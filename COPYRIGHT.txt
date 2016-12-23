@@ -1,0 +1,6 @@
+Guitar
+Copyright (C) 2016 S.Fuchita
+repository: https://github.com/soramimi/Guitar
+web: http://www.soramimi.jp/
+mail: fi7s-fct@asahi-net.or.jp
+twitter: @soramimi_jp
