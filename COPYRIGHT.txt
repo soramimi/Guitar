@@ -1,4 +1,4 @@
-Guitar
+Guitar, The GUI Git Client
 Copyright (C) 2016 S.Fuchita
 repository: https://github.com/soramimi/Guitar
 web: http://www.soramimi.jp/

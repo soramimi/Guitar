@@ -25,7 +25,11 @@ INCLUDEPATH += $$PWD/src
 #unix:debug:LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
 #unix:release:LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a
 
-win32:LIBS += advapi32.lib
+win32 {
+	LIBS += advapi32.lib
+	RC_FILE = win.rc
+	QMAKE_SUBSYSTEM_SUFFIX=,5.01
+}
 
 macx {
 	QMAKE_INFO_PLIST = Info.plist
