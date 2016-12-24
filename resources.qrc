@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/stage.svgz</file>
+        <file>image/unstage.svgz</file>
+        <file>image/commit.svgz</file>
+        <file>image/push.svgz</file>
+        <file>image/selall.svgz</file>
+        <file>image/graphcolor.png</file>
+        <file>image/guitar.svgz</file>
+        <file>image/pull.svgz</file>
+        <file>image/clone.svgz</file>
+        <file>image/fetch.svgz</file>
+        <file>image/digits.png</file>
+        <file>image/guitar.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,2 @@
+#!/bin/sh
+/opt/Guitar/Guitar --open-here 2>/dev/null &
