@@ -67,7 +67,8 @@ SOURCES += \
     src/MyToolButton.cpp \
     src/GitDiff.cpp \
     src/CommitPropertyDialog.cpp \
-    src/Terminal.cpp
+    src/Terminal.cpp \
+    version.c
 
 HEADERS  += \
 	src/MainWindow.h \

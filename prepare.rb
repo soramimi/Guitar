@@ -1,5 +1,10 @@
 #!/usr/bin/ruby
 
+# create the following files
+#	* version.c
+#	* win.rc
+#	* Info.plist
+
 load 'version.rb'
 
 def get_revision()
@@ -15,6 +20,7 @@ end
 
 File.open("version.c", "w") {|f|
 	f.puts <<_____
+int copyright_year = #{$copyright_year};
 char const product_version[] = "#{$version_a}.#{$version_b}.#{$version_c}";
 char const source_revision[] = "#{get_revision()}";
 _____
