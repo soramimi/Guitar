@@ -5,3 +5,5 @@ GUI Git Client
 * Run on Windows, macOS and Linux
 * Written in C++
 * Powered by Qt 5
+
+more information : https://soramimi.github.io/Guitar/
