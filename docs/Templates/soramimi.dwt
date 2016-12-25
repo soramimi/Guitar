@@ -15,7 +15,8 @@ Guitar - GUI Gitクライアント
 </div>
 <!-- #BeginEditable "content" --><!-- #EndEditable -->
 <div id="footer">
-Copyright (C) 2016 S.Fuchita (@soramimi_jp)
+<span id="copyright"></span>
 </div>
 </body>
+<script type="text/javascript" src="common.js"></script>
 </html>
