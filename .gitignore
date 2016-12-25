@@ -3,3 +3,4 @@ build
 win.rc
 Info.plist
 version.c
+_notes
