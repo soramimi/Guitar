@@ -56,7 +56,7 @@ Guitar - GUI Gitクライアント
 <h2>環境設定</h2>
 <p>Qt Creator の設定を行います。[ツール] → [オプション] を選択すると、オプションダイアログが開きます。</p>
 <p><a href="projectsettings1.png"><img src="projectsettings1.png" width="522" height="353"></a></p>
-<p>デフォルト設定では、ファイル名は「alllowercase」な名前になりますが、Guitarでは「UpperCamelCase」なファイル名を採用していますので、[ファイル名を小文字にする] というチェックボックスをOFFにします。</p>
+<p>デフォルト設定では、ファイル名は「lowercase」な名前になりますが、Guitarでは「UpperCamelCase」なファイル名を採用していますので、[ファイル名を小文字にする] というチェックボックスをOFFにします。</p>
 <p><img src="projectsettings2.png" width="522" height="353"></p>
 <p>[ビルドと実行] の [一般] タブにある、 [既定のビルドディレクトリ] の設定を、Windowsの場合“../_build_%{CurrentProject:Name}”にします。これはグローバルの設定なので、変えたくない場合は、後でプロジェクトの設定で“../_build_Guitar”などにします。</p>
 <p><a href="projectsettings3.png"><img src="projectsettings3.png" width="522" height="353"></a></p>
@@ -66,11 +66,11 @@ Guitar - GUI Gitクライアント
 <ul>
   <li>タブ4</li>
 </ul>
-<p>上に上げたのは、グローバルの共通設定ですが、プロジェクト毎にも設定箇所があります。</p>
+<p>上に挙げたのは、グローバルの共通設定ですが、プロジェクト毎にも設定箇所があります。</p>
 <p><img src="projectsettings5.png" width="540" height="342"></p>
 <p>[エディタ]の設定、[コードスタイル]の設定を確認します。</p>
 <h2>ソースコードを取得する</h2>
-<p>作業用フォルダを作成します。各自好みの場所で構いません。筆者の場合、Windowsでは C:\develop 、Linuでは /home/soramimi/develop としています。</p>
+<p>作業用フォルダを作成します。各自好みの場所で構いません。筆者の場合、Windowsでは C:\develop 、Linuxでは /home/soramimi/develop としています。</p>
 <p><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a> にアクセスします。</p>
 <p><img src="github.png" width="995" height="168" class="border"></p>
 <p>右にある[Clone or download]を押すと、ソースコードを取得するためのアドレスが表示されます。</p>
@@ -104,6 +104,41 @@ Guitar - GUI Gitクライアント
 <p>ビルドディレクトリは、Windowsの場合 C:\develop\_build_libgit2 とします。</p>
 <p><img src="libgit2build.png" width="363" height="181" class="border"></p>
 <p>Ctrl+Bを押してビルドします。必要に応じて [デバッグ] と [リリース] を両方ビルドします。</p>
+<p>この時点で、下記のようなフォルダ構成になっているものと想定します。</p>
+<h4>Windowsの場合</h4>
+<ul class="foldertree">
+  <li class="folder">C:\develop
+        <ul>
+          <li class="folder">_build_Guitar
+            <ul>
+              <li class="folder">debug</li>
+              <li class="folder">release</li>
+            </ul>
+          </li>
+          <li class="folder">_build_libgit2
+            <ul>
+              <li class="folder">debug</li>
+              <li class="folder">release          </li>
+            </ul>
+          </li>
+          <li class="folder">Guitar</li>
+          <li class="folder">libgit2</li>
+        </ul>
+  </li>
+</ul>
+<h4>Linuxの場合</h4>
+<ul class="foldertree">
+  <li class="folder">/home/&lt;<em>username&gt;/</em>develop
+        <ul>
+          <li class="folder">_build_Guitar_Debug</li>
+          <li class="folder">_build_Guitar_Release</li>
+          <li class="folder">_build_libgit2_Debug</li>
+          <li class="folder">_build_libgit2_Release</li>
+          <li class="folder">Guitar</li>
+          <li class="folder">libgit2</li>
+        </ul>
+  </li>
+</ul>
 <p>Guitar.pro を開くと、libgit2をリンクする設定がコメントアウトされています。</p>
 <pre>#INCLUDEPATH += $$PWD/../libgit2/include
 
