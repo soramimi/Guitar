@@ -107,7 +107,7 @@ private:
 	void for_each_selected_staged_files(std::function<void (const QString &)> fn);
 	void for_each_selected_unstaged_files(std::function<void (const QString &)> fn);
 	bool editFile(const QString &path, const QString &title);
-	void updateCommitTree();
+	void updateCommitGraph();
 	void changeLog(QListWidgetItem *item, bool uncommited);
 	void doUpdateFilesList();
 	void updateSliderCursor();
@@ -147,7 +147,7 @@ public:
 public:
 	bool eventFilter(QObject *watched, QEvent *event);
 	void autoOpenRepository(QString dir);
-	void saveRepositoryBookmark(const RepositoryItem &item);
+	void saveRepositoryBookmark(RepositoryItem item);
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	int digitWidth() const;
 	int digitHeight() const;

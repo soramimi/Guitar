@@ -18,6 +18,9 @@ bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *
 		writer.writeStartDocument();
 		writer.writeStartElement("repositories");
 		for (RepositoryItem const &item : *items) {
+			if (item.name.isEmpty() && item.local_dir.isEmpty()) {
+				continue;
+			}
 			writer.writeStartElement("repository");
 			writer.writeAttribute("name", item.name);
 			if (!item.local_dir.isEmpty()) {

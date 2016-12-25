@@ -13,6 +13,7 @@ struct Git::Private {
 	QByteArray result;
 	int process_exit_code = 0;
 	QString working_repo_dir;
+	QString error_message;
 };
 
 Git::Git(const Context &cx, QString const &repodir)
@@ -74,6 +75,7 @@ void Git::clearResult()
 {
 	pv->result.clear();
 	pv->process_exit_code = 0;
+	pv->error_message = QString();
 }
 
 QString Git::resultText() const
@@ -136,7 +138,8 @@ bool Git::git(const QString &arg, bool chdir)
 #ifndef QT_NO_DEBUG
 		qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
 		if (pv->process_exit_code != 0) {
-			qDebug() << QString::fromUtf8(p.readAllStandardError());
+			pv->error_message = QString::fromUtf8(p.readAllStandardError());
+			qDebug() << pv->error_message;
 		}
 #endif
 		return pv->process_exit_code == 0;
@@ -147,6 +150,11 @@ bool Git::git(const QString &arg, bool chdir)
 	} else {
 		return Do();
 	}
+}
+
+QString Git::errorMessage() const
+{
+	return pv->error_message;
 }
 
 bool Git::isValidWorkingCopy(QString const &dir)
@@ -500,7 +508,7 @@ bool Git::clone(QString const &location, QString const &path)
 
 		QString cmd = "clone \"%1\" \"%2\"";
 		cmd = cmd.arg(location).arg(subdir);
-		git(cmd, false);
+		ok = git(cmd, false);
 
 		QDir::setCurrent(cwd.path());
 	}

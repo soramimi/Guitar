@@ -15,10 +15,12 @@ private:
 	typedef std::shared_ptr<Git> GitPtr;
 	GitPtr git;
 	QString default_working_dir;
+	QString working_dir;
 public:
 	explicit CloneDialog(QWidget *parent, GitPtr gitptr, QString const &defworkdir);
 	~CloneDialog();
 
+	QString workingDir() const;
 private:
 	Ui::CloneDialog *ui;
 

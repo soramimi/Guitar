@@ -34,19 +34,6 @@
 #include <set>
 #include <QProcess>
 
-class OverrideWaitCursor_ {
-public:
-	OverrideWaitCursor_()
-	{
-		qApp->setOverrideCursor(Qt::WaitCursor);
-	}
-	~OverrideWaitCursor_()
-	{
-		qApp->restoreOverrideCursor();
-	}
-};
-#define OverrideWaitCursor OverrideWaitCursor_ waitcursor_; (void)waitcursor_;
-
 enum {
 	IndexRole = Qt::UserRole,
 	FilePathRole,
@@ -111,7 +98,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	prepareLogTableWidget();
 
-#ifdef _WIN32
+#ifdef Q_OS_WIN
 	{
 		QFont font;
 
@@ -124,12 +111,6 @@ MainWindow::MainWindow(QWidget *parent) :
 		ui->label_branch_name->setFont(font);
 	}
 #endif
-
-//#ifdef _WIN32
-//	pv->gcx.git_command = "C:/Program Files/Git/cmd/git.exe";
-//#else
-//	pv->gcx.git_command = "/usr/bin/git";
-//#endif
 
 	SettingsDialog::loadSettings(&pv->appsettings);
 	{
@@ -358,7 +339,7 @@ QString MainWindow::diff_(QString const &old_id, QString const &new_id) // obsol
 	return QString();
 }
 
-void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsolete
+void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsolete : diff文字列の中にバイナリファイルがあると、それ以降を処理できない
 {
 	pv->diffs.clear();
 
@@ -465,7 +446,7 @@ void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsol
 	}
 }
 
-void MainWindow::makeDiff2(Git *g, QString const &id, QList<Git::Diff> *out)
+void MainWindow::makeDiff2(Git *g, QString const &id, QList<Git::Diff> *out) // バイナリファイルに対応するため、diff処理を別クラスにした
 {
 	Q_ASSERT(g);
 	GitDiff dm;
@@ -597,7 +578,7 @@ void MainWindow::prepareLogTableWidget()
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 
-	updateCommitTree(); // コミットグラフを更新
+	updateCommitGraph(); // コミットグラフを更新
 }
 
 QString MainWindow::currentRepositoryName() const
@@ -669,7 +650,7 @@ void MainWindow::openRepository(bool waitcursor)
 			item->setData(IndexRole, index);
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
-		int col = 1; // col=0 is commit graph
+		int col = 1; // カラム0はコミットグラフなので、その次から
 		auto AddColumn = [&](QString const &text, bool bold){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
 			if (bold) {
@@ -784,7 +765,7 @@ void MainWindow::autoOpenRepository(QString dir)
 
 	for (RepositoryItem const &item : pv->repos) {
 		Qt::CaseSensitivity cs = Qt::CaseSensitive;
-#ifdef _WIN32
+#ifdef Q_OS_WIN
 		cs = Qt::CaseInsensitive;
 #endif
 		if (dir.compare(item.local_dir, cs) == 0) {
@@ -1123,8 +1104,14 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	}
 }
 
-void MainWindow::saveRepositoryBookmark(RepositoryItem const &item)
+void MainWindow::saveRepositoryBookmark(RepositoryItem item)
 {
+	if (item.local_dir.isEmpty()) return;
+
+	if (item.name.isEmpty()) {
+		item.name = tr("Unnamed");
+	}
+
 	bool done = false;
 	for (int i = 0; i < pv->repos.size(); i++) {
 		RepositoryItem *p = &pv->repos[i];
@@ -1265,7 +1252,7 @@ struct Element {
 	std::vector<int> indexes;
 };
 
-void MainWindow::updateCommitTree()
+void MainWindow::updateCommitGraph()
 {
 	const size_t LogCount = pv->logs.size();
 	// 樹形図情報を構築する
@@ -1409,7 +1396,7 @@ void MainWindow::updateCommitTree()
 			// 最初以外の線分の深さを決める
 			for (size_t i = 1; i < elements.size(); i++) { // 最初以外をループ
 				Element *e = &elements[i];
-				int depth = 1; // この変数は次のラムダ式内で参照されるのでここに書く
+				int depth = 1;
 				while (1) { // 失敗したら繰り返し
 					for (size_t j = 0; j < i; j++) { // 既に処理済みの線を調べる
 						Element const *f = &elements[j]; // 検査対象
@@ -1585,7 +1572,7 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 
 bool MainWindow::selectGitCommand()
 {
-#ifdef _WIN32
+#ifdef Q_OS_WIN
 	char const *exe = "git.exe";
 #else
 	char const *exe = "git";
@@ -1767,7 +1754,15 @@ void MainWindow::on_action_clone_triggered()
 {
 	GitPtr g = std::shared_ptr<Git>(new Git(pv->gcx, QString()));
 	CloneDialog dlg(this, g, defaultWorkingDir());
-	dlg.exec();
+	if (dlg.exec() == QDialog::Accepted) {
+		QString dir = dlg.workingDir();
+		RepositoryItem item;
+		item.local_dir = dir;
+		item.name = makeRepositoryName(dir);
+		saveRepositoryBookmark(item);
+		pv->current = item;
+		openRepository();
+	}
 }
 
 void MainWindow::on_action_about_triggered()

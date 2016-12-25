@@ -267,6 +267,7 @@ public:
 	void mergeBranch(const QString &name);
 	static bool isValidWorkingCopy(const QString &dir);
 	QString diff_to_file(const QString &old_id, const QString &path);
+	QString errorMessage() const;
 };
 
 

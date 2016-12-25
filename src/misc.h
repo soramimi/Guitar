@@ -1,11 +1,11 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include <QApplication>
 #include <QStringList>
 #include <QDateTime>
 #include <functional>
 #include <vector>
-
 
 class misc {
 public:
@@ -21,5 +21,18 @@ public:
 	static QString normalizePathSeparator(const QString &str);
 	static QString joinWithSlash(const QString &left, const QString &right);
 };
+
+class OverrideWaitCursor_ {
+public:
+	OverrideWaitCursor_()
+	{
+		qApp->setOverrideCursor(Qt::WaitCursor);
+	}
+	~OverrideWaitCursor_()
+	{
+		qApp->restoreOverrideCursor();
+	}
+};
+#define OverrideWaitCursor OverrideWaitCursor_ waitcursor_; (void)waitcursor_;
 
 #endif // MISC_H
