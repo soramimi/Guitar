@@ -515,21 +515,27 @@ bool Git::clone(QString const &location, QString const &path)
 	return ok;
 }
 
-bool Git::commit_(QString const &text)
+bool Git::commit_(QString const &msg, bool amend)
 {
-	QStringList lines = misc::splitLines(text);
 	QString cmd = "commit";
+	if (amend) {
+		cmd += " --amend";
+	}
 	int n = 0;
-	for (QString const &line : lines) {
-		QString s = line.trimmed();
-		s = s.replace('|', ' ');
-		s = s.replace('<', ' ');
-		s = s.replace('>', ' ');
-		s = s.replace('\"', '\'');
-		if (n > 0 || !s.isEmpty()) {
-			n++;
+	QString text = msg.trimmed();
+	if (!text.isEmpty()) {
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			QString s = line.trimmed();
+			s = s.replace('|', ' ');
+			s = s.replace('<', ' ');
+			s = s.replace('>', ' ');
+			s = s.replace('\"', '\'');
+			if (n > 0 || !s.isEmpty()) {
+				n++;
+			}
+			cmd += QString(" -m \"%1\"").arg(s);
 		}
-		cmd += QString(" -m \"%1\"").arg(s);
 	}
 	if (n == 0) {
 		cmd += " -m \"no message\"";
@@ -542,11 +548,16 @@ bool Git::commit_(QString const &text)
 bool Git::commit(QString const &text)
 {
 #if 1
-	return commit_(text);
+	return commit_(text, false);
 #else
 	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
 	return r.commit(text.toStdString());
 #endif
+}
+
+bool Git::commit_amend_m(const QString &text)
+{
+	return commit_(text, true);
 }
 
 void Git::push_()

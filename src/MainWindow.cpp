@@ -832,7 +832,7 @@ void MainWindow::on_action_add_all_triggered()
 	updateHeadFilesList(false);
 }
 
-void MainWindow::on_action_commit_triggered()
+void MainWindow::commit(bool amend)
 {
 	GitPtr g = git();
 	if (!g) return;
@@ -840,19 +840,37 @@ void MainWindow::on_action_commit_triggered()
 	while (1) {
 		TextEditDialog dlg;
 		dlg.setWindowTitle(tr("Commit"));
+		if (amend) {
+			dlg.setText(pv->logs[0].message);
+		}
 		if (dlg.exec() == QDialog::Accepted) {
 			QString text = dlg.text();
 			if (text.isEmpty()) {
 				QMessageBox::warning(this, tr("Commit"), tr("Commit message can not be omitted."));
 				continue;
 			}
-			g->commit(text);
+			if (amend) {
+				g->commit_amend_m(text);
+			} else {
+				g->commit(text);
+			}
 			openRepository();
 			break;
 		} else {
 			break;
 		}
 	}
+}
+
+void MainWindow::commit_amend()
+{
+	commit(true);
+}
+
+
+void MainWindow::on_action_commit_triggered()
+{
+	commit();
 }
 
 void MainWindow::on_action_push_triggered()
@@ -1802,6 +1820,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QMenu menu;
 		QAction *a_property = menu.addAction(tr("&Property"));
+		QAction *a_edit_comment = nullptr;
+		if (row == 0 && currentBranch().ahead > 0) {
+			a_edit_comment = menu.addAction(tr("Edit comment..."));
+		}
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_property) {
@@ -1809,9 +1831,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				dlg.exec();
 				return;
 			}
+			if (a == a_edit_comment) {
+				commit_amend();
+				return;
+			}
 		}
 	}
 }
+
+
 
 void MainWindow::on_action_test_triggered()
 {

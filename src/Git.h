@@ -199,7 +199,7 @@ private:
 	QStringList make_branch_list_();
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();
-	bool commit_(const QString &text);
+	bool commit_(const QString &msg, bool amend);
 	void push_();
 #if USE_LIBGIT2
 	QString diffHeadToWorkingDir_();
@@ -260,6 +260,7 @@ public:
 	static bool isValidID(QString const &s);
 
 	bool commit(const QString &text);
+	bool commit_amend_m(const QString &text);
 	void push();
 	void test();
 	void createBranch(const QString &name);

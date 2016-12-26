@@ -120,6 +120,8 @@ private:
 	QString diff_(const QString &old_id, const QString &new_id); // obsolete
 	void makeDiff2(Git *g, const QString &id, QList<Git::Diff> *out);
 	void udpateButton();
+	void commit(bool amend = false);
+	void commit_amend();
 public:
 
 	bool selectGitCommand();
