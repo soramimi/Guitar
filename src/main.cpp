@@ -16,12 +16,12 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	bool f_auto = false;
+	bool f_open_here = false;
 
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg == "--open-here") {
-			f_auto = true;
+			f_open_here = true;
 		}
 	}
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
 
-	if (f_auto) {
+	if (f_open_here) {
 		QString dir = QDir::current().absolutePath();
 		w.autoOpenRepository(dir);
 	}

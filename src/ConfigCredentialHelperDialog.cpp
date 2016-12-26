@@ -6,6 +6,9 @@ ConfigCredentialHelperDialog::ConfigCredentialHelperDialog(QWidget *parent) :
 	ui(new Ui::ConfigCredentialHelperDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 }
 
 ConfigCredentialHelperDialog::~ConfigCredentialHelperDialog()

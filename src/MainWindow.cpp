@@ -917,7 +917,6 @@ void MainWindow::on_action_config_global_credential_helper_triggered()
 	GitPtr g = git();
 	if (!g) return;
 
-
 	g->git("config --global credential.helper");
 	QString text = g->resultText().trimmed();
 	ConfigCredentialHelperDialog dlg(this);

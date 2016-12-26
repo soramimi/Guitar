@@ -6,6 +6,9 @@ CheckoutBranchDialog::CheckoutBranchDialog(QWidget *parent, QList<Git::Branch> c
 	ui(new Ui::CheckoutBranchDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 
 	QString current_branch;
 	for (int i = 0; i < branches.size(); i++) {

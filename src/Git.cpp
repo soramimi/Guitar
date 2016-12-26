@@ -753,7 +753,7 @@ QString Git::trimPath(QString const &s)
 	}
 	if (left == begin && right == end) return s;
 	return QString::fromUtf16(left, right - left);
-};
+}
 
 void Git::FileStatus::parse(const QString &text)
 {
