@@ -1,6 +1,6 @@
-build
 *.user
 win.rc
 Info.plist
 version.c
 _notes
+_release
