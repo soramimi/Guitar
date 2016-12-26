@@ -60,6 +60,23 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Mail</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="lineEdit_mail">
+       <property name="frame">
+        <bool>false</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -135,6 +152,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>lineEdit_description</tabstop>
+  <tabstop>lineEdit_date</tabstop>
+  <tabstop>lineEdit_author</tabstop>
+  <tabstop>lineEdit_mail</tabstop>
+  <tabstop>lineEdit_commit_id</tabstop>
+  <tabstop>plainTextEdit_parent_ids</tabstop>
+  <tabstop>pushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

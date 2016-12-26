@@ -411,7 +411,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	CommitItemList items;
 	QString text;
 #if 1
-	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#date:%ci##%s\" --all -%1 %2";
+	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
 	text = resultText().trimmed();
@@ -447,6 +447,8 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						item.parent_ids = val.split(' ', QString::SkipEmptyParts);
 					} else if (key == "author") {
 						item.author = val;
+					} else if (key == "mail") {
+						item.mail = val;
 					} else if (key == "date") {
 						item.commit_date = QDateTime::fromString(val, Qt::ISODate).toLocalTime();
 					} else if (key == "debug") {

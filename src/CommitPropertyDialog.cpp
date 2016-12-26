@@ -14,6 +14,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, const Git::CommitIte
 	ui->lineEdit_commit_id->setText(commit.commit_id);
 	ui->lineEdit_date->setText(commit.commit_date.toLocalTime().toString(Qt::ISODate));
 	ui->lineEdit_author->setText(commit.author);
+	ui->lineEdit_mail->setText(commit.mail);
 
 	QString text;
 	for (QString const &id : commit.parent_ids) {

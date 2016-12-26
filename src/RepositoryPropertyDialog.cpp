@@ -7,6 +7,9 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(QWidget *parent, const Reposi
 	ui(new Ui::RepositoryPropertyDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 
 	ui->label_name->setText(item.name);
 	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(item.local_dir));
