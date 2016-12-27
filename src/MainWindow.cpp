@@ -63,7 +63,7 @@ struct MainWindow::Private {
 	Git::Context gcx;
 	ApplicationSettings appsettings;
 	QList<RepositoryItem> repos;
-	RepositoryItem current;
+	RepositoryItem current_repo;
 	Git::Branch current_branch;
 	QList<Git::Diff> diffs;
 	QStringList added;
@@ -85,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	pv = new Private();
 	ui->setupUi(this);
 	ui->splitter_v->setSizes({100, 400});
-	ui->splitter_h->setSizes({100, 100, 100});
+	ui->splitter_h->setSizes({200, 100, 200});
 
 	ui->widget_diff_pixmap->setFileDiffWidget(ui->widget_diff);
 
@@ -199,11 +199,9 @@ Git::CommitItemList const *MainWindow::logs() const
 	return &pv->logs;
 }
 
-
-
 QString MainWindow::currentWorkingCopyDir() const
 {
-	return pv->current.local_dir;
+	return pv->current_repo.local_dir;
 }
 
 MainWindow::GitPtr MainWindow::git(QString const &dir)
@@ -255,7 +253,7 @@ void MainWindow::onScrollValueChanged2(int value)
 int MainWindow::repositoryIndex(QListWidgetItem *item)
 {
 	if (item) {
-		int i = item->data(Qt::UserRole).toInt();
+		int i = item->data(IndexRole).toInt();
 		if (i >= 0 && i < pv->repos.size()) {
 			return i;
 		}
@@ -279,7 +277,7 @@ void MainWindow::updateRepositoriesList()
 		}
 		QListWidgetItem *item = new QListWidgetItem();
 		item->setText(repo.name);
-		item->setData(Qt::UserRole, i);
+		item->setData(IndexRole, i);
 		ui->listWidget_repos->addItem(item);
 	}
 }
@@ -288,15 +286,11 @@ void MainWindow::updateRepositoriesList()
 void MainWindow::updateHeadFilesList(bool single)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	updateFilesList(QString(), "HEAD", single);
 
-	if (pv->diffs.empty()) {
-		pv->uncommited_changes = false;
-	} else {
-		pv->uncommited_changes = true;
-	}
+	pv->uncommited_changes = !pv->diffs.empty();
 }
 
 void MainWindow::showFileList(bool single)
@@ -456,7 +450,7 @@ void MainWindow::makeDiff2(Git *g, QString const &id, QList<Git::Diff> *out) // 
 void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, bool singlelist)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	clearFileList();
 	if (!singlelist) showFileList(false);
@@ -583,7 +577,7 @@ void MainWindow::prepareLogTableWidget()
 
 QString MainWindow::currentRepositoryName() const
 {
-	return pv->current.name;
+	return pv->current_repo.name;
 }
 
 Git::Branch MainWindow::currentBranch() const
@@ -591,12 +585,28 @@ Git::Branch MainWindow::currentBranch() const
 	return pv->current_branch;
 }
 
+bool MainWindow::isValidWorkingCopy(GitPtr const &g) const
+{
+	return g && g->isValidWorkingCopy();
+}
+
+int MainWindow::limitLogCount() const
+{
+	return 10000;
+}
+
+QDateTime MainWindow::limitLogTime() const
+{
+	QDateTime t = QDateTime::currentDateTime();
+	t = t.addYears(-3);
+	return t;
+}
+
 void MainWindow::openRepository(bool waitcursor)
 {
 	if (waitcursor) {
-		qApp->setOverrideCursor(Qt::WaitCursor);
+		OverrideWaitCursor;
 		openRepository(false);
-		qApp->restoreOverrideCursor();
 		return;
 	}
 
@@ -604,11 +614,11 @@ void MainWindow::openRepository(bool waitcursor)
 	clearRepositoryInfo();
 
 	GitPtr g = git();
-	if (g && g->isValidWorkingCopy()) {
+	if (isValidWorkingCopy(g)) {
 		updateHeadFilesList(true);
 
 		// ログを取得
-		pv->logs = g->log(10000);
+		pv->logs = g->log(limitLogCount(), limitLogTime());
 
 		// ブランチを取得
 		pv->branch_map.clear();
@@ -697,14 +707,10 @@ void MainWindow::openRepository(bool waitcursor)
 				message += " {";
 				message += AbbrevName(b.name);
 				if (b.ahead > 0) {
-					message += ", ";
-					message += QString::number(b.ahead);
-					message += " ahead";
+					message += tr(", %1 ahead").arg(b.ahead);
 				}
 				if (b.behind > 0) {
-					message += ", ";
-					message += QString::number(b.behind);
-					message += " behind";
+					message += tr(", %1 behind").arg(b.behind);
 				}
 				message += '}';
 			}
@@ -759,7 +765,7 @@ void MainWindow::autoOpenRepository(QString dir)
 	dir = QDir(dir).absolutePath();
 
 	auto Open = [&](RepositoryItem const &item){
-		pv->current = item;
+		pv->current_repo = item;
 		openRepository();
 	};
 
@@ -776,7 +782,7 @@ void MainWindow::autoOpenRepository(QString dir)
 
 	RepositoryItem newitem;
 	GitPtr g = git(dir);
-	if (g->isValidWorkingCopy()) {
+	if (isValidWorkingCopy(g)) {
 		ushort const *left = dir.utf16();
 		ushort const *right = left + dir.size();
 		if (right[-1] == '/' || right[-1] == '\\') {
@@ -800,7 +806,7 @@ void MainWindow::openSelectedRepository()
 	int row = repositoryIndex(item);
 	if (row >= 0) {
 		RepositoryItem const &item = pv->repos[row];
-		pv->current = item;
+		pv->current_repo = item;
 		openRepository();
 	}
 }
@@ -826,7 +832,7 @@ QString MainWindow::getBookmarksFilePath() const
 void MainWindow::on_action_add_all_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	g->git("add --all");
 	updateHeadFilesList(false);
@@ -835,7 +841,7 @@ void MainWindow::on_action_add_all_triggered()
 void MainWindow::commit(bool amend)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	while (1) {
 		TextEditDialog dlg;
@@ -873,10 +879,21 @@ void MainWindow::on_action_commit_triggered()
 	commit();
 }
 
+void MainWindow::on_action_fetch_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	OverrideWaitCursor;
+
+	g->fetch();
+	openRepository(false);
+}
+
 void MainWindow::on_action_push_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	OverrideWaitCursor;
 
@@ -887,7 +904,7 @@ void MainWindow::on_action_push_triggered()
 void MainWindow::on_action_pull_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	OverrideWaitCursor;
 
@@ -915,7 +932,7 @@ void MainWindow::on_action_set_remote_origin_url_triggered()
 void MainWindow::on_action_config_global_credential_helper_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	g->git("config --global credential.helper");
 	QString text = g->resultText().trimmed();
@@ -981,7 +998,7 @@ bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &
 void MainWindow::revertFile(QStringList const &paths)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	if (paths.isEmpty()) {
 		// nop
@@ -999,7 +1016,7 @@ void MainWindow::revertFile(QStringList const &paths)
 void MainWindow::revertAllFiles()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	QString cmd = "git reset --hard HEAD";
 	if (askAreYouSureYouWantToRun(tr("Revert all files"), cmd)) {
@@ -1047,7 +1064,7 @@ void MainWindow::for_each_selected_unstaged_files(std::function<void(QString con
 void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
 	if (!items.isEmpty()) {
@@ -1100,7 +1117,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &pos)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	QListWidgetItem *item = ui->listWidget_staged->currentItem();
 	if (item) {
@@ -1203,7 +1220,7 @@ void MainWindow::on_listWidget_repos_customContextMenuRequested(const QPoint &po
 void MainWindow::on_toolButton_stage_clicked()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	g->stage(selectedUnstagedFiles());
 	updateHeadFilesList(false);
@@ -1212,7 +1229,7 @@ void MainWindow::on_toolButton_stage_clicked()
 void MainWindow::on_toolButton_unstage_clicked()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	g->unstage(selectedStagedFiles());
 	updateHeadFilesList(false);
@@ -1232,18 +1249,6 @@ void MainWindow::on_toolButton_select_all_clicked()
 void MainWindow::on_toolButton_commit_clicked()
 {
 	ui->action_commit->trigger();
-}
-
-void MainWindow::on_action_fetch_triggered()
-{
-	OverrideWaitCursor;
-
-	GitPtr g = git();
-	if (!g) return;
-
-	g->fetch();
-
-	openRepository();
 }
 
 bool MainWindow::editFile(const QString &path, QString const &title)
@@ -1539,7 +1544,7 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	ui->widget_diff->clear();
 	int idiff = indexOfDiff(item);
@@ -1701,7 +1706,7 @@ bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 {
 	GitPtr g = git();
-	if (!g) return false;
+	if (!isValidWorkingCopy(g)) return false;
 
 	QByteArray ba;
 	if (g->cat_file(id, &ba)) {
@@ -1727,7 +1732,7 @@ void MainWindow::on_action_edit_settings_triggered()
 void MainWindow::on_action_branch_new_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	NewBranchDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -1739,7 +1744,7 @@ void MainWindow::on_action_branch_new_triggered()
 void MainWindow::on_action_branch_checkout_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	QList<Git::Branch> branches = g->branches();
 	CheckoutBranchDialog dlg(this, branches);
@@ -1747,6 +1752,7 @@ void MainWindow::on_action_branch_checkout_triggered()
 		QString name = dlg.branchName();
 		if (!name.isEmpty()) {
 			g->checkoutBranch(name);
+			openRepository();
 		}
 	}
 }
@@ -1754,7 +1760,7 @@ void MainWindow::on_action_branch_checkout_triggered()
 void MainWindow::on_action_branch_merge_triggered()
 {
 	GitPtr g = git();
-	if (!g) return;
+	if (!isValidWorkingCopy(g)) return;
 
 	QList<Git::Branch> branches = g->branches();
 	MergeBranchDialog dlg(this, branches);
@@ -1777,7 +1783,7 @@ void MainWindow::on_action_clone_triggered()
 		item.local_dir = dir;
 		item.name = makeRepositoryName(dir);
 		saveRepositoryBookmark(item);
-		pv->current = item;
+		pv->current_repo = item;
 		openRepository();
 	}
 }

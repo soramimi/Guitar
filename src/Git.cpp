@@ -403,11 +403,8 @@ QList<Git::Branch> Git::branches()
 #endif
 }
 
-Git::CommitItemList Git::log_all(QString const &id, int maxcount)
+Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limit_time)
 {
-	QDateTime limit_time = QDateTime::currentDateTime();
-	limit_time = limit_time.addYears(-3);
-
 	CommitItemList items;
 	QString text;
 #if 1
@@ -464,10 +461,10 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	return std::move(items);
 }
 
-Git::CommitItemList Git::log(int maxcount)
+Git::CommitItemList Git::log(int maxcount, QDateTime limit_time)
 {
 #if 1
-	return log_all(QString(), maxcount);
+	return log_all(QString(), maxcount, limit_time);
 #else
 	std::string dir = workingRepositoryDir().toStdString();
 	LibGit2::Repository r = LibGit2::openRepository(dir);

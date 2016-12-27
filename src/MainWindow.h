@@ -72,17 +72,11 @@ private slots:
 	void onScrollValueChanged(int);
 	void onScrollValueChanged2(int);
 	void on_action_about_triggered();
-
 	void on_toolButton_clone_clicked();
-
 	void on_toolButton_fetch_clicked();
-
 	void on_comboBox_filter_currentTextChanged(const QString &arg1);
-
 	void on_toolButton_erase_filter_clicked();
-
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
-
 private:
 	Ui::MainWindow *ui;
 
@@ -122,6 +116,8 @@ private:
 	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();
+	int limitLogCount() const;
+	QDateTime limitLogTime() const;
 public:
 
 	bool selectGitCommand();
@@ -133,26 +129,21 @@ public:
 	bool isThereUncommitedChanges() const;
 	bool saveFileAs(QString const &srcpath, QString const &dstpath);
 	QString defaultWorkingDir() const;
-protected:
-	void resizeEvent(QResizeEvent *);
-
-	// QObject interface
-protected:
-	void timerEvent(QTimerEvent *event);
-protected slots:
-
-	// QObject interface
-public:
 	bool event(QEvent *event);
-
-	// QObject interface
-public:
 	bool eventFilter(QObject *watched, QEvent *event);
 	void autoOpenRepository(QString dir);
 	void saveRepositoryBookmark(RepositoryItem item);
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	int digitWidth() const;
 	int digitHeight() const;
+	bool isValidWorkingCopy(const GitPtr &g) const;
+protected:
+	void resizeEvent(QResizeEvent *);
+
+protected:
+	void timerEvent(QTimerEvent *event);
+protected slots:
+
 };
 
 #endif // MAINWINDOW_H

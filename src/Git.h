@@ -231,8 +231,8 @@ public:
 	QString version();
 	QString revparseHEAD();
 	QStringList getUntrackedFiles();
-	CommitItemList log_all(const QString &id, int maxcount);
-	CommitItemList log(int maxcount);
+	CommitItemList log_all(const QString &id, int maxcount, QDateTime limit_time);
+	CommitItemList log(int maxcount, QDateTime limit_time);
 
 	bool clone(const QString &location, const QString &path);
 
