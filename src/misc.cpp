@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <QWidget>
 #include <vector>
 #include "joinpath.h"
 
@@ -207,4 +208,13 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 		return joinpath(left, right);
 	}
 	return !left.isEmpty() ? left : right;
+}
+
+void misc::setFixedSize(QWidget *w)
+{
+	Qt::WindowFlags flags = w->windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	flags |= Qt::MSWindowsFixedSizeDialogHint;
+	w->setWindowFlags(flags);
+	w->setFixedSize(w->size());
 }

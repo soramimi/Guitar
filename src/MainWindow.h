@@ -34,7 +34,6 @@ public:
 	static QString makeRepositoryName(QString const &loc);
 	const Git::CommitItemList *logs() const;
 	QColor color(unsigned int i);
-	QList<Git::Branch> branchForCommit(const QString &id);
 private slots:
 	void on_action_add_all_triggered();
 	void on_action_branch_checkout_triggered();
@@ -77,6 +76,12 @@ private slots:
 	void on_comboBox_filter_currentTextChanged(const QString &arg1);
 	void on_toolButton_erase_filter_clicked();
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
+	void on_action_tag_triggered();
+
+	void on_action_tag_push_all_triggered();
+
+	void on_action_tag_delete_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -118,6 +123,15 @@ private:
 	void commit_amend();
 	int limitLogCount() const;
 	QDateTime limitLogTime() const;
+	void queryBranches(GitPtr g);
+	void queryTags(GitPtr g);
+	QList<Git::Branch> findBranch(const QString &id);
+	QList<Git::Tag> findTag(const QString &id);
+	int selectedLogIndex() const;
+	const Git::CommitItem *selectedCommitItem() const;
+	void deleteTags(const QStringList &tagnames);
+	void deleteTags(const Git::CommitItem &commit);
+	void deleteSelectedTags();
 public:
 
 	bool selectGitCommand();

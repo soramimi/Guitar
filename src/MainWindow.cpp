@@ -22,6 +22,8 @@
 #include "SettingsDialog.h"
 #include "TextEditDialog.h"
 #include "RepositoryPropertyDialog.h"
+#include "EditTagDialog.h"
+#include "DeleteTagsDialog.h"
 #include <deque>
 #include <QDateTime>
 #include <QDebug>
@@ -74,6 +76,7 @@ struct MainWindow::Private {
 	int interval_250ms_counter;
 	QImage graph_color;
 	std::map<QString, QList<Git::Branch>> branch_map;
+	std::map<QString, QList<Git::Tag>> tag_map;
 	QString repository_filter_text;
 	QPixmap digits;
 };
@@ -602,6 +605,29 @@ QDateTime MainWindow::limitLogTime() const
 	return t;
 }
 
+void MainWindow::queryBranches(GitPtr g)
+{
+	Q_ASSERT((bool)g);
+	pv->branch_map.clear();
+	QList<Git::Branch> branches = g->branches();
+	for (Git::Branch const &b : branches) {
+		if (b.flags & Git::Branch::Current) {
+			pv->current_branch = b;
+		}
+		pv->branch_map[b.id].append(b);
+	}
+}
+
+void MainWindow::queryTags(GitPtr g)
+{
+	Q_ASSERT((bool)g);
+	pv->tag_map.clear();
+	QList<Git::Tag> tags = g->tags();
+	for (Git::Tag const &t : tags) {
+		pv->tag_map[t.id].push_back(t);
+	}
+}
+
 void MainWindow::openRepository(bool waitcursor)
 {
 	if (waitcursor) {
@@ -620,15 +646,9 @@ void MainWindow::openRepository(bool waitcursor)
 		// ログを取得
 		pv->logs = g->log(limitLogCount(), limitLogTime());
 
-		// ブランチを取得
-		pv->branch_map.clear();
-		QList<Git::Branch> branches = g->branches();
-		for (Git::Branch const &b : branches) {
-			if (b.flags & Git::Branch::Current) {
-				pv->current_branch = b;
-			}
-			pv->branch_map[b.id].append(b);
-		}
+		// ブランチとタグを取得
+		queryBranches(g);
+		queryTags(g);
 
 		ui->label_repo_name->setText(currentRepositoryName());
 		ui->label_branch_name->setText(currentBranch().name);
@@ -686,33 +706,43 @@ void MainWindow::openRepository(bool waitcursor)
 			author = commit->author;
 			message = commit->message;
 
-			QList<Git::Branch> list = branchForCommit(commit->commit_id);
-			auto AbbrevName = [](QString const &name){
-				QStringList sl = name.split('/');
-				if (sl.size() == 1) return sl[0];
-				QString newname;
-				for (int i = 0; i < sl.size(); i++) {
-					QString s = sl[i];
-					if (i + 1 < sl.size()) {
-						s = s.mid(0, 1);
+			{ // branch
+				QList<Git::Branch> list = findBranch(commit->commit_id);
+				auto AbbrevName = [](QString const &name){
+					QStringList sl = name.split('/');
+					if (sl.size() == 1) return sl[0];
+					QString newname;
+					for (int i = 0; i < sl.size(); i++) {
+						QString s = sl[i];
+						if (i + 1 < sl.size()) {
+							s = s.mid(0, 1);
+						}
+						if (i > 0) {
+							newname += '/';
+						}
+						newname += s;
 					}
-					if (i > 0) {
-						newname += '/';
+					return newname;
+				};
+				for (Git::Branch const &b : list) {
+					message += " {";
+					message += AbbrevName(b.name);
+					if (b.ahead > 0) {
+						message += tr(", %1 ahead").arg(b.ahead);
 					}
-					newname += s;
+					if (b.behind > 0) {
+						message += tr(", %1 behind").arg(b.behind);
+					}
+					message += '}';
 				}
-				return newname;
-			};
-			for (Git::Branch const &b : list) {
-				message += " {";
-				message += AbbrevName(b.name);
-				if (b.ahead > 0) {
-					message += tr(", %1 ahead").arg(b.ahead);
+			}
+			{ // tag
+				QList<Git::Tag> list = findTag(commit->commit_id);
+				for (Git::Tag const &t : list) {
+					message += " {t:";
+					message += t.name;
+					message += '}';
 				}
-				if (b.behind > 0) {
-					message += tr(", %1 behind").arg(b.behind);
-				}
-				message += '}';
 			}
 		}
 		if (false) { // メッセージ欄に、親コミットIDを表示する（デバッグ用）
@@ -1482,13 +1512,22 @@ DONE:;
 	}
 }
 
-QList<Git::Branch> MainWindow::branchForCommit(QString const &id)
+QList<Git::Branch> MainWindow::findBranch(QString const &id)
 {
 	auto it = pv->branch_map.find(id);
 	if (it != pv->branch_map.end()) {
 		return it->second;
 	}
 	return QList<Git::Branch>();
+}
+
+QList<Git::Tag> MainWindow::findTag(QString const &id)
+{
+	auto it = pv->tag_map.find(id);
+	if (it != pv->tag_map.end()) {
+		return it->second;
+	}
+	return QList<Git::Tag>();
 }
 
 void MainWindow::on_action_edit_global_gitconfig_triggered()
@@ -1512,9 +1551,27 @@ void MainWindow::on_action_edit_gitignore_triggered()
 	editFile(path, ".gitignore");
 }
 
+int MainWindow::selectedLogIndex() const
+{
+	int i = ui->tableWidget_log->currentRow();
+	if (i >= 0 && i < (int)pv->logs.size()) {
+		return i;
+	}
+	return -1;
+}
+
+Git::CommitItem const *MainWindow::selectedCommitItem() const
+{
+	int i = selectedLogIndex();
+	if (i >= 0 && i < (int)pv->logs.size()) {
+		return &pv->logs[i];
+	}
+	return nullptr;
+}
+
 void MainWindow::doUpdateFilesList()
 {
-	QTableWidgetItem *item = ui->tableWidget_log->item(ui->tableWidget_log->currentRow(), 0);
+	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
 	if (!item) return;
 	int row = item->data(IndexRole).toInt();
 	int logs = (int)pv->logs.size();
@@ -1817,22 +1874,67 @@ void MainWindow::on_toolButton_erase_filter_clicked()
 	ui->listWidget_repos->setFocus();
 }
 
+void MainWindow::deleteTags(QStringList const &tagnames)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	if (!tagnames.isEmpty()) {
+		OverrideWaitCursor;
+		for (QString const &name : tagnames) {
+			g->delete_tag(name, true);
+		}
+		openRepository(false);
+	}
+}
+
+void MainWindow::deleteTags(const Git::CommitItem &commit)
+{
+	auto it = pv->tag_map.find(commit.commit_id);
+	if (it != pv->tag_map.end()) {
+		QStringList names;
+		QList<Git::Tag> const &tags = it->second;
+		for (Git::Tag const &tag : tags) {
+			names.push_back(tag.name);
+		}
+		deleteTags(names);
+	}
+}
+
+void MainWindow::deleteSelectedTags()
+{
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		QList<Git::Tag> list = findTag(commit->commit_id);
+		if (!list.isEmpty()) {
+			DeleteTagsDialog dlg(this, list);
+			if (dlg.exec() == QDialog::Accepted) {
+				QStringList list = dlg.selectedTags();
+				deleteTags(list);
+			}
+		}
+	}
+}
+
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
-	int row = ui->tableWidget_log->currentRow();
-	if (row >= 0 && row < (int)pv->logs.size()) {
-		Git::CommitItem const &commit = pv->logs[row];
-
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		int row = selectedLogIndex();
 		QMenu menu;
 		QAction *a_property = menu.addAction(tr("&Property"));
 		QAction *a_edit_comment = nullptr;
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
 		}
+		QAction *a_delete_tags = nullptr;
+		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
+			a_delete_tags = menu.addAction(tr("Delete tags"));
+		}
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_property) {
-				CommitPropertyDialog dlg(this, commit);
+				CommitPropertyDialog dlg(this, *commit);
 				dlg.exec();
 				return;
 			}
@@ -1840,13 +1942,48 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				commit_amend();
 				return;
 			}
+			if (a == a_delete_tags) {
+				deleteSelectedTags();
+				return;
+			}
 		}
 	}
 }
 
+void MainWindow::on_action_tag_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	EditTagDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		OverrideWaitCursor;
+		g->tag(dlg.text());
+		if (dlg.isPushChecked()) {
+			g->push(true);
+		}
+		openRepository(false);
+	}
+}
+
+void MainWindow::on_action_tag_push_all_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	OverrideWaitCursor;
+	g->push(true);
+}
+
+
+void MainWindow::on_action_tag_delete_triggered()
+{
+	deleteSelectedTags();
+}
 
 
 void MainWindow::on_action_test_triggered()
 {
 }
+
 

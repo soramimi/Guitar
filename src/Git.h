@@ -86,6 +86,11 @@ public:
 		int flags = 0;
 	};
 
+	struct Tag {
+		QString name;
+		QString id;
+	};
+
 	enum class FileStatusCode : unsigned int {
 		Unknown,
 		Ignored,
@@ -201,7 +206,7 @@ private:
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();
 	bool commit_(const QString &msg, bool amend);
-	void push_();
+	void push_(bool tags);
 #if USE_LIBGIT2
 	QString diffHeadToWorkingDir_();
 	QString diff_(const QString &old_id, const QString &new_id);
@@ -229,7 +234,7 @@ public:
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy();
 	QString version();
-	QString revparseHEAD();
+	QString rev_parse_HEAD();
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(const QString &id, int maxcount, QDateTime limit_time);
 	CommitItemList log(int maxcount, QDateTime limit_time);
@@ -262,7 +267,7 @@ public:
 
 	bool commit(const QString &text);
 	bool commit_amend_m(const QString &text);
-	void push();
+	void push(bool tags = false);
 	void test();
 	void createBranch(const QString &name);
 	void checkoutBranch(const QString &name);
@@ -270,6 +275,10 @@ public:
 	static bool isValidWorkingCopy(const QString &dir);
 	QString diff_to_file(const QString &old_id, const QString &path);
 	QString errorMessage() const;
+	QString rev_parse(const QString &name);
+	QList<Tag> tags();
+	void tag(const QString &name);
+	void delete_tag(const QString &name, bool remote);
 };
 
 

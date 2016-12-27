@@ -721,10 +721,19 @@
     </property>
     <addaction name="action_about"/>
    </widget>
+   <widget class="QMenu" name="menuTag">
+    <property name="title">
+     <string>Tag</string>
+    </property>
+    <addaction name="action_tag"/>
+    <addaction name="action_tag_push_all"/>
+    <addaction name="action_tag_delete"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Branch"/>
+   <addaction name="menuTag"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -843,6 +852,21 @@
   <action name="action_about">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="action_tag">
+   <property name="text">
+    <string>Tag...</string>
+   </property>
+  </action>
+  <action name="action_tag_push_all">
+   <property name="text">
+    <string>Push all tags</string>
+   </property>
+  </action>
+  <action name="action_tag_delete">
+   <property name="text">
+    <string>Delete tags...</string>
    </property>
   </action>
  </widget>
