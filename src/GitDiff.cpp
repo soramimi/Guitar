@@ -56,11 +56,11 @@ public:
 	QList<CommitData> files;
 	QStringList parents;
 
-	bool parseTree(Git *g, QString const &index, QString const &dir, bool append);
-	bool parseCommit(Git *g, QString const &index, bool append);
+	bool parseTree(GitPtr g, QString const &index, QString const &dir, bool append);
+	bool parseCommit(GitPtr g, QString const &index, bool append);
 };
 
-bool GitDiff::CommitList::parseTree(Git *g, const QString &index, const QString &dir, bool append)
+bool GitDiff::CommitList::parseTree(GitPtr g, const QString &index, const QString &dir, bool append)
 {
 	if (!append) {
 		files.clear();
@@ -99,7 +99,7 @@ bool GitDiff::CommitList::parseTree(Git *g, const QString &index, const QString 
 	return false;
 }
 
-bool GitDiff::CommitList::parseCommit(Git *g, const QString &index, bool append)
+bool GitDiff::CommitList::parseCommit(GitPtr g, const QString &index, bool append)
 {
 	if (!append) {
 		files.clear();
@@ -139,7 +139,7 @@ bool GitDiff::CommitList::parseCommit(Git *g, const QString &index, bool append)
 
 // GitDiff
 
-void GitDiff::diff_tree_(Git *g, const QString &dir, QString older_index, QString newer_index)
+void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_index, QString newer_index, std::vector<Git::Diff> *diffs)
 {
 	CommitList older_commit;
 	CommitList newer_commit;
@@ -154,16 +154,16 @@ void GitDiff::diff_tree_(Git *g, const QString &dir, QString older_index, QStrin
 		map.store(cd.path, cd.id);
 	}
 
-	commit_into_map(g, dir, newer_commit, &diffmap);
+	commit_into_map(g, dir, newer_commit, &diffmap, diffs);
 }
 
-void GitDiff::commit_into_map(Git *g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap)
+void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap, std::vector<Git::Diff> *diffs)
 {
 	Git::Diff item;
 	auto AddItem = [&](){
 		item.diff = QString("diff --git ") + item.blob.a.path + ' ' + item.blob.b.path;
 		item.index = QString("index ") + item.blob.a.id + ".." + item.blob.b.id + ' ' + item.mode;
-		diffs.push_back(item);
+		diffs->push_back(item);
 	};
 	for (CommitData const &cd : commit.files) {
 		for (IndexMap const &map : *diffmap) {
@@ -180,7 +180,7 @@ void GitDiff::commit_into_map(Git *g, const QString &dir, const GitDiff::CommitL
 				if (cd.id != it->second) {
 					if (cd.type == CommitData::TREE) {
 						QString path = misc::joinWithSlash(dir, cd.path);
-						diff_tree_(g, path, it->second, cd.id);
+						diff_tree_(g, path, it->second, cd.id, diffs);
 					} else if (cd.type == CommitData::BLOB) {
 						item = Git::Diff();
 						item.path = cd.path;
@@ -198,7 +198,7 @@ void GitDiff::commit_into_map(Git *g, const QString &dir, const GitDiff::CommitL
 	}
 }
 
-void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::MapList *diffmap)
+void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::MapList *diffmap, std::vector<Git::Diff> *diffs)
 {
 	Git::Diff item;
 	auto AddItem = [&](Git::FileStatus const &st){
@@ -207,7 +207,7 @@ void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::Map
 		item.path = st.path1();
 		item.blob.a.path = misc::joinWithSlash("a", item.path); // a/path
 		item.blob.b.path = misc::joinWithSlash("b", item.path); // b/path
-		diffs.push_back(item);
+		diffs->push_back(item);
 		item = Git::Diff();
 	};
 	for (Git::FileStatus const &st : stats) {
@@ -227,7 +227,7 @@ void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::Map
 	}
 }
 
-void GitDiff::parse_commit(Git *g, const QString &dir, const QString &index, GitDiff::MapList *diffmaplist)
+void GitDiff::parse_commit(GitPtr g, const QString &dir, const QString &index, GitDiff::MapList *diffmaplist)
 {
 	CommitList oldcommit;
 	oldcommit.parseCommit(g, index, true);
@@ -239,7 +239,7 @@ void GitDiff::parse_commit(Git *g, const QString &dir, const QString &index, Git
 	}
 }
 
-void GitDiff::parse_tree(Git *g, const QString &dir, const QString &index, std::set<QString> *dirset, GitDiff::MapList *diffmaplist)
+void GitDiff::parse_tree(GitPtr g, const QString &dir, const QString &index, std::set<QString> *dirset, GitDiff::MapList *diffmaplist)
 {
 	if (!dir.isEmpty()) {
 		auto it = dirset->find(dir);
@@ -332,7 +332,7 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 
 		MapList diffmaplist;
 
-		parse_commit(g.get(), QString(), parent, &diffmaplist);
+		parse_commit(g, QString(), parent, &diffmaplist);
 
 		std::set<QString> dirset;
 
@@ -346,25 +346,25 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 					auto it = map.find(path);
 					if (it != map.end()) {
 						QString index = it->second;
-						parse_tree(g.get(), path, index, &dirset, &diffmaplist);
+						parse_tree(g, path, index, &dirset, &diffmaplist);
 					}
 				}
 
 			}
 		}
 
-		file_into_map(stats, &diffmaplist);
+		file_into_map(stats, &diffmaplist, &diffs);
 
 	} else {
 
 		CommitList newcommit;
-		newcommit.parseCommit(g.get(), index, false);
+		newcommit.parseCommit(g, index, false);
 
 		MapList diffmaplist;
 
 		CommitList oldcommit;
 		for (QString parent : newcommit.parents) {
-			oldcommit.parseCommit(g.get(), parent, true);
+			oldcommit.parseCommit(g, parent, true);
 			diffmaplist.push_back(IndexMap());
 			IndexMap &map = diffmaplist.front();
 			for (CommitData const &cd : oldcommit.files) {
@@ -372,7 +372,7 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 			}
 		}
 
-		commit_into_map(g.get(), QString(), newcommit, &diffmaplist);
+		commit_into_map(g, QString(), newcommit, &diffmaplist, &diffs);
 	}
 
 	//
