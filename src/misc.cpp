@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <QProcess>
 #include <vector>
 #include "joinpath.h"
 
@@ -208,3 +209,27 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 	}
 	return !left.isEmpty() ? left : right;
 }
+
+int misc::qtRunCommand(QString const &cmd, QByteArray *out)
+{
+	out->clear();
+	QProcess proc;
+	proc.start(cmd);
+	proc.waitForStarted();
+	proc.closeWriteChannel();
+	proc.setReadChannel(QProcess::StandardOutput);
+	while (1) {
+		QProcess::ProcessState s = proc.state();
+		if (proc.waitForReadyRead(1)) {
+			char tmp[1024];
+			qint64 len = proc.read(tmp, sizeof(tmp));
+			if (len < 1) break;
+			out->append(tmp, len);
+		} else if (s == QProcess::NotRunning) {
+			break;
+		}
+	}
+
+	return proc.exitCode();
+}
+

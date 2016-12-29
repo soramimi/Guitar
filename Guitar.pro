@@ -47,7 +47,6 @@ SOURCES += \
 	src/PushDialog.cpp \
 	src/ConfigCredentialHelperDialog.cpp \
 	src/MySettings.cpp \
-	src/win32.cpp \
 	src/FileDiffWidget.cpp \
 	src/TextEditDialog.cpp \
 	src/LogTableWidget.cpp \
@@ -68,9 +67,7 @@ SOURCES += \
     src/GitDiff.cpp \
     src/CommitPropertyDialog.cpp \
     src/Terminal.cpp \
-    version.c \
-    src/thread.cpp \
-    src/event.cpp
+	version.c
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -80,7 +77,6 @@ HEADERS  += \
 	src/PushDialog.h \
 	src/ConfigCredentialHelperDialog.h \
 	src/MySettings.h \
-	src/win32.h \
 	src/main.h \
 	src/FileDiffWidget.h \
 	src/TextEditDialog.h \
@@ -101,10 +97,7 @@ HEADERS  += \
     src/MyToolButton.h \
     src/GitDiff.h \
     src/CommitPropertyDialog.h \
-    src/Terminal.h \
-    src/thread.h \
-    src/event.h \
-    src/mutex.h
+	src/Terminal.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -123,3 +116,18 @@ FORMS    += \
 
 RESOURCES += \
     resources.qrc
+
+
+
+win32 {
+	SOURCES += \
+		src/win32/thread.cpp \
+		src/win32/event.cpp \
+		src/win32/win32.cpp
+
+	HEADERS  += \
+		src/win32/thread.h \
+		src/win32/event.h \
+		src/win32/mutex.h \
+		src/win32/win32.h
+}

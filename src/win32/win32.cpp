@@ -1,6 +1,5 @@
 #include <QFileInfo>
 #include <QtGlobal>
-#ifdef Q_OS_WIN
 
 #include "win32.h"
 #include <Windows.h>
@@ -43,6 +42,7 @@ class ProcessThread : Thread {
 private:
 	Event start_event;
 	QString command;
+	DWORD exit_code = 0;
 	HANDLE hOutputRead;
 	HANDLE hInputWrite;
 	HANDLE hErrorWrite;
@@ -171,9 +171,9 @@ protected:
 			std::vector<wchar_t> tmp;
 			tmp.resize(command.size() + 1);
 			wcscpy(&tmp[0], (wchar_t const *)command.utf16());
-			if (!CreateProcessW(0, &tmp[0], 0, 0, TRUE, CREATE_NEW_CONSOLE, 0, 0, &si, &pi))
-			//if (!CreateProcessA(0, &tmp[0], 0, 0, TRUE, CREATE_NEW_CONSOLE, 0, 0, &si, &pi))
+			if (!CreateProcessW(0, &tmp[0], 0, 0, TRUE, CREATE_NO_WINDOW, 0, 0, &si, &pi)) {
 				FAILED_("CreateProcess");
+			}
 
 			// 不要なハンドルを閉じる
 			CloseHandle(hOutputWrite);
@@ -188,12 +188,14 @@ protected:
 			isProcessRunning = false;
 			CloseOutput(); // 標準出力を閉じる
 
-			//WaitForSingleObject(pi.hProcess, INFINITE); // プロセス終了を待つ
+			WaitForSingleObject(pi.hProcess, INFINITE); // プロセス終了を待つ
+			GetExitCodeProcess(pi.hProcess, &exit_code);
 
 			// 終了
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		} catch (std::string const &e) { // 例外
+			stream.stop();
 			OutputDebugStringA(e.c_str());
 		}
 	}
@@ -210,12 +212,13 @@ public:
 
 	~ProcessThread()
 	{
-		Join();
+		WaitForExit();
 	}
 
 	void Start(QString const &cmd, bool input)
 	{
 		command = cmd;
+		exit_code = 0;
 		stream.Prepare(this);
 		start();
 		WaitForStart();
@@ -245,43 +248,35 @@ public:
 		}
 	}
 
-	void Join()
+	int WaitForExit()
 	{
 		CloseInput();
 		join();
+		return exit_code;
 	}
 
-
-	bool isRunning()
+	bool IsRunning()
 	{
 		return isProcessRunning;
 	}
 };
 
-
-QString hoge(QString const &s)
+int winRunCommand(QString const &cmd, QByteArray *out)
 {
-	std::vector<char> vec;
-	vec.reserve(65536);
+	out->clear();
 	ProcessThread proc;
-	proc.Start(s, false);
+	proc.Start(cmd, false);
 	while (1) {
-		char tmp[65536];
-		bool r = proc.isRunning();
+		char tmp[1024];
+		bool r = proc.IsRunning();
 		int n = proc.ReadOutput(tmp, sizeof(tmp));
 		if (n > 0) {
-			vec.insert(vec.end(), tmp, tmp + n);
+			out->append(tmp, n);
 		} else if (!r) {
 			break;
 		}
 		Sleep(0);
 	}
-	size_t n = vec.size();
-	if (n > 0) {
-		return QString::fromUtf8(&vec[0], n);
-	}
-	return QString();
+	return proc.WaitForExit();
 }
 
-
-#endif
