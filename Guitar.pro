@@ -68,7 +68,9 @@ SOURCES += \
     src/GitDiff.cpp \
     src/CommitPropertyDialog.cpp \
     src/Terminal.cpp \
-    version.c
+    version.c \
+    src/thread.cpp \
+    src/event.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -99,7 +101,10 @@ HEADERS  += \
     src/MyToolButton.h \
     src/GitDiff.h \
     src/CommitPropertyDialog.h \
-    src/Terminal.h
+    src/Terminal.h \
+    src/thread.h \
+    src/event.h \
+    src/mutex.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -1839,8 +1839,41 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 }
 
 
+QString hoge(QString const &s);
 
 void MainWindow::on_action_test_triggered()
 {
+	QString s = "\"%1\" --version";
+	s = s.arg(pv->gcx.git_command);
+	QTime t;
+	t.start();
+	for (int i = 0; i < 1; i++) {
+#if 0
+		s = hoge(s);
+#else
+		QByteArray ba;
+		QProcess proc;
+		proc.start(s);
+		proc.waitForStarted();
+		proc.closeWriteChannel();
+		proc.setReadChannel(QProcess::StandardOutput);
+		while (1) {
+			QProcess::ProcessState s = proc.state();
+			if (proc.waitForReadyRead(1)) {
+				while (1) {
+					char tmp[1024];
+					qint64 len = proc.read(tmp, sizeof(tmp));
+					if (len < 1) break;
+					ba.append(tmp, len);
+				}
+			} else if (s == QProcess::NotRunning) {
+				break;
+			}
+		}
+		s = QString::fromUtf8(ba);
+#endif
+	}
+	qDebug() << t.elapsed() << "ms";
+	qDebug() << s;
 }
 

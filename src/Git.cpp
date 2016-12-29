@@ -3,10 +3,13 @@
 #include <QDebug>
 #include <QDir>
 #include <QProcess>
+#include <QTimer>
 #include <set>
 #include "joinpath.h"
 #include "misc.h"
 #include "LibGit2.h"
+
+#define DEBUGLOG 1
 
 struct Git::Private {
 	QString git_command;
@@ -108,8 +111,10 @@ bool Git::git(const QString &arg, bool chdir)
 		qDebug() << "Invalid git command: " << gitCommand();
 		return false;
 	}
-#ifndef QT_NO_DEBUG
+#if DEBUGLOG
 	qDebug() << "exec: git " << arg;
+	QTime timer;
+	timer.start();
 #endif
 	clearResult();
 
@@ -135,7 +140,7 @@ bool Git::git(const QString &arg, bool chdir)
 			}
 		}
 		pv->process_exit_code = p.exitCode();
-#ifndef QT_NO_DEBUG
+#if DEBUGLOG
 		qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
 		if (pv->process_exit_code != 0) {
 			pv->error_message = QString::fromUtf8(p.readAllStandardError());
@@ -145,11 +150,19 @@ bool Git::git(const QString &arg, bool chdir)
 		return pv->process_exit_code == 0;
 	};
 
+	bool ok = false;
+
 	if (chdir) {
-		return chdirexec(Do);
+		ok = chdirexec(Do);
 	} else {
-		return Do();
+		ok = Do();
 	}
+
+#if DEBUGLOG
+	qDebug() << timer.elapsed() << "ms";
+#endif
+
+	return ok;
 }
 
 QString Git::errorMessage() const
@@ -314,7 +327,7 @@ QList<Git::Branch> Git::branches_()
 	QList<Branch> branches;
 	git("branch -v -a --abbrev=40");
 	QString s = resultText();
-#ifndef QT_NO_DEBUG
+#if DEBUGLOG
 	qDebug() << s;
 #endif
 	ushort const *begin = s.utf16();
