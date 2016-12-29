@@ -9,7 +9,7 @@
 #include "misc.h"
 #include "LibGit2.h"
 
-#define DEBUGLOG 1
+#define DEBUGLOG 0
 
 struct Git::Private {
 	QString git_command;
@@ -171,6 +171,13 @@ bool Git::git(const QString &arg, bool chdir)
 QString Git::errorMessage() const
 {
 	return pv->error_message;
+}
+
+GitPtr Git::dup() const
+{
+	Git *p = new Git();
+	p->pv = new Private(*pv);
+	return GitPtr(p);
 }
 
 bool Git::isValidWorkingCopy(QString const &dir)

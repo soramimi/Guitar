@@ -26,6 +26,9 @@ struct TreeLine {
 	}
 };
 
+class Git;
+typedef std::shared_ptr<Git> GitPtr;
+
 class Git : QObject {
 public:
 	class Context {
@@ -196,7 +199,7 @@ public:
 
 private:
 	struct Private;
-	Private *pv;
+	Private *pv = nullptr;
 	QStringList make_branch_list_();
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();
@@ -207,13 +210,16 @@ private:
 	QString diff_(const QString &old_id, const QString &new_id);
 #endif
 	static void parseAheadBehind(const QString &s, Branch *b);
+	Git()
+	{
+	}
 public:
 	Git(Context const &cx, const QString &repodir);
-	Git(Git &&r)
-	{
-		pv = r.pv;
-		r.pv = nullptr;
-	}
+	Git(Git &&r) = delete;
+//	{
+//		pv = r.pv;
+//		r.pv = nullptr;
+//	}
 	virtual ~Git();
 	QByteArray result() const;
 	void setGitCommand(const QString &path);
@@ -270,6 +276,8 @@ public:
 	static bool isValidWorkingCopy(const QString &dir);
 	QString diff_to_file(const QString &old_id, const QString &path);
 	QString errorMessage() const;
+
+	GitPtr dup() const;
 };
 
 

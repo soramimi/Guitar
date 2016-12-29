@@ -206,12 +206,12 @@ QString MainWindow::currentWorkingCopyDir() const
 	return pv->current.local_dir;
 }
 
-MainWindow::GitPtr MainWindow::git(QString const &dir)
+GitPtr MainWindow::git(QString const &dir)
 {
 	return dir.isEmpty() ? std::shared_ptr<Git>() : std::shared_ptr<Git>(new Git(pv->gcx, dir));
 }
 
-MainWindow::GitPtr MainWindow::git()
+GitPtr MainWindow::git()
 {
 	return git(currentWorkingCopyDir());
 }
@@ -446,7 +446,7 @@ void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsol
 	}
 }
 
-void MainWindow::makeDiff2(Git *g, QString const &id, QList<Git::Diff> *out) // バイナリファイルに対応するため、diff処理を別クラスにした
+void MainWindow::makeDiff2(GitPtr g, QString const &id, QList<Git::Diff> *out) // バイナリファイルに対応するため、diff処理を別クラスにした
 {
 	Q_ASSERT(g);
 	GitDiff dm;
@@ -464,7 +464,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 #if 0
 	makeDiff(old_id, new_id);
 #else
-	makeDiff2(g.get(), new_id, &pv->diffs);
+	makeDiff2(g, new_id, &pv->diffs);
 #endif
 
 	if (old_id.isEmpty() || new_id.isEmpty()) {
@@ -1163,6 +1163,15 @@ void MainWindow::on_action_view_refresh_triggered()
 	openRepository();
 }
 
+void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)
+{
+	pv->update_files_list_counter = 200;
+	ui->widget_diff_pixmap->clear(false);
+	ui->listWidget_unstaged->clear();
+	ui->listWidget_staged->clear();
+	ui->listWidget_files->clear();
+}
+
 void MainWindow::on_listWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->listWidget_repos->currentItem();
@@ -1527,14 +1536,7 @@ void MainWindow::doUpdateFilesList()
 	}
 }
 
-void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
-{
-	pv->update_files_list_counter = 200;
-	ui->widget_diff_pixmap->clear(false);
-	ui->listWidget_unstaged->clear();
-	ui->listWidget_staged->clear();
-	ui->listWidget_files->clear();
-}
+
 
 void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 {
@@ -1838,17 +1840,18 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	}
 }
 
-#include "win32/win32.h"
+//#include "win32/win32.h"
 
 void MainWindow::on_action_test_triggered()
 {
+#if 0
 	QString s = "\"%1\" --version";
 	s = s.arg(pv->gcx.git_command);
 	QTime t;
 	t.start();
 	for (int i = 0; i < 1; i++) {
 		QByteArray ba;
-#if 0
+#if 1
 		misc::qtRunCommand(s, &ba);
 #else
 		winRunCommand(s, &ba);
@@ -1857,5 +1860,11 @@ void MainWindow::on_action_test_triggered()
 	}
 	qDebug() << t.elapsed() << "ms";
 	qDebug() << s;
+#else
+	GitPtr g1 = git();
+	GitPtr g2 = g1->dup();
+	qDebug() << g1->version();
+	qDebug() << g2->version();
+#endif
 }
 

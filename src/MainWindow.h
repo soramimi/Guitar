@@ -54,13 +54,13 @@ private slots:
 	void on_action_set_remote_origin_url_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
+	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_listWidget_files_currentRowChanged(int currentRow);
 	void on_listWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_repos_itemDoubleClicked(QListWidgetItem *item);
 	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_unstaged_currentRowChanged(int currentRow);
 	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
-	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_toolButton_commit_clicked();
 	void on_toolButton_pull_clicked();
 	void on_toolButton_push_clicked();
@@ -93,7 +93,6 @@ private:
 	QString getBookmarksFilePath() const;
 	bool saveBookmarks() const;
 
-	typedef std::shared_ptr<Git> GitPtr;
 	GitPtr git(const QString &dir);
 	GitPtr git();
 	void openRepository(bool waitcursor = true);
@@ -118,7 +117,7 @@ private:
 	void clearRepositoryInfo();
 	int repositoryIndex(QListWidgetItem *item);
 	QString diff_(const QString &old_id, const QString &new_id); // obsolete
-	void makeDiff2(Git *g, const QString &id, QList<Git::Diff> *out);
+	void makeDiff2(GitPtr g, const QString &id, QList<Git::Diff> *out);
 	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();

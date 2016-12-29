@@ -25,7 +25,7 @@ private:
 	void parse_commit(Git *g, QString const &dir, QString const &index, MapList *diffmaplist);
 	void parse_tree(Git *g, QString const &dir, QString const &index, std::set<QString> *dirset, MapList *diffmaplist);
 public:
-	void diff(Git *g, QString index, QList<Git::Diff> *out);
+	void diff(GitPtr g, QString index, QList<Git::Diff> *out);
 };
 
 
