@@ -39,6 +39,7 @@ macx {
 }
 
 SOURCES += \
+	version.c \
 	src/main.cpp\
 	src/MainWindow.cpp \
 	src/Git.cpp \
@@ -67,7 +68,12 @@ SOURCES += \
     src/GitDiff.cpp \
     src/CommitPropertyDialog.cpp \
     src/Terminal.cpp \
+<<<<<<< HEAD
 	version.c
+=======
+    src/EditTagDialog.cpp \
+    src/DeleteTagsDialog.cpp
+>>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -97,7 +103,13 @@ HEADERS  += \
     src/MyToolButton.h \
     src/GitDiff.h \
     src/CommitPropertyDialog.h \
+<<<<<<< HEAD
 	src/Terminal.h
+=======
+    src/Terminal.h \
+    src/EditTagDialog.h \
+    src/DeleteTagsDialog.h
+>>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -112,7 +124,9 @@ FORMS    += \
     src/CloneDialog.ui \
     src/AboutDialog.ui \
     src/RepositoryPropertyDialog.ui \
-    src/CommitPropertyDialog.ui
+    src/CommitPropertyDialog.ui \
+    src/EditTagDialog.ui \
+    src/DeleteTagsDialog.ui
 
 RESOURCES += \
     resources.qrc

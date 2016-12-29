@@ -326,7 +326,7 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 
 	if (index == "HEAD") {
 
-		QString parent = g->revparseHEAD(); // HEADのインデックスを取得
+		QString parent = g->rev_parse_HEAD(); // HEADのインデックスを取得
 
 		Git::FileStatusList stats = g->status(); // git status
 

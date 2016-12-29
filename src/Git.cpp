@@ -196,10 +196,52 @@ QString Git::version()
 	return resultText().trimmed();
 }
 
-QString Git::revparseHEAD()
+QString Git::rev_parse(QString const &name)
 {
-	git("rev-parse HEAD ");
+	QString cmd = "rev-parse %1";
+	cmd = cmd.arg(name);
+	git(cmd);
 	return resultText().trimmed();
+}
+
+QList<Git::Tag> Git::tags()
+{
+	QList<Git::Tag> list;
+	git("tag");
+	QStringList lines = misc::splitLines(resultText());
+	for (QString const &line : lines) {
+		Tag tag;
+		if (line.isEmpty()) continue;
+		tag.name = line.trimmed();
+		if (tag.name.isEmpty()) continue;
+		tag.id = rev_parse(tag.name);
+		list.push_back(tag);
+	}
+	return list;
+}
+
+void Git::tag(const QString &name)
+{
+	QString cmd = "tag \"%1\"";
+	cmd = cmd.arg(name);
+	git(cmd);
+}
+
+void Git::delete_tag(const QString &name, bool remote)
+{
+	QString cmd = "tag --delete \"%1\"";
+	cmd = cmd.arg(name);
+	git(cmd);
+	{
+		QString cmd = "push --delete origin \"%1\"";
+		cmd = cmd.arg(name);
+		git(cmd);
+	}
+}
+
+QString Git::rev_parse_HEAD()
+{
+	return rev_parse("HEAD");
 }
 
 #if USE_LIBGIT2
@@ -426,11 +468,8 @@ QList<Git::Branch> Git::branches()
 #endif
 }
 
-Git::CommitItemList Git::log_all(QString const &id, int maxcount)
+Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limit_time)
 {
-	QDateTime limit_time = QDateTime::currentDateTime();
-	limit_time = limit_time.addYears(-3);
-
 	CommitItemList items;
 	QString text;
 #if 1
@@ -487,10 +526,10 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	return std::move(items);
 }
 
-Git::CommitItemList Git::log(int maxcount)
+Git::CommitItemList Git::log(int maxcount, QDateTime limit_time)
 {
 #if 1
-	return log_all(QString(), maxcount);
+	return log_all(QString(), maxcount, limit_time);
 #else
 	std::string dir = workingRepositoryDir().toStdString();
 	LibGit2::Repository r = LibGit2::openRepository(dir);
@@ -585,15 +624,19 @@ bool Git::commit_amend_m(const QString &text)
 	return commit_(text, true);
 }
 
-void Git::push_()
+void Git::push_(bool tags)
 {
-	git("push");
+	QString cmd = "push";
+	if (tags) {
+		cmd += " --tags";
+	}
+	git(cmd);
 }
 
-void Git::push()
+void Git::push(bool tags)
 {
 #if 1
-	push_();
+	push_(tags);
 #else
 	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
 	r.push_();

@@ -1,5 +1,9 @@
 #include "misc.h"
+<<<<<<< HEAD
 #include <QProcess>
+=======
+#include <QWidget>
+>>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 #include <vector>
 #include "joinpath.h"
 
@@ -210,6 +214,7 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 	return !left.isEmpty() ? left : right;
 }
 
+<<<<<<< HEAD
 int misc::qtRunCommand(QString const &cmd, QByteArray *out)
 {
 	out->clear();
@@ -233,3 +238,13 @@ int misc::qtRunCommand(QString const &cmd, QByteArray *out)
 	return proc.exitCode();
 }
 
+=======
+void misc::setFixedSize(QWidget *w)
+{
+	Qt::WindowFlags flags = w->windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	flags |= Qt::MSWindowsFixedSizeDialogHint;
+	w->setWindowFlags(flags);
+	w->setFixedSize(w->size());
+}
+>>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4

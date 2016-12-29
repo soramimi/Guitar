@@ -20,7 +20,11 @@ public:
 	static std::string mid(std::string const &str, int start, int length = -1);
 	static QString normalizePathSeparator(const QString &str);
 	static QString joinWithSlash(const QString &left, const QString &right);
+<<<<<<< HEAD
 	static int qtRunCommand(QString const &cmd, QByteArray *out);
+=======
+	static void setFixedSize(QWidget *w);
+>>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 };
 
 class OverrideWaitCursor_ {
