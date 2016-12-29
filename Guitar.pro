@@ -69,7 +69,8 @@ SOURCES += \
     src/CommitPropertyDialog.cpp \
     src/Terminal.cpp \
     src/EditTagDialog.cpp \
-    src/DeleteTagsDialog.cpp
+    src/DeleteTagsDialog.cpp \
+    src/LegacyWindowsStyleTreeControl.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -101,7 +102,8 @@ HEADERS  += \
     src/CommitPropertyDialog.h \
     src/Terminal.h \
     src/EditTagDialog.h \
-    src/DeleteTagsDialog.h
+    src/DeleteTagsDialog.h \
+    src/LegacyWindowsStyleTreeControl.h
 
 FORMS    += \
 	src/MainWindow.ui \

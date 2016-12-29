@@ -7,7 +7,7 @@
 #include <QStandardPaths>
 
 #ifdef Q_OS_WIN32
-#include "win32.h"
+#include "win32/win32.h"
 #else
 QString getAppDataLocation()
 {

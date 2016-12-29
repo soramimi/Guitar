@@ -92,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	ui->widget_diff_pixmap->setFileDiffWidget(ui->widget_diff);
 
-	ui->listWidget_repos->installEventFilter(this);
+	ui->treeWidget_repos->installEventFilter(this);
 
 	showFileList(true);
 
@@ -264,6 +264,17 @@ int MainWindow::repositoryIndex(QListWidgetItem *item)
 	return -1;
 }
 
+int MainWindow::repositoryIndex(QTreeWidgetItem *item)
+{
+	if (item) {
+		int i = item->data(0, IndexRole).toInt();
+		if (i >= 0 && i < pv->repos.size()) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 void MainWindow::updateRepositoriesList()
 {
 	QString path = getBookmarksFilePath();
@@ -272,17 +283,31 @@ void MainWindow::updateRepositoriesList()
 
 	QString filter = pv->repository_filter_text;
 
-	ui->listWidget_repos->clear();
+	ui->treeWidget_repos->clear();
+
+	auto NewQTreeWidgetItem = [](){
+		QTreeWidgetItem *item = new QTreeWidgetItem();
+		item->setSizeHint(0, QSize(20, 20));
+		return item;
+	};
+
+	QTreeWidgetItem *treeitem = NewQTreeWidgetItem();
+	treeitem->setText(0, tr("Local"));
+	treeitem->setData(0, IndexRole, -1);
+
+	ui->treeWidget_repos->addTopLevelItem(treeitem);
 	for (int i = 0; i < pv->repos.size(); i++) {
 		RepositoryItem const &repo = pv->repos[i];
 		if (!filter.isEmpty() && repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) {
 			continue;
 		}
-		QListWidgetItem *item = new QListWidgetItem();
-		item->setText(repo.name);
-		item->setData(IndexRole, i);
-		ui->listWidget_repos->addItem(item);
+		QTreeWidgetItem *child = NewQTreeWidgetItem();
+		child->setText(0, repo.name);
+		child->setData(0, IndexRole, i);
+		treeitem->addChild(child);
+		ui->treeWidget_repos->addTopLevelItem(child);
 	}
+	treeitem->setExpanded(true);
 }
 
 
@@ -832,7 +857,7 @@ void MainWindow::autoOpenRepository(QString dir)
 
 void MainWindow::openSelectedRepository()
 {
-	QListWidgetItem *item = ui->listWidget_repos->currentItem();
+	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
 	int row = repositoryIndex(item);
 	if (row >= 0) {
 		RepositoryItem const &item = pv->repos[row];
@@ -998,9 +1023,7 @@ void MainWindow::on_action_config_global_credential_helper_triggered()
 	}
 }
 
-
-
-void MainWindow::on_listWidget_repos_itemDoubleClicked(QListWidgetItem * /*item*/)
+void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
 {
 	openSelectedRepository();
 }
@@ -1210,7 +1233,7 @@ void MainWindow::on_action_view_refresh_triggered()
 	openRepository();
 }
 
-void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)
+void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
 	pv->update_files_list_counter = 200;
 	ui->widget_diff_pixmap->clear(false);
@@ -1219,17 +1242,23 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *current
 	ui->listWidget_files->clear();
 }
 
-void MainWindow::on_listWidget_repos_customContextMenuRequested(const QPoint &pos)
+void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
-	QListWidgetItem *item = ui->listWidget_repos->currentItem();
+	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
 	int index = repositoryIndex(item);
 	if (index >= 0) {
+		QString open_terminal = tr("Open &terminal");
+		QString open_commandprompt = tr("Open command promp&t");
 		QMenu menu;
 		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
-		QAction *a_open_terminal = menu.addAction(tr("Open &terminal"));
+#ifdef Q_OS_WIN
+		QAction *a_open_terminal = menu.addAction(open_commandprompt);
+#else
+		QAction *a_open_terminal = menu.addAction(open_terminal);
+#endif
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 		QAction *a_property = menu.addAction(tr("&Property"));
-		QPoint pt = ui->listWidget_repos->mapToGlobal(pos);
+		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
 			RepositoryItem const &item = pv->repos[index];
@@ -1728,7 +1757,7 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-	if (watched == ui->listWidget_repos) {
+	if (watched == ui->treeWidget_repos) {
 		if (event->type() == QEvent::KeyPress) {
 			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
@@ -1873,7 +1902,7 @@ void MainWindow::on_comboBox_filter_currentTextChanged(const QString &text)
 void MainWindow::on_toolButton_erase_filter_clicked()
 {
 	ui->comboBox_filter->clearEditText();
-	ui->listWidget_repos->setFocus();
+	ui->treeWidget_repos->setFocus();
 }
 
 void MainWindow::deleteTags(QStringList const &tagnames)
@@ -2009,5 +2038,7 @@ void MainWindow::on_action_test_triggered()
 	qDebug() << g2->version();
 #endif
 }
+
+
 
 

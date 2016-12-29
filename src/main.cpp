@@ -6,15 +6,38 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QDebug>
+#include <QProxyStyle>
+#include "LegacyWindowsStyleTreeControl.h"
 
 QString application_data_dir;
 
 
-void test();
+class MyStyle : public QProxyStyle {
+private:
+	LegacyWindowsStyleTreeControl legacy_windows_;
+public:
+	MyStyle()
+		: QProxyStyle(0)
+	{
+	}
+	void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const
+	{
+		if (element == QStyle::PE_IndicatorBranch) {
+			if (legacy_windows_.drawPrimitive(element, option, painter, widget)) {
+				return;
+			}
+		}
+		QProxyStyle::drawPrimitive(element, option, painter, widget);
+	}
+};
+
+//void test();
 
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
+	QStyle *style = new MyStyle();
+	QApplication::setStyle(style);
 
 	bool f_open_here = false;
 
