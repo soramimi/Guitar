@@ -1952,9 +1952,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	}
 }
 
-<<<<<<< HEAD
-//#include "win32/win32.h"
-=======
 void MainWindow::on_action_tag_triggered()
 {
 	GitPtr g = git();
@@ -1986,7 +1983,6 @@ void MainWindow::on_action_tag_delete_triggered()
 	deleteSelectedTags();
 }
 
->>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 
 void MainWindow::on_action_test_triggered()
 {

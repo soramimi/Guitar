@@ -281,15 +281,12 @@ public:
 	static bool isValidWorkingCopy(const QString &dir);
 	QString diff_to_file(const QString &old_id, const QString &path);
 	QString errorMessage() const;
-<<<<<<< HEAD
 
 	GitPtr dup() const;
-=======
 	QString rev_parse(const QString &name);
 	QList<Tag> tags();
 	void tag(const QString &name);
 	void delete_tag(const QString &name, bool remote);
->>>>>>> 0dcf95e5b5b9d9dfdaf3fd04a5218a2b4c78dab4
 };
 
 
