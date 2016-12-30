@@ -1,18 +1,23 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"><!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
-
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="style/style.css" type="text/css" />
 <!-- #BeginEditable "doctitle" -->
 <title></title>
+<style>
+<!--
+table#screenshots, table#screenshots tr, table#screenshots td {
+	background-color: transparent;
+}
+-->
+</style>
 <!-- #EndEditable -->
 </head>
 <body bgcolor="#f0f0f0" background="style/bg.gif">
 <div id="body">
-<div id="header">
-Guitar - GUI Gitクライアント
-</div>
+<div id="header"> Guitar - GUI Gitクライアント </div>
 <!-- #BeginEditable "content" -->
 <p>Windows、macOS、Linuxで動作する、バージョン管理ツール Git のクライアントアプリケーションです。</p>
 <p><img src="github.png" width="20" height="16" alt="github"><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a></p>
@@ -25,12 +30,28 @@ Guitar - GUI Gitクライアント
   <li>某アプリほど、アイコンが気持ち悪くありません。</li>
   <li>元は、作者（私）がGitを習得することを目的に作り始めたプログラムなので、Gitの奥深い機能までサポートしてはいません。
     <ul>
-      <li>追加してほしい機能があったら、開発に参加して改良したり、アイディアを提案したりしましょう。（←協力者募集です。お願いします。）  </li>
+      <li>追加してほしい機能があったら、開発に参加して改良したり、アイディアを提案したりしましょう。（←協力者募集です。お願いします。） </li>
     </ul>
   </li>
 </ul>
 <h4>スクリーンショット</h4>
-<p align="center"><a href="screenshots/overview.png"><img src="screenshots/overview.png" width="439" height="322" alt="overview"></a></p>
+<p style="text-align: center"><a href="screenshots/overview.png"><img src="screenshots/overview.png" alt="overview" width="320" height="232" class="border"></a><span style="text-align: center"></span></p>
+<table id="screenshots" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tbody>
+    <tr bgcolor="#FFFFFF">
+      <td bgcolor="#FFFFFF" style="text-align: center;"><img src="guitaricon.png" width="172" height="172" alt=""/></td>
+      <td bgcolor="#FFFFFF" style="text-align: center;"class="background-transparent"><a href="screenshots/commitgraph.png"><img src="screenshots/commitgraph.png" alt="" width="230" height="173" class="border"/></a></td>
+      <td bgcolor="#FFFFFF" style="text-align: center;"class="background-transparent"><a href="screenshots/diffview.png"><img src="screenshots/diffview.png" alt="" width="230" height="174" class="border"/></a></td>
+      <td bgcolor="#FFFFFF" style="text-align: center;"class="background-transparent"><a href="screenshots/raspberrypi.jpg"><img src="screenshots/raspberrypi.jpg" alt="" width="230" height="172" class="border"/></a></td>
+    </tr>
+    <tr style="text-align: center">
+      <td bgcolor="#FFFFFF">アイコン</td>
+      <td bgcolor="#FFFFFF">リポジトリリストとコミットグラフ</td>
+      <td bgcolor="#FFFFFF">diffビュー</td>
+      <td bgcolor="#FFFFFF">Raspberry Pi 版</td>
+    </tr>
+  </tbody>
+</table>
 <h2>ビルド方法</h2>
 <ul>
   <li><a href="build.html">build.html</a></li>
@@ -56,9 +77,8 @@ Guitar - GUI Gitクライアント
 </ul>
 <p>そのうち、こちらに移していこうと思います。</p>
 <!-- #EndEditable -->
-<div id="footer">
-<span id="copyright"></span>
-</div>
+<div id="footer"> <span id="copyright"></span> </div>
 </body>
 <script type="text/javascript" src="common.js"></script>
-<!-- InstanceEnd --></html>
+<!-- InstanceEnd -->
+</html>

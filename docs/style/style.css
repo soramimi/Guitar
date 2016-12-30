@@ -200,6 +200,7 @@ div.information {
 
 .border {
 	border: 1px solid #000000;
+	text-align: center;
 }
 
 #header img {
@@ -209,3 +210,10 @@ div.information {
 .breadcrumb-this {
 	color: #a0a0a0;
 }
+
+.background-transparent {
+	background-color: transparent;
+}
+
+
+
