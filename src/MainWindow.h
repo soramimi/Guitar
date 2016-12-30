@@ -85,6 +85,7 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 
 
+	void onRepositoriesTreeDropped();
 private:
 	Ui::MainWindow *ui;
 
@@ -93,7 +94,7 @@ private:
 	void updateHeadFilesList(bool single);
 	void updateRepositoriesList();
 	QString getBookmarksFilePath() const;
-	bool saveBookmarks() const;
+	bool saveRepositoryBookmarks() const;
 
 	GitPtr git(const QString &dir);
 	GitPtr git();
@@ -138,6 +139,8 @@ private:
 	void deleteTags(const Git::CommitItem &commit);
 	void deleteSelectedTags();
 	QTreeWidgetItem *newQTreeWidgetFolderItem(const QString &name);
+	void buildRepoTree(const QString &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
+	void refrectRepositories();
 public:
 
 	bool selectGitCommand();

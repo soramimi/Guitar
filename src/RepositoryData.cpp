@@ -23,6 +23,7 @@ bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *
 			}
 			writer.writeStartElement("repository");
 			writer.writeAttribute("name", item.name);
+			writer.writeAttribute("group", item.group);
 			if (!item.local_dir.isEmpty()) {
 				writer.writeStartElement("local");
 				writer.writeCharacters(item.local_dir);
@@ -47,7 +48,6 @@ QList<RepositoryItem> RepositoryBookmark::load(const QString &path)
 			STATE_ROOT,
 			STATE_REPOSITORIES,
 			STATE_REPOSITORIES_REPOSITORY,
-			STATE_REPOSITORIES_REPOSITORY_REMOTE,
 			STATE_REPOSITORIES_REPOSITORY_LOCAL,
 		};
 		RepositoryItem item;
@@ -74,9 +74,7 @@ QList<RepositoryItem> RepositoryBookmark::load(const QString &path)
 						newstate = STATE_REPOSITORIES_REPOSITORY;
 						item = RepositoryItem();
 						item.name = atts.value("name").toString();
-					} else if (state == STATE_REPOSITORIES_REPOSITORY && reader.name() == "remote") {
-						newstate = STATE_REPOSITORIES_REPOSITORY_REMOTE;
-						text = QString();
+						item.group = atts.value("group").toString();
 					} else if (state == STATE_REPOSITORIES_REPOSITORY && reader.name() == "local") {
 						newstate = STATE_REPOSITORIES_REPOSITORY_LOCAL;
 						text = QString();

@@ -281,7 +281,7 @@
       <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QTreeWidget" name="treeWidget_repos">
+         <widget class="RepositoriesTreeWidget" name="treeWidget_repos">
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -919,6 +919,11 @@
    <class>MyToolButton</class>
    <extends>QToolButton</extends>
    <header>MyToolButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>RepositoriesTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>RepositoriesTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

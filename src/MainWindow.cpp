@@ -44,8 +44,19 @@ enum {
 };
 
 enum TreeItem {
-	FolderItem = -1,
+	GroupItem = -1,
 };
+
+static inline bool isGroupItem(QTreeWidgetItem *item)
+{
+	if (item) {
+		int index = item->data(0, IndexRole).toInt();
+		if (index == GroupItem) {
+			return true;
+		}
+	}
+	return false;
+}
 
 static inline QString getFilePath(QListWidgetItem *item)
 {
@@ -141,6 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->widget_diff, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 	connect(ui->widget_diff_pixmap, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged2(int)));
+	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));;
 
 	QString path = getBookmarksFilePath();
 	pv->repos = RepositoryBookmark::load(path);
@@ -159,6 +171,77 @@ MainWindow::~MainWindow()
 #endif
 	delete pv;
 	delete ui;
+}
+
+bool MainWindow::saveRepositoryBookmarks() const
+{
+	QString path = getBookmarksFilePath();
+	return RepositoryBookmark::save(path, &pv->repos);
+}
+
+void MainWindow::saveRepositoryBookmark(RepositoryItem item)
+{
+	if (item.local_dir.isEmpty()) return;
+
+	if (item.name.isEmpty()) {
+		item.name = tr("Unnamed");
+	}
+
+	bool done = false;
+	for (int i = 0; i < pv->repos.size(); i++) {
+		RepositoryItem *p = &pv->repos[i];
+		if (item.local_dir == p->local_dir) {
+			*p = item;
+			done = true;
+			break;
+		}
+	}
+	if (!done) {
+		pv->repos.push_back(item);
+	}
+	saveRepositoryBookmarks();
+	updateRepositoriesList();
+}
+
+void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos)
+{
+	QString name = item->text(0);
+	if (isGroupItem(item)) {
+		int n = item->childCount();
+		for (int i = 0; i < n; i++) {
+			QTreeWidgetItem *child = item->child(i);
+			QString sub = group / name;
+			buildRepoTree(sub, child, repos);
+		}
+	} else {
+		RepositoryItem const *repo = repositoryItem(item);
+		if (repo) {
+			RepositoryItem newrepo = *repo;
+			newrepo.name = name;
+			newrepo.group = group;
+			item->setData(0, IndexRole, repos->size());
+			repos->push_back(newrepo);
+		}
+	}
+}
+
+void MainWindow::refrectRepositories()
+{
+	QList<RepositoryItem> newrepos;
+	int n = ui->treeWidget_repos->topLevelItemCount();
+	for (int i = 0; i < n; i++) {
+		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
+		buildRepoTree(QString(), item, &newrepos);
+	}
+	pv->repos = std::move(newrepos);
+	saveRepositoryBookmarks();
+}
+
+void MainWindow::onRepositoriesTreeDropped()
+{
+	refrectRepositories();
+	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
+	if (item) item->setExpanded(true);
 }
 
 const QPixmap &MainWindow::digitsPixmap() const
@@ -304,7 +387,7 @@ QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
 {
 	QTreeWidgetItem *item = newQTreeWidgetItem();
 	item->setText(0, name);
-	item->setData(0, IndexRole, FolderItem);
+	item->setData(0, IndexRole, GroupItem);
 	item->setIcon(0, pv->folder_icon);
 	return item;
 }
@@ -319,22 +402,58 @@ void MainWindow::updateRepositoriesList()
 
 	ui->treeWidget_repos->clear();
 
-	QTreeWidgetItem *treeitem = newQTreeWidgetFolderItem(tr("Local"));
+	std::map<QString, QTreeWidgetItem *> parentmap;
 
-	ui->treeWidget_repos->addTopLevelItem(treeitem);
 	for (int i = 0; i < pv->repos.size(); i++) {
 		RepositoryItem const &repo = pv->repos[i];
 		if (!filter.isEmpty() && repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) {
 			continue;
+		}
+		QTreeWidgetItem *parent = nullptr;
+		{
+			QString group = repo.group;
+			if (group.startsWith('/')) {
+				group = group.mid(1);
+			}
+			auto it = parentmap.find(group);
+			if (it != parentmap.end()) {
+				parent = it->second;
+			}
+			if (!parent) {
+				QStringList list = group.split('/');
+				if (list.isEmpty()) {
+					list.push_back(tr("Default"));
+				}
+				for (QString const &name : list) {
+					if (name.isEmpty()) continue;
+					if (!parent) {
+						auto it = parentmap.find(name);
+						if (it != parentmap.end()) {
+							parent = it->second;
+						} else {
+							parent = newQTreeWidgetFolderItem(name);
+							ui->treeWidget_repos->addTopLevelItem(parent);
+						}
+					} else {
+						QTreeWidgetItem *child = newQTreeWidgetFolderItem(name);
+						parent->addChild(child);
+						parent = child;
+					}
+					parent->setExpanded(true);
+				}
+				Q_ASSERT(parent);
+				parentmap[group] = parent;
+			}
+			parent->setData(0, FilePathRole, "");
 		}
 		QTreeWidgetItem *child = newQTreeWidgetItem();
 		child->setText(0, repo.name);
 		child->setData(0, IndexRole, i);
 		child->setIcon(0, pv->repository_icon);
 		child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
-		treeitem->addChild(child);
+		parent->addChild(child);
+		parent->setExpanded(true);
 	}
-	treeitem->setExpanded(true);
 }
 
 
@@ -892,12 +1011,6 @@ void MainWindow::openSelectedRepository()
 	}
 }
 
-bool MainWindow::saveBookmarks() const
-{
-	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &pv->repos);
-}
-
 void MainWindow::resizeEvent(QResizeEvent *)
 {
 	if (ui->widget_diff && ui->widget_diff->isVisible()) {
@@ -1217,35 +1330,11 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	}
 }
 
-void MainWindow::saveRepositoryBookmark(RepositoryItem item)
-{
-	if (item.local_dir.isEmpty()) return;
-
-	if (item.name.isEmpty()) {
-		item.name = tr("Unnamed");
-	}
-
-	bool done = false;
-	for (int i = 0; i < pv->repos.size(); i++) {
-		RepositoryItem *p = &pv->repos[i];
-		if (item.local_dir == p->local_dir) {
-			*p = item;
-			done = true;
-			break;
-		}
-	}
-	if (!done) {
-		pv->repos.push_back(item);
-	}
-	saveBookmarks();
-	updateRepositoriesList();
-}
-
 
 
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
-	QString dir;
+	QString dir = defaultWorkingDir();
 	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
 
 	RepositoryItem item;
@@ -1273,17 +1362,30 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
 	RepositoryItem const *repo = repositoryItem(treeitem);
 	int index = treeitem->data(0, IndexRole).toInt();
-	if (index == FolderItem) {
+	if (isGroupItem(treeitem)) {
 		QMenu menu;
-		QAction *a_addnewfolder = menu.addAction(tr("&Add new folder"));
+		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
+		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
-			if (a == a_addnewfolder) {
+			if (a == a_add_new_group) {
 				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New folder"));
 				treeitem->addChild(child);
 				child->setFlags(child->flags() | Qt::ItemIsEditable);
 				ui->treeWidget_repos->setCurrentItem(child);
+				return;
+			}
+			if (a == a_delete_group) {
+				QTreeWidgetItem *parent = treeitem->parent();
+				if (parent) {
+					int i = parent->indexOfChild(treeitem);
+					delete parent->takeChild(i);
+				} else {
+					int i = ui->treeWidget_repos->indexOfTopLevelItem(treeitem);
+					delete ui->treeWidget_repos->takeTopLevelItem(i);
+				}
+				refrectRepositories();
 				return;
 			}
 		}
@@ -1313,7 +1415,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			}
 			if (a == a_remove) {
 				pv->repos.erase(pv->repos.begin() + index);
-				saveBookmarks();
+				saveRepositoryBookmarks();
 				updateRepositoriesList();
 				return;
 			}

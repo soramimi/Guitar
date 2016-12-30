@@ -70,7 +70,8 @@ SOURCES += \
     src/Terminal.cpp \
     src/EditTagDialog.cpp \
     src/DeleteTagsDialog.cpp \
-    src/LegacyWindowsStyleTreeControl.cpp
+    src/LegacyWindowsStyleTreeControl.cpp \
+    src/RepositoriesTreeWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -103,7 +104,8 @@ HEADERS  += \
     src/Terminal.h \
     src/EditTagDialog.h \
     src/DeleteTagsDialog.h \
-    src/LegacyWindowsStyleTreeControl.h
+    src/LegacyWindowsStyleTreeControl.h \
+    src/RepositoriesTreeWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \
