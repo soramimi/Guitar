@@ -12,5 +12,7 @@
         <file>image/digits.png</file>
         <file>image/guitar.png</file>
         <file>image/Guitar.svg</file>
+        <file>image/folder.png</file>
+        <file>image/repository.png</file>
     </qresource>
 </RCC>

@@ -117,9 +117,9 @@ private:
 	void clearFileList();
 	void clearLog();
 	void clearRepositoryInfo();
-	int repositoryIndex(QListWidgetItem *item);
-	int repositoryIndex(QTreeWidgetItem *item);
-
+//	int repositoryIndex(QListWidgetItem *item);
+	int repositoryIndex_(QTreeWidgetItem *item);
+	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
 	QString diff_(const QString &old_id, const QString &new_id); // obsolete
 	void makeDiff2(GitPtr g, const QString &id, QList<Git::Diff> *out);
@@ -137,6 +137,7 @@ private:
 	void deleteTags(const QStringList &tagnames);
 	void deleteTags(const Git::CommitItem &commit);
 	void deleteSelectedTags();
+	QTreeWidgetItem *newQTreeWidgetFolderItem(const QString &name);
 public:
 
 	bool selectGitCommand();

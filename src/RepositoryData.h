@@ -5,6 +5,7 @@
 
 struct RepositoryItem {
 	QString name;
+	QString group;
 	QString local_dir;
 };
 

@@ -43,6 +43,10 @@ enum {
 	HunkIndexRole,
 };
 
+enum TreeItem {
+	FolderItem = -1,
+};
+
 static inline QString getFilePath(QListWidgetItem *item)
 {
 	if (!item) return QString();
@@ -79,6 +83,8 @@ struct MainWindow::Private {
 	std::map<QString, QList<Git::Tag>> tag_map;
 	QString repository_filter_text;
 	QPixmap digits;
+	QIcon repository_icon;
+	QIcon folder_icon;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -98,6 +104,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	pv->digits.load(":/image/digits.png");
 	pv->graph_color.load(":/image/graphcolor.png");
+
+	pv->repository_icon = QIcon(":/image/repository.png");
+	pv->folder_icon = QIcon(":/image/folder.png");
 
 	prepareLogTableWidget();
 
@@ -253,18 +262,18 @@ void MainWindow::onScrollValueChanged2(int value)
 	ui->verticalScrollBar->setValue(value);
 }
 
-int MainWindow::repositoryIndex(QListWidgetItem *item)
-{
-	if (item) {
-		int i = item->data(IndexRole).toInt();
-		if (i >= 0 && i < pv->repos.size()) {
-			return i;
-		}
-	}
-	return -1;
-}
+//int MainWindow::repositoryIndex(QListWidgetItem *item)
+//{
+//	if (item) {
+//		int i = item->data(IndexRole).toInt();
+//		if (i >= 0 && i < pv->repos.size()) {
+//			return i;
+//		}
+//	}
+//	return -1;
+//}
 
-int MainWindow::repositoryIndex(QTreeWidgetItem *item)
+int MainWindow::repositoryIndex_(QTreeWidgetItem *item)
 {
 	if (item) {
 		int i = item->data(0, IndexRole).toInt();
@@ -273,6 +282,31 @@ int MainWindow::repositoryIndex(QTreeWidgetItem *item)
 		}
 	}
 	return -1;
+}
+
+RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem *item)
+{
+	int row = repositoryIndex_(item);
+	if (row >= 0 && row < pv->repos.size()) {
+		return &pv->repos[row];
+	}
+	return nullptr;
+}
+
+static QTreeWidgetItem *newQTreeWidgetItem()
+{
+	QTreeWidgetItem *item = new QTreeWidgetItem();
+	item->setSizeHint(0, QSize(20, 20));
+	return item;
+}
+
+QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
+{
+	QTreeWidgetItem *item = newQTreeWidgetItem();
+	item->setText(0, name);
+	item->setData(0, IndexRole, FolderItem);
+	item->setIcon(0, pv->folder_icon);
+	return item;
 }
 
 void MainWindow::updateRepositoriesList()
@@ -285,15 +319,7 @@ void MainWindow::updateRepositoriesList()
 
 	ui->treeWidget_repos->clear();
 
-	auto NewQTreeWidgetItem = [](){
-		QTreeWidgetItem *item = new QTreeWidgetItem();
-		item->setSizeHint(0, QSize(20, 20));
-		return item;
-	};
-
-	QTreeWidgetItem *treeitem = NewQTreeWidgetItem();
-	treeitem->setText(0, tr("Local"));
-	treeitem->setData(0, IndexRole, -1);
+	QTreeWidgetItem *treeitem = newQTreeWidgetFolderItem(tr("Local"));
 
 	ui->treeWidget_repos->addTopLevelItem(treeitem);
 	for (int i = 0; i < pv->repos.size(); i++) {
@@ -301,11 +327,12 @@ void MainWindow::updateRepositoriesList()
 		if (!filter.isEmpty() && repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) {
 			continue;
 		}
-		QTreeWidgetItem *child = NewQTreeWidgetItem();
+		QTreeWidgetItem *child = newQTreeWidgetItem();
 		child->setText(0, repo.name);
 		child->setData(0, IndexRole, i);
+		child->setIcon(0, pv->repository_icon);
+		child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
 		treeitem->addChild(child);
-		ui->treeWidget_repos->addTopLevelItem(child);
 	}
 	treeitem->setExpanded(true);
 }
@@ -857,11 +884,10 @@ void MainWindow::autoOpenRepository(QString dir)
 
 void MainWindow::openSelectedRepository()
 {
-	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
-	int row = repositoryIndex(item);
-	if (row >= 0) {
-		RepositoryItem const &item = pv->repos[row];
-		pv->current_repo = item;
+	QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
+	RepositoryItem const *item = repositoryItem(ite);
+	if (item) {
+		pv->current_repo = *item;
 		openRepository();
 	}
 }
@@ -1244,9 +1270,24 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
-	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
-	int index = repositoryIndex(item);
-	if (index >= 0) {
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	RepositoryItem const *repo = repositoryItem(treeitem);
+	int index = treeitem->data(0, IndexRole).toInt();
+	if (index == FolderItem) {
+		QMenu menu;
+		QAction *a_addnewfolder = menu.addAction(tr("&Add new folder"));
+		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
+		QAction *a = menu.exec(pt + QPoint(8, -8));
+		if (a) {
+			if (a == a_addnewfolder) {
+				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New folder"));
+				treeitem->addChild(child);
+				child->setFlags(child->flags() | Qt::ItemIsEditable);
+				ui->treeWidget_repos->setCurrentItem(child);
+				return;
+			}
+		}
+	} else if (repo) {
 		QString open_terminal = tr("Open &terminal");
 		QString open_commandprompt = tr("Open command promp&t");
 		QMenu menu;
@@ -1261,13 +1302,13 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
-			RepositoryItem const &item = pv->repos[index];
+//			RepositoryItem const *item = pv->repos[index];
 			if (a == a_open_folder) {
-				QDesktopServices::openUrl(item.local_dir);
+				QDesktopServices::openUrl(repo->local_dir);
 				return;
 			}
 			if (a == a_open_terminal) {
-				Terminal::open(item.local_dir);
+				Terminal::open(repo->local_dir);
 				return;
 			}
 			if (a == a_remove) {
@@ -1277,7 +1318,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_property) {
-				RepositoryPropertyDialog dlg(this, item);
+				RepositoryPropertyDialog dlg(this, *repo);
 				dlg.exec();
 				return;
 			}
