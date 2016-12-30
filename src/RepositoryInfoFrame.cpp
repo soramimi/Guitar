@@ -8,7 +8,7 @@ RepositoryInfoFrame::RepositoryInfoFrame(QWidget *parent)
 
 }
 
-void RepositoryInfoFrame::paintEvent(QPaintEvent *event)
+void RepositoryInfoFrame::paintEvent(QPaintEvent *)
 {
 	double x = 1;
 	double y = 1;

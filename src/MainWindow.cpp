@@ -420,7 +420,7 @@ void MainWindow::updateRepositoriesList()
 				parent = it->second;
 			}
 			if (!parent) {
-				QStringList list = group.split('/');
+				QStringList list = group.split('/', QString::SkipEmptyParts);
 				if (list.isEmpty()) {
 					list.push_back(tr("Default"));
 				}
@@ -1659,7 +1659,7 @@ void MainWindow::updateCommitGraph()
 						Git::CommitItem *item = &LogItem(index);
 						if (j == 0 && item->has_child) { // 最初のポイントで子がある場合
 							// nop
-						} else if (j + 1 < e->indexes.size() || item->marker_depth < 0) { // 最後以外、または、未確定の場合
+						} else if ((j > 0 && j + 1 < e->indexes.size()) || item->marker_depth < 0) { // 最初と最後以外、または、未確定の場合
 							item->marker_depth = depth; // マークの深さを設定
 						}
 					}

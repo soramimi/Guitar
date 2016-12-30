@@ -232,7 +232,8 @@ void Git::delete_tag(const QString &name, bool remote)
 	QString cmd = "tag --delete \"%1\"";
 	cmd = cmd.arg(name);
 	git(cmd);
-	{
+
+	if (remote) {
 		QString cmd = "push --delete origin \"%1\"";
 		cmd = cmd.arg(name);
 		git(cmd);
