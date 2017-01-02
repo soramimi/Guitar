@@ -139,22 +139,46 @@ bool GitDiff::CommitList::parseCommit(GitPtr g, const QString &index, bool appen
 
 // GitDiff
 
+class CommitListThread : public QThread {
+private:
+	struct Data {
+		GitPtr g;
+		QString index;
+		QString dir;
+	};
+	Data d;
+	void run()
+	{
+		commit.parseTree(d.g, d.index, d.dir, false);
+	}
+public:
+	GitDiff::CommitList commit;
+	CommitListThread(GitPtr g, const QString &index, const QString &dir)
+	{
+		d.g = g;
+		d.index = index;
+		d.dir = dir;
+	}
+};
+
 void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_index, QString newer_index, std::vector<Git::Diff> *diffs)
 {
-	CommitList older_commit;
-	CommitList newer_commit;
-	older_commit.parseTree(g, older_index, dir, false);
-	newer_commit.parseTree(g, newer_index, dir, false);
+	CommitListThread older(g->dup(), older_index, dir);
+	CommitListThread newer(g->dup(), newer_index, dir);
+	older.start();
+	newer.start();
+	older.wait();
+	newer.wait();
 
 	MapList diffmap;
 
 	diffmap.push_back(IndexMap());
 	IndexMap &map = diffmap.front();
-	for (CommitData const &cd : older_commit.files) {
+	for (CommitData const &cd : older.commit.files) {
 		map.store(cd.path, cd.id);
 	}
 
-	commit_into_map(g, dir, newer_commit, &diffmap, diffs);
+	commit_into_map(g, dir, newer.commit, &diffmap, diffs);
 }
 
 void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap, std::vector<Git::Diff> *diffs)

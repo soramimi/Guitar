@@ -8,6 +8,7 @@
 #include "Git.h"
 
 class GitDiff {
+	friend class CommitListThread;
 public:
 private:
 	struct CommitData;
