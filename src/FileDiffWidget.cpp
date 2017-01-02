@@ -285,6 +285,8 @@ void FileDiffWidget::setData(QByteArray const &ba, Git::Diff const &diff, bool u
 			if (*p == ',') {
 				p++;
 				len = ParseNumber();
+			} else {
+				len = 1;
 			}
 			if (pos > 0) pos--;
 			HunkItem item;

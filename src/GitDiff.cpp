@@ -290,7 +290,7 @@ private:
 		Git::Diff out;
 	};
 	Data d;
-
+public:
 	void run()
 	{
 		QString s;
@@ -305,26 +305,30 @@ private:
 		d.out.index = QString("index ") + d.file->blob.a.id + ".." + d.file->blob.b.id + ' ' + d.file->mode;
 		d.out.blob = d.file->blob;
 
-		bool f = false;
+		bool atat = false;
 		for (QString const &line : lines) {
 			ushort c = line.utf16()[0];
 			if (c == '@') {
 				if (line.startsWith("@@ ")) {
 					d.out.hunks.push_back(Git::Hunk());
 					d.out.hunks.back().at = line;
-					f = true;
+					atat = true;
 				}
 			} else {
-				if (f) {
-					if (c == ' ' || c == '-' || c == '+') {
-						// nop
-					} else {
-						f = false;
+				if (atat && c == '\\') { // e.g. \ No newline at end of file...
+					// ignore this line
+				} else {
+					if (atat) {
+						if (c == ' ' || c == '-' || c == '+') {
+							// nop
+						} else {
+							atat = false;
+						}
 					}
-				}
-				if (f) {
-					if (!d.out.hunks.isEmpty()) {
-						d.out.hunks.back().lines.push_back(line);
+					if (atat) {
+						if (!d.out.hunks.isEmpty()) {
+							d.out.hunks.back().lines.push_back(line);
+						}
 					}
 				}
 			}
@@ -400,9 +404,8 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 	}
 
 	//
-
+#if 1
 	std::vector<DiffThread *> threads;
-
 	for (Git::Diff const &file : diffs) {
 		DiffThread *th = new DiffThread(&file, g->dup());
 		threads.push_back(th);
@@ -413,7 +416,13 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 		out->push_back(th->result());
 		delete th;
 	}
-
+#else
+	for (Git::Diff const &file : diffs) {
+		DiffThread th(&file, g->dup());
+		th.run();
+		out->push_back(th.result());
+	}
+#endif
 	//
 
 	std::sort(out->begin(), out->end(), [](Git::Diff const &left, Git::Diff const &right){
