@@ -707,12 +707,8 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 				header = "(??\?) "; // damn trigraph
 			}
 
-			QString filename = diff.blob.a.path;
-			if (filename.isEmpty()) {
-				filename = pv->diffs[idiff].blob.b.path;
-			}
-			QListWidgetItem *item = new QListWidgetItem(header + filename);
-			item->setData(FilePathRole, filename);
+			QListWidgetItem *item = new QListWidgetItem(header + diff.path);
+			item->setData(FilePathRole, diff.path);
 			item->setData(DiffIndexRole, idiff);
 			item->setData(HunkIndexRole, -1);
 			(singlelist ? ui->listWidget_files : ui->listWidget_unstaged)->addItem(item);
@@ -1219,6 +1215,7 @@ QStringList MainWindow::selectedStagedFiles() const
 	}
 	return list;
 }
+
 
 QStringList MainWindow::selectedUnstagedFiles() const
 {
@@ -2339,6 +2336,7 @@ void MainWindow::setDataAsNewFile(QByteArray const &ba)
 void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
 	clearDiff();
+	diffdata()->path = diff.path;
 	diffdata()->left = diff.blob.a;
 	diffdata()->right = diff.blob.b;
 	if (uncommited) {

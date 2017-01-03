@@ -229,10 +229,8 @@ void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::Map
 		item.diff = QString("diff --git ") + item.blob.a.path + ' ' + item.blob.b.path;
 		item.index = QString("index ") + item.blob.a.id + ".." + item.blob.b.id + ' ' + item.mode;
 		item.path = st.path1();
-		item.blob.a.path = misc::joinWithSlash("a", item.path); // a/path
-		item.blob.b.path = misc::joinWithSlash("b", item.path); // b/path
-//		item.blob.a.path = item.path;
-//		item.blob.b.path = item.path;
+		item.blob.a.path = item.path;
+		item.blob.b.path = item.path;
 		diffs->push_back(item);
 		item = Git::Diff();
 	};

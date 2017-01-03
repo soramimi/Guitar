@@ -58,6 +58,7 @@ struct DiffWidgetData {
 		QStringList original_lines;
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
+		QString path;
 		Git::BLOB left;
 		Git::BLOB right;
 	} diffdata;

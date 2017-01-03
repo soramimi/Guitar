@@ -174,35 +174,39 @@ void FileDiffWidget::resizeEvent(QResizeEvent *)
 
 void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
 {
+	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
+
 	QPoint pos = QCursor::pos();
 
 	drawdata()->forcus = view_type;
 
-	Git::BLOB blob;
+	QString id;
 	switch (view_type) {
-	case ViewType::Left:  blob = diffdata()->left;  break;
-	case ViewType::Right: blob = diffdata()->right; break;
+	case ViewType::Left:  id = diffdata()->left.id;  break;
+	case ViewType::Right: id = diffdata()->right.id; break;
 	}
+	QString path = mw->currentWorkingCopyDir() / diffdata()->path;
 
 	QMenu menu;
-	QAction *a_save_as = blob.id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
+	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
 	if (!menu.actions().isEmpty()) {
 		drawdata()->forcus = view_type;
 		update(view_type);
 		QAction *a = menu.exec(pos + QPoint(8, -8));
 		if (a) {
 			if (a == a_save_as) {
-				if (!blob.id.isEmpty()) {
-					QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), blob.path);
+				if (!id.isEmpty()) {
+					QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 					if (!dstpath.isEmpty()) {
-						MainWindow *mw = qobject_cast<MainWindow *>(window());
-						Q_ASSERT(mw);
-						mw->saveAs(blob.id, dstpath);
+						mw->saveAs(id, dstpath);
 					}
 				}
+				goto DONE;
 			}
 		}
 	}
+DONE:;
 	drawdata()->forcus = ViewType::None;
 	update(view_type);
 }
