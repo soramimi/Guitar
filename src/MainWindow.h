@@ -11,15 +11,76 @@ namespace Ui {
 class MainWindow;
 }
 
+class QScrollBar;
+
 class QListWidgetItem;
 class QTreeWidgetItem;
 class QTableWidgetItem;
 
 class CommitList;
 
+#define PATH_PREFIX '*'
+
+class HunkItem {
+public:
+	int hunk_number = -1;
+	size_t pos, len;
+	QStringList lines;
+};
+
+enum class ViewType {
+	None,
+	Left,
+	Right
+};
+
+struct TextDiffLine {
+	enum Type {
+		Unknown,
+		Unchanged,
+		Add,
+		Del,
+	} type;
+	int hunk_number = -1;
+	int line_number = -1;
+	QString line;
+	TextDiffLine()
+	{
+	}
+	TextDiffLine(QString const &text)
+		: line(text)
+	{
+	}
+};
+
+struct DiffWidgetData {
+	struct DiffData {
+		QStringList original_lines;
+		QList<TextDiffLine> left_lines;
+		QList<TextDiffLine> right_lines;
+		Git::BLOB left;
+		Git::BLOB right;
+	} diffdata;
+	struct DrawData {
+		int scrollpos = 0;
+		int char_width = 0;
+		int line_height = 0;
+		QColor bgcolor_text;
+		QColor bgcolor_add;
+		QColor bgcolor_del;
+		QColor bgcolor_add_dark;
+		QColor bgcolor_del_dark;
+		QColor bgcolor_gray;
+		ViewType forcus = ViewType::None;
+		DrawData();
+	} drawdata;
+};
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
+	friend class FileDiffWidget;
+	friend class FileDiffSliderWidget;
 private:
 
 	struct Private;
@@ -27,6 +88,7 @@ private:
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
+
 
 	QPixmap const &digitsPixmap() const;
 
@@ -118,7 +180,6 @@ private:
 	void clearFileList();
 	void clearLog();
 	void clearRepositoryInfo();
-//	int repositoryIndex(QListWidgetItem *item);
 	int repositoryIndex_(QTreeWidgetItem *item);
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
@@ -141,6 +202,24 @@ private:
 	QTreeWidgetItem *newQTreeWidgetFolderItem(const QString &name);
 	void buildRepoTree(const QString &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
+
+	DiffWidgetData *getDiffWidgetData();
+	DiffWidgetData::DiffData *diffdata();
+	DiffWidgetData::DiffData const *diffdata() const;
+	DiffWidgetData::DrawData *drawdata();
+	DiffWidgetData::DrawData const *drawdata() const;
+	void clearDiff();
+	void updateVerticalScrollBar();
+	QString formatLine(const QString &text, bool diffmode);
+	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
+	void setDataAsNewFile(const QByteArray &ba);
+	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncmmited, const QString &workingdir);
+	int totalTextLines() const;
+	int fileviewScrollPos() const;
+	int visibleLines() const;
+	void scrollTo(int value);
+	int fileviewHeight() const;
+	QPixmap makeDiffPixmap(ViewType side, int width, int height);
 public:
 
 	bool selectGitCommand();

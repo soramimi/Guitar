@@ -1,4 +1,5 @@
 #include "FileDiffSliderWidget.h"
+#include "MainWindow.h"
 
 #include <QPainter>
 #include <QMouseEvent>
@@ -11,8 +12,10 @@ FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 
 void FileDiffSliderWidget::updatePixmap()
 {
-	left_pixmap = fdw->makePixmap(FileDiffWidget::Side::Left, 8, height());
-	right_pixmap = fdw->makePixmap(FileDiffWidget::Side::Right, 8, height());
+	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
+	left_pixmap = mw->makeDiffPixmap(ViewType::Left, 8, height());
+	right_pixmap = mw->makeDiffPixmap(ViewType::Right, 8, height());
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)

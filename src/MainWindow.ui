@@ -671,7 +671,7 @@
           </widget>
          </item>
          <item>
-          <widget class="FileDiffWidget" name="widget_diff" native="true">
+          <widget class="FileDiffWidget" name="widget_diff_left" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -679,6 +679,9 @@
             </sizepolicy>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="FileDiffWidget" name="widget_diff_right" native="true"/>
          </item>
          <item>
           <widget class="QScrollBar" name="verticalScrollBar">

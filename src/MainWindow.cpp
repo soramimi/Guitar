@@ -36,6 +36,19 @@
 #include <set>
 #include <QProcess>
 
+
+
+
+DiffWidgetData::DrawData::DrawData()
+{
+	bgcolor_text = QColor(255, 255, 255);
+	bgcolor_gray = QColor(224, 224, 224);
+	bgcolor_add = QColor(192, 240, 192);
+	bgcolor_del = QColor(255, 224, 224);
+	bgcolor_add_dark = QColor(64, 192, 64);
+	bgcolor_del_dark = QColor(240, 64, 64);
+}
+
 enum {
 	IndexRole = Qt::UserRole,
 	FilePathRole,
@@ -96,6 +109,7 @@ struct MainWindow::Private {
 	QPixmap digits;
 	QIcon repository_icon;
 	QIcon folder_icon;
+	DiffWidgetData diff_widget_data;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -106,8 +120,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
-
-	ui->widget_diff_pixmap->setFileDiffWidget(ui->widget_diff);
 
 	ui->treeWidget_repos->installEventFilter(this);
 
@@ -149,8 +161,10 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
-	connect(ui->widget_diff, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
-	connect(ui->widget_diff, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
+	connect(ui->widget_diff_left, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
+	connect(ui->widget_diff_left, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
+	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
+	connect(ui->widget_diff_right, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 	connect(ui->widget_diff_pixmap, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged2(int)));
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));;
 
@@ -172,6 +186,8 @@ MainWindow::~MainWindow()
 	delete pv;
 	delete ui;
 }
+
+
 
 bool MainWindow::saveRepositoryBookmarks() const
 {
@@ -327,15 +343,15 @@ QString MainWindow::makeRepositoryName(QString const &loc)
 
 void MainWindow::updateSliderCursor()
 {
-	int total = ui->widget_diff->totalLines();
-	int value = ui->widget_diff->scrollPos();
-	int size = ui->widget_diff->visibleLines();
+	int total = totalTextLines();
+	int value = fileviewScrollPos();
+	int size = visibleLines();
 	ui->widget_diff_pixmap->setScrollPos(total, value, size);
 }
 
 void MainWindow::onScrollValueChanged(int value)
 {
-	ui->widget_diff->scrollTo(value);
+	scrollTo(value);
 
 	updateSliderCursor();
 }
@@ -344,17 +360,6 @@ void MainWindow::onScrollValueChanged2(int value)
 {
 	ui->verticalScrollBar->setValue(value);
 }
-
-//int MainWindow::repositoryIndex(QListWidgetItem *item)
-//{
-//	if (item) {
-//		int i = item->data(IndexRole).toInt();
-//		if (i >= 0 && i < pv->repos.size()) {
-//			return i;
-//		}
-//	}
-//	return -1;
-//}
 
 int MainWindow::repositoryIndex_(QTreeWidgetItem *item)
 {
@@ -585,7 +590,6 @@ void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsol
 					};
 					switch (h) {
 					case HeaderCode::diff:
-//						pv->diffs.back().diff = line;
 						itemtype = ItemType::Normal;
 						break;
 					case HeaderCode::index:
@@ -763,6 +767,8 @@ bool MainWindow::isValidWorkingCopy(GitPtr const &g) const
 {
 	return g && g->isValidWorkingCopy();
 }
+
+
 
 int MainWindow::limitLogCount() const
 {
@@ -1013,9 +1019,7 @@ void MainWindow::openSelectedRepository()
 
 void MainWindow::resizeEvent(QResizeEvent *)
 {
-	if (ui->widget_diff && ui->widget_diff->isVisible()) {
-		ui->widget_diff->updateVerticalScrollBar(ui->verticalScrollBar);
-	}
+	updateVerticalScrollBar();
 }
 
 QString MainWindow::getBookmarksFilePath() const
@@ -1404,7 +1408,6 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
-//			RepositoryItem const *item = pv->repos[index];
 			if (a == a_open_folder) {
 				QDesktopServices::openUrl(repo->local_dir);
 				return;
@@ -1777,20 +1780,20 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	ui->widget_diff->clear();
+	clearDiff();
 	int idiff = indexOfDiff(item);
 	if (idiff >= 0 && idiff < pv->diffs.size()) {
 		Git::Diff const &diff = pv->diffs[idiff];
 		QByteArray ba;
 		if (diff.blob.a.id.isEmpty()) {
 			g->cat_file(diff.blob.b.id, &ba);
-			ui->widget_diff->setDataAsNewFile(ba);
+			setDataAsNewFile(ba);
 		} else {
 			g->cat_file(diff.blob.a.id, &ba);
-			ui->widget_diff->setData(ba, diff, uncommited, currentWorkingCopyDir());
+			setTextDiffData(ba, diff, uncommited, currentWorkingCopyDir());
 		}
-		ui->widget_diff->updateVerticalScrollBar(ui->verticalScrollBar);
 		ui->verticalScrollBar->setValue(0);
+		updateVerticalScrollBar();
 		ui->widget_diff_pixmap->clear(false);
 		updateSliderCursor();
 		ui->widget_diff_pixmap->update();
@@ -1917,6 +1920,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::onDiffWidgetResized()
 {
 	updateSliderCursor();
+	updateVerticalScrollBar();
 }
 
 bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
@@ -2184,4 +2188,349 @@ void MainWindow::on_action_test_triggered()
 
 
 
+
+
+DiffWidgetData *MainWindow::getDiffWidgetData()
+{
+	return &pv->diff_widget_data;
+}
+
+DiffWidgetData::DiffData *MainWindow::diffdata()
+{
+	return &pv->diff_widget_data.diffdata;
+}
+
+DiffWidgetData::DiffData const *MainWindow::diffdata() const
+{
+	return &pv->diff_widget_data.diffdata;
+}
+
+DiffWidgetData::DrawData *MainWindow::drawdata()
+{
+	return &pv->diff_widget_data.drawdata;
+}
+
+DiffWidgetData::DrawData const *MainWindow::drawdata() const
+{
+	return &pv->diff_widget_data.drawdata;
+}
+
+
+int MainWindow::totalTextLines() const
+{
+	return diffdata()->left_lines.size();
+}
+
+int MainWindow::fileviewScrollPos() const
+{
+	return drawdata()->scrollpos;
+}
+
+int MainWindow::fileviewHeight() const
+{
+	return ui->widget_diff_left->height();
+}
+
+int MainWindow::visibleLines() const
+{
+	int n = 0;
+	if (drawdata()->line_height > 0) {
+		n = fileviewHeight() / drawdata()->line_height;
+		if (n < 1) n = 1;
+	}
+	return n;
+}
+
+void MainWindow::updateVerticalScrollBar()
+{
+	QScrollBar *sb = ui->verticalScrollBar;
+	if (drawdata()->line_height > 0) {
+		int lines_per_widget = fileviewHeight() / drawdata()->line_height;
+		if (lines_per_widget < diffdata()->left_lines.size() + 1) {
+			sb->setRange(0, diffdata()->left_lines.size() - lines_per_widget + 1);
+			sb->setPageStep(lines_per_widget);
+			return;
+		}
+	}
+	sb->setRange(0, 0);
+	sb->setPageStep(0);
+}
+
+QString MainWindow::formatLine(QString const &text, bool diffmode)
+{
+	if (text.isEmpty()) return text;
+	std::vector<ushort> vec;
+	vec.reserve(text.size() + 100);
+	ushort const *begin = text.utf16();
+	ushort const *end = begin + text.size();
+	ushort const *ptr = begin;
+	if (diffmode) {
+		vec.push_back(*ptr);
+		ptr++;
+	}
+	int x = 0;
+	while (ptr < end) {
+		if (*ptr == '\t') {
+			do {
+				vec.push_back(' ');
+				x++;
+			} while ((x % 4) != 0);
+			ptr++;
+		} else {
+			vec.push_back(*ptr);
+			ptr++;
+			x++;
+		}
+	}
+	return QString::fromUtf16(&vec[0], vec.size());
+}
+
+void MainWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right, bool diffmode)
+{
+	enum Pane {
+		Left,
+		Right,
+	};
+	auto DO = [&](QList<TextDiffLine> const &lines, Pane pane, QList<TextDiffLine> *out){
+		out->clear();
+		int linenum = 0;
+		for (TextDiffLine const &line : lines) {
+			TextDiffLine item = line;
+			item.type = TextDiffLine::Unknown;
+			if (diffmode) {
+				ushort c = item.line.utf16()[0];
+				if (c == ' ') {
+					item.type = TextDiffLine::Unchanged;
+					item.line_number = linenum++;
+				} else if (c == '+') {
+					item.type = TextDiffLine::Add;
+					if (pane == Right) {
+						item.line_number = linenum++;
+					}
+				} else if (c == '-') {
+					item.type = TextDiffLine::Del;
+					if (pane == Left) {
+						item.line_number = linenum++;
+					}
+				}
+			}
+			item.line = formatLine(item.line, diffmode);
+			out->push_back(item);
+		}
+	};
+	DO(left, Left, &diffdata()->left_lines);
+	DO(right, Right, &diffdata()->right_lines);
+
+	ui->widget_diff_left->update(ViewType::Left);
+	ui->widget_diff_right->update(ViewType::Right);
+}
+
+
+void MainWindow::clearDiff()
+{
+	*diffdata() = DiffWidgetData::DiffData();
+	ui->widget_diff_left->update(ViewType::Left);
+	ui->widget_diff_right->update(ViewType::Right);
+}
+
+void MainWindow::setDataAsNewFile(QByteArray const &ba)
+{
+	clearDiff();
+
+	if (ba.isEmpty()) {
+		diffdata()->original_lines.clear();
+	} else {
+		diffdata()->original_lines = misc::splitLines(ba, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+	}
+
+	QList<TextDiffLine> left_newlines;
+	QList<TextDiffLine> right_newlines;
+
+	for (QString const &line : diffdata()->original_lines) {
+		QString text = '+' + line;
+		left_newlines.push_back(QString());
+		right_newlines.push_back(text);
+	}
+
+	setDiffText_(left_newlines, right_newlines, true);
+}
+
+void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncmmited, QString const &workingdir)
+{
+	clearDiff();
+	diffdata()->left = diff.blob.a;
+	diffdata()->right = diff.blob.b;
+	if (uncmmited) {
+		QString path = workingdir / diffdata()->right.path;
+		diffdata()->right.id = QString(PATH_PREFIX) + path;
+	}
+
+	if (ba.isEmpty()) {
+		diffdata()->original_lines.clear();
+	} else {
+		diffdata()->original_lines = misc::splitLines(ba, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+	}
+
+	QList<TextDiffLine> left_newlines;
+	QList<TextDiffLine> right_newlines;
+
+	size_t linenum = diffdata()->original_lines.size();
+
+	std::vector<HunkItem> hunks;
+	int number = 0;
+	for (auto it = diff.hunks.begin(); it != diff.hunks.end(); it++, number++) {
+		QString at = it->at;
+		if (at.startsWith("@@ -")) {
+			size_t pos = 0;
+			size_t len = 0;
+			ushort const *p = at.utf16() + 4;
+			auto ParseNumber = [&](){
+				size_t v = 0;
+				while (QChar::isDigit(*p)) {
+					v = v * 10 + (*p - '0');
+					p++;
+				}
+				return v;
+			};
+			pos = ParseNumber();
+			if (*p == ',') {
+				p++;
+				len = ParseNumber();
+			} else {
+				len = 1;
+			}
+			if (pos > 0) pos--;
+			HunkItem item;
+			item.hunk_number = number;
+			item.pos = pos;
+			item.len = len;
+			for (QString const &line : it->lines) {
+				item.lines.push_back(line);
+			}
+			hunks.push_back(item);
+		}
+	}
+	std::sort(hunks.begin(), hunks.end(), [](HunkItem const &l, HunkItem const &r){
+		return l.pos + l.len < r.pos + r.len;
+	});
+	size_t h = hunks.size();
+	while (linenum > 0 || h > 0) {
+		while (h > 0) {
+			int hunk_number = h - 1;
+			HunkItem const &hi = hunks[hunk_number];
+			if (hi.pos + hi.len < linenum) {
+				break;
+			}
+			std::vector<TextDiffLine> tmp_left;
+			std::vector<TextDiffLine> tmp_right;
+			int minus = 0;
+			int plus = 0;
+			auto FlushBlank = [&](){
+				while (minus < plus) {
+					tmp_left.push_back(QString());
+					minus++;
+				}
+				while (minus > plus) {
+					tmp_right.push_back(QString());
+					plus++;
+				}
+				minus = plus = 0;
+			};
+			for (auto it = hi.lines.begin(); it != hi.lines.end(); it++) {
+				QString line = *it;
+				ushort c = line.utf16()[0];
+				if (c == '-') {
+					minus++;
+					TextDiffLine l(line);
+					l.hunk_number = hunk_number;
+					tmp_left.push_back(l);
+				} else if (c == '+') {
+					plus++;
+					TextDiffLine l(line);
+					l.hunk_number = hunk_number;
+					tmp_right.push_back(l);
+				} else {
+					FlushBlank();
+					TextDiffLine l(line);
+					l.hunk_number = hunk_number;
+					tmp_left.push_back(l);
+					tmp_right.push_back(l);
+				}
+			}
+			FlushBlank();
+			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) left_newlines.push_back(*it);
+			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) right_newlines.push_back(*it);
+			linenum = hi.pos;
+			h--;
+		}
+		if (linenum > 0) {
+			linenum--;
+			if (linenum < (size_t)diffdata()->original_lines.size()) {
+				QString line = ' ' + diffdata()->original_lines[linenum];
+				left_newlines.push_back(line);
+				right_newlines.push_back(line);
+			}
+		}
+	}
+
+	std::reverse(left_newlines.begin(), left_newlines.end());
+	std::reverse(right_newlines.begin(), right_newlines.end());
+	setDiffText_(left_newlines, right_newlines, true);
+}
+
+
+void MainWindow::scrollTo(int value)
+{
+	drawdata()->scrollpos = value;
+	ui->widget_diff_left->update(ViewType::Left);
+	ui->widget_diff_right->update(ViewType::Right);
+}
+
+QPixmap MainWindow::makeDiffPixmap(ViewType side, int width, int height)
+{
+	auto MakePixmap = [&](QList<TextDiffLine> const &lines, int w, int h){
+		const int scale = 1;
+		QPixmap pixmap = QPixmap(w, h * scale);
+		pixmap.fill(Qt::white);
+		QPainter pr(&pixmap);
+		auto Loop = [&](std::function<QColor(TextDiffLine::Type)> getcolor){
+			int i = 0;
+			while (i < lines.size()) {
+				TextDiffLine::Type type = lines[i].type;
+				int j = i + 1;
+				if (type != TextDiffLine::Unchanged) {
+					while (j < lines.size()) {
+						if (lines[j].type != type) break;
+						j++;
+					}
+					int y = i * pixmap.height() / lines.size();
+					int z = j * pixmap.height() / lines.size();
+					if (z == y) z = y + 1;
+					QColor color = getcolor(type);
+					if (color.isValid()) pr.fillRect(0, y, w, z - y, color);
+				}
+				i = j;
+			}
+		};
+		DiffWidgetData::DrawData const *dd = drawdata();
+		Loop([&](TextDiffLine::Type t)->QColor{
+			switch (t) {
+			case TextDiffLine::Unknown: return dd->bgcolor_gray;
+			}
+			return QColor();
+		});
+		Loop([&](TextDiffLine::Type t)->QColor{
+			switch (t) {
+			case TextDiffLine::Add: return dd->bgcolor_add_dark;
+			case TextDiffLine::Del: return dd->bgcolor_del_dark;
+			}
+			return QColor();
+		});
+		if (scale == 1) return pixmap;
+		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	};
+	if (side == ViewType::Left)  return MakePixmap(diffdata()->left_lines, width, height);
+	if (side == ViewType::Right) return MakePixmap(diffdata()->right_lines, width, height);
+	return QPixmap();
+}
 

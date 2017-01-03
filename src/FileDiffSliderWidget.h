@@ -14,19 +14,13 @@ private:
 	int scroll_total;
 	int scroll_value;
 	int scroll_visible_size;
-	FileDiffWidget *fdw = nullptr;
 	QPixmap left_pixmap;
 	QPixmap right_pixmap;
+
 	void scroll(int pos);
+	void updatePixmap();
 public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
-
-	void setFileDiffWidget(FileDiffWidget *w)
-	{
-		fdw = w;
-	}
-
-	void updatePixmap();
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
@@ -34,20 +28,10 @@ signals:
 	void valueChanged(int value);
 public slots:
 
-	// QWidget interface
 protected:
 	void paintEvent(QPaintEvent *);
-
-	// QWidget interface
-protected:
 	void resizeEvent(QResizeEvent *);
-
-	// QWidget interface
-protected:
 	void mousePressEvent(QMouseEvent *);
-
-	// QWidget interface
-protected:
 	void mouseMoveEvent(QMouseEvent *);
 };
 
