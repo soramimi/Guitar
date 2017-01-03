@@ -220,16 +220,18 @@ private:
 	void scrollTo(int value);
 	int fileviewHeight() const;
 	QPixmap makeDiffPixmap(ViewType side, int width, int height);
+
+	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
+	bool saveFileAs(const QString &srcpath, const QString &dstpath);
+	bool saveBlobAs(const QString &id, const QString &dstpath);
 public:
 
 	bool selectGitCommand();
 
 	void setGitCommand(const QString &path, bool save);
-	bool saveBlobAs(const QString &id, const QString &path);
 	QString currentRepositoryName() const;
 	Git::Branch currentBranch() const;
 	bool isThereUncommitedChanges() const;
-	bool saveFileAs(QString const &srcpath, QString const &dstpath);
 	QString defaultWorkingDir() const;
 	bool event(QEvent *event);
 	bool eventFilter(QObject *watched, QEvent *event);
@@ -242,6 +244,7 @@ public:
 	QString tempfileHeader() const;
 	void deleteTempFiles();
 	QString newTempFilePath();
+	bool saveAs(const QString &id, const QString &dstpath);
 protected:
 	void resizeEvent(QResizeEvent *);
 

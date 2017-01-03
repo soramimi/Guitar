@@ -576,23 +576,9 @@ void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsol
 					if (pv->diffs.isEmpty() || !pv->diffs.back().hunks.isEmpty()) {
 						pv->diffs.push_back(Git::Diff());
 					}
-					auto GetPath = [](QString s){
-						QString prefix;
-						if (s.startsWith("--- ")) {
-							s = s.mid(4);
-							prefix = "a/";
-						} else if (s.startsWith("+++ ")) {
-							s = s.mid(4);
-							prefix = "b/";
-						}
-						s = Git::trimPath(s);
-						if (!prefix.isEmpty() && s.startsWith(prefix)) {
-							s = s.mid(prefix.size());
-						}
-						return s;
-					};
 					switch (h) {
 					case HeaderCode::diff:
+						pv->diffs.back().diff = line;
 						itemtype = ItemType::Normal;
 						break;
 					case HeaderCode::index:
@@ -608,11 +594,29 @@ void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsol
 						break;
 					case HeaderCode::a:
 						if (itemtype != ItemType::NewFile) {
-							pv->diffs.back().blob.a.path = GetPath(line);
+							QString s = line.trimmed();
+							if (s.startsWith("--- ")) {
+								s = s.mid(4);
+							}
+							pv->diffs.back().blob.a.path = s;
+							QString prefix = "a/";
+							if (s.startsWith(prefix)) {
+								pv->diffs.back().path = s.mid(prefix.size());
+							}
 						}
 						break;
 					case HeaderCode::b:
-						pv->diffs.back().blob.b.path = GetPath(line);
+						{
+							QString s = line.trimmed();
+							if (s.startsWith("+++ ")) {
+								s = s.mid(4);
+							}
+							pv->diffs.back().blob.b.path = s;
+							QString prefix = "b/";
+							if (s.startsWith(prefix)) {
+								pv->diffs.back().path = s.mid(prefix.size());
+							}
+						}
 						break;
 					}
 				}
@@ -647,26 +651,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 
 		for (int idiff = 0; idiff < pv->diffs.size(); idiff++) {
 			Git::Diff const &diff = pv->diffs[idiff];
-			QString filename;
-			if (diff.diff.startsWith("diff")) {
-				ushort const *left = diff.diff.utf16();
-				ushort const *right = left + diff.diff.size();
-				left += 4;
-				while (left + 1 < right) {
-					if (left[0] == 'a' && left[1] == '/') break;
-					left++;
-				}
-				ushort const *mid = left + (right - left) / 2;
-				if (QChar(*mid).isSpace() && mid[1] == 'b' && mid[2] == '/') {
-					left += 2;
-					QString fn1 = QString::fromUtf16(left, mid - left);
-					mid += 3;
-					QString fn2 = QString::fromUtf16(mid, right - mid);
-					if (fn1 == fn2) {
-						filename = fn1;
-					}
-				}
-			}
+			QString filename = diff.path;
 			if (!filename.isEmpty()) {
 				diffmap[filename] = idiff;
 			}
@@ -1802,14 +1787,14 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 
 void MainWindow::on_listWidget_unstaged_currentRowChanged(int currentRow)
 {
-	bool uncommited = isThereUncommitedChanges() && currentRow == 0;
+	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
 	QListWidgetItem *item = ui->listWidget_unstaged->item(currentRow);
 	changeLog(item, uncommited);
 }
 
 void MainWindow::on_listWidget_files_currentRowChanged(int currentRow)
 {
-	bool uncommited = isThereUncommitedChanges() && currentRow == 0;
+	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
 	QListWidgetItem *item = ui->listWidget_files->item(currentRow);
 	changeLog(item, uncommited);
 }
@@ -1922,17 +1907,33 @@ void MainWindow::onDiffWidgetResized()
 	updateVerticalScrollBar();
 }
 
+bool MainWindow::saveByteArrayAs(QByteArray const &ba, QString const &dstpath)
+{
+	QFile file(dstpath);
+	if (file.open(QFile::WriteOnly)) {
+		file.write(ba);
+		file.close();
+		return true;
+	} else {
+		QString msg = "Failed to open the file '%1' for write";
+		msg = msg.arg(dstpath);
+		qDebug() << msg;
+	}
+	return false;
+}
+
 bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 {
 	QFile f(srcpath);
 	if (f.open(QFile::ReadOnly)) {
 		QByteArray ba = f.readAll();
-		QFile file(dstpath);
-		if (file.open(QFile::WriteOnly)) {
-			file.write(ba);
-			file.close();
+		if (saveByteArrayAs(ba, dstpath)) {
 			return true;
 		}
+	} else {
+		QString msg = "Failed to open the file '%1' for read";
+		msg = msg.arg(srcpath);
+		qDebug() << msg;
 	}
 	return false;
 }
@@ -1944,14 +1945,24 @@ bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 
 	QByteArray ba;
 	if (g->cat_file(id, &ba)) {
-		QFile file(dstpath);
-		if (file.open(QFile::WriteOnly)) {
-			file.write(ba);
-			file.close();
+		if (saveByteArrayAs(ba, dstpath)) {
 			return true;
 		}
+	} else {
+		QString msg = "Failed to get the content of the object '%1'";
+		msg = msg.arg(id);
+		qDebug() << msg;
 	}
 	return false;
+}
+
+bool MainWindow::saveAs(QString const &id, QString const &dstpath)
+{
+	if (id.startsWith(PATH_PREFIX)) {
+		return saveFileAs(id.mid(1), dstpath);
+	} else {
+		return saveBlobAs(id, dstpath);
+	}
 }
 
 void MainWindow::on_action_edit_settings_triggered()
@@ -2331,7 +2342,7 @@ void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bo
 	diffdata()->left = diff.blob.a;
 	diffdata()->right = diff.blob.b;
 	if (uncommited) {
-		QString path = workingdir / diffdata()->right.path;
+		QString path = workingdir / diff.path;
 		diffdata()->right.id = QString(PATH_PREFIX) + path;
 	}
 

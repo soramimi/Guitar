@@ -193,15 +193,11 @@ void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
 		if (a) {
 			if (a == a_save_as) {
 				if (!blob.id.isEmpty()) {
-					blob.path = QFileDialog::getSaveFileName(window(), tr("Save as"), blob.path);
-					if (!blob.path.isEmpty()) {
+					QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), blob.path);
+					if (!dstpath.isEmpty()) {
 						MainWindow *mw = qobject_cast<MainWindow *>(window());
 						Q_ASSERT(mw);
-						if (blob.id.startsWith(PATH_PREFIX)) {
-							mw->saveFileAs(blob.id.mid(1), blob.path);
-						} else {
-							mw->saveBlobAs(blob.id, blob.path);
-						}
+						mw->saveAs(blob.id, dstpath);
 					}
 				}
 			}
