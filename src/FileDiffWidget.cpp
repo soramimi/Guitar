@@ -2,6 +2,8 @@
 #include "FileDiffSliderWidget.h"
 
 #include "MainWindow.h"
+#include "misc.h"
+#include "joinpath.h"
 
 #include <QDebug>
 #include <QFileDialog>
@@ -9,32 +11,32 @@
 #include <QPainter>
 #include <QWheelEvent>
 #include <functional>
-#include "misc.h"
-#include "joinpath.h"
-
-
 
 DiffWidgetData::DiffData *FileDiffWidget::diffdata()
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
 	return &mw->getDiffWidgetData()->diffdata;
 }
 
 DiffWidgetData::DiffData const *FileDiffWidget::diffdata() const
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
 	return &mw->getDiffWidgetData()->diffdata;
 }
 
 DiffWidgetData::DrawData *FileDiffWidget::drawdata()
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
 	return &mw->getDiffWidgetData()->drawdata;
 }
 
 DiffWidgetData::DrawData const *FileDiffWidget::drawdata() const
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
 	return &mw->getDiffWidgetData()->drawdata;
 }
 

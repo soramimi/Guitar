@@ -35,6 +35,7 @@
 #include <QKeyEvent>
 #include <set>
 #include <QProcess>
+#include <QDirIterator>
 
 
 
@@ -110,6 +111,7 @@ struct MainWindow::Private {
 	QIcon repository_icon;
 	QIcon folder_icon;
 	DiffWidgetData diff_widget_data;
+	unsigned int temp_file_counter = 0;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -183,6 +185,7 @@ MainWindow::~MainWindow()
 #if USE_LIBGIT2
 	LibGit2::shutdown();
 #endif
+	deleteTempFiles();
 	delete pv;
 	delete ui;
 }
@@ -633,7 +636,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 	clearFileList();
 	if (!singlelist) showFileList(false);
 
-#if 0
+#if 0 // そのうち消す
 	makeDiff(old_id, new_id);
 #else
 	makeDiff2(g, new_id, &pv->diffs);
@@ -1334,8 +1337,6 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	}
 }
 
-
-
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
@@ -1773,8 +1774,6 @@ void MainWindow::doUpdateFilesList()
 	}
 }
 
-
-
 void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 {
 	GitPtr g = git();
@@ -2159,36 +2158,7 @@ void MainWindow::on_action_tag_delete_triggered()
 	deleteSelectedTags();
 }
 
-
-void MainWindow::on_action_test_triggered()
-{
-#if 0
-	QString s = "\"%1\" --version";
-	s = s.arg(pv->gcx.git_command);
-	QTime t;
-	t.start();
-	for (int i = 0; i < 1; i++) {
-		QByteArray ba;
-#if 1
-		misc::qtRunCommand(s, &ba);
-#else
-		winRunCommand(s, &ba);
-#endif
-		s = QString::fromUtf8(ba);
-	}
-	qDebug() << t.elapsed() << "ms";
-	qDebug() << s;
-#else
-	GitPtr g1 = git();
-	GitPtr g2 = g1->dup();
-	qDebug() << g1->version();
-	qDebug() << g2->version();
-#endif
-}
-
-
-
-
+// diff
 
 DiffWidgetData *MainWindow::getDiffWidgetData()
 {
@@ -2355,12 +2325,12 @@ void MainWindow::setDataAsNewFile(QByteArray const &ba)
 	setDiffText_(left_newlines, right_newlines, true);
 }
 
-void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncmmited, QString const &workingdir)
+void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
 	clearDiff();
 	diffdata()->left = diff.blob.a;
 	diffdata()->right = diff.blob.b;
-	if (uncmmited) {
+	if (uncommited) {
 		QString path = workingdir / diffdata()->right.path;
 		diffdata()->right.id = QString(PATH_PREFIX) + path;
 	}
@@ -2533,4 +2503,44 @@ QPixmap MainWindow::makeDiffPixmap(ViewType side, int width, int height)
 	if (side == ViewType::Right) return MakePixmap(diffdata()->right_lines, width, height);
 	return QPixmap();
 }
+
+//
+
+QString MainWindow::tempfileHeader() const
+{
+	QString name = "jp_soramimi_Guitar_%1_";
+	return name.arg(QApplication::applicationPid());
+
+}
+
+void MainWindow::deleteTempFiles()
+{
+	QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+	QString name = tempfileHeader();
+	QDirIterator it(dir, { name + "*" });
+	while (it.hasNext()) {
+		QString path = it.next();
+		QFile::remove(path);
+		qDebug() << path;
+	}
+}
+
+QString MainWindow::newTempFilePath()
+{
+	QString tmpdir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+	QString path = tmpdir / tempfileHeader() + QString::number(pv->temp_file_counter);
+	pv->temp_file_counter++;
+	return path;
+}
+
+void MainWindow::on_action_test_triggered()
+{
+	QString path = newTempFilePath();
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.close();
+	}
+//	deleteTempFiles();
+}
+
 

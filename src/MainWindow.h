@@ -239,6 +239,9 @@ public:
 	int digitWidth() const;
 	int digitHeight() const;
 	bool isValidWorkingCopy(const GitPtr &g) const;
+	QString tempfileHeader() const;
+	void deleteTempFiles();
+	QString newTempFilePath();
 protected:
 	void resizeEvent(QResizeEvent *);
 
