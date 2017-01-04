@@ -193,7 +193,7 @@ void GitDiff::AddItem(Git::Diff *item, QList<Git::Diff> *diffs)
 	item->blob.a.path = item->path;
 	item->blob.b.path = item->path;
 	item->diff = QString("diff --git ") + ("a/" + item->path) + ' ' + ("b/" + item->path);
-	item->index = QString("index ") + makeKey(item->blob) + ' ' + item->mode;
+	item->index = QString("index ") + item->blob.a.id + ".." + item->blob.b.id + ' ' + item->mode;
 	diffs->push_back(*item);
 }
 
@@ -238,6 +238,10 @@ void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::Map
 				item.blob.a.id = it->second;
 				item.blob.b.id = PATH_PREFIX + st.path1();
 				item.path = st.path1();
+				if (st.code() == Git::FileStatusCode::RenamedInIndex) {
+					item.blob.b.id = PATH_PREFIX + st.path2();
+					item.path = st.path2();
+				} //@
 				AddItem(&item, diffs);
 				break;
 			}
@@ -344,20 +348,25 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 		std::set<QString> dirset;
 
 		for (Git::FileStatus const &s : stats) {
-			QStringList list = s.path1().split('/');
-			QString path;
-			for (int i = 0; i + 1 < list.size(); i++) {
-				QString const &s = list[i];
-				path = misc::joinWithSlash(path, s);
-				for (IndexMap const &map : diffmaplist) {
-					auto it = map.find(path);
-					if (it != map.end()) {
-						QString index = it->second;
-						parse_tree(g, path, index, &dirset, &diffmaplist);
+			auto DoIt = [&](QString const &file){
+				QStringList list = file.split('/');
+				QString path;
+				for (int i = 0; i + 1 < list.size(); i++) {
+					QString const &s = list[i];
+					path = misc::joinWithSlash(path, s);
+					for (IndexMap const &map : diffmaplist) {
+						auto it = map.find(path);
+						if (it != map.end()) {
+							QString index = it->second;
+							parse_tree(g, path, index, &dirset, &diffmaplist);
+						}
 					}
 				}
-
-			}
+			};
+			DoIt(s.path1());
+//			if (s.code() == Git::FileStatusCode::RenamedInIndex) {
+//				DoIt(s.path2());
+//			}
 		}
 
 		file_into_map(stats, &diffmaplist, &diffs);
@@ -387,6 +396,5 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 	std::sort(out->begin(), out->end(), [](Git::Diff const &left, Git::Diff const &right){
 		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
 	});
-
 }
 

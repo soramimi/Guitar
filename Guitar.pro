@@ -54,7 +54,6 @@ SOURCES += \
     src/FileDiffSliderWidget.cpp \
     src/LibGit2.cpp \
     src/FileUtil.cpp \
-    src/SelectGitCommandDialog.cpp \
     src/SettingsDialog.cpp \
     src/NewBranchDialog.cpp \
     src/CheckoutBranchDialog.cpp \
@@ -71,7 +70,8 @@ SOURCES += \
     src/EditTagDialog.cpp \
     src/DeleteTagsDialog.cpp \
     src/LegacyWindowsStyleTreeControl.cpp \
-    src/RepositoriesTreeWidget.cpp
+    src/RepositoriesTreeWidget.cpp \
+    src/SelectCommandDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -88,7 +88,6 @@ HEADERS  += \
     src/FileDiffSliderWidget.h \
     src/LibGit2.h \
     src/FileUtil.h \
-    src/SelectGitCommandDialog.h \
     src/SettingsDialog.h \
     src/NewBranchDialog.h \
     src/CheckoutBranchDialog.h \
@@ -105,14 +104,14 @@ HEADERS  += \
     src/EditTagDialog.h \
     src/DeleteTagsDialog.h \
     src/LegacyWindowsStyleTreeControl.h \
-    src/RepositoriesTreeWidget.h
+    src/RepositoriesTreeWidget.h \
+    src/SelectCommandDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
 	src/PushDialog.ui \
 	src/ConfigCredentialHelperDialog.ui \
 	src/TextEditDialog.ui \
-    src/SelectGitCommandDialog.ui \
     src/SettingsDialog.ui \
     src/NewBranchDialog.ui \
     src/CheckoutBranchDialog.ui \
@@ -122,7 +121,8 @@ FORMS    += \
     src/RepositoryPropertyDialog.ui \
     src/CommitPropertyDialog.ui \
     src/EditTagDialog.ui \
-    src/DeleteTagsDialog.ui
+    src/DeleteTagsDialog.ui \
+    src/SelectCommandDialog.ui
 
 RESOURCES += \
     resources.qrc

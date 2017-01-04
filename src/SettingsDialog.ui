@@ -67,6 +67,25 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="title">
+            <string>File command</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QLineEdit" name="lineEdit_file_command"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton_select_file_command">
+              <property name="text">
+               <string>Browse...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="groupBox">
            <property name="title">
             <string>Default working directory</string>

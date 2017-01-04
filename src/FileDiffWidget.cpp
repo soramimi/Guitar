@@ -237,7 +237,7 @@ void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
 			if (a == a_test) {
 				QString path = mw->saveAsTemp(id);
 
-				QString mimetype = mw->filetype(path);
+				QString mimetype = mw->filetype(path, true);
 				if (mimetype == "image/png") {
 					mime_type = mimetype;
 					pixmap.load(path);

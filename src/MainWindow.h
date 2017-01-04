@@ -224,10 +224,13 @@ private:
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
+	QString selectCommand_(const QString &cmdname, const QString &cmdfile, QString path, std::function<void(const QString &)> callback);
 public:
 
-	bool selectGitCommand();
+	QString selectGitCommand();
+	QString selectFileCommand();
 
+	void setFileCommand(const QString &path, bool save);
 	void setGitCommand(const QString &path, bool save);
 	QString currentRepositoryName() const;
 	Git::Branch currentBranch() const;
@@ -246,7 +249,7 @@ public:
 	QString newTempFilePath();
 	bool saveAs(const QString &id, const QString &dstpath);
 	QString saveAsTemp(const QString &id);
-	QString filetype(const QString &path);
+	QString filetype(const QString &path, bool mime);
 protected:
 	void resizeEvent(QResizeEvent *);
 

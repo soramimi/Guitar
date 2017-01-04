@@ -211,7 +211,7 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 	return !left.isEmpty() ? left : right;
 }
 
-int misc::qtRunCommand(QString const &cmd, QByteArray *out)
+int misc::runCommand(QString const &cmd, QByteArray *out)
 {
 	out->clear();
 	QProcess proc;

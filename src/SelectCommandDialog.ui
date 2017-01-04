@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SelectGitCommandDialog</class>
- <widget class="QDialog" name="SelectGitCommandDialog">
+ <class>SelectCommandDialog</class>
+ <widget class="QDialog" name="SelectCommandDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -75,7 +75,7 @@
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>SelectGitCommandDialog</receiver>
+   <receiver>SelectCommandDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -91,7 +91,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>SelectGitCommandDialog</receiver>
+   <receiver>SelectCommandDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

@@ -18,7 +18,7 @@
 #include "Terminal.h"
 #include "PushDialog.h"
 #include "RepositoryData.h"
-#include "SelectGitCommandDialog.h"
+#include "SelectCommandDialog.h"
 #include "SettingsDialog.h"
 #include "TextEditDialog.h"
 #include "RepositoryPropertyDialog.h"
@@ -93,6 +93,7 @@ static inline int getHunkIndex(QListWidgetItem *item)
 struct MainWindow::Private {
 	Git::Context gcx;
 	ApplicationSettings appsettings;
+	QString file_command;
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
 	Git::Branch current_branch;
@@ -155,6 +156,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		MySettings s;
 		s.beginGroup("Global");
 		pv->gcx.git_command = s.value("GitCommand").toString();
+		pv->file_command = s.value("FileCommand").toString();
 		s.endGroup();
 	}
 
@@ -539,8 +541,8 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 				qDebug() << "something wrong...";
 				continue;
 			}
-			auto AddItem = [&](QString const &prefix, int idiff){
-				QString filename = s.path1();
+			auto AddItem = [&](QString const &prefix, int idiff, QString const &filename){
+//				QString filename = s.path1();
 				QListWidgetItem *item = new QListWidgetItem(prefix + filename);
 				item->setData(FilePathRole, filename);
 				item->setData(DiffIndexRole, idiff);
@@ -553,6 +555,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 			};
 			int idiff = -1;
 			QString header;
+			QString filename = s.path1();
 			if (s.code_x() == 'D' || s.code_y() == 'D') {
 				header = "(del) ";
 			} else {
@@ -560,11 +563,14 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 				if (it != diffmap.end()) {
 					header = "(chg) ";
 					idiff = it->second;
+				} else if (s.code_x() == 'R') {
+					header = "(ren) ";
+					filename = s.path2();
 				} else {
 					header = "(??\?) "; // damn trigraph
 				}
 			}
-			AddItem(header, idiff);
+			AddItem(header, idiff, filename);
 		}
 	} else {
 		for (int idiff = 0; idiff < pv->diffs.size(); idiff++) {
@@ -1697,19 +1703,26 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 	pv->gcx.git_command = path;
 }
 
-bool MainWindow::selectGitCommand()
+void MainWindow::setFileCommand(QString const &path, bool save)
 {
-#ifdef Q_OS_WIN
-	char const *exe = "git.exe";
-#else
-	char const *exe = "git";
-#endif
+	if (save) {
+		MySettings s;
+		s.beginGroup("Global");
+		s.setValue("FileCommand", path);
+		s.endGroup();
+	}
+	pv->file_command = path;
+}
 
+QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QString path, std::function<void(QString const &)> callback)
+{
+	QString window_title = tr("Select %1 command");
+	window_title = window_title.arg(cmdfile);
 
 	QStringList list;
 	{
 		std::vector<std::string> vec;
-		FileUtil::which(exe, &vec);
+		FileUtil::which(cmdfile.toStdString(), &vec);
 
 		std::sort(vec.begin(), vec.end());
 		auto it = std::unique(vec.begin(), vec.end());
@@ -1720,18 +1733,50 @@ bool MainWindow::selectGitCommand()
 		}
 	}
 
-	QString path = pv->gcx.git_command;
-	SelectGitCommandDialog dlg(this, path, list);
+	SelectCommandDialog dlg(this, cmdname, cmdfile, path, list);
+	dlg.setWindowTitle(window_title);
 	if (dlg.exec() == QDialog::Accepted) {
 		path = dlg.selectedFile();
+		path = misc::normalizePathSeparator(path);
 		QFileInfo info(path);
 		if (info.isExecutable()) {
-			setGitCommand(path, true);
-			pv->gcx.git_command = path;
+			callback(path);
+			return path;
 		}
-		return true;
 	}
-	return false;
+	return QString();
+}
+
+QString MainWindow::selectGitCommand()
+{
+#ifdef Q_OS_WIN
+	char const *exe = "git.exe";
+#else
+	char const *exe = "git";
+#endif
+	QString path = pv->gcx.git_command;
+
+	auto fn = [&](QString const &path){
+		setGitCommand(path, true);
+	};
+
+	return selectCommand_("Git", exe, path, fn);
+}
+
+QString MainWindow::selectFileCommand()
+{
+#ifdef Q_OS_WIN
+	char const *exe = "file.exe";
+#else
+	char const *exe = "file";
+#endif
+	QString path = pv->file_command;
+
+	auto fn = [&](QString const &path){
+		setFileCommand(path, true);
+	};
+
+	return selectCommand_("File", exe, path, fn);
 }
 
 void MainWindow::checkGitCommand()
@@ -1741,7 +1786,7 @@ void MainWindow::checkGitCommand()
 		if (info.isExecutable()) {
 			break; // ok
 		}
-		if (!selectGitCommand()) {
+		if (!selectGitCommand().isEmpty()) {
 			close();
 			break;
 		}
@@ -2454,8 +2499,49 @@ void MainWindow::on_action_test_triggered()
 	}
 }
 
-QString MainWindow::filetype(QString const &path)
+QString MainWindow::filetype(QString const &path, bool mime)
 {
+	if (QFileInfo(pv->file_command).isExecutable()) {
+		QString file = pv->file_command;
+		QString mgc;
+#ifdef Q_OS_WIN
+		int i = file.lastIndexOf('/');
+		int j = file.lastIndexOf('\\');
+		if (i < j) i = j;
+		if (i >= 0) {
+			mgc = file.mid(0, i + 1) + "magic.mgc";
+			if (QFileInfo(mgc).isReadable()) {
+				// ok
+			} else {
+				mgc = QString();
+			}
+		}
+#endif
+		QString cmd;
+		if (mgc.isEmpty()) {
+			cmd = "\"%1\"";
+			cmd = cmd.arg(file);
+		} else {
+			cmd = "\"%1\" -m \"%2\"";
+			cmd = cmd.arg(file).arg(mgc);
+		}
+		if (mime) {
+			cmd += " --mime";
+		}
+		cmd += QString(" --brief \"%1\"").arg(path);
+		QByteArray ba;
+		misc::runCommand(cmd, &ba);
+		if (!ba.isEmpty()) {
+			QString s = QString::fromUtf8(ba).trimmed();
+			QStringList list = s.split(';', QString::SkipEmptyParts);
+			if (!list.isEmpty()) {
+				QString mimetype = list[0].trimmed();
+				qDebug() << mimetype;
+				return mimetype;
+			}
+		}
+	}
+#if 0
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		QByteArray ba = file.read(8);
@@ -2465,5 +2551,6 @@ QString MainWindow::filetype(QString const &path)
 			}
 		}
 	}
+#endif
 	return QString();
 }
