@@ -42,7 +42,6 @@ public:
 	};
 	struct BLOB {
 		QString id;
-		QString path;
 	};
 	class Diff {
 	public:

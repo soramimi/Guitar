@@ -542,7 +542,6 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 				continue;
 			}
 			auto AddItem = [&](QString const &prefix, int idiff, QString const &filename){
-//				QString filename = s.path1();
 				QListWidgetItem *item = new QListWidgetItem(prefix + filename);
 				item->setData(FilePathRole, filename);
 				item->setData(DiffIndexRole, idiff);
