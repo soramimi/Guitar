@@ -211,7 +211,8 @@ private:
 	void updateVerticalScrollBar();
 	QString formatLine(const QString &text, bool diffmode);
 	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
-	void setDataAsNewFile(const QByteArray &ba);
+	void init_diff_data_(const Git::Diff &diff);
+	void setDataAsNewFile(const QByteArray &ba, const Git::Diff &diff);
 	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncmmited, const QString &workingdir);
 	int totalTextLines() const;
 	int fileviewScrollPos() const;
@@ -244,6 +245,8 @@ public:
 	void deleteTempFiles();
 	QString newTempFilePath();
 	bool saveAs(const QString &id, const QString &dstpath);
+	QString saveAsTemp(const QString &id);
+	QString filetype(const QString &path);
 protected:
 	void resizeEvent(QResizeEvent *);
 

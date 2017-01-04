@@ -14,17 +14,22 @@ class FileDiffWidget : public QWidget
 private:
 	QScrollBar *vertical_scroll_bar = nullptr;
 	ViewType view_type = ViewType::None;
+	QString mime_type;
+	QPixmap pixmap;
 
 	DiffWidgetData::DiffData *diffdata();
 	const DiffWidgetData::DiffData *diffdata() const;
 	DiffWidgetData::DrawData *drawdata();
 	const DiffWidgetData::DrawData *drawdata() const;
+	void paintText();
+	void paintImage();
 public:
 	explicit FileDiffWidget(QWidget *parent);
 	~FileDiffWidget();
 
 	void update(ViewType vt);
 
+	void clear(ViewType vt);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

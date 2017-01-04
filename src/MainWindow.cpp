@@ -1657,7 +1657,7 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 			QByteArray ba;
 			if (diff.blob.a.id.isEmpty()) {
 				g->cat_file(diff.blob.b.id, &ba);
-				setDataAsNewFile(ba);
+				setDataAsNewFile(ba, diff);
 			} else {
 				g->cat_file(diff.blob.a.id, &ba);
 				setTextDiffData(ba, diff, uncommited, currentWorkingCopyDir());
@@ -1850,6 +1850,13 @@ bool MainWindow::saveAs(QString const &id, QString const &dstpath)
 	} else {
 		return saveBlobAs(id, dstpath);
 	}
+}
+
+QString MainWindow::saveAsTemp(QString const &id)
+{
+	QString path = newTempFilePath();
+	saveAs(id, path);
+	return path;
 }
 
 void MainWindow::on_action_edit_settings_triggered()
@@ -2197,13 +2204,21 @@ void MainWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLin
 void MainWindow::clearDiff()
 {
 	*diffdata() = DiffWidgetData::DiffData();
-	ui->widget_diff_left->update(ViewType::Left);
-	ui->widget_diff_right->update(ViewType::Right);
+	ui->widget_diff_left->clear(ViewType::Left);
+	ui->widget_diff_right->clear(ViewType::Right);
 }
 
-void MainWindow::setDataAsNewFile(QByteArray const &ba)
+void MainWindow::init_diff_data_(Git::Diff const &diff)
 {
 	clearDiff();
+	diffdata()->path = diff.path;
+	diffdata()->left = diff.blob.a;
+	diffdata()->right = diff.blob.b;
+}
+
+void MainWindow::setDataAsNewFile(QByteArray const &ba, Git::Diff const &diff)
+{
+	init_diff_data_(diff);
 
 	if (ba.isEmpty()) {
 		diffdata()->original_lines.clear();
@@ -2225,10 +2240,8 @@ void MainWindow::setDataAsNewFile(QByteArray const &ba)
 
 void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
-	clearDiff();
-	diffdata()->path = diff.path;
-	diffdata()->left = diff.blob.a;
-	diffdata()->right = diff.blob.b;
+	init_diff_data_(diff);
+
 	if (uncommited) {
 		QString path = workingdir / diff.path;
 		diffdata()->right.id = QString(PATH_PREFIX) + path;
@@ -2441,4 +2454,16 @@ void MainWindow::on_action_test_triggered()
 	}
 }
 
-
+QString MainWindow::filetype(QString const &path)
+{
+	QFile file(path);
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.read(8);
+		if (ba.size() >= 8) {
+			if (memcmp(ba.data(), "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", 8) == 0) {
+				return "image/png";
+			}
+		}
+	}
+	return QString();
+}

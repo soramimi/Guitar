@@ -63,7 +63,14 @@ void FileDiffWidget::update(ViewType vt)
 	QWidget::update();
 }
 
-void FileDiffWidget::paintEvent(QPaintEvent *)
+void FileDiffWidget::clear(ViewType vt)
+{
+	mime_type = QString();
+	pixmap = QPixmap();
+	update(vt);
+}
+
+void FileDiffWidget::paintText()
 {
 	QPainter pr(this);
 
@@ -152,6 +159,30 @@ void FileDiffWidget::paintEvent(QPaintEvent *)
 	}
 }
 
+void FileDiffWidget::paintImage()
+{
+	int w = pixmap.width();
+	int h = pixmap.height();
+//	if (w < 1 || h < 1) {
+//		pixmap.load(file_path);
+//		w = pixmap.width();
+//		h = pixmap.height();
+//	}
+	if (w > 0 && h > 0) {
+		QPainter pr(this);
+		pr.drawPixmap(0, 0, w, h, pixmap);
+	}
+}
+
+void FileDiffWidget::paintEvent(QPaintEvent *)
+{
+	if (mime_type == "image/png") {
+		paintImage();
+		return;
+	}
+	paintText();
+}
+
 void FileDiffWidget::wheelEvent(QWheelEvent *e)
 {
 	int delta = e->delta();
@@ -190,18 +221,30 @@ void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
 
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
+	QAction *a_test = id.isEmpty() ? nullptr : menu.addAction(tr("test"));
 	if (!menu.actions().isEmpty()) {
 		drawdata()->forcus = view_type;
 		update(view_type);
 		QAction *a = menu.exec(pos + QPoint(8, -8));
 		if (a) {
 			if (a == a_save_as) {
-				if (!id.isEmpty()) {
-					QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
-					if (!dstpath.isEmpty()) {
-						mw->saveAs(id, dstpath);
-					}
+				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
+				if (!dstpath.isEmpty()) {
+					mw->saveAs(id, dstpath);
 				}
+				goto DONE;
+			}
+			if (a == a_test) {
+				QString path = mw->saveAsTemp(id);
+
+				QString mimetype = mw->filetype(path);
+				if (mimetype == "image/png") {
+					mime_type = mimetype;
+					pixmap.load(path);
+				}
+
+				QFile::remove(path);
+
 				goto DONE;
 			}
 		}
