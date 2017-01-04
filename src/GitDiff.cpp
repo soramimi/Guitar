@@ -1,6 +1,7 @@
 #include "GitDiff.h"
 
 #include <QThread>
+#include "MainWindow.h"
 
 // CommitData
 
@@ -161,7 +162,7 @@ public:
 	}
 };
 
-void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_index, QString newer_index, std::vector<Git::Diff> *diffs)
+void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_index, QString newer_index, QList<Git::Diff> *diffs)
 {
 	CommitListThread older(g->dup(), older_index, dir);
 	CommitListThread newer(g->dup(), newer_index, dir);
@@ -181,72 +182,65 @@ void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_index, QStr
 	commit_into_map(g, dir, newer.commit, &diffmap, diffs);
 }
 
-void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap, std::vector<Git::Diff> *diffs)
+QString GitDiff::makeKey(Git::Diff::BLOB_AB const &ab)
 {
-	Git::Diff item;
-	auto AddItem = [&](){
-		item.diff = QString("diff --git ") + item.blob.a.path + ' ' + item.blob.b.path;
-		item.index = QString("index ") + item.blob.a.id + ".." + item.blob.b.id + ' ' + item.mode;
-		diffs->push_back(item);
-	};
+	return  ab.a.id + ".." + ab.b.id;
+
+}
+
+void GitDiff::AddItem(Git::Diff *item, QList<Git::Diff> *diffs)
+{
+	item->blob.a.path = item->path;
+	item->blob.b.path = item->path;
+	item->diff = QString("diff --git ") + ("a/" + item->path) + ' ' + ("b/" + item->path);
+	item->index = QString("index ") + makeKey(item->blob) + ' ' + item->mode;
+	diffs->push_back(*item);
+}
+
+void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap, QList<Git::Diff> *diffs)
+{
 	for (CommitData const &cd : commit.files) {
 		for (IndexMap const &map : *diffmap) {
 			auto it = map.find(cd.path);
-			if (it == map.end()) {
-				item = Git::Diff();
-				item.path = cd.path;
-				item.mode = cd.mode;
-				item.blob.b.id = cd.id;
-				item.blob.a.path = cd.path;
-				item.blob.b.path = cd.path;
-				AddItem();
-			} else {
+			if (it != map.end()) {
 				if (cd.id != it->second) {
 					if (cd.type == CommitData::TREE) {
 						QString path = misc::joinWithSlash(dir, cd.path);
 						diff_tree_(g, path, it->second, cd.id, diffs);
 					} else if (cd.type == CommitData::BLOB) {
-						item = Git::Diff();
+						Git::Diff item;
 						item.path = cd.path;
 						item.mode = cd.mode;
 						item.blob.a.id = it->second;
 						item.blob.b.id = cd.id;
-						item.blob.a.path = cd.path;
-						item.blob.b.path = cd.path;
-						AddItem();
+						AddItem(&item, diffs);
 					}
 					break;
 				}
+			} else {
+				Git::Diff item;
+				item.path = cd.path;
+				item.mode = cd.mode;
+				item.blob.b.id = cd.id;
+				AddItem(&item, diffs);
 			}
 		}
 	}
 }
 
-void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::MapList *diffmap, std::vector<Git::Diff> *diffs)
+void GitDiff::file_into_map(const Git::FileStatusList &stats, const GitDiff::MapList *diffmap, QList<Git::Diff> *diffs)
 {
-	Git::Diff item;
-	auto AddItem = [&](Git::FileStatus const &st){
-		item.diff = QString("diff --git ") + item.blob.a.path + ' ' + item.blob.b.path;
-		item.index = QString("index ") + item.blob.a.id + ".." + item.blob.b.id + ' ' + item.mode;
-		item.path = st.path1();
-		item.blob.a.path = item.path;
-		item.blob.b.path = item.path;
-		diffs->push_back(item);
-		item = Git::Diff();
-	};
 	for (Git::FileStatus const &st : stats) {
-		bool done = false;
 		for (IndexMap const &map : *diffmap) {
 			auto it = map.find(st.path1());
 			if (it != map.end()) {
+				Git::Diff item;
 				item.blob.a.id = it->second;
-				AddItem(st);
-				done = true;
+				item.blob.b.id = PATH_PREFIX + st.path1();
+				item.path = st.path1();
+				AddItem(&item, diffs);
 				break;
 			}
-		}
-		if (!done) {
-			AddItem(st);
 		}
 	}
 }
@@ -282,70 +276,54 @@ void GitDiff::parse_tree(GitPtr g, const QString &dir, const QString &index, std
 	}
 }
 
-class DiffThread : public QThread {
-private:
-	struct Data {
-		Git::Diff const *file;
-		GitPtr g;
-		Git::Diff out;
-	};
-	Data d;
-public:
-	void run()
-	{
-		QString s;
-		if (!d.file->blob.a.id.isEmpty() && !d.file->blob.b.id.isEmpty()) {
-			s = d.g->diff(d.file->blob.a.id, d.file->blob.b.id);
+QString GitDiff::diffFile(GitPtr g, QString const &a_id, QString const &b_id)
+{
+	QString path_prefix = PATH_PREFIX;
+	if (b_id.startsWith(path_prefix)) {
+		return g->diff_to_file(a_id, b_id.mid(path_prefix.size()));
+	} else {
+		return g->diff(a_id, b_id);
+	}
+}
+
+void GitDiff::parseDiff(QString const &s, Git::Diff const *ref, Git::Diff *out)
+{
+	QStringList lines = misc::splitLines(s);
+
+	out->diff = QString("diff --git ") + ("a/" + ref->blob.a.path) + ' ' + ("b/" + ref->blob.b.path);
+	out->index = QString("index ") + ref->blob.a.id + ".." + ref->blob.b.id + ' ' + ref->mode;
+	out->path = ref->path;
+	out->blob = ref->blob;
+
+	bool atat = false;
+	for (QString const &line : lines) {
+		ushort c = line.utf16()[0];
+		if (c == '@') {
+			if (line.startsWith("@@ ")) {
+				out->hunks.push_back(Git::Hunk());
+				out->hunks.back().at = line;
+				atat = true;
+			}
 		} else {
-			s = d.g->diff_to_file(d.file->blob.a.id, d.file->path);
-		}
-		QStringList lines = misc::splitLines(s);
-
-		d.out.diff = QString("diff --git ") + d.file->blob.a.path + ' ' + d.file->blob.b.path;
-		d.out.index = QString("index ") + d.file->blob.a.id + ".." + d.file->blob.b.id + ' ' + d.file->mode;
-		d.out.path = d.file->path;
-		d.out.blob = d.file->blob;
-
-		bool atat = false;
-		for (QString const &line : lines) {
-			ushort c = line.utf16()[0];
-			if (c == '@') {
-				if (line.startsWith("@@ ")) {
-					d.out.hunks.push_back(Git::Hunk());
-					d.out.hunks.back().at = line;
-					atat = true;
-				}
+			if (atat && c == '\\') { // e.g. \ No newline at end of file...
+				// ignore this line
 			} else {
-				if (atat && c == '\\') { // e.g. \ No newline at end of file...
-					// ignore this line
-				} else {
-					if (atat) {
-						if (c == ' ' || c == '-' || c == '+') {
-							// nop
-						} else {
-							atat = false;
-						}
+				if (atat) {
+					if (c == ' ' || c == '-' || c == '+') {
+						// nop
+					} else {
+						atat = false;
 					}
-					if (atat) {
-						if (!d.out.hunks.isEmpty()) {
-							d.out.hunks.back().lines.push_back(line);
-						}
+				}
+				if (atat) {
+					if (!out->hunks.isEmpty()) {
+						out->hunks.back().lines.push_back(line);
 					}
 				}
 			}
 		}
 	}
-public:
-	DiffThread(Git::Diff const *file, GitPtr g)
-	{
-		d.file = file;
-		d.g = g;
-	}
-	Git::Diff const &result()
-	{
-		return d.out;
-	}
-};
+}
 
 void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 {
@@ -404,27 +382,7 @@ void GitDiff::diff(GitPtr g, QString index, QList<Git::Diff> *out)
 		commit_into_map(g, QString(), newcommit, &diffmaplist, &diffs);
 	}
 
-	//
-#if 1
-	std::vector<DiffThread *> threads;
-	for (Git::Diff const &file : diffs) {
-		DiffThread *th = new DiffThread(&file, g->dup());
-		threads.push_back(th);
-		th->start();
-	}
-	for (DiffThread *th : threads) {
-		th->wait();
-		out->push_back(th->result());
-		delete th;
-	}
-#else
-	for (Git::Diff const &file : diffs) {
-		DiffThread th(&file, g->dup());
-		th.run();
-		out->push_back(th.result());
-	}
-#endif
-	//
+	*out = std::move(diffs);
 
 	std::sort(out->begin(), out->end(), [](Git::Diff const &left, Git::Diff const &right){
 		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;

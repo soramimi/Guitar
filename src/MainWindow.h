@@ -118,10 +118,10 @@ private slots:
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-	void on_listWidget_files_currentRowChanged(int currentRow);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_unstaged_currentRowChanged(int currentRow);
+	void on_listWidget_files_currentRowChanged(int currentRow);
 	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
 	void on_toolButton_commit_clicked();
 	void on_toolButton_pull_clicked();
@@ -152,7 +152,6 @@ private slots:
 private:
 	Ui::MainWindow *ui;
 
-	void makeDiff(QString const &old_id, QString const &new_id); // obsolete
 	void updateFilesList(QString const &old_id, QString const &new_id, bool singlelist);
 	void updateHeadFilesList(bool single);
 	void updateRepositoriesList();
@@ -184,8 +183,7 @@ private:
 	int repositoryIndex_(QTreeWidgetItem *item);
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
-	QString diff_(const QString &old_id, const QString &new_id); // obsolete
-	void makeDiff2(GitPtr g, const QString &id, QList<Git::Diff> *out);
+	void makeDiff(GitPtr g, const QString &id, QList<Git::Diff> *out);
 	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();

@@ -97,6 +97,7 @@ struct MainWindow::Private {
 	RepositoryItem current_repo;
 	Git::Branch current_branch;
 	QList<Git::Diff> diffs;
+	std::map<QString, Git::Diff> diff_cache;
 	QStringList added;
 	Git::CommitItemList logs;
 	bool uncommited_changes = false;
@@ -163,6 +164,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
+	connect(ui->widget_diff_pixmap, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_left, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_left, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
@@ -503,129 +505,7 @@ void MainWindow::clearRepositoryInfo()
 	ui->label_branch_name->setText(QString());
 }
 
-QString MainWindow::diff_(QString const &old_id, QString const &new_id) // obsolete
-{
-#if 1
-	GitPtr g = git();
-	if (g.get()) {
-		return g->diff(old_id, new_id);
-	}
-#else
-#endif
-	return QString();
-}
-
-void MainWindow::makeDiff(QString const &old_id, QString const &new_id) // obsolete : diff文字列の中にバイナリファイルがあると、それ以降を処理できない
-{
-	pv->diffs.clear();
-
-	QString s = diff_(old_id, new_id);
-
-	QStringList lines = misc::splitLines(s);
-
-	enum class ItemType {
-		Normal,
-		NewFile,
-	};
-	ItemType itemtype = ItemType::Normal;
-
-	bool f = false;
-	for (QString const &line : lines) {
-		ushort c = line.utf16()[0];
-		if (c == '@') {
-			if (line.startsWith("@@ ")) {
-				if (!pv->diffs.isEmpty()) {
-					pv->diffs.back().hunks.push_back(Git::Hunk());
-					pv->diffs.back().hunks.back().at = line;
-				}
-				f = true;
-			}
-		} else {
-			if (f) {
-				if (c == ' ' || c == '-' || c == '+') {
-					// nop
-				} else {
-					f = false;
-				}
-			}
-			if (f) {
-				if (!pv->diffs.isEmpty() && !pv->diffs.back().hunks.isEmpty()) {
-					pv->diffs.back().hunks.back().lines.push_back(line);
-				}
-			} else {
-				enum class HeaderCode {
-					unknown,
-					diff,
-					index,
-					a,
-					b,
-				};
-				HeaderCode h = HeaderCode::unknown;
-				if (line.startsWith("diff ")) {
-					h = HeaderCode::diff;
-				} else if (line.startsWith("index ")) {
-					h = HeaderCode::index;
-				} else if (line.startsWith("new file ")) {
-					itemtype = ItemType::NewFile;
-				} else if (line.startsWith("--- ")) {
-					h = HeaderCode::a;
-				} else if (line.startsWith("+++ ")) {
-					h = HeaderCode::b;
-				}
-				if (h != HeaderCode::unknown) {
-					if (pv->diffs.isEmpty() || !pv->diffs.back().hunks.isEmpty()) {
-						pv->diffs.push_back(Git::Diff());
-					}
-					switch (h) {
-					case HeaderCode::diff:
-						pv->diffs.back().diff = line;
-						itemtype = ItemType::Normal;
-						break;
-					case HeaderCode::index:
-						pv->diffs.back().index = line;
-						if (line.indexOf("..") == 46) {
-							if (itemtype == ItemType::NewFile) {
-								// nop
-							} else {
-								pv->diffs.back().blob.a.id = line.mid(6, 40);
-							}
-							pv->diffs.back().blob.b.id = line.mid(48, 40);
-						}
-						break;
-					case HeaderCode::a:
-						if (itemtype != ItemType::NewFile) {
-							QString s = line.trimmed();
-							if (s.startsWith("--- ")) {
-								s = s.mid(4);
-							}
-							pv->diffs.back().blob.a.path = s;
-							QString prefix = "a/";
-							if (s.startsWith(prefix)) {
-								pv->diffs.back().path = s.mid(prefix.size());
-							}
-						}
-						break;
-					case HeaderCode::b:
-						{
-							QString s = line.trimmed();
-							if (s.startsWith("+++ ")) {
-								s = s.mid(4);
-							}
-							pv->diffs.back().blob.b.path = s;
-							QString prefix = "b/";
-							if (s.startsWith(prefix)) {
-								pv->diffs.back().path = s.mid(prefix.size());
-							}
-						}
-						break;
-					}
-				}
-			}
-		}
-	}
-}
-
-void MainWindow::makeDiff2(GitPtr g, QString const &id, QList<Git::Diff> *out) // バイナリファイルに対応するため、diff処理を別クラスにした
+void MainWindow::makeDiff(GitPtr g, QString const &id, QList<Git::Diff> *out)
 {
 	Q_ASSERT(g);
 	GitDiff dm;
@@ -640,11 +520,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 	clearFileList();
 	if (!singlelist) showFileList(false);
 
-#if 0 // そのうち消す
-	makeDiff(old_id, new_id);
-#else
-	makeDiff2(g, new_id, &pv->diffs);
-#endif
+	makeDiff(g, new_id, &pv->diffs);
 
 	if (old_id.isEmpty() || new_id.isEmpty()) {
 		std::map<QString, int> diffmap;
@@ -713,6 +589,11 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 			item->setData(HunkIndexRole, -1);
 			(singlelist ? ui->listWidget_files : ui->listWidget_unstaged)->addItem(item);
 		}
+	}
+
+	for (Git::Diff const &diff : pv->diffs) {
+		QString key = GitDiff::makeKey(diff.blob);
+		pv->diff_cache[key] = diff;
 	}
 }
 
@@ -1764,21 +1645,30 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 	clearDiff();
 	int idiff = indexOfDiff(item);
 	if (idiff >= 0 && idiff < pv->diffs.size()) {
-		Git::Diff const &diff = pv->diffs[idiff];
-		QByteArray ba;
-		if (diff.blob.a.id.isEmpty()) {
-			g->cat_file(diff.blob.b.id, &ba);
-			setDataAsNewFile(ba);
-		} else {
-			g->cat_file(diff.blob.a.id, &ba);
-			setTextDiffData(ba, diff, uncommited, currentWorkingCopyDir());
+		QString key = GitDiff::makeKey(pv->diffs[idiff].blob);
+		auto it = pv->diff_cache.find(key);
+		if (it != pv->diff_cache.end()) {
+			Git::Diff diff;
+			{
+				Git::Diff const &ref = it->second;
+				QString text = GitDiff::diffFile(g, ref.blob.a.id, ref.blob.b.id);
+				GitDiff::parseDiff(text, &ref, &diff);
+			}
+			QByteArray ba;
+			if (diff.blob.a.id.isEmpty()) {
+				g->cat_file(diff.blob.b.id, &ba);
+				setDataAsNewFile(ba);
+			} else {
+				g->cat_file(diff.blob.a.id, &ba);
+				setTextDiffData(ba, diff, uncommited, currentWorkingCopyDir());
+			}
+			ui->verticalScrollBar->setValue(0);
+			updateVerticalScrollBar();
+			ui->widget_diff_pixmap->clear(false);
+			updateSliderCursor();
+			ui->widget_diff_pixmap->update();
+			updateSliderCursor();
 		}
-		ui->verticalScrollBar->setValue(0);
-		updateVerticalScrollBar();
-		ui->widget_diff_pixmap->clear(false);
-		updateSliderCursor();
-		ui->widget_diff_pixmap->update();
-		updateSliderCursor();
 	}
 }
 
@@ -2549,7 +2439,6 @@ void MainWindow::on_action_test_triggered()
 	if (file.open(QFile::WriteOnly)) {
 		file.close();
 	}
-//	deleteTempFiles();
 }
 
 

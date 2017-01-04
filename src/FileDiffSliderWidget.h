@@ -24,15 +24,16 @@ public:
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
-signals:
-	void valueChanged(int value);
-public slots:
-
 protected:
 	void paintEvent(QPaintEvent *);
 	void resizeEvent(QResizeEvent *);
 	void mousePressEvent(QMouseEvent *);
 	void mouseMoveEvent(QMouseEvent *);
+	void wheelEvent(QWheelEvent *event);
+signals:
+	void valueChanged(int value);
+	void scrollByWheel(int lines);
+public slots:
 };
 
 #endif // FILEDIFFSLIDERWIDGET_H

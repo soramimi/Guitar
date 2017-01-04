@@ -69,6 +69,21 @@ void FileDiffSliderWidget::mouseMoveEvent(QMouseEvent *e)
 	}
 }
 
+void FileDiffSliderWidget::wheelEvent(QWheelEvent *e)
+{
+	int delta = e->delta();
+	if (delta < 0) {
+		delta = -delta / 40;
+		if (delta == 0) delta = 1;
+		emit scrollByWheel(delta);
+	} else if (delta > 0) {
+		delta /= 40;
+		if (delta == 0) delta = 1;
+		emit scrollByWheel(-delta);
+
+	}
+}
+
 void FileDiffSliderWidget::clear(bool v)
 {
 	left_pixmap = QPixmap();
