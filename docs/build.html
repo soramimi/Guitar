@@ -60,14 +60,15 @@
 <p>Qt Creator の設定を行います。[ツール] → [オプション] を選択すると、オプションダイアログが開きます。</p>
 <p><a href="projectsettings1.png"><img src="projectsettings1.png" width="522" height="353"></a></p>
 <p>デフォルト設定では、ファイル名は「lowercase」な名前になりますが、Guitarでは「UpperCamelCase」なファイル名を採用していますので、[ファイル名を小文字にする] というチェックボックスをOFFにします。</p>
-<p><img src="projectsettings2.png" width="522" height="353"></p>
-<p>[ビルドと実行] の [一般] タブにある、 [既定のビルドディレクトリ] の設定を、Windowsの場合“../_build_%{CurrentProject:Name}”にします。これはグローバルの設定なので、変えたくない場合は、後でプロジェクトの設定で“../_build_Guitar”などにします。</p>
+<p><a href="projectsettings2.png"><img src="projectsettings2.png" width="522" height="353"></a></p>
+<p>[ビルドと実行] の [一般] タブにある、 [既定のビルドディレクトリ] の設定を変更します。</p>
+<p>Windowsの場合“../_build_%{CurrentProject:Name}”にします。これはグローバルの設定なので、変えたくない場合は、後でプロジェクトの設定で“../_build_Guitar”などにします。</p>
 <p><a href="projectsettings3.png"><img src="projectsettings3.png" width="522" height="353"></a></p>
-<p>Windows以外の場合、ビルドディレクトリは 「../_build_%{CurrentProject:Name}_%{CurrentBuild:Name}」がおすすめです。そのような設定にすると /home/<em>&lt;username&gt;</em>/develop/_build_Guitar_Release|Debug の様になります。</p>
+<p>LinuxやmacOSの場合、ビルドディレクトリは 「../_build_%{CurrentProject:Name}_%{CurrentBuild:Name}」がおすすめです。そのような設定にすると /home/<em>&lt;username&gt;</em>/develop/_build_Guitar_Release|Debug の様になります。</p>
 <p><img src="projectsettings4.png" width="605" height="376"></p>
 <p>一応、次のようなコーディングスタイルを採用しています。</p>
 <ul>
-  <li>タブ4</li>
+  <li> ハードタブ（半角4文字幅推奨）</li>
 </ul>
 <p>上に挙げたのは、グローバルの共通設定ですが、プロジェクト毎にも設定箇所があります。</p>
 <p><img src="projectsettings5.png" width="540" height="342"></p>
