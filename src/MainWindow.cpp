@@ -126,6 +126,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->splitter_h->setSizes({200, 100, 200});
 
 	ui->treeWidget_repos->installEventFilter(this);
+	ui->listWidget_staged->installEventFilter(this);
+	ui->listWidget_unstaged->installEventFilter(this);
 
 	showFileList(true);
 
@@ -1677,18 +1679,35 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 	}
 }
 
-void MainWindow::on_listWidget_unstaged_currentRowChanged(int currentRow)
+void MainWindow::updateFileCurrentItem_(QListWidgetItem *item)
 {
 	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
-	QListWidgetItem *item = ui->listWidget_unstaged->item(currentRow);
 	changeLog(item, uncommited);
 }
 
-void MainWindow::on_listWidget_files_currentRowChanged(int currentRow)
+void MainWindow::updateUnstagedFileCurrentItem()
 {
-	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
-	QListWidgetItem *item = ui->listWidget_files->item(currentRow);
-	changeLog(item, uncommited);
+	updateFileCurrentItem_(ui->listWidget_unstaged->currentItem());
+}
+
+void MainWindow::updateStagedFileCurrentItem()
+{
+	updateFileCurrentItem_(ui->listWidget_staged->currentItem());
+}
+
+void MainWindow::on_listWidget_unstaged_currentRowChanged(int /*currentRow*/)
+{
+	updateUnstagedFileCurrentItem();
+}
+
+void MainWindow::on_listWidget_staged_currentRowChanged(int /*currentRow*/)
+{
+	updateStagedFileCurrentItem();
+}
+
+void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
+{
+	updateFileCurrentItem_(ui->listWidget_files->currentItem());
 }
 
 void MainWindow::setGitCommand(QString const &path, bool save)
@@ -1827,6 +1846,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				openSelectedRepository();
 				return true;
 			}
+		}
+	}
+	if (event->type() == QEvent::FocusIn) {
+		// ファイルリストがフォーカスを得たとき、diffビューを更新する
+		if (watched == ui->listWidget_unstaged) {
+			updateUnstagedFileCurrentItem();
+			return true;
+		}
+		if (watched == ui->listWidget_staged) {
+			updateStagedFileCurrentItem();
+			return true;
 		}
 	}
 	return false;
@@ -2553,3 +2583,7 @@ QString MainWindow::filetype(QString const &path, bool mime)
 #endif
 	return QString();
 }
+
+
+
+

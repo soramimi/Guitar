@@ -19,7 +19,7 @@ class QTableWidgetItem;
 
 class CommitList;
 
-#define PATH_PREFIX '*'
+#define PATH_PREFIX "*"
 
 class HunkItem {
 public:
@@ -119,10 +119,11 @@ private slots:
 	void on_action_view_refresh_triggered();
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
+	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_unstaged_currentRowChanged(int currentRow);
+	void on_listWidget_staged_currentRowChanged(int currentRow);
 	void on_listWidget_files_currentRowChanged(int currentRow);
-	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
 	void on_toolButton_commit_clicked();
 	void on_toolButton_pull_clicked();
 	void on_toolButton_push_clicked();
@@ -149,6 +150,7 @@ private slots:
 
 
 	void onRepositoriesTreeDropped();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -225,6 +227,9 @@ private:
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, QString path, std::function<void(const QString &)> callback);
+	void updateFileCurrentItem_(QListWidgetItem *item);
+	void updateUnstagedFileCurrentItem();
+	void updateStagedFileCurrentItem();
 public:
 
 	QString selectGitCommand();
