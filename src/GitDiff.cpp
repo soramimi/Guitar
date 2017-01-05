@@ -189,7 +189,7 @@ public:
 	}
 };
 
-void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString newer_id, QList<Git::Diff> *diffs)
+void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString newer_id)
 {
 	CommitListThread older(g->dup(), older_id, dir);
 	CommitListThread newer(g->dup(), newer_id, dir);
@@ -203,10 +203,11 @@ void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString
 	diffmap.push_back(LookupTable());
 	LookupTable &map = diffmap.front();
 	for (CommitData const &cd : older.commit.files) {
+		checkInterrupted();
 		map.store(cd.path, cd.id);
 	}
 
-	commit_into_map(g, dir, newer.commit, &diffmap, diffs); // recursive
+	commit_into_map(g, dir, newer.commit, &diffmap); // recursive
 }
 
 void GitDiff::AddItem(Git::Diff *item, QList<Git::Diff> *diffs)
@@ -216,11 +217,12 @@ void GitDiff::AddItem(Git::Diff *item, QList<Git::Diff> *diffs)
 	diffs->push_back(*item);
 }
 
-void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap, QList<Git::Diff> *diffs)
+void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::CommitList &commit, const GitDiff::MapList *diffmap)
 {
 	for (CommitData const &cd : commit.files) {
 		bool found = false;
 		for (LookupTable const &map : *diffmap) { // map（新しいコミット）の中を探す
+			checkInterrupted();
 			auto it = map.find_path(cd.path);
 			if (it != map.end_path()) {
 				found = true; // 見つかった
@@ -229,14 +231,14 @@ void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::Commi
 						QString path = misc::joinWithSlash(dir, cd.path); // 子ディレクトリ名
 						QString older_id = it->second;
 						QString newer_id = cd.id;
-						diff_tree_(g, path, older_id, newer_id, diffs); // 子ディレクトリを探索
+						diff_tree_(g, path, older_id, newer_id); // 子ディレクトリを探索
 					} else if (cd.type == CommitData::BLOB) { // ファイル
 						Git::Diff item;
 						item.path = cd.path;
 						item.mode = cd.mode;
 						item.blob.a.id = it->second;
 						item.blob.b.id = cd.id;
-						AddItem(&item, diffs);
+						AddItem(&item, &diffs);
 					}
 					break;
 				}
@@ -247,7 +249,7 @@ void GitDiff::commit_into_map(GitPtr g, const QString &dir, const GitDiff::Commi
 			item.path = cd.path;
 			item.mode = cd.mode;
 			item.blob.b.id = cd.id;
-			AddItem(&item, diffs);
+			AddItem(&item, &diffs);
 		}
 	}
 }
@@ -339,78 +341,79 @@ void GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 		}
 	};
 
-	if (id == "HEAD") {
+	try {
+		if (id == "HEAD") {
 
-		QString parent = g->rev_parse_HEAD(); // HEADのインデックスを取得
-		QStringList parents;
-		parents.push_back(parent);
+			QString parent = g->rev_parse_HEAD(); // HEADのインデックスを取得
+			QStringList parents;
+			parents.push_back(parent);
 
 
-		MapList path_to_id_map;
-		MakeDiffMapList(g, parents, &path_to_id_map);
+			MapList path_to_id_map;
+			MakeDiffMapList(g, parents, &path_to_id_map);
 
-		std::set<QString> dirset;
+			std::set<QString> dirset;
 
-		Git::FileStatusList stats = g->status(); // git status
+			Git::FileStatusList stats = g->status(); // git status
 
-		for (Git::FileStatus const &s : stats) {
-			auto DoIt = [&](QString const &file){
-				QStringList list = file.split('/');
-				QString path;
-				for (int i = 0; i + 1 < list.size(); i++) {
-					QString const &s = list[i];
-					path = misc::joinWithSlash(path, s);
-					for (LookupTable const &map : path_to_id_map) {
-						auto it = map.find_path(path);
-						if (it != map.end_path()) {
-							QString id = it->second;
-							parse_tree(g, path, id, &dirset, &path_to_id_map);
+			for (Git::FileStatus const &s : stats) {
+				auto DoIt = [&](QString const &file){
+					QStringList list = file.split('/');
+					QString path;
+					for (int i = 0; i + 1 < list.size(); i++) {
+						QString const &s = list[i];
+						path = misc::joinWithSlash(path, s);
+						for (LookupTable const &map : path_to_id_map) {
+							checkInterrupted();
+							auto it = map.find_path(path);
+							if (it != map.end_path()) {
+								QString id = it->second;
+								parse_tree(g, path, id, &dirset, &path_to_id_map);
+							}
 						}
 					}
-				}
-			};
-			DoIt(s.path1());
-//			if (s.code() == Git::FileStatusCode::RenamedInIndex) {
-//				DoIt(s.path2());
-//			}
-		}
+				};
+				DoIt(s.path1());
+			}
 
-//		file_into_map(stats, &diffmaplist, &diffs);
-		for (Git::FileStatus const &st : stats) {
-			for (LookupTable const &map : path_to_id_map) {
-				auto it = map.find_path(st.path1());
-				if (it != map.end_path()) {
-					Git::Diff item;
-					item.blob.a.id = it->second;
-					item.blob.b.id = PATH_PREFIX + st.path1();
-					item.path = st.path1();
-					if (st.code() == Git::FileStatusCode::RenamedInIndex) {
-						item.blob.b.id = PATH_PREFIX + st.path2();
-						item.path = st.path2();
-					} //@
-					AddItem(&item, &diffs);
-					break;
+			for (Git::FileStatus const &st : stats) {
+				for (LookupTable const &map : path_to_id_map) {
+					checkInterrupted();
+					auto it = map.find_path(st.path1());
+					if (it != map.end_path()) {
+						Git::Diff item;
+						item.blob.a.id = it->second;
+						item.blob.b.id = PATH_PREFIX + st.path1();
+						item.path = st.path1();
+						if (st.code() == Git::FileStatusCode::RenamedInIndex) {
+							item.blob.b.id = PATH_PREFIX + st.path2();
+							item.path = st.path2();
+						}
+						AddItem(&item, &diffs);
+						break;
+					}
 				}
 			}
+
+		} else {
+
+			CommitList newcommit;
+			newcommit.parseCommit(g, id, false);
+
+			MapList diffmaplist;
+			MakeDiffMapList(g, newcommit.parents, &diffmaplist);
+
+			commit_into_map(g, QString(), newcommit, &diffmaplist);
 		}
 
-	} else {
+		std::sort(diffs.begin(), diffs.end(), [](Git::Diff const &left, Git::Diff const &right){
+			return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
+		});
 
-		CommitList newcommit;
-		newcommit.parseCommit(g, id, false);
-
-//		newcommit.dump_();
-
-		MapList diffmaplist;
-		MakeDiffMapList(g, newcommit.parents, &diffmaplist);
-
-		commit_into_map(g, QString(), newcommit, &diffmaplist, &diffs);
+		*out = std::move(diffs);
+	} catch (Interrupted &) {
+		out->clear();
 	}
 
-	*out = std::move(diffs);
-
-	std::sort(out->begin(), out->end(), [](Git::Diff const &left, Git::Diff const &right){
-		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
-	});
 }
 

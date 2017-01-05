@@ -36,6 +36,7 @@
 #include <set>
 #include <QProcess>
 #include <QDirIterator>
+#include <qthread.h>
 
 
 
@@ -97,7 +98,11 @@ struct MainWindow::Private {
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
 	Git::Branch current_branch;
-	QList<Git::Diff> diffs;
+	struct Diff {
+		QMutex mutex;
+		QList<Git::Diff> result;
+		std::shared_ptr<QThread> thread;
+	} diff;
 	std::map<QString, Git::Diff> diff_cache;
 	QStringList added;
 	Git::CommitItemList logs;
@@ -478,7 +483,7 @@ void MainWindow::updateHeadFilesList(bool single)
 
 	updateFilesList(QString(), "HEAD", single);
 
-	pv->uncommited_changes = !pv->diffs.empty();
+	pv->uncommited_changes = !pv->diff.result.empty();
 }
 
 void MainWindow::showFileList(bool single)
@@ -509,11 +514,48 @@ void MainWindow::clearRepositoryInfo()
 	ui->label_branch_name->setText(QString());
 }
 
+class DiffThread : public QThread {
+private:
+	struct Data {
+		GitPtr g;
+		QString id;
+		QList<Git::Diff> *out;
+	} d;
+public:
+	DiffThread(GitPtr g, QString const &id, QList<Git::Diff> *out)
+	{
+		d.g = g;
+		d.id = id;
+		d.out = out;
+	}
+	void run()
+	{
+		GitDiff dm;
+		dm.diff(d.g, d.id, d.out);
+	}
+	void interrupt()
+	{
+		requestInterruption();
+	}
+};
+
 void MainWindow::makeDiff(GitPtr g, QString const &id, QList<Git::Diff> *out)
 {
 	Q_ASSERT(g);
+#if 0
 	GitDiff dm;
 	dm.diff(g, id, out);
+#else
+	if (pv->diff.thread) {
+		pv->diff.thread->requestInterruption();
+		pv->diff.thread->wait(500);
+		pv->diff.thread.reset();
+	}
+	DiffThread *th = new DiffThread(g->dup(), id, out);
+	pv->diff.thread = std::shared_ptr<QThread>(th);
+	th->start();
+	th->wait();
+#endif
 }
 
 void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, bool singlelist)
@@ -524,13 +566,13 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 	clearFileList();
 	if (!singlelist) showFileList(false);
 
-	makeDiff(g, new_id, &pv->diffs);
+	makeDiff(g, new_id, &pv->diff.result);
 
 	if (old_id.isEmpty() || new_id.isEmpty()) {
 		std::map<QString, int> diffmap;
 
-		for (int idiff = 0; idiff < pv->diffs.size(); idiff++) {
-			Git::Diff const &diff = pv->diffs[idiff];
+		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
+			Git::Diff const &diff = pv->diff.result[idiff];
 			QString filename = diff.path;
 			if (!filename.isEmpty()) {
 				diffmap[filename] = idiff;
@@ -574,8 +616,8 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 			AddItem(header, idiff, filename);
 		}
 	} else {
-		for (int idiff = 0; idiff < pv->diffs.size(); idiff++) {
-			Git::Diff const &diff = pv->diffs[idiff];
+		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
+			Git::Diff const &diff = pv->diff.result[idiff];
 
 			QString header;
 			if (!diff.blob.a.id.isEmpty()) {
@@ -598,7 +640,7 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 		}
 	}
 
-	for (Git::Diff const &diff : pv->diffs) {
+	for (Git::Diff const &diff : pv->diff.result) {
 		QString key = GitDiff::makeKey(diff.blob);
 		pv->diff_cache[key] = diff;
 	}
@@ -1651,8 +1693,8 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 
 	clearDiff();
 	int idiff = indexOfDiff(item);
-	if (idiff >= 0 && idiff < pv->diffs.size()) {
-		QString key = GitDiff::makeKey(pv->diffs[idiff].blob);
+	if (idiff >= 0 && idiff < pv->diff.result.size()) {
+		QString key = GitDiff::makeKey(pv->diff.result[idiff].blob);
 		auto it = pv->diff_cache.find(key);
 		if (it != pv->diff_cache.end()) {
 			Git::Diff diff;
@@ -2204,6 +2246,7 @@ void MainWindow::updateVerticalScrollBar()
 	sb->setRange(0, 0);
 	sb->setPageStep(0);
 }
+
 
 QString MainWindow::formatLine(QString const &text, bool diffmode)
 {

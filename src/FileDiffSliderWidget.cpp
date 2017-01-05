@@ -35,9 +35,8 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 	pr.drawPixmap(w + 4, 0, right_pixmap);
 
 	int y = scroll_value * height() / scroll_total;
-	int h = (scroll_value + scroll_visible_size) * height() / scroll_total;
-	h -= y;
-	if (h < 1) h = 1;
+	int h = scroll_visible_size * height() / scroll_total;
+	if (h < 2) h = 2;
 	pr.fillRect(w + 1, y, 2, h, Qt::black);
 }
 
