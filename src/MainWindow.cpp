@@ -98,6 +98,7 @@ struct MainWindow::Private {
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
 	Git::Branch current_branch;
+	QString selected_file_id;
 	struct Diff {
 		QMutex mutex;
 		QList<Git::Diff> result;
@@ -475,20 +476,17 @@ void MainWindow::updateRepositoriesList()
 	}
 }
 
-
-void MainWindow::updateHeadFilesList(bool single)
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	updateFilesList(QString(), "HEAD", single);
-
-	pv->uncommited_changes = !pv->diff.result.empty();
-}
-
 void MainWindow::showFileList(bool single)
 {
 	ui->stackedWidget->setCurrentWidget(single ? ui->page_1 : ui->page_2);
+}
+
+void MainWindow::clearLog()
+{
+	pv->logs.clear();
+	pv->uncommited_changes = false;
+	ui->tableWidget_log->clearContents();
+	ui->tableWidget_log->scrollToTop();
 }
 
 void MainWindow::clearFileList()
@@ -499,12 +497,12 @@ void MainWindow::clearFileList()
 	ui->listWidget_files->clear();
 }
 
-void MainWindow::clearLog()
+void MainWindow::clearDiffView()
 {
-	pv->logs.clear();
-	pv->uncommited_changes = false;
-	ui->tableWidget_log->clearContents();
-	ui->tableWidget_log->scrollToTop();
+	*diffdata() = DiffWidgetData::DiffData();
+	ui->widget_diff_pixmap->clear(false);
+	ui->widget_diff_left->clear(ViewType::Left);
+	ui->widget_diff_right->clear(ViewType::Right);
 }
 
 void MainWindow::clearRepositoryInfo()
@@ -519,103 +517,155 @@ private:
 	struct Data {
 		GitPtr g;
 		QString id;
-		QList<Git::Diff> *out;
+		QList<Git::Diff> result;
 	} d;
 public:
-	DiffThread(GitPtr g, QString const &id, QList<Git::Diff> *out)
+	DiffThread(GitPtr g, QString const &id)
 	{
 		d.g = g;
 		d.id = id;
-		d.out = out;
 	}
 	void run()
 	{
 		GitDiff dm;
-		dm.diff(d.g, d.id, d.out);
+		dm.diff(d.g, d.id, &d.result);
 	}
 	void interrupt()
 	{
 		requestInterruption();
 	}
+	QString id() const
+	{
+		return d.id;
+	}
+	void take(QList<Git::Diff> *out)
+	{
+		*out = std::move(d.result);
+	}
 };
 
-void MainWindow::makeDiff(GitPtr g, QString const &id, QList<Git::Diff> *out)
+void MainWindow::stopDiff(bool wait, bool lock)
 {
-	Q_ASSERT(g);
+	if (lock) {
+		QMutexLocker lock(&pv->diff.mutex);
+		stopDiff(wait, false);
+		return;
+	}
+	if (pv->diff.thread) {
+		pv->diff.thread->requestInterruption();
+		if (wait) {
+			pv->diff.thread->wait();
+			pv->diff.thread.reset();
+		}
+	}
+}
+
+void MainWindow::startDiff(GitPtr g, QString const &id, bool lock)
+{
+	if (!isValidWorkingCopy(g)) return;
+
+	if (lock) {
+		QMutexLocker lock(&pv->diff.mutex);
+		startDiff(g, id, false);
+		return;
+	}
+	stopDiff(true, false);
+	DiffThread *th = new DiffThread(g->dup(), id);
+	pv->diff.thread = std::shared_ptr<QThread>(th);
+	th->start();
+}
+
+bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
+{
 #if 0
 	GitDiff dm;
 	dm.diff(g, id, out);
 #else
+	QMutexLocker lock(&pv->diff.mutex);
 	if (pv->diff.thread) {
-		pv->diff.thread->requestInterruption();
-		pv->diff.thread->wait(500);
-		pv->diff.thread.reset();
+		DiffThread *th = dynamic_cast<DiffThread *>(pv->diff.thread.get());
+		Q_ASSERT(th);
+		if (id == th->id() && !th->isInterruptionRequested()) {
+			th->wait();
+			th->take(out);
+			return true; // success
+		}
 	}
-	DiffThread *th = new DiffThread(g->dup(), id, out);
-	pv->diff.thread = std::shared_ptr<QThread>(th);
-	th->start();
-	th->wait();
+	return false;
 #endif
 }
 
-void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, bool singlelist)
+void MainWindow::updateFilesList(QString const &id, bool singlelist)
 {
+	Q_ASSERT(!id.isEmpty());
+
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
 	clearFileList();
-	if (!singlelist) showFileList(false);
 
-	makeDiff(g, new_id, &pv->diff.result);
+	if (!makeDiff(id, &pv->diff.result)) {
+		qDebug() << "failed to make diff";
+		return;
+	}
 
-	if (old_id.isEmpty() || new_id.isEmpty()) {
-		std::map<QString, int> diffmap;
-
-		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
-			Git::Diff const &diff = pv->diff.result[idiff];
-			QString filename = diff.path;
-			if (!filename.isEmpty()) {
-				diffmap[filename] = idiff;
-			}
-		}
-
-		Git::FileStatusList stats = g->status();
-		for (Git::FileStatus const &s : stats) {
-			if (s.code() == Git::FileStatusCode::Unknown) {
-				qDebug() << "something wrong...";
-				continue;
-			}
-			auto AddItem = [&](QString const &prefix, int idiff, QString const &filename){
-				QListWidgetItem *item = new QListWidgetItem(prefix + filename);
-				item->setData(FilePathRole, filename);
-				item->setData(DiffIndexRole, idiff);
-				item->setData(HunkIndexRole, -1);
-				if (s.isStaged() && s.code_y() == ' ') {
-					ui->listWidget_staged->addItem(item);
-				} else {
-					(singlelist ? ui->listWidget_files : ui->listWidget_unstaged)->addItem(item);
-				}
-			};
-			int idiff = -1;
-			QString header;
-			QString filename = s.path1();
-			if (s.code_x() == 'D' || s.code_y() == 'D') {
-				header = "(del) ";
-			} else {
-				auto it = diffmap.find(s.path1());
-				if (it != diffmap.end()) {
-					header = "(chg) ";
-					idiff = it->second;
-				} else if (s.code_x() == 'R') {
-					header = "(ren) ";
-					filename = s.path2();
-				} else {
-					header = "(??\?) "; // damn trigraph
-				}
-			}
-			AddItem(header, idiff, filename);
-		}
+	if (id == "HEAD") {
+		pv->uncommited_changes = !pv->diff.result.empty();
+		showFileList(!isThereUncommitedChanges());
 	} else {
+		showFileList(true);
+	}
+
+//	if (new_id.isEmpty()) {
+//		qDebug() << "id is empty";
+//		std::map<QString, int> diffmap;
+
+//		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
+//			Git::Diff const &diff = pv->diff.result[idiff];
+//			QString filename = diff.path;
+//			if (!filename.isEmpty()) {
+//				diffmap[filename] = idiff;
+//			}
+//		}
+
+//		Git::FileStatusList stats = g->status();
+//		for (Git::FileStatus const &s : stats) {
+//			if (s.code() == Git::FileStatusCode::Unknown) {
+//				qDebug() << "something wrong...";
+//				continue;
+//			}
+//			auto AddItem = [&](QString const &prefix, int idiff, QString const &filename){
+//				QListWidgetItem *item = new QListWidgetItem(prefix + filename);
+//				item->setData(FilePathRole, filename);
+//				item->setData(DiffIndexRole, idiff);
+//				item->setData(HunkIndexRole, -1);
+//				if (s.isStaged() && s.code_y() == ' ') {
+//					ui->listWidget_staged->addItem(item);
+//				} else {
+//					(singlelist ? ui->listWidget_files : ui->listWidget_unstaged)->addItem(item);
+//				}
+//			};
+//			int idiff = -1;
+//			QString header;
+//			QString filename = s.path1();
+//			if (s.code_x() == 'D' || s.code_y() == 'D') {
+//				header = "(del) ";
+//			} else {
+//				auto it = diffmap.find(s.path1());
+//				if (it != diffmap.end()) {
+//					header = "(chg) ";
+//					idiff = it->second;
+//				} else if (s.code_x() == 'R') {
+//					header = "(ren) ";
+//					filename = s.path2();
+//				} else {
+//					header = "(??\?) "; // damn trigraph
+//				}
+//			}
+//			AddItem(header, idiff, filename);
+//		}
+//	} else
+	{
 		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
 			Git::Diff const &diff = pv->diff.result[idiff];
 
@@ -645,6 +695,21 @@ void MainWindow::updateFilesList(QString const &old_id, QString const &new_id, b
 		pv->diff_cache[key] = diff;
 	}
 }
+
+void MainWindow::updateHeadFilesList(bool single)
+{
+	qDebug() << Q_FUNC_INFO;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+//	updateFilesList("HEAD", single);
+	pv->selected_file_id = "HEAD";
+	startDiff(g, pv->selected_file_id, true);
+
+//	if (!single) showFileList(false);
+}
+
 
 void MainWindow::prepareLogTableWidget()
 {
@@ -733,6 +798,7 @@ void MainWindow::openRepository(bool waitcursor)
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		updateHeadFilesList(true);
+		updateFilesList("HEAD", false);
 
 		// ログを取得
 		pv->logs = g->log(limitLogCount(), limitLogTime());
@@ -1267,11 +1333,31 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
+	stopDiff(false, true);
+
+	clearFileList();
+//	ui->widget_diff_pixmap->clear(false);
+//	ui->listWidget_unstaged->clear();
+//	ui->listWidget_staged->clear();
+//	ui->listWidget_files->clear();
+
+	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
+	if (!item) return;
+	int row = item->data(IndexRole).toInt();
+	int logs = (int)pv->logs.size();
+	if (row < logs) {
+		if (Git::isUncommited(pv->logs[row])) {
+			updateHeadFilesList(false);
+		} else {
+			GitPtr g = git();
+			if (isValidWorkingCopy(g)) {
+				pv->selected_file_id = pv->logs[row].commit_id;
+				startDiff(g, pv->selected_file_id, true);
+			}
+		}
+	}
+
 	pv->update_files_list_counter = 200;
-	ui->widget_diff_pixmap->clear(false);
-	ui->listWidget_unstaged->clear();
-	ui->listWidget_staged->clear();
-	ui->listWidget_files->clear();
 }
 
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
@@ -1674,24 +1760,29 @@ void MainWindow::doUpdateFilesList()
 	int logs = (int)pv->logs.size();
 	if (row < logs) {
 		if (Git::isUncommited(pv->logs[row])) {
-			updateHeadFilesList(false);
+//			updateHeadFilesList(false);
+			updateFilesList("HEAD", false);
 		} else {
-			QString newer = pv->logs[row].commit_id;
-			QString older;
-			if (pv->logs[row].parent_ids.size() > 0) {
-				older = pv->logs[row].parent_ids[0];
-			}
-			updateFilesList(older, newer, true);
+			QString id = pv->logs[row].commit_id;
+//			QString older;
+//			if (pv->logs[row].parent_ids.size() > 0) {
+//				older = pv->logs[row].parent_ids[0];
+//			}
+			updateFilesList(id, true);
 		}
 	}
 }
 
-void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
+
+
+void MainWindow::updateDiffView(QListWidgetItem *item)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	clearDiff();
+	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
+
+	clearDiffView();
 	int idiff = indexOfDiff(item);
 	if (idiff >= 0 && idiff < pv->diff.result.size()) {
 		QString key = GitDiff::makeKey(pv->diff.result[idiff].blob);
@@ -1721,20 +1812,14 @@ void MainWindow::changeLog(QListWidgetItem *item, bool uncommited)
 	}
 }
 
-void MainWindow::updateFileCurrentItem_(QListWidgetItem *item)
-{
-	bool uncommited = isThereUncommitedChanges() && ui->tableWidget_log->currentRow() == 0;
-	changeLog(item, uncommited);
-}
-
 void MainWindow::updateUnstagedFileCurrentItem()
 {
-	updateFileCurrentItem_(ui->listWidget_unstaged->currentItem());
+	updateDiffView(ui->listWidget_unstaged->currentItem());
 }
 
 void MainWindow::updateStagedFileCurrentItem()
 {
-	updateFileCurrentItem_(ui->listWidget_staged->currentItem());
+	updateDiffView(ui->listWidget_staged->currentItem());
 }
 
 void MainWindow::on_listWidget_unstaged_currentRowChanged(int /*currentRow*/)
@@ -1749,7 +1834,7 @@ void MainWindow::on_listWidget_staged_currentRowChanged(int /*currentRow*/)
 
 void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 {
-	updateFileCurrentItem_(ui->listWidget_files->currentItem());
+	updateDiffView(ui->listWidget_files->currentItem());
 }
 
 void MainWindow::setGitCommand(QString const &path, bool save)
@@ -2317,17 +2402,9 @@ void MainWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLin
 	ui->widget_diff_right->update(ViewType::Right);
 }
 
-
-void MainWindow::clearDiff()
-{
-	*diffdata() = DiffWidgetData::DiffData();
-	ui->widget_diff_left->clear(ViewType::Left);
-	ui->widget_diff_right->clear(ViewType::Right);
-}
-
 void MainWindow::init_diff_data_(Git::Diff const &diff)
 {
-	clearDiff();
+	clearDiffView();
 	diffdata()->path = diff.path;
 	diffdata()->left = diff.blob.a;
 	diffdata()->right = diff.blob.b;

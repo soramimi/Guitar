@@ -154,7 +154,7 @@ private slots:
 private:
 	Ui::MainWindow *ui;
 
-	void updateFilesList(QString const &old_id, QString const &new_id, bool singlelist);
+	void updateFilesList(QString const &new_id, bool singlelist);
 	void updateHeadFilesList(bool single);
 	void updateRepositoriesList();
 	QString getBookmarksFilePath() const;
@@ -174,18 +174,23 @@ private:
 	void for_each_selected_unstaged_files(std::function<void (const QString &)> fn);
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
-	void changeLog(QListWidgetItem *item, bool uncommited);
 	void doUpdateFilesList();
 	void updateSliderCursor();
 	void checkGitCommand();
 	void showFileList(bool signle);
-	void clearFileList();
+
 	void clearLog();
+	void clearFileList();
+	void clearDiffView();
 	void clearRepositoryInfo();
+
 	int repositoryIndex_(QTreeWidgetItem *item);
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
-	void makeDiff(GitPtr g, const QString &id, QList<Git::Diff> *out);
+	void stopDiff(bool wait, bool lock);
+	void startDiff(GitPtr g, const QString &id, bool lock);
+	bool makeDiff(const QString &id, QList<Git::Diff> *out);
+
 	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();
@@ -209,7 +214,6 @@ private:
 	DiffWidgetData::DiffData const *diffdata() const;
 	DiffWidgetData::DrawData *drawdata();
 	DiffWidgetData::DrawData const *drawdata() const;
-	void clearDiff();
 	void updateVerticalScrollBar();
 	QString formatLine(const QString &text, bool diffmode);
 	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
@@ -227,7 +231,7 @@ private:
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, QString path, std::function<void(const QString &)> callback);
-	void updateFileCurrentItem_(QListWidgetItem *item);
+	void updateDiffView(QListWidgetItem *item);
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
 public:
