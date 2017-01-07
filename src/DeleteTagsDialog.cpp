@@ -36,3 +36,12 @@ QStringList DeleteTagsDialog::selectedTags() const
 	}
 	return tags;
 }
+
+void DeleteTagsDialog::on_pushButton_check_all_clicked()
+{
+	int n = ui->listWidget_tags->count();
+	for (int i = 0; i < n; i++) {
+		auto item = ui->listWidget_tags->item(i);
+		item->setCheckState(Qt::Checked);
+	}
+}

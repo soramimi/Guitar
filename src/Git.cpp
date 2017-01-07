@@ -220,10 +220,10 @@ QList<Git::Tag> Git::tags()
 	return list;
 }
 
-void Git::tag(const QString &name)
+void Git::tag(const QString &name, const QString &id)
 {
-	QString cmd = "tag \"%1\"";
-	cmd = cmd.arg(name);
+	QString cmd = "tag \"%1\" %2";
+	cmd = cmd.arg(name).arg(id);
 	git(cmd);
 }
 

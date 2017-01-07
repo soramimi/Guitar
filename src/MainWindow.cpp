@@ -134,7 +134,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
-	showFileList(true);
+	showFileList(FilesListType::SingleList);
 
 	pv->digits.load(":/image/digits.png");
 	pv->graph_color.load(":/image/graphcolor.png");
@@ -319,7 +319,6 @@ bool MainWindow::isThereUncommitedChanges() const
 	return pv->uncommited_changes;
 }
 
-
 Git::CommitItemList const *MainWindow::logs() const
 {
 	return &pv->logs;
@@ -476,9 +475,16 @@ void MainWindow::updateRepositoriesList()
 	}
 }
 
-void MainWindow::showFileList(bool single)
+void MainWindow::showFileList(FilesListType files_list_type)
 {
-	ui->stackedWidget->setCurrentWidget(single ? ui->page_1 : ui->page_2);
+	switch (files_list_type) {
+	case FilesListType::SingleList:
+		ui->stackedWidget->setCurrentWidget(ui->page_1);
+		break;
+	case FilesListType::SideBySide:
+		ui->stackedWidget->setCurrentWidget(ui->page_2);
+		break;
+	}
 }
 
 void MainWindow::clearLog()
@@ -491,7 +497,7 @@ void MainWindow::clearLog()
 
 void MainWindow::clearFileList()
 {
-	showFileList(true);
+	showFileList(FilesListType::SingleList);
 	ui->listWidget_unstaged->clear();
 	ui->listWidget_staged->clear();
 	ui->listWidget_files->clear();
@@ -625,12 +631,36 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 		return;
 	}
 
+	FilesListType listtype = FilesListType::SingleList;
 	if (id == Git::HEAD()) {
 		pv->uncommited_changes = !pv->diff.result.empty();
-		showFileList(!isThereUncommitedChanges());
-	} else {
-		showFileList(true);
+		if (isThereUncommitedChanges()) {
+			listtype = FilesListType::SideBySide;
+		}
 	}
+	showFileList(listtype);
+
+	auto AddItem = [&](QString const &filename, QString header, int idiff, bool staged){
+		if (header.isEmpty()) {
+			header = "(??\?) "; // damn trigraph
+		}
+		QListWidgetItem *item = new QListWidgetItem(header + filename);
+		item->setData(FilePathRole, filename);
+		item->setData(DiffIndexRole, idiff);
+		item->setData(HunkIndexRole, -1);
+		switch (files_list_type) {
+		case FilesListType::SingleList:
+			ui->listWidget_files->addItem(item);
+			break;
+		case FilesListType::SideBySide:
+			if (staged) {
+				ui->listWidget_staged->addItem(item);
+			} else {
+				ui->listWidget_unstaged->addItem(item);
+			}
+			break;
+		}
+	};
 
 	if (id == Git::HEAD()) {
 		std::map<QString, int> diffmap;
@@ -645,48 +675,25 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 
 		Git::FileStatusList stats = g->status();
 		for (Git::FileStatus const &s : stats) {
-			if (s.code() == Git::FileStatusCode::Unknown) {
-				qDebug() << "something wrong...";
-				continue;
-			}
-			auto AddItem = [&](QString const &prefix, int idiff){
-				QString filename = s.path1();
-				QListWidgetItem *item = new QListWidgetItem(prefix + filename);
-				item->setData(FilePathRole, filename);
-				item->setData(DiffIndexRole, idiff);
-				item->setData(HunkIndexRole, -1);
-				if (s.isStaged() && s.code_y() == ' ') {
-					ui->listWidget_staged->addItem(item);
-				} else {
-					switch (files_list_type) {
-					case FilesListType::SingleList:
-						ui->listWidget_files->addItem(item);
-						break;
-					case FilesListType::SideBySide:
-						ui->listWidget_unstaged->addItem(item);
-						break;
-					}
-				}
-			};
+			bool staged = (s.isStaged() && s.code_y() == ' ');
 			int idiff = -1;
 			QString header;
-			if (s.code_x() == 'D' || s.code_y() == 'D') {
+			if (s.code() == Git::FileStatusCode::Unknown) {
+				qDebug() << "something wrong...";
+			} else if (s.code_x() == 'D' || s.code_y() == 'D') {
 				header = "(del) ";
 			} else {
 				auto it = diffmap.find(s.path1());
 				if (it != diffmap.end()) {
 					header = "(chg) ";
 					idiff = it->second;
-				} else {
-					header = "(??\?) "; // damn trigraph
 				}
 			}
-			AddItem(header, idiff);
+			AddItem(s.path1(), header, idiff, staged);
 		}
 	} else {
 		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
 			Git::Diff const &diff = pv->diff.result[idiff];
-
 			QString header;
 			if (!diff.blob.a.id.isEmpty()) {
 				if (!diff.blob.b.id.isEmpty()) {
@@ -696,26 +703,10 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 				}
 			} else if (!diff.blob.b.id.isEmpty()) {
 				header = "(add) ";
-			} else {
-				header = "(??\?) "; // damn trigraph
 			}
-
-			QListWidgetItem *item = new QListWidgetItem(header + diff.path);
-			item->setData(FilePathRole, diff.path);
-			item->setData(DiffIndexRole, idiff);
-			item->setData(HunkIndexRole, -1);
-
-			switch (files_list_type) {
-			case FilesListType::SingleList:
-				ui->listWidget_files->addItem(item);
-				break;
-			case FilesListType::SideBySide:
-				ui->listWidget_unstaged->addItem(item);
-				break;
-			}
+			AddItem(diff.path, header, idiff, false);
 		}
 	}
-
 
 	for (Git::Diff const &diff : pv->diff.result) {
 		QString key = GitDiff::makeKey(diff.blob);
@@ -723,7 +714,7 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 	}
 }
 
-void MainWindow::doUpdateFilesList()
+void MainWindow::updateCurrentFilesList()
 {
 	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
 	if (!item) return;
@@ -746,9 +737,9 @@ void MainWindow::updateHeadFilesList(bool wait)
 
 	QString id = Git::HEAD();
 
-	startDiff(g, id);
+	startDiff(g, id); // diffスレッドを開始
 
-	if (wait) doUpdateFilesList();
+	if (wait) updateCurrentFilesList(); // スレッド終了を待ってリストを更新
 }
 
 void MainWindow::prepareLogTableWidget()
@@ -822,20 +813,12 @@ void MainWindow::queryTags(GitPtr g)
 	}
 }
 
-void MainWindow::openRepository(bool waitcursor)
+void MainWindow::openRepository_(GitPtr g)
 {
-	if (waitcursor) {
-		OverrideWaitCursor;
-		openRepository(false);
-		return;
-	}
-
 	clearLog();
 	clearRepositoryInfo();
 
-	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-//		updateHeadFilesList(true);
 		startDiff(g, Git::HEAD());
 		updateFilesList(Git::HEAD(), FilesListType::SideBySide);
 
@@ -971,6 +954,27 @@ void MainWindow::openRepository(bool waitcursor)
 	udpateButton();
 }
 
+void MainWindow::openRepository(bool waitcursor)
+{
+	if (waitcursor) {
+		OverrideWaitCursor;
+		openRepository(false);
+		return;
+	}
+
+	GitPtr g = git();
+	openRepository_(g);
+}
+
+void MainWindow::reopenRepository(std::function<void(GitPtr g)> callback)
+{
+	OverrideWaitCursor;
+	GitPtr g = git();
+	callback(g);
+	openRepository_(g);
+}
+
+
 void MainWindow::udpateButton()
 {
 	Git::Branch b = currentBranch();
@@ -1098,35 +1102,23 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	OverrideWaitCursor;
-
-	g->fetch();
-	openRepository(false);
+	reopenRepository([](GitPtr g){
+		g->fetch();
+	});
 }
 
 void MainWindow::on_action_push_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	OverrideWaitCursor;
-
-	g->push();
-	openRepository(false);
+	reopenRepository([](GitPtr g){
+		g->push();
+	});
 }
 
 void MainWindow::on_action_pull_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	OverrideWaitCursor;
-
-	g->pull();
-	openRepository(false);
+	reopenRepository([](GitPtr g){
+		g->pull();
+	});
 }
 
 void MainWindow::on_toolButton_push_clicked()
@@ -1964,7 +1956,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 			pv->update_files_list_counter -= pv->timer_interval_ms;
 		} else {
 			pv->update_files_list_counter = 0;
-			doUpdateFilesList();
+			updateCurrentFilesList();
 		}
 	}
 }
@@ -2175,11 +2167,11 @@ void MainWindow::deleteTags(QStringList const &tagnames)
 	if (!isValidWorkingCopy(g)) return;
 
 	if (!tagnames.isEmpty()) {
-		OverrideWaitCursor;
-		for (QString const &name : tagnames) {
-			g->delete_tag(name, true);
-		}
-		openRepository(false);
+		reopenRepository([&](GitPtr g){
+			for (QString const &name : tagnames) {
+				g->delete_tag(name, true);
+			}
+		});
 	}
 }
 
@@ -2211,6 +2203,29 @@ void MainWindow::deleteSelectedTags()
 	}
 }
 
+void MainWindow::addTag()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QString commit_id;
+
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit && !commit->commit_id.isEmpty()) {
+		commit_id = commit->commit_id;
+	}
+
+	EditTagDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		reopenRepository([&](GitPtr g){
+			g->tag(dlg.text(), commit_id);
+			if (dlg.isPushChecked()) {
+				g->push(true);
+			}
+		});
+	}
+}
+
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	Git::CommitItem const *commit = selectedCommitItem();
@@ -2222,9 +2237,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
 		}
+		QAction *a_add_tag = menu.addAction(tr("Add a tag..."));
 		QAction *a_delete_tags = nullptr;
 		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
-			a_delete_tags = menu.addAction(tr("Delete tags"));
+			a_delete_tags = menu.addAction(tr("Delete tags..."));
 		}
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
@@ -2237,6 +2253,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				commit_amend();
 				return;
 			}
+			if (a == a_add_tag) {
+				addTag();
+				return;
+			}
 			if (a == a_delete_tags) {
 				deleteSelectedTags();
 				return;
@@ -2247,27 +2267,14 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 void MainWindow::on_action_tag_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	EditTagDialog dlg(this);
-	if (dlg.exec() == QDialog::Accepted) {
-		OverrideWaitCursor;
-		g->tag(dlg.text());
-		if (dlg.isPushChecked()) {
-			g->push(true);
-		}
-		openRepository(false);
-	}
+	addTag();
 }
 
 void MainWindow::on_action_tag_push_all_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	OverrideWaitCursor;
-	g->push(true);
+	reopenRepository([&](GitPtr g){
+		g->push(true);
+	});
 }
 
 
@@ -2661,7 +2668,7 @@ void MainWindow::on_action_test_triggered()
 }
 
 QString MainWindow::filetype(QString const &path, bool mime)
-{ // ファイルのmimeタイプを取得する
+{ // ファイルタイプを調べる
 	if (QFileInfo(pv->file_command).isExecutable()) {
 		QString file = pv->file_command;
 		QString mgc;

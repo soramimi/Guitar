@@ -166,7 +166,11 @@ private:
 
 	GitPtr git(const QString &dir);
 	GitPtr git();
+
+	void openRepository_(GitPtr g);
 	void openRepository(bool waitcursor = true);
+	void reopenRepository(std::function<void(GitPtr g)> callback);
+
 	void openSelectedRepository();
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
 	void revertFile(const QStringList &path);
@@ -178,10 +182,10 @@ private:
 	void for_each_selected_unstaged_files(std::function<void (const QString &)> fn);
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
-	void doUpdateFilesList();
+	void updateCurrentFilesList();
 	void updateSliderCursor();
 	void checkGitCommand();
-	void showFileList(bool signle);
+	void showFileList(FilesListType files_list_type);
 
 	void clearLog();
 	void clearFileList();
@@ -239,6 +243,7 @@ private:
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
 	void cleanupDiffThread();
+	void addTag();
 public:
 
 	QString selectGitCommand();

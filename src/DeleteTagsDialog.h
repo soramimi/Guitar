@@ -19,6 +19,9 @@ public:
 
 	QStringList selectedTags() const;
 
+private slots:
+	void on_pushButton_check_all_clicked();
+
 private:
 	Ui::DeleteTagsDialog *ui;
 };
