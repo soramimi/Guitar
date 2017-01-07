@@ -242,7 +242,7 @@ void Git::delete_tag(const QString &name, bool remote)
 
 QString Git::rev_parse_HEAD()
 {
-	return rev_parse("HEAD");
+	return rev_parse(HEAD());
 }
 
 #if USE_LIBGIT2
@@ -257,7 +257,7 @@ QString Git::diffHeadToWorkingDir_()
 
 QString Git::diff_(QString const &old_id, QString const &new_id)
 {
-	if (old_id.isEmpty() && new_id == "HEAD") {
+	if (old_id.isEmpty() && new_id == HEAD()) {
 		return diffHeadToWorkingDir_();
 	} else {
 		std::string dir = workingRepositoryDir().toStdString();

@@ -35,7 +35,7 @@ private:
 	void parse_tree(GitPtr g, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map);
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 public:
-	void diff(GitPtr g, QString id, QList<Git::Diff> *out);
+	bool diff(GitPtr g, QString id, QList<Git::Diff> *out);
 	void interrupt()
 	{
 		interrupted = true;

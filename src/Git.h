@@ -220,10 +220,6 @@ private:
 public:
 	Git(Context const &cx, const QString &repodir);
 	Git(Git &&r) = delete;
-//	{
-//		pv = r.pv;
-//		r.pv = nullptr;
-//	}
 	virtual ~Git();
 	QByteArray result() const;
 	void setGitCommand(const QString &path);
@@ -286,6 +282,12 @@ public:
 	QList<Tag> tags();
 	void tag(const QString &name);
 	void delete_tag(const QString &name, bool remote);
+
+
+	static QString HEAD()
+	{
+		return "HEAD";
+	}
 };
 
 

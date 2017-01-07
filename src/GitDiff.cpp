@@ -323,9 +323,9 @@ void GitDiff::parseDiff(QString const &s, Git::Diff const *ref, Git::Diff *out)
 	}
 }
 
-void GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
+bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 {
-	if (!g) return;
+	if (!g) return false;
 
 	out->clear();
 
@@ -342,7 +342,7 @@ void GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 	};
 
 	try {
-		if (id == "HEAD") {
+		if (id == Git::HEAD()) {
 
 			QString parent = g->rev_parse_HEAD(); // HEADのインデックスを取得
 			QStringList parents;
@@ -411,9 +411,10 @@ void GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 		});
 
 		*out = std::move(diffs);
+		return true;
 	} catch (Interrupted &) {
 		out->clear();
 	}
-
+	return false;
 }
 

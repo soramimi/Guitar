@@ -154,8 +154,12 @@ private slots:
 private:
 	Ui::MainWindow *ui;
 
-	void updateFilesList(QString const &new_id, bool singlelist);
-	void updateHeadFilesList(bool single);
+	enum class FilesListType {
+		SingleList,
+		SideBySide,
+	};
+	void updateFilesList(QString const &new_id, FilesListType files_list_type);
+	void updateHeadFilesList(bool wait);
 	void updateRepositoriesList();
 	QString getBookmarksFilePath() const;
 	bool saveRepositoryBookmarks() const;
@@ -187,8 +191,8 @@ private:
 	int repositoryIndex_(QTreeWidgetItem *item);
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
-	void stopDiff(bool wait, bool lock);
-	void startDiff(GitPtr g, const QString &id, bool lock);
+	void stopDiff();
+	void startDiff(GitPtr g, const QString &id);
 	bool makeDiff(const QString &id, QList<Git::Diff> *out);
 
 	void udpateButton();
@@ -234,6 +238,7 @@ private:
 	void updateDiffView(QListWidgetItem *item);
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
+	void cleanupDiffThread();
 public:
 
 	QString selectGitCommand();
