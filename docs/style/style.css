@@ -17,11 +17,14 @@ pre {
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
+	-o-tab-size: 4;
+	-moz-tab-size: 4;
+	tab-size: 4;
 }
+
 code {
 	font-family: monospace;
 }
-
 
 body {
 	background: #f0f0f0;
