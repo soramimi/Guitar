@@ -82,9 +82,49 @@ pre.bad {
 	<ul>
 	  <li>UPPER_SNAKE_CASE （原則）</li>
 	  <li>UpperCamelCase （時々）</li>
-	</ul>
+    </ul>
   </li>
 </ul>
+<h3>接頭語・接尾語・ハンガリアン記法</h3>
+<p>接頭語やハンガリアン記法は採用しない。</p>
+<h4>クラス名</h4>
+<ul>
+  <li>先頭に特定の文字を付ける様なクラス名にはしない。</li>
+</ul>
+<pre class="bad">class CHoge {
+};</pre>
+<h4>変数名</h4>
+<ul>
+  <li>m_ や g_ の様なものは付けない。</li>
+</ul>
+<pre class="bad">
+class Hoge {
+private:
+    int m_value;
+};
+Hoge g_hoge;</pre>
+<ul>
+  <li>一時的なメンバ変数（将来のリファクタリング対象）</li>
+</ul>
+<pre>class Hoge {
+private:
+	int value_;
+};
+</pre>
+<h4>接頭語</h4>
+<ul>
+  <li>禁止はしないが積極的には使わない。</li>
+</ul>
+<pre>bool fCondition;
+char *pSomething;</pre>
+<h4>接尾語</h4>
+<ul>
+  <li>状況次第、あった方がいいと判断すれば使う。</li>
+</ul>
+<pre>char *dataptr;
+std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
+<h4>絶対厳禁</h4>
+<pre class="bad">char *lpszText;</pre>
 <h2>インデントと空白と改行</h2>
 <ul>
   <li>ハードタブ</li>
