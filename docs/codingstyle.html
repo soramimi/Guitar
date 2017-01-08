@@ -424,11 +424,19 @@ for (Hoge &amp;hoge : hogevec) {
 <ul>
   <li>ヘッダファイルに using namespace を書いてはならない。</li>
   <li>すべてのヘッダファイルをインクルードし終わった後  using namespace を書いても良い。</li>
-  <li>using namespace std; は禁止</li>
+  <li>using namespace std; は禁止。</li>
+  <li>namespaceの波括弧内はインデントしない。</li>
 </ul>
+<pre>namespace ns1 {
+namespace ns2 {
+
+class Hoge {
+};
+
+}} // namespace ns1::ns2</pre>
 <h2>ライブラリ</h2>
 <ul>
-  <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止</li>
+  <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止。</li>
 </ul>
 <!-- #EndEditable -->
 <div id="footer">
