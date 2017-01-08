@@ -6,4 +6,4 @@ GUI Git Client
 * Written in C++
 * Powered by Qt 5
 
-more information : https://soramimi.github.io/Guitar/
+more information : https://soramimi.github.io/Guitar/ (in Japanese)
