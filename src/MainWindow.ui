@@ -668,6 +668,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
           </widget>
          </item>
          <item>
@@ -678,10 +681,17 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
           </widget>
          </item>
          <item>
-          <widget class="FileDiffWidget" name="widget_diff_right" native="true"/>
+          <widget class="FileDiffWidget" name="widget_diff_right" native="true">
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QScrollBar" name="verticalScrollBar">

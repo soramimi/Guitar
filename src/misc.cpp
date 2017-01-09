@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <QPainter>
 #include <QProcess>
 #include <QWidget>
 #include <vector>
@@ -242,3 +243,21 @@ void misc::setFixedSize(QWidget *w)
 	w->setWindowFlags(flags);
 	w->setFixedSize(w->size());
 }
+
+void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, const QColor &color)
+{
+	if (w < 3 || h < 3) {
+		if (w > 0 && h > 0) {
+			pr->fillRect(x, y, w, h, color);
+		}
+	} else {
+		pr->fillRect(x, y, w - 1, 1, color);
+		pr->fillRect(x, y + 1, 1, h -1, color);
+		pr->fillRect(x + w - 1, y, 1, h -1, color);
+		pr->fillRect(x + 1, y + h - 1, w - 1, 1, color);
+	}
+}
+
+
+
+

@@ -1,6 +1,6 @@
 #include "FileDiffSliderWidget.h"
 #include "MainWindow.h"
-
+#include "misc.h"
 #include <QPainter>
 #include <QMouseEvent>
 
@@ -38,6 +38,11 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 	int h = scroll_visible_size * height() / scroll_total;
 	if (h < 2) h = 2;
 	pr.fillRect(w + 1, y, 2, h, Qt::black);
+
+	if (hasFocus()) {
+		QPainter pr(this);
+		misc::drawFrame(&pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
+	}
 }
 
 void FileDiffSliderWidget::resizeEvent(QResizeEvent *)

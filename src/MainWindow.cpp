@@ -133,6 +133,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->treeWidget_repos->installEventFilter(this);
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
+	ui->widget_diff_left->installEventFilter(this);
+	ui->widget_diff_right->installEventFilter(this);
+	ui->widget_diff_pixmap->installEventFilter(this);
 
 	showFileList(FilesListType::SingleList);
 
@@ -1968,18 +1971,26 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-	if (watched == ui->treeWidget_repos) {
-		if (event->type() == QEvent::KeyPress) {
-			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
-			Q_ASSERT(e);
-			int k = e->key();
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+		Q_ASSERT(e);
+		int k = e->key();
+		if (watched == ui->treeWidget_repos) {
 			if (k == Qt::Key_Enter || k == Qt::Key_Return) {
 				openSelectedRepository();
 				return true;
 			}
+		} else if (watched == ui->widget_diff_left || watched == ui->widget_diff_right || watched == ui->widget_diff_pixmap) {
+			switch (k) {
+			case Qt::Key_Up:       ui->verticalScrollBar->triggerAction(QScrollBar::SliderSingleStepSub); return true;
+			case Qt::Key_Down:     ui->verticalScrollBar->triggerAction(QScrollBar::SliderSingleStepAdd); return true;
+			case Qt::Key_PageUp:   ui->verticalScrollBar->triggerAction(QScrollBar::SliderPageStepSub);   return true;
+			case Qt::Key_PageDown: ui->verticalScrollBar->triggerAction(QScrollBar::SliderPageStepAdd);   return true;
+			case Qt::Key_Home:     ui->verticalScrollBar->triggerAction(QScrollBar::SliderToMinimum);     return true;
+			case Qt::Key_End:      ui->verticalScrollBar->triggerAction(QScrollBar::SliderToMaximum);     return true;
+			}
 		}
-	}
-	if (event->type() == QEvent::FocusIn) {
+	} else if (event->type() == QEvent::FocusIn) {
 		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
 		if (watched == ui->listWidget_unstaged) {
 			updateUnstagedFileCurrentItem();

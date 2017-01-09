@@ -178,9 +178,14 @@ void FileDiffWidget::paintEvent(QPaintEvent *)
 {
 	if (mime_type == "image/png") {
 		paintImage();
-		return;
+	} else {
+		paintText();
 	}
-	paintText();
+	if (hasFocus()) {
+		QPainter pr(this);
+		misc::drawFrame(&pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
+		misc::drawFrame(&pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
+	}
 }
 
 void FileDiffWidget::wheelEvent(QWheelEvent *e)
@@ -203,12 +208,17 @@ void FileDiffWidget::resizeEvent(QResizeEvent *)
 	emit resized();
 }
 
-void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
+void FileDiffWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 
-	QPoint pos = QCursor::pos();
+	QPoint pos;
+	if (e->reason() == QContextMenuEvent::Mouse) {
+		pos = QCursor::pos() + QPoint(8, -8);
+	} else {
+		pos = mapToGlobal(QPoint(4, 4));
+	}
 
 	drawdata()->forcus = view_type;
 
@@ -225,7 +235,7 @@ void FileDiffWidget::contextMenuEvent(QContextMenuEvent *)
 	if (!menu.actions().isEmpty()) {
 		drawdata()->forcus = view_type;
 		update(view_type);
-		QAction *a = menu.exec(pos + QPoint(8, -8));
+		QAction *a = menu.exec(pos);
 		if (a) {
 			if (a == a_save_as) {
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);

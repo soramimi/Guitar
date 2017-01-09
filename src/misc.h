@@ -22,6 +22,7 @@ public:
 	static QString joinWithSlash(const QString &left, const QString &right);
 	static int runCommand(QString const &cmd, QByteArray *out);
 	static void setFixedSize(QWidget *w);
+	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor const &color);
 };
 
 class OverrideWaitCursor_ {
