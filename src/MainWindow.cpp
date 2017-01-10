@@ -598,7 +598,7 @@ void MainWindow::startDiff(GitPtr g, QString const &id)
 
 bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 { // diffリストを取得する
-#if 0
+#if 0 // single thread (for debug)
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		GitDiff dm;
@@ -606,7 +606,7 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 			return true;
 		}
 	}
-#else
+#else // multi thread
 	if (pv->diff.thread) {
 		DiffThread *th = dynamic_cast<DiffThread *>(pv->diff.thread.get());
 		Q_ASSERT(th);
@@ -965,14 +965,16 @@ void MainWindow::openRepository(bool waitcursor)
 		return;
 	}
 
-	GitPtr g = git();
+	GitPtr g = git(); // ポインタの有効性チェックはしない（nullptrでも続行）
 	openRepository_(g);
 }
 
 void MainWindow::reopenRepository(std::function<void(GitPtr g)> callback)
 {
-	OverrideWaitCursor;
 	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	OverrideWaitCursor;
 	callback(g);
 	openRepository_(g);
 }
@@ -1782,6 +1784,29 @@ Git::CommitItem const *MainWindow::selectedCommitItem() const
 	return nullptr;
 }
 
+bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
+{
+	out->clear();
+	if (!isValidWorkingCopy(g)) return false;
+
+	QString path_prefix = PATH_PREFIX;
+	if (id.startsWith(path_prefix)) {
+		QString path = g->workingRepositoryDir();
+		path = path / id.mid(path_prefix.size());
+		QFile file(path);
+		if (file.open(QFile::ReadOnly)) {
+			*out = file.readAll();
+			file.close();
+			return true;
+		}
+	} else if (Git::isValidID(id)) {
+		if (g->cat_file(id, out)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void MainWindow::updateDiffView(QListWidgetItem *item)
 {
 	GitPtr g = git();
@@ -1795,20 +1820,24 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 		QString key = GitDiff::makeKey(pv->diff.result[idiff].blob);
 		auto it = pv->diff_cache.find(key);
 		if (it != pv->diff_cache.end()) {
+			Git::Diff const &info = it->second;
 			Git::Diff diff;
-			{
-				Git::Diff const &ref = it->second;
-				QString text = GitDiff::diffFile(g, ref.blob.a.id, ref.blob.b.id);
-				GitDiff::parseDiff(text, &ref, &diff);
+			if (info.blob.a.id.isEmpty()) { // 左が空（新しく追加されたファイル）
+				diff = info;
+			} else {
+				QString text = GitDiff::diffFile(g, info.blob.a.id, info.blob.b.id);
+				GitDiff::parseDiff(text, &info, &diff);
 			}
+
 			QByteArray ba;
 			if (diff.blob.a.id.isEmpty()) {
-				g->cat_file(diff.blob.b.id, &ba);
+				cat_file(g, diff.blob.b.id, &ba);
 				setDataAsNewFile(ba, diff);
 			} else {
-				g->cat_file(diff.blob.a.id, &ba);
+				cat_file(g, diff.blob.a.id, &ba);
 				setTextDiffData(ba, diff, uncommited, currentWorkingCopyDir());
 			}
+
 			ui->verticalScrollBar->setValue(0);
 			updateVerticalScrollBar();
 			ui->widget_diff_pixmap->clear(false);

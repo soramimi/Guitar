@@ -42,7 +42,7 @@ public:
 	}
 public:
 	static QString diffFile(GitPtr g, const QString &a_id, const QString &b_id);
-	static void parseDiff(const QString &s, const Git::Diff *ref, Git::Diff *out);
+	static void parseDiff(const QString &s, const Git::Diff *info, Git::Diff *out);
 	static QString makeKey(const Git::Diff::BLOB_AB &ab);
 };
 

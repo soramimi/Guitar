@@ -11,7 +11,7 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 	flags |= Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	command_file = cmdname;
+	command_name = cmdname;
 	command_file = cmdfile;
 
 	QString text = tr("Please select the '%1' command you want to use.");

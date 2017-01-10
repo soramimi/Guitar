@@ -163,11 +163,6 @@ void FileDiffWidget::paintImage()
 {
 	int w = pixmap.width();
 	int h = pixmap.height();
-//	if (w < 1 || h < 1) {
-//		pixmap.load(file_path);
-//		w = pixmap.width();
-//		h = pixmap.height();
-//	}
 	if (w > 0 && h > 0) {
 		QPainter pr(this);
 		pr.drawPixmap(0, 0, w, h, pixmap);

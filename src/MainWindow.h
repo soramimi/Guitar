@@ -244,6 +244,7 @@ private:
 	void updateStagedFileCurrentItem();
 	void cleanupDiffThread();
 	void addTag();
+	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
 public:
 
 	QString selectGitCommand();

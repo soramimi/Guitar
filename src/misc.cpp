@@ -7,7 +7,7 @@
 
 
 
-QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *begin, size_t len)> tos)
+QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> tos)
 {
 	QStringList list;
 	char const *begin = ba.data();

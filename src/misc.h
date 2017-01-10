@@ -9,7 +9,7 @@
 
 class misc {
 public:
-	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *begin, size_t len)> tos);
+	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> tos);
 	static QStringList splitLines(QString const &text);
 	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out);
 	static void splitLines(const std::string &text, std::vector<std::string> *out);
