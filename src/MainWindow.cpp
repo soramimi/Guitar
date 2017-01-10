@@ -205,8 +205,6 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-
-
 bool MainWindow::saveRepositoryBookmarks() const
 {
 	QString path = getBookmarksFilePath();
@@ -921,9 +919,7 @@ void MainWindow::openRepository_(GitPtr g)
 			{ // tag
 				QList<Git::Tag> list = findTag(commit->commit_id);
 				for (Git::Tag const &t : list) {
-					message += " {t:";
-					message += t.name;
-					message += '}';
+					message += QString(" {t:%1}").arg(t.name);
 				}
 			}
 		}
@@ -986,12 +982,10 @@ void MainWindow::udpateButton()
 
 	int n;
 
-	n = -1;
-	if (b.ahead > 0 && !isThereUncommitedChanges()) n = b.ahead;
+	n = b.ahead > 0 ? b.ahead : -1;
 	ui->toolButton_push->setNumber(n);
 
-	n = -1;
-	if (b.behind > 0 && !isThereUncommitedChanges()) n = b.behind;
+	n = b.behind > 0 ? b.behind : -1;
 	ui->toolButton_pull->setNumber(n);
 }
 
@@ -1301,16 +1295,16 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				});
 				revertFile(paths);
 			} else if (a == a_ignore) {
-				QString text;
+				QString append;
 				for_each_selected_unstaged_files([&](QString const &path){
 					if (path == ".gitignore") {
 						// skip
 					} else {
-						text += path + '\n';
+						append += path + '\n';
 					}
 				});
 				QString gitignore_path = currentWorkingCopyDir() / ".gitignore";
-				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore")) {
+				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", append)) {
 					updateHeadFilesList(true);
 				}
 			} else if (a == a_remove) {
@@ -1431,8 +1425,10 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
 #ifdef Q_OS_WIN
 		QAction *a_open_terminal = menu.addAction(open_commandprompt);
+		(void)open_terminal;
 #else
 		QAction *a_open_terminal = menu.addAction(open_terminal);
+		(void)open_commandprompt;
 #endif
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 		QAction *a_property = menu.addAction(tr("&Property"));
@@ -2010,13 +2006,18 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				return true;
 			}
 		} else if (watched == ui->widget_diff_left || watched == ui->widget_diff_right || watched == ui->widget_diff_pixmap) {
+			QScrollBar::SliderAction act = QScrollBar::SliderNoAction;
 			switch (k) {
-			case Qt::Key_Up:       ui->verticalScrollBar->triggerAction(QScrollBar::SliderSingleStepSub); return true;
-			case Qt::Key_Down:     ui->verticalScrollBar->triggerAction(QScrollBar::SliderSingleStepAdd); return true;
-			case Qt::Key_PageUp:   ui->verticalScrollBar->triggerAction(QScrollBar::SliderPageStepSub);   return true;
-			case Qt::Key_PageDown: ui->verticalScrollBar->triggerAction(QScrollBar::SliderPageStepAdd);   return true;
-			case Qt::Key_Home:     ui->verticalScrollBar->triggerAction(QScrollBar::SliderToMinimum);     return true;
-			case Qt::Key_End:      ui->verticalScrollBar->triggerAction(QScrollBar::SliderToMaximum);     return true;
+			case Qt::Key_Up:       act = QScrollBar::SliderSingleStepSub; break;
+			case Qt::Key_Down:     act = QScrollBar::SliderSingleStepAdd; break;
+			case Qt::Key_PageUp:   act = QScrollBar::SliderPageStepSub;   break;
+			case Qt::Key_PageDown: act = QScrollBar::SliderPageStepAdd;   break;
+			case Qt::Key_Home:     act = QScrollBar::SliderToMinimum;     break;
+			case Qt::Key_End:      act = QScrollBar::SliderToMaximum;     break;
+			}
+			if (act != QScrollBar::SliderNoAction) {
+				ui->verticalScrollBar->triggerAction(act);
+				return true;
 			}
 		}
 	} else if (event->type() == QEvent::FocusIn) {

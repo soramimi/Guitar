@@ -19,7 +19,7 @@ public:
 	QString text() const;
 
 
-	static bool editFile(QWidget *parent, QString path, const QString &title);
+	static bool editFile(QWidget *parent, QString path, const QString &title, const QString &append = QString());
 private:
 	Ui::TextEditDialog *ui;
 

@@ -48,7 +48,7 @@ void TextEditDialog::keyPressEvent(QKeyEvent *event)
 	QDialog::keyPressEvent(event);
 }
 
-bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &title)
+bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &title, QString const &append)
 {
 	QString text;
 
@@ -58,6 +58,13 @@ bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &titl
 	if (file.open(QFile::ReadOnly)) {
 		text += QString::fromUtf8(file.readAll());
 	}
+
+	size_t n = text.size();
+	if (n > 0 && text[n - 1] != '\n') {
+		text += '\n'; // 最後に改行を追加
+	}
+
+	text += append;
 
 	TextEditDialog dlg(parent);
 	dlg.setWindowTitle(title);
