@@ -82,6 +82,7 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 	friend class FileDiffWidget;
 	friend class FileDiffSliderWidget;
+	friend class FileHistoryWindow;
 private:
 
 	struct Private;
@@ -119,8 +120,11 @@ private slots:
 	void on_action_view_refresh_triggered();
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
+
+	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
+
 	void on_listWidget_unstaged_currentRowChanged(int currentRow);
 	void on_listWidget_staged_currentRowChanged(int currentRow);
 	void on_listWidget_files_currentRowChanged(int currentRow);
@@ -150,6 +154,7 @@ private slots:
 
 
 	void onRepositoriesTreeDropped();
+
 
 private:
 	Ui::MainWindow *ui;
@@ -202,8 +207,6 @@ private:
 	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();
-	int limitLogCount() const;
-	QDateTime limitLogTime() const;
 	void queryBranches(GitPtr g);
 	void queryTags(GitPtr g);
 	QList<Git::Branch> findBranch(const QString &id);
@@ -233,6 +236,7 @@ private:
 	int visibleLines() const;
 	void scrollTo(int value);
 	int fileviewHeight() const;
+	static QPixmap makeDiffPixmap_(ViewType side, int width, int height, const DiffWidgetData *dd);
 	QPixmap makeDiffPixmap(ViewType side, int width, int height);
 
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
@@ -245,10 +249,15 @@ private:
 	void cleanupDiffThread();
 	void addTag();
 	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
+	void execFileHistory(QListWidgetItem *item);
+	void execFileHistory(const QString &path);
 public:
 
 	QString selectGitCommand();
 	QString selectFileCommand();
+
+	int limitLogCount() const;
+	QDateTime limitLogTime() const;
 
 	void setFileCommand(const QString &path, bool save);
 	void setGitCommand(const QString &path, bool save);
@@ -270,6 +279,7 @@ public:
 	bool saveAs(const QString &id, const QString &dstpath);
 	QString saveAsTemp(const QString &id);
 	QString filetype(const QString &path, bool mime);
+	QString abbrevCommitID(const Git::CommitItem &commit);
 protected:
 	void resizeEvent(QResizeEvent *);
 

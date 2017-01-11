@@ -385,7 +385,7 @@
        </widget>
        <widget class="QStackedWidget" name="stackedWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="page_2">
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,1">
@@ -626,7 +626,11 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QListWidget" name="listWidget_files"/>
+           <widget class="QListWidget" name="listWidget_files">
+            <property name="contextMenuPolicy">
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>

@@ -12,6 +12,7 @@ class FileDiffWidget : public QWidget
 {
 	Q_OBJECT
 private:
+	DiffWidgetData *diff_widget_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
 	ViewType view_type = ViewType::None;
 	QString mime_type;
@@ -27,9 +28,15 @@ public:
 	explicit FileDiffWidget(QWidget *parent);
 	~FileDiffWidget();
 
+	void imbue_(DiffWidgetData *d)
+	{
+		diff_widget_data = d;
+	}
+
 	void update(ViewType vt);
 
 	void clear(ViewType vt);
+	void updateDrawData_(int top_margin, int bottom_margin);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

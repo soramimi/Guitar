@@ -10,6 +10,8 @@ class FileDiffSliderWidget : public QWidget
 {
 	Q_OBJECT
 private:
+	MainWindow *mainwindow;
+	DiffWidgetData const *diff_widget_data;
 	bool visible = false;
 	int scroll_total;
 	int scroll_value;
@@ -21,6 +23,12 @@ private:
 	void updatePixmap();
 public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
+
+	void imbue_(MainWindow *mw, const DiffWidgetData *diff_widget_data)
+	{
+		this->mainwindow = mw;
+		this->diff_widget_data = diff_widget_data;
+	}
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);

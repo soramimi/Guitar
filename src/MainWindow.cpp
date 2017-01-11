@@ -24,6 +24,7 @@
 #include "RepositoryPropertyDialog.h"
 #include "EditTagDialog.h"
 #include "DeleteTagsDialog.h"
+#include "FileHistoryWindow.h"
 #include <deque>
 #include <QDateTime>
 #include <QDebug>
@@ -36,7 +37,7 @@
 #include <set>
 #include <QProcess>
 #include <QDirIterator>
-#include <qthread.h>
+#include <QThread>
 
 
 
@@ -145,6 +146,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	pv->repository_icon = QIcon(":/image/repository.png");
 	pv->folder_icon = QIcon(":/image/folder.png");
 
+	{ // TODO: あとでなんとかする
+		ui->widget_diff_pixmap->imbue_(this, getDiffWidgetData());
+		ui->widget_diff_left->imbue_(getDiffWidgetData());
+		ui->widget_diff_right->imbue_(getDiffWidgetData());
+	}
+
+
 	prepareLogTableWidget();
 
 #ifdef Q_OS_WIN
@@ -172,16 +180,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #if USE_LIBGIT2
 	LibGit2::init();
-//	LibGit2::test();
+	//	LibGit2::test();
 #endif
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
 	connect(ui->widget_diff_pixmap, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
+	connect(ui->widget_diff_pixmap, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged2(int)));
 	connect(ui->widget_diff_left, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_left, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_right, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
-	connect(ui->widget_diff_pixmap, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged2(int)));
+
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));;
 
 	QString path = getBookmarksFilePath();
@@ -814,6 +823,11 @@ void MainWindow::queryTags(GitPtr g)
 	}
 }
 
+QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
+{
+	return commit.commit_id.mid(0, 7);
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -856,7 +870,7 @@ void MainWindow::openRepository_(GitPtr g)
 		Git::CommitItem const *commit = &pv->logs[index];
 		{
 			QTableWidgetItem *item = new QTableWidgetItem();
-			item->setSizeHint(QSize(100, 20));
+//			item->setSizeHint(QSize(100, 20));
 			item->setData(IndexRole, index);
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
@@ -880,7 +894,7 @@ void MainWindow::openRepository_(GitPtr g)
 			if (Git::isUncommited(*commit)) {
 				bold = true;
 			} else {
-				commit_id = commit->commit_id.mid(0, 7);
+				commit_id = abbrevCommitID(*commit);
 			}
 			datetime = misc::makeDateTimeString(commit->commit_date);
 			author = commit->author;
@@ -1268,6 +1282,45 @@ void MainWindow::for_each_selected_unstaged_files(std::function<void(QString con
 	}
 }
 
+void MainWindow::execFileHistory(QString const &path)
+{
+	if (path.isEmpty()) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	FileHistoryWindow dlg(this, g, path);
+	dlg.exec();
+}
+
+void MainWindow::execFileHistory(QListWidgetItem *item)
+{
+	if (item) {
+		QString path = item->data(FilePathRole).toString();
+		if (!path.isEmpty()) {
+			execFileHistory(path);
+		}
+	}
+}
+
+void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &pos)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QMenu menu;
+	QAction *a_history = menu.addAction("History");
+
+	QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
+	QAction *a = menu.exec(pt);
+	if (a) {
+		if (a == a_history) {
+			QListWidgetItem *item = ui->listWidget_files->currentItem();
+			execFileHistory(item);
+		}
+	}
+}
+
 void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos)
 {
 	GitPtr g = git();
@@ -1280,7 +1333,8 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		QAction *a_revert = menu.addAction("Revert");
 		QAction *a_ignore = menu.addAction("Ignore");
 		QAction *a_remove = menu.addAction("Remove");
-		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos);
+		QAction *a_history = menu.addAction("History");
+		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 		QAction *a = menu.exec(pt);
 		if (a) {
 			if (a == a_stage) {
@@ -1316,6 +1370,9 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					});
 				});
 				updateHeadFilesList(true);
+			} else if (a == a_history) {
+				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
+				execFileHistory(item);
 			}
 		}
 	}
@@ -1333,12 +1390,16 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 		if (QFileInfo(fullpath).isFile()) {
 			QMenu menu;
 			QAction *a_unstage = menu.addAction("Unstage");
-			QPoint pt = ui->listWidget_staged->mapToGlobal(pos);
+			QAction *a_history = menu.addAction("History");
+			QPoint pt = ui->listWidget_staged->mapToGlobal(pos) + QPoint(8, -8);
 			QAction *a = menu.exec(pt);
 			if (a) {
 				if (a == a_unstage) {
 					g->unstage(path);
 					updateHeadFilesList(true);
+				} else if (a == a_history) {
+					QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
+					execFileHistory(item);
 				}
 			}
 		}
@@ -1837,7 +1898,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 			ui->verticalScrollBar->setValue(0);
 			updateVerticalScrollBar();
 			ui->widget_diff_pixmap->clear(false);
-			updateSliderCursor();
+//			updateSliderCursor();
 			ui->widget_diff_pixmap->update();
 			updateSliderCursor();
 		}
@@ -2422,6 +2483,14 @@ QString MainWindow::formatLine(QString const &text, bool diffmode)
 	return QString::fromUtf16(&vec[0], vec.size());
 }
 
+void MainWindow::init_diff_data_(Git::Diff const &diff)
+{
+	clearDiffView();
+	diffdata()->path = diff.path;
+	diffdata()->left = diff.blob.a;
+	diffdata()->right = diff.blob.b;
+}
+
 void MainWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right, bool diffmode)
 {
 	enum Pane {
@@ -2460,14 +2529,6 @@ void MainWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLin
 
 	ui->widget_diff_left->update(ViewType::Left);
 	ui->widget_diff_right->update(ViewType::Right);
-}
-
-void MainWindow::init_diff_data_(Git::Diff const &diff)
-{
-	clearDiffView();
-	diffdata()->path = diff.path;
-	diffdata()->left = diff.blob.a;
-	diffdata()->right = diff.blob.b;
 }
 
 void MainWindow::setDataAsNewFile(QByteArray const &ba, Git::Diff const &diff)
@@ -2622,7 +2683,7 @@ void MainWindow::scrollTo(int value)
 	ui->widget_diff_right->update(ViewType::Right);
 }
 
-QPixmap MainWindow::makeDiffPixmap(ViewType side, int width, int height)
+QPixmap MainWindow::makeDiffPixmap_(ViewType side, int width, int height, DiffWidgetData const *dd)
 {
 	auto MakePixmap = [&](QList<TextDiffLine> const &lines, int w, int h){
 		const int scale = 1;
@@ -2648,26 +2709,31 @@ QPixmap MainWindow::makeDiffPixmap(ViewType side, int width, int height)
 				i = j;
 			}
 		};
-		DiffWidgetData::DrawData const *dd = drawdata();
+//		DiffWidgetData::DrawData const *dd = drawdata();
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Unknown: return dd->bgcolor_gray;
+			case TextDiffLine::Unknown: return dd->drawdata.bgcolor_gray;
 			}
 			return QColor();
 		});
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Add: return dd->bgcolor_add_dark;
-			case TextDiffLine::Del: return dd->bgcolor_del_dark;
+			case TextDiffLine::Add: return dd->drawdata.bgcolor_add_dark;
+			case TextDiffLine::Del: return dd->drawdata.bgcolor_del_dark;
 			}
 			return QColor();
 		});
 		if (scale == 1) return pixmap;
 		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	};
-	if (side == ViewType::Left)  return MakePixmap(diffdata()->left_lines, width, height);
-	if (side == ViewType::Right) return MakePixmap(diffdata()->right_lines, width, height);
+	if (side == ViewType::Left)  return MakePixmap(dd->diffdata.left_lines, width, height);
+	if (side == ViewType::Right) return MakePixmap(dd->diffdata.right_lines, width, height);
 	return QPixmap();
+}
+
+QPixmap MainWindow::makeDiffPixmap(ViewType side, int width, int height)
+{
+	return makeDiffPixmap_(side, width, height, &pv->diff_widget_data);
 }
 
 //
@@ -2697,15 +2763,6 @@ QString MainWindow::newTempFilePath()
 	QString path = tmpdir / tempfileHeader() + QString::number(pv->temp_file_counter);
 	pv->temp_file_counter++;
 	return path;
-}
-
-void MainWindow::on_action_test_triggered()
-{
-	QString path = newTempFilePath();
-	QFile file(path);
-	if (file.open(QFile::WriteOnly)) {
-		file.close();
-	}
 }
 
 QString MainWindow::filetype(QString const &path, bool mime)
@@ -2755,6 +2812,10 @@ QString MainWindow::filetype(QString const &path, bool mime)
 	return QString();
 }
 
+
+void MainWindow::on_action_test_triggered()
+{
+}
 
 
 

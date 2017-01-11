@@ -71,7 +71,8 @@ SOURCES += \
     src/DeleteTagsDialog.cpp \
     src/LegacyWindowsStyleTreeControl.cpp \
     src/RepositoriesTreeWidget.cpp \
-    src/SelectCommandDialog.cpp
+    src/SelectCommandDialog.cpp \
+    src/FileHistoryWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -105,7 +106,8 @@ HEADERS  += \
     src/DeleteTagsDialog.h \
     src/LegacyWindowsStyleTreeControl.h \
     src/RepositoriesTreeWidget.h \
-    src/SelectCommandDialog.h
+    src/SelectCommandDialog.h \
+    src/FileHistoryWindow.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -122,7 +124,8 @@ FORMS    += \
     src/CommitPropertyDialog.ui \
     src/EditTagDialog.ui \
     src/DeleteTagsDialog.ui \
-    src/SelectCommandDialog.ui
+    src/SelectCommandDialog.ui \
+    src/FileHistoryWindow.ui
 
 RESOURCES += \
     resources.qrc

@@ -32,6 +32,7 @@ struct CommitData {
 
 class GitDiff::LookupTable {
 private:
+public:
 	std::map<QString, QString> path_to_id_map;
 	std::map<QString, QString> id_to_path_map;
 public:
@@ -435,3 +436,66 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 	return false;
 }
 
+
+QString GitDiff::findFileID(GitPtr g, const QString &commit_id, const QString &file)
+{
+	GitDiff::CommitList c;
+	c.parseCommit(g, commit_id, false);
+
+	MapList diffmaplist;
+//	std::set<QString> dirset;
+	QStringList list = file.split('/', QString::SkipEmptyParts);
+	QString path;
+	for (int i = 0; i + 1 < list.size(); i++) {
+//		MapList diffmaplist2;
+		QString const &s = list[i];
+		path = misc::joinWithSlash(path, s);
+
+		for (CommitData const &data : c.files) {
+			if (data.type == CommitData::TREE) {
+				std::set<QString> dirset;
+				parse_tree(g, path, data.id, &dirset, &diffmaplist);
+
+			}
+		}
+
+//		for (LookupTable const &map : diffmaplist) {
+//			auto it = map.find_path(path);
+//			if (it != map.end_path()) {
+//				QString id = it->second;
+//				parse_tree(g, path, id, &dirset, &diffmaplist2);
+//				break;
+//			}
+//		}
+//		diffmaplist.insert(diffmaplist.end(), diffmaplist2.begin(), diffmaplist2.end());
+
+	}
+
+	for (LookupTable const &table : diffmaplist) {
+		auto it = table.find_path(file);
+		if (it != table.end_path()) {
+//			qDebug() << it->second;
+			return it->second;
+		}
+//		for (auto it = table.path_to_id_map.begin(); it != table.path_to_id_map.end(); it++) {
+//			qDebug() << it->first << it->second;
+//		}
+	}
+
+	//	if (list.size() > 0) {
+//		GitDiff d;
+//		int i = 0;
+//		while (i + 1 < list.size()) {
+//			for (CommitData const &data : c.files) {
+//				if (data.type == CommitData::TREE) {
+//					std::set<QString> dirset;
+//					MapList map;
+//					d.parse_tree(g, QString(), data.id, &dirset, &map);
+
+//				}
+//			}
+//		}
+//		qDebug() << c.files.size();
+//	}
+	return QString();
+}

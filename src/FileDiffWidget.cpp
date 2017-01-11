@@ -14,30 +14,34 @@
 
 DiffWidgetData::DiffData *FileDiffWidget::diffdata()
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	return &mw->getDiffWidgetData()->diffdata;
+//	MainWindow *mw = qobject_cast<MainWindow *>(window());
+//	Q_ASSERT(mw);
+//	return &mw->getDiffWidgetData()->diffdata;
+	return &diff_widget_data->diffdata;
 }
 
 DiffWidgetData::DiffData const *FileDiffWidget::diffdata() const
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	return &mw->getDiffWidgetData()->diffdata;
+//	MainWindow *mw = qobject_cast<MainWindow *>(window());
+//	Q_ASSERT(mw);
+//	return &mw->getDiffWidgetData()->diffdata;
+	return &diff_widget_data->diffdata;
 }
 
 DiffWidgetData::DrawData *FileDiffWidget::drawdata()
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	return &mw->getDiffWidgetData()->drawdata;
+//	MainWindow *mw = qobject_cast<MainWindow *>(window());
+//	Q_ASSERT(mw);
+//	return &mw->getDiffWidgetData()->drawdata;
+	return &diff_widget_data->drawdata;
 }
 
 DiffWidgetData::DrawData const *FileDiffWidget::drawdata() const
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	return &mw->getDiffWidgetData()->drawdata;
+//	MainWindow *mw = qobject_cast<MainWindow *>(window());
+//	Q_ASSERT(mw);
+//	return &mw->getDiffWidgetData()->drawdata;
+	return &diff_widget_data->drawdata;
 }
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -68,6 +72,16 @@ void FileDiffWidget::clear(ViewType vt)
 	mime_type = QString();
 	pixmap = QPixmap();
 	update(vt);
+}
+
+void FileDiffWidget::updateDrawData_(int top_margin, int bottom_margin)
+{
+	QPixmap pm(1, 1);
+	QPainter pr(&pm);
+	QFontMetrics fm = pr.fontMetrics();
+	QSize sz = fm.size(0, "W");
+	drawdata()->char_width = sz.width();
+	drawdata()->line_height = sz.height() + top_margin + bottom_margin;
 }
 
 void FileDiffWidget::paintText()
@@ -206,7 +220,8 @@ void FileDiffWidget::resizeEvent(QResizeEvent *)
 void FileDiffWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
+if (!mw) return; // TODO:
+//	Q_ASSERT(mw);
 
 	QPoint pos;
 	if (e->reason() == QContextMenuEvent::Mouse) {
