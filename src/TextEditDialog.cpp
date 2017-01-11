@@ -60,7 +60,7 @@ bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &titl
 	}
 
 	size_t n = text.size();
-	if (n > 0 && text[n - 1] != '\n') {
+	if (n > 0 && text[(int)n - 1] != '\n') {
 		text += '\n'; // 最後に改行を追加
 	}
 

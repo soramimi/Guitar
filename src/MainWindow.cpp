@@ -2498,7 +2498,7 @@ void MainWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bo
 
 	if (uncommited) {
 		QString path = workingdir / diff.path;
-		diffdata()->right.id = QString(PATH_PREFIX) + path;
+		diffdata()->right.id = GitDiff::prependPathPrefix(path);
 	}
 
 	if (ba.isEmpty()) {
