@@ -1,21 +1,19 @@
 #include "FileDiffSliderWidget.h"
 #include "MainWindow.h"
-
+#include "misc.h"
 #include <QPainter>
 #include <QMouseEvent>
 
 FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 	: QWidget(parent)
 {
-
 }
 
 void FileDiffSliderWidget::updatePixmap()
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	left_pixmap = mw->makeDiffPixmap(ViewType::Left, 8, height());
-	right_pixmap = mw->makeDiffPixmap(ViewType::Right, 8, height());
+	Q_ASSERT(mainwindow);
+	left_pixmap = mainwindow->makeDiffPixmap_(ViewType::Left, 8, height(), diff_widget_data);
+	right_pixmap = mainwindow->makeDiffPixmap_(ViewType::Right, 8, height(), diff_widget_data);
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)
@@ -38,6 +36,11 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 	int h = scroll_visible_size * height() / scroll_total;
 	if (h < 2) h = 2;
 	pr.fillRect(w + 1, y, 2, h, Qt::black);
+
+	if (hasFocus()) {
+		QPainter pr(this);
+		misc::drawFrame(&pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
+	}
 }
 
 void FileDiffSliderWidget::resizeEvent(QResizeEvent *)

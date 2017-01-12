@@ -46,7 +46,7 @@ void FileUtil::rmfile(const std::string &path)
 void FileUtil::mv(const std::string &src, const std::string &dst)
 {
 	MoveFileA(src.c_str(), dst.c_str());
-	DWORD e = GetLastError();
+//	DWORD e = GetLastError();
 }
 
 void FileUtil::getdirents(const std::string &loc, std::vector<DirEnt> *out)

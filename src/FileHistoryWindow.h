@@ -1,23 +1,22 @@
-#ifndef FILEDIFFWIDGET_H
-#define FILEDIFFWIDGET_H
+#ifndef FILEHISTORYWINDOW_H
+#define FILEHISTORYWINDOW_H
 
 #include <QDialog>
 #include "Git.h"
 #include "MainWindow.h"
 
 namespace Ui {
-class FileDiffWidget;
+class FileHistoryWindow;
 }
 
 class QTableWidgetItem;
 
-class FileDiffWidget : public QWidget
+class FileHistoryWindow : public QDialog
 {
 	Q_OBJECT
-	friend class MainWindow;
 private:
 	MainWindow *mainwindow;
-//	GitPtr g;
+	GitPtr g;
 	QString path;
 	Git::CommitItemList commit_item_list;
 
@@ -66,18 +65,11 @@ private:
 	void scrollTo(int value);
 
 public:
-	explicit FileDiffWidget(QWidget *parent = 0);
-	~FileDiffWidget();
+	explicit FileHistoryWindow(QWidget *parent, GitPtr g, QString const &path);
+	~FileHistoryWindow();
 
-
-
-	DiffWidgetData *getDiffWidgetData()
-	{
-		return &data_;
-	}
-	void bind(MainWindow *mw);
-	void setPath(const QString &path);
 private slots:
+	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 
 
 
@@ -93,27 +85,20 @@ private slots:
 
 
 private:
-	Ui::FileDiffWidget *ui;
+	Ui::FileHistoryWindow *ui;
 
 
-	void updateDiffView(QString id_left, QString id_right);
+	void collectFileHistory();
+	void updateDiffView();
 	void clearDiffView();
 	void updateVerticalScrollBar();
 	int fileviewHeight() const;
 	QString formatLine(QString const &text, bool diffmode);
 
 	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
-
-	void setDataAsNewFile(const QByteArray &ba, const Git::Diff &diff);
 	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
-
 	void init_diff_data_(const Git::Diff &diff);
 	void updateSliderCursor();
-
-	// QObject interface
-public:
-	bool eventFilter(QObject *watched, QEvent *event);
-	void setVerticalScrollBarValue(int pos);
 };
 
-#endif // FILEDIFFWIDGET_H
+#endif // FILEHISTORYWINDOW_H

@@ -1,52 +1,31 @@
-#include "FileDiffWidget.h"
+#include "FileHistoryWindow.h"
 #include "MainWindow.h"
-#include "ui_FileDiffWidget.h"
+#include "ui_FileHistoryWindow.h"
 #include "misc.h"
 #include "GitDiff.h"
 #include "joinpath.h"
-
-#include <QKeyEvent>
 
 enum {
 	DiffIndexRole = Qt::UserRole,
 };
 
-FileDiffWidget::FileDiffWidget(QWidget *parent)
-	: QWidget(parent)
-	, ui(new Ui::FileDiffWidget)
+FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &path)
+	: QDialog(parent)
+	, ui(new Ui::FileHistoryWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->widget_diff_left->installEventFilter(this);
-	ui->widget_diff_right->installEventFilter(this);
-	ui->widget_diff_pixmap->installEventFilter(this);
-
-	ui->horizontalScrollBar->setVisible(false);
-
-//	Q_ASSERT(g);
-//	Q_ASSERT(g->isValidWorkingCopy());
-//	this->g = g;
-//	this->path = path;
-
-
-//	updateDiffView();
-}
-
-FileDiffWidget::~FileDiffWidget()
-{
-	delete ui;
-}
-
-void FileDiffWidget::bind(MainWindow *mw)
-{
-	mainwindow = mw;
+	mainwindow = qobject_cast<MainWindow *>(parent);
 	Q_ASSERT(mainwindow);
+
 	ui->widget_diff_pixmap->imbue_(mainwindow, &data_);
 	ui->widget_diff_left->imbue_(&data_);
 	ui->widget_diff_right->imbue_(&data_);
+
+	ui->splitter->setSizes({100, 100});
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
 	connect(ui->widget_diff_pixmap, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
@@ -56,26 +35,88 @@ void FileDiffWidget::bind(MainWindow *mw)
 	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_right, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 
+	Q_ASSERT(g);
+	Q_ASSERT(g->isValidWorkingCopy());
+	this->g = g;
+	this->path = path;
+
 	int top_margin = 1;
 	int bottom_margin = 1;
 	ui->widget_diff_left->updateDrawData_(top_margin, bottom_margin);
 
+
+	collectFileHistory();
+
+	updateDiffView();
 }
 
-void FileDiffWidget::clearDiffView()
+FileHistoryWindow::~FileHistoryWindow()
 {
-	*diffdata() = DiffWidgetData::DiffData();
+	delete ui;
+}
+
+void FileHistoryWindow::collectFileHistory()
+{
+	commit_item_list = g->log_all(path, mainwindow->limitLogCount(), mainwindow->limitLogTime());
+
+	QStringList cols = {
+		tr("Commit"),
+		tr("Date"),
+		tr("Author"),
+		tr("Description"),
+	};
+	int n = cols.size();
+	ui->tableWidget_log->setColumnCount(n);
+	ui->tableWidget_log->setRowCount(0);
+	for (int i = 0; i < n; i++) {
+		QString const &text = cols[i];
+		QTableWidgetItem *item = new QTableWidgetItem(text);
+		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
+	}
+
+	int count = commit_item_list.size();
+	ui->tableWidget_log->setRowCount(count);
+
+	for (int row = 0; row < count; row++) {
+		Git::CommitItem const &commit = commit_item_list[row];
+		int col = 0;
+		auto AddColumn = [&](QString const &text){
+			QTableWidgetItem *item = new QTableWidgetItem(text);
+//			item->setSizeHint(QSize(100, 20));
+			ui->tableWidget_log->setItem(row, col, item);
+			col++;
+		};
+
+		QString commit_id = mainwindow->abbrevCommitID(commit);
+		QString datetime = misc::makeDateTimeString(commit.commit_date);
+		AddColumn(commit_id);
+		AddColumn(datetime);
+		AddColumn(commit.author);
+		AddColumn(commit.message);
+		ui->tableWidget_log->setRowHeight(row, 24);
+	}
+
+	ui->tableWidget_log->resizeColumnsToContents();
+	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
+	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
+
+	ui->tableWidget_log->setFocus();
+	ui->tableWidget_log->setCurrentCell(0, 0);
+}
+
+void FileHistoryWindow::clearDiffView()
+{
 	ui->widget_diff_pixmap->clear(false);
 	ui->widget_diff_left->clear(ViewType::Left);
 	ui->widget_diff_right->clear(ViewType::Right);
 }
 
-int FileDiffWidget::fileviewHeight() const
+int FileHistoryWindow::fileviewHeight() const
 {
 	return ui->widget_diff_left->height();
 }
 
-QString FileDiffWidget::formatLine(const QString &text, bool diffmode)
+QString FileHistoryWindow::formatLine(const QString &text, bool diffmode)
 {
 	if (text.isEmpty()) return text;
 	std::vector<ushort> vec;
@@ -104,12 +145,8 @@ QString FileDiffWidget::formatLine(const QString &text, bool diffmode)
 	return QString::fromUtf16(&vec[0], vec.size());
 }
 
-void FileDiffWidget::setVerticalScrollBarValue(int pos)
-{
-	ui->verticalScrollBar->setValue(pos);
-}
 
-void FileDiffWidget::updateVerticalScrollBar()
+void FileHistoryWindow::updateVerticalScrollBar()
 {
 	QScrollBar *sb = ui->verticalScrollBar;
 	if (mainwindow->drawdata()->line_height > 0) {
@@ -124,7 +161,7 @@ void FileDiffWidget::updateVerticalScrollBar()
 	sb->setPageStep(0);
 }
 
-void FileDiffWidget::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right, bool diffmode)
+void FileHistoryWindow::setDiffText_(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right, bool diffmode)
 {
 	enum Pane {
 		Left,
@@ -164,7 +201,7 @@ void FileDiffWidget::setDiffText_(QList<TextDiffLine> const &left, QList<TextDif
 	ui->widget_diff_right->update(ViewType::Right);
 }
 
-void FileDiffWidget::init_diff_data_(Git::Diff const &diff)
+void FileHistoryWindow::init_diff_data_(Git::Diff const &diff)
 {
 	clearDiffView();
 	diffdata()->path = diff.path;
@@ -172,32 +209,7 @@ void FileDiffWidget::init_diff_data_(Git::Diff const &diff)
 	diffdata()->right = diff.blob.b;
 }
 
-
-
-void FileDiffWidget::setDataAsNewFile(QByteArray const &ba, Git::Diff const &diff)
-{
-	init_diff_data_(diff);
-
-	if (ba.isEmpty()) {
-		diffdata()->original_lines.clear();
-	} else {
-		diffdata()->original_lines = misc::splitLines(ba, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
-	}
-
-	QList<TextDiffLine> left_newlines;
-	QList<TextDiffLine> right_newlines;
-
-	for (QString const &line : diffdata()->original_lines) {
-		QString text = '+' + line;
-		left_newlines.push_back(QString());
-		right_newlines.push_back(text);
-	}
-
-	setDiffText_(left_newlines, right_newlines, true);
-}
-
-
-void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+void FileHistoryWindow::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
 	init_diff_data_(diff);
 
@@ -319,41 +331,45 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 	setDiffText_(left_newlines, right_newlines, true);
 }
 
-void FileDiffWidget::setPath(QString const &path)
+
+
+void FileHistoryWindow::updateDiffView()
 {
-	this->path = path;
+	clearDiffView();
+
+	int row = ui->tableWidget_log->currentRow();
+	if (row >= 0 && row + 1 < (int)commit_item_list.size()) {
+		Git::CommitItem const &commit_left = commit_item_list[row + 1]; // older
+		Git::CommitItem const &commit_right = commit_item_list[row];    // newer
+
+		QString id_left = GitDiff().findFileID(g, commit_left.commit_id, path);
+		QString id_right = GitDiff().findFileID(g, commit_right.commit_id, path);
+
+
+
+		Git::Diff diff;
+		diff.path = path;
+		diff.blob.a.id = id_left;
+		diff.blob.b.id = id_right;
+		diff.mode = "0";
+		QString text = GitDiff::diffFile(g, diff.blob.a.id, diff.blob.b.id);
+		GitDiff::parseDiff(text, &diff, &diff);
+
+		QByteArray ba;
+		mainwindow->cat_file(g, diff.blob.a.id, &ba);
+		setTextDiffData(ba, diff, false, g->workingRepositoryDir());
+
+		ui->verticalScrollBar->setValue(0);
+		updateVerticalScrollBar();
+		ui->widget_diff_pixmap->clear(false);
+//		updateSliderCursor();
+//		ui->widget_diff_pixmap->clear(true);
+		updateSliderCursor();
+		ui->widget_diff_pixmap->update();
+	}
 }
 
-void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
-{
-//	clearDiffView();
-
-	GitPtr g = mainwindow->git();
-	if (!g) return;
-	if (!g->isValidWorkingCopy()) return;
-
-
-	Git::Diff diff;
-	diff.path = path;
-	diff.blob.a.id = id_left;
-	diff.blob.b.id = id_right;
-	diff.mode = "0";
-	QString text = GitDiff::diffFile(g, diff.blob.a.id, diff.blob.b.id);
-	GitDiff::parseDiff(text, &diff, &diff);
-
-	QByteArray ba;
-	mainwindow->cat_file(g, diff.blob.a.id, &ba);
-	setTextDiffData(ba, diff, false, g->workingRepositoryDir());
-
-	ui->verticalScrollBar->setValue(0);
-	updateVerticalScrollBar();
-	ui->widget_diff_pixmap->clear(false);
-
-	updateSliderCursor();
-	ui->widget_diff_pixmap->update();
-}
-
-void FileDiffWidget::updateSliderCursor()
+void FileHistoryWindow::updateSliderCursor()
 {
 	int total = totalTextLines();
 	int value = fileviewScrollPos();
@@ -361,49 +377,27 @@ void FileDiffWidget::updateSliderCursor()
 	ui->widget_diff_pixmap->setScrollPos(total, value, size);
 }
 
-bool FileDiffWidget::eventFilter(QObject *watched, QEvent *event)
+
+void FileHistoryWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
-		Q_ASSERT(e);
-		int k = e->key();
-		if (watched == ui->widget_diff_left || watched == ui->widget_diff_right || watched == ui->widget_diff_pixmap) {
-			QScrollBar::SliderAction act = QScrollBar::SliderNoAction;
-			switch (k) {
-			case Qt::Key_Up:       act = QScrollBar::SliderSingleStepSub; break;
-			case Qt::Key_Down:     act = QScrollBar::SliderSingleStepAdd; break;
-			case Qt::Key_PageUp:   act = QScrollBar::SliderPageStepSub;   break;
-			case Qt::Key_PageDown: act = QScrollBar::SliderPageStepAdd;   break;
-			case Qt::Key_Home:     act = QScrollBar::SliderToMinimum;     break;
-			case Qt::Key_End:      act = QScrollBar::SliderToMaximum;     break;
-			}
-			if (act != QScrollBar::SliderNoAction) {
-				ui->verticalScrollBar->triggerAction(act);
-				return true;
-			}
-		}
-	}
-	return false;
+	updateDiffView();
 }
 
-
-
-
-void FileDiffWidget::scrollTo(int value)
+void FileHistoryWindow::scrollTo(int value)
 {
 	drawdata()->scrollpos = value;
 	ui->widget_diff_left->update(ViewType::Left);
 	ui->widget_diff_right->update(ViewType::Right);
 }
 
-void FileDiffWidget::onScrollValueChanged(int value)
+void FileHistoryWindow::onScrollValueChanged(int value)
 {
 	scrollTo(value);
 
 	updateSliderCursor();
 }
 
-void FileDiffWidget::onDiffWidgetWheelScroll(int lines)
+void FileHistoryWindow::onDiffWidgetWheelScroll(int lines)
 {
 	while (lines > 0) {
 		ui->verticalScrollBar->triggerAction(QScrollBar::SliderSingleStepAdd);
@@ -415,12 +409,12 @@ void FileDiffWidget::onDiffWidgetWheelScroll(int lines)
 	}
 }
 
-void FileDiffWidget::onScrollValueChanged2(int value)
+void FileHistoryWindow::onScrollValueChanged2(int value)
 {
 	ui->verticalScrollBar->setValue(value);
 }
 
-void FileDiffWidget::onDiffWidgetResized()
+void FileHistoryWindow::onDiffWidgetResized()
 {
 	updateSliderCursor();
 	updateVerticalScrollBar();

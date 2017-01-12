@@ -9,7 +9,7 @@
 
 class misc {
 public:
-	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *begin, size_t len)> tos);
+	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> tos);
 	static QStringList splitLines(QString const &text);
 	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out);
 	static void splitLines(const std::string &text, std::vector<std::string> *out);
@@ -22,6 +22,7 @@ public:
 	static QString joinWithSlash(const QString &left, const QString &right);
 	static int runCommand(QString const &cmd, QByteArray *out);
 	static void setFixedSize(QWidget *w);
+	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor const &color);
 };
 
 class OverrideWaitCursor_ {

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>558</width>
-    <height>466</height>
+    <width>848</width>
+    <height>596</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -385,7 +385,7 @@
        </widget>
        <widget class="QStackedWidget" name="stackedWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="page_2">
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,1">
@@ -626,25 +626,23 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QListWidget" name="listWidget_files"/>
+           <widget class="QListWidget" name="listWidget_files">
+            <property name="contextMenuPolicy">
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
        </widget>
-       <widget class="QFrame" name="frame">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="QFrame" name="frame_6">
         <property name="frameShape">
          <enum>QFrame::Panel</enum>
         </property>
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QVBoxLayout" name="verticalLayout_6">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -661,32 +659,12 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="FileDiffSliderWidget" name="widget_diff_pixmap" native="true">
-           <property name="maximumSize">
+          <widget class="FileDiffWidget" name="widget_diff_view" native="true">
+           <property name="minimumSize">
             <size>
-             <width>20</width>
-             <height>16777215</height>
+             <width>0</width>
+             <height>100</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="FileDiffWidget" name="widget_diff_left" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="FileDiffWidget" name="widget_diff_right" native="true"/>
-         </item>
-         <item>
-          <widget class="QScrollBar" name="verticalScrollBar">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
            </property>
           </widget>
          </item>
@@ -702,7 +680,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>558</width>
+     <width>848</width>
      <height>24</height>
     </rect>
    </property>
@@ -896,21 +874,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>FileDiffWidget</class>
-   <extends>QWidget</extends>
-   <header>FileDiffWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>LogTableWidget</class>
    <extends>QTableWidget</extends>
    <header>LogTableWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>FileDiffSliderWidget</class>
-   <extends>QWidget</extends>
-   <header>FileDiffSliderWidget.h</header>
-   <container>1</container>
   </customwidget>
   <customwidget>
    <class>RepositoryInfoFrame</class>
@@ -927,6 +893,12 @@
    <class>RepositoriesTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>RepositoriesTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FileDiffWidget</class>
+   <extends>QWidget</extends>
+   <header>FileDiffWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
