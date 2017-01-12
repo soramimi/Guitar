@@ -127,8 +127,8 @@ FORMS    += \
     src/EditTagDialog.ui \
     src/DeleteTagsDialog.ui \
     src/SelectCommandDialog.ui \
-    src/FileHistoryWindow.ui \
-    src/FileDiffWidget.ui
+	src/FileDiffWidget.ui \
+    src/FileHistoryWindow.ui
 
 RESOURCES += \
     resources.qrc

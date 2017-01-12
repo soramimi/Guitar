@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"><!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
-
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="style/style.css" type="text/css" />
@@ -21,9 +21,9 @@ pre.bad {
 <body bgcolor="#f0f0f0" background="style/bg.gif">
 <div id="body">
 <div id="header">
-<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
-<div style="text-align: right;">under development</div>
-<div style="clear: both;"></div>
+  <div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
+  <div style="text-align: right;">under development</div>
+  <div style="clear: both;"></div>
 </div>
 <!-- #BeginEditable "content" -->
 <h1>コーディングスタイル</h1>
@@ -31,60 +31,100 @@ pre.bad {
 <p>命名規則は厳密には決めない。適当に運用する。ここに書いてあることは必ずしも守らなくても良いが、リファクタリングで整理することがある。</p>
 <ul>
   <li>ファイル名
-	<ul>
-	  <li>UpperCamelCase.cpp （原則）</li>
-	  <li>lowercase.cpp （一部例外）</li>
-	</ul>
+    <ul>
+      <li>UpperCamelCase.cpp （原則）</li>
+      <li>lowercase.cpp （一部例外）</li>
+    </ul>
   </li>
-  <li>typedef型
-	<ul>
-	  <li>snake_case_t （そのときの気分で適当に決める） </li>
-	  <li>UpperCamelCase（クラスや構造体の場合）</li>
-	</ul>
+  <li>typedef型名
+    <ul>
+      <li>snake_case_t （そのときの気分で適当に決める） </li>
+      <li>UpperCamelCase（クラスや構造体の場合）</li>
+    </ul>
   </li>
   <li>クラス／構造体名
-	<ul>
-	  <li> UpperCamelCase</li>
-	</ul>
+    <ul>
+      <li> UpperCamelCase</li>
+    </ul>
   </li>
-  <li>関数
-<ul>
-	  <li>lowerCamelCase （原則）</li>
-	  <li>snake_case （時々）</li>
-	  <li>UpperCamelCase （Windows用）</li>
-	</ul>
+  <li>関数名
+    <ul>
+      <li>lowerCamelCase （原則）</li>
+      <li>snake_case （時々）</li>
+      <li>UpperCamelCase （Windows用）</li>
+    </ul>
   </li>
-  <li>メンバ変数
-	<ul>
-	  <li>snake_case</li>
-	</ul>
+  <li>メンバ変数名
+    <ul>
+      <li>snake_case</li>
+    </ul>
   </li>
-  <li>ローカル変数
-	<ul>
-	  <li>snake_case</li>
-	  <li>lowercase  （そのときの気分で適当に決める） </li>
-	  <li>ローカル変数名には原則として大文字を使わない</li>
-	</ul>
+  <li>ローカル変数名
+    <ul>
+      <li>snake_case</li>
+      <li>lowercase  （そのときの気分で適当に決める） </li>
+      <li>ローカル変数名には原則として大文字を使わない</li>
+    </ul>
   </li>
-  <li>ラムダ式
-	<ul>
-	  <li>auto UpperCamelCase = [](){}; （原則）</li>
-	  <li>auto lowerCamelCase = [](){}; （時々）</li>
-	</ul>
+  <li>ラムダ式名
+    <ul>
+      <li>auto UpperCamelCase = [](){}; （原則）</li>
+      <li>auto lowerCamelCase = [](){}; （時々）</li>
+    </ul>
   </li>
   <li>enumメンバ
-	<ul>
-	  <li>UpperCamelCase（原則）</li>
-	  <li>UPPER_SNAKE_CASE（時々）</li>
-	</ul>
+    <ul>
+      <li>UpperCamelCase（原則）</li>
+      <li>UPPER_SNAKE_CASE（時々）</li>
+    </ul>
   </li>
   <li>プリプロセッサシンボル
-	<ul>
-	  <li>UPPER_SNAKE_CASE （原則）</li>
-	  <li>UpperCamelCase （時々）</li>
-	</ul>
+    <ul>
+      <li>UPPER_SNAKE_CASE （原則）</li>
+      <li>UpperCamelCase （時々）</li>
+    </ul>
   </li>
 </ul>
+<h3>接頭語・接尾語・ハンガリアン記法</h3>
+<p>接頭語やハンガリアン記法は採用しない。</p>
+<h4>クラス名</h4>
+<ul>
+  <li>先頭に特定の文字を付ける様なクラス名にはしない。</li>
+</ul>
+<pre class="bad">class CHoge {
+};</pre>
+<h4>変数名</h4>
+<ul>
+  <li>m_ や g_ の様なものは付けない。</li>
+</ul>
+<pre class="bad">
+class Hoge {
+private:
+    int m_value;
+};
+Hoge g_hoge;</pre>
+<ul>
+  <li>一時的なメンバ変数（将来のリファクタリング対象）</li>
+</ul>
+<pre>class Hoge {
+private:
+	int value_;
+};
+</pre>
+<h4>接頭語</h4>
+<ul>
+  <li>禁止はしないが積極的には使わない。</li>
+</ul>
+<pre>bool fCondition;
+char *pSomething;</pre>
+<h4>接尾語</h4>
+<ul>
+  <li>状況次第、あった方がいいと判断すれば使う。</li>
+</ul>
+<pre>char *dataptr;
+std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
+<h4>絶対厳禁</h4>
+<pre class="bad">char *lpszText;</pre>
 <h2>インデントと空白と改行</h2>
 <ul>
   <li>ハードタブ</li>
@@ -153,7 +193,7 @@ pre.bad {
 <h3>switch</h3>
 <ul>
   <li>
-	<p>switchとcaseのじインデントは同じ深さとする。</p>
+    <p>switchとcaseのじインデントは同じ深さとする。</p>
   </li>
 </ul>
 <h4>良い</h4>
@@ -177,16 +217,6 @@ pre.bad {
 	case 3:
 		// do something
 		break;
-	}</pre>
-<h3>条件式</h3>
-<ul>
-  <li>条件式内で変数への代入は行わない。</li>
-</ul>
-<h4>良くない</h4>
-<pre class="bad">	while ((c = get()) != 0) {
-	}</pre>
-<h4>例外</h4>
-<pre class="good">	if (Hoge *hogeptr = dynamic_cast&lt;Hoge *&gt;(baseptr)) {
 	}</pre>
 <h3>式</h3>
 <ul>
@@ -214,6 +244,16 @@ pre.bad {
 <pre class="good">hoge(a, b, c);
 </pre>
 <h2>式</h2>
+<h3>代入</h3>
+<ul>
+  <li>条件式内で変数への代入は行わない。</li>
+</ul>
+<h4>良くない</h4>
+<pre class="bad">	while ((c = get()) != 0) {
+	}</pre>
+<h4>例外</h4>
+<pre class="good">	if (Hoge *hogeptr = dynamic_cast&lt;Hoge *&gt;(baseptr)) {
+	}</pre>
 <h3>変数宣言</h3>
 <ul>
   <li>ポインタや参照の記号（* や &amp;）は変数名の側に寄せる。</li>
@@ -373,7 +413,7 @@ void hoge(HogeArgs *args)
 </blockquote>
 <ul>
   <li>range-based-for 等で非const参照を受け取る場合はやむを得ない。
-	<pre>std::vector&lt;Hoge&gt; hogevec;
+    <pre>std::vector&lt;Hoge&gt; hogevec;
 for (Hoge &amp;hoge : hogevec) {
 	// do something
 }</pre>
@@ -384,16 +424,23 @@ for (Hoge &amp;hoge : hogevec) {
 <ul>
   <li>ヘッダファイルに using namespace を書いてはならない。</li>
   <li>すべてのヘッダファイルをインクルードし終わった後  using namespace を書いても良い。</li>
-  <li>using namespace std; は禁止</li>
+  <li>using namespace std; は禁止。</li>
+  <li>namespaceの波括弧内はインデントしない。</li>
 </ul>
+<pre>namespace ns1 {
+namespace ns2 {
+
+class Hoge {
+};
+
+}} // namespace ns1::ns2</pre>
 <h2>ライブラリ</h2>
 <ul>
-  <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止</li>
+  <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止。</li>
 </ul>
 <!-- #EndEditable -->
-<div id="footer">
-<span id="copyright"></span>
-</div>
+<div id="footer"> <span id="copyright"></span> </div>
 </body>
 <script type="text/javascript" src="common.js"></script>
-<!-- InstanceEnd --></html>
+<!-- InstanceEnd -->
+</html>

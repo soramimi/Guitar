@@ -666,6 +666,9 @@
              <height>100</height>
             </size>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
           </widget>
          </item>
         </layout>

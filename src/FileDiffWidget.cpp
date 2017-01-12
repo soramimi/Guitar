@@ -59,7 +59,6 @@ void FileDiffWidget::bind(MainWindow *mw)
 	int top_margin = 1;
 	int bottom_margin = 1;
 	ui->widget_diff_left->updateDrawData_(top_margin, bottom_margin);
-
 }
 
 void FileDiffWidget::clearDiffView()
@@ -385,9 +384,6 @@ bool FileDiffWidget::eventFilter(QObject *watched, QEvent *event)
 	}
 	return false;
 }
-
-
-
 
 void FileDiffWidget::scrollTo(int value)
 {
