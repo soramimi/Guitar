@@ -60,7 +60,7 @@
       <property name="frameShadow">
        <enum>QFrame::Sunken</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -77,31 +77,12 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="FileDiffSliderWidget" name="widget_diff_pixmap" native="true">
+        <widget class="FileDiffWidget" name="widget_diff_view" native="true">
          <property name="minimumSize">
           <size>
-           <width>20</width>
-           <height>0</height>
+           <width>0</width>
+           <height>100</height>
           </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>20</width>
-           <height>16777215</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="FilePreviewWidget" name="widget_diff_left" native="true"/>
-       </item>
-       <item>
-        <widget class="FilePreviewWidget" name="widget_diff_right" native="true"/>
-       </item>
-       <item>
-        <widget class="QScrollBar" name="verticalScrollBar">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
          </property>
         </widget>
        </item>
@@ -113,15 +94,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>FileDiffSliderWidget</class>
+   <class>FileDiffWidget</class>
    <extends>QWidget</extends>
-   <header>FileDiffSliderWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>FilePreviewWidget</class>
-   <extends>QWidget</extends>
-   <header>FilePreviewWidget.h</header>
+   <header>FileDiffWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

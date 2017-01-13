@@ -9,15 +9,65 @@ namespace Ui {
 class FileDiffWidget;
 }
 
+enum class ViewType {
+	None,
+	Left,
+	Right
+};
+
+struct TextDiffLine {
+	enum Type {
+		Unknown,
+		Unchanged,
+		Add,
+		Del,
+	} type;
+	int hunk_number = -1;
+	int line_number = -1;
+	QString line;
+	TextDiffLine()
+	{
+	}
+	TextDiffLine(QString const &text)
+		: line(text)
+	{
+	}
+};
+
+struct DiffWidgetData {
+	struct DiffData {
+		QStringList original_lines;
+		QList<TextDiffLine> left_lines;
+		QList<TextDiffLine> right_lines;
+		QString path;
+		Git::BLOB left;
+		Git::BLOB right;
+	} diffdata;
+	struct DrawData {
+		int scrollpos = 0;
+		int char_width = 0;
+		int line_height = 0;
+		QColor bgcolor_text;
+		QColor bgcolor_add;
+		QColor bgcolor_del;
+		QColor bgcolor_add_dark;
+		QColor bgcolor_del_dark;
+		QColor bgcolor_gray;
+		ViewType forcus = ViewType::None;
+		DrawData();
+	} drawdata;
+};
+
+
 class QTableWidgetItem;
 
 class FileDiffWidget : public QWidget
 {
 	Q_OBJECT
 	friend class MainWindow;
+	friend class FileDiffSliderWidget;
 private:
 	MainWindow *mainwindow;
-//	GitPtr g;
 	QString path;
 	Git::CommitItemList commit_item_list;
 
@@ -96,8 +146,6 @@ private:
 	Ui::FileDiffWidget *ui;
 
 
-	void updateDiffView(QString id_left, QString id_right);
-	void clearDiffView();
 	void updateVerticalScrollBar();
 	int fileviewHeight() const;
 	QString formatLine(QString const &text, bool diffmode);
@@ -108,12 +156,20 @@ private:
 	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
 	void init_diff_data_(const Git::Diff &diff);
-	void updateSliderCursor();
 
-	// QObject interface
+	GitPtr git();
+
+	QPixmap makeDiffPixmap_(ViewType side, int width, int height, const DiffWidgetData *dd);
+	QPixmap makeDiffPixmap(ViewType side, int width, int height);
 public:
 	bool eventFilter(QObject *watched, QEvent *event);
+
 	void setVerticalScrollBarValue(int pos);
+	void clearDiffView();
+	void updateSliderCursor();
+
+	void updateDiffView(const Git::Diff &info, bool uncommited);
+	void updateDiffView(QString id_left, QString id_right);
 };
 
 #endif // FILEDIFFWIDGET_H

@@ -11,9 +11,9 @@ FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 
 void FileDiffSliderWidget::updatePixmap()
 {
-	Q_ASSERT(mainwindow);
-	left_pixmap = mainwindow->makeDiffPixmap_(ViewType::Left, 8, height(), diff_widget_data);
-	right_pixmap = mainwindow->makeDiffPixmap_(ViewType::Right, 8, height(), diff_widget_data);
+	Q_ASSERT(file_diff_widget);
+	left_pixmap = file_diff_widget->makeDiffPixmap_(ViewType::Left, 8, height(), diff_widget_data);
+	right_pixmap = file_diff_widget->makeDiffPixmap_(ViewType::Right, 8, height(), diff_widget_data);
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)

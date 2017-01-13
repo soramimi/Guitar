@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPixmap>
 
+#include "FileDiffWidget.h"
 #include "FilePreviewWidget.h"
 
 class FileDiffSliderWidget : public QWidget
@@ -11,6 +12,7 @@ class FileDiffSliderWidget : public QWidget
 	Q_OBJECT
 private:
 	MainWindow *mainwindow;
+	FileDiffWidget *file_diff_widget;
 	DiffWidgetData const *diff_widget_data;
 	bool visible = false;
 	int scroll_total;
@@ -24,9 +26,10 @@ private:
 public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
 
-	void imbue_(MainWindow *mw, const DiffWidgetData *diff_widget_data)
+	void imbue_(MainWindow *mw, FileDiffWidget *fdw, const DiffWidgetData *diff_widget_data)
 	{
 		this->mainwindow = mw;
+		this->file_diff_widget = fdw;
 		this->diff_widget_data = diff_widget_data;
 	}
 

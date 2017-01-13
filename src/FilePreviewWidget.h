@@ -5,6 +5,7 @@
 #include <QWidget>
 #include "Git.h"
 #include "MainWindow.h"
+#include "FileDiffWidget.h"
 
 class FileDiffSliderWidget;
 

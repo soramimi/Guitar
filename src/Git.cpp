@@ -118,12 +118,14 @@ bool Git::git(const QString &arg, bool chdir)
 #endif
 	clearResult();
 
-	auto Do = [&](){
+	auto DoIt = [&](){
 		QString cmd = QString("\"%1\" ").arg(gitCommand());
 		cmd += arg;
 
+#if 1
 		QProcess proc;
 		proc.start(cmd);
+		proc.waitForStarted();
 		proc.closeWriteChannel();
 		proc.setReadChannel(QProcess::StandardOutput);
 		while (1) {
@@ -140,25 +142,26 @@ bool Git::git(const QString &arg, bool chdir)
 			}
 		}
 		pv->process_exit_code = proc.exitCode();
+#else
+		pv->process_exit_code = misc::runCommand(cmd, &pv->result);
+#endif
 
-//		pv->process_exit_code = misc::qtRunCommand(cmd, &pv->result);
-
-#if DEBUGLOG
-		qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
 		if (pv->process_exit_code != 0) {
 			pv->error_message = QString::fromUtf8(proc.readAllStandardError());
+#if 1//DEBUGLOG
+			qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
 			qDebug() << pv->error_message;
-		}
 #endif
+		}
 		return pv->process_exit_code == 0;
 	};
 
 	bool ok = false;
 
 	if (chdir) {
-		ok = chdirexec(Do);
+		ok = chdirexec(DoIt);
 	} else {
-		ok = Do();
+		ok = DoIt();
 	}
 
 #if DEBUGLOG

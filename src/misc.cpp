@@ -223,10 +223,12 @@ int misc::runCommand(QString const &cmd, QByteArray *out)
 	while (1) {
 		QProcess::ProcessState s = proc.state();
 		if (proc.waitForReadyRead(1)) {
-			char tmp[1024];
-			qint64 len = proc.read(tmp, sizeof(tmp));
-			if (len < 1) break;
-			out->append(tmp, len);
+			while (1) {
+				char tmp[1024];
+				qint64 len = proc.read(tmp, sizeof(tmp));
+				if (len < 1) break;
+				out->append(tmp, len);
+			}
 		} else if (s == QProcess::NotRunning) {
 			break;
 		}

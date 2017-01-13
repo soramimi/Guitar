@@ -28,55 +28,6 @@ public:
 	QStringList lines;
 };
 
-enum class ViewType {
-	None,
-	Left,
-	Right
-};
-
-struct TextDiffLine {
-	enum Type {
-		Unknown,
-		Unchanged,
-		Add,
-		Del,
-	} type;
-	int hunk_number = -1;
-	int line_number = -1;
-	QString line;
-	TextDiffLine()
-	{
-	}
-	TextDiffLine(QString const &text)
-		: line(text)
-	{
-	}
-};
-
-struct DiffWidgetData {
-	struct DiffData {
-		QStringList original_lines;
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
-		QString path;
-		Git::BLOB left;
-		Git::BLOB right;
-	} diffdata;
-	struct DrawData {
-		int scrollpos = 0;
-		int char_width = 0;
-		int line_height = 0;
-		QColor bgcolor_text;
-		QColor bgcolor_add;
-		QColor bgcolor_del;
-		QColor bgcolor_add_dark;
-		QColor bgcolor_del_dark;
-		QColor bgcolor_gray;
-		ViewType forcus = ViewType::None;
-		DrawData();
-	} drawdata;
-};
-
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -135,10 +86,6 @@ private slots:
 	void on_toolButton_select_all_clicked();
 	void on_toolButton_stage_clicked();
 	void on_toolButton_unstage_clicked();
-//	void onDiffWidgetResized();
-	void onDiffWidgetWheelScroll(int lines);
-	void onScrollValueChanged(int);
-	void onScrollValueChanged2(int);
 	void on_action_about_triggered();
 	void on_toolButton_clone_clicked();
 	void on_toolButton_fetch_clicked();
@@ -189,7 +136,6 @@ private:
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
 	void updateCurrentFilesList();
-	void updateSliderCursor();
 	void checkGitCommand();
 	void showFileList(FilesListType files_list_type);
 
@@ -221,26 +167,6 @@ private:
 	void buildRepoTree(const QString &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
 
-	DiffWidgetData *getDiffWidgetData();
-	DiffWidgetData const *getDiffWidgetData() const;
-	DiffWidgetData::DiffData *diffdata();
-	DiffWidgetData::DiffData const *diffdata() const;
-	DiffWidgetData::DrawData *drawdata();
-	DiffWidgetData::DrawData const *drawdata() const;
-	void updateVerticalScrollBar();
-	QString formatLine(const QString &text, bool diffmode);
-	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
-	void init_diff_data_(const Git::Diff &diff);
-	void setDataAsNewFile(const QByteArray &ba, const Git::Diff &diff);
-	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncmmited, const QString &workingdir);
-	int totalTextLines() const;
-	int fileviewScrollPos() const;
-	int visibleLines() const;
-	void scrollTo(int value);
-	int fileviewHeight() const;
-	static QPixmap makeDiffPixmap_(ViewType side, int width, int height, const DiffWidgetData *dd);
-	QPixmap makeDiffPixmap(ViewType side, int width, int height);
-
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
@@ -250,7 +176,7 @@ private:
 	void updateStagedFileCurrentItem();
 	void cleanupDiffThread();
 	void addTag();
-	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
+	static bool cat_file(GitPtr g, const QString &id, QByteArray *out);
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
 public:
@@ -283,7 +209,6 @@ public:
 	QString filetype(const QString &path, bool mime);
 	QString abbrevCommitID(const Git::CommitItem &commit);
 protected:
-	void resizeEvent(QResizeEvent *);
 
 protected:
 	void timerEvent(QTimerEvent *event);
