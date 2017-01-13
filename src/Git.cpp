@@ -284,6 +284,18 @@ QString Git::diff(QString const &old_id, QString const &new_id)
 #endif
 }
 
+QString Git::diff_raw(QString const &old_id, QString const &new_id)
+{
+#if 1
+	QString cmd = "diff --raw --abbrev=40 %1 %2";
+	cmd = cmd.arg(old_id).arg(new_id);
+	git(cmd);
+	return resultText();
+#else
+	return diff_(old_id, new_id);
+#endif
+}
+
 QString Git::diff_to_file(QString const &old_id, QString const &path)
 {
 #if 1

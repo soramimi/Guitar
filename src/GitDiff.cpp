@@ -418,6 +418,13 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 			CommitList newcommit;
 			newcommit.parseCommit(g, id, false);
 
+			{ // diff_raw test
+				for (QString const &parent : newcommit.parents) {
+					QString s = g->diff_raw(parent, id);
+					qDebug() << s;
+				}
+			}
+
 			MapList diffmaplist;
 			MakeDiffMapList(g, newcommit.parents, &diffmaplist);
 

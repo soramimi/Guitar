@@ -72,6 +72,11 @@ pre.bad {
       <li>auto lowerCamelCase = [](){}; （時々）</li>
     </ul>
   </li>
+  <li>enum型名
+    <ul>
+      <li>UpperCamelCase</li>
+    </ul>
+  </li>
   <li>enumメンバ
     <ul>
       <li>UpperCamelCase（原則）</li>
@@ -109,11 +114,11 @@ Hoge g_hoge;</pre>
 <pre>class Hoge {
 private:
 	int value_;
-};
-</pre>
+};</pre>
 <h4>接頭語</h4>
 <ul>
   <li>禁止はしないが積極的には使わない。</li>
+  <li>状況次第、あった方がいいと判断すれば使う。</li>
 </ul>
 <pre>bool fCondition;
 char *pSomething;</pre>
@@ -176,7 +181,7 @@ std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
 		// do something
 	} while (cond);</pre>
 <ul>
-  <li>開き波括弧の間に1個の空白を入れる。波括弧の前で改行はしない。</li>
+  <li>波括弧の前に1個の空白を入れる。改行はしない。</li>
   <li>閉じ波括弧の後に1個の空白を入れる。</li>
   <li>開き括弧の前に1個の空白を入れる。</li>
   <li>セミコロンの前に空白は入れない。</li>
@@ -232,7 +237,7 @@ std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
 <h4>良い</h4>
 <pre class="good">int n = (12 + 34);</pre>
 <h4>良くない</h4>
-<pre class="bad"><span class="good">int n = ( 12+34 );</span></pre>
+<pre class="bad">int n = ( 12+34 );</pre>
 <h4>良い</h4>
 <pre class="good">bool g = !f;</pre>
 <h4>良くない</h4>
@@ -335,7 +340,7 @@ std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
 <h2>関数</h2>
 <ul>
   <li>宣言は原則として一行で書く。</li>
-  <li>宣言の後の開き波括弧の前に改行する。</li>
+  <li>関数定義の開き波括弧の前に改行する。</li>
   <li>どうしても引数が長くなりすぎるときは、引数を構造体にまとめて、そのポインタを渡すような方法を検討する。</li>
 </ul>
 <h4>良い</h4>
@@ -400,7 +405,7 @@ void hoge(HogeArgs *args)
   <li>とにかく積極的にconstを使う。</li>
   <li>ポインタはconstが原則。</li>
   <li>どうしてもconstにできないものだけconstを外す。</li>
-  <li>参照型は全てconstにする。  constでない参照を使うくらいならポインタにする。</li>
+  <li>参照型は全てconstにする。  非const参照を使うくらいならポインタにする。</li>
   <li>クラスメンバ関数はできるだけconst関数。</li>
 </ul>
 <blockquote>
@@ -422,8 +427,8 @@ for (Hoge &amp;hoge : hogevec) {
 </ul>
 <h2>名前空間</h2>
 <ul>
-  <li>ヘッダファイルに using namespace を書いてはならない。</li>
-  <li>すべてのヘッダファイルをインクルードし終わった後  using namespace を書いても良い。</li>
+  <li>ヘッダファイルに using namespace を書かない。</li>
+  <li>すべてのヘッダファイルをインクルードし終わった後  using namespace を書いて良い。</li>
   <li>using namespace std; は禁止。</li>
   <li>namespaceの波括弧内はインデントしない。</li>
 </ul>

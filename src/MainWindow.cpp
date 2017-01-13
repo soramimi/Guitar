@@ -653,6 +653,8 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 				qDebug() << "something wrong...";
 			} else if (s.code_x() == 'D' || s.code_y() == 'D') {
 				header = "(del) ";
+			} else if (s.code_x() == 'R') {
+				header = "(ren) ";
 			} else {
 				auto it = diffmap.find(s.path1());
 				if (it != diffmap.end()) {

@@ -264,6 +264,8 @@ public:
 
 	QString diff(QString const &old_id, QString const &new_id);
 
+	QString diff_raw(const QString &old_id, const QString &new_id);
+
 	static bool isValidID(QString const &s);
 
 	bool commit(const QString &text);
