@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
 #include <QProcess>
 #include <QTimer>
 #include <set>
@@ -44,11 +45,11 @@ QString const &Git::workingRepositoryDir() const
 bool Git::isValidID(const QString &s)
 {
 	int n = s.size();
-	if (n > 0) {
+	if (n > 2 && n <= 40) {
 		ushort const *p = s.utf16();
 		for (int i = 0; i < n; i++) {
-			uchar c = QChar::toUpper(p[i]);
-			if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
+			uchar c = p[i];
+			if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
 				// ok
 			} else {
 				return false;
@@ -72,7 +73,6 @@ bool Git::isAllZero(const QString &id)
 	}
 	return false;
 }
-
 
 QByteArray Git::result() const
 {
@@ -838,6 +838,34 @@ void Git::test()
 {
 }
 
+QString Git::findObjectID(const QString &workingdir, const QString &id, QString *path_out)
+{
+	if (Git::isValidID(id)) {
+		QStringList list;
+		QString abspath;
+		QString dir = ".git/objects/%1";
+		QString subdir = id.mid(0, 2);
+		dir = workingdir / dir.arg(subdir);
+		QString name = id.mid(2);
+		QDirIterator it(dir, QDir::Dirs);
+		while (it.hasNext()) {
+			it.next();
+			if (it.fileName().startsWith(name)) {
+				QString id = subdir + it.fileName();
+				if (id.size() == 40 && Git::isValidID(id)) {
+					list.push_back(id);
+					abspath = dir / it.fileName();
+				}
+			}
+		}
+		if (list.size() == 1) {
+			if (path_out) *path_out = abspath;
+			return list[0];
+		}
+	}
+	return QString();
+}
+
 // Git::FileStatus
 
 QString Git::trimPath(QString const &s)
@@ -894,3 +922,4 @@ void Git::FileStatus::parse(const QString &text)
 }
 
 //
+

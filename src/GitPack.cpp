@@ -3,9 +3,9 @@
 #include <QDebug>
 #include <QFile>
 
-size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out)
+size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed)
 {
-	size_t consumed = 0;
+	if (consumed) *consumed = 0;
 	try {
 		int err;
 		z_stream d_stream;
@@ -44,10 +44,12 @@ size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out)
 			d_stream.avail_out = l;
 			uLong total = d_stream.total_out;
 			int n;
+
 			n = d_stream.avail_in;
 			err = ::inflate(&d_stream, Z_NO_FLUSH);
 			n -= d_stream.avail_in;
-			consumed += n;
+			if (consumed) *consumed += n;
+
 			n = d_stream.total_out - total;
 			out->append((char const *)tmp, n);
 			if (err == Z_STREAM_END) {
@@ -63,11 +65,11 @@ size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out)
 			throw QString("failed: inflateEnd");
 		}
 
-		return consumed;
+		return true;
 	} catch (QString const &e) {
 		qDebug() << e;
 	}
-	return 0;
+	return false;
 }
 
 bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Object *out)
@@ -119,9 +121,10 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 			if (!Read(tmp, 20)) throw QString("failed to read");
 		}
 
-		out->expanded_size = size;
-		out->packed_size = decompress(file, size, &out->content);
-		return true;
+		if (decompress(file, size, &out->content, &out->packed_size)) {
+			out->expanded_size = size;
+			return true;
+		}
 	} catch (QString const &e) {
 		qDebug() << e;
 	}

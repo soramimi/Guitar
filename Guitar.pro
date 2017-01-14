@@ -80,7 +80,8 @@ SOURCES += \
     src/FileHistoryWindow.cpp \
     src/Debug.cpp \
     src/GitPackIdxV2.cpp \
-    src/GitPack.cpp
+    src/GitPack.cpp \
+    src/GitObjectManager.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -119,7 +120,8 @@ HEADERS  += \
     src/FileHistoryWindow.h \
     src/Debug.h \
     src/GitPackIdxV2.h \
-    src/GitPack.h
+    src/GitPack.h \
+    src/GitObjectManager.h
 
 FORMS    += \
 	src/MainWindow.ui \

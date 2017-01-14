@@ -100,8 +100,14 @@ bool GitPackIdxV2::parse(QIODevice *in)
 	return false;
 }
 
+void GitPackIdxV2::clear()
+{
+	d = Data();
+}
+
 bool GitPackIdxV2::parse(const QString &idxfile)
 {
+	clear();
 	QFile file(idxfile);
 	if (file.open(QFile::ReadOnly)) {
 		if (parse(&file)) {

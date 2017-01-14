@@ -56,6 +56,7 @@ public:
 	std::map<QString, Item> const *map() const;
 	bool parse(QIODevice *in);
 	bool parse(const QString &idxpath);
+	void clear();
 };
 
 

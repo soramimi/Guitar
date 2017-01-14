@@ -30,9 +30,9 @@ private:
 		return (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
 	}
 
-	static size_t decompress(QIODevice *in, size_t expanded_size, QByteArray *out);
 	static bool load(QIODevice *file, GitPackIdxV2::Item const *item, Object *out);
 public:
+	static size_t decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
 	static bool load(const QString &packfile, const GitPackIdxV2::Item *item, GitPack::Object *out);
 };
 

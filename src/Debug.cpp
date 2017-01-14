@@ -1,13 +1,16 @@
 
 #include "Debug.h"
+#include <QBuffer>
 #include <QDebug>
+#include <QDirIterator>
 #include <QFile>
+#include "Git.h"
 #include "GitPack.h"
+#include "joinpath.h"
+#include "GitObjectManager.h"
 
 
-
-
-void Debug::doit()
+void Debug::doit2()
 {
 	char const *idx_path = "C:/develop/GetIt/.git/objects/pack/pack-da889d867e8acb4d18c95ed6d519c5609e0e78d5.idx";
 	GitPackIdxV2 idx;
@@ -22,4 +25,14 @@ void Debug::doit()
 		GitPack::load(pack_path, item, &t);
 		qDebug() << t.offset;
 	}
+}
+
+
+void Debug::doit(QString const &workingdir)
+{
+	QByteArray out;
+	QString id = "aa2d";
+	GitObjectManager gfm(workingdir);
+	gfm.loadObjectFile(id, &out);
+	qDebug() << out.size();
 }
