@@ -43,7 +43,8 @@ public:
 public:
 	static QString diffFile(GitPtr g, const QString &a_id, const QString &b_id);
 	static void parseDiff(const QString &s, const Git::Diff *info, Git::Diff *out);
-	static QString makeKey(const Git::Diff::BLOB_AB &ab);
+	static QString makeKey(QString const &a_id, QString const &b_id);
+	static QString makeKey(const Git::Diff &diff);
 	static QString prependPathPrefix(const QString &path);
 
 	QString findFileID(GitPtr g, const QString &commit_id, const QString &file);

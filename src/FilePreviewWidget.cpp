@@ -14,33 +14,21 @@
 
 DiffWidgetData::DiffData *FilePreviewWidget::diffdata()
 {
-//	MainWindow *mw = qobject_cast<MainWindow *>(window());
-//	Q_ASSERT(mw);
-//	return &mw->getDiffWidgetData()->diffdata;
 	return &diff_widget_data->diffdata;
 }
 
 DiffWidgetData::DiffData const *FilePreviewWidget::diffdata() const
 {
-//	MainWindow *mw = qobject_cast<MainWindow *>(window());
-//	Q_ASSERT(mw);
-//	return &mw->getDiffWidgetData()->diffdata;
 	return &diff_widget_data->diffdata;
 }
 
 DiffWidgetData::DrawData *FilePreviewWidget::drawdata()
 {
-//	MainWindow *mw = qobject_cast<MainWindow *>(window());
-//	Q_ASSERT(mw);
-//	return &mw->getDiffWidgetData()->drawdata;
 	return &diff_widget_data->drawdata;
 }
 
 DiffWidgetData::DrawData const *FilePreviewWidget::drawdata() const
 {
-//	MainWindow *mw = qobject_cast<MainWindow *>(window());
-//	Q_ASSERT(mw);
-//	return &mw->getDiffWidgetData()->drawdata;
 	return &diff_widget_data->drawdata;
 }
 
@@ -219,9 +207,7 @@ void FilePreviewWidget::resizeEvent(QResizeEvent *)
 
 void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
-if (!mw) return; // TODO:
-//	Q_ASSERT(mw);
+	if (!mainwindow) return; // TODO:
 
 	QPoint pos;
 	if (e->reason() == QContextMenuEvent::Mouse) {
@@ -234,10 +220,10 @@ if (!mw) return; // TODO:
 
 	QString id;
 	switch (view_type) {
-	case ViewType::Left:  id = diffdata()->left.id;  break;
-	case ViewType::Right: id = diffdata()->right.id; break;
+	case ViewType::Left:  id = diffdata()->left_id;  break;
+	case ViewType::Right: id = diffdata()->right_id; break;
 	}
-	QString path = mw->currentWorkingCopyDir() / diffdata()->path;
+	QString path = mainwindow->currentWorkingCopyDir() / diffdata()->path;
 
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
@@ -250,14 +236,14 @@ if (!mw) return; // TODO:
 			if (a == a_save_as) {
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					mw->saveAs(id, dstpath);
+					mainwindow->saveAs(id, dstpath);
 				}
 				goto DONE;
 			}
 			if (a == a_test) {
-				QString path = mw->saveAsTemp(id);
+				QString path = mainwindow->saveAsTemp(id);
 
-				QString mimetype = mw->filetype(path, true);
+				QString mimetype = mainwindow->filetype(path, true);
 				if (mimetype == "image/png") {
 					mime_type = mimetype;
 					pixmap.load(path);

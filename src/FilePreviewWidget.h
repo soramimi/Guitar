@@ -13,6 +13,7 @@ class FilePreviewWidget : public QWidget
 {
 	Q_OBJECT
 private:
+	MainWindow *mainwindow = nullptr;
 	DiffWidgetData *diff_widget_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
 	ViewType view_type = ViewType::None;
@@ -29,8 +30,9 @@ public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
 
-	void imbue_(DiffWidgetData *d)
+	void imbue_(MainWindow *m, DiffWidgetData *d)
 	{
+		mainwindow = m;
 		diff_widget_data = d;
 	}
 

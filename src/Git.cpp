@@ -59,6 +59,21 @@ bool Git::isValidID(const QString &s)
 	return false;
 }
 
+bool Git::isAllZero(const QString &id)
+{
+	int i = 0;
+	int n = id.size();
+	if (n > 0) {
+		ushort const *p = id.utf16();
+		for (i = 0; i < n; i++) {
+			if (p[i] != '0') break;
+		}
+		if (i == n) return true;
+	}
+	return false;
+}
+
+
 QByteArray Git::result() const
 {
 	return pv->result;
@@ -284,16 +299,35 @@ QString Git::diff(QString const &old_id, QString const &new_id)
 #endif
 }
 
-QString Git::diff_raw(QString const &old_id, QString const &new_id)
+QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 {
-#if 1
+	QList<DiffRaw> list;
 	QString cmd = "diff --raw --abbrev=40 %1 %2";
 	cmd = cmd.arg(old_id).arg(new_id);
 	git(cmd);
-	return resultText();
-#else
-	return diff_(old_id, new_id);
-#endif
+	QString text = resultText();
+	QStringList lines = text.split('\n', QString::SkipEmptyParts);
+	for (QString const &line : lines) {
+		DiffRaw item;
+		int colon = line.indexOf(':');
+		int tab = line.indexOf('\t');
+		if (colon >= 0 && colon < tab) {
+			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', QString::SkipEmptyParts);
+			if (header.size() >= 5) {
+				QStringList files = line.mid(tab + 1).split('\t', QString::SkipEmptyParts);
+				if (files.size() > 0) {
+					item.a.id = header[2];
+					item.b.id = header[3];
+					item.a.mode = header[0];
+					item.b.mode = header[1];
+					item.state = header[4];
+					item.files = files;
+					list.push_back(item);
+				}
+			}
+		}
+	}
+	return list;
 }
 
 QString Git::diff_to_file(QString const &old_id, QString const &path)

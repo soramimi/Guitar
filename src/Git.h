@@ -40,18 +40,26 @@ public:
 		QString at;
 		QStringList lines;
 	};
-	struct BLOB {
-		QString id;
-	};
+//	struct BLOB {
+//		QString id;
+//	};
 	class Diff {
 	public:
+		enum class Type {
+			Unknown,
+			Added,
+			Deleted,
+			Changed,
+			Renamed,
+		};
+		Type type = Type::Unknown;
 		QString diff;
 		QString index;
 		QString path;
 		QString mode;
-		struct BLOB_AB {
-			BLOB a;
-			BLOB b;
+		struct BLOB_AB_ {
+			QString a_id;
+			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
 	};
@@ -264,7 +272,16 @@ public:
 
 	QString diff(QString const &old_id, QString const &new_id);
 
-	QString diff_raw(const QString &old_id, const QString &new_id);
+	struct DiffRaw {
+		struct AB {
+			QString id;
+			QString mode;
+		} a, b;
+		QString state;
+		QStringList files;
+	};
+
+	QList<DiffRaw> diff_raw(const QString &old_id, const QString &new_id);
 
 	static bool isValidID(QString const &s);
 
@@ -290,6 +307,7 @@ public:
 	{
 		return "HEAD";
 	}
+	static bool isAllZero(QString const &id);
 };
 
 

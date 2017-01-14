@@ -40,8 +40,8 @@ struct DiffWidgetData {
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
 		QString path;
-		Git::BLOB left;
-		Git::BLOB right;
+		QString left_id;
+		QString right_id;
 	} diffdata;
 	struct DrawData {
 		int scrollpos = 0;
@@ -66,6 +66,7 @@ class FileDiffWidget : public QWidget
 	Q_OBJECT
 	friend class MainWindow;
 	friend class FileDiffSliderWidget;
+	friend class FilePreviewWidget;
 private:
 	MainWindow *mainwindow;
 	QString path;

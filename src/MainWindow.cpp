@@ -668,6 +668,7 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
 			Git::Diff const &diff = pv->diff.result[idiff];
 			QString header;
+#if 0
 			if (!diff.blob.a.id.isEmpty()) {
 				if (!diff.blob.b.id.isEmpty()) {
 					header = "(chg) ";
@@ -677,12 +678,20 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 			} else if (!diff.blob.b.id.isEmpty()) {
 				header = "(add) ";
 			}
+#else
+			switch (diff.type) {
+			case Git::Diff::Type::Added:   header = "(add) "; break;
+			case Git::Diff::Type::Deleted: header = "(del) "; break;
+			case Git::Diff::Type::Changed: header = "(chg) "; break;
+			case Git::Diff::Type::Renamed: header = "(ren) "; break;
+			}
+#endif
 			AddItem(diff.path, header, idiff, false);
 		}
 	}
 
 	for (Git::Diff const &diff : pv->diff.result) {
-		QString key = GitDiff::makeKey(diff.blob);
+		QString key = GitDiff::makeKey(diff);
 		pv->diff_cache[key] = diff;
 	}
 }
@@ -1822,7 +1831,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 
 	int idiff = indexOfDiff(item);
 	if (idiff >= 0 && idiff < pv->diff.result.size()) {
-		QString key = GitDiff::makeKey(pv->diff.result[idiff].blob);
+		QString key = GitDiff::makeKey(pv->diff.result[idiff]);
 		auto it = pv->diff_cache.find(key);
 		if (it != pv->diff_cache.end()) {
 			ui->widget_diff_view->updateDiffView(it->second, uncommited);

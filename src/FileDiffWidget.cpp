@@ -21,6 +21,7 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+
 	ui->widget_diff_left->installEventFilter(this);
 	ui->widget_diff_right->installEventFilter(this);
 	ui->widget_diff_pixmap->installEventFilter(this);
@@ -38,8 +39,8 @@ void FileDiffWidget::bind(MainWindow *mw)
 	mainwindow = mw;
 	Q_ASSERT(mainwindow);
 	ui->widget_diff_pixmap->imbue_(mainwindow, this, &data_);
-	ui->widget_diff_left->imbue_(&data_);
-	ui->widget_diff_right->imbue_(&data_);
+	ui->widget_diff_left->imbue_(mainwindow, &data_);
+	ui->widget_diff_right->imbue_(mainwindow, &data_);
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
 	connect(ui->widget_diff_pixmap, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
@@ -160,8 +161,8 @@ void FileDiffWidget::init_diff_data_(Git::Diff const &diff)
 {
 	clearDiffView();
 	diffdata()->path = diff.path;
-	diffdata()->left = diff.blob.a;
-	diffdata()->right = diff.blob.b;
+	diffdata()->left_id = diff.blob.a_id;
+	diffdata()->right_id = diff.blob.b_id;
 }
 
 
@@ -194,7 +195,7 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 
 	if (uncommited) {
 		QString path = workingdir / diff.path;
-		diffdata()->right.id = GitDiff::prependPathPrefix(path);
+		diffdata()->right_id = GitDiff::prependPathPrefix(path);
 	}
 
 	if (ba.isEmpty()) {
@@ -327,19 +328,19 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g->isValidWorkingCopy()) return;
 
 	Git::Diff diff;
-	if (info.blob.a.id.isEmpty()) { // 左が空（新しく追加されたファイル）
+	if (info.blob.a_id.isEmpty()) { // 左が空（新しく追加されたファイル）
 		diff = info;
 	} else {
-		QString text = GitDiff::diffFile(g, info.blob.a.id, info.blob.b.id);
+		QString text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id);
 		GitDiff::parseDiff(text, &info, &diff);
 	}
 
 	QByteArray ba;
-	if (diff.blob.a.id.isEmpty()) {
-		mainwindow->cat_file(g, diff.blob.b.id, &ba);
+	if (diff.blob.a_id.isEmpty()) {
+		mainwindow->cat_file(g, diff.blob.b_id, &ba);
 		setDataAsNewFile(ba, diff);
 	} else {
-		mainwindow->cat_file(g, diff.blob.a.id, &ba);
+		mainwindow->cat_file(g, diff.blob.a_id, &ba);
 		setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir());
 	}
 
@@ -358,14 +359,14 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 
 	Git::Diff diff;
 	diff.path = path;
-	diff.blob.a.id = id_left;
-	diff.blob.b.id = id_right;
+	diff.blob.a_id = id_left;
+	diff.blob.b_id = id_right;
 	diff.mode = "0";
-	QString text = GitDiff::diffFile(g, diff.blob.a.id, diff.blob.b.id);
+	QString text = GitDiff::diffFile(g, diff.blob.a_id, diff.blob.b_id);
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	QByteArray ba;
-	mainwindow->cat_file(g, diff.blob.a.id, &ba);
+	mainwindow->cat_file(g, diff.blob.a_id, &ba);
 	setTextDiffData(ba, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);

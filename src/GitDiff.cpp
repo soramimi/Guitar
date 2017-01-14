@@ -162,9 +162,15 @@ bool GitDiff::CommitList::parseCommit(GitPtr g, const QString &id, bool append)
 
 // GitDiff
 
-QString GitDiff::makeKey(Git::Diff::BLOB_AB const &ab)
+QString GitDiff::makeKey(const QString &a_id, const QString &b_id)
 {
-	return  ab.a.id + ".." + ab.b.id;
+	return  a_id + ".." + b_id;
+
+}
+
+QString GitDiff::makeKey(Git::Diff const &diff)
+{
+	return  makeKey(diff.blob.a_id, diff.blob.b_id);
 
 }
 
@@ -214,7 +220,7 @@ void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString
 void GitDiff::AddItem(Git::Diff *item, QList<Git::Diff> *diffs)
 {
 	item->diff = QString("diff --git a/%1 b/%2").arg(item->path).arg(item->path);
-	item->index = QString("index %1..%2 %3").arg(item->blob.a.id).arg(item->blob.b.id).arg(item->mode);
+	item->index = QString("index %1..%2 %3").arg(item->blob.a_id).arg(item->blob.b_id).arg(item->mode);
 	diffs->push_back(*item);
 }
 
@@ -229,7 +235,6 @@ void GitDiff::commit_into_map(GitPtr g, const GitDiff::CommitList &commit, const
 				found = true; // 見つかった
 				if (cd.id != it->second) { // 変更されている
 					if (cd.type == CommitData::TREE) { // ディレクトリ
-//						QString path = misc::joinWithSlash(dir, cd.path); // 子ディレクトリ名
 						QString path = cd.path;
 						QString older_id = it->second;
 						QString newer_id = cd.id;
@@ -238,8 +243,8 @@ void GitDiff::commit_into_map(GitPtr g, const GitDiff::CommitList &commit, const
 						Git::Diff item;
 						item.path = cd.path;
 						item.mode = cd.mode;
-						item.blob.a.id = it->second;
-						item.blob.b.id = cd.id;
+						item.blob.a_id = it->second;
+						item.blob.b_id = cd.id;
 						AddItem(&item, &diffs);
 					}
 					break;
@@ -249,13 +254,12 @@ void GitDiff::commit_into_map(GitPtr g, const GitDiff::CommitList &commit, const
 		if (!found) { // 新しく追加されたファイル
 			if (cd.type == CommitData::TREE) {
 				QString path = cd.path;//misc::joinWithSlash(dir, cd.path); // 子ディレクトリ名
-//				qDebug() << path;
 				diff_tree_(g, path, QString(), cd.id); // 子ディレクトリを探索
 			} else {
 				Git::Diff item;
 				item.path = cd.path;
 				item.mode = cd.mode;
-				item.blob.b.id = cd.id;
+				item.blob.b_id = cd.id;
 				AddItem(&item, &diffs);
 			}
 		}
@@ -302,7 +306,7 @@ void GitDiff::parseDiff(QString const &s, Git::Diff const *info, Git::Diff *out)
 	QStringList lines = misc::splitLines(s);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out->index = QString("index ") + info->blob.a.id + ".." + info->blob.b.id + ' ' + info->mode;
+	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
 	out->path = info->path;
 	out->blob = info->blob;
 
@@ -390,7 +394,7 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 				}
 				Git::Diff item;
 				item.path = misc::joinWithSlash(path, list.back());
-				item.blob.b.id = prependPathPrefix(item.path);
+				item.blob.b_id = prependPathPrefix(item.path);
 				AddItem(&item, &diffs);
 			}
 
@@ -400,11 +404,11 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 					auto it = map.find_path(st.path1());
 					if (it != map.end_path()) {
 						Git::Diff item;
-						item.blob.a.id = it->second;
-						item.blob.b.id = prependPathPrefix(st.path1());
+						item.blob.a_id = it->second;
+						item.blob.b_id = prependPathPrefix(st.path1());
 						item.path = st.path1();
 						if (st.code() == Git::FileStatusCode::RenamedInIndex) {
-							item.blob.b.id = prependPathPrefix(st.path2());
+							item.blob.b_id = prependPathPrefix(st.path2());
 							item.path = st.path2();
 						}
 						AddItem(&item, &diffs);
@@ -415,20 +419,72 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 
 		} else {
 
+#if 0
 			CommitList newcommit;
 			newcommit.parseCommit(g, id, false);
 
-			{ // diff_raw test
-				for (QString const &parent : newcommit.parents) {
-					QString s = g->diff_raw(parent, id);
-					qDebug() << s;
-				}
-			}
 
 			MapList diffmaplist;
 			MakeDiffMapList(g, newcommit.parents, &diffmaplist);
 
 			commit_into_map(g, newcommit, &diffmaplist);
+#else
+			{ // diff_raw test
+				CommitList newcommit;
+				newcommit.parseCommit(g, id, false);
+
+				std::map<QString, Git::Diff> diffmap;
+
+				std::set<QString> deleted_set;
+				QList<Git::DiffRaw> list;
+				for (QString const &parent : newcommit.parents) {
+					QList<Git::DiffRaw> l = g->diff_raw(parent, id);
+					for (Git::DiffRaw const &item : l) {
+						if (item.state.startsWith('D')) {
+							deleted_set.insert(item.a.id);
+						} else {
+							list.push_back(item);
+						}
+					}
+				}
+				for (Git::DiffRaw const &item : list) {
+					QString file;
+					if (!item.files.isEmpty()) {
+						file = item.files.front();
+					}
+					Git::Diff diff;
+					diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
+					diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
+					diff.path = file;
+					diff.mode = item.b.mode;
+					if (!Git::isAllZero(item.a.id)) diff.blob.a_id = item.a.id;
+					if (!Git::isAllZero(item.b.id)) diff.blob.b_id = item.b.id;
+
+					if (!diff.blob.a_id.isEmpty()) {
+						if (!diff.blob.b_id.isEmpty()) {
+							diff.type = Git::Diff::Type::Changed;
+						} else {
+							diff.type = Git::Diff::Type::Deleted;
+						}
+					} else if (!diff.blob.b_id.isEmpty()) {
+						if (deleted_set.find(diff.blob.b_id) != deleted_set.end()) {
+							diff.type = Git::Diff::Type::Renamed;
+						} else {
+							diff.type = Git::Diff::Type::Added;
+						}
+					}
+
+					if (diffmap.find(diff.path) == diffmap.end()) {
+						diffmap[diff.path] = diff;
+					}
+				}
+
+				for (auto const &pair : diffmap) {
+					diffs.push_back(pair.second);
+
+				}
+			}
+#endif
 		}
 
 		std::sort(diffs.begin(), diffs.end(), [](Git::Diff const &left, Git::Diff const &right){
@@ -450,11 +506,9 @@ QString GitDiff::findFileID(GitPtr g, const QString &commit_id, const QString &f
 	c.parseCommit(g, commit_id, false);
 
 	MapList diffmaplist;
-//	std::set<QString> dirset;
 	QStringList list = file.split('/', QString::SkipEmptyParts);
 	QString path;
 	for (int i = 0; i + 1 < list.size(); i++) {
-//		MapList diffmaplist2;
 		QString const &s = list[i];
 		path = misc::joinWithSlash(path, s);
 
@@ -465,44 +519,13 @@ QString GitDiff::findFileID(GitPtr g, const QString &commit_id, const QString &f
 
 			}
 		}
-
-//		for (LookupTable const &map : diffmaplist) {
-//			auto it = map.find_path(path);
-//			if (it != map.end_path()) {
-//				QString id = it->second;
-//				parse_tree(g, path, id, &dirset, &diffmaplist2);
-//				break;
-//			}
-//		}
-//		diffmaplist.insert(diffmaplist.end(), diffmaplist2.begin(), diffmaplist2.end());
-
 	}
 
 	for (LookupTable const &table : diffmaplist) {
 		auto it = table.find_path(file);
 		if (it != table.end_path()) {
-//			qDebug() << it->second;
 			return it->second;
 		}
-//		for (auto it = table.path_to_id_map.begin(); it != table.path_to_id_map.end(); it++) {
-//			qDebug() << it->first << it->second;
-//		}
 	}
-
-	//	if (list.size() > 0) {
-//		GitDiff d;
-//		int i = 0;
-//		while (i + 1 < list.size()) {
-//			for (CommitData const &data : c.files) {
-//				if (data.type == CommitData::TREE) {
-//					std::set<QString> dirset;
-//					MapList map;
-//					d.parse_tree(g, QString(), data.id, &dirset, &map);
-
-//				}
-//			}
-//		}
-//		qDebug() << c.files.size();
-//	}
 	return QString();
 }
