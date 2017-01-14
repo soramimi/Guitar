@@ -73,7 +73,9 @@ SOURCES += \
     src/RepositoriesTreeWidget.cpp \
     src/SelectCommandDialog.cpp \
     src/FilePreviewWidget.cpp \
-    src/FileHistoryWindow.cpp
+    src/FileHistoryWindow.cpp \
+    src/Debug.cpp \
+    src/GitPackIdxV2.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -109,7 +111,9 @@ HEADERS  += \
     src/RepositoriesTreeWidget.h \
     src/SelectCommandDialog.h \
     src/FilePreviewWidget.h \
-    src/FileHistoryWindow.h
+    src/FileHistoryWindow.h \
+    src/Debug.h \
+    src/GitPackIdxV2.h
 
 FORMS    += \
 	src/MainWindow.ui \

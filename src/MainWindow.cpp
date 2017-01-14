@@ -2372,9 +2372,13 @@ QString MainWindow::filetype(QString const &path, bool mime)
 	return QString();
 }
 
+//
+
+#include "Debug.h"
 
 void MainWindow::on_action_test_triggered()
 {
+	Debug::doit();
 }
 
 
