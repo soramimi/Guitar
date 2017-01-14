@@ -39,8 +39,8 @@ public:
 	struct Item {
 		QString id;
 		size_t offset = 0;
-		size_t packed_length = 0;
-		size_t expanded_length = 0;
+		size_t packed_size = 0;
+		size_t expanded_size = 0;
 		uint32_t checksum;
 	};
 private:
@@ -50,11 +50,12 @@ private:
 	const uint32_t offset(int i) const;
 	const uint32_t checksum(int i) const;
 public:
-	bool parse(QIODevice *in);
 	uint32_t count() const;
 	Item const *item(size_t i) const;
 	Item const *item(QString const &id) const;
 	std::map<QString, Item> const *map() const;
+	bool parse(QIODevice *in);
+	bool parse(const QString &idxpath);
 };
 
 

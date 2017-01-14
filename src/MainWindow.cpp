@@ -649,18 +649,22 @@ void MainWindow::updateFilesList(QString const &id, FilesListType files_list_typ
 			bool staged = (s.isStaged() && s.code_y() == ' ');
 			int idiff = -1;
 			QString header;
+			auto it = diffmap.find(s.path1());
+			if (it != diffmap.end()) {
+				idiff = it->second;
+			}
 			if (s.code() == Git::FileStatusCode::Unknown) {
 				qDebug() << "something wrong...";
-			} else if (s.code_x() == 'D' || s.code_y() == 'D') {
+			} else if (s.code() == Git::FileStatusCode::Untracked) {
+				// nop
+			} else if (s.code() == Git::FileStatusCode::AddedToIndex) {
+				header = "(add) ";
+			} else if (s.code_x() == 'D' || s.code_y() == 'D' || s.code() == Git::FileStatusCode::DeletedFromIndex) {
 				header = "(del) ";
-			} else if (s.code_x() == 'R') {
+			} else if (s.code_x() == 'R' || s.code() == Git::FileStatusCode::RenamedInIndex) {
 				header = "(ren) ";
-			} else {
-				auto it = diffmap.find(s.path1());
-				if (it != diffmap.end()) {
-					header = "(chg) ";
-					idiff = it->second;
-				}
+			} else if (it != diffmap.end()) {
+				header = "(chg) ";
 			}
 			AddItem(s.path1(), header, idiff, staged);
 		}
@@ -842,7 +846,6 @@ void MainWindow::openRepository_(GitPtr g)
 		Git::CommitItem const *commit = &pv->logs[index];
 		{
 			QTableWidgetItem *item = new QTableWidgetItem();
-//			item->setSizeHint(QSize(100, 20));
 			item->setData(IndexRole, index);
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
@@ -2378,7 +2381,7 @@ QString MainWindow::filetype(QString const &path, bool mime)
 
 void MainWindow::on_action_test_triggered()
 {
-//	Debug::doit();
+	Debug::doit();
 }
 
 

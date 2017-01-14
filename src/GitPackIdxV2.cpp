@@ -1,7 +1,7 @@
 #include "GitPackIdxV2.h"
 #include <QCryptographicHash>
 #include <QDebug>
-
+#include <QFile>
 
 QString GitPackIdxV2::toString(uint8_t const *p)
 {
@@ -60,7 +60,6 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		d.offsets.resize(size);
 		if (!Read(&d.objects[0], size * 20))       throw QString("failed to read the objects");
 		if (!Read(&d.checksums[0], size4))         throw QString("failed to read the checksums");
-//		qDebug() << QString::number(in->pos(), 16);
 		if (!Read(&d.offsets[0], size4))           throw QString("failed to read the offsets");
 		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 
@@ -86,15 +85,28 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		std::sort(item_list.begin(), item_list.end(), [](Item const &left, Item const &right){
 			return left.offset < right.offset;
 		});
-		for (size_t i = 0; i + 1 < size; i++) {
+		for (size_t i = 0; i < size; i++) {
 			Item &item = item_list[i];
-			item.packed_length = item_list[i + 1].offset - item_list[i].offset;
+			if (i + 1 < size) {
+				item.packed_size = item_list[i + 1].offset - item_list[i].offset;
+			}
 			item_map[item.id] = item;
 		}
 
 		return true;
 	} catch (QString const &e) {
 		qDebug() << e;
+	}
+	return false;
+}
+
+bool GitPackIdxV2::parse(const QString &idxfile)
+{
+	QFile file(idxfile);
+	if (file.open(QFile::ReadOnly)) {
+		if (parse(&file)) {
+			return true;
+		}
 	}
 	return false;
 }

@@ -80,6 +80,7 @@ private slots:
 	void on_listWidget_unstaged_currentRowChanged(int currentRow);
 	void on_listWidget_staged_currentRowChanged(int currentRow);
 	void on_listWidget_files_currentRowChanged(int currentRow);
+
 	void on_toolButton_commit_clicked();
 	void on_toolButton_pull_clicked();
 	void on_toolButton_push_clicked();

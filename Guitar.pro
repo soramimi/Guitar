@@ -79,7 +79,8 @@ SOURCES += \
     src/FilePreviewWidget.cpp \
     src/FileHistoryWindow.cpp \
     src/Debug.cpp \
-    src/GitPackIdxV2.cpp
+    src/GitPackIdxV2.cpp \
+    src/GitPack.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -117,7 +118,8 @@ HEADERS  += \
     src/FilePreviewWidget.h \
     src/FileHistoryWindow.h \
     src/Debug.h \
-    src/GitPackIdxV2.h
+    src/GitPackIdxV2.h \
+    src/GitPack.h
 
 FORMS    += \
 	src/MainWindow.ui \
