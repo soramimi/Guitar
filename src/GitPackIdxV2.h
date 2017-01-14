@@ -29,14 +29,32 @@ private:
 		trailer_t trailer;
 	} d;
 
+	QString toString(const uint8_t *p);
+
 	static inline uint32_t read_uint32_be(void const *p);
 
 	static inline uint32_t get_fanout(header_t const *t, int i);
 
 public:
-	uint32_t count() const;
+	struct Item {
+		QString id;
+		size_t offset = 0;
+		size_t packed_length = 0;
+		size_t expanded_length = 0;
+		uint32_t checksum;
+	};
+private:
+	std::vector<Item> item_list;
+	std::map<QString, Item> item_map;
 	uint8_t const *object(int i) const;
+	const uint32_t offset(int i) const;
+	const uint32_t checksum(int i) const;
+public:
 	bool parse(QIODevice *in);
+	uint32_t count() const;
+	Item const *item(size_t i) const;
+	Item const *item(QString const &id) const;
+	std::map<QString, Item> const *map() const;
 };
 
 

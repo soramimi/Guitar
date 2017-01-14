@@ -2378,7 +2378,7 @@ QString MainWindow::filetype(QString const &path, bool mime)
 
 void MainWindow::on_action_test_triggered()
 {
-	Debug::doit();
+//	Debug::doit();
 }
 
 

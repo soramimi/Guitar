@@ -3,6 +3,15 @@
 #include <QDebug>
 
 
+QString GitPackIdxV2::toString(uint8_t const *p)
+{
+	char tmp[41];
+	for (int i = 0; i < 20; i++) {
+		sprintf(tmp + i * 2, "%02x", p[i]);
+	}
+	return QString::fromLatin1(tmp, 40);
+}
+
 uint32_t GitPackIdxV2::read_uint32_be(const void *p)
 {
 	uint8_t const *q = (uint8_t const *)p;
@@ -24,6 +33,16 @@ const uint8_t *GitPackIdxV2::object(int i) const
 	return d.objects[i].id;
 }
 
+const uint32_t GitPackIdxV2::offset(int i) const
+{
+	return read_uint32_be(&d.offsets[i]);
+}
+
+const uint32_t GitPackIdxV2::checksum(int i) const
+{
+	return read_uint32_be(&d.checksums[i]);
+}
+
 bool GitPackIdxV2::parse(QIODevice *in)
 {
 	try {
@@ -41,6 +60,7 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		d.offsets.resize(size);
 		if (!Read(&d.objects[0], size * 20))       throw QString("failed to read the objects");
 		if (!Read(&d.checksums[0], size4))         throw QString("failed to read the checksums");
+//		qDebug() << QString::number(in->pos(), 16);
 		if (!Read(&d.offsets[0], size4))           throw QString("failed to read the offsets");
 		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 
@@ -55,9 +75,45 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		if (memcmp(chksum.data(), d.trailer.idxfile_checksum, 20) != 0) {
 			throw QString("idx checksum is not correct");
 		}
+
+		for (size_t i = 0; i < size; i++) {
+			Item item;
+			item.id = toString(object(i));
+			item.offset = offset(i);
+			item.checksum = checksum(i);
+			item_list.push_back(item);
+		}
+		std::sort(item_list.begin(), item_list.end(), [](Item const &left, Item const &right){
+			return left.offset < right.offset;
+		});
+		for (size_t i = 0; i + 1 < size; i++) {
+			Item &item = item_list[i];
+			item.packed_length = item_list[i + 1].offset - item_list[i].offset;
+			item_map[item.id] = item;
+		}
+
 		return true;
 	} catch (QString const &e) {
 		qDebug() << e;
 	}
 	return false;
+}
+
+const GitPackIdxV2::Item *GitPackIdxV2::item(size_t i) const
+{
+	return &item_list[i];
+}
+
+const GitPackIdxV2::Item *GitPackIdxV2::item(const QString &id) const
+{
+	auto it = item_map.find(id);
+	if (it == item_map.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+const std::map<QString, GitPackIdxV2::Item> *GitPackIdxV2::map() const
+{
+	return &item_map;
 }
