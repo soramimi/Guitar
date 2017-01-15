@@ -13,28 +13,20 @@ class FilePreviewWidget : public QWidget
 {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow = nullptr;
-	DiffWidgetData *diff_widget_data = nullptr;
-	QScrollBar *vertical_scroll_bar = nullptr;
-	ViewType view_type = ViewType::None;
-	QString mime_type;
-	QPixmap pixmap;
+	struct Private;
+	Private *pv;
 
-	DiffWidgetData::DiffData *diffdata();
-	const DiffWidgetData::DiffData *diffdata() const;
-	DiffWidgetData::DrawData *drawdata();
-	const DiffWidgetData::DrawData *drawdata() const;
+	FileDiffWidget::DiffData *diffdata();
+	const FileDiffWidget::DiffData *diffdata() const;
+	FileDiffWidget::DrawData *drawdata();
+	const FileDiffWidget::DrawData *drawdata() const;
 	void paintText();
 	void paintImage();
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
 
-	void imbue_(MainWindow *m, DiffWidgetData *d)
-	{
-		mainwindow = m;
-		diff_widget_data = d;
-	}
+	void imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata, FileDiffWidget::DrawData *drawdata);
 
 	void update(ViewType vt);
 

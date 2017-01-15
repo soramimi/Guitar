@@ -392,12 +392,12 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 					}
 					diffmaplist.insert(diffmaplist.end(), diffmaplist2.begin(), diffmaplist2.end());
 				}
-				Git::Diff item;
-				item.path = misc::joinWithSlash(path, list.back());
-				item.blob.b_id = prependPathPrefix(item.path);
-				AddItem(&item, &diffs);
+//				Git::Diff item;
+//				item.path = misc::joinWithSlash(path, list.back());
+//				item.blob.b_id = prependPathPrefix(item.path);
+//				AddItem(&item, &diffs);
 			}
-
+//diffs.clear();
 			for (Git::FileStatus const &st : stats) {
 				for (LookupTable const &map : diffmaplist) {
 					checkInterrupted();

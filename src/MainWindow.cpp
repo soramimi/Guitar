@@ -42,7 +42,7 @@
 
 
 
-DiffWidgetData::DrawData::DrawData()
+FileDiffWidget::DrawData::DrawData()
 {
 	bgcolor_text = QColor(255, 255, 255);
 	bgcolor_gray = QColor(224, 224, 224);
@@ -108,9 +108,9 @@ struct MainWindow::Private {
 	QStringList added;
 	Git::CommitItemList logs;
 	bool uncommited_changes = false;
-	int timer_interval_ms;
-	int update_files_list_counter;
-	int interval_250ms_counter;
+	int timer_interval_ms = 0;
+	int update_files_list_counter = 0;
+	int interval_250ms_counter = 0;
 	QImage graph_color;
 	std::map<QString, QList<Git::Branch>> branch_map;
 	std::map<QString, QList<Git::Tag>> tag_map;
@@ -118,7 +118,6 @@ struct MainWindow::Private {
 	QPixmap digits;
 	QIcon repository_icon;
 	QIcon folder_icon;
-	DiffWidgetData diff_widget_data;
 	unsigned int temp_file_counter = 0;
 };
 
@@ -566,7 +565,7 @@ void MainWindow::startDiff(GitPtr g, QString const &id)
 
 bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 { // diffリストを取得する
-#if 0 // single thread (for debug)
+#if 1 // single thread (for debug)
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		GitDiff dm;

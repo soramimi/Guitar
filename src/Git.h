@@ -308,7 +308,7 @@ public:
 		return "HEAD";
 	}
 	static bool isAllZero(QString const &id);
-	static QString findObjectID(const QString &workingdir, const QString &id, QString *path_out = nullptr);
+	static QString findObjectID(const QString &workingdir, const QString &id, QString *path_out);
 };
 
 

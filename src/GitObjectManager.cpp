@@ -7,6 +7,11 @@
 #include <QFile>
 #include "joinpath.h"
 
+GitObjectManager::GitObjectManager(const QString &workingdir)
+	: working_dir(workingdir)
+{
+}
+
 bool GitObjectManager::loadObject_(QString const &id, QByteArray *out)
 {
 	QString path;
@@ -52,3 +57,11 @@ bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray 
 	}
 	return false;
 }
+
+bool GitObjectManager::loadObjectFile(const QString &id, QByteArray *out)
+{
+	if (loadObject_(id, out)) return true;
+	if (extractObjectFromPackFile_(id, out)) return true;
+	return false;
+}
+

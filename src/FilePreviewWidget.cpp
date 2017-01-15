@@ -12,29 +12,41 @@
 #include <QWheelEvent>
 #include <functional>
 
-DiffWidgetData::DiffData *FilePreviewWidget::diffdata()
+struct FilePreviewWidget::Private {
+	MainWindow *mainwindow = nullptr;
+	FileDiffWidget::DiffData *diff_data = nullptr;
+	FileDiffWidget::DrawData *draw_data = nullptr;
+	QScrollBar *vertical_scroll_bar = nullptr;
+	ViewType view_type = ViewType::None;
+	QString mime_type;
+	QPixmap pixmap;
+};
+
+FileDiffWidget::DiffData *FilePreviewWidget::diffdata()
 {
-	return &diff_widget_data->diffdata;
+	return pv->diff_data;
 }
 
-DiffWidgetData::DiffData const *FilePreviewWidget::diffdata() const
+FileDiffWidget::DiffData const *FilePreviewWidget::diffdata() const
 {
-	return &diff_widget_data->diffdata;
+	return pv->diff_data;
 }
 
-DiffWidgetData::DrawData *FilePreviewWidget::drawdata()
+FileDiffWidget::DrawData *FilePreviewWidget::drawdata()
 {
-	return &diff_widget_data->drawdata;
+	return pv->draw_data;
 }
 
-DiffWidgetData::DrawData const *FilePreviewWidget::drawdata() const
+FileDiffWidget::DrawData const *FilePreviewWidget::drawdata() const
 {
-	return &diff_widget_data->drawdata;
+	return pv->draw_data;
 }
 
 FilePreviewWidget::FilePreviewWidget(QWidget *parent)
 	: QWidget(parent)
 {
+	pv = new Private();
+
 #if defined(Q_OS_WIN32)
 	setFont(QFont("MS Gothic"));
 #elif defined(Q_OS_LINUX)
@@ -44,21 +56,28 @@ FilePreviewWidget::FilePreviewWidget(QWidget *parent)
 #endif
 }
 
-
 FilePreviewWidget::~FilePreviewWidget()
 {
+	delete pv;
+}
+
+void FilePreviewWidget::imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata, FileDiffWidget::DrawData *drawdata)
+{
+	pv->mainwindow = m;
+	pv->diff_data = diffdata;
+	pv->draw_data = drawdata;
 }
 
 void FilePreviewWidget::update(ViewType vt)
 {
-	view_type = vt;
+	pv->view_type = vt;
 	QWidget::update();
 }
 
 void FilePreviewWidget::clear(ViewType vt)
 {
-	mime_type = QString();
-	pixmap = QPixmap();
+	pv->mime_type = QString();
+	pv->pixmap = QPixmap();
 	update(vt);
 }
 
@@ -90,9 +109,9 @@ void FilePreviewWidget::paintText()
 
 	x = 0;
 	QList<TextDiffLine> const *lines = nullptr;
-	if (view_type == ViewType::Left) {
+	if (pv->view_type == ViewType::Left) {
 		lines = &diffdata()->left_lines;
-	} else if (view_type == ViewType::Right) {
+	} else if (pv->view_type == ViewType::Right) {
 		lines = &diffdata()->right_lines;
 	}
 	if (lines) {
@@ -149,7 +168,7 @@ void FilePreviewWidget::paintText()
 		pr.restore();
 	}
 
-	if (drawdata()->forcus != ViewType::None && view_type == drawdata()->forcus) {
+	if (drawdata()->forcus != ViewType::None && pv->view_type == drawdata()->forcus) {
 		int x = 0;
 		int y = 0;
 		int w = width();
@@ -163,17 +182,17 @@ void FilePreviewWidget::paintText()
 
 void FilePreviewWidget::paintImage()
 {
-	int w = pixmap.width();
-	int h = pixmap.height();
+	int w = pv->pixmap.width();
+	int h = pv->pixmap.height();
 	if (w > 0 && h > 0) {
 		QPainter pr(this);
-		pr.drawPixmap(0, 0, w, h, pixmap);
+		pr.drawPixmap(0, 0, w, h, pv->pixmap);
 	}
 }
 
 void FilePreviewWidget::paintEvent(QPaintEvent *)
 {
-	if (mime_type == "image/png") {
+	if (pv->mime_type == "image/png") {
 		paintImage();
 	} else {
 		paintText();
@@ -207,7 +226,7 @@ void FilePreviewWidget::resizeEvent(QResizeEvent *)
 
 void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
-	if (!mainwindow) return; // TODO:
+	if (!pv->mainwindow) return; // TODO:
 
 	QPoint pos;
 	if (e->reason() == QContextMenuEvent::Mouse) {
@@ -216,37 +235,37 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 		pos = mapToGlobal(QPoint(4, 4));
 	}
 
-	drawdata()->forcus = view_type;
+	drawdata()->forcus = pv->view_type;
 
 	QString id;
-	switch (view_type) {
+	switch (pv->view_type) {
 	case ViewType::Left:  id = diffdata()->left_id;  break;
 	case ViewType::Right: id = diffdata()->right_id; break;
 	}
-	QString path = mainwindow->currentWorkingCopyDir() / diffdata()->path;
+	QString path = pv->mainwindow->currentWorkingCopyDir() / diffdata()->path;
 
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
 	QAction *a_test = id.isEmpty() ? nullptr : menu.addAction(tr("test"));
 	if (!menu.actions().isEmpty()) {
-		drawdata()->forcus = view_type;
-		update(view_type);
+		drawdata()->forcus = pv->view_type;
+		update(pv->view_type);
 		QAction *a = menu.exec(pos);
 		if (a) {
 			if (a == a_save_as) {
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					mainwindow->saveAs(id, dstpath);
+					pv->mainwindow->saveAs(id, dstpath);
 				}
 				goto DONE;
 			}
 			if (a == a_test) {
-				QString path = mainwindow->saveAsTemp(id);
+				QString path = pv->mainwindow->saveAsTemp(id);
 
-				QString mimetype = mainwindow->filetype(path, true);
+				QString mimetype = pv->mainwindow->filetype(path, true);
 				if (mimetype == "image/png") {
-					mime_type = mimetype;
-					pixmap.load(path);
+					pv->mime_type = mimetype;
+					pv->pixmap.load(path);
 				}
 
 				QFile::remove(path);
@@ -257,6 +276,6 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 	}
 DONE:;
 	drawdata()->forcus = ViewType::None;
-	update(view_type);
+	update(pv->view_type);
 }
 

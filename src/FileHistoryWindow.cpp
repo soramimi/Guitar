@@ -6,6 +6,45 @@
 #include "joinpath.h"
 #include "FileDiffWidget.h"
 
+struct FileHistoryWindow::Private {
+	MainWindow *mainwindow;
+	GitPtr g;
+	QString path;
+	Git::CommitItemList commit_item_list;
+	FileDiffWidget::DiffData diff_data;
+	FileDiffWidget::DrawData draw_data;
+};
+
+FileDiffWidget::DiffData *FileHistoryWindow::diffdata()
+{
+	return &pv->diff_data;
+}
+
+const FileDiffWidget::DiffData *FileHistoryWindow::diffdata() const
+{
+	return &pv->diff_data;
+}
+
+FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
+{
+	return &pv->draw_data;
+}
+
+const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
+{
+	return &pv->draw_data;
+}
+
+int FileHistoryWindow::totalTextLines() const
+{
+	return diffdata()->left_lines.size();
+}
+
+int FileHistoryWindow::fileviewScrollPos() const
+{
+	return drawdata()->scrollpos;
+}
+
 FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &path)
 	: QDialog(parent)
 	, ui(new Ui::FileHistoryWindow)
@@ -15,17 +54,19 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	mainwindow = qobject_cast<MainWindow *>(parent);
-	Q_ASSERT(mainwindow);
+	pv = new Private();
+
+	pv->mainwindow = qobject_cast<MainWindow *>(parent);
+	Q_ASSERT(pv->mainwindow);
 
 	ui->splitter->setSizes({100, 100});
 
-	ui->widget_diff_view->bind(mainwindow);
+	ui->widget_diff_view->bind(pv->mainwindow);
 
 	Q_ASSERT(g);
 	Q_ASSERT(g->isValidWorkingCopy());
-	this->g = g;
-	this->path = path;
+	this->pv->g = g;
+	this->pv->path = path;
 
 
 	collectFileHistory();
@@ -35,12 +76,13 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 
 FileHistoryWindow::~FileHistoryWindow()
 {
+	delete pv;
 	delete ui;
 }
 
 void FileHistoryWindow::collectFileHistory()
 {
-	commit_item_list = g->log_all(path, mainwindow->limitLogCount(), mainwindow->limitLogTime());
+	pv->commit_item_list = pv->g->log_all(pv->path, pv->mainwindow->limitLogCount(), pv->mainwindow->limitLogTime());
 
 	QStringList cols = {
 		tr("Commit"),
@@ -57,11 +99,11 @@ void FileHistoryWindow::collectFileHistory()
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 
-	int count = commit_item_list.size();
+	int count = pv->commit_item_list.size();
 	ui->tableWidget_log->setRowCount(count);
 
 	for (int row = 0; row < count; row++) {
-		Git::CommitItem const &commit = commit_item_list[row];
+		Git::CommitItem const &commit = pv->commit_item_list[row];
 		int col = 0;
 		auto AddColumn = [&](QString const &text){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
@@ -69,7 +111,7 @@ void FileHistoryWindow::collectFileHistory()
 			col++;
 		};
 
-		QString commit_id = mainwindow->abbrevCommitID(commit);
+		QString commit_id = pv->mainwindow->abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id);
 		AddColumn(datetime);
@@ -91,12 +133,12 @@ void FileHistoryWindow::updateDiffView()
 	ui->widget_diff_view->clearDiffView();
 
 	int row = ui->tableWidget_log->currentRow();
-	if (row >= 0 && row + 1 < (int)commit_item_list.size()) {
-		Git::CommitItem const &commit_left = commit_item_list[row + 1]; // older
-		Git::CommitItem const &commit_right = commit_item_list[row];    // newer
+	if (row >= 0 && row + 1 < (int)pv->commit_item_list.size()) {
+		Git::CommitItem const &commit_left = pv->commit_item_list[row + 1]; // older
+		Git::CommitItem const &commit_right = pv->commit_item_list[row];    // newer
 
-		QString id_left = GitDiff().findFileID(g, commit_left.commit_id, path);
-		QString id_right = GitDiff().findFileID(g, commit_right.commit_id, path);
+		QString id_left = GitDiff().findFileID(pv->g, commit_left.commit_id, pv->path);
+		QString id_right = GitDiff().findFileID(pv->g, commit_right.commit_id, pv->path);
 
 		ui->widget_diff_view->updateDiffView(id_left, id_right);
 	}

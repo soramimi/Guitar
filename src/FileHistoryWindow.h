@@ -16,43 +16,15 @@ class FileHistoryWindow : public QDialog
 {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow;
-	GitPtr g;
-	QString path;
-	Git::CommitItemList commit_item_list;
+	struct Private;
+	Private *pv;
 
-	DiffWidgetData data_;
-
-	DiffWidgetData::DiffData *diffdata()
-	{
-		return &data_.diffdata;
-	}
-
-	DiffWidgetData::DiffData const *diffdata() const
-	{
-		return &data_.diffdata;
-	}
-
-	DiffWidgetData::DrawData *drawdata()
-	{
-		return &data_.drawdata;
-	}
-
-	DiffWidgetData::DrawData const *drawdata() const
-	{
-		return &data_.drawdata;
-	}
-
-	int totalTextLines() const
-	{
-		return diffdata()->left_lines.size();
-	}
-
-	int fileviewScrollPos() const
-	{
-		return drawdata()->scrollpos;
-	}
-
+	FileDiffWidget::DiffData *diffdata();
+	FileDiffWidget::DiffData const *diffdata() const;
+	FileDiffWidget::DrawData *drawdata();
+	FileDiffWidget::DrawData const *drawdata() const;
+	int totalTextLines() const;
+	int fileviewScrollPos() const;
 public:
 	explicit FileHistoryWindow(QWidget *parent, GitPtr g, QString const &path);
 	~FileHistoryWindow();

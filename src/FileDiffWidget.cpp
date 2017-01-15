@@ -12,6 +12,14 @@ enum {
 	DiffIndexRole = Qt::UserRole,
 };
 
+struct FileDiffWidget::Private {
+	MainWindow *mainwindow;
+	QString path;
+	Git::CommitItemList commit_item_list;
+	FileDiffWidget::DiffData diff_data;
+	FileDiffWidget::DrawData draw_data;
+};
+
 FileDiffWidget::FileDiffWidget(QWidget *parent)
 	: QWidget(parent)
 	, ui(new Ui::FileDiffWidget)
@@ -21,6 +29,7 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	pv = new Private();
 
 	ui->widget_diff_left->installEventFilter(this);
 	ui->widget_diff_right->installEventFilter(this);
@@ -31,16 +40,37 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 
 FileDiffWidget::~FileDiffWidget()
 {
+	delete pv;
 	delete ui;
+}
+
+FileDiffWidget::DiffData *FileDiffWidget::diffdata()
+{
+	return &pv->diff_data;
+}
+
+const FileDiffWidget::DiffData *FileDiffWidget::diffdata() const
+{
+	return &pv->diff_data;
+}
+
+FileDiffWidget::DrawData *FileDiffWidget::drawdata()
+{
+	return &pv->draw_data;
+}
+
+const FileDiffWidget::DrawData *FileDiffWidget::drawdata() const
+{
+	return &pv->draw_data;
 }
 
 void FileDiffWidget::bind(MainWindow *mw)
 {
-	mainwindow = mw;
-	Q_ASSERT(mainwindow);
-	ui->widget_diff_pixmap->imbue_(mainwindow, this, &data_);
-	ui->widget_diff_left->imbue_(mainwindow, &data_);
-	ui->widget_diff_right->imbue_(mainwindow, &data_);
+	pv->mainwindow = mw;
+	Q_ASSERT(pv->mainwindow);
+	ui->widget_diff_pixmap->imbue_(pv->mainwindow, this, diffdata(), drawdata());
+	ui->widget_diff_left->imbue_(pv->mainwindow, diffdata(), drawdata());
+	ui->widget_diff_right->imbue_(pv->mainwindow, diffdata(), drawdata());
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged(int)));
 	connect(ui->widget_diff_pixmap, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
@@ -57,7 +87,7 @@ void FileDiffWidget::bind(MainWindow *mw)
 
 void FileDiffWidget::clearDiffView()
 {
-	*diffdata() = DiffWidgetData::DiffData();
+	*diffdata() = FileDiffWidget::DiffData();
 	ui->widget_diff_pixmap->clear(false);
 	ui->widget_diff_left->clear(ViewType::Left);
 	ui->widget_diff_right->clear(ViewType::Right);
@@ -313,12 +343,12 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 
 void FileDiffWidget::setPath(QString const &path)
 {
-	this->path = path;
+	this->pv->path = path;
 }
 
 GitPtr FileDiffWidget::git()
 {
-	return mainwindow->git();
+	return pv->mainwindow->git();
 }
 
 void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
@@ -337,10 +367,10 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 
 	QByteArray ba;
 	if (diff.blob.a_id.isEmpty()) {
-		mainwindow->cat_file(g, diff.blob.b_id, &ba);
+		pv->mainwindow->cat_file(g, diff.blob.b_id, &ba);
 		setDataAsNewFile(ba, diff);
 	} else {
-		mainwindow->cat_file(g, diff.blob.a_id, &ba);
+		pv->mainwindow->cat_file(g, diff.blob.a_id, &ba);
 		setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir());
 	}
 
@@ -358,7 +388,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	if (!g->isValidWorkingCopy()) return;
 
 	Git::Diff diff;
-	diff.path = path;
+	diff.path = pv->path;
 	diff.blob.a_id = id_left;
 	diff.blob.b_id = id_right;
 	diff.mode = "0";
@@ -366,7 +396,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	QByteArray ba;
-	mainwindow->cat_file(g, diff.blob.a_id, &ba);
+	pv->mainwindow->cat_file(g, diff.blob.a_id, &ba);
 	setTextDiffData(ba, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);
@@ -449,7 +479,7 @@ void FileDiffWidget::onDiffWidgetResized()
 }
 
 
-QPixmap FileDiffWidget::makeDiffPixmap_(ViewType side, int width, int height, DiffWidgetData const *dd)
+QPixmap FileDiffWidget::makeDiffPixmap_(ViewType side, int width, int height, FileDiffWidget::DiffData const *diffdata, FileDiffWidget::DrawData const *drawdata)
 {
 	auto MakePixmap = [&](QList<TextDiffLine> const &lines, int w, int h){
 		const int scale = 1;
@@ -477,26 +507,26 @@ QPixmap FileDiffWidget::makeDiffPixmap_(ViewType side, int width, int height, Di
 		};
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Unknown: return dd->drawdata.bgcolor_gray;
+			case TextDiffLine::Unknown: return drawdata->bgcolor_gray;
 			}
 			return QColor();
 		});
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Add: return dd->drawdata.bgcolor_add_dark;
-			case TextDiffLine::Del: return dd->drawdata.bgcolor_del_dark;
+			case TextDiffLine::Add: return drawdata->bgcolor_add_dark;
+			case TextDiffLine::Del: return drawdata->bgcolor_del_dark;
 			}
 			return QColor();
 		});
 		if (scale == 1) return pixmap;
 		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	};
-	if (side == ViewType::Left)  return MakePixmap(dd->diffdata.left_lines, width, height);
-	if (side == ViewType::Right) return MakePixmap(dd->diffdata.right_lines, width, height);
+	if (side == ViewType::Left)  return MakePixmap(diffdata->left_lines, width, height);
+	if (side == ViewType::Right) return MakePixmap(diffdata->right_lines, width, height);
 	return QPixmap();
 }
 
 QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height)
 {
-	return makeDiffPixmap_(side, width, height, getDiffWidgetData());
+	return makeDiffPixmap_(side, width, height, diffdata(), drawdata());
 }
