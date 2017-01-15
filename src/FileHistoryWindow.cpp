@@ -42,7 +42,7 @@ int FileHistoryWindow::totalTextLines() const
 
 int FileHistoryWindow::fileviewScrollPos() const
 {
-	return drawdata()->scrollpos;
+	return drawdata()->v_scroll_pos;
 }
 
 FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &path)

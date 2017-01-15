@@ -21,9 +21,10 @@ struct TextDiffLine {
 		Unchanged,
 		Add,
 		Del,
-	} type;
+	} type = Unknown;
 	int hunk_number = -1;
 	int line_number = -1;
+	QString mark;
 	QString line;
 	TextDiffLine()
 	{
@@ -40,9 +41,6 @@ class QTableWidgetItem;
 class FileDiffWidget : public QWidget
 {
 	Q_OBJECT
-	friend class MainWindow;
-	friend class FileDiffSliderWidget;
-	friend class FilePreviewWidget;
 public:
 	struct DiffData {
 		QStringList original_lines;
@@ -54,7 +52,8 @@ public:
 	};
 
 	struct DrawData {
-		int scrollpos = 0;
+		int v_scroll_pos = 0;
+		int h_scroll_pos = 0;
 		int char_width = 0;
 		int line_height = 0;
 		QColor bgcolor_text;
@@ -83,7 +82,7 @@ private:
 
 	int fileviewScrollPos() const
 	{
-		return drawdata()->scrollpos;
+		return drawdata()->v_scroll_pos;
 	}
 
 	int visibleLines() const
@@ -98,11 +97,16 @@ private:
 
 	void scrollTo(int value);
 
+	void resetScrollBarValue();
 	void updateVerticalScrollBar();
-	int fileviewHeight() const;
-	QString formatLine(QString const &text, bool diffmode);
+	void updateHorizontalScrollBar();
+	void updateSliderCursor();
+	void updateControls();
 
-	void setDiffText_(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right, bool diffmode);
+	int fileviewHeight() const;
+	QString formatLine(QString const &text);
+
+	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
 	void setDataAsNewFile(const QByteArray &ba, const Git::Diff &diff);
 	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
@@ -111,29 +115,27 @@ private:
 
 	GitPtr git();
 
-	QPixmap makeDiffPixmap_(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
-	QPixmap makeDiffPixmap(ViewType side, int width, int height);
-
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
 
 	void bind(MainWindow *mw);
-	void setPath(const QString &path);
-private slots:
-	void onScrollValueChanged(int value);
-	void onDiffWidgetWheelScroll(int lines);
-	void onScrollValueChanged2(int value);
-	void onDiffWidgetResized();
-public:
-	bool eventFilter(QObject *watched, QEvent *event);
 
-	void setVerticalScrollBarValue(int pos);
 	void clearDiffView();
-	void updateSliderCursor();
 
 	void updateDiffView(const Git::Diff &info, bool uncommited);
 	void updateDiffView(QString id_left, QString id_right);
+
+	QPixmap makeDiffPixmap(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
+
+private slots:
+	void onVerticalScrollValueChanged(int value);
+	void onHorizontalScrollValueChanged(int value);
+	void onDiffWidgetWheelScroll(int lines);
+	void onScrollValueChanged2(int value);
+	void onDiffWidgetResized();
+protected:
+	bool eventFilter(QObject *watched, QEvent *event);
 };
 
 #endif // FILEDIFFWIDGET_H

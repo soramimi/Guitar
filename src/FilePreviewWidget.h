@@ -28,6 +28,7 @@ public:
 
 	void imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata, FileDiffWidget::DrawData *drawdata);
 
+	void update();
 	void update(ViewType vt);
 
 	void clear(ViewType vt);

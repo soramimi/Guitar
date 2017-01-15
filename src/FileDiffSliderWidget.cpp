@@ -39,8 +39,8 @@ void FileDiffSliderWidget::imbue_(MainWindow *mw, FileDiffWidget *fdw, const Fil
 void FileDiffSliderWidget::updatePixmap()
 {
 	Q_ASSERT(pv->file_diff_widget);
-	pv->left_pixmap = pv->file_diff_widget->makeDiffPixmap_(ViewType::Left, 8, height(), pv->diff_data, pv->draw_data);
-	pv->right_pixmap = pv->file_diff_widget->makeDiffPixmap_(ViewType::Right, 8, height(), pv->diff_data, pv->draw_data);
+	pv->left_pixmap = pv->file_diff_widget->makeDiffPixmap(ViewType::Left, 8, height(), pv->diff_data, pv->draw_data);
+	pv->right_pixmap = pv->file_diff_widget->makeDiffPixmap(ViewType::Right, 8, height(), pv->diff_data, pv->draw_data);
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)

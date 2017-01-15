@@ -68,10 +68,15 @@ void FilePreviewWidget::imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata
 	pv->draw_data = drawdata;
 }
 
+void FilePreviewWidget::update()
+{
+	QWidget::update();
+}
+
 void FilePreviewWidget::update(ViewType vt)
 {
 	pv->view_type = vt;
-	QWidget::update();
+	update();
 }
 
 void FilePreviewWidget::clear(ViewType vt)
@@ -114,19 +119,25 @@ void FilePreviewWidget::paintText()
 	} else if (pv->view_type == ViewType::Right) {
 		lines = &diffdata()->right_lines;
 	}
+
+	const int linenums = 5;
+
 	if (lines) {
-		int linenum_w = sz.width() * 5 + 1;
+		int char_width = drawdata()->char_width;
+		int linenum_w = char_width * linenums;
 		int x2 = x + linenum_w;
 		int w2 = w - linenum_w;
 		if (w2 < 1) return;
 		pr.save();
 		pr.setClipRect(x, 0, w, h);
-		int y = drawdata()->scrollpos * drawdata()->line_height;
+		int y = drawdata()->v_scroll_pos * drawdata()->line_height;
 		int i = y / drawdata()->line_height;
 		y -= i * drawdata()->line_height;
 		y = -y;
 		while (i < lines->size() && y < h) {
 			QString const &line = lines->at(i).line;
+			TextDiffLine::Type type = lines->at(i).type;
+
 			QColor *bgcolor;
 			switch (lines->at(i).type) {
 			case TextDiffLine::Unchanged:
@@ -142,9 +153,11 @@ void FilePreviewWidget::paintText()
 				bgcolor = &drawdata()->bgcolor_gray;
 				break;
 			}
+
 			int line_y = y + drawdata()->line_height - descent - bottom_margin;
-			{
-				pr.fillRect(x, y, linenum_w + drawdata()->char_width, drawdata()->line_height, drawdata()->bgcolor_gray);
+
+			{ // draw line number
+				pr.fillRect(x, y, linenum_w + char_width, drawdata()->line_height, drawdata()->bgcolor_gray);
 				int num = lines->at(i).line_number;
 				if (num >= 0 && num < lines->size()) {
 					QString text = "     " + QString::number(num + 1);
@@ -154,9 +167,23 @@ void FilePreviewWidget::paintText()
 				}
 
 			}
-			pr.fillRect(x2 + drawdata()->char_width, y, w2 - drawdata()->char_width, drawdata()->line_height, QBrush(*bgcolor));
+
+			// draw text
+			int x3 = char_width * (linenums + 1); // 行番号＋ヘッダマーク
+			int x4 = drawdata()->h_scroll_pos * char_width; // 水平スクロール
+			pr.fillRect(x3 - 1, y, w2 - char_width + 1, drawdata()->line_height, QBrush(*bgcolor));
 			pr.setPen(QColor(0, 0, 0));
-			pr.drawText(x2, line_y, line);
+
+			switch (type) {
+			case TextDiffLine::Add: pr.drawText(x2, line_y, "+"); break;
+			case TextDiffLine::Del: pr.drawText(x2, line_y, "-"); break;
+			}
+
+			pr.save();
+			pr.setClipRect(x3, 0, width() - x3, height());
+			pr.drawText(x3 - x4, line_y, line);
+			pr.restore();
+
 			y += drawdata()->line_height;
 			i++;
 		}
