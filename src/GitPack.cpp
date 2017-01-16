@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QFile>
 
-size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed)
+bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed)
 {
 	if (consumed) *consumed = 0;
 	try {
@@ -23,7 +23,13 @@ size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out,
 			throw QString("failed: inflateInit");
 		}
 
-		while ((size_t)out->size() < expanded_size) {
+		char header_buf[100] = {0};
+		int header_pos = process_header ? 0 : -1;
+
+		while (1) {
+			if (expanded_size > 0 && (size_t)out->size() > expanded_size) {
+				throw QString("file too large");
+			}
 			uint8_t src[1024];
 			uint8_t tmp[65536];
 			if (d_stream.next_in != src && d_stream.avail_in > 0) {
@@ -51,7 +57,21 @@ size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out,
 			if (consumed) *consumed += n;
 
 			n = d_stream.total_out - total;
-			out->append((char const *)tmp, n);
+			char const *p = (char const *)tmp;
+			while (header_pos >= 0 && n > 0) {
+				char c = *p;
+				header_buf[header_pos] = c;
+				if (header_pos + 1 < sizeof(header_buf)) {
+					header_pos++;
+				}
+				p++;
+				n--;
+				if (c == 0) {
+					header_pos = -1;
+					break;
+				}
+			}
+			out->append(p, n);
 			if (err == Z_STREAM_END) {
 				break;
 			}
@@ -63,6 +83,55 @@ size_t GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out,
 		err = inflateEnd(&d_stream);
 		if (err != Z_OK) {
 			throw QString("failed: inflateEnd");
+		}
+
+		if (process_header) {
+			if (strncmp(header_buf, "tree ", 5) == 0) {
+				type = Type::TREE;
+			}
+		}
+
+		int n = out->size();
+		if (n > 0 && type == Type::TREE) {
+			QByteArray ba;
+			uint8_t const *begin = (uint8_t const *)out->data();
+			uint8_t const *end = begin + out->size();
+			uint8_t const *ptr = begin;
+			while (ptr < end) {
+				int mode = 0;
+				while (ptr < end) {
+					int c = *ptr & 0xff;
+					ptr++;
+					if (isdigit(c & 0xff)) {
+						mode = mode * 10 + (c - '0');
+					} else if (c == ' ') {
+						break;
+					}
+				}
+				uint8_t const *left = ptr;
+				while (ptr < end && *ptr) {
+					ptr++;
+				}
+				std::string name(left, ptr);
+				if (ptr + 20 < end) {
+					ptr++;
+					char tmp[100];
+					sprintf(tmp, "%06u %s ", mode, mode < 100000 ? "tree" : "blob");
+					char *p = tmp + 12;
+					for (int i = 0; i < 20; i++) {
+						sprintf(p, "%02x", ptr[i]);
+						p += 2;
+					}
+					ba.append(tmp, p - tmp);
+					ba.append('\t');
+					ba.append(name.c_str(), name.size());
+					ba.append('\n');
+					ptr += 20;
+				} else {
+					break;
+				}
+			}
+			*out = std::move(ba);
 		}
 
 		return true;
@@ -121,7 +190,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 			if (!Read(tmp, 20)) throw QString("failed to read");
 		}
 
-		if (decompress(file, size, &out->content, &out->packed_size)) {
+		if (decompress(file, false, out->type, size, &out->content, &out->packed_size)) {
 			out->expanded_size = size;
 			return true;
 		}

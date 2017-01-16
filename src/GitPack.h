@@ -10,9 +10,10 @@ public:
 	enum class Type {
 		UNKNOWN = 0,
 		COMMIT = 1,
-		BLOB = 2,
-		TREE = 3,
+		TREE = 2,
+		BLOB = 3,
 		TAG = 4,
+		UNDEFINED = 5,
 		OFS_DELTA = 6,
 		REF_DELTA = 7,
 	};
@@ -32,7 +33,7 @@ private:
 
 	static bool load(QIODevice *file, GitPackIdxV2::Item const *item, Object *out);
 public:
-	static size_t decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
+	static bool decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
 	static bool load(const QString &packfile, const GitPackIdxV2::Item *item, GitPack::Object *out);
 };
 

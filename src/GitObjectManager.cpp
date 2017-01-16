@@ -3,6 +3,7 @@
 #include "GitPack.h"
 
 #include <QBuffer>
+#include <QDebug>
 #include <QDirIterator>
 #include <QFile>
 #include "joinpath.h"
@@ -14,16 +15,18 @@ GitObjectManager::GitObjectManager(const QString &workingdir)
 
 bool GitObjectManager::loadObject_(QString const &id, QByteArray *out)
 {
+//	qDebug() << Q_FUNC_INFO;
 	QString path;
 	Git::findObjectID(working_dir, id, &path);
 	if (!path.isEmpty()) {
+//		QFileInfo info(path);
 		QFile file(path);
 		if (file.open(QFile::ReadOnly)) {
-			QByteArray in = file.readAll();
-			file.close();
-			QBuffer src(&in);
-			src.open(QBuffer::ReadOnly);
-			if (GitPack::decompress(&src, in.size(), out)) {
+//			QByteArray in = file.readAll();
+//			file.close();
+//			QBuffer src(&in);
+//			src.open(QBuffer::ReadOnly);
+			if (GitPack::decompress(&file, true, GitPack::Type::UNKNOWN, 1000000000, out)) {
 				return true;
 			}
 		}
@@ -33,6 +36,7 @@ bool GitObjectManager::loadObject_(QString const &id, QByteArray *out)
 
 bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray *out)
 {
+//	qDebug() << Q_FUNC_INFO;
 	GitPackIdxV2 idx;
 	QString subdir = ".git/objects/pack";
 	QString path = working_dir / subdir;
@@ -47,8 +51,12 @@ bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray 
 					QString packfile = it.fileInfo().baseName() + ".pack";
 					QString path = working_dir / subdir / packfile;
 					GitPack::Object obj;
+					if (id.startsWith("f98089")) {
+						qDebug();
+					}
 					if (GitPack::load(path, item, &obj)) {
 						*out = obj.content;
+						char const *p = out->data();
 						return true;
 					}
 				}

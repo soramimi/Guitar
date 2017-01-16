@@ -9,6 +9,7 @@
 #include "joinpath.h"
 #include "misc.h"
 #include "LibGit2.h"
+#include "GitObjectManager.h"
 
 #define DEBUGLOG 0
 
@@ -738,6 +739,15 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
 		*out = cat_file_(id);
+		{
+			char const *p = out->data();
+			QByteArray ba;
+			GitObjectManager gom(workingRepositoryDir());
+			gom.loadObjectFile(id, &ba);
+			if (out->size() != ba.size()) {
+				qDebug() << "cat_file: " << out->size() << ba.size();
+			}
+		}
 		return true;
 	}
 	return false;
@@ -847,7 +857,7 @@ QString Git::findObjectID(const QString &workingdir, const QString &id, QString 
 		QString subdir = id.mid(0, 2);
 		dir = workingdir / dir.arg(subdir);
 		QString name = id.mid(2);
-		QDirIterator it(dir, QDir::Dirs);
+		QDirIterator it(dir, QDir::Files);
 		while (it.hasNext()) {
 			it.next();
 			if (it.fileName().startsWith(name)) {

@@ -182,6 +182,7 @@ private:
 		QString dir;
 	};
 	Data d;
+public:
 	void run()
 	{
 		commit.parseTree(d.g, d.id, d.dir, false);
@@ -198,12 +199,19 @@ public:
 
 void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString newer_id)
 {
+#if 1 // single thread (for debug)
+	CommitListThread older(g->dup(), older_id, dir);
+	older.run();
+	CommitListThread newer(g->dup(), newer_id, dir);
+	newer.run();
+#else // multi thread
 	CommitListThread older(g->dup(), older_id, dir);
 	CommitListThread newer(g->dup(), newer_id, dir);
 	older.start();
 	newer.start();
 	older.wait();
 	newer.wait();
+#endif
 
 	MapList diffmap;
 
@@ -419,7 +427,7 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 
 		} else {
 
-#if 0
+#if 0 // obsolete: 後で消す
 			CommitList newcommit;
 			newcommit.parseCommit(g, id, false);
 
