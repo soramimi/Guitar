@@ -119,7 +119,10 @@ bool GitPackIdxV2::parse(const QString &idxfile)
 
 const GitPackIdxV2::Item *GitPackIdxV2::item(size_t i) const
 {
-	return &item_list[i];
+	if (i < item_list.size()) {
+		return &item_list[i];
+	}
+	return nullptr;
 }
 
 const GitPackIdxV2::Item *GitPackIdxV2::item(const QString &id) const

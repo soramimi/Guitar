@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <QDebug>
 #include <QPainter>
 #include <QProcess>
 #include <QWidget>
@@ -260,6 +261,51 @@ void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, const QColor &col
 	}
 }
 
+void misc::dump(uint8_t const *ptr, size_t len)
+{
+	if (ptr && len > 0) {
+		size_t pos = 0;
+		while (pos < len) {
+			char tmp[100];
+			char *dst = tmp;
+			sprintf(dst, "%08X ", pos);
+			dst += 9;
+			for (int i = 0; i < 16; i++) {
+				if (pos + i < len) {
+					sprintf(dst, "%02X ", ptr[pos + i] & 0xff);
+				} else {
+					sprintf(dst, "   ", ptr[pos + i] & 0xff);
+				}
+				dst += 3;
+			}
+			for (int i = 0; i < 16; i++) {
+				int c = ' ';
+				if (pos < len) {
+					c = ptr[pos] & 0xff;
+					if (!isprint(c)) {
+						c = '.';
+					}
+					pos++;
+				}
+				*dst = c;
+				dst++;
+			}
+			*dst = 0;
+			qDebug() << tmp;
+		}
+	}
+}
 
-
+void misc::dump(QByteArray *out)
+{
+	size_t len = 0;
+	uint8_t const *ptr = nullptr;
+	if (out) {
+		len = out->size();
+		if (len > 0) {
+			ptr = (uint8_t const *)out->data();
+		}
+	}
+	dump(ptr, len);
+}
 

@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <functional>
 #include <vector>
+#include <stdint.h>
 
 class misc {
 public:
@@ -23,6 +24,8 @@ public:
 	static int runCommand(QString const &cmd, QByteArray *out);
 	static void setFixedSize(QWidget *w);
 	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor const &color);
+	static void dump(const uint8_t *ptr, size_t len);
+	static void dump(QByteArray *out);
 };
 
 class OverrideWaitCursor_ {
