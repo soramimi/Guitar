@@ -53,6 +53,7 @@ void SettingsDialog::on_pushButton_select_git_command_clicked()
 {
 	QString path = mainwindow->selectGitCommand();
 	if (!path.isEmpty()) {
+		set.git_command = path;
 		ui->lineEdit_git_command->setText(path);
 	}
 }
@@ -67,6 +68,7 @@ void SettingsDialog::on_pushButton_select_file_command_clicked()
 {
 	QString path = mainwindow->selectFileCommand();
 	if (!path.isEmpty()) {
+		set.file_command = path;
 		ui->lineEdit_file_command->setText(path);
 	}
 }

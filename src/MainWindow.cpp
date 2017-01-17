@@ -565,7 +565,7 @@ void MainWindow::startDiff(GitPtr g, QString const &id)
 
 bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 { // diffリストを取得する
-#if 1 // single thread (for debug)
+#if SINGLE_THREAD
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		GitDiff dm;

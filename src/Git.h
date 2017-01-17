@@ -8,6 +8,7 @@
 #include <memory>
 
 #define USE_LIBGIT2 0
+#define SINGLE_THREAD 0
 
 enum class LineSide {
 	Left,

@@ -138,6 +138,7 @@ bool Git::git(const QString &arg, bool chdir)
 		QString cmd = QString("\"%1\" ").arg(gitCommand());
 		cmd += arg;
 
+//		qDebug() << cmd;
 #if 1
 		QProcess proc;
 		proc.start(cmd);
@@ -317,6 +318,9 @@ QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 			if (header.size() >= 5) {
 				QStringList files = line.mid(tab + 1).split('\t', QString::SkipEmptyParts);
 				if (files.size() > 0) {
+					for (QString &file : files) {
+						file = Git::trimPath(file);
+					}
 					item.a.id = header[2];
 					item.b.id = header[3];
 					item.a.mode = header[0];

@@ -199,7 +199,7 @@ public:
 
 void GitDiff::diff_tree_(GitPtr g, const QString &dir, QString older_id, QString newer_id)
 {
-#if 1 // single thread (for debug)
+#if SINGLE_THREAD
 	CommitListThread older(g->dup(), older_id, dir);
 	older.run();
 	CommitListThread newer(g->dup(), newer_id, dir);

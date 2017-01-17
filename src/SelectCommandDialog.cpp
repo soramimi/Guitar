@@ -37,9 +37,9 @@ void SelectCommandDialog::on_pushButton_browse_clicked()
 {
 	QString dir;
 #ifdef _WIN32
-	QString filter = tr("%1 command (%1);;Executable files (*.exe)");
+	QString filter = tr("%1 command (%2);;Executable files (*.exe)");
 #else
-	QString filter = tr("%1 command (%1);;All files (*)");
+	QString filter = tr("%1 command (%2);;All files (*)");
 #endif
 	filter = filter.arg(command_name).arg(command_file);
 

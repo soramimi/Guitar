@@ -217,9 +217,18 @@ void FilePreviewWidget::paintImage()
 	}
 }
 
+bool isImageFile(QString const &mimetype)
+{
+	if (mimetype == "image/jpeg") return true;
+	if (mimetype == "image/png") return true;
+	if (mimetype == "image/bmp") return true;
+	if (mimetype == "image/x-ms-bmp") return true;
+	return false;
+}
+
 void FilePreviewWidget::paintEvent(QPaintEvent *)
 {
-	if (pv->mime_type == "image/png") {
+	if (isImageFile(pv->mime_type)) {
 		paintImage();
 	} else {
 		paintText();
@@ -290,7 +299,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 				QString path = pv->mainwindow->saveAsTemp(id);
 
 				QString mimetype = pv->mainwindow->filetype(path, true);
-				if (mimetype == "image/png") {
+				if (isImageFile(mimetype)) {
 					pv->mime_type = mimetype;
 					pv->pixmap.load(path);
 				}
