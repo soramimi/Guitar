@@ -634,31 +634,42 @@ bool Git::clone(QString const &location, QString const &path)
 	return ok;
 }
 
+QString Git::encodeCommitComment(const QString &str)
+{
+	std::vector<ushort> vec;
+	ushort const *begin = str.utf16();
+	ushort const *end = begin + str.size();
+	ushort const *ptr = begin;
+	vec.push_back('\"');
+	while (ptr < end) {
+		ushort c = *ptr;
+		ptr++;
+		if (c == '\"') { // triple quotes
+			vec.push_back(c);
+			vec.push_back(c);
+			vec.push_back(c);
+		} else {
+			vec.push_back(c);
+		}
+	}
+	vec.push_back('\"');
+	return QString::fromUtf16(&vec[0], vec.size());
+}
+
 bool Git::commit_(QString const &msg, bool amend)
 {
 	QString cmd = "commit";
 	if (amend) {
 		cmd += " --amend";
 	}
-	int n = 0;
+
 	QString text = msg.trimmed();
-	if (!text.isEmpty()) {
-		QStringList lines = misc::splitLines(text);
-		for (QString const &line : lines) {
-			QString s = line.trimmed();
-			s = s.replace('|', ' ');
-			s = s.replace('<', ' ');
-			s = s.replace('>', ' ');
-			s = s.replace('\"', '\'');
-			if (n > 0 || !s.isEmpty()) {
-				n++;
-			}
-			cmd += QString(" -m \"%1\"").arg(s);
-		}
+	if (text.isEmpty()) {
+		text = "no message";
 	}
-	if (n == 0) {
-		cmd += " -m \"no message\"";
-	}
+	text = encodeCommitComment(text);
+	cmd += QString(" -m %1").arg(text);
+
 	return git(cmd);
 }
 

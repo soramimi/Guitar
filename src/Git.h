@@ -226,6 +226,7 @@ private:
 	Git()
 	{
 	}
+	QString encodeCommitComment(const QString &str);
 public:
 	Git(Context const &cx, const QString &repodir);
 	Git(Git &&r) = delete;
