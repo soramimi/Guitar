@@ -43,37 +43,43 @@ QString const &Git::workingRepositoryDir() const
 	return pv->working_repo_dir;
 }
 
-bool Git::isValidID(const QString &s)
+bool Git::isValidID(const QString &id)
 {
-	int n = s.size();
+	int zero = 0;
+	int n = id.size();
 	if (n > 2 && n <= 40) {
-		ushort const *p = s.utf16();
+		ushort const *p = id.utf16();
 		for (int i = 0; i < n; i++) {
 			uchar c = p[i];
-			if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			if (c == '0') {
+				zero++;
+			} else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
 				// ok
 			} else {
 				return false;
 			}
 		}
-		return true;
+		if (zero == 40) {
+			return false;
+		}
+		return true; // ok
 	}
 	return false;
 }
 
-bool Git::isAllZero(const QString &id)
-{
-	int i = 0;
-	int n = id.size();
-	if (n > 0) {
-		ushort const *p = id.utf16();
-		for (i = 0; i < n; i++) {
-			if (p[i] != '0') break;
-		}
-		if (i == n) return true;
-	}
-	return false;
-}
+//bool Git::isAllZero(const QString &id)
+//{
+//	int i = 0;
+//	int n = id.size();
+//	if (n > 0) {
+//		ushort const *p = id.utf16();
+//		for (i = 0; i < n; i++) {
+//			if (p[i] != '0') break;
+//		}
+//		if (i == n) return true;
+//	}
+//	return false;
+//}
 
 QByteArray Git::result() const
 {
@@ -527,58 +533,52 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limi
 {
 	CommitItemList items;
 	QString text;
-#if 1
+
 	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
-	text = resultText().trimmed();
-	if (0) {
-		QFile file("test.log");
-		if (file.open(QFile::WriteOnly)) {
-			file.write(text.toUtf8());
+	if (getProcessExitCode() == 0) {
+		text = resultText().trimmed();
+		if (0) {
+			QFile file("test.log");
+			if (file.open(QFile::WriteOnly)) {
+				file.write(text.toUtf8());
+			}
 		}
-	}
-#else
-	{
-		QFile file("test.log");
-		if (file.open(QFile::ReadOnly)) {
-			text = QString::fromUtf8(file.readAll());
-		}
-	}
-#endif
-	QStringList lines = misc::splitLines(text);
-	for (QString const &line : lines) {
-		int i = line.indexOf("##");
-		if (i > 0) {
-			Git::CommitItem item;
-			item.message = line.mid(i + 2);
-			QStringList atts = line.mid(0, i).split('#');
-			for (QString const &s : atts) {
-				int j = s.indexOf(':');
-				if (j > 0) {
-					QString key = s.mid(0, j);
-					QString val = s.mid(j + 1);
-					if (key == "commit") {
-						item.commit_id = val;
-					} else if (key == "parent") {
-						item.parent_ids = val.split(' ', QString::SkipEmptyParts);
-					} else if (key == "author") {
-						item.author = val;
-					} else if (key == "mail") {
-						item.mail = val;
-					} else if (key == "date") {
-						item.commit_date = QDateTime::fromString(val, Qt::ISODate).toLocalTime();
-					} else if (key == "debug") {
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			int i = line.indexOf("##");
+			if (i > 0) {
+				Git::CommitItem item;
+				item.message = line.mid(i + 2);
+				QStringList atts = line.mid(0, i).split('#');
+				for (QString const &s : atts) {
+					int j = s.indexOf(':');
+					if (j > 0) {
+						QString key = s.mid(0, j);
+						QString val = s.mid(j + 1);
+						if (key == "commit") {
+							item.commit_id = val;
+						} else if (key == "parent") {
+							item.parent_ids = val.split(' ', QString::SkipEmptyParts);
+						} else if (key == "author") {
+							item.author = val;
+						} else if (key == "mail") {
+							item.mail = val;
+						} else if (key == "date") {
+							item.commit_date = QDateTime::fromString(val, Qt::ISODate).toLocalTime();
+						} else if (key == "debug") {
+						}
 					}
 				}
+				if (item.commit_date < limit_time) {
+					break;
+				}
+				items.push_back(item);
 			}
-			if (item.commit_date < limit_time) {
-				break;
-			}
-			items.push_back(item);
 		}
 	}
-	return std::move(items);
+	return items;
 }
 
 Git::CommitItemList Git::log(int maxcount, QDateTime limit_time)
@@ -725,7 +725,7 @@ Git::FileStatusList Git::status_()
 			}
 		}
 	}
-	return std::move(files);
+	return files;
 }
 
 Git::FileStatusList Git::status()
@@ -755,7 +755,6 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 	if (isValidID(id)) {
 		*out = cat_file_(id);
 		{
-			char const *p = out->data();
 			QByteArray ba;
 			GitObjectManager gom(workingRepositoryDir());
 			gom.loadObjectFile(id, &ba);

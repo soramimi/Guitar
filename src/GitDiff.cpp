@@ -165,13 +165,11 @@ bool GitDiff::CommitList::parseCommit(GitPtr g, const QString &id, bool append)
 QString GitDiff::makeKey(const QString &a_id, const QString &b_id)
 {
 	return  a_id + ".." + b_id;
-
 }
 
 QString GitDiff::makeKey(Git::Diff const &diff)
 {
 	return  makeKey(diff.blob.a_id, diff.blob.b_id);
-
 }
 
 class CommitListThread : public QThread {
@@ -348,7 +346,7 @@ void GitDiff::parseDiff(QString const &s, Git::Diff const *info, Git::Diff *out)
 	}
 }
 
-bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
+bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out, bool uncommited)
 {
 	if (!g) return false;
 
@@ -366,8 +364,12 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 		}
 	};
 
+	if (id == Git::HEAD()) {
+		id = g->rev_parse_HEAD();
+	}
+
 	try {
-		if (id == Git::HEAD()) {
+		if (uncommited) {
 
 			QString parent = g->rev_parse_HEAD(); // HEADのインデックスを取得
 			QStringList parents;
@@ -441,55 +443,70 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out)
 				CommitList newcommit;
 				newcommit.parseCommit(g, id, false);
 
-				std::map<QString, Git::Diff> diffmap;
+				if (newcommit.parents.isEmpty()) {
+					for (CommitData const &d : newcommit.files) {
+						Git::Diff diff;
+						QString zero40(40, '0');
+						diff.diff = QString("diff --git a/%1 b/%2").arg(d.path).arg(d.path);
+						diff.index = QString("index %1..%2 %3").arg(zero40).arg(d.id).arg(d.mode);
+						diff.blob.a_id = zero40;
+						diff.blob.b_id = d.id;
+						diff.path = d.path;
+						diff.mode = d.mode;
+						diff.type = Git::Diff::Type::Added;
+						diffs.push_back(diff);
+					}
+				} else {
+					std::map<QString, Git::Diff> diffmap;
 
-				std::set<QString> deleted_set;
-				QList<Git::DiffRaw> list;
-				for (QString const &parent : newcommit.parents) {
-					QList<Git::DiffRaw> l = g->diff_raw(parent, id);
-					for (Git::DiffRaw const &item : l) {
-						if (item.state.startsWith('D')) {
-							deleted_set.insert(item.a.id);
-						} else {
-							list.push_back(item);
+					std::set<QString> deleted_set;
+					QList<Git::DiffRaw> list;
+					for (QString const &parent : newcommit.parents) {
+						QList<Git::DiffRaw> l = g->diff_raw(parent, id);
+						for (Git::DiffRaw const &item : l) {
+							if (item.state.startsWith('D')) {
+								deleted_set.insert(item.a.id);
+							} else {
+								list.push_back(item);
+							}
 						}
 					}
-				}
-				for (Git::DiffRaw const &item : list) {
-					QString file;
-					if (!item.files.isEmpty()) {
-						file = item.files.front();
-					}
-					Git::Diff diff;
-					diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
-					diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
-					diff.path = file;
-					diff.mode = item.b.mode;
-					if (!Git::isAllZero(item.a.id)) diff.blob.a_id = item.a.id;
-					if (!Git::isAllZero(item.b.id)) diff.blob.b_id = item.b.id;
-
-					if (!diff.blob.a_id.isEmpty()) {
-						if (!diff.blob.b_id.isEmpty()) {
-							diff.type = Git::Diff::Type::Changed;
-						} else {
-							diff.type = Git::Diff::Type::Deleted;
+					for (Git::DiffRaw const &item : list) {
+						QString file;
+						if (!item.files.isEmpty()) {
+							file = item.files.front();
 						}
-					} else if (!diff.blob.b_id.isEmpty()) {
-						if (deleted_set.find(diff.blob.b_id) != deleted_set.end()) {
-							diff.type = Git::Diff::Type::Renamed;
-						} else {
-							diff.type = Git::Diff::Type::Added;
+						Git::Diff diff;
+						diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
+						diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
+						diff.path = file;
+						diff.mode = item.b.mode;
+						if (Git::isValidID(item.a.id)) diff.blob.a_id = item.a.id;
+						if (Git::isValidID(item.b.id)) diff.blob.b_id = item.b.id;
+
+						if (!diff.blob.a_id.isEmpty()) {
+							if (!diff.blob.b_id.isEmpty()) {
+								diff.type = Git::Diff::Type::Changed;
+							} else {
+								diff.type = Git::Diff::Type::Deleted;
+							}
+						} else if (!diff.blob.b_id.isEmpty()) {
+							if (deleted_set.find(diff.blob.b_id) != deleted_set.end()) {
+								diff.type = Git::Diff::Type::Renamed;
+							} else {
+								diff.type = Git::Diff::Type::Added;
+							}
+						}
+
+						if (diffmap.find(diff.path) == diffmap.end()) {
+							diffmap[diff.path] = diff;
 						}
 					}
 
-					if (diffmap.find(diff.path) == diffmap.end()) {
-						diffmap[diff.path] = diff;
+					for (auto const &pair : diffmap) {
+						diffs.push_back(pair.second);
+
 					}
-				}
-
-				for (auto const &pair : diffmap) {
-					diffs.push_back(pair.second);
-
 				}
 			}
 #endif

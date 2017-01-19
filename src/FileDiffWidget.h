@@ -115,6 +115,7 @@ private:
 
 	GitPtr git();
 
+	bool isValidID_(const QString &id);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();

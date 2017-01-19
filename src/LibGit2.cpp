@@ -387,7 +387,7 @@ QList<Git::Branch> LibGit2::Repository::branches()
 		}
 		git_branch_iterator_free(it);
 	}
-	return std::move(branches);
+	return branches;
 }
 
 Git::FileStatusList LibGit2::Repository::status()

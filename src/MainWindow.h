@@ -112,7 +112,7 @@ private:
 		SingleList,
 		SideBySide,
 	};
-	void updateFilesList(QString const &new_id, FilesListType files_list_type);
+	void updateFilesList(QString new_id);
 	void updateHeadFilesList(bool wait);
 	void updateRepositoriesList();
 	QString getBookmarksFilePath() const;
@@ -149,8 +149,8 @@ private:
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
 	void stopDiff();
-	void startDiff(GitPtr g, const QString &id);
-	bool makeDiff(const QString &id, QList<Git::Diff> *out);
+	void startDiff(GitPtr g, QString id);
+	bool makeDiff(const QString &id, QList<Git::Diff> *out, bool uncommited);
 
 	void udpateButton();
 	void commit(bool amend = false);

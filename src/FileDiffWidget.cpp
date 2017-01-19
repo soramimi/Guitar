@@ -390,6 +390,14 @@ GitPtr FileDiffWidget::git()
 	return pv->mainwindow->git();
 }
 
+bool FileDiffWidget::isValidID_(QString const &id)
+{
+	if (id.startsWith(PATH_PREFIX)) {
+		return true;
+	}
+	return Git::isValidID(id);
+}
+
 void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 {
 	GitPtr g = git();
@@ -397,20 +405,20 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g->isValidWorkingCopy()) return;
 
 	Git::Diff diff;
-	if (info.blob.a_id.isEmpty()) { // 左が空（新しく追加されたファイル）
-		diff = info;
-	} else {
+	if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
 		QString text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id);
 		GitDiff::parseDiff(text, &info, &diff);
+	} else {
+		diff = info;
 	}
 
 	QByteArray ba;
-	if (diff.blob.a_id.isEmpty()) {
-		pv->mainwindow->cat_file(g, diff.blob.b_id, &ba);
-		setDataAsNewFile(ba, diff);
-	} else {
+	if (isValidID_(diff.blob.a_id)) {
 		pv->mainwindow->cat_file(g, diff.blob.a_id, &ba);
 		setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir());
+	} else if (isValidID_(diff.blob.b_id)) {
+		pv->mainwindow->cat_file(g, diff.blob.b_id, &ba);
+		setDataAsNewFile(ba, diff);
 	}
 
 	ui->widget_diff_pixmap->clear(false);
