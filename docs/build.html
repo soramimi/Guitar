@@ -84,6 +84,7 @@
 <pre>C:\develop&gt;git clone git@github.com:soramimi/Guitar.git
 </pre>
 <h2>ビルドの準備</h2>
+<h4>prepare.rb</h4>
 <p>バージョン情報やリソーススクリプトを自動生成するための prepare.rb というスクリプトファイルがあります。Qt Creator でプログラム本体をビルドする前に、このスクリプトを実行しておく必要があります。実行にはRubyが必要です。</p>
 <pre>C:\develop\Guitar&gt;ruby prepare.rb</pre>
 <p>以下のファイルが作成されます。</p>
@@ -92,6 +93,20 @@
   <li>win.rc … Windows用のバージョン情報を定義します</li>
   <li>Info.plist … macOS用のバージョン情報を定義します</li>
 </ul>
+<h4>zlib</h4>
+<p>（2017-01-20 追記）</p>
+<p><a href="http://www.zlib.net/">zlib公式サイト</a>から、最新のzlibをダウンロードします。これを展開し、以下のようなフォルダ構成にします。</p>
+<ul class="foldertree">
+  <li class="folder">C:\develop
+    <ul>
+      <li class="folder">Guitar </li>
+      <li class="folder">zlib-1.2.11</li>
+    </ul>
+  </li>
+</ul>
+<p>Qt Creator から zlib.pro を開きます。</p>
+<p>ビルドディレクトリは、Windowsの場合 _build_zlib\debug と _build_zlib\release 、LinuxやmacOSの場合 _build_zlib_Debug と _build_zlib_Release です。</p>
+<p>デバッグ版とリリース版をそれぞれビルドします。</p>
 <h2>プロジェクトを開く</h2>
 <p>Qt Creator の「ようこそ」の画面で、右上の[プロジェクトを開く]ボタンを押します。</p>
 <p>クローンした場所にある Guitar.pro を開きます。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
