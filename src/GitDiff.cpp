@@ -409,6 +409,7 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out, bool uncommited)
 			}
 //diffs.clear();
 			for (Git::FileStatus const &st : stats) {
+				bool done = false;
 				for (LookupTable const &map : diffmaplist) {
 					checkInterrupted();
 					auto it = map.find_path(st.path1());
@@ -422,8 +423,15 @@ bool GitDiff::diff(GitPtr g, QString id, QList<Git::Diff> *out, bool uncommited)
 							item.path = st.path2();
 						}
 						AddItem(&item, &diffs);
+						done = true;
 						break;
 					}
+				}
+				if (!done) {
+					Git::Diff item;
+					item.blob.b_id = prependPathPrefix(st.path1());
+					item.path = st.path1();
+					AddItem(&item, &diffs);
 				}
 			}
 
