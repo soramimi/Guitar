@@ -29,6 +29,9 @@ INCLUDEPATH += $$PWD/src
 #unix:debug:LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
 #unix:release:LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a
 
+unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libzlib.a
+unix:release:LIBS += $$PWD/../_build_zlib_Release/libzlib.a
+
 win32 {
 	LIBS += advapi32.lib
 	RC_FILE = win.rc
@@ -121,7 +124,8 @@ HEADERS  += \
     src/Debug.h \
     src/GitPackIdxV2.h \
     src/GitPack.h \
-    src/GitObjectManager.h
+    src/GitObjectManager.h \
+    zlib.h
 
 FORMS    += \
 	src/MainWindow.ui \
