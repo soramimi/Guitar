@@ -319,7 +319,7 @@ public:
 	static QString findObjectID(const QString &workingdir, const QString &id, QString *path_out);
 };
 
-class ObjectManager {
+class GitObjectCache {
 public:
 	struct Item {
 		QString id;
@@ -329,42 +329,9 @@ private:
 	QMutex mutex;
 	typedef std::shared_ptr<Item> ItemPtr;
 	std::vector<ItemPtr> items;
-	size_t size() const
-	{
-		size_t size = 0;
-		for (ItemPtr const &item : items) {
-			size += item->ba.size();
-		}
-		return size;
-	}
+	size_t size() const;
 public:
-	QByteArray cat_file(GitPtr g, QString const &id)
-	{
-		{
-			QMutexLocker lock(&mutex);
-			for (ItemPtr const &item : items) {
-				if (item->id == id) {
-					qDebug() << "hit: " << id;
-					return item->ba;
-//					return true;
-				}
-			}
-
-			while (size() > 100000000) { // 100MB
-				items.erase(items.begin());
-			}
-		}
-
-		Item *item = new Item();
-		if (g->cat_file(id, &item->ba)) {
-			QMutexLocker lock(&mutex);
-			item->id = id;
-			items.push_back(ItemPtr(item));
-			return item->ba;
-		}
-		delete item;
-		return QByteArray();
-	}
+	QByteArray cat_file(GitPtr g, QString const &id);
 };
 
 
