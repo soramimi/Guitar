@@ -54,6 +54,7 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
+	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
 	pv = new Private();
@@ -61,7 +62,7 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 	pv->mainwindow = qobject_cast<MainWindow *>(parent);
 	Q_ASSERT(pv->mainwindow);
 
-	ui->splitter->setSizes({100, 100});
+	ui->splitter->setSizes({100, 200});
 
 	ui->widget_diff_view->bind(pv->mainwindow);
 
