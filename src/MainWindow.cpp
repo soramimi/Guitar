@@ -491,6 +491,7 @@ void MainWindow::clearDiffView()
 
 void MainWindow::clearRepositoryInfo()
 {
+	pv->head_id = QString();
 	pv->current_branch = Git::Branch();
 	ui->label_repo_name->setText(QString());
 	ui->label_branch_name->setText(QString());
@@ -832,11 +833,11 @@ void MainWindow::openRepository_(GitPtr g)
 	clearLog();
 	clearRepositoryInfo();
 
-	pv->head_id = QString();
-
 	if (isValidWorkingCopy(g)) {
 		startDiff(g, QString());
 		updateFilesList(QString());
+
+		pv->head_id = g->rev_parse_HEAD();
 
 		// ログを取得
 		pv->logs = g->log(limitLogCount(), limitLogTime());
@@ -889,11 +890,15 @@ void MainWindow::openRepository_(GitPtr g)
 		QString datetime;
 		QString author;
 		QString message;
+		bool ishead = commit->commit_id == pv->head_id;
 		bool bold = false;
 		{
-			if (Git::isUncommited(*commit)) {
-				bold = true;
+			if (Git::isUncommited(*commit)) { // 未コミットの時
+				bold = true; // 太字
 			} else {
+				if (ishead && !isThereUncommitedChanges()) { // HEADで、未コミットがないとき
+					bold = true; // 太字
+				}
 				commit_id = abbrevCommitID(*commit);
 			}
 			datetime = misc::makeDateTimeString(commit->commit_date);
