@@ -21,6 +21,7 @@ class CommitList;
 
 #define PATH_PREFIX "*"
 
+
 class HunkItem {
 public:
 	int hunk_number = -1;
@@ -177,7 +178,7 @@ private:
 	void updateStagedFileCurrentItem();
 	void cleanupDiffThread();
 	void addTag();
-	static bool cat_file(GitPtr g, const QString &id, QByteArray *out);
+	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
 public:
@@ -209,6 +210,7 @@ public:
 	QString saveAsTemp(const QString &id);
 	QString filetype(const QString &path, bool mime);
 	QString abbrevCommitID(const Git::CommitItem &commit);
+	QString findFileID(GitPtr g, const QString &commit_id, const QString &file);
 protected:
 
 protected:

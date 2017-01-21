@@ -5,6 +5,7 @@
 #include <QObject>
 #include <functional>
 
+#include <QDebug>
 #include <memory>
 
 #define USE_LIBGIT2 0
@@ -304,13 +305,55 @@ public:
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
 
-
-	static QString HEAD()
-	{
-		return "HEAD";
-	}
-//	static bool isAllZero(QString const &id);
 	static QString findObjectID(const QString &workingdir, const QString &id, QString *path_out);
+};
+
+class ObjectManager {
+public:
+	struct Item {
+		QString id;
+		QByteArray ba;
+	};
+private:
+	QMutex mutex;
+	typedef std::shared_ptr<Item> ItemPtr;
+	std::vector<ItemPtr> items;
+	size_t size() const
+	{
+		size_t size = 0;
+		for (ItemPtr const &item : items) {
+			size += item->ba.size();
+		}
+		return size;
+	}
+public:
+	QByteArray cat_file(GitPtr g, QString const &id)
+	{
+		{
+			QMutexLocker lock(&mutex);
+			for (ItemPtr const &item : items) {
+				if (item->id == id) {
+					qDebug() << "hit: " << id;
+					return item->ba;
+//					return true;
+				}
+			}
+
+			while (size() > 100000000) { // 100MB
+				items.erase(items.begin());
+			}
+		}
+
+		Item *item = new Item();
+		if (g->cat_file(id, &item->ba)) {
+			QMutexLocker lock(&mutex);
+			item->id = id;
+			items.push_back(ItemPtr(item));
+			return item->ba;
+		}
+		delete item;
+		return QByteArray();
+	}
 };
 
 

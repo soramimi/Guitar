@@ -6,6 +6,8 @@
 #include "joinpath.h"
 #include "FileDiffWidget.h"
 
+#include <QThread>
+
 struct FileHistoryWindow::Private {
 	MainWindow *mainwindow;
 	GitPtr g;
@@ -128,6 +130,29 @@ void FileHistoryWindow::collectFileHistory()
 	ui->tableWidget_log->setCurrentCell(0, 0);
 }
 
+class FindFileIdThread : public QThread {
+private:
+	MainWindow *mainwindow;
+	GitPtr g;
+	QString commit_id;
+	QString file;
+public:
+	QString result;
+	FindFileIdThread(MainWindow *mainwindow, GitPtr g, const QString &commit_id, const QString &file)
+	{
+		this->mainwindow = mainwindow;
+		this->g = g;
+		this->commit_id = commit_id;
+		this->file = file;
+	}
+
+protected:
+	void run()
+	{
+		result = mainwindow->findFileID(g, commit_id, file);
+	}
+};
+
 void FileHistoryWindow::updateDiffView()
 {
 	ui->widget_diff_view->clearDiffView();
@@ -137,8 +162,14 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = pv->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = pv->commit_item_list[row];    // newer
 
-		QString id_left = GitDiff().findFileID(pv->g, commit_left.commit_id, pv->path);
-		QString id_right = GitDiff().findFileID(pv->g, commit_right.commit_id, pv->path);
+		FindFileIdThread left_thread(pv->mainwindow, pv->g->dup(), commit_left.commit_id, pv->path);
+		FindFileIdThread right_thread(pv->mainwindow, pv->g->dup(), commit_right.commit_id, pv->path);
+		left_thread.start();
+		right_thread.start();
+		left_thread.wait();
+		right_thread.wait();
+		QString id_left = left_thread.result;
+		QString id_right = right_thread.result;
 
 		ui->widget_diff_view->updateDiffView(id_left, id_right);
 	}

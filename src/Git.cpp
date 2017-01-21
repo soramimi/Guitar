@@ -67,20 +67,6 @@ bool Git::isValidID(const QString &id)
 	return false;
 }
 
-//bool Git::isAllZero(const QString &id)
-//{
-//	int i = 0;
-//	int n = id.size();
-//	if (n > 0) {
-//		ushort const *p = id.utf16();
-//		for (i = 0; i < n; i++) {
-//			if (p[i] != '0') break;
-//		}
-//		if (i == n) return true;
-//	}
-//	return false;
-//}
-
 QByteArray Git::result() const
 {
 	return pv->result;
@@ -268,7 +254,7 @@ void Git::delete_tag(const QString &name, bool remote)
 
 QString Git::rev_parse_HEAD()
 {
-	return rev_parse(HEAD());
+	return rev_parse("HEAD");
 }
 
 #if USE_LIBGIT2
@@ -740,6 +726,7 @@ Git::FileStatusList Git::status()
 
 QByteArray Git::cat_file_(QString const &id)
 {
+	qDebug() << "cat_file: " << id;
 #if 1
 	git("cat-file -p " + id);
 	return pv->result;
@@ -754,7 +741,7 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
 		*out = cat_file_(id);
-		{
+		if (false){
 			QByteArray ba;
 			GitObjectManager gom(workingRepositoryDir());
 			gom.loadObjectFile(id, &ba);

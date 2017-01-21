@@ -126,6 +126,7 @@ struct MainWindow::Private {
 	QIcon repository_icon;
 	QIcon folder_icon;
 	unsigned int temp_file_counter = 0;
+	ObjectManager objman;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -499,21 +500,23 @@ class DiffThread : public QThread {
 private:
 	struct Data {
 		GitPtr g;
+		ObjectManager *objman;
 		QString id;
 		bool uncommited;
 		QList<Git::Diff> result;
 	} d;
 public:
-	DiffThread(GitPtr g, QString const &id, bool uncommited)
+	DiffThread(GitPtr g, ObjectManager *objman, QString const &id, bool uncommited)
 	{
 		d.g = g;
+		d.objman = objman;
 		d.id = id;
 		d.uncommited = uncommited;
 	}
 	void run()
 	{
-		GitDiff dm;
-		dm.diff(d.g, d.id, &d.result, d.uncommited);
+		GitDiff dm(d.g, d.objman);
+		dm.diff(d.id, &d.result, d.uncommited);
 	}
 	void interrupt()
 	{
@@ -571,7 +574,7 @@ void MainWindow::startDiff(GitPtr g, QString id)
 	Git::FileStatusList list = g->status();
 	pv->uncommited_changes = !list.empty();
 
-	if (id == Git::HEAD()) {
+	if (id.isEmpty()) {
 		if (isThereUncommitedChanges()) {
 			id = QString(); // uncommited changes
 		} else {
@@ -581,7 +584,7 @@ void MainWindow::startDiff(GitPtr g, QString id)
 
 	bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
 
-	DiffThread *th = new DiffThread(g->dup(), id, uncommited);
+	DiffThread *th = new DiffThread(g->dup(), &pv->objman, id, uncommited);
 	pv->diff.thread = std::shared_ptr<QThread>(th);
 	th->start();
 }
@@ -613,8 +616,6 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommi
 
 void MainWindow::updateFilesList(QString id)
 {
-//	Q_ASSERT(!id.isEmpty());
-
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
@@ -624,15 +625,6 @@ void MainWindow::updateFilesList(QString id)
 	pv->uncommited_changes = !stats.empty();
 
 	FilesListType files_list_type = FilesListType::SingleList;
-
-//	FilesListType listtype = FilesListType::SingleList;
-//	if (id == Git::HEAD()) {
-//		pv->uncommited_changes = !pv->diff.result.empty();
-//		if (isThereUncommitedChanges()) {
-//			listtype = FilesListType::SideBySide;
-//		}
-//	}
-//	showFileList(FilesListType::SingleList);
 
 	auto AddItem = [&](QString const &filename, QString header, int idiff, bool staged){
 		if (header.isEmpty()) {
@@ -656,10 +648,6 @@ void MainWindow::updateFilesList(QString id)
 		}
 	};
 
-	if (id == Git::HEAD()) {
-		id = g->rev_parse_HEAD();
-	}
-
 	if (id.isEmpty()) {
 		bool uncommited = isThereUncommitedChanges();
 		if (uncommited) {
@@ -679,9 +667,6 @@ void MainWindow::updateFilesList(QString id)
 			}
 		}
 
-//		if (isThereUncommitedChanges()) {
-//			files_list_type = FilesListType::SideBySide;
-//		}
 		showFileList(files_list_type);
 
 		for (Git::FileStatus const &s : stats) {
@@ -717,24 +702,14 @@ void MainWindow::updateFilesList(QString id)
 		for (int idiff = 0; idiff < pv->diff.result.size(); idiff++) {
 			Git::Diff const &diff = pv->diff.result[idiff];
 			QString header;
-#if 0
-			if (!diff.blob.a.id.isEmpty()) {
-				if (!diff.blob.b.id.isEmpty()) {
-					header = "(chg) ";
-				} else {
-					header = "(del) ";
-				}
-			} else if (!diff.blob.b.id.isEmpty()) {
-				header = "(add) ";
-			}
-#else
+
 			switch (diff.type) {
 			case Git::Diff::Type::Added:   header = "(add) "; break;
 			case Git::Diff::Type::Deleted: header = "(del) "; break;
 			case Git::Diff::Type::Changed: header = "(chg) "; break;
 			case Git::Diff::Type::Renamed: header = "(ren) "; break;
 			}
-#endif
+
 			AddItem(diff.path, header, idiff, false);
 		}
 	}
@@ -766,9 +741,7 @@ void MainWindow::updateHeadFilesList(bool wait)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QString id = Git::HEAD();
-
-	startDiff(g, id); // diffスレッドを開始
+	startDiff(g, QString()); // diffスレッドを開始
 
 	if (wait) updateCurrentFilesList(); // スレッド終了を待ってリストを更新
 }
@@ -847,6 +820,11 @@ void MainWindow::queryTags(GitPtr g)
 QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 {
 	return commit.commit_id.mid(0, 7);
+}
+
+QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString &file)
+{
+	return GitDiff(g, &pv->objman).findFileID(commit_id, file);
 }
 
 void MainWindow::openRepository_(GitPtr g)
@@ -1853,7 +1831,8 @@ Git::CommitItem const *MainWindow::selectedCommitItem() const
 bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
 {
 	out->clear();
-	if (!g->isValidWorkingCopy()) return false;
+
+	if (!isValidWorkingCopy(g)) return false;
 
 	QString path_prefix = PATH_PREFIX;
 	if (id.startsWith(path_prefix)) {
@@ -1866,7 +1845,9 @@ bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
 			return true;
 		}
 	} else if (Git::isValidID(id)) {
-		if (g->cat_file(id, out)) {
+//		if (g->cat_file(id, out)) {
+		*out = pv->objman.cat_file(g, id);
+		if (!out->isEmpty()) {
 			return true;
 		}
 	}
@@ -2102,8 +2083,9 @@ bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
 
-	QByteArray ba;
-	if (g->cat_file(id, &ba)) {
+	QByteArray ba = pv->objman.cat_file(g, id);
+//	if (g->cat_file(id, &ba)) {
+	if (!ba.isEmpty()) {
 		if (saveByteArrayAs(ba, dstpath)) {
 			return true;
 		}
