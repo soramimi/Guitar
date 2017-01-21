@@ -65,6 +65,14 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 
 	ui->widget_diff_view->bind(pv->mainwindow);
 
+	QString reponame = pv->mainwindow->currentRepositoryName();
+	QString brname = pv->mainwindow->currentBranch().name;
+
+	QString text = "%1 (%2)";
+	text = text.arg(reponame).arg(brname);
+	ui->label_repo->setText(text);
+	ui->label_path->setText(path);
+
 	Q_ASSERT(g);
 	Q_ASSERT(g->isValidWorkingCopy());
 	this->pv->g = g;
@@ -172,6 +180,12 @@ void FileHistoryWindow::updateDiffView()
 		QString id_right = right_thread.result;
 
 		ui->widget_diff_view->updateDiffView(id_left, id_right);
+	} else if (row >= 0 && row < (int)pv->commit_item_list.size()) {
+		Git::CommitItem const &commit = pv->commit_item_list[row];    // newer
+		QString id = pv->mainwindow->findFileID(pv->g, commit.commit_id, pv->path);
+
+		Git::Diff diff(id, pv->path, QString());
+		ui->widget_diff_view->updateDiffView(diff, false);
 	}
 }
 

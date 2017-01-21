@@ -934,3 +934,16 @@ void Git::FileStatus::parse(const QString &text)
 
 //
 
+
+void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, QString const &mode)
+{
+	QString zero40(40, '0');
+	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
+	diff->index = QString("index %1..%2 %3").arg(zero40).arg(id).arg(0);
+	diff->blob.a_id = zero40;
+	diff->blob.b_id = id;
+	diff->path = path;
+	diff->mode = mode;
+	diff->type = Git::Diff::Type::Added;
+}
+

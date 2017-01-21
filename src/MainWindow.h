@@ -74,6 +74,8 @@ private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
+	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
+	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
@@ -93,18 +95,17 @@ private slots:
 	void on_toolButton_fetch_clicked();
 	void on_comboBox_filter_currentTextChanged(const QString &arg1);
 	void on_toolButton_erase_filter_clicked();
-	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_action_tag_triggered();
 
 	void on_action_tag_push_all_triggered();
 
 	void on_action_tag_delete_triggered();
 
-	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
-
 
 	void onRepositoriesTreeDropped();
 
+
+	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
 
 private:
 	Ui::MainWindow *ui;
@@ -181,6 +182,7 @@ private:
 	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
+	void execCommitPropertyDialog(const Git::CommitItem *commit);
 public:
 
 	QString selectGitCommand();

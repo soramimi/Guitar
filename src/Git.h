@@ -64,6 +64,16 @@ public:
 			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
+		Diff()
+		{
+		}
+		Diff(const QString &id, const QString &path, const QString &mode)
+		{
+			makeForSingleFile(this, id, path, mode);
+
+		}
+	private:
+		void makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, const QString &mode);
 	};
 
 	struct CommitItem {

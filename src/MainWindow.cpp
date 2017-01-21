@@ -1192,100 +1192,123 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 	openSelectedRepository();
 }
 
-
-
-bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
+void MainWindow::execCommitPropertyDialog(Git::CommitItem const *commit)
 {
-	QString message = tr("Are you sure you want to run the following command ?");
-	QString text = "%1\n\n> %2";
-	text = text.arg(message).arg(command);
-	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
+	CommitPropertyDialog dlg(this, *commit);
+	dlg.exec();
 }
 
-void MainWindow::revertFile(QStringList const &paths)
+void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	if (paths.isEmpty()) {
-		// nop
-	} else {
-		QString cmd = "git checkout -- \"" + paths[0] + '\"';
-		if (askAreYouSureYouWantToRun(tr("Revert a file"), cmd)) {
-			for (QString const &path : paths) {
-				g->revertFile(path);
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	RepositoryItem const *repo = repositoryItem(treeitem);
+	int index = treeitem->data(0, IndexRole).toInt();
+	if (isGroupItem(treeitem)) { // group item
+		QMenu menu;
+		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
+		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
+		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
+		QAction *a = menu.exec(pt + QPoint(8, -8));
+		if (a) {
+			if (a == a_add_new_group) {
+				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New folder"));
+				treeitem->addChild(child);
+				child->setFlags(child->flags() | Qt::ItemIsEditable);
+				ui->treeWidget_repos->setCurrentItem(child);
+				return;
 			}
-			openRepository();
+			if (a == a_delete_group) {
+				QTreeWidgetItem *parent = treeitem->parent();
+				if (parent) {
+					int i = parent->indexOfChild(treeitem);
+					delete parent->takeChild(i);
+				} else {
+					int i = ui->treeWidget_repos->indexOfTopLevelItem(treeitem);
+					delete ui->treeWidget_repos->takeTopLevelItem(i);
+				}
+				refrectRepositories();
+				return;
+			}
+		}
+	} else if (repo) { // repository item
+		QString open_terminal = tr("Open &terminal");
+		QString open_commandprompt = tr("Open command promp&t");
+		QMenu menu;
+		QAction *a_open = menu.addAction(tr("&Open"));
+		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
+#ifdef Q_OS_WIN
+		QAction *a_open_terminal = menu.addAction(open_commandprompt);
+		(void)open_terminal;
+#else
+		QAction *a_open_terminal = menu.addAction(open_terminal);
+		(void)open_commandprompt;
+#endif
+		QAction *a_remove = menu.addAction(tr("&Remove"));
+		QAction *a_property = menu.addAction(tr("&Property"));
+		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
+		QAction *a = menu.exec(pt + QPoint(8, -8));
+		if (a) {
+			if (a == a_open) {
+				openSelectedRepository();
+				return;
+			}
+			if (a == a_open_folder) {
+				QDesktopServices::openUrl(repo->local_dir);
+				return;
+			}
+			if (a == a_open_terminal) {
+				Terminal::open(repo->local_dir);
+				return;
+			}
+			if (a == a_remove) {
+				pv->repos.erase(pv->repos.begin() + index);
+				saveRepositoryBookmarks();
+				updateRepositoriesList();
+				return;
+			}
+			if (a == a_property) {
+				RepositoryPropertyDialog dlg(this, *repo);
+				dlg.exec();
+				return;
+			}
 		}
 	}
 }
 
-void MainWindow::revertAllFiles()
+void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	QString cmd = "git reset --hard HEAD";
-	if (askAreYouSureYouWantToRun(tr("Revert all files"), cmd)) {
-		g->revertAllFiles();
-		openRepository();
-	}
-}
-
-QStringList MainWindow::selectedStagedFiles() const
-{
-	QStringList list;
-	QList<QListWidgetItem *> items = ui->listWidget_staged->selectedItems();
-	for (QListWidgetItem *item : items) {
-		QString path = item->data(FilePathRole).toString();
-		list.push_back(path);
-	}
-	return list;
-}
-
-
-QStringList MainWindow::selectedUnstagedFiles() const
-{
-	QStringList list;
-	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
-	for (QListWidgetItem *item : items) {
-		QString path = item->data(FilePathRole).toString();
-		list.push_back(path);
-	}
-	return list;
-}
-
-void MainWindow::for_each_selected_staged_files(std::function<void(QString const&)> fn)
-{
-	for (QString path : selectedStagedFiles()) {
-		fn(path);
-	}
-}
-
-void MainWindow::for_each_selected_unstaged_files(std::function<void(QString const&)> fn)
-{
-	for (QString path : selectedUnstagedFiles()) {
-		fn(path);
-	}
-}
-
-void MainWindow::execFileHistory(QString const &path)
-{
-	if (path.isEmpty()) return;
-
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	FileHistoryWindow dlg(this, g, path);
-	dlg.exec();
-}
-
-void MainWindow::execFileHistory(QListWidgetItem *item)
-{
-	if (item) {
-		QString path = item->data(FilePathRole).toString();
-		if (!path.isEmpty()) {
-			execFileHistory(path);
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		int row = selectedLogIndex();
+		QMenu menu;
+		QAction *a_property = menu.addAction(tr("&Property"));
+		QAction *a_edit_comment = nullptr;
+		if (row == 0 && currentBranch().ahead > 0) {
+			a_edit_comment = menu.addAction(tr("Edit comment..."));
+		}
+		QAction *a_add_tag = menu.addAction(tr("Add a tag..."));
+		QAction *a_delete_tags = nullptr;
+		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
+			a_delete_tags = menu.addAction(tr("Delete tags..."));
+		}
+		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
+		if (a) {
+			if (a == a_property) {
+				execCommitPropertyDialog(commit);
+				return;
+			}
+			if (a == a_edit_comment) {
+				commit_amend();
+				return;
+			}
+			if (a == a_add_tag) {
+				addTag();
+				return;
+			}
+			if (a == a_delete_tags) {
+				deleteSelectedTags();
+				return;
+			}
 		}
 	}
 }
@@ -1393,6 +1416,108 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	}
 }
 
+bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
+{
+	QString message = tr("Are you sure you want to run the following command ?");
+	QString text = "%1\n\n> %2";
+	text = text.arg(message).arg(command);
+	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
+}
+
+void MainWindow::revertFile(QStringList const &paths)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	if (paths.isEmpty()) {
+		// nop
+	} else {
+		QString cmd = "git checkout -- \"" + paths[0] + '\"';
+		if (askAreYouSureYouWantToRun(tr("Revert a file"), cmd)) {
+			for (QString const &path : paths) {
+				g->revertFile(path);
+			}
+			openRepository();
+		}
+	}
+}
+
+void MainWindow::revertAllFiles()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QString cmd = "git reset --hard HEAD";
+	if (askAreYouSureYouWantToRun(tr("Revert all files"), cmd)) {
+		g->revertAllFiles();
+		openRepository();
+	}
+}
+
+QStringList MainWindow::selectedStagedFiles() const
+{
+	QStringList list;
+	QList<QListWidgetItem *> items = ui->listWidget_staged->selectedItems();
+	for (QListWidgetItem *item : items) {
+		QString path = item->data(FilePathRole).toString();
+		list.push_back(path);
+	}
+	return list;
+}
+
+
+QStringList MainWindow::selectedUnstagedFiles() const
+{
+	QStringList list;
+	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
+	for (QListWidgetItem *item : items) {
+		QString path = item->data(FilePathRole).toString();
+		list.push_back(path);
+	}
+	return list;
+}
+
+void MainWindow::for_each_selected_staged_files(std::function<void(QString const&)> fn)
+{
+	for (QString path : selectedStagedFiles()) {
+		fn(path);
+	}
+}
+
+void MainWindow::for_each_selected_unstaged_files(std::function<void(QString const&)> fn)
+{
+	for (QString path : selectedUnstagedFiles()) {
+		fn(path);
+	}
+}
+
+void MainWindow::execFileHistory(QString const &path)
+{
+	if (path.isEmpty()) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	FileHistoryWindow dlg(this, g, path);
+	dlg.exec();
+}
+
+void MainWindow::execFileHistory(QListWidgetItem *item)
+{
+	if (item) {
+		QString path = item->data(FilePathRole).toString();
+		if (!path.isEmpty()) {
+			execFileHistory(path);
+		}
+	}
+}
+
+
+
+
+
+
+
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
@@ -1434,77 +1559,7 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 	}
 }
 
-void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
-{
-	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
-	RepositoryItem const *repo = repositoryItem(treeitem);
-	int index = treeitem->data(0, IndexRole).toInt();
-	if (isGroupItem(treeitem)) {
-		QMenu menu;
-		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
-		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
-		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
-		QAction *a = menu.exec(pt + QPoint(8, -8));
-		if (a) {
-			if (a == a_add_new_group) {
-				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New folder"));
-				treeitem->addChild(child);
-				child->setFlags(child->flags() | Qt::ItemIsEditable);
-				ui->treeWidget_repos->setCurrentItem(child);
-				return;
-			}
-			if (a == a_delete_group) {
-				QTreeWidgetItem *parent = treeitem->parent();
-				if (parent) {
-					int i = parent->indexOfChild(treeitem);
-					delete parent->takeChild(i);
-				} else {
-					int i = ui->treeWidget_repos->indexOfTopLevelItem(treeitem);
-					delete ui->treeWidget_repos->takeTopLevelItem(i);
-				}
-				refrectRepositories();
-				return;
-			}
-		}
-	} else if (repo) {
-		QString open_terminal = tr("Open &terminal");
-		QString open_commandprompt = tr("Open command promp&t");
-		QMenu menu;
-		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
-#ifdef Q_OS_WIN
-		QAction *a_open_terminal = menu.addAction(open_commandprompt);
-		(void)open_terminal;
-#else
-		QAction *a_open_terminal = menu.addAction(open_terminal);
-		(void)open_commandprompt;
-#endif
-		QAction *a_remove = menu.addAction(tr("&Remove"));
-		QAction *a_property = menu.addAction(tr("&Property"));
-		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
-		QAction *a = menu.exec(pt + QPoint(8, -8));
-		if (a) {
-			if (a == a_open_folder) {
-				QDesktopServices::openUrl(repo->local_dir);
-				return;
-			}
-			if (a == a_open_terminal) {
-				Terminal::open(repo->local_dir);
-				return;
-			}
-			if (a == a_remove) {
-				pv->repos.erase(pv->repos.begin() + index);
-				saveRepositoryBookmarks();
-				updateRepositoriesList();
-				return;
-			}
-			if (a == a_property) {
-				RepositoryPropertyDialog dlg(this, *repo);
-				dlg.exec();
-				return;
-			}
-		}
-	}
-}
+
 
 void MainWindow::on_toolButton_stage_clicked()
 {
@@ -2275,44 +2330,7 @@ void MainWindow::addTag()
 	}
 }
 
-void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
-{
-	Git::CommitItem const *commit = selectedCommitItem();
-	if (commit) {
-		int row = selectedLogIndex();
-		QMenu menu;
-		QAction *a_property = menu.addAction(tr("&Property"));
-		QAction *a_edit_comment = nullptr;
-		if (row == 0 && currentBranch().ahead > 0) {
-			a_edit_comment = menu.addAction(tr("Edit comment..."));
-		}
-		QAction *a_add_tag = menu.addAction(tr("Add a tag..."));
-		QAction *a_delete_tags = nullptr;
-		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
-			a_delete_tags = menu.addAction(tr("Delete tags..."));
-		}
-		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
-		if (a) {
-			if (a == a_property) {
-				CommitPropertyDialog dlg(this, *commit);
-				dlg.exec();
-				return;
-			}
-			if (a == a_edit_comment) {
-				commit_amend();
-				return;
-			}
-			if (a == a_add_tag) {
-				addTag();
-				return;
-			}
-			if (a == a_delete_tags) {
-				deleteSelectedTags();
-				return;
-			}
-		}
-	}
-}
+
 
 void MainWindow::on_action_tag_triggered()
 {
@@ -2405,6 +2423,14 @@ QString MainWindow::filetype(QString const &path, bool mime)
 	return QString();
 }
 
+void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
+{
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		execCommitPropertyDialog(commit);
+	}
+}
+
 //
 
 #include "Debug.h"
@@ -2413,6 +2439,4 @@ void MainWindow::on_action_test_triggered()
 {
 	Debug::doit(currentWorkingCopyDir());
 }
-
-
 

@@ -437,15 +437,7 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out, bool uncommited)
 
 				if (newcommit.parents.isEmpty()) {
 					for (CommitData const &d : newcommit.files) {
-						Git::Diff diff;
-						QString zero40(40, '0');
-						diff.diff = QString("diff --git a/%1 b/%2").arg(d.path).arg(d.path);
-						diff.index = QString("index %1..%2 %3").arg(zero40).arg(d.id).arg(d.mode);
-						diff.blob.a_id = zero40;
-						diff.blob.b_id = d.id;
-						diff.path = d.path;
-						diff.mode = d.mode;
-						diff.type = Git::Diff::Type::Added;
+						Git::Diff diff(d.id, d.path, d.mode);
 						diffs.push_back(diff);
 					}
 				} else {
