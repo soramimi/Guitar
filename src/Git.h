@@ -6,6 +6,7 @@
 #include <functional>
 
 #include <QDebug>
+#include <QMutex>
 #include <memory>
 
 #define USE_LIBGIT2 0
