@@ -74,6 +74,16 @@
 <p>[エディタ]の設定、[コードスタイル]の設定を確認します。</p>
 <h2>ソースコードを取得する</h2>
 <p>作業用フォルダを作成します。各自好みの場所で構いません。筆者の場合、Windowsでは C:\develop 、Linuxでは /home/soramimi/develop としています。</p>
+<p>Guitarとzlibを同じ階層に配置します。</p>
+<ul class="foldertree">
+  <li class="folder">C:\develop
+    <ul>
+      <li class="folder">Guitar</li>
+      <li class="folder">zlib  </li>
+    </ul>
+  </li>
+</ul>
+<h3>Guitar</h3>
 <p><img src="github.png" width="20" height="16" alt="guthub"><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a> にアクセスします。</p>
 <p><img src="repo.png" width="995" height="168" class="border"></p>
 <p>右にある[Clone or download]を押すと、ソースコードを取得するためのアドレスが表示されます。</p>
@@ -82,6 +92,10 @@
 </pre>
 <p>SSHを使用する場合</p>
 <pre>C:\develop&gt;git clone git@github.com:soramimi/Guitar.git
+</pre>
+<h3>zlib</h3>
+<p>同じ要領で、<a href="https://github.com/madler/zlib">zlib</a>もクローンします。</p>
+<pre>C:\develop&gt;git clone https://github.com/madler/zlib.git
 </pre>
 <h2>ビルドの準備</h2>
 <h4>prepare.rb</h4>
@@ -93,26 +107,14 @@
   <li>win.rc … Windows用のバージョン情報を定義します</li>
   <li>Info.plist … macOS用のバージョン情報を定義します</li>
 </ul>
-<h4>zlib</h4>
-<p>（2017-01-20 追記）</p>
-<p><a href="http://www.zlib.net/">zlib公式サイト</a>から、最新のzlibをダウンロードします。これを展開し、以下のようなフォルダ構成にします。</p>
-<ul class="foldertree">
-  <li class="folder">C:\develop
-    <ul>
-      <li class="folder">Guitar </li>
-      <li class="folder">zlib-1.2.11</li>
-    </ul>
-  </li>
-</ul>
-<p>Qt Creator から zlib.pro を開きます。</p>
-<p>ビルドディレクトリは、Windowsの場合 _build_zlib\debug と _build_zlib\release 、LinuxやmacOSの場合 _build_zlib_Debug と _build_zlib_Release です。</p>
-<p>デバッグ版とリリース版をそれぞれビルドします。</p>
 <h2>プロジェクトを開く</h2>
 <p>Qt Creator の「ようこそ」の画面で、右上の[プロジェクトを開く]ボタンを押します。</p>
-<p>クローンした場所にある Guitar.pro を開きます。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
-<p><img src="openproject.png" width="852" height="434"></p>
-<h3>ビルド</h3>
-<p>Qt Creator の左にある三角ボタンを押すか、Ctrl+R（実行）を押すと、ビルドと実行が行われます。ビルドだけして、実行したくない場合は、Ctrl+Bを押します。デバッガ上で実行するには、デバッグ開始ボタンかF5キーを押します。</p>
+<p>クローンした場所に、 Guitar.pro と zlib.pro があります。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
+<p><img src="openproject.png" width="786" height="434"></p>
+<h3>zlibのビルド</h3>
+<p>zlib.pro を開き、ビルド（Ctrl+B）を実行します。デバッグ版とリリース版を作成します。</p>
+<h3>Guitarのビルド</h3>
+<p>Guitar.pro を開き、 Qt Creator の左にある三角ボタンを押すか、Ctrl+R（実行）を押すと、ビルドと実行が行われます。ビルドだけして、実行したくない場合は、Ctrl+Bを押します。デバッガ上で実行するには、デバッグ開始ボタンかF5キーを押します。</p>
 <h4>失敗する場合</h4>
 <p>よくあるのが、prepare.rbを実行し忘れて、 version.c が見つからないというエラー。前述した「ビルドの準備」の操作を行うと version.c が作成されます。自動では行われないので、手作業でやる必要があります。</p>
 <h4>追加したソースがコンパイルされないとき</h4>
@@ -145,8 +147,13 @@
               <li class="folder">release          </li>
             </ul>
           </li>
+          <li class="folder">_build_zlib
+            <ul>
+              <li class="folder">debug</li>
+              <li class="folder">release </li></ul></li>
           <li class="folder">Guitar</li>
           <li class="folder">libgit2</li>
+          <li class="folder">zlib</li>
         </ul>
   </li>
 </ul>
@@ -158,8 +165,11 @@
           <li class="folder">_build_Guitar_Release</li>
           <li class="folder">_build_libgit2_Debug</li>
           <li class="folder">_build_libgit2_Release</li>
+          <li class="folder">_build_zlib_Debug</li>
+          <li class="folder">_build_zlib_Release</li>
           <li class="folder">Guitar</li>
           <li class="folder">libgit2</li>
+          <li class="folder">zlib</li>
         </ul>
   </li>
 </ul>
