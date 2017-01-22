@@ -264,6 +264,19 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	if (!pv->mainwindow) return; // TODO:
 
+	QString id;
+	switch (pv->view_type) {
+	case ViewType::Left:  id = diffdata()->left_id;  break;
+	case ViewType::Right: id = diffdata()->right_id; break;
+	}
+	if (id.startsWith(PATH_PREFIX)) {
+		// pass
+	} else if (Git::isValidID(id)) {
+		// pass
+	} else {
+		return; // invalid id
+	}
+
 	QPoint pos;
 	if (e->reason() == QContextMenuEvent::Mouse) {
 		pos = QCursor::pos() + QPoint(8, -8);
@@ -273,11 +286,6 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 
 	drawdata()->forcus = pv->view_type;
 
-	QString id;
-	switch (pv->view_type) {
-	case ViewType::Left:  id = diffdata()->left_id;  break;
-	case ViewType::Right: id = diffdata()->right_id; break;
-	}
 	QString path = pv->mainwindow->currentWorkingCopyDir() / diffdata()->path;
 
 	QMenu menu;

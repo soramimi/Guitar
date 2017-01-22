@@ -13,7 +13,7 @@ private:
 	class LookupTable;
 private:
 	GitPtr g;
-	ObjectManager *objman = nullptr;
+	GitObjectCache *objcache = nullptr;
 	QList<Git::Diff> diffs;
 
 	bool interrupted = false;
@@ -32,13 +32,13 @@ private:
 
 	void diff_tree_(GitPtr g, QString const &dir, QString older_id, QString newer_id);
 	void commit_into_map(GitPtr g, CommitList const &commit, MapList const *diffmap);
-	void parse_tree(GitPtr g, ObjectManager *objman, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map);
+	void parse_tree(GitPtr g, GitObjectCache *objcache, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map);
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 public:
-	GitDiff(GitPtr g, ObjectManager *objman)
+	GitDiff(GitPtr g, GitObjectCache *objcache)
 	{
 		this->g = g;
-		this->objman = objman;
+		this->objcache = objcache;
 	}
 
 	bool diff(QString id, QList<Git::Diff> *out, bool uncommited);

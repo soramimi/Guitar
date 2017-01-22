@@ -932,8 +932,7 @@ void Git::FileStatus::parse(const QString &text)
 	}
 }
 
-//
-
+// Diff
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, QString const &mode)
 {
@@ -947,3 +946,48 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QStr
 	diff->type = Git::Diff::Type::Added;
 }
 
+// GitObjectCache
+
+size_t GitObjectCache::size() const
+{
+	size_t size = 0;
+	for (ItemPtr const &item : items) {
+		size += item->ba.size();
+	}
+	return size;
+}
+
+QByteArray GitObjectCache::cat_file(GitPtr g, const QString &id)
+{
+	{
+		QMutexLocker lock(&mutex);
+		size_t n = items.size();
+		size_t i = n;
+		while (i > 0) {
+			i--;
+			if (items[i]->id == id) {
+				ItemPtr item = items[i];
+				if (i + 1 < n) {
+					items.erase(items.begin() + i);
+					items.push_back(item);
+				}
+				qDebug() << "hit: " << id;
+				return item->ba;
+			}
+		}
+
+		while (size() > 100000000) { // 100MB
+			items.erase(items.begin());
+		}
+	}
+
+	Item *item = new Item();
+	if (g->cat_file(id, &item->ba)) {
+		QMutexLocker lock(&mutex);
+		item->id = id;
+		items.push_back(ItemPtr(item));
+		return item->ba;
+	}
+	delete item;
+	return QByteArray();
+}
