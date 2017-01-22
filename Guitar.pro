@@ -17,10 +17,6 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
 
-#INCLUDEPATH += $$PWD/../libz/zlib-1.2.8
-#win32:Debug:LIBS += $$PWD/../_build_libz/debug/libz.lib
-#win32:Release:LIBS += $$PWD/../_build_libz/release/libz.lib
-
 #INCLUDEPATH += $$PWD/../libgit2/include
 
 #win32:Debug:LIBS += $$PWD/../_build_libgit2/debug/libgit2.lib
