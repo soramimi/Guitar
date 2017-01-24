@@ -25,6 +25,7 @@
 #include "EditTagDialog.h"
 #include "DeleteTagsDialog.h"
 #include "FileHistoryWindow.h"
+#include "FilePropertyDialog.h"
 #include <deque>
 #include <QDateTime>
 #include <QDebug>
@@ -204,6 +205,16 @@ MainWindow::~MainWindow()
 	deleteTempFiles();
 	delete pv;
 	delete ui;
+}
+
+QString MainWindow::getObjectID(QListWidgetItem *item)
+{
+	int i = indexOfDiff(item);
+	if (i >= 0 && i < pv->diff.result.size()) {
+		Git::Diff const &diff = pv->diff.result[i];
+		return diff.blob.a_id;
+	}
+	return QString();
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -1204,6 +1215,11 @@ void MainWindow::execCommitPropertyDialog(Git::CommitItem const *commit)
 	dlg.exec();
 }
 
+QAction *MainWindow::addMenuActionProperties(QMenu *menu)
+{
+	return menu->addAction(tr("&Properties"));
+}
+
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
@@ -1250,7 +1266,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		(void)open_commandprompt;
 #endif
 		QAction *a_remove = menu.addAction(tr("&Remove"));
-		QAction *a_property = menu.addAction(tr("&Property"));
+		QAction *a_properties = addMenuActionProperties(&menu);
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -1272,7 +1288,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				updateRepositoriesList();
 				return;
 			}
-			if (a == a_property) {
+			if (a == a_properties) {
 				RepositoryPropertyDialog dlg(this, *repo);
 				dlg.exec();
 				return;
@@ -1287,7 +1303,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	if (commit) {
 		int row = selectedLogIndex();
 		QMenu menu;
-		QAction *a_property = menu.addAction(tr("&Property"));
+		QAction *a_properties = addMenuActionProperties(&menu);
 		QAction *a_edit_comment = nullptr;
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
@@ -1299,7 +1315,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
-			if (a == a_property) {
+			if (a == a_properties) {
 				execCommitPropertyDialog(commit);
 				return;
 			}
@@ -1325,14 +1341,17 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	if (!isValidWorkingCopy(g)) return;
 
 	QMenu menu;
-	QAction *a_history = menu.addAction("History");
+	QAction *a_history = menu.addAction(tr("History"));
+	QAction *a_properties = addMenuActionProperties(&menu);
 
 	QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
 	if (a) {
+		QListWidgetItem *item = ui->listWidget_files->currentItem();
 		if (a == a_history) {
-			QListWidgetItem *item = ui->listWidget_files->currentItem();
 			execFileHistory(item);
+		} else if (a == a_properties) {
+			execFilePropertyDialog(item);
 		}
 	}
 }
@@ -1345,14 +1364,16 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
 	if (!items.isEmpty()) {
 		QMenu menu;
-		QAction *a_stage = menu.addAction("Stage");
-		QAction *a_revert = menu.addAction("Revert");
-		QAction *a_ignore = menu.addAction("Ignore");
-		QAction *a_remove = menu.addAction("Remove");
-		QAction *a_history = menu.addAction("History");
+		QAction *a_stage = menu.addAction(tr("Stage"));
+		QAction *a_revert = menu.addAction(tr("Revert"));
+		QAction *a_ignore = menu.addAction(tr("Ignore"));
+		QAction *a_remove = menu.addAction(tr("Remove"));
+		QAction *a_history = menu.addAction(tr("History"));
+		QAction *a_properties = addMenuActionProperties(&menu);
 		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 		QAction *a = menu.exec(pt);
 		if (a) {
+			QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 			if (a == a_stage) {
 				for_each_selected_unstaged_files([&](QString const &path){
 					g->stage(path);
@@ -1387,8 +1408,9 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				});
 				openRepository();
 			} else if (a == a_history) {
-				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				execFileHistory(item);
+			} else if (a == a_properties) {
+				execFilePropertyDialog(item);
 			}
 		}
 	}
@@ -1401,21 +1423,24 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 
 	QListWidgetItem *item = ui->listWidget_staged->currentItem();
 	if (item) {
-		QString path = item->data(FilePathRole).toString();
+		QString path = getFilePath(item);
 		QString fullpath = currentWorkingCopyDir() / path;
 		if (QFileInfo(fullpath).isFile()) {
 			QMenu menu;
-			QAction *a_unstage = menu.addAction("Unstage");
-			QAction *a_history = menu.addAction("History");
+			QAction *a_unstage = menu.addAction(tr("Unstage"));
+			QAction *a_history = menu.addAction(tr("History"));
+			QAction *a_properties = addMenuActionProperties(&menu);
 			QPoint pt = ui->listWidget_staged->mapToGlobal(pos) + QPoint(8, -8);
 			QAction *a = menu.exec(pt);
 			if (a) {
+				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				if (a == a_unstage) {
 					g->unstage(path);
 					updateHeadFilesList(true);
 				} else if (a == a_history) {
-					QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 					execFileHistory(item);
+				} else if (a == a_properties) {
+					execFilePropertyDialog(item);
 				}
 			}
 		}
@@ -1465,7 +1490,7 @@ QStringList MainWindow::selectedStagedFiles() const
 	QStringList list;
 	QList<QListWidgetItem *> items = ui->listWidget_staged->selectedItems();
 	for (QListWidgetItem *item : items) {
-		QString path = item->data(FilePathRole).toString();
+		QString path = getFilePath(item);
 		list.push_back(path);
 	}
 	return list;
@@ -1477,7 +1502,7 @@ QStringList MainWindow::selectedUnstagedFiles() const
 	QStringList list;
 	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
 	for (QListWidgetItem *item : items) {
-		QString path = item->data(FilePathRole).toString();
+		QString path = getFilePath(item);
 		list.push_back(path);
 	}
 	return list;
@@ -1511,7 +1536,7 @@ void MainWindow::execFileHistory(QString const &path)
 void MainWindow::execFileHistory(QListWidgetItem *item)
 {
 	if (item) {
-		QString path = item->data(FilePathRole).toString();
+		QString path = getFilePath(item);
 		if (!path.isEmpty()) {
 			execFileHistory(path);
 		}
@@ -2477,6 +2502,33 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 	}
 }
 
+void MainWindow::execFilePropertyDialog(QListWidgetItem *item)
+{
+	if (item) {
+		QString path = getFilePath(item);
+		QString id = getObjectID(item);
+		FilePropertyDialog dlg(this);
+		dlg.exec(this, path, id);
+	}
+}
+
+
+void MainWindow::on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem * item)
+{
+	execFilePropertyDialog(item);
+}
+
+void MainWindow::on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item)
+{
+	execFilePropertyDialog(item);
+}
+
+void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
+{
+	execFilePropertyDialog(item);
+}
+
+
 //
 
 #include "Debug.h"
@@ -2491,4 +2543,3 @@ void MainWindow::on_action_test_triggered()
 	misc::dump(&ba1);
 	misc::dump(&ba2);
 }
-

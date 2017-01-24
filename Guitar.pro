@@ -83,7 +83,8 @@ SOURCES += \
     src/Debug.cpp \
     src/GitPackIdxV2.cpp \
     src/GitPack.cpp \
-    src/GitObjectManager.cpp
+    src/GitObjectManager.cpp \
+    src/FilePropertyDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -124,7 +125,8 @@ HEADERS  += \
     src/GitPackIdxV2.h \
     src/GitPack.h \
     src/GitObjectManager.h \
-    zlib.h
+    zlib.h \
+    src/FilePropertyDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -143,7 +145,8 @@ FORMS    += \
     src/DeleteTagsDialog.ui \
     src/SelectCommandDialog.ui \
 	src/FileDiffWidget.ui \
-    src/FileHistoryWindow.ui
+    src/FileHistoryWindow.ui \
+    src/FilePropertyDialog.ui
 
 RESOURCES += \
     resources.qrc

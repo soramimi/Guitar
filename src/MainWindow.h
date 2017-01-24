@@ -107,6 +107,12 @@ private slots:
 
 	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
 
+	void on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem *item);
+
+	void on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item);
+
+	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
+
 private:
 	Ui::MainWindow *ui;
 
@@ -184,6 +190,9 @@ private:
 	void execFileHistory(const QString &path);
 	void execCommitPropertyDialog(const Git::CommitItem *commit);
 	QStringList whichCommand_(const QString &cmdfile);
+	QString getObjectID(QListWidgetItem *item);
+	void execFilePropertyDialog(QListWidgetItem *item);
+	static QAction *addMenuActionProperties(QMenu *menu);
 public:
 
 	QString selectGitCommand();
