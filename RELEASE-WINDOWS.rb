@@ -4,14 +4,17 @@ $qt = "C:/Qt/Qt5.7.1/5.7/msvc2013"
 
 require 'fileutils'
 
-$dstdir = "_release"
+load 'version.rb'
+
+$workdir = "_release"
+$dstdir = $workdir + "/Guitar"
 
 $dstdir_iconengines = $dstdir + "/iconengines"
 $dstdir_imageformats = $dstdir + "/imageformats"
 $dstdir_platforms = $dstdir + "/platforms"
 
-FileUtils.rm_rf($dstdir)
-FileUtils.mkdir($dstdir)
+FileUtils.rm_rf($workdir)
+FileUtils.mkpath($dstdir)
 FileUtils.mkpath($dstdir_iconengines)
 FileUtils.mkpath($dstdir_imageformats)
 FileUtils.mkpath($dstdir_platforms)
@@ -59,4 +62,8 @@ end
 cp_qt_platform("qwindows.dll")
 cp_qt_platform("qminimal.dll")
 cp_qt_platform("qoffscreen.dll")
+
+Dir.chdir($workdir) {
+	`7z a Guitar-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip Guitar`
+}
 
