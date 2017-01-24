@@ -1979,24 +1979,30 @@ void MainWindow::setFileCommand(QString const &path, bool save)
 	pv->file_command = path;
 }
 
-QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QString path, std::function<void(QString const &)> callback)
+QStringList MainWindow::whichCommand_(QString const &cmdfile)
+{
+	QStringList list;
+
+	std::vector<std::string> vec;
+	FileUtil::which(cmdfile.toStdString(), &vec);
+
+	std::sort(vec.begin(), vec.end());
+	auto it = std::unique(vec.begin(), vec.end());
+	vec = std::vector<std::string>(vec.begin(), it);
+
+	for (std::string const &s : vec) {
+		list.push_back(QString::fromStdString(s));
+	}
+
+	return list;
+}
+
+QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString path, std::function<void(QString const &)> callback)
 {
 	QString window_title = tr("Select %1 command");
 	window_title = window_title.arg(cmdfile);
 
-	QStringList list;
-	{
-		std::vector<std::string> vec;
-		FileUtil::which(cmdfile.toStdString(), &vec);
-
-		std::sort(vec.begin(), vec.end());
-		auto it = std::unique(vec.begin(), vec.end());
-		vec = std::vector<std::string>(vec.begin(), it);
-
-		for (std::string const &s : vec) {
-			list.push_back(QString::fromStdString(s));
-		}
-	}
+//	QStringList list = whichCommand_(cmdfile);
 
 	SelectCommandDialog dlg(this, cmdname, cmdfile, path, list);
 	dlg.setWindowTitle(window_title);
@@ -2025,7 +2031,35 @@ QString MainWindow::selectGitCommand()
 		setGitCommand(path, true);
 	};
 
-	return selectCommand_("Git", exe, path, fn);
+	QStringList list = whichCommand_(exe);
+#ifdef Q_OS_WIN
+	{
+		QStringList newlist;
+		QString suffix1 = "\\bin\\git.exe";
+		QString suffix2 = "\\cmd\\git.exe";
+		for (QString const &s : list) {
+			newlist.push_back(s);
+			auto DoIt = [&](QString const &suffix){
+				if (s.endsWith(suffix)) {
+					QString t = s.mid(0, s.size() - suffix.size());
+					QString t1 = t + "\\mingw64\\bin\\git.exe";
+					if (QFileInfo(t1).isExecutable()) newlist.push_back(t1);
+					QString t2 = t + "\\mingw\\bin\\git.exe";
+					if (QFileInfo(t2).isExecutable()) newlist.push_back(t2);
+				}
+			};
+			DoIt(suffix1);
+			DoIt(suffix2);
+		}
+		std::sort(newlist.begin(), newlist.end());
+		auto end = std::unique(newlist.begin(), newlist.end());
+		list.clear();
+		for (auto it = newlist.begin(); it != end; it++) {
+			list.push_back(*it);
+		}
+	}
+#endif
+	return selectCommand_("Git", exe, list, path, fn);
 }
 
 QString MainWindow::selectFileCommand()
@@ -2041,7 +2075,8 @@ QString MainWindow::selectFileCommand()
 		setFileCommand(path, true);
 	};
 
-	return selectCommand_("File", exe, path, fn);
+	QStringList list = whichCommand_(exe);
+	return selectCommand_("File", exe, list, path, fn);
 }
 
 void MainWindow::checkGitCommand()

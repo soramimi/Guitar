@@ -173,7 +173,7 @@ private:
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
-	QString selectCommand_(const QString &cmdname, const QString &cmdfile, QString path, std::function<void(const QString &)> callback);
+	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString path, std::function<void(const QString &)> callback);
 	void updateDiffView(QListWidgetItem *item);
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
@@ -183,6 +183,7 @@ private:
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
 	void execCommitPropertyDialog(const Git::CommitItem *commit);
+	QStringList whichCommand_(const QString &cmdfile);
 public:
 
 	QString selectGitCommand();

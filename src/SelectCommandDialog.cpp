@@ -68,3 +68,7 @@ QString SelectCommandDialog::selectedFile() const
 	return path;
 }
 
+void SelectCommandDialog::on_listWidget_itemDoubleClicked(QListWidgetItem * /*item*/)
+{
+	accept();
+}

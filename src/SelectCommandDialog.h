@@ -7,6 +7,8 @@ namespace Ui {
 class SelectCommandDialog;
 }
 
+class QListWidgetItem;
+
 class SelectCommandDialog : public QDialog
 {
 	Q_OBJECT
@@ -24,6 +26,8 @@ private slots:
 	void on_listWidget_currentTextChanged(const QString &currentText);
 
 	void on_pushButton_browse_clicked();
+
+	void on_listWidget_itemDoubleClicked(QListWidgetItem *item);
 
 private:
 	Ui::SelectCommandDialog *ui;
