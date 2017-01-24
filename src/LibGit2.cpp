@@ -346,7 +346,7 @@ QByteArray LibGit2::Repository::cat_file(const std::string &id)
 	git_object *obj;
 	if (git_revparse_single(&obj, this->ptr(), id.c_str()) == 0) {
 		git_object *p = nullptr;
-		if (git_object_peel(&p, obj, GIT_OBJ_BLOB) == 0 && p) {
+		if (git_object_peel(&p, obj, GIT_OBJ_ANY) == 0 && p) {
 			blob = (git_blob *)p;
 		}
 		git_object_free(obj);

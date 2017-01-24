@@ -596,8 +596,8 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommi
 #if SINGLE_THREAD
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-		GitDiff dm;
-		if (dm.diff(g, id, out, uncommited)) {
+		GitDiff dm(g, &pv->objcache);
+		if (dm.diff(id, out, uncommited)) {
 			return true;
 		}
 	}
@@ -689,7 +689,7 @@ void MainWindow::updateFilesList(QString id)
 				header = "(del) ";
 			} else if (s.code_x() == 'R' || s.code() == Git::FileStatusCode::RenamedInIndex) {
 				header = "(ren) ";
-			} else if (s.code_y() == 'M') {
+			} else if (s.code_x() == 'M' || s.code_y() == 'M') {
 				header = "(chg) ";
 			}
 			AddItem(s.path1(), header, idiff, staged);
@@ -2448,6 +2448,12 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 
 void MainWindow::on_action_test_triggered()
 {
-	Debug::doit(currentWorkingCopyDir());
+	QString id = "8b64149be5690e6434ddd07d349f06c143c36df4";
+	GitPtr g = git();
+	QByteArray ba1;
+	QByteArray ba2;
+	g->cat_file(id, &ba1, &ba2);
+	misc::dump(&ba1);
+	misc::dump(&ba2);
 }
 

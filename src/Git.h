@@ -265,7 +265,7 @@ public:
 	bool clone(const QString &location, const QString &path);
 
 	FileStatusList status();
-	bool cat_file(const QString &id, QByteArray *out);
+	bool cat_file(const QString &id, QByteArray *out, QByteArray *debug = 0);
 	void revertFile(const QString &path);
 	void revertAllFiles();
 

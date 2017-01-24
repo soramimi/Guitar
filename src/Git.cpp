@@ -269,7 +269,7 @@ QString Git::diffHeadToWorkingDir_()
 
 QString Git::diff_(QString const &old_id, QString const &new_id)
 {
-	if (old_id.isEmpty() && new_id == HEAD()) {
+	if (new_id.isEmpty()) {
 		return diffHeadToWorkingDir_();
 	} else {
 		std::string dir = workingRepositoryDir().toStdString();
@@ -737,17 +737,18 @@ QByteArray Git::cat_file_(QString const &id)
 #endif
 }
 
-bool Git::cat_file(QString const &id, QByteArray *out)
+bool Git::cat_file(QString const &id, QByteArray *out, QByteArray *debug)
 {
 	if (isValidID(id)) {
 		*out = cat_file_(id);
-		if (false){
+		if (0){
 			QByteArray ba;
 			GitObjectManager gom(workingRepositoryDir());
 			gom.loadObjectFile(id, &ba);
 			if (out->size() != ba.size()) {
-				qDebug() << "cat_file: " << out->size() << ba.size();
+				qDebug() << "cat_file: " << out->size() << ba.size() << id;
 			}
+			if (debug) *debug = std::move(ba);
 		}
 		return true;
 	}

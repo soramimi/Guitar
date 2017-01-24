@@ -25,7 +25,7 @@ public:
 	static void setFixedSize(QWidget *w);
 	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor const &color);
 	static void dump(const uint8_t *ptr, size_t len);
-	static void dump(QByteArray *out);
+	static void dump(QByteArray const *in);
 };
 
 class OverrideWaitCursor_ {

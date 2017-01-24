@@ -296,14 +296,14 @@ void misc::dump(uint8_t const *ptr, size_t len)
 	}
 }
 
-void misc::dump(QByteArray *out)
+void misc::dump(const QByteArray *in)
 {
 	size_t len = 0;
 	uint8_t const *ptr = nullptr;
-	if (out) {
-		len = out->size();
+	if (in) {
+		len = in->size();
 		if (len > 0) {
-			ptr = (uint8_t const *)out->data();
+			ptr = (uint8_t const *)in->data();
 		}
 	}
 	dump(ptr, len);

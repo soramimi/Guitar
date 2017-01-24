@@ -37,9 +37,7 @@ static bool load(QString const &path, GitPackIdxV2 const *idx, size_t i, QByteAr
 		if (GitPack::load(path, item, &obj)) {
 			if (obj.type == GitPack::Type::OFS_DELTA) {
 				if (i > 0) {
-					QByteArray ba;
-					if (load(path, idx, i - 1, &ba)) {
-						qDebug() << ba.size();
+					if (load(path, idx, i - 1, out)) {
 						return true;
 					}
 				}
