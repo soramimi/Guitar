@@ -992,3 +992,8 @@ QByteArray GitObjectCache::cat_file(GitPtr g, const QString &id)
 	delete item;
 	return QByteArray();
 }
+
+//
+
+
+

@@ -60,7 +60,7 @@ enum {
 	HunkIndexRole,
 };
 
-enum TreeItem {
+enum {
 	GroupItem = -1,
 };
 
@@ -837,10 +837,7 @@ QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 
 QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString &file)
 {
-//	QString id = GitDiff(g, &pv->objcache).findFileID(commit_id, file);
-	QString id2 = GitDiff(g, &pv->objcache).findFileID2(commit_id, file);
-//	qDebug() << Q_FUNC_INFO << id << id2;
-	return id2;
+	return lookupFileID(g, &pv->objcache, commit_id, file);
 }
 
 void MainWindow::openRepository_(GitPtr g)
