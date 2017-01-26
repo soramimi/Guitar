@@ -38,6 +38,7 @@ private:
 	void parseTree_(GitPtr g, GitObjectCache *objcache, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map);
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
+	void retrieveCompleteTree(const QString &dir, TreeItemList *files);
 public:
 	GitDiff(GitPtr g, GitObjectCache *objcache)
 	{

@@ -329,12 +329,27 @@ void GitDiff::parseDiff(QString const &s, Git::Diff const *info, Git::Diff *out)
 	}
 }
 
+void GitDiff::retrieveCompleteTree(QString const &dir, TreeItemList *files)
+{
+	for (TreeItem const &d : *files) {
+		QString path = misc::joinWithSlash(dir, d.name);
+		if (d.type == TreeItem::BLOB) {
+			Git::Diff diff(d.id, path, d.mode);
+			diffs.push_back(diff);
+		} else if (d.type == TreeItem::TREE) {
+			TreeItemList files2;
+			parseTree(g, objcache, d.id, QString(), &files2);
+			retrieveCompleteTree(path, &files2);
+		}
+	}
+}
+
 bool GitDiff::diff(QString id, QList<Git::Diff> *out, bool uncommited)
 {
 	if (!g) return false;
 
 	out->clear();
-	this->objcache = objcache;
+	diffs.clear();
 
 	auto MakeDiffMapList = [&](GitPtr g, QStringList const &parents, MapList *path_to_id_map){
 		for (QString parent : parents) {
@@ -421,10 +436,7 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out, bool uncommited)
 				parseTree(g, objcache, newcommit.tree_id, QString(), &files);
 
 				if (newcommit.parents.isEmpty()) {
-					for (TreeItem const &d : files) {
-						Git::Diff diff(d.id, d.name, d.mode);
-						diffs.push_back(diff);
-					}
+					retrieveCompleteTree(QString(), &files);
 				} else {
 					std::map<QString, Git::Diff> diffmap;
 
