@@ -1931,7 +1931,6 @@ bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
 			return true;
 		}
 	} else if (Git::isValidID(id)) {
-//		if (g->cat_file(id, out)) {
 		*out = pv->objcache.cat_file(g, id);
 		if (!out->isEmpty()) {
 			return true;
@@ -2209,8 +2208,8 @@ bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
 
-	QByteArray ba = pv->objcache.cat_file(g, id);
-//	if (g->cat_file(id, &ba)) {
+	QByteArray ba;
+	cat_file(g, id, &ba);
 	if (!ba.isEmpty()) {
 		if (saveByteArrayAs(ba, dstpath)) {
 			return true;

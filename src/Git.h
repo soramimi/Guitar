@@ -43,9 +43,6 @@ public:
 		QString at;
 		QStringList lines;
 	};
-//	struct BLOB {
-//		QString id;
-//	};
 	class Diff {
 	public:
 		enum class Type {
@@ -206,6 +203,11 @@ public:
 		int code_y() const
 		{
 			return data.code_y;
+		}
+
+		bool isDeleted() const
+		{
+			return code_x() == 'D' || code_y() == 'D';
 		}
 
 		QString path1() const

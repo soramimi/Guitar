@@ -239,7 +239,7 @@ void FileDiffWidget::init_diff_data_(Git::Diff const &diff)
 	diffdata()->right_id = diff.blob.b_id;
 }
 
-void FileDiffWidget::setDataAsNewFile(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::prepareSetText_(QByteArray const &ba, Git::Diff const &diff)
 {
 	init_diff_data_(diff);
 
@@ -248,36 +248,49 @@ void FileDiffWidget::setDataAsNewFile(QByteArray const &ba, Git::Diff const &dif
 	} else {
 		diffdata()->original_lines = misc::splitLines(ba, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
 	}
+}
 
-	QList<TextDiffLine> left_newlines;
-	QList<TextDiffLine> right_newlines;
+void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &diff)
+{
+	prepareSetText_(ba, diff);
+
+	QList<TextDiffLine> left_lines;
+	QList<TextDiffLine> right_lines;
 
 	for (QString const &line : diffdata()->original_lines) {
-		QString text = '+' + line;
-		left_newlines.push_back(QString());
-		right_newlines.push_back(text);
+		left_lines.push_back(QString());
+		right_lines.push_back('+' + line);
 	}
 
-	setDiffText(left_newlines, right_newlines);
+	setDiffText(left_lines, right_lines);
+}
+
+void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const &diff)
+{
+	prepareSetText_(ba, diff);
+
+	QList<TextDiffLine> left_lines;
+	QList<TextDiffLine> right_lines;
+
+	for (QString const &line : diffdata()->original_lines) {
+		left_lines.push_back('-' + line);
+		right_lines.push_back(QString());
+	}
+
+	setDiffText(left_lines, right_lines);
 }
 
 void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
-	init_diff_data_(diff);
+	prepareSetText_(ba, diff);
 
 	if (uncommited) {
 		QString path = workingdir / diff.path;
 		diffdata()->right_id = GitDiff::prependPathPrefix(path);
 	}
 
-	if (ba.isEmpty()) {
-		diffdata()->original_lines.clear();
-	} else {
-		diffdata()->original_lines = misc::splitLines(ba, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
-	}
-
-	QList<TextDiffLine> left_newlines;
-	QList<TextDiffLine> right_newlines;
+	QList<TextDiffLine> left_lines;
+	QList<TextDiffLine> right_lines;
 
 	size_t linenum = diffdata()->original_lines.size();
 
@@ -363,8 +376,8 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 				}
 			}
 			FlushBlank();
-			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) left_newlines.push_back(*it);
-			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) right_newlines.push_back(*it);
+			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) left_lines.push_back(*it);
+			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) right_lines.push_back(*it);
 			linenum = hi.pos;
 			h--;
 		}
@@ -372,15 +385,15 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 			linenum--;
 			if (linenum < (size_t)diffdata()->original_lines.size()) {
 				QString line = ' ' + diffdata()->original_lines[linenum];
-				left_newlines.push_back(line);
-				right_newlines.push_back(line);
+				left_lines.push_back(line);
+				right_lines.push_back(line);
 			}
 		}
 	}
 
-	std::reverse(left_newlines.begin(), left_newlines.end());
-	std::reverse(right_newlines.begin(), right_newlines.end());
-	setDiffText(left_newlines, right_newlines);
+	std::reverse(left_lines.begin(), left_lines.end());
+	std::reverse(right_lines.begin(), right_lines.end());
+	setDiffText(left_lines, right_lines);
 }
 
 
@@ -388,6 +401,13 @@ void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff
 GitPtr FileDiffWidget::git()
 {
 	return pv->mainwindow->git();
+}
+
+QByteArray FileDiffWidget::cat_file(GitPtr g, QString const &id)
+{
+	QByteArray ba;
+	pv->mainwindow->cat_file(g, id, &ba);
+	return ba;
 }
 
 bool FileDiffWidget::isValidID_(QString const &id)
@@ -413,12 +433,16 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	}
 
 	QByteArray ba;
-	if (isValidID_(diff.blob.a_id)) {
-		pv->mainwindow->cat_file(g, diff.blob.a_id, &ba);
-		setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir());
-	} else if (isValidID_(diff.blob.b_id)) {
-		pv->mainwindow->cat_file(g, diff.blob.b_id, &ba);
-		setDataAsNewFile(ba, diff);
+	if (isValidID_(diff.blob.a_id)) { // 左が有効
+		ba = cat_file(g, diff.blob.a_id);
+		if (isValidID_(diff.blob.b_id)) { // 右が有効
+			setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+		} else {
+			setDataAsDeletedFile(ba, diff); // 右が無効の時は、削除されたファイル
+		}
+	} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
+		ba = cat_file(g, diff.blob.b_id);
+		setDataAsAddedFile(ba, diff);
 	}
 
 	ui->widget_diff_pixmap->clear(false);
@@ -442,8 +466,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	QString text = GitDiff::diffFile(g, diff.blob.a_id, diff.blob.b_id);
 	GitDiff::parseDiff(text, &diff, &diff);
 
-	QByteArray ba;
-	pv->mainwindow->cat_file(g, diff.blob.a_id, &ba);
+	QByteArray ba = cat_file(g, diff.blob.a_id);
 	setTextDiffData(ba, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);
