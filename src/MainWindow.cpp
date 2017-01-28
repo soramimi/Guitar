@@ -40,9 +40,6 @@
 #include <QDirIterator>
 #include <QThread>
 
-
-
-
 FileDiffWidget::DrawData::DrawData()
 {
 	bgcolor_text = QColor(255, 255, 255);
@@ -2029,8 +2026,6 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 {
 	QString window_title = tr("Select %1 command");
 	window_title = window_title.arg(cmdfile);
-
-//	QStringList list = whichCommand_(cmdfile);
 
 	SelectCommandDialog dlg(this, cmdname, cmdfile, path, list);
 	dlg.setWindowTitle(window_title);

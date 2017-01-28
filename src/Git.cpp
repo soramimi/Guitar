@@ -785,15 +785,10 @@ void Git::stage(QStringList const &paths)
 {
 	QString cmd = "add";
 	for (QString const &path : paths) {
-		if (0) { //if (path.startsWith('\"') && path.startsWith('\"')) {
-			cmd += ' ';
-			cmd += path;
-		} else {
-			cmd += ' ';
-			cmd += '\"';
-			cmd += path;
-			cmd += '\"';
-		}
+		cmd += ' ';
+		cmd += '\"';
+		cmd += path;
+		cmd += '\"';
 	}
 	git(cmd);
 }
