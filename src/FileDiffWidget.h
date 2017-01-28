@@ -108,12 +108,15 @@ private:
 
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
-	void setDataAsNewFile(const QByteArray &ba, const Git::Diff &diff);
+	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
+	void setDataAsAddedFile(const QByteArray &ba, const Git::Diff &diff);
+	void setDataAsDeletedFile(const QByteArray &ba, const Git::Diff &diff);
 	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
 	void init_diff_data_(const Git::Diff &diff);
 
 	GitPtr git();
+	QByteArray cat_file(GitPtr g, const QString &id);
 
 	bool isValidID_(const QString &id);
 public:

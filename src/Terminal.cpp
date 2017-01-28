@@ -9,8 +9,14 @@
 void Terminal::open(QString const &dir)
 {
 	if (dir.indexOf('\"') < 0 && QFileInfo(dir).isDir()) {
-		QString cmd = "cmd.exe /k \"cd %1\"";
-		cmd = cmd.arg(dir);
+		QString arg;
+		if (dir.at(0).isLetter() && dir.at(1) == ':') {
+			arg = QString("%1 & cd %2").arg(dir.mid(0, 2)).arg(dir);
+		} else {
+			arg = QString("cd %1").arg(dir);
+		}
+		QString cmd = "cmd.exe /k \"%1\"";
+		cmd = cmd.arg(arg);
 
 		PROCESS_INFORMATION pi;
 		STARTUPINFO si;

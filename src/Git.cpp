@@ -785,9 +785,10 @@ void Git::stage(QStringList const &paths)
 {
 	QString cmd = "add";
 	for (QString const &path : paths) {
-		cmd += " \"";
+		cmd += ' ';
+		cmd += '\"';
 		cmd += path;
-		cmd += "\"";
+		cmd += '\"';
 	}
 	git(cmd);
 }
@@ -801,8 +802,9 @@ void Git::unstage(QStringList const &paths)
 {
 	QString cmd = "reset HEAD";
 	for (QString const &path : paths) {
-		cmd += ' ';
+		cmd += " \"";
 		cmd += path;
+		cmd += '\"';
 	}
 	git(cmd);
 }
@@ -913,6 +915,7 @@ QString Git::trimPath(QString const &s)
 
 void Git::FileStatus::parse(const QString &text)
 {
+	data = Data();
 	if (text.size() > 3) {
 		ushort const *p = text.utf16();
 		if (p[2] == ' ') {
@@ -921,10 +924,13 @@ void Git::FileStatus::parse(const QString &text)
 
 			int i = text.indexOf(" -> ", 3);
 			if (i > 3) {
-				data.path1 = trimPath(text.mid(3, i - 3));
-				data.path2 = trimPath(text.mid(i + 4));
+				data.rawpath1 = text.mid(3, i - 3);
+				data.rawpath2 = text.mid(i + 4);
+				data.path1 = trimPath(data.rawpath1);
+				data.path2 = trimPath(data.rawpath2);
 			} else {
-				data.path1 = trimPath(text.mid(3));
+				data.rawpath1 = text.mid(3);
+				data.path1 = trimPath(data.rawpath1);
 				data.path2 = QString();
 			}
 

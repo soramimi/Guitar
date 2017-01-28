@@ -33,12 +33,30 @@ private:
 
 	typedef std::list<LookupTable> MapList;
 
-	void diff_tree_(GitPtr g, QString const &dir, QString older_id, QString newer_id);
-	void commit_into_map(GitPtr g, const TreeItemList *files, MapList const *diffmap);
-	void parseTree_(GitPtr g, GitObjectCache *objcache, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map);
+//	void diff_tree_(GitPtr g, QString const &dir, QString older_commit_id, QString newer_commit_id);
+//	void commit_into_map(GitPtr g, const TreeItemList *files, MapList const *diffmap);
+//	void parseTree_(GitPtr g, GitObjectCache *objcache, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map)
+//	{
+//		if (!dir.isEmpty()) {
+//			auto it = dirset->find(dir);
+//			if (it != dirset->end()) {
+//				return;
+//			}
+//			dirset->insert(dir);
+//		}
+
+//		TreeItemList files;
+//		parse_tree_(g, objcache, id, dir, &files);
+//		path_to_id_map->push_back(LookupTable());
+//		LookupTable &map = path_to_id_map->front();
+//		for (TreeItem const &cd : files) {
+//			map.store(cd.name, cd.id);
+//		}
+//	}
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(const QString &dir, TreeItemList *files);
+	void retrieveCompleteTree(const QString &dir, const TreeItemList *files, std::map<QString, TreeItem> *out);
+	void retrieveCompleteTree(const QString &dir, const TreeItemList *files);
 public:
 	GitDiff(GitPtr g, GitObjectCache *objcache)
 	{
@@ -46,7 +64,9 @@ public:
 		this->objcache = objcache;
 	}
 
-	bool diff(QString id, QList<Git::Diff> *out, bool uncommited);
+	bool diff(QString id, QList<Git::Diff> *out);
+	bool diff_uncommited(QList<Git::Diff> *out);
+
 	void interrupt()
 	{
 		interrupted = true;
@@ -60,6 +80,26 @@ public:
 	static QString prependPathPrefix(const QString &path);
 
 
+};
+
+class GitCommitTree {
+private:
+	GitPtr g;
+	GitObjectCache *objcache;
+	TreeItemList root_item_list;
+
+	std::map<QString, TreeItem> blob_map;
+	std::map<QString, QString> tree_id_map;
+
+	QString lookup_(QString const &file, TreeItem *out);
+public:
+	GitCommitTree(GitPtr g, GitObjectCache *objcache);
+
+	QString lookup(QString const &file);
+	bool lookup(const QString &file, TreeItem *out);
+
+	void parseTree(const QString &tree_id);
+	void parseCommit(QString const &commit_id);
 };
 
 QString lookupFileID(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &file);
