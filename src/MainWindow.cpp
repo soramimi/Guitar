@@ -1258,7 +1258,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QString open_commandprompt = tr("Open command promp&t");
 		QMenu menu;
 		QAction *a_open = menu.addAction(tr("&Open"));
-		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
+		menu.addSeparator();
 #ifdef Q_OS_WIN
 		QAction *a_open_terminal = menu.addAction(open_commandprompt);
 		(void)open_terminal;
@@ -1266,8 +1266,12 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_open_terminal = menu.addAction(open_terminal);
 		(void)open_commandprompt;
 #endif
+		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
+		menu.addSeparator();
 		QAction *a_remove = menu.addAction(tr("&Remove"));
+		menu.addSeparator();
 		QAction *a_properties = addMenuActionProperties(&menu);
+
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -1368,7 +1372,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		QAction *a_stage = menu.addAction(tr("Stage"));
 		QAction *a_revert = menu.addAction(tr("Revert"));
 		QAction *a_ignore = menu.addAction(tr("Ignore"));
-		QAction *a_remove = menu.addAction(tr("Remove"));
+		QAction *a_delete = menu.addAction(tr("Delete"));
 		QAction *a_history = menu.addAction(tr("History"));
 		QAction *a_properties = addMenuActionProperties(&menu);
 		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
@@ -1399,15 +1403,17 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", append)) {
 					updateHeadFilesList(true);
 				}
-			} else if (a == a_remove) {
-				for_each_selected_unstaged_files([&](QString const &path){
-					g->removeFile(path);
-					g->chdirexec([&](){
-						QFile(path).remove();
-						return true;
+			} else if (a == a_delete) {
+				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
+					for_each_selected_unstaged_files([&](QString const &path){
+						g->removeFile(path);
+						g->chdirexec([&](){
+							QFile(path).remove();
+							return true;
+						});
 					});
-				});
-				openRepository();
+					openRepository();
+				}
 			} else if (a == a_history) {
 				execFileHistory(item);
 			} else if (a == a_properties) {
@@ -1451,7 +1457,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
 {
 	QString message = tr("Are you sure you want to run the following command ?");
-	QString text = "%1\n\n> %2";
+	QString text = "%1\n\n%2";
 	text = text.arg(message).arg(command);
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
@@ -1465,7 +1471,7 @@ void MainWindow::revertFile(QStringList const &paths)
 		// nop
 	} else {
 		QString cmd = "git checkout -- \"" + paths[0] + '\"';
-		if (askAreYouSureYouWantToRun(tr("Revert a file"), cmd)) {
+		if (askAreYouSureYouWantToRun(tr("Revert a file"), "> " + cmd)) {
 			for (QString const &path : paths) {
 				g->revertFile(path);
 			}
@@ -1480,7 +1486,7 @@ void MainWindow::revertAllFiles()
 	if (!isValidWorkingCopy(g)) return;
 
 	QString cmd = "git reset --hard HEAD";
-	if (askAreYouSureYouWantToRun(tr("Revert all files"), cmd)) {
+	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
 		g->revertAllFiles();
 		openRepository();
 	}
