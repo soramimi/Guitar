@@ -139,6 +139,8 @@ public:
 			char code_x = 0;
 			char code_y = 0;
 			FileStatusCode code = FileStatusCode::Unknown;
+			QString rawpath1;
+			QString rawpath2;
 			QString path1;
 			QString path2;
 		} data;
@@ -218,6 +220,16 @@ public:
 		QString path2() const
 		{
 			return data.path2;
+		}
+
+		QString rawpath1() const
+		{
+			return data.rawpath1;
+		}
+
+		QString rawpath2() const
+		{
+			return data.rawpath2;
 		}
 	};
 	typedef std::vector<FileStatus> FileStatusList;
