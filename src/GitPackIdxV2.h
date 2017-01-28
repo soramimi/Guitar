@@ -53,6 +53,7 @@ public:
 	uint32_t count() const;
 	Item const *item(size_t i) const;
 	Item const *item(QString const &id) const;
+	int number(const QString &id) const;
 	std::map<QString, Item> const *map() const;
 	bool parse(QIODevice *in);
 	bool parse(const QString &idxpath);

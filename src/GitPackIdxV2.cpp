@@ -127,11 +127,24 @@ const GitPackIdxV2::Item *GitPackIdxV2::item(size_t i) const
 
 const GitPackIdxV2::Item *GitPackIdxV2::item(const QString &id) const
 {
+#if 0
 	auto it = item_map.find(id);
-	if (it == item_map.end()) {
-		return nullptr;
+	return it == item_map.end() ? nullptr : &it->second;
+#else
+	int i = number(id);
+	if (i >= 0 && i < item_list.size()) {
+		return item(i);
 	}
-	return &it->second;
+	return nullptr;
+#endif
+}
+
+int GitPackIdxV2::number(const QString &id) const
+{
+	for (int i = 0; i < (int)item_list.size(); i++) {
+		if (item_list[i].id == id) return i;
+	}
+	return -1;
 }
 
 const std::map<QString, GitPackIdxV2::Item> *GitPackIdxV2::map() const

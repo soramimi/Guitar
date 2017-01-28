@@ -2532,14 +2532,85 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 //
 
 #include "Debug.h"
+#include "GitPack.h"
 
 void MainWindow::on_action_test_triggered()
 {
-	QString id = "8b64149be5690e6434ddd07d349f06c143c36df4";
-	GitPtr g = git();
-	QByteArray ba1;
-	QByteArray ba2;
-	g->cat_file(id, &ba1, &ba2);
-	misc::dump(&ba1);
-	misc::dump(&ba2);
+	GitPackIdxV2 idx;
+	if (idx.parse("C:/develop/GetIt/.git/objects/pack/pack-da889d867e8acb4d18c95ed6d519c5609e0e78d5.idx")) {
+		auto Save = [&](QString const &id, QString const &file, GitPack::Object *out){
+			GitPackIdxV2::Item const *item = idx.item(id);
+			if (GitPack::load("C:/develop/GetIt/.git/objects/pack/pack-da889d867e8acb4d18c95ed6d519c5609e0e78d5.pack", item, out)) {
+//				QFile file(file);
+//				if (file.open(QFile::WriteOnly)) {
+//					file.write(out->content);
+//				}
+			}
+		};
+		QByteArray out;
+		GitPack::Object obj0;
+		GitPack::Object obj1;
+		Save("12535086d7f355c994a8f0d0dc9d2e888939c244", "d:/0.bin", &obj0);
+		Save("b3800c01fe78d4f6a0f143e703cf450eb65f845f", "d:/1.bin", &obj1);
+		if (obj1.content.size() > 0) {
+			uint8_t const *begin = (uint8_t const *)obj1.content.data();
+			uint8_t const *end = begin + obj1.content.size();
+			uint8_t const *ptr = begin;
+			auto ReadNumber = [&](){
+				uint64_t n = 0;
+				int shift = 0;
+				while (ptr < end) {
+					uint64_t c = *ptr;
+					ptr++;
+					n |= (c & 0x7f) << shift;
+					shift += 7;
+					if (!(c & 0x80)) break;
+				}
+				return n;
+			};
+			uint64_t a = ReadNumber(); // older file size
+			uint64_t b = ReadNumber(); // newer file size
+			qDebug() << a << b;
+			while (ptr < end) {
+				uint8_t op = *ptr;
+				ptr++;
+				if (op & 0x80) { // copy operation
+					int32_t offset = 0;
+					for (int i = 0; i < 4; i++) {
+						if ((op >> i) & 1) {
+							if (ptr < end) {
+								offset |= *ptr << (i * 8);
+								ptr++;
+							}
+						}
+					}
+					int32_t length = 0;
+					for (int i = 0; i < 3; i++) {
+						if ((op >> (i + 4)) & 1) {
+							if (ptr < end) {
+								length |= *ptr << (i * 8);
+								ptr++;
+							}
+						}
+					}
+					qDebug() << "copy: " << offset << length;
+					out.append(obj0.content.data() + offset, length);
+				} else { // insert operation
+					int length = op & 0x7f;
+					qDebug() << "insert: " << length;
+					if (ptr + length <= end) {
+						out.append((char const *)ptr, length);
+						ptr += length;
+					}
+				}
+			}
+		}
+		QFile file("d:/9.txt");
+		if (file.open(QFile::WriteOnly)) {
+			file.write(out);
+		}
+	}
+//	12535086d7f355c994a8f0d0dc9d2e888939c244 blob   2789 873 72748
+//	b3800c01fe78d4f6a0f143e703cf450eb65f845f blob   12 23 73621 1 12535086d7f355c994a8f0d0dc9d2e888939c244
+
 }
