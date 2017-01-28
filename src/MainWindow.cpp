@@ -529,7 +529,11 @@ public:
 	void run()
 	{
 		GitDiff dm(d.g, d.objcache);
-		dm.diff(d.id, &d.result, d.uncommited);
+		if (d.uncommited) {
+			dm.diff_uncommited(&d.result);
+		} else {
+			dm.diff(d.id, &d.result);
+		}
 	}
 	void interrupt()
 	{
