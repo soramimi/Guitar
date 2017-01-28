@@ -2,6 +2,7 @@
 #include "../zlib.h"
 #include <QDebug>
 #include <QFile>
+#include "GitPackIdxV2.h"
 
 bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed)
 {
@@ -141,13 +142,17 @@ bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t e
 	return false;
 }
 
-bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Object *out)
+bool GitPack::query(QIODevice *file, const GitPackIdxItem *item, Info *out)
 {
-	*out = Object();
 	try {
 		auto Read = [&](void *ptr, size_t len){
 			return file->read((char *)ptr, len) == len;
 		};
+
+		file->seek(0);
+		Info info;
+
+
 		uint32_t header[3];
 		if (!Read(header, sizeof(int32_t) * 3)) throw QString("failed to read the header");
 		if (memcmp(header, "PACK", 4) != 0) throw QString("invalid pack file");
@@ -157,7 +162,52 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 
 		file->seek(item->offset);
 
-		uint64_t size = 0;
+		{
+			int shift = 0;
+			while (1) {
+				char c;
+				if (!Read(&c, 1)) throw QString("failed to read");
+				if (shift == 0) {
+					info.type = (GitPack::Type)((c >> 4) & 7);
+					info.expanded_size = c & 0x0f;
+					shift = 4;
+				} else {
+					info.expanded_size |= (c & 0x7f) << shift;
+					shift += 7;
+				}
+				if (!(c & 0x80)) break;
+			}
+		}
+		*out = info;
+		return true;
+	} catch (QString const &e) {
+		qDebug() << e;
+	}
+	return false;
+}
+
+bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
+{
+	*out = Object();
+	try {
+		auto Read = [&](void *ptr, size_t len){
+			return file->read((char *)ptr, len) == len;
+		};
+
+//		file->seek(0);
+
+//		uint32_t header[3];
+//		if (!Read(header, sizeof(int32_t) * 3)) throw QString("failed to read the header");
+//		if (memcmp(header, "PACK", 4) != 0) throw QString("invalid pack file");
+//		uint32_t version = read_uint32_be(header + 1);
+//		if (version < 2) throw "invalid pack file version";
+//		/*int count = */read_uint32_be(header + 2);
+
+		query(file, item, out);
+
+		file->seek(item->offset);
+
+
 		{
 			int shift = 0;
 			while (1) {
@@ -165,10 +215,10 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 				if (!Read(&c, 1)) throw QString("failed to read");
 				if (shift == 0) {
 					out->type = (GitPack::Type)((c >> 4) & 7);
-					size = c & 0x0f;
+					out->expanded_size = c & 0x0f;
 					shift = 4;
 				} else {
-					size |= (c & 0x7f) << shift;
+					out->expanded_size |= (c & 0x7f) << shift;
 					shift += 7;
 				}
 				if (!(c & 0x80)) break;
@@ -190,8 +240,8 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 			if (!Read(tmp, 20)) throw QString("failed to read");
 		}
 
-		if (decompress(file, false, out->type, size, &out->content, &out->packed_size)) {
-			out->expanded_size = size;
+		if (decompress(file, false, out->type, out->expanded_size, &out->content, &out->packed_size)) {
+			out->expanded_size = out->expanded_size;
 			return true;
 		}
 	} catch (QString const &e) {
@@ -200,7 +250,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxV2::Item *item, GitPack::Obj
 	return false;
 }
 
-bool GitPack::load(QString const &packfile, const GitPackIdxV2::Item *item, GitPack::Object *out)
+bool GitPack::load(QString const &packfile, const GitPackIdxItem *item, GitPack::Object *out)
 {
 	QFile file(packfile);
 	if (file.open(QFile::ReadOnly)) {

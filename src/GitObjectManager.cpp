@@ -8,6 +8,7 @@
 #include <QFile>
 #include "joinpath.h"
 #include "misc.h"
+#include "GitPackIdxV2.h"
 
 GitObjectManager::GitObjectManager(const QString &workingdir)
 	: working_dir(workingdir)
@@ -31,7 +32,7 @@ bool GitObjectManager::loadObject_(QString const &id, QByteArray *out)
 
 static bool load(QString const &path, GitPackIdxV2 const *idx, size_t i, QByteArray *out)
 {
-	GitPackIdxV2::Item const *item = idx->item(i);
+	GitPackIdxItem const *item = idx->item(i);
 	if (item) {
 		GitPack::Object obj;
 		if (GitPack::load(path, item, &obj)) {
@@ -66,7 +67,7 @@ bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray 
 			if (idx.parse(it.filePath())) {
 				size_t n = idx.count();
 				for (size_t i = 0; i < n; i++) {
-					GitPackIdxV2::Item const *item = idx.item(i);
+					GitPackIdxItem const *item = idx.item(i);
 					if (item && item->id.startsWith(id)) {
 						Entry e;
 						QString packfilename = it.fileInfo().baseName() + ".pack";
@@ -80,7 +81,7 @@ bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray 
 	}
 	if (entries.size() == 1) {
 		Entry const &e = entries.front();
-		GitPackIdxV2::Item const *item = idx.item(e.index);
+		GitPackIdxItem const *item = idx.item(e.index);
 //		GitPack::Object obj;
 		if (id.startsWith("f98089")) {
 			qDebug() << "---";

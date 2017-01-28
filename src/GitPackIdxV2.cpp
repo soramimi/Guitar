@@ -28,6 +28,14 @@ uint32_t GitPackIdxV2::count() const
 	return get_fanout(&d.header, 255);
 }
 
+GitPackIdxItem const *GitPackIdxV2::item(size_t i) const
+{
+	if (i < item_list.size()) {
+		return &item_list[i];
+	}
+	return nullptr;
+}
+
 const uint8_t *GitPackIdxV2::object(int i) const
 {
 	return d.objects[i].id;
@@ -76,17 +84,17 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		}
 
 		for (size_t i = 0; i < size; i++) {
-			Item item;
+			GitPackIdxItem item;
 			item.id = toString(object(i));
 			item.offset = offset(i);
 			item.checksum = checksum(i);
 			item_list.push_back(item);
 		}
-		std::sort(item_list.begin(), item_list.end(), [](Item const &left, Item const &right){
+		std::sort(item_list.begin(), item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
 			return left.offset < right.offset;
 		});
 		for (size_t i = 0; i < size; i++) {
-			Item &item = item_list[i];
+			GitPackIdxItem &item = item_list[i];
 			if (i + 1 < size) {
 				item.packed_size = item_list[i + 1].offset - item_list[i].offset;
 			}
@@ -117,22 +125,16 @@ bool GitPackIdxV2::parse(const QString &idxfile)
 	return false;
 }
 
-const GitPackIdxV2::Item *GitPackIdxV2::item(size_t i) const
-{
-	if (i < item_list.size()) {
-		return &item_list[i];
-	}
-	return nullptr;
-}
 
-const GitPackIdxV2::Item *GitPackIdxV2::item(const QString &id) const
+
+GitPackIdxItem const *GitPackIdxV2::item_(const QString &id) const
 {
 #if 0
 	auto it = item_map.find(id);
 	return it == item_map.end() ? nullptr : &it->second;
 #else
 	int i = number(id);
-	if (i >= 0 && i < item_list.size()) {
+	if (i >= 0 && i < (int)item_list.size()) {
 		return item(i);
 	}
 	return nullptr;
@@ -147,7 +149,7 @@ int GitPackIdxV2::number(const QString &id) const
 	return -1;
 }
 
-const std::map<QString, GitPackIdxV2::Item> *GitPackIdxV2::map() const
+const std::map<QString, GitPackIdxItem> *GitPackIdxV2::map() const
 {
 	return &item_map;
 }

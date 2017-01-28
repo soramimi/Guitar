@@ -4,6 +4,16 @@
 #include <QIODevice>
 #include <stdint.h>
 #include <vector>
+#include "GitPack.h"
+
+struct GitPackIdxItem {
+	QString id;
+	GitPack::Type type = GitPack::Type::UNKNOWN;
+	size_t offset = 0;
+	size_t packed_size = 0;
+	size_t expanded_size = 0;
+	uint32_t checksum;
+};
 
 class GitPackIdxV2 {
 private:
@@ -36,25 +46,18 @@ private:
 	static inline uint32_t get_fanout(header_t const *t, int i);
 
 public:
-	struct Item {
-		QString id;
-		size_t offset = 0;
-		size_t packed_size = 0;
-		size_t expanded_size = 0;
-		uint32_t checksum;
-	};
 private:
-	std::vector<Item> item_list;
-	std::map<QString, Item> item_map;
+	std::vector<GitPackIdxItem> item_list;
+	std::map<QString, GitPackIdxItem> item_map;
 	uint8_t const *object(int i) const;
 	const uint32_t offset(int i) const;
 	const uint32_t checksum(int i) const;
 public:
 	uint32_t count() const;
-	Item const *item(size_t i) const;
-	Item const *item(QString const &id) const;
+	GitPackIdxItem const *item(size_t i) const;
+	GitPackIdxItem const *item_(QString const &id) const;
 	int number(const QString &id) const;
-	std::map<QString, Item> const *map() const;
+	std::map<QString, GitPackIdxItem> const *map() const;
 	bool parse(QIODevice *in);
 	bool parse(const QString &idxpath);
 	void clear();

@@ -2537,81 +2537,120 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 
 #include "Debug.h"
 #include "GitPack.h"
+#include "GitPackIdxV2.h"
+
+void ApplyDelta(GitPack::Object *obj0, GitPack::Object *obj1, QByteArray *out)
+{
+	if (obj1->content.size() > 0) {
+		uint8_t const *begin = (uint8_t const *)obj1->content.data();
+		uint8_t const *end = begin + obj1->content.size();
+		uint8_t const *ptr = begin;
+		auto ReadNumber = [&](){
+			uint64_t n = 0;
+			int shift = 0;
+			while (ptr < end) {
+				uint64_t c = *ptr;
+				ptr++;
+				n |= (c & 0x7f) << shift;
+				shift += 7;
+				if (!(c & 0x80)) break;
+			}
+			return n;
+		};
+		uint64_t a = ReadNumber(); // older file size
+		uint64_t b = ReadNumber(); // newer file size
+		qDebug() << a << b;
+		while (ptr < end) {
+			uint8_t op = *ptr;
+			ptr++;
+			if (op & 0x80) { // copy operation
+				int32_t offset = 0;
+				for (int i = 0; i < 4; i++) {
+					if ((op >> i) & 1) {
+						if (ptr < end) {
+							offset |= *ptr << (i * 8);
+							ptr++;
+						}
+					}
+				}
+				int32_t length = 0;
+				for (int i = 0; i < 3; i++) {
+					if ((op >> (i + 4)) & 1) {
+						if (ptr < end) {
+							length |= *ptr << (i * 8);
+							ptr++;
+						}
+					}
+				}
+				qDebug() << "copy: " << offset << length;
+				out->append(obj0->content.data() + offset, length);
+			} else { // insert operation
+				int length = op & 0x7f;
+				qDebug() << "insert: " << length;
+				if (ptr + length <= end) {
+					out->append((char const *)ptr, length);
+					ptr += length;
+				}
+			}
+		}
+	}
+}
+
+bool LoadPackFile(GitPackIdxV2 *idx, QIODevice *packfile, int index, GitPack::Object *out)
+{
+	if (index >= 0) {
+		GitPackIdxItem const *item = idx->item(index);
+		GitPack::Info info;
+		if (GitPack::query(packfile, item, &info)) {
+			if (info.type == GitPack::Type::OFS_DELTA) {
+				if (index > 0) {
+					GitPack::Object source;
+					if (LoadPackFile(idx, packfile, index - 1, &source)) {
+						if (GitPack::load(packfile, item, out)) {
+							QByteArray ba;
+							ApplyDelta(&source, out, &ba);
+							*out = GitPack::Object();
+							out->type = source.type;
+							out->content = std::move(ba);
+							out->expanded_size = out->content.size();
+							return true;
+						}
+					}
+				}
+			} else if (info.type == GitPack::Type::REF_DELTA) {
+				return false; // not supported
+			}
+		}
+		if (GitPack::load(packfile, item, out)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void LoadPackFile(GitPackIdxV2 *idx, QString const &packfilepath, QString const &id, GitPack::Object *out)
+{
+	*out = GitPack::Object();
+	QFile packfile(packfilepath);
+	if (packfile.open(QFile::ReadOnly)) {
+		int i = idx->number(id);
+		LoadPackFile(idx, &packfile, i, out);
+	}
+}
 
 void MainWindow::on_action_test_triggered()
 {
 	GitPackIdxV2 idx;
-	if (idx.parse("C:/develop/GetIt/.git/objects/pack/pack-da889d867e8acb4d18c95ed6d519c5609e0e78d5.idx")) {
-		auto Save = [&](QString const &id, QString const &file, GitPack::Object *out){
-			GitPackIdxV2::Item const *item = idx.item(id);
-			if (GitPack::load("C:/develop/GetIt/.git/objects/pack/pack-da889d867e8acb4d18c95ed6d519c5609e0e78d5.pack", item, out)) {
-//				QFile file(file);
-//				if (file.open(QFile::WriteOnly)) {
-//					file.write(out->content);
-//				}
-			}
-		};
-		QByteArray out;
-		GitPack::Object obj0;
-		GitPack::Object obj1;
-		Save("12535086d7f355c994a8f0d0dc9d2e888939c244", "d:/0.bin", &obj0);
-		Save("b3800c01fe78d4f6a0f143e703cf450eb65f845f", "d:/1.bin", &obj1);
-		if (obj1.content.size() > 0) {
-			uint8_t const *begin = (uint8_t const *)obj1.content.data();
-			uint8_t const *end = begin + obj1.content.size();
-			uint8_t const *ptr = begin;
-			auto ReadNumber = [&](){
-				uint64_t n = 0;
-				int shift = 0;
-				while (ptr < end) {
-					uint64_t c = *ptr;
-					ptr++;
-					n |= (c & 0x7f) << shift;
-					shift += 7;
-					if (!(c & 0x80)) break;
-				}
-				return n;
-			};
-			uint64_t a = ReadNumber(); // older file size
-			uint64_t b = ReadNumber(); // newer file size
-			qDebug() << a << b;
-			while (ptr < end) {
-				uint8_t op = *ptr;
-				ptr++;
-				if (op & 0x80) { // copy operation
-					int32_t offset = 0;
-					for (int i = 0; i < 4; i++) {
-						if ((op >> i) & 1) {
-							if (ptr < end) {
-								offset |= *ptr << (i * 8);
-								ptr++;
-							}
-						}
-					}
-					int32_t length = 0;
-					for (int i = 0; i < 3; i++) {
-						if ((op >> (i + 4)) & 1) {
-							if (ptr < end) {
-								length |= *ptr << (i * 8);
-								ptr++;
-							}
-						}
-					}
-					qDebug() << "copy: " << offset << length;
-					out.append(obj0.content.data() + offset, length);
-				} else { // insert operation
-					int length = op & 0x7f;
-					qDebug() << "insert: " << length;
-					if (ptr + length <= end) {
-						out.append((char const *)ptr, length);
-						ptr += length;
-					}
-				}
-			}
-		}
+	if (idx.parse("C:/develop/GetIt/.git/objects/pack/pack-5a247b6216936cde08e89ba26d7f2cf6b0380e9f.idx")) {
+		QString packfile = "C:/develop/GetIt/.git/objects/pack/pack-5a247b6216936cde08e89ba26d7f2cf6b0380e9f.pack";
+		GitPack::Object obj;
+//		LoadPackFile(&idx, packfile, "12535086d7f355c994a8f0d0dc9d2e888939c244", &obj);
+//		LoadPackFile(&idx, packfile, "b3800c01fe78d4f6a0f143e703cf450eb65f845f", &obj);
+		LoadPackFile(&idx, packfile, "ca2342cd1c304e0c5317e07a4241c8381a9106a6", &obj);
+		qDebug() << obj.content.size();
 		QFile file("d:/9.txt");
 		if (file.open(QFile::WriteOnly)) {
-			file.write(out);
+			file.write(obj.content);
 		}
 	}
 //	12535086d7f355c994a8f0d0dc9d2e888939c244 blob   2789 873 72748

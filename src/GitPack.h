@@ -3,7 +3,8 @@
 
 #include <QIODevice>
 #include <stdint.h>
-#include "GitPackIdxV2.h"
+
+struct GitPackIdxItem;
 
 class GitPack {
 public:
@@ -17,12 +18,14 @@ public:
 		OFS_DELTA = 6,
 		REF_DELTA = 7,
 	};
-	struct Object {
+	struct Info {
 		Type type = Type::UNKNOWN;
+		size_t expanded_size = 0;
+	};
+	struct Object : public Info {
 		QByteArray content;
 		uint64_t offset = 0;
 		size_t packed_size = 0;
-		size_t expanded_size = 0;
 	};
 private:
 	static uint32_t read_uint32_be(const void *p)
@@ -31,10 +34,11 @@ private:
 		return (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
 	}
 
-	static bool load(QIODevice *file, GitPackIdxV2::Item const *item, Object *out);
 public:
 	static bool decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
-	static bool load(const QString &packfile, const GitPackIdxV2::Item *item, GitPack::Object *out);
+	static bool load(QIODevice *file, GitPackIdxItem const *item, Object *out);
+	static bool load(const QString &packfile, const GitPackIdxItem *item, Object *out);
+	static bool query(QIODevice *file, const GitPackIdxItem *item, Info *out);
 };
 
 #endif // GITPACK_H
