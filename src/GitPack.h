@@ -21,10 +21,10 @@ public:
 	struct Info {
 		Type type = Type::UNKNOWN;
 		size_t expanded_size = 0;
+		uint64_t offset = 0;
 	};
 	struct Object : public Info {
 		QByteArray content;
-		uint64_t offset = 0;
 		size_t packed_size = 0;
 	};
 private:
@@ -35,10 +35,12 @@ private:
 	}
 
 public:
-	static bool decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
+	static bool decompress(QIODevice *in, Type type, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
 	static bool load(QIODevice *file, GitPackIdxItem const *item, Object *out);
 	static bool load(const QString &packfile, const GitPackIdxItem *item, Object *out);
 	static bool query(QIODevice *file, const GitPackIdxItem *item, Info *out);
+	static void decodeTree(QByteArray *out);
+	static Type stripHeader(QByteArray *out);
 };
 
 #endif // GITPACK_H

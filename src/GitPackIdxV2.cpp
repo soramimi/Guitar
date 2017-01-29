@@ -36,6 +36,14 @@ GitPackIdxItem const *GitPackIdxV2::item(size_t i) const
 	return nullptr;
 }
 
+GitPackIdxItem const *GitPackIdxV2::item_by_offset(size_t offset) const
+{
+	for (GitPackIdxItem const &item : item_list) {
+		if (item.offset == offset) return &item;
+	}
+	return nullptr;
+}
+
 const uint8_t *GitPackIdxV2::object(int i) const
 {
 	return d.objects[i].id;
@@ -90,9 +98,9 @@ bool GitPackIdxV2::parse(QIODevice *in)
 			item.checksum = checksum(i);
 			item_list.push_back(item);
 		}
-		std::sort(item_list.begin(), item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
-			return left.offset < right.offset;
-		});
+//		std::sort(item_list.begin(), item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
+//			return left.offset < right.offset;
+//		});
 		for (size_t i = 0; i < size; i++) {
 			GitPackIdxItem &item = item_list[i];
 			if (i + 1 < size) {

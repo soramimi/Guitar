@@ -4,7 +4,81 @@
 #include <QFile>
 #include "GitPackIdxV2.h"
 
-bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t expanded_size, QByteArray *out, size_t *consumed)
+void GitPack::decodeTree(QByteArray *out)
+{
+	if (out && out->size() > 0) {
+		QByteArray ba;
+		uint8_t const *begin = (uint8_t const *)out->data();
+		uint8_t const *end = begin + out->size();
+		uint8_t const *ptr = begin;
+		while (ptr < end) {
+			int mode = 0;
+			while (ptr < end) {
+				int c = *ptr & 0xff;
+				ptr++;
+				if (isdigit(c & 0xff)) {
+					mode = mode * 10 + (c - '0');
+				} else if (c == ' ') {
+					break;
+				}
+			}
+			uint8_t const *left = ptr;
+			while (ptr < end && *ptr) {
+				ptr++;
+			}
+			std::string name(left, ptr);
+			if (ptr + 20 < end) {
+				ptr++;
+				char tmp[100];
+				sprintf(tmp, "%06u %s ", mode, mode < 100000 ? "tree" : "blob");
+				char *p = tmp + 12;
+				for (int i = 0; i < 20; i++) {
+					sprintf(p, "%02x", ptr[i]);
+					p += 2;
+				}
+				ba.append(tmp, p - tmp);
+				ba.append('\t');
+				ba.append(name.c_str(), name.size());
+				ba.append('\n');
+				ptr += 20;
+			} else {
+				break;
+			}
+		}
+		*out = std::move(ba);
+	}
+
+}
+
+GitPack::Type GitPack::stripHeader(QByteArray *out)
+{
+	if (out) {
+		int n = out->size();
+		if (n > 0) {
+			char const *p = out->data();
+			if (n > 16) n = 16;
+			for (int i = 0; i < n; i++) {
+				if (p[i] == 0) {
+					Type type = Type::UNKNOWN;
+					if (strncmp(p, "blob ", 5) == 0) {
+						type = Type::BLOB;
+					} else if (strncmp(p, "tree ", 5) == 0) {
+						type = Type::TREE;
+					} else if (strncmp(p, "commit ", 7) == 0) {
+						type = Type::COMMIT;
+					}
+					if (type != Type::UNKNOWN) {
+						*out = out->mid(i + 1);
+					}
+					return type;
+				}
+			}
+		}
+	}
+	return Type::UNKNOWN;
+}
+
+bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteArray *out, size_t *consumed)
 {
 	if (consumed) *consumed = 0;
 	try {
@@ -24,8 +98,8 @@ bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t e
 			throw QString("failed: inflateInit");
 		}
 
-		char header_buf[100] = {0};
-		int header_pos = process_header ? 0 : -1;
+//		char header_buf[100] = {0};
+//		int header_pos = process_header ? 0 : -1;
 
 		while (1) {
 			if (expanded_size > 0 && (size_t)out->size() > expanded_size) {
@@ -59,19 +133,19 @@ bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t e
 
 			n = d_stream.total_out - total;
 			char const *p = (char const *)tmp;
-			while (header_pos >= 0 && n > 0) {
-				char c = *p;
-				header_buf[header_pos] = c;
-				if (header_pos + 1 < sizeof(header_buf)) {
-					header_pos++;
-				}
-				p++;
-				n--;
-				if (c == 0) {
-					header_pos = -1;
-					break;
-				}
-			}
+//			while (header_pos >= 0 && n > 0) {
+//				char c = *p;
+//				header_buf[header_pos] = c;
+//				if (header_pos + 1 < sizeof(header_buf)) {
+//					header_pos++;
+//				}
+//				p++;
+//				n--;
+//				if (c == 0) {
+//					header_pos = -1;
+//					break;
+//				}
+//			}
 			out->append(p, n);
 			if (err == Z_STREAM_END) {
 				break;
@@ -86,54 +160,13 @@ bool GitPack::decompress(QIODevice *in, bool process_header, Type type, size_t e
 			throw QString("failed: inflateEnd");
 		}
 
-		if (process_header) {
-			if (strncmp(header_buf, "tree ", 5) == 0) {
-				type = Type::TREE;
-			}
-		}
+//		if (process_header) {
+//			if (strncmp(header_buf, "tree ", 5) == 0) {
+//				type = Type::TREE;
+//			}
+//		}
 
-		int n = out->size();
-		if (n > 0 && type == Type::TREE) {
-			QByteArray ba;
-			uint8_t const *begin = (uint8_t const *)out->data();
-			uint8_t const *end = begin + out->size();
-			uint8_t const *ptr = begin;
-			while (ptr < end) {
-				int mode = 0;
-				while (ptr < end) {
-					int c = *ptr & 0xff;
-					ptr++;
-					if (isdigit(c & 0xff)) {
-						mode = mode * 10 + (c - '0');
-					} else if (c == ' ') {
-						break;
-					}
-				}
-				uint8_t const *left = ptr;
-				while (ptr < end && *ptr) {
-					ptr++;
-				}
-				std::string name(left, ptr);
-				if (ptr + 20 < end) {
-					ptr++;
-					char tmp[100];
-					sprintf(tmp, "%06u %s ", mode, mode < 100000 ? "tree" : "blob");
-					char *p = tmp + 12;
-					for (int i = 0; i < 20; i++) {
-						sprintf(p, "%02x", ptr[i]);
-						p += 2;
-					}
-					ba.append(tmp, p - tmp);
-					ba.append('\t');
-					ba.append(name.c_str(), name.size());
-					ba.append('\n');
-					ptr += 20;
-				} else {
-					break;
-				}
-			}
-			*out = std::move(ba);
-		}
+//		decodeTree(out);
 
 		return true;
 	} catch (QString const &e) {
@@ -152,7 +185,6 @@ bool GitPack::query(QIODevice *file, const GitPackIdxItem *item, Info *out)
 		file->seek(0);
 		Info info;
 
-
 		uint32_t header[3];
 		if (!Read(header, sizeof(int32_t) * 3)) throw QString("failed to read the header");
 		if (memcmp(header, "PACK", 4) != 0) throw QString("invalid pack file");
@@ -163,21 +195,34 @@ bool GitPack::query(QIODevice *file, const GitPackIdxItem *item, Info *out)
 		file->seek(item->offset);
 
 		{
-			int shift = 0;
-			while (1) {
-				char c;
-				if (!Read(&c, 1)) throw QString("failed to read");
-				if (shift == 0) {
-					info.type = (GitPack::Type)((c >> 4) & 7);
-					info.expanded_size = c & 0x0f;
-					shift = 4;
-				} else {
-					info.expanded_size |= (c & 0x7f) << shift;
-					shift += 7;
-				}
-				if (!(c & 0x80)) break;
+			size_t size = 0;
+			char c;
+			Read(&c, 1);
+			info.type = (GitPack::Type)((c >> 4) & 7);
+			size = c & 0x0f;
+			int shift = 4;
+			while (c & 0x80) {
+				Read(&c, 1);
+				size |= (c & 0x7f) << shift;
+				shift += 7;
 			}
+			info.expanded_size = size;
 		}
+		if (info.type == GitPack::Type::OFS_DELTA) {
+			uint64_t offset = 0;
+			char c;
+			Read(&c, 1);
+			offset = c & 0x7f;
+			while (c & 0x80) {
+				Read(&c, 1);
+				offset = ((offset + 1) << 7) | (c & 0x7f);
+			}
+			info.offset = offset;
+		} else if (info.type == GitPack::Type::REF_DELTA) {
+			char tmp[20];
+			Read(tmp, 20);
+		}
+
 		*out = info;
 		return true;
 	} catch (QString const &e) {
@@ -191,7 +236,10 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 	*out = Object();
 	try {
 		auto Read = [&](void *ptr, size_t len){
-			return file->read((char *)ptr, len) == len;
+			if (file->read((char *)ptr, len) == len) {
+				return;
+			}
+			throw QString("failed to read");
 		};
 
 //		file->seek(0);
@@ -205,42 +253,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 
 		query(file, item, out);
 
-		file->seek(item->offset);
-
-
-		{
-			int shift = 0;
-			while (1) {
-				char c;
-				if (!Read(&c, 1)) throw QString("failed to read");
-				if (shift == 0) {
-					out->type = (GitPack::Type)((c >> 4) & 7);
-					out->expanded_size = c & 0x0f;
-					shift = 4;
-				} else {
-					out->expanded_size |= (c & 0x7f) << shift;
-					shift += 7;
-				}
-				if (!(c & 0x80)) break;
-			}
-		}
-		if (out->type == GitPack::Type::OFS_DELTA) {
-			uint64_t offset = 0;
-			int shift = 0;
-			while (1) {
-				char c;
-				if (!Read(&c, 1)) throw QString("failed to read");
-				offset |= (c & 0x7f) << shift;
-				shift += 7;
-				if (!(c & 0x80)) break;
-			}
-			out->offset = offset;
-		} else if (out->type == GitPack::Type::REF_DELTA) {
-			char tmp[20];
-			if (!Read(tmp, 20)) throw QString("failed to read");
-		}
-
-		if (decompress(file, false, out->type, out->expanded_size, &out->content, &out->packed_size)) {
+		if (decompress(file, out->type, out->expanded_size, &out->content, &out->packed_size)) {
 			out->expanded_size = out->expanded_size;
 			return true;
 		}

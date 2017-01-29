@@ -193,6 +193,7 @@ private:
 	QString getObjectID(QListWidgetItem *item);
 	void execFilePropertyDialog(QListWidgetItem *item);
 	static QAction *addMenuActionProperties(QMenu *menu);
+	bool cat_file2(GitPtr g, const QString &id, QByteArray *out);
 public:
 
 	QString selectGitCommand();

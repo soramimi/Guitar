@@ -56,6 +56,7 @@ public:
 	uint32_t count() const;
 	GitPackIdxItem const *item(size_t i) const;
 	GitPackIdxItem const *item_(QString const &id) const;
+	GitPackIdxItem const *item_by_offset(size_t offset) const;
 	int number(const QString &id) const;
 	std::map<QString, GitPackIdxItem> const *map() const;
 	bool parse(QIODevice *in);
