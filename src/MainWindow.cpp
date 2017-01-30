@@ -838,13 +838,15 @@ QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 
 QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString &file)
 {
-	return lookupFileID(g, &pv->objcache, commit_id, file);
+	return lookupFileID(&pv->objcache, commit_id, file);
 }
 
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
 	clearRepositoryInfo();
+
+	pv->objcache.setup(g);
 
 	if (isValidWorkingCopy(g)) {
 		startDiff(g, QString());
@@ -1938,7 +1940,7 @@ bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
 			return true;
 		}
 	} else if (Git::isValidID(id)) {
-		*out = pv->objcache.cat_file(g, id);
+		*out = pv->objcache.catFile(id);
 		if (!out->isEmpty()) {
 			return true;
 		}
@@ -2533,36 +2535,7 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 }
 
 
-//
-
-#include "Debug.h"
-#include "GitPack.h"
-#include "GitPackIdxV2.h"
-bool MainWindow::cat_file2(GitPtr g, const QString &id, QByteArray *out)
-{
-//	GitPackIdxV2 idx;
-//	if (idx.parse("C:/develop/GetIt/.git/objects/pack/pack-5a247b6216936cde08e89ba26d7f2cf6b0380e9f.idx")) {
-//		QString packfile = "C:/develop/GetIt/.git/objects/pack/pack-5a247b6216936cde08e89ba26d7f2cf6b0380e9f.pack";
-//		GitPack::Object obj;
-////		LoadPackFile(&idx, packfile, "12535086d7f355c994a8f0d0dc9d2e888939c244", &obj);
-////		LoadPackFile(&idx, packfile, "b3800c01fe78d4f6a0f143e703cf450eb65f845f", &obj);
-//		LoadPackFile(&idx, packfile, "ca2342cd1c304e0c5317e07a4241c8381a9106a6", &obj);
-//		qDebug() << obj.content.size();
-//		QFile file("d:/9.txt");
-//		if (file.open(QFile::WriteOnly)) {
-//			file.write(obj.content);
-//		}
-//	}
-	return false;
-}
 
 void MainWindow::on_action_test_triggered()
 {
-	qDebug() << "---";
-	QByteArray ba;
-//	cat_file(git(), "c1e95e6448b59b0f5ed3ee4916f275a1c77b909f", &ba);
-//	cat_file(git(), "41ed8618307462962f655faf022f47bb9458060c", &ba);
-	cat_file(git(), "06deba98de104590a82b7dc3ff77c3d173cb2a4a", &ba);
-
-	qDebug() << ba.size();
 }

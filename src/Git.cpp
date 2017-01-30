@@ -740,12 +740,12 @@ QByteArray Git::cat_file_(QString const &id)
 bool Git::cat_file(QString const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
-		GitObjectManager gom(workingRepositoryDir());
-		if (gom.catFile(id, out)) {
-			return true;
-		}
-		// 上の処理が正しく動いていれば、ここには来ないはず
-		qDebug() << "=== Failed GitObjectManager::loadObjectFile === " << id;
+//		GitObjectManager gom(workingRepositoryDir());
+//		if (gom.catFile(id, out)) {
+//			return true;
+//		}
+//		// 上の処理が正しく動いていれば、ここには来ないはず
+//		qDebug() << "=== Failed GitObjectManager::loadObjectFile === " << id;
 		*out = cat_file_(id);
 		return true;
 	}
@@ -924,7 +924,7 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QStr
 
 // GitObjectCache
 
-size_t GitObjectCache::size() const
+size_t GitObjectCache_::size() const
 {
 	size_t size = 0;
 	for (ItemPtr const &item : items) {
@@ -933,7 +933,7 @@ size_t GitObjectCache::size() const
 	return size;
 }
 
-QByteArray GitObjectCache::cat_file(GitPtr g, const QString &id)
+QByteArray GitObjectCache_::cat_file(GitPtr g, const QString &id)
 {
 	{
 		QMutexLocker lock(&mutex);

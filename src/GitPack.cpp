@@ -78,7 +78,7 @@ GitPack::Type GitPack::stripHeader(QByteArray *out)
 	return Type::UNKNOWN;
 }
 
-bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteArray *out, size_t *consumed)
+bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed)
 {
 	if (consumed) *consumed = 0;
 	try {
@@ -226,7 +226,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 
 		seekPackedObject(file, item, out);
 
-		if (decompress(file, out->type, out->expanded_size, &out->content, &out->packed_size)) {
+		if (decompress(file, out->expanded_size, &out->content, &out->packed_size)) {
 			out->expanded_size = out->expanded_size;
 			return true;
 		}

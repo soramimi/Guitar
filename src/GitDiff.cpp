@@ -28,11 +28,11 @@ struct TreeItem {
 	}
 };
 
-bool parse_tree_(GitPtr g, GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, TreeItemList *out)
+bool parse_tree_(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, TreeItemList *out)
 {
 	out->clear();
-	if (g && !commit_id.isEmpty()) {
-		QByteArray ba = objcache->cat_file(g, commit_id);
+	if (!commit_id.isEmpty()) {
+		QByteArray ba = objcache->catFile(commit_id);
 		if (!ba.isEmpty()) { // 内容を取得
 			QString s = QString::fromUtf8(ba);
 			QStringList lines = misc::splitLines(s);
@@ -107,16 +107,16 @@ public:
 	QString tree_id;
 	QStringList parents;
 
-	bool parseCommit(GitPtr g, GitObjectCache *objcache, QString const &id);
+	bool parseCommit(GitObjectCache *objcache, QString const &id);
 };
 
-bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, const QString &id)
+bool GitCommit::parseCommit(GitObjectCache *objcache, const QString &id)
 {
 	parents.clear();
-	if (g && !id.isEmpty()) {
+	if (!id.isEmpty()) {
 		QStringList parents;
 		{
-			QByteArray ba = objcache->cat_file(g, id);
+			QByteArray ba = objcache->catFile(id);
 			if (!ba.isEmpty()) {
 				QStringList lines = misc::splitLines(QString::fromUtf8(ba));
 				for (QString const &line : lines) {
@@ -141,6 +141,11 @@ bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, const QString &i
 }
 
 // GitDiff
+
+GitPtr GitDiff::git()
+{
+	return objcache->git();
+}
 
 QString GitDiff::makeKey(const QString &a_id, const QString &b_id)
 {
@@ -215,7 +220,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, TreeItemList const *files
 			(*out)[path] = d;
 		} else if (d.type == TreeItem::TREE) {
 			TreeItemList files2;
-			parse_tree_(g, objcache, d.id, QString(), &files2);
+			parse_tree_(objcache, d.id, QString(), &files2);
 			retrieveCompleteTree(path, &files2, out);
 		}
 	}
@@ -230,7 +235,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, TreeItemList const *files
 			diffs.push_back(diff);
 		} else if (d.type == TreeItem::TREE) {
 			TreeItemList files2;
-			parse_tree_(g, objcache, d.id, QString(), &files2);
+			parse_tree_(objcache, d.id, QString(), &files2);
 			retrieveCompleteTree(path, &files2);
 		}
 	}
@@ -238,8 +243,6 @@ void GitDiff::retrieveCompleteTree(QString const &dir, TreeItemList const *files
 
 bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 {
-	if (!g) return false;
-
 	out->clear();
 	diffs.clear();
 
@@ -249,8 +252,8 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 			{ // diff_raw test
 				TreeItemList files;
 				GitCommit newer_commit;
-				newer_commit.parseCommit(g, objcache, id);
-				parse_tree_(g, objcache, newer_commit.tree_id, QString(), &files);
+				newer_commit.parseCommit(objcache, id);
+				parse_tree_(objcache, newer_commit.tree_id, QString(), &files);
 
 				if (newer_commit.parents.isEmpty()) { // 親がないなら最古のコミット
 					retrieveCompleteTree(QString(), &files); // ツリー全体を取得
@@ -260,7 +263,7 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 					std::set<QString> deleted_set;
 					QList<Git::DiffRaw> list;
 					for (QString const &parent : newer_commit.parents) {
-						QList<Git::DiffRaw> l = g->diff_raw(parent, id);
+						QList<Git::DiffRaw> l = git()->diff_raw(parent, id);
 						for (Git::DiffRaw const &item : l) {
 							if (item.state.startsWith('D')) {
 								deleted_set.insert(item.a.id);
@@ -309,10 +312,10 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 			}
 		} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-			GitCommitTree head_tree(g, objcache);
-			head_tree.parseCommit(g->rev_parse_HEAD()); // HEADが親
+			GitCommitTree head_tree(objcache);
+			head_tree.parseCommit(git()->rev_parse_HEAD()); // HEADが親
 
-			Git::FileStatusList stats = g->status(); // git status
+			Git::FileStatusList stats = git()->status(); // git status
 
 			QString zero40(40, '0');
 
@@ -362,10 +365,14 @@ bool GitDiff::diff_uncommited(QList<Git::Diff> *out)
 
 // GitCommitTree
 
-GitCommitTree::GitCommitTree(GitPtr g, GitObjectCache *objcache)
-	: g(g)
-	, objcache(objcache)
+GitCommitTree::GitCommitTree(GitObjectCache *objcache)
+	: objcache(objcache)
 {
+}
+
+GitPtr GitCommitTree::git()
+{
+	return objcache->git();
 }
 
 QString GitCommitTree::lookup_(const QString &file, TreeItem *out)
@@ -384,7 +391,7 @@ QString GitCommitTree::lookup_(const QString &file, TreeItem *out)
 			}
 		}
 		TreeItemList list;
-		if (parse_tree_(g, objcache, tree_id, QString(), &list)) {
+		if (parse_tree_(objcache, tree_id, QString(), &list)) {
 			QString return_id;
 			for (TreeItem const &d : list) {
 				if (d.name == name) {
@@ -444,26 +451,23 @@ bool GitCommitTree::lookup(const QString &file, TreeItem *out)
 
 void GitCommitTree::parseTree(const QString &tree_id)
 {
-	parse_tree_(g, objcache, tree_id, QString(), &root_item_list);
+	parse_tree_(objcache, tree_id, QString(), &root_item_list);
 }
 
 void GitCommitTree::parseCommit(const QString &commit_id)
 {
 	GitCommit commit;
-	commit.parseCommit(g, objcache, commit_id);
+	commit.parseCommit(objcache, commit_id);
 	parseTree(commit.tree_id);
 }
 
 //
 
-QString lookupFileID(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &file)
+QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file)
 // 指定されたコミットに属するファイルのIDを求める
 {
-	GitCommitTree commit_tree(g, objcache);
+	GitCommitTree commit_tree(objcache);
 	commit_tree.parseCommit(commit_id);
 	QString id = commit_tree.lookup(file);
 	return id;
 }
-
-
-

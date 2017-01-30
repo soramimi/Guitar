@@ -7,12 +7,19 @@
 
 class GitPackIdxV2;
 
+class Git;
+typedef std::shared_ptr<Git> GitPtr;
+
 class GitObjectManager {
+	friend class GitObjectCache;
 private:
+	GitPtr g;
+	QMutex mutex;
 	QString subdir_git_objects;
 	QString subdir_git_objects_pack;
-	QString working_dir;
 	std::vector<GitPackIdxPtr> git_idx_list;
+
+	QString workingDir();
 
 	static void applyDelta(QByteArray *base, QByteArray *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
@@ -21,10 +28,36 @@ private:
 	void loadIndexes();
 	QString findObjectPath(const QString &id);
 	bool loadObject(const QString &id, QByteArray *out);
+	GitPtr git()
+	{
+		return g;
+	}
 public:
-	GitObjectManager(QString const &workingdir);
+	GitObjectManager();
+	void setup(GitPtr g);
 	bool catFile(const QString &id, QByteArray *out);
 	void clearIndexes();
+};
+
+class GitObjectCache {
+public:
+	struct Item {
+		QString id;
+		QByteArray ba;
+	};
+private:
+	GitObjectManager object_manager;
+	typedef std::shared_ptr<Item> ItemPtr;
+	std::vector<ItemPtr> items;
+	size_t size() const;
+public:
+	GitPtr git()
+	{
+		return object_manager.git();
+	}
+
+	void setup(GitPtr g);
+	QByteArray catFile(QString const &id);
 };
 
 #endif // GITOBJECTMANAGER_H

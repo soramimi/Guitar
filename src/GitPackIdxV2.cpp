@@ -23,27 +23,6 @@ uint32_t GitPackIdxV2::get_fanout(const GitPackIdxV2::header_t *t, int i)
 	return read_uint32_be(&t->fanout[i]);
 }
 
-uint32_t GitPackIdxV2::count() const
-{
-	return get_fanout(&d.header, 255);
-}
-
-GitPackIdxItem const *GitPackIdxV2::item(size_t i) const
-{
-	if (i < d.item_list.size()) {
-		return &d.item_list[i];
-	}
-	return nullptr;
-}
-
-GitPackIdxItem const *GitPackIdxV2::item_by_offset(size_t offset) const
-{
-	for (GitPackIdxItem const &item : d.item_list) {
-		if (item.offset == offset) return &item;
-	}
-	return nullptr;
-}
-
 const uint8_t *GitPackIdxV2::object(int i) const
 {
 	return d.objects[i].id;
@@ -59,6 +38,11 @@ const uint32_t GitPackIdxV2::checksum(int i) const
 	return read_uint32_be(&d.checksums[i]);
 }
 
+void GitPackIdxV2::clear()
+{
+	d = Data();
+}
+
 bool GitPackIdxV2::parse(QIODevice *in)
 {
 	try {
@@ -68,7 +52,7 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		static char const magic[] = "\xff\x74\x4f\x63\x00\x00\x00\x02";
 		if (!Read(&d.header, sizeof(d.header)))    throw QString("failed to read the idx header");
 		if (memcmp(d.header.magic, magic, 8) != 0) throw QString("invalid idx header");
-		uint32_t size = count();
+		uint32_t size = get_fanout(&d.header, 255);
 		if (size > 100000) throw QString("number of objects in the idx file is too big");
 		size_t size4 = size * sizeof(uint32_t);
 		d.objects.resize(size);
@@ -98,15 +82,11 @@ bool GitPackIdxV2::parse(QIODevice *in)
 			item.checksum = checksum(i);
 			d.item_list.push_back(item);
 		}
-//		std::sort(d.item_list.begin(), d.item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
-//			return left.offset < right.offset;
-//		});
 		for (size_t i = 0; i < size; i++) {
 			GitPackIdxItem &item = d.item_list[i];
 			if (i + 1 < size) {
 				item.packed_size = d.item_list[i + 1].offset - d.item_list[i].offset;
 			}
-//			d.item_map[item.id] = item;
 		}
 
 		return true;
@@ -114,11 +94,6 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		qDebug() << e;
 	}
 	return false;
-}
-
-void GitPackIdxV2::clear()
-{
-	d = Data();
 }
 
 bool GitPackIdxV2::parse(const QString &idxfile)
@@ -133,31 +108,21 @@ bool GitPackIdxV2::parse(const QString &idxfile)
 	return false;
 }
 
-
-
-GitPackIdxItem const *GitPackIdxV2::item_(const QString &id) const
-{
-#if 0
-	auto it = item_map.find(id);
-	return it == item_map.end() ? nullptr : &it->second;
-#else
-	int i = number(id);
-	if (i >= 0 && i < (int)d.item_list.size()) {
-		return item(i);
-	}
-	return nullptr;
-#endif
-}
-
-int GitPackIdxV2::number(const QString &id) const
+const GitPackIdxItem *GitPackIdxV2::item(const QString &id) const
 {
 	for (int i = 0; i < (int)d.item_list.size(); i++) {
-		if (d.item_list[i].id == id) return i;
+		if (d.item_list[i].id == id) {
+			return &d.item_list[i];
+		}
 	}
-	return -1;
+	return nullptr;
 }
 
-//const std::map<QString, GitPackIdxItem> *GitPackIdxV2::map() const
-//{
-//	return &d.item_map;
-//}
+const GitPackIdxItem *GitPackIdxV2::item(size_t offset) const
+{
+	for (GitPackIdxItem const &item : d.item_list) {
+		if (item.offset == offset) return &item;
+	}
+	return nullptr;
+}
+

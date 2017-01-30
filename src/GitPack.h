@@ -36,7 +36,7 @@ private:
 	}
 
 public:
-	static bool decompress(QIODevice *in, Type type, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
+	static bool decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
 	static bool load(QIODevice *file, GitPackIdxItem const *item, Object *out);
 	static bool load(const QString &packfile, const GitPackIdxItem *item, Object *out);
 	static bool seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out);

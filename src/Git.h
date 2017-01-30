@@ -331,7 +331,7 @@ public:
 	void delete_tag(const QString &name, bool remote);
 };
 
-class GitObjectCache {
+class GitObjectCache_ {
 public:
 	struct Item {
 		QString id;

@@ -42,30 +42,23 @@ private:
 		std::vector<uint32_t> offsets;
 		trailer_t trailer;
 		std::vector<GitPackIdxItem> item_list;
-//		std::map<QString, GitPackIdxItem> item_map;
 	} d;
 
-	QString toString(const uint8_t *p);
+private:
 
+	static QString toString(const uint8_t *p);
 	static inline uint32_t read_uint32_be(void const *p);
-
 	static inline uint32_t get_fanout(header_t const *t, int i);
 
-public:
-private:
 	uint8_t const *object(int i) const;
 	const uint32_t offset(int i) const;
 	const uint32_t checksum(int i) const;
-public:
-	uint32_t count() const;
-	GitPackIdxItem const *item(size_t i) const;
-	GitPackIdxItem const *item_(QString const &id) const;
-	GitPackIdxItem const *item_by_offset(size_t offset) const;
-	int number(const QString &id) const;
-//	std::map<QString, GitPackIdxItem> const *map() const;
-	bool parse(QIODevice *in);
-	bool parse(const QString &idxpath);
 	void clear();
+	bool parse(QIODevice *in);
+public:
+	bool parse(const QString &idxpath);
+	GitPackIdxItem const *item(QString const &id) const;
+	GitPackIdxItem const *item(size_t offset) const;
 };
 
 typedef std::shared_ptr<GitPackIdxV2> GitPackIdxPtr;

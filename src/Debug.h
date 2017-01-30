@@ -7,8 +7,7 @@
 
 class Debug {
 public:
-	static void doit(const QString &workingdir);
-	static void doit2();
+	static void doit();
 private:
 };
 

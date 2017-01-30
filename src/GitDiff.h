@@ -4,6 +4,7 @@
 #include <set>
 #include "misc.h"
 #include "Git.h"
+#include "GitObjectManager.h"
 
 struct TreeItem;
 
@@ -15,7 +16,7 @@ public:
 private:
 	class LookupTable;
 private:
-	GitPtr g;
+//	GitPtr g;
 	GitObjectCache *objcache = nullptr;
 	QList<Git::Diff> diffs;
 
@@ -32,6 +33,8 @@ private:
 	}
 
 	typedef std::list<LookupTable> MapList;
+
+	GitPtr git();
 
 //	void diff_tree_(GitPtr g, QString const &dir, QString older_commit_id, QString newer_commit_id);
 //	void commit_into_map(GitPtr g, const TreeItemList *files, MapList const *diffmap);
@@ -60,7 +63,7 @@ private:
 public:
 	GitDiff(GitPtr g, GitObjectCache *objcache)
 	{
-		this->g = g;
+//		this->g = g;
 		this->objcache = objcache;
 	}
 
@@ -84,16 +87,17 @@ public:
 
 class GitCommitTree {
 private:
-	GitPtr g;
 	GitObjectCache *objcache;
 	TreeItemList root_item_list;
 
 	std::map<QString, TreeItem> blob_map;
 	std::map<QString, QString> tree_id_map;
 
+	GitPtr git();
+
 	QString lookup_(QString const &file, TreeItem *out);
 public:
-	GitCommitTree(GitPtr g, GitObjectCache *objcache);
+	GitCommitTree(GitObjectCache *objcache);
 
 	QString lookup(QString const &file);
 	bool lookup(const QString &file, TreeItem *out);
@@ -102,7 +106,7 @@ public:
 	void parseCommit(QString const &commit_id);
 };
 
-QString lookupFileID(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &file);
+QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file);
 
 
 #endif // GITDIFF_H
