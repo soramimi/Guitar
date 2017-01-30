@@ -98,9 +98,6 @@ bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteAr
 			throw QString("failed: inflateInit");
 		}
 
-//		char header_buf[100] = {0};
-//		int header_pos = process_header ? 0 : -1;
-
 		while (1) {
 			if (expanded_size > 0 && (size_t)out->size() > expanded_size) {
 				throw QString("file too large");
@@ -132,21 +129,8 @@ bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteAr
 			if (consumed) *consumed += n;
 
 			n = d_stream.total_out - total;
-			char const *p = (char const *)tmp;
-//			while (header_pos >= 0 && n > 0) {
-//				char c = *p;
-//				header_buf[header_pos] = c;
-//				if (header_pos + 1 < sizeof(header_buf)) {
-//					header_pos++;
-//				}
-//				p++;
-//				n--;
-//				if (c == 0) {
-//					header_pos = -1;
-//					break;
-//				}
-//			}
-			out->append(p, n);
+
+			out->append((char const *)tmp, n);
 			if (err == Z_STREAM_END) {
 				break;
 			}
@@ -160,14 +144,6 @@ bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteAr
 			throw QString("failed: inflateEnd");
 		}
 
-//		if (process_header) {
-//			if (strncmp(header_buf, "tree ", 5) == 0) {
-//				type = Type::TREE;
-//			}
-//		}
-
-//		decodeTree(out);
-
 		return true;
 	} catch (QString const &e) {
 		qDebug() << e;
@@ -175,7 +151,7 @@ bool GitPack::decompress(QIODevice *in, Type type, size_t expanded_size, QByteAr
 	return false;
 }
 
-bool GitPack::query(QIODevice *file, const GitPackIdxItem *item, Info *out)
+bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out)
 {
 	try {
 		auto Read = [&](void *ptr, size_t len){
@@ -248,16 +224,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 			throw QString("failed to read");
 		};
 
-//		file->seek(0);
-
-//		uint32_t header[3];
-//		if (!Read(header, sizeof(int32_t) * 3)) throw QString("failed to read the header");
-//		if (memcmp(header, "PACK", 4) != 0) throw QString("invalid pack file");
-//		uint32_t version = read_uint32_be(header + 1);
-//		if (version < 2) throw "invalid pack file version";
-//		/*int count = */read_uint32_be(header + 2);
-
-		query(file, item, out);
+		seekPackedObject(file, item, out);
 
 		if (decompress(file, out->type, out->expanded_size, &out->content, &out->packed_size)) {
 			out->expanded_size = out->expanded_size;

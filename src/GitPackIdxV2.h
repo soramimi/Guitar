@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <vector>
 #include "GitPack.h"
+#include <memory>
 
 struct GitPackIdxItem {
 	QString id;
@@ -16,7 +17,10 @@ struct GitPackIdxItem {
 };
 
 class GitPackIdxV2 {
+	friend class GitObjectManager;
 private:
+	QString basename; // e.g. "pack-56430ed038c968ded87eb3756dcde85bfafc10ce"
+
 	struct header_t {
 		uint8_t magic[8];
 		uint32_t fanout[256];
@@ -64,5 +68,6 @@ public:
 	void clear();
 };
 
+typedef std::shared_ptr<GitPackIdxV2> GitPackIdxPtr;
 
 #endif // GITPACKIDXV2_H

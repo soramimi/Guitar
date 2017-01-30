@@ -34,6 +34,6 @@ void Debug::doit(QString const &workingdir)
 	QByteArray out;
 	QString id = "aa2d";
 	GitObjectManager gfm(workingdir);
-	gfm.loadObjectFile(id, &out);
+	gfm.catFile(id, &out);
 	qDebug() << out.size();
 }

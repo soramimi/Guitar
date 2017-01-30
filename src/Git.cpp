@@ -741,7 +741,7 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
 		GitObjectManager gom(workingRepositoryDir());
-		if (gom.loadObjectFile(id, out)) {
+		if (gom.catFile(id, out)) {
 			return true;
 		}
 		// 上の処理が正しく動いていれば、ここには来ないはず
@@ -847,34 +847,6 @@ void Git::mergeBranch(QString const &name)
 
 void Git::test()
 {
-}
-
-QString Git::findObjectID(const QString &workingdir, const QString &id, QString *path_out)
-{
-	if (Git::isValidID(id)) {
-		QStringList list;
-		QString abspath;
-		QString dir = ".git/objects/%1";
-		QString subdir = id.mid(0, 2);
-		dir = workingdir / dir.arg(subdir);
-		QString name = id.mid(2);
-		QDirIterator it(dir, QDir::Files);
-		while (it.hasNext()) {
-			it.next();
-			if (it.fileName().startsWith(name)) {
-				QString id = subdir + it.fileName();
-				if (id.size() == 40 && Git::isValidID(id)) {
-					list.push_back(id);
-					abspath = dir / it.fileName();
-				}
-			}
-		}
-		if (list.size() == 1) {
-			if (path_out) *path_out = abspath;
-			return list[0];
-		}
-	}
-	return QString();
 }
 
 // Git::FileStatus

@@ -329,8 +329,6 @@ public:
 	QList<Tag> tags();
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
-
-	static QString findObjectID(const QString &workingdir, const QString &id, QString *path_out);
 };
 
 class GitObjectCache {
