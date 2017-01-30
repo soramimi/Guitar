@@ -22,6 +22,7 @@ public:
 		Type type = Type::UNKNOWN;
 		size_t expanded_size = 0;
 		uint64_t offset = 0;
+		QString ref_id;
 	};
 	struct Object : public Info {
 		QByteArray content;

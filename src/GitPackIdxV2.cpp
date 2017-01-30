@@ -30,15 +30,15 @@ uint32_t GitPackIdxV2::count() const
 
 GitPackIdxItem const *GitPackIdxV2::item(size_t i) const
 {
-	if (i < item_list.size()) {
-		return &item_list[i];
+	if (i < d.item_list.size()) {
+		return &d.item_list[i];
 	}
 	return nullptr;
 }
 
 GitPackIdxItem const *GitPackIdxV2::item_by_offset(size_t offset) const
 {
-	for (GitPackIdxItem const &item : item_list) {
+	for (GitPackIdxItem const &item : d.item_list) {
 		if (item.offset == offset) return &item;
 	}
 	return nullptr;
@@ -96,17 +96,17 @@ bool GitPackIdxV2::parse(QIODevice *in)
 			item.id = toString(object(i));
 			item.offset = offset(i);
 			item.checksum = checksum(i);
-			item_list.push_back(item);
+			d.item_list.push_back(item);
 		}
-//		std::sort(item_list.begin(), item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
+//		std::sort(d.item_list.begin(), d.item_list.end(), [](GitPackIdxItem const &left, GitPackIdxItem const &right){
 //			return left.offset < right.offset;
 //		});
 		for (size_t i = 0; i < size; i++) {
-			GitPackIdxItem &item = item_list[i];
+			GitPackIdxItem &item = d.item_list[i];
 			if (i + 1 < size) {
-				item.packed_size = item_list[i + 1].offset - item_list[i].offset;
+				item.packed_size = d.item_list[i + 1].offset - d.item_list[i].offset;
 			}
-			item_map[item.id] = item;
+//			d.item_map[item.id] = item;
 		}
 
 		return true;
@@ -142,7 +142,7 @@ GitPackIdxItem const *GitPackIdxV2::item_(const QString &id) const
 	return it == item_map.end() ? nullptr : &it->second;
 #else
 	int i = number(id);
-	if (i >= 0 && i < (int)item_list.size()) {
+	if (i >= 0 && i < (int)d.item_list.size()) {
 		return item(i);
 	}
 	return nullptr;
@@ -151,13 +151,13 @@ GitPackIdxItem const *GitPackIdxV2::item_(const QString &id) const
 
 int GitPackIdxV2::number(const QString &id) const
 {
-	for (int i = 0; i < (int)item_list.size(); i++) {
-		if (item_list[i].id == id) return i;
+	for (int i = 0; i < (int)d.item_list.size(); i++) {
+		if (d.item_list[i].id == id) return i;
 	}
 	return -1;
 }
 
-const std::map<QString, GitPackIdxItem> *GitPackIdxV2::map() const
-{
-	return &item_map;
-}
+//const std::map<QString, GitPackIdxItem> *GitPackIdxV2::map() const
+//{
+//	return &d.item_map;
+//}

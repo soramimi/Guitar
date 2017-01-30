@@ -219,8 +219,14 @@ bool GitPack::query(QIODevice *file, const GitPackIdxItem *item, Info *out)
 			}
 			info.offset = offset;
 		} else if (info.type == GitPack::Type::REF_DELTA) {
-			char tmp[20];
-			Read(tmp, 20);
+			char bin[20];
+			Read(bin, 20);
+			char tmp[41];
+			for (int i = 0; i < 20; i++) {
+				sprintf(tmp + i * 2, "%02x", bin[i] & 0xff);
+			}
+			info.ref_id = QString::fromLatin1(tmp, 40);
+			qDebug();
 		}
 
 		*out = info;

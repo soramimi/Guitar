@@ -37,6 +37,8 @@ private:
 		std::vector<uint32_t> checksums;
 		std::vector<uint32_t> offsets;
 		trailer_t trailer;
+		std::vector<GitPackIdxItem> item_list;
+//		std::map<QString, GitPackIdxItem> item_map;
 	} d;
 
 	QString toString(const uint8_t *p);
@@ -47,8 +49,6 @@ private:
 
 public:
 private:
-	std::vector<GitPackIdxItem> item_list;
-	std::map<QString, GitPackIdxItem> item_map;
 	uint8_t const *object(int i) const;
 	const uint32_t offset(int i) const;
 	const uint32_t checksum(int i) const;
@@ -58,7 +58,7 @@ public:
 	GitPackIdxItem const *item_(QString const &id) const;
 	GitPackIdxItem const *item_by_offset(size_t offset) const;
 	int number(const QString &id) const;
-	std::map<QString, GitPackIdxItem> const *map() const;
+//	std::map<QString, GitPackIdxItem> const *map() const;
 	bool parse(QIODevice *in);
 	bool parse(const QString &idxpath);
 	void clear();

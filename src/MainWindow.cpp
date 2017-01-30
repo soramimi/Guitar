@@ -2562,7 +2562,7 @@ void MainWindow::on_action_test_triggered()
 	QByteArray ba;
 //	cat_file(git(), "c1e95e6448b59b0f5ed3ee4916f275a1c77b909f", &ba);
 //	cat_file(git(), "41ed8618307462962f655faf022f47bb9458060c", &ba);
-	cat_file(git(), "512ed9cc64ecff0099ec67225461a301002d195f", &ba);
+	cat_file(git(), "06deba98de104590a82b7dc3ff77c3d173cb2a4a", &ba);
 
 	qDebug() << ba.size();
 }

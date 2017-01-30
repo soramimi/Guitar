@@ -38,7 +38,9 @@ void ApplyDelta(GitPack::Object *obj0, GitPack::Object *obj1, QByteArray *out)
 		};
 		uint64_t a = ReadNumber(); // older file size
 		uint64_t b = ReadNumber(); // newer file size
-		qDebug() << a << b;
+		(void)a;
+		(void)b;
+//		qDebug() << a << b;
 		while (ptr < end) {
 			uint8_t op = *ptr;
 			ptr++;
@@ -61,11 +63,11 @@ void ApplyDelta(GitPack::Object *obj0, GitPack::Object *obj1, QByteArray *out)
 						}
 					}
 				}
-				qDebug() << "copy: " << offset << length;
+//				qDebug() << "copy: " << offset << length;
 				out->append(obj0->content.data() + offset, length);
 			} else { // insert operation
 				int length = op & 0x7f;
-				qDebug() << "insert: " << length;
+//				qDebug() << "insert: " << length;
 				if (ptr + length <= end) {
 					out->append((char const *)ptr, length);
 					ptr += length;
@@ -101,7 +103,26 @@ bool LoadPackFile_(GitPackIdxV2 *idx, QIODevice *packfile, GitPackIdxItem const 
 				}
 //			}
 		} else if (info.type == GitPack::Type::REF_DELTA) {
-			qDebug() << "not supported";
+			GitPack::Object source;
+			GitPackIdxItem const *item2 = idx->item_(info.ref_id);
+			//				qDebug() << id << (void *)item;
+			if (item2 && LoadPackFile_(idx, packfile, item2, &source)) {
+				GitPack::Object delta;
+				if (GitPack::load(packfile, item, &delta)) {
+					QByteArray ba;
+					ApplyDelta(&source, &delta, &ba);
+					*out = GitPack::Object();
+					out->type = source.type;
+					out->content = std::move(ba);
+					//out->content = source.content;
+					out->expanded_size = out->content.size();
+					return true;
+				}
+			}
+			//				QFile file("/home/soramimi/a/refdelta");
+			//				if (file.open(QFile::WriteOnly)) {
+			//					file.write(delta.content);
+			//				}
 			return false; // not supported
 		}
 	}
@@ -111,12 +132,12 @@ bool LoadPackFile_(GitPackIdxV2 *idx, QIODevice *packfile, GitPackIdxItem const 
 	return false;
 }
 
-bool LoadPackFile(GitPackIdxV2 *idx, QString const &packfilepath, QString const &id, GitPack::Object *out)
+bool LoadPackFile(GitPackIdxV2 *idx, QString const &packfilepath, GitPackIdxItem const *item, GitPack::Object *out)
 {
 	*out = GitPack::Object();
 	QFile packfile(packfilepath);
 	if (packfile.open(QFile::ReadOnly)) {
-		GitPackIdxItem const *item = idx->item_(id);
+//		GitPackIdxItem const *item = idx->item_(id);
 //		int i = idx->number(id);
 		if (LoadPackFile_(idx, &packfile, item, out)) {
 //			GitPack::stripHeader(&out->content);
@@ -171,39 +192,34 @@ static bool load(QString const &path, GitPackIdxV2 const *idx, size_t i, QByteAr
 
 bool GitObjectManager::extractObjectFromPackFile_(QString const &id, QByteArray *out)
 {
-	struct Entry {
-		QString path;
-		size_t index;
-	};
-	GitPackIdxV2 idx;
-	std::vector<Entry> entries;
+//	struct Entry {
+//		QString path;
+//		size_t index;
+//	};
+//	std::vector<Entry> entries;
 	{
 		QString subdir = ".git/objects/pack";
 		QString path = working_dir / subdir;
 		QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
 		while (it.hasNext()) {
 			it.next();
+			GitPackIdxV2 idx;
+//			qDebug() << it.filePath();
 			if (idx.parse(it.filePath())) {
 				size_t n = idx.count();
 				for (size_t i = 0; i < n; i++) {
 					GitPackIdxItem const *item = idx.item(i);
-					if (item && item->id.startsWith(id)) {
-						Entry e;
-						QString packfilename = it.fileInfo().baseName() + ".pack";
-						e.path = working_dir / subdir / packfilename;
-						e.index = i;
-						entries.push_back(e);
+					if (item && item->id == id) {
+						QString packfilepath = working_dir / subdir / (it.fileInfo().baseName() + ".pack");
+						GitPack::Object obj;
+						if (LoadPackFile(&idx, packfilepath, item, &obj)) {
+							*out = std::move(obj.content);
+							return true;
+						}
+						return false;
 					}
 				}
 			}
-		}
-	}
-	for (Entry const &e : entries) {
-		Entry const &e = entries.front();
-		GitPack::Object obj;
-		if (LoadPackFile(&idx, e.path, id, &obj)) {
-			*out = std::move(obj.content);
-			return true;
 		}
 	}
 	return false;

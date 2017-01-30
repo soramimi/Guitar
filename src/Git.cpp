@@ -737,37 +737,18 @@ QByteArray Git::cat_file_(QString const &id)
 #endif
 }
 
-bool Git::cat_file(QString const &id, QByteArray *out, QByteArray *debug)
+bool Git::cat_file(QString const &id, QByteArray *out)
 {
-#if 0 // debug
-	if (isValidID(id)) {
-		*out = cat_file_(id);
-		if (1){
-			QByteArray ba;
-			GitObjectManager gom(workingRepositoryDir());
-			gom.loadObjectFile(id, &ba);
-			if (out->size() != ba.size()) {
-				qDebug() << "???: " << out->size() << ba.size() << id;
-//				QFile ok("d:/ok.bin");
-//				if (ok.open(QFile::WriteOnly)) {
-//					ok.write(*out);
-//				}
-//				QFile ng("d:/ng.bin");
-//				if (ng.open(QFile::WriteOnly)) {
-//					ng.write(ba);
-//				}
-			}
-			if (debug) *debug = std::move(ba);
-		}
-		return true;
-	}
-#else
 	if (isValidID(id)) {
 		GitObjectManager gom(workingRepositoryDir());
-		gom.loadObjectFile(id, out);
+		if (gom.loadObjectFile(id, out)) {
+			return true;
+		}
+		// 上の処理が正しく動いていれば、ここには来ないはず
+		qDebug() << "=== Failed GitObjectManager::loadObjectFile === " << id;
+		*out = cat_file_(id);
 		return true;
 	}
-#endif
 	return false;
 }
 
@@ -994,7 +975,7 @@ QByteArray GitObjectCache::cat_file(GitPtr g, const QString &id)
 					items.erase(items.begin() + i);
 					items.push_back(item);
 				}
-				qDebug() << "hit: " << id;
+//				qDebug() << "hit: " << id;
 				return item->ba;
 			}
 		}
