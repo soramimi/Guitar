@@ -1,6 +1,7 @@
 #ifndef GITOBJECTMANAGER_H
 #define GITOBJECTMANAGER_H
 
+#include <QMutex>
 #include <QString>
 #include "GitPack.h"
 #include "GitPackIdxV2.h"

@@ -331,20 +331,4 @@ public:
 	void delete_tag(const QString &name, bool remote);
 };
 
-class GitObjectCache_ {
-public:
-	struct Item {
-		QString id;
-		QByteArray ba;
-	};
-private:
-	QMutex mutex;
-	typedef std::shared_ptr<Item> ItemPtr;
-	std::vector<ItemPtr> items;
-	size_t size() const;
-public:
-	QByteArray cat_file(GitPtr g, QString const &id);
-};
-
-
 #endif // GIT_H
