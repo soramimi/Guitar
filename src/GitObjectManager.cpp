@@ -68,35 +68,36 @@ void GitObjectManager::applyDelta(QByteArray *base_obj, QByteArray *delta_obj, Q
 		uint64_t b = ReadNumber(); // newer file size
 		(void)a;
 		(void)b;
+		// cf. https://github.com/github/git-msysgit/blob/master/patch-delta.c
 		while (ptr < end) {
 			uint8_t op = *ptr;
 			ptr++;
 			if (op & 0x80) { // copy operation
-				int32_t offset = 0;
-				for (int i = 0; i < 4; i++) {
-					if ((op >> i) & 1) {
-						if (ptr < end) {
-							offset |= *ptr << (i * 8);
-							ptr++;
-						}
-					}
-				}
-				int32_t length = 0;
-				for (int i = 0; i < 3; i++) {
-					if ((op >> (i + 4)) & 1) {
-						if (ptr < end) {
-							length |= *ptr << (i * 8);
-							ptr++;
-						}
-					}
+				uint32_t offset = 0;
+				uint32_t length = 0;
+				if (op & 0x01) offset = *ptr++;
+				if (op & 0x02) offset |= (*ptr++ << 8);
+				if (op & 0x04) offset |= (*ptr++ << 16);
+				if (op & 0x08) offset |= ((unsigned) *ptr++ << 24);
+				if (op & 0x10) length = *ptr++;
+				if (op & 0x20) length |= (*ptr++ << 8);
+				if (op & 0x40) length |= (*ptr++ << 16);
+				if (length == 0) length = 0x10000;
+
+				if (offset + length > base_obj->size()) {
+					qDebug() << Q_FUNC_INFO << "base-file or delta-file is corrupted";
+					out->clear();
+					return;
 				}
 				out->append(base_obj->data() + offset, length);
-			} else { // insert operation
+			} else if (op > 0) { // insert operation
 				int length = op & 0x7f;
 				if (ptr + length <= end) {
 					out->append((char const *)ptr, length);
 					ptr += length;
 				}
+			} else {
+				qDebug() << Q_FUNC_INFO << "unexpected delta opcode 0";
 			}
 		}
 	}
@@ -150,6 +151,21 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr idx, GitPackIdxIt
 		}
 	}
 	return false;
+}
+
+bool GitObjectManager::extractDebug(GitPackIdxPtr idx, GitPackIdxItem const *item, GitPack::Object *out)
+{
+	*out = GitPack::Object();
+	QString packfilepath = "C:/debug/a/pack-f959919178f83a67d1dcf28c27a451d561e8501b.pack";
+	QFile packfile(packfilepath);
+	if (packfile.open(QFile::ReadOnly)) {
+		if (loadPackedObject(idx, &packfile, item, out)) {
+			if (out->type == GitPack::Type::TREE) {
+				GitPack::decodeTree(&out->content);
+			}
+			return true;
+		}
+	}
 }
 
 bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *out)
@@ -220,7 +236,6 @@ bool GitObjectManager::catFile(const QString &id, QByteArray *out)
 	if (extractObjectFromPackFile(id, out)) return true;
 	return false;
 }
-
 
 //
 

@@ -37,6 +37,7 @@ public:
 	void setup(GitPtr g);
 	bool catFile(const QString &id, QByteArray *out);
 	void clearIndexes();
+	bool extractDebug(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
 };
 
 class GitObjectCache {

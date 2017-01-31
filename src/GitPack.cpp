@@ -130,6 +130,7 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 
 			n = d_stream.total_out - total;
 
+			size_t z = out->size();
 			out->append((char const *)tmp, n);
 			if (err == Z_STREAM_END) {
 				break;
@@ -170,6 +171,7 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 
 		file->seek(item->offset);
 
+		// cf. https://github.com/github/git-msysgit/blob/master/builtin/unpack-objects.c
 		{
 			size_t size = 0;
 			char c;

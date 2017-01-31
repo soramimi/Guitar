@@ -18,6 +18,7 @@ struct GitPackIdxItem {
 
 class GitPackIdxV2 {
 	friend class GitObjectManager;
+	friend class MainWindow; // for debug
 private:
 	QString basename; // e.g. "pack-56430ed038c968ded87eb3756dcde85bfafc10ce"
 
