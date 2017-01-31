@@ -46,7 +46,7 @@ void GitObjectManager::clearIndexes()
 	git_idx_list.clear();
 }
 
-void GitObjectManager::applyDelta(QByteArray *base_obj, QByteArray *delta_obj, QByteArray *out)
+void GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *delta_obj, QByteArray *out)
 {
 	if (delta_obj->size() > 0) {
 		uint8_t const *begin = (uint8_t const *)delta_obj->data();
@@ -84,7 +84,7 @@ void GitObjectManager::applyDelta(QByteArray *base_obj, QByteArray *delta_obj, Q
 				if (op & 0x40) length |= (*ptr++ << 16);
 				if (length == 0) length = 0x10000;
 
-				if (offset + length > base_obj->size()) {
+				if (offset + length > (uint32_t)base_obj->size()) {
 					qDebug() << Q_FUNC_INFO << "base-file or delta-file is corrupted";
 					out->clear();
 					return;
@@ -118,6 +118,10 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, 
 			if (source_item && loadPackedObject(idx, packfile, source_item, &source)) {
 				GitPack::Object delta;
 				if (GitPack::load(packfile, item, &delta)) {
+					if (delta.checksum != item->checksum) {
+						qDebug() << "crc checksum incorrect";
+						return false;
+					}
 					QByteArray ba;
 					applyDelta(&source.content, &delta.content, &ba);
 					*out = GitPack::Object();
@@ -151,21 +155,6 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr idx, GitPackIdxIt
 		}
 	}
 	return false;
-}
-
-bool GitObjectManager::extractDebug(GitPackIdxPtr idx, GitPackIdxItem const *item, GitPack::Object *out)
-{
-	*out = GitPack::Object();
-	QString packfilepath = "C:/debug/a/pack-f959919178f83a67d1dcf28c27a451d561e8501b.pack";
-	QFile packfile(packfilepath);
-	if (packfile.open(QFile::ReadOnly)) {
-		if (loadPackedObject(idx, &packfile, item, out)) {
-			if (out->type == GitPack::Type::TREE) {
-				GitPack::decodeTree(&out->content);
-			}
-			return true;
-		}
-	}
 }
 
 bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *out)
@@ -267,7 +256,7 @@ QByteArray GitObjectCache::catFile(const QString &id)
 					items.erase(items.begin() + i);
 					items.push_back(item);
 				}
-//				qDebug() << "hit: " << id;
+				//				qDebug() << "hit: " << id;
 				return item->ba;
 			}
 		}
@@ -288,13 +277,19 @@ QByteArray GitObjectCache::catFile(const QString &id)
 		return item->ba;
 	};
 
-	if (object_manager.catFile(id, &ba)) {
+	if (object_manager.catFile(id, &ba)) { // 独自実装のファイル取得
 		return Store();
 	}
 
-	if (object_manager.git()->cat_file(id, &ba)) {
-		return Store();
+	if (true) {
+		if (object_manager.git()->cat_file(id, &ba)) { // 外部コマンド起動の git cat-file -p を試してみる
+			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
+			qDebug() << __LINE__ << __FILE__ << Q_FUNC_INFO << id;
+			return Store();
+		}
 	}
+
+	qDebug() << "failed to cat file: " << id;
 
 	return QByteArray();
 }

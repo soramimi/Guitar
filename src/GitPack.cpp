@@ -78,7 +78,7 @@ GitPack::Type GitPack::stripHeader(QByteArray *out)
 	return Type::UNKNOWN;
 }
 
-bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed)
+bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed, uint32_t *crc)
 {
 	if (consumed) *consumed = 0;
 	try {
@@ -121,17 +121,17 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 			if (l > sizeof(tmp)) l = sizeof(tmp);
 			d_stream.avail_out = l;
 			uLong total = d_stream.total_out;
-			int n;
 
-			n = d_stream.avail_in;
 			err = ::inflate(&d_stream, Z_NO_FLUSH);
-			n -= d_stream.avail_in;
-			if (consumed) *consumed += n;
 
-			n = d_stream.total_out - total;
+			int in_len = (uint8_t *)d_stream.next_in - src;
+			if (consumed) *consumed += in_len;
 
-			size_t z = out->size();
-			out->append((char const *)tmp, n);
+			if (crc) *crc = crc32(*crc, src, in_len);
+
+			int out_len = d_stream.total_out - total;
+			out->append((char const *)tmp, out_len);
+
 			if (err == Z_STREAM_END) {
 				break;
 			}
@@ -155,21 +155,27 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out)
 {
 	try {
+		Info info;
+
 		auto Read = [&](void *ptr, size_t len){
-			return file->read((char *)ptr, len) == len;
+			if (file->read((char *)ptr, len) != len) {
+				throw QString("failed to read");
+			}
+			info.checksum = crc32(info.checksum, (uint8_t const *)ptr, len);
 		};
 
 		file->seek(0);
-		Info info;
 
 		uint32_t header[3];
-		if (!Read(header, sizeof(int32_t) * 3)) throw QString("failed to read the header");
+		Read(header, sizeof(int32_t) * 3);
 		if (memcmp(header, "PACK", 4) != 0) throw QString("invalid pack file");
 		uint32_t version = read_uint32_be(header + 1);
-		if (version < 2) throw "invalid pack file version";
+		if (version < 2) throw QString("invalid pack file version");
 		/*int count = */read_uint32_be(header + 2);
 
 		file->seek(item->offset);
+
+		info.checksum = 0;
 
 		// cf. https://github.com/github/git-msysgit/blob/master/builtin/unpack-objects.c
 		{
@@ -204,7 +210,6 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 				sprintf(tmp + i * 2, "%02x", bin[i] & 0xff);
 			}
 			info.ref_id = QString::fromLatin1(tmp, 40);
-			qDebug();
 		}
 
 		*out = info;
@@ -219,16 +224,9 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 {
 	*out = Object();
 	try {
-		auto Read = [&](void *ptr, size_t len){
-			if (file->read((char *)ptr, len) == len) {
-				return;
-			}
-			throw QString("failed to read");
-		};
-
 		seekPackedObject(file, item, out);
 
-		if (decompress(file, out->expanded_size, &out->content, &out->packed_size)) {
+		if (decompress(file, out->expanded_size, &out->content, &out->packed_size, &out->checksum)) {
 			out->expanded_size = out->expanded_size;
 			return true;
 		}

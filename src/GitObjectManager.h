@@ -22,7 +22,7 @@ private:
 
 	QString workingDir();
 
-	static void applyDelta(QByteArray *base, QByteArray *delta, QByteArray *out);
+	static void applyDelta(const QByteArray *base, const QByteArray *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(const QString &id, QByteArray *out);
@@ -38,7 +38,6 @@ public:
 	void setup(GitPtr g);
 	bool catFile(const QString &id, QByteArray *out);
 	void clearIndexes();
-	bool extractDebug(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
 };
 
 class GitObjectCache {
