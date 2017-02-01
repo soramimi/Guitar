@@ -1929,7 +1929,7 @@ Git::CommitItem const *MainWindow::selectedCommitItem() const
 	return nullptr;
 }
 
-bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
+bool MainWindow::cat_file_(GitPtr g, QString const &id, QByteArray *out)
 {
 	out->clear();
 
@@ -1952,6 +1952,11 @@ bool MainWindow::cat_file(GitPtr g, QString const &id, QByteArray *out)
 		}
 	}
 	return false;
+}
+
+bool MainWindow::cat_file(QString const &id, QByteArray *out)
+{
+	return cat_file_(git(), id, out);
 }
 
 void MainWindow::updateDiffView(QListWidgetItem *item)
@@ -2218,11 +2223,8 @@ bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 
 bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return false;
-
 	QByteArray ba;
-	cat_file(g, id, &ba);
+	cat_file(id, &ba);
 	if (!ba.isEmpty()) {
 		if (saveByteArrayAs(ba, dstpath)) {
 			return true;
@@ -2459,7 +2461,7 @@ QString MainWindow::newTempFilePath()
 	return path;
 }
 
-QString MainWindow::filetype(QString const &path, bool mime)
+QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback)
 { // ファイルタイプを調べる
 	if (QFileInfo(pv->file_command).isExecutable()) {
 		QString file = pv->file_command;
@@ -2489,8 +2491,15 @@ QString MainWindow::filetype(QString const &path, bool mime)
 			cmd += " --mime";
 		}
 		cmd += QString(" --brief \"%1\"").arg(path);
+
+		// run file command
+
 		QByteArray ba;
-		misc::runCommand(cmd, &ba);
+
+		callback(cmd, &ba);
+
+		// parse file type
+
 		if (!ba.isEmpty()) {
 			QString s = QString::fromUtf8(ba).trimmed();
 			QStringList list = s.split(';', QString::SkipEmptyParts);
@@ -2500,10 +2509,27 @@ QString MainWindow::filetype(QString const &path, bool mime)
 				return mimetype;
 			}
 		}
+
+		return cmd;
+
 	} else {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No executable 'file' command"));
 	}
 	return QString();
+}
+
+QString MainWindow::determinFileType(QString const &path, bool mime)
+{
+	return determinFileType_(path, mime, [](QString const &cmd, QByteArray *ba){
+		misc::runCommand(cmd, ba);
+	});
+}
+
+QString MainWindow::determinFileType(QByteArray const &in, bool mime)
+{
+	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
+		misc::runCommand(cmd, &in, ba);
+	});
 }
 
 void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)

@@ -71,6 +71,10 @@ private slots:
 	void on_action_set_remote_origin_url_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
+	void on_action_tag_triggered();
+	void on_action_tag_push_all_triggered();
+	void on_action_tag_delete_triggered();
+
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
@@ -95,23 +99,13 @@ private slots:
 	void on_toolButton_fetch_clicked();
 	void on_comboBox_filter_currentTextChanged(const QString &arg1);
 	void on_toolButton_erase_filter_clicked();
-	void on_action_tag_triggered();
-
-	void on_action_tag_push_all_triggered();
-
-	void on_action_tag_delete_triggered();
-
-
-	void onRepositoriesTreeDropped();
-
 
 	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
-
 	void on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem *item);
-
 	void on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item);
-
 	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
+
+	void onRepositoriesTreeDropped();
 
 private:
 	Ui::MainWindow *ui;
@@ -185,7 +179,6 @@ private:
 	void updateStagedFileCurrentItem();
 	void cleanupDiffThread();
 	void addTag();
-	bool cat_file(GitPtr g, const QString &id, QByteArray *out);
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
 	void execCommitPropertyDialog(const Git::CommitItem *commit);
@@ -193,7 +186,9 @@ private:
 	QString getObjectID(QListWidgetItem *item);
 	void execFilePropertyDialog(QListWidgetItem *item);
 	static QAction *addMenuActionProperties(QMenu *menu);
-//	bool cat_file2(GitPtr g, const QString &id, QByteArray *out);
+	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback);
+	bool cat_file_(GitPtr g, const QString &id, QByteArray *out);
+	bool cat_file(const QString &id, QByteArray *out);
 public:
 
 	QString selectGitCommand();
@@ -221,9 +216,10 @@ public:
 	QString newTempFilePath();
 	bool saveAs(const QString &id, const QString &dstpath);
 	QString saveAsTemp(const QString &id);
-	QString filetype(const QString &path, bool mime);
 	QString abbrevCommitID(const Git::CommitItem &commit);
 	QString findFileID(GitPtr g, const QString &commit_id, const QString &file);
+	QString determinFileType(const QString &path, bool mime);
+	QString determinFileType(const QByteArray &in, bool mime);
 protected:
 
 protected:

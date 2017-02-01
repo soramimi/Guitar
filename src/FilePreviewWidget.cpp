@@ -286,8 +286,6 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 
 	drawdata()->forcus = pv->view_type;
 
-	QString path = pv->mainwindow->currentWorkingCopyDir() / diffdata()->path;
-
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
 	QAction *a_test = id.isEmpty() ? nullptr : menu.addAction(tr("test"));
@@ -297,6 +295,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 		QAction *a = menu.exec(pos);
 		if (a) {
 			if (a == a_save_as) {
+				QString path = pv->mainwindow->currentWorkingCopyDir() / diffdata()->path;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
 					pv->mainwindow->saveAs(id, dstpath);
@@ -305,8 +304,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 			}
 			if (a == a_test) {
 				QString path = pv->mainwindow->saveAsTemp(id);
-
-				QString mimetype = pv->mainwindow->filetype(path, true);
+				QString mimetype = pv->mainwindow->determinFileType(path, true);
 				if (isImageFile(mimetype)) {
 					pv->mime_type = mimetype;
 					pv->pixmap.load(path);

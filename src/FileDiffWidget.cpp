@@ -406,7 +406,7 @@ GitPtr FileDiffWidget::git()
 QByteArray FileDiffWidget::cat_file(GitPtr g, QString const &id)
 {
 	QByteArray ba;
-	pv->mainwindow->cat_file(g, id, &ba);
+	pv->mainwindow->cat_file(id, &ba);
 	return ba;
 }
 
