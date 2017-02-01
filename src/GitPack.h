@@ -23,6 +23,7 @@ public:
 		size_t expanded_size = 0;
 		uint64_t offset = 0;
 		QString ref_id;
+		uint32_t checksum = 0;
 	};
 	struct Object : public Info {
 		QByteArray content;
@@ -36,7 +37,7 @@ private:
 	}
 
 public:
-	static bool decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr);
+	static bool decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr, uint32_t *crc = nullptr);
 	static bool load(QIODevice *file, GitPackIdxItem const *item, Object *out);
 	static bool load(const QString &packfile, const GitPackIdxItem *item, Object *out);
 	static bool seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out);

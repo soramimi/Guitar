@@ -2539,31 +2539,6 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 	execFilePropertyDialog(item);
 }
 
-
-
 void MainWindow::on_action_test_triggered()
 {
-	GitPackIdxPtr idx = GitPackIdxPtr(new GitPackIdxV2());
-	idx->basename = "pack-f959919178f83a67d1dcf28c27a451d561e8501b";
-	idx->parse("C:/debug/a/pack-f959919178f83a67d1dcf28c27a451d561e8501b.idx");
-
-//	QString id = "e5d620fd3d04758bf9da41f9ccf29ee3379f8cd7";
-	QString id = "1c171d9d54594a496e5680fb4541fe9ba9a7958e";
-//	QString id = "8bc5c076462e5783b4cc708efdf6741fa5722790"; // ok
-	GitPackIdxItem const *item = idx->item(id);
-
-	GitPack::Object obj;
-
-	GitObjectManager om;
-	om.setup(git());
-	om.extractDebug(idx, item, &obj);
-//	om.catFile("e5d620fd3d04758bf9da41f9ccf29ee3379f8cd7", &ba);
-//	GitPack::load("C:/debug/a/pack-f959919178f83a67d1dcf28c27a451d561e8501b.pack", item, &obj);
-
-	qDebug() << obj.content.size();
-
-	QFile file("d:/z");
-	if (file.open(QFile::WriteOnly)) {
-		file.write(obj.content);
-	}
 }

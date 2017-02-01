@@ -301,14 +301,14 @@ QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 	git(cmd);
 	QString text = resultText();
 	QStringList lines = text.split('\n', QString::SkipEmptyParts);
-	for (QString const &line : lines) {
+	for (QString const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		DiffRaw item;
 		int colon = line.indexOf(':');
 		int tab = line.indexOf('\t');
 		if (colon >= 0 && colon < tab) {
-			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', QString::SkipEmptyParts);
+			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', QString::SkipEmptyParts); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
-				QStringList files = line.mid(tab + 1).split('\t', QString::SkipEmptyParts);
+				QStringList files = line.mid(tab + 1).split('\t', QString::SkipEmptyParts); // タブより後ろはファイルパス
 				if (files.size() > 0) {
 					for (QString &file : files) {
 						file = Git::trimPath(file);
@@ -739,12 +739,6 @@ QByteArray Git::cat_file_(QString const &id)
 bool Git::cat_file(QString const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
-//		GitObjectManager gom(workingRepositoryDir());
-//		if (gom.catFile(id, out)) {
-//			return true;
-//		}
-//		// 上の処理が正しく動いていれば、ここには来ないはず
-//		qDebug() << "=== Failed GitObjectManager::loadObjectFile === " << id;
 		*out = cat_file_(id);
 		return true;
 	}

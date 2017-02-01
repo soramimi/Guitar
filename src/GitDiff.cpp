@@ -249,7 +249,7 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 	try {
 		if (Git::isValidID(id)) { // 有効なID
 
-			{ // diff_raw test
+			{ // diff_raw
 				TreeItemList files;
 				GitCommit newer_commit;
 				newer_commit.parseCommit(objcache, id);
