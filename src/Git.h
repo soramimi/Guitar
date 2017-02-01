@@ -102,6 +102,7 @@ public:
 		enum {
 			None,
 			Current = 0x0001,
+			HeadDetached = 0x0002,
 		};
 		int flags = 0;
 	};

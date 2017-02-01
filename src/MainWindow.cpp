@@ -861,8 +861,13 @@ void MainWindow::openRepository_(GitPtr g)
 		queryBranches(g);
 		queryTags(g);
 
+		QString branch_name = currentBranch().name;
+		if (currentBranch().flags & Git::Branch::HeadDetached) {
+			branch_name += " (HEAD detached)";
+		}
+
 		ui->label_repo_name->setText(currentRepositoryName());
-		ui->label_branch_name->setText(currentBranch().name);
+		ui->label_branch_name->setText(branch_name);
 	} else {
 		QString name = currentRepositoryName();
 		ui->label_repo_name->setText(name.isEmpty() ? tr("Unknown") : name);

@@ -429,59 +429,64 @@ QList<Git::Branch> Git::branches_()
 #if DEBUGLOG
 	qDebug() << s;
 #endif
-	ushort const *begin = s.utf16();
-	ushort const *end = begin + s.size();
-	ushort const *ptr = begin;
-	while (ptr + 2 < end) {
-		ushort attr = *ptr;
-		ptr += 2;
-		QStringList list;
-		ushort const *left = ptr;
-		while (1) {
-			ushort c = 0;
-			if (ptr < end) c = *ptr;
-			if (c == 0 || QChar::isSpace(c)) {
-				if (left < ptr) {
-					list.push_back(QString::fromUtf16(left, ptr - left));
-					if (list.size() == 2) {
-						while (ptr < end && QChar(*ptr).isSpace()) ptr++;
-						left = ptr;
-						while (ptr < end) {
-							ushort c = *ptr;
-							ptr++;
-							if (c == '\n' || c == '\r') {
-								list.push_back(QString::fromUtf16(left, ptr - left));
-								break;
-							}
-						}
-						c = 0;
-					}
+
+	QStringList lines = misc::splitLines(s);
+	for (QString const &line : lines) {
+		if (line.size() > 2) {
+			QString name;
+			QString text = line.mid(2);
+			int pos = 0;
+			if (text.startsWith('(')) {
+				pos = text.indexOf(')');
+				if (pos > 1) {
+					name = text.mid(1, pos - 1);
+					pos++;
 				}
-				if (c == 0) break;
-				ptr++;
-				if (c == '\n' || c == '\r') break;
-				left = ptr;
 			} else {
-				ptr++;
-			}
-		}
-		if (list.size() >= 2) {
-			Branch b;
-			b.name = list[0];
-			if (list[1].size() == 40) {
-				b.id = list[1];
-				if (list.size() > 2) {
-					parseAheadBehind(list[2], &b);
+				while (pos < text.size() && !QChar::isSpace(text.utf16()[pos])) {
+					pos++;
 				}
-			} else if (list[1] == "->") {
-				if (list.size() >= 3) {
-					b.id = ">" + list[2];
+				name = text.mid(0, pos);
+			}
+			if (!name.isEmpty()) {
+				while (pos < text.size() && QChar::isSpace(text.utf16()[pos])) {
+					pos++;
 				}
+				text = text.mid(pos);
+
+				Branch b;
+
+				if (name.startsWith("HEAD detached at ")) {
+					b.flags |= Branch::HeadDetached;
+					name = name.mid(17);
+				}
+
+				if (name.startsWith("origin/")) {
+					name = name.mid(7);
+				}
+
+				b.name = name;
+
+				if (text.startsWith("-> ")) {
+					b.id = ">" + text.mid(3);
+				} else {
+					int i = text.indexOf(' ');
+					if (i == 40) {
+						b.id = text.mid(0, 40);
+					}
+					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
+						i++;
+					}
+					text = text.mid(i);
+					parseAheadBehind(text, &b);
+				}
+
+				if (line.startsWith('*')) {
+					b.flags |= Branch::Current;
+				}
+
+				branches.push_back(b);
 			}
-			if (attr == '*') {
-				b.flags |= Branch::Current;
-			}
-			branches.push_back(b);
 		}
 	}
 	for (int i = 0; i < branches.size(); i++) {
@@ -525,12 +530,6 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limi
 	git(cmd);
 	if (getProcessExitCode() == 0) {
 		text = resultText().trimmed();
-		if (0) {
-			QFile file("test.log");
-			if (file.open(QFile::WriteOnly)) {
-				file.write(text.toUtf8());
-			}
-		}
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
 			int i = line.indexOf("##");
