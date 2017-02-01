@@ -26,9 +26,10 @@ private:
 	int totalTextLines() const;
 	int fileviewScrollPos() const;
 public:
-	explicit FileHistoryWindow(QWidget *parent, GitPtr g, QString const &path);
+	explicit FileHistoryWindow(QWidget *parent);
 	~FileHistoryWindow();
 
+	void prepare(GitPtr g, const QString &path);
 private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 

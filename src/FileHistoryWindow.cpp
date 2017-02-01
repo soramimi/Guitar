@@ -47,7 +47,7 @@ int FileHistoryWindow::fileviewScrollPos() const
 	return drawdata()->v_scroll_pos;
 }
 
-FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &path)
+FileHistoryWindow::FileHistoryWindow(QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::FileHistoryWindow)
 {
@@ -65,6 +65,20 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 	ui->splitter->setSizes({100, 200});
 
 	ui->widget_diff_view->bind(pv->mainwindow);
+}
+
+FileHistoryWindow::~FileHistoryWindow()
+{
+	delete pv;
+	delete ui;
+}
+
+void FileHistoryWindow::prepare(GitPtr g, const QString &path)
+{
+	Q_ASSERT(g);
+	Q_ASSERT(g->isValidWorkingCopy());
+	this->pv->g = g;
+	this->pv->path = path;
 
 	QString reponame = pv->mainwindow->currentRepositoryName();
 	QString brname = pv->mainwindow->currentBranch().name;
@@ -74,27 +88,18 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent, GitPtr g, const QString &p
 	ui->label_repo->setText(text);
 	ui->label_path->setText(path);
 
-	Q_ASSERT(g);
-	Q_ASSERT(g->isValidWorkingCopy());
-	this->pv->g = g;
-	this->pv->path = path;
-
+	{
+		OverrideWaitCursor;
+		pv->commit_item_list = pv->g->log_all(pv->path, pv->mainwindow->limitLogCount(), pv->mainwindow->limitLogTime());
+	}
 
 	collectFileHistory();
 
 	updateDiffView();
 }
 
-FileHistoryWindow::~FileHistoryWindow()
-{
-	delete pv;
-	delete ui;
-}
-
 void FileHistoryWindow::collectFileHistory()
 {
-	pv->commit_item_list = pv->g->log_all(pv->path, pv->mainwindow->limitLogCount(), pv->mainwindow->limitLogTime());
-
 	QStringList cols = {
 		tr("Commit"),
 		tr("Date"),
@@ -164,6 +169,9 @@ protected:
 
 void FileHistoryWindow::updateDiffView()
 {
+	Q_ASSERT(pv->g);
+	Q_ASSERT(pv->g->isValidWorkingCopy());
+
 	ui->widget_diff_view->clearDiffView();
 
 	int row = ui->tableWidget_log->currentRow();

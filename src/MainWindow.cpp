@@ -1543,7 +1543,8 @@ void MainWindow::execFileHistory(QString const &path)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	FileHistoryWindow dlg(this, g, path);
+	FileHistoryWindow dlg(this);
+	dlg.prepare(g, path);
 	dlg.exec();
 }
 
