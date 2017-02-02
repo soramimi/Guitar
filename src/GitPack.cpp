@@ -1,8 +1,13 @@
 #include "GitPack.h"
-#include "../zlib.h"
 #include <QDebug>
 #include <QFile>
 #include "GitPackIdxV2.h"
+
+#ifdef Q_WS_WIN
+  #include <QtZlib/zlib.h>
+#else
+  #include <zlib.h>
+#endif
 
 void GitPack::decodeTree(QByteArray *out)
 {

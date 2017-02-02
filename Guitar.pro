@@ -51,6 +51,10 @@ macx {
 	QMAKE_BUNDLE_DATA += t
 }
 
+unix {
+    LIBS += -lz
+}
+
 SOURCES += \
 	version.c \
 	src/main.cpp\
