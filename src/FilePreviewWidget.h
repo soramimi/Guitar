@@ -27,9 +27,10 @@ private:
 	const FileDiffWidget::DrawData *drawdata() const;
 	void paintText();
 	void paintImage();
-	QSize imageScrollRange() const;
-	void scrollImage(int x, int y);
+	QSizeF imageScrollRange() const;
+	void scrollImage(double x, double y);
 	void setFileType(QString const &mimetype);
+	void setImageScale(double scale);
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
