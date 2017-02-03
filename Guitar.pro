@@ -91,7 +91,8 @@ SOURCES += \
     src/GitPackIdxV2.cpp \
     src/GitPack.cpp \
     src/GitObjectManager.cpp \
-    src/FilePropertyDialog.cpp
+    src/FilePropertyDialog.cpp \
+    src/BigDiffWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -133,7 +134,8 @@ HEADERS  += \
     src/GitPack.h \
     src/GitObjectManager.h \
     src/FilePropertyDialog.h \
-    zlib.h
+    zlib.h \
+    src/BigDiffWindow.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -153,7 +155,8 @@ FORMS    += \
     src/SelectCommandDialog.ui \
 	src/FileDiffWidget.ui \
     src/FileHistoryWindow.ui \
-    src/FilePropertyDialog.ui
+    src/FilePropertyDialog.ui \
+    src/BigDiffWindow.ui
 
 RESOURCES += \
     resources.qrc

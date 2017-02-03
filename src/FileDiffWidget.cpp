@@ -4,6 +4,7 @@
 #include "misc.h"
 #include "GitDiff.h"
 #include "joinpath.h"
+#include "BigDiffWindow.h"
 
 #include <QBuffer>
 #include <QDebug>
@@ -16,6 +17,8 @@ enum {
 
 struct FileDiffWidget::Private {
 	MainWindow *mainwindow = nullptr;
+	InitParam_ init_param_;
+	ViewStyle view_style = ViewStyle::TextSideBySide;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
 	FileDiffWidget::DrawData draw_data;
@@ -33,6 +36,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 
 	pv = new Private();
 
+	setMaximizeButtonEnabled(true);
+
 	ui->widget_diff_left->installEventFilter(this);
 	ui->widget_diff_right->installEventFilter(this);
 	ui->widget_diff_pixmap->installEventFilter(this);
@@ -42,6 +47,12 @@ FileDiffWidget::~FileDiffWidget()
 {
 	delete pv;
 	delete ui;
+}
+
+void FileDiffWidget::setMaximizeButtonEnabled(bool f)
+{
+	ui->toolButton_fullscreen->setVisible(f);
+	ui->toolButton_fullscreen->setEnabled(f);
 }
 
 FileDiffWidget::DiffData *FileDiffWidget::diffdata()
@@ -175,6 +186,7 @@ QString FileDiffWidget::formatLine(const QString &text)
 
 void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right)
 {
+
 	QPixmap pm(1, 1);
 	QPainter pr(&pm);
 	pr.setFont(ui->widget_diff_left->font());
@@ -251,7 +263,7 @@ void FileDiffWidget::prepareSetText_(QByteArray const &ba, Git::Diff const &diff
 	}
 }
 
-bool FileDiffWidget::setImage(QByteArray const &ba, ViewType viewtype)
+bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 {
 	QString mimetype = pv->mainwindow->determinFileType(ba, true);
 	if (misc::isImageFile(mimetype)) {
@@ -270,7 +282,13 @@ bool FileDiffWidget::setImage(QByteArray const &ba, ViewType viewtype)
 
 void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &diff)
 {
-	if (setImage(ba, ViewType::Right)) return;
+	pv->init_param_ = InitParam_();
+	pv->init_param_.ba = ba;
+	pv->init_param_.diff = diff;
+
+	pv->view_style = FileDiffWidget::ViewStyle::TextRightOnly;
+
+	if (setImage_(ba, ViewType::Right)) return;
 
 	prepareSetText_(ba, diff);
 
@@ -287,7 +305,13 @@ void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &d
 
 void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const &diff)
 {
-	if (setImage(ba, ViewType::Left)) return;
+	pv->init_param_ = InitParam_();
+	pv->init_param_.ba = ba;
+	pv->init_param_.diff = diff;
+
+	pv->view_style = FileDiffWidget::ViewStyle::TextLeftOnly;
+
+	if (setImage_(ba, ViewType::Left)) return;
 
 	prepareSetText_(ba, diff);
 
@@ -304,7 +328,15 @@ void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const 
 
 void FileDiffWidget::setDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
-	if (setImage(ba, ViewType::Left)) return;
+	pv->init_param_ = InitParam_();
+	pv->init_param_.ba = ba;
+	pv->init_param_.diff = diff;
+	pv->init_param_.uncommited = uncommited;
+	pv->init_param_.workingdir = workingdir;
+
+	pv->view_style = FileDiffWidget::ViewStyle::TextSideBySide;
+
+	if (setImage_(ba, ViewType::Left)) return;
 
 	prepareSetText_(ba, diff);
 
@@ -419,8 +451,6 @@ void FileDiffWidget::setDiffData(QByteArray const &ba, Git::Diff const &diff, bo
 	std::reverse(right_lines.begin(), right_lines.end());
 	setDiffText(left_lines, right_lines);
 }
-
-
 
 GitPtr FileDiffWidget::git()
 {
@@ -616,3 +646,11 @@ QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, Fil
 }
 
 
+
+void FileDiffWidget::on_toolButton_fullscreen_clicked()
+{
+	BigDiffWindow win(pv->mainwindow);
+	win.setWindowState(Qt::WindowMaximized);
+	win.prepare(pv->mainwindow, pv->view_style, pv->init_param_.ba, pv->init_param_.diff, pv->init_param_.uncommited, pv->init_param_.workingdir);
+	win.exec();
+}

@@ -41,6 +41,7 @@ class QTableWidgetItem;
 class FileDiffWidget : public QWidget
 {
 	Q_OBJECT
+	friend class BigDiffWindow;
 public:
 	struct DiffData {
 		QStringList original_lines;
@@ -65,10 +66,25 @@ public:
 		ViewType forcus = ViewType::None;
 		DrawData();
 	};
+
+	enum ViewStyle {
+		None,
+		TextLeftOnly,
+		TextRightOnly,
+		TextSideBySide,
+	};
+
 private:
 	Ui::FileDiffWidget *ui;
 	struct Private;
 	Private *pv;
+
+	struct InitParam_ {
+		QByteArray ba;
+		Git::Diff diff;
+		bool uncommited = false;
+		QString workingdir;
+	};
 
 	FileDiffWidget::DiffData *diffdata();
 	FileDiffWidget::DiffData const *diffdata() const;
@@ -119,7 +135,7 @@ private:
 	QByteArray cat_file(GitPtr g, const QString &id);
 
 	bool isValidID_(const QString &id);
-	bool setImage(const QByteArray &ba, ViewType viewtype);
+	bool setImage_(const QByteArray &ba, ViewType viewtype);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -133,12 +149,15 @@ public:
 
 	QPixmap makeDiffPixmap(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
 
+	void setMaximizeButtonEnabled(bool f);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);
 	void onDiffWidgetWheelScroll(int lines);
 	void onScrollValueChanged2(int value);
 	void onDiffWidgetResized();
+	void on_toolButton_fullscreen_clicked();
+
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 };
