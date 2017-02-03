@@ -111,7 +111,7 @@ private:
 	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
 	void setDataAsAddedFile(const QByteArray &ba, const Git::Diff &diff);
 	void setDataAsDeletedFile(const QByteArray &ba, const Git::Diff &diff);
-	void setTextDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
+	void setDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
 	void init_diff_data_(const Git::Diff &diff);
 
@@ -119,6 +119,7 @@ private:
 	QByteArray cat_file(GitPtr g, const QString &id);
 
 	bool isValidID_(const QString &id);
+	bool setImage(const QByteArray &ba, ViewType viewtype);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();

@@ -273,17 +273,19 @@ void misc::setFixedSize(QWidget *w)
 	w->setFixedSize(w->size());
 }
 
-void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, const QColor &color)
+void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright)
 {
 	if (w < 3 || h < 3) {
 		if (w > 0 && h > 0) {
-			pr->fillRect(x, y, w, h, color);
+			pr->fillRect(x, y, w, h, color_topleft);
 		}
 	} else {
-		pr->fillRect(x, y, w - 1, 1, color);
-		pr->fillRect(x, y + 1, 1, h -1, color);
-		pr->fillRect(x + w - 1, y, 1, h -1, color);
-		pr->fillRect(x + 1, y + h - 1, w - 1, 1, color);
+		if (!color_topleft.isValid()) color_topleft = Qt::black;
+		if (!color_bottomright.isValid()) color_bottomright = color_topleft;
+		pr->fillRect(x, y, w - 1, 1, color_topleft);
+		pr->fillRect(x, y + 1, 1, h -1, color_topleft);
+		pr->fillRect(x + w - 1, y, 1, h -1, color_bottomright);
+		pr->fillRect(x + 1, y + h - 1, w - 1, 1, color_bottomright);
 	}
 }
 
@@ -333,5 +335,14 @@ void misc::dump(const QByteArray *in)
 		}
 	}
 	dump(ptr, len);
+}
+
+bool misc::isImageFile(const QString &mimetype)
+{
+	if (mimetype == "image/jpeg") return true;
+	if (mimetype == "image/png") return true;
+	if (mimetype == "image/bmp") return true;
+	if (mimetype == "image/x-ms-bmp") return true;
+	return false;
 }
 

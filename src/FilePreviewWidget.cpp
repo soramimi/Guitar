@@ -20,6 +20,15 @@ struct FilePreviewWidget::Private {
 	ViewType view_type = ViewType::None;
 	QString mime_type;
 	QPixmap pixmap;
+	FilePreviewWidget::PaintMode paint_mode;
+	int image_scroll_x = 0;
+	int image_scroll_y = 0;
+	double image_scale = 1;
+	int scroll_origin_x = 0;
+	int scroll_origin_y = 0;
+	QPoint mouse_press_pos;
+	int wheel_delta = 0;
+	QPointF interest_pos;
 };
 
 FileDiffWidget::DiffData *FilePreviewWidget::diffdata()
@@ -68,6 +77,18 @@ void FilePreviewWidget::imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata
 	pv->draw_data = drawdata;
 }
 
+void FilePreviewWidget::setFileType(QString const &mimetype)
+{
+	pv->mime_type = mimetype;
+	if (misc::isImageFile(pv->mime_type)) {
+		pv->paint_mode = PaintMode::Image;
+		setMouseTracking(true);
+	} else {
+		pv->paint_mode = PaintMode::Text;
+		setMouseTracking(false);
+	}
+}
+
 void FilePreviewWidget::update()
 {
 	QWidget::update();
@@ -81,7 +102,7 @@ void FilePreviewWidget::update(ViewType vt)
 
 void FilePreviewWidget::clear(ViewType vt)
 {
-	pv->mime_type = QString();
+	setFileType(QString());
 	pv->pixmap = QPixmap();
 	update(vt);
 }
@@ -207,31 +228,35 @@ void FilePreviewWidget::paintText()
 	}
 }
 
-void FilePreviewWidget::paintImage()
+QSize FilePreviewWidget::imageScrollRange() const
 {
-	int w = pv->pixmap.width();
-	int h = pv->pixmap.height();
-	if (w > 0 && h > 0) {
-		QPainter pr(this);
-		pr.drawPixmap(0, 0, w, h, pv->pixmap);
-	}
+	int w = pv->pixmap.width() * pv->image_scale;
+	int h = pv->pixmap.height() * pv->image_scale;
+	return QSize(w, h);
 }
 
-bool isImageFile(QString const &mimetype)
+void FilePreviewWidget::paintImage()
 {
-	if (mimetype == "image/jpeg") return true;
-	if (mimetype == "image/png") return true;
-	if (mimetype == "image/bmp") return true;
-	if (mimetype == "image/x-ms-bmp") return true;
-	return false;
+	QPainter pr(this);
+	int cx = width() / 2;
+	int cy = height() / 2;
+	int x = cx - pv->image_scroll_x;
+	int y = cy - pv->image_scroll_y;
+	QSize sz = imageScrollRange();
+//	misc::drawFrame(&pr, x - 2, y - 2, w + 4, h + 4, QColor(128, 128, 128), QColor(255, 255, 255));
+	misc::drawFrame(&pr, x - 1, y - 1, sz.width() + 2, sz.height() + 2, Qt::black);
+	if (sz.width() > 0 && sz.height() > 0) pr.drawPixmap(x, y, sz.width(), sz.height(), pv->pixmap, 0, 0, pv->pixmap.width(), pv->pixmap.height());
 }
 
 void FilePreviewWidget::paintEvent(QPaintEvent *)
 {
-	if (isImageFile(pv->mime_type)) {
+	switch (pv->paint_mode) {
+	case PaintMode::Image:
 		paintImage();
-	} else {
+		break;
+	case PaintMode::Text:
 		paintText();
+		break;
 	}
 	if (hasFocus()) {
 		QPainter pr(this);
@@ -240,24 +265,18 @@ void FilePreviewWidget::paintEvent(QPaintEvent *)
 	}
 }
 
-void FilePreviewWidget::wheelEvent(QWheelEvent *e)
-{
-	int delta = e->delta();
-	if (delta < 0) {
-		delta = -delta / 40;
-		if (delta == 0) delta = 1;
-		emit scrollByWheel(delta);
-	} else if (delta > 0) {
-		delta /= 40;
-		if (delta == 0) delta = 1;
-		emit scrollByWheel(-delta);
-
-	}
-}
-
 void FilePreviewWidget::resizeEvent(QResizeEvent *)
 {
 	emit resized();
+}
+
+void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
+{
+	setFileType(mimetype);
+	pv->pixmap = pixmap;
+	QSize sz = imageScrollRange();
+	pv->image_scroll_x = sz.width() / 2;
+	pv->image_scroll_y = sz.height() / 2;
 }
 
 void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
@@ -305,9 +324,10 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 			if (a == a_test) {
 				QString path = pv->mainwindow->saveAsTemp(id);
 				QString mimetype = pv->mainwindow->determinFileType(path, true);
-				if (isImageFile(mimetype)) {
-					pv->mime_type = mimetype;
-					pv->pixmap.load(path);
+				if (misc::isImageFile(mimetype)) {
+					QPixmap pixmap;
+					pixmap.load(path);
+					setImage(mimetype, pixmap);
 				}
 
 				QFile::remove(path);
@@ -319,5 +339,83 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 DONE:;
 	drawdata()->forcus = ViewType::None;
 	update(pv->view_type);
+}
+
+void FilePreviewWidget::scrollImage(int x, int y)
+{
+	pv->image_scroll_x = x;
+	pv->image_scroll_y = y;
+	QSize sz = imageScrollRange();
+	if (pv->image_scroll_x < 0) pv->image_scroll_x = 0;
+	if (pv->image_scroll_y < 0) pv->image_scroll_y = 0;
+	if (pv->image_scroll_x > sz.width()) pv->image_scroll_x = sz.width();
+	if (pv->image_scroll_y > sz.height()) pv->image_scroll_y = sz.height();
+	update();
+}
+
+void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
+{
+	if (e->button() == Qt::LeftButton) {
+		QPoint pos = mapFromGlobal(QCursor::pos());
+		pv->mouse_press_pos = pos;
+		pv->scroll_origin_x = pv->image_scroll_x;
+		pv->scroll_origin_y = pv->image_scroll_y;
+	}
+}
+
+void FilePreviewWidget::mouseMoveEvent(QMouseEvent *e)
+{
+	if (pv->paint_mode == PaintMode::Image) {
+		QPoint pos = mapFromGlobal(QCursor::pos());
+		if ((e->buttons() & Qt::LeftButton) && focusWidget() == this) {
+			int delta_x = pos.x() - pv->mouse_press_pos.x();
+			int delta_y = pos.y() - pv->mouse_press_pos.y();
+			scrollImage(pv->scroll_origin_x - delta_x, pv->scroll_origin_y - delta_y);
+		}
+		int cx = width() / 2;
+		int cy = height() / 2;
+		double x = (pos.x() - cx + pv->image_scroll_x + 0.5) / pv->image_scale;
+		double y = (pos.y() - cy + pv->image_scroll_y + 0.5) / pv->image_scale;
+		pv->interest_pos = QPointF(x, y);
+		pv->wheel_delta = 0;
+	}
+}
+
+void FilePreviewWidget::wheelEvent(QWheelEvent *e)
+{
+	if (pv->paint_mode == PaintMode::Text) {
+		int delta = e->delta();
+		if (delta < 0) {
+			delta = -delta / 40;
+			if (delta == 0) delta = 1;
+			emit scrollByWheel(delta);
+		} else if (delta > 0) {
+			delta /= 40;
+			if (delta == 0) delta = 1;
+			emit scrollByWheel(-delta);
+
+		}
+	} else if (pv->paint_mode == PaintMode::Image) {
+		double scale = 1;
+		pv->wheel_delta += e->delta();
+		while (pv->wheel_delta >= 120) {
+			pv->wheel_delta -= 120;
+			scale *= 1.125;
+		}
+		while (pv->wheel_delta <= -120) {
+			pv->wheel_delta += 120;
+			scale /= 1.125;
+		}
+		pv->image_scale *= scale;
+
+		int cx = width() / 2;
+		int cy = height() / 2;
+		QPoint pos = mapFromGlobal(QCursor::pos());
+		double dx = pv->interest_pos.x() * pv->image_scale + cx - pos.x();
+		double dy = pv->interest_pos.y() * pv->image_scale + cy - pos.y();
+		scrollImage((int)dx, (int)dy);
+
+		update();
+	}
 }
 

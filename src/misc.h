@@ -7,6 +7,7 @@
 #include <functional>
 #include <vector>
 #include <stdint.h>
+#include <QColor>
 
 class misc {
 public:
@@ -24,9 +25,10 @@ public:
 	static int runCommand(QString const &cmd, QByteArray *out);
 	static int runCommand(const QString &cmd, const QByteArray *in, QByteArray *out);
 	static void setFixedSize(QWidget *w);
-	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor const &color);
+	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright = QColor());
 	static void dump(const uint8_t *ptr, size_t len);
 	static void dump(QByteArray const *in);
+	static bool isImageFile(const QString &mimetype);
 };
 
 class OverrideWaitCursor_ {

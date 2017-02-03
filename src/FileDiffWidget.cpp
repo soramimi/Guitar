@@ -5,6 +5,7 @@
 #include "GitDiff.h"
 #include "joinpath.h"
 
+#include <QBuffer>
 #include <QDebug>
 #include <QKeyEvent>
 #include <QPainter>
@@ -250,8 +251,27 @@ void FileDiffWidget::prepareSetText_(QByteArray const &ba, Git::Diff const &diff
 	}
 }
 
+bool FileDiffWidget::setImage(QByteArray const &ba, ViewType viewtype)
+{
+	QString mimetype = pv->mainwindow->determinFileType(ba, true);
+	if (misc::isImageFile(mimetype)) {
+		QPixmap pixmap;
+		pixmap.loadFromData(ba);
+		FilePreviewWidget *w = nullptr;
+		switch (viewtype) {
+		case ViewType::Left:  w = ui->widget_diff_left;  break;
+		case ViewType::Right: w = ui->widget_diff_right; break;
+		}
+		if (w) w->setImage(mimetype, pixmap);
+		return true;
+	}
+	return false;
+}
+
 void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &diff)
 {
+	if (setImage(ba, ViewType::Right)) return;
+
 	prepareSetText_(ba, diff);
 
 	QList<TextDiffLine> left_lines;
@@ -267,6 +287,8 @@ void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &d
 
 void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const &diff)
 {
+	if (setImage(ba, ViewType::Left)) return;
+
 	prepareSetText_(ba, diff);
 
 	QList<TextDiffLine> left_lines;
@@ -280,8 +302,10 @@ void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const 
 	setDiffText(left_lines, right_lines);
 }
 
-void FileDiffWidget::setTextDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
+	if (setImage(ba, ViewType::Left)) return;
+
 	prepareSetText_(ba, diff);
 
 	if (uncommited) {
@@ -436,7 +460,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (isValidID_(diff.blob.a_id)) { // 左が有効
 		ba = cat_file(g, diff.blob.a_id);
 		if (isValidID_(diff.blob.b_id)) { // 右が有効
-			setTextDiffData(ba, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+			setDiffData(ba, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
 		} else {
 			setDataAsDeletedFile(ba, diff); // 右が無効の時は、削除されたファイル
 		}
@@ -467,7 +491,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	QByteArray ba = cat_file(g, diff.blob.a_id);
-	setTextDiffData(ba, diff, false, g->workingRepositoryDir());
+	setDiffData(ba, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);
 

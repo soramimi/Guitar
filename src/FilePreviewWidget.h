@@ -16,12 +16,20 @@ private:
 	struct Private;
 	Private *pv;
 
+	enum class PaintMode {
+		Text,
+		Image,
+	};
+
 	FileDiffWidget::DiffData *diffdata();
 	const FileDiffWidget::DiffData *diffdata() const;
 	FileDiffWidget::DrawData *drawdata();
 	const FileDiffWidget::DrawData *drawdata() const;
 	void paintText();
 	void paintImage();
+	QSize imageScrollRange() const;
+	void scrollImage(int x, int y);
+	void setFileType(QString const &mimetype);
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
@@ -33,6 +41,7 @@ public:
 
 	void clear(ViewType vt);
 	void updateDrawData_(int top_margin, int bottom_margin);
+	void setImage(QString mimetype, QPixmap pixmap);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);
@@ -41,6 +50,11 @@ protected:
 signals:
 	void scrollByWheel(int lines);
 	void resized();
+
+	// QWidget interface
+protected:
+	void mousePressEvent(QMouseEvent *event);
+	void mouseMoveEvent(QMouseEvent *event);
 };
 
 #endif // FILEPREVIEWWIDGET_H
