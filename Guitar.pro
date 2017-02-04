@@ -31,11 +31,13 @@ INCLUDEPATH += $$PWD/src
 
 # zlib
 
-#win32:Debug:LIBS += $$PWD/../_build_zlib/debug/zlib.lib
-#win32:Release:LIBS += $$PWD/../_build_zlib/release/zlib.lib
+win32:Debug:LIBS += $$PWD/../_build_zlib/debug/libz.lib
+win32:Release:LIBS += $$PWD/../_build_zlib/release/libz.lib
 
-#unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libzlib.a
-#unix:release:LIBS += $$PWD/../_build_zlib_Release/libzlib.a
+unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libz.a
+unix:release:LIBS += $$PWD/../_build_zlib_Release/libz.a
+
+#unix:LIBS += -lz
 
 
 win32 {

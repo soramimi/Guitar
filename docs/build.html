@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"><!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
-
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<!-- InstanceBegin template="/Templates/soramimi.dwt" codeOutsideHTMLIsLocked="true" -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="style/style.css" type="text/css" />
 <!-- #BeginEditable "doctitle" -->
 <title>How to build the Guitar</title>
- <link rel="stylesheet" href="style/style.css">
+<link rel="stylesheet" href="style/style.css">
 <!-- #EndEditable -->
 </head>
 <body bgcolor="#f0f0f0" background="style/bg.gif">
 <div id="body">
 <div id="header">
-<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
-<div style="text-align: right;">under development</div>
-<div style="clear: both;"></div>
+  <div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
+  <div style="text-align: right;">under development</div>
+  <div style="clear: both;"></div>
 </div>
 <!-- #BeginEditable "content" -->
 <h1>Guitarをビルドする</h1>
@@ -74,15 +74,6 @@
 <p>[エディタ]の設定、[コードスタイル]の設定を確認します。</p>
 <h2>ソースコードを取得する</h2>
 <p>作業用フォルダを作成します。各自好みの場所で構いません。筆者の場合、Windowsでは C:\develop 、Linuxでは /home/soramimi/develop としています。</p>
-<p>Guitarとzlibを同じ階層に配置します。</p>
-<ul class="foldertree">
-  <li class="folder">C:\develop
-    <ul>
-      <li class="folder">Guitar</li>
-      <li class="folder">zlib  </li>
-    </ul>
-  </li>
-</ul>
 <h3>Guitar</h3>
 <p><img src="github.png" width="20" height="16" alt="guthub"><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a> にアクセスします。</p>
 <p><img src="repo.png" width="995" height="168" class="border"></p>
@@ -93,10 +84,47 @@
 <p>SSHを使用する場合</p>
 <pre>C:\develop&gt;git clone git@github.com:soramimi/Guitar.git
 </pre>
+<p>クローンしたフォルダに 3個のプロジェクトファイル（*.pro）があるのを確認しておきます。</p>
+<p><img src="openproject.png" width="786" height="434"></p>
+<h2>依存ライブラリ</h2>
 <h3>zlib</h3>
-<p>同じ要領で、<a href="https://github.com/madler/zlib">zlib</a>もクローンします。</p>
-<pre>C:\develop&gt;git clone https://github.com/madler/zlib.git
-</pre>
+<p>圧縮されたファイルの伸張処理でzlibを使用します。Qtアプリからzlibを利用するためには以下のような方法があります。</p>
+<ul>
+  <li>Qt SDK に同梱されているzlib</li>
+  <li>OSにインストールされているzlib</li>
+  <li>公式配布されているzlib</li>
+  <li>GitHubで公開されているzlib</li>
+</ul>
+<p>どのzlibを利用するかによって、Guitarのクローンフォルダにあるzlib.hを書き換えます。</p>
+<h4>Qt SDK に同梱されているzlib</h4>
+<p>一応、最も推奨されている（ことになっている）方法ですが、うまくいかない事例が報告されています。</p>
+<pre>#include &lt;QtZlib/zlib.h&gt;</pre>
+<p>QtZlib/zlib.h が file not found となる場合は別の方法を試してみます。</p>
+<h4>OSにインストールされているzlib</h4>
+<p>Linuxなどでは、ほぼ間違いなくzlibはインストールされています。ただし、開発用パッケージは入っていないかもしれません。Debian系では、以下のようにしてインストールします。</p>
+<pre>$ sudo apt-get install zlib1g-dev</pre>
+<p>ヘッダファイルは次のようにします。</p>
+<pre>#include &lt;zlib.h&gt;</pre>
+<p>この方法では、Guitarのプロジェクトファイル（Guitar.pro）で、明示的に libz.so をリンクするように指定する必要があります。</p>
+<pre>unix:LIBS += -lz</pre>
+<h4>公式配布されているzlib</h4>
+<p>ヘッダファイルは次のようになります。</p>
+<pre>#include &quot;../zlib-1.2.11/zlib.h&quot;</pre>
+<p>ライブラリを自前ビルドする必要があり、面倒なので、この方法はおすすめしません。</p>
+<h4>GitHubで公開されているzlib</h4>
+<p>zlibをクローンします。</p>
+<pre>C:\develop&gt;git clone https://github.com/madler/zlib.git </pre>
+<p>Guitarとzlibを同じ階層に配置します。</p>
+<ul class="foldertree">
+  <li class="folder">C:\develop
+    <ul>
+      <li class="folder">Guitar</li>
+      <li class="folder">zlib </li>
+    </ul>
+  </li>
+</ul>
+<p>Guitarをクローンしたフォルダに zlib.pro がありますので、これを Qt Creator で開きます。そして、[デバッグ]版と[リリース]版をビルドします。</p>
+<p>zlibは（特にUnix系の場合）OSにインストール済みのはずなので、zlibの自前ビルドは明らかに無駄なのですが、この方法が file not found などのエラーが発生しにくいので、マルチプラットフォームの移植性の観点から、一応この手順をGuitarにおける標準ということにしています。</p>
 <h2>ビルドの準備</h2>
 <h4>prepare.rb</h4>
 <p>バージョン情報やリソーススクリプトを自動生成するための prepare.rb というスクリプトファイルがあります。Qt Creator でプログラム本体をビルドする前に、このスクリプトを実行しておく必要があります。実行にはRubyが必要です。</p>
@@ -104,16 +132,12 @@
 <p>以下のファイルが作成されます。</p>
 <ul>
   <li>version.c … バージョン情報ダイアログボックスで表示する値を定義します</li>
-  <li>win.rc … Windows用のバージョン情報を定義します</li>
-  <li>Info.plist … macOS用のバージョン情報を定義します</li>
+  <li>win.rc … Windows用アプリのリソースを定義します</li>
+  <li>Info.plist … macOS用アプリの共通設定を定義します</li>
 </ul>
 <h2>プロジェクトを開く</h2>
 <p>Qt Creator の「ようこそ」の画面で、右上の[プロジェクトを開く]ボタンを押します。</p>
 <p>クローンした場所に、 Guitar.pro があります。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
-<p><img src="openproject.png" width="786" height="434"></p>
-<h3><s>zlibのビルド</s></h3>
-<p><s>zlib.pro を開き、ビルド（Ctrl+B）を実行します。デバッグ版とリリース版を作成します。</s></p>
-<p>（追記 2017-02-02） Qt SDK 同梱の zlib を使用するようにしましたので、zlibを単独でビルドする必要はなくなりました。</p>
 <h3>Guitarのビルド</h3>
 <p>Guitar.pro を開き、 Qt Creator の左にある三角ボタンを押すか、Ctrl+R（実行）を押すと、ビルドと実行が行われます。ビルドだけして、実行したくない場合は、Ctrl+Bを押します。デバッガ上で実行するには、デバッグ開始ボタンかF5キーを押します。</p>
 <h4>失敗する場合</h4>
@@ -122,6 +146,7 @@
 <p>version.c を生成した場合もそうですが、リポジトリから pull したら新しいファイルが追加されていたときや、新しいクラス（のファイル）を追加したとき、そのままビルドすると、増えたファイルがコンパイルされずに、いろいろ見つからないというエラーが出ることがあります。そんなときは、Qt Creator の [ビルド]→[qmake の実行] を行ってください。追加したファイルがビルドされない問題は、大抵これで解消されます。</p>
 <p><img src="qmake.png" alt="qmakeの実行" width="365" height="152" class="border"></p>
 <h2>libgit2対応</h2>
+<p>このライブラリは必須ではありません。</p>
 <p>アプリケーションとリンクして利用するための <a href="https://libgit2.github.com/">libgit2</a> というライブラリがあります。これを使ってみようと挑戦しましたが、libgit2でfetch/push/pullなどの通信を行う処理を実装する方法が分からず、挫折しました。一応プロジェクトファイル libgit2.pro は作ってありますので、ライブラリをビルドするだけなら可能です。</p>
 <p>作業用フォルダ（例 C:\develop\）に移動します。</p>
 <pre>C:\&gt;cd C:\develop</pre>
@@ -135,43 +160,45 @@
 <h4>Windowsの場合</h4>
 <ul class="foldertree">
   <li class="folder">C:\develop
+    <ul>
+      <li class="folder">_build_Guitar
         <ul>
-          <li class="folder">_build_Guitar
-            <ul>
-              <li class="folder">debug</li>
-              <li class="folder">release</li>
-            </ul>
-          </li>
-          <li class="folder">_build_libgit2
-            <ul>
-              <li class="folder">debug</li>
-              <li class="folder">release          </li>
-            </ul>
-          </li>
-          <li class="folder">_build_zlib
-            <ul>
-              <li class="folder">debug</li>
-              <li class="folder">release </li></ul></li>
-          <li class="folder">Guitar</li>
-          <li class="folder">libgit2</li>
-          <li class="folder">zlib</li>
+          <li class="folder">debug</li>
+          <li class="folder">release</li>
         </ul>
+      </li>
+      <li class="folder">_build_libgit2
+        <ul>
+          <li class="folder">debug</li>
+          <li class="folder">release </li>
+        </ul>
+      </li>
+      <li class="folder">_build_zlib
+        <ul>
+          <li class="folder">debug</li>
+          <li class="folder">release </li>
+        </ul>
+      </li>
+      <li class="folder">Guitar</li>
+      <li class="folder">libgit2</li>
+      <li class="folder">zlib</li>
+    </ul>
   </li>
 </ul>
 <h4>Linuxの場合</h4>
 <ul class="foldertree">
   <li class="folder">/home/&lt;<em>username&gt;</em>/develop
-        <ul>
-          <li class="folder">_build_Guitar_Debug</li>
-          <li class="folder">_build_Guitar_Release</li>
-          <li class="folder">_build_libgit2_Debug</li>
-          <li class="folder">_build_libgit2_Release</li>
-          <li class="folder">_build_zlib_Debug</li>
-          <li class="folder">_build_zlib_Release</li>
-          <li class="folder">Guitar</li>
-          <li class="folder">libgit2</li>
-          <li class="folder">zlib</li>
-        </ul>
+    <ul>
+      <li class="folder">_build_Guitar_Debug</li>
+      <li class="folder">_build_Guitar_Release</li>
+      <li class="folder">_build_libgit2_Debug</li>
+      <li class="folder">_build_libgit2_Release</li>
+      <li class="folder">_build_zlib_Debug</li>
+      <li class="folder">_build_zlib_Release</li>
+      <li class="folder">Guitar</li>
+      <li class="folder">libgit2</li>
+      <li class="folder">zlib</li>
+    </ul>
   </li>
 </ul>
 <p>Guitar.pro を開くと、libgit2をリンクする設定がコメントアウトされています。</p>
@@ -187,9 +214,8 @@
 <p><img src="uselibgit2.png" width="870" height="523"></p>
 <p>途中まで作って挫折したソースは LibGit2.cpp/hです。これらを Git.cpp の中から呼び出していますが、条件コンパイルで無効にしています。</p>
 <!-- #EndEditable -->
-<div id="footer">
-<span id="copyright"></span>
-</div>
+<div id="footer"> <span id="copyright"></span> </div>
 </body>
 <script type="text/javascript" src="common.js"></script>
-<!-- InstanceEnd --></html>
+<!-- InstanceEnd -->
+</html>

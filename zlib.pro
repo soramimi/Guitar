@@ -1,3 +1,5 @@
+unix:TARGET = z
+win32:TARGET = libz
 TEMPLATE = lib
 CONFIG += console staticlib
 CONFIG -= app_bundle
