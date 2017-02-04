@@ -18,7 +18,6 @@ enum {
 struct FileDiffWidget::Private {
 	MainWindow *mainwindow = nullptr;
 	InitParam_ init_param_;
-	ViewStyle view_style = ViewStyle::TextSideBySide;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
 	FileDiffWidget::DrawData draw_data;
@@ -280,36 +279,12 @@ bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 	return false;
 }
 
-void FileDiffWidget::setDataAsAddedFile(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::setTextLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	pv->init_param_ = InitParam_();
-	pv->init_param_.ba = ba;
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextLeftOnly;
+	pv->init_param_.content_left = ba;
 	pv->init_param_.diff = diff;
-
-	pv->view_style = FileDiffWidget::ViewStyle::TextRightOnly;
-
-	if (setImage_(ba, ViewType::Right)) return;
-
-	prepareSetText_(ba, diff);
-
-	QList<TextDiffLine> left_lines;
-	QList<TextDiffLine> right_lines;
-
-	for (QString const &line : diffdata()->original_lines) {
-		left_lines.push_back(QString());
-		right_lines.push_back('+' + line);
-	}
-
-	setDiffText(left_lines, right_lines);
-}
-
-void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const &diff)
-{
-	pv->init_param_ = InitParam_();
-	pv->init_param_.ba = ba;
-	pv->init_param_.diff = diff;
-
-	pv->view_style = FileDiffWidget::ViewStyle::TextLeftOnly;
 
 	if (setImage_(ba, ViewType::Left)) return;
 
@@ -326,15 +301,36 @@ void FileDiffWidget::setDataAsDeletedFile(QByteArray const &ba, Git::Diff const 
 	setDiffText(left_lines, right_lines);
 }
 
-void FileDiffWidget::setDiffData(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setTextRightOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	pv->init_param_ = InitParam_();
-	pv->init_param_.ba = ba;
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextRightOnly;
+	pv->init_param_.content_left = ba;
+	pv->init_param_.diff = diff;
+
+	if (setImage_(ba, ViewType::Right)) return;
+
+	prepareSetText_(ba, diff);
+
+	QList<TextDiffLine> left_lines;
+	QList<TextDiffLine> right_lines;
+
+	for (QString const &line : diffdata()->original_lines) {
+		left_lines.push_back(QString());
+		right_lines.push_back('+' + line);
+	}
+
+	setDiffText(left_lines, right_lines);
+}
+
+void FileDiffWidget::setTextSideBySide(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+{
+	pv->init_param_ = InitParam_();
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextSideBySide;
+	pv->init_param_.content_left = ba;
 	pv->init_param_.diff = diff;
 	pv->init_param_.uncommited = uncommited;
 	pv->init_param_.workingdir = workingdir;
-
-	pv->view_style = FileDiffWidget::ViewStyle::TextSideBySide;
 
 	if (setImage_(ba, ViewType::Left)) return;
 
@@ -490,13 +486,13 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (isValidID_(diff.blob.a_id)) { // 左が有効
 		ba = cat_file(g, diff.blob.a_id);
 		if (isValidID_(diff.blob.b_id)) { // 右が有効
-			setDiffData(ba, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+			setTextSideBySide(ba, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
 		} else {
-			setDataAsDeletedFile(ba, diff); // 右が無効の時は、削除されたファイル
+			setTextLeftOnly(ba, diff); // 右が無効の時は、削除されたファイル
 		}
 	} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
 		ba = cat_file(g, diff.blob.b_id);
-		setDataAsAddedFile(ba, diff);
+		setTextRightOnly(ba, diff);
 	}
 
 	ui->widget_diff_pixmap->clear(false);
@@ -521,7 +517,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	QByteArray ba = cat_file(g, diff.blob.a_id);
-	setDiffData(ba, diff, false, g->workingRepositoryDir());
+	setTextSideBySide(ba, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);
 
@@ -651,6 +647,6 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
 	BigDiffWindow win(pv->mainwindow);
 	win.setWindowState(Qt::WindowMaximized);
-	win.prepare(pv->mainwindow, pv->view_style, pv->init_param_.ba, pv->init_param_.diff, pv->init_param_.uncommited, pv->init_param_.workingdir);
+	win.init(pv->mainwindow, pv->init_param_);
 	win.exec();
 }

@@ -17,7 +17,7 @@ public:
 	explicit BigDiffWindow(QWidget *parent = 0);
 	~BigDiffWindow();
 
-	void prepare(MainWindow *mw, FileDiffWidget::ViewStyle view_style, const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
+	void init(MainWindow *mw, const FileDiffWidget::InitParam_ &param);
 private:
 	Ui::BigDiffWindow *ui;
 };

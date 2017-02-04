@@ -80,7 +80,8 @@ private:
 	Private *pv;
 
 	struct InitParam_ {
-		QByteArray ba;
+		ViewStyle view_style = ViewStyle::None;
+		QByteArray content_left;
 		Git::Diff diff;
 		bool uncommited = false;
 		QString workingdir;
@@ -125,9 +126,9 @@ private:
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
 	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
-	void setDataAsAddedFile(const QByteArray &ba, const Git::Diff &diff);
-	void setDataAsDeletedFile(const QByteArray &ba, const Git::Diff &diff);
-	void setDiffData(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
+	void setTextRightOnly(const QByteArray &ba, const Git::Diff &diff);
+	void setTextLeftOnly(const QByteArray &ba, const Git::Diff &diff);
+	void setTextSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
 	void init_diff_data_(const Git::Diff &diff);
 

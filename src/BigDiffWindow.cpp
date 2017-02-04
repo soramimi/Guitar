@@ -19,19 +19,19 @@ BigDiffWindow::~BigDiffWindow()
 	delete ui;
 }
 
-void BigDiffWindow::prepare(MainWindow *mw, FileDiffWidget::ViewStyle view_style, const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir)
+void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param)
 {
 	ui->widget_diff->bind(mw);
 
-	switch (view_style) {
+	switch (param.view_style) {
 	case FileDiffWidget::ViewStyle::TextLeftOnly:
-		ui->widget_diff->setDataAsDeletedFile(ba, diff);
+		ui->widget_diff->setTextLeftOnly(param.content_left, param.diff);
 		break;
 	case FileDiffWidget::ViewStyle::TextRightOnly:
-		ui->widget_diff->setDataAsAddedFile(ba, diff);
+		ui->widget_diff->setTextRightOnly(param.content_left, param.diff);
 		break;
 	case FileDiffWidget::ViewStyle::TextSideBySide:
-		ui->widget_diff->setDiffData(ba, diff, uncommited, workingdir);
+		ui->widget_diff->setTextSideBySide(param.content_left, param.diff, param.uncommited, param.workingdir);
 		break;
 	}
 }
