@@ -40,6 +40,10 @@
 #include <QDirIterator>
 #include <QThread>
 
+#ifdef Q_OS_WIN
+#include "win32/win32.h"
+#endif
+
 FileDiffWidget::DrawData::DrawData()
 {
 	bgcolor_text = QColor(255, 255, 255);
@@ -2030,10 +2034,6 @@ QStringList MainWindow::whichCommand_(QString const &cmdfile)
 	std::vector<std::string> vec;
 	FileUtil::which(cmdfile.toStdString(), &vec);
 
-	std::sort(vec.begin(), vec.end());
-	auto it = std::unique(vec.begin(), vec.end());
-	vec = std::vector<std::string>(vec.begin(), it);
-
 	for (std::string const &s : vec) {
 		list.push_back(QString::fromStdString(s));
 	}
@@ -2118,6 +2118,23 @@ QString MainWindow::selectFileCommand()
 	};
 
 	QStringList list = whichCommand_(exe);
+
+#ifdef Q_OS_WIN
+	QString dir = getModuleFileDir();
+	QString path1 = dir / "msys/file.exe";
+	QString path2;
+	int i = dir.lastIndexOf('/');
+	int j = dir.lastIndexOf('\\');
+	if (i < j) i = j;
+	if (i > 0) {
+		path2 = dir.mid(0, i) / "msys/file.exe";
+	}
+	path1 = misc::normalizePathSeparator(path1);
+	path2 = misc::normalizePathSeparator(path2);
+	if (QFileInfo(path1).isExecutable()) list.push_back(path1);
+	if (QFileInfo(path2).isExecutable()) list.push_back(path2);
+#endif
+
 	return selectCommand_("File", exe, list, path, fn);
 }
 
@@ -2128,7 +2145,21 @@ void MainWindow::checkGitCommand()
 		if (info.isExecutable()) {
 			break; // ok
 		}
-		if (!selectGitCommand().isEmpty()) {
+		if (selectGitCommand().isEmpty()) {
+			close();
+			break;
+		}
+	}
+}
+
+void MainWindow::checkFileCommand()
+{
+	while (1) {
+		QFileInfo info(pv->file_command);
+		if (info.isExecutable()) {
+			break; // ok
+		}
+		if (selectFileCommand().isEmpty()) {
 			close();
 			break;
 		}
@@ -2142,6 +2173,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 		pv->interval_250ms_counter -= 250;
 
 		checkGitCommand();
+		checkFileCommand();
 	}
 
 	if (pv->update_files_list_counter > 0) {
@@ -2161,6 +2193,7 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+	qDebug() << event->type();
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
@@ -2259,6 +2292,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		pv->appsettings = dlg.settings();
 		setGitCommand(pv->appsettings.git_command, false);
+		setFileCommand(pv->appsettings.file_command, false);
 	}
 }
 
@@ -2513,7 +2547,7 @@ QString MainWindow::determinFileType_(QString const &path, bool mime, std::funct
 		return cmd;
 
 	} else {
-		QMessageBox::warning(this, qApp->applicationName(), tr("No executable 'file' command"));
+		qDebug() << "No executable 'file' command";
 	}
 	return QString();
 }

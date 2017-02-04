@@ -2,6 +2,18 @@
 #include "ui_SelectCommandDialog.h"
 #include <QFileDialog>
 
+QStringList uniqueStringList(const QStringList &list)
+{
+	QStringList tmp_list = list;
+	std::sort(tmp_list.begin(), tmp_list.end());
+	auto end = std::unique(tmp_list.begin(), tmp_list.end());
+	QStringList ret_list;
+	for (auto it = tmp_list.begin(); it != end; it++) {
+		ret_list.push_back(*it);
+	}
+	return ret_list;
+}
+
 SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname, const QString &cmdfile, const QString &path, const QStringList &list) :
 	QDialog(parent),
 	ui(new Ui::SelectCommandDialog)
@@ -19,7 +31,9 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 
 	this->path = path;
 
-	for (QString const &s : list) {
+	QStringList list2 = uniqueStringList(list);
+
+	for (QString const &s : list2) {
 		ui->listWidget->addItem(s);
 	}
 

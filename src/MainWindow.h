@@ -189,6 +189,7 @@ private:
 	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback);
 	bool cat_file_(GitPtr g, const QString &id, QByteArray *out);
 	bool cat_file(const QString &id, QByteArray *out);
+	void checkFileCommand();
 public:
 
 	QString selectGitCommand();

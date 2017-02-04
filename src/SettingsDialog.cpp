@@ -31,6 +31,8 @@ void SettingsDialog::loadSettings(ApplicationSettings *set)
 void SettingsDialog::saveSettings()
 {
 	set.default_working_dir = ui->lineEdit_default_working_dir->text();
+	set.git_command = ui->lineEdit_git_command->text();
+	set.file_command = ui->lineEdit_file_command->text();
 
 	MySettings s;
 	s.beginGroup("Global");
