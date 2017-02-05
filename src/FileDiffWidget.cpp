@@ -33,6 +33,9 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	int n = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+	ui->toolButton_fullscreen->setFixedSize(n, n);
+
 	pv = new Private();
 
 	setMaximizeButtonEnabled(true);

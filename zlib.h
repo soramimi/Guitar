@@ -1,1 +1,1 @@
-#include <QtZlib/zlib.h>
+#include "../zlib/zlib.h"
