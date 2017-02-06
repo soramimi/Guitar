@@ -94,7 +94,8 @@ SOURCES += \
     src/GitPack.cpp \
     src/GitObjectManager.cpp \
     src/FilePropertyDialog.cpp \
-    src/BigDiffWindow.cpp
+    src/BigDiffWindow.cpp \
+    src/MaximizeButton.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -137,7 +138,8 @@ HEADERS  += \
     src/GitObjectManager.h \
     src/FilePropertyDialog.h \
     zlib.h \
-    src/BigDiffWindow.h
+    src/BigDiffWindow.h \
+    src/MaximizeButton.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -221,6 +221,7 @@ public:
 	QString findFileID(GitPtr g, const QString &commit_id, const QString &file);
 	QString determinFileType(const QString &path, bool mime);
 	QString determinFileType(const QByteArray &in, bool mime);
+	QPixmap getTransparentPixmap();
 protected:
 
 protected:

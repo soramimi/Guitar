@@ -244,6 +244,9 @@ void FilePreviewWidget::paintImage()
 	double y = cy - pv->image_scroll_y;
 	QSizeF sz = imageScrollRange();
 	if (sz.width() > 0 && sz.height() > 0) {
+		QBrush br(pv->mainwindow->getTransparentPixmap());
+		pr.setBrushOrigin(x, y);
+		pr.fillRect(x, y, sz.width(), sz.height(), br);
 		pr.drawPixmap(x, y, sz.width(), sz.height(), pv->pixmap, 0, 0, pv->pixmap.width(), pv->pixmap.height());
 	}
 	misc::drawFrame(&pr, x - 1, y - 1, sz.width() + 2, sz.height() + 2, Qt::black);

@@ -96,7 +96,7 @@
         </widget>
        </item>
        <item row="1" column="3">
-        <widget class="QToolButton" name="toolButton_fullscreen">
+        <widget class="MaximizeButton" name="toolButton_fullscreen">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -111,6 +111,16 @@
          </property>
          <property name="text">
           <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/image/maximize.png</normaloff>:/image/maximize.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -133,7 +143,14 @@
    <header>FilePreviewWidget.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>MaximizeButton</class>
+   <extends>QToolButton</extends>
+   <header>MaximizeButton.h</header>
+  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -14,5 +14,7 @@
         <file>image/Guitar.svg</file>
         <file>image/folder.png</file>
         <file>image/repository.png</file>
+        <file>image/maximize.png</file>
+        <file>image/transparent.png</file>
     </qresource>
 </RCC>

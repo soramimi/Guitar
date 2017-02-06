@@ -129,6 +129,7 @@ struct MainWindow::Private {
 	QIcon folder_icon;
 	unsigned int temp_file_counter = 0;
 	GitObjectCache objcache;
+	QPixmap transparent_pixmap;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -2602,3 +2603,12 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 void MainWindow::on_action_test_triggered()
 {
 }
+
+QPixmap MainWindow::getTransparentPixmap()
+{
+	if (pv->transparent_pixmap.isNull()) {
+		pv->transparent_pixmap = QPixmap(":/image/transparent.png");
+	}
+	return pv->transparent_pixmap;
+}
+
