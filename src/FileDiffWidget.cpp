@@ -537,18 +537,29 @@ bool FileDiffWidget::eventFilter(QObject *watched, QEvent *event)
 		Q_ASSERT(e);
 		int k = e->key();
 		if (watched == ui->widget_diff_left || watched == ui->widget_diff_right || watched == ui->widget_diff_pixmap) {
-			QScrollBar::SliderAction act = QScrollBar::SliderNoAction;
-			switch (k) {
-			case Qt::Key_Up:       act = QScrollBar::SliderSingleStepSub; break;
-			case Qt::Key_Down:     act = QScrollBar::SliderSingleStepAdd; break;
-			case Qt::Key_PageUp:   act = QScrollBar::SliderPageStepSub;   break;
-			case Qt::Key_PageDown: act = QScrollBar::SliderPageStepAdd;   break;
-			case Qt::Key_Home:     act = QScrollBar::SliderToMinimum;     break;
-			case Qt::Key_End:      act = QScrollBar::SliderToMaximum;     break;
-			}
-			if (act != QScrollBar::SliderNoAction) {
-				ui->verticalScrollBar->triggerAction(act);
-				return true;
+			if (e->modifiers() & Qt::AltModifier) {
+				switch (k) {
+				case Qt::Key_Up:
+					emit movePreviousItem();
+					return true;
+				case Qt::Key_Down:
+					emit moveNextItem();
+					return true;
+				}
+			} else {
+				QScrollBar::SliderAction act = QScrollBar::SliderNoAction;
+				switch (k) {
+				case Qt::Key_Up:       act = QScrollBar::SliderSingleStepSub; break;
+				case Qt::Key_Down:     act = QScrollBar::SliderSingleStepAdd; break;
+				case Qt::Key_PageUp:   act = QScrollBar::SliderPageStepSub;   break;
+				case Qt::Key_PageDown: act = QScrollBar::SliderPageStepAdd;   break;
+				case Qt::Key_Home:     act = QScrollBar::SliderToMinimum;     break;
+				case Qt::Key_End:      act = QScrollBar::SliderToMaximum;     break;
+				}
+				if (act != QScrollBar::SliderNoAction) {
+					ui->verticalScrollBar->triggerAction(act);
+					return true;
+				}
 			}
 		}
 	}

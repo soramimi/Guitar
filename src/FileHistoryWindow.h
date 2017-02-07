@@ -33,6 +33,8 @@ public:
 private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 
+	void onMoveNextItem();
+	void onMovePreviousItem();
 private:
 	Ui::FileHistoryWindow *ui;
 

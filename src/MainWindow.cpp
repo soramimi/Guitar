@@ -1246,7 +1246,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
 			if (a == a_add_new_group) {
-				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New folder"));
+				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New group"));
 				treeitem->addChild(child);
 				child->setFlags(child->flags() | Qt::ItemIsEditable);
 				ui->treeWidget_repos->setCurrentItem(child);
@@ -1300,9 +1300,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_remove) {
-				pv->repos.erase(pv->repos.begin() + index);
-				saveRepositoryBookmarks();
-				updateRepositoriesList();
+				if (QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok) {
+					pv->repos.erase(pv->repos.begin() + index);
+					saveRepositoryBookmarks();
+					updateRepositoriesList();
+				}
 				return;
 			}
 			if (a == a_properties) {

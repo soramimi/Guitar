@@ -2,9 +2,11 @@
 #include <QDebug>
 #include <QEvent>
 #include <QPainter>
+#include <QProxyStyle>
 #include <QStyledItemDelegate>
 #include <math.h>
 #include "MainWindow.h"
+#include <QApplication>
 
 struct LogTableWidget::Private {
 	MainWindow *mainwindow;
@@ -20,15 +22,30 @@ private:
 		Q_ASSERT(mw);
 		return mw;
 	}
+	QProxyStyle proxy_style;
 public:
 	explicit MyItemDelegate(QObject *parent = Q_NULLPTR)
 		: QStyledItemDelegate(parent)
 	{
 	}
 
-	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+	void paint(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
 	{
-		QStyledItemDelegate::paint(painter, option, index);
+		QStyledItemDelegate::paint(painter, opt, index);
+#if 0
+		int col = index.column();
+		if (col == 4) {
+			QRect r = opt.rect;
+			int x0 = r.x();
+			int y0 = r.y();
+			int x1 = x0 + r.width();
+			int y1 = y0 + r.height();
+			QString text = " master ";
+			x0 = x1 - painter->fontMetrics().size(0, text).width();
+			proxy_style.drawItemText(painter, QRect(x0, y0, x1 - x0, y1 - y0), opt.displayAlignment, opt.palette, true, text);
+		} else {
+		}
+#endif
 	}
 };
 

@@ -161,6 +161,9 @@ private slots:
 
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
+signals:
+	void moveNextItem();
+	void movePreviousItem();
 };
 
 #endif // FILEDIFFWIDGET_H
