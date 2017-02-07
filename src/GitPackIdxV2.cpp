@@ -53,7 +53,7 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		if (!Read(&d.header, sizeof(d.header)))    throw QString("failed to read the idx header");
 		if (memcmp(d.header.magic, magic, 8) != 0) throw QString("invalid idx header");
 		uint32_t size = get_fanout(&d.header, 255);
-		if (size > 100000) throw QString("number of objects in the idx file is too big");
+		if (size > 1000000) throw QString("number of objects in the idx file is too big");
 		size_t size4 = size * sizeof(uint32_t);
 		d.objects.resize(size);
 		d.checksums.resize(size);

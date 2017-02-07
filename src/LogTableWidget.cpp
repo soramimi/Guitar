@@ -7,6 +7,7 @@
 #include <math.h>
 #include "MainWindow.h"
 #include <QApplication>
+#include "misc.h"
 
 struct LogTableWidget::Private {
 	MainWindow *mainwindow;
@@ -23,6 +24,26 @@ private:
 		return mw;
 	}
 	QProxyStyle proxy_style;
+
+	static QColor labelColor(int kind)
+	{
+		switch (kind) {
+		case MainWindow::Label::Branch: return QColor(192, 224, 255); // light blue
+		case MainWindow::Label::Tag:    return QColor(255, 224, 192); // orange
+		}
+		return QColor(224, 224, 224); // gray
+	}
+
+	static QColor hiliteColor(QColor const &color)
+	{
+		return QColor(255 - (255 - color.red()) / 2, 255 - (255 - color.green()) / 2, 255 - (255 - color.blue()) / 2);
+	}
+
+	static QColor shadowColor(QColor const &color)
+	{
+		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
+	}
+
 public:
 	explicit MyItemDelegate(QObject *parent = Q_NULLPTR)
 		: QStyledItemDelegate(parent)
@@ -32,18 +53,47 @@ public:
 	void paint(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
 	{
 		QStyledItemDelegate::paint(painter, opt, index);
-#if 0
+#if 1
+		int row = index.row();
 		int col = index.column();
 		if (col == 4) {
-			QRect r = opt.rect;
-			int x0 = r.x();
-			int y0 = r.y();
-			int x1 = x0 + r.width();
-			int y1 = y0 + r.height();
-			QString text = " master ";
-			x0 = x1 - painter->fontMetrics().size(0, text).width();
-			proxy_style.drawItemText(painter, QRect(x0, y0, x1 - x0, y1 - y0), opt.displayAlignment, opt.palette, true, text);
-		} else {
+			painter->save();
+			painter->setRenderHint(QPainter::Antialiasing);
+			QList<MainWindow::Label> const *labels = mainwindow()->label(row);
+			if (labels) {
+				QFontMetrics fm = painter->fontMetrics();
+				int space = 8;
+				int x = opt.rect.x() + opt.rect.width() - 3;
+				int x0 = x;
+				int x1 = x;
+				int y0 = opt.rect.y();
+				int y1 = y0 + opt.rect.height() - 1;
+				int i = labels->size();
+				while (i > 0) {
+					i--;
+					MainWindow::Label const &label = labels->at(i);
+					QString text = misc::abbrevBranchName(label.text);
+					int w = fm.size(0, text).width() + space * 2;
+					x0 = x1 - w;
+					QRect r(x0, y0, x1 - x0, y1 - y0);
+					painter->setPen(Qt::NoPen);
+					auto DrawRect = [&](int dx, int dy, QColor color){
+						painter->setBrush(color);
+						painter->drawRoundedRect(r.adjusted(dx + 3 + 0.5, dy + 3 + 0.5, dx - 3 + 0.5, dy - 3 + 0.5), 3, 3);
+					};
+					QColor color = labelColor(label.kind);
+					QColor hilite = hiliteColor(color);
+					QColor shadow = shadowColor(color);
+					DrawRect(-1, -1, hilite);
+					DrawRect(1, 1, shadow);
+					DrawRect(0, 0, color);
+					painter->setPen(Qt::black);
+					painter->setBrush(Qt::NoBrush);
+					proxy_style.drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
+					x1 = x0;
+				}
+			}
+			painter->restore();
 		}
 #endif
 	}

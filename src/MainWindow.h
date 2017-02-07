@@ -36,6 +36,20 @@ class MainWindow : public QMainWindow
 	friend class FileDiffSliderWidget;
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
+public:
+	struct Label {
+		enum {
+			Branch,
+			Tag,
+		};
+		int kind;
+		QString text;
+		Label(int kind = Branch)
+			: kind(kind)
+		{
+
+		}
+	};
 private:
 
 	struct Private;
@@ -222,6 +236,7 @@ public:
 	QString determinFileType(const QString &path, bool mime);
 	QString determinFileType(const QByteArray &in, bool mime);
 	QPixmap getTransparentPixmap();
+	const QList<Label> *label(int row);
 protected:
 
 protected:

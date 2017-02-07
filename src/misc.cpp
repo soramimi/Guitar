@@ -346,3 +346,21 @@ bool misc::isImageFile(const QString &mimetype)
 	return false;
 }
 
+QString misc::abbrevBranchName(QString const &name)
+{
+	QStringList sl = name.split('/');
+	if (sl.size() == 1) return sl[0];
+	QString newname;
+	for (int i = 0; i < sl.size(); i++) {
+		QString s = sl[i];
+		if (i + 1 < sl.size()) {
+			s = s.mid(0, 1);
+		}
+		if (i > 0) {
+			newname += '/';
+		}
+		newname += s;
+	}
+	return newname;
+}
+

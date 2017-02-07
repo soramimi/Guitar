@@ -116,6 +116,7 @@ struct MainWindow::Private {
 	std::map<QString, Git::Diff> diff_cache;
 	QStringList added;
 	Git::CommitItemList logs;
+	std::map<int, QList<Label>> label_map;
 	bool uncommited_changes = false;
 	int timer_interval_ms = 0;
 	int update_files_list_counter = 0;
@@ -485,6 +486,7 @@ void MainWindow::showFileList(FilesListType files_list_type)
 void MainWindow::clearLog()
 {
 	pv->logs.clear();
+	pv->label_map.clear();
 	pv->uncommited_changes = false;
 	ui->tableWidget_log->clearContents();
 	ui->tableWidget_log->scrollToTop();
@@ -846,6 +848,15 @@ QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString
 	return lookupFileID(&pv->objcache, commit_id, file);
 }
 
+QList<MainWindow::Label> const *MainWindow::label(int row)
+{
+	auto it = pv->label_map.find(row);
+	if (it != pv->label_map.end()) {
+		return &it->second;
+	}
+	return nullptr;
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -901,8 +912,9 @@ void MainWindow::openRepository_(GitPtr g)
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
 		int col = 1; // カラム0はコミットグラフなので、その次から
-		auto AddColumn = [&](QString const &text, bool bold){
+		auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
+			item->setToolTip(tooltip);
 			if (bold) {
 				QFont font = item->font();
 				font.setBold(true);
@@ -915,6 +927,7 @@ void MainWindow::openRepository_(GitPtr g)
 		QString datetime;
 		QString author;
 		QString message;
+		QString message_ex;
 		bool ishead = commit->commit_id == pv->head_id;
 		bool bold = false;
 		{
@@ -932,58 +945,33 @@ void MainWindow::openRepository_(GitPtr g)
 
 			{ // branch
 				QList<Git::Branch> list = findBranch(commit->commit_id);
-				auto AbbrevName = [](QString const &name){
-					QStringList sl = name.split('/');
-					if (sl.size() == 1) return sl[0];
-					QString newname;
-					for (int i = 0; i < sl.size(); i++) {
-						QString s = sl[i];
-						if (i + 1 < sl.size()) {
-							s = s.mid(0, 1);
-						}
-						if (i > 0) {
-							newname += '/';
-						}
-						newname += s;
-					}
-					return newname;
-				};
 				for (Git::Branch const &b : list) {
-					message += " {";
-					message += AbbrevName(b.name);
+					Label label(Label::Branch);
+					label.text = b.name;//misc::abbrevBranchName(b.name);
 					if (b.ahead > 0) {
-						message += tr(", %1 ahead").arg(b.ahead);
+						label.text += tr(", %1 ahead").arg(b.ahead);
 					}
 					if (b.behind > 0) {
-						message += tr(", %1 behind").arg(b.behind);
+						label.text += tr(", %1 behind").arg(b.behind);
 					}
-					message += '}';
+					message_ex += " {" + label.text + '}';
+					pv->label_map[row].push_back(label);
 				}
 			}
 			{ // tag
 				QList<Git::Tag> list = findTag(commit->commit_id);
 				for (Git::Tag const &t : list) {
-					message += QString(" {t:%1}").arg(t.name);
+					Label label(Label::Tag);
+					label.text = t.name;
+					message_ex += QString(" {t:%1}").arg(label.text);
+					pv->label_map[row].push_back(label);
 				}
 			}
 		}
-		if (false) { // メッセージ欄に、親コミットIDを表示する（デバッグ用）
-			message.clear();
-			if (true) {
-				message += QString::number(row);
-			} else {
-				for (QString id : commit->parent_ids) {
-					if (!message.isEmpty()) {
-						message += ' ';
-					}
-					message += id;
-				}
-			}
-		}
-		AddColumn(commit_id, false);
-		AddColumn(datetime, false);
-		AddColumn(author, false);
-		AddColumn(message, bold);
+		AddColumn(commit_id, false, QString());
+		AddColumn(datetime, false, QString());
+		AddColumn(author, false, QString());
+		AddColumn(message, bold, message + message_ex);
 		ui->tableWidget_log->setRowHeight(row, 24);
 		index++;
 	}

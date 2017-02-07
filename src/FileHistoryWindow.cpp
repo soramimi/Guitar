@@ -124,18 +124,19 @@ void FileHistoryWindow::collectFileHistory()
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const &commit = pv->commit_item_list[row];
 		int col = 0;
-		auto AddColumn = [&](QString const &text){
+		auto AddColumn = [&](QString const &text, QString const &tooltip){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
+			item->setToolTip(tooltip);
 			ui->tableWidget_log->setItem(row, col, item);
 			col++;
 		};
 
 		QString commit_id = pv->mainwindow->abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
-		AddColumn(commit_id);
-		AddColumn(datetime);
-		AddColumn(commit.author);
-		AddColumn(commit.message);
+		AddColumn(commit_id, QString());
+		AddColumn(datetime, QString());
+		AddColumn(commit.author, QString());
+		AddColumn(commit.message, commit.message);
 		ui->tableWidget_log->setRowHeight(row, 24);
 	}
 
