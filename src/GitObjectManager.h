@@ -59,6 +59,7 @@ public:
 
 	void setup(GitPtr g);
 	QByteArray catFile(QString const &id);
+	QString getCommitIdFromTag(const QString &tag);
 };
 
 #endif // GITOBJECTMANAGER_H

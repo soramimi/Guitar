@@ -216,18 +216,16 @@ QString Git::rev_parse(QString const &name)
 	return resultText().trimmed();
 }
 
-QList<Git::Tag> Git::tags()
+QStringList Git::tags()
 {
-	QList<Git::Tag> list;
+	QStringList list;
 	git("tag");
 	QStringList lines = misc::splitLines(resultText());
 	for (QString const &line : lines) {
-		Tag tag;
 		if (line.isEmpty()) continue;
-		tag.name = line.trimmed();
-		if (tag.name.isEmpty()) continue;
-		tag.id = rev_parse(tag.name);
-		list.push_back(tag);
+		QString name = line.trimmed();
+		if (name.isEmpty()) continue;
+		list.push_back(name);
 	}
 	return list;
 }

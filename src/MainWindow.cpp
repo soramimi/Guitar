@@ -832,8 +832,11 @@ void MainWindow::queryTags(GitPtr g)
 {
 	Q_ASSERT(g);
 	pv->tag_map.clear();
-	QList<Git::Tag> tags = g->tags();
-	for (Git::Tag const &t : tags) {
+	QStringList tags = g->tags();
+	for (QString const &name : tags) {
+		Git::Tag t;
+		t.name = name;
+		t.id = getCommitIdFromTag(name);
 		pv->tag_map[t.id].push_back(t);
 	}
 }
@@ -2590,15 +2593,21 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 	execFilePropertyDialog(item);
 }
 
-void MainWindow::on_action_test_triggered()
-{
-}
-
 QPixmap MainWindow::getTransparentPixmap()
 {
 	if (pv->transparent_pixmap.isNull()) {
 		pv->transparent_pixmap = QPixmap(":/image/transparent.png");
 	}
 	return pv->transparent_pixmap;
+}
+
+QString MainWindow::getCommitIdFromTag(QString const &tag)
+{
+	return pv->objcache.getCommitIdFromTag(tag);
+}
+
+void MainWindow::on_action_test_triggered()
+{
+	qDebug() << getCommitIdFromTag("tag2");
 }
 

@@ -294,4 +294,29 @@ QByteArray GitObjectCache::catFile(const QString &id)
 	return QByteArray();
 }
 
+QString GitObjectCache::getCommitIdFromTag(QString const &tag)
+{
+	QString commit_id;
+	GitPtr g = git();
+	if (g && g->isValidWorkingCopy()) {
+		QString id = g->rev_parse(tag);
+		QByteArray ba = catFile(id);
+		if (!ba.isEmpty()) {
+			misc::splitLines(ba, [&](char const *ptr, size_t len){
+				if (commit_id.isEmpty()) {
+					if (len >= 7 + 40 && strncmp(ptr, "object ", 7) == 0) {
+						QString id = QString::fromUtf8(ptr + 7, 40);
+						if (Git::isValidID(id)) {
+							commit_id = id;
+						}
+					}
+				}
+				return QString();
+			});
+		}
+	}
+	return commit_id;
+}
+
+
 

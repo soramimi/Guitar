@@ -66,6 +66,8 @@ GitPack::Type GitPack::stripHeader(QByteArray *out)
 						type = Type::TREE;
 					} else if (strncmp(p, "commit ", 7) == 0) {
 						type = Type::COMMIT;
+					} else if (strncmp(p, "tag ", 4) == 0) {
+						type = Type::TAG;
 					}
 					if (type != Type::UNKNOWN) {
 						*out = out->mid(i + 1);

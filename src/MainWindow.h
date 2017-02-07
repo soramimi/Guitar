@@ -237,6 +237,7 @@ public:
 	QString determinFileType(const QByteArray &in, bool mime);
 	QPixmap getTransparentPixmap();
 	const QList<Label> *label(int row);
+	QString getCommitIdFromTag(const QString &tag);
 protected:
 
 protected:

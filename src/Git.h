@@ -327,7 +327,7 @@ public:
 
 	GitPtr dup() const;
 	QString rev_parse(const QString &name);
-	QList<Tag> tags();
+	QStringList tags();
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
 };

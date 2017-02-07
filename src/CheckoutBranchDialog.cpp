@@ -15,7 +15,8 @@ CheckoutBranchDialog::CheckoutBranchDialog(QWidget *parent, QList<Git::Branch> c
 		Git::Branch const &b = branches[i];
 		if (b.flags & Git::Branch::Current) {
 			current_branch = b.name;
-		} else if (b.name.indexOf('/') < 0) {
+		}
+		if (b.name.indexOf('/') < 0) {
 			ui->comboBox_branches->addItem(b.name);
 		}
 	}
