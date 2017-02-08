@@ -39,12 +39,13 @@ class MainWindow : public QMainWindow
 public:
 	struct Label {
 		enum {
-			Branch,
+			LocalBranch,
+			RemoteBranch,
 			Tag,
 		};
 		int kind;
 		QString text;
-		Label(int kind = Branch)
+		Label(int kind = LocalBranch)
 			: kind(kind)
 		{
 

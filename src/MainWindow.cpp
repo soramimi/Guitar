@@ -949,8 +949,11 @@ void MainWindow::openRepository_(GitPtr g)
 			{ // branch
 				QList<Git::Branch> list = findBranch(commit->commit_id);
 				for (Git::Branch const &b : list) {
-					Label label(Label::Branch);
+					Label label(Label::LocalBranch);
 					label.text = b.name;//misc::abbrevBranchName(b.name);
+					if (label.text.startsWith("remotes/")) {
+						label.kind = Label::RemoteBranch;
+					}
 					if (b.ahead > 0) {
 						label.text += tr(", %1 ahead").arg(b.ahead);
 					}
