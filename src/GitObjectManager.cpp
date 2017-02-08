@@ -108,9 +108,9 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, 
 	GitPack::Info info;
 	if (GitPack::seekPackedObject(packfile, item, &info)) {
 		GitPackIdxItem const *source_item = nullptr;
-		if (info.type == GitPack::Type::OFS_DELTA) {
+		if (info.type == Git::Object::Type::OFS_DELTA) {
 			source_item = idx->item(item->offset - info.offset);
-		} else if (info.type == GitPack::Type::REF_DELTA) {
+		} else if (info.type == Git::Object::Type::REF_DELTA) {
 			source_item = idx->item(info.ref_id);
 		}
 		if (source_item) { // if deltified object
@@ -148,7 +148,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr idx, GitPackIdxIt
 	QFile packfile(packfilepath);
 	if (packfile.open(QFile::ReadOnly)) {
 		if (loadPackedObject(idx, &packfile, item, out)) {
-			if (out->type == GitPack::Type::TREE) {
+			if (out->type == Git::Object::Type::TREE) {
 				GitPack::decodeTree(&out->content);
 			}
 			return true;
@@ -157,7 +157,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr idx, GitPackIdxIt
 	return false;
 }
 
-bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *out)
+bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type)
 {
 	loadIndexes();
 
@@ -167,6 +167,7 @@ bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *
 			GitPack::Object obj;
 			if (extractObjectFromPackFile(idx, item, &obj)) {
 				*out = std::move(obj.content);
+				*type = obj.type;
 				return true;
 			}
 			qDebug() << Q_FUNC_INFO << "failed";
@@ -201,15 +202,15 @@ QString GitObjectManager::findObjectPath(const QString &id)
 	return QString(); // not found
 }
 
-bool GitObjectManager::loadObject(QString const &id, QByteArray *out)
+bool GitObjectManager::loadObject(QString const &id, QByteArray *out, Git::Object::Type *type)
 {
 	QString path = findObjectPath(id);
 	if (!path.isEmpty()) {
 		QFile file(path);
 		if (file.open(QFile::ReadOnly)) {
 			if (GitPack::decompress(&file, 1000000000, out)) {
-				GitPack::Type t = GitPack::stripHeader(out);
-				if (t == GitPack::Type::TREE) {
+				*type = GitPack::stripHeader(out);
+				if (*type == Git::Object::Type::TREE) {
 					GitPack::decodeTree(out);
 				}
 				return true;
@@ -219,10 +220,11 @@ bool GitObjectManager::loadObject(QString const &id, QByteArray *out)
 	return false;
 }
 
-bool GitObjectManager::catFile(const QString &id, QByteArray *out)
+bool GitObjectManager::catFile(const QString &id, QByteArray *out, Git::Object::Type *type)
 {
-	if (loadObject(id, out)) return true;
-	if (extractObjectFromPackFile(id, out)) return true;
+	*type = Git::Object::Type::UNKNOWN;
+	if (loadObject(id, out, type)) return true;
+	if (extractObjectFromPackFile(id, out, type)) return true;
 	return false;
 }
 
@@ -242,7 +244,7 @@ void GitObjectCache::setup(GitPtr g)
 	object_manager.setup(g->dup());
 }
 
-QByteArray GitObjectCache::catFile(const QString &id)
+Git::Object GitObjectCache::catFile(const QString &id)
 {
 	{
 		QMutexLocker lock(&object_manager.mutex);
@@ -257,7 +259,10 @@ QByteArray GitObjectCache::catFile(const QString &id)
 					items.push_back(item);
 				}
 				//				qDebug() << "hit: " << id;
-				return item->ba;
+				Git::Object obj;
+				obj.type = item->type;
+				obj.content = item->ba;
+				return obj;
 			}
 		}
 
@@ -267,17 +272,22 @@ QByteArray GitObjectCache::catFile(const QString &id)
 	}
 
 	QByteArray ba;
+	Git::Object::Type type = Git::Object::Type::UNKNOWN;
 
 	auto Store = [&](){
 		QMutexLocker lock(&object_manager.mutex);
 		Item *item = new Item();
 		item->id = id;
 		item->ba = std::move(ba);
+		item->type = type;
 		items.push_back(ItemPtr(item));
-		return item->ba;
+		Git::Object obj;
+		obj.type = item->type;
+		obj.content = item->ba;
+		return obj;
 	};
 
-	if (object_manager.catFile(id, &ba)) { // 独自実装のファイル取得
+	if (object_manager.catFile(id, &ba, &type)) { // 独自実装のファイル取得
 		return Store();
 	}
 
@@ -291,7 +301,7 @@ QByteArray GitObjectCache::catFile(const QString &id)
 
 	qDebug() << "failed to cat file: " << id;
 
-	return QByteArray();
+	return Git::Object();
 }
 
 QString GitObjectCache::getCommitIdFromTag(QString const &tag)
@@ -300,19 +310,27 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 	GitPtr g = git();
 	if (g && g->isValidWorkingCopy()) {
 		QString id = g->rev_parse(tag);
-		QByteArray ba = catFile(id);
-		if (!ba.isEmpty()) {
-			misc::splitLines(ba, [&](char const *ptr, size_t len){
-				if (commit_id.isEmpty()) {
-					if (len >= 7 + 40 && strncmp(ptr, "object ", 7) == 0) {
-						QString id = QString::fromUtf8(ptr + 7, 40);
-						if (Git::isValidID(id)) {
-							commit_id = id;
+		Git::Object obj = catFile(id);
+		switch (obj.type) {
+		case Git::Object::Type::COMMIT:
+			commit_id = id;
+			break;
+		case Git::Object::Type::TAG:
+			if (!obj.content.isEmpty()) {
+				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
+					if (commit_id.isEmpty()) {
+						if (len >= 7 + 40 && strncmp(ptr, "object ", 7) == 0) {
+							QString id = QString::fromUtf8(ptr + 7, len - 7).trimmed();
+							qDebug() << id;
+							if (Git::isValidID(id)) {
+								commit_id = id;
+							}
 						}
 					}
-				}
-				return QString();
-			});
+					return QString();
+				});
+			}
+			break;
 		}
 	}
 	return commit_id;

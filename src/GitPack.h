@@ -3,23 +3,14 @@
 
 #include <QIODevice>
 #include <stdint.h>
+#include "Git.h"
 
 struct GitPackIdxItem;
 
 class GitPack {
 public:
-	enum class Type {
-		UNKNOWN = 0,
-		COMMIT = 1,
-		TREE = 2,
-		BLOB = 3,
-		TAG = 4,
-		UNDEFINED = 5,
-		OFS_DELTA = 6,
-		REF_DELTA = 7,
-	};
 	struct Info {
-		Type type = Type::UNKNOWN;
+		Git::Object::Type type = Git::Object::Type::UNKNOWN;
 		size_t expanded_size = 0;
 		uint64_t offset = 0;
 		QString ref_id;
@@ -42,7 +33,7 @@ public:
 	static bool load(const QString &packfile, const GitPackIdxItem *item, Object *out);
 	static bool seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out);
 	static void decodeTree(QByteArray *out);
-	static Type stripHeader(QByteArray *out);
+	static Git::Object::Type stripHeader(QByteArray *out);
 };
 
 #endif // GITPACK_H

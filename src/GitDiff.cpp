@@ -32,9 +32,9 @@ bool parse_tree_(GitObjectCache *objcache, QString const &commit_id, QString con
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {
-		QByteArray ba = objcache->catFile(commit_id);
-		if (!ba.isEmpty()) { // 内容を取得
-			QString s = QString::fromUtf8(ba);
+		Git::Object obj = objcache->catFile(commit_id);
+		if (!obj.content.isEmpty()) { // 内容を取得
+			QString s = QString::fromUtf8(obj.content);
 			QStringList lines = misc::splitLines(s);
 			for (QString const &line : lines) {
 				int tab = line.indexOf('\t'); // タブより後ろにパスがある
@@ -116,9 +116,9 @@ bool GitCommit::parseCommit(GitObjectCache *objcache, const QString &id)
 	if (!id.isEmpty()) {
 		QStringList parents;
 		{
-			QByteArray ba = objcache->catFile(id);
-			if (!ba.isEmpty()) {
-				QStringList lines = misc::splitLines(QString::fromUtf8(ba));
+			Git::Object obj = objcache->catFile(id);
+			if (!obj.content.isEmpty()) {
+				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
 				for (QString const &line : lines) {
 					int i = line.indexOf(' ');
 					if (i < 1) break;

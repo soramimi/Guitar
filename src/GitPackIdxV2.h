@@ -9,7 +9,7 @@
 
 struct GitPackIdxItem {
 	QString id;
-	GitPack::Type type = GitPack::Type::UNKNOWN;
+	Git::Object::Type type = Git::Object::Type::UNKNOWN;
 	size_t offset = 0;
 	size_t packed_size = 0;
 	size_t expanded_size = 0;

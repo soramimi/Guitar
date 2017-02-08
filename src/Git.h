@@ -38,6 +38,22 @@ public:
 	public:
 		QString git_command;
 	};
+
+	struct Object {
+		enum class Type {
+			UNKNOWN = 0,
+			COMMIT = 1,
+			TREE = 2,
+			BLOB = 3,
+			TAG = 4,
+			UNDEFINED = 5,
+			OFS_DELTA = 6,
+			REF_DELTA = 7,
+		};
+		Type type = Type::UNKNOWN;
+		QByteArray content;
+	};
+
 	class Hunk {
 	public:
 		QString at;

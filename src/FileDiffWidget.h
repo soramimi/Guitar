@@ -133,7 +133,7 @@ private:
 	void init_diff_data_(const Git::Diff &diff);
 
 	GitPtr git();
-	QByteArray cat_file(GitPtr g, const QString &id);
+	Git::Object cat_file(GitPtr g, const QString &id);
 
 	bool isValidID_(const QString &id);
 	bool setImage_(const QByteArray &ba, ViewType viewtype);

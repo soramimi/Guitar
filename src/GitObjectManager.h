@@ -25,10 +25,10 @@ private:
 	static void applyDelta(const QByteArray *base, const QByteArray *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(const QString &id, QByteArray *out);
+	bool extractObjectFromPackFile(const QString &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes();
 	QString findObjectPath(const QString &id);
-	bool loadObject(const QString &id, QByteArray *out);
+	bool loadObject(const QString &id, QByteArray *out, Git::Object::Type *type);
 	GitPtr git()
 	{
 		return g;
@@ -36,7 +36,7 @@ private:
 public:
 	GitObjectManager();
 	void setup(GitPtr g);
-	bool catFile(const QString &id, QByteArray *out);
+	bool catFile(const QString &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
 };
 
@@ -45,6 +45,7 @@ public:
 	struct Item {
 		QString id;
 		QByteArray ba;
+		Git::Object::Type type;
 	};
 private:
 	GitObjectManager object_manager;
@@ -58,7 +59,7 @@ public:
 	}
 
 	void setup(GitPtr g);
-	QByteArray catFile(QString const &id);
+	Git::Object catFile(QString const &id);
 	QString getCommitIdFromTag(const QString &tag);
 };
 

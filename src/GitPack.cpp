@@ -50,7 +50,7 @@ void GitPack::decodeTree(QByteArray *out)
 
 }
 
-GitPack::Type GitPack::stripHeader(QByteArray *out)
+Git::Object::Type GitPack::stripHeader(QByteArray *out)
 {
 	if (out) {
 		int n = out->size();
@@ -59,17 +59,17 @@ GitPack::Type GitPack::stripHeader(QByteArray *out)
 			if (n > 16) n = 16;
 			for (int i = 0; i < n; i++) {
 				if (p[i] == 0) {
-					Type type = Type::UNKNOWN;
+					Git::Object::Type type = Git::Object::Type::UNKNOWN;
 					if (strncmp(p, "blob ", 5) == 0) {
-						type = Type::BLOB;
+						type = Git::Object::Type::BLOB;
 					} else if (strncmp(p, "tree ", 5) == 0) {
-						type = Type::TREE;
+						type = Git::Object::Type::TREE;
 					} else if (strncmp(p, "commit ", 7) == 0) {
-						type = Type::COMMIT;
+						type = Git::Object::Type::COMMIT;
 					} else if (strncmp(p, "tag ", 4) == 0) {
-						type = Type::TAG;
+						type = Git::Object::Type::TAG;
 					}
-					if (type != Type::UNKNOWN) {
+					if (type != Git::Object::Type::UNKNOWN) {
 						*out = out->mid(i + 1);
 					}
 					return type;
@@ -77,7 +77,7 @@ GitPack::Type GitPack::stripHeader(QByteArray *out)
 			}
 		}
 	}
-	return Type::UNKNOWN;
+	return Git::Object::Type::UNKNOWN;
 }
 
 bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed, uint32_t *crc)
@@ -184,7 +184,7 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 			size_t size = 0;
 			char c;
 			Read(&c, 1);
-			info.type = (GitPack::Type)((c >> 4) & 7);
+			info.type = (Git::Object::Type)((c >> 4) & 7);
 			size = c & 0x0f;
 			int shift = 4;
 			while (c & 0x80) {
@@ -194,7 +194,7 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 			}
 			info.expanded_size = size;
 		}
-		if (info.type == GitPack::Type::OFS_DELTA) {
+		if (info.type == Git::Object::Type::OFS_DELTA) {
 			uint64_t offset = 0;
 			char c;
 			Read(&c, 1);
@@ -204,7 +204,7 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 				offset = ((offset + 1) << 7) | (c & 0x7f);
 			}
 			info.offset = offset;
-		} else if (info.type == GitPack::Type::REF_DELTA) {
+		} else if (info.type == Git::Object::Type::REF_DELTA) {
 			char bin[20];
 			Read(bin, 20);
 			char tmp[41];

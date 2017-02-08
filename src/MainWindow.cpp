@@ -1927,34 +1927,30 @@ Git::CommitItem const *MainWindow::selectedCommitItem() const
 	return nullptr;
 }
 
-bool MainWindow::cat_file_(GitPtr g, QString const &id, QByteArray *out)
+Git::Object MainWindow::cat_file_(GitPtr g, QString const &id)
 {
-	out->clear();
-
-	if (!isValidWorkingCopy(g)) return false;
-
-	QString path_prefix = PATH_PREFIX;
-	if (id.startsWith(path_prefix)) {
-		QString path = g->workingRepositoryDir();
-		path = path / id.mid(path_prefix.size());
-		QFile file(path);
-		if (file.open(QFile::ReadOnly)) {
-			*out = file.readAll();
-			file.close();
-			return true;
-		}
-	} else if (Git::isValidID(id)) {
-		*out = pv->objcache.catFile(id);
-		if (!out->isEmpty()) {
-			return true;
+	if (isValidWorkingCopy(g)) {
+		QString path_prefix = PATH_PREFIX;
+		if (id.startsWith(path_prefix)) {
+			QString path = g->workingRepositoryDir();
+			path = path / id.mid(path_prefix.size());
+			QFile file(path);
+			if (file.open(QFile::ReadOnly)) {
+				Git::Object obj;
+				obj.type == Git::Object::Type::UNKNOWN;
+				obj.content = file.readAll();
+				return obj;
+			}
+		} else if (Git::isValidID(id)) {
+			return pv->objcache.catFile(id);;
 		}
 	}
-	return false;
+	return Git::Object();
 }
 
-bool MainWindow::cat_file(QString const &id, QByteArray *out)
+Git::Object MainWindow::cat_file(QString const &id)
 {
-	return cat_file_(git(), id, out);
+	return cat_file_(git(), id);
 }
 
 void MainWindow::updateDiffView(QListWidgetItem *item)
@@ -2249,10 +2245,9 @@ bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 
 bool MainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 {
-	QByteArray ba;
-	cat_file(id, &ba);
-	if (!ba.isEmpty()) {
-		if (saveByteArrayAs(ba, dstpath)) {
+	Git::Object obj = cat_file(id);
+	if (!obj.content.isEmpty()) {
+		if (saveByteArrayAs(obj.content, dstpath)) {
 			return true;
 		}
 	} else {
