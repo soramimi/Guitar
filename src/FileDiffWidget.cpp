@@ -276,7 +276,9 @@ bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 		case ViewType::Left:  w = ui->widget_diff_left;  break;
 		case ViewType::Right: w = ui->widget_diff_right; break;
 		}
-		if (w) w->setImage(mimetype, pixmap);
+		if (w) {
+			w->setImage(mimetype, pixmap);
+		}
 		return true;
 	}
 	return false;

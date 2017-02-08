@@ -17,13 +17,12 @@ class MyItemDelegate : public QStyledItemDelegate {
 private:
 	MainWindow *mainwindow() const
 	{
-		LogTableWidget *w = dynamic_cast<LogTableWidget *>(parent());
+		LogTableWidget *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
 		MainWindow *mw = w->pv->mainwindow;
 		Q_ASSERT(mw);
 		return mw;
 	}
-	QProxyStyle proxy_style;
 
 	static QColor labelColor(int kind)
 	{
@@ -37,12 +36,60 @@ private:
 
 	static QColor hiliteColor(QColor const &color)
 	{
-		return QColor(255 - (255 - color.red()) / 2, 255 - (255 - color.green()) / 2, 255 - (255 - color.blue()) / 2);
+		int r = color.red();
+		int g = color.green();
+		int b = color.blue();
+		r = 255 - (255 - r) / 2;
+		g = 255 - (255 - g) / 2;
+		b = 255 - (255 - b) / 2;
+		return QColor(r, g, b);
 	}
 
 	static QColor shadowColor(QColor const &color)
 	{
 		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
+	}
+
+	void drawDescription(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	{
+		int row = index.row();
+		QList<MainWindow::Label> const *labels = mainwindow()->label(row);
+		if (labels) {
+			painter->save();
+			painter->setRenderHint(QPainter::Antialiasing);
+			QFontMetrics fm = painter->fontMetrics();
+			const int space = 8;
+			int x = opt.rect.x() + opt.rect.width() - 3;
+			int x0 = x;
+			int x1 = x;
+			int y0 = opt.rect.y();
+			int y1 = y0 + opt.rect.height() - 1;
+			int i = labels->size();
+			while (i > 0) {
+				i--;
+				MainWindow::Label const &label = labels->at(i);
+				QString text = misc::abbrevBranchName(label.text);
+				int w = fm.size(0, text).width() + space * 2;
+				x0 = x1 - w;
+				QRect r(x0, y0, x1 - x0, y1 - y0);
+				painter->setPen(Qt::NoPen);
+				auto DrawRect = [&](int dx, int dy, QColor color){
+					painter->setBrush(color);
+					painter->drawRoundedRect(r.adjusted(dx + 3 + 0.5, dy + 3 + 0.5, dx - 3 + 0.5, dy - 3 + 0.5), 3, 3);
+				};
+				QColor color = labelColor(label.kind);
+				QColor hilite = hiliteColor(color);
+				QColor shadow = shadowColor(color);
+				DrawRect(-1, -1, hilite);
+				DrawRect(1, 1, shadow);
+				DrawRect(0, 0, color);
+				painter->setPen(Qt::black);
+				painter->setBrush(Qt::NoBrush);
+				qApp->style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
+				x1 = x0;
+			}
+			painter->restore();
+		}
 	}
 
 public:
@@ -51,52 +98,31 @@ public:
 	{
 	}
 
-	void paint(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
-		QStyledItemDelegate::paint(painter, opt, index);
-#if 1
-		int row = index.row();
-		int col = index.column();
-		if (col == 4) {
+		// 選択枠を描画
+		if (option.showDecorationSelected) {
+			QTableWidget const *tablewidget = qobject_cast<QTableWidget const *>(option.widget);
+			Q_ASSERT(tablewidget);
+			int w = tablewidget->viewport()->rect().width();
 			painter->save();
-			painter->setRenderHint(QPainter::Antialiasing);
-			QList<MainWindow::Label> const *labels = mainwindow()->label(row);
-			if (labels) {
-				QFontMetrics fm = painter->fontMetrics();
-				int space = 8;
-				int x = opt.rect.x() + opt.rect.width() - 3;
-				int x0 = x;
-				int x1 = x;
-				int y0 = opt.rect.y();
-				int y1 = y0 + opt.rect.height() - 1;
-				int i = labels->size();
-				while (i > 0) {
-					i--;
-					MainWindow::Label const &label = labels->at(i);
-					QString text = misc::abbrevBranchName(label.text);
-					int w = fm.size(0, text).width() + space * 2;
-					x0 = x1 - w;
-					QRect r(x0, y0, x1 - x0, y1 - y0);
-					painter->setPen(Qt::NoPen);
-					auto DrawRect = [&](int dx, int dy, QColor color){
-						painter->setBrush(color);
-						painter->drawRoundedRect(r.adjusted(dx + 3 + 0.5, dy + 3 + 0.5, dx - 3 + 0.5, dy - 3 + 0.5), 3, 3);
-					};
-					QColor color = labelColor(label.kind);
-					QColor hilite = hiliteColor(color);
-					QColor shadow = shadowColor(color);
-					DrawRect(-1, -1, hilite);
-					DrawRect(1, 1, shadow);
-					DrawRect(0, 0, color);
-					painter->setPen(Qt::black);
-					painter->setBrush(Qt::NoBrush);
-					proxy_style.drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
-					x1 = x0;
-				}
-			}
+			QStyleOptionViewItem o = option;
+			painter->setClipRect(o.rect);
+			o.rect = QRect(1, o.rect.y(), w - 2, o.rect.height());
+			qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, 0);
 			painter->restore();
 		}
-#endif
+
+		QStyleOptionViewItem opt = option;
+		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
+		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
+
+		QStyledItemDelegate::paint(painter, opt, index); // デフォルトの描画
+
+		// Descriptionの描画
+		if (index.column() == 4) {
+			drawDescription(painter, option, index);
+		}
 	}
 };
 
@@ -105,7 +131,6 @@ LogTableWidget::LogTableWidget(QWidget *parent)
 {
 	pv = new Private;
 	setItemDelegate(new MyItemDelegate(this));
-
 }
 
 LogTableWidget::~LogTableWidget()

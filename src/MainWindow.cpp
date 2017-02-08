@@ -631,7 +631,7 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommi
 		}
 	}
 #endif
-	qDebug() << "failed to makeDiff";
+//	qDebug() << "failed to makeDiff";
 	return false;
 }
 
@@ -1940,7 +1940,6 @@ Git::Object MainWindow::cat_file_(GitPtr g, QString const &id)
 			QFile file(path);
 			if (file.open(QFile::ReadOnly)) {
 				Git::Object obj;
-				obj.type == Git::Object::Type::UNKNOWN;
 				obj.content = file.readAll();
 				return obj;
 			}

@@ -274,15 +274,6 @@ void FilePreviewWidget::resizeEvent(QResizeEvent *)
 	emit resized();
 }
 
-void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
-{
-	setFileType(mimetype);
-	pv->pixmap = pixmap;
-	QSizeF sz = imageScrollRange();
-	pv->image_scroll_x = sz.width() / 2.0;
-	pv->image_scroll_y = sz.height() / 2.0;
-}
-
 void FilePreviewWidget::scrollImage(double x, double y)
 {
 	pv->image_scroll_x = x;
@@ -293,6 +284,18 @@ void FilePreviewWidget::scrollImage(double x, double y)
 	if (pv->image_scroll_x > sz.width()) pv->image_scroll_x = sz.width();
 	if (pv->image_scroll_y > sz.height()) pv->image_scroll_y = sz.height();
 	update();
+}
+
+void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
+{
+	setFileType(mimetype);
+	if (pv->paint_mode == PaintMode::Image) {
+		pv->pixmap = pixmap;
+		pv->image_scale = 1;
+		double x = pv->pixmap.width() / 2.0;
+		double y = pv->pixmap.height() / 2.0;
+		scrollImage(x, y);
+	}
 }
 
 void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
