@@ -100,6 +100,12 @@ public:
 
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
+		QStyleOptionViewItem opt = option;
+
+#ifdef Q_OS_WIN
+		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
+		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
+
 		// 選択枠を描画
 		if (option.showDecorationSelected) {
 			QTableWidget const *tablewidget = qobject_cast<QTableWidget const *>(option.widget);
@@ -112,10 +118,7 @@ public:
 			qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, 0);
 			painter->restore();
 		}
-
-		QStyleOptionViewItem opt = option;
-		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
-		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
+#endif
 
 		QStyledItemDelegate::paint(painter, opt, index); // デフォルトの描画
 
