@@ -103,6 +103,12 @@ public:
 		QStyleOptionViewItem opt = option;
 
 #ifdef Q_OS_WIN
+<<<<<<< HEAD
+=======
+		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
+		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
+
+>>>>>>> 61a80eeb55bc4db547519c20a5ad76be43e246de
 		// 選択枠を描画
 		if (option.showDecorationSelected) {
 			QTableWidget const *tablewidget = qobject_cast<QTableWidget const *>(option.widget);
@@ -115,10 +121,14 @@ public:
 			qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, 0);
 			painter->restore();
 		}
+<<<<<<< HEAD
 
 		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
 #endif
 		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
+=======
+#endif
+>>>>>>> 61a80eeb55bc4db547519c20a5ad76be43e246de
 
 		QStyledItemDelegate::paint(painter, opt, index); // デフォルトの描画
 

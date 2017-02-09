@@ -90,8 +90,10 @@ private slots:
 	void on_action_tag_push_all_triggered();
 	void on_action_tag_delete_triggered();
 
-	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
+	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
+
+	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
@@ -121,6 +123,7 @@ private slots:
 	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
 
 	void onRepositoriesTreeDropped();
+
 
 private:
 	Ui::MainWindow *ui;
@@ -239,6 +242,8 @@ public:
 	QPixmap getTransparentPixmap();
 	const QList<Label> *label(int row);
 	QString getCommitIdFromTag(const QString &tag);
+	void setStatusBarText(const QString &text);
+	QString makeCommitInfoText(int row, QList<Label> *label_list);
 protected:
 
 protected:
