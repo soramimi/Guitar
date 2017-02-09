@@ -208,6 +208,7 @@ private:
 	Git::Object cat_file_(GitPtr g, const QString &id);
 	Git::Object cat_file(const QString &id);
 	void checkFileCommand();
+	void updateStatusBarText();
 public:
 
 	QString selectGitCommand();
@@ -243,6 +244,7 @@ public:
 	const QList<Label> *label(int row);
 	QString getCommitIdFromTag(const QString &tag);
 	void setStatusBarText(const QString &text);
+	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 protected:
 

@@ -86,6 +86,9 @@
            <height>48</height>
           </size>
          </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Clone</string>
          </property>
@@ -117,6 +120,9 @@
            <width>48</width>
            <height>48</height>
           </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
           <string>Fetch</string>
@@ -150,6 +156,9 @@
            <height>48</height>
           </size>
          </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
          <property name="text">
           <string>Pull</string>
          </property>
@@ -181,6 +190,9 @@
            <width>48</width>
            <height>48</height>
           </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
           <string>Push</string>
@@ -385,7 +397,7 @@
        </widget>
        <widget class="QStackedWidget" name="stackedWidget">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="page_2">
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,1">
@@ -904,6 +916,20 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>treeWidget_repos</tabstop>
+  <tabstop>comboBox_filter</tabstop>
+  <tabstop>toolButton_erase_filter</tabstop>
+  <tabstop>tableWidget_log</tabstop>
+  <tabstop>listWidget_unstaged</tabstop>
+  <tabstop>toolButton_select_all</tabstop>
+  <tabstop>toolButton_stage</tabstop>
+  <tabstop>toolButton_unstage</tabstop>
+  <tabstop>toolButton_commit</tabstop>
+  <tabstop>listWidget_staged</tabstop>
+  <tabstop>listWidget_files</tabstop>
+  <tabstop>widget_diff_view</tabstop>
+ </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

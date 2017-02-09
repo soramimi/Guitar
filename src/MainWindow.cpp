@@ -214,9 +214,51 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
+bool MainWindow::event(QEvent *event)
+{
+	return QMainWindow::event(event);
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+		Q_ASSERT(e);
+		int k = e->key();
+		if (watched == ui->treeWidget_repos) {
+			if (k == Qt::Key_Enter || k == Qt::Key_Return) {
+				openSelectedRepository();
+				return true;
+			}
+		} else if (watched == ui->tableWidget_log) {
+			if (k == Qt::Key_Home) {
+				ui->tableWidget_log->setCurrentCell(0, 0);
+				return true;
+			}
+		}
+	} else if (event->type() == QEvent::FocusIn) {
+		updateStatusBarText();
+		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
+		if (watched == ui->listWidget_unstaged) {
+			updateUnstagedFileCurrentItem();
+			return true;
+		}
+		if (watched == ui->listWidget_staged) {
+			updateStagedFileCurrentItem();
+			return true;
+		}
+	}
+	return false;
+}
+
 void MainWindow::setStatusBarText(QString const &text)
 {
 	pv->status_bar_label->setText(text);
+}
+
+void MainWindow::clearStatusBarText()
+{
+	setStatusBarText(QString());
 }
 
 QString MainWindow::getObjectID(QListWidgetItem *item)
@@ -1143,6 +1185,43 @@ void MainWindow::commit_amend()
 }
 
 
+void MainWindow::updateStatusBarText()
+{
+	QString text;
+
+	QWidget *w = QWidget::focusWidget();
+	if (w == ui->treeWidget_repos) {
+		QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
+		RepositoryItem const *item = repositoryItem(ite);
+		if (item) {
+			text = QString("%1 : %2")
+					.arg(item->name)
+					.arg(misc::normalizePathSeparator(item->local_dir))
+					;
+		}
+	} else if (w == ui->tableWidget_log) {
+		QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
+		if (item) {
+			int row = item->data(IndexRole).toInt();
+			if (row < (int)pv->logs.size()) {
+				Git::CommitItem const &commit = pv->logs[row];
+				if (Git::isUncommited(commit)) {
+					text = tr("Uncommited changes");
+				} else {
+					QString id = commit.commit_id;
+					text = QString("%1 : %2%3")
+							.arg(id.mid(0, 7))
+							.arg(commit.message)
+							.arg(makeCommitInfoText(row, nullptr))
+							;
+				}
+			}
+		}
+	}
+
+	setStatusBarText(text);
+}
+
 void MainWindow::on_action_commit_triggered()
 {
 	commit();
@@ -1227,15 +1306,7 @@ void MainWindow::on_action_config_global_credential_helper_triggered()
 
 void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {
-	QString text;
-	QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
-	RepositoryItem const *item = repositoryItem(ite);
-	if (item) {
-		text = item->name;
-		text += " : ";
-		text += item->local_dir;
-	}
-	setStatusBarText(text);
+	updateStatusBarText();
 }
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
@@ -1614,24 +1685,16 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 	int row = item->data(IndexRole).toInt();
 	if (row < (int)pv->logs.size()) {
 		Git::CommitItem const &commit = pv->logs[row];
-		QString status_text;
 		if (Git::isUncommited(commit)) {
 			updateHeadFilesList(false);
-			status_text = tr("Uncommited changes");
 		} else {
 			GitPtr g = git();
 			if (isValidWorkingCopy(g)) {
 				QString id = commit.commit_id;
 				startDiff(g, id);
-
-				status_text = QString("%1 : %2%3")
-						.arg(id.mid(0, 7))
-						.arg(commit.message)
-						.arg(makeCommitInfoText(row, nullptr))
-						;
 			}
 		}
-		setStatusBarText(status_text);
+		updateStatusBarText();
 		pv->update_files_list_counter = 200;
 	}
 }
@@ -2206,42 +2269,6 @@ void MainWindow::timerEvent(QTimerEvent *)
 			updateCurrentFilesList();
 		}
 	}
-}
-
-bool MainWindow::event(QEvent *event)
-{
-	return QMainWindow::event(event);
-}
-
-bool MainWindow::eventFilter(QObject *watched, QEvent *event)
-{
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
-		Q_ASSERT(e);
-		int k = e->key();
-		if (watched == ui->treeWidget_repos) {
-			if (k == Qt::Key_Enter || k == Qt::Key_Return) {
-				openSelectedRepository();
-				return true;
-			}
-		} else if (watched == ui->tableWidget_log) {
-			if (k == Qt::Key_Home) {
-				ui->tableWidget_log->setCurrentCell(0, 0);
-				return true;
-			}
-		}
-	} else if (event->type() == QEvent::FocusIn) {
-		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
-		if (watched == ui->listWidget_unstaged) {
-			updateUnstagedFileCurrentItem();
-			return true;
-		}
-		if (watched == ui->listWidget_staged) {
-			updateStagedFileCurrentItem();
-			return true;
-		}
-	}
-	return false;
 }
 
 bool MainWindow::saveByteArrayAs(QByteArray const &ba, QString const &dstpath)
