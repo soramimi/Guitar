@@ -131,6 +131,7 @@ struct MainWindow::Private {
 	unsigned int temp_file_counter = 0;
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
+	QLabel *status_bar_label;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -141,6 +142,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
+
+	pv->status_bar_label = new QLabel(this);
+	ui->statusBar->addWidget(pv->status_bar_label);
 
 	ui->widget_diff_view->bind(this);
 
@@ -208,6 +212,11 @@ MainWindow::~MainWindow()
 	deleteTempFiles();
 	delete pv;
 	delete ui;
+}
+
+void MainWindow::setStatusBarText(QString const &text)
+{
+	pv->status_bar_label->setText(text);
 }
 
 QString MainWindow::getObjectID(QListWidgetItem *item)
@@ -860,6 +869,40 @@ QList<MainWindow::Label> const *MainWindow::label(int row)
 	return nullptr;
 }
 
+QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
+{
+	QString message_ex;
+	Git::CommitItem const *commit = &pv->logs[row];
+	{ // branch
+		QList<Git::Branch> list = findBranch(commit->commit_id);
+		for (Git::Branch const &b : list) {
+			Label label(Label::LocalBranch);
+			label.text = b.name;//misc::abbrevBranchName(b.name);
+			if (label.text.startsWith("remotes/")) {
+				label.kind = Label::RemoteBranch;
+			}
+			if (b.ahead > 0) {
+				label.text += tr(", %1 ahead").arg(b.ahead);
+			}
+			if (b.behind > 0) {
+				label.text += tr(", %1 behind").arg(b.behind);
+			}
+			message_ex += " {" + label.text + '}';
+			if (label_list) label_list->push_back(label);
+		}
+	}
+	{ // tag
+		QList<Git::Tag> list = findTag(commit->commit_id);
+		for (Git::Tag const &t : list) {
+			Label label(Label::Tag);
+			label.text = t.name;
+			message_ex += QString(" {t:%1}").arg(label.text);
+			if (label_list) label_list->push_back(label);
+		}
+	}
+	return message_ex;
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -902,16 +945,15 @@ void MainWindow::openRepository_(GitPtr g)
 
 	prepareLogTableWidget();
 
-	int index = 0;
 	int count = pv->logs.size();
 
 	ui->tableWidget_log->setRowCount(count);
 
 	for (int row = 0; row < count; row++) {
-		Git::CommitItem const *commit = &pv->logs[index];
+		Git::CommitItem const *commit = &pv->logs[row];
 		{
 			QTableWidgetItem *item = new QTableWidgetItem();
-			item->setData(IndexRole, index);
+			item->setData(IndexRole, row);
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
 		int col = 1; // カラム0はコミットグラフなので、その次から
@@ -945,41 +987,13 @@ void MainWindow::openRepository_(GitPtr g)
 			datetime = misc::makeDateTimeString(commit->commit_date);
 			author = commit->author;
 			message = commit->message;
-
-			{ // branch
-				QList<Git::Branch> list = findBranch(commit->commit_id);
-				for (Git::Branch const &b : list) {
-					Label label(Label::LocalBranch);
-					label.text = b.name;//misc::abbrevBranchName(b.name);
-					if (label.text.startsWith("remotes/")) {
-						label.kind = Label::RemoteBranch;
-					}
-					if (b.ahead > 0) {
-						label.text += tr(", %1 ahead").arg(b.ahead);
-					}
-					if (b.behind > 0) {
-						label.text += tr(", %1 behind").arg(b.behind);
-					}
-					message_ex += " {" + label.text + '}';
-					pv->label_map[row].push_back(label);
-				}
-			}
-			{ // tag
-				QList<Git::Tag> list = findTag(commit->commit_id);
-				for (Git::Tag const &t : list) {
-					Label label(Label::Tag);
-					label.text = t.name;
-					message_ex += QString(" {t:%1}").arg(label.text);
-					pv->label_map[row].push_back(label);
-				}
-			}
+			message_ex = makeCommitInfoText(row, &pv->label_map[row]);
 		}
 		AddColumn(commit_id, false, QString());
 		AddColumn(datetime, false, QString());
 		AddColumn(author, false, QString());
 		AddColumn(message, bold, message + message_ex);
 		ui->tableWidget_log->setRowHeight(row, 24);
-		index++;
 	}
 	ui->tableWidget_log->resizeColumnsToContents();
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
@@ -1209,6 +1223,19 @@ void MainWindow::on_action_config_global_credential_helper_triggered()
 		}
 		g->git("config --global credential.helper " + text);
 	}
+}
+
+void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+	QString text;
+	QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
+	RepositoryItem const *item = repositoryItem(ite);
+	if (item) {
+		text = item->name;
+		text += " : ";
+		text += item->local_dir;
+	}
+	setStatusBarText(text);
 }
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
@@ -1559,12 +1586,6 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
-
-
-
-
-
-
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
@@ -1593,15 +1614,24 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 	int row = item->data(IndexRole).toInt();
 	if (row < (int)pv->logs.size()) {
 		Git::CommitItem const &commit = pv->logs[row];
+		QString status_text;
 		if (Git::isUncommited(commit)) {
 			updateHeadFilesList(false);
+			status_text = tr("Uncommited changes");
 		} else {
 			GitPtr g = git();
 			if (isValidWorkingCopy(g)) {
 				QString id = commit.commit_id;
 				startDiff(g, id);
+
+				status_text = QString("%1 : %2%3")
+						.arg(id.mid(0, 7))
+						.arg(commit.message)
+						.arg(makeCommitInfoText(row, nullptr))
+						;
 			}
 		}
+		setStatusBarText(status_text);
 		pv->update_files_list_counter = 200;
 	}
 }
@@ -2607,4 +2637,5 @@ void MainWindow::on_action_test_triggered()
 {
 	qDebug() << getCommitIdFromTag("tag2");
 }
+
 
