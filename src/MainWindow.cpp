@@ -40,8 +40,12 @@
 #include <QDirIterator>
 #include <QThread>
 
+#include "CommitExploreWindow.h"
+
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
+
+#include "CommitExploreWindow.h"
 #endif
 
 FileDiffWidget::DrawData::DrawData()
@@ -1413,6 +1417,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	Git::CommitItem const *commit = selectedCommitItem();
 	if (commit) {
 		int row = selectedLogIndex();
+
 		QMenu menu;
 		QAction *a_properties = addMenuActionProperties(&menu);
 		QAction *a_edit_comment = nullptr;
@@ -1424,6 +1429,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
 			a_delete_tags = menu.addAction(tr("Delete tags..."));
 		}
+		QAction *a_explore = menu.addAction(tr("Explore"));
+
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_properties) {
@@ -1440,6 +1447,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_delete_tags) {
 				deleteSelectedTags();
+				return;
+			}
+			if (a == a_explore) {
+				CommitExploreWindow win(this, &pv->objcache, commit->commit_id);
+				win.exec();
 				return;
 			}
 		}

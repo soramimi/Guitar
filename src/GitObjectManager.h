@@ -5,6 +5,7 @@
 #include <QString>
 #include "GitPack.h"
 #include "GitPackIdxV2.h"
+#include <map>
 
 class GitPackIdxV2;
 
@@ -62,5 +63,65 @@ public:
 	Git::Object catFile(QString const &id);
 	QString getCommitIdFromTag(const QString &tag);
 };
+
+class GitCommit {
+public:
+	QString tree_id;
+	QStringList parents;
+
+	bool parseCommit(GitObjectCache *objcache, QString const &id);
+};
+
+struct GitTreeItem {
+	enum Type {
+		UNKNOWN,
+		TREE,
+		BLOB,
+	};
+	Type type = UNKNOWN;
+	QString name;
+	QString id;
+	QString mode;
+
+	QString to_string_() const
+	{
+		QString t;
+		switch (type) {
+		case TREE: t = "TREE"; break;
+		case BLOB: t = "BLOB"; break;
+		}
+		return QString("GitTreeItem:{ %1 %2 %3 %4 }").arg(t).arg(id).arg(mode).arg(name);
+	}
+};
+
+typedef QList<GitTreeItem> GitTreeItemList;
+
+class GitCommitTree {
+private:
+	GitObjectCache *objcache;
+	GitTreeItemList root_item_list;
+
+	std::map<QString, GitTreeItem> blob_map;
+	std::map<QString, QString> tree_id_map;
+
+	GitPtr git();
+
+	QString lookup_(QString const &file, GitTreeItem *out);
+public:
+	GitCommitTree(GitObjectCache *objcache);
+
+	QString lookup(QString const &file);
+	bool lookup(const QString &file, GitTreeItem *out);
+
+	void parseTree(const QString &tree_id);
+	QString parseCommit(QString const &commit_id);
+
+	GitTreeItemList const *treelist() const
+	{
+		return &root_item_list;
+	}
+};
+
+QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file);
 
 #endif // GITOBJECTMANAGER_H

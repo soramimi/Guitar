@@ -95,7 +95,8 @@ SOURCES += \
     src/GitObjectManager.cpp \
     src/FilePropertyDialog.cpp \
     src/BigDiffWindow.cpp \
-    src/MaximizeButton.cpp
+    src/MaximizeButton.cpp \
+    src/CommitExploreWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -139,7 +140,8 @@ HEADERS  += \
     src/FilePropertyDialog.h \
     zlib.h \
     src/BigDiffWindow.h \
-    src/MaximizeButton.h
+    src/MaximizeButton.h \
+    src/CommitExploreWindow.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -160,7 +162,8 @@ FORMS    += \
 	src/FileDiffWidget.ui \
     src/FileHistoryWindow.ui \
     src/FilePropertyDialog.ui \
-    src/BigDiffWindow.ui
+    src/BigDiffWindow.ui \
+    src/CommitExploreWindow.ui
 
 RESOURCES += \
     resources.qrc

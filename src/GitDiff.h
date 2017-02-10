@@ -6,10 +6,6 @@
 #include "Git.h"
 #include "GitObjectManager.h"
 
-struct TreeItem;
-
-typedef QList<TreeItem> TreeItemList;
-
 class GitDiff {
 	friend class CommitListThread;
 public:
@@ -58,8 +54,8 @@ private:
 //	}
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(const QString &dir, const TreeItemList *files, std::map<QString, TreeItem> *out);
-	void retrieveCompleteTree(const QString &dir, const TreeItemList *files);
+	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
+	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files);
 public:
 	GitDiff(GitPtr g, GitObjectCache *objcache)
 	{
@@ -84,29 +80,5 @@ public:
 
 
 };
-
-class GitCommitTree {
-private:
-	GitObjectCache *objcache;
-	TreeItemList root_item_list;
-
-	std::map<QString, TreeItem> blob_map;
-	std::map<QString, QString> tree_id_map;
-
-	GitPtr git();
-
-	QString lookup_(QString const &file, TreeItem *out);
-public:
-	GitCommitTree(GitObjectCache *objcache);
-
-	QString lookup(QString const &file);
-	bool lookup(const QString &file, TreeItem *out);
-
-	void parseTree(const QString &tree_id);
-	void parseCommit(QString const &commit_id);
-};
-
-QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file);
-
 
 #endif // GITDIFF_H

@@ -338,3 +338,34 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 
 
 
+
+bool GitCommit::parseCommit(GitObjectCache *objcache, const QString &id)
+{
+	parents.clear();
+	if (!id.isEmpty()) {
+		QStringList parents;
+		{
+			Git::Object obj = objcache->catFile(id);
+			if (!obj.content.isEmpty()) {
+				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
+				for (QString const &line : lines) {
+					int i = line.indexOf(' ');
+					if (i < 1) break;
+					QString key = line.mid(0, i);
+					QString val = line.mid(i + 1).trimmed();
+					if (key == "tree") {
+						tree_id = val;
+					} else if (key == "parent") {
+						parents.push_back(val);
+					}
+				}
+			}
+		}
+		if (!tree_id.isEmpty()) { // サブディレクトリ
+			this->parents.append(parents);
+			return true;
+		}
+	}
+	return false;
+}
+
