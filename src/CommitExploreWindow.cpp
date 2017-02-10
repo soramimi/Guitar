@@ -1,6 +1,7 @@
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
+#include "FilePreviewWidget.h"
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
@@ -19,8 +20,8 @@ struct CommitExploreWindow::Private {
 	QString commit_id;
 	QString root_tree_id;
 	GitTreeItemList tree_item_list;
-	//	FileDiffWidget::DiffData diff_data;
-	//	FileDiffWidget::DrawData draw_data;
+    FileDiffWidget::DiffData diff_data;
+    FileDiffWidget::DrawData draw_data;
 };
 
 CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, QString commit_id) :
@@ -33,10 +34,12 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
+    pv = new Private();
 
 	pv->objcache = objcache;
 	pv->commit_id = commit_id;
+
+    ui->widget_fileview->imbue_(qobject_cast<MainWindow *>(parent), &pv->diff_data, &pv->draw_data);
 
 	ui->splitter->setSizes({100, 100, 200});
 
