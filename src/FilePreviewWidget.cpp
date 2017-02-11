@@ -14,13 +14,12 @@
 
 struct FilePreviewWidget::Private {
 	MainWindow *mainwindow = nullptr;
-	FileDiffWidget::DiffData *diff_data = nullptr;
+	FileDiffWidget::DiffData::Content const *content = nullptr;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
-	ViewType view_type = ViewType::None;
 	QString mime_type;
 	QPixmap pixmap;
-	FilePreviewWidget::PaintMode paint_mode;
+	FilePreviewWidget::PaintMode paint_mode = FilePreviewWidget::PaintMode::Text;
 	double image_scroll_x = 0;
 	double image_scroll_y = 0;
 	double image_scale = 1;
@@ -29,26 +28,33 @@ struct FilePreviewWidget::Private {
 	QPoint mouse_press_pos;
 	int wheel_delta = 0;
 	QPointF interest_pos;
+	int top_margin = 1;
+	int bottom_margin = 1;
 };
-
-FileDiffWidget::DiffData *FilePreviewWidget::diffdata()
-{
-	return pv->diff_data;
-}
-
-FileDiffWidget::DiffData const *FilePreviewWidget::diffdata() const
-{
-	return pv->diff_data;
-}
 
 FileDiffWidget::DrawData *FilePreviewWidget::drawdata()
 {
+	Q_ASSERT(pv->draw_data);
 	return pv->draw_data;
 }
 
 FileDiffWidget::DrawData const *FilePreviewWidget::drawdata() const
 {
+	Q_ASSERT(pv->draw_data);
 	return pv->draw_data;
+}
+
+FileDiffWidget::DiffData::Content const *FilePreviewWidget::getContent() const
+{
+	return pv->content;
+}
+
+
+QList<TextDiffLine> const *FilePreviewWidget::getLines() const
+{
+	FileDiffWidget::DiffData::Content const *content = getContent();
+	if (content) return &content->lines;
+	return nullptr;
 }
 
 FilePreviewWidget::FilePreviewWidget(QWidget *parent)
@@ -70,11 +76,13 @@ FilePreviewWidget::~FilePreviewWidget()
 	delete pv;
 }
 
-void FilePreviewWidget::imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata, FileDiffWidget::DrawData *drawdata)
+void FilePreviewWidget::bind(MainWindow *m, FileDiffWidget::DiffData::Content const *content, FileDiffWidget::DrawData *drawdata)
 {
 	pv->mainwindow = m;
-	pv->diff_data = diffdata;
+	pv->content = content;
 	pv->draw_data = drawdata;
+
+	updateDrawData();
 }
 
 void FilePreviewWidget::setFileType(QString const &mimetype)
@@ -89,32 +97,27 @@ void FilePreviewWidget::setFileType(QString const &mimetype)
 	}
 }
 
-void FilePreviewWidget::update()
-{
-	QWidget::update();
-}
-
-void FilePreviewWidget::update(ViewType vt)
-{
-	pv->view_type = vt;
-	update();
-}
-
 void FilePreviewWidget::clear(ViewType vt)
 {
 	setFileType(QString());
 	pv->pixmap = QPixmap();
-	update(vt);
+	update();
 }
 
-void FilePreviewWidget::updateDrawData_(int top_margin, int bottom_margin)
+void FilePreviewWidget::updateDrawData(QPainter *painter, int *descent)
+{
+	QFontMetrics fm = painter->fontMetrics();
+	QSize sz = fm.size(0, "W");
+	drawdata()->char_width = sz.width();
+	drawdata()->line_height = sz.height() + pv->top_margin + pv->bottom_margin;
+	if (descent) *descent = fm.descent();
+}
+
+void FilePreviewWidget::updateDrawData()
 {
 	QPixmap pm(1, 1);
 	QPainter pr(&pm);
-	QFontMetrics fm = pr.fontMetrics();
-	QSize sz = fm.size(0, "W");
-	drawdata()->char_width = sz.width();
-	drawdata()->line_height = sz.height() + top_margin + bottom_margin;
+	updateDrawData(&pr);
 }
 
 void FilePreviewWidget::paintText()
@@ -124,22 +127,13 @@ void FilePreviewWidget::paintText()
 	int x;
 	int w = width();
 	int h = height();
-	int top_margin = 1;
-	int bottom_margin = 1;
 
-	QFontMetrics fm = pr.fontMetrics();
-	int descent = fm.descent();
-	QSize sz = fm.size(0, "W");
-	drawdata()->char_width = sz.width();
-	drawdata()->line_height = sz.height() + top_margin + bottom_margin;
+	int descent;
+	updateDrawData(&pr, &descent);
+
+	QList<TextDiffLine> const *lines = getLines();
 
 	x = 0;
-	QList<TextDiffLine> const *lines = nullptr;
-	if (pv->view_type == ViewType::Left) {
-		lines = &diffdata()->left_lines;
-	} else if (pv->view_type == ViewType::Right) {
-		lines = &diffdata()->right_lines;
-	}
 
 	const int linenums = 5;
 
@@ -175,7 +169,7 @@ void FilePreviewWidget::paintText()
 				break;
 			}
 
-			int line_y = y + drawdata()->line_height - descent - bottom_margin;
+			int line_y = y + drawdata()->line_height - descent - pv->bottom_margin;
 
 			{ // draw line number
 				pr.fillRect(x, y, linenum_w + char_width, drawdata()->line_height, drawdata()->bgcolor_gray);
@@ -216,7 +210,7 @@ void FilePreviewWidget::paintText()
 		pr.restore();
 	}
 
-	if (drawdata()->forcus != ViewType::None && pv->view_type == drawdata()->forcus) {
+	if (drawdata()->forcus == this) {
 		int x = 0;
 		int y = 0;
 		int w = width();
@@ -375,11 +369,10 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	if (!pv->mainwindow) return; // TODO:
 
-	QString id;
-	switch (pv->view_type) {
-	case ViewType::Left:  id = diffdata()->left_id;  break;
-	case ViewType::Right: id = diffdata()->right_id; break;
-	}
+	FileDiffWidget::DiffData::Content const *content = getContent();
+	if (!content) return;
+
+	QString id = content->id;
 	if (id.startsWith(PATH_PREFIX)) {
 		// pass
 	} else if (Git::isValidID(id)) {
@@ -395,18 +388,16 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 		pos = mapToGlobal(QPoint(4, 4));
 	}
 
-	drawdata()->forcus = pv->view_type;
-
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
-	QAction *a_test = id.isEmpty() ? nullptr : menu.addAction(tr("test"));
+	QAction *a_test = nullptr;//id.isEmpty() ? nullptr : menu.addAction(tr("test"));
 	if (!menu.actions().isEmpty()) {
-		drawdata()->forcus = pv->view_type;
-		update(pv->view_type);
+		drawdata()->forcus = this;
+		update();
 		QAction *a = menu.exec(pos);
 		if (a) {
 			if (a == a_save_as) {
-				QString path = pv->mainwindow->currentWorkingCopyDir() / diffdata()->path;
+				QString path = pv->mainwindow->currentWorkingCopyDir() / content->path;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
 					pv->mainwindow->saveAs(id, dstpath);
@@ -414,22 +405,12 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 				goto DONE;
 			}
 			if (a == a_test) {
-				QString path = pv->mainwindow->saveAsTemp(id);
-				QString mimetype = pv->mainwindow->determinFileType(path, true);
-				if (misc::isImageFile(mimetype)) {
-					QPixmap pixmap;
-					pixmap.load(path);
-					setImage(mimetype, pixmap);
-				}
-
-				QFile::remove(path);
-
 				goto DONE;
 			}
 		}
 	}
 DONE:;
-	drawdata()->forcus = ViewType::None;
-	update(pv->view_type);
+	drawdata()->forcus = nullptr;
+	update();
 }
 

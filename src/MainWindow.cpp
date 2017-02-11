@@ -1308,7 +1308,7 @@ void MainWindow::on_action_config_global_credential_helper_triggered()
 	}
 }
 
-void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*current*/, QTreeWidgetItem * /*previous*/)
 {
 	updateStatusBarText();
 }
@@ -1424,12 +1424,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
 		}
-		QAction *a_add_tag = menu.addAction(tr("Add a tag..."));
+
+		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
+
+		QAction *a_add_tag = is_valid_commit_id ? menu.addAction(tr("Add a tag...")) : nullptr;
 		QAction *a_delete_tags = nullptr;
-		if (pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
+		if (is_valid_commit_id && pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
 			a_delete_tags = menu.addAction(tr("Delete tags..."));
 		}
-		QAction *a_explore = menu.addAction(tr("Explore"));
+		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
@@ -2496,6 +2499,8 @@ void MainWindow::addTag()
 	if (commit && !commit->commit_id.isEmpty()) {
 		commit_id = commit->commit_id;
 	}
+
+	if (!Git::isValidID(commit_id)) return;
 
 	EditTagDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {

@@ -20,7 +20,7 @@ struct CommitExploreWindow::Private {
 	QString commit_id;
 	QString root_tree_id;
 	GitTreeItemList tree_item_list;
-    FileDiffWidget::DiffData diff_data;
+	FileDiffWidget::DiffData::Content content;
     FileDiffWidget::DrawData draw_data;
 };
 
@@ -39,7 +39,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	pv->objcache = objcache;
 	pv->commit_id = commit_id;
 
-    ui->widget_fileview->imbue_(qobject_cast<MainWindow *>(parent), &pv->diff_data, &pv->draw_data);
+	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent), &pv->content, &pv->draw_data);
 
 	ui->splitter->setSizes({100, 100, 200});
 

@@ -8,7 +8,7 @@ MaximizeButton::MaximizeButton(QWidget *parent)
 	pixmap = QPixmap(":/image/maximize.png");
 }
 
-void MaximizeButton::paintEvent(QPaintEvent *event)
+void MaximizeButton::paintEvent(QPaintEvent * /*event*/)
 {
 	QPainter pr(this);
 	int w = pixmap.width();

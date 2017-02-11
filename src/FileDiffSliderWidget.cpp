@@ -28,7 +28,7 @@ FileDiffSliderWidget::~FileDiffSliderWidget()
 	delete pv;
 }
 
-void FileDiffSliderWidget::imbue_(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata)
+void FileDiffSliderWidget::bind(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata)
 {
 	pv->mainwindow = mw;
 	pv->file_diff_widget = fdw;

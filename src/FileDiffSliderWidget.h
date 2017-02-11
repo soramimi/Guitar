@@ -20,7 +20,7 @@ public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
 	~FileDiffSliderWidget();
 
-	void imbue_(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
+	void bind(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);

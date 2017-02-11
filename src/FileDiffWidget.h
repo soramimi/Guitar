@@ -44,12 +44,14 @@ class FileDiffWidget : public QWidget
 	friend class BigDiffWindow;
 public:
 	struct DiffData {
+		struct Content {
+			QString id;
+			QString path;
+			QList<TextDiffLine> lines;
+		};
+		Content left;
+		Content right;
 		QStringList original_lines;
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
-		QString path;
-		QString left_id;
-		QString right_id;
 	};
 
 	struct DrawData {
@@ -63,7 +65,7 @@ public:
 		QColor bgcolor_add_dark;
 		QColor bgcolor_del_dark;
 		QColor bgcolor_gray;
-		ViewType forcus = ViewType::None;
+		QWidget *forcus = nullptr;
 		DrawData();
 	};
 
@@ -94,7 +96,7 @@ private:
 
 	int totalTextLines() const
 	{
-		return diffdata()->left_lines.size();
+		return diffdata()->left.lines.size();
 	}
 
 	int fileviewScrollPos() const

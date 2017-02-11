@@ -39,7 +39,7 @@ const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
 
 int FileHistoryWindow::totalTextLines() const
 {
-	return diffdata()->left_lines.size();
+	return diffdata()->left.lines.size();
 }
 
 int FileHistoryWindow::fileviewScrollPos() const

@@ -17,12 +17,11 @@ private:
 	Private *pv;
 
 	enum class PaintMode {
+		None,
 		Text,
 		Image,
 	};
 
-	FileDiffWidget::DiffData *diffdata();
-	const FileDiffWidget::DiffData *diffdata() const;
 	FileDiffWidget::DrawData *drawdata();
 	const FileDiffWidget::DrawData *drawdata() const;
 	void paintText();
@@ -31,17 +30,18 @@ private:
 	void scrollImage(double x, double y);
 	void setFileType(QString const &mimetype);
 	void setImageScale(double scale);
+	const QList<TextDiffLine> *getLines() const;
+	const FileDiffWidget::DiffData::Content *getContent() const;
+	void updateDrawData(QPainter *painter, int *descent = nullptr);
+	void updateDrawData();
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
 
-	void imbue_(MainWindow *m, FileDiffWidget::DiffData *diffdata, FileDiffWidget::DrawData *drawdata);
-
-	void update();
-	void update(ViewType vt);
+	void bind(MainWindow *m, const FileDiffWidget::DiffData::Content *content, FileDiffWidget::DrawData *drawdata);
 
 	void clear(ViewType vt);
-	void updateDrawData_(int top_margin, int bottom_margin);
+
 	void setImage(QString mimetype, QPixmap pixmap);
 protected:
 	void paintEvent(QPaintEvent *);
