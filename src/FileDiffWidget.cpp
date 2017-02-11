@@ -100,8 +100,8 @@ void FileDiffWidget::clearDiffView()
 {
 	*diffdata() = FileDiffWidget::DiffData();
 	ui->widget_diff_pixmap->clear(false);
-	ui->widget_diff_left->clear(ViewType::Left);
-	ui->widget_diff_right->clear(ViewType::Right);
+	ui->widget_diff_left->clear();
+	ui->widget_diff_right->clear();
 }
 
 int FileDiffWidget::fileviewHeight() const
@@ -284,12 +284,53 @@ bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 	return false;
 }
 
-void FileDiffWidget::setTextLeftOnly(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::layoutView()
+{
+	// 水平スクロールバーを取り外す
+	int i = ui->gridLayout->indexOf(ui->horizontalScrollBar);
+	if (i >= 0) ui->gridLayout->takeAt(i);
+
+	if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::SingleFile) { // 1ファイル表示モード
+		ui->gridLayout->addWidget(ui->horizontalScrollBar, 1, 1, 1, 1); // 水平スクロールバーを colspan=1 で据え付ける
+		ui->widget_diff_right->setVisible(false);  // 右ファイルビューを非表示
+		ui->widget_diff_pixmap->setVisible(false); // pixmap非表示
+	} else { // 2ファイル表示モード
+		ui->gridLayout->addWidget(ui->horizontalScrollBar, 1, 1, 1, 2); // 水平スクロールバーを colspan=2 で据え付ける
+		ui->widget_diff_right->setVisible(true);  // 右ファイルビューを表示
+		ui->widget_diff_pixmap->setVisible(true); // pixmap表示
+	}
+}
+
+void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QString const &path)
 {
 	pv->init_param_ = InitParam_();
-	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextLeftOnly;
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::SingleFile;
+	pv->init_param_.content_left = ba;
+	pv->init_param_.diff.path = path;
+	pv->init_param_.diff.blob.a_id = id;
+	layoutView();
+
+	if (setImage_(ba, ViewType::Left)) return;
+
+	prepareSetText_(ba, pv->init_param_.diff);
+
+	QList<TextDiffLine> left_lines;
+	QList<TextDiffLine> right_lines;
+
+	for (QString const &line : diffdata()->original_lines) {
+		left_lines.push_back(' ' + line);
+	}
+
+	setDiffText(left_lines, right_lines);
+}
+
+void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
+{
+	pv->init_param_ = InitParam_();
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::LeftOnly;
 	pv->init_param_.content_left = ba;
 	pv->init_param_.diff = diff;
+	layoutView();
 
 	if (setImage_(ba, ViewType::Left)) return;
 
@@ -306,12 +347,13 @@ void FileDiffWidget::setTextLeftOnly(QByteArray const &ba, Git::Diff const &diff
 	setDiffText(left_lines, right_lines);
 }
 
-void FileDiffWidget::setTextRightOnly(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	pv->init_param_ = InitParam_();
-	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextRightOnly;
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::RightOnly;
 	pv->init_param_.content_left = ba;
 	pv->init_param_.diff = diff;
+	layoutView();
 
 	if (setImage_(ba, ViewType::Right)) return;
 
@@ -328,14 +370,15 @@ void FileDiffWidget::setTextRightOnly(QByteArray const &ba, Git::Diff const &dif
 	setDiffText(left_lines, right_lines);
 }
 
-void FileDiffWidget::setTextSideBySide(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
 	pv->init_param_ = InitParam_();
-	pv->init_param_.view_style = FileDiffWidget::ViewStyle::TextSideBySide;
+	pv->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySide;
 	pv->init_param_.content_left = ba;
 	pv->init_param_.diff = diff;
 	pv->init_param_.uncommited = uncommited;
 	pv->init_param_.workingdir = workingdir;
+	layoutView();
 
 	if (setImage_(ba, ViewType::Left)) return;
 
@@ -489,13 +532,13 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (isValidID_(diff.blob.a_id)) { // 左が有効
 		obj = cat_file(g, diff.blob.a_id);
 		if (isValidID_(diff.blob.b_id)) { // 右が有効
-			setTextSideBySide(obj.content, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+			setSideBySide(obj.content, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
 		} else {
-			setTextLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
+			setLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
 		}
 	} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
 		obj = cat_file(g, diff.blob.b_id);
-		setTextRightOnly(obj.content, diff);
+		setRightOnly(obj.content, diff);
 	}
 
 	ui->widget_diff_pixmap->clear(false);
@@ -520,7 +563,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = cat_file(g, diff.blob.a_id);
-	setTextSideBySide(obj.content, diff, false, g->workingRepositoryDir());
+	setSideBySide(obj.content, diff, false, g->workingRepositoryDir());
 
 	ui->widget_diff_pixmap->clear(false);
 

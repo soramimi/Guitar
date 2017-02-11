@@ -2,6 +2,8 @@
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
 #include "FilePreviewWidget.h"
+#include "misc.h"
+#include "MainWindow.h"
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
@@ -16,17 +18,19 @@ enum {
 };
 
 struct CommitExploreWindow::Private {
+	MainWindow *mainwindow;
 	GitObjectCache *objcache;
 	QString commit_id;
 	QString root_tree_id;
 	GitTreeItemList tree_item_list;
+	Git::Object content_object;
 	FileDiffWidget::DiffData::Content content;
     FileDiffWidget::DrawData draw_data;
 };
 
-CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, QString commit_id) :
-	QDialog(parent),
-	ui(new Ui::CommitExploreWindow)
+CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, QString commit_id)
+	: QDialog(parent)
+	, ui(new Ui::CommitExploreWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -35,6 +39,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	setWindowFlags(flags);
 
     pv = new Private();
+	pv->mainwindow = parent;
 
 	pv->objcache = objcache;
 	pv->commit_id = commit_id;
@@ -65,6 +70,12 @@ CommitExploreWindow::~CommitExploreWindow()
 {
 	delete pv;
 	delete ui;
+}
+
+void CommitExploreWindow::clearContent()
+{
+	pv->content = FileDiffWidget::DiffData::Content();
+	ui->widget_fileview->clear();
 }
 
 static void removeChildren(QTreeWidgetItem *item)
@@ -145,15 +156,18 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 
 void CommitExploreWindow::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem * /*previous*/)
 {
+	clearContent();
 	doTreeItemChanged_(current);
 }
 
-
 void CommitExploreWindow::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
 {
+	Q_ASSERT(item);
+
 	GitTreeItem::Type type = (GitTreeItem::Type)item->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::TREE) {
 		QString tree_id = item->data(ObjectIdRole).toString();
+		clearContent();
 		QTreeWidgetItem *parent = ui->treeWidget->currentItem();
 		expandTreeItem_(parent);
 		parent->setExpanded(true);
@@ -169,5 +183,42 @@ void CommitExploreWindow::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
 				}
 			}
 		}
+	}
+}
+
+void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem * /*previous*/)
+{
+	if (!current) return;
+
+	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
+	if (type == GitTreeItem::BLOB) {
+		QString id = current->data(ObjectIdRole).toString();
+		pv->content_object = pv->objcache->catFile(id);
+		QStringList original_lines = misc::splitLines(pv->content_object.content, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+
+		ui->widget_fileview->clear();
+
+		QString mimetype = pv->mainwindow->determinFileType(pv->content_object.content, true);
+		if (misc::isImageFile(mimetype)) {
+			QPixmap pixmap;
+			pixmap.loadFromData(pv->content_object.content);
+			ui->widget_fileview->setImage(mimetype, pixmap);
+			return;
+		}
+
+		pv->content.lines.clear();
+		int linenum = 0;
+		for (QString const &line : original_lines) {
+			linenum++;
+			TextDiffLine l;
+			l.line = line;
+			l.line_number = linenum;
+			l.type = TextDiffLine::Unchanged;
+			pv->content.lines.push_back(l);
+		}
+
+		ui->widget_fileview->update();
+	} else {
+		clearContent();
 	}
 }

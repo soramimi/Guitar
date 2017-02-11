@@ -24,14 +24,14 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 	ui->widget_diff->bind(mw);
 
 	switch (param.view_style) {
-	case FileDiffWidget::ViewStyle::TextLeftOnly:
-		ui->widget_diff->setTextLeftOnly(param.content_left, param.diff);
+	case FileDiffWidget::ViewStyle::LeftOnly:
+		ui->widget_diff->setLeftOnly(param.content_left, param.diff);
 		break;
-	case FileDiffWidget::ViewStyle::TextRightOnly:
-		ui->widget_diff->setTextRightOnly(param.content_left, param.diff);
+	case FileDiffWidget::ViewStyle::RightOnly:
+		ui->widget_diff->setRightOnly(param.content_left, param.diff);
 		break;
-	case FileDiffWidget::ViewStyle::TextSideBySide:
-		ui->widget_diff->setTextSideBySide(param.content_left, param.diff, param.uncommited, param.workingdir);
+	case FileDiffWidget::ViewStyle::SideBySide:
+		ui->widget_diff->setSideBySide(param.content_left, param.diff, param.uncommited, param.workingdir);
 		break;
 	}
 }

@@ -97,7 +97,7 @@ void FilePreviewWidget::setFileType(QString const &mimetype)
 	}
 }
 
-void FilePreviewWidget::clear(ViewType vt)
+void FilePreviewWidget::clear()
 {
 	setFileType(QString());
 	pv->pixmap = QPixmap();
@@ -122,6 +122,9 @@ void FilePreviewWidget::updateDrawData()
 
 void FilePreviewWidget::paintText()
 {
+	QList<TextDiffLine> const *lines = getLines();
+	if (!lines) return;
+
 	QPainter pr(this);
 
 	int x;
@@ -130,8 +133,6 @@ void FilePreviewWidget::paintText()
 
 	int descent;
 	updateDrawData(&pr, &descent);
-
-	QList<TextDiffLine> const *lines = getLines();
 
 	x = 0;
 

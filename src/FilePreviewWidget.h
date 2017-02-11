@@ -40,7 +40,7 @@ public:
 
 	void bind(MainWindow *m, const FileDiffWidget::DiffData::Content *content, FileDiffWidget::DrawData *drawdata);
 
-	void clear(ViewType vt);
+	void clear();
 
 	void setImage(QString mimetype, QPixmap pixmap);
 protected:

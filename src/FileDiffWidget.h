@@ -21,7 +21,7 @@ struct TextDiffLine {
 		Unchanged,
 		Add,
 		Del,
-	} type = Unknown;
+	} type = Unchanged;
 	int hunk_number = -1;
 	int line_number = -1;
 	QString mark;
@@ -71,9 +71,10 @@ public:
 
 	enum ViewStyle {
 		None,
-		TextLeftOnly,
-		TextRightOnly,
-		TextSideBySide,
+		SingleFile,
+		LeftOnly,
+		RightOnly,
+		SideBySide,
 	};
 
 private:
@@ -128,9 +129,11 @@ private:
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
 	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
-	void setTextRightOnly(const QByteArray &ba, const Git::Diff &diff);
-	void setTextLeftOnly(const QByteArray &ba, const Git::Diff &diff);
-	void setTextSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
+
+	void setSingleFile(QByteArray const &ba, const QString &id, const QString &path);
+	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
+	void setRightOnly(const QByteArray &ba, const Git::Diff &diff);
+	void setSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
 	void init_diff_data_(const Git::Diff &diff);
 
@@ -139,6 +142,7 @@ private:
 
 	bool isValidID_(const QString &id);
 	bool setImage_(const QByteArray &ba, ViewType viewtype);
+	void layoutView();
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
