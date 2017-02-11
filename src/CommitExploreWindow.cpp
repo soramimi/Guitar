@@ -45,6 +45,7 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 	pv->commit_id = commit_id;
 
 	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent));
+	ui->widget_fileview->setMaximizeButtonEnabled(false);
 
 	ui->splitter->setSizes({100, 100, 200});
 
