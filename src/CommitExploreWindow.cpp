@@ -44,9 +44,11 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 	pv->objcache = objcache;
 	pv->commit_id = commit_id;
 
-	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent), &pv->content, &pv->draw_data);
+	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent));
 
 	ui->splitter->setSizes({100, 100, 200});
+
+	ui->widget_fileview->setSingleFile(QByteArray(), QString(), QString());
 
 	GitCommit commit;
 	commit.parseCommit(objcache, commit_id);
@@ -75,7 +77,7 @@ CommitExploreWindow::~CommitExploreWindow()
 void CommitExploreWindow::clearContent()
 {
 	pv->content = FileDiffWidget::DiffData::Content();
-	ui->widget_fileview->clear();
+	ui->widget_fileview->clearDiffView();
 }
 
 static void removeChildren(QTreeWidgetItem *item)
@@ -196,8 +198,9 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		pv->content_object = pv->objcache->catFile(id);
 		QStringList original_lines = misc::splitLines(pv->content_object.content, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
 
-		ui->widget_fileview->clear();
+		clearContent();
 
+#if 0
 		QString mimetype = pv->mainwindow->determinFileType(pv->content_object.content, true);
 		if (misc::isImageFile(mimetype)) {
 			QPixmap pixmap;
@@ -218,6 +221,9 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		}
 
 		ui->widget_fileview->update();
+#else
+		ui->widget_fileview->setSingleFile(pv->content_object.content, id, QString());
+#endif
 	} else {
 		clearContent();
 	}

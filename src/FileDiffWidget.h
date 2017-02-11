@@ -130,7 +130,6 @@ private:
 
 	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
 
-	void setSingleFile(QByteArray const &ba, const QString &id, const QString &path);
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setRightOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
@@ -150,6 +149,8 @@ public:
 	void bind(MainWindow *mw);
 
 	void clearDiffView();
+
+	void setSingleFile(QByteArray const &ba, const QString &id, const QString &path);
 
 	void updateDiffView(const Git::Diff &info, bool uncommited);
 	void updateDiffView(QString id_left, QString id_right);

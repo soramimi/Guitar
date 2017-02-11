@@ -82,7 +82,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="FilePreviewWidget" name="widget_fileview" native="true">
+        <widget class="FileDiffWidget" name="widget_fileview" native="true">
          <property name="minimumSize">
           <size>
            <width>100</width>
@@ -99,9 +99,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>FilePreviewWidget</class>
+   <class>FileDiffWidget</class>
    <extends>QWidget</extends>
-   <header>FilePreviewWidget.h</header>
+   <header>FileDiffWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

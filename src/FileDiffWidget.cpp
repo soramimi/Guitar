@@ -269,6 +269,8 @@ bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 {
 	QString mimetype = pv->mainwindow->determinFileType(ba, true);
 	if (misc::isImageFile(mimetype)) {
+		ui->verticalScrollBar->setVisible(false);
+		ui->horizontalScrollBar->setVisible(false);
 		QPixmap pixmap;
 		pixmap.loadFromData(ba);
 		FilePreviewWidget *w = nullptr;
@@ -281,6 +283,8 @@ bool FileDiffWidget::setImage_(QByteArray const &ba, ViewType viewtype)
 		}
 		return true;
 	}
+	ui->verticalScrollBar->setVisible(true);
+	ui->horizontalScrollBar->setVisible(true);
 	return false;
 }
 
@@ -310,7 +314,9 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 	pv->init_param_.diff.blob.a_id = id;
 	layoutView();
 
-	if (setImage_(ba, ViewType::Left)) return;
+	if (setImage_(ba, ViewType::Left)) {
+		return;
+	}
 
 	prepareSetText_(ba, pv->init_param_.diff);
 
