@@ -19,7 +19,7 @@ struct FilePreviewWidget::Private {
 	QScrollBar *vertical_scroll_bar = nullptr;
 	QString mime_type;
 	QPixmap pixmap;
-	FilePreviewWidget::PaintMode paint_mode = FilePreviewWidget::PaintMode::Text;
+	FilePreviewType file_type = FilePreviewType::Text;
 	double image_scroll_x = 0;
 	double image_scroll_y = 0;
 	double image_scale = 1;
@@ -89,10 +89,10 @@ void FilePreviewWidget::setFileType(QString const &mimetype)
 {
 	pv->mime_type = mimetype;
 	if (misc::isImageFile(pv->mime_type)) {
-		pv->paint_mode = PaintMode::Image;
+		pv->file_type = FilePreviewType::Image;
 		setMouseTracking(true);
 	} else {
-		pv->paint_mode = PaintMode::Text;
+		pv->file_type = FilePreviewType::Text;
 		setMouseTracking(false);
 	}
 }
@@ -249,11 +249,11 @@ void FilePreviewWidget::paintImage()
 
 void FilePreviewWidget::paintEvent(QPaintEvent *)
 {
-	switch (pv->paint_mode) {
-	case PaintMode::Image:
+	switch (pv->file_type) {
+	case FilePreviewType::Image:
 		paintImage();
 		break;
-	case PaintMode::Text:
+	case FilePreviewType::Text:
 		paintText();
 		break;
 	}
@@ -284,13 +284,18 @@ void FilePreviewWidget::scrollImage(double x, double y)
 void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
 {
 	setFileType(mimetype);
-	if (pv->paint_mode == PaintMode::Image) {
+	if (pv->file_type == FilePreviewType::Image) {
 		pv->pixmap = pixmap;
 		pv->image_scale = 1;
 		double x = pv->pixmap.width() / 2.0;
 		double y = pv->pixmap.height() / 2.0;
 		scrollImage(x, y);
 	}
+}
+
+FilePreviewType FilePreviewWidget::filetype() const
+{
+	return pv->file_type;
 }
 
 void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
@@ -305,7 +310,7 @@ void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
 
 void FilePreviewWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	if (pv->paint_mode == PaintMode::Image) {
+	if (pv->file_type == FilePreviewType::Image) {
 		QPoint pos = mapFromGlobal(QCursor::pos());
 		if ((e->buttons() & Qt::LeftButton) && focusWidget() == this) {
 			int delta_x = pos.x() - pv->mouse_press_pos.x();
@@ -330,7 +335,7 @@ void FilePreviewWidget::setImageScale(double scale)
 
 void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 {
-	if (pv->paint_mode == PaintMode::Text) {
+	if (pv->file_type == FilePreviewType::Text) {
 		int delta = e->delta();
 		if (delta < 0) {
 			delta = -delta / 40;
@@ -342,7 +347,7 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 			emit scrollByWheel(-delta);
 
 		}
-	} else if (pv->paint_mode == PaintMode::Image) {
+	} else if (pv->file_type == FilePreviewType::Image) {
 		double scale = 1;
 		pv->wheel_delta += e->delta();
 		while (pv->wheel_delta >= 120) {

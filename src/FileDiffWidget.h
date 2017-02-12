@@ -15,6 +15,12 @@ enum class ViewType {
 	Right
 };
 
+enum class FilePreviewType {
+	Unknown,
+	Text,
+	Image,
+};
+
 struct TextDiffLine {
 	enum Type {
 		Unknown,
@@ -84,7 +90,7 @@ private:
 
 	struct InitParam_ {
 		ViewStyle view_style = ViewStyle::None;
-		QByteArray content_left;
+		QByteArray bytes;
 		Git::Diff diff;
 		bool uncommited = false;
 		QString workingdir;
@@ -94,6 +100,11 @@ private:
 	FileDiffWidget::DiffData const *diffdata() const;
 	FileDiffWidget::DrawData *drawdata();
 	FileDiffWidget::DrawData const *drawdata() const;
+
+	ViewStyle viewstyle() const;
+
+	GitPtr git();
+	Git::Object cat_file(GitPtr g, const QString &id);
 
 	int totalTextLines() const
 	{
@@ -119,7 +130,7 @@ private:
 
 	void resetScrollBarValue();
 	void updateVerticalScrollBar();
-	void updateHorizontalScrollBar();
+	void updateHorizontalScrollBar(int headerchars);
 	void updateSliderCursor();
 	void updateControls();
 
@@ -128,20 +139,16 @@ private:
 
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
-	void prepareSetText_(const QByteArray &ba, const Git::Diff &diff);
 
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setRightOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
 
-	void init_diff_data_(const Git::Diff &diff);
-
-	GitPtr git();
-	Git::Object cat_file(GitPtr g, const QString &id);
-
 	bool isValidID_(const QString &id);
-	bool setImage_(const QByteArray &ba, ViewType viewtype);
-	void layoutView();
+
+	FilePreviewType setupPreviewWidget();
+
+	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();

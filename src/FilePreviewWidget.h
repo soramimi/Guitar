@@ -12,15 +12,10 @@ class FileDiffSliderWidget;
 class FilePreviewWidget : public QWidget
 {
 	Q_OBJECT
+public:
 private:
 	struct Private;
 	Private *pv;
-
-	enum class PaintMode {
-		None,
-		Text,
-		Image,
-	};
 
 	FileDiffWidget::DrawData *drawdata();
 	const FileDiffWidget::DrawData *drawdata() const;
@@ -43,6 +38,9 @@ public:
 	void clear();
 
 	void setImage(QString mimetype, QPixmap pixmap);
+
+	FilePreviewType filetype() const;
+
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

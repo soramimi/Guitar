@@ -25,7 +25,7 @@ private:
 	void doTreeItemChanged_(QTreeWidgetItem *current);
 	void expandTreeItem_(QTreeWidgetItem *item);
 public:
-	explicit CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, QString commit_id);
+	explicit CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, Git::CommitItem const *commit);
 	~CommitExploreWindow();
 
 	void clearContent();

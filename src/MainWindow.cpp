@@ -1453,7 +1453,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_explore) {
-				CommitExploreWindow win(this, &pv->objcache, commit->commit_id);
+				CommitExploreWindow win(this, &pv->objcache, commit);
 				win.exec();
 				return;
 			}
