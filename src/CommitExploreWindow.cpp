@@ -50,6 +50,8 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 
 	ui->splitter->setSizes({100, 100, 200});
 
+	ui->widget_fileview->setLeftBorderVisible(false);
+
 	ui->widget_fileview->setSingleFile(QByteArray(), QString(), QString());
 
 	{ // change bg color of line edit widgets
@@ -179,8 +181,6 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 
 	loadTree(tree_id);
 
-	qDebug() << "--------------";
-
 	for (GitTreeItem const &ti : pv->tree_item_list) {
 		char const *icon = (ti.type == GitTreeItem::TREE) ? ":/image/folder.png" : ":/image/file.png";
 		QListWidgetItem *p = new QListWidgetItem();
@@ -233,10 +233,8 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	if (type == GitTreeItem::BLOB) {
 		QString id = current->data(ObjectIdRole).toString();
 		pv->content_object = pv->objcache->catFile(id);
-//		QStringList original_lines = misc::splitLines(pv->content_object.content, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-qDebug() << path << id;
 		ui->widget_fileview->setSingleFile(pv->content_object.content, id, path);
 	} else {
 		clearContent();

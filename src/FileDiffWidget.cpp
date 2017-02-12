@@ -52,6 +52,11 @@ FileDiffWidget::~FileDiffWidget()
 	delete ui;
 }
 
+void FileDiffWidget::setLeftBorderVisible(bool f)
+{
+	ui->widget_diff_left->setLeftBorderVisible(f);
+}
+
 void FileDiffWidget::setMaximizeButtonEnabled(bool f)
 {
 	ui->toolButton_fullscreen->setVisible(f);
@@ -407,6 +412,9 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 	QByteArray const &bytes = pv->init_param_.bytes;
 
 	QString mimetype = pv->mainwindow->determinFileType(bytes, true);
+
+	ui->widget_diff_left->setFileType(mimetype);
+	ui->widget_diff_right->setFileType(mimetype);
 
 	if (misc::isImageFile(mimetype)) { // image
 

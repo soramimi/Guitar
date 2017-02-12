@@ -16,7 +16,7 @@ enum class ViewType {
 };
 
 enum class FilePreviewType {
-	Unknown,
+	None,
 	Text,
 	Image,
 };
@@ -165,6 +165,7 @@ public:
 	QPixmap makeDiffPixmap(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
 
 	void setMaximizeButtonEnabled(bool f);
+	void setLeftBorderVisible(bool f);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);

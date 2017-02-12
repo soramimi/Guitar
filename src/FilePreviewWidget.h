@@ -23,7 +23,6 @@ private:
 	void paintImage();
 	QSizeF imageScrollRange() const;
 	void scrollImage(double x, double y);
-	void setFileType(QString const &mimetype);
 	void setImageScale(double scale);
 	const QList<TextDiffLine> *getLines() const;
 	const FileDiffWidget::DiffData::Content *getContent() const;
@@ -37,10 +36,12 @@ public:
 
 	void clear();
 
+	void setFileType(QString const &mimetype);
 	void setImage(QString mimetype, QPixmap pixmap);
 
 	FilePreviewType filetype() const;
 
+	void setLeftBorderVisible(bool f);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);
