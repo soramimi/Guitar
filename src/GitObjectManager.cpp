@@ -37,7 +37,6 @@ void GitObjectManager::loadIndexes()
 			idx->parse(it.filePath());
 			git_idx_list.push_back(idx);
 		}
-		qDebug() << "idx loaded";
 	}
 }
 
@@ -321,7 +320,6 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 					if (commit_id.isEmpty()) {
 						if (len >= 7 + 40 && strncmp(ptr, "object ", 7) == 0) {
 							QString id = QString::fromUtf8(ptr + 7, len - 7).trimmed();
-							qDebug() << id;
 							if (Git::isValidID(id)) {
 								commit_id = id;
 							}

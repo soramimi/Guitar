@@ -96,7 +96,9 @@ SOURCES += \
     src/FilePropertyDialog.cpp \
     src/BigDiffWindow.cpp \
     src/MaximizeButton.cpp \
-    src/CommitExploreWindow.cpp
+    src/CommitExploreWindow.cpp \
+    src/ReadOnlyLineEdit.cpp \
+    src/ReadOnlyPlainTextEdit.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -141,7 +143,9 @@ HEADERS  += \
     zlib.h \
     src/BigDiffWindow.h \
     src/MaximizeButton.h \
-    src/CommitExploreWindow.h
+    src/CommitExploreWindow.h \
+    src/ReadOnlyLineEdit.h \
+    src/ReadOnlyPlainTextEdit.h
 
 FORMS    += \
 	src/MainWindow.ui \

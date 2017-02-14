@@ -4,6 +4,7 @@
 #include "FilePreviewWidget.h"
 #include "misc.h"
 #include "MainWindow.h"
+#include "main.h"
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
@@ -54,24 +55,7 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 
 	ui->widget_fileview->setSingleFile(QByteArray(), QString(), QString());
 
-	{ // change bg color of line edit widgets
-		QColor color = QWidget::palette().color(QWidget::backgroundRole());
-		char tmp[100];
-		sprintf(tmp, "* { background: #%02x%02x%02x; }"
-				, color.red()
-				, color.green()
-				, color.blue()
-				);
-		QString ss = tmp;
-		ui->lineEdit_commit_id->setStyleSheet(ss);
-		ui->lineEdit_date->setStyleSheet(ss);
-		ui->lineEdit_author->setStyleSheet(ss);
-	}
-	{
-		qDebug() << font();
-
-	}
-
+	// set text
 	ui->lineEdit_commit_id->setText(commit->commit_id);
 	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
 	ui->lineEdit_author->setText(commit->author);

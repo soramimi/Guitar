@@ -10,7 +10,7 @@
 #include "LegacyWindowsStyleTreeControl.h"
 
 QString application_data_dir;
-
+QColor panel_bg_color;
 
 class MyStyle : public QProxyStyle {
 private:
@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow w;
+	panel_bg_color = w.palette().color(QPalette::Background);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
 
