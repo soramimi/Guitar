@@ -12,6 +12,7 @@ TEMPLATE = app
 CONFIG += c++11
 
 unix:QMAKE_CXXFLAGS += -Werror=return-type -Werror=trigraphs -Wno-switch
+unix:QMAKE_RPATHDIR += $ORIGIN
 
 linux:QTPLUGIN += ibusplatforminputcontextplugin
 
