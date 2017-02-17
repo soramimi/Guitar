@@ -448,16 +448,18 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 	} else if (pv->file_type == FilePreviewType::Image) {
 		if (!pv->pixmap.isNull()) {
 			double scale = 1;
+			const double mul = 1.189207115; // sqrt(sqrt(2))
 			pv->wheel_delta += e->delta();
 			while (pv->wheel_delta >= 120) {
 				pv->wheel_delta -= 120;
-				scale *= 1.25;
+				scale *= mul;
 			}
 			while (pv->wheel_delta <= -120) {
 				pv->wheel_delta += 120;
-				scale /= 1.25;
+				scale /= mul;
 			}
 			setImageScale(pv->image_scale * scale);
+			qDebug() << pv->image_scale;
 
 			double cx = width() / 2.0;
 			double cy = height() / 2.0;
