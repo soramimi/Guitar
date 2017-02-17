@@ -32,34 +32,13 @@ private:
 
 	GitPtr git();
 
-//	void diff_tree_(GitPtr g, QString const &dir, QString older_commit_id, QString newer_commit_id);
-//	void commit_into_map(GitPtr g, const TreeItemList *files, MapList const *diffmap);
-//	void parseTree_(GitPtr g, GitObjectCache *objcache, QString const &dir, QString const &id, std::set<QString> *dirset, MapList *path_to_id_map)
-//	{
-//		if (!dir.isEmpty()) {
-//			auto it = dirset->find(dir);
-//			if (it != dirset->end()) {
-//				return;
-//			}
-//			dirset->insert(dir);
-//		}
-
-//		TreeItemList files;
-//		parse_tree_(g, objcache, id, dir, &files);
-//		path_to_id_map->push_back(LookupTable());
-//		LookupTable &map = path_to_id_map->front();
-//		for (TreeItem const &cd : files) {
-//			map.store(cd.name, cd.id);
-//		}
-//	}
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
 	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
 	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files);
 public:
-	GitDiff(GitPtr g, GitObjectCache *objcache)
+	GitDiff(GitObjectCache *objcache)
 	{
-//		this->g = g;
 		this->objcache = objcache;
 	}
 

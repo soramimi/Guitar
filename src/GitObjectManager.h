@@ -52,6 +52,7 @@ private:
 	GitObjectManager object_manager;
 	typedef std::shared_ptr<Item> ItemPtr;
 	std::vector<ItemPtr> items;
+	std::map<QString, QString> revparsemap;
 	size_t size() const;
 public:
 	GitPtr git()
@@ -60,6 +61,7 @@ public:
 	}
 
 	void setup(GitPtr g);
+	QString revParse(const QString &name);
 	Git::Object catFile(QString const &id);
 	QString getCommitIdFromTag(const QString &tag);
 };

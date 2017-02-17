@@ -240,7 +240,28 @@ size_t GitObjectCache::size() const
 
 void GitObjectCache::setup(GitPtr g)
 {
+	items.clear();
+	revparsemap.clear();
 	object_manager.setup(g->dup());
+}
+
+QString GitObjectCache::revParse(QString const &name)
+{
+	{
+		QMutexLocker lock(&object_manager.mutex);
+		auto it = revparsemap.find(name);
+		if (it != revparsemap.end()) {
+			return it->second;
+		}
+	}
+
+	QString id = git()->rev_parse(name);
+
+	{
+		QMutexLocker lock(&object_manager.mutex);
+		revparsemap[name] = id;
+		return id;
+	}
 }
 
 Git::Object GitObjectCache::catFile(const QString &id)
@@ -291,7 +312,7 @@ Git::Object GitObjectCache::catFile(const QString &id)
 	}
 
 	if (true) {
-		if (object_manager.git()->cat_file(id, &ba)) { // 外部コマンド起動の git cat-file -p を試してみる
+		if (git()->cat_file(id, &ba)) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __LINE__ << __FILE__ << Q_FUNC_INFO << id;
 			return Store();

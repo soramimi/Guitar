@@ -170,7 +170,7 @@ private:
 
 	void stopDiff();
 	void startDiff(GitPtr g, QString id);
-	bool makeDiff(const QString &id, QList<Git::Diff> *out, bool uncommited);
+	bool makeDiff(const QString &id, QList<Git::Diff> *out);
 
 	void udpateButton();
 	void commit(bool amend = false);

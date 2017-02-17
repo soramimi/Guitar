@@ -80,7 +80,7 @@ public:
 
 GitPtr GitDiff::git()
 {
-	return objcache->git();
+	return objcache->git()->dup();
 }
 
 QString GitDiff::makeKey(const QString &a_id, const QString &b_id)
@@ -263,12 +263,12 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 			}
 		} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-			GitCommitTree head_tree(objcache);
-			QString head_id = git()->rev_parse_HEAD();
-			qDebug() << "HEAD is " << head_id;
-			head_tree.parseCommit(head_id); // HEADが親
+			GitPtr g = objcache->git();
+			QString head_id = objcache->revParse("HEAD");
+			Git::FileStatusList stats = g->status(); // git status
 
-			Git::FileStatusList stats = git()->status(); // git status
+			GitCommitTree head_tree(objcache);
+			head_tree.parseCommit(head_id); // HEADが親
 
 			QString zero40(40, '0');
 

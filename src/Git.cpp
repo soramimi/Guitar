@@ -188,7 +188,9 @@ QString Git::errorMessage() const
 GitPtr Git::dup() const
 {
 	Git *p = new Git();
-	p->pv = new Private(*pv);
+	p->pv = new Private();
+	p->pv->git_command = pv->git_command;
+	p->pv->working_repo_dir = pv->working_repo_dir;
 	return GitPtr(p);
 }
 
@@ -248,11 +250,6 @@ void Git::delete_tag(const QString &name, bool remote)
 		cmd = cmd.arg(name);
 		git(cmd);
 	}
-}
-
-QString Git::rev_parse_HEAD()
-{
-	return rev_parse("HEAD");
 }
 
 #if USE_LIBGIT2
