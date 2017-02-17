@@ -104,6 +104,8 @@ void FileDiffWidget::bind(MainWindow *mw)
 	connect(ui->widget_diff_left, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
 	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
 	connect(ui->widget_diff_right, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
+	connect(ui->widget_diff_left, SIGNAL(onBinaryMode()), this, SLOT(setBinaryMode()));
+	connect(ui->widget_diff_right, SIGNAL(onBinaryMode()), this, SLOT(setBinaryMode()));
 }
 
 GitPtr FileDiffWidget::git()
@@ -336,7 +338,7 @@ void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiff
 			ushort c = item.line.utf16()[0];
 			item.line = item.line.mid(1);
 			if (c == ' ') {
-				item.type = TextDiffLine::Unchanged;
+				item.type = TextDiffLine::Normal;
 				item.line_number = linenum++;
 			} else if (c == '+') {
 				item.type = TextDiffLine::Add;
@@ -409,9 +411,9 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 
 	// init content
 
-	QByteArray const &bytes = pv->init_param_.bytes;
+	diffdata()->left.bytes = pv->init_param_.bytes;
 
-	QString mimetype = pv->mainwindow->determinFileType(bytes, true);
+	QString mimetype = pv->mainwindow->determinFileType(diffdata()->left.bytes, true);
 
 	ui->widget_diff_left->setFileType(mimetype);
 	ui->widget_diff_right->setFileType(mimetype);
@@ -421,7 +423,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(false);
 		ui->horizontalScrollBar->setVisible(false);
 		QPixmap pixmap;
-		pixmap.loadFromData(bytes);
+		pixmap.loadFromData(diffdata()->left.bytes);
 
 		FilePreviewWidget *w = w = ui->widget_diff_left;
 		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
@@ -437,14 +439,23 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(true);
 		ui->horizontalScrollBar->setVisible(true);
 
-		if (bytes.isEmpty()) {
+		if (diffdata()->left.bytes.isEmpty()) {
 			diffdata()->original_lines.clear();
 		} else {
-			diffdata()->original_lines = misc::splitLines(bytes, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+			diffdata()->original_lines = misc::splitLines(diffdata()->left.bytes, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
 		}
 
 		return FilePreviewType::Text;
 	}
+}
+
+void FileDiffWidget::setBinaryMode()
+{
+	diffdata()->original_lines.clear();
+	ui->widget_diff_left->setBinaryMode(true);
+	ui->widget_diff_right->setBinaryMode(true);
+	ui->widget_diff_left->update();
+	ui->widget_diff_right->update();
 }
 
 void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QString const &path)
@@ -692,7 +703,7 @@ QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, Fil
 			while (i < lines.size()) {
 				TextDiffLine::Type type = lines[i].type;
 				int j = i + 1;
-				if (type != TextDiffLine::Unchanged) {
+				if (type != TextDiffLine::Normal) {
 					while (j < lines.size()) {
 						if (lines[j].type != type) break;
 						j++;

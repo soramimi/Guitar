@@ -31,6 +31,7 @@ struct FilePreviewWidget::Private {
 	int top_margin = 1;
 	int bottom_margin = 1;
 	bool draw_left_border = true;
+	bool binary_mode = false;
 };
 
 FileDiffWidget::DrawData *FilePreviewWidget::drawdata()
@@ -164,7 +165,7 @@ void FilePreviewWidget::paintText()
 
 			QColor *bgcolor;
 			switch (lines->at(i).type) {
-			case TextDiffLine::Unchanged:
+			case TextDiffLine::Normal:
 				bgcolor = &drawdata()->bgcolor_text;
 				break;
 			case TextDiffLine::Add:
@@ -219,6 +220,68 @@ void FilePreviewWidget::paintText()
 	}
 }
 
+void FilePreviewWidget::paintBinary()
+{
+	FileDiffWidget::DiffData::Content const *content = getContent();
+	if (!content) return;
+	if (content->bytes.isEmpty()) return;
+
+	int length = content->bytes.size();
+	uint8_t const *source = (uint8_t const *)content->bytes.data();
+
+	QPainter pr(this);
+
+	int x;
+	int w = width();
+	int h = height();
+
+	int descent;
+	updateDrawData(&pr, &descent);
+
+	x = 0;
+
+	const int linenums = 5;
+
+	{//if (lines) {
+		int char_width = drawdata()->char_width;
+		int y = drawdata()->v_scroll_pos * drawdata()->line_height;
+		y = -y;
+		int offset = 0;
+		while (offset < length) {
+			char tmp[100];
+			int j = sprintf(tmp, " %08X ", offset);
+			for (int i = 0; i < 16; i++) {
+				if (offset + i < length) {
+					sprintf(tmp + j, "%02X ", source[offset + i]);
+				} else {
+					strcpy(tmp + j, "   ");
+				}
+				j += 3;
+			}
+			for (int i = 0; i < 16; i++) {
+				uint8_t c = '0';
+				if (offset < length) {
+					c = source[offset];
+					if (!isprint(c)) {
+						c = '.';
+					}
+					offset++;
+				}
+				tmp[j] = c;
+				j++;
+			}
+			tmp[j] = 0;
+			int line_y = y + drawdata()->line_height - descent - pv->bottom_margin;
+			QColor bgcolor = drawdata()->bgcolor_text;
+			pr.fillRect(0, y, width(), drawdata()->line_height, QBrush(bgcolor));
+			pr.setPen(QColor(0, 0, 0));
+			pr.drawText(x, line_y, tmp);
+			y += drawdata()->line_height;
+			if (y >= height()) break;
+		}
+	}
+}
+
 QSizeF FilePreviewWidget::imageScrollRange() const
 {
 	int w = pv->pixmap.width() * pv->image_scale;
@@ -254,13 +317,17 @@ void FilePreviewWidget::paintImage()
 
 void FilePreviewWidget::paintEvent(QPaintEvent *)
 {
-	switch (pv->file_type) {
-	case FilePreviewType::Image:
-		paintImage();
-		break;
-	case FilePreviewType::Text:
-		paintText();
-		break;
+	if (isBinaryMode()) {
+		paintBinary();
+	} else {
+		switch (pv->file_type) {
+		case FilePreviewType::Image:
+			paintImage();
+			break;
+		case FilePreviewType::Text:
+			paintText();
+			break;
+		}
 	}
 	QPainter pr(this);
 	if (pv->draw_left_border) {
@@ -297,6 +364,16 @@ void FilePreviewWidget::scrollImage(double x, double y)
 	if (pv->image_scroll_x > sz.width()) pv->image_scroll_x = sz.width();
 	if (pv->image_scroll_y > sz.height()) pv->image_scroll_y = sz.height();
 	update();
+}
+
+void FilePreviewWidget::setBinaryMode(bool f)
+{
+	pv->binary_mode = f;
+}
+
+bool FilePreviewWidget::isBinaryMode() const
+{
+	return pv->binary_mode;
 }
 
 void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
@@ -373,11 +450,11 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 			pv->wheel_delta += e->delta();
 			while (pv->wheel_delta >= 120) {
 				pv->wheel_delta -= 120;
-				scale *= 1.125;
+				scale *= 1.25;
 			}
 			while (pv->wheel_delta <= -120) {
 				pv->wheel_delta += 120;
-				scale /= 1.125;
+				scale /= 1.25;
 			}
 			setImageScale(pv->image_scale * scale);
 
@@ -418,7 +495,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 
 	QMenu menu;
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
-	QAction *a_test = nullptr;//id.isEmpty() ? nullptr : menu.addAction(tr("test"));
+	QAction *a_test = id.isEmpty() ? nullptr : menu.addAction(tr("test"));
 	if (!menu.actions().isEmpty()) {
 		drawdata()->forcus = this;
 		update();
@@ -433,6 +510,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 				goto DONE;
 			}
 			if (a == a_test) {
+				emit onBinaryMode();
 				goto DONE;
 			}
 		}

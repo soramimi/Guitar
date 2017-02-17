@@ -28,6 +28,7 @@ private:
 	const FileDiffWidget::DiffData::Content *getContent() const;
 	void updateDrawData(QPainter *painter, int *descent = nullptr);
 	void updateDrawData();
+	void paintBinary();
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
@@ -42,6 +43,8 @@ public:
 	FilePreviewType filetype() const;
 
 	void setLeftBorderVisible(bool f);
+	void setBinaryMode(bool f);
+	bool isBinaryMode() const;
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);
@@ -50,6 +53,7 @@ protected:
 signals:
 	void scrollByWheel(int lines);
 	void resized();
+	void onBinaryMode();
 
 	// QWidget interface
 protected:

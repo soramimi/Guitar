@@ -24,10 +24,10 @@ enum class FilePreviewType {
 struct TextDiffLine {
 	enum Type {
 		Unknown,
-		Unchanged,
+		Normal,
 		Add,
 		Del,
-	} type = Unchanged;
+	} type = Normal;
 	int hunk_number = -1;
 	int line_number = -1;
 	QString mark;
@@ -53,6 +53,7 @@ public:
 		struct Content {
 			QString id;
 			QString path;
+			QByteArray bytes;
 			QList<TextDiffLine> lines;
 		};
 		Content left;
@@ -174,6 +175,7 @@ private slots:
 	void onDiffWidgetResized();
 	void on_toolButton_fullscreen_clicked();
 
+	void setBinaryMode();
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 signals:
