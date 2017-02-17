@@ -59,9 +59,11 @@ FileUtils.cp(src, $dstdir_platforminputcontexts)
 $arch = "x86-32bit"
 if `uname -a` =~ /(x86_64)|(amd64)/
 	$arch = "x86-64bit"
+elsif `uname -a` =~ /armv7l/
+	$arch = "raspi"
 end
 
 Dir.chdir($workdir) {
-	`7z a Guitar-#{$version_a}.#{$version_b}.#{$version_c}-linux-#{$arch}.zip Guitar`
+	`tar zcvf Guitar-#{$version_a}.#{$version_b}.#{$version_c}-linux-#{$arch}.tar.gz Guitar`
 }
 
