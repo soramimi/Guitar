@@ -94,6 +94,7 @@ void FilePreviewWidget::setLeftBorderVisible(bool f)
 
 void FilePreviewWidget::setFileType(QString const &mimetype)
 {
+	setBinaryMode(false);
 	pv->mime_type = mimetype;
 	if (misc::isImageFile(pv->mime_type)) {
 		pv->file_type = FilePreviewType::Image;

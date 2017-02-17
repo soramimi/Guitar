@@ -197,14 +197,23 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 					std::map<QString, Git::Diff> diffmap;
 
 					std::set<QString> deleted_set;
+					std::set<QString> renamed_set;
+
 					QList<Git::DiffRaw> list;
 					for (QString const &parent : newer_commit.parents) {
 						QList<Git::DiffRaw> l = git()->diff_raw(parent, id);
 						for (Git::DiffRaw const &item : l) {
 							if (item.state.startsWith('D')) {
 								deleted_set.insert(item.a.id);
-							} else {
-								list.push_back(item);
+							}
+							list.push_back(item);
+						}
+					}
+					for (Git::DiffRaw const &item : list) {
+						if (item.state.startsWith('A')) { // 追加されたファイル
+							auto it = deleted_set.find(item.b.id); // 同じオブジェクトIDが削除リストに載っているなら
+							if (it != deleted_set.end()) {
+								renamed_set.insert(item.b.id); // 名前変更とみなす
 							}
 						}
 					}
@@ -225,18 +234,24 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 							if (!diff.blob.b_id.isEmpty()) {
 								diff.type = Git::Diff::Type::Changed;
 							} else {
-								diff.type = Git::Diff::Type::Deleted;
+								if (renamed_set.find(diff.blob.a_id) != renamed_set.end()) { // 名前変更されたオブジェクトなら
+									diff.type = Git::Diff::Type::Unknown; // マップに追加しない
+								} else {
+									diff.type = Git::Diff::Type::Deleted; // 削除されたオブジェクト
+								}
 							}
 						} else if (!diff.blob.b_id.isEmpty()) {
-							if (deleted_set.find(diff.blob.b_id) != deleted_set.end()) {
+							if (renamed_set.find(diff.blob.b_id) != renamed_set.end()) {
 								diff.type = Git::Diff::Type::Renamed;
 							} else {
 								diff.type = Git::Diff::Type::Added;
 							}
 						}
 
-						if (diffmap.find(diff.path) == diffmap.end()) {
-							diffmap[diff.path] = diff;
+						if (diff.type != Git::Diff::Type::Unknown) {
+							if (diffmap.find(diff.path) == diffmap.end()) {
+								diffmap[diff.path] = diff;
+							}
 						}
 					}
 
@@ -249,7 +264,9 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 		} else { // 無効なIDなら、HEADと作業コピーのdiff
 
 			GitCommitTree head_tree(objcache);
-			head_tree.parseCommit(git()->rev_parse_HEAD()); // HEADが親
+			QString head_id = git()->rev_parse_HEAD();
+			qDebug() << "HEAD is " << head_id;
+			head_tree.parseCommit(head_id); // HEADが親
 
 			Git::FileStatusList stats = git()->status(); // git status
 

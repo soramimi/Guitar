@@ -150,6 +150,7 @@ private:
 	FilePreviewType setupPreviewWidget();
 
 	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
+	void setBinaryMode(bool f);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();

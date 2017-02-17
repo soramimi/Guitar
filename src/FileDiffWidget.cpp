@@ -449,13 +449,18 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 	}
 }
 
-void FileDiffWidget::setBinaryMode()
+void FileDiffWidget::setBinaryMode(bool f)
 {
 	diffdata()->original_lines.clear();
-	ui->widget_diff_left->setBinaryMode(true);
-	ui->widget_diff_right->setBinaryMode(true);
+	ui->widget_diff_left->setBinaryMode(f);
+	ui->widget_diff_right->setBinaryMode(f);
 	ui->widget_diff_left->update();
 	ui->widget_diff_right->update();
+}
+
+void FileDiffWidget::setBinaryMode()
+{
+	setBinaryMode(true);
 }
 
 void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QString const &path)

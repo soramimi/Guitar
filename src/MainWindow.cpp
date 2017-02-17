@@ -671,7 +671,7 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommi
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		GitDiff dm(g, &pv->objcache);
-		if (dm.diff(id, out, uncommited)) {
+		if (dm.diff(id, out)) {
 			return true;
 		}
 	}
@@ -729,7 +729,7 @@ void MainWindow::updateFilesList(QString id)
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
 		}
-		if (!makeDiff(id, &pv->diff.result, uncommited)) {
+		if (!makeDiff(uncommited ? QString() : id, &pv->diff.result, uncommited)) {
 			return;
 		}
 
