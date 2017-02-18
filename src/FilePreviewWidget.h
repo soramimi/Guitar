@@ -45,6 +45,8 @@ public:
 	void setLeftBorderVisible(bool f);
 	void setBinaryMode(bool f);
 	bool isBinaryMode() const;
+
+	static QString formatText(QString const &text);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

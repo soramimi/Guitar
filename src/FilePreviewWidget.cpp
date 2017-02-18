@@ -130,6 +130,31 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
+QString FilePreviewWidget::formatText(const QString &text)
+{
+	if (text.isEmpty()) return text;
+	std::vector<ushort> vec;
+	vec.reserve(text.size() + 100);
+	ushort const *begin = text.utf16();
+	ushort const *end = begin + text.size();
+	ushort const *ptr = begin;
+	int x = 0;
+	while (ptr < end) {
+		if (*ptr == '\t') {
+			do {
+				vec.push_back(' ');
+				x++;
+			} while ((x % 4) != 0);
+			ptr++;
+		} else {
+			vec.push_back(*ptr);
+			ptr++;
+			x++;
+		}
+	}
+	return QString::fromUtf16(&vec[0], vec.size());
+}
+
 void FilePreviewWidget::paintText()
 {
 	QList<TextDiffLine> const *lines = getLines();
@@ -161,11 +186,12 @@ void FilePreviewWidget::paintText()
 		y -= i * drawdata()->line_height;
 		y = -y;
 		while (i < lines->size() && y < h) {
-			QString const &line = lines->at(i).line;
+			QString line = lines->at(i).text;
+			line = formatText(line);
 			TextDiffLine::Type type = lines->at(i).type;
 
 			QColor *bgcolor;
-			switch (lines->at(i).type) {
+			switch (type) {
 			case TextDiffLine::Normal:
 				bgcolor = &drawdata()->bgcolor_text;
 				break;

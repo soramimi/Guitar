@@ -27,16 +27,16 @@ struct TextDiffLine {
 		Normal,
 		Add,
 		Del,
-	} type = Normal;
+	} type = Unknown;
 	int hunk_number = -1;
 	int line_number = -1;
-	QString mark;
-	QString line;
+	QString text;
 	TextDiffLine()
 	{
 	}
-	TextDiffLine(QString const &text)
-		: line(text)
+	TextDiffLine(QString const &text, Type type)
+		: type(type)
+		, text(text)
 	{
 	}
 };
@@ -136,7 +136,6 @@ private:
 	void updateControls();
 
 	int fileviewHeight() const;
-	QString formatLine(QString const &text);
 
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
