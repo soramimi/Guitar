@@ -99,7 +99,8 @@ SOURCES += \
     src/MaximizeButton.cpp \
     src/CommitExploreWindow.cpp \
     src/ReadOnlyLineEdit.cpp \
-    src/ReadOnlyPlainTextEdit.cpp
+    src/ReadOnlyPlainTextEdit.cpp \
+    src/MyTableWidgetDelegate.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -146,7 +147,8 @@ HEADERS  += \
     src/MaximizeButton.h \
     src/CommitExploreWindow.h \
     src/ReadOnlyLineEdit.h \
-    src/ReadOnlyPlainTextEdit.h
+    src/ReadOnlyPlainTextEdit.h \
+    src/MyTableWidgetDelegate.h
 
 FORMS    += \
 	src/MainWindow.ui \

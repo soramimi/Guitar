@@ -5,7 +5,10 @@
 #include "GitDiff.h"
 #include "joinpath.h"
 #include "FileDiffWidget.h"
+#include "MyTableWidgetDelegate.h"
 
+#include <QPainter>
+#include <QStyledItemDelegate>
 #include <QThread>
 
 struct FileHistoryWindow::Private {
@@ -52,6 +55,7 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent)
 	, ui(new Ui::FileHistoryWindow)
 {
 	ui->setupUi(this);
+	ui->tableWidget_log->setItemDelegate(new MyTableWidgetDelegate(this));
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	flags |= Qt::WindowMaximizeButtonHint;

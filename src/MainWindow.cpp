@@ -2603,7 +2603,7 @@ QString MainWindow::determinFileType_(QString const &path, bool mime, std::funct
 			QStringList list = s.split(';', QString::SkipEmptyParts);
 			if (!list.isEmpty()) {
 				QString mimetype = list[0].trimmed();
-				qDebug() << mimetype;
+//				qDebug() << mimetype;
 				return mimetype;
 			}
 		}

@@ -4,12 +4,12 @@
 #include <QTableWidget>
 
 class MainWindow;
-class MyItemDelegate;
+class LogTableWidgetDelegate;
 
 class LogTableWidget : public QTableWidget
 {
 	Q_OBJECT
-	friend class MyItemDelegate;
+	friend class LogTableWidgetDelegate;
 private:
 	struct Private;
 	Private *pv;
