@@ -653,8 +653,6 @@ bool Git::commit_(QString const &msg, bool amend)
 	return git(cmd);
 }
 
-
-
 bool Git::commit(QString const &text)
 {
 #if 1
@@ -818,23 +816,57 @@ QStringList Git::make_branch_list_()
 void Git::createBranch(QString const &name)
 {
 	git("branch " + name);
-
 }
 
 void Git::checkoutBranch(QString const &name)
 {
 	git("checkout " + name);
-
 }
 
 void Git::mergeBranch(QString const &name)
 {
 	git("merge " + name);
-
 }
 
-void Git::test()
+QStringList Git::getRemotes()
 {
+	QStringList ret;
+	git("remote");
+	QStringList lines = misc::splitLines(resultText());
+	for (QString const &line: lines) {
+		if (!line.isEmpty()) {
+			ret.push_back(line);
+		}
+	}
+	return ret;
+}
+
+void Git::getRemoteURLs(QList<Remote> *out)
+{
+	out->clear();
+	git("remote -v");
+	QStringList lines = misc::splitLines(resultText());
+	for (QString const &line : lines) {
+		int i = line.indexOf('\t');
+		int j = line.indexOf(" (");
+		if (i > 0 && i < j) {
+			Remote r;
+			r.remote = line.mid(0, i);
+			r.url = line.mid(i + 1, j - i - 1);
+			r.purpose = line.mid(j + 1);
+			if (r.purpose.startsWith('(') && r.purpose.endsWith(')')) {
+				r.purpose = r.purpose.mid(1, r.purpose.size() - 2);
+			}
+			out->push_back(r);
+		}
+	}
+}
+
+void Git::setRemoteURL(QString const &remote, QString const &url)
+{
+	QString cmd = "remote set-url %1 %2";
+	cmd = cmd.arg(encodeCommitComment(remote)).arg(encodeCommitComment(url));
+	git(cmd);
 }
 
 // Git::FileStatus

@@ -325,6 +325,12 @@ public:
 		QStringList files;
 	};
 
+	struct Remote {
+		QString remote;
+		QString url;
+		QString purpose;
+	};
+
 	QList<DiffRaw> diff_raw(const QString &old_id, const QString &new_id);
 
 	static bool isValidID(QString const &s);
@@ -332,7 +338,7 @@ public:
 	bool commit(const QString &text);
 	bool commit_amend_m(const QString &text);
 	void push(bool tags = false);
-	void test();
+	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(const QString &name);
 	void checkoutBranch(const QString &name);
 	void mergeBranch(const QString &name);
@@ -345,6 +351,8 @@ public:
 	QStringList tags();
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
+	void setRemoteURL(const QString &remote, const QString &url);
+	QStringList getRemotes();
 };
 
 #endif // GIT_H

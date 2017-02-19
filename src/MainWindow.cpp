@@ -41,6 +41,7 @@
 #include <QThread>
 
 #include "CommitExploreWindow.h"
+#include "SetRemoteUrlDialog.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -1379,6 +1380,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 		menu.addSeparator();
 		QAction *a_properties = addMenuActionProperties(&menu);
+		menu.addSeparator();
+		QAction *a_set_remote_url = menu.addAction(tr("Set remote URL"));
 
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
@@ -1406,6 +1409,13 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			if (a == a_properties) {
 				RepositoryPropertyDialog dlg(this, *repo);
 				dlg.exec();
+				return;
+			}
+			if (a == a_set_remote_url) {
+				GitPtr g = git();
+				if (!isValidWorkingCopy(g)) return;
+				SetRemoteUrlDialog dlg(this);
+				dlg.exec(g);
 				return;
 			}
 		}
@@ -2679,7 +2689,12 @@ QString MainWindow::getCommitIdFromTag(QString const &tag)
 
 void MainWindow::on_action_test_triggered()
 {
-	qDebug() << getCommitIdFromTag("tag2");
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+	SetRemoteUrlDialog dlg(this);
+	dlg.exec(g);
 }
+
+
 
 

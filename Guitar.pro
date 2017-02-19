@@ -100,7 +100,8 @@ SOURCES += \
     src/CommitExploreWindow.cpp \
     src/ReadOnlyLineEdit.cpp \
     src/ReadOnlyPlainTextEdit.cpp \
-    src/MyTableWidgetDelegate.cpp
+    src/MyTableWidgetDelegate.cpp \
+    src/SetRemoteUrlDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -148,7 +149,8 @@ HEADERS  += \
     src/CommitExploreWindow.h \
     src/ReadOnlyLineEdit.h \
     src/ReadOnlyPlainTextEdit.h \
-    src/MyTableWidgetDelegate.h
+    src/MyTableWidgetDelegate.h \
+    src/SetRemoteUrlDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -170,7 +172,8 @@ FORMS    += \
     src/FileHistoryWindow.ui \
     src/FilePropertyDialog.ui \
     src/BigDiffWindow.ui \
-    src/CommitExploreWindow.ui
+    src/CommitExploreWindow.ui \
+    src/SetRemoteUrlDialog.ui
 
 RESOURCES += \
     resources.qrc
