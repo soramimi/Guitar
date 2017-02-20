@@ -41,6 +41,7 @@
 #include <QThread>
 
 #include "CommitExploreWindow.h"
+#include "SetRemoteUrlDialog.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -587,7 +588,7 @@ public:
 	}
 	void run()
 	{
-		GitDiff dm(d.g, d.objcache);
+		GitDiff dm(d.objcache);
 		if (d.uncommited) {
 			dm.diff_uncommited(&d.result);
 		} else {
@@ -654,7 +655,7 @@ void MainWindow::startDiff(GitPtr g, QString id)
 		if (isThereUncommitedChanges()) {
 			id = QString(); // uncommited changes
 		} else {
-			id = g->rev_parse_HEAD();
+			id = pv->objcache.revParse("HEAD");
 		}
 	}
 
@@ -665,13 +666,13 @@ void MainWindow::startDiff(GitPtr g, QString id)
 	th->start();
 }
 
-bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommited)
+bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 { // diffリストを取得する
 #if SINGLE_THREAD
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-		GitDiff dm(g, &pv->objcache);
-		if (dm.diff(id, out, uncommited)) {
+		GitDiff dm(&pv->objcache);
+		if (dm.diff(id, out)) {
 			return true;
 		}
 	}
@@ -729,7 +730,7 @@ void MainWindow::updateFilesList(QString id)
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
 		}
-		if (!makeDiff(id, &pv->diff.result, uncommited)) {
+		if (!makeDiff(uncommited ? QString() : id, &pv->diff.result)) {
 			return;
 		}
 
@@ -769,7 +770,7 @@ void MainWindow::updateFilesList(QString id)
 			AddItem(s.path1(), header, idiff, staged);
 		}
 	} else {
-		if (!makeDiff(id, &pv->diff.result, false)) {
+		if (!makeDiff(id, &pv->diff.result)) {
 			return;
 		}
 
@@ -956,11 +957,11 @@ void MainWindow::openRepository_(GitPtr g)
 
 	pv->objcache.setup(g);
 
+	pv->head_id = pv->objcache.revParse("HEAD");
+
 	if (isValidWorkingCopy(g)) {
 		startDiff(g, QString());
 		updateFilesList(QString());
-
-		pv->head_id = g->rev_parse_HEAD();
 
 		// ログを取得
 		pv->logs = g->log(limitLogCount(), limitLogTime());
@@ -1382,6 +1383,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 		menu.addSeparator();
 		QAction *a_properties = addMenuActionProperties(&menu);
+		menu.addSeparator();
+		QAction *a_set_remote_url = menu.addAction(tr("Set remote URL"));
 
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
@@ -1409,6 +1412,13 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			if (a == a_properties) {
 				RepositoryPropertyDialog dlg(this, *repo);
 				dlg.exec();
+				return;
+			}
+			if (a == a_set_remote_url) {
+				GitPtr g = git();
+				if (!isValidWorkingCopy(g)) return;
+				SetRemoteUrlDialog dlg(this);
+				dlg.exec(g);
 				return;
 			}
 		}
@@ -2606,7 +2616,7 @@ QString MainWindow::determinFileType_(QString const &path, bool mime, std::funct
 			QStringList list = s.split(';', QString::SkipEmptyParts);
 			if (!list.isEmpty()) {
 				QString mimetype = list[0].trimmed();
-				qDebug() << mimetype;
+//				qDebug() << mimetype;
 				return mimetype;
 			}
 		}
@@ -2682,7 +2692,12 @@ QString MainWindow::getCommitIdFromTag(QString const &tag)
 
 void MainWindow::on_action_test_triggered()
 {
-	qDebug() << getCommitIdFromTag("tag2");
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+	SetRemoteUrlDialog dlg(this);
+	dlg.exec(g);
 }
+
+
 
 

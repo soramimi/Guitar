@@ -63,6 +63,21 @@ table#screenshots, table#screenshots tr, table#screenshots td {
 <ul>
   <li><a href="codingstyle.html">コーディングスタイル</a></li>
 </ul>
+<h2>最初の起動</h2>
+<p>Guitarを起動すると、初回だけgitコマンドとfileコマンド（Windowsの場合は、git.exeとfile.exe）の場所を尋ねられます。PATHが通っている場合は、候補が表示されますので、適切なものを選択してOKを押してください。候補が無い場合はインストールする必要があります。</p>
+<h4>Windows</h4>
+<blockquote>
+  <h5>git.exe  </h5>
+  <p><a href="https://git-for-windows.github.io/">Git for Windows</a> をインストールし C:\Program Files\Git\bin\git.exe を選択します。</p>
+  <h5>file.exe</h5>
+  <p>MinGWやmsysがインストール済みの場合には file.exe があると思います。無い場合は Guitar\misc\msys.zip を展開すると、msysフォルダが作成されます。この中にfile.exeがありますので、これを使用します。</p>
+</blockquote>
+<h4>macOS / Linux</h4>
+<blockquote>
+  <p>macOSやLinuxのディストリビューションによっては既にインストール済みかもしれません。無い場合はOSごとの方法で git をインストールします。Debian系の場合、下記のコマンドを実行します。</p>
+  <pre>$ sudo apt-get install git
+</pre>
+</blockquote>
 <h2>既知の問題</h2>
 <ul>
   <li>push/pull/fetch など、通信を行う操作で、username/password認証が必要な場合、エラーメッセージも出ず、何も行われません。

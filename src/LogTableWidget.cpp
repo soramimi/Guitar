@@ -3,17 +3,17 @@
 #include <QEvent>
 #include <QPainter>
 #include <QProxyStyle>
-#include <QStyledItemDelegate>
 #include <math.h>
 #include "MainWindow.h"
 #include <QApplication>
+#include "MyTableWidgetDelegate.h"
 #include "misc.h"
 
 struct LogTableWidget::Private {
 	MainWindow *mainwindow;
 };
 
-class MyItemDelegate : public QStyledItemDelegate {
+class LogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
 	MainWindow *mainwindow() const
 	{
@@ -93,34 +93,13 @@ private:
 	}
 
 public:
-	explicit MyItemDelegate(QObject *parent = Q_NULLPTR)
-		: QStyledItemDelegate(parent)
+	explicit LogTableWidgetDelegate(QObject *parent = Q_NULLPTR)
+		: MyTableWidgetDelegate(parent)
 	{
 	}
-
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
-		QStyleOptionViewItem opt = option;
-
-#ifdef Q_OS_WIN
-		// 選択枠を描画
-		if (option.showDecorationSelected) {
-			QTableWidget const *tablewidget = qobject_cast<QTableWidget const *>(option.widget);
-			Q_ASSERT(tablewidget);
-			int w = tablewidget->viewport()->rect().width();
-			painter->save();
-			QStyleOptionViewItem o = option;
-			painter->setClipRect(o.rect);
-			o.rect = QRect(1, o.rect.y(), w - 2, o.rect.height());
-			qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, 0);
-			painter->restore();
-		}
-
-		opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
-#endif
-		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
-
-		QStyledItemDelegate::paint(painter, opt, index); // デフォルトの描画
+		MyTableWidgetDelegate::paint(painter, option, index);
 
 		// Descriptionの描画
 		if (index.column() == 4) {
@@ -133,7 +112,7 @@ LogTableWidget::LogTableWidget(QWidget *parent)
 	: QTableWidget(parent)
 {
 	pv = new Private;
-	setItemDelegate(new MyItemDelegate(this));
+	setItemDelegate(new LogTableWidgetDelegate(this));
 }
 
 LogTableWidget::~LogTableWidget()
