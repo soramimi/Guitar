@@ -11,7 +11,7 @@ TEMPLATE = app
 
 CONFIG += c++11
 
-unix:QMAKE_CXXFLAGS += -Werror=return-type -Werror=trigraphs -Wno-switch
+unix:QMAKE_CXXFLAGS += -Wall -Werror=return-type -Werror=trigraphs -Wno-switch
 unix:QMAKE_RPATHDIR += $ORIGIN
 
 linux:QTPLUGIN += ibusplatforminputcontextplugin
@@ -19,7 +19,7 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 INCLUDEPATH += $$PWD/src
 
 
-# lbigit2
+# libgit2
 
 #INCLUDEPATH += $$PWD/../libgit2/include
 
@@ -143,14 +143,14 @@ HEADERS  += \
     src/GitPack.h \
     src/GitObjectManager.h \
     src/FilePropertyDialog.h \
-    zlib.h \
     src/BigDiffWindow.h \
     src/MaximizeButton.h \
     src/CommitExploreWindow.h \
     src/ReadOnlyLineEdit.h \
     src/ReadOnlyPlainTextEdit.h \
     src/MyTableWidgetDelegate.h \
-    src/SetRemoteUrlDialog.h
+    src/SetRemoteUrlDialog.h \
+    myzlib.h
 
 FORMS    += \
 	src/MainWindow.ui \
