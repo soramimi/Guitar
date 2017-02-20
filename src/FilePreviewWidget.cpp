@@ -259,18 +259,12 @@ void FilePreviewWidget::paintBinary()
 	QPainter pr(this);
 
 	int x;
-	int w = width();
-	int h = height();
-
 	int descent;
 	updateDrawData(&pr, &descent);
 
 	x = 0;
 
-	const int linenums = 5;
-
 	{//if (lines) {
-		int char_width = drawdata()->char_width;
 		int y = drawdata()->v_scroll_pos * drawdata()->line_height;
 		y = -y;
 		int offset = 0;

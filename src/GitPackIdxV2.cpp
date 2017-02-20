@@ -28,12 +28,12 @@ const uint8_t *GitPackIdxV2::object(int i) const
 	return d.objects[i].id;
 }
 
-const uint32_t GitPackIdxV2::offset(int i) const
+uint32_t GitPackIdxV2::offset(int i) const
 {
 	return read_uint32_be(&d.offsets[i]);
 }
 
-const uint32_t GitPackIdxV2::checksum(int i) const
+uint32_t GitPackIdxV2::checksum(int i) const
 {
 	return read_uint32_be(&d.checksums[i]);
 }
@@ -47,7 +47,8 @@ bool GitPackIdxV2::parse(QIODevice *in)
 {
 	try {
 		auto Read = [&](void *ptr, size_t len){
-			return in->read((char *)ptr, len) == len;
+			const auto l = in->read((char *)ptr, len);
+			return 0 < l && static_cast<size_t>(l) == len;
 		};
 		static char const magic[] = "\xff\x74\x4f\x63\x00\x00\x00\x02";
 		if (!Read(&d.header, sizeof(d.header)))    throw QString("failed to read the idx header");

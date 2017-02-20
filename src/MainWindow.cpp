@@ -754,6 +754,7 @@ void MainWindow::updateFilesList(QString id)
 			if (it != diffmap.end()) {
 				idiff = it->second;
 			}
+			QString path = s.path1();
 			if (s.code() == Git::FileStatusCode::Unknown) {
 				qDebug() << "something wrong...";
 			} else if (s.code() == Git::FileStatusCode::Untracked) {
@@ -764,10 +765,11 @@ void MainWindow::updateFilesList(QString id)
 				header = "(del) ";
 			} else if (s.code_x() == 'R' || s.code() == Git::FileStatusCode::RenamedInIndex) {
 				header = "(ren) ";
+				path = s.path2(); // renamed newer path
 			} else if (s.code_x() == 'M' || s.code_y() == 'M') {
 				header = "(chg) ";
 			}
-			AddItem(s.path1(), header, idiff, staged);
+			AddItem(path, header, idiff, staged);
 		}
 	} else {
 		if (!makeDiff(id, &pv->diff.result)) {
@@ -902,7 +904,7 @@ QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 	return commit.commit_id.mid(0, 7);
 }
 
-QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString &file)
+QString MainWindow::findFileID(GitPtr /*g*/, const QString &commit_id, const QString &file)
 {
 	return lookupFileID(&pv->objcache, commit_id, file);
 }

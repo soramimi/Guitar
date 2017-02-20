@@ -60,7 +60,6 @@ private:
 			QFontMetrics fm = painter->fontMetrics();
 			const int space = 8;
 			int x = opt.rect.x() + opt.rect.width() - 3;
-			int x0 = x;
 			int x1 = x;
 			int y0 = opt.rect.y();
 			int y1 = y0 + opt.rect.height() - 1;
@@ -70,7 +69,7 @@ private:
 				MainWindow::Label const &label = labels->at(i);
 				QString text = misc::abbrevBranchName(label.text);
 				int w = fm.size(0, text).width() + space * 2;
-				x0 = x1 - w;
+				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
 				painter->setPen(Qt::NoPen);
 				auto DrawRect = [&](int dx, int dy, QColor color){
@@ -220,7 +219,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 					QPainterPath *path = nullptr;
 					Git::CommitItem const &item2 = list->at(line.index);
 					QRect rc2 = ItemRect(line.index);
-					if (index + 1 == line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
+					if (index + 1 == (size_t)line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);
 						if (pt2.y() > 0) {
 							path = new QPainterPath();
