@@ -1332,7 +1332,10 @@ QAction *MainWindow::addMenuActionProperties(QMenu *menu)
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	if (!treeitem) return;
+
 	RepositoryItem const *repo = repositoryItem(treeitem);
+
 	int index = treeitem->data(0, IndexRole).toInt();
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;

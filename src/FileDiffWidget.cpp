@@ -394,7 +394,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 	{
 		// 水平スクロールバーを取り外す
 		int i = ui->gridLayout->indexOf(ui->horizontalScrollBar);
-		if (i >= 0) ui->gridLayout->takeAt(i);
+		if (i >= 0) delete ui->gridLayout->takeAt(i); // this will deleted QWidgetItem, it wrapped horizontalScrollBar.
 
 		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::SingleFile) { // 1ファイル表示モード
 			ui->gridLayout->addWidget(ui->horizontalScrollBar, 1, 1, 1, 1); // 水平スクロールバーを colspan=1 で据え付ける
