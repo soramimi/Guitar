@@ -6,7 +6,17 @@
 RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 {
+}
 
+void RepositoriesTreeWidget::dragEnterEvent(QDragEnterEvent *event)
+{
+	qDebug() << event;
+	if (event->mimeData()->hasUrls()) {
+		event->acceptProposedAction();
+		event->accept();
+		return;
+	}
+	QTreeWidget::dragEnterEvent(event);
 }
 
 void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
@@ -22,6 +32,10 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 		}
 	}
 
-	QTreeWidget::dropEvent(event);
-	emit dropped();
+	if (event->mimeData()->hasUrls()) {
+	} else {
+		QTreeWidget::dropEvent(event);
+		emit dropped();
+	}
 }
+

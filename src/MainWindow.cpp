@@ -2299,6 +2299,16 @@ void MainWindow::timerEvent(QTimerEvent *)
 	}
 }
 
+#include <QMimeData>
+#include <QDragEnterEvent>
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasUrls()) {
+		event->acceptProposedAction();
+		event->accept();
+	}
+}
+
 bool MainWindow::saveByteArrayAs(QByteArray const &ba, QString const &dstpath)
 {
 	QFile file(dstpath);

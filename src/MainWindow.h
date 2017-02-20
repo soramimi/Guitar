@@ -252,6 +252,10 @@ protected:
 	void timerEvent(QTimerEvent *event);
 protected slots:
 
+
+	// QWidget interface
+protected:
+	void dragEnterEvent(QDragEnterEvent *event);
 };
 
 #endif // MAINWINDOW_H
