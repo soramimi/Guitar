@@ -24,19 +24,19 @@ enum class FilePreviewType {
 struct TextDiffLine {
 	enum Type {
 		Unknown,
-		Unchanged,
+		Normal,
 		Add,
 		Del,
-	} type = Unchanged;
+	} type = Unknown;
 	int hunk_number = -1;
 	int line_number = -1;
-	QString mark;
-	QString line;
+	QString text;
 	TextDiffLine()
 	{
 	}
-	TextDiffLine(QString const &text)
-		: line(text)
+	TextDiffLine(QString const &text, Type type)
+		: type(type)
+		, text(text)
 	{
 	}
 };
@@ -53,6 +53,7 @@ public:
 		struct Content {
 			QString id;
 			QString path;
+			QByteArray bytes;
 			QList<TextDiffLine> lines;
 		};
 		Content left;
@@ -135,7 +136,6 @@ private:
 	void updateControls();
 
 	int fileviewHeight() const;
-	QString formatLine(QString const &text);
 
 	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
 
@@ -149,6 +149,7 @@ private:
 	FilePreviewType setupPreviewWidget();
 
 	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
+	void setBinaryMode(bool f);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -174,6 +175,7 @@ private slots:
 	void onDiffWidgetResized();
 	void on_toolButton_fullscreen_clicked();
 
+	void setBinaryMode();
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 signals:
