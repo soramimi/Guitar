@@ -665,7 +665,7 @@ void MainWindow::startDiff(GitPtr g, QString id)
 	th->start();
 }
 
-bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool uncommited)
+bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out, bool /*uncommited*/)
 { // diffリストを取得する
 #if SINGLE_THREAD
 	GitPtr g = git();
@@ -901,7 +901,7 @@ QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 	return commit.commit_id.mid(0, 7);
 }
 
-QString MainWindow::findFileID(GitPtr g, const QString &commit_id, const QString &file)
+QString MainWindow::findFileID(GitPtr /*g*/, const QString &commit_id, const QString &file)
 {
 	return lookupFileID(&pv->objcache, commit_id, file);
 }

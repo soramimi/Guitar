@@ -111,7 +111,7 @@ GitPtr FileDiffWidget::git()
 	return pv->mainwindow->git();
 }
 
-Git::Object FileDiffWidget::cat_file(GitPtr g, QString const &id)
+Git::Object FileDiffWidget::cat_file(GitPtr /*g*/, QString const &id)
 {
 	return pv->mainwindow->cat_file(id);
 }
@@ -423,7 +423,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		QPixmap pixmap;
 		pixmap.loadFromData(bytes);
 
-		FilePreviewWidget *w = w = ui->widget_diff_left;
+		FilePreviewWidget *w = ui->widget_diff_left;
 		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
 			w = ui->widget_diff_right;
 		}

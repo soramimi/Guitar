@@ -296,13 +296,13 @@ void misc::dump(uint8_t const *ptr, size_t len)
 		while (pos < len) {
 			char tmp[100];
 			char *dst = tmp;
-			sprintf(dst, "%08X ", pos);
+			sprintf(dst, "%08llX ", ((unsigned long long)(pos)));
 			dst += 9;
 			for (int i = 0; i < 16; i++) {
 				if (pos + i < len) {
 					sprintf(dst, "%02X ", ptr[pos + i] & 0xff);
 				} else {
-					sprintf(dst, "   ", ptr[pos + i] & 0xff);
+					sprintf(dst, "   ");
 				}
 				dst += 3;
 			}

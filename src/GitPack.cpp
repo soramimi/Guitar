@@ -160,7 +160,8 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 		Info info;
 
 		auto Read = [&](void *ptr, size_t len){
-			if (file->read((char *)ptr, len) != len) {
+			const auto l = file->read((char *)ptr, len);
+			if (l < 0 || ((size_t)(l)) != len) {
 				throw QString("failed to read");
 			}
 			info.checksum = crc32(info.checksum, (uint8_t const *)ptr, len);

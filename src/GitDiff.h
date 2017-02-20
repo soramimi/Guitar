@@ -57,7 +57,7 @@ private:
 	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
 	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files);
 public:
-	GitDiff(GitPtr g, GitObjectCache *objcache)
+	GitDiff(GitPtr /*g*/, GitObjectCache *objcache)
 	{
 //		this->g = g;
 		this->objcache = objcache;

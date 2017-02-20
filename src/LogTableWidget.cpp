@@ -241,7 +241,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 					QPainterPath *path = nullptr;
 					Git::CommitItem const &item2 = list->at(line.index);
 					QRect rc2 = ItemRect(line.index);
-					if (index + 1 == line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
+					if ((0 < line.index && index + 1 == ((size_t)(line.index))) || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);
 						if (pt2.y() > 0) {
 							path = new QPainterPath();

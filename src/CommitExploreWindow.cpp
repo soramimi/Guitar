@@ -96,14 +96,14 @@ void CommitExploreWindow::clearContent()
 	ui->widget_fileview->clearDiffView();
 }
 
-static void removeChildren(QTreeWidgetItem *item)
-{
-	int i = item->childCount();
-	while (i > 0) {
-		i--;
-		delete item->takeChild(i);
-	}
-}
+//static void removeChildren(QTreeWidgetItem *item)
+//{
+//	int i = item->childCount();
+//	while (i > 0) {
+//		i--;
+//		delete item->takeChild(i);
+//	}
+//}
 
 void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 {

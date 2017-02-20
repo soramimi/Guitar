@@ -52,8 +52,8 @@ private:
 	static inline uint32_t get_fanout(header_t const *t, int i);
 
 	uint8_t const *object(int i) const;
-	const uint32_t offset(int i) const;
-	const uint32_t checksum(int i) const;
+	uint32_t offset(int i) const;
+	uint32_t checksum(int i) const;
 	void clear();
 	bool parse(QIODevice *in);
 public:
