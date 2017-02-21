@@ -11,12 +11,20 @@ TEMPLATE = app
 
 CONFIG += c++11
 
-unix:QMAKE_CXXFLAGS += -Wall -Werror=return-type -Werror=trigraphs -Wno-switch
+unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch
 unix:QMAKE_RPATHDIR += $ORIGIN
 
 linux:QTPLUGIN += ibusplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
+
+
+# execute 'ruby prepare.rb' automatically
+
+prepare.target = prepare
+prepare.commands = cd $$PWD && ruby -W0 prepare.rb
+QMAKE_EXTRA_TARGETS += prepare
+PRE_TARGETDEPS += prepare
 
 
 # libgit2
