@@ -15,6 +15,7 @@ unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-
 unix:QMAKE_RPATHDIR += $ORIGIN
 
 linux:QTPLUGIN += ibusplatforminputcontextplugin
+#linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
 
