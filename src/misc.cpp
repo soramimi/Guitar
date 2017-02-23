@@ -1,5 +1,6 @@
 #include "misc.h"
 #include <QDebug>
+#include <QFileInfo>
 #include <QPainter>
 #include <QProcess>
 #include <QWidget>
@@ -362,5 +363,62 @@ QString misc::abbrevBranchName(QString const &name)
 		newname += s;
 	}
 	return newname;
+}
+
+QString misc::determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback)
+{ // ファイルタイプを調べる
+	if (QFileInfo(filecommand).isExecutable()) {
+		QString file = filecommand;
+		QString mgc;
+#ifdef Q_OS_WIN
+		int i = file.lastIndexOf('/');
+		int j = file.lastIndexOf('\\');
+		if (i < j) i = j;
+		if (i >= 0) {
+			mgc = file.mid(0, i + 1) + "magic.mgc";
+			if (QFileInfo(mgc).isReadable()) {
+				// ok
+			} else {
+				mgc = QString();
+			}
+		}
+#endif
+		QString cmd;
+		if (mgc.isEmpty()) {
+			cmd = "\"%1\"";
+			cmd = cmd.arg(file);
+		} else {
+			cmd = "\"%1\" -m \"%2\"";
+			cmd = cmd.arg(file).arg(mgc);
+		}
+		if (mime) {
+			cmd += " --mime";
+		}
+		cmd += QString(" --brief \"%1\"").arg(path);
+
+		// run file command
+
+		QByteArray ba;
+
+		callback(cmd, &ba);
+
+		// parse file type
+
+		if (!ba.isEmpty()) {
+			QString s = QString::fromUtf8(ba).trimmed();
+			QStringList list = s.split(';', QString::SkipEmptyParts);
+			if (!list.isEmpty()) {
+				QString mimetype = list[0].trimmed();
+				//				qDebug() << mimetype;
+				return mimetype;
+			}
+		}
+
+		return cmd;
+
+	} else {
+		qDebug() << "No executable 'file' command";
+	}
+	return QString();
 }
 

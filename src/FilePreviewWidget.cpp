@@ -479,7 +479,6 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 				scale /= mul;
 			}
 			setImageScale(pv->image_scale * scale);
-			qDebug() << pv->image_scale;
 
 			double cx = width() / 2.0;
 			double cy = height() / 2.0;

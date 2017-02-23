@@ -353,11 +353,7 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QComboBox" name="comboBox_filter">
-             <property name="editable">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <widget class="QLineEdit" name="lineEdit_filter"/>
            </item>
            <item>
             <widget class="ClearButton" name="toolButton_erase_filter">
@@ -956,7 +952,6 @@
  </customwidgets>
  <tabstops>
   <tabstop>treeWidget_repos</tabstop>
-  <tabstop>comboBox_filter</tabstop>
   <tabstop>toolButton_erase_filter</tabstop>
   <tabstop>tableWidget_log</tabstop>
   <tabstop>listWidget_unstaged</tabstop>

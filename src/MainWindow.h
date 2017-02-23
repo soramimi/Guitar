@@ -114,7 +114,8 @@ private slots:
 	void on_action_about_triggered();
 	void on_toolButton_clone_clicked();
 	void on_toolButton_fetch_clicked();
-	void on_comboBox_filter_currentTextChanged(const QString &arg1);
+
+	void on_lineEdit_filter_textChanged(const QString &text);
 	void on_toolButton_erase_filter_clicked();
 
 	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
@@ -123,8 +124,6 @@ private slots:
 	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
 
 	void onRepositoriesTreeDropped();
-
-
 private:
 	Ui::MainWindow *ui;
 

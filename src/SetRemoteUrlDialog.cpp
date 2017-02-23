@@ -115,6 +115,7 @@ void SetRemoteUrlDialog::on_pushButton_test_clicked()
 
 	QString pass = tr("The URL is a valid repository");
 	QString fail = tr("Failed to access the URL");
+
 	QString text = "%1\n\n%2";
 	text = text.arg(url).arg(f ? pass : fail);
 

@@ -2459,7 +2459,9 @@ void MainWindow::on_toolButton_fetch_clicked()
 	ui->action_fetch->trigger();
 }
 
-void MainWindow::on_comboBox_filter_currentTextChanged(const QString &text)
+
+
+void MainWindow::on_lineEdit_filter_textChanged(const QString &text)
 {
 	pv->repository_filter_text = text;
 	updateRepositoriesList();
@@ -2467,8 +2469,8 @@ void MainWindow::on_comboBox_filter_currentTextChanged(const QString &text)
 
 void MainWindow::on_toolButton_erase_filter_clicked()
 {
-	ui->comboBox_filter->clearEditText();
-	ui->treeWidget_repos->setFocus();
+	ui->lineEdit_filter->clear();
+	ui->lineEdit_filter->setFocus();
 }
 
 void MainWindow::deleteTags(QStringList const &tagnames)
@@ -2561,7 +2563,6 @@ QString MainWindow::tempfileHeader() const
 {
 	QString name = "jp_soramimi_Guitar_%1_";
 	return name.arg(QApplication::applicationPid());
-
 }
 
 void MainWindow::deleteTempFiles()
@@ -2572,7 +2573,6 @@ void MainWindow::deleteTempFiles()
 	while (it.hasNext()) {
 		QString path = it.next();
 		QFile::remove(path);
-		qDebug() << path;
 	}
 }
 
@@ -2585,60 +2585,8 @@ QString MainWindow::newTempFilePath()
 }
 
 QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback)
-{ // ファイルタイプを調べる
-	if (QFileInfo(pv->file_command).isExecutable()) {
-		QString file = pv->file_command;
-		QString mgc;
-#ifdef Q_OS_WIN
-		int i = file.lastIndexOf('/');
-		int j = file.lastIndexOf('\\');
-		if (i < j) i = j;
-		if (i >= 0) {
-			mgc = file.mid(0, i + 1) + "magic.mgc";
-			if (QFileInfo(mgc).isReadable()) {
-				// ok
-			} else {
-				mgc = QString();
-			}
-		}
-#endif
-		QString cmd;
-		if (mgc.isEmpty()) {
-			cmd = "\"%1\"";
-			cmd = cmd.arg(file);
-		} else {
-			cmd = "\"%1\" -m \"%2\"";
-			cmd = cmd.arg(file).arg(mgc);
-		}
-		if (mime) {
-			cmd += " --mime";
-		}
-		cmd += QString(" --brief \"%1\"").arg(path);
-
-		// run file command
-
-		QByteArray ba;
-
-		callback(cmd, &ba);
-
-		// parse file type
-
-		if (!ba.isEmpty()) {
-			QString s = QString::fromUtf8(ba).trimmed();
-			QStringList list = s.split(';', QString::SkipEmptyParts);
-			if (!list.isEmpty()) {
-				QString mimetype = list[0].trimmed();
-//				qDebug() << mimetype;
-				return mimetype;
-			}
-		}
-
-		return cmd;
-
-	} else {
-		qDebug() << "No executable 'file' command";
-	}
-	return QString();
+{
+	return misc::determinFileType(pv->file_command, path, mime, callback);
 }
 
 QString MainWindow::determinFileType(QString const &path, bool mime)
@@ -2650,6 +2598,7 @@ QString MainWindow::determinFileType(QString const &path, bool mime)
 
 QString MainWindow::determinFileType(QByteArray const &in, bool mime)
 {
+	// ファイル名を "-" にすると、リダイレクトで標準入力へ流し込める。
 	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
 		misc::runCommand(cmd, &in, ba);
 	});
@@ -2704,7 +2653,6 @@ QString MainWindow::getCommitIdFromTag(QString const &tag)
 
 bool MainWindow::isValidRemoteURL(const QString &url)
 {
-	qDebug() << Q_FUNC_INFO << url;
 	if (url.indexOf('\"') >= 0) {
 		return false;
 	}
@@ -2737,6 +2685,8 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 void MainWindow::on_action_test_triggered()
 {
 }
+
+
 
 
 

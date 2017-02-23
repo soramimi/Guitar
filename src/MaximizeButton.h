@@ -15,7 +15,6 @@ signals:
 
 public slots:
 
-	// QWidget interface
 protected:
 	void paintEvent(QPaintEvent *event);
 };

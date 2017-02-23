@@ -14,9 +14,9 @@ public:
 signals:
 
 public slots:
+
 protected:
 	void paintEvent(QPaintEvent *event);
-
 };
 
 #endif // CLEARBUTTON_H

@@ -14,10 +14,10 @@ class SetRemoteUrlDialog : public QDialog
 {
 	Q_OBJECT
 private:
-	GitPtr git();
-
 	GitPtr g_;
 	MainWindow *mainwindow = nullptr;
+
+	GitPtr git();
 public:
 	explicit SetRemoteUrlDialog(QWidget *parent = 0);
 	~SetRemoteUrlDialog();
@@ -26,8 +26,6 @@ public:
 private:
 	Ui::SetRemoteUrlDialog *ui;
 	void updateRemotesTable();
-
-	// QDialog interface
 public slots:
 	void accept();
 private slots:

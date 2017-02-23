@@ -11,18 +11,11 @@ ClearButton::ClearButton(QWidget *parent)
 void ClearButton::paintEvent(QPaintEvent * /*event*/)
 {
 	QPainter pr(this);
-	if (underMouse()) {
-		pr.setOpacity(1.0);
-	} else {
-		pr.setOpacity(0.5);
-	}
+	pr.setOpacity(underMouse() ? 1.0 : 0.5);
 	int w = pixmap.width();
 	int h = pixmap.height();
 	int x = (width() - w) / 2;
 	int y = (height() - h) / 2;
-	if (isDown()) {
-		x++;
-		y++;
-	}
-	pr.drawPixmap(x, y, w, h, pixmap);
+	int delta = isDown() ? 1 : 0;
+	pr.drawPixmap(x + delta, y + delta, w, h, pixmap);
 }
