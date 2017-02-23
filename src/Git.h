@@ -353,6 +353,14 @@ public:
 	void delete_tag(const QString &name, bool remote);
 	void setRemoteURL(const QString &remote, const QString &url);
 	QStringList getRemotes();
+
+	struct User {
+		QString name;
+		QString email;
+	};
+
+	User getUser(bool global);
+
 };
 
 #endif // GIT_H

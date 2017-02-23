@@ -841,6 +841,19 @@ QStringList Git::getRemotes()
 	return ret;
 }
 
+Git::User Git::getUser(bool global)
+{
+	User user;
+	bool chdir = !global;
+	if (git(QString("config %1 user.name").arg(global ? "--global" : ""), chdir)) {
+		user.name = resultText().trimmed();
+	}
+	if (git(QString("config %1 user.email").arg(global ? "--global" : ""), chdir)) {
+		user.email = resultText().trimmed();
+	}
+	return user;
+}
+
 void Git::getRemoteURLs(QList<Remote> *out)
 {
 	out->clear();

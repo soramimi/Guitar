@@ -202,6 +202,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	pv->repos = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 
+	setUnknownRepositoryInfo();
+
 	pv->timer_interval_ms = 20;
 	pv->update_files_list_counter = 0;
 	pv->interval_250ms_counter = 0;
@@ -952,6 +954,34 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 	return message_ex;
 }
 
+void MainWindow::setWindowTitle_(Git::User const &user)
+{
+	if (user.name.isEmpty() && user.email.isEmpty()) {
+		setWindowTitle(qApp->applicationName());
+	} else {
+		setWindowTitle(QString("%1 : %2 <%3>")
+					   .arg(qApp->applicationName())
+					   .arg(user.name)
+					   .arg(user.email)
+					   );
+	}
+}
+
+void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
+{
+	ui->label_repo_name->setText(reponame);
+	ui->label_branch_name->setText(brname);
+}
+
+void MainWindow::setUnknownRepositoryInfo()
+{
+	setRepositoryInfo(tr("Unknown"), tr("Branch Name"));
+
+	Git g(pv->gcx, QString());
+	Git::User user = g.getUser(true);
+	setWindowTitle_(user);
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -977,12 +1007,13 @@ void MainWindow::openRepository_(GitPtr g)
 			branch_name += " (HEAD detached)";
 		}
 
-		ui->label_repo_name->setText(currentRepositoryName());
-		ui->label_branch_name->setText(branch_name);
+		QString repo_name = currentRepositoryName();
+		setRepositoryInfo(repo_name, branch_name);
+
+		Git::User user = g->getUser(false);
+		setWindowTitle_(user);
 	} else {
-		QString name = currentRepositoryName();
-		ui->label_repo_name->setText(name.isEmpty() ? tr("Unknown") : name);
-		ui->label_branch_name->setText("NOT FOUND");
+		setUnknownRepositoryInfo();
 	}
 
 	if (isThereUncommitedChanges()) {
@@ -2458,8 +2489,6 @@ void MainWindow::on_toolButton_fetch_clicked()
 {
 	ui->action_fetch->trigger();
 }
-
-
 
 void MainWindow::on_lineEdit_filter_textChanged(const QString &text)
 {

@@ -208,6 +208,9 @@ private:
 	Git::Object cat_file(const QString &id);
 	void checkFileCommand();
 	void updateStatusBarText();
+	void setUnknownRepositoryInfo();
+	void setWindowTitle_(const Git::User &user);
+	void setRepositoryInfo(const QString &reponame, const QString &brname);
 public:
 
 	QString selectGitCommand();
