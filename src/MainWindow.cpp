@@ -1417,10 +1417,10 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_set_remote_url) {
-				GitPtr g = git();
+				GitPtr g = git(repo->local_dir);
 				if (!isValidWorkingCopy(g)) return;
 				SetRemoteUrlDialog dlg(this);
-				dlg.exec(g);
+				dlg.exec(this, g);
 				return;
 			}
 		}
@@ -2702,12 +2702,40 @@ QString MainWindow::getCommitIdFromTag(QString const &tag)
 	return pv->objcache.getCommitIdFromTag(tag);
 }
 
+bool MainWindow::isValidRemoteURL(const QString &url)
+{
+	qDebug() << Q_FUNC_INFO << url;
+	if (url.indexOf('\"') >= 0) {
+		return false;
+	}
+	Git g(pv->gcx, QString());
+	QString cmd = "ls-remote \"%1\" HEAD";
+	bool f = g.git(cmd.arg(url), false);
+	QString line = g.resultText().trimmed();
+	QString head;
+	int i = line.indexOf('\t');
+	if (i == 40) {
+		QString id = line.mid(0, i);
+		QString name = line.mid(i + 1);
+		qDebug() << id << name;
+		if (name == "HEAD" && Git::isValidID(id)) {
+			head = id;
+		}
+	}
+	if (f) {
+		qDebug() << "This is a valid repository.";
+		if (head.isEmpty()) {
+			qDebug() << "But HEAD not found";
+		}
+		return true;
+	} else {
+		qDebug() << "It is not a repository.";
+	}
+	return false;
+}
+
 void MainWindow::on_action_test_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-	SetRemoteUrlDialog dlg(this);
-	dlg.exec(g);
 }
 
 

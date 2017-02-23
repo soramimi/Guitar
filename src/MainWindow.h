@@ -246,6 +246,7 @@ public:
 	void setStatusBarText(const QString &text);
 	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
+	bool isValidRemoteURL(QString const &url);
 protected:
 
 protected:

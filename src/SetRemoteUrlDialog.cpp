@@ -1,11 +1,20 @@
 #include "SetRemoteUrlDialog.h"
 #include "ui_SetRemoteUrlDialog.h"
+#include "MyTableWidgetDelegate.h"
+#include "MainWindow.h"
+#include "misc.h"
+#include <QMessageBox>
 
 SetRemoteUrlDialog::SetRemoteUrlDialog(QWidget *parent) :
 	QDialog(parent),
 	ui(new Ui::SetRemoteUrlDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
+
+	ui->tableWidget->setItemDelegate(new MyTableWidgetDelegate(this));
 
 	ui->tableWidget->verticalHeader()->setVisible(false);
 }
@@ -15,13 +24,21 @@ SetRemoteUrlDialog::~SetRemoteUrlDialog()
 	delete ui;
 }
 
-void SetRemoteUrlDialog::exec(GitPtr g)
+GitPtr SetRemoteUrlDialog::git()
 {
-	this->g = g;
+	return g_;
+}
 
-	QStringList remotes = g->getRemotes();
-	if (remotes.size() > 0) {
-		ui->lineEdit_remote->setText(remotes[0]);
+void SetRemoteUrlDialog::exec(MainWindow *mainwindow, GitPtr g)
+{
+	this->mainwindow = mainwindow;
+	this->g_ = g;
+
+	if (g->isValidWorkingCopy()) {
+		QStringList remotes = g->getRemotes();
+		if (remotes.size() > 0) {
+			ui->lineEdit_remote->setText(remotes[0]);
+		}
 	}
 
 	updateRemotesTable();
@@ -31,7 +48,12 @@ void SetRemoteUrlDialog::exec(GitPtr g)
 void SetRemoteUrlDialog::updateRemotesTable()
 {
 	QList<Git::Remote> vec;
-	g->getRemoteURLs(&vec);
+	GitPtr g = git();
+	if (g->isValidWorkingCopy()) {
+		g->getRemoteURLs(&vec);
+	}
+	QString url;
+	QString alturl;
 	int rows = vec.size();
 	ui->tableWidget->setColumnCount(3);
 	ui->tableWidget->setRowCount(rows);
@@ -48,6 +70,11 @@ void SetRemoteUrlDialog::updateRemotesTable()
 	SetHeaderItem(2, tr("URL"));
 	for (int row = 0; row < rows; row++) {
 		Git::Remote const &r = vec[row];
+		if (r.purpose == "push") {
+			url = r.url;
+		} else {
+			alturl = r.url;
+		}
 		auto SetItem = [&](int col, QString const &text){
 			ui->tableWidget->setItem(row, col, newQTableWidgetItem(text));
 			ui->tableWidget->setRowHeight(col, 24);
@@ -57,14 +84,45 @@ void SetRemoteUrlDialog::updateRemotesTable()
 		SetItem(2, r.url);
 	}
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+
+	if (url.isEmpty()) {
+		url = alturl;
+	}
+	ui->lineEdit_url->setText(url);
 }
 
 void SetRemoteUrlDialog::accept()
 {
-	QString rem = ui->lineEdit_remote->text();
-	QString url = ui->lineEdit_url->text();
-	g->setRemoteURL(rem, url);
-	updateRemotesTable();
+	GitPtr g = git();
+	if (g->isValidWorkingCopy()) {
+		QString rem = ui->lineEdit_remote->text();
+		QString url = ui->lineEdit_url->text();
+		g->setRemoteURL(rem, url);
+		updateRemotesTable();
+	}
+	QDialog::accept();
 }
 
+void SetRemoteUrlDialog::on_pushButton_test_clicked()
+{
+	QString url = ui->lineEdit_url->text();
 
+	bool f;
+	{
+		OverrideWaitCursor;
+		f = mainwindow->isValidRemoteURL(url);
+	}
+
+	QString pass = tr("The URL is a valid repository");
+	QString fail = tr("Failed to access the URL");
+	QString text = "%1\n\n%2";
+	text = text.arg(url).arg(f ? pass : fail);
+
+	QString title = tr("Remote Repository");
+
+	if (f) {
+		QMessageBox::information(this, title, text);
+	} else {
+		QMessageBox::critical(this, title, text);
+	}
+}
