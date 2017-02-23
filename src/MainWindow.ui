@@ -360,9 +360,21 @@
             </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButton_erase_filter">
+            <widget class="ClearButton" name="toolButton_erase_filter">
+             <property name="minimumSize">
+              <size>
+               <width>22</width>
+               <height>17</height>
+              </size>
+             </property>
              <property name="text">
-              <string>X</string>
+              <string/>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>15</height>
+              </size>
              </property>
             </widget>
            </item>
@@ -935,6 +947,11 @@
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ClearButton</class>
+   <extends>QToolButton</extends>
+   <header>ClearButton.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

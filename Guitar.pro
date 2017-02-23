@@ -110,7 +110,8 @@ SOURCES += \
     src/ReadOnlyLineEdit.cpp \
     src/ReadOnlyPlainTextEdit.cpp \
     src/MyTableWidgetDelegate.cpp \
-    src/SetRemoteUrlDialog.cpp
+    src/SetRemoteUrlDialog.cpp \
+    src/ClearButton.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -159,7 +160,8 @@ HEADERS  += \
     src/ReadOnlyPlainTextEdit.h \
     src/MyTableWidgetDelegate.h \
     src/SetRemoteUrlDialog.h \
-    myzlib.h
+    myzlib.h \
+    src/ClearButton.h
 
 FORMS    += \
 	src/MainWindow.ui \

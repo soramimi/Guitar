@@ -17,5 +17,6 @@
         <file>image/maximize.png</file>
         <file>image/transparent.png</file>
         <file>image/file.png</file>
+        <file>image/clear.png</file>
     </qresource>
 </RCC>
