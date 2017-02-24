@@ -551,9 +551,9 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limi
 						}
 					}
 				}
-				if (item.commit_date < limit_time) {
-					break;
-				}
+//				if (item.commit_date < limit_time) {
+//					break;
+//				}
 				items.push_back(item);
 			}
 		}
