@@ -749,6 +749,7 @@
     <addaction name="action_edit_gitignore"/>
     <addaction name="action_edit_git_config"/>
     <addaction name="action_edit_global_gitconfig"/>
+    <addaction name="action_set_config_user"/>
     <addaction name="separator"/>
     <addaction name="action_edit_settings"/>
    </widget>
@@ -912,6 +913,11 @@
   <action name="action_tag_delete">
    <property name="text">
     <string>Delete tags...</string>
+   </property>
+  </action>
+  <action name="action_set_config_user">
+   <property name="text">
+    <string>Set config user</string>
    </property>
   </action>
  </widget>

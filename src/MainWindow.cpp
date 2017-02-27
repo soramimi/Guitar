@@ -47,6 +47,7 @@
 #include "win32/win32.h"
 
 #include "CommitExploreWindow.h"
+#include "SetUserDialog.h"
 #endif
 
 FileDiffWidget::DrawData::DrawData()
@@ -405,7 +406,7 @@ QString MainWindow::currentWorkingCopyDir() const
 
 GitPtr MainWindow::git(QString const &dir)
 {
-	return dir.isEmpty() ? std::shared_ptr<Git>() : std::shared_ptr<Git>(new Git(pv->gcx, dir));
+	return std::shared_ptr<Git>(new Git(pv->gcx, dir));
 }
 
 GitPtr MainWindow::git()
@@ -978,8 +979,18 @@ void MainWindow::setUnknownRepositoryInfo()
 	setRepositoryInfo(tr("Unknown"), tr("Branch Name"));
 
 	Git g(pv->gcx, QString());
-	Git::User user = g.getUser(true);
+	Git::User user = g.getUser(Git::GetUserGlobal);
 	setWindowTitle_(user);
+}
+
+void MainWindow::updateWindowTitle(GitPtr g)
+{
+	if (isValidWorkingCopy(g)) {
+		Git::User user = g->getUser(Git::GetUserDefault);
+		setWindowTitle_(user);
+	} else {
+		setUnknownRepositoryInfo();
+	}
 }
 
 void MainWindow::openRepository_(GitPtr g)
@@ -1009,12 +1020,8 @@ void MainWindow::openRepository_(GitPtr g)
 
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
-
-		Git::User user = g->getUser(false);
-		setWindowTitle_(user);
-	} else {
-		setUnknownRepositoryInfo();
 	}
+	updateWindowTitle(g);
 
 	if (isThereUncommitedChanges()) {
 		Git::CommitItem item;
@@ -2023,6 +2030,10 @@ DONE:;
 					LogItem(curr).parent_lines.push_back(line); // 線を追加
 				}
 			}
+		} else {
+			if (LogCount == 1) { // コミットが一つだけ
+				LogItem(0).marker_depth = 0;
+			}
 		}
 	}
 }
@@ -2711,11 +2722,33 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 	return false;
 }
 
+
+void MainWindow::on_action_set_config_user_triggered()
+{
+	Git::User global_user;
+	Git::User repo_user;
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		repo_user = g->getUser(Git::GetUserLocal);
+	}
+	global_user = g->getUser(Git::GetUserGlobal);
+
+	SetUserDialog dlg(this, global_user, repo_user, currentRepositoryName());
+	if (dlg.exec() == QDialog::Accepted) {
+		Git::User user = dlg.user();
+		if (dlg.isGlobalChecked()) {
+			g->setUser(user, true);
+		}
+		if (dlg.isRepositoryChecked()) {
+			g->setUser(user, false);
+		}
+		updateWindowTitle(g);
+	}
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
-
-
 
 
 

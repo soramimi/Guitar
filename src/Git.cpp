@@ -79,6 +79,7 @@ void Git::setGitCommand(QString const &path)
 
 QString Git::gitCommand() const
 {
+	Q_ASSERT(pv);
 	return pv->git_command;
 }
 
@@ -102,8 +103,9 @@ int Git::getProcessExitCode() const
 bool Git::chdirexec(std::function<bool()> fn)
 {
 	bool ok = false;
-	QDir cwd = QDir::current();
-	if (QDir::setCurrent(workingRepositoryDir())) {
+	QString dir = workingRepositoryDir();
+	if (isValidWorkingCopy(dir) && QDir::setCurrent(dir)) {
+		QDir cwd = QDir::current();
 
 		ok = fn();
 
@@ -196,6 +198,7 @@ GitPtr Git::dup() const
 
 bool Git::isValidWorkingCopy(QString const &dir)
 {
+	if (dir.isEmpty()) return false;
 	return QDir(dir / ".git").exists();
 }
 
@@ -614,7 +617,7 @@ bool Git::clone(QString const &location, QString const &path)
 	return ok;
 }
 
-QString Git::encodeCommitComment(const QString &str)
+QString Git::encodeQuotedText(const QString &str)
 {
 	std::vector<ushort> vec;
 	ushort const *begin = str.utf16();
@@ -647,7 +650,7 @@ bool Git::commit_(QString const &msg, bool amend)
 	if (text.isEmpty()) {
 		text = "no message";
 	}
-	text = encodeCommitComment(text);
+	text = encodeQuotedText(text);
 	cmd += QString(" -m %1").arg(text);
 
 	return git(cmd);
@@ -841,17 +844,29 @@ QStringList Git::getRemotes()
 	return ret;
 }
 
-Git::User Git::getUser(bool global)
+Git::User Git::getUser(GetUser purpose)
 {
 	User user;
+	bool global = purpose == Git::GetUserGlobal;
+	bool local = purpose == Git::GetUserLocal;
+	QString arg1;
+	if (global) arg1 = "--global";
+	if (local) arg1 = "--local";
 	bool chdir = !global;
-	if (git(QString("config %1 user.name").arg(global ? "--global" : ""), chdir)) {
+	if (git(QString("config %1 user.name").arg(arg1), chdir)) {
 		user.name = resultText().trimmed();
 	}
-	if (git(QString("config %1 user.email").arg(global ? "--global" : ""), chdir)) {
+	if (git(QString("config %1 user.email").arg(arg1), chdir)) {
 		user.email = resultText().trimmed();
 	}
 	return user;
+}
+
+void Git::setUser(const User &user, bool global)
+{
+	bool chdir = !global;
+	git(QString("config %1 user.name %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.name)), chdir);
+	git(QString("config %1 user.email %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.email)), chdir);
 }
 
 void Git::getRemoteURLs(QList<Remote> *out)
@@ -878,7 +893,7 @@ void Git::getRemoteURLs(QList<Remote> *out)
 void Git::setRemoteURL(QString const &remote, QString const &url)
 {
 	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeCommitComment(remote)).arg(encodeCommitComment(url));
+	cmd = cmd.arg(encodeQuotedText(remote)).arg(encodeQuotedText(url));
 	git(cmd);
 }
 

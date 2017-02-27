@@ -269,7 +269,7 @@ private:
 	Git()
 	{
 	}
-	QString encodeCommitComment(const QString &str);
+	QString encodeQuotedText(const QString &str);
 public:
 	Git(Context const &cx, const QString &repodir);
 	Git(Git &&r) = delete;
@@ -358,8 +358,14 @@ public:
 		QString name;
 		QString email;
 	};
+	enum GetUser {
+		GetUserDefault,
+		GetUserGlobal,
+		GetUserLocal,
+	};
 
-	User getUser(bool global);
+	User getUser(GetUser purpose);
+	void setUser(User const&user, bool global);
 
 };
 

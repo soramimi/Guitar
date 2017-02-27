@@ -124,6 +124,8 @@ private slots:
 	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
 
 	void onRepositoriesTreeDropped();
+	void on_action_set_config_user_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -211,6 +213,7 @@ private:
 	void setUnknownRepositoryInfo();
 	void setWindowTitle_(const Git::User &user);
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
+	void updateWindowTitle(GitPtr g);
 public:
 
 	QString selectGitCommand();
