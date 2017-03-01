@@ -20,7 +20,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
 	setWindowTitle(tr("About Guitar"));
 
-	ui->label_title->setText(QString("Guitar, v%1 (%2)").arg(product_version).arg(source_revision));
+	ui->label_title->setText(appVersion());
 	ui->label_copyright->setText(QString("Copyright (C) %1 S.Fuchita").arg(copyright_year));
 	ui->label_twitter->setText("(@soramimi_jp)");
 	QString t = QString("Qt %1").arg(qVersion());
@@ -42,4 +42,9 @@ AboutDialog::~AboutDialog()
 void AboutDialog::mouseReleaseEvent(QMouseEvent *)
 {
 	accept();
+}
+
+QString AboutDialog::appVersion()
+{
+	return QString("Guitar, v%1 (%2)").arg(product_version).arg(source_revision);
 }

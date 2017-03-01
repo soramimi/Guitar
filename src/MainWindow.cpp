@@ -162,6 +162,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
+	ui->widget_log->init(this);
+	onLogVisibilityChanged();
+
 	showFileList(FilesListType::SingleList);
 
 	pv->digits.load(":/image/digits.png");
@@ -194,13 +197,17 @@ MainWindow::MainWindow(QWidget *parent) :
 		pv->file_command = s.value("FileCommand").toString();
 		s.endGroup();
 	}
+	writeLog(AboutDialog::appVersion() + '\n');
+	logGitVersion();
 
 #if USE_LIBGIT2
 	LibGit2::init();
 	//	LibGit2::test();
 #endif
 
-	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));;
+	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
+
+	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
 
 	QString path = getBookmarksFilePath();
 	pv->repos = RepositoryBookmark::load(path);
@@ -280,6 +287,23 @@ QString MainWindow::getObjectID(QListWidgetItem *item)
 		return diff.blob.a_id;
 	}
 	return QString();
+}
+
+void MainWindow::onLogVisibilityChanged()
+{
+	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
+}
+
+void MainWindow::writeLog(QString const &str)
+{
+	ui->widget_log->termWrite(str);
+	ui->widget_log->update();
+}
+
+void MainWindow::writeLog(QByteArray ba)
+{
+	QString s = QString::fromUtf8(ba);
+	writeLog(s);
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -2179,6 +2203,16 @@ void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 	updateDiffView(ui->listWidget_files->currentItem());
 }
 
+void MainWindow::logGitVersion()
+{
+	GitPtr g = git();
+	QString s = g->version();
+	if (!s.isEmpty()) {
+		s += '\n';
+		writeLog(s);
+	}
+}
+
 void MainWindow::setGitCommand(QString const &path, bool save)
 {
 	if (save) {
@@ -2188,6 +2222,8 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 		s.endGroup();
 	}
 	pv->gcx.git_command = path;
+
+	logGitVersion();
 }
 
 void MainWindow::setFileCommand(QString const &path, bool save)
@@ -2770,3 +2806,8 @@ void MainWindow::on_action_test_triggered()
 
 
 
+
+void MainWindow::on_action_window_log_triggered(bool checked)
+{
+	ui->dockWidget_log->setVisible(checked);
+}

@@ -8,6 +8,8 @@ namespace Ui {
 class CloneDialog;
 }
 
+class MainWindow;
+
 class CloneDialog : public QDialog
 {
 	Q_OBJECT
@@ -28,16 +30,15 @@ public:
 private:
 	Ui::CloneDialog *ui;
 
+	MainWindow *mainwindow();
 public slots:
 	void accept();
 	void reject();
 	void onDone();
 private slots:
 	void on_lineEdit_repo_location_textChanged(const QString &arg1);
-	void doWriteLog(QByteArray ba);
 signals:
 	void done();
-	void writeLog(QByteArray ba);
 };
 
 #endif // CLONEDIALOG_H

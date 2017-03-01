@@ -111,7 +111,8 @@ SOURCES += \
     src/MyTableWidgetDelegate.cpp \
     src/SetRemoteUrlDialog.cpp \
     src/ClearButton.cpp \
-    src/SetUserDialog.cpp
+    src/SetUserDialog.cpp \
+    src/LogWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -162,7 +163,8 @@ HEADERS  += \
     src/SetRemoteUrlDialog.h \
     myzlib.h \
     src/ClearButton.h \
-    src/SetUserDialog.h
+    src/SetUserDialog.h \
+    src/LogWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \

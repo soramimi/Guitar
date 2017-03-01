@@ -2,6 +2,7 @@
 #include "ui_CloneDialog.h"
 #include "misc.h"
 #include "joinpath.h"
+#include "MainWindow.h"
 
 #include <QMessageBox>
 #include <QThread>
@@ -33,12 +34,14 @@ private:
 	{
 		CloneDialog *me = (CloneDialog *)cookie;
 		QByteArray ba(ptr, len);
-		emit me->writeLog(ba);
+//		emit me->writeLog(ba);
+		emit me->mainwindow()->writeLog(ba);
 	}
 };
 
 
 struct CloneDialog::Private {
+	MainWindow *mainwindow;
 	GitPtr git;
 	QString default_working_dir;
 	QString working_dir;
@@ -56,12 +59,7 @@ CloneDialog::CloneDialog(QWidget *parent, GitPtr gitptr, const QString &defworkd
 
 	pv = new Private();
 
-	if (MainWindow *mw = qobject_cast<MainWindow *>(parent)) {
-		ui->widget_log->bind(mw);
-	}
-	ui->widget_log->setTerminalMode();
-	ui->widget_log->setMaximizeButtonEnabled(false);
-	ui->widget_log->setVisible(false);
+	pv->mainwindow = qobject_cast<MainWindow *>(parent);
 
 	pv->git = gitptr;
 	pv->default_working_dir = defworkdir;
@@ -77,6 +75,11 @@ CloneDialog::~CloneDialog()
 	delete ui;
 }
 
+MainWindow *CloneDialog::mainwindow()
+{
+	return pv->mainwindow;
+}
+
 QString CloneDialog::workingDir() const
 {
 	return pv->working_dir;
@@ -84,8 +87,6 @@ QString CloneDialog::workingDir() const
 
 void CloneDialog::accept()
 {
-	ui->widget_log->setFixedSize(ui->widget_log->width(), 200);
-	ui->widget_log->setVisible(true);
 	setEnabled(false);
 
 	QString url = ui->lineEdit_repo_location->text();
@@ -93,15 +94,8 @@ void CloneDialog::accept()
 
 	qApp->setOverrideCursor(Qt::WaitCursor);
 
-	{
-//		OverrideWaitCursor;
-//		if (git->clone(url, working_dir, callback_, this)) {
-//			QDialog::accept();
-//			return;
-//		}
-		pv->thread = std::shared_ptr<CloneThread>(new CloneThread(this, pv->git, url, pv->working_dir));
-		pv->thread->start();
-	}
+	pv->thread = std::shared_ptr<CloneThread>(new CloneThread(this, pv->git, url, pv->working_dir));
+	pv->thread->start();
 }
 
 void CloneDialog::reject()
@@ -115,6 +109,8 @@ void CloneDialog::onDone()
 {
 	qApp->restoreOverrideCursor();
 	setEnabled(true);
+
+	pv->thread.reset();
 
 	if (ok) {
 		QDialog::accept();
@@ -143,13 +139,7 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 	ui->lineEdit_working_dir->setText(path);
 }
 
-void CloneDialog::doWriteLog(QByteArray ba)
-{
-	QString s = QString::fromUtf8(ba);
-	qDebug() << s;
-	ui->widget_log->termWrite(s);
-	ui->widget_log->update();
-}
+
 
 
 

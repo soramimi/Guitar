@@ -128,6 +128,9 @@ private slots:
 	void onRepositoriesTreeDropped();
 	void on_action_set_config_user_triggered();
 
+	void on_action_window_log_triggered(bool checked);
+
+	void onLogVisibilityChanged();
 private:
 	Ui::MainWindow *ui;
 
@@ -216,6 +219,7 @@ private:
 	void setWindowTitle_(const Git::User &user);
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
 	void updateWindowTitle(GitPtr g);
+	void logGitVersion();
 public:
 
 	QString selectGitCommand();
@@ -254,6 +258,9 @@ public:
 	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	bool isValidRemoteURL(QString const &url);
+public slots:
+	void writeLog(const QString &str);
+	void writeLog(QByteArray ba);
 protected:
 
 protected:
