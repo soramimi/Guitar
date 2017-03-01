@@ -1097,6 +1097,16 @@ void MainWindow::openRepository_(GitPtr g)
 
 void MainWindow::openRepository(bool waitcursor)
 {
+	QString dir = currentWorkingCopyDir();
+	if (!QFileInfo(dir).isDir()) {
+		QMessageBox::warning(this, tr("Open Repository"), tr("No such folder") + "\n\n" + dir);
+		return;
+	}
+	if (!Git::isValidWorkingCopy(dir)) {
+		QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
+		return;
+	}
+
 	if (waitcursor) {
 		OverrideWaitCursor;
 		openRepository(false);
