@@ -1,5 +1,10 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+
+#ifdef Q_OS_WIN
+#include "win32/win32.h"
+#endif
+
 #include "AboutDialog.h"
 #include "CheckoutBranchDialog.h"
 #include "CloneDialog.h"
@@ -26,7 +31,11 @@
 #include "DeleteTagsDialog.h"
 #include "FileHistoryWindow.h"
 #include "FilePropertyDialog.h"
-#include <deque>
+#include "CommitExploreWindow.h"
+#include "SetRemoteUrlDialog.h"
+#include "CommitExploreWindow.h"
+#include "SetUserDialog.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QDesktopServices>
@@ -35,20 +44,14 @@
 #include <QPainter>
 #include <QStandardPaths>
 #include <QKeyEvent>
-#include <set>
 #include <QProcess>
 #include <QDirIterator>
 #include <QThread>
 
-#include "CommitExploreWindow.h"
-#include "SetRemoteUrlDialog.h"
+#include <deque>
+#include <set>
 
-#ifdef Q_OS_WIN
-#include "win32/win32.h"
 
-#include "CommitExploreWindow.h"
-#include "SetUserDialog.h"
-#endif
 
 FileDiffWidget::DrawData::DrawData()
 {
