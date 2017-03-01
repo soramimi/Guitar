@@ -46,7 +46,7 @@ public:
 	void setBinaryMode(bool f);
 	bool isBinaryMode() const;
 
-	static QString formatText(QString const &text);
+	static QString formatText(std::vector<ushort> const &text);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

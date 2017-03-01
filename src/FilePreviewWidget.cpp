@@ -130,12 +130,12 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
-QString FilePreviewWidget::formatText(const QString &text)
+QString FilePreviewWidget::formatText(std::vector<ushort> const &text)
 {
-	if (text.isEmpty()) return text;
+	if (text.empty()) return QString();
 	std::vector<ushort> vec;
 	vec.reserve(text.size() + 100);
-	ushort const *begin = text.utf16();
+	ushort const *begin = &text[0];
 	ushort const *end = begin + text.size();
 	ushort const *ptr = begin;
 	int x = 0;
@@ -186,8 +186,7 @@ void FilePreviewWidget::paintText()
 		y -= i * drawdata()->line_height;
 		y = -y;
 		while (i < lines->size() && y < h) {
-			QString line = lines->at(i).text;
-			line = formatText(line);
+			QString line = formatText(lines->at(i).text);
 			TextDiffLine::Type type = lines->at(i).type;
 
 			QColor *bgcolor;

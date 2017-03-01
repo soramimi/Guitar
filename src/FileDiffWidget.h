@@ -30,14 +30,17 @@ struct TextDiffLine {
 	} type = Unknown;
 	int hunk_number = -1;
 	int line_number = -1;
-	QString text;
+//	QString text;
+	std::vector<ushort> text;
 	TextDiffLine()
 	{
 	}
-	TextDiffLine(QString const &text, Type type)
+	TextDiffLine(QString const &text_, Type type)
 		: type(type)
-		, text(text)
 	{
+		ushort const *ptr = text_.utf16();
+		size_t len = text_.size();
+		text.insert(text.end(), ptr, ptr + len);
 	}
 };
 
