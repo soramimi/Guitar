@@ -1095,21 +1095,25 @@ void MainWindow::openRepository_(GitPtr g)
 	udpateButton();
 }
 
-void MainWindow::openRepository(bool waitcursor)
+
+
+void MainWindow::openRepository(bool validate, bool waitcursor)
 {
-	QString dir = currentWorkingCopyDir();
-	if (!QFileInfo(dir).isDir()) {
-		QMessageBox::warning(this, tr("Open Repository"), tr("No such folder") + "\n\n" + dir);
-		return;
-	}
-	if (!Git::isValidWorkingCopy(dir)) {
-		QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-		return;
+	if (validate) {
+		QString dir = currentWorkingCopyDir();
+		if (!QFileInfo(dir).isDir()) {
+			QMessageBox::warning(this, tr("Open Repository"), tr("No such folder") + "\n\n" + dir);
+			return;
+		}
+		if (!Git::isValidWorkingCopy(dir)) {
+			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
+			return;
+		}
 	}
 
 	if (waitcursor) {
 		OverrideWaitCursor;
-		openRepository(false);
+		openRepository(false, false);
 		return;
 	}
 
@@ -1147,7 +1151,7 @@ void MainWindow::autoOpenRepository(QString dir)
 
 	auto Open = [&](RepositoryItem const &item){
 		pv->current_repo = item;
-		openRepository();
+		openRepository(false);
 	};
 
 	for (RepositoryItem const &item : pv->repos) {
@@ -1187,7 +1191,7 @@ void MainWindow::openSelectedRepository()
 	RepositoryItem const *item = repositoryItem(ite);
 	if (item) {
 		pv->current_repo = *item;
-		openRepository();
+		openRepository(true);
 	}
 }
 
@@ -1229,7 +1233,7 @@ void MainWindow::commit(bool amend)
 			} else {
 				g->commit(text);
 			}
-			openRepository();
+			openRepository(true);
 			break;
 		} else {
 			break;
@@ -1599,7 +1603,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 							return true;
 						});
 					});
-					openRepository();
+					openRepository(false);
 				}
 			} else if (a == a_history) {
 				execFileHistory(item);
@@ -1662,7 +1666,7 @@ void MainWindow::revertFile(QStringList const &paths)
 			for (QString const &path : paths) {
 				g->revertFile(path);
 			}
-			openRepository();
+			openRepository(true);
 		}
 	}
 }
@@ -1675,7 +1679,7 @@ void MainWindow::revertAllFiles()
 	QString cmd = "git reset --hard HEAD";
 	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
 		g->revertAllFiles();
-		openRepository();
+		openRepository(true);
 	}
 }
 
@@ -1751,7 +1755,7 @@ void MainWindow::on_action_open_existing_working_copy_triggered()
 
 void MainWindow::on_action_view_refresh_triggered()
 {
-	openRepository();
+	openRepository(true);
 }
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
@@ -2461,7 +2465,7 @@ void MainWindow::on_action_branch_checkout_triggered()
 		QString name = dlg.branchName();
 		if (!name.isEmpty()) {
 			g->checkoutBranch(name);
-			openRepository();
+			openRepository(true);
 		}
 	}
 }
@@ -2493,7 +2497,7 @@ void MainWindow::on_action_clone_triggered()
 		item.name = makeRepositoryName(dir);
 		saveRepositoryBookmark(item);
 		pv->current_repo = item;
-		openRepository();
+		openRepository(true);
 	}
 }
 

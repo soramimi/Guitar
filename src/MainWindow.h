@@ -143,7 +143,7 @@ private:
 	GitPtr git();
 
 	void openRepository_(GitPtr g);
-	void openRepository(bool waitcursor = true);
+	void openRepository(bool validate, bool waitcursor = true);
 	void reopenRepository(std::function<void(GitPtr g)> callback);
 
 	void openSelectedRepository();
