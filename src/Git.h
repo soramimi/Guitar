@@ -280,7 +280,13 @@ public:
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
-	bool git(QString const &arg, bool chdir = true);
+	typedef void (*callback_t)(void *cookie, char const *ptr, int len);
+	bool git(QString const &arg, bool chdir, bool errout = false, callback_t callback = nullptr, void *cookie = nullptr);
+	bool git(QString const &arg, bool errout, void (*callback)(void *cookie), void *cookie);
+	bool git(QString const &arg)
+	{
+		return git(arg, true);
+	}
 
 	void setWorkingRepositoryDir(const QString &repo);
 	const QString &workingRepositoryDir() const;
@@ -292,7 +298,7 @@ public:
 	CommitItemList log_all(const QString &id, int maxcount, QDateTime limit_time);
 	CommitItemList log(int maxcount, QDateTime limit_time);
 
-	bool clone(const QString &location, const QString &path);
+	bool clone(const QString &url, const QString &path, callback_t callback = nullptr, void *cookie = nullptr);
 
 	FileStatusList status();
 	bool cat_file(const QString &id, QByteArray *out);

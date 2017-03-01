@@ -114,7 +114,7 @@ bool Git::chdirexec(std::function<bool()> fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir)
+bool Git::git(const QString &arg, bool chdir, bool errout, callback_t callback, void *cookie)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -138,15 +138,18 @@ bool Git::git(const QString &arg, bool chdir)
 		proc.start(cmd);
 		proc.waitForStarted();
 		proc.closeWriteChannel();
-		proc.setReadChannel(QProcess::StandardOutput);
+		proc.setReadChannel(errout ? QProcess::StandardError : QProcess::StandardOutput);
 		while (1) {
 			QProcess::ProcessState s = proc.state();
 			if (proc.waitForReadyRead(1)) {
 				while (1) {
 					char tmp[1024];
-					qint64 len = proc.read(tmp, sizeof(tmp));
+					int len = (int)proc.read(tmp, sizeof(tmp));
 					if (len < 1) break;
 					pv->result.append(tmp, len);
+					if (callback) {
+						callback(cookie, tmp, len);
+					}
 				}
 			} else if (s == QProcess::NotRunning) {
 				break;
@@ -180,6 +183,11 @@ bool Git::git(const QString &arg, bool chdir)
 #endif
 
 	return ok;
+}
+
+bool Git::git(const QString &arg, bool errout, void (*callback)(void *), void *cookie)
+{
+	return git(arg, true, errout);
 }
 
 QString Git::errorMessage() const
@@ -575,7 +583,7 @@ Git::CommitItemList Git::log(int maxcount, QDateTime limit_time)
 #endif
 }
 
-bool Git::clone(QString const &location, QString const &path)
+bool Git::clone(QString const &url, QString const &path, callback_t callback, void *cookie)
 {
 	QString basedir;
 	QString subdir;
@@ -595,7 +603,7 @@ bool Git::clone(QString const &location, QString const &path)
 			return location;
 		};
 		basedir = path;
-		subdir = GitBaseName(location);
+		subdir = GitBaseName(url);
 	} else {
 		QFileInfo info(path);
 		basedir = info.dir().path();
@@ -608,9 +616,9 @@ bool Git::clone(QString const &location, QString const &path)
 	QDir cwd = QDir::current();
 	if (QDir::setCurrent(basedir)) {
 
-		QString cmd = "clone \"%1\" \"%2\"";
-		cmd = cmd.arg(location).arg(subdir);
-		ok = git(cmd, false);
+		QString cmd = "clone --progress \"%1\" \"%2\"";
+		cmd = cmd.arg(url).arg(subdir);
+		ok = git(cmd, false, true, callback, cookie);
 
 		QDir::setCurrent(cwd.path());
 	}

@@ -4,6 +4,7 @@
 #include "joinpath.h"
 
 #include <QMessageBox>
+#include <QThread>
 
 CloneDialog::CloneDialog(QWidget *parent, GitPtr gitptr, const QString &defworkdir) :
 	QDialog(parent),
@@ -29,18 +30,55 @@ QString CloneDialog::workingDir() const
 	return working_dir;
 }
 
+class CloneThread : public QThread {
+protected:
+	CloneDialog *caller;
+	GitPtr g;
+	QString url;
+	QString into;
+	virtual void run()
+	{
+		ok = g->clone(url, into, callback_, caller);
+	}
+public:
+	bool ok = false;
+	CloneThread(GitPtr g, QString const &url, QString const &into)
+		: g(g)
+		, url(url)
+		, into(into)
+	{
+	}
+private:
+	static void callback_(void *cookie, const char *ptr, int len)
+	{
+		CloneDialog *me = (CloneDialog *)cookie;
+
+		qDebug() << QString::fromUtf8(ptr, len);
+	}
+};
+
+
+
 void CloneDialog::accept()
 {
-	QString loc = ui->lineEdit_repo_location->text();
+	QString url = ui->lineEdit_repo_location->text();
 	working_dir = ui->lineEdit_working_dir->text();
 
 	{
 		OverrideWaitCursor;
-		if (git->clone(loc, working_dir)) {
+//		if (git->clone(url, working_dir, callback_, this)) {
+//			QDialog::accept();
+//			return;
+//		}
+		CloneThread th(git, url, working_dir);
+		th.start();
+		th.wait();
+		if (th.ok) {
 			QDialog::accept();
 			return;
 		}
 	}
+
 	QString errmsg = git->errorMessage();
 	QMessageBox::warning(this, qApp->applicationName(), errmsg);
 }
