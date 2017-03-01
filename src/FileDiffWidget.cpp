@@ -23,6 +23,9 @@ struct FileDiffWidget::Private {
 	FileDiffWidget::DiffData diff_data;
 	FileDiffWidget::DrawData draw_data;
 	int max_line_length = 0;
+
+	int term_cursor_row = 0;
+	int term_cursor_col = 0;
 };
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -380,7 +383,10 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		int i = ui->gridLayout->indexOf(ui->horizontalScrollBar);
 		if (i >= 0) delete ui->gridLayout->takeAt(i); // this will deleted QWidgetItem, it wrapped horizontalScrollBar.
 
-		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::SingleFile) { // 1ファイル表示モード
+		ViewStyle vs = pv->init_param_.view_style;
+		bool single = vs == ViewStyle::Terminal || vs == ViewStyle::SingleFile;
+
+		if (single) { // 1ファイル表示モード
 			ui->gridLayout->addWidget(ui->horizontalScrollBar, 1, 1, 1, 1); // 水平スクロールバーを colspan=1 で据え付ける
 			ui->widget_diff_right->setVisible(false);  // 右ファイルビューを非表示
 			ui->widget_diff_pixmap->setVisible(false); // pixmap非表示
@@ -732,3 +738,64 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 	win.init(pv->mainwindow, pv->init_param_);
 	win.exec();
 }
+
+void FileDiffWidget::setTerminalMode()
+{
+	setSingleFile(QByteArray(), QString(), QString());
+	pv->init_param_.view_style = ViewStyle::Terminal;
+	ui->widget_diff_left->setTerminalMode(true);
+}
+
+bool FileDiffWidget::isTerminalMode() const
+{
+	return pv->init_param_.view_style == ViewStyle::Terminal;
+}
+
+void FileDiffWidget::termWrite(ushort c)
+{
+	if (!isTerminalMode()) return;
+
+	if (c == '\r') {
+		pv->term_cursor_col = 0;
+		return;
+	}
+	if (c == '\n') {
+		pv->term_cursor_col = 0;
+		pv->term_cursor_row++;
+		return;
+	}
+
+	QList<TextDiffLine> *lines = &pv->diff_data.left->lines;
+
+	while (lines->size() <= pv->term_cursor_row) {
+		lines->push_back(TextDiffLine(TextDiffLine::Normal, 100));
+	}
+
+	TextDiffLine *line = &(*lines)[pv->term_cursor_row];
+	while ((int)line->text.size() <= pv->term_cursor_col) {
+		line->text.push_back(' ');
+	}
+
+	line->text[pv->term_cursor_col] = c;
+	pv->term_cursor_col++;
+}
+
+void FileDiffWidget::termWrite(ushort const *begin, ushort const *end)
+{
+	ushort const *p = begin;
+	while (p < end) {
+		termWrite(*p);
+		p++;
+	}
+}
+
+void FileDiffWidget::termWrite(QString const &text)
+{
+	ushort const *begin = text.utf16();
+	ushort const *end = begin + text.size();
+	termWrite(begin, end);
+}
+
+
+
+

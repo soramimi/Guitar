@@ -29,6 +29,7 @@ private:
 	void updateDrawData(QPainter *painter, int *descent = nullptr);
 	void updateDrawData();
 	void paintBinary();
+	QBrush getTransparentBackgroundBrush();
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
@@ -44,7 +45,9 @@ public:
 
 	void setLeftBorderVisible(bool f);
 	void setBinaryMode(bool f);
+	void setTerminalMode(bool f);
 	bool isBinaryMode() const;
+	bool isTerminalMode() const;
 
 	static QString formatText(std::vector<ushort> const &text);
 protected:

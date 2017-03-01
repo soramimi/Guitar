@@ -32,8 +32,10 @@ struct TextDiffLine {
 	int line_number = -1;
 //	QString text;
 	std::vector<ushort> text;
-	TextDiffLine()
+	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
+		: type(type)
 	{
+		text.reserve(reserve_length);
 	}
 	TextDiffLine(QString const &text_, Type type)
 		: type(type)
@@ -92,6 +94,7 @@ public:
 
 	enum ViewStyle {
 		None,
+		Terminal,
 		SingleFile,
 		LeftOnly,
 		RightOnly,
@@ -100,6 +103,7 @@ public:
 
 private:
 	Ui::FileDiffWidget *ui;
+
 	struct Private;
 	Private *pv;
 
@@ -165,6 +169,7 @@ private:
 	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
 	void setBinaryMode(bool f);
 	void bindContent_();
+	bool isTerminalMode() const;
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -182,6 +187,10 @@ public:
 
 	void setMaximizeButtonEnabled(bool f);
 	void setLeftBorderVisible(bool f);
+	void termWrite(ushort c);
+	void termWrite(const ushort *begin, const ushort *end);
+	void termWrite(const QString &text);
+	void setTerminalMode();
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);

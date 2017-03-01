@@ -16,6 +16,7 @@ class QScrollBar;
 class QListWidgetItem;
 class QTreeWidgetItem;
 class QTableWidgetItem;
+class AboutDialog;
 
 class CommitList;
 
@@ -36,6 +37,7 @@ class MainWindow : public QMainWindow
 	friend class FileDiffSliderWidget;
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
+	friend class AboutDialog;
 public:
 	struct Label {
 		enum {

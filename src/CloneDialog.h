@@ -11,11 +11,15 @@ class CloneDialog;
 class CloneDialog : public QDialog
 {
 	Q_OBJECT
+	friend class CloneThread;
 private:
+	struct Private;
+	Private *pv;
+
+	bool ok = false;
+	QString errmsg;
+
 	typedef std::shared_ptr<Git> GitPtr;
-	GitPtr git;
-	QString default_working_dir;
-	QString working_dir;
 public:
 	explicit CloneDialog(QWidget *parent, GitPtr gitptr, QString const &defworkdir);
 	~CloneDialog();
@@ -24,11 +28,16 @@ public:
 private:
 	Ui::CloneDialog *ui;
 
-	// QDialog interface
 public slots:
 	void accept();
+	void reject();
+	void onDone();
 private slots:
 	void on_lineEdit_repo_location_textChanged(const QString &arg1);
+	void doWriteLog(QByteArray ba);
+signals:
+	void done();
+	void writeLog(QByteArray ba);
 };
 
 #endif // CLONEDIALOG_H

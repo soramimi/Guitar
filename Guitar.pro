@@ -99,7 +99,6 @@ SOURCES += \
     src/SelectCommandDialog.cpp \
     src/FilePreviewWidget.cpp \
     src/FileHistoryWindow.cpp \
-    src/Debug.cpp \
     src/GitPackIdxV2.cpp \
     src/GitPack.cpp \
     src/GitObjectManager.cpp \
