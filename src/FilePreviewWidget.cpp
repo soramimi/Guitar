@@ -14,7 +14,7 @@
 
 struct FilePreviewWidget::Private {
 	MainWindow *mainwindow = nullptr;
-	FileDiffWidget::DiffData::Content const *content = nullptr;
+	ObjectContentPtr content;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
 	QString mime_type;
@@ -46,7 +46,7 @@ FileDiffWidget::DrawData const *FilePreviewWidget::drawdata() const
 	return pv->draw_data;
 }
 
-FileDiffWidget::DiffData::Content const *FilePreviewWidget::getContent() const
+ObjectContentPtr FilePreviewWidget::getContent() const
 {
 	return pv->content;
 }
@@ -54,7 +54,7 @@ FileDiffWidget::DiffData::Content const *FilePreviewWidget::getContent() const
 
 QList<TextDiffLine> const *FilePreviewWidget::getLines() const
 {
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (content) return &content->lines;
 	return nullptr;
 }
@@ -78,7 +78,7 @@ FilePreviewWidget::~FilePreviewWidget()
 	delete pv;
 }
 
-void FilePreviewWidget::bind(MainWindow *m, FileDiffWidget::DiffData::Content const *content, FileDiffWidget::DrawData *drawdata)
+void FilePreviewWidget::bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata)
 {
 	pv->mainwindow = m;
 	pv->content = content;
@@ -249,7 +249,7 @@ void FilePreviewWidget::paintText()
 
 void FilePreviewWidget::paintBinary()
 {
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (!content) return;
 	if (content->bytes.isEmpty()) return;
 
@@ -496,7 +496,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	if (!pv->mainwindow) return; // TODO:
 
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (!content) return;
 
 	QString id = content->id;

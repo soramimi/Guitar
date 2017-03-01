@@ -25,7 +25,7 @@ private:
 	void scrollImage(double x, double y);
 	void setImageScale(double scale);
 	const QList<TextDiffLine> *getLines() const;
-	const FileDiffWidget::DiffData::Content *getContent() const;
+	ObjectContentPtr getContent() const;
 	void updateDrawData(QPainter *painter, int *descent = nullptr);
 	void updateDrawData();
 	void paintBinary();
@@ -33,7 +33,7 @@ public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
 
-	void bind(MainWindow *m, const FileDiffWidget::DiffData::Content *content, FileDiffWidget::DrawData *drawdata);
+	void bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata);
 
 	void clear();
 

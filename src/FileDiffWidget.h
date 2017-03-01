@@ -41,6 +41,13 @@ struct TextDiffLine {
 	}
 };
 
+struct ObjectContent {
+	QString id;
+	QString path;
+	QByteArray bytes;
+	QList<TextDiffLine> lines;
+};
+typedef std::shared_ptr<ObjectContent> ObjectContentPtr;
 
 class QTableWidgetItem;
 
@@ -50,15 +57,19 @@ class FileDiffWidget : public QWidget
 	friend class BigDiffWindow;
 public:
 	struct DiffData {
-		struct Content {
-			QString id;
-			QString path;
-			QByteArray bytes;
-			QList<TextDiffLine> lines;
-		};
-		Content left;
-		Content right;
+		ObjectContentPtr left;
+		ObjectContentPtr right;
 		QStringList original_lines;
+		DiffData()
+		{
+			clear();
+		}
+		void clear()
+		{
+			left = ObjectContentPtr(new ObjectContent());
+			right = ObjectContentPtr(new ObjectContent());
+			original_lines.clear();
+		}
 	};
 
 	struct DrawData {
@@ -109,7 +120,7 @@ private:
 
 	int totalTextLines() const
 	{
-		return diffdata()->left.lines.size();
+		return diffdata()->left->lines.size();
 	}
 
 	int fileviewScrollPos() const
@@ -150,6 +161,7 @@ private:
 
 	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
 	void setBinaryMode(bool f);
+	void bindContent_();
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
