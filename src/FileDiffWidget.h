@@ -149,9 +149,8 @@ private:
 
 	void resetScrollBarValue();
 	void updateVerticalScrollBar();
-	void updateHorizontalScrollBar(int headerchars);
+	void updateHorizontalScrollBar();
 	void updateSliderCursor();
-	void updateControls();
 
 	int fileviewHeight() const;
 
@@ -179,6 +178,9 @@ public:
 	void clearDiffView();
 
 	void setSingleFile(QByteArray const &ba, const QString &id, const QString &path);
+
+	void updateControls();
+	void scrollToBottom();
 
 	void updateDiffView(const Git::Diff &info, bool uncommited);
 	void updateDiffView(QString id_left, QString id_right);

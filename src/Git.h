@@ -274,13 +274,17 @@ public:
 	Git(Context const &cx, const QString &repodir);
 	Git(Git &&r) = delete;
 	virtual ~Git();
+
+	typedef void (*callback_t)(void *cookie, char const *ptr, int len);
+
+	void setLogCallback(callback_t func, void *cookie);
+
 	QByteArray result() const;
 	void setGitCommand(const QString &path);
 	QString gitCommand() const;
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
-	typedef void (*callback_t)(void *cookie, char const *ptr, int len);
 	bool git(QString const &arg, bool chdir, bool errout = false, callback_t callback = nullptr, void *cookie = nullptr);
 	bool git(QString const &arg, bool errout, void (*callback)(void *cookie), void *cookie);
 	bool git(QString const &arg)

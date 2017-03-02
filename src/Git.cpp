@@ -19,6 +19,8 @@ struct Git::Private {
 	int process_exit_code = 0;
 	QString working_repo_dir;
 	QString error_message;
+	callback_t callback_func = nullptr;
+	void *callback_cookie = nullptr;
 };
 
 Git::Git(const Context &cx, QString const &repodir)
@@ -31,6 +33,12 @@ Git::Git(const Context &cx, QString const &repodir)
 Git::~Git()
 {
 	delete pv;
+}
+
+void Git::setLogCallback(callback_t func, void *cookie)
+{
+	pv->callback_func = func;
+	pv->callback_cookie = cookie;
 }
 
 void Git::setWorkingRepositoryDir(QString const &repo)
@@ -132,6 +140,12 @@ bool Git::git(const QString &arg, bool chdir, bool errout, callback_t callback, 
 		QString cmd = QString("\"%1\" ").arg(gitCommand());
 		cmd += arg;
 
+		if (pv->callback_func) {
+			QString prompt = "> ";
+			QByteArray ba = (prompt + arg).toUtf8();
+			ba.push_back('\n');
+			pv->callback_func(pv->callback_cookie, ba.data(), (int)ba.size());
+		}
 //		qDebug() << cmd;
 #if 1
 		QProcess proc;
@@ -147,8 +161,11 @@ bool Git::git(const QString &arg, bool chdir, bool errout, callback_t callback, 
 					int len = (int)proc.read(tmp, sizeof(tmp));
 					if (len < 1) break;
 					pv->result.append(tmp, len);
-					if (callback) {
-						callback(cookie, tmp, len);
+//					if (callback) {
+//						callback(cookie, tmp, len);
+//					}
+					if (pv->callback_func) {
+						pv->callback_func(pv->callback_cookie, tmp, len);
 					}
 				}
 			} else if (s == QProcess::NotRunning) {
@@ -201,6 +218,8 @@ GitPtr Git::dup() const
 	p->pv = new Private();
 	p->pv->git_command = pv->git_command;
 	p->pv->working_repo_dir = pv->working_repo_dir;
+	p->pv->callback_func = pv->callback_func;
+	p->pv->callback_cookie = pv->callback_cookie;
 	return GitPtr(p);
 }
 

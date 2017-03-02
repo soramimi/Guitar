@@ -161,8 +161,17 @@ void FileDiffWidget::updateVerticalScrollBar()
 	sb->setPageStep(0);
 }
 
-void FileDiffWidget::updateHorizontalScrollBar(int headerchars)
+void FileDiffWidget::updateHorizontalScrollBar()
 {
+	int headerchars = 0;
+	if (viewstyle() == Terminal) {
+		headerchars = 0;
+	} else if (viewstyle() == SideBySide) {
+		headerchars = 10;
+	} else {
+		headerchars = 5;
+	}
+
 	QScrollBar *sb = ui->horizontalScrollBar;
 	if (drawdata()->char_width) {
 		int chars = ui->widget_diff_left->width() / drawdata()->char_width;
@@ -174,21 +183,26 @@ void FileDiffWidget::updateHorizontalScrollBar(int headerchars)
 	sb->setPageStep(0);
 }
 
+void FileDiffWidget::scrollToBottom()
+{
+	QScrollBar *sb = ui->verticalScrollBar;
+	sb->setValue(sb->maximum());
+}
+
 void FileDiffWidget::updateSliderCursor()
 {
-	int total = totalTextLines();
-	int value = fileviewScrollPos();
-	int size = visibleLines();
-	ui->widget_diff_pixmap->setScrollPos(total, value, size);
+	if (viewstyle() == SideBySide) {
+		int total = totalTextLines();
+		int value = fileviewScrollPos();
+		int size = visibleLines();
+		ui->widget_diff_pixmap->setScrollPos(total, value, size);
+	}
 }
 
 void FileDiffWidget::updateControls()
 {
 	updateVerticalScrollBar();
-
-	int h = (viewstyle() == SideBySide) ? 10 : 5;
-	updateHorizontalScrollBar(h);
-
+	updateHorizontalScrollBar();
 	updateSliderCursor();
 }
 
@@ -744,6 +758,7 @@ void FileDiffWidget::setTerminalMode()
 	setSingleFile(QByteArray(), QString(), QString());
 	pv->init_param_.view_style = ViewStyle::Terminal;
 	ui->widget_diff_left->setTerminalMode(true);
+	ui->horizontalScrollBar->setVisible(false);
 }
 
 bool FileDiffWidget::isTerminalMode() const

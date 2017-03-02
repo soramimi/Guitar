@@ -66,7 +66,6 @@ CloneDialog::CloneDialog(QWidget *parent, GitPtr gitptr, const QString &defworkd
 	ui->lineEdit_working_dir->setText(pv->default_working_dir);
 
 	connect(this, SIGNAL(done()), this, SLOT(onDone()));
-	connect(this, SIGNAL(writeLog(QByteArray)), this, SLOT(doWriteLog(QByteArray)));
 }
 
 CloneDialog::~CloneDialog()
