@@ -1,19 +1,47 @@
 #include "ProgressDialog.h"
 #include "ui_ProgressDialog.h"
 
-ProgressDialog::ProgressDialog(QWidget *parent) :
+#include <QDebug>
+#include <QKeyEvent>
+
+ProgressDialog::ProgressDialog(MainWindow *parent) :
 	QDialog(parent),
 	ui(new Ui::ProgressDialog)
 {
 	ui->setupUi(this);
+#if 0
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	flags &= ~Qt::WindowCloseButtonHint;
-	setWindowFlags(flags);}
+	setWindowFlags(flags);
+#else
+	setWindowFlags(Qt::Popup);
+	setFocusPolicy(Qt::NoFocus);
+	setFixedSize(width(), 0);
+#endif
+
+	ui->widget_log->init(parent);
+
+	updateInterruptCounter();
+
+	connect(this, SIGNAL(finish()), this, SLOT(accept()));
+	connect(this, SIGNAL(writeLog(QString)), this, SLOT(writeLog_(QString)));
+}
 
 ProgressDialog::~ProgressDialog()
 {
 	delete ui;
+}
+
+void ProgressDialog::updateInterruptCounter()
+{
+	QString text;
+	if (interrupt_counter < 2) {
+		text = tr("Press the Esc key to abort the process");
+	} else {
+		text = tr("Press the Esc key %1 times to abort the process").arg(interrupt_counter);
+	}
+	ui->label_interrupt->setText(text);
 }
 
 void ProgressDialog::setLabelText(const QString &text)
@@ -21,12 +49,37 @@ void ProgressDialog::setLabelText(const QString &text)
 	ui->label->setText(text);
 }
 
-void ProgressDialog::on_pushButton_cancel_clicked()
+void ProgressDialog::reject()
 {
-	canceled_by_user = true;
+	// ignore
+}
+
+void ProgressDialog::interrupt()
+{
+	if (interrupt_counter > 1) {
+		interrupt_counter--;
+		updateInterruptCounter();
+	} else {
+		canceled_by_user = true;
+		accept();
+	}
+}
+
+void ProgressDialog::keyPressEvent(QKeyEvent *event)
+{
+	if (event->key() == Qt::Key_Escape) {
+		interrupt();
+	}
 }
 
 bool ProgressDialog::isCanceledByUser() const
 {
 	return canceled_by_user;
 }
+
+void ProgressDialog::writeLog_(QString text)
+{
+	ui->widget_log->termWrite(text);
+}
+
+

@@ -97,7 +97,7 @@ void FileHistoryWindow::prepare(GitPtr g, const QString &path)
 
 	{
 		OverrideWaitCursor;
-		pv->commit_item_list = pv->g->log_all(pv->path, pv->mainwindow->limitLogCount(), pv->mainwindow->limitLogTime());
+		pv->commit_item_list = pv->g->log_all(pv->path, pv->mainwindow->limitLogCount());
 	}
 
 	collectFileHistory();

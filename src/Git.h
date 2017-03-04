@@ -275,7 +275,7 @@ public:
 	Git(Git &&r) = delete;
 	virtual ~Git();
 
-	typedef void (*callback_t)(void *cookie, char const *ptr, int len);
+	typedef bool (*callback_t)(void *cookie, char const *ptr, int len);
 
 	void setLogCallback(callback_t func, void *cookie);
 
@@ -285,7 +285,7 @@ public:
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
-	bool git(QString const &arg, bool chdir, bool errout = false, callback_t callback = nullptr, void *cookie = nullptr);
+	bool git(QString const &arg, bool chdir, bool errout = false);
 	bool git(QString const &arg, bool errout, void (*callback)(void *cookie), void *cookie);
 	bool git(QString const &arg)
 	{
@@ -299,8 +299,8 @@ public:
 	bool isValidWorkingCopy();
 	QString version();
 	QStringList getUntrackedFiles();
-	CommitItemList log_all(const QString &id, int maxcount, QDateTime limit_time);
-	CommitItemList log(int maxcount, QDateTime limit_time);
+	CommitItemList log_all(const QString &id, int maxcount);
+	CommitItemList log(int maxcount);
 
 	bool clone(const QString &url, const QString &path, callback_t callback = nullptr, void *cookie = nullptr);
 

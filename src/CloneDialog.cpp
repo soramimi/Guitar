@@ -15,7 +15,7 @@ protected:
 	QString into;
 	virtual void run()
 	{
-		caller->ok = g->clone(url, into, callback_, caller);
+		caller->ok = g->clone(url, into);
 		if (!caller->ok) {
 			caller->errmsg = g->errorMessage();
 		}

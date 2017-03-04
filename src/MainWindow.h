@@ -219,7 +219,8 @@ private:
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
 	void updateWindowTitle(GitPtr g);
 	void logGitVersion();
-	static void write_log_callback(void *cookie, const char *ptr, int len);
+	static bool write_log_callback(void *cookie, const char *ptr, int len);
+	static bool log_callback(void *cookie, const char *ptr, int len);
 public:
 
 	QString selectGitCommand();
@@ -259,6 +260,7 @@ public:
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	bool isValidRemoteURL(QString const &url);
 	void setLogEnabled(GitPtr g, bool f);
+	void setBlockUI(bool f);
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);
@@ -268,10 +270,10 @@ protected:
 	void timerEvent(QTimerEvent *event);
 protected slots:
 
-
-	// QWidget interface
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
+signals:
+	void onEscapeKeyPressed();
 };
 
 #endif // MAINWINDOW_H

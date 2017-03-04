@@ -122,7 +122,7 @@ bool Git::chdirexec(std::function<bool()> fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir, bool errout, callback_t callback, void *cookie)
+bool Git::git(const QString &arg, bool chdir, bool errout)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -161,11 +161,14 @@ bool Git::git(const QString &arg, bool chdir, bool errout, callback_t callback, 
 					int len = (int)proc.read(tmp, sizeof(tmp));
 					if (len < 1) break;
 					pv->result.append(tmp, len);
-//					if (callback) {
-//						callback(cookie, tmp, len);
-//					}
 					if (pv->callback_func) {
-						pv->callback_func(pv->callback_cookie, tmp, len);
+						bool ok = pv->callback_func(pv->callback_cookie, tmp, len);
+						if (!ok) {
+							pv->error_message = "Interrupted by user";
+							qDebug() << pv->error_message;
+							pv->process_exit_code = -1;
+							return false;
+						}
 					}
 				}
 			} else if (s == QProcess::NotRunning) {
@@ -545,7 +548,7 @@ QList<Git::Branch> Git::branches()
 #endif
 }
 
-Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limit_time)
+Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 {
 	CommitItemList items;
 	QString text;
@@ -591,10 +594,10 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount, QDateTime limi
 	return items;
 }
 
-Git::CommitItemList Git::log(int maxcount, QDateTime limit_time)
+Git::CommitItemList Git::log(int maxcount)
 {
 #if 1
-	return log_all(QString(), maxcount, limit_time);
+	return log_all(QString(), maxcount);
 #else
 	std::string dir = workingRepositoryDir().toStdString();
 	LibGit2::Repository r = LibGit2::openRepository(dir);
@@ -637,7 +640,7 @@ bool Git::clone(QString const &url, QString const &path, callback_t callback, vo
 
 		QString cmd = "clone --progress \"%1\" \"%2\"";
 		cmd = cmd.arg(url).arg(subdir);
-		ok = git(cmd, false, true, callback, cookie);
+		ok = git(cmd, false, true);
 
 		QDir::setCurrent(cwd.path());
 	}

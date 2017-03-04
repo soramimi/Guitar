@@ -160,6 +160,7 @@ struct MainWindow::Private {
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
 	QLabel *status_bar_label;
+	bool ui_blocked = false;
 };
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -176,6 +177,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	ui->widget_diff_view->bind(this);
 
+	qApp->installEventFilter(this);
 	ui->treeWidget_repos->installEventFilter(this);
 	ui->tableWidget_log->installEventFilter(this);
 	ui->listWidget_staged->installEventFilter(this);
@@ -253,12 +255,50 @@ MainWindow::~MainWindow()
 
 bool MainWindow::event(QEvent *event)
 {
+	QEvent::Type et = event->type();
+	if (et == QEvent::KeyPress) {
+		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+		Q_ASSERT(e);
+		int k = e->key();
+		if (k == Qt::Key_Escape) {
+			emit onEscapeKeyPressed();
+		}
+	}
+
 	return QMainWindow::event(event);
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-	if (event->type() == QEvent::KeyPress) {
+	QEvent::Type et = event->type();
+
+	if (pv->ui_blocked) {
+		if (et == QEvent::KeyPress || et == QEvent::KeyRelease) {
+			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+			Q_ASSERT(e);
+			if (e->key() == Qt::Key_Escape) {
+				return false; // default event handling
+			}
+			return true; // discard event
+		}
+		switch (et) {
+		case QEvent::MouseButtonPress:
+		case QEvent::MouseButtonRelease:
+		case QEvent::MouseButtonDblClick:
+		case QEvent::MouseMove:
+		case QEvent::Close:
+		case QEvent::Drop:
+		case QEvent::Wheel:
+		case QEvent::ContextMenu:
+		case QEvent::InputMethod:
+		case QEvent::TabletMove:
+		case QEvent::TabletPress:
+		case QEvent::TabletRelease:
+			return true; // discard event
+		}
+	}
+
+	if (et == QEvent::KeyPress) {
 		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
@@ -273,14 +313,15 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				return true;
 			}
 		}
-	} else if (event->type() == QEvent::FocusIn) {
-		updateStatusBarText();
+	} else if (et == QEvent::FocusIn) {
 		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
 		if (watched == ui->listWidget_unstaged) {
+			updateStatusBarText();
 			updateUnstagedFileCurrentItem();
 			return true;
 		}
 		if (watched == ui->listWidget_staged) {
+			updateStatusBarText();
 			updateStagedFileCurrentItem();
 			return true;
 		}
@@ -328,11 +369,12 @@ void MainWindow::writeLog(QByteArray ba)
 	writeLog(s);
 }
 
-void MainWindow::write_log_callback(void *cookie, char const *ptr, int len)
+bool MainWindow::write_log_callback(void *cookie, char const *ptr, int len)
 {
 	MainWindow *me = (MainWindow *)cookie;
 	QByteArray ba(ptr, len);
 	me->writeLog(ba);
+	return true;
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -1074,6 +1116,20 @@ public:
 	}
 };
 
+bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
+{
+	ProgressDialog *dlg = (ProgressDialog *)cookie;
+	if (dlg->isCanceledByUser()) {
+		qDebug() << "canceled";
+		return false;
+	}
+
+	QString text = QString::fromUtf8(ptr, len);
+	emit dlg->writeLog(text);
+
+	return true;
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1081,35 +1137,39 @@ void MainWindow::openRepository_(GitPtr g)
 
 	pv->objcache.setup(g);
 
-	pv->head_id = pv->objcache.revParse("HEAD");
-
 	if (isValidWorkingCopy(g)) {
 		startDiff(g, QString());
 		updateFilesList(QString());
 
 		// ログを取得
 		{
-#if 0
+#if 1
 			ProgressDialog dlg(this);
 			dlg.setLabelText(tr("Retrieving the log in progress"));
 
+			g->setLogCallback(log_callback, &dlg);
+
 			RetrieveLogThread_ th([&](){
-				pv->logs = g->log(limitLogCount(), limitLogTime());
+				pv->logs = g->log(limitLogCount());
+				emit dlg.finish();
 			});
-//			dlg.show();
 			th.start();
-//			while (1) {
-//				if (th.wait(1)) break;
-//				if (dlg.isCanceledByUser()) {
-//					qDebug() << "canceled by user";
-//					return;
-//				}
-//				QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-//			}
-			dlg.exec();
-			dlg.hide();
+
+			if (th.wait(5000)) {
+				// thread completed
+			} else {
+				dlg.exec();
+				th.wait();
+			}
+
+			g->setLogCallback(nullptr, nullptr);
+
+			if (dlg.isCanceledByUser()) {
+				setUnknownRepositoryInfo();
+				return;
+			}
 #else
-			pv->logs = g->log(limitLogCount(), limitLogTime());
+			pv->logs = g->log(limitLogCount());
 #endif
 		}
 
@@ -1126,6 +1186,8 @@ void MainWindow::openRepository_(GitPtr g)
 		setRepositoryInfo(repo_name, branch_name);
 	}
 	updateWindowTitle(g);
+
+	pv->head_id = pv->objcache.revParse("HEAD");
 
 	if (isThereUncommitedChanges()) {
 		Git::CommitItem item;
@@ -2891,10 +2953,21 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 	ui->dockWidget_log->setVisible(checked);
 }
 
+void MainWindow::setBlockUI(bool f)
+{
+	pv->ui_blocked = f;
+	ui->menuBar->setEnabled(!pv->ui_blocked);
+}
+
 void MainWindow::on_action_test_triggered()
 {
-	writeLog(AboutDialog::appVersion() + '\n');
-	logGitVersion();
+//	setBlockUI(true);
+	ProgressDialog dlg(this);
+//	dlg.show();
+//	connect(this, SIGNAL(onEscapeKeyPressed()), &dlg, SLOT(interrupt()));
+	dlg.exec();
+//	disconnect(this, SIGNAL(onEscapeKeyPressed()), &dlg, SLOT(interrupt()));
+//	setBlockUI(false);
 }
 
 
