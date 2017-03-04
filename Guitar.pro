@@ -112,7 +112,8 @@ SOURCES += \
     src/MyTableWidgetDelegate.cpp \
     src/SetRemoteUrlDialog.cpp \
     src/ClearButton.cpp \
-    src/SetUserDialog.cpp
+    src/SetUserDialog.cpp \
+    src/ProgressDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -163,7 +164,8 @@ HEADERS  += \
     src/SetRemoteUrlDialog.h \
     myzlib.h \
     src/ClearButton.h \
-    src/SetUserDialog.h
+    src/SetUserDialog.h \
+    src/ProgressDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -187,7 +189,8 @@ FORMS    += \
     src/BigDiffWindow.ui \
     src/CommitExploreWindow.ui \
     src/SetRemoteUrlDialog.ui \
-    src/SetUserDialog.ui
+    src/SetUserDialog.ui \
+    src/ProgressDialog.ui
 
 RESOURCES += \
     resources.qrc

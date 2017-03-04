@@ -35,6 +35,7 @@
 #include "SetRemoteUrlDialog.h"
 #include "CommitExploreWindow.h"
 #include "SetUserDialog.h"
+#include "ProgressDialog.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -996,6 +997,21 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	}
 }
 
+class RetrieveLogThread_ : public QThread {
+private:
+	std::function<void()> callback;
+protected:
+	void run()
+	{
+		callback();
+	}
+public:
+	RetrieveLogThread_(std::function<void()> callback)
+		: callback(callback)
+	{
+	}
+};
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1010,7 +1026,30 @@ void MainWindow::openRepository_(GitPtr g)
 		updateFilesList(QString());
 
 		// ログを取得
-		pv->logs = g->log(limitLogCount(), limitLogTime());
+		{
+#if 0
+			ProgressDialog dlg(this);
+			dlg.setLabelText(tr("Retrieving the log in progress"));
+
+			RetrieveLogThread_ th([&](){
+				pv->logs = g->log(limitLogCount(), limitLogTime());
+			});
+//			dlg.show();
+			th.start();
+//			while (1) {
+//				if (th.wait(1)) break;
+//				if (dlg.isCanceledByUser()) {
+//					qDebug() << "canceled by user";
+//					return;
+//				}
+//				QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+//			}
+			dlg.exec();
+			dlg.hide();
+#else
+			pv->logs = g->log(limitLogCount(), limitLogTime());
+#endif
+		}
 
 		// ブランチとタグを取得
 		queryBranches(g);
