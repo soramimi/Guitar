@@ -23,6 +23,9 @@ struct FileDiffWidget::Private {
 	FileDiffWidget::DiffData diff_data;
 	FileDiffWidget::DrawData draw_data;
 	int max_line_length = 0;
+
+	int term_cursor_row = 0;
+	int term_cursor_col = 0;
 };
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -88,13 +91,18 @@ FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 	return pv->init_param_.view_style;
 }
 
+void FileDiffWidget::bindContent_()
+{
+	ui->widget_diff_pixmap->bind(pv->mainwindow, this, diffdata(), drawdata());
+	ui->widget_diff_left->bind(pv->mainwindow, diffdata()->left, drawdata());
+	ui->widget_diff_right->bind(pv->mainwindow, diffdata()->right, drawdata());
+}
+
 void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
 	pv->mainwindow = mw;
-	ui->widget_diff_pixmap->bind(pv->mainwindow, this, diffdata(), drawdata());
-	ui->widget_diff_left->bind(pv->mainwindow, &diffdata()->left, drawdata());
-	ui->widget_diff_right->bind(pv->mainwindow, &diffdata()->right, drawdata());
+	bindContent_();
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
@@ -120,10 +128,11 @@ Git::Object FileDiffWidget::cat_file(GitPtr /*g*/, QString const &id)
 
 void FileDiffWidget::clearDiffView()
 {
-	*diffdata() = FileDiffWidget::DiffData();
+	diffdata()->clear();
 	ui->widget_diff_pixmap->clear(false);
 	ui->widget_diff_left->clear();
 	ui->widget_diff_right->clear();
+	bindContent_();
 }
 
 int FileDiffWidget::fileviewHeight() const
@@ -142,8 +151,8 @@ void FileDiffWidget::updateVerticalScrollBar()
 	QScrollBar *sb = ui->verticalScrollBar;
 	if (drawdata()->line_height > 0) {
 		int lines_per_widget = fileviewHeight() / drawdata()->line_height;
-		if (lines_per_widget < diffdata()->left.lines.size() + 1) {
-			sb->setRange(0, diffdata()->left.lines.size() - lines_per_widget + 1);
+		if (lines_per_widget < diffdata()->left->lines.size() + 1) {
+			sb->setRange(0, diffdata()->left->lines.size() - lines_per_widget + 1);
 			sb->setPageStep(lines_per_widget);
 			return;
 		}
@@ -152,8 +161,17 @@ void FileDiffWidget::updateVerticalScrollBar()
 	sb->setPageStep(0);
 }
 
-void FileDiffWidget::updateHorizontalScrollBar(int headerchars)
+void FileDiffWidget::updateHorizontalScrollBar()
 {
+	int headerchars = 0;
+	if (viewstyle() == Terminal) {
+		headerchars = 0;
+	} else if (viewstyle() == SideBySide) {
+		headerchars = 10;
+	} else {
+		headerchars = 5;
+	}
+
 	QScrollBar *sb = ui->horizontalScrollBar;
 	if (drawdata()->char_width) {
 		int chars = ui->widget_diff_left->width() / drawdata()->char_width;
@@ -165,21 +183,26 @@ void FileDiffWidget::updateHorizontalScrollBar(int headerchars)
 	sb->setPageStep(0);
 }
 
+void FileDiffWidget::scrollToBottom()
+{
+	QScrollBar *sb = ui->verticalScrollBar;
+	sb->setValue(sb->maximum());
+}
+
 void FileDiffWidget::updateSliderCursor()
 {
-	int total = totalTextLines();
-	int value = fileviewScrollPos();
-	int size = visibleLines();
-	ui->widget_diff_pixmap->setScrollPos(total, value, size);
+	if (viewstyle() == SideBySide) {
+		int total = totalTextLines();
+		int value = fileviewScrollPos();
+		int size = visibleLines();
+		ui->widget_diff_pixmap->setScrollPos(total, value, size);
+	}
 }
 
 void FileDiffWidget::updateControls()
 {
 	updateVerticalScrollBar();
-
-	int h = (viewstyle() == SideBySide) ? 10 : 5;
-	updateHorizontalScrollBar(h);
-
+	updateHorizontalScrollBar();
 	updateSliderCursor();
 }
 
@@ -337,8 +360,8 @@ void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiff
 			}
 		}
 	};
-	MakeDiffLines(left, Left, &diffdata()->left.lines);
-	MakeDiffLines(right, Right, &diffdata()->right.lines);
+	MakeDiffLines(left, Left, &diffdata()->left->lines);
+	MakeDiffLines(right, Right, &diffdata()->right->lines);
 
 	if (drawdata()->char_width > 0) {
 		pv->max_line_length /= drawdata()->char_width;
@@ -361,10 +384,10 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 
 	{
 		Git::Diff const &diff = pv->init_param_.diff;
-		diffdata()->left.path = diff.path;
-		diffdata()->right.path = diff.path;
-		diffdata()->left.id = diff.blob.a_id;
-		diffdata()->right.id = diff.blob.b_id;
+		diffdata()->left->path = diff.path;
+		diffdata()->right->path = diff.path;
+		diffdata()->left->id = diff.blob.a_id;
+		diffdata()->right->id = diff.blob.b_id;
 	}
 
 	// layout widgets
@@ -374,7 +397,10 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		int i = ui->gridLayout->indexOf(ui->horizontalScrollBar);
 		if (i >= 0) delete ui->gridLayout->takeAt(i); // this will deleted QWidgetItem, it wrapped horizontalScrollBar.
 
-		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::SingleFile) { // 1ファイル表示モード
+		ViewStyle vs = pv->init_param_.view_style;
+		bool single = vs == ViewStyle::Terminal || vs == ViewStyle::SingleFile;
+
+		if (single) { // 1ファイル表示モード
 			ui->gridLayout->addWidget(ui->horizontalScrollBar, 1, 1, 1, 1); // 水平スクロールバーを colspan=1 で据え付ける
 			ui->widget_diff_right->setVisible(false);  // 右ファイルビューを非表示
 			ui->widget_diff_pixmap->setVisible(false); // pixmap非表示
@@ -387,9 +413,9 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 
 	// init content
 
-	diffdata()->left.bytes = pv->init_param_.bytes;
+	diffdata()->left->bytes = pv->init_param_.bytes;
 
-	QString mimetype = pv->mainwindow->determinFileType(diffdata()->left.bytes, true);
+	QString mimetype = pv->mainwindow->determinFileType(diffdata()->left->bytes, true);
 
 	ui->widget_diff_left->setFileType(mimetype);
 	ui->widget_diff_right->setFileType(mimetype);
@@ -399,7 +425,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(false);
 		ui->horizontalScrollBar->setVisible(false);
 		QPixmap pixmap;
-		pixmap.loadFromData(diffdata()->left.bytes);
+		pixmap.loadFromData(diffdata()->left->bytes);
 
 		FilePreviewWidget *w = ui->widget_diff_left;
 		if (pv->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
@@ -415,10 +441,10 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(true);
 		ui->horizontalScrollBar->setVisible(true);
 
-		if (diffdata()->left.bytes.isEmpty()) {
+		if (diffdata()->left->bytes.isEmpty()) {
 			diffdata()->original_lines.clear();
 		} else {
-			diffdata()->original_lines = misc::splitLines(diffdata()->left.bytes, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+			diffdata()->original_lines = misc::splitLines(diffdata()->left->bytes, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
 		}
 
 		return FilePreviewType::Text;
@@ -515,7 +541,7 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 
 		if (uncommited) {
 			QString path = workingdir / diff.path;
-			diffdata()->right.id = GitDiff::prependPathPrefix(path);
+			diffdata()->right->id = GitDiff::prependPathPrefix(path);
 		}
 
 		QList<TextDiffLine> left_lines;
@@ -714,8 +740,8 @@ QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, Fil
 		if (scale == 1) return pixmap;
 		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	};
-	if (side == ViewType::Left)  return MakePixmap(diffdata->left.lines, width, height);
-	if (side == ViewType::Right) return MakePixmap(diffdata->right.lines, width, height);
+	if (side == ViewType::Left)  return MakePixmap(diffdata->left->lines, width, height);
+	if (side == ViewType::Right) return MakePixmap(diffdata->right->lines, width, height);
 	return QPixmap();
 }
 
@@ -726,3 +752,65 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 	win.init(pv->mainwindow, pv->init_param_);
 	win.exec();
 }
+
+void FileDiffWidget::setTerminalMode()
+{
+	setSingleFile(QByteArray(), QString(), QString());
+	pv->init_param_.view_style = ViewStyle::Terminal;
+	ui->widget_diff_left->setTerminalMode(true);
+	ui->horizontalScrollBar->setVisible(false);
+}
+
+bool FileDiffWidget::isTerminalMode() const
+{
+	return pv->init_param_.view_style == ViewStyle::Terminal;
+}
+
+void FileDiffWidget::termWrite(ushort c)
+{
+	if (!isTerminalMode()) return;
+
+	if (c == '\r') {
+		pv->term_cursor_col = 0;
+		return;
+	}
+	if (c == '\n') {
+		pv->term_cursor_col = 0;
+		pv->term_cursor_row++;
+		return;
+	}
+
+	QList<TextDiffLine> *lines = &pv->diff_data.left->lines;
+
+	while (lines->size() <= pv->term_cursor_row) {
+		lines->push_back(TextDiffLine(TextDiffLine::Normal, 100));
+	}
+
+	TextDiffLine *line = &(*lines)[pv->term_cursor_row];
+	while ((int)line->text.size() <= pv->term_cursor_col) {
+		line->text.push_back(' ');
+	}
+
+	line->text[pv->term_cursor_col] = c;
+	pv->term_cursor_col++;
+}
+
+void FileDiffWidget::termWrite(ushort const *begin, ushort const *end)
+{
+	ushort const *p = begin;
+	while (p < end) {
+		termWrite(*p);
+		p++;
+	}
+}
+
+void FileDiffWidget::termWrite(QString const &text)
+{
+	ushort const *begin = text.utf16();
+	ushort const *end = begin + text.size();
+	termWrite(begin, end);
+}
+
+
+
+

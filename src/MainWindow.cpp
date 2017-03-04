@@ -54,6 +54,24 @@
 
 
 
+class AsyncExecGitThread_ : public QThread {
+private:
+	GitPtr g;
+	std::function<void(GitPtr g)> callback;
+public:
+	AsyncExecGitThread_(GitPtr g, std::function<void(GitPtr g)> callback)
+		: g(g)
+		, callback(callback)
+	{
+	}
+protected:
+	void run()
+	{
+		callback(g);
+	}
+};
+
+
 FileDiffWidget::DrawData::DrawData()
 {
 	bgcolor_text = QColor(255, 255, 255);
@@ -163,6 +181,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
+	ui->widget_log->init(this);
+	onLogVisibilityChanged();
+
 	showFileList(FilesListType::SingleList);
 
 	pv->digits.load(":/image/digits.png");
@@ -195,13 +216,17 @@ MainWindow::MainWindow(QWidget *parent) :
 		pv->file_command = s.value("FileCommand").toString();
 		s.endGroup();
 	}
+	writeLog(AboutDialog::appVersion() + '\n');
+	logGitVersion();
 
 #if USE_LIBGIT2
 	LibGit2::init();
 	//	LibGit2::test();
 #endif
 
-	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));;
+	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
+
+	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
 
 	QString path = getBookmarksFilePath();
 	pv->repos = RepositoryBookmark::load(path);
@@ -281,6 +306,33 @@ QString MainWindow::getObjectID(QListWidgetItem *item)
 		return diff.blob.a_id;
 	}
 	return QString();
+}
+
+void MainWindow::onLogVisibilityChanged()
+{
+	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
+}
+
+void MainWindow::writeLog(QString const &str)
+{
+	ui->widget_log->termWrite(str);
+
+	ui->widget_log->updateControls();
+	ui->widget_log->scrollToBottom();
+	ui->widget_log->update();
+}
+
+void MainWindow::writeLog(QByteArray ba)
+{
+	QString s = QString::fromUtf8(ba);
+	writeLog(s);
+}
+
+void MainWindow::write_log_callback(void *cookie, char const *ptr, int len)
+{
+	MainWindow *me = (MainWindow *)cookie;
+	QByteArray ba(ptr, len);
+	me->writeLog(ba);
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -410,12 +462,22 @@ QString MainWindow::currentWorkingCopyDir() const
 
 GitPtr MainWindow::git(QString const &dir)
 {
-	return std::shared_ptr<Git>(new Git(pv->gcx, dir));
+	GitPtr g = std::shared_ptr<Git>(new Git(pv->gcx, dir));
+	return g;
 }
 
 GitPtr MainWindow::git()
 {
 	return git(currentWorkingCopyDir());
+}
+
+void MainWindow::setLogEnabled(GitPtr g, bool f)
+{
+	if (f) {
+		g->setLogCallback(write_log_callback, this);
+	} else {
+		g->setLogCallback(nullptr, nullptr);
+	}
 }
 
 QString MainWindow::makeRepositoryName(QString const &loc)
@@ -1160,16 +1222,26 @@ void MainWindow::openRepository(bool validate, bool waitcursor)
 	openRepository_(g);
 }
 
-void MainWindow::reopenRepository(std::function<void(GitPtr g)> callback)
+void MainWindow::reopenRepository(bool log, std::function<void(GitPtr g)> callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
 	OverrideWaitCursor;
-	callback(g);
+	if (log) {
+		setLogEnabled(g, true);
+		AsyncExecGitThread_ th(g, callback);
+		th.start();
+		while (1) {
+			if (th.wait(1)) break;
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
+		setLogEnabled(g, false);
+	} else {
+		callback(g);
+	}
 	openRepository_(g);
 }
-
 
 void MainWindow::udpateButton()
 {
@@ -1330,21 +1402,21 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	reopenRepository([](GitPtr g){
+	reopenRepository(true, [&](GitPtr g){
 		g->fetch();
 	});
 }
 
 void MainWindow::on_action_push_triggered()
 {
-	reopenRepository([](GitPtr g){
+	reopenRepository(true, [&](GitPtr g){
 		g->push();
 	});
 }
 
 void MainWindow::on_action_pull_triggered()
 {
-	reopenRepository([](GitPtr g){
+	reopenRepository(true, [&](GitPtr g){
 		g->pull();
 	});
 }
@@ -2218,6 +2290,16 @@ void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 	updateDiffView(ui->listWidget_files->currentItem());
 }
 
+void MainWindow::logGitVersion()
+{
+	GitPtr g = git();
+	QString s = g->version();
+	if (!s.isEmpty()) {
+		s += '\n';
+		writeLog(s);
+	}
+}
+
 void MainWindow::setGitCommand(QString const &path, bool save)
 {
 	if (save) {
@@ -2227,6 +2309,8 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 		s.endGroup();
 	}
 	pv->gcx.git_command = path;
+
+	logGitVersion();
 }
 
 void MainWindow::setFileCommand(QString const &path, bool save)
@@ -2575,7 +2659,7 @@ void MainWindow::deleteTags(QStringList const &tagnames)
 	if (!isValidWorkingCopy(g)) return;
 
 	if (!tagnames.isEmpty()) {
-		reopenRepository([&](GitPtr g){
+		reopenRepository(false, [&](GitPtr g){
 			for (QString const &name : tagnames) {
 				g->delete_tag(name, true);
 			}
@@ -2627,7 +2711,7 @@ void MainWindow::addTag()
 
 	EditTagDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
-		reopenRepository([&](GitPtr g){
+		reopenRepository(false, [&](GitPtr g){
 			g->tag(dlg.text(), commit_id);
 			if (dlg.isPushChecked()) {
 				g->push(true);
@@ -2645,7 +2729,7 @@ void MainWindow::on_action_tag_triggered()
 
 void MainWindow::on_action_tag_push_all_triggered()
 {
-	reopenRepository([&](GitPtr g){
+	reopenRepository(false, [&](GitPtr g){
 		g->push(true);
 	});
 }
@@ -2802,9 +2886,17 @@ void MainWindow::on_action_set_config_user_triggered()
 	}
 }
 
+void MainWindow::on_action_window_log_triggered(bool checked)
+{
+	ui->dockWidget_log->setVisible(checked);
+}
+
 void MainWindow::on_action_test_triggered()
 {
+	writeLog(AboutDialog::appVersion() + '\n');
+	logGitVersion();
 }
+
 
 
 

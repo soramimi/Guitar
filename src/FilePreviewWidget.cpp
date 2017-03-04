@@ -14,7 +14,7 @@
 
 struct FilePreviewWidget::Private {
 	MainWindow *mainwindow = nullptr;
-	FileDiffWidget::DiffData::Content const *content = nullptr;
+	ObjectContentPtr content;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
 	QString mime_type;
@@ -32,6 +32,7 @@ struct FilePreviewWidget::Private {
 	int bottom_margin = 1;
 	bool draw_left_border = true;
 	bool binary_mode = false;
+	bool terminal_mode = false;
 };
 
 FileDiffWidget::DrawData *FilePreviewWidget::drawdata()
@@ -46,7 +47,7 @@ FileDiffWidget::DrawData const *FilePreviewWidget::drawdata() const
 	return pv->draw_data;
 }
 
-FileDiffWidget::DiffData::Content const *FilePreviewWidget::getContent() const
+ObjectContentPtr FilePreviewWidget::getContent() const
 {
 	return pv->content;
 }
@@ -54,7 +55,7 @@ FileDiffWidget::DiffData::Content const *FilePreviewWidget::getContent() const
 
 QList<TextDiffLine> const *FilePreviewWidget::getLines() const
 {
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (content) return &content->lines;
 	return nullptr;
 }
@@ -78,7 +79,7 @@ FilePreviewWidget::~FilePreviewWidget()
 	delete pv;
 }
 
-void FilePreviewWidget::bind(MainWindow *m, FileDiffWidget::DiffData::Content const *content, FileDiffWidget::DrawData *drawdata)
+void FilePreviewWidget::bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata)
 {
 	pv->mainwindow = m;
 	pv->content = content;
@@ -130,12 +131,12 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
-QString FilePreviewWidget::formatText(const QString &text)
+QString FilePreviewWidget::formatText(std::vector<ushort> const &text)
 {
-	if (text.isEmpty()) return text;
+	if (text.empty()) return QString();
 	std::vector<ushort> vec;
 	vec.reserve(text.size() + 100);
-	ushort const *begin = text.utf16();
+	ushort const *begin = &text[0];
 	ushort const *end = begin + text.size();
 	ushort const *ptr = begin;
 	int x = 0;
@@ -171,14 +172,12 @@ void FilePreviewWidget::paintText()
 
 	x = 0;
 
-	const int linenums = 5;
+	int linenums = isTerminalMode() ? 0 : 5;
 
 	if (lines) {
 		int char_width = drawdata()->char_width;
-		int linenum_w = char_width * linenums;
+		int linenum_w = isTerminalMode() ? 0 : (char_width * linenums);
 		int x2 = x + linenum_w;
-		int w2 = w - linenum_w;
-		if (w2 < 1) return;
 		pr.save();
 		pr.setClipRect(x, 0, w, h);
 		int y = drawdata()->v_scroll_pos * drawdata()->line_height;
@@ -186,8 +185,7 @@ void FilePreviewWidget::paintText()
 		y -= i * drawdata()->line_height;
 		y = -y;
 		while (i < lines->size() && y < h) {
-			QString line = lines->at(i).text;
-			line = formatText(line);
+			QString line = formatText(lines->at(i).text);
 			TextDiffLine::Type type = lines->at(i).type;
 
 			QColor *bgcolor;
@@ -208,32 +206,45 @@ void FilePreviewWidget::paintText()
 
 			int line_y = y + drawdata()->line_height - descent - pv->bottom_margin;
 
-			{ // draw line number
+			int text_clip_x = 0;
+
+			if (isTerminalMode()) {
+				pr.fillRect(0, y, w, drawdata()->line_height, QBrush(*bgcolor));
+				text_clip_x = 3; // left margin
+			} else {
+				// draw line number
 				pr.fillRect(x, y, linenum_w + char_width, drawdata()->line_height, drawdata()->bgcolor_gray);
 				int num = lines->at(i).line_number;
 				if (num >= 0 && num < lines->size()) {
 					QString text = "     " + QString::number(num + 1);
-					text = text.mid(text.size() - 5);
+					text = text.mid(text.size() - linenums);
 					pr.setPen(QColor(128, 128, 128));
 					pr.drawText(x, line_y, text);
 				}
 
+				text_clip_x = char_width * (linenums + 1); // 行番号＋ヘッダマーク
+
+				// fill bg
+				pr.fillRect(text_clip_x - 1, y, w - text_clip_x + 1, drawdata()->line_height, QBrush(*bgcolor));
 			}
 
 			// draw text
-			int x3 = char_width * (linenums + 1); // 行番号＋ヘッダマーク
-			int x4 = drawdata()->h_scroll_pos * char_width; // 水平スクロール
-			pr.fillRect(x3 - 1, y, w2 - char_width + 1, drawdata()->line_height, QBrush(*bgcolor));
 			pr.setPen(QColor(0, 0, 0));
 
-			switch (type) {
-			case TextDiffLine::Add: pr.drawText(x2, line_y, "+"); break;
-			case TextDiffLine::Del: pr.drawText(x2, line_y, "-"); break;
+			if (isTerminalMode()) {
+				// nop
+			} else {
+				switch (type) {
+				case TextDiffLine::Add: pr.drawText(x2, line_y, "+"); break;
+				case TextDiffLine::Del: pr.drawText(x2, line_y, "-"); break;
+				}
 			}
 
+			int text_x = text_clip_x - drawdata()->h_scroll_pos * char_width; // 水平スクロール
+
 			pr.save();
-			pr.setClipRect(x3, 0, width() - x3, height());
-			pr.drawText(x3 - x4, line_y, line);
+			pr.setClipRect(text_clip_x, 0, width() - text_clip_x, height());
+			pr.drawText(text_x, line_y, line);
 			pr.restore();
 
 			y += drawdata()->line_height;
@@ -249,7 +260,7 @@ void FilePreviewWidget::paintText()
 
 void FilePreviewWidget::paintBinary()
 {
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (!content) return;
 	if (content->bytes.isEmpty()) return;
 
@@ -310,6 +321,15 @@ QSizeF FilePreviewWidget::imageScrollRange() const
 	return QSize(w, h);
 }
 
+QBrush FilePreviewWidget::getTransparentBackgroundBrush()
+{
+	if (pv->mainwindow) {
+		return pv->mainwindow->getTransparentPixmap();
+	} else {
+		return Qt::NoBrush;
+	}
+}
+
 void FilePreviewWidget::paintImage()
 {
 	QPainter pr(this);
@@ -326,7 +346,7 @@ void FilePreviewWidget::paintImage()
 		double y = cy - pv->image_scroll_y;
 		QSizeF sz = imageScrollRange();
 		if (sz.width() > 0 && sz.height() > 0) {
-			QBrush br(pv->mainwindow->getTransparentPixmap());
+			QBrush br = getTransparentBackgroundBrush();
 			pr.setBrushOrigin(x, y);
 			pr.fillRect(x, y, sz.width(), sz.height(), br);
 			pr.drawPixmap(x, y, sz.width(), sz.height(), pv->pixmap, 0, 0, w, h);
@@ -392,9 +412,19 @@ void FilePreviewWidget::setBinaryMode(bool f)
 	pv->binary_mode = f;
 }
 
+void FilePreviewWidget::setTerminalMode(bool f)
+{
+	pv->terminal_mode = f;
+}
+
 bool FilePreviewWidget::isBinaryMode() const
 {
 	return pv->binary_mode;
+}
+
+bool FilePreviewWidget::isTerminalMode() const
+{
+	return pv->terminal_mode;
 }
 
 void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
@@ -496,7 +526,7 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
 	if (!pv->mainwindow) return; // TODO:
 
-	FileDiffWidget::DiffData::Content const *content = getContent();
+	ObjectContentPtr content = getContent();
 	if (!content) return;
 
 	QString id = content->id;

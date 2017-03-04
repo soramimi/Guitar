@@ -16,6 +16,7 @@ class QScrollBar;
 class QListWidgetItem;
 class QTreeWidgetItem;
 class QTableWidgetItem;
+class AboutDialog;
 
 class CommitList;
 
@@ -36,6 +37,7 @@ class MainWindow : public QMainWindow
 	friend class FileDiffSliderWidget;
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
+	friend class AboutDialog;
 public:
 	struct Label {
 		enum {
@@ -58,7 +60,6 @@ private:
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
-
 
 	QPixmap const &digitsPixmap() const;
 
@@ -126,6 +127,9 @@ private slots:
 	void onRepositoriesTreeDropped();
 	void on_action_set_config_user_triggered();
 
+	void on_action_window_log_triggered(bool checked);
+
+	void onLogVisibilityChanged();
 private:
 	Ui::MainWindow *ui;
 
@@ -144,7 +148,7 @@ private:
 
 	void openRepository_(GitPtr g);
 	void openRepository(bool validate, bool waitcursor = true);
-	void reopenRepository(std::function<void(GitPtr g)> callback);
+	void reopenRepository(bool log, std::function<void(GitPtr g)> callback);
 
 	void openSelectedRepository();
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
@@ -214,6 +218,8 @@ private:
 	void setWindowTitle_(const Git::User &user);
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
 	void updateWindowTitle(GitPtr g);
+	void logGitVersion();
+	static void write_log_callback(void *cookie, const char *ptr, int len);
 public:
 
 	QString selectGitCommand();
@@ -252,6 +258,10 @@ public:
 	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	bool isValidRemoteURL(QString const &url);
+	void setLogEnabled(GitPtr g, bool f);
+public slots:
+	void writeLog(const QString &str);
+	void writeLog(QByteArray ba);
 protected:
 
 protected:

@@ -99,7 +99,6 @@ SOURCES += \
     src/SelectCommandDialog.cpp \
     src/FilePreviewWidget.cpp \
     src/FileHistoryWindow.cpp \
-    src/Debug.cpp \
     src/GitPackIdxV2.cpp \
     src/GitPack.cpp \
     src/GitObjectManager.cpp \
@@ -113,7 +112,8 @@ SOURCES += \
     src/SetRemoteUrlDialog.cpp \
     src/ClearButton.cpp \
     src/SetUserDialog.cpp \
-    src/ProgressDialog.cpp
+	src/ProgressDialog.cpp \
+    src/LogWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -165,7 +165,8 @@ HEADERS  += \
     myzlib.h \
     src/ClearButton.h \
     src/SetUserDialog.h \
-    src/ProgressDialog.h
+	src/ProgressDialog.h \
+    src/LogWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \

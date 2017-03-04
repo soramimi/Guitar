@@ -25,15 +25,16 @@ private:
 	void scrollImage(double x, double y);
 	void setImageScale(double scale);
 	const QList<TextDiffLine> *getLines() const;
-	const FileDiffWidget::DiffData::Content *getContent() const;
+	ObjectContentPtr getContent() const;
 	void updateDrawData(QPainter *painter, int *descent = nullptr);
 	void updateDrawData();
 	void paintBinary();
+	QBrush getTransparentBackgroundBrush();
 public:
 	explicit FilePreviewWidget(QWidget *parent);
 	~FilePreviewWidget();
 
-	void bind(MainWindow *m, const FileDiffWidget::DiffData::Content *content, FileDiffWidget::DrawData *drawdata);
+	void bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata);
 
 	void clear();
 
@@ -44,9 +45,11 @@ public:
 
 	void setLeftBorderVisible(bool f);
 	void setBinaryMode(bool f);
+	void setTerminalMode(bool f);
 	bool isBinaryMode() const;
+	bool isTerminalMode() const;
 
-	static QString formatText(QString const &text);
+	static QString formatText(std::vector<ushort> const &text);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

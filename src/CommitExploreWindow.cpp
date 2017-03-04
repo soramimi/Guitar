@@ -26,7 +26,7 @@ struct CommitExploreWindow::Private {
 	QString root_tree_id;
 	GitTreeItemList tree_item_list;
 	Git::Object content_object;
-	FileDiffWidget::DiffData::Content content;
+	ObjectContent content;
     FileDiffWidget::DrawData draw_data;
 };
 
@@ -92,7 +92,7 @@ CommitExploreWindow::~CommitExploreWindow()
 
 void CommitExploreWindow::clearContent()
 {
-	pv->content = FileDiffWidget::DiffData::Content();
+	pv->content = ObjectContent();
 	ui->widget_fileview->clearDiffView();
 }
 
