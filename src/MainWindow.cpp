@@ -1000,14 +1000,14 @@ void MainWindow::queryBranches(GitPtr g)
 void MainWindow::queryTags(GitPtr g)
 {
 	Q_ASSERT(g);
-	pv->tag_map.clear();
-	QStringList tags = g->tags();
-	for (QString const &name : tags) {
-		Git::Tag t;
-		t.name = name;
-		t.id = getCommitIdFromTag(name);
-		pv->tag_map[t.id].push_back(t);
-	}
+//	pv->tag_map.clear();
+//	QStringList tags = g->tags();
+//	for (QString const &name : tags) {
+//		Git::Tag t;
+//		t.name = name;
+//		t.id = getCommitIdFromTag(name);
+//		pv->tag_map[t.id].push_back(t);
+//	}
 }
 
 QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
@@ -1119,7 +1119,7 @@ public:
 bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
 {
 	ProgressDialog *dlg = (ProgressDialog *)cookie;
-	if (dlg->isCanceledByUser()) {
+	if (dlg->canceledByUser()) {
 		qDebug() << "canceled";
 		return false;
 	}
@@ -1141,31 +1141,54 @@ void MainWindow::openRepository_(GitPtr g)
 		startDiff(g, QString());
 		updateFilesList(QString());
 
-		// ログを取得
 		{
 #if 1
 			ProgressDialog dlg(this);
-			dlg.setLabelText(tr("Retrieving the log in progress"));
+			dlg.setLabelText(tr("Retrieving the log is in progress"));
 
-			g->setLogCallback(log_callback, &dlg);
+//			g->setLogCallback(log_callback, &dlg);
 
 			RetrieveLogThread_ th([&](){
+				emit dlg.writeLog(tr("Retrieving commit log...\n"));
+				// ログを取得
 				pv->logs = g->log(limitLogCount());
+				// ブランチを取得
+				emit dlg.writeLog(tr("Retrieving branches...\n"));
+				queryBranches(g);
+				// タグを取得
+//				queryTags(g);
+				emit dlg.writeLog(tr("Retrieving tags...\n"));
+				pv->tag_map.clear();
+				QStringList tags = g->tags();
+				for (QString const &name : tags) {
+					Git::Tag t;
+					t.name = name;
+					t.id = getCommitIdFromTag(name);
+					pv->tag_map[t.id].push_back(t);
+					if (dlg.canceledByUser()) {
+						return;
+					}
+				}
+
 				emit dlg.finish();
 			});
 			th.start();
 
-			if (th.wait(5000)) {
+			if (th.wait(3000)) {
 				// thread completed
 			} else {
+				dlg.show();
+				dlg.grabMouse();
 				dlg.exec();
+				dlg.releaseMouse();
 				th.wait();
 			}
 
-			g->setLogCallback(nullptr, nullptr);
+//			g->setLogCallback(nullptr, nullptr);
 
-			if (dlg.isCanceledByUser()) {
+			if (dlg.canceledByUser()) {
 				setUnknownRepositoryInfo();
+				writeLog(tr("Canceled by user\n"));
 				return;
 			}
 #else
@@ -1173,9 +1196,6 @@ void MainWindow::openRepository_(GitPtr g)
 #endif
 		}
 
-		// ブランチとタグを取得
-		queryBranches(g);
-		queryTags(g);
 
 		QString branch_name = currentBranch().name;
 		if (currentBranch().flags & Git::Branch::HeadDetached) {
@@ -2671,12 +2691,54 @@ void MainWindow::on_action_branch_merge_triggered()
 
 }
 
+bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
+{
+	ProgressDialog *dlg = (ProgressDialog *)cookie;
+	if (dlg->canceledByUser()) {
+		qDebug() << "canceled";
+		return false;
+	}
+
+	QString text = QString::fromUtf8(ptr, len);
+	emit dlg->writeLog(text);
+	qDebug() << text;
+
+	return true;
+}
+
 void MainWindow::on_action_clone_triggered()
 {
 	GitPtr g = std::shared_ptr<Git>(new Git(pv->gcx, QString()));
 	CloneDialog dlg(this, g, defaultWorkingDir());
 	if (dlg.exec() == QDialog::Accepted) {
-		QString dir = dlg.workingDir();
+		QString url = dlg.url();
+		QString dir = dlg.dir();
+
+		bool ok = false;
+
+		ProgressDialog dlg2(this);
+		dlg2.setLabelText(tr("Cloning is in progress"));
+
+		g->setLogCallback(clone_callback, &dlg2);
+
+		RetrieveLogThread_ th([&](){
+			qDebug() << "cloning";
+			ok = g->clone(url, dir);
+//			pv->logs = g->log(limitLogCount());
+			emit dlg2.finish();
+		});
+		th.start();
+
+		dlg2.exec();
+		th.wait();
+
+		g->setLogCallback(nullptr, nullptr);
+
+		if (dlg2.canceledByUser()) {
+			return;
+		}
+
+		//		QString dir = dlg.workingDir();
 		RepositoryItem item;
 		item.local_dir = dir;
 		item.name = makeRepositoryName(dir);

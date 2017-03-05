@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>303</width>
-    <height>201</height>
+    <width>520</width>
+    <height>246</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,10 +32,10 @@
    <item>
     <widget class="QFrame" name="frame">
      <property name="frameShape">
-      <enum>QFrame::WinPanel</enum>
+      <enum>QFrame::Box</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
@@ -88,7 +88,14 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="LogWidget" name="widget_log" native="true"/>
+          <widget class="LogWidget" name="widget_log" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>200</height>
+            </size>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

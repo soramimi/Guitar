@@ -193,6 +193,7 @@ public:
 	void termWrite(const ushort *begin, const ushort *end);
 	void termWrite(const QString &text);
 	void setTerminalMode();
+	void setFocusAcceptable(bool f);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);

@@ -37,6 +37,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	setFocusAcceptable(true);
+
 	int n = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
 	ui->toolButton_fullscreen->setFixedSize(n, n);
 
@@ -811,6 +813,12 @@ void FileDiffWidget::termWrite(QString const &text)
 	termWrite(begin, end);
 }
 
+void FileDiffWidget::setFocusAcceptable(bool f)
+{
+	Qt::FocusPolicy focuspolicy = f ? Qt::StrongFocus : Qt::NoFocus;
+	ui->widget_diff_left->setFocusPolicy(focuspolicy);
+	ui->widget_diff_right->setFocusPolicy(focuspolicy);
+}
 
 
 

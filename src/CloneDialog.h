@@ -2,6 +2,7 @@
 #define CLONEDIALOG_H
 
 #include <QDialog>
+#include <QThread>
 #include "Git.h"
 
 namespace Ui {
@@ -9,6 +10,32 @@ class CloneDialog;
 }
 
 class MainWindow;
+
+class CloneThread : public QThread {
+protected:
+//	CloneDialog *caller;
+	GitPtr g;
+	QString url;
+	QString into;
+	bool ok = false;
+	QString errmsg;
+	virtual void run()
+	{
+
+		ok = g->clone(url, into);
+		if (!ok) {
+			errmsg = g->errorMessage();
+		}
+//		emit caller->done();
+	}
+public:
+	CloneThread(GitPtr g, QString const &url, QString const &into)
+		: g(g)
+		, url(url)
+		, into(into)
+	{
+	}
+};
 
 class CloneDialog : public QDialog
 {
@@ -26,19 +53,14 @@ public:
 	explicit CloneDialog(QWidget *parent, GitPtr gitptr, QString const &defworkdir);
 	~CloneDialog();
 
-	QString workingDir() const;
+	QString url();
+	QString dir();
 private:
 	Ui::CloneDialog *ui;
 
 	MainWindow *mainwindow();
-public slots:
-	void accept();
-	void reject();
-	void onDone();
 private slots:
 	void on_lineEdit_repo_location_textChanged(const QString &arg1);
-signals:
-	void done();
 };
 
 #endif // CLONEDIALOG_H

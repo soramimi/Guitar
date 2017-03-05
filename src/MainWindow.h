@@ -221,6 +221,7 @@ private:
 	void logGitVersion();
 	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool log_callback(void *cookie, const char *ptr, int len);
+	static bool clone_callback(void *cookie, const char *ptr, int len);
 public:
 
 	QString selectGitCommand();

@@ -15,12 +15,15 @@ ProgressDialog::ProgressDialog(MainWindow *parent) :
 	flags &= ~Qt::WindowCloseButtonHint;
 	setWindowFlags(flags);
 #else
-	setWindowFlags(Qt::Popup);
+	setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
 	setFocusPolicy(Qt::NoFocus);
 	setFixedSize(width(), 0);
 #endif
 
 	ui->widget_log->init(parent);
+
+	ui->widget_log->setFocusAcceptable(false);
+	ui->widget_log->setLeftBorderVisible(false);
 
 	updateInterruptCounter();
 
@@ -37,9 +40,9 @@ void ProgressDialog::updateInterruptCounter()
 {
 	QString text;
 	if (interrupt_counter < 2) {
-		text = tr("Press the Esc key to abort the process");
+		text = tr("Press Esc key to abort the process");
 	} else {
-		text = tr("Press the Esc key %1 times to abort the process").arg(interrupt_counter);
+		text = tr("Press Esc key %1 times to abort the process").arg(interrupt_counter);
 	}
 	ui->label_interrupt->setText(text);
 }
@@ -72,7 +75,7 @@ void ProgressDialog::keyPressEvent(QKeyEvent *event)
 	}
 }
 
-bool ProgressDialog::isCanceledByUser() const
+bool ProgressDialog::canceledByUser() const
 {
 	return canceled_by_user;
 }
@@ -80,6 +83,10 @@ bool ProgressDialog::isCanceledByUser() const
 void ProgressDialog::writeLog_(QString text)
 {
 	ui->widget_log->termWrite(text);
+
+	ui->widget_log->updateControls();
+	ui->widget_log->scrollToBottom();
+	ui->widget_log->update();
 }
 
 

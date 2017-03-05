@@ -111,9 +111,9 @@ int Git::getProcessExitCode() const
 bool Git::chdirexec(std::function<bool()> fn)
 {
 	bool ok = false;
+	QDir cwd = QDir::current();
 	QString dir = workingRepositoryDir();
 	if (isValidWorkingCopy(dir) && QDir::setCurrent(dir)) {
-		QDir cwd = QDir::current();
 
 		ok = fn();
 
@@ -164,6 +164,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 					if (pv->callback_func) {
 						bool ok = pv->callback_func(pv->callback_cookie, tmp, len);
 						if (!ok) {
+							proc.terminate();
 							pv->error_message = "Interrupted by user";
 							qDebug() << pv->error_message;
 							pv->process_exit_code = -1;

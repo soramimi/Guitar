@@ -21,7 +21,7 @@ public:
 	~ProgressDialog();
 
 	void setLabelText(const QString &text);
-	bool isCanceledByUser() const;
+	bool canceledByUser() const;
 
 
 private:
