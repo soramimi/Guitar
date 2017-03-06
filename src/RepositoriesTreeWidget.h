@@ -3,9 +3,12 @@
 
 #include <QTreeWidget>
 
+class MainWindow;
+
 class RepositoriesTreeWidget : public QTreeWidget
 {
 	Q_OBJECT
+	MainWindow *mainwindow();
 public:
 	explicit RepositoriesTreeWidget(QWidget *parent = 0);
 

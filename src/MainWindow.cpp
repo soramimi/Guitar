@@ -1910,15 +1910,34 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::on_action_open_existing_working_copy_triggered()
+void MainWindow::addWorkingCopyDir(QString dir)
 {
-	QString dir = defaultWorkingDir();
-	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
+	if (dir.endsWith(".git")) {
+		int i = dir.size();
+		if (i > 4) {
+			ushort c = dir.utf16()[i - 5];
+			if (c == '/' || c == '\\') {
+				dir = dir.mid(0, i - 5);
+			}
+		}
+	}
+
+	if (!Git::isValidWorkingCopy(dir)) {
+		qDebug() << "Invalid working dir: " + dir;
+		return;
+	}
 
 	RepositoryItem item;
 	item.local_dir = dir;
 	item.name = makeRepositoryName(dir);
 	saveRepositoryBookmark(item);
+}
+
+void MainWindow::on_action_open_existing_working_copy_triggered()
+{
+	QString dir = defaultWorkingDir();
+	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
+	addWorkingCopyDir(dir);
 }
 
 void MainWindow::on_action_view_refresh_triggered()
