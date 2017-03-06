@@ -254,6 +254,13 @@ QString Git::rev_parse(QString const &name)
 
 QList<Git::Tag> Git::tags()
 {
+	auto MidCmp = [](QString const &line, int i, char const *ptr){
+		ushort const *p = line.utf16();
+		for (int j = 0; ptr[j]; j++) {
+			if (p[i + j] != ptr[j]) return false;
+		}
+		return true;
+	};
 	QList<Git::Tag> list;
 	git("tag --format %(objectname)#%(refname)");
 	QStringList lines = misc::splitLines(resultText());
@@ -263,12 +270,6 @@ QList<Git::Tag> Git::tags()
 		int i = line.indexOf('#');
 		if (i == GIT_ID_LENGTH) {
 			tag.id = line.mid(0, i);
-			auto MidCmp = [](QString const &line, int i, char const *ptr){
-				ushort const *p = line.utf16();
-				for (int j = 0; ptr[j]; j++) {
-					if (p[i + j] != ptr[j]) return false;
-				}
-			};
 			if (MidCmp(line, i, "#refs/tags/")) {
 				tag.name = line.mid(i + 11).trimmed();
 				if (tag.name.isEmpty()) continue;
