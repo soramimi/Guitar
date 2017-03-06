@@ -189,7 +189,7 @@ QString GitObjectManager::findObjectPath(const QString &id)
 			it.next();
 			if (it.fileName().startsWith(name)) {
 				QString id = xx + it.fileName(); // complete id
-				if (id.size() == 40 && Git::isValidID(id)) {
+				if (id.size() == GIT_ID_LENGTH && Git::isValidID(id)) {
 					absolute_path = dir / it.fileName();
 					count++;
 				}
@@ -339,7 +339,7 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 			if (!obj.content.isEmpty()) {
 				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
 					if (commit_id.isEmpty()) {
-						if (len >= 7 + 40 && strncmp(ptr, "object ", 7) == 0) {
+						if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
 							QString id = QString::fromUtf8(ptr + 7, len - 7).trimmed();
 							if (Git::isValidID(id)) {
 								commit_id = id;

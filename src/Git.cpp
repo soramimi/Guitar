@@ -55,7 +55,7 @@ bool Git::isValidID(const QString &id)
 {
 	int zero = 0;
 	int n = id.size();
-	if (n > 2 && n <= 40) {
+	if (n > 2 && n <= GIT_ID_LENGTH) {
 		ushort const *p = id.utf16();
 		for (int i = 0; i < n; i++) {
 			uchar c = p[i];
@@ -67,7 +67,7 @@ bool Git::isValidID(const QString &id)
 				return false;
 			}
 		}
-		if (zero == 40) {
+		if (zero == GIT_ID_LENGTH) {
 			return false;
 		}
 		return true; // ok
@@ -252,16 +252,29 @@ QString Git::rev_parse(QString const &name)
 	return resultText().trimmed();
 }
 
-QStringList Git::tags()
+QList<Git::Tag> Git::tags()
 {
-	QStringList list;
-	git("tag");
+	QList<Git::Tag> list;
+	git("tag --format %(objectname)#%(refname)");
 	QStringList lines = misc::splitLines(resultText());
 	for (QString const &line : lines) {
+		Tag tag;
 		if (line.isEmpty()) continue;
-		QString name = line.trimmed();
-		if (name.isEmpty()) continue;
-		list.push_back(name);
+		int i = line.indexOf('#');
+		if (i == GIT_ID_LENGTH) {
+			tag.id = line.mid(0, i);
+			auto MidCmp = [](QString const &line, int i, char const *ptr){
+				ushort const *p = line.utf16();
+				for (int j = 0; ptr[j]; j++) {
+					if (p[i + j] != ptr[j]) return false;
+				}
+			};
+			if (MidCmp(line, i, "#refs/tags/")) {
+				tag.name = line.mid(i + 11).trimmed();
+				if (tag.name.isEmpty()) continue;
+				list.push_back(tag);
+			}
+		}
 	}
 	return list;
 }
@@ -325,8 +338,8 @@ QString Git::diff(QString const &old_id, QString const &new_id)
 QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 {
 	QList<DiffRaw> list;
-	QString cmd = "diff --raw --abbrev=40 %1 %2";
-	cmd = cmd.arg(old_id).arg(new_id);
+	QString cmd = "diff --raw --abbrev=%1 %2 %3";
+	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id).arg(new_id);
 	git(cmd);
 	QString text = resultText();
 	QStringList lines = text.split('\n', QString::SkipEmptyParts);
@@ -453,7 +466,7 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 QList<Git::Branch> Git::branches_()
 {
 	QList<Branch> branches;
-	git("branch -v -a --abbrev=40");
+	git(QString("branch -v -a --abbrev=%1").arg(GIT_ID_LENGTH));
 	QString s = resultText();
 #if DEBUGLOG
 	qDebug() << s;
@@ -500,8 +513,8 @@ QList<Git::Branch> Git::branches_()
 					b.id = ">" + text.mid(3);
 				} else {
 					int i = text.indexOf(' ');
-					if (i == 40) {
-						b.id = text.mid(0, 40);
+					if (i == GIT_ID_LENGTH) {
+						b.id = text.mid(0, GIT_ID_LENGTH);
 					}
 					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
 						i++;
@@ -991,10 +1004,10 @@ void Git::FileStatus::parse(const QString &text)
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, QString const &mode)
 {
-	QString zero40(40, '0');
+	QString zeros(GIT_ID_LENGTH, '0');
 	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-	diff->index = QString("index %1..%2 %3").arg(zero40).arg(id).arg(0);
-	diff->blob.a_id = zero40;
+	diff->index = QString("index %1..%2 %3").arg(zeros).arg(id).arg(0);
+	diff->blob.a_id = zeros;
 	diff->blob.b_id = id;
 	diff->path = path;
 	diff->mode = mode;

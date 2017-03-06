@@ -181,7 +181,6 @@ private:
 	void commit(bool amend = false);
 	void commit_amend();
 	void queryBranches(GitPtr g);
-	void queryTags(GitPtr g);
 	QList<Git::Branch> findBranch(const QString &id);
 	QList<Git::Tag> findTag(const QString &id);
 	int selectedLogIndex() const;

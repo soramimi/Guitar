@@ -6,10 +6,10 @@
 QString GitPackIdxV2::toString(uint8_t const *p)
 {
 	char tmp[41];
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
 		sprintf(tmp + i * 2, "%02x", p[i]);
 	}
-	return QString::fromLatin1(tmp, 40);
+	return QString::fromLatin1(tmp, GIT_ID_LENGTH);
 }
 
 uint32_t GitPackIdxV2::read_uint32_be(const void *p)

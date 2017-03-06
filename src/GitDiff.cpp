@@ -270,7 +270,7 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 			GitCommitTree head_tree(objcache);
 			head_tree.parseCommit(head_id); // HEADが親
 
-			QString zero40(40, '0');
+			QString zeros(GIT_ID_LENGTH, '0');
 
 			for (Git::FileStatus const &fs : stats) {
 				QString path = fs.path1();
@@ -280,18 +280,18 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 				if (head_tree.lookup(path, &treeitem)) {
 					item.blob.a_id = treeitem.id; // HEADにおけるこのファイルのID
 					if (fs.isDeleted()) { // 削除されてる
-						item.blob.b_id = zero40; // 削除された
+						item.blob.b_id = zeros; // 削除された
 					} else {
 						item.blob.b_id = prependPathPrefix(path); // IDの代わりに実在するファイルパスを入れる
 					}
 					item.mode = treeitem.mode;
 				} else {
-					item.blob.a_id = zero40;
+					item.blob.a_id = zeros;
 					item.blob.b_id = prependPathPrefix(path); // 実在するファイルパス
 				}
 
 				item.diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-				item.index = QString("index %1..%2 %3").arg(item.blob.a_id).arg(zero40).arg(item.mode);
+				item.index = QString("index %1..%2 %3").arg(item.blob.a_id).arg(zeros).arg(item.mode);
 				item.path = path;
 
 				diffs.push_back(item);

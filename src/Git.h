@@ -12,6 +12,9 @@
 #define USE_LIBGIT2 0
 #define SINGLE_THREAD 0
 
+#define GIT_ID_LENGTH (40)
+
+
 enum class LineSide {
 	Left,
 	Right,
@@ -358,7 +361,7 @@ public:
 
 	GitPtr dup() const;
 	QString rev_parse(const QString &name);
-	QStringList tags();
+	QList<Tag> tags();
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
 	void setRemoteURL(const QString &remote, const QString &url);

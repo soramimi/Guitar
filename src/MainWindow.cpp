@@ -997,19 +997,6 @@ void MainWindow::queryBranches(GitPtr g)
 	}
 }
 
-void MainWindow::queryTags(GitPtr g)
-{
-	Q_ASSERT(g);
-//	pv->tag_map.clear();
-//	QStringList tags = g->tags();
-//	for (QString const &name : tags) {
-//		Git::Tag t;
-//		t.name = name;
-//		t.id = getCommitIdFromTag(name);
-//		pv->tag_map[t.id].push_back(t);
-//	}
-}
-
 QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 {
 	return commit.commit_id.mid(0, 7);
@@ -1142,11 +1129,8 @@ void MainWindow::openRepository_(GitPtr g)
 		updateFilesList(QString());
 
 		{
-#if 1
 			ProgressDialog dlg(this);
 			dlg.setLabelText(tr("Retrieving the log is in progress"));
-
-//			g->setLogCallback(log_callback, &dlg);
 
 			RetrieveLogThread_ th([&](){
 				emit dlg.writeLog(tr("Retrieving commit log...\n"));
@@ -1156,15 +1140,11 @@ void MainWindow::openRepository_(GitPtr g)
 				emit dlg.writeLog(tr("Retrieving branches...\n"));
 				queryBranches(g);
 				// タグを取得
-//				queryTags(g);
 				emit dlg.writeLog(tr("Retrieving tags...\n"));
 				pv->tag_map.clear();
-				QStringList tags = g->tags();
-				for (QString const &name : tags) {
-					Git::Tag t;
-					t.name = name;
-					t.id = getCommitIdFromTag(name);
-					pv->tag_map[t.id].push_back(t);
+				QList<Git::Tag> tags = g->tags();
+				for (Git::Tag const &tag : tags) {
+					pv->tag_map[tag.id].push_back(tag);
 					if (dlg.canceledByUser()) {
 						return;
 					}
@@ -1184,16 +1164,11 @@ void MainWindow::openRepository_(GitPtr g)
 				th.wait();
 			}
 
-//			g->setLogCallback(nullptr, nullptr);
-
 			if (dlg.canceledByUser()) {
 				setUnknownRepositoryInfo();
 				writeLog(tr("Canceled by user\n"));
 				return;
 			}
-#else
-			pv->logs = g->log(limitLogCount());
-#endif
 		}
 
 
@@ -2966,7 +2941,7 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 	QString line = g.resultText().trimmed();
 	QString head;
 	int i = line.indexOf('\t');
-	if (i == 40) {
+	if (i == GIT_ID_LENGTH) {
 		QString id = line.mid(0, i);
 		QString name = line.mid(i + 1);
 		qDebug() << id << name;
