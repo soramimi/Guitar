@@ -273,6 +273,7 @@ private:
 	{
 	}
 	QString encodeQuotedText(const QString &str);
+	QStringList refs();
 public:
 	Git(Context const &cx, const QString &repodir);
 	Git(Git &&r) = delete;

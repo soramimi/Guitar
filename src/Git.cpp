@@ -252,6 +252,45 @@ QString Git::rev_parse(QString const &name)
 	return resultText().trimmed();
 }
 
+QStringList Git::refs()
+{
+	QStringList lines;
+	{
+		QString path = workingRepositoryDir() / ".git/packed-refs";
+		QFile file(path);
+		if (file.open(QFile::ReadOnly)) {
+			while (!file.atEnd()) {
+				QByteArray ba = file.readLine();
+				QString line = QString::fromLatin1(ba).trimmed();
+				if (line.indexOf(" refs/") > 0) {
+					lines.push_back(line);
+				}
+			}
+		}
+	}
+	{
+		QString refspath = workingRepositoryDir() / ".git/refs/tags";
+		QDirIterator it(refspath);
+		while (it.hasNext()) {
+			it.next();
+			QString path = it.filePath();
+			if (QFileInfo(path).isFile()) {
+				QString name = it.fileName();
+				QFile file(path);
+				if (file.open(QFile::ReadOnly)) {
+					QByteArray ba = file.readAll();
+					QString id = QString::fromLatin1(ba).trimmed();
+					if (Git::isValidID(id)) {
+						QString line = id + " refs/tags/" + name;
+						lines.push_back(line);
+					}
+				}
+			}
+		}
+	}
+	return lines;
+}
+
 QList<Git::Tag> Git::tags()
 {
 	auto MidCmp = [](QString const &line, int i, char const *ptr){
@@ -262,15 +301,14 @@ QList<Git::Tag> Git::tags()
 		return true;
 	};
 	QList<Git::Tag> list;
-	git("tag --format %(objectname)#%(refname)");
-	QStringList lines = misc::splitLines(resultText());
+	QStringList lines = refs();
 	for (QString const &line : lines) {
 		Tag tag;
 		if (line.isEmpty()) continue;
-		int i = line.indexOf('#');
+		int i = line.indexOf(' ');
 		if (i == GIT_ID_LENGTH) {
 			tag.id = line.mid(0, i);
-			if (MidCmp(line, i, "#refs/tags/")) {
+			if (MidCmp(line, i, " refs/tags/")) {
 				tag.name = line.mid(i + 11).trimmed();
 				if (tag.name.isEmpty()) continue;
 				list.push_back(tag);

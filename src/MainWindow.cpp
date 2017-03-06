@@ -3017,13 +3017,6 @@ void MainWindow::setBlockUI(bool f)
 
 void MainWindow::on_action_test_triggered()
 {
-//	setBlockUI(true);
-	ProgressDialog dlg(this);
-//	dlg.show();
-//	connect(this, SIGNAL(onEscapeKeyPressed()), &dlg, SLOT(interrupt()));
-	dlg.exec();
-//	disconnect(this, SIGNAL(onEscapeKeyPressed()), &dlg, SLOT(interrupt()));
-//	setBlockUI(false);
 }
 
 
