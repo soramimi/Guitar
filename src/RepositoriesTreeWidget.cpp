@@ -44,8 +44,14 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 		QList<QUrl> urls = event->mimeData()->urls();
 		for (QUrl const &url : urls) {
 			QString path = url.url();
-			if (path.startsWith("file:///")) {
-				path = path.mid(8);
+			if (path.startsWith("file://")) {
+				int i = 7;
+#ifdef Q_OS_WIN
+				if (path.utf16()[i] == '/') {
+					i++;
+				}
+#endif
+				path = path.mid(i);
 				mainwindow()->addWorkingCopyDir(path);
 			}
 		}
