@@ -106,24 +106,6 @@ void SetRemoteUrlDialog::accept()
 void SetRemoteUrlDialog::on_pushButton_test_clicked()
 {
 	QString url = ui->lineEdit_url->text();
-
-	bool f;
-	{
-		OverrideWaitCursor;
-		f = mainwindow->isValidRemoteURL(url);
-	}
-
-	QString pass = tr("The URL is a valid repository");
-	QString fail = tr("Failed to access the URL");
-
-	QString text = "%1\n\n%2";
-	text = text.arg(url).arg(f ? pass : fail);
-
-	QString title = tr("Remote Repository");
-
-	if (f) {
-		QMessageBox::information(this, title, text);
-	} else {
-		QMessageBox::critical(this, title, text);
-	}
+	mainwindow->testRemoteRepositoryValidity(url);
 }
+

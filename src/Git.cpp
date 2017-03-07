@@ -658,10 +658,10 @@ Git::CommitItemList Git::log(int maxcount)
 #endif
 }
 
-bool Git::clone(QString const &url, QString const &path, callback_t callback, void *cookie)
+Git::CloneData Git::preclone(QString const &url, QString const &path)
 {
-	QString basedir;
-	QString subdir;
+	CloneData d;
+	d.url = url;
 	if (path.endsWith('/') || path.endsWith('\\')) {
 		auto GitBaseName = [](QString location){
 			int i = location.lastIndexOf('/');
@@ -677,22 +677,26 @@ bool Git::clone(QString const &url, QString const &path, callback_t callback, vo
 			}
 			return location;
 		};
-		basedir = path;
-		subdir = GitBaseName(url);
+		d.basedir = path;
+		d.subdir = GitBaseName(url);
 	} else {
 		QFileInfo info(path);
-		basedir = info.dir().path();
-		subdir = info.fileName();
+		d.basedir = info.dir().path();
+		d.subdir = info.fileName();
 	}
+	return d;
+}
 
-	pv->working_repo_dir = misc::normalizePathSeparator(basedir / subdir);
+bool Git::clone(CloneData const &data)
+{
+	pv->working_repo_dir = misc::normalizePathSeparator(data.basedir / data.subdir);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
-	if (QDir::setCurrent(basedir)) {
+	if (QDir::setCurrent(data.basedir)) {
 
 		QString cmd = "clone --progress \"%1\" \"%2\"";
-		cmd = cmd.arg(url).arg(subdir);
+		cmd = cmd.arg(data.url).arg(data.subdir);
 		ok = git(cmd, false, true);
 
 		QDir::setCurrent(cwd.path());

@@ -2701,24 +2701,70 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 }
 
 void MainWindow::on_action_clone_triggered()
-{
-	GitPtr g = std::shared_ptr<Git>(new Git(pv->gcx, QString()));
-	CloneDialog dlg(this, g, defaultWorkingDir());
-	if (dlg.exec() == QDialog::Accepted) {
-		QString url = dlg.url();
-		QString dir = dlg.dir();
+{ // クローン
+	QString url;
+	QString dir = defaultWorkingDir();
+	while (1) {
+		CloneDialog dlg(this, url, dir);
+		if (dlg.exec() != QDialog::Accepted) {
+			return;
+		}
 
-		bool ok = false;
+		url = dlg.url();
+		dir = dlg.dir();
+
+		// 既存チェック
+
+		QFileInfo info(dir);
+		if (info.isFile()) {
+			QString msg = dir + "\n\n" + tr("A file with same name already exists");
+			QMessageBox::warning(this, tr("Clone"), msg);
+			continue;
+		}
+		if (info.isDir()) {
+			QString msg = dir + "\n\n" + tr("A folder with same name already exists");
+			QMessageBox::warning(this, tr("Clone"), msg);
+			continue;
+		}
+
+		// クローン先ディレクトリを求める
+
+		Git::CloneData clone_data = Git::preclone(url, dir);
+
+		// クローン先ディレクトリの存在チェック
+
+		QString basedir = misc::normalizePathSeparator(clone_data.basedir);
+		if (!QFileInfo(basedir).isDir()) {
+			int i = basedir.indexOf('/');
+			int j = basedir.indexOf('\\');
+			if (i < j) i = j;
+			if (i < 0) {
+				QString msg = basedir + "\n\n" + tr("Invalid folder");
+				QMessageBox::warning(this, tr("Clone"), msg);
+				continue;
+			}
+
+			QString msg = basedir + "\n\n" + tr("No such folder. Create it now ?");
+			if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
+				continue;
+			}
+
+			// ディレクトリを作成
+
+			QString base = basedir.mid(0, i + 1);
+			QString sub = basedir.mid(i + 1);
+			QDir(base).mkpath(sub);
+		}
 
 		ProgressDialog dlg2(this);
 		dlg2.setLabelText(tr("Cloning is in progress"));
 
+		GitPtr g = git(QString());
 		g->setLogCallback(clone_callback, &dlg2);
 
 		RetrieveLogThread_ th([&](){
 			qDebug() << "cloning";
-			ok = g->clone(url, dir);
-//			pv->logs = g->log(limitLogCount());
+			g->clone(clone_data);
 			emit dlg2.finish();
 		});
 		th.start();
@@ -2729,16 +2775,17 @@ void MainWindow::on_action_clone_triggered()
 		g->setLogCallback(nullptr, nullptr);
 
 		if (dlg2.canceledByUser()) {
-			return;
+			return; // canceled
 		}
 
-		//		QString dir = dlg.workingDir();
 		RepositoryItem item;
 		item.local_dir = dir;
 		item.name = makeRepositoryName(dir);
 		saveRepositoryBookmark(item);
 		pv->current_repo = item;
 		openRepository(true);
+
+		return; // done
 	}
 }
 
@@ -2980,6 +3027,28 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 	return false;
 }
 
+void MainWindow::testRemoteRepositoryValidity(QString const &url)
+{
+	bool f;
+	{
+		OverrideWaitCursor;
+		f = isValidRemoteURL(url);
+	}
+
+	QString pass = tr("The URL is a valid repository");
+	QString fail = tr("Failed to access the URL");
+
+	QString text = "%1\n\n%2";
+	text = text.arg(url).arg(f ? pass : fail);
+
+	QString title = tr("Remote Repository");
+
+	if (f) {
+		QMessageBox::information(this, title, text);
+	} else {
+		QMessageBox::critical(this, title, text);
+	}
+}
 
 void MainWindow::on_action_set_config_user_triggered()
 {

@@ -306,7 +306,13 @@ public:
 	CommitItemList log_all(const QString &id, int maxcount);
 	CommitItemList log(int maxcount);
 
-	bool clone(const QString &url, const QString &path, callback_t callback = nullptr, void *cookie = nullptr);
+	struct CloneData {
+		QString url;
+		QString basedir;
+		QString subdir;
+	};
+	static CloneData preclone(QString const &url, QString const &path);
+	bool clone(CloneData const &data);
 
 	FileStatusList status();
 	bool cat_file(const QString &id, QByteArray *out);

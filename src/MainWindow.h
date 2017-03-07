@@ -258,10 +258,11 @@ public:
 	void setStatusBarText(const QString &text);
 	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
-	bool isValidRemoteURL(QString const &url);
 	void setLogEnabled(GitPtr g, bool f);
 	void setBlockUI(bool f);
 	void addWorkingCopyDir(QString dir);
+	bool isValidRemoteURL(QString const &url);
+	void testRemoteRepositoryValidity(const QString &url);
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

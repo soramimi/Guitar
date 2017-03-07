@@ -22,7 +22,7 @@ protected:
 	virtual void run()
 	{
 
-		ok = g->clone(url, into);
+		ok = g->clone(Git::preclone(url, into));
 		if (!ok) {
 			errmsg = g->errorMessage();
 		}
@@ -50,7 +50,7 @@ private:
 
 	typedef std::shared_ptr<Git> GitPtr;
 public:
-	explicit CloneDialog(QWidget *parent, GitPtr gitptr, QString const &defworkdir);
+	explicit CloneDialog(QWidget *parent, QString const &url, QString const &defworkdir);
 	~CloneDialog();
 
 	QString url();
@@ -61,6 +61,7 @@ private:
 	MainWindow *mainwindow();
 private slots:
 	void on_lineEdit_repo_location_textChanged(const QString &arg1);
+	void on_pushButton_test_clicked();
 };
 
 #endif // CLONEDIALOG_H

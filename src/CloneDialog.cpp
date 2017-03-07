@@ -11,12 +11,11 @@
 
 struct CloneDialog::Private {
 	MainWindow *mainwindow;
-	GitPtr git;
 	QString url;
 	QString default_working_dir;
 };
 
-CloneDialog::CloneDialog(QWidget *parent, GitPtr gitptr, const QString &defworkdir) :
+CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir) :
 	QDialog(parent),
 	ui(new Ui::CloneDialog)
 {
@@ -29,7 +28,7 @@ CloneDialog::CloneDialog(QWidget *parent, GitPtr gitptr, const QString &defworkd
 
 	pv->mainwindow = qobject_cast<MainWindow *>(parent);
 
-	pv->git = gitptr;
+	ui->lineEdit_repo_location->setText(url);
 	pv->default_working_dir = defworkdir;
 	ui->lineEdit_working_dir->setText(pv->default_working_dir);
 }
@@ -44,10 +43,6 @@ MainWindow *CloneDialog::mainwindow()
 {
 	return pv->mainwindow;
 }
-
-
-
-
 
 QString CloneDialog::url()
 {
@@ -77,8 +72,7 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 	ui->lineEdit_working_dir->setText(path);
 }
 
-
-
-
-
-
+void CloneDialog::on_pushButton_test_clicked()
+{
+	mainwindow()->testRemoteRepositoryValidity(url());
+}
