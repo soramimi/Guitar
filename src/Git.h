@@ -387,6 +387,7 @@ public:
 	User getUser(GetUser purpose);
 	void setUser(User const&user, bool global);
 
+	bool reset_head();
 };
 
 #endif // GIT_H

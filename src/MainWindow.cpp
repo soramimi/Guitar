@@ -1672,6 +1672,13 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
+		QAction *a_reset_head = nullptr;
+#if 0 // 下手に使うとヤバいので、とりあえず無効にしておく
+		if (is_valid_commit_id && commit->commit_id == pv->head_id) {
+			a_reset_head = menu.addAction(tr("Reset HEAD"));
+		}
+#endif
+
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_properties) {
@@ -1695,9 +1702,17 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				win.exec();
 				return;
 			}
+			if (a == a_reset_head) {
+				reopenRepository(false, [](GitPtr g){
+					g->reset_head();
+				});
+				return;
+			}
 		}
 	}
 }
+
+
 
 void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &pos)
 {

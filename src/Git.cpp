@@ -956,6 +956,11 @@ void Git::setUser(const User &user, bool global)
 	git(QString("config %1 user.email %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.email)), chdir);
 }
 
+bool Git::reset_head()
+{
+	return git("reset HEAD~1");
+}
+
 void Git::getRemoteURLs(QList<Remote> *out)
 {
 	out->clear();
