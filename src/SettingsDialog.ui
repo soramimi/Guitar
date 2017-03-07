@@ -88,14 +88,14 @@
          <item>
           <widget class="QGroupBox" name="groupBox">
            <property name="title">
-            <string>Default working directory</string>
+            <string>Default working folder</string>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <widget class="QLineEdit" name="lineEdit_default_working_dir"/>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_2">
+             <widget class="QPushButton" name="pushButton_browse_default_working_dir">
               <property name="text">
                <string>Browse...</string>
               </property>

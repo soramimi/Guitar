@@ -35,6 +35,8 @@ private slots:
 
 	void on_pushButton_select_file_command_clicked();
 
+	void on_pushButton_browse_default_working_dir_clicked();
+
 private:
 	Ui::SettingsDialog *ui;
 

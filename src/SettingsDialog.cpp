@@ -2,6 +2,8 @@
 #include "ui_SettingsDialog.h"
 #include "MySettings.h"
 
+#include <QFileDialog>
+
 SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QDialog(parent),
 	ui(new Ui::SettingsDialog)
@@ -74,3 +76,18 @@ void SettingsDialog::on_pushButton_select_file_command_clicked()
 		ui->lineEdit_file_command->setText(path);
 	}
 }
+
+#include "misc.h"
+void SettingsDialog::on_pushButton_browse_default_working_dir_clicked()
+{
+	QString dir = ui->lineEdit_default_working_dir->text();
+	dir = QFileDialog::getExistingDirectory(this, tr("Default working folder"), dir);
+	dir = misc::normalizePathSeparator(dir);
+	if (QFileInfo(dir).isDir()) {
+		ui->lineEdit_default_working_dir->setText(dir);
+	}
+}
+
+
+
+
