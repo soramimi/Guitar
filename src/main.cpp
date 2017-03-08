@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QProxyStyle>
 #include "LegacyWindowsStyleTreeControl.h"
+#include "webclient.h"
 
 QString application_data_dir;
 QColor panel_bg_color;
@@ -35,6 +36,8 @@ public:
 
 int main(int argc, char *argv[])
 {
+	WebClient::initialize();
+
 	QApplication a(argc, argv);
 	QStyle *style = new MyStyle();
 	QApplication::setStyle(style);

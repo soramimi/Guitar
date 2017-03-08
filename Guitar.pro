@@ -19,6 +19,13 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
 
+# OpenSSL
+
+win32:INCLUDEPATH += C:\openssl\include
+win32:LIBS += -LC:\openssl\lib
+unix:LIBS += -lssl -lcrypto
+
+
 
 # execute 'ruby prepare.rb' automatically
 
@@ -113,7 +120,13 @@ SOURCES += \
     src/ClearButton.cpp \
     src/SetUserDialog.cpp \
 	src/ProgressDialog.cpp \
-    src/LogWidget.cpp
+    src/LogWidget.cpp \
+    src/SearchFromGitHubDialog.cpp \
+    src/webclient.cpp \
+    src/charvec.cpp \
+    src/json.cpp \
+    src/urlencode.cpp \
+    src/HyperLinkLabel.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -166,7 +179,13 @@ HEADERS  += \
     src/ClearButton.h \
     src/SetUserDialog.h \
 	src/ProgressDialog.h \
-    src/LogWidget.h
+    src/LogWidget.h \
+    src/SearchFromGitHubDialog.h \
+    src/webclient.h \
+    src/charvec.h \
+    src/json.h \
+    src/urlencode.h \
+    src/HyperLinkLabel.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -191,7 +210,8 @@ FORMS    += \
     src/CommitExploreWindow.ui \
     src/SetRemoteUrlDialog.ui \
     src/SetUserDialog.ui \
-    src/ProgressDialog.ui
+    src/ProgressDialog.ui \
+    src/SearchFromGitHubDialog.ui
 
 RESOURCES += \
     resources.qrc

@@ -3,11 +3,15 @@
 #include "misc.h"
 #include "joinpath.h"
 #include "MainWindow.h"
+#include "SearchFromGitHubDialog.h"
 
 #include <QMessageBox>
 #include <QThread>
 
-
+enum SearchRepository {
+	None,
+	GitHub,
+};
 
 struct CloneDialog::Private {
 	MainWindow *mainwindow;
@@ -31,6 +35,9 @@ CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &def
 	ui->lineEdit_repo_location->setText(url);
 	pv->default_working_dir = defworkdir;
 	ui->lineEdit_working_dir->setText(pv->default_working_dir);
+
+	ui->comboBox->addItem(tr("Search"));
+	ui->comboBox->addItem(tr("GitHub"));
 }
 
 CloneDialog::~CloneDialog()
@@ -75,4 +82,15 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 void CloneDialog::on_pushButton_test_clicked()
 {
 	mainwindow()->testRemoteRepositoryValidity(url());
+}
+
+void CloneDialog::on_comboBox_currentIndexChanged(int index)
+{
+	if (index == GitHub) {
+		SearchFromGitHubDialog dlg(this);
+		if (dlg.exec() == QDialog::Accepted) {
+			ui->lineEdit_repo_location->setText(dlg.url());
+		}
+	}
+	ui->comboBox->setCurrentIndex(0);
 }

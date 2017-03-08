@@ -7,6 +7,7 @@ ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)
 	: QLineEdit(parent)
 {
 	setReadOnly(true);
+	setFrame(false);
 	setStyleSheet("* { background: transparent; }");
 }
 
