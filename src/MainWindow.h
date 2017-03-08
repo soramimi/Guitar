@@ -137,8 +137,9 @@ private:
 		SingleList,
 		SideBySide,
 	};
-	void updateFilesList(QString new_id);
-	void updateHeadFilesList(bool wait);
+
+	void updateFilesList(QString id, bool wait);
+	void updateFilesList(const Git::CommitItem &commit, bool wait);
 	void updateRepositoriesList();
 	QString getBookmarksFilePath() const;
 	bool saveRepositoryBookmarks() const;
@@ -221,13 +222,13 @@ private:
 	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool log_callback(void *cookie, const char *ptr, int len);
 	static bool clone_callback(void *cookie, const char *ptr, int len);
+	bool isDiffThreadValid(const QString &id) const;
 public:
 
 	QString selectGitCommand();
 	QString selectFileCommand();
 
 	int limitLogCount() const;
-	QDateTime limitLogTime() const;
 
 	void setFileCommand(const QString &path, bool save);
 	void setGitCommand(const QString &path, bool save);
