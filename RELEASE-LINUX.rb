@@ -22,11 +22,14 @@ FileUtils.mkpath($dstdir_platforms)
 FileUtils.mkpath($dstdir_platforminputcontexts)
 
 FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
+FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 
 def cp_qt_lib(name)
-	src = $qt + "/lib/lib" + name + ".so.5"
+	libname = "lib" + name + ".so.5"
+	src = $qt + "/lib/" + libname
 	FileUtils.cp(src, $dstdir)
+	`strip #{$dstdir}/#{libname}`
 end
 
 cp_qt_lib("Qt5Core")
@@ -36,8 +39,10 @@ cp_qt_lib("Qt5Widgets")
 cp_qt_lib("Qt5Xml")
 
 def cp_qt_imageformat(name)
-	src = $qt + "/plugins/imageformats/lib" + name + ".so"
+	libname = "lib" + name + ".so"
+	src = $qt + "/plugins/imageformats/" + libname
 	FileUtils.cp(src, $dstdir_imageformats)
+	`strip #{$dstdir_imageformats}/#{libname}`
 end
 
 cp_qt_imageformat("qgif")
@@ -47,8 +52,10 @@ cp_qt_imageformat("qjpeg")
 cp_qt_imageformat("qsvg")
 
 def cp_qt_iconengine(name)
-	src = $qt + "/plugins/iconengines/lib" + name + ".so"
+	libname = "lib" + name + ".so"
+	src = $qt + "/plugins/iconengines/" + libname
 	FileUtils.cp(src, $dstdir_iconengines)
+	`strip #{$dstdir_iconengines}/#{libname}`
 end
 
 cp_qt_iconengine("qsvgicon")
