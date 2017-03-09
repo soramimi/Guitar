@@ -125,6 +125,22 @@
 </ul>
 <p>Guitarをクローンしたフォルダに zlib.pro がありますので、これを Qt Creator で開きます。そして、[デバッグ]版と[リリース]版をビルドします。</p>
 <p>zlibは（特にUnix系の場合）OSにインストール済みのはずなので、zlibの自前ビルドは明らかに無駄なのですが、この方法が file not found などのエラーが発生しにくいので、マルチプラットフォームの移植性の観点から、一応この手順をGuitarにおける標準ということにしています。</p>
+<h3>OpenSSL</h3>
+<p>ウェブサイトにhttpsでアクセスするため、ソケットとOpenSSLを使用しています。</p>
+<h4>Windows</h4>
+<p><a href="https://www.openssl.org/source/">https://www.openssl.org/source/</a> からOpenSSLをダウンロードしています。1.1系には対応していません。1.0系の最新版を使用してください。本稿執筆時点（2017-03-09）での最新版は <a href="https://www.openssl.org/source/openssl-1.0.2k.tar.gz">openssl-1.0.2k.tar.gz</a> です。ビルド方法は INSTALL.W32 を参照してください。GuitarではOpenSSLが C:\openssl にインストールされている想定でプロジェクトファイルを記述していますので、ビルド前のConfigureスクリプトの実行で、インストール先を指定する必要があります。OpenSSLのビルドにはperlが必要です。ない場合は <a href="http://www.activestate.com/activeperl">ActivePerl</a> などをインストールします。</p>
+<pre>&gt; perl Configure VC-WIN32 --prefix=c:\openssl</pre>
+<p>もし他の場所にインストールした場合、Guitar.proを修正する必要があります。</p>
+<pre>win32:INCLUDEPATH += C:\openssl\include
+win32:LIBS += -LC:\openssl\lib </pre>
+<p>ビルドが完了したOpenSSLの中で、必要なファイルは libeay32.dll と ssleay32.dll です。 C:\openssl\bin にあります。あとで Guitar のビルドが完了したら、ビルド先フォルダにこれらのファイルをコピーする必要があります。</p>
+<h4>Linux / macOS</h4>
+<p>Debian系のLinuxの場合 libssl-dev をインストールしておきます。</p>
+<pre>$ sudo apt-get install libssl-dev </pre>
+<blockquote>
+  <p>※他のLinuxやmacOSでのインストール方法は確認していません。各自お調べください</p>
+</blockquote>
+<p>リンカのオプションに -lssl -lcrypto が必要です。（Guitar.proにはそのように記述しています）</p>
 <h2>ビルドの準備</h2>
 <h4>prepare.rb</h4>
 <p>バージョン情報やリソーススクリプトを自動生成するための prepare.rb というスクリプトファイルがあります。Qt Creator でプログラム本体をビルドする前に、このスクリプトを実行しておく必要があります。実行にはRubyが必要です。</p>
@@ -140,6 +156,8 @@
 <p>クローンした場所に、 Guitar.pro があります。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
 <h3>Guitarのビルド</h3>
 <p>Guitar.pro を開き、 Qt Creator の左にある三角ボタンを押すか、Ctrl+R（実行）を押すと、ビルドと実行が行われます。ビルドだけして、実行したくない場合は、Ctrl+Bを押します。デバッガ上で実行するには、デバッグ開始ボタンかF5キーを押します。</p>
+<h4>Windowsの場合</h4>
+<p>OpenSSLの libeay32.dll と ssleay32.dll を、Guitar.exe と同じフォルダにコピーしておく必要があります。これを忘れた場合 Guitar.exe が実行できずに即座に終了します。</p>
 <h4>失敗する場合</h4>
 <p>よくあるのが、prepare.rbを実行し忘れて、 version.c が見つからないというエラー。前述した「ビルドの準備」の操作を行うと version.c が作成されます。自動では行われないので、手作業でやる必要があります。</p>
 <h4>追加したソースがコンパイルされないとき</h4>
