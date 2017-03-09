@@ -1264,14 +1264,29 @@ void MainWindow::openRepository_(GitPtr g)
 	udpateButton();
 }
 
-
+void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
+{
+	if (ask) {
+		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
+		if (r != QMessageBox::Ok) return;
+	}
+	if (index >= 0 && index < pv->repos.size()) {
+		pv->repos.erase(pv->repos.begin() + index);
+		saveRepositoryBookmarks();
+		updateRepositoriesList();
+	}
+}
 
 void MainWindow::openRepository(bool validate, bool waitcursor)
 {
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
 		if (!QFileInfo(dir).isDir()) {
-			QMessageBox::warning(this, tr("Open Repository"), tr("No such folder") + "\n\n" + dir);
+			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark ?"), QMessageBox::Ok, QMessageBox::Cancel);
+			if (r == QMessageBox::Ok) {
+				int i = indexOfRepository(ui->treeWidget_repos->currentItem());
+				removeRepositoryFromBookmark(i, false);
+			}
 			return;
 		}
 		if (!Git::isValidWorkingCopy(dir)) {
@@ -1366,15 +1381,13 @@ void MainWindow::autoOpenRepository(QString dir)
 
 void MainWindow::openSelectedRepository()
 {
-	QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
-	RepositoryItem const *item = repositoryItem(ite);
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	RepositoryItem const *item = repositoryItem(treeitem);
 	if (item) {
 		pv->current_repo = *item;
-		openRepository(true);
+		openRepository(true, true);
 	}
 }
-
-
 
 QString MainWindow::getBookmarksFilePath() const
 {
@@ -1566,6 +1579,11 @@ QAction *MainWindow::addMenuActionProperties(QMenu *menu)
 	return menu->addAction(tr("&Properties"));
 }
 
+int MainWindow::indexOfRepository(QTreeWidgetItem const *treeitem) const
+{
+	return treeitem->data(0, IndexRole).toInt();
+}
+
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
@@ -1573,7 +1591,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 
 	RepositoryItem const *repo = repositoryItem(treeitem);
 
-	int index = treeitem->data(0, IndexRole).toInt();
+	int index = indexOfRepository(treeitem);
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;
 		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
@@ -1638,11 +1656,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_remove) {
-				if (QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok) {
-					pv->repos.erase(pv->repos.begin() + index);
-					saveRepositoryBookmarks();
-					updateRepositoriesList();
-				}
+				removeRepositoryFromBookmark(index, true);
 				return;
 			}
 			if (a == a_properties) {
@@ -2710,7 +2724,7 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 
 	QString text = QString::fromUtf8(ptr, len);
 	emit dlg->writeLog(text);
-	qDebug() << text;
+//	qDebug() << text;
 
 	return true;
 }

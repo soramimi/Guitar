@@ -223,6 +223,8 @@ private:
 	static bool log_callback(void *cookie, const char *ptr, int len);
 	static bool clone_callback(void *cookie, const char *ptr, int len);
 	bool isDiffThreadValid(const QString &id) const;
+	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
+	void removeRepositoryFromBookmark(int index, bool ask);
 public:
 
 	QString selectGitCommand();
