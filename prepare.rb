@@ -30,7 +30,7 @@ File.open("win.rc", "w") {|f|
 	f.puts <<_____
 #include <windows.h>
 
-100 ICON DISCARDABLE "Guitar.ico"
+100 ICON DISCARDABLE "#{$product_name}.ico"
 
 VS_VERSION_INFO     VERSIONINFO
  FILEVERSION       #{$version_a},#{$version_b},#{$version_c},#{$version_d}

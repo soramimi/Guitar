@@ -265,7 +265,7 @@
              </font>
             </property>
             <property name="text">
-             <string>Unknown</string>
+             <string>Repository</string>
             </property>
            </widget>
           </item>
@@ -841,7 +841,7 @@
    </widget>
    <widget class="QMenu" name="menuTag">
     <property name="title">
-     <string>Tag</string>
+     <string>&amp;Tag</string>
     </property>
     <addaction name="action_tag"/>
     <addaction name="action_tag_push_all"/>
@@ -1022,7 +1022,7 @@
   </action>
   <action name="action_branch_new">
    <property name="text">
-    <string>&amp;New</string>
+    <string>&amp;New branch...</string>
    </property>
   </action>
   <action name="action_branch_checkout">

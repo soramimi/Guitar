@@ -7,7 +7,7 @@ require 'fileutils'
 load 'version.rb'
 
 $workdir = "_release"
-$dstdir = $workdir + "/Guitar"
+$dstdir = $workdir + "/#{$product_name}"
 
 $dstdir_iconengines = $dstdir + "/iconengines"
 $dstdir_imageformats = $dstdir + "/imageformats"
@@ -21,7 +21,7 @@ FileUtils.mkpath($dstdir_imageformats)
 FileUtils.mkpath($dstdir_platforms)
 FileUtils.mkpath($dstdir_platforminputcontexts)
 
-FileUtils.cp("../_build_Guitar_Release/Guitar", $dstdir)
+FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
 
 
 def cp_qt_lib(name)
@@ -64,6 +64,6 @@ elsif `uname -a` =~ /armv7l/
 end
 
 Dir.chdir($workdir) {
-	`tar zcvf Guitar-#{$version_a}.#{$version_b}.#{$version_c}-linux-#{$arch}.tar.gz Guitar`
+	`tar zcvf #{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-linux-#{$arch}.tar.gz #{$product_name}`
 }
 

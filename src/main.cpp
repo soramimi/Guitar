@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QProxyStyle>
+#include <QTranslator>
 #include "LegacyWindowsStyleTreeControl.h"
 #include "webclient.h"
 
@@ -58,6 +59,17 @@ int main(int argc, char *argv[])
 	if (application_data_dir.isEmpty()) {
 		QMessageBox::warning(0, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
+	}
+
+	QTranslator translator;
+	{
+#if defined(Q_OS_MACX)
+		QString path = "../Resources/Guitar_ja";
+#else
+		QString path = "Guitar_ja";
+#endif
+		translator.load(path, a.applicationDirPath());
+		a.installTranslator(&translator);
 	}
 
 	MainWindow w;

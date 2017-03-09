@@ -11,6 +11,8 @@ TEMPLATE = app
 
 CONFIG += c++11
 
+TRANSLATIONS = Guitar_ja.ts
+
 unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch
 unix:QMAKE_RPATHDIR += $ORIGIN
 

@@ -65,7 +65,7 @@ void SetRemoteUrlDialog::updateRemotesTable()
 	auto SetHeaderItem = [&](int col, QString const &text){
 		ui->tableWidget->setHorizontalHeaderItem(col, newQTableWidgetItem(text));
 	};
-	SetHeaderItem(0, tr("Porpose"));
+	SetHeaderItem(0, tr("Purpose"));
 	SetHeaderItem(1, tr("Origin"));
 	SetHeaderItem(2, tr("URL"));
 	for (int row = 0; row < rows; row++) {

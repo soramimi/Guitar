@@ -1078,7 +1078,7 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 
 void MainWindow::setUnknownRepositoryInfo()
 {
-	setRepositoryInfo(tr("Unknown"), tr("Branch Name"));
+	setRepositoryInfo("---", "");
 
 	Git g(pv->gcx, QString());
 	Git::User user = g.getUser(Git::GetUserGlobal);
