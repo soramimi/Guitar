@@ -203,7 +203,7 @@ void SearchFromGitHubDialog::on_tableWidget_currentItemChanged(QTableWidgetItem 
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
 	if (p) {
 		size_t i = p->data(Qt::UserRole).toUInt();
-		if (i >= 0 && i < items.size()) {
+		if (i < items.size()) {
 			Item const &item = items[i];
 			ui->lineEdit_ssh->setText(toQString(item.ssh_url));
 			ui->lineEdit_http->setText(toQString(item.clone_url));

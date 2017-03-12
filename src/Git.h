@@ -290,7 +290,6 @@ public:
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
 	bool git(QString const &arg, bool chdir, bool errout = false);
-	bool git(QString const &arg, bool errout, void (*callback)(void *cookie), void *cookie);
 	bool git(QString const &arg)
 	{
 		return git(arg, true);

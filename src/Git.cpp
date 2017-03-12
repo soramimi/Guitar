@@ -206,11 +206,6 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool errout, void (*callback)(void *), void *cookie)
-{
-	return git(arg, true, errout);
-}
-
 QString Git::errorMessage() const
 {
 	return pv->error_message;
