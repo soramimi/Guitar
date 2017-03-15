@@ -128,7 +128,8 @@ SOURCES += \
     src/charvec.cpp \
     src/json.cpp \
     src/urlencode.cpp \
-    src/HyperLinkLabel.cpp
+    src/HyperLinkLabel.cpp \
+    src/JumpDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -187,7 +188,8 @@ HEADERS  += \
     src/charvec.h \
     src/json.h \
     src/urlencode.h \
-    src/HyperLinkLabel.h
+    src/HyperLinkLabel.h \
+    src/JumpDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -213,7 +215,8 @@ FORMS    += \
     src/SetRemoteUrlDialog.ui \
     src/SetUserDialog.ui \
     src/ProgressDialog.ui \
-    src/SearchFromGitHubDialog.ui
+    src/SearchFromGitHubDialog.ui \
+    src/JumpDialog.ui
 
 RESOURCES += \
     resources.qrc

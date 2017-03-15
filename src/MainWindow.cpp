@@ -36,6 +36,7 @@
 #include "CommitExploreWindow.h"
 #include "SetUserDialog.h"
 #include "ProgressDialog.h"
+#include "JumpDialog.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -3134,7 +3135,40 @@ void MainWindow::setBlockUI(bool f)
 
 void MainWindow::on_action_test_triggered()
 {
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QList<JumpDialog::Item> items;
+	for (auto pair: pv->branch_map) {
+		QString id = pair.first;
+		QList<Git::Branch> const &list = pair.second;
+		for (Git::Branch const &b : list) {
+			JumpDialog::Item item;
+			item.name = b.name;
+			if (item.name.startsWith("remotes/")) {
+				item.name = item.name.mid(8);
+			}
+			items.push_back(item);
+		}
+	}
+	for (auto pair: pv->tag_map) {
+		QString id = pair.first;
+		QList<Git::Tag> const &list = pair.second;
+		for (Git::Tag const &t : list) {
+			JumpDialog::Item item;
+			item.name = t.name;
+			items.push_back(item);
+		}
+	}
+	JumpDialog::sort(&items);
+	JumpDialog dlg(this, items);
+	if (dlg.exec() == QDialog::Accepted) {
+		QString name = dlg.selectedName();
+		QString id = g->rev_parse(name);
+		qDebug() << id;
+	}
 }
+
 
 
 
