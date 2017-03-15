@@ -1028,8 +1028,16 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 	QString message_ex;
 	Git::CommitItem const *commit = &pv->logs[row];
 	{ // branch
+		if (label_list) {
+			if (commit->commit_id == pv->head_id) {
+				Label label(Label::Head);
+				label.text = "HEAD";
+				label_list->push_back(label);
+			}
+		}
 		QList<Git::Branch> list = findBranch(commit->commit_id);
 		for (Git::Branch const &b : list) {
+			if (b.flags & Git::Branch::HeadDetached) continue;
 			Label label(Label::LocalBranch);
 			label.text = b.name;//misc::abbrevBranchName(b.name);
 			if (label.text.startsWith("remotes/")) {
@@ -1129,6 +1137,8 @@ bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
 	return true;
 }
 
+
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1185,7 +1195,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 		QString branch_name = currentBranch().name;
 		if (currentBranch().flags & Git::Branch::HeadDetached) {
-			branch_name += " (HEAD detached)";
+			branch_name = QString("(HEAD detached at %1)").arg(branch_name);
 		}
 
 		QString repo_name = currentRepositoryName();
@@ -1207,6 +1217,8 @@ void MainWindow::openRepository_(GitPtr g)
 	int count = pv->logs.size();
 
 	ui->tableWidget_log->setRowCount(count);
+
+	int index_of_head = -1;
 
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const *commit = &pv->logs[row];
@@ -1232,13 +1244,13 @@ void MainWindow::openRepository_(GitPtr g)
 		QString author;
 		QString message;
 		QString message_ex;
-		bool ishead = commit->commit_id == pv->head_id;
+		bool isHEAD = commit->commit_id == pv->head_id;
 		bool bold = false;
 		{
 			if (Git::isUncommited(*commit)) { // 未コミットの時
 				bold = true; // 太字
 			} else {
-				if (ishead && !isThereUncommitedChanges()) { // HEADで、未コミットがないとき
+				if (isHEAD && !isThereUncommitedChanges()) { // HEADで、未コミットがないとき
 					bold = true; // 太字
 				}
 				commit_id = abbrevCommitID(*commit);
@@ -1253,6 +1265,10 @@ void MainWindow::openRepository_(GitPtr g)
 		AddColumn(author, false, QString());
 		AddColumn(message, bold, message + message_ex);
 		ui->tableWidget_log->setRowHeight(row, 24);
+
+		if (isHEAD) {
+			index_of_head = row;
+		}
 	}
 	ui->tableWidget_log->resizeColumnsToContents();
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
@@ -1260,6 +1276,9 @@ void MainWindow::openRepository_(GitPtr g)
 
 	ui->tableWidget_log->setFocus();
 	ui->tableWidget_log->setCurrentCell(0, 0);
+
+	QTableWidgetItem *p = ui->tableWidget_log->item(index_of_head < 0 ? 0 : index_of_head, 2);
+	ui->tableWidget_log->setCurrentItem(p);
 
 	udpateButton();
 }

@@ -41,6 +41,7 @@ class MainWindow : public QMainWindow
 public:
 	struct Label {
 		enum {
+			Head,
 			LocalBranch,
 			RemoteBranch,
 			Tag,

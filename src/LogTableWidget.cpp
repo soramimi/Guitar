@@ -27,6 +27,7 @@ private:
 	static QColor labelColor(int kind)
 	{
 		switch (kind) {
+		case MainWindow::Label::Head:         return QColor(255, 192, 224); // blue
 		case MainWindow::Label::LocalBranch:  return QColor(192, 224, 255); // blue
 		case MainWindow::Label::RemoteBranch: return QColor(192, 240, 224); // green
 		case MainWindow::Label::Tag:          return QColor(255, 224, 192); // orange
