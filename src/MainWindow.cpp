@@ -1219,7 +1219,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	ui->tableWidget_log->setRowCount(count);
 
-	int index_of_head = -1;
+	int selrow = -1;
 
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const *commit = &pv->logs[row];
@@ -1250,9 +1250,11 @@ void MainWindow::openRepository_(GitPtr g)
 		{
 			if (Git::isUncommited(*commit)) { // 未コミットの時
 				bold = true; // 太字
+				selrow = row;
 			} else {
 				if (isHEAD && !isThereUncommitedChanges()) { // HEADで、未コミットがないとき
 					bold = true; // 太字
+					selrow = row;
 				}
 				commit_id = abbrevCommitID(*commit);
 			}
@@ -1266,10 +1268,6 @@ void MainWindow::openRepository_(GitPtr g)
 		AddColumn(author, false, QString());
 		AddColumn(message, bold, message + message_ex);
 		ui->tableWidget_log->setRowHeight(row, 24);
-
-		if (isHEAD) {
-			index_of_head = row;
-		}
 	}
 	ui->tableWidget_log->resizeColumnsToContents();
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
@@ -1278,7 +1276,7 @@ void MainWindow::openRepository_(GitPtr g)
 	ui->tableWidget_log->setFocus();
 	ui->tableWidget_log->setCurrentCell(0, 0);
 
-	QTableWidgetItem *p = ui->tableWidget_log->item(index_of_head < 0 ? 0 : index_of_head, 2);
+	QTableWidgetItem *p = ui->tableWidget_log->item(selrow < 0 ? 0 : selrow, 2);
 	ui->tableWidget_log->setCurrentItem(p);
 
 	udpateButton();
