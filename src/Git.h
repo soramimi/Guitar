@@ -131,6 +131,11 @@ public:
 		QString id;
 	};
 
+	struct NamedCommitItem {
+		QString name;
+		QString id;
+	};
+
 	enum class FileStatusCode : unsigned int {
 		Unknown,
 		Ignored,

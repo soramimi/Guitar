@@ -2,7 +2,7 @@
 #define JUMPDIALOG_H
 
 #include "MyTableWidgetDelegate.h"
-
+#include "Git.h"
 #include <QDialog>
 
 namespace Ui {
@@ -15,21 +15,18 @@ class JumpDialog : public QDialog
 {
 	Q_OBJECT
 public:
-	struct Item {
-		QString name;
-	};
 private:
 	MyTableWidgetDelegate delegate_;
 	QString filter_text;
 	QString selected_name;
-	QList<Item> list;
+	QList<Git::NamedCommitItem> list;
 public:
-	explicit JumpDialog(QWidget *parent, QList<Item> const &list);
+	explicit JumpDialog(QWidget *parent, QList<Git::NamedCommitItem> const &list);
 	~JumpDialog();
 
 	QString selectedName() const;
 
-	static void sort(QList<JumpDialog::Item> *items);
+	static void sort(QList<Git::NamedCommitItem> *items);
 private slots:
 	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(const QString &text);
@@ -38,7 +35,7 @@ private slots:
 private:
 	Ui::JumpDialog *ui;
 	void updateTable();
-	void updateTable_(const QList<Item> &list2);
+	void updateTable_(const QList<Git::NamedCommitItem> &list2);
 };
 
 #endif // JUMPDIALOG_H

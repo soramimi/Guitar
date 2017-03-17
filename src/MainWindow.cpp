@@ -6,7 +6,7 @@
 #endif
 
 #include "AboutDialog.h"
-#include "CheckoutBranchDialog.h"
+#include "CheckoutDialog.h"
 #include "CloneDialog.h"
 #include "CommitPropertyDialog.h"
 #include "ConfigCredentialHelperDialog.h"
@@ -1723,6 +1723,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
 
+		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout...")) : nullptr;
+
 		QAction *a_add_tag = is_valid_commit_id ? menu.addAction(tr("Add a tag...")) : nullptr;
 		QAction *a_delete_tags = nullptr;
 		if (is_valid_commit_id && pv->tag_map.find(commit->commit_id) != pv->tag_map.end()) {
@@ -1745,6 +1747,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_edit_comment) {
 				commit_amend();
+				return;
+			}
+			if (a == a_checkout) {
+				checkout(commit);
 				return;
 			}
 			if (a == a_add_tag) {
@@ -2715,21 +2721,21 @@ void MainWindow::on_action_branch_new_triggered()
 	}
 }
 
-void MainWindow::on_action_branch_checkout_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
+//void MainWindow::on_action_branch_checkout_triggered()
+//{
+//	GitPtr g = git();
+//	if (!isValidWorkingCopy(g)) return;
 
-	QList<Git::Branch> branches = g->branches();
-	CheckoutBranchDialog dlg(this, branches);
-	if (dlg.exec() == QDialog::Accepted) {
-		QString name = dlg.branchName();
-		if (!name.isEmpty()) {
-			g->checkoutBranch(name);
-			openRepository(true);
-		}
-	}
-}
+//	QList<Git::Branch> branches = g->branches();
+//	CheckoutDialog dlg(this, branches);
+//	if (dlg.exec() == QDialog::Accepted) {
+//		QString name = dlg.branchName();
+//		if (!name.isEmpty()) {
+//			g->checkoutBranch(name);
+//			openRepository(true);
+//		}
+//	}
+//}
 
 void MainWindow::on_action_branch_merge_triggered()
 {
@@ -3146,21 +3152,19 @@ void MainWindow::setBlockUI(bool f)
 	ui->menuBar->setEnabled(!pv->ui_blocked);
 }
 
-void MainWindow::on_action_repo_jump_triggered()
+QList<Git::NamedCommitItem> MainWindow::getBranchesAndTags()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	QList<JumpDialog::Item> items;
+	QList<Git::NamedCommitItem> items;
 	for (auto pair: pv->branch_map) {
 		QString id = pair.first;
 		QList<Git::Branch> const &list = pair.second;
 		for (Git::Branch const &b : list) {
-			JumpDialog::Item item;
+			Git::NamedCommitItem item;
 			item.name = b.name;
 			if (item.name.startsWith("remotes/")) {
 				item.name = item.name.mid(8);
 			}
+			item.id = b.id;
 			items.push_back(item);
 		}
 	}
@@ -3168,11 +3172,21 @@ void MainWindow::on_action_repo_jump_triggered()
 		QString id = pair.first;
 		QList<Git::Tag> const &list = pair.second;
 		for (Git::Tag const &t : list) {
-			JumpDialog::Item item;
+			Git::NamedCommitItem item;
 			item.name = t.name;
+			item.id = t.id;
 			items.push_back(item);
 		}
 	}
+	return items;
+}
+
+void MainWindow::on_action_repo_jump_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QList<Git::NamedCommitItem> items = getBranchesAndTags();
 	JumpDialog::sort(&items);
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -3194,7 +3208,52 @@ void MainWindow::on_action_repo_jump_triggered()
 	}
 }
 
+void MainWindow::checkout(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QStringList local_branch_name;
+	QStringList remote_branch_name;
+	{
+		QList<Git::NamedCommitItem> named_commits = getBranchesAndTags();
+		for (Git::NamedCommitItem const &item : named_commits) {
+			if (item.id == commit->commit_id) {
+				QString name = item.name;
+				int i = name.lastIndexOf('/');
+				if (i < 0) {
+					if (name == "HEAD") continue;
+					local_branch_name.push_back(name);
+				} else {
+					name = name.mid(i + 1);
+					if (name == "HEAD") continue;
+					remote_branch_name.push_back(name);
+				}
+			}
+		}
+	}
+
+	CheckoutDialog dlg(this, local_branch_name, remote_branch_name);
+	if (dlg.exec() == QDialog::Accepted) {
+		QString name = dlg.branchName();
+		if (!name.isEmpty()) {
+			g->checkoutBranch(name);
+			openRepository(true);
+		}
+	}
+
+}
+
+void MainWindow::on_action_repo_checkout_triggered()
+{
+	Git::CommitItem const *commit = selectedCommitItem();
+	checkout(commit);
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
+
 

@@ -90,7 +90,6 @@ SOURCES += \
     src/FileUtil.cpp \
     src/SettingsDialog.cpp \
     src/NewBranchDialog.cpp \
-    src/CheckoutBranchDialog.cpp \
     src/MergeBranchDialog.cpp \
     src/CloneDialog.cpp \
     src/AboutDialog.cpp \
@@ -129,7 +128,8 @@ SOURCES += \
     src/json.cpp \
     src/urlencode.cpp \
     src/HyperLinkLabel.cpp \
-    src/JumpDialog.cpp
+    src/JumpDialog.cpp \
+    src/CheckoutDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -148,7 +148,6 @@ HEADERS  += \
     src/FileUtil.h \
     src/SettingsDialog.h \
     src/NewBranchDialog.h \
-    src/CheckoutBranchDialog.h \
     src/MergeBranchDialog.h \
     src/CloneDialog.h \
     src/AboutDialog.h \
@@ -189,7 +188,8 @@ HEADERS  += \
     src/json.h \
     src/urlencode.h \
     src/HyperLinkLabel.h \
-    src/JumpDialog.h
+    src/JumpDialog.h \
+    src/CheckoutDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -198,7 +198,6 @@ FORMS    += \
 	src/TextEditDialog.ui \
     src/SettingsDialog.ui \
     src/NewBranchDialog.ui \
-    src/CheckoutBranchDialog.ui \
     src/MergeBranchDialog.ui \
     src/CloneDialog.ui \
     src/AboutDialog.ui \
@@ -216,7 +215,8 @@ FORMS    += \
     src/SetUserDialog.ui \
     src/ProgressDialog.ui \
     src/SearchFromGitHubDialog.ui \
-    src/JumpDialog.ui
+    src/JumpDialog.ui \
+    src/CheckoutDialog.ui
 
 RESOURCES += \
     resources.qrc

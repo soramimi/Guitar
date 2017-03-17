@@ -861,6 +861,7 @@
      <string>&amp;Repository</string>
     </property>
     <addaction name="action_repo_jump"/>
+    <addaction name="action_repo_checkout"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1085,10 +1086,15 @@
   </action>
   <action name="action_repo_jump">
    <property name="text">
-    <string>&amp;Jump</string>
+    <string>&amp;Jump...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+J</string>
+   </property>
+  </action>
+  <action name="action_repo_checkout">
+   <property name="text">
+    <string>Check&amp;out...</string>
    </property>
   </action>
  </widget>

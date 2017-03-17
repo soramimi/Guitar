@@ -3,7 +3,7 @@
 
 #include <QDebug>
 
-JumpDialog::JumpDialog(QWidget *parent, const QList<Item> &list) :
+JumpDialog::JumpDialog(QWidget *parent, const QList<Git::NamedCommitItem> &list) :
 	QDialog(parent),
 	ui(new Ui::JumpDialog)
 {
@@ -41,14 +41,14 @@ QString JumpDialog::selectedName() const
 	return selected_name;
 }
 
-void JumpDialog::sort(QList<JumpDialog::Item> *items)
+void JumpDialog::sort(QList<Git::NamedCommitItem> *items)
 {
-	std::sort(items->begin(), items->end(), [](JumpDialog::Item const &l, JumpDialog::Item const &r){
+	std::sort(items->begin(), items->end(), [](Git::NamedCommitItem const &l, Git::NamedCommitItem const &r){
 		return l.name.compare(r.name, Qt::CaseInsensitive) < 0;
 	});
 }
 
-void JumpDialog::updateTable_(QList<Item> const &list)
+void JumpDialog::updateTable_(QList<Git::NamedCommitItem> const &list)
 {
 	ui->tableWidget->clearContents();
 	ui->tableWidget->setRowCount(list.size());
@@ -72,8 +72,8 @@ void JumpDialog::updateTable()
 	if (filter_text.isEmpty()) {
 		updateTable_(list);
 	} else {
-		QList<Item> list2;
-		for (Item const &item: list) {
+		QList<Git::NamedCommitItem> list2;
+		for (Git::NamedCommitItem const &item: list) {
 			if (item.name.indexOf(filter_text) < 0) {
 				continue;
 			}
