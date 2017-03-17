@@ -20,8 +20,6 @@ class AboutDialog;
 
 class CommitList;
 
-struct Git::NamedCommitItem;
-
 #define PATH_PREFIX "*"
 
 
