@@ -64,6 +64,7 @@ void JumpDialog::updateTable_(QList<Item> const &list)
 	}
 	ui->tableWidget->resizeColumnsToContents();
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+	ui->tableWidget->setCurrentCell(0, 0);
 }
 
 void JumpDialog::updateTable()

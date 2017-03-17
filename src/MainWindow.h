@@ -131,6 +131,8 @@ private slots:
 	void on_action_window_log_triggered(bool checked);
 
 	void onLogVisibilityChanged();
+	void on_action_repo_jump_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -268,6 +270,7 @@ public:
 	bool isValidRemoteURL(QString const &url);
 	void testRemoteRepositoryValidity(const QString &url);
 	void removeSelectedRepositoryFromBookmark(bool ask);
+	void setCurrentLogRow(int row);
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

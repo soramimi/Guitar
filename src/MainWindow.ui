@@ -96,7 +96,7 @@
           <string>Clone</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/clone.svgz</normaloff>:/image/clone.svgz</iconset>
          </property>
          <property name="iconSize">
@@ -131,7 +131,7 @@
           <string>Fetch</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/fetch.svgz</normaloff>:/image/fetch.svgz</iconset>
          </property>
          <property name="iconSize">
@@ -166,7 +166,7 @@
           <string>Pull</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/pull.svgz</normaloff>:/image/pull.svgz</iconset>
          </property>
          <property name="iconSize">
@@ -201,7 +201,7 @@
           <string>Push</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/push.svgz</normaloff>:/image/push.svgz</iconset>
          </property>
          <property name="iconSize">
@@ -584,7 +584,7 @@
                   <string>Unstage</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/unstage.svgz</normaloff>:/image/unstage.svgz</iconset>
                  </property>
                  <property name="iconSize">
@@ -613,7 +613,7 @@
                   <string>Select all</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/selall.svgz</normaloff>:/image/selall.svgz</iconset>
                  </property>
                  <property name="iconSize">
@@ -648,7 +648,7 @@
                   <string>Stage</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/stage.svgz</normaloff>:/image/stage.svgz</iconset>
                  </property>
                  <property name="iconSize">
@@ -677,7 +677,7 @@
                   <string>Commit</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/commit.svgz</normaloff>:/image/commit.svgz</iconset>
                  </property>
                  <property name="iconSize">
@@ -856,9 +856,16 @@
     </property>
     <addaction name="action_window_log"/>
    </widget>
+   <widget class="QMenu" name="menu_Repository">
+    <property name="title">
+     <string>&amp;Repository</string>
+    </property>
+    <addaction name="action_repo_jump"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menu_Repository"/>
    <addaction name="menu_Branch"/>
    <addaction name="menuTag"/>
    <addaction name="menu_Window"/>
@@ -957,7 +964,7 @@
   </action>
   <action name="action_push">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources.qrc">
      <normaloff>:/image/push.svgz</normaloff>:/image/push.svgz</iconset>
    </property>
    <property name="text">
@@ -1074,6 +1081,14 @@
    </property>
    <property name="text">
     <string>&amp;Log</string>
+   </property>
+  </action>
+  <action name="action_repo_jump">
+   <property name="text">
+    <string>&amp;Jump</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+J</string>
    </property>
   </action>
  </widget>

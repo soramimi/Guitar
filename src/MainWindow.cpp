@@ -257,6 +257,11 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
+void MainWindow::setCurrentLogRow(int row)
+{
+	ui->tableWidget_log->setCurrentCell(row, 2);
+}
+
 bool MainWindow::event(QEvent *event)
 {
 	QEvent::Type et = event->type();
@@ -318,7 +323,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 		} else if (watched == ui->tableWidget_log) {
 			if (k == Qt::Key_Home) {
-				ui->tableWidget_log->setCurrentCell(0, 0);
+				setCurrentLogRow(0);
 				return true;
 			}
 		}
@@ -1279,7 +1284,7 @@ void MainWindow::openRepository_(GitPtr g)
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
 
 	ui->tableWidget_log->setFocus();
-	ui->tableWidget_log->setCurrentCell(0, 0);
+	setCurrentLogRow(0);
 
 	QTableWidgetItem *p = ui->tableWidget_log->item(selrow < 0 ? 0 : selrow, 2);
 	ui->tableWidget_log->setCurrentItem(p);
@@ -3141,7 +3146,7 @@ void MainWindow::setBlockUI(bool f)
 	ui->menuBar->setEnabled(!pv->ui_blocked);
 }
 
-void MainWindow::on_action_test_triggered()
+void MainWindow::on_action_repo_jump_triggered()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -3173,12 +3178,23 @@ void MainWindow::on_action_test_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		QString name = dlg.selectedName();
 		QString id = g->rev_parse(name);
-		qDebug() << id;
+		int row = -1;
+		for (size_t i = 0; i < pv->logs.size(); i++) {
+			Git::CommitItem const &item = pv->logs[i];
+			if (item.commit_id == id) {
+				row = (int)i;
+				break;
+			}
+		}
+		if (row < 0) {
+			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(name).arg(id) + tr("That commmit has not foud or not read yet"));
+		} else {
+			setCurrentLogRow(row);
+		}
 	}
 }
 
-
-
-
-
+void MainWindow::on_action_test_triggered()
+{
+}
 
