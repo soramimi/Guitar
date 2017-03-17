@@ -267,6 +267,7 @@ public:
 	void addWorkingCopyDir(QString dir);
 	bool isValidRemoteURL(QString const &url);
 	void testRemoteRepositoryValidity(const QString &url);
+	void removeSelectedRepositoryFromBookmark(bool ask);
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

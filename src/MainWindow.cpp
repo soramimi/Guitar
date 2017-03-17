@@ -266,6 +266,11 @@ bool MainWindow::event(QEvent *event)
 		int k = e->key();
 		if (k == Qt::Key_Escape) {
 			emit onEscapeKeyPressed();
+		} else if (k == Qt::Key_Delete) {
+			if (focusWidget() == ui->treeWidget_repos) {
+				removeSelectedRepositoryFromBookmark(true);
+				return true;
+			}
 		}
 	}
 
@@ -1295,6 +1300,12 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 	}
 }
 
+void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
+{
+	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
+	removeRepositoryFromBookmark(i, ask);
+}
+
 void MainWindow::openRepository(bool validate, bool waitcursor)
 {
 	if (validate) {
@@ -1302,8 +1313,7 @@ void MainWindow::openRepository(bool validate, bool waitcursor)
 		if (!QFileInfo(dir).isDir()) {
 			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark ?"), QMessageBox::Ok, QMessageBox::Cancel);
 			if (r == QMessageBox::Ok) {
-				int i = indexOfRepository(ui->treeWidget_repos->currentItem());
-				removeRepositoryFromBookmark(i, false);
+				removeSelectedRepositoryFromBookmark(false);
 			}
 			return;
 		}
