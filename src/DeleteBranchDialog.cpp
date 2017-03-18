@@ -49,12 +49,14 @@ QStringList DeleteBranchDialog::selectedBranchNames() const
 	for (int row = 0; row < n; row++) {
 		QListWidgetItem *item = ui->listWidget->item(row);
 		Q_ASSERT(item);
-		names.push_back(item->text());
+		if (item->checkState() == Qt::Checked) {
+			names.push_back(item->text());
+		}
 	}
 	return names;
 }
 
-void DeleteBranchDialog::on_checkBox_all_branches_toggled(bool checked)
+void DeleteBranchDialog::on_checkBox_all_branches_toggled(bool /*checked*/)
 {
 	updateList();
 }
