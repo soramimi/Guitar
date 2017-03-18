@@ -129,7 +129,8 @@ SOURCES += \
     src/urlencode.cpp \
     src/HyperLinkLabel.cpp \
     src/JumpDialog.cpp \
-    src/CheckoutDialog.cpp
+    src/CheckoutDialog.cpp \
+    src/DeleteBranchDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -189,7 +190,8 @@ HEADERS  += \
     src/urlencode.h \
     src/HyperLinkLabel.h \
     src/JumpDialog.h \
-    src/CheckoutDialog.h
+    src/CheckoutDialog.h \
+    src/DeleteBranchDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -216,7 +218,8 @@ FORMS    += \
     src/ProgressDialog.ui \
     src/SearchFromGitHubDialog.ui \
     src/JumpDialog.ui \
-    src/CheckoutDialog.ui
+    src/CheckoutDialog.ui \
+    src/DeleteBranchDialog.ui
 
 RESOURCES += \
     resources.qrc

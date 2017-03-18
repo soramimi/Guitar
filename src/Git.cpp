@@ -149,10 +149,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 //		qDebug() << cmd;
 #if 1
 		QProcess proc;
+		proc.setReadChannel(errout ? QProcess::StandardError : QProcess::StandardOutput);
 		proc.start(cmd);
 		proc.waitForStarted();
 		proc.closeWriteChannel();
-		proc.setReadChannel(errout ? QProcess::StandardError : QProcess::StandardOutput);
 		while (1) {
 			QProcess::ProcessState s = proc.state();
 			if (proc.waitForReadyRead(1)) {

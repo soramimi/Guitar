@@ -71,7 +71,6 @@ public:
 	QColor color(unsigned int i);
 private slots:
 	void on_action_add_all_triggered();
-//	void on_action_branch_checkout_triggered();
 	void on_action_branch_merge_triggered();
 	void on_action_branch_new_triggered();
 	void on_action_clone_triggered();
@@ -230,8 +229,9 @@ private:
 	bool isDiffThreadValid(const QString &id) const;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);
-	QList<Git::NamedCommitItem> getBranchesAndTags();
+	QList<Git::NamedCommitItem> getBranchesAndTags(bool branches, bool tags);
 	void checkout(const Git::CommitItem *commit);
+	void deleteBranch(const Git::CommitItem *commit);
 public:
 
 	QString selectGitCommand();

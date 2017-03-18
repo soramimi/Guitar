@@ -218,10 +218,10 @@ int misc::runCommand(QString const &cmd, QByteArray *out)
 {
 	out->clear();
 	QProcess proc;
+	proc.setReadChannel(QProcess::StandardOutput);
 	proc.start(cmd);
 	proc.waitForStarted();
 	proc.closeWriteChannel();
-	proc.setReadChannel(QProcess::StandardOutput);
 	while (1) {
 		QProcess::ProcessState s = proc.state();
 		if (proc.waitForReadyRead(1)) {
@@ -243,11 +243,11 @@ int misc::runCommand(QString const &cmd, QByteArray const *in, QByteArray *out)
 {
 	out->clear();
 	QProcess proc;
+	proc.setReadChannel(QProcess::StandardOutput);
 	proc.start(cmd);
 	proc.waitForStarted();
 	proc.write(*in);
 	proc.closeWriteChannel();
-	proc.setReadChannel(QProcess::StandardOutput);
 	while (1) {
 		QProcess::ProcessState s = proc.state();
 		if (proc.waitForReadyRead(1)) {
