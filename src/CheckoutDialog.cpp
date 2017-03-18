@@ -64,8 +64,8 @@ void CheckoutDialog::clearComboBoxOptions()
 
 CheckoutDialog::Operation CheckoutDialog::operation() const
 {
-	if (ui->radioButton_existing_local_branch) return Operation::ExistingLocalBranch;
-	if (ui->radioButton_create_local_branch) return Operation::CreateLocalBranch;
+	if (ui->radioButton_existing_local_branch->isChecked()) return Operation::ExistingLocalBranch;
+	if (ui->radioButton_create_local_branch->isChecked()) return Operation::CreateLocalBranch;
 	return Operation::HeadDetached;
 }
 

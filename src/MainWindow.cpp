@@ -3237,11 +3237,25 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 
 	CheckoutDialog dlg(this, local_branch_name, remote_branch_name);
 	if (dlg.exec() == QDialog::Accepted) {
+		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
-		if (!name.isEmpty()) {
-			g->checkoutBranch(name);
+		QString id = commit->commit_id;
+		bool ok = false;
+		setLogEnabled(g, true);
+		if (op == CheckoutDialog::Operation::HeadDetached) {
+			ok = g->git(QString("checkout %1").arg(id), true);
+		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
+			ok = g->git(QString("checkout -b %1 %2").arg(name).arg(id), true);
+		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
+			ok = g->git(QString("checkout %1").arg(name), true);
+		}
+		if (ok) {
 			openRepository(true);
 		}
+//		if (!name.isEmpty()) {
+//			g->checkoutBranch(name);
+//			openRepository(true);
+//		}
 	}
 
 }
