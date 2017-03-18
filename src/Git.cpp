@@ -1017,6 +1017,27 @@ QString Git::trimPath(QString const &s)
 	return QString::fromUtf16(left, right - left);
 }
 
+Git::FileStatusCode Git::FileStatus::parseFileStatusCode(char x, char y)
+{
+	if (x == ' ' && (y == 'M' || y == 'D')) return FileStatusCode::NotUpdated;
+	if (x == 'M' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::UpdatedInIndex;
+	if (x == 'A' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::AddedToIndex;
+	if (x == 'D' && (y == 'M' || y == ' ')) return FileStatusCode::DeletedFromIndex;
+	if (x == 'R' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::RenamedInIndex;
+	if (x == 'C' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::CopiedInIndex;
+	if (x == 'C' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::CopiedInIndex;
+	if (x == 'D' && y == 'D') return FileStatusCode::Unmerged_BothDeleted;
+	if (x == 'A' && y == 'U') return FileStatusCode::Unmerged_AddedByUs;
+	if (x == 'U' && y == 'D') return FileStatusCode::Unmerged_DeletedByThem;
+	if (x == 'U' && y == 'A') return FileStatusCode::Unmerged_AddedByThem;
+	if (x == 'D' && y == 'U') return FileStatusCode::Unmerged_DeletedByUs;
+	if (x == 'A' && y == 'A') return FileStatusCode::Unmerged_BothAdded;
+	if (x == 'U' && y == 'U') return FileStatusCode::Unmerged_BothModified;
+	if (x == '?' && y == '?') return FileStatusCode::Untracked;
+	if (x == '!' && y == '!') return FileStatusCode::Ignored;
+	return FileStatusCode::Unknown;
+}
+
 void Git::FileStatus::parse(const QString &text)
 {
 	data = Data();

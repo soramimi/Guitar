@@ -229,7 +229,13 @@ private:
 	bool isDiffThreadValid(const QString &id) const;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);
-	QList<Git::NamedCommitItem> getBranchesAndTags(bool branches, bool tags);
+
+	enum NamedCommitFlag {
+		Branches = 0x0001,
+		Tags     = 0x0002,
+	};
+	NamedCommitList namedCommitItems(int flags);
+
 	void checkout(const Git::CommitItem *commit);
 	void deleteBranch(const Git::CommitItem *commit);
 public:

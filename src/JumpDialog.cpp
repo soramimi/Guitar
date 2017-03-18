@@ -3,7 +3,14 @@
 
 #include <QDebug>
 
-JumpDialog::JumpDialog(QWidget *parent, const QList<Git::NamedCommitItem> &list) :
+struct JumpDialog::Private {
+	MyTableWidgetDelegate delegate;
+	QString filter_text;
+	QString selected_name;
+	NamedCommitList items;
+};
+
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items) :
 	QDialog(parent),
 	ui(new Ui::JumpDialog)
 {
@@ -12,9 +19,11 @@ JumpDialog::JumpDialog(QWidget *parent, const QList<Git::NamedCommitItem> &list)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->tableWidget->setItemDelegate(&delegate_);
+	pv = new Private();
 
-	this->list = list;
+	ui->tableWidget->setItemDelegate(&pv->delegate);
+
+	pv->items = items;
 
 	QStringList header = {
 		tr("Name"),
@@ -33,29 +42,30 @@ JumpDialog::JumpDialog(QWidget *parent, const QList<Git::NamedCommitItem> &list)
 
 JumpDialog::~JumpDialog()
 {
+	delete pv;
 	delete ui;
 }
 
 QString JumpDialog::selectedName() const
 {
-	return selected_name;
+	return pv->selected_name;
 }
 
-void JumpDialog::sort(QList<Git::NamedCommitItem> *items)
+void JumpDialog::sort(NamedCommitList *items)
 {
-	std::sort(items->begin(), items->end(), [](Git::NamedCommitItem const &l, Git::NamedCommitItem const &r){
+	std::sort(items->begin(), items->end(), [](NamedCommitItem const &l, NamedCommitItem const &r){
 		return l.name.compare(r.name, Qt::CaseInsensitive) < 0;
 	});
 }
 
-void JumpDialog::updateTable_(QList<Git::NamedCommitItem> const &list)
+void JumpDialog::updateTable_(NamedCommitList const &list)
 {
 	ui->tableWidget->clearContents();
 	ui->tableWidget->setRowCount(list.size());
 	for (int i = 0; i < list.size(); i++) {
 		QTableWidgetItem *p = new QTableWidgetItem();
 		QString name = list[i].name;
-		if (!filter_text.isEmpty() && name.indexOf(filter_text) < 0) {
+		if (!pv->filter_text.isEmpty() && name.indexOf(pv->filter_text) < 0) {
 			continue;
 		}
 		p->setText(name);
@@ -69,23 +79,23 @@ void JumpDialog::updateTable_(QList<Git::NamedCommitItem> const &list)
 
 void JumpDialog::updateTable()
 {
-	if (filter_text.isEmpty()) {
-		updateTable_(list);
+	if (pv->filter_text.isEmpty()) {
+		updateTable_(pv->items);
 	} else {
-		QList<Git::NamedCommitItem> list2;
-		for (Git::NamedCommitItem const &item: list) {
-			if (item.name.indexOf(filter_text) < 0) {
+		NamedCommitList list;
+		for (NamedCommitItem const &item: pv->items) {
+			if (item.name.indexOf(pv->filter_text) < 0) {
 				continue;
 			}
-			list2.push_back(item);
+			list.push_back(item);
 		}
-		updateTable_(list2);
+		updateTable_(list);
 	}
 }
 
 void JumpDialog::on_lineEdit_filter_textChanged(const QString &text)
 {
-	filter_text = text;
+	pv->filter_text = text;
 	updateTable();
 }
 
@@ -99,6 +109,6 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 {
 	int row = ui->tableWidget->currentRow();
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
-	selected_name = p ? p->text() : QString();
+	pv->selected_name = p ? p->text() : QString();
 }
 

@@ -32,6 +32,13 @@ struct TreeLine {
 	}
 };
 
+struct NamedCommitItem {
+	QString name;
+	QString id;
+};
+typedef QList<NamedCommitItem> NamedCommitList;
+
+
 class Git;
 typedef std::shared_ptr<Git> GitPtr;
 
@@ -131,11 +138,6 @@ public:
 		QString id;
 	};
 
-	struct NamedCommitItem {
-		QString name;
-		QString id;
-	};
-
 	enum class FileStatusCode : unsigned int {
 		Unknown,
 		Ignored,
@@ -170,26 +172,7 @@ public:
 			QString path2;
 		} data;
 
-		static FileStatusCode parseFileStatusCode(char x, char y)
-		{
-			if (x == ' ' && (y == 'M' || y == 'D')) return FileStatusCode::NotUpdated;
-			if (x == 'M' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::UpdatedInIndex;
-			if (x == 'A' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::AddedToIndex;
-			if (x == 'D' && (y == 'M' || y == ' ')) return FileStatusCode::DeletedFromIndex;
-			if (x == 'R' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::RenamedInIndex;
-			if (x == 'C' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::CopiedInIndex;
-			if (x == 'C' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::CopiedInIndex;
-			if (x == 'D' && y == 'D') return FileStatusCode::Unmerged_BothDeleted;
-			if (x == 'A' && y == 'U') return FileStatusCode::Unmerged_AddedByUs;
-			if (x == 'U' && y == 'D') return FileStatusCode::Unmerged_DeletedByThem;
-			if (x == 'U' && y == 'A') return FileStatusCode::Unmerged_AddedByThem;
-			if (x == 'D' && y == 'U') return FileStatusCode::Unmerged_DeletedByUs;
-			if (x == 'A' && y == 'A') return FileStatusCode::Unmerged_BothAdded;
-			if (x == 'U' && y == 'U') return FileStatusCode::Unmerged_BothModified;
-			if (x == '?' && y == '?') return FileStatusCode::Untracked;
-			if (x == '!' && y == '!') return FileStatusCode::Ignored;
-			return FileStatusCode::Unknown;
-		}
+		static FileStatusCode parseFileStatusCode(char x, char y);
 
 		bool isStaged() const
 		{

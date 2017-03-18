@@ -16,17 +16,15 @@ class JumpDialog : public QDialog
 	Q_OBJECT
 public:
 private:
-	MyTableWidgetDelegate delegate_;
-	QString filter_text;
-	QString selected_name;
-	QList<Git::NamedCommitItem> list;
+	struct Private;
+	Private *pv;
 public:
-	explicit JumpDialog(QWidget *parent, QList<Git::NamedCommitItem> const &list);
+	explicit JumpDialog(QWidget *parent, NamedCommitList const &items);
 	~JumpDialog();
 
 	QString selectedName() const;
 
-	static void sort(QList<Git::NamedCommitItem> *items);
+	static void sort(NamedCommitList *items);
 private slots:
 	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(const QString &text);
@@ -35,7 +33,7 @@ private slots:
 private:
 	Ui::JumpDialog *ui;
 	void updateTable();
-	void updateTable_(const QList<Git::NamedCommitItem> &list2);
+	void updateTable_(const NamedCommitList &list2);
 };
 
 #endif // JUMPDIALOG_H

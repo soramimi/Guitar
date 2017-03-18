@@ -3158,15 +3158,15 @@ void MainWindow::setBlockUI(bool f)
 	ui->menuBar->setEnabled(!pv->ui_blocked);
 }
 
-QList<Git::NamedCommitItem> MainWindow::getBranchesAndTags(bool branches, bool tags)
+NamedCommitList MainWindow::namedCommitItems(int flags)
 {
-	QList<Git::NamedCommitItem> items;
-	if (branches) {
+	NamedCommitList items;
+	if (flags & Branches) {
 		for (auto pair: pv->branch_map) {
 			QString id = pair.first;
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
-				Git::NamedCommitItem item;
+				NamedCommitItem item;
 				item.name = b.name;
 				if (item.name.startsWith("remotes/")) {
 					item.name = item.name.mid(8);
@@ -3176,12 +3176,12 @@ QList<Git::NamedCommitItem> MainWindow::getBranchesAndTags(bool branches, bool t
 			}
 		}
 	}
-	if (tags) {
+	if (flags & Tags) {
 		for (auto pair: pv->tag_map) {
 			QString id = pair.first;
 			QList<Git::Tag> const &list = pair.second;
 			for (Git::Tag const &t : list) {
-				Git::NamedCommitItem item;
+				NamedCommitItem item;
 				item.name = t.name;
 				item.id = t.id;
 				items.push_back(item);
@@ -3196,7 +3196,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QList<Git::NamedCommitItem> items = getBranchesAndTags(true, true);
+	NamedCommitList items = namedCommitItems(Branches | Tags);
 	JumpDialog::sort(&items);
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -3225,27 +3225,28 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QStringList local_branch_name;
-	QStringList remote_branch_name;
+	QStringList local_branch_names;
+	QStringList remote_branch_names;
 	{
-		QList<Git::NamedCommitItem> named_commits = getBranchesAndTags(true, true);
-		for (Git::NamedCommitItem const &item : named_commits) {
+		NamedCommitList named_commits = namedCommitItems(Branches | Tags);
+		JumpDialog::sort(&named_commits);
+		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == commit->commit_id) {
 				QString name = item.name;
 				int i = name.lastIndexOf('/');
 				if (i < 0) {
 					if (name == "HEAD") continue;
-					local_branch_name.push_back(name);
+					local_branch_names.push_back(name);
 				} else {
 					name = name.mid(i + 1);
 					if (name == "HEAD") continue;
-					remote_branch_name.push_back(name);
+					remote_branch_names.push_back(name);
 				}
 			}
 		}
 	}
 
-	CheckoutDialog dlg(this, local_branch_name, remote_branch_name);
+	CheckoutDialog dlg(this, local_branch_names, remote_branch_names);
 	if (dlg.exec() == QDialog::Accepted) {
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
@@ -3279,24 +3280,25 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QStringList all_local_branch_name;
-	QStringList current_local_branch_name;
+	QStringList all_local_branch_names;
+	QStringList current_local_branch_names;
 	{
-		QList<Git::NamedCommitItem> named_commits = getBranchesAndTags(true, false);
-		for (Git::NamedCommitItem const &item : named_commits) {
+		NamedCommitList named_commits = namedCommitItems(Branches);
+		JumpDialog::sort(&named_commits);
+		for (NamedCommitItem const &item : named_commits) {
 			QString name = item.name;
 			int i = name.lastIndexOf('/');
 			if (i < 0) {
 				if (name == "HEAD") continue;
 				if (item.id == commit->commit_id) {
-					current_local_branch_name.push_back(name);
+					current_local_branch_names.push_back(name);
 				}
-				all_local_branch_name.push_back(name);
+				all_local_branch_names.push_back(name);
 			}
 		}
 	}
 
-	DeleteBranchDialog dlg(this, all_local_branch_name, current_local_branch_name);
+	DeleteBranchDialog dlg(this, all_local_branch_names, current_local_branch_names);
 	if (dlg.exec() == QDialog::Accepted) {
 		setLogEnabled(g, true);
 		QStringList names = dlg.selectedBranchNames();
