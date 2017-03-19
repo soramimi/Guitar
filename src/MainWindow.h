@@ -149,7 +149,6 @@ private:
 	bool saveRepositoryBookmarks() const;
 
 	GitPtr git(const QString &dir);
-	GitPtr git();
 
 	void openRepository_(GitPtr g);
 	void openRepository(bool validate, bool waitcursor = true);
@@ -281,6 +280,7 @@ public:
 	void testRemoteRepositoryValidity(const QString &url);
 	void removeSelectedRepositoryFromBookmark(bool ask);
 	void setCurrentLogRow(int row);
+	GitPtr git();
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

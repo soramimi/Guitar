@@ -519,8 +519,7 @@ QString MainWindow::currentWorkingCopyDir() const
 
 GitPtr MainWindow::git(QString const &dir)
 {
-	GitPtr g = std::shared_ptr<Git>(new Git(pv->gcx, dir));
-	return g;
+	return std::shared_ptr<Git>(new Git(pv->gcx, dir));
 }
 
 GitPtr MainWindow::git()
@@ -1670,9 +1669,10 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		menu.addSeparator();
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 		menu.addSeparator();
-		QAction *a_properties = addMenuActionProperties(&menu);
-		menu.addSeparator();
 		QAction *a_set_remote_url = menu.addAction(tr("Set remote URL"));
+
+		menu.addSeparator();
+		QAction *a_properties = addMenuActionProperties(&menu);
 
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
@@ -1694,15 +1694,16 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_properties) {
-				RepositoryPropertyDialog dlg(this, *repo);
+				GitPtr g = git(repo->local_dir);
+				RepositoryPropertyDialog dlg(this, g, *repo);
 				dlg.exec();
 				return;
 			}
 			if (a == a_set_remote_url) {
 				GitPtr g = git(repo->local_dir);
 				if (!isValidWorkingCopy(g)) return;
-				SetRemoteUrlDialog dlg(this);
-				dlg.exec(this, g);
+				SetRemoteUrlDialog dlg(this, g);
+				dlg.exec();
 				return;
 			}
 		}

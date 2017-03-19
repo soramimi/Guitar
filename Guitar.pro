@@ -130,7 +130,9 @@ SOURCES += \
     src/HyperLinkLabel.cpp \
     src/JumpDialog.cpp \
     src/CheckoutDialog.cpp \
-    src/DeleteBranchDialog.cpp
+    src/DeleteBranchDialog.cpp \
+	src/BasicRepositoryDialog.cpp \
+    src/RemoteRepositoriesTableWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -191,7 +193,9 @@ HEADERS  += \
     src/HyperLinkLabel.h \
     src/JumpDialog.h \
     src/CheckoutDialog.h \
-    src/DeleteBranchDialog.h
+    src/DeleteBranchDialog.h \
+	src/BasicRepositoryDialog.h \
+    src/RemoteRepositoriesTableWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \

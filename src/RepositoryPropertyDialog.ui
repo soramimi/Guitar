@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>404</width>
+    <height>273</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -78,23 +78,61 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Local dir :</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="ReadOnlyLineEdit" name="lineEdit_local_dir">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>Local dir :</string>
+         <string>Remote URLs</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="ReadOnlyLineEdit" name="lineEdit_local_dir">
-        <property name="frame">
-         <bool>false</bool>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
+      <item>
+       <widget class="RemoteRepositoriesTableWidget" name="tableWidget"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>Close</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -107,7 +145,29 @@
    <extends>QLineEdit</extends>
    <header>ReadOnlyLineEdit.h</header>
   </customwidget>
+  <customwidget>
+   <class>RemoteRepositoriesTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>RemoteRepositoriesTableWidget.h</header>
+  </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RepositoryPropertyDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>212</x>
+     <y>341</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>226</x>
+     <y>403</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

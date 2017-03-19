@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "Git.h"
+#include "RepositoryPropertyDialog.h"
 
 class MainWindow;
 
@@ -10,22 +11,20 @@ namespace Ui {
 class SetRemoteUrlDialog;
 }
 
-class SetRemoteUrlDialog : public QDialog
+class SetRemoteUrlDialog : public BasicRepositoryDialog
 {
 	Q_OBJECT
 private:
-	GitPtr g_;
-	MainWindow *mainwindow = nullptr;
 
-	GitPtr git();
 public:
-	explicit SetRemoteUrlDialog(QWidget *parent = 0);
+	explicit SetRemoteUrlDialog(MainWindow *mainwindow, GitPtr g);
 	~SetRemoteUrlDialog();
 
-	void exec(MainWindow *mainwindow, GitPtr g);
+	int exec();
 private:
 	Ui::SetRemoteUrlDialog *ui;
 	void updateRemotesTable();
+//	void updateRemotesTable_(QTableWidget *tablewidget);
 public slots:
 	void accept();
 private slots:

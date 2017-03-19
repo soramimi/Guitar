@@ -2,19 +2,24 @@
 #define REPOSITORYPROPERTYDIALOG_H
 
 #include "RepositoryData.h"
+#include "BasicRepositoryDialog.h"
 #include <QDialog>
+#include "Git.h"
+
 
 namespace Ui {
 class RepositoryPropertyDialog;
 }
 
-class RepositoryPropertyDialog : public QDialog
+class RepositoryPropertyDialog : public BasicRepositoryDialog
 {
 	Q_OBJECT
 
 public:
-	explicit RepositoryPropertyDialog(QWidget *parent, RepositoryItem const &item);
+	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryItem const &item);
 	~RepositoryPropertyDialog();
+
+private slots:
 
 private:
 	Ui::RepositoryPropertyDialog *ui;

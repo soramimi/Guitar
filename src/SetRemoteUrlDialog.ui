@@ -22,23 +22,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="tableWidget">
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="verticalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
-     </property>
-     <property name="horizontalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
-     </property>
-    </widget>
+    <widget class="RemoteRepositoriesTableWidget" name="tableWidget"/>
    </item>
    <item>
     <widget class="QGroupBox" name="groupBox">
@@ -73,21 +57,21 @@
       <item row="1" column="1">
        <widget class="QLineEdit" name="lineEdit_url"/>
       </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="pushButton_test">
+        <property name="text">
+         <string>&amp;Test</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="pushButton_test">
-       <property name="text">
-        <string>&amp;Test</string>
-       </property>
-       <property name="default">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -119,13 +103,19 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RemoteRepositoriesTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header>RemoteRepositoriesTableWidget.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
   <tabstop>tableWidget</tabstop>
   <tabstop>lineEdit_remote</tabstop>
   <tabstop>lineEdit_url</tabstop>
-  <tabstop>pushButton_test</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -136,8 +126,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>222</x>
-     <y>246</y>
+     <x>466</x>
+     <y>301</y>
     </hint>
     <hint type="destinationlabel">
      <x>230</x>
@@ -152,8 +142,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>341</x>
-     <y>245</y>
+     <x>547</x>
+     <y>301</y>
     </hint>
     <hint type="destinationlabel">
      <x>340</x>
