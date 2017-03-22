@@ -1702,7 +1702,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			if (a == a_set_remote_url) {
 				GitPtr g = git(repo->local_dir);
 				if (!isValidWorkingCopy(g)) return;
-				SetRemoteUrlDialog dlg(this, g);
+				QStringList remotes = g->getRemotes();
+				SetRemoteUrlDialog dlg(this, remotes, g);
 				dlg.exec();
 				return;
 			}

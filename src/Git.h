@@ -359,6 +359,7 @@ public:
 	void tag(const QString &name, QString const &id = QString());
 	void delete_tag(const QString &name, bool remote);
 	void setRemoteURL(const QString &remote, const QString &url);
+	void addRemoteURL(QString const &remote, QString const &url);
 	QStringList getRemotes();
 
 	struct User {

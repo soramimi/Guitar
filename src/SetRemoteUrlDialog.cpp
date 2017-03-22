@@ -5,11 +5,13 @@
 #include "misc.h"
 #include <QMessageBox>
 
-SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, GitPtr g) :
+SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g) :
 	BasicRepositoryDialog(mainwindow, g),
 	ui(new Ui::SetRemoteUrlDialog)
 {
 	ui->setupUi(this);
+
+	this->remotes = remotes;
 }
 
 SetRemoteUrlDialog::~SetRemoteUrlDialog()
@@ -21,10 +23,8 @@ int SetRemoteUrlDialog::exec()
 {
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
-		QStringList remotes = g->getRemotes();
-		if (remotes.size() > 0) {
-			ui->lineEdit_remote->setText(remotes[0]);
-		}
+		QString remote = remotes.isEmpty() ? "origin" : remotes[0];
+		ui->lineEdit_remote->setText(remote);
 	}
 
 	updateRemotesTable();
@@ -37,15 +37,17 @@ void SetRemoteUrlDialog::updateRemotesTable()
 	ui->lineEdit_url->setText(url);
 }
 
-
-
 void SetRemoteUrlDialog::accept()
 {
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
 		QString rem = ui->lineEdit_remote->text();
 		QString url = ui->lineEdit_url->text();
-		g->setRemoteURL(rem, url);
+		if (remotes.contains(rem)) {
+			g->setRemoteURL(rem, url);
+		} else {
+			g->addRemoteURL(rem, url);
+		}
 		updateRemotesTable();
 	}
 	QDialog::accept();

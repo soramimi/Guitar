@@ -15,9 +15,9 @@ class SetRemoteUrlDialog : public BasicRepositoryDialog
 {
 	Q_OBJECT
 private:
-
+	QStringList remotes;
 public:
-	explicit SetRemoteUrlDialog(MainWindow *mainwindow, GitPtr g);
+	explicit SetRemoteUrlDialog(MainWindow *mainwindow, const QStringList &remotes, GitPtr g);
 	~SetRemoteUrlDialog();
 
 	int exec();

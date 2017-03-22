@@ -984,6 +984,13 @@ void Git::setRemoteURL(QString const &remote, QString const &url)
 	git(cmd);
 }
 
+void Git::addRemoteURL(QString const &remote, QString const &url)
+{
+	QString cmd = "remote add %1 %2";
+	cmd = cmd.arg(encodeQuotedText(remote)).arg(encodeQuotedText(url));
+	git(cmd);
+}
+
 // Git::FileStatus
 
 QString Git::trimPath(QString const &s)
