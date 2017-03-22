@@ -866,6 +866,7 @@
      <string>Experiment</string>
     </property>
     <addaction name="action_test"/>
+    <addaction name="action_push_u_origin_master"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1100,6 +1101,11 @@
   <action name="action_repo_checkout">
    <property name="text">
     <string>Check&amp;out...</string>
+   </property>
+  </action>
+  <action name="action_push_u_origin_master">
+   <property name="text">
+    <string>push -u origin master</string>
    </property>
   </action>
  </widget>

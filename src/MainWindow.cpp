@@ -3325,3 +3325,10 @@ void MainWindow::on_action_test_triggered()
 }
 
 
+
+void MainWindow::on_action_push_u_origin_master_triggered()
+{
+	reopenRepository(true, [&](GitPtr g){
+		g->push_u_origin_master();
+	});
+}

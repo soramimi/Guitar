@@ -376,6 +376,7 @@ public:
 	void setUser(User const&user, bool global);
 
 	bool reset_head();
+	void push_u_origin_master();
 };
 
 #endif // GIT_H

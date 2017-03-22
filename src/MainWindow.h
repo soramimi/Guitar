@@ -134,6 +134,8 @@ private slots:
 
 	void on_action_repo_checkout_triggered();
 
+	void on_action_push_u_origin_master_triggered();
+
 private:
 	Ui::MainWindow *ui;
 

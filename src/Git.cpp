@@ -753,6 +753,12 @@ bool Git::commit_amend_m(const QString &text)
 	return commit_(text, true);
 }
 
+void Git::push_u_origin_master()
+{
+	QString cmd = "push -u origin master";
+	git(cmd);
+}
+
 void Git::push_(bool tags)
 {
 	QString cmd = "push";
