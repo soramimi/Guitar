@@ -304,7 +304,7 @@
            <bool>true</bool>
           </property>
           <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
+           <set>QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
           </property>
           <property name="dragEnabled">
            <bool>true</bool>

@@ -277,6 +277,17 @@ bool MainWindow::event(QEvent *event)
 				removeSelectedRepositoryFromBookmark(true);
 				return true;
 			}
+//		} else if (k == Qt::Key_F2) {
+//			if (focusWidget() == ui->treeWidget_repos) {
+////				selected
+////				int i = indexOfRepository(ui->treeWidget_repos->currentItem());
+//				QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
+//				item->setFlags(item->flags() | Qt::ItemIsEditable);
+//				ui->treeWidget_repos->editItem(ui->treeWidget_repos->currentItem());
+
+////				removeSelectedRepositoryFromBookmark(true);
+//				return true;
+//			}
 		}
 	}
 
@@ -585,6 +596,7 @@ QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
 	item->setText(0, name);
 	item->setData(0, IndexRole, GroupItem);
 	item->setIcon(0, pv->folder_icon);
+	item->setFlags(item->flags() | Qt::ItemIsEditable);
 	return item;
 }
 
@@ -1629,6 +1641,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QMenu menu;
 		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
 		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
+		QAction *a_rename_group = menu.addAction(tr("&Rename group"));
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -1649,6 +1662,10 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 					delete ui->treeWidget_repos->takeTopLevelItem(i);
 				}
 				refrectRepositories();
+				return;
+			}
+			if (a == a_rename_group) {
+				ui->treeWidget_repos->editItem(treeitem);
 				return;
 			}
 		}
