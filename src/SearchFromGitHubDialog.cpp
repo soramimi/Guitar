@@ -154,7 +154,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 		};
 
 		AddItem([&](QTableWidgetItem *p){
-			p->setData(Qt::UserRole, row);
+			p->setData(Qt::UserRole, (int)row);
 			p->setText(name);
 		});
 		AddItem([&](QTableWidgetItem *p){
