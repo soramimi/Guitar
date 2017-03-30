@@ -16,7 +16,7 @@ private:
 	Private *pv;
 public:
 
-	explicit CheckoutDialog(QWidget *parent, const QStringList &local_branch_names, const QStringList &remote_branch_names);
+	explicit CheckoutDialog(QWidget *parent, const QStringList &tags, const QStringList &local_branches, const QStringList &remote_branches);
 	~CheckoutDialog();
 
 	enum class Operation {

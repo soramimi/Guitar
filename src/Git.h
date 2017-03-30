@@ -33,6 +33,11 @@ struct TreeLine {
 };
 
 struct NamedCommitItem {
+	enum class Type {
+		Branch,
+		Tag,
+	};
+	Type type = Type::Branch;
 	QString name;
 	QString id;
 };

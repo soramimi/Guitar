@@ -3182,10 +3182,10 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	NamedCommitList items;
 	if (flags & Branches) {
 		for (auto pair: pv->branch_map) {
-			QString id = pair.first;
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				NamedCommitItem item;
+				item.type = NamedCommitItem::Type::Branch;
 				item.name = b.name;
 				if (item.name.startsWith("remotes/")) {
 					item.name = item.name.mid(8);
@@ -3197,10 +3197,10 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	}
 	if (flags & Tags) {
 		for (auto pair: pv->tag_map) {
-			QString id = pair.first;
 			QList<Git::Tag> const &list = pair.second;
 			for (Git::Tag const &t : list) {
 				NamedCommitItem item;
+				item.type = NamedCommitItem::Type::Tag;
 				item.name = t.name;
 				item.id = t.id;
 				items.push_back(item);
@@ -3244,28 +3244,33 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QStringList local_branch_names;
-	QStringList remote_branch_names;
+	QStringList tags;
+	QStringList local_branches;
+	QStringList remote_branches;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches | Tags);
 		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == commit->commit_id) {
 				QString name = item.name;
-				int i = name.lastIndexOf('/');
-				if (i < 0) {
-					if (name == "HEAD") continue;
-					local_branch_names.push_back(name);
-				} else {
-					name = name.mid(i + 1);
-					if (name == "HEAD") continue;
-					remote_branch_names.push_back(name);
+				if (item.type == NamedCommitItem::Type::Tag) {
+					tags.push_back(name);
+				} else if (item.type == NamedCommitItem::Type::Branch) {
+					int i = name.lastIndexOf('/');
+					if (i < 0) {
+						if (name == "HEAD") continue;
+						local_branches.push_back(name);
+					} else {
+						name = name.mid(i + 1);
+						if (name == "HEAD") continue;
+						remote_branches.push_back(name);
+					}
 				}
 			}
 		}
 	}
 
-	CheckoutDialog dlg(this, local_branch_names, remote_branch_names);
+	CheckoutDialog dlg(this, tags, local_branches, remote_branches);
 	if (dlg.exec() == QDialog::Accepted) {
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
