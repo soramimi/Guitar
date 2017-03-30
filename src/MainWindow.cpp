@@ -2793,7 +2793,7 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 	return true;
 }
 
-void MainWindow::on_action_clone_triggered()
+void MainWindow::clone()
 { // クローン
 	QString url;
 	QString dir = defaultWorkingDir();
@@ -2880,6 +2880,11 @@ void MainWindow::on_action_clone_triggered()
 
 		return; // done
 	}
+}
+
+void MainWindow::on_action_clone_triggered()
+{
+	clone();
 }
 
 void MainWindow::on_action_about_triggered()
@@ -3291,11 +3296,18 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 
 }
 
+void MainWindow::checkout()
+{
+	checkout(selectedCommitItem());
+}
+
+
+
 void MainWindow::on_action_repo_checkout_triggered()
 {
-	Git::CommitItem const *commit = selectedCommitItem();
-	checkout(commit);
+	checkout();
 }
+
 
 void MainWindow::deleteBranch(Git::CommitItem const *commit)
 {
@@ -3354,3 +3366,5 @@ void MainWindow::on_action_push_u_origin_master_triggered()
 		g->push_u_origin_master();
 	});
 }
+
+

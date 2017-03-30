@@ -130,11 +130,12 @@ private slots:
 	void on_action_window_log_triggered(bool checked);
 
 	void onLogVisibilityChanged();
-	void on_action_repo_jump_triggered();
 
+	void on_action_repo_jump_triggered();
 	void on_action_repo_checkout_triggered();
 
 	void on_action_push_u_origin_master_triggered();
+
 
 private:
 	Ui::MainWindow *ui;
@@ -239,6 +240,8 @@ private:
 
 	void checkout(const Git::CommitItem *commit);
 	void deleteBranch(const Git::CommitItem *commit);
+	void checkout();
+	void clone();
 public:
 
 	QString selectGitCommand();

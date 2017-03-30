@@ -800,13 +800,14 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>24</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="action_clone"/>
     <addaction name="action_open_existing_working_copy"/>
    </widget>
    <widget class="QMenu" name="menu_View">
@@ -826,27 +827,11 @@
     <addaction name="separator"/>
     <addaction name="action_edit_settings"/>
    </widget>
-   <widget class="QMenu" name="menu_Branch">
-    <property name="title">
-     <string>&amp;Branch</string>
-    </property>
-    <addaction name="action_branch_checkout"/>
-    <addaction name="action_branch_merge"/>
-    <addaction name="action_branch_new"/>
-   </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
      <string>&amp;Help</string>
     </property>
     <addaction name="action_about"/>
-   </widget>
-   <widget class="QMenu" name="menuTag">
-    <property name="title">
-     <string>&amp;Tag</string>
-    </property>
-    <addaction name="action_tag"/>
-    <addaction name="action_tag_push_all"/>
-    <addaction name="action_tag_delete"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -860,6 +845,8 @@
     </property>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
+    <addaction name="action_tag"/>
+    <addaction name="action_tag_delete"/>
    </widget>
    <widget class="QMenu" name="menuExperiment">
     <property name="title">
@@ -867,13 +854,14 @@
     </property>
     <addaction name="action_test"/>
     <addaction name="action_push_u_origin_master"/>
+    <addaction name="action_branch_merge"/>
+    <addaction name="action_branch_new"/>
+    <addaction name="action_tag_push_all"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Repository"/>
-   <addaction name="menu_Branch"/>
-   <addaction name="menuTag"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
    <addaction name="menuExperiment"/>
@@ -1042,11 +1030,6 @@
     <string>&amp;New branch...</string>
    </property>
   </action>
-  <action name="action_branch_checkout">
-   <property name="text">
-    <string>Check&amp;out</string>
-   </property>
-  </action>
   <action name="action_branch_merge">
    <property name="text">
     <string>&amp;Merge</string>
@@ -1054,7 +1037,10 @@
   </action>
   <action name="action_clone">
    <property name="text">
-    <string>clone</string>
+    <string>Clone</string>
+   </property>
+   <property name="toolTip">
+    <string>Clone</string>
    </property>
   </action>
   <action name="action_about">
