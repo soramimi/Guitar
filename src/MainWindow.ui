@@ -800,7 +800,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>20</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -845,6 +845,7 @@
     </property>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
+    <addaction name="action_delete_branch"/>
     <addaction name="action_tag"/>
     <addaction name="action_tag_delete"/>
    </widget>
@@ -1094,9 +1095,19 @@
     <string>push -u origin master</string>
    </property>
   </action>
+  <action name="action_delete_branch">
+   <property name="text">
+    <string>Delete branch...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
+  <customwidget>
+   <class>ClearButton</class>
+   <extends>QToolButton</extends>
+   <header>ClearButton.h</header>
+  </customwidget>
   <customwidget>
    <class>LogTableWidget</class>
    <extends>QTableWidget</extends>
@@ -1123,11 +1134,6 @@
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ClearButton</class>
-   <extends>QToolButton</extends>
-   <header>ClearButton.h</header>
   </customwidget>
   <customwidget>
    <class>LogWidget</class>

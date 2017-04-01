@@ -3189,6 +3189,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 		for (auto pair: pv->branch_map) {
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
+				if (b.isHeadDetached()) continue;
 				NamedCommitItem item;
 				item.type = NamedCommitItem::Type::Branch;
 				item.name = b.name;
@@ -3296,19 +3297,6 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 
 }
 
-void MainWindow::checkout()
-{
-	checkout(selectedCommitItem());
-}
-
-
-
-void MainWindow::on_action_repo_checkout_triggered()
-{
-	checkout();
-}
-
-
 void MainWindow::deleteBranch(Git::CommitItem const *commit)
 {
 	if (!commit) return;
@@ -3352,6 +3340,27 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 	}
 }
 
+void MainWindow::checkout()
+{
+	checkout(selectedCommitItem());
+}
+
+void MainWindow::deleteBranch()
+{
+	deleteBranch(selectedCommitItem());
+}
+
+void MainWindow::on_action_repo_checkout_triggered()
+{
+	checkout();
+}
+
+void MainWindow::on_action_delete_branch_triggered()
+{
+	deleteBranch();
+}
+
+
 void MainWindow::on_action_test_triggered()
 {
 	Git::CommitItem const *commit = selectedCommitItem();
@@ -3366,5 +3375,7 @@ void MainWindow::on_action_push_u_origin_master_triggered()
 		g->push_u_origin_master();
 	});
 }
+
+
 
 

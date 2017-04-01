@@ -136,6 +136,10 @@ public:
 			HeadDetached = 0x0002,
 		};
 		int flags = 0;
+		bool isHeadDetached() const
+		{
+			return flags & HeadDetached;
+		}
 	};
 
 	struct Tag {

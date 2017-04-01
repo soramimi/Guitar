@@ -133,8 +133,10 @@ private slots:
 
 	void on_action_repo_jump_triggered();
 	void on_action_repo_checkout_triggered();
+	void on_action_delete_branch_triggered();
 
 	void on_action_push_u_origin_master_triggered();
+
 
 
 private:
@@ -242,6 +244,7 @@ private:
 	void deleteBranch(const Git::CommitItem *commit);
 	void checkout();
 	void clone();
+	void deleteBranch();
 public:
 
 	QString selectGitCommand();
