@@ -118,8 +118,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>254</x>
-     <y>280</y>
+     <x>308</x>
+     <y>452</y>
     </hint>
     <hint type="destinationlabel">
      <x>254</x>
@@ -134,12 +134,28 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>343</x>
-     <y>278</y>
+     <x>389</x>
+     <y>452</y>
     </hint>
     <hint type="destinationlabel">
      <x>338</x>
      <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tableWidget</sender>
+   <signal>itemDoubleClicked(QTableWidgetItem*)</signal>
+   <receiver>JumpDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>303</x>
+     <y>101</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>493</x>
+     <y>134</y>
     </hint>
    </hints>
   </connection>
