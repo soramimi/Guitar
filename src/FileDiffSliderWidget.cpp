@@ -19,48 +19,48 @@ struct FileDiffSliderWidget::Private {
 
 FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 	: QWidget(parent)
+	, m(new Private)
 {
-	pv = new Private();
 }
 
 FileDiffSliderWidget::~FileDiffSliderWidget()
 {
-	delete pv;
+	delete m;
 }
 
 void FileDiffSliderWidget::bind(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata)
 {
-	pv->mainwindow = mw;
-	pv->file_diff_widget = fdw;
-	pv->diff_data = diffdata;
-	pv->draw_data = drawdata;
+	m->mainwindow = mw;
+	m->file_diff_widget = fdw;
+	m->diff_data = diffdata;
+	m->draw_data = drawdata;
 }
 
 void FileDiffSliderWidget::updatePixmap()
 {
-	Q_ASSERT(pv->file_diff_widget);
-	pv->left_pixmap = pv->file_diff_widget->makeDiffPixmap(ViewType::Left, 8, height(), pv->diff_data, pv->draw_data);
-	pv->right_pixmap = pv->file_diff_widget->makeDiffPixmap(ViewType::Right, 8, height(), pv->diff_data, pv->draw_data);
+	Q_ASSERT(m->file_diff_widget);
+	m->left_pixmap = m->file_diff_widget->makeDiffPixmap(ViewType::Left, 8, height(), m->diff_data, m->draw_data);
+	m->right_pixmap = m->file_diff_widget->makeDiffPixmap(ViewType::Right, 8, height(), m->diff_data, m->draw_data);
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 {
-	if (!pv->visible) return;
-	if (pv->scroll_total < 1) return;
+	if (!m->visible) return;
+	if (m->scroll_total < 1) return;
 
-	if (pv->left_pixmap.isNull() || pv->right_pixmap.isNull()) {
+	if (m->left_pixmap.isNull() || m->right_pixmap.isNull()) {
 		updatePixmap();
 	}
 
 	int w;
-	w = pv->left_pixmap.width();
+	w = m->left_pixmap.width();
 	QPainter pr(this);
 	pr.fillRect(w, 0, 4, height(), QColor(240, 240, 240));
-	pr.drawPixmap(0, 0, pv->left_pixmap);
-	pr.drawPixmap(w + 4, 0, pv->right_pixmap);
+	pr.drawPixmap(0, 0, m->left_pixmap);
+	pr.drawPixmap(w + 4, 0, m->right_pixmap);
 
-	int y = pv->scroll_value * height() / pv->scroll_total;
-	int h = pv->scroll_visible_size * height() / pv->scroll_total;
+	int y = m->scroll_value * height() / m->scroll_total;
+	int h = m->scroll_visible_size * height() / m->scroll_total;
 	if (h < 2) h = 2;
 	pr.fillRect(w + 1, y, 2, h, Qt::black);
 
@@ -72,13 +72,13 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 
 void FileDiffSliderWidget::resizeEvent(QResizeEvent *)
 {
-	clear(pv->visible);
+	clear(m->visible);
 }
 
 void FileDiffSliderWidget::scroll(int pos)
 {
 	int v = pos;
-	v = v * pv->scroll_total / height() - pv->scroll_visible_size / 2;
+	v = v * m->scroll_total / height() - m->scroll_visible_size / 2;
 	if (v < 0) v = 0;
 
 	emit valueChanged(v);
@@ -86,14 +86,14 @@ void FileDiffSliderWidget::scroll(int pos)
 
 void FileDiffSliderWidget::mousePressEvent(QMouseEvent *e)
 {
-	if (pv->visible && e->button() == Qt::LeftButton) {
+	if (m->visible && e->button() == Qt::LeftButton) {
 		scroll(e->pos().y());
 	}
 }
 
 void FileDiffSliderWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	if (pv->visible && (e->buttons() & Qt::LeftButton)) {
+	if (m->visible && (e->buttons() & Qt::LeftButton)) {
 		scroll(e->pos().y());
 	}
 }
@@ -115,17 +115,17 @@ void FileDiffSliderWidget::wheelEvent(QWheelEvent *e)
 
 void FileDiffSliderWidget::clear(bool v)
 {
-	pv->left_pixmap = QPixmap();
-	pv->right_pixmap = QPixmap();
-	pv->visible = v;
+	m->left_pixmap = QPixmap();
+	m->right_pixmap = QPixmap();
+	m->visible = v;
 	update();
 }
 
 void FileDiffSliderWidget::setScrollPos(int total, int value, int size)
 {
-	pv->scroll_total = total;
-	pv->scroll_value = value;
-	pv->scroll_visible_size = size;
-	pv->visible = (pv->scroll_total > 0) && (pv->scroll_visible_size > 0);
+	m->scroll_total = total;
+	m->scroll_value = value;
+	m->scroll_visible_size = size;
+	m->visible = (m->scroll_total > 0) && (m->scroll_visible_size > 0);
 	update();
 }

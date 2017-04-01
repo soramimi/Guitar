@@ -6,25 +6,25 @@ struct DeleteBranchDialog::Private {
 	QStringList current_local_branch_names;
 };
 
-DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, const QStringList &all_local_branch_names, QStringList const &current_local_branch_names) :
-	QDialog(parent),
-	ui(new Ui::DeleteBranchDialog)
+DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, const QStringList &all_local_branch_names, QStringList const &current_local_branch_names)
+	: QDialog(parent)
+	, ui(new Ui::DeleteBranchDialog)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
-	pv->all_local_branch_names = all_local_branch_names;
-	pv->current_local_branch_names = current_local_branch_names;
+	m->all_local_branch_names = all_local_branch_names;
+	m->current_local_branch_names = current_local_branch_names;
 
 	updateList();
 }
 
 DeleteBranchDialog::~DeleteBranchDialog()
 {
-	delete pv;
+	delete m;
 	delete ui;
 }
 
@@ -34,7 +34,7 @@ void DeleteBranchDialog::updateList()
 
 	ui->listWidget->clear();
 
-	for (QString const &name : all ? pv->all_local_branch_names : pv->current_local_branch_names) {
+	for (QString const &name : all ? m->all_local_branch_names : m->current_local_branch_names) {
 		QListWidgetItem *item = new QListWidgetItem();
 		item->setText(name);
 		item->setCheckState(Qt::Unchecked);

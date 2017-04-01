@@ -13,7 +13,7 @@ public:
 	virtual ~BasicRepositoryDialog();
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 protected:
 	MainWindow *mainwindow();
 

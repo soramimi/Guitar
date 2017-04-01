@@ -33,6 +33,7 @@ struct CommitExploreWindow::Private {
 CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, const Git::CommitItem *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -40,11 +41,10 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
-	pv->mainwindow = parent;
+	m->mainwindow = parent;
 
-	pv->objcache = objcache;
-	pv->commit = commit;
+	m->objcache = objcache;
+	m->commit = commit;
 
 	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent));
 	ui->widget_fileview->setMaximizeButtonEnabled(false);
@@ -62,23 +62,23 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 
 	{
 		GitCommit c;
-		c.parseCommit(objcache, pv->commit->commit_id);
-		pv->root_tree_id = c.tree_id;
+		c.parseCommit(objcache, m->commit->commit_id);
+		m->root_tree_id = c.tree_id;
 	}
 
 	{
 		GitCommitTree tree(objcache);
-		tree.parseTree(pv->root_tree_id);
+		tree.parseTree(m->root_tree_id);
 	}
 
 	{
 		QTreeWidgetItem *rootitem = newQTreeWidgetItem();
 		rootitem->setText(0, tr("Commit"));
 		rootitem->setData(0, ItemTypeRole, (int)GitTreeItem::TREE);
-		rootitem->setData(0, ObjectIdRole, pv->root_tree_id);
+		rootitem->setData(0, ObjectIdRole, m->root_tree_id);
 		ui->treeWidget->addTopLevelItem(rootitem);
 
-		loadTree(pv->root_tree_id);
+		loadTree(m->root_tree_id);
 
 		rootitem->setExpanded(true);
 	}
@@ -86,13 +86,13 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 
 CommitExploreWindow::~CommitExploreWindow()
 {
-	delete pv;
+	delete m;
 	delete ui;
 }
 
 void CommitExploreWindow::clearContent()
 {
-	pv->content = ObjectContent();
+	m->content = ObjectContent();
 	ui->widget_fileview->clearDiffView();
 }
 
@@ -120,7 +120,7 @@ void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 		QString tree_id = item->data(0, ObjectIdRole).toString();
 		loadTree(tree_id);
 
-		for (GitTreeItem const &ti : pv->tree_item_list) {
+		for (GitTreeItem const &ti : m->tree_item_list) {
 			if (ti.type == GitTreeItem::TREE) {
 				QTreeWidgetItem *child = newQTreeWidgetItem();
 				child->setText(0, ti.name);
@@ -142,12 +142,12 @@ void CommitExploreWindow::on_treeWidget_itemExpanded(QTreeWidgetItem *item)
 
 void CommitExploreWindow::loadTree(QString const &tree_id)
 {
-	GitCommitTree tree(pv->objcache);
+	GitCommitTree tree(m->objcache);
 	tree.parseTree(tree_id);
 
-	pv->tree_item_list = *tree.treelist();
+	m->tree_item_list = *tree.treelist();
 
-	std::sort(pv->tree_item_list.begin(), pv->tree_item_list.end(), [](GitTreeItem const &left, GitTreeItem const &right){
+	std::sort(m->tree_item_list.begin(), m->tree_item_list.end(), [](GitTreeItem const &left, GitTreeItem const &right){
 		int l = (left.type == GitTreeItem::TREE)  ? 0 : 1;
 		int r = (right.type == GitTreeItem::TREE) ? 0 : 1;
 		if (l != r) return l < r;
@@ -165,7 +165,7 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 
 	loadTree(tree_id);
 
-	for (GitTreeItem const &ti : pv->tree_item_list) {
+	for (GitTreeItem const &ti : m->tree_item_list) {
 		char const *icon = (ti.type == GitTreeItem::TREE) ? ":/image/folder.png" : ":/image/file.png";
 		QListWidgetItem *p = new QListWidgetItem();
 		p->setIcon(QIcon(icon));
@@ -216,10 +216,10 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::BLOB) {
 		QString id = current->data(ObjectIdRole).toString();
-		pv->content_object = pv->objcache->catFile(id);
+		m->content_object = m->objcache->catFile(id);
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-		ui->widget_fileview->setSingleFile(pv->content_object.content, id, path);
+		ui->widget_fileview->setSingleFile(m->content_object.content, id, path);
 	} else {
 		clearContent();
 	}

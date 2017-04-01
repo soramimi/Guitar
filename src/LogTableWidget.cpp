@@ -19,7 +19,7 @@ private:
 	{
 		LogTableWidget *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
-		MainWindow *mw = w->pv->mainwindow;
+		MainWindow *mw = w->m->mainwindow;
 		Q_ASSERT(mw);
 		return mw;
 	}
@@ -110,21 +110,21 @@ public:
 
 LogTableWidget::LogTableWidget(QWidget *parent)
 	: QTableWidget(parent)
+	, m(new Private)
 {
-	pv = new Private;
 	setItemDelegate(new LogTableWidgetDelegate(this));
 }
 
 LogTableWidget::~LogTableWidget()
 {
-	delete pv;
+	delete m;
 }
 
 bool LogTableWidget::event(QEvent *e)
 {
 	if (e->type() == QEvent::Polish) {
-		pv->mainwindow = qobject_cast<MainWindow *>(window());
-		Q_ASSERT(pv->mainwindow);
+		m->mainwindow = qobject_cast<MainWindow *>(window());
+		Q_ASSERT(m->mainwindow);
 	}
 	return QTableWidget::event(e);
 }
@@ -173,7 +173,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 
 	QTableWidget::paintEvent(e);
 
-	MainWindow *mw = pv->mainwindow;
+	MainWindow *mw = m->mainwindow;
 
 	QPainter pr(viewport());
 	pr.setRenderHint(QPainter::Antialiasing);

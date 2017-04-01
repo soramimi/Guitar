@@ -10,20 +10,19 @@ struct JumpDialog::Private {
 	NamedCommitList items;
 };
 
-JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items) :
-	QDialog(parent),
-	ui(new Ui::JumpDialog)
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
+	: QDialog(parent)
+	, ui(new Ui::JumpDialog)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
+	ui->tableWidget->setItemDelegate(&m->delegate);
 
-	ui->tableWidget->setItemDelegate(&pv->delegate);
-
-	pv->items = items;
+	m->items = items;
 
 	QStringList header = {
 		tr("Name"),
@@ -42,13 +41,13 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items) :
 
 JumpDialog::~JumpDialog()
 {
-	delete pv;
+	delete m;
 	delete ui;
 }
 
 QString JumpDialog::selectedName() const
 {
-	return pv->selected_name;
+	return m->selected_name;
 }
 
 void JumpDialog::sort(NamedCommitList *items)
@@ -65,7 +64,7 @@ void JumpDialog::updateTable_(NamedCommitList const &list)
 	for (int i = 0; i < list.size(); i++) {
 		QTableWidgetItem *p = new QTableWidgetItem();
 		QString name = list[i].name;
-		if (!pv->filter_text.isEmpty() && name.indexOf(pv->filter_text) < 0) {
+		if (!m->filter_text.isEmpty() && name.indexOf(m->filter_text) < 0) {
 			continue;
 		}
 		p->setText(name);
@@ -79,12 +78,12 @@ void JumpDialog::updateTable_(NamedCommitList const &list)
 
 void JumpDialog::updateTable()
 {
-	if (pv->filter_text.isEmpty()) {
-		updateTable_(pv->items);
+	if (m->filter_text.isEmpty()) {
+		updateTable_(m->items);
 	} else {
 		NamedCommitList list;
-		for (NamedCommitItem const &item: pv->items) {
-			if (item.name.indexOf(pv->filter_text) < 0) {
+		for (NamedCommitItem const &item: m->items) {
+			if (item.name.indexOf(m->filter_text) < 0) {
 				continue;
 			}
 			list.push_back(item);
@@ -95,7 +94,7 @@ void JumpDialog::updateTable()
 
 void JumpDialog::on_lineEdit_filter_textChanged(const QString &text)
 {
-	pv->filter_text = text;
+	m->filter_text = text;
 	updateTable();
 }
 
@@ -109,6 +108,6 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 {
 	int row = ui->tableWidget->currentRow();
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
-	pv->selected_name = p ? p->text() : QString();
+	m->selected_name = p ? p->text() : QString();
 }
 

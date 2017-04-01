@@ -105,7 +105,7 @@ private:
 	Ui::FileDiffWidget *ui;
 
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	struct InitParam_ {
 		ViewStyle view_style = ViewStyle::None;

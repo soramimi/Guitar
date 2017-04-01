@@ -13,7 +13,7 @@ class CheckoutDialog : public QDialog
 	Q_OBJECT
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 public:
 
 	explicit CheckoutDialog(QWidget *parent, const QStringList &tags, const QStringList &local_branches, const QStringList &remote_branches);

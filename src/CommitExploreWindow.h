@@ -19,7 +19,7 @@ private:
 	Ui::CommitExploreWindow *ui;
 
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	void loadTree(const QString &tree_id);
 	void doTreeItemChanged_(QTreeWidgetItem *current);

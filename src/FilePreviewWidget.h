@@ -15,7 +15,7 @@ class FilePreviewWidget : public QWidget
 public:
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	FileDiffWidget::DrawData *drawdata();
 	const FileDiffWidget::DrawData *drawdata() const;

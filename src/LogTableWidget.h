@@ -12,7 +12,7 @@ class LogTableWidget : public QTableWidget
 	friend class LogTableWidgetDelegate;
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 public:
 	explicit LogTableWidget(QWidget *parent = 0);
 	~LogTableWidget();

@@ -12,7 +12,7 @@ class DeleteBranchDialog : public QDialog
 	Q_OBJECT
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 public:
 	explicit DeleteBranchDialog(QWidget *parent, const QStringList &all_local_branch_names, const QStringList &current_local_branch_names);
 	~DeleteBranchDialog();

@@ -37,19 +37,19 @@ struct FilePreviewWidget::Private {
 
 FileDiffWidget::DrawData *FilePreviewWidget::drawdata()
 {
-	Q_ASSERT(pv->draw_data);
-	return pv->draw_data;
+	Q_ASSERT(m->draw_data);
+	return m->draw_data;
 }
 
 FileDiffWidget::DrawData const *FilePreviewWidget::drawdata() const
 {
-	Q_ASSERT(pv->draw_data);
-	return pv->draw_data;
+	Q_ASSERT(m->draw_data);
+	return m->draw_data;
 }
 
 ObjectContentPtr FilePreviewWidget::getContent() const
 {
-	return pv->content;
+	return m->content;
 }
 
 
@@ -62,9 +62,8 @@ QList<TextDiffLine> const *FilePreviewWidget::getLines() const
 
 FilePreviewWidget::FilePreviewWidget(QWidget *parent)
 	: QWidget(parent)
+	, m(new Private)
 {
-	pv = new Private();
-
 #if defined(Q_OS_WIN32)
 	setFont(QFont("MS Gothic"));
 #elif defined(Q_OS_LINUX)
@@ -76,41 +75,41 @@ FilePreviewWidget::FilePreviewWidget(QWidget *parent)
 
 FilePreviewWidget::~FilePreviewWidget()
 {
-	delete pv;
+	delete m;
 }
 
-void FilePreviewWidget::bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata)
+void FilePreviewWidget::bind(MainWindow *mainwindow, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata)
 {
-	pv->mainwindow = m;
-	pv->content = content;
-	pv->draw_data = drawdata;
+	m->mainwindow = mainwindow;
+	m->content = content;
+	m->draw_data = drawdata;
 
 	updateDrawData();
 }
 
 void FilePreviewWidget::setLeftBorderVisible(bool f)
 {
-	pv->draw_left_border = f;
+	m->draw_left_border = f;
 }
 
 void FilePreviewWidget::setFileType(QString const &mimetype)
 {
 	setBinaryMode(false);
-	pv->mime_type = mimetype;
-	if (misc::isImageFile(pv->mime_type)) {
-		pv->file_type = FilePreviewType::Image;
+	m->mime_type = mimetype;
+	if (misc::isImageFile(m->mime_type)) {
+		m->file_type = FilePreviewType::Image;
 		setMouseTracking(true);
 	} else {
-		pv->file_type = FilePreviewType::Text;
+		m->file_type = FilePreviewType::Text;
 		setMouseTracking(false);
 	}
 }
 
 void FilePreviewWidget::clear()
 {
-	pv->file_type = FilePreviewType::None;
-	pv->mime_type = QString();
-	pv->pixmap = QPixmap();
+	m->file_type = FilePreviewType::None;
+	m->mime_type = QString();
+	m->pixmap = QPixmap();
 	setMouseTracking(false);
 	update();
 }
@@ -120,7 +119,7 @@ void FilePreviewWidget::updateDrawData(QPainter *painter, int *descent)
 	QFontMetrics fm = painter->fontMetrics();
 	QSize sz = fm.size(0, "W");
 	drawdata()->char_width = sz.width();
-	drawdata()->line_height = sz.height() + pv->top_margin + pv->bottom_margin;
+	drawdata()->line_height = sz.height() + m->top_margin + m->bottom_margin;
 	if (descent) *descent = fm.descent();
 }
 
@@ -204,7 +203,7 @@ void FilePreviewWidget::paintText()
 				break;
 			}
 
-			int line_y = y + drawdata()->line_height - descent - pv->bottom_margin;
+			int line_y = y + drawdata()->line_height - descent - m->bottom_margin;
 
 			int text_clip_x = 0;
 
@@ -303,7 +302,7 @@ void FilePreviewWidget::paintBinary()
 				j++;
 			}
 			tmp[j] = 0;
-			int line_y = y + drawdata()->line_height - descent - pv->bottom_margin;
+			int line_y = y + drawdata()->line_height - descent - m->bottom_margin;
 			QColor bgcolor = drawdata()->bgcolor_text;
 			pr.fillRect(0, y, width(), drawdata()->line_height, QBrush(bgcolor));
 			pr.setPen(QColor(0, 0, 0));
@@ -316,15 +315,15 @@ void FilePreviewWidget::paintBinary()
 
 QSizeF FilePreviewWidget::imageScrollRange() const
 {
-	int w = pv->pixmap.width() * pv->image_scale;
-	int h = pv->pixmap.height() * pv->image_scale;
+	int w = m->pixmap.width() * m->image_scale;
+	int h = m->pixmap.height() * m->image_scale;
 	return QSize(w, h);
 }
 
 QBrush FilePreviewWidget::getTransparentBackgroundBrush()
 {
-	if (pv->mainwindow) {
-		return pv->mainwindow->getTransparentPixmap();
+	if (m->mainwindow) {
+		return m->mainwindow->getTransparentPixmap();
 	} else {
 		return Qt::NoBrush;
 	}
@@ -333,23 +332,23 @@ QBrush FilePreviewWidget::getTransparentBackgroundBrush()
 void FilePreviewWidget::paintImage()
 {
 	QPainter pr(this);
-	int w = pv->pixmap.width();
-	int h = pv->pixmap.height();
+	int w = m->pixmap.width();
+	int h = m->pixmap.height();
 	if (w > 0 && h > 0) {
 		pr.save();
-		if (!pv->draw_left_border) {
+		if (!m->draw_left_border) {
 			pr.setClipRect(1, 0, width() - 1, height());
 		}
 		double cx = width() / 2.0;
 		double cy = height() / 2.0;
-		double x = cx - pv->image_scroll_x;
-		double y = cy - pv->image_scroll_y;
+		double x = cx - m->image_scroll_x;
+		double y = cy - m->image_scroll_y;
 		QSizeF sz = imageScrollRange();
 		if (sz.width() > 0 && sz.height() > 0) {
 			QBrush br = getTransparentBackgroundBrush();
 			pr.setBrushOrigin(x, y);
 			pr.fillRect(x, y, sz.width(), sz.height(), br);
-			pr.drawPixmap(x, y, sz.width(), sz.height(), pv->pixmap, 0, 0, w, h);
+			pr.drawPixmap(x, y, sz.width(), sz.height(), m->pixmap, 0, 0, w, h);
 		}
 		misc::drawFrame(&pr, x - 1, y - 1, sz.width() + 2, sz.height() + 2, Qt::black);
 		pr.restore();
@@ -361,7 +360,7 @@ void FilePreviewWidget::paintEvent(QPaintEvent *)
 	if (isBinaryMode()) {
 		paintBinary();
 	} else {
-		switch (pv->file_type) {
+		switch (m->file_type) {
 		case FilePreviewType::Image:
 			paintImage();
 			break;
@@ -371,7 +370,7 @@ void FilePreviewWidget::paintEvent(QPaintEvent *)
 		}
 	}
 	QPainter pr(this);
-	if (pv->draw_left_border) {
+	if (m->draw_left_border) {
 		pr.fillRect(0, 0, 1, height(), QColor(160, 160, 160));
 	}
 	if (drawdata()->forcus == this) {
@@ -397,79 +396,79 @@ void FilePreviewWidget::resizeEvent(QResizeEvent *)
 
 void FilePreviewWidget::scrollImage(double x, double y)
 {
-	pv->image_scroll_x = x;
-	pv->image_scroll_y = y;
+	m->image_scroll_x = x;
+	m->image_scroll_y = y;
 	QSizeF sz = imageScrollRange();
-	if (pv->image_scroll_x < 0) pv->image_scroll_x = 0;
-	if (pv->image_scroll_y < 0) pv->image_scroll_y = 0;
-	if (pv->image_scroll_x > sz.width()) pv->image_scroll_x = sz.width();
-	if (pv->image_scroll_y > sz.height()) pv->image_scroll_y = sz.height();
+	if (m->image_scroll_x < 0) m->image_scroll_x = 0;
+	if (m->image_scroll_y < 0) m->image_scroll_y = 0;
+	if (m->image_scroll_x > sz.width()) m->image_scroll_x = sz.width();
+	if (m->image_scroll_y > sz.height()) m->image_scroll_y = sz.height();
 	update();
 }
 
 void FilePreviewWidget::setBinaryMode(bool f)
 {
-	pv->binary_mode = f;
+	m->binary_mode = f;
 }
 
 void FilePreviewWidget::setTerminalMode(bool f)
 {
-	pv->terminal_mode = f;
+	m->terminal_mode = f;
 }
 
 bool FilePreviewWidget::isBinaryMode() const
 {
-	return pv->binary_mode;
+	return m->binary_mode;
 }
 
 bool FilePreviewWidget::isTerminalMode() const
 {
-	return pv->terminal_mode;
+	return m->terminal_mode;
 }
 
 void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
 {
 	setFileType(mimetype);
-	if (pv->file_type == FilePreviewType::Image) {
-		pv->pixmap = pixmap;
-		pv->image_scale = 1;
-		double x = pv->pixmap.width() / 2.0;
-		double y = pv->pixmap.height() / 2.0;
+	if (m->file_type == FilePreviewType::Image) {
+		m->pixmap = pixmap;
+		m->image_scale = 1;
+		double x = m->pixmap.width() / 2.0;
+		double y = m->pixmap.height() / 2.0;
 		scrollImage(x, y);
 	}
 }
 
 FilePreviewType FilePreviewWidget::filetype() const
 {
-	return pv->file_type;
+	return m->file_type;
 }
 
 void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
 {
 	if (e->button() == Qt::LeftButton) {
 		QPoint pos = mapFromGlobal(QCursor::pos());
-		pv->mouse_press_pos = pos;
-		pv->scroll_origin_x = pv->image_scroll_x;
-		pv->scroll_origin_y = pv->image_scroll_y;
+		m->mouse_press_pos = pos;
+		m->scroll_origin_x = m->image_scroll_x;
+		m->scroll_origin_y = m->image_scroll_y;
 	}
 }
 
 void FilePreviewWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	if (pv->file_type == FilePreviewType::Image) {
-		if (!pv->pixmap.isNull()) {
+	if (m->file_type == FilePreviewType::Image) {
+		if (!m->pixmap.isNull()) {
 			QPoint pos = mapFromGlobal(QCursor::pos());
 			if ((e->buttons() & Qt::LeftButton) && focusWidget() == this) {
-				int delta_x = pos.x() - pv->mouse_press_pos.x();
-				int delta_y = pos.y() - pv->mouse_press_pos.y();
-				scrollImage(pv->scroll_origin_x - delta_x, pv->scroll_origin_y - delta_y);
+				int delta_x = pos.x() - m->mouse_press_pos.x();
+				int delta_y = pos.y() - m->mouse_press_pos.y();
+				scrollImage(m->scroll_origin_x - delta_x, m->scroll_origin_y - delta_y);
 			}
 			double cx = width() / 2.0;
 			double cy = height() / 2.0;
-			double x = (pos.x() + 0.5 - cx + pv->image_scroll_x) / pv->image_scale;
-			double y = (pos.y() + 0.5 - cy + pv->image_scroll_y) / pv->image_scale;
-			pv->interest_pos = QPointF(x, y);
-			pv->wheel_delta = 0;
+			double x = (pos.x() + 0.5 - cx + m->image_scroll_x) / m->image_scale;
+			double y = (pos.y() + 0.5 - cy + m->image_scroll_y) / m->image_scale;
+			m->interest_pos = QPointF(x, y);
+			m->wheel_delta = 0;
 		}
 	}
 }
@@ -478,12 +477,12 @@ void FilePreviewWidget::setImageScale(double scale)
 {
 	if (scale < 1 / 32.0) scale = 1 / 32.0;
 	if (scale > 32) scale = 32;
-	pv->image_scale = scale;
+	m->image_scale = scale;
 }
 
 void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 {
-	if (pv->file_type == FilePreviewType::Text) {
+	if (m->file_type == FilePreviewType::Text) {
 		int delta = e->delta();
 		if (delta < 0) {
 			delta = -delta / 40;
@@ -495,26 +494,26 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 			emit scrollByWheel(-delta);
 
 		}
-	} else if (pv->file_type == FilePreviewType::Image) {
-		if (!pv->pixmap.isNull()) {
+	} else if (m->file_type == FilePreviewType::Image) {
+		if (!m->pixmap.isNull()) {
 			double scale = 1;
 			const double mul = 1.189207115; // sqrt(sqrt(2))
-			pv->wheel_delta += e->delta();
-			while (pv->wheel_delta >= 120) {
-				pv->wheel_delta -= 120;
+			m->wheel_delta += e->delta();
+			while (m->wheel_delta >= 120) {
+				m->wheel_delta -= 120;
 				scale *= mul;
 			}
-			while (pv->wheel_delta <= -120) {
-				pv->wheel_delta += 120;
+			while (m->wheel_delta <= -120) {
+				m->wheel_delta += 120;
 				scale /= mul;
 			}
-			setImageScale(pv->image_scale * scale);
+			setImageScale(m->image_scale * scale);
 
 			double cx = width() / 2.0;
 			double cy = height() / 2.0;
 			QPoint pos = mapFromGlobal(QCursor::pos());
-			double dx = pv->interest_pos.x() * pv->image_scale + cx - (pos.x() + 0.5);
-			double dy = pv->interest_pos.y() * pv->image_scale + cy - (pos.y() + 0.5);
+			double dx = m->interest_pos.x() * m->image_scale + cx - (pos.x() + 0.5);
+			double dy = m->interest_pos.y() * m->image_scale + cy - (pos.y() + 0.5);
 			scrollImage(dx, dy);
 
 			update();
@@ -524,7 +523,7 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 
 void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
-	if (!pv->mainwindow) return; // TODO:
+	if (!m->mainwindow) return; // TODO:
 
 	ObjectContentPtr content = getContent();
 	if (!content) return;
@@ -554,10 +553,10 @@ void FilePreviewWidget::contextMenuEvent(QContextMenuEvent *e)
 		QAction *a = menu.exec(pos);
 		if (a) {
 			if (a == a_save_as) {
-				QString path = pv->mainwindow->currentWorkingCopyDir() / content->path;
+				QString path = m->mainwindow->currentWorkingCopyDir() / content->path;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					pv->mainwindow->saveAs(id, dstpath);
+					m->mainwindow->saveAs(id, dstpath);
 				}
 				goto DONE;
 			}

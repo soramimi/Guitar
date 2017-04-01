@@ -14,16 +14,16 @@ struct CheckoutDialog::Private {
 CheckoutDialog::CheckoutDialog(QWidget *parent, const QStringList &tags, const QStringList &local_branches, const QStringList &remote_branches)
 	: QDialog(parent)
 	, ui(new Ui::CheckoutDialog)
-	, pv(new Private)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	pv->tags = tags;
-	pv->local_branch_names = local_branches;
-	pv->remote_branch_names = remote_branches;
+	m->tags = tags;
+	m->local_branch_names = local_branches;
+	m->remote_branch_names = remote_branches;
 
 	ui->radioButton_head_detached->setText("HEAD detached");
 	ui->radioButton_existing_local_branch->setText("Existing local branch");
@@ -41,7 +41,7 @@ CheckoutDialog::CheckoutDialog(QWidget *parent, const QStringList &tags, const Q
 
 CheckoutDialog::~CheckoutDialog()
 {
-	delete pv;
+	delete m;
 	delete ui;
 }
 
@@ -90,13 +90,13 @@ void CheckoutDialog::updateUI()
 	} else if (ui->radioButton_existing_local_branch->isChecked()) {
 		ui->comboBox_branch_name->setEnabled(true);
 		ui->comboBox_branch_name->setEditable(false);
-		makeComboBoxOptions(pv->local_branch_names);
+		makeComboBoxOptions(m->local_branch_names);
 	} else if (ui->radioButton_create_local_branch->isChecked()) {
 		ui->comboBox_branch_name->setEnabled(true);
 		ui->comboBox_branch_name->setEditable(true);
 		QStringList names;
-		names.append(pv->tags);
-		names.append(pv->remote_branch_names);
+		names.append(m->tags);
+		names.append(m->remote_branch_names);
 		makeComboBoxOptions(names);
 		QLineEdit *e = ui->comboBox_branch_name->lineEdit();
 		e->setFocus();

@@ -112,7 +112,7 @@ public:
 	};
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 	void clear_error();
 	static int get_port(URL const *url, char const *scheme, char const *protocol);
 	void set_default_header(URL const &url, Post const *post, const RequestOption &opt);
@@ -157,12 +157,12 @@ class WebContext {
 	friend class WebClient;
 private:
 	struct Private;
-	Private *pv;
-	WebContext(WebContext const &r);
-	void operator = (WebContext const &r);
+	Private *m;
 public:
 	WebContext();
 	~WebContext();
+	WebContext(WebContext const &r) = delete;
+	void operator = (WebContext const &r) = delete;
 
 	void set_keep_alive_enabled(bool f);
 

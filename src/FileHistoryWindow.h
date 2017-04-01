@@ -17,7 +17,7 @@ class FileHistoryWindow : public QDialog
 	Q_OBJECT
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	FileDiffWidget::DiffData *diffdata();
 	FileDiffWidget::DiffData const *diffdata() const;

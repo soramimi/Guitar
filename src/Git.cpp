@@ -24,31 +24,31 @@ struct Git::Private {
 };
 
 Git::Git(const Context &cx, QString const &repodir)
+	: m(new Private)
 {
-	pv = new Private();
 	setGitCommand(cx.git_command);
 	setWorkingRepositoryDir(repodir);
 }
 
 Git::~Git()
 {
-	delete pv;
+	delete m;
 }
 
 void Git::setLogCallback(callback_t func, void *cookie)
 {
-	pv->callback_func = func;
-	pv->callback_cookie = cookie;
+	m->callback_func = func;
+	m->callback_cookie = cookie;
 }
 
 void Git::setWorkingRepositoryDir(QString const &repo)
 {
-	pv->working_repo_dir = repo;
+	m->working_repo_dir = repo;
 }
 
 QString const &Git::workingRepositoryDir() const
 {
-	return pv->working_repo_dir;
+	return m->working_repo_dir;
 }
 
 bool Git::isValidID(const QString &id)
@@ -77,25 +77,25 @@ bool Git::isValidID(const QString &id)
 
 QByteArray Git::result() const
 {
-	return pv->result;
+	return m->result;
 }
 
 void Git::setGitCommand(QString const &path)
 {
-	pv->git_command = path;
+	m->git_command = path;
 }
 
 QString Git::gitCommand() const
 {
-	Q_ASSERT(pv);
-	return pv->git_command;
+	Q_ASSERT(m);
+	return m->git_command;
 }
 
 void Git::clearResult()
 {
-	pv->result.clear();
-	pv->process_exit_code = 0;
-	pv->error_message = QString();
+	m->result.clear();
+	m->process_exit_code = 0;
+	m->error_message = QString();
 }
 
 QString Git::resultText() const
@@ -105,7 +105,7 @@ QString Git::resultText() const
 
 int Git::getProcessExitCode() const
 {
-	return pv->process_exit_code;
+	return m->process_exit_code;
 }
 
 bool Git::chdirexec(std::function<bool()> fn)
@@ -140,11 +140,11 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		QString cmd = QString("\"%1\" ").arg(gitCommand());
 		cmd += arg;
 
-		if (pv->callback_func) {
+		if (m->callback_func) {
 			QString prompt = "> ";
 			QByteArray ba = (prompt + arg).toUtf8();
 			ba.push_back('\n');
-			pv->callback_func(pv->callback_cookie, ba.data(), (int)ba.size());
+			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 //		qDebug() << cmd;
 #if 1
@@ -160,14 +160,14 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 					char tmp[1024];
 					int len = (int)proc.read(tmp, sizeof(tmp));
 					if (len < 1) break;
-					pv->result.append(tmp, len);
-					if (pv->callback_func) {
-						bool ok = pv->callback_func(pv->callback_cookie, tmp, len);
+					m->result.append(tmp, len);
+					if (m->callback_func) {
+						bool ok = m->callback_func(m->callback_cookie, tmp, len);
 						if (!ok) {
 							proc.terminate();
-							pv->error_message = "Interrupted by user";
-							qDebug() << pv->error_message;
-							pv->process_exit_code = -1;
+							m->error_message = "Interrupted by user";
+							qDebug() << m->error_message;
+							m->process_exit_code = -1;
 							return false;
 						}
 					}
@@ -176,19 +176,19 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 				break;
 			}
 		}
-		pv->process_exit_code = proc.exitCode();
+		m->process_exit_code = proc.exitCode();
 #else
-		pv->process_exit_code = misc::runCommand(cmd, &pv->result);
+		m->process_exit_code = misc::runCommand(cmd, &m->result);
 #endif
 
-		if (pv->process_exit_code != 0) {
-			pv->error_message = QString::fromUtf8(proc.readAllStandardError());
+		if (m->process_exit_code != 0) {
+			m->error_message = QString::fromUtf8(proc.readAllStandardError());
 #if 1//DEBUGLOG
 			qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
-			qDebug() << pv->error_message;
+			qDebug() << m->error_message;
 #endif
 		}
-		return pv->process_exit_code == 0;
+		return m->process_exit_code == 0;
 	};
 
 	bool ok = false;
@@ -208,17 +208,17 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 
 QString Git::errorMessage() const
 {
-	return pv->error_message;
+	return m->error_message;
 }
 
 GitPtr Git::dup() const
 {
 	Git *p = new Git();
-	p->pv = new Private();
-	p->pv->git_command = pv->git_command;
-	p->pv->working_repo_dir = pv->working_repo_dir;
-	p->pv->callback_func = pv->callback_func;
-	p->pv->callback_cookie = pv->callback_cookie;
+	p->m = new Private();
+	p->m->git_command = m->git_command;
+	p->m->working_repo_dir = m->working_repo_dir;
+	p->m->callback_func = m->callback_func;
+	p->m->callback_cookie = m->callback_cookie;
 	return GitPtr(p);
 }
 
@@ -684,7 +684,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 
 bool Git::clone(CloneData const &data)
 {
-	pv->working_repo_dir = misc::normalizePathSeparator(data.basedir / data.subdir);
+	m->working_repo_dir = misc::normalizePathSeparator(data.basedir / data.subdir);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
@@ -812,7 +812,7 @@ QByteArray Git::cat_file_(QString const &id)
 	qDebug() << "cat_file: " << id;
 #if 1
 	git("cat-file -p " + id);
-	return pv->result;
+	return m->result;
 #else
 	std::string dir = workingRepositoryDir().toStdString();
 	LibGit2::Repository r = LibGit2::openRepository(dir);

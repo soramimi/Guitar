@@ -255,7 +255,7 @@ public:
 
 private:
 	struct Private;
-	Private *pv = nullptr;
+	Private *m;
 	QStringList make_branch_list_();
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();

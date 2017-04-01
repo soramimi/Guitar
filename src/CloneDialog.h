@@ -43,7 +43,7 @@ class CloneDialog : public QDialog
 	friend class CloneThread;
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	bool ok = false;
 	QString errmsg;

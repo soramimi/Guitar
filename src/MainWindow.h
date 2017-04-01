@@ -57,7 +57,7 @@ public:
 private:
 
 	struct Private;
-	Private *pv;
+	Private *m;
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();

@@ -19,22 +19,22 @@ struct CloneDialog::Private {
 	QString default_working_dir;
 };
 
-CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir) :
-	QDialog(parent),
-	ui(new Ui::CloneDialog)
+CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir)
+	: QDialog(parent)
+	, ui(new Ui::CloneDialog)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
 
-	pv->mainwindow = qobject_cast<MainWindow *>(parent);
+	m->mainwindow = qobject_cast<MainWindow *>(parent);
 
 	ui->lineEdit_repo_location->setText(url);
-	pv->default_working_dir = defworkdir;
-	ui->lineEdit_working_dir->setText(pv->default_working_dir);
+	m->default_working_dir = defworkdir;
+	ui->lineEdit_working_dir->setText(m->default_working_dir);
 
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
@@ -42,13 +42,13 @@ CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &def
 
 CloneDialog::~CloneDialog()
 {
-	delete pv;
+	delete m;
 	delete ui;
 }
 
 MainWindow *CloneDialog::mainwindow()
 {
-	return pv->mainwindow;
+	return m->mainwindow;
 }
 
 QString CloneDialog::url()
@@ -74,7 +74,7 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 	if (i >= 0 && i < j) {
 		path = text.mid(i, j - i);
 	}
-	path = pv->default_working_dir / path;
+	path = m->default_working_dir / path;
 	path = misc::normalizePathSeparator(path);
 	ui->lineEdit_working_dir->setText(path);
 }

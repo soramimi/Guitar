@@ -10,29 +10,29 @@ struct BasicRepositoryDialog::Private {
 
 BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr g)
 	: QDialog(mainwindow)
+	, m(new Private)
 {
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	pv = new Private();
-	pv->mainwindow = mainwindow;
-	pv->git = g;
+	m->mainwindow = mainwindow;
+	m->git = g;
 }
 
 BasicRepositoryDialog::~BasicRepositoryDialog()
 {
-	delete pv;
+	delete m;
 }
 
 MainWindow *BasicRepositoryDialog::mainwindow()
 {
-	return pv->mainwindow;
+	return m->mainwindow;
 }
 
 GitPtr BasicRepositoryDialog::git()
 {
-	return pv->git;
+	return m->git;
 }
 
 QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)

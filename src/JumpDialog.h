@@ -17,7 +17,7 @@ class JumpDialog : public QDialog
 public:
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 public:
 	explicit JumpDialog(QWidget *parent, NamedCommitList const &items);
 	~JumpDialog();

@@ -12,7 +12,7 @@ class FileDiffSliderWidget : public QWidget
 	Q_OBJECT
 private:
 	struct Private;
-	Private *pv;
+	Private *m;
 
 	void scroll(int pos);
 	void updatePixmap();

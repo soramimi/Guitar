@@ -20,7 +20,7 @@ RemoteRepositoriesTableWidget::RemoteRepositoriesTableWidget(QWidget *parent)
 	setItemDelegate(new MyTableWidgetDelegate(this));
 }
 
-void RemoteRepositoriesTableWidget::contextMenuEvent(QContextMenuEvent *event)
+void RemoteRepositoriesTableWidget::contextMenuEvent(QContextMenuEvent *)
 {
 	int row = currentRow();
 	QMenu menu;
