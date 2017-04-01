@@ -277,17 +277,6 @@ bool MainWindow::event(QEvent *event)
 				removeSelectedRepositoryFromBookmark(true);
 				return true;
 			}
-//		} else if (k == Qt::Key_F2) {
-//			if (focusWidget() == ui->treeWidget_repos) {
-////				selected
-////				int i = indexOfRepository(ui->treeWidget_repos->currentItem());
-//				QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
-//				item->setFlags(item->flags() | Qt::ItemIsEditable);
-//				ui->treeWidget_repos->editItem(ui->treeWidget_repos->currentItem());
-
-////				removeSelectedRepositoryFromBookmark(true);
-//				return true;
-//			}
 		}
 	}
 

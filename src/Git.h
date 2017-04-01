@@ -266,9 +266,7 @@ private:
 	QString diff_(const QString &old_id, const QString &new_id);
 #endif
 	static void parseAheadBehind(const QString &s, Branch *b);
-	Git()
-	{
-	}
+	Git();
 	QString encodeQuotedText(const QString &str);
 	QStringList refs();
 public:

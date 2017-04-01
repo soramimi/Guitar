@@ -11,42 +11,12 @@ class CloneDialog;
 
 class MainWindow;
 
-class CloneThread : public QThread {
-protected:
-//	CloneDialog *caller;
-	GitPtr g;
-	QString url;
-	QString into;
-	bool ok = false;
-	QString errmsg;
-	virtual void run()
-	{
-
-		ok = g->clone(Git::preclone(url, into));
-		if (!ok) {
-			errmsg = g->errorMessage();
-		}
-//		emit caller->done();
-	}
-public:
-	CloneThread(GitPtr g, QString const &url, QString const &into)
-		: g(g)
-		, url(url)
-		, into(into)
-	{
-	}
-};
-
 class CloneDialog : public QDialog
 {
 	Q_OBJECT
-	friend class CloneThread;
 private:
 	struct Private;
 	Private *m;
-
-	bool ok = false;
-	QString errmsg;
 
 	typedef std::shared_ptr<Git> GitPtr;
 public:

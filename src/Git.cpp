@@ -23,6 +23,11 @@ struct Git::Private {
 	void *callback_cookie = nullptr;
 };
 
+Git::Git()
+	: m(new Private)
+{
+}
+
 Git::Git(const Context &cx, QString const &repodir)
 	: m(new Private)
 {
@@ -214,7 +219,6 @@ QString Git::errorMessage() const
 GitPtr Git::dup() const
 {
 	Git *p = new Git();
-	p->m = new Private();
 	p->m->git_command = m->git_command;
 	p->m->working_repo_dir = m->working_repo_dir;
 	p->m->callback_func = m->callback_func;
@@ -495,7 +499,6 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 		}
 	}
 }
-
 
 QList<Git::Branch> Git::branches_()
 {

@@ -17,6 +17,8 @@ struct CloneDialog::Private {
 	MainWindow *mainwindow;
 	QString url;
 	QString default_working_dir;
+	bool ok = false;
+	QString errmsg;
 };
 
 CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir)

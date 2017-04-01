@@ -55,7 +55,6 @@ public:
 		}
 	};
 private:
-
 	struct Private;
 	Private *m;
 public:
