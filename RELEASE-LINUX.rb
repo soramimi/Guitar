@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qt = "/opt/Qt5.8.0"
+$qt = "/opt/Qt5.7.1"
 
 require 'fileutils'
 
@@ -22,6 +22,7 @@ FileUtils.mkpath($dstdir_platforms)
 FileUtils.mkpath($dstdir_platforminputcontexts)
 
 FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
+`strip #{$dstdir}/#{$product_name}`
 FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 
