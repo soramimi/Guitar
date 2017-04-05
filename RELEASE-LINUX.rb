@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qt = "/opt/Qt5.7.1"
+$qt = "/opt/Qt5.8.0"
 
 require 'fileutils'
 
