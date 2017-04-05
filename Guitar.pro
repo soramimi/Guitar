@@ -25,8 +25,9 @@ INCLUDEPATH += $$PWD/src
 
 win32:INCLUDEPATH += C:\openssl\include
 win32:LIBS += -LC:\openssl\lib
+macx:INCLUDEPATH += /usr/local/opt/openssl/include
+macx:LIBS += -L/usr/local/opt/openssl/lib
 unix:LIBS += -lssl -lcrypto
-
 
 
 # execute 'ruby prepare.rb' automatically
