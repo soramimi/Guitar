@@ -25,6 +25,7 @@ FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)
 FileUtils.cp($openssl + "/bin/ssleay32.dll", $dstdir)
 
+`7z x -o#{$dstdir} misc/msys.zip`
 
 if $qt != ''
 

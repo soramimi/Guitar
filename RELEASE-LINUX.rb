@@ -68,7 +68,7 @@ $arch = "x86-32bit"
 if `uname -a` =~ /(x86_64)|(amd64)/
 	$arch = "x86-64bit"
 elsif `uname -a` =~ /armv7l/
-	$arch = "raspi"
+	$arch = "raspberrypi"
 end
 
 Dir.chdir($workdir) {
