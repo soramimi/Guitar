@@ -1149,7 +1149,54 @@ bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
 	return true;
 }
 
+struct TemporaryCommitItem {
+	Git::CommitItem const *commit;
+	std::vector<TemporaryCommitItem *> children;
+};
 
+Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
+{
+#if 0
+	return g->log(limitLogCount());
+#else
+	Git::CommitItemList list = g->log(limitLogCount());
+
+	// 親子関係を調べて、順番が狂っていたら、修正する。
+
+	std::set<QString> set;
+
+	size_t i = 0;
+	while (i < list.size()) {
+		std::vector<size_t> reorder;
+		for (QString const &parent : list[i].parent_ids) {
+			auto it = set.find(parent);
+			if (it != set.end()) {
+				set.erase(it);
+				for (size_t j = 0; j < i; j++) {
+					if (parent == list[j].commit_id) {
+						reorder.push_back(j);
+						qDebug() << "fix commit order" << parent;
+					}
+				}
+			}
+		}
+		if (reorder.empty()) {
+			set.insert(set.end(), list[i].commit_id);
+			i++;
+		} else {
+			while (!reorder.empty()) {
+				size_t j = reorder.back();
+				Git::CommitItem t = list[j];
+				list.erase(list.begin() + j);
+				list.insert(list.begin() + i, t);
+				reorder.pop_back();
+			}
+		}
+	}
+
+	return list;
+#endif
+}
 
 void MainWindow::openRepository_(GitPtr g)
 {
@@ -1168,7 +1215,7 @@ void MainWindow::openRepository_(GitPtr g)
 			RetrieveLogThread_ th([&](){
 				emit dlg.writeLog(tr("Retrieving commit log...\n"));
 				// ログを取得
-				m->logs = g->log(limitLogCount());
+				m->logs = retrieveCommitLog(g);
 				// ブランチを取得
 				emit dlg.writeLog(tr("Retrieving branches...\n"));
 				queryBranches(g);
@@ -2735,22 +2782,6 @@ void MainWindow::on_action_branch_new_triggered()
 	}
 }
 
-//void MainWindow::on_action_branch_checkout_triggered()
-//{
-//	GitPtr g = git();
-//	if (!isValidWorkingCopy(g)) return;
-
-//	QList<Git::Branch> branches = g->branches();
-//	CheckoutDialog dlg(this, branches);
-//	if (dlg.exec() == QDialog::Accepted) {
-//		QString name = dlg.branchName();
-//		if (!name.isEmpty()) {
-//			g->checkoutBranch(name);
-//			openRepository(true);
-//		}
-//	}
-//}
-
 void MainWindow::on_action_branch_merge_triggered()
 {
 	GitPtr g = git();
@@ -2764,7 +2795,6 @@ void MainWindow::on_action_branch_merge_triggered()
 			g->mergeBranch(name);
 		}
 	}
-
 }
 
 bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
@@ -2777,7 +2807,6 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 
 	QString text = QString::fromUtf8(ptr, len);
 	emit dlg->writeLog(text);
-//	qDebug() << text;
 
 	return true;
 }
@@ -2965,9 +2994,6 @@ void MainWindow::addTag()
 	if (dlg.exec() == QDialog::Accepted) {
 		reopenRepository(false, [&](GitPtr g){
 			g->tag(dlg.text(), commit_id);
-			if (dlg.isPushChecked()) {
-				g->push(true);
-			}
 		});
 	}
 }

@@ -136,8 +136,6 @@ private slots:
 
 	void on_action_push_u_origin_master_triggered();
 
-
-
 private:
 	Ui::MainWindow *ui;
 
@@ -244,6 +242,7 @@ private:
 	void checkout();
 	void clone();
 	void deleteBranch();
+	Git::CommitItemList retrieveCommitLog(GitPtr g);
 public:
 
 	QString selectGitCommand();

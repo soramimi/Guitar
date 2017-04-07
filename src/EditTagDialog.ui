@@ -31,16 +31,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QCheckBox" name="checkBox_push">
-       <property name="text">
-        <string>Push tags</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -73,7 +63,6 @@
  </widget>
  <tabstops>
   <tabstop>lineEdit</tabstop>
-  <tabstop>checkBox_push</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>

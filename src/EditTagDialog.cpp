@@ -24,7 +24,4 @@ QString EditTagDialog::text() const
 	return ui->lineEdit->text();
 }
 
-bool EditTagDialog::isPushChecked() const
-{
-	return ui->checkBox_push->isChecked();
-}
+

@@ -15,7 +15,6 @@ public:
 	explicit EditTagDialog(QWidget *parent = 0);
 	~EditTagDialog();
 
-	bool isPushChecked() const;
 	QString text() const;
 private:
 	Ui::EditTagDialog *ui;
