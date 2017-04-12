@@ -2,6 +2,7 @@
 #define LOCALSOCKETREADER_H
 
 #include <QLocalSocket>
+#include <QMutex>
 
 class LocalSocketReader : public QObject {
 	Q_OBJECT
