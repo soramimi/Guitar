@@ -18,6 +18,8 @@ class QTreeWidgetItem;
 class QTableWidgetItem;
 class AboutDialog;
 
+class LocalSocketReader;
+
 class CommitList;
 
 #define PATH_PREFIX "*"
@@ -136,6 +138,9 @@ private slots:
 
 	void on_action_push_u_origin_master_triggered();
 
+	void onLocalServerConnected();
+	void onLocalSocketReadyRead(LocalSocketReader *p);
+	void onLocalSocketReadChannelFinished(LocalSocketReader *p);
 private:
 	Ui::MainWindow *ui;
 

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets svg
+QT       += core gui widgets svg network
 
 TARGET = Guitar
 TEMPLATE = app
@@ -133,7 +133,8 @@ SOURCES += \
     src/CheckoutDialog.cpp \
     src/DeleteBranchDialog.cpp \
 	src/BasicRepositoryDialog.cpp \
-    src/RemoteRepositoriesTableWidget.cpp
+    src/RemoteRepositoriesTableWidget.cpp \
+    src/LocalSocketReader.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -196,7 +197,8 @@ HEADERS  += \
     src/CheckoutDialog.h \
     src/DeleteBranchDialog.h \
 	src/BasicRepositoryDialog.h \
-    src/RemoteRepositoriesTableWidget.h
+    src/RemoteRepositoriesTableWidget.h \
+    src/LocalSocketReader.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -38,6 +38,8 @@
 #include "ProgressDialog.h"
 #include "JumpDialog.h"
 #include "DeleteBranchDialog.h"
+#include "LocalSocketReader.h"
+
 
 #include <QDateTime>
 #include <QDebug>
@@ -52,6 +54,7 @@
 #include <QThread>
 #include <QMimeData>
 #include <QDragEnterEvent>
+#include <QLocalServer>
 
 #include <deque>
 #include <set>
@@ -165,6 +168,9 @@ struct MainWindow::Private {
 	QPixmap transparent_pixmap;
 	QLabel *status_bar_label;
 	bool ui_blocked = false;
+
+	QLocalServer local_server;
+	std::shared_ptr<LocalSocketReader> local_socket_reader;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -245,10 +251,14 @@ MainWindow::MainWindow(QWidget *parent)
 	m->update_files_list_counter = 0;
 	m->interval_250ms_counter = 0;
 	startTimer(m->timer_interval_ms);
+
+	connect(&m->local_server, SIGNAL(newConnection()), this, SLOT(onLocalServerConnected()));
+	m->local_server.listen("myserver");
 }
 
 MainWindow::~MainWindow()
 {
+
 #if USE_LIBGIT2
 	LibGit2::shutdown();
 #endif
@@ -256,6 +266,32 @@ MainWindow::~MainWindow()
 	deleteTempFiles();
 	delete m;
 	delete ui;
+}
+
+void MainWindow::onLocalServerConnected()
+{
+	QLocalSocket *local_sock = m->local_server.nextPendingConnection();
+	LocalSocketReader *p = new LocalSocketReader(local_sock);
+	m->local_socket_reader = std::shared_ptr<LocalSocketReader>(p);
+	connect(p, SIGNAL(readyRead(LocalSocketReader*)), this, SLOT(onLocalSocketReadyRead(LocalSocketReader*)));
+	connect(p, SIGNAL(readChannelFinished(LocalSocketReader*)), this, SLOT(onLocalSocketReadChannelFinished(LocalSocketReader*)));
+	connect(local_sock, SIGNAL(readyRead()), p, SLOT(onReadyRead()));
+	connect(local_sock, SIGNAL(readChannelFinished()), p, SLOT(onReadChannelFinished()));
+	p->onReadyRead();
+}
+
+void MainWindow::onLocalSocketReadyRead(LocalSocketReader *p)
+{
+	QByteArray ba = p->takeData();
+	if (!ba.isEmpty()) {
+		QString s = QString::fromLatin1(ba);
+		writeLog(s);
+	}
+}
+
+void MainWindow::onLocalSocketReadChannelFinished(LocalSocketReader *p)
+{
+	m->local_socket_reader.reset();
 }
 
 void MainWindow::setCurrentLogRow(int row)
@@ -3375,21 +3411,17 @@ void MainWindow::on_action_delete_branch_triggered()
 	deleteBranch();
 }
 
-
-void MainWindow::on_action_test_triggered()
-{
-	Git::CommitItem const *commit = selectedCommitItem();
-	deleteBranch(commit);
-}
-
-
-
 void MainWindow::on_action_push_u_origin_master_triggered()
 {
 	reopenRepository(true, [&](GitPtr g){
 		g->push_u_origin_master();
 	});
 }
+
+void MainWindow::on_action_test_triggered()
+{
+}
+
 
 
 
