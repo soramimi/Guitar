@@ -12,6 +12,10 @@ AskPassDialog::AskPassDialog(QString const &caption)
 	setWindowFlags(flags);
 
 	ui->label->setText(caption);
+
+	if (caption.startsWith("password", Qt::CaseInsensitive)) {
+		ui->lineEdit->setEchoMode(QLineEdit::Password);
+	}
 }
 
 AskPassDialog::~AskPassDialog()

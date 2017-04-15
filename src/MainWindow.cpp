@@ -1719,6 +1719,7 @@ QAction *MainWindow::addMenuActionProperties(QMenu *menu)
 
 int MainWindow::indexOfRepository(QTreeWidgetItem const *treeitem) const
 {
+	if (!treeitem) return -1;
 	return treeitem->data(0, IndexRole).toInt();
 }
 
