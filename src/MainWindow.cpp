@@ -2931,9 +2931,11 @@ void MainWindow::clone()
 		GitPtr g = git(QString());
 		g->setLogCallback(clone_callback, &dlg2);
 
+		bool ok = false;
+
 		RetrieveLogThread_ th([&](){
 			qDebug() << "cloning";
-			g->clone(clone_data);
+			ok = g->clone(clone_data);
 			emit dlg2.finish();
 		});
 		th.start();
@@ -2946,6 +2948,8 @@ void MainWindow::clone()
 		if (dlg2.canceledByUser()) {
 			return; // canceled
 		}
+
+		if (!ok) return;
 
 		RepositoryItem item;
 		item.local_dir = dir;
