@@ -280,3 +280,8 @@ int winRunCommand(QString const &cmd, QByteArray *out)
 	return proc.WaitForExit();
 }
 
+
+void setEnvironmentVariable(QString const &name, QString const &value)
+{
+	SetEnvironmentVariableW((wchar_t const *)name.utf16(), (wchar_t const *)value.utf16());
+}

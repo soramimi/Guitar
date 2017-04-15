@@ -56,9 +56,12 @@
 #include <QDragEnterEvent>
 #include <QLocalServer>
 
+#include <stdlib.h>
 #include <deque>
 #include <set>
 
+
+extern QString guitar_executable_file;
 
 
 class AsyncExecGitThread_ : public QThread {
@@ -251,6 +254,24 @@ MainWindow::MainWindow(QWidget *parent)
 	m->update_files_list_counter = 0;
 	m->interval_250ms_counter = 0;
 	startTimer(m->timer_interval_ms);
+
+	auto setAskPass = [](){
+		QString askpass;
+		int i = guitar_executable_file.lastIndexOf('/');
+		int j = guitar_executable_file.lastIndexOf('\\');
+		i = std::max(i, j);
+		if (i > 0) {
+			askpass = guitar_executable_file.mid(0, i);
+#ifdef _WIN32
+			askpass = askpass / "askpass.exe";
+			setEnvironmentVariable("GIT_ASKPASS", askpass);
+#else
+			askpass = askpass / "askpass";
+			setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
+#endif
+		}
+	};
+	setAskPass();
 
 	connect(&m->local_server, SIGNAL(newConnection()), this, SLOT(onLocalServerConnected()));
 	m->local_server.listen("myserver");

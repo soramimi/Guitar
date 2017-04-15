@@ -9,5 +9,6 @@ QString getModuleFileDir();
 QString getAppDataLocation();
 
 int winRunCommand(QString const &cmd, QByteArray *out);
+void setEnvironmentVariable(QString const &name, QString const &value);
 
 #endif // WIN32_H

@@ -10,6 +10,7 @@
 #include <QTranslator>
 #include "LegacyWindowsStyleTreeControl.h"
 #include "webclient.h"
+#include "win32/win32.h"
 
 QString application_data_dir;
 QColor panel_bg_color;
@@ -34,6 +35,7 @@ public:
 };
 
 //void test();
+QString guitar_executable_file;
 
 int main(int argc, char *argv[])
 {
@@ -51,6 +53,12 @@ int main(int argc, char *argv[])
 			f_open_here = true;
 		}
 	}
+
+#ifdef _WIN32
+	guitar_executable_file = getModuleFileName();
+#else
+	guitar_executable_file = argv[0];
+#endif
 
 	a.setOrganizationName(ORGANIZTION_NAME);
 	a.setApplicationName(APPLICATION_NAME);
