@@ -1480,6 +1480,7 @@ void MainWindow::udpateButton()
 void MainWindow::autoOpenRepository(QString dir)
 {
 	dir = QDir(dir).absolutePath();
+	dir.replace('\\', '/');
 
 	auto Open = [&](RepositoryItem const &item){
 		m->current_repo = item;
@@ -1793,11 +1794,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_open_folder) {
-				QDesktopServices::openUrl(repo->local_dir);
+				openExplorer();
 				return;
 			}
 			if (a == a_open_terminal) {
-				Terminal::open(repo->local_dir);
+				openTerminal();
 				return;
 			}
 			if (a == a_remove) {
@@ -2953,6 +2954,7 @@ void MainWindow::clone()
 
 		RepositoryItem item;
 		item.local_dir = dir;
+		item.local_dir.replace('\\', '/');
 		item.name = makeRepositoryName(dir);
 		saveRepositoryBookmark(item);
 		m->current_repo = item;
@@ -3444,11 +3446,48 @@ void MainWindow::on_action_push_u_origin_master_triggered()
 	});
 }
 
+bool MainWindow::runOnCurrentRepositoryDir(std::function<void(QString)> callback)
+{
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	if (treeitem) {
+		RepositoryItem const *repo = repositoryItem(treeitem);
+		if (repo && !isGroupItem(treeitem)) {
+			QString dir = repo->local_dir;
+			dir.replace('\\', '/');
+			if (QFileInfo(dir).isDir()) {
+				callback(dir);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void MainWindow::openTerminal()
+{
+	runOnCurrentRepositoryDir([](QString dir){
+		Terminal::open(dir);
+	});
+}
+
+void MainWindow::openExplorer()
+{
+	runOnCurrentRepositoryDir([](QString dir){
+		QDesktopServices::openUrl(dir);
+	});
+}
+
+void MainWindow::on_toolButton_terminal_clicked()
+{
+	openTerminal();
+}
+
+void MainWindow::on_toolButton_explorer_clicked()
+{
+	openExplorer();
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
-
-
-
-
 

@@ -18,5 +18,7 @@
         <file>image/transparent.png</file>
         <file>image/file.png</file>
         <file>image/clear.png</file>
+        <file>image/terminal.svgz</file>
+        <file>image/explorer.svgz</file>
     </qresource>
 </RCC>

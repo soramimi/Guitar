@@ -3,6 +3,7 @@
 #include <QXmlStreamReader>
 #include <QFile>
 #include <vector>
+#include <QDebug>
 
 RepositoryBookmark::RepositoryBookmark()
 {
@@ -25,8 +26,10 @@ bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *
 			writer.writeAttribute("name", item.name);
 			writer.writeAttribute("group", item.group);
 			if (!item.local_dir.isEmpty()) {
+				QString local = item.local_dir;
+				local.replace('\\', '/');
 				writer.writeStartElement("local");
-				writer.writeCharacters(item.local_dir);
+				writer.writeCharacters(local);
 				writer.writeEndElement(); // local
 			}
 			writer.writeEndElement(); // repository
@@ -84,7 +87,8 @@ QList<RepositoryItem> RepositoryBookmark::load(const QString &path)
 				break;
 			case QXmlStreamReader::EndElement:
 				if (state == STATE_REPOSITORIES_REPOSITORY_LOCAL) {
-						item.local_dir = text;
+					item.local_dir = text;
+					item.local_dir.replace('\\', '/');
 				} else if (state == STATE_REPOSITORIES_REPOSITORY) {
 					items.push_back(item);
 				}

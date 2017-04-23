@@ -141,6 +141,10 @@ private slots:
 	void onLocalServerConnected();
 	void onLocalSocketReadyRead(LocalSocketReader *p);
 	void onLocalSocketReadChannelFinished(LocalSocketReader *p);
+	void on_toolButton_terminal_clicked();
+
+	void on_toolButton_explorer_clicked();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -248,6 +252,9 @@ private:
 	void clone();
 	void deleteBranch();
 	Git::CommitItemList retrieveCommitLog(GitPtr g);
+	bool runOnCurrentRepositoryDir(std::function<void(QString)> callback);
+	void openTerminal();
+	void openExplorer();
 public:
 
 	QString selectGitCommand();
