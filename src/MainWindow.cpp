@@ -2672,7 +2672,7 @@ QString MainWindow::selectFileCommand()
 	QStringList list = whichCommand_(exe);
 
 #ifdef Q_OS_WIN
-	QString dir = getModuleFileDir();
+	QString dir = misc::getApplicationDir();
 	QString path1 = dir / "msys/file.exe";
 	QString path2;
 	int i = dir.lastIndexOf('/');
