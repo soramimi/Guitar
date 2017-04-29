@@ -60,10 +60,6 @@
 #include <deque>
 #include <set>
 
-
-extern QString guitar_executable_file;
-
-
 class AsyncExecGitThread_ : public QThread {
 private:
 	GitPtr g;
@@ -172,8 +168,8 @@ struct MainWindow::Private {
 	QLabel *status_bar_label;
 	bool ui_blocked = false;
 
-	QLocalServer local_server;
-	std::shared_ptr<LocalSocketReader> local_socket_reader;
+//	QLocalServer local_server;
+//	std::shared_ptr<LocalSocketReader> local_socket_reader;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -256,25 +252,16 @@ MainWindow::MainWindow(QWidget *parent)
 	startTimer(m->timer_interval_ms);
 
 	auto setAskPass = [](){
-		QString askpass;
-		int i = guitar_executable_file.lastIndexOf('/');
-		int j = guitar_executable_file.lastIndexOf('\\');
-		i = std::max(i, j);
-		if (i > 0) {
-			askpass = guitar_executable_file.mid(0, i);
+		QString askpass = misc::getApplicationDir();
 #ifdef _WIN32
-			askpass = askpass / "askpass.exe";
-			setEnvironmentVariable("GIT_ASKPASS", askpass);
+		askpass = askpass / "askpass.exe";
+		setEnvironmentVariable("GIT_ASKPASS", askpass);
 #else
-			askpass = askpass / "askpass";
-			setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
+		askpass = askpass / "askpass";
+		setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
 #endif
-		}
 	};
 	setAskPass();
-
-	connect(&m->local_server, SIGNAL(newConnection()), this, SLOT(onLocalServerConnected()));
-	m->local_server.listen("myserver");
 }
 
 MainWindow::~MainWindow()
@@ -289,6 +276,7 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
+#if 0
 void MainWindow::onLocalServerConnected()
 {
 	QLocalSocket *local_sock = m->local_server.nextPendingConnection();
@@ -314,6 +302,7 @@ void MainWindow::onLocalSocketReadChannelFinished(LocalSocketReader *p)
 {
 	m->local_socket_reader.reset();
 }
+#endif
 
 void MainWindow::setCurrentLogRow(int row)
 {

@@ -11,6 +11,7 @@
 
 class misc {
 public:
+	static QString getApplicationDir();
 	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> tos);
 	static QStringList splitLines(QString const &text);
 	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out);

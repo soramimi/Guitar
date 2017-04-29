@@ -7,7 +7,15 @@
 #include <vector>
 #include "joinpath.h"
 
-
+QString misc::getApplicationDir()
+{
+	QString path = QApplication::applicationFilePath();
+	int i = path.lastIndexOf('\\');
+	int j = path.lastIndexOf('/');
+	if (i < j) i = j;
+	if (i > 0) path = path.mid(0, i);
+	return path;
+}
 
 QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> tos)
 {

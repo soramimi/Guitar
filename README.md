@@ -1,5 +1,5 @@
 # Guitar
-GUI Git Client
+Git GUI Client
 
 * Open Source, Free Software
 * Run on Windows, macOS and Linux

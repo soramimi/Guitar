@@ -138,11 +138,13 @@ private slots:
 
 	void on_action_push_u_origin_master_triggered();
 
+#if 0
 	void onLocalServerConnected();
 	void onLocalSocketReadyRead(LocalSocketReader *p);
 	void onLocalSocketReadChannelFinished(LocalSocketReader *p);
-	void on_toolButton_terminal_clicked();
+#endif
 
+    void on_toolButton_terminal_clicked();
 	void on_toolButton_explorer_clicked();
 
 private:

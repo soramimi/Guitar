@@ -38,7 +38,6 @@ private slots:
 private:
 	Ui::FileHistoryWindow *ui;
 
-
 	void collectFileHistory();
 	void updateDiffView();
 };

@@ -12,15 +12,15 @@ QString getModuleFileName()
 	return QString::fromUtf16((ushort const *)tmp, n);
 }
 
-QString getModuleFileDir()
-{
-	QString path = getModuleFileName();
-	int i = path.lastIndexOf('\\');
-	int j = path.lastIndexOf('/');
-	if (i < j) i = j;
-	if (i > 0) path = path.mid(0, i);
-	return path;
-}
+//QString getModuleFileDir()
+//{
+//	QString path = getModuleFileName();
+//	int i = path.lastIndexOf('\\');
+//	int j = path.lastIndexOf('/');
+//	if (i < j) i = j;
+//	if (i > 0) path = path.mid(0, i);
+//	return path;
+//}
 
 QString getAppDataLocation()
 {

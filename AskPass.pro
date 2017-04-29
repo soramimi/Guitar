@@ -8,6 +8,9 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
+unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wreorder
+unix:QMAKE_RPATHDIR += $ORIGIN
+
 SOURCES += askpass/main.cpp \
 	askpass/AskPassDialog.cpp
 
