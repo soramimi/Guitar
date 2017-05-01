@@ -39,6 +39,9 @@ cp_qt_lib("Qt5Gui")
 cp_qt_lib("Qt5Svg")
 cp_qt_lib("Qt5Widgets")
 cp_qt_lib("Qt5Xml")
+cp_qt_lib("Qt5Network")
+cp_qt_lib("Qt5DBus")
+cp_qt_lib("Qt5XcbQpa")
 
 def cp_qt_imageformat(name)
 	libname = "lib" + name + ".so"
@@ -61,6 +64,9 @@ def cp_qt_iconengine(name)
 end
 
 cp_qt_iconengine("qsvgicon")
+
+src = $qt + "/plugins/platforms/libqxcb.so"
+FileUtils.cp(src, $dstdir_platforms)
 
 src = $qt + "/plugins/platforminputcontexts/libibusplatforminputcontextplugin.so"
 FileUtils.cp(src, $dstdir_platforminputcontexts)
