@@ -3470,7 +3470,7 @@ void MainWindow::openTerminal()
 	runOnCurrentRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
-		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args %1";
+		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args \"%1\"";
 		cmd = cmd.arg(dir);
 		QProcess::execute(cmd);
 #else
