@@ -14,7 +14,8 @@ CONFIG += c++11
 TRANSLATIONS = Guitar_ja.ts
 
 unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
-unix:QMAKE_RPATHDIR += $ORIGIN
+linux:QMAKE_RPATHDIR += $ORIGIN
+macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
 linux:QTPLUGIN += ibusplatforminputcontextplugin
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
@@ -23,12 +24,11 @@ INCLUDEPATH += $$PWD/src
 
 # OpenSSL
 
+linux:LIBS += -lssl -lcrypto
+macx:INCLUDEPATH += /usr/local/include
+macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 win32:INCLUDEPATH += C:\openssl\include
 win32:LIBS += -LC:\openssl\lib
-macx:INCLUDEPATH += /usr/local/opt/openssl/include
-macx:LIBS += -L/usr/local/opt/openssl/lib
-unix:LIBS += -lssl -lcrypto
-
 
 # execute 'ruby prepare.rb' automatically
 

@@ -38,6 +38,12 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QFormLayout" name="formLayout">
+      <property name="fieldGrowthPolicy">
+       <enum>QFormLayout::ExpandingFieldsGrow</enum>
+      </property>
+      <property name="labelAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
       <property name="verticalSpacing">
        <number>2</number>
       </property>
@@ -183,15 +189,15 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+  <customwidget>
    <class>FileDiffWidget</class>
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
