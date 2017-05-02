@@ -38,7 +38,7 @@
 </ul>
 <p><a href="https://www.qt.io/download-open-source/#section-2">Qtのダウンロードサイト</a>からお使いのOSに合ったQt SDKをダウンロードし、インストールします。</p>
 <h2>とりあえず</h2>
-<p>Qtが初めての方のために、基本的な使い方を紹介します。Windows、macOS、Linuxのいずれでもほとんど同じです。</p>
+<p>Qtが初めての方の向けに、基本的な使い方を紹介します。Windows、macOS、Linuxのいずれでもほとんど同じです。Qt使用経験のある方は、この節は読み飛ばして結構です。</p>
 <p>Qt Creator を起動します。</p>
 <p><a href="qtcreator.png"><img src="qtcreator.png" width="540" height="342"></a></p>
 <p>[新しいプロジェクト] ボタンを押し、 [Qt ウィジェットアプリケーション] を選択します。</p>
@@ -95,11 +95,11 @@
   <li>公式配布されているzlib</li>
   <li>GitHubで公開されているzlib</li>
 </ul>
-<p>どのzlibを利用するかによって、Guitarのクローンフォルダにあるzlib.hを書き換えます。</p>
+<p>どのzlibを利用するかによって、Guitarのクローンフォルダにあるmyzlib.hを書き換えます。</p>
 <h4>Qt SDK に同梱されているzlib</h4>
-<p>一応、最も推奨されている（ことになっている）方法ですが、うまくいかない事例が報告されています。</p>
+<p>一応、最も推奨されている（ことになっているらしい）方法ですが、うまくいかない事例が報告されています。</p>
 <pre>#include &lt;QtZlib/zlib.h&gt;</pre>
-<p>QtZlib/zlib.h が file not found となる場合は別の方法を試してみます。</p>
+<p>Qt SDKのインストールのしかたによって QtZlib/zlib.h があったりなかったりします。ファイルが見つからないなどのエラーが出る場合は別の方法を試してみます。</p>
 <h4>OSにインストールされているzlib</h4>
 <p>Linuxなどでは、ほぼ間違いなくzlibはインストールされています。ただし、開発用パッケージは入っていないかもしれません。Debian系では、以下のようにしてインストールします。</p>
 <pre>$ sudo apt-get install zlib1g-dev</pre>
@@ -124,7 +124,7 @@
   </li>
 </ul>
 <p>Guitarをクローンしたフォルダに zlib.pro がありますので、これを Qt Creator で開きます。そして、[デバッグ]版と[リリース]版をビルドします。</p>
-<p>zlibは（特にUnix系の場合）OSにインストール済みのはずなので、zlibの自前ビルドは明らかに無駄なのですが、この方法が file not found などのエラーが発生しにくいので、マルチプラットフォームの移植性の観点から、一応この手順をGuitarにおける標準ということにしています。</p>
+<p>zlibは（特にUnix系の場合）OSにインストール済みのはずなので、zlibの自前ビルドは明らかに無駄なのですが、この方法が file not found などのエラーが発生しにくいので、マルチプラットフォームの移植性の観点から、一応この手順をGuitarにおける推奨ということにしています。</p>
 <h3>OpenSSL</h3>
 <p>ウェブサイトにhttpsでアクセスするため、ソケットとOpenSSLを使用しています。</p>
 <h4>Windows</h4>
@@ -134,13 +134,21 @@
 <pre>win32:INCLUDEPATH += C:\openssl\include
 win32:LIBS += -LC:\openssl\lib </pre>
 <p>ビルドが完了したOpenSSLの中で、必要なファイルは libeay32.dll と ssleay32.dll です。 C:\openssl\bin にあります。あとで Guitar のビルドが完了したら、ビルド先フォルダにこれらのファイルをコピーする必要があります。</p>
-<h4>Linux / macOS</h4>
+<h4>Linux</h4>
 <p>Debian系のLinuxの場合 libssl-dev をインストールしておきます。</p>
 <pre>$ sudo apt-get install libssl-dev </pre>
 <blockquote>
   <p>※他のLinuxやmacOSでのインストール方法は確認していません。各自お調べください</p>
 </blockquote>
 <p>リンカのオプションに -lssl -lcrypto が必要です。（Guitar.proにはそのように記述しています）</p>
+<h4>macOS</h4>
+<p>最近のmacOSでは標準でOpenSSLが入らなくなったようです。共有ライブラリのパス解決の問題への対応が面倒なので、自前ビルドしてスタティックリンクしています。1.1系は未対応なので、1.0系の最新版をチェックアウトします。</p>
+<pre>$ git clone https://github.com/openssl/openssl.git
+$ cd openssl
+$ git checkout -b OpenSSL_1_0_2-stable origin/OpenSSL_1_0_2-stable
+$ ./Configure darwin64-x86_64-cc --prefix=/usr/local
+$ make -j4
+$ sudo make install</pre>
 <h2>ビルドの準備</h2>
 <h4>prepare.rb</h4>
 <p>バージョン情報やリソーススクリプトを自動生成するための prepare.rb というスクリプトファイルがあります。Qt Creator でプログラム本体をビルドする前に、このスクリプトを実行しておく必要があります。実行にはRubyが必要です。</p>
