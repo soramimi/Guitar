@@ -3452,17 +3452,44 @@ bool MainWindow::runOnCurrentRepositoryDir(std::function<void(QString)> callback
 	return false;
 }
 
+namespace {
+
+bool isValidDir(QString const &dir)
+{
+	if (dir.indexOf('\"') >= 0) return false;
+#ifndef Q_OS_WIN
+	if (dir.indexOf('\\') >= 0) return false;
+#endif
+	return QFileInfo(dir).isDir();
+}
+
+}
+
 void MainWindow::openTerminal()
 {
 	runOnCurrentRepositoryDir([](QString dir){
+#ifdef Q_OS_MAC
+		if (!isValidDir(dir)) return;
+		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args %1";
+		cmd = cmd.arg(dir);
+		QProcess::execute(cmd);
+#else
 		Terminal::open(dir);
+#endif
 	});
 }
 
 void MainWindow::openExplorer()
 {
 	runOnCurrentRepositoryDir([](QString dir){
+#ifdef Q_OS_MAC
+		if (!isValidDir(dir)) return;
+		QString cmd = "open \"%1\"";
+		cmd = cmd.arg(dir);
+		QProcess::execute(cmd);
+#else
 		QDesktopServices::openUrl(dir);
+#endif
 	});
 }
 
