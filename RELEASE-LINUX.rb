@@ -26,7 +26,6 @@ FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
 `strip #{$dstdir}/#{$product_name}`
 FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
-
 def cp_qt_lib(name)
 	libname = "lib" + name + ".so.5"
 	src = $qt + "/lib/" + libname
@@ -70,6 +69,17 @@ FileUtils.cp(src, $dstdir_platforms)
 
 src = $qt + "/plugins/platforminputcontexts/libibusplatforminputcontextplugin.so"
 FileUtils.cp(src, $dstdir_platforminputcontexts)
+
+def cp_libicu(name)
+	src = "/usr/lib/x86_64-linux-gnu/libicu" + name + ".so.52"
+	FileUtils.cp(src, $dstdir)
+end
+
+cp_libicu("data")
+cp_libicu("i18n")
+cp_libicu("uc")
+
+FileUtils.cp_r("LinuxDesktop", $dstdir)
 
 $arch = "x86-32bit"
 if `uname -a` =~ /(x86_64)|(amd64)/
