@@ -128,7 +128,7 @@
 <h3>OpenSSL</h3>
 <p>ウェブサイトにhttpsでアクセスするため、ソケットとOpenSSLを使用しています。</p>
 <h4>Windows</h4>
-<p><a href="https://www.openssl.org/source/">https://www.openssl.org/source/</a> からOpenSSLをダウンロードしています。1.1系には対応していません。1.0系の最新版を使用してください。本稿執筆時点（2017-03-09）での最新版は <a href="https://www.openssl.org/source/openssl-1.0.2k.tar.gz">openssl-1.0.2k.tar.gz</a> です。ビルド方法は INSTALL.W32 を参照してください。GuitarではOpenSSLが C:\openssl にインストールされている想定でプロジェクトファイルを記述していますので、ビルド前のConfigureスクリプトの実行で、インストール先を指定する必要があります。OpenSSLのビルドにはperlが必要です。ない場合は <a href="http://www.activestate.com/activeperl">ActivePerl</a> などをインストールします。</p>
+<p><a href="https://www.openssl.org/source/">https://www.openssl.org/source/</a> からOpenSSLをダウンロードします。1.1系には対応していません。1.0系の最新版を使用してください。本稿執筆時点（2017-03-09）での最新版は <a href="https://www.openssl.org/source/openssl-1.0.2k.tar.gz">openssl-1.0.2k.tar.gz</a> です。ビルド方法は INSTALL.W32 を参照してください。GuitarではOpenSSLが C:\openssl にインストールされている想定でプロジェクトファイルを記述していますので、ビルド前のConfigureスクリプトの実行で、インストール先を指定する必要があります。OpenSSLのビルドにはperlが必要です。ない場合は <a href="http://www.activestate.com/activeperl">ActivePerl</a> などをインストールします。</p>
 <pre>&gt; perl Configure VC-WIN32 --prefix=c:\openssl</pre>
 <p>もし他の場所にインストールした場合、Guitar.proを修正する必要があります。</p>
 <pre>win32:INCLUDEPATH += C:\openssl\include
@@ -138,11 +138,11 @@ win32:LIBS += -LC:\openssl\lib </pre>
 <p>Debian系のLinuxの場合 libssl-dev をインストールしておきます。</p>
 <pre>$ sudo apt-get install libssl-dev </pre>
 <blockquote>
-  <p>※他のLinuxやmacOSでのインストール方法は確認していません。各自お調べください</p>
+  <p>※他のLinuxでのインストール方法は確認していません。各自お調べください</p>
 </blockquote>
 <p>リンカのオプションに -lssl -lcrypto が必要です。（Guitar.proにはそのように記述しています）</p>
 <h4>macOS</h4>
-<p>最近のmacOSでは標準でOpenSSLが入らなくなったようです。共有ライブラリのパス解決の問題への対応が面倒なので、自前ビルドしてスタティックリンクしています。1.1系は未対応なので、1.0系の最新版をチェックアウトします。</p>
+<p>最近のmacOSでは標準でOpenSSLが入らなくなったようです。共有ライブラリの読み込みパス解決の問題への対応が面倒なので、自前ビルドしてスタティックリンクしています。1.1系は未対応なので、1.0系の最新版をチェックアウトします。</p>
 <pre>$ git clone https://github.com/openssl/openssl.git
 $ cd openssl
 $ git checkout -b OpenSSL_1_0_2-stable origin/OpenSSL_1_0_2-stable
@@ -167,7 +167,7 @@ $ sudo make install</pre>
 <h4>Windowsの場合</h4>
 <p>OpenSSLの libeay32.dll と ssleay32.dll を、Guitar.exe と同じフォルダにコピーしておく必要があります。これを忘れた場合 Guitar.exe が実行できずに即座に終了します。</p>
 <h4>失敗する場合</h4>
-<p>よくあるのが、prepare.rbを実行し忘れて、 version.c が見つからないというエラー。前述した「ビルドの準備」の操作を行うと version.c が作成されます。自動では行われないので、手作業でやる必要があります。</p>
+<p>よくあるのが、prepare.rbを実行し忘れて、 version.c が見つからないというエラーです。前述した「ビルドの準備」の操作を行うと version.c が作成されます。自動では行われないので、手作業でやる必要があります。</p>
 <h4>追加したソースがコンパイルされないとき</h4>
 <p>version.c を生成した場合もそうですが、リポジトリから pull したら新しいファイルが追加されていたときや、新しいクラス（のファイル）を追加したとき、そのままビルドすると、増えたファイルがコンパイルされずに、いろいろ見つからないというエラーが出ることがあります。そんなときは、Qt Creator の [ビルド]→[qmake の実行] を行ってください。追加したファイルがビルドされない問題は、大抵これで解消されます。</p>
 <p><img src="qmake.png" alt="qmakeの実行" width="365" height="152" class="border"></p>

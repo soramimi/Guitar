@@ -431,6 +431,7 @@ for (Hoge &amp;hoge : hogevec) {
   <li>すべてのヘッダファイルをインクルードし終わった後  using namespace を書いて良い。</li>
   <li>using namespace std; は禁止。</li>
   <li>namespaceの波括弧内はインデントしない。</li>
+  <li>namespaceの終了波括弧の後に、コメントで名前空間名を書く。</li>
 </ul>
 <pre>namespace ns1 {
 namespace ns2 {
@@ -439,6 +440,31 @@ class Hoge {
 };
 
 }} // namespace ns1::ns2</pre>
+<h2>pimplイディオム</h2>
+<p>クラスが大きくなってきたら、pimplイディオムの採用を検討する。ポインタは m を推奨。</p>
+<h4>Hoge.h</h4>
+<pre>class Hoge {
+private:
+	struct Private;
+	Private *m;
+public:
+	Hoge();
+	~Hoge();
+];</pre>
+<h4>Hoge.cpp</h4>
+<pre>struct Hoge::Private {
+};
+
+Hoge::Hoge()
+	: m(new Private)
+{
+}
+
+Hoge::~Hoge()
+{
+	delete m;
+}</pre>
+<p>クラスメンバ関数内で、pimplイディオム以外の用途で m という変数を使用することを禁止する。</p>
 <h2>ライブラリ</h2>
 <ul>
   <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止。</li>
