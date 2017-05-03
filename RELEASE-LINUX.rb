@@ -14,6 +14,16 @@ $dstdir_imageformats = $dstdir + "/imageformats"
 $dstdir_platforms = $dstdir + "/platforms"
 $dstdir_platforminputcontexts = $dstdir + "/platforminputcontexts"
 
+$arch = "x86-32bit"
+$libicu = "/usr/lib/i386-linux-gnu"
+if `uname -a` =~ /(x86_64)|(amd64)/
+	$arch = "x86-64bit"
+	$libicu = "/usr/lib/x86_64-linux-gnu"
+elsif `uname -a` =~ /armv7l/
+	$arch = "raspberrypi"
+	$libicu = "/usr/lib/arm_linux_gnueabihf"
+end
+
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 FileUtils.mkpath($dstdir_iconengines)
@@ -71,7 +81,7 @@ src = $qt + "/plugins/platforminputcontexts/libibusplatforminputcontextplugin.so
 FileUtils.cp(src, $dstdir_platforminputcontexts)
 
 def cp_libicu(name)
-	src = "/usr/lib/x86_64-linux-gnu/libicu" + name + ".so.52"
+	src = $libicu + "/libicu" + name + ".so.52"
 	FileUtils.cp(src, $dstdir)
 end
 
@@ -80,13 +90,6 @@ cp_libicu("i18n")
 cp_libicu("uc")
 
 FileUtils.cp_r("LinuxDesktop", $dstdir)
-
-$arch = "x86-32bit"
-if `uname -a` =~ /(x86_64)|(amd64)/
-	$arch = "x86-64bit"
-elsif `uname -a` =~ /armv7l/
-	$arch = "raspberrypi"
-end
 
 Dir.chdir($workdir) {
 	`tar zcvf #{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-linux-#{$arch}.tar.gz #{$product_name}`
