@@ -235,13 +235,13 @@
         <widget class="MyToolButton" name="toolButton_terminal">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>68</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>68</width>
            <height>48</height>
           </size>
          </property>
