@@ -61,7 +61,7 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="spacing">
-        <number>2</number>
+        <number>1</number>
        </property>
        <property name="leftMargin">
         <number>0</number>
@@ -79,13 +79,13 @@
         <widget class="MyToolButton" name="toolButton_clone">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
@@ -114,13 +114,13 @@
         <widget class="MyToolButton" name="toolButton_fetch">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
@@ -149,13 +149,13 @@
         <widget class="MyToolButton" name="toolButton_pull">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
@@ -184,13 +184,13 @@
         <widget class="MyToolButton" name="toolButton_push">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
@@ -225,7 +225,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>8</width>
+           <width>16</width>
            <height>20</height>
           </size>
          </property>
@@ -235,13 +235,13 @@
         <widget class="MyToolButton" name="toolButton_terminal">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
@@ -270,13 +270,13 @@
         <widget class="MyToolButton" name="toolButton_explorer">
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>64</width>
            <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>48</width>
+           <width>16777215</width>
            <height>48</height>
           </size>
          </property>
