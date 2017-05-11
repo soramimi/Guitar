@@ -699,7 +699,7 @@ void FileDiffWidget::onDiffWidgetResized()
 {
 	updateControls();
 }
-//QList<TextDiffLine> const &lines, int w, int pixmap_height, QPainter& pr
+
 namespace{
 	class MakePixmapLoop {
 	private:

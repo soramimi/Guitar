@@ -6,6 +6,7 @@
 #include "json.h"
 #include "charvec.h"
 #include "urlencode.h"
+#include "TypeTraits.h"
 
 #include <QDebug>
 #include <QThread>
@@ -80,7 +81,13 @@ namespace{
 		SearchFromGitHubDialogAddItem(Ui::SearchFromGitHubDialog *ui, size_t row, int &col)
 			: ui_(ui), row_(row), col_(col)
 		{}
-		template<typename Callback>
+		template<
+			typename Callback,
+			typename std::enable_if<
+				type_traits::is_callable<Callback(QTableWidgetItem*), void>::value,
+				std::nullptr_t
+			>::type = nullptr
+		>
 		void operator()(Callback&& callback)
 		{
 			auto p = new QTableWidgetItem();
