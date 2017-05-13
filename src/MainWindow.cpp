@@ -368,9 +368,38 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				openSelectedRepository();
 				return true;
 			}
+			if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
+				appendCharToRepoFilter(k);
+				return true;
+			}
+			if (k == Qt::Key_Backspace) {
+				backspaceRepoFilter();
+				return true;
+			}
+			if (k == Qt::Key_Escape) {
+				clearRepoFilter();
+				return true;
+			}
+			if (k == Qt::Key_Tab) {
+				ui->tableWidget_log->setFocus();
+				return true;
+			}
 		} else if (watched == ui->tableWidget_log) {
 			if (k == Qt::Key_Home) {
 				setCurrentLogRow(0);
+				return true;
+			}
+			if (k == Qt::Key_Escape) {
+				ui->treeWidget_repos->setFocus();
+				return true;
+			}
+			if (k == Qt::Key_Tab) {
+				// consume the event
+				return true;
+			}
+		} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
+			if (k == Qt::Key_Escape) {
+				ui->tableWidget_log->setFocus();
 				return true;
 			}
 		}
@@ -703,10 +732,10 @@ void MainWindow::showFileList(FilesListType files_list_type)
 {
 	switch (files_list_type) {
 	case FilesListType::SingleList:
-		ui->stackedWidget->setCurrentWidget(ui->page_1);
+		ui->stackedWidget->setCurrentWidget(ui->page_files);
 		break;
 	case FilesListType::SideBySide:
-		ui->stackedWidget->setCurrentWidget(ui->page_2);
+		ui->stackedWidget->setCurrentWidget(ui->page_uncommited);
 		break;
 	}
 }
@@ -2985,6 +3014,29 @@ void MainWindow::on_toolButton_fetch_clicked()
 	ui->action_fetch->trigger();
 }
 
+void MainWindow::clearRepoFilter()
+{
+	ui->lineEdit_filter->clear();
+}
+
+void MainWindow::appendCharToRepoFilter(ushort c)
+{
+	if (QChar(c).isLetter()) {
+		c = QChar(c).toLower().unicode();
+	}
+	ui->lineEdit_filter->setText(m->repository_filter_text + c);
+}
+
+void MainWindow::backspaceRepoFilter()
+{
+	QString s = m->repository_filter_text;
+	int n = s.size();
+	if (n > 0) {
+		s = s.mid(0, n - 1);
+	}
+	ui->lineEdit_filter->setText(s);
+}
+
 void MainWindow::on_lineEdit_filter_textChanged(const QString &text)
 {
 	m->repository_filter_text = text;
@@ -2993,7 +3045,7 @@ void MainWindow::on_lineEdit_filter_textChanged(const QString &text)
 
 void MainWindow::on_toolButton_erase_filter_clicked()
 {
-	ui->lineEdit_filter->clear();
+	clearRepoFilter();
 	ui->lineEdit_filter->setFocus();
 }
 

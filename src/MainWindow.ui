@@ -577,7 +577,7 @@
         <property name="currentIndex">
          <number>0</number>
         </property>
-        <widget class="QWidget" name="page_2">
+        <widget class="QWidget" name="page_uncommited">
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,1">
           <property name="spacing">
            <number>2</number>
@@ -813,7 +813,7 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="page_1">
+        <widget class="QWidget" name="page_files">
          <layout class="QVBoxLayout" name="verticalLayout">
           <property name="leftMargin">
            <number>0</number>

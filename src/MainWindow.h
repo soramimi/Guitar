@@ -261,6 +261,9 @@ private:
 	void openExplorer();
 	void pushSetUpstream(const QString &remote, const QString &branch);
 	bool pushSetUpstream(bool testonly);
+	void clearRepoFilter();
+	void appendCharToRepoFilter(ushort c);
+	void backspaceRepoFilter();
 public:
 
 	QString selectGitCommand();
