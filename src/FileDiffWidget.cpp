@@ -6,6 +6,7 @@
 #include "joinpath.h"
 #include "MainWindow.h"
 #include "misc.h"
+#include "TypeTraits.h"
 
 #include <QBuffer>
 #include <QDebug>
@@ -699,6 +700,51 @@ void FileDiffWidget::onDiffWidgetResized()
 	updateControls();
 }
 
+namespace{
+	class MakePixmapLoop {
+	private:
+		std::reference_wrapper<const QList<TextDiffLine>> lines_;
+		int w_;
+		int pixmap_height_;
+		std::reference_wrapper<QPainter> pr_;
+	public:
+		MakePixmapLoop() = delete;
+		MakePixmapLoop(const MakePixmapLoop&) = delete;
+		MakePixmapLoop(MakePixmapLoop&&) = delete;
+		MakePixmapLoop& operator=(const MakePixmapLoop&) = delete;
+		MakePixmapLoop& operator=(MakePixmapLoop&&) = delete;
+		MakePixmapLoop(QList<TextDiffLine> const &lines, int w, int pixmap_height, QPainter& pr)
+			: lines_(lines), w_(w), pixmap_height_(pixmap_height), pr_(pr)
+		{}
+		template<
+			typename GetColorFunc,
+			typename std::enable_if<
+				type_traits::is_callable<GetColorFunc(TextDiffLine::Type), QColor>::value,
+				std::nullptr_t
+			>::type = nullptr
+		>
+		void operator()(GetColorFunc&& getcolor)
+		{
+			int i = 0;
+			while (i < this->lines_.get().size()) {
+				TextDiffLine::Type type = this->lines_.get()[i].type;
+				int j = i + 1;
+				if (type != TextDiffLine::Normal) {
+					while (j < this->lines_.get().size()) {
+						if (this->lines_.get()[j].type != type) break;
+						j++;
+					}
+					int y = i * this->pixmap_height_ / this->lines_.get().size();
+					int z = j * this->pixmap_height_ / this->lines_.get().size();
+					if (z == y) z = y + 1;
+					QColor color = getcolor(type);
+					if (color.isValid()) this->pr_.get().fillRect(0, y, this->w_, z - y, color);
+				}
+				i = j;
+			}
+		}
+	};
+}
 QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, FileDiffWidget::DiffData const *diffdata, FileDiffWidget::DrawData const *drawdata)
 {
 	auto MakePixmap = [&](QList<TextDiffLine> const &lines, int w, int h){
@@ -706,25 +752,7 @@ QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, Fil
 		QPixmap pixmap = QPixmap(w, h * scale);
 		pixmap.fill(Qt::white);
 		QPainter pr(&pixmap);
-		auto Loop = [&](std::function<QColor(TextDiffLine::Type)> getcolor){
-			int i = 0;
-			while (i < lines.size()) {
-				TextDiffLine::Type type = lines[i].type;
-				int j = i + 1;
-				if (type != TextDiffLine::Normal) {
-					while (j < lines.size()) {
-						if (lines[j].type != type) break;
-						j++;
-					}
-					int y = i * pixmap.height() / lines.size();
-					int z = j * pixmap.height() / lines.size();
-					if (z == y) z = y + 1;
-					QColor color = getcolor(type);
-					if (color.isValid()) pr.fillRect(0, y, w, z - y, color);
-				}
-				i = j;
-			}
-		};
+		MakePixmapLoop Loop(lines, w, pixmap.height(), pr);
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
 			case TextDiffLine::Unknown: return drawdata->bgcolor_gray;

@@ -6,6 +6,7 @@
 #include "json.h"
 #include "charvec.h"
 #include "urlencode.h"
+#include "TypeTraits.h"
 
 #include <QDebug>
 #include <QThread>
@@ -65,6 +66,37 @@ public:
 	std::string text;
 };
 
+namespace{
+	class SearchFromGitHubDialogAddItem {
+	private:
+		Ui::SearchFromGitHubDialog *ui_;
+		size_t row_;
+		std::reference_wrapper<int> col_;
+	public:
+		SearchFromGitHubDialogAddItem() = delete;
+		SearchFromGitHubDialogAddItem(const SearchFromGitHubDialogAddItem&) = delete;
+		SearchFromGitHubDialogAddItem(SearchFromGitHubDialogAddItem&&) = delete;
+		SearchFromGitHubDialogAddItem& operator=(const SearchFromGitHubDialogAddItem&) = delete;
+		SearchFromGitHubDialogAddItem& operator=(SearchFromGitHubDialogAddItem&&) = delete;
+		SearchFromGitHubDialogAddItem(Ui::SearchFromGitHubDialog *ui, size_t row, int &col)
+			: ui_(ui), row_(row), col_(col)
+		{}
+		template<
+			typename Callback,
+			typename std::enable_if<
+				type_traits::is_callable<Callback(QTableWidgetItem*), void>::value,
+				std::nullptr_t
+			>::type = nullptr
+		>
+		void operator()(Callback&& callback)
+		{
+			auto p = new QTableWidgetItem();
+			callback(p);
+			this->ui_->tableWidget->setItem(this->row_, this->col_.get(), p);
+			this->col_.get()++;
+		}
+	};
+}
 void SearchFromGitHubDialog::on_pushButton_search_clicked()
 {
 	std::string q = ui->lineEdit_keywords->text().trimmed().toStdString();
@@ -135,7 +167,6 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 
 	for (size_t row = 0; row < items.size(); row++) {
 		Item const &item = items[row];
-		QTableWidgetItem *p;
 
 		QString name = QString::fromStdString(item.full_name);
 		QString owner;
@@ -146,12 +177,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 		}
 
 		int col = 0;
-		auto AddItem = [&](std::function<void(QTableWidgetItem *)> callback){
-			p = new QTableWidgetItem();
-			callback(p);
-			ui->tableWidget->setItem(row, col, p);
-			col++;
-		};
+		SearchFromGitHubDialogAddItem AddItem(ui, row, std::ref(col));
 
 		AddItem([&](QTableWidgetItem *p){
 			p->setData(Qt::UserRole, (int)row);
