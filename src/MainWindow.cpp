@@ -1820,6 +1820,12 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QMenu menu;
 		QAction *a_properties = addMenuActionProperties(&menu);
+
+		QAction *a_push_upstream = nullptr;
+		if (pushSetUpstream(true)) {
+			a_push_upstream = menu.addAction("push --set-upstream ...");
+		}
+
 		QAction *a_edit_comment = nullptr;
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
@@ -1848,6 +1854,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (a) {
 			if (a == a_properties) {
 				execCommitPropertyDialog(commit);
+				return;
+			}
+			if (a == a_push_upstream) {
+				pushSetUpstream(false);
 				return;
 			}
 			if (a == a_edit_comment) {
@@ -3500,6 +3510,70 @@ void MainWindow::on_toolButton_terminal_clicked()
 void MainWindow::on_toolButton_explorer_clicked()
 {
 	openExplorer();
+}
+
+
+void MainWindow::on_action_push_u_triggered()
+{
+	{
+		GitPtr g = git();
+		if (!isValidWorkingCopy(g)) return;
+		QStringList remotes = g->getRemotes();
+	}
+
+	reopenRepository(true, [&](GitPtr g){
+		g->push_u_origin_master();
+	});
+}
+
+void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
+{
+	if (remote.isEmpty()) return;
+	if (branch.isEmpty()) return;
+
+	reopenRepository(true, [&](GitPtr g){
+		g->push_u(remote, branch);
+	});
+}
+
+bool MainWindow::pushSetUpstream(bool testonly)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return false;
+	QStringList remotes = g->getRemotes();
+
+	QStringList branches;
+	int row = ui->tableWidget_log->currentRow();
+	QList<Label> const *labels = label(row);
+	for (Label const &label : *labels) {
+		if (label.kind == Label::LocalBranch) {
+			QString branch = label.text;
+			branches.push_back(branch);
+		}
+	}
+
+	if (remotes.isEmpty() || branches.isEmpty()) {
+		return false;
+	}
+
+	if (testonly) {
+		return true;
+	}
+
+	PushDialog dlg(this, remotes, branches);
+	if (dlg.exec() == QDialog::Accepted) {
+		PushDialog::Action a = dlg.action();
+		if (a == PushDialog::PushSimple) {
+			ui->action_push->trigger();
+		} else if (a == PushDialog::PushSetUpstream) {
+			QString remote = dlg.remote();
+			QString branch = dlg.branch();
+			pushSetUpstream(remote, branch);
+		}
+		return true;
+	}
+
+	return false;
 }
 
 void MainWindow::on_action_test_triggered()

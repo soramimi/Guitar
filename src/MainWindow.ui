@@ -944,6 +944,7 @@
     <addaction name="action_branch_merge"/>
     <addaction name="action_branch_new"/>
     <addaction name="action_tag_push_all"/>
+    <addaction name="action_push_u"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1184,6 +1185,11 @@
   <action name="action_delete_branch">
    <property name="text">
     <string>Delete branch...</string>
+   </property>
+  </action>
+  <action name="action_push_u">
+   <property name="text">
+    <string>push -u</string>
    </property>
   </action>
  </widget>

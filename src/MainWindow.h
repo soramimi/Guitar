@@ -147,6 +147,8 @@ private slots:
     void on_toolButton_terminal_clicked();
 	void on_toolButton_explorer_clicked();
 
+	void on_action_push_u_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -257,6 +259,8 @@ private:
 	bool runOnCurrentRepositoryDir(std::function<void(QString)> callback);
 	void openTerminal();
 	void openExplorer();
+	void pushSetUpstream(const QString &remote, const QString &branch);
+	bool pushSetUpstream(bool testonly);
 public:
 
 	QString selectGitCommand();

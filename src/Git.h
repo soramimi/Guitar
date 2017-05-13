@@ -383,6 +383,7 @@ public:
 	void setUser(User const&user, bool global);
 
 	bool reset_head();
+	void push_u(const QString &remote, const QString &branch);
 	void push_u_origin_master();
 };
 

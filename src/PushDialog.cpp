@@ -1,11 +1,24 @@
 #include "PushDialog.h"
 #include "ui_PushDialog.h"
 
-PushDialog::PushDialog(QWidget *parent) :
+PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStringList &branches) :
 	QDialog(parent),
 	ui(new Ui::PushDialog)
 {
 	ui->setupUi(this);
+
+	if (remotes.isEmpty() || branches.isEmpty()) {
+//		ui->radioButton_push_set_upstream->setEnabled(false);
+	} else {
+		for (QString const &remote : remotes) {
+			ui->comboBox_remote->addItem(remote);
+		}
+		for (QString const &branch : branches) {
+			ui->comboBox_branch->addItem(branch);
+		}
+	}
+
+//	ui->radioButton_push_simply->click();
 }
 
 PushDialog::~PushDialog()
@@ -13,46 +26,36 @@ PushDialog::~PushDialog()
 	delete ui;
 }
 
-void PushDialog::setURL(QString const &url)
+PushDialog::Action PushDialog::action() const
 {
-	int i = url.indexOf("://");
-	if (i > 0) {
-		int j = url.indexOf(':', i + 3);
-		int k = url.indexOf('@');
-		if (i < j && j < k) {
-			QString s;
-			s = url.mid(0, i + 3) + url.mid(k + 1);
-			ui->lineEdit_url->setText(s);
-			s = url.mid(i + 3, j - i - 3);
-			ui->lineEdit_username->setText(s);
-			s = url.mid(j + 1, k - j - 1);
-			ui->lineEdit_password->setText(s);
-		}
+#if 1
+	return PushSetUpstream;
+#else
+	if (ui->radioButton_push_set_upstream->isChecked()) {
+		return PushSetUpstream;
 	}
+	return PushSimple;
+#endif
 }
 
-void PushDialog::makeCompleteURL()
+QString PushDialog::remote() const
 {
-	QString s = ui->lineEdit_url->text();
-	int i = s.indexOf("://");
-	if (i > 0) {
-		s = s.mid(0, i + 3) + ui->lineEdit_username->text() + ':' + ui->lineEdit_password->text() + '@' + s.mid(i + 3);
-		ui->lineEdit_complete_url->setText(s);
-	}
-
+	return ui->comboBox_remote->currentText();
 }
 
-void PushDialog::on_lineEdit_url_textChanged(const QString & /*arg1*/)
+QString PushDialog::branch() const
 {
-	makeCompleteURL();
+	return ui->comboBox_branch->currentText();
 }
 
-void PushDialog::on_lineEdit_username_textChanged(const QString & /*arg1*/)
+#if 0
+void PushDialog::on_radioButton_push_simply_clicked()
 {
-	makeCompleteURL();
+	ui->frame_set_upstream->setEnabled(false);
 }
 
-void PushDialog::on_lineEdit_password_cursorPositionChanged(int /*arg1*/, int /*arg2*/)
+void PushDialog::on_radioButton_push_set_upstream_clicked()
 {
-	makeCompleteURL();
+	ui->frame_set_upstream->setEnabled(true);
 }
+#endif

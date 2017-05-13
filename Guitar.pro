@@ -80,7 +80,6 @@ SOURCES += \
 	src/Git.cpp \
 	src/joinpath.cpp \
 	src/misc.cpp \
-	src/PushDialog.cpp \
 	src/ConfigCredentialHelperDialog.cpp \
 	src/MySettings.cpp \
 	src/FileDiffWidget.cpp \
@@ -134,14 +133,14 @@ SOURCES += \
     src/DeleteBranchDialog.cpp \
 	src/BasicRepositoryDialog.cpp \
     src/RemoteRepositoriesTableWidget.cpp \
-    src/LocalSocketReader.cpp
+    src/LocalSocketReader.cpp \
+    src/PushDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
 	src/Git.h \
 	src/joinpath.h \
 	src/misc.h \
-	src/PushDialog.h \
 	src/ConfigCredentialHelperDialog.h \
 	src/MySettings.h \
 	src/main.h \
@@ -198,11 +197,11 @@ HEADERS  += \
     src/DeleteBranchDialog.h \
 	src/BasicRepositoryDialog.h \
     src/RemoteRepositoriesTableWidget.h \
-    src/LocalSocketReader.h
+    src/LocalSocketReader.h \
+    src/PushDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
-	src/PushDialog.ui \
 	src/ConfigCredentialHelperDialog.ui \
 	src/TextEditDialog.ui \
     src/SettingsDialog.ui \
@@ -226,7 +225,8 @@ FORMS    += \
     src/SearchFromGitHubDialog.ui \
     src/JumpDialog.ui \
     src/CheckoutDialog.ui \
-    src/DeleteBranchDialog.ui
+    src/DeleteBranchDialog.ui \
+    src/PushDialog.ui
 
 RESOURCES += \
     resources.qrc
