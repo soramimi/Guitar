@@ -10,18 +10,18 @@ class AboutDialog;
 class AboutDialog : public QDialog
 {
 	Q_OBJECT
-
+private:
+	Ui::AboutDialog *ui;
+	QPixmap pixmap;
 public:
 	explicit AboutDialog(QWidget *parent = 0);
 	~AboutDialog();
 
 	static QString appVersion();
-private:
-	Ui::AboutDialog *ui;
-
-	// QWidget interface
 protected:
 	void mouseReleaseEvent(QMouseEvent *);
+protected:
+	void paintEvent(QPaintEvent *event);
 };
 
 #endif // ABOUTDIALOG_H

@@ -20,5 +20,6 @@
         <file>image/clear.png</file>
         <file>image/terminal.svgz</file>
         <file>image/explorer.svgz</file>
+        <file>image/about.png</file>
     </qresource>
 </RCC>
