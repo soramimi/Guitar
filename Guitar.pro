@@ -134,7 +134,8 @@ SOURCES += \
 	src/BasicRepositoryDialog.cpp \
     src/RemoteRepositoriesTableWidget.cpp \
     src/LocalSocketReader.cpp \
-    src/PushDialog.cpp
+    src/PushDialog.cpp \
+    src/StatusLabel.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -198,7 +199,8 @@ HEADERS  += \
 	src/BasicRepositoryDialog.h \
     src/RemoteRepositoriesTableWidget.h \
     src/LocalSocketReader.h \
-    src/PushDialog.h
+    src/PushDialog.h \
+    src/StatusLabel.h
 
 FORMS    += \
 	src/MainWindow.ui \

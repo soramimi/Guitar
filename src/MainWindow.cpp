@@ -39,6 +39,7 @@
 #include "JumpDialog.h"
 #include "DeleteBranchDialog.h"
 #include "LocalSocketReader.h"
+#include "StatusLabel.h"
 
 
 #include <QDateTime>
@@ -165,7 +166,7 @@ struct MainWindow::Private {
 	unsigned int temp_file_counter = 0;
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
-	QLabel *status_bar_label;
+	StatusLabel *status_bar_label;
 	bool ui_blocked = false;
 
 //	QLocalServer local_server;
@@ -181,7 +182,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
-	m->status_bar_label = new QLabel(this);
+	m->status_bar_label = new StatusLabel(this);
 	ui->statusBar->addWidget(m->status_bar_label);
 
 	ui->widget_diff_view->bind(this);
