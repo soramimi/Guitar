@@ -41,7 +41,7 @@ void Terminal::open(QString const &dir)
 				char const *p = getenv(name);
 				if (p && *p) return p;
 			}
-			return "xterm";
+			return "x-terminal-emulator";
 		};
 		QString term = GetTerm({"COLORTERM", "TERM"});
 
