@@ -14,10 +14,8 @@ int main(int argc, char *argv[])
 
 	AskPassDialog dlg(text);
 	if (dlg.exec() == QDialog::Accepted) {
-		text = dlg.text();
+		puts(dlg.text().toStdString().c_str());
 	}
-
-	puts(text.toStdString().c_str());
 
 	return 0;
 }
