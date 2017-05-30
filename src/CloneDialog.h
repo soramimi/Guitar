@@ -33,6 +33,7 @@ private slots:
 	void on_lineEdit_repo_location_textChanged(const QString &arg1);
 	void on_pushButton_test_clicked();
 	void on_comboBox_currentIndexChanged(int index);
+	void on_pushButton_browse_clicked();
 };
 
 #endif // CLONEDIALOG_H
