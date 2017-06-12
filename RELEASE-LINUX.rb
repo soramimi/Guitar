@@ -21,7 +21,7 @@ if `uname -a` =~ /(x86_64)|(amd64)/
 	$libicu = "/usr/lib/x86_64-linux-gnu"
 elsif `uname -a` =~ /armv7l/
 	$arch = "raspberrypi"
-	$libicu = "/usr/lib/arm_linux_gnueabihf"
+	$libicu = "/usr/lib/arm-linux-gnueabihf"
 end
 
 FileUtils.rm_rf($workdir)
