@@ -45,10 +45,13 @@ typedef void SSL_CTX;
 struct WebContext::Private {
 	SSL_CTX *ctx;
 	bool use_keep_alive = false;
+	WebProxy http_proxy;
 };
 
 WebClient::URL::URL(std::string const &addr)
 {
+	data.full_request = addr;
+
 	char const *str = addr.c_str();
 	char const *left;
 	char const *right;
@@ -238,14 +241,21 @@ void WebClient::set_default_header(URL const &url, Post const *post, RequestOpti
 	m->request_header = std::move(header);
 }
 
-std::string WebClient::make_http_request(URL const &url, Post const *post)
+std::string WebClient::make_http_request(URL const &url, Post const *post, WebProxy const *proxy)
 {
 	std::string str;
 
 	str = post ? "POST " : "GET ";
-	str += url.path();
-	str += " HTTP/1.0";
-	str += "\r\n";
+
+	if (proxy) {
+		str += url.data.full_request;
+		str += " HTTP/1.0";
+		str += "\r\n";
+	} else {
+		str += url.path();
+		str += " HTTP/1.0";
+		str += "\r\n";
+	}
 
 	for (std::string const &s: m->request_header) {
 		str += s;
@@ -456,13 +466,22 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	}
 }
 
-bool WebClient::http_get(URL const &url, Post const *post, RequestOption const &opt, std::vector<char> *out)
+bool WebClient::http_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out)
 {
 	clear_error();
 	out->clear();
 
-	std::string hostname = url.host();
-	int port = url.port();
+	URL server_url;
+
+	WebProxy const *proxy = m->webcx->http_proxy();
+	if (proxy) {
+		server_url = URL(proxy->server);
+	} else {
+		server_url = request_url;
+	}
+
+	std::string hostname = server_url.host();
+	int port = server_url.port();
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -481,7 +500,7 @@ bool WebClient::http_get(URL const &url, Post const *post, RequestOption const &
 
 		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
 
-		server.sin_port = htons(get_port(&url, "http", "tcp"));
+		server.sin_port = htons(get_port(&server_url, "http", "tcp"));
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (m->sock == INVALID_SOCKET) {
@@ -495,9 +514,9 @@ bool WebClient::http_get(URL const &url, Post const *post, RequestOption const &
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(url, post, opt);
+	set_default_header(server_url, post, opt);
 
-	std::string request = make_http_request(url, post);
+	std::string request = make_http_request(request_url, post, proxy);
 
 	send_(m->sock, request.c_str(), (int)request.size());
 	if (post && !post->data.empty()) {
@@ -516,7 +535,7 @@ bool WebClient::http_get(URL const &url, Post const *post, RequestOption const &
 	return true;
 }
 
-bool WebClient::https_get(const URL &url, Post const *post, RequestOption const &opt, std::vector<char> *out)
+bool WebClient::https_get(const URL &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out)
 {
 #if USE_OPENSSL
 
@@ -537,8 +556,17 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 		return tmp;
 	};
 
-	std::string hostname = url.host();
-	int  port = url.port();
+	URL server_url;
+
+	WebProxy const *proxy = m->webcx->http_proxy();
+	if (proxy) {
+		server_url = URL(proxy->server);
+	} else {
+		server_url = request_url;
+	}
+
+	std::string hostname = server_url.host();
+	int  port = server_url.port();
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -548,7 +576,7 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 		struct hostent *servhost;
 		struct sockaddr_in server;
 
-		servhost = gethostbyname(url.host().c_str());
+		servhost = gethostbyname(server_url.host().c_str());
 		if (!servhost) {
 			throw Error("gethostbyname failed.");
 		}
@@ -558,7 +586,7 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 
 		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
 
-		server.sin_port = htons(get_port(&url, "https", "tcp"));
+		server.sin_port = htons(get_port(&server_url, "https", "tcp"));
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (m->sock == INVALID_SOCKET) {
@@ -568,6 +596,22 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 		if (connect(m->sock, (struct sockaddr*) &server, sizeof(server)) == SOCKET_ERROR) {
 			throw Error("connect failed.");
 		}
+
+		{
+			char port[10];
+			sprintf(port, ":%u", get_port(&request_url, "https", "tcp"));
+
+			std::string str = "CONNECT ";
+			str += request_url.data.host;
+			str += port;
+			str += " HTTP/1.0\r\n\r\n";
+			send_(m->sock, str.c_str(), str.size());
+			char tmp[1000];
+			int n = recv(m->sock, tmp, sizeof(tmp), 0);
+//			printf("%d\n", n);
+		}
+
+
 
 		m->ssl = SSL_new(sslctx());
 		if (!m->ssl) {
@@ -666,9 +710,9 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(url, post, opt);
+	set_default_header(server_url, post, opt);
 
-	std::string request = make_http_request(url, post);
+	std::string request = make_http_request(server_url, post, proxy);
 
 	auto SEND = [&](char const *ptr, int len){
 		while (len > 0) {
@@ -963,6 +1007,21 @@ WebContext::~WebContext()
 void WebContext::set_keep_alive_enabled(bool f)
 {
 	m->use_keep_alive = f;
+}
+
+void WebContext::set_http_proxy(const std::string &proxy)
+{
+	m->http_proxy = WebProxy();
+	m->http_proxy.server = proxy;
+}
+
+const WebProxy *WebContext::http_proxy() const
+{
+	if (m->http_proxy.empty()) {
+		return nullptr;
+	} else {
+		return &m->http_proxy;
+	}
 }
 
 bool WebContext::load_cacert(char const *path)
