@@ -33,6 +33,7 @@ typedef int socket_t;
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/x509.h>
 #else
 typedef void SSL;
 typedef void SSL_CTX;
@@ -603,6 +604,7 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 
 		X509 *x509 = SSL_get_peer_certificate(m->ssl);
 		if (x509) {
+#ifndef OPENSSL_NO_SHA
 			std::string fingerprint;
 			for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
 				if (i > 0) {
@@ -614,8 +616,7 @@ bool WebClient::https_get(const URL &url, Post const *post, RequestOption const 
 			}
 			fingerprint += '\n';
 			output_debug_string(fingerprint.c_str());
-
-
+#endif
 			long l = SSL_get_verify_result(m->ssl);
 			if (l == X509_V_OK) {
 				// ok
