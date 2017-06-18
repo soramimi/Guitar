@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
 
+#include <QFileDialog>
 #include <QMessageBox>
 #include <QThread>
 
@@ -16,6 +17,7 @@ enum SearchRepository {
 struct CloneDialog::Private {
 	MainWindow *mainwindow;
 	QString url;
+	QString repo_name;
 	QString default_working_dir;
 	bool ok = false;
 	QString errmsg;
@@ -76,14 +78,10 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 	if (i >= 0 && i < j) {
 		path = text.mid(i, j - i);
 	}
-	path = m->default_working_dir / path;
+	m->repo_name = path;
+	path = m->default_working_dir / m->repo_name;
 	path = misc::normalizePathSeparator(path);
 	ui->lineEdit_working_dir->setText(path);
-}
-
-void CloneDialog::on_pushButton_test_clicked()
-{
-	mainwindow()->testRemoteRepositoryValidity(url());
 }
 
 void CloneDialog::on_comboBox_currentIndexChanged(int index)
@@ -95,4 +93,21 @@ void CloneDialog::on_comboBox_currentIndexChanged(int index)
 		}
 	}
 	ui->comboBox->setCurrentIndex(0);
+}
+
+void CloneDialog::on_pushButton_test_clicked()
+{
+	mainwindow()->testRemoteRepositoryValidity(url());
+}
+
+void CloneDialog::on_pushButton_browse_clicked()
+{
+	QString path = ui->lineEdit_working_dir->text();
+	path = QFileDialog::getExistingDirectory(this, tr("Checkout into"), path);
+	if (!path.isEmpty()) {
+		m->default_working_dir = path;
+		path = m->default_working_dir / m->repo_name;
+		path = misc::normalizePathSeparator(path);
+		ui->lineEdit_working_dir->setText(path);
+	}
 }
