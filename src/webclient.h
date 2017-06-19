@@ -29,18 +29,30 @@ public:
 	}
 };
 
+class WebProxy {
+public:
+	std::string server;
+	bool empty() const
+	{
+		return server.empty();
+	}
+};
+
 class WebClient {
 public:
 	class URL {
+		friend class WebClient;
 	private:
 		struct Data {
+			std::string full_request;
 			std::string scheme;
 			std::string host;
 			int port = 0;
 			std::string path;
 		} data;
 	public:
-		URL(const std::string &str);
+		URL() {}
+		URL(const std::string &addr);
 		std::string const &scheme() const { return data.scheme; }
 		std::string const &host() const { return data.host; }
 		int port() const { return data.port; }
@@ -116,11 +128,11 @@ private:
 	void clear_error();
 	static int get_port(URL const *url, char const *scheme, char const *protocol);
 	void set_default_header(URL const &url, Post const *post, const RequestOption &opt);
-	std::string make_http_request(URL const &url, Post const *post);
+	std::string make_http_request(URL const &url, Post const *post, const WebProxy *proxy);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, Response *out);
-	bool http_get(URL const &url, Post const *post, RequestOption const &opt, std::vector<char> *out);
-	bool https_get(URL const &url, Post const *post, RequestOption const &opt, std::vector<char> *out);
+	bool http_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
+	bool https_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
 	void get(URL const &url, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, const std::string &name);
@@ -155,6 +167,7 @@ public:
 
 class WebContext {
 	friend class WebClient;
+public:
 private:
 	struct Private;
 	Private *m;
@@ -165,6 +178,9 @@ public:
 	void operator = (WebContext const &r) = delete;
 
 	void set_keep_alive_enabled(bool f);
+
+	void set_http_proxy(std::string const &proxy);
+	WebProxy const *http_proxy() const;
 
 	bool load_cacert(char const *path);
 };

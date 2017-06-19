@@ -3639,7 +3639,20 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	return false;
 }
 
+#include "webclient.h"
 void MainWindow::on_action_test_triggered()
 {
+	WebContext wcx;
+	wcx.set_http_proxy("http://squid:8080/");
+	WebClient wc(&wcx);
+	int r;
+	r = wc.get(WebClient::URL("https://files.soramimi.jp/"));
+	qDebug() << r;
+	std::vector<char> const &data = wc.response().content;
+	if (!data.empty()) {
+		char const *p = &data[0];
+		size_t n = data.size();
+		qDebug() << QString::fromUtf8(p, n);
+	}
 }
 
