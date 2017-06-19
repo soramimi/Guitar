@@ -482,7 +482,7 @@ bool WebClient::http_get(URL const &request_url, Post const *post, RequestOption
 	}
 
 	std::string hostname = server_url.host();
-	int port = server_url.port();
+	int port = get_port(&server_url, "http", "tcp");
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -501,7 +501,7 @@ bool WebClient::http_get(URL const &request_url, Post const *post, RequestOption
 
 		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
 
-		server.sin_port = htons(get_port(&server_url, "http", "tcp"));
+		server.sin_port = htons(port);
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (m->sock == INVALID_SOCKET) {
@@ -567,7 +567,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 	}
 
 	std::string hostname = server_url.host();
-	int  port = server_url.port();
+	int port = get_port(&server_url, "https", "tcp");
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -587,7 +587,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
 
-		server.sin_port = htons(get_port(&server_url, "https", "tcp"));
+		server.sin_port = htons(port);
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (m->sock == INVALID_SOCKET) {
@@ -598,7 +598,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			throw Error("connect failed.");
 		}
 
-		{
+		if (proxy) {
 			char port[10];
 			sprintf(port, ":%u", get_port(&request_url, "https", "tcp"));
 

@@ -1243,6 +1243,10 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 
 	size_t i = 0;
 	while (i < list.size()) {
+		Git::CommitItem const &c = list[i];
+//		if (c.commit_id.startsWith("b242f1bffa839")) {
+//			qDebug() << "";
+//		}
 		std::vector<size_t> reorder;
 		for (QString const &parent : list[i].parent_ids) {
 			auto it = set.find(parent);
