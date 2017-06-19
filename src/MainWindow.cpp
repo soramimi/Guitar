@@ -1244,34 +1244,28 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 	size_t i = 0;
 	while (i < list.size()) {
 		Git::CommitItem const &c = list[i];
-//		if (c.commit_id.startsWith("b242f1bffa839")) {
-//			qDebug() << "";
-//		}
-		std::vector<size_t> reorder;
+		size_t newpos = -1;
 		for (QString const &parent : list[i].parent_ids) {
 			auto it = set.find(parent);
 			if (it != set.end()) {
-				set.erase(it);
 				for (size_t j = 0; j < i; j++) {
 					if (parent == list[j].commit_id) {
-						reorder.push_back(j);
+						if (newpos == (size_t)-1 || j < newpos) {
+							newpos = j;
+						}
 						qDebug() << "fix commit order" << parent;
+						break;
 					}
 				}
 			}
 		}
-		if (reorder.empty()) {
-			set.insert(set.end(), list[i].commit_id);
-			i++;
-		} else {
-			while (!reorder.empty()) {
-				size_t j = reorder.back();
-				Git::CommitItem t = list[j];
-				list.erase(list.begin() + j);
-				list.insert(list.begin() + i, t);
-				reorder.pop_back();
-			}
+		set.insert(set.end(), list[i].commit_id);
+		if (newpos != (size_t)-1) {
+			Git::CommitItem t = list[newpos];
+			list.erase(list.begin() + newpos);
+			list.insert(list.begin() + i, t);
 		}
+		i++;
 	}
 
 	return list;
