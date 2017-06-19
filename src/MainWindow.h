@@ -163,8 +163,6 @@ private:
 	QString getBookmarksFilePath() const;
 	bool saveRepositoryBookmarks() const;
 
-	GitPtr git(const QString &dir);
-
 	void openRepository_(GitPtr g);
 	void openRepository(bool validate, bool waitcursor = true);
 	void reopenRepository(bool log, std::function<void(GitPtr g)> callback);
@@ -302,11 +300,12 @@ public:
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void setLogEnabled(GitPtr g, bool f);
 	void setBlockUI(bool f);
-	void addWorkingCopyDir(QString dir);
+	void addWorkingCopyDir(QString dir, bool open);
 	bool isValidRemoteURL(QString const &url);
 	void testRemoteRepositoryValidity(const QString &url);
 	void removeSelectedRepositoryFromBookmark(bool ask);
 	void setCurrentLogRow(int row);
+	GitPtr git(const QString &dir) const;
 	GitPtr git();
 public slots:
 	void writeLog(const QString &str);

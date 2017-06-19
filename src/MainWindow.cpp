@@ -593,7 +593,7 @@ QString MainWindow::currentWorkingCopyDir() const
 	return m->current_repo.local_dir;
 }
 
-GitPtr MainWindow::git(QString const &dir)
+GitPtr MainWindow::git(QString const &dir) const
 {
 	return std::shared_ptr<Git>(new Git(m->gcx, dir));
 }
@@ -1326,7 +1326,6 @@ void MainWindow::openRepository_(GitPtr g)
 				return;
 			}
 		}
-
 
 		QString branch_name = currentBranch().name;
 		if (currentBranch().flags & Git::Branch::HeadDetached) {
@@ -2138,7 +2137,7 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::addWorkingCopyDir(QString dir)
+void MainWindow::addWorkingCopyDir(QString dir, bool open)
 {
 	if (dir.endsWith(".git")) {
 		int i = dir.size();
@@ -2159,13 +2158,19 @@ void MainWindow::addWorkingCopyDir(QString dir)
 	item.local_dir = dir;
 	item.name = makeRepositoryName(dir);
 	saveRepositoryBookmark(item);
+
+	if (open) {
+		m->current_repo = item;
+		GitPtr g = git(item.local_dir);
+		openRepository_(g);
+	}
 }
 
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
 	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
-	addWorkingCopyDir(dir);
+	addWorkingCopyDir(dir, false);
 }
 
 void MainWindow::on_action_view_refresh_triggered()
@@ -2912,82 +2917,87 @@ void MainWindow::clone()
 		url = dlg.url();
 		dir = dlg.dir();
 
-		// 既存チェック
+		if (dlg.action() == CloneDialog::Action::Clone) {
+			// 既存チェック
 
-		QFileInfo info(dir);
-		if (info.isFile()) {
-			QString msg = dir + "\n\n" + tr("A file with same name already exists");
-			QMessageBox::warning(this, tr("Clone"), msg);
-			continue;
-		}
-		if (info.isDir()) {
-			QString msg = dir + "\n\n" + tr("A folder with same name already exists");
-			QMessageBox::warning(this, tr("Clone"), msg);
-			continue;
-		}
-
-		// クローン先ディレクトリを求める
-
-		Git::CloneData clone_data = Git::preclone(url, dir);
-
-		// クローン先ディレクトリの存在チェック
-
-		QString basedir = misc::normalizePathSeparator(clone_data.basedir);
-		if (!QFileInfo(basedir).isDir()) {
-			int i = basedir.indexOf('/');
-			int j = basedir.indexOf('\\');
-			if (i < j) i = j;
-			if (i < 0) {
-				QString msg = basedir + "\n\n" + tr("Invalid folder");
+			QFileInfo info(dir);
+			if (info.isFile()) {
+				QString msg = dir + "\n\n" + tr("A file with same name already exists");
+				QMessageBox::warning(this, tr("Clone"), msg);
+				continue;
+			}
+			if (info.isDir()) {
+				QString msg = dir + "\n\n" + tr("A folder with same name already exists");
 				QMessageBox::warning(this, tr("Clone"), msg);
 				continue;
 			}
 
-			QString msg = basedir + "\n\n" + tr("No such folder. Create it now ?");
-			if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
-				continue;
+			// クローン先ディレクトリを求める
+
+			Git::CloneData clone_data = Git::preclone(url, dir);
+
+			// クローン先ディレクトリの存在チェック
+
+			QString basedir = misc::normalizePathSeparator(clone_data.basedir);
+			if (!QFileInfo(basedir).isDir()) {
+				int i = basedir.indexOf('/');
+				int j = basedir.indexOf('\\');
+				if (i < j) i = j;
+				if (i < 0) {
+					QString msg = basedir + "\n\n" + tr("Invalid folder");
+					QMessageBox::warning(this, tr("Clone"), msg);
+					continue;
+				}
+
+				QString msg = basedir + "\n\n" + tr("No such folder. Create it now ?");
+				if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
+					continue;
+				}
+
+				// ディレクトリを作成
+
+				QString base = basedir.mid(0, i + 1);
+				QString sub = basedir.mid(i + 1);
+				QDir(base).mkpath(sub);
 			}
 
-			// ディレクトリを作成
+			ProgressDialog dlg2(this);
+			dlg2.setLabelText(tr("Cloning is in progress"));
 
-			QString base = basedir.mid(0, i + 1);
-			QString sub = basedir.mid(i + 1);
-			QDir(base).mkpath(sub);
+			GitPtr g = git(QString());
+			g->setLogCallback(clone_callback, &dlg2);
+
+			bool ok = false;
+
+			RetrieveLogThread_ th([&](){
+				qDebug() << "cloning";
+				ok = g->clone(clone_data);
+				emit dlg2.finish();
+			});
+			th.start();
+
+			dlg2.exec();
+			th.wait();
+
+			g->setLogCallback(nullptr, nullptr);
+
+			if (dlg2.canceledByUser()) {
+				return; // canceled
+			}
+
+			if (!ok) return;
+
+			RepositoryItem item;
+			item.local_dir = dir;
+			item.local_dir.replace('\\', '/');
+			item.name = makeRepositoryName(dir);
+			saveRepositoryBookmark(item);
+			m->current_repo = item;
+			openRepository(true);
+
+		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
+			addWorkingCopyDir(dir, true);
 		}
-
-		ProgressDialog dlg2(this);
-		dlg2.setLabelText(tr("Cloning is in progress"));
-
-		GitPtr g = git(QString());
-		g->setLogCallback(clone_callback, &dlg2);
-
-		bool ok = false;
-
-		RetrieveLogThread_ th([&](){
-			qDebug() << "cloning";
-			ok = g->clone(clone_data);
-			emit dlg2.finish();
-		});
-		th.start();
-
-		dlg2.exec();
-		th.wait();
-
-		g->setLogCallback(nullptr, nullptr);
-
-		if (dlg2.canceledByUser()) {
-			return; // canceled
-		}
-
-		if (!ok) return;
-
-		RepositoryItem item;
-		item.local_dir = dir;
-		item.local_dir.replace('\\', '/');
-		item.name = makeRepositoryName(dir);
-		saveRepositoryBookmark(item);
-		m->current_repo = item;
-		openRepository(true);
 
 		return; // done
 	}

@@ -52,7 +52,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 				}
 #endif
 				path = path.mid(i);
-				mainwindow()->addWorkingCopyDir(path);
+				mainwindow()->addWorkingCopyDir(path, false);
 			}
 		}
 	} else {

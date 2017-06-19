@@ -21,6 +21,7 @@ struct CloneDialog::Private {
 	QString default_working_dir;
 	bool ok = false;
 	QString errmsg;
+	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
 CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir)
@@ -48,6 +49,11 @@ CloneDialog::~CloneDialog()
 {
 	delete m;
 	delete ui;
+}
+
+CloneDialog::Action CloneDialog::action() const
+{
+	return m->action;
 }
 
 MainWindow *CloneDialog::mainwindow()
@@ -109,5 +115,28 @@ void CloneDialog::on_pushButton_browse_clicked()
 		path = m->default_working_dir / m->repo_name;
 		path = misc::normalizePathSeparator(path);
 		ui->lineEdit_working_dir->setText(path);
+	}
+}
+
+void CloneDialog::on_pushButton_open_existing_clicked()
+{
+	QString dir = mainwindow()->defaultWorkingDir();
+	dir = QFileDialog::getExistingDirectory(this, tr("Open existing directory"), dir);
+	if (QFileInfo(dir).isDir()) {
+		QString url;
+		GitPtr g = mainwindow()->git(dir);
+		QList<Git::Remote> vec;
+		if (g->isValidWorkingCopy()) {
+			g->getRemoteURLs(&vec);
+		}
+		for (Git::Remote const &r : vec) {
+			if (r.purpose == "push" || url.isEmpty()) {
+				url = r.url;
+			}
+		}
+		ui->lineEdit_repo_location->setText(url);
+		ui->lineEdit_working_dir->setText(dir);
+		m->action = CloneDialog::Action::AddExisting;
+		done(Accepted);
 	}
 }
