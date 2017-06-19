@@ -1300,7 +1300,9 @@ void MainWindow::openRepository_(GitPtr g)
 				m->tag_map.clear();
 				QList<Git::Tag> tags = g->tags();
 				for (Git::Tag const &tag : tags) {
-					m->tag_map[tag.id].push_back(tag);
+					Git::Tag t = tag;
+					t.id = m->objcache.getCommitIdFromTag(t.id);
+					m->tag_map[t.id].push_back(t);
 					if (dlg.canceledByUser()) {
 						return;
 					}
@@ -3368,6 +3370,9 @@ void MainWindow::on_action_repo_jump_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		QString name = dlg.selectedName();
 		QString id = g->rev_parse(name);
+		if (g->objectType(id) == "tag") {
+			id = m->objcache.getCommitIdFromTag(id);
+		}
 		int row = -1;
 		for (size_t i = 0; i < m->logs.size(); i++) {
 			Git::CommitItem const &item = m->logs[i];

@@ -816,6 +816,12 @@ Git::FileStatusList Git::status()
 #endif
 }
 
+QString Git::objectType(QString const &id)
+{
+	git("cat-file -t " + id);
+	return resultText().trimmed();
+}
+
 QByteArray Git::cat_file_(QString const &id)
 {
 	qDebug() << "cat_file: " << id;
