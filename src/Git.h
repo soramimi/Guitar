@@ -385,6 +385,7 @@ public:
 	bool reset_head();
 	void push_u(const QString &remote, const QString &branch);
 	void push_u_origin_master();
+	QString objectType(const QString &id);
 };
 
 #endif // GIT_H

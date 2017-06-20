@@ -23,6 +23,12 @@ public:
 	explicit CloneDialog(QWidget *parent, QString const &url, QString const &defworkdir);
 	~CloneDialog();
 
+	enum class Action {
+		Clone,
+		AddExisting,
+	};
+	Action action() const;
+
 	QString url();
 	QString dir();
 private:
@@ -34,6 +40,7 @@ private slots:
 	void on_pushButton_test_clicked();
 	void on_comboBox_currentIndexChanged(int index);
 	void on_pushButton_browse_clicked();
+	void on_pushButton_open_existing_clicked();
 };
 
 #endif // CLONEDIALOG_H
