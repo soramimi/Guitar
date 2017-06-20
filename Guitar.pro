@@ -136,7 +136,8 @@ SOURCES += \
     src/LocalSocketReader.cpp \
     src/PushDialog.cpp \
     src/StatusLabel.cpp \
-    src/RepositoryLineEdit.cpp
+    src/RepositoryLineEdit.cpp \
+    src/DirectoryLineEdit.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -202,7 +203,8 @@ HEADERS  += \
     src/LocalSocketReader.h \
     src/PushDialog.h \
     src/StatusLabel.h \
-    src/RepositoryLineEdit.h
+    src/RepositoryLineEdit.h \
+    src/DirectoryLineEdit.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -23,3 +23,5 @@ void RepositoryLineEdit::dropEvent(QDropEvent *e)
 		return;
 	}
 }
+
+

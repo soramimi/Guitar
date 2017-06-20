@@ -48,7 +48,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEdit_working_dir"/>
+      <widget class="DirectoryLineEdit" name="lineEdit_working_dir"/>
      </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="pushButton_browse">
@@ -123,6 +123,11 @@
    <class>RepositoryLineEdit</class>
    <extends>QLineEdit</extends>
    <header>RepositoryLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>DirectoryLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>DirectoryLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
