@@ -135,7 +135,8 @@ SOURCES += \
     src/RemoteRepositoriesTableWidget.cpp \
     src/LocalSocketReader.cpp \
     src/PushDialog.cpp \
-    src/StatusLabel.cpp
+    src/StatusLabel.cpp \
+    src/RepositoryLineEdit.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -200,7 +201,8 @@ HEADERS  += \
     src/RemoteRepositoriesTableWidget.h \
     src/LocalSocketReader.h \
     src/PushDialog.h \
-    src/StatusLabel.h
+    src/StatusLabel.h \
+    src/RepositoryLineEdit.h
 
 FORMS    += \
 	src/MainWindow.ui \
