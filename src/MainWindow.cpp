@@ -2804,6 +2804,8 @@ void MainWindow::timerEvent(QTimerEvent *)
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
+	if (QApplication::modalWindow()) return;
+
 	if (event->mimeData()->hasUrls()) {
 		event->acceptProposedAction();
 		event->accept();

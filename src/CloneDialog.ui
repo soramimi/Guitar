@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>100</height>
+    <height>103</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEdit_repo_location">
+      <widget class="RepositoryLineEdit" name="lineEdit_repo_location">
        <property name="minimumSize">
         <size>
          <width>320</width>
@@ -48,7 +48,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEdit_working_dir"/>
+      <widget class="DirectoryLineEdit" name="lineEdit_working_dir"/>
      </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="pushButton_browse">
@@ -118,6 +118,18 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RepositoryLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>RepositoryLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>DirectoryLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>DirectoryLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>lineEdit_repo_location</tabstop>
   <tabstop>pushButton_test</tabstop>

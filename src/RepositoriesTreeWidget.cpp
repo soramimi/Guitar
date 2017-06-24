@@ -2,7 +2,7 @@
 #include <QDropEvent>
 #include <QDebug>
 #include <QMimeData>
-
+#include <QApplication>
 #include "MainWindow.h"
 
 RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
@@ -17,7 +17,8 @@ MainWindow *RepositoriesTreeWidget::mainwindow()
 
 void RepositoriesTreeWidget::dragEnterEvent(QDragEnterEvent *event)
 {
-	qDebug() << event;
+	if (QApplication::modalWindow()) return;
+
 	if (event->mimeData()->hasUrls()) {
 		event->acceptProposedAction();
 		event->accept();
@@ -28,6 +29,8 @@ void RepositoriesTreeWidget::dragEnterEvent(QDragEnterEvent *event)
 
 void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 {
+	if (QApplication::modalWindow()) return;
+
 	if (0) {
 		QMimeData const *mimedata = event->mimeData();
 		QByteArray encoded = mimedata->data("application/x-qabstractitemmodeldatalist");
