@@ -382,10 +382,11 @@ public:
 	User getUser(GetUser purpose);
 	void setUser(User const&user, bool global);
 
-	bool reset_head();
+	bool reset_head1();
 	void push_u(const QString &remote, const QString &branch);
 	void push_u_origin_master();
 	QString objectType(const QString &id);
+	bool rm_cached(const QString &file);
 };
 
 #endif // GIT_H

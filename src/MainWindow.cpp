@@ -1916,7 +1916,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_reset_head) {
 				reopenRepository(false, [](GitPtr g){
-					g->reset_head();
+					g->reset_head1();
 				});
 				return;
 			}
@@ -1932,6 +1932,8 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	if (!isValidWorkingCopy(g)) return;
 
 	QMenu menu;
+	QAction *a_delete = menu.addAction(tr("Delete"));
+	QAction *a_untrack = menu.addAction(tr("Untrack"));
 	QAction *a_history = menu.addAction(tr("History"));
 	QAction *a_properties = addMenuActionProperties(&menu);
 
@@ -1939,7 +1941,25 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QAction *a = menu.exec(pt);
 	if (a) {
 		QListWidgetItem *item = ui->listWidget_files->currentItem();
-		if (a == a_history) {
+		if (a == a_delete) {
+			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
+				for_each_selected_files([&](QString const &path){
+					g->removeFile(path);
+					g->chdirexec([&](){
+						QFile(path).remove();
+						return true;
+					});
+				});
+				openRepository(false);
+			}
+		} else if (a == a_untrack) {
+			if (askAreYouSureYouWantToRun("Untrack", tr("rm --cached files"))) {
+				for_each_selected_files([&](QString const &path){
+					g->rm_cached(path);
+				});
+				openRepository(false);
+			}
+		} else if (a == a_history) {
 			execFileHistory(item);
 		} else if (a == a_properties) {
 			execFilePropertyDialog(item);
@@ -1959,6 +1979,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		QAction *a_revert = menu.addAction(tr("Revert"));
 		QAction *a_ignore = menu.addAction(tr("Ignore"));
 		QAction *a_delete = menu.addAction(tr("Delete"));
+		QAction *a_untrack = menu.addAction(tr("Untrack"));
 		QAction *a_history = menu.addAction(tr("History"));
 		QAction *a_properties = addMenuActionProperties(&menu);
 		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
@@ -1966,19 +1987,19 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		if (a) {
 			QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 			if (a == a_stage) {
-				for_each_selected_unstaged_files([&](QString const &path){
+				for_each_selected_files([&](QString const &path){
 					g->stage(path);
 				});
 				updateCurrentFilesList();
 			} else if (a == a_revert) {
 				QStringList paths;
-				for_each_selected_unstaged_files([&](QString const &path){
+				for_each_selected_files([&](QString const &path){
 					paths.push_back(path);
 				});
 				revertFile(paths);
 			} else if (a == a_ignore) {
 				QString append;
-				for_each_selected_unstaged_files([&](QString const &path){
+				for_each_selected_files([&](QString const &path){
 					if (path == ".gitignore") {
 						// skip
 					} else {
@@ -1991,12 +2012,19 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				}
 			} else if (a == a_delete) {
 				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
-					for_each_selected_unstaged_files([&](QString const &path){
+					for_each_selected_files([&](QString const &path){
 						g->removeFile(path);
 						g->chdirexec([&](){
 							QFile(path).remove();
 							return true;
 						});
+					});
+					openRepository(false);
+				}
+			} else if (a == a_untrack) {
+				if (askAreYouSureYouWantToRun("Untrack", "rm --cached")) {
+					for_each_selected_files([&](QString const &path){
+						g->rm_cached(path);
 					});
 					openRepository(false);
 				}
@@ -2029,7 +2057,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				if (a == a_unstage) {
 					g->unstage(path);
-					updateCurrentFilesList();
+					openRepository(false);
 				} else if (a == a_history) {
 					execFileHistory(item);
 				} else if (a == a_properties) {
@@ -2078,39 +2106,30 @@ void MainWindow::revertAllFiles()
 	}
 }
 
-QStringList MainWindow::selectedStagedFiles() const
+QStringList MainWindow::selectedFiles_(QListWidget *listwidget) const
 {
 	QStringList list;
-	QList<QListWidgetItem *> items = ui->listWidget_staged->selectedItems();
+	QList<QListWidgetItem *> items = listwidget->selectedItems();
 	for (QListWidgetItem *item : items) {
 		QString path = getFilePath(item);
 		list.push_back(path);
 	}
 	return list;
+
 }
 
-
-QStringList MainWindow::selectedUnstagedFiles() const
+QStringList MainWindow::selectedFiles() const
 {
-	QStringList list;
-	QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
-	for (QListWidgetItem *item : items) {
-		QString path = getFilePath(item);
-		list.push_back(path);
-	}
-	return list;
+	QWidget *w = QWidget::focusWidget();
+	if (w == ui->listWidget_files) return selectedFiles_(ui->listWidget_files);
+	if (w == ui->listWidget_staged) return selectedFiles_(ui->listWidget_staged);
+	if (w == ui->listWidget_unstaged) return selectedFiles_(ui->listWidget_unstaged);
+	return QStringList();
 }
 
-void MainWindow::for_each_selected_staged_files(std::function<void(QString const&)> fn)
+void MainWindow::for_each_selected_files(std::function<void(QString const&)> fn)
 {
-	for (QString path : selectedStagedFiles()) {
-		fn(path);
-	}
-}
-
-void MainWindow::for_each_selected_unstaged_files(std::function<void(QString const&)> fn)
-{
-	for (QString path : selectedUnstagedFiles()) {
+	for (QString path : selectedFiles()) {
 		fn(path);
 	}
 }
@@ -2202,7 +2221,7 @@ void MainWindow::on_toolButton_stage_clicked()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->stage(selectedUnstagedFiles());
+	g->stage(selectedFiles());
 	updateCurrentFilesList();
 }
 
@@ -2211,7 +2230,7 @@ void MainWindow::on_toolButton_unstage_clicked()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->unstage(selectedStagedFiles());
+	g->unstage(selectedFiles());
 	updateCurrentFilesList();
 }
 
@@ -3641,6 +3660,17 @@ bool MainWindow::pushSetUpstream(bool testonly)
 
 	return false;
 }
+
+void MainWindow::on_action_reset_HEAD_1_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->reset_head1();
+	openRepository(false);
+}
+
+
 
 #include "webclient.h"
 void MainWindow::on_action_test_triggered()

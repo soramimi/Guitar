@@ -13,6 +13,7 @@ class MainWindow;
 
 class QScrollBar;
 
+class QListWidget;
 class QListWidgetItem;
 class QTreeWidgetItem;
 class QTableWidgetItem;
@@ -149,6 +150,9 @@ private slots:
 
 	void on_action_push_u_triggered();
 
+	void on_action_reset_HEAD_1_triggered();
+
+
 private:
 	Ui::MainWindow *ui;
 
@@ -172,10 +176,9 @@ private:
 	void revertFile(const QStringList &path);
 	void revertAllFiles();
 	void prepareLogTableWidget();
-	QStringList selectedStagedFiles() const;
-	QStringList selectedUnstagedFiles() const;
-	void for_each_selected_staged_files(std::function<void (const QString &)> fn);
-	void for_each_selected_unstaged_files(std::function<void (const QString &)> fn);
+	QStringList selectedFiles_(QListWidget *listwidget) const;
+	QStringList selectedFiles() const;
+	void for_each_selected_files(std::function<void (const QString &)> fn);
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
 	void updateCurrentFilesList();

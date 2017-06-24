@@ -884,7 +884,8 @@ void Git::stage(QStringList const &paths)
 
 void Git::unstage(QString const &path)
 {
-	git("reset HEAD " + path);
+	QString cmd = "reset HEAD \"%1\"";
+	git(cmd.arg(path));
 }
 
 void Git::unstage(QStringList const &paths)
@@ -972,9 +973,15 @@ void Git::setUser(const User &user, bool global)
 	git(QString("config %1 user.email %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.email)), chdir);
 }
 
-bool Git::reset_head()
+bool Git::reset_head1()
 {
 	return git("reset HEAD~1");
+}
+
+bool Git::rm_cached(QString const &file)
+{
+	QString cmd = "rm --cached \"%1\"";
+	return git(cmd.arg(file));
 }
 
 void Git::getRemoteURLs(QList<Remote> *out)

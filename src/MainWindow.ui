@@ -945,6 +945,7 @@
     <addaction name="action_branch_new"/>
     <addaction name="action_tag_push_all"/>
     <addaction name="action_push_u"/>
+    <addaction name="action_reset_HEAD_1"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1190,6 +1191,11 @@
   <action name="action_push_u">
    <property name="text">
     <string>push -u</string>
+   </property>
+  </action>
+  <action name="action_reset_HEAD_1">
+   <property name="text">
+    <string>reset HEAD~1</string>
    </property>
   </action>
  </widget>
