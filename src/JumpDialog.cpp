@@ -111,3 +111,13 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 	m->selected_name = p ? p->text() : QString();
 }
 
+bool JumpDialog::isCheckoutChecked()
+{
+	return ui->checkBox_checkout->isChecked();
+}
+
+
+
+
+
+

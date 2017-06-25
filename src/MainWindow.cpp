@@ -1862,7 +1862,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
 
-		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout...")) : nullptr;
+		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout/Branch...")) : nullptr;
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
 
 		QAction *a_add_tag = is_valid_commit_id ? menu.addAction(tr("Add a tag...")) : nullptr;
@@ -1870,6 +1870,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (is_valid_commit_id && m->tag_map.find(commit->commit_id) != m->tag_map.end()) {
 			a_delete_tags = menu.addAction(tr("Delete tags..."));
 		}
+		QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
 		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
 		QAction *a_reset_head = nullptr;
@@ -1907,6 +1908,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_delete_tags) {
 				deleteSelectedTags();
+				return;
+			}
+			if (a == a_revert) {
+				revertCommit();
 				return;
 			}
 			if (a == a_explore) {
@@ -1976,7 +1981,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 	if (!items.isEmpty()) {
 		QMenu menu;
 		QAction *a_stage = menu.addAction(tr("Stage"));
-		QAction *a_revert = menu.addAction(tr("Revert"));
+		QAction *a_reset_file = menu.addAction(tr("Reset"));
 		QAction *a_ignore = menu.addAction(tr("Ignore"));
 		QAction *a_delete = menu.addAction(tr("Delete"));
 		QAction *a_untrack = menu.addAction(tr("Untrack"));
@@ -1991,12 +1996,12 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					g->stage(path);
 				});
 				updateCurrentFilesList();
-			} else if (a == a_revert) {
+			} else if (a == a_reset_file) {
 				QStringList paths;
 				for_each_selected_files([&](QString const &path){
 					paths.push_back(path);
 				});
-				revertFile(paths);
+				resetFile(paths);
 			} else if (a == a_ignore) {
 				QString append;
 				for_each_selected_files([&](QString const &path){
@@ -2076,7 +2081,7 @@ bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
-void MainWindow::revertFile(QStringList const &paths)
+void MainWindow::resetFile(QStringList const &paths)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2084,10 +2089,11 @@ void MainWindow::revertFile(QStringList const &paths)
 	if (paths.isEmpty()) {
 		// nop
 	} else {
-		QString cmd = "git checkout -- \"" + paths[0] + '\"';
-		if (askAreYouSureYouWantToRun(tr("Revert a file"), "> " + cmd)) {
+		QString cmd = "git checkout -- \"%1\"";
+		cmd = cmd.arg(paths[0]);
+		if (askAreYouSureYouWantToRun(tr("Reset a file"), "> " + cmd)) {
 			for (QString const &path : paths) {
-				g->revertFile(path);
+				g->resetFile(path);
 			}
 			openRepository(true);
 		}
@@ -2101,7 +2107,7 @@ void MainWindow::revertAllFiles()
 
 	QString cmd = "git reset --hard HEAD";
 	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
-		g->revertAllFiles();
+		g->resetAllFiles();
 		openRepository(true);
 	}
 }
@@ -3123,6 +3129,18 @@ void MainWindow::deleteSelectedTags()
 	}
 }
 
+void MainWindow::revertCommit()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		g->revert(commit->commit_id);
+		openRepository(false);
+	}
+}
+
 void MainWindow::addTag()
 {
 	GitPtr g = git();
@@ -3404,6 +3422,25 @@ void MainWindow::on_action_repo_jump_triggered()
 			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(name).arg(id) + tr("That commmit has not foud or not read yet"));
 		} else {
 			setCurrentLogRow(row);
+
+			if (dlg.isCheckoutChecked()) {
+				NamedCommitItem item;
+				for (NamedCommitItem const &t : items) {
+					if (t.name == name) {
+						item = t;
+						break;
+					}
+				}
+				bool ok = false;
+				if (item.type == NamedCommitItem::Type::Branch) {
+					ok = g->git(QString("checkout \"%1\"").arg(name), true);
+				} else if (item.type == NamedCommitItem::Type::Tag) {
+					ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
+				}
+				if (ok) {
+					openRepository(true);
+				}
+			}
 		}
 	}
 }

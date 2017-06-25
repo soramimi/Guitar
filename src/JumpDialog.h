@@ -25,6 +25,7 @@ public:
 	QString selectedName() const;
 
 	static void sort(NamedCommitList *items);
+	bool isCheckoutChecked();
 private slots:
 	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(const QString &text);

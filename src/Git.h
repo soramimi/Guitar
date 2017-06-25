@@ -34,10 +34,11 @@ struct TreeLine {
 
 struct NamedCommitItem {
 	enum class Type {
+		None,
 		Branch,
 		Tag,
 	};
-	Type type = Type::Branch;
+	Type type = Type::None;
 	QString name;
 	QString id;
 };
@@ -310,8 +311,8 @@ public:
 
 	FileStatusList status();
 	bool cat_file(const QString &id, QByteArray *out);
-	void revertFile(const QString &path);
-	void revertAllFiles();
+	void resetFile(const QString &path);
+	void resetAllFiles();
 
 	void removeFile(const QString &path);
 
@@ -351,6 +352,7 @@ public:
 
 	bool commit(const QString &text);
 	bool commit_amend_m(const QString &text);
+	bool revert(const QString &id);
 	void push(bool tags = false);
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(const QString &name);

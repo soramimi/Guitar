@@ -173,7 +173,7 @@ private:
 
 	void openSelectedRepository();
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
-	void revertFile(const QStringList &path);
+	void resetFile(const QStringList &path);
 	void revertAllFiles();
 	void prepareLogTableWidget();
 	QStringList selectedFiles_(QListWidget *listwidget) const;
@@ -265,6 +265,7 @@ private:
 	void clearRepoFilter();
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
+	void revertCommit();
 public:
 
 	QString selectGitCommand();

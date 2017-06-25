@@ -756,6 +756,14 @@ bool Git::commit_amend_m(const QString &text)
 	return commit_(text, true);
 }
 
+bool Git::revert(const QString &id)
+{
+	QString cmd = "revert %1";
+	cmd = cmd.arg(id);
+	return git(cmd);
+
+}
+
 void Git::push_u(QString const &remote, QString const &branch)
 {
 	QString cmd = "push -u %1 %2";
@@ -844,7 +852,7 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 	return false;
 }
 
-void Git::revertFile(const QString &path)
+void Git::resetFile(const QString &path)
 {
 #if 1
 	git("checkout -- " + path);
@@ -855,7 +863,7 @@ void Git::revertFile(const QString &path)
 #endif
 }
 
-void Git::revertAllFiles()
+void Git::resetAllFiles()
 {
 	git("reset --hard HEAD");
 }
