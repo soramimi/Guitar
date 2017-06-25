@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Commit Properties</string>
+   <string>Commit Property</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

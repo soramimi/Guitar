@@ -247,8 +247,10 @@ QString Git::rev_parse(QString const &name)
 {
 	QString cmd = "rev-parse %1";
 	cmd = cmd.arg(name);
-	git(cmd);
-	return resultText().trimmed();
+	if (git(cmd)) {
+		return resultText().trimmed();
+	}
+	return QString();
 }
 
 QStringList Git::refs()

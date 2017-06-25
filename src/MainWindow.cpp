@@ -307,7 +307,9 @@ void MainWindow::onLocalSocketReadChannelFinished(LocalSocketReader *p)
 
 void MainWindow::setCurrentLogRow(int row)
 {
-	ui->tableWidget_log->setCurrentCell(row, 2);
+	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
+		ui->tableWidget_log->setCurrentCell(row, 2);
+	}
 }
 
 bool MainWindow::event(QEvent *event)
@@ -1243,7 +1245,6 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 
 	size_t i = 0;
 	while (i < list.size()) {
-		Git::CommitItem const &c = list[i];
 		size_t newpos = -1;
 		for (QString const &parent : list[i].parent_ids) {
 			auto it = set.find(parent);
@@ -1731,9 +1732,9 @@ void MainWindow::execCommitPropertyDialog(Git::CommitItem const *commit)
 	dlg.exec();
 }
 
-QAction *MainWindow::addMenuActionProperties(QMenu *menu)
+QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 {
-	return menu->addAction(tr("&Properties"));
+	return menu->addAction(tr("&Property"));
 }
 
 int MainWindow::indexOfRepository(QTreeWidgetItem const *treeitem) const
@@ -1802,7 +1803,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_set_remote_url = menu.addAction(tr("Set remote URL"));
 
 		menu.addSeparator();
-		QAction *a_properties = addMenuActionProperties(&menu);
+		QAction *a_properties = addMenuActionProperty(&menu);
 
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
@@ -1848,7 +1849,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		int row = selectedLogIndex();
 
 		QMenu menu;
-		QAction *a_properties = addMenuActionProperties(&menu);
 
 		QAction *a_push_upstream = nullptr;
 		if (pushSetUpstream(true)) {
@@ -1874,11 +1874,12 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
 		QAction *a_reset_head = nullptr;
-#if 0 // 下手に使うとヤバいので、とりあえず無効にしておく
+#if 0 // 下手に使うと危険なので、とりあえず無効にしておく
 		if (is_valid_commit_id && commit->commit_id == m->head_id) {
 			a_reset_head = menu.addAction(tr("Reset HEAD"));
 		}
 #endif
+		QAction *a_properties = addMenuActionProperty(&menu);
 
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
@@ -1940,7 +1941,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QAction *a_delete = menu.addAction(tr("Delete"));
 	QAction *a_untrack = menu.addAction(tr("Untrack"));
 	QAction *a_history = menu.addAction(tr("History"));
-	QAction *a_properties = addMenuActionProperties(&menu);
+	QAction *a_properties = addMenuActionProperty(&menu);
 
 	QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
@@ -1986,7 +1987,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		QAction *a_delete = menu.addAction(tr("Delete"));
 		QAction *a_untrack = menu.addAction(tr("Untrack"));
 		QAction *a_history = menu.addAction(tr("History"));
-		QAction *a_properties = addMenuActionProperties(&menu);
+		QAction *a_properties = addMenuActionProperty(&menu);
 		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 		QAction *a = menu.exec(pt);
 		if (a) {
@@ -2055,7 +2056,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 			QMenu menu;
 			QAction *a_unstage = menu.addAction(tr("Unstage"));
 			QAction *a_history = menu.addAction(tr("History"));
-			QAction *a_properties = addMenuActionProperties(&menu);
+			QAction *a_properties = addMenuActionProperty(&menu);
 			QPoint pt = ui->listWidget_staged->mapToGlobal(pos) + QPoint(8, -8);
 			QAction *a = menu.exec(pt);
 			if (a) {
@@ -3396,6 +3397,17 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	return items;
 }
 
+int MainWindow::rowFromCommitId(QString const &id)
+{
+	for (size_t i = 0; i < m->logs.size(); i++) {
+		Git::CommitItem const &item = m->logs[i];
+		if (item.commit_id == id) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
+
 void MainWindow::on_action_repo_jump_triggered()
 {
 	GitPtr g = git();
@@ -3403,47 +3415,58 @@ void MainWindow::on_action_repo_jump_triggered()
 
 	NamedCommitList items = namedCommitItems(Branches | Tags);
 	JumpDialog::sort(&items);
+	{
+		NamedCommitItem head;
+		head.name = "HEAD";
+		head.id = m->head_id;
+		items.push_front(head);
+	}
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
-		QString name = dlg.selectedName();
-		QString id = g->rev_parse(name);
-		if (g->objectType(id) == "tag") {
-			id = m->objcache.getCommitIdFromTag(id);
-		}
-		int row = -1;
-		for (size_t i = 0; i < m->logs.size(); i++) {
-			Git::CommitItem const &item = m->logs[i];
-			if (item.commit_id == id) {
-				row = (int)i;
-				break;
+		JumpDialog::Action action = dlg.action();
+		if (action == JumpDialog::Action::BranchsAndTags) {
+			QString name = dlg.text();
+			QString id = g->rev_parse(name);
+			if (g->objectType(id) == "tag") {
+				id = m->objcache.getCommitIdFromTag(id);
 			}
-		}
-		if (row < 0) {
-			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(name).arg(id) + tr("That commmit has not foud or not read yet"));
-		} else {
-			setCurrentLogRow(row);
+			int row = rowFromCommitId(id);
+			if (row < 0) {
+				QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(name).arg(id) + tr("That commmit has not foud or not read yet"));
+			} else {
+				setCurrentLogRow(row);
 
-			if (dlg.isCheckoutChecked()) {
-				NamedCommitItem item;
-				for (NamedCommitItem const &t : items) {
-					if (t.name == name) {
-						item = t;
-						break;
+				if (dlg.isCheckoutChecked()) {
+					NamedCommitItem item;
+					for (NamedCommitItem const &t : items) {
+						if (t.name == name) {
+							item = t;
+							break;
+						}
+					}
+					bool ok = false;
+					if (item.type == NamedCommitItem::Type::Branch) {
+						ok = g->git(QString("checkout \"%1\"").arg(name), true);
+					} else if (item.type == NamedCommitItem::Type::Tag) {
+						ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
+					}
+					if (ok) {
+						openRepository(true);
 					}
 				}
-				bool ok = false;
-				if (item.type == NamedCommitItem::Type::Branch) {
-					ok = g->git(QString("checkout \"%1\"").arg(name), true);
-				} else if (item.type == NamedCommitItem::Type::Tag) {
-					ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
-				}
-				if (ok) {
-					openRepository(true);
-				}
+			}
+		} else if (action == JumpDialog::Action::CommitId) {
+			QString id = dlg.text();
+			id = g->rev_parse(id);
+			if (!id.isEmpty()) {
+				int row = rowFromCommitId(id);
+				setCurrentLogRow(row);
 			}
 		}
 	}
 }
+
+
 
 void MainWindow::checkout(Git::CommitItem const *commit)
 {
@@ -3727,4 +3750,5 @@ void MainWindow::on_action_test_triggered()
 		qDebug() << QString::fromUtf8(p, n);
 	}
 }
+
 

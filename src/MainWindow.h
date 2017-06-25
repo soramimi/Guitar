@@ -152,7 +152,6 @@ private slots:
 
 	void on_action_reset_HEAD_1_triggered();
 
-
 private:
 	Ui::MainWindow *ui;
 
@@ -227,7 +226,7 @@ private:
 	QStringList whichCommand_(const QString &cmdfile);
 	QString getObjectID(QListWidgetItem *item);
 	void execFilePropertyDialog(QListWidgetItem *item);
-	static QAction *addMenuActionProperties(QMenu *menu);
+	static QAction *addMenuActionProperty(QMenu *menu);
 	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback);
 	Git::Object cat_file_(GitPtr g, const QString &id);
 	Git::Object cat_file(const QString &id);
@@ -266,6 +265,7 @@ private:
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
 	void revertCommit();
+	int rowFromCommitId(const QString &id);
 public:
 
 	QString selectGitCommand();

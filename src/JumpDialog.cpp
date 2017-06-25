@@ -37,6 +37,9 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 		}
 	}
 	updateTable();
+
+	ui->tabWidget->setCurrentWidget(ui->tab_branches_tags);
+	ui->lineEdit_filter->setFocus();
 }
 
 JumpDialog::~JumpDialog()
@@ -45,9 +48,25 @@ JumpDialog::~JumpDialog()
 	delete ui;
 }
 
-QString JumpDialog::selectedName() const
+JumpDialog::Action JumpDialog::action() const
 {
-	return m->selected_name;
+	QWidget *w = ui->tabWidget->currentWidget();
+	if (w == ui->tab_branches_tags) return Action::BranchsAndTags;
+	if (w == ui->tab_find_text)     return Action::CommitId;
+	return Action::None;
+}
+
+QString JumpDialog::text() const
+{
+	JumpDialog::Action a = action();
+
+	if (a == JumpDialog::Action::BranchsAndTags) {
+		return m->selected_name;
+	}
+
+	if (a == JumpDialog::Action::CommitId) {
+		return ui->lineEdit_text->text();
+	}
 }
 
 void JumpDialog::sort(NamedCommitList *items)
@@ -64,9 +83,6 @@ void JumpDialog::updateTable_(NamedCommitList const &list)
 	for (int i = 0; i < list.size(); i++) {
 		QTableWidgetItem *p = new QTableWidgetItem();
 		QString name = list[i].name;
-		if (!m->filter_text.isEmpty() && name.indexOf(m->filter_text) < 0) {
-			continue;
-		}
 		p->setText(name);
 		ui->tableWidget->setItem(i, 0, p);
 		ui->tableWidget->setRowHeight(i, 24);
@@ -83,7 +99,7 @@ void JumpDialog::updateTable()
 	} else {
 		NamedCommitList list;
 		for (NamedCommitItem const &item: m->items) {
-			if (item.name.indexOf(m->filter_text) < 0) {
+			if (item.name.indexOf(m->filter_text, 0, Qt::CaseInsensitive) < 0) {
 				continue;
 			}
 			list.push_back(item);
@@ -116,8 +132,12 @@ bool JumpDialog::isCheckoutChecked()
 	return ui->checkBox_checkout->isChecked();
 }
 
-
-
-
-
+void JumpDialog::on_tabWidget_currentChanged(int /*index*/)
+{
+	if (ui->tabWidget->currentWidget() == ui->tab_branches_tags) {
+		ui->checkBox_checkout->setVisible(true);
+	} else {
+		ui->checkBox_checkout->setVisible(false);
+	}
+}
 
