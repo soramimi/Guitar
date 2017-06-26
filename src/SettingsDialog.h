@@ -9,13 +9,15 @@ namespace Ui {
 class SettingsDialog;
 }
 
+class QTreeWidgetItem;
+
 class SettingsDialog : public QDialog
 {
 	Q_OBJECT
 public:
 	ApplicationSettings set;
 private:
-	MainWindow *mainwindow;
+	MainWindow *mainwindow_;
 
 	void loadSettings();
 	void saveSettings();
@@ -24,6 +26,16 @@ public:
 	explicit SettingsDialog(MainWindow *parent);
 	~SettingsDialog();
 
+	MainWindow *mainwindow()
+	{
+		return mainwindow_;
+	}
+
+	SettingsDialog *dialog()
+	{
+		return this;
+	}
+
 	ApplicationSettings const &settings() const
 	{
 		return set;
@@ -31,11 +43,8 @@ public:
 
 	static void loadSettings(ApplicationSettings *set);
 private slots:
-	void on_pushButton_select_git_command_clicked();
 
-	void on_pushButton_select_file_command_clicked();
-
-	void on_pushButton_browse_default_working_dir_clicked();
+	void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 
 private:
 	Ui::SettingsDialog *ui;

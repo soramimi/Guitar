@@ -137,7 +137,10 @@ SOURCES += \
     src/PushDialog.cpp \
     src/StatusLabel.cpp \
     src/RepositoryLineEdit.cpp \
-    src/DirectoryLineEdit.cpp
+    src/DirectoryLineEdit.cpp \
+	src/SettingDirectoriesForm.cpp \
+    src/AbstractSettingForm.cpp \
+    src/SettingExampleForm.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -204,7 +207,10 @@ HEADERS  += \
     src/PushDialog.h \
     src/StatusLabel.h \
     src/RepositoryLineEdit.h \
-    src/DirectoryLineEdit.h
+    src/DirectoryLineEdit.h \
+	src/SettingDirectoriesForm.h \
+    src/AbstractSettingForm.h \
+    src/SettingExampleForm.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -232,7 +238,9 @@ FORMS    += \
     src/JumpDialog.ui \
     src/CheckoutDialog.ui \
     src/DeleteBranchDialog.ui \
-    src/PushDialog.ui
+    src/PushDialog.ui \
+	src/SettingDirectoriesForm.ui \
+    src/SettingExampleForm.ui
 
 RESOURCES += \
     resources.qrc

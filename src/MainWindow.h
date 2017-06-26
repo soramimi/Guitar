@@ -268,7 +268,7 @@ private:
 	int rowFromCommitId(const QString &id);
 public:
 
-	QString selectGitCommand();
+	QString selectGitCommand(bool save);
 	QString selectFileCommand();
 
 	int limitLogCount() const;

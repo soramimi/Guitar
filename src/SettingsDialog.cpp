@@ -3,16 +3,32 @@
 #include "MySettings.h"
 
 #include <QFileDialog>
+#include "misc.h"
 
 SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QDialog(parent),
 	ui(new Ui::SettingsDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 
-	mainwindow = parent;
+	mainwindow_ = parent;
 
 	loadSettings();
+
+	QTreeWidgetItem *item;
+
+	item = new QTreeWidgetItem();
+	item->setText(0, tr("Directories"));
+	item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)ui->page_directories));
+	ui->treeWidget->addTopLevelItem(item);
+
+	item = new QTreeWidgetItem();
+	item->setText(0, tr("Example"));
+	item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)ui->page_example));
+	ui->treeWidget->addTopLevelItem(item);
 }
 
 SettingsDialog::~SettingsDialog()
@@ -32,10 +48,6 @@ void SettingsDialog::loadSettings(ApplicationSettings *set)
 
 void SettingsDialog::saveSettings()
 {
-	set.default_working_dir = ui->lineEdit_default_working_dir->text();
-	set.git_command = ui->lineEdit_git_command->text();
-	set.file_command = ui->lineEdit_file_command->text();
-
 	MySettings s;
 	s.beginGroup("Global");
 	s.setValue("DefaultWorkingDirectory", set.default_working_dir);
@@ -48,46 +60,26 @@ void SettingsDialog::loadSettings()
 {
 	loadSettings(&set);
 
-	ui->lineEdit_default_working_dir->setText(set.default_working_dir);
-	ui->lineEdit_git_command->setText(set.git_command);
-	ui->lineEdit_file_command->setText(set.file_command);
-}
-
-void SettingsDialog::on_pushButton_select_git_command_clicked()
-{
-	QString path = mainwindow->selectGitCommand();
-	if (!path.isEmpty()) {
-		set.git_command = path;
-		ui->lineEdit_git_command->setText(path);
+	QList<AbstractSettingForm *> forms = ui->stackedWidget->findChildren<AbstractSettingForm *>();
+	for (AbstractSettingForm *form : forms) {
+		form->reflect();
 	}
 }
 
 void SettingsDialog::accept()
 {
 	saveSettings();
-	QDialog::accept();
+	done(QDialog::Accepted);
 }
 
-void SettingsDialog::on_pushButton_select_file_command_clicked()
+void SettingsDialog::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {
-	QString path = mainwindow->selectFileCommand();
-	if (!path.isEmpty()) {
-		set.file_command = path;
-		ui->lineEdit_file_command->setText(path);
+	(void)previous;
+	if (current) {
+		uintptr_t p = current->data(0, Qt::UserRole).value<uintptr_t>();
+		QWidget *w = reinterpret_cast<QWidget *>(p);
+		Q_ASSERT(w);
+		ui->stackedWidget->setCurrentWidget(w);
 	}
 }
-
-#include "misc.h"
-void SettingsDialog::on_pushButton_browse_default_working_dir_clicked()
-{
-	QString dir = ui->lineEdit_default_working_dir->text();
-	dir = QFileDialog::getExistingDirectory(this, tr("Default working folder"), dir);
-	dir = misc::normalizePathSeparator(dir);
-	if (QFileInfo(dir).isDir()) {
-		ui->lineEdit_default_working_dir->setText(dir);
-	}
-}
-
-
-
 

@@ -2683,7 +2683,7 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 	return QString();
 }
 
-QString MainWindow::selectGitCommand()
+QString MainWindow::selectGitCommand(bool save)
 {
 #ifdef Q_OS_WIN
 	char const *exe = "git.exe";
@@ -2693,7 +2693,7 @@ QString MainWindow::selectGitCommand()
 	QString path = m->gcx.git_command;
 
 	auto fn = [&](QString const &path){
-		setGitCommand(path, true);
+		setGitCommand(path, save);
 	};
 
 	QStringList list = whichCommand_(exe);
@@ -2768,7 +2768,7 @@ void MainWindow::checkGitCommand()
 		if (info.isExecutable()) {
 			break; // ok
 		}
-		if (selectGitCommand().isEmpty()) {
+		if (selectGitCommand(true).isEmpty()) {
 			close();
 			break;
 		}
