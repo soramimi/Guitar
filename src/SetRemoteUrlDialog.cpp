@@ -50,7 +50,7 @@ void SetRemoteUrlDialog::accept()
 		}
 		updateRemotesTable();
 	}
-	QDialog::accept();
+	QDialog::done(Accepted);
 }
 
 void SetRemoteUrlDialog::on_pushButton_test_clicked()

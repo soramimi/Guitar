@@ -67,6 +67,8 @@ QString JumpDialog::text() const
 	if (a == JumpDialog::Action::CommitId) {
 		return ui->lineEdit_text->text();
 	}
+
+	return QString();
 }
 
 void JumpDialog::sort(NamedCommitList *items)

@@ -140,7 +140,8 @@ SOURCES += \
     src/DirectoryLineEdit.cpp \
 	src/SettingDirectoriesForm.cpp \
     src/AbstractSettingForm.cpp \
-    src/SettingExampleForm.cpp
+    src/SettingExampleForm.cpp \
+    src/CreateRepositoryDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -210,7 +211,8 @@ HEADERS  += \
     src/DirectoryLineEdit.h \
 	src/SettingDirectoriesForm.h \
     src/AbstractSettingForm.h \
-    src/SettingExampleForm.h
+    src/SettingExampleForm.h \
+    src/CreateRepositoryDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -240,7 +242,8 @@ FORMS    += \
     src/DeleteBranchDialog.ui \
     src/PushDialog.ui \
 	src/SettingDirectoriesForm.ui \
-    src/SettingExampleForm.ui
+    src/SettingExampleForm.ui \
+    src/CreateRepositoryDialog.ui
 
 RESOURCES += \
     resources.qrc

@@ -243,6 +243,24 @@ QString Git::version()
 	return resultText().trimmed();
 }
 
+bool Git::init()
+{
+	bool ok = false;
+	QDir cwd = QDir::current();
+	QString dir = workingRepositoryDir();
+	if (QDir::setCurrent(dir)) {
+		QString gitdir = dir / ".git";
+		if (!QFileInfo(gitdir).isDir()) {
+			git("init", false);
+			if (QFileInfo(gitdir).isDir()) {
+				ok = true;
+			}
+		}
+		QDir::setCurrent(cwd.path());
+	}
+	return ok;
+}
+
 QString Git::rev_parse(QString const &name)
 {
 	QString cmd = "rev-parse %1";

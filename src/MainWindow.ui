@@ -898,6 +898,7 @@
     </property>
     <addaction name="action_clone"/>
     <addaction name="action_open_existing_working_copy"/>
+    <addaction name="action_create_a_repository"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -1199,6 +1200,11 @@
   <action name="action_reset_HEAD_1">
    <property name="text">
     <string>reset HEAD~1</string>
+   </property>
+  </action>
+  <action name="action_create_a_repository">
+   <property name="text">
+    <string>Create a repository</string>
    </property>
   </action>
  </widget>

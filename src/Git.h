@@ -297,6 +297,7 @@ public:
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy();
 	QString version();
+	bool init();
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(const QString &id, int maxcount);
 	CommitItemList log(int maxcount);

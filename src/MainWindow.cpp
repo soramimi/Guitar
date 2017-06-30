@@ -40,7 +40,7 @@
 #include "DeleteBranchDialog.h"
 #include "LocalSocketReader.h"
 #include "StatusLabel.h"
-
+#include "CreateRepositoryDialog.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -2163,7 +2163,7 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::addWorkingCopyDir(QString dir, bool open)
+void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 {
 	if (dir.endsWith(".git")) {
 		int i = dir.size();
@@ -2180,9 +2180,13 @@ void MainWindow::addWorkingCopyDir(QString dir, bool open)
 		return;
 	}
 
+	if (name.isEmpty()) {
+		name = makeRepositoryName(dir);
+	}
+
 	RepositoryItem item;
 	item.local_dir = dir;
-	item.name = makeRepositoryName(dir);
+	item.name = name;
 	saveRepositoryBookmark(item);
 
 	if (open) {
@@ -3306,27 +3310,29 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 	return false;
 }
 
-void MainWindow::testRemoteRepositoryValidity(QString const &url)
+bool MainWindow::testRemoteRepositoryValidity(QString const &url)
 {
-	bool f;
+	bool ok;
 	{
 		OverrideWaitCursor;
-		f = isValidRemoteURL(url);
+		ok = isValidRemoteURL(url);
 	}
 
 	QString pass = tr("The URL is a valid repository");
 	QString fail = tr("Failed to access the URL");
 
 	QString text = "%1\n\n%2";
-	text = text.arg(url).arg(f ? pass : fail);
+	text = text.arg(url).arg(ok ? pass : fail);
 
 	QString title = tr("Remote Repository");
 
-	if (f) {
+	if (ok) {
 		QMessageBox::information(this, title, text);
 	} else {
 		QMessageBox::critical(this, title, text);
 	}
+
+	return ok;
 }
 
 void MainWindow::on_action_set_config_user_triggered()
@@ -3732,23 +3738,37 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	openRepository(false);
 }
 
-
-
-#include "webclient.h"
-void MainWindow::on_action_test_triggered()
+void MainWindow::on_action_create_a_repository_triggered()
 {
-	WebContext wcx;
-	wcx.set_http_proxy("http://squid:8080/");
-	WebClient wc(&wcx);
-	int r;
-	r = wc.get(WebClient::URL("https://files.soramimi.jp/"));
-	qDebug() << r;
-	std::vector<char> const &data = wc.response().content;
-	if (!data.empty()) {
-		char const *p = &data[0];
-		size_t n = data.size();
-		qDebug() << QString::fromUtf8(p, n);
+	CreateRepositoryDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		QString path = dlg.path();
+		if (QFileInfo(path).isDir()) {
+			if (Git::isValidWorkingCopy(path)) {
+				// A valid git repository already exists there.
+			} else {
+				GitPtr g = git(path);
+				if (g->init()) {
+					QString name = dlg.name();
+					if (!name.isEmpty()) {
+						addWorkingCopyDir(path, name, true);
+					}
+					QString url = dlg.remoteURL();
+					if (!url.isEmpty()) {
+						QString remote = "origin";
+						g->addRemoteURL(remote, url);
+					}
+				}
+			}
+		} else {
+			// not dir
+		}
 	}
 }
+
+void MainWindow::on_action_test_triggered()
+{
+}
+
 
 

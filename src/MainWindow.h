@@ -152,6 +152,8 @@ private slots:
 
 	void on_action_reset_HEAD_1_triggered();
 
+	void on_action_create_a_repository_triggered();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -304,9 +306,13 @@ public:
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void setLogEnabled(GitPtr g, bool f);
 	void setBlockUI(bool f);
-	void addWorkingCopyDir(QString dir, bool open);
+	void addWorkingCopyDir(QString dir, QString name, bool open);
+	void addWorkingCopyDir(QString dir, bool open)
+	{
+		addWorkingCopyDir(dir, QString(), open);
+	}
 	bool isValidRemoteURL(QString const &url);
-	void testRemoteRepositoryValidity(const QString &url);
+	bool testRemoteRepositoryValidity(const QString &url);
 	void removeSelectedRepositoryFromBookmark(bool ask);
 	void setCurrentLogRow(int row);
 	GitPtr git(const QString &dir) const;
