@@ -142,6 +142,7 @@ private:
 	void output_debug_string(const char *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
 	static void cleanup();
+	void reset();
 public:
 	static void initialize();
 	WebClient(WebContext *webcx);

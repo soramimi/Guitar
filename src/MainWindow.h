@@ -154,6 +154,8 @@ private slots:
 
 	void on_action_create_a_repository_triggered();
 
+	void on_action_get_avatar_triggered();
+
 private:
 	Ui::MainWindow *ui;
 

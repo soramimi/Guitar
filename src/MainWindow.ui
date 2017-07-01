@@ -950,6 +950,7 @@
     <addaction name="action_tag_push_all"/>
     <addaction name="action_push_u"/>
     <addaction name="action_reset_HEAD_1"/>
+    <addaction name="action_get_avatar"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1205,6 +1206,11 @@
   <action name="action_create_a_repository">
    <property name="text">
     <string>Create a repository</string>
+   </property>
+  </action>
+  <action name="action_get_avatar">
+   <property name="text">
+    <string>Get avatar...</string>
    </property>
   </action>
  </widget>

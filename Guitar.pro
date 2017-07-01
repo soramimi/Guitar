@@ -141,7 +141,10 @@ SOURCES += \
 	src/SettingDirectoriesForm.cpp \
     src/AbstractSettingForm.cpp \
     src/SettingExampleForm.cpp \
-    src/CreateRepositoryDialog.cpp
+    src/CreateRepositoryDialog.cpp \
+    src/GitHubAPI.cpp \
+    src/MemoryReader.cpp \
+    src/ExperimentDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -212,7 +215,10 @@ HEADERS  += \
 	src/SettingDirectoriesForm.h \
     src/AbstractSettingForm.h \
     src/SettingExampleForm.h \
-    src/CreateRepositoryDialog.h
+    src/CreateRepositoryDialog.h \
+    src/GitHubAPI.h \
+    src/MemoryReader.h \
+    src/ExperimentDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -243,7 +249,8 @@ FORMS    += \
     src/PushDialog.ui \
 	src/SettingDirectoriesForm.ui \
     src/SettingExampleForm.ui \
-    src/CreateRepositoryDialog.ui
+    src/CreateRepositoryDialog.ui \
+    src/ExperimentDialog.ui
 
 RESOURCES += \
     resources.qrc

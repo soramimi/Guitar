@@ -96,7 +96,6 @@ bool WebClient::URL::isssl() const
 	return false;
 }
 
-
 void WebClientHandler::abort(const std::string &message)
 {
 	throw WebClient::Error(message);
@@ -108,7 +107,7 @@ struct WebClient::Private {
 	Response response;
 	WebContext *webcx;
 	int crlf_state = 0;
-	size_t content_offset;
+	size_t content_offset = 0;
 	std::string last_host_name;
 	int last_port = 0;
 	bool keep_alive = false;
@@ -150,6 +149,15 @@ void WebClient::cleanup()
 #ifdef _WIN32
 	WSACleanup();
 #endif
+}
+
+void WebClient::reset()
+{
+	m->request_header.clear();
+	m->error = Error();
+	m->response = Response();
+	m->crlf_state = 0;
+	m->content_offset = 0;
 }
 
 void WebClient::output_debug_string(char const *str)
@@ -598,7 +606,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			throw Error("connect failed.");
 		}
 
-		if (proxy) {
+		if (proxy) { // testing
 			char port[10];
 			sprintf(port, ":%u", get_port(&request_url, "https", "tcp"));
 
@@ -747,7 +755,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHandler *handler)
 {
-	*out = Response();
+	reset();
 	try {
 		if (!m->webcx->m) {
 			throw Error("WebContext is null.");

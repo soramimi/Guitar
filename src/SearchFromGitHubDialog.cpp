@@ -1,10 +1,8 @@
 #include "SearchFromGitHubDialog.h"
 #include "ui_SearchFromGitHubDialog.h"
 
-#include "webclient.h"
 #include "misc.h"
 #include "json.h"
-#include "charvec.h"
 #include "urlencode.h"
 
 #include <QDebug>
@@ -12,6 +10,8 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <functional>
+
+using SearchResultItem = GitHubAPI::SearchResultItem;
 
 static QString toQString(std::string const &s)
 {
@@ -44,78 +44,14 @@ QString SearchFromGitHubDialog::url() const
 	return url_;
 }
 
-class GitHubRequestThread : public QThread {
-protected:
-	void run()
-	{
-		ok = false;
-		WebContext webcx;
-		WebClient web(&webcx);
-		if (web.get(WebClient::URL(url)) == 200) {
-			WebClient::Response const &r = web.response();
-			if (!r.content.empty()) {
-				text = to_stdstr(r.content);
-				ok = true;
-			}
-		}
-	}
-public:
-	std::string url;
-	bool ok = false;
-	std::string text;
-};
-
 void SearchFromGitHubDialog::on_pushButton_search_clicked()
 {
 	std::string q = ui->lineEdit_keywords->text().trimmed().toStdString();
 	q = url_encode(q);
 	if (q.empty()) return;
 
-	GitHubRequestThread th;
-	{
-		OverrideWaitCursor;
-		th.url = "https://api.github.com/search/repositories?q=" + q;
-		th.start();
-		while (!th.wait(1)) {
-			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		}
-		th.wait();
-	}
-	if (!th.ok) return;
-
-	items.clear();
-
-	JSON json;
-	json.parse(th.text);
-	for (JSON::Node const &node1 : json.node.children) {
-		if (node1.name == "items") {
-			for (JSON::Node const &node2 : node1.children) {
-				Item item;
-				for (JSON::Node const &node3 : node2.children) {
-					if (node3.name == "full_name") {
-						item.full_name = node3.value;
-					} else if (node3.name == "description") {
-						item.description = node3.value;
-					} else if (node3.name == "html_url") {
-						item.html_url = node3.value;
-					} else if (node3.name == "ssh_url") {
-						item.ssh_url = node3.value;
-					} else if (node3.name == "clone_url") {
-						item.clone_url = node3.value;
-					} else if (node3.name == "score") {
-						item.score = strtod(node3.value.c_str(), nullptr);
-					}
-				}
-				if (!item.full_name.empty()) {
-					items.push_back(item);
-				}
-			}
-		}
-	}
-
-	std::sort(items.begin(), items.end(), [](Item const &l, Item const &r){
-		return l.score > r.score; // 降順
-	});
+	GitHubAPI github;
+	items = github.searchRepository(q);
 
 	QStringList cols = {
 		tr("Name"),
@@ -133,8 +69,8 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 		ui->tableWidget->setHorizontalHeaderItem(col, p);
 	}
 
-	for (size_t row = 0; row < items.size(); row++) {
-		Item const &item = items[row];
+	for (int row = 0; row < items.size(); row++) {
+		SearchResultItem const &item = items[row];
 		QTableWidgetItem *p;
 
 		QString name = QString::fromStdString(item.full_name);
@@ -202,9 +138,9 @@ void SearchFromGitHubDialog::on_tableWidget_currentItemChanged(QTableWidgetItem 
 	int row = ui->tableWidget->currentRow();
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
 	if (p) {
-		size_t i = p->data(Qt::UserRole).toUInt();
+		int i = p->data(Qt::UserRole).toInt();
 		if (i < items.size()) {
-			Item const &item = items[i];
+			SearchResultItem const &item = items[i];
 			ui->lineEdit_ssh->setText(toQString(item.ssh_url));
 			ui->lineEdit_http->setText(toQString(item.clone_url));
 			ui->label_hyperlink->setText(toQString(item.html_url));
@@ -228,6 +164,5 @@ void SearchFromGitHubDialog::onHyperlinkClicked()
 	QString url = ui->label_hyperlink->text();
 	QDesktopServices::openUrl(QUrl(url));
 }
-
 
 

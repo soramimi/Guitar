@@ -3766,9 +3766,19 @@ void MainWindow::on_action_create_a_repository_triggered()
 	}
 }
 
+#include "ExperimentDialog.h"
+#include "GitHubAPI.h"
+#include "json.h"
+
 void MainWindow::on_action_test_triggered()
 {
 }
 
 
 
+
+void MainWindow::on_action_get_avatar_triggered()
+{
+	ExperimentDialog dlg(this);
+	dlg.exec();
+}

@@ -2,6 +2,7 @@
 #define SEARCHFROMGITHUBDIALOG_H
 
 #include "MyTableWidgetDelegate.h"
+#include "GitHubAPI.h"
 
 #include <QDialog>
 
@@ -15,15 +16,7 @@ class SearchFromGitHubDialog : public QDialog
 {
 	Q_OBJECT
 private:
-	struct Item {
-		std::string full_name;
-		std::string description;
-		std::string ssh_url;
-		std::string clone_url;
-		std::string html_url;
-		double score = 0;
-	};
-	std::vector<Item> items;
+	QList<GitHubAPI::SearchResultItem> items;
 	QString url_;
 	MyTableWidgetDelegate item_delegate;
 public:
