@@ -3700,11 +3700,8 @@ void MainWindow::on_toolButton_explorer_clicked()
 
 void MainWindow::on_action_push_u_triggered()
 {
-	{
-		GitPtr g = git();
-		if (!isValidWorkingCopy(g)) return;
-		QStringList remotes = g->getRemotes();
-	}
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
 
 	reopenRepository(true, [&](GitPtr g){
 		g->push_u_origin_master();

@@ -284,7 +284,7 @@
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
-          <string>File</string>
+          <string>Explorer</string>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
