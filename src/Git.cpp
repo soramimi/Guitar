@@ -958,6 +958,11 @@ void Git::checkoutBranch(QString const &name)
 	git("checkout " + name);
 }
 
+void Git::cherrypick(QString const &name)
+{
+	git("cherry-pick " + name);
+}
+
 void Git::mergeBranch(QString const &name)
 {
 	git("merge " + name);

@@ -1864,6 +1864,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout/Branch...")) : nullptr;
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
+		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
+		QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 
 		QAction *a_add_tag = is_valid_commit_id ? menu.addAction(tr("Add a tag...")) : nullptr;
 		QAction *a_delete_tags = nullptr;
@@ -1901,6 +1903,14 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_delbranch) {
 				deleteBranch(commit);
+				return;
+			}
+			if (a == a_merge) {
+				mergeBranch(commit);
+				return;
+			}
+			if (a == a_cherrypick) {
+				cherrypick(commit);
 				return;
 			}
 			if (a == a_add_tag) {
@@ -3569,6 +3579,28 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 			openRepository(true);
 		}
 	}
+}
+
+void MainWindow::mergeBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->mergeBranch(commit->commit_id);
+	openRepository(true);
+}
+
+void MainWindow::cherrypick(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->cherrypick(commit->commit_id);
+	openRepository(true);
 }
 
 void MainWindow::checkout()

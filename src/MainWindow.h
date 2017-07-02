@@ -270,6 +270,8 @@ private:
 	void backspaceRepoFilter();
 	void revertCommit();
 	int rowFromCommitId(const QString &id);
+	void cherrypick(const Git::CommitItem *commit);
+	void mergeBranch(const Git::CommitItem *commit);
 public:
 
 	QString selectGitCommand(bool save);

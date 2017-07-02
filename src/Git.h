@@ -390,6 +390,7 @@ public:
 	void push_u_origin_master();
 	QString objectType(const QString &id);
 	bool rm_cached(const QString &file);
+	void cherrypick(const QString &name);
 };
 
 #endif // GIT_H
