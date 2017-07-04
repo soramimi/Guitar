@@ -127,9 +127,9 @@ QImage GitHubAPI::avatarImage(std::string const &name)
 				if (web.get(WebClient::URL(avatar_url)) == 200) {
 					WebClient::Response const &r = web.response();
 					if (!r.content.empty()) {
-						MemoryReader r(&r.content[0], r.content.size());
-						r.open(MemoryReader::ReadOnly);
-						if (image.load(&r, nullptr)) {
+						MemoryReader reader(&r.content[0], r.content.size());
+						reader.open(MemoryReader::ReadOnly);
+						if (image.load(&reader, nullptr)) {
 							return true;
 						}
 					}
