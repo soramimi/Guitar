@@ -301,7 +301,7 @@ public:
 	QString abbrevCommitID(const Git::CommitItem &commit);
 	QString findFileID(GitPtr g, const QString &commit_id, const QString &file);
 	QString determinFileType(const QString &path, bool mime);
-	QString determinFileType(const QByteArray &in, bool mime);
+	QString determinFileType(QByteArray in, bool mime);
 	QPixmap getTransparentPixmap();
 	const QList<Label> *label(int row);
 	QString getCommitIdFromTag(const QString &tag);

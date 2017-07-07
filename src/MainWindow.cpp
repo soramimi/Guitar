@@ -3178,8 +3178,6 @@ void MainWindow::addTag()
 	}
 }
 
-
-
 void MainWindow::on_action_tag_triggered()
 {
 	addTag();
@@ -3234,8 +3232,24 @@ QString MainWindow::determinFileType(QString const &path, bool mime)
 	});
 }
 
-QString MainWindow::determinFileType(QByteArray const &in, bool mime)
+#include "gunzip.h"
+#include "MemoryReader.h"
+
+QString MainWindow::determinFileType(QByteArray in, bool mime)
 {
+	if (in.size() > 10) {
+		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) {
+			QBuffer buf;
+			MemoryReader reader(in.data(), in.size());
+			reader.open(MemoryReader::ReadOnly);
+			buf.open(QBuffer::WriteOnly);
+			gunzip z;
+			z.set_maximul_size(100000);
+			z.decode(&reader, &buf);
+			in = buf.buffer();
+		}
+	}
+
 	// ファイル名を "-" にすると、リダイレクトで標準入力へ流し込める。
 	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
 		misc::runCommand(cmd, &in, ba);

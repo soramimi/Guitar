@@ -98,7 +98,8 @@ public:
 		SingleFile,
 		LeftOnly,
 		RightOnly,
-		SideBySide,
+		SideBySideText,
+		SideBySideImage,
 	};
 
 private:
@@ -109,7 +110,8 @@ private:
 
 	struct InitParam_ {
 		ViewStyle view_style = ViewStyle::None;
-		QByteArray bytes;
+		QByteArray bytes_a;
+		QByteArray bytes_b;
 		Git::Diff diff;
 		bool uncommited = false;
 		QString workingdir;
@@ -160,6 +162,7 @@ private:
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setRightOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
+	void setSideBySide(const QByteArray &ba_a, const QByteArray &ba_b, const QString &workingdir);
 
 	bool isValidID_(const QString &id);
 

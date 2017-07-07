@@ -144,7 +144,8 @@ SOURCES += \
     src/CreateRepositoryDialog.cpp \
     src/GitHubAPI.cpp \
     src/MemoryReader.cpp \
-    src/ExperimentDialog.cpp
+    src/ExperimentDialog.cpp \
+    src/gunzip.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -218,7 +219,8 @@ HEADERS  += \
     src/CreateRepositoryDialog.h \
     src/GitHubAPI.h \
     src/MemoryReader.h \
-    src/ExperimentDialog.h
+    src/ExperimentDialog.h \
+    src/gunzip.h
 
 FORMS    += \
 	src/MainWindow.ui \

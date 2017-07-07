@@ -167,7 +167,7 @@ void FileDiffWidget::updateHorizontalScrollBar()
 	int headerchars = 0;
 	if (viewstyle() == Terminal) {
 		headerchars = 0;
-	} else if (viewstyle() == SideBySide) {
+	} else if (viewstyle() == SideBySideText) {
 		headerchars = 10;
 	} else {
 		headerchars = 5;
@@ -192,7 +192,7 @@ void FileDiffWidget::scrollToBottom()
 
 void FileDiffWidget::updateSliderCursor()
 {
-	if (viewstyle() == SideBySide) {
+	if (viewstyle() == SideBySideText) {
 		int total = totalTextLines();
 		int value = fileviewScrollPos();
 		int size = visibleLines();
@@ -389,6 +389,8 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		diffdata()->right->path = diff.path;
 		diffdata()->left->id = diff.blob.a_id;
 		diffdata()->right->id = diff.blob.b_id;
+		diffdata()->left->bytes = m->init_param_.bytes_a;
+		diffdata()->right->bytes = m->init_param_.bytes_b;
 	}
 
 	// layout widgets
@@ -414,8 +416,6 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 
 	// init content
 
-	diffdata()->left->bytes = m->init_param_.bytes;
-
 	QString mimetype = m->mainwindow->determinFileType(diffdata()->left->bytes, true);
 
 	ui->widget_diff_left->setFileType(mimetype);
@@ -434,6 +434,13 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		}
 
 		w->setImage(mimetype, pixmap);
+
+		if (m->init_param_.view_style == FileDiffWidget::ViewStyle::SideBySideImage) {
+			QPixmap pixmap;
+			pixmap.loadFromData(diffdata()->right->bytes);
+			FilePreviewWidget *w = ui->widget_diff_right;
+			w->setImage(mimetype, pixmap);
+		}
 
 		return w->filetype();
 
@@ -470,7 +477,7 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SingleFile;
-	m->init_param_.bytes = ba;
+	m->init_param_.bytes_a = ba;
 	m->init_param_.diff.path = path;
 	m->init_param_.diff.blob.a_id = id;
 
@@ -491,7 +498,7 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::LeftOnly;
-	m->init_param_.bytes = ba;
+	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
@@ -512,7 +519,7 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::RightOnly;
-	m->init_param_.bytes = ba;
+	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
@@ -532,8 +539,8 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
-	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySide;
-	m->init_param_.bytes = ba;
+	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideText;
+	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
 	m->init_param_.uncommited = uncommited;
 	m->init_param_.workingdir = workingdir;
@@ -544,6 +551,25 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 			QString path = workingdir / diff.path;
 			diffdata()->right->id = GitDiff::prependPathPrefix(path);
 		}
+
+		QList<TextDiffLine> left_lines;
+		QList<TextDiffLine> right_lines;
+
+		makeSideBySideDiffData(&left_lines, &right_lines);
+
+		setDiffText(left_lines, right_lines);
+	}
+}
+
+void FileDiffWidget::setSideBySide(QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
+{
+	m->init_param_ = InitParam_();
+	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImage;
+	m->init_param_.bytes_a = ba_a;
+	m->init_param_.bytes_b = ba_b;
+	m->init_param_.workingdir = workingdir;
+
+	if (setupPreviewWidget() == FilePreviewType::Text) {
 
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
@@ -568,27 +594,40 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g) return;
 	if (!g->isValidWorkingCopy()) return;
 
-	Git::Diff diff;
 	if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
-		QString text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id);
-		GitDiff::parseDiff(text, &info, &diff);
-	} else {
-		diff = info;
-	}
-
-	Git::Object obj;
-	if (isValidID_(diff.blob.a_id)) { // 左が有効
-		obj = cat_file(g, diff.blob.a_id);
-		if (isValidID_(diff.blob.b_id)) { // 右が有効
-			setSideBySide(obj.content, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
-		} else {
-			setLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
+		Git::Object obj_a = cat_file(g, info.blob.a_id);
+		Git::Object obj_b = cat_file(g, info.blob.b_id);
+		QString mime_a = m->mainwindow->determinFileType(obj_a.content, true);
+		QString mime_b = m->mainwindow->determinFileType(obj_a.content, true);
+		if (misc::isImageFile(mime_a) && misc::isImageFile(mime_b)) {
+			setSideBySide(obj_a.content, obj_b.content, g->workingRepositoryDir());
+			goto L1;
 		}
-	} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
-		obj = cat_file(g, diff.blob.b_id);
-		setRightOnly(obj.content, diff);
 	}
 
+	{
+		Git::Diff diff;
+		if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
+			QString text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id);
+			GitDiff::parseDiff(text, &info, &diff);
+		} else {
+			diff = info;
+		}
+
+		Git::Object obj;
+		if (isValidID_(diff.blob.a_id)) { // 左が有効
+			obj = cat_file(g, diff.blob.a_id);
+			if (isValidID_(diff.blob.b_id)) { // 右が有効
+				setSideBySide(obj.content, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+			} else {
+				setLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
+			}
+		} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
+			obj = cat_file(g, diff.blob.b_id);
+			setRightOnly(obj.content, diff);
+		}
+	}
+L1:;
 	ui->widget_diff_pixmap->clear(false);
 
 	resetScrollBarValue();
