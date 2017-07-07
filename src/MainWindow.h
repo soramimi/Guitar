@@ -156,6 +156,7 @@ private slots:
 
 	void on_action_get_avatar_triggered();
 
+	void onAvatarUpdated();
 private:
 	Ui::MainWindow *ui;
 
@@ -272,6 +273,7 @@ private:
 	int rowFromCommitId(const QString &id);
 	void cherrypick(const Git::CommitItem *commit);
 	void mergeBranch(const Git::CommitItem *commit);
+	static ServerType detectServerType(GitPtr g);
 public:
 
 	QString selectGitCommand(bool save);
@@ -303,7 +305,6 @@ public:
 	QString determinFileType(const QString &path, bool mime);
 	QString determinFileType(QByteArray in, bool mime);
 	QPixmap getTransparentPixmap();
-	const QList<Label> *label(int row);
 	QString getCommitIdFromTag(const QString &tag);
 	void setStatusBarText(const QString &text);
 	void clearStatusBarText();
@@ -321,6 +322,9 @@ public:
 	void setCurrentLogRow(int row);
 	GitPtr git(const QString &dir) const;
 	GitPtr git();
+	const QList<Label> *label(int row);
+	bool isGitHub() const;
+	QIcon committerIcon(int row);
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

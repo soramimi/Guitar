@@ -145,7 +145,8 @@ SOURCES += \
     src/GitHubAPI.cpp \
     src/MemoryReader.cpp \
     src/ExperimentDialog.cpp \
-    src/gunzip.cpp
+    src/gunzip.cpp \
+    src/AvatarLoader.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -220,7 +221,8 @@ HEADERS  += \
     src/GitHubAPI.h \
     src/MemoryReader.h \
     src/ExperimentDialog.h \
-    src/gunzip.h
+    src/gunzip.h \
+    src/AvatarLoader.h
 
 FORMS    += \
 	src/MainWindow.ui \

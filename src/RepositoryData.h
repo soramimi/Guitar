@@ -3,6 +3,11 @@
 
 #include <QList>
 
+enum class ServerType {
+	Standard,
+	GitHub,
+};
+
 struct RepositoryItem {
 	QString name;
 	QString group;

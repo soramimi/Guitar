@@ -221,6 +221,14 @@ bool JSON::parse(std::string const &text)
 	return parse(begin, end);
 }
 
+bool JSON::parse(std::vector<char> const *vec)
+{
+	if (vec->empty()) return false;
+	const char *begin = &vec->at(0);
+	const char *end = begin + vec->size();
+	return parse(begin, end);
+}
+
 std::string JSON::double_quoted_string(const std::string &str)
 {
 	std::vector<char> vec;

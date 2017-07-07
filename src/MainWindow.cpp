@@ -41,6 +41,7 @@
 #include "LocalSocketReader.h"
 #include "StatusLabel.h"
 #include "CreateRepositoryDialog.h"
+#include "AvatarLoader.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -141,6 +142,7 @@ struct MainWindow::Private {
 	QString file_command;
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
+	ServerType server_type = ServerType::Standard;
 	Git::Branch current_branch;
 	QString head_id;
 	struct Diff {
@@ -168,6 +170,8 @@ struct MainWindow::Private {
 	QPixmap transparent_pixmap;
 	StatusLabel *status_bar_label;
 	bool ui_blocked = false;
+
+	AvatarLoader avatar_loader;
 
 //	QLocalServer local_server;
 //	std::shared_ptr<LocalSocketReader> local_socket_reader;
@@ -247,6 +251,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setUnknownRepositoryInfo();
 
+	m->avatar_loader.start();
+	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
+
 	m->timer_interval_ms = 20;
 	m->update_files_list_counter = 0;
 	m->interval_250ms_counter = 0;
@@ -267,12 +274,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-
 #if USE_LIBGIT2
 	LibGit2::shutdown();
 #endif
+
+	m->avatar_loader.interrupt();
+
 	cleanupDiffThread();
 	deleteTempFiles();
+
+	m->avatar_loader.wait();
+
 	delete m;
 	delete ui;
 }
@@ -769,8 +781,10 @@ void MainWindow::clearRepositoryInfo()
 {
 	m->head_id = QString();
 	m->current_branch = Git::Branch();
+	m->server_type = ServerType::Standard;
 	ui->label_repo_name->setText(QString());
 	ui->label_branch_name->setText(QString());
+
 }
 
 class DiffThread : public QThread {
@@ -1104,6 +1118,30 @@ QString MainWindow::findFileID(GitPtr /*g*/, const QString &commit_id, const QSt
 	return lookupFileID(&m->objcache, commit_id, file);
 }
 
+bool MainWindow::isGitHub() const
+{
+	return m->server_type == ServerType::GitHub;
+}
+
+void MainWindow::onAvatarUpdated()
+{
+	ui->tableWidget_log->viewport()->update();
+}
+
+QIcon MainWindow::committerIcon(int row)
+{
+	QIcon icon;
+#if 0
+	if (isGitHub()) {
+		if (row >= 0 && row < (int)m->logs.size()) {
+			Git::CommitItem const &commit = m->logs[row];
+			icon = m->avatar_loader.fetch(commit.author);
+		}
+	}
+#endif
+	return icon;
+}
+
 QList<MainWindow::Label> const *MainWindow::label(int row)
 {
 	auto it = m->label_map.find(row);
@@ -1273,6 +1311,24 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 #endif
 }
 
+ServerType MainWindow::detectServerType(GitPtr g)
+{
+	QString push_url;
+	QList<Git::Remote> remotes;
+	g->getRemoteURLs(&remotes);
+	for (Git::Remote const &r : remotes) {
+		if (r.purpose == "push") {
+			push_url = r.url;
+		}
+	}
+
+	if (push_url.indexOf("@github.com:") > 0 || push_url.indexOf("://github.com/") > 0) {
+		return ServerType::GitHub;
+	}
+
+	return ServerType::Standard;
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1281,6 +1337,9 @@ void MainWindow::openRepository_(GitPtr g)
 	m->objcache.setup(g);
 
 	if (isValidWorkingCopy(g)) {
+
+		m->server_type = detectServerType(g);
+
 		updateFilesList(QString(), true);
 
 		{

@@ -62,7 +62,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
-		th.wait();
+//		th.wait();
 	}
 	if (th.ok) {
 
@@ -141,7 +141,7 @@ QImage GitHubAPI::avatarImage(std::string const &name)
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
-		th.wait();
+//		th.wait();
 	}
 
 	return image;

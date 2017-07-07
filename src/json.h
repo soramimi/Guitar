@@ -40,6 +40,7 @@ private:
 public:
 	bool parse(char const *begin, char const *end);
 	bool parse(const std::string &text);
+	bool parse(const std::vector<char> *vec);
 	std::string stringify() const;
 	Value get(std::string const &path) const;
 };
