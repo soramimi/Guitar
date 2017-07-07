@@ -30,6 +30,7 @@ public:
 	static void dump(const uint8_t *ptr, size_t len);
 	static void dump(QByteArray const *in);
 	static bool isImageFile(const QString &mimetype);
+	static bool isSVG(const QString &mimetype);
 	static QString abbrevBranchName(const QString &name);
 	static QString determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback);
 };

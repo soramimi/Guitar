@@ -416,33 +416,31 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 
 	// init content
 
-	QString mimetype = m->mainwindow->determinFileType(diffdata()->left->bytes, true);
+	QString mimetype_l = m->mainwindow->determinFileType(diffdata()->left->bytes, true);
+	QString mimetype_r = m->mainwindow->determinFileType(diffdata()->right->bytes, true);
 
-	ui->widget_diff_left->setFileType(mimetype);
-	ui->widget_diff_right->setFileType(mimetype);
+	ui->widget_diff_left->setFileType(mimetype_l);
+	ui->widget_diff_right->setFileType(mimetype_l);
 
-	if (misc::isImageFile(mimetype)) { // image
+	if (misc::isImageFile(mimetype_l) || misc::isImageFile(mimetype_r)) { // image
 
 		ui->verticalScrollBar->setVisible(false);
 		ui->horizontalScrollBar->setVisible(false);
-		QPixmap pixmap;
-		pixmap.loadFromData(diffdata()->left->bytes);
 
-		FilePreviewWidget *w = ui->widget_diff_left;
-		if (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
-			w = ui->widget_diff_right;
-		}
-
-		w->setImage(mimetype, pixmap);
+		FilePreviewWidget *w_left = ui->widget_diff_left;
 
 		if (m->init_param_.view_style == FileDiffWidget::ViewStyle::SideBySideImage) {
-			QPixmap pixmap;
-			pixmap.loadFromData(diffdata()->right->bytes);
-			FilePreviewWidget *w = ui->widget_diff_right;
-			w->setImage(mimetype, pixmap);
+			FilePreviewWidget *w_right = ui->widget_diff_right;
+			w_left->setImage(mimetype_l, diffdata()->left->bytes);
+			w_right->setImage(mimetype_r, diffdata()->right->bytes);
+		} else {
+			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
+				w_left = ui->widget_diff_right;
+			}
+			w_left->setImage(mimetype_l, diffdata()->left->bytes);
 		}
 
-		return w->filetype();
+		return w_left->filetype();
 
 	} else { // text
 

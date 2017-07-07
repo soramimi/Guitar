@@ -11,6 +11,9 @@
 #include <QPainter>
 #include <QWheelEvent>
 #include <functional>
+#include <QSvgRenderer>
+
+typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
 
 struct FilePreviewWidget::Private {
 	MainWindow *mainwindow = nullptr;
@@ -18,7 +21,10 @@ struct FilePreviewWidget::Private {
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *vertical_scroll_bar = nullptr;
 	QString mime_type;
+
 	QPixmap pixmap;
+	SvgRendererPtr svg;
+
 	FilePreviewType file_type = FilePreviewType::None;
 	double image_scroll_x = 0;
 	double image_scroll_y = 0;
@@ -315,8 +321,9 @@ void FilePreviewWidget::paintBinary()
 
 QSizeF FilePreviewWidget::imageScrollRange() const
 {
-	int w = m->pixmap.width() * m->image_scale;
-	int h = m->pixmap.height() * m->image_scale;
+	QSize sz = imageSize();
+	int w = sz.width() * m->image_scale;
+	int h = sz.height() * m->image_scale;
 	return QSize(w, h);
 }
 
@@ -329,12 +336,23 @@ QBrush FilePreviewWidget::getTransparentBackgroundBrush()
 	}
 }
 
+bool FilePreviewWidget::isValidImage() const
+{
+	return !m->pixmap.isNull() || (m->svg && m->svg->isValid());
+}
+
+QSize FilePreviewWidget::imageSize() const
+{
+	if (!m->pixmap.isNull()) return m->pixmap.size();
+	if (m->svg && m->svg->isValid()) return m->svg->defaultSize();
+	return QSize();
+}
+
 void FilePreviewWidget::paintImage()
 {
 	QPainter pr(this);
-	int w = m->pixmap.width();
-	int h = m->pixmap.height();
-	if (w > 0 && h > 0) {
+	QSize imagesize = imageSize();
+	if (imagesize.width() > 0 && imagesize.height() > 0) {
 		pr.save();
 		if (!m->draw_left_border) {
 			pr.setClipRect(1, 0, width() - 1, height());
@@ -348,7 +366,11 @@ void FilePreviewWidget::paintImage()
 			QBrush br = getTransparentBackgroundBrush();
 			pr.setBrushOrigin(x, y);
 			pr.fillRect(x, y, sz.width(), sz.height(), br);
-			pr.drawPixmap(x, y, sz.width(), sz.height(), m->pixmap, 0, 0, w, h);
+			if (!m->pixmap.isNull()) {
+				pr.drawPixmap(x, y, sz.width(), sz.height(), m->pixmap, 0, 0, imagesize.width(), imagesize.height());
+			} else if (m->svg && m->svg->isValid()) {
+				m->svg->render(&pr, QRectF(x, y, sz.width(), sz.height()));
+			}
 		}
 		misc::drawFrame(&pr, x - 1, y - 1, sz.width() + 2, sz.height() + 2, Qt::black);
 		pr.restore();
@@ -426,14 +448,21 @@ bool FilePreviewWidget::isTerminalMode() const
 	return m->terminal_mode;
 }
 
-void FilePreviewWidget::setImage(QString mimetype, QPixmap pixmap)
+void FilePreviewWidget::setImage(QString mimetype, QByteArray const &ba)
 {
 	setFileType(mimetype);
 	if (m->file_type == FilePreviewType::Image) {
-		m->pixmap = pixmap;
+		if (misc::isSVG(mimetype)) {
+			m->pixmap = QPixmap();
+			m->svg = SvgRendererPtr(new QSvgRenderer(ba));
+		} else {
+			m->pixmap.loadFromData(ba);
+			m->svg = SvgRendererPtr();
+		}
 		m->image_scale = 1;
-		double x = m->pixmap.width() / 2.0;
-		double y = m->pixmap.height() / 2.0;
+		QSize sz = imageSize();
+		double x = sz.width() / 2.0;
+		double y = sz.height() / 2.0;
 		scrollImage(x, y);
 	}
 }
@@ -456,7 +485,7 @@ void FilePreviewWidget::mousePressEvent(QMouseEvent *e)
 void FilePreviewWidget::mouseMoveEvent(QMouseEvent *e)
 {
 	if (m->file_type == FilePreviewType::Image) {
-		if (!m->pixmap.isNull()) {
+		if (isValidImage()) {
 			QPoint pos = mapFromGlobal(QCursor::pos());
 			if ((e->buttons() & Qt::LeftButton) && focusWidget() == this) {
 				int delta_x = pos.x() - m->mouse_press_pos.x();
@@ -495,7 +524,7 @@ void FilePreviewWidget::wheelEvent(QWheelEvent *e)
 
 		}
 	} else if (m->file_type == FilePreviewType::Image) {
-		if (!m->pixmap.isNull()) {
+		if (isValidImage()) {
 			double scale = 1;
 			const double mul = 1.189207115; // sqrt(sqrt(2))
 			m->wheel_delta += e->delta();

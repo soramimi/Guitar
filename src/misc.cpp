@@ -346,14 +346,20 @@ void misc::dump(const QByteArray *in)
 	dump(ptr, len);
 }
 
+bool misc::isSVG(const QString &mimetype)
+{
+	if (mimetype == "image/svg") return true;
+	if (mimetype == "image/svg+xml") return true;
+	return false;
+}
+
 bool misc::isImageFile(const QString &mimetype)
 {
 	if (mimetype == "image/jpeg") return true;
 	if (mimetype == "image/png") return true;
 	if (mimetype == "image/bmp") return true;
 	if (mimetype == "image/x-ms-bmp") return true;
-	if (mimetype == "image/svg") return true;
-	if (mimetype == "image/svg+xml") return true;
+	if (isSVG(mimetype)) return true;
 	return false;
 }
 

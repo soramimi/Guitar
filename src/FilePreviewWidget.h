@@ -21,6 +21,9 @@ private:
 	const FileDiffWidget::DrawData *drawdata() const;
 	void paintText();
 	void paintImage();
+	bool isValidImage() const;
+	QSize imageSize() const;
+
 	QSizeF imageScrollRange() const;
 	void scrollImage(double x, double y);
 	void setImageScale(double scale);
@@ -39,7 +42,7 @@ public:
 	void clear();
 
 	void setFileType(QString const &mimetype);
-	void setImage(QString mimetype, QPixmap pixmap);
+	void setImage(QString mimetype, const QByteArray &ba);
 
 	FilePreviewType filetype() const;
 
