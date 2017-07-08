@@ -48,7 +48,7 @@ void AboutDialog::mouseReleaseEvent(QMouseEvent *)
 	accept();
 }
 
-void AboutDialog::paintEvent(QPaintEvent *event)
+void AboutDialog::paintEvent(QPaintEvent *)
 {
 	QPainter pr(this);
 	int w = width();

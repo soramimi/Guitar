@@ -617,6 +617,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			send_(m->sock, str.c_str(), str.size());
 			char tmp[1000];
 			int n = recv(m->sock, tmp, sizeof(tmp), 0);
+			(void)n;
 //			printf("%d\n", n);
 		}
 
