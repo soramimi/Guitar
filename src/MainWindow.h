@@ -328,6 +328,7 @@ public:
 	const QList<Label> *label(int row);
 	bool isGitHub() const;
 	QIcon committerIcon(int row);
+	void updateCommitTableLater();
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

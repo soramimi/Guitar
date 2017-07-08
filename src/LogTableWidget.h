@@ -16,7 +16,6 @@ private:
 public:
 	explicit LogTableWidget(QWidget *parent = 0);
 	~LogTableWidget();
-
 signals:
 
 public slots:

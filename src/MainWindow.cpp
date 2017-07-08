@@ -1139,9 +1139,14 @@ bool MainWindow::isGitHub() const
 	return m->server_type == ServerType::GitHub;
 }
 
+void MainWindow::updateCommitTableLater()
+{
+	m->update_commit_table_counter = 300;
+}
+
 void MainWindow::onAvatarUpdated()
 {
-	m->update_commit_table_counter = 500;
+	updateCommitTableLater();
 }
 
 void MainWindow::onCommitUpdated()
@@ -1151,7 +1156,7 @@ void MainWindow::onCommitUpdated()
 		GitHubAPI::User const &user = r.user;
 		if (!user.login.empty()) {
 			m->committer_map[QString::fromStdString(user.email)] = user;
-			m->update_commit_table_counter = 500;
+			updateCommitTableLater();
 		}
 	}
 }
@@ -1159,21 +1164,26 @@ void MainWindow::onCommitUpdated()
 QIcon MainWindow::committerIcon(int row)
 {
 	QIcon icon;
-	if (0) {
+	if (1) {
 		if (isGitHub()) {
 			if (row >= 0 && row < (int)m->logs.size()) {
 				Git::CommitItem const &commit = m->logs[row];
 				if (commit.email.indexOf('@') > 0) {
-					std::string author;
-					auto it = m->committer_map.find(commit.email);
-					if (it != m->committer_map.end()) {
-						author = it->second.login;
-					} else {
-						QString url = makeGitHubCommitQuery(&commit);
-						GitHubAPI::User user = m->commit_loader.fetch(url, true);
-						author = user.login;
+					if (1) { // from Gravatar
+						std::string email = commit.email.toStdString();
+						icon = m->avatar_loader.fetch(email, true); // from gavatar
+					} else { // from GitHub
+						std::string author;
+						auto it = m->committer_map.find(commit.email);
+						if (it != m->committer_map.end()) {
+							author = it->second.login;
+						} else {
+							QString url = makeGitHubCommitQuery(&commit);
+							GitHubAPI::User user = m->commit_loader.fetch(url, true);
+							author = user.login;
+						}
+						icon = m->avatar_loader.fetch(author, true);
 					}
-					icon = m->avatar_loader.fetch(author, true);
 				}
 			}
 		}
@@ -1363,6 +1373,8 @@ void MainWindow::openRepository_(GitPtr g)
 
 		updateFilesList(QString(), true);
 
+		bool canceled = false;
+		ui->tableWidget_log->setEnabled(false);
 		{
 			ProgressDialog dlg(this);
 			dlg.setLabelText(tr("Retrieving the log is in progress"));
@@ -1404,9 +1416,12 @@ void MainWindow::openRepository_(GitPtr g)
 			if (dlg.canceledByUser()) {
 				setUnknownRepositoryInfo();
 				writeLog(tr("Canceled by user\n"));
-				return;
+				canceled = true;
 			}
 		}
+		ui->tableWidget_log->setEnabled(true);
+		updateCommitTableLater();
+		if (canceled) return;
 
 		QString branch_name = currentBranch().name;
 		if (currentBranch().flags & Git::Branch::HeadDetached) {
@@ -2897,6 +2912,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 		if (m->update_commit_table_counter > m->timer_interval_ms) {
 			m->update_commit_table_counter -= m->timer_interval_ms;
 		} else {
+			m->update_commit_table_counter = 0;
 			ui->tableWidget_log->viewport()->update();
 		}
 	}

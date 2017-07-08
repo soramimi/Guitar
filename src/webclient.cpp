@@ -620,8 +620,6 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 //			printf("%d\n", n);
 		}
 
-
-
 		m->ssl = SSL_new(sslctx());
 		if (!m->ssl) {
 			throw Error(get_ssl_error());
@@ -781,9 +779,8 @@ void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHa
 		}
 		return;
 	} catch (Error const &e) {
-		if (handler) {
-			m->error = e;
-		}
+		m->error = e;
+		close();
 	}
 	*out = Response();
 }
@@ -917,6 +914,7 @@ void WebClient::close()
 	}
 #endif
 	if (m->sock != INVALID_SOCKET) {
+		shutdown(m->sock, 2); // SD_BOTH or SHUT_RDWR
 		closesocket(m->sock);
 		m->sock = INVALID_SOCKET;
 	}

@@ -30,18 +30,13 @@ QImage ExperimentDialog::getIconFromGitHub(QString name)
 QImage ExperimentDialog::getIconFromGravatar(QString name)
 {
 	QCryptographicHash hash(QCryptographicHash::Md5);
-	hash.addData(name.toLatin1());
-	auto HexString = [](QByteArray const &ba){
-		QString s;
-		for (int i = 0; i < ba.size(); i++) {
-			char tmp[3];
-			sprintf(tmp, "%02x", ba.data()[i] & 0xff);
-			tmp[2] = 0;
-			s += tmp;
-		}
-		return s;
-	};
-	QString id = HexString(hash.result());
+	hash.addData(name.trimmed().toLower().toLatin1());
+	QByteArray ba = hash.result();
+	char tmp[100];
+	for (int i = 0; i < ba.size(); i++) {
+		sprintf(tmp + i * 2, "%02x", ba.data()[i] & 0xff);
+	}
+	QString id = tmp;
 	QString url = "https://www.gravatar.com/avatar/%1?s=%2";
 	url = url.arg(id).arg(256);
 	WebContext webcx;

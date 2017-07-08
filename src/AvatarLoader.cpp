@@ -3,6 +3,7 @@
 #include "json.h"
 #include "webclient.h"
 
+#include <QCryptographicHash>
 #include <QDebug>
 
 namespace {
@@ -37,67 +38,99 @@ AvatarLoader::~AvatarLoader()
 
 void AvatarLoader::run()
 {
+	m->webcx.set_keep_alive_enabled(true);
+	m->web1 = WebClientPtr(new WebClient(&m->webcx));
+	m->web2 = WebClientPtr(new WebClient(&m->webcx));
+
 	while (1) {
-		if (isInterruptionRequested()) {
-			break;
-		}
-		if (!m->web1) {
-			m->web1 = WebClientPtr(new WebClient(&m->webcx));
-		}
+		std::deque<RequestItem> requests;
+
+		if (isInterruptionRequested()) break;
 
 		m->thread_mutex.lock();
-		m->condition.wait(&m->thread_mutex);
-		m->thread_mutex.unlock();
-
-		if (isInterruptionRequested()) {
-			break;
-		}
-
-		RequestItem item;
-
 		{
 			QMutexLocker lock(&m->data_mutex);
-			if (!m->requested.empty()) {
-				item = m->requested.front();
+			requests = std::move(m->requested);
+		}
+		if (requests.empty()) {
+			m->condition.wait(&m->thread_mutex);
+			{
+				QMutexLocker lock(&m->data_mutex);
+				requests = std::move(m->requested);
 			}
 		}
+		m->thread_mutex.unlock();
 
-		if (item.name.empty()) goto L1;
+		for (RequestItem &item : requests) {
 
-		{
-			std::string url = "https://api.github.com/users/" + item.name;
+			if (isInterruptionRequested()) break;
 
-			std::string avatar_url;
+			if (item.name.empty()) continue;
 
-			auto it = m->avatar_url_cache.find(url);
-			if (it == m->avatar_url_cache.end()) {
-				if (m->web1->get(url) == 200) {
-					{
-						JSON json;
-						json.parse(&m->web1->response().content);
-						for (JSON::Node const &node : json.node.children) {
-							if (node.name == "avatar_url") {
-								avatar_url = node.value;
-								m->avatar_url_cache[url] = avatar_url;
+			if (strchr(item.name.c_str(), '@')) {
+				QCryptographicHash hash(QCryptographicHash::Md5);
+				hash.addData(item.name.c_str(), item.name.size());
+				QByteArray ba = hash.result();
+				char tmp[100];
+				for (int i = 0; i < ba.size(); i++) {
+					sprintf(tmp + i * 2, "%02x", ba.data()[i] & 0xff);
+				}
+				QString id = tmp;
+				QString url = "https://www.gravatar.com/avatar/%1?s=%2";
+				url = url.arg(id).arg(ICON_SIZE);
+				if (m->web2->get(WebClient::URL(url.toStdString())) == 200) {
+					if (!m->web2->response().content.empty()) {
+						MemoryReader reader(m->web2->response().content.data(), m->web2->response().content.size());
+						reader.open(MemoryReader::ReadOnly);
+						QImage image;
+						image.load(&reader, nullptr);
+						int w = image.width();
+						int h = image.height();
+						if (w > 0 && h > 0) {
+							item.icon = QIcon(QPixmap::fromImage(image));
+							{
+								QMutexLocker lock(&m->data_mutex);
+								while (m->completed.size() >= MAX_CACHE_COUNT) {
+									m->completed.pop_back();
+								}
+								m->completed.push_front(item);
 							}
+							emit updated();
+							continue;
 						}
 					}
 				}
 			} else {
-				avatar_url = it->second;
-			}
+				std::string url = "https://api.github.com/users/" + item.name;
 
-			if (!avatar_url.empty()) {
-				if (!m->web2) {
-					m->web2 = WebClientPtr(new WebClient(&m->webcx));
+				std::string avatar_url;
+
+				auto it = m->avatar_url_cache.find(url);
+				if (it == m->avatar_url_cache.end()) {
+					if (m->web1->get(url) == 200) {
+						{
+							JSON json;
+							json.parse(&m->web1->response().content);
+							for (JSON::Node const &node : json.node.children) {
+								if (node.name == "avatar_url") {
+									avatar_url = node.value;
+									m->avatar_url_cache[url] = avatar_url;
+								}
+							}
+						}
+					}
+				} else {
+					avatar_url = it->second;
 				}
-				if (m->web2->get(avatar_url) == 200) {
-					WebClient::Response const &r = m->web2->response();
-					if (!r.content.empty()) {
-						MemoryReader reader(&r.content[0], r.content.size());
-						reader.open(MemoryReader::ReadOnly);
-						QImage image;
-						if (image.load(&reader, nullptr)) {
+
+				if (!avatar_url.empty()) {
+					if (m->web2->get(avatar_url) == 200) {
+						WebClient::Response const &r = m->web2->response();
+						if (!r.content.empty()) {
+							MemoryReader reader(&r.content[0], r.content.size());
+							reader.open(MemoryReader::ReadOnly);
+							QImage image;
+							image.load(&reader, nullptr);
 							int w = image.width();
 							int h = image.height();
 							if (w > 0 && h > 0) {
@@ -120,7 +153,7 @@ void AvatarLoader::run()
 									m->completed.push_front(item);
 								}
 								emit updated();
-								goto L1; // found
+								continue;
 							}
 						}
 					}
@@ -129,13 +162,6 @@ void AvatarLoader::run()
 			{ // not found
 				QMutexLocker lock(&m->data_mutex);
 				m->notfound.insert(m->notfound.end(), item.name);
-			}
-		}
-L1:;
-		{
-			QMutexLocker lock(&m->data_mutex);
-			if (!m->requested.empty()) {
-				m->requested.pop_front();
 			}
 		}
 	}

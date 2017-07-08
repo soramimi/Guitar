@@ -53,6 +53,8 @@ private:
 
 	void drawAvatar(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
 	{
+		if (!opt.widget->isEnabled()) return;
+
 		int row = index.row();
 		QIcon icon = mainwindow()->committerIcon(row);
 		if (!icon.isNull()) {
@@ -60,7 +62,11 @@ private:
 			int w = h;
 			int x = opt.rect.x() + opt.rect.width() - w;
 			int y = opt.rect.y();
+
+			painter->save();
+			painter->setOpacity(0.5); // 半透明で描画
 			icon.paint(painter, x, y, w, h);
+			painter->restore();
 		}
 	}
 
@@ -112,12 +118,12 @@ public:
 	}
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
-		MyTableWidgetDelegate::paint(painter, option, index);
-
-		// avatar
+		// avatarの描画
 		if (index.column() == 3) {
 			drawAvatar(painter, option, index);
 		}
+
+		MyTableWidgetDelegate::paint(painter, option, index);
 
 		// Descriptionの描画
 		if (index.column() == 4) {
@@ -137,8 +143,6 @@ LogTableWidget::~LogTableWidget()
 {
 	delete m;
 }
-
-
 
 bool LogTableWidget::event(QEvent *e)
 {
