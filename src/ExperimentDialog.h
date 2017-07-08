@@ -20,6 +20,8 @@ private slots:
 
 private:
 	Ui::ExperimentDialog *ui;
+	QImage getIconFromGitHub(QString name);
+	QImage getIconFromGravatar(QString name);
 };
 
 #endif // EXPERIMENTDIALOG_H
