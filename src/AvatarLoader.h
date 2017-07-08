@@ -27,7 +27,7 @@ protected:
 public:
 	AvatarLoader();
 	~AvatarLoader();
-	QIcon fetch(QString const &name);
+	QIcon fetch(const std::string &name, bool request);
 	void interrupt();
 signals:
 	void updated();

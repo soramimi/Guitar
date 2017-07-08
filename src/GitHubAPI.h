@@ -14,6 +14,13 @@ class GitHubAPI {
 public:
 	typedef std::shared_ptr<WebClient> WebClientPtr;
 
+	struct User {
+		std::string login;
+		std::string avatar_url;
+		std::string name;
+		std::string email;
+	};
+
 	struct SearchResultItem {
 		std::string full_name;
 		std::string description;

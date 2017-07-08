@@ -42,6 +42,7 @@
 #include "StatusLabel.h"
 #include "CreateRepositoryDialog.h"
 #include "AvatarLoader.h"
+#include "CommitLoader.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -61,6 +62,11 @@
 #include <stdlib.h>
 #include <deque>
 #include <set>
+
+struct GitHubRepositoryInfo {
+	QString owner_account_name;
+	QString repository_name;
+};
 
 class AsyncExecGitThread_ : public QThread {
 private:
@@ -143,6 +149,7 @@ struct MainWindow::Private {
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
 	ServerType server_type = ServerType::Standard;
+	GitHubRepositoryInfo github;
 	Git::Branch current_branch;
 	QString head_id;
 	struct Diff {
@@ -172,6 +179,10 @@ struct MainWindow::Private {
 	bool ui_blocked = false;
 
 	AvatarLoader avatar_loader;
+	CommitLoader commit_loader;
+	int update_commit_table_counter = 0;
+
+	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
 //	QLocalServer local_server;
 //	std::shared_ptr<LocalSocketReader> local_socket_reader;
@@ -253,6 +264,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->avatar_loader.start();
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
+	m->commit_loader.start();
+	connect(&m->commit_loader, SIGNAL(updated()), this, SLOT(onCommitUpdated()));
 
 	m->timer_interval_ms = 20;
 	m->update_files_list_counter = 0;
@@ -279,11 +292,13 @@ MainWindow::~MainWindow()
 #endif
 
 	m->avatar_loader.interrupt();
+	m->commit_loader.interrupt();
 
 	cleanupDiffThread();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
+	m->commit_loader.wait();
 
 	delete m;
 	delete ui;
@@ -782,6 +797,7 @@ void MainWindow::clearRepositoryInfo()
 	m->head_id = QString();
 	m->current_branch = Git::Branch();
 	m->server_type = ServerType::Standard;
+	m->github = GitHubRepositoryInfo();
 	ui->label_repo_name->setText(QString());
 	ui->label_branch_name->setText(QString());
 
@@ -1125,20 +1141,43 @@ bool MainWindow::isGitHub() const
 
 void MainWindow::onAvatarUpdated()
 {
-	ui->tableWidget_log->viewport()->update();
+	m->update_commit_table_counter = 500;
+}
+
+void MainWindow::onCommitUpdated()
+{
+	std::deque<CommitLoader::RequestItem> results = m->commit_loader.takeResults();
+	for (CommitLoader::RequestItem const &r: results) {
+		GitHubAPI::User const &user = r.user;
+		if (!user.login.empty()) {
+			m->committer_map[QString::fromStdString(user.email)] = user;
+			m->update_commit_table_counter = 500;
+		}
+	}
 }
 
 QIcon MainWindow::committerIcon(int row)
 {
 	QIcon icon;
-#if 0
-	if (isGitHub()) {
-		if (row >= 0 && row < (int)m->logs.size()) {
-			Git::CommitItem const &commit = m->logs[row];
-			icon = m->avatar_loader.fetch(commit.author);
+	if (0) {
+		if (isGitHub()) {
+			if (row >= 0 && row < (int)m->logs.size()) {
+				Git::CommitItem const &commit = m->logs[row];
+				if (commit.email.indexOf('@') > 0) {
+					std::string author;
+					auto it = m->committer_map.find(commit.email);
+					if (it != m->committer_map.end()) {
+						author = it->second.login;
+					} else {
+						QString url = makeGitHubCommitQuery(&commit);
+						GitHubAPI::User user = m->commit_loader.fetch(url, true);
+						author = user.login;
+					}
+					icon = m->avatar_loader.fetch(author, true);
+				}
+			}
 		}
 	}
-#endif
 	return icon;
 }
 
@@ -1311,24 +1350,6 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 #endif
 }
 
-ServerType MainWindow::detectServerType(GitPtr g)
-{
-	QString push_url;
-	QList<Git::Remote> remotes;
-	g->getRemoteURLs(&remotes);
-	for (Git::Remote const &r : remotes) {
-		if (r.purpose == "push") {
-			push_url = r.url;
-		}
-	}
-
-	if (push_url.indexOf("@github.com:") > 0 || push_url.indexOf("://github.com/") > 0) {
-		return ServerType::GitHub;
-	}
-
-	return ServerType::Standard;
-}
-
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1338,7 +1359,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
-		m->server_type = detectServerType(g);
+		detectServerType(g);
 
 		updateFilesList(QString(), true);
 
@@ -2872,6 +2893,14 @@ void MainWindow::timerEvent(QTimerEvent *)
 		checkFileCommand();
 	}
 
+	if (m->update_commit_table_counter > 0) {
+		if (m->update_commit_table_counter > m->timer_interval_ms) {
+			m->update_commit_table_counter -= m->timer_interval_ms;
+		} else {
+			ui->tableWidget_log->viewport()->update();
+		}
+	}
+
 	if (m->update_files_list_counter > 0) {
 		if (m->update_files_list_counter > m->timer_interval_ms) {
 			m->update_files_list_counter -= m->timer_interval_ms;
@@ -3872,8 +3901,69 @@ void MainWindow::on_action_create_a_repository_triggered()
 #include "GitHubAPI.h"
 #include "json.h"
 
+void MainWindow::detectServerType(GitPtr g)
+{
+	m->server_type = ServerType::Standard;
+	m->github = GitHubRepositoryInfo();
+
+	QString push_url;
+	QList<Git::Remote> remotes;
+	g->getRemoteURLs(&remotes);
+	for (Git::Remote const &r : remotes) {
+		if (r.purpose == "push") {
+			push_url = r.url;
+		}
+	}
+
+	auto Check = [&](QString const &s){
+		int i = push_url.indexOf(s);
+		if (i > 0) return i + s.size();
+		return 0;
+	};
+
+	// check GitHub
+	int pos = Check("@github.com:");
+	if (pos == 0) {
+		pos = Check("://github.com/");
+	}
+	if (pos > 0) {
+		int end = push_url.size();
+		{
+			QString s = ".git";
+			if (push_url.endsWith(s)) {
+				end -= s.size();
+			}
+		}
+		QString s = push_url.mid(pos, end - pos);
+		int i = s.indexOf('/');
+		if (i > 0) {
+			QString user = s.mid(0, i);
+			QString repo = s.mid(i + 1);
+			m->github.owner_account_name = user;
+			m->github.repository_name = repo;
+		}
+		m->server_type = ServerType::GitHub;
+	}
+}
+
+QString MainWindow::makeGitHubCommitQuery(Git::CommitItem const *commit)
+{
+	QString url = "https://api.github.com/repos/%1/%2/commits/%3";
+	url = url.arg(m->github.owner_account_name).arg(m->github.repository_name).arg(commit->commit_id);
+	return url;
+}
+
+#include "webclient.h"
+#include "charvec.h"
+#include "json.h"
+
 void MainWindow::on_action_test_triggered()
 {
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		QString url = makeGitHubCommitQuery(commit);
+		m->commit_loader.fetch(url, true);
+	}
 }
 
 

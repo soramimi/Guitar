@@ -6,6 +6,7 @@
 #include "RepositoryData.h"
 #include <memory>
 #include <functional>
+#include "GitHubAPI.h"
 
 namespace Ui {
 class MainWindow;
@@ -157,6 +158,7 @@ private slots:
 	void on_action_get_avatar_triggered();
 
 	void onAvatarUpdated();
+	void onCommitUpdated();
 private:
 	Ui::MainWindow *ui;
 
@@ -273,7 +275,8 @@ private:
 	int rowFromCommitId(const QString &id);
 	void cherrypick(const Git::CommitItem *commit);
 	void mergeBranch(const Git::CommitItem *commit);
-	static ServerType detectServerType(GitPtr g);
+	void detectServerType(GitPtr g);
+	QString makeGitHubCommitQuery(const Git::CommitItem *commit);
 public:
 
 	QString selectGitCommand(bool save);

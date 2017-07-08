@@ -648,7 +648,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						} else if (key == "author") {
 							item.author = val;
 						} else if (key == "mail") {
-							item.mail = val;
+							item.email = val;
 						} else if (key == "date") {
 							item.commit_date = QDateTime::fromString(val, Qt::ISODate).toLocalTime();
 						} else if (key == "debug") {

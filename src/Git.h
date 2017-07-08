@@ -110,7 +110,7 @@ public:
 		QString commit_id;
 		QStringList parent_ids;
 		QString author;
-		QString mail;
+		QString email;
 		QString message;
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;

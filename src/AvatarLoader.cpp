@@ -5,8 +5,10 @@
 
 #include <QDebug>
 
-const int MAX_ICON_CACHE = 1000;
+namespace {
+const int MAX_CACHE_COUNT = 1000;
 const int ICON_SIZE = 64;
+}
 
 typedef std::shared_ptr<WebClient> WebClientPtr;
 
@@ -112,7 +114,7 @@ void AvatarLoader::run()
 								item.icon = QIcon(QPixmap::fromImage(image));
 								{
 									QMutexLocker lock(&m->data_mutex);
-									while (m->completed.size() >= MAX_ICON_CACHE) {
+									while (m->completed.size() >= MAX_CACHE_COUNT) {
 										m->completed.pop_back();
 									}
 									m->completed.push_front(item);
@@ -162,10 +164,10 @@ bool isValidGitHubName(std::string const &name)
 
 }
 
-QIcon AvatarLoader::fetch(const QString &name)
+QIcon AvatarLoader::fetch(std::string const &name, bool request)
 {
 	RequestItem item;
-	item.name = name.toStdString();
+	item.name = name;
 	if (isValidGitHubName(item.name)) {
 		QMutexLocker lock(&m->data_mutex);
 
@@ -179,17 +181,18 @@ QIcon AvatarLoader::fetch(const QString &name)
 					return item.icon;
 				}
 			}
-
-			bool waiting = false;
-			for (RequestItem const &r : m->requested) {
-				if (item.name == r.name) {
-					waiting = true;
-					break;
+			if (request) {
+				bool waiting = false;
+				for (RequestItem const &r : m->requested) {
+					if (item.name == r.name) {
+						waiting = true;
+						break;
+					}
 				}
-			}
-			if (!waiting) {
-				m->requested.push_back(item);
-				m->condition.wakeOne();
+				if (!waiting) {
+					m->requested.push_back(item);
+					m->condition.wakeOne();
+				}
 			}
 		}
 	}

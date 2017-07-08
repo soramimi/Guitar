@@ -146,7 +146,8 @@ SOURCES += \
     src/MemoryReader.cpp \
     src/ExperimentDialog.cpp \
     src/gunzip.cpp \
-    src/AvatarLoader.cpp
+    src/AvatarLoader.cpp \
+    src/CommitLoader.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -222,7 +223,8 @@ HEADERS  += \
     src/MemoryReader.h \
     src/ExperimentDialog.h \
     src/gunzip.h \
-    src/AvatarLoader.h
+    src/AvatarLoader.h \
+    src/CommitLoader.h
 
 FORMS    += \
 	src/MainWindow.ui \
