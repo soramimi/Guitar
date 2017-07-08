@@ -461,8 +461,17 @@ void FilePreviewWidget::setImage(QString mimetype, QByteArray const &ba)
 		}
 		m->image_scale = 1;
 		QSize sz = imageSize();
-		double x = sz.width() / 2.0;
-		double y = sz.height() / 2.0;
+		double x = 0;
+		double y = 0;
+		double sx = sz.width();
+		double sy = sz.height();
+		if (sx > 0 && sy > 0) {
+			sx = width() / sx;
+			sy = height() / sy;
+			m->image_scale = (sx < sy ? sx : sy) * 0.9;
+			x = sz.width() * m->image_scale / 2.0;
+			y = sz.height() * m->image_scale / 2.0;
+		}
 		scrollImage(x, y);
 	}
 }
