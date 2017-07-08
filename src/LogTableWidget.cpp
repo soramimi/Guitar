@@ -118,12 +118,12 @@ public:
 	}
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
+		MyTableWidgetDelegate::paint(painter, option, index);
+
 		// avatarの描画
 		if (index.column() == 3) {
 			drawAvatar(painter, option, index);
 		}
-
-		MyTableWidgetDelegate::paint(painter, option, index);
 
 		// Descriptionの描画
 		if (index.column() == 4) {
