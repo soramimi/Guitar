@@ -147,7 +147,6 @@ SOURCES += \
     src/ExperimentDialog.cpp \
     src/gunzip.cpp \
     src/AvatarLoader.cpp \
-    src/CommitLoader.cpp \
     src/SettingNetworkForm.cpp
 
 HEADERS  += \
@@ -225,7 +224,6 @@ HEADERS  += \
     src/ExperimentDialog.h \
     src/gunzip.h \
     src/AvatarLoader.h \
-    src/CommitLoader.h \
     src/SettingNetworkForm.h
 
 FORMS    += \

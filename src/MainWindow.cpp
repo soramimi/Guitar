@@ -42,7 +42,6 @@
 #include "StatusLabel.h"
 #include "CreateRepositoryDialog.h"
 #include "AvatarLoader.h"
-#include "CommitLoader.h"
 #include "webclient.h"
 #include "MemoryReader.h"
 #include "gunzip.h"
@@ -66,6 +65,11 @@
 #include <stdlib.h>
 #include <deque>
 #include <set>
+
+#ifdef Q_OS_WIN
+#else
+#include <unistd.h>
+#endif
 
 struct GitHubRepositoryInfo {
 	QString owner_account_name;
@@ -184,13 +188,9 @@ struct MainWindow::Private {
 
 	WebContext webcx;
 	AvatarLoader avatar_loader;
-	CommitLoader commit_loader;
 	int update_commit_table_counter = 0;
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
-
-//	QLocalServer local_server;
-//	std::shared_ptr<LocalSocketReader> local_socket_reader;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -266,8 +266,6 @@ MainWindow::MainWindow(QWidget *parent)
 	m->webcx.set_keep_alive_enabled(true);
 	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
-	m->commit_loader.start(&m->webcx);
-	connect(&m->commit_loader, SIGNAL(updated()), this, SLOT(onCommitUpdated()));
 
 	m->timer_interval_ms = 20;
 	m->update_files_list_counter = 0;
@@ -294,13 +292,11 @@ MainWindow::~MainWindow()
 #endif
 
 	m->avatar_loader.interrupt();
-	m->commit_loader.interrupt();
 
 	cleanupDiffThread();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
-	m->commit_loader.wait();
 
 	delete m;
 	delete ui;
@@ -1151,49 +1147,22 @@ void MainWindow::onAvatarUpdated()
 	updateCommitTableLater();
 }
 
-void MainWindow::onCommitUpdated()
-{
-	std::deque<CommitLoader::RequestItem> results = m->commit_loader.takeResults();
-	for (CommitLoader::RequestItem const &r: results) {
-		GitHubAPI::User const &user = r.user;
-		if (!user.login.empty()) {
-			m->committer_map[QString::fromStdString(user.email)] = user;
-			updateCommitTableLater();
-		}
-	}
-}
 
-QString MainWindow::makeGitHubCommitQuery(Git::CommitItem const *commit)
+
+bool MainWindow::isAvatarEnabled() const
 {
-	QString url = "https://api.github.com/repos/%1/%2/commits/%3";
-	url = url.arg(m->github.owner_account_name).arg(m->github.repository_name).arg(commit->commit_id);
-	return url;
+	return true;
 }
 
 QIcon MainWindow::committerIcon(int row)
 {
 	QIcon icon;
-	if (1) {
-		if (isGitHub()) {
-			if (row >= 0 && row < (int)m->logs.size()) {
-				Git::CommitItem const &commit = m->logs[row];
-				if (commit.email.indexOf('@') > 0) {
-					if (1) { // from Gravatar
-						std::string email = commit.email.toStdString();
-						icon = m->avatar_loader.fetch(email, true); // from gavatar
-					} else { // from GitHub
-						std::string author;
-						auto it = m->committer_map.find(commit.email);
-						if (it != m->committer_map.end()) {
-							author = it->second.login;
-						} else {
-							QString url = makeGitHubCommitQuery(&commit);
-							GitHubAPI::User user = m->commit_loader.fetch(url, true);
-							author = user.login;
-						}
-						icon = m->avatar_loader.fetch(author, true);
-					}
-				}
+	if (isAvatarEnabled()) {
+		if (row >= 0 && row < (int)m->logs.size()) {
+			Git::CommitItem const &commit = m->logs[row];
+			if (commit.email.indexOf('@') > 0) {
+				std::string email = commit.email.toStdString();
+				icon = m->avatar_loader.fetch(email, true); // from gavatar
 			}
 		}
 	}
@@ -2823,7 +2792,25 @@ void MainWindow::initNetworking()
 	std::string proxy_server;
 	if (m->appsettings.proxy_type == "auto") {
 #ifdef Q_OS_WIN
-		proxy_server = misc::makeProxyServerURL(getWin32HttpProxy()).toStdString();
+		proxy_server = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
+#else
+		auto getienv = [](std::string const &name)->char const *{
+			char **p = environ;
+			while (*p) {
+				if (strncasecmp(*p, name.c_str(), name.size()) == 0) {
+					char const *e = *p + name.size();
+					if (*e == '=') {
+						return e + 1;
+					}
+				}
+				p++;
+			}
+			return nullptr;
+		};
+		char const *p = getienv("http_proxy");
+		if (p) {
+			proxy_server = misc::makeProxyServerURL(std::string(p));
+		}
 #endif
 	} else if (m->appsettings.proxy_type == "manual") {
 		proxy_server = m->appsettings.proxy_server.toStdString();
@@ -3987,9 +3974,6 @@ void MainWindow::on_action_create_a_repository_triggered()
 
 void MainWindow::on_action_test_triggered()
 {
-
-	QString s = getWin32HttpProxy();
-	qDebug() << s;
 }
 
 

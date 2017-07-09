@@ -50,7 +50,7 @@ void AvatarLoader::run()
 	while (1) {
 		std::deque<RequestItem> requests;
 
-		if (isInterruptionRequested()) break;
+		if (isInterruptionRequested()) return;
 
 		m->thread_mutex.lock();
 		{
@@ -66,9 +66,11 @@ void AvatarLoader::run()
 		}
 		m->thread_mutex.unlock();
 
+		if (isInterruptionRequested()) return;
+
 		for (RequestItem &item : requests) {
 
-			if (isInterruptionRequested()) break;
+			if (isInterruptionRequested()) return;
 
 			if (item.name.empty()) continue;
 

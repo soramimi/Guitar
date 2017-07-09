@@ -159,7 +159,6 @@ private slots:
 	void on_action_create_a_repository_triggered();
 
 	void onAvatarUpdated();
-	void onCommitUpdated();
 private:
 	Ui::MainWindow *ui;
 
@@ -277,7 +276,6 @@ private:
 	void cherrypick(const Git::CommitItem *commit);
 	void mergeBranch(const Git::CommitItem *commit);
 	void detectGitServerType(GitPtr g);
-	QString makeGitHubCommitQuery(const Git::CommitItem *commit);
 	void initNetworking();
 public:
 
@@ -331,6 +329,7 @@ public:
 	bool isGitHub() const;
 	QIcon committerIcon(int row);
 	void updateCommitTableLater();
+	bool isAvatarEnabled() const;
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);
