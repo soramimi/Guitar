@@ -1144,7 +1144,7 @@ bool MainWindow::isGitHub() const
 
 void MainWindow::updateCommitTableLater()
 {
-	m->update_commit_table_counter = 300;
+	m->update_commit_table_counter = 200;
 }
 
 void MainWindow::onAvatarUpdated()
@@ -2350,7 +2350,6 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 
 	int row = item->data(IndexRole).toInt();
 	if (row < (int)m->logs.size()) {
-		updateFilesList(m->logs[row], false); // 完了を待たない
 		updateStatusBarText();
 		m->update_files_list_counter = 200;
 	}
