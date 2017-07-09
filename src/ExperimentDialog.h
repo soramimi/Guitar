@@ -16,12 +16,9 @@ public:
 	~ExperimentDialog();
 
 private slots:
-	void on_pushButton_get_clicked();
 
 private:
 	Ui::ExperimentDialog *ui;
-	QImage getIconFromGitHub(QString name);
-	QImage getIconFromGravatar(QString name);
 };
 
 #endif // EXPERIMENTDIALOG_H

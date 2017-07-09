@@ -438,3 +438,11 @@ QString misc::determinFileType(const QString &filecommand, const QString &path, 
 	return QString();
 }
 
+QString misc::makeProxyServerURL(QString text)
+{
+	if (!text.isEmpty() && text.indexOf("://") < 0) {
+		text = "http://" + text;
+	}
+	return text;
+}
+

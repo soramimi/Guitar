@@ -33,6 +33,7 @@ public:
 	static bool isSVG(const QString &mimetype);
 	static QString abbrevBranchName(const QString &name);
 	static QString determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback);
+	static QString makeProxyServerURL(QString text);
 };
 
 class OverrideWaitCursor_ {

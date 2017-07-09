@@ -20,15 +20,15 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 
 	QTreeWidgetItem *item;
 
-	item = new QTreeWidgetItem();
-	item->setText(0, tr("Directories"));
-	item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)ui->page_directories));
-	ui->treeWidget->addTopLevelItem(item);
-
-	item = new QTreeWidgetItem();
-	item->setText(0, tr("Example"));
-	item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)ui->page_example));
-	ui->treeWidget->addTopLevelItem(item);
+	auto AddPage = [&](QString const &name, QWidget *page){
+		item = new QTreeWidgetItem();
+		item->setText(0, name);
+		item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)page));
+		ui->treeWidget->addTopLevelItem(item);
+	};
+	AddPage(tr("Directories"), ui->page_directories);
+	AddPage(tr("Network"), ui->page_network);
+	AddPage(tr("Example"), ui->page_example);
 }
 
 SettingsDialog::~SettingsDialog()
@@ -36,23 +36,35 @@ SettingsDialog::~SettingsDialog()
 	delete ui;
 }
 
-void SettingsDialog::loadSettings(ApplicationSettings *set)
+void SettingsDialog::loadSettings(ApplicationSettings *as)
 {
 	MySettings s;
+
 	s.beginGroup("Global");
-	set->default_working_dir = s.value("DefaultWorkingDirectory").toString();
-	set->git_command = s.value("GitCommand").toString();
-	set->file_command = s.value("FileCommand").toString();
+	as->default_working_dir = s.value("DefaultWorkingDirectory").toString();
+	as->git_command = s.value("GitCommand").toString();
+	as->file_command = s.value("FileCommand").toString();
+	s.endGroup();
+
+	s.beginGroup("Network");
+	as->proxy_type = s.value("ProxyType").toString();
+	as->proxy_server = misc::makeProxyServerURL(s.value("ProxyServer").toString());
 	s.endGroup();
 }
 
 void SettingsDialog::saveSettings()
 {
 	MySettings s;
+
 	s.beginGroup("Global");
 	s.setValue("DefaultWorkingDirectory", set.default_working_dir);
 	s.setValue("GitCommand", set.git_command);
 	s.setValue("FileCommand", set.file_command);
+	s.endGroup();
+
+	s.beginGroup("Network");
+	s.setValue("ProxyType", set.proxy_type);
+	s.setValue("ProxyServer", misc::makeProxyServerURL(set.proxy_server));
 	s.endGroup();
 }
 

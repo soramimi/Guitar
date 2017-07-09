@@ -39,6 +39,7 @@ typedef void SSL;
 typedef void SSL_CTX;
 #endif
 
+#include <assert.h>
 #include "charvec.h"
 
 #define USER_AGENT "Generic Web Client"
@@ -63,6 +64,9 @@ WebClient::URL::URL(std::string const &addr)
 		left = right + 3;
 	}
 	right = strchr(left, '/');
+	if (!right) {
+		right = left + strlen(left);
+	}
 	if (right) {
 		char const *p = strchr(left, ':');
 		if (p && left < p && p < right) {
@@ -118,6 +122,7 @@ struct WebClient::Private {
 WebClient::WebClient(WebContext *webcx)
 	: m(new Private)
 {
+	assert(webcx);
 	m->webcx = webcx;
 }
 
@@ -720,7 +725,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 	set_default_header(server_url, post, opt);
 
-	std::string request = make_http_request(server_url, post, proxy);
+	std::string request = make_http_request(request_url, post, proxy);
 
 	auto SEND = [&](char const *ptr, int len){
 		while (len > 0) {

@@ -147,7 +147,8 @@ SOURCES += \
     src/ExperimentDialog.cpp \
     src/gunzip.cpp \
     src/AvatarLoader.cpp \
-    src/CommitLoader.cpp
+    src/CommitLoader.cpp \
+    src/SettingNetworkForm.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -224,7 +225,8 @@ HEADERS  += \
     src/ExperimentDialog.h \
     src/gunzip.h \
     src/AvatarLoader.h \
-    src/CommitLoader.h
+    src/CommitLoader.h \
+    src/SettingNetworkForm.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -256,7 +258,8 @@ FORMS    += \
 	src/SettingDirectoriesForm.ui \
     src/SettingExampleForm.ui \
     src/CreateRepositoryDialog.ui \
-    src/ExperimentDialog.ui
+    src/ExperimentDialog.ui \
+    src/SettingNetworkForm.ui
 
 RESOURCES += \
     resources.qrc

@@ -21,7 +21,7 @@ struct AvatarLoader::Private {
 	std::deque<RequestItem> requested;
 	std::deque<RequestItem> completed;
 	std::set<std::string> notfound;
-	WebContext webcx;
+	WebContext *webcx = nullptr;
 	WebClientPtr web1;
 	WebClientPtr web2;
 };
@@ -36,11 +36,16 @@ AvatarLoader::~AvatarLoader()
 	delete m;
 }
 
+void AvatarLoader::start(WebContext *webcx)
+{
+	m->webcx = webcx;
+	QThread::start();
+}
+
 void AvatarLoader::run()
 {
-	m->webcx.set_keep_alive_enabled(true);
-	m->web1 = WebClientPtr(new WebClient(&m->webcx));
-	m->web2 = WebClientPtr(new WebClient(&m->webcx));
+	m->web1 = WebClientPtr(new WebClient(m->webcx));
+	m->web2 = WebClientPtr(new WebClient(m->webcx));
 
 	while (1) {
 		std::deque<RequestItem> requests;

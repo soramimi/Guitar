@@ -285,3 +285,34 @@ void setEnvironmentVariable(QString const &name, QString const &value)
 {
 	SetEnvironmentVariableW((wchar_t const *)name.utf16(), (wchar_t const *)value.utf16());
 }
+
+
+QString getWin32HttpProxy()
+{
+	HKEY hk = 0;
+	auto Close = [&](){
+		RegCloseKey(hk);
+	};
+	try {
+		LSTATUS s;
+		s = RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", 0, KEY_READ, &hk);
+		if (s != ERROR_SUCCESS) throw s;
+		char tmp[1000];
+		DWORD type = 0;
+		DWORD len = sizeof(tmp);
+		s = RegQueryValueExA(hk, "ProxyServer", nullptr, &type, (unsigned char *)tmp, &len);
+		if (s != ERROR_SUCCESS) throw s;
+		while (len > 0 && tmp[len - 1] == 0) {
+			len--;
+		}
+		Close();
+		return QString::fromLatin1(tmp, len);
+	} catch (LSTATUS s) {
+		Close();
+	}
+	return QString();
+}
+
+
+
+

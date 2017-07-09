@@ -19,7 +19,7 @@ struct CommitLoader::Private {
 	std::deque<RequestItem> requested;
 	std::deque<RequestItem> completed;
 	std::set<std::string> notfound;
-	WebContext webcx;
+	WebContext *webcx = nullptr;
 	WebClientPtr web1;
 	WebClientPtr web2;
 };
@@ -34,6 +34,11 @@ CommitLoader::~CommitLoader()
 	delete m;
 }
 
+void CommitLoader::start(WebContext *webcx)
+{
+	m->webcx = webcx;
+}
+
 void CommitLoader::run()
 {
 	while (1) {
@@ -41,7 +46,7 @@ void CommitLoader::run()
 			break;
 		}
 		if (!m->web1) {
-			m->web1 = WebClientPtr(new WebClient(&m->webcx));
+			m->web1 = WebClientPtr(new WebClient(m->webcx));
 		}
 
 		m->thread_mutex.lock();

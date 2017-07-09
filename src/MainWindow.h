@@ -7,6 +7,7 @@
 #include <memory>
 #include <functional>
 #include "GitHubAPI.h"
+#include "main.h"
 
 namespace Ui {
 class MainWindow;
@@ -19,6 +20,8 @@ class QListWidgetItem;
 class QTreeWidgetItem;
 class QTableWidgetItem;
 class AboutDialog;
+
+class MySettings;
 
 class LocalSocketReader;
 
@@ -155,8 +158,6 @@ private slots:
 
 	void on_action_create_a_repository_triggered();
 
-	void on_action_get_avatar_triggered();
-
 	void onAvatarUpdated();
 	void onCommitUpdated();
 private:
@@ -275,8 +276,9 @@ private:
 	int rowFromCommitId(const QString &id);
 	void cherrypick(const Git::CommitItem *commit);
 	void mergeBranch(const Git::CommitItem *commit);
-	void detectServerType(GitPtr g);
+	void detectGitServerType(GitPtr g);
 	QString makeGitHubCommitQuery(const Git::CommitItem *commit);
+	void initNetworking();
 public:
 
 	QString selectGitCommand(bool save);

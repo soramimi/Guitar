@@ -3,6 +3,7 @@
 
 #include "Git.h"
 #include "GitHubAPI.h"
+#include "webclient.h"
 #include <QIcon>
 #include <QThread>
 #include <QMutex>
@@ -33,6 +34,7 @@ public:
 	GitHubAPI::User fetch(const QString &url, bool request);
 	std::deque<RequestItem> takeResults();
 	void interrupt();
+	void start(WebContext *webcx);
 signals:
 	void updated();
 };

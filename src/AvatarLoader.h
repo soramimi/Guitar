@@ -10,6 +10,8 @@
 #include <set>
 #include <string>
 
+class WebContext;
+
 class AvatarLoader : public QThread {
 	Q_OBJECT
 private:
@@ -29,6 +31,7 @@ public:
 	~AvatarLoader();
 	QIcon fetch(const std::string &name, bool request);
 	void interrupt();
+	void start(WebContext *webcx);
 signals:
 	void updated();
 };

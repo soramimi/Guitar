@@ -30,7 +30,7 @@ void GitHubRequestThread::run()
 {
 	ok = false;
 
-	m->webcx.set_keep_alive_enabled(true);
+//	m->webcx.set_keep_alive_enabled(true);
 	m->web = WebClientPtr(new WebClient(&m->webcx));
 
 	if (web()->get(WebClient::URL(url)) == 200) {

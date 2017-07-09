@@ -43,6 +43,9 @@
 #include "CreateRepositoryDialog.h"
 #include "AvatarLoader.h"
 #include "CommitLoader.h"
+#include "webclient.h"
+#include "MemoryReader.h"
+#include "gunzip.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -58,6 +61,7 @@
 #include <QMimeData>
 #include <QDragEnterEvent>
 #include <QLocalServer>
+#include <QBuffer>
 
 #include <stdlib.h>
 #include <deque>
@@ -178,6 +182,7 @@ struct MainWindow::Private {
 	StatusLabel *status_bar_label;
 	bool ui_blocked = false;
 
+	WebContext webcx;
 	AvatarLoader avatar_loader;
 	CommitLoader commit_loader;
 	int update_commit_table_counter = 0;
@@ -209,13 +214,9 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->listWidget_unstaged->installEventFilter(this);
 
 	SettingsDialog::loadSettings(&m->appsettings);
-	{
-		MySettings s;
-		s.beginGroup("Global");
-		m->gcx.git_command = s.value("GitCommand").toString();
-		m->file_command = s.value("FileCommand").toString();
-		s.endGroup();
-	}
+	setGitCommand(m->appsettings.git_command, false);
+	setFileCommand(m->appsettings.file_command, false);
+	initNetworking();
 
 	ui->widget_log->init(this);
 	onLogVisibilityChanged();
@@ -262,9 +263,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setUnknownRepositoryInfo();
 
-	m->avatar_loader.start();
+	m->webcx.set_keep_alive_enabled(true);
+	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
-	m->commit_loader.start();
+	m->commit_loader.start(&m->webcx);
 	connect(&m->commit_loader, SIGNAL(updated()), this, SLOT(onCommitUpdated()));
 
 	m->timer_interval_ms = 20;
@@ -1161,6 +1163,13 @@ void MainWindow::onCommitUpdated()
 	}
 }
 
+QString MainWindow::makeGitHubCommitQuery(Git::CommitItem const *commit)
+{
+	QString url = "https://api.github.com/repos/%1/%2/commits/%3";
+	url = url.arg(m->github.owner_account_name).arg(m->github.repository_name).arg(commit->commit_id);
+	return url;
+}
+
 QIcon MainWindow::committerIcon(int row)
 {
 	QIcon icon;
@@ -1360,6 +1369,51 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 #endif
 }
 
+void MainWindow::detectGitServerType(GitPtr g)
+{
+	m->server_type = ServerType::Standard;
+	m->github = GitHubRepositoryInfo();
+
+	QString push_url;
+	QList<Git::Remote> remotes;
+	g->getRemoteURLs(&remotes);
+	for (Git::Remote const &r : remotes) {
+		if (r.purpose == "push") {
+			push_url = r.url;
+		}
+	}
+
+	auto Check = [&](QString const &s){
+		int i = push_url.indexOf(s);
+		if (i > 0) return i + s.size();
+		return 0;
+	};
+
+	// check GitHub
+	int pos = Check("@github.com:");
+	if (pos == 0) {
+		pos = Check("://github.com/");
+	}
+	if (pos > 0) {
+		int end = push_url.size();
+		{
+			QString s = ".git";
+			if (push_url.endsWith(s)) {
+				end -= s.size();
+			}
+		}
+		QString s = push_url.mid(pos, end - pos);
+		int i = s.indexOf('/');
+		if (i > 0) {
+			QString user = s.mid(0, i);
+			QString repo = s.mid(i + 1);
+			m->github.owner_account_name = user;
+			m->github.repository_name = repo;
+		}
+		m->server_type = ServerType::GitHub;
+	}
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1369,7 +1423,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
-		detectServerType(g);
+		detectGitServerType(g);
 
 		updateFilesList(QString(), true);
 
@@ -2759,6 +2813,26 @@ void MainWindow::setFileCommand(QString const &path, bool save)
 	m->file_command = path;
 }
 
+
+#ifdef Q_OS_WIN
+QString getWin32HttpProxy();
+#endif
+
+void MainWindow::initNetworking()
+{
+	std::string proxy_server;
+	if (m->appsettings.proxy_type == "auto") {
+#ifdef Q_OS_WIN
+		proxy_server = misc::makeProxyServerURL(getWin32HttpProxy()).toStdString();
+#endif
+	} else if (m->appsettings.proxy_type == "manual") {
+		proxy_server = m->appsettings.proxy_server.toStdString();
+	}
+	m->webcx.set_http_proxy(proxy_server);
+}
+
+
+
 QStringList MainWindow::whichCommand_(QString const &cmdfile)
 {
 	QStringList list;
@@ -3003,7 +3077,7 @@ void MainWindow::on_action_edit_settings_triggered()
 {
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
-		m->appsettings = dlg.settings();
+		ApplicationSettings const &newsettings = dlg.settings();
 		setGitCommand(m->appsettings.git_command, false);
 		setFileCommand(m->appsettings.file_command, false);
 	}
@@ -3335,9 +3409,6 @@ QString MainWindow::determinFileType(QString const &path, bool mime)
 		misc::runCommand(cmd, ba);
 	});
 }
-
-#include "gunzip.h"
-#include "MemoryReader.h"
 
 QString MainWindow::determinFileType(QByteArray in, bool mime)
 {
@@ -3913,80 +3984,15 @@ void MainWindow::on_action_create_a_repository_triggered()
 	}
 }
 
-#include "ExperimentDialog.h"
-#include "GitHubAPI.h"
-#include "json.h"
-
-void MainWindow::detectServerType(GitPtr g)
-{
-	m->server_type = ServerType::Standard;
-	m->github = GitHubRepositoryInfo();
-
-	QString push_url;
-	QList<Git::Remote> remotes;
-	g->getRemoteURLs(&remotes);
-	for (Git::Remote const &r : remotes) {
-		if (r.purpose == "push") {
-			push_url = r.url;
-		}
-	}
-
-	auto Check = [&](QString const &s){
-		int i = push_url.indexOf(s);
-		if (i > 0) return i + s.size();
-		return 0;
-	};
-
-	// check GitHub
-	int pos = Check("@github.com:");
-	if (pos == 0) {
-		pos = Check("://github.com/");
-	}
-	if (pos > 0) {
-		int end = push_url.size();
-		{
-			QString s = ".git";
-			if (push_url.endsWith(s)) {
-				end -= s.size();
-			}
-		}
-		QString s = push_url.mid(pos, end - pos);
-		int i = s.indexOf('/');
-		if (i > 0) {
-			QString user = s.mid(0, i);
-			QString repo = s.mid(i + 1);
-			m->github.owner_account_name = user;
-			m->github.repository_name = repo;
-		}
-		m->server_type = ServerType::GitHub;
-	}
-}
-
-QString MainWindow::makeGitHubCommitQuery(Git::CommitItem const *commit)
-{
-	QString url = "https://api.github.com/repos/%1/%2/commits/%3";
-	url = url.arg(m->github.owner_account_name).arg(m->github.repository_name).arg(commit->commit_id);
-	return url;
-}
-
-#include "webclient.h"
-#include "charvec.h"
-#include "json.h"
 
 void MainWindow::on_action_test_triggered()
 {
-	Git::CommitItem const *commit = selectedCommitItem();
-	if (commit) {
-		QString url = makeGitHubCommitQuery(commit);
-		m->commit_loader.fetch(url, true);
-	}
+
+	QString s = getWin32HttpProxy();
+	qDebug() << s;
 }
 
 
 
 
-void MainWindow::on_action_get_avatar_triggered()
-{
-	ExperimentDialog dlg(this);
-	dlg.exec();
-}
+
