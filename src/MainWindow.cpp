@@ -1156,7 +1156,8 @@ void MainWindow::onAvatarUpdated()
 
 bool MainWindow::isAvatarEnabled() const
 {
-	return true;
+	qDebug() << m->appsettings.get_committer_icon;
+	return m->appsettings.get_committer_icon;
 }
 
 QIcon MainWindow::committerIcon(int row)
@@ -3070,6 +3071,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
+		m->appsettings = newsettings;
 		setGitCommand(m->appsettings.git_command, false);
 		setFileCommand(m->appsettings.file_command, false);
 	}
