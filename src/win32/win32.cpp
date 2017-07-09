@@ -309,6 +309,7 @@ QString getWin32HttpProxy()
 		return QString::fromLatin1(tmp, len);
 	} catch (LSTATUS s) {
 		Close();
+		(void)s;
 	}
 	return QString();
 }

@@ -1152,11 +1152,8 @@ void MainWindow::onAvatarUpdated()
 	updateCommitTableLater();
 }
 
-
-
 bool MainWindow::isAvatarEnabled() const
 {
-	qDebug() << m->appsettings.get_committer_icon;
 	return m->appsettings.get_committer_icon;
 }
 
