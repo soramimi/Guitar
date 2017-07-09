@@ -128,7 +128,7 @@ private:
 	void clear_error();
 	static int get_port(URL const *url, char const *scheme, char const *protocol);
 	void set_default_header(URL const &url, Post const *post, const RequestOption &opt);
-	std::string make_http_request(URL const &url, Post const *post, const WebProxy *proxy);
+	std::string make_http_request(URL const &url, Post const *post, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, Response *out);
 	bool http_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);

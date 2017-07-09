@@ -26,6 +26,7 @@ class MySettings;
 class LocalSocketReader;
 
 class CommitList;
+class WebContext;
 
 #define PATH_PREFIX "*"
 
@@ -330,6 +331,7 @@ public:
 	QIcon committerIcon(int row);
 	void updateCommitTableLater();
 	bool isAvatarEnabled() const;
+	WebContext *getWebContextPtr();
 public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);

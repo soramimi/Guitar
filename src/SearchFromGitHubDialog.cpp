@@ -4,6 +4,7 @@
 #include "misc.h"
 #include "json.h"
 #include "urlencode.h"
+#include "MainWindow.h"
 
 #include <QDebug>
 #include <QThread>
@@ -18,9 +19,10 @@ static QString toQString(std::string const &s)
 	return QString::fromUtf8(s.c_str(), s.size());
 }
 
-SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent) :
-	QDialog(parent),
-	ui(new Ui::SearchFromGitHubDialog)
+SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent, MainWindow *mw)
+	: QDialog(parent)
+	, ui(new Ui::SearchFromGitHubDialog)
+	, mainwindow(mw)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -50,7 +52,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 	q = url_encode(q);
 	if (q.empty()) return;
 
-	GitHubAPI github;
+	GitHubAPI github(mainwindow->getWebContextPtr());
 	items = github.searchRepository(q);
 
 	QStringList cols = {

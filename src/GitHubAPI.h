@@ -7,8 +7,8 @@
 #include <functional>
 #include <memory>
 
+class WebContext;
 class WebClient;
-
 
 class GitHubAPI {
 public:
@@ -30,8 +30,14 @@ public:
 		double score = 0;
 	};
 
+	WebContext *webcx;
+
+	GitHubAPI(WebContext *webcx)
+		: webcx(webcx)
+	{
+	}
+
 	QList<GitHubAPI::SearchResultItem> searchRepository(const std::string &q);
-	QImage avatarImage(const std::string &name);
 };
 
 
@@ -50,6 +56,7 @@ public:
 	bool ok = false;
 	std::string text;
 	std::function<bool(std::string const &text)> callback;
+	void start(WebContext *webcx);
 };
 
 #endif // GITHUBAPI_H

@@ -457,6 +457,11 @@ void MainWindow::clearStatusBarText()
 	setStatusBarText(QString());
 }
 
+WebContext *MainWindow::getWebContextPtr()
+{
+	return &m->webcx;
+}
+
 QString MainWindow::getObjectID(QListWidgetItem *item)
 {
 	int i = indexOfDiff(item);
