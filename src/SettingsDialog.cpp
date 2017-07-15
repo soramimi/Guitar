@@ -49,6 +49,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	s.beginGroup("Network");
 	as->proxy_type = s.value("ProxyType").toString();
 	as->proxy_server = misc::makeProxyServerURL(s.value("ProxyServer").toString());
+	as->get_committer_icon = s.value("GetCommitterIcon").toBool();
 	s.endGroup();
 }
 
@@ -65,6 +66,7 @@ void SettingsDialog::saveSettings()
 	s.beginGroup("Network");
 	s.setValue("ProxyType", set.proxy_type);
 	s.setValue("ProxyServer", misc::makeProxyServerURL(set.proxy_server));
+	s.setValue("GetCommitterIcon", set.get_committer_icon);
 	s.endGroup();
 }
 

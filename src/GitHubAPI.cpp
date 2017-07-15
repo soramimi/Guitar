@@ -12,7 +12,6 @@
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
-	WebContext webcx;
 	WebClientPtr web;
 };
 
@@ -26,13 +25,15 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
+void GitHubRequestThread::start(WebContext *webcx)
+{
+	m->web = WebClientPtr(new WebClient(webcx));
+	QThread::start();
+}
+
 void GitHubRequestThread::run()
 {
 	ok = false;
-
-//	m->webcx.set_keep_alive_enabled(true);
-	m->web = WebClientPtr(new WebClient(&m->webcx));
-
 	if (web()->get(WebClient::URL(url)) == 200) {
 		WebClient::Response const &r = web()->response();
 		if (!r.content.empty()) {
@@ -58,7 +59,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 	{
 		OverrideWaitCursor;
 		th.url = "https://api.github.com/search/repositories?q=" + q;
-		th.start();
+		th.start(webcx);
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -100,51 +101,6 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 	});
 
 	return items;
-}
-
-QImage GitHubAPI::avatarImage(std::string const &name)
-{
-	QImage image;
-
-	GitHubRequestThread th;
-	{
-		OverrideWaitCursor;
-		th.url = "https://api.github.com/users/" + name;
-		th.callback = [&](std::string const &text){
-			std::string avatar_url;
-			{
-				JSON json;
-				json.parse(text);
-				for (JSON::Node const &node : json.node.children) {
-					if (node.name == "avatar_url") {
-						avatar_url = node.value;
-					}
-				}
-			}
-			if (!avatar_url.empty()) {
-				WebContext webcx;
-				WebClient web(&webcx);
-				if (web.get(WebClient::URL(avatar_url)) == 200) {
-					WebClient::Response const &r = web.response();
-					if (!r.content.empty()) {
-						MemoryReader reader(&r.content[0], r.content.size());
-						reader.open(MemoryReader::ReadOnly);
-						if (image.load(&reader, nullptr)) {
-							return true;
-						}
-					}
-				}
-			}
-			return false;
-		};
-		th.start();
-		while (!th.wait(1)) {
-			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		}
-//		th.wait();
-	}
-
-	return image;
 }
 
 

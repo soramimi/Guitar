@@ -12,6 +12,8 @@ class SearchFromGitHubDialog;
 
 class QTableWidgetItem;
 
+class MainWindow;
+
 class SearchFromGitHubDialog : public QDialog
 {
 	Q_OBJECT
@@ -19,8 +21,9 @@ private:
 	QList<GitHubAPI::SearchResultItem> items;
 	QString url_;
 	MyTableWidgetDelegate item_delegate;
+	MainWindow *mainwindow;
 public:
-	explicit SearchFromGitHubDialog(QWidget *parent = 0);
+	explicit SearchFromGitHubDialog(QWidget *parent, MainWindow *mw);
 	~SearchFromGitHubDialog();
 
 	QString url() const;

@@ -15,8 +15,6 @@ class WebContext;
 class AvatarLoader : public QThread {
 	Q_OBJECT
 private:
-	GitHubAPI github;
-
 	struct RequestItem {
 		std::string name;
 		QIcon icon;

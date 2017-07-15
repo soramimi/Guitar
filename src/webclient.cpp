@@ -256,13 +256,13 @@ void WebClient::set_default_header(URL const &url, Post const *post, RequestOpti
 	m->request_header = std::move(header);
 }
 
-std::string WebClient::make_http_request(URL const &url, Post const *post, WebProxy const *proxy)
+std::string WebClient::make_http_request(URL const &url, Post const *post, WebProxy const *proxy, bool https)
 {
 	std::string str;
 
 	str = post ? "POST " : "GET ";
 
-	if (proxy) {
+	if (proxy && !https) {
 		str += url.data.full_request;
 		str += " HTTP/1.0";
 		str += "\r\n";
@@ -529,9 +529,9 @@ bool WebClient::http_get(URL const &request_url, Post const *post, RequestOption
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(server_url, post, opt);
+	set_default_header(request_url, post, opt);
 
-	std::string request = make_http_request(request_url, post, proxy);
+	std::string request = make_http_request(request_url, post, proxy, false);
 
 	send_(m->sock, request.c_str(), (int)request.size());
 	if (post && !post->data.empty()) {
@@ -724,9 +724,9 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(server_url, post, opt);
+	set_default_header(request_url, post, opt);
 
-	std::string request = make_http_request(request_url, post, proxy);
+	std::string request = make_http_request(request_url, post, proxy, true);
 
 	auto SEND = [&](char const *ptr, int len){
 		while (len > 0) {

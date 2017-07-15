@@ -16,6 +16,7 @@ struct ApplicationSettings {
 	QString default_working_dir;
 	QString proxy_type;
 	QString proxy_server;
+	bool get_committer_icon = false;
 };
 
 #endif // MAIN_H

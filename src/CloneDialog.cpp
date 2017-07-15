@@ -93,7 +93,7 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
 void CloneDialog::on_comboBox_currentIndexChanged(int index)
 {
 	if (index == GitHub) {
-		SearchFromGitHubDialog dlg(this);
+		SearchFromGitHubDialog dlg(this, mainwindow());
 		if (dlg.exec() == QDialog::Accepted) {
 			ui->lineEdit_repo_location->setText(dlg.url());
 		}
