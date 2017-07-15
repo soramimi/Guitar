@@ -48,6 +48,7 @@ struct WebContext::Private {
 	SSL_CTX *ctx;
 	bool use_keep_alive = false;
 	WebProxy http_proxy;
+	WebProxy https_proxy;
 };
 
 WebClient::URL::URL(std::string const &addr)
@@ -572,7 +573,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 	URL server_url;
 
-	WebProxy const *proxy = m->webcx->http_proxy();
+	WebProxy const *proxy = m->webcx->https_proxy();
 	if (proxy) {
 		server_url = URL(proxy->server);
 	} else {
@@ -1028,12 +1029,31 @@ void WebContext::set_http_proxy(const std::string &proxy)
 	m->http_proxy.server = proxy;
 }
 
+void WebContext::set_https_proxy(const std::string &proxy)
+{
+	m->https_proxy = WebProxy();
+	m->https_proxy.server = proxy;
+}
+
 const WebProxy *WebContext::http_proxy() const
 {
-	if (m->http_proxy.empty()) {
-		return nullptr;
-	} else {
+	if (!m->http_proxy.empty()) {
 		return &m->http_proxy;
+	} else {
+		return nullptr;
+	}
+}
+
+const WebProxy *WebContext::https_proxy() const
+{
+	if (!m->https_proxy.empty()) {
+		return &m->https_proxy;
+	} else {
+		if (!m->http_proxy.empty()) {
+			return &m->http_proxy;
+		} else {
+			return nullptr;
+		}
 	}
 }
 

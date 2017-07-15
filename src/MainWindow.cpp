@@ -2789,7 +2789,8 @@ QString getWin32HttpProxy();
 
 void MainWindow::initNetworking()
 {
-	std::string proxy_server;
+	std::string http_proxy;
+	std::string https_proxy;
 	if (m->appsettings.proxy_type == "auto") {
 #ifdef Q_OS_WIN
 		proxy_server = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
@@ -2807,15 +2808,21 @@ void MainWindow::initNetworking()
 			}
 			return nullptr;
 		};
-		char const *p = getienv("http_proxy");
+		char const *p;
+		p = getienv("http_proxy");
 		if (p) {
-			proxy_server = misc::makeProxyServerURL(std::string(p));
+			http_proxy = misc::makeProxyServerURL(std::string(p));
+		}
+		p = getienv("https_proxy");
+		if (p) {
+			https_proxy = misc::makeProxyServerURL(std::string(p));
 		}
 #endif
 	} else if (m->appsettings.proxy_type == "manual") {
-		proxy_server = m->appsettings.proxy_server.toStdString();
+		http_proxy = m->appsettings.proxy_server.toStdString();
 	}
-	m->webcx.set_http_proxy(proxy_server);
+	m->webcx.set_http_proxy(http_proxy);
+	m->webcx.set_https_proxy(https_proxy);
 }
 
 

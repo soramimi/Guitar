@@ -181,7 +181,9 @@ public:
 	void set_keep_alive_enabled(bool f);
 
 	void set_http_proxy(std::string const &proxy);
+	void set_https_proxy(std::string const &proxy);
 	WebProxy const *http_proxy() const;
+	WebProxy const *https_proxy() const;
 
 	bool load_cacert(char const *path);
 };
