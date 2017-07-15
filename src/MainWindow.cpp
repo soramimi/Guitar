@@ -2795,7 +2795,7 @@ void MainWindow::initNetworking()
 	std::string https_proxy;
 	if (m->appsettings.proxy_type == "auto") {
 #ifdef Q_OS_WIN
-		proxy_server = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
+		http_proxy = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
 #else
 		auto getienv = [](std::string const &name)->char const *{
 			char **p = environ;
