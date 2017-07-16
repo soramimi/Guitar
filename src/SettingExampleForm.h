@@ -16,7 +16,7 @@ class SettingExampleForm : public AbstractSettingForm
 public:
 	explicit SettingExampleForm(QWidget *parent = 0);
 	~SettingExampleForm();
-	void reflect();
+	void exchange(bool save);
 
 private:
 	Ui::SettingExampleForm *ui;

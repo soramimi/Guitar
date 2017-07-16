@@ -14,7 +14,7 @@ class SettingDirectoriesForm : public AbstractSettingForm
 public:
 	explicit SettingDirectoriesForm(QWidget *parent = 0);
 	~SettingDirectoriesForm();
-	void reflect();
+	void exchange(bool save);
 private slots:
 	void on_pushButton_select_git_command_clicked();
 	void on_pushButton_select_file_command_clicked();

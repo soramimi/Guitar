@@ -17,11 +17,17 @@ SettingDirectoriesForm::~SettingDirectoriesForm()
 	delete ui;
 }
 
-void SettingDirectoriesForm::reflect()
+void SettingDirectoriesForm::exchange(bool save)
 {
-	ui->lineEdit_default_working_dir->setText(settings()->default_working_dir);
-	ui->lineEdit_git_command->setText(settings()->git_command);
-	ui->lineEdit_file_command->setText(settings()->file_command);
+	if (save) {
+		settings()->default_working_dir = ui->lineEdit_default_working_dir->text();
+		settings()->git_command = ui->lineEdit_git_command->text();
+		settings()->file_command = ui->lineEdit_file_command->text();
+	} else {
+		ui->lineEdit_default_working_dir->setText(settings()->default_working_dir);
+		ui->lineEdit_git_command->setText(settings()->git_command);
+		ui->lineEdit_file_command->setText(settings()->file_command);
+	}
 }
 
 void SettingDirectoriesForm::on_pushButton_select_git_command_clicked()
