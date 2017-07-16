@@ -1769,9 +1769,34 @@ void MainWindow::on_action_fetch_triggered()
 
 void MainWindow::on_action_push_triggered()
 {
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	if (g->getRemotes().isEmpty()) {
+		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
+		execSetRemoteUrlDialog();
+		return;
+	}
+
+	int exitcode = 0;
+	QString errormsg;
+
 	reopenRepository(true, [&](GitPtr g){
 		g->push();
+		exitcode = g->getProcessExitCode();
+		errormsg = g->errorMessage();
 	});
+
+	if (exitcode == 128 && errormsg.indexOf("no upstream branch")) {
+		QString brname = currentBranch().name;
+
+		QString msg = tr("The current branch %1 has no upstream branch.");
+		msg = msg.arg(brname);
+		msg += '\n';
+		msg += tr("You try push --set-upstream");
+		QMessageBox::warning(this, qApp->applicationName(), msg);
+		pushSetUpstream(false);
+	}
 }
 
 void MainWindow::on_action_pull_triggered()
@@ -1952,15 +1977,26 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_set_remote_url) {
-				GitPtr g = git(repo->local_dir);
-				if (!isValidWorkingCopy(g)) return;
-				QStringList remotes = g->getRemotes();
-				SetRemoteUrlDialog dlg(this, remotes, g);
-				dlg.exec();
+				execSetRemoteUrlDialog();
 				return;
 			}
 		}
 	}
+}
+
+void MainWindow::execSetRemoteUrlDialog(RepositoryItem const *repo)
+{
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	if (!treeitem) return;
+
+	repo = repositoryItem(treeitem);
+	if (!repo) return;
+
+	GitPtr g = git(repo->local_dir);
+	if (!isValidWorkingCopy(g)) return;
+	QStringList remotes = g->getRemotes();
+	SetRemoteUrlDialog dlg(this, remotes, g);
+	dlg.exec();
 }
 
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
@@ -3830,6 +3866,7 @@ bool MainWindow::runOnCurrentRepositoryDir(std::function<void(QString)> callback
 			}
 		}
 	}
+	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
 	return false;
 }
 
