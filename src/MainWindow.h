@@ -176,7 +176,7 @@ private:
 
 	void openRepository_(GitPtr g);
 	void openRepository(bool validate, bool waitcursor = true);
-	void reopenRepository(bool log, std::function<void(GitPtr g)> callback);
+	void reopenRepository(bool log, std::function<void(GitPtr)> callback);
 
 	void openSelectedRepository();
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
@@ -278,6 +278,7 @@ private:
 	void mergeBranch(const Git::CommitItem *commit);
 	void detectGitServerType(GitPtr g);
 	void initNetworking();
+	void execSetRemoteUrlDialog(const RepositoryItem *repo = nullptr);
 public:
 
 	QString selectGitCommand(bool save);
