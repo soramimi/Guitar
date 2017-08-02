@@ -420,7 +420,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 	QString mimetype_r = m->mainwindow->determinFileType(diffdata()->right->bytes, true);
 
 	ui->widget_diff_left->setFileType(mimetype_l);
-	ui->widget_diff_right->setFileType(mimetype_l);
+	ui->widget_diff_right->setFileType(mimetype_r);
 
 	if (misc::isImageFile(mimetype_l) || misc::isImageFile(mimetype_r)) { // image
 

@@ -250,11 +250,21 @@ int misc::runCommand(QString const &cmd, QByteArray *out)
 int misc::runCommand(QString const &cmd, QByteArray const *in, QByteArray *out)
 {
 	out->clear();
+	if (in->isEmpty()) {
+		return -1;
+	}
 	QProcess proc;
 	proc.setReadChannel(QProcess::StandardOutput);
 	proc.start(cmd);
 	proc.waitForStarted();
-	proc.write(*in);
+	{
+		char const *p = in->data();
+		int n = in->size();
+		if (n > 65536) {
+			n = 65536;
+		}
+		proc.write(p, n);
+	}
 	proc.closeWriteChannel();
 	while (1) {
 		QProcess::ProcessState s = proc.state();
@@ -356,9 +366,13 @@ bool misc::isSVG(const QString &mimetype)
 bool misc::isImageFile(const QString &mimetype)
 {
 	if (mimetype == "image/jpeg") return true;
+	if (mimetype == "image/jpg") return true;
 	if (mimetype == "image/png") return true;
+	if (mimetype == "image/gif") return true;
 	if (mimetype == "image/bmp") return true;
 	if (mimetype == "image/x-ms-bmp") return true;
+	if (mimetype == "image/x-icon") return true;
+	if (mimetype == "image/tiff") return true;
 	if (isSVG(mimetype)) return true;
 	return false;
 }
@@ -406,11 +420,17 @@ QString misc::determinFileType(const QString &filecommand, const QString &path, 
 		} else {
 			cmd = "\"%1\" -m \"%2\"";
 			cmd = cmd.arg(file).arg(mgc);
+			cmd = cmd.replace('\\', '/');
 		}
 		if (mime) {
 			cmd += " --mime";
 		}
-		cmd += QString(" --brief \"%1\"").arg(path);
+		cmd += " --brief ";
+		if (path == "-") {
+			cmd += path;
+		} else {
+			cmd += QString("\"%1\"").arg(path);
+		}
 
 		// run file command
 
@@ -425,12 +445,9 @@ QString misc::determinFileType(const QString &filecommand, const QString &path, 
 			QStringList list = s.split(';', QString::SkipEmptyParts);
 			if (!list.isEmpty()) {
 				QString mimetype = list[0].trimmed();
-				//				qDebug() << mimetype;
 				return mimetype;
 			}
 		}
-
-		return cmd;
 
 	} else {
 		qDebug() << "No executable 'file' command";

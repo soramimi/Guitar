@@ -3445,8 +3445,10 @@ QString MainWindow::determinFileType(QString const &path, bool mime)
 
 QString MainWindow::determinFileType(QByteArray in, bool mime)
 {
+	if (in.isEmpty()) return QString();
+
 	if (in.size() > 10) {
-		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) {
+		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
 			QBuffer buf;
 			MemoryReader reader(in.data(), in.size());
 			reader.open(MemoryReader::ReadOnly);
@@ -3460,7 +3462,10 @@ QString MainWindow::determinFileType(QByteArray in, bool mime)
 
 	// ファイル名を "-" にすると、リダイレクトで標準入力へ流し込める。
 	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
-		misc::runCommand(cmd, &in, ba);
+		int r = misc::runCommand(cmd, &in, ba);
+		if (r != 0) {
+			ba->clear();
+		}
 	});
 }
 
