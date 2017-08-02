@@ -5,6 +5,9 @@
 #include <QFileDialog>
 #include "misc.h"
 
+static int page_number = 0;
+
+
 SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QDialog(parent),
 	ui(new Ui::SettingsDialog)
@@ -23,12 +26,14 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	auto AddPage = [&](QString const &name, QWidget *page){
 		item = new QTreeWidgetItem();
 		item->setText(0, name);
-		item->setData(0, Qt::UserRole, QVariant((uintptr_t)(QWidget *)page));
+		item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
 		ui->treeWidget->addTopLevelItem(item);
 	};
 	AddPage(tr("Directories"), ui->page_directories);
 	AddPage(tr("Network"), ui->page_network);
 	AddPage(tr("Example"), ui->page_example);
+
+	ui->treeWidget->setCurrentItem(ui->treeWidget->topLevelItem(page_number));
 }
 
 SettingsDialog::~SettingsDialog()
@@ -70,18 +75,29 @@ void SettingsDialog::saveSettings()
 	s.endGroup();
 }
 
+void SettingsDialog::exchange(bool save)
+{
+	QList<AbstractSettingForm *> forms = ui->stackedWidget->findChildren<AbstractSettingForm *>();
+	for (AbstractSettingForm *form : forms) {
+		form->exchange(save);
+	}
+}
+
 void SettingsDialog::loadSettings()
 {
 	loadSettings(&set);
+	exchange(false);
+}
 
-	QList<AbstractSettingForm *> forms = ui->stackedWidget->findChildren<AbstractSettingForm *>();
-	for (AbstractSettingForm *form : forms) {
-		form->reflect();
-	}
+void SettingsDialog::done(int r)
+{
+	page_number = ui->stackedWidget->currentIndex();
+	QDialog::done(r);
 }
 
 void SettingsDialog::accept()
 {
+	exchange(true);
 	saveSettings();
 	done(QDialog::Accepted);
 }

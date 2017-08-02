@@ -49,9 +49,13 @@ private slots:
 private:
 	Ui::SettingsDialog *ui;
 
-	// QDialog interface
+	void exchange(bool save);
 public slots:
 	void accept();
+
+	// QDialog interface
+public slots:
+	void done(int);
 };
 
 #endif // SETTINGSDIALOG_H

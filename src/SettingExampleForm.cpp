@@ -13,7 +13,9 @@ SettingExampleForm::~SettingExampleForm()
 	delete ui;
 }
 
-void SettingExampleForm::reflect()
+void SettingExampleForm::exchange(bool save)
 {
-
+	if (save) {
+	} else {
+	}
 }

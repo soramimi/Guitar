@@ -14,7 +14,7 @@ protected:
 	ApplicationSettings *settings();
 public:
 	AbstractSettingForm(QWidget *parent = 0);
-	virtual void reflect() = 0;
+	virtual void exchange(bool save) = 0;
 };
 
 #endif // ABSTRACTSETTINGFORM_H

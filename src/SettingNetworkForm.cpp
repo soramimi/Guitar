@@ -14,43 +14,30 @@ SettingNetworkForm::~SettingNetworkForm()
 	delete ui;
 }
 
-void SettingNetworkForm::reflect()
+void SettingNetworkForm::exchange(bool save)
 {
-	ApplicationSettings const *s = settings();
-	if (s->proxy_type == "auto") {
-		ui->radioButton_auto_detect->click();
-	} else if (s->proxy_type == "manual") {
-		ui->radioButton_manual->click();
+	if (save) {
+		if (ui->radioButton_auto_detect->isChecked()) {
+			settings()->proxy_type = "auto";
+		} else if (ui->radioButton_manual->isChecked()) {
+			settings()->proxy_type = "manual";
+		} else {
+			settings()->proxy_type = "none";
+		}
+		settings()->proxy_server = ui->lineEdit_proxy_server->text();
+		settings()->get_committer_icon = ui->checkBox_get_committer_icon->isChecked();
 	} else {
-		ui->radioButton_no_proxy->click();
+		ApplicationSettings const *s = settings();
+		if (s->proxy_type == "auto") {
+			ui->radioButton_auto_detect->click();
+		} else if (s->proxy_type == "manual") {
+			ui->radioButton_manual->click();
+		} else {
+			ui->radioButton_no_proxy->click();
+		}
+		ui->lineEdit_proxy_server->setText(s->proxy_server);
+
+		ui->checkBox_get_committer_icon->setChecked(s->get_committer_icon);
 	}
-	ui->lineEdit_proxy_server->setText(s->proxy_server);
-
-	ui->checkBox_get_committer_icon->setChecked(s->get_committer_icon);
 }
 
-void SettingNetworkForm::on_radioButton_no_proxy_clicked()
-{
-	settings()->proxy_type = "none";
-}
-
-void SettingNetworkForm::on_radioButton_auto_detect_clicked()
-{
-	settings()->proxy_type = "auto";
-}
-
-void SettingNetworkForm::on_radioButton_manual_clicked()
-{
-	settings()->proxy_type = "manual";
-}
-
-void SettingNetworkForm::on_lineEdit_proxy_server_textChanged(const QString &text)
-{
-	settings()->proxy_server = text;
-}
-
-void SettingNetworkForm::on_checkBox_get_committer_icon_toggled(bool checked)
-{
-	settings()->get_committer_icon = checked;
-
-}
