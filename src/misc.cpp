@@ -363,6 +363,12 @@ bool misc::isSVG(const QString &mimetype)
 	return false;
 }
 
+bool misc::isPSD(const QString &mimetype)
+{
+	if (mimetype == "image/vnd.adobe.photoshop") return true;
+	return false;
+}
+
 bool misc::isImageFile(const QString &mimetype)
 {
 	if (mimetype == "image/jpeg") return true;
@@ -374,6 +380,7 @@ bool misc::isImageFile(const QString &mimetype)
 	if (mimetype == "image/x-icon") return true;
 	if (mimetype == "image/tiff") return true;
 	if (isSVG(mimetype)) return true;
+	if (isPSD(mimetype)) return true;
 	return false;
 }
 

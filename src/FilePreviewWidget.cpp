@@ -4,6 +4,8 @@
 #include "MainWindow.h"
 #include "misc.h"
 #include "joinpath.h"
+#include "Photoshop.h"
+#include "MemoryReader.h"
 
 #include <QDebug>
 #include <QFileDialog>
@@ -12,6 +14,7 @@
 #include <QWheelEvent>
 #include <functional>
 #include <QSvgRenderer>
+#include <QBuffer>
 
 typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
 
@@ -455,8 +458,21 @@ void FilePreviewWidget::setImage(QString mimetype, QByteArray const &ba)
 		if (misc::isSVG(mimetype)) {
 			m->pixmap = QPixmap();
 			m->svg = SvgRendererPtr(new QSvgRenderer(ba));
+		} else if (misc::isPSD(mimetype)) {
+			if (!ba.isEmpty()) {
+				MemoryReader reader(ba.data(), ba.size());
+				if (reader.open(QIODevice::ReadOnly)) {
+					std::vector<char> jpeg;
+					photoshop::readThumbnail(&reader, &jpeg);
+					if (!jpeg.empty()) {
+						m->pixmap.loadFromData((uchar const *)&jpeg[0], jpeg.size());
+					}
+				}
+			}
 		} else {
 			m->pixmap.loadFromData(ba);
+		}
+		if (!m->pixmap.isNull()) {
 			m->svg = SvgRendererPtr();
 		}
 		m->image_scale = 1;

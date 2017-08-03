@@ -147,7 +147,8 @@ SOURCES += \
     src/ExperimentDialog.cpp \
     src/gunzip.cpp \
     src/AvatarLoader.cpp \
-    src/SettingNetworkForm.cpp
+    src/SettingNetworkForm.cpp \
+    Photoshop.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -224,7 +225,8 @@ HEADERS  += \
     src/ExperimentDialog.h \
     src/gunzip.h \
     src/AvatarLoader.h \
-    src/SettingNetworkForm.h
+    src/SettingNetworkForm.h \
+    Photoshop.h
 
 FORMS    += \
 	src/MainWindow.ui \
