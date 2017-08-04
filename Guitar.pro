@@ -148,7 +148,7 @@ SOURCES += \
     src/gunzip.cpp \
     src/AvatarLoader.cpp \
     src/SettingNetworkForm.cpp \
-    Photoshop.cpp
+	src/Photoshop.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -226,7 +226,7 @@ HEADERS  += \
     src/gunzip.h \
     src/AvatarLoader.h \
     src/SettingNetworkForm.h \
-    Photoshop.h
+	src/Photoshop.h
 
 FORMS    += \
 	src/MainWindow.ui \
