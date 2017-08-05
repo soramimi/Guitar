@@ -422,25 +422,26 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 	ui->widget_diff_left->setFileType(mimetype_l);
 	ui->widget_diff_right->setFileType(mimetype_r);
 
-	if (misc::isImageFile(mimetype_l) || misc::isImageFile(mimetype_r)) { // image
+	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 
 		ui->verticalScrollBar->setVisible(false);
 		ui->horizontalScrollBar->setVisible(false);
 
-		FilePreviewWidget *w_left = ui->widget_diff_left;
-
 		if (m->init_param_.view_style == FileDiffWidget::ViewStyle::SideBySideImage) {
+			FilePreviewWidget *w_left = ui->widget_diff_left;
 			FilePreviewWidget *w_right = ui->widget_diff_right;
 			w_left->setImage(mimetype_l, diffdata()->left->bytes);
 			w_right->setImage(mimetype_r, diffdata()->right->bytes);
+			return w_left->filetype();
 		} else {
-			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
-				w_left = ui->widget_diff_right;
-			}
-			w_left->setImage(mimetype_l, diffdata()->left->bytes);
+			FilePreviewType type = (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly
+									? ui->widget_diff_right
+									: ui->widget_diff_left
+									  )->filetype();
+			ui->widget_diff_left->setImage(mimetype_l, diffdata()->left->bytes);
+			ui->widget_diff_right->setImage(mimetype_r, diffdata()->right->bytes);
+			return type;
 		}
-
-		return w_left->filetype();
 
 	} else { // text
 
@@ -517,7 +518,7 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::RightOnly;
-	m->init_param_.bytes_a = ba;
+	m->init_param_.bytes_b = ba;
 	m->init_param_.diff = diff;
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
@@ -597,7 +598,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		Git::Object obj_b = cat_file(g, info.blob.b_id);
 		QString mime_a = m->mainwindow->determinFileType(obj_a.content, true);
 		QString mime_b = m->mainwindow->determinFileType(obj_a.content, true);
-		if (misc::isImageFile(mime_a) && misc::isImageFile(mime_b)) {
+		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
 			setSideBySide(obj_a.content, obj_b.content, g->workingRepositoryDir());
 			goto L1;
 		}

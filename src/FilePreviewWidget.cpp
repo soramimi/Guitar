@@ -105,7 +105,7 @@ void FilePreviewWidget::setFileType(QString const &mimetype)
 {
 	setBinaryMode(false);
 	m->mime_type = mimetype;
-	if (misc::isImageFile(m->mime_type)) {
+	if (misc::isImage(m->mime_type)) {
 		m->file_type = FilePreviewType::Image;
 		setMouseTracking(true);
 	} else {
@@ -453,27 +453,30 @@ bool FilePreviewWidget::isTerminalMode() const
 
 void FilePreviewWidget::setImage(QString mimetype, QByteArray const &ba)
 {
+	if (mimetype.isEmpty()) {
+		mimetype = "image/x-unknown";
+	}
 	setFileType(mimetype);
 	if (m->file_type == FilePreviewType::Image) {
-		if (misc::isSVG(mimetype)) {
-			m->pixmap = QPixmap();
-			m->svg = SvgRendererPtr(new QSvgRenderer(ba));
-		} else if (misc::isPSD(mimetype)) {
-			if (!ba.isEmpty()) {
-				MemoryReader reader(ba.data(), ba.size());
-				if (reader.open(QIODevice::ReadOnly)) {
-					std::vector<char> jpeg;
-					photoshop::readThumbnail(&reader, &jpeg);
-					if (!jpeg.empty()) {
-						m->pixmap.loadFromData((uchar const *)&jpeg[0], jpeg.size());
+		m->pixmap = QPixmap();
+		m->svg = SvgRendererPtr();
+		if (!ba.isEmpty()) {
+			if (misc::isSVG(mimetype)) {
+				m->svg = SvgRendererPtr(new QSvgRenderer(ba));
+			} else if (misc::isPSD(mimetype)) {
+				if (!ba.isEmpty()) {
+					MemoryReader reader(ba.data(), ba.size());
+					if (reader.open(QIODevice::ReadOnly)) {
+						std::vector<char> jpeg;
+						photoshop::readThumbnail(&reader, &jpeg);
+						if (!jpeg.empty()) {
+							m->pixmap.loadFromData((uchar const *)&jpeg[0], jpeg.size());
+						}
 					}
 				}
+			} else {
+				m->pixmap.loadFromData(ba);
 			}
-		} else {
-			m->pixmap.loadFromData(ba);
-		}
-		if (!m->pixmap.isNull()) {
-			m->svg = SvgRendererPtr();
 		}
 		m->image_scale = 1;
 		QSize sz = imageSize();

@@ -29,7 +29,8 @@ public:
 	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright = QColor());
 	static void dump(const uint8_t *ptr, size_t len);
 	static void dump(QByteArray const *in);
-	static bool isImageFile(const QString &mimetype);
+	static bool isText(const QString &mimetype);
+	static bool isImage(const QString &mimetype);
 	static bool isSVG(const QString &mimetype);
 	static bool isPSD(const QString &mimetype);
 	static QString abbrevBranchName(const QString &name);

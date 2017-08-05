@@ -356,6 +356,11 @@ void misc::dump(const QByteArray *in)
 	dump(ptr, len);
 }
 
+bool misc::isText(const QString &mimetype)
+{
+	return mimetype.startsWith("text/");
+}
+
 bool misc::isSVG(const QString &mimetype)
 {
 	if (mimetype == "image/svg") return true;
@@ -369,8 +374,9 @@ bool misc::isPSD(const QString &mimetype)
 	return false;
 }
 
-bool misc::isImageFile(const QString &mimetype)
+bool misc::isImage(const QString &mimetype)
 {
+#if 0
 	if (mimetype == "image/jpeg") return true;
 	if (mimetype == "image/jpg") return true;
 	if (mimetype == "image/png") return true;
@@ -382,6 +388,9 @@ bool misc::isImageFile(const QString &mimetype)
 	if (isSVG(mimetype)) return true;
 	if (isPSD(mimetype)) return true;
 	return false;
+#else
+	return mimetype.startsWith("image/");
+#endif
 }
 
 QString misc::abbrevBranchName(QString const &name)
