@@ -8,7 +8,9 @@ class MainWindow;
 class RepositoriesTreeWidget : public QTreeWidget
 {
 	Q_OBJECT
+private:
 	MainWindow *mainwindow();
+	QTreeWidgetItem *current_item = nullptr;
 public:
 	explicit RepositoriesTreeWidget(QWidget *parent = 0);
 

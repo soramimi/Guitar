@@ -8,6 +8,10 @@
 RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 {
+	connect(this, &RepositoriesTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *previous){
+		current_item = current;
+		qDebug() << current_item;
+	});
 }
 
 MainWindow *RepositoriesTreeWidget::mainwindow()
@@ -59,7 +63,9 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 			}
 		}
 	} else {
+		QTreeWidgetItem *item = current_item;
 		QTreeWidget::dropEvent(event);
+		setCurrentItem(item);
 		emit dropped();
 	}
 }
