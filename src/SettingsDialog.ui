@@ -49,9 +49,25 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
-       <widget class="QWidget" name="page_directories">
+       <widget class="SettingBehaviorForm" name="page_behavior">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
+       <widget class="SettingDirectoriesForm" name="page_directories">
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
           <number>0</number>
@@ -65,12 +81,9 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="SettingDirectoriesForm" name="widget_directories_form" native="true"/>
-         </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="page_network">
+       <widget class="SettingNetworkForm" name="page_network">
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <property name="leftMargin">
           <number>0</number>
@@ -84,12 +97,9 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="SettingNetworkForm" name="widget" native="true"/>
-         </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="page_example">
+       <widget class="SettingExampleForm" name="page_example">
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <property name="leftMargin">
           <number>0</number>
@@ -103,9 +113,6 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="SettingExampleForm" name="widget_example_form" native="true"/>
-         </item>
         </layout>
        </widget>
       </widget>
@@ -162,6 +169,12 @@
    <class>SettingNetworkForm</class>
    <extends>QWidget</extends>
    <header>SettingNetworkForm.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingBehaviorForm</class>
+   <extends>QWidget</extends>
+   <header>SettingBehaviorForm.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

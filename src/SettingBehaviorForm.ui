@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SettingNetworkForm</class>
- <widget class="QWidget" name="SettingNetworkForm">
+ <class>SettingGeneralForm</class>
+ <widget class="QWidget" name="SettingGeneralForm">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -27,40 +27,9 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QRadioButton" name="radioButton_no_proxy">
+    <widget class="QCheckBox" name="checkBox">
      <property name="text">
-      <string>No Proxy</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="radioButton_auto_detect">
-     <property name="text">
-      <string>Auto Detect</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="radioButton_manual">
-     <property name="text">
-      <string>Manual</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="lineEdit_proxy_server"/>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="checkBox_get_committer_icon">
-     <property name="text">
-      <string>Get committer's icon</string>
+      <string>Automatically fetch when opening the repository.</string>
      </property>
     </widget>
    </item>
@@ -72,7 +41,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>187</height>
+       <height>275</height>
       </size>
      </property>
     </spacer>

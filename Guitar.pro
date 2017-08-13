@@ -148,7 +148,8 @@ SOURCES += \
     src/gunzip.cpp \
     src/AvatarLoader.cpp \
     src/SettingNetworkForm.cpp \
-	src/Photoshop.cpp
+	src/Photoshop.cpp \
+    src/SettingBehaviorForm.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -226,7 +227,8 @@ HEADERS  += \
     src/gunzip.h \
     src/AvatarLoader.h \
     src/SettingNetworkForm.h \
-	src/Photoshop.h
+	src/Photoshop.h \
+    src/SettingBehaviorForm.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -259,7 +261,8 @@ FORMS    += \
     src/SettingExampleForm.ui \
     src/CreateRepositoryDialog.ui \
     src/ExperimentDialog.ui \
-    src/SettingNetworkForm.ui
+    src/SettingNetworkForm.ui \
+    src/SettingBehaviorForm.ui
 
 RESOURCES += \
     resources.qrc

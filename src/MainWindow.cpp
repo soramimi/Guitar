@@ -1395,6 +1395,10 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
+		if (m->appsettings.automatically_fetch_when_opening_the_repository) {
+			g->fetch();
+		}
+
 		detectGitServerType(g);
 
 		updateFilesList(QString(), true);

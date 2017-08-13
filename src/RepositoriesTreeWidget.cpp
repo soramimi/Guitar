@@ -10,7 +10,6 @@ RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
 {
 	connect(this, &RepositoriesTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *previous){
 		current_item = current;
-		qDebug() << current_item;
 	});
 }
 

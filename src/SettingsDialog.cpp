@@ -29,6 +29,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 		item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
 		ui->treeWidget->addTopLevelItem(item);
 	};
+	AddPage(tr("Behavior"), ui->page_behavior);
 	AddPage(tr("Directories"), ui->page_directories);
 	AddPage(tr("Network"), ui->page_network);
 	AddPage(tr("Example"), ui->page_example);
@@ -45,16 +46,29 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 {
 	MySettings s;
 
+	auto STRING_VALUE = [&](QString const &name, QString &v){
+		v = s.value(name, v).toString();
+	};
+
+	auto BOOL_VALUE = [&](QString const &name, bool &v){
+		v = s.value(name, v).toBool();
+	};
+
 	s.beginGroup("Global");
-	as->default_working_dir = s.value("DefaultWorkingDirectory").toString();
-	as->git_command = s.value("GitCommand").toString();
-	as->file_command = s.value("FileCommand").toString();
+	STRING_VALUE("DefaultWorkingDirectory", as->default_working_dir);
+	STRING_VALUE("GitCommand", as->git_command);
+	STRING_VALUE("FileCommand", as->file_command);
 	s.endGroup();
 
 	s.beginGroup("Network");
-	as->proxy_type = s.value("ProxyType").toString();
-	as->proxy_server = misc::makeProxyServerURL(s.value("ProxyServer").toString());
-	as->get_committer_icon = s.value("GetCommitterIcon").toBool();
+	STRING_VALUE("ProxyType", as->proxy_type);
+	STRING_VALUE("ProxyServer", as->proxy_server);
+	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
+	BOOL_VALUE("GetCommitterIcon", as->get_committer_icon);
+	s.endGroup();
+
+	s.beginGroup("Behavior");
+	BOOL_VALUE("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
 	s.endGroup();
 }
 
@@ -72,6 +86,10 @@ void SettingsDialog::saveSettings()
 	s.setValue("ProxyType", set.proxy_type);
 	s.setValue("ProxyServer", misc::makeProxyServerURL(set.proxy_server));
 	s.setValue("GetCommitterIcon", set.get_committer_icon);
+	s.endGroup();
+
+	s.beginGroup("Behavior");
+	s.setValue("AutomaticFetch", set.automatically_fetch_when_opening_the_repository);
 	s.endGroup();
 }
 
