@@ -661,7 +661,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 		X509 *x509 = SSL_get_peer_certificate(m->ssl);
 		if (x509) {
-#ifndef OPENSSL_NO_SHA
+#ifndef OPENSSL_NO_SHA1
 			std::string fingerprint;
 			for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
 				if (i > 0) {
