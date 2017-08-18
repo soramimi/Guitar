@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>無題ドキュメント</title>
+</head>
+
+<body>
+<p>How to build the Guitar (en) (draft)</p>
+<p>&nbsp;</p>
+<p>Prerequirements</p>
+<p>- Compiler</p>
+<p>-- Windows</p>
+<p>Microsoft Visual C++ 2013 or later<br>
+  Ruby : https://rubyinstaller.org/<br>
+  Perl : 
+https://www.activestate.com/activeperl</p>
+<p>-- mac OS</p>
+<p>Xcode<br>
+Ruby<br>
+Perl</p>
+<p>-- Linux</p>
+<p>GCC<br>
+Ruby : apt-get install ruby<br> 
+Perl : apt-get install perl</p>
+<p>&nbsp;</p>
+<p>Dependent libraries</p>
+<p>- Qt : https://www.qt.io/download-open-source/#section-2<br>
+--Please download and install Qt SDK suitable for your platform.</p>
+<p>  - zlib : 
+  https://github.com/madler/zlib.git<br>
+</p>
+<p>- OpenSSL : https://www.openssl.org/source/ | https://github.com/openssl/openssl.git<br>
+  -- required openssl-1.0.x<br>
+--- openssl-1.1.x is not supported</p>
+<p>&nbsp;</p>
+<p>Download sources</p>
+<p>- Guitar</p>
+<p>-- (https) git clone https://github.com/soramimi/Guitar.git<br>
+-- (ssh)  git clone git@github.com:soramimi/Guitar.git</p>
+<p>- zlib </p>
+<p>-- git clone https://github.com/madler/zlib.git</p>
+<p>- OpenSSL</p>
+<p>-- git clone https://github.com/openssl/openssl.git<br>
+  -- ...or  download source from https://www.openssl.org/source/</p>
+<p>&nbsp;</p>
+<p>Directories (example)</p>
+<p>/home/my/work/Guitar<br>
+/home/my/work/openssl<br>
+/home/my/work/zip</p>
+<p>&nbsp;</p>
+<p>Make the zlib</p>
+<p>- Start the Qt Creator and open Guitar/zlib.pro<br>
+  -- Set build directory to:<br>
+  --- (ex. for Windows)
+ C:\work\_build_zlib<br>
+  --- (ex. for Linux/mac)
+  /home/my/work/_build_zlib_Debug|Release<br>
+- Run [Build] menu (or press Ctrl+B)</p>
+<p>&nbsp;</p>
+<p>Make OpenSSL on Windows</p>
+<p>please read the INSTALL.W32</p>
+<p> recommended  to install the OpenSSL on  C:\openssl</p>
+<p>- &gt; perl Configure VC-WIN32 --prefix=c:\openssl</p>
+<p>&nbsp;</p>
+<p>Make OpenSSL on macOS</p>
+<p>$ cd openssl<br>
+$ git checkout -b OpenSSL_1_0_2-stable origin/OpenSSL_1_0_2-stable  <br>
+$ ./Configure darwin64-x86_64-cc --prefix=/usr/local  <br>
+$ make -j4  <br>
+$ sudo make install</p>
+<p>&nbsp;</p>
+<p>Install OpenSSL on Linux</p>
+<p>$ sudo apt-get install libssl-dev</p>
+<p>&nbsp;</p>
+<p>Make the Guitar</p>
+<p>- first, run the script 'prepare.rb'</p>
+<p>$ cd Guitar<br>
+  $ ruby prepare.rb
+</p>
+<p>- start the Qt Creator, open the project file 'Guitar.pro'<br>
+  -- Set build directory to:<br>
+--- (ex. for Windows)
+ C:\work\_build_Guitar<br>
+--- (ex. for Linux/mac)
+  /home/my/work/_build_Guitar_Debug|Release<br>
+  -- do [Run qmake] (in [Build] menu)<br>
+  -- do [Build] (or press Ctrl+B)</p>
+<p>&nbsp;</p>
+<p>Note</p>
+<p>(on Windows) necessary to copy OpenSSL's 'libeay32.dll' and 'ssleay32.dll' to the same folder as 'Guitar.exe'.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+</body>
+</html>
