@@ -71,6 +71,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef Q_OS_MAC
+extern "C" char **environ;
+#endif
+
 struct GitHubRepositoryInfo {
 	QString owner_account_name;
 	QString repository_name;
