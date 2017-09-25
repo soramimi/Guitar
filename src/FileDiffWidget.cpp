@@ -448,11 +448,21 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(true);
 		ui->horizontalScrollBar->setVisible(true);
 
-		if (diffdata()->left->bytes.isEmpty()) {
-			diffdata()->original_lines.clear();
-		} else {
-			diffdata()->original_lines = misc::splitLines(diffdata()->left->bytes, [](char const *ptr, size_t len){ return QString::fromUtf8(ptr, len); });
+		QStringList lines;
+		{
+			QByteArray const *p = nullptr;
+			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::LeftOnly) {
+				p = &diffdata()->left->bytes;
+			} else if (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
+				p = &diffdata()->right->bytes;
+			}
+			if (p && !p->isEmpty()) {
+				lines = misc::splitLines(*p, [](char const *ptr, size_t len){
+					return QString::fromUtf8(ptr, len);
+				});
+			}
 		}
+		diffdata()->original_lines = lines;
 
 		return FilePreviewType::Text;
 	}
