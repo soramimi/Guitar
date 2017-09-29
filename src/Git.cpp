@@ -11,6 +11,7 @@
 #include "misc.h"
 #include "LibGit2.h"
 #include "GitObjectManager.h"
+#include "win32/Win32Process.h"
 
 #define DEBUGLOG 0
 
@@ -153,16 +154,24 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 //		qDebug() << cmd;
-#if 1
+#ifdef _WIN32
+
+
+		Win32Process proc;
+		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
+
+
+#else
+
+
 		QProcess proc;
 		proc.setReadChannel(errout ? QProcess::StandardError : QProcess::StandardOutput);
 		proc.start(cmd);
 		proc.waitForStarted();
 		proc.closeWriteChannel();
-		int notrunning = 0;
 		while (1) {
 			QProcess::ProcessState s = proc.state();
-			if (proc.waitForReadyRead(20)) {
+			if (proc.waitForReadyRead(1)) {
 				while (1) {
 					char tmp[1024];
 					int len = (int)proc.read(tmp, sizeof(tmp));
@@ -180,17 +189,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 					}
 				}
 			} else if (s == QProcess::NotRunning) {
-				notrunning++;
-				if (notrunning >= 2) break;
-				QThread::msleep(20);
+				break;
 			}
 		}
 		m->process_exit_code = proc.exitCode();
-
-		qDebug() << cmd << resultText();
-#else
-		m->process_exit_code = misc::runCommand(cmd, &m->result);
-#endif
 
 		if (m->process_exit_code != 0) {
 			m->error_message = QString::fromUtf8(proc.readAllStandardError());
@@ -199,6 +201,8 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			qDebug() << m->error_message;
 #endif
 		}
+#endif
+
 		return m->process_exit_code == 0;
 	};
 

@@ -273,11 +273,13 @@ win32 {
 	SOURCES += \
 		src/win32/thread.cpp \
 		src/win32/event.cpp \
-		src/win32/win32.cpp
+        src/win32/win32.cpp \
+        src/win32/Win32Process.cpp
 
 	HEADERS  += \
 		src/win32/thread.h \
 		src/win32/event.h \
 		src/win32/mutex.h \
-		src/win32/win32.h
+        src/win32/win32.h \
+        src/win32/Win32Process.h
 }
