@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QProcess>
+#include <QThread>
 #include <QTimer>
 #include <set>
 #include "joinpath.h"
@@ -158,9 +159,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		proc.start(cmd);
 		proc.waitForStarted();
 		proc.closeWriteChannel();
+		int notrunning = 0;
 		while (1) {
 			QProcess::ProcessState s = proc.state();
-			if (proc.waitForReadyRead(1)) {
+			if (proc.waitForReadyRead(20)) {
 				while (1) {
 					char tmp[1024];
 					int len = (int)proc.read(tmp, sizeof(tmp));
@@ -178,10 +180,14 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 					}
 				}
 			} else if (s == QProcess::NotRunning) {
-				break;
+				notrunning++;
+				if (notrunning >= 2) break;
+				QThread::msleep(20);
 			}
 		}
 		m->process_exit_code = proc.exitCode();
+
+		qDebug() << cmd << resultText();
 #else
 		m->process_exit_code = misc::runCommand(cmd, &m->result);
 #endif

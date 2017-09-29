@@ -896,6 +896,11 @@ bool MainWindow::isDiffThreadValid(QString const &id) const
 }
 
 void MainWindow::startDiff(GitPtr g, QString id)
+{
+
+}
+
+void MainWindow::startDiff2(GitPtr g, QString id)
 { // diffスレッドを開始する
 	if (!isValidWorkingCopy(g)) return;
 
@@ -934,6 +939,7 @@ bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
 		}
 	}
 #else // multi thread
+	startDiff2(git(), id);
 	if (m->diff.thread) {
 		DiffThread *th = dynamic_cast<DiffThread *>(m->diff.thread.get());
 		Q_ASSERT(th);
