@@ -451,7 +451,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		QStringList lines;
 		{
 			QByteArray const *p = nullptr;
-			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::LeftOnly) {
+			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::LeftOnly || m->init_param_.view_style == FileDiffWidget::ViewStyle::SideBySideText) {
 				p = &diffdata()->left->bytes;
 			} else if (m->init_param_.view_style == FileDiffWidget::ViewStyle::RightOnly) {
 				p = &diffdata()->right->bytes;
