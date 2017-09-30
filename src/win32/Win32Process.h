@@ -1,6 +1,5 @@
 #ifndef WIN32PROCESS_H
 #define WIN32PROCESS_H
-#ifdef _WIN32
 
 #include <vector>
 #include <string>
@@ -20,5 +19,4 @@ public:
 	int run(QString const &command, QByteArray *out, QByteArray *err);
 };
 
-#endif
 #endif // WIN32PROCESS_H

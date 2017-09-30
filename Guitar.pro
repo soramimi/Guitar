@@ -149,7 +149,7 @@ SOURCES += \
     src/AvatarLoader.cpp \
     src/SettingNetworkForm.cpp \
 	src/Photoshop.cpp \
-    src/SettingBehaviorForm.cpp
+	src/SettingBehaviorForm.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -228,7 +228,7 @@ HEADERS  += \
     src/AvatarLoader.h \
     src/SettingNetworkForm.h \
 	src/Photoshop.h \
-    src/SettingBehaviorForm.h
+	src/SettingBehaviorForm.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -267,7 +267,12 @@ FORMS    += \
 RESOURCES += \
     resources.qrc
 
-
+unix {
+	SOURCES += \
+		src/unix/UnixProcess.cpp
+	HEADERS += \
+		src/unix/UnixProcess.h
+}
 
 win32 {
 	SOURCES += \
@@ -276,7 +281,7 @@ win32 {
         src/win32/win32.cpp \
         src/win32/Win32Process.cpp
 
-	HEADERS  += \
+	HEADERS += \
 		src/win32/thread.h \
 		src/win32/event.h \
 		src/win32/mutex.h \

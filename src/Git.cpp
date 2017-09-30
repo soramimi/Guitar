@@ -11,7 +11,14 @@
 #include "misc.h"
 #include "LibGit2.h"
 #include "GitObjectManager.h"
+
+#ifdef Q_OS_WIN
 #include "win32/Win32Process.h"
+#endif
+
+#ifdef Q_OS_UNIX
+#include "unix/UnixProcess.h"
+#endif
 
 #define DEBUGLOG 0
 
@@ -154,12 +161,20 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 //		qDebug() << cmd;
-#ifdef _WIN32
 
+#if 1
+
+#ifdef Q_OS_WIN
 
 		Win32Process proc;
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
 
+#else
+
+		UnixProcess proc;
+		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
+
+#endif
 
 #else
 
