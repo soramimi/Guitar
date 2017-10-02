@@ -20,13 +20,16 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
 	misc::setFixedSize(this);
 
+	QString copyright_holder = "S.Fuchita";
+	QString twitter_account = "soramimi_jp";
+
 	pixmap.load(":/image/about.png");
 
-	setWindowTitle(tr("About Guitar"));
+	setWindowTitle(tr("About %1").arg(qApp->applicationName()));
 
 	ui->label_title->setText(appVersion());
-	ui->label_copyright->setText(QString("Copyright (C) %1 S.Fuchita").arg(copyright_year));
-	ui->label_twitter->setText("(@soramimi_jp)");
+	ui->label_copyright->setText(QString("Copyright (C) %1 %2").arg(copyright_year).arg(copyright_holder));
+	ui->label_twitter->setText(twitter_account.isEmpty() ? QString() : QString("(@%1)").arg(twitter_account));
 	QString t = QString("Qt %1").arg(qVersion());
 #if defined(_MSC_VER)
 	t += QString(", msvc=%1").arg(_MSC_VER);
@@ -58,5 +61,5 @@ void AboutDialog::paintEvent(QPaintEvent *)
 
 QString AboutDialog::appVersion()
 {
-	return QString("Guitar, v%1 (%2)").arg(product_version).arg(source_revision);
+	return QString("%1, v%2 (%3)").arg(qApp->applicationName()).arg(product_version).arg(source_revision);
 }

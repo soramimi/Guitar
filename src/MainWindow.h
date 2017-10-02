@@ -160,6 +160,10 @@ private slots:
 	void on_action_create_a_repository_triggered();
 
 	void onAvatarUpdated();
+	void on_radioButton_remote_online_clicked();
+
+	void on_radioButton_remote_offline_clicked();
+
 private:
 	Ui::MainWindow *ui;
 
@@ -280,6 +284,8 @@ private:
 	void detectGitServerType(GitPtr g);
 	void initNetworking();
 	void execSetRemoteUrlDialog(const RepositoryItem *repo = nullptr);
+	void setRemoteOnline(bool f);
+	bool isRemoteOnline() const;
 public:
 
 	QString selectGitCommand(bool save);

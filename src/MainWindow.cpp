@@ -222,6 +222,14 @@ MainWindow::MainWindow(QWidget *parent)
 	setFileCommand(m->appsettings.file_command, false);
 	initNetworking();
 
+	{
+		MySettings s;
+		s.beginGroup("Remote");
+		bool f = s.value("Online", true).toBool();
+		s.endGroup();
+		setRemoteOnline(f);
+	}
+
 	ui->widget_log->init(this);
 	onLogVisibilityChanged();
 
@@ -1405,7 +1413,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
-		if (m->appsettings.automatically_fetch_when_opening_the_repository) {
+		if (isRemoteOnline() && m->appsettings.automatically_fetch_when_opening_the_repository) {
 			g->fetch();
 		}
 
@@ -1776,6 +1784,8 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
+	if (!isRemoteOnline()) return;
+
 	reopenRepository(true, [&](GitPtr g){
 		g->fetch();
 	});
@@ -1783,6 +1793,8 @@ void MainWindow::on_action_fetch_triggered()
 
 void MainWindow::on_action_push_triggered()
 {
+	if (!isRemoteOnline()) return;
+
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
@@ -1815,6 +1827,8 @@ void MainWindow::on_action_push_triggered()
 
 void MainWindow::on_action_pull_triggered()
 {
+	if (!isRemoteOnline()) return;
+
 	reopenRepository(true, [&](GitPtr g){
 		g->pull();
 	});
@@ -3173,6 +3187,8 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 
 void MainWindow::clone()
 { // クローン
+	if (!isRemoteOnline()) return;
+
 	QString url;
 	QString dir = defaultWorkingDir();
 	while (1) {
@@ -4037,12 +4053,44 @@ void MainWindow::on_action_create_a_repository_triggered()
 	}
 }
 
-
-void MainWindow::on_action_test_triggered()
+bool MainWindow::isRemoteOnline() const
 {
+	return ui->radioButton_remote_online->isChecked();
+}
+
+void MainWindow::setRemoteOnline(bool f)
+{
+	QRadioButton *rb = nullptr;
+	rb = f ? ui->radioButton_remote_online : ui->radioButton_remote_offline;
+	rb->blockSignals(true);
+	rb->click();
+	rb->blockSignals(false);
+
+	ui->toolButton_clone->setEnabled(f);
+	ui->toolButton_fetch->setEnabled(f);
+	ui->toolButton_pull->setEnabled(f);
+	ui->toolButton_push->setEnabled(f);
+
+	MySettings s;
+	s.beginGroup("Remote");
+	s.setValue("Online", f);
+	s.endGroup();
+}
+
+void MainWindow::on_radioButton_remote_online_clicked()
+{
+	setRemoteOnline(true);
+}
+
+void MainWindow::on_radioButton_remote_offline_clicked()
+{
+	setRemoteOnline(false);
 }
 
 
 
+void MainWindow::on_action_test_triggered()
+{
+}
 
 
