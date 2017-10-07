@@ -607,7 +607,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		Git::Object obj_a = cat_file(g, info.blob.a_id);
 		Git::Object obj_b = cat_file(g, info.blob.b_id);
 		QString mime_a = m->mainwindow->determinFileType(obj_a.content, true);
-		QString mime_b = m->mainwindow->determinFileType(obj_a.content, true);
+		QString mime_b = m->mainwindow->determinFileType(obj_b.content, true);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
 			setSideBySide(obj_a.content, obj_b.content, g->workingRepositoryDir());
 			goto L1;

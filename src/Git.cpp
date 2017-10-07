@@ -455,7 +455,7 @@ QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 QString Git::diff_to_file(QString const &old_id, QString const &path)
 {
 #if 1
-	QString cmd = "diff --full-index -a %1 -- %2";
+	QString cmd = "diff --full-index -a %1 -- \"%2\"";
 	cmd = cmd.arg(old_id).arg(path);
 	git(cmd);
 	return resultText();
