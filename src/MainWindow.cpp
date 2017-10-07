@@ -1034,6 +1034,8 @@ void MainWindow::updateFilesList(QString id, bool wait)
 				qDebug() << "something wrong...";
 			} else if (s.code() == Git::FileStatusCode::Untracked) {
 				// nop
+			} else if (s.isUnmerged()) {
+				header += "(unmerged) ";
 			} else if (s.code() == Git::FileStatusCode::AddedToIndex) {
 				header = "(add) ";
 			} else if (s.code_x() == 'D' || s.code_y() == 'D' || s.code() == Git::FileStatusCode::DeletedFromIndex) {
