@@ -305,7 +305,7 @@ MainWindow::~MainWindow()
 
 	m->avatar_loader.interrupt();
 
-	cleanupDiffThread();
+//	cleanupDiffThread();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
@@ -818,148 +818,122 @@ void MainWindow::clearRepositoryInfo()
 
 }
 
-class DiffThread : public QThread {
-private:
-	struct Data {
-		GitPtr g;
-		GitObjectCache *objcache;
-		QString id;
-		bool uncommited;
-		QList<Git::Diff> result;
-	} d;
-public:
-	DiffThread(GitPtr g, GitObjectCache *objcache, QString const &id, bool uncommited)
-	{
-		d.g = g;
-		d.objcache = objcache;
-		d.id = id;
-		d.uncommited = uncommited;
-	}
-	void run()
-	{
-		GitDiff dm(d.objcache);
-		if (d.uncommited) {
-			dm.diff_uncommited(&d.result);
-		} else {
-			dm.diff(d.id, &d.result);
-		}
-	}
-	void interrupt()
-	{
-		requestInterruption();
-	}
-	QString id() const
-	{
-		return d.id;
-	}
-	void take(QList<Git::Diff> *out)
-	{
-		*out = std::move(d.result);
-	}
-};
+//class DiffThread : public QThread {
+//private:
+//	struct Data {
+//		GitPtr g;
+//		GitObjectCache *objcache;
+//		QString id;
+//		bool uncommited;
+//		QList<Git::Diff> result;
+//	} d;
+//public:
+//	DiffThread(GitPtr g, GitObjectCache *objcache, QString const &id, bool uncommited)
+//	{
+//		d.g = g;
+//		d.objcache = objcache;
+//		d.id = id;
+//		d.uncommited = uncommited;
+//	}
+//	void run()
+//	{
+//		GitDiff dm(d.objcache);
+//		if (d.uncommited) {
+//			dm.diff_uncommited(&d.result);
+//		} else {
+//			dm.diff(d.id, &d.result);
+//		}
+//	}
+//	void interrupt()
+//	{
+//		requestInterruption();
+//	}
+//	QString id() const
+//	{
+//		return d.id;
+//	}
+//	void take(QList<Git::Diff> *out)
+//	{
+//		*out = std::move(d.result);
+//	}
+//};
 
-void MainWindow::cleanupDiffThread()
-{ // 全てのスレッドが終了するまで待つ
-	if (m->diff.thread) {
-		m->diff.thread->requestInterruption();
-		m->diff.garbage.push_back(m->diff.thread);
-		m->diff.thread.reset();
-	}
-	for (auto ptr : m->diff.garbage) {
-		if (ptr) {
-			ptr->wait();
-		}
-	}
-	m->diff.garbage.clear();
-}
+//void MainWindow::cleanupDiffThread()
+//{ // 全てのスレッドが終了するまで待つ
+//	if (m->diff.thread) {
+//		m->diff.thread->requestInterruption();
+//		m->diff.garbage.push_back(m->diff.thread);
+//		m->diff.thread.reset();
+//	}
+//	for (auto ptr : m->diff.garbage) {
+//		if (ptr) {
+//			ptr->wait();
+//		}
+//	}
+//	m->diff.garbage.clear();
+//}
 
-void MainWindow::stopDiff()
+//void MainWindow::stopDiff()
+//{
+//	if (m->diff.thread) {
+//		m->diff.thread->requestInterruption(); // 停止要求
+//		m->diff.garbage.push_back(m->diff.thread); // ゴミリストに投入
+//		m->diff.thread.reset(); // ポインタをクリア
+//	}
+
+//	// 終了したスレッドをリストから除外する
+//	QList<std::shared_ptr<QThread>> garbage;
+//	for (auto ptr : m->diff.garbage) {
+//		if (ptr && ptr->isRunning()) {
+//			garbage.push_back(ptr); // 実行中
+//		}
+//	}
+//	m->diff.garbage = std::move(garbage); // リストを差し替える
+//}
+
+//bool MainWindow::isDiffThreadValid(QString const &id) const
+//{
+//	if (m->diff.thread) {
+//		DiffThread *th = dynamic_cast<DiffThread *>(m->diff.thread.get());
+//		Q_ASSERT(th);
+//		if (id == th->id() && !th->isInterruptionRequested()) { // IDが一致して中断されていない
+//			return true;
+//		}
+//	}
+//	return false;
+//}
+
+//void MainWindow::startDiff(GitPtr g, QString id)
+//{
+
+//}
+
+//void MainWindow::startDiff2(GitPtr g, QString id)
+//{ // diffスレッドを開始する
+//}
+
+bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 {
-	if (m->diff.thread) {
-		m->diff.thread->requestInterruption(); // 停止要求
-		m->diff.garbage.push_back(m->diff.thread); // ゴミリストに投入
-		m->diff.thread.reset(); // ポインタをクリア
-	}
-
-	// 終了したスレッドをリストから除外する
-	QList<std::shared_ptr<QThread>> garbage;
-	for (auto ptr : m->diff.garbage) {
-		if (ptr && ptr->isRunning()) {
-			garbage.push_back(ptr); // 実行中
-		}
-	}
-	m->diff.garbage = std::move(garbage); // リストを差し替える
-}
-
-bool MainWindow::isDiffThreadValid(QString const &id) const
-{
-	if (m->diff.thread) {
-		DiffThread *th = dynamic_cast<DiffThread *>(m->diff.thread.get());
-		Q_ASSERT(th);
-		if (id == th->id() && !th->isInterruptionRequested()) { // IDが一致して中断されていない
-			return true;
-		}
-	}
-	return false;
-}
-
-void MainWindow::startDiff(GitPtr g, QString id)
-{
-
-}
-
-void MainWindow::startDiff2(GitPtr g, QString id)
-{ // diffスレッドを開始する
-	if (!isValidWorkingCopy(g)) return;
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return false;
 
 	Git::FileStatusList list = g->status();
 	m->uncommited_changes = !list.empty();
 
-	if (id.isEmpty()) {
-		if (isThereUncommitedChanges()) {
-			id = QString(); // uncommited changes
-		} else {
-			id = m->objcache.revParse("HEAD");
-		}
+	if (id.isEmpty() && !isThereUncommitedChanges()) {
+		id = m->objcache.revParse("HEAD");
 	}
 
-	if (isDiffThreadValid(id)) {
-		// 同じ問い合わせのスレッドが実行中なので何もしない
+	bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
+
+	GitDiff dm(&m->objcache);
+	if (uncommited) {
+		dm.diff_uncommited(out);
 	} else {
-		stopDiff(); // 現在処理中のスレッドを停止
-
-		bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
-
-		DiffThread *th = new DiffThread(g->dup(), &m->objcache, id, uncommited);
-		m->diff.thread = std::shared_ptr<QThread>(th);
-		th->start();
+		dm.diff(id, out);
 	}
-}
 
-bool MainWindow::makeDiff(QString const &id, QList<Git::Diff> *out)
-{ // diffリストを取得する
-#if SINGLE_THREAD
-	GitPtr g = git();
-	if (isValidWorkingCopy(g)) {
-		GitDiff dm(&m->objcache);
-		if (dm.diff(id, out)) {
-			return true;
-		}
-	}
-#else // multi thread
-	startDiff2(git(), id);
-	if (m->diff.thread) {
-		DiffThread *th = dynamic_cast<DiffThread *>(m->diff.thread.get());
-		Q_ASSERT(th);
-		if (id == th->id() && !th->isInterruptionRequested()) { // IDが一致して中断されていない
-			th->wait(); // 終了まで待つ
-			th->take(out); // 結果を取得
-			return true; // success
-		}
-	}
-#endif
-//	qDebug() << "failed to makeDiff";
-	return false;
+	return true; // success
 }
 
 void MainWindow::updateFilesList(QString id, bool wait)
@@ -967,7 +941,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	startDiff(g, id);
+//	startDiff(g, id);
 
 	if (!wait) return;
 
@@ -2407,7 +2381,7 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
-	stopDiff();
+//	stopDiff();
 
 	clearFileList();
 
@@ -2777,6 +2751,8 @@ Git::Object MainWindow::cat_file(QString const &id)
 void MainWindow::updateDiffView(QListWidgetItem *item)
 {
 	clearDiffView();
+
+	if (!item) return;
 
 	int idiff = indexOfDiff(item);
 	if (idiff >= 0 && idiff < m->diff.result.size()) {

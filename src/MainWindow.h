@@ -204,10 +204,10 @@ private:
 	int repositoryIndex_(QTreeWidgetItem *item);
 	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
 
-	void stopDiff();
-	void startDiff(GitPtr g, QString id);
-	void startDiff2(GitPtr g, QString id);
-	bool makeDiff(const QString &id, QList<Git::Diff> *out);
+//	void stopDiff();
+//	void startDiff(GitPtr g, QString id);
+//	void startDiff2(GitPtr g, QString id);
+	bool makeDiff(QString id, QList<Git::Diff> *out);
 
 	void udpateButton();
 	void commit(bool amend = false);
@@ -231,7 +231,7 @@ private:
 	void updateDiffView(QListWidgetItem *item);
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
-	void cleanupDiffThread();
+//	void cleanupDiffThread();
 	void addTag();
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
@@ -253,7 +253,7 @@ private:
 	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool log_callback(void *cookie, const char *ptr, int len);
 	static bool clone_callback(void *cookie, const char *ptr, int len);
-	bool isDiffThreadValid(const QString &id) const;
+//	bool isDiffThreadValid(const QString &id) const;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);
 
