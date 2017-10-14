@@ -261,7 +261,7 @@ private:
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();
 	bool commit_(const QString &msg, bool amend);
-	void push_(bool tags);
+	bool push_(bool tags);
 #if USE_LIBGIT2
 	QString diffHeadToWorkingDir_();
 	QString diff_(const QString &old_id, const QString &new_id);
@@ -354,7 +354,7 @@ public:
 	bool commit(const QString &text);
 	bool commit_amend_m(const QString &text);
 	bool revert(const QString &id);
-	void push(bool tags = false);
+	bool push(bool tags = false);
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(const QString &name);
 	void checkoutBranch(const QString &name);

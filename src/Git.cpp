@@ -25,9 +25,9 @@
 struct Git::Private {
 	QString git_command;
 	QByteArray result;
+	QString error_message;
 	int process_exit_code = 0;
 	QString working_repo_dir;
-	QString error_message;
 	callback_t callback_func = nullptr;
 	void *callback_cookie = nullptr;
 };
@@ -117,6 +117,11 @@ QString Git::resultText() const
 	return QString::fromUtf8(result());
 }
 
+QString Git::errorMessage() const
+{
+	return m->error_message;
+}
+
 int Git::getProcessExitCode() const
 {
 	return m->process_exit_code;
@@ -168,6 +173,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 
 		Win32Process proc;
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
+
+		if (!errout) {
+			m->error_message = QString::fromStdString(proc.errstring());
+		}
 
 #else
 
@@ -234,11 +243,6 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 #endif
 
 	return ok;
-}
-
-QString Git::errorMessage() const
-{
-	return m->error_message;
 }
 
 GitPtr Git::dup() const
@@ -821,19 +825,19 @@ void Git::push_u_origin_master()
 	git(cmd);
 }
 
-void Git::push_(bool tags)
+bool Git::push_(bool tags)
 {
 	QString cmd = "push";
 	if (tags) {
 		cmd += " --tags";
 	}
-	git(cmd);
+	return git(cmd);
 }
 
-void Git::push(bool tags)
+bool Git::push(bool tags)
 {
 #if 1
-	push_(tags);
+	return push_(tags);
 #else
 	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
 	r.push_();

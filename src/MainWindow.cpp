@@ -1789,15 +1789,23 @@ void MainWindow::on_action_push_triggered()
 		errormsg = g->errorMessage();
 	});
 
-	if (exitcode == 128 && errormsg.indexOf("no upstream branch")) {
-		QString brname = currentBranch().name;
+	if (exitcode == 128) {
+		if (errormsg.indexOf("no upstream branch") >= 0) {
+			QString brname = currentBranch().name;
 
-		QString msg = tr("The current branch %1 has no upstream branch.");
-		msg = msg.arg(brname);
-		msg += '\n';
-		msg += tr("You try push --set-upstream");
-		QMessageBox::warning(this, qApp->applicationName(), msg);
-		pushSetUpstream(false);
+			QString msg = tr("The current branch %1 has no upstream branch.");
+			msg = msg.arg(brname);
+			msg += '\n';
+			msg += tr("You try push --set-upstream");
+			QMessageBox::warning(this, qApp->applicationName(), msg);
+			pushSetUpstream(false);
+			return;
+		}
+		if (errormsg.indexOf("Connection refused") >= 0) {
+			QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
+			return;
+		}
+		qDebug() << errormsg;
 	}
 }
 
