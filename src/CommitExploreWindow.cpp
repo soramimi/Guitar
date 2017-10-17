@@ -6,6 +6,8 @@
 #include "MainWindow.h"
 #include "main.h"
 
+#include <QFileIconProvider>
+
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
 	QTreeWidgetItem *item = new QTreeWidgetItem();
@@ -115,6 +117,8 @@ void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 
 	if (item->childCount() == 0) {
 
+		QFileIconProvider icons;
+
 		QString path = item->data(0, FilePathRole).toString();
 
 		QString tree_id = item->data(0, ObjectIdRole).toString();
@@ -123,6 +127,7 @@ void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 		for (GitTreeItem const &ti : m->tree_item_list) {
 			if (ti.type == GitTreeItem::TREE) {
 				QTreeWidgetItem *child = newQTreeWidgetItem();
+				child->setIcon(0, icons.icon(QFileIconProvider::Folder));
 				child->setText(0, ti.name);
 				child->setData(0, ItemTypeRole, (int)ti.type);
 				child->setData(0, ObjectIdRole, ti.id);
@@ -165,10 +170,12 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 
 	loadTree(tree_id);
 
+	QFileIconProvider icons;
+
 	for (GitTreeItem const &ti : m->tree_item_list) {
-		char const *icon = (ti.type == GitTreeItem::TREE) ? ":/image/folder.png" : ":/image/file.png";
+		QIcon icon = icons.icon(ti.type == GitTreeItem::TREE ? QFileIconProvider::Folder : QFileIconProvider::File);
 		QListWidgetItem *p = new QListWidgetItem();
-		p->setIcon(QIcon(icon));
+		p->setIcon(icon);
 		p->setText(ti.name);
 		p->setData(ItemTypeRole, (int)ti.type);
 		p->setData(ObjectIdRole, ti.id);

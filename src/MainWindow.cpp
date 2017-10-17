@@ -61,6 +61,7 @@
 #include <QDragEnterEvent>
 #include <QLocalServer>
 #include <QBuffer>
+#include <QFileIconProvider>
 
 #include <stdlib.h>
 #include <deque>
@@ -235,11 +236,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 	showFileList(FilesListType::SingleList);
 
+
+	QFileIconProvider icons;
+
 	m->digits.load(":/image/digits.png");
 	m->graph_color.load(":/image/graphcolor.png");
 
 	m->repository_icon = QIcon(":/image/repository.png");
-	m->folder_icon = QIcon(":/image/folder.png");
+	m->folder_icon = icons.icon(QFileIconProvider::Folder);
 
 	prepareLogTableWidget();
 
