@@ -35,7 +35,7 @@ class HunkItem {
 public:
 	int hunk_number = -1;
 	size_t pos, len;
-	QStringList lines;
+	std::vector<std::string> lines;
 };
 
 class MainWindow : public QMainWindow

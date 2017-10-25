@@ -218,14 +218,14 @@ void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QLi
 	std::vector<HunkItem> hunks;
 	int number = 0;
 	for (auto it = diff.hunks.begin(); it != diff.hunks.end(); it++, number++) {
-		QString at = it->at;
-		if (at.startsWith("@@ -")) {
+		std::string at = it->at;
+		if (strncmp(at.c_str(), "@@ -", 4) == 0) {
 			size_t pos = 0;
 			size_t len = 0;
-			ushort const *p = at.utf16() + 4;
+			char const *p = at.c_str() + 4;
 			auto ParseNumber = [&](){
 				size_t v = 0;
-				while (QChar::isDigit(*p)) {
+				while (isdigit(*p & 0xff)) {
 					v = v * 10 + (*p - '0');
 					p++;
 				}
@@ -243,7 +243,7 @@ void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QLi
 			item.hunk_number = number;
 			item.pos = pos;
 			item.len = len;
-			for (QString const &line : it->lines) {
+			for (std::string const &line : it->lines) {
 				item.lines.push_back(line);
 			}
 			hunks.push_back(item);
@@ -276,9 +276,9 @@ void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QLi
 				minus = plus = 0;
 			};
 			for (auto it = hi.lines.begin(); it != hi.lines.end(); it++) {
-				QString line = *it;
-				ushort c = line.utf16()[0];
-				line = line.mid(1);
+				std::string line = *it;
+				int c = line[0] & 0xff;
+				line = line.substr(1);
 				if (c == '-') {
 					minus++;
 					TextDiffLine l(line, TextDiffLine::Del);
@@ -306,7 +306,7 @@ void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QLi
 		if (linenum > 0) {
 			linenum--;
 			if (linenum < (size_t)diffdata()->original_lines.size()) {
-				QString line = diffdata()->original_lines[linenum];
+				std::string line = diffdata()->original_lines[linenum];
 				left_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
 				right_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
 			}
@@ -448,7 +448,7 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 		ui->verticalScrollBar->setVisible(true);
 		ui->horizontalScrollBar->setVisible(true);
 
-		QStringList lines;
+		std::vector<std::string> lines;
 		{
 			QByteArray const *p = nullptr;
 			if (m->init_param_.view_style == FileDiffWidget::ViewStyle::LeftOnly || m->init_param_.view_style == FileDiffWidget::ViewStyle::SideBySideText) {
@@ -457,9 +457,10 @@ FilePreviewType FileDiffWidget::setupPreviewWidget()
 				p = &diffdata()->right->bytes;
 			}
 			if (p && !p->isEmpty()) {
-				lines = misc::splitLines(*p, [](char const *ptr, size_t len){
-					return QString::fromUtf8(ptr, len);
-				});
+//				lines = misc::splitLines(*p, [](char const *ptr, size_t len){
+//					return QString::fromUtf8(ptr, len);
+//				});
+				misc::splitLines(p->data(), p->data() + p->size(), &lines);
 			}
 		}
 		diffdata()->original_lines = lines;
@@ -495,7 +496,7 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
 
-		for (QString const &line : diffdata()->original_lines) {
+		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine(line, TextDiffLine::Normal));
 		}
 
@@ -515,7 +516,7 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
 
-		for (QString const &line : diffdata()->original_lines) {
+		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine(line, TextDiffLine::Del));
 			right_lines.push_back(TextDiffLine());
 		}
@@ -536,7 +537,7 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 		QList<TextDiffLine> left_lines;
 		QList<TextDiffLine> right_lines;
 
-		for (QString const &line : diffdata()->original_lines) {
+		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine());
 			right_lines.push_back(TextDiffLine(line, TextDiffLine::Add));
 		}
@@ -617,7 +618,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	{
 		Git::Diff diff;
 		if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
-			QString text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id);
+			std::string text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id).toStdString();
 			GitDiff::parseDiff(text, &info, &diff);
 		} else {
 			diff = info;
@@ -655,7 +656,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	diff.blob.a_id = id_left;
 	diff.blob.b_id = id_right;
 	diff.mode = "0";
-	QString text = GitDiff::diffFile(g, diff.blob.a_id, diff.blob.b_id);
+	std::string text = GitDiff::diffFile(g, diff.blob.a_id, diff.blob.b_id).toStdString();
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = cat_file(g, diff.blob.a_id);

@@ -31,18 +31,18 @@ struct TextDiffLine {
 	int hunk_number = -1;
 	int line_number = -1;
 //	QString text;
-	std::vector<ushort> text;
+	std::vector<char> text;
 	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
 		: type(type)
 	{
 		text.reserve(reserve_length);
 	}
-	TextDiffLine(QString const &text_, Type type)
+	TextDiffLine(std::string const &text_, Type type)
 		: type(type)
 	{
-		ushort const *ptr = text_.utf16();
-		size_t len = text_.size();
-		text.insert(text.end(), ptr, ptr + len);
+		char const *begin = text_.c_str();
+		char const *end = begin + text_.size();
+		text.insert(text.end(), begin, end);
 	}
 };
 
@@ -64,7 +64,7 @@ public:
 	struct DiffData {
 		ObjectContentPtr left;
 		ObjectContentPtr right;
-		QStringList original_lines;
+		std::vector<std::string> original_lines;
 		DiffData()
 		{
 			clear();

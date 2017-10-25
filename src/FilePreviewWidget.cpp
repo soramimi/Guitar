@@ -6,6 +6,7 @@
 #include "joinpath.h"
 #include "Photoshop.h"
 #include "MemoryReader.h"
+#include "charvec.h"
 
 #include <QDebug>
 #include <QFileDialog>
@@ -139,14 +140,14 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
-QString FilePreviewWidget::formatText(std::vector<ushort> const &text)
+QString FilePreviewWidget::formatText(std::vector<char> const &text)
 {
 	if (text.empty()) return QString();
-	std::vector<ushort> vec;
+	std::vector<char> vec;
 	vec.reserve(text.size() + 100);
-	ushort const *begin = &text[0];
-	ushort const *end = begin + text.size();
-	ushort const *ptr = begin;
+	char const *begin = &text[0];
+	char const *end = begin + text.size();
+	char const *ptr = begin;
 	int x = 0;
 	while (ptr < end) {
 		if (*ptr == '\t') {
@@ -161,7 +162,7 @@ QString FilePreviewWidget::formatText(std::vector<ushort> const &text)
 			x++;
 		}
 	}
-	return QString::fromUtf16(&vec[0], vec.size());
+	return QString::fromUtf8(&vec[0], vec.size());
 }
 
 void FilePreviewWidget::paintText()

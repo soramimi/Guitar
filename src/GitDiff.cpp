@@ -109,9 +109,16 @@ QString GitDiff::diffFile(GitPtr g, QString const &a_id, QString const &b_id)
 	}
 }
 
-void GitDiff::parseDiff(QString const &s, Git::Diff const *info, Git::Diff *out)
+void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 {
-	QStringList lines = misc::splitLines(s);
+//	QStringList lines = misc::splitLines(s);
+	std::vector<std::string> lines;
+	{
+		char const *begin = s.c_str();
+		char const *end = begin + s.size();
+		misc::splitLines(begin, end, &lines);
+	}
+
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
@@ -119,10 +126,10 @@ void GitDiff::parseDiff(QString const &s, Git::Diff const *info, Git::Diff *out)
 	out->blob = info->blob;
 
 	bool atat = false;
-	for (QString const &line : lines) {
-		ushort c = line.utf16()[0];
+	for (std::string const &line : lines) {
+		int c = line[0] & 0xff;
 		if (c == '@') {
-			if (line.startsWith("@@ ")) {
+			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
 				out->hunks.push_back(Git::Hunk());
 				out->hunks.back().at = line;
 				atat = true;

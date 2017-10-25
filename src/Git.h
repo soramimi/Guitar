@@ -72,8 +72,8 @@ public:
 
 	class Hunk {
 	public:
-		QString at;
-		QStringList lines;
+		std::string at;
+		std::vector<std::string> lines;
 	};
 	class Diff {
 	public:

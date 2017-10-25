@@ -52,7 +52,7 @@ public:
 	bool isBinaryMode() const;
 	bool isTerminalMode() const;
 
-	static QString formatText(std::vector<ushort> const &text);
+	static QString formatText(std::vector<char> const &text);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);
