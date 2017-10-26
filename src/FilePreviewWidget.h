@@ -27,7 +27,7 @@ private:
 	QSizeF imageScrollRange() const;
 	void scrollImage(double x, double y);
 	void setImageScale(double scale);
-	const QList<TextDiffLine> *getLines() const;
+	const TextDiffLineList *getLines() const;
 	ObjectContentPtr getContent() const;
 	void updateDrawData(QPainter *painter, int *descent = nullptr);
 	void updateDrawData();
@@ -52,7 +52,7 @@ public:
 	bool isBinaryMode() const;
 	bool isTerminalMode() const;
 
-	static QString formatText(std::vector<char> const &text);
+	static QString formatText(const TextDiffLine &line);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

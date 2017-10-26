@@ -29,9 +29,8 @@ struct TextDiffLine {
 		Del,
 	} type = Unknown;
 	int hunk_number = -1;
-	int line_number = -1;
-//	QString text;
-	std::vector<char> text;
+	int line_number = 0;
+	QByteArray text;
 	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
 		: type(type)
 	{
@@ -40,17 +39,16 @@ struct TextDiffLine {
 	TextDiffLine(std::string const &text_, Type type)
 		: type(type)
 	{
-		char const *begin = text_.c_str();
-		char const *end = begin + text_.size();
-		text.insert(text.end(), begin, end);
+		text.append(text_.c_str(), text_.size());
 	}
 };
+typedef QList<TextDiffLine> TextDiffLineList;
 
 struct ObjectContent {
 	QString id;
 	QString path;
 	QByteArray bytes;
-	QList<TextDiffLine> lines;
+	TextDiffLineList lines;
 };
 typedef std::shared_ptr<ObjectContent> ObjectContentPtr;
 
@@ -156,7 +154,7 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const QList<TextDiffLine> &left, const QList<TextDiffLine> &right);
+	void setDiffText(const TextDiffLineList &left, const TextDiffLineList &right);
 
 
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
@@ -168,7 +166,7 @@ private:
 
 	FilePreviewType setupPreviewWidget();
 
-	void makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const;
+	void makeSideBySideDiffData(TextDiffLineList *left_lines, TextDiffLineList *right_lines) const;
 	void setBinaryMode(bool f);
 	void bindContent_();
 	bool isTerminalMode() const;

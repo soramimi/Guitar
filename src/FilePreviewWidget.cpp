@@ -63,7 +63,7 @@ ObjectContentPtr FilePreviewWidget::getContent() const
 }
 
 
-QList<TextDiffLine> const *FilePreviewWidget::getLines() const
+TextDiffLineList const *FilePreviewWidget::getLines() const
 {
 	ObjectContentPtr content = getContent();
 	if (content) return &content->lines;
@@ -140,13 +140,14 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
-QString FilePreviewWidget::formatText(std::vector<char> const &text)
+QString FilePreviewWidget::formatText(TextDiffLine const &line)
 {
-	if (text.empty()) return QString();
+	QByteArray const &ba = line.text;
+	if (ba.isEmpty()) return QString();
 	std::vector<char> vec;
-	vec.reserve(text.size() + 100);
-	char const *begin = &text[0];
-	char const *end = begin + text.size();
+	vec.reserve(ba.size() + 100);
+	char const *begin = ba.data();
+	char const *end = begin + ba.size();
 	char const *ptr = begin;
 	int x = 0;
 	while (ptr < end) {
@@ -167,7 +168,7 @@ QString FilePreviewWidget::formatText(std::vector<char> const &text)
 
 void FilePreviewWidget::paintText()
 {
-	QList<TextDiffLine> const *lines = getLines();
+	TextDiffLineList const *lines = getLines();
 	if (!lines) return;
 
 	QPainter pr(this);
@@ -194,7 +195,7 @@ void FilePreviewWidget::paintText()
 		y -= i * drawdata()->line_height;
 		y = -y;
 		while (i < lines->size() && y < h) {
-			QString line = formatText(lines->at(i).text);
+			QString line = formatText(lines->at(i));
 			TextDiffLine::Type type = lines->at(i).type;
 
 			QColor *bgcolor;
@@ -224,8 +225,8 @@ void FilePreviewWidget::paintText()
 				// draw line number
 				pr.fillRect(x, y, linenum_w + char_width, drawdata()->line_height, drawdata()->bgcolor_gray);
 				int num = lines->at(i).line_number;
-				if (num >= 0 && num < lines->size()) {
-					QString text = "     " + QString::number(num + 1);
+				if (num >= 1 && num <= lines->size()) {
+					QString text = "     " + QString::number(num);
 					text = text.mid(text.size() - linenums);
 					pr.setPen(QColor(128, 128, 128));
 					pr.drawText(x, line_y, text);

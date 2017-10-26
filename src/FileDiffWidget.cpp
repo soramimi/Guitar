@@ -209,7 +209,7 @@ void FileDiffWidget::updateControls()
 
 
 
-void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QList<TextDiffLine> *right_lines) const
+void FileDiffWidget::makeSideBySideDiffData(TextDiffLineList *left_lines, TextDiffLineList *right_lines) const
 {
 	Git::Diff const &diff = m->init_param_.diff;
 
@@ -317,7 +317,7 @@ void FileDiffWidget::makeSideBySideDiffData(QList<TextDiffLine> *left_lines, QLi
 	std::reverse(right_lines->begin(), right_lines->end());
 }
 
-void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiffLine> const &right)
+void FileDiffWidget::setDiffText(TextDiffLineList const &left, TextDiffLineList const &right)
 {
 	QPixmap pm(1, 1);
 	QPainter pr(&pm);
@@ -330,7 +330,7 @@ void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiff
 		Left,
 		Right,
 	};
-	auto MakeDiffLines = [&](QList<TextDiffLine> const &lines, Pane pane, QList<TextDiffLine> *out){
+	auto MakeDiffLines = [&](TextDiffLineList const &lines, Pane pane, TextDiffLineList *out){
 		out->clear();
 		int linenum = 0;
 		for (TextDiffLine const &line : lines) {
@@ -338,23 +338,23 @@ void FileDiffWidget::setDiffText(QList<TextDiffLine> const &left, QList<TextDiff
 
 			switch (item.type) {
 			case TextDiffLine::Normal:
-				item.line_number = linenum++;
+				item.line_number = ++linenum;
 				break;
 			case TextDiffLine::Add:
 				if (pane == Right) {
-					item.line_number = linenum++;
+					item.line_number = ++linenum;
 				}
 				break;
 			case TextDiffLine::Del:
 				if (pane == Left) {
-					item.line_number = linenum++;
+					item.line_number = ++linenum;
 				}
 				break;
 			}
 
 			out->push_back(item);
 
-			QString text = FilePreviewWidget::formatText(item.text);
+			QString text = FilePreviewWidget::formatText(item);
 			QSize sz = fm.size(0, text);
 			if (m->max_line_length < sz.width()) {
 				m->max_line_length = sz.width();
@@ -493,8 +493,8 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
 
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
 
 		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine(line, TextDiffLine::Normal));
@@ -513,8 +513,8 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
 
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
 
 		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine(line, TextDiffLine::Del));
@@ -534,8 +534,8 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
 
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
 
 		for (std::string const &line : diffdata()->original_lines) {
 			left_lines.push_back(TextDiffLine());
@@ -562,8 +562,8 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 			diffdata()->right->id = GitDiff::prependPathPrefix(path);
 		}
 
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
 
 		makeSideBySideDiffData(&left_lines, &right_lines);
 
@@ -581,8 +581,8 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba_a, QByteArray const &ba_
 
 	if (setupPreviewWidget() == FilePreviewType::Text) {
 
-		QList<TextDiffLine> left_lines;
-		QList<TextDiffLine> right_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
 
 		makeSideBySideDiffData(&left_lines, &right_lines);
 
@@ -750,7 +750,7 @@ void FileDiffWidget::onDiffWidgetResized()
 
 QPixmap FileDiffWidget::makeDiffPixmap(ViewType side, int width, int height, FileDiffWidget::DiffData const *diffdata, FileDiffWidget::DrawData const *drawdata)
 {
-	auto MakePixmap = [&](QList<TextDiffLine> const &lines, int w, int h){
+	auto MakePixmap = [&](TextDiffLineList const &lines, int w, int h){
 		const int scale = 1;
 		QPixmap pixmap = QPixmap(w, h * scale);
 		pixmap.fill(Qt::white);
@@ -830,7 +830,7 @@ void FileDiffWidget::termWrite(ushort c)
 		return;
 	}
 
-	QList<TextDiffLine> *lines = &m->diff_data.left->lines;
+	TextDiffLineList *lines = &m->diff_data.left->lines;
 
 	while (lines->size() <= m->term_cursor_row) {
 		lines->push_back(TextDiffLine(TextDiffLine::Normal, 100));
