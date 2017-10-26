@@ -217,17 +217,19 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 						}
 					}
 					for (Git::DiffRaw const &item : list) {
-						if (item.state.startsWith('A')) { // 追加されたファイル
+						if (item.state.startsWith('A') || item.state.startsWith('C')) { // 追加されたファイル
 							auto it = deleted_set.find(item.b.id); // 同じオブジェクトIDが削除リストに載っているなら
 							if (it != deleted_set.end()) {
 								renamed_set.insert(item.b.id); // 名前変更とみなす
 							}
+						} else if (item.state.startsWith('R')) { // 名前変更されたファイル
+							renamed_set.insert(item.b.id);
 						}
 					}
 					for (Git::DiffRaw const &item : list) {
 						QString file;
 						if (!item.files.isEmpty()) {
-							file = item.files.front();
+							file = item.files.back(); // 名前変更された場合はリストの最後が新しい名前
 						}
 						Git::Diff diff;
 						diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
@@ -237,23 +239,42 @@ bool GitDiff::diff(QString id, QList<Git::Diff> *out)
 						if (Git::isValidID(item.a.id)) diff.blob.a_id = item.a.id;
 						if (Git::isValidID(item.b.id)) diff.blob.b_id = item.b.id;
 
+#if 0
 						if (!diff.blob.a_id.isEmpty()) {
 							if (!diff.blob.b_id.isEmpty()) {
-								diff.type = Git::Diff::Type::Changed;
+								if (renamed_set.find(diff.blob.b_id) != renamed_set.end()) {
+									diff.type = Git::Diff::Type::Rename;
+								} else {
+									diff.type = Git::Diff::Type::Modify;
+								}
 							} else {
 								if (renamed_set.find(diff.blob.a_id) != renamed_set.end()) { // 名前変更されたオブジェクトなら
 									diff.type = Git::Diff::Type::Unknown; // マップに追加しない
 								} else {
-									diff.type = Git::Diff::Type::Deleted; // 削除されたオブジェクト
+									diff.type = Git::Diff::Type::Delete; // 削除されたオブジェクト
 								}
 							}
 						} else if (!diff.blob.b_id.isEmpty()) {
 							if (renamed_set.find(diff.blob.b_id) != renamed_set.end()) {
-								diff.type = Git::Diff::Type::Renamed;
+								diff.type = Git::Diff::Type::Rename;
 							} else {
-								diff.type = Git::Diff::Type::Added;
+								diff.type = Git::Diff::Type::Create;
 							}
 						}
+#else
+						diff.type = Git::Diff::Type::Unknown;
+						int state = item.state.utf16()[0];
+						switch (state) {
+						case 'A': diff.type = Git::Diff::Type::Create;   break;
+						case 'C': diff.type = Git::Diff::Type::Copy;     break;
+						case 'D': diff.type = Git::Diff::Type::Delete;   break;
+						case 'M': diff.type = Git::Diff::Type::Modify;   break;
+						case 'R': diff.type = Git::Diff::Type::Rename;   break;
+						case 'T': diff.type = Git::Diff::Type::ChType;   break;
+						case 'U': diff.type = Git::Diff::Type::Unmerged; break;
+						}
+
+#endif
 
 						if (diff.type != Git::Diff::Type::Unknown) {
 							if (diffmap.find(diff.path) == diffmap.end()) {

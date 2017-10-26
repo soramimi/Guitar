@@ -1172,6 +1172,6 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QStr
 	diff->blob.b_id = id;
 	diff->path = path;
 	diff->mode = mode;
-	diff->type = Git::Diff::Type::Added;
+	diff->type = Git::Diff::Type::Create;
 }
 

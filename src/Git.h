@@ -79,10 +79,13 @@ public:
 	public:
 		enum class Type {
 			Unknown,
-			Added,
-			Deleted,
-			Changed,
-			Renamed,
+			Modify,
+			Copy,
+			Rename,
+			Create,
+			Delete,
+			ChType,
+			Unmerged,
 		};
 		Type type = Type::Unknown;
 		QString diff;

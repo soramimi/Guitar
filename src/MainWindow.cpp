@@ -1038,10 +1038,13 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			QString header;
 
 			switch (diff.type) {
-			case Git::Diff::Type::Added:   header = "(add) "; break;
-			case Git::Diff::Type::Deleted: header = "(del) "; break;
-			case Git::Diff::Type::Changed: header = "(chg) "; break;
-			case Git::Diff::Type::Renamed: header = "(ren) "; break;
+			case Git::Diff::Type::Modify:   header = "(chg) "; break;
+			case Git::Diff::Type::Copy:     header = "(cpy) "; break;
+			case Git::Diff::Type::Rename:   header = "(ren) "; break;
+			case Git::Diff::Type::Create:   header = "(add) "; break;
+			case Git::Diff::Type::Delete:   header = "(del) "; break;
+			case Git::Diff::Type::ChType:   header = "(chg) "; break;
+			case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
 			}
 
 			AddItem(diff.path, header, idiff, false);
