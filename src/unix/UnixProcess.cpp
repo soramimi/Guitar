@@ -33,7 +33,7 @@ public:
 	}
 };
 }
-int UnixProcess::run(const char *file, char * const *argv, QByteArray *outvec, QByteArray *errvec)
+int UnixProcess::run(const char *file, char * const *argv, QByteArray *out, QByteArray *err)
 {
 	int exit_code = -1;
 	const int R = 0;
@@ -96,8 +96,8 @@ int UnixProcess::run(const char *file, char * const *argv, QByteArray *outvec, Q
 
 		close(fd_in_read);
 
-		ReadThread t1(fd_out_write, outvec);
-		ReadThread t2(fd_err_write, errvec);
+		ReadThread t1(fd_out_write, out);
+		ReadThread t2(fd_err_write, err);
 		t1.start();
 		t2.start();
 
@@ -127,7 +127,7 @@ int UnixProcess::run(const char *file, char * const *argv, QByteArray *outvec, Q
 	return exit_code;
 }
 
-int UnixProcess::run(const QString &command, QByteArray *outvec, QByteArray *errvec)
+int UnixProcess::run(const QString &command, QByteArray *out, QByteArray *err)
 {
 	int exit_code = -1;
 	std::string cmd = command.toStdString();
@@ -173,9 +173,22 @@ int UnixProcess::run(const QString &command, QByteArray *outvec, QByteArray *err
 			args.push_back(const_cast<char *>(s.c_str()));
 		}
 		args.push_back(nullptr);
-		exit_code = run(args[0], &args[0], outvec, errvec);
+		exit_code = run(args[0], &args[0], &outvec, &errvec);
+		if (out) {
+			out->clear();
+			out->append(outvec);
+		}
+		if (err) {
+			err->clear();
+			err->append(errvec);
+		}
 	}
 
 	return exit_code;
+}
+
+QString UnixProcess::errstring()
+{
+	return QString::fromUtf8(errvec);
 }
 

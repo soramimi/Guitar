@@ -183,6 +183,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		UnixProcess proc;
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
 
+		if (!errout) {
+			m->error_message = proc.errstring();
+		}
+
 #endif
 
 #else

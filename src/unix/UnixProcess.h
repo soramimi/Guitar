@@ -7,9 +7,12 @@
 
 class UnixProcess {
 private:
+	QByteArray outvec;
+	QByteArray errvec;
 public:
-	int run(char const *file, char * const *argv, QByteArray *outvec, QByteArray *errvec);
-	int run(QString const &command, QByteArray *outvec, QByteArray *errvec);
+	int run(char const *file, char * const *argv, QByteArray *out, QByteArray *err);
+	int run(QString const &command, QByteArray *out, QByteArray *err);
+	QString errstring();
 };
 
 #endif // UNIXPROCESS_H
