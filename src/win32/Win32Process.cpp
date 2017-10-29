@@ -7,7 +7,7 @@ namespace {
 class ReadThread : public QThread {
 private:
 	HANDLE hRead;
-	std::vector<char> *buffer;
+	QByteArray *buffer;
 protected:
 	void run()
 	{
@@ -16,11 +16,11 @@ protected:
 			DWORD len = 0;
 			if (!ReadFile(hRead, buf, sizeof(buf), &len, nullptr)) break;
 			if (len < 1) break;
-			if (buffer) buffer->insert(buffer->end(), buf, buf + len);
+			if (buffer) buffer->append(buf, len);
 		}
 	}
 public:
-	ReadThread(HANDLE hRead, std::vector<char> *buffer)
+	ReadThread(HANDLE hRead, QByteArray *buffer)
 		: hRead(hRead)
 		, buffer(buffer)
 	{
@@ -130,22 +130,14 @@ uint32_t Win32Process::run(const std::string &command)
 	return exit_code;
 }
 
-std::string Win32Process::outstring() const
+QString Win32Process::outstring() const
 {
-	if (outvec.empty()) {
-		return std::string();
-	} else {
-		return std::string(&outvec[0], outvec.size());
-	}
+	return QString::fromUtf8(outvec);
 }
 
-std::string Win32Process::errstring() const
+QString Win32Process::errstring() const
 {
-	if (errvec.empty()) {
-		return std::string();
-	} else {
-		return std::string(&errvec[0], errvec.size());
-	}
+	return QString::fromUtf8(errvec);
 }
 
 int Win32Process::run(const QString &command, QByteArray *out, QByteArray *err)
@@ -160,16 +152,11 @@ int Win32Process::run(const QString &command, QByteArray *out, QByteArray *err)
 	int r = run(cmd);
 	if (out) {
 		out->clear();
-		if (!outvec.empty()) {
-			out->append(&outvec[0], outvec.size());
-		}
-
+		out->append(outvec);
 	}
 	if (err) {
 		err->clear();
-		if (!errvec.empty()) {
-			err->append(&errvec[0], errvec.size());
-		}
+		err->append(errvec);
 	}
 	return r;
 }

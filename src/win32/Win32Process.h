@@ -8,13 +8,13 @@
 
 class Win32Process {
 private:
-	std::vector<char> outvec;
-	std::vector<char> errvec;
+	QByteArray outvec;
+	QByteArray errvec;
 	uint32_t run(std::string const &command);
 public:
 
-	std::string outstring() const;
-	std::string errstring() const;
+	QString outstring() const;
+	QString errstring() const;
 
 	int run(QString const &command, QByteArray *out, QByteArray *err);
 };

@@ -175,7 +175,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
 
 		if (!errout) {
-			m->error_message = QString::fromStdString(proc.errstring());
+			m->error_message = proc.errstring();
 		}
 
 #else
