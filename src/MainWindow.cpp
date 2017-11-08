@@ -3882,17 +3882,12 @@ void MainWindow::on_action_push_u_origin_master_triggered()
 
 bool MainWindow::runOnCurrentRepositoryDir(std::function<void(QString)> callback)
 {
-	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
-	if (treeitem) {
-		RepositoryItem const *repo = repositoryItem(treeitem);
-		if (repo && !isGroupItem(treeitem)) {
-			QString dir = repo->local_dir;
-			dir.replace('\\', '/');
-			if (QFileInfo(dir).isDir()) {
-				callback(dir);
-				return true;
-			}
-		}
+	RepositoryItem const *repo = &m->current_repo;
+	QString dir = repo->local_dir;
+	dir.replace('\\', '/');
+	if (QFileInfo(dir).isDir()) {
+		callback(dir);
+		return true;
 	}
 	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
 	return false;
