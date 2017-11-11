@@ -168,10 +168,13 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		}
 
 		Process proc;
-		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
+		m->process_exit_code = proc.run(cmd);
 
-		if (!errout) {
+		if (errout) {
+			m->result = proc.errbytes;
 			m->error_message = proc.errstring();
+		} else {
+			m->result = proc.outbytes;
 		}
 
 		return m->process_exit_code == 0;

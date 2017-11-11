@@ -5,21 +5,18 @@
 #include <string>
 #include <stdint.h>
 #include <QByteArray>
-#include <deque>
+#include <vector>
 #include "MyProcess.h"
 
 class Win32Process : public AbstractProcess {
-private:
-	std::deque<char> outvec;
-	std::deque<char> errvec;
-	stdinput_fn_t stdinput_callback_fn;
-	uint32_t run(std::string const &command);
 public:
+	std::vector<char> outbytes;
+	std::vector<char> errbytes;
 
 	QString outstring() const;
 	QString errstring() const;
 
-	int run(QString const &command, std::vector<char> *out, std::vector<char> *err, stdinput_fn_t stdinput = stdinput_fn_t());
+	int run(QString const &command, stdinput_fn_t stdinput = stdinput_fn_t());
 };
 
 #endif // WIN32PROCESS_H
