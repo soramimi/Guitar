@@ -24,7 +24,7 @@
 
 struct Git::Private {
 	QString git_command;
-	QByteArray result;
+	std::vector<char> result;
 	QString error_message;
 	int process_exit_code = 0;
 	QString working_repo_dir;
@@ -89,9 +89,10 @@ bool Git::isValidID(const QString &id)
 	return false;
 }
 
-QByteArray Git::result() const
+QByteArray Git::toQByteArray() const
 {
-	return m->result;
+	if (m->result.empty()) return QByteArray();
+	return QByteArray(&m->result[0], m->result.size());
 }
 
 void Git::setGitCommand(QString const &path)
@@ -114,7 +115,7 @@ void Git::clearResult()
 
 QString Git::resultText() const
 {
-	return QString::fromUtf8(result());
+	return QString::fromUtf8(toQByteArray());
 }
 
 QString Git::errorMessage() const
@@ -171,7 +172,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 
 #ifdef Q_OS_WIN
 
-		Win32Process proc;
+		Process proc;
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
 
 		if (!errout) {
@@ -888,7 +889,7 @@ QByteArray Git::cat_file_(QString const &id)
 	qDebug() << "cat_file: " << id;
 #if 1
 	git("cat-file -p " + id);
-	return m->result;
+	return toQByteArray();
 #else
 	std::string dir = workingRepositoryDir().toStdString();
 	LibGit2::Repository r = LibGit2::openRepository(dir);

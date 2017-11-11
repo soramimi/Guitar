@@ -2,12 +2,13 @@
 #include <windows.h>
 #include <QThread>
 #include <QTextCodec>
+#include <deque>
 
 namespace {
 class ReadThread : public QThread {
 private:
 	HANDLE hRead;
-	QByteArray *buffer;
+	std::deque<char> *buffer;
 protected:
 	void run()
 	{
@@ -16,11 +17,11 @@ protected:
 			DWORD len = 0;
 			if (!ReadFile(hRead, buf, sizeof(buf), &len, nullptr)) break;
 			if (len < 1) break;
-			if (buffer) buffer->append(buf, len);
+			if (buffer) buffer->insert(buffer->end(), buf, buf + len);
 		}
 	}
 public:
-	ReadThread(HANDLE hRead, QByteArray *buffer)
+	ReadThread(HANDLE hRead, std::deque<char> *buffer)
 		: hRead(hRead)
 		, buffer(buffer)
 	{
@@ -111,7 +112,11 @@ uint32_t Win32Process::run(const std::string &command)
 		t1.start();
 		t2.start();
 
-		WaitForSingleObject(pi.hProcess, INFINITE);
+		while (WaitForSingleObject(pi.hProcess, 1) != WAIT_OBJECT_0) {
+			if (stdinput_callback_fn && !stdinput_callback_fn("", 0)) {
+				break;
+			}
+		}
 
 		t1.wait();
 		t2.wait();
@@ -132,18 +137,26 @@ uint32_t Win32Process::run(const std::string &command)
 
 QString Win32Process::outstring() const
 {
-	return QString::fromUtf8(outvec);
+	if (outvec.empty()) return QString();
+	std::vector<char> v;
+	v.insert(v.end(), outvec.begin(), outvec.end());
+	return QString::fromUtf8(&v[0], v.size());
 }
 
 QString Win32Process::errstring() const
 {
-	return QString::fromUtf8(errvec);
+	if (errvec.empty()) return QString();
+	std::vector<char> v;
+	v.insert(v.end(), errvec.begin(), errvec.end());
+	return QString::fromUtf8(&v[0], v.size());
 }
 
-int Win32Process::run(const QString &command, QByteArray *out, QByteArray *err)
+int Win32Process::run(QString const &command, std::vector<char> *out, std::vector<char> *err, stdinput_fn_t stdinput)
 {
 	QTextCodec *sjis = QTextCodec::codecForName("Shift_JIS");
 	Q_ASSERT(sjis);
+
+	stdinput_callback_fn = stdinput;
 
 	QByteArray ba = sjis->fromUnicode(command);
 	ba.push_back((char)0);
@@ -152,11 +165,12 @@ int Win32Process::run(const QString &command, QByteArray *out, QByteArray *err)
 	int r = run(cmd);
 	if (out) {
 		out->clear();
-		out->append(outvec);
+		out->insert(out->end(), outvec.begin(), outvec.end());
 	}
 	if (err) {
 		err->clear();
-		err->append(errvec);
+		err->insert(err->end(), errvec.begin(), errvec.end());
 	}
 	return r;
 }
+

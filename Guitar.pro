@@ -149,7 +149,8 @@ SOURCES += \
     src/AvatarLoader.cpp \
     src/SettingNetworkForm.cpp \
 	src/Photoshop.cpp \
-	src/SettingBehaviorForm.cpp
+	src/SettingBehaviorForm.cpp \
+    src/MyProcess.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -228,7 +229,8 @@ HEADERS  += \
     src/AvatarLoader.h \
     src/SettingNetworkForm.h \
 	src/Photoshop.h \
-	src/SettingBehaviorForm.h
+	src/SettingBehaviorForm.h \
+    src/MyProcess.h
 
 FORMS    += \
 	src/MainWindow.ui \

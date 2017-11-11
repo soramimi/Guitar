@@ -282,7 +282,7 @@ public:
 
 	void setLogCallback(callback_t func, void *cookie);
 
-	QByteArray result() const;
+	QByteArray toQByteArray() const;
 	void setGitCommand(const QString &path);
 	QString gitCommand() const;
 	void clearResult();
