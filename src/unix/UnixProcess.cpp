@@ -7,13 +7,13 @@
 #include <sys/time.h>
 #include <QDebug>
 #include <QThread>
-
+#include <deque>
 
 namespace {
 class ReadThread : public QThread {
 private:
 	int fd;
-	QByteArray *out;
+	std::deque<char> *out;
 protected:
 	void run()
 	{
@@ -21,113 +21,142 @@ protected:
 			char buf[256];
 			int n = read(fd, buf, sizeof(buf));
 			if (n < 1) break;
-			if (out) out->append(buf, n);
+			if (out) {
+				out->insert(out->end(), buf, buf + n);
+			}
 		}
 	}
 public:
-	ReadThread(int fd, QByteArray *out)
+	ReadThread(int fd, std::deque<char> *out)
 		: fd(fd)
 		, out(out)
 	{
 
 	}
 };
-}
-int UnixProcess::run(const char *file, char * const *argv, QByteArray *out, QByteArray *err)
-{
+class ProcessWaitThread : public QThread {
+public:
+	const char *file;
+	char * const *argv;
+	std::deque<char> *out;
+	std::deque<char> *err;
+	AbstractProcess::stdinput_fn_t stdinput;
+	int pid = 0;
 	int exit_code = -1;
-	const int R = 0;
-	const int W = 1;
-	const int E = 2;
-	int stdin_pipe[2] = { -1, -1 };
-	int stdout_pipe[2] = { -1, -1 };
-	int stderr_pipe[2] = { -1, -1 };
+protected:
+public:
+	ProcessWaitThread(const char *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, AbstractProcess::stdinput_fn_t stdinput)
+		: file(file)
+		, argv(argv)
+		, out(out)
+		, err(err)
+		, stdinput(stdinput)
+	{
+	}
+protected:
+	void run()
+	{
+		exit_code = -1;
+		const int R = 0;
+		const int W = 1;
+		const int E = 2;
+		int stdin_pipe[2] = { -1, -1 };
+		int stdout_pipe[2] = { -1, -1 };
+		int stderr_pipe[2] = { -1, -1 };
 
-	try {
-		int fd_in_read;
-		int fd_out_write;
-		int fd_err_write;
-		int pid;
+		try {
+			int fd_in_read;
+			int fd_out_write;
+			int fd_err_write;
+			int pid;
 
-		if (pipe(stdin_pipe) < 0) {
-			throw std::string("failed: pipe");
-		}
+			if (pipe(stdin_pipe) < 0) {
+				throw std::string("failed: pipe");
+			}
 
-		if (pipe(stdout_pipe) < 0) {
-			throw std::string("failed: pipe");
-		}
+			if (pipe(stdout_pipe) < 0) {
+				throw std::string("failed: pipe");
+			}
 
-		if (pipe(stderr_pipe) < 0) {
-			throw std::string("failed: pipe");
-		}
+			if (pipe(stderr_pipe) < 0) {
+				throw std::string("failed: pipe");
+			}
 
-		pid = fork();
-		if (pid < 0) {
-			throw std::string("failed: fork");
-		}
+			pid = fork();
+			if (pid < 0) {
+				throw std::string("failed: fork");
+			}
 
-		if (pid == 0) { // child
-			close(stdin_pipe[W]);
-			close(stdout_pipe[R]);
-			close(stderr_pipe[R]);
-			dup2(stdin_pipe[R], R);
-			dup2(stdout_pipe[W], W);
-			dup2(stderr_pipe[W], E);
-			close(stdin_pipe[R]);
-			close(stdout_pipe[W]);
-			close(stderr_pipe[E]);
-			if (execvp(file, argv) < 0) {
+			if (pid == 0) { // child
+				close(stdin_pipe[W]);
+				close(stdout_pipe[R]);
+				close(stderr_pipe[R]);
+				dup2(stdin_pipe[R], R);
+				dup2(stdout_pipe[W], W);
+				dup2(stderr_pipe[W], E);
 				close(stdin_pipe[R]);
 				close(stdout_pipe[W]);
 				close(stderr_pipe[E]);
-				fprintf(stderr, "failed: exec\n");
-				exit(1);
+				if (execvp(file, argv) < 0) {
+					close(stdin_pipe[R]);
+					close(stdout_pipe[W]);
+					close(stderr_pipe[E]);
+					fprintf(stderr, "failed: exec\n");
+					exit(1);
+				}
 			}
-		}
 
-		close(stdin_pipe[R]);
-		close(stdout_pipe[W]);
-		close(stderr_pipe[W]);
-		fd_in_read = stdin_pipe[W];
-		fd_out_write = stdout_pipe[R];
-		fd_err_write = stderr_pipe[R];
+			close(stdin_pipe[R]);
+			close(stdout_pipe[W]);
+			close(stderr_pipe[W]);
+			fd_in_read = stdin_pipe[W];
+			fd_out_write = stdout_pipe[R];
+			fd_err_write = stderr_pipe[R];
 
-		//
+			//
 
-		close(fd_in_read);
+			close(fd_in_read);
 
-		ReadThread t1(fd_out_write, out);
-		ReadThread t2(fd_err_write, err);
-		t1.start();
-		t2.start();
+			ReadThread t1(fd_out_write, out);
+			ReadThread t2(fd_err_write, err);
+			t1.start();
+			t2.start();
 
-		int status = 0;
-		if (waitpid(pid, &status, 0) == pid) {
-			if (WIFEXITED(status)) {
-				exit_code = WEXITSTATUS(status);
+			int status = 0;
+			if (waitpid(pid, &status, 0) == pid) {
+				if (WIFEXITED(status)) {
+					exit_code = WEXITSTATUS(status);
+				}
 			}
+
+			t1.wait();
+			t2.wait();
+
+			close(fd_out_write);
+
+		} catch (std::string const &e) {
+			close(stdin_pipe[R]);
+			close(stdin_pipe[W]);
+			close(stdout_pipe[R]);
+			close(stdout_pipe[W]);
+			close(stderr_pipe[R]);
+			close(stderr_pipe[W]);
+			fprintf(stderr, "%s\n", e.c_str());
+			exit(1);
 		}
-
-		t1.wait();
-		t2.wait();
-
-		close(fd_out_write);
-
-	} catch (std::string const &e) {
-		close(stdin_pipe[R]);
-		close(stdin_pipe[W]);
-		close(stdout_pipe[R]);
-		close(stdout_pipe[W]);
-		close(stderr_pipe[R]);
-		close(stderr_pipe[W]);
-		fprintf(stderr, "%s\n", e.c_str());
-		exit(1);
 	}
-
-	return exit_code;
+};
 }
 
-int UnixProcess::run(const QString &command, QByteArray *out, QByteArray *err)
+int UnixProcess::run(const char *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, stdinput_fn_t stdinput)
+{
+	ProcessWaitThread waiter(file, argv, out, err, stdinput);
+	waiter.start();
+	waiter.wait();
+	return waiter.exit_code;
+}
+
+int UnixProcess::run(const QString &command, std::vector<char> *out, std::vector<char> *err, stdinput_fn_t stdinput)
 {
 	int exit_code = -1;
 	std::string cmd = command.toStdString();
@@ -173,14 +202,14 @@ int UnixProcess::run(const QString &command, QByteArray *out, QByteArray *err)
 			args.push_back(const_cast<char *>(s.c_str()));
 		}
 		args.push_back(nullptr);
-		exit_code = run(args[0], &args[0], &outvec, &errvec);
+		exit_code = run(args[0], &args[0], &outvec, &errvec, stdinput);
 		if (out) {
 			out->clear();
-			out->append(outvec);
+			out->insert(out->end(), outvec.begin(), outvec.end());
 		}
 		if (err) {
 			err->clear();
-			err->append(errvec);
+			err->insert(err->end(), errvec.begin(), errvec.end());
 		}
 	}
 
@@ -189,6 +218,9 @@ int UnixProcess::run(const QString &command, QByteArray *out, QByteArray *err)
 
 QString UnixProcess::errstring()
 {
-	return QString::fromUtf8(errvec);
+	if (errvec.empty()) return QString();
+	std::vector<char> v;
+	v.insert(v.end(), errvec.begin(), errvec.end());
+	return QString::fromUtf8(&v[0], v.size());
 }
 

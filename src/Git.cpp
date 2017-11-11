@@ -166,11 +166,6 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			ba.push_back('\n');
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
-//		qDebug() << cmd;
-
-#if 1
-
-#ifdef Q_OS_WIN
 
 		Process proc;
 		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
@@ -178,59 +173,6 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		if (!errout) {
 			m->error_message = proc.errstring();
 		}
-
-#else
-
-		UnixProcess proc;
-		m->process_exit_code = proc.run(cmd, errout ? nullptr : &m->result, errout ? &m->result : nullptr);
-
-		if (!errout) {
-			m->error_message = proc.errstring();
-		}
-
-#endif
-
-#else
-
-
-		QProcess proc;
-		proc.setReadChannel(errout ? QProcess::StandardError : QProcess::StandardOutput);
-		proc.start(cmd);
-		proc.waitForStarted();
-		proc.closeWriteChannel();
-		while (1) {
-			QProcess::ProcessState s = proc.state();
-			if (proc.waitForReadyRead(1)) {
-				while (1) {
-					char tmp[1024];
-					int len = (int)proc.read(tmp, sizeof(tmp));
-					if (len < 1) break;
-					m->result.append(tmp, len);
-					if (m->callback_func) {
-						bool ok = m->callback_func(m->callback_cookie, tmp, len);
-						if (!ok) {
-							proc.terminate();
-							m->error_message = "Interrupted by user";
-							qDebug() << m->error_message;
-							m->process_exit_code = -1;
-							return false;
-						}
-					}
-				}
-			} else if (s == QProcess::NotRunning) {
-				break;
-			}
-		}
-		m->process_exit_code = proc.exitCode();
-
-		if (m->process_exit_code != 0) {
-			m->error_message = QString::fromUtf8(proc.readAllStandardError());
-#if 1//DEBUGLOG
-			qDebug() << QString("Process exit code: %1").arg(getProcessExitCode());
-			qDebug() << m->error_message;
-#endif
-		}
-#endif
 
 		return m->process_exit_code == 0;
 	};
