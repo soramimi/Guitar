@@ -34,22 +34,21 @@ public:
 
 	}
 };
-class ProcessWaitThread : public QThread {
+
+class UnixProcessThread : public QThread {
 public:
 	const char *file;
 	char * const *argv;
-	std::deque<char> *out;
-	std::deque<char> *err;
+	std::deque<char> out;
+	std::deque<char> err;
 	AbstractProcess::stdinput_fn_t stdinput;
 	int pid = 0;
 	int exit_code = -1;
 protected:
 public:
-	ProcessWaitThread(const char *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, AbstractProcess::stdinput_fn_t stdinput)
+	UnixProcessThread(const char *file, char * const *argv, AbstractProcess::stdinput_fn_t stdinput)
 		: file(file)
 		, argv(argv)
-		, out(out)
-		, err(err)
 		, stdinput(stdinput)
 	{
 	}
@@ -117,8 +116,8 @@ protected:
 
 			close(fd_in_read);
 
-			ReadThread t1(fd_out_write, out);
-			ReadThread t2(fd_err_write, err);
+			ReadThread t1(fd_out_write, &out);
+			ReadThread t2(fd_err_write, &err);
 			t1.start();
 			t2.start();
 
@@ -146,17 +145,15 @@ protected:
 		}
 	}
 };
-}
+
+} // namespace
 
 int UnixProcess::run(const char *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, stdinput_fn_t stdinput)
 {
-	ProcessWaitThread waiter(file, argv, out, err, stdinput);
-	waiter.start();
-	waiter.wait();
-	return waiter.exit_code;
+	return 0;
 }
 
-int UnixProcess::run(const QString &command, std::vector<char> *out, std::vector<char> *err, stdinput_fn_t stdinput)
+int UnixProcess::run(const QString &command, stdinput_fn_t stdinput)
 {
 	int exit_code = -1;
 	std::string cmd = command.toStdString();
@@ -202,15 +199,25 @@ int UnixProcess::run(const QString &command, std::vector<char> *out, std::vector
 			args.push_back(const_cast<char *>(s.c_str()));
 		}
 		args.push_back(nullptr);
-		exit_code = run(args[0], &args[0], &outvec, &errvec, stdinput);
-		if (out) {
-			out->clear();
-			out->insert(out->end(), outvec.begin(), outvec.end());
-		}
-		if (err) {
-			err->clear();
-			err->insert(err->end(), errvec.begin(), errvec.end());
-		}
+//		exit_code = run(args[0], &args[0], &outbytes, &errbytes, stdinput);
+
+		UnixProcessThread th(args[0], &args[0], stdinput);
+		th.start();
+		th.wait();
+		exit_code = th.exit_code;
+
+//		if (out) {
+//			out->clear();
+//			out->insert(out->end(), outbytes.begin(), outbytes.end());
+//		}
+//		if (err) {
+//			err->clear();
+//			err->insert(err->end(), errbytes.begin(), errbytes.end());
+//		}
+		outbytes.clear();
+		errbytes.clear();
+		if (!th.out.empty()) outbytes.insert(outbytes.end(), th.out.begin(), th.out.end());
+		if (!th.err.empty()) errbytes.insert(errbytes.end(), th.err.begin(), th.err.end());
 	}
 
 	return exit_code;
@@ -218,9 +225,9 @@ int UnixProcess::run(const QString &command, std::vector<char> *out, std::vector
 
 QString UnixProcess::errstring()
 {
-	if (errvec.empty()) return QString();
+	if (errbytes.empty()) return QString();
 	std::vector<char> v;
-	v.insert(v.end(), errvec.begin(), errvec.end());
+	v.insert(v.end(), errbytes.begin(), errbytes.end());
 	return QString::fromUtf8(&v[0], v.size());
 }
 

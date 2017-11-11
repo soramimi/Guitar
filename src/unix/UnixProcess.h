@@ -10,11 +10,13 @@
 
 class UnixProcess : public AbstractProcess {
 private:
-	std::deque<char> outvec;
-	std::deque<char> errvec;
 	int run(char const *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, stdinput_fn_t stdinput);
 public:
-	int run(QString const &command, std::vector<char> *out, std::vector<char> *err, stdinput_fn_t stdinput = stdinput_fn_t());
+	int run(QString const &command, stdinput_fn_t stdinput = stdinput_fn_t());
+
+	std::vector<char> outbytes;
+	std::vector<char> errbytes;
+
 	QString errstring();
 };
 
