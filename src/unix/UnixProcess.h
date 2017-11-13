@@ -18,6 +18,23 @@ public:
 	std::vector<char> errbytes;
 
 	QString errstring();
+
+	static void parseArgs(const std::string &cmd, std::vector<std::string> *vec);
+};
+
+class UnixProcess2 {
+private:
+	struct Private;
+	Private *m;
+public:
+	UnixProcess2();
+	~UnixProcess2();
+
+	void start(QString const &command, AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
+//	bool wait();
+
+	int read(char *dstptr, int maxlen);
+	bool step();
 };
 
 #endif // UNIXPROCESS_H
