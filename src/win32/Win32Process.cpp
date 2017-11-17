@@ -44,10 +44,8 @@ public:
 	std::deque<char> errvec;
 	AbstractProcess::stdinput_fn_t stdinput_callback_fn;
 protected:
-	void run()
+	void exec_command()
 	{
-		outvec.clear();
-		errvec.clear();
 		try {
 			HANDLE hInputWrite = INVALID_HANDLE_VALUE;
 			HANDLE hOutputRead = INVALID_HANDLE_VALUE;
@@ -151,6 +149,12 @@ protected:
 			OutputDebugStringA(e.c_str());
 		}
 	}
+
+	void run()
+	{
+		exec_command();
+	}
+
 };
 
 } // namespace
@@ -191,7 +195,9 @@ QString Win32Process::errstring() const
 // experiment
 
 struct Win32Process2::Private {
+	QTextCodec *sjis = nullptr;
 	Win32ProcessThread th;
+	std::list<Win32Process2::Task> tasks;
 };
 
 
@@ -207,25 +213,41 @@ Win32Process2::~Win32Process2()
 	delete m;
 }
 
-void Win32Process2::start(const QString &command, AbstractProcess::stdinput_fn_t stdinput)
+void Win32Process2::start(AbstractProcess::stdinput_fn_t stdinput)
 {
-	QTextCodec *sjis = QTextCodec::codecForName("Shift_JIS");
-	Q_ASSERT(sjis);
-
-	QByteArray ba = sjis->fromUnicode(command);
-	ba.push_back((char)0);
-	char const *cmd = ba.data();
-
 	m->th.stdinput_callback_fn = stdinput;
-	m->th.command = cmd;
-	m->th.start();
 
+	m->sjis = QTextCodec::codecForName("Shift_JIS");
+	Q_ASSERT(m->sjis);
 }
 
-bool Win32Process2::step()
+void Win32Process2::exec(const QString &command)
 {
-	m->th.wait(1);
-	return m->th.isRunning();
+	QByteArray ba = m->sjis->fromUnicode(command);
+	if (ba.isEmpty()) return;
+	Task task;
+	char const *begin = ba.data();
+	char const *end = begin + ba.size();
+	task.command.assign(begin, end);
+	m->tasks.push_back(task);
+}
+
+bool Win32Process2::step(bool delay)
+{
+	if (delay) {
+		m->th.wait(1);
+	}
+	if (m->th.isRunning()) {
+		return true;
+	}
+	if (!m->tasks.empty()) {
+		Task task = m->tasks.front();
+		m->tasks.pop_front();
+		m->th.command = task.command;
+		m->th.start();
+		return true;
+	}
+	return false;
 }
 
 int Win32Process2::read(char *dstptr, int maxlen)

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <QByteArray>
 #include <vector>
+#include <list>
 #include "MyProcess.h"
 
 class Win32Process : public AbstractProcess {
@@ -20,6 +21,13 @@ public:
 };
 
 class Win32Process2 {
+public:
+	class Task {
+	public:
+		std::string command;
+		bool done = false;
+		int exit_code = -1;
+	};
 private:
 	struct Private;
 	Private *m;
@@ -27,11 +35,12 @@ public:
 	Win32Process2();
 	~Win32Process2();
 
-	void start(QString const &command, AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
+	void start(AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
 	bool wait();
 
 	int read(char *dstptr, int maxlen);
-	bool step();
+	bool step(bool delay);
+	void exec(const QString &command);
 };
 
 #endif // WIN32PROCESS_H
