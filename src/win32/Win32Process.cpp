@@ -230,6 +230,7 @@ void Win32Process2::exec(const QString &command)
 	char const *end = begin + ba.size();
 	task.command.assign(begin, end);
 	m->tasks.push_back(task);
+	step(false);
 }
 
 bool Win32Process2::step(bool delay)

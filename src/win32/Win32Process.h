@@ -36,11 +36,10 @@ public:
 	~Win32Process2();
 
 	void start(AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
-	bool wait();
+	void exec(const QString &command);
+	bool step(bool delay);
 
 	int read(char *dstptr, int maxlen);
-	bool step(bool delay);
-	void exec(const QString &command);
 };
 
 #endif // WIN32PROCESS_H

@@ -14,7 +14,8 @@ namespace {
 class ReadThread : public QThread {
 private:
 	int fd;
-	std::deque<char> *out;
+	QMutex *mutex;
+	std::deque<char> *buffer;
 protected:
 	void run()
 	{
@@ -22,15 +23,17 @@ protected:
 			char buf[256];
 			int n = read(fd, buf, sizeof(buf));
 			if (n < 1) break;
-			if (out) {
-				out->insert(out->end(), buf, buf + n);
+			if (buffer) {
+				QMutexLocker lock(mutex);
+				buffer->insert(buffer->end(), buf, buf + n);
 			}
 		}
 	}
 public:
-	ReadThread(int fd, std::deque<char> *out)
+	ReadThread(int fd, QMutex *mutex, std::deque<char> *out)
 		: fd(fd)
-		, out(out)
+		, mutex(mutex)
+		, buffer(out)
 	{
 
 	}
@@ -43,7 +46,7 @@ public:
 	char * const *argv;
 	std::deque<char> outvec;
 	std::deque<char> errvec;
-	AbstractProcess::stdinput_fn_t stdinput;
+	AbstractProcess::stdinput_fn_t stdinput_callback_fn;
 	int pid = 0;
 	int exit_code = -1;
 protected:
@@ -51,17 +54,16 @@ public:
 	UnixProcessThread(const char *file, char * const *argv, AbstractProcess::stdinput_fn_t stdinput)
 		: file(file)
 		, argv(argv)
-		, stdinput(stdinput)
+		, stdinput_callback_fn(stdinput)
 	{
 	}
 	UnixProcessThread()
 	{
 	}
-	void init(const char *file, char * const *argv, AbstractProcess::stdinput_fn_t stdinput)
+	void init(const char *file, char * const *argv)
 	{
 		this->file = file;
 		this->argv = argv;
-		this->stdinput = stdinput;
 	}
 protected:
 	void run()
@@ -127,8 +129,8 @@ protected:
 
 			close(fd_in_read);
 
-			ReadThread t1(fd_out_write, &outvec);
-			ReadThread t2(fd_err_write, &errvec);
+			ReadThread t1(fd_out_write, &mutex, &outvec);
+			ReadThread t2(fd_err_write, &mutex, &errvec);
 			t1.start();
 			t2.start();
 
@@ -164,8 +166,9 @@ int UnixProcess::run(const char *file, char * const *argv, std::deque<char> *out
 	return 0;
 }
 
-void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *vec)
+void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *out)
 {
+	out->clear();
 	char const *begin = cmd.c_str();
 	char const *end = begin + cmd.size();
 	std::vector<char> tmp;
@@ -191,7 +194,7 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ve
 			} else if (isspace(c) || c == 0) {
 				if (!tmp.empty()) {
 					std::string s(&tmp[0], tmp.size());
-					vec->push_back(s);
+					out->push_back(s);
 				}
 				if (c == 0) break;
 				tmp.clear();
@@ -215,21 +218,12 @@ int UnixProcess::run(const QString &command, stdinput_fn_t stdinput)
 			args.push_back(const_cast<char *>(s.c_str()));
 		}
 		args.push_back(nullptr);
-//		exit_code = run(args[0], &args[0], &outbytes, &errbytes, stdinput);
 
 		UnixProcessThread th(args[0], &args[0], stdinput);
 		th.start();
 		th.wait();
 		exit_code = th.exit_code;
 
-//		if (out) {
-//			out->clear();
-//			out->insert(out->end(), outbytes.begin(), outbytes.end());
-//		}
-//		if (err) {
-//			err->clear();
-//			err->insert(err->end(), errbytes.begin(), errbytes.end());
-//		}
 		outbytes.clear();
 		errbytes.clear();
 		if (!th.outvec.empty()) outbytes.insert(outbytes.end(), th.outvec.begin(), th.outvec.end());
@@ -253,6 +247,9 @@ QString UnixProcess::errstring()
 
 struct UnixProcess2::Private {
 	UnixProcessThread th;
+	std::vector<std::string> args1;
+	std::vector<char *> args2;
+	std::list<UnixProcess2::Task> tasks;
 };
 
 UnixProcess2::UnixProcess2()
@@ -266,32 +263,48 @@ UnixProcess2::~UnixProcess2()
 	delete m;
 }
 
-void UnixProcess2::start(const QString &command, AbstractProcess::stdinput_fn_t stdinput)
+void UnixProcess2::start(AbstractProcess::stdinput_fn_t stdinput)
 {
-	std::string cmd = command.toStdString();
-
-	std::vector<std::string> vec;
-	UnixProcess::parseArgs(cmd, &vec);
-	if (vec.size() < 1) return;
-
-	std::vector<char *> args;
-	for (std::string const &s : vec) {
-		args.push_back(const_cast<char *>(s.c_str()));
-	}
-	args.push_back(nullptr);
-	//		exit_code = run(args[0], &args[0], &outbytes, &errbytes, stdinput);
-
-	m->th.init(args[0], &args[0], stdinput);
-	//	m->th.stdinput_callback_fn = stdinput;
-	//	m->th.command = cmd;
-	m->th.start();
+	m->th.stdinput_callback_fn = stdinput;
 }
 
-//bool UnixProcess2::wait()
-//{
-//	m->th.wait();
+void UnixProcess2::exec(const QString &command)
+{
+	Task task;
+	task.command = command.toStdString();
+	m->tasks.push_back(task);
+	step(false);
+}
 
-//}
+bool UnixProcess2::step(bool delay)
+{
+	if (delay) {
+		m->th.wait(1);
+	}
+	if (m->th.isRunning()) {
+		return true;
+	}
+	if (!m->tasks.empty()) {
+		Task task = m->tasks.front();
+		m->tasks.pop_front();
+
+		m->args1.clear();
+		m->args2.clear();
+
+		UnixProcess::parseArgs(task.command, &m->args1);
+		if (m->args1.size() < 1) return false;
+
+		for (std::string const &s : m->args1) {
+			m->args2.push_back(const_cast<char *>(s.c_str()));
+		}
+		m->args2.push_back(nullptr);
+
+		m->th.init(m->args2[0], &m->args2[0]);
+		m->th.start();
+		return true;
+	}
+	return false;
+}
 
 int UnixProcess2::read(char *dstptr, int maxlen)
 {
@@ -328,8 +341,3 @@ int UnixProcess2::read(char *dstptr, int maxlen)
 	return pos;
 }
 
-bool UnixProcess2::step()
-{
-	m->th.wait(1);
-	return m->th.isRunning();
-}
