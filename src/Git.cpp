@@ -172,10 +172,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 
 		if (errout) {
 			m->result = proc.errbytes;
-			m->error_message = proc.errstring();
 		} else {
 			m->result = proc.outbytes;
 		}
+		m->error_message = proc.errstring();
 
 		return m->process_exit_code == 0;
 	};
