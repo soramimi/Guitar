@@ -25,6 +25,7 @@ INCLUDEPATH += $$PWD/src
 # OpenSSL
 
 linux:LIBS += -lssl -lcrypto
+haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 win32:INCLUDEPATH += C:\openssl\include
@@ -54,11 +55,14 @@ PRE_TARGETDEPS += prepare
 win32:Debug:LIBS += $$PWD/../_build_zlib/debug/libz.lib
 win32:Release:LIBS += $$PWD/../_build_zlib/release/libz.lib
 
+!haiku {
 unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libz.a
 unix:release:LIBS += $$PWD/../_build_zlib_Release/libz.a
 
 #unix:LIBS += -lz
+}
 
+haiku:LIBS += -lz
 
 win32 {
 	LIBS += advapi32.lib

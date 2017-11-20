@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 
 #ifdef __HAIKU__
-struct stat     s;
+struct stat	s;
 #endif
 
 #ifdef _WIN32

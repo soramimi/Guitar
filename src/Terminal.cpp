@@ -37,11 +37,15 @@ void Terminal::open(QString const &dir)
 {
 	if (dir.indexOf('\"') < 0 && QFileInfo(dir).isDir()) {
 		auto GetTerm = [&](std::vector<char const *> const &vec){
-			for (char const *name : vec) {
-				char const *p = getenv(name);
-				if (p && *p) return p;
-			}
-			return "x-terminal-emulator";
+			#ifndef __HAIKU__
+				for (char const *name : vec) {
+					char const *p = getenv(name);
+					if (p && *p) return p;
+				}
+				return "x-terminal-emulator";
+			#else
+				return "Terminal";
+			#endif
 		};
 		QString term = GetTerm({"COLORTERM", "TERM"});
 
