@@ -4,6 +4,10 @@
 
 #include <sys/stat.h>
 
+#ifdef __HAIKU__
+struct stat     s;
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
@@ -134,7 +138,12 @@ void FileUtil::getdirents(std::string const &loc, std::vector<DirEnt> *out)
 			DirEnt de;
 			de.name = d->d_name;
 			de.isdir = false;
-			if (d->d_type & DT_DIR) {
+			#ifdef DT_DIR
+				if (d->d_type & DT_DIR) {
+			#else
+				stat(d->d_name, &s);
+				if(S_ISDIR(s.st_mode))  {
+			#endif
 				if (de.name == "." || de.name == "..") {
 					continue;
 				}
