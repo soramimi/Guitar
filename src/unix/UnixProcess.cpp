@@ -46,15 +46,15 @@ public:
 	char * const *argv;
 	std::deque<char> outvec;
 	std::deque<char> errvec;
-	AbstractProcess::stdinput_fn_t stdinput_callback_fn;
+	bool use_input = false;
 	int pid = 0;
 	int exit_code = -1;
 protected:
 public:
-	UnixProcessThread(const char *file, char * const *argv, AbstractProcess::stdinput_fn_t stdinput)
+	UnixProcessThread(const char *file, char * const *argv, bool use_input)
 		: file(file)
 		, argv(argv)
-		, stdinput_callback_fn(stdinput)
+		, use_input(use_input)
 	{
 	}
 	UnixProcessThread()
@@ -161,10 +161,7 @@ protected:
 
 } // namespace
 
-int UnixProcess::run(const char *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, stdinput_fn_t stdinput)
-{
-	return 0;
-}
+
 
 void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *out)
 {
@@ -206,7 +203,7 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ou
 	}
 }
 
-int UnixProcess::run(const QString &command, stdinput_fn_t stdinput)
+int UnixProcess::run(const QString &command, bool use_input)
 {
 	int exit_code = -1;
 	std::string cmd = command.toStdString();
@@ -219,7 +216,7 @@ int UnixProcess::run(const QString &command, stdinput_fn_t stdinput)
 		}
 		args.push_back(nullptr);
 
-		UnixProcessThread th(args[0], &args[0], stdinput);
+		UnixProcessThread th(args[0], &args[0], use_input);
 		th.start();
 		th.wait();
 		exit_code = th.exit_code;
@@ -263,9 +260,9 @@ UnixProcess2::~UnixProcess2()
 	delete m;
 }
 
-void UnixProcess2::start(AbstractProcess::stdinput_fn_t stdinput)
+void UnixProcess2::start(bool use_input)
 {
-	m->th.stdinput_callback_fn = stdinput;
+	m->th.use_input = use_input;
 }
 
 void UnixProcess2::exec(const QString &command)

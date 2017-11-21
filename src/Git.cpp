@@ -168,7 +168,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		}
 
 		Process proc;
-		m->process_exit_code = proc.run(cmd);
+		m->process_exit_code = proc.run(cmd, false);
 
 		if (errout) {
 			m->result = proc.errbytes;

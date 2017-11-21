@@ -9,10 +9,8 @@
 #include "MyProcess.h"
 
 class UnixProcess : public AbstractProcess {
-private:
-	int run(char const *file, char * const *argv, std::deque<char> *out, std::deque<char> *err, stdinput_fn_t stdinput);
 public:
-	int run(QString const &command, stdinput_fn_t stdinput = stdinput_fn_t());
+	int run(QString const &command, bool use_input);
 
 	std::vector<char> outbytes;
 	std::vector<char> errbytes;
@@ -37,7 +35,7 @@ public:
 	UnixProcess2();
 	~UnixProcess2();
 
-	void start(AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
+	void start(bool use_input);
 	void exec(QString const &command);
 	bool step(bool delay);
 

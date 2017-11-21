@@ -17,7 +17,7 @@ public:
 	QString outstring() const;
 	QString errstring() const;
 
-	int run(QString const &command, stdinput_fn_t stdinput = stdinput_fn_t());
+	int run(QString const &command, bool use_input);
 };
 
 class Win32Process2 {
@@ -35,11 +35,15 @@ public:
 	Win32Process2();
 	~Win32Process2();
 
-	void start(AbstractProcess::stdinput_fn_t stdinput = AbstractProcess::stdinput_fn_t());
+	void start(bool use_input);
 	void exec(const QString &command);
 	bool step(bool delay);
 
 	int read(char *dstptr, int maxlen);
+
+	void writeInput(char const *ptr, int len);
+	void closeInput();
+	void quit();
 };
 
 #endif // WIN32PROCESS_H

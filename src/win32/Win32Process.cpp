@@ -35,19 +35,22 @@ public:
 };
 
 class Win32ProcessThread : public QThread {
+	friend class Win32Process2;
 private:
 public:
 	QMutex mutex;
 	std::string command;
 	DWORD exit_code = -1;
+	std::deque<char> input;
 	std::deque<char> outvec;
 	std::deque<char> errvec;
-	AbstractProcess::stdinput_fn_t stdinput_callback_fn;
+	bool use_input = false;
+	HANDLE hInputWrite = INVALID_HANDLE_VALUE;
 protected:
 	void exec_command()
 	{
 		try {
-			HANDLE hInputWrite = INVALID_HANDLE_VALUE;
+			hInputWrite = INVALID_HANDLE_VALUE;
 			HANDLE hOutputRead = INVALID_HANDLE_VALUE;
 			HANDLE hErrorRead = INVALID_HANDLE_VALUE;
 
@@ -116,9 +119,8 @@ protected:
 			CloseHandle(hErrorWrite);
 			CloseHandle(hInputRead);
 
-			if (!stdinput_callback_fn) {
-				// 入力を閉じる
-				CloseHandle(hInputWrite);
+			if (!use_input) {
+				closeInput();
 			}
 
 			ReadThread t1(hOutputRead, &mutex, &outvec);
@@ -127,9 +129,20 @@ protected:
 			t2.start();
 
 			while (WaitForSingleObject(pi.hProcess, 1) != WAIT_OBJECT_0) {
-				if (stdinput_callback_fn) {
-					if (!stdinput_callback_fn("", 0)) {
-						break;
+				if (hInputWrite != INVALID_HANDLE_VALUE) {
+					QMutexLocker lock(&mutex);
+					int n = input.size();
+					while (n > 0) {
+						char tmp[1024];
+						int l = n;
+						if (l > sizeof(tmp)) {
+							l = sizeof(tmp);
+						}
+						std::copy(input.begin(), input.begin() + l, tmp);
+						input.erase(input.begin(), input.begin() + l);
+						DWORD written;
+						WriteFile(hInputWrite, tmp, l, &written, nullptr);
+						n -= l;
 					}
 				}
 			}
@@ -155,11 +168,17 @@ protected:
 		exec_command();
 	}
 
+	void closeInput()
+	{
+		CloseHandle(hInputWrite);
+		hInputWrite = INVALID_HANDLE_VALUE;
+	}
+
 };
 
 } // namespace
 
-int Win32Process::run(QString const &command, stdinput_fn_t stdinput)
+int Win32Process::run(QString const &command, bool use_input)
 {
 	QTextCodec *sjis = QTextCodec::codecForName("Shift_JIS");
 	Q_ASSERT(sjis);
@@ -169,7 +188,7 @@ int Win32Process::run(QString const &command, stdinput_fn_t stdinput)
 	char const *cmd = ba.data();
 
 	Win32ProcessThread th;
-	th.stdinput_callback_fn = stdinput;
+	th.use_input = use_input;
 	th.command = cmd;
 	th.start();
 	th.wait();
@@ -213,9 +232,9 @@ Win32Process2::~Win32Process2()
 	delete m;
 }
 
-void Win32Process2::start(AbstractProcess::stdinput_fn_t stdinput)
+void Win32Process2::start(bool use_input)
 {
-	m->th.stdinput_callback_fn = stdinput;
+	m->th.use_input = use_input;
 
 	m->sjis = QTextCodec::codecForName("Shift_JIS");
 	Q_ASSERT(m->sjis);
@@ -284,6 +303,26 @@ int Win32Process2::read(char *dstptr, int maxlen)
 		}
 	}
 	return pos;
+}
+
+void Win32Process2::writeInput(const char *ptr, int len)
+{
+	QMutexLocker lock(&m->th.mutex);
+	m->th.input.insert(m->th.input.end(), ptr, ptr + len);
+}
+
+void Win32Process2::closeInput()
+{
+	m->th.closeInput();
+}
+
+void Win32Process2::quit()
+{
+	if (m->th.isRunning()) {
+		m->th.requestInterruption();
+		closeInput();
+		m->th.wait();
+	}
 }
 
 

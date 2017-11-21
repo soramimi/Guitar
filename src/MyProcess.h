@@ -11,9 +11,9 @@ public:
 	{
 	}
 
-	typedef std::function<bool (const char *, int)> stdinput_fn_t;
+//	typedef std::function<bool (void *cookie)> stdinput_fn_t;
 
-	virtual int run(QString const &command, stdinput_fn_t stdinput = stdinput_fn_t()) = 0;
+	virtual int run(QString const &command, bool use_input) = 0;
 
 	static QString toQString(std::vector<char> const &vec);
 };
