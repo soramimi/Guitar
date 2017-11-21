@@ -40,6 +40,9 @@ public:
 	bool step(bool delay);
 
 	int read(char *dstptr, int maxlen);
+	void writeInput(char const *ptr, int len);
+	void closeInput();
+	void quit();
 };
 
 #endif // UNIXPROCESS_H

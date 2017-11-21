@@ -39,14 +39,53 @@ public:
 	}
 };
 
+class WriteThread : public QThread {
+private:
+	int fd;
+	QMutex *mutex;
+	std::deque<char> *buffer;
+protected:
+	void run()
+	{
+		while (1) {
+			if (isInterruptionRequested()) return;
+
+			int n = buffer->size();
+			while (n > 0) {
+				char buf[256];
+				int l = n;
+				if (l > sizeof(buf)) {
+					l = sizeof(buf);
+				}
+				std::copy(buffer->begin(), buffer->begin() + l, buf);
+				buffer->erase(buffer->begin(), buffer->begin() + l);
+				write(fd, buf, l);
+				n -= l;
+			}
+			msleep(1);
+		}
+	}
+public:
+	WriteThread(int fd, QMutex *mutex, std::deque<char> *in)
+		: fd(fd)
+		, mutex(mutex)
+		, buffer(in)
+	{
+
+	}
+};
+
 class UnixProcessThread : public QThread {
+	friend class ::UnixProcess2;
 public:
 	QMutex mutex;
 	const char *file;
 	char * const *argv;
+	std::deque<char> input;
 	std::deque<char> outvec;
 	std::deque<char> errvec;
 	bool use_input = false;
+	int fd_in_read = -1;
 	int pid = 0;
 	int exit_code = -1;
 protected:
@@ -77,7 +116,6 @@ protected:
 		int stderr_pipe[2] = { -1, -1 };
 
 		try {
-			int fd_in_read;
 			int fd_out_write;
 			int fd_err_write;
 			int pid;
@@ -127,10 +165,14 @@ protected:
 
 			//
 
-			close(fd_in_read);
+			if (!use_input) {
+				closeInput();
+			}
 
+			WriteThread t0(fd_in_read, &mutex, &input);
 			ReadThread t1(fd_out_write, &mutex, &outvec);
 			ReadThread t2(fd_err_write, &mutex, &errvec);
+			if (use_input) t0.start();
 			t1.start();
 			t2.start();
 
@@ -141,6 +183,10 @@ protected:
 				}
 			}
 
+			if (use_input) {
+				t0.requestInterruption();
+				t0.wait();
+			}
 			t1.wait();
 			t2.wait();
 
@@ -155,6 +201,21 @@ protected:
 			close(stderr_pipe[W]);
 			fprintf(stderr, "%s\n", e.c_str());
 			exit(1);
+		}
+	}
+
+	void writeInput(const char *ptr, int len)
+	{
+		if (use_input && fd_in_read >= 0) {
+			write(fd_in_read, ptr, len);
+		}
+	}
+
+	void closeInput()
+	{
+		if (fd_in_read >= 0) {
+			close(fd_in_read);
+			fd_in_read = -1;
 		}
 	}
 };
@@ -337,4 +398,25 @@ int UnixProcess2::read(char *dstptr, int maxlen)
 	}
 	return pos;
 }
+
+void UnixProcess2::writeInput(const char *ptr, int len)
+{
+	QMutexLocker lock(&m->th.mutex);
+	m->th.input.insert(m->th.input.end(), ptr, ptr + len);
+}
+
+void UnixProcess2::closeInput()
+{
+	m->th.closeInput();
+}
+
+void UnixProcess2::quit()
+{
+	if (m->th.isRunning()) {
+		m->th.requestInterruption();
+		closeInput();
+		m->th.wait();
+	}
+}
+
 
