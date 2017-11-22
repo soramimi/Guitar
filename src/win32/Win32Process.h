@@ -7,6 +7,7 @@
 #include <QByteArray>
 #include <vector>
 #include <list>
+#include <QThread>
 #include "MyProcess.h"
 
 class Win32Process : public AbstractProcess {
@@ -42,7 +43,28 @@ public:
 	int read(char *dstptr, int maxlen);
 	void writeInput(char const *ptr, int len);
 	void closeInput();
-	void quit();
+	void stop();
 };
+
+
+class Win32Process3 : public QThread {
+private:
+	struct Private;
+	Private *m;
+
+	static QString getProgram(QString const &cmdline);
+
+	void close();
+protected:
+	void run();
+public:
+	Win32Process3();
+	~Win32Process3();
+	int read(char *dstptr, int maxlen);
+	void writeInput(char const *ptr, int len);
+	void start(QString const &cmdline);
+	void stop();
+};
+
 
 #endif // WIN32PROCESS_H

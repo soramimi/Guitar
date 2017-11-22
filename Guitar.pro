@@ -21,6 +21,8 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
+win32:INCLUDEPATH += $$PWD/winpty
+win32:LIBS += $$PWD/winpty/winpty.lib
 
 # OpenSSL
 

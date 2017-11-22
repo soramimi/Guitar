@@ -1,8 +1,9 @@
 #include "Win32Process.h"
-#include <windows.h>
+#include <winpty.h>
 #include <QThread>
 #include <QTextCodec>
 #include <deque>
+
 
 namespace {
 
@@ -316,13 +317,219 @@ void Win32Process2::closeInput()
 	m->th.closeInput();
 }
 
-void Win32Process2::quit()
+void Win32Process2::stop()
 {
 	if (m->th.isRunning()) {
 		m->th.requestInterruption();
 		closeInput();
 		m->th.wait();
 	}
+}
+
+// ReaderThread3
+
+class ReaderThread3 : public QThread {
+	friend class Win32Process3;
+private:
+	HANDLE handle;
+	std::deque<char> result;
+protected:
+	void run();
+public:
+	void start(HANDLE hOutput);
+};
+
+void ReaderThread3::run()
+{
+	char buf[1024];
+	while (1) {
+		if (isInterruptionRequested()) break;
+		DWORD amount = 0;
+		BOOL ret = ReadFile(handle, buf, sizeof(buf), &amount, nullptr);
+		if (!ret || amount == 0) {
+			break;
+		}
+		result.insert(result.end(), buf, buf + amount);
+	}
+
+}
+
+void ReaderThread3::start(HANDLE hOutput)
+{
+	handle = hOutput;
+	QThread::start();
+}
+
+// Win32Process3
+
+struct Win32Process3::Private {
+	QString command_line;
+	ReaderThread3 output_reader;
+	HANDLE hProcess = INVALID_HANDLE_VALUE;
+	HANDLE hOutput = INVALID_HANDLE_VALUE;
+	HANDLE hInput = INVALID_HANDLE_VALUE;
+};
+
+Win32Process3::Win32Process3()
+	: m(new Private)
+{
+}
+
+Win32Process3::~Win32Process3()
+{
+	delete m;
+}
+
+QString Win32Process3::getProgram(const QString &cmdline)
+{
+	ushort const *begin = cmdline.utf16();
+	ushort const *end = begin + cmdline.size();
+	ushort const *ptr = begin;
+	bool quote = 0;
+	while (1) {
+		ushort c = 0;
+		if (ptr < end) {
+			c = *ptr;
+		}
+		if (c == '\"') {
+			if (quote) {
+				quote = false;
+			} else {
+				quote = true;
+			}
+			ptr++;
+		} else if (quote && c != 0) {
+			ptr++;
+		} else if (QChar(c).isSpace() || c == 0) {
+			break;
+		} else {
+			ptr++;
+		}
+	}
+	ushort const *left = begin;
+	ushort const *right = ptr;
+	if (left + 1 < right) {
+		if (left[0] == '\"' && right[-1] == '\"') {
+			left++;
+			right--;
+		}
+	}
+	return QString::fromUtf16(left, right - left);
+}
+
+void Win32Process3::run()
+{
+	QString program;
+
+	program = getProgram(m->command_line);
+
+	auto agentCfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
+	auto pty = winpty_open(agentCfg, nullptr);
+	winpty_config_free(agentCfg);
+
+	m->hInput = CreateFileW(winpty_conin_name(pty), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	m->hOutput = CreateFileW(winpty_conout_name(pty), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	m->output_reader.start(m->hOutput);
+
+	auto spawnCfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command_line.utf16(), nullptr, nullptr, nullptr);
+	BOOL spawnSuccess = winpty_spawn(pty, spawnCfg, &m->hProcess, nullptr, nullptr, nullptr);
+
+	if (spawnSuccess) {
+		DWORD exitCode = 0;
+		while (1) {
+			GetExitCodeProcess(m->hProcess, &exitCode);
+			if (exitCode == STILL_ACTIVE) {
+				// running
+				msleep(1);
+			} else {
+				break;
+			}
+		}
+	}
+
+	CloseHandle(m->hInput);
+	CloseHandle(m->hProcess);
+	CloseHandle(m->hOutput);
+	winpty_free(pty);
+}
+
+int Win32Process3::read(char *dstptr, int maxlen)
+{
+	int len = m->output_reader.result.size();
+	if (len > maxlen) {
+		len = maxlen;
+	}
+	if (len > 0) {
+		auto begin = m->output_reader.result.begin();
+		std::copy(begin, begin + len, dstptr);
+		m->output_reader.result.erase(begin, begin + len);
+	}
+	return len;
+}
+
+void Win32Process3::writeInput(const char *ptr, int len)
+{
+	char const *begin = ptr;
+	char const *end = begin + len;
+	char const *left = begin;
+	char const *right = begin;
+	while (1) {
+		int c = -1;
+		if (right < end) {
+			c = *right & 0xff;
+		}
+		if (c == '\r' || c == '\n' || c < 0) {
+			if (left < right) {
+				DWORD written;
+				WriteFile(m->hInput, left, right - left, &written, 0);
+			}
+			if (c < 0) break;
+			right++;
+			if (c == '\r') {
+				if (*right == '\n') {
+					right++;
+				}
+				c = '\r';
+			} else if (c == '\n') {
+				c = '\r';
+			} else {
+				c = -1;
+			}
+			if (c >= 0) {
+				DWORD written;
+				WriteFile(m->hInput, &c, 1, &written, 0);
+			}
+			left = right;
+		} else {
+			right++;
+		}
+	}
+}
+
+void Win32Process3::close()
+{
+	CloseHandle(m->hInput);
+	CloseHandle(m->hOutput);
+	CloseHandle(m->hProcess);
+	m->hInput = INVALID_HANDLE_VALUE;
+	m->hOutput = INVALID_HANDLE_VALUE;
+	m->hProcess = INVALID_HANDLE_VALUE;
+}
+
+void Win32Process3::start(const QString &cmdline)
+{
+	if (isRunning()) return;
+	m->command_line = cmdline;
+	QThread::start();
+}
+
+void Win32Process3::stop()
+{
+	m->output_reader.requestInterruption();
+	requestInterruption();
+	close();
+	m->output_reader.wait();
+	wait();
 }
 
 
