@@ -1,6 +1,6 @@
 #include "CreateRepositoryDialog.h"
 #include "MainWindow.h"
-#include "misc.h"
+#include "common/misc.h"
 #include "ui_CreateRepositoryDialog.h"
 
 #include <QFileDialog>

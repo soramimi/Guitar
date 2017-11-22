@@ -3,7 +3,7 @@
 #if USE_LIBGIT2
 
 #include <QDebug>
-#include "misc.h"
+#include "common/misc.h"
 
 
 std::string LibGit2::get_error_message(int err)

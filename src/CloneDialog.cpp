@@ -1,7 +1,7 @@
 #include "CloneDialog.h"
 #include "ui_CloneDialog.h"
-#include "misc.h"
-#include "joinpath.h"
+#include "common/misc.h"
+#include "common/joinpath.h"
 #include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
 

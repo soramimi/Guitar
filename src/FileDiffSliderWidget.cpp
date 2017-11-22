@@ -1,6 +1,6 @@
 #include "FileDiffSliderWidget.h"
 #include "MainWindow.h"
-#include "misc.h"
+#include "common/misc.h"
 #include <QPainter>
 #include <QMouseEvent>
 

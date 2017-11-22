@@ -1,6 +1,6 @@
 #include "EditTagDialog.h"
 #include "ui_EditTagDialog.h"
-#include "misc.h"
+#include "common/misc.h"
 
 EditTagDialog::EditTagDialog(QWidget *parent) :
 	QDialog(parent),

@@ -7,8 +7,8 @@
 #include <QThread>
 #include <QTimer>
 #include <set>
-#include "joinpath.h"
-#include "misc.h"
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include "LibGit2.h"
 #include "GitObjectManager.h"
 

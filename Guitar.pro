@@ -84,8 +84,8 @@ SOURCES += \
 	src/main.cpp\
 	src/MainWindow.cpp \
 	src/Git.cpp \
-	src/joinpath.cpp \
-	src/misc.cpp \
+	src/common/joinpath.cpp \
+	src/common/misc.cpp \
 	src/ConfigCredentialHelperDialog.cpp \
 	src/MySettings.cpp \
 	src/FileDiffWidget.cpp \
@@ -161,8 +161,8 @@ SOURCES += \
 HEADERS  += \
 	src/MainWindow.h \
 	src/Git.h \
-	src/joinpath.h \
-	src/misc.h \
+	src/common/joinpath.h \
+	src/common/misc.h \
 	src/ConfigCredentialHelperDialog.h \
 	src/MySettings.h \
 	src/main.h \

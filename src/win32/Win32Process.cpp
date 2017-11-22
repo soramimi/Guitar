@@ -271,7 +271,7 @@ bool Win32Process2::step(bool delay)
 	return false;
 }
 
-int Win32Process2::read(char *dstptr, int maxlen)
+int Win32Process2::readOutput(char *dstptr, int maxlen)
 {
 	QMutexLocker lock(&m->th.mutex);
 	int pos = 0;
@@ -364,7 +364,7 @@ void ReaderThread3::start(HANDLE hOutput)
 
 struct Win32Process3::Private {
 	QString command_line;
-	ReaderThread3 output_reader;
+	ReaderThread3 output_reader_thread;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;
 	HANDLE hInput = INVALID_HANDLE_VALUE;
@@ -420,25 +420,25 @@ QString Win32Process3::getProgram(const QString &cmdline)
 void Win32Process3::run()
 {
 	QString program;
-
 	program = getProgram(m->command_line);
 
-	auto agentCfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
-	auto pty = winpty_open(agentCfg, nullptr);
-	winpty_config_free(agentCfg);
+	winpty_config_t *agent_cfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
+	winpty_t *pty = winpty_open(agent_cfg, nullptr);
+	winpty_config_free(agent_cfg);
 
 	m->hInput = CreateFileW(winpty_conin_name(pty), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	m->hOutput = CreateFileW(winpty_conout_name(pty), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-	m->output_reader.start(m->hOutput);
+	m->output_reader_thread.start(m->hOutput);
 
-	auto spawnCfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command_line.utf16(), nullptr, nullptr, nullptr);
-	BOOL spawnSuccess = winpty_spawn(pty, spawnCfg, &m->hProcess, nullptr, nullptr, nullptr);
+	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command_line.utf16(), nullptr, nullptr, nullptr);
+	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
 	if (spawnSuccess) {
-		DWORD exitCode = 0;
+		DWORD exit_code = 0;
 		while (1) {
-			GetExitCodeProcess(m->hProcess, &exitCode);
-			if (exitCode == STILL_ACTIVE) {
+			if (isInterruptionRequested()) break;
+			GetExitCodeProcess(m->hProcess, &exit_code);
+			if (exit_code == STILL_ACTIVE) {
 				// running
 				msleep(1);
 			} else {
@@ -447,22 +447,20 @@ void Win32Process3::run()
 		}
 	}
 
-	CloseHandle(m->hInput);
-	CloseHandle(m->hProcess);
-	CloseHandle(m->hOutput);
+	close();
 	winpty_free(pty);
 }
 
-int Win32Process3::read(char *dstptr, int maxlen)
+int Win32Process3::readOutput(char *dstptr, int maxlen)
 {
-	int len = m->output_reader.result.size();
+	int len = m->output_reader_thread.result.size();
 	if (len > maxlen) {
 		len = maxlen;
 	}
 	if (len > 0) {
-		auto begin = m->output_reader.result.begin();
+		auto begin = m->output_reader_thread.result.begin();
 		std::copy(begin, begin + len, dstptr);
-		m->output_reader.result.erase(begin, begin + len);
+		m->output_reader_thread.result.erase(begin, begin + len);
 	}
 	return len;
 }
@@ -525,10 +523,10 @@ void Win32Process3::start(const QString &cmdline)
 
 void Win32Process3::stop()
 {
-	m->output_reader.requestInterruption();
+	m->output_reader_thread.requestInterruption();
 	requestInterruption();
 	close();
-	m->output_reader.wait();
+	m->output_reader_thread.wait();
 	wait();
 }
 

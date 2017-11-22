@@ -1,7 +1,7 @@
 #include "GitObjectManager.h"
 #include "Git.h"
-#include "joinpath.h"
-#include "misc.h"
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include <QBuffer>
 #include <QDebug>
 #include <QDirIterator>

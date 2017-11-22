@@ -1,6 +1,6 @@
 
 #include "FileUtil.h"
-#include "joinpath.h"
+#include "common/joinpath.h"
 
 #include <sys/stat.h>
 

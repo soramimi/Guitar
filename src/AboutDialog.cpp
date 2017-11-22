@@ -1,6 +1,6 @@
 #include "AboutDialog.h"
 #include "ui_AboutDialog.h"
-#include "misc.h"
+#include "common/misc.h"
 
 #include <QPainter>
 

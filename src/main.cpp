@@ -11,7 +11,7 @@
 #include "LegacyWindowsStyleTreeControl.h"
 #include "webclient.h"
 #include "win32/win32.h"
-#include "misc.h"
+#include "common/misc.h"
 
 QString application_data_dir;
 QColor panel_bg_color;

@@ -1,9 +1,9 @@
 #include "FileHistoryWindow.h"
 #include "MainWindow.h"
 #include "ui_FileHistoryWindow.h"
-#include "misc.h"
+#include "common/misc.h"
 #include "GitDiff.h"
-#include "joinpath.h"
+#include "common/joinpath.h"
 #include "FileDiffWidget.h"
 #include "MyTableWidgetDelegate.h"
 

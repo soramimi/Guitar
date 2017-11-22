@@ -2,8 +2,8 @@
 #include "FileDiffSliderWidget.h"
 
 #include "MainWindow.h"
-#include "misc.h"
-#include "joinpath.h"
+#include "common/misc.h"
+#include "common/joinpath.h"
 #include "Photoshop.h"
 #include "MemoryReader.h"
 #include "charvec.h"

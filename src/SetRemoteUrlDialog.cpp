@@ -2,7 +2,7 @@
 #include "ui_SetRemoteUrlDialog.h"
 #include "MyTableWidgetDelegate.h"
 #include "MainWindow.h"
-#include "misc.h"
+#include "common/misc.h"
 #include <QMessageBox>
 
 SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g) :

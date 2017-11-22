@@ -1,7 +1,7 @@
 #include "GitHubAPI.h"
 
 #include "webclient.h"
-#include "misc.h"
+#include "common/misc.h"
 #include "json.h"
 #include "charvec.h"
 #include "urlencode.h"

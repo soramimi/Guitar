@@ -1,7 +1,7 @@
 #include "SearchFromGitHubDialog.h"
 #include "ui_SearchFromGitHubDialog.h"
 
-#include "misc.h"
+#include "common/misc.h"
 #include "json.h"
 #include "urlencode.h"
 #include "MainWindow.h"

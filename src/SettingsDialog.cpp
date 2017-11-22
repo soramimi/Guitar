@@ -3,7 +3,7 @@
 #include "MySettings.h"
 
 #include <QFileDialog>
-#include "misc.h"
+#include "common/misc.h"
 
 static int page_number = 0;
 

@@ -3,9 +3,9 @@
 
 #include "BigDiffWindow.h"
 #include "GitDiff.h"
-#include "joinpath.h"
+#include "common/joinpath.h"
 #include "MainWindow.h"
-#include "misc.h"
+#include "common/misc.h"
 
 #include <QBuffer>
 #include <QDebug>

@@ -2,7 +2,7 @@
 #define GITDIFF_H
 
 #include <set>
-#include "misc.h"
+#include "common/misc.h"
 #include "Git.h"
 #include "GitObjectManager.h"
 

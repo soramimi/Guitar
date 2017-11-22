@@ -1,6 +1,6 @@
 #include "ReadOnlyPlainTextEdit.h"
 #include "main.h"
-#include "misc.h"
+#include "common/misc.h"
 
 #include <QPainter>
 

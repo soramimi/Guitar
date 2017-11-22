@@ -40,7 +40,7 @@ public:
 	void exec(const QString &command);
 	bool step(bool delay);
 
-	int read(char *dstptr, int maxlen);
+	int readOutput(char *dstptr, int maxlen);
 	void writeInput(char const *ptr, int len);
 	void closeInput();
 	void stop();
@@ -60,7 +60,7 @@ protected:
 public:
 	Win32Process3();
 	~Win32Process3();
-	int read(char *dstptr, int maxlen);
+	int readOutput(char *dstptr, int maxlen);
 	void writeInput(char const *ptr, int len);
 	void start(QString const &cmdline);
 	void stop();

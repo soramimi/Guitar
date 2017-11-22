@@ -3,7 +3,7 @@
 #include "ui_SettingDirectoriesForm.h"
 #include <QFileDialog>
 #include "SettingsDialog.h"
-#include "misc.h"
+#include "common/misc.h"
 
 SettingDirectoriesForm::SettingDirectoriesForm(QWidget *parent) :
 	AbstractSettingForm(parent),

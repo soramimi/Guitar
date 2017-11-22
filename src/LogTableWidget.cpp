@@ -7,7 +7,7 @@
 #include "MainWindow.h"
 #include <QApplication>
 #include "MyTableWidgetDelegate.h"
-#include "misc.h"
+#include "common/misc.h"
 
 struct LogTableWidget::Private {
 	MainWindow *mainwindow;

@@ -1,11 +1,11 @@
-#include "misc.h"
+#include "common/misc.h"
 #include <QDebug>
 #include <QFileInfo>
 #include <QPainter>
 #include <QProcess>
 #include <QWidget>
 #include <vector>
-#include "joinpath.h"
+#include "common/joinpath.h"
 
 QString misc::getApplicationDir()
 {
