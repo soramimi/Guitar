@@ -67,6 +67,8 @@
 #include <deque>
 #include <set>
 
+#include <win32/Win32Process.h>
+
 #ifdef Q_OS_WIN
 #else
 #include <unistd.h>
@@ -196,6 +198,8 @@ struct MainWindow::Private {
 	int update_commit_table_counter = 0;
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
+
+//	Win32Process3 proc3;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -231,11 +235,15 @@ MainWindow::MainWindow(QWidget *parent)
 		setRemoteOnline(f);
 	}
 
-	ui->widget_log->init(this);
+//	ui->widget_log->init(this);
+	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
+	ui->widget_log->setTheme(TextEditorTheme::Dark());
+	ui->widget_log->setAutoLayout(true);
+	ui->widget_log->setTerminalMode();
+	ui->widget_log->layoutEditor();
 	onLogVisibilityChanged();
 
 	showFileList(FilesListType::SingleList);
-
 
 	QFileIconProvider icons;
 
@@ -262,7 +270,7 @@ MainWindow::MainWindow(QWidget *parent)
 #endif
 
 	writeLog(AboutDialog::appVersion() + '\n');
-	logGitVersion();
+//	logGitVersion();
 
 #if USE_LIBGIT2
 	LibGit2::init();
@@ -283,7 +291,7 @@ MainWindow::MainWindow(QWidget *parent)
 	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
 
-	m->timer_interval_ms = 20;
+	m->timer_interval_ms = 1;
 	m->update_files_list_counter = 0;
 	m->interval_250ms_counter = 0;
 	startTimer(m->timer_interval_ms);
@@ -307,12 +315,15 @@ MainWindow::~MainWindow()
 	LibGit2::shutdown();
 #endif
 
+
 	m->avatar_loader.interrupt();
 
 //	cleanupDiffThread();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
+
+//	m->proc3.stop();
 
 	delete m;
 	delete ui;
@@ -493,14 +504,28 @@ void MainWindow::onLogVisibilityChanged()
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
-void MainWindow::writeLog(QString const &str)
+void MainWindow::writeLog(char const *ptr, int len)
 {
+	ui->widget_log->setReadOnly(false);
+	ui->widget_log->write(ptr, len);
+	ui->widget_log->setReadOnly(true);
+}
+
+void MainWindow::writeLog(const QString &str)
+{
+#if 0
 	ui->widget_log->termWrite(str);
 
 	ui->widget_log->updateControls();
 	ui->widget_log->scrollToBottom();
 	ui->widget_log->update();
+#else
+	std::string s = str.toStdString();
+	writeLog(s.c_str(), s.size());
+#endif
 }
+
+
 
 void MainWindow::writeLog(QByteArray ba)
 {
@@ -643,7 +668,9 @@ QString MainWindow::currentWorkingCopyDir() const
 
 GitPtr MainWindow::git(QString const &dir) const
 {
-	return std::shared_ptr<Git>(new Git(m->gcx, dir));
+	GitPtr g = std::shared_ptr<Git>(new Git(m->gcx, dir));
+	g->setLogCallback(git_callback, (void *)this);
+	return g;
 }
 
 GitPtr MainWindow::git()
@@ -1434,6 +1461,7 @@ void MainWindow::openRepository_(GitPtr g)
 			});
 			th.start();
 
+#if 0
 			if (th.wait(3000)) {
 				// thread completed
 			} else {
@@ -1443,6 +1471,9 @@ void MainWindow::openRepository_(GitPtr g)
 				dlg.releaseMouse();
 				th.wait();
 			}
+#else
+			th.wait();
+#endif
 
 			if (dlg.canceledByUser()) {
 				setUnknownRepositoryInfo();
@@ -3164,8 +3195,9 @@ void MainWindow::on_action_branch_merge_triggered()
 	}
 }
 
-bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
+bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
 {
+#if 0
 	ProgressDialog *dlg = (ProgressDialog *)cookie;
 	if (dlg->canceledByUser()) {
 		qDebug() << "canceled";
@@ -3174,7 +3206,11 @@ bool MainWindow::clone_callback(void *cookie, char const *ptr, int len)
 
 	QString text = QString::fromUtf8(ptr, len);
 	emit dlg->writeLog(text);
+#else
+	MainWindow *mw = (MainWindow *)cookie;
+	mw->writeLog(ptr, len);
 
+#endif
 	return true;
 }
 
@@ -3241,7 +3277,7 @@ void MainWindow::clone()
 			dlg2.setLabelText(tr("Cloning is in progress"));
 
 			GitPtr g = git(QString());
-			g->setLogCallback(clone_callback, &dlg2);
+//			g->setLogCallback(clone_callback, &dlg2);
 
 			bool ok = false;
 
@@ -3255,7 +3291,7 @@ void MainWindow::clone()
 			dlg2.exec();
 			th.wait();
 
-			g->setLogCallback(nullptr, nullptr);
+//			g->setLogCallback(nullptr, nullptr);
 
 			if (dlg2.canceledByUser()) {
 				return; // canceled
@@ -4082,3 +4118,8 @@ void MainWindow::on_action_test_triggered()
 }
 
 
+
+void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
+{
+	ui->widget_log->refrectScrollBar();
+}

@@ -164,6 +164,8 @@ private slots:
 
 	void on_radioButton_remote_offline_clicked();
 
+	void on_verticalScrollBar_log_valueChanged(int value);
+
 private:
 	Ui::MainWindow *ui;
 
@@ -252,7 +254,7 @@ private:
 	void logGitVersion();
 	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool log_callback(void *cookie, const char *ptr, int len);
-	static bool clone_callback(void *cookie, const char *ptr, int len);
+	static bool git_callback(void *cookie, const char *ptr, int len);
 //	bool isDiffThreadValid(const QString &id) const;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);
@@ -341,6 +343,7 @@ public:
 	bool isAvatarEnabled() const;
 	WebContext *getWebContextPtr();
 public slots:
+	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);
 protected:

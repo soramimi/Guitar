@@ -14,13 +14,13 @@
 
 #ifdef Q_OS_WIN
 #include "win32/Win32Process.h"
-#endif
-
-#ifdef Q_OS_UNIX
+#else
 #include "unix/UnixProcess.h"
 #endif
 
 #define DEBUGLOG 0
+
+using callback_t = Git::callback_t;
 
 struct Git::Private {
 	QString git_command;
@@ -161,9 +161,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 		cmd += arg;
 
 		if (m->callback_func) {
-			QString prompt = "> ";
-			QByteArray ba = (prompt + arg).toUtf8();
-			ba.push_back('\n');
+			QByteArray ba;
+			ba.append("> git ");
+			ba.append(arg);
+			ba.append('\n');
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 
@@ -176,6 +177,17 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			m->result = proc.outbytes;
 		}
 		m->error_message = proc.errstring();
+
+#if 0
+		if (m->callback_func) {
+			if (!proc.outbytes.empty()) {
+				m->callback_func(m->callback_cookie, &proc.outbytes[0], proc.outbytes.size());
+			}
+			if (!proc.errbytes.empty()) {
+				m->callback_func(m->callback_cookie, &proc.errbytes[0], proc.errbytes.size());
+			}
+		}
+#endif
 
 		return m->process_exit_code == 0;
 	};

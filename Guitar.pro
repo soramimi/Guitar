@@ -21,6 +21,7 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
+INCLUDEPATH += $$PWD/../ore/src/editorcore
 win32:INCLUDEPATH += $$PWD/winpty
 win32:LIBS += $$PWD/winpty/winpty.lib
 
@@ -156,7 +157,13 @@ SOURCES += \
     src/SettingNetworkForm.cpp \
 	src/Photoshop.cpp \
 	src/SettingBehaviorForm.cpp \
-    src/MyProcess.cpp
+    src/MyProcess.cpp \
+    ../ore/src/editorcore/AbstractCharacterBasedApplication.cpp \
+    ../ore/src/editorcore/InputMethodPopup.cpp \
+    ../ore/src/editorcore/TextEditorTheme.cpp \
+    ../ore/src/editorcore/TextEditorWidget.cpp \
+    ../ore/src/editorcore/unicode.cpp \
+    ../ore/src/editorcore/UnicodeWidth.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -236,7 +243,13 @@ HEADERS  += \
     src/SettingNetworkForm.h \
 	src/Photoshop.h \
 	src/SettingBehaviorForm.h \
-    src/MyProcess.h
+    src/MyProcess.h \
+    ../ore/src/editorcore/AbstractCharacterBasedApplication.h \
+    ../ore/src/editorcore/InputMethodPopup.h \
+    ../ore/src/editorcore/TextEditorTheme.h \
+    ../ore/src/editorcore/TextEditorWidget.h \
+    ../ore/src/editorcore/unicode.h \
+    ../ore/src/editorcore/UnicodeWidth.h
 
 FORMS    += \
 	src/MainWindow.ui \

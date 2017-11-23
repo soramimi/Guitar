@@ -1058,10 +1058,7 @@
        <property name="frameShadow">
         <enum>QFrame::Sunken</enum>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
-        <property name="spacing">
-         <number>0</number>
-        </property>
+       <layout class="QGridLayout" name="gridLayout_2">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -1074,8 +1071,25 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
-        <item>
-         <widget class="LogWidget" name="widget_log" native="true"/>
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="TextEditorWidget" name="widget_log" native="true"/>
+        </item>
+        <item row="0" column="1">
+         <widget class="QScrollBar" name="verticalScrollBar_log">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QScrollBar" name="horizontalScrollBar_log">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -1300,9 +1314,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>LogWidget</class>
+   <class>TextEditorWidget</class>
    <extends>QWidget</extends>
-   <header>LogWidget.h</header>
+   <header>TextEditorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
