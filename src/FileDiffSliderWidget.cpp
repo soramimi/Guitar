@@ -93,7 +93,7 @@ void FileDiffSliderWidget::resizeEvent(QResizeEvent *)
 	clear(m->visible);
 }
 
-void FileDiffSliderWidget::setValue(int v)
+void FileDiffSliderWidget::internalSetValue(int v)
 {
 	int max = m->scroll_total - m->scroll_page_size / 2;
 	if (v > max) {
@@ -103,6 +103,11 @@ void FileDiffSliderWidget::setValue(int v)
 		v = 0;
 	}
 	m->scroll_value = v;
+}
+
+void FileDiffSliderWidget::setValue(int v)
+{
+	internalSetValue(v);
 	update();
 	emit valueChanged(m->scroll_value);
 }
@@ -156,8 +161,8 @@ void FileDiffSliderWidget::clear(bool v)
 void FileDiffSliderWidget::setScrollPos(int total, int value, int size)
 {
 	m->scroll_total = total;
-	m->scroll_value = value;
 	m->scroll_page_size = size;
+	internalSetValue(value);
 	m->visible = (m->scroll_total > 0) && (m->scroll_page_size > 0);
 	update();
 }

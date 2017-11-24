@@ -20,6 +20,7 @@ private:
 	void scroll_(int pos);
 	QPixmap makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height);
 	void setValue(int v);
+	void internalSetValue(int v);
 public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
 	~FileDiffSliderWidget();

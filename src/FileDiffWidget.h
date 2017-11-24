@@ -160,8 +160,8 @@ private:
 	void setBinaryMode(bool f);
 	void bindContent_();
 	bool isTerminalMode() const;
+	void onUpdateSliderBar();
 	void refrectScrollBar();
-	void onUpdateScrollBar();
 	void setOriginalLines_(const QByteArray &ba);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);

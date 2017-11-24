@@ -368,15 +368,15 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string>
 	m->max_line_length = 0;
 
 //	parseDiff(s, &diff, &diff);
-	TextDiffLineList left_lines;
-	TextDiffLineList right_lines;
-	makeSideBySideDiffData(diff, original_lines, &left_lines, &right_lines);
+//	TextDiffLineList left_lines;
+//	TextDiffLineList right_lines;
+//	makeSideBySideDiffData(diff, original_lines, &left_lines, &right_lines);
 
 	enum Pane {
 		Left,
 		Right,
 	};
-	auto MakeDiffLines = [&](TextDiffLineList const &lines, Pane pane, TextDiffLineList *out){
+	auto SetLineNumber = [&](TextDiffLineList const &lines, Pane pane, TextDiffLineList *out){
 		out->clear();
 		int linenum = 1;
 		for (TextDiffLine const &line : lines) {
@@ -404,8 +404,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string>
 			out->push_back(item);
 		}
 	};
-	MakeDiffLines(left_lines, Pane::Left, &m->left_lines);
-	MakeDiffLines(right_lines, Pane::Right, &m->right_lines);
+	SetLineNumber(left, Pane::Left, &m->left_lines);
+	SetLineNumber(right, Pane::Right, &m->right_lines);
 	ui->widget_diff_left->setDocument(&m->left_lines);
 	ui->widget_diff_right->setDocument(&m->right_lines);
 	ui->widget_diff_left->scrollToTop();
@@ -946,13 +946,25 @@ void FileDiffWidget::setFocusAcceptable(bool f)
 	ui->widget_diff_right->setFocusPolicy(focuspolicy);
 }
 
-
+void FileDiffWidget::onUpdateSliderBar()
+{
+#if 0
+	int page = ui->widget_diff_left->height();
+	page /= ui->widget_diff_left->lineHeight();
+	ui->widget_diff_slider->setScrollPos(ui->verticalScrollBar->maximum(), ui->verticalScrollBar->value(), page);
+#else
+	int total = m->engine_left->document.lines.size();
+	int value = ui->verticalScrollBar->value();
+	int page = ui->verticalScrollBar->pageStep();
+	ui->widget_diff_slider->setScrollPos(total, value, page);
+#endif
+}
 
 void FileDiffWidget::refrectScrollBar()
 {
 	ui->widget_diff_left->refrectScrollBar();
 	ui->widget_diff_right->refrectScrollBar();
-	ui->widget_diff_slider->setScrollPos(m->engine_left->document.lines.size(), ui->verticalScrollBar->value(), ui->verticalScrollBar->pageStep());
+	onUpdateSliderBar();
 }
 
 
@@ -1003,18 +1015,12 @@ QPixmap FileDiffWidget::makeDiffPixmap(Pane pane, int width, int height)
 	return QPixmap();
 }
 
-void FileDiffWidget::onUpdateScrollBar()
-{
-	int page = ui->widget_diff_left->height();
-	page /= ui->widget_diff_left->lineHeight();
-	ui->widget_diff_slider->setScrollPos(ui->verticalScrollBar->maximum(), ui->verticalScrollBar->value(), page);
-}
 
 void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 {
 	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
 	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
 	refrectScrollBar();
-	onUpdateScrollBar();
+	onUpdateSliderBar();
 }
 

@@ -410,6 +410,9 @@
           </property>
           <item>
            <widget class="QRadioButton" name="radioButton_remote_online">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>Online</string>
             </property>
@@ -417,6 +420,9 @@
           </item>
           <item>
            <widget class="QRadioButton" name="radioButton_remote_offline">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="text">
              <string>Offline</string>
             </property>

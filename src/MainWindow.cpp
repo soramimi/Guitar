@@ -62,6 +62,7 @@
 #include <QLocalServer>
 #include <QBuffer>
 #include <QFileIconProvider>
+#include <QTimer>
 
 #include <stdlib.h>
 #include <deque>
@@ -179,7 +180,8 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	int timer_interval_ms = 0;
 	int update_files_list_counter = 0;
-	int interval_250ms_counter = 0;
+	QTimer interval_10ms_timer;
+	QTimer interval_250ms_timer;
 	QImage graph_color;
 	std::map<QString, QList<Git::Branch>> branch_map;
 	std::map<QString, QList<Git::Tag>> tag_map;
@@ -293,8 +295,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->timer_interval_ms = 1;
 	m->update_files_list_counter = 0;
-	m->interval_250ms_counter = 0;
+//	m->interval_250ms_counter = 0;
 	startTimer(m->timer_interval_ms);
+
+	startTimers();
 
 	auto setAskPass = [](){
 		QString askpass = misc::getApplicationDir();
@@ -327,6 +331,43 @@ MainWindow::~MainWindow()
 
 	delete m;
 	delete ui;
+}
+
+void MainWindow::startTimers()
+{
+	// interval 10ms
+
+	connect(&m->interval_10ms_timer, &QTimer::timeout, [&](){
+		const int ms = 10;
+		if (m->update_commit_table_counter > 0) {
+			if (m->update_commit_table_counter > ms) {
+				m->update_commit_table_counter -= ms;
+			} else {
+				m->update_commit_table_counter = 0;
+				ui->tableWidget_log->viewport()->update();
+			}
+		}
+		if (m->update_files_list_counter > 0) {
+			if (m->update_files_list_counter > ms) {
+				m->update_files_list_counter -= ms;
+			} else {
+				m->update_files_list_counter = 0;
+				updateCurrentFilesList();
+			}
+		}
+	});
+	m->interval_10ms_timer.setInterval(10);
+	m->interval_10ms_timer.start();
+
+	// interval 250ms
+
+	connect(&m->interval_250ms_timer, &QTimer::timeout, [&](){
+		checkGitCommand();
+		checkFileCommand();
+	});
+	m->interval_250ms_timer.setInterval(1000);
+	m->interval_250ms_timer.start();
+
 }
 
 #if 0
@@ -3052,35 +3093,6 @@ void MainWindow::checkFileCommand()
 		if (selectFileCommand().isEmpty()) {
 			close();
 			break;
-		}
-	}
-}
-
-void MainWindow::timerEvent(QTimerEvent *)
-{
-	m->interval_250ms_counter += m->timer_interval_ms;
-	if (m->interval_250ms_counter >= 250) {
-		m->interval_250ms_counter -= 250;
-
-		checkGitCommand();
-		checkFileCommand();
-	}
-
-	if (m->update_commit_table_counter > 0) {
-		if (m->update_commit_table_counter > m->timer_interval_ms) {
-			m->update_commit_table_counter -= m->timer_interval_ms;
-		} else {
-			m->update_commit_table_counter = 0;
-			ui->tableWidget_log->viewport()->update();
-		}
-	}
-
-	if (m->update_files_list_counter > 0) {
-		if (m->update_files_list_counter > m->timer_interval_ms) {
-			m->update_files_list_counter -= m->timer_interval_ms;
-		} else {
-			m->update_files_list_counter = 0;
-			updateCurrentFilesList();
 		}
 	}
 }

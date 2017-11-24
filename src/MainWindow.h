@@ -290,6 +290,7 @@ private:
 	void execSetRemoteUrlDialog(const RepositoryItem *repo = nullptr);
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const;
+	void startTimers();
 public:
 
 	QString selectGitCommand(bool save);
@@ -350,8 +351,6 @@ public slots:
 	void writeLog(QByteArray ba);
 protected:
 
-protected:
-	void timerEvent(QTimerEvent *event);
 protected slots:
 
 protected:
