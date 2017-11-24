@@ -1,6 +1,7 @@
 #ifndef FILEDIFFWIDGET_H
 #define FILEDIFFWIDGET_H
 
+#include <AbstractCharacterBasedApplication.h>
 #include <QDialog>
 #include "Git.h"
 #include "MainWindow.h"
@@ -21,28 +22,29 @@ enum class FilePreviewType {
 	Image,
 };
 
-struct TextDiffLine {
-	enum Type {
-		Unknown,
-		Normal,
-		Add,
-		Del,
-	} type = Unknown;
-	int hunk_number = -1;
-	int line_number = 0;
-	QByteArray text;
-	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
-		: type(type)
-	{
-		text.reserve(reserve_length);
-	}
-	TextDiffLine(std::string const &text_, Type type)
-		: type(type)
-	{
-		text.append(text_.c_str(), text_.size());
-	}
-};
-typedef QList<TextDiffLine> TextDiffLineList;
+//struct TextDiffLine {
+//	enum Type {
+//		Unknown,
+//		Normal,
+//		Add,
+//		Del,
+//	} type = Unknown;
+//	int hunk_number = -1;
+//	int line_number = 0;
+//	QByteArray text;
+//	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
+//		: type(type)
+//	{
+//		text.reserve(reserve_length);
+//	}
+//	TextDiffLine(std::string const &text_, Type type)
+//		: type(type)
+//	{
+//		text.append(text_.c_str(), text_.size());
+//	}
+//};
+typedef Document::Line TextDiffLine;
+typedef QList<Document::Line> TextDiffLineList;
 
 struct ObjectContent {
 	QString id;
@@ -59,6 +61,10 @@ class FileDiffWidget : public QWidget
 	Q_OBJECT
 	friend class BigDiffWindow;
 public:
+	enum class Pane {
+		Left,
+		Right,
+	};
 	struct DiffData {
 		ObjectContentPtr left;
 		ObjectContentPtr right;
@@ -115,35 +121,21 @@ private:
 		QString workingdir;
 	};
 
-	FileDiffWidget::DiffData *diffdata();
-	FileDiffWidget::DiffData const *diffdata() const;
-	FileDiffWidget::DrawData *drawdata();
-	FileDiffWidget::DrawData const *drawdata() const;
+//	FileDiffWidget::DiffData *diffdata();
+//	FileDiffWidget::DiffData const *diffdata() const;
+//	FileDiffWidget::DrawData *drawdata();
+//	FileDiffWidget::DrawData const *drawdata() const;
 
 	ViewStyle viewstyle() const;
 
 	GitPtr git();
 	Git::Object cat_file(GitPtr g, const QString &id);
 
-	int totalTextLines() const
-	{
-		return diffdata()->left->lines.size();
-	}
+	int totalTextLines() const;
 
-	int fileviewScrollPos() const
-	{
-		return drawdata()->v_scroll_pos;
-	}
+//	int fileviewScrollPos() const;
 
-	int visibleLines() const
-	{
-		int n = 0;
-		if (drawdata()->line_height > 0) {
-			n = fileviewHeight() / drawdata()->line_height;
-			if (n < 1) n = 1;
-		}
-		return n;
-	}
+	int visibleLines() const;
 
 	void scrollTo(int value);
 
@@ -154,7 +146,7 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const TextDiffLineList &left, const TextDiffLineList &right);
+	void setDiffText(const Git::Diff &diff, const std::vector<std::string> &original_lines, const TextDiffLineList &left, const TextDiffLineList &right);
 
 
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
@@ -166,10 +158,11 @@ private:
 
 	FilePreviewType setupPreviewWidget();
 
-	void makeSideBySideDiffData(TextDiffLineList *left_lines, TextDiffLineList *right_lines) const;
+	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void setBinaryMode(bool f);
 	void bindContent_();
 	bool isTerminalMode() const;
+	void refrectScrollBar();
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -195,6 +188,7 @@ public:
 	void termWrite(const QString &text);
 	void setTerminalMode();
 	void setFocusAcceptable(bool f);
+	QPixmap makeDiffPixmap(Pane pane, int width, int height);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);

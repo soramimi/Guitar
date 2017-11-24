@@ -68,14 +68,14 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="FilePreviewWidget" name="widget_diff_left" native="true">
+        <widget class="TextEditorWidget" name="widget_diff_left" native="true">
          <property name="focusPolicy">
           <enum>Qt::StrongFocus</enum>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="FilePreviewWidget" name="widget_diff_right" native="true">
+        <widget class="TextEditorWidget" name="widget_diff_right" native="true">
          <property name="focusPolicy">
           <enum>Qt::StrongFocus</enum>
          </property>
@@ -135,15 +135,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>FileDiffSliderWidget</class>
+   <class>TextEditorWidget</class>
    <extends>QWidget</extends>
-   <header>FileDiffSliderWidget.h</header>
+   <header>TextEditorWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>FilePreviewWidget</class>
+   <class>FileDiffSliderWidget</class>
    <extends>QWidget</extends>
-   <header>FilePreviewWidget.h</header>
+   <header>FileDiffSliderWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

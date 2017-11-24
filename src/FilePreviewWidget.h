@@ -52,7 +52,7 @@ public:
 	bool isBinaryMode() const;
 	bool isTerminalMode() const;
 
-	static QString formatText(const TextDiffLine &line);
+	static QString formatText(const Document::Line &line2);
 protected:
 	void paintEvent(QPaintEvent *);
 	void wheelEvent(QWheelEvent *);

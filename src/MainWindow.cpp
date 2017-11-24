@@ -4123,3 +4123,4 @@ void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
 {
 	ui->widget_log->refrectScrollBar();
 }
+

@@ -140,7 +140,7 @@ void FilePreviewWidget::updateDrawData()
 	updateDrawData(&pr);
 }
 
-QString FilePreviewWidget::formatText(TextDiffLine const &line)
+QString FilePreviewWidget::formatText(Document::Line const &line)
 {
 	QByteArray const &ba = line.text;
 	if (ba.isEmpty()) return QString();
@@ -196,17 +196,17 @@ void FilePreviewWidget::paintText()
 		y = -y;
 		while (i < lines->size() && y < h) {
 			QString line = formatText(lines->at(i));
-			TextDiffLine::Type type = lines->at(i).type;
+			Document::Line::Type type = (Document::Line::Type)lines->at(i).type;
 
 			QColor *bgcolor;
 			switch (type) {
-			case TextDiffLine::Normal:
+			case Document::Line::Normal:
 				bgcolor = &drawdata()->bgcolor_text;
 				break;
-			case TextDiffLine::Add:
+			case Document::Line::Add:
 				bgcolor = &drawdata()->bgcolor_add;
 				break;
-			case TextDiffLine::Del:
+			case Document::Line::Del:
 				bgcolor = &drawdata()->bgcolor_del;
 				break;
 			default:
@@ -245,8 +245,8 @@ void FilePreviewWidget::paintText()
 				// nop
 			} else {
 				switch (type) {
-				case TextDiffLine::Add: pr.drawText(x2, line_y, "+"); break;
-				case TextDiffLine::Del: pr.drawText(x2, line_y, "-"); break;
+				case Document::Line::Add: pr.drawText(x2, line_y, "+"); break;
+				case Document::Line::Del: pr.drawText(x2, line_y, "-"); break;
 				}
 			}
 
