@@ -137,8 +137,6 @@ private:
 
 	int visibleLines() const;
 
-	void scrollTo(int value);
-
 	void resetScrollBarValue();
 	void updateVerticalScrollBar();
 	void updateHorizontalScrollBar();
@@ -163,6 +161,7 @@ private:
 	void bindContent_();
 	bool isTerminalMode() const;
 	void refrectScrollBar();
+	void onUpdateScrollBar();
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -198,11 +197,21 @@ private slots:
 	void on_toolButton_fullscreen_clicked();
 
 	void setBinaryMode();
+	void scrollTo(int value);
+	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 signals:
 	void moveNextItem();
 	void movePreviousItem();
+
+	// QWidget interface
+protected:
+	void resizeEvent(QResizeEvent *event);
+
+	// QWidget interface
+protected:
+	void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // FILEDIFFWIDGET_H

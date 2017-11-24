@@ -166,6 +166,8 @@ private slots:
 
 	void on_verticalScrollBar_log_valueChanged(int value);
 
+	void on_horizontalScrollBar_log_valueChanged(int value);
+
 private:
 	Ui::MainWindow *ui;
 

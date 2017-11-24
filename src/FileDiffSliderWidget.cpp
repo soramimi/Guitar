@@ -12,7 +12,7 @@ struct FileDiffSliderWidget::Private {
 	bool visible = false;
 	int scroll_total = 0;
 	int scroll_value = 0;
-	int scroll_visible_size = 0;
+	int scroll_page_size = 0;
 	QPixmap left_pixmap;
 	QPixmap right_pixmap;
 	int wheel_delta = 0;
@@ -78,7 +78,7 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 	}
 
 	int y = m->scroll_value * height() / m->scroll_total;
-	int h = m->scroll_visible_size * height() / m->scroll_total;
+	int h = m->scroll_page_size * height() / m->scroll_total;
 	if (h < 2) h = 2;
 	pr.fillRect(w + 1, y, 2, h, Qt::black);
 
@@ -95,8 +95,9 @@ void FileDiffSliderWidget::resizeEvent(QResizeEvent *)
 
 void FileDiffSliderWidget::setValue(int v)
 {
-	if (v > m->scroll_total) {
-		v = m->scroll_total;
+	int max = m->scroll_total - m->scroll_page_size / 2;
+	if (v > max) {
+		v = max;
 	}
 	if (v < 0) {
 		v = 0;
@@ -109,7 +110,7 @@ void FileDiffSliderWidget::setValue(int v)
 void FileDiffSliderWidget::scroll_(int pos)
 {
 	int v = pos;
-	v = v * m->scroll_total / height() - m->scroll_visible_size / 2;
+	v = v * m->scroll_total / height() - m->scroll_page_size / 2;
 	setValue(v);
 }
 
@@ -156,7 +157,7 @@ void FileDiffSliderWidget::setScrollPos(int total, int value, int size)
 {
 	m->scroll_total = total;
 	m->scroll_value = value;
-	m->scroll_visible_size = size;
-	m->visible = (m->scroll_total > 0) && (m->scroll_visible_size > 0);
+	m->scroll_page_size = size;
+	m->visible = (m->scroll_total > 0) && (m->scroll_page_size > 0);
 	update();
 }

@@ -44,6 +44,9 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	setWindowFlags(flags);
 
 	ui->widget_diff_pixmap->bind(this);
+	connect(ui->widget_diff_pixmap, SIGNAL(valueChanged(int)), this, SLOT(scrollTo(int)));
+	connect(ui->widget_diff_left, SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
+	connect(ui->widget_diff_right, SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
 
 	setFocusAcceptable(true);
 
@@ -70,6 +73,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	ui->widget_diff_right->showFooter(false);
 	ui->widget_diff_left->setAutoLayout(true);
 	ui->widget_diff_right->setAutoLayout(true);
+	ui->widget_diff_left->setReadOnly(true);
+	ui->widget_diff_right->setReadOnly(true);
 
 	ui->widget_diff_left->bindScrollBar(ui->verticalScrollBar, ui->horizontalScrollBar);
 	ui->widget_diff_right->bindScrollBar(ui->verticalScrollBar, ui->horizontalScrollBar);
@@ -245,6 +250,7 @@ void FileDiffWidget::updateSliderCursor()
 //		int value = fileviewScrollPos();
 //		int size = visibleLines();
 //		ui->widget_diff_pixmap->setScrollPos(total, value, size);
+		ui->widget_diff_pixmap->clear(true);
 	}
 }
 
@@ -420,8 +426,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string>
 	ui->widget_diff_right->setDocument(&m->right_lines);
 	ui->widget_diff_left->scrollToTop();
 	ui->widget_diff_right->scrollToTop();
-	ui->widget_diff_pixmap->updatePixmap();
-	ui->widget_diff_pixmap->update();
+	refrectScrollBar();
+	ui->widget_diff_pixmap->clear(true);
 }
 
 FilePreviewType FileDiffWidget::setupPreviewWidget()
@@ -604,6 +610,13 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 	m->init_param_.uncommited = uncommited;
 	m->init_param_.workingdir = workingdir;
 
+	m->original_lines.clear();
+	if (!ba.isEmpty()) {
+		char const *begin = ba.data();
+		char const *end = begin + ba.size();
+		misc::splitLines(begin, end, &m->original_lines);
+	}
+
 	if (setupPreviewWidget() == FilePreviewType::Text) {
 
 		if (uncommited) {
@@ -755,6 +768,20 @@ bool FileDiffWidget::eventFilter(QObject *watched, QEvent *event)
 	}
 #endif
 	return false;
+}
+
+void FileDiffWidget::resizeEvent(QResizeEvent *event)
+{
+	refrectScrollBar();
+}
+
+void FileDiffWidget::keyPressEvent(QKeyEvent *event)
+{
+	if (focusWidget() == ui->widget_diff_left) {
+		ui->widget_diff_left->write(event);
+	} else if (focusWidget() == ui->widget_diff_right) {
+		ui->widget_diff_right->write(event);
+	}
 }
 
 void FileDiffWidget::scrollTo(int value)
@@ -979,5 +1006,20 @@ QPixmap FileDiffWidget::makeDiffPixmap(Pane pane, int width, int height)
 	if (pane == Pane::Left)  return MakePixmap(m->left_lines, width, height);
 	if (pane == Pane::Right) return MakePixmap(m->right_lines, width, height);
 	return QPixmap();
+}
+
+void FileDiffWidget::onUpdateScrollBar()
+{
+	int page = ui->widget_diff_left->height();
+	page /= ui->widget_diff_left->lineHeight();
+	ui->widget_diff_pixmap->setScrollPos(ui->verticalScrollBar->maximum(), ui->verticalScrollBar->value(), page);
+}
+
+void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
+{
+	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
+	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
+	refrectScrollBar();
+	onUpdateScrollBar();
 }
 

@@ -4111,16 +4111,21 @@ void MainWindow::on_radioButton_remote_offline_clicked()
 	setRemoteOnline(false);
 }
 
+void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
+
+
+
+{
+	ui->widget_log->refrectScrollBar();
+}
+
+void MainWindow::on_horizontalScrollBar_log_valueChanged(int value)
+{
+	ui->widget_log->refrectScrollBar();
+
+}
 
 
 void MainWindow::on_action_test_triggered()
 {
 }
-
-
-
-void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
-{
-	ui->widget_log->refrectScrollBar();
-}
-
