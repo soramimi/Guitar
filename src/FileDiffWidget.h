@@ -162,6 +162,7 @@ private:
 	bool isTerminalMode() const;
 	void refrectScrollBar();
 	void onUpdateScrollBar();
+	void setOriginalLines_(const QByteArray &ba);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();

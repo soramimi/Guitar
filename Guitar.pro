@@ -163,7 +163,8 @@ SOURCES += \
     ../ore/src/editorcore/TextEditorTheme.cpp \
     ../ore/src/editorcore/TextEditorWidget.cpp \
     ../ore/src/editorcore/unicode.cpp \
-    ../ore/src/editorcore/UnicodeWidth.cpp
+    ../ore/src/editorcore/UnicodeWidth.cpp \
+    src/FileViewWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -249,7 +250,8 @@ HEADERS  += \
     ../ore/src/editorcore/TextEditorTheme.h \
     ../ore/src/editorcore/TextEditorWidget.h \
     ../ore/src/editorcore/unicode.h \
-    ../ore/src/editorcore/UnicodeWidth.h
+    ../ore/src/editorcore/UnicodeWidth.h \
+    src/FileViewWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -283,7 +285,8 @@ FORMS    += \
     src/CreateRepositoryDialog.ui \
     src/ExperimentDialog.ui \
     src/SettingNetworkForm.ui \
-    src/SettingBehaviorForm.ui
+    src/SettingBehaviorForm.ui \
+    src/FileViewWidget.ui
 
 RESOURCES += \
     resources.qrc

@@ -49,7 +49,7 @@
         <number>0</number>
        </property>
        <item row="0" column="0">
-        <widget class="FileDiffSliderWidget" name="widget_diff_pixmap" native="true">
+        <widget class="FileDiffSliderWidget" name="widget_diff_slider" native="true">
          <property name="minimumSize">
           <size>
            <width>20</width>
@@ -68,14 +68,14 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="TextEditorWidget" name="widget_diff_left" native="true">
+        <widget class="FileViewWidget" name="widget_diff_left" native="true">
          <property name="focusPolicy">
           <enum>Qt::StrongFocus</enum>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="TextEditorWidget" name="widget_diff_right" native="true">
+        <widget class="FileViewWidget" name="widget_diff_right" native="true">
          <property name="focusPolicy">
           <enum>Qt::StrongFocus</enum>
          </property>
@@ -135,12 +135,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TextEditorWidget</class>
-   <extends>QWidget</extends>
-   <header>TextEditorWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>FileDiffSliderWidget</class>
    <extends>QWidget</extends>
    <header>FileDiffSliderWidget.h</header>
@@ -150,6 +144,12 @@
    <class>MaximizeButton</class>
    <extends>QToolButton</extends>
    <header>MaximizeButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FileViewWidget</class>
+   <extends>QWidget</extends>
+   <header>FileViewWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
