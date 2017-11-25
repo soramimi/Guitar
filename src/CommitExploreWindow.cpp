@@ -1,7 +1,7 @@
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
-#include "FilePreviewWidget.h"
+#include "ImageViewWidget.h"
 #include "common/misc.h"
 #include "MainWindow.h"
 #include "main.h"

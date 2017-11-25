@@ -7,7 +7,7 @@
 #include <QPixmap>
 
 #include "FileDiffWidget.h"
-//#include "FilePreviewWidget.h"
+//#include "ImageViewWidget.h"
 
 
 class FileDiffSliderWidget : public QWidget

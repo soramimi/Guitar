@@ -7,11 +7,17 @@
 
 class QScrollBar;
 struct PreEditText;
+class MainWindow;
 
 namespace Ui {
 class FileViewWidget;
 }
 
+enum class FileViewType {
+	None,
+	Text,
+	Image,
+};
 
 class FileViewWidget : public QWidget
 {
@@ -21,6 +27,9 @@ public:
 	explicit FileViewWidget(QWidget *parent = 0);
 	~FileViewWidget();
 
+	void setViewType(FileViewType type);
+
+	void setImage(QString mimetype, const QByteArray &ba);
 
 	void setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
@@ -38,6 +47,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorWidget *texteditor();
+	void bind(MainWindow *mw);
 private:
 	Ui::FileViewWidget *ui;
 };

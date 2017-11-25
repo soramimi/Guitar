@@ -112,7 +112,7 @@ SOURCES += \
     src/LegacyWindowsStyleTreeControl.cpp \
     src/RepositoriesTreeWidget.cpp \
     src/SelectCommandDialog.cpp \
-    src/FilePreviewWidget.cpp \
+    src/ImageViewWidget.cpp \
     src/FileHistoryWindow.cpp \
     src/GitPackIdxV2.cpp \
     src/GitPack.cpp \
@@ -197,7 +197,7 @@ HEADERS  += \
     src/LegacyWindowsStyleTreeControl.h \
     src/RepositoriesTreeWidget.h \
     src/SelectCommandDialog.h \
-    src/FilePreviewWidget.h \
+    src/ImageViewWidget.h \
     src/FileHistoryWindow.h \
     src/Debug.h \
     src/GitPackIdxV2.h \

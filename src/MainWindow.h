@@ -41,7 +41,7 @@ public:
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
-	friend class FilePreviewWidget;
+	friend class ImageViewWidget;
 	friend class FileDiffSliderWidget;
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;

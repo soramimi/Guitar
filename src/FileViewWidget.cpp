@@ -5,6 +5,7 @@
 
 #include "common/misc.h"
 
+
 FileViewWidget::FileViewWidget(QWidget *parent) :
 	QWidget(parent),
 	ui(new Ui::FileViewWidget)
@@ -17,7 +18,30 @@ FileViewWidget::~FileViewWidget()
 	delete ui;
 }
 
+void FileViewWidget::bind(MainWindow *mw)
+{
+	ui->page_image->bind(mw);
+}
 
+void FileViewWidget::setViewType(FileViewType type)
+{
+	switch (type) {
+	case FileViewType::Text:
+		ui->stackedWidget->setCurrentWidget(ui->page_text);
+		return;
+	case FileViewType::Image:
+		ui->stackedWidget->setCurrentWidget(ui->page_image);
+		return;
+	default:
+		ui->stackedWidget->setCurrentWidget(ui->page_none);
+		return;
+	}
+}
+
+void FileViewWidget::setImage(QString mimetype, const QByteArray &ba)
+{
+	ui->page_image->setImage(mimetype, ba);
+}
 
 const TextEditorTheme *FileViewWidget::theme() const
 {

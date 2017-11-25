@@ -1,5 +1,5 @@
-#ifndef FILEPREVIEWWIDGET_H
-#define FILEPREVIEWWIDGET_H
+#ifndef IMAGEVIEWWIDGET_H
+#define IMAGEVIEWWIDGET_H
 
 #include <QScrollBar>
 #include <QWidget>
@@ -9,7 +9,7 @@
 
 class FileDiffSliderWidget;
 
-class FilePreviewWidget : public QWidget
+class ImageViewWidget : public QWidget
 {
 	Q_OBJECT
 public:
@@ -17,9 +17,9 @@ private:
 	struct Private;
 	Private *m;
 
-	FileDiffWidget::DrawData *drawdata();
-	const FileDiffWidget::DrawData *drawdata() const;
-	void paintText();
+//	FileDiffWidget::DrawData *drawdata();
+//	const FileDiffWidget::DrawData *drawdata() const;
+//	void paintText();
 	void paintImage();
 	bool isValidImage() const;
 	QSize imageSize() const;
@@ -29,28 +29,27 @@ private:
 	void setImageScale(double scale);
 	const TextDiffLineList *getLines() const;
 	ObjectContentPtr getContent() const;
-	void updateDrawData(QPainter *painter, int *descent = nullptr);
-	void updateDrawData();
-	void paintBinary();
+//	void paintBinary();
 	QBrush getTransparentBackgroundBrush();
+	bool hasFocus() const;
 public:
-	explicit FilePreviewWidget(QWidget *parent);
-	~FilePreviewWidget();
+	explicit ImageViewWidget(QWidget *parent = 0);
+	~ImageViewWidget();
 
-	void bind(MainWindow *m, ObjectContentPtr content, FileDiffWidget::DrawData *drawdata);
+	void bind(MainWindow *m);
 
 	void clear();
 
 	void setFileType(QString const &mimetype);
 	void setImage(QString mimetype, const QByteArray &ba);
 
-	FilePreviewType filetype() const;
+	FileViewType filetype() const;
 
 	void setLeftBorderVisible(bool f);
-	void setBinaryMode(bool f);
-	void setTerminalMode(bool f);
-	bool isBinaryMode() const;
-	bool isTerminalMode() const;
+//	void setBinaryMode(bool f);
+//	void setTerminalMode(bool f);
+//	bool isBinaryMode() const;
+//	bool isTerminalMode() const;
 
 	static QString formatText(const Document::Line &line2);
 protected:
@@ -69,4 +68,4 @@ protected:
 	void mouseMoveEvent(QMouseEvent *event);
 };
 
-#endif // FILEPREVIEWWIDGET_H
+#endif // IMAGEVIEWWIDGET_H

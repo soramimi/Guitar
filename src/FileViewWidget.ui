@@ -31,13 +31,23 @@
    </property>
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="page_none"/>
      <widget class="TextEditorWidget" name="page_text"/>
-     <widget class="QWidget" name="page_2"/>
+     <widget class="ImageViewWidget" name="page_image"/>
     </widget>
    </item>
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>ImageViewWidget</class>
+   <extends>QWidget</extends>
+   <header>ImageViewWidget.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>TextEditorWidget</class>
    <extends>QWidget</extends>

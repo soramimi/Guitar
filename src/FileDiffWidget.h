@@ -5,6 +5,7 @@
 #include <QDialog>
 #include "Git.h"
 #include "MainWindow.h"
+#include "FileViewWidget.h"
 
 namespace Ui {
 class FileDiffWidget;
@@ -14,12 +15,6 @@ enum class ViewType {
 	None,
 	Left,
 	Right
-};
-
-enum class FilePreviewType {
-	None,
-	Text,
-	Image,
 };
 
 //struct TextDiffLine {
@@ -154,7 +149,7 @@ private:
 
 	bool isValidID_(const QString &id);
 
-	FilePreviewType setupPreviewWidget();
+	FileViewType setupPreviewWidget();
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void setBinaryMode(bool f);
@@ -189,6 +184,7 @@ public:
 	void setTerminalMode();
 	void setFocusAcceptable(bool f);
 	QPixmap makeDiffPixmap(Pane pane, int width, int height);
+	void setViewType(FileViewType type);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);
