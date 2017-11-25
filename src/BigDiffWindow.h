@@ -12,7 +12,9 @@ class BigDiffWindow;
 class BigDiffWindow : public QDialog
 {
 	Q_OBJECT
-
+private:
+	struct Private;
+	Private *m;
 public:
 	explicit BigDiffWindow(QWidget *parent = 0);
 	~BigDiffWindow();

@@ -29,7 +29,7 @@ struct CommitExploreWindow::Private {
 	GitTreeItemList tree_item_list;
 	Git::Object content_object;
 	ObjectContent content;
-    FileDiffWidget::DrawData draw_data;
+	TextEditorEnginePtr text_editor_engine;
 };
 
 CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, const Git::CommitItem *commit)
@@ -48,12 +48,11 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 	m->objcache = objcache;
 	m->commit = commit;
 
-	ui->widget_fileview->bind(qobject_cast<MainWindow *>(parent));
-	ui->widget_fileview->setMaximizeButtonEnabled(false);
+	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
+	ui->widget_fileview->bind(parent, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar);
+	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	ui->splitter->setSizes({100, 100, 200});
-
-	ui->widget_fileview->setSingleFile(QByteArray(), QString(), QString());
 
 	// set text
 	ui->lineEdit_commit_id->setText(commit->commit_id);
@@ -93,17 +92,7 @@ CommitExploreWindow::~CommitExploreWindow()
 void CommitExploreWindow::clearContent()
 {
 	m->content = ObjectContent();
-	ui->widget_fileview->clearDiffView();
 }
-
-//static void removeChildren(QTreeWidgetItem *item)
-//{
-//	int i = item->childCount();
-//	while (i > 0) {
-//		i--;
-//		delete item->takeChild(i);
-//	}
-//}
 
 void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 {
@@ -224,8 +213,23 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		m->content_object = m->objcache->catFile(id);
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-		ui->widget_fileview->setSingleFile(m->content_object.content, id, path);
+		QString mimetype = m->mainwindow->determinFileType(m->content_object.content, true);
+		if (misc::isImage(mimetype)) {
+			ui->widget_fileview->setImage(mimetype, m->content_object.content, id, path);
+		} else {
+			ui->widget_fileview->setText(m->content_object.content, m->mainwindow, id, path);
+		}
 	} else {
 		clearContent();
 	}
+}
+
+void CommitExploreWindow::on_verticalScrollBar_valueChanged(int value)
+{
+	ui->widget_fileview->refrectScrollBar();
+}
+
+void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int value)
+{
+	ui->widget_fileview->refrectScrollBar();
 }

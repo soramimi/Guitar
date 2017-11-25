@@ -55,6 +55,7 @@ protected:
 	void mouseMoveEvent(QMouseEvent *event);
 	void wheelEvent(QWheelEvent *event);
 	void resizeEvent(QResizeEvent *event);
+	void contextMenuEvent(QContextMenuEvent *event);
 	QFont textFont();
 	void drawText(QPainter *painter, int px, int py, const QString &str);
 public:
@@ -86,13 +87,12 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor();
 	void setFocusFrameVisible(bool f);
-	void defaultCustomContextMenuRequested();
-	void setCustomContextMenuRequestedHandler(std::function<void ()> fn);
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
 private slots:
-	void onCustomContextMenuRequested(QPoint);
+//	void onCustomContextMenuRequested(QPoint);
+
 };
 
 

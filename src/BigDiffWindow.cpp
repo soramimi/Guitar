@@ -1,15 +1,25 @@
 #include "BigDiffWindow.h"
 #include "ui_BigDiffWindow.h"
 
-BigDiffWindow::BigDiffWindow(QWidget *parent) :
-	QDialog(parent),
-	ui(new Ui::BigDiffWindow)
+struct BigDiffWindow::Private {
+	TextEditorEnginePtr text_editor_engine;
+
+};
+
+
+
+BigDiffWindow::BigDiffWindow(QWidget *parent)
+	: QDialog(parent)
+	, ui(new Ui::BigDiffWindow)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
+
+	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
 
 	ui->widget_diff->setMaximizeButtonEnabled(false);
 
@@ -20,6 +30,7 @@ BigDiffWindow::BigDiffWindow(QWidget *parent) :
 
 BigDiffWindow::~BigDiffWindow()
 {
+	delete m;
 	delete ui;
 }
 

@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <QColor>
 
+class QContextMenuEvent;
+
 class misc {
 public:
 	static QString getApplicationDir();
@@ -37,6 +39,7 @@ public:
 	static QString determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback);
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);
+	static QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);
 };
 
 class OverrideWaitCursor_ {

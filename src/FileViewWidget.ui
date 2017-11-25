@@ -32,10 +32,10 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page_none"/>
-     <widget class="TextEditorWidget" name="page_text">
+     <widget class="MyTextEditorWidget" name="page_text">
       <property name="focusPolicy">
        <enum>Qt::StrongFocus</enum>
       </property>
@@ -51,15 +51,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TextEditorWidget</class>
-   <extends>QWidget</extends>
-   <header>TextEditorWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>ImageViewWidget</class>
    <extends>QWidget</extends>
    <header>ImageViewWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MyTextEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>MyTextEditorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

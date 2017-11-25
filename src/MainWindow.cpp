@@ -223,6 +223,15 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
+	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
+	ui->widget_log->setTheme(TextEditorTheme::Dark());
+	ui->widget_log->setAutoLayout(true);
+	ui->widget_log->setTerminalMode();
+	ui->widget_log->layoutEditor();
+	onLogVisibilityChanged();
+
+	writeLog(AboutDialog::appVersion() + '\n');
+
 	SettingsDialog::loadSettings(&m->appsettings);
 	setGitCommand(m->appsettings.git_command, false);
 	setFileCommand(m->appsettings.file_command, false);
@@ -236,13 +245,6 @@ MainWindow::MainWindow(QWidget *parent)
 		setRemoteOnline(f);
 	}
 
-//	ui->widget_log->init(this);
-	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
-	ui->widget_log->setTheme(TextEditorTheme::Dark());
-	ui->widget_log->setAutoLayout(true);
-	ui->widget_log->setTerminalMode();
-	ui->widget_log->layoutEditor();
-	onLogVisibilityChanged();
 
 	showFileList(FilesListType::SingleList);
 
@@ -270,8 +272,6 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 
-	writeLog(AboutDialog::appVersion() + '\n');
-//	logGitVersion();
 
 #if USE_LIBGIT2
 	LibGit2::init();
@@ -368,34 +368,6 @@ void MainWindow::startTimers()
 	m->interval_250ms_timer.start();
 
 }
-
-#if 0
-void MainWindow::onLocalServerConnected()
-{
-	QLocalSocket *local_sock = m->local_server.nextPendingConnection();
-	LocalSocketReader *p = new LocalSocketReader(local_sock);
-	m->local_socket_reader = std::shared_ptr<LocalSocketReader>(p);
-	connect(p, SIGNAL(readyRead(LocalSocketReader*)), this, SLOT(onLocalSocketReadyRead(LocalSocketReader*)));
-	connect(p, SIGNAL(readChannelFinished(LocalSocketReader*)), this, SLOT(onLocalSocketReadChannelFinished(LocalSocketReader*)));
-	connect(local_sock, SIGNAL(readyRead()), p, SLOT(onReadyRead()));
-	connect(local_sock, SIGNAL(readChannelFinished()), p, SLOT(onReadChannelFinished()));
-	p->onReadyRead();
-}
-
-void MainWindow::onLocalSocketReadyRead(LocalSocketReader *p)
-{
-	QByteArray ba = p->takeData();
-	if (!ba.isEmpty()) {
-		QString s = QString::fromLatin1(ba);
-		writeLog(s);
-	}
-}
-
-void MainWindow::onLocalSocketReadChannelFinished(LocalSocketReader *p)
-{
-	m->local_socket_reader.reset();
-}
-#endif
 
 void MainWindow::setCurrentLogRow(int row)
 {
@@ -553,19 +525,9 @@ void MainWindow::writeLog(char const *ptr, int len)
 
 void MainWindow::writeLog(const QString &str)
 {
-#if 0
-	ui->widget_log->termWrite(str);
-
-	ui->widget_log->updateControls();
-	ui->widget_log->scrollToBottom();
-	ui->widget_log->update();
-#else
 	std::string s = str.toStdString();
 	writeLog(s.c_str(), s.size());
-#endif
 }
-
-
 
 void MainWindow::writeLog(QByteArray ba)
 {
@@ -889,100 +851,6 @@ void MainWindow::clearRepositoryInfo()
 
 }
 
-//class DiffThread : public QThread {
-//private:
-//	struct Data {
-//		GitPtr g;
-//		GitObjectCache *objcache;
-//		QString id;
-//		bool uncommited;
-//		QList<Git::Diff> result;
-//	} d;
-//public:
-//	DiffThread(GitPtr g, GitObjectCache *objcache, QString const &id, bool uncommited)
-//	{
-//		d.g = g;
-//		d.objcache = objcache;
-//		d.id = id;
-//		d.uncommited = uncommited;
-//	}
-//	void run()
-//	{
-//		GitDiff dm(d.objcache);
-//		if (d.uncommited) {
-//			dm.diff_uncommited(&d.result);
-//		} else {
-//			dm.diff(d.id, &d.result);
-//		}
-//	}
-//	void interrupt()
-//	{
-//		requestInterruption();
-//	}
-//	QString id() const
-//	{
-//		return d.id;
-//	}
-//	void take(QList<Git::Diff> *out)
-//	{
-//		*out = std::move(d.result);
-//	}
-//};
-
-//void MainWindow::cleanupDiffThread()
-//{ // 全てのスレッドが終了するまで待つ
-//	if (m->diff.thread) {
-//		m->diff.thread->requestInterruption();
-//		m->diff.garbage.push_back(m->diff.thread);
-//		m->diff.thread.reset();
-//	}
-//	for (auto ptr : m->diff.garbage) {
-//		if (ptr) {
-//			ptr->wait();
-//		}
-//	}
-//	m->diff.garbage.clear();
-//}
-
-//void MainWindow::stopDiff()
-//{
-//	if (m->diff.thread) {
-//		m->diff.thread->requestInterruption(); // 停止要求
-//		m->diff.garbage.push_back(m->diff.thread); // ゴミリストに投入
-//		m->diff.thread.reset(); // ポインタをクリア
-//	}
-
-//	// 終了したスレッドをリストから除外する
-//	QList<std::shared_ptr<QThread>> garbage;
-//	for (auto ptr : m->diff.garbage) {
-//		if (ptr && ptr->isRunning()) {
-//			garbage.push_back(ptr); // 実行中
-//		}
-//	}
-//	m->diff.garbage = std::move(garbage); // リストを差し替える
-//}
-
-//bool MainWindow::isDiffThreadValid(QString const &id) const
-//{
-//	if (m->diff.thread) {
-//		DiffThread *th = dynamic_cast<DiffThread *>(m->diff.thread.get());
-//		Q_ASSERT(th);
-//		if (id == th->id() && !th->isInterruptionRequested()) { // IDが一致して中断されていない
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-
-//void MainWindow::startDiff(GitPtr g, QString id)
-//{
-
-//}
-
-//void MainWindow::startDiff2(GitPtr g, QString id)
-//{ // diffスレッドを開始する
-//}
-
 bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 {
 	GitPtr g = git();
@@ -1011,8 +879,6 @@ void MainWindow::updateFilesList(QString id, bool wait)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
-
-//	startDiff(g, id);
 
 	if (!wait) return;
 
@@ -1348,20 +1214,6 @@ public:
 	{
 	}
 };
-
-//bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
-//{
-//	ProgressDialog *dlg = (ProgressDialog *)cookie;
-//	if (dlg->canceledByUser()) {
-//		qDebug() << "canceled";
-//		return false;
-//	}
-
-//	QString text = QString::fromUtf8(ptr, len);
-//	emit dlg->writeLog(text);
-
-//	return true;
-//}
 
 struct TemporaryCommitItem {
 	Git::CommitItem const *commit;
@@ -2464,8 +2316,6 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
-//	stopDiff();
-
 	clearFileList();
 
 	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);

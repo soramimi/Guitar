@@ -13,7 +13,8 @@ FileViewWidget::FileViewWidget(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	setupContextMenu();
+	setContextMenuPolicy(Qt::DefaultContextMenu);
+//	setupContextMenu();
 }
 
 FileViewWidget::~FileViewWidget()
@@ -21,15 +22,18 @@ FileViewWidget::~FileViewWidget()
 	delete ui;
 }
 
+#if 0
 void FileViewWidget::setupContextMenu()
 {
 	ui->page_text->setCustomContextMenuRequestedHandler([&](){
 		QMenu menu;
-		QAction *a_saveas = menu.addAction("Save as...");
+		QAction *a_save_as = menu.addAction("Save as...");
 		QAction *a_copy = menu.addAction("Copy");
-		QAction *a = menu.exec(QCursor::pos() + QPoint(8, -4));
+		QAction *a = menu.exec(this, nullptr);
+//		QAction *a = menu.exec(this, misc::contextMenuPos());
 		if (a) {
-			if (a == a_saveas) {
+			if (a == a_save_as) {
+				qDebug() << source_id;
 				return;
 			}
 			if (a == a_copy) {
@@ -39,9 +43,11 @@ void FileViewWidget::setupContextMenu()
 		}
 	});
 }
-void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw)
+#endif
+
+void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb)
 {
-	ui->page_image->bind(mw, fdw);
+	ui->page_image->bind(mw, fdw, vsb, hsb);
 }
 
 void FileViewWidget::setViewType(FileViewType type)
@@ -57,12 +63,6 @@ void FileViewWidget::setViewType(FileViewType type)
 		ui->stackedWidget->setCurrentWidget(ui->page_none);
 		return;
 	}
-}
-
-void FileViewWidget::setImage(QString mimetype, const QByteArray &ba, const QString &source_id)
-{
-	this->source_id = source_id;
-	ui->page_image->setImage(mimetype, ba);
 }
 
 const TextEditorTheme *FileViewWidget::theme() const
@@ -90,7 +90,7 @@ void FileViewWidget::setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *
 	ui->page_text->setAutoLayout(true);
 	ui->page_text->setReadOnly(true);
 	ui->page_text->setToggleSelectionAnchorEnabled(false);
-	ui->page_text->  setFocusFrameVisible(true);
+	ui->page_text->setFocusFrameVisible(true);
 	return ui->page_text->bindScrollBar(vsb, hsb);
 }
 
@@ -104,10 +104,36 @@ void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 	return ui->page_text->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
 }
 
-void FileViewWidget::setText(const QList<Document::Line> *source, const QString &source_id)
+void FileViewWidget::setImage(QString mimetype, const QByteArray &ba, const QString &object_id, QString const &path)
 {
-	this->source_id = source_id;
-	ui->page_text->setDocument(source);
+	setViewType(FileViewType::Image);
+	this->source_id = object_id;
+	ui->page_image->setImage(mimetype, ba, object_id, path);
+}
+
+void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw, const QString &object_id, QString const &object_path)
+{
+	setViewType(FileViewType::Text);
+	this->source_id = object_id;
+	ui->page_text->setDocument(source, mw, object_id, object_path);
+	scrollToTop();
+}
+
+void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, const QString &object_id, QString const &object_path)
+{
+	std::vector<std::string> lines;
+	char const *begin = ba.data();
+	char const *end = begin + ba.size();
+	misc::splitLines(begin, end, &lines);
+	TextDiffLineList source;
+	source.reserve(lines.size());
+	int num = 0;
+	for (std::string const &line : lines) {
+		Document::Line t(line);
+		t.line_number = ++num;
+		source.push_back(t);
+	}
+	setText(&source, mw, object_id, object_path);
 }
 
 void FileViewWidget::scrollToTop()

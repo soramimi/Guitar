@@ -76,11 +76,11 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->ime_popup->setPreEditText(PreEditText());
 #endif
 
-	setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenuRequested(QPoint)));
-	setCustomContextMenuRequestedHandler([&](){
-		defaultCustomContextMenuRequested();
-	});
+	setContextMenuPolicy(Qt::DefaultContextMenu);
+//	connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenuRequested(QPoint)));
+//	setCustomContextMenuRequestedHandler([&](){
+//		defaultCustomContextMenuRequested();
+//	});
 
 	setRenderingMode(DecoratedMode);
 
@@ -92,10 +92,10 @@ TextEditorWidget::~TextEditorWidget()
 	delete m;
 }
 
-void TextEditorWidget::setCustomContextMenuRequestedHandler(std::function<void(void)> fn)
-{
-	m->custom_context_menu_requested = fn;
-}
+//void TextEditorWidget::setCustomContextMenuRequestedHandler(std::function<void(void)> fn)
+//{
+//	m->custom_context_menu_requested = fn;
+//}
 
 
 
@@ -649,14 +649,14 @@ void TextEditorWidget::setFocusFrameVisible(bool f)
 	m->is_focus_frame_visible = f;
 }
 
-void TextEditorWidget::onCustomContextMenuRequested(QPoint)
-{
-	if (m->custom_context_menu_requested) {
-		m->custom_context_menu_requested();
-	}
-}
+//void TextEditorWidget::onCustomContextMenuRequested(QPoint)
+//{
+//	if (m->custom_context_menu_requested) {
+//		m->custom_context_menu_requested();
+//	}
+//}
 
-void TextEditorWidget::defaultCustomContextMenuRequested()
+void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 {
 	QMenu menu;
 	QAction *a_cut = nullptr;
@@ -664,7 +664,7 @@ void TextEditorWidget::defaultCustomContextMenuRequested()
 	QAction *a_copy = menu.addAction("Copy");
 	QAction *a_paste = nullptr;
 	if (!isReadOnly()) a_paste = menu.addAction("Paste");
-	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -4));
+	QAction *a = menu.exec(misc::contextMenuPos(this, event));
 	if (a) {
 		if (a == a_cut) {
 			editCut();

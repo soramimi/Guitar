@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QProcess>
 #include <QWidget>
+#include <QContextMenuEvent>
 #include <vector>
 #include "common/joinpath.h"
 
@@ -493,3 +494,10 @@ QString misc::makeProxyServerURL(QString text)
 	return text;
 }
 
+QPoint misc::contextMenuPos(QWidget *w, QContextMenuEvent *e)
+{
+	if (e && e->reason() == QContextMenuEvent::Mouse) {
+		return QCursor::pos() + QPoint(8, -8);
+	}
+	return w->mapToGlobal(QPoint(4, 4));
+}

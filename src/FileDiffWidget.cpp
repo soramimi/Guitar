@@ -90,8 +90,8 @@ void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
 	m->mainwindow = mw;
-	ui->widget_diff_left->bind(mw, this);
-	ui->widget_diff_right->bind(mw, this);
+	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar);
+	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
@@ -296,11 +296,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string>
 	SetLineNumber(left, Pane::Left, &m->left_lines);
 	SetLineNumber(right, Pane::Right, &m->right_lines);
 
-	setViewType(FileViewType::Text);
-	ui->widget_diff_left->setText(&m->left_lines, diff.blob.a_id);
-	ui->widget_diff_right->setText(&m->right_lines, diff.blob.b_id);
-	ui->widget_diff_left->scrollToTop();
-	ui->widget_diff_right->scrollToTop();
+	ui->widget_diff_left->setText(&m->left_lines, m->mainwindow, diff.blob.a_id, diff.path);
+	ui->widget_diff_right->setText(&m->right_lines, m->mainwindow, diff.blob.b_id, diff.path);
 	refrectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
@@ -318,9 +315,8 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 		ui->horizontalScrollBar->setVisible(false);
 		ui->widget_diff_slider->setVisible(false);
 
-		setViewType(FileViewType::Image);
-		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, m->init_param_.diff.blob.a_id);
-		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, m->init_param_.diff.blob.b_id);
+		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, m->init_param_.diff.blob.a_id, m->init_param_.diff.path);
+		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, m->init_param_.diff.blob.b_id, m->init_param_.diff.path);
 
 		return FileViewType::Image;
 
