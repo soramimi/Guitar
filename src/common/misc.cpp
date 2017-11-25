@@ -80,7 +80,7 @@ QStringList misc::splitLines(const QString &text)
 	return list;
 }
 
-void misc::splitLines(char const *begin, char const *end, std::vector<std::string> *out)
+void misc::splitLines(char const *begin, char const *end, std::vector<std::string> *out, bool need_crlf)
 {
 	char const *ptr = begin;
 	char const *left = ptr;
@@ -90,8 +90,7 @@ void misc::splitLines(char const *begin, char const *end, std::vector<std::strin
 			c = *ptr;
 		}
 		if (c == '\n' || c == '\r' || c == 0) {
-			out->push_back(std::string(left, ptr - left));
-			if (c == 0) break;
+			char const *end = ptr;
 			if (c == '\n') {
 				ptr++;
 			} else if (c == '\r') {
@@ -100,6 +99,11 @@ void misc::splitLines(char const *begin, char const *end, std::vector<std::strin
 					ptr++;
 				}
 			}
+			if (need_crlf) {
+				end = ptr;
+			}
+			out->push_back(std::string(left, end - left));
+			if (c == 0) break;
 			left = ptr;
 		} else {
 			ptr++;
@@ -107,11 +111,11 @@ void misc::splitLines(char const *begin, char const *end, std::vector<std::strin
 	}
 }
 
-void misc::splitLines(std::string const &text, std::vector<std::string> *out)
+void misc::splitLines(std::string const &text, std::vector<std::string> *out, bool need_crlf)
 {
 	char const *begin = text.c_str();
 	char const *end = begin + text.size();
-	splitLines(begin, end, out);
+	splitLines(begin, end, out, need_crlf);
 }
 
 QStringList misc::splitWords(const QString &text)

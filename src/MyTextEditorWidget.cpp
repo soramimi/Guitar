@@ -33,6 +33,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 	QMenu menu;
 
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
+	QAction *a_copy = menu.addAction(tr("Copy"));
 	if (!menu.actions().isEmpty()) {
 		update();
 		QAction *a = menu.exec(misc::contextMenuPos(this, event));
@@ -44,6 +45,10 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 					mainwindow->saveAs(id, dstpath);
 				}
 				update();
+				return;
+			}
+			if (a == a_copy) {
+				editCopy();
 				return;
 			}
 		}

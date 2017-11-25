@@ -1272,11 +1272,9 @@ int AbstractCharacterBasedApplication::internalParseLine(std::vector<uint32_t> *
 		char const *src = m->parsed_line.data();
 		utf8 u8(src, len);
 		while (1) {
-			uint32_t c = u8.next();
 			int n = 0;
-			if (c == '\r' || c == '\n' || c == 0) {
-				if (c == 0) break;
-			}
+			uint32_t c = u8.next();
+			if (c == 0) break;
 			if (c == '\t') {
 				int z = nextTabStop(col);
 				n = z - col;

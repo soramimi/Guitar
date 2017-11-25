@@ -124,7 +124,7 @@ void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, const QString
 	std::vector<std::string> lines;
 	char const *begin = ba.data();
 	char const *end = begin + ba.size();
-	misc::splitLines(begin, end, &lines);
+	misc::splitLines(begin, end, &lines, true);
 	TextDiffLineList source;
 	source.reserve(lines.size());
 	int num = 0;

@@ -116,7 +116,7 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 	{
 		char const *begin = s.c_str();
 		char const *end = begin + s.size();
-		misc::splitLines(begin, end, &lines);
+		misc::splitLines(begin, end, &lines, false);
 	}
 
 

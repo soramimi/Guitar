@@ -357,7 +357,7 @@ void FileDiffWidget::setOriginalLines_(QByteArray const &ba)
 	if (!ba.isEmpty()) {
 		char const *begin = ba.data();
 		char const *end = begin + ba.size();
-		misc::splitLines(begin, end, &m->original_lines);
+		misc::splitLines(begin, end, &m->original_lines, true);
 	}
 }
 

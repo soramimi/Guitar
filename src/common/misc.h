@@ -16,8 +16,8 @@ public:
 	static QString getApplicationDir();
 	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> tos);
 	static QStringList splitLines(QString const &text);
-	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out);
-	static void splitLines(const std::string &text, std::vector<std::string> *out);
+	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out, bool keep_crlf);
+	static void splitLines(const std::string &text, std::vector<std::string> *out, bool need_crlf);
 	static QStringList splitWords(const QString &text);
 	static QString getFileName(const QString &path);
 	static QString makeDateTimeString(const QDateTime &dt);
