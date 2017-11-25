@@ -21,6 +21,7 @@ typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
 
 struct ImageViewWidget::Private {
 	MainWindow *mainwindow = nullptr;
+	FileDiffWidget *filediffwidget = nullptr;
 	QPixmap transparent_pixmap;
 	ObjectContentPtr content;
 	FileDiffWidget::DrawData *draw_data = nullptr;
@@ -89,19 +90,16 @@ ImageViewWidget::~ImageViewWidget()
 	delete m;
 }
 
-void ImageViewWidget::bind(MainWindow *mainwindow)
+void ImageViewWidget::bind(MainWindow *mainwindow, FileDiffWidget *filediffwidget)
 {
 	m->mainwindow = mainwindow;
-//	m->content = content;
-//	m->draw_data = drawdata;
-
-//	updateDrawData();
+	m->filediffwidget = filediffwidget;
 }
 
 bool ImageViewWidget::hasFocus() const
 {
 	QWidget *w = qApp->focusWidget();
-	return w && w->isAncestorOf(this);
+	return w && w != m->filediffwidget && w->isAncestorOf(this);
 }
 
 void ImageViewWidget::setLeftBorderVisible(bool f)

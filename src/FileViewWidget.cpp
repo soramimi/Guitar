@@ -39,9 +39,9 @@ void FileViewWidget::setupContextMenu()
 		}
 	});
 }
-void FileViewWidget::bind(MainWindow *mw)
+void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw)
 {
-	ui->page_image->bind(mw);
+	ui->page_image->bind(mw, fdw);
 }
 
 void FileViewWidget::setViewType(FileViewType type)

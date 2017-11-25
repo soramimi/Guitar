@@ -36,7 +36,7 @@ public:
 	explicit ImageViewWidget(QWidget *parent = 0);
 	~ImageViewWidget();
 
-	void bind(MainWindow *m);
+	void bind(MainWindow *m, FileDiffWidget *filediffwidget);
 
 	void clear();
 

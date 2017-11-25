@@ -90,8 +90,8 @@ void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
 	m->mainwindow = mw;
-	ui->widget_diff_left->bind(mw);
-	ui->widget_diff_right->bind(mw);
+	ui->widget_diff_left->bind(mw, this);
+	ui->widget_diff_right->bind(mw, this);
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
@@ -534,9 +534,14 @@ void FileDiffWidget::resizeEvent(QResizeEvent *event)
 
 void FileDiffWidget::keyPressEvent(QKeyEvent *event)
 {
-	if (focusWidget() == ui->widget_diff_left) {
+	if (event->key() == Qt::Key_Escape) {
+		emit escPressed();
+		return;
+	}
+
+	if (focusWidget() == ui->widget_diff_left->texteditor()) {
 		ui->widget_diff_left->write(event);
-	} else if (focusWidget() == ui->widget_diff_right) {
+	} else if (focusWidget() == ui->widget_diff_right->texteditor()) {
 		ui->widget_diff_right->write(event);
 	}
 }

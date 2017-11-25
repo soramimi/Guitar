@@ -1,7 +1,7 @@
 #ifndef FILEDIFFWIDGET_H
 #define FILEDIFFWIDGET_H
 
-#include <AbstractCharacterBasedApplication.h>
+#include "texteditor/AbstractCharacterBasedApplication.h"
 #include <QDialog>
 #include "Git.h"
 #include "MainWindow.h"
@@ -162,6 +162,7 @@ private slots:
 signals:
 	void moveNextItem();
 	void movePreviousItem();
+	void escPressed();
 };
 
 #endif // FILEDIFFWIDGET_H

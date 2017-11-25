@@ -3,11 +3,12 @@
 
 #include <QWidget>
 
-#include "TextEditorWidget.h"
+#include "texteditor/TextEditorWidget.h"
 
 class QScrollBar;
 struct PreEditText;
 class MainWindow;
+class FileDiffWidget;
 
 namespace Ui {
 class FileViewWidget;
@@ -45,7 +46,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorWidget *texteditor();
-	void bind(MainWindow *mw);
+	void bind(MainWindow *mw, FileDiffWidget *fdw);
 private:
 	Ui::FileViewWidget *ui;
 	void setupContextMenu();

@@ -12,6 +12,10 @@ BigDiffWindow::BigDiffWindow(QWidget *parent) :
 	setWindowFlags(flags);
 
 	ui->widget_diff->setMaximizeButtonEnabled(false);
+
+	connect(ui->widget_diff, &FileDiffWidget::escPressed, [&](){
+		close();
+	});
 }
 
 BigDiffWindow::~BigDiffWindow()
@@ -28,7 +32,7 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 		ui->widget_diff->setLeftOnly(param.bytes_a, param.diff);
 		break;
 	case FileDiffWidget::ViewStyle::RightOnly:
-		ui->widget_diff->setRightOnly(param.bytes_a, param.diff);
+		ui->widget_diff->setRightOnly(param.bytes_b, param.diff);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideText:
 		ui->widget_diff->setSideBySide(param.bytes_a, param.diff, param.uncommited, param.workingdir);
@@ -38,3 +42,7 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 		break;
 	}
 }
+
+
+
+
