@@ -7,8 +7,6 @@
 #include <QPixmap>
 
 #include "FileDiffWidget.h"
-//#include "ImageViewWidget.h"
-
 
 class FileDiffSliderWidget : public QWidget
 {
@@ -25,8 +23,6 @@ public:
 	explicit FileDiffSliderWidget(QWidget *parent = 0);
 	~FileDiffSliderWidget();
 
-//	void bind(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
-
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
 	void bind(FileDiffWidget *w);
@@ -40,7 +36,6 @@ protected:
 signals:
 	void valueChanged(int value);
 	void scrollByWheel(int lines);
-public slots:
 };
 
 #endif // FILEDIFFSLIDERWIDGET_H

@@ -46,10 +46,6 @@ public:
 	FileViewType filetype() const;
 
 	void setLeftBorderVisible(bool f);
-//	void setBinaryMode(bool f);
-//	void setTerminalMode(bool f);
-//	bool isBinaryMode() const;
-//	bool isTerminalMode() const;
 
 	static QString formatText(const Document::Line &line2);
 protected:

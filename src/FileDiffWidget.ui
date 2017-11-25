@@ -83,6 +83,15 @@
        </item>
        <item row="0" column="3">
         <widget class="QScrollBar" name="verticalScrollBar">
+         <property name="maximum">
+          <number>0</number>
+         </property>
+         <property name="singleStep">
+          <number>0</number>
+         </property>
+         <property name="pageStep">
+          <number>0</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -90,6 +99,15 @@
        </item>
        <item row="1" column="1" colspan="2">
         <widget class="QScrollBar" name="horizontalScrollBar">
+         <property name="maximum">
+          <number>0</number>
+         </property>
+         <property name="singleStep">
+          <number>0</number>
+         </property>
+         <property name="pageStep">
+          <number>0</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>

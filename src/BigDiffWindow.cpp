@@ -34,7 +34,7 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 		ui->widget_diff->setSideBySide(param.bytes_a, param.diff, param.uncommited, param.workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideImage:
-		ui->widget_diff->setSideBySide(param.bytes_a, param.bytes_b, param.workingdir);
+		ui->widget_diff->setSideBySide_(param.bytes_a, param.bytes_b, param.workingdir);
 		break;
 	}
 }

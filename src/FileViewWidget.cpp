@@ -1,6 +1,7 @@
 #include "FileViewWidget.h"
 #include "ui_FileViewWidget.h"
 
+#include <QMenu>
 #include <QPainter>
 
 #include "common/misc.h"
@@ -11,6 +12,8 @@ FileViewWidget::FileViewWidget(QWidget *parent) :
 	ui(new Ui::FileViewWidget)
 {
 	ui->setupUi(this);
+
+	setupContextMenu();
 }
 
 FileViewWidget::~FileViewWidget()
@@ -18,6 +21,24 @@ FileViewWidget::~FileViewWidget()
 	delete ui;
 }
 
+void FileViewWidget::setupContextMenu()
+{
+	ui->page_text->setCustomContextMenuRequestedHandler([&](){
+		QMenu menu;
+		QAction *a_saveas = menu.addAction("Save as...");
+		QAction *a_copy = menu.addAction("Copy");
+		QAction *a = menu.exec(QCursor::pos() + QPoint(8, -4));
+		if (a) {
+			if (a == a_saveas) {
+				return;
+			}
+			if (a == a_copy) {
+				ui->page_text->editCopy();
+				return;
+			}
+		}
+	});
+}
 void FileViewWidget::bind(MainWindow *mw)
 {
 	ui->page_image->bind(mw);
@@ -38,8 +59,9 @@ void FileViewWidget::setViewType(FileViewType type)
 	}
 }
 
-void FileViewWidget::setImage(QString mimetype, const QByteArray &ba)
+void FileViewWidget::setImage(QString mimetype, const QByteArray &ba, const QString &source_id)
 {
+	this->source_id = source_id;
 	ui->page_image->setImage(mimetype, ba);
 }
 
@@ -58,10 +80,6 @@ int FileViewWidget::lineHeight() const
 	return ui->page_text->lineHeight();
 }
 
-
-
-
-
 void FileViewWidget::setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *vsb, QScrollBar *hsb)
 {
 	ui->page_text->setRenderingMode(TextEditorWidget::DecoratedMode);
@@ -76,45 +94,19 @@ void FileViewWidget::setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *
 	return ui->page_text->bindScrollBar(vsb, hsb);
 }
 
-
-
-
-
-
-
 void FileViewWidget::refrectScrollBar()
 {
 	return ui->page_text->refrectScrollBar();
 }
-
-
 
 void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
 	return ui->page_text->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-//bool FileViewWidget::isReadOnly() const
-//{
-//	return ui->page_text->isReadOnly();
-//}
-
-
-
-void FileViewWidget::setDocument(const QList<Document::Line> *source)
+void FileViewWidget::setText(const QList<Document::Line> *source, const QString &source_id)
 {
+	this->source_id = source_id;
 	ui->page_text->setDocument(source);
 }
 
@@ -122,21 +114,6 @@ void FileViewWidget::scrollToTop()
 {
 	ui->page_text->scrollToTop();
 }
-
-//void FileViewWidget::write(int c)
-//{
-//	ui->page_text->write(c);
-//}
-
-//void FileViewWidget::write(const char *ptr, int len)
-//{
-//	ui->page_text->write(ptr, len);
-//}
-
-//void FileViewWidget::write(QString text)
-//{
-//	ui->page_text->write(text);
-//}
 
 void FileViewWidget::write(QKeyEvent *e)
 {
@@ -147,8 +124,4 @@ TextEditorWidget *FileViewWidget::texteditor()
 {
 	return ui->page_text;
 }
-
-
-
-
 

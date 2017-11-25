@@ -17,27 +17,6 @@ enum class ViewType {
 	Right
 };
 
-//struct TextDiffLine {
-//	enum Type {
-//		Unknown,
-//		Normal,
-//		Add,
-//		Del,
-//	} type = Unknown;
-//	int hunk_number = -1;
-//	int line_number = 0;
-//	QByteArray text;
-//	TextDiffLine(Type type = Unknown, size_t reserve_length = 0)
-//		: type(type)
-//	{
-//		text.reserve(reserve_length);
-//	}
-//	TextDiffLine(std::string const &text_, Type type)
-//		: type(type)
-//	{
-//		text.append(text_.c_str(), text_.size());
-//	}
-//};
 typedef Document::Line TextDiffLine;
 typedef QList<Document::Line> TextDiffLineList;
 
@@ -93,7 +72,6 @@ public:
 
 	enum ViewStyle {
 		None,
-		Terminal,
 		SingleFile,
 		LeftOnly,
 		RightOnly,
@@ -116,11 +94,6 @@ private:
 		QString workingdir;
 	};
 
-//	FileDiffWidget::DiffData *diffdata();
-//	FileDiffWidget::DiffData const *diffdata() const;
-//	FileDiffWidget::DrawData *drawdata();
-//	FileDiffWidget::DrawData const *drawdata() const;
-
 	ViewStyle viewstyle() const;
 
 	GitPtr git();
@@ -128,13 +101,7 @@ private:
 
 	int totalTextLines() const;
 
-//	int fileviewScrollPos() const;
-
-	int visibleLines() const;
-
 	void resetScrollBarValue();
-	void updateVerticalScrollBar();
-	void updateHorizontalScrollBar();
 	void updateSliderCursor();
 
 	int fileviewHeight() const;
@@ -145,7 +112,7 @@ private:
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setRightOnly(const QByteArray &ba, const Git::Diff &diff);
 	void setSideBySide(const QByteArray &ba, const Git::Diff &diff, bool uncommited, const QString &workingdir);
-	void setSideBySide(const QByteArray &ba_a, const QByteArray &ba_b, const QString &workingdir);
+	void setSideBySide_(const QByteArray &ba_a, const QByteArray &ba_b, const QString &workingdir);
 
 	bool isValidID_(const QString &id);
 
@@ -153,11 +120,12 @@ private:
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void setBinaryMode(bool f);
-	void bindContent_();
-	bool isTerminalMode() const;
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void setOriginalLines_(const QByteArray &ba);
+protected:
+	void resizeEvent(QResizeEvent *event);
+	void keyPressEvent(QKeyEvent *event);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
@@ -177,11 +145,6 @@ public:
 	QPixmap makeDiffPixmap(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
 
 	void setMaximizeButtonEnabled(bool f);
-	void setLeftBorderVisible(bool f);
-	void termWrite(ushort c);
-	void termWrite(const ushort *begin, const ushort *end);
-	void termWrite(const QString &text);
-	void setTerminalMode();
 	void setFocusAcceptable(bool f);
 	QPixmap makeDiffPixmap(Pane pane, int width, int height);
 	void setViewType(FileViewType type);
@@ -196,19 +159,9 @@ private slots:
 	void setBinaryMode();
 	void scrollTo(int value);
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
-protected:
-	bool eventFilter(QObject *watched, QEvent *event);
 signals:
 	void moveNextItem();
 	void movePreviousItem();
-
-	// QWidget interface
-protected:
-	void resizeEvent(QResizeEvent *event);
-
-	// QWidget interface
-protected:
-	void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // FILEDIFFWIDGET_H

@@ -255,7 +255,7 @@ private:
 	void updateWindowTitle(GitPtr g);
 	void logGitVersion();
 	static bool write_log_callback(void *cookie, const char *ptr, int len);
-	static bool log_callback(void *cookie, const char *ptr, int len);
+//	static bool log_callback(void *cookie, const char *ptr, int len);
 	static bool git_callback(void *cookie, const char *ptr, int len);
 //	bool isDiffThreadValid(const QString &id) const;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;

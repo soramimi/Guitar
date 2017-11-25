@@ -417,26 +417,6 @@ void ImageViewWidget::scrollImage(double x, double y)
 	update();
 }
 
-//void ImageViewWidget::setBinaryMode(bool f)
-//{
-//	m->binary_mode = f;
-//}
-
-//void ImageViewWidget::setTerminalMode(bool f)
-//{
-//	m->terminal_mode = f;
-//}
-
-//bool ImageViewWidget::isBinaryMode() const
-//{
-//	return m->binary_mode;
-//}
-
-//bool ImageViewWidget::isTerminalMode() const
-//{
-//	return m->terminal_mode;
-//}
-
 void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
 {
 	if (mimetype.isEmpty()) {

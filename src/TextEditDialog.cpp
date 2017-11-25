@@ -85,3 +85,4 @@ bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &titl
 
 	return ok;
 }
+

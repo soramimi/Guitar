@@ -20,8 +20,6 @@ struct FileDiffWidget::Private {
 	MainWindow *mainwindow = nullptr;
 	InitParam_ init_param_;
 	Git::CommitItemList commit_item_list;
-//	FileDiffWidget::DiffData diff_data;
-//	FileDiffWidget::DrawData draw_data;
 	std::vector<std::string> original_lines;
 	TextEditorEnginePtr engine_left;
 	TextEditorEnginePtr engine_right;
@@ -55,10 +53,6 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 
 	setMaximizeButtonEnabled(true);
 
-//	ui->widget_diff_left->installEventFilter(this);
-//	ui->widget_diff_right->installEventFilter(this);
-//	ui->widget_diff_slider->installEventFilter(this);
-
 	m->engine_left = TextEditorEnginePtr(new TextEditorEngine);
 	m->engine_right = TextEditorEnginePtr(new TextEditorEngine);
 	ui->widget_diff_left->setDiffMode(m->engine_left, ui->verticalScrollBar, ui->horizontalScrollBar);
@@ -79,48 +73,18 @@ void FileDiffWidget::setViewType(FileViewType type)
 	ui->widget_diff_right->setViewType(type);
 }
 
-void FileDiffWidget::setLeftBorderVisible(bool f)
-{
-//	ui->widget_diff_left->setLeftBorderVisible(f);
-}
-
 void FileDiffWidget::setMaximizeButtonEnabled(bool f)
 {
 	ui->toolButton_fullscreen->setVisible(f);
 	ui->toolButton_fullscreen->setEnabled(f);
 }
 
-//FileDiffWidget::DiffData *FileDiffWidget::diffdata()
-//{
-//	return &m->diff_data;
-//}
-
-//const FileDiffWidget::DiffData *FileDiffWidget::diffdata() const
-//{
-//	return &m->diff_data;
-//}
-
-//FileDiffWidget::DrawData *FileDiffWidget::drawdata()
-//{
-//	return &m->draw_data;
-//}
-
-//const FileDiffWidget::DrawData *FileDiffWidget::drawdata() const
-//{
-//	return &m->draw_data;
-//}
-
 FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 {
 	return m->init_param_.view_style;
 }
 
-void FileDiffWidget::bindContent_()
-{
-//	ui->widget_diff_slider->bind(m->mainwindow, this, diffdata(), drawdata());
-//	ui->widget_diff_left->bind(m->mainwindow, diffdata()->left, drawdata());
-//	ui->widget_diff_right->bind(m->mainwindow, diffdata()->right, drawdata());
-}
+
 
 void FileDiffWidget::bind(MainWindow *mw)
 {
@@ -128,19 +92,9 @@ void FileDiffWidget::bind(MainWindow *mw)
 	m->mainwindow = mw;
 	ui->widget_diff_left->bind(mw);
 	ui->widget_diff_right->bind(mw);
-	bindContent_();
-
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
-//	connect(ui->widget_diff_slider, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
-//	connect(ui->widget_diff_slider, SIGNAL(valueChanged(int)), this, SLOT(onScrollValueChanged2(int)));
-//	connect(ui->widget_diff_left, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
-//	connect(ui->widget_diff_left, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
-//	connect(ui->widget_diff_right, SIGNAL(scrollByWheel(int)), this, SLOT(onDiffWidgetWheelScroll(int)));
-//	connect(ui->widget_diff_right, SIGNAL(resized()), this, SLOT(onDiffWidgetResized()));
-//	connect(ui->widget_diff_left, SIGNAL(onBinaryMode()), this, SLOT(setBinaryMode()));
-//	connect(ui->widget_diff_right, SIGNAL(onBinaryMode()), this, SLOT(setBinaryMode()));
 }
 
 GitPtr FileDiffWidget::git()
@@ -155,32 +109,12 @@ Git::Object FileDiffWidget::cat_file(GitPtr /*g*/, QString const &id)
 
 int FileDiffWidget::totalTextLines() const
 {
-//	return diffdata()->left->lines.size();
 	return m->engine_left->document.lines.size();
-}
-
-//int FileDiffWidget::fileviewScrollPos() const
-//{
-////	return drawdata()->v_scroll_pos;
-//}
-
-int FileDiffWidget::visibleLines() const
-{
-	int n = 0;
-//	if (drawdata()->line_height > 0) {
-//		n = fileviewHeight() / drawdata()->line_height;
-//		if (n < 1) n = 1;
-//	}
-	return n;
 }
 
 void FileDiffWidget::clearDiffView()
 {
-//	diffdata()->clear();
 	ui->widget_diff_slider->clear(false);
-//	ui->widget_diff_left->clear();
-//	ui->widget_diff_right->clear();
-	bindContent_();
 }
 
 int FileDiffWidget::fileviewHeight() const
@@ -194,43 +128,6 @@ void FileDiffWidget::resetScrollBarValue()
 	ui->horizontalScrollBar->setValue(0);
 }
 
-void FileDiffWidget::updateVerticalScrollBar()
-{
-//	QScrollBar *sb = ui->verticalScrollBar;
-//	if (drawdata()->line_height > 0) {
-//		int lines_per_widget = fileviewHeight() / drawdata()->line_height;
-//		if (lines_per_widget < diffdata()->left->lines.size() + 1) {
-//			sb->setRange(0, diffdata()->left->lines.size() - lines_per_widget + 1);
-//			sb->setPageStep(lines_per_widget);
-//			return;
-//		}
-//	}
-//	sb->setRange(0, 0);
-//	sb->setPageStep(0);
-}
-
-void FileDiffWidget::updateHorizontalScrollBar()
-{
-//	int headerchars = 0;
-//	if (viewstyle() == Terminal) {
-//		headerchars = 0;
-//	} else if (viewstyle() == SideBySideText) {
-//		headerchars = 10;
-//	} else {
-//		headerchars = 5;
-//	}
-
-//	QScrollBar *sb = ui->horizontalScrollBar;
-//	if (drawdata()->char_width) {
-//		int chars = ui->widget_diff_left->width() / drawdata()->char_width;
-//		sb->setRange(0, m->max_line_length + headerchars - chars);
-//		sb->setPageStep(chars);
-//		return;
-//	}
-//	sb->setRange(0, 0);
-//	sb->setPageStep(0);
-}
-
 void FileDiffWidget::scrollToBottom()
 {
 	QScrollBar *sb = ui->verticalScrollBar;
@@ -240,22 +137,14 @@ void FileDiffWidget::scrollToBottom()
 void FileDiffWidget::updateSliderCursor()
 {
 	if (viewstyle() == SideBySideText) {
-//		int total = totalTextLines();
-//		int value = fileviewScrollPos();
-//		int size = visibleLines();
-//		ui->widget_diff_slider->setScrollPos(total, value, size);
 		ui->widget_diff_slider->clear(true);
 	}
 }
 
 void FileDiffWidget::updateControls()
 {
-	updateVerticalScrollBar();
-	updateHorizontalScrollBar();
 	updateSliderCursor();
 }
-
-
 
 void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<std::string> const &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines)
 {
@@ -370,17 +259,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 
 void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string> const &original_lines, TextDiffLineList const &left, TextDiffLineList const &right)
 {
-//	QPixmap pm(1, 1);
-//	QPainter pr(&pm);
-//	pr.setFont(ui->widget_diff_left->font());
-//	QFontMetrics fm = pr.fontMetrics();
-
 	m->max_line_length = 0;
-
-//	parseDiff(s, &diff, &diff);
-//	TextDiffLineList left_lines;
-//	TextDiffLineList right_lines;
-//	makeSideBySideDiffData(diff, original_lines, &left_lines, &right_lines);
 
 	enum Pane {
 		Left,
@@ -418,8 +297,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string>
 	SetLineNumber(right, Pane::Right, &m->right_lines);
 
 	setViewType(FileViewType::Text);
-	ui->widget_diff_left->setDocument(&m->left_lines);
-	ui->widget_diff_right->setDocument(&m->right_lines);
+	ui->widget_diff_left->setText(&m->left_lines, diff.blob.a_id);
+	ui->widget_diff_right->setText(&m->right_lines, diff.blob.b_id);
 	ui->widget_diff_left->scrollToTop();
 	ui->widget_diff_right->scrollToTop();
 	refrectScrollBar();
@@ -440,8 +319,8 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 		ui->widget_diff_slider->setVisible(false);
 
 		setViewType(FileViewType::Image);
-		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a);
-		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b);
+		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, m->init_param_.diff.blob.a_id);
+		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, m->init_param_.diff.blob.b_id);
 
 		return FileViewType::Image;
 
@@ -554,7 +433,7 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 	}
 }
 
-void FileDiffWidget::setSideBySide(QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
+void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImage;
@@ -595,8 +474,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		QString mime_a = m->mainwindow->determinFileType(obj_a.content, true);
 		QString mime_b = m->mainwindow->determinFileType(obj_b.content, true);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide(obj_a.content, obj_b.content, g->workingRepositoryDir());
-			goto L1;
+			setSideBySide_(obj_a.content, obj_b.content, g->workingRepositoryDir());
+			return;
 		}
 	}
 
@@ -622,13 +501,6 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 			setRightOnly(obj.content, diff);
 		}
 	}
-L1:;
-	ui->widget_diff_slider->clear(false);
-
-	resetScrollBarValue();
-	updateControls();
-
-	ui->widget_diff_slider->update();
 }
 
 void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
@@ -655,44 +527,6 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	ui->widget_diff_slider->update();
 }
 
-bool FileDiffWidget::eventFilter(QObject *watched, QEvent *event)
-{
-#if 0
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
-		Q_ASSERT(e);
-		int k = e->key();
-		if (watched == ui->widget_diff_left || watched == ui->widget_diff_right || watched == ui->widget_diff_slider) {
-			if (e->modifiers() & Qt::AltModifier) {
-				switch (k) {
-				case Qt::Key_Up:
-					emit movePreviousItem();
-					return true;
-				case Qt::Key_Down:
-					emit moveNextItem();
-					return true;
-				}
-			} else {
-				QScrollBar::SliderAction act = QScrollBar::SliderNoAction;
-				switch (k) {
-				case Qt::Key_Up:       act = QScrollBar::SliderSingleStepSub; break;
-				case Qt::Key_Down:     act = QScrollBar::SliderSingleStepAdd; break;
-				case Qt::Key_PageUp:   act = QScrollBar::SliderPageStepSub;   break;
-				case Qt::Key_PageDown: act = QScrollBar::SliderPageStepAdd;   break;
-				case Qt::Key_Home:     act = QScrollBar::SliderToMinimum;     break;
-				case Qt::Key_End:      act = QScrollBar::SliderToMaximum;     break;
-				}
-				if (act != QScrollBar::SliderNoAction) {
-					ui->verticalScrollBar->triggerAction(act);
-					return true;
-				}
-			}
-		}
-	}
-#endif
-	return false;
-}
-
 void FileDiffWidget::resizeEvent(QResizeEvent *event)
 {
 	refrectScrollBar();
@@ -709,24 +543,16 @@ void FileDiffWidget::keyPressEvent(QKeyEvent *event)
 
 void FileDiffWidget::scrollTo(int value)
 {
-//	drawdata()->v_scroll_pos = value;
-//	ui->widget_diff_left->update();
-//	ui->widget_diff_right->update();
 	ui->verticalScrollBar->setValue(value);
 }
 
 void FileDiffWidget::onVerticalScrollValueChanged(int value)
 {
-//	scrollTo(value);
-//	updateSliderCursor();
 	refrectScrollBar();
 }
 
 void FileDiffWidget::onHorizontalScrollValueChanged(int value)
 {
-//	m->draw_data.h_scroll_pos = value;
-//	ui->widget_diff_left->update();
-//	ui->widget_diff_right->update();
 	refrectScrollBar();
 }
 
@@ -805,66 +631,6 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 	win.setWindowState(Qt::WindowMaximized);
 	win.init(m->mainwindow, m->init_param_);
 	win.exec();
-}
-
-void FileDiffWidget::setTerminalMode()
-{
-	setSingleFile(QByteArray(), QString(), QString());
-	m->init_param_.view_style = ViewStyle::Terminal;
-//	ui->widget_diff_left->setTerminalMode();
-	ui->horizontalScrollBar->setVisible(false);
-}
-
-bool FileDiffWidget::isTerminalMode() const
-{
-	return m->init_param_.view_style == ViewStyle::Terminal;
-}
-
-void FileDiffWidget::termWrite(ushort c)
-{
-#if 0
-	if (!isTerminalMode()) return;
-
-	if (c == '\r') {
-		m->term_cursor_col = 0;
-		return;
-	}
-	if (c == '\n') {
-		m->term_cursor_col = 0;
-		m->term_cursor_row++;
-		return;
-	}
-
-	TextDiffLineList *lines = &m->diff_data.left->lines;
-
-	while (lines->size() <= m->term_cursor_row) {
-		lines->push_back(TextDiffLine(TextDiffLine::Normal, 100));
-	}
-
-	TextDiffLine *line = &(*lines)[m->term_cursor_row];
-	while ((int)line->text.size() <= m->term_cursor_col) {
-		line->text.push_back(' ');
-	}
-
-	line->text[m->term_cursor_col] = c;
-	m->term_cursor_col++;
-#endif
-}
-
-void FileDiffWidget::termWrite(ushort const *begin, ushort const *end)
-{
-	ushort const *p = begin;
-	while (p < end) {
-		termWrite(*p);
-		p++;
-	}
-}
-
-void FileDiffWidget::termWrite(QString const &text)
-{
-	ushort const *begin = text.utf16();
-	ushort const *end = begin + text.size();
-	termWrite(begin, end);
 }
 
 void FileDiffWidget::setFocusAcceptable(bool f)

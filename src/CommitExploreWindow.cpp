@@ -53,8 +53,6 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 
 	ui->splitter->setSizes({100, 100, 200});
 
-	ui->widget_fileview->setLeftBorderVisible(false);
-
 	ui->widget_fileview->setSingleFile(QByteArray(), QString(), QString());
 
 	// set text

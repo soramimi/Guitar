@@ -35,7 +35,6 @@
 #include "SetRemoteUrlDialog.h"
 #include "CommitExploreWindow.h"
 #include "SetUserDialog.h"
-#include "ProgressDialog.h"
 #include "JumpDialog.h"
 #include "DeleteBranchDialog.h"
 #include "LocalSocketReader.h"
@@ -1350,19 +1349,19 @@ public:
 	}
 };
 
-bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
-{
-	ProgressDialog *dlg = (ProgressDialog *)cookie;
-	if (dlg->canceledByUser()) {
-		qDebug() << "canceled";
-		return false;
-	}
+//bool MainWindow::log_callback(void *cookie, char const *ptr, int len)
+//{
+//	ProgressDialog *dlg = (ProgressDialog *)cookie;
+//	if (dlg->canceledByUser()) {
+//		qDebug() << "canceled";
+//		return false;
+//	}
 
-	QString text = QString::fromUtf8(ptr, len);
-	emit dlg->writeLog(text);
+//	QString text = QString::fromUtf8(ptr, len);
+//	emit dlg->writeLog(text);
 
-	return true;
-}
+//	return true;
+//}
 
 struct TemporaryCommitItem {
 	Git::CommitItem const *commit;
@@ -1475,52 +1474,49 @@ void MainWindow::openRepository_(GitPtr g)
 		bool canceled = false;
 		ui->tableWidget_log->setEnabled(false);
 		{
-			ProgressDialog dlg(this);
-			dlg.setLabelText(tr("Retrieving the log is in progress"));
+//			ProgressDialog dlg(this);
+//			dlg.setLabelText(tr("Retrieving the log is in progress"));
 
 			RetrieveLogThread_ th([&](){
-				emit dlg.writeLog(tr("Retrieving commit log...\n"));
+//				emit dlg.writeLog(tr("Retrieving commit log...\n"));
 				// ログを取得
 				m->logs = retrieveCommitLog(g);
 				// ブランチを取得
-				emit dlg.writeLog(tr("Retrieving branches...\n"));
+//				emit dlg.writeLog(tr("Retrieving branches...\n"));
 				queryBranches(g);
 				// タグを取得
-				emit dlg.writeLog(tr("Retrieving tags...\n"));
+//				emit dlg.writeLog(tr("Retrieving tags...\n"));
 				m->tag_map.clear();
 				QList<Git::Tag> tags = g->tags();
 				for (Git::Tag const &tag : tags) {
 					Git::Tag t = tag;
 					t.id = m->objcache.getCommitIdFromTag(t.id);
 					m->tag_map[t.id].push_back(t);
-					if (dlg.canceledByUser()) {
-						return;
-					}
+//					if (dlg.canceledByUser()) {
+//						return;
+//					}
 				}
 
-				emit dlg.finish();
+//				emit dlg.finish();
 			});
 			th.start();
 
-#if 0
-			if (th.wait(3000)) {
-				// thread completed
-			} else {
-				dlg.show();
-				dlg.grabMouse();
-				dlg.exec();
-				dlg.releaseMouse();
-				th.wait();
-			}
-#else
+//			if (th.wait(3000)) {
+//				// thread completed
+//			} else {
+//				dlg.show();
+//				dlg.grabMouse();
+//				dlg.exec();
+//				dlg.releaseMouse();
+//				th.wait();
+//			}
 			th.wait();
-#endif
 
-			if (dlg.canceledByUser()) {
-				setUnknownRepositoryInfo();
-				writeLog(tr("Canceled by user\n"));
-				canceled = true;
-			}
+//			if (dlg.canceledByUser()) {
+//				setUnknownRepositoryInfo();
+//				writeLog(tr("Canceled by user\n"));
+//				canceled = true;
+//			}
 		}
 		ui->tableWidget_log->setEnabled(true);
 		updateCommitTableLater();
@@ -3285,31 +3281,31 @@ void MainWindow::clone()
 				QDir(base).mkpath(sub);
 			}
 
-			ProgressDialog dlg2(this);
-			dlg2.setLabelText(tr("Cloning is in progress"));
+//			ProgressDialog dlg2(this);
+//			dlg2.setLabelText(tr("Cloning is in progress"));
 
-			GitPtr g = git(QString());
+//			GitPtr g = git(QString());
 //			g->setLogCallback(clone_callback, &dlg2);
 
-			bool ok = false;
+//			bool ok = false;
 
-			RetrieveLogThread_ th([&](){
-				qDebug() << "cloning";
-				ok = g->clone(clone_data);
-				emit dlg2.finish();
-			});
-			th.start();
+//			RetrieveLogThread_ th([&](){
+//				qDebug() << "cloning";
+//				ok = g->clone(clone_data);
+//				emit dlg2.finish();
+//			});
+//			th.start();
 
-			dlg2.exec();
-			th.wait();
+//			dlg2.exec();
+//			th.wait();
 
 //			g->setLogCallback(nullptr, nullptr);
 
-			if (dlg2.canceledByUser()) {
-				return; // canceled
-			}
+//			if (dlg2.canceledByUser()) {
+//				return; // canceled
+//			}
 
-			if (!ok) return;
+//			if (!ok) return;
 
 			RepositoryItem item;
 			item.local_dir = dir;

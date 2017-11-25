@@ -127,8 +127,6 @@ SOURCES += \
     src/SetRemoteUrlDialog.cpp \
     src/ClearButton.cpp \
     src/SetUserDialog.cpp \
-	src/ProgressDialog.cpp \
-    src/LogWidget.cpp \
     src/SearchFromGitHubDialog.cpp \
     src/webclient.cpp \
     src/charvec.cpp \
@@ -214,8 +212,6 @@ HEADERS  += \
     myzlib.h \
     src/ClearButton.h \
     src/SetUserDialog.h \
-	src/ProgressDialog.h \
-    src/LogWidget.h \
     src/SearchFromGitHubDialog.h \
     src/webclient.h \
     src/charvec.h \
@@ -274,7 +270,6 @@ FORMS    += \
     src/CommitExploreWindow.ui \
     src/SetRemoteUrlDialog.ui \
     src/SetUserDialog.ui \
-    src/ProgressDialog.ui \
     src/SearchFromGitHubDialog.ui \
     src/JumpDialog.ui \
     src/CheckoutDialog.ui \

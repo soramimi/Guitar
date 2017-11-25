@@ -6,9 +6,6 @@
 
 struct FileDiffSliderWidget::Private {
 	FileDiffWidget *owner = nullptr;
-//	FileDiffWidget *file_diff_widget;
-//	FileDiffWidget::DiffData const *diff_data;
-//	FileDiffWidget::DrawData const *draw_data;
 	bool visible = false;
 	int scroll_total = 0;
 	int scroll_value = 0;
@@ -34,16 +31,6 @@ void FileDiffSliderWidget::bind(FileDiffWidget *w)
 	m->owner = w;
 }
 
-//void FileDiffSliderWidget::bind(MainWindow *mw, FileDiffWidget *fdw, const FileDiffWidget::DiffData *diffdata, const FileDiffWidget::DrawData *drawdata)
-//{
-//	m->mainwindow = mw;
-//	m->file_diff_widget = fdw;
-//	m->diff_data = diffdata;
-//	m->draw_data = drawdata;
-//}
-
-
-
 QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height)
 {
 	Q_ASSERT(m->owner);
@@ -52,7 +39,6 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int widt
 
 void FileDiffSliderWidget::updatePixmap()
 {
-//	Q_ASSERT(m->file_diff_widget);
 	m->left_pixmap = makeDiffPixmap(FileDiffWidget::Pane::Left, 1, height());
 	m->right_pixmap = makeDiffPixmap(FileDiffWidget::Pane::Right, 1, height());
 }
@@ -77,10 +63,12 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 		pr.drawPixmap(w + 4, 0, w, h, m->right_pixmap, 0, 0, sw, sh);
 	}
 
-	int y = m->scroll_value * height() / m->scroll_total;
-	int h = m->scroll_page_size * height() / m->scroll_total;
-	if (h < 2) h = 2;
-	pr.fillRect(w + 1, y, 2, h, Qt::black);
+	if (m->scroll_page_size > 0 && m->scroll_total > 0) {
+		int y = m->scroll_value * height() / m->scroll_total;
+		int h = m->scroll_page_size * height() / m->scroll_total;
+		if (h < 2) h = 2;
+		pr.fillRect(w + 1, y, 2, h, Qt::black);
+	}
 
 	if (hasFocus()) {
 		QPainter pr(this);
