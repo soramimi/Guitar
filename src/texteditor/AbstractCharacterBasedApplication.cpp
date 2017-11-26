@@ -40,6 +40,7 @@ struct AbstractCharacterBasedApplication::Private {
 	DialogHandler dialog_handler;
 	bool is_painting_suppressed = false;
 	int valid_line_index = 0;
+	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
 };
 
@@ -807,9 +808,14 @@ bool AbstractCharacterBasedApplication::isSingleLineMode() const
 	return cx()->single_line;
 }
 
+void AbstractCharacterBasedApplication::setLineMargin(int n)
+{
+	m->line_margin = n;
+}
+
 void AbstractCharacterBasedApplication::ensureCurrentLineVisible()
 {
-	int margin = (cx()->viewport_height >= 6 && !isSingleLineMode()) ? 3 : 0;
+	int margin = (cx()->viewport_height >= 6 && !isSingleLineMode()) ? m->line_margin : 0;
 	int pos = cx()->scroll_row_pos;
 	int top = cx()->current_row - margin;
 	int bottom = cx()->current_row + 1 - editorViewportHeight() + margin;

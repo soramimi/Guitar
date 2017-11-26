@@ -343,6 +343,7 @@ public:
 	void setTerminalMode();
 	void moveToBottom();
 	bool isBottom() const;
+	void setLineMargin(int n);
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

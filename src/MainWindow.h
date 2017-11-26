@@ -351,6 +351,14 @@ protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 signals:
 	void onEscapeKeyPressed();
+
+	// QObject interface
+protected:
+	void timerEvent(QTimerEvent *event);
+
+	// QWidget interface
+protected:
+	void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // MAINWINDOW_H

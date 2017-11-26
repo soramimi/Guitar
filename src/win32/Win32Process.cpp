@@ -3,6 +3,8 @@
 #include <QThread>
 #include <QTextCodec>
 #include <deque>
+#include <QDir>
+#include <QDebug>
 
 
 namespace {

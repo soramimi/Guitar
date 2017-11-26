@@ -1081,7 +1081,11 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="TextEditorWidget" name="widget_log" native="true"/>
+         <widget class="TextEditorWidget" name="widget_log" native="true">
+          <property name="focusPolicy">
+           <enum>Qt::StrongFocus</enum>
+          </property>
+         </widget>
         </item>
         <item row="0" column="1">
          <widget class="QScrollBar" name="verticalScrollBar_log">
@@ -1288,6 +1292,12 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
+   <class>TextEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>TextEditorWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>ClearButton</class>
    <extends>QToolButton</extends>
    <header>ClearButton.h</header>
@@ -1317,12 +1327,6 @@
    <class>FileDiffWidget</class>
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TextEditorWidget</class>
-   <extends>QWidget</extends>
-   <header>TextEditorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

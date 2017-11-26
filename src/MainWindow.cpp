@@ -200,7 +200,7 @@ struct MainWindow::Private {
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
-//	Win32Process3 proc3;
+	Win32Process3 proc3;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -225,6 +225,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
 	ui->widget_log->setTheme(TextEditorTheme::Dark());
+	ui->widget_log->setLineMargin(1);
 	ui->widget_log->setAutoLayout(true);
 	ui->widget_log->setTerminalMode();
 	ui->widget_log->layoutEditor();
@@ -299,17 +300,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 	startTimers();
 
-	auto setAskPass = [](){
-		QString askpass = misc::getApplicationDir();
-#ifdef _WIN32
-		askpass = askpass / "askpass.exe";
-		setEnvironmentVariable("GIT_ASKPASS", askpass);
-#else
-		askpass = askpass / "askpass";
-		setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
-#endif
-	};
-	setAskPass();
+//	auto setAskPass = [](){
+//		QString askpass = misc::getApplicationDir();
+//#ifdef _WIN32
+//		askpass = askpass / "askpass.exe";
+//		setEnvironmentVariable("GIT_ASKPASS", askpass);
+//#else
+//		askpass = askpass / "askpass";
+//		setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
+//#endif
+//	};
+//	setAskPass();
 }
 
 MainWindow::~MainWindow()
@@ -367,6 +368,9 @@ void MainWindow::startTimers()
 	m->interval_250ms_timer.setInterval(1000);
 	m->interval_250ms_timer.start();
 
+	//
+
+	startTimer(1);
 }
 
 void MainWindow::setCurrentLogRow(int row)
@@ -1199,21 +1203,6 @@ int MainWindow::limitLogCount() const
 {
 	return 10000;
 }
-
-class RetrieveLogThread_ : public QThread {
-private:
-	std::function<void()> callback;
-protected:
-	void run()
-	{
-		callback();
-	}
-public:
-	RetrieveLogThread_(std::function<void()> callback)
-		: callback(callback)
-	{
-	}
-};
 
 struct TemporaryCommitItem {
 	Git::CommitItem const *commit;
@@ -2953,6 +2942,46 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 	}
 }
 
+void MainWindow::timerEvent(QTimerEvent *event)
+{
+	ui->widget_log->setReadOnly(false);
+	while (1) {
+		char tmp[1024];
+		int len = m->proc3.readOutput(tmp, sizeof(tmp));
+		if (len < 1) break;
+		ui->widget_log->write(tmp, len);
+	}
+	ui->widget_log->setReadOnly(true);
+
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+	if (focusWidget() == ui->widget_log) {
+		int c = event->key();
+
+		auto write_char = [&](char c){
+			m->proc3.writeInput(&c, 1);
+		};
+
+		auto write_text = [&](QString const &str){
+			std::string s = str.toStdString();
+			for (int i = 0; i < (int)s.size(); i++) {
+				write_char(s[i]);
+			}
+		};
+
+		ui->widget_log->setReadOnly(false);
+		if (c == Qt::Key_Return || c == Qt::Key_Enter) {
+			write_char('\n');
+		} else {
+			QString text = event->text();
+			write_text(text);
+		}
+		ui->widget_log->setReadOnly(true);
+	}
+}
+
 bool MainWindow::saveByteArrayAs(QByteArray const &ba, QString const &dstpath)
 {
 	QFile file(dstpath);
@@ -3134,14 +3163,18 @@ void MainWindow::clone()
 //			ProgressDialog dlg2(this);
 //			dlg2.setLabelText(tr("Cloning is in progress"));
 
-//			GitPtr g = git(QString());
+			GitPtr g = git(QString());
 //			g->setLogCallback(clone_callback, &dlg2);
 
 //			bool ok = false;
 
 //			RetrieveLogThread_ th([&](){
 //				qDebug() << "cloning";
-//				ok = g->clone(clone_data);
+#ifdef Q_OS_WIN
+			g->clone(clone_data, &m->proc3);
+#else
+			g->clone(clone_data, nullptr);
+#endif
 //				emit dlg2.finish();
 //			});
 //			th.start();
@@ -3970,9 +4003,6 @@ void MainWindow::on_radioButton_remote_offline_clicked()
 }
 
 void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
-
-
-
 {
 	ui->widget_log->refrectScrollBar();
 }
@@ -3986,4 +4016,6 @@ void MainWindow::on_horizontalScrollBar_log_valueChanged(int value)
 
 void MainWindow::on_action_test_triggered()
 {
+	QString command_line = "\"C:/Program Files/Git/bin/git.exe\" --version";
+	m->proc3.start(command_line);
 }

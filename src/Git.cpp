@@ -142,7 +142,7 @@ bool Git::chdirexec(std::function<bool()> fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir, bool errout)
+bool Git::git(const QString &arg, bool chdir, bool errout, void *ttymode)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -157,7 +157,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 	clearResult();
 
 	auto DoIt = [&](){
-		QString cmd = QString("\"%1\" ").arg(gitCommand());
+		QString cmd = QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
 		if (m->callback_func) {
@@ -168,13 +168,12 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 
-		bool use_tty = false;
 #ifdef Q_OS_WIN
-		if (use_tty) {
-			Win32Process3 proc;
-			proc.start(cmd);
-			m->process_exit_code = proc.wait();
-			m->result = *proc.result();
+		if (ttymode) {
+			Win32Process3 *p = (Win32Process3 *)ttymode;
+			p->start(cmd);
+//			m->process_exit_code = ttymode->wait();
+//			m->result = *ttymode->result();
 		} else
 #endif
 		{
@@ -700,17 +699,18 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 	return d;
 }
 
-bool Git::clone(CloneData const &data)
+bool Git::clone(CloneData const &data, void *proc)
 {
-	m->working_repo_dir = misc::normalizePathSeparator(data.basedir / data.subdir);
+	QString clone_to = data.basedir / data.subdir;
+	m->working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
 	if (QDir::setCurrent(data.basedir)) {
 
 		QString cmd = "clone --progress \"%1\" \"%2\"";
-		cmd = cmd.arg(data.url).arg(data.subdir);
-		ok = git(cmd, false, true);
+		cmd = cmd.arg(data.url).arg(clone_to);
+		ok = git(cmd, false, true, proc);
 
 		QDir::setCurrent(cwd.path());
 	}
@@ -797,7 +797,7 @@ bool Git::push_(bool tags)
 	if (tags) {
 		cmd += " --tags";
 	}
-	return git(cmd);
+	return git(cmd, true, false, nullptr);
 }
 
 bool Git::push(bool tags)
@@ -924,12 +924,12 @@ void Git::unstage(QStringList const &paths)
 
 void Git::pull()
 {
-	git("pull");
+	git("pull", true, false, nullptr);
 }
 
 void Git::fetch()
 {
-	git("fetch");
+	git("fetch", true, false, nullptr);
 }
 
 QStringList Git::make_branch_list_()

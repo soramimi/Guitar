@@ -14,6 +14,7 @@
 
 #define GIT_ID_LENGTH (40)
 
+class Win32Process3;
 
 enum class LineSide {
 	Left,
@@ -288,7 +289,7 @@ public:
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
-	bool git(QString const &arg, bool chdir, bool errout = false);
+	bool git(QString const &arg, bool chdir, bool errout = false, void *ttymode = nullptr);
 	bool git(QString const &arg)
 	{
 		return git(arg, true);
@@ -311,7 +312,7 @@ public:
 		QString subdir;
 	};
 	static CloneData preclone(QString const &url, QString const &path);
-	bool clone(CloneData const &data);
+	bool clone(CloneData const &data, void *proc);
 
 	FileStatusList status();
 	bool cat_file(const QString &id, QByteArray *out);
