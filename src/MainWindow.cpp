@@ -1329,7 +1329,7 @@ void MainWindow::openRepository_(GitPtr g)
 //			ProgressDialog dlg(this);
 //			dlg.setLabelText(tr("Retrieving the log is in progress"));
 
-			RetrieveLogThread_ th([&](){
+//			RetrieveLogThread_ th([&](){
 //				emit dlg.writeLog(tr("Retrieving commit log...\n"));
 				// ログを取得
 				m->logs = retrieveCommitLog(g);
@@ -1350,8 +1350,8 @@ void MainWindow::openRepository_(GitPtr g)
 				}
 
 //				emit dlg.finish();
-			});
-			th.start();
+//			});
+//			th.start();
 
 //			if (th.wait(3000)) {
 //				// thread completed
@@ -1362,7 +1362,7 @@ void MainWindow::openRepository_(GitPtr g)
 //				dlg.releaseMouse();
 //				th.wait();
 //			}
-			th.wait();
+//			th.wait();
 
 //			if (dlg.canceledByUser()) {
 //				setUnknownRepositoryInfo();

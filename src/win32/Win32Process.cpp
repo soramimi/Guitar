@@ -332,11 +332,16 @@ class ReaderThread3 : public QThread {
 	friend class Win32Process3;
 private:
 	HANDLE handle;
-	std::deque<char> result;
+	std::deque<char> result1;
+	std::vector<char> result2;
 protected:
 	void run();
 public:
 	void start(HANDLE hOutput);
+	std::vector<char> const *result() const
+	{
+		return &result2;
+	}
 };
 
 void ReaderThread3::run()
@@ -349,13 +354,15 @@ void ReaderThread3::run()
 		if (!ret || amount == 0) {
 			break;
 		}
-		result.insert(result.end(), buf, buf + amount);
+		result1.insert(result1.end(), buf, buf + amount);
+		result2.insert(result2.end(), buf, buf + amount);
 	}
 
 }
 
 void ReaderThread3::start(HANDLE hOutput)
 {
+	result2.clear();
 	handle = hOutput;
 	QThread::start();
 }
@@ -368,6 +375,7 @@ struct Win32Process3::Private {
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;
 	HANDLE hInput = INVALID_HANDLE_VALUE;
+	DWORD exit_code = 0;
 };
 
 Win32Process3::Win32Process3()
@@ -434,11 +442,10 @@ void Win32Process3::run()
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
 	if (spawnSuccess) {
-		DWORD exit_code = 0;
 		while (1) {
 			if (isInterruptionRequested()) break;
-			GetExitCodeProcess(m->hProcess, &exit_code);
-			if (exit_code == STILL_ACTIVE) {
+			GetExitCodeProcess(m->hProcess, &m->exit_code);
+			if (m->exit_code == STILL_ACTIVE) {
 				// running
 				msleep(1);
 			} else {
@@ -453,14 +460,14 @@ void Win32Process3::run()
 
 int Win32Process3::readOutput(char *dstptr, int maxlen)
 {
-	int len = m->output_reader_thread.result.size();
+	int len = m->output_reader_thread.result1.size();
 	if (len > maxlen) {
 		len = maxlen;
 	}
 	if (len > 0) {
-		auto begin = m->output_reader_thread.result.begin();
+		auto begin = m->output_reader_thread.result1.begin();
 		std::copy(begin, begin + len, dstptr);
-		m->output_reader_thread.result.erase(begin, begin + len);
+		m->output_reader_thread.result1.erase(begin, begin + len);
 	}
 	return len;
 }
@@ -528,6 +535,17 @@ void Win32Process3::stop()
 	close();
 	m->output_reader_thread.wait();
 	wait();
+}
+
+int Win32Process3::wait()
+{
+	QThread::wait();
+	return m->exit_code;
+}
+
+const std::vector<char> *Win32Process3::result() const
+{
+	return m->output_reader_thread.result();
 }
 
 

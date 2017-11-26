@@ -168,26 +168,30 @@ bool Git::git(const QString &arg, bool chdir, bool errout)
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 
-		Process proc;
-		m->process_exit_code = proc.run(cmd, false);
-
-		if (errout) {
-			m->result = proc.errbytes;
-		} else {
-			m->result = proc.outbytes;
-		}
-		m->error_message = proc.errstring();
-
-#if 0
-		if (m->callback_func) {
-			if (!proc.outbytes.empty()) {
-				m->callback_func(m->callback_cookie, &proc.outbytes[0], proc.outbytes.size());
-			}
-			if (!proc.errbytes.empty()) {
-				m->callback_func(m->callback_cookie, &proc.errbytes[0], proc.errbytes.size());
-			}
-		}
+		bool use_tty = false;
+#ifdef Q_OS_WIN
+		if (use_tty) {
+			Win32Process3 proc;
+			proc.start(cmd);
+			m->process_exit_code = proc.wait();
+			m->result = *proc.result();
+		} else
 #endif
+		{
+			Process proc;
+			m->process_exit_code = proc.run(cmd, false);
+
+			if (errout) {
+				m->result = proc.errbytes;
+			} else {
+				m->result = proc.outbytes;
+			}
+			m->error_message = proc.errstring();
+		}
+#if 0
+#else
+#endif
+
 
 		return m->process_exit_code == 0;
 	};

@@ -64,6 +64,8 @@ public:
 	void writeInput(char const *ptr, int len);
 	void start(QString const &cmdline);
 	void stop();
+	int wait();
+	std::vector<char> const *result() const;
 };
 
 
