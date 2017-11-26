@@ -321,13 +321,12 @@ UnixProcess2::~UnixProcess2()
 	delete m;
 }
 
-void UnixProcess2::start(bool use_input)
-{
-	m->th.use_input = use_input;
-}
+
 
 void UnixProcess2::exec(const QString &command)
 {
+	m->th.use_input = true;
+
 	Task task;
 	task.command = command.toStdString();
 	m->tasks.push_back(task);
@@ -364,7 +363,7 @@ bool UnixProcess2::step(bool delay)
 	return false;
 }
 
-int UnixProcess2::read(char *dstptr, int maxlen)
+int UnixProcess2::readOutput(char *dstptr, int maxlen)
 {
 	QMutexLocker lock(&m->th.mutex);
 	int pos = 0;
@@ -410,7 +409,7 @@ void UnixProcess2::closeInput()
 	m->th.closeInput();
 }
 
-void UnixProcess2::quit()
+void UnixProcess2::stop()
 {
 	if (m->th.isRunning()) {
 		m->th.requestInterruption();
@@ -419,4 +418,291 @@ void UnixProcess2::quit()
 	}
 }
 
+// UnixProcess3
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <wait.h>
+#include <QMutex>
+#include <sys/ioctl.h>
+
+class ReadOutputThread3 : public QThread {
+public:
+	QMutex *mutex;
+	int fd_pty;
+	std::deque<char> *buffer = nullptr;
+protected:
+	void run()
+	{
+		while (1) {
+			if (isInterruptionRequested()) break;
+			char buf[1024];
+			int len = ::read(fd_pty, buf, sizeof(buf));
+			if (len < 1) break;
+			{
+				QMutexLocker lock(mutex);
+				buffer->insert(buffer->end(), buf, buf + len);
+			}
+		}
+	}
+public:
+	void start(int fd, QMutex *mutex, std::deque<char> *buffer)
+	{
+		this->fd_pty = fd;
+		this->mutex = mutex;
+		this->buffer = buffer;
+		if (!isRunning()) QThread::start();
+	}
+	int read(char *ptr, int len)
+	{
+		if (!buffer) return 0;
+
+		QMutexLocker lock(mutex);
+		int n = buffer->size();
+		if (n > len) {
+			n = len;
+		}
+		std::copy(buffer->begin(), buffer->begin() + n, ptr);
+		buffer->erase(buffer->begin(), buffer->begin() + n);
+		return n;
+	}
+};
+
+class WriteInputThread3 : public QThread {
+public:
+	QMutex *mutex;
+	int fd_pty;
+	std::deque<char> *buffer = nullptr;
+protected:
+	void run()
+	{
+		while (1) {
+			if (isInterruptionRequested()) break;
+			char buf[1024];
+			int len = 0;
+			{
+				QMutexLocker lock(mutex);
+				len = buffer->size();
+				if (len > sizeof(buf)) {
+					len = sizeof(buf);
+				}
+				std::copy(buffer->begin(), buffer->begin() + len, buf);
+				buffer->erase(buffer->begin(), buffer->begin() + len);
+			}
+			if (len > 0) {
+				::write(fd_pty, buf, len);
+				qDebug() << QString::fromUtf8(buf, len);
+			} else {
+				msleep(1);
+			}
+		}
+	}
+public:
+	void start(int fd, QMutex *mutex, std::deque<char> *buffer)
+	{
+		this->fd_pty = fd;
+		this->mutex = mutex;
+		this->buffer = buffer;
+		if (!isRunning()) QThread::start();
+	}
+	int write(char const *ptr, int len)
+	{
+		if (!buffer) return 0;
+		if (len > 0) {
+			QMutexLocker lock(mutex);
+			buffer->insert(buffer->end(), ptr, ptr + len);
+		}
+		return len;
+	}
+};
+
+struct UnixProcess3::Private {
+	QMutex mutex;
+	WriteInputThread3 input_writer_thread;
+	ReadOutputThread3 output_reader_thread;
+	int pty_master;
+	int pty_slave;
+	std::deque<char> input_buffer;
+	std::deque<char> output_buffer;
+	int exit_code = -1;
+	std::list<UnixProcess3::Task> tasks;
+	std::vector<std::string> args1;
+	std::vector<char *> args2;
+	pid_t pid = 0;
+};
+
+UnixProcess3::UnixProcess3()
+	: m(new Private)
+{
+}
+
+UnixProcess3::~UnixProcess3()
+{
+	stop();
+	delete m;
+}
+
+void UnixProcess3::run()
+{
+	m->exit_code = -1;
+#ifdef Q_OS_WIN
+	QString command_line = "\"C:/Program Files/Git/bin/git.exe\" clone http://git/git/test.git";
+	m->proc3.start(command_line);
+#else
+	struct termios orig_termios, new_termios;
+	struct winsize orig_winsize;
+	char *pts_name;
+	pid_t pid;
+
+	tcgetattr(STDIN_FILENO, &orig_termios);
+	ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&orig_winsize);
+
+	m->pty_master = posix_openpt(O_RDWR | O_NOCTTY);
+	grantpt(m->pty_master);
+	unlockpt(m->pty_master);
+
+	pts_name = ptsname(m->pty_master);
+
+	pid = fork();
+	if (pid == 0) {
+		setsid();
+
+		m->pty_slave = open(pts_name, O_RDWR);
+		::close(m->pty_master);
+
+		cfmakeraw(&new_termios);
+		tcsetattr(m->pty_slave, TCSAFLUSH, &new_termios);
+
+		tcsetattr(m->pty_slave, TCSANOW, &orig_termios);
+		ioctl(m->pty_slave, TIOCSWINSZ, &orig_winsize);
+
+		dup2(m->pty_slave, STDIN_FILENO);
+		dup2(m->pty_slave, STDOUT_FILENO);
+		dup2(m->pty_slave, STDERR_FILENO);
+		::close(m->pty_slave);
+
+#if 0
+		char *argv[] = {
+			"git",
+			"clone",
+			"http://git/git/test.git",
+			"/home/soramimi/a/test",
+			NULL,
+		};
+#else
+		char *argv[] = {
+			"git",
+			"--version",
+			NULL,
+		};
+#endif
+		execvp(m->args2[0], &m->args2[0]);
+	} else {
+		m->pid = pid;
+		new_termios = orig_termios;
+
+#if 0
+		cfmakeraw(&new_termios);
+#else
+		new_termios.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+		new_termios.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+		new_termios.c_cflag &= ~(CSIZE | PARENB);
+		new_termios.c_cflag |= CS8;
+		new_termios.c_oflag &= ~(OPOST);
+		new_termios.c_cc[VMIN]  = 1;
+		new_termios.c_cc[VTIME] = 0;
+#endif
+
+		tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_termios);
+
+		m->input_writer_thread.start(m->pty_master, &m->mutex, &m->input_buffer);
+		m->output_reader_thread.start(m->pty_master, &m->mutex, &m->output_buffer);
+
+		while (1) {
+			if (isInterruptionRequested()) break;
+			int status = 0;
+			int r = waitpid(m->pid, &status, WNOHANG);
+			if (r < 0) break;
+			QThread::currentThread()->msleep(1);
+			if (r > 0) {
+				if (WIFEXITED(status)) {
+					m->exit_code = WEXITSTATUS(status);
+					break;
+				}
+				if (WIFSIGNALED(status)) {
+					break;
+				}
+			}
+		}
+
+		::close(m->pty_master);
+
+		tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+	}
+
+#endif
+}
+
+void UnixProcess3::stop()
+{
+	requestInterruption();
+	m->input_writer_thread.requestInterruption();
+	m->output_reader_thread.requestInterruption();
+	kill(m->pid, SIGTERM);
+	::close(m->pty_master);
+	::close(m->pty_slave);
+	m->input_writer_thread.wait();
+	m->output_reader_thread.wait();
+	wait();
+}
+
+int UnixProcess3::writeInput(const char *ptr, int len)
+{
+	return m->input_writer_thread.write(ptr, len);
+}
+
+int UnixProcess3::readOutput(char *ptr, int len)
+{
+	return m->output_reader_thread.read(ptr, len);
+}
+
+bool UnixProcess3::step(bool delay)
+{
+	if (delay) {
+		wait(1);
+	}
+	if (isRunning()) {
+		return true;
+	}
+	if (!m->tasks.empty()) {
+		Task task = m->tasks.front();
+		m->tasks.pop_front();
+
+		m->args1.clear();
+		m->args2.clear();
+
+		UnixProcess::parseArgs(task.command, &m->args1);
+		if (m->args1.size() < 1) return false;
+
+		for (std::string const &s : m->args1) {
+			m->args2.push_back(const_cast<char *>(s.c_str()));
+		}
+		m->args2.push_back(nullptr);
+
+//		m->th.init(m->args2[0], &m->args2[0]);
+		start();
+		return true;
+	}
+	return false;
+}
+
+void UnixProcess3::exec(const QString &command)
+{
+	Task task;
+	task.command = command.toStdString();
+	m->tasks.push_back(task);
+	step(false);
+}

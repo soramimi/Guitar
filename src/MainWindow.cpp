@@ -67,11 +67,12 @@
 #include <deque>
 #include <set>
 
-#include <win32/Win32Process.h>
 
 #ifdef Q_OS_WIN
+#include <win32/Win32Process.h>
 #else
 #include <unistd.h>
+#include <unix/UnixProcess.h>
 #endif
 
 #ifdef Q_OS_MAC
@@ -200,7 +201,11 @@ struct MainWindow::Private {
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
-	Win32Process3 proc3;
+#ifdef Q_OS_WIN
+	Win32Process3 proc;
+#else
+	UnixProcess2 proc;
+#endif
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -327,7 +332,7 @@ MainWindow::~MainWindow()
 
 	m->avatar_loader.wait();
 
-//	m->proc3.stop();
+//	m->proc.stop();
 
 	delete m;
 	delete ui;
@@ -2947,12 +2952,11 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	ui->widget_log->setReadOnly(false);
 	while (1) {
 		char tmp[1024];
-		int len = m->proc3.readOutput(tmp, sizeof(tmp));
+		int len = m->proc.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
 		ui->widget_log->write(tmp, len);
 	}
 	ui->widget_log->setReadOnly(true);
-
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -2961,7 +2965,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 		int c = event->key();
 
 		auto write_char = [&](char c){
-			m->proc3.writeInput(&c, 1);
+			m->proc.writeInput(&c, 1);
 		};
 
 		auto write_text = [&](QString const &str){
@@ -3171,7 +3175,7 @@ void MainWindow::clone()
 //			RetrieveLogThread_ th([&](){
 //				qDebug() << "cloning";
 #ifdef Q_OS_WIN
-			g->clone(clone_data, &m->proc3);
+			g->clone(clone_data, &m->proc);
 #else
 			g->clone(clone_data, nullptr);
 #endif
@@ -4016,6 +4020,8 @@ void MainWindow::on_horizontalScrollBar_log_valueChanged(int value)
 
 void MainWindow::on_action_test_triggered()
 {
+#ifdef Q_OS_WIN
 	QString command_line = "\"C:/Program Files/Git/bin/git.exe\" --version";
-	m->proc3.start(command_line);
+	m->proc.start(command_line);
+#endif
 }
