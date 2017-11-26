@@ -48,7 +48,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->text_font = QFont("MS Gothic", 10);
 #endif
 #ifdef Q_OS_LINUX
-	m->text_font = QFont("VL Gothic", 16);
+	m->text_font = QFont("Monospace", 12);
 #endif
 #ifdef Q_OS_MACX
 	m->text_font = QFont("Monaco", 12);
@@ -562,7 +562,6 @@ void TextEditorWidget::mouseMoveEvent(QMouseEvent * /*event*/)
 
 QVariant TextEditorWidget::inputMethodQuery(Qt::InputMethodQuery q) const
 {
-	qDebug() << q;
 	if (q == Qt::ImCursorRectangle) {
 		QRect r = cx()->cursor_rect;
 		return r;
