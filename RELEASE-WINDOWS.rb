@@ -20,7 +20,6 @@ FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
 FileUtils.cp("../_build_#{$product_name}/release/#{$product_name}.exe", $dstdir)
-FileUtils.cp("../_build_AskPass/release/askpass.exe", $dstdir)
 FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)

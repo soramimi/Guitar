@@ -31,8 +31,7 @@ FileUtils.mkpath($dstdir_imageformats)
 FileUtils.mkpath($dstdir_platforms)
 FileUtils.mkpath($dstdir_platforminputcontexts)
 
-FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
-FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
+FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
 `strip #{$dstdir}/#{$product_name}`
 FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
