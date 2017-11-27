@@ -295,21 +295,10 @@ RESOURCES += \
 unix {
 	SOURCES += \
 		src/unix/UnixProcess.cpp \
-		src/unix/UnixPtyProcess.cpp \
-		src/qtermwidget/Pty.cpp \
-		src/qtermwidget/kptyprocess.cpp \
-		src/qtermwidget/kptydevice.cpp \
-		src/qtermwidget/kpty.cpp \
-		src/qtermwidget/kprocess.cpp
+		src/unix/UnixPtyProcess.cpp
 	HEADERS += \
 		src/unix/UnixProcess.h \
-		src/unix/UnixPtyProcess.h \
-		src/qtermwidget/Pty.h \
-		src/qtermwidget/kptyprocess.h \
-		src/qtermwidget/kptydevice.h \
-		src/qtermwidget/kpty.h \
-		src/qtermwidget/kpty_p.h \
-		src/qtermwidget/kprocess.h
+		src/unix/UnixPtyProcess.h
 }
 
 win32 {

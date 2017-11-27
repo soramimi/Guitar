@@ -1,84 +1,15 @@
 #include "UnixPtyProcess.h"
-namespace {
-//void parseArgs(const QString &cmd, QStringList *out)
-//{
-//	out->clear();
-//	ushort const *begin = cmd.utf16();
-//	ushort const *end = begin + cmd.size();
-//	std::vector<ushort> tmp;
-//	ushort const *ptr = begin;
-//	ushort quote = 0;
-//	while (1) {
-//		int c = 0;
-//		if (ptr < end) {
-//			c = *ptr;
-//		}
-//		if (c == '\"' && ptr + 2 < end && ptr[1] == '\"' && ptr[2] == '\"') {
-//			tmp.push_back(c);
-//			ptr += 3;
-//		} else {
-//			if (quote != 0 && c != 0) {
-//				if (c == quote) {
-//					quote = 0;
-//				} else {
-//					tmp.push_back(c);
-//				}
-//			} else if (c == '\"') {
-//				quote = c;
-//			} else if (isspace(c) || c == 0) {
-//				if (!tmp.empty()) {
-//					QString s = QString::fromUtf16(&tmp[0], tmp.size());
-//					out->push_back(s);
-//				}
-//				if (c == 0) break;
-//				tmp.clear();
-//			} else {
-//				tmp.push_back(c);
-//			}
-//			ptr++;
-//		}
-//	}
-//}
-//void parseArgs(std::string const &cmd, std::vector<std::string> *out)
-//{
-//	out->clear();
-//	char const *begin = cmd.c_str();
-//	char const *end = begin + cmd.size();
-//	std::vector<char> tmp;
-//	char const *ptr = begin;
-//	int quote = 0;
-//	while (1) {
-//		int c = 0;
-//		if (ptr < end) {
-//			c = *ptr & 0xff;
-//		}
-//		if (c == '\"' && ptr + 2 < end && ptr[1] == '\"' && ptr[2] == '\"') {
-//			tmp.push_back(c);
-//			ptr += 3;
-//		} else {
-//			if (quote != 0 && c != 0) {
-//				if (c == quote) {
-//					quote = 0;
-//				} else {
-//					tmp.push_back(c);
-//				}
-//			} else if (c == '\"') {
-//				quote = c;
-//			} else if (isspace(c) || c == 0) {
-//				if (!tmp.empty()) {
-//					std::string s(&tmp[0], tmp.size());
-//					out->push_back(s);
-//				}
-//				if (c == 0) break;
-//				tmp.clear();
-//			} else {
-//				tmp.push_back(c);
-//			}
-//			ptr++;
-//		}
-//	}
-//}
+#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <sys/wait.h>
+#include <deque>
+#include <QMutex>
 
+namespace {
 
 void make_argv(char *command, std::vector<char *> *out)
 {
@@ -115,36 +46,7 @@ void make_argv(char *command, std::vector<char *> *out)
 	}
 }
 
-
-}
-//int UnixPtyProcess::start(const QString &program)
-//{
-//	QStringList argv;
-//	QStringList env;
-//	parseArgs(program, &argv);
-//	int r = Pty::start(argv[0], argv, env, 0, 0);
-//	waitForStarted();
-//	return r;
-//}
-
-/////
-
-//#include "PtyProcess.h"
-
-#include <unistd.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <QDebug>
-#include <QMutex>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <deque>
-
-namespace {
-class OutputReaderThread2 : public QThread {
+class OutputReaderThread : public QThread {
 private:
 	QMutex *mutex;
 	int pty_master;
@@ -172,35 +74,35 @@ public:
 		QThread::start();
 	}
 };
+
 } // namespace
 
-struct UnixPtyProcess2::Private {
+struct UnixPtyProcess::Private {
 	QMutex mutex;
 	std::string command;
 	int pty_master;
 	std::deque<char> output_buffer;
-	OutputReaderThread2 th_output_reader;
+	OutputReaderThread th_output_reader;
 	int exit_code = -1;
 };
 
-UnixPtyProcess2::UnixPtyProcess2()
+UnixPtyProcess::UnixPtyProcess()
 	: m(new Private)
 {
 }
 
-UnixPtyProcess2::~UnixPtyProcess2()
+UnixPtyProcess::~UnixPtyProcess()
 {
 	stop();
 	delete m;
 }
 
-void UnixPtyProcess2::writeInput(const char *ptr, int len)
+void UnixPtyProcess::writeInput(const char *ptr, int len)
 {
-	qDebug() << QString::fromUtf8(ptr, len);
 	::write(m->pty_master, ptr, len);
 }
 
-int UnixPtyProcess2::readOutput(char *ptr, int len)
+int UnixPtyProcess::readOutput(char *ptr, int len)
 {
 	QMutexLocker lock(&m->mutex);
 	int n = m->output_buffer.size();
@@ -215,13 +117,13 @@ int UnixPtyProcess2::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess2::start(const QString &cmd)
+void UnixPtyProcess::start(const QString &cmd)
 {
 	m->command = cmd.toStdString();
 	QThread::start();
 }
 
-void UnixPtyProcess2::run()
+void UnixPtyProcess::run()
 {
 	struct termios orig_termios;
 	struct winsize orig_winsize;
@@ -292,7 +194,7 @@ void UnixPtyProcess2::run()
 	}
 }
 
-void UnixPtyProcess2::stop()
+void UnixPtyProcess::stop()
 {
 	requestInterruption();
 	wait();

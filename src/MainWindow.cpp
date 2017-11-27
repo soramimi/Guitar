@@ -205,7 +205,7 @@ struct MainWindow::Private {
 #ifdef Q_OS_WIN
 	Win32PtyProcess pty_process;
 #else
-	UnixPtyProcess2 pty_process;
+	UnixPtyProcess pty_process;
 #endif
 };
 

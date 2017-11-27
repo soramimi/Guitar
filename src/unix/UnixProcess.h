@@ -9,7 +9,6 @@
 #include <list>
 #include "MyProcess.h"
 #include <QThread>
-#include "qtermwidget/Pty.h"
 
 class UnixProcess : public AbstractProcess {
 public:
