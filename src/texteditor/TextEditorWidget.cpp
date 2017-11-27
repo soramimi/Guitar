@@ -48,7 +48,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->text_font = QFont("MS Gothic", 10);
 #endif
 #ifdef Q_OS_LINUX
-	m->text_font = QFont("Monospace", 12);
+	m->text_font = QFont("Monospace", 9);
 #endif
 #ifdef Q_OS_MACX
 	m->text_font = QFont("Monaco", 10);
