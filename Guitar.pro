@@ -14,6 +14,8 @@ CONFIG += c++11
 TRANSLATIONS = Guitar_ja.ts
 
 DEFINES += HAVE_POSIX_OPENPT
+macx:DEFINES += HAVE_SYS_TIME_H
+macx:DEFINES += HAVE_UTMPX
 
 unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
 linux:QMAKE_RPATHDIR += $ORIGIN
@@ -165,8 +167,7 @@ SOURCES += \
 	src/texteditor/unicode.cpp \
 	src/texteditor/UnicodeWidth.cpp \
 	src/FileViewWidget.cpp \
-	src/MyTextEditorWidget.cpp \
-    src/win32/Win32PtyProcess.cpp
+	src/MyTextEditorWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -252,8 +253,7 @@ HEADERS  += \
 	src/texteditor/unicode.h \
 	src/texteditor/UnicodeWidth.h \
 	src/FileViewWidget.h \
-	src/MyTextEditorWidget.h \
-    src/win32/Win32PtyProcess.h
+	src/MyTextEditorWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -317,12 +317,14 @@ win32 {
 		src/win32/thread.cpp \
 		src/win32/event.cpp \
         src/win32/win32.cpp \
-        src/win32/Win32Process.cpp
+		src/win32/Win32Process.cpp \
+		src/win32/Win32PtyProcess.cpp
 
 	HEADERS += \
 		src/win32/thread.h \
 		src/win32/event.h \
 		src/win32/mutex.h \
         src/win32/win32.h \
-        src/win32/Win32Process.h
+		src/win32/Win32Process.h \
+		src/win32/Win32PtyProcess.h
 }

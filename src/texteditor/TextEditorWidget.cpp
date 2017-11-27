@@ -51,7 +51,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->text_font = QFont("Monospace", 12);
 #endif
 #ifdef Q_OS_MACX
-	m->text_font = QFont("Monaco", 12);
+	m->text_font = QFont("Monaco", 10);
 #endif
 	m->top_margin = 0;
 	m->bottom_margin = 1;
@@ -61,7 +61,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	QFontMetrics fm = pr.fontMetrics();
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
-	m->latin1_width = fm.width('X');
+	m->latin1_width = fm.width('l');
 	m->line_height = m->ascent + m->descent + m->top_margin + m->bottom_margin;
 	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
 

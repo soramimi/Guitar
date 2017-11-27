@@ -231,7 +231,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->listWidget_unstaged->installEventFilter(this);
 
 	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
-	ui->widget_log->setTheme(TextEditorTheme::Dark());
+	ui->widget_log->setTheme(TextEditorTheme::Light());
 	ui->widget_log->setAutoLayout(true);
 	ui->widget_log->setTerminalMode(true);
 	ui->widget_log->layoutEditor();
@@ -301,10 +301,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 #ifdef Q_OS_WIN
 #else
-	connect(&m->proc, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
+	connect(&m->pty_process, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
 		ui->widget_log->write(ptr, len);
 	});
-	m->proc.open(QIODevice::ReadWrite);
+	m->pty_process.open(QIODevice::ReadWrite);
 #endif
 
 	m->timer_interval_ms = 1;
@@ -2975,13 +2975,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 		int c = event->key();
 
 		auto write_char = [&](char c){
+			if (m->pty_process.isRunning()) {
 #ifdef Q_OS_WIN
-			m->pty_process.writeInput(&c, 1);
+				m->pty_process.writeInput(&c, 1);
 #else
-			if (m->proc.isRunning()) {
-				m->proc.sendData(&c, 1);
-			}
+				m->pty_process.sendData(&c, 1);
 #endif
+			}
 		};
 
 		auto write_text = [&](QString const &str){
