@@ -179,9 +179,9 @@ bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
 		} else
 #else
 		if (pty) {
-			UnixPtyProcess *p = (UnixPtyProcess *)pty;
+			UnixPtyProcess2 *p = (UnixPtyProcess2 *)pty;
 			p->start(cmd);
-		}
+		} else
 #endif
 		{
 			Process proc;

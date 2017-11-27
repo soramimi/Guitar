@@ -180,7 +180,6 @@ struct MainWindow::Private {
 	Git::CommitItemList logs;
 	std::map<int, QList<Label>> label_map;
 	bool uncommited_changes = false;
-	int timer_interval_ms = 0;
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
 	QTimer interval_250ms_timer;
@@ -206,7 +205,7 @@ struct MainWindow::Private {
 #ifdef Q_OS_WIN
 	Win32PtyProcess pty_process;
 #else
-	UnixPtyProcess pty_process;
+	UnixPtyProcess2 pty_process;
 #endif
 };
 
@@ -301,16 +300,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 #ifdef Q_OS_WIN
 #else
-	connect(&m->pty_process, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
-		ui->widget_log->write(ptr, len);
-	});
-	m->pty_process.open(QIODevice::ReadWrite);
+//	connect(&m->pty_process, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
+//		ui->widget_log->write(ptr, len);
+//	});
+//	m->pty_process.open(QIODevice::ReadWrite);
 #endif
 
-	m->timer_interval_ms = 1;
 	m->update_files_list_counter = 0;
 //	m->interval_250ms_counter = 0;
-	startTimer(m->timer_interval_ms);
 
 	startTimers();
 
@@ -384,7 +381,7 @@ void MainWindow::startTimers()
 
 	//
 
-	startTimer(1);
+	startTimer(10);
 }
 
 void MainWindow::setCurrentLogRow(int row)
@@ -2966,6 +2963,12 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	}
 	ui->widget_log->setReadOnly(true);
 #else
+	while (1) {
+		char tmp[1024];
+		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
+		if (len < 1) break;
+		ui->widget_log->write(tmp, len);
+	}
 #endif
 }
 
@@ -2979,7 +2982,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 #ifdef Q_OS_WIN
 				m->pty_process.writeInput(&c, 1);
 #else
-				m->pty_process.sendData(&c, 1);
+				m->pty_process.writeInput(&c, 1);
 #endif
 			}
 		};
