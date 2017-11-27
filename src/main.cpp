@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 	panel_bg_color = w.palette().color(QPalette::Background);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
+	w.shown();
 
 	if (f_open_here) {
 		QString dir = QDir::current().absolutePath();

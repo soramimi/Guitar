@@ -224,12 +224,12 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	}
 }
 
-void CommitExploreWindow::on_verticalScrollBar_valueChanged(int value)
+void CommitExploreWindow::on_verticalScrollBar_valueChanged(int)
 {
 	ui->widget_fileview->refrectScrollBar();
 }
 
-void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int value)
+void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int)
 {
 	ui->widget_fileview->refrectScrollBar();
 }

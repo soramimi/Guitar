@@ -257,7 +257,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 	std::reverse(right_lines->begin(), right_lines->end());
 }
 
-void FileDiffWidget::setDiffText(Git::Diff const &diff, std::vector<std::string> const &original_lines, TextDiffLineList const &left, TextDiffLineList const &right)
+void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
 {
 	m->max_line_length = 0;
 
@@ -331,16 +331,16 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 	}
 }
 
-void FileDiffWidget::setBinaryMode(bool f)
-{
-	ui->widget_diff_left->update();
-	ui->widget_diff_right->update();
-}
+//void FileDiffWidget::setBinaryMode(bool f)
+//{
+//	ui->widget_diff_left->update();
+//	ui->widget_diff_right->update();
+//}
 
-void FileDiffWidget::setBinaryMode()
-{
-	setBinaryMode(true);
-}
+//void FileDiffWidget::setBinaryMode()
+//{
+//	setBinaryMode(true);
+//}
 
 void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QString const &path)
 {
@@ -380,7 +380,7 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 			right_lines.push_back(TextDiffLine());
 		}
 
-		setDiffText(diff, m->original_lines, left_lines, right_lines);
+		setDiffText(diff, left_lines, right_lines);
 	}
 }
 
@@ -403,7 +403,7 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 			right_lines.push_back(TextDiffLine(line, TextDiffLine::Add));
 		}
 
-		setDiffText(diff, m->original_lines, left_lines, right_lines);
+		setDiffText(diff, left_lines, right_lines);
 	}
 }
 
@@ -425,7 +425,7 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 
 		makeSideBySideDiffData(diff, m->original_lines, &left_lines, &right_lines);
 
-		setDiffText(diff, m->original_lines, left_lines, right_lines);
+		setDiffText(diff, left_lines, right_lines);
 	}
 }
 
@@ -446,7 +446,7 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 
 		makeSideBySideDiffData(m->init_param_.diff, m->original_lines, &left_lines, &right_lines);
 
-		setDiffText(m->init_param_.diff, m->original_lines, left_lines, right_lines);
+		setDiffText(m->init_param_.diff, left_lines, right_lines);
 	}
 }
 
@@ -523,7 +523,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	ui->widget_diff_slider->update();
 }
 
-void FileDiffWidget::resizeEvent(QResizeEvent *event)
+void FileDiffWidget::resizeEvent(QResizeEvent *)
 {
 	refrectScrollBar();
 }
@@ -547,12 +547,12 @@ void FileDiffWidget::scrollTo(int value)
 	ui->verticalScrollBar->setValue(value);
 }
 
-void FileDiffWidget::onVerticalScrollValueChanged(int value)
+void FileDiffWidget::onVerticalScrollValueChanged(int)
 {
 	refrectScrollBar();
 }
 
-void FileDiffWidget::onHorizontalScrollValueChanged(int value)
+void FileDiffWidget::onHorizontalScrollValueChanged(int)
 {
 	refrectScrollBar();
 }
@@ -713,6 +713,8 @@ QPixmap FileDiffWidget::makeDiffPixmap(Pane pane, int width, int height)
 
 void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 {
+	(void)cur_col;
+	(void)cur_row;
 	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
 	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
 	refrectScrollBar();

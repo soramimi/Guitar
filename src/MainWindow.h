@@ -164,9 +164,9 @@ private slots:
 
 	void on_radioButton_remote_offline_clicked();
 
-	void on_verticalScrollBar_log_valueChanged(int value);
+	void on_verticalScrollBar_log_valueChanged(int);
 
-	void on_horizontalScrollBar_log_valueChanged(int value);
+	void on_horizontalScrollBar_log_valueChanged(int);
 
 private:
 	Ui::MainWindow *ui;
@@ -339,6 +339,7 @@ public:
 	void updateCommitTableLater();
 	bool isAvatarEnabled() const;
 	WebContext *getWebContextPtr();
+	void shown();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
@@ -354,7 +355,7 @@ signals:
 
 	// QObject interface
 protected:
-	void timerEvent(QTimerEvent *event);
+	void timerEvent(QTimerEvent *);
 
 	// QWidget interface
 protected:

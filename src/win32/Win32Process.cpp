@@ -9,7 +9,7 @@
 
 namespace {
 
-class ReadThread : public QThread {
+class OutputReaderThread : public QThread {
 private:
 	HANDLE hRead;
 	QMutex *mutex;
@@ -29,7 +29,7 @@ protected:
 		}
 	}
 public:
-	ReadThread(HANDLE hRead, QMutex *mutex, std::deque<char> *buffer)
+	OutputReaderThread(HANDLE hRead, QMutex *mutex, std::deque<char> *buffer)
 		: hRead(hRead)
 		, mutex(mutex)
 		, buffer(buffer)
@@ -126,8 +126,8 @@ protected:
 				closeInput();
 			}
 
-			ReadThread t1(hOutputRead, &mutex, &outvec);
-			ReadThread t2(hErrorRead, &mutex, &errvec);
+			OutputReaderThread t1(hOutputRead, &mutex, &outvec);
+			OutputReaderThread t2(hErrorRead, &mutex, &errvec);
 			t1.start();
 			t2.start();
 
@@ -213,118 +213,4 @@ QString Win32Process::errstring() const
 	return Process::toQString(errbytes);
 }
 
-
-// experiment
-
-struct Win32Process2::Private {
-	QTextCodec *sjis = nullptr;
-	Win32ProcessThread th;
-	std::list<Win32Process2::Task> tasks;
-};
-
-
-
-Win32Process2::Win32Process2()
-	: m(new Private)
-{
-
-}
-
-Win32Process2::~Win32Process2()
-{
-	delete m;
-}
-
-void Win32Process2::start(bool use_input)
-{
-	m->th.use_input = use_input;
-
-	m->sjis = QTextCodec::codecForName("Shift_JIS");
-	Q_ASSERT(m->sjis);
-}
-
-void Win32Process2::exec(const QString &command)
-{
-	QByteArray ba = m->sjis->fromUnicode(command);
-	if (ba.isEmpty()) return;
-	Task task;
-	char const *begin = ba.data();
-	char const *end = begin + ba.size();
-	task.command.assign(begin, end);
-	m->tasks.push_back(task);
-	step(false);
-}
-
-bool Win32Process2::step(bool delay)
-{
-	if (delay) {
-		m->th.wait(1);
-	}
-	if (m->th.isRunning()) {
-		return true;
-	}
-	if (!m->tasks.empty()) {
-		Task task = m->tasks.front();
-		m->tasks.pop_front();
-		m->th.command = task.command;
-		m->th.start();
-		return true;
-	}
-	return false;
-}
-
-int Win32Process2::readOutput(char *dstptr, int maxlen)
-{
-	QMutexLocker lock(&m->th.mutex);
-	int pos = 0;
-	while (pos < maxlen) {
-		int n;
-		n = m->th.outvec.size();
-		if (n > 0) {
-			if (n > maxlen) {
-				n = maxlen;
-			}
-			for (int i = 0; i < n; i++) {
-				dstptr[pos++] = m->th.outvec.front();
-				m->th.outvec.pop_front();
-
-			}
-
-		} else {
-			n = m->th.errvec.size();
-			if (n > 0) {
-				if (n > maxlen) {
-					n = maxlen;
-				}
-				for (int i = 0; i < n; i++) {
-					dstptr[pos++] = m->th.errvec.front();
-					m->th.errvec.pop_front();
-				}
-			} else {
-				break;
-			}
-		}
-	}
-	return pos;
-}
-
-void Win32Process2::writeInput(const char *ptr, int len)
-{
-	QMutexLocker lock(&m->th.mutex);
-	m->th.input.insert(m->th.input.end(), ptr, ptr + len);
-}
-
-void Win32Process2::closeInput()
-{
-	m->th.closeInput();
-}
-
-void Win32Process2::stop()
-{
-	if (m->th.isRunning()) {
-		m->th.requestInterruption();
-		closeInput();
-		m->th.wait();
-	}
-}
 

@@ -11,7 +11,7 @@
 #include <deque>
 
 namespace {
-class ReadThread : public QThread {
+class OutputReaderThread : public QThread {
 private:
 	int fd;
 	QMutex *mutex;
@@ -30,7 +30,7 @@ protected:
 		}
 	}
 public:
-	ReadThread(int fd, QMutex *mutex, std::deque<char> *out)
+	OutputReaderThread(int fd, QMutex *mutex, std::deque<char> *out)
 		: fd(fd)
 		, mutex(mutex)
 		, buffer(out)
@@ -170,8 +170,8 @@ protected:
 			}
 
 			WriteThread t0(fd_in_read, &mutex, &input);
-			ReadThread t1(fd_out_write, &mutex, &outvec);
-			ReadThread t2(fd_err_write, &mutex, &errvec);
+			OutputReaderThread t1(fd_out_write, &mutex, &outvec);
+			OutputReaderThread t2(fd_err_write, &mutex, &errvec);
 			if (use_input) t0.start();
 			t1.start();
 			t2.start();

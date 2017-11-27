@@ -34,8 +34,8 @@ private slots:
 	void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 	void on_listWidget_itemDoubleClicked(QListWidgetItem *item);
 	void on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
-	void on_verticalScrollBar_valueChanged(int value);
-	void on_horizontalScrollBar_valueChanged(int value);
+	void on_verticalScrollBar_valueChanged(int);
+	void on_horizontalScrollBar_valueChanged(int);
 };
 
 #endif // COMMITEXPLOREWINDOW_H

@@ -413,13 +413,13 @@ void TextEditorWidget::drawCursor(QPainter *pr)
 	if (y < cx()->viewport_org_y || y >= cx()->viewport_org_y + cx()->viewport_height) return;
 	x *= latin1Width();
 	y *= lineHeight();
-	int w = cx()->current_char_span * latin1Width();
 	int h = lineHeight();
 #if 1
 	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
 	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
 	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
 #else
+	int w = cx()->current_char_span * latin1Width();
 	pr->save();
 	pr->setOpacity(0.25);
 	pr->fillRect(cx()->cursor_rect, theme()->fgCursor());

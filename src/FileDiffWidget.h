@@ -106,7 +106,7 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const Git::Diff &diff, const std::vector<std::string> &original_lines, const TextDiffLineList &left, const TextDiffLineList &right);
+	void setDiffText(const Git::Diff &diff, const TextDiffLineList &left, const TextDiffLineList &right);
 
 
 	void setLeftOnly(const QByteArray &ba, const Git::Diff &diff);
@@ -119,12 +119,12 @@ private:
 	FileViewType setupPreviewWidget();
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
-	void setBinaryMode(bool f);
+//	void setBinaryMode(bool f);
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void setOriginalLines_(const QByteArray &ba);
 protected:
-	void resizeEvent(QResizeEvent *event);
+	void resizeEvent(QResizeEvent *);
 	void keyPressEvent(QKeyEvent *event);
 public:
 	explicit FileDiffWidget(QWidget *parent = 0);
@@ -149,14 +149,14 @@ public:
 	QPixmap makeDiffPixmap(Pane pane, int width, int height);
 	void setViewType(FileViewType type);
 private slots:
-	void onVerticalScrollValueChanged(int value);
-	void onHorizontalScrollValueChanged(int value);
+	void onVerticalScrollValueChanged(int);
+	void onHorizontalScrollValueChanged(int);
 	void onDiffWidgetWheelScroll(int lines);
 	void onScrollValueChanged2(int value);
 	void onDiffWidgetResized();
 	void on_toolButton_fullscreen_clicked();
 
-	void setBinaryMode();
+//	void setBinaryMode();
 	void scrollTo(int value);
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
 signals:

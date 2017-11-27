@@ -77,6 +77,8 @@ public:
 
 } // namespace
 
+// UnixPtyProcess
+
 struct UnixPtyProcess::Private {
 	QMutex mutex;
 	std::string command;

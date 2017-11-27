@@ -77,6 +77,13 @@
 #include <unix/UnixPtyProcess.h>
 #endif
 
+#ifdef Q_OS_WIN
+typedef Win32PtyProcess PtyProcess;
+#else
+typedef UnixPtyProcess PtyProcess;
+#endif
+
+
 #ifdef Q_OS_MAC
 extern "C" char **environ;
 #endif
@@ -202,11 +209,7 @@ struct MainWindow::Private {
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
-#ifdef Q_OS_WIN
-	Win32PtyProcess pty_process;
-#else
-	UnixPtyProcess pty_process;
-#endif
+	PtyProcess pty_process;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -236,11 +239,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->widget_log->layoutEditor();
 	onLogVisibilityChanged();
 
-	writeLog(AboutDialog::appVersion() + '\n');
-
 	SettingsDialog::loadSettings(&m->appsettings);
-	setGitCommand(m->appsettings.git_command, false);
-	setFileCommand(m->appsettings.file_command, false);
+
 	initNetworking();
 
 	{
@@ -298,30 +298,9 @@ MainWindow::MainWindow(QWidget *parent)
 	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
 
-#ifdef Q_OS_WIN
-#else
-//	connect(&m->pty_process, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
-//		ui->widget_log->write(ptr, len);
-//	});
-//	m->pty_process.open(QIODevice::ReadWrite);
-#endif
-
 	m->update_files_list_counter = 0;
-//	m->interval_250ms_counter = 0;
 
 	startTimers();
-
-//	auto setAskPass = [](){
-//		QString askpass = misc::getApplicationDir();
-//#ifdef _WIN32
-//		askpass = askpass / "askpass.exe";
-//		setEnvironmentVariable("GIT_ASKPASS", askpass);
-//#else
-//		askpass = askpass / "askpass";
-//		setenv("GIT_ASKPASS", askpass.toStdString().c_str(), 1);
-//#endif
-//	};
-//	setAskPass();
 }
 
 MainWindow::~MainWindow()
@@ -333,15 +312,19 @@ MainWindow::~MainWindow()
 
 	m->avatar_loader.interrupt();
 
-//	cleanupDiffThread();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
 
-//	m->proc.stop();
-
 	delete m;
 	delete ui;
+}
+
+void MainWindow::shown()
+{
+	writeLog(AboutDialog::appVersion() + '\n');
+	setGitCommand(m->appsettings.git_command, false);
+	setFileCommand(m->appsettings.file_command, false);
 }
 
 void MainWindow::startTimers()
@@ -2951,25 +2934,14 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 	}
 }
 
-void MainWindow::timerEvent(QTimerEvent *event)
+void MainWindow::timerEvent(QTimerEvent *)
 {
-#ifdef Q_OS_WIN
-	ui->widget_log->setReadOnly(false);
 	while (1) {
 		char tmp[1024];
 		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
 		ui->widget_log->write(tmp, len);
 	}
-	ui->widget_log->setReadOnly(true);
-#else
-	while (1) {
-		char tmp[1024];
-		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
-		if (len < 1) break;
-		ui->widget_log->write(tmp, len);
-	}
-#endif
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -2979,11 +2951,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 		auto write_char = [&](char c){
 			if (m->pty_process.isRunning()) {
-#ifdef Q_OS_WIN
 				m->pty_process.writeInput(&c, 1);
-#else
-				m->pty_process.writeInput(&c, 1);
-#endif
 			}
 		};
 
@@ -3996,12 +3964,12 @@ void MainWindow::on_radioButton_remote_offline_clicked()
 	setRemoteOnline(false);
 }
 
-void MainWindow::on_verticalScrollBar_log_valueChanged(int value)
+void MainWindow::on_verticalScrollBar_log_valueChanged(int)
 {
 	ui->widget_log->refrectScrollBar();
 }
 
-void MainWindow::on_horizontalScrollBar_log_valueChanged(int value)
+void MainWindow::on_horizontalScrollBar_log_valueChanged(int)
 {
 	ui->widget_log->refrectScrollBar();
 

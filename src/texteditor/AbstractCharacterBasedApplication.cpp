@@ -1836,6 +1836,7 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 	if (m->show_line_number) {
 		Option opt_normal;
 		paintLineNumbers([&](int y, QString text, Document::Line const *line){
+			(void)line;
 			print(0, y, text + '|', opt_normal);
 		});
 	}
