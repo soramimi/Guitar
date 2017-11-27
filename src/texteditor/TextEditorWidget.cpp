@@ -298,29 +298,6 @@ void TextEditorWidget::setPreEditText(const PreEditText &preedit)
 	update();
 }
 
-void TextEditorWidget::drawCursor(QPainter *pr)
-{
-	int x = cx()->viewport_org_x + cursorX();
-	int y = cx()->viewport_org_y + cursorY();
-	if (x < cx()->viewport_org_x || x >= cx()->viewport_org_x + cx()->viewport_width) return;
-	if (y < cx()->viewport_org_y || y >= cx()->viewport_org_y + cx()->viewport_height) return;
-	x *= latin1Width();
-	y *= lineHeight();
-	int w = cx()->current_char_span * latin1Width();
-	int h = lineHeight();
-#if 1
-	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
-	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
-	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
-#else
-	pr->save();
-	pr->setOpacity(0.25);
-	pr->fillRect(cx()->cursor_rect, theme()->fgCursor());
-	pr->restore();
-	misc::drawBox(pr, x, y, w, h, theme()->fgCursor());
-#endif
-}
-
 QFont TextEditorWidget::textFont()
 {
 	return m->text_font;
@@ -428,10 +405,33 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 	}
 }
 
-
+void TextEditorWidget::drawCursor(QPainter *pr)
+{
+	int x = cx()->viewport_org_x + cursorX();
+	int y = cx()->viewport_org_y + cursorY();
+	if (x < cx()->viewport_org_x || x >= cx()->viewport_org_x + cx()->viewport_width) return;
+	if (y < cx()->viewport_org_y || y >= cx()->viewport_org_y + cx()->viewport_height) return;
+	x *= latin1Width();
+	y *= lineHeight();
+	int w = cx()->current_char_span * latin1Width();
+	int h = lineHeight();
+#if 1
+	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
+	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
+	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
+#else
+	pr->save();
+	pr->setOpacity(0.25);
+	pr->fillRect(cx()->cursor_rect, theme()->fgCursor());
+	pr->restore();
+	misc::drawBox(pr, x, y, w, h, theme()->fgCursor());
+#endif
+}
 
 void TextEditorWidget::paintEvent(QPaintEvent *)
 {
+	bool has_focus = hasFocus();
+
 	preparePaintScreen();
 
 	QPainter pr(this);
@@ -463,13 +463,15 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 
 	int linenum_width = leftMargin() * latin1Width();
 
-	// current line
-	if (renderingMode() == DecoratedMode) {
-		int y = current_y * lineHeight();
-		pr.fillRect(linenum_width, y + lineHeight() - 1, width() - linenum_width, 1, theme()->fgCursor());
-	}
+	if (has_focus) {
+		// current line
+		if (renderingMode() == DecoratedMode) {
+			int y = current_y * lineHeight();
+			pr.fillRect(linenum_width, y + lineHeight() - 1, width() - linenum_width, 1, theme()->fgCursor());
+		}
 
-	drawCursor(&pr);
+		drawCursor(&pr);
+	}
 
 	paintScreen(&pr);
 
@@ -516,7 +518,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
-	if (m->is_focus_frame_visible && hasFocus()) {
+	if (m->is_focus_frame_visible && has_focus) {
 		misc::drawFrame(&pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
 		misc::drawFrame(&pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
 	}
@@ -525,6 +527,8 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::RightButton) return;
+
+	if (isTerminalMode()) return;
 
 	bool shift = (event->modifiers() & Qt::ShiftModifier);
 	if (shift) {
@@ -611,8 +615,8 @@ void TextEditorWidget::refrectScrollBar()
 void TextEditorWidget::layoutEditor()
 {
 	if (isAutoLayout()) {
-		int h = (height() + lineHeight() - 1) / lineHeight();
-		int w = (width() + latin1Width() - 1) / latin1Width();
+		int h = height() / lineHeight();
+		int w = width() / latin1Width();
 		setScreenSize(w, h, false);
 	}
 	AbstractTextEditorApplication::layoutEditor();

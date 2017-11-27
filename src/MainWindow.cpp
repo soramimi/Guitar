@@ -73,6 +73,7 @@
 #else
 #include <unistd.h>
 #include <unix/UnixProcess.h>
+#include <unix/UnixPtyProcess.h>
 #endif
 
 #ifdef Q_OS_MAC
@@ -204,7 +205,7 @@ struct MainWindow::Private {
 #ifdef Q_OS_WIN
 	Win32Process3 proc;
 #else
-	UnixProcess2 proc;
+	UnixPtyProcess proc;
 #endif
 };
 
@@ -230,9 +231,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
 	ui->widget_log->setTheme(TextEditorTheme::Dark());
-	ui->widget_log->setLineMargin(1);
 	ui->widget_log->setAutoLayout(true);
-	ui->widget_log->setTerminalMode();
+	ui->widget_log->setTerminalMode(true);
 	ui->widget_log->layoutEditor();
 	onLogVisibilityChanged();
 
@@ -297,6 +297,14 @@ MainWindow::MainWindow(QWidget *parent)
 	m->webcx.set_keep_alive_enabled(true);
 	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
+
+#ifdef Q_OS_WIN
+#else
+	connect(&m->proc, &UnixPtyProcess::receivedData, [&](char const *ptr, int len){
+		ui->widget_log->write(ptr, len);
+	});
+	m->proc.open(QIODevice::ReadWrite);
+#endif
 
 	m->timer_interval_ms = 1;
 	m->update_files_list_counter = 0;
@@ -527,9 +535,7 @@ void MainWindow::onLogVisibilityChanged()
 
 void MainWindow::writeLog(char const *ptr, int len)
 {
-	ui->widget_log->setReadOnly(false);
 	ui->widget_log->write(ptr, len);
-	ui->widget_log->setReadOnly(true);
 }
 
 void MainWindow::writeLog(const QString &str)
@@ -2949,6 +2955,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+#ifdef Q_OS_WIN
 	ui->widget_log->setReadOnly(false);
 	while (1) {
 		char tmp[1024];
@@ -2957,6 +2964,8 @@ void MainWindow::timerEvent(QTimerEvent *event)
 		ui->widget_log->write(tmp, len);
 	}
 	ui->widget_log->setReadOnly(true);
+#else
+#endif
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -2965,7 +2974,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 		int c = event->key();
 
 		auto write_char = [&](char c){
+#ifdef Q_OS_WIN
 			m->proc.writeInput(&c, 1);
+#else
+			if (m->proc.isRunning()) {
+				m->proc.sendData(&c, 1);
+			}
+#endif
 		};
 
 		auto write_text = [&](QString const &str){
@@ -2975,14 +2990,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 			}
 		};
 
-		ui->widget_log->setReadOnly(false);
 		if (c == Qt::Key_Return || c == Qt::Key_Enter) {
 			write_char('\n');
 		} else {
 			QString text = event->text();
 			write_text(text);
 		}
-		ui->widget_log->setReadOnly(true);
 	}
 }
 
@@ -3177,7 +3190,7 @@ void MainWindow::clone()
 #ifdef Q_OS_WIN
 			g->clone(clone_data, &m->proc);
 #else
-			g->clone(clone_data, nullptr);
+			g->clone(clone_data, &m->proc);
 #endif
 //				emit dlg2.finish();
 //			});

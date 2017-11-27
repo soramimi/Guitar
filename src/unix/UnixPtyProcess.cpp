@@ -45,6 +45,7 @@ int UnixPtyProcess::start(const QString &program)
 	QStringList argv;
 	QStringList env;
 	parseArgs(program, &argv);
-	Pty::start(argv[0], argv, env, 0, 0);
+	int r = Pty::start(argv[0], argv, env, 0, 0);
 	waitForStarted();
+	return r;
 }

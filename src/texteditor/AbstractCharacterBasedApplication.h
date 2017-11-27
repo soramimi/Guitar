@@ -340,7 +340,8 @@ public:
 	void setWriteMode(WriteMode wm);
 	bool isInsertMode() const;
 	bool isOverwriteMode() const;
-	void setTerminalMode();
+	void setTerminalMode(bool f);
+	bool isTerminalMode() const;
 	void moveToBottom();
 	bool isBottom() const;
 	void setLineMargin(int n);

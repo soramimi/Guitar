@@ -17,6 +17,7 @@ struct AbstractCharacterBasedApplication::Private {
 	bool is_save_enabled = false;
 	bool is_toggle_selection_anchor_enabled = true;
 	bool is_read_only = false;
+	bool is_terminal_mode = false;
 	State state = State::Normal;
 	int header_line = 1;
 	int footer_line = 1;
@@ -1947,7 +1948,7 @@ void AbstractCharacterBasedApplication::setReadOnly(bool f)
 
 bool AbstractCharacterBasedApplication::isReadOnly() const
 {
-	return m->is_read_only;
+	return m->is_read_only && !m->is_terminal_mode;
 }
 
 void AbstractCharacterBasedApplication::setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll)
@@ -2027,13 +2028,22 @@ bool AbstractCharacterBasedApplication::isOverwriteMode() const
 	return m->write_mode == WriteMode::Overwrite;
 }
 
-void AbstractCharacterBasedApplication::setTerminalMode()
+void AbstractCharacterBasedApplication::setTerminalMode(bool f)
 {
-	showHeader(false);
-	showFooter(false);
-	showLineNumber(false, 0);
-	setWriteMode(WriteMode::Overwrite);
-	setReadOnly(true);
+	m->is_terminal_mode = f;
+	if (isTerminalMode()) {
+		showHeader(false);
+		showFooter(false);
+		showLineNumber(false, 0);
+		setLineMargin(0);
+		setWriteMode(WriteMode::Overwrite);
+		setReadOnly(true);
+	}
+}
+
+bool AbstractCharacterBasedApplication::isTerminalMode() const
+{
+	return m->is_terminal_mode;
 }
 
 bool AbstractCharacterBasedApplication::isBottom() const

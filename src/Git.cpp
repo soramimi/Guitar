@@ -16,6 +16,7 @@
 #include "win32/Win32Process.h"
 #else
 #include "unix/UnixProcess.h"
+#include "unix/UnixPtyProcess.h"
 #endif
 
 #define DEBUGLOG 0
@@ -142,7 +143,7 @@ bool Git::chdirexec(std::function<bool()> fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir, bool errout, void *ttymode)
+bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -169,12 +170,17 @@ bool Git::git(const QString &arg, bool chdir, bool errout, void *ttymode)
 		}
 
 #ifdef Q_OS_WIN
-		if (ttymode) {
-			Win32Process3 *p = (Win32Process3 *)ttymode;
+		if (pty) {
+			Win32Process3 *p = (Win32Process3 *)pty;
 			p->start(cmd);
 //			m->process_exit_code = ttymode->wait();
 //			m->result = *ttymode->result();
 		} else
+#else
+		if (pty) {
+			UnixPtyProcess *p = (UnixPtyProcess *)pty;
+			p->start(cmd);
+		}
 #endif
 		{
 			Process proc;

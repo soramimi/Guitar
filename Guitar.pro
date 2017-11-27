@@ -13,6 +13,8 @@ CONFIG += c++11
 
 TRANSLATIONS = Guitar_ja.ts
 
+DEFINES += HAVE_POSIX_OPENPT
+
 unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
@@ -163,7 +165,7 @@ SOURCES += \
 	src/texteditor/unicode.cpp \
 	src/texteditor/UnicodeWidth.cpp \
 	src/FileViewWidget.cpp \
-    src/MyTextEditorWidget.cpp
+	src/MyTextEditorWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -249,7 +251,7 @@ HEADERS  += \
 	src/texteditor/unicode.h \
 	src/texteditor/UnicodeWidth.h \
 	src/FileViewWidget.h \
-    src/MyTextEditorWidget.h
+	src/MyTextEditorWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -290,9 +292,22 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
-		src/unix/UnixProcess.cpp
+		src/unix/UnixProcess.cpp \
+		src/unix/UnixPtyProcess.cpp \
+		src/qtermwidget/Pty.cpp \
+		src/qtermwidget/kptyprocess.cpp \
+		src/qtermwidget/kptydevice.cpp \
+		src/qtermwidget/kpty.cpp \
+		src/qtermwidget/kprocess.cpp
 	HEADERS += \
-		src/unix/UnixProcess.h
+		src/unix/UnixProcess.h \
+		src/unix/UnixPtyProcess.h \
+		src/qtermwidget/Pty.h \
+		src/qtermwidget/kptyprocess.h \
+		src/qtermwidget/kptydevice.h \
+		src/qtermwidget/kpty.h \
+		src/qtermwidget/kpty_p.h \
+		src/qtermwidget/kprocess.h
 }
 
 win32 {
