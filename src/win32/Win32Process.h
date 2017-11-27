@@ -8,9 +8,9 @@
 #include <vector>
 #include <list>
 #include <QThread>
-#include "MyProcess.h"
+//#include "MyProcess.h"
 
-class Win32Process : public AbstractProcess {
+class Win32Process {
 public:
 	std::vector<char> outbytes;
 	std::vector<char> errbytes;

@@ -3,6 +3,8 @@
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
+#else
+#include <unistd.h>
 #endif
 
 #include "AboutDialog.h"
@@ -67,21 +69,7 @@
 #include <deque>
 #include <set>
 
-
-#ifdef Q_OS_WIN
-#include <win32/Win32Process.h>
-#include <win32/Win32PtyProcess.h>
-#else
-#include <unistd.h>
-#include <unix/UnixProcess.h>
-#include <unix/UnixPtyProcess.h>
-#endif
-
-#ifdef Q_OS_WIN
-typedef Win32PtyProcess PtyProcess;
-#else
-typedef UnixPtyProcess PtyProcess;
-#endif
+#include "MyProcess.h"
 
 
 #ifdef Q_OS_MAC

@@ -12,13 +12,7 @@
 #include "LibGit2.h"
 #include "GitObjectManager.h"
 
-#ifdef Q_OS_WIN
-#include "win32/Win32Process.h"
-#include "win32/Win32PtyProcess.h"
-#else
-#include "unix/UnixProcess.h"
-#include "unix/UnixPtyProcess.h"
-#endif
+#include "MyProcess.h"
 
 #define DEBUGLOG 0
 

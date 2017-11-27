@@ -54,7 +54,7 @@ protected:
 			while (n > 0) {
 				char buf[256];
 				int l = n;
-				if (l > sizeof(buf)) {
+				if (l > (int)sizeof(buf)) {
 					l = sizeof(buf);
 				}
 				std::copy(buffer->begin(), buffer->begin() + l, buf);
@@ -76,7 +76,6 @@ public:
 };
 
 class UnixProcessThread : public QThread {
-	friend class ::UnixProcess2;
 public:
 	QMutex mutex;
 	const char *file;
@@ -111,9 +110,9 @@ protected:
 		const int R = 0;
 		const int W = 1;
 		const int E = 2;
-		int stdin_pipe[2] = { -1, -1 };
-		int stdout_pipe[2] = { -1, -1 };
-		int stderr_pipe[2] = { -1, -1 };
+		int stdin_pipe[3] = { -1, -1, -1 };
+		int stdout_pipe[3] = { -1, -1, -1 };
+		int stderr_pipe[3] = { -1, -1, -1 };
 
 		try {
 			int fd_out_write;
@@ -298,132 +297,4 @@ QString UnixProcess::errstring()
 	v.insert(v.end(), errbytes.begin(), errbytes.end());
 	return QString::fromUtf8(&v[0], v.size());
 }
-
-
-// experiment
-//
-
-struct UnixProcess2::Private {
-	UnixProcessThread th;
-	std::vector<std::string> args1;
-	std::vector<char *> args2;
-	std::list<UnixProcess2::Task> tasks;
-};
-
-UnixProcess2::UnixProcess2()
-	: m(new Private)
-{
-
-}
-
-UnixProcess2::~UnixProcess2()
-{
-	delete m;
-}
-
-
-
-void UnixProcess2::exec(const QString &command)
-{
-	m->th.use_input = true;
-
-	Task task;
-	task.command = command.toStdString();
-	m->tasks.push_back(task);
-	step(false);
-}
-
-bool UnixProcess2::step(bool delay)
-{
-	if (delay) {
-		m->th.wait(1);
-	}
-	if (m->th.isRunning()) {
-		return true;
-	}
-	if (!m->tasks.empty()) {
-		Task task = m->tasks.front();
-		m->tasks.pop_front();
-
-		m->args1.clear();
-		m->args2.clear();
-
-		UnixProcess::parseArgs(task.command, &m->args1);
-		if (m->args1.size() < 1) return false;
-
-		for (std::string const &s : m->args1) {
-			m->args2.push_back(const_cast<char *>(s.c_str()));
-		}
-		m->args2.push_back(nullptr);
-
-		m->th.init(m->args2[0], &m->args2[0]);
-		m->th.start();
-		return true;
-	}
-	return false;
-}
-
-int UnixProcess2::readOutput(char *dstptr, int maxlen)
-{
-	QMutexLocker lock(&m->th.mutex);
-	int pos = 0;
-	while (pos < maxlen) {
-		int n;
-		n = m->th.outvec.size();
-		if (n > 0) {
-			if (n > maxlen) {
-				n = maxlen;
-			}
-			for (int i = 0; i < n; i++) {
-				dstptr[pos++] = m->th.outvec.front();
-				m->th.outvec.pop_front();
-
-			}
-
-		} else {
-			n = m->th.errvec.size();
-			if (n > 0) {
-				if (n > maxlen) {
-					n = maxlen;
-				}
-				for (int i = 0; i < n; i++) {
-					dstptr[pos++] = m->th.errvec.front();
-					m->th.errvec.pop_front();
-				}
-			} else {
-				break;
-			}
-		}
-	}
-	return pos;
-}
-
-void UnixProcess2::writeInput(const char *ptr, int len)
-{
-	QMutexLocker lock(&m->th.mutex);
-	m->th.input.insert(m->th.input.end(), ptr, ptr + len);
-}
-
-void UnixProcess2::closeInput()
-{
-	m->th.closeInput();
-}
-
-void UnixProcess2::stop()
-{
-	if (m->th.isRunning()) {
-		m->th.requestInterruption();
-		closeInput();
-		m->th.wait();
-	}
-}
-
-
-
-
-
-
-
-
-
 

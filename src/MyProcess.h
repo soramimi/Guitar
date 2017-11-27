@@ -1,29 +1,16 @@
 #ifndef MYPROCESS_H
 #define MYPROCESS_H
 
-#include <QString>
-#include <functional>
-#include <vector>
-
-class AbstractProcess {
-public:
-	virtual ~AbstractProcess()
-	{
-	}
-
-//	typedef std::function<bool (void *cookie)> stdinput_fn_t;
-
-	virtual int run(QString const &command, bool use_input) = 0;
-
-	static QString toQString(std::vector<char> const &vec);
-};
-
 #ifdef Q_OS_WIN
-class Win32Process;
+#include "win32/Win32Process.h"
+#include "win32/Win32PtyProcess.h"
 typedef Win32Process Process;
+typedef Win32PtyProcess PtyProcess;
 #else
-class UnixProcess;
+#include "unix/UnixProcess.h"
+#include "unix/UnixPtyProcess.h"
 typedef UnixProcess Process;
+typedef UnixPtyProcess PtyProcess;
 #endif
 
 #endif // MYPROCESS_H
