@@ -9,6 +9,7 @@
 #include <list>
 #include "MyProcess.h"
 #include <QThread>
+#include "qtermwidget/Pty.h"
 
 class UnixProcess : public AbstractProcess {
 public:
@@ -46,29 +47,5 @@ public:
 	void stop();
 };
 
-
-class UnixProcess3 : public QThread {
-private:
-	struct Private;
-	Private *m;
-
-	class Task {
-	public:
-		std::string command;
-		bool done = false;
-		int exit_code = -1;
-	};
-protected:
-	void run();
-public:
-	UnixProcess3();
-	~UnixProcess3();
-
-	void stop();
-	int writeInput(char const *ptr, int len);
-	int readOutput(char *ptr, int len);
-	bool step(bool delay);
-	void exec(QString const &command);
-};
 
 #endif // UNIXPROCESS_H
