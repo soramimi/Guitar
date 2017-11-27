@@ -165,7 +165,8 @@ SOURCES += \
 	src/texteditor/unicode.cpp \
 	src/texteditor/UnicodeWidth.cpp \
 	src/FileViewWidget.cpp \
-	src/MyTextEditorWidget.cpp
+	src/MyTextEditorWidget.cpp \
+    src/win32/Win32PtyProcess.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -251,7 +252,8 @@ HEADERS  += \
 	src/texteditor/unicode.h \
 	src/texteditor/UnicodeWidth.h \
 	src/FileViewWidget.h \
-	src/MyTextEditorWidget.h
+	src/MyTextEditorWidget.h \
+    src/win32/Win32PtyProcess.h
 
 FORMS    += \
 	src/MainWindow.ui \

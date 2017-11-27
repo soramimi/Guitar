@@ -70,6 +70,7 @@
 
 #ifdef Q_OS_WIN
 #include <win32/Win32Process.h>
+#include <win32/Win32PtyProcess.h>
 #else
 #include <unistd.h>
 #include <unix/UnixProcess.h>
@@ -203,9 +204,9 @@ struct MainWindow::Private {
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
 #ifdef Q_OS_WIN
-	Win32Process3 proc;
+	Win32PtyProcess pty_process;
 #else
-	UnixPtyProcess proc;
+	UnixPtyProcess pty_process;
 #endif
 };
 
@@ -2959,7 +2960,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	ui->widget_log->setReadOnly(false);
 	while (1) {
 		char tmp[1024];
-		int len = m->proc.readOutput(tmp, sizeof(tmp));
+		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
 		ui->widget_log->write(tmp, len);
 	}
@@ -2975,7 +2976,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 		auto write_char = [&](char c){
 #ifdef Q_OS_WIN
-			m->proc.writeInput(&c, 1);
+			m->pty_process.writeInput(&c, 1);
 #else
 			if (m->proc.isRunning()) {
 				m->proc.sendData(&c, 1);
@@ -3177,35 +3178,8 @@ void MainWindow::clone()
 				QDir(base).mkpath(sub);
 			}
 
-//			ProgressDialog dlg2(this);
-//			dlg2.setLabelText(tr("Cloning is in progress"));
-
 			GitPtr g = git(QString());
-//			g->setLogCallback(clone_callback, &dlg2);
-
-//			bool ok = false;
-
-//			RetrieveLogThread_ th([&](){
-//				qDebug() << "cloning";
-#ifdef Q_OS_WIN
-			g->clone(clone_data, &m->proc);
-#else
-			g->clone(clone_data, &m->proc);
-#endif
-//				emit dlg2.finish();
-//			});
-//			th.start();
-
-//			dlg2.exec();
-//			th.wait();
-
-//			g->setLogCallback(nullptr, nullptr);
-
-//			if (dlg2.canceledByUser()) {
-//				return; // canceled
-//			}
-
-//			if (!ok) return;
+			g->clone(clone_data, &m->pty_process);
 
 			RepositoryItem item;
 			item.local_dir = dir;
@@ -4035,6 +4009,6 @@ void MainWindow::on_action_test_triggered()
 {
 #ifdef Q_OS_WIN
 	QString command_line = "\"C:/Program Files/Git/bin/git.exe\" --version";
-	m->proc.start(command_line);
+	m->pty_process.start(command_line);
 #endif
 }

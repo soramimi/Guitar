@@ -47,26 +47,5 @@ public:
 };
 
 
-class Win32Process3 : public QThread {
-private:
-	struct Private;
-	Private *m;
-
-	static QString getProgram(QString const &cmdline);
-
-	void close();
-protected:
-	void run();
-public:
-	Win32Process3();
-	~Win32Process3();
-	int readOutput(char *dstptr, int maxlen);
-	void writeInput(char const *ptr, int len);
-	void start(QString const &cmdline);
-	void stop();
-	int wait();
-	std::vector<char> const *result() const;
-};
-
 
 #endif // WIN32PROCESS_H

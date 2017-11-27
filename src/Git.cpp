@@ -14,6 +14,7 @@
 
 #ifdef Q_OS_WIN
 #include "win32/Win32Process.h"
+#include "win32/Win32PtyProcess.h"
 #else
 #include "unix/UnixProcess.h"
 #include "unix/UnixPtyProcess.h"
@@ -171,7 +172,7 @@ bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
 
 #ifdef Q_OS_WIN
 		if (pty) {
-			Win32Process3 *p = (Win32Process3 *)pty;
+			Win32PtyProcess *p = (Win32PtyProcess *)pty;
 			p->start(cmd);
 //			m->process_exit_code = ttymode->wait();
 //			m->result = *ttymode->result();
