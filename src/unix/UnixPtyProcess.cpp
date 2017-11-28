@@ -121,8 +121,15 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 
 void UnixPtyProcess::start(const QString &cmd)
 {
+	if (isRunning()) return;
 	m->command = cmd.toStdString();
 	QThread::start();
+}
+
+int UnixPtyProcess::wait()
+{
+	QThread::wait();
+	return m->exit_code;
 }
 
 void UnixPtyProcess::run()
@@ -193,6 +200,8 @@ void UnixPtyProcess::run()
 		m->th_output_reader.wait();
 		close(m->pty_master);
 		m->pty_master = -1;
+
+		emit completed();
 	}
 }
 

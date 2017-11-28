@@ -8,69 +8,66 @@
 #endif
 
 #include "AboutDialog.h"
+#include "AvatarLoader.h"
 #include "CheckoutDialog.h"
 #include "CloneDialog.h"
+#include "CommitExploreWindow.h"
+#include "CommitExploreWindow.h"
 #include "CommitPropertyDialog.h"
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include "ConfigCredentialHelperDialog.h"
+#include "CreateRepositoryDialog.h"
+#include "DeleteBranchDialog.h"
+#include "DeleteTagsDialog.h"
+#include "EditTagDialog.h"
+#include "FileHistoryWindow.h"
+#include "FilePropertyDialog.h"
 #include "FileUtil.h"
 #include "Git.h"
 #include "GitDiff.h"
-#include "common/joinpath.h"
+#include "gunzip.h"
+#include "JumpDialog.h"
 #include "LibGit2.h"
+#include "LocalSocketReader.h"
 #include "main.h"
+#include "MemoryReader.h"
 #include "MergeBranchDialog.h"
-#include "common/misc.h"
+#include "MyProcess.h"
 #include "MySettings.h"
 #include "NewBranchDialog.h"
-#include "Terminal.h"
 #include "PushDialog.h"
 #include "RepositoryData.h"
-#include "SelectCommandDialog.h"
-#include "SettingsDialog.h"
-#include "TextEditDialog.h"
 #include "RepositoryPropertyDialog.h"
-#include "EditTagDialog.h"
-#include "DeleteTagsDialog.h"
-#include "FileHistoryWindow.h"
-#include "FilePropertyDialog.h"
-#include "CommitExploreWindow.h"
+#include "SelectCommandDialog.h"
 #include "SetRemoteUrlDialog.h"
-#include "CommitExploreWindow.h"
+#include "SettingsDialog.h"
 #include "SetUserDialog.h"
-#include "JumpDialog.h"
-#include "DeleteBranchDialog.h"
-#include "LocalSocketReader.h"
 #include "StatusLabel.h"
-#include "CreateRepositoryDialog.h"
-#include "AvatarLoader.h"
+#include "Terminal.h"
+#include "TextEditDialog.h"
 #include "webclient.h"
-#include "MemoryReader.h"
-#include "gunzip.h"
+#include <deque>
+#include <set>
+#include <stdlib.h>
 
+#include <QBuffer>
 #include <QDateTime>
 #include <QDebug>
 #include <QDesktopServices>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QPainter>
-#include <QStandardPaths>
-#include <QKeyEvent>
-#include <QProcess>
 #include <QDirIterator>
-#include <QThread>
-#include <QMimeData>
 #include <QDragEnterEvent>
-#include <QLocalServer>
-#include <QBuffer>
+#include <QFileDialog>
 #include <QFileIconProvider>
+#include <QKeyEvent>
+#include <QLocalServer>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QPainter>
+#include <QProcess>
+#include <QStandardPaths>
+#include <QThread>
 #include <QTimer>
-
-#include <stdlib.h>
-#include <deque>
-#include <set>
-
-#include "MyProcess.h"
-
 
 #ifdef Q_OS_MAC
 extern "C" char **environ;
@@ -97,7 +94,6 @@ protected:
 		callback(g);
 	}
 };
-
 
 FileDiffWidget::DrawData::DrawData()
 {
@@ -161,6 +157,7 @@ struct MainWindow::Private {
 	QString file_command;
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
+	RepositoryItem temp_repo;
 	ServerType server_type = ServerType::Standard;
 	GitHubRepositoryInfo github;
 	Git::Branch current_branch;
@@ -275,6 +272,8 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
 
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
+
+	connect((AbstractPtyProcess *)&m->pty_process, SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
 
 	QString path = getBookmarksFilePath();
 	m->repos = RepositoryBookmark::load(path);
@@ -1191,9 +1190,6 @@ struct TemporaryCommitItem {
 
 Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 {
-#if 0
-	return g->log(limitLogCount());
-#else
 	Git::CommitItemList list = g->log(limitLogCount());
 
 	// 親子関係を調べて、順番が狂っていたら、修正する。
@@ -1227,7 +1223,6 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 	}
 
 	return list;
-#endif
 }
 
 void MainWindow::detectGitServerType(GitPtr g)
@@ -1294,51 +1289,20 @@ void MainWindow::openRepository_(GitPtr g)
 
 		bool canceled = false;
 		ui->tableWidget_log->setEnabled(false);
-		{
-//			ProgressDialog dlg(this);
-//			dlg.setLabelText(tr("Retrieving the log is in progress"));
 
-//			RetrieveLogThread_ th([&](){
-//				emit dlg.writeLog(tr("Retrieving commit log...\n"));
-				// ログを取得
-				m->logs = retrieveCommitLog(g);
-				// ブランチを取得
-//				emit dlg.writeLog(tr("Retrieving branches...\n"));
-				queryBranches(g);
-				// タグを取得
-//				emit dlg.writeLog(tr("Retrieving tags...\n"));
-				m->tag_map.clear();
-				QList<Git::Tag> tags = g->tags();
-				for (Git::Tag const &tag : tags) {
-					Git::Tag t = tag;
-					t.id = m->objcache.getCommitIdFromTag(t.id);
-					m->tag_map[t.id].push_back(t);
-//					if (dlg.canceledByUser()) {
-//						return;
-//					}
-				}
-
-//				emit dlg.finish();
-//			});
-//			th.start();
-
-//			if (th.wait(3000)) {
-//				// thread completed
-//			} else {
-//				dlg.show();
-//				dlg.grabMouse();
-//				dlg.exec();
-//				dlg.releaseMouse();
-//				th.wait();
-//			}
-//			th.wait();
-
-//			if (dlg.canceledByUser()) {
-//				setUnknownRepositoryInfo();
-//				writeLog(tr("Canceled by user\n"));
-//				canceled = true;
-//			}
+		// ログを取得
+		m->logs = retrieveCommitLog(g);
+		// ブランチを取得
+		queryBranches(g);
+		// タグを取得
+		m->tag_map.clear();
+		QList<Git::Tag> tags = g->tags();
+		for (Git::Tag const &tag : tags) {
+			Git::Tag t = tag;
+			t.id = m->objcache.getCommitIdFromTag(t.id);
+			m->tag_map[t.id].push_back(t);
 		}
+
 		ui->tableWidget_log->setEnabled(true);
 		updateCommitTableLater();
 		if (canceled) return;
@@ -2005,8 +1969,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	}
 }
 
-
-
 void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &pos)
 {
 	GitPtr g = git();
@@ -2296,8 +2258,6 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 		m->update_files_list_counter = 200;
 	}
 }
-
-
 
 void MainWindow::on_toolButton_stage_clicked()
 {
@@ -3061,25 +3021,13 @@ void MainWindow::on_action_branch_merge_triggered()
 
 bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
 {
-#if 0
-	ProgressDialog *dlg = (ProgressDialog *)cookie;
-	if (dlg->canceledByUser()) {
-		qDebug() << "canceled";
-		return false;
-	}
-
-	QString text = QString::fromUtf8(ptr, len);
-	emit dlg->writeLog(text);
-#else
 	MainWindow *mw = (MainWindow *)cookie;
 	mw->writeLog(ptr, len);
-
-#endif
 	return true;
 }
 
 void MainWindow::clone()
-{ // クローン
+{
 	if (!isRemoteOnline()) return;
 
 	QString url;
@@ -3137,16 +3085,12 @@ void MainWindow::clone()
 				QDir(base).mkpath(sub);
 			}
 
+			m->temp_repo.local_dir = dir;
+			m->temp_repo.local_dir.replace('\\', '/');
+			m->temp_repo.name = makeRepositoryName(dir);
+
 			GitPtr g = git(QString());
 			g->clone(clone_data, &m->pty_process);
-
-			RepositoryItem item;
-			item.local_dir = dir;
-			item.local_dir.replace('\\', '/');
-			item.name = makeRepositoryName(dir);
-			saveRepositoryBookmark(item);
-			m->current_repo = item;
-			openRepository(true);
 
 		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
 			addWorkingCopyDir(dir, true);
@@ -3154,6 +3098,18 @@ void MainWindow::clone()
 
 		return; // done
 	}
+}
+
+void MainWindow::onCloneCompleted()
+{
+	saveRepositoryBookmark(m->temp_repo);
+	m->current_repo = m->temp_repo;
+	openRepository(true);
+}
+
+void MainWindow::onPtyProcessCompleted()
+{
+	onCloneCompleted();
 }
 
 void MainWindow::on_action_clone_triggered()
@@ -3165,7 +3121,6 @@ void MainWindow::on_action_about_triggered()
 {
 	AboutDialog dlg(this);
 	dlg.exec();
-
 }
 
 void MainWindow::on_toolButton_clone_clicked()
@@ -3387,7 +3342,6 @@ void MainWindow::execFilePropertyDialog(QListWidgetItem *item)
 	}
 }
 
-
 void MainWindow::on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem * item)
 {
 	execFilePropertyDialog(item);
@@ -3608,8 +3562,6 @@ void MainWindow::on_action_repo_jump_triggered()
 		}
 	}
 }
-
-
 
 void MainWindow::checkout(Git::CommitItem const *commit)
 {
@@ -3963,11 +3915,6 @@ void MainWindow::on_horizontalScrollBar_log_valueChanged(int)
 
 }
 
-
 void MainWindow::on_action_test_triggered()
 {
-#ifdef Q_OS_WIN
-	QString command_line = "\"C:/Program Files/Git/bin/git.exe\" --version";
-	m->pty_process.start(command_line);
-#endif
 }

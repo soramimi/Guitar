@@ -76,98 +76,6 @@ public:
 	static QString makeRepositoryName(QString const &loc);
 	const Git::CommitItemList *logs() const;
 	QColor color(unsigned int i);
-private slots:
-	void on_action_add_all_triggered();
-	void on_action_branch_merge_triggered();
-	void on_action_branch_new_triggered();
-	void on_action_clone_triggered();
-	void on_action_commit_triggered();
-	void on_action_config_global_credential_helper_triggered();
-	void on_action_edit_git_config_triggered();
-	void on_action_edit_gitignore_triggered();
-	void on_action_edit_global_gitconfig_triggered();
-	void on_action_edit_settings_triggered();
-	void on_action_fetch_triggered();
-	void on_action_open_existing_working_copy_triggered();
-	void on_action_pull_triggered();
-	void on_action_push_triggered();
-	void on_action_set_remote_origin_url_triggered();
-	void on_action_test_triggered();
-	void on_action_view_refresh_triggered();
-	void on_action_tag_triggered();
-	void on_action_tag_push_all_triggered();
-	void on_action_tag_delete_triggered();
-
-	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
-
-	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-
-	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
-	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
-	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
-	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
-	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
-
-	void on_listWidget_unstaged_currentRowChanged(int currentRow);
-	void on_listWidget_staged_currentRowChanged(int currentRow);
-	void on_listWidget_files_currentRowChanged(int currentRow);
-
-	void on_toolButton_commit_clicked();
-	void on_toolButton_pull_clicked();
-	void on_toolButton_push_clicked();
-	void on_toolButton_select_all_clicked();
-	void on_toolButton_stage_clicked();
-	void on_toolButton_unstage_clicked();
-	void on_action_about_triggered();
-	void on_toolButton_clone_clicked();
-	void on_toolButton_fetch_clicked();
-
-	void on_lineEdit_filter_textChanged(const QString &text);
-	void on_toolButton_erase_filter_clicked();
-
-	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
-	void on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem *item);
-	void on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item);
-	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
-
-	void onRepositoriesTreeDropped();
-	void on_action_set_config_user_triggered();
-
-	void on_action_window_log_triggered(bool checked);
-
-	void onLogVisibilityChanged();
-
-	void on_action_repo_jump_triggered();
-	void on_action_repo_checkout_triggered();
-	void on_action_delete_branch_triggered();
-
-	void on_action_push_u_origin_master_triggered();
-
-#if 0
-	void onLocalServerConnected();
-	void onLocalSocketReadyRead(LocalSocketReader *p);
-	void onLocalSocketReadChannelFinished(LocalSocketReader *p);
-#endif
-
-    void on_toolButton_terminal_clicked();
-	void on_toolButton_explorer_clicked();
-
-	void on_action_push_u_triggered();
-
-	void on_action_reset_HEAD_1_triggered();
-
-	void on_action_create_a_repository_triggered();
-
-	void onAvatarUpdated();
-	void on_radioButton_remote_online_clicked();
-
-	void on_radioButton_remote_offline_clicked();
-
-	void on_verticalScrollBar_log_valueChanged(int);
-
-	void on_horizontalScrollBar_log_valueChanged(int);
-
 private:
 	Ui::MainWindow *ui;
 
@@ -285,6 +193,13 @@ private:
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const;
 	void startTimers();
+	void onCloneCompleted();
+protected:
+	void dragEnterEvent(QDragEnterEvent *event);
+	void timerEvent(QTimerEvent *);
+	void keyPressEvent(QKeyEvent *event);
+	bool event(QEvent *event);
+	bool eventFilter(QObject *watched, QEvent *event);
 public:
 
 	QString selectGitCommand(bool save);
@@ -298,8 +213,6 @@ public:
 	Git::Branch currentBranch() const;
 	bool isThereUncommitedChanges() const;
 	QString defaultWorkingDir() const;
-	bool event(QEvent *event);
-	bool eventFilter(QObject *watched, QEvent *event);
 	void autoOpenRepository(QString dir);
 	void saveRepositoryBookmark(RepositoryItem item);
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
@@ -344,22 +257,93 @@ public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);
-protected:
+private slots:
+	void on_action_add_all_triggered();
+	void on_action_branch_merge_triggered();
+	void on_action_branch_new_triggered();
+	void on_action_clone_triggered();
+	void on_action_commit_triggered();
+	void on_action_config_global_credential_helper_triggered();
+	void on_action_edit_git_config_triggered();
+	void on_action_edit_gitignore_triggered();
+	void on_action_edit_global_gitconfig_triggered();
+	void on_action_edit_settings_triggered();
+	void on_action_fetch_triggered();
+	void on_action_open_existing_working_copy_triggered();
+	void on_action_pull_triggered();
+	void on_action_push_triggered();
+	void on_action_set_remote_origin_url_triggered();
+	void on_action_test_triggered();
+	void on_action_view_refresh_triggered();
+	void on_action_tag_triggered();
+	void on_action_tag_push_all_triggered();
+	void on_action_tag_delete_triggered();
 
-protected slots:
+	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
-protected:
-	void dragEnterEvent(QDragEnterEvent *event);
+	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
+
+	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
+	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
+	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
+	void on_listWidget_unstaged_customContextMenuRequested(const QPoint &pos);
+	void on_listWidget_staged_customContextMenuRequested(const QPoint &pos);
+
+	void on_listWidget_unstaged_currentRowChanged(int currentRow);
+	void on_listWidget_staged_currentRowChanged(int currentRow);
+	void on_listWidget_files_currentRowChanged(int currentRow);
+
+	void on_toolButton_commit_clicked();
+	void on_toolButton_pull_clicked();
+	void on_toolButton_push_clicked();
+	void on_toolButton_select_all_clicked();
+	void on_toolButton_stage_clicked();
+	void on_toolButton_unstage_clicked();
+	void on_action_about_triggered();
+	void on_toolButton_clone_clicked();
+	void on_toolButton_fetch_clicked();
+
+	void on_lineEdit_filter_textChanged(const QString &text);
+	void on_toolButton_erase_filter_clicked();
+
+	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
+	void on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem *item);
+	void on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item);
+	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
+
+	void onRepositoriesTreeDropped();
+	void on_action_set_config_user_triggered();
+
+	void on_action_window_log_triggered(bool checked);
+
+	void onLogVisibilityChanged();
+
+	void on_action_repo_jump_triggered();
+	void on_action_repo_checkout_triggered();
+	void on_action_delete_branch_triggered();
+
+	void on_action_push_u_origin_master_triggered();
+
+	void on_toolButton_terminal_clicked();
+	void on_toolButton_explorer_clicked();
+
+	void on_action_push_u_triggered();
+
+	void on_action_reset_HEAD_1_triggered();
+
+	void on_action_create_a_repository_triggered();
+
+	void onAvatarUpdated();
+	void on_radioButton_remote_online_clicked();
+
+	void on_radioButton_remote_offline_clicked();
+	void on_verticalScrollBar_log_valueChanged(int);
+	void on_horizontalScrollBar_log_valueChanged(int);
+
+	void onPtyProcessCompleted();
 signals:
 	void onEscapeKeyPressed();
-
-	// QObject interface
-protected:
-	void timerEvent(QTimerEvent *);
-
-	// QWidget interface
-protected:
-	void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // MAINWINDOW_H

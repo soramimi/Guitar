@@ -1,12 +1,13 @@
 #ifndef WIN32PTYPROCESS_H
 #define WIN32PTYPROCESS_H
 
+#include <AbstractProcess.h>
 #include <QString>
 #include <QThread>
 #include <vector>
 
 
-class Win32PtyProcess : public QThread {
+class Win32PtyProcess : public AbstractPtyProcess, public QThread {
 private:
 	struct Private;
 	Private *m;
@@ -22,9 +23,12 @@ public:
 	int readOutput(char *dstptr, int maxlen);
 	void writeInput(char const *ptr, int len);
 	void start(QString const &cmdline);
-	void stop();
 	int wait();
+	void stop();
 	std::vector<char> const *result() const;
+
+	// AbstractPtyProcess interface
+public:
 };
 
 

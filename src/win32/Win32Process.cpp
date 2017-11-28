@@ -179,6 +179,12 @@ protected:
 
 };
 
+QString toQString(const std::vector<char> &vec)
+{
+	if (vec.empty()) return QString();
+	return QString::fromUtf8(&vec[0], vec.size());
+}
+
 } // namespace
 
 int Win32Process::run(QString const &command, bool use_input)
@@ -205,12 +211,12 @@ int Win32Process::run(QString const &command, bool use_input)
 
 QString Win32Process::outstring() const
 {
-	return Process::toQString(outbytes);
+	return toQString(outbytes);
 }
 
 QString Win32Process::errstring() const
 {
-	return Process::toQString(errbytes);
+	return toQString(errbytes);
 }
 
 

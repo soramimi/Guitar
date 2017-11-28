@@ -135,6 +135,8 @@ void Win32PtyProcess::run()
 
 	close();
 	winpty_free(pty);
+
+	emit completed();
 }
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
@@ -207,6 +209,12 @@ void Win32PtyProcess::start(const QString &cmdline)
 	QThread::start();
 }
 
+int Win32PtyProcess::wait()
+{
+	QThread::wait();
+	return m->exit_code;
+}
+
 void Win32PtyProcess::stop()
 {
 	m->th_output_reader.requestInterruption();
@@ -216,11 +224,6 @@ void Win32PtyProcess::stop()
 	wait();
 }
 
-int Win32PtyProcess::wait()
-{
-	QThread::wait();
-	return m->exit_code;
-}
 
 const std::vector<char> *Win32PtyProcess::result() const
 {

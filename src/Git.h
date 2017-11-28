@@ -1,6 +1,8 @@
 #ifndef GIT_H
 #define GIT_H
 
+#include "AbstractProcess.h"
+
 #include <QDateTime>
 #include <QObject>
 #include <functional>
@@ -289,7 +291,7 @@ public:
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> fn);
-	bool git(QString const &arg, bool chdir, bool errout = false, void *ttymode = nullptr);
+	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr);
 	bool git(QString const &arg)
 	{
 		return git(arg, true);
@@ -312,7 +314,7 @@ public:
 		QString subdir;
 	};
 	static CloneData preclone(QString const &url, QString const &path);
-	bool clone(CloneData const &data, void *proc);
+	bool clone(CloneData const &data, AbstractPtyProcess *pty);
 
 	FileStatusList status();
 	bool cat_file(const QString &id, QByteArray *out);

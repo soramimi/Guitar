@@ -138,7 +138,7 @@ bool Git::chdirexec(std::function<bool()> fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
+bool Git::git(const QString &arg, bool chdir, bool errout, AbstractPtyProcess *pty)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -164,20 +164,10 @@ bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
 			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 
-#ifdef Q_OS_WIN
 		if (pty) {
-			Win32PtyProcess *p = (Win32PtyProcess *)pty;
-			p->start(cmd);
-//			m->process_exit_code = ttymode->wait();
-//			m->result = *ttymode->result();
-		} else
-#else
-		if (pty) {
-			UnixPtyProcess *p = (UnixPtyProcess *)pty;
-			p->start(cmd);
-		} else
-#endif
-		{
+			pty->start(cmd);
+			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
+		} else {
 			Process proc;
 			m->process_exit_code = proc.run(cmd, false);
 
@@ -188,10 +178,6 @@ bool Git::git(const QString &arg, bool chdir, bool errout, void *pty)
 			}
 			m->error_message = proc.errstring();
 		}
-#if 0
-#else
-#endif
-
 
 		return m->process_exit_code == 0;
 	};
@@ -700,7 +686,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 	return d;
 }
 
-bool Git::clone(CloneData const &data, void *proc)
+bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
 	m->working_repo_dir = misc::normalizePathSeparator(clone_to);
@@ -711,7 +697,7 @@ bool Git::clone(CloneData const &data, void *proc)
 
 		QString cmd = "clone --progress \"%1\" \"%2\"";
 		cmd = cmd.arg(data.url).arg(clone_to);
-		ok = git(cmd, false, true, proc);
+		ok = git(cmd, false, true, pty);
 
 		QDir::setCurrent(cwd.path());
 	}
