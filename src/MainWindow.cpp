@@ -811,15 +811,6 @@ void MainWindow::showFileList(FilesListType files_list_type)
 	}
 }
 
-void MainWindow::clearLog()
-{
-	m->logs.clear();
-	m->label_map.clear();
-	m->uncommited_changes = false;
-	ui->tableWidget_log->clearContents();
-	ui->tableWidget_log->scrollToTop();
-}
-
 void MainWindow::clearFileList()
 {
 	showFileList(FilesListType::SingleList);
@@ -842,6 +833,21 @@ void MainWindow::clearRepositoryInfo()
 	ui->label_repo_name->setText(QString());
 	ui->label_branch_name->setText(QString());
 
+}
+
+void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
+{
+	ui->label_repo_name->setText(reponame);
+	ui->label_branch_name->setText(brname);
+}
+
+void MainWindow::setUnknownRepositoryInfo()
+{
+	setRepositoryInfo("---", "");
+
+	Git g(m->gcx, QString());
+	Git::User user = g.getUser(Git::GetUserGlobal);
+	setWindowTitle_(user);
 }
 
 bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
@@ -1163,21 +1169,6 @@ void MainWindow::setWindowTitle_(Git::User const &user)
 	}
 }
 
-void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
-{
-	ui->label_repo_name->setText(reponame);
-	ui->label_branch_name->setText(brname);
-}
-
-void MainWindow::setUnknownRepositoryInfo()
-{
-	setRepositoryInfo("---", "");
-
-	Git g(m->gcx, QString());
-	Git::User user = g.getUser(Git::GetUserGlobal);
-	setWindowTitle_(user);
-}
-
 void MainWindow::updateWindowTitle(GitPtr g)
 {
 	if (isValidWorkingCopy(g)) {
@@ -1290,11 +1281,17 @@ void MainWindow::fetch(GitPtr g)
 	}
 }
 
+void MainWindow::clearLog()
+{
+	m->logs.clear();
+	m->label_map.clear();
+	m->uncommited_changes = false;
+	ui->tableWidget_log->clearContents();
+	ui->tableWidget_log->scrollToTop();
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
-	clearLog();
-	clearRepositoryInfo();
-
 	m->objcache.setup(g);
 
 	if (isValidWorkingCopy(g)) {
@@ -1302,6 +1299,9 @@ void MainWindow::openRepository_(GitPtr g)
 		if (isRemoteOnline() && m->appsettings.automatically_fetch_when_opening_the_repository) {
 			fetch(g);
 		}
+
+		clearLog();
+		clearRepositoryInfo();
 
 		detectGitServerType(g);
 
@@ -1334,7 +1334,11 @@ void MainWindow::openRepository_(GitPtr g)
 
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
+	} else {
+		clearLog();
+		clearRepositoryInfo();
 	}
+
 	updateWindowTitle(g);
 
 	m->head_id = m->objcache.revParse("HEAD");
