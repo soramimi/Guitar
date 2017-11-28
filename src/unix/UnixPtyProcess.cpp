@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include <deque>
 #include <QMutex>
+#include <QDir>
 
 namespace {
 
@@ -126,10 +127,9 @@ void UnixPtyProcess::start(const QString &cmd)
 	QThread::start();
 }
 
-int UnixPtyProcess::wait()
+bool UnixPtyProcess::wait(unsigned long time)
 {
-	QThread::wait();
-	return m->exit_code;
+	return QThread::wait(time);
 }
 
 void UnixPtyProcess::run()
@@ -166,6 +166,8 @@ void UnixPtyProcess::run()
 		dup2(pty_slave, STDOUT_FILENO);
 		dup2(pty_slave, STDERR_FILENO);
 		close(pty_slave);
+
+		QDir::setCurrent(change_dir);
 
 		char *command = (char *)alloca(m->command.size() + 1);
 		strcpy(command, m->command.c_str());

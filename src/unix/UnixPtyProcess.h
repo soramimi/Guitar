@@ -16,7 +16,7 @@ public:
 	void writeInput(char const *ptr, int len);
 	int readOutput(char *ptr, int len);
 	void start(QString const &cmd);
-	int wait();
+	bool wait(unsigned long time = ULONG_MAX);
 	void stop();
 };
 

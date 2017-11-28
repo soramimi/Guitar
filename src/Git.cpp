@@ -185,7 +185,12 @@ bool Git::git(const QString &arg, bool chdir, bool errout, AbstractPtyProcess *p
 	bool ok = false;
 
 	if (chdir) {
-		ok = chdirexec(DoIt);
+		if (pty) {
+			pty->setChangeDir(workingRepositoryDir());
+			ok = DoIt();
+		} else {
+			ok = chdirexec(DoIt);
+		}
 	} else {
 		ok = DoIt();
 	}
@@ -693,14 +698,23 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 
 	bool ok = false;
 	QDir cwd = QDir::current();
-	if (QDir::setCurrent(data.basedir)) {
 
+	auto DoIt = [&](){
 		QString cmd = "clone --progress \"%1\" \"%2\"";
-		cmd = cmd.arg(data.url).arg(clone_to);
+		cmd = cmd.arg(data.url).arg(data.subdir);
 		ok = git(cmd, false, true, pty);
+	};
 
-		QDir::setCurrent(cwd.path());
+	if (pty) {
+		pty->setChangeDir(data.basedir);
+		DoIt();
+	} else {
+		if (QDir::setCurrent(data.basedir)) {
+			DoIt();
+			QDir::setCurrent(cwd.path());
+		}
 	}
+
 	return ok;
 }
 
@@ -778,19 +792,19 @@ void Git::push_u_origin_master()
 	git(cmd);
 }
 
-bool Git::push_(bool tags)
+bool Git::push_(bool tags, AbstractPtyProcess *pty)
 {
 	QString cmd = "push";
 	if (tags) {
 		cmd += " --tags";
 	}
-	return git(cmd, true, false, nullptr);
+	return git(cmd, true, false, pty);
 }
 
-bool Git::push(bool tags)
+bool Git::push(bool tags, AbstractPtyProcess *pty)
 {
 #if 1
-	return push_(tags);
+	return push_(tags, pty);
 #else
 	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
 	r.push_();
@@ -909,14 +923,14 @@ void Git::unstage(QStringList const &paths)
 	git(cmd);
 }
 
-void Git::pull()
+void Git::pull(AbstractPtyProcess *pty)
 {
-	git("pull", true, false, nullptr);
+	git("pull", true, false, pty);
 }
 
-void Git::fetch()
+void Git::fetch(AbstractPtyProcess *pty)
 {
-	git("fetch", true, false, nullptr);
+	git("fetch", true, false, pty);
 }
 
 QStringList Git::make_branch_list_()

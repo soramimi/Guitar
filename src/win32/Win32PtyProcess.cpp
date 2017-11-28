@@ -4,6 +4,9 @@
 
 #include <winpty.h>
 
+#include <QDir>
+
+
 namespace {
 
 class OutputReaderThread : public QThread {
@@ -109,6 +112,8 @@ void Win32PtyProcess::run()
 	QString program;
 	program = getProgram(m->command);
 
+	QDir::setCurrent(change_dir);
+
 	winpty_config_t *agent_cfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
 	winpty_t *pty = winpty_open(agent_cfg, nullptr);
 	winpty_config_free(agent_cfg);
@@ -209,10 +214,9 @@ void Win32PtyProcess::start(const QString &cmdline)
 	QThread::start();
 }
 
-int Win32PtyProcess::wait()
+bool Win32PtyProcess::wait(unsigned long time)
 {
-	QThread::wait();
-	return m->exit_code;
+	return QThread::wait(time);
 }
 
 void Win32PtyProcess::stop()

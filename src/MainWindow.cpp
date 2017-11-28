@@ -151,13 +151,21 @@ static inline int getHunkIndex(QListWidgetItem *item)
 	return item->data(HunkIndexRole).toInt();
 }
 
+enum class PtyCondition {
+	None,
+	Clone,
+	Fetch,
+	Pull,
+	Push,
+};
+
+
 struct MainWindow::Private {
 	Git::Context gcx;
 	ApplicationSettings appsettings;
 	QString file_command;
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
-	RepositoryItem temp_repo;
 	ServerType server_type = ServerType::Standard;
 	GitHubRepositoryInfo github;
 	Git::Branch current_branch;
@@ -195,6 +203,8 @@ struct MainWindow::Private {
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
 	PtyProcess pty_process;
+	PtyCondition pty_condition = PtyCondition::None;
+	RepositoryItem temp_repo;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1270,6 +1280,16 @@ void MainWindow::detectGitServerType(GitPtr g)
 	}
 }
 
+void MainWindow::fetch(GitPtr g)
+{
+	m->pty_condition = PtyCondition::Fetch;
+	g->fetch(&m->pty_process);
+	while (1) {
+		if (m->pty_process.wait(1)) break;
+		QApplication::processEvents();
+	}
+}
+
 void MainWindow::openRepository_(GitPtr g)
 {
 	clearLog();
@@ -1280,7 +1300,7 @@ void MainWindow::openRepository_(GitPtr g)
 	if (isValidWorkingCopy(g)) {
 
 		if (isRemoteOnline() && m->appsettings.automatically_fetch_when_opening_the_repository) {
-			g->fetch();
+			fetch(g);
 		}
 
 		detectGitServerType(g);
@@ -1623,7 +1643,7 @@ void MainWindow::on_action_fetch_triggered()
 	if (!isRemoteOnline()) return;
 
 	reopenRepository(true, [&](GitPtr g){
-		g->fetch();
+		fetch(g);
 	});
 }
 
@@ -1644,7 +1664,7 @@ void MainWindow::on_action_push_triggered()
 	QString errormsg;
 
 	reopenRepository(true, [&](GitPtr g){
-		g->push();
+		g->push(false);
 		exitcode = g->getProcessExitCode();
 		errormsg = g->errorMessage();
 	});
@@ -1674,7 +1694,12 @@ void MainWindow::on_action_pull_triggered()
 	if (!isRemoteOnline()) return;
 
 	reopenRepository(true, [&](GitPtr g){
-		g->pull();
+		m->pty_condition = PtyCondition::Pull;
+		g->pull(&m->pty_process);
+		while (1) {
+			if (m->pty_process.wait(1)) break;
+			QApplication::processEvents();
+		}
 	});
 }
 
@@ -3090,6 +3115,7 @@ void MainWindow::clone()
 			m->temp_repo.name = makeRepositoryName(dir);
 
 			GitPtr g = git(QString());
+			m->pty_condition = PtyCondition::Clone;
 			g->clone(clone_data, &m->pty_process);
 
 		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
@@ -3109,7 +3135,12 @@ void MainWindow::onCloneCompleted()
 
 void MainWindow::onPtyProcessCompleted()
 {
-	onCloneCompleted();
+	switch (m->pty_condition) {
+	case PtyCondition::Clone:
+		onCloneCompleted();
+		break;
+	}
+	m->pty_condition = PtyCondition::None;
 }
 
 void MainWindow::on_action_clone_triggered()

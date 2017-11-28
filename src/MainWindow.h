@@ -194,6 +194,7 @@ private:
 	bool isRemoteOnline() const;
 	void startTimers();
 	void onCloneCompleted();
+	void fetch(GitPtr g);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
