@@ -1124,8 +1124,8 @@
              </property>
              <property name="iconSize">
               <size>
-               <width>16</width>
-               <height>16</height>
+               <width>10</width>
+               <height>10</height>
               </size>
              </property>
              <property name="toolButtonStyle">

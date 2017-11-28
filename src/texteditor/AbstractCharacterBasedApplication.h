@@ -96,6 +96,9 @@ struct TextEditorContext {
 	int current_row = 0;
 	int current_col = 0;
 	int current_col_hint = 0;
+	int saved_row = 0;
+	int saved_col = 0;
+	int saved_col_hint = 0;
 	int current_char_span = 1;
 	int scroll_row_pos = 0;
 	int scroll_col_pos = 0;
@@ -183,10 +186,12 @@ public:
 	};
 
 	QList<FormattedLine> formatLine(const Document::Line &line, int tab_span, int anchor_a = -1, int anchor_b = -1) const;
-protected:
 private:
 	struct Private;
 	Private *m;
+protected:
+	SelectionAnchor selection_anchor_0;
+	SelectionAnchor selection_anchor_1;
 protected:
 
 	std::vector<Character> *screen();
@@ -232,7 +237,9 @@ protected:
 
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	void commitLine(const std::vector<uint32_t> &vec);
+
 	void doDelete();
+	void doBackspace();
 
 	bool isDialogMode();
 	void setDialogMode(bool f);
@@ -261,6 +268,7 @@ private:
 	bool isCurrentLineWritable() const;
 	void initEngine(std::shared_ptr<TextEditorContext> cx);
 	void writeCR();
+	void fetchLine() const;
 protected:
 
 	void parseLine(std::vector<uint32_t> *vec, int increase_hint, bool force);
@@ -277,7 +285,6 @@ protected:
 	void scrollLeft();
 
 	void addNewLineToBottom();
-	void doBackspace();
 	void appendNewLine(std::vector<uint32_t> *vec);
 	void writeNewLine();
 	void updateCursorPos(bool auto_scroll);
@@ -291,6 +298,8 @@ protected:
 	void paintLineNumbers(std::function<void(int, QString, const Document::Line *)> draw);
 	bool isAutoLayout() const;
 	void invalidateArea(int top_y = 0);
+	void savePos();
+	void restorePos();
 public:
 	virtual void layoutEditor();
 	void scrollUp();
@@ -311,10 +320,6 @@ public:
 	int screenWidth() const;
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
-	void write(int c);
-	void write(const char *ptr, int len = -1);
-	void write(QString text);
-	void write(QKeyEvent *e);
 	void setTextEditorEngine(TextEditorEnginePtr e);
 	void openFile(const QString &path);
 	void saveFile(const QString &path);
@@ -345,6 +350,12 @@ public:
 	void moveToBottom();
 	bool isBottom() const;
 	void setLineMargin(int n);
+	void write(int c, bool by_keyboard);
+	void write(const char *ptr, int len, bool by_keyboard);
+	void write(QKeyEvent *e);
+protected:
+	void write_(const char *ptr, bool by_keyboard);
+	void write_(QString text, bool by_keyboard);
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

@@ -517,7 +517,7 @@ void MainWindow::onLogVisibilityChanged()
 
 void MainWindow::writeLog(char const *ptr, int len)
 {
-	ui->widget_log->write(ptr, len);
+	ui->widget_log->write(ptr, len, false);
 }
 
 void MainWindow::writeLog(const QString &str)
@@ -2927,7 +2927,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 		char tmp[1024];
 		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		ui->widget_log->write(tmp, len);
+		ui->widget_log->write(tmp, len, false);
 	}
 }
 

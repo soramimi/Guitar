@@ -188,18 +188,20 @@ void TextEditorWidget::moveCursor(QPoint const &pt, bool by_mouse, bool auto_scr
 		}
 		setCursorRow(row, false, auto_scroll);
 	}
-	int col = pt.x();
-	if (col < 0) {
-		col = 0;
-	} else {
-		fetchCurrentLine();
-		QByteArray line = parsedLine();
-		int maxcol = calcVisualWidth(Document::Line(line));
-		if (col > maxcol) {
-			col = maxcol;
+	{
+		int col = pt.x();
+		if (col < 0) {
+			col = 0;
+		} else {
+			fetchCurrentLine();
+			QByteArray line = parsedLine();
+			int maxcol = calcVisualWidth(Document::Line(line));
+			if (col > maxcol) {
+				col = maxcol;
+			}
 		}
+		setCursorCol(col, false, auto_scroll);
 	}
-	setCursorCol(col, false, auto_scroll);
 	clearParsedLine();
 	updateVisibility(!by_mouse, true, auto_scroll);
 }
@@ -526,11 +528,16 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	}
 }
 
+void TextEditorWidget::keyPressEvent(QKeyEvent *event)
+{
+	write(event);
+}
+
 void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::RightButton) return;
 
-	if (isTerminalMode()) return;
+	savePos();
 
 	bool shift = (event->modifiers() & Qt::ShiftModifier);
 	if (shift) {
@@ -551,6 +558,11 @@ void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 	} else {
 		setSelectionAnchor(SelectionAnchor::EnabledEasy, true, false);
 	}
+	selection_anchor_1 = selection_anchor_0;
+
+	if (isTerminalMode()) {
+		restorePos();
+	}
 }
 
 void TextEditorWidget::mouseReleaseEvent(QMouseEvent * /*event*/)
@@ -559,11 +571,18 @@ void TextEditorWidget::mouseReleaseEvent(QMouseEvent * /*event*/)
 
 void TextEditorWidget::mouseMoveEvent(QMouseEvent * /*event*/)
 {
+	savePos();
+
 	QPoint pos = mapFromGlobal(QCursor::pos());
 	pos = mapFromPixel(pos);
 	pos.rx() += xScrollPos() - leftMargin();
 	moveCursor(pos, true, false);
-	setSelectionAnchor(SelectionAnchor::EnabledEasy, false, false);
+
+	setSelectionAnchor(SelectionAnchor::EnabledEasy, true, false);
+
+	if (isTerminalMode()) {
+		restorePos();
+	}
 }
 
 QVariant TextEditorWidget::inputMethodQuery(Qt::InputMethodQuery q) const
@@ -603,7 +622,7 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 
 	QString commit_text = e->commitString();
 	if (!commit_text.isEmpty()) {
-		write(commit_text);
+		write_(commit_text, true);
 	}
 }
 
@@ -654,21 +673,14 @@ void TextEditorWidget::setFocusFrameVisible(bool f)
 	m->is_focus_frame_visible = f;
 }
 
-//void TextEditorWidget::onCustomContextMenuRequested(QPoint)
-//{
-//	if (m->custom_context_menu_requested) {
-//		m->custom_context_menu_requested();
-//	}
-//}
-
 void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 {
 	QMenu menu;
 	QAction *a_cut = nullptr;
-	if (!isReadOnly()) a_cut = menu.addAction("Cut");
+	if (!isReadOnly() && !isTerminalMode()) a_cut = menu.addAction("Cut");
 	QAction *a_copy = menu.addAction("Copy");
 	QAction *a_paste = nullptr;
-	if (!isReadOnly()) a_paste = menu.addAction("Paste");
+	if (!isReadOnly() && !isTerminalMode()) a_paste = menu.addAction("Paste");
 	QAction *a = menu.exec(misc::contextMenuPos(this, event));
 	if (a) {
 		if (a == a_cut) {

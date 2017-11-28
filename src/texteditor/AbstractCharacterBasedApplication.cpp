@@ -31,7 +31,6 @@ struct AbstractCharacterBasedApplication::Private {
 	QString dialog_value;
 	std::vector<Character> screen;
 	std::vector<uint8_t> line_flags;
-	SelectionAnchor selection_anchor;
 	int parsed_row_index = -1;
 	int parsed_col_index = -1;
 	bool parsed_for_edit = false;
@@ -221,6 +220,18 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	return res;
 }
 
+void AbstractCharacterBasedApplication::fetchLine() const
+{
+	QByteArray line;
+	const int row = cx()->current_row;
+	int lines = documentLines();
+	if (row >= 0 && row < lines) {
+		line = cx()->engine->document.lines[row].text;
+	}
+	m->parsed_row_index = row;
+	m->parsed_line = line;
+}
+
 void AbstractCharacterBasedApplication::fetchCurrentLine()
 {
 	QByteArray line;
@@ -342,283 +353,6 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 		}
 	}
 	return false;
-}
-
-void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const ushort *end)
-{
-	if (cx()->engine->document.lines.isEmpty()) {
-		Document::Line line;
-		line.type = Document::Line::Normal;
-		line.line_number = 1;
-		cx()->engine->document.lines.push_back(line);
-	}
-
-	if (!isCurrentLineWritable()) return;
-
-	int len = end - begin;
-	parseLine(nullptr, len, false);
-	int index = m->parsed_col_index;
-	if (index < 0) {
-		addNewLineToBottom();
-		index = 0;
-	}
-
-	std::vector<uint32_t> *vec = &m->prepared_current_line;
-
-	auto WriteChar = [&](ushort c){
-		if (isInsertMode()) {
-			vec->insert(vec->begin() + index, c);
-		} else if (isOverwriteMode()) {
-			if (index < (int)vec->size()) {
-				ushort d = vec->at(index);
-				if (d == '\n' || d == '\r') {
-					vec->insert(vec->begin() + index, c);
-				} else {
-					vec->at(index) = c;
-				}
-			} else {
-				vec->push_back(c);
-			}
-		}
-	};
-
-	ushort const *ptr = begin;
-	while (ptr < end) {
-		ushort c = *ptr;
-		ptr++;
-		if (c >= 0xd800 && c < 0xdc00) {
-			if (ptr < end) {
-				ushort d = *ptr;
-				if (d >= 0xdc00 && d < 0xe000) {
-					ptr++;
-					int u = 0x10000 + (c - 0xd800) * 0x400 + (d - 0xdc00);
-					WriteChar(u);
-					index++;
-				}
-			}
-		} else {
-			WriteChar(c);
-			index++;
-		}
-	}
-	m->parsed_col_index = index;
-	commitLine(*vec);
-	setCursorColByIndex(*vec, index);
-	updateVisibility(true, true, true);
-}
-
-void AbstractCharacterBasedApplication::write(int c)
-{
-	if (c < 0x20) {
-		if (c == 0x08) {
-			doBackspace();
-		} else if (c == 0x09) {
-			ushort u = c;
-			internalWrite(&u, &u + 1);
-		} else if (c == 0x0a) {
-			pressEnter();
-		} else if (c == 0x0d) {
-			writeCR();
-		} else if (c == 0x1b) {
-			pressEscape();
-		} else if (c >= 1 && c <= 26) {
-			pressLetterWithControl(c);
-		}
-	} else if (c == 0x7f) {
-		doDelete();
-	} else if (c < 0x10000) {
-		ushort u = c;
-		internalWrite(&u, &u + 1);
-	} else if (c >= 0x10000 && c <= 0x10ffff) {
-		ushort t[2];
-		t[0] = (c - 0x10000) / 0x400 + 0xd800;
-		t[1] = (c - 0x10000) % 0x400 + 0xdc00;
-		internalWrite(t, t + 2);
-	} else {
-		switch (c) {
-		case EscapeCode::Up:
-			moveCursorUp();
-			break;
-		case EscapeCode::Down:
-			moveCursorDown();
-			break;
-		case EscapeCode::Right:
-			moveCursorRight();
-			break;
-		case EscapeCode::Left:
-			moveCursorLeft();
-			break;
-		case EscapeCode::Home:
-			moveCursorHome();
-			break;
-		case EscapeCode::End:
-			moveCursorEnd();
-			break;
-		case EscapeCode::PageUp:
-			movePageUp();
-			break;
-		case EscapeCode::PageDown:
-			movePageDown();
-			break;
-		case EscapeCode::Insert:
-			break;
-		case EscapeCode::Delete:
-			doDelete();
-			break;
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::write(QKeyEvent *e)
-{
-	int c = e->key();
-	if (c == Qt::Key_Backspace) {
-		write(0x08);
-	} else if (c == Qt::Key_Delete) {
-		write(0x7f);
-	} else if (c == Qt::Key_Up) {
-		if (e->modifiers() & Qt::ControlModifier) {
-			scrollUp();
-		} else {
-			write(EscapeCode::Up);
-		}
-	} else if (c == Qt::Key_Down) {
-		if (e->modifiers() & Qt::ControlModifier) {
-			scrollDown();
-		} else {
-			write(EscapeCode::Down);
-		}
-	} else if (c == Qt::Key_Left) {
-		write(EscapeCode::Left);
-	} else if (c == Qt::Key_Right) {
-		write(EscapeCode::Right);
-	} else if (c == Qt::Key_PageUp) {
-		write(EscapeCode::PageUp);
-	} else if (c == Qt::Key_PageDown) {
-		write(EscapeCode::PageDown);
-	} else if (c == Qt::Key_Home) {
-		write(EscapeCode::Home);
-	} else if (c == Qt::Key_End) {
-		write(EscapeCode::End);
-	} else if (c == Qt::Key_Return || c == Qt::Key_Enter) {
-		write('\n');
-	} else if (c == Qt::Key_Escape) {
-		write(0x1b);
-	} else if (e->modifiers() & Qt::ControlModifier) {
-		if (QChar(c).isLetter()) {
-			c = QChar(c).toUpper().unicode();
-			if (c >= 0x40 && c < 0x60) {
-				write(c - 0x40);
-			}
-		}
-	} else {
-		QString text = e->text();
-		write(text);
-	}
-}
-
-void AbstractCharacterBasedApplication::write(char const *ptr, int len)
-{
-	if (isReadOnly()) return;
-
-	char const *begin = ptr;
-	char const *end = begin + (len < 0 ? strlen(ptr) : len);
-	char const *left = begin;
-	char const *right = begin;
-	while (1) {
-		int c = -1;
-		if (right < end) {
-			c = *right & 0xff;
-		}
-		if (c == '\n' || c == '\r' || c < 0) {
-			while (left < right) {
-				write(*left);
-				left++;
-			}
-			if (c < 0) break;
-			right++;
-			if (c == '\r') {
-				c = isInsertMode() ? '\n' : '\r';
-				if (right < end && *right == '\n') {
-					c = '\n';
-					right++;
-				}
-				write(c);
-			} else if (c == '\n') {
-				write('\n');
-			}
-			left = right;
-		} else {
-			right++;
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::write(QString text)
-{
-	if (isReadOnly()) return;
-
-	if (text.size() == 1) {
-		ushort c = text.at(0).unicode();
-		write(c);
-		return;
-	}
-	int len = text.size();
-	if (len > 0) {
-		ushort const *begin = text.utf16();
-		ushort const *end = begin + len;
-		ushort const *left = begin;
-		ushort const *right = begin;
-		while (1) {
-			int c = -1;
-			if (right < end) {
-				c = *right;
-			}
-			if (c < 0x20) {
-				if (left < right) {
-					internalWrite(left, right);
-				}
-				if (c == -1) break;
-				right++;
-				if (c == '\n' || c == '\r') {
-					if (c == '\r') {
-						if (right < end && *right == '\n') {
-							right++;
-						}
-					}
-					writeNewLine();
-				} else {
-					write(c);
-				}
-				left = right;
-			} else {
-				right++;
-			}
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::editPaste()
-{
-	if (isReadOnly()) return;
-
-	setPaintingSuppressed(true);
-
-#if 1
-	QString str = qApp->clipboard()->text();
-	utf16(str.utf16(), str.size()).to_utf32([&](uint32_t c){
-		write(c);
-		return true;
-	});
-#else
-	std::vector<uint32_t> const *source = &m->cut_buffer;
-	for (uint32_t c : *source) {
-		write(c);
-	}
-#endif
-
-	setPaintingSuppressed(false);
-	updateVisibility(true, true, true);
 }
 
 int AbstractCharacterBasedApplication::editorViewportWidth() const
@@ -905,33 +639,63 @@ int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<uint3
 	return col;
 }
 
+void AbstractCharacterBasedApplication::savePos()
+{
+	TextEditorContext *p = editor_cx.get();
+	if (p) {
+		p->saved_row = p->current_row;
+		p->saved_col = p->current_col;
+		p->saved_col_hint = p->current_col_hint;
+	}
+}
+
+void AbstractCharacterBasedApplication::restorePos()
+{
+	TextEditorContext *p = editor_cx.get();
+	if (p) {
+		p->current_row = p->saved_row;
+		p->current_col = p->saved_col;
+		p->current_col_hint = p->saved_col_hint;
+	}
+}
+
 void AbstractCharacterBasedApplication::setCursorRow(int row, bool shift, bool auto_scroll)
 {
 	shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
 	if (shift) {
-		if (m->selection_anchor.enabled == SelectionAnchor::No) {
+		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
+			selection_anchor_1 = selection_anchor_0;
 		}
-	} else if (m->selection_anchor.enabled == SelectionAnchor::EnabledEasy) {
+	} else if (selection_anchor_0.enabled == SelectionAnchor::EnabledEasy) {
 		setSelectionAnchor(SelectionAnchor::No, false, auto_scroll);
 	}
 
 	cx()->current_row = row;
+
+	if (selection_anchor_0.enabled != SelectionAnchor::No) {
+		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
+	}
 }
 
 void AbstractCharacterBasedApplication::setCursorCol(int col, bool shift, bool auto_scroll)
 {
 	shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
 	if (shift) {
-		if (m->selection_anchor.enabled == SelectionAnchor::No) {
+		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
+			selection_anchor_1 = selection_anchor_0;
 		}
-	} else if (m->selection_anchor.enabled == SelectionAnchor::EnabledEasy) {
+	} else if (selection_anchor_0.enabled == SelectionAnchor::EnabledEasy) {
 		setSelectionAnchor(SelectionAnchor::No, false, auto_scroll);
 	}
 
 	cx()->current_col = col;
 	cx()->current_col_hint = col;
+
+	if (selection_anchor_0.enabled != SelectionAnchor::No) {
+		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
+	}
 }
 
 void AbstractCharacterBasedApplication::setCursorPos(int row, int col, bool shift)
@@ -959,8 +723,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		op = EditOperation::Copy;
 	}
 
-	SelectionAnchor a = m->selection_anchor;
-	SelectionAnchor b = currentAnchor(SelectionAnchor::EnabledHard);
+	SelectionAnchor a = selection_anchor_0;
+	SelectionAnchor b = selection_anchor_1;
 	if (!a.enabled) return;
 	if (!b.enabled) return;
 	if (a == b) return;
@@ -1137,10 +901,11 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 void AbstractCharacterBasedApplication::doDelete()
 {
 	if (isReadOnly()) return;
+	if (isTerminalMode()) return;
 
-	if (m->selection_anchor.enabled) {
+	if (selection_anchor_0.enabled) {
 		SelectionAnchor a = currentAnchor(SelectionAnchor::EnabledHard);
-		if (m->selection_anchor != a) {
+		if (selection_anchor_0 != a) {
 			editSelected(EditOperation::Cut, nullptr);
 			return;
 		}
@@ -1197,6 +962,7 @@ void AbstractCharacterBasedApplication::doDelete()
 void AbstractCharacterBasedApplication::doBackspace()
 {
 	if (isReadOnly()) return;
+	if (isTerminalMode()) return;
 
 	if (cx()->current_row > 0 || cx()->current_col > 0) {
 		setPaintingSuppressed(true);
@@ -1845,11 +1611,15 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 	SelectionAnchor anchor_b;
 
 	auto MakeSelectionAnchor = [&](){
-		if (m->selection_anchor.enabled != SelectionAnchor::No) {
-			anchor_a = m->selection_anchor;
+		if (selection_anchor_0.enabled != SelectionAnchor::No) {
+			anchor_a = selection_anchor_0;
+#if 0
 			anchor_b.row = cx()->current_row;
 			anchor_b.col = cx()->current_col;
-			anchor_b.enabled = m->selection_anchor.enabled;
+			anchor_b.enabled = selection_anchor_0.enabled;
+#else
+			anchor_b = selection_anchor_1;
+#endif
 		}
 	};
 
@@ -1929,12 +1699,13 @@ SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor
 
 void AbstractCharacterBasedApplication::deselect()
 {
-	m->selection_anchor.enabled = SelectionAnchor::No;
+	selection_anchor_0.enabled = SelectionAnchor::No;
+	selection_anchor_1.enabled = SelectionAnchor::No;
 }
 
 bool AbstractCharacterBasedApplication::isSelectionAnchorEnabled() const
 {
-	return m->selection_anchor.enabled != SelectionAnchor::No;
+	return selection_anchor_0.enabled != SelectionAnchor::No;
 }
 
 void AbstractCharacterBasedApplication::setToggleSelectionAnchorEnabled(bool f)
@@ -1955,9 +1726,9 @@ bool AbstractCharacterBasedApplication::isReadOnly() const
 void AbstractCharacterBasedApplication::setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll)
 {
 	if (update_anchor) {
-		m->selection_anchor = currentAnchor(enabled);
+		selection_anchor_0 = currentAnchor(enabled);
 	} else {
-		m->selection_anchor.enabled = enabled;
+		selection_anchor_0.enabled = enabled;
 	}
 	clearParsedLine();
 	updateVisibility(false, false, auto_scroll);
@@ -1968,6 +1739,24 @@ void AbstractCharacterBasedApplication::toggleSelectionAnchor()
 	if (!m->is_toggle_selection_anchor_enabled) return;
 
 	setSelectionAnchor(isSelectionAnchorEnabled() ? SelectionAnchor::No : SelectionAnchor::EnabledHard, true, true);
+	selection_anchor_1 = selection_anchor_0;
+}
+
+void AbstractCharacterBasedApplication::editPaste()
+{
+	if (isReadOnly()) return;
+	if (isTerminalMode()) return;
+
+	setPaintingSuppressed(true);
+
+	QString str = qApp->clipboard()->text();
+	utf16(str.utf16(), str.size()).to_utf32([&](uint32_t c){
+		write(c, false);
+		return true;
+	});
+
+	setPaintingSuppressed(false);
+	updateVisibility(true, true, true);
 }
 
 void AbstractCharacterBasedApplication::editCopy()
@@ -1977,41 +1766,9 @@ void AbstractCharacterBasedApplication::editCopy()
 
 void AbstractCharacterBasedApplication::editCut()
 {
+	if (isReadOnly()) return;
+	if (isTerminalMode()) return;
 	edit_(EditOperation::Cut);
-}
-
-void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
-{
-	if (c < 0 || c > 0x7f) {
-		return;
-	}
-	if (c < 0x40) {
-		c += 0x40;
-	}
-	c = toupper(c);
-	switch (c) {
-	case 'A':
-		toggleSelectionAnchor();
-		break;
-	case 'Q':
-		onQuit();
-		break;
-	case 'O':
-		onOpenFile();
-		break;
-	case 'S':
-		onSaveFile();
-		break;
-	case 'X':
-		editCut();
-		break;
-	case 'C':
-		editCopy();
-		break;
-	case 'V':
-		editPaste();
-		break;
-	}
 }
 
 void AbstractCharacterBasedApplication::setWriteMode(WriteMode wm)
@@ -2066,11 +1823,9 @@ void AbstractCharacterBasedApplication::moveToBottom()
 	cx()->current_row = documentLines();
 	cx()->current_col = 0;
 	if (cx()->current_row > 0) {
-//		setCursorRow(cx()->current_row - 1);
 		cx()->current_row = cx()->current_row - 1;
 		clearParsedLine();
 		fetchCurrentLine();
-//		setCursorCol(calcVisualWidth(Document::Line(m->parsed_line)));
 		int col = calcVisualWidth(Document::Line(m->parsed_line));
 		cx()->current_col = col;
 		cx()->current_col_hint = col;
@@ -2079,5 +1834,314 @@ void AbstractCharacterBasedApplication::moveToBottom()
 	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
+}
+
+void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const ushort *end)
+{
+	if (cx()->engine->document.lines.isEmpty()) {
+		Document::Line line;
+		line.type = Document::Line::Normal;
+		line.line_number = 1;
+		cx()->engine->document.lines.push_back(line);
+	}
+
+	if (!isCurrentLineWritable()) return;
+
+	int len = end - begin;
+	parseLine(nullptr, len, false);
+	int index = m->parsed_col_index;
+	if (index < 0) {
+		addNewLineToBottom();
+		index = 0;
+	}
+
+	std::vector<uint32_t> *vec = &m->prepared_current_line;
+
+	auto WriteChar = [&](ushort c){
+		if (isInsertMode()) {
+			vec->insert(vec->begin() + index, c);
+		} else if (isOverwriteMode()) {
+			if (index < (int)vec->size()) {
+				ushort d = vec->at(index);
+				if (d == '\n' || d == '\r') {
+					vec->insert(vec->begin() + index, c);
+				} else {
+					vec->at(index) = c;
+				}
+			} else {
+				vec->push_back(c);
+			}
+		}
+	};
+
+	ushort const *ptr = begin;
+	while (ptr < end) {
+		ushort c = *ptr;
+		ptr++;
+		if (c >= 0xd800 && c < 0xdc00) {
+			if (ptr < end) {
+				ushort d = *ptr;
+				if (d >= 0xdc00 && d < 0xe000) {
+					ptr++;
+					int u = 0x10000 + (c - 0xd800) * 0x400 + (d - 0xdc00);
+					WriteChar(u);
+					index++;
+				}
+			}
+		} else {
+			WriteChar(c);
+			index++;
+		}
+	}
+	m->parsed_col_index = index;
+	commitLine(*vec);
+	setCursorColByIndex(*vec, index);
+	updateVisibility(true, true, true);
+}
+
+void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
+{
+	if (c < 0 || c > 0x7f) {
+		return;
+	}
+	if (c < 0x40) {
+		c += 0x40;
+	}
+	c = toupper(c);
+	switch (c) {
+	case 'A':
+		toggleSelectionAnchor();
+		break;
+	case 'Q':
+		onQuit();
+		break;
+	case 'O':
+		onOpenFile();
+		break;
+	case 'S':
+		onSaveFile();
+		break;
+	case 'X':
+		editCut();
+		break;
+	case 'C':
+		editCopy();
+		break;
+	case 'V':
+		editPaste();
+		break;
+	}
+}
+
+void AbstractCharacterBasedApplication::write(int c, bool by_keyboard)
+{
+	bool ok = !(isTerminalMode() && by_keyboard);
+
+	if (c < 0x20) {
+		if (c == 0x08) {
+			if (ok) {
+				doBackspace();
+			}
+		} else if (c == 0x09) {
+			if (ok) {
+				ushort u = c;
+				internalWrite(&u, &u + 1);
+			}
+		} else if (c == 0x0a) {
+			if (ok) {
+				pressEnter();
+			}
+		} else if (c == 0x0d) {
+			if (ok) {
+				writeCR();
+			}
+		} else if (c == 0x1b) {
+			pressEscape();
+		} else if (c >= 1 && c <= 26) {
+			pressLetterWithControl(c);
+		}
+	} else if (c == 0x7f) {
+		if (ok) {
+			doDelete();
+		}
+	} else if (c < 0x10000) {
+		if (ok) {
+			ushort u = c;
+			internalWrite(&u, &u + 1);
+		}
+	} else if (c >= 0x10000 && c <= 0x10ffff) {
+		if (ok) {
+			ushort t[2];
+			t[0] = (c - 0x10000) / 0x400 + 0xd800;
+			t[1] = (c - 0x10000) % 0x400 + 0xdc00;
+			internalWrite(t, t + 2);
+		}
+	} else {
+		switch (c) {
+		case EscapeCode::Up:
+			if (ok) moveCursorUp();
+			break;
+		case EscapeCode::Down:
+			if (ok) moveCursorDown();
+			break;
+		case EscapeCode::Right:
+			if (ok) moveCursorRight();
+			break;
+		case EscapeCode::Left:
+			if (ok) moveCursorLeft();
+			break;
+		case EscapeCode::Home:
+			if (ok) moveCursorHome();
+			break;
+		case EscapeCode::End:
+			if (ok) moveCursorEnd();
+			break;
+		case EscapeCode::PageUp:
+			if (ok) movePageUp();
+			break;
+		case EscapeCode::PageDown:
+			if (ok) movePageDown();
+			break;
+		case EscapeCode::Insert:
+			break;
+		case EscapeCode::Delete:
+			if (ok) doDelete();
+			break;
+		}
+	}
+}
+
+void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_keyboard)
+{
+	if (isReadOnly()) return;
+
+	char const *begin = ptr;
+	char const *end = begin + (len < 0 ? strlen(ptr) : len);
+	char const *left = begin;
+	char const *right = begin;
+	while (1) {
+		int c = -1;
+		if (right < end) {
+			c = *right & 0xff;
+		}
+		if (c == '\n' || c == '\r' || c < 0) {
+			while (left < right) {
+				write(*left, by_keyboard);
+				left++;
+			}
+			if (c < 0) break;
+			right++;
+			if (c == '\r') {
+				c = isInsertMode() ? '\n' : '\r';
+				if (right < end && *right == '\n') {
+					c = '\n';
+					right++;
+				}
+				write(c, by_keyboard);
+			} else if (c == '\n') {
+				write('\n', by_keyboard);
+			}
+			left = right;
+		} else {
+			right++;
+		}
+	}
+}
+
+void AbstractCharacterBasedApplication::write_(const char *ptr, bool by_keyboard)
+{
+	write(ptr, -1, by_keyboard);
+}
+
+void AbstractCharacterBasedApplication::write_(QString text, bool by_keyboard)
+{
+	if (isReadOnly()) return;
+
+	if (text.size() == 1) {
+		ushort c = text.at(0).unicode();
+		write(c, by_keyboard);
+		return;
+	}
+	int len = text.size();
+	if (len > 0) {
+		ushort const *begin = text.utf16();
+		ushort const *end = begin + len;
+		ushort const *left = begin;
+		ushort const *right = begin;
+		while (1) {
+			int c = -1;
+			if (right < end) {
+				c = *right;
+			}
+			if (c < 0x20) {
+				if (left < right) {
+					internalWrite(left, right);
+				}
+				if (c == -1) break;
+				right++;
+				if (c == '\n' || c == '\r') {
+					if (c == '\r') {
+						if (right < end && *right == '\n') {
+							right++;
+						}
+					}
+					writeNewLine();
+				} else {
+					write(c, by_keyboard);
+				}
+				left = right;
+			} else {
+				right++;
+			}
+		}
+	}
+}
+
+void AbstractCharacterBasedApplication::write(QKeyEvent *e)
+{
+	int c = e->key();
+	if (c == Qt::Key_Backspace) {
+		write(0x08, true);
+	} else if (c == Qt::Key_Delete) {
+		write(0x7f, true);
+	} else if (c == Qt::Key_Up) {
+		if (e->modifiers() & Qt::ControlModifier) {
+			scrollUp();
+		} else {
+			write(EscapeCode::Up, true);
+		}
+	} else if (c == Qt::Key_Down) {
+		if (e->modifiers() & Qt::ControlModifier) {
+			scrollDown();
+		} else {
+			write(EscapeCode::Down, true);
+		}
+	} else if (c == Qt::Key_Left) {
+		write(EscapeCode::Left, true);
+	} else if (c == Qt::Key_Right) {
+		write(EscapeCode::Right, true);
+	} else if (c == Qt::Key_PageUp) {
+		write(EscapeCode::PageUp, true);
+	} else if (c == Qt::Key_PageDown) {
+		write(EscapeCode::PageDown, true);
+	} else if (c == Qt::Key_Home) {
+		write(EscapeCode::Home, true);
+	} else if (c == Qt::Key_End) {
+		write(EscapeCode::End, true);
+	} else if (c == Qt::Key_Return || c == Qt::Key_Enter) {
+		write('\n', true);
+	} else if (c == Qt::Key_Escape) {
+		write(0x1b, true);
+	} else if (e->modifiers() & Qt::ControlModifier) {
+		if (QChar(c).isLetter()) {
+			c = QChar(c).toUpper().unicode();
+			if (c >= 0x40 && c < 0x60) {
+				write(c - 0x40, true);
+			}
+		}
+	} else {
+		QString text = e->text();
+		write_(text, true);
+	}
 }
 
