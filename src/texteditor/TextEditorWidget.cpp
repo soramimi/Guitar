@@ -509,7 +509,9 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 			}
 		});
 
-		pr.fillRect(0, view_y, 1, view_h, Qt::black);
+		if (linenum_width > 0) {
+			pr.fillRect(0, view_y, 1, view_h, Qt::black);
+		}
 		pr.fillRect(linenum_width - 2, view_y, 1, view_h, Qt::black);
 
 		if (bottom >= 0) {

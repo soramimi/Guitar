@@ -70,6 +70,11 @@ Win32PtyProcess::~Win32PtyProcess()
 	delete m;
 }
 
+bool Win32PtyProcess::isRunning() const
+{
+	return QThread::isRunning();
+}
+
 QString Win32PtyProcess::getProgram(const QString &cmdline)
 {
 	ushort const *begin = cmdline.utf16();

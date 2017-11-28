@@ -12,6 +12,7 @@ protected:
 	QString change_dir;
 public:
 	void setChangeDir(QString const &dir);
+	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual int readOutput(char *ptr, int len) = 0;
 	virtual void start(QString const &cmd) = 0;

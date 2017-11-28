@@ -195,6 +195,7 @@ private:
 	void startTimers();
 	void onCloneCompleted();
 	void fetch(GitPtr g);
+	void stopPtyProcess();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -343,6 +344,12 @@ private slots:
 	void on_horizontalScrollBar_log_valueChanged(int);
 
 	void onPtyProcessCompleted();
+	void on_toolButton_stop_process_clicked();
+
+	void on_action_stop_process_triggered();
+
+	void on_action_exit_triggered();
+
 signals:
 	void onEscapeKeyPressed();
 };

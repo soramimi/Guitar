@@ -100,6 +100,11 @@ UnixPtyProcess::~UnixPtyProcess()
 	delete m;
 }
 
+bool UnixPtyProcess::isRunning() const
+{
+	return QThread::isRunning();
+}
+
 void UnixPtyProcess::writeInput(const char *ptr, int len)
 {
 	::write(m->pty_master, ptr, len);

@@ -161,6 +161,7 @@ enum class PtyCondition {
 
 
 struct MainWindow::Private {
+	QString starting_dir;
 	Git::Context gcx;
 	ApplicationSettings appsettings;
 	QString file_command;
@@ -213,6 +214,9 @@ MainWindow::MainWindow(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
+
+	m->starting_dir = QDir::current().absolutePath();
+
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
@@ -2913,6 +2917,12 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::timerEvent(QTimerEvent *)
 {
+	bool running = m->pty_process.isRunning();
+	if (ui->toolButton_stop_process->isEnabled() != running) {
+		ui->toolButton_stop_process->setEnabled(running);
+		ui->action_stop_process->setEnabled(running);
+	}
+
 	while (1) {
 		char tmp[1024];
 		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
@@ -3947,9 +3957,30 @@ void MainWindow::on_verticalScrollBar_log_valueChanged(int)
 void MainWindow::on_horizontalScrollBar_log_valueChanged(int)
 {
 	ui->widget_log->refrectScrollBar();
+}
 
+void MainWindow::stopPtyProcess()
+{
+	m->pty_process.stop();
+	QDir::setCurrent(m->starting_dir);
+}
+
+void MainWindow::on_toolButton_stop_process_clicked()
+{
+	stopPtyProcess();
+}
+
+void MainWindow::on_action_stop_process_triggered()
+{
+	stopPtyProcess();
+}
+
+void MainWindow::on_action_exit_triggered()
+{
+	close();
 }
 
 void MainWindow::on_action_test_triggered()
 {
 }
+

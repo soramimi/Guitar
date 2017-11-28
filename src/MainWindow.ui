@@ -962,6 +962,9 @@
     <addaction name="action_clone"/>
     <addaction name="action_open_existing_working_copy"/>
     <addaction name="action_create_a_repository"/>
+    <addaction name="action_stop_process"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -1064,7 +1067,10 @@
        <property name="frameShadow">
         <enum>QFrame::Sunken</enum>
        </property>
-       <layout class="QGridLayout" name="gridLayout_2">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -1077,29 +1083,112 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="TextEditorWidget" name="widget_log" native="true">
-          <property name="focusPolicy">
-           <enum>Qt::StrongFocus</enum>
-          </property>
+        <item>
+         <widget class="QFrame" name="frame_8">
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <property name="spacing">
+            <number>1</number>
+           </property>
+           <property name="leftMargin">
+            <number>1</number>
+           </property>
+           <property name="topMargin">
+            <number>1</number>
+           </property>
+           <property name="rightMargin">
+            <number>1</number>
+           </property>
+           <property name="bottomMargin">
+            <number>1</number>
+           </property>
+           <item>
+            <widget class="QToolButton" name="toolButton_stop_process">
+             <property name="minimumSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../resources.qrc">
+               <normaloff>:/image/redsquare.svgz</normaloff>:/image/redsquare.svgz</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonIconOnly</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>5</width>
+               <height>45</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QScrollBar" name="verticalScrollBar_log">
+        <item>
+         <widget class="Line" name="line_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QScrollBar" name="horizontalScrollBar_log">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <property name="spacing">
+           <number>0</number>
           </property>
-         </widget>
+          <item row="0" column="1">
+           <widget class="QScrollBar" name="verticalScrollBar_log">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="TextEditorWidget" name="widget_log" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::StrongFocus</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QScrollBar" name="horizontalScrollBar_log">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -1286,6 +1375,23 @@
   <action name="action_create_a_repository">
    <property name="text">
     <string>Create a repository</string>
+   </property>
+  </action>
+  <action name="action_stop_process">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/image/redsquare.svgz</normaloff>:/image/redsquare.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Stop process</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
  </widget>
