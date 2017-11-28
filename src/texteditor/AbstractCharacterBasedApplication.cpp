@@ -1047,16 +1047,20 @@ int AbstractCharacterBasedApplication::internalParseLine(std::vector<uint32_t> *
 		while (1) {
 			int n = 0;
 			uint32_t c = u8.next();
-			if (c == 0) break;
-			if (c == '\t') {
-				int z = nextTabStop(col);
-				n = z - col;
+			if (c == 0) {
+				n = 1;
 			} else {
-				n = charWidth(c);
+				if (c == '\t') {
+					int z = nextTabStop(col);
+					n = z - col;
+				} else {
+					n = charWidth(c);
+				}
 			}
 			if (col <= cx()->current_col && col + n > cx()->current_col) {
 				index = (int)vec->size();
 			}
+			if (c == 0) break;
 			col += n;
 			vec->push_back(c);
 		}

@@ -310,9 +310,9 @@ MainWindow::~MainWindow()
 	LibGit2::shutdown();
 #endif
 
-
 	m->avatar_loader.interrupt();
 
+	stopPtyProcess();
 	deleteTempFiles();
 
 	m->avatar_loader.wait();
@@ -2953,6 +2953,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 			write_char('\n');
 		} else {
 			QString text = event->text();
+			qDebug() << text;
 			write_text(text);
 		}
 	}

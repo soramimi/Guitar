@@ -556,6 +556,7 @@ void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 	selection_anchor_1 = selection_anchor_0;
 
 	if (isTerminalMode()) {
+		clearParsedLine();
 		restorePos();
 	}
 }
@@ -576,6 +577,7 @@ void TextEditorWidget::mouseMoveEvent(QMouseEvent * /*event*/)
 	setSelectionAnchor(SelectionAnchor::EnabledEasy, true, false);
 
 	if (isTerminalMode()) {
+		clearParsedLine();
 		restorePos();
 	}
 }
