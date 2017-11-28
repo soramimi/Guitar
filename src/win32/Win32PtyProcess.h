@@ -14,7 +14,6 @@ private:
 
 	static QString getProgram(QString const &cmdline);
 
-	void close();
 protected:
 	void run();
 public:

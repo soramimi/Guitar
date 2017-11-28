@@ -528,11 +528,6 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	}
 }
 
-void TextEditorWidget::keyPressEvent(QKeyEvent *event)
-{
-	write(event);
-}
-
 void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::RightButton) return;

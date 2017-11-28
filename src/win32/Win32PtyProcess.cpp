@@ -52,6 +52,7 @@ void OutputReaderThread::start(HANDLE hOutput)
 // Win32PtyProcess
 
 struct Win32PtyProcess::Private {
+	QMutex mutex;
 	QString command;
 	OutputReaderThread th_output_reader;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
@@ -143,8 +144,14 @@ void Win32PtyProcess::run()
 		}
 	}
 
-	close();
 	winpty_free(pty);
+
+	CloseHandle(m->hInput);
+	CloseHandle(m->hOutput);
+	CloseHandle(m->hProcess);
+	m->hInput = INVALID_HANDLE_VALUE;
+	m->hOutput = INVALID_HANDLE_VALUE;
+	m->hProcess = INVALID_HANDLE_VALUE;
 
 	emit completed();
 }
@@ -202,15 +209,7 @@ void Win32PtyProcess::writeInput(const char *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::close()
-{
-	CloseHandle(m->hInput);
-	CloseHandle(m->hOutput);
-	CloseHandle(m->hProcess);
-	m->hInput = INVALID_HANDLE_VALUE;
-	m->hOutput = INVALID_HANDLE_VALUE;
-	m->hProcess = INVALID_HANDLE_VALUE;
-}
+
 
 void Win32PtyProcess::start(const QString &cmdline)
 {
@@ -228,7 +227,6 @@ void Win32PtyProcess::stop()
 {
 	m->th_output_reader.requestInterruption();
 	requestInterruption();
-	close();
 	m->th_output_reader.wait();
 	wait();
 }
