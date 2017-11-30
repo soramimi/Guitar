@@ -196,6 +196,7 @@ private:
 	void onCloneCompleted();
 	void fetch(GitPtr g);
 	void stopPtyProcess();
+	void setNetworkingCommandsEnabled(bool f);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);

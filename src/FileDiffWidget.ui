@@ -78,9 +78,6 @@
          <property name="maximum">
           <number>0</number>
          </property>
-         <property name="singleStep">
-          <number>0</number>
-         </property>
          <property name="pageStep">
           <number>0</number>
          </property>
@@ -92,9 +89,6 @@
        <item row="1" column="1" colspan="2">
         <widget class="QScrollBar" name="horizontalScrollBar">
          <property name="maximum">
-          <number>0</number>
-         </property>
-         <property name="singleStep">
           <number>0</number>
          </property>
          <property name="pageStep">
@@ -126,7 +120,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/maximize.png</normaloff>:/image/maximize.png</iconset>
          </property>
          <property name="iconSize">
@@ -162,6 +156,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

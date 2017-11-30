@@ -2921,6 +2921,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 	if (ui->toolButton_stop_process->isEnabled() != running) {
 		ui->toolButton_stop_process->setEnabled(running);
 		ui->action_stop_process->setEnabled(running);
+		setNetworkingCommandsEnabled(!running);
 	}
 
 	while (1) {
@@ -3921,6 +3922,15 @@ bool MainWindow::isRemoteOnline() const
 	return ui->radioButton_remote_online->isChecked();
 }
 
+void MainWindow::setNetworkingCommandsEnabled(bool f)
+{
+	f = f && isRemoteOnline();
+	ui->toolButton_clone->setEnabled(f);
+	ui->toolButton_fetch->setEnabled(f);
+	ui->toolButton_pull->setEnabled(f);
+	ui->toolButton_push->setEnabled(f);
+}
+
 void MainWindow::setRemoteOnline(bool f)
 {
 	QRadioButton *rb = nullptr;
@@ -3929,10 +3939,7 @@ void MainWindow::setRemoteOnline(bool f)
 	rb->click();
 	rb->blockSignals(false);
 
-	ui->toolButton_clone->setEnabled(f);
-	ui->toolButton_fetch->setEnabled(f);
-	ui->toolButton_pull->setEnabled(f);
-	ui->toolButton_push->setEnabled(f);
+	setNetworkingCommandsEnabled(f);
 
 	MySettings s;
 	s.beginGroup("Remote");
