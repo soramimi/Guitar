@@ -63,8 +63,8 @@ win32:Debug:LIBS += $$PWD/../_build_zlib/debug/libz.lib
 win32:Release:LIBS += $$PWD/../_build_zlib/release/libz.lib
 
 !haiku {
-unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libz.a
-unix:release:LIBS += $$PWD/../_build_zlib_Release/libz.a
+#unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libz.a
+unix:LIBS += $$PWD/../_build_zlib_Release/libz.a
 
 #unix:LIBS += -lz
 }
