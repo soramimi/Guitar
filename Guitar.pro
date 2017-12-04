@@ -14,6 +14,8 @@ CONFIG += c++11
 
 TRANSLATIONS = Guitar_ja.ts
 
+DEFINES += APP_GUITAR
+
 DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
@@ -169,7 +171,14 @@ SOURCES += \
 	src/texteditor/UnicodeWidth.cpp \
 	src/FileViewWidget.cpp \
 	src/MyTextEditorWidget.cpp \
-    src/AbstractProcess.cpp
+    src/AbstractProcess.cpp \
+    src/texteditor/AbstractCharacterBasedApplication.cpp \
+    src/texteditor/InputMethodPopup.cpp \
+    src/texteditor/TextEditorTheme.cpp \
+    src/texteditor/TextEditorWidget.cpp \
+    src/texteditor/unicode.cpp \
+    src/texteditor/UnicodeWidth.cpp \
+    MyImageViewWidget.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -256,7 +265,14 @@ HEADERS  += \
 	src/texteditor/UnicodeWidth.h \
 	src/FileViewWidget.h \
 	src/MyTextEditorWidget.h \
-    src/AbstractProcess.h
+    src/AbstractProcess.h \
+    src/texteditor/AbstractCharacterBasedApplication.h \
+    src/texteditor/InputMethodPopup.h \
+    src/texteditor/TextEditorTheme.h \
+    src/texteditor/TextEditorWidget.h \
+    src/texteditor/unicode.h \
+    src/texteditor/UnicodeWidth.h \
+    MyImageViewWidget.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -289,8 +305,7 @@ FORMS    += \
 	src/CreateRepositoryDialog.ui \
 	src/ExperimentDialog.ui \
 	src/SettingNetworkForm.ui \
-	src/SettingBehaviorForm.ui \
-	src/FileViewWidget.ui
+	src/SettingBehaviorForm.ui
 
 RESOURCES += \
     resources.qrc

@@ -5,7 +5,9 @@
 #include <QWidget>
 #include "Git.h"
 #include "MainWindow.h"
-#include "FileDiffWidget.h"
+#include "AbstractCharacterBasedApplication.h"
+
+class FileDiffWidget;
 
 class FileDiffSliderWidget;
 
@@ -27,12 +29,12 @@ private:
 	void setScrollBarRange(QScrollBar *h, QScrollBar *v);
 	void updateScrollBarRange();
 protected:
+	MainWindow *mainwindow();
 	void resizeEvent(QResizeEvent *);
 	void paintEvent(QPaintEvent *);
 	void mousePressEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
 	void wheelEvent(QWheelEvent *);
-	void contextMenuEvent(QContextMenuEvent *);
 public:
 	explicit ImageViewWidget(QWidget *parent = 0);
 	~ImageViewWidget();
@@ -41,7 +43,7 @@ public:
 
 	void clear();
 
-	void setImage(QString mimetype, const QByteArray &ba, const QString &object_id, const QString &path);
+	void setImage(QString mimetype, const QByteArray &ba);
 
 	void setLeftBorderVisible(bool f);
 

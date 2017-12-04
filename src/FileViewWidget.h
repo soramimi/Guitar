@@ -9,6 +9,8 @@ class QScrollBar;
 struct PreEditText;
 class MainWindow;
 class FileDiffWidget;
+class QVBoxLayout;
+class QStackedWidget;
 
 namespace Ui {
 class FileViewWidget;
@@ -20,15 +22,35 @@ enum class FileViewType {
 	Image,
 };
 
+#ifdef APP_GUITAR
+#include "MyTextEditorWidget.h"
+#include "MyImageViewWidget.h"
+#else
+#include "ImageViewWidget.h"
+#endif
+
 class FileViewWidget : public QWidget
 {
 	Q_OBJECT
 private:
-	Ui::FileViewWidget *ui;
+
+#ifdef APP_GUITAR
+using X_TextEditorWidget = MyTextEditorWidget;
+using X_ImageViewWidget = MyImageViewWidget;
+#else
+using X_TextEditorWidget = TextEditorWidget;
+using X_ImageViewWidget = ImageViewWidget;
+#endif
+
+	QVBoxLayout *ui_verticalLayout;
+	QStackedWidget *ui_stackedWidget;
+	QWidget *ui_page_none;
+	X_TextEditorWidget *ui_page_text;
+	X_ImageViewWidget *ui_page_image;
+
 	QString source_id;
 	FileViewType view_type = FileViewType::None;
 
-//	void setupContextMenu();
 public:
 	explicit FileViewWidget(QWidget *parent = 0);
 	~FileViewWidget();

@@ -22,9 +22,6 @@ typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
 struct ImageViewWidget::Private {
 	MainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
-	QPixmap transparent_pixmap;
-	QString object_id;
-	QString path;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
 	QScrollBar *h_scroll_bar = nullptr;
@@ -44,6 +41,10 @@ struct ImageViewWidget::Private {
 	int top_margin = 1;
 	int bottom_margin = 1;
 	bool draw_left_border = true;
+
+#ifndef APP_GUITAR
+	QPixmap transparent_pixmap;
+#endif
 };
 
 ImageViewWidget::ImageViewWidget(QWidget *parent)
@@ -183,9 +184,21 @@ void ImageViewWidget::updateScrollBarRange()
 	setScrollBarRange(m->h_scroll_bar, m->v_scroll_bar);
 }
 
+MainWindow *ImageViewWidget::mainwindow()
+{
+	return m->mainwindow;
+}
+
 QBrush ImageViewWidget::getTransparentBackgroundBrush()
 {
+#ifdef APP_GUITAR
 	return m->mainwindow->getTransparentPixmap();
+#else
+	if (m->transparent_pixmap.isNull()) {
+		m->transparent_pixmap = QPixmap(":/image/transparent.png");
+	}
+	return m->transparent_pixmap;
+#endif
 }
 
 bool ImageViewWidget::isValidImage() const
@@ -244,11 +257,8 @@ void ImageViewWidget::resizeEvent(QResizeEvent *)
 	updateScrollBarRange();
 }
 
-void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
 {
-	m->object_id = object_id;
-	m->path = path;
-
 	if (mimetype.isEmpty()) {
 		mimetype = "image/x-unknown";
 	}
@@ -361,34 +371,5 @@ void ImageViewWidget::wheelEvent(QWheelEvent *e)
 	}
 }
 
-void ImageViewWidget::contextMenuEvent(QContextMenuEvent *e)
-{
-	QString id = m->object_id;
-	if (id.startsWith(PATH_PREFIX)) {
-		// pass
-	} else if (Git::isValidID(id)) {
-		// pass
-	} else {
-		return; // invalid id
-	}
 
-	QMenu menu;
-
-	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
-	if (!menu.actions().isEmpty()) {
-		update();
-		QAction *a = menu.exec(misc::contextMenuPos(this, e));
-		if (a) {
-			if (a == a_save_as) {
-				QString path = m->mainwindow->currentWorkingCopyDir() / m->path;
-				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
-				if (!dstpath.isEmpty()) {
-					m->mainwindow->saveAs(id, dstpath);
-				}
-				update();
-				return;
-			}
-		}
-	}
-}
 

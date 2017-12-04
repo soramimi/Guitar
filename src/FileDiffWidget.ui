@@ -139,6 +139,12 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>FileViewWidget</class>
+   <extends>QWidget</extends>
+   <header>FileViewWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>FileDiffSliderWidget</class>
    <extends>QWidget</extends>
    <header>FileDiffSliderWidget.h</header>
@@ -148,12 +154,6 @@
    <class>MaximizeButton</class>
    <extends>QToolButton</extends>
    <header>MaximizeButton.h</header>
-  </customwidget>
-  <customwidget>
-   <class>FileViewWidget</class>
-   <extends>QWidget</extends>
-   <header>FileViewWidget.h</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
