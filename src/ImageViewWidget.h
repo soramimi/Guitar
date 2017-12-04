@@ -19,10 +19,9 @@ private:
 	QSize imageSize() const;
 
 	QSizeF imageScrollRange() const;
+	void internalScrollImage(double x, double y);
 	void scrollImage(double x, double y);
 	void setImageScale(double scale);
-//	const TextDiffLineList *getLines() const;
-//	ObjectContentPtr getContent() const;
 	QBrush getTransparentBackgroundBrush();
 	bool hasFocus() const;
 	void setScrollBarRange(QScrollBar *h, QScrollBar *v);
@@ -45,6 +44,8 @@ public:
 	void setImage(QString mimetype, const QByteArray &ba, const QString &object_id, const QString &path);
 
 	void setLeftBorderVisible(bool f);
+
+	void refrectScrollBar();
 
 	static QString formatText(const Document::Line &line2);
 signals:

@@ -521,6 +521,9 @@ void AbstractCharacterBasedApplication::pressEscape()
 		closeDialog(false);
 		return;
 	}
+
+	deselect();
+	updateVisibility(false, false, false);
 }
 
 AbstractCharacterBasedApplication::State AbstractCharacterBasedApplication::state() const
@@ -826,9 +829,9 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		}
 	}
 
-	deselect();
 
 	if (op == EditOperation::Cut) {
+		deselect();
 		setCursorPos(a.row, a.col);
 		invalidateArea(a.row - cx()->scroll_row_pos);
 	} else {
@@ -1021,6 +1024,7 @@ void AbstractCharacterBasedApplication::execDialog(QString const &dialog_title, 
 void AbstractCharacterBasedApplication::closeDialog(bool result)
 {
 	if (isDialogMode()) {
+		deselect();
 		QString line;
 		if (!dialog_cx->engine->document.lines.empty()) {
 			Document::Line const &l = dialog_cx->engine->document.lines.front();

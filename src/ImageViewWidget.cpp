@@ -23,7 +23,6 @@ struct ImageViewWidget::Private {
 	MainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
 	QPixmap transparent_pixmap;
-//	ObjectContentPtr content;
 	QString object_id;
 	QString path;
 	FileDiffWidget::DrawData *draw_data = nullptr;
@@ -46,18 +45,6 @@ struct ImageViewWidget::Private {
 	int bottom_margin = 1;
 	bool draw_left_border = true;
 };
-
-//ObjectContentPtr ImageViewWidget::getContent() const
-//{
-//	return m->content;
-//}
-
-//TextDiffLineList const *ImageViewWidget::getLines() const
-//{
-//	ObjectContentPtr content = getContent();
-//	if (content) return &content->lines;
-//	return nullptr;
-//}
 
 ImageViewWidget::ImageViewWidget(QWidget *parent)
 	: QWidget(parent)
@@ -96,6 +83,44 @@ bool ImageViewWidget::hasFocus() const
 void ImageViewWidget::setLeftBorderVisible(bool f)
 {
 	m->draw_left_border = f;
+}
+
+void ImageViewWidget::internalScrollImage(double x, double y)
+{
+	m->image_scroll_x = x;
+	m->image_scroll_y = y;
+	QSizeF sz = imageScrollRange();
+	if (m->image_scroll_x < 0) m->image_scroll_x = 0;
+	if (m->image_scroll_y < 0) m->image_scroll_y = 0;
+	if (m->image_scroll_x > sz.width()) m->image_scroll_x = sz.width();
+	if (m->image_scroll_y > sz.height()) m->image_scroll_y = sz.height();
+	update();
+}
+
+void ImageViewWidget::scrollImage(double x, double y)
+{
+	internalScrollImage(x, y);
+
+	if (m->h_scroll_bar) {
+		m->h_scroll_bar->blockSignals(true);
+		m->h_scroll_bar->setValue(m->image_scroll_x);
+		m->h_scroll_bar->blockSignals(false);
+	}
+	if (m->v_scroll_bar) {
+		m->v_scroll_bar->blockSignals(true);
+		m->v_scroll_bar->setValue(m->image_scroll_y);
+		m->v_scroll_bar->blockSignals(false);
+	}
+}
+
+void ImageViewWidget::refrectScrollBar()
+{
+	double e = 0.75;
+	double x = m->h_scroll_bar->value();
+	double y = m->v_scroll_bar->value();
+	if (fabs(x - m->image_scroll_x) < e) x = m->image_scroll_x; // 差が小さいときは値を維持する
+	if (fabs(y - m->image_scroll_y) < e) y = m->image_scroll_y;
+	internalScrollImage(x, y);
 }
 
 void ImageViewWidget::clear()
@@ -219,30 +244,6 @@ void ImageViewWidget::resizeEvent(QResizeEvent *)
 	updateScrollBarRange();
 }
 
-void ImageViewWidget::scrollImage(double x, double y)
-{
-	m->image_scroll_x = x;
-	m->image_scroll_y = y;
-	QSizeF sz = imageScrollRange();
-	if (m->image_scroll_x < 0) m->image_scroll_x = 0;
-	if (m->image_scroll_y < 0) m->image_scroll_y = 0;
-	if (m->image_scroll_x > sz.width()) m->image_scroll_x = sz.width();
-	if (m->image_scroll_y > sz.height()) m->image_scroll_y = sz.height();
-
-	if (m->h_scroll_bar) {
-		m->h_scroll_bar->blockSignals(true);
-		m->h_scroll_bar->setValue(m->image_scroll_x);
-		m->h_scroll_bar->blockSignals(false);
-	}
-	if (m->v_scroll_bar) {
-		m->v_scroll_bar->blockSignals(true);
-		m->v_scroll_bar->setValue(m->image_scroll_y);
-		m->v_scroll_bar->blockSignals(false);
-	}
-
-	update();
-}
-
 void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	m->object_id = object_id;
@@ -287,7 +288,14 @@ void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba, QString c
 		y = sz.height() * m->image_scale / 2.0;
 	}
 	updateScrollBarRange();
-	scrollImage(x, y);
+
+	m->h_scroll_bar->blockSignals(true);
+	m->v_scroll_bar->blockSignals(true);
+	m->h_scroll_bar->setValue(m->h_scroll_bar->maximum() / 2);
+	m->v_scroll_bar->setValue(m->v_scroll_bar->maximum() / 2);
+	m->h_scroll_bar->blockSignals(false);
+	m->v_scroll_bar->blockSignals(false);
+	refrectScrollBar();
 }
 
 void ImageViewWidget::mousePressEvent(QMouseEvent *e)
@@ -355,9 +363,6 @@ void ImageViewWidget::wheelEvent(QWheelEvent *e)
 
 void ImageViewWidget::contextMenuEvent(QContextMenuEvent *e)
 {
-//	ObjectContentPtr content = getContent();
-//	if (!content) return;
-
 	QString id = m->object_id;
 	if (id.startsWith(PATH_PREFIX)) {
 		// pass

@@ -8,6 +8,10 @@
 
 #include <QFileIconProvider>
 
+#ifdef Q_OS_WIN
+#include "win32/win32.h"
+#endif
+
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
 	QTreeWidgetItem *item = new QTreeWidgetItem();
@@ -160,7 +164,23 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 	QFileIconProvider icons;
 
 	for (GitTreeItem const &ti : m->tree_item_list) {
-		QIcon icon = icons.icon(ti.type == GitTreeItem::TREE ? QFileIconProvider::Folder : QFileIconProvider::File);
+		QIcon icon;
+		if (ti.type == GitTreeItem::TREE) {
+			icon = icons.icon(QFileIconProvider::Folder);
+		} else {
+#ifdef Q_OS_WIN
+			{
+				int i = ti.name.lastIndexOf('.');
+				if (i > 0) {
+					QString ext = ti.name.mid(i + 1);
+					icon = winIconFromExtensionLarge(ext);
+				}
+			}
+#endif
+			if (icon.isNull()) {
+				icon = icons.icon(QFileIconProvider::File);
+			}
+		}
 		QListWidgetItem *p = new QListWidgetItem();
 		p->setIcon(icon);
 		p->setText(ti.name);

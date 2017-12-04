@@ -5,6 +5,13 @@
 #include <Windows.h>
 #include <ShlObj.h>
 
+#include <windows.h>
+#include <shlobj.h>
+#include <shellapi.h>
+#include <commoncontrols.h>
+#include <QtWinExtras/QtWinExtras>
+
+
 QString getModuleFileName()
 {
 	wchar_t tmp[300];
@@ -317,3 +324,31 @@ QString getWin32HttpProxy()
 
 
 
+namespace {
+QIcon iconFromExtension_(QString const &ext, UINT flag)
+{
+	QIcon icon;
+	QString name = "*." + ext;
+	SHFILEINFOW shinfo;
+	if (SHGetFileInfoW((wchar_t const *)name.utf16(), 0, &shinfo, sizeof(shinfo), flag | SHGFI_ICON | SHGFI_USEFILEATTRIBUTES) != 0) {
+		if (shinfo.hIcon) {
+			QPixmap pm = QtWin::fromHICON(shinfo.hIcon);
+			if (!pm.isNull()) {
+				icon = QIcon(pm);
+			}
+			DestroyIcon(shinfo.hIcon);
+		}
+	}
+	return icon;
+}
+}
+
+QIcon winIconFromExtensionLarge(QString const &ext)
+{
+	return iconFromExtension_(ext, SHGFI_LARGEICON);
+}
+
+QIcon winIconFromExtensionSmall(QString const &ext)
+{
+	return iconFromExtension_(ext, SHGFI_SMALLICON);
+}

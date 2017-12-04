@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui widgets svg network
+win32:QT += winextras
 
 TARGET = Guitar
 TEMPLATE = app
@@ -72,7 +73,7 @@ unix:LIBS += $$PWD/../_build_zlib_Release/libz.a
 haiku:LIBS += -lz
 
 win32 {
-	LIBS += advapi32.lib
+	LIBS += advapi32.lib shell32.lib user32.lib
 	RC_FILE = win.rc
 	QMAKE_SUBSYSTEM_SUFFIX=,5.01
 }

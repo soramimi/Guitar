@@ -26,6 +26,7 @@ class FileViewWidget : public QWidget
 private:
 	Ui::FileViewWidget *ui;
 	QString source_id;
+	FileViewType view_type = FileViewType::None;
 
 //	void setupContextMenu();
 public:

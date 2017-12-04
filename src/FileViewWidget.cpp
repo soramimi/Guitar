@@ -14,36 +14,12 @@ FileViewWidget::FileViewWidget(QWidget *parent) :
 	ui->setupUi(this);
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
-//	setupContextMenu();
 }
 
 FileViewWidget::~FileViewWidget()
 {
 	delete ui;
 }
-
-#if 0
-void FileViewWidget::setupContextMenu()
-{
-	ui->page_text->setCustomContextMenuRequestedHandler([&](){
-		QMenu menu;
-		QAction *a_save_as = menu.addAction("Save as...");
-		QAction *a_copy = menu.addAction("Copy");
-		QAction *a = menu.exec(this, nullptr);
-//		QAction *a = menu.exec(this, misc::contextMenuPos());
-		if (a) {
-			if (a == a_save_as) {
-				qDebug() << source_id;
-				return;
-			}
-			if (a == a_copy) {
-				ui->page_text->editCopy();
-				return;
-			}
-		}
-	});
-}
-#endif
 
 void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb)
 {
@@ -52,7 +28,8 @@ void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, 
 
 void FileViewWidget::setViewType(FileViewType type)
 {
-	switch (type) {
+	view_type = type;
+	switch (view_type) {
 	case FileViewType::Text:
 		ui->stackedWidget->setCurrentWidget(ui->page_text);
 		return;
@@ -96,7 +73,14 @@ void FileViewWidget::setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *
 
 void FileViewWidget::refrectScrollBar()
 {
-	return ui->page_text->refrectScrollBar();
+	switch (view_type) {
+	case FileViewType::Text:
+		ui->page_text->refrectScrollBar();
+		return;
+	case FileViewType::Image:
+		ui->page_image->refrectScrollBar();
+		return;
+	}
 }
 
 void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)

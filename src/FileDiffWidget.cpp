@@ -331,17 +331,6 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 	}
 }
 
-//void FileDiffWidget::setBinaryMode(bool f)
-//{
-//	ui->widget_diff_left->update();
-//	ui->widget_diff_right->update();
-//}
-
-//void FileDiffWidget::setBinaryMode()
-//{
-//	setBinaryMode(true);
-//}
-
 void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QString const &path)
 {
 	m->init_param_ = InitParam_();
