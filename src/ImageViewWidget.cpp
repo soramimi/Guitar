@@ -8,12 +8,14 @@
 #include "MemoryReader.h"
 #include "charvec.h"
 
+#include <math.h>
+#include <functional>
+
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenu>
 #include <QPainter>
 #include <QWheelEvent>
-#include <functional>
 #include <QSvgRenderer>
 #include <QBuffer>
 
@@ -286,16 +288,12 @@ void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
 		}
 	}
 	QSize sz = imageSize();
-	double x = 0;
-	double y = 0;
 	double sx = sz.width();
 	double sy = sz.height();
 	if (sx > 0 && sy > 0) {
 		sx = width() / sx;
 		sy = height() / sy;
 		m->image_scale = (sx < sy ? sx : sy) * 0.9;
-		x = sz.width() * m->image_scale / 2.0;
-		y = sz.height() * m->image_scale / 2.0;
 	}
 	updateScrollBarRange();
 

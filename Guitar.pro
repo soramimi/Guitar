@@ -163,12 +163,6 @@ SOURCES += \
 	src/Photoshop.cpp \
 	src/SettingBehaviorForm.cpp \
 	src/MyProcess.cpp \
-	src/texteditor/AbstractCharacterBasedApplication.cpp \
-	src/texteditor/InputMethodPopup.cpp \
-	src/texteditor/TextEditorTheme.cpp \
-	src/texteditor/TextEditorWidget.cpp \
-	src/texteditor/unicode.cpp \
-	src/texteditor/UnicodeWidth.cpp \
 	src/FileViewWidget.cpp \
 	src/MyTextEditorWidget.cpp \
     src/AbstractProcess.cpp \
@@ -257,13 +251,6 @@ HEADERS  += \
 	src/Photoshop.h \
 	src/SettingBehaviorForm.h \
 	src/MyProcess.h \
-	src/texteditor/AbstractCharacterBasedApplication.h \
-	src/texteditor/InputMethodPopup.h \
-	src/texteditor/TextEditorTheme.h \
-	src/texteditor/TextEditorWidget.h \
-	src/texteditor/unicode.h \
-	src/texteditor/UnicodeWidth.h \
-	src/FileViewWidget.h \
 	src/MyTextEditorWidget.h \
     src/AbstractProcess.h \
     src/texteditor/AbstractCharacterBasedApplication.h \

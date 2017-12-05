@@ -1585,12 +1585,21 @@ void MainWindow::commit(bool amend)
 				QMessageBox::warning(this, tr("Commit"), tr("Commit message can not be omitted."));
 				continue;
 			}
+			bool ok;
 			if (amend) {
-				g->commit_amend_m(text);
+				ok = g->commit_amend_m(text);
 			} else {
-				g->commit(text);
+				ok = g->commit(text);
 			}
-			openRepository(true);
+			if (ok) {
+				openRepository(true);
+			} else {
+				QString err = g->errorMessage().trimmed();
+				err += "\n*** ";
+				err += tr("Failed to commit");
+				err += " ***\n";
+				writeLog(err);
+			}
 			break;
 		} else {
 			break;

@@ -12,10 +12,6 @@ class FileDiffWidget;
 class QVBoxLayout;
 class QStackedWidget;
 
-namespace Ui {
-class FileViewWidget;
-}
-
 enum class FileViewType {
 	None,
 	Text,
@@ -29,9 +25,7 @@ enum class FileViewType {
 #include "ImageViewWidget.h"
 #endif
 
-class FileViewWidget : public QWidget
-{
-	Q_OBJECT
+class FileViewWidget : public QWidget {
 private:
 
 #ifdef APP_GUITAR
