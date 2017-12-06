@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/Qt5.8.0/5.8/msvc2013"
+$qt = "C:/Qt/5.7/msvc2013"
 #$qt = "" # スタティックリンクのとき
 
 $openssl = "C:/openssl"
@@ -20,12 +20,14 @@ FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
 FileUtils.cp("../_build_#{$product_name}/release/#{$product_name}.exe", $dstdir)
-FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
+#FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)
 FileUtils.cp($openssl + "/bin/ssleay32.dll", $dstdir)
 
-`7z x -o#{$dstdir} misc/msys.zip`
+`7z x -o#{$dstdir} misc/win32tools.zip`
+`move #{$dstdir}\\win32tools\\* #{$dstdir}`
+FileUtils.rmdir("#{$dstdir}\\win32tools")
 
 if $qt != ''
 
@@ -47,6 +49,7 @@ if $qt != ''
 	cp_qt_lib("Qt5Widgets.dll")
 	cp_qt_lib("Qt5Xml.dll")
 	cp_qt_lib("Qt5Network.dll")
+	cp_qt_lib("Qt5WinExtras.dll")
 
 	def cp_qt_imageformat(name)
 		src = $qt + "/plugins/imageformats/" + name

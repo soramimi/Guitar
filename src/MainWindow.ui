@@ -962,6 +962,7 @@
     <addaction name="action_clone"/>
     <addaction name="action_open_existing_working_copy"/>
     <addaction name="action_create_a_repository"/>
+    <addaction name="separator"/>
     <addaction name="action_stop_process"/>
     <addaction name="separator"/>
     <addaction name="action_exit"/>
