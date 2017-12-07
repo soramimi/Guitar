@@ -218,7 +218,7 @@ bool Git::isValidWorkingCopy(QString const &dir)
 	return QDir(dir / ".git").exists();
 }
 
-bool Git::isValidWorkingCopy()
+bool Git::isValidWorkingCopy() const
 {
 	return isValidWorkingCopy(workingRepositoryDir());
 }

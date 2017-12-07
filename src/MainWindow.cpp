@@ -3928,7 +3928,12 @@ void MainWindow::on_action_create_a_repository_triggered()
 
 bool MainWindow::isRemoteOnline() const
 {
-	return ui->radioButton_remote_online->isChecked();
+	if (ui->radioButton_remote_online->isChecked()) {
+		if (const_cast<MainWindow *>(this)->git()->isValidWorkingCopy()) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void MainWindow::setNetworkingCommandsEnabled(bool f)

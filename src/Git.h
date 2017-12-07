@@ -301,7 +301,7 @@ public:
 	const QString &workingRepositoryDir() const;
 
 	QString getCurrentBranchName();
-	bool isValidWorkingCopy();
+	bool isValidWorkingCopy() const;
 	QString version();
 	bool init();
 	QStringList getUntrackedFiles();
