@@ -293,8 +293,6 @@ MainWindow::MainWindow(QWidget *parent)
 	m->repos = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 
-	setUnknownRepositoryInfo();
-
 	m->webcx.set_keep_alive_enabled(true);
 	m->avatar_loader.start(&m->webcx);
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
@@ -326,6 +324,8 @@ void MainWindow::shown()
 	writeLog(AboutDialog::appVersion() + '\n');
 	setGitCommand(m->appsettings.git_command, false);
 	setFileCommand(m->appsettings.file_command, false);
+
+	setUnknownRepositoryInfo();
 }
 
 void MainWindow::startTimers()

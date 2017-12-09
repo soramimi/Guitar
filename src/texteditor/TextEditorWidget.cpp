@@ -63,7 +63,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->descent = fm.descent();
 	m->latin1_width = fm.width('l');
 	m->line_height = m->ascent + m->descent + m->top_margin + m->bottom_margin;
-	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
+//	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
 
 	initEditor();
 
@@ -615,7 +615,7 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 		m->ime_popup->show();
 	}
 #endif
-	qDebug() << e->preeditString() << e->commitString();
+//	qDebug() << e->preeditString() << e->commitString();
 
 	QString commit_text = e->commitString();
 	if (!commit_text.isEmpty()) {

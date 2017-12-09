@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
-$qt = "/opt/Qt5.8.0"
+$qt = ""
+#$qt = "/opt/Qt5.8.0"
 
 require 'fileutils'
 
@@ -26,67 +27,72 @@ end
 
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
-FileUtils.mkpath($dstdir_iconengines)
-FileUtils.mkpath($dstdir_imageformats)
-FileUtils.mkpath($dstdir_platforms)
-FileUtils.mkpath($dstdir_platforminputcontexts)
 
-FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
+FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
+#FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
 `strip #{$dstdir}/#{$product_name}`
-FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
+#FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
-def cp_qt_lib(name)
-	libname = "lib" + name + ".so.5"
-	src = $qt + "/lib/" + libname
-	FileUtils.cp(src, $dstdir)
-	`strip #{$dstdir}/#{libname}`
+if $qt != ""
+
+	def cp_qt_lib(name)
+		libname = "lib" + name + ".so.5"
+		src = $qt + "/lib/" + libname
+		FileUtils.cp(src, $dstdir)
+		`strip #{$dstdir}/#{libname}`
+	end
+
+	FileUtils.mkpath($dstdir_iconengines)
+	FileUtils.mkpath($dstdir_imageformats)
+	FileUtils.mkpath($dstdir_platforms)
+	FileUtils.mkpath($dstdir_platforminputcontexts)
+	cp_qt_lib("Qt5Core")
+	cp_qt_lib("Qt5Gui")
+	cp_qt_lib("Qt5Svg")
+	cp_qt_lib("Qt5Widgets")
+	cp_qt_lib("Qt5Xml")
+	cp_qt_lib("Qt5Network")
+	cp_qt_lib("Qt5DBus")
+	cp_qt_lib("Qt5XcbQpa")
+
+	def cp_qt_imageformat(name)
+		libname = "lib" + name + ".so"
+		src = $qt + "/plugins/imageformats/" + libname
+		FileUtils.cp(src, $dstdir_imageformats)
+		`strip #{$dstdir_imageformats}/#{libname}`
+	end
+
+	cp_qt_imageformat("qgif")
+	cp_qt_imageformat("qicns")
+	cp_qt_imageformat("qico")
+	cp_qt_imageformat("qjpeg")
+	cp_qt_imageformat("qsvg")
+
+	def cp_qt_iconengine(name)
+		libname = "lib" + name + ".so"
+		src = $qt + "/plugins/iconengines/" + libname
+		FileUtils.cp(src, $dstdir_iconengines)
+		`strip #{$dstdir_iconengines}/#{libname}`
+	end
+
+	cp_qt_iconengine("qsvgicon")
+
+	src = $qt + "/plugins/platforms/libqxcb.so"
+	FileUtils.cp(src, $dstdir_platforms)
+
+	src = $qt + "/plugins/platforminputcontexts/libibusplatforminputcontextplugin.so"
+	FileUtils.cp(src, $dstdir_platforminputcontexts)
+
+	def cp_libicu(name)
+		src = $libicu + "/libicu" + name + ".so.52"
+		FileUtils.cp(src, $dstdir)
+	end
+
+	cp_libicu("data")
+	cp_libicu("i18n")
+	cp_libicu("uc")
+
 end
-
-cp_qt_lib("Qt5Core")
-cp_qt_lib("Qt5Gui")
-cp_qt_lib("Qt5Svg")
-cp_qt_lib("Qt5Widgets")
-cp_qt_lib("Qt5Xml")
-cp_qt_lib("Qt5Network")
-cp_qt_lib("Qt5DBus")
-cp_qt_lib("Qt5XcbQpa")
-
-def cp_qt_imageformat(name)
-	libname = "lib" + name + ".so"
-	src = $qt + "/plugins/imageformats/" + libname
-	FileUtils.cp(src, $dstdir_imageformats)
-	`strip #{$dstdir_imageformats}/#{libname}`
-end
-
-cp_qt_imageformat("qgif")
-cp_qt_imageformat("qicns")
-cp_qt_imageformat("qico")
-cp_qt_imageformat("qjpeg")
-cp_qt_imageformat("qsvg")
-
-def cp_qt_iconengine(name)
-	libname = "lib" + name + ".so"
-	src = $qt + "/plugins/iconengines/" + libname
-	FileUtils.cp(src, $dstdir_iconengines)
-	`strip #{$dstdir_iconengines}/#{libname}`
-end
-
-cp_qt_iconengine("qsvgicon")
-
-src = $qt + "/plugins/platforms/libqxcb.so"
-FileUtils.cp(src, $dstdir_platforms)
-
-src = $qt + "/plugins/platforminputcontexts/libibusplatforminputcontextplugin.so"
-FileUtils.cp(src, $dstdir_platforminputcontexts)
-
-def cp_libicu(name)
-	src = $libicu + "/libicu" + name + ".so.52"
-	FileUtils.cp(src, $dstdir)
-end
-
-cp_libicu("data")
-cp_libicu("i18n")
-cp_libicu("uc")
 
 FileUtils.cp_r("LinuxDesktop", $dstdir)
 
