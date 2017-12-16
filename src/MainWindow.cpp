@@ -3928,18 +3928,17 @@ void MainWindow::on_action_create_a_repository_triggered()
 
 bool MainWindow::isRemoteOnline() const
 {
-	if (ui->radioButton_remote_online->isChecked()) {
-		if (const_cast<MainWindow *>(this)->git()->isValidWorkingCopy()) {
-			return true;
-		}
-	}
-	return false;
+	return ui->radioButton_remote_online->isChecked();
 }
 
 void MainWindow::setNetworkingCommandsEnabled(bool f)
 {
-	f = f && isRemoteOnline();
 	ui->toolButton_clone->setEnabled(f);
+
+	if (!const_cast<MainWindow *>(this)->git()->isValidWorkingCopy()) {
+		f = false;
+	}
+
 	ui->toolButton_fetch->setEnabled(f);
 	ui->toolButton_pull->setEnabled(f);
 	ui->toolButton_push->setEnabled(f);
