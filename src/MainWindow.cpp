@@ -2963,7 +2963,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 			write_char('\n');
 		} else {
 			QString text = event->text();
-			qDebug() << text;
 			write_text(text);
 		}
 	}
@@ -3431,10 +3430,23 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 	if (url.indexOf('\"') >= 0) {
 		return false;
 	}
-	Git g(m->gcx, QString());
+	stopPtyProcess();
+	GitPtr g = git(QString());
 	QString cmd = "ls-remote \"%1\" HEAD";
-	bool f = g.git(cmd.arg(url), false);
-	QString line = g.resultText().trimmed();
+	bool f = g->git(cmd.arg(url), false, false, &m->pty_process);
+	{
+		QTime time;
+		time.start();
+		while (!m->pty_process.wait(10)) {
+			if (time.elapsed() > 10000) {
+				f = false;
+				break;
+			}
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
+		stopPtyProcess();
+	}
+	QString line = g->resultText().trimmed();
 	QString head;
 	int i = line.indexOf('\t');
 	if (i == GIT_ID_LENGTH) {
