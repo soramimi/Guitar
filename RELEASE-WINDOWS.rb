@@ -31,8 +31,8 @@ FileUtils.rmdir("#{$dstdir}\\win32tools")
 
 if $qt != ''
 
-	FileUtils.cp("C:/Windows/SysWOW64/msvcp120.dll", $dstdir)
-	FileUtils.cp("C:/Windows/SysWOW64/msvcr120.dll", $dstdir)
+#	FileUtils.cp("C:/Windows/SysWOW64/msvcp120.dll", $dstdir)
+#	FileUtils.cp("C:/Windows/SysWOW64/msvcr120.dll", $dstdir)
 
 	FileUtils.mkpath($dstdir_iconengines)
 	FileUtils.mkpath($dstdir_imageformats)
