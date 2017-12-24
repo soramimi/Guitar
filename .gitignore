@@ -7,3 +7,4 @@ _release
 .DS_Store
 image/about.psd
 extra/_build_*
+misc/win32tools

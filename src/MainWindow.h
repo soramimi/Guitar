@@ -46,6 +46,7 @@ class MainWindow : public QMainWindow
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
+	friend class SettingDirectoriesForm;
 public:
 	struct Label {
 		enum {
@@ -105,8 +106,12 @@ private:
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
 	void updateCurrentFilesList();
-	void checkGitCommand();
 	void showFileList(FilesListType files_list_type);
+
+	QString selectGitCommand(bool save);
+	QString selectFileCommand(bool save);
+	bool checkGitCommand();
+	bool checkFileCommand();
 
 	void clearLog();
 	void clearFileList();
@@ -148,10 +153,9 @@ private:
 	QString getObjectID(QListWidgetItem *item);
 	void execFilePropertyDialog(QListWidgetItem *item);
 	static QAction *addMenuActionProperty(QMenu *menu);
-	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback);
+	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const;
 	Git::Object cat_file_(GitPtr g, const QString &id);
 	Git::Object cat_file(const QString &id);
-	void checkFileCommand();
 	void updateStatusBarText();
 	void setUnknownRepositoryInfo();
 	void setWindowTitle_(const Git::User &user);
@@ -204,9 +208,6 @@ protected:
 	bool event(QEvent *event);
 	bool eventFilter(QObject *watched, QEvent *event);
 public:
-
-	QString selectGitCommand(bool save);
-	QString selectFileCommand();
 
 	int limitLogCount() const;
 

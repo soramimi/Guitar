@@ -273,7 +273,7 @@ int misc::runCommand(QString const &cmd, QByteArray const *in, QByteArray *out)
 	proc.closeWriteChannel();
 	while (1) {
 		QProcess::ProcessState s = proc.state();
-		if (proc.waitForReadyRead(1)) {
+		if (proc.waitForReadyRead(10)) {
 			while (1) {
 				char tmp[1024];
 				qint64 len = proc.read(tmp, sizeof(tmp));
@@ -452,6 +452,7 @@ QString misc::determinFileType(const QString &filecommand, const QString &path, 
 		} else {
 			cmd += QString("\"%1\"").arg(path);
 		}
+		cmd = misc::normalizePathSeparator(cmd);
 
 		// run file command
 

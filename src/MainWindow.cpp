@@ -183,7 +183,7 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
-	QTimer interval_250ms_timer;
+//	QTimer interval_250ms_timer;
 	QImage graph_color;
 	std::map<QString, QList<Git::Branch>> branch_map;
 	std::map<QString, QList<Git::Tag>> tag_map;
@@ -241,15 +241,6 @@ MainWindow::MainWindow(QWidget *parent)
 	SettingsDialog::loadSettings(&m->appsettings);
 
 	initNetworking();
-
-	{
-		MySettings s;
-		s.beginGroup("Remote");
-		bool f = s.value("Online", true).toBool();
-		s.endGroup();
-		setRemoteOnline(f);
-	}
-
 
 	showFileList(FilesListType::SingleList);
 
@@ -321,9 +312,21 @@ MainWindow::~MainWindow()
 
 void MainWindow::shown()
 {
-	writeLog(AboutDialog::appVersion() + '\n');
 	setGitCommand(m->appsettings.git_command, false);
 	setFileCommand(m->appsettings.file_command, false);
+	if (!checkGitCommand()) return;
+	if (!checkFileCommand()) return;
+
+	writeLog(AboutDialog::appVersion() + '\n');
+
+
+	{
+		MySettings s;
+		s.beginGroup("Remote");
+		bool f = s.value("Online", true).toBool();
+		s.endGroup();
+		setRemoteOnline(f);
+	}
 
 	setUnknownRepositoryInfo();
 }
@@ -356,12 +359,12 @@ void MainWindow::startTimers()
 
 	// interval 250ms
 
-	connect(&m->interval_250ms_timer, &QTimer::timeout, [&](){
-		checkGitCommand();
-		checkFileCommand();
-	});
-	m->interval_250ms_timer.setInterval(1000);
-	m->interval_250ms_timer.start();
+//	connect(&m->interval_250ms_timer, &QTimer::timeout, [&](){
+////		checkGitCommand();
+////		checkFileCommand();
+//	});
+//	m->interval_250ms_timer.setInterval(1000);
+//	m->interval_250ms_timer.start();
 
 	//
 
@@ -667,6 +670,8 @@ QString MainWindow::currentWorkingCopyDir() const
 
 GitPtr MainWindow::git(QString const &dir) const
 {
+	const_cast<MainWindow *>(this)->checkGitCommand();
+
 	GitPtr g = std::shared_ptr<Git>(new Git(m->gcx, dir));
 	g->setLogCallback(git_callback, (void *)this);
 	return g;
@@ -2808,13 +2813,26 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 	return QString();
 }
 
+#ifdef Q_OS_WIN
+#define GIT_COMMAND "git.exe"
+#define FILE_COMMAND "file.exe"
+#else
+#define GIT_COMMAND "git"
+#define FILE_COMMAND "file"
+#endif
+
+namespace {
+bool isExecutable(QString cmd)
+{
+	QFileInfo info(cmd);
+	return info.isExecutable();
+}
+}
+
 QString MainWindow::selectGitCommand(bool save)
 {
-#ifdef Q_OS_WIN
-	char const *exe = "git.exe";
-#else
-	char const *exe = "git";
-#endif
+	char const *exe = GIT_COMMAND;
+
 	QString path = m->gcx.git_command;
 
 	auto fn = [&](QString const &path){
@@ -2825,17 +2843,17 @@ QString MainWindow::selectGitCommand(bool save)
 #ifdef Q_OS_WIN
 	{
 		QStringList newlist;
-		QString suffix1 = "\\bin\\git.exe";
-		QString suffix2 = "\\cmd\\git.exe";
+		QString suffix1 = "\\bin\\" GIT_COMMAND;
+		QString suffix2 = "\\cmd\\" GIT_COMMAND;
 		for (QString const &s : list) {
 			newlist.push_back(s);
 			auto DoIt = [&](QString const &suffix){
 				if (s.endsWith(suffix)) {
 					QString t = s.mid(0, s.size() - suffix.size());
-					QString t1 = t + "\\mingw64\\bin\\git.exe";
-					if (QFileInfo(t1).isExecutable()) newlist.push_back(t1);
-					QString t2 = t + "\\mingw\\bin\\git.exe";
-					if (QFileInfo(t2).isExecutable()) newlist.push_back(t2);
+					QString t1 = t + "\\mingw64\\bin\\" GIT_COMMAND;
+					if (isExecutable(t1)) newlist.push_back(t1);
+					QString t2 = t + "\\mingw\\bin\\" GIT_COMMAND;
+					if (isExecutable(t2)) newlist.push_back(t2);
 				}
 			};
 			DoIt(suffix1);
@@ -2852,64 +2870,59 @@ QString MainWindow::selectGitCommand(bool save)
 	return selectCommand_("Git", exe, list, path, fn);
 }
 
-QString MainWindow::selectFileCommand()
+QString MainWindow::selectFileCommand(bool save)
 {
-#ifdef Q_OS_WIN
-	char const *exe = "file.exe";
-#else
-	char const *exe = "file";
-#endif
+	char const *exe = FILE_COMMAND;
+
 	QString path = m->file_command;
 
 	auto fn = [&](QString const &path){
-		setFileCommand(path, true);
+		setFileCommand(path, save);
 	};
 
 	QStringList list = whichCommand_(exe);
 
 #ifdef Q_OS_WIN
 	QString dir = misc::getApplicationDir();
-	QString path1 = dir / "msys/file.exe";
+	QString path1 = dir / FILE_COMMAND;
 	QString path2;
 	int i = dir.lastIndexOf('/');
 	int j = dir.lastIndexOf('\\');
 	if (i < j) i = j;
 	if (i > 0) {
-		path2 = dir.mid(0, i) / "msys/file.exe";
+		path2 = dir.mid(0, i) / FILE_COMMAND;
 	}
 	path1 = misc::normalizePathSeparator(path1);
 	path2 = misc::normalizePathSeparator(path2);
-	if (QFileInfo(path1).isExecutable()) list.push_back(path1);
-	if (QFileInfo(path2).isExecutable()) list.push_back(path2);
+	if (isExecutable(path1)) list.push_back(path1);
+	if (isExecutable(path2)) list.push_back(path2);
 #endif
 
 	return selectCommand_("File", exe, list, path, fn);
 }
 
-void MainWindow::checkGitCommand()
+bool MainWindow::checkGitCommand()
 {
 	while (1) {
-		QFileInfo info(m->gcx.git_command);
-		if (info.isExecutable()) {
-			break; // ok
+		if (isExecutable(m->gcx.git_command)) {
+			return true;
 		}
 		if (selectGitCommand(true).isEmpty()) {
 			close();
-			break;
+			return false;
 		}
 	}
 }
 
-void MainWindow::checkFileCommand()
+bool MainWindow::checkFileCommand()
 {
 	while (1) {
-		QFileInfo info(m->file_command);
-		if (info.isExecutable()) {
-			break; // ok
+		if (isExecutable(m->file_command)) {
+			return true;
 		}
-		if (selectFileCommand().isEmpty()) {
+		if (selectFileCommand(true).isEmpty()) {
 			close();
-			break;
+			return false;
 		}
 	}
 }
@@ -3341,8 +3354,9 @@ QString MainWindow::newTempFilePath()
 	return path;
 }
 
-QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback)
+QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const
 {
+	const_cast<MainWindow *>(this)->checkFileCommand();
 	return misc::determinFileType(m->file_command, path, mime, callback);
 }
 
@@ -3947,7 +3961,7 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 {
 	ui->toolButton_clone->setEnabled(f);
 
-	if (!const_cast<MainWindow *>(this)->git()->isValidWorkingCopy()) {
+	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
 		f = false;
 	}
 

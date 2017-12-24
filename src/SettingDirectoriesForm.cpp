@@ -41,7 +41,7 @@ void SettingDirectoriesForm::on_pushButton_select_git_command_clicked()
 
 void SettingDirectoriesForm::on_pushButton_select_file_command_clicked()
 {
-	QString path = mainwindow()->selectFileCommand();
+	QString path = mainwindow()->selectFileCommand(false);
 	if (!path.isEmpty()) {
 		settings()->file_command = path;
 		ui->lineEdit_file_command->setText(path);
