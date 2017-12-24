@@ -11,14 +11,23 @@
 //#include "MyProcess.h"
 
 class Win32Process {
+private:
+	struct Private;
+	Private *m;
 public:
 	std::vector<char> outbytes;
 	std::vector<char> errbytes;
 
+	Win32Process();
+	~Win32Process();
+
 	QString outstring() const;
 	QString errstring() const;
 
-	int run(QString const &command, bool use_input);
+	void start(QString const &command, bool use_input);
+	int wait();
+	void writeInput(const char *ptr, int len);
+	void closeInput(bool justnow);
 };
 
 #endif // WIN32PROCESS_H

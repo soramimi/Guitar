@@ -5,9 +5,8 @@
 #include <deque>
 #include <QDir>
 #include <QDebug>
+#include <QDateTime>
 
-
-namespace {
 
 class OutputReaderThread : public QThread {
 private:
@@ -41,16 +40,31 @@ class Win32ProcessThread : public QThread {
 	friend class Win32Process2;
 private:
 public:
-	QMutex mutex;
+	QMutex *mutex = nullptr;
 	std::string command;
 	DWORD exit_code = -1;
-	std::deque<char> input;
-	std::deque<char> outvec;
-	std::deque<char> errvec;
+	std::deque<char> inq;
+	std::deque<char> outq;
+	std::deque<char> errq;
 	bool use_input = false;
 	HANDLE hInputWrite = INVALID_HANDLE_VALUE;
+	bool close_input_later = false;
+
+	void reset()
+	{
+		mutex = nullptr;
+		command.clear();
+		exit_code = -1;
+		inq.clear();
+		outq.clear();
+		errq.clear();
+		use_input = false;
+		hInputWrite = INVALID_HANDLE_VALUE;
+		close_input_later = false;
+	}
+
 protected:
-	void exec_command()
+	void run()
 	{
 		try {
 			hInputWrite = INVALID_HANDLE_VALUE;
@@ -86,18 +100,18 @@ protected:
 			if (!DuplicateHandle(currproc, hInputWriteTmp, currproc, &hInputWrite, 0, FALSE, DUPLICATE_SAME_ACCESS))
 				throw std::string("Failed to DupliateHandle");
 
-			// 子プロセスのエラー出力
-			if (!DuplicateHandle(currproc, hErrorReadTmp, currproc, &hErrorRead, 0, TRUE, DUPLICATE_SAME_ACCESS))
-				throw std::string("Failed to DuplicateHandle");
-
 			// 子プロセスの標準出力
 			if (!DuplicateHandle(currproc, hOutputReadTmp, currproc, &hOutputRead, 0, FALSE, DUPLICATE_SAME_ACCESS))
 				throw std::string("Failed to DupliateHandle");
 
+			// 子プロセスのエラー出力
+			if (!DuplicateHandle(currproc, hErrorReadTmp, currproc, &hErrorRead, 0, FALSE, DUPLICATE_SAME_ACCESS))
+				throw std::string("Failed to DuplicateHandle");
+
 			// 不要なハンドルを閉じる
+			CloseHandle(hInputWriteTmp);
 			CloseHandle(hOutputReadTmp);
 			CloseHandle(hErrorReadTmp);
-			CloseHandle(hInputWriteTmp);
 
 			// プロセス起動
 			PROCESS_INFORMATION pi;
@@ -118,35 +132,39 @@ protected:
 			}
 
 			// 不要なハンドルを閉じる
+			CloseHandle(hInputRead);
 			CloseHandle(hOutputWrite);
 			CloseHandle(hErrorWrite);
-			CloseHandle(hInputRead);
 
 			if (!use_input) {
 				closeInput();
 			}
 
-			OutputReaderThread t1(hOutputRead, &mutex, &outvec);
-			OutputReaderThread t2(hErrorRead, &mutex, &errvec);
+			OutputReaderThread t1(hOutputRead, mutex, &outq);
+			OutputReaderThread t2(hErrorRead, mutex, &errq);
 			t1.start();
 			t2.start();
 
 			while (WaitForSingleObject(pi.hProcess, 1) != WAIT_OBJECT_0) {
-				if (hInputWrite != INVALID_HANDLE_VALUE) {
-					QMutexLocker lock(&mutex);
-					int n = input.size();
+				QMutexLocker lock(mutex);
+				int n = inq.size();
+				if (n > 0) {
 					while (n > 0) {
 						char tmp[1024];
 						int l = n;
 						if (l > sizeof(tmp)) {
 							l = sizeof(tmp);
 						}
-						std::copy(input.begin(), input.begin() + l, tmp);
-						input.erase(input.begin(), input.begin() + l);
-						DWORD written;
-						WriteFile(hInputWrite, tmp, l, &written, nullptr);
+						std::copy(inq.begin(), inq.begin() + l, tmp);
+						inq.erase(inq.begin(), inq.begin() + l);
+						if (hInputWrite != INVALID_HANDLE_VALUE) {
+							DWORD written;
+							WriteFile(hInputWrite, tmp, l, &written, nullptr);
+						}
 						n -= l;
 					}
+				} else if (close_input_later) {
+					closeInput();
 				}
 			}
 
@@ -165,18 +183,17 @@ protected:
 			OutputDebugStringA(e.c_str());
 		}
 	}
-
-	void run()
-	{
-		exec_command();
-	}
-
+public:
 	void closeInput()
 	{
 		CloseHandle(hInputWrite);
 		hInputWrite = INVALID_HANDLE_VALUE;
 	}
-
+	void writeInput(const char *ptr, int len)
+	{
+		QMutexLocker lock(mutex);
+		inq.insert(inq.end(), ptr, ptr + len);
+	}
 };
 
 QString toQString(const std::vector<char> &vec)
@@ -185,9 +202,24 @@ QString toQString(const std::vector<char> &vec)
 	return QString::fromUtf8(&vec[0], vec.size());
 }
 
-} // namespace
+struct Win32Process::Private {
+	QMutex mutex;
+	Win32ProcessThread th;
 
-int Win32Process::run(QString const &command, bool use_input)
+};
+
+Win32Process::Win32Process()
+	: m(new Private)
+{
+
+}
+
+Win32Process::~Win32Process()
+{
+	delete m;
+}
+
+void Win32Process::start(QString const &command, bool use_input)
 {
 	QTextCodec *sjis = QTextCodec::codecForName("Shift_JIS");
 	Q_ASSERT(sjis);
@@ -196,17 +228,23 @@ int Win32Process::run(QString const &command, bool use_input)
 	ba.push_back((char)0);
 	char const *cmd = ba.data();
 
-	Win32ProcessThread th;
-	th.use_input = use_input;
-	th.command = cmd;
-	th.start();
-	th.wait();
+	m->th.mutex = &m->mutex;
+	m->th.use_input = use_input;
+	m->th.command = cmd;
+	m->th.start();
+}
+
+int Win32Process::wait()
+{
+	m->th.wait();
 
 	outbytes.clear();
 	errbytes.clear();
-	outbytes.insert(outbytes.end(), th.outvec.begin(), th.outvec.end());
-	errbytes.insert(errbytes.end(), th.errvec.begin(), th.errvec.end());
-	return th.exit_code;
+	outbytes.insert(outbytes.end(), m->th.outq.begin(), m->th.outq.end());
+	errbytes.insert(errbytes.end(), m->th.errq.begin(), m->th.errq.end());
+	int exit_code = m->th.exit_code;
+	m->th.reset();
+	return exit_code;
 }
 
 QString Win32Process::outstring() const
@@ -219,4 +257,16 @@ QString Win32Process::errstring() const
 	return toQString(errbytes);
 }
 
+void Win32Process::writeInput(char const *ptr, int len)
+{
+	m->th.writeInput(ptr, len);
+}
 
+void Win32Process::closeInput(bool justnow)
+{
+	if (justnow) {
+		m->th.closeInput();
+	} else {
+		m->th.close_input_later = true;
+	}
+}

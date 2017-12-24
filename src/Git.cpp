@@ -169,7 +169,8 @@ bool Git::git(const QString &arg, bool chdir, bool errout, AbstractPtyProcess *p
 			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;
-			m->process_exit_code = proc.run(cmd, false);
+			proc.start(cmd, false);
+			m->process_exit_code = proc.wait();
 
 			if (errout) {
 				m->result = proc.errbytes;

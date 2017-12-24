@@ -4029,5 +4029,21 @@ void MainWindow::on_action_exit_triggered()
 
 void MainWindow::on_action_test_triggered()
 {
+	QFile file("d:\\mimi5.jpg");
+	file.open(QFile::ReadOnly);
+	QByteArray in = file.readAll();
+
+	QString cmd = "C:\\develop\\Guitar\\misc\\win32tools\\file.exe -m C:\\develop\\Guitar\\misc\\win32tools\\magic.mgc --mime --brief -";
+	Win32Process proc;
+	proc.start(cmd, true);
+	int n = in.size();
+	if (n > 0) {
+		if (n > 65536) n = 65536;
+		proc.writeInput(in.data(), n);
+//		QThread::currentThread()->msleep(100);
+		proc.closeInput(false);
+	}
+	proc.wait();
+	qDebug() << proc.outstring();
 }
 
