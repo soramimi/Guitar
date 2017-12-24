@@ -10,7 +10,6 @@
 #include <QThread>
 #include <deque>
 
-namespace {
 class OutputReaderThread : public QThread {
 private:
 	int fd;
@@ -20,7 +19,7 @@ protected:
 	void run()
 	{
 		while (1) {
-			char buf[256];
+			char buf[1024];
 			int n = read(fd, buf, sizeof(buf));
 			if (n < 1) break;
 			if (buffer) {
@@ -39,70 +38,86 @@ public:
 	}
 };
 
-class WriteThread : public QThread {
-private:
-	int fd;
-	QMutex *mutex;
-	std::deque<char> *buffer;
-protected:
-	void run()
-	{
-		while (1) {
-			if (isInterruptionRequested()) return;
+//class WriteThread : public QThread {
+//private:
+//	int fd;
+//	QMutex *mutex;
+//	std::deque<char> *buffer;
+//	bool *close_input_later = nullptr;
+//protected:
+//	void run()
+//	{
+//		while (1) {
+//			if (isInterruptionRequested()) return;
 
-			int n = buffer->size();
-			while (n > 0) {
-				char buf[256];
-				int l = n;
-				if (l > (int)sizeof(buf)) {
-					l = sizeof(buf);
-				}
-				std::copy(buffer->begin(), buffer->begin() + l, buf);
-				buffer->erase(buffer->begin(), buffer->begin() + l);
-				write(fd, buf, l);
-				n -= l;
-			}
-			msleep(1);
-		}
-	}
-public:
-	WriteThread(int fd, QMutex *mutex, std::deque<char> *in)
-		: fd(fd)
-		, mutex(mutex)
-		, buffer(in)
-	{
+//			{
+//				int n = buffer->size();
+//				if (n > 0) {
+//					while (n > 0) {
+//						char buf[256];
+//						int l = n;
+//						if (l > (int)sizeof(buf)) {
+//							l = sizeof(buf);
+//						}
+//						std::copy(buffer->begin(), buffer->begin() + l, buf);
+//						buffer->erase(buffer->begin(), buffer->begin() + l);
+//						write(fd, buf, l);
+//						n -= l;
+//					}
+//				} else if (*close_input_later) {
+//					close(fd);
+//					fd = -1;
+//					return;
+//				}
+//			}
+//			msleep(1);
+//		}
+//	}
+//public:
+//	WriteThread(int fd, QMutex *mutex, std::deque<char> *in, bool *close_input_later)
+//		: fd(fd)
+//		, mutex(mutex)
+//		, buffer(in)
+//		, close_input_later(close_input_later)
+//	{
 
-	}
-};
+//	}
+//};
 
 class UnixProcessThread : public QThread {
 public:
-	QMutex mutex;
-	const char *file;
-	char * const *argv;
-	std::deque<char> input;
-	std::deque<char> outvec;
-	std::deque<char> errvec;
+	QMutex *mutex;
+	std::vector<std::string> argvec;
+	std::vector<char *> args;
+	std::deque<char> inq;
+	std::deque<char> outq;
+	std::deque<char> errq;
 	bool use_input = false;
 	int fd_in_read = -1;
 	int pid = 0;
 	int exit_code = -1;
+	bool close_input_later = false;
 protected:
 public:
-	UnixProcessThread(const char *file, char * const *argv, bool use_input)
-		: file(file)
-		, argv(argv)
-		, use_input(use_input)
+	void init(QMutex *mutex, bool use_input)
 	{
+		this->mutex = mutex;
+		this->use_input = use_input;
 	}
-	UnixProcessThread()
+	void reset()
 	{
+		argvec.clear();
+		args.clear();
+		inq.clear();
+		outq.clear();
+		errq.clear();
+		use_input = false;
+		fd_in_read = -1;
+		pid = 0;
+		exit_code = -1;
+		close_input_later = false;
 	}
-	void init(const char *file, char * const *argv)
-	{
-		this->file = file;
-		this->argv = argv;
-	}
+
 protected:
 	void run()
 	{
@@ -146,7 +161,7 @@ protected:
 				close(stdin_pipe[R]);
 				close(stdout_pipe[W]);
 				close(stderr_pipe[E]);
-				if (execvp(file, argv) < 0) {
+				if (execvp(args[0], &args[0]) < 0) {
 					close(stdin_pipe[R]);
 					close(stdout_pipe[W]);
 					close(stderr_pipe[E]);
@@ -168,24 +183,53 @@ protected:
 				closeInput();
 			}
 
-			WriteThread t0(fd_in_read, &mutex, &input);
-			OutputReaderThread t1(fd_out_write, &mutex, &outvec);
-			OutputReaderThread t2(fd_err_write, &mutex, &errvec);
-			if (use_input) t0.start();
+//			WriteThread t0(fd_in_read, mutex, &input, &close_input_later);
+			OutputReaderThread t1(fd_out_write, mutex, &outq);
+			OutputReaderThread t2(fd_err_write, mutex, &errq);
+//			if (use_input) t0.start();
 			t1.start();
 			t2.start();
 
-			int status = 0;
-			if (waitpid(pid, &status, 0) == pid) {
-				if (WIFEXITED(status)) {
-					exit_code = WEXITSTATUS(status);
+			while (1) {
+				QThread::currentThread()->msleep(1);
+				int status = 0;
+				if (waitpid(pid, &status, WNOHANG) == pid) {
+					if (WIFEXITED(status)) {
+						exit_code = WEXITSTATUS(status);
+						break;
+					}
+					if (WIFSIGNALED(status)) {
+						exit_code = -1;
+						break;
+					}
+				}
+				{
+					QMutexLocker lock(mutex);
+					int n = inq.size();
+					if (n > 0) {
+						while (n > 0) {
+							char tmp[1024];
+							int l = n;
+							if (l > sizeof(tmp)) {
+								l = sizeof(tmp);
+							}
+							std::copy(inq.begin(), inq.begin() + l, tmp);
+							inq.erase(inq.begin(), inq.begin() + l);
+							if (fd_in_read != -1) {
+								write(fd_in_read, tmp, l);
+							}
+							n -= l;
+						}
+					} else if (close_input_later) {
+						closeInput();
+					}
 				}
 			}
 
-			if (use_input) {
-				t0.requestInterruption();
-				t0.wait();
-			}
+//			if (use_input) {
+//				t0.requestInterruption();
+//				t0.wait();
+//			}
 			t1.wait();
 			t2.wait();
 
@@ -202,12 +246,11 @@ protected:
 			exit(1);
 		}
 	}
-
+public:
 	void writeInput(const char *ptr, int len)
 	{
-		if (use_input && fd_in_read >= 0) {
-			write(fd_in_read, ptr, len);
-		}
+		QMutexLocker lock(mutex);
+		inq.insert(inq.end(), ptr, ptr + len);
 	}
 
 	void closeInput()
@@ -219,9 +262,21 @@ protected:
 	}
 };
 
-} // namespace
+struct UnixProcess::Private {
+	QMutex mutex;
+	UnixProcessThread th;
+};
 
+UnixProcess::UnixProcess()
+	: m(new Private)
+{
 
+}
+
+UnixProcess::~UnixProcess()
+{
+	delete m;
+}
 
 void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *out)
 {
@@ -263,31 +318,54 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ou
 	}
 }
 
-int UnixProcess::run(const QString &command, bool use_input)
+void UnixProcess::start(const QString &command, bool use_input)
 {
-	int exit_code = -1;
 	std::string cmd = command.toStdString();
-	std::vector<std::string> vec;
-	parseArgs(cmd, &vec);
-	if (vec.size() > 0) {
-		std::vector<char *> args;
-		for (std::string const &s : vec) {
-			args.push_back(const_cast<char *>(s.c_str()));
+	parseArgs(cmd, &m->th.argvec);
+	if (m->th.argvec.size() > 0) {
+		for (std::string const &s : m->th.argvec) {
+			m->th.args.push_back(const_cast<char *>(s.c_str()));
 		}
-		args.push_back(nullptr);
+		m->th.args.push_back(nullptr);
 
-		UnixProcessThread th(args[0], &args[0], use_input);
-		th.start();
-		th.wait();
-		exit_code = th.exit_code;
-
-		outbytes.clear();
-		errbytes.clear();
-		if (!th.outvec.empty()) outbytes.insert(outbytes.end(), th.outvec.begin(), th.outvec.end());
-		if (!th.errvec.empty()) errbytes.insert(errbytes.end(), th.errvec.begin(), th.errvec.end());
+		m->th.init(&m->mutex, use_input);
+		m->th.start();
 	}
+}
 
+int UnixProcess::wait()
+{
+	m->th.wait();
+
+	outbytes.clear();
+	errbytes.clear();
+	if (!m->th.outq.empty()) outbytes.insert(outbytes.end(), m->th.outq.begin(), m->th.outq.end());
+	if (!m->th.errq.empty()) errbytes.insert(errbytes.end(), m->th.errq.begin(), m->th.errq.end());
+	int exit_code = m->th.exit_code;
+	m->th.reset();
 	return exit_code;
+}
+
+void UnixProcess::writeInput(const char *ptr, int len)
+{
+	m->th.writeInput(ptr, len);
+}
+
+void UnixProcess::closeInput(bool justnow)
+{
+	if (justnow) {
+		m->th.closeInput();
+	} else {
+		m->th.close_input_later = true;
+	}
+}
+
+QString UnixProcess::outstring()
+{
+	if (outbytes.empty()) return QString();
+	std::vector<char> v;
+	v.insert(v.end(), outbytes.begin(), outbytes.end());
+	return QString::fromUtf8(&v[0], v.size());
 }
 
 QString UnixProcess::errstring()

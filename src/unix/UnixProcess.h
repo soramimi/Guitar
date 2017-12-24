@@ -11,15 +11,27 @@
 //#include <QThread>
 
 class UnixProcess {
+private:
+	struct Private;
+	Private *m;
 public:
-	int run(QString const &command, bool use_input);
+	UnixProcess();
+	~UnixProcess();
+	void start(QString const &command, bool use_input);
 
 	std::vector<char> outbytes;
 	std::vector<char> errbytes;
 
+	QString outstring();
 	QString errstring();
 
 	static void parseArgs(const std::string &cmd, std::vector<std::string> *out);
+
+	int wait();
+
+	void writeInput(const char *ptr, int len);
+
+	void closeInput(bool justnow);
 };
 
 #endif // UNIXPROCESS_H
