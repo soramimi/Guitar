@@ -7,6 +7,7 @@
 #include <QContextMenuEvent>
 #include <vector>
 #include "common/joinpath.h"
+#include "MyProcess.h"
 
 QString misc::getApplicationDir()
 {
@@ -227,65 +228,32 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 	return !left.isEmpty() ? left : right;
 }
 
-int misc::runCommand(QString const &cmd, QByteArray *out)
-{
-	out->clear();
-	QProcess proc;
-	proc.setReadChannel(QProcess::StandardOutput);
-	proc.start(cmd);
-	proc.waitForStarted();
-	proc.closeWriteChannel();
-	while (1) {
-		QProcess::ProcessState s = proc.state();
-		if (proc.waitForReadyRead(1)) {
-			while (1) {
-				char tmp[1024];
-				qint64 len = proc.read(tmp, sizeof(tmp));
-				if (len < 1) break;
-				out->append(tmp, len);
-			}
-		} else if (s == QProcess::NotRunning) {
-			break;
-		}
-	}
-
-	return proc.exitCode();
-}
-
 int misc::runCommand(QString const &cmd, QByteArray const *in, QByteArray *out)
 {
-	out->clear();
-	if (in->isEmpty()) {
-		return -1;
-	}
-	QProcess proc;
-	proc.setReadChannel(QProcess::StandardOutput);
-	proc.start(cmd);
-	proc.waitForStarted();
-	{
-		char const *p = in->data();
+	Process proc;
+	proc.start(cmd, (bool)in);
+
+	if (in) {
 		int n = in->size();
-		if (n > 65536) {
-			n = 65536;
+		if (n > 0) {
+			if (n > 65536) n = 65536;
+			proc.writeInput(in->data(), n);
 		}
-		proc.write(p, n);
-	}
-	proc.closeWriteChannel();
-	while (1) {
-		QProcess::ProcessState s = proc.state();
-		if (proc.waitForReadyRead(10)) {
-			while (1) {
-				char tmp[1024];
-				qint64 len = proc.read(tmp, sizeof(tmp));
-				if (len < 1) break;
-				out->append(tmp, len);
-			}
-		} else if (s == QProcess::NotRunning) {
-			break;
-		}
+		proc.closeInput(false);
 	}
 
-	return proc.exitCode();
+	int r = proc.wait();
+	if (proc.outbytes.empty()) {
+		out->clear();
+	} else {
+		out->append(&proc.outbytes[0], proc.outbytes.size());
+	}
+	return r;
+}
+
+int misc::runCommand(QString const &cmd, QByteArray *out)
+{
+	return runCommand(cmd, nullptr, out);
 }
 
 void misc::setFixedSize(QWidget *w)

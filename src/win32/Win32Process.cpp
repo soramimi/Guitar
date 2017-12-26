@@ -270,3 +270,6 @@ void Win32Process::closeInput(bool justnow)
 		m->th.close_input_later = true;
 	}
 }
+
+
+

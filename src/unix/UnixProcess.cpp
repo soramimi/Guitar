@@ -376,3 +376,6 @@ QString UnixProcess::errstring()
 	return QString::fromUtf8(&v[0], v.size());
 }
 
+
+
+

@@ -4029,12 +4029,15 @@ void MainWindow::on_action_exit_triggered()
 
 void MainWindow::on_action_test_triggered()
 {
-	QFile file("/home/soramimi/a/about.png");
+	QString path = "D:\\mimi5.jpg";
+//	QString path = "home/soramimi/a/about.png";
+	QFile file(path);
+
 	file.open(QFile::ReadOnly);
 	QByteArray in = file.readAll();
 
-	QString cmd = "file --mime --brief -";
-	UnixProcess proc;
+	QString cmd = "C:\\develop\\Guitar\\misc\\win32tools\\file.exe -m C:\\develop\\Guitar\\misc\\win32tools\\magic.mgc --mime --brief -";
+	Process proc;
 	proc.start(cmd, true);
 	int n = in.size();
 	if (n > 0) {
