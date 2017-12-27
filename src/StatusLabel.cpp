@@ -3,6 +3,7 @@
 StatusLabel::StatusLabel(QWidget *parent)
 	: QLabel(parent)
 {
+	setTextFormat(Qt::PlainText);
 }
 
 QSize StatusLabel::minimumSizeHint() const
