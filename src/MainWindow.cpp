@@ -411,17 +411,19 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				openSelectedRepository();
 				return true;
 			}
-			if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
-				appendCharToRepoFilter(k);
-				return true;
-			}
-			if (k == Qt::Key_Backspace) {
-				backspaceRepoFilter();
-				return true;
-			}
-			if (k == Qt::Key_Escape) {
-				clearRepoFilter();
-				return true;
+			if (!(e->modifiers() & Qt::ControlModifier)) {
+				if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
+					appendCharToRepoFilter(k);
+					return true;
+				}
+				if (k == Qt::Key_Backspace) {
+					backspaceRepoFilter();
+					return true;
+				}
+				if (k == Qt::Key_Escape) {
+					clearRepoFilter();
+					return true;
+				}
 			}
 			if (k == Qt::Key_Tab) {
 				ui->tableWidget_log->setFocus();
