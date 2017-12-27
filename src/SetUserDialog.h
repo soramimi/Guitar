@@ -16,7 +16,7 @@ private:
 	Git::User global_user;
 	Git::User repo_user;
 public:
-	explicit SetUserDialog(QWidget *parent, Git::User global_user, Git::User repo_user, const QString &repo);
+	explicit SetUserDialog(QWidget *parent, const Git::User &global_user, const Git::User &repo_user, const QString &repo);
 	~SetUserDialog();
 
 	bool isGlobalChecked() const;

@@ -172,7 +172,8 @@ SOURCES += \
     src/texteditor/TextEditorWidget.cpp \
     src/texteditor/unicode.cpp \
     src/texteditor/UnicodeWidth.cpp \
-    MyImageViewWidget.cpp
+    MyImageViewWidget.cpp \
+    src/SetGlobalUserDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -259,7 +260,8 @@ HEADERS  += \
     src/texteditor/TextEditorWidget.h \
     src/texteditor/unicode.h \
     src/texteditor/UnicodeWidth.h \
-    MyImageViewWidget.h
+    MyImageViewWidget.h \
+    src/SetGlobalUserDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -292,7 +294,8 @@ FORMS    += \
 	src/CreateRepositoryDialog.ui \
 	src/ExperimentDialog.ui \
 	src/SettingNetworkForm.ui \
-	src/SettingBehaviorForm.ui
+	src/SettingBehaviorForm.ui \
+    src/SetGlobalUserDialog.ui
 
 RESOURCES += \
     resources.qrc

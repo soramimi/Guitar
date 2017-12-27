@@ -112,6 +112,7 @@ private:
 	QString selectFileCommand(bool save);
 	bool checkGitCommand();
 	bool checkFileCommand();
+	void checkUser();
 
 	void clearLog();
 	void clearFileList();
@@ -201,6 +202,8 @@ private:
 	void fetch(GitPtr g);
 	void stopPtyProcess();
 	void setNetworkingCommandsEnabled(bool f);
+	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
+	void execSetGlobalUserDialog();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -238,7 +241,6 @@ public:
 	void clearStatusBarText();
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void setLogEnabled(GitPtr g, bool f);
-	void setBlockUI(bool f);
 	void addWorkingCopyDir(QString dir, QString name, bool open);
 	void addWorkingCopyDir(QString dir, bool open)
 	{

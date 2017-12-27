@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "SetGlobalUserDialog.h"
 #include "ui_MainWindow.h"
 
 #ifdef Q_OS_WIN
@@ -183,7 +184,6 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
-//	QTimer interval_250ms_timer;
 	QImage graph_color;
 	std::map<QString, QList<Git::Branch>> branch_map;
 	std::map<QString, QList<Git::Tag>> tag_map;
@@ -195,7 +195,6 @@ struct MainWindow::Private {
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
 	StatusLabel *status_bar_label;
-	bool ui_blocked = false;
 
 	WebContext webcx;
 	AvatarLoader avatar_loader;
@@ -319,7 +318,6 @@ void MainWindow::shown()
 
 	writeLog(AboutDialog::appVersion() + '\n');
 
-
 	{
 		MySettings s;
 		s.beginGroup("Remote");
@@ -329,6 +327,8 @@ void MainWindow::shown()
 	}
 
 	setUnknownRepositoryInfo();
+
+	checkUser();
 }
 
 void MainWindow::startTimers()
@@ -401,32 +401,6 @@ bool MainWindow::event(QEvent *event)
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
 	QEvent::Type et = event->type();
-
-	if (m->ui_blocked) {
-		if (et == QEvent::KeyPress || et == QEvent::KeyRelease) {
-			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
-			Q_ASSERT(e);
-			if (e->key() == Qt::Key_Escape) {
-				return false; // default event handling
-			}
-			return true; // discard event
-		}
-		switch (et) {
-		case QEvent::MouseButtonPress:
-		case QEvent::MouseButtonRelease:
-		case QEvent::MouseButtonDblClick:
-		case QEvent::MouseMove:
-		case QEvent::Close:
-		case QEvent::Drop:
-		case QEvent::Wheel:
-		case QEvent::ContextMenu:
-		case QEvent::InputMethod:
-		case QEvent::TabletMove:
-		case QEvent::TabletPress:
-		case QEvent::TabletRelease:
-			return true; // discard event
-		}
-	}
 
 	if (et == QEvent::KeyPress) {
 		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
@@ -2927,6 +2901,15 @@ bool MainWindow::checkFileCommand()
 	}
 }
 
+void MainWindow::checkUser()
+{
+	Git g(m->gcx, QString());
+	Git::User user = g.getUser(Git::GetUserGlobal);
+	if (user.name.isEmpty() || user.email.isEmpty()) {
+		execSetGlobalUserDialog();
+	}
+}
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (QApplication::modalWindow()) return;
@@ -3508,18 +3491,22 @@ bool MainWindow::testRemoteRepositoryValidity(QString const &url)
 	return ok;
 }
 
-void MainWindow::on_action_set_config_user_triggered()
+void MainWindow::execSetGlobalUserDialog()
 {
-	Git::User global_user;
-	Git::User repo_user;
-	GitPtr g = git();
-	if (isValidWorkingCopy(g)) {
-		repo_user = g->getUser(Git::GetUserLocal);
-	}
-	global_user = g->getUser(Git::GetUserGlobal);
-
-	SetUserDialog dlg(this, global_user, repo_user, currentRepositoryName());
+	SetGlobalUserDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
+		GitPtr g = git();
+		Git::User user = dlg.user();
+		g->setUser(user, true);
+		updateWindowTitle(g);
+	}
+}
+
+void MainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
+{
+	SetUserDialog dlg(this, global_user, repo_user, reponame);
+	if (dlg.exec() == QDialog::Accepted) {
+		GitPtr g = git();
 		Git::User user = dlg.user();
 		if (dlg.isGlobalChecked()) {
 			g->setUser(user, true);
@@ -3531,15 +3518,22 @@ void MainWindow::on_action_set_config_user_triggered()
 	}
 }
 
+void MainWindow::on_action_set_config_user_triggered()
+{
+	Git::User global_user;
+	Git::User repo_user;
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		repo_user = g->getUser(Git::GetUserLocal);
+	}
+	global_user = g->getUser(Git::GetUserGlobal);
+
+	execSetUserDialog(global_user, repo_user, currentRepositoryName());
+}
+
 void MainWindow::on_action_window_log_triggered(bool checked)
 {
 	ui->dockWidget_log->setVisible(checked);
-}
-
-void MainWindow::setBlockUI(bool f)
-{
-	m->ui_blocked = f;
-	ui->menuBar->setEnabled(!m->ui_blocked);
 }
 
 NamedCommitList MainWindow::namedCommitItems(int flags)

@@ -2,7 +2,7 @@
 #include "ui_SetUserDialog.h"
 #include "common/misc.h"
 
-SetUserDialog::SetUserDialog(QWidget *parent, Git::User global_user, Git::User repo_user, QString const &repo) :
+SetUserDialog::SetUserDialog(QWidget *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo) :
 	QDialog(parent),
 	ui(new Ui::SetUserDialog)
 {
