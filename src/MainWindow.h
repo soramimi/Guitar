@@ -354,6 +354,8 @@ private slots:
 
 	void on_action_exit_triggered();
 
+	void on_action_reflog_triggered();
+
 signals:
 	void onEscapeKeyPressed();
 };

@@ -1049,6 +1049,84 @@ void Git::addRemoteURL(QString const &remote, QString const &url)
 	git(cmd);
 }
 
+bool Git::reflog(ReflogItemList *out, int maxcount)
+{
+	out->clear();
+	QString cmd = "reflog --no-abbrev --raw -n %1";
+	cmd = cmd.arg(maxcount);
+	if (!git(cmd)) return false;
+	QByteArray ba = toQByteArray();
+	if (!ba.isEmpty()) {
+		ReflogItem item;
+		char const *begin = ba.data();
+		char const *end = begin + ba.size();
+		char const *left = begin;
+		char const *ptr = begin;
+		while (1) {
+			int c = 0;
+			if (ptr < end) {
+				c = *ptr;
+			}
+			if (c == '\r' || c == '\n' || c == 0) {
+				int d = 0;
+				QString line = QString::fromUtf8(left, ptr - left);
+				if (left < ptr) {
+					d = *left & 0xff;
+				}
+				if (d == ':') {
+					// ex. ":100644 100644 bb603836fb597cca994309a1f0a52251d6b20314 d6b9798854debee375bb419f0f2ed9c8437f1932 M\tsrc/MainWindow.cpp"
+					int tab = line.indexOf('\t');
+					if (tab > 1) {
+						QString tmp = line.mid(1, tab - 1);
+						QString path = line.mid(tab + 1);
+						QStringList cols = misc::splitWords(tmp);
+						if (!path.isEmpty() && cols.size() == 5) {
+							ReflogItem::File file;
+							file.atts_a = cols[0];
+							file.atts_b = cols[1];
+							file.id_a = cols[2];
+							file.id_b = cols[3];
+							file.type = cols[4];
+							file.path = path;
+							item.files.push_back(file);
+						}
+					}
+				} else {
+					bool start = isxdigit(d);
+					if (start || c == 0) {
+						if (!item.id.isEmpty()) {
+							out->push_back(item);
+						}
+					}
+					if (start) {
+						// ex. "0a2a8b6b66f48bcbf985d8a2afcd14ff41676c16 HEAD@{188}: commit: comment text"
+						item = ReflogItem();
+						int i = line.indexOf(": ");
+						if (i > 0) {
+							int j = line.indexOf(": ", i + 2);
+							if (j > 2) {
+								item.head = line.mid(0, i);
+								item.command = line.mid(i + 2, j - i - 2);
+								item.comment= line.mid(j + 2);
+								if (item.head.size() > GIT_ID_LENGTH) {
+									item.id = item.head.mid(0, GIT_ID_LENGTH);
+									item.head = item.head.mid(GIT_ID_LENGTH + 1);
+								}
+							}
+						}
+					}
+				}
+				if (c == 0) break;
+				ptr++;
+				left = ptr;
+			} else {
+				ptr++;
+			}
+		}
+	}
+	return true;
+}
+
 // Git::FileStatus
 
 QString Git::trimPath(QString const &s)

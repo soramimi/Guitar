@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "ReflogDialog.h"
 #include "SetGlobalUserDialog.h"
 #include "ui_MainWindow.h"
 
@@ -4046,3 +4047,13 @@ void MainWindow::on_action_test_triggered()
 	qDebug() << proc.outstring();
 }
 
+
+void MainWindow::on_action_reflog_triggered()
+{
+	GitPtr g = git();
+	Git::ReflogItemList reflog;
+	g->reflog(&reflog);
+
+	ReflogDialog dlg(this, reflog);
+	dlg.exec();
+}

@@ -173,7 +173,8 @@ SOURCES += \
     src/texteditor/unicode.cpp \
     src/texteditor/UnicodeWidth.cpp \
     MyImageViewWidget.cpp \
-    src/SetGlobalUserDialog.cpp
+    src/SetGlobalUserDialog.cpp \
+    src/ReflogDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -261,7 +262,8 @@ HEADERS  += \
     src/texteditor/unicode.h \
     src/texteditor/UnicodeWidth.h \
     MyImageViewWidget.h \
-    src/SetGlobalUserDialog.h
+    src/SetGlobalUserDialog.h \
+    src/ReflogDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -295,7 +297,8 @@ FORMS    += \
 	src/ExperimentDialog.ui \
 	src/SettingNetworkForm.ui \
 	src/SettingBehaviorForm.ui \
-    src/SetGlobalUserDialog.ui
+    src/SetGlobalUserDialog.ui \
+    src/ReflogDialog.ui
 
 RESOURCES += \
     resources.qrc

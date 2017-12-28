@@ -397,6 +397,25 @@ public:
 	QString objectType(const QString &id);
 	bool rm_cached(const QString &file);
 	void cherrypick(const QString &name);
+
+	struct ReflogItem {
+		QString id;
+		QString head;
+		QString command;
+		QString comment;
+		struct File {
+			QString atts_a;
+			QString atts_b;
+			QString id_a;
+			QString id_b;
+			QString type;
+			QString path;
+		};
+		QList<File> files;
+	};
+	typedef QList<ReflogItem> ReflogItemList;
+
+	bool reflog(ReflogItemList *out, int maxcount = 100);
 };
 
 #endif // GIT_H

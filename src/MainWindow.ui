@@ -1011,6 +1011,7 @@
      <string>Experiment</string>
     </property>
     <addaction name="action_test"/>
+    <addaction name="action_reflog"/>
     <addaction name="action_push_u_origin_master"/>
     <addaction name="action_branch_merge"/>
     <addaction name="action_branch_new"/>
@@ -1393,6 +1394,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_reflog">
+   <property name="text">
+    <string>reflog</string>
    </property>
   </action>
  </widget>
