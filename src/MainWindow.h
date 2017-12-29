@@ -149,7 +149,6 @@ private:
 	void addTag();
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
-	void execCommitPropertyDialog(const Git::CommitItem *commit);
 	QStringList whichCommand_(const QString &cmdfile);
 	QString getObjectID(QListWidgetItem *item);
 	void execFilePropertyDialog(QListWidgetItem *item);
@@ -259,6 +258,8 @@ public:
 	bool isAvatarEnabled() const;
 	WebContext *getWebContextPtr();
 	void shown();
+	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
+	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

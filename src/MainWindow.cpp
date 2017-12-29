@@ -14,7 +14,6 @@
 #include "CheckoutDialog.h"
 #include "CloneDialog.h"
 #include "CommitExploreWindow.h"
-#include "CommitExploreWindow.h"
 #include "CommitPropertyDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
@@ -1768,9 +1767,9 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 	openSelectedRepository();
 }
 
-void MainWindow::execCommitPropertyDialog(Git::CommitItem const *commit)
+void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)
 {
-	CommitPropertyDialog dlg(this, *commit);
+	CommitPropertyDialog dlg(parent, *commit);
 	dlg.exec();
 }
 
@@ -1895,6 +1894,12 @@ void MainWindow::execSetRemoteUrlDialog(RepositoryItem const *repo)
 	dlg.exec();
 }
 
+void MainWindow::execCommitExploreWindow(QWidget *parent, Git::CommitItem const *commit)
+{
+	CommitExploreWindow win(parent, this, &m->objcache, commit);
+	win.exec();
+}
+
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	Git::CommitItem const *commit = selectedCommitItem();
@@ -1939,7 +1944,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_properties) {
-				execCommitPropertyDialog(commit);
+				execCommitPropertyDialog(this, commit);
 				return;
 			}
 			if (a == a_push_upstream) {
@@ -1979,8 +1984,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_explore) {
-				CommitExploreWindow win(this, &m->objcache, commit);
-				win.exec();
+				execCommitExploreWindow(this, commit);
 				return;
 			}
 			if (a == a_reset_head) {
@@ -3383,7 +3387,7 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 {
 	Git::CommitItem const *commit = selectedCommitItem();
 	if (commit) {
-		execCommitPropertyDialog(commit);
+		execCommitPropertyDialog(this, commit);
 	}
 }
 
@@ -4054,6 +4058,6 @@ void MainWindow::on_action_reflog_triggered()
 	Git::ReflogItemList reflog;
 	g->reflog(&reflog);
 
-	ReflogDialog dlg(this, reflog);
+	ReflogDialog dlg(this, this, reflog);
 	dlg.exec();
 }

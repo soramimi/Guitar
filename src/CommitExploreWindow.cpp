@@ -36,7 +36,7 @@ struct CommitExploreWindow::Private {
 	TextEditorEnginePtr text_editor_engine;
 };
 
-CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *objcache, const Git::CommitItem *commit)
+CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
 	, m(new Private)
@@ -47,13 +47,13 @@ CommitExploreWindow::CommitExploreWindow(MainWindow *parent, GitObjectCache *obj
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
-	m->mainwindow = parent;
+	m->mainwindow = mainwin;
 
 	m->objcache = objcache;
 	m->commit = commit;
 
 	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
-	ui->widget_fileview->bind(parent, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar);
+	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar);
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	ui->splitter->setSizes({100, 100, 200});

@@ -1,7 +1,11 @@
+#include "CommitExploreWindow.h"
 #include "ReflogDialog.h"
 #include "ui_ReflogDialog.h"
+#include "MainWindow.h"
+#include "Git.h"
+#include <QMenu>
 
-ReflogDialog::ReflogDialog(QWidget *parent, Git::ReflogItemList const &reflog)
+ReflogDialog::ReflogDialog(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)
 	: QDialog(parent)
 	, ui(new Ui::ReflogDialog)
 {
@@ -10,7 +14,10 @@ ReflogDialog::ReflogDialog(QWidget *parent, Git::ReflogItemList const &reflog)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	updateTable(reflog);
+	mainwindow_ = mainwin;
+	reflog_ =  reflog;
+
+	updateTable(reflog_);
 }
 
 ReflogDialog::~ReflogDialog()
@@ -65,4 +72,51 @@ void ReflogDialog::updateTable(Git::ReflogItemList const &reflog)
 
 	ui->tableWidget->resizeColumnsToContents();
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+}
+
+bool ReflogDialog::currentCommit(Git::CommitItem *out)
+{
+	bool ok = false;
+	*out = Git::CommitItem();
+	int row = ui->tableWidget->currentRow();
+	if (row >= 0 && row < reflog_.size()) {
+		Git::ReflogItem const &logitem = reflog_[row];
+		GitPtr g = mainwindow_->git();
+		if (g->objectType(logitem.id) == "commit") {
+			if (g->query_commit(logitem.id, out)) {
+				ok = true;
+			}
+		}
+	}
+	return ok;
+}
+
+void ReflogDialog::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+{
+	Git::CommitItem commit;
+	if (!currentCommit(&commit)) return;
+
+	QMenu menu;
+	QAction *a_explorer = menu.addAction(tr("Explorer"));
+	QAction *a_property = menu.addAction(tr("Property"));
+	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
+	if (a) {
+		if (a == a_explorer) {
+			mainwindow_->execCommitExploreWindow(this, &commit);
+			return;
+		}
+		if (a == a_property) {
+			mainwindow_->execCommitPropertyDialog(this, &commit);
+			return;
+		}
+	}
+
+}
+
+void ReflogDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+	Git::CommitItem commit;
+	if (!currentCommit(&commit)) return;
+
+	mainwindow_->execCommitPropertyDialog(this, &commit);
 }

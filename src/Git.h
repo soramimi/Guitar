@@ -307,6 +307,7 @@ public:
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(const QString &id, int maxcount);
 	CommitItemList log(int maxcount);
+	bool query_commit(const QString &id, CommitItem *out);
 
 	struct CloneData {
 		QString url;
