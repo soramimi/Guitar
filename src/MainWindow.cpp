@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "ReflogDialog.h"
+#include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
 #include "ui_MainWindow.h"
 
@@ -29,7 +29,7 @@
 #include "GitDiff.h"
 #include "gunzip.h"
 #include "JumpDialog.h"
-#include "LibGit2.h"
+//#include "LibGit2.h"
 #include "LocalSocketReader.h"
 #include "main.h"
 #include "MemoryReader.h"
@@ -1769,7 +1769,7 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 
 void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)
 {
-	CommitPropertyDialog dlg(parent, *commit);
+	CommitPropertyDialog dlg(parent, this, commit);
 	dlg.exec();
 }
 
@@ -1956,7 +1956,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_checkout) {
-				checkout(commit);
+				checkout(this, commit);
 				return;
 			}
 			if (a == a_delbranch) {
@@ -3646,7 +3646,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	}
 }
 
-void MainWindow::checkout(Git::CommitItem const *commit)
+void MainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -3679,7 +3679,7 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 		}
 	}
 
-	CheckoutDialog dlg(this, tags, local_branches, remote_branches);
+	CheckoutDialog dlg(parent, tags, local_branches, remote_branches);
 	if (dlg.exec() == QDialog::Accepted) {
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
@@ -3697,7 +3697,6 @@ void MainWindow::checkout(Git::CommitItem const *commit)
 			openRepository(true);
 		}
 	}
-
 }
 
 void MainWindow::deleteBranch(Git::CommitItem const *commit)
@@ -3767,7 +3766,7 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 
 void MainWindow::checkout()
 {
-	checkout(selectedCommitItem());
+	checkout(this, selectedCommitItem());
 }
 
 void MainWindow::deleteBranch()
@@ -4058,6 +4057,6 @@ void MainWindow::on_action_reflog_triggered()
 	Git::ReflogItemList reflog;
 	g->reflog(&reflog);
 
-	ReflogDialog dlg(this, this, reflog);
+	ReflogWindow dlg(this, this, reflog);
 	dlg.exec();
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ReflogDialog</class>
- <widget class="QDialog" name="ReflogDialog">
+ <class>ReflogWindow</class>
+ <widget class="QDialog" name="ReflogWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -63,5 +63,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ReflogWindow</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>618</x>
+     <y>473</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>609</x>
+     <y>522</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

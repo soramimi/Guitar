@@ -132,6 +132,13 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QPushButton" name="pushButton_checkout">
+       <property name="text">
+        <string>Checkout</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -177,26 +184,11 @@
   <tabstop>lineEdit_mail</tabstop>
   <tabstop>lineEdit_commit_id</tabstop>
   <tabstop>plainTextEdit_parent_ids</tabstop>
+  <tabstop>pushButton_checkout</tabstop>
   <tabstop>pushButton</tabstop>
  </tabstops>
  <resources/>
  <connections>
-  <connection>
-   <sender>CommitPropertyDialog</sender>
-   <signal>accepted()</signal>
-   <receiver>CommitPropertyDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>355</x>
-     <y>285</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>355</x>
-     <y>286</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
@@ -204,12 +196,12 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>362</x>
-     <y>235</y>
+     <x>368</x>
+     <y>347</y>
     </hint>
     <hint type="destinationlabel">
-     <x>373</x>
-     <y>275</y>
+     <x>367</x>
+     <y>394</y>
     </hint>
    </hints>
   </connection>

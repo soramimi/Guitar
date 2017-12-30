@@ -1005,13 +1005,13 @@
     <addaction name="action_delete_branch"/>
     <addaction name="action_tag"/>
     <addaction name="action_tag_delete"/>
+    <addaction name="action_reflog"/>
    </widget>
    <widget class="QMenu" name="menuExperiment">
     <property name="title">
      <string>Experiment</string>
     </property>
     <addaction name="action_test"/>
-    <addaction name="action_reflog"/>
     <addaction name="action_push_u_origin_master"/>
     <addaction name="action_branch_merge"/>
     <addaction name="action_branch_new"/>
@@ -1398,7 +1398,7 @@
   </action>
   <action name="action_reflog">
    <property name="text">
-    <string>reflog</string>
+    <string>Reflog...</string>
    </property>
   </action>
  </widget>

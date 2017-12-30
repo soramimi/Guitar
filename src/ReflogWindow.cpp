@@ -1,17 +1,18 @@
 #include "CommitExploreWindow.h"
-#include "ReflogDialog.h"
-#include "ui_ReflogDialog.h"
+#include "ReflogWindow.h"
+#include "ui_ReflogWindow.h"
 #include "MainWindow.h"
 #include "Git.h"
 #include <QMenu>
 
-ReflogDialog::ReflogDialog(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)
+ReflogWindow::ReflogWindow(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)
 	: QDialog(parent)
-	, ui(new Ui::ReflogDialog)
+	, ui(new Ui::ReflogWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
+	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
 	mainwindow_ = mainwin;
@@ -20,12 +21,12 @@ ReflogDialog::ReflogDialog(QWidget *parent, MainWindow *mainwin, Git::ReflogItem
 	updateTable(reflog_);
 }
 
-ReflogDialog::~ReflogDialog()
+ReflogWindow::~ReflogWindow()
 {
 	delete ui;
 }
 
-void ReflogDialog::updateTable(Git::ReflogItemList const &reflog)
+void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 {
 	QTableWidgetItem *item;
 	ui->tableWidget->clear();
@@ -74,7 +75,7 @@ void ReflogDialog::updateTable(Git::ReflogItemList const &reflog)
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
-bool ReflogDialog::currentCommit(Git::CommitItem *out)
+bool ReflogWindow::currentCommit(Git::CommitItem *out)
 {
 	bool ok = false;
 	*out = Git::CommitItem();
@@ -91,16 +92,21 @@ bool ReflogDialog::currentCommit(Git::CommitItem *out)
 	return ok;
 }
 
-void ReflogDialog::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
 	Git::CommitItem commit;
 	if (!currentCommit(&commit)) return;
 
 	QMenu menu;
+	QAction *a_checkout = menu.addAction(tr("Checkout"));
 	QAction *a_explorer = menu.addAction(tr("Explorer"));
 	QAction *a_property = menu.addAction(tr("Property"));
 	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
+		if (a == a_checkout) {
+			mainwindow_->checkout(this, &commit);
+			return;
+		}
 		if (a == a_explorer) {
 			mainwindow_->execCommitExploreWindow(this, &commit);
 			return;
@@ -113,7 +119,7 @@ void ReflogDialog::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 }
 
-void ReflogDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	Git::CommitItem commit;
 	if (!currentCommit(&commit)) return;

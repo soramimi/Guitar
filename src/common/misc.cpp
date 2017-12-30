@@ -159,6 +159,7 @@ QString misc::getFileName(QString const &path)
 QString misc::makeDateTimeString(QDateTime const &dt)
 {
 	if (dt.isValid()) {
+#if 0
 		char tmp[100];
 		sprintf(tmp, "%04u-%02u-%02u %02u:%02u:%02u"
 				, dt.date().year()
@@ -169,6 +170,14 @@ QString misc::makeDateTimeString(QDateTime const &dt)
 				, dt.time().second()
 				);
 		return tmp;
+#elif 0
+		QString s = dt.toLocalTime().toString(Qt::DefaultLocaleShortDate);
+		return s;
+#else
+		QString s = dt.toLocalTime().toString(Qt::ISODate);
+		s.replace('T', ' ');
+		return s;
+#endif
 	}
 	return QString();
 }

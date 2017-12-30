@@ -173,7 +173,6 @@ private:
 	};
 	NamedCommitList namedCommitItems(int flags);
 
-	void checkout(const Git::CommitItem *commit);
 	void deleteBranch(const Git::CommitItem *commit);
 	void checkout();
 	void clone();
@@ -260,6 +259,7 @@ public:
 	void shown();
 	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
+	void checkout(QWidget *parent, const Git::CommitItem *commit);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
