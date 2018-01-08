@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 21.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1"
+	 id="レイヤー_1" xmlns:cc="http://web.resource.org/cc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:ns1="http://sozi.baierouge.fr" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 907.1 907.1"
+	 style="enable-background:new 0 0 907.1 907.1;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:url(#SVGID_1_);stroke:#4D4D4D;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;}
+	.st1{fill:url(#SVGID_2_);stroke:#000DA2;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;}
+</style>
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="39.6" y1="752.84" x2="867.6" y2="752.84" gradientTransform="matrix(1 0 0 -1 0 905.89)">
+	<stop  offset="0" style="stop-color:#FFFF80"/>
+	<stop  offset="1" style="stop-color:#808040"/>
+</linearGradient>
+<path class="st0" d="M39.6,22.7v136c0,68.9,185.4,124.7,414,124.7s414-55.8,414-124.7v-136"/>
+<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="453.5173" y1="775.543" x2="453.5173" y2="99.7587" gradientTransform="matrix(1 0 0 -1 0 969.89)">
+	<stop  offset="0" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#8BE3FF"/>
+</linearGradient>
+<path class="st1" d="M831.3,453.4H567.9V228.3c0-16.5-13.5-30-30-30H369.6c-16.5,0-30,13.5-30,30v225.2H76.2
+	c-32.9,0-40.8,19-17.5,42.2l352.4,352.4c23.2,23.2,61.4,23.2,84.7,0l352.4-352.4C871.6,472.4,863.8,453.4,831.3,453.4z"/>
+</svg>

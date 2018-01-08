@@ -1,14 +1,14 @@
 <RCC>
     <qresource prefix="/">
-        <file>image/stage.svgz</file>
-        <file>image/unstage.svgz</file>
-        <file>image/commit.svgz</file>
-        <file>image/push.svgz</file>
-        <file>image/selall.svgz</file>
+        <file>image/stage.svg</file>
+        <file>image/unstage.svg</file>
+        <file>image/commit.svg</file>
+        <file>image/push.svg</file>
+        <file>image/selall.svg</file>
         <file>image/graphcolor.png</file>
-        <file>image/pull.svgz</file>
-        <file>image/clone.svgz</file>
-        <file>image/fetch.svgz</file>
+        <file>image/pull.svg</file>
+        <file>image/clone.svg</file>
+        <file>image/fetch.svg</file>
         <file>image/digits.png</file>
         <file>image/guitar.png</file>
         <file>image/Guitar.svg</file>
@@ -18,9 +18,9 @@
         <file>image/transparent.png</file>
         <file>image/file.png</file>
         <file>image/clear.png</file>
-        <file>image/terminal.svgz</file>
-        <file>image/explorer.svgz</file>
+        <file>image/terminal.svg</file>
+        <file>image/explorer.svg</file>
         <file>image/about.png</file>
-        <file>image/redsquare.svgz</file>
+        <file>image/redsquare.svg</file>
     </qresource>
 </RCC>

@@ -97,7 +97,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/clone.svgz</normaloff>:/image/clone.svgz</iconset>
+           <normaloff>:/image/clone.svg</normaloff>:/image/clone.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -132,7 +132,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/fetch.svgz</normaloff>:/image/fetch.svgz</iconset>
+           <normaloff>:/image/fetch.svg</normaloff>:/image/fetch.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -167,7 +167,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/pull.svgz</normaloff>:/image/pull.svgz</iconset>
+           <normaloff>:/image/pull.svg</normaloff>:/image/pull.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -202,7 +202,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/push.svgz</normaloff>:/image/push.svgz</iconset>
+           <normaloff>:/image/push.svg</normaloff>:/image/push.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -253,7 +253,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/terminal.svgz</normaloff>:/image/terminal.svgz</iconset>
+           <normaloff>:/image/terminal.svg</normaloff>:/image/terminal.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -288,7 +288,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/image/explorer.svgz</normaloff>:/image/explorer.svgz</iconset>
+           <normaloff>:/image/explorer.svg</normaloff>:/image/explorer.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -737,7 +737,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/image/unstage.svgz</normaloff>:/image/unstage.svgz</iconset>
+                   <normaloff>:/image/unstage.svg</normaloff>:/image/unstage.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -766,7 +766,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/image/selall.svgz</normaloff>:/image/selall.svgz</iconset>
+                   <normaloff>:/image/selall.svg</normaloff>:/image/selall.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -801,7 +801,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/image/stage.svgz</normaloff>:/image/stage.svgz</iconset>
+                   <normaloff>:/image/stage.svg</normaloff>:/image/stage.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -830,7 +830,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/image/commit.svgz</normaloff>:/image/commit.svgz</iconset>
+                   <normaloff>:/image/commit.svg</normaloff>:/image/commit.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -1122,7 +1122,7 @@
              </property>
              <property name="icon">
               <iconset resource="../resources.qrc">
-               <normaloff>:/image/redsquare.svgz</normaloff>:/image/redsquare.svgz</iconset>
+               <normaloff>:/image/redsquare.svg</normaloff>:/image/redsquare.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -1225,7 +1225,7 @@
   <action name="action_push">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/image/push.svgz</normaloff>:/image/push.svgz</iconset>
+     <normaloff>:/image/push.svg</normaloff>:/image/push.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Push</string>
@@ -1382,7 +1382,7 @@
   <action name="action_stop_process">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/image/redsquare.svgz</normaloff>:/image/redsquare.svgz</iconset>
+     <normaloff>:/image/redsquare.svg</normaloff>:/image/redsquare.svg</iconset>
    </property>
    <property name="text">
     <string>Stop process</string>
