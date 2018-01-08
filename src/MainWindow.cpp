@@ -230,11 +230,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
-	ui->widget_log->bindScrollBar(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
-	ui->widget_log->setTheme(TextEditorTheme::Light());
-	ui->widget_log->setAutoLayout(true);
-	ui->widget_log->setTerminalMode(true);
-	ui->widget_log->layoutEditor();
+	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
 	onLogVisibilityChanged();
 
 	SettingsDialog::loadSettings(&m->appsettings);

@@ -1941,7 +1941,7 @@ void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
 	}
 }
 
-void AbstractCharacterBasedApplication::write(int c, bool by_keyboard)
+void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 {
 	bool ok = !(isTerminalMode() && by_keyboard);
 
@@ -2033,9 +2033,11 @@ void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_
 			c = *right & 0xff;
 		}
 		if (c == '\n' || c == '\r' || c < 0) {
-			while (left < right) {
-				write(*left, by_keyboard);
-				left++;
+			utf8 src(left, right);
+			while (1) {
+				int d = src.next();
+				if (d == 0) break;
+				write(d, by_keyboard);
 			}
 			if (c < 0) break;
 			right++;

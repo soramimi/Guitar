@@ -73,7 +73,10 @@ public:
 	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 
 	bool event(QEvent *event);
+
 	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
+	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb);
+
 	QPoint mapFromPixel(const QPoint &pt);
 	QPoint mapToPixel(const QPoint &pt);
 

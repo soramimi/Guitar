@@ -350,7 +350,7 @@ public:
 	void moveToBottom();
 	bool isBottom() const;
 	void setLineMargin(int n);
-	void write(int c, bool by_keyboard);
+	void write(uint32_t c, bool by_keyboard);
 	void write(const char *ptr, int len, bool by_keyboard);
 	void write(QKeyEvent *e);
 protected:

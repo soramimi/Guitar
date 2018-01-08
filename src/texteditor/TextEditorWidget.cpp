@@ -212,6 +212,15 @@ void TextEditorWidget::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
 	m->scroll_bar_h = hsb;
 }
 
+void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb)
+{
+	bindScrollBar(vsb, hsb);
+	setTheme(TextEditorTheme::Light());
+	setAutoLayout(true);
+	setTerminalMode(true);
+	layoutEditor();
+}
+
 QRect TextEditorWidget::updateCursorRect(bool auto_scroll)
 {
 	updateCursorPos(auto_scroll);
