@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include <QApplication>
+#include "DarkStyle.h"
 #include "MySettings.h"
 #include "main.h"
 #include <string>
@@ -22,6 +23,7 @@ private:
 public:
 	MyStyle()
 		: QProxyStyle(0)
+//		: QProxyStyle(new DarkStyle)
 	{
 	}
 	void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const

@@ -67,7 +67,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorWidget *texteditor();
-	void bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb);
+	void bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme);
 };
 
 #endif // FILEVIEWWIDGET_H

@@ -50,10 +50,11 @@ FileViewWidget::~FileViewWidget()
 {
 }
 
-void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb)
+void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
 {
 	ui_page_text->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(mw, fdw, vsb, hsb);
+	ui_page_text->setTheme(theme);
 }
 
 void FileViewWidget::setViewType(FileViewType type)

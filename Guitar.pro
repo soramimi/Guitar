@@ -174,7 +174,9 @@ SOURCES += \
     src/texteditor/UnicodeWidth.cpp \
     MyImageViewWidget.cpp \
     src/SetGlobalUserDialog.cpp \
-    src/ReflogWindow.cpp
+    src/ReflogWindow.cpp \
+    src/DarkStyle.cpp \
+    src/NinePatch.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -263,7 +265,9 @@ HEADERS  += \
     src/texteditor/UnicodeWidth.h \
     MyImageViewWidget.h \
     src/SetGlobalUserDialog.h \
-    src/ReflogWindow.h
+    src/ReflogWindow.h \
+    src/DarkStyle.h \
+    src/NinePatch.h
 
 FORMS    += \
 	src/MainWindow.ui \

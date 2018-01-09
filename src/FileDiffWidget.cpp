@@ -90,8 +90,8 @@ void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
 	m->mainwindow = mw;
-	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar);
-	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar);
+	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
+	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
 
 	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));

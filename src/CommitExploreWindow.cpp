@@ -53,7 +53,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	m->commit = commit;
 
 	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
-	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar);
+	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwin->themeForTextEditor());
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	ui->splitter->setSizes({100, 100, 200});

@@ -205,6 +205,8 @@ struct MainWindow::Private {
 	PtyProcess pty_process;
 	PtyCondition pty_condition = PtyCondition::None;
 	RepositoryItem temp_repo;
+
+	TextEditorThemePtr text_editor_theme;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -222,6 +224,8 @@ MainWindow::MainWindow(QWidget *parent)
 	m->status_bar_label = new StatusLabel(this);
 	ui->statusBar->addWidget(m->status_bar_label);
 
+	m->text_editor_theme = TextEditorTheme::Light();
+
 	ui->widget_diff_view->bind(this);
 
 	qApp->installEventFilter(this);
@@ -230,7 +234,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->listWidget_staged->installEventFilter(this);
 	ui->listWidget_unstaged->installEventFilter(this);
 
-	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log);
+	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log, themeForTextEditor());
 	onLogVisibilityChanged();
 
 	SettingsDialog::loadSettings(&m->appsettings);
@@ -365,6 +369,11 @@ void MainWindow::startTimers()
 	//
 
 	startTimer(10);
+}
+
+TextEditorThemePtr MainWindow::themeForTextEditor()
+{
+	return m->text_editor_theme;
 }
 
 void MainWindow::setCurrentLogRow(int row)

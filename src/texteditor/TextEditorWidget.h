@@ -75,7 +75,7 @@ public:
 	bool event(QEvent *event);
 
 	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
-	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb);
+	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme);
 
 	QPoint mapFromPixel(const QPoint &pt);
 	QPoint mapToPixel(const QPoint &pt);

@@ -10,7 +10,8 @@ TextEditorThemePtr TextEditorTheme::Dark()
 {
 	TextEditorThemePtr t = TextEditorThemePtr(new TextEditorTheme());
 	t->fg_default = QColor(255, 255, 255);
-	t->bg_default = QColor(0, 0, 64);
+//	t->bg_default = QColor(0, 0, 64);
+	t->bg_default = QColor(48, 48, 48);
 	t->fg_line_number = QColor(176, 176, 176);
 	t->bg_line_number = QColor(64, 64, 64);
 	t->fg_cursor = QColor(0, 128, 255);

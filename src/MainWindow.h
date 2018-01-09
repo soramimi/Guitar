@@ -8,6 +8,7 @@
 #include <functional>
 #include "GitHubAPI.h"
 #include "main.h"
+#include "TextEditorTheme.h"
 
 namespace Ui {
 class MainWindow;
@@ -260,6 +261,7 @@ public:
 	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
 	void checkout(QWidget *parent, const Git::CommitItem *commit);
+	TextEditorThemePtr themeForTextEditor();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

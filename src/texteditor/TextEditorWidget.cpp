@@ -212,10 +212,10 @@ void TextEditorWidget::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
 	m->scroll_bar_h = hsb;
 }
 
-void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb)
+void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
 {
 	bindScrollBar(vsb, hsb);
-	setTheme(TextEditorTheme::Light());
+	setTheme(theme);
 	setAutoLayout(true);
 	setTerminalMode(true);
 	layoutEditor();

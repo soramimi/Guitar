@@ -22,5 +22,17 @@
         <file>image/explorer.svg</file>
         <file>image/about.png</file>
         <file>image/redsquare.svg</file>
+        <file>darktheme/button/button_normal.png</file>
+        <file>darktheme/button/button_press.png</file>
+        <file>darktheme/hsb/hsb_add_line.png</file>
+        <file>darktheme/hsb/hsb_page_bg.png</file>
+        <file>darktheme/hsb/hsb_slider.png</file>
+        <file>darktheme/hsb/hsb_sub_line.png</file>
+        <file>darktheme/progress/horz.png</file>
+        <file>darktheme/progress/vert.png</file>
+        <file>darktheme/vsb/vsb_add_line.png</file>
+        <file>darktheme/vsb/vsb_page_bg.png</file>
+        <file>darktheme/vsb/vsb_slider.png</file>
+        <file>darktheme/vsb/vsb_sub_line.png</file>
     </qresource>
 </RCC>
