@@ -3358,7 +3358,7 @@ QString MainWindow::determinFileType_(QString const &path, bool mime, std::funct
 QString MainWindow::determinFileType(QString const &path, bool mime)
 {
 	return determinFileType_(path, mime, [](QString const &cmd, QByteArray *ba){
-		misc::runCommand(cmd, ba);
+		misc2::runCommand(cmd, ba);
 	});
 }
 
@@ -3381,7 +3381,7 @@ QString MainWindow::determinFileType(QByteArray in, bool mime)
 
 	// ファイル名を "-" にすると、リダイレクトで標準入力へ流し込める。
 	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
-		int r = misc::runCommand(cmd, &in, ba);
+		int r = misc2::runCommand(cmd, &in, ba);
 		if (r != 0) {
 			ba->clear();
 		}

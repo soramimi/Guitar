@@ -7,7 +7,7 @@
 #include <QContextMenuEvent>
 #include <vector>
 #include "common/joinpath.h"
-#include "MyProcess.h"
+#include "misc.h"
 
 QString misc::getApplicationDir()
 {
@@ -235,34 +235,6 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 		return joinpath(left, right);
 	}
 	return !left.isEmpty() ? left : right;
-}
-
-int misc::runCommand(QString const &cmd, QByteArray const *in, QByteArray *out)
-{
-	Process proc;
-	proc.start(cmd, (bool)in);
-
-	if (in) {
-		int n = in->size();
-		if (n > 0) {
-			if (n > 65536) n = 65536;
-			proc.writeInput(in->data(), n);
-		}
-		proc.closeInput(false);
-	}
-
-	int r = proc.wait();
-	if (proc.outbytes.empty()) {
-		out->clear();
-	} else {
-		out->append(&proc.outbytes[0], proc.outbytes.size());
-	}
-	return r;
-}
-
-int misc::runCommand(QString const &cmd, QByteArray *out)
-{
-	return runCommand(cmd, nullptr, out);
 }
 
 void misc::setFixedSize(QWidget *w)
