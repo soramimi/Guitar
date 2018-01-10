@@ -1,5 +1,6 @@
 #include "ReadOnlyLineEdit.h"
 #include "main.h"
+#include "ApplicationGlobal.h"
 
 #include <QPainter>
 
@@ -14,9 +15,9 @@ ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)
 void ReadOnlyLineEdit::paintEvent(QPaintEvent *event)
 {
 	{
-		int r = panel_bg_color.red();
-		int g = panel_bg_color.green();
-		int b = panel_bg_color.blue();
+		int r = global->panel_bg_color.red();
+		int g = global->panel_bg_color.green();
+		int b = global->panel_bg_color.blue();
 		r = r * 4 / 5;
 		g = g * 4 / 5;
 		b = b * 4 / 5;

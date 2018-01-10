@@ -1,7 +1,7 @@
 #include "ReadOnlyPlainTextEdit.h"
 #include "main.h"
 #include "common/misc.h"
-
+#include "ApplicationGlobal.h"
 #include <QPainter>
 
 ReadOnlyPlainTextEdit::ReadOnlyPlainTextEdit(QWidget *parent)
@@ -9,9 +9,9 @@ ReadOnlyPlainTextEdit::ReadOnlyPlainTextEdit(QWidget *parent)
 {
 	setReadOnly(true);
 
-	int r = panel_bg_color.red();
-	int g = panel_bg_color.green();
-	int b = panel_bg_color.blue();
+	int r = global->panel_bg_color.red();
+	int g = global->panel_bg_color.green();
+	int b = global->panel_bg_color.blue();
 	r = r * 4 / 5;
 	g = g * 4 / 5;
 	b = b * 4 / 5;

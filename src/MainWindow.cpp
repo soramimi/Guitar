@@ -9,6 +9,7 @@
 #include <unistd.h>
 #endif
 
+#include "ApplicationGlobal.h"
 #include "AboutDialog.h"
 #include "AvatarLoader.h"
 #include "CheckoutDialog.h"
@@ -205,8 +206,6 @@ struct MainWindow::Private {
 	PtyProcess pty_process;
 	PtyCondition pty_condition = PtyCondition::None;
 	RepositoryItem temp_repo;
-
-	TextEditorThemePtr text_editor_theme;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -223,8 +222,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->status_bar_label = new StatusLabel(this);
 	ui->statusBar->addWidget(m->status_bar_label);
-
-	m->text_editor_theme = TextEditorTheme::Light();
 
 	ui->widget_diff_view->bind(this);
 
@@ -373,7 +370,7 @@ void MainWindow::startTimers()
 
 TextEditorThemePtr MainWindow::themeForTextEditor()
 {
-	return m->text_editor_theme;
+	return global->theme->text_editor_theme;
 }
 
 void MainWindow::setCurrentLogRow(int row)
@@ -1542,7 +1539,7 @@ void MainWindow::openSelectedRepository()
 
 QString MainWindow::getBookmarksFilePath() const
 {
-	return application_data_dir / "bookmarks.xml";
+	return global->application_data_dir / "bookmarks.xml";
 }
 
 void MainWindow::on_action_add_all_triggered()

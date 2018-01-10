@@ -176,7 +176,9 @@ SOURCES += \
     src/SetGlobalUserDialog.cpp \
     src/ReflogWindow.cpp \
     src/DarkStyle.cpp \
-    src/NinePatch.cpp
+    src/NinePatch.cpp \
+    src/Theme.cpp \
+    src/ApplicationGlobal.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -267,7 +269,9 @@ HEADERS  += \
     src/SetGlobalUserDialog.h \
     src/ReflogWindow.h \
     src/DarkStyle.h \
-    src/NinePatch.h
+    src/NinePatch.h \
+    src/Theme.h \
+    src/ApplicationGlobal.h
 
 FORMS    += \
 	src/MainWindow.ui \

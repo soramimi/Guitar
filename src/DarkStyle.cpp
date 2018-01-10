@@ -1,6 +1,8 @@
 #include "DarkStyle.h"
+#include <QDebug>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
+#include <QTableWidget>
 #include "NinePatch.h"
 #include <math.h>
 
@@ -92,6 +94,27 @@ void drawFrame(QPainter *pr, QRect const &r, QColor color_topleft, QColor color_
 
 // MyStyle
 
+DarkStyle::DarkStyle()
+{
+	button_normal = loadImage(QLatin1String(":/darktheme/button/button_normal.png"), QLatin1String("normal"));
+	button_press = loadImage(QLatin1String(":/darktheme/button/button_press.png"), QLatin1String("press"));
+
+	hsb.sub_line = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_sub_line.png"));
+	hsb.add_line = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_add_line.png"));
+	hsb.page_bg = loadImage(QLatin1String(":/darktheme/hsb/hsb_page_bg.png"));
+	hsb.slider.im_normal = loadImage(QLatin1String(":/darktheme/hsb/hsb_slider.png"));
+	hsb.slider.im_hover = generateHoverImage(hsb.slider.im_normal);
+
+	vsb.sub_line = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_sub_line.png"));
+	vsb.add_line = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_add_line.png"));
+	vsb.page_bg = loadImage(QLatin1String(":/darktheme/vsb/vsb_page_bg.png"));
+	vsb.slider.im_normal = loadImage(QLatin1String(":/darktheme/vsb/vsb_slider.png"));
+	vsb.slider.im_hover = generateHoverImage(vsb.slider.im_normal);
+
+	progress_horz.load(QLatin1String(":/darktheme/progress/horz.png"));
+	progress_vert.load(QLatin1String(":/darktheme/progress/vert.png"));
+}
+
 QString DarkStyle::pixmapkey(const QString &name, const QString &role, const QSize &size)
 {
 	QString key = "%1:%2:%3:%4";
@@ -148,6 +171,18 @@ QPixmap DarkStyle::pixmapFromImage(const QImage &image, QSize size) const
 	return t.pm;
 }
 
+QColor DarkStyle::colorForSelectedFrame(const QStyleOption *opt) const
+{
+	(void)opt;
+	return QColor(128, 192, 255);
+
+}
+
+QColor DarkStyle::colorForItemView(QStyleOption const *opt) const
+{
+	return opt->palette.color(QPalette::Dark);
+}
+
 void DarkStyle::drawNinePatchImage(QPainter *p, const QImage &image, const QRect &r, int w, int h) const
 {
 	QImage im = createImageFromNinePatchImage(image, w, h);
@@ -182,22 +217,26 @@ void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 	}
 }
 
-void DarkStyle::selectedMenuFrame(const QStyleOption *option, QPainter *p, const QWidget *widget) const
+void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, const QWidget *widget, bool deep) const
 {
-#if 0
-	drawPrimitive(PE_PanelButtonTool, option, p, widget); // TODO:
-#else
+	QColor color = colorForSelectedFrame(option);
+
 	int x = option->rect.x();
 	int y = option->rect.y();
 	int w = option->rect.width();
 	int h = option->rect.height();
 
-	QColor color = Qt::white;
+	auto SetAlpha = [&](QColor *color, int alpha){
+		if (deep) {
+			alpha = alpha * 3 / 2;
+		}
+		color->setAlpha(alpha);
+	};
 
 	p->save();
 	p->setRenderHint(QPainter::Antialiasing);
 	QColor pencolor = color;
-	pencolor.setAlpha(128);
+	SetAlpha(&pencolor, 128);
 	p->setPen(pencolor);
 	p->setBrush(Qt::NoBrush);
 
@@ -213,8 +252,8 @@ void DarkStyle::selectedMenuFrame(const QStyleOption *option, QPainter *p, const
 	QColor color0 = color;
 	QColor color1 = color;
 	int a = color.alpha();
-	color0.setAlpha(96 * a / 255);
-	color1.setAlpha(32 * a / 255);
+	SetAlpha(&color0, 96 * a / 255);
+	SetAlpha(&color1, 32 * a / 255);
 	QLinearGradient gr(QPointF(x, y), QPointF(x, y + h));
 	gr.setColorAt(0, color0);
 	gr.setColorAt(1, color1);
@@ -222,7 +261,6 @@ void DarkStyle::selectedMenuFrame(const QStyleOption *option, QPainter *p, const
 	p->fillRect(x, y, w, h, br);
 
 	p->restore();
-#endif
 }
 
 void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
@@ -243,10 +281,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 		p->save();
 		p->setRenderHint(QPainter::Antialiasing);
 		p->setClipPath(path);
-#if 0
-		p->setOpacity(0.125);
-		p->fillRect(option->rect, Qt::white);
-#else
+
 		int x = option->rect.x();
 		int y = option->rect.y();
 		int w = option->rect.width();
@@ -287,7 +322,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 		gr.setColorAt(1, color1);
 		QBrush br(gr);
 		p->fillRect(x, y, w, h, br);
-#endif
+
 		p->restore();
 	}
 }
@@ -358,27 +393,6 @@ void DarkStyle::drawRaisedFrame(QPainter *p, QRect const &rect, QPalette const &
 	p->fillRect(x, y + h - 1, w, 1, palette.color(QPalette::Shadow));
 	p->fillRect(x + w - 1, y, 1, h, palette.color(QPalette::Shadow));
 	p->restore();
-}
-
-DarkStyle::DarkStyle()
-{
-	button_normal = loadImage(QLatin1String(":/darktheme/button/button_normal.png"), QLatin1String("normal"));
-	button_press = loadImage(QLatin1String(":/darktheme/button/button_press.png"), QLatin1String("press"));
-
-	hsb.sub_line = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_sub_line.png"));
-	hsb.add_line = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_add_line.png"));
-	hsb.page_bg = loadImage(QLatin1String(":/darktheme/hsb/hsb_page_bg.png"));
-	hsb.slider.im_normal = loadImage(QLatin1String(":/darktheme/hsb/hsb_slider.png"));
-	hsb.slider.im_hover = generateHoverImage(hsb.slider.im_normal);
-
-	vsb.sub_line = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_sub_line.png"));
-	vsb.add_line = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_add_line.png"));
-	vsb.page_bg = loadImage(QLatin1String(":/darktheme/vsb/vsb_page_bg.png"));
-	vsb.slider.im_normal = loadImage(QLatin1String(":/darktheme/vsb/vsb_slider.png"));
-	vsb.slider.im_hover = generateHoverImage(vsb.slider.im_normal);
-
-	progress_horz.load(QLatin1String(":/darktheme/progress/horz.png"));
-	progress_vert.load(QLatin1String(":/darktheme/progress/vert.png"));
 }
 
 int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
@@ -533,7 +547,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_PanelLineEdit) {
-		p->fillRect(option->rect, QColor(32, 32, 32));
+		p->fillRect(option->rect, colorForItemView(option));
 		drawFrame(p, option->rect, Qt::black, option->palette.color(QPalette::Light));
 		return;
 	}
@@ -559,6 +573,33 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 #endif
 		return;
 	}
+	if (pe == PE_PanelItemViewItem) {
+		p->fillRect(option->rect, colorForItemView(option));
+		if (qobject_cast<QTableView const *>(widget)) {
+			if (option->state & State_Selected) {
+				drawSelectedMenuFrame(option, p, widget, true);
+			}
+		} else {
+			int n = 0;
+			if (option->state & State_Selected) {
+				n++;
+			}
+			if (option->state & State_MouseOver) {
+				n++;
+			}
+			if (n > 0) {
+				drawSelectedMenuFrame(option, p, widget, n > 1);
+			}
+		}
+		return;
+	}
+	if (pe == QStyle::PE_IndicatorBranch) {
+		p->fillRect(option->rect, colorForItemView(option));
+		if (legacy_windows_.drawPrimitive(pe, option, p, widget)) {
+			return;
+		}
+	}
+//	qDebug() << pe;
 	QProxyStyle::drawPrimitive(pe, option, p, widget);
 }
 
@@ -633,7 +674,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_MenuBarItem) {
 		if (option->state & State_Selected) {
-			selectedMenuFrame(option, p, widget);
+			drawSelectedMenuFrame(option, p, widget, false);
 		}
 		if (const QStyleOptionMenuItem *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			QPalette::ColorRole textRole = disabled ? QPalette::Text : QPalette::ButtonText;
@@ -684,7 +725,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			if (act) {
 				stateId = dis ? MBI_DISABLED : MBI_HOT;
-				selectedMenuFrame(option, p, widget);
+				drawSelectedMenuFrame(option, p, widget, false);
 			}
 
 			if (checked) {
@@ -1113,6 +1154,23 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		}
 		return;
 	}
+	if (ce == CE_HeaderSection || ce == CE_HeaderEmptyArea) {
+		int x = option->rect.x();
+		int y = option->rect.y();
+		int w = option->rect.width();
+		int h = option->rect.height();
+		p->fillRect(x, y, w, h, option->palette.color(QPalette::Window));
+		drawFrame(p, x, y, w, h, option->palette.color(QPalette::Light), option->palette.color(QPalette::Dark));
+		if (ce == CE_HeaderSection) {
+			if (option->state & QStyle::State_MouseOver) {
+				p->save();
+				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
+				p->restore();
+			}
+		}
+		return;
+	}
+//	qDebug() << ce;
 	QProxyStyle::drawControl(ce, option, p, widget);
 }
 
@@ -1511,5 +1569,6 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		}
 		return;
 	}
+//	qDebug() << cc;
 	QProxyStyle::drawComplexControl(cc, option, p, widget);
 }

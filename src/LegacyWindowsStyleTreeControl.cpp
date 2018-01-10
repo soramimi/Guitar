@@ -1,6 +1,7 @@
 #include "LegacyWindowsStyleTreeControl.h"
 #include <QStyleOption>
 #include <QPainter>
+#include <QDebug>
 
 static unsigned char plus_image[9][9] = {
 	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
@@ -71,7 +72,11 @@ bool LegacyWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement eleme
 			painter->fillRect(ox, oy, 1, option->rect.bottom() - oy + 1, br_branch);
 		}
 		if (option->state & (QStyle::State_Open | QStyle::State_Children | QStyle::State_Item | QStyle::State_Sibling)) {
-			painter->fillRect(ox, option->rect.y(), 1, oy - option->rect.y(), br_branch);
+			if (option->rect.x() == 0 && option->rect.y() == 0) {
+				// nop
+			} else {
+				painter->fillRect(ox, option->rect.y(), 1, oy - option->rect.y(), br_branch);
+			}
 		}
 		if (option->state & QStyle::State_Children) {
 			if (option->state & QStyle::State_Open) {
@@ -80,6 +85,7 @@ bool LegacyWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement eleme
 				painter->drawPixmap(ox - 4, oy - 4, pm_plus);
 			}
 		}
+		qDebug() << element;
 		return true;
 	}
 	return false;

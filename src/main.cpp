@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include <QApplication>
+#include "ApplicationGlobal.h"
 #include "DarkStyle.h"
 #include "MySettings.h"
 #include "main.h"
@@ -9,41 +10,24 @@
 #include <QDebug>
 #include <QProxyStyle>
 #include <QTranslator>
-#include "LegacyWindowsStyleTreeControl.h"
 #include "webclient.h"
 #include "win32/win32.h"
 #include "common/misc.h"
 
-QString application_data_dir;
-QColor panel_bg_color;
-
-class MyStyle : public QProxyStyle {
-private:
-	LegacyWindowsStyleTreeControl legacy_windows_;
-public:
-	MyStyle()
-		: QProxyStyle(0)
-//		: QProxyStyle(new DarkStyle)
-	{
-	}
-	void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const
-	{
-		if (element == QStyle::PE_IndicatorBranch) {
-			if (legacy_windows_.drawPrimitive(element, option, painter, widget)) {
-				return;
-			}
-		}
-		QProxyStyle::drawPrimitive(element, option, painter, widget);
-	}
-};
+ApplicationGlobal *global = 0;
 
 int main(int argc, char *argv[])
 {
-	WebClient::initialize();
+	ApplicationGlobal g;
+	global = &g;
+
+	global->theme = createStandardTheme();
+//	global->theme = createDarkTheme();
 
 	QApplication a(argc, argv);
-	QStyle *style = new MyStyle();
-	QApplication::setStyle(style);
+	QApplication::setStyle(global->theme->newStyle());
+
+	WebClient::initialize();
 
 	bool f_open_here = false;
 
@@ -57,8 +41,8 @@ int main(int argc, char *argv[])
 	a.setOrganizationName(ORGANIZTION_NAME);
 	a.setApplicationName(APPLICATION_NAME);
 
-	application_data_dir = makeApplicationDataDir();
-	if (application_data_dir.isEmpty()) {
+	global->application_data_dir = makeApplicationDataDir();
+	if (global->application_data_dir.isEmpty()) {
 		QMessageBox::warning(0, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
 	}
@@ -75,7 +59,7 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow w;
-	panel_bg_color = w.palette().color(QPalette::Background);
+	global->panel_bg_color = w.palette().color(QPalette::Background);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
 	w.shown();
