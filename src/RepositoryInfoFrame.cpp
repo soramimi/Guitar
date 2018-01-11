@@ -1,6 +1,6 @@
 #include "RepositoryInfoFrame.h"
-
 #include <QPainter>
+#include "ApplicationGlobal.h"
 
 RepositoryInfoFrame::RepositoryInfoFrame(QWidget *parent)
 	: QFrame(parent)
@@ -15,8 +15,8 @@ void RepositoryInfoFrame::paintEvent(QPaintEvent *)
 	double w = width() - 2;
 	double h = height() - 2;
 	QPainter pr(this);
-	pr.setPen(QPen(QColor(192, 192, 192), 2));
-	pr.setBrush(Qt::white);
+	pr.setPen(QPen(palette().color(QPalette::Dark), 2));
+	pr.setBrush(palette().color(QPalette::Light));
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.drawRoundedRect(QRectF(x, y, w, h), 5, 5);
 }

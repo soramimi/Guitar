@@ -134,7 +134,6 @@ SOURCES += \
 	src/Terminal.cpp \
 	src/EditTagDialog.cpp \
 	src/DeleteTagsDialog.cpp \
-	src/LegacyWindowsStyleTreeControl.cpp \
 	src/RepositoriesTreeWidget.cpp \
 	src/SelectCommandDialog.cpp \
 	src/ImageViewWidget.cpp \
@@ -183,20 +182,21 @@ SOURCES += \
 	src/MyProcess.cpp \
 	src/FileViewWidget.cpp \
 	src/MyTextEditorWidget.cpp \
-    src/AbstractProcess.cpp \
-    src/texteditor/AbstractCharacterBasedApplication.cpp \
-    src/texteditor/InputMethodPopup.cpp \
-    src/texteditor/TextEditorTheme.cpp \
-    src/texteditor/TextEditorWidget.cpp \
-    src/texteditor/unicode.cpp \
-    src/texteditor/UnicodeWidth.cpp \
-    MyImageViewWidget.cpp \
-    src/SetGlobalUserDialog.cpp \
-    src/ReflogWindow.cpp \
-    src/DarkStyle.cpp \
-    src/NinePatch.cpp \
-    src/Theme.cpp \
-    src/ApplicationGlobal.cpp
+	src/AbstractProcess.cpp \
+	src/texteditor/AbstractCharacterBasedApplication.cpp \
+	src/texteditor/InputMethodPopup.cpp \
+	src/texteditor/TextEditorTheme.cpp \
+	src/texteditor/TextEditorWidget.cpp \
+	src/texteditor/unicode.cpp \
+	src/texteditor/UnicodeWidth.cpp \
+	MyImageViewWidget.cpp \
+	src/SetGlobalUserDialog.cpp \
+	src/ReflogWindow.cpp \
+	darktheme/src/LegacyWindowsStyleTreeControl.cpp \
+	darktheme/src/DarkStyle.cpp \
+	darktheme/src/NinePatch.cpp \
+	src/Theme.cpp \
+	src/ApplicationGlobal.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -226,7 +226,6 @@ HEADERS  += \
 	src/Terminal.h \
 	src/EditTagDialog.h \
 	src/DeleteTagsDialog.h \
-	src/LegacyWindowsStyleTreeControl.h \
 	src/RepositoriesTreeWidget.h \
 	src/SelectCommandDialog.h \
 	src/ImageViewWidget.h \
@@ -276,20 +275,21 @@ HEADERS  += \
 	src/SettingBehaviorForm.h \
 	src/MyProcess.h \
 	src/MyTextEditorWidget.h \
-    src/AbstractProcess.h \
-    src/texteditor/AbstractCharacterBasedApplication.h \
-    src/texteditor/InputMethodPopup.h \
-    src/texteditor/TextEditorTheme.h \
-    src/texteditor/TextEditorWidget.h \
-    src/texteditor/unicode.h \
-    src/texteditor/UnicodeWidth.h \
-    MyImageViewWidget.h \
-    src/SetGlobalUserDialog.h \
-    src/ReflogWindow.h \
-    src/DarkStyle.h \
-    src/NinePatch.h \
-    src/Theme.h \
-    src/ApplicationGlobal.h
+	src/AbstractProcess.h \
+	src/texteditor/AbstractCharacterBasedApplication.h \
+	src/texteditor/InputMethodPopup.h \
+	src/texteditor/TextEditorTheme.h \
+	src/texteditor/TextEditorWidget.h \
+	src/texteditor/unicode.h \
+	src/texteditor/UnicodeWidth.h \
+	MyImageViewWidget.h \
+	src/SetGlobalUserDialog.h \
+	src/ReflogWindow.h \
+	darktheme/src/LegacyWindowsStyleTreeControl.h \
+	darktheme/src/DarkStyle.h \
+	darktheme/src/NinePatch.h \
+	src/Theme.h \
+	src/ApplicationGlobal.h
 
 FORMS    += \
 	src/MainWindow.ui \

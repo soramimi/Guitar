@@ -1,4 +1,4 @@
-#include "DarkStyle.h"
+#include "../darktheme/src/DarkStyle.h"
 #include "Theme.h"
 
 // StandardStyle
@@ -36,16 +36,43 @@ AbstractTheme::~AbstractTheme()
 
 // StandardTheme
 
+StandardTheme::StandardTheme()
+{
+	frame_line_color = palette.color(QPalette::Dark);
+	frame_background_color = palette.color(QPalette::Light);
+}
+
 QStyle *StandardTheme::newStyle()
 {
 	return new StandardStyle();
 }
 
+QImage StandardTheme::graphColorMap()
+{
+	QImage image;
+	image.load(":/image/graphcolor.png");
+	return image;
+}
+
 // DarkTheme
+
+DarkTheme::DarkTheme()
+{
+	palette = QPalette(QColor(64, 64, 64));
+	frame_line_color = palette.color(QPalette::Light);
+	frame_background_color = palette.color(QPalette::Dark);
+}
 
 QStyle *DarkTheme::newStyle()
 {
 	return new DarkStyle();
+}
+
+QImage DarkTheme::graphColorMap()
+{
+	QImage image;
+	image.load(":/darktheme/graphcolor.png");
+	return image;
 }
 
 

@@ -227,7 +227,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto SetPen = [&](QPainter *pr, int level, bool /*continued*/){
-		QColor c = mw->color(level);
+		QColor c = mw->color(level + 1);
 		Qt::PenStyle s = Qt::SolidLine;
 		pr->setPen(QPen(c, line_width, s));
 	};
@@ -311,7 +311,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	// draw marks
 
 	pr.setOpacity(1);
-	pr.setBrush(Qt::white);
+	pr.setBrush(mw->color(0));
 
 	for (size_t i = 0; i < list->size(); i++) {
 		double y = DrawMark(i, i);

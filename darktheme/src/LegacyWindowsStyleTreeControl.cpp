@@ -85,7 +85,6 @@ bool LegacyWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement eleme
 				painter->drawPixmap(ox - 4, oy - 4, pm_plus);
 			}
 		}
-//		qDebug() << element;
 		return true;
 	}
 	return false;

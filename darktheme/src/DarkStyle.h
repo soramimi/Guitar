@@ -48,10 +48,11 @@ private:
 
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;
-	void drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QWidget const *widget, bool deep) const;
+	void drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, QWidget const *widget, bool deep) const;
 	void drawButton(QPainter *p, QStyleOption const *option) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	static void drawRaisedFrame(QPainter *p, const QRect &rect, const QPalette &palette);
+	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 public:
 	DarkStyle();
 	void polish(QPalette &palette);

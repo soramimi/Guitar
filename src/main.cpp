@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 #include <QApplication>
 #include "ApplicationGlobal.h"
-#include "DarkStyle.h"
 #include "MySettings.h"
 #include "main.h"
 #include <string>
@@ -13,6 +12,7 @@
 #include "webclient.h"
 #include "win32/win32.h"
 #include "common/misc.h"
+#include "../darktheme/src/DarkStyle.h"
 
 ApplicationGlobal *global = 0;
 

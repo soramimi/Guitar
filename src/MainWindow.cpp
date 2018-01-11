@@ -243,7 +243,7 @@ MainWindow::MainWindow(QWidget *parent)
 	QFileIconProvider icons;
 
 	m->digits.load(":/image/digits.png");
-	m->graph_color.load(":/image/graphcolor.png");
+	m->graph_color = global->theme->graphColorMap();
 
 	m->repository_icon = QIcon(":/image/repository.png");
 	m->folder_icon = icons.icon(QFileIconProvider::Folder);
