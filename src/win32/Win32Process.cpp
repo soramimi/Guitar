@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QDateTime>
+#include <QMutex>
 
 
 class OutputReaderThread : public QThread {

@@ -12,6 +12,9 @@ TEMPLATE = app
 
 CONFIG += c++11
 
+win32:CONFIG += MSVC
+#win32:CONFIG += MinGW
+
 TRANSLATIONS = Guitar_ja.ts
 
 DEFINES += APP_GUITAR
@@ -38,8 +41,17 @@ linux:LIBS += -lssl -lcrypto
 haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
-win32:INCLUDEPATH += C:\openssl\include
-win32:LIBS += -LC:\openssl\lib
+
+win32:MSVC {
+	INCLUDEPATH += C:\openssl\include
+	LIBS += -LC:\openssl\lib
+}
+
+win32:MinGW {
+	INCLUDEPATH += C:\Qt\Tools\mingw530_32\opt\include
+	LIBS += -LC:\Qt\Tools\mingw530_32\opt\lib
+	LIBS += -lcrypto -lssl
+}
 
 # execute 'ruby prepare.rb' automatically
 
@@ -53,29 +65,35 @@ PRE_TARGETDEPS += prepare
 
 #INCLUDEPATH += $$PWD/../libgit2/include
 
-#win32:Debug:LIBS += $$PWD/../_build_libgit2/debug/libgit2.lib
-#win32:Release:LIBS += $$PWD/../_build_libgit2/release/libgit2.lib
+#win32:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_libgit2/debug/libgit2.lib
+#win32:CONFIG(release, debug|release):LIBS += $$PWD/../_build_libgit2/release/libgit2.lib
 
-#unix:debug:LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
-#unix:release:LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a
+#unix:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
+#unix:CONFIG(release, debug|release):LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a
 
 
 # zlib
 
-win32:Debug:LIBS += $$PWD/../_build_zlib/debug/libz.lib
-win32:Release:LIBS += $$PWD/../_build_zlib/release/libz.lib
+win32:MSVC {
+	CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib/debug/libz.lib
+	CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib/release/libz.lib
+}
+
+win32:MinGW {
+	CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib/debug/liblibz.a
+	CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib/release/liblibz.a
+}
 
 !haiku {
-#unix:debug:LIBS += $$PWD/../_build_zlib_Debug/libz.a
-unix:LIBS += $$PWD/../_build_zlib_Release/libz.a
-
-#unix:LIBS += -lz
+	unix:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib_Debug/libz.a
+	unix:CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib_Release/libz.a
+	#unix:LIBS += -lz
 }
 
 haiku:LIBS += -lz
 
 win32 {
-	LIBS += advapi32.lib shell32.lib user32.lib
+	LIBS += -ladvapi32 -lshell32 -luser32 -lws2_32
 	RC_FILE = win.rc
 	QMAKE_SUBSYSTEM_SUFFIX=,5.01
 }

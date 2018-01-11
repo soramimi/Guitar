@@ -5,12 +5,12 @@
 #include <winpty.h>
 
 #include <QDir>
-
+#include <QMutex>
 
 namespace {
 
 class OutputReaderThread : public QThread {
-	friend class Win32PtyProcess;
+	friend class ::Win32PtyProcess;
 private:
 	HANDLE handle;
 	std::deque<char> result1;
