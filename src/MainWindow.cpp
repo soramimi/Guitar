@@ -30,7 +30,6 @@
 #include "GitDiff.h"
 #include "gunzip.h"
 #include "JumpDialog.h"
-//#include "LibGit2.h"
 #include "LocalSocketReader.h"
 #include "main.h"
 #include "MemoryReader.h"
@@ -264,12 +263,6 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 
-
-#if USE_LIBGIT2
-	LibGit2::init();
-	//	LibGit2::test();
-#endif
-
 	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
 
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
@@ -291,10 +284,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-#if USE_LIBGIT2
-	LibGit2::shutdown();
-#endif
-
 	m->avatar_loader.interrupt();
 
 	stopPtyProcess();

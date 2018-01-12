@@ -11,7 +11,6 @@
 #include <QMutex>
 #include <memory>
 
-#define USE_LIBGIT2 0
 #define SINGLE_THREAD 0
 
 #define GIT_ID_LENGTH (40)
@@ -268,10 +267,6 @@ private:
 	FileStatusList status_();
 	bool commit_(const QString &msg, bool amend);
 	bool push_(bool tags, AbstractPtyProcess *pty);
-#if USE_LIBGIT2
-	QString diffHeadToWorkingDir_();
-	QString diff_(const QString &old_id, const QString &new_id);
-#endif
 	static void parseAheadBehind(const QString &s, Branch *b);
 	Git();
 	QString encodeQuotedText(const QString &str);

@@ -9,7 +9,6 @@
 #include <set>
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "LibGit2.h"
 #include "GitObjectManager.h"
 
 #include "MyProcess.h"
@@ -344,30 +343,6 @@ void Git::delete_tag(const QString &name, bool remote)
 	}
 }
 
-#if USE_LIBGIT2
-
-QString Git::diffHeadToWorkingDir_()
-{
-	std::string dir = workingRepositoryDir().toStdString();
-	LibGit2::Repository r = LibGit2::openRepository(dir);
-	std::string s = r.diff_head_to_workdir();
-	return QString::fromStdString(s);
-}
-
-QString Git::diff_(QString const &old_id, QString const &new_id)
-{
-	if (new_id.isEmpty()) {
-		return diffHeadToWorkingDir_();
-	} else {
-		std::string dir = workingRepositoryDir().toStdString();
-		LibGit2::Repository r = LibGit2::openRepository(dir);
-		std::string s = r.diff2(old_id.toStdString(), new_id.toStdString());
-		return QString::fromStdString(s);
-	}
-}
-
-#endif
-
 QString Git::diff(QString const &old_id, QString const &new_id)
 {
 #if 1
@@ -597,13 +572,7 @@ QList<Git::Branch> Git::branches_()
 
 QList<Git::Branch> Git::branches()
 {
-#if 1
 	return branches_();
-#else
-	std::string dir = workingRepositoryDir().toStdString();
-	LibGit2::Repository r = LibGit2::openRepository(dir);
-	return r.branches();
-#endif
 }
 
 Git::CommitItemList Git::log_all(QString const &id, int maxcount)
@@ -654,13 +623,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 
 Git::CommitItemList Git::log(int maxcount)
 {
-#if 1
 	return log_all(QString(), maxcount);
-#else
-	std::string dir = workingRepositoryDir().toStdString();
-	LibGit2::Repository r = LibGit2::openRepository(dir);
-	return r.log(maxcount);
-#endif
 }
 
 bool Git::query_commit(QString const &id, CommitItem *out)
@@ -816,12 +779,7 @@ bool Git::commit_(QString const &msg, bool amend)
 
 bool Git::commit(QString const &text)
 {
-#if 1
 	return commit_(text, false);
-#else
-	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
-	return r.commit(text.toStdString());
-#endif
 }
 
 bool Git::commit_amend_m(const QString &text)
@@ -860,12 +818,7 @@ bool Git::push_(bool tags, AbstractPtyProcess *pty)
 
 bool Git::push(bool tags, AbstractPtyProcess *pty)
 {
-#if 1
 	return push_(tags, pty);
-#else
-	LibGit2::Repository r = LibGit2::openRepository(workingRepositoryDir().toStdString());
-	r.push_();
-#endif
 }
 
 
@@ -889,12 +842,7 @@ Git::FileStatusList Git::status_()
 
 Git::FileStatusList Git::status()
 {
-#if 1
 	return status_();
-#else
-	std::string repodir = workingRepositoryDir().toStdString();
-	return LibGit2::status(repodir);
-#endif
 }
 
 QString Git::objectType(QString const &id)
@@ -905,15 +853,8 @@ QString Git::objectType(QString const &id)
 
 QByteArray Git::cat_file_(QString const &id)
 {
-	qDebug() << "cat_file: " << id;
-#if 1
 	git("cat-file -p " + id);
 	return toQByteArray();
-#else
-	std::string dir = workingRepositoryDir().toStdString();
-	LibGit2::Repository r = LibGit2::openRepository(dir);
-	return r.cat_file(id.toStdString());
-#endif
 }
 
 bool Git::cat_file(QString const &id, QByteArray *out)
@@ -927,13 +868,7 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 
 void Git::resetFile(const QString &path)
 {
-#if 1
 	git("checkout -- " + path);
-#else
-	std::string dir = workingRepositoryDir().toStdString();
-	LibGit2::Repository r = LibGit2::openRepository(dir);
-	r.revert_a_file(path.toStdString());
-#endif
 }
 
 void Git::resetAllFiles()

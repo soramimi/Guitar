@@ -118,7 +118,6 @@ SOURCES += \
 	src/TextEditDialog.cpp \
 	src/LogTableWidget.cpp \
 	src/FileDiffSliderWidget.cpp \
-	src/LibGit2.cpp \
 	src/FileUtil.cpp \
 	src/SettingsDialog.cpp \
 	src/NewBranchDialog.cpp \
@@ -210,7 +209,6 @@ HEADERS  += \
 	src/TextEditDialog.h \
 	src/LogTableWidget.h \
 	src/FileDiffSliderWidget.h \
-	src/LibGit2.h \
 	src/FileUtil.h \
 	src/SettingsDialog.h \
 	src/NewBranchDialog.h \
