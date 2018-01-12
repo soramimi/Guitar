@@ -1815,7 +1815,7 @@ bool AbstractCharacterBasedApplication::isTerminalMode() const
 bool AbstractCharacterBasedApplication::isBottom() const
 {
 	if (cx()->current_row == m->parsed_row_index) {
-		if (m->parsed_col_index == m->prepared_current_line.size()) {
+		if (m->parsed_col_index == (int)m->prepared_current_line.size()) {
 			return true;
 		}
 	}

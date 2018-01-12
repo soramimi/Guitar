@@ -221,6 +221,8 @@ void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 
 void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, const QWidget *widget, bool deep) const
 {
+	(void)rect;
+	(void)widget;
 	QColor color = colorForSelectedFrame(option);
 
 	int x = option->rect.x();
@@ -764,24 +766,24 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		};
 
 		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
-			int state = option->state;
-			State flags = option->state;
-			int partId = BP_PUSHBUTTON;
-			int stateId = 0;
-			if (btn->features & QStyleOptionButton::CommandLinkButton) {
-				partId = BP_COMMANDLINK;
-			}
-			if (!(flags & State_Enabled) && !(btn->features & QStyleOptionButton::Flat)) {
-				stateId = PBS_DISABLED;
-			} else if (flags & (State_Sunken | State_On)) {
-				stateId = PBS_PRESSED;
-			} else if (flags & State_MouseOver) {
-				stateId = PBS_HOT;
-			} else if (btn->features & QStyleOptionButton::DefaultButton && (state & State_Active)) {
-				stateId = PBS_DEFAULTED;
-			} else {
-				stateId = PBS_NORMAL;
-			}
+//			int state = option->state;
+//			State flags = option->state;
+//			int partId = BP_PUSHBUTTON;
+//			int stateId = 0;
+//			if (btn->features & QStyleOptionButton::CommandLinkButton) {
+//				partId = BP_COMMANDLINK;
+//			}
+//			if (!(flags & State_Enabled) && !(btn->features & QStyleOptionButton::Flat)) {
+//				stateId = PBS_DISABLED;
+//			} else if (flags & (State_Sunken | State_On)) {
+//				stateId = PBS_PRESSED;
+//			} else if (flags & State_MouseOver) {
+//				stateId = PBS_HOT;
+//			} else if (btn->features & QStyleOptionButton::DefaultButton && (state & State_Active)) {
+//				stateId = PBS_DEFAULTED;
+//			} else {
+//				stateId = PBS_NORMAL;
+//			}
 
 			drawButton(p, option);
 
@@ -825,7 +827,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_MenuItem) {
 		if (const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
-			int stateId = 0;
+//			int stateId = 0;
 			// windows always has a check column, regardless whether we have an icon or not
 			int checkcol = 25;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
 			const int gutterWidth = 3;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
@@ -853,7 +855,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QRect vCheckRect = visualRect(option->direction, menuitem->rect, QRect(menuitem->rect.x(), menuitem->rect.y(), checkcol - (gutterWidth + menuitem->rect.x()), menuitem->rect.height()));
 
 			if (act) {
-				stateId = dis ? MBI_DISABLED : MBI_HOT;
+//				stateId = dis ? MBI_DISABLED : MBI_HOT;
 				drawSelectedMenuFrame(option, p, option->rect, widget, false);
 			}
 
@@ -1314,13 +1316,13 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
 			SubControls sub = option->subControls;
 			if (cmb->editable) {
-				int partId = 0;
-				int stateId = 0;
+//				int partId = 0;
+//				int stateId = 0;
 #define EP_EDITBORDER_NOSCROLL      6
 #define EP_EDITBORDER_HVSCROLL      9
-				State flags = option->state;
+//				State flags = option->state;
 				if (sub & SC_ComboBoxEditField) {
-					partId = EP_EDITBORDER_NOSCROLL;
+//					partId = EP_EDITBORDER_NOSCROLL;
 //					if (!(flags & State_Enabled))
 //						stateId = ETS_DISABLED;
 //					else if (flags & State_MouseOver)
@@ -1612,162 +1614,162 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		return;
 	}
 	if (cc == CC_Slider) {
+//		if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
 		if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-			if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-				QRect groove = subControlRect(CC_Slider, option, SC_SliderGroove, widget);
-				QRect handle = subControlRect(CC_Slider, option, SC_SliderHandle, widget);
+			QRect groove = subControlRect(CC_Slider, option, SC_SliderGroove, widget);
+			QRect handle = subControlRect(CC_Slider, option, SC_SliderHandle, widget);
 
-				bool horizontal = slider->orientation == Qt::Horizontal;
-				bool ticksAbove = slider->tickPosition & QSlider::TicksAbove;
-				bool ticksBelow = slider->tickPosition & QSlider::TicksBelow;
-				QPixmap cache;
-				QBrush oldBrush = p->brush();
-				QPen oldPen = p->pen();
-				QColor shadowAlpha(Qt::black);
-				shadowAlpha.setAlpha(10);
-				if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange) {
-				}
-
-				if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
-					QRect rect(0, 0, groove.width(), groove.height());
-					QString key = pixmapkey("slider_groove", horizontal ? "horz" : "vert", rect.size());
-
-					QRectF grooveRect;
-					double r = std::min(groove.width(), groove.height()) / 2;
-					{
-						double n = r * 3 / 4;
-						grooveRect = rect.adjusted(n, n, -n, -n);
-						r -= n;
-					}
-
-					// draw background groove
-					QPixmap cache;
-					if (!QPixmapCache::find(key, cache)) {
-						cache = QPixmap(rect.size());
-						cache.fill(Qt::transparent);
-						QPainter groovePainter(&cache);
-						groovePainter.setRenderHint(QPainter::Antialiasing, true);
-						groovePainter.translate(0.5, 0.5);
-						QLinearGradient gradient;
-						if (horizontal) {
-							gradient.setStart(grooveRect.center().x(), grooveRect.top());
-							gradient.setFinalStop(grooveRect.center().x(), grooveRect.bottom());
-						} else {
-							gradient.setStart(grooveRect.left(), grooveRect.center().y());
-							gradient.setFinalStop(grooveRect.right(), grooveRect.center().y());
-						}
-						groovePainter.setPen(Qt::NoPen);
-						gradient.setColorAt(0, QColor(32, 32, 32));
-						gradient.setColorAt(1, QColor(96, 96, 96));
-						groovePainter.setBrush(gradient);
-						groovePainter.drawRoundedRect(grooveRect, r, r);
-						groovePainter.end();
-						QPixmapCache::insert(key, cache);
-					}
-					p->drawPixmap(groove.topLeft(), cache);
-				}
-
-				if (option->subControls & SC_SliderTickmarks) {
-					int tickSize = pixelMetric(PM_SliderTickmarkOffset, option, widget);
-					int available = pixelMetric(PM_SliderSpaceAvailable, slider, widget);
-					int interval = slider->tickInterval;
-					if (interval <= 0) {
-						interval = slider->singleStep;
-						if (QStyle::sliderPositionFromValue(slider->minimum, slider->maximum, interval, available) - QStyle::sliderPositionFromValue(slider->minimum, slider->maximum, 0, available) < 3) {
-							interval = slider->pageStep;
-						}
-					}
-					if (interval <= 0) {
-						interval = 1;
-					}
-
-					int v = slider->minimum;
-					int len = pixelMetric(PM_SliderLength, slider, widget);
-					while (v <= slider->maximum + 1) {
-						if (v == slider->maximum + 1 && interval == 1) break;
-						const int v_ = qMin(v, slider->maximum);
-						int pos = sliderPositionFromValue(slider->minimum, slider->maximum,
-														  v_, (horizontal
-															   ? slider->rect.width()
-															   : slider->rect.height()) - len,
-														  slider->upsideDown) + len / 2;
-						int extra = 2 - ((v_ == slider->minimum || v_ == slider->maximum) ? 1 : 0);
-
-						if (horizontal) {
-							if (ticksAbove) {
-								p->setPen(QColor(128, 128, 128));
-								p->drawLine(pos, slider->rect.top() + extra, pos, slider->rect.top() + tickSize);
-							}
-							if (ticksBelow) {
-								p->setPen(QColor(0, 0, 0));
-								p->drawLine(pos, slider->rect.bottom() - extra, pos, slider->rect.bottom() - tickSize);
-							}
-						} else {
-							if (ticksAbove) {
-								p->setPen(QColor(128, 128, 128));
-								p->drawLine(slider->rect.left() + extra, pos, slider->rect.left() + tickSize, pos);
-							}
-							if (ticksBelow) {
-								p->setPen(QColor(0, 0, 0));
-								p->drawLine(slider->rect.right() - extra, pos, slider->rect.right() - tickSize, pos);
-							}
-						}
-						// in the case where maximum is max int
-						int nextInterval = v + interval;
-						if (nextInterval < v) break;
-						v = nextInterval;
-					}
-				}
-				// draw handle
-				if ((option->subControls & SC_SliderHandle) ) {
-					QRect pixmapRect(0, 0, handle.width(), handle.height());
-					QRect r = pixmapRect;
-					QPainterPath path;
-					path.addEllipse(r);
-					QString handlePixmapName = pixmapkey(QLatin1String("slider_handle"), "", handle.size());
-					if (!QPixmapCache::find(handlePixmapName, cache)) {
-						cache = QPixmap(handle.size());
-						cache.fill(Qt::transparent);
-						QPainter handlePainter(&cache);
-
-						handlePainter.setRenderHint(QPainter::Antialiasing, true);
-						handlePainter.translate(0.5, 0.5);
-
-						QLinearGradient gradient;
-						gradient.setStart(pixmapRect.topLeft());
-						gradient.setFinalStop(pixmapRect.bottomRight());
-						gradient.setColorAt(0, QColor(128, 128, 128));
-						gradient.setColorAt(1, QColor(0, 0, 0));
-						handlePainter.save();
-						handlePainter.setClipPath(path);
-						handlePainter.fillRect(r, gradient);
-
-						handlePainter.setPen(QPen(QColor(128, 128, 128), 2));
-						handlePainter.setBrush(Qt::NoBrush);
-						handlePainter.drawEllipse(r.adjusted(0, 0, 2, 2));
-						handlePainter.setPen(QPen(QColor(0, 0, 0), 2));
-						handlePainter.setBrush(Qt::NoBrush);
-						handlePainter.drawEllipse(r.adjusted(-2, -2, 0, 0));
-
-						handlePainter.restore();
-						handlePainter.end();
-						QPixmapCache::insert(handlePixmapName, cache);
-					}
-
-					QPoint topleft = handle.topLeft();
-					p->drawPixmap(topleft, cache);
-
-					if ((option->state & State_HasFocus) && (option->state & State_KeyboardFocusChange)) {
-						p->save();
-						p->setClipPath(path.translated(topleft));
-						p->fillRect(handle, QColor(255, 255, 255, 32));
-						p->restore();
-					}
-				}
-				p->setBrush(oldBrush);
-				p->setPen(oldPen);
+			bool horizontal = slider->orientation == Qt::Horizontal;
+			bool ticksAbove = slider->tickPosition & QSlider::TicksAbove;
+			bool ticksBelow = slider->tickPosition & QSlider::TicksBelow;
+			QPixmap cache;
+			QBrush oldBrush = p->brush();
+			QPen oldPen = p->pen();
+			QColor shadowAlpha(Qt::black);
+			shadowAlpha.setAlpha(10);
+			if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange) {
 			}
+
+			if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
+				QRect rect(0, 0, groove.width(), groove.height());
+				QString key = pixmapkey("slider_groove", horizontal ? "horz" : "vert", rect.size());
+
+				QRectF grooveRect;
+				double r = std::min(groove.width(), groove.height()) / 2;
+				{
+					double n = r * 3 / 4;
+					grooveRect = rect.adjusted(n, n, -n, -n);
+					r -= n;
+				}
+
+				// draw background groove
+				QPixmap cache;
+				if (!QPixmapCache::find(key, cache)) {
+					cache = QPixmap(rect.size());
+					cache.fill(Qt::transparent);
+					QPainter groovePainter(&cache);
+					groovePainter.setRenderHint(QPainter::Antialiasing, true);
+					groovePainter.translate(0.5, 0.5);
+					QLinearGradient gradient;
+					if (horizontal) {
+						gradient.setStart(grooveRect.center().x(), grooveRect.top());
+						gradient.setFinalStop(grooveRect.center().x(), grooveRect.bottom());
+					} else {
+						gradient.setStart(grooveRect.left(), grooveRect.center().y());
+						gradient.setFinalStop(grooveRect.right(), grooveRect.center().y());
+					}
+					groovePainter.setPen(Qt::NoPen);
+					gradient.setColorAt(0, QColor(32, 32, 32));
+					gradient.setColorAt(1, QColor(96, 96, 96));
+					groovePainter.setBrush(gradient);
+					groovePainter.drawRoundedRect(grooveRect, r, r);
+					groovePainter.end();
+					QPixmapCache::insert(key, cache);
+				}
+				p->drawPixmap(groove.topLeft(), cache);
+			}
+
+			if (option->subControls & SC_SliderTickmarks) {
+				int tickSize = pixelMetric(PM_SliderTickmarkOffset, option, widget);
+				int available = pixelMetric(PM_SliderSpaceAvailable, slider, widget);
+				int interval = slider->tickInterval;
+				if (interval <= 0) {
+					interval = slider->singleStep;
+					if (QStyle::sliderPositionFromValue(slider->minimum, slider->maximum, interval, available) - QStyle::sliderPositionFromValue(slider->minimum, slider->maximum, 0, available) < 3) {
+						interval = slider->pageStep;
+					}
+				}
+				if (interval <= 0) {
+					interval = 1;
+				}
+
+				int v = slider->minimum;
+				int len = pixelMetric(PM_SliderLength, slider, widget);
+				while (v <= slider->maximum + 1) {
+					if (v == slider->maximum + 1 && interval == 1) break;
+					const int v_ = qMin(v, slider->maximum);
+					int pos = sliderPositionFromValue(slider->minimum, slider->maximum,
+													  v_, (horizontal
+														   ? slider->rect.width()
+														   : slider->rect.height()) - len,
+													  slider->upsideDown) + len / 2;
+					int extra = 2 - ((v_ == slider->minimum || v_ == slider->maximum) ? 1 : 0);
+
+					if (horizontal) {
+						if (ticksAbove) {
+							p->setPen(QColor(128, 128, 128));
+							p->drawLine(pos, slider->rect.top() + extra, pos, slider->rect.top() + tickSize);
+						}
+						if (ticksBelow) {
+							p->setPen(QColor(0, 0, 0));
+							p->drawLine(pos, slider->rect.bottom() - extra, pos, slider->rect.bottom() - tickSize);
+						}
+					} else {
+						if (ticksAbove) {
+							p->setPen(QColor(128, 128, 128));
+							p->drawLine(slider->rect.left() + extra, pos, slider->rect.left() + tickSize, pos);
+						}
+						if (ticksBelow) {
+							p->setPen(QColor(0, 0, 0));
+							p->drawLine(slider->rect.right() - extra, pos, slider->rect.right() - tickSize, pos);
+						}
+					}
+					// in the case where maximum is max int
+					int nextInterval = v + interval;
+					if (nextInterval < v) break;
+					v = nextInterval;
+				}
+			}
+			// draw handle
+			if ((option->subControls & SC_SliderHandle) ) {
+				QRect pixmapRect(0, 0, handle.width(), handle.height());
+				QRect r = pixmapRect;
+				QPainterPath path;
+				path.addEllipse(r);
+				QString handlePixmapName = pixmapkey(QLatin1String("slider_handle"), "", handle.size());
+				if (!QPixmapCache::find(handlePixmapName, cache)) {
+					cache = QPixmap(handle.size());
+					cache.fill(Qt::transparent);
+					QPainter handlePainter(&cache);
+
+					handlePainter.setRenderHint(QPainter::Antialiasing, true);
+					handlePainter.translate(0.5, 0.5);
+
+					QLinearGradient gradient;
+					gradient.setStart(pixmapRect.topLeft());
+					gradient.setFinalStop(pixmapRect.bottomRight());
+					gradient.setColorAt(0, QColor(128, 128, 128));
+					gradient.setColorAt(1, QColor(0, 0, 0));
+					handlePainter.save();
+					handlePainter.setClipPath(path);
+					handlePainter.fillRect(r, gradient);
+
+					handlePainter.setPen(QPen(QColor(128, 128, 128), 2));
+					handlePainter.setBrush(Qt::NoBrush);
+					handlePainter.drawEllipse(r.adjusted(0, 0, 2, 2));
+					handlePainter.setPen(QPen(QColor(0, 0, 0), 2));
+					handlePainter.setBrush(Qt::NoBrush);
+					handlePainter.drawEllipse(r.adjusted(-2, -2, 0, 0));
+
+					handlePainter.restore();
+					handlePainter.end();
+					QPixmapCache::insert(handlePixmapName, cache);
+				}
+
+				QPoint topleft = handle.topLeft();
+				p->drawPixmap(topleft, cache);
+
+				if ((option->state & State_HasFocus) && (option->state & State_KeyboardFocusChange)) {
+					p->save();
+					p->setClipPath(path.translated(topleft));
+					p->fillRect(handle, QColor(255, 255, 255, 32));
+					p->restore();
+				}
+			}
+			p->setBrush(oldBrush);
+			p->setPen(oldPen);
 		}
+		//		}
 		return;
 	}
 //	qDebug() << cc;

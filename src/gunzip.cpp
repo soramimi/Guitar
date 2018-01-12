@@ -140,7 +140,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 				unsigned char obuf[65536];
 				stream.next_out = obuf;            /* discard the output */
 				stream.avail_out = sizeof(obuf);
-				if (maxsize != -1 && stream.total_out + stream.avail_out > maxsize && maxsize >= stream.total_out) {
+				if (maxsize != -1 && stream.total_out + stream.avail_out > (unsigned)maxsize && (unsigned)maxsize >= stream.total_out) {
 					stream.avail_out = maxsize - stream.total_out;
 				}
 				uLong total_out = stream.total_out;
@@ -166,7 +166,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 				if (err != Z_OK) {
 					throw QString("inflate failed");
 				}
-				if (stream.total_out >= maxsize) {
+				if (stream.total_out >= (unsigned)maxsize) {
 					break;
 				}
 			}

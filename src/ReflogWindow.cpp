@@ -121,6 +121,7 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
+	(void)item;
 	Git::CommitItem commit;
 	if (!currentCommit(&commit)) return;
 

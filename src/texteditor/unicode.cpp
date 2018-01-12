@@ -2,7 +2,7 @@
 #include "unicode.h"
 
 
-namespace {
+namespace unicode_helper_ {
 
 class reader {
 public:
@@ -201,7 +201,7 @@ uint32_t utf16::next()
 
 //
 
-class utf8encoder::internal_writer : public writer8 {
+class utf8encoder::internal_writer : public unicode_helper_::writer8 {
 public:
 	char *dst;
 	int len;
@@ -252,7 +252,7 @@ bool utf8encoder::next()
 		uint32_t code = data.reader->next();
 		if (code) {
 			internal_writer w(data.buf);
-			encode_utf8(&w, code);
+			unicode_helper_::encode_utf8(&w, code);
 			data.len = w.len;
 			data.pos = 0;
 			return next_();
@@ -271,7 +271,7 @@ char utf8encoder::get()
 
 //
 
-class utf16encoder::internal_writer : public writer16 {
+class utf16encoder::internal_writer : public unicode_helper_::writer16 {
 public:
 	uint16_t *dst;
 	int len;
@@ -322,7 +322,7 @@ bool utf16encoder::next()
 		uint32_t code = data.reader->next();
 		if (code) {
 			internal_writer w(data.buf);
-			encode_utf16(&w, code);
+			unicode_helper_::encode_utf16(&w, code);
 			data.len = w.len;
 			data.pos = 0;
 			return next_();

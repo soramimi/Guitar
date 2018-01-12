@@ -210,7 +210,7 @@ protected:
 						while (n > 0) {
 							char tmp[1024];
 							int l = n;
-							if (l > sizeof(tmp)) {
+							if (l > (int)sizeof(tmp)) {
 								l = sizeof(tmp);
 							}
 							std::copy(inq.begin(), inq.begin() + l, tmp);

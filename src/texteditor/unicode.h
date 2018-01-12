@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <functional>
 
-namespace {
+namespace unicode_helper_ {
 
 struct utf8_reader_state_t {
 	int a;
@@ -132,7 +132,7 @@ public:
 
 class utf8 : public abstract_unicode_reader {
 private:
-	utf8decoder reader;
+	unicode_helper_::utf8decoder reader;
 public:
 	utf8(char const *ptr, char const *end);
 	utf8(char const *ptr);
