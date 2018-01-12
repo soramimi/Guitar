@@ -732,6 +732,10 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	if (!b.enabled) return;
 	if (a == b) return;
 
+	auto UpdateVisibility = [&](){
+		updateVisibility(false, false, false);
+	};
+
 	if (cutbuffer) {
 		cutbuffer->clear();
 	}
@@ -764,7 +768,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		if (op == EditOperation::Cut) {
 			vec1.erase(begin, end);
 			commitLine(vec1);
-			updateVisibility(true, true, true);
+			UpdateVisibility();
 		}
 	} else {
 		std::vector<uint32_t> vec1;
@@ -780,7 +784,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			if (op == EditOperation::Cut) {
 				vec1.erase(begin, end);
 				commitLine(vec1);
-				updateVisibility(true, true, true);
+				UpdateVisibility();
 			}
 		}
 		int n = b.row - a.row;
@@ -813,7 +817,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			vec2.resize(index);
 			vec2.insert(vec2.end(), vec1.begin(), vec1.end());
 			commitLine(vec2);
-			updateVisibility(true, true, true);
+			UpdateVisibility();
 		}
 	}
 
@@ -841,7 +845,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	}
 
 	clearParsedLine();
-	updateVisibility(true, true, true);
+	UpdateVisibility();
 }
 
 void AbstractCharacterBasedApplication::edit_(EditOperation op)

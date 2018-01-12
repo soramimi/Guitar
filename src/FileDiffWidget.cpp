@@ -238,6 +238,19 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 				}
 			}
 			FlushBlank();
+			auto ComplementNewLine = [](std::vector<TextDiffLine> *lines){
+				for (TextDiffLine &line : *lines) {
+					int n = line.text.size();
+					if (n > 0) {
+						int c = line.text[n - 1] & 0xff;
+						if (c != '\r' && c != '\n') {
+							line.text.push_back('\n');
+						}
+					}
+				}
+			};
+			ComplementNewLine(&tmp_left);
+			ComplementNewLine(&tmp_right);
 			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) left_lines->push_back(*it);
 			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) right_lines->push_back(*it);
 			linenum = hi.pos;
