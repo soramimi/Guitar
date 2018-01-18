@@ -19,8 +19,6 @@ public:
 	QColor bg_diff_unknown;
 	QColor bg_diff_add;
 	QColor bg_diff_del;
-	QColor bg_diff_add_dark;
-	QColor bg_diff_del_dark;
 public:
 	TextEditorTheme();
 	QColor fgDefault() const
@@ -58,14 +56,6 @@ public:
 	QColor bgDiffDel() const
 	{
 		return bg_diff_del;
-	}
-	QColor bgDiffAddDark() const
-	{
-		return bg_diff_add_dark;
-	}
-	QColor bgDiffDelDark() const
-	{
-		return bg_diff_del_dark;
 	}
 	static TextEditorThemePtr Dark();
 	static TextEditorThemePtr Light();

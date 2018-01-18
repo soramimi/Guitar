@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QDebug>
+#include "ApplicationGlobal.h"
+#include "TextEditorTheme.h"
 
 struct FileDiffSliderWidget::Private {
 	FileDiffWidget *owner = nullptr;
@@ -63,11 +65,12 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 		pr.drawPixmap(w + 4, 0, w, h, m->right_pixmap, 0, 0, sw, sh);
 	}
 
+	pr.fillRect(w, 0, 4, height(), palette().color(QPalette::Window));
 	if (m->scroll_page_size > 0 && m->scroll_total > 0) {
 		int y = m->scroll_value * height() / m->scroll_total;
 		int h = m->scroll_page_size * height() / m->scroll_total;
 		if (h < 2) h = 2;
-		pr.fillRect(w + 1, y, 2, h, Qt::black);
+		pr.fillRect(w + 1, y, 2, h, global->theme->diff_slider_handle);
 	}
 
 	if (hasFocus()) {

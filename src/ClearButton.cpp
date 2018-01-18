@@ -1,11 +1,13 @@
 #include "ClearButton.h"
+#include "ApplicationGlobal.h"
+#include "Theme.h"
 
 #include <QPainter>
 
 ClearButton::ClearButton(QWidget *parent)
 	: QToolButton(parent)
 {
-	pixmap = QPixmap(":/image/clear.png");
+	pixmap = global->theme->resource_clear_png();
 }
 
 void ClearButton::paintEvent(QPaintEvent * /*event*/)

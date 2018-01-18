@@ -142,8 +142,6 @@ public:
 	void updateDiffView(const Git::Diff &info, bool uncommited);
 	void updateDiffView(QString id_left, QString id_right);
 
-	QPixmap makeDiffPixmap(ViewType side, int width, int height, const DiffData *diffdata, const FileDiffWidget::DrawData *drawdata);
-
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(bool f);
 	QPixmap makeDiffPixmap(Pane pane, int width, int height);
