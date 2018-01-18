@@ -1479,10 +1479,12 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 			int w, h;
 			if (ishorz) {
 				h = extent;
-				w = h * r.width() / r.height();
+				int d = r.height();
+				w = (d == 0) ? 0 : (h * r.width() / d);
 			} else {
 				w = extent;
-				h = w * r.height() / r.width();
+				int d = r.width();
+				h = (d == 0) ? 0 : (w * r.height() / d);
 			}
 			drawNinePatchImage(p, image, r, w, h);
 		};
@@ -1531,10 +1533,12 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 			int w, h;
 			if (ishorz) {
 				h = extent;
-				w = h * r.width() / r.height();
+				int d = r.height();
+				w = (d == 0) ? 0 : (h * r.width() / d);
 			} else {
 				w = extent;
-				h = w * r.height() / r.width();
+				int d = r.width();
+				h = (d == 0) ? 0 : (w * r.height() / d);
 			}
 #ifdef Q_OS_MAC // macだとズレて見えるので調整する
 			if (ishorz) {
