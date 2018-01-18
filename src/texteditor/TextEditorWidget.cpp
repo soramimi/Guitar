@@ -514,7 +514,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 					mark = "-";
 				}
 				if (mark) {
-					pr.setPen(Qt::black);
+					pr.setPen(theme()->fgDefault());
 					drawText(&pr, linenum_width - latin1Width(), y * lineHeight(), mark);
 				}
 			}
