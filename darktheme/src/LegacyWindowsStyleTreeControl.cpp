@@ -72,11 +72,7 @@ bool LegacyWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement eleme
 			painter->fillRect(ox, oy, 1, option->rect.bottom() - oy + 1, br_branch);
 		}
 		if (option->state & (QStyle::State_Open | QStyle::State_Children | QStyle::State_Item | QStyle::State_Sibling)) {
-			if (option->rect.x() == 0 && option->rect.y() == 0) {
-				// nop
-			} else {
-				painter->fillRect(ox, option->rect.y(), 1, oy - option->rect.y(), br_branch);
-			}
+			painter->fillRect(ox, option->rect.y(), 1, oy - option->rect.y(), br_branch);
 		}
 		if (option->state & QStyle::State_Children) {
 			if (option->state & QStyle::State_Open) {

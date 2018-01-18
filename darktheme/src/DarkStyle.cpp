@@ -223,10 +223,11 @@ void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, Q
 {
 	QColor color = colorForSelectedFrame(option);
 
-	int x = option->rect.x();
-	int y = option->rect.y();
-	int w = option->rect.width();
-	int h = option->rect.height();
+	int x, y, w, h;
+	x = rect.x();
+	y = rect.y();
+	w = rect.width();
+	h = rect.height();
 
 	auto SetAlpha = [&](QColor *color, int alpha){
 		if (deep) {
@@ -694,11 +695,29 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 #endif
 		return;
 	}
+	if (pe == PE_PanelItemViewRow) {
+#ifdef Q_OS_WIN
+		// thru
+#else
+		return;
+#endif
+	}
 	if (pe == PE_PanelItemViewItem) {
 //		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
 		if (qobject_cast<QTableView const *>(widget)) {
 			if (option->state & State_Selected) {
+#ifdef Q_OS_WIN
 				drawSelectedMenuFrame(option, p, option->rect, widget, true);
+#else
+				if (option->state & State_Selected) {
+					p->save();
+					p->setClipRect(option->rect);
+					QRect r = widget->rect();
+					r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
+					drawSelectedMenuFrame(option, p, r, widget, false);
+					p->restore();
+				}
+#endif
 			}
 		} else {
 			int n = 0;
