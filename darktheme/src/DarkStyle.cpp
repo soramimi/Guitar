@@ -1,6 +1,8 @@
 #include "DarkStyle.h"
+#include <QApplication>
 #include <QComboBox>
 #include <QDebug>
+#include <QDockWidget>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
 #include <QTableWidget>
@@ -1319,6 +1321,72 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				p->save();
 				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
 				p->restore();
+			}
+		}
+		return;
+	}
+	if (ce == CE_DockWidgetTitle) {
+		if (const QStyleOptionDockWidget *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
+			const QDockWidget *dockWidget = qobject_cast<const QDockWidget *>(widget);
+			QRect rect = option->rect;
+			if (dockWidget && dockWidget->isFloating()) {
+				QProxyStyle::drawControl(ce, option, p, widget);
+				return;
+			}
+
+			const QStyleOptionDockWidgetV2 *v2 = qstyleoption_cast<const QStyleOptionDockWidgetV2*>(dwOpt);
+			bool verticalTitleBar = v2 == 0 ? false : v2->verticalTitleBar;
+
+			if (verticalTitleBar) {
+				rect.setSize(rect.size().transposed());
+
+				p->translate(rect.left() - 1, rect.top() + rect.width());
+				p->rotate(-90);
+				p->translate(-rect.left() + 1, -rect.top());
+			}
+
+			p->setBrush(option->palette.background().color().darker(110));
+			p->setPen(option->palette.background().color().darker(130));
+			p->drawRect(rect.adjusted(0, 1, -1, -3));
+
+			int buttonMargin = 4;
+			int mw = proxy()->pixelMetric(QStyle::PM_DockWidgetTitleMargin, dwOpt, widget);
+			int fw = proxy()->pixelMetric(PM_DockWidgetFrameWidth, dwOpt, widget);
+			const QDockWidget *dw = qobject_cast<const QDockWidget *>(widget);
+			bool isFloating = dw != 0 && dw->isFloating();
+
+			QRect r = option->rect.adjusted(0, 2, -1, -3);
+			QRect titleRect = r;
+
+			if (dwOpt->closable) {
+				QSize sz = proxy()->standardIcon(QStyle::SP_TitleBarCloseButton, dwOpt, widget).actualSize(QSize(10, 10));
+				titleRect.adjust(0, 0, -sz.width() - mw - buttonMargin, 0);
+			}
+
+			if (dwOpt->floatable) {
+				QSize sz = proxy()->standardIcon(QStyle::SP_TitleBarMaxButton, dwOpt, widget).actualSize(QSize(10, 10));
+				titleRect.adjust(0, 0, -sz.width() - mw - buttonMargin, 0);
+			}
+
+			if (isFloating) {
+				titleRect.adjust(0, -fw, 0, 0);
+				if (widget != 0 && widget->windowIcon().cacheKey() != QApplication::windowIcon().cacheKey())
+					titleRect.adjust(titleRect.height() + mw, 0, 0, 0);
+			} else {
+				titleRect.adjust(mw, 0, 0, 0);
+				if (!dwOpt->floatable && !dwOpt->closable)
+					titleRect.adjust(0, 0, -mw, 0);
+			}
+			if (!verticalTitleBar)
+				titleRect = visualRect(dwOpt->direction, r, titleRect);
+
+			if (!dwOpt->title.isEmpty()) {
+				QString titleText = p->fontMetrics().elidedText(dwOpt->title, Qt::ElideRight, verticalTitleBar ? titleRect.height() : titleRect.width());
+				const int indent = 4;
+				drawItemText(p, rect.adjusted(indent + 1, 1, -indent - 1, -1),
+							 Qt::AlignLeft | Qt::AlignVCenter, dwOpt->palette,
+							 dwOpt->state & State_Enabled, titleText,
+							 QPalette::WindowText);
 			}
 		}
 		return;
