@@ -51,7 +51,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	m->text_font = QFont("Monospace", 9);
 #endif
 #ifdef Q_OS_MACX
-	m->text_font = QFont("Monaco", 10);
+	m->text_font = QFontDatabase().font("Osaka", "Regular-Mono", 14);
 #endif
 	m->top_margin = 0;
 	m->bottom_margin = 1;
