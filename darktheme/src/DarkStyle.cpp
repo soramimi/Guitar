@@ -223,6 +223,7 @@ void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 
 void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, const QWidget *widget, bool deep) const
 {
+	(void)widget;
 	QColor color = colorForSelectedFrame(option);
 
 	int x, y, w, h;
@@ -1405,7 +1406,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 			SubControls sub = option->subControls;
 			if (cmb->editable) {
 				int partId = 0;
-				int stateId = 0;
+//				int stateId = 0;
 #define EP_EDITBORDER_NOSCROLL      6
 #define EP_EDITBORDER_HVSCROLL      9
 				State flags = option->state;

@@ -304,10 +304,12 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 	}
 	if (m->parsed_row_index == 0 && engine()->document.lines.empty()) {
 		Document::Line newline;
-		newline.line_number = 1;
 		engine()->document.lines.push_back(newline);
 	}
 	Document::Line *line = &engine()->document.lines[m->parsed_row_index];
+	if (m->parsed_row_index == 0) {
+		line->line_number = (line->type == Document::Line::Unknown) ? 0 : 1;
+	}
 	line->text = ba;
 
 	if (m->valid_line_index > m->parsed_row_index) {
@@ -926,6 +928,9 @@ void AbstractCharacterBasedApplication::doDelete()
 		c = (*vec)[index];
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
+		if (index == 0) {
+			m->parsed_row_index--;
+		}
 		invalidateAreaBelowTheCurrentLine();
 		if (isSingleLineMode()) {
 			// nop
@@ -938,7 +943,7 @@ void AbstractCharacterBasedApplication::doDelete()
 			}
 			if (vec->empty()) {
 				clearParsedLine();
-				if (cx()->current_row < (int)cx()->engine->document.lines.size()) {
+				if (cx()->current_row + 1 < (int)cx()->engine->document.lines.size()) {
 					cx()->engine->document.lines.erase(cx()->engine->document.lines.begin() + cx()->current_row);
 				}
 			} else {
@@ -1571,6 +1576,14 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 		int row = editor_cx->scroll_row_pos + i;
 		Document::Line *line = nullptr;
 		if (row < (int)editor_cx->engine->document.lines.size()) {
+			if (m->valid_line_index < 0) {
+				m->valid_line_index = 0;
+				Document::Line *p = &Line(0);
+				if (p->type != Document::Line::Unknown) {
+					p->line_number = num;
+					num++;
+				}
+			}
 			line = &Line(row);
 			if (row >= m->valid_line_index) {
 				num = Line(m->valid_line_index).line_number;
