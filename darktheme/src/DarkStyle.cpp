@@ -1325,6 +1325,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		}
 		return;
 	}
+#ifdef Q_OS_MAC
 	if (ce == CE_DockWidgetTitle) {
 		if (const QStyleOptionDockWidget *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
 			const QDockWidget *dockWidget = qobject_cast<const QDockWidget *>(widget);
@@ -1383,14 +1384,16 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			if (!dwOpt->title.isEmpty()) {
 				QString titleText = p->fontMetrics().elidedText(dwOpt->title, Qt::ElideRight, verticalTitleBar ? titleRect.height() : titleRect.width());
 				const int indent = 4;
+				int align = Qt::AlignRight | Qt::AlignVCenter;
 				drawItemText(p, rect.adjusted(indent + 1, 1, -indent - 1, -1),
-							 Qt::AlignLeft | Qt::AlignVCenter, dwOpt->palette,
+							 align, dwOpt->palette,
 							 dwOpt->state & State_Enabled, titleText,
 							 QPalette::WindowText);
 			}
 		}
 		return;
 	}
+#endif // Q_OS_MAC
 //	qDebug() << ce;
 	QProxyStyle::drawControl(ce, option, p, widget);
 }
