@@ -1845,11 +1845,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_open_folder) {
-				openExplorer();
+				openExplorer(repo);
 				return;
 			}
 			if (a == a_open_terminal) {
-				openTerminal();
+				openTerminal(repo);
 				return;
 			}
 			if (a == a_remove) {
@@ -3782,9 +3782,11 @@ void MainWindow::on_action_push_u_origin_master_triggered()
 	});
 }
 
-bool MainWindow::runOnCurrentRepositoryDir(std::function<void(QString)> callback)
+bool MainWindow::runOnRepositoryDir(std::function<void(QString)> callback, RepositoryItem const *repo)
 {
-	RepositoryItem const *repo = &m->current_repo;
+	if (!repo) {
+		repo = &m->current_repo;
+	}
 	QString dir = repo->local_dir;
 	dir.replace('\\', '/');
 	if (QFileInfo(dir).isDir()) {
@@ -3807,9 +3809,9 @@ bool isValidDir(QString const &dir)
 }
 #endif
 
-void MainWindow::openTerminal()
+void MainWindow::openTerminal(RepositoryItem const *repo)
 {
-	runOnCurrentRepositoryDir([](QString dir){
+	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
 		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args \"%1\"";
@@ -3818,12 +3820,12 @@ void MainWindow::openTerminal()
 #else
 		Terminal::open(dir);
 #endif
-	});
+	}, repo);
 }
 
-void MainWindow::openExplorer()
+void MainWindow::openExplorer(RepositoryItem const *repo)
 {
-	runOnCurrentRepositoryDir([](QString dir){
+	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
 		QString cmd = "open \"%1\"";
@@ -3832,17 +3834,17 @@ void MainWindow::openExplorer()
 #else
 		QDesktopServices::openUrl(dir);
 #endif
-	});
+	}, repo);
 }
 
 void MainWindow::on_toolButton_terminal_clicked()
 {
-	openTerminal();
+	openTerminal(nullptr);
 }
 
 void MainWindow::on_toolButton_explorer_clicked()
 {
-	openExplorer();
+	openExplorer(nullptr);
 }
 
 

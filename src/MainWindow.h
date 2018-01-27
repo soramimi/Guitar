@@ -179,9 +179,9 @@ private:
 	void clone();
 	void deleteBranch();
 	Git::CommitItemList retrieveCommitLog(GitPtr g);
-	bool runOnCurrentRepositoryDir(std::function<void(QString)> callback);
-	void openTerminal();
-	void openExplorer();
+	bool runOnRepositoryDir(std::function<void(QString)> callback, const RepositoryItem *repo);
+	void openTerminal(const RepositoryItem *repo);
+	void openExplorer(const RepositoryItem *repo);
 	void pushSetUpstream(const QString &remote, const QString &branch);
 	bool pushSetUpstream(bool testonly);
 	void clearRepoFilter();
