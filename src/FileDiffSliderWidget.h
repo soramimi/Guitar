@@ -5,8 +5,11 @@
 
 #include <QWidget>
 #include <QPixmap>
+#include <functional>
 
 #include "FileDiffWidget.h"
+
+typedef std::function<QPixmap(FileDiffWidget::Pane pane, int width, int height)> fn_pixmap_maker_t;
 
 class FileDiffSliderWidget : public QWidget
 {
@@ -25,8 +28,9 @@ public:
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
-	void bind(FileDiffWidget *w);
+	void bind(FileDiffWidget *w, fn_pixmap_maker_t pixmap_maker);
 	void updatePixmap();
+	static QPixmap makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines);
 protected:
 	void paintEvent(QPaintEvent *);
 	void resizeEvent(QResizeEvent *);
