@@ -16,13 +16,14 @@ struct FileDiffSliderWidget::Private {
 	QPixmap right_pixmap;
 	int wheel_delta = 0;
 	fn_pixmap_maker_t pixmap_maker;
-
+	ThemePtr theme;
 };
 
 FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
+	m->theme = global->theme;
 }
 
 FileDiffSliderWidget::~FileDiffSliderWidget()
@@ -30,13 +31,13 @@ FileDiffSliderWidget::~FileDiffSliderWidget()
 	delete m;
 }
 
-void FileDiffSliderWidget::bind(FileDiffWidget *w, fn_pixmap_maker_t pixmap_maker)
+void FileDiffSliderWidget::bind(fn_pixmap_maker_t pixmap_maker)
 {
 //	m->owner = w;
 	m->pixmap_maker = pixmap_maker;
 }
 
-QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height)
+QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int height)
 {
 //	Q_ASSERT(m->owner);
 //	return m->owner->makeDiffPixmap(pane, width, height);
@@ -48,16 +49,16 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int widt
 
 void FileDiffSliderWidget::updatePixmap()
 {
-	m->left_pixmap = makeDiffPixmap(FileDiffWidget::Pane::Left, 1, height());
-	m->right_pixmap = makeDiffPixmap(FileDiffWidget::Pane::Right, 1, height());
+	m->left_pixmap = makeDiffPixmap(DiffPane::Left, 1, height());
+	m->right_pixmap = makeDiffPixmap(DiffPane::Right, 1, height());
 }
 
-QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines)
+QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines, ThemePtr theme)
 {
 	auto MakePixmap = [&](TextDiffLineList const &lines, int w, int h){
 		const int scale = 1;
 		QPixmap pixmap = QPixmap(w, h * scale);
-		pixmap.fill(global->theme->diff_slider_normal_bg);
+		pixmap.fill(theme->diff_slider_normal_bg);
 		QPainter pr(&pixmap);
 		auto Loop = [&](std::function<QColor(TextDiffLine::Type)> getcolor){
 			int i = 0;
@@ -80,22 +81,22 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(FileDiffWidget::Pane pane, int widt
 		};
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Unknown: return global->theme->diff_slider_unknown_bg;
+			case TextDiffLine::Unknown: return theme->diff_slider_unknown_bg;
 			}
 			return QColor();
 		});
 		Loop([&](TextDiffLine::Type t)->QColor{
 			switch (t) {
-			case TextDiffLine::Add: return global->theme->diff_slider_add_bg;
-			case TextDiffLine::Del: return global->theme->diff_slider_del_bg;
+			case TextDiffLine::Add: return theme->diff_slider_add_bg;
+			case TextDiffLine::Del: return theme->diff_slider_del_bg;
 			}
 			return QColor();
 		});
 		if (scale == 1) return pixmap;
 		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	};
-	if (pane == FileDiffWidget::Pane::Left)  return MakePixmap(left_lines, width, height);
-	if (pane == FileDiffWidget::Pane::Right) return MakePixmap(right_lines, width, height);
+	if (pane == DiffPane::Left)  return MakePixmap(left_lines, width, height);
+	if (pane == DiffPane::Right) return MakePixmap(right_lines, width, height);
 	return QPixmap();
 }
 
@@ -124,7 +125,7 @@ void FileDiffSliderWidget::paintEvent(QPaintEvent *)
 		int y = m->scroll_value * height() / m->scroll_total;
 		int h = m->scroll_page_size * height() / m->scroll_total;
 		if (h < 2) h = 2;
-		pr.fillRect(w + 1, y, 2, h, global->theme->diff_slider_handle);
+		pr.fillRect(w + 1, y, 2, h, m->theme->diff_slider_handle);
 	}
 
 	if (hasFocus()) {

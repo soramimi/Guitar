@@ -6,6 +6,7 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "FileViewWidget.h"
+#include "FileDiffSliderWidget.h"
 
 namespace Ui {
 class FileDiffWidget;
@@ -35,10 +36,6 @@ class FileDiffWidget : public QWidget
 	Q_OBJECT
 	friend class BigDiffWindow;
 public:
-	enum class Pane {
-		Left,
-		Right,
-	};
 	struct DiffData {
 		ObjectContentPtr left;
 		ObjectContentPtr right;
@@ -144,7 +141,7 @@ public:
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(bool f);
-	QPixmap makeDiffPixmap(Pane pane, int width, int height);
+	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
 private slots:
 	void onVerticalScrollValueChanged(int);

@@ -59,6 +59,7 @@ QPixmap StandardTheme::resource_clear_png()
 	return QPixmap(":/image/clear.png");
 }
 
+#ifndef NO_DARK_THEME
 // DarkTheme
 
 DarkTheme::DarkTheme()
@@ -120,3 +121,5 @@ ThemePtr createDarkTheme()
 
 	return ThemePtr(p);
 }
+
+#endif // NO_DAR_THEME

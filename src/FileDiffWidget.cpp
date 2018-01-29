@@ -44,8 +44,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->widget_diff_slider->bind(this, [&](FileDiffWidget::Pane pane, int width, int height){
-		return FileDiffSliderWidget::makeDiffPixmap(pane, width, height, m->left_lines, m->right_lines);
+	ui->widget_diff_slider->bind([&](DiffPane pane, int width, int height){
+		return FileDiffSliderWidget::makeDiffPixmap(pane, width, height, m->left_lines, m->right_lines, global->theme);
 	});
 	connect(ui->widget_diff_slider, SIGNAL(valueChanged(int)), this, SLOT(scrollTo(int)));
 	connect(ui->widget_diff_left->texteditor(), SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
@@ -624,9 +624,9 @@ void FileDiffWidget::refrectScrollBar()
 
 
 
-QPixmap FileDiffWidget::makeDiffPixmap(Pane pane, int width, int height)
+QPixmap FileDiffWidget::makeDiffPixmap(DiffPane pane, int width, int height)
 {
-	return FileDiffSliderWidget::makeDiffPixmap(pane, width, height, m->left_lines, m->right_lines);
+	return FileDiffSliderWidget::makeDiffPixmap(pane, width, height, m->left_lines, m->right_lines, global->theme);
 }
 
 void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)

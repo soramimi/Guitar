@@ -7,9 +7,19 @@
 #include <QPixmap>
 #include <functional>
 
-#include "FileDiffWidget.h"
+#include "AbstractCharacterBasedApplication.h"
+#include "Theme.h"
+//#include "FileDiffWidget.h"
 
-typedef std::function<QPixmap(FileDiffWidget::Pane pane, int width, int height)> fn_pixmap_maker_t;
+typedef Document::Line TextDiffLine;
+typedef QList<Document::Line> TextDiffLineList;
+
+enum class DiffPane {
+	Left,
+	Right,
+};
+
+typedef std::function<QPixmap(DiffPane pane, int width, int height)> fn_pixmap_maker_t;
 
 class FileDiffSliderWidget : public QWidget
 {
@@ -19,7 +29,7 @@ private:
 	Private *m;
 
 	void scroll_(int pos);
-	QPixmap makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height);
+	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setValue(int v);
 	void internalSetValue(int v);
 public:
@@ -28,9 +38,9 @@ public:
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
-	void bind(FileDiffWidget *w, fn_pixmap_maker_t pixmap_maker);
+	void bind(fn_pixmap_maker_t pixmap_maker);
 	void updatePixmap();
-	static QPixmap makeDiffPixmap(FileDiffWidget::Pane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines);
+	static QPixmap makeDiffPixmap(DiffPane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines, ThemePtr theme);
 protected:
 	void paintEvent(QPaintEvent *);
 	void resizeEvent(QResizeEvent *);

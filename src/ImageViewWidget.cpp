@@ -1,5 +1,6 @@
 #include "ImageViewWidget.h"
 #include "FileDiffSliderWidget.h"
+#include "FileDiffWidget.h"
 
 #include "MainWindow.h"
 #include "common/misc.h"
