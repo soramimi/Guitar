@@ -5,7 +5,6 @@
 
 #include "LegacyWindowsStyleTreeControl.h"
 
-
 // StandardStyle
 
 class StandardStyle : public QProxyStyle {

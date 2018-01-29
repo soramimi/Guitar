@@ -7,7 +7,6 @@
 #include "TextEditorTheme.h"
 
 struct FileDiffSliderWidget::Private {
-//	FileDiffWidget *owner = nullptr;
 	bool visible = false;
 	int scroll_total = 0;
 	int scroll_value = 0;
@@ -23,7 +22,6 @@ FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
-//	m->theme = global->theme;
 }
 
 FileDiffSliderWidget::~FileDiffSliderWidget()
@@ -33,15 +31,12 @@ FileDiffSliderWidget::~FileDiffSliderWidget()
 
 void FileDiffSliderWidget::init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme)
 {
-//	m->owner = w;
 	m->pixmap_maker = pixmap_maker;
 	m->theme = theme;
 }
 
 QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int height)
 {
-//	Q_ASSERT(m->owner);
-//	return m->owner->makeDiffPixmap(pane, width, height);
 	if (m->pixmap_maker) {
 		return m->pixmap_maker(pane, width, height);
 	}
@@ -54,7 +49,7 @@ void FileDiffSliderWidget::updatePixmap()
 	m->right_pixmap = makeDiffPixmap(DiffPane::Right, 1, height());
 }
 
-QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines, ThemePtr theme)
+QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, const TextDiffLineList &lines, ThemePtr theme)
 {
 	auto MakePixmap = [&](TextDiffLineList const &lines, int w, int h){
 		const int scale = 1;
@@ -96,9 +91,7 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int heigh
 		if (scale == 1) return pixmap;
 		return pixmap.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	};
-	if (pane == DiffPane::Left)  return MakePixmap(left_lines, width, height);
-	if (pane == DiffPane::Right) return MakePixmap(right_lines, width, height);
-	return QPixmap();
+	return MakePixmap(lines, width, height);
 }
 
 void FileDiffSliderWidget::paintEvent(QPaintEvent *)

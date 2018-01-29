@@ -9,7 +9,6 @@
 
 #include "AbstractCharacterBasedApplication.h"
 #include "Theme.h"
-//#include "FileDiffWidget.h"
 
 typedef Document::Line TextDiffLine;
 typedef QList<Document::Line> TextDiffLineList;
@@ -40,7 +39,7 @@ public:
 	void setScrollPos(int total, int value, int size);
 	void init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme);
 	void updatePixmap();
-	static QPixmap makeDiffPixmap(DiffPane pane, int width, int height, const TextDiffLineList &left_lines, const TextDiffLineList &right_lines, ThemePtr theme);
+	static QPixmap makeDiffPixmap(int width, int height, const TextDiffLineList &lines, ThemePtr theme);
 protected:
 	void paintEvent(QPaintEvent *);
 	void resizeEvent(QResizeEvent *);
