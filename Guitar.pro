@@ -19,6 +19,8 @@ TRANSLATIONS = Guitar_ja.ts
 
 DEFINES += APP_GUITAR
 
+DEFINES += USE_DARK_THEME
+
 DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
@@ -191,7 +193,7 @@ SOURCES += \
 	MyImageViewWidget.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/ReflogWindow.cpp \
-	darktheme/src/LegacyWindowsStyleTreeControl.cpp \
+	src/LegacyWindowsStyleTreeControl.cpp \
 	darktheme/src/DarkStyle.cpp \
 	darktheme/src/NinePatch.cpp \
 	src/Theme.cpp \
@@ -284,7 +286,7 @@ HEADERS  += \
 	MyImageViewWidget.h \
 	src/SetGlobalUserDialog.h \
 	src/ReflogWindow.h \
-	darktheme/src/LegacyWindowsStyleTreeControl.h \
+	src/LegacyWindowsStyleTreeControl.h \
 	darktheme/src/DarkStyle.h \
 	darktheme/src/NinePatch.h \
 	src/Theme.h \

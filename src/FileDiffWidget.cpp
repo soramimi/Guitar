@@ -44,9 +44,10 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->widget_diff_slider->bind([&](DiffPane pane, int width, int height){
+	ui->widget_diff_slider->init([&](DiffPane pane, int width, int height){
 		return FileDiffSliderWidget::makeDiffPixmap(pane, width, height, m->left_lines, m->right_lines, global->theme);
-	});
+	}, global->theme);
+
 	connect(ui->widget_diff_slider, SIGNAL(valueChanged(int)), this, SLOT(scrollTo(int)));
 	connect(ui->widget_diff_left->texteditor(), SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
 	connect(ui->widget_diff_right->texteditor(), SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));

@@ -1,7 +1,10 @@
-#include "../darktheme/src/DarkStyle.h"
 #include "Theme.h"
 #include <QApplication>
 #include <QRgb>
+#include <QProxyStyle>
+
+#include "LegacyWindowsStyleTreeControl.h"
+
 
 // StandardStyle
 
@@ -59,7 +62,24 @@ QPixmap StandardTheme::resource_clear_png()
 	return QPixmap(":/image/clear.png");
 }
 
-#ifndef NO_DARK_THEME
+ThemePtr createStandardTheme()
+{
+	AbstractTheme *p = new StandardTheme;
+	p->text_editor_theme = TextEditorTheme::Light();
+
+	p->diff_slider_normal_bg = Qt::white;
+	p->diff_slider_unknown_bg = QColor(208, 208, 208);
+	p->diff_slider_add_bg = QColor(64, 192, 64);
+	p->diff_slider_del_bg = QColor(240, 64, 64);
+	p->diff_slider_handle = Qt::black;
+
+	return ThemePtr(p);
+}
+
+#ifdef USE_DARK_THEME
+
+#include "../darktheme/src/DarkStyle.h"
+
 // DarkTheme
 
 DarkTheme::DarkTheme()
@@ -94,20 +114,6 @@ QPixmap DarkTheme::resource_clear_png()
 	return QPixmap::fromImage(img);
 }
 
-ThemePtr createStandardTheme()
-{
-	AbstractTheme *p = new StandardTheme;
-	p->text_editor_theme = TextEditorTheme::Light();
-
-	p->diff_slider_normal_bg = Qt::white;
-	p->diff_slider_unknown_bg = QColor(208, 208, 208);
-	p->diff_slider_add_bg = QColor(64, 192, 64);
-	p->diff_slider_del_bg = QColor(240, 64, 64);
-	p->diff_slider_handle = Qt::black;
-
-	return ThemePtr(p);
-}
-
 ThemePtr createDarkTheme()
 {
 	AbstractTheme *p = new DarkTheme;
@@ -122,4 +128,4 @@ ThemePtr createDarkTheme()
 	return ThemePtr(p);
 }
 
-#endif // NO_DAR_THEME
+#endif // USE_DAR_THEME

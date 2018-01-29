@@ -23,7 +23,7 @@ FileDiffSliderWidget::FileDiffSliderWidget(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
-	m->theme = global->theme;
+//	m->theme = global->theme;
 }
 
 FileDiffSliderWidget::~FileDiffSliderWidget()
@@ -31,10 +31,11 @@ FileDiffSliderWidget::~FileDiffSliderWidget()
 	delete m;
 }
 
-void FileDiffSliderWidget::bind(fn_pixmap_maker_t pixmap_maker)
+void FileDiffSliderWidget::init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme)
 {
 //	m->owner = w;
 	m->pixmap_maker = pixmap_maker;
+	m->theme = theme;
 }
 
 QPixmap FileDiffSliderWidget::makeDiffPixmap(DiffPane pane, int width, int height)
