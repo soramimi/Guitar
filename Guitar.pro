@@ -195,7 +195,8 @@ SOURCES += \
 	darktheme/src/DarkStyle.cpp \
 	darktheme/src/NinePatch.cpp \
 	src/Theme.cpp \
-	src/ApplicationGlobal.cpp
+	src/ApplicationGlobal.cpp \
+    src/BlameWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -287,7 +288,8 @@ HEADERS  += \
 	darktheme/src/DarkStyle.h \
 	darktheme/src/NinePatch.h \
 	src/Theme.h \
-	src/ApplicationGlobal.h
+	src/ApplicationGlobal.h \
+    src/BlameWindow.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -322,7 +324,8 @@ FORMS    += \
 	src/SettingNetworkForm.ui \
 	src/SettingBehaviorForm.ui \
     src/SetGlobalUserDialog.ui \
-    src/ReflogWindow.ui
+    src/ReflogWindow.ui \
+    src/BlameWindow.ui
 
 RESOURCES += \
     resources.qrc

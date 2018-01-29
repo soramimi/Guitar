@@ -1,3 +1,4 @@
+#include "BlameWindow.h"
 #include "MainWindow.h"
 #include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
@@ -4020,30 +4021,6 @@ void MainWindow::on_action_exit_triggered()
 	close();
 }
 
-void MainWindow::on_action_test_triggered()
-{
-	QString path = "D:\\mimi5.jpg";
-//	QString path = "home/soramimi/a/about.png";
-	QFile file(path);
-
-	file.open(QFile::ReadOnly);
-	QByteArray in = file.readAll();
-
-	QString cmd = "C:\\develop\\Guitar\\misc\\win32tools\\file.exe -m C:\\develop\\Guitar\\misc\\win32tools\\magic.mgc --mime --brief -";
-	Process proc;
-	proc.start(cmd, true);
-	int n = in.size();
-	if (n > 0) {
-		if (n > 65536) n = 65536;
-		QThread::currentThread()->msleep(100);
-		proc.writeInput(in.data(), n);
-		proc.closeInput(false);
-	}
-	proc.wait();
-	qDebug() << proc.outstring();
-}
-
-
 void MainWindow::on_action_reflog_triggered()
 {
 	GitPtr g = git();
@@ -4053,3 +4030,29 @@ void MainWindow::on_action_reflog_triggered()
 	ReflogWindow dlg(this, this, reflog);
 	dlg.exec();
 }
+
+void MainWindow::blame()
+{
+	QList<BlameItem> list;
+	QFile file("d:/a.txt");
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		if (!ba.isEmpty()) {
+			char const *begin = ba.data();
+			char const *end = begin + ba.size();
+			list = BlameWindow::parseBlame(begin, end);
+		}
+	}
+
+	BlameWindow win(this, "Test", list);
+	win.exec();
+}
+
+
+
+void MainWindow::on_action_test_triggered()
+{
+	blame();
+}
+
+

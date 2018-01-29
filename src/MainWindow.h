@@ -203,6 +203,7 @@ private:
 	void setNetworkingCommandsEnabled(bool f);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
 	void execSetGlobalUserDialog();
+	void blame();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
