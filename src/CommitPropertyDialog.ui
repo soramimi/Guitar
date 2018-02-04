@@ -139,6 +139,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pushButton_jump">
+       <property name="text">
+        <string>Jump</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -152,7 +159,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="pushButton_close">
        <property name="text">
         <string>Close</string>
        </property>
@@ -185,12 +192,12 @@
   <tabstop>lineEdit_commit_id</tabstop>
   <tabstop>plainTextEdit_parent_ids</tabstop>
   <tabstop>pushButton_checkout</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_close</tabstop>
  </tabstops>
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>pushButton_close</sender>
    <signal>clicked()</signal>
    <receiver>CommitPropertyDialog</receiver>
    <slot>reject()</slot>

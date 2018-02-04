@@ -82,11 +82,8 @@ bool ReflogWindow::currentCommit(Git::CommitItem *out)
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
 		Git::ReflogItem const &logitem = reflog_[row];
-		GitPtr g = mainwindow_->git();
-		if (g->objectType(logitem.id) == "commit") {
-			if (g->query_commit(logitem.id, out)) {
-				ok = true;
-			}
+		if (mainwindow_->queryCommit(logitem.id, out)) {
+			ok = true;
 		}
 	}
 	return ok;

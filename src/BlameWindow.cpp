@@ -1,12 +1,20 @@
 #include "BlameWindow.h"
 #include "ui_BlameWindow.h"
 #include "common/misc.h"
+#include "CommitPropertyDialog.h"
+#include "Git.h"
+#include "MainWindow.h"
+
+enum {
+	CommidIdRole = Qt::UserRole,
+};
 
 struct BlameWindow::Private {
+	MainWindow *mainwindow;
 	QList<BlameItem> list;
 };
 
-BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<BlameItem> &list)
+BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QList<BlameItem> &list)
 	: QDialog(parent)
 	, ui(new Ui::BlameWindow)
 	, m(new Private)
@@ -15,6 +23,8 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
+
+	m->mainwindow = parent;
 
 	{
 		QString s = "Blame : %1";
@@ -30,6 +40,8 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 			rows = item.line_number;
 		}
 	}
+	int n = m->list.size();
+	if (rows < n) rows = n;
 
 	QStringList cols = {
 		"Commit",
@@ -48,18 +60,38 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 
 	int row = 0;
 	for (BlameItem const &blame: m->list) {
-		QTableWidgetItem *item;
+		QString id;
+		if (Git::isValidID(blame.commit_id)) {
+			id = blame.commit_id.mid(0, 8);
+		}
+
 		int col = 0;
-		QString id = blame.commit_id.mid(0, 8);
-		item = new QTableWidgetItem(id);
-		ui->tableWidget->setItem(row, col++, item);
-		item = new QTableWidgetItem(misc::makeDateTimeString(blame.time));
-		ui->tableWidget->setItem(row, col++, item);
-		item = new QTableWidgetItem(QString::number(blame.line_number));
+
+		auto NewItem = [](QString const &text){
+			return new QTableWidgetItem(text);
+		};
+
+		auto SetItem = [&](QTableWidgetItem *item){
+			ui->tableWidget->setItem(row, col, item);
+			col++;
+		};
+
+		QTableWidgetItem *item;
+
+		item = NewItem(id);
+		item->setData(CommidIdRole, blame.commit_id);
+		SetItem(item);
+
+		item = NewItem(misc::makeDateTimeString(blame.time));
+		SetItem(item);
+
+		item = NewItem(QString::number(blame.line_number));
 		item->setTextAlignment(Qt::AlignRight);
-		ui->tableWidget->setItem(row, col++, item);
-		item = new QTableWidgetItem(blame.text);
-		ui->tableWidget->setItem(row, col++, item);
+		SetItem(item);
+
+		item = NewItem(blame.text);
+		SetItem(item);
+
 		ui->tableWidget->setRowHeight(row, 24);
 		row++;
 	}
@@ -109,7 +141,7 @@ bool parseBlameHeader(const char *ptr, const char *end, BlameItem *out)
 		return false;
 	}
 
-	if (ptr + 18 < end && memcmp(ptr, "Not Committed Yet ", 18)) {
+	if (ptr + 18 < end && memcmp(ptr, "Not Committed Yet ", 18) == 0) {
 		ptr += 18;
 	} else {
 		item.author = Token();
@@ -198,4 +230,23 @@ QList<BlameItem> BlameWindow::parseBlame(const char *begin, const char *end)
 		}
 	}
 	return list;
+}
+
+void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
+{
+	int row = ui->tableWidget->currentRow();
+	if (row >= 0 && row < m->list.size()) {
+		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
+		if (item) {
+			QString id = item->data(CommidIdRole).toString();
+			if (Git::isValidID(id)) {
+				CommitPropertyDialog dlg(this, m->mainwindow, id);
+				dlg.showCheckoutButton(false);
+				dlg.showJumpButton(true);
+				if (dlg.exec() == QDialog::Accepted) {
+					close();
+				}
+			}
+		}
+	}
 }

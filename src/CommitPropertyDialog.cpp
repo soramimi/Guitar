@@ -4,38 +4,79 @@
 
 #include "common/misc.h"
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
-	: QDialog(parent)
-	, ui(new Ui::CommitPropertyDialog)
+struct CommitPropertyDialog::Private {
+	MainWindow *mainwindow;
+	Git::CommitItem commit;
+};
+
+void CommitPropertyDialog::init(MainWindow *mw)
 {
-	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	mainwin_ = mw;
-	commit_ = commit;
+	ui->pushButton_jump->setVisible(false);
 
-	ui->lineEdit_description->setText(commit->message);
-	ui->lineEdit_commit_id->setText(commit->commit_id);
-	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
-	ui->lineEdit_author->setText(commit->author);
-	ui->lineEdit_mail->setText(commit->email);
+	m->mainwindow = mw;
+
+	ui->lineEdit_description->setText(m->commit.message);
+	ui->lineEdit_commit_id->setText(m->commit.commit_id);
+	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
+	ui->lineEdit_author->setText(m->commit.author);
+	ui->lineEdit_mail->setText(m->commit.email);
 
 	QString text;
-	for (QString const &id : commit->parent_ids) {
+	for (QString const &id : m->commit.parent_ids) {
 		text += id + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 }
 
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
+	: QDialog(parent)
+	, ui(new Ui::CommitPropertyDialog)
+	, m(new Private)
+{
+	ui->setupUi(this);
+	m->commit = *commit;
+	init(mw);
+}
+
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, const QString &commit_id)
+	: QDialog(parent)
+	, ui(new Ui::CommitPropertyDialog)
+	, m(new Private)
+{
+	ui->setupUi(this);
+
+	mw->queryCommit(commit_id, &m->commit);
+	init(mw);
+}
+
 CommitPropertyDialog::~CommitPropertyDialog()
 {
+	delete m;
 	delete ui;
+}
+
+void CommitPropertyDialog::showCheckoutButton(bool f)
+{
+	ui->pushButton_checkout->setVisible(f);
+}
+
+void CommitPropertyDialog::showJumpButton(bool f)
+{
+	ui->pushButton_jump->setVisible(f);
 }
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwin_->checkout(this, commit_);
+	m->mainwindow->checkout(this, &m->commit);
 	done(QDialog::Rejected);
+}
+
+void CommitPropertyDialog::on_pushButton_jump_clicked()
+{
+	m->mainwindow->jumpToCommit(m->commit.commit_id);
+	done(QDialog::Accepted);
 }

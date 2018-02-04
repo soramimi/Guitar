@@ -1,4 +1,5 @@
 #include "BlameWindow.h"
+#include "Git.h"
 #include "MainWindow.h"
 #include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
@@ -344,17 +345,6 @@ void MainWindow::startTimers()
 	m->interval_10ms_timer.setInterval(10);
 	m->interval_10ms_timer.start();
 
-	// interval 250ms
-
-//	connect(&m->interval_250ms_timer, &QTimer::timeout, [&](){
-////		checkGitCommand();
-////		checkFileCommand();
-//	});
-//	m->interval_250ms_timer.setInterval(1000);
-//	m->interval_250ms_timer.start();
-
-	//
-
 	startTimer(10);
 }
 
@@ -367,6 +357,8 @@ void MainWindow::setCurrentLogRow(int row)
 {
 	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
 		ui->tableWidget_log->setCurrentCell(row, 2);
+		ui->tableWidget_log->setFocus();
+		updateStatusBarText();
 	}
 }
 
@@ -648,6 +640,13 @@ GitPtr MainWindow::git(QString const &dir) const
 GitPtr MainWindow::git()
 {
 	return git(currentWorkingCopyDir());
+}
+
+bool MainWindow::queryCommit(QString const &id, Git::CommitItem *out)
+{
+	*out = Git::CommitItem();
+	GitPtr g = git();
+	return g->queryCommit(id, out);
 }
 
 void MainWindow::setLogEnabled(GitPtr g, bool f)
@@ -1998,6 +1997,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QAction *a_delete = menu.addAction(tr("Delete"));
 	QAction *a_untrack = menu.addAction(tr("Untrack"));
 	QAction *a_history = menu.addAction(tr("History"));
+	QAction *a_blame = menu.addAction(tr("Blame"));
 	QAction *a_properties = addMenuActionProperty(&menu);
 
 	QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
@@ -2024,6 +2024,8 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 			}
 		} else if (a == a_history) {
 			execFileHistory(item);
+		} else if (a == a_blame) {
+			blame(item);
 		} else if (a == a_properties) {
 			execFilePropertyDialog(item);
 		}
@@ -2044,6 +2046,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 		QAction *a_delete = menu.addAction(tr("Delete"));
 		QAction *a_untrack = menu.addAction(tr("Untrack"));
 		QAction *a_history = menu.addAction(tr("History"));
+		QAction *a_blame = menu.addAction(tr("Blame"));
 		QAction *a_properties = addMenuActionProperty(&menu);
 		QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
 		QAction *a = menu.exec(pt);
@@ -2093,6 +2096,8 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				}
 			} else if (a == a_history) {
 				execFileHistory(item);
+			} else if (a == a_blame) {
+				blame(item);
 			} else if (a == a_properties) {
 				execFilePropertyDialog(item);
 			}
@@ -2113,6 +2118,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 			QMenu menu;
 			QAction *a_unstage = menu.addAction(tr("Unstage"));
 			QAction *a_history = menu.addAction(tr("History"));
+			QAction *a_blame = menu.addAction(tr("Blame"));
 			QAction *a_properties = addMenuActionProperty(&menu);
 			QPoint pt = ui->listWidget_staged->mapToGlobal(pos) + QPoint(8, -8);
 			QAction *a = menu.exec(pt);
@@ -2123,6 +2129,8 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 					openRepository(false);
 				} else if (a == a_history) {
 					execFileHistory(item);
+				} else if (a == a_blame) {
+					blame(item);
 				} else if (a == a_properties) {
 					execFilePropertyDialog(item);
 				}
@@ -3648,12 +3656,18 @@ void MainWindow::on_action_repo_jump_triggered()
 			}
 		} else if (action == JumpDialog::Action::CommitId) {
 			QString id = dlg.text();
-			id = g->rev_parse(id);
-			if (!id.isEmpty()) {
-				int row = rowFromCommitId(id);
-				setCurrentLogRow(row);
-			}
+			jumpToCommit(id);
 		}
+	}
+}
+
+void MainWindow::jumpToCommit(QString id)
+{
+	GitPtr g = git();
+	id = g->rev_parse(id);
+	if (!id.isEmpty()) {
+		int row = rowFromCommitId(id);
+		setCurrentLogRow(row);
 	}
 }
 
@@ -4050,30 +4064,34 @@ void MainWindow::on_action_reflog_triggered()
 	dlg.exec();
 }
 
-void MainWindow::blame()
+void MainWindow::blame(QListWidgetItem *item)
 {
 	QList<BlameItem> list;
-	QListWidgetItem *item = currentFileItem();
 	QString path = getFilePath(item);
-	GitPtr g = git();
-	QByteArray ba = g->blame(path);
-	if (!ba.isEmpty()) {
-		char const *begin = ba.data();
-		char const *end = begin + ba.size();
-		list = BlameWindow::parseBlame(begin, end);
+	{
+		GitPtr g = git();
+		QByteArray ba = g->blame(path);
+		if (!ba.isEmpty()) {
+			char const *begin = ba.data();
+			char const *end = begin + ba.size();
+			list = BlameWindow::parseBlame(begin, end);
+		}
 	}
-
-	qApp->setOverrideCursor(Qt::WaitCursor);
-	BlameWindow win(this, path, list);
-	qApp->restoreOverrideCursor();
-	win.exec();
+	if (!list.isEmpty()) {
+		qApp->setOverrideCursor(Qt::WaitCursor);
+		BlameWindow win(this, path, list);
+		qApp->restoreOverrideCursor();
+		win.exec();
+	}
 }
 
-
+void MainWindow::blame()
+{
+	blame(currentFileItem());
+}
 
 void MainWindow::on_action_test_triggered()
 {
-	blame();
 }
 
 

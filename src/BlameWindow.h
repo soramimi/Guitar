@@ -4,6 +4,9 @@
 #include <QDateTime>
 #include <QDialog>
 
+class MainWindow;
+class QTableWidgetItem;
+
 
 namespace Ui {
 class BlameWindow;
@@ -24,10 +27,13 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit BlameWindow(QWidget *parent, QString const &filename, QList<BlameItem> const &list);
+	explicit BlameWindow(MainWindow *parent, QString const &filename, QList<BlameItem> const &list);
 	~BlameWindow();
 
 	static QList<BlameItem> parseBlame(const char *begin, const char *end);
+private slots:
+	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
+
 private:
 	Ui::BlameWindow *ui;
 };

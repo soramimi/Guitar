@@ -203,6 +203,7 @@ private:
 	void setNetworkingCommandsEnabled(bool f);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
 	void execSetGlobalUserDialog();
+	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
 protected:
@@ -264,6 +265,8 @@ public:
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
 	void checkout(QWidget *parent, const Git::CommitItem *commit);
 	TextEditorThemePtr themeForTextEditor();
+	bool queryCommit(const QString &id, Git::CommitItem *out);
+	void jumpToCommit(QString id);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

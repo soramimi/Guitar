@@ -15,18 +15,24 @@ class CommitPropertyDialog : public QDialog
 {
 	Q_OBJECT
 private:
-	MainWindow *mainwin_;
-	Git::CommitItem const *commit_;
+	struct Private;
+	Private *m;
 public:
 	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
 	~CommitPropertyDialog();
 
+	void showCheckoutButton(bool f);
+	void showJumpButton(bool f);
 private slots:
 
 	void on_pushButton_checkout_clicked();
 
+	void on_pushButton_jump_clicked();
+
 private:
 	Ui::CommitPropertyDialog *ui;
+	void init(MainWindow *mw);
 };
 
 #endif // COMMITPROPERTYDIALOG_H

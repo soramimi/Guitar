@@ -76,7 +76,7 @@ bool Git::isValidID(const QString &id)
 				return false;
 			}
 		}
-		if (zero == GIT_ID_LENGTH) {
+		if (zero == GIT_ID_LENGTH) { // 全部 0 の時は false を返す
 			return false;
 		}
 		return true; // ok
@@ -626,7 +626,7 @@ Git::CommitItemList Git::log(int maxcount)
 	return log_all(QString(), maxcount);
 }
 
-bool Git::query_commit(QString const &id, CommitItem *out)
+bool Git::queryCommit(QString const &id, CommitItem *out)
 {
 	if (objectType(id) == "commit") {
 		out->commit_id = id;
