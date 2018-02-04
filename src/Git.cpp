@@ -1198,6 +1198,16 @@ void Git::FileStatus::parse(const QString &text)
 	}
 }
 
+QByteArray Git::blame(QString const &path)
+{
+	QString cmd = "blame --abbrev=40 \"%1\"";
+	cmd = cmd.arg(path);
+	if (git(cmd)) {
+		return toQByteArray();
+	}
+	return QByteArray();
+}
+
 // Diff
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, QString const &mode)

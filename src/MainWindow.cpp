@@ -3408,6 +3408,25 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 	execFilePropertyDialog(item);
 }
 
+QListWidgetItem *MainWindow::currentFileItem() const
+{
+	QListWidget *listwidget = nullptr;
+	if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
+		QWidget *w = qApp->focusWidget();
+		if (w == ui->listWidget_unstaged) {
+			listwidget = ui->listWidget_unstaged;
+		} else if (w == ui->listWidget_staged) {
+			listwidget = ui->listWidget_staged;
+		}
+	} else {
+		listwidget = ui->listWidget_files;
+	}
+	if (listwidget) {
+		return listwidget->currentItem();
+	}
+	return nullptr;
+}
+
 QPixmap MainWindow::getTransparentPixmap()
 {
 	if (m->transparent_pixmap.isNull()) {
@@ -4034,17 +4053,19 @@ void MainWindow::on_action_reflog_triggered()
 void MainWindow::blame()
 {
 	QList<BlameItem> list;
-	QFile file("d:/a.txt");
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray ba = file.readAll();
-		if (!ba.isEmpty()) {
-			char const *begin = ba.data();
-			char const *end = begin + ba.size();
-			list = BlameWindow::parseBlame(begin, end);
-		}
+	QListWidgetItem *item = currentFileItem();
+	QString path = getFilePath(item);
+	GitPtr g = git();
+	QByteArray ba = g->blame(path);
+	if (!ba.isEmpty()) {
+		char const *begin = ba.data();
+		char const *end = begin + ba.size();
+		list = BlameWindow::parseBlame(begin, end);
 	}
 
-	BlameWindow win(this, "Test", list);
+	qApp->setOverrideCursor(Qt::WaitCursor);
+	BlameWindow win(this, path, list);
+	qApp->restoreOverrideCursor();
 	win.exec();
 }
 

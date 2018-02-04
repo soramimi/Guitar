@@ -412,6 +412,7 @@ public:
 	typedef QList<ReflogItem> ReflogItemList;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
+	QByteArray blame(const QString &path);
 };
 
 #endif // GIT_H

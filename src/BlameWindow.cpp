@@ -2,9 +2,14 @@
 #include "ui_BlameWindow.h"
 #include "common/misc.h"
 
-BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<BlameItem> &list) :
-	QDialog(parent),
-	ui(new Ui::BlameWindow)
+struct BlameWindow::Private {
+	QList<BlameItem> list;
+};
+
+BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<BlameItem> &list)
+	: QDialog(parent)
+	, ui(new Ui::BlameWindow)
+	, m(new Private)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -17,10 +22,10 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 		setWindowTitle(s);
 	}
 
-	list_ = list;
+	m->list = list;
 
 	int rows = 0;
-	for (BlameItem const &item : list_) {
+	for (BlameItem const &item : m->list) {
 		if (rows < item.line_number) {
 			rows = item.line_number;
 		}
@@ -42,7 +47,7 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 	}
 
 	int row = 0;
-	for (BlameItem const &blame: list_) {
+	for (BlameItem const &blame: m->list) {
 		QTableWidgetItem *item;
 		int col = 0;
 		QString id = blame.commit_id.mid(0, 8);
@@ -65,6 +70,7 @@ BlameWindow::BlameWindow(QWidget *parent, const QString &filename, const QList<B
 
 BlameWindow::~BlameWindow()
 {
+	delete m;
 	delete ui;
 }
 
