@@ -1,11 +1,13 @@
 #include "MaximizeButton.h"
 #include <QPainter>
 #include <QIcon>
+#include "Theme.h"
+#include "ApplicationGlobal.h"
 
 MaximizeButton::MaximizeButton(QWidget *parent)
 	: QToolButton(parent)
 {
-	pixmap = QPixmap(":/image/maximize.png");
+	pixmap = global->theme->resource_maximize_png();
 }
 
 void MaximizeButton::paintEvent(QPaintEvent * /*event*/)

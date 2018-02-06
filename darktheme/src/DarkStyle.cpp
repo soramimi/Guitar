@@ -2,7 +2,10 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QDebug>
+#include <QDialogButtonBox>
 #include <QDockWidget>
+#include <QInputDialog>
+#include <QMessageBox>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
 #include <QTableWidget>
@@ -743,6 +746,26 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		if (legacy_windows_.drawPrimitive(pe, option, p, widget)) {
 			return;
 		}
+	}
+	if (pe == QStyle::PE_Widget) { // bg for messagebox
+		const QDialogButtonBox *buttonBox = 0;
+
+		if (qobject_cast<const QMessageBox *> (widget))
+			buttonBox = widget->findChild<const QDialogButtonBox *>(QLatin1String("qt_msgbox_buttonbox"));
+#ifndef QT_NO_INPUTDIALOG
+		else if (qobject_cast<const QInputDialog *> (widget))
+			buttonBox = widget->findChild<const QDialogButtonBox *>(QLatin1String("qt_inputdlg_buttonbox"));
+#endif // QT_NO_INPUTDIALOG
+
+		if (buttonBox) {
+			int y = buttonBox->geometry().top();
+			QRect r(option->rect.x(), y, option->rect.width(), 1);
+			p->fillRect(r, option->palette.color(QPalette::Light));
+			r.translate(0, -1);
+			p->fillRect(r, option->palette.color(QPalette::Dark));
+		}
+
+		return;
 	}
 //	qDebug() << pe;
 	QProxyStyle::drawPrimitive(pe, option, p, widget);

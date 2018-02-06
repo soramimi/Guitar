@@ -61,6 +61,11 @@ QPixmap StandardTheme::resource_clear_png()
 	return QPixmap(":/image/clear.png");
 }
 
+QPixmap StandardTheme::resource_maximize_png()
+{
+	return QPixmap(":/image/maximize.png");
+}
+
 ThemePtr createStandardTheme()
 {
 	AbstractTheme *p = new StandardTheme;
@@ -97,19 +102,34 @@ QImage DarkTheme::graphColorMap()
 	return image;
 }
 
-QPixmap DarkTheme::resource_clear_png()
+static QImage loadInvertedImage(QString const &path)
 {
-	QImage img(":/image/clear.png"); // clear.pngは黒画像なので、α値だけ維持して白に変換する
+	QImage img(path);
 	int w = img.width();
 	int h = img.height();
 	for (int y = 0; y < h; y++) {
 		QRgb *p = (QRgb *)img.scanLine(y);
 		for (int x = 0; x < w; x++) {
+			int r = qRed(*p);
+			int g = qGreen(*p);
+			int b = qBlue(*p);
 			int a = qAlpha(*p);
-			*p = qRgba(255, 255, 255, a);
+			*p = qRgba(255 - r, 255 - g, 255 - b, a);
 			p++;
 		}
 	}
+	return img;
+}
+
+QPixmap DarkTheme::resource_clear_png()
+{
+	QImage img = loadInvertedImage(":/image/clear.png");
+	return QPixmap::fromImage(img);
+}
+
+QPixmap DarkTheme::resource_maximize_png()
+{
+	QImage img = loadInvertedImage(":/image/maximize.png");
 	return QPixmap::fromImage(img);
 }
 

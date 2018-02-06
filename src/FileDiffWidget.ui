@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>398</width>
-    <height>195</height>
+    <width>520</width>
+    <height>298</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,30 +48,18 @@
        <property name="spacing">
         <number>0</number>
        </property>
-       <item row="0" column="0">
-        <widget class="FileDiffSliderWidget" name="widget_diff_slider" native="true">
-         <property name="minimumSize">
-          <size>
-           <width>20</width>
-           <height>0</height>
-          </size>
+       <item row="1" column="1" colspan="2">
+        <widget class="QScrollBar" name="horizontalScrollBar">
+         <property name="maximum">
+          <number>0</number>
          </property>
-         <property name="maximumSize">
-          <size>
-           <width>20</width>
-           <height>16777215</height>
-          </size>
+         <property name="pageStep">
+          <number>0</number>
          </property>
-         <property name="focusPolicy">
-          <enum>Qt::StrongFocus</enum>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="FileViewWidget" name="widget_diff_left" native="true"/>
-       </item>
-       <item row="0" column="2">
-        <widget class="FileViewWidget" name="widget_diff_right" native="true"/>
        </item>
        <item row="0" column="3">
         <widget class="QScrollBar" name="verticalScrollBar">
@@ -83,19 +71,6 @@
          </property>
          <property name="orientation">
           <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QScrollBar" name="horizontalScrollBar">
-         <property name="maximum">
-          <number>0</number>
-         </property>
-         <property name="pageStep">
-          <number>0</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -119,15 +94,36 @@
          <property name="text">
           <string/>
          </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/image/maximize.png</normaloff>:/image/maximize.png</iconset>
-         </property>
          <property name="iconSize">
           <size>
            <width>15</width>
            <height>15</height>
           </size>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="FileViewWidget" name="widget_diff_right" native="true"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="FileViewWidget" name="widget_diff_left" native="true"/>
+       </item>
+       <item row="0" column="0">
+        <widget class="FileDiffSliderWidget" name="widget_diff_slider" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>20</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::StrongFocus</enum>
          </property>
         </widget>
        </item>
@@ -156,8 +152,6 @@
    <header>MaximizeButton.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
