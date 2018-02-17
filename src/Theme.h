@@ -26,6 +26,7 @@ public:
 
 	virtual QPixmap resource_clear_png() = 0;
 	virtual QPixmap resource_maximize_png() = 0;
+	virtual QPixmap resource_menu_png() = 0;
 };
 
 typedef std::shared_ptr<AbstractTheme> ThemePtr;
@@ -37,6 +38,7 @@ public:
 	QImage graphColorMap();
 	QPixmap resource_clear_png();
 	QPixmap resource_maximize_png();
+	QPixmap resource_menu_png();
 };
 ThemePtr createStandardTheme();
 
@@ -49,6 +51,7 @@ public:
 	QImage graphColorMap();
 	QPixmap resource_clear_png();
 	QPixmap resource_maximize_png();
+	QPixmap resource_menu_png();
 };
 ThemePtr createDarkTheme();
 

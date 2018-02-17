@@ -13,7 +13,9 @@
 #include <QBuffer>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QPainter>
+#include <QTextCodec>
 
 enum {
 	DiffIndexRole = Qt::UserRole,
@@ -637,3 +639,38 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	onUpdateSliderBar();
 }
 
+
+void FileDiffWidget::on_toolButton_menu_clicked()
+{
+	QMenu menu;
+	QAction *a_utf8 = menu.addAction("UTF-8");
+	QAction *a_sjis = menu.addAction("Shift-JIS/CP932");
+	QAction *a_eucjp = menu.addAction("EUC-JP");
+	QAction *a_iso2022jp = menu.addAction("ISO2022JP");
+	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
+	if (a) {
+		auto SetTextCodec = [&](char const *name){
+			QTextCodec *codec = name ? QTextCodec::codecForName(name) : nullptr;
+			ui->widget_diff_left->setTextCodec(codec);
+			ui->widget_diff_right->setTextCodec(codec);
+		};
+		if (a == a_utf8) {
+			SetTextCodec(nullptr);
+			return;
+		}
+		if (a == a_sjis) {
+			SetTextCodec("Shift_JIS");
+			return;
+		}
+		if (a == a_eucjp) {
+			SetTextCodec("EUC-JP");
+			ui->widget_diff_left->setTextCodec(QTextCodec::codecForName("EUC-JP"));
+			ui->widget_diff_right->setTextCodec(QTextCodec::codecForName("EUC-JP"));
+			return;
+		}
+		if (a == a_iso2022jp) {
+			SetTextCodec("ISO-2022-JP");
+			return;
+		}
+	}
+}

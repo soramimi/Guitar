@@ -154,6 +154,8 @@ private slots:
 //	void setBinaryMode();
 	void scrollTo(int value);
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
+	void on_toolButton_menu_clicked();
+
 signals:
 	void moveNextItem();
 	void movePreviousItem();

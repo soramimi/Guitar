@@ -35,5 +35,6 @@
         <file>darktheme/vsb/vsb_slider.png</file>
         <file>darktheme/vsb/vsb_sub_line.png</file>
         <file>darktheme/graphcolor.png</file>
+        <file>image/menu.png</file>
     </qresource>
 </RCC>

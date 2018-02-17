@@ -1,15 +1,15 @@
-#include "MaximizeButton.h"
+#include "MenuButton.h"
 #include <QPainter>
 #include "Theme.h"
 #include "ApplicationGlobal.h"
 
-MaximizeButton::MaximizeButton(QWidget *parent)
+MenuButton::MenuButton(QWidget *parent)
 	: QToolButton(parent)
 {
-	pixmap = global->theme->resource_maximize_png();
+	pixmap = global->theme->resource_menu_png();
 }
 
-void MaximizeButton::paintEvent(QPaintEvent * /*event*/)
+void MenuButton::paintEvent(QPaintEvent *event)
 {
 	QPainter pr(this);
 	int w = pixmap.width();

@@ -49,6 +49,8 @@ public:
 	explicit FileViewWidget(QWidget *parent = 0);
 	~FileViewWidget();
 
+	void setTextCodec(QTextCodec *codec);
+
 	void setViewType(FileViewType type);
 
 	void setImage(QString mimetype, const QByteArray &ba, QString const &object_id, const QString &path);

@@ -18,6 +18,8 @@ ApplicationGlobal *global = 0;
 
 int main(int argc, char *argv[])
 {
+	putenv("UNICODEMAP_JP=cp932");
+
 	ApplicationGlobal g;
 	global = &g;
 
