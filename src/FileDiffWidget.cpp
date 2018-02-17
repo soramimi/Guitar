@@ -265,7 +265,8 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 				TextDiffLine l(*it);
 				if (m->text_codec) {
 					if (!l.text.isEmpty()) {
-						l.text = m->text_codec->fromUnicode(QString::fromUtf8(l.text.data(), l.text.size()));
+						QString s = QString::fromUtf8(l.text.data(), l.text.size());
+						l.text = m->text_codec->fromUnicode(s);
 					}
 				}
 				left_lines->push_back(l);
@@ -274,7 +275,8 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 				TextDiffLine l(*it);
 				if (m->text_codec) {
 					if (!l.text.isEmpty()) {
-						l.text = m->text_codec->fromUnicode(QString::fromUtf8(l.text.data(), l.text.size()));
+						QString s = QString::fromUtf8(l.text.data(), l.text.size());
+						l.text = m->text_codec->fromUnicode(s);
 					}
 				}
 				right_lines->push_back(l);
@@ -639,6 +641,7 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
 	BigDiffWindow win(m->mainwindow);
 	win.setWindowState(Qt::WindowMaximized);
+//	win.setTextCodec(m->text_codec);
 	win.init(m->mainwindow, m->init_param_);
 	win.exec();
 }
@@ -685,26 +688,34 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	onUpdateSliderBar();
 }
 
-void FileDiffWidget::setTextCodec(char const *name)
+void FileDiffWidget::setTextCodec(QTextCodec *codec)
 {
-	QTextCodec *codec = name ? QTextCodec::codecForName(name) : nullptr;
+//	if (!codec) {
+//		codec = QTextCodec::codecForName("UTF-8");
+//	}
 	m->text_codec = codec;
 	ui->widget_diff_left->setTextCodec(codec);
 	ui->widget_diff_right->setTextCodec(codec);
-	m->mainwindow->updateDiffView();
+	emit textcodecChanged();
+}
+
+void FileDiffWidget::setTextCodec(char const *name)
+{
+	QTextCodec *codec = name ? QTextCodec::codecForName(name) : nullptr;
+	setTextCodec(codec);
 }
 
 void FileDiffWidget::on_toolButton_menu_clicked()
 {
 	QMenu menu;
 	QAction *a_utf8 = menu.addAction("UTF-8");
-	QAction *a_sjis = menu.addAction("Shift-JIS/CP932");
+	QAction *a_sjis = menu.addAction("SJIS (CP932)");
 	QAction *a_eucjp = menu.addAction("EUC-JP");
-	QAction *a_iso2022jp = menu.addAction("ISO-2022-JP");
+	QAction *a_iso2022jp = menu.addAction("JIS (ISO-2022-JP)");
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_utf8) {
-			setTextCodec(nullptr);
+			setTextCodec((char const *)nullptr);
 			return;
 		}
 		if (a == a_sjis) {

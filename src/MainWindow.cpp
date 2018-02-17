@@ -283,6 +283,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->update_files_list_counter = 0;
 
+	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
+
 	startTimers();
 }
 
