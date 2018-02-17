@@ -104,11 +104,11 @@ public:
 		}
 		Diff(const QString &id, const QString &path, const QString &mode)
 		{
-			makeForSingleFile(this, id, path, mode);
+			makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
 
 		}
 	private:
-		void makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, const QString &mode);
+		void makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, const QString &mode);
 	};
 
 	struct CommitItem {
@@ -333,6 +333,7 @@ public:
 	int getProcessExitCode() const;
 
 	QString diff(QString const &old_id, QString const &new_id);
+	QString diff_file(const QString &old_path, const QString &new_path);
 
 	struct DiffRaw {
 		struct AB {
@@ -414,5 +415,7 @@ public:
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	QByteArray blame(const QString &path);
 };
+
+void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
 
 #endif // GIT_H

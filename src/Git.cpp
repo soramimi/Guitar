@@ -345,14 +345,18 @@ void Git::delete_tag(const QString &name, bool remote)
 
 QString Git::diff(QString const &old_id, QString const &new_id)
 {
-#if 1
 	QString cmd = "diff --full-index -a %1 %2";
 	cmd = cmd.arg(old_id).arg(new_id);
 	git(cmd);
 	return resultText();
-#else
-	return diff_(old_id, new_id);
-#endif
+}
+
+QString Git::diff_file(QString const &old_path, QString const &new_path)
+{
+	QString cmd = "diff --full-index -a -- %1 %2";
+	cmd = cmd.arg(old_path).arg(new_path);
+	git(cmd);
+	return resultText();
 }
 
 QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
@@ -1210,15 +1214,61 @@ QByteArray Git::blame(QString const &path)
 
 // Diff
 
-void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id, const QString &path, QString const &mode)
+void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, QString const &mode)
 {
-	QString zeros(GIT_ID_LENGTH, '0');
 	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-	diff->index = QString("index %1..%2 %3").arg(zeros).arg(id).arg(0);
-	diff->blob.a_id = zeros;
-	diff->blob.b_id = id;
+	diff->index = QString("index %1..%2 %3").arg(id_a).arg(id_b).arg(0);
+	diff->blob.a_id = id_a;
+	diff->blob.b_id = id_b;
 	diff->path = path;
 	diff->mode = mode;
 	diff->type = Git::Diff::Type::Create;
+}
+
+//
+
+void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
+{
+	std::vector<std::string> lines;
+	{
+		char const *begin = s.c_str();
+		char const *end = begin + s.size();
+		misc::splitLines(begin, end, &lines, false);
+	}
+
+
+	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
+	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
+	out->path = info->path;
+	out->blob = info->blob;
+
+	bool atat = false;
+	for (std::string const &line : lines) {
+		int c = line[0] & 0xff;
+		if (c == '@') {
+			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
+				out->hunks.push_back(Git::Hunk());
+				out->hunks.back().at = line;
+				atat = true;
+			}
+		} else {
+			if (atat && c == '\\') { // e.g. \ No newline at end of file...
+				// ignore this line
+			} else {
+				if (atat) {
+					if (c == ' ' || c == '-' || c == '+') {
+						// nop
+					} else {
+						atat = false;
+					}
+				}
+				if (atat) {
+					if (!out->hunks.isEmpty()) {
+						out->hunks.back().lines.push_back(line);
+					}
+				}
+			}
+		}
+	}
 }
 

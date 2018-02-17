@@ -145,6 +145,7 @@ private:
 	bool saveBlobAs(const QString &id, const QString &dstpath);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString path, std::function<void(const QString &)> callback);
 	void updateDiffView(QListWidgetItem *item);
+	void updateDiffView();
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
 	void addTag();

@@ -98,7 +98,7 @@ QString GitDiff::prependPathPrefix(QString const &path)
 	return PATH_PREFIX + path;
 }
 
-QString GitDiff::diffFile(GitPtr g, QString const &a_id, QString const &b_id)
+QString GitDiff::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
 {
 	QString path_prefix = PATH_PREFIX;
 	if (b_id.startsWith(path_prefix)) {
@@ -109,16 +109,19 @@ QString GitDiff::diffFile(GitPtr g, QString const &a_id, QString const &b_id)
 	}
 }
 
+QString GitDiff::diffFiles(GitPtr g, QString const &a_path, QString const &b_path)
+{
+	return g->diff_file(a_path, b_path);
+}
+
 void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 {
-//	QStringList lines = misc::splitLines(s);
 	std::vector<std::string> lines;
 	{
 		char const *begin = s.c_str();
 		char const *end = begin + s.size();
 		misc::splitLines(begin, end, &lines, false);
 	}
-
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
