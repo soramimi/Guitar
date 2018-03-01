@@ -3,6 +3,10 @@
 
 #include "ImageViewWidget.h"
 
+// used from FileViewWidget.h
+
+// ImageViewWidgetクラスは、他のアプリで再利用する想定の設計。
+// MyImageViewWidgetクラスは、Guitar専用にカスタマイズを行っている。
 
 class MyImageViewWidget : public ImageViewWidget {
 private:

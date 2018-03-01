@@ -7,6 +7,7 @@
 #include "main.h"
 
 #include <QFileIconProvider>
+#include <QMenu>
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -252,4 +253,23 @@ void CommitExploreWindow::on_verticalScrollBar_valueChanged(int)
 void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int)
 {
 	ui->widget_fileview->refrectScrollBar();
+}
+
+void CommitExploreWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
+{
+	QListWidgetItem *current = ui->listWidget->currentItem();
+	if (!current) return;
+	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
+	if (type == GitTreeItem::BLOB) {
+		QMenu menu;
+		QAction *a_history = menu.addAction("History");
+		QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
+		if (a) {
+			if (a == a_history) {
+				QString path = current->data(FilePathRole).toString();
+				m->mainwindow->execFileHistory(path);
+				return;
+			}
+		}
+	}
 }

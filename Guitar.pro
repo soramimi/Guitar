@@ -63,17 +63,6 @@ QMAKE_EXTRA_TARGETS += prepare
 PRE_TARGETDEPS += prepare
 
 
-# libgit2
-
-#INCLUDEPATH += $$PWD/../libgit2/include
-
-#win32:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_libgit2/debug/libgit2.lib
-#win32:CONFIG(release, debug|release):LIBS += $$PWD/../_build_libgit2/release/libgit2.lib
-
-#unix:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
-#unix:CONFIG(release, debug|release):LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a
-
-
 # zlib
 
 win32:MSVC {
@@ -190,7 +179,7 @@ SOURCES += \
 	src/texteditor/TextEditorWidget.cpp \
 	src/texteditor/unicode.cpp \
 	src/texteditor/UnicodeWidth.cpp \
-	MyImageViewWidget.cpp \
+	src/MyImageViewWidget.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/ReflogWindow.cpp \
 	src/LegacyWindowsStyleTreeControl.cpp \
@@ -284,7 +273,7 @@ HEADERS  += \
 	src/texteditor/TextEditorWidget.h \
 	src/texteditor/unicode.h \
 	src/texteditor/UnicodeWidth.h \
-	MyImageViewWidget.h \
+	src/MyImageViewWidget.h \
 	src/SetGlobalUserDialog.h \
 	src/ReflogWindow.h \
 	src/LegacyWindowsStyleTreeControl.h \

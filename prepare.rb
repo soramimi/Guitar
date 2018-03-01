@@ -46,7 +46,7 @@ BEGIN
         BLOCK "041103a4"
         BEGIN
             VALUE "CompanyName", "S.Fuchita"
-            VALUE "FileDescription", "The GUI Git Client"
+            VALUE "FileDescription", "The Git GUI Client"
             VALUE "FileVersion", "#{$version_a}, #{$version_b}, #{$version_c}, #{$version_d}"
             VALUE "InternalName",    "#{$product_name}.exe"
             VALUE "LegalCopyright", "Copyright (C) #{$copyright_year} S.Fuchita (@soramimi_jp)"

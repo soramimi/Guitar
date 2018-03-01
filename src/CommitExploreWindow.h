@@ -36,6 +36,7 @@ private slots:
 	void on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 	void on_verticalScrollBar_valueChanged(int);
 	void on_horizontalScrollBar_valueChanged(int);
+	void on_listWidget_customContextMenuRequested(const QPoint &pos);
 };
 
 #endif // COMMITEXPLOREWINDOW_H
