@@ -88,7 +88,7 @@
 <pre>C:\develop&gt;git clone git@github.com:soramimi/Guitar.git
 </pre>
 <p>クローンしたフォルダに 3個のプロジェクトファイル（*.pro）があるのを確認しておきます。</p>
-<p><img src="openproject.png" width="786" height="434"></p>
+<p><img src="openproject.png" width="800" height="512"></p>
 <h2>依存ライブラリ</h2>
 <h3>zlib</h3>
 <p>圧縮されたファイルの伸張処理でzlibを使用します。Qtアプリからzlibを利用するためには以下のような方法があります。</p>
@@ -164,7 +164,7 @@ $ sudo make install</pre>
 </ul>
 <h2>プロジェクトを開く</h2>
 <p>Qt Creator の「ようこそ」の画面で、右上の[プロジェクトを開く]ボタンを押します。</p>
-<p>クローンした場所に、 Guitar.pro があります。 libgit2.pro というのは後述しますが、とりあえず関係ありません。</p>
+<p>クローンした場所に、 Guitar.pro があります。 </p>
 <h3>Guitarのビルド</h3>
 <p>Guitar.pro を開き、 Qt Creator の左にある三角ボタンを押すか、Ctrl+R（実行）を押すと、ビルドと実行が行われます。ビルドだけして、実行したくない場合は、Ctrl+Bを押します。デバッガ上で実行するには、デバッグ開始ボタンかF5キーを押します。</p>
 <h4>Windowsの場合</h4>
@@ -174,74 +174,6 @@ $ sudo make install</pre>
 <h4>追加したソースがコンパイルされないとき</h4>
 <p>version.c を生成した場合もそうですが、リポジトリから pull したら新しいファイルが追加されていたときや、新しいクラス（のファイル）を追加したとき、そのままビルドすると、増えたファイルがコンパイルされずに、いろいろ見つからないというエラーが出ることがあります。そんなときは、Qt Creator の [ビルド]→[qmake の実行] を行ってください。追加したファイルがビルドされない問題は、大抵これで解消されます。</p>
 <p><img src="qmake.png" alt="qmakeの実行" width="365" height="152" class="border"></p>
-<h2>libgit2対応</h2>
-<p>このライブラリは必須ではありません。</p>
-<p>アプリケーションとリンクして利用するための <a href="https://libgit2.github.com/">libgit2</a> というライブラリがあります。これを使ってみようと挑戦しましたが、libgit2でfetch/push/pullなどの通信を行う処理を実装する方法が分からず、挫折しました。一応プロジェクトファイル libgit2.pro は作ってありますので、ライブラリをビルドするだけなら可能です。</p>
-<p>作業用フォルダ（例 C:\develop\）に移動します。</p>
-<pre>C:\&gt;cd C:\develop</pre>
-<p>クローンします。</p>
-<pre>C:\develop&gt;git clone https://github.com/libgit2/libgit2.git</pre>
-<p>Qt Creator から libgit2.pro を開きます。</p>
-<p>ビルドディレクトリは、Windowsの場合 C:\develop\_build_libgit2 とします。</p>
-<p><img src="libgit2build.png" width="363" height="181" class="border"></p>
-<p>Ctrl+Bを押してビルドします。必要に応じて [デバッグ] と [リリース] を両方ビルドします。</p>
-<p>この時点で、下記のようなフォルダ構成になっているものと想定します。</p>
-<h4>Windowsの場合</h4>
-<ul class="foldertree">
-  <li class="folder">C:\develop
-    <ul>
-      <li class="folder">_build_Guitar
-        <ul>
-          <li class="folder">debug</li>
-          <li class="folder">release</li>
-        </ul>
-      </li>
-      <li class="folder">_build_libgit2
-        <ul>
-          <li class="folder">debug</li>
-          <li class="folder">release </li>
-        </ul>
-      </li>
-      <li class="folder">_build_zlib
-        <ul>
-          <li class="folder">debug</li>
-          <li class="folder">release </li>
-        </ul>
-      </li>
-      <li class="folder">Guitar</li>
-      <li class="folder">libgit2</li>
-      <li class="folder">zlib</li>
-    </ul>
-  </li>
-</ul>
-<h4>Linuxの場合</h4>
-<ul class="foldertree">
-  <li class="folder">/home/&lt;<em>username&gt;</em>/develop
-    <ul>
-      <li class="folder">_build_Guitar_Debug</li>
-      <li class="folder">_build_Guitar_Release</li>
-      <li class="folder">_build_libgit2_Debug</li>
-      <li class="folder">_build_libgit2_Release</li>
-      <li class="folder">_build_zlib_Debug</li>
-      <li class="folder">_build_zlib_Release</li>
-      <li class="folder">Guitar</li>
-      <li class="folder">libgit2</li>
-      <li class="folder">zlib</li>
-    </ul>
-  </li>
-</ul>
-<p>Guitar.pro を開くと、libgit2をリンクする設定がコメントアウトされています。</p>
-<pre>#INCLUDEPATH += $$PWD/../libgit2/include
-
-#win32:Debug:LIBS += $$PWD/../_build_libgit2/debug/libgit2.lib
-#win32:Release:LIBS += $$PWD/../_build_libgit2/release/libgit2.lib
-
-#unix:debug:LIBS += $$PWD/../_build_libgit2_Debug/liblibgit2.a
-#unix:release:LIBS += $$PWD/../_build_libgit2_Release/liblibgit2.a </pre>
-<p>これらのコメントを外して、[ビルド]→[qmake の実行]を行います。</p>
-<p>Git.h を開き、USE_LIBGIT2 の定義を 1 にすると、libgit2対応に関するソースがコンパイルされるようになります。</p>
-<p><img src="uselibgit2.png" width="870" height="523"></p>
-<p>途中まで作って挫折したソースは LibGit2.cpp/hです。これらを Git.cpp の中から呼び出していますが、条件コンパイルで無効にしています。</p>
 <!-- #EndEditable -->
 <div id="footer"> <span id="copyright"></span> </div>
 </body>

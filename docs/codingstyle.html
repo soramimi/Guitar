@@ -28,7 +28,6 @@ pre.bad {
 <!-- #BeginEditable "content" -->
 <h1>コーディングスタイル</h1>
 <h2>命名規則</h2>
-<p>命名規則は厳密には決めない。適当に運用する。ここに書いてあることは必ずしも守らなくても良いが、リファクタリングで整理することがある。</p>
 <ul>
   <li>ファイル名
     <ul>
@@ -90,8 +89,8 @@ pre.bad {
     </ul>
   </li>
 </ul>
-<h3>接頭語・接尾語・ハンガリアン記法</h3>
-<p>接頭語やハンガリアン記法は採用しない。</p>
+<h3>接頭辞・接尾辞・ハンガリアン記法</h3>
+<p>接頭辞やハンガリアン記法は採用しない。</p>
 <h4>クラス名</h4>
 <ul>
   <li>先頭に特定の文字を付ける様なクラス名にはしない。</li>
@@ -109,26 +108,29 @@ private:
 };
 Hoge g_hoge;</pre>
 <ul>
-  <li>一時的なメンバ変数（将来のリファクタリング対象）</li>
+  <li>アンダースコアで終わる。（とりあえず不問。将来のリファクタリング対象）</li>
 </ul>
 <pre>class Hoge {
 private:
 	int value_;
 };</pre>
-<h4>接頭語</h4>
+<h4>接頭辞</h4>
 <ul>
   <li>禁止はしないが積極的には使わない。</li>
   <li>状況次第、あった方がいいと判断すれば使う。</li>
 </ul>
 <pre>bool fCondition;
 char *pSomething;</pre>
-<h4>接尾語</h4>
+<h4>接尾辞</h4>
 <ul>
   <li>状況次第、あった方がいいと判断すれば使う。</li>
 </ul>
 <pre>char *dataptr;
 std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
 <h4>絶対厳禁</h4>
+<ul>
+  <li>Windows由来のシステムハンガリアン記法は厳禁</li>
+</ul>
 <pre class="bad">char *lpszText;</pre>
 <h2>インデントと空白と改行</h2>
 <ul>
@@ -334,7 +336,7 @@ std::shared_ptr&lt;Hoge&gt; hoge_ptr;</pre>
 <h4>良い</h4>
 <pre class="good">	if (c &gt;= '0' &amp;&amp; c &lt;= '9') {
 	}</pre>
-<h4>できるだけ避ける</h4>
+<h4>原則避ける</h4>
 <pre class="bad">	if ('0' &lt;= c &amp;&amp; c &lt;= '9') {
 	}</pre>
 <h2>関数</h2>
@@ -464,7 +466,7 @@ Hoge::~Hoge()
 {
 	delete m;
 }</pre>
-<p>クラスメンバ関数内で、pimplイディオム以外の用途で m という変数を使用することを禁止する。</p>
+<p>クラスメンバ関数内で、pimplイディオム以外の用途で m という変数を使用することを避ける。</p>
 <h2>ライブラリ</h2>
 <ul>
   <li>cin、cout、cerr、および、&lt;iostream&gt;系のクラスは使用禁止。</li>
