@@ -3,18 +3,12 @@
 
 #include <QToolButton>
 
-class MaximizeButton : public QToolButton
-{
+class MaximizeButton : public QToolButton {
 	Q_OBJECT
 private:
 	QPixmap pixmap;
 public:
 	explicit MaximizeButton(QWidget *parent = 0);
-
-signals:
-
-public slots:
-
 protected:
 	void paintEvent(QPaintEvent *event);
 };

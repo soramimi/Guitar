@@ -1,4 +1,5 @@
 #include "TextEditorWidget.h"
+#include "TextEditorWidget.h"
 
 #include <QDebug>
 #include <QFile>
@@ -9,6 +10,7 @@
 #include <QApplication>
 #include <functional>
 #include <QMenu>
+#include <QTextCodec>
 
 #include "common/misc.h"
 #include "InputMethodPopup.h"
@@ -37,7 +39,6 @@ struct TextEditorWidget::Private {
 	bool is_focus_frame_visible = false;
 
 	std::function<void(void)> custom_context_menu_requested;
-
 };
 
 TextEditorWidget::TextEditorWidget(QWidget *parent)
@@ -77,10 +78,6 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 #endif
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
-//	connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenuRequested(QPoint)));
-//	setCustomContextMenuRequestedHandler([&](){
-//		defaultCustomContextMenuRequested();
-//	});
 
 	setRenderingMode(DecoratedMode);
 
@@ -91,13 +88,6 @@ TextEditorWidget::~TextEditorWidget()
 {
 	delete m;
 }
-
-//void TextEditorWidget::setCustomContextMenuRequestedHandler(std::function<void(void)> fn)
-//{
-//	m->custom_context_menu_requested = fn;
-//}
-
-
 
 void TextEditorWidget::setTheme(TextEditorThemePtr theme)
 {

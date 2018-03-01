@@ -13,7 +13,9 @@
 #include <QBuffer>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QPainter>
+#include <QTextCodec>
 
 enum {
 	DiffIndexRole = Qt::UserRole,
@@ -32,6 +34,8 @@ struct FileDiffWidget::Private {
 
 	int term_cursor_row = 0;
 	int term_cursor_col = 0;
+
+	QTextCodec *text_codec = nullptr;
 };
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -257,8 +261,26 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 			};
 			ComplementNewLine(&tmp_left);
 			ComplementNewLine(&tmp_right);
-			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) left_lines->push_back(*it);
-			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) right_lines->push_back(*it);
+			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) {
+				TextDiffLine l(*it);
+				if (m->text_codec) {
+					if (!l.text.isEmpty()) {
+						QString s = QString::fromUtf8(l.text.data(), l.text.size());
+						l.text = m->text_codec->fromUnicode(s);
+					}
+				}
+				left_lines->push_back(l);
+			}
+			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) {
+				TextDiffLine l(*it);
+				if (m->text_codec) {
+					if (!l.text.isEmpty()) {
+						QString s = QString::fromUtf8(l.text.data(), l.text.size());
+						l.text = m->text_codec->fromUnicode(s);
+					}
+				}
+				right_lines->push_back(l);
+			}
 			linenum = hi.pos;
 			h--;
 		}
@@ -458,6 +480,34 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 	}
 }
 
+QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
+{
+	if (m->text_codec) {
+		Git::Object obj_a = m->mainwindow->cat_file_(g, a_id);
+		Git::Object obj_b = m->mainwindow->cat_file_(g, b_id);
+		if (obj_b.type == Git::Object::Type::UNKNOWN) {
+			obj_b.type = Git::Object::Type::BLOB;
+		}
+		if (obj_a.type == Git::Object::Type::BLOB && obj_b.type == Git::Object::Type::BLOB) {
+			QString path_a = m->mainwindow->newTempFilePath();
+			QString path_b = m->mainwindow->newTempFilePath();
+			QFile file_a(path_a);
+			QFile file_b(path_b);
+			if (file_a.open(QFile::WriteOnly) && file_b.open(QFile::WriteOnly)) {
+				file_a.write(m->text_codec->toUnicode(obj_a.content).toUtf8());
+				file_b.write(m->text_codec->toUnicode(obj_b.content).toUtf8());
+				file_a.close();
+				file_b.close();
+				QString s = g->diff_file(path_a, path_b);
+				file_a.remove();
+				file_b.remove();
+				return s;
+			}
+		}
+	}
+	return GitDiff::diffObjects(g, a_id, b_id);
+}
+
 bool FileDiffWidget::isValidID_(QString const &id)
 {
 	if (id.startsWith(PATH_PREFIX)) {
@@ -486,7 +536,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	{
 		Git::Diff diff;
 		if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
-			std::string text = GitDiff::diffFile(g, info.blob.a_id, info.blob.b_id).toStdString();
+			std::string text = diffObjects(g, info.blob.a_id, info.blob.b_id).toStdString();
 			GitDiff::parseDiff(text, &info, &diff);
 		} else {
 			diff = info;
@@ -517,7 +567,7 @@ void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
 	diff.blob.a_id = id_left;
 	diff.blob.b_id = id_right;
 	diff.mode = "0";
-	std::string text = GitDiff::diffFile(g, diff.blob.a_id, diff.blob.b_id).toStdString();
+	std::string text = diffObjects(g, diff.blob.a_id, diff.blob.b_id).toStdString();
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = cat_file(g, diff.blob.a_id);
@@ -591,6 +641,7 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
 	BigDiffWindow win(m->mainwindow);
 	win.setWindowState(Qt::WindowMaximized);
+//	win.setTextCodec(m->text_codec);
 	win.init(m->mainwindow, m->init_param_);
 	win.exec();
 }
@@ -637,3 +688,47 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	onUpdateSliderBar();
 }
 
+void FileDiffWidget::setTextCodec(QTextCodec *codec)
+{
+//	if (!codec) {
+//		codec = QTextCodec::codecForName("UTF-8");
+//	}
+	m->text_codec = codec;
+	ui->widget_diff_left->setTextCodec(codec);
+	ui->widget_diff_right->setTextCodec(codec);
+	emit textcodecChanged();
+}
+
+void FileDiffWidget::setTextCodec(char const *name)
+{
+	QTextCodec *codec = name ? QTextCodec::codecForName(name) : nullptr;
+	setTextCodec(codec);
+}
+
+void FileDiffWidget::on_toolButton_menu_clicked()
+{
+	QMenu menu;
+	QAction *a_utf8 = menu.addAction("UTF-8");
+	QAction *a_sjis = menu.addAction("SJIS (CP932)");
+	QAction *a_eucjp = menu.addAction("EUC-JP");
+	QAction *a_iso2022jp = menu.addAction("JIS (ISO-2022-JP)");
+	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
+	if (a) {
+		if (a == a_utf8) {
+			setTextCodec((char const *)nullptr);
+			return;
+		}
+		if (a == a_sjis) {
+			setTextCodec("Shift_JIS");
+			return;
+		}
+		if (a == a_eucjp) {
+			setTextCodec("EUC-JP");
+			return;
+		}
+		if (a == a_iso2022jp) {
+			setTextCodec("ISO-2022-JP");
+			return;
+		}
+	}
+}

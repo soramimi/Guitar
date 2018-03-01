@@ -198,7 +198,8 @@ SOURCES += \
 	darktheme/src/NinePatch.cpp \
 	src/Theme.cpp \
 	src/ApplicationGlobal.cpp \
-    src/BlameWindow.cpp
+    src/BlameWindow.cpp \
+    src/MenuButton.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -291,7 +292,8 @@ HEADERS  += \
 	darktheme/src/NinePatch.h \
 	src/Theme.h \
 	src/ApplicationGlobal.h \
-    src/BlameWindow.h
+    src/BlameWindow.h \
+    src/MenuButton.h
 
 FORMS    += \
 	src/MainWindow.ui \

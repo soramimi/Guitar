@@ -120,6 +120,7 @@ private:
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void setOriginalLines_(const QByteArray &ba);
+	QString diffObjects(GitPtr g, const QString &a_id, const QString &b_id);
 protected:
 	void resizeEvent(QResizeEvent *);
 	void keyPressEvent(QKeyEvent *event);
@@ -143,6 +144,8 @@ public:
 	void setFocusAcceptable(bool f);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
+	void setTextCodec(QTextCodec *codec);
+	void setTextCodec(const char *name);
 private slots:
 	void onVerticalScrollValueChanged(int);
 	void onHorizontalScrollValueChanged(int);
@@ -154,10 +157,13 @@ private slots:
 //	void setBinaryMode();
 	void scrollTo(int value);
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
+	void on_toolButton_menu_clicked();
+
 signals:
 	void moveNextItem();
 	void movePreviousItem();
 	void escPressed();
+	void textcodecChanged();
 };
 
 #endif // FILEDIFFWIDGET_H

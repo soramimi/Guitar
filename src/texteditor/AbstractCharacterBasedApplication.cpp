@@ -6,6 +6,7 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QFile>
+#include <QTextCodec>
 #include "unicode.h"
 
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
@@ -42,6 +43,7 @@ struct AbstractCharacterBasedApplication::Private {
 	int valid_line_index = 0;
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
+	QTextCodec *text_codec = nullptr;
 };
 
 AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
@@ -52,6 +54,14 @@ AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
 AbstractCharacterBasedApplication::~AbstractCharacterBasedApplication()
 {
 	delete m;
+}
+
+void AbstractCharacterBasedApplication::setTextCodec(QTextCodec *codec)
+{
+	m->text_codec = codec;
+	clearParsedLine();
+	invalidateArea();
+	makeBuffer();
 }
 
 void AbstractCharacterBasedApplication::setAutoLayout(bool f)
@@ -145,9 +155,16 @@ int AbstractCharacterBasedApplication::charWidth(uint32_t c)
 
 QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Line const &line, int tab_span, int anchor_a, int anchor_b) const
 {
+	QByteArray ba;
+	if (m->text_codec) {
+		ba = m->text_codec->toUnicode(line.text).toUtf8();
+	} else {
+		ba = line.text;
+	}
+
 	std::vector<ushort> vec;
-	vec.reserve(line.text.size() + 100);
-	size_t len = line.text.size();
+	vec.reserve(ba.size() + 100);
+	size_t len = ba.size();
 	QList<FormattedLine> res;
 
 	int col = 0;
@@ -176,7 +193,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	};
 
 	if (len > 0) {
-		utf8 u8(line.text.data(), len);
+		utf8 u8(ba.data(), len);
 		u8.to_utf32([&](uint32_t c){
 			if (c == '\t') {
 				do {

@@ -127,6 +127,31 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="MenuButton" name="toolButton_menu">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16</width>
+           <height>16</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
@@ -150,6 +175,11 @@
    <class>MaximizeButton</class>
    <extends>QToolButton</extends>
    <header>MaximizeButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MenuButton</class>
+   <extends>QToolButton</extends>
+   <header>MenuButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

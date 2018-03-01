@@ -66,6 +66,11 @@ QPixmap StandardTheme::resource_maximize_png()
 	return QPixmap(":/image/maximize.png");
 }
 
+QPixmap StandardTheme::resource_menu_png()
+{
+	return QPixmap(":/image/menu.png");
+}
+
 ThemePtr createStandardTheme()
 {
 	AbstractTheme *p = new StandardTheme;
@@ -130,6 +135,12 @@ QPixmap DarkTheme::resource_clear_png()
 QPixmap DarkTheme::resource_maximize_png()
 {
 	QImage img = loadInvertedImage(":/image/maximize.png");
+	return QPixmap::fromImage(img);
+}
+
+QPixmap DarkTheme::resource_menu_png()
+{
+	QImage img = loadInvertedImage(":/image/menu.png");
 	return QPixmap::fromImage(img);
 }
 

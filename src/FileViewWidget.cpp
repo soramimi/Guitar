@@ -41,13 +41,17 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_page_text->setToggleSelectionAnchorEnabled(false);
 	ui_page_text->setFocusFrameVisible(true);
 
-//	setContextMenuPolicy(Qt::DefaultContextMenu);
-
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
 }
 
 FileViewWidget::~FileViewWidget()
 {
+}
+
+void FileViewWidget::setTextCodec(QTextCodec *codec)
+{
+	ui_page_text->setTextCodec(codec);
+//	ui_page_text->update();
 }
 
 void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)

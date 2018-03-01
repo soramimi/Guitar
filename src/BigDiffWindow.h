@@ -20,8 +20,10 @@ public:
 	~BigDiffWindow();
 
 	void init(MainWindow *mw, const FileDiffWidget::InitParam_ &param);
+	void setTextCodec(QTextCodec *codec);
 private:
 	Ui::BigDiffWindow *ui;
+	void updateDiffView();
 };
 
 #endif // BIGDIFFWINDOW_H

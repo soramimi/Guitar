@@ -353,6 +353,7 @@ public:
 	void write(uint32_t c, bool by_keyboard);
 	void write(const char *ptr, int len, bool by_keyboard);
 	void write(QKeyEvent *e);
+	void setTextCodec(QTextCodec *codec);
 protected:
 	void write_(const char *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);

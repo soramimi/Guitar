@@ -207,6 +207,8 @@ struct MainWindow::Private {
 	PtyProcess pty_process;
 	PtyCondition pty_condition = PtyCondition::None;
 	RepositoryItem temp_repo;
+
+	QListWidgetItem *last_selected_file_item = nullptr;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -280,6 +282,8 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&m->avatar_loader, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
 
 	m->update_files_list_counter = 0;
+
+	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
 
 	startTimers();
 }
@@ -2642,6 +2646,8 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 {
 	clearDiffView();
 
+	m->last_selected_file_item = item;
+
 	if (!item) return;
 
 	int idiff = indexOfDiff(item);
@@ -2655,6 +2661,11 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 			ui->widget_diff_view->updateDiffView(it->second, uncommited);
 		}
 	}
+}
+
+void MainWindow::updateDiffView()
+{
+	updateDiffView(m->last_selected_file_item);
 }
 
 void MainWindow::updateUnstagedFileCurrentItem()
