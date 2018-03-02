@@ -23,16 +23,18 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 
 	QTreeWidgetItem *item;
 
-	auto AddPage = [&](QString const &name, QWidget *page){
+	auto AddPage = [&](QWidget *page){
+		QString name = page->windowTitle();
 		item = new QTreeWidgetItem();
 		item->setText(0, name);
 		item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
 		ui->treeWidget->addTopLevelItem(item);
 	};
-	AddPage(tr("Behavior"), ui->page_behavior);
-	AddPage(tr("Directories"), ui->page_directories);
-	AddPage(tr("Network"), ui->page_network);
-	AddPage(tr("Example"), ui->page_example);
+	AddPage(ui->page_general);
+	AddPage(ui->page_behavior);
+	AddPage(ui->page_directories);
+	AddPage(ui->page_network);
+	AddPage(ui->page_example);
 
 	ui->treeWidget->setCurrentItem(ui->treeWidget->topLevelItem(page_number));
 }
@@ -55,6 +57,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	};
 
 	s.beginGroup("Global");
+	BOOL_VALUE("SaveWindowPosition", as->remember_and_restore_window_position);
 	STRING_VALUE("DefaultWorkingDirectory", as->default_working_dir);
 	STRING_VALUE("GitCommand", as->git_command);
 	STRING_VALUE("FileCommand", as->file_command);
@@ -77,6 +80,7 @@ void SettingsDialog::saveSettings()
 	MySettings s;
 
 	s.beginGroup("Global");
+	s.setValue("SaveWindowPosition", set.remember_and_restore_window_position);
 	s.setValue("DefaultWorkingDirectory", set.default_working_dir);
 	s.setValue("GitCommand", set.git_command);
 	s.setValue("FileCommand", set.file_command);

@@ -6,7 +6,7 @@
 #include <QWidget>
 
 namespace Ui {
-class SettingGeneralForm;
+class SettingBehaviorForm;
 }
 
 class SettingBehaviorForm : public AbstractSettingForm
@@ -18,7 +18,7 @@ public:
 	~SettingBehaviorForm();
 
 private:
-	Ui::SettingGeneralForm *ui;
+	Ui::SettingBehaviorForm *ui;
 
 	// AbstractSettingForm interface
 public:

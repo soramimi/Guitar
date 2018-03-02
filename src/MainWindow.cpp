@@ -285,6 +285,21 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
 
+	if (!global->start_with_shift_key && m->appsettings.remember_and_restore_window_position) {
+		Qt::WindowStates state = windowState();
+		MySettings settings;
+
+		settings.beginGroup("MainWindow");
+		bool maximized = settings.value("Maximized").toBool();
+		restoreGeometry(settings.value("Geometry").toByteArray());
+//		ui->splitter->restoreState(settings.value("SplitterState").toByteArray());
+		settings.endGroup();
+		if (maximized) {
+			state |= Qt::WindowMaximized;
+			setWindowState(state);
+		}
+	}
+
 	startTimers();
 }
 
@@ -450,6 +465,29 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		}
 	}
 	return false;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+	if (m->appsettings.remember_and_restore_window_position) {
+		setWindowOpacity(0);
+		Qt::WindowStates state = windowState();
+		bool maximized = (state & Qt::WindowMaximized) != 0;
+		if (maximized) {
+			state &= ~Qt::WindowMaximized;
+			setWindowState(state);
+		}
+		{
+			MySettings settings;
+
+			settings.beginGroup("MainWindow");
+			settings.setValue("Maximized", maximized);
+			settings.setValue("Geometry", saveGeometry());
+			//		settings.setValue("SplitterState", ui->splitter->saveState());
+			settings.endGroup();
+		}
+	}
+	QMainWindow::closeEvent(event);
 }
 
 void MainWindow::setStatusBarText(QString const &text)

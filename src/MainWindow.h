@@ -367,6 +367,10 @@ private slots:
 
 signals:
 	void onEscapeKeyPressed();
+
+	// QWidget interface
+protected:
+	void closeEvent(QCloseEvent *event);
 };
 
 #endif // MAINWINDOW_H

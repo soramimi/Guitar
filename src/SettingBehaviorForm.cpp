@@ -3,9 +3,10 @@
 
 SettingBehaviorForm::SettingBehaviorForm(QWidget *parent) :
 	AbstractSettingForm(parent),
-	ui(new Ui::SettingGeneralForm)
+	ui(new Ui::SettingBehaviorForm)
 {
 	ui->setupUi(this);
+	setWindowTitle(tr("Behavior"));
 }
 
 SettingBehaviorForm::~SettingBehaviorForm()
@@ -16,8 +17,8 @@ SettingBehaviorForm::~SettingBehaviorForm()
 void SettingBehaviorForm::exchange(bool save)
 {
 	if (save) {
-		settings()->automatically_fetch_when_opening_the_repository = ui->checkBox->isChecked();
+		settings()->automatically_fetch_when_opening_the_repository = ui->checkBox_auto_fetch->isChecked();
 	} else {
-		ui->checkBox->setChecked(settings()->automatically_fetch_when_opening_the_repository);
+		ui->checkBox_auto_fetch->setChecked(settings()->automatically_fetch_when_opening_the_repository);
 	}
 }

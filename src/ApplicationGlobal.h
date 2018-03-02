@@ -6,6 +6,7 @@
 #include "Theme.h"
 
 struct ApplicationGlobal {
+	bool start_with_shift_key = false;
 	QString application_data_dir;
 	QColor panel_bg_color;
 	ThemePtr theme;

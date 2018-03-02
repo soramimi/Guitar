@@ -7,6 +7,7 @@ SettingNetworkForm::SettingNetworkForm(QWidget *parent) :
 	ui(new Ui::SettingNetworkForm)
 {
 	ui->setupUi(this);
+	setWindowTitle(tr("Network"));
 }
 
 SettingNetworkForm::~SettingNetworkForm()

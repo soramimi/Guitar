@@ -10,6 +10,7 @@ SettingDirectoriesForm::SettingDirectoriesForm(QWidget *parent) :
 	ui(new Ui::SettingDirectoriesForm)
 {
 	ui->setupUi(this);
+	setWindowTitle(tr("Directories"));
 }
 
 SettingDirectoriesForm::~SettingDirectoriesForm()

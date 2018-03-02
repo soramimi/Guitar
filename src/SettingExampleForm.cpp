@@ -6,6 +6,7 @@ SettingExampleForm::SettingExampleForm(QWidget *parent) :
 	ui(new Ui::SettingExampleForm)
 {
 	ui->setupUi(this);
+	setWindowTitle(tr("Example"));
 }
 
 SettingExampleForm::~SettingExampleForm()

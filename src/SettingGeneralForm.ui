@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SettingBehaviorForm</class>
- <widget class="QWidget" name="SettingBehaviorForm">
+ <class>SettingGeneralForm</class>
+ <widget class="QWidget" name="SettingGeneralForm">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -27,9 +27,9 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QCheckBox" name="checkBox_auto_fetch">
+    <widget class="QCheckBox" name="checkBox_save_window_pos">
      <property name="text">
-      <string>Automatically fetch when opening the repository.</string>
+      <string>Remember and restore window position.</string>
      </property>
     </widget>
    </item>
