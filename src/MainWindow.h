@@ -109,8 +109,6 @@ private:
 	void updateCurrentFilesList();
 	void showFileList(FilesListType files_list_type);
 
-	QString selectGitCommand(bool save);
-	QString selectFileCommand(bool save);
 	bool checkGitCommand();
 	bool checkFileCommand();
 	void checkUser();
@@ -201,7 +199,7 @@ private:
 	void stopPtyProcess();
 	void setNetworkingCommandsEnabled(bool f);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
-	void execSetGlobalUserDialog();
+	bool execSetGlobalUserDialog();
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
@@ -212,6 +210,9 @@ protected:
 	bool event(QEvent *event);
 	bool eventFilter(QObject *watched, QEvent *event);
 public:
+
+	QString selectGitCommand(bool save);
+	QString selectFileCommand(bool save);
 
 	int limitLogCount() const;
 
@@ -259,7 +260,7 @@ public:
 	void updateCommitTableLater();
 	bool isAvatarEnabled() const;
 	WebContext *getWebContextPtr();
-	void shown();
+	bool shown();
 	void execFileHistory(QListWidgetItem *item);
 	void execFileHistory(const QString &path);
 	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
@@ -268,6 +269,8 @@ public:
 	TextEditorThemePtr themeForTextEditor();
 	bool queryCommit(const QString &id, Git::CommitItem *out);
 	void jumpToCommit(QString id);
+	WebContext *webContext();
+	bool execWelcomeWizardDialog();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

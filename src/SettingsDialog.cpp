@@ -48,53 +48,59 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 {
 	MySettings s;
 
-	auto STRING_VALUE = [&](QString const &name, QString &v){
-		v = s.value(name, v).toString();
+	auto STRING_VALUE = [&](QString const &name, QString *v){
+		*v = s.value(name, *v).toString();
 	};
 
-	auto BOOL_VALUE = [&](QString const &name, bool &v){
-		v = s.value(name, v).toBool();
+	auto BOOL_VALUE = [&](QString const &name, bool *v){
+		*v = s.value(name, *v).toBool();
 	};
 
 	s.beginGroup("Global");
-	BOOL_VALUE("SaveWindowPosition", as->remember_and_restore_window_position);
-	STRING_VALUE("DefaultWorkingDirectory", as->default_working_dir);
-	STRING_VALUE("GitCommand", as->git_command);
-	STRING_VALUE("FileCommand", as->file_command);
+	BOOL_VALUE("SaveWindowPosition", &as->remember_and_restore_window_position);
+	STRING_VALUE("DefaultWorkingDirectory", &as->default_working_dir);
+	STRING_VALUE("GitCommand", &as->git_command);
+	STRING_VALUE("FileCommand", &as->file_command);
 	s.endGroup();
 
 	s.beginGroup("Network");
-	STRING_VALUE("ProxyType", as->proxy_type);
-	STRING_VALUE("ProxyServer", as->proxy_server);
+	STRING_VALUE("ProxyType", &as->proxy_type);
+	STRING_VALUE("ProxyServer", &as->proxy_server);
 	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
-	BOOL_VALUE("GetCommitterIcon", as->get_committer_icon);
+	BOOL_VALUE("GetCommitterIcon", &as->get_committer_icon);
 	s.endGroup();
 
 	s.beginGroup("Behavior");
-	BOOL_VALUE("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
+	BOOL_VALUE("AutomaticFetch", &as->automatically_fetch_when_opening_the_repository);
 	s.endGroup();
 }
 
-void SettingsDialog::saveSettings()
+void SettingsDialog::saveSettings(ApplicationSettings const *as)
 {
 	MySettings s;
 
 	s.beginGroup("Global");
-	s.setValue("SaveWindowPosition", set.remember_and_restore_window_position);
-	s.setValue("DefaultWorkingDirectory", set.default_working_dir);
-	s.setValue("GitCommand", set.git_command);
-	s.setValue("FileCommand", set.file_command);
+	s.setValue("SaveWindowPosition", as->remember_and_restore_window_position);
+	s.setValue("DefaultWorkingDirectory", as->default_working_dir);
+	s.setValue("GitCommand", as->git_command);
+	s.setValue("FileCommand", as->file_command);
 	s.endGroup();
 
 	s.beginGroup("Network");
-	s.setValue("ProxyType", set.proxy_type);
-	s.setValue("ProxyServer", misc::makeProxyServerURL(set.proxy_server));
-	s.setValue("GetCommitterIcon", set.get_committer_icon);
+	s.setValue("ProxyType", as->proxy_type);
+	s.setValue("ProxyServer", misc::makeProxyServerURL(as->proxy_server));
+	s.setValue("GetCommitterIcon", as->get_committer_icon);
 	s.endGroup();
 
 	s.beginGroup("Behavior");
-	s.setValue("AutomaticFetch", set.automatically_fetch_when_opening_the_repository);
+	s.setValue("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
 	s.endGroup();
+
+}
+
+void SettingsDialog::saveSettings()
+{
+	saveSettings(&set);
 }
 
 void SettingsDialog::exchange(bool save)

@@ -20,7 +20,7 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
-	flags |= Qt::WindowContextHelpButtonHint;
+	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
 	command_name = cmdname;

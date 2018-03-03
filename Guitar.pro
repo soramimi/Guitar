@@ -189,7 +189,8 @@ SOURCES += \
 	src/ApplicationGlobal.cpp \
     src/BlameWindow.cpp \
     src/MenuButton.cpp \
-    src/SettingGeneralForm.cpp
+    src/SettingGeneralForm.cpp \
+    src/WelcomeWizardDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -284,7 +285,8 @@ HEADERS  += \
 	src/ApplicationGlobal.h \
     src/BlameWindow.h \
     src/MenuButton.h \
-    src/SettingGeneralForm.h
+    src/SettingGeneralForm.h \
+    src/WelcomeWizardDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -321,7 +323,8 @@ FORMS    += \
     src/SetGlobalUserDialog.ui \
     src/ReflogWindow.ui \
     src/BlameWindow.ui \
-    src/SettingGeneralForm.ui
+    src/SettingGeneralForm.ui \
+    src/WelcomeWizardDialog.ui
 
 RESOURCES += \
     resources.qrc

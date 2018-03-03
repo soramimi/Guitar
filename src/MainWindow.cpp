@@ -3,6 +3,7 @@
 #include "MainWindow.h"
 #include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
+#include "WelcomeWizardDialog.h"
 #include "ui_MainWindow.h"
 
 #ifdef Q_OS_WIN
@@ -316,12 +317,83 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::shown()
+namespace {
+bool isExecutable(QString cmd)
 {
+	QFileInfo info(cmd);
+	return info.isExecutable();
+}
+}
+
+bool MainWindow::checkGitCommand()
+{
+	while (1) {
+		if (isExecutable(m->gcx.git_command)) {
+			return true;
+		}
+		if (selectGitCommand(true).isEmpty()) {
+			close();
+			return false;
+		}
+	}
+}
+
+bool MainWindow::checkFileCommand()
+{
+	while (1) {
+		if (isExecutable(m->file_command)) {
+			return true;
+		}
+		if (selectFileCommand(true).isEmpty()) {
+			close();
+			return false;
+		}
+	}
+}
+
+bool MainWindow::execWelcomeWizardDialog()
+{
+	WelcomeWizardDialog dlg(this);
+	dlg.set_git_command_path(m->appsettings.git_command);
+	dlg.set_file_command_path(m->appsettings.file_command);
+	dlg.set_default_working_folder(m->appsettings.default_working_dir);
+	if (isExecutable(m->appsettings.git_command)) {
+		m->gcx.git_command = m->appsettings.git_command;
+		Git g(m->gcx, QString());
+		Git::User user = g.getUser(Git::GetUserGlobal);
+		dlg.set_user_name(user.name);
+		dlg.set_user_email(user.email);
+	}
+	if (dlg.exec() == QDialog::Accepted) {
+		m->appsettings.git_command  = m->gcx.git_command = dlg.git_command_path();
+		m->appsettings.file_command = m->file_command    = dlg.file_command_path();
+		m->appsettings.default_working_dir = dlg.default_working_folder();
+		SettingsDialog::saveSettings(&m->appsettings);
+
+		if (isExecutable(m->appsettings.git_command)) {
+			GitPtr g = git();
+			Git::User user;
+			user.name = dlg.user_name();
+			user.email = dlg.user_email();
+			g->setUser(user, true);
+		}
+
+		return true;
+	}
+	return false;
+}
+
+bool MainWindow::shown()
+{
+	while (!isExecutable(m->appsettings.git_command) || !isExecutable(m->appsettings.file_command)) {
+		if (!execWelcomeWizardDialog()) {
+			return false;
+		}
+	}
 	setGitCommand(m->appsettings.git_command, false);
 	setFileCommand(m->appsettings.file_command, false);
-	if (!checkGitCommand()) return;
-	if (!checkFileCommand()) return;
+
+	logGitVersion();
 
 	writeLog(AboutDialog::appVersion() + '\n');
 
@@ -336,6 +408,13 @@ void MainWindow::shown()
 	setUnknownRepositoryInfo();
 
 	checkUser();
+
+	return true;
+}
+
+WebContext *MainWindow::webContext()
+{
+	return &m->webcx;
 }
 
 void MainWindow::startTimers()
@@ -2750,8 +2829,6 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 		s.endGroup();
 	}
 	m->gcx.git_command = path;
-
-	logGitVersion();
 }
 
 void MainWindow::setFileCommand(QString const &path, bool save)
@@ -2851,14 +2928,6 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 #define FILE_COMMAND "file"
 #endif
 
-namespace {
-bool isExecutable(QString cmd)
-{
-	QFileInfo info(cmd);
-	return info.isExecutable();
-}
-}
-
 QString MainWindow::selectGitCommand(bool save)
 {
 	char const *exe = GIT_COMMAND;
@@ -2931,38 +3000,17 @@ QString MainWindow::selectFileCommand(bool save)
 	return selectCommand_("File", exe, list, path, fn);
 }
 
-bool MainWindow::checkGitCommand()
-{
-	while (1) {
-		if (isExecutable(m->gcx.git_command)) {
-			return true;
-		}
-		if (selectGitCommand(true).isEmpty()) {
-			close();
-			return false;
-		}
-	}
-}
-
-bool MainWindow::checkFileCommand()
-{
-	while (1) {
-		if (isExecutable(m->file_command)) {
-			return true;
-		}
-		if (selectFileCommand(true).isEmpty()) {
-			close();
-			return false;
-		}
-	}
-}
-
 void MainWindow::checkUser()
 {
 	Git g(m->gcx, QString());
-	Git::User user = g.getUser(Git::GetUserGlobal);
-	if (user.name.isEmpty() || user.email.isEmpty()) {
-		execSetGlobalUserDialog();
+	while (1) {
+		Git::User user = g.getUser(Git::GetUserGlobal);
+		if (!user.name.isEmpty() && !user.email.isEmpty()) {
+			return; // ok
+		}
+		if (!execSetGlobalUserDialog()) {
+			return;
+		}
 	}
 }
 
@@ -3566,7 +3614,7 @@ bool MainWindow::testRemoteRepositoryValidity(QString const &url)
 	return ok;
 }
 
-void MainWindow::execSetGlobalUserDialog()
+bool MainWindow::execSetGlobalUserDialog()
 {
 	SetGlobalUserDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -3574,7 +3622,9 @@ void MainWindow::execSetGlobalUserDialog()
 		Git::User user = dlg.user();
 		g->setUser(user, true);
 		updateWindowTitle(g);
+		return true;
 	}
+	return false;
 }
 
 void MainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
@@ -4141,6 +4191,7 @@ void MainWindow::blame()
 
 void MainWindow::on_action_test_triggered()
 {
+	execWelcomeWizardDialog();
 }
 
 
