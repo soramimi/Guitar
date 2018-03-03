@@ -35,6 +35,8 @@ private slots:
 
 	void onMoveNextItem();
 	void onMovePreviousItem();
+	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
+
 private:
 	Ui::FileHistoryWindow *ui;
 

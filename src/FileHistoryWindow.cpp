@@ -7,6 +7,7 @@
 #include "FileDiffWidget.h"
 #include "MyTableWidgetDelegate.h"
 
+#include <QMenu>
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <QThread>
@@ -227,3 +228,23 @@ void FileHistoryWindow::onMovePreviousItem()
 	}
 }
 
+
+void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
+{
+	Git::CommitItem const *commit = nullptr;
+	int row = ui->tableWidget_log->currentRow();
+	if (row >= 0 && row < m->commit_item_list.size()) {
+		commit = &m->commit_item_list[row];
+	}
+	if (!commit) return;
+
+	QMenu menu;
+	QAction *a_explorer = menu.addAction("Explorer");
+	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
+	if (a) {
+		if (a == a_explorer) {
+			m->mainwindow->execCommitExploreWindow(this, commit);
+			return;
+		}
+	}
+}
