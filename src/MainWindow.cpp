@@ -317,18 +317,10 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-namespace {
-bool isExecutable(QString cmd)
-{
-	QFileInfo info(cmd);
-	return info.isExecutable();
-}
-}
-
 bool MainWindow::checkGitCommand()
 {
 	while (1) {
-		if (isExecutable(m->gcx.git_command)) {
+		if (misc::isExecutable(m->gcx.git_command)) {
 			return true;
 		}
 		if (selectGitCommand(true).isEmpty()) {
@@ -341,7 +333,7 @@ bool MainWindow::checkGitCommand()
 bool MainWindow::checkFileCommand()
 {
 	while (1) {
-		if (isExecutable(m->file_command)) {
+		if (misc::isExecutable(m->file_command)) {
 			return true;
 		}
 		if (selectFileCommand(true).isEmpty()) {
@@ -357,7 +349,7 @@ bool MainWindow::execWelcomeWizardDialog()
 	dlg.set_git_command_path(m->appsettings.git_command);
 	dlg.set_file_command_path(m->appsettings.file_command);
 	dlg.set_default_working_folder(m->appsettings.default_working_dir);
-	if (isExecutable(m->appsettings.git_command)) {
+	if (misc::isExecutable(m->appsettings.git_command)) {
 		m->gcx.git_command = m->appsettings.git_command;
 		Git g(m->gcx, QString());
 		Git::User user = g.getUser(Git::GetUserGlobal);
@@ -370,7 +362,7 @@ bool MainWindow::execWelcomeWizardDialog()
 		m->appsettings.default_working_dir = dlg.default_working_folder();
 		SettingsDialog::saveSettings(&m->appsettings);
 
-		if (isExecutable(m->appsettings.git_command)) {
+		if (misc::isExecutable(m->appsettings.git_command)) {
 			GitPtr g = git();
 			Git::User user;
 			user.name = dlg.user_name();
@@ -385,7 +377,7 @@ bool MainWindow::execWelcomeWizardDialog()
 
 bool MainWindow::shown()
 {
-	while (!isExecutable(m->appsettings.git_command) || !isExecutable(m->appsettings.file_command)) {
+	while (!misc::isExecutable(m->appsettings.git_command) || !misc::isExecutable(m->appsettings.file_command)) {
 		if (!execWelcomeWizardDialog()) {
 			return false;
 		}
