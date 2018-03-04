@@ -2942,9 +2942,9 @@ QString MainWindow::selectGitCommand(bool save)
 				if (s.endsWith(suffix)) {
 					QString t = s.mid(0, s.size() - suffix.size());
 					QString t1 = t + "\\mingw64\\bin\\" GIT_COMMAND;
-					if (isExecutable(t1)) newlist.push_back(t1);
+					if (misc::isExecutable(t1)) newlist.push_back(t1);
 					QString t2 = t + "\\mingw\\bin\\" GIT_COMMAND;
-					if (isExecutable(t2)) newlist.push_back(t2);
+					if (misc::isExecutable(t2)) newlist.push_back(t2);
 				}
 			};
 			DoIt(suffix1);
@@ -2985,8 +2985,8 @@ QString MainWindow::selectFileCommand(bool save)
 	}
 	path1 = misc::normalizePathSeparator(path1);
 	path2 = misc::normalizePathSeparator(path2);
-	if (isExecutable(path1)) list.push_back(path1);
-	if (isExecutable(path2)) list.push_back(path2);
+	if (misc::isExecutable(path1)) list.push_back(path1);
+	if (misc::isExecutable(path2)) list.push_back(path2);
 #endif
 
 	return selectCommand_("File", exe, list, path, fn);
