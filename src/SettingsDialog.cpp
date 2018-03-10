@@ -63,6 +63,10 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	STRING_VALUE("FileCommand", &as->file_command);
 	s.endGroup();
 
+	s.beginGroup("UI");
+	STRING_VALUE("Theme", &as->theme);
+	s.endGroup();
+
 	s.beginGroup("Network");
 	STRING_VALUE("ProxyType", &as->proxy_type);
 	STRING_VALUE("ProxyServer", &as->proxy_server);
@@ -84,6 +88,10 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.setValue("DefaultWorkingDirectory", as->default_working_dir);
 	s.setValue("GitCommand", as->git_command);
 	s.setValue("FileCommand", as->file_command);
+	s.endGroup();
+
+	s.beginGroup("UI");
+	s.setValue("Theme", as->theme);
 	s.endGroup();
 
 	s.beginGroup("Network");

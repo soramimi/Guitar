@@ -18,7 +18,17 @@ void SettingGeneralForm::exchange(bool save)
 {
 	if (save) {
 		settings()->remember_and_restore_window_position = ui->checkBox_save_window_pos->isChecked();
+		if (ui->radioButton_theme_dark->isChecked()) {
+			settings()->theme = "dark";
+		} else {
+			settings()->theme = "standard";
+		}
 	} else {
 		ui->checkBox_save_window_pos->setChecked(settings()->remember_and_restore_window_position);
+		if (settings()->theme.compare("dark", Qt::CaseInsensitive) == 0) {
+			ui->radioButton_theme_dark->click();
+		} else {
+			ui->radioButton_theme_standard->click();
+		}
 	}
 }

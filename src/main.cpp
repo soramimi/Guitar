@@ -23,10 +23,21 @@ int main(int argc, char *argv[])
 	ApplicationGlobal g;
 	global = &g;
 
-	global->theme = createStandardTheme();
-//	global->theme = createDarkTheme();
-
 	QApplication a(argc, argv);
+	a.setOrganizationName(ORGANIZTION_NAME);
+	a.setApplicationName(APPLICATION_NAME);
+
+	{
+		MySettings s;
+		s.beginGroup("UI");
+		QString theme = s.value("Theme").toString();
+		if (theme.compare("dark", Qt::CaseInsensitive) == 0) {
+			global->theme = createDarkTheme();
+		} else {
+			global->theme = createStandardTheme();
+		}
+	}
+
 	QApplication::setStyle(global->theme->newStyle());
 
 	if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
@@ -43,9 +54,6 @@ int main(int argc, char *argv[])
 			f_open_here = true;
 		}
 	}
-
-	a.setOrganizationName(ORGANIZTION_NAME);
-	a.setApplicationName(APPLICATION_NAME);
 
 	global->application_data_dir = makeApplicationDataDir();
 	if (global->application_data_dir.isEmpty()) {

@@ -12,6 +12,7 @@ struct ApplicationSettings {
 	QString default_working_dir;
 	QString proxy_type;
 	QString proxy_server;
+	QString theme;
 	bool get_committer_icon = false;
 	bool remember_and_restore_window_position = false;
 	bool automatically_fetch_when_opening_the_repository = true;
