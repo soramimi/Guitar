@@ -17,6 +17,7 @@ class WelcomeWizardDialog : public QDialog
 private:
 	MainWindow *mainwindow_;
 	AvatarLoader avatar_loader_;
+	QList<QWidget *> pages_;
 public:
 	explicit WelcomeWizardDialog(MainWindow *parent = 0);
 	~WelcomeWizardDialog();
@@ -33,19 +34,18 @@ public:
 	QString git_command_path() const;
 	QString file_command_path() const;
 private slots:
-	void on_pushButton_to_default_working_folder_clicked();
-	void on_pushButton_to_global_user_information_clicked();
-	void on_pushButton_to_helper_tools_clicked();
-	void on_pushButton_to_default_working_folder_2_clicked();
-	void on_pushButton_to_finish_clicked();
-	void on_pushButton_to_helper_tools_2_clicked();
 	void on_stackedWidget_currentChanged(int arg1);
 	void on_pushButton_browse_default_workiing_folder_clicked();
 	void on_pushButton_browse_git_clicked();
 	void on_pushButton_browse_file_clicked();
 	void on_pushButton_get_icon_clicked();
+	void on_pushButton_prev_clicked();
+
+	void on_pushButton_next_clicked();
+
 private:
 	Ui::WelcomeWizardDialog *ui;
+	void setAvatar(const QIcon &icon);
 };
 
 #endif // WELCOMEWIZARDDIALOG_H

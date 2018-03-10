@@ -455,3 +455,9 @@ QPoint misc::contextMenuPos(QWidget *w, QContextMenuEvent *e)
 	}
 	return w->mapToGlobal(QPoint(4, 4));
 }
+
+bool misc::isExecutable(const QString &cmd)
+{
+	QFileInfo info(cmd);
+	return info.isExecutable();
+}

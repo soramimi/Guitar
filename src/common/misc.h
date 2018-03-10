@@ -38,6 +38,7 @@ public:
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);
 	static QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);
+	static bool isExecutable(QString const &cmd);
 };
 
 class OverrideWaitCursor_ {
