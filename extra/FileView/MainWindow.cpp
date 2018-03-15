@@ -7,7 +7,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	ui->widget->bind(this, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar);
+	texteditor_theme_ = TextEditorTheme::Light();
+	ui->widget->bind(this, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, texteditor_theme_);
 }
 
 MainWindow::~MainWindow()
