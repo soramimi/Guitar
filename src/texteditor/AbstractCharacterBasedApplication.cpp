@@ -19,6 +19,7 @@ struct AbstractCharacterBasedApplication::Private {
 	bool is_toggle_selection_anchor_enabled = true;
 	bool is_read_only = false;
 	bool is_terminal_mode = false;
+	bool is_cursor_visible = true;
 	State state = State::Normal;
 	int header_line = 1;
 	int footer_line = 1;
@@ -86,6 +87,16 @@ void AbstractCharacterBasedApplication::showLineNumber(bool show, int left_margi
 {
 	m->show_line_number = show;
 	m->left_margin = left_margin;
+}
+
+void AbstractCharacterBasedApplication::setCursorVisible(bool show)
+{
+	m->is_cursor_visible = show;
+}
+
+bool AbstractCharacterBasedApplication::isCursorVisible()
+{
+	return m->is_cursor_visible;
 }
 
 int AbstractCharacterBasedApplication::leftMargin() const
@@ -1168,6 +1179,11 @@ void AbstractCharacterBasedApplication::writeCR()
 	setCursorCol(0);
 	clearParsedLine();
 	updateVisibility(true, true, true);
+}
+
+void AbstractCharacterBasedApplication::moveCursorOut()
+{
+	setCursorRow(-1);
 }
 
 void AbstractCharacterBasedApplication::moveCursorHome()

@@ -41,6 +41,7 @@ private:
 
 	void paintScreen(QPainter *painter);
 	void drawCursor(QPainter *pr);
+	void drawFocusFrame(QPainter *pr);
 	QRect updateCursorRect(bool auto_scroll);
 	RenderingMode renderingMode() const;
 	QColor defaultForegroundColor();

@@ -415,18 +415,15 @@ void TextEditorWidget::drawCursor(QPainter *pr)
 	x *= latin1Width();
 	y *= lineHeight();
 	int h = lineHeight();
-#if 1
 	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
 	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
 	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
-#else
-	int w = cx()->current_char_span * latin1Width();
-	pr->save();
-	pr->setOpacity(0.25);
-	pr->fillRect(cx()->cursor_rect, theme()->fgCursor());
-	pr->restore();
-	misc::drawBox(pr, x, y, w, h, theme()->fgCursor());
-#endif
+}
+
+void TextEditorWidget::drawFocusFrame(QPainter *pr)
+{
+	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
+	misc::drawFrame(pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
 }
 
 void TextEditorWidget::paintEvent(QPaintEvent *)
@@ -460,18 +457,21 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
+	qDebug() << editor_cx->current_row;
 	int current_y = editor_cx->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
 
 	int linenum_width = leftMargin() * latin1Width();
 
 	if (has_focus) {
-		// current line
-		if (renderingMode() == DecoratedMode) {
-			int y = current_y * lineHeight();
-			pr.fillRect(linenum_width, y + lineHeight() - 1, width() - linenum_width, 1, theme()->fgCursor());
-		}
+		if (isCursorVisible()) {
+			// current line
+			if (renderingMode() == DecoratedMode) {
+				int y = current_y * lineHeight();
+				pr.fillRect(linenum_width, y + lineHeight() - 1, width() - linenum_width, 1, theme()->fgCursor());
+			}
 
-		drawCursor(&pr);
+			drawCursor(&pr);
+		}
 	}
 
 	paintScreen(&pr);
@@ -490,7 +490,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 
 		paintLineNumbers([&](int y, QString text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
-			if (y == current_y) {
+			if (y == current_y && isCursorVisible()) {
 				FillLineNumberBG(y * lineHeight(), lineHeight(), theme()->bgCurrentLineNumber());
 			}
 			pr.setBackground(Qt::transparent);
@@ -522,8 +522,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	}
 
 	if (m->is_focus_frame_visible && has_focus) {
-		misc::drawFrame(&pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
-		misc::drawFrame(&pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
+		drawFocusFrame(&pr);
 	}
 }
 
@@ -692,7 +691,6 @@ void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 			return;
 		}
 	}
-
 }
 
 

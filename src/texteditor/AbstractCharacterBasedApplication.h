@@ -304,6 +304,7 @@ public:
 	virtual void layoutEditor();
 	void scrollUp();
 	void scrollDown();
+	void moveCursorOut();
 	void moveCursorHome();
 	void moveCursorEnd();
 	void moveCursorUp();
@@ -354,6 +355,8 @@ public:
 	void write(const char *ptr, int len, bool by_keyboard);
 	void write(QKeyEvent *e);
 	void setTextCodec(QTextCodec *codec);
+	void setCursorVisible(bool show);
+	bool isCursorVisible();
 protected:
 	void write_(const char *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);

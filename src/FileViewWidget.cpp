@@ -132,10 +132,12 @@ void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw
 	this->source_id = object_id;
 #ifdef APP_GUITAR
 	ui_page_text->setDocument(source, mw, object_id, object_path);
+	scrollToTop();
+	texteditor()->moveCursorOut(); // 現在行を -1 にして、カーソルを非表示にする。
 #else
 	ui_page_text->setDocument(source);
-#endif
 	scrollToTop();
+#endif
 }
 
 void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, const QString &object_id, QString const &object_path)

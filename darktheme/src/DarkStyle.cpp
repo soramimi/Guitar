@@ -712,27 +712,21 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 //		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
 		if (qobject_cast<QTableView const *>(widget)) {
 			if (option->state & State_Selected) {
-#ifdef Q_OS_WIN
-				drawSelectedMenuFrame(option, p, option->rect, widget, true);
-#else
-				if (option->state & State_Selected) {
-					p->save();
-					p->setClipRect(option->rect);
-					QRect r = widget->rect();
-					r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
-					drawSelectedMenuFrame(option, p, r, widget, false);
-					p->restore();
-				}
-#endif
+				p->save();
+				p->setClipRect(option->rect);
+				QRect r = widget->rect();
+				r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
+				drawSelectedMenuFrame(option, p, r, widget, false);
+				p->restore();
 			}
 		} else {
 			int n = 0;
 			if (option->state & State_Selected) {
 				n++;
 			}
-			if (option->state & State_MouseOver) {
-				n++;
-			}
+//			if (option->state & State_MouseOver) {
+//				n++;
+//			}
 			if (n > 0) {
 				drawSelectedMenuFrame(option, p, option->rect, widget, n > 1);
 			}
