@@ -457,7 +457,6 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
-	qDebug() << editor_cx->current_row;
 	int current_y = editor_cx->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
 
 	int linenum_width = leftMargin() * latin1Width();
