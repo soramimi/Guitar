@@ -257,6 +257,7 @@ void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int)
 
 void CommitExploreWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
 {
+	(void)pos;
 	QListWidgetItem *current = ui->listWidget->currentItem();
 	if (!current) return;
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();

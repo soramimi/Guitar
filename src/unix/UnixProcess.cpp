@@ -216,7 +216,8 @@ protected:
 							std::copy(inq.begin(), inq.begin() + l, tmp);
 							inq.erase(inq.begin(), inq.begin() + l);
 							if (fd_in_read != -1) {
-								write(fd_in_read, tmp, l);
+								int r = write(fd_in_read, tmp, l);
+								(void)r;
 							}
 							n -= l;
 						}

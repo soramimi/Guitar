@@ -107,7 +107,8 @@ bool UnixPtyProcess::isRunning() const
 
 void UnixPtyProcess::writeInput(const char *ptr, int len)
 {
-	::write(m->pty_master, ptr, len);
+	int r = write(m->pty_master, ptr, len);
+	(void)r;
 }
 
 int UnixPtyProcess::readOutput(char *ptr, int len)

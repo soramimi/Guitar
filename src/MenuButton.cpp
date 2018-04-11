@@ -9,7 +9,7 @@ MenuButton::MenuButton(QWidget *parent)
 	pixmap = global->theme->resource_menu_png();
 }
 
-void MenuButton::paintEvent(QPaintEvent *event)
+void MenuButton::paintEvent(QPaintEvent *)
 {
 	QPainter pr(this);
 	int w = pixmap.width();

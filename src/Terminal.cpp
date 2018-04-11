@@ -51,7 +51,8 @@ void Terminal::open(QString const &dir)
 
 		QString cmd = "/bin/sh -c \"cd \\\"%1\\\" && %2\" &";
 		cmd = cmd.arg(dir).arg(term);
-		system(cmd.toStdString().c_str());
+		int r = system(cmd.toStdString().c_str());
+		(void)r;
 	}
 }
 

@@ -231,9 +231,10 @@ void FileHistoryWindow::onMovePreviousItem()
 
 void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
+	(void)pos;
 	Git::CommitItem const *commit = nullptr;
 	int row = ui->tableWidget_log->currentRow();
-	if (row >= 0 && row < m->commit_item_list.size()) {
+	if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		commit = &m->commit_item_list[row];
 	}
 	if (!commit) return;
