@@ -115,7 +115,7 @@ typedef std::function<void(bool, QString const &text)> DialogHandler;
 
 class AbstractCharacterBasedApplication {
 public:
-	static const int LEFT_MARGIN = 6;
+	static const int LEFT_MARGIN = 8;
 	static const int RIGHT_MARGIN = 10;
 
 	enum class WriteMode {

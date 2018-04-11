@@ -1599,6 +1599,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 	auto Line = [&](int index)->Document::Line &{
 		return editor_cx->engine->document.lines[index];
 	};
+	int rightpadding = 2;
 	int left_margin = leftMargin();
 	int num = 1;
 	for (int i = 0; i < editor_cx->viewport_height; i++) {
@@ -1636,7 +1637,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 					linenum = line->line_number;
 				}
 				if (linenum > 0 && line->type != Document::Line::Unknown) {
-					sprintf(tmp, "%*u ", left_margin - 1, linenum);
+					sprintf(tmp, "%*u ", left_margin - rightpadding, linenum);
 				}
 			}
 		}

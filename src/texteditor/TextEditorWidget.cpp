@@ -504,7 +504,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 				}
 				if (mark) {
 					pr.setPen(theme()->fgDefault());
-					drawText(&pr, linenum_width - latin1Width(), y * lineHeight(), mark);
+					drawText(&pr, linenum_width - latin1Width() * 3 / 2, y * lineHeight(), mark);
 				}
 			}
 		});
