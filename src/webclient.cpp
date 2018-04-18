@@ -624,8 +624,20 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			send_(m->sock, str.c_str(), str.size());
 			char tmp[1000];
 			int n = recv(m->sock, tmp, sizeof(tmp), 0);
-			(void)n;
-//			printf("%d\n", n);
+			int i;
+			for (i = 0; i < n; i++) {
+				char c = tmp[i];
+				if (c < 0x20) break;
+			}
+			if (i > 0) {
+				std::string s(tmp, i);
+				s = "proxy: " + s + '\n';
+#ifdef _WIN32
+				OutputDebugStringA(s.c_str());
+#else
+				fprintf(stderr, "%s", tmp);
+#endif
+			}
 		}
 
 		m->ssl = SSL_new(sslctx());

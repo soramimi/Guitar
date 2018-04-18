@@ -42,3 +42,23 @@ void SettingNetworkForm::exchange(bool save)
 	}
 }
 
+void SettingNetworkForm::updateProxyServerLineEdit()
+{
+	bool f = ui->radioButton_manual->isChecked();
+	ui->lineEdit_proxy_server->setEnabled(f);
+}
+
+void SettingNetworkForm::on_radioButton_no_proxy_clicked()
+{
+	updateProxyServerLineEdit();
+}
+
+void SettingNetworkForm::on_radioButton_auto_detect_clicked()
+{
+	updateProxyServerLineEdit();
+}
+
+void SettingNetworkForm::on_radioButton_manual_clicked()
+{
+	updateProxyServerLineEdit();
+}

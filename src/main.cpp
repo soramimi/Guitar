@@ -16,6 +16,13 @@
 
 ApplicationGlobal *global = 0;
 
+ApplicationSettings ApplicationSettings::defaultSettings()
+{
+	ApplicationSettings s;
+	s.proxy_server = "http://squid:3128/";
+	return s;
+}
+
 int main(int argc, char *argv[])
 {
 	putenv((char *)"UNICODEMAP_JP=cp932");
@@ -85,3 +92,4 @@ int main(int argc, char *argv[])
 
 	return a.exec();
 }
+

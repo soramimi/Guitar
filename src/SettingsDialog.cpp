@@ -48,34 +48,39 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 {
 	MySettings s;
 
-	auto STRING_VALUE = [&](QString const &name, QString *v){
-		*v = s.value(name, *v).toString();
+	ApplicationSettings def = ApplicationSettings::defaultSettings();
+
+	auto STRING_VALUE_ = [&](QString const &name, QString *v, QString const &def){
+		*v = s.value(name, def).toString();
 	};
 
-	auto BOOL_VALUE = [&](QString const &name, bool *v){
-		*v = s.value(name, *v).toBool();
+	auto BOOL_VALUE_ = [&](QString const &name, bool *v, bool const &def){
+		*v = s.value(name, def).toBool();
 	};
+
+#define STRING_VALUE(NAME, SYMBOL) STRING_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
+#define BOOL_VALUE(NAME, SYMBOL)   BOOL_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 
 	s.beginGroup("Global");
-	BOOL_VALUE("SaveWindowPosition", &as->remember_and_restore_window_position);
-	STRING_VALUE("DefaultWorkingDirectory", &as->default_working_dir);
-	STRING_VALUE("GitCommand", &as->git_command);
-	STRING_VALUE("FileCommand", &as->file_command);
+	BOOL_VALUE("SaveWindowPosition", remember_and_restore_window_position);
+	STRING_VALUE("DefaultWorkingDirectory", default_working_dir);
+	STRING_VALUE("GitCommand", git_command);
+	STRING_VALUE("FileCommand", file_command);
 	s.endGroup();
 
 	s.beginGroup("UI");
-	STRING_VALUE("Theme", &as->theme);
+	STRING_VALUE("Theme", theme);
 	s.endGroup();
 
 	s.beginGroup("Network");
-	STRING_VALUE("ProxyType", &as->proxy_type);
-	STRING_VALUE("ProxyServer", &as->proxy_server);
+	STRING_VALUE("ProxyType", proxy_type);
+	STRING_VALUE("ProxyServer", proxy_server);
 	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
-	BOOL_VALUE("GetCommitterIcon", &as->get_committer_icon);
+	BOOL_VALUE("GetCommitterIcon", get_committer_icon);
 	s.endGroup();
 
 	s.beginGroup("Behavior");
-	BOOL_VALUE("AutomaticFetch", &as->automatically_fetch_when_opening_the_repository);
+	BOOL_VALUE("AutomaticFetch", automatically_fetch_when_opening_the_repository);
 	s.endGroup();
 }
 
