@@ -560,6 +560,14 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
+#ifdef Q_OS_LINUX
+	if (pe == PE_FrameFocusRect) {
+//		QColor color = option->palette.color(QPalette::Light);
+		QColor color(64, 128, 255);
+		drawFrame(p, option->rect, color, color);
+		return;
+	}
+#endif
 	if (pe == PE_IndicatorArrowDown) {
 		//		p->fillRect(option->rect, Qt::red);
 		switch (pe) {
@@ -781,6 +789,133 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 //		return;
 //	}
 #endif
+#ifdef Q_OS_LINUX
+	if (ce == CE_ToolBar) {
+		int x = option->rect.x();
+		int y = option->rect.y();
+		int w = option->rect.width();
+		int h = option->rect.height();
+		QColor color = option->palette.color(QPalette::Window);
+		p->fillRect(x, y + h - 1, w, 1, color);
+		return;
+	}
+	if (ce == CE_PushButtonLabel) {
+		 if (const QStyleOptionButton *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+			 QRect ir = button->rect;
+			 uint tf = Qt::AlignVCenter | Qt::TextShowMnemonic;
+			 QPoint buttonShift;
+
+			 if (option->state & State_Sunken) {
+				 buttonShift = QPoint(pixelMetric(PM_ButtonShiftHorizontal, option, widget), proxy()->pixelMetric(PM_ButtonShiftVertical, option, widget));
+			 }
+
+			 if (proxy()->styleHint(SH_UnderlineShortcut, button, widget)) {
+				 tf |= Qt::TextShowMnemonic;
+			 } else {
+				 tf |= Qt::TextHideMnemonic;
+			 }
+
+			 if (!button->icon.isNull()) {
+				 //Center both icon and text
+				 QPoint point;
+
+				 QIcon::Mode mode = button->state & State_Enabled ? QIcon::Normal : QIcon::Disabled;
+				 if (mode == QIcon::Normal && button->state & State_HasFocus) {
+					 mode = QIcon::Active;
+				 }
+
+				 QIcon::State state = QIcon::Off;
+
+				 if (button->state & State_On) {
+					 state = QIcon::On;
+				 }
+
+				 QPixmap pixmap = button->icon.pixmap(button->iconSize, mode, state);
+				 int w = pixmap.width();
+				 int h = pixmap.height();
+
+				 if (!button->text.isEmpty()) {
+					 w += button->fontMetrics.boundingRect(option->rect, tf, button->text).width() + 4;
+				 }
+
+				 point = QPoint(ir.x() + ir.width() / 2 - w / 2, ir.y() + ir.height() / 2 - h / 2);
+
+				 if (button->direction == Qt::RightToLeft) {
+					 point.rx() += pixmap.width();
+				 }
+
+				 p->drawPixmap(visualPos(button->direction, button->rect, point + buttonShift), pixmap);
+
+				 if (button->direction == Qt::RightToLeft) {
+					 ir.translate(-point.x() - 2, 0);
+				 } else {
+					 ir.translate(point.x() + pixmap.width() + 2, 0);
+				 }
+
+				 // left-align text if there is
+				 if (!button->text.isEmpty()) {
+					 tf |= Qt::AlignLeft;
+				 }
+
+			 } else {
+				 tf |= Qt::AlignHCenter;
+			 }
+
+			 ir.translate(buttonShift);
+
+			 if (button->features & QStyleOptionButton::HasMenu) {
+				 ir = ir.adjusted(0, 0, -pixelMetric(PM_MenuButtonIndicator, button, widget), 0);
+			 }
+
+			 drawItemText(p, ir, tf, option->palette, (button->state & State_Enabled), button->text, QPalette::ButtonText);
+			 return;
+		 }
+	}
+	if (ce == CE_RadioButton || ce == CE_CheckBox) {
+		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+			bool isRadio = (ce == CE_RadioButton);
+
+			QStyleOptionButton subopt = *btn;
+			subopt.rect = subElementRect(isRadio ? SE_RadioButtonIndicator : SE_CheckBoxIndicator, btn, widget);
+			proxy()->drawPrimitive(isRadio ? PE_IndicatorRadioButton : PE_IndicatorCheckBox, &subopt, p, widget);
+			subopt.rect = subElementRect(isRadio ? SE_RadioButtonContents : SE_CheckBoxContents, btn, widget);
+
+			drawControl(isRadio ? CE_RadioButtonLabel : CE_CheckBoxLabel, &subopt, p, widget);
+
+			if (btn->state & State_HasFocus) {
+				QStyleOptionFocusRect fropt;
+				fropt.QStyleOption::operator=(*btn);
+				fropt.rect = subElementRect(isRadio ? SE_RadioButtonFocusRect : SE_CheckBoxFocusRect, btn, widget);
+				drawPrimitive(PE_FrameFocusRect, &fropt, p, widget);
+			}
+			return;
+		}
+	}
+	if (ce == CE_RadioButtonLabel || ce == CE_CheckBoxLabel) {
+		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+			uint alignment = visualAlignment(btn->direction, Qt::AlignLeft | Qt::AlignVCenter);
+
+			if (!styleHint(SH_UnderlineShortcut, btn, widget)) {
+				alignment |= Qt::TextHideMnemonic;
+			}
+			QPixmap pix;
+			QRect textRect = btn->rect;
+			if (!btn->icon.isNull()) {
+				pix = btn->icon.pixmap(btn->iconSize, btn->state & State_Enabled ? QIcon::Normal : QIcon::Disabled);
+				drawItemPixmap(p, btn->rect, alignment, pix);
+				if (btn->direction == Qt::RightToLeft) {
+					textRect.setRight(textRect.right() - btn->iconSize.width() - 4);
+				} else {
+					textRect.setLeft(textRect.left() + btn->iconSize.width() + 4);
+				}
+			}
+			if (!btn->text.isEmpty()){
+				drawItemText(p, textRect, alignment | Qt::TextShowMnemonic, btn->palette, btn->state & State_Enabled, btn->text, QPalette::ButtonText);
+			}
+			return;
+		}
+	}
+  #endif
 	if (ce == CE_ShapedFrame) {
 		if (qobject_cast<QAbstractItemView const *>(widget)) {
 			p->fillRect(option->rect, option->palette.color(QPalette::Window));
@@ -1412,6 +1547,12 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 #endif // Q_OS_MAC
+#ifdef Q_OS_LINUX
+	if (ce == CE_Splitter) {
+		p->fillRect(option->rect, option->palette.color(QPalette::Window));
+		return;
+	}
+#endif
 //	qDebug() << ce;
 	QProxyStyle::drawControl(ce, option, p, widget);
 }
@@ -1527,9 +1668,9 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 				QStyleOptionFocusRect fr;
 				fr.QStyleOption::operator=(*toolbutton);
 				fr.rect.adjust(3, 3, -3, -3);
-				if (toolbutton->features & QStyleOptionToolButton::MenuButtonPopup)
-					fr.rect.adjust(0, 0, -pixelMetric(QStyle::PM_MenuButtonIndicator,
-													  toolbutton, widget), 0);
+				if (toolbutton->features & QStyleOptionToolButton::MenuButtonPopup) {
+					fr.rect.adjust(0, 0, -pixelMetric(QStyle::PM_MenuButtonIndicator, toolbutton, widget), 0);
+				}
 				drawPrimitive(PE_FrameFocusRect, &fr, p, widget);
 			}
 			QStyleOptionToolButton label = *toolbutton;
