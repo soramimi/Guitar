@@ -2142,7 +2142,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QAction *a_blame = menu.addAction(tr("Blame"));
 	QAction *a_properties = addMenuActionProperty(&menu);
 
-	QPoint pt = ui->listWidget_unstaged->mapToGlobal(pos) + QPoint(8, -8);
+	QPoint pt = ui->listWidget_files->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
 	if (a) {
 		QListWidgetItem *item = ui->listWidget_files->currentItem();

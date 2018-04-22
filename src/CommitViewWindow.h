@@ -25,6 +25,8 @@ public:
 private slots:
 	void on_listWidget_files_currentRowChanged(int currentRow);
 
+	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
+
 private:
 	Ui::CommitViewWindow *ui;
 };

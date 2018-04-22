@@ -150,8 +150,6 @@ private:
 	void addTag();
 	QStringList whichCommand_(const QString &cmdfile);
 	QString getObjectID(QListWidgetItem *item);
-	void execFilePropertyDialog(QListWidgetItem *item);
-	static QAction *addMenuActionProperty(QMenu *menu);
 	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const;
 	Git::Object cat_file_(GitPtr g, const QString &id);
 	Git::Object cat_file(const QString &id);
@@ -274,6 +272,8 @@ public:
 	bool execWelcomeWizardDialog();
 	void updateFilesList(QString id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
+	QAction *addMenuActionProperty(QMenu *menu);
+	void execFilePropertyDialog(QListWidgetItem *item);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

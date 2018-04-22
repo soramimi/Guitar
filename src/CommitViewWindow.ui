@@ -49,7 +49,11 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QListWidget" name="listWidget_files"/>
+     <widget class="QListWidget" name="listWidget_files">
+      <property name="contextMenuPolicy">
+       <enum>Qt::CustomContextMenu</enum>
+      </property>
+     </widget>
      <widget class="FileDiffWidget" name="widget_diff" native="true"/>
     </widget>
    </item>
