@@ -12,6 +12,7 @@ TextEditorThemePtr TextEditorTheme::Light()
 	t->fg_line_number = QColor(96, 96, 96);
 	t->bg_line_number = QColor(208, 208, 208);
 	t->fg_cursor = QColor(0, 128, 255);
+	t->bg_current_line = QColor(192, 192, 192);
 	t->bg_current_line_number = QColor(176, 176, 176);
 	t->bg_diff_unknown = QColor(208, 208, 208);
 	t->bg_diff_add = QColor(192, 240, 192);
@@ -27,6 +28,7 @@ TextEditorThemePtr TextEditorTheme::Dark()
 	t->fg_line_number = QColor(176, 176, 176);
 	t->bg_line_number = QColor(64, 64, 64);
 	t->fg_cursor = QColor(0, 128, 255);
+	t->bg_current_line = QColor(64, 64, 64);
 	t->bg_current_line_number = QColor(96, 96, 96);
 	t->bg_diff_unknown = QColor(0, 0, 0);
 	t->bg_diff_add = QColor(0, 64, 0);

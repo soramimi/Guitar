@@ -15,6 +15,7 @@ public:
 	QColor fg_line_number;
 	QColor bg_line_number;
 	QColor fg_cursor;
+	QColor bg_current_line;
 	QColor bg_current_line_number;
 	QColor bg_diff_unknown;
 	QColor bg_diff_add;
@@ -40,6 +41,10 @@ public:
 	QColor fgCursor() const
 	{
 		return fg_cursor;
+	}
+	QColor bgCurrentLine() const
+	{
+		return bg_current_line;
 	}
 	QColor bgCurrentLineNumber() const
 	{

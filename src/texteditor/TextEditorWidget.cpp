@@ -457,18 +457,20 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
-	int current_y = editor_cx->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
+	auto visualY = [&](TextEditorContext const *context){
+		return context->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
+	};
 
-	int linenum_width = leftMargin() * latin1Width();
 
 	if (has_focus) {
 		if (isCursorVisible()) {
 			// current line
 			if (renderingMode() == DecoratedMode) {
-				int y = current_y * lineHeight();
-				pr.fillRect(linenum_width, y + lineHeight() - 1, width() - linenum_width, 1, theme()->fgCursor());
+				int x = cx()->viewport_org_x * latin1Width();
+				int y = visualY(cx()) * lineHeight();
+				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
+				pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
 			}
-
 			drawCursor(&pr);
 		}
 	}
@@ -476,6 +478,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	paintScreen(&pr);
 
 	if (renderingMode() == DecoratedMode) {
+		int linenum_width = leftMargin() * latin1Width();
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};
@@ -489,7 +492,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 
 		paintLineNumbers([&](int y, QString text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
-			if (y == current_y && isCursorVisible()) {
+			if (isCursorVisible() && y == visualY(editor_cx.get())) {
 				FillLineNumberBG(y * lineHeight(), lineHeight(), theme()->bgCurrentLineNumber());
 			}
 			pr.setBackground(Qt::transparent);

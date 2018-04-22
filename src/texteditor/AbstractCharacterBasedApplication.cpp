@@ -41,7 +41,7 @@ struct AbstractCharacterBasedApplication::Private {
 	bool dialog_mode = false;
 	DialogHandler dialog_handler;
 	bool is_painting_suppressed = false;
-	int valid_line_index = 0;
+	int valid_line_index = -1;
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
 	QTextCodec *text_codec = nullptr;
