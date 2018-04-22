@@ -241,10 +241,15 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 
 	QMenu menu;
 	QAction *a_explorer = menu.addAction("Explorer");
+	QAction *a_property = menu.addAction("Property");
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_explorer) {
 			m->mainwindow->execCommitExploreWindow(this, commit);
+			return;
+		}
+		if (a == a_property) {
+			m->mainwindow->execCommitPropertyDialog(this, commit);
 			return;
 		}
 	}

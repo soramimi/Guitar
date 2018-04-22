@@ -80,3 +80,8 @@ void CommitPropertyDialog::on_pushButton_jump_clicked()
 	m->mainwindow->jumpToCommit(m->commit.commit_id);
 	done(QDialog::Accepted);
 }
+
+void CommitPropertyDialog::on_pushButton_details_clicked()
+{
+	m->mainwindow->execCommitViewWindow(&m->commit);
+}

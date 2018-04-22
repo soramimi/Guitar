@@ -8,6 +8,7 @@ class ReadOnlyLineEdit : public QLineEdit
 public:
 	ReadOnlyLineEdit(QWidget *parent = 0);
 
+	void setText(QString const &text);
 	// QWidget interface
 protected:
 	void paintEvent(QPaintEvent *event);

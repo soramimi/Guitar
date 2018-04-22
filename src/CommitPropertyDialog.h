@@ -30,6 +30,8 @@ private slots:
 
 	void on_pushButton_jump_clicked();
 
+	void on_pushButton_details_clicked();
+
 private:
 	Ui::CommitPropertyDialog *ui;
 	void init(MainWindow *mw);

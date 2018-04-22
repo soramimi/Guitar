@@ -12,6 +12,12 @@ ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)
 	setStyleSheet("* { background: transparent; }");
 }
 
+void ReadOnlyLineEdit::setText(const QString &text)
+{
+	QLineEdit::setText(text);
+	setSelection(0, 0);
+}
+
 void ReadOnlyLineEdit::paintEvent(QPaintEvent *event)
 {
 	{

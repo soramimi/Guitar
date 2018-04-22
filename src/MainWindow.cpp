@@ -1,4 +1,5 @@
 #include "BlameWindow.h"
+#include "CommitViewWindow.h"
 #include "Git.h"
 #include "MainWindow.h"
 #include "ReflogWindow.h"
@@ -963,6 +964,26 @@ bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 	return true; // success
 }
 
+void MainWindow::addDiffItems(QList<Git::Diff> const *diff_list, std::function<void(QString const &filename, QString header, int idiff)> add_item)
+{
+	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
+		Git::Diff const &diff = diff_list->at(idiff);
+		QString header;
+
+		switch (diff.type) {
+		case Git::Diff::Type::Modify:   header = "(chg) "; break;
+		case Git::Diff::Type::Copy:     header = "(cpy) "; break;
+		case Git::Diff::Type::Rename:   header = "(ren) "; break;
+		case Git::Diff::Type::Create:   header = "(add) "; break;
+		case Git::Diff::Type::Delete:   header = "(del) "; break;
+		case Git::Diff::Type::ChType:   header = "(chg) "; break;
+		case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
+		}
+
+		add_item(diff.path, header, idiff);
+	}
+}
+
 void MainWindow::updateFilesList(QString id, bool wait)
 {
 	GitPtr g = git();
@@ -977,7 +998,8 @@ void MainWindow::updateFilesList(QString id, bool wait)
 
 	FilesListType files_list_type = FilesListType::SingleList;
 
-	auto AddItem = [&](QString const &filename, QString header, int idiff, bool staged){
+	bool staged = false;
+	auto AddItem = [&](QString const &filename, QString header, int idiff){
 		if (header.isEmpty()) {
 			header = "(??\?) "; // damn trigraph
 		}
@@ -1021,7 +1043,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 		showFileList(files_list_type);
 
 		for (Git::FileStatus const &s : stats) {
-			bool staged = (s.isStaged() && s.code_y() == ' ');
+			staged = (s.isStaged() && s.code_y() == ' ');
 			int idiff = -1;
 			QString header;
 			auto it = diffmap.find(s.path1());
@@ -1045,37 +1067,44 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			} else if (s.code_x() == 'M' || s.code_y() == 'M') {
 				header = "(chg) ";
 			}
-			AddItem(path, header, idiff, staged);
+			AddItem(path, header, idiff);
 		}
 	} else {
 		if (!makeDiff(id, &m->diff.result)) {
 			return;
 		}
-
 		showFileList(files_list_type);
-
-		for (int idiff = 0; idiff < m->diff.result.size(); idiff++) {
-			Git::Diff const &diff = m->diff.result[idiff];
-			QString header;
-
-			switch (diff.type) {
-			case Git::Diff::Type::Modify:   header = "(chg) "; break;
-			case Git::Diff::Type::Copy:     header = "(cpy) "; break;
-			case Git::Diff::Type::Rename:   header = "(ren) "; break;
-			case Git::Diff::Type::Create:   header = "(add) "; break;
-			case Git::Diff::Type::Delete:   header = "(del) "; break;
-			case Git::Diff::Type::ChType:   header = "(chg) "; break;
-			case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
-			}
-
-			AddItem(diff.path, header, idiff, false);
-		}
+		addDiffItems(&m->diff.result, AddItem);
 	}
 
 	for (Git::Diff const &diff : m->diff.result) {
 		QString key = GitDiff::makeKey(diff);
 		m->diff_cache[key] = diff;
 	}
+}
+
+void MainWindow::updateFilesList(QString id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	listwidget->clear();
+
+	auto AddItem = [&](QString const &filename, QString header, int idiff){
+		if (header.isEmpty()) {
+			header = "(??\?) "; // damn trigraph
+		}
+		QListWidgetItem *item = new QListWidgetItem(header + filename);
+		item->setData(FilePathRole, filename);
+		item->setData(DiffIndexRole, idiff);
+		item->setData(HunkIndexRole, -1);
+		listwidget->addItem(item);
+	};
+
+	GitDiff dm(&m->objcache);
+	if (!dm.diff(id, diff_list)) return;
+
+	addDiffItems(diff_list, AddItem);
 }
 
 void MainWindow::updateFilesList(Git::CommitItem const &commit, bool wait)
@@ -4181,9 +4210,14 @@ void MainWindow::blame()
 	blame(currentFileItem());
 }
 
+void MainWindow::execCommitViewWindow(Git::CommitItem const *commit)
+{
+	CommitViewWindow win(this, commit);
+	win.exec();
+}
+
 void MainWindow::on_action_test_triggered()
 {
-	execWelcomeWizardDialog();
 }
 
 

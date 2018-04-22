@@ -86,6 +86,7 @@ private:
 		SideBySide,
 	};
 
+	void addDiffItems(const QList<Git::Diff> *diff_list, std::function<void (const QString &, QString, int)> AddItem_);
 	void updateFilesList(QString id, bool wait);
 	void updateFilesList(const Git::CommitItem &commit, bool wait);
 	void updateRepositoriesList();
@@ -271,6 +272,8 @@ public:
 	void jumpToCommit(QString id);
 	WebContext *webContext();
 	bool execWelcomeWizardDialog();
+	void updateFilesList(QString id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
+	void execCommitViewWindow(const Git::CommitItem *commit);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

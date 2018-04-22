@@ -790,7 +790,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 //	if (pe == QStyle::PE_PanelItemViewRow) {
 
 //	}
-	qDebug() << pe;
+//	qDebug() << pe;
 	QProxyStyle::drawPrimitive(pe, option, p, widget);
 }
 

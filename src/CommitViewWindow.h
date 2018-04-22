@@ -1,0 +1,32 @@
+#ifndef COMMITVIEWWINDOW_H
+#define COMMITVIEWWINDOW_H
+
+#include "Git.h"
+
+#include <QDialog>
+
+class MainWindow;
+
+namespace Ui {
+class CommitViewWindow;
+}
+
+class CommitViewWindow : public QDialog
+{
+	Q_OBJECT
+private:
+	struct Private;
+	Private *m;
+	MainWindow *mainwindow();
+public:
+	explicit CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit);
+	~CommitViewWindow();
+
+private slots:
+	void on_listWidget_files_currentRowChanged(int currentRow);
+
+private:
+	Ui::CommitViewWindow *ui;
+};
+
+#endif // COMMITVIEWWINDOW_H

@@ -109,6 +109,10 @@ void FileDiffWidget::bind(MainWindow *mw)
 
 GitPtr FileDiffWidget::git()
 {
+	if (!m->mainwindow) {
+		qDebug() << "Maybe, you forgot to call FileDiffWidget::bind() ?";
+		return GitPtr();
+	}
 	return m->mainwindow->git();
 }
 

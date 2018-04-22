@@ -191,7 +191,8 @@ SOURCES += \
     src/MenuButton.cpp \
     src/SettingGeneralForm.cpp \
     src/WelcomeWizardDialog.cpp \
-    src/DialogHeaderFrame.cpp
+    src/DialogHeaderFrame.cpp \
+    src/CommitViewWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -288,7 +289,8 @@ HEADERS  += \
     src/MenuButton.h \
     src/SettingGeneralForm.h \
     src/WelcomeWizardDialog.h \
-    src/DialogHeaderFrame.h
+    src/DialogHeaderFrame.h \
+    src/CommitViewWindow.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -326,7 +328,8 @@ FORMS    += \
     src/ReflogWindow.ui \
     src/BlameWindow.ui \
     src/SettingGeneralForm.ui \
-    src/WelcomeWizardDialog.ui
+    src/WelcomeWizardDialog.ui \
+    src/CommitViewWindow.ui
 
 RESOURCES += \
     resources.qrc
