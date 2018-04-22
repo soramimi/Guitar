@@ -218,7 +218,6 @@ void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 		p->fillRect(x, y, 1, h, dark);
 		p->fillRect(x + 1, y, 1, h, lite);
 	} else if (w > h) {
-		fprintf(stderr, "%d %d\n", y, h);
 		y += (h - 1) / 2;
 		p->fillRect(x, y, w, 1, dark);
 		p->fillRect(x, y + 1, w, 1, lite);
@@ -561,9 +560,9 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
+//	qDebug() << pe;
 #ifdef Q_OS_LINUX
 	if (pe == PE_FrameFocusRect) {
-//		QColor color = option->palette.color(QPalette::Light);
 		QColor color(64, 128, 255);
 		drawFrame(p, option->rect, color, color);
 		return;
@@ -796,6 +795,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
+//	qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
 #ifdef Q_OS_MAC
     if (ce == CE_ToolBar) {
@@ -936,7 +936,35 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			return;
 		}
 	}
-  #endif
+	if (ce == CE_ComboBoxLabel) {
+		if (const QStyleOptionComboBox *opt = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
+			QRect editRect = subControlRect(CC_ComboBox, opt, SC_ComboBoxEditField, widget);
+
+			uint alignment = Qt::AlignLeft | Qt::AlignVCenter;
+
+			if (!styleHint(SH_UnderlineShortcut, opt, widget)) {
+				alignment |= Qt::TextHideMnemonic;
+			}
+			QPixmap pix;
+			QRect iconRect(editRect);
+			QIcon icon = opt->currentIcon;
+			QString text = opt->currentText;
+			if (!icon.isNull()) {
+				pix = icon.pixmap(opt->iconSize, opt->state & State_Enabled ? QIcon::Normal : QIcon::Disabled);
+				drawItemPixmap(p, iconRect, alignment, pix);
+				if (opt->direction == Qt::RightToLeft) {
+					editRect.setRight(editRect.right() - opt->iconSize.width() - 4);
+				} else {
+					editRect.setLeft(editRect.left() + opt->iconSize.width() + 4);
+				}
+			}
+			if (!text.isEmpty()){
+				drawItemText(p, editRect, alignment, opt->palette, opt->state & State_Enabled, text, QPalette::ButtonText);
+			}
+			return;
+		}
+	}
+#endif
 	if (ce == CE_ShapedFrame) {
 		if (qobject_cast<QAbstractItemView const *>(widget)) {
 			p->fillRect(option->rect, option->palette.color(QPalette::Window));
@@ -1019,12 +1047,24 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_MenuItem) {
-		if (const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
+		if (const QStyleOptionMenuItem *opt = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			int stateId = 0;
 			// windows always has a check column, regardless whether we have an icon or not
 			int checkcol = 25;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
 			const int gutterWidth = 3;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
 			QRect rect = option->rect;
+
+			bool ignoreCheckMark = false;
+			if (qobject_cast<const QComboBox*>(widget)) {
+				{ // bg
+					int x = option->rect.x();
+					int y = option->rect.y();
+					int w = option->rect.width();
+					int h = option->rect.height();
+					p->fillRect(x, y, w, h, option->palette.color(QPalette::Light));
+				}
+				ignoreCheckMark = true; //ignore the checkmarks provided by the QComboMenuDelegate
+			}
 
 			//draw vertical menu line
 			if (option->direction == Qt::LeftToRight) {
@@ -1032,20 +1072,19 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			}
 
 			int x, y, w, h;
-			menuitem->rect.getRect(&x, &y, &w, &h);
-			int tab = menuitem->tabWidth;
-			bool dis = !(menuitem->state & State_Enabled);
-			bool checked = menuitem->checkType != QStyleOptionMenuItem::NotCheckable
-					? menuitem->checked : false;
-			bool act = menuitem->state & State_Selected;
+			opt->rect.getRect(&x, &y, &w, &h);
+			int tab = opt->tabWidth;
+			bool dis = !(opt->state & State_Enabled);
+			bool checked = opt->checkType != QStyleOptionMenuItem::NotCheckable ? opt->checked : false;
+			bool act = opt->state & State_Selected;
 
-			if (menuitem->menuItemType == QStyleOptionMenuItem::Separator) {
+			if (opt->menuItemType == QStyleOptionMenuItem::Separator) {
 				QRect r = option->rect.adjusted(2, 0, -2, 0);
 				drawGutter(p, r);
 				return;
 			}
 
-			QRect vCheckRect = visualRect(option->direction, menuitem->rect, QRect(menuitem->rect.x(), menuitem->rect.y(), checkcol - (gutterWidth + menuitem->rect.x()), menuitem->rect.height()));
+			QRect vCheckRect = visualRect(option->direction, opt->rect, QRect(opt->rect.x(), opt->rect.y(), checkcol - (gutterWidth + opt->rect.x()), opt->rect.height()));
 
 			if (act) {
 				stateId = dis ? MBI_DISABLED : MBI_HOT;
@@ -1055,65 +1094,74 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			if (checked) {
 			}
 
-			if (!menuitem->icon.isNull()) {
-				QIcon::Mode mode = dis ? QIcon::Disabled : QIcon::Normal;
-				if (act && !dis) {
-					mode = QIcon::Active;
+			if (!ignoreCheckMark) {
+				if (!opt->icon.isNull()) {
+					QIcon::Mode mode = dis ? QIcon::Disabled : QIcon::Normal;
+					if (act && !dis) {
+						mode = QIcon::Active;
+					}
+					QPixmap pixmap;
+					if (checked) {
+						pixmap = opt->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode, QIcon::On);
+					} else {
+						pixmap = opt->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode);
+					}
+					const int pixw = pixmap.width() / pixmap.devicePixelRatio();
+					const int pixh = pixmap.height() / pixmap.devicePixelRatio();
+					QRect pmr(0, 0, pixw, pixh);
+					pmr.moveCenter(vCheckRect.center());
+					p->setPen(opt->palette.text().color());
+					p->drawPixmap(pmr.topLeft(), pixmap);
 				}
-				QPixmap pixmap;
-				if (checked) {
-					pixmap = menuitem->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode, QIcon::On);
+			} else {
+				if (opt->icon.isNull()) {
+					checkcol = 0;
 				} else {
-					pixmap = menuitem->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode);
+					checkcol = opt->maxIconWidth;
 				}
-				const int pixw = pixmap.width() / pixmap.devicePixelRatio();
-				const int pixh = pixmap.height() / pixmap.devicePixelRatio();
-				QRect pmr(0, 0, pixw, pixh);
-				pmr.moveCenter(vCheckRect.center());
-				p->setPen(menuitem->palette.text().color());
-				p->drawPixmap(pmr.topLeft(), pixmap);
 			}
 
-			p->setPen(menuitem->palette.buttonText().color());
+			p->setPen(opt->palette.buttonText().color());
 
-			const QColor textColor = menuitem->palette.text().color();
+			const QColor textColor = opt->palette.text().color();
 			if (dis) {
 				p->setPen(textColor);
 			}
 
-			int xm = windowsItemFrame + checkcol + windowsItemHMargin + (gutterWidth - menuitem->rect.x()) - 1;
-			int xpos = menuitem->rect.x() + xm;
+			int xm = windowsItemFrame + checkcol + windowsItemHMargin + (gutterWidth - opt->rect.x()) - 1;
+			int xpos = opt->rect.x() + xm;
 			QRect textRect(xpos, y + windowsItemVMargin, w - xm - windowsRightBorder - tab + 1, h - 2 * windowsItemVMargin);
-			QRect vTextRect = visualRect(option->direction, menuitem->rect, textRect);
-			QString s = menuitem->text;
+			QRect vTextRect = visualRect(option->direction, opt->rect, textRect);
+			QString s = opt->text;
 			if (!s.isEmpty()) {    // draw text
 				p->save();
 				int t = s.indexOf(QLatin1Char('\t'));
 				int text_flags = Qt::AlignVCenter | Qt::TextShowMnemonic | Qt::TextDontClip | Qt::TextSingleLine;
-				if (!styleHint(SH_UnderlineShortcut, menuitem, widget))
+				if (!styleHint(SH_UnderlineShortcut, opt, widget)) {
 					text_flags |= Qt::TextHideMnemonic;
+				}
 				text_flags |= Qt::AlignLeft;
 				if (t >= 0) {
-					QRect vShortcutRect = visualRect(option->direction, menuitem->rect,
-													 QRect(textRect.topRight(), QPoint(menuitem->rect.right(), textRect.bottom())));
+					QRect vShortcutRect = visualRect(option->direction, opt->rect, QRect(textRect.topRight(), QPoint(opt->rect.right(), textRect.bottom())));
 					p->drawText(vShortcutRect, text_flags, s.mid(t + 1));
 					s = s.left(t);
 				}
-				QFont font = menuitem->font;
-				if (menuitem->menuItemType == QStyleOptionMenuItem::DefaultItem)
+				QFont font = opt->font;
+				if (opt->menuItemType == QStyleOptionMenuItem::DefaultItem) {
 					font.setBold(true);
+				}
 				p->setFont(font);
 				p->setPen(textColor);
 				p->drawText(vTextRect, text_flags, s.left(t));
 				p->restore();
 			}
-			if (menuitem->menuItemType == QStyleOptionMenuItem::SubMenu) {// draw sub menu arrow
+			if (opt->menuItemType == QStyleOptionMenuItem::SubMenu) {// draw sub menu arrow
 				int dim = (h - 2 * windowsItemFrame) / 2;
 				PrimitiveElement arrow;
 				arrow = (option->direction == Qt::RightToLeft) ? PE_IndicatorArrowLeft : PE_IndicatorArrowRight;
 				xpos = x + w - windowsArrowHMargin - windowsItemFrame - dim;
-				QRect  vSubMenuRect = visualRect(option->direction, menuitem->rect, QRect(xpos, y + h / 2 - dim / 2, dim, dim));
-				QStyleOptionMenuItem newMI = *menuitem;
+				QRect  vSubMenuRect = visualRect(option->direction, opt->rect, QRect(xpos, y + h / 2 - dim / 2, dim, dim));
+				QStyleOptionMenuItem newMI = *opt;
 				newMI.rect = vSubMenuRect;
 				newMI.state = dis ? State_None : State_Enabled;
 				drawPrimitive(arrow, &newMI, p, widget);
