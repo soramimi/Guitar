@@ -190,7 +190,8 @@ SOURCES += \
     src/BlameWindow.cpp \
     src/MenuButton.cpp \
     src/SettingGeneralForm.cpp \
-    src/WelcomeWizardDialog.cpp
+    src/WelcomeWizardDialog.cpp \
+    src/DialogHeaderFrame.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -286,7 +287,8 @@ HEADERS  += \
     src/BlameWindow.h \
     src/MenuButton.h \
     src/SettingGeneralForm.h \
-    src/WelcomeWizardDialog.h
+    src/WelcomeWizardDialog.h \
+    src/DialogHeaderFrame.h
 
 FORMS    += \
 	src/MainWindow.ui \

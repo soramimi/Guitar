@@ -30,19 +30,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QFrame" name="frame">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>64</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>64</height>
-      </size>
-     </property>
+    <widget class="DialogHeaderFrame" name="frame">
      <property name="styleSheet">
       <string notr="true">QFrame {
 	background: #ffffff;
@@ -55,12 +43,24 @@
       <enum>QFrame::Plain</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="topMargin">
+       <number>16</number>
+      </property>
+      <property name="bottomMargin">
+       <number>16</number>
+      </property>
       <item>
        <widget class="QLabel" name="label_name">
         <property name="font">
          <font>
           <pointsize>15</pointsize>
          </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel {
+	background: transparent;
+}
+</string>
         </property>
         <property name="text">
          <string>TextLabel</string>
@@ -155,6 +155,12 @@
    <class>RemoteRepositoriesTableWidget</class>
    <extends>QTableWidget</extends>
    <header>RemoteRepositoriesTableWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>DialogHeaderFrame</class>
+   <extends>QFrame</extends>
+   <header>DialogHeaderFrame.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

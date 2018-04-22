@@ -55,8 +55,8 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 	auto SetHeaderItem = [&](int col, QString const &text){
 		tablewidget->setHorizontalHeaderItem(col, newQTableWidgetItem(text));
 	};
-	SetHeaderItem(0, tr("Purpose"));
-	SetHeaderItem(1, tr("Remote"));
+	SetHeaderItem(0, tr("Name"));
+	SetHeaderItem(1, tr("Purpose"));
 	SetHeaderItem(2, tr("URL"));
 	for (int row = 0; row < rows; row++) {
 		Git::Remote const &r = vec[row];
@@ -69,8 +69,8 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 			tablewidget->setItem(row, col, newQTableWidgetItem(text));
 			tablewidget->setRowHeight(col, 24);
 		};
-		SetItem(0, r.purpose);
-		SetItem(1, r.remote);
+		SetItem(0, r.name);
+		SetItem(1, r.purpose);
 		SetItem(2, r.url);
 	}
 	tablewidget->horizontalHeader()->setStretchLastSection(true);

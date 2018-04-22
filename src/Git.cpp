@@ -486,7 +486,7 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 	}
 }
 
-QList<Git::Branch> Git::branches_()
+QList<Git::Branch> Git::branches()
 {
 	QList<Branch> branches;
 	git(QString("branch -v -a --abbrev=%1").arg(GIT_ID_LENGTH));
@@ -572,11 +572,6 @@ QList<Git::Branch> Git::branches_()
 		}
 	}
 	return branches;
-}
-
-QList<Git::Branch> Git::branches()
-{
-	return branches_();
 }
 
 Git::CommitItemList Git::log_all(QString const &id, int maxcount)
@@ -1019,7 +1014,7 @@ void Git::getRemoteURLs(QList<Remote> *out)
 		int j = line.indexOf(" (");
 		if (i > 0 && i < j) {
 			Remote r;
-			r.remote = line.mid(0, i);
+			r.name = line.mid(0, i);
 			r.url = line.mid(i + 1, j - i - 1);
 			r.purpose = line.mid(j + 1);
 			if (r.purpose.startsWith('(') && r.purpose.endsWith(')')) {

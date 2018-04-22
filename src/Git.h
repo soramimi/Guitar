@@ -327,7 +327,6 @@ public:
 
 	void fetch(AbstractPtyProcess *pty = 0);
 
-	QList<Branch> branches_();
 	QList<Branch> branches();
 
 	int getProcessExitCode() const;
@@ -345,7 +344,7 @@ public:
 	};
 
 	struct Remote {
-		QString remote;
+		QString name;
 		QString url;
 		QString purpose;
 	};

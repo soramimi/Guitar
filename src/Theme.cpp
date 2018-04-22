@@ -76,6 +76,7 @@ ThemePtr createStandardTheme()
 	AbstractTheme *p = new StandardTheme;
 	p->text_editor_theme = TextEditorTheme::Light();
 
+	p->dialog_header_frame_bg = Qt::white;
 	p->diff_slider_normal_bg = Qt::white;
 	p->diff_slider_unknown_bg = QColor(208, 208, 208);
 	p->diff_slider_add_bg = QColor(64, 192, 64);
@@ -149,6 +150,7 @@ ThemePtr createDarkTheme()
 	AbstractTheme *p = new DarkTheme;
 	p->text_editor_theme = TextEditorTheme::Dark();
 
+	p->dialog_header_frame_bg =  QColor(32, 32, 32);
 	p->diff_slider_normal_bg = QColor(48, 48, 48);
 	p->diff_slider_unknown_bg = QColor(0, 0, 0);
 	p->diff_slider_add_bg = QColor(0, 144, 0);

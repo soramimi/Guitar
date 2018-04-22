@@ -5,6 +5,7 @@
 #include <QDialogButtonBox>
 #include <QDockWidget>
 #include <QInputDialog>
+#include <QListView>
 #include <QMessageBox>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
@@ -718,12 +719,29 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 	if (pe == PE_PanelItemViewItem) {
 //		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
-		if (qobject_cast<QTableView const *>(widget)) {
+		if (QTableView const *tableview = qobject_cast<QTableView const *>(widget)) {
+			Qt::PenStyle grid_pen_style = Qt::NoPen;
+			if (tableview->showGrid()) {
+				grid_pen_style = tableview->gridStyle();
+			}
+			QAbstractItemView::SelectionBehavior selection_behavior = tableview->selectionBehavior();
+			if (grid_pen_style != Qt::NoPen) {
+				int x = option->rect.x();
+				int y = option->rect.y();
+				int w = option->rect.width();
+				int h = option->rect.height();
+				p->fillRect(x + w - 1, y, 1, h, option->palette.color(QPalette::Dark));
+				p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
+			}
 			if (option->state & State_Selected) {
 				p->save();
 				p->setClipRect(option->rect);
 				QRect r = widget->rect();
-				r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
+				if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
+					r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
+				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
+					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
+				}
 				drawSelectedMenuFrame(option, p, r, widget, false);
 				p->restore();
 			}
@@ -769,7 +787,10 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 
 		return;
 	}
-//	qDebug() << pe;
+//	if (pe == QStyle::PE_PanelItemViewRow) {
+
+//	}
+	qDebug() << pe;
 	QProxyStyle::drawPrimitive(pe, option, p, widget);
 }
 
