@@ -4001,17 +4001,6 @@ void MainWindow::on_toolButton_explorer_clicked()
 	openExplorer(nullptr);
 }
 
-
-void MainWindow::on_action_push_u_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	reopenRepository(true, [&](GitPtr g){
-		g->push_u_origin_master();
-	});
-}
-
 void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 {
 	if (remote.isEmpty()) return;
@@ -4028,14 +4017,11 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	if (!isValidWorkingCopy(g)) return false;
 	QStringList remotes = g->getRemotes();
 
+	QString current_branch = currentBranch().name;
+
 	QStringList branches;
-	int row = ui->tableWidget_log->currentRow();
-	QList<Label> const *labels = label(row);
-	for (Label const &label : *labels) {
-		if (label.kind == Label::LocalBranch) {
-			QString branch = label.text;
-			branches.push_back(branch);
-		}
+	for (Git::Branch const &b : g->branches()) {
+		branches.push_back(b.name);
 	}
 
 	if (remotes.isEmpty() || branches.isEmpty()) {
@@ -4046,7 +4032,7 @@ bool MainWindow::pushSetUpstream(bool testonly)
 		return true;
 	}
 
-	PushDialog dlg(this, remotes, branches);
+	PushDialog dlg(this, remotes, branches, PushDialog::RemoteBranch(QString(), current_branch));
 	if (dlg.exec() == QDialog::Accepted) {
 		PushDialog::Action a = dlg.action();
 		if (a == PushDialog::PushSimple) {
@@ -4060,6 +4046,12 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	}
 
 	return false;
+}
+
+
+void MainWindow::on_action_push_u_triggered()
+{
+	pushSetUpstream(false);
 }
 
 void MainWindow::on_action_reset_HEAD_1_triggered()
@@ -4106,11 +4098,17 @@ bool MainWindow::isRemoteOnline() const
 
 void MainWindow::setNetworkingCommandsEnabled(bool f)
 {
+	ui->action_clone->setEnabled(f);
+
 	ui->toolButton_clone->setEnabled(f);
 
 	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
 		f = false;
 	}
+
+	ui->action_fetch->setEnabled(f);
+	ui->action_pull->setEnabled(f);
+	ui->action_push->setEnabled(f);
 
 	ui->toolButton_fetch->setEnabled(f);
 	ui->toolButton_pull->setEnabled(f);
@@ -4216,8 +4214,17 @@ void MainWindow::execCommitViewWindow(Git::CommitItem const *commit)
 	win.exec();
 }
 
+
+
+
+
+
+
+
+
 void MainWindow::on_action_test_triggered()
 {
 }
+
 
 

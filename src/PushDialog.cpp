@@ -1,7 +1,7 @@
 #include "PushDialog.h"
 #include "ui_PushDialog.h"
 
-PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStringList &branches) :
+PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStringList &branches, const RemoteBranch &remote_branch) :
 	QDialog(parent),
 	ui(new Ui::PushDialog)
 {
@@ -16,6 +16,13 @@ PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStrin
 		for (QString const &branch : branches) {
 			ui->comboBox_branch->addItem(branch);
 		}
+	}
+
+	if (!remote_branch.remote.isEmpty()) {
+		ui->comboBox_remote->setCurrentText(remote_branch.remote);
+	}
+	if (!remote_branch.branch.isEmpty()) {
+		ui->comboBox_branch->setCurrentText(remote_branch.branch);
 	}
 
 //	ui->radioButton_push_simply->click();

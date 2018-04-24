@@ -10,9 +10,21 @@ class PushDialog;
 class PushDialog : public QDialog
 {
 	Q_OBJECT
-
 public:
-	explicit PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches);
+	struct RemoteBranch {
+		QString remote;
+		QString branch;
+		RemoteBranch()
+		{
+		}
+		RemoteBranch(QString const &r, QString const &b)
+			: remote(r)
+			, branch(b)
+		{
+		}
+	};
+public:
+	explicit PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches, RemoteBranch const &remote_branch);
 	~PushDialog();
 
 	enum Action {

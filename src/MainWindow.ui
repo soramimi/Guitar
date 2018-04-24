@@ -96,7 +96,7 @@
           <string>Clone</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/clone.svg</normaloff>:/image/clone.svg</iconset>
          </property>
          <property name="iconSize">
@@ -131,7 +131,7 @@
           <string>Fetch</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/fetch.svg</normaloff>:/image/fetch.svg</iconset>
          </property>
          <property name="iconSize">
@@ -166,7 +166,7 @@
           <string>Pull</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/pull.svg</normaloff>:/image/pull.svg</iconset>
          </property>
          <property name="iconSize">
@@ -201,7 +201,7 @@
           <string>Push</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/push.svg</normaloff>:/image/push.svg</iconset>
          </property>
          <property name="iconSize">
@@ -252,7 +252,7 @@
           <string>Terminal</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/terminal.svg</normaloff>:/image/terminal.svg</iconset>
          </property>
          <property name="iconSize">
@@ -287,7 +287,7 @@
           <string>Explorer</string>
          </property>
          <property name="icon">
-          <iconset>
+          <iconset resource="../resources.qrc">
            <normaloff>:/image/explorer.svg</normaloff>:/image/explorer.svg</iconset>
          </property>
          <property name="iconSize">
@@ -745,7 +745,7 @@
                   <string>Unstage</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/unstage.svg</normaloff>:/image/unstage.svg</iconset>
                  </property>
                  <property name="iconSize">
@@ -774,7 +774,7 @@
                   <string>Select all</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/selall.svg</normaloff>:/image/selall.svg</iconset>
                  </property>
                  <property name="iconSize">
@@ -809,7 +809,7 @@
                   <string>Stage</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/stage.svg</normaloff>:/image/stage.svg</iconset>
                  </property>
                  <property name="iconSize">
@@ -838,7 +838,7 @@
                   <string>Commit</string>
                  </property>
                  <property name="icon">
-                  <iconset>
+                  <iconset resource="../resources.qrc">
                    <normaloff>:/image/commit.svg</normaloff>:/image/commit.svg</iconset>
                  </property>
                  <property name="iconSize">
@@ -1009,12 +1009,19 @@
     <property name="title">
      <string>&amp;Repository</string>
     </property>
+    <addaction name="action_fetch"/>
+    <addaction name="action_pull"/>
+    <addaction name="action_push"/>
+    <addaction name="action_push_u"/>
+    <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
     <addaction name="action_delete_branch"/>
     <addaction name="action_tag"/>
     <addaction name="action_tag_delete"/>
     <addaction name="action_reflog"/>
+    <addaction name="separator"/>
+    <addaction name="action_clone"/>
    </widget>
    <widget class="QMenu" name="menuExperiment">
     <property name="title">
@@ -1025,7 +1032,6 @@
     <addaction name="action_branch_merge"/>
     <addaction name="action_branch_new"/>
     <addaction name="action_tag_push_all"/>
-    <addaction name="action_push_u"/>
     <addaction name="action_reset_HEAD_1"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1130,7 +1136,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="../resources.qrc">
                <normaloff>:/image/redsquare.svg</normaloff>:/image/redsquare.svg</iconset>
              </property>
              <property name="iconSize">
@@ -1233,7 +1239,7 @@
   </action>
   <action name="action_push">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources.qrc">
      <normaloff>:/image/push.svg</normaloff>:/image/push.svg</iconset>
    </property>
    <property name="text">
@@ -1267,11 +1273,19 @@
    </property>
   </action>
   <action name="action_pull">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/image/pull.svg</normaloff>:/image/pull.svg</iconset>
+   </property>
    <property name="text">
     <string>Pu&amp;ll</string>
    </property>
   </action>
   <action name="action_fetch">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/image/fetch.svg</normaloff>:/image/fetch.svg</iconset>
+   </property>
    <property name="text">
     <string>&amp;Fetch</string>
    </property>
@@ -1310,6 +1324,10 @@
    </property>
   </action>
   <action name="action_clone">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/image/clone.svg</normaloff>:/image/clone.svg</iconset>
+   </property>
    <property name="text">
     <string>Clone</string>
    </property>
@@ -1390,7 +1408,7 @@
   </action>
   <action name="action_stop_process">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources.qrc">
      <normaloff>:/image/redsquare.svg</normaloff>:/image/redsquare.svg</iconset>
    </property>
    <property name="text">
@@ -1465,6 +1483,8 @@
   <tabstop>listWidget_files</tabstop>
   <tabstop>widget_diff_view</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
