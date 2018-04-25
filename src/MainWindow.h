@@ -119,8 +119,8 @@ private:
 	void clearDiffView();
 	void clearRepositoryInfo();
 
-	int repositoryIndex_(QTreeWidgetItem *item);
-	RepositoryItem const *repositoryItem(QTreeWidgetItem *item);
+	int repositoryIndex_(const QTreeWidgetItem *item) const;
+	RepositoryItem const *repositoryItem(const QTreeWidgetItem *item) const;
 
 	bool makeDiff(QString id, QList<Git::Diff> *out);
 
@@ -189,7 +189,6 @@ private:
 	void mergeBranch(const Git::CommitItem *commit);
 	void detectGitServerType(GitPtr g);
 	void initNetworking();
-	void execSetRemoteUrlDialog(const RepositoryItem *repo = nullptr);
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const;
 	void startTimers();
@@ -202,6 +201,7 @@ private:
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
+	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -274,6 +274,7 @@ public:
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	QAction *addMenuActionProperty(QMenu *menu);
 	void execFilePropertyDialog(QListWidgetItem *item);
+	void execRepositoryPropertyDialog(QString workdir = QString());
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

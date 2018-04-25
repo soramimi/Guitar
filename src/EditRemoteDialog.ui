@@ -1,33 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SetRemoteUrlDialog</class>
- <widget class="QDialog" name="SetRemoteUrlDialog">
+ <class>EditRemoteDialog</class>
+ <widget class="QDialog" name="EditRemoteDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>558</width>
-    <height>312</height>
+    <width>574</width>
+    <height>122</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Set Remote URL</string>
+   <string>Dialog</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Current URLs</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="RemoteRepositoriesTableWidget" name="tableWidget"/>
-   </item>
-   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>New URL</string>
+      <string>Remote</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
@@ -86,16 +76,16 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="pushButton_ok">
        <property name="text">
         <string>OK</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="pushButton_close">
        <property name="text">
-        <string>Cancel</string>
+        <string>Close</string>
        </property>
       </widget>
      </item>
@@ -105,54 +95,49 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>RemoteRepositoriesTableWidget</class>
-   <extends>QTableWidget</extends>
-   <header>RemoteRepositoriesTableWidget.h</header>
-  </customwidget>
-  <customwidget>
    <class>RepositoryLineEdit</class>
    <extends>QLineEdit</extends>
    <header>RepositoryLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>pushButton</tabstop>
-  <tabstop>pushButton_2</tabstop>
-  <tabstop>tableWidget</tabstop>
   <tabstop>lineEdit_name</tabstop>
   <tabstop>lineEdit_url</tabstop>
+  <tabstop>pushButton_test</tabstop>
+  <tabstop>pushButton_ok</tabstop>
+  <tabstop>pushButton_close</tabstop>
  </tabstops>
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>pushButton_ok</sender>
    <signal>clicked()</signal>
-   <receiver>SetRemoteUrlDialog</receiver>
+   <receiver>EditRemoteDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>466</x>
-     <y>301</y>
+     <x>446</x>
+     <y>104</y>
     </hint>
     <hint type="destinationlabel">
-     <x>230</x>
-     <y>327</y>
+     <x>394</x>
+     <y>97</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_2</sender>
+   <sender>pushButton_close</sender>
    <signal>clicked()</signal>
-   <receiver>SetRemoteUrlDialog</receiver>
+   <receiver>EditRemoteDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>547</x>
-     <y>301</y>
+     <x>542</x>
+     <y>101</y>
     </hint>
     <hint type="destinationlabel">
-     <x>340</x>
-     <y>384</y>
+     <x>568</x>
+     <y>97</y>
     </hint>
    </hints>
   </connection>

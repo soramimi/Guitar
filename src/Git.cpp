@@ -1025,17 +1025,24 @@ void Git::getRemoteURLs(QList<Remote> *out)
 	}
 }
 
-void Git::setRemoteURL(QString const &remote, QString const &url)
+void Git::setRemoteURL(QString const &name, QString const &url)
 {
 	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeQuotedText(remote)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
 	git(cmd);
 }
 
-void Git::addRemoteURL(QString const &remote, QString const &url)
+void Git::addRemoteURL(QString const &name, QString const &url)
 {
 	QString cmd = "remote add %1 %2";
-	cmd = cmd.arg(encodeQuotedText(remote)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
+	git(cmd);
+}
+
+void Git::removeRemote(QString const &name)
+{
+	QString cmd = "remote remove %1";
+	cmd = cmd.arg(encodeQuotedText(name));
 	git(cmd);
 }
 

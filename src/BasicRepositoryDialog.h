@@ -20,6 +20,7 @@ protected:
 	GitPtr git();
 	QString updateRemotesTable(QTableWidget *tablewidget);
 
+	const QList<Git::Remote> *remotes() const;
 };
 
 #endif // BASICREPOSITORYDIALOG_H

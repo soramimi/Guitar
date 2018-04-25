@@ -192,7 +192,8 @@ SOURCES += \
     src/SettingGeneralForm.cpp \
     src/WelcomeWizardDialog.cpp \
     src/DialogHeaderFrame.cpp \
-    src/CommitViewWindow.cpp
+    src/CommitViewWindow.cpp \
+    src/EditRemoteDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -290,7 +291,8 @@ HEADERS  += \
     src/SettingGeneralForm.h \
     src/WelcomeWizardDialog.h \
     src/DialogHeaderFrame.h \
-    src/CommitViewWindow.h
+    src/CommitViewWindow.h \
+    src/EditRemoteDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -329,7 +331,8 @@ FORMS    += \
     src/BlameWindow.ui \
     src/SettingGeneralForm.ui \
     src/WelcomeWizardDialog.ui \
-    src/CommitViewWindow.ui
+    src/CommitViewWindow.ui \
+    src/EditRemoteDialog.ui
 
 RESOURCES += \
     resources.qrc

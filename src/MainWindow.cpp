@@ -739,7 +739,19 @@ Git::CommitItemList const *MainWindow::logs() const
 
 QString MainWindow::currentWorkingCopyDir() const
 {
-	return m->current_repo.local_dir;
+	QString workdir = m->current_repo.local_dir;
+	if (!workdir.isEmpty()) return workdir;
+
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	if (treeitem) {
+		RepositoryItem const *repo = repositoryItem(treeitem);
+		if (repo) {
+			workdir = repo->local_dir;
+			return workdir;
+		}
+	}
+
+	return QString();
 }
 
 GitPtr MainWindow::git(QString const &dir) const
@@ -788,7 +800,24 @@ QString MainWindow::makeRepositoryName(QString const &loc)
 	return QString();
 }
 
-int MainWindow::repositoryIndex_(QTreeWidgetItem *item)
+RepositoryItem const *MainWindow::findRegisteredRepository(QString *workdir) const
+{
+	*workdir = QDir(*workdir).absolutePath();
+	workdir->replace('\\', '/');
+
+	for (RepositoryItem const &item : m->repos) {
+		Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#ifdef Q_OS_WIN
+		cs = Qt::CaseInsensitive;
+#endif
+		if (workdir->compare(item.local_dir, cs) == 0) {
+			return &item;
+		}
+	}
+	return nullptr;
+}
+
+int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 {
 	if (item) {
 		int i = item->data(0, IndexRole).toInt();
@@ -799,7 +828,7 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem *item)
 	return -1;
 }
 
-RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem *item)
+RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
 	if (row >= 0 && row < m->repos.size()) {
@@ -1619,23 +1648,15 @@ void MainWindow::udpateButton()
 
 void MainWindow::autoOpenRepository(QString dir)
 {
-	dir = QDir(dir).absolutePath();
-	dir.replace('\\', '/');
-
 	auto Open = [&](RepositoryItem const &item){
 		m->current_repo = item;
 		openRepository(false);
 	};
 
-	for (RepositoryItem const &item : m->repos) {
-		Qt::CaseSensitivity cs = Qt::CaseSensitive;
-#ifdef Q_OS_WIN
-		cs = Qt::CaseInsensitive;
-#endif
-		if (dir.compare(item.local_dir, cs) == 0) {
-			Open(item);
-			return;
-		}
+	RepositoryItem const *repo = findRegisteredRepository(&dir);
+	if (repo) {
+		Open(*repo);
+		return;
 	}
 
 	RepositoryItem newitem;
@@ -1764,6 +1785,26 @@ void MainWindow::updateStatusBarText()
 	setStatusBarText(text);
 }
 
+void MainWindow::execRepositoryPropertyDialog(QString workdir)
+{
+	if (workdir.isEmpty()) {
+		workdir = currentWorkingCopyDir();
+	}
+	QString name;
+	RepositoryItem const *repo = findRegisteredRepository(&workdir);
+	if (repo) {
+		name = repo->name;
+	}
+	if (name.isEmpty()) {
+		name = makeRepositoryName(workdir);
+	}
+	GitPtr g = git(workdir);
+	RepositoryPropertyDialog dlg(this, g, *repo);
+	dlg.exec();
+}
+
+
+
 void MainWindow::on_action_commit_triggered()
 {
 	commit();
@@ -1787,7 +1828,7 @@ void MainWindow::on_action_push_triggered()
 
 	if (g->getRemotes().isEmpty()) {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		execSetRemoteUrlDialog();
+		execRepositoryPropertyDialog();
 		return;
 	}
 
@@ -1973,8 +2014,6 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
 		menu.addSeparator();
 		QAction *a_remove = menu.addAction(tr("&Remove"));
-		menu.addSeparator();
-		QAction *a_set_remote_url = menu.addAction(tr("Set remote URL"));
 
 		menu.addSeparator();
 		QAction *a_properties = addMenuActionProperty(&menu);
@@ -1999,32 +2038,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_properties) {
-				GitPtr g = git(repo->local_dir);
-				RepositoryPropertyDialog dlg(this, g, *repo);
-				dlg.exec();
-				return;
-			}
-			if (a == a_set_remote_url) {
-				execSetRemoteUrlDialog();
+				execRepositoryPropertyDialog(repo->local_dir);
 				return;
 			}
 		}
 	}
-}
-
-void MainWindow::execSetRemoteUrlDialog(RepositoryItem const *repo)
-{
-	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
-	if (!treeitem) return;
-
-	repo = repositoryItem(treeitem);
-	if (!repo) return;
-
-	GitPtr g = git(repo->local_dir);
-	if (!isValidWorkingCopy(g)) return;
-	QStringList remotes = g->getRemotes();
-	SetRemoteUrlDialog dlg(this, remotes, g);
-	dlg.exec();
 }
 
 void MainWindow::execCommitExploreWindow(QWidget *parent, Git::CommitItem const *commit)

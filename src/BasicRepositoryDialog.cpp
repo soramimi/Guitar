@@ -6,6 +6,7 @@
 struct BasicRepositoryDialog::Private {
 	MainWindow *mainwindow = nullptr;
 	GitPtr git;
+	QList<Git::Remote> remotes;
 };
 
 BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr g)
@@ -35,20 +36,27 @@ GitPtr BasicRepositoryDialog::git()
 	return m->git;
 }
 
+QList<Git::Remote> const *BasicRepositoryDialog::remotes() const
+{
+	return &m->remotes;
+}
+
 QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 {
-	QList<Git::Remote> vec;
+	tablewidget->clear();
+	m->remotes.clear();
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
-		g->getRemoteURLs(&vec);
+		g->getRemoteURLs(&m->remotes);
 	}
 	QString url;
 	QString alturl;
-	int rows = vec.size();
+	int rows = m->remotes.size();
 	tablewidget->setColumnCount(3);
 	tablewidget->setRowCount(rows);
 	auto newQTableWidgetItem = [](QString const &text){
 		QTableWidgetItem *item = new QTableWidgetItem();
+		item->setSizeHint(QSize(20, 20));
 		item->setText(text);
 		return item;
 	};
@@ -59,7 +67,7 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 	SetHeaderItem(1, tr("Purpose"));
 	SetHeaderItem(2, tr("URL"));
 	for (int row = 0; row < rows; row++) {
-		Git::Remote const &r = vec[row];
+		Git::Remote const &r = m->remotes[row];
 		if (r.purpose == "push") {
 			url = r.url;
 		} else {
@@ -67,7 +75,7 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 		}
 		auto SetItem = [&](int col, QString const &text){
 			tablewidget->setItem(row, col, newQTableWidgetItem(text));
-			tablewidget->setRowHeight(col, 24);
+//			tablewidget->setRowHeight(col, 24);
 		};
 		SetItem(0, r.name);
 		SetItem(1, r.purpose);

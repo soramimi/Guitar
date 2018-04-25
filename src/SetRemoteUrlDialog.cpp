@@ -24,7 +24,7 @@ int SetRemoteUrlDialog::exec()
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
 		QString remote = remotes.isEmpty() ? "origin" : remotes[0];
-		ui->lineEdit_remote->setText(remote);
+		ui->lineEdit_name->setText(remote);
 	}
 
 	updateRemotesTable();
@@ -41,7 +41,7 @@ void SetRemoteUrlDialog::accept()
 {
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
-		QString rem = ui->lineEdit_remote->text();
+		QString rem = ui->lineEdit_name->text();
 		QString url = ui->lineEdit_url->text();
 		if (remotes.contains(rem)) {
 			g->setRemoteURL(rem, url);
