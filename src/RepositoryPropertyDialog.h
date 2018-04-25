@@ -18,7 +18,7 @@ class RepositoryPropertyDialog : public BasicRepositoryDialog
 private:
 	RepositoryItem repository;
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryItem const &item);
+	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog();
 
 private slots:

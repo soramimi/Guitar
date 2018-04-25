@@ -1785,7 +1785,7 @@ void MainWindow::updateStatusBarText()
 	setStatusBarText(text);
 }
 
-void MainWindow::execRepositoryPropertyDialog(QString workdir)
+void MainWindow::execRepositoryPropertyDialog(QString workdir, bool open_repository_menu)
 {
 	if (workdir.isEmpty()) {
 		workdir = currentWorkingCopyDir();
@@ -1799,7 +1799,7 @@ void MainWindow::execRepositoryPropertyDialog(QString workdir)
 		name = makeRepositoryName(workdir);
 	}
 	GitPtr g = git(workdir);
-	RepositoryPropertyDialog dlg(this, g, *repo);
+	RepositoryPropertyDialog dlg(this, g, *repo, open_repository_menu);
 	dlg.exec();
 }
 
@@ -1828,7 +1828,7 @@ void MainWindow::on_action_push_triggered()
 
 	if (g->getRemotes().isEmpty()) {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		execRepositoryPropertyDialog();
+		execRepositoryPropertyDialog(QString(), true);
 		return;
 	}
 

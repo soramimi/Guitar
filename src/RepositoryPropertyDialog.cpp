@@ -7,7 +7,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, const RepositoryItem &item)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, const RepositoryItem &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
 {
@@ -18,7 +18,7 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g,
 
 	repository = item;
 
-	ui->groupBox_remote->setVisible(false);
+	ui->groupBox_remote->setVisible(open_repository_menu);
 
 	ui->label_name->setText(repository.name);
 	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));

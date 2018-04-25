@@ -274,7 +274,7 @@ public:
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	QAction *addMenuActionProperty(QMenu *menu);
 	void execFilePropertyDialog(QListWidgetItem *item);
-	void execRepositoryPropertyDialog(QString workdir = QString());
+	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
