@@ -202,6 +202,7 @@ private:
 	void blame();
 	QListWidgetItem *currentFileItem() const;
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
+	void updateRemoteInfo();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -218,7 +219,7 @@ public:
 	void setFileCommand(const QString &path, bool save);
 	void setGitCommand(const QString &path, bool save);
 	QString currentRepositoryName() const;
-	Git::Branch currentBranch() const;
+	const Git::Branch &currentBranch() const;
 	bool isThereUncommitedChanges() const;
 	QString defaultWorkingDir() const;
 	void autoOpenRepository(QString dir);
@@ -275,6 +276,7 @@ public:
 	QAction *addMenuActionProperty(QMenu *menu);
 	void execFilePropertyDialog(QListWidgetItem *item);
 	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
+	QStringList remotes() const;
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

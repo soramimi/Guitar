@@ -134,6 +134,7 @@ public:
 	struct Branch {
 		QString name;
 		QString id;
+		QString remote;
 		int ahead = 0;
 		int behind = 0;
 		enum {
@@ -142,6 +143,16 @@ public:
 			HeadDetached = 0x0002,
 		};
 		int flags = 0;
+		operator bool () const
+		{
+			if (name.isEmpty()) return false;
+			if (id.isEmpty()) return false;
+			return true;
+		}
+		bool isCurrent() const
+		{
+			return flags & Current;
+		}
 		bool isHeadDetached() const
 		{
 			return flags & HeadDetached;

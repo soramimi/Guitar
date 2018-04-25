@@ -189,6 +189,7 @@ struct MainWindow::Private {
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
+	QStringList remotes;
 	std::map<QString, QList<Git::Branch>> branch_map;
 	std::map<QString, QList<Git::Tag>> tag_map;
 	QString repository_filter_text;
@@ -301,6 +302,8 @@ MainWindow::MainWindow(QWidget *parent)
 			setWindowState(state);
 		}
 	}
+
+	ui->comboBox_remote->setEnabled(false); // TODO:
 
 	startTimers();
 }
@@ -1184,7 +1187,7 @@ QString MainWindow::currentRepositoryName() const
 	return m->current_repo.name;
 }
 
-Git::Branch MainWindow::currentBranch() const
+Git::Branch const &MainWindow::currentBranch() const
 {
 	return m->current_branch;
 }
@@ -1200,11 +1203,20 @@ void MainWindow::queryBranches(GitPtr g)
 	m->branch_map.clear();
 	QList<Git::Branch> branches = g->branches();
 	for (Git::Branch const &b : branches) {
-		if (b.flags & Git::Branch::Current) {
+		if (b.isCurrent()) {
 			m->current_branch = b;
 		}
 		m->branch_map[b.id].append(b);
 	}
+}
+
+QList<Git::Branch> MainWindow::findBranch(QString const &id)
+{
+	auto it = m->branch_map.find(id);
+	if (it != m->branch_map.end()) {
+		return it->second;
+	}
+	return QList<Git::Branch>();
 }
 
 QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
@@ -1324,6 +1336,36 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	} else {
 		setUnknownRepositoryInfo();
 	}
+}
+
+void MainWindow::updateRemoteInfo()
+{
+	GitPtr g = git();
+	m->remotes = g->getRemotes();
+	std::sort(m->remotes.begin(), m->remotes.end());
+
+	QString current_remote;
+	{
+		Git::Branch const &r = currentBranch();
+		int i = r.remote.indexOf('/');
+		if (i > 0) {
+			current_remote = r.remote.mid(0, i);
+		}
+	}
+
+	ui->comboBox_remote->clear();
+
+	for (QString const &remote : m->remotes) {
+		ui->comboBox_remote->addItem(remote);
+		qDebug() << remote;
+	}
+
+	ui->comboBox_remote->setCurrentText(current_remote);
+}
+
+QStringList MainWindow::remotes() const
+{
+	return m->remotes;
 }
 
 int MainWindow::limitLogCount() const
@@ -1485,6 +1527,8 @@ void MainWindow::openRepository_(GitPtr g)
 		clearLog();
 		clearRepositoryInfo();
 	}
+
+	updateRemoteInfo();
 
 	updateWindowTitle(g);
 
@@ -1801,6 +1845,9 @@ void MainWindow::execRepositoryPropertyDialog(QString workdir, bool open_reposit
 	GitPtr g = git(workdir);
 	RepositoryPropertyDialog dlg(this, g, *repo, open_repository_menu);
 	dlg.exec();
+	if (dlg.isRemoteChanged()) {
+		updateRemoteInfo();
+	}
 }
 
 
@@ -2714,15 +2761,6 @@ DONE:;
 			}
 		}
 	}
-}
-
-QList<Git::Branch> MainWindow::findBranch(QString const &id)
-{
-	auto it = m->branch_map.find(id);
-	if (it != m->branch_map.end()) {
-		return it->second;
-	}
-	return QList<Git::Branch>();
 }
 
 QList<Git::Tag> MainWindow::findTag(QString const &id)
@@ -4027,6 +4065,8 @@ void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 	reopenRepository(true, [&](GitPtr g){
 		g->push_u(remote, branch);
 	});
+
+	updateRemoteInfo();
 }
 
 bool MainWindow::pushSetUpstream(bool testonly)

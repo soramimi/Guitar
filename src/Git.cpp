@@ -468,19 +468,39 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 
 	if (*ptr == '[') {
 		ptr++;
-		while (*ptr) {
-			if (*ptr == ',' || QChar(*ptr).isSpace()) {
-				ptr++;
-			} else if (NCompare(ptr, "ahead ", 6)) {
-				ptr += 6;
-				SkipSpace();
-				b->ahead = GetNumber();
-			} else if (NCompare(ptr, "behind ", 7)) {
-				ptr += 7;
-				SkipSpace();
-				b->behind = GetNumber();
-			} else {
+		ushort const *e = nullptr;
+		int n;
+		for (n = 0; ptr + n < end; n++) {
+			if (ptr[n] == ']') {
+				e = ptr + n;
 				break;
+			}
+		}
+		if (e) {
+			end = e;
+			ushort const *begin = ptr;
+			while (1) {
+				if (NCompare(ptr, "ahead ", 6)) {
+					ptr += 6;
+					SkipSpace();
+					b->ahead = GetNumber();
+				} else if (NCompare(ptr, "behind ", 7)) {
+					ptr += 7;
+					SkipSpace();
+					b->behind = GetNumber();
+				} else {
+					ushort c = 0;
+					if (ptr < end) {
+						c = *ptr;
+					}
+					if (c == ':' || c == 0) {
+						if (b->remote.isEmpty()) {
+							b->remote = QString::fromUtf16(begin, ptr - begin);
+						}
+					}
+					if (c == 0) break;
+					ptr++;
+				}
 			}
 		}
 	}
@@ -489,7 +509,7 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 QList<Git::Branch> Git::branches()
 {
 	QList<Branch> branches;
-	git(QString("branch -v -a --abbrev=%1").arg(GIT_ID_LENGTH));
+	git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
 	QString s = resultText();
 #if DEBUGLOG
 	qDebug() << s;

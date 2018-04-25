@@ -100,16 +100,25 @@ Git::Remote RepositoryPropertyDialog::selectedRemote() const
 	return remote;
 }
 
+bool RepositoryPropertyDialog::isRemoteChanged() const
+{
+	return remote_changed;
+}
+
 void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 {
 	Git::Remote r;
-	execEditRemoteDialog(&r, EditRemoteDialog::RemoteAdd);
+	if (execEditRemoteDialog(&r, EditRemoteDialog::RemoteAdd)) {
+		remote_changed = true;
+	}
 }
 
 void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 {
 	Git::Remote remote = selectedRemote();
-	execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet);
+	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
+		remote_changed = true;
+	}
 }
 
 void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
@@ -121,6 +130,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 			GitPtr g = git();
 			g->removeRemote(remote.name);
 			updateRemotesTable();
+			remote_changed = true;
 		}
 	}
 }
