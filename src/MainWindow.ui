@@ -436,7 +436,11 @@
           </layout>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_remote"/>
+          <widget class="QPushButton" name="pushButton_remote">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -1022,6 +1026,8 @@
     <addaction name="action_reflog"/>
     <addaction name="separator"/>
     <addaction name="action_clone"/>
+    <addaction name="separator"/>
+    <addaction name="action_repository_property"/>
    </widget>
    <widget class="QMenu" name="menuExperiment">
     <property name="title">
@@ -1426,6 +1432,11 @@
   <action name="action_reflog">
    <property name="text">
     <string>Reflog...</string>
+   </property>
+  </action>
+  <action name="action_repository_property">
+   <property name="text">
+    <string>Property...</string>
    </property>
   </action>
  </widget>

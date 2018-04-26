@@ -375,6 +375,8 @@ private slots:
 	void on_action_reflog_triggered();
 
 
+	void on_action_repository_property_triggered();
+
 signals:
 	void onEscapeKeyPressed();
 

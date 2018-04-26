@@ -24,20 +24,16 @@ public:
 
 	bool isRemoteChanged() const;
 private slots:
-
-	void on_label_remote_menu_linkActivated(const QString &link);
-
 	void on_pushButton_remote_add_clicked();
-
 	void on_pushButton_remote_edit_clicked();
-
 	void on_pushButton_remote_remove_clicked();
-
+	void on_pushButton_remote_menu_clicked();
 private:
 	Ui::RepositoryPropertyDialog *ui;
 	void updateRemotesTable();
 	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
 	Git::Remote selectedRemote() const;
+	void toggleRemoteMenuActivity();
 };
 
 #endif // REPOSITORYPROPERTYDIALOG_H

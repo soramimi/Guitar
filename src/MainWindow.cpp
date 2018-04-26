@@ -303,7 +303,7 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-	ui->comboBox_remote->setEnabled(false); // TODO:
+	ui->pushButton_remote->setEnabled(false); // TODO:
 
 	startTimers();
 }
@@ -1353,14 +1353,13 @@ void MainWindow::updateRemoteInfo()
 		}
 	}
 
-	ui->comboBox_remote->clear();
 
-	for (QString const &remote : m->remotes) {
-		ui->comboBox_remote->addItem(remote);
-		qDebug() << remote;
-	}
+//	for (QString const &remote : m->remotes) {
+//		ui->pushButton_remote->addItem(remote);
+//		qDebug() << remote;
+//	}
 
-	ui->comboBox_remote->setCurrentText(current_remote);
+	ui->pushButton_remote->setText(current_remote);
 }
 
 QStringList MainWindow::remotes() const
@@ -4272,6 +4271,10 @@ void MainWindow::execCommitViewWindow(Git::CommitItem const *commit)
 	win.exec();
 }
 
+void MainWindow::on_action_repository_property_triggered()
+{
+	execRepositoryPropertyDialog(currentWorkingCopyDir());
+}
 
 
 
@@ -4283,6 +4286,7 @@ void MainWindow::execCommitViewWindow(Git::CommitItem const *commit)
 void MainWindow::on_action_test_triggered()
 {
 }
+
 
 
 

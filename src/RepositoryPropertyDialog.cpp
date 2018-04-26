@@ -36,12 +36,12 @@ void RepositoryPropertyDialog::updateRemotesTable()
 	BasicRepositoryDialog::updateRemotesTable(ui->tableWidget);
 }
 
-void RepositoryPropertyDialog::on_label_remote_menu_linkActivated(const QString &link)
+void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 {
-	if (link == "#remote") {
-		ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
-	}
+	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
+
+
 
 bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
 {
@@ -135,3 +135,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 	}
 }
 
+void RepositoryPropertyDialog::on_pushButton_remote_menu_clicked()
+{
+	toggleRemoteMenuActivity();
+}

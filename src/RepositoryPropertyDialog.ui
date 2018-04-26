@@ -161,12 +161,9 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QLabel" name="label_remote_menu">
+         <widget class="QPushButton" name="pushButton_remote_menu">
           <property name="text">
-           <string>&lt;a href=&quot;#remote&quot;&gt;Remote menu&lt;/a&gt;</string>
-          </property>
-          <property name="textFormat">
-           <enum>Qt::RichText</enum>
+           <string>&amp;Remote menu</string>
           </property>
          </widget>
         </item>
