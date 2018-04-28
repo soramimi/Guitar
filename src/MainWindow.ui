@@ -436,11 +436,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_remote">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
+          <widget class="ReadOnlyLineEdit" name="lineEdit_remote"/>
          </item>
         </layout>
        </item>
@@ -1479,6 +1475,11 @@
    <extends>QWidget</extends>
    <header location="global">FileDiffWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

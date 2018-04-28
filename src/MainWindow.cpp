@@ -303,8 +303,6 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-	ui->pushButton_remote->setEnabled(false); // TODO:
-
 	startTimers();
 }
 
@@ -1353,13 +1351,7 @@ void MainWindow::updateRemoteInfo()
 		}
 	}
 
-
-//	for (QString const &remote : m->remotes) {
-//		ui->pushButton_remote->addItem(remote);
-//		qDebug() << remote;
-//	}
-
-	ui->pushButton_remote->setText(current_remote);
+	ui->lineEdit_remote->setText(current_remote);
 }
 
 QStringList MainWindow::remotes() const
