@@ -13,7 +13,6 @@
 #include <QThread>
 
 struct FileHistoryWindow::Private {
-	MainWindow *mainwindow;
 	GitPtr g;
 	QString path;
 	Git::CommitItemList commit_item_list;
@@ -51,7 +50,7 @@ int FileHistoryWindow::fileviewScrollPos() const
 	return drawdata()->v_scroll_pos;
 }
 
-FileHistoryWindow::FileHistoryWindow(QWidget *parent)
+FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
 	: QDialog(parent)
 	, ui(new Ui::FileHistoryWindow)
 	, m(new Private)
@@ -63,12 +62,9 @@ FileHistoryWindow::FileHistoryWindow(QWidget *parent)
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
-	m->mainwindow = qobject_cast<MainWindow *>(parent);
-	Q_ASSERT(m->mainwindow);
-
 	ui->splitter->setSizes({100, 200});
 
-	ui->widget_diff_view->bind(m->mainwindow);
+	ui->widget_diff_view->bind(mainwindow());
 
 	connect(ui->widget_diff_view, SIGNAL(moveNextItem()), this, SLOT(onMoveNextItem()));
 	connect(ui->widget_diff_view, SIGNAL(movePreviousItem()), this, SLOT(onMovePreviousItem()));
@@ -80,6 +76,11 @@ FileHistoryWindow::~FileHistoryWindow()
 	delete ui;
 }
 
+MainWindow *FileHistoryWindow::mainwindow()
+{
+	return qobject_cast<MainWindow *>(parent());
+}
+
 void FileHistoryWindow::prepare(GitPtr g, const QString &path)
 {
 	Q_ASSERT(g);
@@ -87,8 +88,8 @@ void FileHistoryWindow::prepare(GitPtr g, const QString &path)
 	this->m->g = g;
 	this->m->path = path;
 
-	QString reponame = m->mainwindow->currentRepositoryName();
-	QString brname = m->mainwindow->currentBranch().name;
+	QString reponame = mainwindow()->currentRepositoryName();
+	QString brname = mainwindow()->currentBranch().name;
 
 	QString text = "%1 (%2)";
 	text = text.arg(reponame).arg(brname);
@@ -97,7 +98,7 @@ void FileHistoryWindow::prepare(GitPtr g, const QString &path)
 
 	{
 		OverrideWaitCursor;
-		m->commit_item_list = m->g->log_all(m->path, m->mainwindow->limitLogCount());
+		m->commit_item_list = m->g->log_all(m->path, mainwindow()->limitLogCount());
 	}
 
 	collectFileHistory();
@@ -135,7 +136,7 @@ void FileHistoryWindow::collectFileHistory()
 			col++;
 		};
 
-		QString commit_id = m->mainwindow->abbrevCommitID(commit);
+		QString commit_id = mainwindow()->abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
@@ -187,8 +188,8 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		FindFileIdThread left_thread(m->mainwindow, m->g->dup(), commit_left.commit_id, m->path);
-		FindFileIdThread right_thread(m->mainwindow, m->g->dup(), commit_right.commit_id, m->path);
+		FindFileIdThread left_thread(mainwindow(), m->g->dup(), commit_left.commit_id, m->path);
+		FindFileIdThread right_thread(mainwindow(), m->g->dup(), commit_right.commit_id, m->path);
 		left_thread.start();
 		right_thread.start();
 		left_thread.wait();
@@ -199,7 +200,7 @@ void FileHistoryWindow::updateDiffView()
 		ui->widget_diff_view->updateDiffView(id_left, id_right);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = m->mainwindow->findFileID(m->g, commit.commit_id, m->path);
+		QString id = mainwindow()->findFileID(m->g, commit.commit_id, m->path);
 
 		Git::Diff diff(id, m->path, QString());
 		ui->widget_diff_view->updateDiffView(diff, false);
@@ -240,16 +241,11 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 	if (!commit) return;
 
 	QMenu menu;
-	QAction *a_explorer = menu.addAction("Explorer");
-	QAction *a_property = menu.addAction("Property");
+	QAction *a_property = menu.addAction("&Property");
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
-		if (a == a_explorer) {
-			m->mainwindow->execCommitExploreWindow(this, commit);
-			return;
-		}
 		if (a == a_property) {
-			m->mainwindow->execCommitPropertyDialog(this, commit);
+			mainwindow()->execCommitPropertyDialog(this, commit);
 			return;
 		}
 	}

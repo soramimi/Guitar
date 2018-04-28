@@ -34,8 +34,17 @@ public:
 private slots:
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 
+	void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+
+	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
+
 private:
 	Ui::BlameWindow *ui;
+	MainWindow *mainwindow();
+
+	// QObject interface
+	QString getCommitId(QTableWidgetItem *item) const;
+	QString currentCommitId() const;
 };
 
 #endif // BLAMEWINDOW_H

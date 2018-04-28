@@ -85,3 +85,9 @@ void CommitPropertyDialog::on_pushButton_details_clicked()
 {
 	m->mainwindow->execCommitViewWindow(&m->commit);
 }
+
+void CommitPropertyDialog::on_pushButton_explorer_clicked()
+{
+	m->mainwindow->execCommitExploreWindow(this, &m->commit);
+
+}

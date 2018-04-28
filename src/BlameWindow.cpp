@@ -5,13 +5,25 @@
 #include "Git.h"
 #include "MainWindow.h"
 
+#include <QMenu>
+#include <QToolTip>
+
 enum {
 	CommidIdRole = Qt::UserRole,
 };
 
+namespace {
+struct CommitInfo {
+	QString datetime;
+	QString author;
+	QString email;
+	QString message;
+};
+}
+
 struct BlameWindow::Private {
-	MainWindow *mainwindow;
 	QList<BlameItem> list;
+	std::map<QString, CommitInfo> commit_cache;
 };
 
 BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QList<BlameItem> &list)
@@ -23,8 +35,6 @@ BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QLis
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-
-	m->mainwindow = parent;
 
 	{
 		QString s = "Blame : %1";
@@ -98,12 +108,19 @@ BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QLis
 
 	ui->tableWidget->resizeColumnsToContents();
 	ui->tableWidget->horizontalHeader()->stretchLastSection();
+
+	ui->tableWidget->selectRow(0);
 }
 
 BlameWindow::~BlameWindow()
 {
 	delete m;
 	delete ui;
+}
+
+MainWindow *BlameWindow::mainwindow()
+{
+	return qobject_cast<MainWindow *>(parent());
 }
 
 namespace {
@@ -232,21 +249,86 @@ QList<BlameItem> BlameWindow::parseBlame(const char *begin, const char *end)
 	return list;
 }
 
-void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
+QString BlameWindow::getCommitId(QTableWidgetItem *item) const
 {
+	return item ? item->data(CommidIdRole).toString() : QString();
+}
+
+QString BlameWindow::currentCommitId() const
+{
+	QString id;
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < m->list.size()) {
 		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
-		if (item) {
-			QString id = item->data(CommidIdRole).toString();
-			if (Git::isValidID(id)) {
-				CommitPropertyDialog dlg(this, m->mainwindow, id);
-				dlg.showCheckoutButton(false);
-				dlg.showJumpButton(true);
-				if (dlg.exec() == QDialog::Accepted) {
-					close();
-				}
-			}
+		id = getCommitId(item);
+	}
+	return id;
+}
+
+void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
+{
+	QString id = currentCommitId();
+	if (Git::isValidID(id)) {
+		CommitPropertyDialog dlg(this, mainwindow(), id);
+		dlg.showCheckoutButton(false);
+		dlg.showJumpButton(true);
+		if (dlg.exec() == QDialog::Accepted) {
+			close();
 		}
 	}
+}
+
+void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
+{
+	(void)pos;
+	int row = ui->tableWidget->currentRow();
+	if (row < 0 || row >= m->list.size()) return;
+
+	Git::CommitItem commit;
+	BlameItem blame = m->list[row];
+	GitPtr g = mainwindow()->git();
+	if (!g->queryCommit(blame.commit_id, &commit)) return;
+
+	QMenu menu;
+	QAction *a_property = menu.addAction("&Property");
+	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
+	if (a) {
+		if (a == a_property) {
+			mainwindow()->execCommitPropertyDialog(this, &commit);
+			return;
+		}
+	}
+}
+
+void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)
+{
+	(void)current;
+	(void)previous;
+	QString id = currentCommitId();
+	CommitInfo info;
+	if (Git::isValidID(id)) {
+		auto it = m->commit_cache.find(id);
+		if (it != m->commit_cache.end()) {
+			info = it->second;
+		} else {
+			GitPtr g = mainwindow()->git();
+			Git::CommitItem commit;
+			if (g->queryCommit(id, &commit)) {
+				info.datetime = misc::makeDateTimeString(commit.commit_date);
+				info.author = commit.author;
+				info.email = commit.email;
+				info.message = commit.message;
+			}
+		}
+	} else {
+		id = QString();
+	}
+	QString author = info.author;
+	if (!info.email.isEmpty()) {
+		author = author + " <" + info.email + '>';
+	}
+	ui->lineEdit_commit_id->setText(id);
+	ui->lineEdit_date->setText(info.datetime);
+	ui->lineEdit_author->setText(author);
+	ui->lineEdit_message->setText(info.message);
 }

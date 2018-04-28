@@ -10,6 +10,7 @@ namespace Ui {
 class FileHistoryWindow;
 }
 
+class MainWindow;
 class QTableWidgetItem;
 
 class FileHistoryWindow : public QDialog
@@ -26,7 +27,7 @@ private:
 	int totalTextLines() const;
 	int fileviewScrollPos() const;
 public:
-	explicit FileHistoryWindow(QWidget *parent);
+	explicit FileHistoryWindow(MainWindow *parent);
 	~FileHistoryWindow();
 
 	void prepare(GitPtr g, const QString &path);
@@ -42,6 +43,7 @@ private:
 
 	void collectFileHistory();
 	void updateDiffView();
+	MainWindow *mainwindow();
 };
 
 #endif // FILEHISTORYWINDOW_H
