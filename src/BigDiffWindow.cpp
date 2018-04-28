@@ -20,10 +20,6 @@ BigDiffWindow::BigDiffWindow(QWidget *parent)
 	ui->widget_diff->setMaximizeButtonEnabled(false);
 
 	connect(ui->widget_diff, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
-
-	connect(ui->widget_diff, &FileDiffWidget::escPressed, [&](){
-		close();
-	});
 }
 
 BigDiffWindow::~BigDiffWindow()

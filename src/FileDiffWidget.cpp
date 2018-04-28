@@ -598,7 +598,7 @@ void FileDiffWidget::resizeEvent(QResizeEvent *)
 void FileDiffWidget::keyPressEvent(QKeyEvent *event)
 {
 	if (event->key() == Qt::Key_Escape) {
-		emit escPressed();
+		event->ignore(); // Escが押されたとき、親ウィジェットに処理させる。（通常、ウィンドウを閉じる、など）
 		return;
 	}
 
@@ -698,9 +698,6 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 
 void FileDiffWidget::setTextCodec(QTextCodec *codec)
 {
-//	if (!codec) {
-//		codec = QTextCodec::codecForName("UTF-8");
-//	}
 	m->text_codec = codec;
 	ui->widget_diff_left->setTextCodec(codec);
 	ui->widget_diff_right->setTextCodec(codec);

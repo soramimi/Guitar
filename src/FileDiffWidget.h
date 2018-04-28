@@ -155,7 +155,6 @@ private slots:
 	void onDiffWidgetResized();
 	void on_toolButton_fullscreen_clicked();
 
-//	void setBinaryMode();
 	void scrollTo(int value);
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void on_toolButton_menu_clicked();
@@ -163,7 +162,6 @@ private slots:
 signals:
 	void moveNextItem();
 	void movePreviousItem();
-	void escPressed();
 	void textcodecChanged();
 };
 
