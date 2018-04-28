@@ -121,6 +121,7 @@ private:
 	void refrectScrollBar();
 	void setOriginalLines_(const QByteArray &ba);
 	QString diffObjects(GitPtr g, const QString &a_id, const QString &b_id);
+	MainWindow *mainwindow();
 protected:
 	void resizeEvent(QResizeEvent *);
 	void keyPressEvent(QKeyEvent *event);

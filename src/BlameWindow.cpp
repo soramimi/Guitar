@@ -290,7 +290,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	if (!g->queryCommit(blame.commit_id, &commit)) return;
 
 	QMenu menu;
-	QAction *a_property = menu.addAction("&Property");
+	QAction *a_property = mainwindow()->addMenuActionProperty(&menu);
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {

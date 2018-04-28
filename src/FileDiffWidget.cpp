@@ -107,18 +107,23 @@ void FileDiffWidget::bind(MainWindow *mw)
 	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
 }
 
+MainWindow *FileDiffWidget::mainwindow()
+{
+	return m->mainwindow;
+}
+
 GitPtr FileDiffWidget::git()
 {
-	if (!m->mainwindow) {
+	if (!mainwindow()) {
 		qDebug() << "Maybe, you forgot to call FileDiffWidget::bind() ?";
 		return GitPtr();
 	}
-	return m->mainwindow->git();
+	return mainwindow()->git();
 }
 
 Git::Object FileDiffWidget::cat_file(GitPtr /*g*/, QString const &id)
 {
-	return m->mainwindow->cat_file(id);
+	return mainwindow()->cat_file(id);
 }
 
 int FileDiffWidget::totalTextLines() const
@@ -341,8 +346,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 	SetLineNumber(left, Pane::Left, &m->left_lines);
 	SetLineNumber(right, Pane::Right, &m->right_lines);
 
-	ui->widget_diff_left->setText(&m->left_lines, m->mainwindow, diff.blob.a_id, diff.path);
-	ui->widget_diff_right->setText(&m->right_lines, m->mainwindow, diff.blob.b_id, diff.path);
+	ui->widget_diff_left->setText(&m->left_lines, mainwindow(), diff.blob.a_id, diff.path);
+	ui->widget_diff_right->setText(&m->right_lines, mainwindow(), diff.blob.b_id, diff.path);
 	refrectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
@@ -351,8 +356,8 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 {
 	clearDiffView();
 
-	QString mimetype_l = m->mainwindow->determinFileType(m->init_param_.bytes_a, true);
-	QString mimetype_r = m->mainwindow->determinFileType(m->init_param_.bytes_b, true);
+	QString mimetype_l = mainwindow()->determinFileType(m->init_param_.bytes_a, true);
+	QString mimetype_r = mainwindow()->determinFileType(m->init_param_.bytes_b, true);
 
 	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 
@@ -487,14 +492,14 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
-		Git::Object obj_a = m->mainwindow->cat_file_(g, a_id);
-		Git::Object obj_b = m->mainwindow->cat_file_(g, b_id);
+		Git::Object obj_a = mainwindow()->cat_file_(g, a_id);
+		Git::Object obj_b = mainwindow()->cat_file_(g, b_id);
 		if (obj_b.type == Git::Object::Type::UNKNOWN) {
 			obj_b.type = Git::Object::Type::BLOB;
 		}
 		if (obj_a.type == Git::Object::Type::BLOB && obj_b.type == Git::Object::Type::BLOB) {
-			QString path_a = m->mainwindow->newTempFilePath();
-			QString path_b = m->mainwindow->newTempFilePath();
+			QString path_a = mainwindow()->newTempFilePath();
+			QString path_b = mainwindow()->newTempFilePath();
 			QFile file_a(path_a);
 			QFile file_b(path_b);
 			if (file_a.open(QFile::WriteOnly) && file_b.open(QFile::WriteOnly)) {
@@ -529,8 +534,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
 		Git::Object obj_a = cat_file(g, info.blob.a_id);
 		Git::Object obj_b = cat_file(g, info.blob.b_id);
-		QString mime_a = m->mainwindow->determinFileType(obj_a.content, true);
-		QString mime_b = m->mainwindow->determinFileType(obj_b.content, true);
+		QString mime_a = mainwindow()->determinFileType(obj_a.content, true);
+		QString mime_b = mainwindow()->determinFileType(obj_b.content, true);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
 			setSideBySide_(obj_a.content, obj_b.content, g->workingRepositoryDir());
 			return;
@@ -643,10 +648,9 @@ void FileDiffWidget::onDiffWidgetResized()
 
 void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
-	BigDiffWindow win(m->mainwindow);
+	BigDiffWindow win(mainwindow());
 	win.setWindowState(Qt::WindowMaximized);
-//	win.setTextCodec(m->text_codec);
-	win.init(m->mainwindow, m->init_param_);
+	win.init(mainwindow(), m->init_param_);
 	win.exec();
 }
 

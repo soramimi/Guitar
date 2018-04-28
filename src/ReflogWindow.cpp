@@ -82,7 +82,7 @@ bool ReflogWindow::currentCommit(Git::CommitItem *out)
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
 		Git::ReflogItem const &logitem = reflog_[row];
-		if (mainwindow_->queryCommit(logitem.id, out)) {
+		if (mainwindow()->queryCommit(logitem.id, out)) {
 			ok = true;
 		}
 	}
@@ -97,19 +97,19 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QMenu menu;
 	QAction *a_checkout = menu.addAction(tr("Checkout"));
 	QAction *a_explorer = menu.addAction(tr("Explorer"));
-	QAction *a_property = menu.addAction(tr("Property"));
+	QAction *a_property = mainwindow()->addMenuActionProperty(&menu);
 	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_checkout) {
-			mainwindow_->checkout(this, &commit);
+			mainwindow()->checkout(this, &commit);
 			return;
 		}
 		if (a == a_explorer) {
-			mainwindow_->execCommitExploreWindow(this, &commit);
+			mainwindow()->execCommitExploreWindow(this, &commit);
 			return;
 		}
 		if (a == a_property) {
-			mainwindow_->execCommitPropertyDialog(this, &commit);
+			mainwindow()->execCommitPropertyDialog(this, &commit);
 			return;
 		}
 	}
@@ -122,5 +122,5 @@ void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 	Git::CommitItem commit;
 	if (!currentCommit(&commit)) return;
 
-	mainwindow_->execCommitPropertyDialog(this, &commit);
+	mainwindow()->execCommitPropertyDialog(this, &commit);
 }

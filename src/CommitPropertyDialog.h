@@ -37,6 +37,7 @@ private slots:
 private:
 	Ui::CommitPropertyDialog *ui;
 	void init(MainWindow *mw);
+	MainWindow *mainwindow();
 };
 
 #endif // COMMITPROPERTYDIALOG_H

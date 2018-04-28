@@ -13,18 +13,10 @@ class LogTableWidget : public QTableWidget
 private:
 	struct Private;
 	Private *m;
+	MainWindow *mainwindow();
 public:
 	explicit LogTableWidget(QWidget *parent = 0);
 	~LogTableWidget();
-signals:
-
-public slots:
-
-	// QObject interface
-public:
-	bool event(QEvent *);
-
-	// QWidget interface
 protected:
 	void paintEvent(QPaintEvent *);
 };

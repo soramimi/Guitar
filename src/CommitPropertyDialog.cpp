@@ -59,6 +59,11 @@ CommitPropertyDialog::~CommitPropertyDialog()
 	delete ui;
 }
 
+MainWindow *CommitPropertyDialog::mainwindow()
+{
+	return m->mainwindow;
+}
+
 void CommitPropertyDialog::showCheckoutButton(bool f)
 {
 	ui->pushButton_checkout->setVisible(f);
@@ -71,23 +76,23 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	m->mainwindow->checkout(this, &m->commit);
+	mainwindow()->checkout(this, &m->commit);
 	done(QDialog::Rejected);
 }
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	m->mainwindow->jumpToCommit(m->commit.commit_id);
+	mainwindow()->jumpToCommit(m->commit.commit_id);
 	done(QDialog::Accepted);
 }
 
 void CommitPropertyDialog::on_pushButton_details_clicked()
 {
-	m->mainwindow->execCommitViewWindow(&m->commit);
+	mainwindow()->execCommitViewWindow(&m->commit);
 }
 
 void CommitPropertyDialog::on_pushButton_explorer_clicked()
 {
-	m->mainwindow->execCommitExploreWindow(this, &m->commit);
+	mainwindow()->execCommitExploreWindow(this, &m->commit);
 
 }

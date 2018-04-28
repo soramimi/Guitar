@@ -195,7 +195,7 @@ MainWindow *ImageViewWidget::mainwindow()
 QBrush ImageViewWidget::getTransparentBackgroundBrush()
 {
 #ifdef APP_GUITAR
-	return m->mainwindow->getTransparentPixmap();
+	return mainwindow()->getTransparentPixmap();
 #else
 	if (m->transparent_pixmap.isNull()) {
 		m->transparent_pixmap = QPixmap(":/image/transparent.png");

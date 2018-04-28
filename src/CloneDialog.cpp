@@ -15,7 +15,6 @@ enum SearchRepository {
 };
 
 struct CloneDialog::Private {
-	MainWindow *mainwindow;
 	QString url;
 	QString repo_name;
 	QString default_working_dir;
@@ -24,7 +23,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &defworkdir)
+CloneDialog::CloneDialog(MainWindow *parent, const QString &url, const QString &defworkdir)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -33,9 +32,6 @@ CloneDialog::CloneDialog(QWidget *parent, const QString &url, const QString &def
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-
-
-	m->mainwindow = qobject_cast<MainWindow *>(parent);
 
 	ui->lineEdit_repo_location->setText(url);
 	m->default_working_dir = defworkdir;
@@ -58,7 +54,7 @@ CloneDialog::Action CloneDialog::action() const
 
 MainWindow *CloneDialog::mainwindow()
 {
-	return m->mainwindow;
+	return qobject_cast<MainWindow *>(parent());
 }
 
 QString CloneDialog::url()

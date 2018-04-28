@@ -10,7 +10,6 @@
 #include "common/misc.h"
 
 struct LogTableWidget::Private {
-	MainWindow *mainwindow;
 };
 
 class LogTableWidgetDelegate : public MyTableWidgetDelegate {
@@ -19,9 +18,7 @@ private:
 	{
 		LogTableWidget *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
-		MainWindow *mw = w->m->mainwindow;
-		Q_ASSERT(mw);
-		return mw;
+		return w->mainwindow();
 	}
 
 	static QColor labelColor(int kind)
@@ -144,15 +141,12 @@ LogTableWidget::~LogTableWidget()
 	delete m;
 }
 
-bool LogTableWidget::event(QEvent *e)
+MainWindow *LogTableWidget::mainwindow()
 {
-	if (e->type() == QEvent::Polish) {
-		m->mainwindow = qobject_cast<MainWindow *>(window());
-		Q_ASSERT(m->mainwindow);
-	}
-	return QTableWidget::event(e);
+	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	Q_ASSERT(mw);
+	return mw;
 }
-
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
 {
@@ -197,13 +191,11 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 
 	QTableWidget::paintEvent(e);
 
-	MainWindow *mw = m->mainwindow;
-
 	QPainter pr(viewport());
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const *list = mw->logs();
+	Git::CommitItemList const *list = mainwindow()->logs();
 
 	int indent_span = 16;
 
@@ -227,7 +219,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto SetPen = [&](QPainter *pr, int level, bool /*continued*/){
-		QColor c = mw->color(level + 1);
+		QColor c = mainwindow()->color(level + 1);
 		Qt::PenStyle s = Qt::SolidLine;
 		pr->setPen(QPen(c, line_width, s));
 	};
@@ -311,7 +303,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	// draw marks
 
 	pr.setOpacity(1);
-	pr.setBrush(mw->color(0));
+	pr.setBrush(mainwindow()->color(0));
 
 	for (size_t i = 0; i < list->size(); i++) {
 		double y = DrawMark(i, i);

@@ -94,6 +94,11 @@ CommitExploreWindow::~CommitExploreWindow()
 	delete ui;
 }
 
+MainWindow *CommitExploreWindow::mainwindow()
+{
+	return m->mainwindow;
+}
+
 void CommitExploreWindow::clearContent()
 {
 	m->content = ObjectContent();
@@ -234,11 +239,11 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		m->content_object = m->objcache->catFile(id);
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-		QString mimetype = m->mainwindow->determinFileType(m->content_object.content, true);
+		QString mimetype = mainwindow()->determinFileType(m->content_object.content, true);
 		if (misc::isImage(mimetype)) {
 			ui->widget_fileview->setImage(mimetype, m->content_object.content, id, path);
 		} else {
-			ui->widget_fileview->setText(m->content_object.content, m->mainwindow, id, path);
+			ui->widget_fileview->setText(m->content_object.content, mainwindow(), id, path);
 		}
 	} else {
 		clearContent();
@@ -268,7 +273,7 @@ void CommitExploreWindow::on_listWidget_customContextMenuRequested(const QPoint 
 		if (a) {
 			if (a == a_history) {
 				QString path = current->data(FilePathRole).toString();
-				m->mainwindow->execFileHistory(path);
+				mainwindow()->execFileHistory(path);
 				return;
 			}
 		}

@@ -241,7 +241,7 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 	if (!commit) return;
 
 	QMenu menu;
-	QAction *a_property = menu.addAction("&Property");
+	QAction *a_property = mainwindow()->addMenuActionProperty(&menu);
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {

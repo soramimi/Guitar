@@ -18,6 +18,11 @@ class ReflogWindow : public QDialog
 private:
 	MainWindow *mainwindow_;
 	Git::ReflogItemList reflog_;
+
+	MainWindow *mainwindow()
+	{
+		return mainwindow_;
+	}
 public:
 	explicit ReflogWindow(QWidget *parent, MainWindow *mainwin, const Git::ReflogItemList &reflog);
 	~ReflogWindow();
