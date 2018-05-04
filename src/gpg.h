@@ -18,7 +18,7 @@ public:
 		QString mail;
 	};
 
-	static bool listKeys(const QString &gpg_command, bool global, QList<gpg::Key> *keys);
+	static bool listKeys(const QString &gpg_command, QList<gpg::Key> *keys);
 };
 
 #endif // GPG_H

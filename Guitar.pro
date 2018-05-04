@@ -196,7 +196,7 @@ SOURCES += \
     src/EditRemoteDialog.cpp \
     src/gpg.cpp \
     src/SelectGpgKeyDialog.cpp \
-    src/SetGpgVerificationDialog.cpp
+    src/SetGpgSigningDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -298,7 +298,7 @@ HEADERS  += \
     src/EditRemoteDialog.h \
     src/gpg.h \
     src/SelectGpgKeyDialog.h \
-    src/SetGpgVerificationDialog.h
+    src/SetGpgSigningDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -340,7 +340,7 @@ FORMS    += \
     src/CommitViewWindow.ui \
     src/EditRemoteDialog.ui \
     src/SelectGpgKeyDialog.ui \
-    src/SetGpgVerificationDialog.ui
+    src/SetGpgSigningDialog.ui
 
 RESOURCES += \
     resources.qrc

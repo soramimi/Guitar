@@ -4321,29 +4321,27 @@ void MainWindow::on_action_repository_property_triggered()
 
 
 #include "SelectGpgKeyDialog.h"
-#include "SetGpgVerificationDialog.h"
+#include "SetGpgSigningDialog.h"
 #include "gpg.h"
 
 
-void MainWindow::on_action_set_gpg_verification_triggered()
+void MainWindow::on_action_set_gpg_signing_triggered()
 {
-	SetGpgVerificationDialog dlg(this, currentRepositoryName());
+	GitPtr g = git();
+	QString global_key_id = g->signingKey(true);
+	QString repository_key_id = g->signingKey(false);
+	SetGpgSigningDialog dlg(this, currentRepositoryName(), global_key_id, repository_key_id);
 	if (dlg.exec() == QDialog::Accepted) {
 
 	}
 }
+
+
 
 void MainWindow::on_action_test_triggered()
 {
-	bool for_global = true;
-	QList<gpg::Key> keys;
-	gpg::listKeys(global->gpg_command, for_global, &keys);
-
-	SelectGpgKeyDialog dlg(this, keys);
-	if (dlg.exec() == QDialog::Accepted) {
-
-	}
 }
+
 
 
 

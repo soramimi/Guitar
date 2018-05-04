@@ -426,6 +426,8 @@ public:
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	QByteArray blame(const QString &path);
+	QString signingKey(bool global);
+	bool setSigningKey(const QString &id, bool global);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);

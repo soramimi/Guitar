@@ -4,15 +4,15 @@
 #include <QList>
 #include "MyProcess.h"
 
-bool gpg::listKeys(const QString &gpg_command, bool global, QList<gpg::Key> *keys)
+bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 {
 	keys->clear();
 
 	QString cmd = gpg_command;
 	if (!QFileInfo(cmd).isExecutable()) return false;
 
-	cmd = "\"%1\" %2 --list-keys";
-	cmd = cmd.arg(gpg_command).arg(global ? "--global" : "--local");
+	cmd = "\"%1\" --list-keys";
+	cmd = cmd.arg(gpg_command);
 
 	Process proc;
 	proc.start(cmd, false);

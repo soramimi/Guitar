@@ -1236,6 +1236,27 @@ QByteArray Git::blame(QString const &path)
 	return QByteArray();
 }
 
+QString Git::signingKey(bool global)
+{
+	QString cmd = "config %1 user.signingkey";
+	cmd = cmd.arg(global ? "--global" : "--local");
+	if (git(cmd)) {
+		return resultText();
+	}
+	return QString();
+}
+
+bool Git::setSigningKey(QString const &id, bool global)
+{
+	for (int i = 0; i < id.size(); i++) {
+		if (!QChar(id[i]).isLetterOrNumber()) return false;
+	}
+
+	QString cmd = "config %1 user.signingkey %1";
+	cmd = cmd.arg(global ? "--global" : "--local").arg(id);
+	return git(cmd);
+}
+
 // Diff
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, QString const &mode)

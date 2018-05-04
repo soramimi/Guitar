@@ -381,7 +381,7 @@ private slots:
 
 	void on_action_repository_property_triggered();
 
-	void on_action_set_gpg_verification_triggered();
+	void on_action_set_gpg_signing_triggered();
 
 signals:
 	void onEscapeKeyPressed();
