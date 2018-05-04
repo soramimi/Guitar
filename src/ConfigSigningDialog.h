@@ -17,12 +17,11 @@ class ConfigSigningDialog : public QDialog
 	Q_OBJECT
 
 public:
-	explicit ConfigSigningDialog(QWidget *parent, MainWindow *mw, gpg::Key const &key);
+	explicit ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool local_enable);
 	~ConfigSigningDialog();
 
 private:
 	Ui::ConfigSigningDialog *ui;
-	gpg::Key key_;
 	MainWindow *mainwindow_;
 	MainWindow *mainwindow();
 	Git::SignPolicy gpol_;

@@ -23,6 +23,8 @@ private:
 	// AbstractSettingForm interface
 public:
 	void exchange(bool save);
+private slots:
+	void on_pushButton_signing_policy_clicked();
 };
 
 #endif // SETTINGBEHAVIORFORM_H

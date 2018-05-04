@@ -88,7 +88,7 @@ void CommitDialog::keyPressEvent(QKeyEvent *event)
 
 void CommitDialog::on_pushButton_config_signing_clicked()
 {
-	ConfigSigningDialog dlg(this, mainwindow(), key_);
+	ConfigSigningDialog dlg(this, mainwindow(), true);
 	if (dlg.exec() == QDialog::Accepted) {
 		updateSigningInfo();
 	}

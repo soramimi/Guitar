@@ -37,6 +37,8 @@ private slots:
 
 	void on_pushButton_clear_clicked();
 
+	void on_pushButton_configure_clicked();
+
 private:
 	Ui::SetGpgSigningDialog *ui;
 	void setKey_(gpg::Key const &key);

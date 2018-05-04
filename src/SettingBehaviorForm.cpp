@@ -1,3 +1,4 @@
+#include "ConfigSigningDialog.h"
 #include "SettingBehaviorForm.h"
 #include "ui_SettingBehaviorForm.h"
 
@@ -21,4 +22,10 @@ void SettingBehaviorForm::exchange(bool save)
 	} else {
 		ui->checkBox_auto_fetch->setChecked(settings()->automatically_fetch_when_opening_the_repository);
 	}
+}
+
+void SettingBehaviorForm::on_pushButton_signing_policy_clicked()
+{
+	ConfigSigningDialog dlg(this, mainwindow(), false);
+	dlg.exec();
 }

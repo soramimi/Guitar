@@ -2,13 +2,18 @@
 #include "MainWindow.h"
 #include "ui_ConfigSigningDialog.h"
 
-ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, MainWindow *mw, const gpg::Key &key) :
+ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool local_enable) :
 	QDialog(parent),
 	ui(new Ui::ConfigSigningDialog)
 {
 	ui->setupUi(this);
 	mainwindow_ = mw;
-	key_ = key;
+
+	if (!mainwindow()->git()->isValidWorkingCopy()) {
+		local_enable = false;
+	}
+	ui->label_local->setVisible(local_enable);
+	ui->comboBox_sign_local->setVisible(local_enable);
 
 	updateSigningInfo();
 }

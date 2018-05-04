@@ -3,6 +3,7 @@
 #include "ui_SetGpgSigningDialog.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
+#include "ConfigSigningDialog.h"
 
 struct SetGpgSigningDialog::Private {
 	QList<gpg::Key> keys;
@@ -126,3 +127,9 @@ void SetGpgSigningDialog::on_radioButton_repository_clicked()
 }
 
 
+
+void SetGpgSigningDialog::on_pushButton_configure_clicked()
+{
+	ConfigSigningDialog dlg(this, mainwindow(), true);
+	dlg.exec();
+}
