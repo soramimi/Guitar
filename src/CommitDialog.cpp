@@ -1,9 +1,10 @@
 #include "CommitDialog.h"
 #include "ui_CommitDialog.h"
-
+#include "MainWindow.h"
+#include "ConfigSigningDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(QWidget *parent, QString const &reponame, const Git::User &user, const gpg::Key &key) :
+CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, const Git::User &user, const gpg::Key &key) :
 	QDialog(parent),
 	ui(new Ui::CommitDialog)
 {
@@ -12,19 +13,13 @@ CommitDialog::CommitDialog(QWidget *parent, QString const &reponame, const Git::
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	key_ = key;
+
 	ui->label_reponame->setText(reponame);
 	ui->label_commit_author->setText(user.name);
 	ui->label_commit_mail->setText(user.email);
 
-	if (key.id.isEmpty()) {
-		ui->groupBox_gpg_sign->setChecked(false);
-		ui->groupBox_gpg_sign->setEnabled(false);
-	} else {
-		ui->groupBox_gpg_sign->setChecked(true);
-		ui->label_sign_id->setText(key.id);
-		ui->label_sign_name->setText(key.name);
-		ui->label_sign_mail->setText(key.mail);
-	}
+	updateSigningInfo();
 
 	ui->plainTextEdit->setFocus();
 }
@@ -32,6 +27,32 @@ CommitDialog::CommitDialog(QWidget *parent, QString const &reponame, const Git::
 CommitDialog::~CommitDialog()
 {
 	delete ui;
+}
+
+MainWindow *CommitDialog::mainwindow()
+{
+	return qobject_cast<MainWindow *>(parent());
+}
+
+void CommitDialog::updateSigningInfo()
+{
+	GitPtr g = mainwindow()->git();
+
+	Git::SignPolicy pol = g->signPolicy(Git::Source::Default);
+	if (!key_.id.isEmpty()) {
+		if (pol == Git::SignPolicy::True) {
+			ui->groupBox_gpg_sign->setCheckable(false);
+		} else {
+			ui->groupBox_gpg_sign->setCheckable(true);
+			ui->groupBox_gpg_sign->setChecked(false);
+		}
+		ui->label_sign_id->setText(key_.id);
+		ui->label_sign_name->setText(key_.name);
+		ui->label_sign_mail->setText(key_.mail);
+	} else {
+		ui->groupBox_gpg_sign->setChecked(false);
+		ui->groupBox_gpg_sign->setEnabled(false);
+	}
 }
 
 bool CommitDialog::isSigningEnabled() const
@@ -63,4 +84,12 @@ void CommitDialog::keyPressEvent(QKeyEvent *event)
 		}
 	}
 	QDialog::keyPressEvent(event);
+}
+
+void CommitDialog::on_pushButton_config_signing_clicked()
+{
+	ConfigSigningDialog dlg(this, mainwindow(), key_);
+	if (dlg.exec() == QDialog::Accepted) {
+		updateSigningInfo();
+	}
 }

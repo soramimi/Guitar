@@ -4353,8 +4353,8 @@ void MainWindow::on_action_set_gpg_signing_triggered()
 
 void MainWindow::on_action_test_triggered()
 {
-	QList<gpg::Key> keys;
-	gpg::listKeys(global->gpg_command, &keys);
+	GitPtr g = git();
+	qDebug() << g->signPolicy(Git::Source::Global);
 }
 
 

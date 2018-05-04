@@ -427,8 +427,16 @@ public:
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	QByteArray blame(const QString &path);
+
+	enum SignPolicy {
+		Unset,
+		False,
+		True,
+	};
 	QString signingKey(Source purpose);
 	bool setSigningKey(const QString &id, bool global);
+	SignPolicy signPolicy(Source source);
+	bool setSignPolicy(Source source, SignPolicy policy);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);

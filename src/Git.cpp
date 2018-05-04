@@ -1282,6 +1282,42 @@ bool Git::setSigningKey(QString const &id, bool global)
 	return git(cmd, !global);
 }
 
+Git::SignPolicy Git::signPolicy(Source source)
+{
+	QString arg1;
+	if (source == Source::Global) arg1 = "--global";
+	if (source == Source::Local)  arg1 = "--local";
+	QString cmd = "config %1 commit.gpgsign";
+	cmd = cmd.arg(arg1);
+	bool chdir = source != Source::Global;
+	if (git(cmd, chdir)) {
+		QString t = resultText().trimmed();
+		if (t == "false") return SignPolicy::False;
+		if (t == "true")  return SignPolicy::True;
+	}
+	return SignPolicy::Unset;
+}
+
+bool Git::setSignPolicy(Source source, SignPolicy policy)
+{
+	QString arg1;
+	if (source == Source::Global) arg1 = "--global";
+	if (source == Source::Local)  arg1 = "--local";
+	QString cmd = "config %1 %2 commit.gpgsign %3";
+	QString arg2;
+	QString arg3;
+	if (policy == SignPolicy::False) {
+		arg3 = "false";
+	} else if (policy == SignPolicy::True) {
+		arg3 = "true";
+	} else {
+		arg2 = "--unset";
+	}
+	cmd = cmd.arg(arg1).arg(arg2).arg(arg3);
+	bool chdir = source != Source::Global;
+	return git(cmd, chdir);
+}
+
 // Diff
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, QString const &mode)
