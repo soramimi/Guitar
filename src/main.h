@@ -9,6 +9,7 @@
 struct ApplicationSettings {
 	QString git_command;
 	QString file_command;
+	QString gpg_command;
 	QString default_working_dir;
 	QString proxy_type;
 	QString proxy_server;

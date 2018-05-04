@@ -66,6 +66,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	STRING_VALUE("DefaultWorkingDirectory", default_working_dir);
 	STRING_VALUE("GitCommand", git_command);
 	STRING_VALUE("FileCommand", file_command);
+	STRING_VALUE("GpgCommand", gpg_command);
 	s.endGroup();
 
 	s.beginGroup("UI");
@@ -93,6 +94,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.setValue("DefaultWorkingDirectory", as->default_working_dir);
 	s.setValue("GitCommand", as->git_command);
 	s.setValue("FileCommand", as->file_command);
+	s.setValue("GpgCommand", as->gpg_command);
 	s.endGroup();
 
 	s.beginGroup("UI");

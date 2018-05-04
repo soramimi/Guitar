@@ -389,6 +389,7 @@ bool MainWindow::shown()
 	}
 	setGitCommand(m->appsettings.git_command, false);
 	setFileCommand(m->appsettings.file_command, false);
+	setGpgCommand(m->appsettings.gpg_command, false);
 
 	logGitVersion();
 
@@ -1252,7 +1253,7 @@ bool MainWindow::isAvatarEnabled() const
 
 bool MainWindow::isVerified(int row) const
 {
-	if (row >= 0 && row < m->logs.size()) {
+	if (row >= 0 && row < (int)m->logs.size()) {
 		Git::CommitItem const &commit = m->logs[row];
 		if (commit.verified) {
 			return true;
@@ -2931,6 +2932,17 @@ void MainWindow::setFileCommand(QString const &path, bool save)
 	m->file_command = path;
 }
 
+void MainWindow::setGpgCommand(QString const &path, bool save)
+{
+	if (save) {
+		MySettings s;
+		s.beginGroup("Global");
+		s.setValue("GpgCommand", path);
+		s.endGroup();
+	}
+	global->gpg_command = path;
+}
+
 
 #ifdef Q_OS_WIN
 QString getWin32HttpProxy();
@@ -3012,9 +3024,11 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 #ifdef Q_OS_WIN
 #define GIT_COMMAND "git.exe"
 #define FILE_COMMAND "file.exe"
+#define GPG_COMMAND "gpg.exe"
 #else
 #define GIT_COMMAND "git"
 #define FILE_COMMAND "file"
+#define GPG_COMMAND "gpg"
 #endif
 
 QString MainWindow::selectGitCommand(bool save)
@@ -3087,6 +3101,21 @@ QString MainWindow::selectFileCommand(bool save)
 #endif
 
 	return selectCommand_("File", exe, list, path, fn);
+}
+
+QString MainWindow::selectGpgCommand(bool save)
+{
+	char const *exe = GPG_COMMAND;
+
+	QString path = global->gpg_command;
+
+	auto fn = [&](QString const &path){
+		setGpgCommand(path, save);
+	};
+
+	QStringList list = whichCommand_(exe);
+
+	return selectCommand_("GPG", exe, list, path, fn);
 }
 
 void MainWindow::checkUser()
@@ -3227,6 +3256,7 @@ void MainWindow::on_action_edit_settings_triggered()
 		m->appsettings = newsettings;
 		setGitCommand(m->appsettings.git_command, false);
 		setFileCommand(m->appsettings.file_command, false);
+		setGpgCommand(m->appsettings.gpg_command, false);
 	}
 }
 
@@ -4290,14 +4320,29 @@ void MainWindow::on_action_repository_property_triggered()
 }
 
 
+#include "SelectGpgKeyDialog.h"
+#include "SetGpgVerificationDialog.h"
+#include "gpg.h"
 
 
+void MainWindow::on_action_set_gpg_verification_triggered()
+{
+	SetGpgVerificationDialog dlg(this, currentRepositoryName());
+	if (dlg.exec() == QDialog::Accepted) {
 
-
-
+	}
+}
 
 void MainWindow::on_action_test_triggered()
 {
+	bool for_global = true;
+	QList<gpg::Key> keys;
+	gpg::listKeys(global->gpg_command, for_global, &keys);
+
+	SelectGpgKeyDialog dlg(this, keys);
+	if (dlg.exec() == QDialog::Accepted) {
+
+	}
 }
 
 

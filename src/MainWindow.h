@@ -213,11 +213,13 @@ public:
 
 	QString selectGitCommand(bool save);
 	QString selectFileCommand(bool save);
+	QString selectGpgCommand(bool save);
 
 	int limitLogCount() const;
 
-	void setFileCommand(const QString &path, bool save);
 	void setGitCommand(const QString &path, bool save);
+	void setFileCommand(const QString &path, bool save);
+	void setGpgCommand(const QString &path, bool save);
 	QString currentRepositoryName() const;
 	const Git::Branch &currentBranch() const;
 	bool isThereUncommitedChanges() const;
@@ -378,6 +380,8 @@ private slots:
 
 
 	void on_action_repository_property_triggered();
+
+	void on_action_set_gpg_verification_triggered();
 
 signals:
 	void onEscapeKeyPressed();

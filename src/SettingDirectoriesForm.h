@@ -19,6 +19,8 @@ private slots:
 	void on_pushButton_select_git_command_clicked();
 	void on_pushButton_select_file_command_clicked();
 	void on_pushButton_browse_default_working_dir_clicked();
+	void on_pushButton_select_gpg_command_clicked();
+
 private:
 	Ui::SettingDirectoriesForm *ui;
 };

@@ -193,7 +193,10 @@ SOURCES += \
     src/WelcomeWizardDialog.cpp \
     src/DialogHeaderFrame.cpp \
     src/CommitViewWindow.cpp \
-    src/EditRemoteDialog.cpp
+    src/EditRemoteDialog.cpp \
+    src/gpg.cpp \
+    src/SelectGpgKeyDialog.cpp \
+    src/SetGpgVerificationDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -292,7 +295,10 @@ HEADERS  += \
     src/WelcomeWizardDialog.h \
     src/DialogHeaderFrame.h \
     src/CommitViewWindow.h \
-    src/EditRemoteDialog.h
+    src/EditRemoteDialog.h \
+    src/gpg.h \
+    src/SelectGpgKeyDialog.h \
+    src/SetGpgVerificationDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -332,7 +338,9 @@ FORMS    += \
     src/SettingGeneralForm.ui \
     src/WelcomeWizardDialog.ui \
     src/CommitViewWindow.ui \
-    src/EditRemoteDialog.ui
+    src/EditRemoteDialog.ui \
+    src/SelectGpgKeyDialog.ui \
+    src/SetGpgVerificationDialog.ui
 
 RESOURCES += \
     resources.qrc
