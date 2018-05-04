@@ -256,7 +256,7 @@ public:
 	GitPtr git();
 	const QList<Label> *label(int row);
 	bool isGitHub() const;
-	QIcon committerIcon(int row);
+	QIcon committerIcon(int row) const;
 	void updateCommitTableLater();
 	bool isAvatarEnabled() const;
 	WebContext *getWebContextPtr();
@@ -277,6 +277,8 @@ public:
 	void execFilePropertyDialog(QListWidgetItem *item);
 	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
 	QStringList remotes() const;
+	QIcon verifiedIcon() const;
+	bool isVerified(int row) const;
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

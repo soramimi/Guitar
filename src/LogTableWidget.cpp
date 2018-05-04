@@ -48,6 +48,24 @@ private:
 		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
 	}
 
+	void drawVerified(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	{
+		if (!opt.widget->isEnabled()) return;
+
+		if (mainwindow()->isVerified(index.row())) {
+			QIcon icon = mainwindow()->verifiedIcon();
+			if (!icon.isNull()) {
+				QRect r = opt.rect.adjusted(6, 3, 0, -3);
+				int h = r.height();
+				int w = h;
+				int x = r.x() + r.width() - w;
+				int y = r.y();
+
+				icon.paint(painter, x, y, w, h);
+			}
+		}
+	}
+
 	void drawAvatar(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
 	{
 		if (!opt.widget->isEnabled()) return;
@@ -116,6 +134,11 @@ public:
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
+
+		// verifiedの描画
+		if (index.column() == 1) {
+			drawVerified(painter, option, index);
+		}
 
 		// avatarの描画
 		if (index.column() == 3) {

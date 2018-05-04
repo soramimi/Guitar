@@ -599,7 +599,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	CommitItemList items;
 	QString text;
 
-	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+	QString cmd = "log --pretty=format:\"commit:%H#pgp:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
 	if (getProcessExitCode() == 0) {
@@ -618,6 +618,8 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						QString val = s.mid(j + 1);
 						if (key == "commit") {
 							item.commit_id = val;
+						} else if (key == "pgp") {
+							item.verified = (val == "G");
 						} else if (key == "parent") {
 							item.parent_ids = val.split(' ', QString::SkipEmptyParts);
 						} else if (key == "author") {

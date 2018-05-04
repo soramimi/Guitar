@@ -36,5 +36,6 @@
         <file>darktheme/vsb/vsb_sub_line.png</file>
         <file>darktheme/graphcolor.png</file>
         <file>image/menu.png</file>
+        <file>image/verified.png</file>
     </qresource>
 </RCC>

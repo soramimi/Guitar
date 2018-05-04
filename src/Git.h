@@ -119,6 +119,7 @@ public:
 		QString message;
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
+		bool verified = false;
 		bool has_child = false;
 		int marker_depth = -1;
 		bool resolved =  false;

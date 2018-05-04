@@ -196,6 +196,7 @@ struct MainWindow::Private {
 	QPixmap digits;
 	QIcon repository_icon;
 	QIcon folder_icon;
+	QIcon verified_icon;
 	unsigned int temp_file_counter = 0;
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
@@ -253,6 +254,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->repository_icon = QIcon(":/image/repository.png");
 	m->folder_icon = icons.icon(QFileIconProvider::Folder);
+
+	m->verified_icon = QIcon(":/image/verified.png");
 
 	prepareLogTableWidget();
 
@@ -1247,7 +1250,23 @@ bool MainWindow::isAvatarEnabled() const
 	return m->appsettings.get_committer_icon;
 }
 
-QIcon MainWindow::committerIcon(int row)
+bool MainWindow::isVerified(int row) const
+{
+	if (row >= 0 && row < m->logs.size()) {
+		Git::CommitItem const &commit = m->logs[row];
+		if (commit.verified) {
+			return true;
+		}
+	}
+	return false;
+}
+
+QIcon MainWindow::verifiedIcon() const
+{
+	return m->verified_icon;
+}
+
+QIcon MainWindow::committerIcon(int row) const
 {
 	QIcon icon;
 	if (isAvatarEnabled()) {
@@ -1361,7 +1380,9 @@ QStringList MainWindow::remotes() const
 
 int MainWindow::limitLogCount() const
 {
-	return 10000;
+
+return 10;
+//	return 10000;
 }
 
 struct TemporaryCommitItem {
