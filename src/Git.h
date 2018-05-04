@@ -119,6 +119,7 @@ public:
 		QString message;
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
+		QByteArray fingerprint;
 		bool verified = false;
 		bool has_child = false;
 		int marker_depth = -1;
@@ -277,7 +278,7 @@ private:
 	QStringList make_branch_list_();
 	QByteArray cat_file_(const QString &id);
 	FileStatusList status_();
-	bool commit_(const QString &msg, bool amend);
+	bool commit_(const QString &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	bool push_(bool tags, AbstractPtyProcess *pty);
 	static void parseAheadBehind(const QString &s, Branch *b);
 	Git();
@@ -365,8 +366,8 @@ public:
 
 	static bool isValidID(QString const &s);
 
-	bool commit(const QString &text);
-	bool commit_amend_m(const QString &text);
+	bool commit(const QString &text, bool sign, AbstractPtyProcess *pty);
+	bool commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const QString &id);
 	bool push(bool tags, AbstractPtyProcess *pty = 0);
 	void getRemoteURLs(QList<Remote> *out);
@@ -391,13 +392,13 @@ public:
 		QString name;
 		QString email;
 	};
-	enum GetUser {
-		GetUserDefault,
-		GetUserGlobal,
-		GetUserLocal,
+	enum class Source {
+		Default,
+		Global,
+		Local,
 	};
 
-	User getUser(GetUser purpose);
+	User getUser(Source purpose);
 	void setUser(User const&user, bool global);
 
 	bool reset_head1();
@@ -426,7 +427,7 @@ public:
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	QByteArray blame(const QString &path);
-	QString signingKey(bool global);
+	QString signingKey(Source purpose);
 	bool setSigningKey(const QString &id, bool global);
 };
 

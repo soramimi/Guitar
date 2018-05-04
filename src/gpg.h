@@ -16,6 +16,7 @@ public:
 		QString name;
 		QString comment;
 		QString mail;
+		QByteArray fingerprint;
 	};
 
 	static bool listKeys(const QString &gpg_command, QList<gpg::Key> *keys);

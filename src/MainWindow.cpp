@@ -51,6 +51,10 @@
 #include "StatusLabel.h"
 #include "Terminal.h"
 #include "TextEditDialog.h"
+#include "CommitDialog.h"
+#include "SelectGpgKeyDialog.h"
+#include "SetGpgSigningDialog.h"
+#include "gpg.h"
 #include "webclient.h"
 #include <deque>
 #include <set>
@@ -357,7 +361,7 @@ bool MainWindow::execWelcomeWizardDialog()
 	if (misc::isExecutable(m->appsettings.git_command)) {
 		m->gcx.git_command = m->appsettings.git_command;
 		Git g(m->gcx, QString());
-		Git::User user = g.getUser(Git::GetUserGlobal);
+		Git::User user = g.getUser(Git::Source::Global);
 		dlg.set_user_name(user.name);
 		dlg.set_user_email(user.email);
 	}
@@ -970,7 +974,7 @@ void MainWindow::setUnknownRepositoryInfo()
 	setRepositoryInfo("---", "");
 
 	Git g(m->gcx, QString());
-	Git::User user = g.getUser(Git::GetUserGlobal);
+	Git::User user = g.getUser(Git::Source::Global);
 	setWindowTitle_(user);
 }
 
@@ -1349,7 +1353,7 @@ void MainWindow::setWindowTitle_(Git::User const &user)
 void MainWindow::updateWindowTitle(GitPtr g)
 {
 	if (isValidWorkingCopy(g)) {
-		Git::User user = g->getUser(Git::GetUserDefault);
+		Git::User user = g->getUser(Git::Source::Default);
 		setWindowTitle_(user);
 	} else {
 		setUnknownRepositoryInfo();
@@ -1766,8 +1770,19 @@ void MainWindow::commit(bool amend)
 	if (!isValidWorkingCopy(g)) return;
 
 	while (1) {
-		TextEditDialog dlg;
-		dlg.setWindowTitle(tr("Commit"));
+		Git::User user = g->getUser(Git::Source::Default);
+		QString sign_id = g->signingKey(Git::Source::Default);
+		gpg::Key key;
+		{
+			QList<gpg::Key> keys;
+			gpg::listKeys(global->gpg_command, &keys);
+			for (gpg::Key const &k : keys) {
+				if (k.id == sign_id) {
+					key = k;
+				}
+			}
+		}
+		CommitDialog dlg(this, currentRepositoryName(), user, key);
 		if (amend) {
 			dlg.setText(m->logs[0].message);
 		}
@@ -1777,11 +1792,12 @@ void MainWindow::commit(bool amend)
 				QMessageBox::warning(this, tr("Commit"), tr("Commit message can not be omitted."));
 				continue;
 			}
+			bool sign = dlg.isSigningEnabled();
 			bool ok;
 			if (amend) {
-				ok = g->commit_amend_m(text);
+				ok = g->commit_amend_m(text, sign, &m->pty_process);
 			} else {
-				ok = g->commit(text);
+				ok = g->commit(text, sign, &m->pty_process);
 			}
 			if (ok) {
 				openRepository(true);
@@ -3122,7 +3138,7 @@ void MainWindow::checkUser()
 {
 	Git g(m->gcx, QString());
 	while (1) {
-		Git::User user = g.getUser(Git::GetUserGlobal);
+		Git::User user = g.getUser(Git::Source::Global);
 		if (!user.name.isEmpty() && !user.email.isEmpty()) {
 			return; // ok
 		}
@@ -3768,9 +3784,9 @@ void MainWindow::on_action_set_config_user_triggered()
 	Git::User repo_user;
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-		repo_user = g->getUser(Git::GetUserLocal);
+		repo_user = g->getUser(Git::Source::Local);
 	}
-	global_user = g->getUser(Git::GetUserGlobal);
+	global_user = g->getUser(Git::Source::Global);
 
 	execSetUserDialog(global_user, repo_user, currentRepositoryName());
 }
@@ -4319,20 +4335,17 @@ void MainWindow::on_action_repository_property_triggered()
 	execRepositoryPropertyDialog(currentWorkingCopyDir());
 }
 
-
-#include "SelectGpgKeyDialog.h"
-#include "SetGpgSigningDialog.h"
-#include "gpg.h"
-
-
 void MainWindow::on_action_set_gpg_signing_triggered()
 {
 	GitPtr g = git();
-	QString global_key_id = g->signingKey(true);
-	QString repository_key_id = g->signingKey(false);
+	QString global_key_id = g->signingKey(Git::Source::Global);
+	QString repository_key_id;
+	if (g->isValidWorkingCopy()) {
+		repository_key_id = g->signingKey(Git::Source::Local);
+	}
 	SetGpgSigningDialog dlg(this, currentRepositoryName(), global_key_id, repository_key_id);
 	if (dlg.exec() == QDialog::Accepted) {
-
+		g->setSigningKey(dlg.id(), dlg.isGlobalChecked());
 	}
 }
 
@@ -4340,6 +4353,8 @@ void MainWindow::on_action_set_gpg_signing_triggered()
 
 void MainWindow::on_action_test_triggered()
 {
+	QList<gpg::Key> keys;
+	gpg::listKeys(global->gpg_command, &keys);
 }
 
 

@@ -11,7 +11,8 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 	QString cmd = gpg_command;
 	if (!QFileInfo(cmd).isExecutable()) return false;
 
-	cmd = "\"%1\" --list-keys";
+//	cmd = "\"%1\" --list-keys";
+	cmd = "\"%1\" --fingerprint";
 	cmd = cmd.arg(gpg_command);
 
 	Process proc;
@@ -23,6 +24,7 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 		char const *ptr = begin;
 		char const *line = ptr;
 		std::string pub, uid, sub;
+		QByteArray fingerprint;
 		while (1) {
 			int c = 0;
 			if (ptr < end) {
@@ -68,9 +70,11 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 						gpg::Key key;
 						ParseKey(SkipHeader(pub.c_str()), &key);
 						ParseUID(SkipHeader(uid.c_str()), &key);
+						key.fingerprint = fingerprint;
 						keys->push_back(key);
 					}
 					pub = uid = sub = std::string();
+					fingerprint.clear();
 				} else if (line < ptr) {
 					std::string s(line, ptr - line);
 					if (strncmp(s.c_str(), "pub ", 4) == 0) {
@@ -79,6 +83,25 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 						uid = s;
 					} else if (strncmp(s.c_str(), "sub ", 4) == 0) {
 						sub = s;
+					} else if (!pub.empty() && uid.empty()) {
+						char const *p = strchr(s.c_str(), '=');
+						if (p) {
+							p++;
+							fingerprint.clear();
+							while (p[0] && p[1]) {
+								if (isxdigit(p[0] & 0xff) && isxdigit(p[1] & 0xff)) {
+									char tmp[3];
+									tmp[0] = p[0];
+									tmp[1] = p[1];
+									tmp[2] = 0;
+									int v = strtol(tmp, nullptr, 16);
+									fingerprint.push_back(v);
+									p += 2;
+								} else {
+									p++;
+								}
+							}
+						}
 					}
 				}
 				if (c == 0) {

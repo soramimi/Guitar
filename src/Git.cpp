@@ -599,7 +599,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	CommitItemList items;
 	QString text;
 
-	QString cmd = "log --pretty=format:\"commit:%H#pgp:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+	QString cmd = "log --pretty=format:\"commit:%H#gpg:%G?#key:%GK#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
 	if (getProcessExitCode() == 0) {
@@ -609,6 +609,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 			int i = line.indexOf("##");
 			if (i > 0) {
 				Git::CommitItem item;
+				QString signed_key;
 				item.message = line.mid(i + 2);
 				QStringList atts = line.mid(0, i).split('#');
 				for (QString const &s : atts) {
@@ -618,8 +619,10 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						QString val = s.mid(j + 1);
 						if (key == "commit") {
 							item.commit_id = val;
-						} else if (key == "pgp") {
+						} else if (key == "gpg") {
 							item.verified = (val == "G");
+						} else if (key == "key") {
+							signed_key = val;
 						} else if (key == "parent") {
 							item.parent_ids = val.split(' ', QString::SkipEmptyParts);
 						} else if (key == "author") {
@@ -632,9 +635,24 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						}
 					}
 				}
-//				if (item.commit_date < limit_time) {
-//					break;
-//				}
+				if (!signed_key.isEmpty()) {
+					ushort const *begin = signed_key.utf16();
+					int n = signed_key.size();
+					for (int i = 0; i + 1 < n; i += 2) {
+						ushort c = begin[i];
+						ushort d = begin[i + 1];
+						if (c < 0x80 && c < 0x80 && isxdigit(c) && isxdigit(d)) {
+							char tmp[3];
+							tmp[0] = c;
+							tmp[1] = d;
+							tmp[2] = 0;
+							int v = strtol(tmp, nullptr, 16);
+							item.fingerprint.push_back(v);
+						} else {
+							break;
+						}
+					}
+				}
 				items.push_back(item);
 			}
 		}
@@ -781,11 +799,14 @@ QString Git::encodeQuotedText(const QString &str)
 	return QString::fromUtf16(&vec[0], vec.size());
 }
 
-bool Git::commit_(QString const &msg, bool amend)
+bool Git::commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty)
 {
 	QString cmd = "commit";
 	if (amend) {
 		cmd += " --amend";
+	}
+	if (sign) {
+		cmd += " -S";
 	}
 
 	QString text = msg.trimmed();
@@ -795,17 +816,17 @@ bool Git::commit_(QString const &msg, bool amend)
 	text = encodeQuotedText(text);
 	cmd += QString(" -m %1").arg(text);
 
-	return git(cmd);
+	return git(cmd, true, false, pty);
 }
 
-bool Git::commit(QString const &text)
+bool Git::commit(QString const &text, bool sign, AbstractPtyProcess *pty)
 {
-	return commit_(text, false);
+	return commit_(text, false, sign, pty);
 }
 
-bool Git::commit_amend_m(const QString &text)
+bool Git::commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty)
 {
-	return commit_(text, true);
+	return commit_(text, true, sign, pty);
 }
 
 bool Git::revert(const QString &id)
@@ -990,11 +1011,11 @@ QStringList Git::getRemotes()
 	return ret;
 }
 
-Git::User Git::getUser(GetUser purpose)
+Git::User Git::getUser(Source purpose)
 {
 	User user;
-	bool global = purpose == Git::GetUserGlobal;
-	bool local = purpose == Git::GetUserLocal;
+	bool global = purpose == Git::Source::Global;
+	bool local = purpose == Git::Source::Local;
 	QString arg1;
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
@@ -1236,12 +1257,16 @@ QByteArray Git::blame(QString const &path)
 	return QByteArray();
 }
 
-QString Git::signingKey(bool global)
+QString Git::signingKey(Source purpose)
 {
+	QString arg1;
+	if (purpose == Source::Global) arg1 = "--global";
+	if (purpose == Source::Local) arg1 = "--local";
 	QString cmd = "config %1 user.signingkey";
-	cmd = cmd.arg(global ? "--global" : "--local");
-	if (git(cmd)) {
-		return resultText();
+	cmd = cmd.arg(arg1);
+	bool chdir = purpose != Source::Global;
+	if (git(cmd, chdir)) {
+		return resultText().trimmed();
 	}
 	return QString();
 }
@@ -1252,9 +1277,9 @@ bool Git::setSigningKey(QString const &id, bool global)
 		if (!QChar(id[i]).isLetterOrNumber()) return false;
 	}
 
-	QString cmd = "config %1 user.signingkey %1";
-	cmd = cmd.arg(global ? "--global" : "--local").arg(id);
-	return git(cmd);
+	QString cmd = "config %1 %2 user.signingkey %3";
+	cmd = cmd.arg(global ? "--global" : "--local").arg(id.isEmpty() ? "--unset" : "").arg(id);
+	return git(cmd, !global);
 }
 
 // Diff

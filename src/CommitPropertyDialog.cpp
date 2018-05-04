@@ -1,7 +1,8 @@
 #include "CommitPropertyDialog.h"
 #include "MainWindow.h"
+#include "gpg.h"
 #include "ui_CommitPropertyDialog.h"
-
+#include "ApplicationGlobal.h"
 #include "common/misc.h"
 
 struct CommitPropertyDialog::Private {
@@ -30,6 +31,32 @@ void CommitPropertyDialog::init(MainWindow *mw)
 		text += id + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
+
+	gpg::Key key;
+	int n1 = m->commit.fingerprint.size();
+	if (m->commit.verified && n1 > 0) {
+		QList<gpg::Key> keys;
+		gpg::listKeys(global->gpg_command, &keys);
+		for (gpg::Key const &k : keys) {
+			int n2 = k.fingerprint.size();
+			if (n2 > 0) {
+				int n = std::min(n1, n2);
+				char const *p1 = m->commit.fingerprint.data() + n1 - n;
+				char const *p2 = k.fingerprint.data() + n2 - n;
+				if (memcmp(p1, p2, n) == 0) {
+					key = k;
+					break;
+				}
+			}
+		}
+	}
+	if (key.id.isEmpty()) {
+		ui->frame_sign->setVisible(false);
+	} else {
+		ui->lineEdit_sign_id->setText(key.id);
+		ui->lineEdit_sign_name->setText(key.name);
+		ui->lineEdit_sign_mail->setText(key.mail);
+	}
 }
 
 CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)

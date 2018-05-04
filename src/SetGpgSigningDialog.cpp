@@ -17,6 +17,8 @@ SetGpgSigningDialog::SetGpgSigningDialog(QWidget *parent, QString const &repo, c
 {
 	ui->setupUi(this);
 
+	gpg::listKeys(global->gpg_command, &m->keys);
+
 	m->global_key_id = global_key_id;
 	m->repository_key_id = repository_key_id;
 
@@ -28,7 +30,10 @@ SetGpgSigningDialog::SetGpgSigningDialog(QWidget *parent, QString const &repo, c
 		text += repo;
 		ui->radioButton_repository->setText(text);
 	}
-	ui->radioButton_global->click();
+
+	QRadioButton *w = repository_key_id.isEmpty() ? ui->radioButton_global : ui->radioButton_repository;
+	w->setFocus();
+	w->click();
 }
 
 SetGpgSigningDialog::~SetGpgSigningDialog()

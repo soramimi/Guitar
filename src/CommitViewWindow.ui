@@ -17,10 +17,7 @@
    <item>
     <widget class="QFrame" name="frame">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="leftMargin">
@@ -36,7 +33,14 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="ReadOnlyLineEdit" name="lineEdit_message"/>
+       <widget class="ReadOnlyLineEdit" name="lineEdit_message">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="ReadOnlyLineEdit" name="lineEdit_id"/>
@@ -61,15 +65,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
-  </customwidget>
-  <customwidget>
    <class>FileDiffWidget</class>
    <extends>QWidget</extends>
    <header location="global">FileDiffWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
