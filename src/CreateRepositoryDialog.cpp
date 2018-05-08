@@ -83,7 +83,7 @@ void CreateRepositoryDialog::validate()
 		ok = false;
 	}
 
-	ui->pushButton_ok->setEnabled(ok);
+//	ui->pushButton_ok->setEnabled(ok);
 }
 
 void CreateRepositoryDialog::on_lineEdit_path_textChanged(const QString &)
