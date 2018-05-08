@@ -66,18 +66,18 @@ PRE_TARGETDEPS += prepare
 # zlib
 
 win32:MSVC {
-	CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib/debug/libz.lib
-	CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib/release/libz.lib
+	CONFIG(debug, debug|release):LIBS += $$PWD/_lib/libz.lib
+	CONFIG(release, debug|release):LIBS += $$PWD/_lib/libz.lib
 }
 
 win32:MinGW {
-	CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib/debug/liblibz.a
-	CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib/release/liblibz.a
+	CONFIG(debug, debug|release):LIBS += $$PWD/_lib/liblibz.a
+	CONFIG(release, debug|release):LIBS += $$PWD/_lib/liblibz.a
 }
 
 !haiku {
-	unix:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib_Debug/libz.a
-	unix:CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib_Release/libz.a
+    unix:CONFIG(debug, debug|release):LIBS += $$PWD/_lib/libzd.a
+    unix:CONFIG(release, debug|release):LIBS += $$PWD/_lib/libz.a
 	#unix:LIBS += -lz
 }
 
