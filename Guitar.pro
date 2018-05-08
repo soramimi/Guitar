@@ -76,8 +76,8 @@ win32:MinGW {
 }
 
 !haiku {
-	unix:CONFIG(debug, debug|release):LIBS += $$PWD/../_build_zlib_Debug/libz.a
-	unix:CONFIG(release, debug|release):LIBS += $$PWD/../_build_zlib_Release/libz.a
+    unix:CONFIG(debug, debug|release):LIBS += $$PWD/_lib/libzd.a
+    unix:CONFIG(release, debug|release):LIBS += $$PWD/_lib/libz.a
 	#unix:LIBS += -lz
 }
 

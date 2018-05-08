@@ -1,9 +1,12 @@
-unix:TARGET = z
+unix:CONFIG(debug,debug|release):TARGET = zd
+unix:CONFIG(release,debug|release):TARGET = z
 win32:TARGET = libz
 TEMPLATE = lib
 CONFIG += console staticlib
 CONFIG -= app_bundle
 CONFIG -= qt
+
+DESTDIR = $$PWD/_lib
 
 SOURCES += \
     ../zlib/gzclose.c \

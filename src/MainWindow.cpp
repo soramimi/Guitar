@@ -1385,9 +1385,7 @@ QStringList MainWindow::remotes() const
 
 int MainWindow::limitLogCount() const
 {
-
-return 10;
-//	return 10000;
+	return 10000;
 }
 
 struct TemporaryCommitItem {
