@@ -436,7 +436,14 @@
           </layout>
          </item>
          <item>
-          <widget class="ReadOnlyLineEdit" name="lineEdit_remote"/>
+          <widget class="ReadOnlyLineEdit" name="lineEdit_remote">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -961,7 +968,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>23</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
