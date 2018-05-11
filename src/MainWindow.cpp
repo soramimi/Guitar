@@ -219,6 +219,8 @@ struct MainWindow::Private {
 
 	PtyProcess pty_process;
 	PtyCondition pty_condition = PtyCondition::None;
+	bool pty_process_ok = false;
+
 	RepositoryItem temp_repo;
 
 	QListWidgetItem *last_selected_file_item = nullptr;
@@ -1489,14 +1491,13 @@ void MainWindow::detectGitServerType(GitPtr g)
 bool MainWindow::fetch(GitPtr g)
 {
 	m->pty_condition = PtyCondition::Fetch;
+	m->pty_process_ok = true;
 	g->fetch(&m->pty_process);
 	while (1) {
 		if (m->pty_process.wait(1)) break;
 		QApplication::processEvents();
 	}
-	bool ok = (m->pty_condition == PtyCondition::Fetch);
-	m->pty_condition = PtyCondition::None;
-	return ok;
+	return m->pty_process_ok;
 }
 
 void MainWindow::clearLog()
@@ -1957,6 +1958,7 @@ void MainWindow::on_action_pull_triggered()
 
 	reopenRepository(true, [&](GitPtr g){
 		m->pty_condition = PtyCondition::Pull;
+		m->pty_process_ok = true;
 		g->pull(&m->pty_process);
 		while (1) {
 			if (m->pty_process.wait(1)) break;
@@ -3393,6 +3395,7 @@ void MainWindow::clone()
 
 			GitPtr g = git(QString());
 			m->pty_condition = PtyCondition::Clone;
+			m->pty_process_ok = true;
 			g->clone(clone_data, &m->pty_process);
 
 		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
@@ -4381,7 +4384,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 		if (r == TheDlg::Result::Yes) {
 			m->pty_process.writeInput("yes\n", 4);
 		} else {
-			m->pty_condition = PtyCondition::None; // abort: fetch()関数にfalseを返させる
+			m->pty_process_ok = false; // abort
 			m->pty_process.writeInput("no\n", 3);
 			QThread::msleep(300);
 			stopPtyProcess();
