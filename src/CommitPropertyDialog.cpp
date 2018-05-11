@@ -3,11 +3,13 @@
 #include "gpg.h"
 #include "ui_CommitPropertyDialog.h"
 #include "ApplicationGlobal.h"
+#include "AvatarLoader.h"
 #include "common/misc.h"
 
 struct CommitPropertyDialog::Private {
 	MainWindow *mainwindow;
 	Git::CommitItem commit;
+	AvatarLoader avatar_loader;
 };
 
 void CommitPropertyDialog::init(MainWindow *mw)
@@ -57,6 +59,27 @@ void CommitPropertyDialog::init(MainWindow *mw)
 		ui->lineEdit_sign_name->setText(key.name);
 		ui->lineEdit_sign_mail->setText(key.mail);
 	}
+
+	m->avatar_loader.start(mainwindow()->webContext());
+	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
+		UpdateAvatar(false);
+	});
+	UpdateAvatar(true);
+}
+
+void CommitPropertyDialog::UpdateAvatar(bool request)
+{
+	auto SetAvatar = [&](QString const &email, QLabel *label){
+		if (mainwindow()->appsettings()->get_committer_icon) {
+			label->setFixedSize(QSize(48, 48));
+			QIcon icon = m->avatar_loader.fetch(email.toStdString(), request);
+			setAvatar(icon, label);
+		} else {
+			label->setVisible(false);
+		}
+	};
+	SetAvatar(ui->lineEdit_mail->text(), ui->label_user_avatar);
+	SetAvatar(ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
 }
 
 CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
@@ -82,6 +105,8 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, cons
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
+	m->avatar_loader.interrupt();
+	m->avatar_loader.wait();
 	delete m;
 	delete ui;
 }
@@ -89,6 +114,12 @@ CommitPropertyDialog::~CommitPropertyDialog()
 MainWindow *CommitPropertyDialog::mainwindow()
 {
 	return m->mainwindow;
+}
+
+void CommitPropertyDialog::setAvatar(QIcon icon, QLabel *label)
+{
+	QPixmap pm = icon.pixmap(label->size());
+	label->setPixmap(pm);
 }
 
 void CommitPropertyDialog::showCheckoutButton(bool f)

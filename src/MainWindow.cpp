@@ -307,7 +307,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
 
-	if (!global->start_with_shift_key && m->appsettings.remember_and_restore_window_position) {
+	if (!global->start_with_shift_key && appsettings()->remember_and_restore_window_position) {
 		Qt::WindowStates state = windowState();
 		MySettings settings;
 
@@ -364,26 +364,36 @@ bool MainWindow::checkFileCommand()
 	}
 }
 
+ApplicationSettings *MainWindow::appsettings()
+{
+	return &m->appsettings;
+}
+
+ApplicationSettings const *MainWindow::appsettings() const
+{
+	return &m->appsettings;
+}
+
 bool MainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
-	dlg.set_git_command_path(m->appsettings.git_command);
-	dlg.set_file_command_path(m->appsettings.file_command);
-	dlg.set_default_working_folder(m->appsettings.default_working_dir);
-	if (misc::isExecutable(m->appsettings.git_command)) {
-		m->gcx.git_command = m->appsettings.git_command;
+	dlg.set_git_command_path(appsettings()->git_command);
+	dlg.set_file_command_path(appsettings()->file_command);
+	dlg.set_default_working_folder(appsettings()->default_working_dir);
+	if (misc::isExecutable(appsettings()->git_command)) {
+		m->gcx.git_command = appsettings()->git_command;
 		Git g(m->gcx, QString());
 		Git::User user = g.getUser(Git::Source::Global);
 		dlg.set_user_name(user.name);
 		dlg.set_user_email(user.email);
 	}
 	if (dlg.exec() == QDialog::Accepted) {
-		m->appsettings.git_command  = m->gcx.git_command = dlg.git_command_path();
-		m->appsettings.file_command = m->file_command    = dlg.file_command_path();
-		m->appsettings.default_working_dir = dlg.default_working_folder();
+		appsettings()->git_command  = m->gcx.git_command = dlg.git_command_path();
+		appsettings()->file_command = m->file_command    = dlg.file_command_path();
+		appsettings()->default_working_dir = dlg.default_working_folder();
 		SettingsDialog::saveSettings(&m->appsettings);
 
-		if (misc::isExecutable(m->appsettings.git_command)) {
+		if (misc::isExecutable(appsettings()->git_command)) {
 			GitPtr g = git();
 			Git::User user;
 			user.name = dlg.user_name();
@@ -398,14 +408,14 @@ bool MainWindow::execWelcomeWizardDialog()
 
 bool MainWindow::shown()
 {
-	while (!misc::isExecutable(m->appsettings.git_command) || !misc::isExecutable(m->appsettings.file_command)) {
+	while (!misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command)) {
 		if (!execWelcomeWizardDialog()) {
 			return false;
 		}
 	}
-	setGitCommand(m->appsettings.git_command, false);
-	setFileCommand(m->appsettings.file_command, false);
-	setGpgCommand(m->appsettings.gpg_command, false);
+	setGitCommand(appsettings()->git_command, false);
+	setFileCommand(appsettings()->file_command, false);
+	setGpgCommand(appsettings()->gpg_command, false);
 
 	logGitVersion();
 
@@ -562,7 +572,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-	if (m->appsettings.remember_and_restore_window_position) {
+	if (appsettings()->remember_and_restore_window_position) {
 		setWindowOpacity(0);
 		Qt::WindowStates state = windowState();
 		bool maximized = (state & Qt::WindowMaximized) != 0;
@@ -734,7 +744,7 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
 
 QString MainWindow::defaultWorkingDir() const
 {
-	return m->appsettings.default_working_dir;
+	return appsettings()->default_working_dir;
 }
 
 QColor MainWindow::color(unsigned int i)
@@ -1265,7 +1275,7 @@ void MainWindow::onAvatarUpdated()
 
 bool MainWindow::isAvatarEnabled() const
 {
-	return m->appsettings.get_committer_icon;
+	return appsettings()->get_committer_icon;
 }
 
 bool MainWindow::isVerified(int row) const
@@ -1398,7 +1408,7 @@ QStringList MainWindow::remotes() const
 
 int MainWindow::limitLogCount() const
 {
-	int n = m->appsettings.maximum_number_of_commit_item_acquisitions;
+	int n = appsettings()->maximum_number_of_commit_item_acquisitions;
 	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
@@ -1516,7 +1526,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
-		if (isRemoteOnline() && m->appsettings.automatically_fetch_when_opening_the_repository) {
+		if (isRemoteOnline() && appsettings()->automatically_fetch_when_opening_the_repository) {
 			if (!fetch(g)) {
 				return;
 			}
@@ -2985,7 +2995,7 @@ void MainWindow::initNetworking()
 {
 	std::string http_proxy;
 	std::string https_proxy;
-	if (m->appsettings.proxy_type == "auto") {
+	if (appsettings()->proxy_type == "auto") {
 #ifdef Q_OS_WIN
 		http_proxy = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
 #else
@@ -3012,8 +3022,8 @@ void MainWindow::initNetworking()
 			https_proxy = misc::makeProxyServerURL(std::string(p));
 		}
 #endif
-	} else if (m->appsettings.proxy_type == "manual") {
-		http_proxy = m->appsettings.proxy_server.toStdString();
+	} else if (appsettings()->proxy_type == "manual") {
+		http_proxy = appsettings()->proxy_server.toStdString();
 	}
 	m->webcx.set_http_proxy(http_proxy);
 	m->webcx.set_https_proxy(https_proxy);
@@ -3291,9 +3301,9 @@ void MainWindow::on_action_edit_settings_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
 		m->appsettings = newsettings;
-		setGitCommand(m->appsettings.git_command, false);
-		setFileCommand(m->appsettings.file_command, false);
-		setGpgCommand(m->appsettings.gpg_command, false);
+		setGitCommand(appsettings()->git_command, false);
+		setFileCommand(appsettings()->file_command, false);
+		setGpgCommand(appsettings()->gpg_command, false);
 	}
 }
 

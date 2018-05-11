@@ -35,9 +35,9 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent) :
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
-	delete ui;
 	avatar_loader_.interrupt();
 	avatar_loader_.wait();
+	delete ui;
 }
 
 void WelcomeWizardDialog::set_user_name(const QString &v)

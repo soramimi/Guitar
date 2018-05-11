@@ -5,6 +5,8 @@
 
 #include "Git.h"
 
+class QLabel;
+
 namespace Ui {
 class CommitPropertyDialog;
 }
@@ -38,6 +40,8 @@ private:
 	Ui::CommitPropertyDialog *ui;
 	void init(MainWindow *mw);
 	MainWindow *mainwindow();
+	void setAvatar(QIcon icon, QLabel *label);
+	void UpdateAvatar(bool request);
 };
 
 #endif // COMMITPROPERTYDIALOG_H

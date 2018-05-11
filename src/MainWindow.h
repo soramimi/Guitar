@@ -282,6 +282,8 @@ public:
 	QStringList remotes() const;
 	QIcon verifiedIcon() const;
 	bool isVerified(int row) const;
+	ApplicationSettings *appsettings();
+	const ApplicationSettings *appsettings() const;
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
