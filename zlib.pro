@@ -1,6 +1,8 @@
 unix:CONFIG(debug,debug|release):TARGET = zd
 unix:CONFIG(release,debug|release):TARGET = z
-win32:TARGET = libz
+win32:CONFIG(debug,debug|release):win32:TARGET = libzd
+win32:CONFIG(release,debug|release):win32:TARGET = libz
+
 TEMPLATE = lib
 CONFIG += console staticlib
 CONFIG -= app_bundle
