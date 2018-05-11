@@ -17,6 +17,7 @@ struct ApplicationSettings {
 	bool get_committer_icon = false;
 	bool remember_and_restore_window_position = false;
 	bool automatically_fetch_when_opening_the_repository = true;
+	int maximum_number_of_commit_item_acquisitions = 10000;
 	static ApplicationSettings defaultSettings();
 };
 

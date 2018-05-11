@@ -1398,7 +1398,8 @@ QStringList MainWindow::remotes() const
 
 int MainWindow::limitLogCount() const
 {
-	return 10000;
+	int n = m->appsettings.maximum_number_of_commit_item_acquisitions;
+	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
 struct TemporaryCommitItem {
@@ -4406,7 +4407,7 @@ void MainWindow::onLogIdle()
 	if (vec.size() > 0) {
 		auto match = [&](char const *str){
 			int n = strlen(str);
-			if (n <= vec.size()) {
+			if (n <= (int)vec.size()) {
 				if (memcmp(&vec[vec.size() - n], str, n) == 0) {
 					return true;
 				}

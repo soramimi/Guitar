@@ -58,8 +58,13 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 		*v = s.value(name, def).toBool();
 	};
 
+	auto INT_VALUE_ = [&](QString const &name, int *v, int const &def){
+		*v = s.value(name, def).toInt();
+	};
+
 #define STRING_VALUE(NAME, SYMBOL) STRING_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 #define BOOL_VALUE(NAME, SYMBOL)   BOOL_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
+#define INT_VALUE(NAME, SYMBOL)   INT_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 
 	s.beginGroup("Global");
 	BOOL_VALUE("SaveWindowPosition", remember_and_restore_window_position);
@@ -82,6 +87,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 
 	s.beginGroup("Behavior");
 	BOOL_VALUE("AutomaticFetch", automatically_fetch_when_opening_the_repository);
+	INT_VALUE("MaxCommitItemAcquisitions", maximum_number_of_commit_item_acquisitions);
 	s.endGroup();
 }
 
@@ -109,6 +115,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 
 	s.beginGroup("Behavior");
 	s.setValue("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
+	s.setValue("MaxCommitItemAcquisitions", as->maximum_number_of_commit_item_acquisitions);
 	s.endGroup();
 
 }
