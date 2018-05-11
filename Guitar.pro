@@ -198,7 +198,8 @@ SOURCES += \
     src/SelectGpgKeyDialog.cpp \
     src/SetGpgSigningDialog.cpp \
     src/CommitDialog.cpp \
-    src/ConfigSigningDialog.cpp
+    src/ConfigSigningDialog.cpp \
+    src/AreYouSureYouWantToContinueConnectingDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -302,7 +303,8 @@ HEADERS  += \
     src/SelectGpgKeyDialog.h \
     src/SetGpgSigningDialog.h \
     src/CommitDialog.h \
-    src/ConfigSigningDialog.h
+    src/ConfigSigningDialog.h \
+    src/AreYouSureYouWantToContinueConnectingDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -346,7 +348,8 @@ FORMS    += \
     src/SelectGpgKeyDialog.ui \
     src/SetGpgSigningDialog.ui \
     src/CommitDialog.ui \
-    src/ConfigSigningDialog.ui
+    src/ConfigSigningDialog.ui \
+    src/AreYouSureYouWantToContinueConnectingDialog.ui
 
 RESOURCES += \
     resources.qrc

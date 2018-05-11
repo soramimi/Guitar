@@ -94,12 +94,9 @@ public:
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
-private slots:
-//	void onCustomContextMenuRequested(QPoint);
-
-
-	// QWidget interface
+	void idle();
 protected:
+	void timerEvent(QTimerEvent *);
 };
 
 

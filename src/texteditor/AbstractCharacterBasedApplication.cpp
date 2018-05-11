@@ -13,6 +13,7 @@ using WriteMode = AbstractCharacterBasedApplication::WriteMode;
 using FormattedLine = AbstractCharacterBasedApplication::FormattedLine;
 
 struct AbstractCharacterBasedApplication::Private {
+	bool is_changed = false;
 	bool is_quit_enabled = false;
 	bool is_open_enabled = false;
 	bool is_save_enabled = false;
@@ -97,6 +98,21 @@ void AbstractCharacterBasedApplication::setCursorVisible(bool show)
 bool AbstractCharacterBasedApplication::isCursorVisible()
 {
 	return m->is_cursor_visible;
+}
+
+void AbstractCharacterBasedApplication::retrieveLastText(std::vector<char> *out, int maxlen) const
+{
+	const_cast<AbstractCharacterBasedApplication *>(this)->document()->retrieveLastText(out, maxlen);
+}
+
+bool AbstractCharacterBasedApplication::isChanged() const
+{
+	return m->is_changed;
+}
+
+void AbstractCharacterBasedApplication::setChanged(bool f)
+{
+	m->is_changed = f;
 }
 
 int AbstractCharacterBasedApplication::leftMargin() const
@@ -322,6 +338,8 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 {
 	if (isReadOnly()) return;
 
+	setChanged(true);
+
 	QByteArray ba;
 	if (!vec.empty()){
 		utf32 u32(&vec[0], vec.size());
@@ -521,6 +539,7 @@ void AbstractCharacterBasedApplication::openFile(const QString &path)
 			}
 		}
 		m->valid_line_index = (int)document()->lines.size();
+		setChanged(false);
 		setRecentlyUsedPath(path);
 	}
 	scrollToTop();
@@ -2206,3 +2225,20 @@ void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 	}
 }
 
+
+void Document::retrieveLastText(std::vector<char> *out, int maxlen) const
+{
+	int remain = maxlen;
+	int i = lines.size();
+	while (i > 0 && remain > 0) {
+		i--;
+		QByteArray const &data = lines[i].text;
+		int n = data.size();
+		if (n > remain) {
+			n = remain;
+		}
+		char const *p = data.data() + data.size() - n;
+		out->insert(out->begin(), p, p + n);
+		remain -= n;
+	}
+}

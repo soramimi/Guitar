@@ -193,7 +193,7 @@ private:
 	bool isRemoteOnline() const;
 	void startTimers();
 	void onCloneCompleted();
-	void fetch(GitPtr g);
+	bool fetch(GitPtr g);
 	void stopPtyProcess();
 	void setNetworkingCommandsEnabled(bool f);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
@@ -203,6 +203,7 @@ private:
 	QListWidgetItem *currentFileItem() const;
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
 	void updateRemoteInfo();
+	void execAreYouSureYouWantToContinueConnectingDialog();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -389,6 +390,8 @@ signals:
 	// QWidget interface
 protected:
 	void closeEvent(QCloseEvent *event);
+protected slots:
+	void onLogIdle();
 };
 
 #endif // MAINWINDOW_H

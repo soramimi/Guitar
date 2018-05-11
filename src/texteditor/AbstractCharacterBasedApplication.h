@@ -57,6 +57,8 @@ public:
 	};
 
 	QList<Line> lines;
+
+	void retrieveLastText(std::vector<char> *out, int maxlen) const;
 };
 
 class TextEditorEngine {
@@ -357,6 +359,9 @@ public:
 	void setTextCodec(QTextCodec *codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
+	void retrieveLastText(std::vector<char> *out, int maxlen) const;
+	bool isChanged() const;
+	void setChanged(bool f);
 protected:
 	void write_(const char *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);

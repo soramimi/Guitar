@@ -11,6 +11,7 @@
 #include <functional>
 #include <QMenu>
 #include <QTextCodec>
+#include <QTimer>
 
 #include "common/misc.h"
 #include "InputMethodPopup.h"
@@ -38,6 +39,8 @@ struct TextEditorWidget::Private {
 
 	bool is_focus_frame_visible = false;
 
+	unsigned int idle_count = 0;
+
 	std::function<void(void)> custom_context_menu_requested;
 };
 
@@ -54,6 +57,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 #ifdef Q_OS_MACX
 	m->text_font = QFontDatabase().font("Osaka", "Regular-Mono", 14);
 #endif
+
 	m->top_margin = 0;
 	m->bottom_margin = 1;
 	QPixmap pm(1, 1);
@@ -82,6 +86,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	setRenderingMode(DecoratedMode);
 
 	updateCursorRect(true);
+
+	startTimer(100);
 }
 
 TextEditorWidget::~TextEditorWidget()
@@ -668,6 +674,19 @@ void TextEditorWidget::wheelEvent(QWheelEvent *event)
 void TextEditorWidget::setFocusFrameVisible(bool f)
 {
 	m->is_focus_frame_visible = f;
+}
+
+
+
+void TextEditorWidget::timerEvent(QTimerEvent *)
+{
+	if (!isChanged()) {
+		m->idle_count++;
+		if (m->idle_count >= 10) {
+			m->idle_count = 0;
+			emit idle();
+		}
+	}
 }
 
 void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)

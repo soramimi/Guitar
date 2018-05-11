@@ -1,3 +1,4 @@
+#include "AreYouSureYouWantToContinueConnectingDialog.h"
 #include "BlameWindow.h"
 #include "CommitViewWindow.h"
 #include "Git.h"
@@ -168,6 +169,10 @@ enum class PtyCondition {
 	Push,
 };
 
+enum InteractionMode {
+	None,
+	Busy,
+};
 
 struct MainWindow::Private {
 	QString starting_dir;
@@ -217,6 +222,9 @@ struct MainWindow::Private {
 	RepositoryItem temp_repo;
 
 	QListWidgetItem *last_selected_file_item = nullptr;
+
+
+	InteractionMode interaction_mode = InteractionMode::None;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -278,10 +286,12 @@ MainWindow::MainWindow(QWidget *parent)
 #endif
 
 	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
+	connect(ui->widget_log, SIGNAL(idle()), this, SLOT(onLogIdle()));
 
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
 
 	connect((AbstractPtyProcess *)&m->pty_process, SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
+
 
 	QString path = getBookmarksFilePath();
 	m->repos = RepositoryBookmark::load(path);
@@ -315,12 +325,12 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-	m->avatar_loader.interrupt();
-
 	stopPtyProcess();
-	deleteTempFiles();
 
+	m->avatar_loader.interrupt();
 	m->avatar_loader.wait();
+
+	deleteTempFiles();
 
 	delete m;
 	delete ui;
@@ -604,6 +614,7 @@ void MainWindow::onLogVisibilityChanged()
 void MainWindow::writeLog(char const *ptr, int len)
 {
 	ui->widget_log->write(ptr, len, false);
+	ui->widget_log->setChanged(false);
 }
 
 void MainWindow::writeLog(const QString &str)
@@ -1475,7 +1486,7 @@ void MainWindow::detectGitServerType(GitPtr g)
 	}
 }
 
-void MainWindow::fetch(GitPtr g)
+bool MainWindow::fetch(GitPtr g)
 {
 	m->pty_condition = PtyCondition::Fetch;
 	g->fetch(&m->pty_process);
@@ -1483,6 +1494,9 @@ void MainWindow::fetch(GitPtr g)
 		if (m->pty_process.wait(1)) break;
 		QApplication::processEvents();
 	}
+	bool ok = (m->pty_condition == PtyCondition::Fetch);
+	m->pty_condition = PtyCondition::None;
+	return ok;
 }
 
 void MainWindow::clearLog()
@@ -1501,7 +1515,9 @@ void MainWindow::openRepository_(GitPtr g)
 	if (isValidWorkingCopy(g)) {
 
 		if (isRemoteOnline() && m->appsettings.automatically_fetch_when_opening_the_repository) {
-			fetch(g);
+			if (!fetch(g)) {
+				return;
+			}
 		}
 
 		clearLog();
@@ -3164,12 +3180,16 @@ void MainWindow::timerEvent(QTimerEvent *)
 		ui->action_stop_process->setEnabled(running);
 		setNetworkingCommandsEnabled(!running);
 	}
+	if (!running) {
+		m->interaction_mode = InteractionMode::None;
+	}
 
 	while (1) {
 		char tmp[1024];
 		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		ui->widget_log->write(tmp, len, false);
+//		ui->widget_log->write(tmp, len, false);
+		writeLog(tmp, len);
 	}
 }
 
@@ -4347,12 +4367,61 @@ void MainWindow::on_action_set_gpg_signing_triggered()
 	}
 }
 
+void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
+{
+	using TheDlg = AreYouSureYouWantToContinueConnectingDialog;
+
+	m->interaction_mode = InteractionMode::Busy;
+
+	QApplication::restoreOverrideCursor();
+
+	TheDlg dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		TheDlg::Result r = dlg.result();
+		if (r == TheDlg::Result::Yes) {
+			m->pty_process.writeInput("yes\n", 4);
+		} else {
+			m->pty_condition = PtyCondition::None; // abort: fetch()関数にfalseを返させる
+			m->pty_process.writeInput("no\n", 3);
+			QThread::msleep(300);
+			stopPtyProcess();
+		}
+	} else {
+		ui->widget_log->setFocus();
+	}
+	m->interaction_mode = InteractionMode::Busy;
+}
+
+void MainWindow::onLogIdle()
+{
+	if (m->interaction_mode != InteractionMode::None) return;
+
+	static char const are_you_sure_you_want_to_continue_connecting[] = "\nAre you sure you want to continue connecting (yes/no)? ";
+
+	std::vector<char> vec;
+	ui->widget_log->retrieveLastText(&vec, 100);
+	if (vec.size() > 0) {
+		auto match = [&](char const *str){
+			int n = strlen(str);
+			if (n <= vec.size()) {
+				if (memcmp(&vec[vec.size() - n], str, n) == 0) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		if (match(are_you_sure_you_want_to_continue_connecting)) {
+			execAreYouSureYouWantToContinueConnectingDialog();
+		}
+	}
+}
+
+
 
 
 void MainWindow::on_action_test_triggered()
 {
-	GitPtr g = git();
-	qDebug() << g->signPolicy(Git::Source::Global);
 }
 
 
