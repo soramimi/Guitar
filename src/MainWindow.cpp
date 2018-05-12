@@ -2,6 +2,7 @@
 #include "BlameWindow.h"
 #include "CommitViewWindow.h"
 #include "Git.h"
+#include "LineEditDialog.h"
 #include "MainWindow.h"
 #include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
@@ -1938,7 +1939,7 @@ void MainWindow::on_action_push_triggered()
 	QString errormsg;
 
 	reopenRepository(true, [&](GitPtr g){
-		g->push(false);
+		g->push(false, &m->pty_process);
 		exitcode = g->getProcessExitCode();
 		errormsg = g->errorMessage();
 	});
@@ -4410,23 +4411,47 @@ void MainWindow::onLogIdle()
 {
 	if (m->interaction_mode != InteractionMode::None) return;
 
-	static char const are_you_sure_you_want_to_continue_connecting[] = "\nAre you sure you want to continue connecting (yes/no)? ";
+	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)? ";
 
 	std::vector<char> vec;
 	ui->widget_log->retrieveLastText(&vec, 100);
 	if (vec.size() > 0) {
-		auto match = [&](char const *str){
-			int n = strlen(str);
-			if (n <= (int)vec.size()) {
-				if (memcmp(&vec[vec.size() - n], str, n) == 0) {
-					return true;
-				}
+		std::string line;
+		int n = (int)vec.size();
+		int i = n;
+		while (i > 0) {
+			i--;
+			if (vec[i] == '\n') {
+				i++;
+				line.assign(&vec[i], n - i);
+				break;
 			}
-			return false;
-		};
+		}
+		if (!line.empty()) {
+			if (line == are_you_sure_you_want_to_continue_connecting) {
+				execAreYouSureYouWantToContinueConnectingDialog();
+				return;
+			}
 
-		if (match(are_you_sure_you_want_to_continue_connecting)) {
-			execAreYouSureYouWantToContinueConnectingDialog();
+			char const *begin = line.c_str();
+			char const *end = line.c_str() + line.size();
+			auto Input = [&](QString const &title, bool password){
+				std::string header = QString("%1 for '").arg(title).toStdString();
+				if (strncmp(begin, header.c_str(), header.size()) == 0) {
+					if (memcmp(end - 3, "': ", 3) == 0) {
+						QString msg = QString::fromUtf8(begin, end - begin - 2);
+						LineEditDialog dlg(this, title, msg, password);
+						if (dlg.exec() == QDialog::Accepted) {
+							std::string text = dlg.text().toStdString() + '\n';
+							m->pty_process.writeInput(text.c_str(), text.size());
+						}
+						return true;
+					}
+				}
+				return false;
+			};
+			if (Input("Username", false)) return;
+			if (Input("Password", true)) return;
 		}
 	}
 }
