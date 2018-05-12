@@ -152,6 +152,7 @@ protected:
 			}
 
 			if (pid == 0) { // child
+				putenv("LANG=C");
 				close(stdin_pipe[W]);
 				close(stdout_pipe[R]);
 				close(stderr_pipe[R]);

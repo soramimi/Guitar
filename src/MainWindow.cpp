@@ -4412,6 +4412,7 @@ void MainWindow::onLogIdle()
 	if (m->interaction_mode != InteractionMode::None) return;
 
 	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)? ";
+	static char const enter_passphrase[] = "Enter passphrase: ";
 
 	std::vector<char> vec;
 	ui->widget_log->retrieveLastText(&vec, 100);
@@ -4430,6 +4431,18 @@ void MainWindow::onLogIdle()
 		if (!line.empty()) {
 			if (line == are_you_sure_you_want_to_continue_connecting) {
 				execAreYouSureYouWantToContinueConnectingDialog();
+				return;
+			}
+
+			if (line == enter_passphrase) {
+				LineEditDialog dlg(this, "Passphrase", QString::fromStdString(line), true);
+				if (dlg.exec() == QDialog::Accepted) {
+					std::string text = dlg.text().toStdString() + '\n';
+					m->pty_process.writeInput(text.c_str(), text.size());
+				} else {
+					m->pty_process_ok = false;
+					stopPtyProcess();
+				}
 				return;
 			}
 
