@@ -51,7 +51,8 @@ class OutputReaderThread : public QThread {
 private:
 	QMutex *mutex;
 	int pty_master;
-	std::deque<char> *output_buffer;
+	std::deque<char> *output_queue;
+	std::vector<char> *output_vector;
 protected:
 	void run()
 	{
@@ -62,16 +63,18 @@ protected:
 			if (len < 1) break;
 			{
 				QMutexLocker lock(mutex);
-				output_buffer->insert(output_buffer->end(), buf, buf + len);
+				output_queue->insert(output_queue->end(), buf, buf + len);
+				output_vector->insert(output_vector->end(), buf, buf + len);
 			}
 		}
 	}
 public:
-	void start(QMutex *mutex, int pty_master, std::deque<char> *outbuf)
+	void start(QMutex *mutex, int pty_master, std::deque<char> *outq, std::vector<char> *outv)
 	{
 		this->mutex = mutex;
 		this->pty_master = pty_master;
-		this->output_buffer = outbuf;
+		this->output_queue = outq;
+		this->output_vector = outv;
 		QThread::start();
 	}
 };
@@ -84,7 +87,8 @@ struct UnixPtyProcess::Private {
 	QMutex mutex;
 	std::string command;
 	int pty_master;
-	std::deque<char> output_buffer;
+	std::deque<char> output_queue;
+	std::vector<char> output_vector;
 	OutputReaderThread th_output_reader;
 	int exit_code = -1;
 };
@@ -114,14 +118,14 @@ void UnixPtyProcess::writeInput(const char *ptr, int len)
 int UnixPtyProcess::readOutput(char *ptr, int len)
 {
 	QMutexLocker lock(&m->mutex);
-	int n = m->output_buffer.size();
+	int n = m->output_queue.size();
 	if (n > len) {
 		n = len;
 	}
 	if (n > 0) {
-		auto it = m->output_buffer.begin();
+		auto it = m->output_queue.begin();
 		std::copy(it, it + n, ptr);
-		m->output_buffer.erase(it, it + n);
+		m->output_queue.erase(it, it + n);
 	}
 	return n;
 }
@@ -185,7 +189,7 @@ void UnixPtyProcess::run()
 
 	} else {
 
-		m->th_output_reader.start(&m->mutex, m->pty_master, &m->output_buffer);
+		m->th_output_reader.start(&m->mutex, m->pty_master, &m->output_queue, &m->output_vector);
 
 		while (1) {
 			if (isInterruptionRequested()) break;
@@ -220,4 +224,18 @@ void UnixPtyProcess::stop()
 	wait();
 }
 
+int UnixPtyProcess::getExitCode() const
+{
+	return m->exit_code;
+}
 
+QString UnixPtyProcess::getMessage() const
+{
+	QString s;
+	if (!m->output_vector.empty()) {
+		std::vector<char> vec;
+		vec.insert(vec.end(), m->output_vector.begin(), m->output_vector.end());
+		s = QString::fromUtf8(&vec[0], vec.size());
+	}
+	return s;
+}

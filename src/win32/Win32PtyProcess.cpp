@@ -237,5 +237,21 @@ const std::vector<char> *Win32PtyProcess::result() const
 	return m->th_output_reader.result();
 }
 
+int Win32PtyProcess::getExitCode() const
+{
+	return m->exit_code;
+}
+
+QString Win32PtyProcess::getMessage() const
+{
+	QString s;
+//	if (!m->output_buffer.empty()) {
+//		std::vector<char> vec;
+//		vec.insert(vec.end(), m->output_buffer.begin(), m->output_buffer.end());
+//		s = QString::fromUtf8(&vec[0], vec.size());
+//	}
+	return s;
+}
+
 
 

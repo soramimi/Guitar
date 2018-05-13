@@ -26,6 +26,8 @@ public:
 	bool wait(unsigned long time = ULONG_MAX);
 	void stop();
 	std::vector<char> const *result() const;
+	int getExitCode() const;
+	QString getMessage() const;
 };
 
 

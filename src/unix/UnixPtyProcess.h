@@ -19,9 +19,8 @@ public:
 	void start(QString const &cmd);
 	bool wait(unsigned long time = ULONG_MAX);
 	void stop();
-
-	// AbstractPtyProcess interface
-public:
+	int getExitCode() const;
+	QString getMessage() const;
 };
 
 #endif // UNIXPTYPROCESS_H

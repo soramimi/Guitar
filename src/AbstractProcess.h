@@ -18,6 +18,8 @@ public:
 	virtual void start(QString const &cmd) = 0;
 	virtual bool wait(unsigned long time = ULONG_MAX) = 0;
 	virtual void stop() = 0;
+	virtual int getExitCode() const = 0;
+	virtual QString getMessage() const = 0;
 signals:
 	void completed();
 };

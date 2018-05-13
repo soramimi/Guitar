@@ -1939,8 +1939,12 @@ void MainWindow::on_action_push_triggered()
 
 	reopenRepository(true, [&](GitPtr g){
 		g->push(false, &m->pty_process);
-		exitcode = g->getProcessExitCode();
-		errormsg = g->errorMessage();
+		while (1) {
+			if (m->pty_process.wait(1)) break;
+			QApplication::processEvents();
+		}
+		exitcode = m->pty_process.getExitCode();
+		errormsg = m->pty_process.getMessage();
 	});
 
 	if (exitcode == 128) {
