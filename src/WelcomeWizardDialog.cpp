@@ -107,14 +107,14 @@ void WelcomeWizardDialog::on_pushButton_prev_clicked()
 
 void WelcomeWizardDialog::on_pushButton_next_clicked()
 {
+	if (ui->stackedWidget->currentWidget() == ui->page_finish) {
+		done(QDialog::Accepted);
+	}
 	int i = pages_.indexOf(ui->stackedWidget->currentWidget());
 	if (i + 1 < pages_.size()) {
 		i++;
 		QWidget *w = pages_[i];
 		ui->stackedWidget->setCurrentWidget(w);
-		if (w == ui->page_finish) {
-			done(QDialog::Accepted);
-		}
 	}
 }
 

@@ -418,9 +418,8 @@ bool MainWindow::shown()
 	setFileCommand(appsettings()->file_command, false);
 	setGpgCommand(appsettings()->gpg_command, false);
 
-	logGitVersion();
-
-	writeLog(AboutDialog::appVersion() + '\n');
+	writeLog(AboutDialog::appVersion() + '\n'); // print application version
+	logGitVersion(); // print git command version
 
 	{
 		MySettings s;

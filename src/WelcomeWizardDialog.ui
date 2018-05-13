@@ -292,7 +292,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEdit_preview_user">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_user">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -306,7 +306,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QLineEdit" name="lineEdit_preview_email">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_email">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -320,7 +320,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QLineEdit" name="lineEdit_preview_folder">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_folder">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -334,7 +334,7 @@
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QLineEdit" name="lineEdit_preview_git">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_git">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -348,7 +348,7 @@
           </widget>
          </item>
          <item row="6" column="1">
-          <widget class="QLineEdit" name="lineEdit_preview_file">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_file">
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -432,6 +432,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
