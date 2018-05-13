@@ -233,9 +233,7 @@ QString UnixPtyProcess::getMessage() const
 {
 	QString s;
 	if (!m->output_vector.empty()) {
-		std::vector<char> vec;
-		vec.insert(vec.end(), m->output_vector.begin(), m->output_vector.end());
-		s = QString::fromUtf8(&vec[0], vec.size());
+		s = QString::fromUtf8(&m->output_vector[0], m->output_vector.size());
 	}
 	return s;
 }
