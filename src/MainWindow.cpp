@@ -1963,7 +1963,6 @@ void MainWindow::on_action_push_triggered()
 			QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
 			return;
 		}
-		qDebug() << errormsg;
 	}
 }
 
@@ -4425,7 +4424,7 @@ void MainWindow::onLogIdle()
 		int i = n;
 		while (i > 0) {
 			i--;
-			if (vec[i] == '\n') {
+			if (i + 1 < n && vec[i] == '\n') {
 				i++;
 				line.assign(&vec[i], n - i);
 				break;

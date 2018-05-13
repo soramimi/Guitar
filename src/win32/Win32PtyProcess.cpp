@@ -13,16 +13,12 @@ class OutputReaderThread : public QThread {
 	friend class ::Win32PtyProcess;
 private:
 	HANDLE handle;
-	std::deque<char> result1;
-	std::vector<char> result2;
+	std::deque<char> *output_queue = nullptr;
+	std::vector<char> *output_vector = nullptr;
 protected:
 	void run();
 public:
-	void start(HANDLE hOutput);
-	std::vector<char> const *result() const
-	{
-		return &result2;
-	}
+	void start(HANDLE hOutput, std::deque<char> *outq, std::vector<char> *outv);
 };
 
 void OutputReaderThread::run()
@@ -35,15 +31,16 @@ void OutputReaderThread::run()
 		if (!ret || amount == 0) {
 			break;
 		}
-		result1.insert(result1.end(), buf, buf + amount);
-		result2.insert(result2.end(), buf, buf + amount);
+		output_queue->insert(output_queue->end(), buf, buf + amount);
+		output_vector->insert(output_vector->end(), buf, buf + amount);
 	}
 }
 
-void OutputReaderThread::start(HANDLE hOutput)
+void OutputReaderThread::start(HANDLE hOutput, std::deque<char> *outq, std::vector<char> *outv)
 {
-	result2.clear();
 	handle = hOutput;
+	output_queue = outq;
+	output_vector = outv;
 	QThread::start();
 }
 
@@ -54,6 +51,8 @@ void OutputReaderThread::start(HANDLE hOutput)
 struct Win32PtyProcess::Private {
 	QMutex mutex;
 	QString command;
+	std::deque<char> output_queue;
+	std::vector<char> output_vector;
 	OutputReaderThread th_output_reader;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;
@@ -126,7 +125,7 @@ void Win32PtyProcess::run()
 
 	m->hInput = CreateFileW(winpty_conin_name(pty), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	m->hOutput = CreateFileW(winpty_conout_name(pty), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-	m->th_output_reader.start(m->hOutput);
+	m->th_output_reader.start(m->hOutput, &m->output_queue, &m->output_vector);
 
 	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command.utf16(), nullptr, nullptr, nullptr);
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
@@ -158,14 +157,14 @@ void Win32PtyProcess::run()
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
 {
-	int len = m->th_output_reader.result1.size();
+	int len = m->output_queue.size();
 	if (len > maxlen) {
 		len = maxlen;
 	}
 	if (len > 0) {
-		auto begin = m->th_output_reader.result1.begin();
+		auto begin = m->output_queue.begin();
 		std::copy(begin, begin + len, dstptr);
-		m->th_output_reader.result1.erase(begin, begin + len);
+		m->output_queue.erase(begin, begin + len);
 	}
 	return len;
 }
@@ -209,8 +208,6 @@ void Win32PtyProcess::writeInput(const char *ptr, int len)
 	}
 }
 
-
-
 void Win32PtyProcess::start(const QString &cmdline)
 {
 	if (isRunning()) return;
@@ -220,7 +217,7 @@ void Win32PtyProcess::start(const QString &cmdline)
 
 bool Win32PtyProcess::wait(unsigned long time)
 {
-	return QThread::wait(time);
+	return QThread::wait(time) && m->th_output_reader.wait(time);
 }
 
 void Win32PtyProcess::stop()
@@ -231,10 +228,9 @@ void Win32PtyProcess::stop()
 	wait();
 }
 
-
 const std::vector<char> *Win32PtyProcess::result() const
 {
-	return m->th_output_reader.result();
+	return &m->output_vector;
 }
 
 int Win32PtyProcess::getExitCode() const
@@ -245,11 +241,9 @@ int Win32PtyProcess::getExitCode() const
 QString Win32PtyProcess::getMessage() const
 {
 	QString s;
-//	if (!m->output_buffer.empty()) {
-//		std::vector<char> vec;
-//		vec.insert(vec.end(), m->output_buffer.begin(), m->output_buffer.end());
-//		s = QString::fromUtf8(&vec[0], vec.size());
-//	}
+	if (!m->output_vector.empty()) {
+		s = QString::fromUtf8(&m->output_vector[0], m->output_vector.size());
+	}
 	return s;
 }
 
