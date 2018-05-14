@@ -143,6 +143,9 @@ void Win32PtyProcess::run()
 		}
 	}
 
+	// プロセスの出力を確実に取得するため、ここで output reader スレッドの終了を待つ
+	m->th_output_reader.wait();
+
 	winpty_free(pty);
 
 	CloseHandle(m->hInput);
@@ -222,8 +225,9 @@ bool Win32PtyProcess::wait(unsigned long time)
 
 void Win32PtyProcess::stop()
 {
-	m->th_output_reader.requestInterruption();
+	// プロセススレッドと output reader スレッドの両方に停止要求
 	requestInterruption();
+	m->th_output_reader.requestInterruption();
 	m->th_output_reader.wait();
 	wait();
 }
