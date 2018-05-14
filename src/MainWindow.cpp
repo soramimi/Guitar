@@ -3844,6 +3844,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.name = b.name;
 				if (item.name.startsWith("remotes/")) {
 					item.name = item.name.mid(8);
+					item.remote = true;
 				}
 				item.id = b.id;
 				items.push_back(item);
@@ -3960,13 +3961,12 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 					tags.push_back(name);
 				} else if (item.type == NamedCommitItem::Type::Branch) {
 					int i = name.lastIndexOf('/');
-					if (i < 0) {
-						if (name == "HEAD") continue;
-						local_branches.push_back(name);
-					} else {
-						name = name.mid(i + 1);
-						if (name == "HEAD") continue;
+					if (i < 0 && name == "HEAD") continue;
+					if (i > 0 && name.mid(i + 1) == "HEAD") continue;
+					if (item.remote) {
 						remote_branches.push_back(name);
+					} else {
+						local_branches.push_back(name);
 					}
 				}
 			}

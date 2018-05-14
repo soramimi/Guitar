@@ -51,11 +51,10 @@ int CheckoutDialog::makeComboBoxOptions(QStringList const &names)
 	ui->comboBox_branch_name->clear();
 	ui->comboBox_branch_name->clearEditText();
 	for (QString const &name : names) {
-		QString text = name;
-		int i = text.lastIndexOf('/');
-		if (i >= 0) text = text.mid(i + 1);
-		if (text == "HEAD") continue;
-		ui->comboBox_branch_name->addItem(text);
+		int i = name.lastIndexOf('/');
+		if (i < 0 && name == "HEAD") continue;
+		if (i > 0 && name.mid(i + 1) == "HEAD") continue;
+		ui->comboBox_branch_name->addItem(name);
 		count++;
 	}
 	return count;
