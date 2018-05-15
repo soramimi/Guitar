@@ -1226,9 +1226,16 @@ bool MainWindow::isValidWorkingCopy(GitPtr const &g) const
 	return g && g->isValidWorkingCopy();
 }
 
+void MainWindow::queryRemotes(GitPtr g)
+{
+	m->remotes = g->getRemotes();
+	std::sort(m->remotes.begin(), m->remotes.end());
+}
+
 void MainWindow::queryBranches(GitPtr g)
 {
 	Q_ASSERT(g);
+//	queryRemotes(g);
 	m->branch_map.clear();
 	QList<Git::Branch> branches = g->branches();
 	for (Git::Branch const &b : branches) {
@@ -1237,6 +1244,24 @@ void MainWindow::queryBranches(GitPtr g)
 		}
 		m->branch_map[b.id].append(b);
 	}
+}
+
+void MainWindow::updateRemoteInfo()
+{
+	queryRemotes(git());
+
+	QString current_remote;
+	{
+		Git::Branch const &r = currentBranch();
+		current_remote = r.remote;
+	}
+	if (current_remote.isEmpty()) {
+		if (m->remotes.size() == 1) {
+			current_remote = m->remotes[0];
+		}
+	}
+
+	ui->lineEdit_remote->setText(current_remote);
 }
 
 QList<Git::Branch> MainWindow::findBranch(QString const &id)
@@ -1335,8 +1360,10 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 			if (b.flags & Git::Branch::HeadDetached) continue;
 			Label label(Label::LocalBranch);
 			label.text = b.name;//misc::abbrevBranchName(b.name);
-			if (label.text.startsWith("remotes/")) {
+//			if (label.text.startsWith("remotes/")) {
+			if (!b.remote.isEmpty()) {
 				label.kind = Label::RemoteBranch;
+				label.text = b.remote / label.text;
 			}
 			if (b.ahead > 0) {
 				label.text += tr(", %1 ahead").arg(b.ahead);
@@ -1381,24 +1408,6 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	} else {
 		setUnknownRepositoryInfo();
 	}
-}
-
-void MainWindow::updateRemoteInfo()
-{
-	GitPtr g = git();
-	m->remotes = g->getRemotes();
-	std::sort(m->remotes.begin(), m->remotes.end());
-
-	QString current_remote;
-	{
-		Git::Branch const &r = currentBranch();
-		int i = r.remote.indexOf('/');
-		if (i > 0) {
-			current_remote = r.remote.mid(0, i);
-		}
-	}
-
-	ui->lineEdit_remote->setText(current_remote);
 }
 
 QStringList MainWindow::remotes() const
@@ -3844,11 +3853,11 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.name = b.name;
 				if (item.name.startsWith("remotes/")) {
 					item.name = item.name.mid(8);
-                    int i = item.name.indexOf('/');
-                    if (i > 0) {
-                        item.remote = item.name.mid(0, i);
-                        item.name = item.name.mid(i + 1);
-                    }
+					int i = item.name.indexOf('/');
+					if (i > 0) {
+						item.remote = item.name.mid(0, i);
+						item.name = item.name.mid(i + 1);
+					}
 				}
 				item.id = b.id;
 				items.push_back(item);
@@ -3967,9 +3976,9 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 					int i = name.lastIndexOf('/');
 					if (i < 0 && name == "HEAD") continue;
 					if (i > 0 && name.mid(i + 1) == "HEAD") continue;
-                    if (item.remote.isNull()) {
-                        local_branches.push_back(name);
-                    } else {
+					if (item.remote.isNull()) {
+						local_branches.push_back(name);
+					} else {
 						remote_branches.push_back(name);
 					}
 				}

@@ -493,11 +493,15 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 					if (ptr < end) {
 						c = *ptr;
 					}
-					if (c == ':' || c == 0) {
-						if (b->remote.isEmpty()) {
-							b->remote = QString::fromUtf16(begin, ptr - begin);
-						}
-					}
+//					if (c == ':' || c == 0) {
+//						if (b->remote.isEmpty()) {
+//							b->remote = QString::fromUtf16(begin, ptr - begin);
+//							int i = b->remote.indexOf('/');
+//							if (i > 0) {
+//								b->remote = b->remote.mid(0, i);
+//							}
+//						}
+//					}
 					if (c == 0) break;
 					ptr++;
 				}
@@ -546,8 +550,13 @@ QList<Git::Branch> Git::branches()
 					name = name.mid(17);
 				}
 
-				if (name.startsWith("origin/")) {
-					name = name.mid(7);
+				if (name.startsWith("remotes/")) {
+					name = name.mid(8);
+					int i = name.indexOf('/');
+					if (i > 0) {
+						b.remote = name.mid(0, i);
+						name = name.mid(i + 1);
+					}
 				}
 
 				b.name = name;
@@ -578,9 +587,6 @@ QList<Git::Branch> Git::branches()
 		Branch *b = &branches[i];
 		if (b->id.startsWith('>')) {
 			QString name = b->id.mid(1);
-			if (name.startsWith("origin/")) {
-				name = name.mid(7);
-			}
 			for (int j = 0; j < branches.size(); j++) {
 				if (j != i) {
 					if (branches[j].name == name) {

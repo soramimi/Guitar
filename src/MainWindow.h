@@ -128,6 +128,7 @@ private:
 	void commit(bool amend = false);
 	void commit_amend();
 	void queryBranches(GitPtr g);
+	void updateRemoteInfo();
 	QList<Git::Branch> findBranch(const QString &id);
 	QList<Git::Tag> findTag(const QString &id);
 	int selectedLogIndex() const;
@@ -202,8 +203,8 @@ private:
 	void blame();
 	QListWidgetItem *currentFileItem() const;
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
-	void updateRemoteInfo();
 	void execAreYouSureYouWantToContinueConnectingDialog();
+	void queryRemotes(GitPtr g);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
