@@ -41,7 +41,7 @@ struct NamedCommitItem {
 		Tag,
 	};
 	Type type = Type::None;
-	bool remote = false;
+    QString remote;
 	QString name;
 	QString id;
 };
