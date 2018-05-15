@@ -1363,7 +1363,7 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 //			if (label.text.startsWith("remotes/")) {
 			if (!b.remote.isEmpty()) {
 				label.kind = Label::RemoteBranch;
-				label.text = b.remote / label.text;
+				label.text = "remotes" / b.remote / label.text;
 			}
 			if (b.ahead > 0) {
 				label.text += tr(", %1 ahead").arg(b.ahead);
@@ -1611,7 +1611,10 @@ void MainWindow::openRepository_(GitPtr g)
 		int col = 1; // カラム0はコミットグラフなので、その次から
 		auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
-			item->setToolTip(tooltip);
+			QString tt = tooltip;
+			tt.replace('\n', ' ');
+			tt = tt.toHtmlEscaped();
+			item->setToolTip(tt);
 			if (bold) {
 				QFont font = item->font();
 				font.setBold(true);
