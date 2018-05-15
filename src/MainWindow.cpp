@@ -1359,8 +1359,7 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 		for (Git::Branch const &b : list) {
 			if (b.flags & Git::Branch::HeadDetached) continue;
 			Label label(Label::LocalBranch);
-			label.text = b.name;//misc::abbrevBranchName(b.name);
-//			if (label.text.startsWith("remotes/")) {
+			label.text = b.name;
 			if (!b.remote.isEmpty()) {
 				label.kind = Label::RemoteBranch;
 				label.text = "remotes" / b.remote / label.text;
