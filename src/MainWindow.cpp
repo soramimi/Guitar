@@ -1613,6 +1613,7 @@ void MainWindow::openRepository_(GitPtr g)
 			QString tt = tooltip;
 			tt.replace('\n', ' ');
 			tt = tt.toHtmlEscaped();
+			tt = "<p style='white-space: pre'>" + tt + "</p>";
 			item->setToolTip(tt);
 			if (bold) {
 				QFont font = item->font();
