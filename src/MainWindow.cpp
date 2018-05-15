@@ -1610,11 +1610,13 @@ void MainWindow::openRepository_(GitPtr g)
 		int col = 1; // カラム0はコミットグラフなので、その次から
 		auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
 			QTableWidgetItem *item = new QTableWidgetItem(text);
-			QString tt = tooltip;
-			tt.replace('\n', ' ');
-			tt = tt.toHtmlEscaped();
-			tt = "<p style='white-space: pre'>" + tt + "</p>";
-			item->setToolTip(tt);
+			if (!tooltip.isEmpty()) {
+				QString tt = tooltip;
+				tt.replace('\n', ' ');
+				tt = tt.toHtmlEscaped();
+				tt = "<p style='white-space: pre'>" + tt + "</p>";
+				item->setToolTip(tt);
+			}
 			if (bold) {
 				QFont font = item->font();
 				font.setBold(true);
