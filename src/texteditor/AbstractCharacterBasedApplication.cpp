@@ -12,6 +12,60 @@
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
 using FormattedLine = AbstractCharacterBasedApplication::FormattedLine;
 
+class EsccapeSequence {
+private:
+	int offset = 0;
+	unsigned char data[100];
+	int color_fg = -1;
+	int color_bg = -1;
+public:
+	bool isActive() const
+	{
+		return offset > 0;
+	}
+	void write(char c)
+	{
+		if (c == 0x1b) {
+			data[0] = c;
+			offset = 1;
+			return;
+		}
+		data[offset] = c;
+		if (offset > 0) {
+			if (c == 'm') {
+				if (data[1] == '[' && isdigit(data[2]) && isdigit(data[3])) {
+					data[offset] = 0;
+					if (data[2] == '3') {
+						color_fg = atoi((char const *)data + 3);
+						if (color_fg == 9) {
+							color_fg = -1;
+						}
+					}
+					if (data[2] == '4') {
+						color_bg = atoi((char const *)data + 3);
+						if (color_bg == 9) {
+							color_bg = -1;
+						}
+					}
+				}
+				offset = 0;
+				return;
+			}
+			if (offset + 1 < sizeof(data)) {
+				offset++;
+			}
+		}
+	}
+	int fg_color_code() const
+	{
+		return color_fg == 9 ? -1 : color_fg;
+	}
+	int bg_color_code() const
+	{
+		return color_bg == 9 ? -1 : color_bg;
+	}
+};
+
 struct AbstractCharacterBasedApplication::Private {
 	bool is_changed = false;
 	bool is_quit_enabled = false;
@@ -38,7 +92,9 @@ struct AbstractCharacterBasedApplication::Private {
 	int parsed_col_index = -1;
 	bool parsed_for_edit = false;
 	QByteArray parsed_line;
+//	QList<Document::CharAttr_> parsed_atts;
 	std::vector<uint32_t> prepared_current_line;
+	QList<Document::CharAttr_> syntax_table;
 	bool dialog_mode = false;
 	DialogHandler dialog_handler;
 	bool is_painting_suppressed = false;
@@ -46,6 +102,10 @@ struct AbstractCharacterBasedApplication::Private {
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
 	QTextCodec *text_codec = nullptr;
+	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier;
+	bool ctrl_modifier = false;
+	bool shift_modifier = false;
+	EsccapeSequence escape_sequence;
 };
 
 AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
@@ -56,6 +116,28 @@ AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
 AbstractCharacterBasedApplication::~AbstractCharacterBasedApplication()
 {
 	delete m;
+}
+
+void AbstractCharacterBasedApplication::setModifierKeys(Qt::KeyboardModifiers keymod)
+{
+	m->keyboard_modifiers = keymod;
+	m->ctrl_modifier = m->keyboard_modifiers & Qt::ControlModifier;
+	m->shift_modifier = m->keyboard_modifiers & Qt::ShiftModifier;
+}
+
+void AbstractCharacterBasedApplication::clearShiftModifier()
+{
+	m->shift_modifier = false;
+}
+
+bool AbstractCharacterBasedApplication::isControlModifierPressed() const
+{
+	return m->ctrl_modifier;
+}
+
+bool AbstractCharacterBasedApplication::isShiftModifierPressed() const
+{
+	return m->shift_modifier;
 }
 
 void AbstractCharacterBasedApplication::setTextCodec(QTextCodec *codec)
@@ -183,6 +265,7 @@ int AbstractCharacterBasedApplication::charWidth(uint32_t c)
 QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Line const &line, int tab_span, int anchor_a, int anchor_b) const
 {
 	QByteArray ba;
+//	QList<Document::CharAttr_> const &attslist = line.atts;
 	if (m->text_codec) {
 		ba = m->text_codec->toUnicode(line.text).toUtf8();
 	} else {
@@ -200,12 +283,45 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	bool flag_a = false;
 	bool flag_b = false;
 
-	auto Flush = [&](){
+	auto Color = [&](size_t offset, size_t *next_offset){
+		int i = findSyntax(&m->syntax_table, offset);
+		if (i < m->syntax_table.size() && m->syntax_table[i].offset <= offset) {
+			if (next_offset) {
+				if (i + 1 < m->syntax_table.size()) {
+					*next_offset = m->syntax_table[i + 1].offset;
+				} else {
+					*next_offset = -1;
+				}
+			}
+			static int color[] = {
+				0x000000,
+				0x0000ff,
+				0x00ff00,
+				0x00ffff,
+				0xff0000,
+				0xff00ff,
+				0xffff00,
+				0xffffff,
+			};
+			i = m->syntax_table[i].color;
+			if (i >= 0 && i < 8) {
+				return color[i];
+			}
+		}
+		if (next_offset) {
+			*next_offset = -1;
+		}
+		return 0;
+	};
+
+
+	auto Flush = [&](size_t offset, size_t *next_offset){
 		if (!vec.empty()) {
 			int atts = 0;
+			atts |= Color(offset, next_offset);
 			if (anchor_a >= 0 || anchor_b >= 0) {
 				if ((anchor_a < 0 || col_start >= anchor_a) && (anchor_b == -1 || col_start < anchor_b)) {
-					atts = 1;
+					atts |= FormattedLine::Selected;
 				}
 			}
 			ushort const *left = &vec[0];
@@ -215,13 +331,33 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 				res.push_back(FormattedLine(QString::fromUtf16(left, right - left), atts));
 			}
 			vec.clear();
+		} else {
+			*next_offset = -1;
 		}
 		col_start = col;
 	};
 
+	size_t offset = 0;
+	size_t next_offset = -1;
 	if (len > 0) {
+		{
+			size_t o = line.byte_offset;
+			int i = findSyntax(&m->syntax_table, o);
+			if (i < m->syntax_table.size() && m->syntax_table[i].offset <= o) {
+				if (i + 1 < m->syntax_table.size()) {
+					o = m->syntax_table[i + 1].offset;
+					if (o != -1) {
+						next_offset = o;
+					}
+				}
+			}
+		}
 		utf8 u8(ba.data(), len);
 		u8.to_utf32([&](uint32_t c){
+			if (line.byte_offset + u8.offset() == next_offset) {
+				Flush(line.byte_offset + offset, &next_offset);
+				offset += u8.offset();
+			}
 			if (c == '\t') {
 				do {
 					vec.push_back(' ');
@@ -247,52 +383,72 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 				}
 				col += cw;
 			}
-			if (anchor_a >= 0 || anchor_b >= 0) {
+			if ((anchor_a >= 0 || anchor_b >= 0) && anchor_a != anchor_b) {
 				if (!flag_a && col >= anchor_a) {
-					Flush();
+					Flush(line.byte_offset + offset, &next_offset);
+//					offset = u8.offset();
+//					pos = current_pos;
 					flag_a = true;
 				}
 				if (!flag_b && col >= anchor_b) {
-					Flush();
+					Flush(line.byte_offset + offset, &next_offset);
+//					offset = u8.offset();
+//					pos = current_pos;
 					flag_b = true;
 				}
+//			} else {
+//				curr_offset = u8.offset();
 			}
+//			offset += u8.offset();
+//			current_pos++;
 			return true;
 		});
 	}
-	Flush();
+	Flush(line.byte_offset + offset, &next_offset);
+//	if (!vec.empty()) {
+//		ushort const *left = &vec[0];
+//		ushort const *right = left + vec.size();
+//		while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
+//		size_t o = line.byte_offset + offset;
+//		while (left < right) {
+//			size_t n = right - left;
+//			if (next_offset != -1) {
+//				size_t n2 = next_offset - o;
+//				if (n > n2) n = n2;
+//			}
+//			int atts = Color(o, &next_offset);
+//			res.push_back(FormattedLine(QString::fromUtf16(left, n), atts));
+////			if (next_offset != -1) {
+////				size_t n2 = next_offset - o;
+////				if (n > n2) n = n2;
+////			}
+//			left += n;
+//		}
+//	}
 	return res;
 }
 
-void AbstractCharacterBasedApplication::fetchLine() const
+void AbstractCharacterBasedApplication::fetchCurrentLine() const
 {
 	QByteArray line;
+	QList<Document::CharAttr_> atts;
 	const int row = cx()->current_row;
 	int lines = documentLines();
 	if (row >= 0 && row < lines) {
 		line = cx()->engine->document.lines[row].text;
+//		atts = cx()->engine->document.lines[row].atts;
 	}
 	m->parsed_row_index = row;
 	m->parsed_line = line;
-}
-
-void AbstractCharacterBasedApplication::fetchCurrentLine()
-{
-	QByteArray line;
-	const int row = cx()->current_row;
-	int lines = documentLines();
-	if (row >= 0 && row < lines) {
-		line = cx()->engine->document.lines[row].text;
-	}
-	m->parsed_row_index = row;
-	m->parsed_line = line;
+//	m->parsed_atts = atts;
 }
 
 void AbstractCharacterBasedApplication::clearParsedLine()
 {
 	m->parsed_row_index = -1;
 	m->parsed_for_edit = false;
-	m->parsed_line = QByteArray();
+	m->parsed_line.clear();
+//	m->parsed_atts.clear();
 }
 
 int AbstractCharacterBasedApplication::cursorX() const
@@ -338,12 +494,10 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 {
 	if (isReadOnly()) return;
 
-	setChanged(true);
-
 	QByteArray ba;
 	if (!vec.empty()){
 		utf32 u32(&vec[0], vec.size());
-		u32.to_utf8([&](char c){
+		u32.to_utf8([&](char c, int pos){
 			ba.push_back(c);
 			return true;
 		});
@@ -354,6 +508,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 	}
 	Document::Line *line = &engine()->document.lines[m->parsed_row_index];
 	if (m->parsed_row_index == 0) {
+		line->byte_offset = 0;
 		line->line_number = (line->type == Document::Line::Unknown) ? 0 : 1;
 	}
 	line->text = ba;
@@ -521,14 +676,17 @@ void AbstractCharacterBasedApplication::openFile(const QString &path)
 	document()->lines.clear();
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
+		size_t offset = 0;
 		QString line;
 		unsigned int linenum = 0;
 		while (!file.atEnd()) {
 			linenum++;
 			Document::Line line(file.readLine());
+			line.byte_offset = offset;
 			line.type = Document::Line::Normal;
 			line.line_number = linenum;
 			document()->lines.push_back(line);
+			offset += line.text.size();
 		}
 		int n = line.size();
 		if (n > 0) {
@@ -539,7 +697,6 @@ void AbstractCharacterBasedApplication::openFile(const QString &path)
 			}
 		}
 		m->valid_line_index = (int)document()->lines.size();
-		setChanged(false);
 		setRecentlyUsedPath(path);
 	}
 	scrollToTop();
@@ -557,6 +714,8 @@ void AbstractCharacterBasedApplication::saveFile(const QString &path)
 
 void AbstractCharacterBasedApplication::pressEnter()
 {
+	deleteIfSelected();
+
 	if (isDialogMode()) {
 		closeDialog(true);
 	} else {
@@ -566,6 +725,11 @@ void AbstractCharacterBasedApplication::pressEnter()
 
 void AbstractCharacterBasedApplication::pressEscape()
 {
+	if (isTerminalMode()) {
+		m->escape_sequence.write(0x1b);
+		return;
+	}
+
 	if (isDialogMode()) {
 		closeDialog(false);
 		return;
@@ -711,10 +875,9 @@ void AbstractCharacterBasedApplication::restorePos()
 	}
 }
 
-void AbstractCharacterBasedApplication::setCursorRow(int row, bool shift, bool auto_scroll)
+void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll)
 {
-	shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
-	if (shift) {
+	if (isShiftModifierPressed()) {
 		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
 			selection_anchor_1 = selection_anchor_0;
@@ -730,10 +893,9 @@ void AbstractCharacterBasedApplication::setCursorRow(int row, bool shift, bool a
 	}
 }
 
-void AbstractCharacterBasedApplication::setCursorCol(int col, bool shift, bool auto_scroll)
+void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll)
 {
-	shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
-	if (shift) {
+	if (isShiftModifierPressed()) {
 		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
 			selection_anchor_1 = selection_anchor_0;
@@ -915,43 +1077,15 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 	}
 }
 
-void AbstractCharacterBasedApplication::moveCursorLeft()
+bool AbstractCharacterBasedApplication::deleteIfSelected()
 {
-	if (cx()->current_col == 0) {
-		if (isSingleLineMode()) {
-			// nop
-		} else {
-			if (cx()->current_row > 0) {
-				setCursorRow(cx()->current_row - 1);
-				clearParsedLine();
-				moveCursorEnd();
-			}
-		}
-		return;
-	}
-
-	int col = 0;
-	int newcol = 0;
-	int index;
-	for (index = 0; index < (int)m->prepared_current_line.size(); index++) {
-		ushort c = m->prepared_current_line[index];
-		if (c == '\r' || c == '\n') {
-			break;
-		}
-		newcol = col;
-		if (c == '\t') {
-			col = nextTabStop(col);
-		} else {
-			col += charWidth(c);
-		}
-		if (col >= cx()->current_col) {
-			break;
+	if (selection_anchor_0.enabled && selection_anchor_1.enabled) {
+		if (selection_anchor_0 != selection_anchor_1) {
+			editSelected(EditOperation::Cut, nullptr);
+			return true;
 		}
 	}
-	m->parsed_col_index = index;
-	setCursorCol(newcol);
-
-	updateVisibility(true, true, true);
+	return false;
 }
 
 void AbstractCharacterBasedApplication::doDelete()
@@ -959,12 +1093,8 @@ void AbstractCharacterBasedApplication::doDelete()
 	if (isReadOnly()) return;
 	if (isTerminalMode()) return;
 
-	if (selection_anchor_0.enabled) {
-		SelectionAnchor a = currentAnchor(SelectionAnchor::EnabledHard);
-		if (selection_anchor_0 != a) {
-			editSelected(EditOperation::Cut, nullptr);
-			return;
-		}
+	if (deleteIfSelected()) {
+		return;
 	}
 
 	parseLine(nullptr, 0, false);
@@ -1022,6 +1152,10 @@ void AbstractCharacterBasedApplication::doBackspace()
 {
 	if (isReadOnly()) return;
 	if (isTerminalMode()) return;
+
+	if (deleteIfSelected()) {
+		return ;
+	}
 
 	if (cx()->current_row > 0 || cx()->current_col > 0) {
 		setPaintingSuppressed(true);
@@ -1097,6 +1231,7 @@ void AbstractCharacterBasedApplication::closeDialog(bool result)
 int AbstractCharacterBasedApplication::internalParseLine(std::vector<uint32_t> *vec, int increase_hint) const
 {
 	vec->clear();
+
 	int index = -1;
 	int col = 0;
 	int len = m->parsed_line.size();
@@ -1195,6 +1330,8 @@ int AbstractCharacterBasedApplication::scrollBottomLimit() const
 
 void AbstractCharacterBasedApplication::writeCR()
 {
+	deleteIfSelected();
+
 	setCursorCol(0);
 	clearParsedLine();
 	updateVisibility(true, true, true);
@@ -1299,8 +1436,69 @@ void AbstractCharacterBasedApplication::scrollToTop()
 	updateVisibility(true, false, true);
 }
 
+void AbstractCharacterBasedApplication::moveCursorLeft()
+{
+	if (!isShiftModifierPressed() && selection_anchor_0.enabled && selection_anchor_1.enabled) { // 選択領域があったら
+		if (selection_anchor_0 != selection_anchor_1) {
+			SelectionAnchor a = std::min(selection_anchor_0, selection_anchor_1);
+			deselect();
+			setCursorRow(a.row);
+			setCursorCol(a.col);
+			updateVisibility(true, true, true);
+			return;
+		}
+	}
+
+	if (cx()->current_col == 0) {
+		if (isSingleLineMode()) {
+			// nop
+		} else {
+			if (cx()->current_row > 0) {
+				setCursorRow(cx()->current_row - 1);
+				clearParsedLine();
+				moveCursorEnd();
+			}
+		}
+		return;
+	}
+
+	int col = 0;
+	int newcol = 0;
+	int index;
+	for (index = 0; index < (int)m->prepared_current_line.size(); index++) {
+		ushort c = m->prepared_current_line[index];
+		if (c == '\r' || c == '\n') {
+			break;
+		}
+		newcol = col;
+		if (c == '\t') {
+			col = nextTabStop(col);
+		} else {
+			col += charWidth(c);
+		}
+		if (col >= cx()->current_col) {
+			break;
+		}
+	}
+	m->parsed_col_index = index;
+	setCursorCol(newcol);
+
+	updateVisibility(true, true, true);
+}
+
 void AbstractCharacterBasedApplication::moveCursorRight()
 {
+	if (!isShiftModifierPressed() && selection_anchor_0.enabled && selection_anchor_1.enabled) { // 選択領域があったら
+		if (selection_anchor_0 != selection_anchor_1) {
+			SelectionAnchor a = std::max(selection_anchor_0, selection_anchor_1);
+			deselect();
+			setCursorRow(a.row);
+			setCursorCol(a.col);
+			updateVisibility(true, true, true);
+			return;
+		}
+	}
+
 	int col = 0;
 	int i = 0;
 	while (1) {
@@ -1582,6 +1780,9 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 					QList<FormattedLine> lines = formatLine(line, cx->tab_span, anchor_a, anchor_b);
 					for (FormattedLine const &line : lines) {
 						AbstractCharacterBasedApplication::Option opt;
+						if (line.atts & FormattedLine::StyleID) {
+							opt.char_attr.color = QColor(line.atts & 0xff, (line.atts >> 8) & 0xff, (line.atts >> 16) & 0xff);
+						}
 						opt.clip = clip;
 						if (line.isSelected()) {
 							opt.char_attr.flags |= CharAttr::Selected;
@@ -1621,6 +1822,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 	int rightpadding = 2;
 	int left_margin = leftMargin();
 	int num = 1;
+	size_t offset = 0;
 	for (int i = 0; i < editor_cx->viewport_height; i++) {
 		char tmp[100];
 		Q_ASSERT(left_margin < sizeof(tmp));
@@ -1633,29 +1835,43 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 				m->valid_line_index = 0;
 				Document::Line *p = &Line(0);
 				if (p->type != Document::Line::Unknown) {
+					p->byte_offset = offset;
 					p->line_number = num;
+					offset += p->text.size();
 					num++;
 				}
 			}
 			line = &Line(row);
 			if (row >= m->valid_line_index) {
-				num = Line(m->valid_line_index).line_number;
+				{
+					Document::Line const &line = Line(m->valid_line_index);
+					offset = line.byte_offset;
+					num = line.line_number;
+				}
 				while (m->valid_line_index <= row) {
-					if (Line(m->valid_line_index).type != Document::Line::Unknown) {
+					Document::Line const &line = Line(m->valid_line_index);
+					if (line.type != Document::Line::Unknown) {
+						offset += line.text.size();
 						num++;
 					}
 					m->valid_line_index++;
 					if (m->valid_line_index < editor_cx->engine->document.lines.size()) {
-						Line(m->valid_line_index).line_number = num;
+						Document::Line *p = &Line(m->valid_line_index);
+						p->byte_offset = offset;
+						p->line_number = num;
 					}
 				}
 			}
 			if (left_margin > 1) {
-				unsigned int linenum = 0;
+				unsigned int linenum = -1;
 				if (row < m->valid_line_index) {
+#if 1
 					linenum = line->line_number;
+#else
+					linenum = line->byte_offset;
+#endif
 				}
-				if (linenum > 0 && line->type != Document::Line::Unknown) {
+				if (linenum != -1 && line->type != Document::Line::Unknown) {
 					sprintf(tmp, "%*u ", left_margin - rightpadding, linenum);
 				}
 			}
@@ -1764,6 +1980,7 @@ void AbstractCharacterBasedApplication::setNormalTextEditorMode(bool f)
 	m->is_quit_enabled = f;
 	m->is_open_enabled = f;
 	m->is_save_enabled = f;
+	setTerminalMode(!f);
 }
 
 SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor::Enabled enabled)
@@ -1875,6 +2092,7 @@ void AbstractCharacterBasedApplication::setTerminalMode(bool f)
 		setWriteMode(WriteMode::Overwrite);
 		setReadOnly(true);
 	}
+	layoutEditor();
 }
 
 bool AbstractCharacterBasedApplication::isTerminalMode() const
@@ -1914,8 +2132,62 @@ void AbstractCharacterBasedApplication::moveToBottom()
 	updateVisibility(true, false, true);
 }
 
+int AbstractCharacterBasedApplication::findSyntax(QList<Document::CharAttr_> const *list, size_t offset)
+{
+	int lo = 0;
+	int hi = list->size();
+	while (lo + 1 < hi) {
+		int mid = (lo + hi) / 2;
+		Document::CharAttr_ const *a = &list->at(mid);
+		if (offset == a->offset) {
+			return mid;
+		}
+		if (offset < a->offset) {
+			hi = mid;
+		} else {
+			lo = mid;
+		}
+	}
+	return lo;
+}
+
+void AbstractCharacterBasedApplication::insertSyntax(QList<Document::CharAttr_> *list, size_t offset, Document::CharAttr_ const &a)
+{
+	int i = findSyntax(list, offset);
+	int n = list->size();
+	if (i < n) {
+		if (list->at(i).offset == offset) {
+			(*list)[i] = a;
+		} else {
+			if (i < n) {
+				if (a.offset < list->at(i).offset) {
+					if (list->at(i).color == a.color) {
+						(*list)[i].offset = offset;
+						return;
+					}
+				}
+			}
+			if (list->at(i).color == a.color) {
+				return;
+			}
+			if (list->at(i).offset < a.offset) {
+				i++;
+			}
+			list->insert(list->begin() + i, a);
+			while (++i < n) {
+				(*list)[i].offset++;
+			}
+		}
+	} else {
+		list->push_back(a);
+	}
+}
+
 void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const ushort *end)
 {
+	deleteIfSelected();
+	clearShiftModifier();
+
 	if (cx()->engine->document.lines.isEmpty()) {
 		Document::Line line;
 		line.type = Document::Line::Normal;
@@ -1950,6 +2222,10 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 				vec->push_back(c);
 			}
 		}
+		Document::CharAttr_ a;
+		a.offset = index;
+		a.color = m->escape_sequence.fg_color_code();
+		insertSyntax(&m->syntax_table, index, a);
 	};
 
 	ushort const *ptr = begin;
@@ -2013,6 +2289,13 @@ void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
 
 void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 {
+	if (isTerminalMode()) {
+		if (c == 0x1b || m->escape_sequence.isActive()) {
+			m->escape_sequence.write(c);
+			return;
+		}
+	}
+
 	bool ok = !(isTerminalMode() && by_keyboard);
 
 	if (c < 0x20) {
@@ -2081,8 +2364,10 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			if (ok) movePageDown();
 			break;
 		case EscapeCode::Insert:
+			clearShiftModifier();
 			break;
 		case EscapeCode::Delete:
+			clearShiftModifier();
 			if (ok) doDelete();
 			break;
 		}
@@ -2125,6 +2410,13 @@ void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_
 		} else {
 			right++;
 		}
+	}
+}
+
+void AbstractCharacterBasedApplication::write(const std::string &text)
+{
+	if (!text.empty()) {
+		write(text.c_str(), text.size(), false);
 	}
 }
 
@@ -2177,21 +2469,25 @@ void AbstractCharacterBasedApplication::write_(QString text, bool by_keyboard)
 	}
 }
 
+
+
 void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 {
+	setModifierKeys(e->modifiers());
+
 	int c = e->key();
 	if (c == Qt::Key_Backspace) {
 		write(0x08, true);
 	} else if (c == Qt::Key_Delete) {
 		write(0x7f, true);
 	} else if (c == Qt::Key_Up) {
-		if (e->modifiers() & Qt::ControlModifier) {
+		if (isControlModifierPressed()) {
 			scrollUp();
 		} else {
 			write(EscapeCode::Up, true);
 		}
 	} else if (c == Qt::Key_Down) {
-		if (e->modifiers() & Qt::ControlModifier) {
+		if (isControlModifierPressed()) {
 			scrollDown();
 		} else {
 			write(EscapeCode::Down, true);
@@ -2212,7 +2508,7 @@ void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 		write('\n', true);
 	} else if (c == Qt::Key_Escape) {
 		write(0x1b, true);
-	} else if (e->modifiers() & Qt::ControlModifier) {
+	} else if (isControlModifierPressed()) {
 		if (QChar(c).isLetter()) {
 			c = QChar(c).toUpper().unicode();
 			if (c >= 0x40 && c < 0x60) {
@@ -2224,6 +2520,7 @@ void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 		write_(text, true);
 	}
 }
+
 
 
 void Document::retrieveLastText(std::vector<char> *out, int maxlen) const

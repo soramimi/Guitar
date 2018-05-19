@@ -9,6 +9,7 @@
 #include <vector>
 #include <functional>
 #include <QKeyEvent>
+#include <QColor>
 
 namespace EscapeCode {
 enum EscapeCode {
@@ -27,6 +28,10 @@ enum EscapeCode {
 
 class Document {
 public:
+	struct CharAttr_ {
+		size_t offset = 0;
+		int color = -1;
+	};
 	struct Line {
 		enum Type {
 			Unknown,
@@ -37,6 +42,7 @@ public:
 		int type = Unknown;
 		int hunk_number = -1;
 		int line_number = 0;
+		size_t byte_offset = 0;
 		QByteArray text;
 
 		Line()
@@ -57,7 +63,6 @@ public:
 	};
 
 	QList<Line> lines;
-
 	void retrieveLastText(std::vector<char> *out, int maxlen) const;
 };
 
@@ -80,13 +85,42 @@ struct SelectionAnchor {
 	Enabled enabled = No;
 	int row = 0;
 	int col = 0;
+	int compare(SelectionAnchor const &a) const
+	{
+		if (enabled && a.enabled) {
+			if (row < a.row) return -1;
+			if (row > a.row) return 1;
+			if (col < a.col) return -1;
+			if (col > a.col) return 1;
+		} else {
+			if (a.enabled) return -1;
+			if (enabled) return 1;
+		}
+		return 0;
+	}
 	bool operator == (SelectionAnchor const &a) const
 	{
-		return enabled == a.enabled && row == a.row && col == a.col;
+		return compare(a) == 0;
 	}
 	bool operator != (SelectionAnchor const &a) const
 	{
-		return !operator == (a);
+		return compare(a) != 0;
+	}
+	bool operator < (SelectionAnchor const &a) const
+	{
+		return compare(a) < 0;
+	}
+	bool operator > (SelectionAnchor const &a) const
+	{
+		return compare(a) > 0;
+	}
+	bool operator <= (SelectionAnchor const &a) const
+	{
+		return compare(a) <= 0;
+	}
+	bool operator >= (SelectionAnchor const &a) const
+	{
+		return compare(a) >= 0;
 	}
 };
 
@@ -133,13 +167,14 @@ public:
 	struct CharAttr {
 		uint16_t index;
 		uint16_t flags = 0;
+		QColor color;
 		CharAttr(int index = Normal)
 			: index(index)
 		{
 		}
 		bool operator == (CharAttr const &r) const
 		{
-			return index == r.index;
+			return index == r.index && color == r.color;
 		}
 		bool operator != (CharAttr const &r) const
 		{
@@ -175,7 +210,11 @@ public:
 	class FormattedLine {
 	public:
 		QString text;
-		int atts;
+		enum Attr {
+			StyleID = 0x00ffffff,
+			Selected = 0x01000000,
+		};
+		uint32_t atts;
 		FormattedLine(QString const &text, int atts)
 			: text(text)
 			, atts(atts)
@@ -183,7 +222,7 @@ public:
 		}
 		bool isSelected() const
 		{
-			return atts & 1;
+			return atts & Selected;
 		}
 	};
 
@@ -202,7 +241,7 @@ protected:
 
 	void initEditor();
 
-	void fetchCurrentLine();
+	void fetchCurrentLine() const;
 	void clearParsedLine();
 
 	int cursorX() const;
@@ -270,13 +309,15 @@ private:
 	bool isCurrentLineWritable() const;
 	void initEngine(std::shared_ptr<TextEditorContext> cx);
 	void writeCR();
-	void fetchLine() const;
+	bool deleteIfSelected();
+	static int findSyntax(const QList<Document::CharAttr_> *list, size_t offset);
+	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 protected:
 
 	void parseLine(std::vector<uint32_t> *vec, int increase_hint, bool force);
 	QByteArray parsedLine() const;
-	void setCursorRow(int row, bool shift = false, bool auto_scroll = true);
-	void setCursorCol(int col, bool shift = false, bool auto_scroll = true);
+	void setCursorRow(int row, bool auto_scroll = true);
+	void setCursorCol(int col, bool auto_scroll = true);
 	void setCursorPos(int row, int col, bool shift = false);
 	void setCursorColByIndex(const std::vector<uint32_t> &vec, int col_index);
 	int nextTabStop(int x) const;
@@ -355,10 +396,15 @@ public:
 	void setLineMargin(int n);
 	void write(uint32_t c, bool by_keyboard);
 	void write(const char *ptr, int len, bool by_keyboard);
+	void write(std::string const &text);
 	void write(QKeyEvent *e);
 	void setTextCodec(QTextCodec *codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
+	void setModifierKeys(Qt::KeyboardModifiers keymod);
+	bool isControlModifierPressed() const;
+	bool isShiftModifierPressed() const;
+	void clearShiftModifier();
 	void retrieveLastText(std::vector<char> *out, int maxlen) const;
 	bool isChanged() const;
 	void setChanged(bool f);

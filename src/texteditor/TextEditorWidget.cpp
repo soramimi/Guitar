@@ -182,7 +182,7 @@ void TextEditorWidget::moveCursor(QPoint const &pt, bool by_mouse, bool auto_scr
 				row = maxrow;
 			}
 		}
-		setCursorRow(row, false, auto_scroll);
+		setCursorRow(row, auto_scroll);
 	}
 	{
 		int col = pt.x();
@@ -196,7 +196,7 @@ void TextEditorWidget::moveCursor(QPoint const &pt, bool by_mouse, bool auto_scr
 				col = maxcol;
 			}
 		}
-		setCursorCol(col, false, auto_scroll);
+		setCursorCol(col, auto_scroll);
 	}
 	clearParsedLine();
 	updateVisibility(!by_mouse, true, auto_scroll);
@@ -331,9 +331,12 @@ QColor TextEditorWidget::defaultBackgroundColor()
 	return Qt::black;
 }
 
-QColor TextEditorWidget::colorForIndex(int index, bool foreground)
+QColor TextEditorWidget::colorForIndex(CharAttr const &attr, bool foreground)
 {
-	switch (index) {
+	if (foreground && attr.color.isValid()) {
+		return attr.color;
+	}
+	switch (attr.index) {
 	case CharAttr::Invert:
 		return foreground ? defaultBackgroundColor() : defaultForegroundColor();
 	}
@@ -401,8 +404,8 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 				QFontMetrics fm = painter->fontMetrics();
 				int w = fm.width(str);
 				int h = lineHeight();
-				QColor fgcolor = colorForIndex(charattr.index, true);
-				QColor bgcolor = colorForIndex(charattr.index, false);
+				QColor fgcolor = colorForIndex(charattr, true);
+				QColor bgcolor = colorForIndex(charattr, false);
 				painter->fillRect(px, py, w, h, bgcolor);
 				painter->setPen(fgcolor);
 				drawText(painter, px, py, str);

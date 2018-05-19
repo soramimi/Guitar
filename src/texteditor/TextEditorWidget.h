@@ -46,7 +46,8 @@ private:
 	RenderingMode renderingMode() const;
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
-	QColor colorForIndex(int index, bool foreground);
+	QColor colorForIndex(CharAttr const &attr, bool foreground);
+//QColor colorForIndex(int index, bool foreground);
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 	void internalUpdateScrollBar();
 protected:

@@ -24,6 +24,10 @@ private:
 public:
 	utf8decoder(char const *begin, char const *end);
 	uint32_t next();
+	size_t offset() const
+	{
+		return pos;
+	}
 };
 
 }
@@ -47,6 +51,7 @@ private:
 public:
 	utf8encoder(abstract_unicode_reader *reader = 0);
 	char get();
+	int pos() const;
 };
 
 class utf16encoder {
@@ -76,13 +81,14 @@ public:
 	}
 	virtual uint32_t next() = 0;
 
-	void to_utf8(std::function<bool(char)> fn)
+	void to_utf8(std::function<bool(char, int)> fn)
 	{
 		utf8encoder e(this);
 		while (1) {
+			int pos = e.pos();
 			int c = e.get();
 			if (c == 0) break;
-			if (!fn(c)) break;
+			if (!fn(c, pos)) break;
 		}
 	}
 	void to_utf16(std::function<bool(uint16_t)> fn)
@@ -138,6 +144,10 @@ public:
 	utf8(char const *ptr);
 	utf8(char const *ptr, size_t len);
 	uint32_t next();
+	size_t offset() const
+	{
+		return reader.offset();
+	}
 };
 
 

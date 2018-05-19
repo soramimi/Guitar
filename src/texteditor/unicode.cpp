@@ -269,6 +269,11 @@ char utf8encoder::get()
 	return 0;
 }
 
+int utf8encoder::pos() const
+{
+	return data.pos;
+}
+
 //
 
 class utf16encoder::internal_writer : public unicode_helper_::writer16 {
