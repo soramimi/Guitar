@@ -1,10 +1,12 @@
 #include "MySettings.h"
 #include "main.h"
 #include "common/joinpath.h"
+#include "ApplicationGlobal.h"
 #include <QApplication>
 #include <QDir>
 #include <QString>
 #include <QStandardPaths>
+#include <QDebug>
 
 QString makeApplicationDataDir()
 {
@@ -17,7 +19,7 @@ QString makeApplicationDataDir()
 }
 
 MySettings::MySettings(QObject *)
-	: QSettings(joinpath(makeApplicationDataDir(), qApp->applicationName() + ".ini"), QSettings::IniFormat)
+	: QSettings(joinpath(makeApplicationDataDir(), global->application_name + ".ini"), QSettings::IniFormat)
 {
 }
 

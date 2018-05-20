@@ -23,16 +23,32 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	return s;
 }
 
+static bool isHighDpiScalingEnabled(int argc, char *argv[])
+{
+	QApplication dummy(argc, argv);
+	dummy.setOrganizationName(ORGANIZTION_NAME);
+	dummy.setApplicationName(global->application_name);
+	MySettings s;
+	s.beginGroup("UI");
+	QVariant v = s.value("EnableHighDpiScaling");
+	return v.isNull() || v.toBool();
+}
+
 int main(int argc, char *argv[])
 {
 	putenv((char *)"UNICODEMAP_JP=cp932");
 
 	ApplicationGlobal g;
 	global = &g;
+	global->application_name = APPLICATION_NAME;
+
+	if (isHighDpiScalingEnabled(argc, argv)){
+		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	}
 
 	QApplication a(argc, argv);
 	a.setOrganizationName(ORGANIZTION_NAME);
-	a.setApplicationName(APPLICATION_NAME);
+	a.setApplicationName(global->application_name);
 
 	{
 		MySettings s;

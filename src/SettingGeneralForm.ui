@@ -34,6 +34,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="checkBox_enable_high_dpi_scaling">
+     <property name="text">
+      <string>Enable high DPI scaling</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Theme</string>
