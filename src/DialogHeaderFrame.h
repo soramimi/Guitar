@@ -15,7 +15,7 @@ public slots:
 
 	// QWidget interface
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *);
 };
 
 #endif // DIALOGHEADERFRAME_H

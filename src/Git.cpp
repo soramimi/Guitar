@@ -478,7 +478,6 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 		}
 		if (e) {
 			end = e;
-			ushort const *begin = ptr;
 			while (1) {
 				if (NCompare(ptr, "ahead ", 6)) {
 					ptr += 6;
@@ -493,15 +492,6 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 					if (ptr < end) {
 						c = *ptr;
 					}
-//					if (c == ':' || c == 0) {
-//						if (b->remote.isEmpty()) {
-//							b->remote = QString::fromUtf16(begin, ptr - begin);
-//							int i = b->remote.indexOf('/');
-//							if (i > 0) {
-//								b->remote = b->remote.mid(0, i);
-//							}
-//						}
-//					}
 					if (c == 0) break;
 					ptr++;
 				}

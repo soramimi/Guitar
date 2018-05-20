@@ -8,7 +8,7 @@ DialogHeaderFrame::DialogHeaderFrame(QWidget *parent)
 {
 }
 
-void DialogHeaderFrame::paintEvent(QPaintEvent *event)
+void DialogHeaderFrame::paintEvent(QPaintEvent *)
 {
 	QPainter pr(this);
 	pr.fillRect(this->rect(), global->theme->dialog_header_frame_bg);

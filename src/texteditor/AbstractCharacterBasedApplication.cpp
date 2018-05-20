@@ -498,6 +498,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 	if (!vec.empty()){
 		utf32 u32(&vec[0], vec.size());
 		u32.to_utf8([&](char c, int pos){
+			(void)pos;
 			ba.push_back(c);
 			return true;
 		});
