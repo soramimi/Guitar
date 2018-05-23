@@ -15,12 +15,12 @@ class SelectGpgKeyDialog : public QDialog
 {
 	Q_OBJECT
 private:
-	QList<gpg::Key> keys_;
+	QList<gpg::Data> keys_;
 public:
-	explicit SelectGpgKeyDialog(QWidget *parent, const QList<gpg::Key> &keys);
+	explicit SelectGpgKeyDialog(QWidget *parent, const QList<gpg::Data> &keys);
 	~SelectGpgKeyDialog();
 
-	gpg::Key key() const;
+	gpg::Data key() const;
 
 private slots:
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);

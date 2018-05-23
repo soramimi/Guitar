@@ -4,7 +4,7 @@
 #include "ConfigSigningDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, const Git::User &user, const gpg::Key &key) :
+CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, const Git::User &user, const gpg::Data &key) :
 	QDialog(parent),
 	ui(new Ui::CommitDialog)
 {

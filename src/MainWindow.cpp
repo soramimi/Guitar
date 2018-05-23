@@ -1812,11 +1812,11 @@ void MainWindow::commit(bool amend)
 	while (1) {
 		Git::User user = g->getUser(Git::Source::Default);
 		QString sign_id = g->signingKey(Git::Source::Default);
-		gpg::Key key;
+		gpg::Data key;
 		{
-			QList<gpg::Key> keys;
+			QList<gpg::Data> keys;
 			gpg::listKeys(global->gpg_command, &keys);
-			for (gpg::Key const &k : keys) {
+			for (gpg::Data const &k : keys) {
 				if (k.id == sign_id) {
 					key = k;
 				}
@@ -4490,10 +4490,15 @@ void MainWindow::onLogIdle()
 }
 
 
-
-
 void MainWindow::on_action_test_triggered()
 {
+	QFile file("/home/soramimi/a/keys2.json");
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		QList<gpg::Item> keys = gpg::load(ba);
+		qDebug();
+	}
+
 }
 
 

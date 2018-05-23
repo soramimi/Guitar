@@ -34,12 +34,12 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	gpg::Key key;
+	gpg::Data key;
 	int n1 = m->commit.fingerprint.size();
 	if (m->commit.verified && n1 > 0) {
-		QList<gpg::Key> keys;
+		QList<gpg::Data> keys;
 		gpg::listKeys(global->gpg_command, &keys);
-		for (gpg::Key const &k : keys) {
+		for (gpg::Data const &k : keys) {
 			int n2 = k.fingerprint.size();
 			if (n2 > 0) {
 				int n = std::min(n1, n2);

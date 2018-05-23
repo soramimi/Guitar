@@ -6,7 +6,7 @@
 #include "ConfigSigningDialog.h"
 
 struct SetGpgSigningDialog::Private {
-	QList<gpg::Key> keys;
+	QList<gpg::Data> keys;
 	QString global_key_id;
 	QString repository_key_id;
 };
@@ -58,7 +58,7 @@ bool SetGpgSigningDialog::isRepositoryChecked() const
 	return ui->radioButton_repository->isChecked();
 }
 
-void SetGpgSigningDialog::setKey_(const gpg::Key &key)
+void SetGpgSigningDialog::setKey_(const gpg::Data &key)
 {
 	if (isGlobalChecked())     m->global_key_id = key.id;
 	if (isRepositoryChecked()) m->repository_key_id = key.id;
@@ -70,8 +70,8 @@ void SetGpgSigningDialog::setKey_(const gpg::Key &key)
 
 void SetGpgSigningDialog::setKey_(QString const &key_id)
 {
-	gpg::Key key;
-	for (gpg::Key const &k : m->keys) {
+	gpg::Data key;
+	for (gpg::Data const &k : m->keys) {
 		if (k.id.compare(key_id, Qt::CaseInsensitive) == 0) {
 			key = k;
 			break;
@@ -100,8 +100,8 @@ void SetGpgSigningDialog::on_pushButton_select_clicked()
 	gpg::listKeys(global->gpg_command, &m->keys);
 	SelectGpgKeyDialog dlg(this, m->keys);
 	if (dlg.exec() == QDialog::Accepted) {
-		gpg::Key key = dlg.key();
-		for (gpg::Key const &k : m->keys) {
+		gpg::Data key = dlg.key();
+		for (gpg::Data const &k : m->keys) {
 			if (k.id.compare(key.id, Qt::CaseInsensitive) == 0) {
 				key = k;
 				break;
@@ -113,7 +113,7 @@ void SetGpgSigningDialog::on_pushButton_select_clicked()
 
 void SetGpgSigningDialog::on_pushButton_clear_clicked()
 {
-	setKey_(gpg::Key());
+	setKey_(gpg::Data());
 }
 
 void SetGpgSigningDialog::on_radioButton_global_clicked()

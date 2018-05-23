@@ -2,9 +2,14 @@
 
 #include <QFileInfo>
 #include <QList>
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 #include "MyProcess.h"
 
-bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
+bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
 {
 	keys->clear();
 
@@ -37,14 +42,14 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 						while (isspace((unsigned char)*p)) p++;
 						return p;
 					};
-					auto ParseKey = [](char const *p, gpg::Key *key){
+					auto ParseKey = [](char const *p, gpg::Data *key){
 						char id[100];
 						if (sscanf(p, "%u%c/%99s %u-%u-%u", &key->len, &key->type, id, &key->year, &key->month, &key->day) == 6) {
 							key->id = id;
 						}
 
 					};
-					auto ParseUID = [](char const *p, gpg::Key *key){
+					auto ParseUID = [](char const *p, gpg::Data *key){
 						char const *q1 = strrchr(p, '(');
 						char const *q2 = strrchr(p, ')');
 						char const *q3 = strrchr(p, '<');
@@ -67,7 +72,7 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 						}
 					};
 					if (!pub.empty() && !uid.empty()) {
-						gpg::Key key;
+						gpg::Data key;
 						ParseKey(SkipHeader(pub.c_str()), &key);
 						ParseUID(SkipHeader(uid.c_str()), &key);
 						key.fingerprint = fingerprint;
@@ -120,4 +125,46 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Key> *keys)
 		}
 	}
 	return true;
+}
+
+QList<gpg::Item> gpg::load(const QByteArray &json)
+{
+	QList<Item> items;
+
+	QJsonDocument doc = QJsonDocument::fromJson(json);
+	QJsonArray a1 = doc.array();
+	for (QJsonValue const &v1: a1) {
+		QJsonObject o1 = v1.toObject(QJsonObject());
+
+		Item item;
+
+		QJsonObject o2 = o1["pub"].toObject();
+		item.pub.id = o2["key"].toString();
+		QString timestamp = o2["timestamp"].toString();
+		item.pub.timestamp = QDateTime::fromString(timestamp, Qt::ISODate);
+
+		QJsonArray a2 = o1["sub"].toArray();
+		for (QJsonValue const &v2 : a2) {
+			QJsonObject o3 = v2.toObject(QJsonObject());
+			Key sub;
+			sub.id = o3["key"].toString();
+			QString timestamp = o3["timestamp"].toString();
+			sub.timestamp = QDateTime::fromString(timestamp, Qt::ISODate);
+			item.sub.push_back(sub);
+		}
+
+		QJsonArray a3 = o1["uid"].toArray();
+		for (QJsonValue const &v3 : a3) {
+			QJsonObject o3 = v3.toObject(QJsonObject());
+			UID uid;
+			uid.name = o3["name"].toString();
+			uid.email = o3["email"].toString();
+			uid.comment = o3["comment"].toString();
+			item.uid.push_back(uid);
+		}
+
+		items.push_back(item);
+	}
+
+	return items;
 }

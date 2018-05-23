@@ -2,7 +2,7 @@
 #include "ui_SelectGpgKeyDialog.h"
 #include "MainWindow.h"
 
-SelectGpgKeyDialog::SelectGpgKeyDialog(QWidget *parent, const QList<gpg::Key> &keys) :
+SelectGpgKeyDialog::SelectGpgKeyDialog(QWidget *parent, const QList<gpg::Data> &keys) :
 	QDialog(parent),
 	ui(new Ui::SelectGpgKeyDialog)
 {
@@ -16,13 +16,13 @@ SelectGpgKeyDialog::~SelectGpgKeyDialog()
 	delete ui;
 }
 
-gpg::Key SelectGpgKeyDialog::key() const
+gpg::Data SelectGpgKeyDialog::key() const
 {
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < keys_.size()) {
 		return keys_[row];
 	}
-	return gpg::Key();
+	return gpg::Data();
 }
 
 void SelectGpgKeyDialog::updateTable()
@@ -40,7 +40,7 @@ void SelectGpgKeyDialog::updateTable()
 		ui->tableWidget->setHorizontalHeaderItem(col, item);
 	}
 	for (int row = 0; row < keys_.size(); row++) {
-		gpg::Key const &key = keys_[row];
+		gpg::Data const &key = keys_[row];
 		QTableWidgetItem *item;
 		auto NewItem = [&](){
 			QTableWidgetItem *item = new QTableWidgetItem();

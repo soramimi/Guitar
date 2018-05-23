@@ -353,10 +353,35 @@ JSON::Value JSON::get(const std::string &path) const
 	Node const *p = &node;
 	for (std::string const &name : vec) {
 		Node const *q = nullptr;
-		for (Node const &child : p->children) {
-			if (child.name == name) {
-				q = &child;
-				break;
+		char const *ptr = name.c_str();
+		char const *num = strchr(ptr, '#');
+		std::string name2;
+		if (num) {
+			name2.assign(ptr, num - ptr);
+			num++;
+		} else {
+			name2 = name;
+		}
+		if (name2.empty()) {
+			if (num) {
+				size_t i = strtoul(num, nullptr, 10);
+				if (i < p->children.size()) {
+					q = &p->children[i];
+				}
+			}
+		} else {
+			for (Node const &child : p->children) {
+				if (child.name == name2) {
+					if (num) {
+						size_t i = strtoul(num, nullptr, 10);
+						if (i < child.children.size()) {
+							q = &child.children[i];
+						}
+					} else {
+						q = &child;
+					}
+					break;
+				}
 			}
 		}
 		if (q) {

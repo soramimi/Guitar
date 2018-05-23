@@ -41,7 +41,7 @@ private slots:
 
 private:
 	Ui::SetGpgSigningDialog *ui;
-	void setKey_(gpg::Key const &key);
+	void setKey_(gpg::Data const &key);
 	void setKey_(const QString &key_id);
 };
 

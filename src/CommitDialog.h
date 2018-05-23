@@ -17,7 +17,7 @@ class CommitDialog : public QDialog
 	Q_OBJECT
 
 public:
-	explicit CommitDialog(MainWindow *parent, const QString &reponame, Git::User const &user, gpg::Key const &key);
+	explicit CommitDialog(MainWindow *parent, const QString &reponame, Git::User const &user, gpg::Data const &key);
 	~CommitDialog();
 
 	void setText(const QString &text);
@@ -27,7 +27,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event);
 private:
 	Ui::CommitDialog *ui;
-	gpg::Key key_;
+	gpg::Data key_;
 
 	// QDialog interface
 	MainWindow *mainwindow();
