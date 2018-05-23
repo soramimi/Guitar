@@ -43,7 +43,11 @@ int main(int argc, char *argv[])
 	global->application_name = APPLICATION_NAME;
 
 	if (isHighDpiScalingEnabled(argc, argv)){
+#if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
+		qDebug() << "High DPI scaling is not supported";
+#else
 		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 	}
 
 	QApplication a(argc, argv);
