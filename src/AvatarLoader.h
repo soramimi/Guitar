@@ -16,7 +16,7 @@ class AvatarLoader : public QThread {
 	Q_OBJECT
 private:
 	struct RequestItem {
-		std::string name;
+		std::string email;
 		QIcon icon;
 	};
 	struct Private;
@@ -27,7 +27,7 @@ protected:
 public:
 	AvatarLoader();
 	~AvatarLoader();
-	QIcon fetch(const std::string &name, bool request);
+	QIcon fetch(const std::string &email, bool request);
 	void interrupt();
 	void start(WebContext *webcx);
 signals:
