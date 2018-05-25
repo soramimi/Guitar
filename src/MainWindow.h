@@ -291,7 +291,6 @@ public slots:
 	void writeLog(QByteArray ba);
 private slots:
 	void on_action_add_all_triggered();
-	void on_action_branch_merge_triggered();
 	void on_action_branch_new_triggered();
 	void on_action_clone_triggered();
 	void on_action_commit_triggered();
@@ -355,12 +354,8 @@ private slots:
 	void on_action_repo_checkout_triggered();
 	void on_action_delete_branch_triggered();
 
-	void on_action_push_u_origin_master_triggered();
-
 	void on_toolButton_terminal_clicked();
 	void on_toolButton_explorer_clicked();
-
-	void on_action_push_u_triggered();
 
 	void on_action_reset_HEAD_1_triggered();
 
@@ -387,10 +382,11 @@ private slots:
 
 	void on_action_set_gpg_signing_triggered();
 
+
+
 signals:
 	void onEscapeKeyPressed();
 
-	// QWidget interface
 protected:
 	void closeEvent(QCloseEvent *event);
 protected slots:

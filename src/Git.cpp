@@ -830,19 +830,15 @@ bool Git::revert(const QString &id)
 	QString cmd = "revert %1";
 	cmd = cmd.arg(id);
 	return git(cmd);
-
 }
 
-void Git::push_u(QString const &remote, QString const &branch)
+void Git::push_u(QString const &remote, QString const &branch, AbstractPtyProcess *pty)
 {
-	QString cmd = "push -u %1 %2";
-	git(cmd.arg(remote).arg(branch));
-}
-
-void Git::push_u_origin_master()
-{
-	QString cmd = "push -u origin master";
-	git(cmd);
+	if (remote.indexOf('\"') >= 0 || branch.indexOf('\"') >= 0) {
+		return;
+	}
+	QString cmd = "push -u \"%1\" \"%2\"";
+	git(cmd.arg(remote).arg(branch), true, false, pty);
 }
 
 bool Git::push_(bool tags, AbstractPtyProcess *pty)

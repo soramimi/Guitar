@@ -3336,20 +3336,7 @@ void MainWindow::on_action_branch_new_triggered()
 	}
 }
 
-void MainWindow::on_action_branch_merge_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
 
-	QList<Git::Branch> branches = g->branches();
-	MergeBranchDialog dlg(this, branches);
-	if (dlg.exec() == QDialog::Accepted) {
-		QString name = dlg.branchName();
-		if (!name.isEmpty()) {
-			g->mergeBranch(name);
-		}
-	}
-}
 
 bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
 {
@@ -4096,13 +4083,6 @@ void MainWindow::on_action_delete_branch_triggered()
 	deleteBranch();
 }
 
-void MainWindow::on_action_push_u_origin_master_triggered()
-{
-	reopenRepository(true, [&](GitPtr g){
-		g->push_u_origin_master();
-	});
-}
-
 bool MainWindow::runOnRepositoryDir(std::function<void(QString)> callback, RepositoryItem const *repo)
 {
 	if (!repo) {
@@ -4173,9 +4153,29 @@ void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 	if (remote.isEmpty()) return;
 	if (branch.isEmpty()) return;
 
+//	reopenRepository(true, [&](GitPtr g){
+//		g->push_u(remote, branch);
+//	});
+	int exitcode = 0;
+	QString errormsg;
+
 	reopenRepository(true, [&](GitPtr g){
-		g->push_u(remote, branch);
+		g->push_u(remote, branch, &m->pty_process);
+//		g->push_u_origin_master(&m->pty_process);
+		while (1) {
+			if (m->pty_process.wait(1)) break;
+			QApplication::processEvents();
+		}
+		exitcode = m->pty_process.getExitCode();
+		errormsg = m->pty_process.getMessage();
 	});
+
+	if (exitcode == 128) {
+		if (errormsg.indexOf("Connection refused") >= 0) {
+			QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
+			return;
+		}
+	}
 
 	updateRemoteInfo();
 }
@@ -4218,10 +4218,7 @@ bool MainWindow::pushSetUpstream(bool testonly)
 }
 
 
-void MainWindow::on_action_push_u_triggered()
-{
-	pushSetUpstream(false);
-}
+
 
 void MainWindow::on_action_reset_HEAD_1_triggered()
 {
@@ -4471,8 +4468,13 @@ void MainWindow::onLogIdle()
 			auto Input = [&](QString const &title, bool password){
 				std::string header = QString("%1 for '").arg(title).toStdString();
 				if (strncmp(begin, header.c_str(), header.size()) == 0) {
-					if (memcmp(end - 3, "': ", 3) == 0) {
-						QString msg = QString::fromUtf8(begin, end - begin - 2);
+					QString msg;
+					if (memcmp(end - 2, "':", 2) == 0) {
+						msg = QString::fromUtf8(begin, end - begin - 1);
+					} else if (memcmp(end - 3, "': ", 3) == 0) {
+						msg = QString::fromUtf8(begin, end - begin - 2);
+					}
+					if (!msg.isEmpty()) {
 						LineEditDialog dlg(this, title, msg, password);
 						if (dlg.exec() == QDialog::Accepted) {
 							std::string text = dlg.text().toStdString() + '\n';
@@ -4498,8 +4500,11 @@ void MainWindow::on_action_test_triggered()
 		QList<gpg::Item> keys = gpg::load(ba);
 		qDebug();
 	}
-
 }
+
+
+
+
 
 
 

@@ -968,7 +968,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>18</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1018,6 +1018,7 @@
      <string>&amp;Repository</string>
     </property>
     <addaction name="action_fetch"/>
+    <addaction name="action_commit"/>
     <addaction name="action_pull"/>
     <addaction name="action_push"/>
     <addaction name="action_push_u"/>
@@ -1038,9 +1039,6 @@
      <string>Experiment</string>
     </property>
     <addaction name="action_test"/>
-    <addaction name="action_push_u_origin_master"/>
-    <addaction name="action_branch_merge"/>
-    <addaction name="action_branch_new"/>
     <addaction name="action_tag_push_all"/>
     <addaction name="action_reset_HEAD_1"/>
    </widget>
@@ -1243,6 +1241,10 @@
    </property>
   </action>
   <action name="action_commit">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/image/commit.svg</normaloff>:/image/commit.svg</iconset>
+   </property>
    <property name="text">
     <string>&amp;Commit</string>
    </property>
@@ -1328,11 +1330,6 @@
     <string>&amp;New branch...</string>
    </property>
   </action>
-  <action name="action_branch_merge">
-   <property name="text">
-    <string>&amp;Merge</string>
-   </property>
-  </action>
   <action name="action_clone">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -1389,11 +1386,6 @@
   <action name="action_repo_checkout">
    <property name="text">
     <string>Check&amp;out...</string>
-   </property>
-  </action>
-  <action name="action_push_u_origin_master">
-   <property name="text">
-    <string>push -u origin master</string>
    </property>
   </action>
   <action name="action_delete_branch">

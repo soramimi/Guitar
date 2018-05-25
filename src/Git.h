@@ -403,8 +403,7 @@ public:
 	void setUser(User const&user, bool global);
 
 	bool reset_head1();
-	void push_u(const QString &remote, const QString &branch);
-	void push_u_origin_master();
+	void push_u(const QString &remote, const QString &branch, AbstractPtyProcess *pty);
 	QString objectType(const QString &id);
 	bool rm_cached(const QString &file);
 	void cherrypick(const QString &name);
