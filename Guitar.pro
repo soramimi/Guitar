@@ -143,7 +143,6 @@ SOURCES += \
 	src/SearchFromGitHubDialog.cpp \
 	src/webclient.cpp \
 	src/charvec.cpp \
-	src/json.cpp \
 	src/urlencode.cpp \
 	src/HyperLinkLabel.cpp \
 	src/JumpDialog.cpp \
@@ -249,7 +248,6 @@ HEADERS  += \
 	src/SearchFromGitHubDialog.h \
 	src/webclient.h \
 	src/charvec.h \
-	src/json.h \
 	src/urlencode.h \
 	src/HyperLinkLabel.h \
 	src/JumpDialog.h \
