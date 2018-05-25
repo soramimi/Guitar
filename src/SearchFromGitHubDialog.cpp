@@ -2,7 +2,7 @@
 #include "ui_SearchFromGitHubDialog.h"
 
 #include "common/misc.h"
-#include "json.h"
+//#include "json.h"
 #include "urlencode.h"
 #include "MainWindow.h"
 
@@ -102,7 +102,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 			char tmp[100];
 			sprintf(tmp, "%.2f", item.score);
 			p->setText(tmp);
-			p->setTextAlignment(Qt::AlignRight);
+			p->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 		});
 		AddItem([&](QTableWidgetItem *p){
 			p->setText(toQString(item.description));

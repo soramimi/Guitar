@@ -2,12 +2,15 @@
 
 #include "webclient.h"
 #include "common/misc.h"
-#include "json.h"
+//#include "json.h"
 #include "charvec.h"
 #include "urlencode.h"
 #include "MemoryReader.h"
 
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
@@ -66,7 +69,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 //		th.wait();
 	}
 	if (th.ok) {
-
+#if 0
 		JSON json;
 		json.parse(th.text);
 		for (JSON::Node const &node1 : json.node.children) {
@@ -94,6 +97,27 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 				}
 			}
 		}
+#else
+		QByteArray ba(th.text.c_str(), th.text.size());
+		QJsonDocument doc = QJsonDocument::fromJson(ba);
+		QJsonArray a1 = doc.object().value("items").toArray();
+		for (QJsonValue const &v1 : a1) {
+			QJsonObject o1 = v1.toObject();
+			SearchResultItem item;
+			auto String = [&](QString const &key){
+				return o1.value(key).toString().toStdString();
+			};
+			item.full_name = String("full_name");
+			if (!item.full_name.empty()) {
+				item.description = String("description");
+				item.html_url = String("html_url");
+				item.ssh_url = String("ssh_url");
+				item.clone_url = String("clone_url");
+				item.score = o1.value("score").toDouble();
+				items.push_back(item);
+			}
+		}
+#endif
 	}
 
 	std::sort(items.begin(), items.end(), [](SearchResultItem const &l, SearchResultItem const &r){
