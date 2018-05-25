@@ -111,7 +111,6 @@ SOURCES += \
 	src/FileDiffSliderWidget.cpp \
 	src/FileUtil.cpp \
 	src/SettingsDialog.cpp \
-	src/NewBranchDialog.cpp \
 	src/MergeBranchDialog.cpp \
 	src/CloneDialog.cpp \
 	src/AboutDialog.cpp \
@@ -216,7 +215,6 @@ HEADERS  += \
 	src/FileDiffSliderWidget.h \
 	src/FileUtil.h \
 	src/SettingsDialog.h \
-	src/NewBranchDialog.h \
 	src/MergeBranchDialog.h \
 	src/CloneDialog.h \
 	src/AboutDialog.h \
@@ -313,7 +311,6 @@ FORMS    += \
 	src/ConfigCredentialHelperDialog.ui \
 	src/TextEditDialog.ui \
 	src/SettingsDialog.ui \
-	src/NewBranchDialog.ui \
 	src/MergeBranchDialog.ui \
 	src/CloneDialog.ui \
 	src/AboutDialog.ui \

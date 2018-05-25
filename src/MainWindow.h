@@ -290,11 +290,8 @@ public slots:
 	void writeLog(const QString &str);
 	void writeLog(QByteArray ba);
 private slots:
-	void on_action_add_all_triggered();
-	void on_action_branch_new_triggered();
 	void on_action_clone_triggered();
 	void on_action_commit_triggered();
-	void on_action_config_global_credential_helper_triggered();
 	void on_action_edit_git_config_triggered();
 	void on_action_edit_gitignore_triggered();
 	void on_action_edit_global_gitconfig_triggered();

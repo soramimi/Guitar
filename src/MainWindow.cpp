@@ -42,7 +42,6 @@
 #include "MergeBranchDialog.h"
 #include "MyProcess.h"
 #include "MySettings.h"
-#include "NewBranchDialog.h"
 #include "PushDialog.h"
 #include "RepositoryData.h"
 #include "RepositoryPropertyDialog.h"
@@ -1795,14 +1794,7 @@ QString MainWindow::getBookmarksFilePath() const
 	return global->application_data_dir / "bookmarks.xml";
 }
 
-void MainWindow::on_action_add_all_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
 
-	g->git("add --all");
-	updateCurrentFilesList();
-}
 
 void MainWindow::commit(bool amend)
 {
@@ -2012,44 +2004,7 @@ void MainWindow::on_action_set_remote_origin_url_triggered()
 	git.git("remote set-url origin " + newurl);
 }
 
-void MainWindow::on_action_config_global_credential_helper_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
 
-	g->git("config --global credential.helper");
-	QString text = g->resultText().trimmed();
-	ConfigCredentialHelperDialog dlg(this);
-	dlg.setHelper(text);
-	if (dlg.exec() == QDialog::Accepted) {
-		text = dlg.helper();
-		bool ok = true;
-		if (text.isEmpty()) {
-			text = "\"\"";
-		} else {
-			auto isValidChar = [](ushort c){
-				if (QChar::isLetterOrNumber(c)) return true;
-				if (c == '_') return true;
-				return false;
-			};
-			ushort const *begin = text.utf16();
-			ushort const *end = begin + text.size();
-			ushort const *ptr = begin;
-			while (ptr < end) {
-				if (!isValidChar(*ptr)) {
-					ok = false;
-					break;
-				}
-				ptr++;
-			}
-		}
-		if (!ok) {
-			QMessageBox::warning(this, tr("Config credential helper"), tr("Invalid credential helper name"));
-			return;
-		}
-		g->git("config --global credential.helper " + text);
-	}
-}
 
 void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*current*/, QTreeWidgetItem * /*previous*/)
 {
@@ -3324,17 +3279,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	}
 }
 
-void MainWindow::on_action_branch_new_triggered()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
 
-	NewBranchDialog dlg(this);
-	if (dlg.exec() == QDialog::Accepted) {
-		QString name = dlg.branchName();
-		g->createBranch(name);
-	}
-}
 
 
 

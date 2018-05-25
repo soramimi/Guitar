@@ -1261,27 +1261,12 @@
     <bool>false</bool>
    </property>
   </action>
-  <action name="action_set_remote_origin_url">
-   <property name="text">
-    <string>set remote origin url</string>
-   </property>
-  </action>
-  <action name="action_config_global_credential_helper">
-   <property name="text">
-    <string>config --global credential.helper</string>
-   </property>
-  </action>
   <action name="action_test">
    <property name="text">
     <string>test</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
-   </property>
-  </action>
-  <action name="action_add_all">
-   <property name="text">
-    <string>Add all</string>
    </property>
   </action>
   <action name="action_pull">
@@ -1323,11 +1308,6 @@
   <action name="action_edit_settings">
    <property name="text">
     <string>&amp;Settings</string>
-   </property>
-  </action>
-  <action name="action_branch_new">
-   <property name="text">
-    <string>&amp;New branch...</string>
    </property>
   </action>
   <action name="action_clone">
