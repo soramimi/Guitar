@@ -13,14 +13,14 @@ class CreateRepositoryDialog : public QDialog
 {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow_;
-	bool remote_url_is_ok_ = false;
+	QString already_exists_;
 public:
 	explicit CreateRepositoryDialog(MainWindow *parent = 0);
 	~CreateRepositoryDialog();
 
 	QString path() const;
 	QString name() const;
+	QString remoteName() const;
 	QString remoteURL() const;
 private slots:
 	void on_lineEdit_path_textChanged(const QString &arg1);
@@ -33,7 +33,11 @@ private slots:
 
 private:
 	Ui::CreateRepositoryDialog *ui;
-	void validate();
+	void validate(bool change_name);
+	MainWindow *mainwindow();
+
+public slots:
+	void accept();
 };
 
 #endif // CREATEREPOSITORYDIALOG_H

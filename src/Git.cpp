@@ -1073,7 +1073,7 @@ void Git::setRemoteURL(QString const &name, QString const &url)
 
 void Git::addRemoteURL(QString const &name, QString const &url)
 {
-	QString cmd = "remote add %1 %2";
+	QString cmd = "remote add \"%1\" \"%2\"";
 	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
 	git(cmd);
 }

@@ -4,6 +4,7 @@
 #include "ui_CreateRepositoryDialog.h"
 
 #include <QFileDialog>
+#include <QMessageBox>
 #include "Git.h"
 
 CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent) :
@@ -15,11 +16,13 @@ CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent) :
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	mainwindow_ = parent;
+	already_exists_ = tr("A valid git repository already exists there.");
 
 	ui->groupBox_remote->setChecked(false);
 
-	validate();
+	ui->lineEdit_remote_name->setText("origin");
+
+	validate(false);
 }
 
 CreateRepositoryDialog::~CreateRepositoryDialog()
@@ -27,9 +30,36 @@ CreateRepositoryDialog::~CreateRepositoryDialog()
 	delete ui;
 }
 
+MainWindow *CreateRepositoryDialog::mainwindow()
+{
+	return qobject_cast<MainWindow *>(parent());
+}
+
+void CreateRepositoryDialog::accept()
+{
+	QString path = ui->lineEdit_path->text();
+	if (!QFileInfo(path).isDir()) {
+		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
+		return;
+	}
+	if (Git::isValidWorkingCopy(path)) {
+		QMessageBox::warning(this, tr("Create Repository"), already_exists_);
+		return;
+	}
+	if (!QFileInfo(path).isDir()) {
+		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
+		return;
+	}
+	if (remoteName().indexOf('\"') >= 0 || remoteURL().indexOf('\"') >= 0) { // 手抜き
+		QMessageBox::warning(this, tr("Create Repository"), tr("Remote name is invalid."));
+		return;
+	}
+	done(QDialog::Accepted);
+}
+
 void CreateRepositoryDialog::on_pushButton_browse_path_clicked()
 {
-	QString path = QFileDialog::getExistingDirectory(this, tr("Destination Path"), mainwindow_->defaultWorkingDir());
+	QString path = QFileDialog::getExistingDirectory(this, tr("Destination Path"), mainwindow()->defaultWorkingDir());
 	if (!path.isEmpty()) {
 		path = misc::normalizePathSeparator(path);
 		ui->lineEdit_path->setText(path);
@@ -46,65 +76,57 @@ QString CreateRepositoryDialog::name() const
 	return ui->lineEdit_name->text();
 }
 
-QString CreateRepositoryDialog::remoteURL() const
+QString CreateRepositoryDialog::remoteName() const
 {
-	if (remote_url_is_ok_) {
-		return ui->lineEdit_remote_url->text();
-	}
-	return QString();
+	return ui->groupBox_remote->isChecked() ? ui->lineEdit_remote_name->text() : QString();
 }
 
-void CreateRepositoryDialog::validate()
+QString CreateRepositoryDialog::remoteURL() const
 {
-	bool ok = true;
-	QString path = ui->lineEdit_path->text();
-	if (Git::isValidWorkingCopy(path)) {
-		ui->label_warning->setText(tr("A valid git repository already exists there."));
-		ok = false;
+	return ui->groupBox_remote->isChecked() ? ui->lineEdit_remote_url->text() : QString();
+}
+
+void CreateRepositoryDialog::validate(bool change_name)
+{
+	QString path = this->path();
+	{
+		QString text;
+		if (Git::isValidWorkingCopy(path)) {
+			text = already_exists_;
+		}
+		ui->label_warning->setText(text);
 	}
 
-	int i = path.lastIndexOf('/');
-	int j = path.lastIndexOf('\\');
-	if (i < j) i = j;
+	if (change_name) {
+		int i = path.lastIndexOf('/');
+		int j = path.lastIndexOf('\\');
+		if (i < j) i = j;
 
-	if (i >= 0) {
-		QString name = path.mid(i + 1);
-		ui->lineEdit_name->setText(name);
-		if (ui->groupBox_bookmark->isChecked() && name.isEmpty()) {
-			ok = false;
+		if (i >= 0) {
+			QString name = path.mid(i + 1);
+			ui->lineEdit_name->setText(name);
 		}
 	}
-
-	if (!QFileInfo(path).isDir()) {
-		ok = false;
-	}
-
-	if (ui->groupBox_remote->isChecked() && !remote_url_is_ok_) {
-		ok = false;
-	}
-
-//	ui->pushButton_ok->setEnabled(ok);
 }
 
 void CreateRepositoryDialog::on_lineEdit_path_textChanged(const QString &)
 {
-	validate();
+	validate(true);
 }
 
 void CreateRepositoryDialog::on_lineEdit_name_textChanged(const QString &)
 {
-	validate();
+	validate(false);
 }
 
 void CreateRepositoryDialog::on_groupBox_remote_toggled(bool)
 {
-	remote_url_is_ok_ = false;
-	validate();
+	validate(false);
 }
 
 void CreateRepositoryDialog::on_pushButton_test_repo_clicked()
 {
 	QString url = ui->lineEdit_remote_url->text();
-	remote_url_is_ok_ = mainwindow_->testRemoteRepositoryValidity(url);
-	validate();
+	mainwindow()->testRemoteRepositoryValidity(url);
+	validate(false);
 }

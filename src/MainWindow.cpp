@@ -4247,10 +4247,10 @@ void MainWindow::on_action_create_a_repository_triggered()
 					if (!name.isEmpty()) {
 						addWorkingCopyDir(path, name, true);
 					}
-					QString url = dlg.remoteURL();
-					if (!url.isEmpty()) {
-						QString remote = "origin";
-						g->addRemoteURL(remote, url);
+					QString remote_name = dlg.remoteName();
+					QString remote_url = dlg.remoteURL();
+					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
+						g->addRemoteURL(remote_name, remote_url);
 					}
 				}
 			}
