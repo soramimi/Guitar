@@ -413,12 +413,14 @@ bool MainWindow::shown()
 			return false;
 		}
 	}
+
 	setGitCommand(appsettings()->git_command, false);
 	setFileCommand(appsettings()->file_command, false);
-	setGpgCommand(appsettings()->gpg_command, false);
 
 	writeLog(AboutDialog::appVersion() + '\n'); // print application version
 	logGitVersion(); // print git command version
+
+	setGpgCommand(appsettings()->gpg_command, false);
 
 	{
 		MySettings s;
@@ -640,14 +642,6 @@ void MainWindow::writeLog(QByteArray ba)
 	writeLog(s);
 }
 
-bool MainWindow::write_log_callback(void *cookie, char const *ptr, int len)
-{
-	MainWindow *me = (MainWindow *)cookie;
-	QByteArray ba(ptr, len);
-	me->writeLog(ba);
-	return true;
-}
-
 bool MainWindow::saveRepositoryBookmarks() const
 {
 	QString path = getBookmarksFilePath();
@@ -809,7 +803,7 @@ bool MainWindow::queryCommit(QString const &id, Git::CommitItem *out)
 void MainWindow::setLogEnabled(GitPtr g, bool f)
 {
 	if (f) {
-		g->setLogCallback(write_log_callback, this);
+		g->setLogCallback(git_callback, this);
 	} else {
 		g->setLogCallback(nullptr, nullptr);
 	}
@@ -2957,7 +2951,7 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 	}
 	global->gpg_command = path;
 
-	{
+	if (!global->gpg_command.isEmpty()) {
 		GitPtr g = git();
 		g->configGpgProgram(global->gpg_command, true);
 	}
@@ -3283,10 +3277,6 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGpgCommand(appsettings()->gpg_command, false);
 	}
 }
-
-
-
-
 
 bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
 {
@@ -4441,22 +4431,6 @@ void MainWindow::onLogIdle()
 	}
 }
 
-
 void MainWindow::on_action_test_triggered()
 {
-	QFile file("/home/soramimi/a/keys2.json");
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray ba = file.readAll();
-		QList<gpg::Item> keys = gpg::load(ba);
-		qDebug();
-	}
 }
-
-
-
-
-
-
-
-
-

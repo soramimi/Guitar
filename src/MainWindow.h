@@ -160,7 +160,7 @@ private:
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
 	void updateWindowTitle(GitPtr g);
 	void logGitVersion();
-	static bool write_log_callback(void *cookie, const char *ptr, int len);
+//	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool git_callback(void *cookie, const char *ptr, int len);
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);

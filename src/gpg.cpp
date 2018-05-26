@@ -16,8 +16,7 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
 	QString cmd = gpg_command;
 	if (!QFileInfo(cmd).isExecutable()) return false;
 
-	cmd = "\"%1\" --list-keys --keyid-format LONG";
-//	cmd = "\"%1\" --fingerprint";
+	cmd = "\"%1\" --list-keys --keyid-format LONG --fingerprint";
 	cmd = cmd.arg(gpg_command);
 
 	Process proc;
