@@ -1,19 +1,17 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2016-02-06T19:08:45
-#
-#-------------------------------------------------
 
 QT       += core gui widgets svg network
 win32:QT += winextras
 
-TARGET = Guitar
+CONFIG(debug,debug|release):win32:TARGET = Guitard
+CONFIG(release,debug|release):win32:TARGET = Guitar
 TEMPLATE = app
 
 CONFIG += c++11
 
-win32:CONFIG += MSVC
+#win32:CONFIG += MSVC
 #win32:CONFIG += MinGW
+
+DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = Guitar_ja.ts
 
@@ -44,12 +42,12 @@ haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
-win32:MSVC {
+win32:msvc {
 	INCLUDEPATH += C:\openssl\include
 	LIBS += -LC:\openssl\lib
 }
 
-win32:MinGW {
+win32:gcc {
 	INCLUDEPATH += C:\Qt\Tools\mingw530_32\opt\include
 	LIBS += -LC:\Qt\Tools\mingw530_32\opt\lib
 	LIBS += -lcrypto -lssl
@@ -65,19 +63,19 @@ PRE_TARGETDEPS += prepare
 
 # zlib
 
-win32:MSVC {
-	CONFIG(debug, debug|release):LIBS += $$PWD/_lib/libz.lib
-	CONFIG(release, debug|release):LIBS += $$PWD/_lib/libz.lib
+win32:msvc {
+	CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libz.lib
+	CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.lib
 }
 
-win32:MinGW {
-	CONFIG(debug, debug|release):LIBS += $$PWD/_lib/liblibz.a
-	CONFIG(release, debug|release):LIBS += $$PWD/_lib/liblibz.a
+win32:gcc {
+	CONFIG(debug, debug|release):LIBS += $$PWD/_bin/liblibz.a
+	CONFIG(release, debug|release):LIBS += $$PWD/_bin/liblibz.a
 }
 
 !haiku {
-    unix:CONFIG(debug, debug|release):LIBS += $$PWD/_lib/libzd.a
-    unix:CONFIG(release, debug|release):LIBS += $$PWD/_lib/libz.a
+	unix:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libzd.a
+	unix:CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.a
 	#unix:LIBS += -lz
 }
 

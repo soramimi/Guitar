@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/5.7/msvc2013"
+$qt = "C:/Qt/Qt5.7.1/5.7/msvc2013"
 #$qt = "" # スタティックリンクのとき
 
 $openssl = "C:/openssl"
@@ -19,7 +19,7 @@ $dstdir_platforms = $dstdir + "/platforms"
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
-FileUtils.cp("../_build_#{$product_name}/release/#{$product_name}.exe", $dstdir)
+FileUtils.cp("_bin/#{$product_name}.exe", $dstdir)
 #FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)
@@ -30,9 +30,6 @@ FileUtils.cp($openssl + "/bin/ssleay32.dll", $dstdir)
 FileUtils.rmdir("#{$dstdir}\\win32tools")
 
 if $qt != ''
-
-#	FileUtils.cp("C:/Windows/SysWOW64/msvcp120.dll", $dstdir)
-#	FileUtils.cp("C:/Windows/SysWOW64/msvcr120.dll", $dstdir)
 
 	FileUtils.mkpath($dstdir_iconengines)
 	FileUtils.mkpath($dstdir_imageformats)

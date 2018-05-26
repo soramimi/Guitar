@@ -8,7 +8,7 @@ CONFIG += console staticlib
 CONFIG -= app_bundle
 CONFIG -= qt
 
-DESTDIR = $$PWD/_lib
+DESTDIR = $$PWD/_bin
 
 SOURCES += \
     ../zlib/gzclose.c \
