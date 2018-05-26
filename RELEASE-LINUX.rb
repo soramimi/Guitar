@@ -28,8 +28,7 @@ end
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
-FileUtils.cp("../_build_#{$product_name}_Release/#{$product_name}", $dstdir)
-#FileUtils.cp("../_build_AskPass_Release/askpass", $dstdir)
+FileUtils.cp("_bin/#{$product_name}", $dstdir)
 `strip #{$dstdir}/#{$product_name}`
 #FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 

@@ -2,14 +2,11 @@
 QT       += core gui widgets svg network
 win32:QT += winextras
 
-CONFIG(debug,debug|release):win32:TARGET = Guitard
-CONFIG(release,debug|release):win32:TARGET = Guitar
+CONFIG(debug,debug|release):TARGET = Guitard
+CONFIG(release,debug|release):TARGET = Guitar
 TEMPLATE = app
 
 CONFIG += c++11
-
-#win32:CONFIG += MSVC
-#win32:CONFIG += MinGW
 
 DESTDIR = $$PWD/_bin
 
@@ -23,7 +20,7 @@ DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
 
-unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
+gcc:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 

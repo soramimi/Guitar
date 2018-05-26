@@ -158,7 +158,7 @@ void UnixPtyProcess::run()
 	pid_t pid = fork();
 	if (pid == 0) {
 		setsid();
-		putenv("LANG=C");
+		putenv(const_cast<char *>("LANG=C"));
 
 		char *pts_name = ptsname(m->pty_master);
 		int pty_slave = open(pts_name, O_RDWR);

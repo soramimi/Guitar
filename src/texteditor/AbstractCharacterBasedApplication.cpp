@@ -51,7 +51,7 @@ public:
 				offset = 0;
 				return;
 			}
-			if (offset + 1 < sizeof(data)) {
+			if (offset + 1 < (int)sizeof(data)) {
 				offset++;
 			}
 		}
@@ -346,7 +346,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			if (i < m->syntax_table.size() && m->syntax_table[i].offset <= o) {
 				if (i + 1 < m->syntax_table.size()) {
 					o = m->syntax_table[i + 1].offset;
-					if (o != -1) {
+					if (o != (size_t)-1) {
 						next_offset = o;
 					}
 				}
@@ -1826,7 +1826,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 	size_t offset = 0;
 	for (int i = 0; i < editor_cx->viewport_height; i++) {
 		char tmp[100];
-		Q_ASSERT(left_margin < sizeof(tmp));
+		Q_ASSERT(left_margin < (int)sizeof(tmp));
 		memset(tmp, ' ', left_margin);
 		tmp[left_margin] = 0;
 		int row = editor_cx->scroll_row_pos + i;
@@ -1872,7 +1872,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 					linenum = line->byte_offset;
 #endif
 				}
-				if (linenum != -1 && line->type != Document::Line::Unknown) {
+				if (linenum != (unsigned int)-1 && line->type != Document::Line::Unknown) {
 					sprintf(tmp, "%*u ", left_margin - rightpadding, linenum);
 				}
 			}
