@@ -2956,6 +2956,11 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 		s.endGroup();
 	}
 	global->gpg_command = path;
+
+	{
+		GitPtr g = git();
+		g->configGpgProgram(global->gpg_command, true);
+	}
 }
 
 

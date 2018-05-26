@@ -1310,6 +1310,22 @@ bool Git::setSignPolicy(Source source, SignPolicy policy)
 	return git(cmd, chdir);
 }
 
+bool Git::configGpgProgram(QString const &path, bool global)
+{
+	QString cmd = "config ";
+	if (global) {
+		cmd += "--global ";
+	}
+	if (path.isEmpty()) {
+		cmd += "--unset ";
+	}
+	cmd += "gpg.program ";
+	if (!path.isEmpty()) {
+		cmd += QString("\"%1\"").arg(path);
+	}
+	return git(cmd, false);
+}
+
 // Diff
 
 void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, QString const &mode)

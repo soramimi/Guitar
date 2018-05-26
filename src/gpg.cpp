@@ -16,8 +16,8 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
 	QString cmd = gpg_command;
 	if (!QFileInfo(cmd).isExecutable()) return false;
 
-//	cmd = "\"%1\" --list-keys";
-	cmd = "\"%1\" --fingerprint";
+	cmd = "\"%1\" --list-keys --keyid-format LONG";
+//	cmd = "\"%1\" --fingerprint";
 	cmd = cmd.arg(gpg_command);
 
 	Process proc;
@@ -43,31 +43,49 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
 						return p;
 					};
 					auto ParseKey = [](char const *p, gpg::Data *key){
-						char id[100];
-						if (sscanf(p, "%u%c/%99s %u-%u-%u", &key->len, &key->type, id, &key->year, &key->month, &key->day) == 6) {
-							key->id = id;
+						p = strchr(p, '/');
+						if (p) {
+							p++;
+							char id[100];
+							if (sscanf(p, "%99s %u-%u-%u", id, &key->year, &key->month, &key->day) == 4) {
+								key->id = id;
+							}
 						}
-
 					};
 					auto ParseUID = [](char const *p, gpg::Data *key){
-						char const *q1 = strrchr(p, '(');
-						char const *q2 = strrchr(p, ')');
-						char const *q3 = strrchr(p, '<');
-						if (!q1) {
-							q1 = q2 = q3;
+						auto Search = [](char const *p, char c)->char const *{
+							while (*p) {
+								if (*p == c) return p;
+								p++;
+							}
+							return nullptr;
+						};
+						char const *q1 = nullptr;
+						if (*p == '[') {
+							q1 = Search(p, ']');
+							if (q1) {
+								p = q1 + 1;
+								while (isspace((unsigned char)*p)) p++;
+							}
 						}
-						char const *e = q1 ? q1 : (p + strlen(p));
+						char const *q2 = Search(p, '(');
+						char const *q3 = Search(p, ')');
+						char const *q4 = Search(p, '<');
+						if (!q2) {
+							q2 = q3 = q4;
+						}
+						char const *e = q2 ? q2 : (p + strlen(p));
 						while (p < e && isspace((unsigned char)e[-1])) e--;
 						key->name = QString::fromUtf8(p, e - p);
-						if (q1 && q2 && q1 < q2 && *q1 == '(') {
-							q1++;
-							key->comment = QString::fromUtf8(q1, q2 - q1);
+						if (q2 && q3 && q2 < q3 && *q2 == '(') {
+							q2++;
+							key->comment = QString::fromUtf8(q2, q3 - q2);
 						}
-						if (q3) {
-							q3++;
-							char const *q4 = strchr(q3, '>');
-							if (q4) {
-								key->mail = QString::fromUtf8(q3, q4 - q3);
+						if (q4) {
+							q4++;
+							char const *q5 = strchr(q4, '>');
+							if (q5) {
+								key->mail = QString::fromUtf8(q4, q5 - q4);
 							}
 						}
 					};

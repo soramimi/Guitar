@@ -437,6 +437,7 @@ public:
 	bool setSigningKey(const QString &id, bool global);
 	SignPolicy signPolicy(Source source);
 	bool setSignPolicy(Source source, SignPolicy policy);
+	bool configGpgProgram(const QString &path, bool global);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
