@@ -8,8 +8,6 @@
 class gpg {
 public:
 	struct Data {
-//		unsigned int len = 0;
-//		char type = 0;
 		QString id;
 		unsigned int year = 0;
 		unsigned int month = 0;

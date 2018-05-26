@@ -160,7 +160,6 @@ private:
 	void setRepositoryInfo(const QString &reponame, const QString &brname);
 	void updateWindowTitle(GitPtr g);
 	void logGitVersion();
-//	static bool write_log_callback(void *cookie, const char *ptr, int len);
 	static bool git_callback(void *cookie, const char *ptr, int len);
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void removeRepositoryFromBookmark(int index, bool ask);
@@ -300,7 +299,6 @@ private slots:
 	void on_action_open_existing_working_copy_triggered();
 	void on_action_pull_triggered();
 	void on_action_push_triggered();
-	void on_action_set_remote_origin_url_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_tag_triggered();

@@ -278,7 +278,6 @@ Git::Object GitObjectCache::catFile(const QString &id)
 					items.erase(items.begin() + i);
 					items.push_back(item);
 				}
-				//				qDebug() << "hit: " << id;
 				Git::Object obj;
 				obj.type = item->type;
 				obj.content = item->ba;

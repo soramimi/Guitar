@@ -24,7 +24,6 @@ public:
 private:
 	Ui::SetRemoteUrlDialog *ui;
 	void updateRemotesTable();
-//	void updateRemotesTable_(QTableWidget *tablewidget);
 public slots:
 	void accept();
 private slots:

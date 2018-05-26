@@ -12,7 +12,6 @@ public:
 private:
 	class LookupTable;
 private:
-//	GitPtr g;
 	GitObjectCache *objcache = nullptr;
 	QList<Git::Diff> diffs;
 

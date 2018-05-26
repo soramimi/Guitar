@@ -116,7 +116,6 @@ private:
 	FileViewType setupPreviewWidget();
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
-//	void setBinaryMode(bool f);
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void setOriginalLines_(const QByteArray &ba);

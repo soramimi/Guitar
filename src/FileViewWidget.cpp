@@ -51,7 +51,6 @@ FileViewWidget::~FileViewWidget()
 void FileViewWidget::setTextCodec(QTextCodec *codec)
 {
 	ui_page_text->setTextCodec(codec);
-//	ui_page_text->update();
 }
 
 void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)

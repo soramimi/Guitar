@@ -1232,7 +1232,6 @@ void MainWindow::queryRemotes(GitPtr g)
 void MainWindow::queryBranches(GitPtr g)
 {
 	Q_ASSERT(g);
-//	queryRemotes(g);
 	m->branch_map.clear();
 	QList<Git::Branch> branches = g->branches();
 	for (Git::Branch const &b : branches) {
@@ -2002,15 +2001,6 @@ void MainWindow::on_toolButton_pull_clicked()
 {
 	ui->action_pull->trigger();
 }
-
-void MainWindow::on_action_set_remote_origin_url_triggered()
-{
-	QString newurl;
-	Git git(m->gcx, currentWorkingCopyDir());
-	git.git("remote set-url origin " + newurl);
-}
-
-
 
 void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*current*/, QTreeWidgetItem * /*previous*/)
 {
@@ -3181,7 +3171,6 @@ void MainWindow::timerEvent(QTimerEvent *)
 		char tmp[1024];
 		int len = m->pty_process.readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-//		ui->widget_log->write(tmp, len, false);
 		writeLog(tmp, len);
 	}
 }
@@ -4102,15 +4091,11 @@ void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 	if (remote.isEmpty()) return;
 	if (branch.isEmpty()) return;
 
-//	reopenRepository(true, [&](GitPtr g){
-//		g->push_u(remote, branch);
-//	});
 	int exitcode = 0;
 	QString errormsg;
 
 	reopenRepository(true, [&](GitPtr g){
 		g->push_u(remote, branch, &m->pty_process);
-//		g->push_u_origin_master(&m->pty_process);
 		while (1) {
 			if (m->pty_process.wait(1)) break;
 			QApplication::processEvents();

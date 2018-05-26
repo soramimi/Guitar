@@ -65,38 +65,8 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
-//		th.wait();
 	}
 	if (th.ok) {
-#if 0
-		JSON json;
-		json.parse(th.text);
-		for (JSON::Node const &node1 : json.node.children) {
-			if (node1.name == "items") {
-				for (JSON::Node const &node2 : node1.children) {
-					SearchResultItem item;
-					for (JSON::Node const &node3 : node2.children) {
-						if (node3.name == "full_name") {
-							item.full_name = node3.value;
-						} else if (node3.name == "description") {
-							item.description = node3.value;
-						} else if (node3.name == "html_url") {
-							item.html_url = node3.value;
-						} else if (node3.name == "ssh_url") {
-							item.ssh_url = node3.value;
-						} else if (node3.name == "clone_url") {
-							item.clone_url = node3.value;
-						} else if (node3.name == "score") {
-							item.score = strtod(node3.value.c_str(), nullptr);
-						}
-					}
-					if (!item.full_name.empty()) {
-						items.push_back(item);
-					}
-				}
-			}
-		}
-#else
 		QByteArray ba(th.text.c_str(), th.text.size());
 		QJsonDocument doc = QJsonDocument::fromJson(ba);
 		QJsonArray a1 = doc.object().value("items").toArray();
@@ -116,7 +86,6 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 				items.push_back(item);
 			}
 		}
-#endif
 	}
 
 	std::sort(items.begin(), items.end(), [](SearchResultItem const &l, SearchResultItem const &r){

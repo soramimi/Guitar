@@ -75,7 +75,6 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 		}
 		auto SetItem = [&](int col, QString const &text){
 			tablewidget->setItem(row, col, newQTableWidgetItem(text));
-//			tablewidget->setRowHeight(col, 24);
 		};
 		SetItem(0, r.name);
 		SetItem(1, r.purpose);

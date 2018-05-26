@@ -58,7 +58,6 @@ void SelectGpgKeyDialog::updateTable()
 		item = NewItem();
 		item->setText(key.mail);
 		ui->tableWidget->setItem(row, col, item);
-//		ui->tableWidget->setRowHeight(row, 20);
 	}
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 	ui->tableWidget->resizeColumnsToContents();

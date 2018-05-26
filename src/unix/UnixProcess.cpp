@@ -38,52 +38,6 @@ public:
 	}
 };
 
-//class WriteThread : public QThread {
-//private:
-//	int fd;
-//	QMutex *mutex;
-//	std::deque<char> *buffer;
-//	bool *close_input_later = nullptr;
-//protected:
-//	void run()
-//	{
-//		while (1) {
-//			if (isInterruptionRequested()) return;
-
-//			{
-//				int n = buffer->size();
-//				if (n > 0) {
-//					while (n > 0) {
-//						char buf[256];
-//						int l = n;
-//						if (l > (int)sizeof(buf)) {
-//							l = sizeof(buf);
-//						}
-//						std::copy(buffer->begin(), buffer->begin() + l, buf);
-//						buffer->erase(buffer->begin(), buffer->begin() + l);
-//						write(fd, buf, l);
-//						n -= l;
-//					}
-//				} else if (*close_input_later) {
-//					close(fd);
-//					fd = -1;
-//					return;
-//				}
-//			}
-//			msleep(1);
-//		}
-//	}
-//public:
-//	WriteThread(int fd, QMutex *mutex, std::deque<char> *in, bool *close_input_later)
-//		: fd(fd)
-//		, mutex(mutex)
-//		, buffer(in)
-//		, close_input_later(close_input_later)
-//	{
-
-//	}
-//};
-
 class UnixProcessThread : public QThread {
 public:
 	QMutex *mutex;

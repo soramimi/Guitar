@@ -8,7 +8,7 @@ PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStrin
 	ui->setupUi(this);
 
 	if (remotes.isEmpty() || branches.isEmpty()) {
-//		ui->radioButton_push_set_upstream->setEnabled(false);
+		// thru
 	} else {
 		for (QString const &remote : remotes) {
 			ui->comboBox_remote->addItem(remote);
@@ -24,8 +24,6 @@ PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStrin
 	if (!remote_branch.branch.isEmpty()) {
 		ui->comboBox_branch->setCurrentText(remote_branch.branch);
 	}
-
-//	ui->radioButton_push_simply->click();
 }
 
 PushDialog::~PushDialog()
