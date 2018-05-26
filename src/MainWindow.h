@@ -281,10 +281,10 @@ public:
 	void execFilePropertyDialog(QListWidgetItem *item);
 	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
 	QStringList remotes() const;
-	QIcon verifiedIcon() const;
-	bool isVerified(int row) const;
+	QIcon verifiedIcon(char s) const;
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
+	const Git::CommitItem *commitItem(int row) const;
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

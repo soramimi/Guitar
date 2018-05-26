@@ -36,7 +36,7 @@ void CommitPropertyDialog::init(MainWindow *mw)
 
 	gpg::Data key;
 	int n1 = m->commit.fingerprint.size();
-	if (m->commit.verified && n1 > 0) {
+	if (n1 > 0) {
 		QList<gpg::Data> keys;
 		gpg::listKeys(global->gpg_command, &keys);
 		for (gpg::Data const &k : keys) {
@@ -55,6 +55,12 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	if (key.id.isEmpty()) {
 		ui->frame_sign->setVisible(false);
 	} else {
+		{
+			int w = ui->label_signature_icon->width();
+			int h = ui->label_signature_icon->width();
+			QIcon icon = mainwindow()->verifiedIcon(m->commit.signature);
+			ui->label_signature_icon->setPixmap(icon.pixmap(w, h));
+		}
 		ui->lineEdit_sign_id->setText(key.id);
 		ui->lineEdit_sign_name->setText(key.name);
 		ui->lineEdit_sign_mail->setText(key.mail);

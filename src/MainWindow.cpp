@@ -205,7 +205,9 @@ struct MainWindow::Private {
 	QPixmap digits;
 	QIcon repository_icon;
 	QIcon folder_icon;
-	QIcon verified_icon;
+	QIcon signature_good_icon;
+	QIcon signature_dubious_icon;
+	QIcon signature_bad_icon;
 	unsigned int temp_file_counter = 0;
 	GitObjectCache objcache;
 	QPixmap transparent_pixmap;
@@ -269,7 +271,9 @@ MainWindow::MainWindow(QWidget *parent)
 	m->repository_icon = QIcon(":/image/repository.png");
 	m->folder_icon = icons.icon(QFileIconProvider::Folder);
 
-	m->verified_icon = QIcon(":/image/verified.png");
+	m->signature_good_icon = QIcon(":/image/signature-good.png");
+	m->signature_bad_icon = QIcon(":/image/signature-bad.png");
+	m->signature_dubious_icon = QIcon(":/image/signature-dubious.png");
 
 	prepareLogTableWidget();
 
@@ -1296,20 +1300,28 @@ bool MainWindow::isAvatarEnabled() const
 	return appsettings()->get_committer_icon;
 }
 
-bool MainWindow::isVerified(int row) const
+Git::CommitItem const *MainWindow::commitItem(int row) const
 {
 	if (row >= 0 && row < (int)m->logs.size()) {
-		Git::CommitItem const &commit = m->logs[row];
-		if (commit.verified) {
-			return true;
-		}
+		return &m->logs[row];
 	}
-	return false;
+	return nullptr;
 }
 
-QIcon MainWindow::verifiedIcon() const
+QIcon MainWindow::verifiedIcon(char s) const
 {
-	return m->verified_icon;
+	Git::SignatureGrade g = Git::evaluateSignature(s);
+	switch (g) {
+	case Git::SignatureGrade::Good:
+		return m->signature_good_icon;
+	case Git::SignatureGrade::Bad:
+		return m->signature_bad_icon;
+	case Git::SignatureGrade::Unknown:
+	case Git::SignatureGrade::Dubious:
+	case Git::SignatureGrade::Missing:
+		return m->signature_dubious_icon;
+	}
+	return QIcon();
 }
 
 QIcon MainWindow::committerIcon(int row) const
@@ -2827,10 +2839,7 @@ int MainWindow::selectedLogIndex() const
 Git::CommitItem const *MainWindow::selectedCommitItem() const
 {
 	int i = selectedLogIndex();
-	if (i >= 0 && i < (int)m->logs.size()) {
-		return &m->logs[i];
-	}
-	return nullptr;
+	return commitItem(i);
 }
 
 Git::Object MainWindow::cat_file_(GitPtr g, QString const &id)

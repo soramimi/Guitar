@@ -36,6 +36,8 @@
         <file>darktheme/vsb/vsb_sub_line.png</file>
         <file>darktheme/graphcolor.png</file>
         <file>image/menu.png</file>
-        <file>image/verified.png</file>
+        <file>image/signature-bad.png</file>
+        <file>image/signature-dubious.png</file>
+        <file>image/signature-good.png</file>
     </qresource>
 </RCC>

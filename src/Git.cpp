@@ -616,7 +616,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						if (key == "commit") {
 							item.commit_id = val;
 						} else if (key == "gpg") {
-							item.verified = (val == "G");
+							item.signature = *val.utf16();
 						} else if (key == "key") {
 							signed_key = val;
 						} else if (key == "parent") {

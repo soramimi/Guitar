@@ -112,6 +112,37 @@ public:
 		void makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, const QString &mode);
 	};
 
+	enum class SignatureGrade {
+		NoSignature,
+		Unknown,
+		Good,
+		Dubious,
+		Missing,
+		Bad,
+	};
+
+	static SignatureGrade evaluateSignature(char s)
+	{
+		switch (s) {
+		case 'G':
+			return SignatureGrade::Good;
+		case 'U':
+		case 'X':
+		case 'Y':
+			return SignatureGrade::Dubious;
+		case 'B':
+		case 'R':
+			return SignatureGrade::Bad;
+		case 'E':
+			return SignatureGrade::Missing;
+		case 'N':
+		case ' ':
+		case 0:
+			return SignatureGrade::NoSignature;
+		}
+		return SignatureGrade::Unknown;
+	}
+
 	struct CommitItem {
 		QString commit_id;
 		QStringList parent_ids;
@@ -121,7 +152,7 @@ public:
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
 		QByteArray fingerprint;
-		bool verified = false;
+		char signature = 0; // git log format:%G?
 		bool has_child = false;
 		int marker_depth = -1;
 		bool resolved =  false;
