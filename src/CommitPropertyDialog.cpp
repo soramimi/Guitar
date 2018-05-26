@@ -38,18 +38,25 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	int n1 = m->commit.fingerprint.size();
 	if (n1 > 0) {
 		QList<gpg::Data> keys;
-		gpg::listKeys(global->gpg_command, &keys);
-		for (gpg::Data const &k : keys) {
-			int n2 = k.fingerprint.size();
-			if (n2 > 0) {
-				int n = std::min(n1, n2);
-				char const *p1 = m->commit.fingerprint.data() + n1 - n;
-				char const *p2 = k.fingerprint.data() + n2 - n;
-				if (memcmp(p1, p2, n) == 0) {
-					key = k;
-					break;
+		if (gpg::listKeys(global->gpg_command, &keys)) {
+			for (gpg::Data const &k : keys) {
+				int n2 = k.fingerprint.size();
+				if (n2 > 0) {
+					int n = std::min(n1, n2);
+					char const *p1 = m->commit.fingerprint.data() + n1 - n;
+					char const *p2 = k.fingerprint.data() + n2 - n;
+					if (memcmp(p1, p2, n) == 0) {
+						key = k;
+						break;
+					}
 				}
 			}
+		} else {
+			qDebug() << "Failed to get gpg keys";
+		}
+		if (key.id.isEmpty()) {
+			// gpgコマンドが登録されていないなど、keyidが取得できなかったとき
+			key.id = tr("<Unknown>");
 		}
 	}
 	if (key.id.isEmpty()) {
