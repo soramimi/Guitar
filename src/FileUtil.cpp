@@ -248,6 +248,9 @@ static void split_path(std::string const &path, std::vector<std::string> *out)
 
 std::string FileUtil::which(std::string const &name, std::vector<std::string> *out)
 {
+	if (out) {
+		out->clear();
+	}
 	char const *p = getenv("PATH");
 	if (p) {
 		std::vector<std::string> paths;

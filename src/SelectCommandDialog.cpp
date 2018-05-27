@@ -14,7 +14,7 @@ QStringList uniqueStringList(const QStringList &list)
 	return ret_list;
 }
 
-SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname, const QString &cmdfile, const QString &path, const QStringList &list) :
+SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname, const QStringList &cmdfiles, const QString &path, const QStringList &list) :
 	QDialog(parent),
 	ui(new Ui::SelectCommandDialog)
 {
@@ -24,10 +24,10 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 	setWindowFlags(flags);
 
 	command_name = cmdname;
-	command_file = cmdfile;
+	command_files = cmdfiles;
 
 	QString text = tr("Please select the '%1' command you want to use.");
-	ui->label->setText(text.arg(cmdfile));
+	ui->label->setText(text.arg(cmdfiles.front()));
 
 	this->path = path;
 
@@ -53,9 +53,12 @@ void SelectCommandDialog::on_pushButton_browse_clicked()
 #ifdef _WIN32
 	QString filter = tr("%1 command (%2);;Executable files (*.exe)");
 #else
-	QString filter = tr("%1 command (%2);;All files (*)");
+	QString filter;
+	for (QString const &cmd : command_files) {
+		filter += tr("%1 command (%2);;").arg(command_name).arg(cmd);
+	}
+	filter += "All files (*)";
 #endif
-	filter = filter.arg(command_name).arg(command_file);
 
 	QFileDialog dlg(this);
 	dlg.setWindowTitle(tr("%1 command").arg(command_name));

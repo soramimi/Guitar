@@ -143,13 +143,14 @@ private:
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
+	QString selectCommand_(const QString &cmdname, const QStringList &cmdfile, const QStringList &list, QString path, std::function<void (const QString &)> callback);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString path, std::function<void(const QString &)> callback);
 	void updateDiffView(QListWidgetItem *item);
 	void updateDiffView();
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
 	void addTag();
-	QStringList whichCommand_(const QString &cmdfile);
+	QStringList whichCommand_(const QString &cmdfile1, const QString &cmdfile2 = QString());
 	QString getObjectID(QListWidgetItem *item);
 	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const;
 	Git::Object cat_file_(GitPtr g, const QString &id);

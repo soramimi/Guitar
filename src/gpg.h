@@ -18,6 +18,7 @@ public:
 		QByteArray fingerprint;
 	};
 
+	static void parse(const char *begin, const char *end, QList<gpg::Data> *keys);
 	static bool listKeys(const QString &gpg_command, QList<gpg::Data> *keys);
 
 
@@ -25,25 +26,25 @@ public:
 
 
 
-public:
-	struct Key {
-		QString id;
-		QDateTime timestamp;
-	};
+//public:
+//	struct Key {
+//		QString id;
+//		QDateTime timestamp;
+//	};
 
-	struct UID {
-		QString name;
-		QString email;
-		QString comment;
-	};
+//	struct UID {
+//		QString name;
+//		QString email;
+//		QString comment;
+//	};
 
-	struct Item {
-		Key pub;
-		QList<Key> sub;
-		QList<UID> uid;
-	};
+//	struct Item {
+//		Key pub;
+//		QList<Key> sub;
+//		QList<UID> uid;
+//	};
 
-	static QList<Item> load(QByteArray const &json);
+//	static QList<Item> load(QByteArray const &json);
 
 };
 

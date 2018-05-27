@@ -3001,26 +3001,34 @@ void MainWindow::initNetworking()
 
 
 
-QStringList MainWindow::whichCommand_(QString const &cmdfile)
+QStringList MainWindow::whichCommand_(QString const &cmdfile1, const QString &cmdfile2)
 {
 	QStringList list;
 
-	std::vector<std::string> vec;
-	FileUtil::which(cmdfile.toStdString(), &vec);
-
-	for (std::string const &s : vec) {
-		list.push_back(QString::fromStdString(s));
+	if (!cmdfile1.isEmpty()){
+		std::vector<std::string> vec;
+		FileUtil::which(cmdfile1.toStdString(), &vec);
+		for (std::string const &s : vec) {
+			list.push_back(QString::fromStdString(s));
+		}
+	}
+	if (!cmdfile2.isEmpty()){
+		std::vector<std::string> vec;
+		FileUtil::which(cmdfile2.toStdString(), &vec);
+		for (std::string const &s : vec) {
+			list.push_back(QString::fromStdString(s));
+		}
 	}
 
 	return list;
 }
 
-QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString path, std::function<void(QString const &)> callback)
+QString MainWindow::selectCommand_(QString const &cmdname, QStringList const &cmdfiles, QStringList const &list, QString path, std::function<void(QString const &)> callback)
 {
 	QString window_title = tr("Select %1 command");
-	window_title = window_title.arg(cmdfile);
+	window_title = window_title.arg(cmdfiles.front());
 
-	SelectCommandDialog dlg(this, cmdname, cmdfile, path, list);
+	SelectCommandDialog dlg(this, cmdname, cmdfiles, path, list);
 	dlg.setWindowTitle(window_title);
 	if (dlg.exec() == QDialog::Accepted) {
 		path = dlg.selectedFile();
@@ -3034,6 +3042,13 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 	return QString();
 }
 
+QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString path, std::function<void(QString const &)> callback)
+{
+	QStringList cmdfiles;
+	cmdfiles.push_back(cmdfile);
+	return selectCommand_(cmdname, cmdfiles, list, path, callback);
+}
+
 #ifdef Q_OS_WIN
 #define GIT_COMMAND "git.exe"
 #define FILE_COMMAND "file.exe"
@@ -3042,6 +3057,7 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 #define GIT_COMMAND "git"
 #define FILE_COMMAND "file"
 #define GPG_COMMAND "gpg"
+#define GPG2_COMMAND "gpg2"
 #endif
 
 QString MainWindow::selectGitCommand(bool save)
@@ -3118,17 +3134,18 @@ QString MainWindow::selectFileCommand(bool save)
 
 QString MainWindow::selectGpgCommand(bool save)
 {
-	char const *exe = GPG_COMMAND;
-
 	QString path = global->gpg_command;
 
 	auto fn = [&](QString const &path){
 		setGpgCommand(path, save);
 	};
 
-	QStringList list = whichCommand_(exe);
+	QStringList list = whichCommand_(GPG_COMMAND, GPG2_COMMAND);
 
-	return selectCommand_("GPG", exe, list, path, fn);
+	QStringList cmdlist;
+	cmdlist.push_back(GPG_COMMAND);
+	cmdlist.push_back(GPG2_COMMAND);
+	return selectCommand_("GPG", cmdlist, list, path, fn);
 }
 
 void MainWindow::checkUser()
@@ -4425,6 +4442,29 @@ void MainWindow::onLogIdle()
 	}
 }
 
+#include <QMessageBox>
+
 void MainWindow::on_action_test_triggered()
 {
+	QString path = QFileDialog::getOpenFileName(this, tr("Test for parsing gpg keys"));
+	if (!path.isEmpty()) {
+		QList<gpg::Data> keys;
+		QFile file(path);
+		if (file.open(QFile::ReadOnly)) {
+			QByteArray ba = file.readAll();
+			if (!ba.isEmpty()) {
+				char const *begin = ba.data();
+				char const *end = begin + ba.size();
+				gpg::parse(begin, end, &keys);
+			}
+		}
+		SelectGpgKeyDialog dlg(this, keys);
+		if (dlg.exec() == QDialog::Accepted) {
+			gpg::Data data = dlg.key();
+			QString text = "%1 %2 (%3) <%4>";
+			text = text.arg(data.id).arg(data.name).arg(data.comment).arg(data.mail);
+			QMessageBox::information(this, tr("Selected key"), text);
+		}
+	}
+
 }

@@ -15,9 +15,9 @@ class SelectCommandDialog : public QDialog
 private:
 	QString path;
 	QString command_name;
-	QString command_file;
+	QStringList command_files;
 public:
-	explicit SelectCommandDialog(QWidget *parent, QString const &cmdname, const QString &cmdfile, QString const &path, QStringList const &list);
+	explicit SelectCommandDialog(QWidget *parent, QString const &cmdname, const QStringList &cmdfiles, QString const &path, QStringList const &list);
 	~SelectCommandDialog();
 
 	QString selectedFile() const;
