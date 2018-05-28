@@ -34,7 +34,9 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 	QStringList list2 = uniqueStringList(list);
 
 	for (QString const &s : list2) {
-		ui->listWidget->addItem(s);
+		if (!s.isEmpty()) {
+			ui->listWidget->addItem(s);
+		}
 	}
 
 	ui->listWidget->setFocus();
