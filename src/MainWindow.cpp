@@ -3790,25 +3790,28 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 
 NamedCommitList MainWindow::namedCommitItems(int flags)
 {
-	NamedCommitList items;
+	std::map<QString, NamedCommitItem> map;
+//	NamedCommitList items;
 	if (flags & Branches) {
 		for (auto pair: m->branch_map) {
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
+				QString key = b.name;
+				if (flags & NamedCommitFlag::Remotes) {
+					if (!b.remote.isEmpty()) {
+						key = b.remote / key;
+					}
+				} else {
+					if (!b.remote.isEmpty()) continue;
+				}
 				NamedCommitItem item;
 				item.type = NamedCommitItem::Type::Branch;
+				item.remote = b.remote;
 				item.name = b.name;
-				if (item.name.startsWith("remotes/")) {
-					item.name = item.name.mid(8);
-					int i = item.name.indexOf('/');
-					if (i > 0) {
-						item.remote = item.name.mid(0, i);
-						item.name = item.name.mid(i + 1);
-					}
-				}
 				item.id = b.id;
-				items.push_back(item);
+				map[key] = item;
+//				items.push_back(item);
 			}
 		}
 	}
@@ -3820,9 +3823,14 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.type = NamedCommitItem::Type::Tag;
 				item.name = t.name;
 				item.id = t.id;
-				items.push_back(item);
+				map[item.name] = item;
+//				items.push_back(item);
 			}
 		}
+	}
+	NamedCommitList items;
+	for (auto const &pair : map) {
+		items.push_back(pair.second);
 	}
 	return items;
 }
@@ -3843,7 +3851,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	NamedCommitList items = namedCommitItems(Branches | Tags);
+	NamedCommitList items = namedCommitItems(Branches | Tags | Remotes);
 	JumpDialog::sort(&items);
 	{
 		NamedCommitItem head;
@@ -3913,7 +3921,7 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 	QStringList local_branches;
 	QStringList remote_branches;
 	{
-		NamedCommitList named_commits = namedCommitItems(Branches | Tags);
+		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
 		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == commit->commit_id) {
