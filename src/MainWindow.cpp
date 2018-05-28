@@ -3053,6 +3053,7 @@ QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfil
 #define GIT_COMMAND "git.exe"
 #define FILE_COMMAND "file.exe"
 #define GPG_COMMAND "gpg.exe"
+#define GPG2_COMMAND "gpg2.exe"
 #else
 #define GIT_COMMAND "git"
 #define FILE_COMMAND "file"
