@@ -3791,7 +3791,6 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 NamedCommitList MainWindow::namedCommitItems(int flags)
 {
 	std::map<QString, NamedCommitItem> map;
-//	NamedCommitList items;
 	if (flags & Branches) {
 		for (auto pair: m->branch_map) {
 			QList<Git::Branch> const &list = pair.second;
@@ -3800,7 +3799,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				QString key = b.name;
 				if (flags & NamedCommitFlag::Remotes) {
 					if (!b.remote.isEmpty()) {
-						key = b.remote / key;
+						key = "remotes" / b.remote / key;
 					}
 				} else {
 					if (!b.remote.isEmpty()) continue;
@@ -3811,7 +3810,6 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.name = b.name;
 				item.id = b.id;
 				map[key] = item;
-//				items.push_back(item);
 			}
 		}
 	}
@@ -3824,7 +3822,6 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.name = t.name;
 				item.id = t.id;
 				map[item.name] = item;
-//				items.push_back(item);
 			}
 		}
 	}
