@@ -34,9 +34,8 @@ SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname
 	QStringList list2 = uniqueStringList(list);
 
 	for (QString const &s : list2) {
-		if (!s.isEmpty()) {
-			ui->listWidget->addItem(s);
-		}
+		if (s.isEmpty()) continue;
+		ui->listWidget->addItem(s);
 	}
 
 	ui->listWidget->setFocus();
@@ -53,10 +52,16 @@ void SelectCommandDialog::on_pushButton_browse_clicked()
 {
 	QString dir;
 #ifdef _WIN32
-	QString filter = tr("%1 command (%2);;Executable files (*.exe)");
+	QString filter;
+	for (QString const &cmd : command_files) {
+		if (cmd.isEmpty()) continue;
+		filter += tr("%1 command (%2);;").arg(command_name).arg(cmd);
+	}
+	filter += tr("Executable files (*.exe)");
 #else
 	QString filter;
 	for (QString const &cmd : command_files) {
+		if (cmd.isEmpty()) continue;
 		filter += tr("%1 command (%2);;").arg(command_name).arg(cmd);
 	}
 	filter += "All files (*)";

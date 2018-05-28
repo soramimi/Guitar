@@ -193,7 +193,8 @@ SOURCES += \
     src/CommitDialog.cpp \
     src/ConfigSigningDialog.cpp \
     src/AreYouSureYouWantToContinueConnectingDialog.cpp \
-    src/LineEditDialog.cpp
+    src/LineEditDialog.cpp \
+    src/TagEditDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -297,7 +298,8 @@ HEADERS  += \
     src/CommitDialog.h \
     src/ConfigSigningDialog.h \
     src/AreYouSureYouWantToContinueConnectingDialog.h \
-    src/LineEditDialog.h
+    src/LineEditDialog.h \
+    src/TagEditDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -342,7 +344,8 @@ FORMS    += \
     src/CommitDialog.ui \
     src/ConfigSigningDialog.ui \
     src/AreYouSureYouWantToContinueConnectingDialog.ui \
-    src/LineEditDialog.ui
+    src/LineEditDialog.ui \
+    src/TagEditDialog.ui
 
 RESOURCES += \
     resources.qrc

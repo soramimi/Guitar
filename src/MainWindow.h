@@ -168,6 +168,7 @@ private:
 	enum NamedCommitFlag {
 		Branches = 0x0001,
 		Tags     = 0x0002,
+		Remotes  = 0x0100,
 	};
 	NamedCommitList namedCommitItems(int flags);
 
