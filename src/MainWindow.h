@@ -206,6 +206,7 @@ private:
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void queryRemotes(GitPtr g);
+	void internalSetCommand(const QString &path, bool save, const QString &name, QString *out);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -286,6 +287,7 @@ public:
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	const Git::CommitItem *commitItem(int row) const;
+	bool checkExecutable(const QString &path);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

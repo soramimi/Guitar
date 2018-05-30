@@ -178,7 +178,6 @@ struct MainWindow::Private {
 	QString starting_dir;
 	Git::Context gcx;
 	ApplicationSettings appsettings;
-	QString file_command;
 	QList<RepositoryItem> repos;
 	RepositoryItem current_repo;
 	ServerType server_type = ServerType::Standard;
@@ -358,7 +357,7 @@ bool MainWindow::checkGitCommand()
 bool MainWindow::checkFileCommand()
 {
 	while (1) {
-		if (misc::isExecutable(m->file_command)) {
+		if (misc::isExecutable(global->file_command)) {
 			return true;
 		}
 		if (selectFileCommand(true).isEmpty()) {
@@ -392,8 +391,8 @@ bool MainWindow::execWelcomeWizardDialog()
 		dlg.set_user_email(user.email);
 	}
 	if (dlg.exec() == QDialog::Accepted) {
-		appsettings()->git_command  = m->gcx.git_command = dlg.git_command_path();
-		appsettings()->file_command = m->file_command    = dlg.file_command_path();
+		appsettings()->git_command  = m->gcx.git_command   = dlg.git_command_path();
+		appsettings()->file_command = global->file_command = dlg.file_command_path();
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		SettingsDialog::saveSettings(&m->appsettings);
 
@@ -2918,38 +2917,45 @@ void MainWindow::logGitVersion()
 	}
 }
 
+bool MainWindow::checkExecutable(QString const &path)
+{
+	if (QFileInfo(path).isExecutable()) {
+		return true;
+	}
+	QString text = "The specified program '%1' is not executable.\n";
+	text = text.arg(path);
+	writeLog(text);
+	return false;
+}
+
+void MainWindow::internalSetCommand(QString const &path, bool save, QString const &name, QString *out)
+{
+	if (checkExecutable(path)) {
+		if (save) {
+			MySettings s;
+			s.beginGroup("Global");
+			s.setValue(name, path);
+			s.endGroup();
+		}
+		*out = path;
+	} else {
+		*out = QString();
+	}
+}
+
 void MainWindow::setGitCommand(QString const &path, bool save)
 {
-	if (save) {
-		MySettings s;
-		s.beginGroup("Global");
-		s.setValue("GitCommand", path);
-		s.endGroup();
-	}
-	m->gcx.git_command = path;
+	internalSetCommand(path, save, "GitCommand", &m->gcx.git_command);
 }
 
 void MainWindow::setFileCommand(QString const &path, bool save)
 {
-	if (save) {
-		MySettings s;
-		s.beginGroup("Global");
-		s.setValue("FileCommand", path);
-		s.endGroup();
-	}
-	m->file_command = path;
+	internalSetCommand(path, save, "FileCommand", &global->file_command);
 }
 
 void MainWindow::setGpgCommand(QString const &path, bool save)
 {
-	if (save) {
-		MySettings s;
-		s.beginGroup("Global");
-		s.setValue("GpgCommand", path);
-		s.endGroup();
-	}
-	global->gpg_command = path;
-
+	internalSetCommand(path, save, "GpgCommand", &global->gpg_command);
 	if (!global->gpg_command.isEmpty()) {
 		GitPtr g = git();
 		g->configGpgProgram(global->gpg_command, true);
@@ -3106,7 +3112,7 @@ QString MainWindow::selectFileCommand(bool save)
 {
 	char const *exe = FILE_COMMAND;
 
-	QString path = m->file_command;
+	QString path = global->file_command;
 
 	auto fn = [&](QString const &path){
 		setFileCommand(path, save);
@@ -3571,7 +3577,7 @@ QString MainWindow::newTempFilePath()
 QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const
 {
 	const_cast<MainWindow *>(this)->checkFileCommand();
-	return misc::determinFileType(m->file_command, path, mime, callback);
+	return misc::determinFileType(global->file_command, path, mime, callback);
 }
 
 QString MainWindow::determinFileType(QString const &path, bool mime)

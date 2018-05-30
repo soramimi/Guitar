@@ -9,6 +9,7 @@ struct ApplicationGlobal {
 	bool start_with_shift_key = false;
 	QString application_name;
 	QString application_data_dir;
+	QString file_command;
 	QString gpg_command;
 	QColor panel_bg_color;
 	ThemePtr theme;
