@@ -47,7 +47,6 @@ class MainWindow : public QMainWindow
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
-	friend class SettingDirectoriesForm;
 public:
 	struct Label {
 		enum {

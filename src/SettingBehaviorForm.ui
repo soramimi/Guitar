@@ -11,13 +11,20 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Behavior</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QCheckBox" name="checkBox_auto_fetch">
      <property name="text">
-      <string>Automatically fetch when opening the repository.</string>
+      <string>Automatically fetch when opening the repository</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="checkBox_get_committer_icon">
+     <property name="text">
+      <string>Get committer's icon from gravatar.com</string>
      </property>
     </widget>
    </item>

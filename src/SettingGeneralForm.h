@@ -23,6 +23,8 @@ private:
 	// AbstractSettingForm interface
 public:
 	void exchange(bool save);
+private slots:
+	void on_pushButton_browse_default_working_dir_clicked();
 };
 
 #endif // SETTINGGENERALFORM_H

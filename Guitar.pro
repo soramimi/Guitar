@@ -150,7 +150,6 @@ SOURCES += \
 	src/StatusLabel.cpp \
 	src/RepositoryLineEdit.cpp \
 	src/DirectoryLineEdit.cpp \
-	src/SettingDirectoriesForm.cpp \
 	src/AbstractSettingForm.cpp \
 	src/SettingExampleForm.cpp \
 	src/CreateRepositoryDialog.cpp \
@@ -194,7 +193,8 @@ SOURCES += \
     src/ConfigSigningDialog.cpp \
     src/AreYouSureYouWantToContinueConnectingDialog.cpp \
     src/LineEditDialog.cpp \
-    src/TagEditDialog.cpp
+    src/TagEditDialog.cpp \
+    src/SettingProgramsForm.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -256,7 +256,6 @@ HEADERS  += \
 	src/StatusLabel.h \
 	src/RepositoryLineEdit.h \
 	src/DirectoryLineEdit.h \
-	src/SettingDirectoriesForm.h \
 	src/AbstractSettingForm.h \
 	src/SettingExampleForm.h \
 	src/CreateRepositoryDialog.h \
@@ -299,7 +298,8 @@ HEADERS  += \
     src/ConfigSigningDialog.h \
     src/AreYouSureYouWantToContinueConnectingDialog.h \
     src/LineEditDialog.h \
-    src/TagEditDialog.h
+    src/TagEditDialog.h \
+    src/SettingProgramsForm.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -326,7 +326,6 @@ FORMS    += \
 	src/CheckoutDialog.ui \
 	src/DeleteBranchDialog.ui \
 	src/PushDialog.ui \
-	src/SettingDirectoriesForm.ui \
 	src/SettingExampleForm.ui \
 	src/CreateRepositoryDialog.ui \
 	src/ExperimentDialog.ui \
@@ -345,7 +344,8 @@ FORMS    += \
     src/ConfigSigningDialog.ui \
     src/AreYouSureYouWantToContinueConnectingDialog.ui \
     src/LineEditDialog.ui \
-    src/TagEditDialog.ui
+    src/TagEditDialog.ui \
+    src/SettingProgramsForm.ui
 
 RESOURCES += \
     resources.qrc

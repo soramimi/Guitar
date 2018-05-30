@@ -24,6 +24,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QTreeWidgetItem *item;
 
 	auto AddPage = [&](QWidget *page){
+		page->layout()->setMargin(0);
 		QString name = page->windowTitle();
 		item = new QTreeWidgetItem();
 		item->setText(0, name);
@@ -31,8 +32,8 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 		ui->treeWidget->addTopLevelItem(item);
 	};
 	AddPage(ui->page_general);
+	AddPage(ui->page_programs);
 	AddPage(ui->page_behavior);
-	AddPage(ui->page_directories);
 	AddPage(ui->page_network);
 	AddPage(ui->page_example);
 
@@ -143,7 +144,7 @@ void SettingsDialog::loadSettings()
 
 void SettingsDialog::done(int r)
 {
-	page_number = ui->stackedWidget->currentIndex();
+	page_number = ui->treeWidget->currentIndex().row();
 	QDialog::done(r);
 }
 

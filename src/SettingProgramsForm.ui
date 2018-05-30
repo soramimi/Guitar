@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SettingDirectoriesForm</class>
- <widget class="QWidget" name="SettingDirectoriesForm">
+ <class>SettingProgramsForm</class>
+ <widget class="QWidget" name="SettingProgramsForm">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,21 +11,9 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Programs</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
@@ -84,25 +72,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Default working folder</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QLineEdit" name="lineEdit_default_working_dir"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_browse_default_working_dir">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -124,8 +93,6 @@
   <tabstop>pushButton_select_file_command</tabstop>
   <tabstop>lineEdit_gpg_command</tabstop>
   <tabstop>pushButton_select_gpg_command</tabstop>
-  <tabstop>lineEdit_default_working_dir</tabstop>
-  <tabstop>pushButton_browse_default_working_dir</tabstop>
  </tabstops>
  <resources/>
  <connections/>

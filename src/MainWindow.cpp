@@ -2930,7 +2930,7 @@ bool MainWindow::checkExecutable(QString const &path)
 
 void MainWindow::internalSetCommand(QString const &path, bool save, QString const &name, QString *out)
 {
-	if (checkExecutable(path)) {
+	if (!path.isEmpty() && checkExecutable(path)) {
 		if (save) {
 			MySettings s;
 			s.beginGroup("Global");

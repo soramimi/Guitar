@@ -11,25 +11,13 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>General</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
    <item>
     <widget class="QCheckBox" name="checkBox_save_window_pos">
      <property name="text">
-      <string>Remember and restore window position.</string>
+      <string>Remember and restore window position</string>
      </property>
     </widget>
    </item>
@@ -38,6 +26,25 @@
      <property name="text">
       <string>Enable high DPI scaling</string>
      </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Default working folder</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLineEdit" name="lineEdit_default_working_dir"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_browse_default_working_dir">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>

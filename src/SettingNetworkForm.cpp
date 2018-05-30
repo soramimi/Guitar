@@ -7,7 +7,6 @@ SettingNetworkForm::SettingNetworkForm(QWidget *parent) :
 	ui(new Ui::SettingNetworkForm)
 {
 	ui->setupUi(this);
-	setWindowTitle(tr("Network"));
 }
 
 SettingNetworkForm::~SettingNetworkForm()
@@ -26,19 +25,15 @@ void SettingNetworkForm::exchange(bool save)
 			settings()->proxy_type = "none";
 		}
 		settings()->proxy_server = ui->lineEdit_proxy_server->text();
-		settings()->get_committer_icon = ui->checkBox_get_committer_icon->isChecked();
 	} else {
-		ApplicationSettings const *s = settings();
-		if (s->proxy_type == "auto") {
+		if (settings()->proxy_type == "auto") {
 			ui->radioButton_auto_detect->click();
-		} else if (s->proxy_type == "manual") {
+		} else if (settings()->proxy_type == "manual") {
 			ui->radioButton_manual->click();
 		} else {
 			ui->radioButton_no_proxy->click();
 		}
-		ui->lineEdit_proxy_server->setText(s->proxy_server);
-
-		ui->checkBox_get_committer_icon->setChecked(s->get_committer_icon);
+		ui->lineEdit_proxy_server->setText(settings()->proxy_server);
 	}
 }
 
