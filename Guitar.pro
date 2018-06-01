@@ -116,7 +116,6 @@ SOURCES += \
 	src/GitDiff.cpp \
 	src/CommitPropertyDialog.cpp \
 	src/Terminal.cpp \
-	src/EditTagDialog.cpp \
 	src/DeleteTagsDialog.cpp \
 	src/RepositoriesTreeWidget.cpp \
 	src/SelectCommandDialog.cpp \
@@ -193,8 +192,9 @@ SOURCES += \
     src/ConfigSigningDialog.cpp \
     src/AreYouSureYouWantToContinueConnectingDialog.cpp \
     src/LineEditDialog.cpp \
-    src/TagEditDialog.cpp \
-    src/SettingProgramsForm.cpp
+    src/SettingProgramsForm.cpp \
+    src/InputNewTagDialog.cpp \
+    src/EditTagsDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -220,7 +220,6 @@ HEADERS  += \
 	src/GitDiff.h \
 	src/CommitPropertyDialog.h \
 	src/Terminal.h \
-	src/EditTagDialog.h \
 	src/DeleteTagsDialog.h \
 	src/RepositoriesTreeWidget.h \
 	src/SelectCommandDialog.h \
@@ -298,8 +297,9 @@ HEADERS  += \
     src/ConfigSigningDialog.h \
     src/AreYouSureYouWantToContinueConnectingDialog.h \
     src/LineEditDialog.h \
-    src/TagEditDialog.h \
-    src/SettingProgramsForm.h
+    src/SettingProgramsForm.h \
+    src/InputNewTagDialog.h \
+    src/EditTagsDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -311,7 +311,6 @@ FORMS    += \
 	src/AboutDialog.ui \
 	src/RepositoryPropertyDialog.ui \
 	src/CommitPropertyDialog.ui \
-	src/EditTagDialog.ui \
 	src/DeleteTagsDialog.ui \
 	src/SelectCommandDialog.ui \
 	src/FileDiffWidget.ui \
@@ -344,8 +343,9 @@ FORMS    += \
     src/ConfigSigningDialog.ui \
     src/AreYouSureYouWantToContinueConnectingDialog.ui \
     src/LineEditDialog.ui \
-    src/TagEditDialog.ui \
-    src/SettingProgramsForm.ui
+    src/SettingProgramsForm.ui \
+    src/InputNewTagDialog.ui \
+    src/EditTagsDialog.ui
 
 RESOURCES += \
     resources.qrc

@@ -132,9 +132,7 @@ private:
 	QList<Git::Tag> findTag(const QString &id);
 	int selectedLogIndex() const;
 	const Git::CommitItem *selectedCommitItem() const;
-	void deleteTags(const QStringList &tagnames);
 	void deleteTags(const Git::CommitItem &commit);
-	void deleteSelectedTags();
 	QTreeWidgetItem *newQTreeWidgetFolderItem(const QString &name);
 	void buildRepoTree(const QString &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
@@ -148,7 +146,7 @@ private:
 	void updateDiffView();
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
-	void addTag();
+//	void addTag();
 	QStringList whichCommand_(const QString &cmdfile1, const QString &cmdfile2 = QString());
 	QString getObjectID(QListWidgetItem *item);
 	QString determinFileType_(const QString &path, bool mime, std::function<void(QString const &cmd, QByteArray *ba)> callback) const;
@@ -287,6 +285,9 @@ public:
 	const ApplicationSettings *appsettings() const;
 	const Git::CommitItem *commitItem(int row) const;
 	bool checkExecutable(const QString &path);
+	void deleteTags(const QStringList &tagnames);
+	QList<Git::Tag> queryTagList();
+	bool addTag(const QString &name);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
@@ -304,9 +305,7 @@ private slots:
 	void on_action_push_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
-	void on_action_tag_triggered();
 	void on_action_tag_push_all_triggered();
-	void on_action_tag_delete_triggered();
 
 	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
@@ -377,10 +376,8 @@ private slots:
 
 
 	void on_action_repository_property_triggered();
-
 	void on_action_set_gpg_signing_triggered();
-
-
+	void on_action_edit_tags_triggered();
 
 signals:
 	void onEscapeKeyPressed();

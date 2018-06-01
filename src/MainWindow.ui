@@ -968,7 +968,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>24</height>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1026,8 +1026,7 @@
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
     <addaction name="action_delete_branch"/>
-    <addaction name="action_tag"/>
-    <addaction name="action_tag_delete"/>
+    <addaction name="action_edit_tags"/>
     <addaction name="action_reflog"/>
     <addaction name="separator"/>
     <addaction name="action_clone"/>
@@ -1333,19 +1332,17 @@
     <string>&amp;About</string>
    </property>
   </action>
-  <action name="action_tag">
+  <action name="action_edit_tags">
    <property name="text">
-    <string>Tag...</string>
+    <string>Edit tags...</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit tags</string>
    </property>
   </action>
   <action name="action_tag_push_all">
    <property name="text">
     <string>Push all tags</string>
-   </property>
-  </action>
-  <action name="action_tag_delete">
-   <property name="text">
-    <string>Delete tags...</string>
    </property>
   </action>
   <action name="action_set_config_user">

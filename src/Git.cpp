@@ -323,11 +323,11 @@ QList<Git::Tag> Git::tags()
 	return list;
 }
 
-void Git::tag(const QString &name, const QString &id)
+bool Git::tag(const QString &name, const QString &id)
 {
 	QString cmd = "tag \"%1\" %2";
 	cmd = cmd.arg(name).arg(id);
-	git(cmd);
+	return git(cmd);
 }
 
 void Git::delete_tag(const QString &name, bool remote)

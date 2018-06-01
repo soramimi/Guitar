@@ -6,6 +6,7 @@
 #include "MainWindow.h"
 #include "ReflogWindow.h"
 #include "SetGlobalUserDialog.h"
+#include "EditTagsDialog.h"
 #include "WelcomeWizardDialog.h"
 #include "ui_MainWindow.h"
 
@@ -28,7 +29,7 @@
 #include "CreateRepositoryDialog.h"
 #include "DeleteBranchDialog.h"
 #include "DeleteTagsDialog.h"
-#include "EditTagDialog.h"
+#include "InputNewTagDialog.h"
 #include "FileHistoryWindow.h"
 #include "FilePropertyDialog.h"
 #include "FileUtil.h"
@@ -2146,11 +2147,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
 		QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 
-		QAction *a_add_tag = is_valid_commit_id ? menu.addAction(tr("Add a tag...")) : nullptr;
-		QAction *a_delete_tags = nullptr;
-		if (is_valid_commit_id && m->tag_map.find(commit->commit_id) != m->tag_map.end()) {
-			a_delete_tags = menu.addAction(tr("Delete tags..."));
-		}
+		QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
 		QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
 		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
@@ -2192,12 +2189,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				cherrypick(commit);
 				return;
 			}
-			if (a == a_add_tag) {
-				addTag();
-				return;
-			}
-			if (a == a_delete_tags) {
-				deleteSelectedTags();
+			if (a == a_edit_tags) {
+				ui->action_edit_tags->trigger();
 				return;
 			}
 			if (a == a_revert) {
@@ -3461,6 +3454,8 @@ void MainWindow::deleteTags(QStringList const &tagnames)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
+	int row = ui->tableWidget_log->currentRow();
+
 	if (!tagnames.isEmpty()) {
 		reopenRepository(false, [&](GitPtr g){
 			for (QString const &name : tagnames) {
@@ -3468,6 +3463,8 @@ void MainWindow::deleteTags(QStringList const &tagnames)
 			}
 		});
 	}
+
+	ui->tableWidget_log->selectRow(row);
 }
 
 void MainWindow::deleteTags(const Git::CommitItem &commit)
@@ -3483,20 +3480,7 @@ void MainWindow::deleteTags(const Git::CommitItem &commit)
 	}
 }
 
-void MainWindow::deleteSelectedTags()
-{
-	Git::CommitItem const *commit = selectedCommitItem();
-	if (commit) {
-		QList<Git::Tag> list = findTag(commit->commit_id);
-		if (!list.isEmpty()) {
-			DeleteTagsDialog dlg(this, list);
-			if (dlg.exec() == QDialog::Accepted) {
-				QStringList list = dlg.selectedTags();
-				deleteTags(list);
-			}
-		}
-	}
-}
+
 
 void MainWindow::revertCommit()
 {
@@ -3510,10 +3494,12 @@ void MainWindow::revertCommit()
 	}
 }
 
-void MainWindow::addTag()
+bool MainWindow::addTag(QString const &name)
 {
+	if (name.isEmpty()) return false;
+
 	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
+	if (!isValidWorkingCopy(g)) return false;
 
 	QString commit_id;
 
@@ -3522,20 +3508,45 @@ void MainWindow::addTag()
 		commit_id = commit->commit_id;
 	}
 
-	if (!Git::isValidID(commit_id)) return;
+	if (!Git::isValidID(commit_id)) return false;
 
-	EditTagDialog dlg(this);
-	if (dlg.exec() == QDialog::Accepted) {
-		reopenRepository(false, [&](GitPtr g){
-			g->tag(dlg.text(), commit_id);
-		});
-	}
+	int row = ui->tableWidget_log->currentRow();
+
+	bool ok = false;
+	reopenRepository(false, [&](GitPtr g){
+		ok = g->tag(name, commit_id);
+	});
+
+	ui->tableWidget_log->selectRow(row);
+	return ok;
 }
 
-void MainWindow::on_action_tag_triggered()
-{
-	addTag();
-}
+//void MainWindow::addTag()
+//{
+//	GitPtr g = git();
+//	if (!isValidWorkingCopy(g)) return;
+
+//	QString commit_id;
+
+//	Git::CommitItem const *commit = selectedCommitItem();
+//	if (commit && !commit->commit_id.isEmpty()) {
+//		commit_id = commit->commit_id;
+//	}
+
+//	if (!Git::isValidID(commit_id)) return;
+
+//	InputNewTagDialog dlg(this);
+//	if (dlg.exec() == QDialog::Accepted) {
+//		reopenRepository(false, [&](GitPtr g){
+//			g->tag(dlg.text(), commit_id);
+//		});
+//	}
+//}
+
+//void MainWindow::on_action_tag_triggered()
+//{
+//	addTag();
+//}
 
 void MainWindow::on_action_tag_push_all_triggered()
 {
@@ -3544,10 +3555,7 @@ void MainWindow::on_action_tag_push_all_triggered()
 	});
 }
 
-void MainWindow::on_action_tag_delete_triggered()
-{
-	deleteSelectedTags();
-}
+
 
 QString MainWindow::tempfileHeader() const
 {
@@ -4454,29 +4462,26 @@ void MainWindow::onLogIdle()
 	}
 }
 
-#include <QMessageBox>
+QList<Git::Tag> MainWindow::queryTagList()
+{
+	QList<Git::Tag> list;
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit && Git::isValidID(commit->commit_id)) {
+		list = findTag(commit->commit_id);
+	}
+	return list;
+}
+
+void MainWindow::on_action_edit_tags_triggered()
+{
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit && Git::isValidID(commit->commit_id)) {
+		EditTagsDialog dlg(this, commit);
+		dlg.exec();
+	}
+}
 
 void MainWindow::on_action_test_triggered()
 {
-	QString path = QFileDialog::getOpenFileName(this, tr("Test for parsing gpg keys"));
-	if (!path.isEmpty()) {
-		QList<gpg::Data> keys;
-		QFile file(path);
-		if (file.open(QFile::ReadOnly)) {
-			QByteArray ba = file.readAll();
-			if (!ba.isEmpty()) {
-				char const *begin = ba.data();
-				char const *end = begin + ba.size();
-				gpg::parse(begin, end, &keys);
-			}
-		}
-		SelectGpgKeyDialog dlg(this, keys);
-		if (dlg.exec() == QDialog::Accepted) {
-			gpg::Data data = dlg.key();
-			QString text = "%1 %2 (%3) <%4>";
-			text = text.arg(data.id).arg(data.name).arg(data.comment).arg(data.mail);
-			QMessageBox::information(this, tr("Selected key"), text);
-		}
-	}
-
 }
+

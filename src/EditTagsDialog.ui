@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TagEditDialog</class>
- <widget class="QDialog" name="TagEditDialog">
+ <class>EditTagsDialog</class>
+ <widget class="QDialog" name="EditTagsDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>308</width>
+    <height>141</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Edit Tags</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ReadOnlyLineEdit" name="lineEdit_commit_id"/>
+   </item>
+   <item>
+    <widget class="ReadOnlyLineEdit" name="lineEdit_message"/>
+   </item>
    <item>
     <widget class="QListWidget" name="listWidget">
      <property name="editTriggers">
@@ -67,12 +73,19 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
    <sender>pushButton_4</sender>
    <signal>clicked()</signal>
-   <receiver>TagEditDialog</receiver>
+   <receiver>EditTagsDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

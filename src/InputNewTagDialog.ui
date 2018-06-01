@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>EditTagDialog</class>
- <widget class="QDialog" name="EditTagDialog">
+ <class>InputNewTagDialog</class>
+ <widget class="QDialog" name="InputNewTagDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -77,7 +77,7 @@
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>EditTagDialog</receiver>
+   <receiver>InputNewTagDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -93,7 +93,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>EditTagDialog</receiver>
+   <receiver>InputNewTagDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

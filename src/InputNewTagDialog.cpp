@@ -1,10 +1,10 @@
-#include "EditTagDialog.h"
-#include "ui_EditTagDialog.h"
+#include "InputNewTagDialog.h"
+#include "ui_InputNewTagDialog.h"
 #include "common/misc.h"
 
-EditTagDialog::EditTagDialog(QWidget *parent) :
+InputNewTagDialog::InputNewTagDialog(QWidget *parent) :
 	QDialog(parent),
-	ui(new Ui::EditTagDialog)
+	ui(new Ui::InputNewTagDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -14,12 +14,12 @@ EditTagDialog::EditTagDialog(QWidget *parent) :
 	misc::setFixedSize(this);
 }
 
-EditTagDialog::~EditTagDialog()
+InputNewTagDialog::~InputNewTagDialog()
 {
 	delete ui;
 }
 
-QString EditTagDialog::text() const
+QString InputNewTagDialog::text() const
 {
 	return ui->lineEdit->text();
 }
