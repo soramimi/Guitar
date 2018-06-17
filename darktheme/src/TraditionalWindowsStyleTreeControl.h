@@ -1,5 +1,5 @@
-#ifndef LEGACYWINDOWSSTYLETREECONTROL_H
-#define LEGACYWINDOWSSTYLETREECONTROL_H
+#ifndef TRADITIONALWINDOWSSTYLETREECONTROL_H
+#define TRADITIONALWINDOWSSTYLETREECONTROL_H
 
 #include <QBrush>
 #include <QPixmap>
@@ -8,14 +8,14 @@
 class QPainter;
 class QWidget;
 
-class LegacyWindowsStyleTreeControl {
+class TraditionalWindowsStyleTreeControl {
 private:
 	QBrush br_branch;
 	QPixmap pm_plus;
 	QPixmap pm_minus;
 public:
-	LegacyWindowsStyleTreeControl();
+	TraditionalWindowsStyleTreeControl();
 	bool drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const;
 };
 
-#endif // LEGACYWINDOWSSTYLETREECONTROL_H
+#endif // TRADITIONALWINDOWSSTYLETREECONTROL_H

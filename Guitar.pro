@@ -173,7 +173,6 @@ SOURCES += \
 	src/MyImageViewWidget.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/ReflogWindow.cpp \
-	src/LegacyWindowsStyleTreeControl.cpp \
 	darktheme/src/DarkStyle.cpp \
 	darktheme/src/NinePatch.cpp \
 	src/Theme.cpp \
@@ -194,7 +193,11 @@ SOURCES += \
     src/LineEditDialog.cpp \
     src/SettingProgramsForm.cpp \
     src/InputNewTagDialog.cpp \
-    src/EditTagsDialog.cpp
+    src/EditTagsDialog.cpp \
+    darktheme/src/DarkStyle.cpp \
+    darktheme/src/NinePatch.cpp \
+    darktheme/src/StandardStyle.cpp \
+    darktheme/src/TraditionalWindowsStyleTreeControl.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -278,7 +281,6 @@ HEADERS  += \
 	src/MyImageViewWidget.h \
 	src/SetGlobalUserDialog.h \
 	src/ReflogWindow.h \
-	src/LegacyWindowsStyleTreeControl.h \
 	darktheme/src/DarkStyle.h \
 	darktheme/src/NinePatch.h \
 	src/Theme.h \
@@ -299,7 +301,11 @@ HEADERS  += \
     src/LineEditDialog.h \
     src/SettingProgramsForm.h \
     src/InputNewTagDialog.h \
-    src/EditTagsDialog.h
+    src/EditTagsDialog.h \
+    darktheme/src/DarkStyle.h \
+    darktheme/src/NinePatch.h \
+    darktheme/src/StandardStyle.h \
+    darktheme/src/TraditionalWindowsStyleTreeControl.h
 
 FORMS    += \
 	src/MainWindow.ui \

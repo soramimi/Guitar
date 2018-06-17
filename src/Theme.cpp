@@ -3,29 +3,6 @@
 #include <QRgb>
 #include <QProxyStyle>
 
-#include "LegacyWindowsStyleTreeControl.h"
-
-// StandardStyle
-
-class StandardStyle : public QProxyStyle {
-private:
-	LegacyWindowsStyleTreeControl legacy_windows_;
-public:
-	StandardStyle()
-		: QProxyStyle(0)
-	{
-	}
-	void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const
-	{
-		if (element == QStyle::PE_IndicatorBranch) {
-			if (legacy_windows_.drawPrimitive(element, option, painter, widget)) {
-				return;
-			}
-		}
-		QProxyStyle::drawPrimitive(element, option, painter, widget);
-	}
-};
-
 // AbstractTheme
 
 AbstractTheme::AbstractTheme()
@@ -39,6 +16,8 @@ AbstractTheme::~AbstractTheme()
 }
 
 // StandardTheme
+
+#include "../darktheme/src/StandardStyle.h"
 
 StandardTheme::StandardTheme()
 {

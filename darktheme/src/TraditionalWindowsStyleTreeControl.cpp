@@ -1,4 +1,4 @@
-#include "LegacyWindowsStyleTreeControl.h"
+#include "TraditionalWindowsStyleTreeControl.h"
 #include <QStyleOption>
 #include <QPainter>
 #include <QDebug>
@@ -27,7 +27,7 @@ static unsigned char minus_image[9][9] = {
 	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
 };
 
-LegacyWindowsStyleTreeControl::LegacyWindowsStyleTreeControl()
+TraditionalWindowsStyleTreeControl::TraditionalWindowsStyleTreeControl()
 {
 	// create brush
     {
@@ -60,7 +60,7 @@ LegacyWindowsStyleTreeControl::LegacyWindowsStyleTreeControl()
 	pm_minus = QPixmap::fromImage(img_minus);
 }
 
-bool LegacyWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *) const
+bool TraditionalWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *) const
 {
 	if (element == QStyle::PE_IndicatorBranch) {
 		int ox = option->rect.x() + option->rect.width() / 2;

@@ -1,19 +1,21 @@
 #ifndef DARKSTYLE_H
 #define DARKSTYLE_H
 
-#include "LegacyWindowsStyleTreeControl.h"
-
 #include <QPainter>
 #include <QProxyStyle>
 
 class DarkStyle : public QProxyStyle {
 public:
+private:
+	struct Private;
+	Private *m;
+
 	class ButtonImages {
 	public:
 		QImage im_normal;
 		QImage im_hover;
 	};
-private:
+
 	struct ScrollBarTextures {
 		QImage page_bg;
 		ButtonImages sub_line;
@@ -21,27 +23,12 @@ private:
 		ButtonImages slider;
 	};
 
-	ScrollBarTextures hsb;
-	ScrollBarTextures vsb;
-
-	QImage button_normal;
-	QImage button_press;
-
-	QPixmap progress_horz;
-	QPixmap progress_vert;
-
-	LegacyWindowsStyleTreeControl legacy_windows_;
-
-	static const int TEXTURE_CACHE_SIZE = 100;
-
-	struct TextureCacheItem {
-		QString key;
-		QPixmap pm;
-	};
-
-	static QString pixmapkey(QString const &name, QString const &role, QSize const &size);
-	static ButtonImages generateButtonImages(const QString &path);
+	QImage colorizeImage(QImage image);
+	QImage loadColorizedImage(const QString &path, const QString &role = QString());
+	ButtonImages generateButtonImages(const QString &path);
+	QImage generateHoverImage(const QImage &source);
 	QPixmap pixmapFromImage(QImage const &image, QSize size) const;
+	void loadImages();
 
 	QColor colorForSelectedFrame(QStyleOption const *opt) const;
 	QColor colorForItemView(QStyleOption const *opt) const;
@@ -51,12 +38,17 @@ private:
 	void drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, QWidget const *widget, bool deep) const;
 	void drawButton(QPainter *p, QStyleOption const *option) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
-	static void drawRaisedFrame(QPainter *p, const QRect &rect, const QPalette &palette);
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
+	QColor color(int level, int alpha = 255) const;
 public:
-	DarkStyle();
+	DarkStyle(QColor base_color = QColor());
+	~DarkStyle();
+
+	QColor getBaseColor();
+	void setBaseColor(QColor color);
+	void setScrollBarExtent(int n);
+
 	void polish(QPalette &palette);
-public:
 	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const;
 	QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const;
 	void drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const;
