@@ -173,8 +173,6 @@ SOURCES += \
 	src/MyImageViewWidget.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/ReflogWindow.cpp \
-	darktheme/src/DarkStyle.cpp \
-	darktheme/src/NinePatch.cpp \
 	src/Theme.cpp \
 	src/ApplicationGlobal.cpp \
     src/BlameWindow.cpp \
@@ -281,8 +279,6 @@ HEADERS  += \
 	src/MyImageViewWidget.h \
 	src/SetGlobalUserDialog.h \
 	src/ReflogWindow.h \
-	darktheme/src/DarkStyle.h \
-	darktheme/src/NinePatch.h \
 	src/Theme.h \
 	src/ApplicationGlobal.h \
     src/BlameWindow.h \

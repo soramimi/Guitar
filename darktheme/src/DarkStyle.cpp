@@ -12,6 +12,7 @@
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
 #include <QTableWidget>
+#include <QToolTip>
 #include <math.h>
 #include <stdint.h>
 
@@ -366,6 +367,9 @@ void DarkStyle::polish(QPalette &palette)
 	}
 	loadImages();
 	palette = QPalette(color(64));
+#ifndef Q_OS_WIN
+	palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
+#endif
 }
 
 void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
@@ -933,12 +937,15 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 			r.translate(0, -1);
 			p->fillRect(r, option->palette.color(QPalette::Dark));
 		}
-
 		return;
 	}
-//	if (pe == QStyle::PE_PanelItemViewRow) {
-
-//	}
+#ifndef Q_OS_WIN
+	if (pe == QStyle::PE_PanelTipLabel) {
+		// ツールチップの背景パネル
+		p->fillRect(option->rect, Qt::white);
+		return;
+	}
+#endif
 //	qDebug() << pe;
 	QProxyStyle::drawPrimitive(pe, option, p, widget);
 }
@@ -1249,7 +1256,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				drawSelectedMenuFrame(option, p, option->rect, widget, false);
 			}
 
-			if (checked) {
+			if (checked && !ignoreCheckMark) {
 				const qreal boxMargin = 3.5;
 				const qreal boxWidth = checkcol - 2 * boxMargin;
 				const int checkColHOffset = windowsItemHMargin + windowsItemFrame - 1;
