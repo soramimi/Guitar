@@ -513,6 +513,17 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 		QBrush br(gr);
 		p->fillRect(x, y, w, h, br);
 
+		if (option->state & State_HasFocus) {
+#if 1
+			p->setPen(QColor(80, 160, 255));
+			p->setBrush(Qt::NoBrush);
+			double m = 3.5;
+			p->drawRoundedRect(((QRectF)option->rect).adjusted(m, m, -m, -m), 4, 4);
+#else
+			p->fillRect(x, y, w, h, QColor(80, 160, 255, 32));
+#endif
+		}
+
 		p->restore();
 	}
 }
@@ -942,7 +953,8 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 #ifndef Q_OS_WIN
 	if (pe == QStyle::PE_PanelTipLabel) {
 		// ツールチップの背景パネル
-		p->fillRect(option->rect, Qt::white);
+		p->fillRect(option->rect, QColor(255, 255, 192));
+		drawFrame(p, option->rect, Qt::black, Qt::black);
 		return;
 	}
 #endif
