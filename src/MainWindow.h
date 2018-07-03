@@ -106,7 +106,6 @@ private:
 	void for_each_selected_files(std::function<void (const QString &)> fn);
 	bool editFile(const QString &path, const QString &title);
 	void updateCommitGraph();
-	void updateCurrentFilesList();
 	void showFileList(FilesListType files_list_type);
 
 	bool checkGitCommand();
@@ -288,6 +287,7 @@ public:
 	void deleteTags(const QStringList &tagnames);
 	QList<Git::Tag> queryTagList();
 	bool addTag(const QString &name);
+	void updateCurrentFilesList();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

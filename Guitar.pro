@@ -195,7 +195,8 @@ SOURCES += \
     darktheme/src/DarkStyle.cpp \
     darktheme/src/NinePatch.cpp \
     darktheme/src/StandardStyle.cpp \
-    darktheme/src/TraditionalWindowsStyleTreeControl.cpp
+    darktheme/src/TraditionalWindowsStyleTreeControl.cpp \
+    src/EditGitIgnoreDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -301,7 +302,8 @@ HEADERS  += \
     darktheme/src/DarkStyle.h \
     darktheme/src/NinePatch.h \
     darktheme/src/StandardStyle.h \
-    darktheme/src/TraditionalWindowsStyleTreeControl.h
+    darktheme/src/TraditionalWindowsStyleTreeControl.h \
+    src/EditGitIgnoreDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -347,7 +349,8 @@ FORMS    += \
     src/LineEditDialog.ui \
     src/SettingProgramsForm.ui \
     src/InputNewTagDialog.ui \
-    src/EditTagsDialog.ui
+    src/EditTagsDialog.ui \
+    src/EditGitIgnoreDialog.ui
 
 RESOURCES += \
     resources.qrc

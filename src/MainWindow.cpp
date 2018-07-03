@@ -9,6 +9,7 @@
 #include "EditTagsDialog.h"
 #include "WelcomeWizardDialog.h"
 #include "ui_MainWindow.h"
+#include "EditGitIgnoreDialog.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -2280,13 +2281,54 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					g->stage(path);
 				});
 				updateCurrentFilesList();
-			} else if (a == a_reset_file) {
+				return;
+			}
+			if (a == a_reset_file) {
 				QStringList paths;
 				for_each_selected_files([&](QString const &path){
 					paths.push_back(path);
 				});
 				resetFile(paths);
-			} else if (a == a_ignore) {
+				return;
+			}
+			if (a == a_ignore) {
+				QString gitignore_path = currentWorkingCopyDir() / ".gitignore";
+				if (items.size() == 1) {
+					QString file = getFilePath(items[0]);
+					EditGitIgnoreDialog dlg(this, gitignore_path, file);
+					if (dlg.exec() == QDialog::Accepted) {
+						QString appending = dlg.text();
+						if (!appending.isEmpty()) {
+							QString text;
+
+							QString path = gitignore_path;
+							path.replace('/', QDir::separator());
+
+							{
+								QFile file(path);
+								if (file.open(QFile::ReadOnly)) {
+									text += QString::fromUtf8(file.readAll());
+								}
+							}
+
+							size_t n = text.size();
+							if (n > 0 && text[(int)n - 1] != '\n') {
+								text += '\n'; // 最後に改行を追加
+							}
+
+							text += appending + '\n';
+
+							{
+								QFile file(path);
+								if (file.open(QFile::WriteOnly)) {
+									file.write(text.toUtf8());
+								}
+							}
+							updateCurrentFilesList();
+							return;
+						}
+					}
+				}
 				QString append;
 				for_each_selected_files([&](QString const &path){
 					if (path == ".gitignore") {
@@ -2295,11 +2337,12 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 						append += path + '\n';
 					}
 				});
-				QString gitignore_path = currentWorkingCopyDir() / ".gitignore";
 				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", append)) {
 					updateCurrentFilesList();
 				}
-			} else if (a == a_delete) {
+				return;
+			}
+			if (a == a_delete) {
 				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
 					for_each_selected_files([&](QString const &path){
 						g->removeFile(path);
@@ -2310,19 +2353,28 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					});
 					openRepository(false);
 				}
-			} else if (a == a_untrack) {
+				return;
+			}
+			if (a == a_untrack) {
 				if (askAreYouSureYouWantToRun("Untrack", "rm --cached")) {
 					for_each_selected_files([&](QString const &path){
 						g->rm_cached(path);
 					});
 					openRepository(false);
 				}
-			} else if (a == a_history) {
+				return;
+			}
+			if (a == a_history) {
 				execFileHistory(item);
-			} else if (a == a_blame) {
+				return;
+			}
+			if (a == a_blame) {
 				blame(item);
-			} else if (a == a_properties) {
+				return;
+			}
+			if (a == a_properties) {
 				execFilePropertyDialog(item);
+				return;
 			}
 		}
 	}
@@ -2806,7 +2858,9 @@ void MainWindow::on_action_edit_gitignore_triggered()
 {
 	QString dir = currentWorkingCopyDir();
 	QString path = dir / ".gitignore";
-	editFile(path, ".gitignore");
+	if (editFile(path, ".gitignore")) {
+		updateCurrentFilesList();
+	}
 }
 
 int MainWindow::selectedLogIndex() const
