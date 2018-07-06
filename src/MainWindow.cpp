@@ -4504,6 +4504,9 @@ void MainWindow::onLogIdle()
 						if (dlg.exec() == QDialog::Accepted) {
 							std::string text = dlg.text().toStdString() + '\n';
 							m->pty_process.writeInput(text.c_str(), text.size());
+						} else {
+							m->pty_process_ok = false;
+							stopPtyProcess();
 						}
 						return true;
 					}

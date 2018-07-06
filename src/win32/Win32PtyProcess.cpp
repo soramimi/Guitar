@@ -12,6 +12,7 @@ namespace {
 class OutputReaderThread : public QThread {
 	friend class ::Win32PtyProcess;
 private:
+public:
 	HANDLE handle;
 	std::deque<char> *output_queue = nullptr;
 	std::vector<char> *output_vector = nullptr;
@@ -225,10 +226,10 @@ bool Win32PtyProcess::wait(unsigned long time)
 
 void Win32PtyProcess::stop()
 {
-	// プロセススレッドと output reader スレッドの両方に停止要求
+	// 標準出力読み出しスレッドを強制終了しないとwinptyプロセスが終了してくれない
+	m->th_output_reader.terminate();
+	// プロセススレッド停止
 	requestInterruption();
-	m->th_output_reader.requestInterruption();
-	m->th_output_reader.wait();
 	wait();
 }
 
