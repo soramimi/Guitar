@@ -230,6 +230,7 @@ struct MainWindow::Private {
 
 
 	InteractionMode interaction_mode = InteractionMode::None;
+	bool interaction_canceled = false;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -633,6 +634,7 @@ void MainWindow::writeLog(char const *ptr, int len)
 {
 	ui->widget_log->write(ptr, len, false);
 	ui->widget_log->setChanged(false);
+	m->interaction_canceled = false;
 }
 
 void MainWindow::writeLog(const QString &str)
@@ -2327,8 +2329,11 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 							updateCurrentFilesList();
 							return;
 						}
+					} else {
+						return;
 					}
 				}
+
 				QString append;
 				for_each_selected_files([&](QString const &path){
 					if (path == ".gitignore") {
@@ -3430,18 +3435,20 @@ void MainWindow::clone()
 	}
 }
 
-void MainWindow::onCloneCompleted()
+void MainWindow::onCloneCompleted(bool success)
 {
-	saveRepositoryBookmark(m->temp_repo);
-	m->current_repo = m->temp_repo;
-	openRepository(true);
+	if (success) {
+		saveRepositoryBookmark(m->temp_repo);
+		m->current_repo = m->temp_repo;
+		openRepository(true);
+	}
 }
 
 void MainWindow::onPtyProcessCompleted()
 {
 	switch (m->pty_condition) {
 	case PtyCondition::Clone:
-		onCloneCompleted();
+		onCloneCompleted(m->pty_process_ok);
 		break;
 	}
 	m->pty_condition = PtyCondition::None;
@@ -4348,14 +4355,21 @@ void MainWindow::stopPtyProcess()
 	QDir::setCurrent(m->starting_dir);
 }
 
-void MainWindow::on_toolButton_stop_process_clicked()
+void MainWindow::abortPtyProcess()
 {
 	stopPtyProcess();
+	m->pty_process_ok = false;
+	m->interaction_canceled = true;
+}
+
+void MainWindow::on_toolButton_stop_process_clicked()
+{
+	abortPtyProcess();
 }
 
 void MainWindow::on_action_stop_process_triggered()
 {
-	stopPtyProcess();
+	abortPtyProcess();
 }
 
 void MainWindow::on_action_exit_triggered()
@@ -4445,15 +4459,17 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 		}
 	} else {
 		ui->widget_log->setFocus();
+		m->interaction_canceled = true;
 	}
 	m->interaction_mode = InteractionMode::Busy;
 }
 
 void MainWindow::onLogIdle()
 {
+	if (m->interaction_canceled) return;
 	if (m->interaction_mode != InteractionMode::None) return;
 
-	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)? ";
+	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)?";
 	static char const enter_passphrase[] = "Enter passphrase: ";
 
 	std::vector<char> vec;
@@ -4471,7 +4487,20 @@ void MainWindow::onLogIdle()
 			}
 		}
 		if (!line.empty()) {
-			if (line == are_you_sure_you_want_to_continue_connecting) {
+			auto Match = [&](char const *str){
+				int n = strlen(str);
+				if (strncmp(line.c_str(), str, n) == 0) {
+					char const *p = line.c_str() + n;
+					while (1) {
+						if (!*p) return true;
+						if (!isspace((unsigned char)*p)) break;
+						p++;
+					}
+				}
+				return false;
+			};
+
+			if (Match(are_you_sure_you_want_to_continue_connecting)) {
 				execAreYouSureYouWantToContinueConnectingDialog();
 				return;
 			}

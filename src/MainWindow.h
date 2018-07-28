@@ -190,9 +190,10 @@ private:
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const;
 	void startTimers();
-	void onCloneCompleted();
+	void onCloneCompleted(bool success);
 	bool fetch(GitPtr g);
 	void stopPtyProcess();
+	void abortPtyProcess();
 	void setNetworkingCommandsEnabled(bool f);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
 	bool execSetGlobalUserDialog();

@@ -11,6 +11,9 @@ EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString gitignore_p
 	, gitignore_path(gitignore_path)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 
 	QFileInfo info(file);
 

@@ -1,11 +1,14 @@
 #include "AreYouSureYouWantToContinueConnectingDialog.h"
 #include "ui_AreYouSureYouWantToContinueConnectingDialog.h"
 
-AreYouSureYouWantToContinueConnectingDialog::AreYouSureYouWantToContinueConnectingDialog(QWidget *parent) :
-	QDialog(parent),
-	ui(new Ui::AreYouSureYouWantToContinueConnectingDialog)
+AreYouSureYouWantToContinueConnectingDialog::AreYouSureYouWantToContinueConnectingDialog(QWidget *parent)
+	: QDialog(parent)
+	, ui(new Ui::AreYouSureYouWantToContinueConnectingDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 }
 
 AreYouSureYouWantToContinueConnectingDialog::~AreYouSureYouWantToContinueConnectingDialog()
