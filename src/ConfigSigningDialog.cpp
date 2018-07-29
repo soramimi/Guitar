@@ -7,6 +7,9 @@ ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool l
 	ui(new Ui::ConfigSigningDialog)
 {
 	ui->setupUi(this);
+	Qt::WindowFlags flags = windowFlags();
+	flags &= ~Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags);
 	mainwindow_ = mw;
 
 	if (!mainwindow()->git()->isValidWorkingCopy()) {
