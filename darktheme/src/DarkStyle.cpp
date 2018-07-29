@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
+#include <QStyleOptionFrameV3>
 #include <QTableWidget>
 #include <QToolTip>
 #include <math.h>
@@ -646,11 +647,11 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 					int verticalAlignment = styleHint(SH_GroupBox_TextLabelVerticalAlignment, groupBox, widget);
 					if (groupBox->text.size()) {
 						topHeight = groupBox->fontMetrics.height();
-						if (verticalAlignment & Qt::AlignVCenter) {
+//                        if (verticalAlignment & Qt::AlignVCenter) {
 							topMargin = topHeight / 2;
-						} else if (verticalAlignment & Qt::AlignTop) {
-							topMargin = -topHeight/2;
-						}
+//						} else if (verticalAlignment & Qt::AlignTop) {
+//							topMargin = -topHeight/2;
+//						}
 					} else {
 						topHeight = groupBox->fontMetrics.height();
 						noLabelMargin = topHeight / 2;
@@ -725,7 +726,7 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
-//	qDebug() << pe;
+//    qDebug() << pe;
 #ifdef Q_OS_LINUX
 	if (pe == PE_FrameFocusRect) {
 		QColor color(64, 128, 255);
@@ -854,17 +855,22 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 	if (pe == PE_FrameGroupBox) {
 #if 0
-		QRect r = option->rect;
-		r = r.adjusted(1, 1, -1, -1);
-		drawFrame(p, r, option->palette.color(QPalette::Light), option->palette.color(QPalette::Light));
-		r = r.adjusted(-1, -1, -1, -1);
-		drawFrame(p, r, option->palette.color(QPalette::Dark), option->palette.color(QPalette::Dark));
+//        p->save();
+//        p->setRenderHint(QPainter::Antialiasing);
+        QRectF r = option->rect;
+        qDebug() << r;
+//        r = r.adjusted(19.5, 19.5, -18.5, -18.5);
+        p->setPen(option->palette.color(QPalette::Light));
+        p->fillRect(r, Qt::red);
+//        r = r.adjusted(-1, -1, -1, -1);
+//        p->setPen(option->palette.color(QPalette::Dark));
+//        p->drawRoundedRect(r, 5, 5);
+//        p->restore();
 #else
 		p->save();
-
 		p->setRenderHint(QPainter::Antialiasing);
 		QRectF r = option->rect;
-		r = r.adjusted(1.5, 1.5, -0.5, -0.5);
+        r = r.adjusted(1.5, 1.5, -0.5, -0.5);
 		p->setPen(option->palette.color(QPalette::Light));
 		p->drawRoundedRect(r, 5, 5);
 		r = r.adjusted(-1, -1, -1, -1);
@@ -964,7 +970,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
-//	qDebug() << ce;
+//    qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
 #ifdef Q_OS_MAC
     if (ce == CE_ToolBar) {
@@ -1135,17 +1141,39 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 #endif
 	if (ce == CE_ShapedFrame) {
-		bool raised = (option->state & State_Raised);
-		bool sunken = (option->state & State_Sunken);
+		if (QStyleOptionFrameV3 const *o = qstyleoption_cast<QStyleOptionFrameV3 const *>(option)) {
+			int lw = o->lineWidth;
+			if (lw > 0) {
+				QRect r = option->rect;
+				if (r.width() > r.height()) {
+					int z1 = r.height() / 2;
+					r = r.adjusted(z1, 0, -z1, 0);
+					r = QRect(r.x(), r.y() + z1, r.width(), 0);
+				} else {
+					int z1 = r.width() / 2;
+					r = r.adjusted(0, z1, 0, -z1);
+					r = QRect(r.x() + z1, r.y(), 0, r.height());
+				}
+				int z2 = o->midLineWidth / 2;
+				int z3 = o->midLineWidth - z2;
+				r = r.adjusted(-z2, -z2, z3, z3);
 
-//		if (qobject_cast<QAbstractItemView const *>(widget)) {
-//			p->fillRect(option->rect, option->palette.color(QPalette::Window));
-//		}
+				QColor color_topleft     = option->palette.color(QPalette::Dark);
+				QColor color_bottomright = option->palette.color(QPalette::Light);
 
-		if (raised) {
-			drawFrame(p, option->rect, option->palette.color(QPalette::Light), option->palette.color(QPalette::Dark));
-		} else if (sunken) {
-			drawFrame(p, option->rect, option->palette.color(QPalette::Dark), option->palette.color(QPalette::Light));
+				if (option->state & State_Raised) {
+					std::swap(color_topleft, color_bottomright);
+				}
+
+				int x0 = r.x();
+				int y0 = r.y();
+				int x1 = x0 + r.width();
+				int y1 = y0 + r.height();
+				p->fillRect(x0 - lw, y0 - lw, x1 - x0 + lw, lw, color_topleft);
+				p->fillRect(x0 - lw, y0 - lw, lw, y1 - y0 + lw, color_topleft);
+				p->fillRect(x0, y1, x1 - x0 + lw, lw, color_bottomright);
+				p->fillRect(x1, y0, lw, y1 - y0 + lw, color_bottomright);
+			}
 		}
 		return;
 	}
@@ -1821,6 +1849,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const
 {
+//    qDebug() << cc;
 	if (cc == QStyle::CC_ComboBox) {
 		if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
 			SubControls sub = option->subControls;
@@ -2091,8 +2120,8 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					}
 					region -= finalRect;
 				}
-				p->setClipRegion(region);
-				drawPrimitive(PE_FrameGroupBox, &frame, p, widget);
+                p->setClipRegion(region);
+                drawPrimitive(PE_FrameGroupBox, &frame, p, widget);
 				p->restore();
 			}
 			// Draw title
