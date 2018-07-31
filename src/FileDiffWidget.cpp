@@ -15,6 +15,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>
+#include <QStyle>
 #include <QTextCodec>
 
 enum {
