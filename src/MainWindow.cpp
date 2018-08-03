@@ -4047,15 +4047,11 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 		NamedCommitList named_commits = namedCommitItems(Branches);
 		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
-			QString name = item.name;
-			int i = name.lastIndexOf('/');
-			if (i < 0) {
-				if (name == "HEAD") continue;
-				if (item.id == commit->commit_id) {
-					current_local_branch_names.push_back(name);
-				}
-				all_local_branch_names.push_back(name);
+			if (item.name == "HEAD") continue;
+			if (item.id == commit->commit_id) {
+				current_local_branch_names.push_back(item.name);
 			}
+			all_local_branch_names.push_back(item.name);
 		}
 	}
 
