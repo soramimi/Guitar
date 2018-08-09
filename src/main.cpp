@@ -14,6 +14,9 @@
 #include "common/misc.h"
 #include "../darktheme/src/DarkStyle.h"
 
+#include <QStandardPaths>
+#include "common/joinpath.h"
+
 ApplicationGlobal *global = 0;
 
 ApplicationSettings ApplicationSettings::defaultSettings()
@@ -25,10 +28,8 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 
 static bool isHighDpiScalingEnabled(int argc, char *argv[])
 {
-	QApplication dummy(argc, argv);
-	dummy.setOrganizationName(ORGANIZTION_NAME);
-	dummy.setApplicationName(global->application_name);
-	MySettings s;
+	QSettings s(global->config_file_path, QSettings::IniFormat);
+
 	s.beginGroup("UI");
 	QVariant v = s.value("EnableHighDpiScaling");
 	return v.isNull() || v.toBool();
@@ -40,7 +41,14 @@ int main(int argc, char *argv[])
 
 	ApplicationGlobal g;
 	global = &g;
+
 	global->application_name = APPLICATION_NAME;
+	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+	global->application_data_dir = global->generic_config_location / ORGANIZTION_NAME / global->application_name;
+	global->config_file_path = joinpath(global->application_data_dir, global->application_name + ".ini");
+	if (!QFileInfo(global->application_data_dir).isDir()) {
+		QDir().mkpath(global->application_data_dir);
+	}
 
 	if (isHighDpiScalingEnabled(argc, argv)){
 #if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
@@ -82,7 +90,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	global->application_data_dir = makeApplicationDataDir();
 	if (global->application_data_dir.isEmpty()) {
 		QMessageBox::warning(0, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
