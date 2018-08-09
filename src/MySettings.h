@@ -15,6 +15,4 @@ public slots:
 	
 };
 
-//QString makeApplicationDataDir();
-
 #endif // MYSETTINGS_H

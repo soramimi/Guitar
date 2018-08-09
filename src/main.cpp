@@ -28,8 +28,7 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 
 static bool isHighDpiScalingEnabled(int argc, char *argv[])
 {
-	QSettings s(global->config_file_path, QSettings::IniFormat);
-
+	MySettings s;
 	s.beginGroup("UI");
 	QVariant v = s.value("EnableHighDpiScaling");
 	return v.isNull() || v.toBool();
@@ -43,7 +42,11 @@ int main(int argc, char *argv[])
 	global = &g;
 
 	global->application_name = APPLICATION_NAME;
-	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+#ifdef Q_OS_WIN
+	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+#else
+	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+#endif
 	global->application_data_dir = global->generic_config_location / ORGANIZTION_NAME / global->application_name;
 	global->config_file_path = joinpath(global->application_data_dir, global->application_name + ".ini");
 	if (!QFileInfo(global->application_data_dir).isDir()) {
