@@ -41,16 +41,13 @@ int main(int argc, char *argv[])
 	ApplicationGlobal g;
 	global = &g;
 
+	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
-#ifdef Q_OS_WIN
-	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-#else
-	global->generic_config_location = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-#endif
-	global->application_data_dir = global->generic_config_location / ORGANIZTION_NAME / global->application_name;
-	global->config_file_path = joinpath(global->application_data_dir, global->application_name + ".ini");
-	if (!QFileInfo(global->application_data_dir).isDir()) {
-		QDir().mkpath(global->application_data_dir);
+	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
+	global->config_file_path = joinpath(global->app_config_dir, global->application_name + ".ini");
+	if (!QFileInfo(global->app_config_dir).isDir()) {
+		QDir().mkpath(global->app_config_dir);
 	}
 
 	if (isHighDpiScalingEnabled(argc, argv)){
@@ -62,7 +59,7 @@ int main(int argc, char *argv[])
 	}
 
 	QApplication a(argc, argv);
-	a.setOrganizationName(ORGANIZTION_NAME);
+	a.setOrganizationName(global->organization_name);
 	a.setApplicationName(global->application_name);
 
 	{
@@ -93,7 +90,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (global->application_data_dir.isEmpty()) {
+	if (global->app_config_dir.isEmpty()) {
 		QMessageBox::warning(0, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
 	}

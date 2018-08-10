@@ -3,7 +3,7 @@
 
 #include <QString>
 
-#define ORGANIZTION_NAME "soramimi.jp"
+#define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
 
 struct ApplicationSettings {

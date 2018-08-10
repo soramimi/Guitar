@@ -1799,7 +1799,7 @@ void MainWindow::openSelectedRepository()
 
 QString MainWindow::getBookmarksFilePath() const
 {
-	return global->application_data_dir / "bookmarks.xml";
+	return global->app_config_dir / "bookmarks.xml";
 }
 
 
