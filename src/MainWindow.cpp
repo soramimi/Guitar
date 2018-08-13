@@ -632,6 +632,7 @@ void MainWindow::onLogVisibilityChanged()
 
 void MainWindow::writeLog(char const *ptr, int len)
 {
+	ui->widget_log->logicalMoveToBottom();
 	ui->widget_log->write(ptr, len, false);
 	ui->widget_log->setChanged(false);
 	m->interaction_canceled = false;

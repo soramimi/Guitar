@@ -2102,10 +2102,24 @@ bool AbstractCharacterBasedApplication::isBottom() const
 	return false;
 }
 
-void AbstractCharacterBasedApplication::moveToBottom()
+void AbstractCharacterBasedApplication::moveToTop()
 {
 	if (isSingleLineMode()) return;
 
+	deselect();
+
+	cx()->current_row = 0;
+	cx()->current_col = 0;
+	cx()->current_col_hint = 0;
+	cx()->scroll_row_pos = 0;
+	scrollToTop();
+	invalidateArea();
+	clearParsedLine();
+	updateVisibility(true, false, true);
+}
+
+void AbstractCharacterBasedApplication::logicalMoveToBottom()
+{
 	deselect();
 
 	cx()->current_row = documentLines();
@@ -2119,6 +2133,14 @@ void AbstractCharacterBasedApplication::moveToBottom()
 		cx()->current_col_hint = col;
 	}
 	cx()->scroll_row_pos = scrollBottomLimit();
+}
+
+void AbstractCharacterBasedApplication::moveToBottom()
+{
+	if (isSingleLineMode()) return;
+
+	logicalMoveToBottom();
+
 	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
@@ -2282,6 +2304,7 @@ void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
 void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 {
 	if (isTerminalMode()) {
+		moveToBottom();
 		if (c == 0x1b || m->escape_sequence.isActive()) {
 			m->escape_sequence.write(c);
 			return;
@@ -2493,9 +2516,17 @@ void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 	} else if (c == Qt::Key_PageDown) {
 		write(EscapeCode::PageDown, true);
 	} else if (c == Qt::Key_Home) {
-		write(EscapeCode::Home, true);
+		if (isControlModifierPressed()) {
+			moveToTop();
+		} else {
+			write(EscapeCode::Home, true);
+		}
 	} else if (c == Qt::Key_End) {
-		write(EscapeCode::End, true);
+		if (isControlModifierPressed()) {
+			moveToBottom();
+		} else {
+			write(EscapeCode::End, true);
+		}
 	} else if (c == Qt::Key_Return || c == Qt::Key_Enter) {
 		write('\n', true);
 	} else if (c == Qt::Key_Escape) {

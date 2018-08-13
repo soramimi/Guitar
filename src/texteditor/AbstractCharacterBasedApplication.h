@@ -390,6 +390,7 @@ public:
 	bool isOverwriteMode() const;
 	void setTerminalMode(bool f);
 	bool isTerminalMode() const;
+	void moveToTop();
 	void moveToBottom();
 	bool isBottom() const;
 	void setLineMargin(int n);
@@ -407,6 +408,7 @@ public:
 	void retrieveLastText(std::vector<char> *out, int maxlen) const;
 	bool isChanged() const;
 	void setChanged(bool f);
+	void logicalMoveToBottom();
 protected:
 	void write_(const char *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);
