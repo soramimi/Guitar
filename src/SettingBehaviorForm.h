@@ -25,6 +25,7 @@ public:
 	void exchange(bool save);
 private slots:
 	void on_pushButton_signing_policy_clicked();
+	void on_pushButton_browse_default_working_dir_clicked();
 };
 
 #endif // SETTINGBEHAVIORFORM_H

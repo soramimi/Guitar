@@ -76,7 +76,6 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-	STRING_VALUE("Theme", theme);
 	BOOL_VALUE("EnableHighDpiScaling", enable_high_dpi_scaling);
 	s.endGroup();
 
@@ -106,7 +105,6 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-	s.setValue("Theme", as->theme);
 	s.setValue("EnableHighDpiScaling", as->enable_high_dpi_scaling);
 	s.endGroup();
 

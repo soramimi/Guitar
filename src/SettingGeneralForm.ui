@@ -7,13 +7,59 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>325</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>General</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Language</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="ReadOnlyLineEdit" name="lineEdit_language"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_change_language">
+          <property name="text">
+           <string>Change Language...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="ReadOnlyLineEdit" name="lineEdit_theme"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_change_theme">
+          <property name="text">
+           <string>Change Theme...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="QCheckBox" name="checkBox_save_window_pos">
      <property name="text">
@@ -29,55 +75,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>Default working folder</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QLineEdit" name="lineEdit_default_working_dir"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_browse_default_working_dir">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Theme</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QRadioButton" name="radioButton_theme_standard">
-        <property name="text">
-         <string>Standard</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="radioButton_theme_dark">
-        <property name="text">
-         <string>Dark</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>(Changes are applied at next run)</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -90,8 +87,30 @@
      </property>
     </spacer>
    </item>
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>(Changes are applied at next run)</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>lineEdit_language</tabstop>
+  <tabstop>pushButton_change_language</tabstop>
+  <tabstop>lineEdit_theme</tabstop>
+  <tabstop>pushButton_change_theme</tabstop>
+  <tabstop>checkBox_save_window_pos</tabstop>
+  <tabstop>checkBox_enable_high_dpi_scaling</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

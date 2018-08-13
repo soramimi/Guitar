@@ -13,7 +13,7 @@ struct ApplicationSettings {
 	QString default_working_dir;
 	QString proxy_type;
 	QString proxy_server;
-	QString theme;
+//	QString theme;
 	bool get_committer_icon = false;
 	bool remember_and_restore_window_position = false;
 	bool enable_high_dpi_scaling = true;

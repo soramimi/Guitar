@@ -17,20 +17,20 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Proxy Server</string>
+      <string>Proxy server</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QRadioButton" name="radioButton_no_proxy">
         <property name="text">
-         <string>No Proxy</string>
+         <string>No proxy</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QRadioButton" name="radioButton_auto_detect">
         <property name="text">
-         <string>Auto Detect</string>
+         <string>Auto detect</string>
         </property>
        </widget>
       </item>

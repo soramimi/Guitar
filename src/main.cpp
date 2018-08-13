@@ -65,12 +65,14 @@ int main(int argc, char *argv[])
 	{
 		MySettings s;
 		s.beginGroup("UI");
-		QString theme = s.value("Theme").toString();
-		if (theme.compare("dark", Qt::CaseInsensitive) == 0) {
+		global->language_id = s.value("Language").toString();
+		global->theme_id = s.value("Theme").toString();
+		if (global->theme_id.compare("dark", Qt::CaseInsensitive) == 0) {
 			global->theme = createDarkTheme();
 		} else {
 			global->theme = createStandardTheme();
 		}
+		s.endGroup();
 	}
 
 	QApplication::setStyle(global->theme->newStyle());
@@ -97,13 +99,17 @@ int main(int argc, char *argv[])
 
 	QTranslator translator;
 	{
+		if (global->language_id.isEmpty() || global->language_id == "en") {
+			// thru
+		} else {
 #if defined(Q_OS_MACX)
-		QString path = "../Resources/Guitar_ja";
+			QString path = "../Resources/Guitar_" + lang_id;
 #else
-		QString path = "Guitar_ja";
+			QString path = "Guitar_" + global->language_id;
 #endif
-		translator.load(path, a.applicationDirPath());
-		a.installTranslator(&translator);
+			translator.load(path, a.applicationDirPath());
+			a.installTranslator(&translator);
+		}
 	}
 
 	MainWindow w;
