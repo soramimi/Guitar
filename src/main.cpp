@@ -26,7 +26,7 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	return s;
 }
 
-static bool isHighDpiScalingEnabled(int argc, char *argv[])
+static bool isHighDpiScalingEnabled()
 {
 	MySettings s;
 	s.beginGroup("UI");
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 		QDir().mkpath(global->app_config_dir);
 	}
 
-	if (isHighDpiScalingEnabled(argc, argv)){
+	if (isHighDpiScalingEnabled()){
 #if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
 		qDebug() << "High DPI scaling is not supported";
 #else

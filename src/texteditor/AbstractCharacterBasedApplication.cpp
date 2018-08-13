@@ -92,7 +92,6 @@ struct AbstractCharacterBasedApplication::Private {
 	int parsed_col_index = -1;
 	bool parsed_for_edit = false;
 	QByteArray parsed_line;
-//	QList<Document::CharAttr_> parsed_atts;
 	std::vector<uint32_t> prepared_current_line;
 	QList<Document::CharAttr_> syntax_table;
 	bool dialog_mode = false;
@@ -197,7 +196,7 @@ void AbstractCharacterBasedApplication::setChanged(bool f)
 	m->is_changed = f;
 }
 
-int AbstractCharacterBasedApplication::leftMargin() const
+int AbstractCharacterBasedApplication::leftMargin_() const
 {
 	return m->left_margin;
 }
@@ -240,7 +239,7 @@ void AbstractCharacterBasedApplication::makeBuffer()
 void AbstractCharacterBasedApplication::layoutEditor()
 {
 	makeBuffer();
-	editor_cx->viewport_org_x = leftMargin();
+	editor_cx->viewport_org_x = leftMargin_();
 	editor_cx->viewport_org_y = m->header_line;
 	editor_cx->viewport_width = screenWidth() - cx()->viewport_org_x;
 	editor_cx->viewport_height = screenHeight() - (m->header_line + m->footer_line);
@@ -265,7 +264,6 @@ int AbstractCharacterBasedApplication::charWidth(uint32_t c)
 QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Line const &line, int tab_span, int anchor_a, int anchor_b) const
 {
 	QByteArray ba;
-//	QList<Document::CharAttr_> const &attslist = line.atts;
 	if (m->text_codec) {
 		ba = m->text_codec->toUnicode(line.text).toUtf8();
 	} else {
@@ -386,61 +384,30 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			if ((anchor_a >= 0 || anchor_b >= 0) && anchor_a != anchor_b) {
 				if (!flag_a && col >= anchor_a) {
 					Flush(line.byte_offset + offset, &next_offset);
-//					offset = u8.offset();
-//					pos = current_pos;
 					flag_a = true;
 				}
 				if (!flag_b && col >= anchor_b) {
 					Flush(line.byte_offset + offset, &next_offset);
-//					offset = u8.offset();
-//					pos = current_pos;
 					flag_b = true;
 				}
-//			} else {
-//				curr_offset = u8.offset();
 			}
-//			offset += u8.offset();
-//			current_pos++;
 			return true;
 		});
 	}
 	Flush(line.byte_offset + offset, &next_offset);
-//	if (!vec.empty()) {
-//		ushort const *left = &vec[0];
-//		ushort const *right = left + vec.size();
-//		while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
-//		size_t o = line.byte_offset + offset;
-//		while (left < right) {
-//			size_t n = right - left;
-//			if (next_offset != -1) {
-//				size_t n2 = next_offset - o;
-//				if (n > n2) n = n2;
-//			}
-//			int atts = Color(o, &next_offset);
-//			res.push_back(FormattedLine(QString::fromUtf16(left, n), atts));
-////			if (next_offset != -1) {
-////				size_t n2 = next_offset - o;
-////				if (n > n2) n = n2;
-////			}
-//			left += n;
-//		}
-//	}
 	return res;
 }
 
 void AbstractCharacterBasedApplication::fetchCurrentLine() const
 {
 	QByteArray line;
-	QList<Document::CharAttr_> atts;
 	const int row = cx()->current_row;
 	int lines = documentLines();
 	if (row >= 0 && row < lines) {
 		line = cx()->engine->document.lines[row].text;
-//		atts = cx()->engine->document.lines[row].atts;
 	}
 	m->parsed_row_index = row;
 	m->parsed_line = line;
-//	m->parsed_atts = atts;
 }
 
 void AbstractCharacterBasedApplication::clearParsedLine()
@@ -448,7 +415,6 @@ void AbstractCharacterBasedApplication::clearParsedLine()
 	m->parsed_row_index = -1;
 	m->parsed_for_edit = false;
 	m->parsed_line.clear();
-//	m->parsed_atts.clear();
 }
 
 int AbstractCharacterBasedApplication::cursorX() const
@@ -816,10 +782,7 @@ int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &lin
 	return x;
 }
 
-int AbstractCharacterBasedApplication::xScrollPos() const
-{
-	return cx()->scroll_col_pos;
-}
+
 
 void AbstractCharacterBasedApplication::clearRect(int x, int y, int w, int h)
 {
@@ -878,6 +841,8 @@ void AbstractCharacterBasedApplication::restorePos()
 
 void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll)
 {
+	if (cx()->current_row == row) return;
+
 	if (isShiftModifierPressed()) {
 		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
@@ -896,6 +861,11 @@ void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll)
 
 void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll)
 {
+	if (cx()->current_col == col) {
+		cx()->current_col_hint = col;
+		return;
+	}
+
 	if (isShiftModifierPressed()) {
 		if (selection_anchor_0.enabled == SelectionAnchor::No) {
 			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
@@ -913,10 +883,10 @@ void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll)
 	}
 }
 
-void AbstractCharacterBasedApplication::setCursorPos(int row, int col, bool shift)
+void AbstractCharacterBasedApplication::setCursorPos(int row, int col)
 {
-	setCursorRow(row, shift);
-	setCursorCol(col, shift);
+	setCursorRow(row, false);
+	setCursorCol(col, false);
 }
 
 void AbstractCharacterBasedApplication::setCursorColByIndex(std::vector<uint32_t> const &vec, int col_index)
@@ -1656,6 +1626,31 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	updateVisibility(true, true, true);
 }
 
+void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
+{
+	out->clear();
+	std::vector<uint32_t> const *line = &m->prepared_current_line;
+	int x = 0;
+	while (1) {
+		size_t index = out->size();
+		out->push_back(x);
+		int n;
+		int c = -1;
+		if (index < line->size()) {
+			c = line->at(index);
+		}
+		if (c == '\r' || c == '\n' || c == -1) {
+			break;
+		} else if (c == '\t') {
+			int z = nextTabStop(x);
+			n = z - x;
+		} else {
+			n = charWidth(c);
+		}
+		x += n;
+	}
+}
+
 void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 {
 	if (!cx()->engine) {
@@ -1663,36 +1658,32 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 	}
 
 	parseLine(&m->prepared_current_line, 0, false);
-	std::vector<uint32_t> const *line = &m->prepared_current_line;
 
 	int index = 0;
 	int char_span = 0;
 	int col = cx()->current_col_hint;
+
 	{
-		int x = 0;
-		while (1) {
-			int n;
-			int c = -1;
-			if (index < (int)line->size()) {
-				c = line->at(index);
+		std::vector<int> pts;
+		makeColumnPosList(&pts);
+		if (pts.size() > 1) {
+			int newcol = pts.back();
+			int newindex = pts.size() - 1;
+			for (size_t i = 0; i + 1 < pts.size(); i++) {
+				int x = pts[i];
+				if (x <= col && col < pts[i + 1]) {
+					char_span = pts[i + 1] - pts[i];
+					newindex = i;
+					newcol = x;
+					break;
+				}
 			}
-			char_span = 0;
-			if (c == '\r' || c == '\n' || c == -1) {
-				col = x;
-				break;
-			} else if (c == '\t') {
-				int z = nextTabStop(x);
-				n = z - x;
-			} else {
-				n = charWidth(c);
-				char_span = n;
-			}
-			if (x <= col && col < x + n) {
-				col = x;
-				break;
-			}
-			x += n;
-			index++;
+			index = newindex;
+			col = newcol;
+		} else if (pts.size() > 0) {
+			col = pts.back();
+		} else {
+			col = 0;
 		}
 	}
 
@@ -1821,7 +1812,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 		return editor_cx->engine->document.lines[index];
 	};
 	int rightpadding = 2;
-	int left_margin = leftMargin();
+	int left_margin = editor_cx->viewport_org_x;
 	int num = 1;
 	size_t offset = 0;
 	for (int i = 0; i < editor_cx->viewport_height; i++) {

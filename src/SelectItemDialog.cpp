@@ -47,7 +47,7 @@ SelectItemDialog::Item SelectItemDialog::item() const
 	return ret;
 }
 
-void SelectItemDialog::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
+void SelectItemDialog::on_listWidget_itemDoubleClicked(QListWidgetItem *)
 {
 	done(Accepted);
 }

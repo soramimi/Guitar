@@ -169,39 +169,6 @@ QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
 	return QPoint(x, y);
 }
 
-void TextEditorWidget::moveCursor(QPoint const &pt, bool by_mouse, bool auto_scroll)
-{
-	if (!isSingleLineMode()) {
-		int row = pt.y() - cx()->viewport_org_y + cx()->scroll_row_pos;
-		if (row < 0) {
-			row = 0;
-		} else {
-			int maxrow = cx()->engine->document.lines.size();
-			maxrow = maxrow > 0 ? (maxrow - 1) : 0;
-			if (row > maxrow) {
-				row = maxrow;
-			}
-		}
-		setCursorRow(row, auto_scroll);
-	}
-	{
-		int col = pt.x();
-		if (col < 0) {
-			col = 0;
-		} else {
-			fetchCurrentLine();
-			QByteArray line = parsedLine();
-			int maxcol = calcVisualWidth(Document::Line(line));
-			if (col > maxcol) {
-				col = maxcol;
-			}
-		}
-		setCursorCol(col, auto_scroll);
-	}
-	clearParsedLine();
-	updateVisibility(!by_mouse, true, auto_scroll);
-}
-
 void TextEditorWidget::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->scroll_bar_v = vsb;
@@ -487,7 +454,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	paintScreen(&pr);
 
 	if (renderingMode() == DecoratedMode) {
-		int linenum_width = leftMargin() * latin1Width();
+		int linenum_width = editor_cx->viewport_org_x * latin1Width();
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};
@@ -537,6 +504,58 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	}
 }
 
+void TextEditorWidget::moveCursorByMouse()
+{
+	QPoint mousepos = mapFromGlobal(QCursor::pos());
+	int row, col;
+	{
+		QPoint pos = mapFromPixel(mousepos);
+		row = pos.y() + cx()->scroll_row_pos - cx()->viewport_org_y;
+		col = pos.x() + cx()->scroll_col_pos - cx()->viewport_org_x;
+	}
+
+	// row
+	if (!isSingleLineMode()) {
+		if (row < 0) {
+			row = 0;
+		} else {
+			int maxrow = cx()->engine->document.lines.size();
+			maxrow = maxrow > 0 ? (maxrow - 1) : 0;
+			if (row > maxrow) {
+				row = maxrow;
+			}
+		}
+	}
+	setCursorRow(row, false);
+
+	// column
+	{
+		if (col < 0) {
+			col = 0;
+		} else {
+			int mouse_x = mousepos.x() - cx()->viewport_org_x * m->latin1_width;
+			parseLine(nullptr, 0, true);
+			std::vector<int> pts;
+			makeColumnPosList(&pts);
+			int newcol = 0;
+			int distance = -1;
+			for (size_t i = 0; i < pts.size(); i++) {
+				int x = pts[i] * m->latin1_width;
+				int d = abs(x - mouse_x);
+				if (distance < 0 || d < distance) {
+					distance = d;
+					newcol = x;
+				}
+			}
+			col = newcol / m->latin1_width;
+		}
+	}
+	setCursorCol(col, false);
+
+	clearParsedLine();
+	updateVisibility(false, true, false);
+}
+
 void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::RightButton) return;
@@ -552,10 +571,7 @@ void TextEditorWidget::mousePressEvent(QMouseEvent *event)
 		}
 	}
 
-	QPoint pos = mapFromGlobal(QCursor::pos());
-	pos = mapFromPixel(pos);
-	pos.rx() += xScrollPos() - leftMargin();
-	moveCursor(pos, true, false);
+	moveCursorByMouse();
 
 	if (shift) {
 		setSelectionAnchor(SelectionAnchor::EnabledEasy, false, false);
@@ -578,10 +594,7 @@ void TextEditorWidget::mouseMoveEvent(QMouseEvent * /*event*/)
 {
 	savePos();
 
-	QPoint pos = mapFromGlobal(QCursor::pos());
-	pos = mapFromPixel(pos);
-	pos.rx() += xScrollPos() - leftMargin();
-	moveCursor(pos, true, false);
+	moveCursorByMouse();
 
 	setSelectionAnchor(SelectionAnchor::EnabledEasy, true, false);
 

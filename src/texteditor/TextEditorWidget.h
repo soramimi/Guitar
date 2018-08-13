@@ -50,6 +50,7 @@ private:
 //QColor colorForIndex(int index, bool foreground);
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 	void internalUpdateScrollBar();
+	void moveCursorByMouse();
 protected:
 	void paintEvent(QPaintEvent *);
 	void mousePressEvent(QMouseEvent *event);
@@ -82,7 +83,6 @@ public:
 	QPoint mapFromPixel(const QPoint &pt);
 	QPoint mapToPixel(const QPoint &pt);
 
-	void moveCursor(const QPoint &pt, bool by_mouse, bool auto_scroll);
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const;
 	void inputMethodEvent(QInputMethodEvent *e);
 	void refrectScrollBar();

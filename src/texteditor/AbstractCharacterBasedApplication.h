@@ -268,8 +268,7 @@ protected:
 
 	int calcVisualWidth(Document::Line const &line) const;
 
-	int xScrollPos() const;
-	int leftMargin() const;
+	int leftMargin_() const;
 
 	void makeBuffer();
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
@@ -318,7 +317,7 @@ protected:
 	QByteArray parsedLine() const;
 	void setCursorRow(int row, bool auto_scroll = true);
 	void setCursorCol(int col, bool auto_scroll = true);
-	void setCursorPos(int row, int col, bool shift = false);
+	void setCursorPos(int row, int col);
 	void setCursorColByIndex(const std::vector<uint32_t> &vec, int col_index);
 	int nextTabStop(int x) const;
 	int scrollBottomLimit() const;
@@ -411,6 +410,7 @@ public:
 protected:
 	void write_(const char *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);
+	void makeColumnPosList(std::vector<int> *out);
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

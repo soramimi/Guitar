@@ -34,7 +34,7 @@ public:
 	Item item() const;
 	void select(const QString &id);
 private slots:
-	void on_listWidget_itemDoubleClicked(QListWidgetItem *item);
+	void on_listWidget_itemDoubleClicked(QListWidgetItem *);
 
 private:
 	Ui::SelectItemDialog *ui;
