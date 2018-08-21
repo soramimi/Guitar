@@ -3,10 +3,13 @@
 $product_name = "Guitar"
 $copyright_year = 2018
 $version_a = 0
-$version_b = 3
+$version_b = 9
 $version_c = 0
 $version_d = 0
 
+# v0.9.0 2018-08-21
+#	*
+#
 # v0.2.0 2017-12-18
 #	* 
 #

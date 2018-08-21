@@ -240,6 +240,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
+#ifdef Q_OS_MACX
+	ui->action_about->setText("About Guitar...");
+	ui->action_edit_settings->setText("Settings...");
+#endif
+
 	m->starting_dir = QDir::current().absolutePath();
 
 	ui->splitter_v->setSizes({100, 400});

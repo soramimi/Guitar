@@ -27,6 +27,8 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
 	setWindowTitle(tr("About %1").arg(qApp->applicationName()));
 
+	setStyleSheet("QLabel { color: black; }");
+
 	ui->label_title->setText(appVersion());
 	ui->label_copyright->setText(QString("Copyright (C) %1 %2").arg(copyright_year).arg(copyright_holder));
 	ui->label_twitter->setText(twitter_account.isEmpty() ? QString() : QString("(@%1)").arg(twitter_account));

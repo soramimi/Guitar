@@ -9,7 +9,8 @@ $workdir = "_release"
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($workdir)
 
-`cp -a ../_build_#{$product_name}_Release/#{$product_name}.app #{$workdir}/`
+`cp -a _bin/#{$product_name}.app #{$workdir}/`
+`cp Guitar_ja.qm #{$workdir}/Guitar.app/Contents/Resources`
 
 `/opt/Qt5.9.2/5.9.2/clang_64/bin/macdeployqt #{$workdir}/#{$product_name}.app`
 

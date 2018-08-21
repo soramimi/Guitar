@@ -1090,8 +1090,8 @@
     </message>
     <message>
         <location filename="src/MainWindow.ui" line="1315"/>
-        <source>&amp;Settings</source>
-        <translation>設定(&amp;S)</translation>
+		<source>&amp;Settings...</source>
+		<translation>設定(&amp;S)...</translation>
     </message>
     <message>
         <location filename="src/MainWindow.ui" line="1363"/>

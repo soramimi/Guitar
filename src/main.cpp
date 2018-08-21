@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 			// thru
 		} else {
 #if defined(Q_OS_MACX)
-			QString path = "../Resources/Guitar_" + lang_id;
+			QString path = "../Resources/Guitar_" + global->language_id;
 #else
 			QString path = "Guitar_" + global->language_id;
 #endif

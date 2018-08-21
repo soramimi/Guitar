@@ -1314,6 +1314,9 @@
    <property name="text">
     <string>&amp;Settings</string>
    </property>
+   <property name="toolTip">
+    <string>Settings...</string>
+   </property>
   </action>
   <action name="action_clone">
    <property name="icon">
