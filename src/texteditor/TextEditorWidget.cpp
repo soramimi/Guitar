@@ -533,7 +533,7 @@ void TextEditorWidget::moveCursorByMouse()
 		if (col < 0) {
 			col = 0;
 		} else {
-			int mouse_x = mousepos.x() - cx()->viewport_org_x * m->latin1_width;
+			int mouse_x = mousepos.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * m->latin1_width;
 			parseLine(nullptr, 0, true);
 			std::vector<int> pts;
 			makeColumnPosList(&pts);

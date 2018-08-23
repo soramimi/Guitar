@@ -64,6 +64,7 @@
 #include <stdlib.h>
 
 #include <QBuffer>
+#include <QClipboard>
 #include <QDateTime>
 #include <QDebug>
 #include <QDesktopServices>
@@ -2139,6 +2140,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QMenu menu;
 
+		QAction *a_copy_id_7_letters = menu.addAction(tr("Copy commit id (7 letters)"));
+		QAction *a_copy_id_complete = menu.addAction(tr("Copy commit id (completely)"));
+
+		menu.addSeparator();
+
 		QAction *a_push_upstream = nullptr;
 		if (pushSetUpstream(true)) {
 			a_push_upstream = menu.addAction("push --set-upstream ...");
@@ -2170,6 +2176,14 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
+			if (a == a_copy_id_7_letters) {
+				qApp->clipboard()->setText(commit->commit_id.mid(0, 7));
+				return;
+			}
+			if (a == a_copy_id_complete) {
+				qApp->clipboard()->setText(commit->commit_id);
+				return;
+			}
 			if (a == a_properties) {
 				execCommitPropertyDialog(this, commit);
 				return;
@@ -3588,41 +3602,12 @@ bool MainWindow::addTag(QString const &name)
 	return ok;
 }
 
-//void MainWindow::addTag()
-//{
-//	GitPtr g = git();
-//	if (!isValidWorkingCopy(g)) return;
-
-//	QString commit_id;
-
-//	Git::CommitItem const *commit = selectedCommitItem();
-//	if (commit && !commit->commit_id.isEmpty()) {
-//		commit_id = commit->commit_id;
-//	}
-
-//	if (!Git::isValidID(commit_id)) return;
-
-//	InputNewTagDialog dlg(this);
-//	if (dlg.exec() == QDialog::Accepted) {
-//		reopenRepository(false, [&](GitPtr g){
-//			g->tag(dlg.text(), commit_id);
-//		});
-//	}
-//}
-
-//void MainWindow::on_action_tag_triggered()
-//{
-//	addTag();
-//}
-
 void MainWindow::on_action_tag_push_all_triggered()
 {
 	reopenRepository(false, [&](GitPtr g){
 		g->push(true);
 	});
 }
-
-
 
 QString MainWindow::tempfileHeader() const
 {
