@@ -380,6 +380,8 @@ private slots:
 	void on_action_set_gpg_signing_triggered();
 	void on_action_edit_tags_triggered();
 
+    void on_action_push_u_triggered();
+
 signals:
 	void onEscapeKeyPressed();
 

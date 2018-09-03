@@ -3856,7 +3856,7 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 
 NamedCommitList MainWindow::namedCommitItems(int flags)
 {
-	std::map<QString, NamedCommitItem> map;
+    NamedCommitList items;
 	if (flags & Branches) {
 		for (auto pair: m->branch_map) {
 			QList<Git::Branch> const &list = pair.second;
@@ -3875,7 +3875,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.remote = b.remote;
 				item.name = b.name;
 				item.id = b.id;
-				map[key] = item;
+                items.push_back(item);
 			}
 		}
 	}
@@ -3887,13 +3887,9 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				item.type = NamedCommitItem::Type::Tag;
 				item.name = t.name;
 				item.id = t.id;
-				map[item.name] = item;
+                items.push_back(item);
 			}
 		}
-	}
-	NamedCommitList items;
-	for (auto const &pair : map) {
-		items.push_back(pair.second);
 	}
 	return items;
 }
@@ -4554,7 +4550,11 @@ void MainWindow::on_action_edit_tags_triggered()
 	}
 }
 
+void MainWindow::on_action_push_u_triggered()
+{
+    pushSetUpstream(false);
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
-
