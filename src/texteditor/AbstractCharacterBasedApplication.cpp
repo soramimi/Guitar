@@ -105,6 +105,8 @@ struct AbstractCharacterBasedApplication::Private {
 	bool ctrl_modifier = false;
 	bool shift_modifier = false;
 	EsccapeSequence escape_sequence;
+
+	bool cursor_moved_by_mouse = false;
 };
 
 AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
@@ -839,7 +841,7 @@ void AbstractCharacterBasedApplication::restorePos()
 	}
 }
 
-void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll)
+void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 {
 	if (cx()->current_row == row) return;
 
@@ -857,9 +859,12 @@ void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll)
 	if (selection_anchor_0.enabled != SelectionAnchor::No) {
 		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
 	}
+
+	m->cursor_moved_by_mouse = by_mouse;
+
 }
 
-void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll)
+void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll, bool by_mouse)
 {
 	if (cx()->current_col == col) {
 		cx()->current_col_hint = col;
@@ -881,6 +886,8 @@ void AbstractCharacterBasedApplication::setCursorCol(int col, bool auto_scroll)
 	if (selection_anchor_0.enabled != SelectionAnchor::No) {
 		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
 	}
+
+	m->cursor_moved_by_mouse = by_mouse;
 }
 
 void AbstractCharacterBasedApplication::setCursorPos(int row, int col)
@@ -2065,12 +2072,12 @@ void AbstractCharacterBasedApplication::setWriteMode(WriteMode wm)
 
 bool AbstractCharacterBasedApplication::isInsertMode() const
 {
-	return m->write_mode == WriteMode::Insert;
+	return m->write_mode == WriteMode::Insert && !isTerminalMode();
 }
 
 bool AbstractCharacterBasedApplication::isOverwriteMode() const
 {
-	return m->write_mode == WriteMode::Overwrite;
+	return m->write_mode == WriteMode::Overwrite || isTerminalMode();
 }
 
 void AbstractCharacterBasedApplication::setTerminalMode(bool f)
@@ -2304,7 +2311,15 @@ void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
 void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 {
 	if (isTerminalMode()) {
-		moveToBottom();
+		if (c == '\r') {
+			setCursorCol(0);
+			clearParsedLine();
+			updateVisibility(true, true, true);
+			return;
+		}
+		if (m->cursor_moved_by_mouse) {
+			moveToBottom();
+		}
 		if (c == 0x1b || m->escape_sequence.isActive()) {
 			m->escape_sequence.write(c);
 			return;

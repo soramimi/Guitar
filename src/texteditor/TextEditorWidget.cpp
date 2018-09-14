@@ -526,7 +526,7 @@ void TextEditorWidget::moveCursorByMouse()
 			}
 		}
 	}
-	setCursorRow(row, false);
+	setCursorRow(row, false, true);
 
 	// column
 	{
@@ -550,7 +550,7 @@ void TextEditorWidget::moveCursorByMouse()
 			col = newcol / m->latin1_width;
 		}
 	}
-	setCursorCol(col, false);
+	setCursorCol(col, false, true);
 
 	clearParsedLine();
 	updateVisibility(false, true, false);

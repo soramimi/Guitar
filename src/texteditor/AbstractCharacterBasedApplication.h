@@ -315,8 +315,8 @@ protected:
 
 	void parseLine(std::vector<uint32_t> *vec, int increase_hint, bool force);
 	QByteArray parsedLine() const;
-	void setCursorRow(int row, bool auto_scroll = true);
-	void setCursorCol(int col, bool auto_scroll = true);
+	void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
+	void setCursorCol(int col, bool auto_scroll = true, bool by_mouse = false);
 	void setCursorPos(int row, int col);
 	void setCursorColByIndex(const std::vector<uint32_t> &vec, int col_index);
 	int nextTabStop(int x) const;
