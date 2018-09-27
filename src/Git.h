@@ -174,7 +174,8 @@ public:
 		enum {
 			None,
 			Current = 0x0001,
-			HeadDetached = 0x0002,
+			HeadDetachedAt = 0x0002,
+			HeadDetachedFrom = 0x0004,
 		};
 		int flags = 0;
 		operator bool () const
@@ -189,7 +190,7 @@ public:
 		}
 		bool isHeadDetached() const
 		{
-			return flags & HeadDetached;
+			return flags & HeadDetachedAt;
 		}
 	};
 

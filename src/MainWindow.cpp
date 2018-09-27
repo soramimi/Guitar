@@ -1371,7 +1371,8 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 		}
 		QList<Git::Branch> list = findBranch(commit->commit_id);
 		for (Git::Branch const &b : list) {
-			if (b.flags & Git::Branch::HeadDetached) continue;
+			if (b.flags & Git::Branch::HeadDetachedAt) continue;
+			if (b.flags & Git::Branch::HeadDetachedFrom) continue;
 			Label label(Label::LocalBranch);
 			label.text = b.name;
 			if (!b.remote.isEmpty()) {
@@ -1393,7 +1394,7 @@ QString MainWindow::makeCommitInfoText(int row, QList<Label> *label_list)
 		for (Git::Tag const &t : list) {
 			Label label(Label::Tag);
 			label.text = t.name;
-			message_ex += QString(" {t:%1}").arg(label.text);
+			message_ex += QString(" {#%1}").arg(label.text);
 			if (label_list) label_list->push_back(label);
 		}
 	}
@@ -1581,9 +1582,15 @@ void MainWindow::openRepository_(GitPtr g)
 		updateCommitTableLater();
 		if (canceled) return;
 
-		QString branch_name = currentBranch().name;
-		if (currentBranch().flags & Git::Branch::HeadDetached) {
-			branch_name = QString("(HEAD detached at %1)").arg(branch_name);
+		QString branch_name;
+		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
+			branch_name += QString("(HEAD detached at %1)").arg(currentBranch().name);
+		}
+		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
+			branch_name += QString("(HEAD detached from %1)").arg(currentBranch().name);
+		}
+		if (branch_name.isEmpty()) {
+			branch_name = currentBranch().name;
 		}
 
 		QString repo_name = currentRepositoryName();

@@ -536,8 +536,13 @@ QList<Git::Branch> Git::branches()
 				Branch b;
 
 				if (name.startsWith("HEAD detached at ")) {
-					b.flags |= Branch::HeadDetached;
+					b.flags |= Branch::HeadDetachedAt;
 					name = name.mid(17);
+				}
+
+				if (name.startsWith("HEAD detached from ")) {
+					b.flags |= Branch::HeadDetachedFrom;
+					name = name.mid(19);
 				}
 
 				if (name.startsWith("remotes/")) {
