@@ -4,9 +4,10 @@
 struct DeleteBranchDialog::Private {
 	QStringList all_local_branch_names;
 	QStringList current_local_branch_names;
+	bool remote = false;
 };
 
-DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, const QStringList &all_local_branch_names, QStringList const &current_local_branch_names)
+DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, bool remote, const QStringList &all_local_branch_names, QStringList const &current_local_branch_names)
 	: QDialog(parent)
 	, ui(new Ui::DeleteBranchDialog)
 	, m(new Private)
@@ -15,6 +16,13 @@ DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, const QStringList &all_l
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
+
+	m->remote = remote;
+
+	if (isRemote()) {
+		setWindowTitle(tr("Delete Remote Branch"));
+		ui->checkBox_all_branches->setVisible(false);
+	}
 
 	m->all_local_branch_names = all_local_branch_names;
 	m->current_local_branch_names = current_local_branch_names;
@@ -26,6 +34,11 @@ DeleteBranchDialog::~DeleteBranchDialog()
 {
 	delete m;
 	delete ui;
+}
+
+bool DeleteBranchDialog::isRemote() const
+{
+	return m->remote;
 }
 
 void DeleteBranchDialog::updateList()

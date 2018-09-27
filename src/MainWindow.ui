@@ -968,7 +968,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>18</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1026,6 +1026,7 @@
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
     <addaction name="action_delete_branch"/>
+    <addaction name="action_delete_remote_branch"/>
     <addaction name="action_edit_tags"/>
     <addaction name="action_reflog"/>
     <addaction name="separator"/>
@@ -1427,6 +1428,11 @@
    </property>
    <property name="toolTip">
     <string>Set GPG signing</string>
+   </property>
+  </action>
+  <action name="action_delete_remote_branch">
+   <property name="text">
+    <string>Delete remote branch...</string>
    </property>
   </action>
  </widget>

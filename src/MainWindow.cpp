@@ -2164,8 +2164,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
 
+
+
 		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout/Branch...")) : nullptr;
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
+		QAction *a_delrembranch = remoteBranches(commit->commit_id).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
 		QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 
@@ -2209,6 +2212,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_delbranch) {
 				deleteBranch(commit);
+				return;
+			}
+			if (a == a_delrembranch) {
+				deleteRemoteBranch(commit);
 				return;
 			}
 			if (a == a_merge) {
@@ -4049,7 +4056,7 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 		}
 	}
 
-	DeleteBranchDialog dlg(this, all_local_branch_names, current_local_branch_names);
+	DeleteBranchDialog dlg(this, false, all_local_branch_names, current_local_branch_names);
 	if (dlg.exec() == QDialog::Accepted) {
 		setLogEnabled(g, true);
 		QStringList names = dlg.selectedBranchNames();
@@ -4562,6 +4569,55 @@ void MainWindow::on_action_push_u_triggered()
     pushSetUpstream(false);
 }
 
+QStringList MainWindow::remoteBranches(QString const &id)
+{
+	QStringList list;
+
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
+		JumpDialog::sort(&named_commits);
+		for (NamedCommitItem const &item : named_commits) {
+			if (item.id == id && !item.remote.isEmpty()) {
+				list.push_back(item.remote / item.name);
+			}
+		}
+	}
+
+	return list;
+}
+
+void MainWindow::deleteRemoteBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QStringList remote_branches = remoteBranches(commit->commit_id);
+	if (remote_branches.isEmpty()) return;
+
+	DeleteBranchDialog dlg(this, true, QStringList(), remote_branches);
+	if (dlg.exec() == QDialog::Accepted) {
+		setLogEnabled(g, true);
+		QStringList names = dlg.selectedBranchNames();
+		for (QString const &name : names) {
+			int i = name.indexOf('/');
+			if (i > 0) {
+				QString remote = name.mid(0, i);
+				QString branch = ':' + name.mid(i + 1);
+				pushSetUpstream(remote, branch);
+			}
+		}
+	}
+}
+
+void MainWindow::on_action_delete_remote_branch_triggered()
+{
+	deleteRemoteBranch(selectedCommitItem());
+}
+
 void MainWindow::on_action_test_triggered()
 {
+
 }
