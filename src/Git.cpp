@@ -516,7 +516,21 @@ QList<Git::Branch> Git::branches()
 			QString text = line.mid(2);
 			int pos = 0;
 			if (text.startsWith('(')) {
-				pos = text.indexOf(')');
+				int i, paren = 1;
+				for (i = 1; i < text.size(); i++) {
+					if (text[i] == '(') {
+						paren++;
+					} else if (text[i] == ')') {
+						if (paren > 0) {
+							paren--;
+							if (paren == 0) {
+								pos = i;
+								break;
+							}
+						}
+					}
+				}
+//				pos = text.indexOf(')');
 				if (pos > 1) {
 					name = text.mid(1, pos - 1);
 					pos++;
@@ -962,6 +976,13 @@ void Git::pull(AbstractPtyProcess *pty)
 void Git::fetch(AbstractPtyProcess *pty)
 {
 	git("fetch", true, false, pty);
+}
+
+void Git::rebaseOnto(QString const &newbase, QString const &upstream, QString const &branch, AbstractPtyProcess *pty)
+{
+	QString cmd = "rebase --onto \"%1\" \"%2\" \"%3\"";
+	cmd = cmd.arg(newbase).arg(upstream).arg(branch);
+	git(cmd, true, false, pty);
 }
 
 QStringList Git::make_branch_list_()

@@ -1041,6 +1041,7 @@
     <addaction name="action_test"/>
     <addaction name="action_tag_push_all"/>
     <addaction name="action_reset_HEAD_1"/>
+    <addaction name="action_rebase_onto"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1433,6 +1434,11 @@
   <action name="action_delete_remote_branch">
    <property name="text">
     <string>Delete remote branch...</string>
+   </property>
+  </action>
+  <action name="action_rebase_onto">
+   <property name="text">
+    <string>rebase onto</string>
    </property>
   </action>
  </widget>

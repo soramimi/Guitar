@@ -81,6 +81,7 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QTimer>
+#include <RebaseOntoDialog.h>
 
 #ifdef Q_OS_MAC
 extern "C" char **environ;
@@ -4617,7 +4618,79 @@ void MainWindow::on_action_delete_remote_branch_triggered()
 	deleteRemoteBranch(selectedCommitItem());
 }
 
+void MainWindow::rebaseOnto()
+{
+	struct Commit {
+		QStringList parents;
+		QStringList children;
+	};
+
+	std::map<QString, Commit> commit_map;
+
+	Git::CommitItem const *commit = selectedCommitItem();
+	if (commit) {
+		for (Git::CommitItem const &item : m->logs) {
+			Commit c;
+			c.parents = item.parent_ids;
+			commit_map[item.commit_id] = c;
+		}
+		for (Git::CommitItem const &item : m->logs) {
+			for (QString const &parent : item.parent_ids) {
+				auto it = commit_map.find(parent);
+				if (it != commit_map.end()) {
+					it->second.children.push_back(item.commit_id);
+				}
+			}
+		}
+		QString upstream;
+		QString id = m->head_id;
+		while (1) {
+			auto it = commit_map.find(id);
+			if (it == commit_map.end()) break;
+			Commit const &c = it->second;
+			if (c.parents.size() > 1) goto done;
+			if (c.parents.size() != 1) break;
+			if (id != m->head_id) {
+				if (c.children.size() > 1) goto done;
+				if (!findTag(id).isEmpty()) goto done;
+				auto it2 = m->branch_map.find(id);
+				if (it2 != m->branch_map.end()) {
+					QList<Git::Branch> b = it2->second;
+					if (!it2->second.empty()) goto done;
+				}
+			}
+			id = c.parents.first();
+			continue;
+done:;
+			upstream = id;
+			break;
+		}
+
+		QString newbase = commit->commit_id;
+		QString branch = m->head_id;
+
+		RebaseOntoDialog dlg(this);
+		if (dlg.exec(newbase, upstream, branch) == QDialog::Accepted) {
+			reopenRepository(true, [&](GitPtr g){
+				m->pty_condition = PtyCondition::Pull;
+				m->pty_process_ok = true;
+				g->rebaseOnto(newbase, upstream, branch, &m->pty_process);
+				while (1) {
+					if (m->pty_process.wait(1)) break;
+					QApplication::processEvents();
+				}
+			});
+		}
+	}
+}
+
+void MainWindow::on_action_rebase_onto_triggered()
+{
+	rebaseOnto();
+}
+
 void MainWindow::on_action_test_triggered()
 {
-
+	rebaseOnto();
 }
+

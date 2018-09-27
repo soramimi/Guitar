@@ -206,6 +206,7 @@ private:
 	void internalSetCommand(const QString &path, bool save, const QString &name, QString *out);
 	void deleteRemoteBranch(const Git::CommitItem *commit);
 	QStringList remoteBranches(const QString &id);
+	void rebaseOnto();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -385,6 +386,8 @@ private slots:
     void on_action_push_u_triggered();
 
 	void on_action_delete_remote_branch_triggered();
+
+	void on_action_rebase_onto_triggered();
 
 signals:
 	void onEscapeKeyPressed();
