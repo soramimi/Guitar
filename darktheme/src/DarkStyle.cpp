@@ -632,79 +632,70 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 		}
 	}
 	if (cc == CC_GroupBox) {
-		QRect rect;
+//		return QProxyStyle::subControlRect(cc, option, sc, widget);
+		QRect ret;
 		if (const QStyleOptionGroupBox *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
 			switch (sc) {
 			case SC_GroupBoxFrame:
-				// FALL THROUGH
 			case SC_GroupBoxContents:
 				{
 					int topMargin = 0;
 					int topHeight = 0;
-					int bottomMargin = 0;
-					int noLabelMargin = 0;
-					QRect frameRect = groupBox->rect;
-					int verticalAlignment = styleHint(SH_GroupBox_TextLabelVerticalAlignment, groupBox, widget);
-					if (groupBox->text.size()) {
+					int verticalAlignment = proxy()->styleHint(SH_GroupBox_TextLabelVerticalAlignment, groupBox, widget);
+#ifdef Q_OS_MACX
+					verticalAlignment |= Qt::AlignVCenter;
+#endif
+					if (groupBox->text.size() || (groupBox->subControls & QStyle::SC_GroupBoxCheckBox)) {
 						topHeight = groupBox->fontMetrics.height();
-//                        if (verticalAlignment & Qt::AlignVCenter) {
-							topMargin = topHeight / 2;
-//						} else if (verticalAlignment & Qt::AlignTop) {
-//							topMargin = -topHeight/2;
-//						}
-					} else {
-						topHeight = groupBox->fontMetrics.height();
-						noLabelMargin = topHeight / 2;
 						if (verticalAlignment & Qt::AlignVCenter) {
-							topMargin = topHeight / 4 - 4;
-							bottomMargin = topHeight / 4 - 4;
+							topMargin = topHeight / 2;
 						} else if (verticalAlignment & Qt::AlignTop) {
-							topMargin = topHeight/2 - 4;
-							bottomMargin = topHeight/2 - 4;
+							topMargin = topHeight;
 						}
 					}
 
+					QRect frameRect = groupBox->rect;
+					frameRect.setTop(topMargin);
+
 					if (sc == SC_GroupBoxFrame) {
-						frameRect.setTop(topMargin);
-						frameRect.setBottom(frameRect.height() + bottomMargin);
-						rect = frameRect;
+						ret = frameRect;
 						break;
 					}
 
 					int frameWidth = 0;
-					if ((groupBox->features & QStyleOptionFrameV2::Flat) == 0) {
-						frameWidth = pixelMetric(PM_DefaultFrameWidth, groupBox, widget);
+					if ((groupBox->features & QStyleOptionFrame::Flat) == 0) {
+						frameWidth = proxy()->pixelMetric(PM_DefaultFrameWidth, groupBox, widget);
 					}
-					rect = frameRect.adjusted(frameWidth, frameWidth + topHeight, -frameWidth, -frameWidth - noLabelMargin);
-					break;
+					ret = frameRect.adjusted(frameWidth, frameWidth + topHeight - topMargin, -frameWidth, -frameWidth);
 				}
+				break;
 			case SC_GroupBoxCheckBox:
-				// FALL THROUGH
 			case SC_GroupBoxLabel:
 				{
 					QFontMetrics fontMetrics = groupBox->fontMetrics;
 					int h = fontMetrics.height();
 					int tw = fontMetrics.size(Qt::TextShowMnemonic, groupBox->text + QLatin1Char(' ')).width();
-					int marg = (groupBox->features & QStyleOptionFrameV2::Flat) ? 0 : 8;
-					rect = groupBox->rect.adjusted(marg, 0, -marg, 0);
-					rect.setHeight(h);
+					int marg = (groupBox->features & QStyleOptionFrame::Flat) ? 0 : 8;
+					ret = groupBox->rect.adjusted(marg, 0, -marg, 0);
+					ret.setHeight(h);
 
-					int indicatorWidth = pixelMetric(PM_IndicatorWidth, option, widget);
-					int indicatorSpace = pixelMetric(PM_CheckBoxLabelSpacing, option, widget) - 1;
+					int indicatorWidth = proxy()->pixelMetric(PM_IndicatorWidth, option, widget);
+					int indicatorSpace = proxy()->pixelMetric(PM_CheckBoxLabelSpacing, option, widget) - 1;
 					bool hasCheckBox = groupBox->subControls & QStyle::SC_GroupBoxCheckBox;
 					int checkBoxSize = hasCheckBox ? (indicatorWidth + indicatorSpace) : 0;
 
 					// Adjusted rect for label + indicatorWidth + indicatorSpace
-					QRect totalRect = alignedRect(groupBox->direction, groupBox->textAlignment, QSize(tw + checkBoxSize, h), rect);
+					QRect totalRect = alignedRect(groupBox->direction, groupBox->textAlignment, QSize(tw + checkBoxSize, h), ret);
+
 					// Adjust totalRect if checkbox is set
 					if (hasCheckBox) {
 						bool ltr = groupBox->direction == Qt::LeftToRight;
 						int left = 0;
 						// Adjust for check box
 						if (sc == SC_GroupBoxCheckBox) {
-							int indicatorHeight = pixelMetric(PM_IndicatorHeight, option, widget);
+							int indicatorHeight = proxy()->pixelMetric(PM_IndicatorHeight, option, widget);
 							left = ltr ? totalRect.left() : (totalRect.right() - indicatorWidth);
-							int top = totalRect.top() + (fontMetrics.height() - indicatorHeight) / 2;
+							int top = totalRect.top() + qMax(0, fontMetrics.height() - indicatorHeight) / 2;
 							totalRect.setRect(left, top, indicatorWidth, indicatorHeight);
 							// Adjust for label
 						} else {
@@ -712,14 +703,12 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 							totalRect.setRect(left, totalRect.top(), totalRect.width() - checkBoxSize, totalRect.height());
 						}
 					}
-					rect = totalRect;
-					break;
+					ret = totalRect;
 				}
-			default:
 				break;
 			}
+			return ret;
 		}
-		return rect;
 	}
 	return QProxyStyle::subControlRect(cc, option, sc, widget);
 }
@@ -1144,35 +1133,71 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		if (QStyleOptionFrameV3 const *o = qstyleoption_cast<QStyleOptionFrameV3 const *>(option)) {
 			int lw = o->lineWidth;
 			if (lw > 0) {
-				QRect r = option->rect;
-				if (r.width() > r.height()) {
-					int z1 = r.height() / 2;
-					r = r.adjusted(z1, 0, -z1, 0);
-					r = QRect(r.x(), r.y() + z1, r.width(), 0);
-				} else {
-					int z1 = r.width() / 2;
-					r = r.adjusted(0, z1, 0, -z1);
-					r = QRect(r.x() + z1, r.y(), 0, r.height());
+				QRect r = o->rect;
+				if (o->frameShape == QFrame::Panel || o->frameShape == QFrame::HLine || o->frameShape == QFrame::VLine) {
+					if (o->state & (State_Sunken | State_Raised)) {
+						if (r.width() < r.height()) {
+							if (r.width() > 2) {
+								r.adjust(0, 0, -1, 0);
+							}
+						} else {
+							if (r.height() > 2) {
+								r.adjust(0, 0, 0, -1);
+							}
+						}
+						int x = r.x();
+						int y = r.y();
+						int w = r.width();
+						int h = r.height();
+						QColor color_topleft     = o->palette.color(QPalette::Dark);
+						QColor color_bottomright = o->palette.color(QPalette::Light);
+						if (o->state & State_Raised) {
+							std::swap(color_topleft, color_bottomright);
+						}
+						int t = lw;
+						p->fillRect(x, y, w - t, t, color_topleft);
+						p->fillRect(x, y + t, t, h - t, color_topleft);
+						p->fillRect(x + w - t, y, t, h - t, color_bottomright);
+						p->fillRect(x + t, y + h - t, w - t, t, color_bottomright);
+					} else {
+						if (r.width() < r.height()) {
+							if (lw < r.width()) {
+								r = QRect(r.x() + (r.width() - lw) / 2, r.y(), lw, r.height());
+							}
+						} else {
+							if (lw < r.height()) {
+								r = QRect(r.x(), r.y() + (r.height() - lw) / 2, r.width(), lw);
+							}
+						}
+						int x = r.x();
+						int y = r.y();
+						int w = r.width();
+						int h = r.height();
+						QColor color = o->palette.color(QPalette::Shadow);
+						p->fillRect(x, y, w, h, color);
+					}
+				} else if (o->frameShape == QFrame::Box) {
+					int x = r.x();
+					int y = r.y();
+					int w = r.width();
+					int h = r.height();
+					if (w > 1) w--;
+					if (h > 1) h--;
+					QColor color_topleft     = o->palette.color(QPalette::Dark);
+					QColor color_bottomright = o->palette.color(QPalette::Light);
+					if (o->state & State_Raised) {
+						std::swap(color_topleft, color_bottomright);
+					}
+					drawFrame(p, x + 1, y + 1, w, h, color_bottomright, color_bottomright);
+					drawFrame(p, x, y, w, h, color_topleft, color_topleft);
+				} else if (o->frameShape == QFrame::StyledPanel) {
+					QColor color = o->palette.color(QPalette::Midlight);
+					int x = r.x();
+					int y = r.y();
+					int w = r.width();
+					int h = r.height();
+					drawFrame(p, x, y, w, h, color, color);
 				}
-				int z2 = o->midLineWidth / 2;
-				int z3 = o->midLineWidth - z2;
-				r = r.adjusted(-z2, -z2, z3, z3);
-
-				QColor color_topleft     = option->palette.color(QPalette::Dark);
-				QColor color_bottomright = option->palette.color(QPalette::Light);
-
-				if (option->state & State_Raised) {
-					std::swap(color_topleft, color_bottomright);
-				}
-
-				int x0 = r.x();
-				int y0 = r.y();
-				int x1 = x0 + r.width();
-				int y1 = y0 + r.height();
-				p->fillRect(x0 - lw, y0 - lw, x1 - x0 + lw, lw, color_topleft);
-				p->fillRect(x0 - lw, y0 - lw, lw, y1 - y0 + lw, color_topleft);
-				p->fillRect(x0, y1, x1 - x0 + lw, lw, color_bottomright);
-				p->fillRect(x1, y0, lw, y1 - y0 + lw, color_bottomright);
 			}
 		}
 		return;
