@@ -198,7 +198,7 @@ SOURCES += \
     darktheme/src/TraditionalWindowsStyleTreeControl.cpp \
     src/EditGitIgnoreDialog.cpp \
     src/SelectItemDialog.cpp \
-    RebaseOntoDialog.cpp
+	src/RebaseOntoDialog.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -307,7 +307,7 @@ HEADERS  += \
     darktheme/src/TraditionalWindowsStyleTreeControl.h \
     src/EditGitIgnoreDialog.h \
     src/SelectItemDialog.h \
-    RebaseOntoDialog.h
+	src/RebaseOntoDialog.h
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -356,7 +356,7 @@ FORMS    += \
     src/EditTagsDialog.ui \
     src/EditGitIgnoreDialog.ui \
     src/SelectItemDialog.ui \
-    RebaseOntoDialog.ui
+	src/RebaseOntoDialog.ui
 
 RESOURCES += \
     resources.qrc
