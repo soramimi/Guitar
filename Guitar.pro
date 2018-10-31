@@ -92,7 +92,7 @@ macx {
 }
 
 SOURCES += \
-	version.c \
+	src/../version.c \
 	src/main.cpp\
 	src/MainWindow.cpp \
 	src/Git.cpp \
