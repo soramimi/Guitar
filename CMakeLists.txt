@@ -319,7 +319,7 @@ set(Guitar_RESOURCES
     )
 
 set(Guitar_TRANSLATIONS
-    Guitar_ja.ts
+    translations/Guitar_ja.ts
     )
 
 add_custom_target(translations ALL DEPENDS ${Guitar_TRANSLATIONS})
