@@ -316,7 +316,7 @@ set(Guitar_UIS
     )
 
 set(Guitar_RESOURCES
-    resources.qrc
+    resources/resources.qrc
     )
 
 set(Guitar_TRANSLATIONS
