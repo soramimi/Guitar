@@ -15,6 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(Qt5 COMPONENTS Core Widgets Network Svg REQUIRED)
 find_package(zlib REQUIRED )
 find_package(OpenSSL REQUIRED )
+find_package(Qt5LinguistTools REQUIRED)
 
 set(Guitar_SOURCES
     version.c
@@ -322,7 +323,9 @@ set(Guitar_TRANSLATIONS
     translations/Guitar_ja.ts
     )
 
-add_custom_target(translations ALL DEPENDS ${Guitar_TRANSLATIONS})
+qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
+
+add_custom_target(translations ALL DEPENDS ${Guitar_QM_FILES})
 
 add_custom_target(resources ALL DEPENDS ${Guitar_RESOURCES})
 
