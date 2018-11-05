@@ -224,6 +224,8 @@ public:
 	void setGitCommand(const QString &path, bool save);
 	void setFileCommand(const QString &path, bool save);
 	void setGpgCommand(const QString &path, bool save);
+	void clearAuthentication();
+	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
 	QString currentRepositoryName() const;
 	const Git::Branch &currentBranch() const;
 	bool isThereUncommitedChanges() const;

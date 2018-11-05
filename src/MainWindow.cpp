@@ -233,6 +233,9 @@ struct MainWindow::Private {
 
 	InteractionMode interaction_mode = InteractionMode::None;
 	bool interaction_canceled = false;
+
+	std::string ssh_passphrase_for;
+	std::string ssh_passphrase_secret;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1219,10 +1222,25 @@ void MainWindow::prepareLogTableWidget()
 	updateCommitGraph(); // コミットグラフを更新
 }
 
+void MainWindow::clearAuthentication()
+{
+	m->ssh_passphrase_for.clear();
+	m->ssh_passphrase_secret.clear();
+}
+
+void MainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
+{
+	if (clear_authentication) {
+		clearAuthentication();
+	}
+	m->current_repo = repo;
+}
+
 QString MainWindow::currentRepositoryName() const
 {
 	return m->current_repo.name;
 }
+
 
 Git::Branch const &MainWindow::currentBranch() const
 {
@@ -1772,8 +1790,8 @@ void MainWindow::udpateButton()
 void MainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryItem const &item){
-		m->current_repo = item;
-		openRepository(false);
+		setCurrentRepository(item, true);
+		openRepository(false, true);
 	};
 
 	RepositoryItem const *repo = findRegisteredRepository(&dir);
@@ -1807,8 +1825,8 @@ void MainWindow::openSelectedRepository()
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
 	RepositoryItem const *item = repositoryItem(treeitem);
 	if (item) {
-		m->current_repo = *item;
-		openRepository(true, true);
+		setCurrentRepository(*item, true);
+		openRepository(true);
 	}
 }
 
@@ -2570,7 +2588,7 @@ void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 	saveRepositoryBookmark(item);
 
 	if (open) {
-		m->current_repo = item;
+		setCurrentRepository(item, true);
 		GitPtr g = git(item.local_dir);
 		openRepository_(g);
 	}
@@ -3474,7 +3492,7 @@ void MainWindow::onCloneCompleted(bool success)
 {
 	if (success) {
 		saveRepositoryBookmark(m->temp_repo);
-		m->current_repo = m->temp_repo;
+		setCurrentRepository(m->temp_repo, false);
 		openRepository(true);
 	}
 }
@@ -4247,9 +4265,6 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	return false;
 }
 
-
-
-
 void MainWindow::on_action_reset_HEAD_1_triggered()
 {
 	GitPtr g = git();
@@ -4469,6 +4484,7 @@ void MainWindow::onLogIdle()
 
 	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)?";
 	static char const enter_passphrase[] = "Enter passphrase: ";
+	static char const enter_passphrase_for_key[] = "Enter passphrase for key '";
 
 	std::vector<char> vec;
 	ui->widget_log->retrieveLastText(&vec, 100);
@@ -4485,6 +4501,19 @@ void MainWindow::onLogIdle()
 			}
 		}
 		if (!line.empty()) {
+			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, bool password){
+				LineEditDialog dlg(parent, title, prompt, password);
+				if (dlg.exec() == QDialog::Accepted) {
+					std::string ret = dlg.text().toStdString();
+					std::string str = ret + '\n';
+					m->pty_process.writeInput(str.c_str(), str.size());
+					return ret;
+				} else {
+					abortPtyProcess();
+				}
+				return std::string();
+			};
+
 			auto Match = [&](char const *str){
 				int n = strlen(str);
 				if (strncmp(line.c_str(), str, n) == 0) {
@@ -4498,21 +4527,47 @@ void MainWindow::onLogIdle()
 				return false;
 			};
 
+			auto StartsWith = [&](char const *str){
+				char const *p = line.c_str();
+				while (*str) {
+					if (*p != *str) return false;
+					str++;
+					p++;
+				}
+				return true;
+			};
+
 			if (Match(are_you_sure_you_want_to_continue_connecting)) {
 				execAreYouSureYouWantToContinueConnectingDialog();
 				return;
 			}
 
 			if (line == enter_passphrase) {
-				LineEditDialog dlg(this, "Passphrase", QString::fromStdString(line), true);
-				if (dlg.exec() == QDialog::Accepted) {
-					std::string text = dlg.text().toStdString() + '\n';
-					m->pty_process.writeInput(text.c_str(), text.size());
-				} else {
-					m->pty_process_ok = false;
-					stopPtyProcess();
-				}
+				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), true);
 				return;
+			}
+
+			if (StartsWith(enter_passphrase_for_key)) {
+				std::string keyfile;
+				{
+					int i = strlen(enter_passphrase_for_key);
+					char const *p = line.c_str() + i;
+					char const *q = strrchr(p, ':');
+					if (q && p + 2 < q && q[-1] == '\'') {
+						keyfile.assign(p, q - 1);
+					}
+				}
+				if (!keyfile.empty()) {
+					if (keyfile == m->ssh_passphrase_for && !m->ssh_passphrase_secret.empty()) {
+						std::string text = m->ssh_passphrase_secret + '\n';
+						m->pty_process.writeInput(text.c_str(), text.size());
+					} else {
+						m->ssh_passphrase_for = keyfile;
+						std::string s = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), true);
+						m->ssh_passphrase_secret = s;
+					}
+					return;
+				}
 			}
 
 			char const *begin = line.c_str();
@@ -4527,14 +4582,7 @@ void MainWindow::onLogIdle()
 						msg = QString::fromUtf8(begin, end - begin - 2);
 					}
 					if (!msg.isEmpty()) {
-						LineEditDialog dlg(this, title, msg, password);
-						if (dlg.exec() == QDialog::Accepted) {
-							std::string text = dlg.text().toStdString() + '\n';
-							m->pty_process.writeInput(text.c_str(), text.size());
-						} else {
-							m->pty_process_ok = false;
-							stopPtyProcess();
-						}
+						ExecLineEditDialog(this, title, msg, password);
 						return true;
 					}
 				}
