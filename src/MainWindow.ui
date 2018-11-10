@@ -598,6 +598,9 @@
             <property name="horizontalScrollMode">
              <enum>QAbstractItemView::ScrollPerPixel</enum>
             </property>
+            <property name="wordWrap">
+             <bool>false</bool>
+            </property>
             <attribute name="horizontalHeaderHighlightSections">
              <bool>false</bool>
             </attribute>
