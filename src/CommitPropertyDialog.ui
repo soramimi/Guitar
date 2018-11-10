@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>527</width>
-    <height>448</height>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,6 +33,9 @@
        </property>
        <property name="labelAlignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+       <property name="formAlignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
        </property>
        <property name="verticalSpacing">
         <number>3</number>
@@ -158,6 +161,12 @@
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
          <layout class="QFormLayout" name="formLayout_2">
+          <property name="labelAlignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="formAlignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
           <property name="verticalSpacing">
            <number>3</number>
           </property>

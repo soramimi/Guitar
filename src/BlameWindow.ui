@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>604</width>
-    <height>477</height>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,6 +45,12 @@
       <string>Information</string>
      </property>
      <layout class="QFormLayout" name="formLayout">
+      <property name="labelAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+      <property name="formAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
       <property name="verticalSpacing">
        <number>3</number>
       </property>
@@ -68,16 +74,6 @@
       <item row="1" column="1">
        <widget class="ReadOnlyLineEdit" name="lineEdit_date"/>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Message</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="ReadOnlyLineEdit" name="lineEdit_message"/>
-      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
@@ -87,6 +83,16 @@
       </item>
       <item row="2" column="1">
        <widget class="ReadOnlyLineEdit" name="lineEdit_author"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Message</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="ReadOnlyLineEdit" name="lineEdit_message"/>
       </item>
      </layout>
     </widget>

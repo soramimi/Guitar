@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>375</width>
-    <height>246</height>
+    <height>279</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,6 +49,12 @@
       <enum>QFrame::Sunken</enum>
      </property>
      <layout class="QFormLayout" name="formLayout">
+      <property name="labelAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+      <property name="formAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
       <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
