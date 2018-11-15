@@ -320,10 +320,11 @@ set(Guitar_RESOURCES
     )
 
 set(Guitar_TRANSLATIONS
-    translations/Guitar_ja.ts
+    resources/translations/ja_JPN.ts
     )
 
 qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
+configure_file(${Guitar_RESOURCES} ${CMAKE_BINARY_DIR} COPYONLY)
 
 add_custom_target(translations ALL DEPENDS ${Guitar_QM_FILES})
 
@@ -339,6 +340,7 @@ add_executable(${PROJECT_NAME}
     ${Guitar_HEADERS}
     ${Guitar_UIS}
     ${Guitar_RESOURCES}
+    ${Guitar_QM_FILES}
     )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
