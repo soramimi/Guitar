@@ -317,11 +317,11 @@ set(Guitar_UIS
     )
 
 set(Guitar_RESOURCES
-    resources/resources.qrc
+    src/resources/resources.qrc
     )
 
 set(Guitar_TRANSLATIONS
-    resources/translations/ja_JPN.ts
+    src/resources/translations/ja_JPN.ts
     )
 
 qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
