@@ -118,10 +118,10 @@ set(Guitar_SOURCES
     src/SettingProgramsForm.cpp
     src/InputNewTagDialog.cpp
     src/EditTagsDialog.cpp
-    ./darktheme/src/DarkStyle.cpp
-    ./darktheme/src/NinePatch.cpp
-    ./darktheme/src/StandardStyle.cpp
-    ./darktheme/src/TraditionalWindowsStyleTreeControl.cpp
+    src/darktheme/DarkStyle.cpp
+    src/darktheme/NinePatch.cpp
+    src/darktheme/StandardStyle.cpp
+    src/darktheme/TraditionalWindowsStyleTreeControl.cpp
     src/EditGitIgnoreDialog.cpp
     src/SelectItemDialog.cpp
     src/RebaseOntoDialog.cpp
@@ -230,10 +230,10 @@ set(Guitar_HEADERS
     src/SettingProgramsForm.h
     src/InputNewTagDialog.h
     src/EditTagsDialog.h
-    ./darktheme/src/DarkStyle.h
-    ./darktheme/src/NinePatch.h
-    ./darktheme/src/StandardStyle.h
-    ./darktheme/src/TraditionalWindowsStyleTreeControl.h
+    src/darktheme/DarkStyle.h
+    src/darktheme/NinePatch.h
+    src/darktheme/StandardStyle.h
+    src/darktheme/TraditionalWindowsStyleTreeControl.h
     src/EditGitIgnoreDialog.h
     src/SelectItemDialog.h
     src/RebaseOntoDialog.h
