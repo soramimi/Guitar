@@ -199,6 +199,7 @@ set(Guitar_HEADERS
     src/Photoshop.h
     src/SettingBehaviorForm.h
     src/MyProcess.h
+    src/FileViewWidget.h
     src/MyTextEditorWidget.h
     src/AbstractProcess.h
     src/texteditor/AbstractCharacterBasedApplication.h
@@ -355,3 +356,6 @@ target_link_libraries(${PROJECT_NAME}
     zlib
     OpenSSL::SSL OpenSSL::Crypto
 )
+
+
+add_subdirectory(extra)
