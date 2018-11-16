@@ -1155,6 +1155,13 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 							std::swap(color_topleft, color_bottomright);
 						}
 						int t = lw;
+						if (o->frameShape == QFrame::HLine) {
+							y = h / 2 - t;
+							h = t * 2;
+						} else if (o->frameShape == QFrame::VLine) {
+							x = w / 2 - t;
+							w = t * 2;
+						}
 						p->fillRect(x, y, w - t, t, color_topleft);
 						p->fillRect(x, y + t, t, h - t, color_topleft);
 						p->fillRect(x + w - t, y, t, h - t, color_bottomright);
