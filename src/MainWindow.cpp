@@ -236,6 +236,9 @@ struct MainWindow::Private {
 
 	std::string ssh_passphrase_for;
 	std::string ssh_passphrase_secret;
+
+	std::string http_uid;
+	std::string http_pwd;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1226,6 +1229,8 @@ void MainWindow::clearAuthentication()
 {
 	m->ssh_passphrase_for.clear();
 	m->ssh_passphrase_secret.clear();
+	m->http_uid.clear();
+	m->http_pwd.clear();
 }
 
 void MainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
@@ -4485,6 +4490,7 @@ void MainWindow::onLogIdle()
 	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)?";
 	static char const enter_passphrase[] = "Enter passphrase: ";
 	static char const enter_passphrase_for_key[] = "Enter passphrase for key '";
+	static char const fatal_authentication_failed_for[] = "fatal: Authentication failed for '";
 
 	std::vector<char> vec;
 	ui->widget_log->retrieveLastText(&vec, 100);
@@ -4501,8 +4507,8 @@ void MainWindow::onLogIdle()
 			}
 		}
 		if (!line.empty()) {
-			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, bool password){
-				LineEditDialog dlg(parent, title, prompt, password);
+			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password){
+				LineEditDialog dlg(parent, title, prompt, val, password);
 				if (dlg.exec() == QDialog::Accepted) {
 					std::string ret = dlg.text().toStdString();
 					std::string str = ret + '\n';
@@ -4543,7 +4549,7 @@ void MainWindow::onLogIdle()
 			}
 
 			if (line == enter_passphrase) {
-				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), true);
+				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
 				return;
 			}
 
@@ -4563,7 +4569,7 @@ void MainWindow::onLogIdle()
 						m->pty_process.writeInput(text.c_str(), text.size());
 					} else {
 						m->ssh_passphrase_for = keyfile;
-						std::string s = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), true);
+						std::string s = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), QString(), true);
 						m->ssh_passphrase_secret = s;
 					}
 					return;
@@ -4572,7 +4578,7 @@ void MainWindow::onLogIdle()
 
 			char const *begin = line.c_str();
 			char const *end = line.c_str() + line.size();
-			auto Input = [&](QString const &title, bool password){
+			auto Input = [&](QString const &title, bool password, std::string *value){
 				std::string header = QString("%1 for '").arg(title).toStdString();
 				if (strncmp(begin, header.c_str(), header.size()) == 0) {
 					QString msg;
@@ -4582,14 +4588,29 @@ void MainWindow::onLogIdle()
 						msg = QString::fromUtf8(begin, end - begin - 2);
 					}
 					if (!msg.isEmpty()) {
-						ExecLineEditDialog(this, title, msg, password);
+						std::string s = ExecLineEditDialog(this, title, msg, value ? QString::fromStdString(*value) : QString(), password);
+						if (value) *value = s;
 						return true;
 					}
 				}
 				return false;
 			};
-			if (Input("Username", false)) return;
-			if (Input("Password", true)) return;
+			std::string uid = m->http_uid;
+			std::string pwd = m->http_pwd;
+			if (Input("Username", false, &uid)) {
+				m->http_uid = uid;
+				return;
+			}
+			if (Input("Password", true, &pwd)) {
+				m->http_pwd = pwd;
+				return;
+			}
+
+			if (StartsWith(fatal_authentication_failed_for)) {
+				QMessageBox::critical(this, tr("Authentication Failed"), QString::fromStdString(line));
+				abortPtyProcess();
+				return;
+			}
 		}
 	}
 }
