@@ -16,6 +16,11 @@ find_package(Qt5 COMPONENTS Core Widgets Network Svg REQUIRED)
 find_package(zlib REQUIRED )
 find_package(OpenSSL REQUIRED )
 find_package(Qt5LinguistTools REQUIRED)
+if(WIN32)
+    # check package at
+    # https://github.com/rprichard/winpty
+    find_package(winpty REQUIRED )
+endif()
 
 set(Guitar_SOURCES
     version.c
