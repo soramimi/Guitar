@@ -22,8 +22,20 @@ if(WIN32)
     find_package(winpty REQUIRED )
 endif()
 
+# extract version information
+string(TIMESTAMP Guitar_copyright_year "%Y")
+execute_process(
+    COMMAND git rev-parse --short=7 HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE Guitar_git_hash
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+configure_file(version.h.in version.h)
+configure_file(win.rc.in win.rc.h)
+configure_file(Info.plist.in Info.plist)
+
 set(Guitar_SOURCES
-    version.c
     src/main.cpp
     src/MainWindow.cpp
     src/Git.cpp
