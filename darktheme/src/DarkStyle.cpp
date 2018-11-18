@@ -456,27 +456,43 @@ void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, Q
 
 void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 {
-	int w = option->rect.width();
-	int h = option->rect.height();
+	QRect rect = option->rect;
+	int w =	rect.width();
+	int h = rect.height();
+
+#ifdef Q_OS_MAC
+	int margin = pixelMetric(PM_ButtonMargin, option, nullptr);
+	if (margin > 0) {
+		int n = std::min(w, h);
+		if (n > margin * 2) {
+			n = (n - margin * 2) / 2;
+			if (n > margin) n = margin;
+			rect = rect.adjusted(n, n, -n, -n);
+			w = rect.width();
+			h = rect.height();
+		}
+	}
+#endif
+
 	bool pressed = (option->state & (State_Sunken | State_On));
 	bool hover = (option->state & State_MouseOver);
 
 	if (pressed) {
-        drawNinePatchImage(p, m->button_press, option->rect, w, h);
+		drawNinePatchImage(p, m->button_press, rect, w, h);
 	} else {
-        drawNinePatchImage(p, m->button_normal, option->rect, w, h);
+		drawNinePatchImage(p, m->button_normal, rect, w, h);
 	}
 	{
 		QPainterPath path;
-		path.addRoundedRect(option->rect, 6, 6); // 角丸四角形のパス
+		path.addRoundedRect(rect, 6, 6); // 角丸四角形のパス
 		p->save();
 		p->setRenderHint(QPainter::Antialiasing);
 		p->setClipPath(path);
 
-		int x = option->rect.x();
-		int y = option->rect.y();
-		int w = option->rect.width();
-		int h = option->rect.height();
+		int x = rect.x();
+		int y = rect.y();
+		int w = rect.width();
+		int h = rect.height();
 		QColor color0, color1;
 #ifdef Q_OS_MAC
 		if (pressed) {
@@ -519,7 +535,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 			p->setPen(QColor(80, 160, 255));
 			p->setBrush(Qt::NoBrush);
 			double m = 3.5;
-			p->drawRoundedRect(((QRectF)option->rect).adjusted(m, m, -m, -m), 4, 4);
+			p->drawRoundedRect(((QRectF)rect).adjusted(m, m, -m, -m), 4, 4);
 #else
 			p->fillRect(x, y, w, h, QColor(80, 160, 255, 32));
 #endif
@@ -606,6 +622,8 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	}
 	return QProxyStyle::pixelMetric(metric, option, widget);
 }
+
+
 
 QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const
 {
@@ -2347,3 +2365,4 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 //	qDebug() << cc;
 	QProxyStyle::drawComplexControl(cc, option, p, widget);
 }
+
