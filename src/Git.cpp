@@ -214,8 +214,7 @@ GitPtr Git::dup() const
 
 bool Git::isValidWorkingCopy(QString const &dir)
 {
-	if (dir.isEmpty()) return false;
-	return QDir(dir / ".git").exists();
+	return QFileInfo(dir).isDir() && QDir(dir / ".git").exists();
 }
 
 bool Git::isValidWorkingCopy() const

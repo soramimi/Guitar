@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/Qt5.7.1/5.7/msvc2013"
+$qt = "C:/Qt/5.7/msvc2013"
 #$qt = "" # スタティックリンクのとき
 
 $openssl = "C:/openssl"

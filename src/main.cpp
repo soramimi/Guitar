@@ -85,10 +85,16 @@ int main(int argc, char *argv[])
 
 	bool f_open_here = false;
 
+	QStringList args;
+
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
-		if (arg == "--open-here") {
-			f_open_here = true;
+		if (arg[0] == '-') {
+			if (arg == "--open-here") {
+				f_open_here = true;
+			}
+		} else {
+			args.push_back(QString::fromStdString(arg));
 		}
 	}
 
@@ -121,6 +127,16 @@ int main(int argc, char *argv[])
 	if (f_open_here) {
 		QString dir = QDir::current().absolutePath();
 		w.autoOpenRepository(dir);
+	} else if (args.size() == 1) {
+		QString dir = args[0] / QString();
+		if (dir.startsWith("./") || dir.startsWith(".\\")) {
+			dir = QDir::current().absolutePath() / dir.mid(2);
+		}
+		QFileInfo fi(dir);
+		if (fi.isDir()) {
+			dir = fi.absolutePath();
+			w.autoOpenRepository(dir);
+		}
 	}
 
 	return a.exec();
