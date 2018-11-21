@@ -407,6 +407,7 @@ public:
 	void createBranch(const QString &name);
 	void checkoutBranch(const QString &name);
 	void mergeBranch(const QString &name);
+	void rebaseBranch(const QString &name);
 	static bool isValidWorkingCopy(const QString &dir);
 	QString diff_to_file(const QString &old_id, const QString &path);
 	QString errorMessage() const;

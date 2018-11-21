@@ -2194,6 +2194,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
 		QAction *a_delrembranch = remoteBranches(commit->commit_id).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
+		QAction *a_rebase = is_valid_commit_id ? menu.addAction(tr("Rebase")) : nullptr;
 		QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 
 		QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
@@ -2244,6 +2245,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_merge) {
 				mergeBranch(commit);
+				return;
+			}
+			if (a == a_rebase) {
+				rebaseBranch(commit);
 				return;
 			}
 			if (a == a_cherrypick) {
@@ -4107,6 +4112,23 @@ void MainWindow::mergeBranch(Git::CommitItem const *commit)
 
 	g->mergeBranch(commit->commit_id);
 	openRepository(true);
+}
+
+void MainWindow::rebaseBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QString text = tr("Are you sure you want to rebase the commit ?");
+	text += "\n\n";
+	text += "> git rebase " + commit->commit_id;
+	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
+	if (r == QMessageBox::Ok) {
+		g->rebaseBranch(commit->commit_id);
+		openRepository(true);
+	}
 }
 
 void MainWindow::cherrypick(Git::CommitItem const *commit)

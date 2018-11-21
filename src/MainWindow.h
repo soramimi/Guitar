@@ -185,6 +185,7 @@ private:
 	int rowFromCommitId(const QString &id);
 	void cherrypick(const Git::CommitItem *commit);
 	void mergeBranch(const Git::CommitItem *commit);
+	void rebaseBranch(const Git::CommitItem *commit);
 	void detectGitServerType(GitPtr g);
 	void initNetworking();
 	void setRemoteOnline(bool f);

@@ -1016,6 +1016,11 @@ void Git::mergeBranch(QString const &name)
 	git("merge " + name);
 }
 
+void Git::rebaseBranch(QString const &name)
+{
+	git("rebase " + name);
+}
+
 QStringList Git::getRemotes()
 {
 	QStringList ret;
