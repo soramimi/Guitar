@@ -10,6 +10,7 @@
 #include "WelcomeWizardDialog.h"
 #include "ui_MainWindow.h"
 #include "EditGitIgnoreDialog.h"
+#include "DoYouWantToInitDialog.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -851,13 +852,15 @@ RepositoryItem const *MainWindow::findRegisteredRepository(QString *workdir) con
 	*workdir = QDir(*workdir).absolutePath();
 	workdir->replace('\\', '/');
 
-	for (RepositoryItem const &item : m->repos) {
-		Qt::CaseSensitivity cs = Qt::CaseSensitive;
+	if (Git::isValidWorkingCopy(*workdir)) {
+		for (RepositoryItem const &item : m->repos) {
+			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
-		cs = Qt::CaseInsensitive;
+			cs = Qt::CaseInsensitive;
 #endif
-		if (workdir->compare(item.local_dir, cs) == 0) {
-			return &item;
+			if (workdir->compare(item.local_dir, cs) == 0) {
+				return &item;
+			}
 		}
 	}
 	return nullptr;
@@ -1821,6 +1824,11 @@ void MainWindow::autoOpenRepository(QString dir)
 			saveRepositoryBookmark(newitem);
 			Open(newitem);
 			return;
+		}
+	} else {
+		DoYouWantToInitDialog dlg(this, dir);
+		if (dlg.exec() == QDialog::Accepted) {
+			createRepository(dir);
 		}
 	}
 }
@@ -4301,9 +4309,9 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	openRepository(false);
 }
 
-void MainWindow::on_action_create_a_repository_triggered()
+void MainWindow::createRepository(QString const &dir)
 {
-	CreateRepositoryDialog dlg(this);
+	CreateRepositoryDialog dlg(this, dir);
 	if (dlg.exec() == QDialog::Accepted) {
 		QString path = dlg.path();
 		if (QFileInfo(path).isDir()) {
@@ -4327,6 +4335,11 @@ void MainWindow::on_action_create_a_repository_triggered()
 			// not dir
 		}
 	}
+}
+
+void MainWindow::on_action_create_a_repository_triggered()
+{
+	createRepository(QString());
 }
 
 bool MainWindow::isRemoteOnline() const

@@ -15,7 +15,7 @@ class CreateRepositoryDialog : public QDialog
 private:
 	QString already_exists_;
 public:
-	explicit CreateRepositoryDialog(MainWindow *parent = 0);
+	explicit CreateRepositoryDialog(MainWindow *parent, QString const &dir = QString());
 	~CreateRepositoryDialog();
 
 	QString path() const;

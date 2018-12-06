@@ -7,7 +7,7 @@
 #include <QMessageBox>
 #include "Git.h"
 
-CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent) :
+CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent, const QString &dir) :
 	QDialog(parent),
 	ui(new Ui::CreateRepositoryDialog)
 {
@@ -18,8 +18,8 @@ CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent) :
 
 	already_exists_ = tr("A valid git repository already exists there.");
 
+	ui->lineEdit_path->setText(dir);
 	ui->groupBox_remote->setChecked(false);
-
 	ui->lineEdit_remote_name->setText("origin");
 
 	validate(false);

@@ -208,6 +208,7 @@ private:
 	void deleteRemoteBranch(const Git::CommitItem *commit);
 	QStringList remoteBranches(const QString &id);
 	void rebaseOnto();
+	void createRepository(const QString &dir);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
