@@ -532,43 +532,44 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		Q_ASSERT(e);
 		int k = e->key();
 		if (k == Qt::Key_Tab) {
-			QList<QWidget *> tabstops;
-			tabstops.push_back(ui->treeWidget_repos);
-			tabstops.push_back(ui->tableWidget_log);
-			if (ui->stackedWidget->currentWidget() == ui->page_files) {
-				tabstops.push_back(ui->listWidget_files);
-			} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
-				tabstops.push_back(ui->listWidget_unstaged);
-				tabstops.push_back(ui->toolButton_select_all);
-				tabstops.push_back(ui->toolButton_stage);
-				tabstops.push_back(ui->toolButton_unstage);
-				tabstops.push_back(ui->toolButton_commit);
-				tabstops.push_back(ui->listWidget_staged);
-			}
-			tabstops.push_back(ui->widget_diff_view);
-			int n = tabstops.size();
-			if (n > 0) {
-				QWidget *f = qApp->focusWidget();
-				int i;
-				for (i = 0; i < n; i++) {
-					if (tabstops[i] == f) {
-						break;
+			if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
+				QList<QWidget *> tabstops;
+				tabstops.push_back(ui->treeWidget_repos);
+				tabstops.push_back(ui->tableWidget_log);
+				if (ui->stackedWidget->currentWidget() == ui->page_files) {
+					tabstops.push_back(ui->listWidget_files);
+				} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
+					tabstops.push_back(ui->listWidget_unstaged);
+					tabstops.push_back(ui->toolButton_select_all);
+					tabstops.push_back(ui->toolButton_stage);
+					tabstops.push_back(ui->toolButton_unstage);
+					tabstops.push_back(ui->toolButton_commit);
+					tabstops.push_back(ui->listWidget_staged);
+				}
+				tabstops.push_back(ui->widget_diff_view);
+				int n = tabstops.size();
+				if (n > 0) {
+					QWidget *f = qApp->focusWidget();
+					int i;
+					for (i = 0; i < n; i++) {
+						if (tabstops[i] == f) {
+							break;
+						}
+					}
+					if (i < n) {
+						if (e->modifiers() & Qt::ShiftModifier) {
+							i = (i + n - 1) % n;
+						} else {
+							i = (i + 1) % n;
+						}
+						tabstops[i]->setFocus();
 					}
 				}
-				if (i < n) {
-					if (e->modifiers() & Qt::ShiftModifier) {
-						i = (i + n - 1) % n;
-					} else {
-						i = (i + 1) % n;
-					}
-					tabstops[i]->setFocus();
-				}
+				return true;
 			}
-			return true;
 		}
 		if (k == Qt::Key_Escape) {
-			QWidget *f = qApp->focusWidget();
-			if (centralWidget()->isAncestorOf(f)) {
+			if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
 				ui->treeWidget_repos->setFocus();
 				return true;
 			}
