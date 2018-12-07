@@ -217,6 +217,8 @@ struct MainWindow::Private {
 	QPixmap transparent_pixmap;
 	StatusLabel *status_bar_label;
 
+	QObject *last_focused_file_list = 0;
+
 	WebContext webcx;
 	AvatarLoader avatar_loader;
 	int update_commit_table_counter = 0;
@@ -265,10 +267,6 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->widget_diff_view->bind(this);
 
 	qApp->installEventFilter(this);
-	ui->treeWidget_repos->installEventFilter(this);
-	ui->tableWidget_log->installEventFilter(this);
-	ui->listWidget_staged->installEventFilter(this);
-	ui->listWidget_unstaged->installEventFilter(this);
 
 	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log, themeForTextEditor());
 	onLogVisibilityChanged();
@@ -515,7 +513,7 @@ bool MainWindow::event(QEvent *event)
 		if (k == Qt::Key_Escape) {
 			emit onEscapeKeyPressed();
 		} else if (k == Qt::Key_Delete) {
-			if (focusWidget() == ui->treeWidget_repos) {
+			if (qApp->focusWidget() == ui->treeWidget_repos) {
 				removeSelectedRepositoryFromBookmark(true);
 				return true;
 			}
@@ -533,6 +531,65 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
+		if (k == Qt::Key_Tab) {
+			QList<QWidget *> tabstops;
+			tabstops.push_back(ui->treeWidget_repos);
+			tabstops.push_back(ui->tableWidget_log);
+			if (ui->stackedWidget->currentWidget() == ui->page_files) {
+				tabstops.push_back(ui->listWidget_files);
+			} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
+				tabstops.push_back(ui->listWidget_unstaged);
+				tabstops.push_back(ui->toolButton_select_all);
+				tabstops.push_back(ui->toolButton_stage);
+				tabstops.push_back(ui->toolButton_unstage);
+				tabstops.push_back(ui->toolButton_commit);
+				tabstops.push_back(ui->listWidget_staged);
+			}
+			tabstops.push_back(ui->widget_diff_view);
+			int n = tabstops.size();
+			if (n > 0) {
+				QWidget *f = qApp->focusWidget();
+				int i;
+				for (i = 0; i < n; i++) {
+					if (tabstops[i] == f) {
+						break;
+					}
+				}
+				if (i < n) {
+					if (e->modifiers() & Qt::ShiftModifier) {
+						i = (i + n - 1) % n;
+					} else {
+						i = (i + 1) % n;
+					}
+					tabstops[i]->setFocus();
+				}
+			}
+			return true;
+		}
+		if (k == Qt::Key_Escape) {
+			QWidget *f = qApp->focusWidget();
+			if (centralWidget()->isAncestorOf(f)) {
+				ui->treeWidget_repos->setFocus();
+				return true;
+			}
+		}
+		if (e->modifiers() & Qt::ControlModifier) {
+			if (k == Qt::Key_Up || k == Qt::Key_Down) {
+				int rows = ui->tableWidget_log->rowCount();
+				int row = ui->tableWidget_log->currentRow();
+				if (k == Qt::Key_Up) {
+					if (row > 0) {
+						row--;
+					}
+				} else if (k == Qt::Key_Down) {
+					if (row + 1 < rows) {
+						row++;
+					}
+				}
+				ui->tableWidget_log->setCurrentCell(row, 0);
+				return true;
+			}
+		}
 		if (watched == ui->treeWidget_repos) {
 			if (k == Qt::Key_Enter || k == Qt::Key_Return) {
 				openSelectedRepository();
@@ -552,10 +609,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 			}
-			if (k == Qt::Key_Tab) {
-				ui->tableWidget_log->setFocus();
-				return true;
-			}
 		} else if (watched == ui->tableWidget_log) {
 			if (k == Qt::Key_Home) {
 				setCurrentLogRow(0);
@@ -563,10 +616,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 			if (k == Qt::Key_Escape) {
 				ui->treeWidget_repos->setFocus();
-				return true;
-			}
-			if (k == Qt::Key_Tab) {
-				// consume the event
 				return true;
 			}
 		} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
@@ -578,14 +627,19 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 	} else if (et == QEvent::FocusIn) {
 		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
 		if (watched == ui->listWidget_unstaged) {
+			m->last_focused_file_list = watched;
 			updateStatusBarText();
 			updateUnstagedFileCurrentItem();
 			return true;
 		}
 		if (watched == ui->listWidget_staged) {
+			m->last_focused_file_list = watched;
 			updateStatusBarText();
 			updateStagedFileCurrentItem();
 			return true;
+		}
+		if (watched == ui->listWidget_files) {
+			m->last_focused_file_list = watched;
 		}
 	}
 	return false;
@@ -1706,6 +1760,8 @@ void MainWindow::openRepository_(GitPtr g)
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
 
+	m->last_focused_file_list = 0;
+
 	ui->tableWidget_log->setFocus();
 	setCurrentLogRow(0);
 
@@ -1911,7 +1967,7 @@ void MainWindow::updateStatusBarText()
 {
 	QString text;
 
-	QWidget *w = QWidget::focusWidget();
+	QWidget *w = qApp->focusWidget();
 	if (w == ui->treeWidget_repos) {
 		QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
 		RepositoryItem const *item = repositoryItem(ite);
@@ -2539,10 +2595,9 @@ QStringList MainWindow::selectedFiles_(QListWidget *listwidget) const
 
 QStringList MainWindow::selectedFiles() const
 {
-	QWidget *w = QWidget::focusWidget();
-	if (w == ui->listWidget_files) return selectedFiles_(ui->listWidget_files);
-	if (w == ui->listWidget_staged) return selectedFiles_(ui->listWidget_staged);
-	if (w == ui->listWidget_unstaged) return selectedFiles_(ui->listWidget_unstaged);
+	if (m->last_focused_file_list == ui->listWidget_files)    return selectedFiles_(ui->listWidget_files);
+	if (m->last_focused_file_list == ui->listWidget_staged)   return selectedFiles_(ui->listWidget_staged);
+	if (m->last_focused_file_list == ui->listWidget_unstaged) return selectedFiles_(ui->listWidget_unstaged);
 	return QStringList();
 }
 
@@ -3320,7 +3375,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-	if (focusWidget() == ui->widget_log) {
+	if (qApp->focusWidget() == ui->widget_log) {
 		int c = event->key();
 
 		auto write_char = [&](char c){

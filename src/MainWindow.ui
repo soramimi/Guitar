@@ -443,6 +443,9 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::ClickFocus</enum>
+           </property>
           </widget>
          </item>
         </layout>
@@ -521,7 +524,11 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QLineEdit" name="lineEdit_filter"/>
+            <widget class="QLineEdit" name="lineEdit_filter">
+             <property name="focusPolicy">
+              <enum>Qt::ClickFocus</enum>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="ClearButton" name="toolButton_erase_filter">
@@ -749,7 +756,7 @@
                   </size>
                  </property>
                  <property name="focusPolicy">
-                  <enum>Qt::NoFocus</enum>
+                  <enum>Qt::StrongFocus</enum>
                  </property>
                  <property name="text">
                   <string>Unstage</string>
@@ -778,7 +785,7 @@
                   </sizepolicy>
                  </property>
                  <property name="focusPolicy">
-                  <enum>Qt::NoFocus</enum>
+                  <enum>Qt::StrongFocus</enum>
                  </property>
                  <property name="text">
                   <string>Select all</string>
@@ -813,7 +820,7 @@
                   </size>
                  </property>
                  <property name="focusPolicy">
-                  <enum>Qt::NoFocus</enum>
+                  <enum>Qt::StrongFocus</enum>
                  </property>
                  <property name="text">
                   <string>Stage</string>
@@ -842,7 +849,7 @@
                   </sizepolicy>
                  </property>
                  <property name="focusPolicy">
-                  <enum>Qt::NoFocus</enum>
+                  <enum>Qt::StrongFocus</enum>
                  </property>
                  <property name="text">
                   <string>Commit</string>
