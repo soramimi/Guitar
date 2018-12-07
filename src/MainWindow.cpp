@@ -2175,6 +2175,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 {
 	Git::CommitItem const *commit = selectedCommitItem();
 	if (commit) {
+		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
 		int row = selectedLogIndex();
 
 		QMenu menu;
@@ -2184,30 +2185,20 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		menu.addSeparator();
 
-		QAction *a_push_upstream = nullptr;
-		if (pushSetUpstream(true)) {
-			a_push_upstream = menu.addAction("push --set-upstream ...");
-		}
+		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout/Branch...")) : nullptr;
+
+		menu.addSeparator();
 
 		QAction *a_edit_comment = nullptr;
 		if (row == 0 && currentBranch().ahead > 0) {
 			a_edit_comment = menu.addAction(tr("Edit comment..."));
 		}
 
-		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
-
-
-
-		QAction *a_checkout = is_valid_commit_id ? menu.addAction(tr("Checkout/Branch...")) : nullptr;
-		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
-		QAction *a_delrembranch = remoteBranches(commit->commit_id).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
 		QAction *a_rebase = is_valid_commit_id ? menu.addAction(tr("Rebase")) : nullptr;
 		QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
-
 		QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
 		QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
-		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 
 		QAction *a_reset_head = nullptr;
 #if 0 // 下手に使うと危険なので、とりあえず無効にしておく
@@ -2215,6 +2206,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			a_reset_head = menu.addAction(tr("Reset HEAD"));
 		}
 #endif
+
+		menu.addSeparator();
+
+		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
+		QAction *a_delrembranch = remoteBranches(commit->commit_id).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
+
+		menu.addSeparator();
+
+		QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 		QAction *a_properties = addMenuActionProperty(&menu);
 
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
@@ -2229,10 +2229,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_properties) {
 				execCommitPropertyDialog(this, commit);
-				return;
-			}
-			if (a == a_push_upstream) {
-				pushSetUpstream(false);
 				return;
 			}
 			if (a == a_edit_comment) {
