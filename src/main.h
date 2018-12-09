@@ -18,6 +18,7 @@ struct ApplicationSettings {
 	bool remember_and_restore_window_position = false;
 	bool enable_high_dpi_scaling = true;
 	bool automatically_fetch_when_opening_the_repository = true;
+	int watch_remote_interval_in_minutes = 5;
 	int maximum_number_of_commit_item_acquisitions = 10000;
 	static ApplicationSettings defaultSettings();
 };

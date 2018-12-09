@@ -208,7 +208,7 @@ private:
 	void rebaseOnto();
 	void createRepository(const QString &dir);
 	void checkRemoteUpdate();
-//	void doCheckRemoteUpdate();
+	void setWatchRemoteInterval(int mins);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);

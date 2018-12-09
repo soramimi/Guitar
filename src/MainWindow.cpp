@@ -325,10 +325,11 @@ MainWindow::MainWindow(QWidget *parent)
 	});
 	// 定期的にリモートの更新状態を取得する
 	m->remote_watcher.setup(this);
-	m->remote_watcher_timer.start(60000);
+	m->remote_watcher_timer.start(300000);
 	connect(&m->remote_watcher_timer, &QTimer::timeout, [&](){
 		emit asyncCheckRemoteUpdate();
 	});
+	setWatchRemoteInterval(appsettings()->watch_remote_interval_in_minutes);
 
 	//
 
@@ -3171,6 +3172,10 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 	}
 }
 
+void MainWindow::setWatchRemoteInterval(int mins)
+{
+	m->remote_watcher_timer.setInterval(mins * 60000);
+}
 
 #ifdef Q_OS_WIN
 QString getWin32HttpProxy();
@@ -3506,6 +3511,7 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
+		setWatchRemoteInterval(appsettings()->watch_remote_interval_in_minutes);
 	}
 }
 
