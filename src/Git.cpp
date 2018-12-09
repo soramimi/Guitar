@@ -90,6 +90,10 @@ QByteArray Git::toQByteArray() const
 	return QByteArray(&m->result[0], m->result.size());
 }
 
+QString Git::resultText() const
+{
+	return QString::fromUtf8(toQByteArray());
+}
 void Git::setGitCommand(QString const &path)
 {
 	m->git_command = path;
@@ -106,11 +110,6 @@ void Git::clearResult()
 	m->result.clear();
 	m->process_exit_code = 0;
 	m->error_message = QString();
-}
-
-QString Git::resultText() const
-{
-	return QString::fromUtf8(toQByteArray());
 }
 
 QString Git::errorMessage() const
@@ -404,8 +403,6 @@ QString Git::diff_to_file(QString const &old_id, QString const &path)
 #endif
 }
 
-
-
 QString Git::getCurrentBranchName()
 {
 	if (isValidWorkingCopy()) {
@@ -429,9 +426,6 @@ QStringList Git::getUntrackedFiles()
 	}
 	return files;
 }
-
-
-
 
 void Git::parseAheadBehind(QString const &s, Branch *b)
 {
@@ -1277,6 +1271,25 @@ QByteArray Git::blame(QString const &path)
 		return toQByteArray();
 	}
 	return QByteArray();
+}
+
+QList<Git::RemoteInfo> Git::ls_remote()
+{
+	QList<RemoteInfo> list;
+	QString cmd = "ls-remote";
+	if (git(cmd)) {
+		QStringList lines = misc::splitLines(resultText());
+		for (QString const &line : lines) {
+			QStringList words = misc::splitWords(line);
+			if (words.size() == 2 && isValidID(words[0])) {
+				RemoteInfo info;
+				info.commit_id = words[0];
+				info.name = words[1];
+				list.push_back(info);
+			}
+		}
+	}
+	return list;
 }
 
 QString Git::signingKey(Source purpose)

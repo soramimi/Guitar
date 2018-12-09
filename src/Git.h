@@ -472,6 +472,12 @@ public:
 	bool setSignPolicy(Source source, SignPolicy policy);
 	bool configGpgProgram(const QString &path, bool global);
 	void rebaseOnto(const QString &newbase, const QString &upstream, const QString &branch, AbstractPtyProcess *pty);
+
+	struct RemoteInfo {
+		QString commit_id;
+		QString name;
+	};
+	QList<RemoteInfo> ls_remote();
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);

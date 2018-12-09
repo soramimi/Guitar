@@ -39,8 +39,7 @@ public:
 	std::vector<std::string> lines;
 };
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
 	Q_OBJECT
 	friend class ImageViewWidget;
 	friend class FileDiffSliderWidget;
@@ -122,7 +121,6 @@ private:
 
 	bool makeDiff(QString id, QList<Git::Diff> *out);
 
-	void udpateButton();
 	void commit(bool amend = false);
 	void commit_amend();
 	void queryBranches(GitPtr g);
@@ -209,6 +207,8 @@ private:
 	QStringList remoteBranches(const QString &id);
 	void rebaseOnto();
 	void createRepository(const QString &dir);
+	void checkRemoteUpdate();
+//	void doCheckRemoteUpdate();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -296,6 +296,7 @@ public:
 	QList<Git::Tag> queryTagList();
 	bool addTag(const QString &name);
 	void updateCurrentFilesList();
+	void setRemoteChanged(bool f);
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
@@ -393,9 +394,11 @@ private slots:
 
 	void on_action_rebase_onto_triggered();
 
+	void doUpdateButton();
 signals:
 	void onEscapeKeyPressed();
-
+	void asyncCheckRemoteUpdate();
+	void updateButton();
 protected:
 	void closeEvent(QCloseEvent *event);
 protected slots:

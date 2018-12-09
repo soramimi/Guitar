@@ -199,7 +199,8 @@ SOURCES += \
     src/EditGitIgnoreDialog.cpp \
     src/SelectItemDialog.cpp \
 	src/RebaseOntoDialog.cpp \
-    src/DoYouWantToInitDialog.cpp
+    src/DoYouWantToInitDialog.cpp \
+    src/RemoteWatcher.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -309,7 +310,8 @@ HEADERS  += \
     src/EditGitIgnoreDialog.h \
     src/SelectItemDialog.h \
 	src/RebaseOntoDialog.h \
-    src/DoYouWantToInitDialog.h
+    src/DoYouWantToInitDialog.h \
+    src/RemoteWatcher.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -9,8 +9,22 @@ MyToolButton::MyToolButton(QWidget *parent)
 {
 }
 
+void MyToolButton::setIndicatorMode(Indicator i)
+{
+	indicator = i;
+	update();
+}
+
+void MyToolButton::setDot(bool f)
+{
+	indicator = Dot;
+	number = f;
+	update();
+}
+
 void MyToolButton::setNumber(int n)
 {
+	indicator = Number;
 	number = n;
 	update();
 }
@@ -22,7 +36,15 @@ void MyToolButton::paintEvent(QPaintEvent *event)
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 
-	if (number >= 0) {
+	if (indicator == Dot && number > 0) {
+		QPainter pr(this);
+		pr.setRenderHint(QPainter::Antialiasing);
+		int z = 10;
+		QRect r(width() - z, 0, z, z);
+		pr.setPen(Qt::NoPen);
+		pr.setBrush(QColor(255, 0, 0));
+		pr.drawEllipse(r);
+	} else if (indicator == Number && number >= 0) {
 		int w = mw->digitWidth();
 		int h = mw->digitHeight();
 		QPixmap pm;

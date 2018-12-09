@@ -11,6 +11,7 @@
 #include "ui_MainWindow.h"
 #include "EditGitIgnoreDialog.h"
 #include "DoYouWantToInitDialog.h"
+#include "RemoteWatcher.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -201,6 +202,7 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
+	QTimer remote_watcher_timer;
 	QImage graph_color;
 	QStringList remotes;
 	std::map<QString, QList<Git::Branch>> branch_map;
@@ -237,11 +239,15 @@ struct MainWindow::Private {
 	InteractionMode interaction_mode = InteractionMode::None;
 	bool interaction_canceled = false;
 
+	bool remote_changed = false;
+
 	std::string ssh_passphrase_for;
 	std::string ssh_passphrase_secret;
 
 	std::string http_uid;
 	std::string http_pwd;
+
+	RemoteWatcher remote_watcher;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -312,6 +318,19 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect((AbstractPtyProcess *)&m->pty_process, SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
 
+	// リモート監視
+	connect(this, SIGNAL(asyncCheckRemoteUpdate()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
+	connect(this, &MainWindow::updateButton, [&](){
+		doUpdateButton();
+	});
+	// 定期的にリモートの更新状態を取得する
+	m->remote_watcher.setup(this);
+	m->remote_watcher_timer.start(60000);
+	connect(&m->remote_watcher_timer, &QTimer::timeout, [&](){
+		emit asyncCheckRemoteUpdate();
+	});
+
+	//
 
 	QString path = getBookmarksFilePath();
 	m->repos = RepositoryBookmark::load(path);
@@ -506,7 +525,9 @@ void MainWindow::setCurrentLogRow(int row)
 bool MainWindow::event(QEvent *event)
 {
 	QEvent::Type et = event->type();
-	if (et == QEvent::KeyPress) {
+	if (et == QEvent::WindowActivate) {
+		checkRemoteUpdate();
+	} else if (et == QEvent::KeyPress) {
 		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
@@ -519,7 +540,6 @@ bool MainWindow::event(QEvent *event)
 			}
 		}
 	}
-
 	return QMainWindow::event(event);
 }
 
@@ -1262,6 +1282,12 @@ void MainWindow::updateCurrentFilesList()
 	}
 }
 
+void MainWindow::setRemoteChanged(bool f)
+{
+	m->remote_changed = f;
+	updateButton();
+}
+
 void MainWindow::prepareLogTableWidget()
 {
 	QStringList cols = {
@@ -1769,7 +1795,8 @@ void MainWindow::openRepository_(GitPtr g)
 	QTableWidgetItem *p = ui->tableWidget_log->item(selrow < 0 ? 0 : selrow, 2);
 	ui->tableWidget_log->setCurrentItem(p);
 
-	udpateButton();
+	checkRemoteUpdate();
+	doUpdateButton();
 }
 
 void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
@@ -1839,11 +1866,15 @@ void MainWindow::reopenRepository(bool log, std::function<void(GitPtr g)> callba
 	openRepository_(g);
 }
 
-void MainWindow::udpateButton()
+void MainWindow::doUpdateButton()
 {
+	setNetworkingCommandsEnabled(isRemoteOnline());
+
 	Git::Branch b = currentBranch();
 
 	int n;
+
+	ui->toolButton_fetch->setDot(m->remote_changed);
 
 	n = b.ahead > 0 ? b.ahead : -1;
 	ui->toolButton_push->setNumber(n);
@@ -2010,6 +2041,9 @@ void MainWindow::execRepositoryPropertyDialog(QString workdir, bool open_reposit
 	RepositoryItem const *repo = findRegisteredRepository(&workdir);
 	if (repo) {
 		name = repo->name;
+	} else {
+		QMessageBox::warning(this, tr("Repository Property"), tr("Not a valid git repository") + "\n\n" + workdir);
+		return;
 	}
 	if (name.isEmpty()) {
 		name = makeRepositoryName(workdir);
@@ -4845,8 +4879,16 @@ void MainWindow::on_action_rebase_onto_triggered()
 	rebaseOnto();
 }
 
+void MainWindow::checkRemoteUpdate()
+{
+	emit asyncCheckRemoteUpdate();
+}
+
+
+
 void MainWindow::on_action_test_triggered()
 {
-	rebaseOnto();
+	checkRemoteUpdate();
+
 }
 
