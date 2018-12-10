@@ -62,10 +62,16 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	auto INT_VALUE_ = [&](QString const &name, int *v, int const &def){
 		*v = s.value(name, def).toInt();
 	};
+	(void)INT_VALUE_;
+
+	auto UINT_VALUE_ = [&](QString const &name, unsigned int *v, unsigned int const &def){
+		*v = s.value(name, def).toUInt();
+	};
 
 #define STRING_VALUE(NAME, SYMBOL) STRING_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 #define BOOL_VALUE(NAME, SYMBOL)   BOOL_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 #define INT_VALUE(NAME, SYMBOL)   INT_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
+#define UINT_VALUE(NAME, SYMBOL)   UINT_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
 
 	s.beginGroup("Global");
 	BOOL_VALUE("SaveWindowPosition", remember_and_restore_window_position);
@@ -88,8 +94,8 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 
 	s.beginGroup("Behavior");
 	BOOL_VALUE("AutomaticFetch", automatically_fetch_when_opening_the_repository);
-	INT_VALUE("WatchRemoteInterval", watch_remote_interval_in_minutes);
-	INT_VALUE("MaxCommitItemAcquisitions", maximum_number_of_commit_item_acquisitions);
+	UINT_VALUE("WatchRemoteInterval", watch_remote_changes_every_mins);
+	UINT_VALUE("MaxCommitItemAcquisitions", maximum_number_of_commit_item_acquisitions);
 	s.endGroup();
 }
 
@@ -117,7 +123,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 
 	s.beginGroup("Behavior");
 	s.setValue("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
-	s.setValue("WatchRemoteInterval", as->watch_remote_interval_in_minutes);
+	s.setValue("WatchRemoteInterval", as->watch_remote_changes_every_mins);
 	s.setValue("MaxCommitItemAcquisitions", as->maximum_number_of_commit_item_acquisitions);
 	s.endGroup();
 

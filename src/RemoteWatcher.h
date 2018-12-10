@@ -5,17 +5,20 @@
 
 #include "MainWindow.h"
 
-class RemoteWatcher : public QObject {
+class RemoteWatcher : public QThread {
 	Q_OBJECT
 private:
 	MainWindow *mainwindow_ = nullptr;
+	QString remote_;
+	QString branch_;
 	MainWindow *mainwindow()
 	{
 		return mainwindow_;
 	}
 public:
 	RemoteWatcher();
-	void setup(MainWindow *mw);
+	void start(MainWindow *mw);
+	void setCurrent(QString const &remote, QString const &branch);
 public slots:
 	void checkRemoteUpdate();
 };

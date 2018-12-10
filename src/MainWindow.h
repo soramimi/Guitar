@@ -209,6 +209,7 @@ private:
 	void createRepository(const QString &dir);
 	void checkRemoteUpdate();
 	void setWatchRemoteInterval(int mins);
+	void emitWriteLog(QByteArray ba);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void timerEvent(QTimerEvent *);
@@ -228,8 +229,6 @@ public:
 	void setGpgCommand(const QString &path, bool save);
 	void clearAuthentication();
 	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
-	QString currentRepositoryName() const;
-	const Git::Branch &currentBranch() const;
 	bool isThereUncommitedChanges() const;
 	QString defaultWorkingDir() const;
 	void autoOpenRepository(QString dir);
@@ -297,6 +296,10 @@ public:
 	bool addTag(const QString &name);
 	void updateCurrentFilesList();
 	void setRemoteChanged(bool f);
+	QString currentRepositoryName() const;
+	QString currentRemoteName() const;
+	Git::Branch const &currentBranch() const;
+	QString currentBranchName() const;
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
@@ -397,8 +400,9 @@ private slots:
 	void doUpdateButton();
 signals:
 	void onEscapeKeyPressed();
-	void asyncCheckRemoteUpdate();
+	void signalCheckRemoteUpdate();
 	void updateButton();
+	void signalWriteLog(QByteArray ba);
 protected:
 	void closeEvent(QCloseEvent *event);
 protected slots:

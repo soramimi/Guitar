@@ -6,9 +6,16 @@ RemoteWatcher::RemoteWatcher()
 {
 }
 
-void RemoteWatcher::setup(MainWindow *mw)
+void RemoteWatcher::start(MainWindow *mw)
 {
 	mainwindow_ = mw;
+	QThread::start();
+}
+
+void RemoteWatcher::setCurrent(const QString &remote, const QString &branch)
+{
+	remote_ = remote;
+	branch_ = branch;
 }
 
 void RemoteWatcher::checkRemoteUpdate()
@@ -19,37 +26,15 @@ void RemoteWatcher::checkRemoteUpdate()
 	QString local_id;
 
 	if (QFileInfo(dir).isDir()) {
-		QString head = dir / ".git/refs/remotes/origin/HEAD";
+		refs = "refs/remotes" / remote_ / branch_;
+		QString head = dir / ".git" / refs;
 		QFile file1(head);
 		if (file1.open(QFile::ReadOnly)) {
-			refs = file1.readLine().trimmed();
-			if (refs.startsWith("ref: ")) {
-				refs = refs.mid(5);
-				QString dir2 = dir / ".git" / refs;
-				QFile file2(dir2);
-				if (file2.open(QFile::ReadOnly)) {
-					local_id = file2.readLine().trimmed();
-				}
-			}
+			local_id = file1.readLine().trimmed();
 		}
+		refs = "refs/heads" / branch_;
 	}
 	if (local_id.isEmpty()) return;
-
-	if (refs.startsWith("refs/remotes/")) {
-		QStringList v = refs.split('/');
-		if (v.size() < 3) return;
-		v.erase(v.begin() + 2);
-		v[1] = "heads";
-		refs = QString();
-		for (int i = 0; i < v.size(); i++) {
-			if (i > 0) {
-				refs += '/';
-			}
-			refs += v[i];
-		}
-	} else {
-		return;
-	}
 
 	QString remote_id;
 	GitPtr g = mainwindow()->git();

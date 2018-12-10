@@ -83,9 +83,9 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QLabel" name="label_3">
+      <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Periodically watch remote updates</string>
+        <string>Watch remote changes periodically</string>
        </property>
       </widget>
      </item>
@@ -103,18 +103,14 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label_4">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>interval in min:</string>
+        <string>interval</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="spinBox_watch_remote_min">
-       <property name="maximum">
-        <number>120</number>
-       </property>
-      </widget>
+      <widget class="QComboBox" name="comboBox_watch_remote_changes"/>
      </item>
     </layout>
    </item>
@@ -163,7 +159,6 @@
   <tabstop>checkBox_auto_fetch</tabstop>
   <tabstop>checkBox_get_committer_icon</tabstop>
   <tabstop>spinBox_max_commit_item_acquisitions</tabstop>
-  <tabstop>spinBox_watch_remote_min</tabstop>
   <tabstop>pushButton_signing_policy</tabstop>
  </tabstops>
  <resources/>

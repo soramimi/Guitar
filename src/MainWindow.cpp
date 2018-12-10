@@ -188,6 +188,7 @@ struct MainWindow::Private {
 	RepositoryItem current_repo;
 	ServerType server_type = ServerType::Standard;
 	GitHubRepositoryInfo github;
+	QString current_remote;
 	Git::Branch current_branch;
 	QString head_id;
 	struct Diff {
@@ -311,6 +312,8 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 
+	connect(this, SIGNAL(signalWriteLog(QByteArray)), this, SLOT(writeLog(QByteArray)));
+
 	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
 	connect(ui->widget_log, SIGNAL(idle()), this, SLOT(onLogIdle()));
 
@@ -319,17 +322,13 @@ MainWindow::MainWindow(QWidget *parent)
 	connect((AbstractPtyProcess *)&m->pty_process, SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
 
 	// リモート監視
-	connect(this, SIGNAL(asyncCheckRemoteUpdate()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
+	connect(this, SIGNAL(signalCheckRemoteUpdate()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
+	connect(&m->remote_watcher_timer, SIGNAL(timeout()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
 	connect(this, &MainWindow::updateButton, [&](){
 		doUpdateButton();
 	});
-	// 定期的にリモートの更新状態を取得する
-	m->remote_watcher.setup(this);
-	m->remote_watcher_timer.start(300000);
-	connect(&m->remote_watcher_timer, &QTimer::timeout, [&](){
-		emit asyncCheckRemoteUpdate();
-	});
-	setWatchRemoteInterval(appsettings()->watch_remote_interval_in_minutes);
+	m->remote_watcher.start(this);
+	setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
 
 	//
 
@@ -369,6 +368,9 @@ MainWindow::~MainWindow()
 
 	m->avatar_loader.interrupt();
 	m->avatar_loader.wait();
+
+	m->remote_watcher.quit();
+	m->remote_watcher.wait();
 
 	deleteTempFiles();
 
@@ -736,8 +738,21 @@ void MainWindow::writeLog(const QString &str)
 
 void MainWindow::writeLog(QByteArray ba)
 {
-	QString s = QString::fromUtf8(ba);
-	writeLog(s);
+	if (!ba.isEmpty()) {
+		writeLog(ba.data(), ba.size());
+	}
+}
+
+void MainWindow::emitWriteLog(QByteArray ba)
+{
+	emit signalWriteLog(ba);
+}
+
+bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
+{
+	MainWindow *mw = (MainWindow *)cookie;
+	mw->emitWriteLog(QByteArray(ptr, len));
+	return true;
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -875,6 +890,26 @@ QString MainWindow::currentWorkingCopyDir() const
 	}
 
 	return QString();
+}
+
+QString MainWindow::currentRepositoryName() const
+{
+	return m->current_repo.name;
+}
+
+QString MainWindow::currentRemoteName() const
+{
+	return m->current_remote;
+}
+
+Git::Branch const &MainWindow::currentBranch() const
+{
+	return m->current_branch;
+}
+
+QString MainWindow::currentBranchName() const
+{
+	return currentBranch().name;
 }
 
 GitPtr MainWindow::git(QString const &dir) const
@@ -1326,17 +1361,6 @@ void MainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_aut
 	m->current_repo = repo;
 }
 
-QString MainWindow::currentRepositoryName() const
-{
-	return m->current_repo.name;
-}
-
-
-Git::Branch const &MainWindow::currentBranch() const
-{
-	return m->current_branch;
-}
-
 bool MainWindow::isValidWorkingCopy(GitPtr const &g) const
 {
 	return g && g->isValidWorkingCopy();
@@ -1365,18 +1389,18 @@ void MainWindow::updateRemoteInfo()
 {
 	queryRemotes(git());
 
-	QString current_remote;
+	m->current_remote = QString();
 	{
 		Git::Branch const &r = currentBranch();
-		current_remote = r.remote;
+		m->current_remote = r.remote;
 	}
-	if (current_remote.isEmpty()) {
+	if (m->current_remote.isEmpty()) {
 		if (m->remotes.size() == 1) {
-			current_remote = m->remotes[0];
+			m->current_remote = m->remotes[0];
 		}
 	}
 
-	ui->lineEdit_remote->setText(current_remote);
+	ui->lineEdit_remote->setText(m->current_remote);
 }
 
 QList<Git::Branch> MainWindow::findBranch(QString const &id)
@@ -1693,13 +1717,13 @@ void MainWindow::openRepository_(GitPtr g)
 
 		QString branch_name;
 		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
-			branch_name += QString("(HEAD detached at %1)").arg(currentBranch().name);
+			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
 		}
 		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
-			branch_name += QString("(HEAD detached from %1)").arg(currentBranch().name);
+			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
 		}
 		if (branch_name.isEmpty()) {
-			branch_name = currentBranch().name;
+			branch_name = currentBranchName();
 		}
 
 		QString repo_name = currentRepositoryName();
@@ -1795,6 +1819,8 @@ void MainWindow::openRepository_(GitPtr g)
 
 	QTableWidgetItem *p = ui->tableWidget_log->item(selrow < 0 ? 0 : selrow, 2);
 	ui->tableWidget_log->setCurrentItem(p);
+
+	m->remote_watcher.setCurrent(currentRemoteName(), currentBranchName());
 
 	checkRemoteUpdate();
 	doUpdateButton();
@@ -2101,7 +2127,7 @@ void MainWindow::on_action_push_triggered()
 
 	if (exitcode == 128) {
 		if (errormsg.indexOf("no upstream branch") >= 0) {
-			QString brname = currentBranch().name;
+			QString brname = currentBranchName();
 
 			QString msg = tr("The current branch %1 has no upstream branch.");
 			msg = msg.arg(brname);
@@ -3174,7 +3200,11 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 
 void MainWindow::setWatchRemoteInterval(int mins)
 {
-	m->remote_watcher_timer.setInterval(mins * 60000);
+	if (mins > 0) {
+		m->remote_watcher_timer.start(mins * 60000);
+	} else {
+		m->remote_watcher_timer.stop();
+	}
 }
 
 #ifdef Q_OS_WIN
@@ -3511,15 +3541,8 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
-		setWatchRemoteInterval(appsettings()->watch_remote_interval_in_minutes);
+		setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
 	}
-}
-
-bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
-{
-	MainWindow *mw = (MainWindow *)cookie;
-	mw->writeLog(ptr, len);
-	return true;
 }
 
 void MainWindow::clone()
@@ -4361,7 +4384,7 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	if (!isValidWorkingCopy(g)) return false;
 	QStringList remotes = g->getRemotes();
 
-	QString current_branch = currentBranch().name;
+	QString current_branch = currentBranchName();
 
 	QStringList branches;
 	for (Git::Branch const &b : g->branches()) {
@@ -4887,14 +4910,12 @@ void MainWindow::on_action_rebase_onto_triggered()
 
 void MainWindow::checkRemoteUpdate()
 {
-	emit asyncCheckRemoteUpdate();
+	emit signalCheckRemoteUpdate();
 }
-
-
 
 void MainWindow::on_action_test_triggered()
 {
+	qDebug() << m->current_remote << m->current_branch.name;
 	checkRemoteUpdate();
-
 }
 

@@ -20,7 +20,8 @@ public:
 private:
 	Ui::SettingBehaviorForm *ui;
 
-	// AbstractSettingForm interface
+	unsigned int getWatchRemoteChangesEveryMins();
+	void setWatchRemoteChangesEveryMins(unsigned int min);
 public:
 	void exchange(bool save);
 private slots:
