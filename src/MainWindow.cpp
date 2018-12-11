@@ -366,8 +366,7 @@ MainWindow::~MainWindow()
 {
 	stopPtyProcess();
 
-	m->avatar_loader.interrupt();
-	m->avatar_loader.wait();
+	m->avatar_loader.stop();
 
 	m->remote_watcher.quit();
 	m->remote_watcher.wait();

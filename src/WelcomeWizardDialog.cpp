@@ -35,8 +35,7 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent) :
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
-	avatar_loader_.interrupt();
-	avatar_loader_.wait();
+	avatar_loader_.stop();
 	delete ui;
 }
 

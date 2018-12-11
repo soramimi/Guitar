@@ -118,8 +118,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, cons
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
-	m->avatar_loader.interrupt();
-	m->avatar_loader.wait();
+	m->avatar_loader.stop();
 	delete m;
 	delete ui;
 }

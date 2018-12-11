@@ -46,8 +46,7 @@ SetUserDialog::SetUserDialog(MainWindow *parent, Git::User const &global_user, G
 
 SetUserDialog::~SetUserDialog()
 {
-	m->avatar_loader.interrupt();
-	m->avatar_loader.wait();
+	m->avatar_loader.stop();
 	delete m;
 	delete ui;
 }

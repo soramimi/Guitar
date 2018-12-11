@@ -21,8 +21,7 @@ struct AvatarLoader::Private {
 	std::deque<RequestItem> completed;
 	std::set<std::string> notfound;
 	WebContext *webcx = nullptr;
-	WebClientPtr web1;
-	WebClientPtr web2;
+	WebClientPtr web;
 };
 
 AvatarLoader::AvatarLoader()
@@ -43,8 +42,7 @@ void AvatarLoader::start(WebContext *webcx)
 
 void AvatarLoader::run()
 {
-	m->web1 = WebClientPtr(new WebClient(m->webcx));
-	m->web2 = WebClientPtr(new WebClient(m->webcx));
+	m->web = std::make_shared<WebClient>(m->webcx);
 
 	while (1) {
 		std::deque<RequestItem> requests;
@@ -84,9 +82,9 @@ void AvatarLoader::run()
 				QString id = tmp;
 				QString url = "https://www.gravatar.com/avatar/%1?s=%2";
 				url = url.arg(id).arg(ICON_SIZE);
-				if (m->web2->get(WebClient::URL(url.toStdString())) == 200) {
-					if (!m->web2->response().content.empty()) {
-						MemoryReader reader(m->web2->response().content.data(), m->web2->response().content.size());
+				if (m->web->get(WebClient::URL(url.toStdString())) == 200) {
+					if (!m->web->response().content.empty()) {
+						MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
 						reader.open(MemoryReader::ReadOnly);
 						QImage image;
 						image.load(&reader, nullptr);
@@ -173,12 +171,12 @@ QIcon AvatarLoader::fetch(std::string const &email, bool request)
 	return QIcon();
 }
 
-void AvatarLoader::interrupt()
+void AvatarLoader::stop()
 {
 	requestInterruption();
-	if (m->web1) m->web1->close();
-	if (m->web2) m->web2->close();
+	if (m->web) m->web->close();
 	m->condition.wakeAll();
+	wait();
 }
 
 

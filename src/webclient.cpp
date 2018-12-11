@@ -587,7 +587,9 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
 
-	if (m->sock == INVALID_SOCKET || !m->ssl) {
+	socket_t sock = m->sock;
+	SSL *ssl = m->ssl;
+	if (sock == INVALID_SOCKET || !ssl) {
 		int ret;
 		struct hostent *servhost;
 		struct sockaddr_in server;
@@ -604,13 +606,14 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 		server.sin_port = htons(port);
 
-		m->sock = socket(AF_INET, SOCK_STREAM, 0);
-		if (m->sock == INVALID_SOCKET) {
-			throw Error("socket failed.");
-		}
-
-		if (connect(m->sock, (struct sockaddr*) &server, sizeof(server)) == SOCKET_ERROR) {
-			throw Error("connect failed.");
+		if (sock == INVALID_SOCKET) {
+			sock = socket(AF_INET, SOCK_STREAM, 0);
+			if (sock == INVALID_SOCKET) {
+				throw Error("socket failed.");
+			}
+			if (connect(sock, (struct sockaddr*) &server, sizeof(server)) == SOCKET_ERROR) {
+				throw Error("connect failed.");
+			}
 		}
 
 		if (proxy) { // testing
@@ -621,9 +624,9 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			str += request_url.data.host;
 			str += port;
 			str += " HTTP/1.0\r\n\r\n";
-			send_(m->sock, str.c_str(), str.size());
+			send_(sock, str.c_str(), str.size());
 			char tmp[1000];
-			int n = recv(m->sock, tmp, sizeof(tmp), 0);
+			int n = recv(sock, tmp, sizeof(tmp), 0);
 			int i;
 			for (i = 0; i < n; i++) {
 				char c = tmp[i];
@@ -640,15 +643,15 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			}
 		}
 
-		m->ssl = SSL_new(sslctx());
-		if (!m->ssl) {
+		ssl = SSL_new(sslctx());
+		if (!ssl) {
 			throw Error(get_ssl_error());
 		}
 
-		SSL_set_options(m->ssl, SSL_OP_NO_SSLv2);
-		SSL_set_options(m->ssl, SSL_OP_NO_SSLv3);
+		SSL_set_options(ssl, SSL_OP_NO_SSLv2);
+		SSL_set_options(ssl, SSL_OP_NO_SSLv3);
 
-		ret = SSL_set_fd(m->ssl, m->sock);
+		ret = SSL_set_fd(ssl, sock);
 		if (ret == 0) {
 			throw Error(get_ssl_error());
 		}
@@ -659,20 +662,20 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			RAND_seed(&rand_ret, sizeof(rand_ret));
 		}
 
-		ret = SSL_connect(m->ssl);
+		ret = SSL_connect(ssl);
 		if (ret != 1) {
 			throw Error(get_ssl_error());
 		}
 
-		std::string cipher = SSL_get_cipher(m->ssl);
+		std::string cipher = SSL_get_cipher(ssl);
 		cipher += '\n';
 		output_debug_string(cipher.c_str());
 
-		std::string version = SSL_get_cipher_version(m->ssl);
+		std::string version = SSL_get_cipher_version(ssl);
 		version += '\n';
 		output_debug_string(version.c_str());
 
-		X509 *x509 = SSL_get_peer_certificate(m->ssl);
+		X509 *x509 = SSL_get_peer_certificate(ssl);
 		if (x509) {
 #ifndef OPENSSL_NO_SHA1
 			std::string fingerprint;
@@ -687,7 +690,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			fingerprint += '\n';
 			output_debug_string(fingerprint.c_str());
 #endif
-			long l = SSL_get_verify_result(m->ssl);
+			long l = SSL_get_verify_result(ssl);
 			if (l == X509_V_OK) {
 				// ok
 			} else {
@@ -743,7 +746,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 	auto SEND = [&](char const *ptr, int len){
 		while (len > 0) {
-			int n = SSL_write(m->ssl, ptr, len);
+			int n = SSL_write(ssl, ptr, len);
 			if (n < 1 || n > len) {
 				throw WebClient::Error(get_ssl_error());
 			}
@@ -761,11 +764,12 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 	m->content_offset = 0;
 
 	receive_(opt, [&](char *ptr, int len){
-		return SSL_read(m->ssl, ptr, len);
+		return SSL_read(ssl, ptr, len);
 	}, out);
 
+	m->sock = sock;
+	m->ssl = ssl;
 	if (!m->keep_alive) close();
-
 	return true;
 #endif
 	return false;
