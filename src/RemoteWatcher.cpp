@@ -10,6 +10,7 @@ void RemoteWatcher::start(MainWindow *mw)
 {
 	mainwindow_ = mw;
 	QThread::start();
+	moveToThread(this);
 }
 
 void RemoteWatcher::setCurrent(const QString &remote, const QString &branch)

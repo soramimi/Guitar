@@ -200,6 +200,7 @@ struct MainWindow::Private {
 	QStringList added;
 	Git::CommitItemList logs;
 	std::map<int, QList<Label>> label_map;
+	bool force_fetch = false;
 	bool uncommited_changes = false;
 	int update_files_list_counter = 0;
 	QTimer interval_10ms_timer;
@@ -235,7 +236,6 @@ struct MainWindow::Private {
 	RepositoryItem temp_repo;
 
 	QListWidgetItem *last_selected_file_item = nullptr;
-
 
 	InteractionMode interaction_mode = InteractionMode::None;
 	bool interaction_canceled = false;
@@ -1682,7 +1682,9 @@ void MainWindow::openRepository_(GitPtr g)
 
 	if (isValidWorkingCopy(g)) {
 
-		if (isRemoteOnline() && appsettings()->automatically_fetch_when_opening_the_repository) {
+		bool do_fetch = isRemoteOnline() && (m->force_fetch || appsettings()->automatically_fetch_when_opening_the_repository);
+		m->force_fetch = false;
+		if (do_fetch) {
 			if (!fetch(g)) {
 				return;
 			}
@@ -2001,6 +2003,7 @@ void MainWindow::commit(bool amend)
 				ok = g->commit(text, sign, &m->pty_process);
 			}
 			if (ok) {
+				m->force_fetch = true;
 				openRepository(true);
 			} else {
 				QString err = g->errorMessage().trimmed();
@@ -4915,7 +4918,5 @@ void MainWindow::checkRemoteUpdate()
 
 void MainWindow::on_action_test_triggered()
 {
-	qDebug() << m->current_remote << m->current_branch.name;
-	checkRemoteUpdate();
 }
 
