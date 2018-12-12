@@ -4912,6 +4912,8 @@ void MainWindow::on_action_rebase_onto_triggered()
 
 void MainWindow::checkRemoteUpdate()
 {
+	if (m->pty_process.isRunning()) return;
+
 	emit signalCheckRemoteUpdate();
 }
 
