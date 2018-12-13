@@ -45,57 +45,71 @@ SettingsDialog::~SettingsDialog()
 	delete ui;
 }
 
+namespace {
+
+template <typename T> class GetValue {
+private:
+public:
+	MySettings &settings;
+	QString name;
+	GetValue(MySettings &s, QString const &name)
+		: settings(s)
+		, name(name)
+	{
+	}
+	void operator >> (T &value)
+	{
+		value = settings.value(name, value).value<T>();
+	}
+};
+
+template <typename T> class SetValue {
+private:
+public:
+	MySettings &settings;
+	QString name;
+	SetValue(MySettings &s, QString const &name)
+		: settings(s)
+		, name(name)
+	{
+	}
+	void operator << (T const &value)
+	{
+		settings.setValue(name, value);
+	}
+};
+
+} // namespace
+
 void SettingsDialog::loadSettings(ApplicationSettings *as)
 {
 	MySettings s;
 
-	ApplicationSettings def = ApplicationSettings::defaultSettings();
-
-	auto STRING_VALUE_ = [&](QString const &name, QString *v, QString const &def){
-		*v = s.value(name, def).toString();
-	};
-
-	auto BOOL_VALUE_ = [&](QString const &name, bool *v, bool const &def){
-		*v = s.value(name, def).toBool();
-	};
-
-	auto INT_VALUE_ = [&](QString const &name, int *v, int const &def){
-		*v = s.value(name, def).toInt();
-	};
-	(void)INT_VALUE_;
-
-	auto UINT_VALUE_ = [&](QString const &name, unsigned int *v, unsigned int const &def){
-		*v = s.value(name, def).toUInt();
-	};
-
-#define STRING_VALUE(NAME, SYMBOL) STRING_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
-#define BOOL_VALUE(NAME, SYMBOL)   BOOL_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
-#define INT_VALUE(NAME, SYMBOL)   INT_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
-#define UINT_VALUE(NAME, SYMBOL)   UINT_VALUE_(NAME, &as->SYMBOL, def.SYMBOL)
+	*as = ApplicationSettings::defaultSettings();
 
 	s.beginGroup("Global");
-	BOOL_VALUE("SaveWindowPosition", remember_and_restore_window_position);
-	STRING_VALUE("DefaultWorkingDirectory", default_working_dir);
-	STRING_VALUE("GitCommand", git_command);
-	STRING_VALUE("FileCommand", file_command);
-	STRING_VALUE("GpgCommand", gpg_command);
+	GetValue<bool>(s, "SaveWindowPosition")                  >> as->remember_and_restore_window_position;
+	GetValue<QString>(s, "DefaultWorkingDirectory")          >> as->default_working_dir;
+	GetValue<QString>(s, "GitCommand")                       >> as->git_command;
+	GetValue<QString>(s, "FileCommand")                      >> as->file_command;
+	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
-	BOOL_VALUE("EnableHighDpiScaling", enable_high_dpi_scaling);
+	GetValue<bool>(s, "EnableHighDpiScaling")                >> as->enable_high_dpi_scaling;
 	s.endGroup();
 
 	s.beginGroup("Network");
-	STRING_VALUE("ProxyType", proxy_type);
-	STRING_VALUE("ProxyServer", proxy_server);
-	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
-	BOOL_VALUE("GetCommitterIcon", get_committer_icon);
+	GetValue<QString>(s, "ProxyType")                        >> as->proxy_type;
+	GetValue<QString>(s, "ProxyServer")                      >> as->proxy_server;
+	GetValue<bool>(s, "GetCommitterIcon")                    >> as->get_committer_icon;
 	s.endGroup();
+	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
 
 	s.beginGroup("Behavior");
-	BOOL_VALUE("AutomaticFetch", automatically_fetch_when_opening_the_repository);
-	UINT_VALUE("WatchRemoteInterval", watch_remote_changes_every_mins);
-	UINT_VALUE("MaxCommitItemAcquisitions", maximum_number_of_commit_item_acquisitions);
+	GetValue<bool>(s, "AutomaticFetch")                      >> as->automatically_fetch_when_opening_the_repository;
+	GetValue<unsigned int>(s, "WatchRemoteInterval")         >> as->watch_remote_changes_every_mins;
+	GetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   >> as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 }
 
@@ -104,27 +118,27 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	MySettings s;
 
 	s.beginGroup("Global");
-	s.setValue("SaveWindowPosition", as->remember_and_restore_window_position);
-	s.setValue("DefaultWorkingDirectory", as->default_working_dir);
-	s.setValue("GitCommand", as->git_command);
-	s.setValue("FileCommand", as->file_command);
-	s.setValue("GpgCommand", as->gpg_command);
+	SetValue<bool>(s, "SaveWindowPosition")                  << as->remember_and_restore_window_position;
+	SetValue<QString>(s, "DefaultWorkingDirectory")          << as->default_working_dir;
+	SetValue<QString>(s, "GitCommand")                       << as->git_command;
+	SetValue<QString>(s, "FileCommand")                      << as->file_command;
+	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
-	s.setValue("EnableHighDpiScaling", as->enable_high_dpi_scaling);
+	SetValue<bool>(s, "EnableHighDpiScaling")                << as->enable_high_dpi_scaling;
 	s.endGroup();
 
 	s.beginGroup("Network");
-	s.setValue("ProxyType", as->proxy_type);
-	s.setValue("ProxyServer", misc::makeProxyServerURL(as->proxy_server));
-	s.setValue("GetCommitterIcon", as->get_committer_icon);
+	SetValue<QString>(s, "ProxyType")                        << as->proxy_type;
+	SetValue<QString>(s, "ProxyServer")                      << misc::makeProxyServerURL(as->proxy_server);
+	SetValue<bool>(s, "GetCommitterIcon")                    << as->get_committer_icon;
 	s.endGroup();
 
 	s.beginGroup("Behavior");
-	s.setValue("AutomaticFetch", as->automatically_fetch_when_opening_the_repository);
-	s.setValue("WatchRemoteInterval", as->watch_remote_changes_every_mins);
-	s.setValue("MaxCommitItemAcquisitions", as->maximum_number_of_commit_item_acquisitions);
+	SetValue<bool>(s, "AutomaticFetch")                      << as->automatically_fetch_when_opening_the_repository;
+	SetValue<unsigned int>(s, "WatchRemoteInterval")         << as->watch_remote_changes_every_mins;
+	SetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   << as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 
 }
