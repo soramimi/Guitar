@@ -197,7 +197,7 @@ void FileHistoryWindow::updateDiffView()
 		QString id_left = left_thread.result;
 		QString id_right = right_thread.result;
 
-		ui->widget_diff_view->updateDiffView(id_left, id_right);
+		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
 		QString id = mainwindow()->findFileID(m->g, commit.commit_id, m->path);

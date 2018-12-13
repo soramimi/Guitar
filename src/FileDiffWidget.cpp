@@ -567,13 +567,14 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	}
 }
 
-void FileDiffWidget::updateDiffView(QString id_left, QString id_right)
+void FileDiffWidget::updateDiffView(QString id_left, QString id_right, QString const &path)
 {
 	GitPtr g = git();
 	if (!g) return;
 	if (!g->isValidWorkingCopy()) return;
 
 	Git::Diff diff;
+	diff.path = path;
 	diff.blob.a_id = id_left;
 	diff.blob.b_id = id_right;
 	diff.mode = "0";
