@@ -1,5 +1,5 @@
 #include "GitPack.h"
-#include "../myzlib.h"
+#include <zlib.h>
 #include <QDebug>
 #include <QFile>
 #include "GitPackIdxV2.h"

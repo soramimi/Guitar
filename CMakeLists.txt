@@ -186,7 +186,6 @@ set(Guitar_HEADERS
     src/ReadOnlyPlainTextEdit.h
     src/MyTableWidgetDelegate.h
     src/SetRemoteUrlDialog.h
-    myzlib.h
     src/ClearButton.h
     src/SetUserDialog.h
     src/SearchFromGitHubDialog.h
