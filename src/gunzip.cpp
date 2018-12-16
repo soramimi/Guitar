@@ -1,5 +1,5 @@
 #include "gunzip.h"
-#include "myzlib.h"
+#include <zlib.h>
 #include <stdint.h>
 #include <QFile>
 

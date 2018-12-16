@@ -40,4 +40,7 @@
         <file>image/signature-dubious.png</file>
         <file>image/signature-good.png</file>
     </qresource>
+    <qresource prefix="/translations">
+        <file>translations/ja_JPN.qm</file>
+    </qresource>
 </RCC>

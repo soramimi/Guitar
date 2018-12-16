@@ -141,7 +141,7 @@
            </size>
           </property>
           <property name="pixmap">
-           <pixmap resource="../resources.qrc">:/image/signature-good.png</pixmap>
+           <pixmap resource="resources/resources.qrc">:/image/signature-good.png</pixmap>
           </property>
           <property name="scaledContents">
            <bool>true</bool>
@@ -363,7 +363,7 @@
   <tabstop>pushButton_close</tabstop>
  </tabstops>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="resources/resources.qrc"/>
  </resources>
  <connections>
   <connection>

@@ -41,7 +41,7 @@ public:
 };
 ThemePtr createStandardTheme();
 
-#ifdef USE_DARK_THEME
+// #ifdef USE_DARK_THEME
 
 class DarkTheme : public AbstractTheme {
 public:
@@ -54,7 +54,7 @@ public:
 };
 ThemePtr createDarkTheme();
 
-#endif
+// #endif
 
 
 #endif // THEME_H

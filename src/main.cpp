@@ -12,7 +12,7 @@
 #include "webclient.h"
 #include "win32/win32.h"
 #include "common/misc.h"
-#include "../darktheme/src/DarkStyle.h"
+#include "darktheme/DarkStyle.h"
 
 #include <QStandardPaths>
 #include "common/joinpath.h"
