@@ -59,7 +59,7 @@ public:
 	}
 	void operator >> (T &value)
 	{
-		value = settings.value(name, value).value<T>();
+		value = settings.value(name, value).template value<T>();
 	}
 };
 
