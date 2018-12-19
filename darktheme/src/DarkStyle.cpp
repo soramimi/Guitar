@@ -14,8 +14,8 @@
 #include <QStyleOptionFrameV3>
 #include <QTableWidget>
 #include <QToolTip>
-#include <math.h>
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
 
 #define MBI_NORMAL                  1
 #define MBI_HOT                     2
@@ -24,11 +24,11 @@
 
 namespace {
 
-static const int windowsItemFrame        =  2; // menu item frame width
-static const int windowsItemHMargin      =  3; // menu item hor text margin
-static const int windowsItemVMargin      =  4; // menu item ver text margin
-static const int windowsArrowHMargin     =  6; // arrow horizontal margin
-static const int windowsRightBorder      = 15; // right border on windows
+const int windowsItemFrame        =  2; // menu item frame width
+const int windowsItemHMargin      =  3; // menu item hor text margin
+const int windowsItemVMargin      =  4; // menu item ver text margin
+const int windowsArrowHMargin     =  6; // arrow horizontal margin
+const int windowsRightBorder      = 15; // right border on windows
 
 void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright)
 {
@@ -46,7 +46,7 @@ void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, Q
 	}
 }
 
-void drawFrame(QPainter *pr, QRect const &r, QColor color_topleft, QColor color_bottomright)
+void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor const &color_bottomright)
 {
 	return drawFrame(pr, r.x(), r.y(), r.width(), r.height(), color_topleft, color_bottomright);
 }
@@ -138,7 +138,7 @@ struct DarkStyle::Private {
 
 };
 
-DarkStyle::DarkStyle(QColor base_color)
+DarkStyle::DarkStyle(QColor const &base_color)
     : m(new Private)
 {
 	setBaseColor(base_color);
@@ -945,7 +945,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		}
 	}
 	if (pe == QStyle::PE_Widget) { // bg for messagebox
-		const QDialogButtonBox *buttonBox = 0;
+		const QDialogButtonBox *buttonBox = nullptr;
 
 		if (qobject_cast<const QMessageBox *> (widget))
 			buttonBox = widget->findChild<const QDialogButtonBox *>(QLatin1String("qt_msgbox_buttonbox"));
@@ -1265,7 +1265,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			if (btn->features & QStyleOptionButton::HasMenu) {
 				int mbiw = 0, mbih = 0;
-				QRect r = subElementRect(SE_PushButtonContents, option, 0);
+				QRect r = subElementRect(SE_PushButtonContents, option, nullptr);
 				QStyleOptionButton newBtn = *btn;
 				r = QRect(r.right() - mbiw - 2, option->rect.top() + (option->rect.height()/2) - (mbih/2), mbiw + 1, mbih + 1);
 				newBtn.rect = QStyle::visualRect(option->direction, option->rect, r);
@@ -1376,8 +1376,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					} else {
 						pixmap = opt->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode);
 					}
-					const int pixw = pixmap.width() / pixmap.devicePixelRatio();
-					const int pixh = pixmap.height() / pixmap.devicePixelRatio();
+					const int pixw = int(pixmap.width() / pixmap.devicePixelRatio());
+					const int pixh = int(pixmap.height() / pixmap.devicePixelRatio());
 					QRect pmr(0, 0, pixw, pixh);
 					pmr.moveCenter(vCheckRect.center());
 					p->setPen(opt->palette.text().color());
@@ -1440,7 +1440,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_TabBarTabShape) {
-		if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
+		if (const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
 			bool rtlHorTabs = (tab->direction == Qt::RightToLeft && (tab->shape == QTabBar::RoundedNorth || tab->shape == QTabBar::RoundedSouth));
 			bool selected = tab->state & State_Selected;
 			bool lastTab = ((!rtlHorTabs && tab->position == QStyleOptionTab::End) || (rtlHorTabs && tab->position == QStyleOptionTab::Beginning));
@@ -2061,7 +2061,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 	}
 	if (cc == QStyle::CC_ScrollBar) {
 		bool ishorz = (option->state & State_Horizontal);
-        ScrollBarTextures *tx = const_cast<ScrollBarTextures *>(ishorz ? &m->hsb : &m->vsb);
+		auto *tx = const_cast<ScrollBarTextures *>(ishorz ? &m->hsb : &m->vsb);
 
 		int extent = (ishorz ? tx->slider.im_normal.height() : tx->slider.im_normal.width()) - 2;
 
@@ -2227,7 +2227,8 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 				double r = std::min(groove.width(), groove.height()) / 2;
 				{
 					double n = r * 3 / 4;
-					grooveRect = rect.adjusted(n, n, -n, -n);
+					int i = (int)n;
+					grooveRect = rect.adjusted(i, i, -i, -i);
 					r -= n;
 				}
 

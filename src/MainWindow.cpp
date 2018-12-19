@@ -12,13 +12,6 @@
 #include "EditGitIgnoreDialog.h"
 #include "DoYouWantToInitDialog.h"
 #include "RemoteWatcher.h"
-
-#ifdef Q_OS_WIN
-#include "win32/win32.h"
-#else
-#include <unistd.h>
-#endif
-
 #include "ApplicationGlobal.h"
 #include "AboutDialog.h"
 #include "AvatarLoader.h"
@@ -61,10 +54,7 @@
 #include "SetGpgSigningDialog.h"
 #include "gpg.h"
 #include "webclient.h"
-#include <deque>
-#include <set>
-#include <stdlib.h>
-
+#include "RebaseOntoDialog.h"
 #include <QBuffer>
 #include <QClipboard>
 #include <QDateTime>
@@ -83,7 +73,16 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QTimer>
-#include <RebaseOntoDialog.h>
+#include <deque>
+#include <set>
+#include <stdlib.h>
+
+#ifdef Q_OS_WIN
+#include "win32/win32.h"
+#else
+#include <unistd.h>
+#endif
+
 
 #ifdef Q_OS_MAC
 extern "C" char **environ;
@@ -1152,7 +1151,7 @@ bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 	return true; // success
 }
 
-void MainWindow::addDiffItems(QList<Git::Diff> const *diff_list, std::function<void(QString const &filename, QString header, int idiff)> add_item)
+void MainWindow::addDiffItems(QList<Git::Diff> const *diff_list, std::function<void(QString const &filename, QString header, int idiff)> const &add_item)
 {
 	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
 		Git::Diff const &diff = diff_list->at(idiff);

@@ -15,7 +15,7 @@
 QString getModuleFileName()
 {
 	wchar_t tmp[300];
-	DWORD n = GetModuleFileNameW(0, tmp, 300);
+	DWORD n = GetModuleFileNameW(nullptr, tmp, 300);
 	return QString::fromUtf16((ushort const *)tmp, n);
 }
 
@@ -32,7 +32,7 @@ QString getModuleFileName()
 QString getAppDataLocation()
 {
 	wchar_t tmp[300];
-	if (SHGetSpecialFolderPathW(0, tmp, CSIDL_APPDATA, TRUE)) {
+	if (SHGetSpecialFolderPathW(nullptr, tmp, CSIDL_APPDATA, TRUE)) {
 		return QString::fromUtf16((ushort const *)tmp);
 	}
 	return QString();
@@ -61,14 +61,14 @@ private:
 		std::deque<char> out;
 		Mutex mutex;
 	protected:
-		virtual void run()
+		 void run() override
 		{
 			try {
 				// 子プロセスの標準出力を読み出す
 				while (1) {
 					CHAR tmp[1024];
 					DWORD len;
-					if (!ReadFile(procthread->hOutputRead, tmp, sizeof(tmp), &len, 0) || len == 0) {
+					if (!ReadFile(procthread->hOutputRead, tmp, sizeof(tmp), &len, nullptr) || len == 0) {
 						if (GetLastError() == ERROR_BROKEN_PIPE) {
 							break; // pipe done - normal exit path.
 						}
@@ -81,7 +81,7 @@ private:
 			} catch (std::string const &e) { // 例外
 				OutputDebugStringA(e.c_str());
 			}
-			procthread = 0;
+			procthread = nullptr;
 		}
 	public:
 		void Prepare(ProcessThread *pt)
@@ -119,7 +119,7 @@ protected:
 		}
 	}
 
-	virtual void run()
+	 void run() override
 	{
 		hOutputRead = INVALID_HANDLE_VALUE;
 		hInputWrite = INVALID_HANDLE_VALUE;
@@ -134,7 +134,7 @@ protected:
 			SECURITY_ATTRIBUTES sa;
 
 			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-			sa.lpSecurityDescriptor = 0;
+			sa.lpSecurityDescriptor = nullptr;
 			sa.bInheritHandle = TRUE;
 
 			HANDLE currproc = GetCurrentProcess();
@@ -178,7 +178,7 @@ protected:
 			std::vector<wchar_t> tmp;
 			tmp.resize(command.size() + 1);
 			wcscpy(&tmp[0], (wchar_t const *)command.utf16());
-			if (!CreateProcessW(0, &tmp[0], 0, 0, TRUE, CREATE_NO_WINDOW, 0, 0, &si, &pi)) {
+			if (!CreateProcessW(nullptr, &tmp[0], nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
 				FAILED_("CreateProcess");
 			}
 
@@ -238,7 +238,7 @@ public:
 	{
 		if (ptr && len > 0) {
 			DWORD l = 0;
-			WriteFile(hInputWrite, ptr, len, &l, 0);
+			WriteFile(hInputWrite, ptr, len, &l, nullptr);
 		}
 	}
 
@@ -296,7 +296,7 @@ void setEnvironmentVariable(QString const &name, QString const &value)
 
 QString getWin32HttpProxy()
 {
-	HKEY hk = 0;
+	HKEY hk = nullptr;
 	auto Close = [&](){
 		RegCloseKey(hk);
 	};

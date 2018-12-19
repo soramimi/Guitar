@@ -122,7 +122,7 @@ int Git::getProcessExitCode() const
 	return m->process_exit_code;
 }
 
-bool Git::chdirexec(std::function<bool()> fn)
+bool Git::chdirexec(std::function<bool()> const &fn)
 {
 	bool ok = false;
 	QDir cwd = QDir::current();
@@ -373,7 +373,7 @@ QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', QString::SkipEmptyParts); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
 				QStringList files = line.mid(tab + 1).split('\t', QString::SkipEmptyParts); // タブより後ろはファイルパス
-				if (files.size() > 0) {
+				if (!files.empty()) {
 					for (QString &file : files) {
 						file = Git::trimPath(file);
 					}
@@ -649,7 +649,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 					for (int i = 0; i + 1 < n; i += 2) {
 						ushort c = begin[i];
 						ushort d = begin[i + 1];
-						if (c < 0x80 && c < 0x80 && isxdigit(c) && isxdigit(d)) {
+						if (c < 0x80 && isxdigit(c) && isxdigit(d)) {
 							char tmp[3];
 							tmp[0] = c;
 							tmp[1] = d;
@@ -682,7 +682,7 @@ bool Git::queryCommit(QString const &id, CommitItem *out)
 			QStringList lines = misc::splitLines(ba, [](char const *p, size_t n){
 				return QString::fromUtf8(p, (int)n);
 			});
-			while (lines.size() > 0 && lines[lines.size() - 1].isEmpty()) {
+			while (!lines.empty() && lines[lines.size() - 1].isEmpty()) {
 				lines.pop_back();
 			}
 
@@ -1308,8 +1308,8 @@ QString Git::signingKey(Source purpose)
 
 bool Git::setSigningKey(QString const &id, bool global)
 {
-	for (int i = 0; i < id.size(); i++) {
-		if (!QChar(id[i]).isLetterOrNumber()) return false;
+	for (auto i : id) {
+		if (!QChar(i).isLetterOrNumber()) return false;
 	}
 
 	QString cmd = "config %1 %2 user.signingkey %3";

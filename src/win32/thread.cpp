@@ -23,7 +23,7 @@ void Thread::start()
 	detach();
 	_interrupted = false;
 #ifdef WIN32
-	_thread_handle = (HANDLE)_beginthreadex(0, 0, run_, this, CREATE_SUSPENDED, 0);
+	_thread_handle = (HANDLE)_beginthreadex(nullptr, 0, run_, this, CREATE_SUSPENDED, nullptr);
 	ResumeThread(_thread_handle);
 #else
 	pthread_create(&_thread_handle, NULL, run_, this);
@@ -67,7 +67,7 @@ void Thread::detach()
 #ifdef WIN32
 	if (_thread_handle) {
 		CloseHandle(_thread_handle);
-		_thread_handle = 0;
+		_thread_handle = nullptr;
 	}
 #else
 	if (_thread_handle) {

@@ -622,7 +622,7 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 		if (a.type == QInputMethodEvent::TextFormat) {
 			QTextFormat f = qvariant_cast<QTextFormat>(a.value);
 			if (f.type() == QTextFormat::CharFormat) {
-				preedit.format.push_back(PreEditText::Format(a.start, a.length, f));
+				preedit.format.emplace_back(a.start, a.length, f);
 			} else {
 			}
 		}
@@ -639,7 +639,7 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 #endif
 //	qDebug() << e->preeditString() << e->commitString();
 
-	QString commit_text = e->commitString();
+	QString const &commit_text = e->commitString();
 	if (!commit_text.isEmpty()) {
 		write_(commit_text, true);
 	}

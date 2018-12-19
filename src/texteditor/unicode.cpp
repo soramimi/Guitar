@@ -6,19 +6,19 @@ namespace unicode_helper_ {
 
 class reader {
 public:
-	virtual ~reader() {}
+	virtual ~reader() = default;
 	virtual int get() = 0;
 };
 
 class writer8 {
 public:
-	virtual ~writer8() {}
+	virtual ~writer8() = default;
 	virtual void put(int c) = 0;
 };
 
 class writer16 {
 public:
-	virtual ~writer16() {}
+	virtual ~writer16() = default;
 	virtual void put(int c) = 0;
 };
 
@@ -211,10 +211,8 @@ public:
 		, len(0)
 	{
 	}
-	virtual ~internal_writer()
-	{
-	}
-	virtual void put(int c)
+	~internal_writer() override = default;
+	void put(int c) override
 	{
 		dst[len++] = c;
 	}
@@ -279,17 +277,14 @@ int utf8encoder::pos() const
 class utf16encoder::internal_writer : public unicode_helper_::writer16 {
 public:
 	uint16_t *dst;
-	int len;
+	int len = 0;
 public:
 	internal_writer(uint16_t *p)
 		: dst(p)
-		, len(0)
 	{
 	}
-	virtual ~internal_writer()
-	{
-	}
-	virtual void put(int c)
+	~internal_writer() override = default;
+	void put(int c) override
 	{
 		dst[len++] = c;
 	}

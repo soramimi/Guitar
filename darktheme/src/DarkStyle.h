@@ -41,7 +41,7 @@ private:
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 	QColor color(int level, int alpha = 255) const;
 public:
-	DarkStyle(QColor base_color = QColor());
+	DarkStyle(const QColor &base_color = QColor());
 	~DarkStyle();
 
 	QColor getBaseColor();

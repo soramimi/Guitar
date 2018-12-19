@@ -45,9 +45,7 @@ public:
 		size_t byte_offset = 0;
 		QByteArray text;
 
-		Line()
-		{
-		}
+		Line() = default;
 
 		explicit Line(QByteArray const &ba)
 			: type(Normal)
@@ -124,7 +122,7 @@ struct SelectionAnchor {
 	}
 };
 
-typedef std::shared_ptr<TextEditorEngine> TextEditorEnginePtr;
+using TextEditorEnginePtr = std::shared_ptr<TextEditorEngine>;
 
 struct TextEditorContext {
 	QRect cursor_rect;
@@ -147,7 +145,7 @@ struct TextEditorContext {
 	TextEditorEnginePtr engine;
 };
 
-typedef std::function<void(bool, QString const &text)> DialogHandler;
+using DialogHandler = std::function<void (bool, const QString &)>;
 
 class AbstractCharacterBasedApplication {
 public:
@@ -284,7 +282,7 @@ protected:
 	bool isDialogMode();
 	void setDialogMode(bool f);
 	void closeDialog(bool result);
-	void setDialogOption(const QString &title, QString value, DialogHandler handler);
+	void setDialogOption(const QString &title, const QString &value, DialogHandler handler);
 	void execDialog(const QString &dialog_title, QString dialog_value, DialogHandler handler);
 	void toggleSelectionAnchor();
 private:
@@ -306,7 +304,7 @@ private:
 	int calcColumnToIndex(int column);
 	void edit_(EditOperation op);
 	bool isCurrentLineWritable() const;
-	void initEngine(std::shared_ptr<TextEditorContext> cx);
+	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
 	static int findSyntax(const QList<Document::CharAttr_> *list, size_t offset);
@@ -337,7 +335,7 @@ protected:
 	void setRecentlyUsedPath(const QString &path);
 	QString recentlyUsedPath();
 	void clearRect(int x, int y, int w, int h);
-	void paintLineNumbers(std::function<void(int, QString, const Document::Line *)> draw);
+	void paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> const &draw);
 	bool isAutoLayout() const;
 	void invalidateArea(int top_y = 0);
 	void savePos();
@@ -363,7 +361,7 @@ public:
 	int screenWidth() const;
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
-	void setTextEditorEngine(TextEditorEnginePtr e);
+	void setTextEditorEngine(const TextEditorEnginePtr &e);
 	void openFile(const QString &path);
 	void saveFile(const QString &path);
 	void loadExampleFile();

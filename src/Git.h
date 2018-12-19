@@ -331,7 +331,7 @@ public:
 	QString gitCommand() const;
 	void clearResult();
 	QString resultText() const;
-	bool chdirexec(std::function<bool ()> fn);
+	bool chdirexec(std::function<bool ()> const &fn);
 	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr);
 	bool git(QString const &arg)
 	{

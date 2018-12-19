@@ -12,7 +12,7 @@
 
 Event::Event()
 {
-	_handle = CreateEvent(0, FALSE, FALSE, 0);
+	_handle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
 Event::~Event()

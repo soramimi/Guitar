@@ -1,3 +1,7 @@
+#include <memory>
+
+#include <memory>
+
 #include "FileDiffWidget.h"
 #include "ui_FileDiffWidget.h"
 
@@ -64,8 +68,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 
 	setMaximizeButtonEnabled(true);
 
-	m->engine_left = TextEditorEnginePtr(new TextEditorEngine);
-	m->engine_right = TextEditorEnginePtr(new TextEditorEngine);
+	m->engine_left = std::make_shared<TextEditorEngine>();
+	m->engine_right = std::make_shared<TextEditorEngine>();
 	ui->widget_diff_left->setDiffMode(m->engine_left, ui->verticalScrollBar, ui->horizontalScrollBar);
 	ui->widget_diff_right->setDiffMode(m->engine_right, ui->verticalScrollBar, ui->horizontalScrollBar);
 
@@ -226,17 +230,16 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 			int plus = 0;
 			auto FlushBlank = [&](){
 				while (minus < plus) {
-					tmp_left.push_back(TextDiffLine());
+					tmp_left.emplace_back();
 					minus++;
 				}
 				while (minus > plus) {
-					tmp_right.push_back(TextDiffLine());
+					tmp_right.emplace_back();
 					plus++;
 				}
 				minus = plus = 0;
 			};
-			for (auto it = hi.lines.begin(); it != hi.lines.end(); it++) {
-				std::string line = *it;
+			for (auto line : hi.lines) {
 				int c = line[0] & 0xff;
 				line = line.substr(1);
 				if (c == '-') {

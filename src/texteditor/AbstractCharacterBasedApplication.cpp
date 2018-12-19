@@ -1,3 +1,8 @@
+#include <memory>
+
+#include <memory>
+
+
 #include "AbstractCharacterBasedApplication.h"
 #include "UnicodeWidth.h"
 #include "unicode.h"
@@ -7,7 +12,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QTextCodec>
-#include "unicode.h"
+#include <memory>
 
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
 using FormattedLine = AbstractCharacterBasedApplication::FormattedLine;
@@ -249,7 +254,7 @@ void AbstractCharacterBasedApplication::layoutEditor()
 
 void AbstractCharacterBasedApplication::initEditor()
 {
-	editor_cx = std::shared_ptr<TextEditorContext>(new TextEditorContext());
+	editor_cx = std::make_shared<TextEditorContext>();
 	layoutEditor();
 }
 
@@ -600,9 +605,9 @@ int AbstractCharacterBasedApplication::print(int x, int y, const QString &text, 
 	return x;
 }
 
-void AbstractCharacterBasedApplication::initEngine(std::shared_ptr<TextEditorContext> cx)
+void AbstractCharacterBasedApplication::initEngine(std::shared_ptr<TextEditorContext> const &cx)
 {
-	cx->engine = TextEditorEnginePtr(new TextEditorEngine);
+	cx->engine = std::make_shared<TextEditorEngine>();
 }
 
 TextEditorContext *AbstractCharacterBasedApplication::cx()
@@ -630,7 +635,7 @@ TextEditorEnginePtr AbstractCharacterBasedApplication::engine()
 	return cx()->engine;
 }
 
-void AbstractCharacterBasedApplication::setTextEditorEngine(TextEditorEnginePtr e)
+void AbstractCharacterBasedApplication::setTextEditorEngine(TextEditorEnginePtr const &e)
 {
 	cx()->engine = e;
 }
@@ -1149,7 +1154,7 @@ bool AbstractCharacterBasedApplication::isDialogMode()
 	return m->dialog_mode;
 }
 
-void AbstractCharacterBasedApplication::setDialogOption(QString const &title, QString value, DialogHandler handler)
+void AbstractCharacterBasedApplication::setDialogOption(QString const &title, QString const &value, DialogHandler handler)
 {
 	m->dialog_title = title;
 	m->dialog_value = value;
@@ -1161,8 +1166,8 @@ void AbstractCharacterBasedApplication::setDialogMode(bool f)
 	if (f) {
 		if (!dialog_cx) {
 			int y = screenHeight() - 2;
-			dialog_cx = std::shared_ptr<TextEditorContext>(new TextEditorContext);
-			dialog_cx->engine = std::shared_ptr<TextEditorEngine>(new TextEditorEngine);
+			dialog_cx = std::make_shared<TextEditorContext>();
+			dialog_cx->engine = std::make_shared<TextEditorEngine>();
 			dialog_cx->single_line = true;
 			dialog_cx->viewport_org_x = 0;
 			dialog_cx->viewport_org_y = y + 1;
@@ -1687,7 +1692,7 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 			}
 			index = newindex;
 			col = newcol;
-		} else if (pts.size() > 0) {
+		} else if (!pts.empty()) {
 			col = pts.back();
 		} else {
 			col = 0;
@@ -1813,7 +1818,7 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 	return end_of_line_y;
 }
 
-void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> draw)
+void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> const &draw)
 {
 	auto Line = [&](int index)->Document::Line &{
 		return editor_cx->engine->document.lines[index];

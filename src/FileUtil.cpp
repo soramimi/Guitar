@@ -15,7 +15,7 @@ struct stat	s;
 std::string FileUtil::getcwd()
 {
 	std::string cwd;
-	char *p = _getcwd(0, 0);
+	char *p = _getcwd(nullptr, 0);
 	cwd = p;
 	free(p);
 	return cwd;
@@ -29,7 +29,7 @@ bool FileUtil::isdir(std::string const &path)
 
 void FileUtil::mkdir(const std::string &dir, int /*perm*/)
 {
-	CreateDirectoryA(dir.c_str(), 0);
+	CreateDirectoryA(dir.c_str(), nullptr);
 }
 
 void FileUtil::rmdir(const std::string &dir)
