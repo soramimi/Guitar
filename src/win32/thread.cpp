@@ -11,10 +11,10 @@ unsigned int __stdcall Thread::run_(void *arg)
 #else
 void *Thread::run_(void *arg)
 {
-	Thread *me = (Thread *)arg;
+	auto *me = (Thread *)arg;
 	me->run();
 	me->_running = false;
-	return 0;
+	return nullptr;
 }
 #endif
 
@@ -26,7 +26,7 @@ void Thread::start()
 	_thread_handle = (HANDLE)_beginthreadex(nullptr, 0, run_, this, CREATE_SUSPENDED, nullptr);
 	ResumeThread(_thread_handle);
 #else
-	pthread_create(&_thread_handle, NULL, run_, this);
+	pthread_create(&_thread_handle, nullptr, run_, this);
 #endif
 	_running = true;
 }
@@ -42,7 +42,7 @@ void Thread::join()
 #ifdef WIN32
 		WaitForSingleObject(_thread_handle, INFINITE);
 #else
-		pthread_join(_thread_handle, 0);
+		pthread_join(_thread_handle, nullptr);
 #endif
 		_running = false;
 	}
@@ -72,7 +72,7 @@ void Thread::detach()
 #else
 	if (_thread_handle) {
 		pthread_detach(_thread_handle);
-		_thread_handle = 0;
+		_thread_handle = nullptr;
 	}
 #endif
 	_running = false;

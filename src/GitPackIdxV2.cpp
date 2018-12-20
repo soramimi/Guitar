@@ -14,7 +14,7 @@ QString GitPackIdxV2::toString(uint8_t const *p)
 
 uint32_t GitPackIdxV2::read_uint32_be(const void *p)
 {
-	uint8_t const *q = (uint8_t const *)p;
+	auto const *q = (uint8_t const *)p;
 	return (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
 }
 
@@ -111,9 +111,9 @@ bool GitPackIdxV2::parse(const QString &idxfile)
 
 const GitPackIdxItem *GitPackIdxV2::item(const QString &id) const
 {
-	for (int i = 0; i < (int)d.item_list.size(); i++) {
-		if (d.item_list[i].id == id) {
-			return &d.item_list[i];
+	for (const auto & i : d.item_list) {
+		if (i.id == id) {
+			return &i;
 		}
 	}
 	return nullptr;

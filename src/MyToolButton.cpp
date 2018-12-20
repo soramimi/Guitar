@@ -33,7 +33,7 @@ void MyToolButton::paintEvent(QPaintEvent *event)
 {
 	QToolButton::paintEvent(event);
 
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	auto *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 
 	if (indicator == Dot && number > 0) {

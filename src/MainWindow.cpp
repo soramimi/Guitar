@@ -104,7 +104,7 @@ public:
 	{
 	}
 protected:
-	void run()
+	void run() override
 	{
 		callback(g);
 	}
@@ -220,7 +220,7 @@ struct MainWindow::Private {
 	QPixmap transparent_pixmap;
 	StatusLabel *status_bar_label;
 
-	QObject *last_focused_file_list = 0;
+	QObject *last_focused_file_list = nullptr;
 
 	WebContext webcx;
 	AvatarLoader avatar_loader;
@@ -529,7 +529,7 @@ bool MainWindow::event(QEvent *event)
 	if (et == QEvent::WindowActivate) {
 		checkRemoteUpdate();
 	} else if (et == QEvent::KeyPress) {
-		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+		auto *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
 		if (k == Qt::Key_Escape) {
@@ -549,7 +549,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 	QEvent::Type et = event->type();
 
 	if (et == QEvent::KeyPress) {
-		QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+		auto *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
 		if (k == Qt::Key_Tab) {
@@ -748,7 +748,7 @@ void MainWindow::emitWriteLog(QByteArray ba)
 
 bool MainWindow::git_callback(void *cookie, char const *ptr, int len)
 {
-	MainWindow *mw = (MainWindow *)cookie;
+	auto *mw = (MainWindow *)cookie;
 	mw->emitWriteLog(QByteArray(ptr, len));
 	return true;
 }
@@ -768,8 +768,8 @@ void MainWindow::saveRepositoryBookmark(RepositoryItem item)
 	}
 
 	bool done = false;
-	for (int i = 0; i < m->repos.size(); i++) {
-		RepositoryItem *p = &m->repos[i];
+	for (auto &repo : m->repos) {
+		RepositoryItem *p = &repo;
 		if (item.local_dir == p->local_dir) {
 			*p = item;
 			done = true;
@@ -997,7 +997,7 @@ RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem const *item) co
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
-	QTreeWidgetItem *item = new QTreeWidgetItem();
+	auto *item = new QTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
 	return item;
 }
@@ -1336,7 +1336,7 @@ void MainWindow::prepareLogTableWidget()
 	ui->tableWidget_log->setRowCount(0);
 	for (int i = 0; i < n; i++) {
 		QString const &text = cols[i];
-		QTableWidgetItem *item = new QTableWidgetItem(text);
+		auto *item = new QTableWidgetItem(text);
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 
@@ -1757,13 +1757,13 @@ void MainWindow::openRepository_(GitPtr g)
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const *commit = &m->logs[row];
 		{
-			QTableWidgetItem *item = new QTableWidgetItem();
+			auto *item = new QTableWidgetItem;
 			item->setData(IndexRole, row);
 			ui->tableWidget_log->setItem(row, 0, item);
 		}
 		int col = 1; // カラム0はコミットグラフなので、その次から
 		auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
-			QTableWidgetItem *item = new QTableWidgetItem(text);
+			auto *item = new QTableWidgetItem(text);
 			if (!tooltip.isEmpty()) {
 				QString tt = tooltip;
 				tt.replace('\n', ' ');
@@ -1812,7 +1812,7 @@ void MainWindow::openRepository_(GitPtr g)
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
 
-	m->last_focused_file_list = 0;
+	m->last_focused_file_list = nullptr;
 
 	ui->tableWidget_log->setFocus();
 	setCurrentLogRow(0);
@@ -2010,10 +2010,8 @@ void MainWindow::commit(bool amend)
 				err += " ***\n";
 				writeLog(err);
 			}
-			break;
-		} else {
-			break;
 		}
+		break;
 	}
 }
 
@@ -2794,9 +2792,7 @@ bool MainWindow::editFile(const QString &path, QString const &title)
 struct Task {
 	int index = 0;
 	int parent = 0;
-	Task()
-	{
-	}
+	Task() = default;
 	Task(int index, int parent)
 		: index(index)
 		, parent(parent)
@@ -2833,7 +2829,7 @@ void MainWindow::updateCommitGraph()
 					QString const &parent_id = item->parent_ids[j]; // 親のハッシュ値
 					for (size_t k = i + 1; k < LogCount; k++) { // 親を探す
 						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親
-							item->parent_lines.push_back(k); // インデックス値を記憶
+							item->parent_lines.emplace_back(k); // インデックス値を記憶
 							LogItem(k).has_child = true;
 							LogItem(k).marker_depth = KNOWN;
 							item->resolved = true;
@@ -2852,7 +2848,7 @@ void MainWindow::updateCommitGraph()
 					if (item->marker_depth == UNKNOWN) {
 						int n = item->parent_lines.size(); // 最初のコミットアイテム
 						for (int j = 0; j < n; j++) {
-							tasks.push_back(Task(i, j)); // タスクを追加
+							tasks.emplace_back(i, j); // タスクを追加
 						}
 					}
 					item->marker_depth = UNKNOWN;
@@ -2875,7 +2871,7 @@ void MainWindow::updateCommitGraph()
 					if (item->marker_depth == KNOWN) break; // 既知のアイテムに到達したら終了
 					item->marker_depth = KNOWN; // 既知のアイテムにする
 					for (int i = 1; i < n; i++) {
-						tasks.push_back(Task(index, i)); // タスク追加
+						tasks.emplace_back(index, i); // タスク追加
 					}
 					index = LogItem(index).parent_lines[0].index; // 次の親（親リストの先頭の要素）
 				}
@@ -2995,8 +2991,7 @@ FAIL:;
 DONE:;
 			}
 			// 線情報を生成する
-			for (size_t i = 0; i < elements.size(); i++) {
-				Element const &e = elements[i];
+			for (const auto & e : elements) {
 				auto ColorNumber = [&](){ return e.depth; };
 				size_t count = e.indexes.size();
 				for (size_t j = 0; j + 1 < count; j++) {
@@ -3457,8 +3452,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 		auto write_text = [&](QString const &str){
 			std::string s = str.toStdString();
-			for (int i = 0; i < (int)s.size(); i++) {
-				write_char(s[i]);
+			for (char i : s) {
+				write_char(i);
 			}
 		};
 
@@ -3478,11 +3473,10 @@ bool MainWindow::saveByteArrayAs(QByteArray const &ba, QString const &dstpath)
 		file.write(ba);
 		file.close();
 		return true;
-	} else {
-		QString msg = "Failed to open the file '%1' for write";
-		msg = msg.arg(dstpath);
-		qDebug() << msg;
 	}
+	QString msg = "Failed to open the file '%1' for write";
+	msg = msg.arg(dstpath);
+	qDebug() << msg;
 	return false;
 }
 
@@ -3943,9 +3937,8 @@ bool MainWindow::isValidRemoteURL(const QString &url)
 			qDebug() << "But HEAD not found";
 		}
 		return true;
-	} else {
-		qDebug() << "It is not a repository.";
 	}
+	qDebug() << "It is not a repository.";
 	return false;
 }
 
@@ -4645,7 +4638,7 @@ void MainWindow::onLogIdle()
 
 	std::vector<char> vec;
 	ui->widget_log->retrieveLastText(&vec, 100);
-	if (vec.size() > 0) {
+	if (!vec.empty()) {
 		std::string line;
 		int n = (int)vec.size();
 		int i = n;
@@ -4665,9 +4658,8 @@ void MainWindow::onLogIdle()
 					std::string str = ret + '\n';
 					m->pty_process.writeInput(str.c_str(), str.size());
 					return ret;
-				} else {
-					abortPtyProcess();
 				}
+				abortPtyProcess();
 				return std::string();
 			};
 

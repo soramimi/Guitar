@@ -3,7 +3,7 @@
 #include <QEvent>
 #include <QPainter>
 #include <QProxyStyle>
-#include <math.h>
+#include <cmath>
 #include "MainWindow.h"
 #include <QApplication>
 #include "MyTableWidgetDelegate.h"
@@ -107,7 +107,7 @@ private:
 				painter->setPen(Qt::NoPen);
 				auto DrawRect = [&](int dx, int dy, QColor color){
 					painter->setBrush(color);
-					painter->drawRoundedRect(r.adjusted(dx + 3 + 0.5, dy + 3 + 0.5, dx - 3 + 0.5, dy - 3 + 0.5), 3, 3);
+					painter->drawRoundedRect(r.adjusted(lround(dx + 3), lround(dy + 3), lround(dx - 3), lround(dy - 3)), 3, 3);
 				};
 				QColor color = labelColor(label.kind);
 				QColor hilite = hiliteColor(color);
@@ -129,7 +129,7 @@ public:
 		: MyTableWidgetDelegate(parent)
 	{
 	}
-	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 

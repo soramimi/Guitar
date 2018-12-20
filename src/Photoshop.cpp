@@ -8,13 +8,13 @@ namespace {
 
 inline uint32_t read_uint32_be(void const *p)
 {
-	uint8_t const *q = (uint8_t const *)p;
+	auto const *q = (uint8_t const *)p;
 	return (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
 }
 
 inline uint16_t read_uint16_be(void const *p)
 {
-	uint8_t const *q = (uint8_t const *)p;
+	auto const *q = (uint8_t const *)p;
 	return (q[0] << 8) | q[1];
 }
 
@@ -63,9 +63,8 @@ void photoshop::readThumbnail(QIODevice *in, std::vector<char> *jpeg)
 							if (in->read(&c, 1) != 1) break;
 						}
 						break;
-					} else {
-						name.push_back(c);
 					}
+					name.push_back(c);
 				}
 
 				in->read(tmp, 4);

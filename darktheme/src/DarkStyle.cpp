@@ -631,7 +631,7 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 		return widget->rect();
 	}
 	if (cc == CC_Slider && sc == SC_SliderHandle) {
-		if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
+		if (const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
 			QRect rect;
 			int extent = std::min(widget->width(), widget->height());
 			int span = pixelMetric(PM_SliderLength, slider, widget);
@@ -652,7 +652,7 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 	if (cc == CC_GroupBox) {
 //		return QProxyStyle::subControlRect(cc, option, sc, widget);
 		QRect ret;
-		if (const QStyleOptionGroupBox *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
+		if (const auto *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
 			switch (sc) {
 			case SC_GroupBoxFrame:
 			case SC_GroupBoxContents:
@@ -845,7 +845,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_PanelLineEdit) {
-		if (const QStyleOptionFrame *panel = qstyleoption_cast<const QStyleOptionFrame *>(option)) {
+		if (const auto *panel = qstyleoption_cast<const QStyleOptionFrame *>(option)) {
 //			p->fillRect(option->rect, option->palette.color(QPalette::Dark));
 			p->fillRect(option->rect, colorForItemView(option));
 			if (panel->lineWidth > 0) {
@@ -896,7 +896,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 	if (pe == PE_PanelItemViewItem) {
 //		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
-		if (QTableView const *tableview = qobject_cast<QTableView const *>(widget)) {
+		if (auto const *tableview = qobject_cast<QTableView const *>(widget)) {
 			Qt::PenStyle grid_pen_style = Qt::NoPen;
 			if (tableview->showGrid()) {
 				grid_pen_style = tableview->gridStyle();
@@ -1148,7 +1148,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 #endif
 	if (ce == CE_ShapedFrame) {
-		if (QStyleOptionFrameV3 const *o = qstyleoption_cast<QStyleOptionFrameV3 const *>(option)) {
+		if (auto const *o = qstyleoption_cast<QStyleOptionFrameV3 const *>(option)) {
 			int lw = o->lineWidth;
 			if (lw > 0) {
 				QRect r = o->rect;
@@ -1241,7 +1241,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			PBS_NORMAL,
 		};
 
-		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+		if (const auto *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
 			int state = option->state;
 			State flags = option->state;
 			int partId = BP_PUSHBUTTON;
@@ -1283,7 +1283,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		if (option->state & State_Selected) {
 			drawSelectedMenuFrame(option, p, option->rect, widget, false);
 		}
-		if (const QStyleOptionMenuItem *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
+		if (const auto *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			QPalette::ColorRole textRole = disabled ? QPalette::Text : QPalette::ButtonText;
 			QPixmap pix = mbi->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), QIcon::Normal);
 			uint alignment = Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextDontClip | Qt::TextSingleLine;
@@ -1302,7 +1302,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_MenuItem) {
-		if (const QStyleOptionMenuItem *opt = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
+		if (const auto *opt = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			int stateId = 0;
 			// windows always has a check column, regardless whether we have an icon or not
 			int checkcol = 25;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
@@ -1740,7 +1740,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_ProgressBarGroove || ce == CE_ProgressBarContents) {
-		if (const QStyleOptionProgressBar *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
+		if (const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
 
 			QColor color(0, 128, 255);
 
@@ -1820,16 +1820,16 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 #ifdef Q_OS_MAC
 	if (ce == CE_DockWidgetTitle) {
-		if (const QStyleOptionDockWidget *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
-			const QDockWidget *dockWidget = qobject_cast<const QDockWidget *>(widget);
+		if (const auto *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
+			const auto *dockWidget = qobject_cast<const QDockWidget *>(widget);
 			QRect rect = option->rect;
 			if (dockWidget && dockWidget->isFloating()) {
 				QProxyStyle::drawControl(ce, option, p, widget);
 				return;
 			}
 
-			const QStyleOptionDockWidgetV2 *v2 = qstyleoption_cast<const QStyleOptionDockWidgetV2*>(dwOpt);
-			bool verticalTitleBar = v2 == 0 ? false : v2->verticalTitleBar;
+			const auto *v2 = qstyleoption_cast<const QStyleOptionDockWidgetV2*>(dwOpt);
+			bool verticalTitleBar = v2 && v2->verticalTitleBar;
 
 			if (verticalTitleBar) {
 				rect.setSize(rect.size().transposed());
@@ -1846,8 +1846,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			int buttonMargin = 4;
 			int mw = proxy()->pixelMetric(QStyle::PM_DockWidgetTitleMargin, dwOpt, widget);
 			int fw = proxy()->pixelMetric(PM_DockWidgetFrameWidth, dwOpt, widget);
-			const QDockWidget *dw = qobject_cast<const QDockWidget *>(widget);
-			bool isFloating = dw != 0 && dw->isFloating();
+			const auto *dw = qobject_cast<const QDockWidget *>(widget);
+			bool isFloating = dw && dw->isFloating();
 
 			QRect r = option->rect.adjusted(0, 2, -1, -3);
 			QRect titleRect = r;
@@ -1864,12 +1864,14 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			if (isFloating) {
 				titleRect.adjust(0, -fw, 0, 0);
-				if (widget != 0 && widget->windowIcon().cacheKey() != QApplication::windowIcon().cacheKey())
+				if (widget && widget->windowIcon().cacheKey() != QApplication::windowIcon().cacheKey()) {
 					titleRect.adjust(titleRect.height() + mw, 0, 0, 0);
+				}
 			} else {
 				titleRect.adjust(mw, 0, 0, 0);
-				if (!dwOpt->floatable && !dwOpt->closable)
+				if (!dwOpt->floatable && !dwOpt->closable) {
 					titleRect.adjust(0, 0, -mw, 0);
+				}
 			}
 			if (!verticalTitleBar)
 				titleRect = visualRect(dwOpt->direction, r, titleRect);
@@ -1901,7 +1903,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 {
 //    qDebug() << cc;
 	if (cc == QStyle::CC_ComboBox) {
-		if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
+		if (const auto *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
 			SubControls sub = option->subControls;
 			if (cmb->editable) {
 				int partId = 0;
@@ -1971,7 +1973,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 	}
 	if (cc == QStyle::CC_ToolButton) {
 		QStyle::State flags = option->state;
-		if (const QStyleOptionToolButton *toolbutton = qstyleoption_cast<const QStyleOptionToolButton *>(option)) {
+		if (const auto *toolbutton = qstyleoption_cast<const QStyleOptionToolButton *>(option)) {
 			QRect button, menuarea;
 			button = subControlRect(cc, toolbutton, SC_ToolButton, widget);
 			menuarea = subControlRect(cc, toolbutton, SC_ToolButtonMenu, widget);
@@ -2147,7 +2149,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		return;
 	}
 	if (cc == CC_GroupBox) {
-		if (const QStyleOptionGroupBox *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
+		if (const auto *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
 			QRect textRect = subControlRect(CC_GroupBox, option, SC_GroupBoxLabel, widget);
 			QRect checkBoxRect = subControlRect(CC_GroupBox, option, SC_GroupBoxCheckBox, widget);
 			if (groupBox->subControls & QStyle::SC_GroupBoxFrame) {
@@ -2206,7 +2208,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		return;
 	}
 	if (cc == CC_Slider) {
-		if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
+		if (const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
 			QRect groove = subControlRect(CC_Slider, option, SC_SliderGroove, widget);
 			QRect handle = subControlRect(CC_Slider, option, SC_SliderHandle, widget);
 

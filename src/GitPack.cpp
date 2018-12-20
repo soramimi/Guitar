@@ -87,11 +87,11 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 		int err;
 		z_stream d_stream;
 
-		d_stream.zalloc = (alloc_func)0;
-		d_stream.zfree = (free_func)0;
-		d_stream.opaque = (voidpf)0;
+		d_stream.zalloc = nullptr;
+		d_stream.zfree = nullptr;
+		d_stream.opaque = nullptr;
 
-		d_stream.next_in  = 0;
+		d_stream.next_in  = nullptr;
 		d_stream.avail_in = 0;
 
 		err = inflateInit(&d_stream);

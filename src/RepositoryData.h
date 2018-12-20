@@ -16,7 +16,7 @@ struct RepositoryItem {
 
 class RepositoryBookmark {
 public:
-	RepositoryBookmark();
+	RepositoryBookmark() = default;
 	static bool save(QString const &path, QList<RepositoryItem> const *items);
 	static QList<RepositoryItem> load(QString const &path);
 };

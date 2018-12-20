@@ -5,23 +5,13 @@
 
 // AbstractTheme
 
-AbstractTheme::AbstractTheme()
-{
 
-}
 
-AbstractTheme::~AbstractTheme()
-{
 
-}
 
 // StandardTheme
 
 #include "../darktheme/src/StandardStyle.h"
-
-StandardTheme::StandardTheme()
-{
-}
 
 QStyle *StandardTheme::newStyle()
 {
@@ -71,9 +61,7 @@ ThemePtr createStandardTheme()
 
 // DarkTheme
 
-DarkTheme::DarkTheme()
-{
-}
+
 
 QStyle *DarkTheme::newStyle()
 {

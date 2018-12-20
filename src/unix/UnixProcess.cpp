@@ -16,7 +16,7 @@ private:
 	QMutex *mutex;
 	std::deque<char> *buffer;
 protected:
-	void run()
+	void run() override
 	{
 		while (1) {
 			char buf[1024];
@@ -73,7 +73,7 @@ public:
 	}
 
 protected:
-	void run()
+	void run() override
 	{
 		exit_code = -1;
 		const int R = 0;

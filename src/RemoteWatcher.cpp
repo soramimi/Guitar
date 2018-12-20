@@ -2,9 +2,7 @@
 #include "common/joinpath.h"
 #include <QFileInfo>
 
-RemoteWatcher::RemoteWatcher()
-{
-}
+
 
 void RemoteWatcher::start(MainWindow *mw)
 {

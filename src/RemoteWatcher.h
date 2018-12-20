@@ -16,7 +16,7 @@ private:
 		return mainwindow_;
 	}
 public:
-	RemoteWatcher();
+	RemoteWatcher() = default;
 	void start(MainWindow *mw);
 	void setCurrent(QString const &remote, QString const &branch);
 public slots:

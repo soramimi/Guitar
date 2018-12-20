@@ -87,7 +87,7 @@ void FileUtil::getdirents(const std::string &loc, std::vector<DirEnt> *out)
 std::string FileUtil::getcwd()
 {
 	std::string cwd;
-	char *p = ::getcwd(0, 0);
+	char *p = ::getcwd(nullptr, 0);
 	cwd = p;
 	free(p);
 	return cwd;

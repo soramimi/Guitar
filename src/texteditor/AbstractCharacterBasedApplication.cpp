@@ -1653,7 +1653,8 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 		}
 		if (c == '\r' || c == '\n' || c == -1) {
 			break;
-		} else if (c == '\t') {
+		}
+		if (c == '\t') {
 			int z = nextTabStop(x);
 			n = z - x;
 		} else {

@@ -10,7 +10,7 @@ const int MAX_CACHE_COUNT = 1000;
 const int ICON_SIZE = 64;
 }
 
-typedef std::shared_ptr<WebClient> WebClientPtr;
+using WebClientPtr = std::shared_ptr<WebClient>;
 
 struct AvatarLoader::Private {
 	QMutex data_mutex;

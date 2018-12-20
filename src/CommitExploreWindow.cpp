@@ -15,7 +15,7 @@
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
-	QTreeWidgetItem *item = new QTreeWidgetItem();
+	auto *item = new QTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
 	return item;
 }
@@ -187,7 +187,7 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 				icon = icons.icon(QFileIconProvider::File);
 			}
 		}
-		QListWidgetItem *p = new QListWidgetItem();
+		auto *p = new QListWidgetItem;
 		p->setIcon(icon);
 		p->setText(ti.name);
 		p->setData(ItemTypeRole, (int)ti.type);

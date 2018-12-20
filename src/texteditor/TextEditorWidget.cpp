@@ -539,8 +539,8 @@ void TextEditorWidget::moveCursorByMouse()
 			makeColumnPosList(&pts);
 			int newcol = 0;
 			int distance = -1;
-			for (size_t i = 0; i < pts.size(); i++) {
-				int x = pts[i] * m->latin1_width;
+			for (int pt : pts) {
+				int x = pt * m->latin1_width;
 				int d = abs(x - mouse_x);
 				if (distance < 0 || d < distance) {
 					distance = d;

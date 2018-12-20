@@ -47,8 +47,8 @@ void DeleteBranchDialog::updateList()
 
 	ui->listWidget->clear();
 
-	for (QString const &name : all ? m->all_local_branch_names : m->current_local_branch_names) {
-		QListWidgetItem *item = new QListWidgetItem();
+	for (QString const &name : (all ? m->all_local_branch_names : m->current_local_branch_names)) {
+		auto *item = new QListWidgetItem;
 		item->setText(name);
 		item->setCheckState(Qt::Unchecked);
 		ui->listWidget->addItem(item);

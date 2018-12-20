@@ -35,7 +35,7 @@ void SelectGpgKeyDialog::updateTable()
 	ui->tableWidget->setColumnCount(cols.size());
 	ui->tableWidget->setRowCount(keys_.size());
 	for (int col = 0; col < cols.size(); col++) {
-		QTableWidgetItem *item = new QTableWidgetItem();
+		auto *item = new QTableWidgetItem;
 		item->setText(cols[col]);
 		ui->tableWidget->setHorizontalHeaderItem(col, item);
 	}
@@ -43,7 +43,7 @@ void SelectGpgKeyDialog::updateTable()
 		gpg::Data const &key = keys_[row];
 		QTableWidgetItem *item;
 		auto NewItem = [&](){
-			QTableWidgetItem *item = new QTableWidgetItem();
+			auto *item = new QTableWidgetItem;
 			return item;
 		};
 		int col = 0;

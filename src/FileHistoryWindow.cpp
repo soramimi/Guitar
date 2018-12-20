@@ -170,7 +170,7 @@ public:
 	}
 
 protected:
-	void run()
+	void run() override
 	{
 		result = mainwindow->findFileID(g, commit_id, file);
 	}

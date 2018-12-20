@@ -20,7 +20,7 @@
 #include <QSvgRenderer>
 #include <QBuffer>
 
-typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
+using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
 	MainWindow *mainwindow = nullptr;

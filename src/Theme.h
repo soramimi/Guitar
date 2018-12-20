@@ -18,8 +18,8 @@ public:
 	QColor diff_slider_del_bg;
 	QColor diff_slider_handle;
 
-	AbstractTheme();
-	virtual ~AbstractTheme();
+	AbstractTheme() = default;
+	virtual ~AbstractTheme() = default;
 	virtual QStyle *newStyle() = 0;
 	virtual QImage graphColorMap() = 0;
 
@@ -28,16 +28,16 @@ public:
 	virtual QPixmap resource_menu_png() = 0;
 };
 
-typedef std::shared_ptr<AbstractTheme> ThemePtr;
+using ThemePtr = std::shared_ptr<AbstractTheme>;
 
 class StandardTheme : public AbstractTheme {
 public:
-	StandardTheme();
-	QStyle *newStyle();
-	QImage graphColorMap();
-	QPixmap resource_clear_png();
-	QPixmap resource_maximize_png();
-	QPixmap resource_menu_png();
+	StandardTheme() = default;
+	QStyle *newStyle() override;
+	QImage graphColorMap() override;
+	QPixmap resource_clear_png() override;
+	QPixmap resource_maximize_png() override;
+	QPixmap resource_menu_png() override;
 };
 ThemePtr createStandardTheme();
 
@@ -45,12 +45,12 @@ ThemePtr createStandardTheme();
 
 class DarkTheme : public AbstractTheme {
 public:
-	DarkTheme();
-	QStyle *newStyle();
-	QImage graphColorMap();
-	QPixmap resource_clear_png();
-	QPixmap resource_maximize_png();
-	QPixmap resource_menu_png();
+	DarkTheme() = default;
+	QStyle *newStyle() override;
+	QImage graphColorMap() override;
+	QPixmap resource_clear_png() override;
+	QPixmap resource_maximize_png() override;
+	QPixmap resource_menu_png() override;
 };
 ThemePtr createDarkTheme();
 

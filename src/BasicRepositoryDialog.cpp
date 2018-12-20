@@ -55,7 +55,7 @@ QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
 	tablewidget->setColumnCount(3);
 	tablewidget->setRowCount(rows);
 	auto newQTableWidgetItem = [](QString const &text){
-		QTableWidgetItem *item = new QTableWidgetItem();
+		auto *item = new QTableWidgetItem;
 		item->setSizeHint(QSize(20, 20));
 		item->setText(text);
 		return item;
