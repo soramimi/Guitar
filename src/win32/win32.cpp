@@ -19,16 +19,6 @@ QString getModuleFileName()
 	return QString::fromUtf16((ushort const *)tmp, n);
 }
 
-//QString getModuleFileDir()
-//{
-//	QString path = getModuleFileName();
-//	int i = path.lastIndexOf('\\');
-//	int j = path.lastIndexOf('/');
-//	if (i < j) i = j;
-//	if (i > 0) path = path.mid(0, i);
-//	return path;
-//}
-
 QString getAppDataLocation()
 {
 	wchar_t tmp[300];
@@ -44,7 +34,7 @@ QString getAppDataLocation()
 #include <deque>
 #define FAILED_(TEXT) throw std::string(TEXT)
 
-class ProcessThread : Thread {
+class ProcessThread : public Thread {
 	friend class StreamThread;
 private:
 	Event start_event;
@@ -88,13 +78,13 @@ private:
 		{
 			procthread = pt;
 		}
-		int ReadOutput(char *ptr, int len)
+		int ReadOutput(char *ptr, size_t len)
 		{
 			mutex.lock();
 			size_t n = 0;
 			if (ptr && len > 0) {
 				n = out.size();
-				if (len > len) {
+				if (n > len) {
 					n = len;
 				}
 				for (size_t i = 0; i < n; i++) {
@@ -213,11 +203,9 @@ protected:
 	}
 
 public:
-	ProcessThread()
-	{
-	}
+	ProcessThread() = default;
 
-	~ProcessThread()
+	~ProcessThread() override
 	{
 		WaitForExit();
 	}

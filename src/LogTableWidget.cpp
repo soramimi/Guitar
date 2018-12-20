@@ -297,7 +297,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 			SetPen(&pr, item.marker_depth, false);
 			if (item.resolved) {
 				// ◯
-				pr.drawEllipse(x, y, r * 2, r * 2);
+				pr.drawEllipse((int)x, (int)y, int(r * 2), int(r * 2));
 			} else {
 				// ▽
 				QPainterPath path;

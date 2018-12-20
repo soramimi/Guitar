@@ -75,7 +75,7 @@ void SelectCommandDialog::on_pushButton_browse_clicked()
 	dlg.setFileMode(QFileDialog::ExistingFile);
 	if (dlg.exec() == QDialog::Accepted) {
 		QStringList list = dlg.selectedFiles();
-		if (list.size() > 0) {
+		if (!list.empty()) {
 			path = list.first();
 			accept();
 		}

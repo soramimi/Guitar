@@ -6,7 +6,6 @@
 #include <QString>
 
 QString getModuleFileName();
-//QString getModuleFileDir();
 QString getAppDataLocation();
 
 int winRunCommand(QString const &cmd, QByteArray *out);

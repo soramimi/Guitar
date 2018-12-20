@@ -811,7 +811,7 @@ void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHa
 
 void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)
 {
-	if (header->size() > 0) {
+	if (!header->empty()) {
 		std::string const &line = header->at(0);
 		char const *begin = line.c_str();
 		char const *end = begin + line.size();
