@@ -1,7 +1,7 @@
 #include "DoYouWantToInitDialog.h"
 #include "ui_DoYouWantToInitDialog.h"
 
-DoYouWantToInitDialog::DoYouWantToInitDialog(QWidget *parent, const QString &dir) :
+DoYouWantToInitDialog::DoYouWantToInitDialog(QWidget *parent, QString const &dir) :
 	QDialog(parent),
 	ui(new Ui::DoYouWantToInitDialog)
 {

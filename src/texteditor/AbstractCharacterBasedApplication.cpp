@@ -542,7 +542,7 @@ int AbstractCharacterBasedApplication::editorViewportHeight() const
 	return cx()->viewport_height;
 }
 
-int AbstractCharacterBasedApplication::print(int x, int y, const QString &text, const AbstractCharacterBasedApplication::Option &opt)
+int AbstractCharacterBasedApplication::print(int x, int y, QString const &text, const AbstractCharacterBasedApplication::Option &opt)
 {
 	CharAttr attr = opt.char_attr;
 	if (opt.char_attr.flags & CharAttr::Selected) {
@@ -645,7 +645,7 @@ void AbstractCharacterBasedApplication::setDocument(QList<Document::Line> const 
 	document()->lines = *source;
 }
 
-void AbstractCharacterBasedApplication::openFile(const QString &path)
+void AbstractCharacterBasedApplication::openFile(QString const &path)
 {
 	document()->lines.clear();
 	QFile file(path);
@@ -676,7 +676,7 @@ void AbstractCharacterBasedApplication::openFile(const QString &path)
 	scrollToTop();
 }
 
-void AbstractCharacterBasedApplication::saveFile(const QString &path)
+void AbstractCharacterBasedApplication::saveFile(QString const &path)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
@@ -2456,7 +2456,7 @@ void AbstractCharacterBasedApplication::write(const std::string &text)
 	}
 }
 
-void AbstractCharacterBasedApplication::write_(const char *ptr, bool by_keyboard)
+void AbstractCharacterBasedApplication::write_(char const *ptr, bool by_keyboard)
 {
 	write(ptr, -1, by_keyboard);
 }

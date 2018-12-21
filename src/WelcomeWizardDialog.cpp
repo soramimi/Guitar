@@ -39,28 +39,28 @@ WelcomeWizardDialog::~WelcomeWizardDialog()
 	delete ui;
 }
 
-void WelcomeWizardDialog::set_user_name(const QString &v)
+void WelcomeWizardDialog::set_user_name(QString const &v)
 {
 	ui->lineEdit_user_name->setText(v);
 }
 
-void WelcomeWizardDialog::set_user_email(const QString &v)
+void WelcomeWizardDialog::set_user_email(QString const &v)
 {
 	ui->lineEdit_user_email->setText(v);
 }
 
-void WelcomeWizardDialog::set_default_working_folder(const QString &v)
+void WelcomeWizardDialog::set_default_working_folder(QString const &v)
 {
 	ui->lineEdit_default_working_folder->setText(v);
 
 }
 
-void WelcomeWizardDialog::set_git_command_path(const QString &v)
+void WelcomeWizardDialog::set_git_command_path(QString const &v)
 {
 	ui->lineEdit_git->setText(v);
 }
 
-void WelcomeWizardDialog::set_file_command_path(const QString &v)
+void WelcomeWizardDialog::set_file_command_path(QString const &v)
 {
 	ui->lineEdit_file->setText(v);
 }

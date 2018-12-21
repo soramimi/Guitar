@@ -26,10 +26,10 @@ private:
 	static void applyDelta(const QByteArray *base, const QByteArray *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(const QString &id, QByteArray *out, Git::Object::Type *type);
+	bool extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes();
-	QString findObjectPath(const QString &id);
-	bool loadObject(const QString &id, QByteArray *out, Git::Object::Type *type);
+	QString findObjectPath(QString const &id);
+	bool loadObject(QString const &id, QByteArray *out, Git::Object::Type *type);
 	GitPtr git()
 	{
 		return g;
@@ -37,7 +37,7 @@ private:
 public:
 	GitObjectManager();
 	void setup(GitPtr g);
-	bool catFile(const QString &id, QByteArray *out, Git::Object::Type *type);
+	bool catFile(QString const &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
 };
 
@@ -61,9 +61,9 @@ public:
 	}
 
 	void setup(GitPtr g);
-	QString revParse(const QString &name);
+	QString revParse(QString const &name);
 	Git::Object catFile(QString const &id);
-	QString getCommitIdFromTag(const QString &tag);
+	QString getCommitIdFromTag(QString const &tag);
 };
 
 class GitCommit {
@@ -113,9 +113,9 @@ public:
 	GitCommitTree(GitObjectCache *objcache);
 
 	QString lookup(QString const &file);
-	bool lookup(const QString &file, GitTreeItem *out);
+	bool lookup(QString const &file, GitTreeItem *out);
 
-	void parseTree(const QString &tree_id);
+	void parseTree(QString const &tree_id);
 	QString parseCommit(QString const &commit_id);
 
 	GitTreeItemList const *treelist() const
@@ -124,6 +124,6 @@ public:
 	}
 };
 
-QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file);
+QString lookupFileID(GitObjectCache *objcache, QString const &commit_id, QString const &file);
 
 #endif // GITOBJECTMANAGER_H

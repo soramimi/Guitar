@@ -13,7 +13,7 @@ RebaseOntoDialog::~RebaseOntoDialog()
 	delete ui;
 }
 
-int RebaseOntoDialog::exec(const QString &newbase, const QString &upstream, const QString &branch)
+int RebaseOntoDialog::exec(QString const &newbase, QString const &upstream, QString const &branch)
 {
 	ui->lineEdit_newbase->setText(newbase);
 	ui->lineEdit_upstream->setText(upstream);

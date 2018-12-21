@@ -76,7 +76,7 @@ bool Win32PtyProcess::isRunning() const
 	return QThread::isRunning();
 }
 
-QString Win32PtyProcess::getProgram(const QString &cmdline)
+QString Win32PtyProcess::getProgram(QString const &cmdline)
 {
 	ushort const *begin = cmdline.utf16();
 	ushort const *end = begin + cmdline.size();
@@ -173,7 +173,7 @@ int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
 	return len;
 }
 
-void Win32PtyProcess::writeInput(const char *ptr, int len)
+void Win32PtyProcess::writeInput(char const *ptr, int len)
 {
 	char const *begin = ptr;
 	char const *end = begin + len;
@@ -212,7 +212,7 @@ void Win32PtyProcess::writeInput(const char *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::start(const QString &cmdline)
+void Win32PtyProcess::start(QString const &cmdline)
 {
 	if (isRunning()) return;
 	m->command = cmdline;

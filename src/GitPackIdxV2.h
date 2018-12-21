@@ -57,7 +57,7 @@ private:
 	void clear();
 	bool parse(QIODevice *in);
 public:
-	bool parse(const QString &idxpath);
+	bool parse(QString const &idxpath);
 	GitPackIdxItem const *item(QString const &id) const;
 	GitPackIdxItem const *item(size_t offset) const;
 };

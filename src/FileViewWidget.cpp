@@ -112,7 +112,7 @@ void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 	return ui_page_text->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
 }
 
-void FileViewWidget::setImage(QString mimetype, const QByteArray &ba, const QString &object_id, QString const &path)
+void FileViewWidget::setImage(QString mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	setViewType(FileViewType::Image);
 	this->source_id = object_id;
@@ -123,7 +123,7 @@ void FileViewWidget::setImage(QString mimetype, const QByteArray &ba, const QStr
 #endif
 }
 
-void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw, const QString &object_id, QString const &object_path)
+void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	setViewType(FileViewType::Text);
 	this->source_id = object_id;
@@ -137,7 +137,7 @@ void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw
 #endif
 }
 
-void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, const QString &object_id, QString const &object_path)
+void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	std::vector<std::string> lines;
 	char const *begin = ba.data();

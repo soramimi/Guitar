@@ -60,7 +60,7 @@ QString const &Git::workingRepositoryDir() const
 	return m->working_repo_dir;
 }
 
-bool Git::isValidID(const QString &id)
+bool Git::isValidID(QString const &id)
 {
 	int zero = 0;
 	int n = id.size();
@@ -136,7 +136,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git(const QString &arg, bool chdir, bool errout, AbstractPtyProcess *pty)
+bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty)
 {
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -321,14 +321,14 @@ QList<Git::Tag> Git::tags()
 	return list;
 }
 
-bool Git::tag(const QString &name, const QString &id)
+bool Git::tag(QString const &name, QString const &id)
 {
 	QString cmd = "tag \"%1\" %2";
 	cmd = cmd.arg(name).arg(id);
 	return git(cmd);
 }
 
-void Git::delete_tag(const QString &name, bool remote)
+void Git::delete_tag(QString const &name, bool remote)
 {
 	QString cmd = "tag --delete \"%1\"";
 	cmd = cmd.arg(name);
@@ -785,7 +785,7 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	return ok;
 }
 
-QString Git::encodeQuotedText(const QString &str)
+QString Git::encodeQuotedText(QString const &str)
 {
 	std::vector<ushort> vec;
 	ushort const *begin = str.utf16();
@@ -832,12 +832,12 @@ bool Git::commit(QString const &text, bool sign, AbstractPtyProcess *pty)
 	return commit_(text, false, sign, pty);
 }
 
-bool Git::commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty)
+bool Git::commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty)
 {
 	return commit_(text, true, sign, pty);
 }
 
-bool Git::revert(const QString &id)
+bool Git::revert(QString const &id)
 {
 	QString cmd = "revert %1";
 	cmd = cmd.arg(id);
@@ -912,7 +912,7 @@ bool Git::cat_file(QString const &id, QByteArray *out)
 	return false;
 }
 
-void Git::resetFile(const QString &path)
+void Git::resetFile(QString const &path)
 {
 	git("checkout -- " + path);
 }
@@ -922,7 +922,7 @@ void Git::resetAllFiles()
 	git("reset --hard HEAD");
 }
 
-void Git::removeFile(const QString &path)
+void Git::removeFile(QString const &path)
 {
 	git("rm " + path);
 }
@@ -1237,7 +1237,7 @@ Git::FileStatusCode Git::FileStatus::parseFileStatusCode(char x, char y)
 	return FileStatusCode::Unknown;
 }
 
-void Git::FileStatus::parse(const QString &text)
+void Git::FileStatus::parse(QString const &text)
 {
 	data = Data();
 	if (text.size() > 3) {
@@ -1371,7 +1371,7 @@ bool Git::configGpgProgram(QString const &path, bool global)
 
 // Diff
 
-void Git::Diff::makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, QString const &mode)
+void Git::Diff::makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode)
 {
 	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
 	diff->index = QString("index %1..%2 %3").arg(id_a).arg(id_b).arg(0);

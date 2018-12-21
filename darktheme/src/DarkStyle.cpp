@@ -188,7 +188,7 @@ QImage DarkStyle::colorizeImage(QImage image)
 	return image;
 }
 
-QImage DarkStyle::loadColorizedImage(QString const &path, const QString &role)
+QImage DarkStyle::loadColorizedImage(QString const &path, QString const &role)
 {
 	QImage image = loadImage(path);
 	image = colorizeImage(image);
@@ -222,7 +222,7 @@ public:
 };
 }
 
-DarkStyle::ButtonImages DarkStyle::generateButtonImages(const QString &path)
+DarkStyle::ButtonImages DarkStyle::generateButtonImages(QString const &path)
 {
 	QImage source = loadImage(path);
 	ButtonImages buttons;

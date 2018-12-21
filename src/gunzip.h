@@ -22,7 +22,7 @@ public:
 	bool decode(QString const &inpath, QString const &outpath);
 
 	static bool is_valid_gz_file(QIODevice *input);
-	static bool is_valid_gz_file(const QString &inpath);
+	static bool is_valid_gz_file(QString const &inpath);
 };
 
 #endif // GUNZIP_H

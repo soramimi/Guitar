@@ -7,7 +7,7 @@
 #include <QMessageBox>
 #include "Git.h"
 
-CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent, const QString &dir) :
+CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent, QString const &dir) :
 	QDialog(parent),
 	ui(new Ui::CreateRepositoryDialog)
 {
@@ -109,12 +109,12 @@ void CreateRepositoryDialog::validate(bool change_name)
 	}
 }
 
-void CreateRepositoryDialog::on_lineEdit_path_textChanged(const QString &)
+void CreateRepositoryDialog::on_lineEdit_path_textChanged(QString const &)
 {
 	validate(true);
 }
 
-void CreateRepositoryDialog::on_lineEdit_name_textChanged(const QString &)
+void CreateRepositoryDialog::on_lineEdit_name_textChanged(QString const &)
 {
 	validate(false);
 }

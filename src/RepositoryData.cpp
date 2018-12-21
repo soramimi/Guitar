@@ -7,7 +7,7 @@
 
 
 
-bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *items)
+bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *items)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
@@ -38,7 +38,7 @@ bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *
 	return false;
 }
 
-QList<RepositoryItem> RepositoryBookmark::load(const QString &path)
+QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
 {
 	QList<RepositoryItem> items;
 	QFile file(path);

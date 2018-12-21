@@ -85,7 +85,7 @@ qint64 MemoryReader::readData(char *data, qint64 maxlen)
 	return n;
 }
 
-qint64 MemoryReader::writeData(const char * /*data*/, qint64 /*len*/)
+qint64 MemoryReader::writeData(char const * /*data*/, qint64 /*len*/)
 {
 	return 0;
 }

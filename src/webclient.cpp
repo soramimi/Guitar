@@ -315,7 +315,7 @@ void WebClient::parse_http_header(char const *begin, char const *end, std::vecto
 	}
 }
 
-void WebClient::parse_http_header(const char *begin, const char *end, WebClient::Response *out)
+void WebClient::parse_http_header(char const *begin, char const *end, WebClient::Response *out)
 {
 	*out = Response();
 	parse_http_header(begin, end, &out->header);

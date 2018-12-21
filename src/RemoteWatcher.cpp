@@ -11,7 +11,7 @@ void RemoteWatcher::start(MainWindow *mw)
 	moveToThread(this);
 }
 
-void RemoteWatcher::setCurrent(const QString &remote, const QString &branch)
+void RemoteWatcher::setCurrent(QString const &remote, QString const &branch)
 {
 	remote_ = remote;
 	branch_ = branch;

@@ -145,7 +145,7 @@ struct TextEditorContext {
 	TextEditorEnginePtr engine;
 };
 
-using DialogHandler = std::function<void (bool, const QString &)>;
+using DialogHandler = std::function<void (bool, QString const &)>;
 
 class AbstractCharacterBasedApplication {
 public:
@@ -282,8 +282,8 @@ protected:
 	bool isDialogMode();
 	void setDialogMode(bool f);
 	void closeDialog(bool result);
-	void setDialogOption(const QString &title, const QString &value, DialogHandler handler);
-	void execDialog(const QString &dialog_title, QString dialog_value, DialogHandler handler);
+	void setDialogOption(QString const &title, QString const &value, DialogHandler handler);
+	void execDialog(QString const &dialog_title, QString dialog_value, DialogHandler handler);
 	void toggleSelectionAnchor();
 private:
 	int internalParseLine(std::vector<uint32_t> *vec, int increase_hint) const;
@@ -293,7 +293,7 @@ private:
 	void onQuit();
 	void onOpenFile();
 	void onSaveFile();
-	void printInvertedBar(int x, int y, const char *text, int padchar);
+	void printInvertedBar(int x, int y, char const *text, int padchar);
 	SelectionAnchor currentAnchor(SelectionAnchor::Enabled enabled);
 	enum class EditOperation {
 		Cut,
@@ -332,7 +332,7 @@ protected:
 	QString statusLine() const;
 
 	void preparePaintScreen();
-	void setRecentlyUsedPath(const QString &path);
+	void setRecentlyUsedPath(QString const &path);
 	QString recentlyUsedPath();
 	void clearRect(int x, int y, int w, int h);
 	void paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> const &draw);
@@ -362,8 +362,8 @@ public:
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
 	void setTextEditorEngine(const TextEditorEnginePtr &e);
-	void openFile(const QString &path);
-	void saveFile(const QString &path);
+	void openFile(QString const &path);
+	void saveFile(QString const &path);
 	void loadExampleFile();
 	void pressEnter();
 	void pressEscape();
@@ -393,7 +393,7 @@ public:
 	bool isBottom() const;
 	void setLineMargin(int n);
 	void write(uint32_t c, bool by_keyboard);
-	void write(const char *ptr, int len, bool by_keyboard);
+	void write(char const *ptr, int len, bool by_keyboard);
 	void write(std::string const &text);
 	void write(QKeyEvent *e);
 	void setTextCodec(QTextCodec *codec);
@@ -408,7 +408,7 @@ public:
 	void setChanged(bool f);
 	void logicalMoveToBottom();
 protected:
-	void write_(const char *ptr, bool by_keyboard);
+	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
 };

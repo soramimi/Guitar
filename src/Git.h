@@ -103,13 +103,13 @@ public:
 		Diff()
 		{
 		}
-		Diff(const QString &id, const QString &path, const QString &mode)
+		Diff(QString const &id, QString const &path, QString const &mode)
 		{
 			makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
 
 		}
 	private:
-		void makeForSingleFile(Git::Diff *diff, const QString &id_a, const QString &id_b, const QString &path, const QString &mode);
+		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
 	};
 
 	enum class SignatureGrade {
@@ -303,22 +303,22 @@ public:
 	};
 	typedef std::vector<FileStatus> FileStatusList;
 
-	static QString trimPath(const QString &s);
+	static QString trimPath(QString const &s);
 
 private:
 	struct Private;
 	Private *m;
 	QStringList make_branch_list_();
-	QByteArray cat_file_(const QString &id);
+	QByteArray cat_file_(QString const &id);
 	FileStatusList status_();
-	bool commit_(const QString &msg, bool amend, bool sign, AbstractPtyProcess *pty);
+	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	bool push_(bool tags, AbstractPtyProcess *pty);
-	static void parseAheadBehind(const QString &s, Branch *b);
+	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
-	QString encodeQuotedText(const QString &str);
+	QString encodeQuotedText(QString const &str);
 	QStringList refs();
 public:
-	Git(Context const &cx, const QString &repodir);
+	Git(Context const &cx, QString const &repodir);
 	Git(Git &&r) = delete;
 	virtual ~Git();
 
@@ -327,7 +327,7 @@ public:
 	void setLogCallback(callback_t func, void *cookie);
 
 	QByteArray toQByteArray() const;
-	void setGitCommand(const QString &path);
+	void setGitCommand(QString const &path);
 	QString gitCommand() const;
 	void clearResult();
 	QString resultText() const;
@@ -338,17 +338,17 @@ public:
 		return git(arg, true);
 	}
 
-	void setWorkingRepositoryDir(const QString &repo);
-	const QString &workingRepositoryDir() const;
+	void setWorkingRepositoryDir(QString const &repo);
+	QString const &workingRepositoryDir() const;
 
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy() const;
 	QString version();
 	bool init();
 	QStringList getUntrackedFiles();
-	CommitItemList log_all(const QString &id, int maxcount);
+	CommitItemList log_all(QString const &id, int maxcount);
 	CommitItemList log(int maxcount);
-	bool queryCommit(const QString &id, CommitItem *out);
+	bool queryCommit(QString const &id, CommitItem *out);
 
 	struct CloneData {
 		QString url;
@@ -359,16 +359,16 @@ public:
 	bool clone(CloneData const &data, AbstractPtyProcess *pty);
 
 	FileStatusList status();
-	bool cat_file(const QString &id, QByteArray *out);
-	void resetFile(const QString &path);
+	bool cat_file(QString const &id, QByteArray *out);
+	void resetFile(QString const &path);
 	void resetAllFiles();
 
-	void removeFile(const QString &path);
+	void removeFile(QString const &path);
 
-	void stage(const QString &path);
-	void stage(const QStringList &paths);
-	void unstage(const QString &path);
-	void unstage(const QStringList &paths);
+	void stage(QString const &path);
+	void stage(QStringList const &paths);
+	void unstage(QString const &path);
+	void unstage(QStringList const &paths);
 	void pull(AbstractPtyProcess *pty = 0);
 
 	void fetch(AbstractPtyProcess *pty = 0);
@@ -378,7 +378,7 @@ public:
 	int getProcessExitCode() const;
 
 	QString diff(QString const &old_id, QString const &new_id);
-	QString diff_file(const QString &old_path, const QString &new_path);
+	QString diff_file(QString const &old_path, QString const &new_path);
 
 	struct DiffRaw {
 		struct AB {
@@ -395,29 +395,29 @@ public:
 		QString purpose;
 	};
 
-	QList<DiffRaw> diff_raw(const QString &old_id, const QString &new_id);
+	QList<DiffRaw> diff_raw(QString const &old_id, QString const &new_id);
 
 	static bool isValidID(QString const &s);
 
-	bool commit(const QString &text, bool sign, AbstractPtyProcess *pty);
-	bool commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty);
-	bool revert(const QString &id);
+	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
+	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
+	bool revert(QString const &id);
 	bool push(bool tags, AbstractPtyProcess *pty = 0);
 	void getRemoteURLs(QList<Remote> *out);
-	void createBranch(const QString &name);
-	void checkoutBranch(const QString &name);
-	void mergeBranch(const QString &name);
-	void rebaseBranch(const QString &name);
-	static bool isValidWorkingCopy(const QString &dir);
-	QString diff_to_file(const QString &old_id, const QString &path);
+	void createBranch(QString const &name);
+	void checkoutBranch(QString const &name);
+	void mergeBranch(QString const &name);
+	void rebaseBranch(QString const &name);
+	static bool isValidWorkingCopy(QString const &dir);
+	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage() const;
 
 	GitPtr dup() const;
-	QString rev_parse(const QString &name);
+	QString rev_parse(QString const &name);
 	QList<Tag> tags();
-	bool tag(const QString &name, QString const &id = QString());
-	void delete_tag(const QString &name, bool remote);
-	void setRemoteURL(const QString &name, const QString &url);
+	bool tag(QString const &name, QString const &id = QString());
+	void delete_tag(QString const &name, bool remote);
+	void setRemoteURL(QString const &name, QString const &url);
 	void addRemoteURL(QString const &name, QString const &url);
 	void removeRemote(QString const &name);
 	QStringList getRemotes();
@@ -436,10 +436,10 @@ public:
 	void setUser(User const&user, bool global);
 
 	bool reset_head1();
-	void push_u(const QString &remote, const QString &branch, AbstractPtyProcess *pty);
-	QString objectType(const QString &id);
-	bool rm_cached(const QString &file);
-	void cherrypick(const QString &name);
+	void push_u(QString const &remote, QString const &branch, AbstractPtyProcess *pty);
+	QString objectType(QString const &id);
+	bool rm_cached(QString const &file);
+	void cherrypick(QString const &name);
 
 	struct ReflogItem {
 		QString id;
@@ -459,7 +459,7 @@ public:
 	typedef QList<ReflogItem> ReflogItemList;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
-	QByteArray blame(const QString &path);
+	QByteArray blame(QString const &path);
 
 	enum SignPolicy {
 		Unset,
@@ -467,11 +467,11 @@ public:
 		True,
 	};
 	QString signingKey(Source purpose);
-	bool setSigningKey(const QString &id, bool global);
+	bool setSigningKey(QString const &id, bool global);
 	SignPolicy signPolicy(Source source);
 	bool setSignPolicy(Source source, SignPolicy policy);
-	bool configGpgProgram(const QString &path, bool global);
-	void rebaseOnto(const QString &newbase, const QString &upstream, const QString &branch, AbstractPtyProcess *pty);
+	bool configGpgProgram(QString const &path, bool global);
+	void rebaseOnto(QString const &newbase, QString const &upstream, QString const &branch, AbstractPtyProcess *pty);
 
 	struct RemoteInfo {
 		QString commit_id;

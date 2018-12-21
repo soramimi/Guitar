@@ -43,7 +43,7 @@ public:
 
 	void clear();
 
-	void setImage(QString mimetype, const QByteArray &ba);
+	void setImage(QString mimetype, QByteArray const &ba);
 
 	void setLeftBorderVisible(bool f);
 

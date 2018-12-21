@@ -22,7 +22,7 @@ TextEditDialog::~TextEditDialog()
 	delete ui;
 }
 
-void TextEditDialog::setText(const QString &text)
+void TextEditDialog::setText(QString const &text)
 {
 	ui->plainTextEdit->setPlainText(text);
 	QTextCursor cur = ui->plainTextEdit->textCursor();

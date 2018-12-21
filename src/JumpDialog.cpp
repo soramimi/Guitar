@@ -110,7 +110,7 @@ void JumpDialog::updateTable()
 	}
 }
 
-void JumpDialog::on_lineEdit_filter_textChanged(const QString &text)
+void JumpDialog::on_lineEdit_filter_textChanged(QString const &text)
 {
 	m->filter_text = text;
 	updateTable();

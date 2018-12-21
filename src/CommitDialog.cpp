@@ -60,7 +60,7 @@ bool CommitDialog::isSigningEnabled() const
 	return ui->groupBox_gpg_sign->isChecked();
 }
 
-void CommitDialog::setText(const QString &text)
+void CommitDialog::setText(QString const &text)
 {
 	ui->plainTextEdit->setPlainText(text);
 	QTextCursor cur = ui->plainTextEdit->textCursor();

@@ -18,7 +18,7 @@ typedef UnixPtyProcess PtyProcess;
 class misc2 {
 public:
 	static int runCommand(QString const &cmd, QByteArray *out);
-	static int runCommand(const QString &cmd, const QByteArray *in, QByteArray *out);
+	static int runCommand(QString const &cmd, const QByteArray *in, QByteArray *out);
 };
 
 #endif // MYPROCESS_H

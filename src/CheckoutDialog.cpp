@@ -10,8 +10,7 @@ struct CheckoutDialog::Private {
 
 };
 
-
-CheckoutDialog::CheckoutDialog(QWidget *parent, const QStringList &tags, const QStringList &local_branches, const QStringList &remote_branches)
+CheckoutDialog::CheckoutDialog(QWidget *parent, QStringList const &tags, QStringList const &local_branches, QStringList const &remote_branches)
 	: QDialog(parent)
 	, ui(new Ui::CheckoutDialog)
 	, m(new Private)
@@ -31,11 +30,16 @@ CheckoutDialog::CheckoutDialog(QWidget *parent, const QStringList &tags, const Q
 
 	bool existing = makeComboBoxOptions(local_branches) > 0;
 
+	QRadioButton *sel = nullptr;
 	if (existing) {
-		ui->radioButton_existing_local_branch->click();
+		sel = ui->radioButton_existing_local_branch;
 	} else {
 		ui->radioButton_existing_local_branch->setEnabled(false);
-		ui->radioButton_create_local_branch->click();
+		sel = ui->radioButton_create_local_branch;
+	}
+	if (sel) {
+		sel->setFocus();
+		sel->click();
 	}
 }
 

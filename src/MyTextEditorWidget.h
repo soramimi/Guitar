@@ -14,7 +14,7 @@ public:
 	MyTextEditorWidget(QWidget *parent = 0);
 
 	// QWidget interface
-	void setDocument(const QList<Document::Line> *source, MainWindow *mw, const QString &object_id, const QString &object_path);
+	void setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path);
 protected:
 	void contextMenuEvent(QContextMenuEvent *event);
 };

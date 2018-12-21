@@ -14,7 +14,7 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit DeleteBranchDialog(QWidget *parent, bool remote, const QStringList &all_local_branch_names, const QStringList &current_local_branch_names);
+	explicit DeleteBranchDialog(QWidget *parent, bool remote, QStringList const &all_local_branch_names, QStringList const &current_local_branch_names);
 	~DeleteBranchDialog();
 
 	QStringList selectedBranchNames() const;

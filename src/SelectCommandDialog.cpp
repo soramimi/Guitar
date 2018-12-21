@@ -2,7 +2,7 @@
 #include "ui_SelectCommandDialog.h"
 #include <QFileDialog>
 
-QStringList uniqueStringList(const QStringList &list)
+QStringList uniqueStringList(QStringList const &list)
 {
 	QStringList tmp_list = list;
 	std::sort(tmp_list.begin(), tmp_list.end());
@@ -14,7 +14,7 @@ QStringList uniqueStringList(const QStringList &list)
 	return ret_list;
 }
 
-SelectCommandDialog::SelectCommandDialog(QWidget *parent, const QString &cmdname, const QStringList &cmdfiles, const QString &path, const QStringList &list) :
+SelectCommandDialog::SelectCommandDialog(QWidget *parent, QString const &cmdname, QStringList const &cmdfiles, QString const &path, QStringList const &list) :
 	QDialog(parent),
 	ui(new Ui::SelectCommandDialog)
 {
@@ -82,7 +82,7 @@ void SelectCommandDialog::on_pushButton_browse_clicked()
 	}
 }
 
-void SelectCommandDialog::on_listWidget_currentTextChanged(const QString &currentText)
+void SelectCommandDialog::on_listWidget_currentTextChanged(QString const &currentText)
 {
 	path = currentText;
 }

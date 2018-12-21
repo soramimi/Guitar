@@ -26,7 +26,7 @@ public:
 
 	void start(QString const &command, bool use_input);
 	int wait();
-	void writeInput(const char *ptr, int len);
+	void writeInput(char const *ptr, int len);
 	void closeInput(bool justnow);
 };
 

@@ -16,7 +16,7 @@ SelectItemDialog::~SelectItemDialog()
 	delete ui;
 }
 
-void SelectItemDialog::addItem(const QString &id, const QString &text)
+void SelectItemDialog::addItem(QString const &id, QString const &text)
 {
 	auto *item = new QListWidgetItem;
 	item->setText(text);

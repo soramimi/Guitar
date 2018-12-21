@@ -11,7 +11,7 @@ struct SetGpgSigningDialog::Private {
 	QString repository_key_id;
 };
 
-SetGpgSigningDialog::SetGpgSigningDialog(QWidget *parent, QString const &repo, const QString &global_key_id, const QString &repository_key_id)
+SetGpgSigningDialog::SetGpgSigningDialog(QWidget *parent, QString const &repo, QString const &global_key_id, QString const &repository_key_id)
 	: QDialog(parent)
 	, ui(new Ui::SetGpgSigningDialog)
 	, m(new Private)

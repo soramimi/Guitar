@@ -1,6 +1,6 @@
 #include "AbstractProcess.h"
 
-void AbstractPtyProcess::setChangeDir(const QString &dir)
+void AbstractPtyProcess::setChangeDir(QString const &dir)
 {
 	change_dir = dir;
 }

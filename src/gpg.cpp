@@ -129,7 +129,7 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 	}
 }
 
-bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
+bool gpg::listKeys(QString const &gpg_command, QList<gpg::Data> *keys)
 {
 	keys->clear();
 
@@ -163,7 +163,7 @@ bool gpg::listKeys(const QString &gpg_command, QList<gpg::Data> *keys)
 	return true;
 }
 
-//QList<gpg::Item> gpg::load(const QByteArray &json)
+//QList<gpg::Item> gpg::load(QByteArray const &json)
 //{
 //	QList<Item> items;
 
