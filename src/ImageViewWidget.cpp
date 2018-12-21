@@ -25,7 +25,7 @@
 using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
-	MainWindow *mainwindow = nullptr;
+	BasicMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
@@ -72,7 +72,7 @@ ImageViewWidget::~ImageViewWidget()
 	delete m;
 }
 
-void ImageViewWidget::bind(MainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
+void ImageViewWidget::bind(BasicMainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->mainwindow = mainwindow;
 	m->filediffwidget = filediffwidget;
@@ -189,7 +189,7 @@ void ImageViewWidget::updateScrollBarRange()
 	setScrollBarRange(m->h_scroll_bar, m->v_scroll_bar);
 }
 
-MainWindow *ImageViewWidget::mainwindow()
+BasicMainWindow *ImageViewWidget::mainwindow()
 {
 	return m->mainwindow;
 }

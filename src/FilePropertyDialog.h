@@ -7,18 +7,17 @@ namespace Ui {
 class FilePropertyDialog;
 }
 
-class MainWindow;
+class BasicMainWindow;
 
-class FilePropertyDialog : public QDialog
-{
+class FilePropertyDialog : public QDialog {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 public:
 	explicit FilePropertyDialog(QWidget *parent = 0);
 	~FilePropertyDialog();
 
-	void exec(MainWindow *mw, QString const &path, QString const &id);
+	void exec(BasicMainWindow *mw, QString const &path, QString const &id);
 private:
 	Ui::FilePropertyDialog *ui;
 };

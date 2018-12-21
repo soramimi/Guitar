@@ -1,5 +1,5 @@
 #include "CommitPropertyDialog.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "gpg.h"
 #include "ui_CommitPropertyDialog.h"
 #include "ApplicationGlobal.h"
@@ -7,12 +7,12 @@
 #include "common/misc.h"
 
 struct CommitPropertyDialog::Private {
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 	Git::CommitItem commit;
 	AvatarLoader avatar_loader;
 };
 
-void CommitPropertyDialog::init(MainWindow *mw)
+void CommitPropertyDialog::init(BasicMainWindow *mw)
 {
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
@@ -95,7 +95,7 @@ void CommitPropertyDialog::UpdateAvatar(bool request)
 	SetAvatar(ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, Git::CommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -105,7 +105,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git:
 	init(mw);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, QString const &commit_id)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -123,7 +123,7 @@ CommitPropertyDialog::~CommitPropertyDialog()
 	delete ui;
 }
 
-MainWindow *CommitPropertyDialog::mainwindow()
+BasicMainWindow *CommitPropertyDialog::mainwindow()
 {
 	return m->mainwindow;
 }

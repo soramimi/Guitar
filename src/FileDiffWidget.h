@@ -120,7 +120,7 @@ private:
 	void refrectScrollBar();
 	void setOriginalLines_(QByteArray const &ba);
 	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 protected:
 	void resizeEvent(QResizeEvent *);
 	void keyPressEvent(QKeyEvent *event);
@@ -128,7 +128,7 @@ public:
 	explicit FileDiffWidget(QWidget *parent = 0);
 	~FileDiffWidget();
 
-	void bind(MainWindow *mw);
+	void bind(BasicMainWindow *mw);
 
 	void clearDiffView();
 

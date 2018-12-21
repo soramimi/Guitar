@@ -5,21 +5,20 @@
 
 #include <QDialog>
 
-class MainWindow;
+class BasicMainWindow;
 
 namespace Ui {
 class WelcomeWizardDialog;
 }
 
-class WelcomeWizardDialog : public QDialog
-{
+class WelcomeWizardDialog : public QDialog {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow_;
+	BasicMainWindow *mainwindow_;
 	AvatarLoader avatar_loader_;
 	QList<QWidget *> pages_;
 public:
-	explicit WelcomeWizardDialog(MainWindow *parent = 0);
+	explicit WelcomeWizardDialog(BasicMainWindow *parent = 0);
 	~WelcomeWizardDialog();
 
 	void set_user_name(QString const &v);

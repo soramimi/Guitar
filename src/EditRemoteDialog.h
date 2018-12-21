@@ -3,14 +3,13 @@
 
 #include <QDialog>
 
-class MainWindow;
+class BasicMainWindow;
 
 namespace Ui {
 class EditRemoteDialog;
 }
 
-class EditRemoteDialog : public QDialog
-{
+class EditRemoteDialog : public QDialog {
 	Q_OBJECT
 public:
 	enum Operation {
@@ -18,7 +17,7 @@ public:
 		RemoteSet,
 	};
 public:
-	explicit EditRemoteDialog(MainWindow *parent, Operation op);
+	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op);
 	~EditRemoteDialog();
 
 	void setName(QString const &s) const;
@@ -32,7 +31,7 @@ private slots:
 
 private:
 	Ui::EditRemoteDialog *ui;
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 };
 
 #endif // EDITREMOTEDIALOG_H

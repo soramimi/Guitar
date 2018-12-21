@@ -136,7 +136,7 @@ bool isValidGitHubName(std::string const &name)
 
 }
 
-QIcon AvatarLoader::fetch(std::string const &email, bool request)
+QIcon AvatarLoader::fetch(std::string const &email, bool request) const
 {
 	RequestItem item;
 	item.email = email;

@@ -51,7 +51,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 	q = url_encode(q);
 	if (q.empty()) return;
 
-	GitHubAPI github(mainwindow->getWebContextPtr());
+	GitHubAPI github(mainwindow->webContext());
 	items = github.searchRepository(q);
 
 	QStringList cols = {

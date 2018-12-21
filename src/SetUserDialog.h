@@ -5,20 +5,19 @@
 
 #include <QDialog>
 
-class MainWindow;
+class BasicMainWindow;
 
 namespace Ui {
 class SetUserDialog;
 }
 
-class SetUserDialog : public QDialog
-{
+class SetUserDialog : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
 	Private *m;
 public:
-	explicit SetUserDialog(MainWindow *parent, const Git::User &global_user, const Git::User &repo_user, QString const &repo);
+	explicit SetUserDialog(BasicMainWindow *parent, const Git::User &global_user, const Git::User &repo_user, QString const &repo);
 	~SetUserDialog();
 
 	bool isGlobalChecked() const;
@@ -39,7 +38,7 @@ private slots:
 private:
 	Ui::SetUserDialog *ui;
 	void setAvatar(QIcon icon);
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 };
 
 #endif // SETUSERDIALOG_H

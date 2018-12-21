@@ -27,7 +27,7 @@ enum {
 };
 
 struct CommitExploreWindow::Private {
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 	GitObjectCache *objcache;
 	Git::CommitItem const *commit;
 	QString root_tree_id;
@@ -37,7 +37,7 @@ struct CommitExploreWindow::Private {
 	TextEditorEnginePtr text_editor_engine;
 };
 
-CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
+CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
 	, m(new Private)
@@ -94,7 +94,7 @@ CommitExploreWindow::~CommitExploreWindow()
 	delete ui;
 }
 
-MainWindow *CommitExploreWindow::mainwindow()
+BasicMainWindow *CommitExploreWindow::mainwindow()
 {
 	return m->mainwindow;
 }

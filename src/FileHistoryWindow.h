@@ -3,14 +3,14 @@
 
 #include <QDialog>
 #include "Git.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "FileDiffWidget.h"
 
 namespace Ui {
 class FileHistoryWindow;
 }
 
-class MainWindow;
+class BasicMainWindow;
 class QTableWidgetItem;
 
 class FileHistoryWindow : public QDialog
@@ -27,7 +27,7 @@ private:
 	int totalTextLines() const;
 	int fileviewScrollPos() const;
 public:
-	explicit FileHistoryWindow(MainWindow *parent);
+	explicit FileHistoryWindow(BasicMainWindow *parent);
 	~FileHistoryWindow();
 
 	void prepare(GitPtr g, QString const &path);
@@ -43,7 +43,7 @@ private:
 
 	void collectFileHistory();
 	void updateDiffView();
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 };
 
 #endif // FILEHISTORYWINDOW_H

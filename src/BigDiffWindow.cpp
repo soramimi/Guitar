@@ -41,7 +41,7 @@ void BigDiffWindow::updateDiffView()
 	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommited);
 }
 
-void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param)
+void BigDiffWindow::init(BasicMainWindow *mw, FileDiffWidget::InitParam_ const &param)
 {
 	ui->widget_diff->bind(mw);
 	m->param = param;

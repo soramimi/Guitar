@@ -7,19 +7,19 @@
 #include <QDialog>
 #include "Git.h"
 
+class BasicMainWindow;
 
 namespace Ui {
 class RepositoryPropertyDialog;
 }
 
-class RepositoryPropertyDialog : public BasicRepositoryDialog
-{
+class RepositoryPropertyDialog : public BasicRepositoryDialog {
 	Q_OBJECT
 private:
 	RepositoryItem repository;
 	bool remote_changed = false;
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog();
 
 	bool isRemoteChanged() const;

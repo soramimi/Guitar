@@ -27,7 +27,7 @@ protected:
 public:
 	AvatarLoader();
 	~AvatarLoader();
-	QIcon fetch(const std::string &email, bool request);
+	QIcon fetch(const std::string &email, bool request) const;
 	void stop();
 	void start(WebContext *webcx);
 signals:

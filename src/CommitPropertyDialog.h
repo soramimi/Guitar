@@ -11,17 +11,16 @@ namespace Ui {
 class CommitPropertyDialog;
 }
 
-class MainWindow;
+class BasicMainWindow;
 
-class CommitPropertyDialog : public QDialog
-{
+class CommitPropertyDialog : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
 	Private *m;
 public:
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
+	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, Git::CommitItem const *commit);
+	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, QString const &commit_id);
 	~CommitPropertyDialog();
 
 	void showCheckoutButton(bool f);
@@ -38,8 +37,8 @@ private slots:
 
 private:
 	Ui::CommitPropertyDialog *ui;
-	void init(MainWindow *mw);
-	MainWindow *mainwindow();
+	void init(BasicMainWindow *mw);
+	BasicMainWindow *mainwindow();
 	void setAvatar(QIcon icon, QLabel *label);
 	void UpdateAvatar(bool request);
 };
