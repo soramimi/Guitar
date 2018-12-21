@@ -93,9 +93,7 @@ QRgb colorize(QRgb color, int light, int alpha)
 {
 	int r, g, b;
 	r = g = b = 0;
-//	int alpha = qAlpha(source);
 	if (alpha != 0) {
-//		int light = qGray(source);
 		r = qRed(color);
 		g = qGreen(color);
 		b = qBlue(color);
@@ -142,8 +140,6 @@ DarkStyle::DarkStyle(QColor const &base_color)
     : m(new Private)
 {
 	setBaseColor(base_color);
-//	setBaseColor(QColor(128, 255, 240));
-//	setBaseColor(QColor(128, 240, 255));
 }
 
 DarkStyle::~DarkStyle()
@@ -156,7 +152,7 @@ QColor DarkStyle::getBaseColor()
 	return m->base_color;
 }
 
-void DarkStyle::setBaseColor(QColor color)
+void DarkStyle::setBaseColor(QColor const &color)
 {
 	m->base_color = color;
 	m->images_loaded = false;
@@ -181,10 +177,9 @@ QImage DarkStyle::colorizeImage(QImage image)
 	if (w > 0 && h > 0) {
 		QColor c = color(128);
 		QRgb rgb = c.rgb();
-		//image = image.convertToFormat(QImage::Format_ARGB32);
 		Q_ASSERT(image.format() == QImage::Format_ARGB32);
 		for (int y = 0; y < h; y++) {
-			QRgb *p = (QRgb *)image.scanLine(y);
+			QRgb *p = reinterpret_cast<QRgb *>(image.scanLine(y));
 			for (int x = 0; x < w; x++) {
 				p[x] = colorize(rgb, qGray(p[x]), qAlpha(p[x]));
 			}
@@ -242,24 +237,20 @@ DarkStyle::ButtonImages DarkStyle::generateButtonImages(const QString &path)
 		w -= 4;
 		h -= 4;
 		for (int y = 0; y < h; y++) {
-			QRgb *src1 = (QRgb *)source.scanLine(y + 1);
-			QRgb *src2 = (QRgb *)source.scanLine(y + 2);
-			QRgb *src3 = (QRgb *)source.scanLine(y + 3);
-			QRgb *dst0 = (QRgb *)buttons.im_normal.scanLine(y + 2) + 2;
-			QRgb *dst1 = (QRgb *)buttons.im_hover.scanLine(y + 2) + 2;
+			QRgb *src1 = reinterpret_cast<QRgb *>(source.scanLine(y + 1));
+			QRgb *src2 = reinterpret_cast<QRgb *>(source.scanLine(y + 2));
+			QRgb *src3 = reinterpret_cast<QRgb *>(source.scanLine(y + 3));
+			QRgb *dst0 = reinterpret_cast<QRgb *>(buttons.im_normal.scanLine(y + 2)) + 2;
+			QRgb *dst1 = reinterpret_cast<QRgb *>(buttons.im_hover.scanLine(y + 2)) + 2;
 			for (int x = 0; x < w; x++) {
 				int v = (int)qAlpha(src3[x + 3]) - (int)qAlpha(src1[x + 1]);
 				v = (v + 256) / 2;
 				int alpha = qAlpha(src2[x + 2]);
-//				dst0[x] = qRgba(v, v, v, alpha);
 				dst0[x] = colorize(rgb, v, alpha);
 				v = lighten[v];
-//				dst1[x] = qRgba(v, v, v, alpha);
 				dst1[x] = colorize(rgb, v, alpha);
 			}
 		}
-//		buttons.im_normal = colorizeImage(buttons.im_normal);
-//		buttons.im_hover  = colorizeImage(buttons.im_hover);
 		buttons.im_normal.setText("name", source.text("name"));
 		buttons.im_hover.setText("name", source.text("name"));
 		buttons.im_normal.setText("role", "normal");
@@ -282,15 +273,13 @@ QImage DarkStyle::generateHoverImage(QImage const &source)
 		w -= 2;
 		h -= 2;
 		for (int y = 0; y < h; y++) {
-			QRgb *ptr = (QRgb *)newimage.scanLine(y + 1) + 1;
+			QRgb *ptr = reinterpret_cast<QRgb *>(newimage.scanLine(y + 1)) + 1;
 			for (int x = 0; x < w; x++) {
 				int v = qGray(ptr[x]);
 				v = lighten[v];
-//				ptr[x] = qRgba(v, v, v, qAlpha(ptr[x]));
 				ptr[x] = colorize(rgb, v, qAlpha(ptr[x]));
 			}
 		}
-//		newimage = colorizeImage(newimage);
 		newimage.setText("role", "hover");
 	}
 	return newimage;
@@ -603,7 +592,7 @@ void DarkStyle::drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget c
 	int h = widget->height();
 	QLinearGradient gradient;
 	gradient.setStart(x, y);
-	gradient.setFinalStop(x, y + h / 2);
+	gradient.setFinalStop(x, y + h / 2.0);
 	gradient.setColorAt(0, option->palette.color(QPalette::Light));
 	gradient.setColorAt(1, option->palette.color(QPalette::Window));
 	p->fillRect(x, y, w, h, gradient);
@@ -622,8 +611,6 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	}
 	return QProxyStyle::pixelMetric(metric, option, widget);
 }
-
-
 
 QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const
 {
@@ -650,7 +637,6 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 		}
 	}
 	if (cc == CC_GroupBox) {
-//		return QProxyStyle::subControlRect(cc, option, sc, widget);
 		QRect ret;
 		if (const auto *groupBox = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
 			switch (sc) {
@@ -742,7 +728,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 #endif
 	if (pe == PE_IndicatorArrowDown) {
-		//		p->fillRect(option->rect, Qt::red);
 		switch (pe) {
 		case PE_IndicatorArrowUp:
 		case PE_IndicatorArrowDown:
@@ -754,10 +739,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				QRect r = option->rect.adjusted(-10, -10, 0, 10);
 				int size = qMin(r.height(), r.width());
 				QPixmap pixmap;
-//				QString pixmapName = QStyleHelper::uniqueName(QLatin1String("$qt_ia-")
-//															  % QLatin1String(metaObject()->className()), option, QSize(size, size))
-//						% HexString<uint>(pe);
-				if (1) {//if (!QPixmapCache::find(pixmapName, pixmap)) {
+				if (1) {
 					int border = size/5;
 					int sqsize = 2*(size/2);
 					QImage image(sqsize, sqsize, QImage::Format_ARGB32_Premultiplied);
@@ -811,7 +793,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					imagePainter.drawPolygon(a);
 					imagePainter.end();
 					pixmap = QPixmap::fromImage(image);
-//					QPixmapCache::insert(pixmapName, pixmap);
 				}
 				int xOffset = r.x() + (r.width() - size)/2;
 				int yOffset = r.y() + (r.height() - size)/2;
@@ -846,34 +827,14 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 	if (pe == PE_PanelLineEdit) {
 		if (const auto *panel = qstyleoption_cast<const QStyleOptionFrame *>(option)) {
-//			p->fillRect(option->rect, option->palette.color(QPalette::Dark));
 			p->fillRect(option->rect, colorForItemView(option));
 			if (panel->lineWidth > 0) {
 				drawFrame(p, option->rect, option->palette.color(QPalette::Shadow), option->palette.color(QPalette::Light));
 			}
-
-//		option->
-//				if (qobject_cast<QComboBox const *>(widget->parent())) {
-//			// nop
-//		} else {
-//		}
 		}
 		return;
 	}
 	if (pe == PE_FrameGroupBox) {
-#if 0
-//        p->save();
-//        p->setRenderHint(QPainter::Antialiasing);
-        QRectF r = option->rect;
-        qDebug() << r;
-//        r = r.adjusted(19.5, 19.5, -18.5, -18.5);
-        p->setPen(option->palette.color(QPalette::Light));
-        p->fillRect(r, Qt::red);
-//        r = r.adjusted(-1, -1, -1, -1);
-//        p->setPen(option->palette.color(QPalette::Dark));
-//        p->drawRoundedRect(r, 5, 5);
-//        p->restore();
-#else
 		p->save();
 		p->setRenderHint(QPainter::Antialiasing);
 		QRectF r = option->rect;
@@ -884,7 +845,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		p->setPen(option->palette.color(QPalette::Dark));
 		p->drawRoundedRect(r, 5, 5);
 		p->restore();
-#endif
 		return;
 	}
 	if (pe == PE_PanelItemViewRow) {
@@ -927,9 +887,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 			if (option->state & State_Selected) {
 				n++;
 			}
-//			if (option->state & State_MouseOver) {
-//				n++;
-//			}
 			if (n > 0) {
 				drawSelectedMenuFrame(option, p, option->rect, widget, n > 1);
 			}
@@ -988,9 +945,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		p->fillRect(x, y + h - 1, w, 1, color(32));
 		return;
 	}
-//  if (ce == CE_ToolButtonLabel) {
-//		return;
-//	}
 #endif
 #ifdef Q_OS_LINUX
 	if (ce == CE_ToolBar) {
@@ -1228,41 +1182,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_PushButtonBevel) {
-		enum PartID {
-			BP_PUSHBUTTON,
-			BP_COMMANDLINK,
-		};
-
-		enum StateID {
-			PBS_DISABLED,
-			PBS_PRESSED,
-			PBS_HOT,
-			PBS_DEFAULTED,
-			PBS_NORMAL,
-		};
-
 		if (const auto *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
-			int state = option->state;
-			State flags = option->state;
-			int partId = BP_PUSHBUTTON;
-			int stateId = 0;
-			if (btn->features & QStyleOptionButton::CommandLinkButton) {
-				partId = BP_COMMANDLINK;
-			}
-			if (!(flags & State_Enabled) && !(btn->features & QStyleOptionButton::Flat)) {
-				stateId = PBS_DISABLED;
-			} else if (flags & (State_Sunken | State_On)) {
-				stateId = PBS_PRESSED;
-			} else if (flags & State_MouseOver) {
-				stateId = PBS_HOT;
-			} else if (btn->features & QStyleOptionButton::DefaultButton && (state & State_Active)) {
-				stateId = PBS_DEFAULTED;
-			} else {
-				stateId = PBS_NORMAL;
-			}
-
 			drawButton(p, option);
-
 			if (btn->features & QStyleOptionButton::HasMenu) {
 				int mbiw = 0, mbih = 0;
 				QRect r = subElementRect(SE_PushButtonContents, option, nullptr);
@@ -1303,7 +1224,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_MenuItem) {
 		if (const auto *opt = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
-			int stateId = 0;
 			// windows always has a check column, regardless whether we have an icon or not
 			int checkcol = 25;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
 			const int gutterWidth = 3;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
@@ -1342,7 +1262,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QRect vCheckRect = visualRect(option->direction, opt->rect, QRect(opt->rect.x(), opt->rect.y(), checkcol - (gutterWidth + opt->rect.x()), opt->rect.height()));
 
 			if (act) {
-				stateId = dis ? MBI_DISABLED : MBI_HOT;
 				drawSelectedMenuFrame(option, p, option->rect, widget, false);
 			}
 
@@ -1906,51 +1825,15 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		if (const auto *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
 			SubControls sub = option->subControls;
 			if (cmb->editable) {
-				int partId = 0;
-//				int stateId = 0;
 #define EP_EDITBORDER_NOSCROLL      6
 #define EP_EDITBORDER_HVSCROLL      9
-				State flags = option->state;
 				if (sub & SC_ComboBoxEditField) {
-					partId = EP_EDITBORDER_NOSCROLL;
-//					if (!(flags & State_Enabled))
-//						stateId = ETS_DISABLED;
-//					else if (flags & State_MouseOver)
-//						stateId = ETS_HOT;
-//					else if (flags & State_HasFocus)
-//						stateId = ETS_FOCUSED;
-//					else
-//						stateId = ETS_NORMAL;
-
-//					XPThemeData theme(widget, painter,
-//									  QWindowsXPStylePrivate::EditTheme,
-//									  partId, stateId, r);
-
-//					d->drawBackground(theme);
 					p->fillRect(option->rect, option->palette.color(QPalette::Dark));
 					drawFrame(p, option->rect, option->palette.color(QPalette::Shadow), option->palette.color(QPalette::Light));
-//					drawFrame(p, option->rect, option->palette.color(QPalette::Dark), option->palette.color(QPalette::Light));
 				}
 				if (sub & SC_ComboBoxArrow) {
 					QRect subRect = subControlRect(CC_ComboBox, option, SC_ComboBoxArrow, widget);
-//					XPThemeData theme(widget, painter, QWindowsXPStylePrivate::ComboboxTheme);
-//					theme.rect = subRect;
-//					partId = option->direction == Qt::RightToLeft ? CP_DROPDOWNBUTTONLEFT : CP_DROPDOWNBUTTONRIGHT;
-
-//					if (!(cmb->state & State_Enabled))
-//						stateId = CBXS_DISABLED;
-//					else if (cmb->state & State_Sunken || cmb->state & State_On)
-//						stateId = CBXS_PRESSED;
-//					else if (cmb->state & State_MouseOver && option->activeSubControls & SC_ComboBoxArrow)
-//						stateId = CBXS_HOT;
-//					else
-//						stateId = CBXS_NORMAL;
-
-//					theme.partId = partId;
-//					theme.stateId = stateId;
-//					d->drawBackground(theme);
 					QStyleOptionComplex opt = *option;
-//					p->fillRect(subRect, Qt::blue);
 					opt.rect = subRect;
 					drawToolButton(p, &opt);
 					opt.rect = QRect(subRect.right() - 4, subRect.y() + subRect.height() / 2 - 1, 2, 2);

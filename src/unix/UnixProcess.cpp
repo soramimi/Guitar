@@ -40,7 +40,7 @@ public:
 
 class UnixProcessThread : public QThread {
 public:
-	QMutex *mutex;
+	QMutex *mutex = nullptr;
 	std::vector<std::string> argvec;
 	std::vector<char *> args;
 	std::deque<char> inq;
@@ -278,7 +278,7 @@ void UnixProcess::start(const QString &command, bool use_input)
 {
 	std::string cmd = command.toStdString();
 	parseArgs(cmd, &m->th.argvec);
-	if (m->th.argvec.size() > 0) {
+	if (!m->th.argvec.empty()) {
 		for (std::string const &s : m->th.argvec) {
 			m->th.args.push_back(const_cast<char *>(s.c_str()));
 		}

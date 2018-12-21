@@ -45,7 +45,7 @@ public:
 	~DarkStyle();
 
 	QColor getBaseColor();
-	void setBaseColor(QColor color);
+	void setBaseColor(const QColor& color);
 	void setScrollBarExtent(int n);
 
 	void polish(QPalette &palette);
