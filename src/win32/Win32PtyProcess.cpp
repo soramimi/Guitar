@@ -17,7 +17,7 @@ public:
 	std::deque<char> *output_queue = nullptr;
 	std::vector<char> *output_vector = nullptr;
 protected:
-	void run();
+	void run() override;
 public:
 	void start(HANDLE hOutput, std::deque<char> *outq, std::vector<char> *outv);
 };
@@ -187,7 +187,7 @@ void Win32PtyProcess::writeInput(const char *ptr, int len)
 		if (c == '\r' || c == '\n' || c < 0) {
 			if (left < right) {
 				DWORD written;
-				WriteFile(m->hInput, left, right - left, &written, 0);
+				WriteFile(m->hInput, left, right - left, &written, nullptr);
 			}
 			if (c < 0) break;
 			right++;
@@ -203,7 +203,7 @@ void Win32PtyProcess::writeInput(const char *ptr, int len)
 			}
 			if (c >= 0) {
 				DWORD written;
-				WriteFile(m->hInput, &c, 1, &written, 0);
+				WriteFile(m->hInput, &c, 1, &written, nullptr);
 			}
 			left = right;
 		} else {

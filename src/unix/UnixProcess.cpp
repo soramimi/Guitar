@@ -16,7 +16,7 @@ private:
 	QMutex *mutex;
 	std::deque<char> *buffer;
 protected:
-	void run()
+	void run() override
 	{
 		while (1) {
 			char buf[1024];
@@ -40,7 +40,7 @@ public:
 
 class UnixProcessThread : public QThread {
 public:
-	QMutex *mutex;
+	QMutex *mutex = nullptr;
 	std::vector<std::string> argvec;
 	std::vector<char *> args;
 	std::deque<char> inq;
@@ -73,7 +73,7 @@ public:
 	}
 
 protected:
-	void run()
+	void run() override
 	{
 		exit_code = -1;
 		const int R = 0;
@@ -278,7 +278,7 @@ void UnixProcess::start(const QString &command, bool use_input)
 {
 	std::string cmd = command.toStdString();
 	parseArgs(cmd, &m->th.argvec);
-	if (m->th.argvec.size() > 0) {
+	if (!m->th.argvec.empty()) {
 		for (std::string const &s : m->th.argvec) {
 			m->th.args.push_back(const_cast<char *>(s.c_str()));
 		}

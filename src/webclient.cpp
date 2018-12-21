@@ -419,7 +419,7 @@ public:
 						*p++ = 0;
 						auto IS = [&](char const *name){ return stricmp(begin, name) == 0; };
 						if (IS("content-length")) {
-							content_length = strtol(p, 0, 10);
+							content_length = strtol(p, nullptr, 10);
 						} else if (IS("connection")) {
 							if (stristr(p, "keep-alive")) {
 								connection_keep_alive = true;
@@ -811,7 +811,7 @@ void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHa
 
 void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)
 {
-	if (header->size() > 0) {
+	if (!header->empty()) {
 		std::string const &line = header->at(0);
 		char const *begin = line.c_str();
 		char const *end = begin + line.size();
@@ -1056,28 +1056,25 @@ const WebProxy *WebContext::http_proxy() const
 {
 	if (!m->http_proxy.empty()) {
 		return &m->http_proxy;
-	} else {
-		return nullptr;
 	}
+	return nullptr;
 }
 
 const WebProxy *WebContext::https_proxy() const
 {
 	if (!m->https_proxy.empty()) {
 		return &m->https_proxy;
-	} else {
-		if (!m->http_proxy.empty()) {
-			return &m->http_proxy;
-		} else {
-			return nullptr;
-		}
 	}
+	if (!m->http_proxy.empty()) {
+		return &m->http_proxy;
+	}
+	return nullptr;
 }
 
 bool WebContext::load_cacert(char const *path)
 {
 #if USE_OPENSSL
-	int r = SSL_CTX_load_verify_locations(m->ctx, path, 0);
+	int r = SSL_CTX_load_verify_locations(m->ctx, path, nullptr);
 	return r == 1;
 #else
 	return false;

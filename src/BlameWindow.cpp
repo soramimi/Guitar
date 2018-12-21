@@ -64,7 +64,7 @@ BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QLis
 	ui->tableWidget->setRowCount(rows);
 
 	for (int col = 0; col < cols.size(); col++) {
-		QTableWidgetItem *item = new QTableWidgetItem(cols[col]);
+		auto *item = new QTableWidgetItem(cols[col]);
 		ui->tableWidget->setHorizontalHeaderItem(col, item);
 	}
 

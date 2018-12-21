@@ -6,7 +6,7 @@
 #include <QDateTime>
 #include <functional>
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 #include <QColor>
 
 class QContextMenuEvent;
@@ -14,7 +14,7 @@ class QContextMenuEvent;
 class misc {
 public:
 	static QString getApplicationDir();
-	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> tos);
+	static QStringList splitLines(const QByteArray &text, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);
 	static void splitLines(const char *begin, const char *end, std::vector<std::string> *out, bool keep_newline);
 	static void splitLines(const std::string &text, std::vector<std::string> *out, bool need_crlf);
@@ -34,7 +34,7 @@ public:
 	static bool isSVG(const QString &mimetype);
 	static bool isPSD(const QString &mimetype);
 	static QString abbrevBranchName(const QString &name);
-	static QString determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback);
+	static QString determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void(const QString &, QByteArray *)> const &callback);
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);
 	static QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);

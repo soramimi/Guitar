@@ -8,8 +8,7 @@ MergeBranchDialog::MergeBranchDialog(QWidget *parent, const QList<Git::Branch> &
 	ui->setupUi(this);
 
 	QString current_branch;
-	for (int i = 0; i < branches.size(); i++) {
-		Git::Branch const &b = branches[i];
+	for (const auto & b : branches) {
 		if (b.isCurrent()) {
 			current_branch = b.name;
 		} else if (b.name.indexOf('/') < 0) {

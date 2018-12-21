@@ -18,7 +18,7 @@ SelectItemDialog::~SelectItemDialog()
 
 void SelectItemDialog::addItem(const QString &id, const QString &text)
 {
-	QListWidgetItem *item = new QListWidgetItem();
+	auto *item = new QListWidgetItem;
 	item->setText(text);
 	item->setData(Qt::UserRole, id);
 	ui->listWidget->addItem(item);

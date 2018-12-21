@@ -39,7 +39,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	};
 
 	auto newQTableWidgetItem = [](QString const &text){
-		QTableWidgetItem *item = new QTableWidgetItem(text);
+		auto *item = new QTableWidgetItem(text);
 		return item;
 	};
 

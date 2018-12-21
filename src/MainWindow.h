@@ -84,7 +84,7 @@ private:
 		SideBySide,
 	};
 
-	void addDiffItems(const QList<Git::Diff> *diff_list, std::function<void (const QString &, QString, int)> AddItem_);
+	void addDiffItems(const QList<Git::Diff> *diff_list, std::function<void (const QString &, QString, int)> const &AddItem_);
 	void updateFilesList(QString id, bool wait);
 	void updateFilesList(const Git::CommitItem &commit, bool wait);
 	void updateRepositoriesList();

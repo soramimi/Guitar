@@ -5,10 +5,7 @@
 #include <vector>
 #include <QDebug>
 
-RepositoryBookmark::RepositoryBookmark()
-{
 
-}
 
 bool RepositoryBookmark::save(const QString &path, QList<RepositoryItem> const *items)
 {

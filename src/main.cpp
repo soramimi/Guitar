@@ -17,7 +17,7 @@
 #include <QStandardPaths>
 #include "common/joinpath.h"
 
-ApplicationGlobal *global = 0;
+ApplicationGlobal *global = nullptr;
 
 ApplicationSettings ApplicationSettings::defaultSettings()
 {
@@ -59,8 +59,8 @@ int main(int argc, char *argv[])
 	}
 
 	QApplication a(argc, argv);
-	a.setOrganizationName(global->organization_name);
-	a.setApplicationName(global->application_name);
+	QApplication::setOrganizationName(global->organization_name);
+	QApplication::setApplicationName(global->application_name);
 
 	{
 		MySettings s;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (global->app_config_dir.isEmpty()) {
-		QMessageBox::warning(0, qApp->applicationName(), "Preparation of data storage folder failed.");
+		QMessageBox::warning(nullptr, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
 	}
 
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
 #else
 			QString path = "Guitar_" + global->language_id;
 #endif
-			translator.load(path, a.applicationDirPath());
-			a.installTranslator(&translator);
+			translator.load(path, QApplication::applicationDirPath());
+			QApplication::installTranslator(&translator);
 		}
 	}
 
@@ -139,6 +139,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return a.exec();
+	return QApplication::exec();
 }
 

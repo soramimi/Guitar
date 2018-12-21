@@ -1,7 +1,7 @@
 #include "common/joinpath.h"
 #include <sstream>
 #include <vector>
-#include <string.h>
+#include <cstring>
 
 #ifdef WIN32
 #pragma warning(disable:4996)

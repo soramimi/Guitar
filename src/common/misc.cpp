@@ -19,7 +19,7 @@ QString misc::getApplicationDir()
 	return path;
 }
 
-QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> tos)
+QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos)
 {
 	QStringList list;
 	char const *begin = ba.data();
@@ -365,10 +365,10 @@ QString misc::abbrevBranchName(QString const &name)
 	return newname;
 }
 
-QString misc::determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback)
+QString misc::determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> const &callback)
 { // ファイルタイプを調べる
 	if (QFileInfo(filecommand).isExecutable()) {
-		QString file = filecommand;
+		QString const &file = filecommand;
 		QString mgc;
 #ifdef Q_OS_WIN
 		int i = file.lastIndexOf('/');

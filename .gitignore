@@ -11,3 +11,4 @@ misc/win32tools
 _bin/
 build/
 src/version.h
+*.autosave

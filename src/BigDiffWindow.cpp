@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "BigDiffWindow.h"
 #include "ui_BigDiffWindow.h"
 
@@ -30,7 +32,7 @@ BigDiffWindow::~BigDiffWindow()
 
 void BigDiffWindow::setTextCodec(QTextCodec *codec)
 {
-	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
+	m->text_editor_engine = std::make_shared<TextEditorEngine>();
 	ui->widget_diff->setTextCodec(codec);
 }
 

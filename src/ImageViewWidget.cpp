@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "ImageViewWidget.h"
 #include "FileDiffSliderWidget.h"
 #include "FileDiffWidget.h"
@@ -20,7 +22,7 @@
 #include <QSvgRenderer>
 #include <QBuffer>
 
-typedef std::shared_ptr<QSvgRenderer> SvgRendererPtr;
+using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
 	MainWindow *mainwindow = nullptr;
@@ -36,8 +38,8 @@ struct ImageViewWidget::Private {
 	double image_scroll_x = 0;
 	double image_scroll_y = 0;
 	double image_scale = 1;
-	int scroll_origin_x = 0;
-	int scroll_origin_y = 0;
+	double scroll_origin_x = 0;
+	double scroll_origin_y = 0;
 	QPoint mouse_press_pos;
 	int wheel_delta = 0;
 	QPointF interest_pos;
@@ -107,12 +109,12 @@ void ImageViewWidget::scrollImage(double x, double y)
 
 	if (m->h_scroll_bar) {
 		m->h_scroll_bar->blockSignals(true);
-		m->h_scroll_bar->setValue(m->image_scroll_x);
+		m->h_scroll_bar->setValue((int)m->image_scroll_x);
 		m->h_scroll_bar->blockSignals(false);
 	}
 	if (m->v_scroll_bar) {
 		m->v_scroll_bar->blockSignals(true);
-		m->v_scroll_bar->setValue(m->image_scroll_y);
+		m->v_scroll_bar->setValue((int)m->image_scroll_y);
 		m->v_scroll_bar->blockSignals(false);
 	}
 }
@@ -164,8 +166,8 @@ QString ImageViewWidget::formatText(Document::Line const &line)
 QSizeF ImageViewWidget::imageScrollRange() const
 {
 	QSize sz = imageSize();
-	int w = sz.width() * m->image_scale;
-	int h = sz.height() * m->image_scale;
+	int w = int(sz.width() * m->image_scale);
+	int h = int(sz.height() * m->image_scale);
 	return QSize(w, h);
 }
 
@@ -174,8 +176,8 @@ void ImageViewWidget::setScrollBarRange(QScrollBar *h, QScrollBar *v)
 	h->blockSignals(true);
 	v->blockSignals(true);
 	QSizeF sz = imageScrollRange();
-	h->setRange(0, sz.width());
-	v->setRange(0, sz.height());
+	h->setRange(0, (int)sz.width());
+	v->setRange(0, (int)sz.height());
 	h->setPageStep(width());
 	v->setPageStep(height());
 	h->blockSignals(false);
@@ -233,15 +235,15 @@ void ImageViewWidget::paintEvent(QPaintEvent *)
 		QSizeF sz = imageScrollRange();
 		if (sz.width() > 0 && sz.height() > 0) {
 			QBrush br = getTransparentBackgroundBrush();
-			pr.setBrushOrigin(x, y);
-			pr.fillRect(x, y, sz.width(), sz.height(), br);
+			pr.setBrushOrigin((int)x, (int)y);
+			pr.fillRect((int)x, (int)y, (int)sz.width(), (int)sz.height(), br);
 			if (!m->pixmap.isNull()) {
-				pr.drawPixmap(x, y, sz.width(), sz.height(), m->pixmap, 0, 0, imagesize.width(), imagesize.height());
+				pr.drawPixmap((int)x, (int)y, (int)sz.width(), (int)sz.height(), m->pixmap, 0, 0, imagesize.width(), imagesize.height());
 			} else if (m->svg && m->svg->isValid()) {
 				m->svg->render(&pr, QRectF(x, y, sz.width(), sz.height()));
 			}
 		}
-		misc::drawFrame(&pr, x - 1, y - 1, sz.width() + 2, sz.height() + 2, Qt::black);
+		misc::drawFrame(&pr, (int)x - 1, (int)y - 1, (int)sz.width() + 2, (int)sz.height() + 2, Qt::black);
 		pr.restore();
 	}
 
@@ -272,7 +274,7 @@ void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
 	m->svg = SvgRendererPtr();
 	if (!ba.isEmpty()) {
 		if (misc::isSVG(mimetype)) {
-			m->svg = SvgRendererPtr(new QSvgRenderer(ba));
+			m->svg = std::make_shared<QSvgRenderer>(ba);
 		} else if (misc::isPSD(mimetype)) {
 			if (!ba.isEmpty()) {
 				MemoryReader reader(ba.data(), ba.size());

@@ -1,12 +1,12 @@
-#include "TextEditorTheme.h"
 
-TextEditorTheme::TextEditorTheme()
-{
-}
+#include "TextEditorTheme.h"
+#include <memory>
+
+
 
 TextEditorThemePtr TextEditorTheme::Light()
 {
-	TextEditorThemePtr t = TextEditorThemePtr(new TextEditorTheme());
+	TextEditorThemePtr t = std::make_shared<TextEditorTheme>();
 	t->fg_default = QColor(0, 0, 0);
 	t->bg_default = QColor(240, 240, 240);
 	t->fg_line_number = QColor(96, 96, 96);
@@ -22,7 +22,7 @@ TextEditorThemePtr TextEditorTheme::Light()
 
 TextEditorThemePtr TextEditorTheme::Dark()
 {
-	TextEditorThemePtr t = TextEditorThemePtr(new TextEditorTheme());
+	TextEditorThemePtr t = std::make_shared<TextEditorTheme>();
 	t->fg_default = QColor(255, 255, 255);
 	t->bg_default = QColor(48, 48, 48); //	t->bg_default = QColor(0, 0, 64);
 	t->fg_line_number = QColor(176, 176, 176);

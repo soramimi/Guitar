@@ -93,7 +93,7 @@ static void url_decode_(char const *ptr, char const *end, std::vector<char> *out
 			tmp[0] = ptr[0];
 			tmp[1] = ptr[1];
 			tmp[2] = 0;
-			c = strtol(tmp, NULL, 16);
+			c = strtol(tmp, nullptr, 16);
 			ptr += 2;
 		}
 		print(out, c);

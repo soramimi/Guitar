@@ -44,9 +44,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
 }
 
-FileViewWidget::~FileViewWidget()
-{
-}
+
 
 void FileViewWidget::setTextCodec(QTextCodec *codec)
 {

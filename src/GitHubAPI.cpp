@@ -1,3 +1,4 @@
+
 #include "GitHubAPI.h"
 
 #include "webclient.h"
@@ -10,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <memory>
 
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
@@ -29,7 +31,7 @@ GitHubRequestThread::~GitHubRequestThread()
 
 void GitHubRequestThread::start(WebContext *webcx)
 {
-	m->web = WebClientPtr(new WebClient(webcx));
+	m->web = std::make_shared<WebClient>(webcx);
 	QThread::start();
 }
 

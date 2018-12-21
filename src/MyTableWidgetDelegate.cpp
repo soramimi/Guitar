@@ -24,7 +24,7 @@ void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
 		QStyleOptionViewItem o = option;
 		painter->setClipRect(o.rect);
 		o.rect = QRect(1, o.rect.y(), w - 2, o.rect.height());
-		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, 0);
+		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, nullptr);
 		painter->restore();
 	}
 

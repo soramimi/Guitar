@@ -15,7 +15,7 @@ private:
 	QMutex *mutex;
 	std::deque<char> *buffer;
 protected:
-	void run()
+	void run() override
 	{
 		while (1) {
 			char buf[256];
@@ -65,7 +65,7 @@ public:
 	}
 
 protected:
-	void run()
+	void run() override
 	{
 		try {
 			hInputWrite = INVALID_HANDLE_VALUE;
@@ -82,7 +82,7 @@ protected:
 			SECURITY_ATTRIBUTES sa;
 
 			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-			sa.lpSecurityDescriptor = 0;
+			sa.lpSecurityDescriptor = nullptr;
 			sa.bInheritHandle = TRUE;
 
 			HANDLE currproc = GetCurrentProcess();
@@ -128,7 +128,7 @@ protected:
 
 			char *tmp = (char *)alloca(command.size() + 1);
 			strcpy(tmp, command.c_str());
-			if (!CreateProcessA(0, tmp, 0, 0, TRUE, CREATE_NO_WINDOW, 0, 0, &si, &pi)) {
+			if (!CreateProcessA(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
 				throw std::string("Failed to CreateProcess");
 			}
 

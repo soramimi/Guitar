@@ -22,7 +22,7 @@ public:
 	QColor bg_diff_add;
 	QColor bg_diff_del;
 public:
-	TextEditorTheme();
+	TextEditorTheme() = default;
 	QColor fgDefault() const
 	{
 		return fg_default;

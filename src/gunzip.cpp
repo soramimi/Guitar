@@ -43,7 +43,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 			throw QString("failed to read the header");
 		}
 
-		Header *h = (Header *)ibuf;
+		auto *h = (Header *)ibuf;
 
 		if (h->id1 == 0x1f && h->id2 == 0x8b && h->cm == 8) {
 			// ok
@@ -92,9 +92,9 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		uint32_t crc = 0;
 		int err;
 
-		stream.zalloc = (alloc_func)0;
-		stream.zfree = (free_func)0;
-		stream.opaque = (voidpf)0;
+		stream.zalloc = nullptr;
+		stream.zfree = nullptr;
+		stream.opaque = nullptr;
 
 		stream.next_in = ibuf;
 		stream.avail_in = 0;
@@ -180,7 +180,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		n = input->read((char *)ibuf, 8);
 
 		auto ReadU32LE = [](void const *p)->uint32_t{
-			uint8_t const *q = (uint8_t const *)p;
+			auto const *q = (uint8_t const *)p;
 			return (q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
 		};
 

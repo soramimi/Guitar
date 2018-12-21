@@ -13,13 +13,11 @@ private:
 	QString object_id_;
 	QString path_;
 protected:
-	void contextMenuEvent(QContextMenuEvent *e);
+	void contextMenuEvent(QContextMenuEvent *e) override;
 public:
-	MyImageViewWidget(QWidget *parent = 0);
+	MyImageViewWidget(QWidget *parent = nullptr);
 
 	void setImage(QString mimetype, QByteArray const &ba, QString const &object_id_, QString const &path_);
-
-
 };
 
 #endif // MYIMAGEVIEWWIDGET_H
