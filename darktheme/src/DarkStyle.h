@@ -35,25 +35,25 @@ private:
 
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;
-	void drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, QWidget const *widget, bool deep) const;
+	void drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, QRect rect, QWidget const *widget, bool deep = false) const;
 	void drawButton(QPainter *p, QStyleOption const *option) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 	QColor color(int level, int alpha = 255) const;
 public:
 	DarkStyle(const QColor &base_color = QColor());
-	~DarkStyle();
+	~DarkStyle() override;
 
 	QColor getBaseColor();
-	void setBaseColor(const QColor& color);
+	void setBaseColor(const QColor &color);
 	void setScrollBarExtent(int n);
 
-	void polish(QPalette &palette);
-	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const;
-	QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const;
-	void drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const;
-	void drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const;
-	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const;
+	void polish(QPalette &palette) override;
+	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const override;
+	QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const override;
+	void drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const override;
+	void drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const override;
+	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const override;
 };
 
 #endif // DARKSTYLE_H

@@ -35,10 +35,10 @@ TraditionalWindowsStyleTreeControl::TraditionalWindowsStyleTreeControl()
         QRgb *p;
         QRgb t = qRgb(0xff, 0xff, 0xff);
         QRgb u = qRgb(0x80, 0x80, 0x80);
-        p = (QRgb *)img.scanLine(0);
+		p = reinterpret_cast<QRgb *>(img.scanLine(0));
         p[0] = u;
         p[1] = t;
-        p = (QRgb *)img.scanLine(1);
+		p = reinterpret_cast<QRgb *>(img.scanLine(1));
         p[0] = t;
         p[1] = u;
         br_branch = QBrush(img);
@@ -51,9 +51,9 @@ TraditionalWindowsStyleTreeControl::TraditionalWindowsStyleTreeControl()
 		for (int x = 0; x < 9; x++) {
 			unsigned char v;
 			v = plus_image[y][x];
-			((QRgb *)img_plus.scanLine(y))[x] = qRgb(v, v, v);
+			reinterpret_cast<QRgb *>(img_plus.scanLine(y))[x] = qRgb(v, v, v);
 			v = minus_image[y][x];
-			((QRgb *)img_minus.scanLine(y))[x] = qRgb(v, v, v);
+			reinterpret_cast<QRgb *>(img_minus.scanLine(y))[x] = qRgb(v, v, v);
 		}
 	}
 	pm_plus = QPixmap::fromImage(img_plus);

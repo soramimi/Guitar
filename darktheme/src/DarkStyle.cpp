@@ -332,7 +332,6 @@ QColor DarkStyle::colorForSelectedFrame(const QStyleOption *opt) const
 {
 	(void)opt;
 	return QColor(128, 192, 255);
-
 }
 
 QColor DarkStyle::colorForItemView(QStyleOption const *opt) const
@@ -399,12 +398,7 @@ void DarkStyle::drawSelectedMenuFrame(const QStyleOption *option, QPainter *p, Q
 		color->setAlpha(alpha);
 	};
 
-	QString key;
-	{
-		char tmp[100];
-		sprintf(tmp, "selection_frame:%02x%02x%02x:%dx%d", color.red(), color.green(), color.blue(), w, h);
-		key = tmp;
-	}
+	QString key = QString().sprintf("selection_frame:%02x%02x%02x:%dx%d", color.red(), color.green(), color.blue(), w, h);
 
 	QPixmap pixmap;
 	if (!QPixmapCache::find(key, &pixmap)) {
@@ -734,14 +728,15 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		case PE_IndicatorArrowRight:
 		case PE_IndicatorArrowLeft:
 			{
-				if (option->rect.width() <= 1 || option->rect.height() <= 1)
+				if (option->rect.width() <= 1 || option->rect.height() <= 1) {
 					break;
+				}
 				QRect r = option->rect.adjusted(-10, -10, 0, 10);
 				int size = qMin(r.height(), r.width());
 				QPixmap pixmap;
 				if (1) {
-					int border = size/5;
-					int sqsize = 2*(size/2);
+					int border = size / 5;
+					int sqsize = 2 * (size / 2);
 					QImage image(sqsize, sqsize, QImage::Format_ARGB32_Premultiplied);
 					image.fill(0);
 					QPainter imagePainter(&image);
@@ -749,16 +744,16 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					QPolygon a;
 					switch (pe) {
 					case PE_IndicatorArrowUp:
-						a.setPoints(3, border, sqsize/2,  sqsize/2, border,  sqsize - border, sqsize/2);
+						a.setPoints(3, border, sqsize / 2,  sqsize / 2, border,  sqsize - border, sqsize / 2);
 						break;
 					case PE_IndicatorArrowDown:
-						a.setPoints(3, border, sqsize/2,  sqsize/2, sqsize - border,  sqsize - border, sqsize/2);
+						a.setPoints(3, border, sqsize / 2,  sqsize / 2, sqsize - border,  sqsize - border, sqsize / 2);
 						break;
 					case PE_IndicatorArrowRight:
-						a.setPoints(3, sqsize - border, sqsize/2,  sqsize/2, border,  sqsize/2, sqsize - border);
+						a.setPoints(3, sqsize - border, sqsize / 2,  sqsize / 2, border,  sqsize / 2, sqsize - border);
 						break;
 					case PE_IndicatorArrowLeft:
-						a.setPoints(3, border, sqsize/2,  sqsize/2, border,  sqsize/2, sqsize - border);
+						a.setPoints(3, border, sqsize / 2,  sqsize / 2, border,  sqsize / 2, sqsize - border);
 						break;
 					default:
 						break;
@@ -879,7 +874,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
-				drawSelectedMenuFrame(option, p, r, widget, false);
+				drawSelectedMenuFrame(option, p, r, widget);
 				p->restore();
 			}
 		} else {
@@ -1183,7 +1178,12 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_PushButtonBevel) {
 		if (const auto *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
-			drawButton(p, option);
+			if (btn->features & QStyleOptionButton::Flat) {
+				// nop
+			} else {
+				drawButton(p, option);
+			}
+
 			if (btn->features & QStyleOptionButton::HasMenu) {
 				int mbiw = 0, mbih = 0;
 				QRect r = subElementRect(SE_PushButtonContents, option, nullptr);
@@ -1202,7 +1202,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	if (ce == CE_MenuBarItem) {
 		drawMenuBarBG(p, option, widget);
 		if (option->state & State_Selected) {
-			drawSelectedMenuFrame(option, p, option->rect, widget, false);
+			drawSelectedMenuFrame(option, p, option->rect, widget);
 		}
 		if (const auto *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			QPalette::ColorRole textRole = disabled ? QPalette::Text : QPalette::ButtonText;
@@ -1250,7 +1250,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			opt->rect.getRect(&x, &y, &w, &h);
 			int tab = opt->tabWidth;
 			bool dis = !(opt->state & State_Enabled);
-			bool checked = opt->checkType != QStyleOptionMenuItem::NotCheckable ? opt->checked : false;
+			bool checked = (opt->checkType != QStyleOptionMenuItem::NotCheckable) && opt->checked;
 			bool act = opt->state & State_Selected;
 
 			if (opt->menuItemType == QStyleOptionMenuItem::Separator) {
@@ -1262,7 +1262,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QRect vCheckRect = visualRect(option->direction, opt->rect, QRect(opt->rect.x(), opt->rect.y(), checkcol - (gutterWidth + opt->rect.x()), opt->rect.height()));
 
 			if (act) {
-				drawSelectedMenuFrame(option, p, option->rect, widget, false);
+				drawSelectedMenuFrame(option, p, option->rect, widget);
 			}
 
 			if (checked && !ignoreCheckMark) {
@@ -1295,12 +1295,15 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					} else {
 						pixmap = opt->icon.pixmap(pixelMetric(PM_SmallIconSize, option, widget), mode);
 					}
-					const int pixw = int(pixmap.width() / pixmap.devicePixelRatio());
-					const int pixh = int(pixmap.height() / pixmap.devicePixelRatio());
-					QRect pmr(0, 0, pixw, pixh);
-					pmr.moveCenter(vCheckRect.center());
-					p->setPen(opt->palette.text().color());
-					p->drawPixmap(pmr.topLeft(), pixmap);
+					double dpr = pixmap.devicePixelRatio();
+					if (dpr > 0) {
+						const int pixw = int(pixmap.width() / dpr);
+						const int pixh = int(pixmap.height() / dpr);
+						QRect pmr(0, 0, pixw, pixh);
+						pmr.moveCenter(vCheckRect.center());
+						p->setPen(opt->palette.text().color());
+						p->drawPixmap(pmr.topLeft(), pixmap);
+					}
 				}
 			} else {
 				if (opt->icon.isNull()) {
@@ -1663,15 +1666,17 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			QColor color(0, 128, 255);
 
-			QImage const *image = &m->progress_horz;
+			bool horz = (bar->orientation == Qt::Horizontal);
 
-			QString key = "horz";
+			QString key;
+			QImage const *image;
 
-			bool horz = true;
-			if (bar->orientation == Qt::Vertical) {
-				image = &m->progress_vert;
+			if (horz) {
+				key = "horz";
+				image = &m->progress_horz;
+			} else {
 				key = "vert";
-				horz = false;
+				image = &m->progress_vert;
 			}
 
 			p->save();
@@ -1723,7 +1728,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		int h = option->rect.height();
 		QLinearGradient gradient;
 		gradient.setStart(x, y);
-		gradient.setFinalStop(x, y + h / 4);
+		gradient.setFinalStop(x, y + h / 4.0);
 		gradient.setColorAt(0, option->palette.color(QPalette::Light));
 		gradient.setColorAt(1, option->palette.color(QPalette::Window));
 		p->fillRect(x, y, w, h, gradient);
@@ -1792,17 +1797,15 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					titleRect.adjust(0, 0, -mw, 0);
 				}
 			}
-			if (!verticalTitleBar)
+			if (!verticalTitleBar) {
 				titleRect = visualRect(dwOpt->direction, r, titleRect);
+			}
 
 			if (!dwOpt->title.isEmpty()) {
 				QString titleText = p->fontMetrics().elidedText(dwOpt->title, Qt::ElideRight, verticalTitleBar ? titleRect.height() : titleRect.width());
 				const int indent = 4;
 				int align = Qt::AlignRight | Qt::AlignVCenter;
-				drawItemText(p, rect.adjusted(indent + 1, 1, -indent - 1, -1),
-							 align, dwOpt->palette,
-							 dwOpt->state & State_Enabled, titleText,
-							 QPalette::WindowText);
+				drawItemText(p, rect.adjusted(indent + 1, 1, -indent - 1, -1), align, dwOpt->palette, dwOpt->state & State_Enabled, titleText, QPalette::WindowText);
 			}
 		}
 		return;
@@ -2109,11 +2112,10 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 				QString key = pixmapkey("slider_groove", horizontal ? "horz" : "vert", rect.size(), m->base_color);
 
 				QRectF grooveRect;
-				double r = std::min(groove.width(), groove.height()) / 2;
+				double r = std::min(groove.width(), groove.height()) / 2.0;
 				{
 					double n = r * 3 / 4;
-					int i = (int)n;
-					grooveRect = rect.adjusted(i, i, -i, -i);
+					grooveRect = QRectF(rect).adjusted(n, n, -n, -n);
 					r -= n;
 				}
 
