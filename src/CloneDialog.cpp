@@ -23,7 +23,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(MainWindow *parent, const QString &url, const QString &defworkdir)
+CloneDialog::CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -67,7 +67,7 @@ QString CloneDialog::dir()
 	return ui->lineEdit_working_dir->text();
 }
 
-void CloneDialog::on_lineEdit_repo_location_textChanged(const QString &text)
+void CloneDialog::on_lineEdit_repo_location_textChanged(QString const &text)
 {
 	QString path;
 	int i = text.lastIndexOf('/');

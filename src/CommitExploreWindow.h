@@ -21,7 +21,7 @@ private:
 	struct Private;
 	Private *m;
 
-	void loadTree(const QString &tree_id);
+	void loadTree(QString const &tree_id);
 	void doTreeItemChanged_(QTreeWidgetItem *current);
 	void expandTreeItem_(QTreeWidgetItem *item);
 	MainWindow *mainwindow();

@@ -32,7 +32,7 @@ public:
 	void addItem(QString const &item, QString const &text);
 
 	Item item() const;
-	void select(const QString &id);
+	void select(QString const &id);
 private slots:
 	void on_listWidget_itemDoubleClicked(QListWidgetItem *);
 

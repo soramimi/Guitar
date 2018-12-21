@@ -33,8 +33,8 @@ private:
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
-	void retrieveCompleteTree(const QString &dir, const GitTreeItemList *files);
+	void retrieveCompleteTree(QString const &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
+	void retrieveCompleteTree(QString const &dir, const GitTreeItemList *files);
 public:
 	GitDiff(GitObjectCache *objcache)
 	{
@@ -50,12 +50,12 @@ public:
 	}
 
 public:
-	static QString diffObjects(GitPtr g, const QString &a_id, const QString &b_id);
-	static QString diffFiles(GitPtr g, const QString &a_path, const QString &b_path);
+	static QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
+	static QString diffFiles(GitPtr g, QString const &a_path, QString const &b_path);
 	static void parseDiff(std::string const &s, const Git::Diff *info, Git::Diff *out);
 	static QString makeKey(QString const &a_id, QString const &b_id);
 	static QString makeKey(const Git::Diff &diff);
-	static QString prependPathPrefix(const QString &path);
+	static QString prependPathPrefix(QString const &path);
 
 
 };

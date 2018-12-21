@@ -112,7 +112,7 @@ void encode_utf16(writer16 *writer, uint32_t code)
 
 //
 
-utf8decoder::utf8decoder(const char *begin, const char *end)
+utf8decoder::utf8decoder(char const *begin, char const *end)
 	: begin(begin)
 	, end(end)
 	, pos(0)
@@ -341,17 +341,17 @@ uint16_t utf16encoder::get()
 
 //
 
-utf8::utf8(const char *ptr, const char *end)
+utf8::utf8(char const *ptr, char const *end)
 	: reader(ptr, end)
 {
 }
 
-utf8::utf8(const char *ptr)
+utf8::utf8(char const *ptr)
 	: reader(ptr, ptr + strlen(ptr))
 {
 }
 
-utf8::utf8(const char *ptr, size_t len)
+utf8::utf8(char const *ptr, size_t len)
 	: reader(ptr, ptr + len)
 {
 }

@@ -190,7 +190,7 @@ public:
 		CloseHandle(hInputWrite);
 		hInputWrite = INVALID_HANDLE_VALUE;
 	}
-	void writeInput(const char *ptr, int len)
+	void writeInput(char const *ptr, int len)
 	{
 		QMutexLocker lock(mutex);
 		inq.insert(inq.end(), ptr, ptr + len);

@@ -105,7 +105,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git:
 	init(mw);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, const QString &commit_id)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)

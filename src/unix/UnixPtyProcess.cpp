@@ -109,7 +109,7 @@ bool UnixPtyProcess::isRunning() const
 	return QThread::isRunning();
 }
 
-void UnixPtyProcess::writeInput(const char *ptr, int len)
+void UnixPtyProcess::writeInput(char const *ptr, int len)
 {
 	int r = write(m->pty_master, ptr, len);
 	(void)r;
@@ -130,7 +130,7 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(const QString &cmd)
+void UnixPtyProcess::start(QString const &cmd)
 {
 	if (isRunning()) return;
 	m->command = cmd.toStdString();

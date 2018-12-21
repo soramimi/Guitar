@@ -11,7 +11,7 @@ std::string url_encode(char const *str, size_t len);
 std::string url_decode(char const *str, size_t len);
 
 std::string url_encode(char const *str);
-std::string url_decode(const char *str);
+std::string url_decode(char const *str);
 
 std::string url_encode(std::string const &str);
 std::string url_decode(std::string const &str);

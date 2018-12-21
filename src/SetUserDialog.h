@@ -18,7 +18,7 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit SetUserDialog(MainWindow *parent, const Git::User &global_user, const Git::User &repo_user, const QString &repo);
+	explicit SetUserDialog(MainWindow *parent, const Git::User &global_user, const Git::User &repo_user, QString const &repo);
 	~SetUserDialog();
 
 	bool isGlobalChecked() const;
@@ -30,9 +30,9 @@ private slots:
 
 	void on_radioButton_repository_toggled(bool checked);
 
-	void on_lineEdit_name_textChanged(const QString &text);
+	void on_lineEdit_name_textChanged(QString const &text);
 
-	void on_lineEdit_mail_textChanged(const QString &text);
+	void on_lineEdit_mail_textChanged(QString const &text);
 
 	void on_pushButton_get_icon_clicked();
 

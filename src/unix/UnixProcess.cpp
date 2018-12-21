@@ -203,7 +203,7 @@ protected:
 		}
 	}
 public:
-	void writeInput(const char *ptr, int len)
+	void writeInput(char const *ptr, int len)
 	{
 		QMutexLocker lock(mutex);
 		inq.insert(inq.end(), ptr, ptr + len);
@@ -274,7 +274,7 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ou
 	}
 }
 
-void UnixProcess::start(const QString &command, bool use_input)
+void UnixProcess::start(QString const &command, bool use_input)
 {
 	std::string cmd = command.toStdString();
 	parseArgs(cmd, &m->th.argvec);
@@ -302,7 +302,7 @@ int UnixProcess::wait()
 	return exit_code;
 }
 
-void UnixProcess::writeInput(const char *ptr, int len)
+void UnixProcess::writeInput(char const *ptr, int len)
 {
 	m->th.writeInput(ptr, len);
 }

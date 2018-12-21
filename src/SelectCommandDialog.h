@@ -17,13 +17,13 @@ private:
 	QString command_name;
 	QStringList command_files;
 public:
-	explicit SelectCommandDialog(QWidget *parent, QString const &cmdname, const QStringList &cmdfiles, QString const &path, QStringList const &list);
+	explicit SelectCommandDialog(QWidget *parent, QString const &cmdname, QStringList const &cmdfiles, QString const &path, QStringList const &list);
 	~SelectCommandDialog();
 
 	QString selectedFile() const;
 private slots:
 
-	void on_listWidget_currentTextChanged(const QString &currentText);
+	void on_listWidget_currentTextChanged(QString const &currentText);
 
 	void on_pushButton_browse_clicked();
 

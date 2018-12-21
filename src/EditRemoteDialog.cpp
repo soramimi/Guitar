@@ -25,12 +25,12 @@ MainWindow *EditRemoteDialog::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-void EditRemoteDialog::setName(const QString &s) const
+void EditRemoteDialog::setName(QString const &s) const
 {
 	ui->lineEdit_name->setText(s);
 }
 
-void EditRemoteDialog::setUrl(const QString &s) const
+void EditRemoteDialog::setUrl(QString const &s) const
 {
 	ui->lineEdit_url->setText(s);
 }

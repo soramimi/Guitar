@@ -30,7 +30,7 @@ public:
 	explicit BlameWindow(MainWindow *parent, QString const &filename, QList<BlameItem> const &list);
 	~BlameWindow();
 
-	static QList<BlameItem> parseBlame(const char *begin, const char *end);
+	static QList<BlameItem> parseBlame(char const *begin, char const *end);
 private slots:
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 

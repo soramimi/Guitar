@@ -18,8 +18,8 @@ public:
 		QByteArray fingerprint;
 	};
 
-	static void parse(const char *begin, const char *end, QList<gpg::Data> *keys);
-	static bool listKeys(const QString &gpg_command, QList<gpg::Data> *keys);
+	static void parse(char const *begin, char const *end, QList<gpg::Data> *keys);
+	static bool listKeys(QString const &gpg_command, QList<gpg::Data> *keys);
 
 
 

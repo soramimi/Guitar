@@ -20,7 +20,7 @@ private:
 	MainWindow *mainwindow();
 
 public:
-	explicit SetGpgSigningDialog(QWidget *parent, const QString &repo, QString const &global_key_id, QString const &repository_key_id);
+	explicit SetGpgSigningDialog(QWidget *parent, QString const &repo, QString const &global_key_id, QString const &repository_key_id);
 	~SetGpgSigningDialog();
 
 	QString id() const;
@@ -42,7 +42,7 @@ private slots:
 private:
 	Ui::SetGpgSigningDialog *ui;
 	void setKey_(gpg::Data const &key);
-	void setKey_(const QString &key_id);
+	void setKey_(QString const &key_id);
 };
 
 #endif // SETGPGSIGNINGDIALOG_H

@@ -176,7 +176,7 @@ bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *
 	return false;
 }
 
-QString GitObjectManager::findObjectPath(const QString &id)
+QString GitObjectManager::findObjectPath(QString const &id)
 {
 	if (Git::isValidID(id)) {
 		int count = 0;
@@ -219,7 +219,7 @@ bool GitObjectManager::loadObject(QString const &id, QByteArray *out, Git::Objec
 	return false;
 }
 
-bool GitObjectManager::catFile(const QString &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::catFile(QString const &id, QByteArray *out, Git::Object::Type *type)
 {
 	*type = Git::Object::Type::UNKNOWN;
 	if (loadObject(id, out, type)) return true;
@@ -264,7 +264,7 @@ QString GitObjectCache::revParse(QString const &name)
 	}
 }
 
-Git::Object GitObjectCache::catFile(const QString &id)
+Git::Object GitObjectCache::catFile(QString const &id)
 {
 	{
 		QMutexLocker lock(&object_manager.mutex);
@@ -357,7 +357,7 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 
 
 
-bool GitCommit::parseCommit(GitObjectCache *objcache, const QString &id)
+bool GitCommit::parseCommit(GitObjectCache *objcache, QString const &id)
 {
 	parents.clear();
 	if (!id.isEmpty()) {

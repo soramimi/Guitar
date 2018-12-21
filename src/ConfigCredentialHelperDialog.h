@@ -17,7 +17,7 @@ public:
 
 	QString helper() const;
 
-	void setHelper(const QString &helper);
+	void setHelper(QString const &helper);
 private:
 	Ui::ConfigCredentialHelperDialog *ui;
 };

@@ -83,7 +83,7 @@ GitPtr GitDiff::git()
 	return objcache->git()->dup();
 }
 
-QString GitDiff::makeKey(const QString &a_id, const QString &b_id)
+QString GitDiff::makeKey(QString const &a_id, QString const &b_id)
 {
 	return  a_id + ".." + b_id;
 }
@@ -359,7 +359,7 @@ GitPtr GitCommitTree::git()
 	return objcache->git();
 }
 
-QString GitCommitTree::lookup_(const QString &file, GitTreeItem *out)
+QString GitCommitTree::lookup_(QString const &file, GitTreeItem *out)
 {
 	int i = file.lastIndexOf('/');
 	if (i >= 0) {
@@ -413,7 +413,7 @@ QString GitCommitTree::lookup_(const QString &file, GitTreeItem *out)
 	return QString();
 }
 
-QString GitCommitTree::lookup(const QString &file)
+QString GitCommitTree::lookup(QString const &file)
 {
 	auto it = blob_map.find(file);
 	if (it != blob_map.end()) {
@@ -422,7 +422,7 @@ QString GitCommitTree::lookup(const QString &file)
 	return lookup_(file, nullptr);
 }
 
-bool GitCommitTree::lookup(const QString &file, GitTreeItem *out)
+bool GitCommitTree::lookup(QString const &file, GitTreeItem *out)
 {
 	*out = GitTreeItem();
 	auto it = blob_map.find(file);
@@ -433,12 +433,12 @@ bool GitCommitTree::lookup(const QString &file, GitTreeItem *out)
 	return !lookup_(file, out).isEmpty();
 }
 
-void GitCommitTree::parseTree(const QString &tree_id)
+void GitCommitTree::parseTree(QString const &tree_id)
 {
 	parse_tree_(objcache, tree_id, QString(), &root_item_list);
 }
 
-QString GitCommitTree::parseCommit(const QString &commit_id)
+QString GitCommitTree::parseCommit(QString const &commit_id)
 {
 	GitCommit commit;
 	commit.parseCommit(objcache, commit_id);
@@ -448,7 +448,7 @@ QString GitCommitTree::parseCommit(const QString &commit_id)
 
 //
 
-QString lookupFileID(GitObjectCache *objcache, const QString &commit_id, const QString &file)
+QString lookupFileID(GitObjectCache *objcache, QString const &commit_id, QString const &file)
 // 指定されたコミットに属するファイルのIDを求める
 {
 	GitCommitTree commit_tree(objcache);

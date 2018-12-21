@@ -30,7 +30,7 @@ public:
 	explicit FileHistoryWindow(MainWindow *parent);
 	~FileHistoryWindow();
 
-	void prepare(GitPtr g, const QString &path);
+	void prepare(GitPtr g, QString const &path);
 private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 

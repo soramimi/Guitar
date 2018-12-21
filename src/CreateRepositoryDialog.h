@@ -23,9 +23,9 @@ public:
 	QString remoteName() const;
 	QString remoteURL() const;
 private slots:
-	void on_lineEdit_path_textChanged(const QString &arg1);
+	void on_lineEdit_path_textChanged(QString const &arg1);
 	void on_pushButton_browse_path_clicked();
-	void on_lineEdit_name_textChanged(const QString &arg1);
+	void on_lineEdit_name_textChanged(QString const &arg1);
 
 	void on_groupBox_remote_toggled(bool arg1);
 

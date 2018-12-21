@@ -50,7 +50,7 @@ QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char co
 	return list;
 }
 
-QStringList misc::splitLines(const QString &text)
+QStringList misc::splitLines(QString const &text)
 {
 	QStringList list;
 	ushort const *begin = text.utf16();
@@ -119,7 +119,7 @@ void misc::splitLines(std::string const &text, std::vector<std::string> *out, bo
 	splitLines(begin, end, out, need_crlf);
 }
 
-QStringList misc::splitWords(const QString &text)
+QStringList misc::splitWords(QString const &text)
 {
 	QStringList list;
 	ushort const *begin = text.utf16();
@@ -310,25 +310,25 @@ void misc::dump(const QByteArray *in)
 	dump(ptr, len);
 }
 
-bool misc::isText(const QString &mimetype)
+bool misc::isText(QString const &mimetype)
 {
 	return mimetype.startsWith("text/");
 }
 
-bool misc::isSVG(const QString &mimetype)
+bool misc::isSVG(QString const &mimetype)
 {
 	if (mimetype == "image/svg") return true;
 	if (mimetype == "image/svg+xml") return true;
 	return false;
 }
 
-bool misc::isPSD(const QString &mimetype)
+bool misc::isPSD(QString const &mimetype)
 {
 	if (mimetype == "image/vnd.adobe.photoshop") return true;
 	return false;
 }
 
-bool misc::isImage(const QString &mimetype)
+bool misc::isImage(QString const &mimetype)
 {
 #if 0
 	if (mimetype == "image/jpeg") return true;
@@ -365,7 +365,7 @@ QString misc::abbrevBranchName(QString const &name)
 	return newname;
 }
 
-QString misc::determinFileType(const QString &filecommand, const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> const &callback)
+QString misc::determinFileType(QString const &filecommand, QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback)
 { // ファイルタイプを調べる
 	if (QFileInfo(filecommand).isExecutable()) {
 		QString const &file = filecommand;
@@ -456,7 +456,7 @@ QPoint misc::contextMenuPos(QWidget *w, QContextMenuEvent *e)
 	return w->mapToGlobal(QPoint(4, 4));
 }
 
-bool misc::isExecutable(const QString &cmd)
+bool misc::isExecutable(QString const &cmd)
 {
 	QFileInfo info(cmd);
 	return info.isExecutable();

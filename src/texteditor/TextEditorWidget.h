@@ -60,7 +60,7 @@ protected:
 	void resizeEvent(QResizeEvent *event);
 	void contextMenuEvent(QContextMenuEvent *event);
 	QFont textFont();
-	void drawText(QPainter *painter, int px, int py, const QString &str);
+	void drawText(QPainter *painter, int px, int py, QString const &str);
 public:
 	explicit TextEditorWidget(QWidget *parent = 0);
 	~TextEditorWidget();

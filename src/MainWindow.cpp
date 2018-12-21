@@ -728,7 +728,7 @@ void MainWindow::writeLog(char const *ptr, int len)
 	m->interaction_canceled = false;
 }
 
-void MainWindow::writeLog(const QString &str)
+void MainWindow::writeLog(QString const &str)
 {
 	std::string s = str.toStdString();
 	writeLog(s.c_str(), s.size());
@@ -1415,7 +1415,7 @@ QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 	return commit.commit_id.mid(0, 7);
 }
 
-QString MainWindow::findFileID(GitPtr /*g*/, const QString &commit_id, const QString &file)
+QString MainWindow::findFileID(GitPtr /*g*/, QString const &commit_id, QString const &file)
 {
 	return lookupFileID(&m->objcache, commit_id, file);
 }
@@ -2784,7 +2784,7 @@ void MainWindow::on_toolButton_commit_clicked()
 	ui->action_commit->trigger();
 }
 
-bool MainWindow::editFile(const QString &path, QString const &title)
+bool MainWindow::editFile(QString const &path, QString const &title)
 {
 	return TextEditDialog::editFile(this, path, title);
 }
@@ -3247,7 +3247,7 @@ void MainWindow::initNetworking()
 
 
 
-QStringList MainWindow::whichCommand_(QString const &cmdfile1, const QString &cmdfile2)
+QStringList MainWindow::whichCommand_(QString const &cmdfile1, QString const &cmdfile2)
 {
 	QStringList list;
 
@@ -3679,7 +3679,7 @@ void MainWindow::backspaceRepoFilter()
 	ui->lineEdit_filter->setText(s);
 }
 
-void MainWindow::on_lineEdit_filter_textChanged(const QString &text)
+void MainWindow::on_lineEdit_filter_textChanged(QString const &text)
 {
 	m->repository_filter_text = text;
 	updateRepositoriesList();
@@ -3899,7 +3899,7 @@ QString MainWindow::getCommitIdFromTag(QString const &tag)
 	return m->objcache.getCommitIdFromTag(tag);
 }
 
-bool MainWindow::isValidRemoteURL(const QString &url)
+bool MainWindow::isValidRemoteURL(QString const &url)
 {
 	if (url.indexOf('\"') >= 0) {
 		return false;

@@ -26,7 +26,7 @@ struct BlameWindow::Private {
 	std::map<QString, CommitInfo> commit_cache;
 };
 
-BlameWindow::BlameWindow(MainWindow *parent, const QString &filename, const QList<BlameItem> &list)
+BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QList<BlameItem> &list)
 	: QDialog(parent)
 	, ui(new Ui::BlameWindow)
 	, m(new Private)
@@ -125,7 +125,7 @@ MainWindow *BlameWindow::mainwindow()
 
 namespace {
 
-bool parseBlameHeader(const char *ptr, const char *end, BlameItem *out)
+bool parseBlameHeader(char const *ptr, char const *end, BlameItem *out)
 {
 	*out = BlameItem();
 
@@ -185,7 +185,7 @@ bool parseBlameHeader(const char *ptr, const char *end, BlameItem *out)
 	return true;
 }
 
-QString textWithoutTab(const char *ptr, const char *end)
+QString textWithoutTab(char const *ptr, char const *end)
 {
 	std::vector<char> vec;
 	vec.reserve(end - ptr);
@@ -212,7 +212,7 @@ QString textWithoutTab(const char *ptr, const char *end)
 
 } // end namespace
 
-QList<BlameItem> BlameWindow::parseBlame(const char *begin, const char *end)
+QList<BlameItem> BlameWindow::parseBlame(char const *begin, char const *end)
 {
 	QList<BlameItem> list;
 	char const *ptr = begin;

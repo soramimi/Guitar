@@ -96,7 +96,7 @@ void SetUserDialog::on_radioButton_repository_toggled(bool checked)
 	}
 }
 
-void SetUserDialog::on_lineEdit_name_textChanged(const QString &text)
+void SetUserDialog::on_lineEdit_name_textChanged(QString const &text)
 {
 	if (isGlobalChecked()) {
 		m->global_user.name = text;
@@ -106,7 +106,7 @@ void SetUserDialog::on_lineEdit_name_textChanged(const QString &text)
 	}
 }
 
-void SetUserDialog::on_lineEdit_mail_textChanged(const QString &text)
+void SetUserDialog::on_lineEdit_mail_textChanged(QString const &text)
 {
 	if (isGlobalChecked()) {
 		m->global_user.email = text;

@@ -17,10 +17,10 @@ class CommitDialog : public QDialog
 	Q_OBJECT
 
 public:
-	explicit CommitDialog(MainWindow *parent, const QString &reponame, Git::User const &user, gpg::Data const &key);
+	explicit CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key);
 	~CommitDialog();
 
-	void setText(const QString &text);
+	void setText(QString const &text);
 	QString text() const;
 	bool isSigningEnabled() const;
 protected:

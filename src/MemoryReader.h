@@ -24,7 +24,7 @@ public:
 	virtual bool waitForBytesWritten(int msecs);
 protected:
 	virtual qint64 readData(char *data, qint64 maxlen);
-	virtual qint64 writeData(const char *data, qint64 len);
+	virtual qint64 writeData(char const *data, qint64 len);
 };
 
 #endif // MEMORYREADER_H

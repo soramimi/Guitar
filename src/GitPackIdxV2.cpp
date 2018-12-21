@@ -97,7 +97,7 @@ bool GitPackIdxV2::parse(QIODevice *in)
 	return false;
 }
 
-bool GitPackIdxV2::parse(const QString &idxfile)
+bool GitPackIdxV2::parse(QString const &idxfile)
 {
 	clear();
 	QFile file(idxfile);
@@ -109,7 +109,7 @@ bool GitPackIdxV2::parse(const QString &idxfile)
 	return false;
 }
 
-const GitPackIdxItem *GitPackIdxV2::item(const QString &id) const
+const GitPackIdxItem *GitPackIdxV2::item(QString const &id) const
 {
 	for (const auto & i : d.item_list) {
 		if (i.id == id) {

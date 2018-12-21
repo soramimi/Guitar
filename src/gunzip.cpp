@@ -196,7 +196,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 	return false;
 }
 
-bool gunzip::decode(const QString &inpath, const QString &outpath)
+bool gunzip::decode(QString const &inpath, QString const &outpath)
 {
 	QFile infile(inpath);
 	QFile outfile(outpath);
@@ -215,7 +215,7 @@ bool gunzip::is_valid_gz_file(QIODevice *input)
 	return z.decode(input, nullptr);
 }
 
-bool gunzip::is_valid_gz_file(const QString &inpath)
+bool gunzip::is_valid_gz_file(QString const &inpath)
 {
 	QFile infile(inpath);
 	if (infile.open(QFile::ReadOnly)) {

@@ -1,7 +1,7 @@
 #include "PushDialog.h"
 #include "ui_PushDialog.h"
 
-PushDialog::PushDialog(QWidget *parent, const QStringList &remotes, const QStringList &branches, const RemoteBranch &remote_branch) :
+PushDialog::PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches, const RemoteBranch &remote_branch) :
 	QDialog(parent),
 	ui(new Ui::PushDialog)
 {
