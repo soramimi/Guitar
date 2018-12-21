@@ -1,18 +1,13 @@
 #include "NinePatch.h"
 #include <QPainter>
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 struct Part {
-	bool stretchable;
-	int pos;
-	int len;
-	Part()
-		: stretchable(false)
-		, pos(0)
-		, len(0)
-	{
-	}
+	bool stretchable = false;
+	int pos = 0;
+	int len = 0;
+	Part() = default;
 	Part(int pos, int len, bool stretchable)
 		: stretchable(stretchable)
 		, pos(pos)
@@ -51,7 +46,7 @@ static QImage resize9patch(QImage const &image, int dw, int dh)
 				if (isStretchableMarker(last) != isStretchableMarker(next) || x == sw - 2) {
 					bool stretchable = isStretchableMarker(last);
 					int len = x - pos;
-					horz.push_back(Part(pos, len, stretchable));
+					horz.emplace_back(pos, len, stretchable);
 					if (stretchable) horz_stretch += len;
 					last = next;
 					pos = x;
@@ -64,7 +59,7 @@ static QImage resize9patch(QImage const &image, int dw, int dh)
 				if (isStretchableMarker(last) != isStretchableMarker(next) || y == sh - 2) {
 					bool stretchable = isStretchableMarker(last);
 					int len = y - pos;
-					vert.push_back(Part(pos, len, stretchable));
+					vert.emplace_back(pos, len, stretchable);
 					if (stretchable) vert_stretch += len;
 					last = next;
 					pos = y;
@@ -133,7 +128,6 @@ QImage createImageFromNinePatchImage(QImage const &image, int dw, int dh)
 		pr.setRenderHint(QPainter::SmoothPixmapTransform);
 		pr.drawImage(QRect(0, 0, dw, dh), pm1, QRect(0, 0, w, h));
 		return pm2;
-	} else {
-		return resize9patch(image, w, h);
 	}
+	return resize9patch(image, w, h);
 }

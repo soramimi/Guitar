@@ -29,8 +29,8 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/texteditor
-win32:INCLUDEPATH += $$PWD/winpty
-win32:LIBS += $$PWD/winpty/winpty.lib
+win32:INCLUDEPATH += $$PWD/misc/winpty
+win32:LIBS += $$PWD/misc/winpty/winpty.lib
 
 # OpenSSL
 
@@ -41,6 +41,7 @@ macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += C:\openssl\include
+	INCLUDEPATH += $$PWD/../zlib
 	LIBS += -LC:\openssl\lib
 }
 
