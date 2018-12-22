@@ -1,5 +1,5 @@
 
-#include "../darktheme/src/DarkStyle.h"
+#include "darktheme/DarkStyle.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MySettings.h"

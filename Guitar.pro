@@ -14,8 +14,6 @@ TRANSLATIONS = Guitar_ja.ts
 
 DEFINES += APP_GUITAR
 
-DEFINES += USE_DARK_THEME
-
 DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
@@ -192,10 +190,10 @@ SOURCES += \
     src/SettingProgramsForm.cpp \
     src/InputNewTagDialog.cpp \
     src/EditTagsDialog.cpp \
-    darktheme/src/DarkStyle.cpp \
-    darktheme/src/NinePatch.cpp \
-    darktheme/src/StandardStyle.cpp \
-    darktheme/src/TraditionalWindowsStyleTreeControl.cpp \
+    src/darktheme/DarkStyle.cpp \
+    src/darktheme/NinePatch.cpp \
+    src/darktheme/StandardStyle.cpp \
+    src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
     src/EditGitIgnoreDialog.cpp \
     src/SelectItemDialog.cpp \
 	src/RebaseOntoDialog.cpp \
@@ -304,10 +302,10 @@ HEADERS  += \
     src/SettingProgramsForm.h \
     src/InputNewTagDialog.h \
     src/EditTagsDialog.h \
-    darktheme/src/DarkStyle.h \
-    darktheme/src/NinePatch.h \
-    darktheme/src/StandardStyle.h \
-    darktheme/src/TraditionalWindowsStyleTreeControl.h \
+    src/darktheme/DarkStyle.h \
+    src/darktheme/NinePatch.h \
+    src/darktheme/StandardStyle.h \
+    src/darktheme/TraditionalWindowsStyleTreeControl.h \
     src/EditGitIgnoreDialog.h \
     src/SelectItemDialog.h \
 	src/RebaseOntoDialog.h \
@@ -367,7 +365,7 @@ FORMS    += \
     src/DoYouWantToInitDialog.ui
 
 RESOURCES += \
-    resources.qrc
+    src/resources/resources.qrc
 
 unix {
 	SOURCES += \

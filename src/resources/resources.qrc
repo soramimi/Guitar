@@ -1,0 +1,46 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/stage.svg</file>
+        <file>image/unstage.svg</file>
+        <file>image/commit.svg</file>
+        <file>image/push.svg</file>
+        <file>image/selall.svg</file>
+        <file>image/graphcolor.png</file>
+        <file>image/pull.svg</file>
+        <file>image/clone.svg</file>
+        <file>image/fetch.svg</file>
+        <file>image/digits.png</file>
+        <file>image/guitar.png</file>
+        <file>image/Guitar.svg</file>
+        <file>image/folder.png</file>
+        <file>image/repository.png</file>
+        <file>image/maximize.png</file>
+        <file>image/transparent.png</file>
+        <file>image/file.png</file>
+        <file>image/clear.png</file>
+        <file>image/terminal.svg</file>
+        <file>image/explorer.svg</file>
+        <file>image/about.png</file>
+        <file>image/redsquare.svg</file>
+        <file>darktheme/button/button_normal.png</file>
+        <file>darktheme/button/button_press.png</file>
+        <file>darktheme/hsb/hsb_add_line.png</file>
+        <file>darktheme/hsb/hsb_page_bg.png</file>
+        <file>darktheme/hsb/hsb_slider.png</file>
+        <file>darktheme/hsb/hsb_sub_line.png</file>
+        <file>darktheme/progress/horz.png</file>
+        <file>darktheme/progress/vert.png</file>
+        <file>darktheme/vsb/vsb_add_line.png</file>
+        <file>darktheme/vsb/vsb_page_bg.png</file>
+        <file>darktheme/vsb/vsb_slider.png</file>
+        <file>darktheme/vsb/vsb_sub_line.png</file>
+        <file>darktheme/graphcolor.png</file>
+        <file>image/menu.png</file>
+        <file>image/signature-bad.png</file>
+        <file>image/signature-dubious.png</file>
+        <file>image/signature-good.png</file>
+    </qresource>
+    <qresource prefix="/translations">
+        <file>translations/ja_JPN.qm</file>
+    </qresource>
+</RCC>
