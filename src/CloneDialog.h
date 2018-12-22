@@ -9,10 +9,9 @@ namespace Ui {
 class CloneDialog;
 }
 
-class MainWindow;
+class BasicMainWindow;
 
-class CloneDialog : public QDialog
-{
+class CloneDialog : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
@@ -20,7 +19,7 @@ private:
 
 	typedef std::shared_ptr<Git> GitPtr;
 public:
-	explicit CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir);
+	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
 	~CloneDialog();
 
 	enum class Action {
@@ -34,7 +33,7 @@ public:
 private:
 	Ui::CloneDialog *ui;
 
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 private slots:
 	void on_lineEdit_repo_location_textChanged(QString const &arg1);
 	void on_pushButton_test_clicked();

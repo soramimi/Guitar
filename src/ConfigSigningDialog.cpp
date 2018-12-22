@@ -1,8 +1,8 @@
 #include "ConfigSigningDialog.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "ui_ConfigSigningDialog.h"
 
-ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool local_enable) :
+ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, BasicMainWindow *mw, bool local_enable) :
 	QDialog(parent),
 	ui(new Ui::ConfigSigningDialog)
 {
@@ -26,7 +26,7 @@ ConfigSigningDialog::~ConfigSigningDialog()
 	delete ui;
 }
 
-MainWindow *ConfigSigningDialog::mainwindow()
+BasicMainWindow *ConfigSigningDialog::mainwindow()
 {
 	return mainwindow_;
 }

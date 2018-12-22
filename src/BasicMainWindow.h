@@ -73,6 +73,22 @@ protected:
 		SideBySide,
 	};
 
+	struct Task {
+		int index = 0;
+		int parent = 0;
+		Task() = default;
+		Task(int index, int parent)
+			: index(index)
+			, parent(parent)
+		{
+		}
+	};
+
+	struct Element {
+		int depth = 0;
+		std::vector<int> indexes;
+	};
+
 
 	QString starting_dir_;
 	Git::Context gcx_;
@@ -160,6 +176,20 @@ protected:
 	virtual int selectedLogIndex() const = 0;
 	virtual void clearFileList() = 0;
 	virtual void updateFilesList(QString id, bool wait) = 0;
+	void updateFilesList(const Git::CommitItem &commit, bool wait);
+	void reopenRepository(bool log, std::function<void (GitPtr)> callback);
+	void openSelectedRepository();
+	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
+	void resetFile(const QStringList &paths);
+	void revertAllFiles();
+	bool editFile(const QString &path, const QString &title);
+	virtual const RepositoryItem *selectedRepositoryItem() const = 0;
+	void internalDeleteTags(const QStringList &tagnames);
+	void removeRepositoryFromBookmark(int index, bool ask);
+	void deleteTags(const Git::CommitItem &commit);
+	virtual void deleteTags(const QStringList &tagnames) = 0;
+	bool internalAddTag(const QString &name);
+	bool makeDiff(QString id, QList<Git::Diff> *out);
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
 	WebContext *webContext();
@@ -242,6 +272,26 @@ public:
 	QList<Git::Tag> queryTagList();
 	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
+	bool isThereUncommitedChanges() const;
+	void commit(bool amend = false);
+	void commitAmend();
+	void queryBranches(GitPtr g);
+	void updateRemoteInfo();
+	void queryRemotes(GitPtr g);
+	void deleteBranch(const Git::CommitItem *commit);
+	void clone();
+	virtual bool isRemoteOnline() const = 0;
+	void deleteBranch();
+	bool runOnRepositoryDir(std::function<void (QString)> callback, const RepositoryItem *repo);
+	QString defaultWorkingDir() const;
+	void autoOpenRepository(QString dir);
+	void openTerminal(const RepositoryItem *repo);
+	void openExplorer(const RepositoryItem *repo);
+	void pushSetUpstream(const QString &remote, const QString &branch);
+	bool pushSetUpstream(bool testonly);
+	void push();
+	void createRepository(const QString &dir);
+	void checkRemoteUpdate();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
@@ -249,6 +299,7 @@ public slots:
 signals:
 	void signalWriteLog(QByteArray ba);
 	void remoteInfoChanged();
+	void signalCheckRemoteUpdate();
 };
 
 #endif // BASICMAINWINDOW_H

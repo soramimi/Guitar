@@ -1,10 +1,10 @@
 #include "CommitDialog.h"
 #include "ui_CommitDialog.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "ConfigSigningDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, const Git::User &user, const gpg::Data &key) :
+CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, const Git::User &user, const gpg::Data &key) :
 	QDialog(parent),
 	ui(new Ui::CommitDialog)
 {
@@ -29,9 +29,9 @@ CommitDialog::~CommitDialog()
 	delete ui;
 }
 
-MainWindow *CommitDialog::mainwindow()
+BasicMainWindow *CommitDialog::mainwindow()
 {
-	return qobject_cast<MainWindow *>(parent());
+	return qobject_cast<BasicMainWindow *>(parent());
 }
 
 void CommitDialog::updateSigningInfo()

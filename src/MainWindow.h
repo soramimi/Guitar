@@ -73,17 +73,17 @@ private:
 
 	void openRepository_(GitPtr g);
 //	void openRepository(bool validate, bool waitcursor = true);
-	void reopenRepository(bool log, std::function<void(GitPtr)> callback);
+//	void reopenRepository(bool log, std::function<void(GitPtr)> callback);
 
-	void openSelectedRepository();
-	bool askAreYouSureYouWantToRun(QString const &title, QString const &command);
-	void resetFile(QStringList const &path);
-	void revertAllFiles();
+//	void openSelectedRepository();
+//	bool askAreYouSureYouWantToRun(QString const &title, QString const &command);
+//	void resetFile(QStringList const &path);
+//	void revertAllFiles();
 	void prepareLogTableWidget();
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> fn);
-	bool editFile(QString const &path, QString const &title);
+//	bool editFile(QString const &path, QString const &title);
 	void updateCommitGraph();
 	void showFileList(FilesListType files_list_type);
 
@@ -99,17 +99,17 @@ private:
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryItem const *repositoryItem(const QTreeWidgetItem *item) const;
 
-	bool makeDiff(QString id, QList<Git::Diff> *out);
+//	bool makeDiff(QString id, QList<Git::Diff> *out);
 
-	void commit(bool amend = false);
-	void commit_amend();
-	void queryBranches(GitPtr g);
-	void updateRemoteInfo();
+//	void commit(bool amend = false);
+//	void commit_amend();
+//	void queryBranches(GitPtr g);
+//	void updateRemoteInfo();
 //	QList<Git::Branch> findBranch(QString const &id);
 //	QList<Git::Tag> findTag(QString const &id);
 	int selectedLogIndex() const;
 //	const Git::CommitItem *selectedCommitItem() const;
-	void deleteTags(const Git::CommitItem &commit);
+//	void deleteTags(const Git::CommitItem &commit);
 	QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
@@ -137,19 +137,19 @@ private:
 //	void logGitVersion();
 //	static bool git_callback(void *cookie, char const *ptr, int len);
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
-	void removeRepositoryFromBookmark(int index, bool ask);
+//	void removeRepositoryFromBookmark(int index, bool ask);
 
 //	NamedCommitList namedCommitItems(int flags);
 
-	void deleteBranch(const Git::CommitItem *commit);
-	void clone();
-	void deleteBranch();
+//	void deleteBranch(const Git::CommitItem *commit);
+//	void clone();
+//	void deleteBranch();
 //	Git::CommitItemList retrieveCommitLog(GitPtr g);
-	bool runOnRepositoryDir(std::function<void(QString)> callback, const RepositoryItem *repo);
-	void openTerminal(const RepositoryItem *repo);
-	void openExplorer(const RepositoryItem *repo);
-	void pushSetUpstream(QString const &remote, QString const &branch);
-	bool pushSetUpstream(bool testonly);
+//	bool runOnRepositoryDir(std::function<void(QString)> callback, const RepositoryItem *repo);
+//	void openTerminal(const RepositoryItem *repo);
+//	void openExplorer(const RepositoryItem *repo);
+//	void pushSetUpstream(QString const &remote, QString const &branch);
+//	bool pushSetUpstream(bool testonly);
 	void clearRepoFilter();
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
@@ -175,13 +175,13 @@ private:
 	QListWidgetItem *currentFileItem() const;
 //	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
 	void execAreYouSureYouWantToContinueConnectingDialog();
-	void queryRemotes(GitPtr g);
+//	void queryRemotes(GitPtr g);
 //	void internalSetCommand(QString const &path, bool save, QString const &name, QString *out);
 	void deleteRemoteBranch(const Git::CommitItem *commit);
 	QStringList remoteBranches(QString const &id);
 	void rebaseOnto();
-	void createRepository(QString const &dir);
-	void checkRemoteUpdate();
+//	void createRepository(QString const &dir);
+//	void checkRemoteUpdate();
 	void setWatchRemoteInterval(int mins);
 //	void emitWriteLog(QByteArray ba);
 protected:
@@ -203,9 +203,9 @@ public:
 //	void setGpgCommand(QString const &path, bool save);
 //	void clearAuthentication();
 //	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
-	bool isThereUncommitedChanges() const;
-	QString defaultWorkingDir() const;
-	void autoOpenRepository(QString dir);
+//	bool isThereUncommitedChanges() const;
+//	QString defaultWorkingDir() const;
+//	void autoOpenRepository(QString dir);
 //	void saveRepositoryBookmark(RepositoryItem item);
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	int digitWidth() const;
@@ -230,7 +230,7 @@ public:
 //	void addWorkingCopyDir(QString dir, bool open);
 //	bool isValidRemoteURL(QString const &url);
 //	bool testRemoteRepositoryValidity(QString const &url);
-	void removeSelectedRepositoryFromBookmark(bool ask);
+//	void removeSelectedRepositoryFromBookmark(bool ask);
 	void setCurrentLogRow(int row);
 //	GitPtr git(QString const &dir) const;
 //	GitPtr git();
@@ -370,11 +370,12 @@ private slots:
 	void doUpdateButton();
 signals:
 	void onEscapeKeyPressed();
-	void signalCheckRemoteUpdate();
 	void updateButton();
 protected:
 	void closeEvent(QCloseEvent *event);
 	virtual void internalWriteLog(const char *ptr, int len);
+	const RepositoryItem *selectedRepositoryItem() const;
+	void removeSelectedRepositoryFromBookmark(bool ask);
 protected slots:
 	void onLogIdle();
 };

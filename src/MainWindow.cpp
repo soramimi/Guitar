@@ -769,7 +769,7 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
 	pr->drawPixmap(x, y, w, h, m->digits, n * w, 0, w, h);
 }
 
-QString MainWindow::defaultWorkingDir() const
+QString BasicMainWindow::defaultWorkingDir() const
 {
 	return appsettings()->default_working_dir;
 }
@@ -786,7 +786,7 @@ QColor MainWindow::color(unsigned int i)
 	return Qt::black;
 }
 
-bool MainWindow::isThereUncommitedChanges() const
+bool BasicMainWindow::isThereUncommitedChanges() const
 {
 	return uncommited_changes_;
 }
@@ -806,13 +806,10 @@ QString MainWindow::currentWorkingCopyDir() const
 {
 	QString workdir = BasicMainWindow::currentWorkingCopyDir();
 	if (workdir.isEmpty()) {
-		QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
-		if (treeitem) {
-			RepositoryItem const *repo = repositoryItem(treeitem);
-			if (repo) {
-				workdir = repo->local_dir;
-				return workdir;
-			}
+		RepositoryItem const *repo = selectedRepositoryItem();
+		if (repo) {
+			workdir = repo->local_dir;
+			return workdir;
 		}
 	}
 	return workdir;
@@ -917,10 +914,21 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
-	if (row >= 0 && row < repos_.size()) {
-		return &repos_[row];
+	return (row >= 0 && row < repos_.size()) ? &repos_[row] : nullptr;
+}
+
+RepositoryItem const *MainWindow::selectedRepositoryItem() const
+{
+	return repositoryItem(ui->treeWidget_repos->currentItem());
+}
+
+void BasicMainWindow::openSelectedRepository()
+{
+	RepositoryItem const *repo = selectedRepositoryItem();
+	if (repo) {
+		setCurrentRepository(*repo, true);
+		openRepository(true);
 	}
-	return nullptr;
 }
 
 static QTreeWidgetItem *newQTreeWidgetItem()
@@ -1055,7 +1063,7 @@ void BasicMainWindow::setUnknownRepositoryInfo()
 	setWindowTitle_(user);
 }
 
-bool MainWindow::makeDiff(QString id, QList<Git::Diff> *out)
+bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
@@ -1292,13 +1300,13 @@ bool BasicMainWindow::isValidWorkingCopy(GitPtr const &g) const
 	return g && g->isValidWorkingCopy();
 }
 
-void MainWindow::queryRemotes(GitPtr g)
+void BasicMainWindow::queryRemotes(GitPtr g)
 {
 	remotes_ = g->getRemotes();
 	std::sort(remotes_.begin(), remotes_.end());
 }
 
-void MainWindow::queryBranches(GitPtr g)
+void BasicMainWindow::queryBranches(GitPtr g)
 {
 	Q_ASSERT(g);
 	branch_map_.clear();
@@ -1311,7 +1319,7 @@ void MainWindow::queryBranches(GitPtr g)
 	}
 }
 
-void MainWindow::updateRemoteInfo()
+void BasicMainWindow::updateRemoteInfo()
 {
 	queryRemotes(git());
 
@@ -1759,7 +1767,7 @@ void MainWindow::openRepository_(GitPtr g)
 	doUpdateButton();
 }
 
-void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
+void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
 {
 	if (ask) {
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
@@ -1805,7 +1813,7 @@ void BasicMainWindow::openRepository(bool validate, bool waitcursor)
 	openRepository_(g);
 }
 
-void MainWindow::reopenRepository(bool log, std::function<void(GitPtr g)> callback)
+void BasicMainWindow::reopenRepository(bool log, std::function<void(GitPtr g)> callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -1843,7 +1851,7 @@ void MainWindow::doUpdateButton()
 	ui->toolButton_pull->setNumber(n);
 }
 
-void MainWindow::autoOpenRepository(QString dir)
+void BasicMainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryItem const &item){
 		setCurrentRepository(item, true);
@@ -1881,16 +1889,6 @@ void MainWindow::autoOpenRepository(QString dir)
 	}
 }
 
-void MainWindow::openSelectedRepository()
-{
-	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
-	RepositoryItem const *item = repositoryItem(treeitem);
-	if (item) {
-		setCurrentRepository(*item, true);
-		openRepository(true);
-	}
-}
-
 QString BasicMainWindow::getBookmarksFilePath() const
 {
 	return global->app_config_dir / "bookmarks.xml";
@@ -1898,7 +1896,7 @@ QString BasicMainWindow::getBookmarksFilePath() const
 
 
 
-void MainWindow::commit(bool amend)
+void BasicMainWindow::commit(bool amend)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -1948,7 +1946,7 @@ void MainWindow::commit(bool amend)
 	}
 }
 
-void MainWindow::commit_amend()
+void BasicMainWindow::commitAmend()
 {
 	commit(true);
 }
@@ -1960,12 +1958,11 @@ void MainWindow::updateStatusBarText()
 
 	QWidget *w = qApp->focusWidget();
 	if (w == ui->treeWidget_repos) {
-		QTreeWidgetItem *ite = ui->treeWidget_repos->currentItem();
-		RepositoryItem const *item = repositoryItem(ite);
-		if (item) {
+		RepositoryItem const *repo = selectedRepositoryItem();
+		if (repo) {
 			text = QString("%1 : %2")
-					.arg(item->name)
-					.arg(misc::normalizePathSeparator(item->local_dir))
+					.arg(repo->name)
+					.arg(misc::normalizePathSeparator(repo->local_dir))
 					;
 		}
 	} else if (w == ui->tableWidget_log) {
@@ -2032,6 +2029,11 @@ void MainWindow::on_action_fetch_triggered()
 }
 
 void MainWindow::on_action_push_triggered()
+{
+	push();
+}
+
+void BasicMainWindow::push()
 {
 	if (!isRemoteOnline()) return;
 
@@ -2282,7 +2284,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_edit_comment) {
-				commit_amend();
+				commitAmend();
 				return;
 			}
 			if (a == a_checkout) {
@@ -2536,7 +2538,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	}
 }
 
-bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
+bool BasicMainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
 {
 	QString message = tr("Are you sure you want to run the following command ?");
 	QString text = "%1\n\n%2";
@@ -2544,7 +2546,7 @@ bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
-void MainWindow::resetFile(QStringList const &paths)
+void BasicMainWindow::resetFile(QStringList const &paths)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2563,7 +2565,7 @@ void MainWindow::resetFile(QStringList const &paths)
 	}
 }
 
-void MainWindow::revertAllFiles()
+void BasicMainWindow::revertAllFiles()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2722,26 +2724,10 @@ void MainWindow::on_toolButton_commit_clicked()
 	ui->action_commit->trigger();
 }
 
-bool MainWindow::editFile(QString const &path, QString const &title)
+bool BasicMainWindow::editFile(QString const &path, QString const &title)
 {
 	return TextEditDialog::editFile(this, path, title);
 }
-
-struct Task {
-	int index = 0;
-	int parent = 0;
-	Task() = default;
-	Task(int index, int parent)
-		: index(index)
-		, parent(parent)
-	{
-	}
-};
-
-struct Element {
-	int depth = 0;
-	std::vector<int> indexes;
-};
 
 void MainWindow::updateCommitGraph()
 {
@@ -3478,7 +3464,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	}
 }
 
-void MainWindow::clone()
+void BasicMainWindow::clone()
 {
 	if (!isRemoteOnline()) return;
 
@@ -3629,12 +3615,10 @@ void MainWindow::on_toolButton_erase_filter_clicked()
 	ui->lineEdit_filter->setFocus();
 }
 
-void MainWindow::deleteTags(QStringList const &tagnames)
+void BasicMainWindow::internalDeleteTags(QStringList const &tagnames)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
-
-	int row = ui->tableWidget_log->currentRow();
 
 	if (!tagnames.isEmpty()) {
 		reopenRepository(false, [&](GitPtr g){
@@ -3643,11 +3627,18 @@ void MainWindow::deleteTags(QStringList const &tagnames)
 			}
 		});
 	}
+}
+
+void MainWindow::deleteTags(QStringList const &tagnames)
+{
+	int row = ui->tableWidget_log->currentRow();
+
+	internalDeleteTags(tagnames);
 
 	ui->tableWidget_log->selectRow(row);
 }
 
-void MainWindow::deleteTags(const Git::CommitItem &commit)
+void BasicMainWindow::deleteTags(const Git::CommitItem &commit)
 {
 	auto it = tag_map_.find(commit.commit_id);
 	if (it != tag_map_.end()) {
@@ -3674,7 +3665,7 @@ void MainWindow::revertCommit()
 	}
 }
 
-bool MainWindow::addTag(QString const &name)
+bool BasicMainWindow::internalAddTag(QString const &name)
 {
 	if (name.isEmpty()) return false;
 
@@ -3690,12 +3681,17 @@ bool MainWindow::addTag(QString const &name)
 
 	if (!Git::isValidID(commit_id)) return false;
 
-	int row = ui->tableWidget_log->currentRow();
-
 	bool ok = false;
 	reopenRepository(false, [&](GitPtr g){
 		ok = g->tag(name, commit_id);
 	});
+}
+
+bool MainWindow::addTag(QString const &name)
+{
+	int row = ui->tableWidget_log->currentRow();
+
+	bool ok = internalAddTag(name);
 
 	ui->tableWidget_log->selectRow(row);
 	return ok;
@@ -4125,7 +4121,7 @@ void BasicMainWindow::checkout()
 }
 
 
-void MainWindow::deleteBranch(Git::CommitItem const *commit)
+void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -4205,7 +4201,7 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 
 
 
-void MainWindow::deleteBranch()
+void BasicMainWindow::deleteBranch()
 {
 	deleteBranch(selectedCommitItem());
 }
@@ -4220,7 +4216,7 @@ void MainWindow::on_action_delete_branch_triggered()
 	deleteBranch();
 }
 
-bool MainWindow::runOnRepositoryDir(std::function<void(QString)> callback, RepositoryItem const *repo)
+bool BasicMainWindow::runOnRepositoryDir(std::function<void(QString)> callback, RepositoryItem const *repo)
 {
 	if (!repo) {
 		repo = &current_repo_;
@@ -4247,7 +4243,7 @@ bool isValidDir(QString const &dir)
 }
 #endif
 
-void MainWindow::openTerminal(RepositoryItem const *repo)
+void BasicMainWindow::openTerminal(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -4261,7 +4257,7 @@ void MainWindow::openTerminal(RepositoryItem const *repo)
 	}, repo);
 }
 
-void MainWindow::openExplorer(RepositoryItem const *repo)
+void BasicMainWindow::openExplorer(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -4285,7 +4281,7 @@ void MainWindow::on_toolButton_explorer_clicked()
 	openExplorer(nullptr);
 }
 
-void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
+void BasicMainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 {
 	if (remote.isEmpty()) return;
 	if (branch.isEmpty()) return;
@@ -4313,7 +4309,7 @@ void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 	updateRemoteInfo();
 }
 
-bool MainWindow::pushSetUpstream(bool testonly)
+bool BasicMainWindow::pushSetUpstream(bool testonly)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
@@ -4338,7 +4334,7 @@ bool MainWindow::pushSetUpstream(bool testonly)
 	if (dlg.exec() == QDialog::Accepted) {
 		PushDialog::Action a = dlg.action();
 		if (a == PushDialog::PushSimple) {
-			ui->action_push->trigger();
+			push();
 		} else if (a == PushDialog::PushSetUpstream) {
 			QString remote = dlg.remote();
 			QString branch = dlg.branch();
@@ -4359,7 +4355,7 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	openRepository(false);
 }
 
-void MainWindow::createRepository(QString const &dir)
+void BasicMainWindow::createRepository(QString const &dir)
 {
 	CreateRepositoryDialog dlg(this, dir);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -4842,7 +4838,7 @@ void MainWindow::on_action_rebase_onto_triggered()
 	rebaseOnto();
 }
 
-void MainWindow::checkRemoteUpdate()
+void BasicMainWindow::checkRemoteUpdate()
 {
 	if (pty_process_.isRunning()) return;
 
