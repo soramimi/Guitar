@@ -7,13 +7,12 @@ namespace Ui {
 class InputNewTagDialog;
 }
 
-class InputNewTagDialog : public QDialog
-{
+class InputNewTagDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit InputNewTagDialog(QWidget *parent = 0);
-	~InputNewTagDialog();
+	explicit InputNewTagDialog(QWidget *parent = nullptr);
+	~InputNewTagDialog() override;
 
 	QString text() const;
 private:

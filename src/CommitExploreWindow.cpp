@@ -1,17 +1,15 @@
+
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
 #include "ImageViewWidget.h"
-#include "common/misc.h"
 #include "MainWindow.h"
+#include "common/misc.h"
 #include "main.h"
-
+#include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>
-
-#ifdef Q_OS_WIN
-#include "win32/win32.h"
-#endif
+#include <memory>
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
@@ -27,7 +25,7 @@ enum {
 };
 
 struct CommitExploreWindow::Private {
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 	GitObjectCache *objcache;
 	Git::CommitItem const *commit;
 	QString root_tree_id;
@@ -37,7 +35,7 @@ struct CommitExploreWindow::Private {
 	TextEditorEnginePtr text_editor_engine;
 };
 
-CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
+CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
 	, m(new Private)
@@ -53,7 +51,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	m->objcache = objcache;
 	m->commit = commit;
 
-	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
+	m->text_editor_engine = std::make_shared<TextEditorEngine>();
 	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwin->themeForTextEditor());
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
@@ -94,7 +92,7 @@ CommitExploreWindow::~CommitExploreWindow()
 	delete ui;
 }
 
-MainWindow *CommitExploreWindow::mainwindow()
+BasicMainWindow *CommitExploreWindow::mainwindow()
 {
 	return m->mainwindow;
 }

@@ -9,14 +9,13 @@ namespace Ui {
 class EditGitIgnoreDialog;
 }
 
-class EditGitIgnoreDialog : public QDialog
-{
+class EditGitIgnoreDialog : public QDialog {
 	Q_OBJECT
 private:
 	QString gitignore_path;
 public:
-	explicit EditGitIgnoreDialog(MainWindow *parent, QString gitignore_path, QString const &file);
-	~EditGitIgnoreDialog();
+	explicit EditGitIgnoreDialog(MainWindow *parent, const QString &gitignore_path, QString const &file);
+	~EditGitIgnoreDialog() override;
 
 	QString text() const;
 

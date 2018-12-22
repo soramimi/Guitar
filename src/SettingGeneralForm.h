@@ -14,19 +14,17 @@ class SettingGeneralForm : public AbstractSettingForm
 {
 	Q_OBJECT
 private:
+	Ui::SettingGeneralForm *ui;
 	QList<SelectItemDialog::Item> langs;
 	QList<SelectItemDialog::Item> themes;
-public:
-	explicit SettingGeneralForm(QWidget *parent = 0);
-	~SettingGeneralForm();
-
-private:
-	Ui::SettingGeneralForm *ui;
 
 	void updateLanguage();
 	void updateTheme();
 public:
-	void exchange(bool save);
+	explicit SettingGeneralForm(QWidget *parent = nullptr);
+	~SettingGeneralForm() override;
+
+	void exchange(bool save) override;
 private slots:
 	void on_pushButton_browse_default_working_dir_clicked();
 	void on_pushButton_change_language_clicked();

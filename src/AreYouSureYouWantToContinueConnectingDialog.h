@@ -7,8 +7,7 @@ namespace Ui {
 class AreYouSureYouWantToContinueConnectingDialog;
 }
 
-class AreYouSureYouWantToContinueConnectingDialog : public QDialog
-{
+class AreYouSureYouWantToContinueConnectingDialog : public QDialog {
 	Q_OBJECT
 public:
 	enum Result {
@@ -17,8 +16,8 @@ public:
 		No,
 	};
 public:
-	explicit AreYouSureYouWantToContinueConnectingDialog(QWidget *parent = 0);
-	~AreYouSureYouWantToContinueConnectingDialog();
+	explicit AreYouSureYouWantToContinueConnectingDialog(QWidget *parent = nullptr);
+	~AreYouSureYouWantToContinueConnectingDialog() override;
 
 	Result result() const;
 
@@ -31,7 +30,7 @@ private:
 
 	// QDialog interface
 public slots:
-	void reject();
+	void reject() override;
 };
 
 #endif // AREYOUSUREYOUWANTTOCONTINUECONNECTINGDIALOG_H

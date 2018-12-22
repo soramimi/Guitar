@@ -3,16 +3,10 @@
 
 #include <QSettings>
 
-class MySettings : public QSettings
-{
+class MySettings : public QSettings {
 	Q_OBJECT
 public:
-	explicit MySettings(QObject *parent = 0);
-	
-signals:
-	
-public slots:
-	
+	explicit MySettings(QObject *parent = nullptr);
 };
 
 #endif // MYSETTINGS_H

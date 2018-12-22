@@ -3,8 +3,7 @@
 
 #include <QToolButton>
 
-class MyToolButton : public QToolButton
-{
+class MyToolButton : public QToolButton {
 	Q_OBJECT
 public:
 	enum Indicator {
@@ -17,15 +16,11 @@ private:
 	int number = -1;
 	void setIndicatorMode(Indicator i);
 public:
-	explicit MyToolButton(QWidget *parent = 0);
+	explicit MyToolButton(QWidget *parent = nullptr);
 	void setNumber(int n);
 	void setDot(bool f);
-signals:
-
-public slots:
-
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 };
 
 #endif // MYTOOLBUTTON_H

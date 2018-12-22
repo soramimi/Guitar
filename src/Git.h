@@ -45,11 +45,10 @@ struct NamedCommitItem {
 	QString name;
 	QString id;
 };
-typedef QList<NamedCommitItem> NamedCommitList;
-
+using NamedCommitList = QList<NamedCommitItem>;
 
 class Git;
-typedef std::shared_ptr<Git> GitPtr;
+using GitPtr = std::shared_ptr<Git>;
 
 class Git : QObject {
 public:
@@ -100,13 +99,10 @@ public:
 			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
-		Diff()
-		{
-		}
+		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
 		{
 			makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
-
 		}
 	private:
 		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
@@ -158,7 +154,7 @@ public:
 		bool resolved =  false;
 
 	};
-	typedef std::vector<CommitItem> CommitItemList;
+	using CommitItemList = std::vector<CommitItem>;
 
 	static bool isUncommited(CommitItem const &item)
 	{
@@ -252,9 +248,7 @@ public:
 
 		void parse(QString const &text);
 
-		FileStatus()
-		{
-		}
+		FileStatus() = default;
 
 		FileStatus(QString const &text)
 		{
@@ -301,7 +295,7 @@ public:
 			return data.rawpath2;
 		}
 	};
-	typedef std::vector<FileStatus> FileStatusList;
+	using FileStatusList = std::vector<FileStatus>;
 
 	static QString trimPath(QString const &s);
 
@@ -320,9 +314,9 @@ private:
 public:
 	Git(Context const &cx, QString const &repodir);
 	Git(Git &&r) = delete;
-	virtual ~Git();
+	 ~Git() override;
 
-	typedef bool (*callback_t)(void *cookie, char const *ptr, int len);
+	using callback_t = bool (*)(void *, const char *, int);
 
 	void setLogCallback(callback_t func, void *cookie);
 
@@ -369,9 +363,9 @@ public:
 	void stage(QStringList const &paths);
 	void unstage(QString const &path);
 	void unstage(QStringList const &paths);
-	void pull(AbstractPtyProcess *pty = 0);
+	void pull(AbstractPtyProcess *pty = nullptr);
 
-	void fetch(AbstractPtyProcess *pty = 0);
+	void fetch(AbstractPtyProcess *pty = nullptr);
 
 	QList<Branch> branches();
 
@@ -402,7 +396,7 @@ public:
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(QString const &id);
-	bool push(bool tags, AbstractPtyProcess *pty = 0);
+	bool push(bool tags, AbstractPtyProcess *pty = nullptr);
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
@@ -456,7 +450,7 @@ public:
 		};
 		QList<File> files;
 	};
-	typedef QList<ReflogItem> ReflogItemList;
+	using ReflogItemList = QList<ReflogItem>;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	QByteArray blame(QString const &path);

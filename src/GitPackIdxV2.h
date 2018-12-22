@@ -2,7 +2,7 @@
 #define GITPACKIDXV2_H
 
 #include <QIODevice>
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 #include "GitPack.h"
 #include <memory>
@@ -62,6 +62,6 @@ public:
 	GitPackIdxItem const *item(size_t offset) const;
 };
 
-typedef std::shared_ptr<GitPackIdxV2> GitPackIdxPtr;
+using GitPackIdxPtr = std::shared_ptr<GitPackIdxV2>;
 
 #endif // GITPACKIDXV2_H

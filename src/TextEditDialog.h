@@ -7,25 +7,20 @@ namespace Ui {
 class TextEditDialog;
 }
 
-class TextEditDialog : public QDialog
-{
+class TextEditDialog : public QDialog {
 	Q_OBJECT
-
+private:
+	Ui::TextEditDialog *ui;
+protected:
+	void keyPressEvent(QKeyEvent *) override;
 public:
-	explicit TextEditDialog(QWidget *parent = 0);
-	~TextEditDialog();
+	explicit TextEditDialog(QWidget *parent = nullptr);
+	~TextEditDialog() override;
 
 	void setText(QString const &text);
 	QString text() const;
 
-
 	static bool editFile(QWidget *parent, QString path, QString const &title, QString const &append = QString());
-private:
-	Ui::TextEditDialog *ui;
-
-	// QWidget interface
-protected:
-	void keyPressEvent(QKeyEvent *);
 };
 
 #endif // TEXTEDITDIALOG_H

@@ -11,8 +11,7 @@ class JumpDialog;
 
 class QTableWidgetItem;
 
-class JumpDialog : public QDialog
-{
+class JumpDialog : public QDialog {
 	Q_OBJECT
 public:
 private:
@@ -20,7 +19,7 @@ private:
 	Private *m;
 public:
 	explicit JumpDialog(QWidget *parent, NamedCommitList const &items);
-	~JumpDialog();
+	~JumpDialog() override;
 
 	enum class Action {
 		None,

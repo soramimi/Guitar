@@ -3,22 +3,15 @@
 
 #include <QLabel>
 
-class HyperLinkLabel : public QLabel
-{
+class HyperLinkLabel : public QLabel {
 	Q_OBJECT
 public:
-	explicit HyperLinkLabel(QWidget *parent = 0);
-
-	void paintEvent(QPaintEvent *);
-
-	void mousePressEvent(QMouseEvent *e);
-	void mouseReleaseEvent(QMouseEvent *e);
-
+	explicit HyperLinkLabel(QWidget *parent = nullptr);
+	void paintEvent(QPaintEvent *) override;
+	void mousePressEvent(QMouseEvent *e) override;
+	void mouseReleaseEvent(QMouseEvent *e) override;
 signals:
 	void clicked();
-
-public slots:
-
 };
 
 #endif // HYPERLINKLABEL_H

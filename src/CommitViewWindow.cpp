@@ -8,7 +8,7 @@ struct CommitViewWindow::Private {
 	QList<Git::Diff> diff_list;
 };
 
-CommitViewWindow::CommitViewWindow(MainWindow *parent, const Git::CommitItem *commit)
+CommitViewWindow::CommitViewWindow(BasicMainWindow *parent, const Git::CommitItem *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitViewWindow)
 	, m(new Private)
@@ -36,9 +36,9 @@ CommitViewWindow::~CommitViewWindow()
 	delete ui;
 }
 
-MainWindow *CommitViewWindow::mainwindow()
+BasicMainWindow *CommitViewWindow::mainwindow()
 {
-	return qobject_cast<MainWindow *>(parent());
+	return qobject_cast<BasicMainWindow *>(parent());
 }
 
 void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)

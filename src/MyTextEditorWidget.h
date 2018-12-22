@@ -3,20 +3,18 @@
 
 #include "texteditor/TextEditorWidget.h"
 
-class MainWindow;
+class BasicMainWindow;
 
 class MyTextEditorWidget : public TextEditorWidget {
 private:
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 	QString object_id;
 	QString object_path;
 public:
-	MyTextEditorWidget(QWidget *parent = 0);
-
-	// QWidget interface
-	void setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path);
+	MyTextEditorWidget(QWidget *parent = nullptr);
+	void setDocument(const QList<Document::Line> *source, BasicMainWindow *mw, QString const &object_id, QString const &object_path);
 protected:
-	void contextMenuEvent(QContextMenuEvent *event);
+	void contextMenuEvent(QContextMenuEvent *event) override;
 };
 
 #endif // MYTEXTEDITORWIDGET_H

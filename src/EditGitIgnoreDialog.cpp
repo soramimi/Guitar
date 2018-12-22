@@ -5,7 +5,7 @@
 
 #include <QFileInfo>
 
-EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString gitignore_path, QString const &file)
+EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file)
 	: QDialog(parent)
 	, ui(new Ui::EditGitIgnoreDialog)
 	, gitignore_path(gitignore_path)

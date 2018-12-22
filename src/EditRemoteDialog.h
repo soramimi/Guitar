@@ -3,36 +3,34 @@
 
 #include <QDialog>
 
-class MainWindow;
+class BasicMainWindow;
 
 namespace Ui {
 class EditRemoteDialog;
 }
 
-class EditRemoteDialog : public QDialog
-{
+class EditRemoteDialog : public QDialog {
 	Q_OBJECT
 public:
 	enum Operation {
 		RemoteAdd,
 		RemoteSet,
 	};
+private:
+	Ui::EditRemoteDialog *ui;
+	BasicMainWindow *mainwindow();
 public:
-	explicit EditRemoteDialog(MainWindow *parent, Operation op);
-	~EditRemoteDialog();
+	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op);
+	~EditRemoteDialog() override;
 
 	void setName(QString const &s) const;
 	void setUrl(QString const &s) const;
 
 	QString name() const;
 	QString url() const;
-	int exec();
+	int exec() override;
 private slots:
 	void on_pushButton_test_clicked();
-
-private:
-	Ui::EditRemoteDialog *ui;
-	MainWindow *mainwindow();
 };
 
 #endif // EDITREMOTEDIALOG_H

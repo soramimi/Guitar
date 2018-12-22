@@ -12,8 +12,7 @@ class QTreeWidgetItem;
 class QListWidgetItem;
 class GitObjectCache;
 
-class CommitExploreWindow : public QDialog
-{
+class CommitExploreWindow : public QDialog {
 	Q_OBJECT
 private:
 	Ui::CommitExploreWindow *ui;
@@ -24,10 +23,10 @@ private:
 	void loadTree(QString const &tree_id);
 	void doTreeItemChanged_(QTreeWidgetItem *current);
 	void expandTreeItem_(QTreeWidgetItem *item);
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 public:
-	explicit CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);
-	~CommitExploreWindow();
+	explicit CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);
+	~CommitExploreWindow() override;
 
 	void clearContent();
 private slots:

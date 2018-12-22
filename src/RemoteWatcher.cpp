@@ -44,6 +44,8 @@ void RemoteWatcher::checkRemoteUpdate()
 			break;
 		}
 	}
-	mainwindow()->setRemoteChanged(remote_id != local_id);
+
+	bool changed = remote_id != local_id;
+	emit mainwindow()->signalSetRemoteChanged(changed);
 }
 

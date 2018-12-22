@@ -146,6 +146,7 @@ set(Guitar_SOURCES
     src/RebaseOntoDialog.cpp
     src/RemoteWatcher.cpp
     src/DoYouWantToInitDialog.cpp
+	src/BasicMainWindow.cpp
     )
 
 
@@ -259,6 +260,7 @@ set(Guitar_HEADERS
     src/RebaseOntoDialog.h
     src/RemoteWatcher.h
     src/DoYouWantToInitDialog.h
+	src/BasicMainWindow.h
     )
 
 if(UNIX)

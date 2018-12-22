@@ -62,7 +62,7 @@ protected:
 	QFont textFont();
 	void drawText(QPainter *painter, int px, int py, QString const &str);
 public:
-	explicit TextEditorWidget(QWidget *parent = 0);
+	explicit TextEditorWidget(QWidget *parent = nullptr);
 	~TextEditorWidget();
 
 	void setTheme(TextEditorThemePtr theme);

@@ -7,20 +7,26 @@
 #include <QDialog>
 #include "Git.h"
 
+class BasicMainWindow;
 
 namespace Ui {
 class RepositoryPropertyDialog;
 }
 
-class RepositoryPropertyDialog : public BasicRepositoryDialog
-{
+class RepositoryPropertyDialog : public BasicRepositoryDialog {
 	Q_OBJECT
 private:
+	Ui::RepositoryPropertyDialog *ui;
 	RepositoryItem repository;
 	bool remote_changed = false;
+
+	void updateRemotesTable();
+	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
+	Git::Remote selectedRemote() const;
+	void toggleRemoteMenuActivity();
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
-	~RepositoryPropertyDialog();
+	explicit RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
+	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;
 private slots:
@@ -28,12 +34,6 @@ private slots:
 	void on_pushButton_remote_edit_clicked();
 	void on_pushButton_remote_remove_clicked();
 	void on_pushButton_remote_menu_clicked();
-private:
-	Ui::RepositoryPropertyDialog *ui;
-	void updateRemotesTable();
-	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
-	Git::Remote selectedRemote() const;
-	void toggleRemoteMenuActivity();
 };
 
 #endif // REPOSITORYPROPERTYDIALOG_H

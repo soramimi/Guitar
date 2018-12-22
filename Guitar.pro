@@ -14,8 +14,6 @@ TRANSLATIONS = Guitar_ja.ts
 
 DEFINES += APP_GUITAR
 
-DEFINES += USE_DARK_THEME
-
 DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
@@ -200,7 +198,8 @@ SOURCES += \
     src/SelectItemDialog.cpp \
 	src/RebaseOntoDialog.cpp \
     src/DoYouWantToInitDialog.cpp \
-    src/RemoteWatcher.cpp
+    src/RemoteWatcher.cpp \
+    src/BasicMainWindow.cpp
 
 HEADERS  += \
 	src/MainWindow.h \
@@ -310,7 +309,9 @@ HEADERS  += \
     src/SelectItemDialog.h \
 	src/RebaseOntoDialog.h \
     src/DoYouWantToInitDialog.h \
-    src/RemoteWatcher.h
+    src/RemoteWatcher.h \
+    src/BasicMainWindow.h \
+    src/version.h
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -11,7 +11,7 @@
 
 // StandardTheme
 
-#include "../darktheme/StandardStyle.h"
+#include "darktheme/StandardStyle.h"
 
 QStyle *StandardTheme::newStyle()
 {
@@ -55,7 +55,7 @@ ThemePtr createStandardTheme()
 	return ThemePtr(p);
 }
 
-//#ifdef USE_DARK_THEME
+#ifdef USE_DARK_THEME
 
 #include "darktheme/DarkStyle.h"
 
@@ -127,4 +127,4 @@ ThemePtr createDarkTheme()
 	return ThemePtr(p);
 }
 
-//#endif // USE_DAR_THEME
+#endif // USE_DAR_THEME

@@ -3,12 +3,11 @@
 
 #include <QLabel>
 
-class StatusLabel : public QLabel
-{
+class StatusLabel : public QLabel {
 	Q_OBJECT
 public:
-	explicit StatusLabel(QWidget *parent = 0);
-	QSize minimumSizeHint() const;
+	explicit StatusLabel(QWidget *parent = nullptr);
+	QSize minimumSizeHint() const override;
 };
 
 #endif // STATUSLABEL_H

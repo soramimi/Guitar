@@ -17,7 +17,7 @@ private:
 public:
 
 	explicit CheckoutDialog(QWidget *parent, QStringList const &tags, QStringList const &local_branches, QStringList const &remote_branches);
-	~CheckoutDialog();
+	~CheckoutDialog() override;
 
 	enum class Operation {
 		HeadDetached,

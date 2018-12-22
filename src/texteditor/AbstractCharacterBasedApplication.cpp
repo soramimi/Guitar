@@ -2461,7 +2461,7 @@ void AbstractCharacterBasedApplication::write_(char const *ptr, bool by_keyboard
 	write(ptr, -1, by_keyboard);
 }
 
-void AbstractCharacterBasedApplication::write_(QString text, bool by_keyboard)
+void AbstractCharacterBasedApplication::write_(QString const &text, bool by_keyboard)
 {
 	if (isReadOnly()) return;
 

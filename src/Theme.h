@@ -6,6 +6,8 @@
 #include <memory>
 #include "TextEditorTheme.h"
 
+#define USE_DARK_THEME
+
 class QStyle;
 
 class AbstractTheme {
@@ -41,7 +43,7 @@ public:
 };
 ThemePtr createStandardTheme();
 
-// #ifdef USE_DARK_THEME
+#ifdef USE_DARK_THEME
 
 class DarkTheme : public AbstractTheme {
 public:
@@ -54,7 +56,7 @@ public:
 };
 ThemePtr createDarkTheme();
 
-// #endif
+#endif
 
 
 #endif // THEME_H

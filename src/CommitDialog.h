@@ -6,31 +6,29 @@
 
 #include <QDialog>
 
-class MainWindow;
+class BasicMainWindow;
 
 namespace Ui {
 class CommitDialog;
 }
 
-class CommitDialog : public QDialog
-{
+class CommitDialog : public QDialog {
 	Q_OBJECT
-
 public:
-	explicit CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key);
-	~CommitDialog();
+	explicit CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key);
+	~CommitDialog() override;
 
 	void setText(QString const &text);
 	QString text() const;
 	bool isSigningEnabled() const;
 protected:
-	void keyPressEvent(QKeyEvent *event);
+	void keyPressEvent(QKeyEvent *event) override;
 private:
 	Ui::CommitDialog *ui;
 	gpg::Data key_;
 
 	// QDialog interface
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 	void updateSigningInfo();
 private slots:
 	void on_pushButton_config_signing_clicked();

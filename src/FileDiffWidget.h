@@ -1,12 +1,16 @@
 #ifndef FILEDIFFWIDGET_H
 #define FILEDIFFWIDGET_H
 
-#include "texteditor/AbstractCharacterBasedApplication.h"
-#include <QDialog>
+
+
+
+#include "FileDiffSliderWidget.h"
+#include "FileViewWidget.h"
 #include "Git.h"
 #include "MainWindow.h"
-#include "FileViewWidget.h"
-#include "FileDiffSliderWidget.h"
+#include "texteditor/AbstractCharacterBasedApplication.h"
+#include <QDialog>
+#include <memory>
 
 namespace Ui {
 class FileDiffWidget;
@@ -18,8 +22,8 @@ enum class ViewType {
 	Right
 };
 
-typedef Document::Line TextDiffLine;
-typedef QList<Document::Line> TextDiffLineList;
+using TextDiffLine = Document::Line;
+using TextDiffLineList = QList<Document::Line>;
 
 struct ObjectContent {
 	QString id;
@@ -27,12 +31,11 @@ struct ObjectContent {
 	QByteArray bytes;
 	TextDiffLineList lines;
 };
-typedef std::shared_ptr<ObjectContent> ObjectContentPtr;
+using ObjectContentPtr = std::shared_ptr<ObjectContent>;
 
 class QTableWidgetItem;
 
-class FileDiffWidget : public QWidget
-{
+class FileDiffWidget : public QWidget {
 	Q_OBJECT
 	friend class BigDiffWindow;
 public:
@@ -46,8 +49,8 @@ public:
 		}
 		void clear()
 		{
-			left = ObjectContentPtr(new ObjectContent());
-			right = ObjectContentPtr(new ObjectContent());
+			left = std::make_shared<ObjectContent>();
+			right = std::make_shared<ObjectContent>();
 			original_lines.clear();
 		}
 	};
@@ -120,15 +123,15 @@ private:
 	void refrectScrollBar();
 	void setOriginalLines_(QByteArray const &ba);
 	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
-	MainWindow *mainwindow();
+	BasicMainWindow *mainwindow();
 protected:
-	void resizeEvent(QResizeEvent *);
-	void keyPressEvent(QKeyEvent *event);
+	void resizeEvent(QResizeEvent *) override;
+	void keyPressEvent(QKeyEvent *event) override;
 public:
-	explicit FileDiffWidget(QWidget *parent = 0);
-	~FileDiffWidget();
+	explicit FileDiffWidget(QWidget *parent = nullptr);
+	~FileDiffWidget() override;
 
-	void bind(MainWindow *mw);
+	void bind(BasicMainWindow *mw);
 
 	void clearDiffView();
 

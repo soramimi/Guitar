@@ -2,7 +2,7 @@
 
 #include <QDebug>
 #include <QThread>
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 
 bool parse_tree_(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out)
 {
@@ -187,7 +187,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, GitTreeItemList const *fi
 	}
 }
 
-bool GitDiff::diff(QString id, QList<Git::Diff> *out)
+bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();

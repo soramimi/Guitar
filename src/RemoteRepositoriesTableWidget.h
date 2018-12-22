@@ -5,11 +5,9 @@
 
 class RemoteRepositoriesTableWidget : public QTableWidget {
 public:
-	RemoteRepositoriesTableWidget(QWidget *parent = 0);
-
-	// QWidget interface
+	RemoteRepositoriesTableWidget(QWidget *parent = nullptr);
 protected:
-	void contextMenuEvent(QContextMenuEvent *event);
+	void contextMenuEvent(QContextMenuEvent *event) override;
 };
 
 #endif // REMOTEREPOSITORIESTABLEWIDGET_H

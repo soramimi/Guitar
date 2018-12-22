@@ -1,5 +1,5 @@
 #include "AvatarLoader.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "SetUserDialog.h"
 #include "ui_SetUserDialog.h"
 #include "common/misc.h"
@@ -10,7 +10,7 @@ struct SetUserDialog::Private  {
 	AvatarLoader avatar_loader;
 };
 
-SetUserDialog::SetUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo)
+SetUserDialog::SetUserDialog(BasicMainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo)
 	: QDialog(parent)
 	, ui(new Ui::SetUserDialog)
 	, m(new Private)
@@ -51,9 +51,9 @@ SetUserDialog::~SetUserDialog()
 	delete ui;
 }
 
-MainWindow *SetUserDialog::mainwindow()
+BasicMainWindow *SetUserDialog::mainwindow()
 {
-	return qobject_cast<MainWindow *>(parent());
+	return qobject_cast<BasicMainWindow *>(parent());
 }
 
 bool SetUserDialog::isGlobalChecked() const

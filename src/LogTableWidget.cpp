@@ -16,7 +16,7 @@ class LogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
 	MainWindow *mainwindow() const
 	{
-		LogTableWidget *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
+		auto *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
 		return w->mainwindow();
 	}
@@ -24,10 +24,10 @@ private:
 	static QColor labelColor(int kind)
 	{
 		switch (kind) {
-		case MainWindow::Label::Head:         return QColor(255, 192, 224); // blue
-		case MainWindow::Label::LocalBranch:  return QColor(192, 224, 255); // blue
-		case MainWindow::Label::RemoteBranch: return QColor(192, 240, 224); // green
-		case MainWindow::Label::Tag:          return QColor(255, 224, 192); // orange
+		case BasicMainWindow::Label::Head:         return QColor(255, 192, 224); // blue
+		case BasicMainWindow::Label::LocalBranch:  return QColor(192, 224, 255); // blue
+		case BasicMainWindow::Label::RemoteBranch: return QColor(192, 240, 224); // green
+		case BasicMainWindow::Label::Tag:          return QColor(255, 224, 192); // orange
 		}
 		return QColor(224, 224, 224); // gray
 	}
@@ -86,7 +86,7 @@ private:
 	void drawDescription(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
 	{
 		int row = index.row();
-		QList<MainWindow::Label> const *labels = mainwindow()->label(row);
+		QList<BasicMainWindow::Label> const *labels = mainwindow()->label(row);
 		if (labels) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
@@ -99,7 +99,7 @@ private:
 			int i = labels->size();
 			while (i > 0) {
 				i--;
-				MainWindow::Label const &label = labels->at(i);
+				BasicMainWindow::Label const &label = labels->at(i);
 				QString text = misc::abbrevBranchName(label.text);
 				int w = fm.size(0, text).width() + space * 2;
 				int x0 = x1 - w;
@@ -216,7 +216,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const *list = mainwindow()->logs();
+	Git::CommitItemList const *list = &mainwindow()->getLogs();
 
 	int indent_span = 16;
 

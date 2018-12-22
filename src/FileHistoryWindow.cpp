@@ -1,5 +1,5 @@
 #include "FileHistoryWindow.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "ui_FileHistoryWindow.h"
 #include "common/misc.h"
 #include "GitDiff.h"
@@ -50,7 +50,7 @@ int FileHistoryWindow::fileviewScrollPos() const
 	return drawdata()->v_scroll_pos;
 }
 
-FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
+FileHistoryWindow::FileHistoryWindow(BasicMainWindow *parent)
 	: QDialog(parent)
 	, ui(new Ui::FileHistoryWindow)
 	, m(new Private)
@@ -76,9 +76,9 @@ FileHistoryWindow::~FileHistoryWindow()
 	delete ui;
 }
 
-MainWindow *FileHistoryWindow::mainwindow()
+BasicMainWindow *FileHistoryWindow::mainwindow()
 {
-	return qobject_cast<MainWindow *>(parent());
+	return qobject_cast<BasicMainWindow *>(parent());
 }
 
 void FileHistoryWindow::prepare(GitPtr g, QString const &path)
@@ -155,15 +155,15 @@ void FileHistoryWindow::collectFileHistory()
 
 class FindFileIdThread : public QThread {
 private:
-	MainWindow *mainwindow;
+	BasicMainWindow *mainwindow;
 	GitPtr g;
 	QString commit_id;
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(MainWindow *mainwindow, GitPtr g, QString const &commit_id, QString const &file)
+	FindFileIdThread(BasicMainWindow *BasicMainWindow, GitPtr g, QString const &commit_id, QString const &file)
 	{
-		this->mainwindow = mainwindow;
+		this->mainwindow = BasicMainWindow;
 		this->g = g;
 		this->commit_id = commit_id;
 		this->file = file;

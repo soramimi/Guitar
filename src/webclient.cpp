@@ -1,6 +1,6 @@
 
 #include "webclient.h"
-#include <string.h>
+#include <cstring>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -40,13 +40,13 @@ typedef void SSL;
 typedef void SSL_CTX;
 #endif
 
-#include <assert.h>
+#include <cassert>
 #include "charvec.h"
 
 #define USER_AGENT "Generic Web Client"
 
 struct WebContext::Private {
-	SSL_CTX *ctx;
+	SSL_CTX *ctx = nullptr;
 	bool use_keep_alive = false;
 	WebProxy http_proxy;
 	WebProxy https_proxy;

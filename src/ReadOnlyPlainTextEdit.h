@@ -3,18 +3,12 @@
 
 #include <QPlainTextEdit>
 
-class ReadOnlyPlainTextEdit : public QPlainTextEdit
-{
+class ReadOnlyPlainTextEdit : public QPlainTextEdit {
 	Q_OBJECT
-public:
-	explicit ReadOnlyPlainTextEdit(QWidget *parent = 0);
-
-signals:
-
-public slots:
-
 protected:
-	void mousePressEvent(QMouseEvent *event);
+	void mousePressEvent(QMouseEvent *event) override;
+public:
+	explicit ReadOnlyPlainTextEdit(QWidget *parent = nullptr);
 };
 
 #endif // READONLYPLAINTEXTEDIT_H

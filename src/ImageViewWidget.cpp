@@ -1,31 +1,28 @@
-#include <memory>
 
 #include "ImageViewWidget.h"
 #include "FileDiffSliderWidget.h"
 #include "FileDiffWidget.h"
-
 #include "MainWindow.h"
-#include "common/misc.h"
-#include "common/joinpath.h"
-#include "Photoshop.h"
 #include "MemoryReader.h"
+#include "Photoshop.h"
 #include "charvec.h"
-
-#include <math.h>
-#include <functional>
-
+#include "common/joinpath.h"
+#include "common/misc.h"
+#include <QBuffer>
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenu>
 #include <QPainter>
-#include <QWheelEvent>
 #include <QSvgRenderer>
-#include <QBuffer>
+#include <QWheelEvent>
+#include <cmath>
+#include <functional>
+#include <memory>
 
 using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
-	MainWindow *mainwindow = nullptr;
+	QMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
@@ -72,7 +69,7 @@ ImageViewWidget::~ImageViewWidget()
 	delete m;
 }
 
-void ImageViewWidget::bind(MainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
+void ImageViewWidget::bind(QMainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->mainwindow = mainwindow;
 	m->filediffwidget = filediffwidget;
@@ -189,7 +186,7 @@ void ImageViewWidget::updateScrollBarRange()
 	setScrollBarRange(m->h_scroll_bar, m->v_scroll_bar);
 }
 
-MainWindow *ImageViewWidget::mainwindow()
+QMainWindow *ImageViewWidget::mainwindow()
 {
 	return m->mainwindow;
 }
@@ -197,7 +194,7 @@ MainWindow *ImageViewWidget::mainwindow()
 QBrush ImageViewWidget::getTransparentBackgroundBrush()
 {
 #ifdef APP_GUITAR
-	return mainwindow()->getTransparentPixmap();
+	return qobject_cast<BasicMainWindow *>(mainwindow())->getTransparentPixmap();
 #else
 	if (m->transparent_pixmap.isNull()) {
 		m->transparent_pixmap = QPixmap(":/image/transparent.png");

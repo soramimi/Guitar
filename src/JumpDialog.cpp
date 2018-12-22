@@ -31,7 +31,7 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 	ui->tableWidget->setColumnCount(header.size());
 	{
 		for (int i = 0; i < header.size(); i++) {
-			QTableWidgetItem *p = new QTableWidgetItem();
+			auto *p = new QTableWidgetItem();
 			p->setText(header[i]);
 			ui->tableWidget->setHorizontalHeaderItem(i, p);
 		}
@@ -83,7 +83,7 @@ void JumpDialog::updateTable_(NamedCommitList const &list)
 	ui->tableWidget->clearContents();
 	ui->tableWidget->setRowCount(list.size());
 	for (int i = 0; i < list.size(); i++) {
-		QTableWidgetItem *p = new QTableWidgetItem();
+		auto *p = new QTableWidgetItem();
 		QString name = list[i].name;
 		p->setText(name);
 		ui->tableWidget->setItem(i, 0, p);

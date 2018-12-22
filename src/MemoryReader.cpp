@@ -47,10 +47,7 @@ bool MemoryReader::atEnd() const
 
 bool MemoryReader::reset()
 {
-	if (begin && begin < end) {
-		return true;
-	}
-	return false;
+	return begin && begin < end;
 }
 
 qint64 MemoryReader::bytesToWrite() const

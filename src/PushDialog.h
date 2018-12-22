@@ -7,16 +7,15 @@ namespace Ui {
 class PushDialog;
 }
 
-class PushDialog : public QDialog
-{
+class PushDialog : public QDialog {
 	Q_OBJECT
+private:
+	Ui::PushDialog *ui;
 public:
 	struct RemoteBranch {
 		QString remote;
 		QString branch;
-		RemoteBranch()
-		{
-		}
+		RemoteBranch() = default;
 		RemoteBranch(QString const &r, QString const &b)
 			: remote(r)
 			, branch(b)
@@ -25,7 +24,7 @@ public:
 	};
 public:
 	explicit PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches, RemoteBranch const &remote_branch);
-	~PushDialog();
+	~PushDialog() override;
 
 	enum Action {
 		PushSimple,
@@ -35,14 +34,6 @@ public:
 	Action action() const;
 	QString remote() const;
 	QString branch() const;
-
-private slots:
-#if 0
-	void on_radioButton_push_simply_clicked();
-	void on_radioButton_push_set_upstream_clicked();
-#endif
-private:
-	Ui::PushDialog *ui;
 };
 
 #endif // PUSHDIALOG_H

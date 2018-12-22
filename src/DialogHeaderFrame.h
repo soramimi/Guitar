@@ -3,17 +3,10 @@
 
 #include <QFrame>
 
-class DialogHeaderFrame : public QFrame
-{
+class DialogHeaderFrame : public QFrame {
 	Q_OBJECT
 public:
 	explicit DialogHeaderFrame(QWidget *parent = nullptr);
-
-signals:
-
-public slots:
-
-	// QWidget interface
 protected:
 	void paintEvent(QPaintEvent *);
 };

@@ -20,15 +20,14 @@ struct BlameItem {
 	QString text;
 };
 
-class BlameWindow : public QDialog
-{
+class BlameWindow : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
 	Private *m;
 public:
 	explicit BlameWindow(MainWindow *parent, QString const &filename, QList<BlameItem> const &list);
-	~BlameWindow();
+	~BlameWindow() override;
 
 	static QList<BlameItem> parseBlame(char const *begin, char const *end);
 private slots:

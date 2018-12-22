@@ -15,19 +15,18 @@ class SetRemoteUrlDialog : public BasicRepositoryDialog
 {
 	Q_OBJECT
 private:
+	Ui::SetRemoteUrlDialog *ui;
 	QStringList remotes;
+	void updateRemotesTable();
 public:
 	explicit SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g);
-	~SetRemoteUrlDialog();
+	~SetRemoteUrlDialog() override;
 
-	int exec();
-private:
-	Ui::SetRemoteUrlDialog *ui;
-	void updateRemotesTable();
-public slots:
-	void accept();
+	int exec() override;
 private slots:
 	void on_pushButton_test_clicked();
+public slots:
+	void accept() override;
 };
 
 #endif // SETREMOTEURLDIALOG_H

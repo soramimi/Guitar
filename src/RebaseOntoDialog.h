@@ -7,14 +7,13 @@ namespace Ui {
 class RebaseOntoDialog;
 }
 
-class RebaseOntoDialog : public QDialog
-{
+class RebaseOntoDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::RebaseOntoDialog *ui;
 public:
 	explicit RebaseOntoDialog(QWidget *parent = nullptr);
-	~RebaseOntoDialog();
+	~RebaseOntoDialog() override;
 	int exec(QString const &newbase, QString const &upstream, QString const &branch);
 	QString newbase() const;
 	QString upstream() const;

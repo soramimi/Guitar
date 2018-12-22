@@ -1,10 +1,10 @@
 
 #include "urlencode.h"
 #include "charvec.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cctype>
+#include <cstring>
 #ifdef WIN32
 #pragma warning(disable:4996)
 #endif

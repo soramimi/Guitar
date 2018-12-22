@@ -1,5 +1,5 @@
 #include "CreateRepositoryDialog.h"
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 #include "common/misc.h"
 #include "ui_CreateRepositoryDialog.h"
 
@@ -7,7 +7,7 @@
 #include <QMessageBox>
 #include "Git.h"
 
-CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent, QString const &dir) :
+CreateRepositoryDialog::CreateRepositoryDialog(BasicMainWindow *parent, QString const &dir) :
 	QDialog(parent),
 	ui(new Ui::CreateRepositoryDialog)
 {
@@ -30,9 +30,9 @@ CreateRepositoryDialog::~CreateRepositoryDialog()
 	delete ui;
 }
 
-MainWindow *CreateRepositoryDialog::mainwindow()
+BasicMainWindow *CreateRepositoryDialog::mainwindow()
 {
-	return qobject_cast<MainWindow *>(parent());
+	return qobject_cast<BasicMainWindow *>(parent());
 }
 
 void CreateRepositoryDialog::accept()

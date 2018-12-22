@@ -10,7 +10,7 @@
 class GitPackIdxV2;
 
 class Git;
-typedef std::shared_ptr<Git> GitPtr;
+using GitPtr = std::shared_ptr<Git>;
 
 class GitObjectManager {
 	friend class GitObjectCache;
@@ -24,8 +24,8 @@ private:
 	QString workingDir();
 
 	static void applyDelta(const QByteArray *base, const QByteArray *delta, QByteArray *out);
-	static bool loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(GitPackIdxPtr idx, const GitPackIdxItem *item, GitPack::Object *out);
+	static bool loadPackedObject(const GitPackIdxPtr &idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
+	bool extractObjectFromPackFile(const GitPackIdxPtr &idx, const GitPackIdxItem *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes();
 	QString findObjectPath(QString const &id);
@@ -50,7 +50,7 @@ public:
 	};
 private:
 	GitObjectManager object_manager;
-	typedef std::shared_ptr<Item> ItemPtr;
+	using ItemPtr = std::shared_ptr<Item>;
 	std::vector<ItemPtr> items;
 	std::map<QString, QString> revparsemap;
 	size_t size() const;
@@ -96,7 +96,7 @@ struct GitTreeItem {
 	}
 };
 
-typedef QList<GitTreeItem> GitTreeItemList;
+using GitTreeItemList = QList<GitTreeItem>;
 
 class GitCommitTree {
 private:

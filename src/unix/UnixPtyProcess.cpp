@@ -1,7 +1,7 @@
 #include "UnixPtyProcess.h"
 #include <unistd.h>
-#include <stdlib.h>
-#include <signal.h>
+#include <cstdlib>
+#include <csignal>
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>

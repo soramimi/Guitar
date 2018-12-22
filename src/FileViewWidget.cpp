@@ -51,7 +51,7 @@ void FileViewWidget::setTextCodec(QTextCodec *codec)
 	ui_page_text->setTextCodec(codec);
 }
 
-void FileViewWidget::bind(MainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
+void FileViewWidget::bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
 {
 	ui_page_text->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(mw, fdw, vsb, hsb);
@@ -123,12 +123,12 @@ void FileViewWidget::setImage(QString mimetype, QByteArray const &ba, QString co
 #endif
 }
 
-void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
+void FileViewWidget::setText(const QList<Document::Line> *source, QMainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	setViewType(FileViewType::Text);
 	this->source_id = object_id;
 #ifdef APP_GUITAR
-	ui_page_text->setDocument(source, mw, object_id, object_path);
+	ui_page_text->setDocument(source, qobject_cast<BasicMainWindow *>(mw), object_id, object_path);
 	scrollToTop();
 	texteditor()->moveCursorOut(); // 現在行を -1 にして、カーソルを非表示にする。
 #else
@@ -137,7 +137,7 @@ void FileViewWidget::setText(const QList<Document::Line> *source, MainWindow *mw
 #endif
 }
 
-void FileViewWidget::setText(QByteArray const &ba, MainWindow *mw, QString const &object_id, QString const &object_path)
+void FileViewWidget::setText(QByteArray const &ba, QMainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	std::vector<std::string> lines;
 	char const *begin = ba.data();

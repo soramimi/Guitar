@@ -9,22 +9,22 @@ private:
 	char const *begin;
 	char const *end;
 public:
-	MemoryReader(char const *ptr = 0, qint64 len = 0);
+	MemoryReader(char const *ptr = nullptr, qint64 len = 0);
 	void setData(char const *ptr, qint64 len);
-	virtual bool isSequential() const;
-	virtual bool open(OpenMode mode);
-	virtual qint64 pos() const;
-	virtual qint64 size() const;
-	virtual bool seek(qint64 pos);
-	virtual bool atEnd() const;
-	virtual bool reset();
-	virtual qint64 bytesToWrite() const;
-	virtual bool canReadLine() const;
-	virtual bool waitForReadyRead(int msecs);
-	virtual bool waitForBytesWritten(int msecs);
+	bool isSequential() const override;
+	bool open(OpenMode mode) override;
+	qint64 pos() const override;
+	qint64 size() const override;
+	bool seek(qint64 pos) override;
+	bool atEnd() const override;
+	bool reset() override;
+	qint64 bytesToWrite() const override;
+	bool canReadLine() const override;
+	bool waitForReadyRead(int msecs) override;
+	bool waitForBytesWritten(int msecs) override;
 protected:
-	virtual qint64 readData(char *data, qint64 maxlen);
-	virtual qint64 writeData(char const *data, qint64 len);
+	qint64 readData(char *data, qint64 maxlen) override;
+	qint64 writeData(char const *data, qint64 len) override;
 };
 
 #endif // MEMORYREADER_H

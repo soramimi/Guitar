@@ -5,9 +5,9 @@
 #include "common/misc.h"
 #include "Git.h"
 
-WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent) :
-	QDialog(parent),
-	ui(new Ui::WelcomeWizardDialog)
+WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
+	: QDialog(parent)
+	, ui(new Ui::WelcomeWizardDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
