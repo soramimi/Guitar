@@ -311,7 +311,11 @@ HEADERS  += \
     src/DoYouWantToInitDialog.h \
     src/RemoteWatcher.h \
     src/BasicMainWindow.h \
+<<<<<<< HEAD
     src/version.h
+=======
+    src/platform.h
+>>>>>>> 1577236553e0370f7ab2c4b5a5743bab35f93670
 
 FORMS    += \
 	src/MainWindow.ui \

@@ -12,3 +12,4 @@ _bin/
 build/
 src/version.h
 *.autosave
+src/version.h
