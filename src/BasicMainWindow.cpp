@@ -101,6 +101,8 @@ struct BasicMainWindow::Private {
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
+	PtyProcess pty_process;
+	bool pty_process_ok = false;
 	PtyCondition pty_condition = PtyCondition::None;
 
 
@@ -722,7 +724,27 @@ void BasicMainWindow::setPtyCondition(const PtyCondition &ptyCondition)
 
 PtyProcess *BasicMainWindow::getPtyProcess()
 {
-	return &pty_process__;
+	return &m->pty_process;
+}
+
+bool BasicMainWindow::getPtyProcessOk() const
+{
+	return m->pty_process_ok;
+}
+
+void BasicMainWindow::setPtyProcessOk(bool pty_process_ok)
+{
+	m->pty_process_ok = pty_process_ok;
+}
+
+const QList<RepositoryItem> &BasicMainWindow::getRepos() const
+{
+	return repos__;
+}
+
+QList<RepositoryItem> *BasicMainWindow::getReposPtr()
+{
+	return &repos__;
 }
 
 bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
@@ -1198,7 +1220,7 @@ QString BasicMainWindow::abbrevCommitID(const Git::CommitItem &commit)
 bool BasicMainWindow::saveRepositoryBookmarks() const
 {
 	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &repos_);
+	return RepositoryBookmark::save(path, &getRepos());
 }
 
 QString BasicMainWindow::getBookmarksFilePath() const
@@ -1215,7 +1237,7 @@ void BasicMainWindow::stopPtyProcess()
 void BasicMainWindow::abortPtyProcess()
 {
 	stopPtyProcess();
-	pty_process_ok_ = false;
+	setPtyProcessOk(false);
 	interaction_canceled_ = true;
 }
 
@@ -1602,8 +1624,9 @@ void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	if (index >= 0 && index < repos_.size()) {
-		repos_.erase(repos_.begin() + index);
+	auto *repos = getReposPtr();
+	if (index >= 0 && index < repos->size()) {
+		repos->erase(repos->begin() + index);
 		saveRepositoryBookmarks();
 		updateRepositoriesList();
 	}
@@ -1674,7 +1697,7 @@ void BasicMainWindow::clone()
 
 			GitPtr g = git(QString());
 			setPtyCondition(PtyCondition::Clone);
-			pty_process_ok_ = true;
+			setPtyProcessOk(true);
 			g->clone(clone_data, getPtyProcess());
 
 		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
@@ -1973,8 +1996,10 @@ void BasicMainWindow::saveRepositoryBookmark(RepositoryItem item)
 		item.name = tr("Unnamed");
 	}
 
+	auto *repos = getReposPtr();
+
 	bool done = false;
-	for (auto &repo : repos_) {
+	for (auto &repo : *repos) {
 		RepositoryItem *p = &repo;
 		if (item.local_dir == p->local_dir) {
 			*p = item;
@@ -1983,7 +2008,7 @@ void BasicMainWindow::saveRepositoryBookmark(RepositoryItem item)
 		}
 	}
 	if (!done) {
-		repos_.push_back(item);
+		repos->push_back(item);
 	}
 	saveRepositoryBookmarks();
 	updateRepositoriesList();

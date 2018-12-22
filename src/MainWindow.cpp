@@ -126,10 +126,12 @@ MainWindow::MainWindow(QWidget *parent)
 	m->remote_watcher.start(this);
 	setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
 
+	connect(this, SIGNAL(signalSetRemoteChanged(bool)), this, SLOT(setRemoteChanged(bool)));
+
 	//
 
 	QString path = getBookmarksFilePath();
-	repos_ = RepositoryBookmark::load(path);
+	*getReposPtr() = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 
 	webcx_.set_keep_alive_enabled(true);
@@ -492,7 +494,7 @@ void MainWindow::refrectRepositories()
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
 		buildRepoTree(QString(), item, &newrepos);
 	}
-	repos_ = std::move(newrepos);
+	*getReposPtr() = std::move(newrepos);
 	saveRepositoryBookmarks();
 }
 
@@ -561,7 +563,7 @@ RepositoryItem const *BasicMainWindow::findRegisteredRepository(QString *workdir
 	workdir->replace('\\', '/');
 
 	if (Git::isValidWorkingCopy(*workdir)) {
-		for (RepositoryItem const &item : repos_) {
+		for (RepositoryItem const &item : getRepos()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
 			cs = Qt::CaseInsensitive;
@@ -578,7 +580,7 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 {
 	if (item) {
 		int i = item->data(0, IndexRole).toInt();
-		if (i >= 0 && i < repos_.size()) {
+		if (i >= 0 && i < getRepos().size()) {
 			return i;
 		}
 	}
@@ -588,7 +590,8 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
-	return (row >= 0 && row < repos_.size()) ? &repos_[row] : nullptr;
+	auto const &repos = getRepos();
+	return (row >= 0 && row < repos.size()) ? &repos[row] : nullptr;
 }
 
 RepositoryItem const *MainWindow::selectedRepositoryItem() const
@@ -617,7 +620,8 @@ void MainWindow::updateRepositoriesList()
 {
 	QString path = getBookmarksFilePath();
 
-	repos_ = RepositoryBookmark::load(path);
+	auto *repos = getReposPtr();
+	*repos = RepositoryBookmark::load(path);
 
 	QString filter = repository_filter_text_;
 
@@ -625,8 +629,8 @@ void MainWindow::updateRepositoriesList()
 
 	std::map<QString, QTreeWidgetItem *> parentmap;
 
-	for (int i = 0; i < repos_.size(); i++) {
-		RepositoryItem const &repo = repos_[i];
+	for (int i = 0; i < repos->size(); i++) {
+		RepositoryItem const &repo = repos->at(i);
 		if (!filter.isEmpty() && repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) {
 			continue;
 		}
@@ -912,13 +916,13 @@ void MainWindow::detectGitServerType(GitPtr g)
 bool MainWindow::fetch(GitPtr g)
 {
 	setPtyCondition(PtyCondition::Fetch);
-	pty_process_ok_ = true;
+	setPtyProcessOk(true);
 	g->fetch(getPtyProcess());
 	while (1) {
 		if (getPtyProcess()->wait(1)) break;
 		QApplication::processEvents();
 	}
-	return pty_process_ok_;
+	return getPtyProcessOk();
 }
 
 void MainWindow::clearLog()
@@ -1170,7 +1174,7 @@ void MainWindow::on_action_pull_triggered()
 
 	reopenRepository(true, [&](GitPtr g){
 		setPtyCondition(PtyCondition::Pull);
-		pty_process_ok_ = true;
+		setPtyProcessOk(true);
 		g->pull(getPtyProcess());
 		while (1) {
 			if (getPtyProcess()->wait(1)) break;
@@ -2102,7 +2106,7 @@ void MainWindow::onPtyProcessCompleted()
 {
 	switch (getPtyCondition()) {
 	case PtyCondition::Clone:
-		onCloneCompleted(pty_process_ok_);
+		onCloneCompleted(getPtyProcessOk());
 		break;
 	}
 	setPtyCondition(PtyCondition::None);
@@ -2545,7 +2549,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 		if (r == TheDlg::Result::Yes) {
 			getPtyProcess()->writeInput("yes\n", 4);
 		} else {
-			pty_process_ok_ = false; // abort
+			setPtyProcessOk(false); // abort
 			getPtyProcess()->writeInput("no\n", 3);
 			QThread::msleep(300);
 			stopPtyProcess();
@@ -2806,7 +2810,7 @@ done:;
 		if (dlg.exec(newbase, upstream, branch) == QDialog::Accepted) {
 			reopenRepository(true, [&](GitPtr g){
 				setPtyCondition(PtyCondition::Pull);
-				pty_process_ok_ = true;
+				setPtyProcessOk(true);
 				g->rebaseOnto(newbase, upstream, branch, getPtyProcess());
 				while (1) {
 					if (getPtyProcess()->wait(1)) break;

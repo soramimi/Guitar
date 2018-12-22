@@ -111,10 +111,8 @@ private:
 protected:
 
 
-	PtyProcess pty_process__;
-	bool pty_process_ok_ = false;
 
-	QList<RepositoryItem> repos_;
+	QList<RepositoryItem> repos__;
 	QString current_remote_;
 	WebContext webcx_;
 	AvatarLoader avatar_loader_;
@@ -267,7 +265,12 @@ protected:
 
 	PtyProcess *getPtyProcess();
 	PtyCondition getPtyCondition();
+	bool getPtyProcessOk() const;
+	void setPtyProcessOk(bool pty_process_ok);
 	void setPtyCondition(const PtyCondition &ptyCondition);
+
+	QList<RepositoryItem> const &getRepos() const;
+	QList<RepositoryItem> *getReposPtr();
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
 	virtual void updateFilesList(QString id, bool wait) = 0;
@@ -339,6 +342,7 @@ public:
 	QIcon getSignatureDubiousIcon() const;
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
+
 
 public slots:
 	void writeLog(const char *ptr, int len);

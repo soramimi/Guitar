@@ -110,6 +110,7 @@ public:
 	void deleteTags(QStringList const &tagnames);
 	bool addTag(QString const &name);
 	void updateCurrentFilesList();
+public slots:
 	void setRemoteChanged(bool f);
 private slots:
 	void doUpdateButton();
@@ -178,9 +179,6 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
 	void on_action_push_u_triggered();
-signals:
-	void onEscapeKeyPressed();
-	void updateButton();
 protected:
 	void closeEvent(QCloseEvent *event);
 	virtual void internalWriteLog(const char *ptr, int len);
@@ -188,6 +186,10 @@ protected:
 	void removeSelectedRepositoryFromBookmark(bool ask);
 protected slots:
 	void onLogIdle();
+signals:
+	void signalSetRemoteChanged(bool f);
+	void onEscapeKeyPressed();
+	void updateButton();
 };
 
 #endif // MAINWINDOW_H
