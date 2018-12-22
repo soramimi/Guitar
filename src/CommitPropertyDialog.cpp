@@ -1,10 +1,11 @@
 #include "CommitPropertyDialog.h"
-#include "BasicMainWindow.h"
-#include "gpg.h"
 #include "ui_CommitPropertyDialog.h"
 #include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
+#include "BasicMainWindow.h"
 #include "common/misc.h"
+#include "gpg.h"
+#include "main.h"
 
 struct CommitPropertyDialog::Private {
 	BasicMainWindow *mainwindow;

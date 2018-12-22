@@ -3,6 +3,7 @@
 #include "AboutDialog.h"
 #include "ApplicationGlobal.h"
 #include "AreYouSureYouWantToContinueConnectingDialog.h"
+#include "AvatarLoader.h"
 #include "BlameWindow.h"
 #include "CommitPropertyDialog.h"
 #include "DeleteBranchDialog.h"
@@ -23,6 +24,7 @@
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "platform.h"
+#include "webclient.h"
 #include <QClipboard>
 #include <QFileDialog>
 #include <QFileIconProvider>
@@ -114,7 +116,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
 
 	connect(this, &BasicMainWindow::remoteInfoChanged, [&](){
-		ui->lineEdit_remote->setText(current_remote_);
+		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 
 	// リモート監視
@@ -126,7 +128,10 @@ MainWindow::MainWindow(QWidget *parent)
 	m->remote_watcher.start(this);
 	setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
 
-	connect(this, SIGNAL(signalSetRemoteChanged(bool)), this, SLOT(setRemoteChanged(bool)));
+	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
+		setRemoteChanged(f);
+		updateButton();
+	});
 
 	//
 
@@ -134,11 +139,11 @@ MainWindow::MainWindow(QWidget *parent)
 	*getReposPtr() = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 
-	webcx_.set_keep_alive_enabled(true);
-	avatar_loader_.start(&webcx_);
-	connect(&avatar_loader_, SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
+	webContext()->set_keep_alive_enabled(true);
+	getAvatarLoader()->start(webContext());
+	connect(getAvatarLoader(), SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
 
-	update_files_list_counter_ = 0;
+	*ptrUpdateFilesListCounter() = 0;
 
 	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(); });
 
@@ -164,7 +169,7 @@ MainWindow::~MainWindow()
 {
 	stopPtyProcess();
 
-	avatar_loader_.stop();
+	getAvatarLoader()->stop();
 
 	m->remote_watcher.quit();
 	m->remote_watcher.wait();
@@ -214,19 +219,21 @@ void MainWindow::startTimers()
 
 	connect(&m->interval_10ms_timer, &QTimer::timeout, [&](){
 		const int ms = 10;
-		if (update_commit_table_counter_ > 0) {
-			if (update_commit_table_counter_ > ms) {
-				update_commit_table_counter_ -= ms;
+		auto *p1 = ptrUpdateCommitTableCounter();
+		if (*p1 > 0) {
+			if (*p1 > ms) {
+				*p1 -= ms;
 			} else {
-				update_commit_table_counter_ = 0;
+				*p1 = 0;
 				ui->tableWidget_log->viewport()->update();
 			}
 		}
-		if (update_files_list_counter_ > 0) {
-			if (update_files_list_counter_ > ms) {
-				update_files_list_counter_ -= ms;
+		auto *p2 = ptrUpdateFilesListCounter();
+		if (*p2 > 0) {
+			if (*p2 > ms) {
+				*p2 -= ms;
 			} else {
-				update_files_list_counter_ = 0;
+				*p2 = 0;
 				updateCurrentFilesList();
 			}
 		}
@@ -431,8 +438,8 @@ void MainWindow::clearStatusBarText()
 QString BasicMainWindow::getObjectID(QListWidgetItem *item)
 {
 	int i = indexOfDiff(item);
-	if (i >= 0 && i < diff_.result.size()) {
-		Git::Diff const &diff = diff_.result[i];
+	if (i >= 0 && i < diffResult()->size()) {
+		Git::Diff const &diff = diffResult()->at(i);
 		return diff.blob.a_id;
 	}
 	return QString();
@@ -448,7 +455,7 @@ void MainWindow::internalWriteLog(char const *ptr, int len)
 	ui->widget_log->logicalMoveToBottom();
 	ui->widget_log->write(ptr, len, false);
 	ui->widget_log->setChanged(false);
-	interaction_canceled_ = false;
+	setInteractionCanceled(false);
 }
 
 void BasicMainWindow::writeLog(QString const &str)
@@ -623,7 +630,7 @@ void MainWindow::updateRepositoriesList()
 	auto *repos = getReposPtr();
 	*repos = RepositoryBookmark::load(path);
 
-	QString filter = repository_filter_text_;
+	QString filter = getRepositoryFilterText();
 
 	ui->treeWidget_repos->clear();
 
@@ -729,7 +736,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 	clearFileList();
 
 	Git::FileStatusList stats = g->status();
-	uncommited_changes_ = !stats.empty();
+	setUncommitedChanges(!stats.empty());
 
 	FilesListType files_list_type = FilesListType::SingleList;
 
@@ -761,14 +768,14 @@ void MainWindow::updateFilesList(QString id, bool wait)
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
 		}
-		if (!makeDiff(uncommited ? QString() : id, &diff_.result)) {
+		if (!makeDiff(uncommited ? QString() : id, diffResult())) {
 			return;
 		}
 
 		std::map<QString, int> diffmap;
 
-		for (int idiff = 0; idiff < diff_.result.size(); idiff++) {
-			Git::Diff const &diff = diff_.result[idiff];
+		for (int idiff = 0; idiff < diffResult()->size(); idiff++) {
+			Git::Diff const &diff = diffResult()->at(idiff);
 			QString filename = diff.path;
 			if (!filename.isEmpty()) {
 				diffmap[filename] = idiff;
@@ -805,16 +812,16 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			AddItem(path, header, idiff);
 		}
 	} else {
-		if (!makeDiff(id, &diff_.result)) {
+		if (!makeDiff(id, diffResult())) {
 			return;
 		}
 		showFileList(files_list_type);
-		addDiffItems(&diff_.result, AddItem);
+		addDiffItems(diffResult(), AddItem);
 	}
 
-	for (Git::Diff const &diff : diff_.result) {
+	for (Git::Diff const &diff : *diffResult()) {
 		QString key = GitDiff::makeKey(diff);
-		diff_cache_[key] = diff;
+		(*getDiffCacheMap())[key] = diff;
 	}
 }
 
@@ -841,12 +848,6 @@ void MainWindow::updateCurrentFilesList()
 	}
 }
 
-void MainWindow::setRemoteChanged(bool f)
-{
-	remote_changed_ = f;
-	updateButton();
-}
-
 void MainWindow::prepareLogTableWidget()
 {
 	QStringList cols = {
@@ -870,8 +871,8 @@ void MainWindow::prepareLogTableWidget()
 
 void MainWindow::detectGitServerType(GitPtr g)
 {
-	server_type_ = ServerType::Standard;
-	github_ = GitHubRepositoryInfo();
+	setServerType(ServerType::Standard);
+	*ptrGitHub() = GitHubRepositoryInfo();
 
 	QString push_url;
 	QList<Git::Remote> remotes;
@@ -904,12 +905,13 @@ void MainWindow::detectGitServerType(GitPtr g)
 		QString s = push_url.mid(pos, end - pos);
 		int i = s.indexOf('/');
 		if (i > 0) {
+			auto *p = ptrGitHub();
 			QString user = s.mid(0, i);
 			QString repo = s.mid(i + 1);
-			github_.owner_account_name = user;
-			github_.repository_name = repo;
+			p->owner_account_name = user;
+			p->repository_name = repo;
 		}
-		server_type_ = ServerType::GitHub;
+		setServerType(ServerType::GitHub);
 	}
 }
 
@@ -928,20 +930,20 @@ bool MainWindow::fetch(GitPtr g)
 void MainWindow::clearLog()
 {
 	clearLogs();
-	label_map_.clear();
-	uncommited_changes_ = false;
+	clearLabelMap();
+	setUncommitedChanges(false);
 	ui->tableWidget_log->clearContents();
 	ui->tableWidget_log->scrollToTop();
 }
 
 void MainWindow::openRepository_(GitPtr g)
 {
-	objcache_.setup(g);
+	getObjCache()->setup(g);
 
 	if (isValidWorkingCopy(g)) {
 
-		bool do_fetch = isRemoteOnline() && (force_fetch_ || appsettings()->automatically_fetch_when_opening_the_repository);
-		force_fetch_ = false;
+		bool do_fetch = isRemoteOnline() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
+		setForceFetch(false);
 		if (do_fetch) {
 			if (!fetch(g)) {
 				return;
@@ -963,12 +965,12 @@ void MainWindow::openRepository_(GitPtr g)
 		// ブランチを取得
 		queryBranches(g);
 		// タグを取得
-		tag_map_.clear();
+		ptrTagMap()->clear();
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
 			Git::Tag t = tag;
-			t.id = objcache_.getCommitIdFromTag(t.id);
-			tag_map_[t.id].push_back(t);
+			t.id = getObjCache()->getCommitIdFromTag(t.id);
+			(*ptrTagMap())[t.id].push_back(t);
 		}
 
 		ui->tableWidget_log->setEnabled(true);
@@ -998,7 +1000,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	updateWindowTitle(g);
 
-	head_id_ = objcache_.revParse("HEAD");
+	setHeadId(getObjCache()->revParse("HEAD"));
 
 	if (isThereUncommitedChanges()) {
 		Git::CommitItem item;
@@ -1047,7 +1049,7 @@ void MainWindow::openRepository_(GitPtr g)
 		QString author;
 		QString message;
 		QString message_ex;
-		bool isHEAD = (commit->commit_id == head_id_);
+		bool isHEAD = (commit->commit_id == getHeadId());
 		bool bold = false;
 		{
 			if (Git::isUncommited(*commit)) { // 未コミットの時
@@ -1063,7 +1065,7 @@ void MainWindow::openRepository_(GitPtr g)
 			datetime = misc::makeDateTimeString(commit->commit_date);
 			author = commit->author;
 			message = commit->message;
-			message_ex = makeCommitInfoText(row, &label_map_[row]);
+			message_ex = makeCommitInfoText(row, &(*getLabelMap())[row]);
 		}
 		AddColumn(commit_id, false, QString());
 		AddColumn(datetime, false, QString());
@@ -1099,17 +1101,11 @@ void MainWindow::doUpdateButton()
 {
 	setNetworkingCommandsEnabled(isRemoteOnline());
 
+	ui->toolButton_fetch->setDot(getRemoteChanged());
+
 	Git::Branch b = currentBranch();
-
-	int n;
-
-	ui->toolButton_fetch->setDot(remote_changed_);
-
-	n = b.ahead > 0 ? b.ahead : -1;
-	ui->toolButton_push->setNumber(n);
-
-	n = b.behind > 0 ? b.behind : -1;
-	ui->toolButton_pull->setNumber(n);
+	ui->toolButton_push->setNumber(b.ahead > 0 ? b.ahead : -1);
+	ui->toolButton_pull->setNumber(b.behind > 0 ? b.behind : -1);
 }
 
 void MainWindow::updateStatusBarText()
@@ -1677,7 +1673,7 @@ void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*curr
 	int row = item->data(IndexRole).toInt();
 	if (row < (int)logs.size()) {
 		updateStatusBarText();
-		update_files_list_counter_ = 200;
+		*ptrUpdateFilesListCounter() = 200;
 	}
 }
 
@@ -1971,11 +1967,11 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 	if (!item) return;
 
 	int idiff = indexOfDiff(item);
-	if (idiff >= 0 && idiff < diff_.result.size()) {
-		Git::Diff const &diff = diff_.result[idiff];
+	if (idiff >= 0 && idiff < diffResult()->size()) {
+		Git::Diff const &diff = diffResult()->at(idiff);
 		QString key = GitDiff::makeKey(diff);
-		auto it = diff_cache_.find(key);
-		if (it != diff_cache_.end()) {
+		auto it = getDiffCacheMap()->find(key);
+		if (it != getDiffCacheMap()->end()) {
 			auto const &logs = getLogs();
 			int row = ui->tableWidget_log->currentRow();
 			bool uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
@@ -2042,7 +2038,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 		setNetworkingCommandsEnabled(!running);
 	}
 	if (!running) {
-		interaction_mode_ = InteractionMode::None;
+		setInteractionMode(InteractionMode::None);
 	}
 
 	while (1) {
@@ -2096,8 +2092,8 @@ void MainWindow::on_action_edit_settings_triggered()
 void MainWindow::onCloneCompleted(bool success)
 {
 	if (success) {
-		saveRepositoryBookmark(temp_repo_);
-		setCurrentRepository(temp_repo_, false);
+		saveRepositoryBookmark(getTempRepoForCloneComplete());
+		setCurrentRepository(getTempRepoForCloneComplete(), false);
 		openRepository(true);
 	}
 }
@@ -2143,12 +2139,12 @@ void MainWindow::appendCharToRepoFilter(ushort c)
 	if (QChar(c).isLetter()) {
 		c = QChar(c).toLower().unicode();
 	}
-	ui->lineEdit_filter->setText(repository_filter_text_ + c);
+	ui->lineEdit_filter->setText(getRepositoryFilterText() + c);
 }
 
 void MainWindow::backspaceRepoFilter()
 {
-	QString s = repository_filter_text_;
+	QString s = getRepositoryFilterText();
 	int n = s.size();
 	if (n > 0) {
 		s = s.mid(0, n - 1);
@@ -2158,7 +2154,7 @@ void MainWindow::backspaceRepoFilter()
 
 void MainWindow::on_lineEdit_filter_textChanged(QString const &text)
 {
-	repository_filter_text_ = text;
+	setRepositoryFilterText(text);
 	updateRepositoriesList();
 }
 
@@ -2276,7 +2272,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	{
 		NamedCommitItem head;
 		head.name = "HEAD";
-		head.id = head_id_;
+		head.id = getHeadId();
 		items.push_front(head);
 	}
 	JumpDialog dlg(this, items);
@@ -2286,7 +2282,7 @@ void MainWindow::on_action_repo_jump_triggered()
 			QString name = dlg.text();
 			QString id = g->rev_parse(name);
 			if (g->objectType(id) == "tag") {
-				id = objcache_.getCommitIdFromTag(id);
+				id = getObjCache()->getCommitIdFromTag(id);
 			}
 			int row = rowFromCommitId(id);
 			if (row < 0) {
@@ -2539,7 +2535,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 {
 	using TheDlg = AreYouSureYouWantToContinueConnectingDialog;
 
-	interaction_mode_ = InteractionMode::Busy;
+	setInteractionMode(InteractionMode::Busy);
 
 	QApplication::restoreOverrideCursor();
 
@@ -2556,15 +2552,15 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 		}
 	} else {
 		ui->widget_log->setFocus();
-		interaction_canceled_ = true;
+		setInteractionCanceled(true);
 	}
-	interaction_mode_ = InteractionMode::Busy;
+	setInteractionMode(InteractionMode::Busy);
 }
 
 void MainWindow::onLogIdle()
 {
-	if (interaction_canceled_) return;
-	if (interaction_mode_ != InteractionMode::None) return;
+	if (interactionCanceled()) return;
+	if (interactionMode() != InteractionMode::None) return;
 
 	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)?";
 	static char const enter_passphrase[] = "Enter passphrase: ";
@@ -2780,14 +2776,14 @@ void MainWindow::rebaseOnto()
 			}
 		}
 		QString upstream;
-		QString id = head_id_;
+		QString id = getHeadId();
 		while (1) {
 			auto it = commit_map.find(id);
 			if (it == commit_map.end()) break;
 			Commit const &c = it->second;
 			if (c.parents.size() > 1) goto done;
 			if (c.parents.size() != 1) break;
-			if (id != head_id_) {
+			if (id != getHeadId()) {
 				if (c.children.size() > 1) goto done;
 				if (!findTag(id).isEmpty()) goto done;
 				auto it2 = branchMapRef().find(id);
@@ -2804,7 +2800,7 @@ done:;
 		}
 
 		QString newbase = commit->commit_id;
-		QString branch = head_id_;
+		QString branch = getHeadId();
 
 		RebaseOntoDialog dlg(this);
 		if (dlg.exec(newbase, upstream, branch) == QDialog::Accepted) {

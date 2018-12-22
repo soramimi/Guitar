@@ -110,8 +110,8 @@ public:
 	void deleteTags(QStringList const &tagnames);
 	bool addTag(QString const &name);
 	void updateCurrentFilesList();
-public slots:
-	void setRemoteChanged(bool f);
+//public slots:
+//	void setRemoteChanged(bool f);
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();

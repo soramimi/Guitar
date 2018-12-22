@@ -1,24 +1,20 @@
 #ifndef BASICMAINWINDOW_H
 #define BASICMAINWINDOW_H
 
-#include "AvatarLoader.h"
-#include "BasicMainWindow.h"
 #include "Git.h"
-#include "GitHubAPI.h"
 #include "GitObjectManager.h"
 #include "MyProcess.h"
 #include "RepositoryData.h"
 #include "TextEditorTheme.h"
-#include "main.h"
-#include "webclient.h"
-#include <QApplication>
 #include <QMainWindow>
 #include <functional>
-#include <memory>
 
+class ApplicationSettings;
+class AvatarLoader;
 class QListWidget;
 class QListWidgetItem;
 class QTreeWidgetItem;
+class WebContext;
 
 struct GitHubRepositoryInfo {
 	QString owner_account_name;
@@ -46,11 +42,6 @@ public:
 		}
 	};
 protected:
-	struct Diff_ {
-		QList<Git::Diff> result;
-		std::shared_ptr<QThread> thread;
-		QList<std::shared_ptr<QThread>> garbage;
-	};
 
 	enum class PtyCondition {
 		None,
@@ -105,35 +96,7 @@ protected:
 
 	struct Private;
 	Private *m;
-private:
-
-private:
 protected:
-
-
-
-	QList<RepositoryItem> repos__;
-	QString current_remote_;
-	WebContext webcx_;
-	AvatarLoader avatar_loader_;
-	int update_files_list_counter_ = 0;
-	int update_commit_table_counter_ = 0;
-	bool interaction_canceled_ = false;
-	QString repository_filter_text_;
-	bool uncommited_changes_ = false;
-	BasicMainWindow::Diff_ diff_;
-	std::map<QString, Git::Diff> diff_cache_;
-	bool remote_changed_ = false;
-	ServerType server_type_ = ServerType::Standard;
-	GitHubRepositoryInfo github_;
-	std::map<int, QList<Label>> label_map_;
-	GitObjectCache objcache_;
-	bool force_fetch_ = false;
-	std::map<QString, QList<Git::Tag>> tag_map_;
-	QString head_id_;
-	InteractionMode interaction_mode_ = InteractionMode::None;
-	RepositoryItem temp_repo_;
-	std::map<QString, QList<Git::Branch>> branch_map_;
 private:
 private:
 	static bool git_callback(void *cookie, const char *ptr, int len);
@@ -160,6 +123,7 @@ private:
 
 	void revertAllFiles();
 
+	void setCurrentRemoteName(const QString &name);
 
 	void deleteTags(const Git::CommitItem &commit);
 
@@ -271,6 +235,51 @@ protected:
 
 	QList<RepositoryItem> const &getRepos() const;
 	QList<RepositoryItem> *getReposPtr();
+
+	QString getCurrentRemoteName() const;
+
+	AvatarLoader *getAvatarLoader();
+	const AvatarLoader *getAvatarLoader() const;
+
+	int *ptrUpdateFilesListCounter();
+	int *ptrUpdateCommitTableCounter();
+
+	bool interactionCanceled() const;
+	void setInteractionCanceled(bool canceled);
+
+	InteractionMode interactionMode() const;
+	void setInteractionMode(const InteractionMode &im);
+
+	QString getRepositoryFilterText() const;
+	void setRepositoryFilterText(const QString &text);
+
+	void setUncommitedChanges(bool uncommited_changes);
+
+	QList<Git::Diff> *diffResult();
+	std::map<QString, Git::Diff> *getDiffCacheMap();
+
+	bool getRemoteChanged() const;
+	void setRemoteChanged(bool remote_changed);
+
+	void setServerType(const ServerType &server_type);
+
+	GitHubRepositoryInfo *ptrGitHub();
+
+	std::map<int, QList<Label> > *getLabelMap();
+	void clearLabelMap();
+
+	GitObjectCache *getObjCache();
+
+	bool getForceFetch() const;
+	void setForceFetch(bool force_fetch);
+
+	std::map<QString, QList<Git::Tag>> *ptrTagMap();
+
+	QString getHeadId() const;
+	void setHeadId(const QString &head_id);
+
+	RepositoryItem const &getTempRepoForCloneComplete() const;
+
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
 	virtual void updateFilesList(QString id, bool wait) = 0;
@@ -342,7 +351,6 @@ public:
 	QIcon getSignatureDubiousIcon() const;
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
-
 
 public slots:
 	void writeLog(const char *ptr, int len);

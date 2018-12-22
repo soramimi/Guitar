@@ -13,4 +13,16 @@
 extern "C" char **environ;
 #endif
 
+#ifdef Q_OS_WIN
+#define GIT_COMMAND "git.exe"
+#define FILE_COMMAND "file.exe"
+#define GPG_COMMAND "gpg.exe"
+#define GPG2_COMMAND "gpg2.exe"
+#else
+#define GIT_COMMAND "git"
+#define FILE_COMMAND "file"
+#define GPG_COMMAND "gpg"
+#define GPG2_COMMAND "gpg2"
+#endif
+
 #endif // PLATFORM_H
