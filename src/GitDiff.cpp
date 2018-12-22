@@ -2,7 +2,7 @@
 
 #include <QDebug>
 #include <QThread>
-#include "MainWindow.h"
+#include "BasicMainWindow.h"
 
 bool parse_tree_(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out)
 {

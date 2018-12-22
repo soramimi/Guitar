@@ -2,16 +2,12 @@
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
 #include "ImageViewWidget.h"
-#include "common/misc.h"
 #include "MainWindow.h"
+#include "common/misc.h"
 #include "main.h"
-
+#include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>
-
-#ifdef Q_OS_WIN
-#include "win32/win32.h"
-#endif
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {

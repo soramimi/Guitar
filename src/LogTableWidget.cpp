@@ -216,7 +216,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const *list = mainwindow()->logs();
+	Git::CommitItemList const *list = &mainwindow()->getLogs();
 
 	int indent_span = 16;
 

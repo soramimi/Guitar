@@ -1,21 +1,21 @@
-#include "MainWindow.h"
-#include <QApplication>
-#include "ApplicationGlobal.h"
-#include "MySettings.h"
-#include "main.h"
-#include <string>
-#include <QMessageBox>
-#include <QDir>
-#include <QDebug>
-#include <QProxyStyle>
-#include <QTranslator>
-#include "webclient.h"
-#include "win32/win32.h"
-#include "common/misc.h"
-#include "../darktheme/src/DarkStyle.h"
 
-#include <QStandardPaths>
+#include "../darktheme/src/DarkStyle.h"
+#include "ApplicationGlobal.h"
+#include "MainWindow.h"
+#include "MySettings.h"
 #include "common/joinpath.h"
+#include "common/misc.h"
+#include "main.h"
+#include "platform.h"
+#include "webclient.h"
+#include <QApplication>
+#include <QDebug>
+#include <QDir>
+#include <QMessageBox>
+#include <QProxyStyle>
+#include <QStandardPaths>
+#include <QTranslator>
+#include <string>
 
 ApplicationGlobal *global = nullptr;
 

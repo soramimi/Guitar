@@ -313,7 +313,8 @@ HEADERS  += \
 	src/RebaseOntoDialog.h \
     src/DoYouWantToInitDialog.h \
     src/RemoteWatcher.h \
-    src/BasicMainWindow.h
+    src/BasicMainWindow.h \
+    src/platform.h
 
 FORMS    += \
 	src/MainWindow.ui \
