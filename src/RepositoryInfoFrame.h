@@ -3,19 +3,12 @@
 
 #include <QFrame>
 
-class RepositoryInfoFrame : public QFrame
-{
+class RepositoryInfoFrame : public QFrame {
 	Q_OBJECT
-public:
-	explicit RepositoryInfoFrame(QWidget *parent = 0);
-
-signals:
-
-public slots:
-
-	// QWidget interface
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
+public:
+	explicit RepositoryInfoFrame(QWidget *parent = nullptr);
 };
 
 #endif // REPOSITORYINFOFRAME_H

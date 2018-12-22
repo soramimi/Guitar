@@ -6,13 +6,13 @@
 #ifdef Q_OS_WIN
 #include "win32/Win32Process.h"
 #include "win32/Win32PtyProcess.h"
-typedef Win32Process Process;
-typedef Win32PtyProcess PtyProcess;
+using Process = Win32Process;
+using PtyProcess = Win32PtyProcess;
 #else
 #include "unix/UnixProcess.h"
 #include "unix/UnixPtyProcess.h"
-typedef UnixProcess Process;
-typedef UnixPtyProcess PtyProcess;
+using Process = UnixProcess;
+using PtyProcess = UnixPtyProcess;
 #endif
 
 class misc2 {

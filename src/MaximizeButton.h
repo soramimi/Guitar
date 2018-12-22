@@ -8,9 +8,9 @@ class MaximizeButton : public QToolButton {
 private:
 	QPixmap pixmap;
 public:
-	explicit MaximizeButton(QWidget *parent = 0);
+	explicit MaximizeButton(QWidget *parent = nullptr);
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 };
 
 #endif // MAXIMIZEBUTTON_H

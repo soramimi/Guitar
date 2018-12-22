@@ -11,20 +11,21 @@ class SearchFromGitHubDialog;
 }
 
 class QTableWidgetItem;
-
 class BasicMainWindow;
 
-class SearchFromGitHubDialog : public QDialog
-{
+class SearchFromGitHubDialog : public QDialog {
 	Q_OBJECT
 private:
+	Ui::SearchFromGitHubDialog *ui;
 	QList<GitHubAPI::SearchResultItem> items;
 	QString url_;
 	MyTableWidgetDelegate item_delegate;
 	BasicMainWindow *mainwindow;
+
+	void updateUI();
 public:
 	explicit SearchFromGitHubDialog(QWidget *parent, BasicMainWindow *mw);
-	~SearchFromGitHubDialog();
+	~SearchFromGitHubDialog() override;
 
 	QString url() const;
 
@@ -34,9 +35,6 @@ private slots:
 	void on_radioButton_ssh_clicked();
 	void on_radioButton_http_clicked();
 	void onHyperlinkClicked();
-private:
-	Ui::SearchFromGitHubDialog *ui;
-	void updateUI();
 };
 
 #endif // SEARCHFROMGITHUBDIALOG_H

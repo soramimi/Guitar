@@ -1,3 +1,4 @@
+
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
 #include "GitObjectManager.h"
@@ -8,6 +9,7 @@
 #include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>
+#include <memory>
 
 static QTreeWidgetItem *newQTreeWidgetItem()
 {
@@ -49,7 +51,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainw
 	m->objcache = objcache;
 	m->commit = commit;
 
-	m->text_editor_engine = TextEditorEnginePtr(new TextEditorEngine);
+	m->text_editor_engine = std::make_shared<TextEditorEngine>();
 	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwin->themeForTextEditor());
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 

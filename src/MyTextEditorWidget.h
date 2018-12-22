@@ -11,12 +11,10 @@ private:
 	QString object_id;
 	QString object_path;
 public:
-	MyTextEditorWidget(QWidget *parent = 0);
-
-	// QWidget interface
+	MyTextEditorWidget(QWidget *parent = nullptr);
 	void setDocument(const QList<Document::Line> *source, BasicMainWindow *mw, QString const &object_id, QString const &object_path);
 protected:
-	void contextMenuEvent(QContextMenuEvent *event);
+	void contextMenuEvent(QContextMenuEvent *event) override;
 };
 
 #endif // MYTEXTEDITORWIDGET_H

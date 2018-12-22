@@ -952,7 +952,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_PushButtonLabel) {
-		 if (const QStyleOptionButton *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+		 if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
 			 QRect ir = button->rect;
 			 uint tf = Qt::AlignVCenter | Qt::TextShowMnemonic;
 			 QPoint buttonShift;
@@ -1024,7 +1024,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		 }
 	}
 	if (ce == CE_RadioButton || ce == CE_CheckBox) {
-		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+		if (const auto *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
 			bool isRadio = (ce == CE_RadioButton);
 
 			QStyleOptionButton subopt = *btn;
@@ -1044,7 +1044,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		}
 	}
 	if (ce == CE_RadioButtonLabel || ce == CE_CheckBoxLabel) {
-		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+		if (const auto *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
 			uint alignment = visualAlignment(btn->direction, Qt::AlignLeft | Qt::AlignVCenter);
 
 			if (!styleHint(SH_UnderlineShortcut, btn, widget)) {
@@ -1068,7 +1068,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		}
 	}
 	if (ce == CE_ComboBoxLabel) {
-		if (const QStyleOptionComboBox *opt = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
+		if (const auto *opt = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
 			QRect editRect = subControlRect(CC_ComboBox, opt, SC_ComboBoxEditField, widget);
 
 			uint alignment = Qt::AlignLeft | Qt::AlignVCenter;
@@ -2073,7 +2073,9 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					alignment |= Qt::TextHideMnemonic;
 				}
 
-				drawItemText(p, textRect,  Qt::TextShowMnemonic | Qt::AlignHCenter | alignment, groupBox->palette, groupBox->state & State_Enabled, groupBox->text, QPalette::WindowText);
+				alignment |= Qt::TextShowMnemonic;
+				alignment |= Qt::AlignHCenter;
+				drawItemText(p, textRect, alignment, groupBox->palette, groupBox->state & State_Enabled, groupBox->text, QPalette::WindowText);
 
 				if (groupBox->state & State_HasFocus) {
 					QStyleOptionFocusRect fropt;

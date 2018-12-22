@@ -1,3 +1,4 @@
+
 #include "GitObjectManager.h"
 #include "Git.h"
 #include "common/joinpath.h"
@@ -6,6 +7,7 @@
 #include <QDebug>
 #include <QDirIterator>
 #include <QFile>
+#include <memory>
 
 GitObjectManager::GitObjectManager()
 {
@@ -32,7 +34,7 @@ void GitObjectManager::loadIndexes()
 		QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
 		while (it.hasNext()) {
 			it.next();
-			GitPackIdxPtr idx = GitPackIdxPtr(new GitPackIdxV2());
+			GitPackIdxPtr idx = std::make_shared<GitPackIdxV2>();
 			idx->basename = it.fileInfo().baseName();
 			idx->parse(it.filePath());
 			git_idx_list.push_back(idx);
@@ -102,7 +104,7 @@ void GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *
 	}
 }
 
-bool GitObjectManager::loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out)
+bool GitObjectManager::loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out)
 {
 	GitPack::Info info;
 	if (GitPack::seekPackedObject(packfile, item, &info)) {
@@ -134,13 +136,10 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr idx, QIODevice *packfile, 
 			return false;
 		}
 	}
-	if (GitPack::load(packfile, item, out)) {
-		return true;
-	}
-	return false;
+	return GitPack::load(packfile, item, out);
 }
 
-bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr idx, GitPackIdxItem const *item, GitPack::Object *out)
+bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out)
 {
 	*out = GitPack::Object();
 	QString packfilepath = workingDir() / subdir_git_objects_pack / (idx->basename + ".pack");

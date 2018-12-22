@@ -4,7 +4,6 @@
 #include <QDateTime>
 #include <QString>
 
-
 class gpg {
 public:
 	struct Data {
@@ -20,32 +19,6 @@ public:
 
 	static void parse(char const *begin, char const *end, QList<gpg::Data> *keys);
 	static bool listKeys(QString const &gpg_command, QList<gpg::Data> *keys);
-
-
-
-
-
-
-//public:
-//	struct Key {
-//		QString id;
-//		QDateTime timestamp;
-//	};
-
-//	struct UID {
-//		QString name;
-//		QString email;
-//		QString comment;
-//	};
-
-//	struct Item {
-//		Key pub;
-//		QList<Key> sub;
-//		QList<UID> uid;
-//	};
-
-//	static QList<Item> load(QByteArray const &json);
-
 };
 
 #endif // GPG_H

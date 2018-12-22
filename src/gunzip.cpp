@@ -1,6 +1,6 @@
 #include "gunzip.h"
 #include "myzlib.h"
-#include <stdint.h>
+#include <cstdint>
 #include <QFile>
 
 void gunzip::set_header_only(bool f)

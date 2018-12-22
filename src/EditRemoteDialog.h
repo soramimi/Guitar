@@ -16,22 +16,21 @@ public:
 		RemoteAdd,
 		RemoteSet,
 	};
+private:
+	Ui::EditRemoteDialog *ui;
+	BasicMainWindow *mainwindow();
 public:
 	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op);
-	~EditRemoteDialog();
+	~EditRemoteDialog() override;
 
 	void setName(QString const &s) const;
 	void setUrl(QString const &s) const;
 
 	QString name() const;
 	QString url() const;
-	int exec();
+	int exec() override;
 private slots:
 	void on_pushButton_test_clicked();
-
-private:
-	Ui::EditRemoteDialog *ui;
-	BasicMainWindow *mainwindow();
 };
 
 #endif // EDITREMOTEDIALOG_H

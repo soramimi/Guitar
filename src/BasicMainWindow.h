@@ -101,8 +101,8 @@ private:
 private:
 	static bool git_callback(void *cookie, const char *ptr, int len);
 
-	QString selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, std::function<void (const QString &)> callback);
-	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString path, std::function<void (const QString &)> callback);
+	QString selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, std::function<void (const QString &)> const &callback);
+	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, const QString &path, std::function<void (const QString &)> const &callback);
 
 	bool checkGitCommand();
 	bool checkFileCommand();
@@ -140,7 +140,6 @@ private:
 	void addWorkingCopyDir(QString dir, QString name, bool open);
 	static QString makeRepositoryName(const QString &loc);
 	void clearAuthentication();
-	void onAvatarUpdated();
 	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
 	void queryRemotes(GitPtr g);
 	bool runOnRepositoryDir(std::function<void (QString)> callback, const RepositoryItem *repo);
@@ -342,7 +341,7 @@ public:
 	Git::Object cat_file(const QString &id);
 	QString newTempFilePath();
 	QString findFileID(GitPtr, const QString &commit_id, const QString &file);
-	void updateFilesList(QString id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
+	void updateFilesList(const QString &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void setAppSettings(const ApplicationSettings &appsettings);
 
 	QIcon getRepositoryIcon() const;
@@ -352,6 +351,8 @@ public:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 
+protected slots:
+	void onAvatarUpdated();
 public slots:
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);

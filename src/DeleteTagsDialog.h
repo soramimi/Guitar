@@ -9,13 +9,12 @@ namespace Ui {
 class DeleteTagsDialog;
 }
 
-class DeleteTagsDialog : public QDialog
-{
+class DeleteTagsDialog : public QDialog {
 	Q_OBJECT
 
 public:
 	explicit DeleteTagsDialog(QWidget *parent, QList<Git::Tag> const &list);
-	~DeleteTagsDialog();
+	~DeleteTagsDialog() override;
 
 	QStringList selectedTags() const;
 

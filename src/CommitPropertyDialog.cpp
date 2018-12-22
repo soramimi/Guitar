@@ -129,7 +129,7 @@ BasicMainWindow *CommitPropertyDialog::mainwindow()
 	return m->mainwindow;
 }
 
-void CommitPropertyDialog::setAvatar(QIcon icon, QLabel *label)
+void CommitPropertyDialog::setAvatar(QIcon const &icon, QLabel *label)
 {
 	QPixmap pm = icon.pixmap(label->size());
 	label->setPixmap(pm);

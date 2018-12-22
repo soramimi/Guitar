@@ -17,14 +17,17 @@ class SettingsDialog : public QDialog
 public:
 	ApplicationSettings set;
 private:
+	Ui::SettingsDialog *ui;
 	MainWindow *mainwindow_;
+
+	void exchange(bool save);
 
 	void loadSettings();
 	void saveSettings();
 
 public:
 	explicit SettingsDialog(MainWindow *parent);
-	~SettingsDialog();
+	~SettingsDialog() override;
 
 	MainWindow *mainwindow()
 	{
@@ -44,19 +47,10 @@ public:
 	static void loadSettings(ApplicationSettings *as);
 	static void saveSettings(const ApplicationSettings *as);
 private slots:
-
 	void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-
-private:
-	Ui::SettingsDialog *ui;
-
-	void exchange(bool save);
 public slots:
-	void accept();
-
-	// QDialog interface
-public slots:
-	void done(int);
+	void accept() override;
+	void done(int) override;
 };
 
 #endif // SETTINGSDIALOG_H

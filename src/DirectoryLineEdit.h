@@ -4,21 +4,13 @@
 #include <QLineEdit>
 #include <QWidget>
 
-class DirectoryLineEdit : public QLineEdit
-{
+class DirectoryLineEdit : public QLineEdit {
 	Q_OBJECT
 public:
-	explicit DirectoryLineEdit(QWidget *parent = 0);
-
-signals:
-
-public slots:
+	explicit DirectoryLineEdit(QWidget *parent = nullptr);
 protected:
-	void dragEnterEvent(QDragEnterEvent *event);
-
-	// QWidget interface
-protected:
-	void dropEvent(QDropEvent *event);
+	void dragEnterEvent(QDragEnterEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
 };
 
 #endif // DIRECTORYLINEEDIT_H

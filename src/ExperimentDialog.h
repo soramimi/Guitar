@@ -7,16 +7,11 @@ namespace Ui {
 class ExperimentDialog;
 }
 
-class ExperimentDialog : public QDialog
-{
+class ExperimentDialog : public QDialog {
 	Q_OBJECT
-
 public:
-	explicit ExperimentDialog(QWidget *parent = 0);
-	~ExperimentDialog();
-
-private slots:
-
+	explicit ExperimentDialog(QWidget *parent = nullptr);
+	~ExperimentDialog() override;
 private:
 	Ui::ExperimentDialog *ui;
 };

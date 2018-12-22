@@ -12,13 +12,12 @@ namespace Ui {
 class ConfigSigningDialog;
 }
 
-class ConfigSigningDialog : public QDialog
-{
+class ConfigSigningDialog : public QDialog {
 	Q_OBJECT
 
 public:
 	explicit ConfigSigningDialog(QWidget *parent, BasicMainWindow *mw, bool local_enable);
-	~ConfigSigningDialog();
+	~ConfigSigningDialog() override;
 
 private:
 	Ui::ConfigSigningDialog *ui;
@@ -29,9 +28,8 @@ private:
 
 	void updateSigningInfo();
 
-	// QDialog interface
 public slots:
-	void accept();
+	void accept() override;
 };
 
 #endif // CONFIGSIGNINGDIALOG_H

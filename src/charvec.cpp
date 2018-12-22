@@ -1,6 +1,6 @@
 #include "charvec.h"
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 void print(std::vector<char> *out, char c)
 {

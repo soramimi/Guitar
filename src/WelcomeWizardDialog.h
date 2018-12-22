@@ -18,8 +18,8 @@ private:
 	AvatarLoader avatar_loader_;
 	QList<QWidget *> pages_;
 public:
-	explicit WelcomeWizardDialog(BasicMainWindow *parent = 0);
-	~WelcomeWizardDialog();
+	explicit WelcomeWizardDialog(BasicMainWindow *parent = nullptr);
+	~WelcomeWizardDialog() override;
 
 	void set_user_name(QString const &v);
 	void set_user_email(QString const &v);
@@ -39,9 +39,7 @@ private slots:
 	void on_pushButton_browse_file_clicked();
 	void on_pushButton_get_icon_clicked();
 	void on_pushButton_prev_clicked();
-
 	void on_pushButton_next_clicked();
-
 private:
 	Ui::WelcomeWizardDialog *ui;
 	void setAvatar(const QIcon &icon);

@@ -8,13 +8,11 @@ namespace Ui {
 class MergeBranchDialog;
 }
 
-class MergeBranchDialog : public QDialog
-{
+class MergeBranchDialog : public QDialog {
 	Q_OBJECT
-
 public:
 	explicit MergeBranchDialog(QWidget *parent, QList<Git::Branch> const &branches);
-	~MergeBranchDialog();
+	~MergeBranchDialog() override;
 
 	QString branchName() const;
 private:

@@ -1,5 +1,6 @@
-#include "BasicMainWindow.h"
+
 #include "ApplicationGlobal.h"
+#include "BasicMainWindow.h"
 #include "CheckoutDialog.h"
 #include "CloneDialog.h"
 #include "CommitDialog.h"
@@ -40,6 +41,7 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QTreeWidgetItem>
+#include <memory>
 
 
 class AsyncExecGitThread_ : public QThread {
@@ -213,7 +215,7 @@ GitPtr BasicMainWindow::git(const QString &dir) const
 {
 	const_cast<BasicMainWindow *>(this)->checkGitCommand();
 
-	GitPtr g = std::shared_ptr<Git>(new Git(m->gcx, dir));
+	GitPtr g = std::make_shared<Git>(m->gcx, dir);
 	g->setLogCallback(git_callback, (void *)this);
 	return g;
 }
@@ -642,7 +644,7 @@ QString BasicMainWindow::findFileID(GitPtr, const QString &commit_id, const QStr
 	return lookupFileID(getObjCache(), commit_id, file);
 }
 
-void BasicMainWindow::updateFilesList(QString id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -910,7 +912,7 @@ bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
 	return true;
 }
 
-QString BasicMainWindow::selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, std::function<void (const QString &)> callback)
+QString BasicMainWindow::selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, std::function<void (const QString &)> const &callback)
 {
 	QString window_title = tr("Select %1 command");
 	window_title = window_title.arg(cmdfiles.front());
@@ -929,7 +931,7 @@ QString BasicMainWindow::selectCommand_(const QString &cmdname, const QStringLis
 	return QString();
 }
 
-QString BasicMainWindow::selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString path, std::function<void (const QString &)> callback)
+QString BasicMainWindow::selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString const &path, std::function<void (const QString &)> const &callback)
 {
 	QStringList cmdfiles;
 	cmdfiles.push_back(cmdfile);

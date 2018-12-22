@@ -27,22 +27,22 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit MainWindow(QWidget *parent = 0);
-	~MainWindow();
+	explicit MainWindow(QWidget *parent = nullptr);
+	~MainWindow() override;
 
 	QPixmap const &digitsPixmap() const;
 
-	QString currentWorkingCopyDir() const;
+	QString currentWorkingCopyDir() const override;
 
 	QColor color(unsigned int i);
 private:
 	Ui::MainWindow *ui;
 
-	void updateFilesList(QString id, bool wait);
+	void updateFilesList(QString id, bool wait) override;
 	void updateFilesList(const Git::CommitItem &commit, bool wait);
-	void updateRepositoriesList();
+	void updateRepositoriesList() override;
 
-	void openRepository_(GitPtr g);
+	void openRepository_(GitPtr g) override;
 
 	void prepareLogTableWidget();
 	QStringList selectedFiles_(QListWidget *listwidget) const;
@@ -52,14 +52,14 @@ private:
 	void showFileList(FilesListType files_list_type);
 
 	void clearLog();
-	void clearFileList();
+	void clearFileList() override;
 	void clearDiffView();
 	void clearRepositoryInfo();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryItem const *repositoryItem(const QTreeWidgetItem *item) const;
 
-	int selectedLogIndex() const;
+	int selectedLogIndex() const override;
 	QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
@@ -69,7 +69,7 @@ private:
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
 	void updateStatusBarText();
-	void setRepositoryInfo(QString const &reponame, QString const &brname);
+	void setRepositoryInfo(QString const &reponame, QString const &brname) override;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void clearRepoFilter();
 	void appendCharToRepoFilter(ushort c);
@@ -80,7 +80,7 @@ private:
 	void rebaseBranch(const Git::CommitItem *commit);
 	void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f);
-	bool isRemoteOnline() const;
+	bool isRemoteOnline() const override;
 	void startTimers();
 	void onCloneCompleted(bool success);
 	bool fetch(GitPtr g);
@@ -94,24 +94,22 @@ private:
 	void rebaseOnto();
 	void setWatchRemoteInterval(int mins);
 protected:
-	void dragEnterEvent(QDragEnterEvent *event);
-	void timerEvent(QTimerEvent *);
-	void keyPressEvent(QKeyEvent *event);
-	bool event(QEvent *event);
-	bool eventFilter(QObject *watched, QEvent *event);
+	void dragEnterEvent(QDragEnterEvent *event) override;
+	void timerEvent(QTimerEvent *) override;
+	void keyPressEvent(QKeyEvent *event) override;
+	bool event(QEvent *event) override;
+	bool eventFilter(QObject *watched, QEvent *event) override;
 public:
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	int digitWidth() const;
 	int digitHeight() const;
 	void setStatusBarText(QString const &text);
 	void clearStatusBarText();
-	void setCurrentLogRow(int row);
+	void setCurrentLogRow(int row) override;
 	bool shown();
-	void deleteTags(QStringList const &tagnames);
+	void deleteTags(QStringList const &tagnames) override;
 	bool addTag(QString const &name);
 	void updateCurrentFilesList();
-//public slots:
-//	void setRemoteChanged(bool f);
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();
@@ -180,10 +178,10 @@ private slots:
 	void on_verticalScrollBar_log_valueChanged(int);
 	void on_action_push_u_triggered();
 protected:
-	void closeEvent(QCloseEvent *event);
-	virtual void internalWriteLog(const char *ptr, int len);
-	const RepositoryItem *selectedRepositoryItem() const;
-	void removeSelectedRepositoryFromBookmark(bool ask);
+	void closeEvent(QCloseEvent *event) override;
+	void internalWriteLog(const char *ptr, int len) override;
+	const RepositoryItem *selectedRepositoryItem() const override;
+	void removeSelectedRepositoryFromBookmark(bool ask) override;
 protected slots:
 	void onLogIdle();
 signals:

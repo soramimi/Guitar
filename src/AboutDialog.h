@@ -14,14 +14,13 @@ private:
 	Ui::AboutDialog *ui;
 	QPixmap pixmap;
 public:
-	explicit AboutDialog(QWidget *parent = 0);
-	~AboutDialog();
+	explicit AboutDialog(QWidget *parent = nullptr);
+	~AboutDialog() override;
 
 	static QString appVersion();
 protected:
-	void mouseReleaseEvent(QMouseEvent *);
-protected:
-	void paintEvent(QPaintEvent *event);
+	void mouseReleaseEvent(QMouseEvent *) override;
+	void paintEvent(QPaintEvent *event) override;
 };
 
 #endif // ABOUTDIALOG_H

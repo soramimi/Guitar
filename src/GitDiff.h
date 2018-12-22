@@ -27,7 +27,7 @@ private:
 		}
 	}
 
-	typedef std::list<LookupTable> MapList;
+	using MapList = std::list<LookupTable>;
 
 	GitPtr git();
 
@@ -41,7 +41,7 @@ public:
 		this->objcache = objcache;
 	}
 
-	bool diff(QString id, QList<Git::Diff> *out);
+	bool diff(const QString &id, QList<Git::Diff> *out);
 	bool diff_uncommited(QList<Git::Diff> *out);
 
 	void interrupt()

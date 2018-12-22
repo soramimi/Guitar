@@ -3,15 +3,12 @@
 
 #include <QLineEdit>
 
-class ReadOnlyLineEdit : public QLineEdit
-{
+class ReadOnlyLineEdit : public QLineEdit {
 public:
-	ReadOnlyLineEdit(QWidget *parent = 0);
-
+	ReadOnlyLineEdit(QWidget *parent = nullptr);
 	void setText(QString const &text);
-	// QWidget interface
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 };
 
 #endif // READONLYLINEEDIT_H

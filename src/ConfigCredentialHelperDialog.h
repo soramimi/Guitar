@@ -7,13 +7,12 @@ namespace Ui {
 class ConfigCredentialHelperDialog;
 }
 
-class ConfigCredentialHelperDialog : public QDialog
-{
+class ConfigCredentialHelperDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit ConfigCredentialHelperDialog(QWidget *parent = 0);
-	~ConfigCredentialHelperDialog();
+	explicit ConfigCredentialHelperDialog(QWidget *parent = nullptr);
+	~ConfigCredentialHelperDialog() override;
 
 	QString helper() const;
 

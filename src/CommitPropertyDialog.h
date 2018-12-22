@@ -21,7 +21,7 @@ private:
 public:
 	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, Git::CommitItem const *commit);
 	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, QString const &commit_id);
-	~CommitPropertyDialog();
+	~CommitPropertyDialog() override;
 
 	void showCheckoutButton(bool f);
 	void showJumpButton(bool f);
@@ -39,7 +39,7 @@ private:
 	Ui::CommitPropertyDialog *ui;
 	void init(BasicMainWindow *mw);
 	BasicMainWindow *mainwindow();
-	void setAvatar(QIcon icon, QLabel *label);
+	void setAvatar(const QIcon &icon, QLabel *label);
 	void UpdateAvatar(bool request);
 };
 

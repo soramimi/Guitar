@@ -3,19 +3,12 @@
 
 #include <QLineEdit>
 
-class RepositoryLineEdit : public QLineEdit
-{
+class RepositoryLineEdit : public QLineEdit {
 	Q_OBJECT
-public:
-	explicit RepositoryLineEdit(QWidget *parent = 0);
-
-signals:
-
-public slots:
-
-	// QWidget interface
 protected:
-	void dropEvent(QDropEvent *event);
+	void dropEvent(QDropEvent *event) override;
+public:
+	explicit RepositoryLineEdit(QWidget *parent = nullptr);
 };
 
 #endif // REPOSITORYLINEEDIT_H

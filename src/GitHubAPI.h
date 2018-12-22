@@ -12,7 +12,7 @@ class WebClient;
 
 class GitHubAPI {
 public:
-	typedef std::shared_ptr<WebClient> WebClientPtr;
+	using WebClientPtr = std::shared_ptr<WebClient>;
 
 	struct User {
 		std::string login;
@@ -46,12 +46,12 @@ private:
 	struct Private;
 	Private *m;
 protected:
-	void run();
+	void run() override;
 public:
 	GitHubAPI::WebClientPtr web();
 public:
 	GitHubRequestThread();
-	~GitHubRequestThread();
+	~GitHubRequestThread() override;
 	std::string url;
 	bool ok = false;
 	std::string text;

@@ -9,14 +9,13 @@ class CreateRepositoryDialog;
 
 class BasicMainWindow;
 
-class CreateRepositoryDialog : public QDialog
-{
+class CreateRepositoryDialog : public QDialog {
 	Q_OBJECT
 private:
 	QString already_exists_;
 public:
 	explicit CreateRepositoryDialog(BasicMainWindow *parent, QString const &dir = QString());
-	~CreateRepositoryDialog();
+	~CreateRepositoryDialog() override;
 
 	QString path() const;
 	QString name() const;
@@ -37,7 +36,7 @@ private:
 	BasicMainWindow *mainwindow();
 
 public slots:
-	void accept();
+	void accept() override;
 };
 
 #endif // CREATEREPOSITORYDIALOG_H

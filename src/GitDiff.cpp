@@ -187,7 +187,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, GitTreeItemList const *fi
 	}
 }
 
-bool GitDiff::diff(QString id, QList<Git::Diff> *out)
+bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();

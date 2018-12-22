@@ -16,7 +16,7 @@ class LogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
 	MainWindow *mainwindow() const
 	{
-		LogTableWidget *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
+		auto *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
 		return w->mainwindow();
 	}

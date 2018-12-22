@@ -7,12 +7,11 @@ namespace Ui {
 class LineEditDialog;
 }
 
-class LineEditDialog : public QDialog
-{
+class LineEditDialog : public QDialog {
 	Q_OBJECT
 public:
 	explicit LineEditDialog(QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password);
-	~LineEditDialog();
+	~LineEditDialog() override;
 	QString text() const;
 private:
 	Ui::LineEditDialog *ui;

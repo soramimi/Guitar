@@ -1,7 +1,7 @@
 #include "Photoshop.h"
 
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 #include <vector>
 
 namespace {
@@ -18,7 +18,7 @@ inline uint16_t read_uint16_be(void const *p)
 	return (q[0] << 8) | q[1];
 }
 
-}
+} // namespace
 
 void photoshop::readThumbnail(QIODevice *in, std::vector<char> *jpeg)
 {

@@ -11,8 +11,7 @@ namespace Ui {
 class CommitViewWindow;
 }
 
-class CommitViewWindow : public QDialog
-{
+class CommitViewWindow : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
@@ -20,7 +19,7 @@ private:
 	BasicMainWindow *mainwindow();
 public:
 	explicit CommitViewWindow(BasicMainWindow *parent, Git::CommitItem const *commit);
-	~CommitViewWindow();
+	~CommitViewWindow() override;
 
 private slots:
 	void on_listWidget_files_currentRowChanged(int currentRow);

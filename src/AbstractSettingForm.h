@@ -13,7 +13,7 @@ protected:
 	MainWindow *mainwindow();
 	ApplicationSettings *settings();
 public:
-	AbstractSettingForm(QWidget *parent = 0);
+	AbstractSettingForm(QWidget *parent = nullptr);
 	virtual void exchange(bool save) = 0;
 };
 

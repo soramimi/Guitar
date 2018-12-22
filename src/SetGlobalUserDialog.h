@@ -8,17 +8,15 @@ namespace Ui {
 class SetGlobalUserDialog;
 }
 
-class SetGlobalUserDialog : public QDialog
-{
+class SetGlobalUserDialog : public QDialog {
 	Q_OBJECT
-
-public:
-	explicit SetGlobalUserDialog(QWidget *parent = 0);
-	~SetGlobalUserDialog();
-
-	Git::User user() const;
 private:
 	Ui::SetGlobalUserDialog *ui;
+public:
+	explicit SetGlobalUserDialog(QWidget *parent = nullptr);
+	~SetGlobalUserDialog() override;
+
+	Git::User user() const;
 };
 
 #endif // SETGLOBALUSERDIALOG_H

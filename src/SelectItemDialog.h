@@ -12,13 +12,13 @@ class SelectItemDialog;
 
 class SelectItemDialog : public QDialog {
 	Q_OBJECT
+private:
+	Ui::SelectItemDialog *ui;
 public:
 	struct Item {
 		QString id;
 		QString text;
-		Item()
-		{
-		}
+		Item() = default;
 		Item(QString const &id, QString const &text)
 			: id(id)
 			, text(text)
@@ -26,8 +26,8 @@ public:
 		}
 	};
 public:
-	explicit SelectItemDialog(QWidget *parent = 0);
-	~SelectItemDialog();
+	explicit SelectItemDialog(QWidget *parent = nullptr);
+	~SelectItemDialog() override;
 
 	void addItem(QString const &item, QString const &text);
 
@@ -35,9 +35,6 @@ public:
 	void select(QString const &id);
 private slots:
 	void on_listWidget_itemDoubleClicked(QListWidgetItem *);
-
-private:
-	Ui::SelectItemDialog *ui;
 };
 
 #endif // SELECTITEMDIALOG_H

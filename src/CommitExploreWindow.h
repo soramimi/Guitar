@@ -12,8 +12,7 @@ class QTreeWidgetItem;
 class QListWidgetItem;
 class GitObjectCache;
 
-class CommitExploreWindow : public QDialog
-{
+class CommitExploreWindow : public QDialog {
 	Q_OBJECT
 private:
 	Ui::CommitExploreWindow *ui;
@@ -27,7 +26,7 @@ private:
 	BasicMainWindow *mainwindow();
 public:
 	explicit CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);
-	~CommitExploreWindow();
+	~CommitExploreWindow() override;
 
 	void clearContent();
 private slots:

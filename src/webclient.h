@@ -19,9 +19,7 @@ class WebClientHandler {
 protected:
 	void abort(std::string const &message = std::string());
 public:
-	virtual ~WebClientHandler()
-	{
-	}
+	virtual ~WebClientHandler() = default;
 	virtual void checkHeader(WebClient * /*wc*/)
 	{
 	}
@@ -52,7 +50,7 @@ public:
 			std::string path;
 		} data;
 	public:
-		URL() {}
+		URL() = default;
 		URL(const std::string &addr);
 		std::string const &scheme() const { return data.scheme; }
 		std::string const &host() const { return data.host; }
@@ -65,16 +63,12 @@ public:
 	private:
 		std::string msg_;
 	public:
-		Error()
-		{
-		}
+		Error() = default;
 		Error(std::string const &message)
 			: msg_(message)
 		{
 		}
-		virtual ~Error()
-		{
-		}
+		virtual ~Error() = default;
 		std::string message() const
 		{
 			return msg_;
@@ -105,9 +99,7 @@ public:
 		std::string content_type;
 		ContentDisposition content_disposition;
 		std::string content_transfer_encoding;
-		Part()
-		{
-		}
+		Part() = default;
 		Part(char const *data, size_t size, std::string const &content_type = std::string())
 			: data(data)
 			, size(size)

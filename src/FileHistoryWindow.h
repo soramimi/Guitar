@@ -13,8 +13,7 @@ class FileHistoryWindow;
 class BasicMainWindow;
 class QTableWidgetItem;
 
-class FileHistoryWindow : public QDialog
-{
+class FileHistoryWindow : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
@@ -28,7 +27,7 @@ private:
 	int fileviewScrollPos() const;
 public:
 	explicit FileHistoryWindow(BasicMainWindow *parent);
-	~FileHistoryWindow();
+	~FileHistoryWindow() override;
 
 	void prepare(GitPtr g, QString const &path);
 private slots:

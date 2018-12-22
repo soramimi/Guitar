@@ -6,8 +6,7 @@
 class MainWindow;
 class LogTableWidgetDelegate;
 
-class LogTableWidget : public QTableWidget
-{
+class LogTableWidget : public QTableWidget {
 	Q_OBJECT
 	friend class LogTableWidgetDelegate;
 private:
@@ -15,10 +14,10 @@ private:
 	Private *m;
 	MainWindow *mainwindow();
 public:
-	explicit LogTableWidget(QWidget *parent = 0);
-	~LogTableWidget();
+	explicit LogTableWidget(QWidget *parent = nullptr);
+	~LogTableWidget() override;
 protected:
-	void paintEvent(QPaintEvent *);
+	void paintEvent(QPaintEvent *) override;
 };
 
 #endif // LOGTABLEWIDGET_H

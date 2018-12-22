@@ -11,8 +11,7 @@ namespace Ui {
 class EditTagsDialog;
 }
 
-class EditTagsDialog : public QDialog
-{
+class EditTagsDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::EditTagsDialog *ui;
@@ -24,7 +23,7 @@ private:
 	void updateTagList();
 public:
 	explicit EditTagsDialog(MainWindow *parent, Git::CommitItem const *commit);
-	~EditTagsDialog();
+	~EditTagsDialog() override;
 
 private slots:
 	void on_pushButton_add_clicked();

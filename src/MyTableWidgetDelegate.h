@@ -5,10 +5,9 @@
 
 
 class MyTableWidgetDelegate : public QStyledItemDelegate {
-
 public:
-	explicit MyTableWidgetDelegate(QObject *parent = Q_NULLPTR);
-	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+	explicit MyTableWidgetDelegate(QObject *parent = nullptr);
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
 #endif // MYTABLEWIDGETDELEGATE_H

@@ -23,10 +23,10 @@ private:
 	Private *m;
 
 protected:
-	void run();
+	void run() override;
 public:
 	AvatarLoader();
-	~AvatarLoader();
+	~AvatarLoader() override;
 	QIcon fetch(const std::string &email, bool request) const;
 	void stop();
 	void start(WebContext *webcx);

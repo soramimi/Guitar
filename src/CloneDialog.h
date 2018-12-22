@@ -20,7 +20,7 @@ private:
 	typedef std::shared_ptr<Git> GitPtr;
 public:
 	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
-	~CloneDialog();
+	~CloneDialog() override;
 
 	enum class Action {
 		Clone,

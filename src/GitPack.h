@@ -2,7 +2,7 @@
 #define GITPACK_H
 
 #include <QIODevice>
-#include <stdint.h>
+#include <cstdint>
 #include "Git.h"
 
 struct GitPackIdxItem;
@@ -23,7 +23,7 @@ public:
 private:
 	static uint32_t read_uint32_be(const void *p)
 	{
-		uint8_t const *q = (uint8_t const *)p;
+		auto const *q = (uint8_t const *)p;
 		return (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
 	}
 

@@ -13,7 +13,7 @@ private:
 		PreEditText preedit;
 	} data;
 public:
-	explicit InputMethodPopup(QWidget *parent = 0);
+	explicit InputMethodPopup(QWidget *parent = nullptr);
 
 	void setPreEditText(const PreEditText &preedit);
 

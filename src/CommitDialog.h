@@ -16,13 +16,13 @@ class CommitDialog : public QDialog {
 	Q_OBJECT
 public:
 	explicit CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key);
-	~CommitDialog();
+	~CommitDialog() override;
 
 	void setText(QString const &text);
 	QString text() const;
 	bool isSigningEnabled() const;
 protected:
-	void keyPressEvent(QKeyEvent *event);
+	void keyPressEvent(QKeyEvent *event) override;
 private:
 	Ui::CommitDialog *ui;
 	gpg::Data key_;

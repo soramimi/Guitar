@@ -4,7 +4,7 @@
 #include <QIODevice>
 #include <string>
 #include <functional>
-#include <stdint.h>
+#include <cstdint>
 
 class gunzip {
 public:

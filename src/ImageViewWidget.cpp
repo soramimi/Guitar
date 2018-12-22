@@ -1,26 +1,23 @@
-#include <memory>
 
 #include "ImageViewWidget.h"
 #include "FileDiffSliderWidget.h"
 #include "FileDiffWidget.h"
-
 #include "MainWindow.h"
-#include "common/misc.h"
-#include "common/joinpath.h"
-#include "Photoshop.h"
 #include "MemoryReader.h"
+#include "Photoshop.h"
 #include "charvec.h"
-
-#include <math.h>
-#include <functional>
-
+#include "common/joinpath.h"
+#include "common/misc.h"
+#include <QBuffer>
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenu>
 #include <QPainter>
-#include <QWheelEvent>
 #include <QSvgRenderer>
-#include <QBuffer>
+#include <QWheelEvent>
+#include <cmath>
+#include <functional>
+#include <memory>
 
 using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 

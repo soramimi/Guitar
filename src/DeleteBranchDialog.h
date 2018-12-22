@@ -7,15 +7,14 @@ namespace Ui {
 class DeleteBranchDialog;
 }
 
-class DeleteBranchDialog : public QDialog
-{
+class DeleteBranchDialog : public QDialog {
 	Q_OBJECT
 private:
 	struct Private;
 	Private *m;
 public:
 	explicit DeleteBranchDialog(QWidget *parent, bool remote, QStringList const &all_local_branch_names, QStringList const &current_local_branch_names);
-	~DeleteBranchDialog();
+	~DeleteBranchDialog() override;
 
 	QStringList selectedBranchNames() const;
 private slots:
