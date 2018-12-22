@@ -152,7 +152,6 @@ protected:
 	static int getHunkIndex(QListWidgetItem *item);
 
 	void initNetworking();
-	static QString abbrevCommitID(const Git::CommitItem &commit);
 	bool saveRepositoryBookmarks() const;
 	QString getBookmarksFilePath() const;
 
@@ -351,6 +350,7 @@ public:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 
+	static QString abbrevCommitID(const Git::CommitItem &commit);
 protected slots:
 	void onAvatarUpdated();
 public slots:

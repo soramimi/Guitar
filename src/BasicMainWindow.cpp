@@ -2036,6 +2036,20 @@ void BasicMainWindow::push()
 	}
 }
 
+#ifdef Q_OS_MAC
+namespace {
+
+bool isValidDir(QString const &dir)
+{
+	if (dir.indexOf('\"') >= 0 || dir.indexOf('\\') >= 0) return false;
+	return QFileInfo(dir).isDir();
+}
+
+}
+
+#include <QProcess>
+#endif
+
 void BasicMainWindow::openTerminal(const RepositoryItem *repo)
 {
 	runOnRepositoryDir([](QString dir){

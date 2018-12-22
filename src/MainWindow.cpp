@@ -2365,18 +2365,6 @@ void MainWindow::on_action_delete_branch_triggered()
 	deleteBranch();
 }
 
-#ifdef Q_OS_MAC
-namespace {
-
-bool isValidDir(QString const &dir)
-{
-	if (dir.indexOf('\"') >= 0 || dir.indexOf('\\') >= 0) return false;
-	return QFileInfo(dir).isDir();
-}
-
-}
-#endif
-
 void MainWindow::on_toolButton_terminal_clicked()
 {
 	openTerminal(nullptr);

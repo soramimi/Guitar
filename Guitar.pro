@@ -85,7 +85,7 @@ win32 {
 
 macx {
 	QMAKE_INFO_PLIST = Info.plist
-	ICON += Guitar.icns
+    ICON += src/resources/Guitar.icns
 	t.path=Contents/Resources
 	QMAKE_BUNDLE_DATA += t
 }

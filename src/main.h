@@ -6,7 +6,8 @@
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
 
-struct ApplicationSettings {
+class ApplicationSettings {
+public:
 	QString git_command;
 	QString file_command;
 	QString gpg_command;
