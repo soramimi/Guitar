@@ -27,8 +27,8 @@ linux:QTPLUGIN += ibusplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/texteditor
-win32:INCLUDEPATH += $$PWD/winpty
-win32:LIBS += $$PWD/winpty/winpty.lib
+win32:INCLUDEPATH += $$PWD/misc/winpty
+win32:LIBS += $$PWD/misc/winpty/winpty.lib
 
 # OpenSSL
 
@@ -39,6 +39,7 @@ macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += C:\openssl\include
+	INCLUDEPATH += $$PWD/../zlib
 	LIBS += -LC:\openssl\lib
 }
 
@@ -90,7 +91,6 @@ macx {
 }
 
 SOURCES += \
-	version.c \
 	src/main.cpp\
 	src/MainWindow.cpp \
 	src/Git.cpp \
@@ -242,7 +242,6 @@ HEADERS  += \
 	src/ReadOnlyPlainTextEdit.h \
 	src/MyTableWidgetDelegate.h \
 	src/SetRemoteUrlDialog.h \
-	myzlib.h \
 	src/ClearButton.h \
 	src/SetUserDialog.h \
 	src/SearchFromGitHubDialog.h \
@@ -312,7 +311,11 @@ HEADERS  += \
     src/DoYouWantToInitDialog.h \
     src/RemoteWatcher.h \
     src/BasicMainWindow.h \
+<<<<<<< HEAD
+    src/version.h
+=======
     src/platform.h
+>>>>>>> 1577236553e0370f7ab2c4b5a5743bab35f93670
 
 FORMS    += \
 	src/MainWindow.ui \
@@ -392,3 +395,5 @@ win32 {
 		src/win32/Win32Process.h \
 		src/win32/Win32PtyProcess.h
 }
+
+

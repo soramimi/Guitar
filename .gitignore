@@ -9,5 +9,7 @@ image/about.psd
 extra/_build_*
 misc/win32tools
 _bin/
+build/
+src/version.h
 *.autosave
 src/version.h

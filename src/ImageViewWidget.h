@@ -29,7 +29,7 @@ private:
 	void setScrollBarRange(QScrollBar *h, QScrollBar *v);
 	void updateScrollBarRange();
 protected:
-	BasicMainWindow *mainwindow();
+	QMainWindow *mainwindow();
 	void resizeEvent(QResizeEvent *) override;
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;
@@ -39,7 +39,7 @@ public:
 	explicit ImageViewWidget(QWidget *parent = nullptr);
 	~ImageViewWidget() override;
 
-	void bind(BasicMainWindow *m, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb);
+	void bind(QMainWindow *m, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb);
 
 	void clear();
 

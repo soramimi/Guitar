@@ -22,7 +22,7 @@
 using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
-	BasicMainWindow *mainwindow = nullptr;
+	QMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
 	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
@@ -69,7 +69,7 @@ ImageViewWidget::~ImageViewWidget()
 	delete m;
 }
 
-void ImageViewWidget::bind(BasicMainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
+void ImageViewWidget::bind(QMainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->mainwindow = mainwindow;
 	m->filediffwidget = filediffwidget;
@@ -186,7 +186,7 @@ void ImageViewWidget::updateScrollBarRange()
 	setScrollBarRange(m->h_scroll_bar, m->v_scroll_bar);
 }
 
-BasicMainWindow *ImageViewWidget::mainwindow()
+QMainWindow *ImageViewWidget::mainwindow()
 {
 	return m->mainwindow;
 }
@@ -194,7 +194,7 @@ BasicMainWindow *ImageViewWidget::mainwindow()
 QBrush ImageViewWidget::getTransparentBackgroundBrush()
 {
 #ifdef APP_GUITAR
-	return mainwindow()->getTransparentPixmap();
+	return qobject_cast<BasicMainWindow *>(mainwindow())->getTransparentPixmap();
 #else
 	if (m->transparent_pixmap.isNull()) {
 		m->transparent_pixmap = QPixmap(":/image/transparent.png");
