@@ -182,12 +182,12 @@ QString misc::makeDateTimeString(QDateTime const &dt)
 	return QString();
 }
 
-bool misc::starts_with(const std::string &str, const std::string &with)
+bool misc::starts_with(std::string const &str, std::string const &with)
 {
 	return strncmp(str.c_str(), with.c_str(), with.size()) == 0;
 }
 
-std::string misc::mid(const std::string &str, int start, int length)
+std::string misc::mid(std::string const &str, int start, int length)
 {
 	int size = (int)str.size();
 	if (length < 0) length = size;
@@ -297,7 +297,7 @@ void misc::dump(uint8_t const *ptr, size_t len)
 	}
 }
 
-void misc::dump(const QByteArray *in)
+void misc::dump(QByteArray const *in)
 {
 	size_t len = 0;
 	uint8_t const *ptr = nullptr;

@@ -33,15 +33,15 @@ private:
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(QString const &dir, const GitTreeItemList *files, std::map<QString, GitTreeItem> *out);
-	void retrieveCompleteTree(QString const &dir, const GitTreeItemList *files);
+	void retrieveCompleteTree(QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out);
+	void retrieveCompleteTree(QString const &dir, GitTreeItemList const *files);
 public:
 	GitDiff(GitObjectCache *objcache)
 	{
 		this->objcache = objcache;
 	}
 
-	bool diff(const QString &id, QList<Git::Diff> *out);
+	bool diff(QString const &id, QList<Git::Diff> *out);
 	bool diff_uncommited(QList<Git::Diff> *out);
 
 	void interrupt()

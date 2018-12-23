@@ -102,7 +102,7 @@ bool WebClient::URL::isssl() const
 	return false;
 }
 
-void WebClientHandler::abort(const std::string &message)
+void WebClientHandler::abort(std::string const &message)
 {
 	throw WebClient::Error(message);
 }
@@ -1040,13 +1040,13 @@ void WebContext::set_keep_alive_enabled(bool f)
 	m->use_keep_alive = f;
 }
 
-void WebContext::set_http_proxy(const std::string &proxy)
+void WebContext::set_http_proxy(std::string const &proxy)
 {
 	m->http_proxy = WebProxy();
 	m->http_proxy.server = proxy;
 }
 
-void WebContext::set_https_proxy(const std::string &proxy)
+void WebContext::set_https_proxy(std::string const &proxy)
 {
 	m->https_proxy = WebProxy();
 	m->https_proxy.server = proxy;

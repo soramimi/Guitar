@@ -409,7 +409,7 @@ public:
 	void logicalMoveToBottom();
 protected:
 	void write_(char const *ptr, bool by_keyboard);
-	void write_(const QString &text, bool by_keyboard);
+	void write_(QString const &text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
 };
 

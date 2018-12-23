@@ -60,7 +60,7 @@ TraditionalWindowsStyleTreeControl::TraditionalWindowsStyleTreeControl()
 	pm_minus = QPixmap::fromImage(img_minus);
 }
 
-bool TraditionalWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *) const
+bool TraditionalWindowsStyleTreeControl::drawPrimitive(QStyle::PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *) const
 {
 	if (element == QStyle::PE_IndicatorBranch) {
 		int ox = option->rect.x() + option->rect.width() / 2;

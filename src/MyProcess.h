@@ -18,7 +18,7 @@ using PtyProcess = UnixPtyProcess;
 class misc2 {
 public:
 	static int runCommand(QString const &cmd, QByteArray *out);
-	static int runCommand(QString const &cmd, const QByteArray *in, QByteArray *out);
+	static int runCommand(QString const &cmd, QByteArray const *in, QByteArray *out);
 };
 
 #endif // MYPROCESS_H

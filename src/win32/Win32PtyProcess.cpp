@@ -156,7 +156,7 @@ void Win32PtyProcess::run()
 	m->hOutput = INVALID_HANDLE_VALUE;
 	m->hProcess = INVALID_HANDLE_VALUE;
 
-	emit completed();
+	emit completed(user_data);
 }
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
@@ -212,10 +212,11 @@ void Win32PtyProcess::writeInput(char const *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::start(QString const &cmdline)
+void Win32PtyProcess::start(QString const &cmdline, QVariant const &userdata)
 {
 	if (isRunning()) return;
 	m->command = cmdline;
+	this->user_data = userdata;
 	QThread::start();
 }
 

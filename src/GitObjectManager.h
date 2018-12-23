@@ -23,9 +23,9 @@ private:
 
 	QString workingDir();
 
-	static void applyDelta(const QByteArray *base, const QByteArray *delta, QByteArray *out);
-	static bool loadPackedObject(const GitPackIdxPtr &idx, QIODevice *packfile, const GitPackIdxItem *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(const GitPackIdxPtr &idx, const GitPackIdxItem *item, GitPack::Object *out);
+	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
+	static bool loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out);
+	bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes();
 	QString findObjectPath(QString const &id);

@@ -3,7 +3,7 @@
 #include "EditTagsDialog.h"
 #include "ui_EditTagsDialog.h"
 
-EditTagsDialog::EditTagsDialog(MainWindow *parent, const Git::CommitItem *commit) :
+EditTagsDialog::EditTagsDialog(MainWindow *parent, Git::CommitItem const *commit) :
 	QDialog(parent),
 	ui(new Ui::EditTagsDialog)
 {

@@ -48,7 +48,7 @@ private:
 		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
 	}
 
-	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
@@ -64,7 +64,7 @@ private:
 		}
 	}
 
-	void drawAvatar(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	void drawAvatar(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
@@ -83,7 +83,7 @@ private:
 		}
 	}
 
-	void drawDescription(QPainter *painter, const QStyleOptionViewItem &opt, const QModelIndex &index) const
+	void drawDescription(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
 	{
 		int row = index.row();
 		QList<BasicMainWindow::Label> const *labels = mainwindow()->label(row);
@@ -129,7 +129,7 @@ public:
 		: MyTableWidgetDelegate(parent)
 	{
 	}
-	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const override
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 

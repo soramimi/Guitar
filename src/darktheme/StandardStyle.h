@@ -14,7 +14,7 @@ public:
 		: QProxyStyle(0)
 	{
 	}
-	void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget = 0) const;
+	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = 0) const;
 };
 
 #endif // STANDARDSTYLE_H

@@ -10,7 +10,7 @@ MyTableWidgetDelegate::MyTableWidgetDelegate(QObject *parent)
 {
 }
 
-void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const
 {
 	QStyleOptionViewItem opt = option;
 

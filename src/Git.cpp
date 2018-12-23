@@ -163,7 +163,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 		}
 
 		if (pty) {
-			pty->start(cmd);
+			pty->start(cmd, pty->userVariant());
 			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;

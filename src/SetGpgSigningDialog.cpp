@@ -58,7 +58,7 @@ bool SetGpgSigningDialog::isRepositoryChecked() const
 	return ui->radioButton_repository->isChecked();
 }
 
-void SetGpgSigningDialog::setKey_(const gpg::Data &key)
+void SetGpgSigningDialog::setKey_(gpg::Data const &key)
 {
 	if (isGlobalChecked())     m->global_key_id = key.id;
 	if (isRepositoryChecked()) m->repository_key_id = key.id;

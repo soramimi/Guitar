@@ -8,7 +8,7 @@ struct CommitViewWindow::Private {
 	QList<Git::Diff> diff_list;
 };
 
-CommitViewWindow::CommitViewWindow(BasicMainWindow *parent, const Git::CommitItem *commit)
+CommitViewWindow::CommitViewWindow(BasicMainWindow *parent, Git::CommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitViewWindow)
 	, m(new Private)

@@ -22,7 +22,7 @@ public:
 	QString outstring();
 	QString errstring();
 
-	static void parseArgs(const std::string &cmd, std::vector<std::string> *out);
+	static void parseArgs(std::string const &cmd, std::vector<std::string> *out);
 
 	void start(QString const &command, bool use_input);
 	int wait();

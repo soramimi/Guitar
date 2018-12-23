@@ -35,7 +35,7 @@ struct CommitExploreWindow::Private {
 	TextEditorEnginePtr text_editor_engine;
 };
 
-CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, const Git::CommitItem *commit)
+CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
 	, m(new Private)

@@ -27,33 +27,33 @@ bool FileUtil::isdir(std::string const &path)
 	return f != INVALID_FILE_ATTRIBUTES && (f & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
-void FileUtil::mkdir(const std::string &dir, int /*perm*/)
+void FileUtil::mkdir(std::string const &dir, int /*perm*/)
 {
 	CreateDirectoryA(dir.c_str(), nullptr);
 }
 
-void FileUtil::rmdir(const std::string &dir)
+void FileUtil::rmdir(std::string const &dir)
 {
 	RemoveDirectoryA(dir.c_str());
 }
 
-bool FileUtil::chdir(const std::string &dir)
+bool FileUtil::chdir(std::string const &dir)
 {
 	return SetCurrentDirectoryA(dir.c_str()) != 0;
 }
 
-void FileUtil::rmfile(const std::string &path)
+void FileUtil::rmfile(std::string const &path)
 {
 	DeleteFileA(path.c_str());
 }
 
-void FileUtil::mv(const std::string &src, const std::string &dst)
+void FileUtil::mv(std::string const &src, std::string const &dst)
 {
 	MoveFileA(src.c_str(), dst.c_str());
 //	DWORD e = GetLastError();
 }
 
-void FileUtil::getdirents(const std::string &loc, std::vector<DirEnt> *out)
+void FileUtil::getdirents(std::string const &loc, std::vector<DirEnt> *out)
 {
 	out->clear();
 	std::string filter = loc / "*.*";
@@ -104,22 +104,22 @@ bool FileUtil::isdir(std::string const &path)
 	return false;
 }
 
-void FileUtil::rmdir(const std::string &dir)
+void FileUtil::rmdir(std::string const &dir)
 {
 	::rmdir(dir.c_str());
 }
 
-void FileUtil::rmfile(const std::string &path)
+void FileUtil::rmfile(std::string const &path)
 {
 	unlink(path.c_str());
 }
 
-void FileUtil::mkdir(const std::string &dir, int perm)
+void FileUtil::mkdir(std::string const &dir, int perm)
 {
 	::mkdir(dir.c_str(), perm);
 }
 
-bool FileUtil::chdir(const std::string &dir)
+bool FileUtil::chdir(std::string const &dir)
 {
 	return ::chdir(dir.c_str()) == 0;
 }
@@ -157,7 +157,7 @@ void FileUtil::getdirents(std::string const &loc, std::vector<DirEnt> *out)
 
 #endif
 
-void FileUtil::rmtree(const std::string &path)
+void FileUtil::rmtree(std::string const &path)
 {
 	std::vector<DirEnt> ents;
 	getdirents(path, &ents);

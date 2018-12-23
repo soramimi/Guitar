@@ -38,7 +38,7 @@ public:
 	void setScrollPos(int total, int value, int size);
 	void init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme);
 	void updatePixmap();
-	static QPixmap makeDiffPixmap(int width, int height, const TextDiffLineList &lines, ThemePtr theme);
+	static QPixmap makeDiffPixmap(int width, int height, TextDiffLineList const &lines, ThemePtr theme);
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *) override;

@@ -13,15 +13,15 @@ public:
 
 	static std::string getcwd();
 	static void mkdir(std::string const &dir, int perm = 0777);
-	static void rmdir(const std::string &dir);
+	static void rmdir(std::string const &dir);
 	static bool chdir(std::string const &dir);
-	static void rmfile(const std::string &path);
-	static void rmtree(const std::string &path);
-	static void mv(const std::string &src, const std::string &dst);
+	static void rmfile(std::string const &path);
+	static void rmtree(std::string const &path);
+	static void mv(std::string const &src, std::string const &dst);
 	static void getdirents(std::string const &loc, std::vector<DirEnt> *out);
-	static bool isdir(const std::string &path);
-	static std::string which(const std::string &name, std::vector<std::string> *out = nullptr);
-	static std::string normalize_path_separator(const std::string &s);
+	static bool isdir(std::string const &path);
+	static std::string which(std::string const &name, std::vector<std::string> *out = nullptr);
+	static std::string normalize_path_separator(std::string const &s);
 };
 
 #endif // FILEUTIL_H

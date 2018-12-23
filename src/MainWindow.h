@@ -39,7 +39,7 @@ private:
 	Ui::MainWindow *ui;
 
 	void updateFilesList(QString id, bool wait) override;
-	void updateFilesList(const Git::CommitItem &commit, bool wait);
+	void updateFilesList(Git::CommitItem const &commit, bool wait);
 	void updateRepositoriesList() override;
 
 	void openRepository_(GitPtr g) override;
@@ -75,21 +75,21 @@ private:
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
 	void revertCommit();
-	void cherrypick(const Git::CommitItem *commit);
-	void mergeBranch(const Git::CommitItem *commit);
-	void rebaseBranch(const Git::CommitItem *commit);
+	void cherrypick(Git::CommitItem const *commit);
+	void mergeBranch(Git::CommitItem const *commit);
+	void rebaseBranch(Git::CommitItem const *commit);
 	void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const override;
 	void startTimers();
-	void onCloneCompleted(bool success);
+	void onCloneCompleted(bool success, QVariant &userdata);
 	bool fetch(GitPtr g);
 	void setNetworkingCommandsEnabled(bool f);
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
 	void execAreYouSureYouWantToContinueConnectingDialog();
-	void deleteRemoteBranch(const Git::CommitItem *commit);
+	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id);
 	void rebaseOnto();
 	void setWatchRemoteInterval(int mins);
@@ -110,10 +110,11 @@ public:
 	void deleteTags(QStringList const &tagnames) override;
 	bool addTag(QString const &name);
 	void updateCurrentFilesList();
+	void notifyRemoteChanged(bool f);
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();
-	void onPtyProcessCompleted();
+	void onPtyProcessCompleted(QVariant userdata);
 	void onRepositoriesTreeDropped();
 	void on_action_about_triggered();
 	void on_action_clone_triggered();
@@ -180,7 +181,7 @@ private slots:
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
-	const RepositoryItem *selectedRepositoryItem() const override;
+	RepositoryItem const *selectedRepositoryItem() const override;
 	void removeSelectedRepositoryFromBookmark(bool ask) override;
 protected slots:
 	void onLogIdle();

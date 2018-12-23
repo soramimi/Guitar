@@ -16,7 +16,7 @@ public:
 	bool isRunning() const;
 	void writeInput(char const *ptr, int len);
 	int readOutput(char *ptr, int len);
-	void start(QString const &cmd);
+	void start(QString const &cmd, QVariant const &userdata);
 	bool wait(unsigned long time = ULONG_MAX);
 	void stop();
 	int getExitCode() const;

@@ -62,6 +62,8 @@ int main(int argc, char *argv[])
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);
 
+	qRegisterMetaType<RepositoryItem>("RepositoryItem");
+
 	{
 		MySettings s;
 		s.beginGroup("UI");

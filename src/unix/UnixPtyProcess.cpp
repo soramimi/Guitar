@@ -130,10 +130,11 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(QString const &cmd)
+void UnixPtyProcess::start(QString const &cmd, QVariant const &userdata)
 {
 	if (isRunning()) return;
 	m->command = cmd.toStdString();
+	user_data = userdata;
 	QThread::start();
 }
 
@@ -214,7 +215,7 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		emit completed();
+		emit completed(user_data);
 	}
 }
 

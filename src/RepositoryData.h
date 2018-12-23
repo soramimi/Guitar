@@ -2,6 +2,7 @@
 #define REPOSITORYDATA_H
 
 #include <QList>
+#include <QMetaType>
 
 enum class ServerType {
 	Standard,
@@ -13,6 +14,7 @@ struct RepositoryItem {
 	QString group;
 	QString local_dir;
 };
+Q_DECLARE_METATYPE(RepositoryItem);
 
 class RepositoryBookmark {
 public:

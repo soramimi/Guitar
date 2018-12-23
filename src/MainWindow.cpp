@@ -113,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
 
-	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed()), this, SLOT(onPtyProcessCompleted()));
+	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed(QVariant)), this, SLOT(onPtyProcessCompleted(QVariant)));
 
 	connect(this, &BasicMainWindow::remoteInfoChanged, [&](){
 		ui->lineEdit_remote->setText(currentRemoteName());
@@ -179,8 +179,13 @@ MainWindow::~MainWindow()
 }
 
 
-
-
+void MainWindow::notifyRemoteChanged(bool f)
+{
+	postUserFunctionEvent([&](QVariant const &v){
+		setRemoteChanged(v.toBool());
+		updateButton();
+	}, QVariant(f));
+}
 
 bool MainWindow::shown()
 {
@@ -276,7 +281,7 @@ bool MainWindow::event(QEvent *event)
 			}
 		}
 	}
-	return QMainWindow::event(event);
+	return BasicMainWindow::event(event);
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -2089,20 +2094,21 @@ void MainWindow::on_action_edit_settings_triggered()
 	}
 }
 
-void MainWindow::onCloneCompleted(bool success)
+void MainWindow::onCloneCompleted(bool success, QVariant &userdata)
 {
 	if (success) {
-		saveRepositoryBookmark(getTempRepoForCloneComplete());
-		setCurrentRepository(getTempRepoForCloneComplete(), false);
+		RepositoryItem r = userdata.value<RepositoryItem>();
+		saveRepositoryBookmark(r);
+		setCurrentRepository(r, false);
 		openRepository(true);
 	}
 }
 
-void MainWindow::onPtyProcessCompleted()
+void MainWindow::onPtyProcessCompleted(QVariant userdata)
 {
 	switch (getPtyCondition()) {
 	case PtyCondition::Clone:
-		onCloneCompleted(getPtyProcessOk());
+		onCloneCompleted(getPtyProcessOk(), userdata);
 		break;
 	}
 	setPtyCondition(PtyCondition::None);

@@ -37,7 +37,7 @@ public:
 	{
 	}
 
-	QList<GitHubAPI::SearchResultItem> searchRepository(const std::string &q);
+	QList<GitHubAPI::SearchResultItem> searchRepository(std::string const &q);
 };
 
 

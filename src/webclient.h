@@ -51,7 +51,7 @@ public:
 		} data;
 	public:
 		URL() = default;
-		URL(const std::string &addr);
+		URL(std::string const &addr);
 		std::string const &scheme() const { return data.scheme; }
 		std::string const &host() const { return data.host; }
 		int port() const { return data.port; }
@@ -128,7 +128,7 @@ private:
 	bool https_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
 	void get(URL const &url, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
-	static std::string header_value(std::vector<std::string> const *header, const std::string &name);
+	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);
 	void on_end_header(const std::vector<char> *vec, WebClientHandler *handler);
 	void receive_(const RequestOption &opt, std::function<int (char *, int)>, std::vector<char> *out);
@@ -155,8 +155,8 @@ public:
 	char const *content_data() const;
 
 	static void make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out);
-	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, const std::string &boundary);
-	static void make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, const std::string &boundary);
+	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, std::string const &boundary);
+	static void make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary);
 };
 
 class WebContext {

@@ -154,7 +154,7 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 	return false;
 }
 
-bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info *out)
+bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info *out)
 {
 	try {
 		Info info;
@@ -223,7 +223,7 @@ bool GitPack::seekPackedObject(QIODevice *file, const GitPackIdxItem *item, Info
 	return false;
 }
 
-bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
+bool GitPack::load(QIODevice *file, GitPackIdxItem const *item, Object *out)
 {
 	*out = Object();
 	try {
@@ -239,7 +239,7 @@ bool GitPack::load(QIODevice *file, const GitPackIdxItem *item, Object *out)
 	return false;
 }
 
-bool GitPack::load(QString const &packfile, const GitPackIdxItem *item, GitPack::Object *out)
+bool GitPack::load(QString const &packfile, GitPackIdxItem const *item, GitPack::Object *out)
 {
 	QFile file(packfile);
 	if (file.open(QFile::ReadOnly)) {

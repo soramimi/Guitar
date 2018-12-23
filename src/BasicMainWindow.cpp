@@ -35,12 +35,14 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QDirIterator>
+#include <QEvent>
 #include <QFileIconProvider>
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QTreeWidgetItem>
+#include <functional>
 #include <memory>
 
 
@@ -60,7 +62,6 @@ protected:
 		callback(g);
 	}
 };
-
 
 //
 
@@ -127,6 +128,7 @@ struct BasicMainWindow::Private {
 	bool force_fetch = false;
 
 	RepositoryItem temp_repo_for_clone_complete;
+	QVariant pty_process_completion_data;
 };
 
 BasicMainWindow::BasicMainWindow(QWidget *parent)
@@ -173,6 +175,43 @@ QString BasicMainWindow::gitCommand() const
 	return m->gcx.git_command;
 }
 
+namespace {
+
+enum UserEvent {
+	EventUserFunction = QEvent::User,
+};
+
+class UserFunctionEvent : public QEvent {
+public:
+	std::function<void(QVariant &)> func;
+	QVariant var;
+
+	explicit UserFunctionEvent(std::function<void(QVariant const &)> const &func, QVariant const &var)
+		: QEvent((QEvent::Type)EventUserFunction)
+		, func(func)
+		, var(var)
+	{
+	}
+};
+
+} // namespace
+
+bool BasicMainWindow::event(QEvent *event)
+{
+	if (event->type() == EventUserFunction) {
+		if (auto *e = dynamic_cast<UserFunctionEvent *>(event)) {
+			e->func(e->var);
+			return true;
+		}
+	}
+	return QMainWindow::event(event);
+}
+
+void BasicMainWindow::postUserFunctionEvent(const std::function<void(QVariant const &)> &fn, QVariant const &v)
+{
+	qApp->postEvent(this, new UserFunctionEvent(fn, v));
+}
+
 void BasicMainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryItem const &item){
@@ -211,7 +250,7 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 	}
 }
 
-GitPtr BasicMainWindow::git(const QString &dir) const
+GitPtr BasicMainWindow::git(QString const &dir) const
 {
 	const_cast<BasicMainWindow *>(this)->checkGitCommand();
 
@@ -246,7 +285,7 @@ QIcon BasicMainWindow::committerIcon(int row) const
 	return icon;
 }
 
-const Git::CommitItem *BasicMainWindow::commitItem(int row) const
+Git::CommitItem const *BasicMainWindow::commitItem(int row) const
 {
 	auto const &logs = getLogs();
 	if (row >= 0 && row < (int)logs.size()) {
@@ -277,7 +316,7 @@ QString BasicMainWindow::currentWorkingCopyDir() const
 	return workdir.isEmpty() ? QString() : workdir;
 }
 
-const QList<BasicMainWindow::Label> *BasicMainWindow::label(int row)
+QList<BasicMainWindow::Label> const *BasicMainWindow::label(int row)
 {
 	auto it = getLabelMap()->find(row);
 	if (it != getLabelMap()->end()) {
@@ -286,7 +325,7 @@ const QList<BasicMainWindow::Label> *BasicMainWindow::label(int row)
 	return nullptr;
 }
 
-bool BasicMainWindow::saveAs(const QString &id, const QString &dstpath)
+bool BasicMainWindow::saveAs(QString const &id, QString const &dstpath)
 {
 	if (id.startsWith(PATH_PREFIX)) {
 		return saveFileAs(id.mid(1), dstpath);
@@ -295,7 +334,7 @@ bool BasicMainWindow::saveAs(const QString &id, const QString &dstpath)
 	}
 }
 
-bool BasicMainWindow::testRemoteRepositoryValidity(const QString &url)
+bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url)
 {
 	bool ok;
 	{
@@ -325,7 +364,7 @@ void BasicMainWindow::addWorkingCopyDir(QString dir, bool open)
 	addWorkingCopyDir(dir, QString(), open);
 }
 
-bool BasicMainWindow::queryCommit(const QString &id, Git::CommitItem *out)
+bool BasicMainWindow::queryCommit(QString const &id, Git::CommitItem *out)
 {
 	*out = Git::CommitItem();
 	GitPtr g = git();
@@ -337,7 +376,7 @@ QAction *BasicMainWindow::addMenuActionProperty(QMenu *menu)
 	return menu->addAction(tr("&Property"));
 }
 
-void BasicMainWindow::checkout(QWidget *parent, const Git::CommitItem *commit)
+void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -399,19 +438,19 @@ void BasicMainWindow::jumpToCommit(QString id)
 	}
 }
 
-void BasicMainWindow::execCommitViewWindow(const Git::CommitItem *commit)
+void BasicMainWindow::execCommitViewWindow(Git::CommitItem const *commit)
 {
 	CommitViewWindow win(this, commit);
 	win.exec();
 }
 
-void BasicMainWindow::execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit)
+void BasicMainWindow::execCommitExploreWindow(QWidget *parent, Git::CommitItem const *commit)
 {
 	CommitExploreWindow win(parent, this, getObjCache(), commit);
 	win.exec();
 }
 
-void BasicMainWindow::execFileHistory(const QString &path)
+void BasicMainWindow::execFileHistory(QString const &path)
 {
 	if (path.isEmpty()) return;
 
@@ -521,12 +560,12 @@ QString BasicMainWindow::selectGpgCommand(bool save)
 	return selectCommand_("GPG", cmdlist, list, path, fn);
 }
 
-const Git::Branch &BasicMainWindow::currentBranch() const
+Git::Branch const &BasicMainWindow::currentBranch() const
 {
 	return m->current_branch;
 }
 
-void BasicMainWindow::setCurrentBranch(const Git::Branch &b)
+void BasicMainWindow::setCurrentBranch(Git::Branch const &b)
 {
 	m->current_branch = b;
 }
@@ -551,13 +590,13 @@ bool BasicMainWindow::isValidWorkingCopy(const GitPtr &g) const
 	return g && g->isValidWorkingCopy();
 }
 
-QString BasicMainWindow::determinFileType_(const QString &path, bool mime, std::function<void (const QString &, QByteArray *)> callback) const
+QString BasicMainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> callback) const
 {
 	const_cast<BasicMainWindow *>(this)->checkFileCommand();
 	return misc::determinFileType(global->file_command, path, mime, callback);
 }
 
-QString BasicMainWindow::determinFileType(const QString &path, bool mime)
+QString BasicMainWindow::determinFileType(QString const &path, bool mime)
 {
 	return determinFileType_(path, mime, [](QString const &cmd, QByteArray *ba){
 		misc2::runCommand(cmd, ba);
@@ -606,7 +645,7 @@ int BasicMainWindow::limitLogCount() const
 	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
-Git::Object BasicMainWindow::cat_file_(GitPtr g, const QString &id)
+Git::Object BasicMainWindow::cat_file_(GitPtr g, QString const &id)
 {
 	if (isValidWorkingCopy(g)) {
 		QString path_prefix = PATH_PREFIX;
@@ -626,7 +665,7 @@ Git::Object BasicMainWindow::cat_file_(GitPtr g, const QString &id)
 	return Git::Object();
 }
 
-Git::Object BasicMainWindow::cat_file(const QString &id)
+Git::Object BasicMainWindow::cat_file(QString const &id)
 {
 	return cat_file_(git(), id);
 }
@@ -639,7 +678,7 @@ QString BasicMainWindow::newTempFilePath()
 	return path;
 }
 
-QString BasicMainWindow::findFileID(GitPtr, const QString &commit_id, const QString &file)
+QString BasicMainWindow::findFileID(GitPtr, QString const &commit_id, QString const &file)
 {
 	return lookupFileID(getObjCache(), commit_id, file);
 }
@@ -738,10 +777,16 @@ BasicMainWindow::PtyCondition BasicMainWindow::getPtyCondition()
 	return m->pty_condition;
 }
 
+void BasicMainWindow::setPtyUserData(QVariant const &userdata)
+{
+	m->pty_process.setVariant(userdata);
+}
+
 void BasicMainWindow::setPtyCondition(const PtyCondition &ptyCondition)
 {
 	m->pty_condition = ptyCondition;
 }
+
 
 PtyProcess *BasicMainWindow::getPtyProcess()
 {
@@ -768,7 +813,7 @@ QList<RepositoryItem> *BasicMainWindow::getReposPtr()
 	return &m->repos;
 }
 
-void BasicMainWindow::setCurrentRemoteName(const QString &name)
+void BasicMainWindow::setCurrentRemoteName(QString const &name)
 {
 	m->current_remote_name = name;
 }
@@ -818,7 +863,7 @@ QString BasicMainWindow::getRepositoryFilterText() const
 	return m->repository_filter_text;
 }
 
-void BasicMainWindow::setRepositoryFilterText(const QString &text)
+void BasicMainWindow::setRepositoryFilterText(QString const &text)
 {
 	m->repository_filter_text = text;
 }
@@ -895,14 +940,19 @@ QString BasicMainWindow::getHeadId() const
 	return m->head_id;
 }
 
-void BasicMainWindow::setHeadId(const QString &head_id)
+void BasicMainWindow::setHeadId(QString const &head_id)
 {
 	m->head_id = head_id;
 }
 
-const RepositoryItem &BasicMainWindow::getTempRepoForCloneComplete() const
+void BasicMainWindow::setPtyProcessCompletionData(QVariant const &value)
 {
-	return m->temp_repo_for_clone_complete;
+	m->pty_process_completion_data = value;
+}
+
+QVariant const &BasicMainWindow::getTempRepoForCloneCompleteV() const
+{
+	return m->pty_process_completion_data;
 }
 
 bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
@@ -912,7 +962,7 @@ bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
 	return true;
 }
 
-QString BasicMainWindow::selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, std::function<void (const QString &)> const &callback)
+QString BasicMainWindow::selectCommand_(QString const &cmdname, QStringList const &cmdfiles, QStringList const &list, QString path, std::function<void (QString const &)> const &callback)
 {
 	QString window_title = tr("Select %1 command");
 	window_title = window_title.arg(cmdfiles.front());
@@ -931,7 +981,7 @@ QString BasicMainWindow::selectCommand_(const QString &cmdname, const QStringLis
 	return QString();
 }
 
-QString BasicMainWindow::selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, QString const &path, std::function<void (const QString &)> const &callback)
+QString BasicMainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString const &path, std::function<void (QString const &)> const &callback)
 {
 	QStringList cmdfiles;
 	cmdfiles.push_back(cmdfile);
@@ -964,7 +1014,7 @@ bool BasicMainWindow::checkFileCommand()
 	}
 }
 
-bool BasicMainWindow::checkExecutable(const QString &path)
+bool BasicMainWindow::checkExecutable(QString const &path)
 {
 	if (QFileInfo(path).isExecutable()) {
 		return true;
@@ -975,7 +1025,7 @@ bool BasicMainWindow::checkExecutable(const QString &path)
 	return false;
 }
 
-void BasicMainWindow::internalSetCommand(const QString &path, bool save, const QString &name, QString *out)
+void BasicMainWindow::internalSetCommand(QString const &path, bool save, QString const &name, QString *out)
 {
 	if (!path.isEmpty() && checkExecutable(path)) {
 		if (save) {
@@ -990,7 +1040,7 @@ void BasicMainWindow::internalSetCommand(const QString &path, bool save, const Q
 	}
 }
 
-QStringList BasicMainWindow::whichCommand_(const QString &cmdfile1, const QString &cmdfile2)
+QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString const &cmdfile2)
 {
 	QStringList list;
 
@@ -1017,7 +1067,7 @@ void BasicMainWindow::emitWriteLog(QByteArray ba)
 	emit signalWriteLog(ba);
 }
 
-void BasicMainWindow::setWindowTitle_(const Git::User &user)
+void BasicMainWindow::setWindowTitle_(Git::User const &user)
 {
 	if (user.name.isEmpty() && user.email.isEmpty()) {
 		setWindowTitle(qApp->applicationName());
@@ -1043,7 +1093,7 @@ bool BasicMainWindow::execSetGlobalUserDialog()
 	return false;
 }
 
-bool BasicMainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpath)
+bool BasicMainWindow::saveByteArrayAs(const QByteArray &ba, QString const &dstpath)
 {
 	QFile file(dstpath);
 	if (file.open(QFile::WriteOnly)) {
@@ -1057,7 +1107,7 @@ bool BasicMainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpa
 	return false;
 }
 
-bool BasicMainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
+bool BasicMainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 {
 	QFile f(srcpath);
 	if (f.open(QFile::ReadOnly)) {
@@ -1073,7 +1123,7 @@ bool BasicMainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
 	return false;
 }
 
-bool BasicMainWindow::saveBlobAs(const QString &id, const QString &dstpath)
+bool BasicMainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 {
 	Git::Object obj = cat_file(id);
 	if (!obj.content.isEmpty()) {
@@ -1100,7 +1150,7 @@ void BasicMainWindow::revertAllFiles()
 	}
 }
 
-void BasicMainWindow::deleteTags(const Git::CommitItem &commit)
+void BasicMainWindow::deleteTags(Git::CommitItem const &commit)
 {
 	auto it = ptrTagMap()->find(commit.commit_id);
 	if (it != ptrTagMap()->end()) {
@@ -1128,7 +1178,7 @@ QStringList BasicMainWindow::remotes() const
 	return m->remotes;
 }
 
-QList<Git::Branch> BasicMainWindow::findBranch(const QString &id)
+QList<Git::Branch> BasicMainWindow::findBranch(QString const &id)
 {
 	auto it = branchMapRef().find(id);
 	if (it != branchMapRef().end()) {
@@ -1137,7 +1187,7 @@ QList<Git::Branch> BasicMainWindow::findBranch(const QString &id)
 	return QList<Git::Branch>();
 }
 
-QString BasicMainWindow::saveAsTemp(const QString &id)
+QString BasicMainWindow::saveAsTemp(QString const &id)
 {
 	QString path = newTempFilePath();
 	saveAs(id, path);
@@ -1161,12 +1211,12 @@ void BasicMainWindow::deleteTempFiles()
 	}
 }
 
-QString BasicMainWindow::getCommitIdFromTag(const QString &tag)
+QString BasicMainWindow::getCommitIdFromTag(QString const &tag)
 {
 	return getObjCache()->getCommitIdFromTag(tag);
 }
 
-bool BasicMainWindow::isValidRemoteURL(const QString &url)
+bool BasicMainWindow::isValidRemoteURL(QString const &url)
 {
 	if (url.indexOf('\"') >= 0) {
 		return false;
@@ -1242,7 +1292,7 @@ void BasicMainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 	}
 }
 
-QString BasicMainWindow::makeRepositoryName(const QString &loc)
+QString BasicMainWindow::makeRepositoryName(QString const &loc)
 {
 	int i = loc.lastIndexOf('/');
 	int j = loc.lastIndexOf('\\');
@@ -1276,7 +1326,7 @@ void BasicMainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
-bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> callback, const RepositoryItem *repo)
+bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> callback, RepositoryItem const *repo)
 {
 	if (!repo) {
 		repo = &m->current_repo;
@@ -1370,7 +1420,7 @@ void BasicMainWindow::initNetworking()
 	webContext()->set_https_proxy(https_proxy);
 }
 
-QString BasicMainWindow::abbrevCommitID(const Git::CommitItem &commit)
+QString BasicMainWindow::abbrevCommitID(Git::CommitItem const &commit)
 {
 	return commit.commit_id.mid(0, 7);
 }
@@ -1455,7 +1505,7 @@ void BasicMainWindow::execRepositoryPropertyDialog(QString workdir, bool open_re
 	}
 }
 
-void BasicMainWindow::execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame)
+void BasicMainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
 {
 	SetUserDialog dlg(this, global_user, repo_user, reponame);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -1471,17 +1521,17 @@ void BasicMainWindow::execSetUserDialog(const Git::User &global_user, const Git:
 	}
 }
 
-void BasicMainWindow::setGitCommand(const QString &path, bool save)
+void BasicMainWindow::setGitCommand(QString const &path, bool save)
 {
 	internalSetCommand(path, save, "GitCommand", &m->gcx.git_command);
 }
 
-void BasicMainWindow::setFileCommand(const QString &path, bool save)
+void BasicMainWindow::setFileCommand(QString const &path, bool save)
 {
 	internalSetCommand(path, save, "FileCommand", &global->file_command);
 }
 
-void BasicMainWindow::setGpgCommand(const QString &path, bool save)
+void BasicMainWindow::setGpgCommand(QString const &path, bool save)
 {
 	internalSetCommand(path, save, "GpgCommand", &global->gpg_command);
 	if (!global->gpg_command.isEmpty()) {
@@ -1624,7 +1674,7 @@ bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 	return true; // success
 }
 
-void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const QString &, QString, int)> &add_item)
+void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item)
 {
 	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
 		Git::Diff const &diff = diff_list->at(idiff);
@@ -1849,15 +1899,16 @@ void BasicMainWindow::clone()
 				QDir(base).mkpath(sub);
 			}
 
-			m->temp_repo_for_clone_complete.local_dir = dir;
-			m->temp_repo_for_clone_complete.local_dir.replace('\\', '/');
-			m->temp_repo_for_clone_complete.name = makeRepositoryName(dir);
+			RepositoryItem data;
+			data.local_dir = dir;
+			data.local_dir.replace('\\', '/');
+			data.name = makeRepositoryName(dir);
 
 			GitPtr g = git(QString());
+			setPtyUserData(QVariant::fromValue<RepositoryItem>(data));
 			setPtyCondition(PtyCondition::Clone);
 			setPtyProcessOk(true);
 			g->clone(clone_data, getPtyProcess());
-
 		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
 			addWorkingCopyDir(dir, true);
 		}
@@ -1926,7 +1977,7 @@ void BasicMainWindow::commitAmend()
 	commit(true);
 }
 
-void BasicMainWindow::pushSetUpstream(const QString &remote, const QString &branch)
+void BasicMainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 {
 	if (remote.isEmpty()) return;
 	if (branch.isEmpty()) return;
@@ -2050,7 +2101,7 @@ bool isValidDir(QString const &dir)
 #include <QProcess>
 #endif
 
-void BasicMainWindow::openTerminal(const RepositoryItem *repo)
+void BasicMainWindow::openTerminal(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -2064,7 +2115,7 @@ void BasicMainWindow::openTerminal(const RepositoryItem *repo)
 	}, repo);
 }
 
-void BasicMainWindow::openExplorer(const RepositoryItem *repo)
+void BasicMainWindow::openExplorer(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -2078,13 +2129,13 @@ void BasicMainWindow::openExplorer(const RepositoryItem *repo)
 	}, repo);
 }
 
-const Git::CommitItem *BasicMainWindow::selectedCommitItem() const
+Git::CommitItem const *BasicMainWindow::selectedCommitItem() const
 {
 	int i = selectedLogIndex();
 	return commitItem(i);
 }
 
-void BasicMainWindow::deleteBranch(const Git::CommitItem *commit)
+void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -2128,7 +2179,7 @@ void BasicMainWindow::deleteBranch()
 	deleteBranch(selectedCommitItem());
 }
 
-bool BasicMainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &command)
+bool BasicMainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
 {
 	QString message = tr("Are you sure you want to run the following command ?");
 	QString text = "%1\n\n%2";
@@ -2136,12 +2187,12 @@ bool BasicMainWindow::askAreYouSureYouWantToRun(const QString &title, const QStr
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
-bool BasicMainWindow::editFile(const QString &path, const QString &title)
+bool BasicMainWindow::editFile(QString const &path, QString const &title)
 {
 	return TextEditDialog::editFile(this, path, title);
 }
 
-void BasicMainWindow::resetFile(const QStringList &paths)
+void BasicMainWindow::resetFile(QStringList const &paths)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2186,7 +2237,7 @@ void BasicMainWindow::saveRepositoryBookmark(RepositoryItem item)
 	updateRepositoriesList();
 }
 
-void BasicMainWindow::setCurrentRepository(const RepositoryItem &repo, bool clear_authentication)
+void BasicMainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
 {
 	if (clear_authentication) {
 		clearAuthentication();
@@ -2194,7 +2245,7 @@ void BasicMainWindow::setCurrentRepository(const RepositoryItem &repo, bool clea
 	m->current_repo = repo;
 }
 
-void BasicMainWindow::internalDeleteTags(const QStringList &tagnames)
+void BasicMainWindow::internalDeleteTags(QStringList const &tagnames)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2208,7 +2259,7 @@ void BasicMainWindow::internalDeleteTags(const QStringList &tagnames)
 	}
 }
 
-bool BasicMainWindow::internalAddTag(const QString &name)
+bool BasicMainWindow::internalAddTag(QString const &name)
 {
 	if (name.isEmpty()) return false;
 
@@ -2272,7 +2323,7 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 	return items;
 }
 
-int BasicMainWindow::rowFromCommitId(const QString &id)
+int BasicMainWindow::rowFromCommitId(QString const &id)
 {
 	auto const &logs = getLogs();
 	for (size_t i = 0; i < logs.size(); i++) {
@@ -2284,7 +2335,7 @@ int BasicMainWindow::rowFromCommitId(const QString &id)
 	return -1;
 }
 
-void BasicMainWindow::createRepository(const QString &dir)
+void BasicMainWindow::createRepository(QString const &dir)
 {
 	CreateRepositoryDialog dlg(this, dir);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -2321,7 +2372,7 @@ void BasicMainWindow::setLogEnabled(GitPtr g, bool f)
 	}
 }
 
-QList<Git::Tag> BasicMainWindow::findTag(const QString &id)
+QList<Git::Tag> BasicMainWindow::findTag(QString const &id)
 {
 	auto it = ptrTagMap()->find(id);
 	if (it != ptrTagMap()->end()) {
@@ -2330,7 +2381,7 @@ QList<Git::Tag> BasicMainWindow::findTag(const QString &id)
 	return QList<Git::Tag>();
 }
 
-void BasicMainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
+void BasicMainWindow::sshSetPassphrase(std::string const &user, std::string const &pass)
 {
 	m->ssh_passphrase_user = user;
 	m->ssh_passphrase_pass = pass;
@@ -2346,7 +2397,7 @@ std::string BasicMainWindow::sshPassphrasePass() const
 	return m->ssh_passphrase_pass;
 }
 
-void BasicMainWindow::httpSetAuthentication(const std::string &user, const std::string &pass)
+void BasicMainWindow::httpSetAuthentication(std::string const &user, std::string const &pass)
 {
 	m->http_uid = user;
 	m->http_pwd = pass;
@@ -2361,4 +2412,3 @@ std::string BasicMainWindow::httpAuthenticationPass() const
 {
 	return m->http_uid;
 }
-

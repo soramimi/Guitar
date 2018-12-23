@@ -21,7 +21,7 @@ private:
 	void setAvatar(QIcon icon);
 	BasicMainWindow *mainwindow();
 public:
-	explicit SetUserDialog(BasicMainWindow *parent, const Git::User &global_user, const Git::User &repo_user, QString const &repo);
+	explicit SetUserDialog(BasicMainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo);
 	~SetUserDialog() override;
 
 	bool isGlobalChecked() const;

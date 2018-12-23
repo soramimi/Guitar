@@ -22,7 +22,7 @@ public:
 	bool isRunning() const;
 	int readOutput(char *dstptr, int maxlen);
 	void writeInput(char const *ptr, int len);
-	void start(QString const &cmdline);
+	void start(QString const &cmdline, QVariant const &userdata);
 	bool wait(unsigned long time = ULONG_MAX);
 	void stop();
 	std::vector<char> const *result() const;

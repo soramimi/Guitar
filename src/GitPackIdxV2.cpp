@@ -109,7 +109,7 @@ bool GitPackIdxV2::parse(QString const &idxfile)
 	return false;
 }
 
-const GitPackIdxItem *GitPackIdxV2::item(QString const &id) const
+GitPackIdxItem const *GitPackIdxV2::item(QString const &id) const
 {
 	for (const auto & i : d.item_list) {
 		if (i.id == id) {
@@ -119,7 +119,7 @@ const GitPackIdxItem *GitPackIdxV2::item(QString const &id) const
 	return nullptr;
 }
 
-const GitPackIdxItem *GitPackIdxV2::item(size_t offset) const
+GitPackIdxItem const *GitPackIdxV2::item(size_t offset) const
 {
 	for (GitPackIdxItem const &item : d.item_list) {
 		if (item.offset == offset) return &item;

@@ -2449,7 +2449,7 @@ void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_
 	}
 }
 
-void AbstractCharacterBasedApplication::write(const std::string &text)
+void AbstractCharacterBasedApplication::write(std::string const &text)
 {
 	if (!text.empty()) {
 		write(text.c_str(), text.size(), false);

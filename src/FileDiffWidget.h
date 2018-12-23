@@ -106,7 +106,7 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const Git::Diff &diff, const TextDiffLineList &left, const TextDiffLineList &right);
+	void setDiffText(const Git::Diff &diff, TextDiffLineList const &left, TextDiffLineList const &right);
 
 
 	void setLeftOnly(QByteArray const &ba, const Git::Diff &diff);

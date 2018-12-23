@@ -49,7 +49,7 @@ void FileDiffSliderWidget::updatePixmap()
 	m->right_pixmap = makeDiffPixmap(DiffPane::Right, 1, height());
 }
 
-QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, const TextDiffLineList &lines, ThemePtr theme)
+QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLineList const &lines, ThemePtr theme)
 {
 	auto MakePixmap = [&](TextDiffLineList const &lines, int w, int h){
 		const int scale = 1;

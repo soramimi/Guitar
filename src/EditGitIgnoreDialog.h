@@ -14,7 +14,7 @@ class EditGitIgnoreDialog : public QDialog {
 private:
 	QString gitignore_path;
 public:
-	explicit EditGitIgnoreDialog(MainWindow *parent, const QString &gitignore_path, QString const &file);
+	explicit EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file);
 	~EditGitIgnoreDialog() override;
 
 	QString text() const;
