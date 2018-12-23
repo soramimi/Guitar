@@ -17,7 +17,7 @@ private:
 	struct Private;
 	Private *m;
 
-	typedef std::shared_ptr<Git> GitPtr;
+	using GitPtr = std::shared_ptr<Git>;
 public:
 	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
 	~CloneDialog() override;

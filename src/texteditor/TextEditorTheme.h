@@ -6,7 +6,7 @@
 
 class TextEditorTheme;
 
-typedef std::shared_ptr<TextEditorTheme> TextEditorThemePtr;
+using TextEditorThemePtr = std::shared_ptr<TextEditorTheme>;
 
 class TextEditorTheme {
 public:

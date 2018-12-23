@@ -21,7 +21,7 @@ typedef SOCKET socket_t;
 #include <net/if.h>
 #include <netdb.h>
 #define closesocket(S) ::close(S)
-typedef int socket_t;
+using socket_t = int;
 #define INVALID_SOCKET (-1)
 #define SOCKET_ERROR (-1)
 #define stricmp(A, B) strcasecmp(A, B)
@@ -555,12 +555,11 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 {
 #if USE_OPENSSL
 
-	if (!m->webcx || !m->webcx->m->ctx) {
+	auto *sslctx = m->webcx->m->ctx;
+	if (!m->webcx || !sslctx) {
 		output_debug_string("SSL context is null.\n");
 		return false;
 	}
-
-	auto sslctx = [&](){ return m->webcx->m->ctx; };
 
 	clear_error();
 	out->clear();
@@ -643,7 +642,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 			}
 		}
 
-		ssl = SSL_new(sslctx());
+		ssl = SSL_new(sslctx);
 		if (!ssl) {
 			throw Error(get_ssl_error());
 		}
