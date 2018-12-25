@@ -4,9 +4,15 @@ $product_name = "Guitar"
 $copyright_year = 2018
 $version_a = 0
 $version_b = 9
-$version_c = 1
+$version_c = 2
 $version_d = 0
 
+# v0.9.2 2018-11-06
+#	* 定期的リモート監視機能
+#	* ソースコードリファクタリング
+#	* 安定性向上
+#	* cmake対応
+#
 # v0.9.1 2018-11-06
 #	* support ssh key with passphrase
 #
