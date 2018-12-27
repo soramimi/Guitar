@@ -281,6 +281,8 @@ protected:
 	void setPtyProcessCompletionData(QVariant const &value);
 	QVariant const &getTempRepoForCloneCompleteV() const;
 
+	void updateCommitGraph();
+	bool fetch(GitPtr g, bool prune);
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
 	virtual void updateFilesList(QString id, bool wait) = 0;

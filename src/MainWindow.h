@@ -48,7 +48,7 @@ private:
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> fn);
-	void updateCommitGraph();
+//	void updateCommitGraph();
 	void showFileList(FilesListType files_list_type);
 
 	void clearLog();
@@ -83,7 +83,7 @@ private:
 	bool isRemoteOnline() const override;
 	void startTimers();
 	void onCloneCompleted(bool success, QVariant &userdata);
-	bool fetch(GitPtr g);
+//	bool fetch(GitPtr g, bool prune);
 	void setNetworkingCommandsEnabled(bool f);
 	void blame(QListWidgetItem *item);
 	void blame();
@@ -129,9 +129,11 @@ private slots:
 	void on_action_edit_tags_triggered();
 	void on_action_exit_triggered();
 	void on_action_fetch_triggered();
+	void on_action_fetch_prune_triggered();
 	void on_action_open_existing_working_copy_triggered();
 	void on_action_pull_triggered();
 	void on_action_push_triggered();
+	void on_action_push_u_triggered();
 	void on_action_rebase_onto_triggered();
 	void on_action_reflog_triggered();
 	void on_action_repo_checkout_triggered();
@@ -177,7 +179,7 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
-	void on_action_push_u_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

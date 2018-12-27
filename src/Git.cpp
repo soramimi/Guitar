@@ -966,9 +966,13 @@ void Git::pull(AbstractPtyProcess *pty)
 	git("pull", true, false, pty);
 }
 
-void Git::fetch(AbstractPtyProcess *pty)
+void Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	git("fetch", true, false, pty);
+	QString cmd = "fetch";
+	if (prune) {
+		cmd += " --prune";
+	}
+	git(cmd, true, false, pty);
 }
 
 void Git::rebaseOnto(QString const &newbase, QString const &upstream, QString const &branch, AbstractPtyProcess *pty)

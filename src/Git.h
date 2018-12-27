@@ -365,7 +365,7 @@ public:
 	void unstage(QStringList const &paths);
 	void pull(AbstractPtyProcess *pty = nullptr);
 
-	void fetch(AbstractPtyProcess *pty = nullptr);
+	void fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
 
 	QList<Branch> branches();
 
