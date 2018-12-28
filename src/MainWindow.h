@@ -90,7 +90,7 @@ private:
 	QListWidgetItem *currentFileItem() const;
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void deleteRemoteBranch(Git::CommitItem const *commit);
-	QStringList remoteBranches(QString const &id);
+	QStringList remoteBranches(QString const &id, QStringList *all);
 	void rebaseOnto();
 	void setWatchRemoteInterval(int mins);
 protected:

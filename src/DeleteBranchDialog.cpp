@@ -21,7 +21,7 @@ DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, bool remote, QStringList
 
 	if (isRemote()) {
 		setWindowTitle(tr("Delete Remote Branch"));
-		ui->checkBox_all_branches->setVisible(false);
+//		ui->checkBox_all_branches->setVisible(false);
 	}
 
 	m->all_local_branch_names = all_local_branch_names;

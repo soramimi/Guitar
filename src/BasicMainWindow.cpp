@@ -2356,7 +2356,7 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QStringList all_local_branch_names;
+	QStringList all_branch_names;
 	QStringList current_local_branch_names;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches);
@@ -2366,11 +2366,11 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 			if (item.id == commit->commit_id) {
 				current_local_branch_names.push_back(item.name);
 			}
-			all_local_branch_names.push_back(item.name);
+			all_branch_names.push_back(item.name);
 		}
 	}
 
-	DeleteBranchDialog dlg(this, false, all_local_branch_names, current_local_branch_names);
+	DeleteBranchDialog dlg(this, false, all_branch_names, current_local_branch_names);
 	if (dlg.exec() == QDialog::Accepted) {
 		setLogEnabled(g, true);
 		QStringList names = dlg.selectedBranchNames();
@@ -2391,6 +2391,55 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 void BasicMainWindow::deleteBranch()
 {
 	deleteBranch(selectedCommitItem());
+}
+
+QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
+{
+	if (all) all->clear();
+
+	QStringList list;
+
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
+		JumpDialog::sort(&named_commits);
+		for (NamedCommitItem const &item : named_commits) {
+			if (item.id == id && !item.remote.isEmpty()) {
+				list.push_back(item.remote / item.name);
+			}
+			if (all && !item.remote.isEmpty() && item.name != "HEAD") {
+				all->push_back(item.remote / item.name);
+			}
+		}
+	}
+
+	return list;
+}
+
+void MainWindow::deleteRemoteBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QStringList all_branches;
+	QStringList remote_branches = remoteBranches(commit->commit_id, &all_branches);
+	if (remote_branches.isEmpty()) return;
+
+	DeleteBranchDialog dlg(this, true, all_branches, remote_branches);
+	if (dlg.exec() == QDialog::Accepted) {
+		setLogEnabled(g, true);
+		QStringList names = dlg.selectedBranchNames();
+		for (QString const &name : names) {
+			int i = name.indexOf('/');
+			if (i > 0) {
+				QString remote = name.mid(0, i);
+				QString branch = ':' + name.mid(i + 1);
+				pushSetUpstream(remote, branch);
+			}
+		}
+	}
 }
 
 bool BasicMainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
@@ -2624,5 +2673,5 @@ std::string BasicMainWindow::httpAuthenticationUser() const
 
 std::string BasicMainWindow::httpAuthenticationPass() const
 {
-	return m->http_uid;
+	return m->http_pwd;
 }
