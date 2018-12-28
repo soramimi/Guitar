@@ -366,8 +366,7 @@ FORMS    += \
     src/WelcomeWizardDialog.ui
 
 RESOURCES += \
-    src/resources/resources.qrc \
-    resources.qrc
+	src/resources/resources.qrc
 
 unix {
 	SOURCES += \
