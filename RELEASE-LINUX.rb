@@ -30,7 +30,7 @@ FileUtils.mkpath($dstdir)
 
 FileUtils.cp("_bin/#{$product_name}", $dstdir)
 `strip #{$dstdir}/#{$product_name}`
-FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
+#FileUtils.cp("#{$product_name}_ja.qm", $dstdir)
 
 if $qt != ""
 

@@ -967,14 +967,6 @@
     </message>
 </context>
 <context>
-    <name>FileViewWidget</name>
-    <message>
-        <location filename="../../FileViewWidget.cpp" line="31"/>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-</context>
-<context>
     <name>InputNewTagDialog</name>
     <message>
         <location filename="../../InputNewTagDialog.ui" line="14"/>

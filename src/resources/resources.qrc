@@ -39,8 +39,6 @@
         <file>image/signature-bad.png</file>
         <file>image/signature-dubious.png</file>
         <file>image/signature-good.png</file>
-    </qresource>
-    <qresource prefix="/translations">
-        <file>translations/ja_JPN.qm</file>
+		<file>translations/Guitar_ja.qm</file>
     </qresource>
 </RCC>

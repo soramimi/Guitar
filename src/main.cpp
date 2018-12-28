@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 #if defined(Q_OS_MACX)
 			QString path = "../Resources/Guitar_" + global->language_id;
 #else
-			QString path = "Guitar_" + global->language_id;
+			QString path = ":/translations/Guitar_" + global->language_id;
 #endif
 			translator.load(path, QApplication::applicationDirPath());
 			QApplication::installTranslator(&translator);

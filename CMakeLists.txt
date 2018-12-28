@@ -346,7 +346,7 @@ set(Guitar_RESOURCES
     )
 
 set(Guitar_TRANSLATIONS
-    src/resources/translations/ja_JPN.ts
+	src/resources/translations/Guitar_ja.ts
     )
 
 qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
