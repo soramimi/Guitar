@@ -20,7 +20,7 @@ FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
 FileUtils.cp("_bin/#{$product_name}.exe", $dstdir)
-FileUtils.cp("src/resources/translations/Guitar_ja.qm", $dstdir)
+#FileUtils.cp("src/resources/translations/Guitar_ja.qm", $dstdir)
 
 FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)
 FileUtils.cp($openssl + "/bin/ssleay32.dll", $dstdir)
