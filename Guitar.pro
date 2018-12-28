@@ -10,7 +10,7 @@ CONFIG += c++11
 
 DESTDIR = $$PWD/_bin
 
-TRANSLATIONS = Guitar_ja.ts
+TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 
 DEFINES += APP_GUITAR
 

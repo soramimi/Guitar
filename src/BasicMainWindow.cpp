@@ -2379,7 +2379,7 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 			if (g->git(QString("branch -D \"%1\"").arg(name))) {
 				count++;
 			} else {
-				writeLog(tr("Failed to delete the branch '%1'\n").arg(name));
+				writeLog(tr("Failed to delete the branch '%1'").arg(name) + '\n');
 			}
 		}
 		if (count > 0) {
