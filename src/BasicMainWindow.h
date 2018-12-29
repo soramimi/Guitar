@@ -331,6 +331,7 @@ public:
 	QString selectGpgCommand(bool save);
 	Git::Branch const &currentBranch() const;
 	void setCurrentBranch(Git::Branch const &b);
+	const RepositoryItem &currentRepository() const;
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;

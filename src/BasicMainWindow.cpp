@@ -570,9 +570,14 @@ void BasicMainWindow::setCurrentBranch(Git::Branch const &b)
 	m->current_branch = b;
 }
 
+RepositoryItem const &BasicMainWindow::currentRepository() const
+{
+	return m->current_repo;
+}
+
 QString BasicMainWindow::currentRepositoryName() const
 {
-	return m->current_repo.name;
+	return currentRepository().name;
 }
 
 QString BasicMainWindow::currentRemoteName() const

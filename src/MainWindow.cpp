@@ -2571,7 +2571,18 @@ void MainWindow::on_action_rebase_onto_triggered()
 	rebaseOnto();
 }
 
+void MainWindow::on_action_terminal_triggered()
+{
+	auto const *repo = &currentRepository();
+	openTerminal(repo);
+}
+
+void MainWindow::on_action_explorer_triggered()
+{
+	auto const *repo = &currentRepository();
+	openExplorer(repo);
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
-

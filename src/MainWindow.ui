@@ -1043,6 +1043,9 @@
     <addaction name="separator"/>
     <addaction name="action_clone"/>
     <addaction name="separator"/>
+    <addaction name="action_terminal"/>
+    <addaction name="action_explorer"/>
+    <addaction name="separator"/>
     <addaction name="action_repository_property"/>
    </widget>
    <widget class="QMenu" name="menuExperiment">
@@ -1455,6 +1458,24 @@
   <action name="action_fetch_prune">
    <property name="text">
     <string>Fetch --prune</string>
+   </property>
+  </action>
+  <action name="action_terminal">
+   <property name="icon">
+    <iconset resource="resources/resources.qrc">
+     <normaloff>:/image/terminal.svg</normaloff>:/image/terminal.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Terminal</string>
+   </property>
+  </action>
+  <action name="action_explorer">
+   <property name="icon">
+    <iconset resource="resources/resources.qrc">
+     <normaloff>:/image/explorer.svg</normaloff>:/image/explorer.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Explorer</string>
    </property>
   </action>
  </widget>

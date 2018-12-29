@@ -180,6 +180,10 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
 
+	void on_action_terminal_triggered();
+
+	void on_action_explorer_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
