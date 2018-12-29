@@ -13,4 +13,3 @@ build/
 src/version.h
 *.autosave
 src/version.h
-src/resources/translations/Guitar_*.qm
