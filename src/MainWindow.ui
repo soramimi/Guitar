@@ -1027,8 +1027,17 @@
     <property name="title">
      <string>&amp;Repository</string>
     </property>
+    <widget class="QMenu" name="menuDestructive">
+     <property name="title">
+      <string>Destructive</string>
+     </property>
+     <addaction name="action_fetch_prune"/>
+     <addaction name="action_reset_HEAD_1"/>
+     <addaction name="separator"/>
+     <addaction name="action_reset_hard"/>
+     <addaction name="action_clean_df"/>
+    </widget>
     <addaction name="action_fetch"/>
-    <addaction name="action_fetch_prune"/>
     <addaction name="action_commit"/>
     <addaction name="action_pull"/>
     <addaction name="action_push"/>
@@ -1040,6 +1049,7 @@
     <addaction name="action_delete_remote_branch"/>
     <addaction name="action_edit_tags"/>
     <addaction name="action_reflog"/>
+    <addaction name="menuDestructive"/>
     <addaction name="separator"/>
     <addaction name="action_clone"/>
     <addaction name="separator"/>
@@ -1054,7 +1064,6 @@
     </property>
     <addaction name="action_test"/>
     <addaction name="action_tag_push_all"/>
-    <addaction name="action_reset_HEAD_1"/>
     <addaction name="action_rebase_onto"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1402,7 +1411,10 @@
   </action>
   <action name="action_reset_HEAD_1">
    <property name="text">
-    <string>reset HEAD~1</string>
+    <string>Reset HEAD~1</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset HEAD~1</string>
    </property>
   </action>
   <action name="action_create_a_repository">
@@ -1476,6 +1488,16 @@
    </property>
    <property name="text">
     <string>Explorer</string>
+   </property>
+  </action>
+  <action name="action_clean_df">
+   <property name="text">
+    <string>Clean -df</string>
+   </property>
+  </action>
+  <action name="action_reset_hard">
+   <property name="text">
+    <string>Reset --hard</string>
    </property>
   </action>
  </widget>

@@ -430,6 +430,8 @@ public:
 	void setUser(User const&user, bool global);
 
 	bool reset_head1();
+	bool reset_hard();
+	bool clean_df();
 	void push_u(QString const &remote, QString const &branch, AbstractPtyProcess *pty);
 	QString objectType(QString const &id);
 	bool rm_cached(QString const &file);

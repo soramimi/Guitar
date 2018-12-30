@@ -184,6 +184,10 @@ private slots:
 
 	void on_action_explorer_triggered();
 
+	void on_action_clean_df_triggered();
+
+	void on_action_reset_hard_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

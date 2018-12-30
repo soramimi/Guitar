@@ -1061,6 +1061,16 @@ bool Git::reset_head1()
 	return git("reset HEAD~1");
 }
 
+bool Git::reset_hard()
+{
+	return git("reset --hard");
+}
+
+bool Git::clean_df()
+{
+	return git("clean -df");
+}
+
 bool Git::rm_cached(QString const &file)
 {
 	QString cmd = "rm --cached \"%1\"";

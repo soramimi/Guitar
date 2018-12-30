@@ -2583,6 +2583,26 @@ void MainWindow::on_action_explorer_triggered()
 	openExplorer(repo);
 }
 
+void MainWindow::on_action_reset_hard_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->reset_hard();
+	openRepository(false);
+}
+
+void MainWindow::on_action_clean_df_triggered()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->clean_df();
+	openRepository(false);
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
+
+
