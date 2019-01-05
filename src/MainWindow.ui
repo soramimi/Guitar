@@ -1042,6 +1042,7 @@
     <addaction name="action_pull"/>
     <addaction name="action_push"/>
     <addaction name="action_push_u"/>
+    <addaction name="action_tag_push_all"/>
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
@@ -1058,21 +1059,12 @@
     <addaction name="separator"/>
     <addaction name="action_repository_property"/>
    </widget>
-   <widget class="QMenu" name="menuExperiment">
-    <property name="title">
-     <string>Experiment</string>
-    </property>
-    <addaction name="action_test"/>
-    <addaction name="action_tag_push_all"/>
-    <addaction name="action_rebase_onto"/>
-   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Repository"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
-   <addaction name="menuExperiment"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="dockWidget_log">

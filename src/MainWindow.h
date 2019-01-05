@@ -91,7 +91,6 @@ private:
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id, QStringList *all);
-	void rebaseOnto();
 	void setWatchRemoteInterval(int mins);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -134,7 +133,6 @@ private slots:
 	void on_action_pull_triggered();
 	void on_action_push_triggered();
 	void on_action_push_u_triggered();
-	void on_action_rebase_onto_triggered();
 	void on_action_reflog_triggered();
 	void on_action_repo_checkout_triggered();
 	void on_action_repo_jump_triggered();

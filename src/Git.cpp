@@ -975,13 +975,6 @@ void Git::fetch(AbstractPtyProcess *pty, bool prune)
 	git(cmd, true, false, pty);
 }
 
-void Git::rebaseOnto(QString const &newbase, QString const &upstream, QString const &branch, AbstractPtyProcess *pty)
-{
-	QString cmd = "rebase --onto \"%1\" \"%2\" \"%3\"";
-	cmd = cmd.arg(newbase).arg(upstream).arg(branch);
-	git(cmd, true, false, pty);
-}
-
 QStringList Git::make_branch_list_()
 {
 	QStringList list;

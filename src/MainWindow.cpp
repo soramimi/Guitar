@@ -14,7 +14,6 @@
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MySettings.h"
-#include "RebaseOntoDialog.h"
 #include "ReflogWindow.h"
 #include "RemoteWatcher.h"
 #include "SetGpgSigningDialog.h"
@@ -2497,78 +2496,6 @@ void MainWindow::on_action_push_u_triggered()
 void MainWindow::on_action_delete_remote_branch_triggered()
 {
 	deleteRemoteBranch(selectedCommitItem());
-}
-
-void MainWindow::rebaseOnto()
-{
-	struct Commit {
-		QStringList parents;
-		QStringList children;
-	};
-
-	std::map<QString, Commit> commit_map;
-
-	Git::CommitItem const *commit = selectedCommitItem();
-	if (commit) {
-		auto const &logs = getLogs();
-		for (Git::CommitItem const &item : logs) {
-			Commit c;
-			c.parents = item.parent_ids;
-			commit_map[item.commit_id] = c;
-		}
-		for (Git::CommitItem const &item : logs) {
-			for (QString const &parent : item.parent_ids) {
-				auto it = commit_map.find(parent);
-				if (it != commit_map.end()) {
-					it->second.children.push_back(item.commit_id);
-				}
-			}
-		}
-		QString upstream;
-		QString id = getHeadId();
-		while (1) {
-			auto it = commit_map.find(id);
-			if (it == commit_map.end()) break;
-			Commit const &c = it->second;
-			if (c.parents.size() > 1) goto done;
-			if (c.parents.size() != 1) break;
-			if (id != getHeadId()) {
-				if (c.children.size() > 1) goto done;
-				if (!findTag(id).isEmpty()) goto done;
-				auto it2 = branchMapRef().find(id);
-				if (it2 != branchMapRef().end()) {
-					QList<Git::Branch> b = it2->second;
-					if (!it2->second.empty()) goto done;
-				}
-			}
-			id = c.parents.first();
-			continue;
-done:;
-			upstream = id;
-			break;
-		}
-
-		QString newbase = commit->commit_id;
-		QString branch = getHeadId();
-
-		RebaseOntoDialog dlg(this);
-		if (dlg.exec(newbase, upstream, branch) == QDialog::Accepted) {
-			reopenRepository(true, [&](GitPtr g){
-				setPtyCondition(PtyCondition::Pull);
-				setPtyProcessOk(true);
-				g->rebaseOnto(newbase, upstream, branch, getPtyProcess());
-				while (1) {
-					if (getPtyProcess()->wait(1)) break;
-					QApplication::processEvents();
-				}
-			});
-		}
-	}
-}
-
-void MainWindow::on_action_rebase_onto_triggered()
-{
-	rebaseOnto();
 }
 
 void MainWindow::on_action_terminal_triggered()

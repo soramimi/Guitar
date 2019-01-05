@@ -140,7 +140,6 @@ SOURCES += \
     src/PushDialog.cpp \
     src/ReadOnlyLineEdit.cpp \
     src/ReadOnlyPlainTextEdit.cpp \
-    src/RebaseOntoDialog.cpp \
     src/ReflogWindow.cpp \
     src/RemoteRepositoriesTableWidget.cpp \
     src/RepositoriesTreeWidget.cpp \
@@ -251,7 +250,6 @@ HEADERS  += \
     src/PushDialog.h \
     src/ReadOnlyLineEdit.h \
     src/ReadOnlyPlainTextEdit.h \
-    src/RebaseOntoDialog.h \
     src/ReflogWindow.h \
     src/RemoteRepositoriesTableWidget.h \
     src/RepositoriesTreeWidget.h \
@@ -334,7 +332,6 @@ FORMS    += \
     src/MainWindow.ui \
     src/MergeBranchDialog.ui \
     src/PushDialog.ui \
-    src/RebaseOntoDialog.ui \
     src/RepositoryPropertyDialog.ui \
     src/SearchFromGitHubDialog.ui \
     src/SelectCommandDialog.ui \

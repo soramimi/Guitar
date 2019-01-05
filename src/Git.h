@@ -467,7 +467,6 @@ public:
 	SignPolicy signPolicy(Source source);
 	bool setSignPolicy(Source source, SignPolicy policy);
 	bool configGpgProgram(QString const &path, bool global);
-	void rebaseOnto(QString const &newbase, QString const &upstream, QString const &branch, AbstractPtyProcess *pty);
 
 	struct RemoteInfo {
 		QString commit_id;

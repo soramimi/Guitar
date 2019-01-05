@@ -35,7 +35,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	AddPage(ui->page_programs);
 	AddPage(ui->page_behavior);
 	AddPage(ui->page_network);
-	AddPage(ui->page_example);
+//	AddPage(ui->page_example);
 
 	ui->treeWidget->setCurrentItem(ui->treeWidget->topLevelItem(page_number));
 }
