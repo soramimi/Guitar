@@ -118,6 +118,7 @@ void Win32PtyProcess::run()
 	QString program;
 	program = getProgram(m->command);
 
+	QString cwd = QDir::currentPath();
 	QDir::setCurrent(change_dir);
 
 	winpty_config_t *agent_cfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
@@ -131,6 +132,8 @@ void Win32PtyProcess::run()
 	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command.utf16(), nullptr, nullptr, nullptr);
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
+	bool ok = false;
+
 	if (spawnSuccess) {
 		while (1) {
 			if (isInterruptionRequested()) break;
@@ -139,6 +142,7 @@ void Win32PtyProcess::run()
 				// running
 				msleep(1);
 			} else {
+				ok = true;
 				break;
 			}
 		}
@@ -156,7 +160,9 @@ void Win32PtyProcess::run()
 	m->hOutput = INVALID_HANDLE_VALUE;
 	m->hProcess = INVALID_HANDLE_VALUE;
 
-	emit completed(user_data);
+	emit completed(ok, user_data);
+
+	QDir::setCurrent(cwd);
 }
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)

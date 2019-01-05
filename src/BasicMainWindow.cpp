@@ -1963,7 +1963,7 @@ void BasicMainWindow::queryBranches(GitPtr g)
 	}
 }
 
-std::map<QString, QList<Git::Branch> > &BasicMainWindow::branchMapRef()
+std::map<QString, QList<Git::Branch>> &BasicMainWindow::branchMapRef()
 {
 	return m->branch_map;
 }

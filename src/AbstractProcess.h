@@ -25,7 +25,7 @@ public:
 	virtual int getExitCode() const = 0;
 	virtual QString getMessage() const = 0;
 signals:
-	void completed(QVariant);
+	void completed(bool, QVariant);
 };
 
 #endif // ABSTRACTPROCESS_H

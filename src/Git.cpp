@@ -23,7 +23,7 @@ struct Git::Private {
 	QString error_message;
 	int process_exit_code = 0;
 	QString working_repo_dir;
-	callback_t callback_func = nullptr;
+	callback_t fn_log_writer_callback = nullptr;
 	void *callback_cookie = nullptr;
 };
 
@@ -46,7 +46,7 @@ Git::~Git()
 
 void Git::setLogCallback(callback_t func, void *cookie)
 {
-	m->callback_func = func;
+	m->fn_log_writer_callback = func;
 	m->callback_cookie = cookie;
 }
 
@@ -125,13 +125,13 @@ int Git::getProcessExitCode() const
 bool Git::chdirexec(std::function<bool()> const &fn)
 {
 	bool ok = false;
-	QDir cwd = QDir::current();
+	QString cwd = QDir::currentPath();
 	QString dir = workingRepositoryDir();
 	if (isValidWorkingCopy(dir) && QDir::setCurrent(dir)) {
 
 		ok = fn();
 
-		QDir::setCurrent(cwd.path());
+		QDir::setCurrent(cwd);
 	}
 	return ok;
 }
@@ -154,12 +154,12 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 		QString cmd = QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (m->callback_func) {
+		if (m->fn_log_writer_callback) {
 			QByteArray ba;
 			ba.append("> git ");
 			ba.append(arg);
 			ba.append('\n');
-			m->callback_func(m->callback_cookie, ba.data(), (int)ba.size());
+			m->fn_log_writer_callback(m->callback_cookie, ba.data(), (int)ba.size());
 		}
 
 		if (pty) {
@@ -206,7 +206,7 @@ GitPtr Git::dup() const
 	Git *p = new Git();
 	p->m->git_command = m->git_command;
 	p->m->working_repo_dir = m->working_repo_dir;
-	p->m->callback_func = m->callback_func;
+	p->m->fn_log_writer_callback = m->fn_log_writer_callback;
 	p->m->callback_cookie = m->callback_cookie;
 	return GitPtr(p);
 }

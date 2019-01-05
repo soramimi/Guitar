@@ -190,6 +190,8 @@ void UnixPtyProcess::run()
 
 	} else {
 
+		bool ok = false;
+
 		m->th_output_reader.start(&m->mutex, m->pty_master, &m->output_queue, &m->output_vector);
 
 		while (1) {
@@ -201,6 +203,7 @@ void UnixPtyProcess::run()
 			if (r > 0) {
 				if (WIFEXITED(status)) {
 					m->exit_code = WEXITSTATUS(status);
+					ok = true;
 					break;
 				}
 				if (WIFSIGNALED(status)) {
@@ -215,7 +218,7 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		emit completed(user_data);
+		emit completed(ok, user_data);
 	}
 }
 

@@ -82,7 +82,7 @@ private:
 	void setRemoteOnline(bool f);
 	bool isRemoteOnline() const override;
 	void startTimers();
-	void onCloneCompleted(bool success, QVariant &userdata);
+	void onCloneCompleted(bool success, const QVariant &userdata);
 //	bool fetch(GitPtr g, bool prune);
 	void setNetworkingCommandsEnabled(bool f);
 	void blame(QListWidgetItem *item);
@@ -114,7 +114,7 @@ public:
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();
-	void onPtyProcessCompleted(QVariant userdata);
+	void onPtyProcessCompleted(bool ok, const QVariant &userdata);
 	void onRepositoriesTreeDropped();
 	void on_action_about_triggered();
 	void on_action_clone_triggered();

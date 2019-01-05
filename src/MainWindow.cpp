@@ -113,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
 
-	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed(QVariant)), this, SLOT(onPtyProcessCompleted(QVariant)));
+	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed(bool, QVariant)), this, SLOT(onPtyProcessCompleted(bool, QVariant)));
 
 	connect(this, &BasicMainWindow::remoteInfoChanged, [&](){
 		ui->lineEdit_remote->setText(currentRemoteName());
@@ -1891,7 +1891,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	}
 }
 
-void MainWindow::onCloneCompleted(bool success, QVariant &userdata)
+void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 {
 	if (success) {
 		RepositoryItem r = userdata.value<RepositoryItem>();
@@ -1901,7 +1901,7 @@ void MainWindow::onCloneCompleted(bool success, QVariant &userdata)
 	}
 }
 
-void MainWindow::onPtyProcessCompleted(QVariant userdata)
+void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 {
 	switch (getPtyCondition()) {
 	case PtyCondition::Clone:
