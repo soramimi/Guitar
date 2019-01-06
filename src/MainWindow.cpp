@@ -22,6 +22,7 @@
 #include "TextEditDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "CloneFromGitHubDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -2526,6 +2527,22 @@ void MainWindow::on_action_clean_df_triggered()
 
 	g->clean_df();
 	openRepository(false);
+}
+
+void MainWindow::postOpenRepositoryFromGitHub(QString const &username, QString const &reponame)
+{
+	QVariantList list;
+	list.push_back(username);
+	list.push_back(reponame);
+	postUserFunctionEvent([&](QVariant const &v){
+		QVariantList l = v.toList();
+		QString uname = l[0].toString();
+		QString rname = l[1].toString();
+		CloneFromGitHubDialog dlg(this, uname, rname);
+		if (dlg.exec() == QDialog::Accepted) {
+			clone(dlg.url());
+		}
+	}, QVariant(list));
 }
 
 void MainWindow::on_action_test_triggered()

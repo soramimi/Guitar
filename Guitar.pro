@@ -198,7 +198,8 @@ SOURCES += \
     src/darktheme/NinePatch.cpp \
     src/darktheme/StandardStyle.cpp \
     src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
-    src/gpg.cpp
+    src/gpg.cpp \
+    src/CloneFromGitHubDialog.cpp
 
 HEADERS  += \
     src/AboutDialog.h \
@@ -309,7 +310,8 @@ HEADERS  += \
     src/darktheme/StandardStyle.h \
     src/darktheme/TraditionalWindowsStyleTreeControl.h \
     src/gpg.h \
-    src/platform.h
+    src/platform.h \
+    src/CloneFromGitHubDialog.h
 
 HEADERS += src/version.h
 
@@ -360,7 +362,8 @@ FORMS    += \
     src/SetGpgSigningDialog.ui \
     src/SettingGeneralForm.ui \
     src/SettingProgramsForm.ui \
-    src/WelcomeWizardDialog.ui
+    src/WelcomeWizardDialog.ui \
+    src/CloneFromGitHubDialog.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

@@ -110,6 +110,7 @@ public:
 	bool addTag(QString const &name);
 	void updateCurrentFilesList();
 	void notifyRemoteChanged(bool f);
+	void postOpenRepositoryFromGitHub(const QString &username, const QString &reponame);
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();

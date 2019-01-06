@@ -184,7 +184,7 @@ protected:
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 
-	void clone();
+	void clone(QString url = QString(), QString dir = QString());
 	void checkout();
 	void commit(bool amend = false);
 	void commitAmend();

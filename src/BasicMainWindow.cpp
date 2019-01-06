@@ -1491,7 +1491,18 @@ void BasicMainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 	}
 
 	if (!Git::isValidWorkingCopy(dir)) {
-		qDebug() << "Invalid working dir: " + dir;
+		if (QFileInfo(dir).isDir()) {
+			QString text;
+			text += tr("The folder is not a valid git repository.") + '\n';
+			text += '\n';
+			text += dir + '\n';
+			text += '\n';
+			text += tr("Do you want to initialize it as a git repository ?") + '\n';
+			int r = QMessageBox::information(this, tr("Initialize Repository") , text, QMessageBox::Yes, QMessageBox::No);
+			if (r == QMessageBox::Yes) {
+				createRepository(dir);
+			}
+		}
 		return;
 	}
 
@@ -2059,12 +2070,11 @@ void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
 	}
 }
 
-void BasicMainWindow::clone()
+void BasicMainWindow::clone(QString url, QString dir)
 {
 	if (!isRemoteOnline()) return;
 
-	QString url;
-	QString dir = defaultWorkingDir();
+	dir = defaultWorkingDir();
 	while (1) {
 		CloneDialog dlg(this, url, dir);
 		if (dlg.exec() != QDialog::Accepted) {

@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QMimeData>
 #include <QApplication>
+#include "CloneFromGitHubDialog.h"
 #include "MainWindow.h"
 
 RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
@@ -59,6 +60,14 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 #endif
 				path = path.mid(i);
 				mainwindow()->addWorkingCopyDir(path, false);
+			} else if (path.startsWith("https://github.com/")) {
+				int i = 19;
+				int j = path.indexOf('/', i);
+				if (j > i) {
+					QString username = path.mid(i, j - i);
+					QString reponame = path.mid(j + 1);
+					mainwindow()->postOpenRepositoryFromGitHub(username, reponame);
+				}
 			}
 		}
 	} else {
