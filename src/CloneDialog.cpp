@@ -33,9 +33,9 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->lineEdit_repo_location->setText(url);
 	m->default_working_dir = defworkdir;
 	ui->lineEdit_working_dir->setText(m->default_working_dir);
+	ui->lineEdit_repo_location->setText(url);
 
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));

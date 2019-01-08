@@ -48,9 +48,26 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 
 	if (event->mimeData()->hasUrls()) {
 		Q_ASSERT(mainwindow());
-		QList<QUrl> urls = event->mimeData()->urls();
-		for (QUrl const &url : urls) {
-			QString path = url.url();
+		QStringList paths;
+
+		QByteArray ba = event->mimeData()->data("text/uri-list");
+		if (ba.size() > 4 && memcmp(ba.data(), "h\0t\0t\0p\0", 8) == 0) {
+			QString path = QString::fromUtf16((ushort const *)ba.data(), ba.size() / 2);
+			int i = path.indexOf('\n');
+			if (i >= 0) {
+				path = path.mid(0, i);
+			}
+			if (!path.isEmpty()) {
+				paths.push_back(path);
+			}
+		} else {
+			QList<QUrl> urls = event->mimeData()->urls();
+			for (QUrl const &url : urls) {
+				QString path = url.url();
+				paths.push_back(path);
+			}
+		}
+		for (QString const &path : paths) {
 			if (path.startsWith("file://")) {
 				int i = 7;
 #ifdef Q_OS_WIN
@@ -58,8 +75,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 					i++;
 				}
 #endif
-				path = path.mid(i);
-				mainwindow()->addWorkingCopyDir(path, false);
+				mainwindow()->addWorkingCopyDir(path.mid(i), false);
 			} else if (path.startsWith("https://github.com/")) {
 				int i = 19;
 				int j = path.indexOf('/', i);
