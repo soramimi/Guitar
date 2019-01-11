@@ -2513,20 +2513,16 @@ void MainWindow::on_action_explorer_triggered()
 
 void MainWindow::on_action_reset_hard_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	g->reset_hard();
-	openRepository(false);
+	doGitCommand([&](GitPtr g){
+		g->reset_hard();
+	});
 }
 
 void MainWindow::on_action_clean_df_triggered()
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	g->clean_df();
-	openRepository(false);
+	doGitCommand([&](GitPtr g){
+		g->clean_df();
+	});
 }
 
 void MainWindow::postOpenRepositoryFromGitHub(QString const &username, QString const &reponame)
@@ -2545,8 +2541,30 @@ void MainWindow::postOpenRepositoryFromGitHub(QString const &username, QString c
 	}, QVariant(list));
 }
 
+void MainWindow::on_action_stash_triggered()
+{
+	doGitCommand([&](GitPtr g){
+		g->stash();
+	});
+}
+
+void MainWindow::on_action_stash_apply_triggered()
+{
+	doGitCommand([&](GitPtr g){
+		g->stash_apply();
+	});
+}
+
+void MainWindow::on_action_stash_drop_triggered()
+{
+	doGitCommand([&](GitPtr g){
+		g->stash_drop();
+	});
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
+
 
 

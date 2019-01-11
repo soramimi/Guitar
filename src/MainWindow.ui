@@ -1037,6 +1037,14 @@
      <addaction name="action_reset_hard"/>
      <addaction name="action_clean_df"/>
     </widget>
+    <widget class="QMenu" name="menuStash">
+     <property name="title">
+      <string>Stash</string>
+     </property>
+     <addaction name="action_stash"/>
+     <addaction name="action_stash_apply"/>
+     <addaction name="action_stash_drop"/>
+    </widget>
     <addaction name="action_fetch"/>
     <addaction name="action_commit"/>
     <addaction name="action_pull"/>
@@ -1046,13 +1054,12 @@
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
+    <addaction name="menuStash"/>
     <addaction name="action_delete_branch"/>
     <addaction name="action_delete_remote_branch"/>
     <addaction name="action_edit_tags"/>
     <addaction name="action_reflog"/>
     <addaction name="menuDestructive"/>
-    <addaction name="separator"/>
-    <addaction name="action_clone"/>
     <addaction name="separator"/>
     <addaction name="action_terminal"/>
     <addaction name="action_explorer"/>
@@ -1454,11 +1461,6 @@
     <string>Delete remote branch...</string>
    </property>
   </action>
-  <action name="action_rebase_onto">
-   <property name="text">
-    <string>rebase onto</string>
-   </property>
-  </action>
   <action name="action_fetch_prune">
    <property name="text">
     <string>Fetch --prune</string>
@@ -1490,6 +1492,21 @@
   <action name="action_reset_hard">
    <property name="text">
     <string>Reset --hard</string>
+   </property>
+  </action>
+  <action name="action_stash">
+   <property name="text">
+    <string>Stash</string>
+   </property>
+  </action>
+  <action name="action_stash_apply">
+   <property name="text">
+    <string>Apply</string>
+   </property>
+  </action>
+  <action name="action_stash_drop">
+   <property name="text">
+    <string>Drop</string>
    </property>
   </action>
  </widget>

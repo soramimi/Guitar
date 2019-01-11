@@ -473,6 +473,10 @@ public:
 		QString name;
 	};
 	QList<RemoteInfo> ls_remote();
+
+	bool stash();
+	bool stash_apply();
+	bool stash_drop();
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);

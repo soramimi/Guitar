@@ -222,6 +222,8 @@ protected:
 	bool event(QEvent *event) override;
 	void postUserFunctionEvent(const std::function<void(QVariant const &)> &fn, QVariant const &v = QVariant());
 
+	void doGitCommand(std::function<void(GitPtr)> const &callback);
+
 	Git::CommitItemList *getLogsPtr();
 	void setLogs(const Git::CommitItemList &logs);
 	void clearLogs();
@@ -283,6 +285,7 @@ protected:
 
 	void updateCommitGraph();
 	bool fetch(GitPtr g, bool prune);
+
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
 	virtual void updateFilesList(QString id, bool wait) = 0;

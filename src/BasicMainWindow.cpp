@@ -2690,3 +2690,14 @@ std::string BasicMainWindow::httpAuthenticationPass() const
 {
 	return m->http_pwd;
 }
+
+void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback)
+{
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		OverrideWaitCursor;
+		callback(g);
+		openRepository(false, false);
+	}
+}
+

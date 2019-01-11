@@ -1064,6 +1064,21 @@ bool Git::clean_df()
 	return git("clean -df");
 }
 
+bool Git::stash()
+{
+	return git("stash");
+}
+
+bool Git::stash_apply()
+{
+	return git("stash apply");
+}
+
+bool Git::stash_drop()
+{
+	return git("stash drop");
+}
+
 bool Git::rm_cached(QString const &file)
 {
 	QString cmd = "rm --cached \"%1\"";

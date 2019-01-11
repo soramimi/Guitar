@@ -187,6 +187,12 @@ private slots:
 
 	void on_action_reset_hard_triggered();
 
+	void on_action_stash_triggered();
+
+	void on_action_stash_apply_triggered();
+
+	void on_action_stash_drop_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
