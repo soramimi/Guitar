@@ -38,19 +38,20 @@ configure_file(win.rc.in win.rc.h)
 configure_file(Info.plist.in Info.plist)
 
 set(Guitar_SOURCES
-	src/BasicMainWindow.cpp
 	src/AboutDialog.cpp
 	src/AbstractProcess.cpp
 	src/AbstractSettingForm.cpp
 	src/ApplicationGlobal.cpp
 	src/AreYouSureYouWantToContinueConnectingDialog.cpp
 	src/AvatarLoader.cpp
+	src/BasicMainWindow.cpp
 	src/BasicRepositoryDialog.cpp
 	src/BigDiffWindow.cpp
 	src/BlameWindow.cpp
 	src/CheckoutDialog.cpp
 	src/ClearButton.cpp
 	src/CloneDialog.cpp
+	src/CloneFromGitHubDialog.cpp
 	src/CommitDialog.cpp
 	src/CommitExploreWindow.cpp
 	src/CommitPropertyDialog.cpp
@@ -101,7 +102,6 @@ set(Guitar_SOURCES
 	src/PushDialog.cpp
 	src/ReadOnlyLineEdit.cpp
 	src/ReadOnlyPlainTextEdit.cpp
-	src/RebaseOntoDialog.cpp
 	src/ReflogWindow.cpp
 	src/RemoteRepositoriesTableWidget.cpp
 	src/RemoteWatcher.cpp
@@ -151,19 +151,20 @@ set(Guitar_SOURCES
 
 
 set(Guitar_HEADERS
-	src/BasicMainWindow.h
 	src/AboutDialog.h
 	src/AbstractProcess.h
 	src/AbstractSettingForm.h
 	src/ApplicationGlobal.h
 	src/AreYouSureYouWantToContinueConnectingDialog.h
 	src/AvatarLoader.h
+	src/BasicMainWindow.h
 	src/BasicRepositoryDialog.h
 	src/BigDiffWindow.h
 	src/BlameWindow.h
 	src/CheckoutDialog.h
 	src/ClearButton.h
 	src/CloneDialog.h
+	src/CloneFromGitHubDialog.h
 	src/CommitDialog.h
 	src/CommitExploreWindow.h
 	src/CommitPropertyDialog.h
@@ -215,7 +216,6 @@ set(Guitar_HEADERS
 	src/PushDialog.h
 	src/ReadOnlyLineEdit.h
 	src/ReadOnlyPlainTextEdit.h
-	src/RebaseOntoDialog.h
 	src/ReflogWindow.h
 	src/RemoteRepositoriesTableWidget.h
 	src/RemoteWatcher.h
@@ -297,6 +297,7 @@ set(Guitar_UIS
 	src/BlameWindow.ui
 	src/CheckoutDialog.ui
 	src/CloneDialog.ui
+	src/CloneFromGitHubDialog.ui
 	src/CommitDialog.ui
 	src/CommitExploreWindow.ui
 	src/CommitPropertyDialog.ui
@@ -320,7 +321,6 @@ set(Guitar_UIS
 	src/MainWindow.ui
 	src/MergeBranchDialog.ui
 	src/PushDialog.ui
-	src/RebaseOntoDialog.ui
 	src/ReflogWindow.ui
 	src/RepositoryPropertyDialog.ui
 	src/SearchFromGitHubDialog.ui
