@@ -985,7 +985,6 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="action_clone"/>
     <addaction name="action_open_existing_working_copy"/>
     <addaction name="action_create_a_repository"/>
     <addaction name="separator"/>
@@ -1027,16 +1026,6 @@
     <property name="title">
      <string>&amp;Repository</string>
     </property>
-    <widget class="QMenu" name="menuDestructive">
-     <property name="title">
-      <string>Destructive</string>
-     </property>
-     <addaction name="action_fetch_prune"/>
-     <addaction name="action_reset_HEAD_1"/>
-     <addaction name="separator"/>
-     <addaction name="action_reset_hard"/>
-     <addaction name="action_clean_df"/>
-    </widget>
     <widget class="QMenu" name="menuStash">
      <property name="title">
       <string>Stash</string>
@@ -1045,12 +1034,7 @@
      <addaction name="action_stash_apply"/>
      <addaction name="action_stash_drop"/>
     </widget>
-    <addaction name="action_fetch"/>
     <addaction name="action_commit"/>
-    <addaction name="action_pull"/>
-    <addaction name="action_push"/>
-    <addaction name="action_push_u"/>
-    <addaction name="action_tag_push_all"/>
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_checkout"/>
@@ -1059,17 +1043,42 @@
     <addaction name="action_delete_remote_branch"/>
     <addaction name="action_edit_tags"/>
     <addaction name="action_reflog"/>
-    <addaction name="menuDestructive"/>
     <addaction name="separator"/>
     <addaction name="action_terminal"/>
     <addaction name="action_explorer"/>
     <addaction name="separator"/>
     <addaction name="action_repository_property"/>
    </widget>
+   <widget class="QMenu" name="menuRe_mote">
+    <property name="title">
+     <string>Re&amp;mote</string>
+    </property>
+    <addaction name="action_fetch"/>
+    <addaction name="action_pull"/>
+    <addaction name="action_push"/>
+    <addaction name="action_push_u"/>
+    <addaction name="action_push_all_tags"/>
+    <addaction name="separator"/>
+    <addaction name="action_clone"/>
+   </widget>
+   <widget class="QMenu" name="menuDestructive_3">
+    <property name="title">
+     <string>&amp;Destructive</string>
+    </property>
+    <addaction name="action_reset_HEAD_1"/>
+    <addaction name="separator"/>
+    <addaction name="action_reset_hard"/>
+    <addaction name="separator"/>
+    <addaction name="action_fetch_prune"/>
+    <addaction name="separator"/>
+    <addaction name="action_clean_df"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Repository"/>
+   <addaction name="menuRe_mote"/>
+   <addaction name="menuDestructive_3"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
   </widget>
@@ -1367,7 +1376,7 @@
     <string>Edit tags</string>
    </property>
   </action>
-  <action name="action_tag_push_all">
+  <action name="action_push_all_tags">
    <property name="text">
     <string>Push all tags</string>
    </property>
@@ -1405,7 +1414,7 @@
   </action>
   <action name="action_push_u">
    <property name="text">
-    <string>Push --set-upstream</string>
+    <string>Push upstream</string>
    </property>
   </action>
   <action name="action_reset_HEAD_1">

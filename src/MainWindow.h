@@ -142,7 +142,7 @@ private slots:
 	void on_action_set_config_user_triggered();
 	void on_action_set_gpg_signing_triggered();
 	void on_action_stop_process_triggered();
-	void on_action_tag_push_all_triggered();
+	void on_action_push_all_tags_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_window_log_triggered(bool checked);
@@ -198,6 +198,7 @@ protected:
 	void internalWriteLog(const char *ptr, int len) override;
 	RepositoryItem const *selectedRepositoryItem() const override;
 	void removeSelectedRepositoryFromBookmark(bool ask) override;
+	void setRemoteMonitoringEnabled(bool enable) override;
 protected slots:
 	void onLogIdle();
 signals:

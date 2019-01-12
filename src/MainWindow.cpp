@@ -126,7 +126,7 @@ MainWindow::MainWindow(QWidget *parent)
 		doUpdateButton();
 	});
 	m->remote_watcher.start(this);
-	setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
+	setRemoteMonitoringEnabled(true);
 
 	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
 		setRemoteChanged(f);
@@ -1821,6 +1821,15 @@ void MainWindow::setWatchRemoteInterval(int mins)
 	}
 }
 
+void MainWindow::setRemoteMonitoringEnabled(bool enable)
+{
+	if (enable) {
+		setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
+	} else {
+		setWatchRemoteInterval(0);
+	}
+}
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (QApplication::modalWindow()) return;
@@ -1887,7 +1896,7 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
-		setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
+		setRemoteMonitoringEnabled(true);
 	}
 }
 
@@ -1998,7 +2007,7 @@ bool MainWindow::addTag(QString const &name)
 	return ok;
 }
 
-void MainWindow::on_action_tag_push_all_triggered()
+void MainWindow::on_action_push_all_tags_triggered()
 {
 	reopenRepository(false, [&](GitPtr g){
 		g->push(true);
@@ -2211,6 +2220,8 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 	ui->action_fetch_prune->setEnabled(f);
 	ui->action_pull->setEnabled(f);
 	ui->action_push->setEnabled(f);
+	ui->action_push_u->setEnabled(f);
+	ui->action_push_all_tags->setEnabled(f);
 
 	ui->toolButton_fetch->setEnabled(f);
 	ui->toolButton_pull->setEnabled(f);

@@ -151,6 +151,7 @@ BasicMainWindow::BasicMainWindow(QWidget *parent)
 
 BasicMainWindow::~BasicMainWindow()
 {
+	setRemoteMonitoringEnabled(false);
 	deleteTempFiles();
 	delete m;
 }
@@ -1843,6 +1844,8 @@ void BasicMainWindow::reopenRepository(bool log, std::function<void (GitPtr)> ca
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
+	setRemoteMonitoringEnabled(false);
+
 	OverrideWaitCursor;
 	if (log) {
 		setLogEnabled(g, true);
@@ -1857,6 +1860,8 @@ void BasicMainWindow::reopenRepository(bool log, std::function<void (GitPtr)> ca
 		callback(g);
 	}
 	openRepository_(g);
+
+	setRemoteMonitoringEnabled(true);
 }
 
 void BasicMainWindow::openSelectedRepository()

@@ -299,6 +299,7 @@ protected:
 	virtual void clearFileList() = 0;
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
 	virtual bool isRemoteOnline() const = 0;
+	virtual void setRemoteMonitoringEnabled(bool enable) {};
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
 	~BasicMainWindow();
