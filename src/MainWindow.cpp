@@ -2080,7 +2080,6 @@ void MainWindow::on_action_repo_jump_triggered()
 	if (!isValidWorkingCopy(g)) return;
 
 	NamedCommitList items = namedCommitItems(Branches | Tags | Remotes);
-	JumpDialog::sort(&items);
 	{
 		NamedCommitItem head;
 		head.name = "HEAD";

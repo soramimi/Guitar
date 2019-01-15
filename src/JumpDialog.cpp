@@ -1,6 +1,7 @@
 #include "JumpDialog.h"
 #include "ui_JumpDialog.h"
-
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include <QDebug>
 
 struct JumpDialog::Private {
@@ -22,13 +23,23 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 
 	ui->tableWidget->setItemDelegate(&m->delegate);
 
-	m->items = items;
+//	m->items = items;
+	for (NamedCommitItem const &item : items) {
+		NamedCommitItem newitem = item;
+		QString name = newitem.name;
+		QString remote = newitem.remote;
+		if (!remote.isEmpty()) {
+			newitem.name = "remotes" / remote / name;
+		}
+		m->items.push_back(newitem);
+	}
+	sort(&m->items);
 
 	QStringList header = {
 		tr("Name"),
 	};
 
-	ui->tableWidget->setColumnCount(header.size());
+	ui->tableWidget->setColumnCount(1);
 	{
 		for (int i = 0; i < header.size(); i++) {
 			auto *p = new QTableWidgetItem();
@@ -74,18 +85,25 @@ QString JumpDialog::text() const
 void JumpDialog::sort(NamedCommitList *items)
 {
 	std::sort(items->begin(), items->end(), [](NamedCommitItem const &l, NamedCommitItem const &r){
-		return l.name.compare(r.name, Qt::CaseInsensitive) < 0;
+		auto Compare = [](NamedCommitItem const &l, NamedCommitItem const &r){
+			int i;
+			i = l.remote.compare(r.remote, Qt::CaseInsensitive);
+			if (i == 0) {
+				i = l.name.compare(r.name, Qt::CaseInsensitive);
+			}
+			return i;
+		};
+		return Compare(l, r) < 0;
 	});
 }
 
-void JumpDialog::updateTable_(NamedCommitList const &list)
+void JumpDialog::internalUpdateTable(NamedCommitList const &list)
 {
 	ui->tableWidget->clearContents();
 	ui->tableWidget->setRowCount(list.size());
 	for (int i = 0; i < list.size(); i++) {
 		auto *p = new QTableWidgetItem();
-		QString name = list[i].name;
-		p->setText(name);
+		p->setText(list[i].name);
 		ui->tableWidget->setItem(i, 0, p);
 		ui->tableWidget->setRowHeight(i, 24);
 	}
@@ -97,16 +115,23 @@ void JumpDialog::updateTable_(NamedCommitList const &list)
 void JumpDialog::updateTable()
 {
 	if (m->filter_text.isEmpty()) {
-		updateTable_(m->items);
+		internalUpdateTable(m->items);
 	} else {
+		QStringList filter = misc::splitWords(m->filter_text);
 		NamedCommitList list;
 		for (NamedCommitItem const &item: m->items) {
-			if (item.name.indexOf(m->filter_text, 0, Qt::CaseInsensitive) < 0) {
-				continue;
-			}
+			auto Match = [&](QString  const &name){
+				for (QString s : filter) {
+					if (name.indexOf(s, 0, Qt::CaseInsensitive) < 0) {
+						return false;
+					}
+				}
+				return true;
+			};
+			if (!Match(item.name)) continue;
 			list.push_back(item);
 		}
-		updateTable_(list);
+		internalUpdateTable(list);
 	}
 }
 

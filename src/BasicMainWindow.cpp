@@ -389,7 +389,7 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 	QStringList remote_branches;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
-		JumpDialog::sort(&named_commits);
+//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == commit->commit_id) {
 				QString name = item.name;
@@ -2380,7 +2380,7 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 	QStringList current_local_branch_names;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches);
-		JumpDialog::sort(&named_commits);
+//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.name == "HEAD") continue;
 			if (item.id == commit->commit_id) {
@@ -2422,7 +2422,7 @@ QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
-		JumpDialog::sort(&named_commits);
+//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == id && !item.remote.isEmpty()) {
 				list.push_back(item.remote / item.name);
@@ -2574,11 +2574,8 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
-				QString key = b.name;
 				if (flags & NamedCommitFlag::Remotes) {
-					if (!b.remote.isEmpty()) {
-						key = "remotes" / b.remote / key;
-					}
+					// nop
 				} else {
 					if (!b.remote.isEmpty()) continue;
 				}

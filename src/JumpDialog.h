@@ -44,7 +44,7 @@ private slots:
 private:
 	Ui::JumpDialog *ui;
 	void updateTable();
-	void updateTable_(const NamedCommitList &list2);
+	void internalUpdateTable(const NamedCommitList &list2);
 };
 
 #endif // JUMPDIALOG_H
