@@ -106,22 +106,22 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 
-	connect(this, SIGNAL(signalWriteLog(QByteArray)), this, SLOT(writeLog(QByteArray)));
+	connect(this, &BasicMainWindow::signalWriteLog, this, &BasicMainWindow::writeLog_);
 
-	connect(ui->dockWidget_log, SIGNAL(visibilityChanged(bool)), this, SLOT(onLogVisibilityChanged()));
-	connect(ui->widget_log, SIGNAL(idle()), this, SLOT(onLogIdle()));
+	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
+	connect(ui->widget_log, &TextEditorWidget::idle, this, &MainWindow::onLogIdle);
 
-	connect(ui->treeWidget_repos, SIGNAL(dropped()), this, SLOT(onRepositoriesTreeDropped()));
+	connect(ui->treeWidget_repos, &RepositoriesTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
 
-	connect((AbstractPtyProcess *)getPtyProcess(), SIGNAL(completed(bool, QVariant)), this, SLOT(onPtyProcessCompleted(bool, QVariant)));
+	connect((AbstractPtyProcess *)getPtyProcess(), &AbstractPtyProcess::completed, this, &MainWindow::onPtyProcessCompleted);
 
 	connect(this, &BasicMainWindow::remoteInfoChanged, [&](){
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 
 	// リモート監視
-	connect(this, SIGNAL(signalCheckRemoteUpdate()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
-	connect(&m->remote_watcher_timer, SIGNAL(timeout()), &m->remote_watcher, SLOT(checkRemoteUpdate()));
+	connect(this, &BasicMainWindow::signalCheckRemoteUpdate, &m->remote_watcher, &RemoteWatcher::checkRemoteUpdate);
+	connect(&m->remote_watcher_timer, &QTimer::timeout, &m->remote_watcher, &RemoteWatcher::checkRemoteUpdate);
 	connect(this, &MainWindow::updateButton, [&](){
 		doUpdateButton();
 	});
@@ -141,7 +141,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	webContext()->set_keep_alive_enabled(true);
 	getAvatarLoader()->start(webContext());
-	connect(getAvatarLoader(), SIGNAL(updated()), this, SLOT(onAvatarUpdated()));
+	connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
 
 	*ptrUpdateFilesListCounter() = 0;
 
@@ -289,101 +289,105 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 	QEvent::Type et = event->type();
 
 	if (et == QEvent::KeyPress) {
-		auto *e = dynamic_cast<QKeyEvent *>(event);
-		Q_ASSERT(e);
-		int k = e->key();
-		if (k == Qt::Key_Tab) {
-			if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
-				QList<QWidget *> tabstops;
-				tabstops.push_back(ui->treeWidget_repos);
-				tabstops.push_back(ui->tableWidget_log);
-				if (ui->stackedWidget->currentWidget() == ui->page_files) {
-					tabstops.push_back(ui->listWidget_files);
-				} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
-					tabstops.push_back(ui->listWidget_unstaged);
-					tabstops.push_back(ui->toolButton_select_all);
-					tabstops.push_back(ui->toolButton_stage);
-					tabstops.push_back(ui->toolButton_unstage);
-					tabstops.push_back(ui->toolButton_commit);
-					tabstops.push_back(ui->listWidget_staged);
-				}
-				tabstops.push_back(ui->widget_diff_view);
-				int n = tabstops.size();
-				if (n > 0) {
-					QWidget *f = qApp->focusWidget();
-					int i;
-					for (i = 0; i < n; i++) {
-						if (tabstops[i] == f) {
-							break;
+		if (QApplication::activeModalWidget()) {
+			// thru
+		} else {
+			auto *e = dynamic_cast<QKeyEvent *>(event);
+			Q_ASSERT(e);
+			int k = e->key();
+			if (k == Qt::Key_Tab) {
+				if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
+					QList<QWidget *> tabstops;
+					tabstops.push_back(ui->treeWidget_repos);
+					tabstops.push_back(ui->tableWidget_log);
+					if (ui->stackedWidget->currentWidget() == ui->page_files) {
+						tabstops.push_back(ui->listWidget_files);
+					} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
+						tabstops.push_back(ui->listWidget_unstaged);
+						tabstops.push_back(ui->toolButton_select_all);
+						tabstops.push_back(ui->toolButton_stage);
+						tabstops.push_back(ui->toolButton_unstage);
+						tabstops.push_back(ui->toolButton_commit);
+						tabstops.push_back(ui->listWidget_staged);
+					}
+					tabstops.push_back(ui->widget_diff_view);
+					int n = tabstops.size();
+					if (n > 0) {
+						QWidget *f = qApp->focusWidget();
+						int i;
+						for (i = 0; i < n; i++) {
+							if (tabstops[i] == f) {
+								break;
+							}
+						}
+						if (i < n) {
+							if (e->modifiers() & Qt::ShiftModifier) {
+								i = (i + n - 1) % n;
+							} else {
+								i = (i + 1) % n;
+							}
+							tabstops[i]->setFocus();
 						}
 					}
-					if (i < n) {
-						if (e->modifiers() & Qt::ShiftModifier) {
-							i = (i + n - 1) % n;
-						} else {
-							i = (i + 1) % n;
-						}
-						tabstops[i]->setFocus();
-					}
-				}
-				return true;
-			}
-		}
-		if (k == Qt::Key_Escape) {
-			if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
-				ui->treeWidget_repos->setFocus();
-				return true;
-			}
-		}
-		if (e->modifiers() & Qt::ControlModifier) {
-			if (k == Qt::Key_Up || k == Qt::Key_Down) {
-				int rows = ui->tableWidget_log->rowCount();
-				int row = ui->tableWidget_log->currentRow();
-				if (k == Qt::Key_Up) {
-					if (row > 0) {
-						row--;
-					}
-				} else if (k == Qt::Key_Down) {
-					if (row + 1 < rows) {
-						row++;
-					}
-				}
-				ui->tableWidget_log->setCurrentCell(row, 0);
-				return true;
-			}
-		}
-		if (watched == ui->treeWidget_repos) {
-			if (k == Qt::Key_Enter || k == Qt::Key_Return) {
-				openSelectedRepository();
-				return true;
-			}
-			if (!(e->modifiers() & Qt::ControlModifier)) {
-				if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
-					appendCharToRepoFilter(k);
 					return true;
 				}
-				if (k == Qt::Key_Backspace) {
-					backspaceRepoFilter();
+			}
+			if (k == Qt::Key_Escape) {
+				if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
+					ui->treeWidget_repos->setFocus();
+					return true;
+				}
+			}
+			if (e->modifiers() & Qt::ControlModifier) {
+				if (k == Qt::Key_Up || k == Qt::Key_Down) {
+					int rows = ui->tableWidget_log->rowCount();
+					int row = ui->tableWidget_log->currentRow();
+					if (k == Qt::Key_Up) {
+						if (row > 0) {
+							row--;
+						}
+					} else if (k == Qt::Key_Down) {
+						if (row + 1 < rows) {
+							row++;
+						}
+					}
+					ui->tableWidget_log->setCurrentCell(row, 0);
+					return true;
+				}
+			}
+			if (watched == ui->treeWidget_repos) {
+				if (k == Qt::Key_Enter || k == Qt::Key_Return) {
+					openSelectedRepository();
+					return true;
+				}
+				if (!(e->modifiers() & Qt::ControlModifier)) {
+					if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
+						appendCharToRepoFilter(k);
+						return true;
+					}
+					if (k == Qt::Key_Backspace) {
+						backspaceRepoFilter();
+						return true;
+					}
+					if (k == Qt::Key_Escape) {
+						clearRepoFilter();
+						return true;
+					}
+				}
+			} else if (watched == ui->tableWidget_log) {
+				if (k == Qt::Key_Home) {
+					setCurrentLogRow(0);
 					return true;
 				}
 				if (k == Qt::Key_Escape) {
-					clearRepoFilter();
+					ui->treeWidget_repos->setFocus();
 					return true;
 				}
-			}
-		} else if (watched == ui->tableWidget_log) {
-			if (k == Qt::Key_Home) {
-				setCurrentLogRow(0);
-				return true;
-			}
-			if (k == Qt::Key_Escape) {
-				ui->treeWidget_repos->setFocus();
-				return true;
-			}
-		} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
-			if (k == Qt::Key_Escape) {
-				ui->tableWidget_log->setFocus();
-				return true;
+			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
+				if (k == Qt::Key_Escape) {
+					ui->tableWidget_log->setFocus();
+					return true;
+				}
 			}
 		}
 	} else if (et == QEvent::FocusIn) {
@@ -469,7 +473,7 @@ void BasicMainWindow::writeLog(QString const &str)
 	writeLog(s.c_str(), s.size());
 }
 
-void BasicMainWindow::writeLog(QByteArray ba)
+void BasicMainWindow::writeLog_(QByteArray ba)
 {
 	if (!ba.isEmpty()) {
 		writeLog(ba.data(), ba.size());
@@ -1862,7 +1866,7 @@ void MainWindow::timerEvent(QTimerEvent *)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-	if (qApp->focusWidget() == ui->widget_log) {
+	if (QApplication::focusWidget() == ui->widget_log) {
 		int c = event->key();
 
 		auto write_char = [&](char c){

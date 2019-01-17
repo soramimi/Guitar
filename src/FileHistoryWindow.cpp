@@ -66,8 +66,8 @@ FileHistoryWindow::FileHistoryWindow(BasicMainWindow *parent)
 
 	ui->widget_diff_view->bind(mainwindow());
 
-	connect(ui->widget_diff_view, SIGNAL(moveNextItem()), this, SLOT(onMoveNextItem()));
-	connect(ui->widget_diff_view, SIGNAL(movePreviousItem()), this, SLOT(onMovePreviousItem()));
+//	connect(ui->widget_diff_view, &FileDiffWidget::moveNextItem, this, &FileHistoryWindow::onMoveNextItem);
+//	connect(ui->widget_diff_view, &FileDiffWidget::movePreviousItem, this, &FileHistoryWindow::onMovePreviousItem);
 }
 
 FileHistoryWindow::~FileHistoryWindow()
@@ -212,23 +212,22 @@ void FileHistoryWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *
 	updateDiffView();
 }
 
-void FileHistoryWindow::onMoveNextItem()
-{
-	int row = ui->tableWidget_log->currentRow();
-	int count = ui->tableWidget_log->rowCount();
-	if (row + 1 < count) {
-		ui->tableWidget_log->setCurrentCell(row + 1, 0, QItemSelectionModel::ClearAndSelect);
-	}
-}
+//void FileHistoryWindow::onMoveNextItem()
+//{
+//	int row = ui->tableWidget_log->currentRow();
+//	int count = ui->tableWidget_log->rowCount();
+//	if (row + 1 < count) {
+//		ui->tableWidget_log->setCurrentCell(row + 1, 0, QItemSelectionModel::ClearAndSelect);
+//	}
+//}
 
-void FileHistoryWindow::onMovePreviousItem()
-{
-	int row = ui->tableWidget_log->currentRow();
-	if (row > 0) {
-		ui->tableWidget_log->setCurrentCell(row - 1, 0, QItemSelectionModel::ClearAndSelect);
-	}
-}
-
+//void FileHistoryWindow::onMovePreviousItem()
+//{
+//	int row = ui->tableWidget_log->currentRow();
+//	if (row > 0) {
+//		ui->tableWidget_log->setCurrentCell(row - 1, 0, QItemSelectionModel::ClearAndSelect);
+//	}
+//}
 
 void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {

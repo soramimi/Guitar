@@ -57,9 +57,9 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 		return makeDiffPixmap(pane, width, height);
 	}, global->theme);
 
-	connect(ui->widget_diff_slider, SIGNAL(valueChanged(int)), this, SLOT(scrollTo(int)));
-	connect(ui->widget_diff_left->texteditor(), SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
-	connect(ui->widget_diff_right->texteditor(), SIGNAL(moved(int,int,int,int)), this, SLOT(onMoved(int,int,int,int)));
+	connect(ui->widget_diff_slider, &FileDiffSliderWidget::valueChanged, this, &FileDiffWidget::scrollTo);
+	connect(ui->widget_diff_left->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
+	connect(ui->widget_diff_right->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
 
 	setFocusAcceptable(true);
 
@@ -108,8 +108,8 @@ void FileDiffWidget::bind(BasicMainWindow *mw)
 	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
 	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
 
-	connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollValueChanged(int)));
-	connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(onHorizontalScrollValueChanged(int)));
+	connect(ui->verticalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged);
+	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
 }
 
 BasicMainWindow *FileDiffWidget::mainwindow()

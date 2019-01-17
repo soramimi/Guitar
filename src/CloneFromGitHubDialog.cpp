@@ -21,7 +21,7 @@ CloneFromGitHubDialog::CloneFromGitHubDialog(QWidget *parent, const QString &use
 	url = QString("https://github.com/%1/%2.git").arg(username).arg(reponame);
 	ui->lineEdit_http->setText(url);
 
-	connect(ui->label_hyperlink, SIGNAL(clicked()), this, SLOT(onHyperlinkClicked()));
+	connect(ui->label_hyperlink, &HyperLinkLabel::clicked, this, &CloneFromGitHubDialog::onHyperlinkClicked);
 	ui->pushButton_ok->setEnabled(false);
 }
 

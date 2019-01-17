@@ -30,7 +30,7 @@ SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent, BasicMainWindow 
 
 	ui->tableWidget->setItemDelegate(&item_delegate);
 
-	connect(ui->label_hyperlink, SIGNAL(clicked()), this, SLOT(onHyperlinkClicked()));
+	connect(ui->label_hyperlink, &HyperLinkLabel::clicked, this, &SearchFromGitHubDialog::onHyperlinkClicked);
 
 	ui->pushButton_ok->setEnabled(false);
 }

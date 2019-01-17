@@ -363,10 +363,11 @@ public:
 	static QString abbrevCommitID(Git::CommitItem const &commit);
 protected slots:
 	void onAvatarUpdated();
-public slots:
+public:
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
-	void writeLog(QByteArray ba);
+public slots:
+	void writeLog_(QByteArray ba);
 signals:
 	void signalWriteLog(QByteArray ba);
 	void remoteInfoChanged();

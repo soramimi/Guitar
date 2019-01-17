@@ -162,8 +162,8 @@ private slots:
 	void on_toolButton_menu_clicked();
 
 signals:
-	void moveNextItem();
-	void movePreviousItem();
+//	void moveNextItem();
+//	void movePreviousItem();
 	void textcodecChanged();
 };
 

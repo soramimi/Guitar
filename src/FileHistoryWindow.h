@@ -33,8 +33,8 @@ public:
 private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 
-	void onMoveNextItem();
-	void onMovePreviousItem();
+//	void onMoveNextItem();
+//	void onMovePreviousItem();
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 
 private:
