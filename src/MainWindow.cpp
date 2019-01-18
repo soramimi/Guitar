@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent)
 	updateRepositoriesList();
 
 	webContext()->set_keep_alive_enabled(true);
-	getAvatarLoader()->start(webContext());
+	getAvatarLoader()->start(this);
 	connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
 
 	*ptrUpdateFilesListCounter() = 0;

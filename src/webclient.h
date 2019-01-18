@@ -126,7 +126,7 @@ private:
 	void parse_http_header(char const *begin, char const *end, Response *out);
 	bool http_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
 	bool https_get(URL const &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
-	void get(URL const &url, Post const *post, Response *out, WebClientHandler *handler);
+	bool get(URL const &url, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);

@@ -108,8 +108,6 @@ private:
 	void internalSetCommand(QString const &path, bool save, QString const &name, QString *out);
 	QStringList whichCommand_(QString const &cmdfile1, QString const &cmdfile2 = QString());
 
-	void emitWriteLog(QByteArray ba);
-
 	void setWindowTitle_(Git::User const &user);
 	bool execSetGlobalUserDialog();
 
@@ -366,6 +364,7 @@ protected slots:
 public:
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
+	void emitWriteLog(QByteArray ba);
 public slots:
 	void writeLog_(QByteArray ba);
 signals:

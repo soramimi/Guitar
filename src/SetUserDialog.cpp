@@ -36,7 +36,7 @@ SetUserDialog::SetUserDialog(BasicMainWindow *parent, Git::User const &global_us
 	ui->radioButton_global->click();
 	ui->lineEdit_name->setFocus();
 
-	m->avatar_loader.start(mainwindow()->webContext());
+	m->avatar_loader.start(mainwindow());
 	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
 		QString email = ui->lineEdit_mail->text();
 		QIcon icon = m->avatar_loader.fetch(email.toStdString(), false);

@@ -1,4 +1,5 @@
 #include "AvatarLoader.h"
+#include "BasicMainWindow.h"
 #include "MemoryReader.h"
 #include "webclient.h"
 
@@ -20,6 +21,7 @@ struct AvatarLoader::Private {
 	std::deque<RequestItem> requested;
 	std::deque<RequestItem> completed;
 	std::set<std::string> notfound;
+	BasicMainWindow *mainwindow = nullptr;
 	WebContext *webcx = nullptr;
 	WebClientPtr web;
 };
@@ -34,9 +36,10 @@ AvatarLoader::~AvatarLoader()
 	delete m;
 }
 
-void AvatarLoader::start(WebContext *webcx)
+void AvatarLoader::start(BasicMainWindow *mainwindow)
 {
-	m->webcx = webcx;
+	m->mainwindow = mainwindow;
+	m->webcx = m->mainwindow->webContext();
 	QThread::start();
 }
 
@@ -103,6 +106,10 @@ void AvatarLoader::run()
 							continue;
 						}
 					}
+				} else {
+					m->mainwindow->emitWriteLog(QString("Failed to fetch the avatar.\n").toUtf8());
+					QString msg = QString::fromStdString(m->web->error().message() + '\n');
+					m->mainwindow->emitWriteLog(msg.toUtf8());
 				}
 			}
 			{ // not found

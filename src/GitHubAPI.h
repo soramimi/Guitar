@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 
+class BasicMainWindow;
 class WebContext;
 class WebClient;
 
@@ -30,10 +31,12 @@ public:
 		double score = 0;
 	};
 
+	BasicMainWindow *mainwindow_;
 	WebContext *webcx;
 
-	GitHubAPI(WebContext *webcx)
+	GitHubAPI(WebContext *webcx, BasicMainWindow *mainwindow)
 		: webcx(webcx)
+		, mainwindow_(mainwindow)
 	{
 	}
 
@@ -56,7 +59,7 @@ public:
 	bool ok = false;
 	std::string text;
 	std::function<bool(std::string const &text)> callback;
-	void start(WebContext *webcx);
+	void start(WebContext *webcx, BasicMainWindow *mainwindow);
 };
 
 #endif // GITHUBAPI_H

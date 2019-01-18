@@ -74,7 +74,7 @@ void CommitPropertyDialog::init(BasicMainWindow *mw)
 		ui->lineEdit_sign_mail->setText(key.mail);
 	}
 
-	m->avatar_loader.start(mainwindow()->webContext());
+	m->avatar_loader.start(mainwindow());
 	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
 		UpdateAvatar(false);
 	});

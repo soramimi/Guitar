@@ -595,7 +595,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 
 		servhost = gethostbyname(server_url.host().c_str());
 		if (!servhost) {
-			throw Error("gethostbyname failed.");
+			throw Error("gethostbyname failed: " + server_url.host());
 		}
 
 		memset((char *)&server, 0, sizeof(server));
@@ -774,7 +774,7 @@ bool WebClient::https_get(const URL &request_url, Post const *post, RequestOptio
 	return false;
 }
 
-void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHandler *handler)
+bool WebClient::get(URL const &url, Post const *post, Response *out, WebClientHandler *handler)
 {
 	reset();
 	try {
@@ -800,12 +800,13 @@ void WebClient::get(URL const &url, Post const *post, Response *out, WebClientHa
 				out->content.assign(ptr, end);
 			}
 		}
-		return;
+		return true;
 	} catch (Error const &e) {
 		m->error = e;
 		close();
 	}
 	*out = Response();
+	return false;
 }
 
 void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)

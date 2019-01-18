@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 
+class BasicMainWindow;
 class WebContext;
 
 class AvatarLoader : public QThread {
@@ -29,7 +30,7 @@ public:
 	~AvatarLoader() override;
 	QIcon fetch(std::string const &email, bool request) const;
 	void stop();
-	void start(WebContext *webcx);
+	void start(BasicMainWindow *mainwindow);
 signals:
 	void updated();
 };

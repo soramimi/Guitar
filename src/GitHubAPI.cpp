@@ -1,4 +1,5 @@
 
+#include "BasicMainWindow.h"
 #include "GitHubAPI.h"
 
 #include "webclient.h"
@@ -16,6 +17,7 @@
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
+	BasicMainWindow *mainwindow = nullptr;
 	WebClientPtr web;
 };
 
@@ -29,9 +31,10 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
-void GitHubRequestThread::start(WebContext *webcx)
+void GitHubRequestThread::start(WebContext *webcx, BasicMainWindow *mainwindow)
 {
-	m->web = std::make_shared<WebClient>(webcx);
+	m->mainwindow = mainwindow;
+	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());
 	QThread::start();
 }
 
@@ -46,6 +49,13 @@ void GitHubRequestThread::run()
 			if (callback) {
 				ok = callback(text);
 			}
+		}
+	} else {
+		std::string msg = web()->error().message();
+		if (!msg.empty()) {
+			m->mainwindow->emitWriteLog(QString::fromStdString("Failed to access the site: " + url + '\n').toUtf8());
+			QString s = QString::fromStdString(msg + '\n');
+			m->mainwindow->emitWriteLog(s.toUtf8());
 		}
 	}
 }
@@ -63,7 +73,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 	{
 		OverrideWaitCursor;
 		th.url = "https://api.github.com/search/repositories?q=" + q;
-		th.start(webcx);
+		th.start(webcx, mainwindow_);
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}

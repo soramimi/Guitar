@@ -23,7 +23,7 @@ WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
 	ui->stackedWidget->setCurrentWidget(pages_[0]);
 	on_stackedWidget_currentChanged(0);
 
-	avatar_loader_.start(mainwindow_->webContext());
+	avatar_loader_.start(mainwindow_);
 	connect(&avatar_loader_, &AvatarLoader::updated, [&](){
 		QString email = ui->lineEdit_user_email->text();
 		QIcon icon = avatar_loader_.fetch(email.toStdString(), false);
