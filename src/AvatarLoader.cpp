@@ -22,7 +22,6 @@ struct AvatarLoader::Private {
 	std::deque<RequestItem> completed;
 	std::set<std::string> notfound;
 	BasicMainWindow *mainwindow = nullptr;
-	WebContext *webcx = nullptr;
 	WebClientPtr web;
 };
 
@@ -39,13 +38,12 @@ AvatarLoader::~AvatarLoader()
 void AvatarLoader::start(BasicMainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
-	m->webcx = m->mainwindow->webContext();
 	QThread::start();
 }
 
 void AvatarLoader::run()
 {
-	m->web = std::make_shared<WebClient>(m->webcx);
+	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());
 
 	while (1) {
 		std::deque<RequestItem> requests;

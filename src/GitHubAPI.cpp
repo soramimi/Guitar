@@ -31,7 +31,7 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
-void GitHubRequestThread::start(WebContext *webcx, BasicMainWindow *mainwindow)
+void GitHubRequestThread::start(BasicMainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
 	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());
@@ -73,7 +73,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 	{
 		OverrideWaitCursor;
 		th.url = "https://api.github.com/search/repositories?q=" + q;
-		th.start(webcx, mainwindow_);
+		th.start(mainwindow_);
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}

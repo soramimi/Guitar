@@ -32,11 +32,9 @@ public:
 	};
 
 	BasicMainWindow *mainwindow_;
-	WebContext *webcx;
 
-	GitHubAPI(WebContext *webcx, BasicMainWindow *mainwindow)
-		: webcx(webcx)
-		, mainwindow_(mainwindow)
+	GitHubAPI(BasicMainWindow *mainwindow)
+		: mainwindow_(mainwindow)
 	{
 	}
 
@@ -59,7 +57,7 @@ public:
 	bool ok = false;
 	std::string text;
 	std::function<bool(std::string const &text)> callback;
-	void start(WebContext *webcx, BasicMainWindow *mainwindow);
+	void start(BasicMainWindow *mainwindow);
 };
 
 #endif // GITHUBAPI_H
