@@ -296,7 +296,6 @@ protected:
 	virtual int selectedLogIndex() const = 0;
 	virtual void clearFileList() = 0;
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
-	virtual bool isRemoteOnline() const = 0;
 	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; };
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
@@ -357,6 +356,8 @@ public:
 	QIcon getSignatureDubiousIcon() const;
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
+
+	virtual bool isRemoteOnline() const = 0;
 
 	static QString abbrevCommitID(Git::CommitItem const &commit);
 protected slots:

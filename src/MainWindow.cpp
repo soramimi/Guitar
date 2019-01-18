@@ -2204,11 +2204,6 @@ void MainWindow::on_action_create_a_repository_triggered()
 	createRepository(QString());
 }
 
-bool MainWindow::isRemoteOnline() const
-{
-	return ui->radioButton_remote_online->isChecked();
-}
-
 void MainWindow::setNetworkingCommandsEnabled(bool f)
 {
 	ui->action_clone->setEnabled(f);
@@ -2229,6 +2224,11 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 	ui->toolButton_fetch->setEnabled(f);
 	ui->toolButton_pull->setEnabled(f);
 	ui->toolButton_push->setEnabled(f);
+}
+
+bool MainWindow::isRemoteOnline() const
+{
+	return ui->radioButton_remote_online->isChecked();
 }
 
 void MainWindow::setRemoteOnline(bool f)

@@ -35,6 +35,8 @@ public:
 	QString currentWorkingCopyDir() const override;
 
 	QColor color(unsigned int i);
+
+	bool isRemoteOnline() const override;
 private:
 	Ui::MainWindow *ui;
 
@@ -80,7 +82,6 @@ private:
 	void rebaseBranch(Git::CommitItem const *commit);
 	void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f);
-	bool isRemoteOnline() const override;
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);
 //	bool fetch(GitPtr g, bool prune);
