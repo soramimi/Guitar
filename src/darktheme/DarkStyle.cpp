@@ -1727,25 +1727,34 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_HeaderSection || ce == CE_HeaderEmptyArea) {
-		int x = option->rect.x();
-		int y = option->rect.y();
-		int w = option->rect.width();
-		int h = option->rect.height();
-		QLinearGradient gradient;
-		gradient.setStart(x, y);
-		gradient.setFinalStop(x, y + h / 4.0);
-		gradient.setColorAt(0, option->palette.color(QPalette::Light));
-		gradient.setColorAt(1, option->palette.color(QPalette::Window));
-		p->fillRect(x, y, w, h, gradient);
-		p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
-		if (ce == CE_HeaderSection) {
-			if (option->state & QStyle::State_MouseOver) {
-				p->save();
-				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
-				p->restore();
+		if (QStyleOptionHeader const *o = qstyleoption_cast<QStyleOptionHeader const *>(option)) {
+			bool horz = (o->orientation == Qt::Horizontal);
+			int x = o->rect.x();
+			int y = o->rect.y();
+			int w = o->rect.width();
+			int h = o->rect.height();
+			QLinearGradient gradient;
+			gradient.setStart(x, y);
+			gradient.setFinalStop(x, y + h / 4.0);
+			gradient.setColorAt(0, o->palette.color(QPalette::Light));
+			gradient.setColorAt(1, o->palette.color(QPalette::Window));
+			p->fillRect(x, y, w, h, gradient);
+			p->fillRect(x, y + h - 1, w, 1, o->palette.color(QPalette::Dark));
+			if (horz) {
+				p->fillRect(x + w - 1, y, 1, h, o->palette.color(QPalette::Dark));
 			}
+			if (ce == CE_HeaderSection) {
+				if (horz) {
+					p->fillRect(x, y, 1, h, o->palette.color(QPalette::Light));
+				}
+				if (o->state & QStyle::State_MouseOver) {
+					p->save();
+					p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
+					p->restore();
+				}
+			}
+			return;
 		}
-		return;
 	}
 #ifdef Q_OS_MAC
 	if (ce == CE_DockWidgetTitle) {
@@ -1824,34 +1833,17 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 #endif
 
 #if 1
-	if (ce == CE_Header || ce == CE_HeaderSection || ce == CE_HeaderEmptyArea) {
-		int x = option->rect.x();
-		int y = option->rect.y();
-		int w = option->rect.width();
-		int h = option->rect.height();
-		QLinearGradient gradient;
-		gradient.setStart(x, y);
-		gradient.setFinalStop(x, y + h / 4.0);
-		gradient.setColorAt(0, option->palette.color(QPalette::Light));
-		gradient.setColorAt(1, option->palette.color(QPalette::Window));
-		p->fillRect(x, y, w, h, gradient);
-		p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
-		if (ce == CE_HeaderSection) {
-			if (option->state & QStyle::State_MouseOver) {
-				p->save();
-				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
-				p->restore();
-			}
-		}
+	if (ce == CE_Header) {
+		drawControl(CE_HeaderSection, option, p, widget);
+		drawControl(CE_HeaderLabel, option, p, widget);
 		return;
 	}
 	if (ce == CE_ItemViewItem) {
-		drawPrimitive(PE_PanelItemViewItem, option, p, widget);
 		if (QStyleOptionViewItem const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
+			drawPrimitive(PE_PanelItemViewItem, option, p, widget);
 			drawItemText(p, o->rect.adjusted(2, 0, 0, 0), o->displayAlignment, option->palette, true, o->text);
 			return;
 		}
-		return;
 	}
 	if (ce == CE_TabBarTab) {
 		drawControl(CE_TabBarTabShape, option, p, widget);
