@@ -63,7 +63,7 @@ QString pixmapkey(QString const &name, QString const &role, QSize const &size, Q
     return key;
 }
 
-void drawRaisedFrame(QPainter *p, QRect const &rect, const QPalette &palette)
+void drawRaisedFrame(QPainter *p, const QRect &rect, const QPalette &palette)
 {
 	p->save();
     int x = rect.x();
@@ -74,8 +74,8 @@ void drawRaisedFrame(QPainter *p, QRect const &rect, const QPalette &palette)
     p->fillRect(x, y, w, h, palette.color(QPalette::Window));
     p->fillRect(x, y, w - 1, 1, palette.color(QPalette::Light));
     p->fillRect(x, y, 1, h - 1, palette.color(QPalette::Light));
-    p->fillRect(x + 1, y + h - 2, w - 2, 1, palette.color(QPalette::Dark));
-    p->fillRect(x + w - 2, y + 1, 1, h - 2, palette.color(QPalette::Dark));
+//    p->fillRect(x + 1, y + h - 2, w - 2, 1, palette.color(QPalette::Dark));
+//    p->fillRect(x + w - 2, y + 1, 1, h - 2, palette.color(QPalette::Dark));
     p->fillRect(x, y + h - 1, w, 1, palette.color(QPalette::Shadow));
     p->fillRect(x + w - 1, y, 1, h, palette.color(QPalette::Shadow));
     p->restore();
@@ -328,10 +328,10 @@ QPixmap DarkStyle::pixmapFromImage(const QImage &image, QSize size) const
 	return t.pm;
 }
 
-QColor DarkStyle::colorForSelectedFrame(QStyleOption const *opt) const
+QColor DarkStyle::selectionColor() const
 {
-	(void)opt;
-	return QColor(128, 192, 255);
+//	return QColor(128, 192, 255);
+	return QColor(80, 160, 255);
 }
 
 QColor DarkStyle::colorForItemView(QStyleOption const *opt) const
@@ -340,7 +340,7 @@ QColor DarkStyle::colorForItemView(QStyleOption const *opt) const
 //	return opt->palette.color(QPalette::Base); // これじゃない
 }
 
-void DarkStyle::drawNinePatchImage(QPainter *p, const QImage &image, QRect const &r, int w, int h) const
+void DarkStyle::drawNinePatchImage(QPainter *p, const QImage &image, const QRect &r, int w, int h) const
 {
 	QImage im = createImageFromNinePatchImage(image, w, h);
 	im.setText("name", image.text("name"));
@@ -361,7 +361,7 @@ void DarkStyle::polish(QPalette &palette)
 #endif
 }
 
-void DarkStyle::drawGutter(QPainter *p, QRect const &r) const
+void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 {
 	int x = r.x();
 	int y = r.y();
@@ -380,10 +380,10 @@ void DarkStyle::drawGutter(QPainter *p, QRect const &r) const
 	}
 }
 
-void DarkStyle::drawSelectedMenuFrame(QStyleOption const *option, QPainter *p, QRect rect, QWidget const *widget, bool deep) const
+void DarkStyle::drawSelectedItemFrame(const QStyleOption *option, QPainter *p, QRect rect, const QWidget *widget, bool deep) const
 {
 	(void)widget;
-	QColor color = colorForSelectedFrame(option);
+	QColor color = selectionColor();
 
 	int x, y, w, h;
 	x = rect.x();
@@ -437,7 +437,15 @@ void DarkStyle::drawSelectedMenuFrame(QStyleOption const *option, QPainter *p, Q
 	p->drawPixmap(x, y, w, h, pixmap);
 }
 
-void DarkStyle::drawButton(QPainter *p, QStyleOption const *option) const
+void DarkStyle::drawSelectionFrame(QPainter *p, QRect const &rect, double margin) const
+{
+	QColor color = selectionColor();
+	p->setPen(color);
+	p->setBrush(Qt::NoBrush);
+	p->drawRoundedRect(((QRectF)rect).adjusted(margin, margin, -margin, -margin), 4, 4);
+}
+
+void DarkStyle::drawButton(QPainter *p, const QStyleOption *option) const
 {
 	QRect rect = option->rect;
 	int w =	rect.width();
@@ -515,10 +523,7 @@ void DarkStyle::drawButton(QPainter *p, QStyleOption const *option) const
 
 		if (option->state & State_HasFocus) {
 #if 1
-			p->setPen(QColor(80, 160, 255));
-			p->setBrush(Qt::NoBrush);
-			double m = 3.5;
-			p->drawRoundedRect(((QRectF)rect).adjusted(m, m, -m, -m), 4, 4);
+			drawSelectionFrame(p, rect, 3.5);
 #else
 			p->fillRect(x, y, w, h, QColor(80, 160, 255, 32));
 #endif
@@ -528,7 +533,7 @@ void DarkStyle::drawButton(QPainter *p, QStyleOption const *option) const
 	}
 }
 
-void DarkStyle::drawToolButton(QPainter *p, QStyleOption const *option) const
+void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 {
 	p->save();
 
@@ -578,7 +583,7 @@ void DarkStyle::drawToolButton(QPainter *p, QStyleOption const *option) const
 	p->restore();
 }
 
-void DarkStyle::drawMenuBarBG(QPainter *p, QStyleOption const *option, QWidget const *widget) const
+void DarkStyle::drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget const *widget) const
 {
 	int x = option->rect.x();
 	int y = widget->y();
@@ -593,7 +598,7 @@ void DarkStyle::drawMenuBarBG(QPainter *p, QStyleOption const *option, QWidget c
 	p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
 }
 
-int DarkStyle::pixelMetric(PixelMetric metric, QStyleOption const *option, QWidget const *widget) const
+int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
 {
     if (metric == PM_ScrollBarExtent) {
         if (m->scroll_bar_extent > 0) {
@@ -606,7 +611,7 @@ int DarkStyle::pixelMetric(PixelMetric metric, QStyleOption const *option, QWidg
 	return QProxyStyle::pixelMetric(metric, option, widget);
 }
 
-QRect DarkStyle::subControlRect(ComplexControl cc, QStyleOptionComplex const *option, SubControl sc, QWidget const *widget) const
+QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const
 {
 	if (cc == CC_Slider && sc == SC_SliderGroove) {
 		return widget->rect();
@@ -711,7 +716,7 @@ QRect DarkStyle::subControlRect(ComplexControl cc, QStyleOptionComplex const *op
 	return QProxyStyle::subControlRect(cc, option, sc, widget);
 }
 
-void DarkStyle::drawPrimitive(PrimitiveElement pe, QStyleOption const *option, QPainter *p, QWidget const *widget) const
+void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
 //    qDebug() << pe;
 #ifdef Q_OS_LINUX
@@ -874,7 +879,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, QStyleOption const *option, Q
 				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
-				drawSelectedMenuFrame(option, p, r, widget);
+				drawSelectedItemFrame(option, p, r, widget);
 				p->restore();
 			}
 		} else {
@@ -883,7 +888,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, QStyleOption const *option, Q
 				n++;
 			}
 			if (n > 0) {
-				drawSelectedMenuFrame(option, p, option->rect, widget, n > 1);
+				drawSelectedItemFrame(option, p, option->rect, widget, n > 1);
 			}
 		}
 		return;
@@ -927,7 +932,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, QStyleOption const *option, Q
 	QProxyStyle::drawPrimitive(pe, option, p, widget);
 }
 
-void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPainter *p, QWidget const *widget) const
+void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
 //    qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
@@ -1202,7 +1207,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 	if (ce == CE_MenuBarItem) {
 		drawMenuBarBG(p, option, widget);
 		if (option->state & State_Selected) {
-			drawSelectedMenuFrame(option, p, option->rect, widget);
+			drawSelectedItemFrame(option, p, option->rect, widget);
 		}
 		if (const auto *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			QPalette::ColorRole textRole = disabled ? QPalette::Text : QPalette::ButtonText;
@@ -1262,7 +1267,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 			QRect vCheckRect = visualRect(option->direction, opt->rect, QRect(opt->rect.x(), opt->rect.y(), checkcol - (gutterWidth + opt->rect.x()), opt->rect.height()));
 
 			if (act) {
-				drawSelectedMenuFrame(option, p, option->rect, widget);
+				drawSelectedItemFrame(option, p, option->rect, widget);
 			}
 
 			if (checked && !ignoreCheckMark) {
@@ -1377,6 +1382,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 			QColor light = tab->palette.light().color();
 			QColor dark = tab->palette.dark().color();
 			QColor shadow = tab->palette.shadow().color();
+			QColor bgcolor = tab->palette.background().color();
 			int borderThinkness = pixelMetric(PM_TabBarBaseOverlap, tab, widget);
 			if (selected) {
 				borderThinkness /= 2;
@@ -1532,7 +1538,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						p->setPen(shadow);
 						p->drawLine(x2, y1 + 2, x2, y2 - ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness));
 						p->drawPoint(x2 - 1, y1 + 1);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(x2 - 1, y1 + 2, x2 - 1, y2 - ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness));
 					}
 					break;
@@ -1549,8 +1555,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 
 					// Delete border
 					if (selected) {
-						p->fillRect(QRect(x1, y1 + 1, (x2 - 1)-x1, 1), tab->palette.background());
-						p->fillRect(QRect(x1, y1, (x2 - 1)-x1, 1), tab->palette.background());
+						p->fillRect(QRect(x1, y1, (x2 - 1) - x1, 1), tab->palette.background());
 					}
 					// Left
 					if (firstTab || selected || onlyOne || !previousSelected) {
@@ -1564,7 +1569,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						int end = x2 - (nextSelected ? 0 : 2);
 						p->setPen(shadow);
 						p->drawLine(beg, y2, end, y2);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(beg, y2 - 1, end, y2 - 1);
 					}
 					// Right
@@ -1572,7 +1577,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						p->setPen(shadow);
 						p->drawLine(x2, y2 - 2, x2, y1 + ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness));
 						p->drawPoint(x2 - 1, y2 - 1);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(x2 - 1, y2 - 2, x2 - 1, y1 + ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness));
 					}
 					break;
@@ -1610,7 +1615,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						p->setPen(shadow);
 						p->drawLine(x1 + 3, y2, x2 - ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness), y2);
 						p->drawPoint(x1 + 2, y2 - 1);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(x1 + 3, y2 - 1, x2 - ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness), y2 - 1);
 						p->drawPoint(x1 + 1, y2 - 1);
 						p->drawPoint(x1 + 2, y2);
@@ -1644,7 +1649,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						int end = y2 - (nextSelected ? 0 : 2);
 						p->setPen(shadow);
 						p->drawLine(x2, beg, x2, end);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(x2 - 1, beg, x2 - 1, end);
 					}
 					// Bottom
@@ -1652,7 +1657,7 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 						p->setPen(shadow);
 						p->drawLine(x2 - 2, y2, x1 + ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness), y2);
 						p->drawPoint(x2 - 1, y2 - 1);
-						p->setPen(dark);
+						p->setPen(/*dark*/bgcolor);
 						p->drawLine(x2 - 2, y2 - 1, x1 + ((onlyOne || lastTab) && selected && rightAligned ? 0 : borderThinkness), y2 - 1);
 					}
 					break;
@@ -1817,11 +1822,59 @@ void DarkStyle::drawControl(ControlElement ce, QStyleOption const *option, QPain
 		return;
 	}
 #endif
+
+#if 1
+	if (ce == CE_Header || ce == CE_HeaderSection || ce == CE_HeaderEmptyArea) {
+		int x = option->rect.x();
+		int y = option->rect.y();
+		int w = option->rect.width();
+		int h = option->rect.height();
+		QLinearGradient gradient;
+		gradient.setStart(x, y);
+		gradient.setFinalStop(x, y + h / 4.0);
+		gradient.setColorAt(0, option->palette.color(QPalette::Light));
+		gradient.setColorAt(1, option->palette.color(QPalette::Window));
+		p->fillRect(x, y, w, h, gradient);
+		p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
+		if (ce == CE_HeaderSection) {
+			if (option->state & QStyle::State_MouseOver) {
+				p->save();
+				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
+				p->restore();
+			}
+		}
+		return;
+	}
+	if (ce == CE_ItemViewItem) {
+		drawPrimitive(PE_PanelItemViewItem, option, p, widget);
+		if (QStyleOptionViewItem const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
+			drawItemText(p, o->rect.adjusted(2, 0, 0, 0), o->displayAlignment, option->palette, true, o->text);
+			return;
+		}
+		return;
+	}
+	if (ce == CE_TabBarTab) {
+		drawControl(CE_TabBarTabShape, option, p, widget);
+		drawControl(CE_TabBarTabLabel, option, p, widget);
+		return;
+	}
+	if (ce == CE_PushButton) {
+		drawControl(CE_PushButtonBevel, option, p, widget);
+		drawControl(CE_PushButtonLabel, option, p, widget);
+		return;
+	}
+	if (ce == CE_ProgressBar) {
+		drawControl(CE_ProgressBarGroove, option, p, widget);
+		drawControl(CE_ProgressBarContents, option, p, widget);
+		return;
+	}
+#endif
+
 //	qDebug() << ce;
 	QProxyStyle::drawControl(ce, option, p, widget);
 }
 
-void DarkStyle::drawComplexControl(ComplexControl cc, QStyleOptionComplex const *option, QPainter *p, QWidget const *widget) const
+void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const
 {
 //    qDebug() << cc;
 	if (cc == QStyle::CC_ComboBox) {

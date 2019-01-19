@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 project(Guitar
-    VERSION 0.9.2
+    VERSION 0.9.3
     LANGUAGES CXX C
 )
 

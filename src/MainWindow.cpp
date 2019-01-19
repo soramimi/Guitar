@@ -45,6 +45,7 @@ FileDiffWidget::DrawData::DrawData()
 }
 
 struct MainWindow::Private {
+	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QTimer remote_watcher_timer;
 	QImage graph_color;
@@ -2228,11 +2229,13 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 
 bool MainWindow::isRemoteOnline() const
 {
-	return ui->radioButton_remote_online->isChecked();
+	return m->is_online_mode;
 }
 
 void MainWindow::setRemoteOnline(bool f)
 {
+	m->is_online_mode = f;
+
 	QRadioButton *rb = nullptr;
 	rb = f ? ui->radioButton_remote_online : ui->radioButton_remote_offline;
 	rb->blockSignals(true);
