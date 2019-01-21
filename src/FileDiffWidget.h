@@ -144,7 +144,7 @@ public:
 	void updateDiffView(QString id_left, QString id_right, QString const &path = QString());
 
 	void setMaximizeButtonEnabled(bool f);
-	void setFocusAcceptable(bool f);
+	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
 	void setTextCodec(QTextCodec *codec);

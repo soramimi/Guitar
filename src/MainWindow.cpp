@@ -163,6 +163,9 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
+	setTabOrder(ui->treeWidget_repos, ui->widget_log);
+//	setTabOrder(ui->widget_log, ui->treeWidget_repos);
+
 	startTimers();
 }
 
@@ -296,43 +299,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			auto *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
 			int k = e->key();
-			if (k == Qt::Key_Tab) {
-				if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
-					QList<QWidget *> tabstops;
-					tabstops.push_back(ui->treeWidget_repos);
-					tabstops.push_back(ui->tableWidget_log);
-					if (ui->stackedWidget->currentWidget() == ui->page_files) {
-						tabstops.push_back(ui->listWidget_files);
-					} else if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
-						tabstops.push_back(ui->listWidget_unstaged);
-						tabstops.push_back(ui->toolButton_select_all);
-						tabstops.push_back(ui->toolButton_stage);
-						tabstops.push_back(ui->toolButton_unstage);
-						tabstops.push_back(ui->toolButton_commit);
-						tabstops.push_back(ui->listWidget_staged);
-					}
-					tabstops.push_back(ui->widget_diff_view);
-					int n = tabstops.size();
-					if (n > 0) {
-						QWidget *f = qApp->focusWidget();
-						int i;
-						for (i = 0; i < n; i++) {
-							if (tabstops[i] == f) {
-								break;
-							}
-						}
-						if (i < n) {
-							if (e->modifiers() & Qt::ShiftModifier) {
-								i = (i + n - 1) % n;
-							} else {
-								i = (i + 1) % n;
-							}
-							tabstops[i]->setFocus();
-						}
-					}
-					return true;
-				}
-			}
 			if (k == Qt::Key_Escape) {
 				if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
 					ui->treeWidget_repos->setFocus();
@@ -392,21 +358,34 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 		}
 	} else if (et == QEvent::FocusIn) {
+		auto SelectItem = [](QListWidget *w){
+			int row = w->currentRow();
+			if (row < 0) {
+				row = 0;
+				w->setCurrentRow(row);
+			}
+			w->setItemSelected(w->item(row), true);
+			w->viewport()->update();
+		};
 		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
 		if (watched == ui->listWidget_unstaged) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText();
 			updateUnstagedFileCurrentItem();
+			SelectItem(ui->listWidget_unstaged);
 			return true;
 		}
 		if (watched == ui->listWidget_staged) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText();
 			updateStagedFileCurrentItem();
+			SelectItem(ui->listWidget_staged);
 			return true;
 		}
 		if (watched == ui->listWidget_files) {
 			m->last_focused_file_list = watched;
+			SelectItem(ui->listWidget_files);
+			return true;
 		}
 	}
 	return false;

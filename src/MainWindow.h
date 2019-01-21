@@ -118,6 +118,7 @@ private slots:
 	void onPtyProcessCompleted(bool ok, const QVariant &userdata);
 	void onRepositoriesTreeDropped();
 	void on_action_about_triggered();
+	void on_action_clean_df_triggered();
 	void on_action_clone_triggered();
 	void on_action_commit_triggered();
 	void on_action_create_a_repository_triggered();
@@ -129,10 +130,14 @@ private slots:
 	void on_action_edit_settings_triggered();
 	void on_action_edit_tags_triggered();
 	void on_action_exit_triggered();
-	void on_action_fetch_triggered();
+	void on_action_explorer_triggered();
 	void on_action_fetch_prune_triggered();
+	void on_action_fetch_triggered();
+	void on_action_offline_triggered();
+	void on_action_online_triggered();
 	void on_action_open_existing_working_copy_triggered();
 	void on_action_pull_triggered();
+	void on_action_push_all_tags_triggered();
 	void on_action_push_triggered();
 	void on_action_push_u_triggered();
 	void on_action_reflog_triggered();
@@ -140,10 +145,14 @@ private slots:
 	void on_action_repo_jump_triggered();
 	void on_action_repository_property_triggered();
 	void on_action_reset_HEAD_1_triggered();
+	void on_action_reset_hard_triggered();
 	void on_action_set_config_user_triggered();
 	void on_action_set_gpg_signing_triggered();
+	void on_action_stash_apply_triggered();
+	void on_action_stash_drop_triggered();
+	void on_action_stash_triggered();
 	void on_action_stop_process_triggered();
-	void on_action_push_all_tags_triggered();
+	void on_action_terminal_triggered();
 	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_window_log_triggered(bool checked);
@@ -179,25 +188,6 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
-
-	void on_action_terminal_triggered();
-
-	void on_action_explorer_triggered();
-
-	void on_action_clean_df_triggered();
-
-	void on_action_reset_hard_triggered();
-
-	void on_action_stash_triggered();
-
-	void on_action_stash_apply_triggered();
-
-	void on_action_stash_drop_triggered();
-
-	void on_action_online_triggered();
-
-	void on_action_offline_triggered();
-
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

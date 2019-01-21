@@ -61,7 +61,9 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	connect(ui->widget_diff_left->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
 	connect(ui->widget_diff_right->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
 
-	setFocusAcceptable(true);
+	setFocusAcceptable(Qt::ClickFocus);
+	QWidget::setTabOrder(ui->widget_diff_slider, ui->widget_diff_left);
+	QWidget::setTabOrder(ui->widget_diff_left, ui->widget_diff_right);
 
 	int n = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
 	ui->toolButton_fullscreen->setFixedSize(n, n);
@@ -659,9 +661,9 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 	win.exec();
 }
 
-void FileDiffWidget::setFocusAcceptable(bool f)
+void FileDiffWidget::setFocusAcceptable(Qt::FocusPolicy focuspolicy)
 {
-	Qt::FocusPolicy focuspolicy = f ? Qt::StrongFocus : Qt::NoFocus;
+//	Qt::FocusPolicy focuspolicy = f ? Qt::ClickFocus : Qt::NoFocus;
 	ui->widget_diff_left->setFocusPolicy(focuspolicy);
 	ui->widget_diff_right->setFocusPolicy(focuspolicy);
 }

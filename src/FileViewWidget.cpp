@@ -21,11 +21,11 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->addWidget(ui_page_none);
 	ui_page_text = new X_TextEditorWidget();
 	ui_page_text->setObjectName(QStringLiteral("page_text"));
-	ui_page_text->setFocusPolicy(Qt::StrongFocus);
+	ui_page_text->setFocusPolicy(Qt::ClickFocus);
 	ui_stackedWidget->addWidget(ui_page_text);
 	ui_page_image = new X_ImageViewWidget();
 	ui_page_image->setObjectName(QStringLiteral("page_image"));
-	ui_page_image->setFocusPolicy(Qt::StrongFocus);
+	ui_page_image->setFocusPolicy(Qt::ClickFocus);
 	ui_stackedWidget->addWidget(ui_page_image);
 	ui_verticalLayout->addWidget(ui_stackedWidget);
 	setWindowTitle(QApplication::translate("FileViewWidget", "Form", Q_NULLPTR));
