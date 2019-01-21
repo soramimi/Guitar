@@ -194,6 +194,10 @@ private slots:
 
 	void on_action_stash_drop_triggered();
 
+	void on_action_online_triggered();
+
+	void on_action_offline_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

@@ -414,22 +414,22 @@
             <number>4</number>
            </property>
            <item>
-            <widget class="QRadioButton" name="radioButton_remote_offline">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>Offline</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QRadioButton" name="radioButton_remote_online">
              <property name="focusPolicy">
               <enum>Qt::NoFocus</enum>
              </property>
              <property name="text">
               <string>Online</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioButton_remote_offline">
+             <property name="focusPolicy">
+              <enum>Qt::NoFocus</enum>
+             </property>
+             <property name="text">
+              <string>Offline</string>
              </property>
             </widget>
            </item>
@@ -1060,6 +1060,9 @@
     <addaction name="action_push_all_tags"/>
     <addaction name="separator"/>
     <addaction name="action_clone"/>
+    <addaction name="separator"/>
+    <addaction name="action_online"/>
+    <addaction name="action_offline"/>
    </widget>
    <widget class="QMenu" name="menuDestructive_3">
     <property name="title">
@@ -1516,6 +1519,16 @@
   <action name="action_stash_drop">
    <property name="text">
     <string>Drop</string>
+   </property>
+  </action>
+  <action name="action_online">
+   <property name="text">
+    <string>Online</string>
+   </property>
+  </action>
+  <action name="action_offline">
+   <property name="text">
+    <string>Offline</string>
    </property>
   </action>
  </widget>

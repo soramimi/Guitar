@@ -2242,6 +2242,11 @@ void MainWindow::setRemoteOnline(bool f)
 	rb->click();
 	rb->blockSignals(false);
 
+	ui->action_online->setCheckable(true);
+	ui->action_offline->setCheckable(true);
+	ui->action_online->setChecked(f);
+	ui->action_offline->setChecked(!f);
+
 	setNetworkingCommandsEnabled(f);
 
 	MySettings s;
@@ -2579,9 +2584,20 @@ void MainWindow::on_action_stash_drop_triggered()
 	});
 }
 
+void MainWindow::on_action_online_triggered()
+{
+	ui->radioButton_remote_online->click();
+}
+
+void MainWindow::on_action_offline_triggered()
+{
+	ui->radioButton_remote_offline->click();
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
+
 
 
 
