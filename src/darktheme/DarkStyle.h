@@ -37,7 +37,7 @@ private:
 	void drawGutter(QPainter *p, QRect const &r) const;
 	void drawSelectedItemFrame(const QStyleOption *option, QPainter *p, QRect rect, QWidget const *widget, bool deep = false) const;
 	void drawSelectionFrame(QPainter *p, const QRect &rect, double margin) const;
-	void drawButton(QPainter *p, QStyleOption const *option) const;
+	void drawButton(QPainter *p, QStyleOption const *option, bool mac_margin = true) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 	QColor color(int level, int alpha = 255) const;
