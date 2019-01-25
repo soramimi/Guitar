@@ -273,7 +273,7 @@ QPixmap BasicMainWindow::getTransparentPixmap()
 QIcon BasicMainWindow::committerIcon(int row) const
 {
 	QIcon icon;
-	if (isAvatarEnabled()) {
+	if (isAvatarEnabled() && isRemoteOnline()) {
 		auto const &logs = getLogs();
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];

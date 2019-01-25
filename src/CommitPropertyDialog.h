@@ -40,7 +40,7 @@ private:
 	void init(BasicMainWindow *mw);
 	BasicMainWindow *mainwindow();
 	void setAvatar(const QIcon &icon, QLabel *label);
-	void UpdateAvatar(bool request);
+	void updateAvatar(bool request);
 };
 
 #endif // COMMITPROPERTYDIALOG_H

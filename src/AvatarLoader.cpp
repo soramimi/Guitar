@@ -64,7 +64,7 @@ void AvatarLoader::run()
 		}
 		m->thread_mutex.unlock();
 
-		if (!m->mainwindow->isRemoteOnline()) continue;
+//		if (!m->mainwindow->isRemoteOnline()) continue;
 
 		if (isInterruptionRequested()) return;
 

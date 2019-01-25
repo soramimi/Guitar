@@ -76,13 +76,15 @@ void CommitPropertyDialog::init(BasicMainWindow *mw)
 
 	m->avatar_loader.start(mainwindow());
 	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
-		UpdateAvatar(false);
+		updateAvatar(false);
 	});
-	UpdateAvatar(true);
+	updateAvatar(true);
 }
 
-void CommitPropertyDialog::UpdateAvatar(bool request)
+void CommitPropertyDialog::updateAvatar(bool request)
 {
+	if (!mainwindow()->isRemoteOnline()) return;
+
 	auto SetAvatar = [&](QString const &email, QLabel *label){
 		if (mainwindow()->appsettings()->get_committer_icon) {
 			label->setFixedSize(QSize(48, 48));
