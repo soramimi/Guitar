@@ -1748,34 +1748,68 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	if (ce == CE_HeaderSection || ce == CE_HeaderEmptyArea) {
+		bool horz = true;
 		if (QStyleOptionHeader const *o = qstyleoption_cast<QStyleOptionHeader const *>(option)) {
-			bool horz = (o->orientation == Qt::Horizontal);
-			int x = o->rect.x();
-			int y = o->rect.y();
-			int w = o->rect.width();
-			int h = o->rect.height();
-			QLinearGradient gradient;
-			gradient.setStart(x, y);
-			gradient.setFinalStop(x, y + h / 4.0);
-			gradient.setColorAt(0, o->palette.color(QPalette::Light));
-			gradient.setColorAt(1, o->palette.color(QPalette::Window));
-			p->fillRect(x, y, w, h, gradient);
-			p->fillRect(x, y + h - 1, w, 1, o->palette.color(QPalette::Dark));
-			if (horz) {
-				p->fillRect(x + w - 1, y, 1, h, o->palette.color(QPalette::Dark));
-			}
-			if (ce == CE_HeaderSection) {
-				if (horz) {
-					p->fillRect(x, y, 1, h, o->palette.color(QPalette::Light));
-				}
-				if (o->state & QStyle::State_MouseOver) {
-					p->save();
-					p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
-					p->restore();
-				}
-			}
-			return;
+			horz = (o->orientation == Qt::Horizontal);
 		}
+		int x = option->rect.x();
+		int y = option->rect.y();
+		int w = option->rect.width();
+		int h = option->rect.height();
+		QLinearGradient gradient;
+		gradient.setStart(x, y);
+		gradient.setFinalStop(x, y + h / 4.0);
+		gradient.setColorAt(0, option->palette.color(QPalette::Light));
+		gradient.setColorAt(1, option->palette.color(QPalette::Window));
+		p->fillRect(x, y, w, h, gradient);
+		p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
+		if (horz) {
+			p->fillRect(x + w - 1, y, 1, h, option->palette.color(QPalette::Dark));
+		}
+		if (ce == CE_HeaderSection) {
+			if (horz) {
+				p->fillRect(x, y, 1, h, option->palette.color(QPalette::Light));
+			}
+			if (option->state & QStyle::State_MouseOver) {
+				p->save();
+				p->fillRect(x, y, w, h, QColor(255, 255, 255, 32));
+				p->restore();
+			}
+		}
+		return;
+	}
+	if (ce == CE_HeaderLabel) {
+		if (QStyleOptionHeader const *header = qstyleoption_cast<QStyleOptionHeader const *>(option)) {
+			QRect rect = header->rect;
+			if (!header->icon.isNull()) {
+				int iconExtent = pixelMetric(PM_SmallIconSize, option, widget);
+				QPixmap pixmap = header->icon.pixmap(QSize(iconExtent, iconExtent), (header->state & State_Enabled) ? QIcon::Normal : QIcon::Disabled);
+				int pixw = pixmap.width() / pixmap.devicePixelRatio();
+
+				QRect aligned = alignedRect(header->direction, QFlag(header->iconAlignment), pixmap.size() / pixmap.devicePixelRatio(), rect);
+				QRect inter = aligned.intersected(rect);
+				p->drawPixmap(inter.x(), inter.y(), pixmap, inter.x() - aligned.x(), inter.y() - aligned.y(), aligned.width() * pixmap.devicePixelRatio(), pixmap.height() * pixmap.devicePixelRatio());
+
+				const int margin = pixelMetric(QStyle::PM_HeaderMargin, option, widget);
+				if (header->direction == Qt::LeftToRight) {
+					rect.setLeft(rect.left() + pixw + margin);
+				} else {
+					rect.setRight(rect.right() - pixw - margin);
+				}
+			}
+			if (header->state & QStyle::State_On) {
+				QFont fnt = p->font();
+				fnt.setBold(true);
+				p->setFont(fnt);
+			}
+			int leftmargin = 0;
+			auto align = header->textAlignment;
+			if (align & Qt::AlignLeft) {
+				leftmargin += 4;
+			}
+			drawItemText(p, rect.adjusted(leftmargin, 0, 0, 0), align, header->palette, (header->state & State_Enabled), header->text, QPalette::ButtonText);
+		}
+		return;
 	}
 #ifdef Q_OS_MAC
 	if (ce == CE_DockWidgetTitle) {
