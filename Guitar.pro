@@ -199,7 +199,8 @@ SOURCES += \
     src/darktheme/StandardStyle.cpp \
     src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
     src/gpg.cpp \
-    src/CloneFromGitHubDialog.cpp
+    src/CloneFromGitHubDialog.cpp \
+    src/ObjectBrowserDialog.cpp
 
 HEADERS  += \
     src/AboutDialog.h \
@@ -311,7 +312,8 @@ HEADERS  += \
     src/darktheme/TraditionalWindowsStyleTreeControl.h \
     src/gpg.h \
     src/platform.h \
-    src/CloneFromGitHubDialog.h
+    src/CloneFromGitHubDialog.h \
+    src/ObjectBrowserDialog.h
 
 HEADERS += src/version.h
 
@@ -363,7 +365,8 @@ FORMS    += \
     src/SettingGeneralForm.ui \
     src/SettingProgramsForm.ui \
     src/WelcomeWizardDialog.ui \
-    src/CloneFromGitHubDialog.ui
+    src/CloneFromGitHubDialog.ui \
+    src/ObjectBrowserDialog.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

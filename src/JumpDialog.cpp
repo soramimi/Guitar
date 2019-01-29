@@ -23,7 +23,6 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 
 	ui->tableWidget->setItemDelegate(&m->delegate);
 
-//	m->items = items;
 	for (NamedCommitItem const &item : items) {
 		NamedCommitItem newitem = item;
 		QString name = newitem.name;
@@ -49,7 +48,6 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 	}
 	updateTable();
 
-	ui->tabWidget->setCurrentWidget(ui->tab_branches_tags);
 	ui->lineEdit_filter->setFocus();
 }
 
@@ -59,26 +57,17 @@ JumpDialog::~JumpDialog()
 	delete ui;
 }
 
-JumpDialog::Action JumpDialog::action() const
-{
-	QWidget *w = ui->tabWidget->currentWidget();
-	if (w == ui->tab_branches_tags) return Action::BranchsAndTags;
-	if (w == ui->tab_find_text)     return Action::CommitId;
-	return Action::None;
-}
-
 QString JumpDialog::text() const
 {
-	JumpDialog::Action a = action();
-
-	if (a == JumpDialog::Action::BranchsAndTags) {
-		return m->selected_name;
+	int row = ui->tableWidget->currentRow();
+	if (row < 0) {
+		return ui->lineEdit_filter->text();
+	} else {
+		auto *item = ui->tableWidget->item(row, 0);
+		if (item) {
+			return item->text();
+		}
 	}
-
-	if (a == JumpDialog::Action::CommitId) {
-		return ui->lineEdit_text->text();
-	}
-
 	return QString();
 }
 
@@ -109,7 +98,6 @@ void JumpDialog::internalUpdateTable(NamedCommitList const &list)
 	}
 	ui->tableWidget->resizeColumnsToContents();
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
-	ui->tableWidget->setCurrentCell(0, 0);
 }
 
 void JumpDialog::updateTable()
@@ -152,19 +140,5 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 	int row = ui->tableWidget->currentRow();
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
 	m->selected_name = p ? p->text() : QString();
-}
-
-bool JumpDialog::isCheckoutChecked()
-{
-	return ui->checkBox_checkout->isChecked();
-}
-
-void JumpDialog::on_tabWidget_currentChanged(int /*index*/)
-{
-	if (ui->tabWidget->currentWidget() == ui->tab_branches_tags) {
-		ui->checkBox_checkout->setVisible(true);
-	} else {
-		ui->checkBox_checkout->setVisible(false);
-	}
 }
 

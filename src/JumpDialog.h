@@ -20,27 +20,12 @@ private:
 public:
 	explicit JumpDialog(QWidget *parent, NamedCommitList const &items);
 	~JumpDialog() override;
-
-	enum class Action {
-		None,
-		BranchsAndTags,
-		CommitId,
-	};
-
-	Action action() const;
-
-
 	QString text() const;
-
 	static void sort(NamedCommitList *items);
-	bool isCheckoutChecked();
 private slots:
 	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-
-	void on_tabWidget_currentChanged(int index);
-
 private:
 	Ui::JumpDialog *ui;
 	void updateTable();

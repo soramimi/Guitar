@@ -2703,3 +2703,25 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 	}
 }
 
+QStringList BasicMainWindow::findGitObject(QString const &id) const
+{
+	QStringList list;
+	if (Git::isValidID(id)) {
+		QString a = id.mid(0, 2);
+		QString b = id.mid(2);
+		QString dir = m->current_repo.local_dir / ".git/objects" / a;
+		QDirIterator it(dir);
+		while (it.hasNext()) {
+			it.next();
+			QFileInfo info = it.fileInfo();
+			if (info.isFile()) {
+				QString c = info.fileName();
+				if (c.startsWith(b)) {
+					list.push_back(a + c);
+				}
+			}
+		}
+	}
+	return list;
+}
+

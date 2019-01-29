@@ -23,6 +23,7 @@
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "CloneFromGitHubDialog.h"
+#include "ObjectBrowserDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -2072,41 +2073,29 @@ void MainWindow::on_action_repo_jump_triggered()
 	}
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
-		JumpDialog::Action action = dlg.action();
-		if (action == JumpDialog::Action::BranchsAndTags) {
-			QString name = dlg.text();
-			QString id = g->rev_parse(name);
-			if (g->objectType(id) == "tag") {
-				id = getObjCache()->getCommitIdFromTag(id);
+		QString text = dlg.text();
+		if (text.isEmpty()) return;
+		QString id = g->rev_parse(text);
+		if (id.isEmpty() && Git::isValidID(text)) {
+			QStringList list = findGitObject(text);
+			if (list.isEmpty()) {
+				QMessageBox::warning(this, tr("Jump"), QString("%1\n\n").arg(text) + tr("No such commit"));
+				return;
 			}
-			int row = rowFromCommitId(id);
-			if (row < 0) {
-				QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(name).arg(id) + tr("That commmit has not foud or not read yet"));
-			} else {
-				setCurrentLogRow(row);
-
-				if (dlg.isCheckoutChecked()) {
-					NamedCommitItem item;
-					for (NamedCommitItem const &t : items) {
-						if (t.name == name) {
-							item = t;
-							break;
-						}
-					}
-					bool ok = false;
-					if (item.type == NamedCommitItem::Type::Branch) {
-						ok = g->git(QString("checkout \"%1\"").arg(name), true);
-					} else if (item.type == NamedCommitItem::Type::Tag) {
-						ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
-					}
-					if (ok) {
-						openRepository(true);
-					}
-				}
+			ObjectBrowserDialog dlg2(this, list);
+			if (dlg2.exec() == QDialog::Accepted) {
+				id = dlg2.text();
+				if (id.isEmpty()) return;
 			}
-		} else if (action == JumpDialog::Action::CommitId) {
-			QString id = dlg.text();
-			jumpToCommit(id);
+		}
+		if (g->objectType(id) == "tag") {
+			id = getObjCache()->getCommitIdFromTag(id);
+		}
+		int row = rowFromCommitId(id);
+		if (row < 0) {
+			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(id) + tr("No such commit"));
+		} else {
+			setCurrentLogRow(row);
 		}
 	}
 }

@@ -64,7 +64,7 @@ bool Git::isValidID(QString const &id)
 {
 	int zero = 0;
 	int n = id.size();
-	if (n > 2 && n <= GIT_ID_LENGTH) {
+	if (n >= 4 && n <= GIT_ID_LENGTH) {
 		ushort const *p = id.utf16();
 		for (int i = 0; i < n; i++) {
 			uchar c = p[i];
