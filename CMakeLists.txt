@@ -98,6 +98,7 @@ set(Guitar_SOURCES
 	src/MyTableWidgetDelegate.cpp
 	src/MyTextEditorWidget.cpp
 	src/MyToolButton.cpp
+    src/ObjectBrowserDialog.cpp
 	src/Photoshop.cpp
 	src/PushDialog.cpp
 	src/ReadOnlyLineEdit.cpp
@@ -212,6 +213,7 @@ set(Guitar_HEADERS
 	src/MyTableWidgetDelegate.h
 	src/MyTextEditorWidget.h
 	src/MyToolButton.h
+    src/ObjectBrowserDialog.h
 	src/Photoshop.h
 	src/PushDialog.h
 	src/ReadOnlyLineEdit.h
@@ -320,6 +322,7 @@ set(Guitar_UIS
 	src/LineEditDialog.ui
 	src/MainWindow.ui
 	src/MergeBranchDialog.ui
+    src/ObjectBrowserDialog.ui
 	src/PushDialog.ui
 	src/ReflogWindow.ui
 	src/RepositoryPropertyDialog.ui
