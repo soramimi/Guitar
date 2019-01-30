@@ -1844,9 +1844,11 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_ItemViewItem) {
 		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
+			p->save();
 			p->setFont(o->font);
 			drawPrimitive(PE_PanelItemViewItem, option, p, widget);
 			drawItemText(p, o->rect.adjusted(2, 0, 0, 0), o->displayAlignment, option->palette, true, o->text);
+			p->restore();
 			return;
 		}
 	}

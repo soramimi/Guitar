@@ -60,6 +60,7 @@ public:
 	bool parse(QString const &idxpath);
 	GitPackIdxItem const *item(QString const &id) const;
 	GitPackIdxItem const *item(size_t offset) const;
+	void each(std::function<bool(GitPackIdxItem const *)> const &fn) const;
 };
 
 using GitPackIdxPtr = std::shared_ptr<GitPackIdxV2>;

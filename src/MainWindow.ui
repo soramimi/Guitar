@@ -946,6 +946,8 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="action_about"/>
+    <addaction name="separator"/>
+    <addaction name="action_test"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">

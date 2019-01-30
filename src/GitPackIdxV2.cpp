@@ -127,3 +127,10 @@ GitPackIdxItem const *GitPackIdxV2::item(size_t offset) const
 	return nullptr;
 }
 
+void GitPackIdxV2::each(std::function<bool(GitPackIdxItem const *)> const &fn) const
+{
+	for (const auto & i : d.item_list) {
+		if (!fn(&i)) break;
+	}
+}
+

@@ -27,6 +27,7 @@
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
+#include <QDirIterator>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QMessageBox>

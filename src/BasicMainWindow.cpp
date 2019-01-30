@@ -2706,20 +2706,44 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 QStringList BasicMainWindow::findGitObject(QString const &id) const
 {
 	QStringList list;
+	std::set<QString> set;
 	if (Git::isValidID(id)) {
-		QString a = id.mid(0, 2);
-		QString b = id.mid(2);
-		QString dir = m->current_repo.local_dir / ".git/objects" / a;
-		QDirIterator it(dir);
-		while (it.hasNext()) {
-			it.next();
-			QFileInfo info = it.fileInfo();
-			if (info.isFile()) {
-				QString c = info.fileName();
-				if (c.startsWith(b)) {
-					list.push_back(a + c);
+		{
+			QString a = id.mid(0, 2);
+			QString b = id.mid(2);
+			QString dir = m->current_repo.local_dir / ".git/objects" / a;
+			QDirIterator it(dir);
+			while (it.hasNext()) {
+				it.next();
+				QFileInfo info = it.fileInfo();
+				if (info.isFile()) {
+					QString c = info.fileName();
+					if (c.startsWith(b)) {
+						set.insert(set.end(), a + c);
+					}
 				}
 			}
+		}
+		{
+			QString dir = m->current_repo.local_dir / ".git/objects/pack";
+			QDirIterator it(dir);
+			while (it.hasNext()) {
+				it.next();
+				QFileInfo info = it.fileInfo();
+				if (info.isFile() && info.fileName().startsWith("pack-") && info.fileName().endsWith(".idx")) {
+					GitPackIdxV2 idx;
+					idx.parse(info.absoluteFilePath());
+					idx.each([&](GitPackIdxItem const *item){
+						if (item->id.startsWith(id)) {
+							set.insert(item->id);
+						}
+						return true;
+					});
+				}
+			}
+		}
+		for (QString const &s : set) {
+			list.push_back(s);
 		}
 	}
 	return list;
