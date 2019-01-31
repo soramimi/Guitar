@@ -6,7 +6,6 @@
 #include <QThread>
 #include <QMutex>
 #include <deque>
-#include <QWaitCondition>
 #include <set>
 #include <string>
 
@@ -18,7 +17,7 @@ class AvatarLoader : public QThread {
 private:
 	struct RequestItem {
 		std::string email;
-		QIcon icon;
+		QImage image;
 	};
 	struct Private;
 	Private *m;
