@@ -820,14 +820,12 @@ void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
 //    qDebug() << pe;
-//#ifdef Q_OS_LINUX
+#ifndef Q_OS_MAC
 	if (pe == PE_FrameFocusRect) {
-//		QColor color(64, 128, 255);
-//		drawFrame(p, option->rect, color, color);
 		drawSelectionFrame(p, option->rect, 0);
 		return;
 	}
-//#endif
+#endif
 	if (pe == PE_IndicatorArrowDown) {
 		switch (pe) {
 		case PE_IndicatorArrowUp:
