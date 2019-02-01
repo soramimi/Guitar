@@ -57,10 +57,7 @@ void AvatarLoader::run()
 		}
 
 		for (RequestItem &item : requests) {
-
 			if (isInterruptionRequested()) return;
-
-			if (item.email.empty()) continue;
 
 			if (strchr(item.email.c_str(), '@')) {
 				QString id;
@@ -88,6 +85,13 @@ void AvatarLoader::run()
 							item.image = image;
 							{
 								QMutexLocker lock(&m->mutex);
+								size_t i = m->requested.size();
+								while (i > 0) {
+									i--;
+									if (m->requested[i].email == item.email) {
+										m->requested.erase(m->requested.begin() + i);
+									}
+								}
 								while (m->completed.size() >= MAX_CACHE_COUNT) {
 									m->completed.pop_back();
 								}
