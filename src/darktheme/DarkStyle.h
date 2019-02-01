@@ -4,6 +4,8 @@
 #include <QPainter>
 #include <QProxyStyle>
 
+class QStyleOptionViewItem;
+
 class DarkStyle : public QProxyStyle {
 public:
 private:
@@ -36,11 +38,12 @@ private:
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;
 	void drawSelectedItemFrame(QPainter *p, QRect rect, QWidget const *widget, bool deep = false) const;
-	void drawSelectionFrame(QPainter *p, const QRect &rect, double margin) const;
+	void drawSelectionFrame(QPainter *p, const QRect &rect, int margin) const;
 	void drawButton(QPainter *p, QStyleOption const *option, bool mac_margin = true) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 	QColor color(int level, int alpha = 255) const;
+	void viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const;
 public:
 	DarkStyle(const QColor &base_color = QColor());
 	~DarkStyle() override;

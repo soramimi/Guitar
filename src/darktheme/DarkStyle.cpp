@@ -13,6 +13,7 @@
 #include <QStyleOptionComplex>
 #include <QStyleOptionFrameV3>
 #include <QTableWidget>
+#include <QTextLayout>
 #include <QToolTip>
 #include <cmath>
 #include <cstdint>
@@ -437,12 +438,16 @@ void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, const QWidget *wi
 	p->drawPixmap(x, y, w, h, pixmap);
 }
 
-void DarkStyle::drawSelectionFrame(QPainter *p, QRect const &rect, double margin) const
+void DarkStyle::drawSelectionFrame(QPainter *p, QRect const &rect, int margin) const
 {
+	p->save();
+	p->setRenderHint(QPainter::Antialiasing);
 	QColor color = selectionColor();
 	p->setPen(color);
 	p->setBrush(Qt::NoBrush);
-	p->drawRoundedRect(((QRectF)rect).adjusted(margin, margin, -margin, -margin), 4, 4);
+	double m = margin + 0.5;
+	p->drawRoundedRect(((QRectF)rect).adjusted(m, m, -m, -m), 3, 3);
+	p->restore();
 }
 
 void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_margin) const
@@ -527,7 +532,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 		
 		if (option->state & State_HasFocus) {
 #if 1
-			drawSelectionFrame(p, rect, 3.5);
+			drawSelectionFrame(p, rect, 3);
 #else
 			p->fillRect(x, y, w, h, QColor(80, 160, 255, 32));
 #endif
@@ -720,16 +725,109 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 	return QProxyStyle::subControlRect(cc, option, sc, widget);
 }
 
+#if 0
+static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth)
+{
+	qreal height = 0;
+	qreal widthUsed = 0;
+	textLayout.beginLayout();
+	while (true) {
+		QTextLine line = textLayout.createLine();
+		if (!line.isValid())
+			break;
+		line.setLineWidth(lineWidth);
+		line.setPosition(QPointF(0, height));
+		height += line.height();
+		widthUsed = qMax(widthUsed, line.naturalTextWidth());
+	}
+	textLayout.endLayout();
+	return QSizeF(widthUsed, height);
+}
+
+void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
+{
+	const QWidget *widget = option->widget;
+	const int textMargin = pixelMetric(QStyle::PM_FocusFrameHMargin, 0, widget) + 1;
+
+	QRect textRect = rect.adjusted(textMargin, 0, -textMargin, 0); // remove width padding
+	const bool wrapText = option->features & QStyleOptionViewItem::WrapText;
+	QTextOption textOption;
+	textOption.setWrapMode(wrapText ? QTextOption::WordWrap : QTextOption::ManualWrap);
+	textOption.setTextDirection(option->direction);
+	textOption.setAlignment(QStyle::visualAlignment(option->direction, option->displayAlignment));
+	QTextLayout textLayout(option->text, option->font);
+	textLayout.setTextOption(textOption);
+
+	viewItemTextLayout(textLayout, textRect.width());
+
+	const QRectF boundingRect = textLayout.boundingRect();
+	const QRect layoutRect = QStyle::alignedRect(option->direction, option->displayAlignment, boundingRect.size().toSize(), textRect);
+	const QPointF position = layoutRect.topLeft();
+	const int lineCount = textLayout.lineCount();
+
+	qreal height = 0;
+	for (int i = 0; i < lineCount; ++i) {
+		const QTextLine line = textLayout.lineAt(i);
+		height += line.height();
+
+		// above visible rect
+		if (height + layoutRect.top() <= textRect.top()) continue;
+
+		const int start = line.textStart();
+		const int length = line.textLength();
+
+		const bool drawElided = line.naturalTextWidth() > textRect.width();
+		bool elideLastVisibleLine = false;
+		if (!drawElided && i + 1 < lineCount) {
+			const QTextLine nextLine = textLayout.lineAt(i + 1);
+			const int nextHeight = height + nextLine.height() / 2;
+			// elide when less than the next half line is visible
+			if (nextHeight + layoutRect.top() > textRect.height() + textRect.top()) {
+				elideLastVisibleLine = true;
+			}
+		}
+
+		if (drawElided || elideLastVisibleLine) {
+			QString text = textLayout.text().mid(start, length);
+			if (elideLastVisibleLine) {
+				text += QChar(0x2026);
+			}
+//			const QStackTextEngine engine(text, option->font);
+			const QString elidedText = text;//engine.elidedText(option->textElideMode, textRect.width());
+			const QPointF pos(position.x() + line.x(), position.y() + line.y() + line.ascent());
+			p->save();
+			p->setFont(option->font);
+			p->drawText(pos, elidedText);
+			p->restore();
+		} else {
+			line.draw(p, position);
+		}
+
+		// below visible text, can stop
+		if (height + layoutRect.top() >= textRect.bottom()) {
+			break;
+		}
+	}
+}
+#else
+void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
+{
+	bool enabled = (option->state & State_Enabled);
+	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, option->text);
+}
+#endif
+
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
 //    qDebug() << pe;
-#ifdef Q_OS_LINUX
+//#ifdef Q_OS_LINUX
 	if (pe == PE_FrameFocusRect) {
-		QColor color(64, 128, 255);
-		drawFrame(p, option->rect, color, color);
+//		QColor color(64, 128, 255);
+//		drawFrame(p, option->rect, color, color);
+		drawSelectionFrame(p, option->rect, 0);
 		return;
 	}
-#endif
+//#endif
 	if (pe == PE_IndicatorArrowDown) {
 		switch (pe) {
 		case PE_IndicatorArrowUp:
@@ -1837,12 +1935,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 #endif
-	if (ce == CE_Header) {
-		drawControl(CE_HeaderSection, option, p, widget);
-		drawControl(CE_HeaderLabel, option, p, widget);
-		return;
-	}
 	if (ce == CE_ItemViewItem) {
+#if 0
 		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
 			p->save();
 			p->setFont(o->font);
@@ -1851,6 +1945,88 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			p->restore();
 			return;
 		}
+#else
+		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
+			p->save();
+			p->setClipRect(o->rect);
+
+			QRect checkRect = subElementRect(SE_ItemViewItemCheckIndicator, o, widget);
+			QRect iconRect = subElementRect(SE_ItemViewItemDecoration, o, widget);
+			QRect textRect = subElementRect(SE_ItemViewItemText, o, widget);
+			textRect.adjust(2, 0, 0, 0);
+
+			// draw the background
+			drawPrimitive(PE_PanelItemViewItem, o, p, widget);
+
+			// draw the check mark
+			if (o->features & QStyleOptionViewItem::HasCheckIndicator) {
+				QStyleOptionViewItem o2(*o);
+				o2.rect = checkRect;
+				o2.state = o2.state & ~QStyle::State_HasFocus;
+
+				switch (o->checkState) {
+				case Qt::Unchecked:
+					o2.state |= QStyle::State_Off;
+					break;
+				case Qt::PartiallyChecked:
+					o2.state |= QStyle::State_NoChange;
+					break;
+				case Qt::Checked:
+					o2.state |= QStyle::State_On;
+					break;
+				}
+				drawPrimitive(QStyle::PE_IndicatorViewItemCheck, &o2, p, widget);
+			}
+
+			// draw the icon
+			QIcon::Mode mode = QIcon::Normal;
+			if (!(o->state & QStyle::State_Enabled)) {
+				mode = QIcon::Disabled;
+			} else if (o->state & QStyle::State_Selected) {
+				mode = QIcon::Selected;
+			}
+			QIcon::State state = o->state & QStyle::State_Open ? QIcon::On : QIcon::Off;
+			o->icon.paint(p, iconRect, o->decorationAlignment, mode, state);
+
+			// draw the text
+			if (!o->text.isEmpty()) {
+				QPalette::ColorGroup cg = o->state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
+				if (cg == QPalette::Normal && !(o->state & QStyle::State_Active)) {
+					cg = QPalette::Inactive;
+				}
+				if (o->state & QStyle::State_Selected) {
+					p->setPen(o->palette.color(cg, QPalette::HighlightedText));
+				} else {
+					p->setPen(o->palette.color(cg, QPalette::Text));
+				}
+				if (o->state & QStyle::State_Editing) {
+					p->setPen(o->palette.color(cg, QPalette::Text));
+					p->drawRect(textRect.adjusted(0, 0, -1, -1));
+				}
+				viewItemDrawText(p, o, textRect);
+			}
+
+			// draw the focus rect
+			if (o->state & QStyle::State_HasFocus) {
+				QStyleOptionFocusRect o3;
+				o3.QStyleOption::operator=(*o);
+				o3.rect = subElementRect(SE_ItemViewItemFocusRect, o, widget);
+				o3.state |= QStyle::State_KeyboardFocusChange;
+				o3.state |= QStyle::State_Item;
+				QPalette::ColorGroup cg = (o->state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
+				o3.backgroundColor = o->palette.color(cg, (o->state & QStyle::State_Selected) ? QPalette::Highlight : QPalette::Window);
+				drawPrimitive(QStyle::PE_FrameFocusRect, &o3, p, widget);
+			}
+
+			p->restore();
+		}
+		return;
+#endif
+	}
+	if (ce == CE_Header) {
+		drawControl(CE_HeaderSection, option, p, widget);
+		drawControl(CE_HeaderLabel, option, p, widget);
+		return;
 	}
 	if (ce == CE_TabBarTab) {
 		drawControl(CE_TabBarTabShape, option, p, widget);
