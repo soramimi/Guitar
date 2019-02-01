@@ -59,6 +59,8 @@ struct MainWindow::Private {
 	QListWidgetItem *last_selected_file_item = nullptr;
 
 	RemoteWatcher remote_watcher;
+
+	int repos_panel_width = 0;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -200,6 +202,10 @@ bool MainWindow::shown()
 			return false;
 		}
 	}
+
+	m->repos_panel_width = ui->stackedWidget_leftpanel->width();
+	ui->stackedWidget_leftpanel->setCurrentWidget(ui->page_repos);
+	ui->action_repositories_panel->setChecked(true);
 
 	setGitCommand(appsettings()->git_command, false);
 	setFileCommand(appsettings()->file_command, false);
@@ -683,10 +689,10 @@ void MainWindow::showFileList(FilesListType files_list_type)
 {
 	switch (files_list_type) {
 	case FilesListType::SingleList:
-		ui->stackedWidget->setCurrentWidget(ui->page_files);
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files);
 		break;
 	case FilesListType::SideBySide:
-		ui->stackedWidget->setCurrentWidget(ui->page_uncommited);
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited);
 		break;
 	}
 }
@@ -2026,7 +2032,7 @@ void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 QListWidgetItem *MainWindow::currentFileItem() const
 {
 	QListWidget *listwidget = nullptr;
-	if (ui->stackedWidget->currentWidget() == ui->page_uncommited) {
+	if (ui->stackedWidget_filelist->currentWidget() == ui->page_uncommited) {
 		QWidget *w = qApp->focusWidget();
 		if (w == ui->listWidget_unstaged) {
 			listwidget = ui->listWidget_unstaged;
@@ -2563,10 +2569,23 @@ void MainWindow::on_action_offline_triggered()
 	ui->radioButton_remote_offline->click();
 }
 
+void MainWindow::on_action_repositories_panel_triggered()
+{
+	bool checked = ui->action_repositories_panel->isChecked();
+	ui->stackedWidget_leftpanel->setCurrentWidget(checked ? ui->page_repos : ui->page_collapsed);
+
+	if (checked) {
+		ui->stackedWidget_leftpanel->setFixedWidth(m->repos_panel_width);
+		ui->stackedWidget_leftpanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+		ui->stackedWidget_leftpanel->setMinimumWidth(QWIDGETSIZE_MAX);
+		ui->stackedWidget_leftpanel->setMaximumWidth(QWIDGETSIZE_MAX);
+	} else {
+		m->repos_panel_width = ui->stackedWidget_leftpanel->width();
+		ui->stackedWidget_leftpanel->setFixedWidth(24);
+	}
+}
+
 void MainWindow::on_action_test_triggered()
 {
 }
-
-
-
 
