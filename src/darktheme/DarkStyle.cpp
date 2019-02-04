@@ -438,7 +438,7 @@ void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, const QWidget *wi
 	p->drawPixmap(x, y, w, h, pixmap);
 }
 
-void DarkStyle::drawSelectionFrame(QPainter *p, QRect const &rect, int margin) const
+void DarkStyle::drawFocusFrame(QPainter *p, QRect const &rect, int margin) const
 {
 	p->save();
 	p->setRenderHint(QPainter::Antialiasing);
@@ -532,7 +532,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 		
 		if (option->state & State_HasFocus) {
 #if 1
-			drawSelectionFrame(p, rect, 3);
+			drawFocusFrame(p, rect, 3);
 #else
 			p->fillRect(x, y, w, h, QColor(80, 160, 255, 32));
 #endif
@@ -825,7 +825,16 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 //    qDebug() << pe;
 #ifndef Q_OS_MAC
 	if (pe == PE_FrameFocusRect) {
-		drawSelectionFrame(p, option->rect, 0);
+		if (auto const *w = qobject_cast<QTableView const *>(widget)) {
+			if (w->selectionBehavior() == QAbstractItemView::SelectRows) {
+				if (auto const *v = w->viewport()) {
+					QRect r(0, option->rect.y(), v->width(), option->rect.height());
+					return;
+				}
+
+			}
+		}
+		drawFocusFrame(p, option->rect, 0);
 		return;
 	}
 #endif
@@ -971,6 +980,8 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_PanelItemViewRow) {
+//		p->drawEllipse(option->rect);
+//		return;
 #ifdef Q_OS_WIN
 		// thru
 #else
@@ -1003,6 +1014,24 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
 				drawSelectedItemFrame(p, r, widget);
+
+#if 0
+				if (tableview->hasFocus()) { // 単一行選択モードのとき、フォーカス枠をここで描く
+					if (tableview->selectionMode() == QAbstractItemView::SingleSelection && tableview->selectionBehavior() == QAbstractItemView::SelectRows) {
+						if (auto const *viewport = tableview->viewport()) {
+							if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
+								QRect r(0, option->rect.y(), viewport->width(), option->rect.height());
+								if (o->index.column() == tableview->model()->columnCount() - 1) {
+									r.setWidth(o->rect.x() + o->rect.width());
+								}
+								p->setClipRect(o->rect);
+								drawFocusFrame(p, r, 0);
+							}
+						}
+					}
+				}
+#endif
+
 				p->restore();
 			}
 		} else {
