@@ -813,7 +813,10 @@ void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option
 void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
 {
 	bool enabled = (option->state & State_Enabled);
-	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, option->text);
+	p->save();
+	p->setFont(option->font);
+	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, option->text, QPalette::NoRole);
+	p->restore();
 }
 #endif
 
