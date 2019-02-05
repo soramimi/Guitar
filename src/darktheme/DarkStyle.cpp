@@ -337,8 +337,11 @@ QColor DarkStyle::selectionColor() const
 
 QColor DarkStyle::colorForItemView(QStyleOption const *opt) const
 {
+#ifdef Q_OS_WIN
+	return opt->palette.color(QPalette::Base);
+#else
 	return opt->palette.color(QPalette::Dark);
-//	return opt->palette.color(QPalette::Base); // これじゃない
+#endif
 }
 
 void DarkStyle::drawNinePatchImage(QPainter *p, const QImage &image, const QRect &r, int w, int h) const
@@ -381,23 +384,15 @@ void DarkStyle::drawGutter(QPainter *p, const QRect &r) const
 	}
 }
 
-void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, const QWidget *widget, bool deep) const
+void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, bool focus) const
 {
-	(void)widget;
-	QColor color = selectionColor();
+	QColor color = focus ? selectionColor() : QColor(128, 128, 128);
 
 	int x, y, w, h;
 	x = rect.x();
 	y = rect.y();
 	w = rect.width();
 	h = rect.height();
-
-	auto SetAlpha = [&](QColor *color, int alpha){
-		if (deep) {
-			alpha = alpha * 3 / 2;
-		}
-		color->setAlpha(alpha);
-	};
 
 	QString key = QString::asprintf("selection_frame:%02x%02x%02x:%dx%d", color.red(), color.green(), color.blue(), w, h);
 
@@ -409,7 +404,7 @@ void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, const QWidget *wi
 		pr.setRenderHint(QPainter::Antialiasing);
 
 		QColor pencolor = color;
-		SetAlpha(&pencolor, 128);
+		pencolor.setAlpha(128);
 		pr.setPen(pencolor);
 		pr.setBrush(Qt::NoBrush);
 
@@ -423,8 +418,8 @@ void DarkStyle::drawSelectedItemFrame(QPainter *p, QRect rect, const QWidget *wi
 		int a = color.alpha();
 		QColor color0 = color;
 		QColor color1 = color;
-		SetAlpha(&color0, 96 * a / 255);
-		SetAlpha(&color1, 32 * a / 255);
+		color0.setAlpha(128 * a / 255);
+		color1.setAlpha(64 * a / 255);
 		QLinearGradient gr(QPointF(0, 0), QPointF(0, h));
 		gr.setColorAt(0, color0);
 		gr.setColorAt(1, color1);
@@ -825,15 +820,15 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 //    qDebug() << pe;
 #ifndef Q_OS_MAC
 	if (pe == PE_FrameFocusRect) {
-		if (auto const *w = qobject_cast<QTableView const *>(widget)) {
-			if (w->selectionBehavior() == QAbstractItemView::SelectRows) {
-				if (auto const *v = w->viewport()) {
-					QRect r(0, option->rect.y(), v->width(), option->rect.height());
-					return;
-				}
+//		if (auto const *w = qobject_cast<QTableView const *>(widget)) {
+//			if (w->selectionBehavior() == QAbstractItemView::SelectRows) {
+//				if (auto const *v = w->viewport()) {
+//					QRect r(0, option->rect.y(), v->width(), option->rect.height());
+//					return;
+//				}
 
-			}
-		}
+//			}
+//		}
 		drawFocusFrame(p, option->rect, 0);
 		return;
 	}
@@ -990,6 +985,10 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 	if (pe == PE_PanelItemViewItem) {
 //		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
+		auto DrawSelectionFrame = [&](QRect const &r){
+			bool focus = widget && widget->hasFocus();
+			drawSelectedItemFrame(p, r, focus);
+		};
 		if (auto const *tableview = qobject_cast<QTableView const *>(widget)) {
 			Qt::PenStyle grid_pen_style = Qt::NoPen;
 			if (tableview->showGrid()) {
@@ -1013,34 +1012,12 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
-				drawSelectedItemFrame(p, r, widget);
-
-#if 0
-				if (tableview->hasFocus()) { // 単一行選択モードのとき、フォーカス枠をここで描く
-					if (tableview->selectionMode() == QAbstractItemView::SingleSelection && tableview->selectionBehavior() == QAbstractItemView::SelectRows) {
-						if (auto const *viewport = tableview->viewport()) {
-							if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
-								QRect r(0, option->rect.y(), viewport->width(), option->rect.height());
-								if (o->index.column() == tableview->model()->columnCount() - 1) {
-									r.setWidth(o->rect.x() + o->rect.width());
-								}
-								p->setClipRect(o->rect);
-								drawFocusFrame(p, r, 0);
-							}
-						}
-					}
-				}
-#endif
-
+				DrawSelectionFrame(r);
 				p->restore();
 			}
 		} else {
-			int n = 0;
 			if (option->state & State_Selected) {
-				n++;
-			}
-			if (n > 0) {
-				drawSelectedItemFrame(p, option->rect, widget, n > 1);
+				DrawSelectionFrame(option->rect);
 			}
 		}
 		return;
@@ -1359,7 +1336,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	if (ce == CE_MenuBarItem) {
 		drawMenuBarBG(p, option, widget);
 		if (option->state & State_Selected) {
-			drawSelectedItemFrame(p, option->rect, widget);
+			drawSelectedItemFrame(p, option->rect, true);
 		}
 		if (auto const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(option)) {
 			QPalette::ColorRole textRole = disabled ? QPalette::Text : QPalette::ButtonText;
@@ -1419,7 +1396,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QRect vCheckRect = visualRect(option->direction, o->rect, QRect(o->rect.x(), o->rect.y(), checkcol - (gutterWidth + o->rect.x()), o->rect.height()));
 
 			if (act) {
-				drawSelectedItemFrame(p, option->rect, widget);
+				drawSelectedItemFrame(p, option->rect, true);
 			}
 
 			if (checked && !ignoreCheckMark) {
@@ -1855,6 +1832,9 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				p->restore();
 			}
 		}
+		if (option->state & QStyle::State_Sunken) {
+			drawFocusFrame(p, option->rect.adjusted(0, 0, -1, -1), 0);
+		}
 		return;
 	}
 	if (ce == CE_HeaderLabel) {
@@ -2036,6 +2016,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				viewItemDrawText(p, o, textRect);
 			}
 
+#if 0
 			// draw the focus rect
 			if (o->state & QStyle::State_HasFocus) {
 				QStyleOptionFocusRect o3;
@@ -2045,8 +2026,9 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				o3.state |= QStyle::State_Item;
 				QPalette::ColorGroup cg = (o->state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
 				o3.backgroundColor = o->palette.color(cg, (o->state & QStyle::State_Selected) ? QPalette::Highlight : QPalette::Window);
-				drawPrimitive(QStyle::PE_FrameFocusRect, &o3, p, widget);
+				drawPrimitive(PE_FrameFocusRect, &o3, p, widget);
 			}
+#endif
 
 			p->restore();
 		}

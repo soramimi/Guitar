@@ -38,7 +38,8 @@ void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
 		QStyleOptionViewItem o = option;
 		painter->setClipRect(o.rect);
 		o.rect = QRect(1, o.rect.y(), w - 2, o.rect.height());
-		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, nullptr);
+		QWidget *wid = tablewidget->viewport(); // ダークスタイル時、PE_PanelItemViewItem で選択枠を描画させないため、QTableWidget*ではなくviewportを渡す。
+		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &o, painter, wid);
 		painter->restore();
 
 #if 0
