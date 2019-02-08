@@ -463,7 +463,7 @@
       </property>
       <widget class="QStackedWidget" name="stackedWidget_leftpanel">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="page_repos">
         <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -691,7 +691,7 @@
           <item>
            <widget class="QFrame" name="frame_2">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
