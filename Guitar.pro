@@ -200,7 +200,7 @@ SOURCES += \
     src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
     src/gpg.cpp \
     src/CloneFromGitHubDialog.cpp \
-    src/ObjectBrowserDialog.cpp
+	src/ObjectBrowserDialog.cpp
 
 HEADERS  += \
     src/AboutDialog.h \
@@ -313,7 +313,7 @@ HEADERS  += \
     src/gpg.h \
     src/platform.h \
     src/CloneFromGitHubDialog.h \
-    src/ObjectBrowserDialog.h
+	src/ObjectBrowserDialog.h
 
 HEADERS += src/version.h
 

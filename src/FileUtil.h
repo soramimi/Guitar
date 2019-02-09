@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <QString>
 
 class FileUtil {
 public:
@@ -22,6 +23,8 @@ public:
 	static bool isdir(std::string const &path);
 	static std::string which(std::string const &name, std::vector<std::string> *out = nullptr);
 	static std::string normalize_path_separator(std::string const &s);
+	static void qgetdirents(const QString &loc, std::vector<DirEnt> *out);
+	static std::string qwhich(const std::string &name, std::vector<std::string> *out);
 };
 
 #endif // FILEUTIL_H

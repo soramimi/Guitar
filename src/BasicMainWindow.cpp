@@ -45,7 +45,6 @@
 #include <functional>
 #include <memory>
 
-
 class AsyncExecGitThread_ : public QThread {
 private:
 	GitPtr g;
@@ -1266,14 +1265,14 @@ QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString cons
 
 	if (!cmdfile1.isEmpty()){
 		std::vector<std::string> vec;
-		FileUtil::which(cmdfile1.toStdString(), &vec);
+		FileUtil::qwhich(cmdfile1.toStdString(), &vec);
 		for (std::string const &s : vec) {
 			list.push_back(QString::fromStdString(s));
 		}
 	}
 	if (!cmdfile2.isEmpty()){
 		std::vector<std::string> vec;
-		FileUtil::which(cmdfile2.toStdString(), &vec);
+		FileUtil::qwhich(cmdfile2.toStdString(), &vec);
 		for (std::string const &s : vec) {
 			list.push_back(QString::fromStdString(s));
 		}

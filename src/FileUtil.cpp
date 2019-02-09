@@ -4,10 +4,6 @@
 
 #include <sys/stat.h>
 
-#ifdef __HAIKU__
-struct stat	s;
-#endif
-
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
@@ -138,12 +134,13 @@ void FileUtil::getdirents(std::string const &loc, std::vector<DirEnt> *out)
 			DirEnt de;
 			de.name = d->d_name;
 			de.isdir = false;
-			#ifdef DT_DIR
-				if (d->d_type & DT_DIR) {
-			#else
-				stat(d->d_name, &s);
-				if(S_ISDIR(s.st_mode))  {
-			#endif
+#ifdef DT_DIR
+			if (d->d_type & DT_DIR) {
+#else
+			struct stat	s;
+			stat(d->d_name, &s);
+			if (S_ISDIR(s.st_mode))  {
+#endif
 				if (de.name == "." || de.name == "..") {
 					continue;
 				}
@@ -257,6 +254,74 @@ std::string FileUtil::which(std::string const &name, std::vector<std::string> *o
 		split_path(p, &paths);
 		for (std::string const &path : paths) {
 			std::string t = ::which(name, path);
+			if (!t.empty()) {
+				if (out) {
+					out->push_back(t);
+				} else {
+					return t;
+				}
+			}
+		}
+	}
+	if (out && !out->empty()) {
+		return out->front();
+	}
+	return std::string();
+}
+
+#include <QDirIterator>
+
+void FileUtil::qgetdirents(QString const &loc, std::vector<DirEnt> *out)
+{
+	out->clear();
+	QDirIterator it(loc);
+	while (it.hasNext()) {
+		it.next();
+		QFileInfo info = it.fileInfo();
+		DirEnt de;
+		de.name = info.fileName().toStdString();
+		de.isdir = false;
+		if (info.isDir()) {
+			if (de.name == "." || de.name == "..") {
+				continue;
+			}
+			de.isdir = true;
+		}
+		out->push_back(de);
+	}
+}
+
+static std::string qwhich(std::string const &name, std::string const &dir)
+{
+	std::vector<FileUtil::DirEnt> ents;
+	FileUtil::qgetdirents(QString::fromStdString(dir), &ents);
+	for (FileUtil::DirEnt const &ent : ents) {
+		if (!ent.isdir) {
+#ifdef _WIN32
+			if (stricmp(ent.name.c_str(), name.c_str()) == 0) {
+				return FileUtil::normalize_path_separator(dir / ent.name);
+			}
+#else
+			if (ent.name == name) {
+				return dir / ent.name;
+			}
+#endif
+		}
+	}
+	return std::string();
+}
+
+std::string FileUtil::qwhich(std::string const &name, std::vector<std::string> *out)
+{
+	if (out) {
+		out->clear();
+	}
+	char const *p = getenv("PATH");
+	if (p) {
+		std::vector<std::string> paths;
+		split_path(p, &paths);
+		for (std::string const &path : paths) {
+			std::string t = ::qwhich(name, path);
 			if (!t.empty()) {
 				if (out) {
 					out->push_back(t);
