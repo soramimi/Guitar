@@ -1270,15 +1270,22 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_open_terminal = menu.addAction(open_terminal);
 		(void)open_commandprompt;
 #endif
+		a_open_terminal->setIcon(QIcon(":/image/terminal.svg"));
+
 		QAction *a_open_folder = menu.addAction(tr("Open &folder"));
+		a_open_folder->setIcon(QIcon(":/image/explorer.svg"));
+
 		menu.addSeparator();
+
 		QAction *a_remove = menu.addAction(tr("&Remove"));
 
 		menu.addSeparator();
+
 		QAction *a_properties = addMenuActionProperty(&menu);
 
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
+
 		if (a) {
 			if (a == a_open) {
 				openSelectedRepository();

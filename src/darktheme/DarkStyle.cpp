@@ -1358,8 +1358,12 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 	if (ce == CE_MenuItem) {
 		if (auto const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(option)) {
+#ifdef Q_OS_MAC
+			int checkcol = 15;
+#else
 			// windows always has a check column, regardless whether we have an icon or not
 			int checkcol = 25;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
+#endif
 			const int gutterWidth = 3;// / QWindowsXPStylePrivate::devicePixelRatio(widget);
 			QRect rect = option->rect;
 
@@ -1393,19 +1397,34 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				return;
 			}
 
+#ifdef Q_OS_MAC
+//			qDebug() << pixelMetric(PM_SmallIconSize, option, widget);
+			QRect vCheckRect = visualRect(option->direction, o->rect, QRect(o->rect.x(), o->rect.y(), 20 - (gutterWidth + o->rect.x()), o->rect.height()));
+#else
 			QRect vCheckRect = visualRect(option->direction, o->rect, QRect(o->rect.x(), o->rect.y(), checkcol - (gutterWidth + o->rect.x()), o->rect.height()));
+#endif
 
 			if (act) {
 				drawSelectedItemFrame(p, option->rect, true);
 			}
 
+			int xm = windowsItemFrame + checkcol + windowsItemHMargin + (gutterWidth - o->rect.x()) - 1;
+			int xpos = o->rect.x() + xm;
+
 			if (checked && !ignoreCheckMark) {
 				const qreal boxMargin = 3.5;
 				const qreal boxWidth = checkcol - 2 * boxMargin;
 				const int checkColHOffset = windowsItemHMargin + windowsItemFrame - 1;
-				QRectF checkRectF(option->rect.left() + boxMargin + checkColHOffset, option->rect.center().y() - boxWidth/2 + 1, boxWidth, boxWidth);
+#ifdef Q_OS_MAC
+				QRectF checkRectF(0, option->rect.y(), xpos, option->rect.height());
+				QRect checkRect = checkRectF.toRect();
+				checkRect.setWidth(checkRect.height());
+				checkRect.adjust(windowsItemFrame + (xpos - windowsItemFrame - checkRect.width()) / 2, 0, 0, 0);
+#else
+				QRectF checkRectF(option->rect.left() + boxMargin + checkColHOffset, option->rect.center().y() - boxWidth / 2 + 1, boxWidth, boxWidth);
 				QRect checkRect = checkRectF.toRect();
 				checkRect.setWidth(checkRect.height()); // avoid .toRect() round error results in non-perfect square
+#endif
 				checkRect = visualRect(o->direction, o->rect, checkRect);
 
 				QStyleOptionButton box;
@@ -1416,6 +1435,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				}
 				drawPrimitive(PE_IndicatorCheckBox, &box, p, widget);
 			}
+
 
 			if (!ignoreCheckMark) {
 				if (!o->icon.isNull()) {
@@ -1433,10 +1453,17 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					if (dpr > 0) {
 						const int pixw = int(pixmap.width() / dpr);
 						const int pixh = int(pixmap.height() / dpr);
+#ifdef Q_OS_MAC
+						QRect pmr(xpos, vCheckRect.y() + (vCheckRect.height() - pixh) / 2, pixw, pixh);
+						p->setPen(o->palette.text().color());
+						p->drawPixmap(pmr.topLeft(), pixmap);
+						xpos += pmr.width() + 4;
+#else
 						QRect pmr(0, 0, pixw, pixh);
 						pmr.moveCenter(vCheckRect.center());
 						p->setPen(o->palette.text().color());
 						p->drawPixmap(pmr.topLeft(), pixmap);
+#endif
 					}
 				}
 			} else {
@@ -1454,8 +1481,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				p->setPen(textColor);
 			}
 
-			int xm = windowsItemFrame + checkcol + windowsItemHMargin + (gutterWidth - o->rect.x()) - 1;
-			int xpos = o->rect.x() + xm;
 			QRect textRect(xpos, y + windowsItemVMargin, w - xm - windowsRightBorder - tab + 1, h - 2 * windowsItemVMargin);
 			QRect vTextRect = visualRect(option->direction, o->rect, textRect);
 			QString s = o->text;
