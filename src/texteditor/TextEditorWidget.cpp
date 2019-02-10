@@ -57,6 +57,9 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 #ifdef Q_OS_MACX
 	m->text_font = QFontDatabase().font("Osaka", "Regular-Mono", 14);
 #endif
+#ifdef Q_OS_HAIKU
+    m->text_font = QFont("Noto Mono", 9);
+#endif
 
 	m->top_margin = 0;
 	m->bottom_margin = 1;
