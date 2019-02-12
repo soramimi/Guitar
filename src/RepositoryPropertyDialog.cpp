@@ -115,6 +115,10 @@ void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 
 void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 {
+	int row = ui->tableWidget->currentRow();
+	if (row < 0) {
+		ui->tableWidget->setCurrentCell(0, 0);
+	}
 	Git::Remote remote = selectedRemote();
 	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
 		remote_changed = true;

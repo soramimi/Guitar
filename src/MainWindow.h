@@ -70,7 +70,7 @@ private:
 	void updateDiffView();
 	void updateUnstagedFileCurrentItem();
 	void updateStagedFileCurrentItem();
-	void updateStatusBarText();
+	void updateStatusBarText() override;
 	void setRepositoryInfo(QString const &reponame, QString const &brname) override;
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void clearRepoFilter();

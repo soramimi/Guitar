@@ -2192,6 +2192,7 @@ void BasicMainWindow::commit(bool amend)
 			}
 			if (ok) {
 				setForceFetch(true);
+				updateStatusBarText();
 				openRepository(true);
 			} else {
 				QString err = g->errorMessage().trimmed();

@@ -297,6 +297,7 @@ protected:
 	virtual void clearFileList() = 0;
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
 	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; };
+	virtual void updateStatusBarText() {};
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
 	~BasicMainWindow();

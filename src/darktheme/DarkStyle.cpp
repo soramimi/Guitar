@@ -360,6 +360,9 @@ void DarkStyle::polish(QPalette &palette)
 	}
 	loadImages();
 	palette = QPalette(color(64));
+	palette.setColor(QPalette::Disabled, QPalette::Text, color(160));
+	palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(75));
+	palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
 #ifndef Q_OS_WIN
 	palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
 #endif
