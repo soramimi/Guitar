@@ -268,6 +268,7 @@ TextEditorThemePtr BasicMainWindow::themeForTextEditor()
 
 void MainWindow::setCurrentLogRow(int row)
 {
+	qDebug() << Q_FUNC_INFO << row;
 	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
 		ui->tableWidget_log->setCurrentCell(row, 2);
 		ui->tableWidget_log->setFocus();
@@ -912,18 +913,6 @@ void MainWindow::detectGitServerType(GitPtr g)
 	}
 }
 
-bool BasicMainWindow::fetch(GitPtr g, bool prune)
-{
-	setPtyCondition(PtyCondition::Fetch);
-	setPtyProcessOk(true);
-	g->fetch(getPtyProcess(), prune);
-	while (1) {
-		if (getPtyProcess()->wait(1)) break;
-		QApplication::processEvents();
-	}
-	return getPtyProcessOk();
-}
-
 void MainWindow::clearLog()
 {
 	clearLogs();
@@ -933,13 +922,21 @@ void MainWindow::clearLog()
 	ui->tableWidget_log->scrollToTop();
 }
 
-void MainWindow::openRepository_(GitPtr g)
+void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 {
 	getObjCache()->setup(g);
 
+	int scroll_pos = -1;
+	int select_row = -1;
+
+	if (keep_selection) {
+		scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
+		select_row = ui->tableWidget_log->currentRow();
+	}
+
 	if (isValidWorkingCopy(g)) {
 
-		bool do_fetch = isRemoteOnline() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
+		bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
 		setForceFetch(false);
 		if (do_fetch) {
 			if (!fetch(g, false)) {
@@ -1014,7 +1011,7 @@ void MainWindow::openRepository_(GitPtr g)
 
 	ui->tableWidget_log->setRowCount(count);
 
-	int selrow = -1;
+	int selrow = 0;
 
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const *commit = &logs[row];
@@ -1077,10 +1074,9 @@ void MainWindow::openRepository_(GitPtr g)
 	m->last_focused_file_list = nullptr;
 
 	ui->tableWidget_log->setFocus();
-	setCurrentLogRow(0);
 
-	QTableWidgetItem *p = ui->tableWidget_log->item(selrow < 0 ? 0 : selrow, 2);
-	ui->tableWidget_log->setCurrentItem(p);
+	setCurrentLogRow(select_row >= 0 ? select_row : selrow);
+	ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
 
 	m->remote_watcher.setCurrent(currentRemoteName(), currentBranchName());
 
@@ -1096,7 +1092,7 @@ void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
 
 void MainWindow::doUpdateButton()
 {
-	setNetworkingCommandsEnabled(isRemoteOnline());
+	setNetworkingCommandsEnabled(isOnlineMode());
 
 	ui->toolButton_fetch->setDot(getRemoteChanged());
 
@@ -1149,16 +1145,18 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	if (!isRemoteOnline()) return;
-
-	reopenRepository(true, [&](GitPtr g){
-		fetch(g, false);
-	});
+	if (isOnlineMode()) {
+		reopenRepository(true, [&](GitPtr g){
+			fetch(g, false);
+		});
+	} else {
+		updateRepository();
+	}
 }
 
 void MainWindow::on_action_fetch_prune_triggered()
 {
-	if (!isRemoteOnline()) return;
+	if (!isOnlineMode()) return;
 
 	reopenRepository(true, [&](GitPtr g){
 		fetch(g, true);
@@ -1172,7 +1170,7 @@ void MainWindow::on_action_push_triggered()
 
 void MainWindow::on_action_pull_triggered()
 {
-	if (!isRemoteOnline()) return;
+	if (!isOnlineMode()) return;
 
 	reopenRepository(true, [&](GitPtr g){
 		setPtyCondition(PtyCondition::Pull);
@@ -1861,8 +1859,12 @@ void MainWindow::timerEvent(QTimerEvent *)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
+	int c = event->key();
+	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
+		test();
+		return;
+	}
 	if (QApplication::focusWidget() == ui->widget_log) {
-		int c = event->key();
 
 		auto write_char = [&](char c){
 			if (getPtyProcess()->isRunning()) {
@@ -2197,19 +2199,29 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 		f = false;
 	}
 
-	ui->action_fetch->setEnabled(f);
+	bool opened = !currentRepository().name.isEmpty();
+	ui->action_fetch->setEnabled(f || opened);
+	ui->toolButton_fetch->setEnabled(f || opened);
+
+	if (isOnlineMode()) {
+		ui->action_fetch->setText(tr("Fetch"));
+		ui->toolButton_fetch->setText(tr("Fetch"));
+	} else {
+		ui->action_fetch->setText(tr("Update"));
+		ui->toolButton_fetch->setText(tr("Update"));
+	}
+
 	ui->action_fetch_prune->setEnabled(f);
 	ui->action_pull->setEnabled(f);
 	ui->action_push->setEnabled(f);
 	ui->action_push_u->setEnabled(f);
 	ui->action_push_all_tags->setEnabled(f);
 
-	ui->toolButton_fetch->setEnabled(f);
 	ui->toolButton_pull->setEnabled(f);
 	ui->toolButton_push->setEnabled(f);
 }
 
-bool MainWindow::isRemoteOnline() const
+bool MainWindow::isOnlineMode() const
 {
 	return m->is_online_mode;
 }
@@ -2592,7 +2604,13 @@ void MainWindow::on_action_repositories_panel_triggered()
 	}
 }
 
-void MainWindow::on_action_test_triggered()
+void MainWindow::test()
 {
+	qDebug() << Q_FUNC_INFO;
+	int scrollpos = 4;
+	int currentrow = 7;
+	ui->tableWidget_log->verticalScrollBar()->setValue(scrollpos);
+	ui->tableWidget_log->setCurrentCell(currentrow, 0);
+	ui->tableWidget_log->selectRow(currentrow);
 }
 

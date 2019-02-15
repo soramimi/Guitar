@@ -53,14 +53,16 @@ private:
 		if (!opt.widget->isEnabled()) return;
 
 		Git::CommitItem const *commit = mainwindow()->commitItem(index.row());
-		QIcon icon = mainwindow()->verifiedIcon(commit->signature);
-		if (!icon.isNull()) {
-			QRect r = opt.rect.adjusted(6, 3, 0, -3);
-			int h = r.height();
-			int w = h;
-			int x = r.x() + r.width() - w;
-			int y = r.y();
-			icon.paint(painter, x, y, w, h);
+		if (commit) {
+			QIcon icon = mainwindow()->verifiedIcon(commit->signature);
+			if (!icon.isNull()) {
+				QRect r = opt.rect.adjusted(6, 3, 0, -3);
+				int h = r.height();
+				int w = h;
+				int x = r.x() + r.width() - w;
+				int y = r.y();
+				icon.paint(painter, x, y, w, h);
+			}
 		}
 	}
 

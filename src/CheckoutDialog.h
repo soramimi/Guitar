@@ -16,7 +16,7 @@ private:
 	Private *m;
 public:
 
-	explicit CheckoutDialog(QWidget *parent, QStringList const &tags, QStringList const &local_branches, QStringList const &remote_branches);
+	explicit CheckoutDialog(QWidget *parent, QStringList const &tags, const QStringList &all_local_branches, QStringList const &local_branches, QStringList const &remote_branches);
 	~CheckoutDialog() override;
 
 	enum class Operation {
@@ -38,7 +38,8 @@ private slots:
 private:
 	Ui::CheckoutDialog *ui;
 	void updateUI();
-	int makeComboBoxOptions(QStringList const &names);
+	int makeComboBoxOptionsFromList(QStringList const &names);
+	Operation makeComboBoxOptions(bool click);
 	void clearComboBoxOptions();
 };
 

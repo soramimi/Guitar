@@ -272,7 +272,7 @@ QPixmap BasicMainWindow::getTransparentPixmap()
 QIcon BasicMainWindow::committerIcon(int row) const
 {
 	QIcon icon;
-	if (isAvatarEnabled() && isRemoteOnline()) {
+	if (isAvatarEnabled() && isOnlineMode()) {
 		auto const &logs = getLogs();
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
@@ -384,14 +384,14 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 	if (!isValidWorkingCopy(g)) return;
 
 	QStringList tags;
+	QStringList all_local_branches;
 	QStringList local_branches;
 	QStringList remote_branches;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
-//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
+			QString name = item.name;
 			if (item.id == commit->commit_id) {
-				QString name = item.name;
 				if (item.type == NamedCommitItem::Type::Tag) {
 					tags.push_back(name);
 				} else if (item.type == NamedCommitItem::Type::Branch) {
@@ -405,10 +405,15 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 					}
 				}
 			}
+			if (item.type == NamedCommitItem::Type::Branch) {
+				if (item.remote.isNull()) {
+					all_local_branches.push_back(name);
+				}
+			}
 		}
 	}
 
-	CheckoutDialog dlg(parent, tags, local_branches, remote_branches);
+	CheckoutDialog dlg(parent, tags, all_local_branches, local_branches, remote_branches);
 	if (dlg.exec() == QDialog::Accepted) {
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
@@ -1174,6 +1179,18 @@ DONE:;
 	}
 }
 
+bool BasicMainWindow::fetch(GitPtr g, bool prune)
+{
+	setPtyCondition(PtyCondition::Fetch);
+	setPtyProcessOk(true);
+	g->fetch(getPtyProcess(), prune);
+	while (1) {
+		if (getPtyProcess()->wait(1)) break;
+		QApplication::processEvents();
+	}
+	return getPtyProcessOk();
+}
+
 bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
 {
 	auto *mw = (BasicMainWindow *)cookie;
@@ -1811,7 +1828,7 @@ void BasicMainWindow::checkUser()
 	}
 }
 
-void BasicMainWindow::openRepository(bool validate, bool waitcursor)
+void BasicMainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
 {
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
@@ -1830,11 +1847,20 @@ void BasicMainWindow::openRepository(bool validate, bool waitcursor)
 
 	if (waitcursor) {
 		OverrideWaitCursor;
-		openRepository(false, false);
+		openRepository(false, false, keep_selection);
 		return;
 	}
 
 	GitPtr g = git(); // ポインタの有効性チェックはしない（nullptrでも続行）
+	openRepository_(g, keep_selection);
+}
+
+void BasicMainWindow::updateRepository()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	OverrideWaitCursor;
 	openRepository_(g);
 }
 
@@ -2076,7 +2102,7 @@ void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
 
 void BasicMainWindow::clone(QString url, QString dir)
 {
-	if (!isRemoteOnline()) return;
+	if (!isOnlineMode()) return;
 
 	dir = defaultWorkingDir();
 	while (1) {
@@ -2278,7 +2304,7 @@ bool BasicMainWindow::pushSetUpstream(bool testonly)
 
 void BasicMainWindow::push()
 {
-	if (!isRemoteOnline()) return;
+	if (!isOnlineMode()) return;
 
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2380,7 +2406,6 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 	QStringList current_local_branch_names;
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches);
-//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.name == "HEAD") continue;
 			if (item.id == commit->commit_id) {
@@ -2403,7 +2428,7 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 			}
 		}
 		if (count > 0) {
-			openRepository(true);
+			openRepository(true, true, true);
 		}
 	}
 }
@@ -2422,7 +2447,6 @@ QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
 		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
-//		JumpDialog::sort(&named_commits);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == id && !item.remote.isEmpty()) {
 				list.push_back(item.remote / item.name);

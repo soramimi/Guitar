@@ -36,7 +36,7 @@ public:
 
 	QColor color(unsigned int i);
 
-	bool isRemoteOnline() const override;
+	bool isOnlineMode() const override;
 private:
 	Ui::MainWindow *ui;
 
@@ -44,13 +44,12 @@ private:
 	void updateFilesList(Git::CommitItem const &commit, bool wait);
 	void updateRepositoriesList() override;
 
-	void openRepository_(GitPtr g) override;
+	void openRepository_(GitPtr g, bool keep_selection = false) override;
 
 	void prepareLogTableWidget();
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> fn);
-//	void updateCommitGraph();
 	void showFileList(FilesListType files_list_type);
 
 	void clearLog();
@@ -84,7 +83,6 @@ private:
 	void setRemoteOnline(bool f);
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);
-//	bool fetch(GitPtr g, bool prune);
 	void setNetworkingCommandsEnabled(bool f);
 	void blame(QListWidgetItem *item);
 	void blame();
@@ -93,6 +91,7 @@ private:
 	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id, QStringList *all);
 	void setWatchRemoteInterval(int mins);
+	void test();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void timerEvent(QTimerEvent *) override;
@@ -153,7 +152,6 @@ private slots:
 	void on_action_stash_triggered();
 	void on_action_stop_process_triggered();
 	void on_action_terminal_triggered();
-	void on_action_test_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_window_log_triggered(bool checked);
 	void on_horizontalScrollBar_log_valueChanged(int);

@@ -83,7 +83,7 @@ void CommitPropertyDialog::init(BasicMainWindow *mw)
 
 void CommitPropertyDialog::updateAvatar(bool request)
 {
-	if (!mainwindow()->isRemoteOnline()) return;
+	if (!mainwindow()->isOnlineMode()) return;
 
 	auto SetAvatar = [&](QString const &email, QLabel *label){
 		if (mainwindow()->appsettings()->get_committer_icon) {

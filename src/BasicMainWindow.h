@@ -164,7 +164,8 @@ protected:
 	void setUnknownRepositoryInfo();
 	void internalClearRepositoryInfo();
 	void checkUser();
-	void openRepository(bool validate, bool waitcursor = true);
+	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
+	void updateRepository();
 	void reopenRepository(bool log, std::function<void (GitPtr)> callback);
 	void openSelectedRepository();
 	void checkRemoteUpdate();
@@ -291,7 +292,7 @@ protected:
 	virtual void deleteTags(QStringList const &tagnames) = 0;
 	virtual void internalWriteLog(const char *ptr, int len) = 0;
 	virtual void removeSelectedRepositoryFromBookmark(bool ask) = 0;
-	virtual void openRepository_(GitPtr g) = 0;
+	virtual void openRepository_(GitPtr g, bool keep_selection = false) = 0;
 	virtual void updateRepositoriesList() = 0;
 	virtual int selectedLogIndex() const = 0;
 	virtual void clearFileList() = 0;
@@ -358,7 +359,7 @@ public:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 
-	virtual bool isRemoteOnline() const = 0;
+	virtual bool isOnlineMode() const = 0;
 
 	static QString abbrevCommitID(Git::CommitItem const &commit);
 protected slots:
