@@ -2104,8 +2104,8 @@ void BasicMainWindow::clone(QString url, QString dir)
 {
 	if (!isOnlineMode()) return;
 
-	dir = defaultWorkingDir();
 	while (1) {
+		dir = defaultWorkingDir();
 		CloneDialog dlg(this, url, dir);
 		if (dlg.exec() != QDialog::Accepted) {
 			return;
