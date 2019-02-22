@@ -2038,8 +2038,11 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
 
 	std::set<QString> set;
 
+	const size_t count = list.size();
+	size_t limit = count;
+
 	size_t i = 0;
-	while (i < list.size()) {
+	while (i < count) {
 		size_t newpos = -1;
 		for (QString const &parent : list[i].parent_ids) {
 			if (set.find(parent) != set.end()) {
@@ -2056,11 +2059,13 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
 		}
 		set.insert(set.end(), list[i].commit_id);
 		if (newpos != (size_t)-1) {
+			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
 			Git::CommitItem t = list[i];
 			t.strange_date = true;
 			list.erase(list.begin() + i);
 			list.insert(list.begin() + newpos, t);
 			i = newpos;
+			limit--;
 		}
 		i++;
 	}
