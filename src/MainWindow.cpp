@@ -5,6 +5,7 @@
 #include "AreYouSureYouWantToContinueConnectingDialog.h"
 #include "AvatarLoader.h"
 #include "BlameWindow.h"
+#include "CloneFromGitHubDialog.h"
 #include "CommitPropertyDialog.h"
 #include "DeleteBranchDialog.h"
 #include "EditGitIgnoreDialog.h"
@@ -14,6 +15,7 @@
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MySettings.h"
+#include "ObjectBrowserDialog.h"
 #include "ReflogWindow.h"
 #include "RemoteWatcher.h"
 #include "SetGpgSigningDialog.h"
@@ -22,8 +24,6 @@
 #include "TextEditDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "CloneFromGitHubDialog.h"
-#include "ObjectBrowserDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -261,14 +261,10 @@ void MainWindow::startTimers()
 	startTimer(10);
 }
 
-TextEditorThemePtr BasicMainWindow::themeForTextEditor()
-{
-	return global->theme->text_editor_theme;
-}
+
 
 void MainWindow::setCurrentLogRow(int row)
 {
-	qDebug() << Q_FUNC_INFO << row;
 	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
 		ui->tableWidget_log->setCurrentCell(row, 2);
 		ui->tableWidget_log->setFocus();
@@ -433,15 +429,7 @@ void MainWindow::clearStatusBarText()
 	setStatusBarText(QString());
 }
 
-QString BasicMainWindow::getObjectID(QListWidgetItem *item)
-{
-	int i = indexOfDiff(item);
-	if (i >= 0 && i < diffResult()->size()) {
-		Git::Diff const &diff = diffResult()->at(i);
-		return diff.blob.a_id;
-	}
-	return QString();
-}
+
 
 void MainWindow::onLogVisibilityChanged()
 {
@@ -454,19 +442,6 @@ void MainWindow::internalWriteLog(char const *ptr, int len)
 	ui->widget_log->write(ptr, len, false);
 	ui->widget_log->setChanged(false);
 	setInteractionCanceled(false);
-}
-
-void BasicMainWindow::writeLog(QString const &str)
-{
-	std::string s = str.toStdString();
-	writeLog(s.c_str(), s.size());
-}
-
-void BasicMainWindow::writeLog_(QByteArray ba)
-{
-	if (!ba.isEmpty()) {
-		writeLog(ba.data(), ba.size());
-	}
 }
 
 void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos)
@@ -2606,11 +2581,5 @@ void MainWindow::on_action_repositories_panel_triggered()
 
 void MainWindow::test()
 {
-	qDebug() << Q_FUNC_INFO;
-	int scrollpos = 4;
-	int currentrow = 7;
-	ui->tableWidget_log->verticalScrollBar()->setValue(scrollpos);
-	ui->tableWidget_log->setCurrentCell(currentrow, 0);
-	ui->tableWidget_log->selectRow(currentrow);
 }
 

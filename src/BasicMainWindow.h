@@ -365,10 +365,10 @@ public:
 protected slots:
 	void onAvatarUpdated();
 public:
+	QStringList findGitObject(const QString &id) const;
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
 	void emitWriteLog(QByteArray ba);
-	QStringList findGitObject(const QString &id) const;
 public slots:
 	void writeLog_(QByteArray ba);
 signals:

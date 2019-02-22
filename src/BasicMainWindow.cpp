@@ -655,6 +655,11 @@ int BasicMainWindow::limitLogCount() const
 	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
+TextEditorThemePtr BasicMainWindow::themeForTextEditor()
+{
+	return global->theme->text_editor_theme;
+}
+
 Git::Object BasicMainWindow::cat_file_(GitPtr g, QString const &id)
 {
 	if (isValidWorkingCopy(g)) {
@@ -715,11 +720,6 @@ void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_
 	if (!dm.diff(id, diff_list)) return;
 
 	addDiffItems(diff_list, AddItem);
-}
-
-void BasicMainWindow::writeLog(const char *ptr, int len)
-{
-	internalWriteLog(ptr, len);
 }
 
 void BasicMainWindow::setAppSettings(const ApplicationSettings &appsettings)
@@ -1298,10 +1298,9 @@ QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString cons
 	return list;
 }
 
-void BasicMainWindow::emitWriteLog(QByteArray ba)
-{
-	emit signalWriteLog(ba);
-}
+
+
+
 
 void BasicMainWindow::setWindowTitle_(Git::User const &user)
 {
@@ -1495,6 +1494,16 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 	return false;
 }
 
+QString BasicMainWindow::getObjectID(QListWidgetItem *item)
+{
+	int i = indexOfDiff(item);
+	if (i >= 0 && i < diffResult()->size()) {
+		Git::Diff const &diff = diffResult()->at(i);
+		return diff.blob.a_id;
+	}
+	return QString();
+}
+
 void BasicMainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 {
 	if (dir.endsWith(".git")) {
@@ -1565,6 +1574,75 @@ void BasicMainWindow::clearAuthentication()
 void BasicMainWindow::onAvatarUpdated()
 {
 	updateCommitTableLater();
+}
+
+QStringList BasicMainWindow::findGitObject(const QString &id) const
+{
+	QStringList list;
+	std::set<QString> set;
+	if (Git::isValidID(id)) {
+		{
+			QString a = id.mid(0, 2);
+			QString b = id.mid(2);
+			QString dir = m->current_repo.local_dir / ".git/objects" / a;
+			QDirIterator it(dir);
+			while (it.hasNext()) {
+				it.next();
+				QFileInfo info = it.fileInfo();
+				if (info.isFile()) {
+					QString c = info.fileName();
+					if (c.startsWith(b)) {
+						set.insert(set.end(), a + c);
+					}
+				}
+			}
+		}
+		{
+			QString dir = m->current_repo.local_dir / ".git/objects/pack";
+			QDirIterator it(dir);
+			while (it.hasNext()) {
+				it.next();
+				QFileInfo info = it.fileInfo();
+				if (info.isFile() && info.fileName().startsWith("pack-") && info.fileName().endsWith(".idx")) {
+					GitPackIdxV2 idx;
+					idx.parse(info.absoluteFilePath());
+					idx.each([&](GitPackIdxItem const *item){
+						if (item->id.startsWith(id)) {
+							set.insert(item->id);
+						}
+						return true;
+					});
+				}
+			}
+		}
+		for (QString const &s : set) {
+			list.push_back(s);
+		}
+	}
+	return list;
+}
+
+void BasicMainWindow::writeLog(const char *ptr, int len)
+{
+	internalWriteLog(ptr, len);
+}
+
+void BasicMainWindow::writeLog(const QString &str)
+{
+	std::string s = str.toStdString();
+	writeLog(s.c_str(), s.size());
+}
+
+void BasicMainWindow::emitWriteLog(QByteArray ba)
+{
+	emit signalWriteLog(ba);
+}
+
+void BasicMainWindow::writeLog_(QByteArray ba)
+{
+	if (!ba.isEmpty()) {
+		writeLog(ba.data(), ba.size());
+	}
 }
 
 void BasicMainWindow::queryRemotes(GitPtr g)
@@ -2727,49 +2805,7 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 	}
 }
 
-QStringList BasicMainWindow::findGitObject(QString const &id) const
-{
-	QStringList list;
-	std::set<QString> set;
-	if (Git::isValidID(id)) {
-		{
-			QString a = id.mid(0, 2);
-			QString b = id.mid(2);
-			QString dir = m->current_repo.local_dir / ".git/objects" / a;
-			QDirIterator it(dir);
-			while (it.hasNext()) {
-				it.next();
-				QFileInfo info = it.fileInfo();
-				if (info.isFile()) {
-					QString c = info.fileName();
-					if (c.startsWith(b)) {
-						set.insert(set.end(), a + c);
-					}
-				}
-			}
-		}
-		{
-			QString dir = m->current_repo.local_dir / ".git/objects/pack";
-			QDirIterator it(dir);
-			while (it.hasNext()) {
-				it.next();
-				QFileInfo info = it.fileInfo();
-				if (info.isFile() && info.fileName().startsWith("pack-") && info.fileName().endsWith(".idx")) {
-					GitPackIdxV2 idx;
-					idx.parse(info.absoluteFilePath());
-					idx.each([&](GitPackIdxItem const *item){
-						if (item->id.startsWith(id)) {
-							set.insert(item->id);
-						}
-						return true;
-					});
-				}
-			}
-		}
-		for (QString const &s : set) {
-			list.push_back(s);
-		}
-	}
-	return list;
-}
+
+
+
 
