@@ -152,7 +152,7 @@ public:
 		bool has_child = false;
 		int marker_depth = -1;
 		bool resolved =  false;
-
+		bool strange_date = false;
 	};
 	using CommitItemList = std::vector<CommitItem>;
 

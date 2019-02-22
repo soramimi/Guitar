@@ -928,8 +928,6 @@ GitObjectCache *BasicMainWindow::getObjCache()
 	return &m->objcache;
 }
 
-
-
 bool BasicMainWindow::getForceFetch() const
 {
 	return m->force_fetch;
@@ -2044,14 +2042,13 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
 	while (i < list.size()) {
 		size_t newpos = -1;
 		for (QString const &parent : list[i].parent_ids) {
-			auto it = set.find(parent);
-			if (it != set.end()) {
+			if (set.find(parent) != set.end()) {
 				for (size_t j = 0; j < i; j++) {
 					if (parent == list[j].commit_id) {
 						if (newpos == (size_t)-1 || j < newpos) {
 							newpos = j;
 						}
-						qDebug() << "fix commit order" << parent;
+						qDebug() << "fix commit order" << list[i].commit_id;
 						break;
 					}
 				}
@@ -2059,9 +2056,11 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
 		}
 		set.insert(set.end(), list[i].commit_id);
 		if (newpos != (size_t)-1) {
-			Git::CommitItem t = list[newpos];
-			list.erase(list.begin() + newpos);
-			list.insert(list.begin() + i, t);
+			Git::CommitItem t = list[i];
+			t.strange_date = true;
+			list.erase(list.begin() + i);
+			list.insert(list.begin() + newpos, t);
+			i = newpos;
 		}
 		i++;
 	}

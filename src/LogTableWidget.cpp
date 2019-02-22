@@ -135,18 +135,36 @@ public:
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 
+		enum {
+			Graph,
+			CommitId,
+			Date,
+			Author,
+			Description,
+		};
+
 		// signatureの描画
-		if (index.column() == 1) {
+		if (index.column() == CommitId) {
 			drawSignatureIcon(painter, option, index);
 		}
 
+		// コミット日時
+		if (index.column() == Date) {
+			Git::CommitItem const *commit = mainwindow()->commitItem(index.row());
+			if (commit && commit->strange_date) {
+				QColor color(255, 0, 0, 128);
+				QRect r = option.rect.adjusted(1, 1, -1, -2);
+				misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
+			}
+		}
+
 		// avatarの描画
-		if (index.column() == 3) {
+		if (index.column() == Author) {
 			drawAvatar(painter, option, index);
 		}
 
 		// Descriptionの描画
-		if (index.column() == 4) {
+		if (index.column() == Description) {
 			drawDescription(painter, option, index);
 		}
 	}
