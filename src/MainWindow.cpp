@@ -159,7 +159,6 @@ MainWindow::MainWindow(QWidget *parent)
 		settings.beginGroup("MainWindow");
 		bool maximized = settings.value("Maximized").toBool();
 		restoreGeometry(settings.value("Geometry").toByteArray());
-//		ui->splitter->restoreState(settings.value("SplitterState").toByteArray());
 		settings.endGroup();
 		if (maximized) {
 			state |= Qt::WindowMaximized;
@@ -167,8 +166,7 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-	setTabOrder(ui->treeWidget_repos, ui->widget_log);
-//	setTabOrder(ui->widget_log, ui->treeWidget_repos);
+//	setTabOrder(ui->treeWidget_repos, ui->widget_log);
 
 	startTimers();
 }
@@ -216,11 +214,20 @@ bool MainWindow::shown()
 	setGpgCommand(appsettings()->gpg_command, false);
 
 	{
-		MySettings s;
-		s.beginGroup("Remote");
-		bool f = s.value("Online", true).toBool();
-		s.endGroup();
-		setRemoteOnline(f);
+		MySettings settings;
+		{
+			settings.beginGroup("Remote");
+			bool f = settings.value("Online", true).toBool();
+			settings.endGroup();
+			setRemoteOnline(f);
+		}
+		{
+			settings.beginGroup("MainWindow");
+			int n = settings.value("FirstColumnWidth", n).toInt();
+			if (n < 10) n = 50;
+			ui->tableWidget_log->setColumnWidth(0, n);
+			settings.endGroup();
+		}
 	}
 
 	setUnknownRepositoryInfo();
@@ -398,6 +405,8 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+	MySettings settings;
+
 	if (appsettings()->remember_and_restore_window_position) {
 		setWindowOpacity(0);
 		Qt::WindowStates state = windowState();
@@ -407,15 +416,19 @@ void MainWindow::closeEvent(QCloseEvent *event)
 			setWindowState(state);
 		}
 		{
-			MySettings settings;
-
 			settings.beginGroup("MainWindow");
 			settings.setValue("Maximized", maximized);
 			settings.setValue("Geometry", saveGeometry());
-			//		settings.setValue("SplitterState", ui->splitter->saveState());
 			settings.endGroup();
 		}
 	}
+
+	{
+		settings.beginGroup("MainWindow");
+		settings.setValue("FirstColumnWidth", ui->tableWidget_log->columnWidth(0));
+		settings.endGroup();
+	}
+
 	QMainWindow::closeEvent(event);
 }
 
@@ -1042,7 +1055,9 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 		AddColumn(message, bold, message + message_ex);
 		ui->tableWidget_log->setRowHeight(row, 24);
 	}
+	int t = ui->tableWidget_log->columnWidth(0);
 	ui->tableWidget_log->resizeColumnsToContents();
+	ui->tableWidget_log->setColumnWidth(0, t);
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
 	ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
 
