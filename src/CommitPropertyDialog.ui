@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="ReadOnlyLineEdit" name="lineEdit_description">
+    <widget class="ReadOnlyLineEdit" name="lineEdit_message">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -353,7 +353,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>lineEdit_description</tabstop>
+  <tabstop>lineEdit_message</tabstop>
   <tabstop>lineEdit_date</tabstop>
   <tabstop>lineEdit_author</tabstop>
   <tabstop>lineEdit_mail</tabstop>

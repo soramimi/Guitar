@@ -85,7 +85,7 @@ private:
 		}
 	}
 
-	void drawDescription(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
+	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
 	{
 		int row = index.row();
 		QList<BasicMainWindow::Label> const *labels = mainwindow()->label(row);
@@ -103,7 +103,7 @@ private:
 				i--;
 				BasicMainWindow::Label const &label = labels->at(i);
 				QString text = misc::abbrevBranchName(label.text);
-				int w = fm.size(0, text).width() + space * 2;
+				int w = fm.size(0, text).width() + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
 				painter->setPen(Qt::NoPen);
@@ -119,7 +119,7 @@ private:
 				DrawRect(0, 0, color);
 				painter->setPen(Qt::black);
 				painter->setBrush(Qt::NoBrush);
-				qApp->style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
+				QApplication::style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
 				x1 = x0;
 			}
 			painter->restore();
@@ -140,7 +140,7 @@ public:
 			CommitId,
 			Date,
 			Author,
-			Description,
+			Message,
 		};
 
 		// signatureの描画
@@ -163,9 +163,9 @@ public:
 			drawAvatar(painter, option, index);
 		}
 
-		// Descriptionの描画
-		if (index.column() == Description) {
-			drawDescription(painter, option, index);
+		// ラベルの描画
+		if (index.column() == Message) {
+			drawLabels(painter, option, index);
 		}
 	}
 };

@@ -1177,7 +1177,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 						}
 					}
 					if (start) {
-						// ex. "0a2a8b6b66f48bcbf985d8a2afcd14ff41676c16 HEAD@{188}: commit: comment text"
+						// ex. "0a2a8b6b66f48bcbf985d8a2afcd14ff41676c16 HEAD@{188}: commit: message"
 						item = ReflogItem();
 						int i = line.indexOf(": ");
 						if (i > 0) {
@@ -1185,7 +1185,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 							if (j > 2) {
 								item.head = line.mid(0, i);
 								item.command = line.mid(i + 2, j - i - 2);
-								item.comment= line.mid(j + 2);
+								item.message = line.mid(j + 2);
 								if (item.head.size() > GIT_ID_LENGTH) {
 									item.id = item.head.mid(0, GIT_ID_LENGTH);
 									item.head = item.head.mid(GIT_ID_LENGTH + 1);

@@ -112,7 +112,7 @@ void FileHistoryWindow::collectFileHistory()
 		tr("Commit"),
 		tr("Date"),
 		tr("Author"),
-		tr("Description"),
+		tr("Message"),
 	};
 	int n = cols.size();
 	ui->tableWidget_log->setColumnCount(n);

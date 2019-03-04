@@ -441,7 +441,7 @@ public:
 		QString id;
 		QString head;
 		QString command;
-		QString comment;
+		QString message;
 		struct File {
 			QString atts_a;
 			QString atts_b;

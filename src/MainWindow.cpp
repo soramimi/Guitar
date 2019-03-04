@@ -841,7 +841,7 @@ void MainWindow::prepareLogTableWidget()
 		tr("Commit"),
 		tr("Date"),
 		tr("Author"),
-		tr("Description"),
+		tr("Message"),
 	};
 	int n = cols.size();
 	ui->tableWidget_log->setColumnCount(n);
@@ -1317,9 +1317,9 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		menu.addSeparator();
 
-		QAction *a_edit_comment = nullptr;
+		QAction *a_edit_message = nullptr;
 		if (row == 0 && currentBranch().ahead > 0) {
-			a_edit_comment = menu.addAction(tr("Edit comment..."));
+			a_edit_message = menu.addAction(tr("Edit message..."));
 		}
 
 		QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
@@ -1359,7 +1359,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				execCommitPropertyDialog(this, commit);
 				return;
 			}
-			if (a == a_edit_comment) {
+			if (a == a_edit_message) {
 				commitAmend();
 				return;
 			}

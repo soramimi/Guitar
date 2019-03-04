@@ -35,7 +35,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 		tr("Commit"),
 		tr("Head"),
 		tr("Command"),
-		tr("Comment"),
+		tr("Message"),
 	};
 
 	auto newQTableWidgetItem = [](QString const &text){
@@ -65,7 +65,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 		cmd = cmd.mid(0, i);
 		item = newQTableWidgetItem(cmd);
 		ui->tableWidget->setItem(row, 2, item);
-		item = newQTableWidgetItem(t.comment);
+		item = newQTableWidgetItem(t.message);
 		ui->tableWidget->setItem(row, 3, item);
 		ui->tableWidget->setRowHeight(row, 24);
 		row++;

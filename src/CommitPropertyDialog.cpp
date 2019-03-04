@@ -23,7 +23,7 @@ void CommitPropertyDialog::init(BasicMainWindow *mw)
 
 	m->mainwindow = mw;
 
-	ui->lineEdit_description->setText(m->commit.message);
+	ui->lineEdit_message->setText(m->commit.message);
 	ui->lineEdit_commit_id->setText(m->commit.commit_id);
 	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
 	ui->lineEdit_author->setText(m->commit.author);
