@@ -223,7 +223,7 @@ bool MainWindow::shown()
 		}
 		{
 			settings.beginGroup("MainWindow");
-			int n = settings.value("FirstColumnWidth", n).toInt();
+			int n = settings.value("FirstColumnWidth", 50).toInt();
 			if (n < 10) n = 50;
 			ui->tableWidget_log->setColumnWidth(0, n);
 			settings.endGroup();
@@ -855,7 +855,7 @@ void MainWindow::prepareLogTableWidget()
 	updateCommitGraph(); // コミットグラフを更新
 }
 
-void MainWindow::detectGitServerType(GitPtr g)
+void MainWindow::detectGitServerType(GitPtr const &g)
 {
 	setServerType(ServerType::Standard);
 	*ptrGitHub() = GitHubRepositoryInfo();
@@ -1638,9 +1638,9 @@ QStringList MainWindow::selectedFiles() const
 	return QStringList();
 }
 
-void MainWindow::for_each_selected_files(std::function<void(QString const&)> fn)
+void MainWindow::for_each_selected_files(std::function<void(QString const&)> const &fn)
 {
-	for (QString path : selectedFiles()) {
+	for (QString const &path : selectedFiles()) {
 		fn(path);
 	}
 }

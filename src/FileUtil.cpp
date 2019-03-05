@@ -77,7 +77,7 @@ void FileUtil::getdirents(std::string const &loc, std::vector<DirEnt> *out)
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 
 std::string FileUtil::getcwd()

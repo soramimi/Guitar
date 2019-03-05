@@ -2,8 +2,6 @@
 #include "common/joinpath.h"
 #include <QFileInfo>
 
-
-
 void RemoteWatcher::start(MainWindow *mw)
 {
 	mainwindow_ = mw;
@@ -38,7 +36,7 @@ void RemoteWatcher::checkRemoteUpdate()
 	QString remote_id;
 	GitPtr g = mainwindow()->git();
 	auto list = g->ls_remote();
-	for (auto item : list) {
+	for (auto const &item : list) {
 		if (item.name == refs) {
 			remote_id = item.commit_id;
 			break;

@@ -447,7 +447,7 @@ public:
 	}
 };
 
-void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int)> rcv, std::vector<char> *out)
+void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int)> const &rcv, std::vector<char> *out)
 {
 	char buf[4096];
 	size_t pos = 0;

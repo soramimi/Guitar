@@ -1,14 +1,14 @@
 #include "UnixProcess.h"
-#include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
 #include <QDebug>
 #include <QMutex>
 #include <QThread>
+#include <cstdlib>
+#include <ctime>
 #include <deque>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 class OutputReaderThread : public QThread {
 private:
@@ -146,7 +146,7 @@ protected:
 			t2.start();
 
 			while (1) {
-				QThread::currentThread()->msleep(1);
+				QThread::msleep(1);
 				int status = 0;
 				if (waitpid(pid, &status, WNOHANG) == pid) {
 					if (WIFEXITED(status)) {

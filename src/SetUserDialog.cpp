@@ -1,7 +1,7 @@
-#include "AvatarLoader.h"
-#include "BasicMainWindow.h"
 #include "SetUserDialog.h"
 #include "ui_SetUserDialog.h"
+#include "AvatarLoader.h"
+#include "BasicMainWindow.h"
 #include "common/misc.h"
 
 struct SetUserDialog::Private  {
@@ -74,7 +74,7 @@ Git::User SetUserDialog::user() const
 	return user;
 }
 
-void SetUserDialog::setAvatar(QIcon icon)
+void SetUserDialog::setAvatar(QIcon const &icon)
 {
 	QPixmap pm = icon.pixmap(QSize(64, 64));
 	ui->label_avatar->setPixmap(pm);

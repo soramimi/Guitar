@@ -1,6 +1,6 @@
 #include "BasicMainWindow.h"
-#include "ObjectBrowserDialog.h"
 #include "ui_ObjectBrowserDialog.h"
+#include "ObjectBrowserDialog.h"
 #include <QMessageBox>
 
 enum {
@@ -25,7 +25,7 @@ ObjectBrowserDialog::ObjectBrowserDialog(BasicMainWindow *parent, const QStringL
 	};
 
 	auto NewQTableWidgetItem = [](){
-		QTableWidgetItem *item = new QTableWidgetItem();
+		auto *item = new QTableWidgetItem();
 		return item;
 	};
 

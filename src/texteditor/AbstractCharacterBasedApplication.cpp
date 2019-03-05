@@ -1154,7 +1154,7 @@ bool AbstractCharacterBasedApplication::isDialogMode()
 	return m->dialog_mode;
 }
 
-void AbstractCharacterBasedApplication::setDialogOption(QString const &title, QString const &value, DialogHandler handler)
+void AbstractCharacterBasedApplication::setDialogOption(QString const &title, QString const &value, DialogHandler const &handler)
 {
 	m->dialog_title = title;
 	m->dialog_value = value;
@@ -1188,7 +1188,7 @@ void AbstractCharacterBasedApplication::setDialogMode(bool f)
 	}
 }
 
-void AbstractCharacterBasedApplication::execDialog(QString const &dialog_title, QString dialog_value, DialogHandler handler)
+void AbstractCharacterBasedApplication::execDialog(QString const &dialog_title, QString const &dialog_value, DialogHandler const &handler)
 {
 	setDialogOption(dialog_title, dialog_value, handler);
 	setDialogMode(true);

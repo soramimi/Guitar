@@ -50,7 +50,7 @@ private:
 	GitPtr g;
 	std::function<void(GitPtr g)> callback;
 public:
-	AsyncExecGitThread_(GitPtr g, std::function<void(GitPtr g)> callback)
+        AsyncExecGitThread_(GitPtr const &g, std::function<void(GitPtr g)> const &callback)
 		: g(g)
 		, callback(callback)
 	{
@@ -359,7 +359,7 @@ bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url)
 	return ok;
 }
 
-void BasicMainWindow::addWorkingCopyDir(QString dir, bool open)
+void BasicMainWindow::addWorkingCopyDir(QString const &dir, bool open)
 {
 	addWorkingCopyDir(dir, QString(), open);
 }
@@ -600,7 +600,7 @@ bool BasicMainWindow::isValidWorkingCopy(const GitPtr &g) const
 	return g && g->isValidWorkingCopy();
 }
 
-QString BasicMainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> callback) const
+QString BasicMainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const
 {
 	const_cast<BasicMainWindow *>(this)->checkFileCommand();
 	return misc::determinFileType(global->file_command, path, mime, callback);
@@ -660,7 +660,7 @@ TextEditorThemePtr BasicMainWindow::themeForTextEditor()
 	return global->theme->text_editor_theme;
 }
 
-Git::Object BasicMainWindow::cat_file_(GitPtr g, QString const &id)
+Git::Object BasicMainWindow::cat_file_(GitPtr const &g, QString const &id)
 {
 	if (isValidWorkingCopy(g)) {
 		QString path_prefix = PATH_PREFIX;
@@ -693,7 +693,7 @@ QString BasicMainWindow::newTempFilePath()
 	return path;
 }
 
-QString BasicMainWindow::findFileID(GitPtr, QString const &commit_id, QString const &file)
+QString BasicMainWindow::findFileID(QString const &commit_id, QString const &file)
 {
 	return lookupFileID(getObjCache(), commit_id, file);
 }
@@ -1177,7 +1177,7 @@ DONE:;
 	}
 }
 
-bool BasicMainWindow::fetch(GitPtr g, bool prune)
+bool BasicMainWindow::fetch(GitPtr const &g, bool prune)
 {
 	setPtyCondition(PtyCondition::Fetch);
 	setPtyProcessOk(true);
@@ -1631,7 +1631,7 @@ void BasicMainWindow::writeLog(const QString &str)
 	writeLog(s.c_str(), s.size());
 }
 
-void BasicMainWindow::emitWriteLog(QByteArray ba)
+void BasicMainWindow::emitWriteLog(QByteArray const &ba)
 {
 	emit signalWriteLog(ba);
 }
@@ -1643,13 +1643,13 @@ void BasicMainWindow::writeLog_(QByteArray ba)
 	}
 }
 
-void BasicMainWindow::queryRemotes(GitPtr g)
+void BasicMainWindow::queryRemotes(GitPtr const &g)
 {
 	m->remotes = g->getRemotes();
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
-bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> callback, RepositoryItem const *repo)
+bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo)
 {
 	if (!repo) {
 		repo = &m->current_repo;
@@ -1940,7 +1940,7 @@ void BasicMainWindow::updateRepository()
 	openRepository_(g);
 }
 
-void BasicMainWindow::reopenRepository(bool log, std::function<void (GitPtr)> callback)
+void BasicMainWindow::reopenRepository(bool log, std::function<void (GitPtr)> const &callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2030,7 +2030,7 @@ void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std:
 	}
 }
 
-Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
+Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr const &g)
 {
 	Git::CommitItemList list = g->log(limitLogCount());
 
@@ -2073,7 +2073,7 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr g)
 	return list;
 }
 
-void BasicMainWindow::queryBranches(GitPtr g)
+void BasicMainWindow::queryBranches(GitPtr const &g)
 {
 	Q_ASSERT(g);
 	m->branch_map.clear();
@@ -2114,7 +2114,7 @@ void BasicMainWindow::updateRemoteInfo()
 	emit remoteInfoChanged();
 }
 
-void BasicMainWindow::updateWindowTitle(GitPtr g)
+void BasicMainWindow::updateWindowTitle(GitPtr const &g)
 {
 	if (isValidWorkingCopy(g)) {
 		Git::User user = g->getUser(Git::Source::Default);
@@ -2676,7 +2676,7 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 {
 	NamedCommitList items;
 	if (flags & Branches) {
-		for (auto pair: branchMapRef()) {
+		for (auto const &pair: branchMapRef()) {
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
@@ -2695,7 +2695,7 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 		}
 	}
 	if (flags & Tags) {
-		for (auto pair: *ptrTagMap()) {
+		for (auto const &pair: *ptrTagMap()) {
 			QList<Git::Tag> const &list = pair.second;
 			for (Git::Tag const &t : list) {
 				NamedCommitItem item;
@@ -2749,7 +2749,7 @@ void BasicMainWindow::createRepository(QString const &dir)
 	}
 }
 
-void BasicMainWindow::setLogEnabled(GitPtr g, bool f)
+void BasicMainWindow::setLogEnabled(GitPtr const &g, bool f)
 {
 	if (f) {
 		g->setLogCallback(git_callback, this);
@@ -2808,6 +2808,8 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 		openRepository(false, false);
 	}
 }
+
+
 
 
 

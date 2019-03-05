@@ -1,8 +1,8 @@
-#include "GitDiff.h"
 
+#include "GitDiff.h"
+#include "BasicMainWindow.h"
 #include <QDebug>
 #include <QThread>
-#include "BasicMainWindow.h"
 
 bool parse_tree_(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out)
 {
@@ -50,7 +50,7 @@ public:
 	std::map<QString, QString> id_to_path_map;
 public:
 
-	typedef std::map<QString, QString>::const_iterator const_iterator;
+	using const_iterator = std::map<QString, QString>::const_iterator;
 
 	void store(QString const &path, QString const &id)
 	{
@@ -98,7 +98,7 @@ QString GitDiff::prependPathPrefix(QString const &path)
 	return PATH_PREFIX + path;
 }
 
-QString GitDiff::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
+QString GitDiff::diffObjects(GitPtr const &g, QString const &a_id, QString const &b_id)
 {
 	QString path_prefix = PATH_PREFIX;
 	if (b_id.startsWith(path_prefix)) {
@@ -109,7 +109,7 @@ QString GitDiff::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
 	}
 }
 
-QString GitDiff::diffFiles(GitPtr g, QString const &a_path, QString const &b_path)
+QString GitDiff::diffFiles(GitPtr const &g, QString const &a_path, QString const &b_path)
 {
 	return g->diff_file(a_path, b_path);
 }

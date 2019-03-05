@@ -1,14 +1,12 @@
 #ifndef FILEDIFFSLIDERWIDGET_H
 #define FILEDIFFSLIDERWIDGET_H
 
-#include "MainWindow.h"
-
-#include <QWidget>
-#include <QPixmap>
-#include <functional>
-
 #include "AbstractCharacterBasedApplication.h"
+#include "MainWindow.h"
 #include "Theme.h"
+#include <QPixmap>
+#include <QWidget>
+#include <functional>
 
 using TextDiffLine = Document::Line;
 using TextDiffLineList = QList<Document::Line>;
@@ -36,7 +34,7 @@ public:
 
 	void clear(bool v);
 	void setScrollPos(int total, int value, int size);
-	void init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme);
+	void init(fn_pixmap_maker_t const &pixmap_maker, const ThemePtr &theme);
 	void updatePixmap();
 	static QPixmap makeDiffPixmap(int width, int height, TextDiffLineList const &lines, ThemePtr theme);
 protected:

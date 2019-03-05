@@ -19,7 +19,7 @@ private:
 	QStringList remotes;
 	void updateRemotesTable();
 public:
-	explicit SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g);
+	explicit SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, const GitPtr &g);
 	~SetRemoteUrlDialog() override;
 
 	int exec() override;

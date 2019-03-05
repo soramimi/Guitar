@@ -1,9 +1,6 @@
 #ifndef FILEDIFFWIDGET_H
 #define FILEDIFFWIDGET_H
 
-
-
-
 #include "FileDiffSliderWidget.h"
 #include "FileViewWidget.h"
 #include "Git.h"
@@ -97,7 +94,7 @@ private:
 	ViewStyle viewstyle() const;
 
 	GitPtr git();
-	Git::Object cat_file(GitPtr g, QString const &id);
+	Git::Object cat_file(const GitPtr &g, QString const &id);
 
 	int totalTextLines() const;
 
@@ -122,7 +119,7 @@ private:
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void setOriginalLines_(QByteArray const &ba);
-	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
+	QString diffObjects(const GitPtr &g, QString const &a_id, QString const &b_id);
 	BasicMainWindow *mainwindow();
 protected:
 	void resizeEvent(QResizeEvent *) override;
@@ -141,7 +138,7 @@ public:
 	void scrollToBottom();
 
 	void updateDiffView(const Git::Diff &info, bool uncommited);
-	void updateDiffView(QString id_left, QString id_right, QString const &path = QString());
+	void updateDiffView(const QString &id_left, const QString &id_right, QString const &path = QString());
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);

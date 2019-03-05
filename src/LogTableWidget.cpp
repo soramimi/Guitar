@@ -1,13 +1,13 @@
 #include "LogTableWidget.h"
+#include "MainWindow.h"
+#include "MyTableWidgetDelegate.h"
+#include "common/misc.h"
+#include <QApplication>
 #include <QDebug>
 #include <QEvent>
 #include <QPainter>
 #include <QProxyStyle>
 #include <cmath>
-#include "MainWindow.h"
-#include <QApplication>
-#include "MyTableWidgetDelegate.h"
-#include "common/misc.h"
 
 struct LogTableWidget::Private {
 };
@@ -184,7 +184,7 @@ LogTableWidget::~LogTableWidget()
 
 MainWindow *LogTableWidget::mainwindow()
 {
-	MainWindow *mw = qobject_cast<MainWindow *>(window());
+	auto *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 	return mw;
 }

@@ -98,7 +98,7 @@ TextEditorWidget::~TextEditorWidget()
 	delete m;
 }
 
-void TextEditorWidget::setTheme(TextEditorThemePtr theme)
+void TextEditorWidget::setTheme(TextEditorThemePtr const &theme)
 {
 	m->theme = theme;
 }
@@ -178,7 +178,7 @@ void TextEditorWidget::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
 	m->scroll_bar_h = hsb;
 }
 
-void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
+void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
 	bindScrollBar(vsb, hsb);
 	setTheme(theme);

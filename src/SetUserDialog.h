@@ -18,7 +18,7 @@ private:
 	struct Private;
 	Private *m;
 
-	void setAvatar(QIcon icon);
+	void setAvatar(const QIcon &icon);
 	BasicMainWindow *mainwindow();
 public:
 	explicit SetUserDialog(BasicMainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo);

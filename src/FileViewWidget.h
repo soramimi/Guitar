@@ -55,11 +55,11 @@ public:
 
 	void setViewType(FileViewType type);
 
-	void setImage(QString mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
+	void setImage(const QString &mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
 	void setText(const QList<Document::Line> *source, QMainWindow *mw, QString const &object_id, const QString &object_path);
 	void setText(const QByteArray &ba, QMainWindow *mw, const QString &object_id, const QString &object_path);
 
-	void setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *vsb, QScrollBar *hsb);
+	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
 	int latin1Width() const;
 	int lineHeight() const;
@@ -71,7 +71,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorWidget *texteditor();
-	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme);
+	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 };
 
 #endif // FILEVIEWWIDGET_H

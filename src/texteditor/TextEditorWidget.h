@@ -65,7 +65,7 @@ public:
 	explicit TextEditorWidget(QWidget *parent = nullptr);
 	~TextEditorWidget();
 
-	void setTheme(TextEditorThemePtr theme);
+	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
 
 	int latin1Width() const;
@@ -78,7 +78,7 @@ public:
 	bool event(QEvent *event);
 
 	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
-	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme);
+	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 
 	QPoint mapFromPixel(const QPoint &pt);
 	QPoint mapToPixel(const QPoint &pt);

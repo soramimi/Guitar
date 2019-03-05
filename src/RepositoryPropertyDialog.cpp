@@ -1,13 +1,12 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
-#include "common/misc.h"
 #include "MainWindow.h"
-
+#include "common/misc.h"
 #include <QClipboard>
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
 {

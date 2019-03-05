@@ -282,8 +282,8 @@ protected:
 	bool isDialogMode();
 	void setDialogMode(bool f);
 	void closeDialog(bool result);
-	void setDialogOption(QString const &title, QString const &value, DialogHandler handler);
-	void execDialog(QString const &dialog_title, QString dialog_value, DialogHandler handler);
+	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
+	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	void toggleSelectionAnchor();
 private:
 	int internalParseLine(std::vector<uint32_t> *vec, int increase_hint) const;

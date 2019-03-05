@@ -50,8 +50,8 @@ public:
 	}
 
 public:
-	static QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
-	static QString diffFiles(GitPtr g, QString const &a_path, QString const &b_path);
+	static QString diffObjects(const GitPtr &g, QString const &a_id, QString const &b_id);
+	static QString diffFiles(const GitPtr &g, QString const &a_path, QString const &b_path);
 	static void parseDiff(std::string const &s, const Git::Diff *info, Git::Diff *out);
 	static QString makeKey(QString const &a_id, QString const &b_id);
 	static QString makeKey(const Git::Diff &diff);

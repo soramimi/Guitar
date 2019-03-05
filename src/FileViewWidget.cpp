@@ -1,10 +1,9 @@
 #include "FileViewWidget.h"
+#include "common/misc.h"
 #include <QMenu>
 #include <QPainter>
 #include <QStackedWidget>
 #include <QVBoxLayout>
-
-#include "common/misc.h"
 
 FileViewWidget::FileViewWidget(QWidget *parent)
 	: QWidget(parent)
@@ -51,7 +50,7 @@ void FileViewWidget::setTextCodec(QTextCodec *codec)
 	ui_page_text->setTextCodec(codec);
 }
 
-void FileViewWidget::bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr theme)
+void FileViewWidget::bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
 	ui_page_text->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(mw, fdw, vsb, hsb);
@@ -89,7 +88,7 @@ int FileViewWidget::lineHeight() const
 	return ui_page_text->lineHeight();
 }
 
-void FileViewWidget::setDiffMode(TextEditorEnginePtr editor_engine, QScrollBar *vsb, QScrollBar *hsb)
+void FileViewWidget::setDiffMode(TextEditorEnginePtr const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)
 {
 	ui_page_text->setTextEditorEngine(editor_engine);
 	return ui_page_text->bindScrollBar(vsb, hsb);
@@ -112,7 +111,7 @@ void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 	return ui_page_text->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
 }
 
-void FileViewWidget::setImage(QString mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void FileViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	setViewType(FileViewType::Image);
 	this->source_id = object_id;

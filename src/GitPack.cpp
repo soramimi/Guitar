@@ -1,8 +1,8 @@
 #include "GitPack.h"
-#include <zlib.h>
+#include "GitPackIdxV2.h"
 #include <QDebug>
 #include <QFile>
-#include "GitPackIdxV2.h"
+#include <zlib.h>
 
 void GitPack::decodeTree(QByteArray *out)
 {

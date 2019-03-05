@@ -2,7 +2,6 @@
 #include "ui_JumpDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include <QDebug>
 
 struct JumpDialog::Private {
 	MyTableWidgetDelegate delegate;
@@ -109,7 +108,7 @@ void JumpDialog::updateTable()
 		NamedCommitList list;
 		for (NamedCommitItem const &item: m->items) {
 			auto Match = [&](QString  const &name){
-				for (QString s : filter) {
+				for (QString const &s : filter) {
 					if (name.indexOf(s, 0, Qt::CaseInsensitive) < 0) {
 						return false;
 					}

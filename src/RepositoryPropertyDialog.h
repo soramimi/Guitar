@@ -25,7 +25,7 @@ private:
 	Git::Remote selectedRemote() const;
 	void toggleRemoteMenuActivity();
 public:
-	explicit RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(BasicMainWindow *parent, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

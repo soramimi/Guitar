@@ -49,7 +49,7 @@ private:
 	void prepareLogTableWidget();
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
-	void for_each_selected_files(std::function<void (QString const &)> fn);
+	void for_each_selected_files(std::function<void (QString const &)> const &fn);
 	void showFileList(FilesListType files_list_type);
 
 	void clearLog();
@@ -79,7 +79,7 @@ private:
 	void cherrypick(Git::CommitItem const *commit);
 	void mergeBranch(Git::CommitItem const *commit);
 	void rebaseBranch(Git::CommitItem const *commit);
-	void detectGitServerType(GitPtr g);
+	void detectGitServerType(const GitPtr &g);
 	void setRemoteOnline(bool f);
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);

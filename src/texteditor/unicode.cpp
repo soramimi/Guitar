@@ -1,7 +1,6 @@
 
 #include "unicode.h"
 
-
 namespace unicode_helper_ {
 
 class reader {

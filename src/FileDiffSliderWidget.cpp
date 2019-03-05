@@ -1,10 +1,11 @@
+
 #include "FileDiffSliderWidget.h"
-#include "common/misc.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QDebug>
 #include "ApplicationGlobal.h"
 #include "TextEditorTheme.h"
+#include "common/misc.h"
+#include <QDebug>
+#include <QMouseEvent>
+#include <QPainter>
 
 struct FileDiffSliderWidget::Private {
 	bool visible = false;
@@ -29,7 +30,7 @@ FileDiffSliderWidget::~FileDiffSliderWidget()
 	delete m;
 }
 
-void FileDiffSliderWidget::init(fn_pixmap_maker_t pixmap_maker, ThemePtr theme)
+void FileDiffSliderWidget::init(fn_pixmap_maker_t const &pixmap_maker, ThemePtr const &theme)
 {
 	m->pixmap_maker = pixmap_maker;
 	m->theme = theme;

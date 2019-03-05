@@ -1,13 +1,11 @@
 
-#include "BasicMainWindow.h"
 #include "GitHubAPI.h"
-
-#include "webclient.h"
-#include "common/misc.h"
-#include "charvec.h"
-#include "urlencode.h"
+#include "BasicMainWindow.h"
 #include "MemoryReader.h"
-
+#include "charvec.h"
+#include "common/misc.h"
+#include "urlencode.h"
+#include "webclient.h"
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>

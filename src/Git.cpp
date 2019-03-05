@@ -1,4 +1,9 @@
+
 #include "Git.h"
+#include "GitObjectManager.h"
+#include "MyProcess.h"
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -7,11 +12,6 @@
 #include <QThread>
 #include <QTimer>
 #include <set>
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include "GitObjectManager.h"
-
-#include "MyProcess.h"
 
 #define DEBUGLOG 0
 

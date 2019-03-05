@@ -1,12 +1,10 @@
 #include "SettingsDialog.h"
 #include "ui_SettingsDialog.h"
 #include "MySettings.h"
-
-#include <QFileDialog>
 #include "common/misc.h"
+#include <QFileDialog>
 
 static int page_number = 0;
-
 
 SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QDialog(parent),

@@ -137,8 +137,8 @@ private:
 	static QString makeRepositoryName(QString const &loc);
 	void clearAuthentication();
 	RepositoryItem const *findRegisteredRepository(QString *workdir) const;
-	void queryRemotes(GitPtr g);
-	bool runOnRepositoryDir(std::function<void (QString)> callback, RepositoryItem const *repo);
+	void queryRemotes(const GitPtr &g);
+	bool runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo);
 	void clearSshAuthentication();
 protected:
 	static QString getFilePath(QListWidgetItem *item);
@@ -166,20 +166,20 @@ protected:
 	void checkUser();
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
-	void reopenRepository(bool log, std::function<void (GitPtr)> callback);
+	void reopenRepository(bool log, std::function<void (GitPtr)> const &callback);
 	void openSelectedRepository();
 	void checkRemoteUpdate();
 	bool isThereUncommitedChanges() const;
 	bool makeDiff(QString id, QList<Git::Diff> *out);
 	void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item);
-	Git::CommitItemList retrieveCommitLog(GitPtr g);
+	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
 
-	void queryBranches(GitPtr g);
+	void queryBranches(const GitPtr &g);
 	std::map<QString, QList<Git::Branch>> &branchMapRef();
 
 	void updateCommitTableLater();
 	void updateRemoteInfo();
-	void updateWindowTitle(GitPtr g);
+	void updateWindowTitle(const GitPtr &g);
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 
@@ -206,7 +206,7 @@ protected:
 	NamedCommitList namedCommitItems(int flags);
 	int rowFromCommitId(QString const &id);
 	void createRepository(QString const &dir);
-	void setLogEnabled(GitPtr g, bool f);
+	void setLogEnabled(const GitPtr &g, bool f);
 	QList<Git::Tag> findTag(QString const &id);
 	void sshSetPassphrase(std::string const &user, std::string const &pass);
 	std::string sshPassphraseUser() const;
@@ -283,7 +283,7 @@ protected:
 	QVariant const &getTempRepoForCloneCompleteV() const;
 
 	void updateCommitGraph();
-	bool fetch(GitPtr g, bool prune);
+        bool fetch(const GitPtr &g, bool prune);
 
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
@@ -318,7 +318,7 @@ public:
 	bool saveAs(QString const &id, QString const &dstpath);
 	bool testRemoteRepositoryValidity(QString const &url);
 	QString defaultWorkingDir() const;
-	void addWorkingCopyDir(QString dir, bool open);
+	void addWorkingCopyDir(const QString &dir, bool open);
 	bool queryCommit(QString const &id, Git::CommitItem *out);
 	QAction *addMenuActionProperty(QMenu *menu);
 	void checkout(QWidget *parent, Git::CommitItem const *commit);
@@ -339,16 +339,16 @@ public:
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
 	bool isValidWorkingCopy(const GitPtr &g) const;
-	QString determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> callback) const;
+	QString determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const;
 	QString determinFileType(QString const &path, bool mime);
 	QString determinFileType(QByteArray in, bool mime);
 	QList<Git::Tag> queryTagList();
 	int limitLogCount() const;
 	TextEditorThemePtr themeForTextEditor();
-	Git::Object cat_file_(GitPtr g, QString const &id);
+	Git::Object cat_file_(const GitPtr &g, QString const &id);
 	Git::Object cat_file(QString const &id);
 	QString newTempFilePath();
-	QString findFileID(GitPtr, QString const &commit_id, QString const &file);
+        QString findFileID(QString const &commit_id, QString const &file);
 	void updateFilesList(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void setAppSettings(const ApplicationSettings &appsettings);
 
@@ -368,7 +368,7 @@ public:
 	QStringList findGitObject(const QString &id) const;
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
-	void emitWriteLog(QByteArray ba);
+        void emitWriteLog(const QByteArray &ba);
 public slots:
 	void writeLog_(QByteArray ba);
 signals:

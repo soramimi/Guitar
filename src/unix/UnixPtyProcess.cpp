@@ -1,14 +1,14 @@
 #include "UnixPtyProcess.h"
-#include <unistd.h>
-#include <cstdlib>
+#include <QDir>
+#include <QMutex>
 #include <csignal>
+#include <cstdlib>
+#include <deque>
 #include <fcntl.h>
-#include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#include <deque>
-#include <QMutex>
-#include <QDir>
+#include <termios.h>
+#include <unistd.h>
 
 namespace {
 
@@ -54,7 +54,7 @@ private:
 	std::deque<char> *output_queue;
 	std::vector<char> *output_vector;
 protected:
-	void run()
+	void run() override
 	{
 		while (1) {
 			if (isInterruptionRequested()) break;
@@ -198,7 +198,7 @@ void UnixPtyProcess::run()
 			int status = 0;
 			int r = waitpid(pid, &status, WNOHANG);
 			if (r < 0) break;
-			QThread::currentThread()->msleep(1);
+			QThread::msleep(1);
 			if (r > 0) {
 				if (WIFEXITED(status)) {
 					m->exit_code = WEXITSTATUS(status);

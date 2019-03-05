@@ -1,13 +1,11 @@
 #include "SearchFromGitHubDialog.h"
 #include "ui_SearchFromGitHubDialog.h"
-
+#include "BasicMainWindow.h"
 #include "common/misc.h"
 #include "urlencode.h"
-#include "BasicMainWindow.h"
-
 #include <QDebug>
-#include <QThread>
 #include <QDesktopServices>
+#include <QThread>
 #include <QUrl>
 #include <functional>
 
@@ -65,7 +63,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 	ui->tableWidget->setRowCount(items.size());
 
 	for (int col = 0; col < cols.size(); col++) {
-		QTableWidgetItem *p = new QTableWidgetItem();
+		auto *p = new QTableWidgetItem();
 		p->setText(cols[col]);
 		ui->tableWidget->setHorizontalHeaderItem(col, p);
 	}

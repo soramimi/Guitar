@@ -15,7 +15,7 @@ GitObjectManager::GitObjectManager()
 	subdir_git_objects_pack = subdir_git_objects / "pack";
 }
 
-void GitObjectManager::setup(GitPtr g)
+void GitObjectManager::setup(GitPtr const &g)
 {
 	this->g = g;
 	clearIndexes();
@@ -159,7 +159,7 @@ bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *
 {
 	loadIndexes();
 
-	for (GitPackIdxPtr idx : git_idx_list) {
+	for (GitPackIdxPtr const &idx : git_idx_list) {
 		GitPackIdxItem const *item = idx->item(id);
 		if (item) {
 			GitPack::Object obj;
@@ -237,7 +237,7 @@ size_t GitObjectCache::size() const
 	return size;
 }
 
-void GitObjectCache::setup(GitPtr g)
+void GitObjectCache::setup(GitPtr const &g)
 {
 	items.clear();
 	revparsemap.clear();

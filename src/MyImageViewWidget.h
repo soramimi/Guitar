@@ -17,7 +17,7 @@ protected:
 public:
 	MyImageViewWidget(QWidget *parent = nullptr);
 
-	void setImage(QString mimetype, QByteArray const &ba, QString const &object_id_, QString const &path_);
+	void setImage(const QString &mimetype, QByteArray const &ba, QString const &object_id_, QString const &path_);
 };
 
 #endif // MYIMAGEVIEWWIDGET_H

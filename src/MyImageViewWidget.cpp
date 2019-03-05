@@ -2,9 +2,8 @@
 
 #include <QMenu>
 #include <QFileDialog>
-
-#include "common/misc.h"
 #include "common/joinpath.h"
+#include "common/misc.h"
 
 MyImageViewWidget::MyImageViewWidget(QWidget *parent)
 	: ImageViewWidget(parent)
@@ -12,7 +11,7 @@ MyImageViewWidget::MyImageViewWidget(QWidget *parent)
 
 }
 
-void MyImageViewWidget::setImage(QString mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void MyImageViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	this->object_id_ = object_id;
 	this->path_ = path;

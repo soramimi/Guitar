@@ -1,12 +1,11 @@
 #include "FileHistoryWindow.h"
 #include "BasicMainWindow.h"
-#include "ui_FileHistoryWindow.h"
-#include "common/misc.h"
-#include "GitDiff.h"
-#include "common/joinpath.h"
 #include "FileDiffWidget.h"
+#include "GitDiff.h"
 #include "MyTableWidgetDelegate.h"
-
+#include "common/joinpath.h"
+#include "common/misc.h"
+#include "ui_FileHistoryWindow.h"
 #include <QMenu>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -81,7 +80,7 @@ BasicMainWindow *FileHistoryWindow::mainwindow()
 	return qobject_cast<BasicMainWindow *>(parent());
 }
 
-void FileHistoryWindow::prepare(GitPtr g, QString const &path)
+void FileHistoryWindow::prepare(GitPtr const &g, QString const &path)
 {
 	Q_ASSERT(g);
 	Q_ASSERT(g->isValidWorkingCopy());
@@ -119,7 +118,7 @@ void FileHistoryWindow::collectFileHistory()
 	ui->tableWidget_log->setRowCount(0);
 	for (int i = 0; i < n; i++) {
 		QString const &text = cols[i];
-		QTableWidgetItem *item = new QTableWidgetItem(text);
+		auto *item = new QTableWidgetItem(text);
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 
@@ -130,13 +129,13 @@ void FileHistoryWindow::collectFileHistory()
 		Git::CommitItem const &commit = m->commit_item_list[row];
 		int col = 0;
 		auto AddColumn = [&](QString const &text, QString const &tooltip){
-			QTableWidgetItem *item = new QTableWidgetItem(text);
+			auto *item = new QTableWidgetItem(text);
 			item->setToolTip(tooltip);
 			ui->tableWidget_log->setItem(row, col, item);
 			col++;
 		};
 
-		QString commit_id = mainwindow()->abbrevCommitID(commit);
+		QString commit_id = BasicMainWindow::abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
@@ -161,7 +160,7 @@ private:
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(BasicMainWindow *BasicMainWindow, GitPtr g, QString const &commit_id, QString const &file)
+	FindFileIdThread(BasicMainWindow *BasicMainWindow, GitPtr const &g, QString const &commit_id, QString const &file)
 	{
 		this->mainwindow = BasicMainWindow;
 		this->g = g;
@@ -172,7 +171,7 @@ public:
 protected:
 	void run() override
 	{
-		result = mainwindow->findFileID(g, commit_id, file);
+		result = mainwindow->findFileID(commit_id, file);
 	}
 };
 
@@ -200,7 +199,7 @@ void FileHistoryWindow::updateDiffView()
 		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = mainwindow()->findFileID(m->g, commit.commit_id, m->path);
+		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
 
 		Git::Diff diff(id, m->path, QString());
 		ui->widget_diff_view->updateDiffView(diff, false);

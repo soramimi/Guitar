@@ -1,13 +1,13 @@
 #include "SetRemoteUrlDialog.h"
 #include "ui_SetRemoteUrlDialog.h"
-#include "MyTableWidgetDelegate.h"
 #include "MainWindow.h"
+#include "MyTableWidgetDelegate.h"
 #include "common/misc.h"
 #include <QMessageBox>
 
-SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g) :
-	BasicRepositoryDialog(mainwindow, g),
-	ui(new Ui::SetRemoteUrlDialog)
+SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr const &g)
+	: BasicRepositoryDialog(mainwindow, g)
+	, ui(new Ui::SetRemoteUrlDialog)
 {
 	ui->setupUi(this);
 

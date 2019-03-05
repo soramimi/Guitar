@@ -131,7 +131,7 @@ private:
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);
 	void on_end_header(const std::vector<char> *vec, WebClientHandler *handler);
-	void receive_(const RequestOption &opt, std::function<int (char *, int)>, std::vector<char> *out);
+	void receive_(const RequestOption &opt, std::function<int (char *, int)> const &, std::vector<char> *out);
 	void output_debug_string(char const *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
 	static void cleanup();
