@@ -155,11 +155,10 @@ void UnixPtyProcess::run()
 	grantpt(m->pty_master);
 	unlockpt(m->pty_master);
 
-
 	pid_t pid = fork();
 	if (pid == 0) {
 		setsid();
-		putenv(const_cast<char *>("LANG=C"));
+		setenv("LANG", "C", 1);
 
 		char *pts_name = ptsname(m->pty_master);
 		int pty_slave = open(pts_name, O_RDWR);

@@ -17,6 +17,10 @@
 #include <QTranslator>
 #include <string>
 
+#ifdef Q_OS_WIN
+#include "win32/win32.h"
+#endif
+
 ApplicationGlobal *global = nullptr;
 
 ApplicationSettings ApplicationSettings::defaultSettings()
@@ -34,9 +38,15 @@ static bool isHighDpiScalingEnabled()
 	return v.isNull() || v.toBool();
 }
 
+void setEnvironmentVariable(QString const &name, QString const &value);
+
 int main(int argc, char *argv[])
 {
-	putenv((char *)"UNICODEMAP_JP=cp932");
+#ifdef Q_OS_WIN
+	setEnvironmentVariable("UNICODEMAP_JP", "cp932");
+#else
+	setenv("UNICODEMAP_JP", "cp932", 1);
+#endif
 
 	ApplicationGlobal g;
 	global = &g;

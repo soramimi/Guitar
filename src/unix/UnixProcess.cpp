@@ -106,7 +106,7 @@ protected:
 			}
 
 			if (pid == 0) { // child
-				putenv(const_cast<char *>("LANG=C"));
+				setenv("LANG", "C", 1);
 				close(stdin_pipe[W]);
 				close(stdout_pipe[R]);
 				close(stderr_pipe[R]);
