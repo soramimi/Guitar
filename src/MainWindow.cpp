@@ -1065,8 +1065,12 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 
 	ui->tableWidget_log->setFocus();
 
-	setCurrentLogRow(select_row >= 0 ? select_row : selrow);
-	ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+	if (select_row < 0) {
+		setCurrentLogRow(selrow);
+	} else {
+		setCurrentLogRow(select_row);
+		ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+	}
 
 	m->remote_watcher.setCurrent(currentRemoteName(), currentBranchName());
 
