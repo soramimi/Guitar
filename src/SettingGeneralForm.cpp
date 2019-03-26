@@ -15,6 +15,7 @@ SettingGeneralForm::SettingGeneralForm(QWidget *parent) :
 
 	langs.push_back(SelectItemDialog::Item("en", tr("English")));
 	langs.push_back(SelectItemDialog::Item("ja", tr("Japanese")));
+	langs.push_back(SelectItemDialog::Item("ru", tr("Russian")));
 
 	themes.push_back(SelectItemDialog::Item("standard", tr("Standard")));
 	themes.push_back(SelectItemDialog::Item("dark", tr("Dark")));
