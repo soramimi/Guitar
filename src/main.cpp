@@ -121,7 +121,10 @@ int main(int argc, char *argv[])
 			// thru
 		} else {
 			QString path = ":/translations/Guitar_" + global->language_id;
-			translator.load(path, QApplication::applicationDirPath());
+			bool f = translator.load(path, QApplication::applicationDirPath());
+			if (!f) {
+				qDebug() << QString("Failed to load the translation file: %1").arg(path);
+			}
 			QApplication::installTranslator(&translator);
 		}
 	}

@@ -40,5 +40,6 @@
         <file>image/signature-dubious.png</file>
         <file>image/signature-good.png</file>
 	<file>translations/Guitar_ja.qm</file>
+  	<file>translations/Guitar_ru.qm</file>
     </qresource>
 </RCC>
