@@ -138,10 +138,8 @@ protected:
 				closeInput();
 			}
 
-//			WriteThread t0(fd_in_read, mutex, &input, &close_input_later);
 			OutputReaderThread t1(fd_out_write, mutex, &outq);
 			OutputReaderThread t2(fd_err_write, mutex, &errq);
-//			if (use_input) t0.start();
 			t1.start();
 			t2.start();
 
@@ -182,14 +180,11 @@ protected:
 				}
 			}
 
-//			if (use_input) {
-//				t0.requestInterruption();
-//				t0.wait();
-//			}
 			t1.wait();
 			t2.wait();
 
 			close(fd_out_write);
+			close(fd_err_write);
 
 		} catch (std::string const &e) {
 			close(stdin_pipe[R]);
