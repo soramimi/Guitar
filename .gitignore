@@ -13,3 +13,4 @@ build/
 src/version.h
 *.autosave
 src/version.h
+*.deb

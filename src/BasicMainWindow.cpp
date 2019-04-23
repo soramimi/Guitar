@@ -198,7 +198,7 @@ public:
 
 bool BasicMainWindow::event(QEvent *event)
 {
-	if (event->type() == EventUserFunction) {
+	if (event->type() == (QEvent::Type)EventUserFunction) {
 		if (auto *e = dynamic_cast<UserFunctionEvent *>(event)) {
 			e->func(e->var);
 			return true;
