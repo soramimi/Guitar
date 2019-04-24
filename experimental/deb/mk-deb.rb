@@ -11,10 +11,27 @@ $workdir = "build"
 $bindir = "build"
 $dstdir = $workdir + "/#{$package}"
 
+puts "Finding libssl1.0 ..."
+$libssl = ""
+lines = `apt search libssl1.0. 2>/dev/null`
+lines.each_line {|line|
+	if line =~ /^(libssl1\.0\.[0-9]+)\/.*#{$arch}/
+		$libssl = $1
+		break
+	end
+}
+if $libssl == ""
+	puts "libssl1.0 not found"
+	exit 1
+else
+	puts "libssl = #{$libssl}"
+end
+
 $arch = "i386"
-if `uname -a` =~ /(x86_64)|(amd64)/
+uname_a = `uname -a`
+if uname_a =~ /(x86_64)|(amd64)/
 	$arch = "amd64"
-elsif `uname -a` =~ /armv7l/
+elsif uname_a =~ /armv7l/
 	$arch = "armhf"
 end
 
@@ -42,7 +59,7 @@ Package: #{$package}
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt5widgets5 (>= 5.5.0), libqt5xml5 (>= 5.5.0), libqt5svg5 (>= 5.5.0), libssl1.0.0, git, file
+Depends: libqt5widgets5 (>= 5.5.0), libqt5xml5 (>= 5.5.0), libqt5svg5 (>= 5.5.0), #{$libssl}, git, file
 Description: Git GUI Client
 ___
 }
