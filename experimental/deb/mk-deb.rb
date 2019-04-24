@@ -59,7 +59,7 @@ Package: #{$package}
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt5widgets5 (>= 5.5.0), libqt5xml5 (>= 5.5.0), libqt5svg5 (>= 5.5.0), #{$libssl}, git, file
+Depends: libqt5widgets5 (>= 5.5.0), libqt5xml5 (>= 5.5.0), libqt5svg5 (>= 5.5.0), zlib1g, #{$libssl}, git, file
 Description: Git GUI Client
 ___
 }
