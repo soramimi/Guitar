@@ -5,6 +5,8 @@ project(Guitar
     LANGUAGES CXX C
 )
 
+add_definitions(-DAPP_GUITAR)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -149,7 +151,6 @@ set(Guitar_SOURCES
 	src/urlencode.cpp
 	src/webclient.cpp
     )
-
 
 set(Guitar_HEADERS
 	src/AboutDialog.h
@@ -386,5 +387,4 @@ target_link_libraries(${PROJECT_NAME}
     OpenSSL::SSL OpenSSL::Crypto
 )
 
-
-add_subdirectory(extra)
+# add_subdirectory(extra)

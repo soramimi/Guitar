@@ -1,11 +1,11 @@
 
-#include "darktheme/DarkStyle.h"
+#include "main.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "main.h"
+#include "darktheme/DarkStyle.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QApplication>
@@ -19,6 +19,10 @@
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
+#endif
+
+#ifndef APP_GUITAR
+#error APP_GUITAR is not defined.
 #endif
 
 ApplicationGlobal *global = nullptr;
