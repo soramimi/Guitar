@@ -5,7 +5,7 @@ require 'fileutils'
 load '../../version.rb'
 
 $package = "guitar"
-$maintainer = "foo <foo@example.com>"
+$maintainer = "nobody <nobody@example.com>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "build"
 $bindir = "build"
@@ -47,6 +47,7 @@ File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|
 [Desktop Entry]
 Type=Application
 Name=Guitar
+Categories=Development
 Exec=/usr/bin/Guitar
 Icon=/usr/share/icons/guitar/Guitar.svg
 Terminal=false
@@ -56,6 +57,7 @@ ___
 File.open($dstdir + "/DEBIAN/control", "w") {|f|
 	f.puts <<___
 Package: #{$package}
+Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
