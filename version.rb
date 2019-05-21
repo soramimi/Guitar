@@ -2,12 +2,15 @@
 
 $product_name = "Guitar"
 $copyright_year = 2019
-$version_a = 0
-$version_b = 9
-$version_c = 4
+$version_a = 1
+$version_b = 0
+$version_c = 0
 $version_d = 0
 
-
+# v1.0.0 2019-05-xx
+#	* ロシア語対応
+#	* 細かい修正
+#
 # v0.9.3 2019-01-19
 #	* stashコマンドを実装
 #	* GitHubウェブページからのドラッグアンドドロップ動作を改良
