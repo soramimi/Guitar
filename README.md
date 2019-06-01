@@ -32,7 +32,7 @@ Git GUI Client
 
 ## Binaries
 
-* http://files.soramimi.jp/guitar/
+* https://files.soramimi.jp/guitar/
 
 ## Documents
 
