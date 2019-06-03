@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>Guitar</Name>
+    <Version>1.0.0</Version>
+    <Title>Guitar Installer</Title>
+    <Publisher>soramimi</Publisher>
+    <StartMenuDir>Guitar</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/soramimi/Guitar</TargetDir>
+    <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
+</Installer>

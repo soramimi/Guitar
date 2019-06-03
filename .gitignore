@@ -14,3 +14,5 @@ src/version.h
 *.autosave
 src/version.h
 *.deb
+packaging/win/packages/jp.soramimi.guitar/data/
+packaging/win/GuitarSetup.exe

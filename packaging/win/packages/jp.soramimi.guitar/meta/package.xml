@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>Guitar - the Git GUI client application</DisplayName>
+    <Description>Install Guitar application.</Description>
+    <Version>1.0.0</Version>
+    <ReleaseDate>2010-06-03</ReleaseDate>
+    <Licenses>
+        <License name="GNU GENERAL PUBLIC LICENSE, Version 2" file="license.txt" />
+    </Licenses>
+    <Default>script</Default>
+    <Script>installscript.qs</Script>
+    <UserInterfaces>
+<!--        <UserInterface>page.ui</UserInterface> -->
+    </UserInterfaces>
+</Package>

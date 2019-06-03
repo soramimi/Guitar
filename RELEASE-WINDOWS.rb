@@ -77,7 +77,13 @@ if $qt != ''
 
 end
 
+pkgfilename = "#{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
+
 Dir.chdir($workdir) {
-	`7z a #{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip #{$product_name}`
+	`7z a #{pkgfilename} #{$product_name}`
+}
+
+Dir.chdir("packaging/win") {
+	`mk.bat #{pkgfilename}`
 }
 
