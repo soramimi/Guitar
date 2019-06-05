@@ -25,6 +25,8 @@ public:
 	~SettingGeneralForm() override;
 
 	void exchange(bool save) override;
+	static QList<SelectItemDialog::Item> languages();
+	static void execSelectLanguageDialog(QWidget *parent, const QList<SelectItemDialog::Item> &langs, const std::function<void ()> &done);
 private slots:
 	void on_pushButton_browse_default_working_dir_clicked();
 	void on_pushButton_change_language_clicked();

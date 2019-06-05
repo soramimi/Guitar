@@ -19,6 +19,8 @@
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
+
+#include "SettingGeneralForm.h"
 #endif
 
 #ifndef APP_GUITAR
@@ -117,6 +119,12 @@ int main(int argc, char *argv[])
 	if (global->app_config_dir.isEmpty()) {
 		QMessageBox::warning(nullptr, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
+	}
+
+	// 設定ファイルがないときは、言語の選択をする。
+	if (!QFileInfo(global->config_file_path).exists()) {
+		auto langs = SettingGeneralForm::languages();
+		SettingGeneralForm::execSelectLanguageDialog(nullptr, langs, [](){});
 	}
 
 	QTranslator translator;

@@ -92,6 +92,7 @@ private:
 	QStringList remoteBranches(QString const &id, QStringList *all);
 	void setWatchRemoteInterval(int mins);
 	void test();
+	bool isUninitialized();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void timerEvent(QTimerEvent *) override;

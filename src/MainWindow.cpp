@@ -193,9 +193,14 @@ void MainWindow::notifyRemoteChanged(bool f)
 	}, QVariant(f));
 }
 
+bool MainWindow::isUninitialized()
+{
+	return !misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command);
+}
+
 bool MainWindow::shown()
 {
-	while (!misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command)) {
+	while (isUninitialized()) {
 		if (!execWelcomeWizardDialog()) {
 			return false;
 		}
