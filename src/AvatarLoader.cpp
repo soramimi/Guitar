@@ -73,7 +73,7 @@ void AvatarLoader::run()
 				}
 				QString url = "https://www.gravatar.com/avatar/%1?s=%2";
 				url = url.arg(id).arg(ICON_SIZE);
-				if (m->web->get(WebClient::URL(url.toStdString())) == 200) {
+				if (m->web->get(WebClient::Request(url.toStdString())) == 200) {
 					if (!m->web->response().content.empty()) {
 						MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
 						reader.open(MemoryReader::ReadOnly);

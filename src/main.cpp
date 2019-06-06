@@ -3,6 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MySettings.h"
+#include "SettingGeneralForm.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "darktheme/DarkStyle.h"
