@@ -37,14 +37,12 @@ public:
 	}
 };
 
+#define CT_APPLICATION_OCTET_STREAM "application/octet-stream"
+#define CT_APPLICATION_X_WWW_FORM_URLENCODED "application/x-www-form-urlencoded"
+#define CT_MULTIPART_FORM_DATA "multipart/form-data"
+
 class WebClient {
 public:
-	class ContentType {
-	public:
-		static constexpr const char *APPLICATION_OCTET_STREAM = "application/octet-stream";
-		static constexpr const char *APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
-		static constexpr const char *MULTIPART_FORM_DATA = "multipart/form-data";
-	};
 	class URL {
 		friend class WebClient;
 	private:

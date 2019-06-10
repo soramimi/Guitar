@@ -1310,10 +1310,10 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
-	Git::CommitItem const *commit = selectedCommitItem();
+	int row = selectedLogIndex();
+	Git::CommitItem const *commit = commitItem(row);
 	if (commit) {
 		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
-		int row = selectedLogIndex();
 
 		QMenu menu;
 
@@ -1327,7 +1327,23 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		menu.addSeparator();
 
 		QAction *a_edit_message = nullptr;
-		if (row == 0 && currentBranch().ahead > 0) {
+
+		auto canEditMessage = [&](){
+			if (commit->has_child) return false; // 子がないこと
+			if (Git::isUncommited(*commit)) return false; // 未コミットがないこと
+			bool is_head = false;
+			bool has_remote_branch = false;
+			QList<Label> const *labels = label(row);
+			for (const Label &label : *labels) {
+				if (label.kind == Label::Head) {
+					is_head = true;
+				} else if (label.kind == Label::RemoteBranch) {
+					has_remote_branch = true;
+				}
+			}
+			return is_head && !has_remote_branch; // HEAD && リモートブランチ無し
+		};
+		if (canEditMessage()) {
 			a_edit_message = menu.addAction(tr("Edit message..."));
 		}
 

@@ -241,8 +241,8 @@ void WebClient::set_default_header(Request const &req, Post const *post, Request
 		AddHeader("Content-Length: " + to_s(post->data.size()));
 		std::string ct = "Content-Type: ";
 		if (post->content_type.empty()) {
-			ct += ContentType::APPLICATION_OCTET_STREAM;
-		} else if (post->content_type == ContentType::MULTIPART_FORM_DATA) {
+			ct += CT_APPLICATION_OCTET_STREAM;
+		} else if (post->content_type == CT_MULTIPART_FORM_DATA) {
 			ct += post->content_type;
 			if (!post->boundary.empty()) {
 				ct += "; boundary=";
@@ -962,14 +962,14 @@ WebClient::Response const &WebClient::response() const
 void WebClient::make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out)
 {
 	*out = WebClient::Post();
-	out->content_type = ContentType::APPLICATION_X_WWW_FORM_URLENCODED;
+	out->content_type = CT_APPLICATION_X_WWW_FORM_URLENCODED;
 	print(&out->data, begin, end - begin);
 }
 
 void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClient::Post *out, std::string const &boundary)
 {
 	*out = WebClient::Post();
-	out->content_type = ContentType::MULTIPART_FORM_DATA;
+	out->content_type = CT_MULTIPART_FORM_DATA;
 	out->boundary = boundary;
 
 	for (Part const &part : parts) {
