@@ -3,9 +3,52 @@
 #include <QXmlStreamReader>
 #include <QFile>
 #include <vector>
-#include <QDebug>
 
-
+class TagState {
+private:
+	std::vector<ushort> arr;
+public:
+	void push(QString const &tag)
+	{
+		if (arr.empty()) {
+			arr.reserve(100);
+		}
+		size_t s = arr.size();
+		size_t t = tag.size();
+		arr.resize(s + t + 1);
+		arr[s] = '/';
+		std::copy_n(tag.utf16(), t, &arr[s + 1]);
+	}
+	void push(QStringRef const &tag)
+	{
+		push(tag.toString());
+	}
+	void pop()
+	{
+		size_t s = arr.size();
+		while (s > 0) {
+			s--;
+			if (arr[s] == '/') break;
+		}
+		arr.resize(s);
+	}
+	bool is(char const *path) const
+	{
+		size_t s = arr.size();
+		for (size_t i = 0; i < s; i++) {
+			if (arr[i] != path[i]) return false;
+		}
+		return path[s] == 0;
+	}
+	bool operator == (char const *path) const
+	{
+		return is(path);
+	}
+	QString str() const
+	{
+		return arr.empty() ? QString() : QString::fromUtf16(&arr[0], arr.size());
+	}
+};
 
 bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *items)
 {
@@ -43,55 +86,35 @@ QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
 	QList<RepositoryItem> items;
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
-		enum State {
-			STATE_UNKNOWN,
-			STATE_ROOT,
-			STATE_REPOSITORIES,
-			STATE_REPOSITORIES_REPOSITORY,
-			STATE_REPOSITORIES_REPOSITORY_LOCAL,
-		};
 		RepositoryItem item;
 		QString text;
-		std::vector<State> state_stack;
+		TagState state;
 		QXmlStreamReader reader(&file);
 		reader.setNamespaceProcessing(false);
 		while (!reader.atEnd()) {
-			State state = STATE_UNKNOWN;
-			State newstate = STATE_UNKNOWN;
-			if (!state_stack.empty()) {
-				state = state_stack.back();
-			}
 			QXmlStreamReader::TokenType tt = reader.readNext();
 			switch (tt) {
 			case QXmlStreamReader::StartElement:
-				if (state_stack.empty()) {
-					if (reader.name() == "repositories") {
-						newstate = STATE_REPOSITORIES;
-					}
-				} else {
+				state.push(reader.name());
+				{
 					QXmlStreamAttributes atts = reader.attributes();
-					if (state == STATE_REPOSITORIES && reader.name() == "repository") {
-						newstate = STATE_REPOSITORIES_REPOSITORY;
+					if (state == "/repositories/repository") {
 						item = RepositoryItem();
 						item.name = atts.value("name").toString();
 						item.group = atts.value("group").toString();
-					} else if (state == STATE_REPOSITORIES_REPOSITORY && reader.name() == "local") {
-						newstate = STATE_REPOSITORIES_REPOSITORY_LOCAL;
+					} else if (state == "/repositories/repository/local") {
 						text = QString();
 					}
 				}
-				state_stack.push_back(newstate);
 				break;
 			case QXmlStreamReader::EndElement:
-				if (state == STATE_REPOSITORIES_REPOSITORY_LOCAL) {
+				if (state == "/repositories/repository/local") {
 					item.local_dir = text;
 					item.local_dir.replace('\\', '/');
-				} else if (state == STATE_REPOSITORIES_REPOSITORY) {
+				} else if (state == "/repositories/repository") {
 					items.push_back(item);
 				}
-				if (!state_stack.empty()) {
-					state_stack.pop_back();
-				}
+				state.pop();
 				break;
 			case QXmlStreamReader::Characters:
 				text.append(reader.text());
