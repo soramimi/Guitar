@@ -33,8 +33,6 @@ execute_process(
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-add_compile_options(-std=c++11)
-
 configure_file(version.h.in version.h)
 configure_file(win.rc.in win.rc.h)
 configure_file(Info.plist.in Info.plist)
