@@ -93,6 +93,9 @@ private:
 	void setWatchRemoteInterval(int mins);
 	void test();
 	bool isUninitialized();
+	void doLogCurrentItemChanged();
+	void findNext();
+	void findText(const QString &text);
 protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void timerEvent(QTimerEvent *) override;
@@ -188,6 +191,10 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
 	void on_action_repositories_panel_triggered();
+
+	void on_action_find_triggered();
+
+	void on_action_find_next_triggered();
 
 protected:
 	void closeEvent(QCloseEvent *event) override;

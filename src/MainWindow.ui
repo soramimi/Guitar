@@ -964,7 +964,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -993,6 +993,9 @@
     <addaction name="action_edit_global_gitconfig"/>
     <addaction name="action_set_config_user"/>
     <addaction name="action_set_gpg_signing"/>
+    <addaction name="separator"/>
+    <addaction name="action_find"/>
+    <addaction name="action_find_next"/>
     <addaction name="separator"/>
     <addaction name="action_edit_settings"/>
    </widget>
@@ -1531,9 +1534,36 @@
     <string>Ctrl+R</string>
    </property>
   </action>
+  <action name="action_find">
+   <property name="text">
+    <string>&amp;Find...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="action_find_next">
+   <property name="text">
+    <string>Find next</string>
+   </property>
+   <property name="shortcut">
+    <string>F3</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
+  <customwidget>
+   <class>FileDiffWidget</class>
+   <extends>QWidget</extends>
+   <header>FileDiffWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
   <customwidget>
    <class>TextEditorWidget</class>
    <extends>QWidget</extends>
@@ -1565,17 +1595,6 @@
    <class>RepositoriesTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>RepositoriesTreeWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>FileDiffWidget</class>
-   <extends>QWidget</extends>
-   <header location="global">FileDiffWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

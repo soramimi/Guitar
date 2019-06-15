@@ -11,6 +11,7 @@
 #include "EditGitIgnoreDialog.h"
 #include "EditTagsDialog.h"
 #include "FileDiffWidget.h"
+#include "FindDialog.h"
 #include "GitDiff.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
@@ -57,6 +58,9 @@ struct MainWindow::Private {
 	QObject *last_focused_file_list = nullptr;
 
 	QListWidgetItem *last_selected_file_item = nullptr;
+
+	bool searching = false;
+	QString search_text;
 
 	RemoteWatcher remote_watcher;
 
@@ -272,8 +276,6 @@ void MainWindow::startTimers()
 
 	startTimer(10);
 }
-
-
 
 void MainWindow::setCurrentLogRow(int row)
 {
@@ -1676,6 +1678,58 @@ void BasicMainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
+void MainWindow::doLogCurrentItemChanged()
+{
+	clearFileList();
+
+	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
+	if (!item) return;
+
+	auto const &logs = getLogs();
+	int row = item->data(IndexRole).toInt();
+	if (row < (int)logs.size()) {
+		updateStatusBarText();
+		*ptrUpdateFilesListCounter() = 200;
+	}
+}
+
+void MainWindow::findNext()
+{
+	if (m->search_text.isEmpty()) {
+		return;
+	}
+	auto const &logs = getLogs();
+	for (int pass = 0; pass < 2; pass++) {
+		int row = 0;
+		if (pass == 0) {
+			row = selectedLogIndex();
+			if (row < 0) {
+				row = 0;
+			} else if (m->searching) {
+				row++;
+			}
+		}
+		while (row < logs.size()) {
+			Git::CommitItem const commit = logs[row];
+			if (!Git::isUncommited(commit)) {
+				if (commit.message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {
+					bool b = ui->tableWidget_log->blockSignals(true);
+					setCurrentLogRow(row);
+					ui->tableWidget_log->blockSignals(b);
+					m->searching = true;
+					return;
+				}
+			}
+			row++;
+		}
+	}
+}
+
+void MainWindow::findText(QString const &text)
+{
+	m->search_text = text;
+}
+
 void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
@@ -1690,17 +1744,8 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
-	clearFileList();
-
-	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
-	if (!item) return;
-
-	auto const &logs = getLogs();
-	int row = item->data(IndexRole).toInt();
-	if (row < (int)logs.size()) {
-		updateStatusBarText();
-		*ptrUpdateFilesListCounter() = 200;
-	}
+	doLogCurrentItemChanged();
+	m->searching = false;
 }
 
 void MainWindow::on_toolButton_stage_clicked()
@@ -2619,7 +2664,28 @@ void MainWindow::on_action_repositories_panel_triggered()
 	}
 }
 
+void MainWindow::on_action_find_triggered()
+{
+	m->searching = false;
+	FindDialog dlg(this, m->search_text);
+	if (dlg.exec() == QDialog::Accepted) {
+		m->search_text = dlg.text();
+		ui->tableWidget_log->setFocus();
+		findNext();
+	}
+}
+
+void MainWindow::on_action_find_next_triggered()
+{
+	if (m->search_text.isEmpty()) {
+		on_action_find_triggered();
+	} else {
+		findNext();
+	}
+}
+
 void MainWindow::test()
 {
 }
+
 
