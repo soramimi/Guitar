@@ -116,7 +116,8 @@ SOURCES += \
     src/FilePropertyDialog.cpp \
     src/FileUtil.cpp \
     src/FileViewWidget.cpp \
-	src/FindDialog.cpp \
+	src/FilesListWidget.cpp \
+	src/FindCommitDialog.cpp \
     src/Git.cpp \
     src/GitDiff.cpp \
     src/GitHubAPI.cpp \
@@ -229,7 +230,8 @@ HEADERS  += \
     src/FileHistoryWindow.h \
     src/FilePropertyDialog.h \
     src/FileUtil.h \
-	src/FindDialog.h \
+	src/FilesListWidget.h \
+	src/FindCommitDialog.h \
     src/Git.h \
     src/GitDiff.h \
     src/GitHubAPI.h \
@@ -335,7 +337,7 @@ FORMS    += \
     src/FileDiffWidget.ui \
     src/FileHistoryWindow.ui \
     src/FilePropertyDialog.ui \
-    src/FindDialog.ui \
+    src/FindCommitDialog.ui \
     src/JumpDialog.ui \
     src/MainWindow.ui \
     src/MergeBranchDialog.ui \

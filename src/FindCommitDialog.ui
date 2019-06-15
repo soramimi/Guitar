@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FindDialog</class>
- <widget class="QDialog" name="FindDialog">
+ <class>FindCommitDialog</class>
+ <widget class="QDialog" name="FindCommitDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>335</width>
     <height>75</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Find</string>
+   <string>Find Commit</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -71,7 +71,7 @@
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>FindDialog</receiver>
+   <receiver>FindCommitDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -87,7 +87,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>FindDialog</receiver>
+   <receiver>FindCommitDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

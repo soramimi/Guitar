@@ -11,7 +11,7 @@
 #include "EditGitIgnoreDialog.h"
 #include "EditTagsDialog.h"
 #include "FileDiffWidget.h"
-#include "FindDialog.h"
+#include "FindCommitDialog.h"
 #include "GitDiff.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
@@ -2667,7 +2667,12 @@ void MainWindow::on_action_repositories_panel_triggered()
 void MainWindow::on_action_find_triggered()
 {
 	m->searching = false;
-	FindDialog dlg(this, m->search_text);
+
+	if (getLogs().size() == 0) {
+		return;
+	}
+
+	FindCommitDialog dlg(this, m->search_text);
 	if (dlg.exec() == QDialog::Accepted) {
 		m->search_text = dlg.text();
 		ui->tableWidget_log->setFocus();

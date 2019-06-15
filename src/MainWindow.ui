@@ -673,7 +673,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QListWidget" name="listWidget_unstaged">
+           <widget class="FilesListWidget" name="listWidget_unstaged">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -874,7 +874,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="listWidget_staged">
+           <widget class="FilesListWidget" name="listWidget_staged">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -906,7 +906,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QListWidget" name="listWidget_files">
+           <widget class="FilesListWidget" name="listWidget_files">
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
             </property>
@@ -1595,6 +1595,11 @@
    <class>RepositoriesTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>RepositoriesTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FilesListWidget</class>
+   <extends>QListWidget</extends>
+   <header>FilesListWidget.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
