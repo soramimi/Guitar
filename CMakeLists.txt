@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 
 project(Guitar
-    VERSION 1.0.0
-    LANGUAGES CXX C
+	VERSION 1.0.0
+	LANGUAGES CXX C
 )
 
 add_definitions(-DAPP_GUITAR)
@@ -19,18 +19,18 @@ find_package(zlib REQUIRED )
 find_package(OpenSSL REQUIRED )
 find_package(Qt5LinguistTools REQUIRED)
 if(WIN32)
-    # check package at
-    # https://github.com/rprichard/winpty
-    find_package(winpty REQUIRED )
+	# check package at
+	# https://github.com/rprichard/winpty
+	find_package(winpty REQUIRED )
 endif()
 
 # extract version information
 string(TIMESTAMP Guitar_copyright_year "%Y")
 execute_process(
-    COMMAND git rev-parse --short=7 HEAD
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE Guitar_git_hash
-    OUTPUT_STRIP_TRAILING_WHITESPACE
+	COMMAND git rev-parse --short=7 HEAD
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	OUTPUT_VARIABLE Guitar_git_hash
+	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 add_compile_options(-std=c++11)
@@ -102,7 +102,7 @@ set(Guitar_SOURCES
 	src/MyTableWidgetDelegate.cpp
 	src/MyTextEditorWidget.cpp
 	src/MyToolButton.cpp
-    src/ObjectBrowserDialog.cpp
+	src/ObjectBrowserDialog.cpp
 	src/Photoshop.cpp
 	src/PushDialog.cpp
 	src/ReadOnlyLineEdit.cpp
@@ -152,7 +152,7 @@ set(Guitar_SOURCES
 	src/texteditor/unicode.cpp
 	src/urlencode.cpp
 	src/webclient.cpp
-    )
+	)
 
 set(Guitar_HEADERS
 	src/AboutDialog.h
@@ -218,7 +218,7 @@ set(Guitar_HEADERS
 	src/MyTableWidgetDelegate.h
 	src/MyTextEditorWidget.h
 	src/MyToolButton.h
-    src/ObjectBrowserDialog.h
+	src/ObjectBrowserDialog.h
 	src/Photoshop.h
 	src/PushDialog.h
 	src/ReadOnlyLineEdit.h
@@ -268,33 +268,33 @@ set(Guitar_HEADERS
 	src/texteditor/unicode.h
 	src/urlencode.h
 	src/webclient.h
-    )
+	)
 
 if(UNIX)
-    list(APPEND Guitar_SOURCES
-        src/unix/UnixProcess.cpp
-        src/unix/UnixPtyProcess.cpp
-        )
-    list(APPEND Guitar_HEADERS
-        src/unix/UnixProcess.h
-        src/unix/UnixPtyProcess.h
-        )
+	list(APPEND Guitar_SOURCES
+		src/unix/UnixProcess.cpp
+		src/unix/UnixPtyProcess.cpp
+		)
+	list(APPEND Guitar_HEADERS
+		src/unix/UnixProcess.h
+		src/unix/UnixPtyProcess.h
+		)
 elseif(WIN32)
-    list(APPEND Guitar_SOURCES
+	list(APPEND Guitar_SOURCES
 		src/win32/Win32Process.cpp
 		src/win32/Win32PtyProcess.cpp
 		src/win32/event.cpp
 		src/win32/thread.cpp
 		src/win32/win32.cpp
-        )
-    list(APPEND Guitar_HEADERS
+		)
+	list(APPEND Guitar_HEADERS
 		src/win32/Win32Process.h
 		src/win32/Win32PtyProcess.h
 		src/win32/event.h
 		src/win32/mutex.h
 		src/win32/thread.h
 		src/win32/win32.h
-        )
+		)
 endif()
 
 set(Guitar_UIS
@@ -328,7 +328,7 @@ set(Guitar_UIS
 	src/LineEditDialog.ui
 	src/MainWindow.ui
 	src/MergeBranchDialog.ui
-    src/ObjectBrowserDialog.ui
+	src/ObjectBrowserDialog.ui
 	src/PushDialog.ui
 	src/ReflogWindow.ui
 	src/RepositoryPropertyDialog.ui
@@ -348,16 +348,16 @@ set(Guitar_UIS
 	src/SettingsDialog.ui
 	src/TextEditDialog.ui
 	src/WelcomeWizardDialog.ui
-    )
+	)
 
 set(Guitar_RESOURCES
-    src/resources/resources.qrc
-    )
+	src/resources/resources.qrc
+	)
 
 set(Guitar_TRANSLATIONS
 	src/resources/translations/Guitar_ja.ts
 	src/resources/translations/Guitar_ru.ts
-    )
+	)
 
 qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
 configure_file(${Guitar_RESOURCES} ${CMAKE_BINARY_DIR} COPYONLY)
@@ -372,24 +372,24 @@ include_directories(src)
 include_directories(src/texteditor)
 
 add_executable(${PROJECT_NAME}
-    ${Guitar_SOURCES}
-    ${Guitar_HEADERS}
-    ${Guitar_UIS}
-    ${Guitar_RESOURCES}
-    ${Guitar_QM_FILES}
-    )
+	${Guitar_SOURCES}
+	${Guitar_HEADERS}
+	${Guitar_UIS}
+	${Guitar_RESOURCES}
+	${Guitar_QM_FILES}
+	)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 11
-    CXX_EXTENSIONS OFF
-)
+	CXX_STANDARD 11
+	CXX_EXTENSIONS OFF
+	)
 
 target_link_libraries(${PROJECT_NAME}
-    Qt5::Widgets
-    Qt5::Network
-    Qt5::Svg
-    zlib
-    OpenSSL::SSL OpenSSL::Crypto
-)
+	Qt5::Widgets
+	Qt5::Network
+	Qt5::Svg
+	zlib
+	OpenSSL::SSL OpenSSL::Crypto
+	)
 
 # add_subdirectory(extra)
