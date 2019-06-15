@@ -26,15 +26,10 @@ public:
 	void showCheckoutButton(bool f);
 	void showJumpButton(bool f);
 private slots:
-
 	void on_pushButton_checkout_clicked();
-
-	void on_pushButton_jump_clicked();
-
 	void on_pushButton_details_clicked();
-
 	void on_pushButton_explorer_clicked();
-
+	void on_pushButton_jump_clicked();
 private:
 	Ui::CommitPropertyDialog *ui;
 	void init(BasicMainWindow *mw);

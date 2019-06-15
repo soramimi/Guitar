@@ -1,6 +1,6 @@
 #include "CheckoutDialog.h"
 #include "ui_CheckoutDialog.h"
-
+#include <set>
 #include <QLineEdit>
 
 struct CheckoutDialog::Private {
@@ -30,19 +30,7 @@ CheckoutDialog::CheckoutDialog(QWidget *parent, QStringList const &tags, QString
 	ui->radioButton_existing_local_branch->setText("Existing local branch");
 	ui->radioButton_create_local_branch->setText("Create local branch");
 
-	Operation op = makeComboBoxOptions(true);
-
-//	QRadioButton *sel = nullptr;
-//	if (op == Operation::ExistingLocalBranch) {
-//		sel = ui->radioButton_existing_local_branch;
-//	} else {
-//		ui->radioButton_existing_local_branch->setEnabled(false);
-//		sel = ui->radioButton_create_local_branch;
-//	}
-//	if (sel) {
-//		sel->setFocus();
-//		sel->click();
-//	}
+	makeComboBoxOptions(true);
 }
 
 CheckoutDialog::~CheckoutDialog()
@@ -68,6 +56,7 @@ int CheckoutDialog::makeComboBoxOptionsFromList(QStringList const &names)
 
 CheckoutDialog::Operation CheckoutDialog::makeComboBoxOptions(bool click)
 {
+	// ローカルブランチがあればそれを優先して選択
 	if (makeComboBoxOptionsFromList(m->local_branch_names) > 0) {
 		auto *rb = ui->radioButton_existing_local_branch;
 		rb->setFocus();
@@ -75,9 +64,24 @@ CheckoutDialog::Operation CheckoutDialog::makeComboBoxOptions(bool click)
 		return Operation::ExistingLocalBranch;
 	}
 
+	// 全ローカルブランチ名をコンボボックスに追加
 	bool f = makeComboBoxOptionsFromList(m->all_local_branch_names);
 	ui->radioButton_existing_local_branch->setEnabled(f);
 
+	// リモートブランチ名と同じローカルブランチが既存なら
+	for (QString const &name : m->all_local_branch_names) {
+		if (m->remote_branch_names.indexOf(name) >= 0) {
+			ui->comboBox_branch_name->setCurrentText(name);
+			{
+				auto *rb = ui->radioButton_existing_local_branch;
+				rb->setFocus();
+				if (click) rb->click();
+			}
+			return Operation::ExistingLocalBranch;
+		}
+	}
+
+	// ブランチ新規作成
 	{
 		auto *rb = ui->radioButton_create_local_branch;
 		rb->setFocus();
