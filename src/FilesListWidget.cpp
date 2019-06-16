@@ -1,99 +1,74 @@
 #include "FilesListWidget.h"
-
 #include <QDebug>
 #include <QPainter>
 #include <QStyledItemDelegate>
+#include <map>
 
 namespace {
 class ItemDelegate : public QStyledItemDelegate {
 private:
-	mutable QIcon icon_chg;
-	mutable QIcon icon_add;
-	mutable QIcon icon_del;
-	mutable QIcon icon_ren;
-	mutable QIcon icon_cpy;
+	struct Badge {
+		QString text;
+		QColor color;
+		QIcon icon;
+		Badge() = default;
+		Badge(QString const &text, QColor const &color, QIcon const &icon)
+			: text(text)
+			, color(color)
+			, icon(icon)
+		{
+		}
+	};
+	std::map<QString, Badge> badge_map;
 public:
 	ItemDelegate(QObject *parent)
 		: QStyledItemDelegate(parent)
 	{
+		badge_map["(chg) "] = Badge("Chg", QColor(240, 240, 140), QIcon(":/image/chg.svg"));
+		badge_map["(add) "] = Badge("Add", QColor(180, 240, 180), QIcon(":/image/add.svg"));
+		badge_map["(del) "] = Badge("Del", QColor(255, 200, 200), QIcon(":/image/del.svg"));
+		badge_map["(ren) "] = Badge("Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
+		badge_map["(cpy) "] = Badge("Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
 	}
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);
 
+		int x = o.rect.x();
+		int y = o.rect.y();
 		int h = o.rect.height();
 		int w = 2 + h + painter->fontMetrics().size(0, " Aaa").width() + 2;
-#if 1
-		QIcon icon;
-		QString badge;
-		QColor bgcolor(240, 240, 240);
-		if (o.text.startsWith("(chg) ")) {
-			badge = "Chg";
+
+		// draw badge
+		QString header = o.text.mid(0, 6);
+		auto it = badge_map.find(header);
+		if (it != badge_map.end()) {
 			o.text = o.text.mid(6);
-			bgcolor = QColor(240, 240, 140);
-			if (icon_chg.isNull()) {
-				icon_chg = QIcon(":/image/chg.svg");
-			}
-			icon = icon_chg;
-		} else if (o.text.startsWith("(add) ")) {
-			badge = "Add";
-			o.text = o.text.mid(6);
-			bgcolor = QColor(180, 240, 180);
-			if (icon_add.isNull()) {
-				icon_add = QIcon(":/image/add.svg");
-			}
-			icon = icon_add;
-		} else if (o.text.startsWith("(del) ")) {
-			badge = "Del";
-			o.text = o.text.mid(6);
-			bgcolor = QColor(255, 200, 200);
-			if (icon_del.isNull()) {
-				icon_del = QIcon(":/image/del.svg");
-			}
-			icon = icon_del;
-		} else if (o.text.startsWith("(ren) ")) {
-			badge = "Ren";
-			o.text = o.text.mid(6);
-			bgcolor = QColor(200, 210, 255);
-			if (icon_ren.isNull()) {
-				icon_ren = QIcon(":/image/ren.svg");
-			}
-			icon = icon_ren;
-		} else if (o.text.startsWith("(cpy) ")) {
-			badge = "Cpy";
-			o.text = o.text.mid(6);
-			bgcolor = QColor(200, 210, 255);
-			if (icon_cpy.isNull()) {
-				icon_cpy = QIcon(":/image/cpy.svg");
-			}
-			icon = icon_cpy;
-		}
-		if (!badge.isEmpty()) {
-			int x = o.rect.x();
-			int y = o.rect.y();
+			Badge const *badge = &it->second;
 			QRect r(x, y, w, h);
-			QRect r2 = QRect(x + 2, y + 1, h - 2, h - 2).adjusted(2, 2, -2, -2);
-			QRect r3 = r.adjusted(1, 1, -2, -2);
-			QRect r4 = r.adjusted(r2.width(), 0, 0, 0);
-			QTextOption to;
-			to.setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+			QRect r_icon = QRect(x + 2, y + 1, h - 2, h - 2).adjusted(2, 2, -2, -2);
+			QRect r_badge = r.adjusted(1, 1, -2, -2);
+			QRect r_text = r.adjusted(r_icon.width(), 0, 0, 0);
 			painter->setPen(Qt::NoPen);
-			painter->setBrush(QBrush(bgcolor.darker(130)));
-			painter->drawRoundedRect(r3.translated(1, 1), 3, 3);
-			painter->setBrush(QBrush(bgcolor));
-			painter->drawRoundedRect(r3, 3, 3);
-			if (!icon.isNull()) {
+			painter->setBrush(QBrush(badge->color.darker(130)));
+			painter->drawRoundedRect(r_badge.translated(1, 1), 3, 3);
+			painter->setBrush(QBrush(badge->color));
+			painter->drawRoundedRect(r_badge, 3, 3);
+			if (!badge->icon.isNull()) {
 				painter->save();
 				painter->setOpacity(0.5);
-				icon.paint(painter, r2);
+				badge->icon.paint(painter, r_icon);
 				painter->restore();
 			}
 			painter->setPen(Qt::black);
-			painter->drawText(r4, badge, to);
+			QTextOption to;
+			to.setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+			painter->drawText(r_text, badge->text, to);
 		}
 		o.rect.adjust(w, 0, 0, 0);
-#endif
+
+		// draw text
 		option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &o, painter, option.widget);
 	}
 };
