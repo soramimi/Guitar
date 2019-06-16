@@ -74,8 +74,10 @@ set(Guitar_SOURCES
 	src/FileDiffWidget.cpp
 	src/FileHistoryWindow.cpp
 	src/FilePropertyDialog.cpp
+	src/FilesListWidget.cpp
 	src/FileUtil.cpp
 	src/FileViewWidget.cpp
+	src/FindCommitDialog.cpp
 	src/Git.cpp
 	src/GitDiff.cpp
 	src/GitHubAPI.cpp
@@ -188,8 +190,10 @@ set(Guitar_HEADERS
 	src/FileDiffWidget.h
 	src/FileHistoryWindow.h
 	src/FilePropertyDialog.h
+	src/FilesListWidget.h
 	src/FileUtil.h
 	src/FileViewWidget.h
+	src/FindCommitDialog.h
 	src/Git.h
 	src/GitDiff.h
 	src/GitHubAPI.h
@@ -318,6 +322,7 @@ set(Guitar_UIS
 	src/FileDiffWidget.ui
 	src/FileHistoryWindow.ui
 	src/FilePropertyDialog.ui
+	src/FindCommitDialog.ui
 	src/InputNewTagDialog.ui
 	src/JumpDialog.ui
 	src/LineEditDialog.ui
