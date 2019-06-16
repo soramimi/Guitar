@@ -739,6 +739,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			header = "(??\?) "; // damn trigraph
 		}
 		QListWidgetItem *item = new QListWidgetItem(header + filename);
+		item->setSizeHint(QSize(item->sizeHint().width(), 18));
 		item->setData(FilePathRole, filename);
 		item->setData(DiffIndexRole, idiff);
 		item->setData(HunkIndexRole, -1);

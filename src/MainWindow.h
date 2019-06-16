@@ -136,6 +136,8 @@ private slots:
 	void on_action_explorer_triggered();
 	void on_action_fetch_prune_triggered();
 	void on_action_fetch_triggered();
+	void on_action_find_next_triggered();
+	void on_action_find_triggered();
 	void on_action_offline_triggered();
 	void on_action_online_triggered();
 	void on_action_open_existing_working_copy_triggered();
@@ -146,6 +148,7 @@ private slots:
 	void on_action_reflog_triggered();
 	void on_action_repo_checkout_triggered();
 	void on_action_repo_jump_triggered();
+	void on_action_repositories_panel_triggered();
 	void on_action_repository_property_triggered();
 	void on_action_reset_HEAD_1_triggered();
 	void on_action_reset_hard_triggered();
@@ -190,12 +193,6 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
-	void on_action_repositories_panel_triggered();
-
-	void on_action_find_triggered();
-
-	void on_action_find_next_triggered();
-
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
