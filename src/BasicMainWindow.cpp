@@ -1152,7 +1152,8 @@ FAIL:;
 DONE:;
 			}
 			// 線情報を生成する
-			for (const auto & e : elements) {
+			for (size_t i = 0; i < elements.size(); i++) {
+				auto &e = elements[i];
 				auto ColorNumber = [&](){ return e.depth; };
 				size_t count = e.indexes.size();
 				for (size_t j = 0; j + 1 < count; j++) {
@@ -1162,7 +1163,21 @@ DONE:;
 					line.color_number = ColorNumber();
 					line.bend_early = (j + 2 < count || !LogItem(next).resolved);
 					if (j + 2 == count) {
-						if (count > 2 || !LogItem(curr).has_child) { // 直結ではない、または、子がない
+						int join = false;
+						if (count > 2) { // 直結ではない
+							join = true;
+						} else if (!LogItem(curr).has_child) { // 子がない
+							join = true;
+							int d = LogItem(curr).marker_depth; // 開始点の深さ
+							for (size_t k = curr + 1; k < next; k++) {
+								Git::CommitItem *item = &LogItem(k);
+								if (item->marker_depth == d) { // 衝突する
+									join = false; // 迂回する
+									break;
+								}
+							}
+						}
+						if (join) {
 							line.depth = LogItem(next).marker_depth; // 合流する先のアイテムの深さと同じにする
 						}
 					}
