@@ -2669,7 +2669,7 @@ void MainWindow::on_action_find_triggered()
 {
 	m->searching = false;
 
-	if (getLogs().size() == 0) {
+	if (getLogs().empty()) {
 		return;
 	}
 

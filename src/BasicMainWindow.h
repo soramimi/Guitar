@@ -166,7 +166,7 @@ protected:
 	void checkUser();
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
-	void reopenRepository(bool log, std::function<void (GitPtr)> const &callback);
+	void reopenRepository(bool log, const std::function<void(GitPtr const &)> &callback);
 	void openSelectedRepository();
 	void checkRemoteUpdate();
 	bool isThereUncommitedChanges() const;

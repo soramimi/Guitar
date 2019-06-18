@@ -50,7 +50,7 @@ private:
 	GitPtr g;
 	std::function<void(GitPtr g)> callback;
 public:
-        AsyncExecGitThread_(GitPtr const &g, std::function<void(GitPtr g)> const &callback)
+		AsyncExecGitThread_(GitPtr const &g, std::function<void(GitPtr const &g)> const &callback)
 		: g(g)
 		, callback(callback)
 	{
@@ -1152,25 +1152,24 @@ FAIL:;
 DONE:;
 			}
 			// 線情報を生成する
-			for (size_t i = 0; i < elements.size(); i++) {
-				auto &e = elements[i];
+			for (auto &e : elements) {
 				auto ColorNumber = [&](){ return e.depth; };
 				size_t count = e.indexes.size();
-				for (size_t j = 0; j + 1 < count; j++) {
-					int curr = e.indexes[j];
-					int next = e.indexes[j + 1];
+				for (size_t i = 0; i + 1 < count; i++) {
+					int curr = e.indexes[i];
+					int next = e.indexes[i + 1];
 					TreeLine line(next, e.depth);
 					line.color_number = ColorNumber();
-					line.bend_early = (j + 2 < count || !LogItem(next).resolved);
-					if (j + 2 == count) {
+					line.bend_early = (i + 2 < count || !LogItem(next).resolved);
+					if (i + 2 == count) {
 						int join = false;
 						if (count > 2) { // 直結ではない
 							join = true;
 						} else if (!LogItem(curr).has_child) { // 子がない
 							join = true;
 							int d = LogItem(curr).marker_depth; // 開始点の深さ
-							for (size_t k = curr + 1; k < next; k++) {
-								Git::CommitItem *item = &LogItem(k);
+							for (int j = curr + 1; j < next; j++) {
+								Git::CommitItem *item = &LogItem(j);
 								if (item->marker_depth == d) { // 衝突する
 									join = false; // 迂回する
 									break;
@@ -1955,7 +1954,7 @@ void BasicMainWindow::updateRepository()
 	openRepository_(g);
 }
 
-void BasicMainWindow::reopenRepository(bool log, std::function<void (GitPtr)> const &callback)
+void BasicMainWindow::reopenRepository(bool log, std::function<void(GitPtr const &)> const &callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;

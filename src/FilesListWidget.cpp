@@ -30,7 +30,7 @@ public:
 		badge_map["(ren) "] = Badge("Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
 		badge_map["(cpy) "] = Badge("Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
 	}
-	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
 	{
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);

@@ -80,7 +80,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 		QByteArray ba(th.text.c_str(), th.text.size());
 		QJsonDocument doc = QJsonDocument::fromJson(ba);
 		QJsonArray a1 = doc.object().value("items").toArray();
-		for (QJsonValue const &v1 : a1) {
+		for (QJsonValueRef const &v1 : a1) {
 			QJsonObject o1 = v1.toObject();
 			SearchResultItem item;
 			auto String = [&](QString const &key){
