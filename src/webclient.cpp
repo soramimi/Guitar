@@ -15,13 +15,14 @@
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
 #else
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <net/if.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #define closesocket(S) ::close(S)
 using socket_t = int;
 #define INVALID_SOCKET (-1)
@@ -494,7 +495,7 @@ struct sockaddr_in getinetaddr(char const *name)
 {
 	struct sockaddr_in addr = {};
 
-#if 1
+#if 0
 	struct hostent *host;
 	uint32_t a = inet_addr(name);
 	if (a != INADDR_NONE) {
