@@ -1,9 +1,11 @@
 
 #include "webclient.h"
 #include <cstring>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #pragma comment(lib, "ws2_32.lib")
 #if USE_OPENSSL
@@ -487,6 +489,45 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	}
 }
 
+namespace {
+struct sockaddr_in getinetaddr(char const *name)
+{
+	struct sockaddr_in addr = {};
+
+#if 1
+	struct hostent *host;
+	uint32_t a = inet_addr(name);
+	if (a != INADDR_NONE) {
+		host = gethostbyaddr((const char *)&a, 4, AF_INET);
+	} else {
+		host = gethostbyname(name);
+	}
+	if (!host) {
+		throw WebClient::Error(std::string("gethostbyname failed: ") + name);
+	}
+	addr.sin_family = AF_INET;
+	memcpy((char *)&addr.sin_addr, host->h_addr, host->h_length);
+#else
+	struct addrinfo hints = {};
+	struct addrinfo *res = nullptr;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_family = AF_INET;
+	getaddrinfo(name, nullptr, &hints, &res);
+	if (res) {
+		if (res->ai_family == AF_INET) {
+			addr = *reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
+		}
+		freeaddrinfo(res);
+	}
+	if (addr.sin_family == 0) {
+		throw WebClient::Error(std::string("getaddrinfo failed: ") + name);
+	}
+#endif
+	return addr;
+}
+}
+
+
 bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, std::vector<char> *out)
 {
 	clear_error();
@@ -508,19 +549,7 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 	if (!m->keep_alive) close();
 
 	if (m->sock == INVALID_SOCKET) {
-		struct hostent *servhost;
-		struct sockaddr_in server;
-
-		servhost = gethostbyname(hostname.c_str());
-		if (!servhost) {
-			throw Error("gethostbyname failed.");
-		}
-
-		memset((char *)&server, 0, sizeof(server));
-		server.sin_family = AF_INET;
-
-		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
-
+		struct sockaddr_in server = getinetaddr(server_req.url.host().c_str());
 		server.sin_port = htons(port);
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -594,20 +623,7 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 	socket_t sock = m->sock;
 	SSL *ssl = m->ssl;
 	if (sock == INVALID_SOCKET || !ssl) {
-		int ret;
-		struct hostent *servhost;
-		struct sockaddr_in server;
-
-		servhost = gethostbyname(server_req.url.host().c_str());
-		if (!servhost) {
-			throw Error("gethostbyname failed: " + server_req.url.host());
-		}
-
-		memset((char *)&server, 0, sizeof(server));
-		server.sin_family = AF_INET;
-
-		memcpy((char *)&server.sin_addr, servhost->h_addr, servhost->h_length);
-
+		struct sockaddr_in server = getinetaddr(server_req.url.host().c_str());
 		server.sin_port = htons(port);
 
 		if (sock == INVALID_SOCKET) {
@@ -655,6 +671,7 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 		SSL_set_options(ssl, SSL_OP_NO_SSLv2);
 		SSL_set_options(ssl, SSL_OP_NO_SSLv3);
 
+		int ret;
 		ret = SSL_set_fd(ssl, sock);
 		if (ret == 0) {
 			throw Error(get_ssl_error());
