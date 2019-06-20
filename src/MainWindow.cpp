@@ -169,6 +169,8 @@ MainWindow::MainWindow(QWidget *parent)
 			setWindowState(state);
 		}
 	}
+	
+	createDockWindows();
 
 //	setTabOrder(ui->treeWidget_repos, ui->widget_log);
 
@@ -2285,6 +2287,14 @@ void MainWindow::setNetworkingCommandsEnabled(bool f)
 bool MainWindow::isOnlineMode() const
 {
 	return m->is_online_mode;
+}
+
+void MainWindow::createDockWindows()
+{
+	QDockWidget *repoDock = new QDockWidget(tr("Repositories"), this);
+	repoDock->setWidget(ui->stackedWidget_leftpanel);
+	addDockWidget(Qt::LeftDockWidgetArea, repoDock);
+	ui->menu_Window->addAction(repoDock->toggleViewAction());
 }
 
 void MainWindow::setRemoteOnline(bool f)

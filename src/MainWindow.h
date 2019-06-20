@@ -39,6 +39,8 @@ public:
 	bool isOnlineMode() const override;
 private:
 	Ui::MainWindow *ui;
+	
+	void createDockWindows();
 
 	void updateFilesList(QString id, bool wait) override;
 	void updateFilesList(Git::CommitItem const &commit, bool wait);
