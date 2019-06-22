@@ -842,7 +842,7 @@ void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option
 
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
-//    qDebug() << pe;
+//	qDebug() << pe;
 #ifndef Q_OS_MAC
 	if (pe == PE_FrameFocusRect) {
 //		if (auto const *w = qobject_cast<QTableView const *>(widget)) {
@@ -1015,11 +1015,11 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 			drawSelectedItemFrame(p, r, focus);
 		};
 		if (auto const *tableview = qobject_cast<QTableView const *>(widget)) {
+#if 0
 			Qt::PenStyle grid_pen_style = Qt::NoPen;
 			if (tableview->showGrid()) {
 				grid_pen_style = tableview->gridStyle();
 			}
-			QAbstractItemView::SelectionBehavior selection_behavior = tableview->selectionBehavior();
 			if (grid_pen_style != Qt::NoPen) {
 				int x = option->rect.x();
 				int y = option->rect.y();
@@ -1028,6 +1028,8 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				p->fillRect(x + w - 1, y, 1, h, option->palette.color(QPalette::Dark));
 				p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
 			}
+#endif
+			QAbstractItemView::SelectionBehavior selection_behavior = tableview->selectionBehavior();
 			if (option->state & State_Selected) {
 				p->save();
 				p->setClipRect(option->rect);
@@ -1088,7 +1090,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
-//    qDebug() << ce;
+//	qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
 #ifdef Q_OS_MAC
     if (ce == CE_ToolBar) {
