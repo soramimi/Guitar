@@ -42,20 +42,27 @@ public:
 
 		// draw badge
 		QString header = o.text.mid(0, 6);
+		QColor color;
+		Badge const *badge = nullptr;
 		auto it = badge_map.find(header);
 		if (it != badge_map.end()) {
+			badge = &it->second;
+			color = badge->color;
+		} else {
+			color = QColor(160, 160, 160);
+		}
+		{
 			o.text = o.text.mid(6);
-			Badge const *badge = &it->second;
 			QRect r(x, y, w, h);
 			QRect r_icon = QRect(x + 2, y + 1, h - 2, h - 2).adjusted(2, 2, -2, -2);
 			QRect r_badge = r.adjusted(1, 1, -2, -2);
 			QRect r_text = r.adjusted(r_icon.width(), 0, 0, 0);
 			painter->setPen(Qt::NoPen);
-			painter->setBrush(QBrush(badge->color.darker(130)));
+			painter->setBrush(QBrush(color.darker(130)));
 			painter->drawRoundedRect(r_badge.translated(1, 1), 3, 3);
-			painter->setBrush(QBrush(badge->color));
+			painter->setBrush(QBrush(color));
 			painter->drawRoundedRect(r_badge, 3, 3);
-			if (!badge->icon.isNull()) {
+			if (badge && !badge->icon.isNull()) {
 				painter->save();
 				painter->setOpacity(0.5);
 				badge->icon.paint(painter, r_icon);
@@ -64,7 +71,11 @@ public:
 			painter->setPen(Qt::black);
 			QTextOption to;
 			to.setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
-			painter->drawText(r_text, badge->text, to);
+			if (badge) {
+				painter->drawText(r_text, badge->text, to);
+			} else {
+				painter->drawText(r_badge, "?", to);
+			}
 		}
 		o.rect.adjust(w, 0, 0, 0);
 
