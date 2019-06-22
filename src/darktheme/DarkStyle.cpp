@@ -742,7 +742,7 @@ static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth)
 	return QSizeF(widthUsed, height);
 }
 
-void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
+void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
 {
 	const QWidget *widget = option->widget;
 	const int textMargin = pixelMetric(QStyle::PM_FocusFrameHMargin, 0, widget) + 1;
@@ -808,12 +808,26 @@ void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option
 	}
 }
 #else
-void DarkStyle::viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
+void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const
 {
 	bool enabled = (option->state & State_Enabled);
 	p->save();
 	p->setFont(option->font);
-	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, option->text, QPalette::NoRole);
+	QString text = option->text;
+	if (abbreviation) {
+		int n = text.size();
+		if (n > 1) {
+			QFontMetrics fm = p->fontMetrics();
+			int w = rect.width();
+			while (1) {
+				if (fm.size(0, text).width() <= w) break;
+				n--;
+				text = text.mid(0, n);
+				text += "...";
+			}
+		}
+	}
+	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, text, QPalette::NoRole);
 	p->restore();
 }
 #endif
@@ -2041,7 +2055,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					p->setPen(o->palette.color(cg, QPalette::Text));
 					p->drawRect(textRect.adjusted(0, 0, -1, -1));
 				}
-				viewItemDrawText(p, o, textRect);
+				drawItemViewText(p, o, textRect, true);
 			}
 
 #if 0
