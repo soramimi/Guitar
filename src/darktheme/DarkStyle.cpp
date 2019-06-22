@@ -723,6 +723,14 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 	return QProxyStyle::subControlRect(cc, option, sc, widget);
 }
 
+int DarkStyle::styleHint(QStyle::StyleHint stylehint, const QStyleOption *opt, const QWidget *widget, QStyleHintReturn *returnData) const
+{
+	if (stylehint == SH_Table_GridLineColor) {
+		return static_cast<int>(color(32).rgb());
+	}
+	return QProxyStyle::styleHint(stylehint, opt, widget, returnData);
+}
+
 #if 0
 static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth)
 {
