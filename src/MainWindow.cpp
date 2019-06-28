@@ -738,11 +738,12 @@ void MainWindow::updateFilesList(QString id, bool wait)
 		if (header.isEmpty()) {
 			header = "(??\?) "; // damn trigraph
 		}
-		QListWidgetItem *item = new QListWidgetItem(header + filename);
+		QListWidgetItem *item = new QListWidgetItem(filename);
 		item->setSizeHint(QSize(item->sizeHint().width(), 18));
 		item->setData(FilePathRole, filename);
 		item->setData(DiffIndexRole, idiff);
 		item->setData(HunkIndexRole, -1);
+		item->setData(HeaderRole, header);
 		switch (files_list_type) {
 		case FilesListType::SingleList:
 			ui->listWidget_files->addItem(item);

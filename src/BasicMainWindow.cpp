@@ -709,10 +709,11 @@ void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_
 		if (header.isEmpty()) {
 			header = "(??\?) "; // damn trigraph
 		}
-		QListWidgetItem *item = new QListWidgetItem(header + filename);
+		QListWidgetItem *item = new QListWidgetItem(filename);
 		item->setData(FilePathRole, filename);
 		item->setData(DiffIndexRole, idiff);
 		item->setData(HunkIndexRole, -1);
+		item->setData(HeaderRole, header);
 		listwidget->addItem(item);
 	};
 

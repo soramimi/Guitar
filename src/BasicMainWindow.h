@@ -41,6 +41,13 @@ public:
 
 		}
 	};
+	enum {
+		IndexRole = Qt::UserRole,
+		FilePathRole,
+		DiffIndexRole,
+		HunkIndexRole,
+		HeaderRole,
+	};
 protected:
 
 	enum class PtyCondition {
@@ -83,12 +90,6 @@ protected:
 		std::vector<int> indexes;
 	};
 
-	enum {
-		IndexRole = Qt::UserRole,
-		FilePathRole,
-		DiffIndexRole,
-		HunkIndexRole,
-	};
 
 	enum {
 		GroupItem = -1,
