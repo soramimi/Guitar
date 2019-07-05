@@ -44,24 +44,6 @@ public:
 		int h = o.rect.height();
 		int w = 2 + h + painter->fontMetrics().size(0, " Aaa").width() + 2;
 
-		auto ParseHeader = [](QString const &s){
-			ushort const *p = s.utf16();
-			if (p[0] == '(') {
-				int n = 1;
-				while (QChar(p[n]).isLetter() || p[n] == '?') {
-					n++;
-				}
-				if (p[n] == ')' && p[n + 1] == ' ') {
-					n += 2;
-					while (p[n] == ' ') {
-						n++;
-					}
-					return n;
-				}
-			}
-			return 0;
-		};
-
 		// draw badge
 		Badge badge;
 		if (header == "(unmerged) ") {

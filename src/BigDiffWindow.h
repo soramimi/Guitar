@@ -23,6 +23,7 @@ public:
 private:
 	Ui::BigDiffWindow *ui;
 	void updateDiffView();
+	QString fileName() const;
 };
 
 #endif // BIGDIFFWINDOW_H

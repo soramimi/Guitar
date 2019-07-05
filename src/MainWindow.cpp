@@ -1711,7 +1711,7 @@ void MainWindow::findNext()
 				row++;
 			}
 		}
-		while (row < logs.size()) {
+		while (row < (int)logs.size()) {
 			Git::CommitItem const commit = logs[row];
 			if (!Git::isUncommited(commit)) {
 				if (commit.message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {

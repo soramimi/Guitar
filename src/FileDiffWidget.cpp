@@ -23,7 +23,7 @@ enum {
 
 struct FileDiffWidget::Private {
 	BasicMainWindow *mainwindow = nullptr;
-	InitParam_ init_param_;
+	FileDiffWidget::InitParam_ init_param_;
 	Git::CommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
 	TextEditorEnginePtr engine_left;
@@ -650,6 +650,10 @@ void FileDiffWidget::onDiffWidgetResized()
 
 void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
+	if (m->init_param_.diff.blob.a_id.isEmpty() && m->init_param_.diff.blob.b_id.isEmpty()) {
+		return;
+	}
+
 	BigDiffWindow win(mainwindow());
 	win.setWindowState(Qt::WindowMaximized);
 	win.init(mainwindow(), m->init_param_);

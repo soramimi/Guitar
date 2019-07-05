@@ -39,7 +39,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
-       <number>0</number>
+       <number>2</number>
       </property>
       <property name="leftMargin">
        <number>0</number>
@@ -54,7 +54,53 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="FileDiffWidget" name="widget_diff" native="true"/>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <property name="leftMargin">
+         <number>6</number>
+        </property>
+        <property name="topMargin">
+         <number>6</number>
+        </property>
+        <property name="rightMargin">
+         <number>6</number>
+        </property>
+        <property name="bottomMargin">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="ReadOnlyLineEdit" name="lineEdit_left"/>
+        </item>
+        <item>
+         <widget class="ReadOnlyLineEdit" name="lineEdit_center">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ReadOnlyLineEdit" name="lineEdit_right">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="FileDiffWidget" name="widget_diff" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -67,6 +113,11 @@
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
