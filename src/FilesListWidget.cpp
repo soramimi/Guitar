@@ -37,7 +37,6 @@ public:
 		QStyledItemDelegate::initStyleOption(&o, index);
 
 		QString header = index.data(BasicMainWindow::HeaderRole).toString();
-		qDebug() << header;
 
 		int x = o.rect.x();
 		int y = o.rect.y();
