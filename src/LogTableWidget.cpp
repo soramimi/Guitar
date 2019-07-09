@@ -364,3 +364,9 @@ void LogTableWidget::resizeEvent(QResizeEvent *e)
 	QTableWidget::resizeEvent(e);
 }
 
+void LogTableWidget::verticalScrollbarValueChanged(int value)
+{
+	(void)value;
+	mainwindow()->updateAncestorCommitMap();
+}
+

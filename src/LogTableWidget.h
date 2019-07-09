@@ -19,6 +19,8 @@ public:
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *e);
+protected slots:
+	void verticalScrollbarValueChanged(int value);
 };
 
 #endif // LOGTABLEWIDGET_H
