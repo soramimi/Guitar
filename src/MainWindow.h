@@ -60,7 +60,6 @@ private:
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryItem const *repositoryItem(const QTreeWidgetItem *item) const;
 
-	int selectedLogIndex() const override;
 	QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
@@ -115,6 +114,9 @@ public:
 	void updateCurrentFilesList();
 	void notifyRemoteChanged(bool f);
 	void postOpenRepositoryFromGitHub(const QString &username, const QString &reponame);
+	int selectedLogIndex() const override;
+	void updateAncestorCommitMap();
+	bool isAncestorCommit(const QString &id);
 private slots:
 	void doUpdateButton();
 	void onLogVisibilityChanged();

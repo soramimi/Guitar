@@ -969,6 +969,7 @@ void BasicMainWindow::updateCommitGraph()
 	auto const &logs = getLogs();
 	auto *logsp = getLogsPtr();
 
+
 	const size_t LogCount = logs.size();
 	// 樹形図情報を構築する
 	if (LogCount > 0) {
@@ -1191,6 +1192,8 @@ DONE:;
 		}
 	}
 }
+
+
 
 bool BasicMainWindow::fetch(GitPtr const &g, bool prune)
 {
@@ -1684,6 +1687,8 @@ void BasicMainWindow::clearSshAuthentication()
 	m->ssh_passphrase_user.clear();
 	m->ssh_passphrase_pass.clear();
 }
+
+
 
 QString BasicMainWindow::getFilePath(QListWidgetItem *item)
 {

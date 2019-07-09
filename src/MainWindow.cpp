@@ -65,6 +65,8 @@ struct MainWindow::Private {
 	RemoteWatcher remote_watcher;
 
 	int repos_panel_width = 0;
+
+	std::set<QString> ancestors;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1684,15 +1686,20 @@ void MainWindow::doLogCurrentItemChanged()
 {
 	clearFileList();
 
-	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
-	if (!item) return;
-
-	auto const &logs = getLogs();
-	int row = item->data(IndexRole).toInt();
-	if (row < (int)logs.size()) {
-		updateStatusBarText();
-		*ptrUpdateFilesListCounter() = 200;
+	int row = selectedLogIndex();
+	QTableWidgetItem *item = ui->tableWidget_log->item(row, 0);
+	if (item) {
+		auto const &logs = getLogs();
+		int row = item->data(IndexRole).toInt();
+		if (row < (int)logs.size()) {
+			updateStatusBarText();
+			*ptrUpdateFilesListCounter() = 200;
+		}
+	} else {
+		row = -1;
 	}
+	updateAncestorCommitMap();
+	ui->tableWidget_log->viewport()->update();
 }
 
 void MainWindow::findNext()
@@ -1730,6 +1737,60 @@ void MainWindow::findNext()
 void MainWindow::findText(QString const &text)
 {
 	m->search_text = text;
+}
+
+bool MainWindow::isAncestorCommit(QString const &id)
+{
+	auto it = m->ancestors.find(id);
+	return it != m->ancestors.end();
+}
+
+void MainWindow::updateAncestorCommitMap()
+{
+	m->ancestors.clear();
+
+	auto const &logs = getLogs();
+	const size_t LogCount = logs.size();
+	int index = selectedLogIndex();
+	if (index >= 0 && index < LogCount) {
+		// ok
+	} else {
+		return;
+	}
+
+	auto *logsp = getLogsPtr();
+	auto LogItem = [&](size_t i)->Git::CommitItem &{ return logsp->at(i); };
+
+	std::map<QString, size_t> commit_to_index_map;
+
+	int end = LogCount;
+
+	if (index >= 0 && index < end) {
+		for (int i = index; i < end; i++) {
+			Git::CommitItem const &commit = LogItem(i);
+			commit_to_index_map[commit.commit_id] = i;
+			auto *item = ui->tableWidget_log->item(i, 0);
+			QRect r = ui->tableWidget_log->visualItemRect(item);
+			if (r.y() >= ui->tableWidget_log->height()) {
+				end = i + 1;
+				break;
+			}
+		}
+	}
+
+	Git::CommitItem *item = &LogItem(index);
+	if (item) {
+		m->ancestors.insert(m->ancestors.end(), item->commit_id);
+	}
+
+	for (size_t i = index; i < end; i++) {
+		Git::CommitItem *item = &LogItem(i);
+		if (isAncestorCommit(item->commit_id)) {
+			for (QString const &parent : item->parent_ids) {
+				m->ancestors.insert(m->ancestors.end(), parent);
+			}
+		}
+	}
 }
 
 void MainWindow::on_action_open_existing_working_copy_triggered()

@@ -284,7 +284,7 @@ protected:
 	QVariant const &getTempRepoForCloneCompleteV() const;
 
 	void updateCommitGraph();
-        bool fetch(const GitPtr &g, bool prune);
+	bool fetch(const GitPtr &g, bool prune);
 
 protected:
 	virtual void setCurrentLogRow(int row) = 0;
@@ -295,7 +295,6 @@ protected:
 	virtual void removeSelectedRepositoryFromBookmark(bool ask) = 0;
 	virtual void openRepository_(GitPtr g, bool keep_selection = false) = 0;
 	virtual void updateRepositoriesList() = 0;
-	virtual int selectedLogIndex() const = 0;
 	virtual void clearFileList() = 0;
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
 	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; };
@@ -349,7 +348,7 @@ public:
 	Git::Object cat_file_(const GitPtr &g, QString const &id);
 	Git::Object cat_file(QString const &id);
 	QString newTempFilePath();
-        QString findFileID(QString const &commit_id, QString const &file);
+	QString findFileID(QString const &commit_id, QString const &file);
 	void updateFilesList(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void setAppSettings(const ApplicationSettings &appsettings);
 
@@ -361,6 +360,7 @@ public:
 	QPixmap getTransparentPixmap() const;
 
 	virtual bool isOnlineMode() const = 0;
+	virtual int selectedLogIndex() const = 0;
 
 	static QString abbrevCommitID(Git::CommitItem const &commit);
 protected slots:
@@ -369,7 +369,7 @@ public:
 	QStringList findGitObject(const QString &id) const;
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
-        void emitWriteLog(const QByteArray &ba);
+	void emitWriteLog(const QByteArray &ba);
 public slots:
 	void writeLog_(QByteArray ba);
 signals:

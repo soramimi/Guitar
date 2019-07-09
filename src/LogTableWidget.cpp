@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QProxyStyle>
 #include <cmath>
+#include <map>
 
 struct LogTableWidget::Private {
 };
@@ -240,6 +241,9 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 
 	int indent_span = 16;
 
+	int line_width = 2;
+	int thick_line_width = 4;
+
 	auto ItemRect = [&](int row){
 		QRect r;
 		QTableWidgetItem *p = item(row, 0);
@@ -249,7 +253,9 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		return r;
 	};
 
-	int line_width = 2;
+	auto IsAncestor = [&](Git::CommitItem const &item){
+		return mainwindow()->isAncestorCommit(item.commit_id);
+	};
 
 	auto ItemPoint = [&](int depth, QRect const &rect){
 		int h = rect.height();
@@ -259,10 +265,10 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		return QPointF(x, y);
 	};
 
-	auto SetPen = [&](QPainter *pr, int level, bool /*continued*/){
+	auto SetPen = [&](QPainter *pr, int level, bool thick){
 		QColor c = mainwindow()->color(level + 1);
 		Qt::PenStyle s = Qt::SolidLine;
-		pr->setPen(QPen(c, line_width, s));
+		pr->setPen(QPen(c, thick ? thick_line_width : line_width, s));
 	};
 
 	auto DrawLine = [&](size_t index, int itemrow){
@@ -294,7 +300,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 						}
 					}
 					if (path) {
-						SetPen(&pr, line.color_number, false);
+						SetPen(&pr, line.color_number, IsAncestor(item1));
 						pr.drawPath(*path);
 						delete path;
 					}
@@ -314,7 +320,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 			double r = 4;
 			x = pt.x() - r;
 			y = pt.y() - r;
-			SetPen(&pr, item.marker_depth, false);
+			SetPen(&pr, item.marker_depth, IsAncestor(item));
 			if (item.resolved) {
 				// ◯
 				pr.drawEllipse((int)x, (int)y, int(r * 2), int(r * 2));
@@ -350,5 +356,11 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		double y = DrawMark(i, i);
 		if (y >= height()) break;
 	}
+}
+
+void LogTableWidget::resizeEvent(QResizeEvent *e)
+{
+	mainwindow()->updateAncestorCommitMap();
+	QTableWidget::resizeEvent(e);
 }
 

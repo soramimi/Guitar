@@ -18,6 +18,7 @@ public:
 	~LogTableWidget() override;
 protected:
 	void paintEvent(QPaintEvent *) override;
+	void resizeEvent(QResizeEvent *e);
 };
 
 #endif // LOGTABLEWIDGET_H
