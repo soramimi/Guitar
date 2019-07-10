@@ -169,7 +169,7 @@ protected:
 	void updateRepository();
 	void reopenRepository(bool log, const std::function<void(GitPtr const &)> &callback);
 	void openSelectedRepository();
-	void checkRemoteUpdate();
+//	void checkRemoteUpdate();
 	bool isThereUncommitedChanges() const;
 	bool makeDiff(QString id, QList<Git::Diff> *out);
 	void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item);
@@ -375,7 +375,7 @@ public slots:
 signals:
 	void signalWriteLog(QByteArray ba);
 	void remoteInfoChanged();
-	void signalCheckRemoteUpdate();
+//	void signalCheckRemoteUpdate();
 };
 
 #endif // BASICMAINWINDOW_H

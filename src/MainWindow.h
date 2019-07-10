@@ -89,7 +89,7 @@ private:
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id, QStringList *all);
-	void setWatchRemoteInterval(int mins);
+//	void setWatchRemoteInterval(int mins);
 	void test();
 	bool isUninitialized();
 	void doLogCurrentItemChanged();
@@ -200,7 +200,7 @@ protected:
 	void internalWriteLog(const char *ptr, int len) override;
 	RepositoryItem const *selectedRepositoryItem() const override;
 	void removeSelectedRepositoryFromBookmark(bool ask) override;
-	void setRemoteMonitoringEnabled(bool enable) override;
+//	void setRemoteMonitoringEnabled(bool enable) override;
 protected slots:
 	void onLogIdle();
 signals:

@@ -1994,12 +1994,12 @@ void BasicMainWindow::openSelectedRepository()
 	}
 }
 
-void BasicMainWindow::checkRemoteUpdate()
-{
-	if (getPtyProcess()->isRunning()) return;
+//void BasicMainWindow::checkRemoteUpdate()
+//{
+//	if (getPtyProcess()->isRunning()) return;
 
-	emit signalCheckRemoteUpdate();
-}
+//	emit signalCheckRemoteUpdate();
+//}
 
 bool BasicMainWindow::isThereUncommitedChanges() const
 {
