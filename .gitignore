@@ -16,3 +16,7 @@ src/version.h
 *.deb
 packaging/win/packages/jp.soramimi.guitar/data/
 packaging/win/GuitarSetup.exe
+packaging/mac/Guitar.app
+packaging/mac/Guitar.app/Contents/Frameworks/QtCore.framework/QtCore
+packaging/mac/*.zip
+packaging/mac/Guitar-macos.zip
