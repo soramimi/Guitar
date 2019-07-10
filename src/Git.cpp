@@ -86,8 +86,8 @@ bool Git::isValidID(QString const &id)
 
 QString Git::status()
 {
-	git("status", false);
-	return resultText().trimmed();
+	git("status");
+	return resultText();
 }
 
 QByteArray Git::toQByteArray() const
