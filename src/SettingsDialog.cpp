@@ -106,7 +106,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 
 	s.beginGroup("Behavior");
 	GetValue<bool>(s, "AutomaticFetch")                      >> as->automatically_fetch_when_opening_the_repository;
-	GetValue<unsigned int>(s, "WatchRemoteInterval")         >> as->watch_remote_changes_every_mins;
+//	GetValue<unsigned int>(s, "WatchRemoteInterval")         >> as->watch_remote_changes_every_mins;
 	GetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   >> as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 }
@@ -135,7 +135,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 
 	s.beginGroup("Behavior");
 	SetValue<bool>(s, "AutomaticFetch")                      << as->automatically_fetch_when_opening_the_repository;
-	SetValue<unsigned int>(s, "WatchRemoteInterval")         << as->watch_remote_changes_every_mins;
+//	SetValue<unsigned int>(s, "WatchRemoteInterval")         << as->watch_remote_changes_every_mins;
 	SetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   << as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 
