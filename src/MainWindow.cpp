@@ -730,7 +730,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 
 	clearFileList();
 
-	Git::FileStatusList stats = g->status();
+	Git::FileStatusList stats = g->status_s();
 	setUncommitedChanges(!stats.empty());
 
 	FilesListType files_list_type = FilesListType::SingleList;
@@ -1196,6 +1196,30 @@ void MainWindow::on_toolButton_push_clicked()
 void MainWindow::on_toolButton_pull_clicked()
 {
 	ui->action_pull->trigger();
+}
+
+void MainWindow::showStatus()
+{
+	auto g = git();
+	if (!g->isValidWorkingCopy()) {
+		QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
+		return;
+	}
+	QString s = g->status();
+	TextEditDialog dlg(this);
+	dlg.setWindowTitle(tr("Status"));
+	dlg.setText(s, true);
+	dlg.exec();
+}
+
+void MainWindow::on_toolButton_status_clicked()
+{
+	showStatus();
+}
+
+void MainWindow::on_action_repository_status_triggered()
+{
+	showStatus();
 }
 
 void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*current*/, QTreeWidgetItem * /*previous*/)
@@ -2755,5 +2779,8 @@ void MainWindow::on_action_find_next_triggered()
 void MainWindow::test()
 {
 }
+
+
+
 
 

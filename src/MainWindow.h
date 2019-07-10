@@ -95,6 +95,7 @@ private:
 	void doLogCurrentItemChanged();
 	void findNext();
 	void findText(const QString &text);
+	void showStatus();
 protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void timerEvent(QTimerEvent *) override;
@@ -186,6 +187,7 @@ private slots:
 	void on_toolButton_fetch_clicked();
 	void on_toolButton_pull_clicked();
 	void on_toolButton_push_clicked();
+	void on_toolButton_status_clicked();
 	void on_toolButton_select_all_clicked();
 	void on_toolButton_stage_clicked();
 	void on_toolButton_stop_process_clicked();
@@ -195,6 +197,10 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
+
+
+	void on_action_repository_status_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

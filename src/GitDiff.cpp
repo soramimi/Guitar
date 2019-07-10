@@ -296,7 +296,7 @@ bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 
 			GitPtr g = objcache->git();
 			QString head_id = objcache->revParse("HEAD");
-			Git::FileStatusList stats = g->status(); // git status
+			Git::FileStatusList stats = g->status_s(); // git status
 
 			GitCommitTree head_tree(objcache);
 			head_tree.parseCommit(head_id); // HEADが親

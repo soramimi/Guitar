@@ -2011,7 +2011,7 @@ bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
 
-	Git::FileStatusList list = g->status();
+	Git::FileStatusList list = g->status_s();
 	setUncommitedChanges(!list.empty());
 
 	if (id.isEmpty() && !isThereUncommitedChanges()) {

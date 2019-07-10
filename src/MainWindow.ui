@@ -232,6 +232,57 @@
         </spacer>
        </item>
        <item>
+        <widget class="MyToolButton" name="toolButton_status">
+         <property name="minimumSize">
+          <size>
+           <width>64</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="text">
+          <string>Status</string>
+         </property>
+         <property name="icon">
+          <iconset resource="resources/resources.qrc">
+           <normaloff>:/image/status.svg</normaloff>:/image/status.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonTextUnderIcon</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_7">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>8</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <widget class="MyToolButton" name="toolButton_terminal">
          <property name="minimumSize">
           <size>
@@ -964,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1023,6 +1074,7 @@
      <addaction name="action_stash_apply"/>
      <addaction name="action_stash_drop"/>
     </widget>
+    <addaction name="action_repository_status"/>
     <addaction name="action_commit"/>
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
@@ -1548,6 +1600,15 @@
    </property>
    <property name="shortcut">
     <string>F3</string>
+   </property>
+  </action>
+  <action name="action_repository_status">
+   <property name="icon">
+    <iconset resource="resources/resources.qrc">
+     <normaloff>:/image/status.svg</normaloff>:/image/status.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Status</string>
    </property>
   </action>
  </widget>

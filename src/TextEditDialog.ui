@@ -43,7 +43,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="pushButton_ok">
        <property name="text">
         <string>OK</string>
        </property>
@@ -53,7 +53,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="pushButton_cancel">
        <property name="text">
         <string>Cancel</string>
        </property>
@@ -66,14 +66,14 @@
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>pushButton_ok</sender>
    <signal>clicked()</signal>
    <receiver>TextEditDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>295</x>
-     <y>282</y>
+     <x>661</x>
+     <y>427</y>
     </hint>
     <hint type="destinationlabel">
      <x>227</x>
@@ -82,14 +82,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_2</sender>
+   <sender>pushButton_cancel</sender>
    <signal>clicked()</signal>
    <receiver>TextEditDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>376</x>
-     <y>282</y>
+     <x>744</x>
+     <y>427</y>
     </hint>
     <hint type="destinationlabel">
      <x>386</x>

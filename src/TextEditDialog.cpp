@@ -22,8 +22,12 @@ TextEditDialog::~TextEditDialog()
 	delete ui;
 }
 
-void TextEditDialog::setText(QString const &text)
+void TextEditDialog::setText(QString const &text, bool readonly)
 {
+	ui->plainTextEdit->setReadOnly(readonly);
+	ui->pushButton_ok->setVisible(!readonly);
+	ui->pushButton_cancel->setText(readonly ? tr("&Close") : tr("Cacnel"));
+
 	ui->plainTextEdit->setPlainText(text);
 	QTextCursor cur = ui->plainTextEdit->textCursor();
 	cur.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
@@ -70,7 +74,7 @@ bool TextEditDialog::editFile(QWidget *parent, QString path, QString const &titl
 	dlg.setWindowTitle(title);
 	dlg.ui->lineEdit_path->setVisible(true);
 	dlg.ui->lineEdit_path->setText(path);
-	dlg.setText(text);
+	dlg.setText(text, false);
 
 	bool ok = false;
 

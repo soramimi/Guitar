@@ -17,7 +17,7 @@ public:
 	explicit TextEditDialog(QWidget *parent = nullptr);
 	~TextEditDialog() override;
 
-	void setText(QString const &text);
+	void setText(QString const &text, bool readonly);
 	QString text() const;
 
 	static bool editFile(QWidget *parent, QString path, QString const &title, QString const &append = QString());

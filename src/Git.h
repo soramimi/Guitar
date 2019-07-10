@@ -304,7 +304,7 @@ private:
 	Private *m;
 	QStringList make_branch_list_();
 	QByteArray cat_file_(QString const &id);
-	FileStatusList status_();
+	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	bool push_(bool tags, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
@@ -352,7 +352,7 @@ public:
 	static CloneData preclone(QString const &url, QString const &path);
 	bool clone(CloneData const &data, AbstractPtyProcess *pty);
 
-	FileStatusList status();
+	FileStatusList status_s();
 	bool cat_file(QString const &id, QByteArray *out);
 	void resetFile(QString const &path);
 	void resetAllFiles();
@@ -393,6 +393,7 @@ public:
 
 	static bool isValidID(QString const &s);
 
+	QString status();
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(QString const &id);

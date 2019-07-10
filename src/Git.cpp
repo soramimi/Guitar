@@ -84,6 +84,12 @@ bool Git::isValidID(QString const &id)
 	return false;
 }
 
+QString Git::status()
+{
+	git("status", false);
+	return resultText().trimmed();
+}
+
 QByteArray Git::toQByteArray() const
 {
 	if (m->result.empty()) return QByteArray();
@@ -226,6 +232,8 @@ QString Git::version()
 	git("--version", false);
 	return resultText().trimmed();
 }
+
+
 
 bool Git::init()
 {
@@ -418,7 +426,7 @@ QString Git::getCurrentBranchName()
 QStringList Git::getUntrackedFiles()
 {
 	QStringList files;
-	Git::FileStatusList stats = status();
+	Git::FileStatusList stats = status_s();
 	for (FileStatus const &s : stats) {
 		if (s.code() == FileStatusCode::Untracked) {
 			files.push_back(s.path1());
@@ -868,7 +876,7 @@ bool Git::push(bool tags, AbstractPtyProcess *pty)
 }
 
 
-Git::FileStatusList Git::status_()
+Git::FileStatusList Git::status_s_()
 {
 	FileStatusList files;
 	if (git("status -s -u --porcelain")) {
@@ -886,9 +894,9 @@ Git::FileStatusList Git::status_()
 	return files;
 }
 
-Git::FileStatusList Git::status()
+Git::FileStatusList Git::status_s()
 {
-	return status_();
+	return status_s_();
 }
 
 QString Git::objectType(QString const &id)

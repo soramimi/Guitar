@@ -46,5 +46,6 @@
         <file>image/del.svg</file>
         <file>image/ren.svg</file>
         <file>image/cpy.svg</file>
+        <file>image/status.svg</file>
     </qresource>
 </RCC>
