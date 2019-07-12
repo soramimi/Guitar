@@ -201,6 +201,8 @@ private slots:
 
 	void on_action_repository_status_triggered();
 
+	void on_action_repo_jump_to_head_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;

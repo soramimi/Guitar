@@ -2776,9 +2776,24 @@ void MainWindow::on_action_find_next_triggered()
 	}
 }
 
+void MainWindow::on_action_repo_jump_to_head_triggered()
+{
+	QString name = "HEAD";
+	GitPtr g = git();
+	QString id = g->rev_parse(name);
+	int row = rowFromCommitId(id);
+	if (row < 0) {
+		qDebug() << "No such commit";
+	} else {
+		setCurrentLogRow(row);
+	}
+
+}
+
 void MainWindow::test()
 {
 }
+
 
 
 

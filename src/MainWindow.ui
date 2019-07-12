@@ -1015,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1078,6 +1078,7 @@
     <addaction name="action_commit"/>
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
+    <addaction name="action_repo_jump_to_head"/>
     <addaction name="action_repo_checkout"/>
     <addaction name="menuStash"/>
     <addaction name="action_delete_branch"/>
@@ -1609,6 +1610,14 @@
    </property>
    <property name="text">
     <string>Status</string>
+   </property>
+  </action>
+  <action name="action_repo_jump_to_head">
+   <property name="text">
+    <string>Jump to &amp;HEAD</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
    </property>
   </action>
  </widget>
