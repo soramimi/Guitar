@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/5.7/msvc2013"
-#$qt = "" # ƒXƒ^ƒeƒBƒbƒNƒŠƒ“ƒN‚Ì‚Æ‚«
+$qt = "C:/Qt/Qt5.7.1/5.7/msvc2013"
+#$qt = "" # ã‚¹ã‚¿ãƒ†ã‚£ãƒƒã‚¯ãƒªãƒ³ã‚¯ã®ã¨ã
 
 $openssl = "C:/openssl"
 
