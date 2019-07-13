@@ -1,6 +1,6 @@
 
 all:
-	-mkdir build
+	-mkdir build 2>/dev/null
 	cd ../..; ruby prepare.rb
 	cd build; cmake ../../..
 	cd build; make -j4

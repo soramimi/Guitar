@@ -11,29 +11,23 @@ $workdir = "build"
 $bindir = "build"
 $dstdir = $workdir + "/#{$package}"
 
-puts "Finding libssl1.0 ..."
+puts "Finding libssl1. ..."
 $libssl = ""
-lines = `apt search libssl1.0. 2>/dev/null`
+lines = `apt search libssl1. 2>/dev/null`
 lines.each_line {|line|
-	if line =~ /^(libssl1\.0\.[0-9]+)\/.*#{$arch}/
+	if line =~ /^(libssl1\.[0-1]\.[0-9]+)\/.*#{$arch}/
 		$libssl = $1
 		break
 	end
 }
 if $libssl == ""
-	puts "libssl1.0 not found"
+	puts "libssl1.x not found"
 	exit 1
 else
 	puts "libssl = #{$libssl}"
 end
 
-$arch = "i386"
-uname_a = `uname -a`
-if uname_a =~ /(x86_64)|(amd64)/
-	$arch = "amd64"
-elsif uname_a =~ /armv7l/
-	$arch = "armhf"
-end
+$arch = `./arch.rb`.strip
 
 FileUtils.mkpath($dstdir + "/DEBIAN")
 FileUtils.mkpath($dstdir + "/usr/bin")
