@@ -79,10 +79,10 @@ private:
 	void mergeBranch(Git::CommitItem const *commit);
 	void rebaseBranch(Git::CommitItem const *commit);
 	void detectGitServerType(const GitPtr &g);
-	void setRemoteOnline(bool f);
+	void setRemoteOnline(bool f, bool update_ui, bool save);
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);
-	void setNetworkingCommandsEnabled(bool f);
+	void setNetworkingCommandsEnabled(bool enabled);
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
@@ -119,7 +119,7 @@ public:
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(const QString &id);
 private slots:
-	void doUpdateButton();
+	void updateUI();
 	void onLogVisibilityChanged();
 	void onPtyProcessCompleted(bool ok, const QVariant &userdata);
 	void onRepositoriesTreeDropped();

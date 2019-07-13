@@ -312,8 +312,12 @@ QIcon BasicMainWindow::verifiedIcon(char s) const
 
 QString BasicMainWindow::currentWorkingCopyDir() const
 {
-	QString workdir = m->current_repo.local_dir;
-	return workdir.isEmpty() ? QString() : workdir;
+	return m->current_repo.local_dir;
+}
+
+bool BasicMainWindow::isRepositoryOpened() const
+{
+	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
 
 QList<BasicMainWindow::Label> const *BasicMainWindow::label(int row)
@@ -1667,6 +1671,11 @@ void BasicMainWindow::queryRemotes(GitPtr const &g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
+void BasicMainWindow::msgNoRepositorySelected()
+{
+	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
+}
+
 bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo)
 {
 	if (!repo) {
@@ -1678,7 +1687,7 @@ bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> const &ca
 		callback(dir);
 		return true;
 	}
-	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
+	msgNoRepositorySelected();
 	return false;
 }
 

@@ -230,7 +230,7 @@ bool MainWindow::shown()
 			settings.beginGroup("Remote");
 			bool f = settings.value("Online", true).toBool();
 			settings.endGroup();
-			setRemoteOnline(f);
+			setRemoteOnline(f, false, false);
 		}
 		{
 			settings.beginGroup("MainWindow");
@@ -240,6 +240,7 @@ bool MainWindow::shown()
 			settings.endGroup();
 		}
 	}
+	updateUI();
 
 	setUnknownRepositoryInfo();
 
@@ -1085,8 +1086,7 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 
 	m->remote_watcher.setCurrent(currentRemoteName(), currentBranchName());
 
-//	checkRemoteUpdate();
-	doUpdateButton();
+	updateUI();
 }
 
 void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
@@ -1095,7 +1095,39 @@ void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
 	removeRepositoryFromBookmark(i, ask);
 }
 
-void MainWindow::doUpdateButton()
+void MainWindow::setNetworkingCommandsEnabled(bool enabled)
+{
+	ui->action_clone->setEnabled(enabled);
+
+	ui->toolButton_clone->setEnabled(enabled);
+
+	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
+		enabled = false;
+	}
+
+	bool opened = !currentRepository().name.isEmpty();
+	ui->action_fetch->setEnabled(enabled || opened);
+	ui->toolButton_fetch->setEnabled(enabled || opened);
+
+	if (isOnlineMode()) {
+		ui->action_fetch->setText(tr("Fetch"));
+		ui->toolButton_fetch->setText(tr("Fetch"));
+	} else {
+		ui->action_fetch->setText(tr("Update"));
+		ui->toolButton_fetch->setText(tr("Update"));
+	}
+
+	ui->action_fetch_prune->setEnabled(enabled);
+	ui->action_pull->setEnabled(enabled);
+	ui->action_push->setEnabled(enabled);
+	ui->action_push_u->setEnabled(enabled);
+	ui->action_push_all_tags->setEnabled(enabled);
+
+	ui->toolButton_pull->setEnabled(enabled);
+	ui->toolButton_push->setEnabled(enabled);
+}
+
+void MainWindow::updateUI()
 {
 	setNetworkingCommandsEnabled(isOnlineMode());
 
@@ -1104,6 +1136,16 @@ void MainWindow::doUpdateButton()
 	Git::Branch b = currentBranch();
 	ui->toolButton_push->setNumber(b.ahead > 0 ? b.ahead : -1);
 	ui->toolButton_pull->setNumber(b.behind > 0 ? b.behind : -1);
+
+	{
+		bool f = isRepositoryOpened();
+		ui->toolButton_status->setEnabled(f);
+		ui->toolButton_terminal->setEnabled(f);
+		ui->toolButton_explorer->setEnabled(f);
+		ui->action_repository_status->setEnabled(f);
+		ui->action_terminal->setEnabled(f);
+		ui->action_explorer->setEnabled(f);
+	}
 }
 
 void MainWindow::updateStatusBarText()
@@ -1202,7 +1244,7 @@ void MainWindow::showStatus()
 {
 	auto g = git();
 	if (!g->isValidWorkingCopy()) {
-		QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
+		msgNoRepositorySelected();
 		return;
 	}
 	QString s = g->status();
@@ -1775,8 +1817,8 @@ void MainWindow::updateAncestorCommitMap()
 
 	auto const &logs = getLogs();
 	const size_t LogCount = logs.size();
-	int index = selectedLogIndex();
-	if (index >= 0 && index < LogCount) {
+	const size_t index = selectedLogIndex();
+	if (index < LogCount) {
 		// ok
 	} else {
 		return;
@@ -1787,10 +1829,10 @@ void MainWindow::updateAncestorCommitMap()
 
 	std::map<QString, size_t> commit_to_index_map;
 
-	int end = LogCount;
+	size_t end = LogCount;
 
 	if (index >= 0 && index < end) {
-		for (int i = index; i < end; i++) {
+		for (size_t i = index; i < end; i++) {
 			Git::CommitItem const &commit = LogItem(i);
 			commit_to_index_map[commit.commit_id] = i;
 			auto *item = ui->tableWidget_log->item(i, 0);
@@ -2336,74 +2378,46 @@ void MainWindow::on_action_create_a_repository_triggered()
 	createRepository(QString());
 }
 
-void MainWindow::setNetworkingCommandsEnabled(bool f)
-{
-	ui->action_clone->setEnabled(f);
-
-	ui->toolButton_clone->setEnabled(f);
-
-	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
-		f = false;
-	}
-
-	bool opened = !currentRepository().name.isEmpty();
-	ui->action_fetch->setEnabled(f || opened);
-	ui->toolButton_fetch->setEnabled(f || opened);
-
-	if (isOnlineMode()) {
-		ui->action_fetch->setText(tr("Fetch"));
-		ui->toolButton_fetch->setText(tr("Fetch"));
-	} else {
-		ui->action_fetch->setText(tr("Update"));
-		ui->toolButton_fetch->setText(tr("Update"));
-	}
-
-	ui->action_fetch_prune->setEnabled(f);
-	ui->action_pull->setEnabled(f);
-	ui->action_push->setEnabled(f);
-	ui->action_push_u->setEnabled(f);
-	ui->action_push_all_tags->setEnabled(f);
-
-	ui->toolButton_pull->setEnabled(f);
-	ui->toolButton_push->setEnabled(f);
-}
-
 bool MainWindow::isOnlineMode() const
 {
 	return m->is_online_mode;
 }
 
-void MainWindow::setRemoteOnline(bool f)
+void MainWindow::setRemoteOnline(bool f, bool update_ui, bool save)
 {
 	m->is_online_mode = f;
 
-	QRadioButton *rb = nullptr;
-	rb = f ? ui->radioButton_remote_online : ui->radioButton_remote_offline;
-	rb->blockSignals(true);
-	rb->click();
-	rb->blockSignals(false);
+	if (update_ui) {
+		QRadioButton *rb = nullptr;
+		rb = f ? ui->radioButton_remote_online : ui->radioButton_remote_offline;
+		rb->blockSignals(true);
+		rb->click();
+		rb->blockSignals(false);
 
-	ui->action_online->setCheckable(true);
-	ui->action_offline->setCheckable(true);
-	ui->action_online->setChecked(f);
-	ui->action_offline->setChecked(!f);
+		ui->action_online->setCheckable(true);
+		ui->action_offline->setCheckable(true);
+		ui->action_online->setChecked(f);
+		ui->action_offline->setChecked(!f);
 
-	setNetworkingCommandsEnabled(f);
+		setNetworkingCommandsEnabled(f);
+	}
 
-	MySettings s;
-	s.beginGroup("Remote");
-	s.setValue("Online", f);
-	s.endGroup();
+	if (save) {
+		MySettings s;
+		s.beginGroup("Remote");
+		s.setValue("Online", f);
+		s.endGroup();
+	}
 }
 
 void MainWindow::on_radioButton_remote_online_clicked()
 {
-	setRemoteOnline(true);
+	setRemoteOnline(true, true, true);
 }
 
 void MainWindow::on_radioButton_remote_offline_clicked()
 {
-	setRemoteOnline(false);
+	setRemoteOnline(false, true, true);
 }
 
 void MainWindow::on_verticalScrollBar_log_valueChanged(int)

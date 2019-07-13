@@ -299,6 +299,8 @@ protected:
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
 	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; };
 	virtual void updateStatusBarText() {};
+	void msgNoRepositorySelected();
+	bool isRepositoryOpened() const;
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
 	~BasicMainWindow();
