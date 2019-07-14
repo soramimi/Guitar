@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/soramimi/Guitar.svg?branch=master)](https://travis-ci.com/soramimi/Guitar)
+
 # Guitar
 Git GUI Client
 
