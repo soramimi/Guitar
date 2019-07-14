@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>guitar</id>
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>GPL-2.0+</project_license>
+	<name>Guitar</name>
+	<summary>Git GUI Client</summary>
+	<description>
+		<p>Guitar is a graphical frontend for the git distributed version control system. It has logs, graphs, and a diff view.</p>
+	</description>
+	<launchable type="desktop-id">guitar.desktop</launchable>
+	<url type="homepage">https://github.com/soramimi/Guitar</url>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://camo.githubusercontent.com/851ca9188bb22d726e8d06b9e7cfdd16d0f0c128/68747470733a2f2f736f72616d696d692e6769746875622e696f2f4775697461722f73637265656e73686f74732f7562756e74752e706e67</image>
+		</screenshot>
+	</screenshots>
+	<provides>
+		<id>guitar.desktop</id>
+	</provides>
+</component>
