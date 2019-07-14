@@ -24,6 +24,9 @@ Git GUI Client
 ### Dark Theme
 ![Dark Theme](https://soramimi.github.io/Guitar/screenshots/raspberrypi1.jpg "Dark Theme")
 
+### Haiku
+![Haiku](https://soramimi.github.io/Guitar/screenshots/haiku.jpg "Haiku")
+
 ### Log and Graph
 ![Log and Graph](https://soramimi.github.io/Guitar/screenshots/commitgraph.png "Log and Graph")
 
