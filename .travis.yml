@@ -1,0 +1,37 @@
+language: cpp
+compiler: gcc
+sudo: require
+dist: trusty
+
+before_install:
+  - sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y
+  - sudo apt-get update -qq
+
+install:
+  - sudo apt-get -y install qt59base qt59svg libgl1-mesa-dev libssl-dev zlib1g-dev ruby # openssl-1.1.x is not supported!
+  - source /opt/qt*/bin/qt*-env.sh
+
+script:
+  - ruby prepare.rb
+  - mkdir -p _bin/ && cp /usr/lib/x86_64-linux-gnu/libz.a _bin/ # FIXME: Why is this needed?
+  - qmake CONFIG+=release PREFIX=/usr
+  - make -j$(nproc)
+  # FIXME: make: Nothing to be done for `install'.
+  # make INSTALL_ROOT=appdir -j$(nproc) install ; find appdir/
+  - mkdir -p appdir/usr/bin && cp _bin/Guitar appdir/usr/bin/guitar && strip appdir/usr/bin/guitar && chmod a+x appdir/usr/bin/guitar
+  - mkdir -p appdir/usr/share/icons/hicolor/scalable/apps && cp LinuxDesktop/Guitar.svg appdir/usr/share/icons/hicolor/scalable/apps/guitar.svg
+  - mkdir -p appdir/usr/share/applications && cp LinuxDesktop/guitar.desktop appdir/usr/share/applications/
+  - mkdir -p appdir/usr/share/metainfo && cp LinuxDesktop/guitar.appdata.xml appdir/usr/share/metainfo/
+  - find appdir/
+  - wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+  - chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+  - ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -appimage
+
+after_success:
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - bash upload.sh Guitar*.AppImage*
+  
+branches:
+  except:
+    - # Do not build tags that we create when we upload to GitHub Releases
+    - /^(?i:continuous)/
