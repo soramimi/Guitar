@@ -50,7 +50,6 @@ FileDiffWidget::DrawData::DrawData()
 struct MainWindow::Private {
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
-//	QTimer remote_watcher_timer;
 	QImage graph_color;
 	QPixmap digits;
 	StatusLabel *status_bar_label;
@@ -130,15 +129,6 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 
-//	// リモート監視
-//	connect(this, &BasicMainWindow::signalCheckRemoteUpdate, &m->remote_watcher, &RemoteWatcher::checkRemoteUpdate);
-//	connect(&m->remote_watcher_timer, &QTimer::timeout, &m->remote_watcher, &RemoteWatcher::checkRemoteUpdate);
-//	connect(this, &MainWindow::updateButton, [&](){
-//		doUpdateButton();
-//	});
-//	m->remote_watcher.start(this);
-//	setRemoteMonitoringEnabled(true);
-
 	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
 		setRemoteChanged(f);
 		updateButton();
@@ -171,8 +161,6 @@ MainWindow::MainWindow(QWidget *parent)
 			setWindowState(state);
 		}
 	}
-
-//	setTabOrder(ui->treeWidget_repos, ui->widget_log);
 
 	startTimers();
 }
@@ -1997,24 +1985,6 @@ void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 {
 	updateDiffView(ui->listWidget_files->currentItem());
 }
-
-//void MainWindow::setWatchRemoteInterval(int mins)
-//{
-//	if (mins > 0) {
-//		m->remote_watcher_timer.start(mins * 60000);
-//	} else {
-//		m->remote_watcher_timer.stop();
-//	}
-//}
-
-//void MainWindow::setRemoteMonitoringEnabled(bool enable)
-//{
-//	if (enable) {
-//		setWatchRemoteInterval(appsettings()->watch_remote_changes_every_mins);
-//	} else {
-//		setWatchRemoteInterval(0);
-//	}
-//}
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {

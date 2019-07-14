@@ -89,7 +89,6 @@ private:
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id, QStringList *all);
-//	void setWatchRemoteInterval(int mins);
 	void test();
 	bool isUninitialized();
 	void doLogCurrentItemChanged();

@@ -13,9 +13,6 @@ class SettingBehaviorForm : public AbstractSettingForm {
 	Q_OBJECT
 private:
 	Ui::SettingBehaviorForm *ui;
-
-//	unsigned int getWatchRemoteChangesEveryMins();
-//	void setWatchRemoteChangesEveryMins(unsigned int min);
 public:
 	explicit SettingBehaviorForm(QWidget *parent = nullptr);
 	~SettingBehaviorForm() override;
