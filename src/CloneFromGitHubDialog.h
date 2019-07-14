@@ -16,7 +16,7 @@ private:
 	void updateUI();
 public:
 	explicit CloneFromGitHubDialog(QWidget *parent, QString const &username, QString const &reponame);
-	~CloneFromGitHubDialog();
+	~CloneFromGitHubDialog() override;
 	QString url() const;
 private slots:
 	void onHyperlinkClicked();

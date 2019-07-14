@@ -9,18 +9,18 @@ private:
 	struct Private;
 	Private *m;
 protected:
-	void run();
+	void run() override;
 public:
 	UnixPtyProcess();
-	~UnixPtyProcess();
-	bool isRunning() const;
-	void writeInput(char const *ptr, int len);
-	int readOutput(char *ptr, int len);
-	void start(QString const &cmd, QVariant const &userdata);
-	bool wait(unsigned long time = ULONG_MAX);
-	void stop();
-	int getExitCode() const;
-	QString getMessage() const;
+	~UnixPtyProcess() override;
+	bool isRunning() const override;
+	void writeInput(char const *ptr, int len) override;
+	int readOutput(char *ptr, int len) override;
+	void start(QString const &cmd, QVariant const &userdata) override;
+	bool wait(unsigned long time = ULONG_MAX) override;
+	void stop() override;
+	int getExitCode() const override;
+	QString getMessage() const override;
 };
 
 #endif // UNIXPTYPROCESS_H

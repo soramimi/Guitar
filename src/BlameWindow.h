@@ -31,12 +31,9 @@ public:
 
 	static QList<BlameItem> parseBlame(char const *begin, char const *end);
 private slots:
-	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
-
-	void on_tableWidget_customContextMenuRequested(const QPoint &pos);
-
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-
+	void on_tableWidget_customContextMenuRequested(const QPoint &pos);
+	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 private:
 	Ui::BlameWindow *ui;
 	MainWindow *mainwindow();

@@ -1819,7 +1819,7 @@ void MainWindow::updateAncestorCommitMap()
 
 	size_t end = LogCount;
 
-	if (index >= 0 && index < end) {
+	if (index < end) {
 		for (size_t i = index; i < end; i++) {
 			Git::CommitItem const &commit = LogItem(i);
 			commit_to_index_map[commit.commit_id] = i;

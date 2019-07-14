@@ -1,7 +1,7 @@
 #ifndef UNICODEWIDTH_H
 #define UNICODEWIDTH_H
 
-#include <stdint.h>
+#include <cstdint>
 
 
 
@@ -22,8 +22,8 @@ private:
 		uint32_t hi;
 		Type type;
 	};
-	UnicodeWidth();
 public:
+	UnicodeWidth() = delete;
 	static Type type(uint32_t c);
 	static int width(Type t)
 	{

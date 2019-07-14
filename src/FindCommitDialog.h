@@ -12,7 +12,7 @@ class FindCommitDialog : public QDialog {
 
 public:
 	explicit FindCommitDialog(QWidget *parent, const QString &text);
-	~FindCommitDialog();
+	~FindCommitDialog() override;
 
 	QString text() const;
 private:

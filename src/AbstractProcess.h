@@ -14,7 +14,7 @@ protected:
 	QVariant user_data;
 public:
 	void setChangeDir(QString const &dir);
-	void setVariant(QVariant const &userdata);
+	void setVariant(QVariant const &value);
 	QVariant const &userVariant() const;
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;

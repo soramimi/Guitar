@@ -107,7 +107,6 @@ public:
 			: msg_(message)
 		{
 		}
-		virtual ~Error() = default;
 		std::string message() const
 		{
 			return msg_;
@@ -159,12 +158,12 @@ private:
 	Private *m;
 	void clear_error();
 	static int get_port(URL const *url, char const *scheme, char const *protocol);
-	void set_default_header(const Request &url, Post const *post, const RequestOption &opt);
-	std::string make_http_request(const Request &url, Post const *post, const WebProxy *proxy, bool https);
+	void set_default_header(const Request &req, Post const *post, const RequestOption &opt);
+	std::string make_http_request(const Request &req, Post const *post, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, Response *out);
 	bool http_get(const Request &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out);
-	bool https_get(const Request &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
+	bool https_get(const Request &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out);
 	bool get(const Request &req, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);

@@ -15,7 +15,7 @@ private:
 	QPixmap pm_minus;
 public:
 	TraditionalWindowsStyleTreeControl();
-	bool drawPrimitive(QStyle::PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = 0) const;
+	bool drawPrimitive(QStyle::PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const;
 };
 
 #endif // TRADITIONALWINDOWSSTYLETREECONTROL_H

@@ -297,13 +297,13 @@ protected:
 	virtual void updateRepositoriesList() = 0;
 	virtual void clearFileList() = 0;
 	virtual RepositoryItem const *selectedRepositoryItem() const = 0;
-	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; };
-	virtual void updateStatusBarText() {};
+	virtual void setRemoteMonitoringEnabled(bool enable) { (void)enable; }
+	virtual void updateStatusBarText() {}
 	void msgNoRepositorySelected();
 	bool isRepositoryOpened() const;
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
-	~BasicMainWindow();
+	~BasicMainWindow() override;
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	WebContext *webContext();

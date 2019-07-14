@@ -11,10 +11,10 @@ private:
 	TraditionalWindowsStyleTreeControl legacy_windows_;
 public:
 	StandardStyle()
-		: QProxyStyle(0)
+		: QProxyStyle(nullptr)
 	{
 	}
-	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = 0) const;
+	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const override;
 };
 
 #endif // STANDARDSTYLE_H

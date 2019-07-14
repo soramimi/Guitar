@@ -2,9 +2,9 @@
 #include "BasicMainWindow.h"
 #include "ui_ConfigSigningDialog.h"
 
-ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, BasicMainWindow *mw, bool local_enable) :
-	QDialog(parent),
-	ui(new Ui::ConfigSigningDialog)
+ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, BasicMainWindow *mw, bool local_enable)
+	: QDialog(parent)
+	, ui(new Ui::ConfigSigningDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

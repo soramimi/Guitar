@@ -20,7 +20,7 @@ private:
 	GitPtr git();
 public:
 	explicit ObjectBrowserDialog(BasicMainWindow *parent, QStringList const &list);
-	~ObjectBrowserDialog();
+	~ObjectBrowserDialog() override;
 	QString text() const;
 private slots:
 	void on_pushButton_inspect_clicked();

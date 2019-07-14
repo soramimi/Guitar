@@ -1,7 +1,7 @@
 
 #include "webclient.h"
 #include <cstring>
-#include <stdint.h>
+#include <cstdint>
 
 #ifdef _WIN32
 #include <winsock2.h>

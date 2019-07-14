@@ -14,7 +14,7 @@ class QContextMenuEvent;
 class misc {
 public:
 	static QString getApplicationDir();
-	static QStringList splitLines(QByteArray const &text, std::function<QString(char const *ptr, size_t len)> const &tos);
+	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);
 	static void splitLines(char const *begin, char const *end, std::vector<std::string> *out, bool keep_newline);
 	static void splitLines(std::string const &text, std::vector<std::string> *out, bool need_crlf);

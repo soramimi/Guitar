@@ -18,9 +18,9 @@ public:
 	~LogTableWidget() override;
 protected:
 	void paintEvent(QPaintEvent *) override;
-	void resizeEvent(QResizeEvent *e);
+	void resizeEvent(QResizeEvent *e) override;
 protected slots:
-	void verticalScrollbarValueChanged(int value);
+	void verticalScrollbarValueChanged(int value) override;
 };
 
 #endif // LOGTABLEWIDGET_H

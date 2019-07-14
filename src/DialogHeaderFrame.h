@@ -8,7 +8,7 @@ class DialogHeaderFrame : public QFrame {
 public:
 	explicit DialogHeaderFrame(QWidget *parent = nullptr);
 protected:
-	void paintEvent(QPaintEvent *);
+	void paintEvent(QPaintEvent *) override;
 };
 
 #endif // DIALOGHEADERFRAME_H

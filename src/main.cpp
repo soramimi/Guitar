@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 	}
 
 	// 設定ファイルがないときは、言語の選択をする。
-	if (!QFileInfo(global->config_file_path).exists()) {
+	if (!QFileInfo::exists(global->config_file_path)) {
 		auto langs = SettingGeneralForm::languages();
 		SettingGeneralForm::execSelectLanguageDialog(nullptr, langs, [](){});
 	}

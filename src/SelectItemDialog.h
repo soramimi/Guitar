@@ -29,7 +29,7 @@ public:
 	explicit SelectItemDialog(QWidget *parent = nullptr);
 	~SelectItemDialog() override;
 
-	void addItem(QString const &item, QString const &text);
+	void addItem(QString const &id, QString const &text);
 
 	Item item() const;
 	void select(QString const &id);

@@ -2,9 +2,9 @@
 #ifndef UNICODE_H_
 #define UNICODE_H_
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
 #include <functional>
 
 namespace unicode_helper_ {
@@ -49,7 +49,7 @@ private:
 	bool next();
 	inline bool next_();
 public:
-	utf8encoder(abstract_unicode_reader *reader = 0);
+	utf8encoder(abstract_unicode_reader *reader = nullptr);
 	char get();
 	int pos() const;
 };
@@ -69,38 +69,36 @@ private:
 	bool next();
 	bool next_();
 public:
-	utf16encoder(abstract_unicode_reader *reader = 0);
+	utf16encoder(abstract_unicode_reader *reader = nullptr);
 	uint16_t get();
 };
 
 
 class abstract_unicode_reader {
 public:
-	virtual ~abstract_unicode_reader()
-	{
-	}
+	virtual ~abstract_unicode_reader() = default;
 	virtual uint32_t next() = 0;
 
-	void to_utf8(std::function<bool(char, int)> fn)
+	void to_utf8(std::function<bool(char, int)> const &fn)
 	{
 		utf8encoder e(this);
 		while (1) {
 			int pos = e.pos();
 			int c = e.get();
 			if (c == 0) break;
-			if (!fn(c, pos)) break;
+			if (!fn((char)c, pos)) break;
 		}
 	}
-	void to_utf16(std::function<bool(uint16_t)> fn)
+	void to_utf16(std::function<bool(uint16_t)> const &fn)
 	{
 		utf16encoder e(this);
 		while (1) {
 			int c = e.get();
 			if (c == 0) break;
-			if (!fn(c)) break;
+			if (!fn((uint16_t)c)) break;
 		}
 	}
-	void to_utf32(std::function<bool(uint32_t)> fn)
+	void to_utf32(std::function<bool(uint32_t)> const &fn)
 	{
 		while (1) {
 			uint32_t c = next();
@@ -120,7 +118,7 @@ public:
 	utf32(uint32_t const *ptr, uint32_t const *end);
 	utf32(uint32_t const *ptr);
 	utf32(uint32_t const *ptr, size_t len);
-	uint32_t next();
+	uint32_t next() override;
 };
 
 class utf16 : public abstract_unicode_reader {
@@ -133,7 +131,7 @@ public:
 	utf16(uint16_t const *ptr, uint16_t const *end);
 	utf16(uint16_t const *ptr);
 	utf16(uint16_t const *ptr, size_t len);
-	uint32_t next();
+	uint32_t next() override;
 };
 
 class utf8 : public abstract_unicode_reader {
@@ -143,7 +141,7 @@ public:
 	utf8(char const *ptr, char const *end);
 	utf8(char const *ptr);
 	utf8(char const *ptr, size_t len);
-	uint32_t next();
+	uint32_t next() override;
 	size_t offset() const
 	{
 		return reader.offset();

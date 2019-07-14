@@ -16,7 +16,7 @@ enum class DiffPane {
 	Right,
 };
 
-typedef std::function<QPixmap(DiffPane pane, int width, int height)> fn_pixmap_maker_t;
+using fn_pixmap_maker_t = std::function<QPixmap (DiffPane, int, int)>;
 
 class FileDiffSliderWidget : public QWidget {
 	Q_OBJECT

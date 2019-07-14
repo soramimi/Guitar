@@ -55,7 +55,7 @@ public:
 	void polish(QPalette &palette) override;
 	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const override;
 	QRect subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const override;
-	int styleHint(StyleHint stylehint, const QStyleOption *opt = nullptr, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const;
+	int styleHint(StyleHint stylehint, const QStyleOption *opt = nullptr, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override;
 	void drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const override;
 	void drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const override;
 	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const override;

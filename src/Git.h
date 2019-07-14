@@ -391,7 +391,7 @@ public:
 
 	QList<DiffRaw> diff_raw(QString const &old_id, QString const &new_id);
 
-	static bool isValidID(QString const &s);
+	static bool isValidID(QString const &id);
 
 	QString status();
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);

@@ -46,10 +46,7 @@ using X_ImageViewWidget = ImageViewWidget;
 	FileViewType view_type = FileViewType::None;
 
 public:
-	explicit FileViewWidget(QWidget *parent = 0);
-	~FileViewWidget()
-	{
-	}
+	explicit FileViewWidget(QWidget *parent = nullptr);
 
 	void setTextCodec(QTextCodec *codec);
 
