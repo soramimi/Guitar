@@ -320,12 +320,13 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 			double r = 4;
 			x = pt.x() - r;
 			y = pt.y() - r;
-			SetPen(&pr, item.marker_depth, IsAncestor(item));
 			if (item.resolved) {
 				// ◯
+				SetPen(&pr, item.marker_depth, IsAncestor(item));
 				pr.drawEllipse((int)x, (int)y, int(r * 2), int(r * 2));
 			} else {
 				// ▽
+				SetPen(&pr, item.marker_depth, false);
 				QPainterPath path;
 				path.moveTo(pt.x(), pt.y() + r);
 				path.lineTo(pt.x() - r, pt.y() - r);
