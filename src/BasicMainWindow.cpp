@@ -1197,13 +1197,23 @@ DONE:;
 	}
 }
 
-
-
 bool BasicMainWindow::fetch(GitPtr const &g, bool prune)
 {
 	setPtyCondition(PtyCondition::Fetch);
 	setPtyProcessOk(true);
 	g->fetch(getPtyProcess(), prune);
+	while (1) {
+		if (getPtyProcess()->wait(1)) break;
+		QApplication::processEvents();
+	}
+	return getPtyProcessOk();
+}
+
+bool BasicMainWindow::fetch_tags_f(GitPtr const &g)
+{
+	setPtyCondition(PtyCondition::Fetch);
+	setPtyProcessOk(true);
+	g->fetch_tags_f(getPtyProcess());
 	while (1) {
 		if (getPtyProcess()->wait(1)) break;
 		QApplication::processEvents();

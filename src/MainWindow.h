@@ -136,8 +136,9 @@ private slots:
 	void on_action_edit_tags_triggered();
 	void on_action_exit_triggered();
 	void on_action_explorer_triggered();
-	void on_action_fetch_prune_triggered();
 	void on_action_fetch_triggered();
+	void on_action_fetch_tags_f_triggered();
+	void on_action_fetch_prune_triggered();
 	void on_action_find_next_triggered();
 	void on_action_find_triggered();
 	void on_action_offline_triggered();
@@ -149,9 +150,11 @@ private slots:
 	void on_action_push_u_triggered();
 	void on_action_reflog_triggered();
 	void on_action_repo_checkout_triggered();
+	void on_action_repo_jump_to_head_triggered();
 	void on_action_repo_jump_triggered();
 	void on_action_repositories_panel_triggered();
 	void on_action_repository_property_triggered();
+	void on_action_repository_status_triggered();
 	void on_action_reset_HEAD_1_triggered();
 	void on_action_reset_hard_triggered();
 	void on_action_set_config_user_triggered();
@@ -186,9 +189,9 @@ private slots:
 	void on_toolButton_fetch_clicked();
 	void on_toolButton_pull_clicked();
 	void on_toolButton_push_clicked();
-	void on_toolButton_status_clicked();
 	void on_toolButton_select_all_clicked();
 	void on_toolButton_stage_clicked();
+	void on_toolButton_status_clicked();
 	void on_toolButton_stop_process_clicked();
 	void on_toolButton_terminal_clicked();
 	void on_toolButton_unstage_clicked();
@@ -196,18 +199,11 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
-
-
-	void on_action_repository_status_triggered();
-
-	void on_action_repo_jump_to_head_triggered();
-
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
 	RepositoryItem const *selectedRepositoryItem() const override;
 	void removeSelectedRepositoryFromBookmark(bool ask) override;
-//	void setRemoteMonitoringEnabled(bool enable) override;
 protected slots:
 	void onLogIdle();
 signals:

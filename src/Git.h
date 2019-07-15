@@ -366,6 +366,7 @@ public:
 	void pull(AbstractPtyProcess *pty = nullptr);
 
 	void fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
+	void fetch_tags_f(AbstractPtyProcess *pty);
 
 	QList<Branch> branches();
 

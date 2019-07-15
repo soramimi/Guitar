@@ -280,9 +280,7 @@ void MainWindow::setCurrentLogRow(int row)
 bool MainWindow::event(QEvent *event)
 {
 	QEvent::Type et = event->type();
-	if (et == QEvent::WindowActivate) {
-//		checkRemoteUpdate();
-	} else if (et == QEvent::KeyPress) {
+	if (et == QEvent::KeyPress) {
 		auto *e = dynamic_cast<QKeyEvent *>(event);
 		Q_ASSERT(e);
 		int k = e->key();
@@ -1183,6 +1181,17 @@ void MainWindow::on_action_fetch_triggered()
 	if (isOnlineMode()) {
 		reopenRepository(true, [&](GitPtr g){
 			fetch(g, false);
+		});
+	} else {
+		updateRepository();
+	}
+}
+
+void MainWindow::on_action_fetch_tags_f_triggered()
+{
+	if (isOnlineMode()) {
+		reopenRepository(true, [&](GitPtr g){
+			fetch_tags_f(g);
 		});
 	} else {
 		updateRepository();
@@ -2777,6 +2786,8 @@ void MainWindow::on_action_repo_jump_to_head_triggered()
 void MainWindow::test()
 {
 }
+
+
 
 
 

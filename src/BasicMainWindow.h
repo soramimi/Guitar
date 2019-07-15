@@ -285,6 +285,7 @@ protected:
 
 	void updateCommitGraph();
 	bool fetch(const GitPtr &g, bool prune);
+	bool fetch_tags_f(const GitPtr &g);
 
 protected:
 	virtual void setCurrentLogRow(int row) = 0;

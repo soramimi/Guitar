@@ -983,6 +983,12 @@ void Git::fetch(AbstractPtyProcess *pty, bool prune)
 	git(cmd, true, false, pty);
 }
 
+void Git::fetch_tags_f(AbstractPtyProcess *pty)
+{
+	QString cmd = "fetch --tags -f";
+	git(cmd, true, false, pty);
+}
+
 QStringList Git::make_branch_list_()
 {
 	QStringList list;
