@@ -971,12 +971,12 @@ void Git::unstage(QStringList const &paths)
 
 void Git::pull(AbstractPtyProcess *pty)
 {
-	git("pull --tags", true, false, pty);
+	git("pull", true, false, pty);
 }
 
 void Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	QString cmd = "fetch --tags";
+	QString cmd = "fetch";
 	if (prune) {
 		cmd += " --prune";
 	}
