@@ -38,6 +38,7 @@ Git GUI Client
 ## Binaries
 
 * https://files.soramimi.jp/guitar/
+* [Countinuous build (x86_64.AppImage)](https://github.com/soramimi/Guitar/releases/tag/continuous)
 
 ## Documents
 
