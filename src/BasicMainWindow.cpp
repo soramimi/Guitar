@@ -320,13 +320,33 @@ bool BasicMainWindow::isRepositoryOpened() const
 	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
 
-QList<BasicMainWindow::Label> const *BasicMainWindow::label(int row)
+QList<BasicMainWindow::Label> *BasicMainWindow::label(int row)
 {
 	auto it = getLabelMap()->find(row);
 	if (it != getLabelMap()->end()) {
 		return &it->second;
 	}
 	return nullptr;
+}
+
+QList<BasicMainWindow::Label> BasicMainWindow::sortedLabels(int row) const
+{
+	QList<BasicMainWindow::Label> list;
+	auto const *p = const_cast<BasicMainWindow *>(this)->label(row);
+	if (p && !p->empty()) {
+		list = *p;
+		std::sort(list.begin(), list.end(), [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
+			auto Compare = [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
+				if (l.kind < r.kind) return -1;
+				if (l.kind > r.kind) return 1;
+				if (l.text < r.text) return -1;
+				if (l.text > r.text) return 1;
+				return 0;
+			};
+			return Compare(l, r) < 0;
+		});
+	}
+	return list;
 }
 
 bool BasicMainWindow::saveAs(QString const &id, QString const &dstpath)

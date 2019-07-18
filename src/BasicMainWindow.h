@@ -267,7 +267,7 @@ protected:
 
 	GitHubRepositoryInfo *ptrGitHub();
 
-	std::map<int, QList<Label> > *getLabelMap();
+	std::map<int, QList<Label>> *getLabelMap();
 	void clearLabelMap();
 
 	GitObjectCache *getObjCache();
@@ -317,7 +317,7 @@ public:
 	Git::CommitItem const *commitItem(int row) const;
 	QIcon verifiedIcon(char s) const;
 	virtual QString currentWorkingCopyDir() const;
-	QList<BasicMainWindow::Label> const *label(int row);
+	QList<Label> *label(int row);
 	bool saveAs(QString const &id, QString const &dstpath);
 	bool testRemoteRepositoryValidity(QString const &url);
 	QString defaultWorkingDir() const;
@@ -362,17 +362,18 @@ public:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 
-	virtual bool isOnlineMode() const = 0;
-	virtual int selectedLogIndex() const = 0;
-
 	static QString abbrevCommitID(Git::CommitItem const &commit);
-protected slots:
-	void onAvatarUpdated();
-public:
 	QStringList findGitObject(const QString &id) const;
+
 	void writeLog(const char *ptr, int len);
 	void writeLog(QString const &str);
 	void emitWriteLog(const QByteArray &ba);
+	QList<Label> sortedLabels(int row) const;
+
+	virtual bool isOnlineMode() const = 0;
+	virtual int selectedLogIndex() const = 0;
+protected slots:
+	void onAvatarUpdated();
 public slots:
 	void writeLog_(QByteArray ba);
 signals:

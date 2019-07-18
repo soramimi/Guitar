@@ -1389,6 +1389,18 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a_copy_id_7_letters = menu.addAction(tr("Copy commit id (7 letters)"));
 		QAction *a_copy_id_complete = menu.addAction(tr("Copy commit id (completely)"));
 
+		std::set<QAction *> copy_label_actions;
+		{
+			QList<BasicMainWindow::Label> v = sortedLabels(row);
+			if (!v.isEmpty()) {
+				auto *copy_lebel_menu = menu.addMenu("Copy label");
+				for (BasicMainWindow::Label const &l : v) {
+					QAction *a = copy_lebel_menu->addAction(l.text);
+					copy_label_actions.insert(copy_label_actions.end(), a);
+				}
+			}
+		}
+
 		menu.addSeparator();
 
 		QAction *a_checkout = menu.addAction(tr("Checkout/Branch..."));
@@ -1497,6 +1509,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				reopenRepository(false, [](GitPtr g){
 					g->reset_head1();
 				});
+				return;
+			}
+			if (copy_label_actions.find(a) != copy_label_actions.end()) {
+				QString text = a->text();
+				QApplication::clipboard()->setText(text);
 				return;
 			}
 		}
