@@ -16,6 +16,7 @@
 #include <QProxyStyle>
 #include <QStandardPaths>
 #include <QTranslator>
+#include <signal.h>
 #include <string>
 
 #ifdef Q_OS_WIN
@@ -47,6 +48,15 @@ static bool isHighDpiScalingEnabled()
 
 void setEnvironmentVariable(QString const &name, QString const &value);
 
+void onSigTerm(int)
+{
+	qDebug() << "SIGTERM caught";
+	if (global->mainwindow) {
+		global->mainwindow->close();
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
@@ -57,6 +67,7 @@ int main(int argc, char *argv[])
 
 	ApplicationGlobal g;
 	global = &g;
+	signal(SIGTERM, onSigTerm);
 
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
@@ -143,6 +154,7 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow w;
+	global->mainwindow = &w;
 	global->panel_bg_color = w.palette().color(QPalette::Background);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
@@ -163,6 +175,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return QApplication::exec();
+	int r = QApplication::exec();
+	global->mainwindow = nullptr;
+	return r;
 }
 

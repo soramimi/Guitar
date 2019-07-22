@@ -5,7 +5,10 @@
 #include <QString>
 #include "Theme.h"
 
+class MainWindow;
+
 struct ApplicationGlobal {
+	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
 	QString organization_name;
 	QString application_name;
