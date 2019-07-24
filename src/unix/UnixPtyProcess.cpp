@@ -240,3 +240,9 @@ QString UnixPtyProcess::getMessage() const
 	}
 	return s;
 }
+
+void UnixPtyProcess::readResult(std::vector<char> *out)
+{
+	*out = m->output_vector;
+	m->output_vector.clear();
+}

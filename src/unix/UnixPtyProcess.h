@@ -21,6 +21,7 @@ public:
 	void stop() override;
 	int getExitCode() const override;
 	QString getMessage() const override;
+	void readResult(std::vector<char> *out);
 };
 
 #endif // UNIXPTYPROCESS_H
