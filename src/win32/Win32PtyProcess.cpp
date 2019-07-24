@@ -240,11 +240,6 @@ void Win32PtyProcess::stop()
 	wait();
 }
 
-const std::vector<char> *Win32PtyProcess::result() const
-{
-	return &m->output_vector;
-}
-
 int Win32PtyProcess::getExitCode() const
 {
 	return m->exit_code;
@@ -257,6 +252,12 @@ QString Win32PtyProcess::getMessage() const
 		s = QString::fromUtf8(&m->output_vector[0], m->output_vector.size());
 	}
 	return s;
+}
+
+void Win32PtyProcess::readResult(std::vector<char> *out)
+{
+	*out = m->output_vector;
+	m->output_vector.clear();
 }
 
 

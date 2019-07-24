@@ -24,6 +24,7 @@ public:
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
 	virtual QString getMessage() const = 0;
+	virtual void readResult(std::vector<char> *out) = 0;
 signals:
 	void completed(bool, QVariant);
 };

@@ -442,14 +442,23 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
 		QString id = commit->commit_id;
+		if (id.isEmpty() && !commit->parent_ids.isEmpty()) {
+			id = commit->parent_ids.front();
+		}
 		bool ok = false;
 		setLogEnabled(g, true);
 		if (op == CheckoutDialog::Operation::HeadDetached) {
-			ok = g->git(QString("checkout \"%1\"").arg(id), true);
+			if (!id.isEmpty()) {
+				ok = g->git(QString("checkout \"%1\"").arg(id), true);
+			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
-			ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
+			if (!name.isEmpty() && !id.isEmpty()) {
+				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
+			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
-			ok = g->git(QString("checkout \"%1\"").arg(name), true);
+			if (!name.isEmpty()) {
+				ok = g->git(QString("checkout \"%1\"").arg(name), true);
+			}
 		}
 		if (ok) {
 			openRepository(true);
@@ -1509,7 +1518,8 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 	stopPtyProcess();
 	GitPtr g = git(QString());
 	QString cmd = "ls-remote \"%1\" HEAD";
-	bool f = g->git(cmd.arg(url), false, false, getPtyProcess());
+	cmd = cmd.arg(url);
+	bool f = g->git(cmd, false, false, getPtyProcess());
 	{
 		QTime time;
 		time.start();
@@ -1522,25 +1532,42 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 		}
 		stopPtyProcess();
 	}
-	QString line = g->resultText().trimmed();
-	QString head;
-	int i = line.indexOf('\t');
-	if (i == GIT_ID_LENGTH) {
-		QString id = line.mid(0, i);
-		QString name = line.mid(i + 1);
-		qDebug() << id << name;
-		if (name == "HEAD" && Git::isValidID(id)) {
-			head = id;
+	QString line;
+	{
+		std::vector<char> v;
+		getPtyProcess()->readResult(&v);
+		if (!v.empty()) {
+			line = QString::fromUtf8(&v[0], v.size()).trimmed();
 		}
+	}
+	if (line.isEmpty()) {
+		f = false;
 	}
 	if (f) {
-		qDebug() << "This is a valid repository.";
-		if (head.isEmpty()) {
-			qDebug() << "But HEAD not found";
+		int i = -1;
+		for (int j = 0; j < line.size(); j++) {
+			ushort c = line.utf16()[j];
+			if (QChar(c).isSpace()) {
+				i = j;
+				break;
+			}
 		}
-		return true;
+		if (i == GIT_ID_LENGTH) {
+			QString id = line.mid(0, i);
+			QString name = line.mid(i + 1).trimmed();
+			QString head;
+			qDebug() << id << name;
+			if (name == "HEAD" && Git::isValidID(id)) {
+				head = id;
+			}
+			qDebug() << "This is a valid repository.";
+			if (head.isEmpty()) {
+				qDebug() << "But HEAD not found";
+			}
+			return true;
+		}
 	}
-	qDebug() << "It is not a repository.";
+	qDebug() << "This is not a repository.";
 	return false;
 }
 

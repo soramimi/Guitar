@@ -1386,8 +1386,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QMenu menu;
 
-		QAction *a_copy_id_7_letters = menu.addAction(tr("Copy commit id (7 letters)"));
-		QAction *a_copy_id_complete = menu.addAction(tr("Copy commit id (completely)"));
+		QAction *a_copy_id_7letters = is_valid_commit_id ? menu.addAction(tr("Copy commit id (7 letters)")) : nullptr;
+		QAction *a_copy_id_complete = is_valid_commit_id ? menu.addAction(tr("Copy commit id (completely)")) : nullptr;
 
 		std::set<QAction *> copy_label_actions;
 		{
@@ -1453,7 +1453,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
-			if (a == a_copy_id_7_letters) {
+			if (a == a_copy_id_7letters) {
 				qApp->clipboard()->setText(commit->commit_id.mid(0, 7));
 				return;
 			}

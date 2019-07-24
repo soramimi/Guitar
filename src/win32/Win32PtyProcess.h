@@ -18,16 +18,17 @@ protected:
 	void run();
 public:
 	Win32PtyProcess();
-	~Win32PtyProcess();
-	bool isRunning() const;
-	int readOutput(char *dstptr, int maxlen);
-	void writeInput(char const *ptr, int len);
-	void start(QString const &cmdline, QVariant const &userdata);
-	bool wait(unsigned long time = ULONG_MAX);
-	void stop();
-	std::vector<char> const *result() const;
-	int getExitCode() const;
-	QString getMessage() const;
+	~Win32PtyProcess() override;
+	bool isRunning() const override;
+	int readOutput(char *dstptr, int maxlen) override;
+	void writeInput(char const *ptr, int len) override;
+	void start(QString const &cmdline, QVariant const &userdata) override;
+	bool wait(unsigned long time = ULONG_MAX) override;
+	void stop() override;
+	int getExitCode() const override;
+	QString getMessage() const override;
+	void clearResult();
+	void readResult(std::vector<char> *out) override;
 };
 
 
