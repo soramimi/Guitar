@@ -1532,6 +1532,9 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 		}
 		stopPtyProcess();
 	}
+	if (f) {
+		f = (getPtyProcess()->getExitCode() == 0);
+	}
 	QString line;
 	{
 		std::vector<char> v;
@@ -1540,10 +1543,8 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 			line = QString::fromUtf8(&v[0], v.size()).trimmed();
 		}
 	}
-	if (line.isEmpty()) {
-		f = false;
-	}
 	if (f) {
+		qDebug() << "This is a valid repository.";
 		int i = -1;
 		for (int j = 0; j < line.size(); j++) {
 			ushort c = line.utf16()[j];
@@ -1552,20 +1553,19 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 				break;
 			}
 		}
+		QString head;
 		if (i == GIT_ID_LENGTH) {
 			QString id = line.mid(0, i);
 			QString name = line.mid(i + 1).trimmed();
-			QString head;
 			qDebug() << id << name;
 			if (name == "HEAD" && Git::isValidID(id)) {
 				head = id;
 			}
-			qDebug() << "This is a valid repository.";
-			if (head.isEmpty()) {
-				qDebug() << "But HEAD not found";
-			}
-			return true;
 		}
+		if (head.isEmpty()) {
+			qDebug() << "But HEAD not found";
+		}
+		return true;
 	}
 	qDebug() << "This is not a repository.";
 	return false;
