@@ -93,7 +93,7 @@ set(Guitar_SOURCES
 	src/MaximizeButton.cpp
 	src/MemoryReader.cpp
 	src/MenuButton.cpp
-	src/MergeBranchDialog.cpp
+	src/MergeDialog.cpp
 	src/MyImageViewWidget.cpp
 	src/MyProcess.cpp
 	src/MySettings.cpp
@@ -209,7 +209,7 @@ set(Guitar_HEADERS
 	src/MaximizeButton.h
 	src/MemoryReader.h
 	src/MenuButton.h
-	src/MergeBranchDialog.h
+	src/MergeDialog.h
 	src/MyImageViewWidget.h
 	src/MyProcess.h
 	src/MySettings.h
@@ -325,7 +325,7 @@ set(Guitar_UIS
 	src/JumpDialog.ui
 	src/LineEditDialog.ui
 	src/MainWindow.ui
-	src/MergeBranchDialog.ui
+	src/MergeDialog.ui
 	src/ObjectBrowserDialog.ui
 	src/PushDialog.ui
 	src/ReflogWindow.ui

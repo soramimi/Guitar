@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MergeBranchDialog</class>
- <widget class="QDialog" name="MergeBranchDialog">
+ <class>MergeDialog</class>
+ <widget class="QDialog" name="MergeDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>430</width>
-    <height>252</height>
+    <height>274</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -94,7 +94,7 @@
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>MergeBranchDialog</receiver>
+   <receiver>MergeDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -110,7 +110,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>MergeBranchDialog</receiver>
+   <receiver>MergeDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

@@ -75,9 +75,10 @@ private:
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
 	void revertCommit();
-	void cherrypick(Git::CommitItem const *commit);
+	void mergeBranch(const QString &commit);
 	void mergeBranch(Git::CommitItem const *commit);
 	void rebaseBranch(Git::CommitItem const *commit);
+	void cherrypick(Git::CommitItem const *commit);
 	void detectGitServerType(const GitPtr &g);
 	void setRemoteOnline(bool f, bool update_ui, bool save);
 	void startTimers();

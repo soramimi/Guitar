@@ -25,7 +25,7 @@
 #include "TextEditDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "MergeBranchDialog.h"
+#include "MergeDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -2302,15 +2302,21 @@ void MainWindow::on_action_repo_jump_triggered()
 	}
 }
 
-void MainWindow::mergeBranch(Git::CommitItem const *commit)
+void MainWindow::mergeBranch(QString const &commit)
 {
-	if (!commit) return;
+	if (commit.isEmpty()) return;
 
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->mergeBranch(commit->commit_id);
+	g->mergeBranch(commit);
 	openRepository(true);
+}
+
+void MainWindow::mergeBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+	mergeBranch(commit->commit_id);
 }
 
 void MainWindow::rebaseBranch(Git::CommitItem const *commit)
@@ -2803,15 +2809,21 @@ void MainWindow::on_action_repo_jump_to_head_triggered()
 
 void MainWindow::test()
 {
+	// wip: MergeDialog
+
+	if (isThereUncommitedChanges()) return;
+
 	int row = selectedLogIndex();
 	Git::CommitItem const *commit = commitItem(row);
 	if (commit && Git::isValidID(commit->commit_id)) {
+
+		static const char MergeFastForward[] = "MergeFastForward";
 
 		QString fastforward;
 		{
 			MySettings s;
 			s.beginGroup("Behavior");
-			fastforward = s.value("FastForward").toString();
+			fastforward = s.value(MergeFastForward).toString();
 			s.endGroup();
 		}
 
@@ -2831,16 +2843,17 @@ void MainWindow::test()
 
 		QString branch_name = currentBranchName();
 
-		MergeBranchDialog dlg(fastforward, labels, branch_name, this);
+		MergeDialog dlg(fastforward, labels, branch_name, this);
 		if (dlg.exec() == QDialog::Accepted) {
 			fastforward = dlg.getFastForwardPolicy();
 			{
 				MySettings s;
 				s.beginGroup("Behavior");
-				s.setValue("FastForward", fastforward);
+				s.setValue(MergeFastForward, fastforward);
 				s.endGroup();
 			}
-
+			QString from = dlg.mergeFrom();
+			mergeBranch(from);
 		}
 	}
 }

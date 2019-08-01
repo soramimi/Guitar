@@ -1,9 +1,9 @@
-#include "MergeBranchDialog.h"
-#include "ui_MergeBranchDialog.h"
+#include "MergeDialog.h"
+#include "ui_MergeDialog.h"
 
-MergeBranchDialog::MergeBranchDialog(QString const &fastforward, const std::vector<QString> &labels, const QString curr_branch_name, QWidget *parent)
+MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> &labels, const QString curr_branch_name, QWidget *parent)
 	: QDialog(parent)
-	, ui(new Ui::MergeBranchDialog)
+	, ui(new Ui::MergeDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -21,19 +21,19 @@ MergeBranchDialog::MergeBranchDialog(QString const &fastforward, const std::vect
 	}
 }
 
-MergeBranchDialog::~MergeBranchDialog()
+MergeDialog::~MergeDialog()
 {
 	delete ui;
 }
 
-QString MergeBranchDialog::getFastForwardPolicy() const
+QString MergeDialog::getFastForwardPolicy() const
 {
 	if (ui->radioButton_force_ff) return "yes";
 	if (ui->radioButton_force_no_ff) return "no";
 	return "default";
 }
 
-void MergeBranchDialog::setFastForwardPolicy(QString const &ff)
+void MergeDialog::setFastForwardPolicy(QString const &ff)
 {
 	if (ff.compare("yes", Qt::CaseInsensitive) == 0) {
 		ui->radioButton_force_ff->click();
@@ -46,7 +46,7 @@ void MergeBranchDialog::setFastForwardPolicy(QString const &ff)
 	ui->radioButton_ff_default->click();
 }
 
-QString MergeBranchDialog::mergeFrom() const
+QString MergeDialog::mergeFrom() const
 {
 	QListWidgetItem *p = ui->listWidget_from->currentItem();
 	return p ? p->text() : QString();
