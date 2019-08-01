@@ -132,7 +132,6 @@ SOURCES += \
     src/MainWindow.cpp \
     src/MaximizeButton.cpp \
     src/MemoryReader.cpp \
-    src/MergeBranchDialog.cpp \
     src/MyImageViewWidget.cpp \
     src/MyProcess.cpp \
     src/MySettings.cpp \
@@ -203,7 +202,8 @@ SOURCES += \
     src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
     src/gpg.cpp \
     src/CloneFromGitHubDialog.cpp \
-	src/ObjectBrowserDialog.cpp
+	src/ObjectBrowserDialog.cpp \
+    src/MergeBranchDialog.cpp
 
 HEADERS  += \
     src/AboutDialog.h \
@@ -246,7 +246,6 @@ HEADERS  += \
     src/MainWindow.h \
     src/MaximizeButton.h \
     src/MemoryReader.h \
-    src/MergeBranchDialog.h \
     src/MyImageViewWidget.h \
     src/MyProcess.h \
     src/MySettings.h \
@@ -318,7 +317,8 @@ HEADERS  += \
     src/gpg.h \
     src/platform.h \
     src/CloneFromGitHubDialog.h \
-	src/ObjectBrowserDialog.h
+	src/ObjectBrowserDialog.h \
+    src/MergeBranchDialog.h
 
 HEADERS += src/version.h
 
@@ -340,7 +340,6 @@ FORMS    += \
     src/FindCommitDialog.ui \
     src/JumpDialog.ui \
     src/MainWindow.ui \
-    src/MergeBranchDialog.ui \
     src/PushDialog.ui \
     src/RepositoryPropertyDialog.ui \
     src/SearchFromGitHubDialog.ui \
@@ -372,7 +371,8 @@ FORMS    += \
     src/SettingProgramsForm.ui \
     src/WelcomeWizardDialog.ui \
     src/CloneFromGitHubDialog.ui \
-    src/ObjectBrowserDialog.ui
+    src/ObjectBrowserDialog.ui \
+    src/MergeBranchDialog.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

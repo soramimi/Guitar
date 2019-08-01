@@ -6,75 +6,88 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>430</width>
+    <height>252</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Merge</string>
   </property>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>20</y>
-     <width>50</width>
-     <height>12</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Current branch :</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_current_branch">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>20</y>
-     <width>50</width>
-     <height>12</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="comboBox_branches">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>70</y>
-     <width>191</width>
-     <height>22</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>170</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>OK</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_2">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>170</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Cancel</string>
-   </property>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Fast Forwarding</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QRadioButton" name="radioButton_ff_default">
+        <property name="text">
+         <string>Default</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_force_ff">
+        <property name="text">
+         <string>Force fast forward</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_force_no_ff">
+        <property name="text">
+         <string>Force no fast forward</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>From</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QListWidget" name="listWidget_from"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton">
+       <property name="text">
+        <string>OK</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections>
@@ -85,12 +98,12 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>187</y>
+     <x>174</x>
+     <y>229</y>
     </hint>
     <hint type="destinationlabel">
-     <x>134</x>
-     <y>183</y>
+     <x>153</x>
+     <y>228</y>
     </hint>
    </hints>
   </connection>
@@ -101,12 +114,12 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>315</x>
-     <y>179</y>
+     <x>287</x>
+     <y>229</y>
     </hint>
     <hint type="destinationlabel">
-     <x>284</x>
-     <y>188</y>
+     <x>327</x>
+     <y>233</y>
     </hint>
    </hints>
   </connection>

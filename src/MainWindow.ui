@@ -1015,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>18</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1076,6 +1076,7 @@
      <addaction name="action_stash_drop"/>
     </widget>
     <addaction name="action_repository_status"/>
+    <addaction name="action_repo_merge"/>
     <addaction name="action_commit"/>
     <addaction name="separator"/>
     <addaction name="action_repo_jump"/>
@@ -1628,6 +1629,11 @@
    </property>
    <property name="toolTip">
     <string>Fetch tags -f</string>
+   </property>
+  </action>
+  <action name="action_repo_merge">
+   <property name="text">
+    <string>Merge...</string>
    </property>
   </action>
  </widget>

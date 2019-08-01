@@ -2,7 +2,6 @@
 #define MERGEBRANCHDIALOG_H
 
 #include <QDialog>
-#include "Git.h"
 
 namespace Ui {
 class MergeBranchDialog;
@@ -11,10 +10,12 @@ class MergeBranchDialog;
 class MergeBranchDialog : public QDialog {
 	Q_OBJECT
 public:
-	explicit MergeBranchDialog(QWidget *parent, QList<Git::Branch> const &branches);
-	~MergeBranchDialog() override;
+	explicit MergeBranchDialog(const QString &fastforward, std::vector<QString> const &labels, QString const curr_branch_name, QWidget *parent = nullptr);
+	~MergeBranchDialog();
 
-	QString branchName() const;
+	QString getFastForwardPolicy() const;
+	void setFastForwardPolicy(const QString &ff);
+	QString mergeFrom() const;
 private:
 	Ui::MergeBranchDialog *ui;
 };

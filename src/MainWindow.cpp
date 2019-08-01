@@ -25,6 +25,7 @@
 #include "TextEditDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "MergeBranchDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -2802,6 +2803,46 @@ void MainWindow::on_action_repo_jump_to_head_triggered()
 
 void MainWindow::test()
 {
+	int row = selectedLogIndex();
+	Git::CommitItem const *commit = commitItem(row);
+	if (commit && Git::isValidID(commit->commit_id)) {
+
+		QString fastforward;
+		{
+			MySettings s;
+			s.beginGroup("Behavior");
+			fastforward = s.value("FastForward").toString();
+			s.endGroup();
+		}
+
+		std::vector<QString> labels;
+		{
+			int row = selectedLogIndex();
+			QList<Label> *v = label(row);
+			for (Label const &label : *v) {
+				if (label.kind == Label::LocalBranch) {
+					labels.push_back(label.text);
+				}
+			}
+		}
+		std::sort(labels.begin(), labels.end());
+
+		labels.push_back(commit->commit_id);
+
+		QString branch_name = currentBranchName();
+
+		MergeBranchDialog dlg(fastforward, labels, branch_name, this);
+		if (dlg.exec() == QDialog::Accepted) {
+			fastforward = dlg.getFastForwardPolicy();
+			{
+				MySettings s;
+				s.beginGroup("Behavior");
+				s.setValue("FastForward", fastforward);
+				s.endGroup();
+			}
+
+		}
+	}
 }
 
 
