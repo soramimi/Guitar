@@ -2830,9 +2830,9 @@ void MainWindow::test()
 		std::vector<QString> labels;
 		{
 			int row = selectedLogIndex();
-			QList<Label> *v = label(row);
+			QList<Label> const *v = label(row);
 			for (Label const &label : *v) {
-				if (label.kind == Label::LocalBranch) {
+				if (label.kind == Label::LocalBranch || label.kind == Label::Tag) {
 					labels.push_back(label.text);
 				}
 			}

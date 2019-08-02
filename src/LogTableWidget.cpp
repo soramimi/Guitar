@@ -103,7 +103,7 @@ private:
 			while (i > 0) {
 				i--;
 				BasicMainWindow::Label const &label = labels->at(i);
-				QString text = misc::abbrevBranchName(label.text);
+				QString text = misc::abbrevBranchName(label.text + label.info);
 				int w = fm.size(0, text).width() + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);

@@ -3,6 +3,8 @@
 
 #include <QDialog>
 
+class QListWidgetItem;
+
 namespace Ui {
 class MergeDialog;
 }
@@ -16,6 +18,9 @@ public:
 	QString getFastForwardPolicy() const;
 	void setFastForwardPolicy(const QString &ff);
 	QString mergeFrom() const;
+private slots:
+	void on_listWidget_from_itemDoubleClicked(QListWidgetItem *item);
+
 private:
 	Ui::MergeDialog *ui;
 };

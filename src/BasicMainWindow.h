@@ -35,6 +35,7 @@ public:
 		};
 		int kind;
 		QString text;
+		QString info;
 		Label(int kind = LocalBranch)
 			: kind(kind)
 		{
@@ -268,6 +269,7 @@ protected:
 	GitHubRepositoryInfo *ptrGitHub();
 
 	std::map<int, QList<Label>> *getLabelMap();
+	const std::map<int, QList<Label>> *getLabelMap() const;
 	void clearLabelMap();
 
 	GitObjectCache *getObjCache();
@@ -317,7 +319,7 @@ public:
 	Git::CommitItem const *commitItem(int row) const;
 	QIcon verifiedIcon(char s) const;
 	virtual QString currentWorkingCopyDir() const;
-	QList<Label> *label(int row);
+	const QList<Label> *label(int row) const;
 	bool saveAs(QString const &id, QString const &dstpath);
 	bool testRemoteRepositoryValidity(QString const &url);
 	QString defaultWorkingDir() const;

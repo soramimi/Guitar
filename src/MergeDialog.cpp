@@ -12,7 +12,7 @@ MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> 
 
 	setFastForwardPolicy(fastforward);
 
-	for (int i = 0; i < labels.size(); i++) {
+	for (size_t i = 0; i < labels.size(); i++) {
 		QString const &label = labels[i];
 		ui->listWidget_from->addItem(label);
 		if (label == curr_branch_name) {
@@ -52,3 +52,9 @@ QString MergeDialog::mergeFrom() const
 	return p ? p->text() : QString();
 }
 
+
+void MergeDialog::on_listWidget_from_itemDoubleClicked(QListWidgetItem *item)
+{
+	(void)item;
+	done(QDialog::Accepted);
+}

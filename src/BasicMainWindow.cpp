@@ -320,7 +320,7 @@ bool BasicMainWindow::isRepositoryOpened() const
 	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
 
-QList<BasicMainWindow::Label> *BasicMainWindow::label(int row)
+QList<BasicMainWindow::Label> const *BasicMainWindow::label(int row) const
 {
 	auto it = getLabelMap()->find(row);
 	if (it != getLabelMap()->end()) {
@@ -951,6 +951,11 @@ GitHubRepositoryInfo *BasicMainWindow::ptrGitHub()
 }
 
 std::map<int, QList<BasicMainWindow::Label>> *BasicMainWindow::getLabelMap()
+{
+	return &m->label_map;
+}
+
+std::map<int, QList<BasicMainWindow::Label>> const *BasicMainWindow::getLabelMap() const
 {
 	return &m->label_map;
 }
@@ -2236,10 +2241,10 @@ QString BasicMainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Labe
 				label.text = "remotes" / b.remote / label.text;
 			}
 			if (b.ahead > 0) {
-				label.text += tr(", %1 ahead").arg(b.ahead);
+				label.info += tr(", %1 ahead").arg(b.ahead);
 			}
 			if (b.behind > 0) {
-				label.text += tr(", %1 behind").arg(b.behind);
+				label.info += tr(", %1 behind").arg(b.behind);
 			}
 			message_ex += " {" + label.text + '}';
 			if (label_list) label_list->push_back(label);
