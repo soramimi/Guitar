@@ -324,7 +324,7 @@ public:
 	void addWorkingCopyDir(const QString &dir, bool open);
 	bool queryCommit(QString const &id, Git::CommitItem *out);
 	QAction *addMenuActionProperty(QMenu *menu);
-	void checkout(QWidget *parent, Git::CommitItem const *commit);
+	void checkout(QWidget *parent, Git::CommitItem const *commit, std::function<void()> accepted_callback = nullptr);
 	void jumpToCommit(QString id);
 	void execCommitViewWindow(Git::CommitItem const *commit);
 	void execCommitExploreWindow(QWidget *parent, Git::CommitItem const *commit);

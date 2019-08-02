@@ -400,7 +400,7 @@ QAction *BasicMainWindow::addMenuActionProperty(QMenu *menu)
 	return menu->addAction(tr("&Property"));
 }
 
-void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
+void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit, std::function<void()> accepted_callback)
 {
 	if (!commit) return;
 
@@ -439,6 +439,9 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit)
 
 	CheckoutDialog dlg(parent, tags, all_local_branches, local_branches, remote_branches);
 	if (dlg.exec() == QDialog::Accepted) {
+		if (accepted_callback) {
+			accepted_callback();
+		}
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
 		QString id = commit->commit_id;

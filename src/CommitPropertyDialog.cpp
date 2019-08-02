@@ -149,7 +149,7 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwindow()->checkout(this, &m->commit);
+	mainwindow()->checkout(this, &m->commit, [&](){ hide(); });
 	done(QDialog::Rejected);
 }
 
