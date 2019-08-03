@@ -12,13 +12,15 @@ MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> 
 
 	setFastForwardPolicy(fastforward);
 
+	int select = 0;
 	for (size_t i = 0; i < labels.size(); i++) {
 		QString const &label = labels[i];
 		ui->listWidget_from->addItem(label);
 		if (label == curr_branch_name) {
-			ui->listWidget_from->setCurrentRow(i);
+			select = i;
 		}
 	}
+	ui->listWidget_from->setCurrentRow(select);
 }
 
 MergeDialog::~MergeDialog()
@@ -28,22 +30,33 @@ MergeDialog::~MergeDialog()
 
 QString MergeDialog::getFastForwardPolicy() const
 {
-	if (ui->radioButton_force_ff) return "yes";
-	if (ui->radioButton_force_no_ff) return "no";
+	if (ui->radioButton_ff_only->isChecked()) return "only";
+	if (ui->radioButton_ff_no->isChecked()) return "no";
 	return "default";
 }
 
 void MergeDialog::setFastForwardPolicy(QString const &ff)
 {
-	if (ff.compare("yes", Qt::CaseInsensitive) == 0) {
-		ui->radioButton_force_ff->click();
+	if (ff.compare("only", Qt::CaseInsensitive) == 0) {
+		ui->radioButton_ff_only->click();
 		return;
 	}
 	if (ff.compare("no", Qt::CaseInsensitive) == 0) {
-		ui->radioButton_force_no_ff->click();
+		ui->radioButton_ff_no->click();
 		return;
 	}
 	ui->radioButton_ff_default->click();
+}
+
+Git::MergeFastForward MergeDialog::ff(QString const &ff)
+{
+	if (ff.compare("only", Qt::CaseInsensitive) == 0) {
+		return Git::MergeFastForward::Only;
+	}
+	if (ff.compare("no", Qt::CaseInsensitive) == 0) {
+		return Git::MergeFastForward::No;
+	}
+	return Git::MergeFastForward::Default;
 }
 
 QString MergeDialog::mergeFrom() const

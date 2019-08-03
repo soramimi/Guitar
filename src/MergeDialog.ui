@@ -23,21 +23,21 @@
       <item>
        <widget class="QRadioButton" name="radioButton_ff_default">
         <property name="text">
-         <string>Default</string>
+         <string>Default (--ff)</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_force_ff">
+       <widget class="QRadioButton" name="radioButton_ff_no">
         <property name="text">
-         <string>Force fast forward</string>
+         <string>No fast forward (--no-ff)</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_force_no_ff">
+       <widget class="QRadioButton" name="radioButton_ff_only">
         <property name="text">
-         <string>Force no fast forward</string>
+         <string>Fast forward only (--ff-only)</string>
         </property>
        </widget>
       </item>
@@ -89,6 +89,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>radioButton_ff_default</tabstop>
+  <tabstop>radioButton_ff_no</tabstop>
+  <tabstop>radioButton_ff_only</tabstop>
+  <tabstop>listWidget_from</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_2</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

@@ -2246,7 +2246,7 @@ QString BasicMainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Labe
 			if (b.behind > 0) {
 				label.info += tr(", %1 behind").arg(b.behind);
 			}
-			message_ex += " {" + label.text + '}';
+			message_ex += " {" + label.text + label.info + '}';
 			if (label_list) label_list->push_back(label);
 		}
 	}

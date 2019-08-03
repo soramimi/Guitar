@@ -1,6 +1,7 @@
 #ifndef MERGEDIALOG_H
 #define MERGEDIALOG_H
 
+#include "Git.h"
 #include <QDialog>
 
 class QListWidgetItem;
@@ -18,6 +19,7 @@ public:
 	QString getFastForwardPolicy() const;
 	void setFastForwardPolicy(const QString &ff);
 	QString mergeFrom() const;
+	static Git::MergeFastForward ff(const QString &ff);
 private slots:
 	void on_listWidget_from_itemDoubleClicked(QListWidgetItem *item);
 

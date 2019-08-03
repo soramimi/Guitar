@@ -75,8 +75,8 @@ private:
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
 	void revertCommit();
-	void mergeBranch(const QString &commit);
-	void mergeBranch(Git::CommitItem const *commit);
+	void mergeBranch(const QString &commit, Git::MergeFastForward ff);
+	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff);
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
 	void detectGitServerType(const GitPtr &g);

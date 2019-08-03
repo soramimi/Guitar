@@ -217,6 +217,12 @@ public:
 		Tracked_ = 0xf0000000
 	};
 
+	enum class MergeFastForward {
+		Default,
+		No,
+		Only,
+	};
+
 	class FileStatus {
 	public:
 		struct Data {
@@ -402,7 +408,7 @@ public:
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
-	void mergeBranch(QString const &name);
+	void mergeBranch(QString const &name, MergeFastForward ff);
 	void rebaseBranch(QString const &name);
 	static bool isValidWorkingCopy(QString const &dir);
 	QString diff_to_file(QString const &old_id, QString const &path);

@@ -1483,7 +1483,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_merge) {
-				mergeBranch(commit);
+				mergeBranch(commit, Git::MergeFastForward::Default);
 				return;
 			}
 			if (a == a_rebase) {
@@ -2302,21 +2302,21 @@ void MainWindow::on_action_repo_jump_triggered()
 	}
 }
 
-void MainWindow::mergeBranch(QString const &commit)
+void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff)
 {
 	if (commit.isEmpty()) return;
 
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->mergeBranch(commit);
+	g->mergeBranch(commit, ff);
 	openRepository(true);
 }
 
-void MainWindow::mergeBranch(Git::CommitItem const *commit)
+void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff)
 {
 	if (!commit) return;
-	mergeBranch(commit->commit_id);
+	mergeBranch(commit->commit_id, ff);
 }
 
 void MainWindow::rebaseBranch(Git::CommitItem const *commit)
@@ -2853,7 +2853,7 @@ void MainWindow::test()
 				s.endGroup();
 			}
 			QString from = dlg.mergeFrom();
-			mergeBranch(from);
+			mergeBranch(from, MergeDialog::ff(fastforward));
 		}
 	}
 }

@@ -1015,9 +1015,21 @@ void Git::cherrypick(QString const &name)
 	git("cherry-pick " + name);
 }
 
-void Git::mergeBranch(QString const &name)
+void Git::mergeBranch(QString const &name, MergeFastForward ff)
 {
-	git("merge " + name);
+	QString cmd = "merge ";
+	switch (ff) {
+	case MergeFastForward::No:
+		cmd += "--no-ff ";
+		break;
+	case MergeFastForward::Only:
+		cmd += "--ff-only ";
+		break;
+	default:
+		cmd += "--ff ";
+		break;
+	}
+	git(cmd + name);
 }
 
 void Git::rebaseBranch(QString const &name)
