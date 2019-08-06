@@ -4,9 +4,9 @@
 #include "ConfigSigningDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key) :
-	QDialog(parent),
-	ui(new Ui::CommitDialog)
+CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key)
+	: QDialog(parent)
+	, ui(new Ui::CommitDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

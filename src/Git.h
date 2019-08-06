@@ -37,7 +37,8 @@ struct TreeLine {
 struct NamedCommitItem {
 	enum class Type {
 		None,
-		Branch,
+		BranchLocal,
+		BranchRemote,
 		Tag,
 	};
 	Type type = Type::None;
@@ -316,7 +317,6 @@ private:
 	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
 	QString encodeQuotedText(QString const &str);
-	QStringList refs();
 public:
 	Git(Context const &cx, QString const &repodir);
 	Git(Git &&r) = delete;
@@ -417,6 +417,7 @@ public:
 	GitPtr dup() const;
 	QString rev_parse(QString const &name);
 	QList<Tag> tags();
+	QList<Tag> tags2();
 	bool tag(QString const &name, QString const &id = QString());
 	void delete_tag(QString const &name, bool remote);
 	void setRemoteURL(QString const &name, QString const &url);

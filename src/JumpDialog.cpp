@@ -24,10 +24,12 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 
 	for (NamedCommitItem const &item : items) {
 		NamedCommitItem newitem = item;
-		QString name = newitem.name;
-		QString remote = newitem.remote;
-		if (!remote.isEmpty()) {
-			newitem.name = "remotes" / remote / name;
+		if (newitem.type == NamedCommitItem::Type::BranchRemote) {
+			if (!newitem.remote.isEmpty()) {
+				newitem.name = "remotes" / newitem.remote / newitem.name;
+			}
+		} else if (newitem.type == NamedCommitItem::Type::Tag) {
+			newitem.name = "tags" / newitem.name;
 		}
 		m->items.push_back(newitem);
 	}
@@ -74,12 +76,13 @@ void JumpDialog::sort(NamedCommitList *items)
 {
 	std::sort(items->begin(), items->end(), [](NamedCommitItem const &l, NamedCommitItem const &r){
 		auto Compare = [](NamedCommitItem const &l, NamedCommitItem const &r){
-			int i;
-			i = l.remote.compare(r.remote, Qt::CaseInsensitive);
-			if (i == 0) {
-				i = l.name.compare(r.name, Qt::CaseInsensitive);
+			if (l.type < r.type) return -1;
+			if (l.type > r.type) return 1;
+			if (l.type == NamedCommitItem::Type::BranchRemote) {
+				int i = l.remote.compare(r.remote, Qt::CaseInsensitive);
+				if (i != 0) return i;
 			}
-			return i;
+			return l.name.compare(r.name, Qt::CaseInsensitive);
 		};
 		return Compare(l, r) < 0;
 	});

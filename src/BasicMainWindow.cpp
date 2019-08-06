@@ -14,7 +14,6 @@
 #include "FileUtil.h"
 #include "Git.h"
 #include "GitDiff.h"
-#include "JumpDialog.h"
 #include "MemoryReader.h"
 #include "MySettings.h"
 #include "PushDialog.h"
@@ -418,21 +417,19 @@ void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit, s
 			if (item.id == commit->commit_id) {
 				if (item.type == NamedCommitItem::Type::Tag) {
 					tags.push_back(name);
-				} else if (item.type == NamedCommitItem::Type::Branch) {
+				} else if (item.type == NamedCommitItem::Type::BranchLocal || item.type == NamedCommitItem::Type::BranchRemote) {
 					int i = name.lastIndexOf('/');
 					if (i < 0 && name == "HEAD") continue;
 					if (i > 0 && name.mid(i + 1) == "HEAD") continue;
-					if (item.remote.isNull()) {
+					if (item.type == NamedCommitItem::Type::BranchLocal) {
 						local_branches.push_back(name);
-					} else {
+					} else if (item.type == NamedCommitItem::Type::BranchRemote) {
 						remote_branches.push_back(name);
 					}
 				}
 			}
-			if (item.type == NamedCommitItem::Type::Branch) {
-				if (item.remote.isNull()) {
-					all_local_branches.push_back(name);
-				}
+			if (item.type == NamedCommitItem::Type::BranchLocal) {
+				all_local_branches.push_back(name);
 			}
 		}
 	}
@@ -2789,8 +2786,16 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 					if (!b.remote.isEmpty()) continue;
 				}
 				NamedCommitItem item;
-				item.type = NamedCommitItem::Type::Branch;
-				item.remote = b.remote;
+				if (b.remote.isEmpty()) {
+					if (b.name == "HEAD") {
+						item.type = NamedCommitItem::Type::None;
+					} else {
+						item.type = NamedCommitItem::Type::BranchLocal;
+					}
+				} else {
+					item.type = NamedCommitItem::Type::BranchRemote;
+					item.remote = b.remote;
+				}
 				item.name = b.name;
 				item.id = b.id;
 				items.push_back(item);
@@ -2805,6 +2810,9 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 				item.type = NamedCommitItem::Type::Tag;
 				item.name = t.name;
 				item.id = t.id;
+				if (item.name.startsWith("refs/tags/")) {
+					item.name = item.name.mid(10);
+				}
 				items.push_back(item);
 			}
 		}
