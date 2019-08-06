@@ -1015,6 +1015,26 @@ void Git::cherrypick(QString const &name)
 	git("cherry-pick " + name);
 }
 
+QString Git::getCherryPicking() const
+{
+	QString dir = workingRepositoryDir();
+	QString path = dir / ".git/CHERRY_PICK_HEAD";
+	QFile file(path);
+	if (file.open(QFile::ReadOnly)) {
+		QString line = QString::fromLatin1(file.readLine()).trimmed();
+		if (isValidID(line)) {
+			return line;
+		}
+	}
+	return QString();
+}
+
+QString Git::getMessage(QString const &id)
+{
+	git("show --no-patch --pretty=%s " + id);
+	return resultText().trimmed();
+}
+
 void Git::mergeBranch(QString const &name, MergeFastForward ff)
 {
 	QString cmd = "merge ";

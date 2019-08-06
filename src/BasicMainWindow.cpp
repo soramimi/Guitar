@@ -2362,6 +2362,17 @@ void BasicMainWindow::commit(bool amend)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
+	QString message;
+
+	if (amend) {
+		message = getLogs()[0].message;
+	} else {
+		QString id = g->getCherryPicking();
+		if (Git::isValidID(id)) {
+			message = g->getMessage(id);
+		}
+	}
+
 	while (1) {
 		Git::User user = g->getUser(Git::Source::Default);
 		QString sign_id = g->signingKey(Git::Source::Default);
@@ -2376,9 +2387,7 @@ void BasicMainWindow::commit(bool amend)
 			}
 		}
 		CommitDialog dlg(this, currentRepositoryName(), user, key);
-		if (amend) {
-			dlg.setText(getLogs()[0].message);
-		}
+		dlg.setText(message);
 		if (dlg.exec() == QDialog::Accepted) {
 			QString text = dlg.text();
 			if (text.isEmpty()) {

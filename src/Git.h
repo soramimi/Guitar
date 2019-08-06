@@ -444,6 +444,9 @@ public:
 	QString objectType(QString const &id);
 	bool rm_cached(QString const &file);
 	void cherrypick(QString const &name);
+	QString getCherryPicking() const;
+
+	QString getMessage(const QString &id);
 
 	struct ReflogItem {
 		QString id;
@@ -485,6 +488,7 @@ public:
 	bool stash();
 	bool stash_apply();
 	bool stash_drop();
+
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
