@@ -96,7 +96,7 @@ BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QLis
 		SetItem(item);
 
 		item = NewItem(QString::number(blame.line_number));
-		item->setTextAlignment(Qt::AlignRight);
+		item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 		SetItem(item);
 
 		item = NewItem(blame.text);
@@ -123,126 +123,40 @@ MainWindow *BlameWindow::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-namespace {
-
-bool parseBlameHeader(char const *ptr, char const *end, BlameItem *out)
-{
-	*out = BlameItem();
-
-	auto SkipSpace = [&](){
-		while (ptr < end && isspace(*ptr & 0xff)) {
-			ptr++;
-		}
-	};
-
-	auto Token = [&](){
-		char const *head = ptr;
-		while (ptr < end) {
-			int c = *ptr & 0xff;
-			if (isspace(c)) break;
-			ptr++;
-		}
-		return QString::fromLatin1(head, ptr - head);
-	};
-
-	BlameItem item;
-
-	item.commit_id = Token();
-	if (item.commit_id.isEmpty()) return false;
-
-	SkipSpace();
-
-	if (ptr < end && *ptr == '(') {
-		ptr++;
-	} else {
-		return false;
-	}
-
-	if (ptr + 18 < end && memcmp(ptr, "Not Committed Yet ", 18) == 0) {
-		ptr += 18;
-	} else {
-		item.author = Token();
-		SkipSpace();
-	}
-
-	if (ptr + 25 < end && ptr[4] == '-' && ptr[7] == '-' && ptr[10] == ' ' && ptr[13] == ':' && ptr[16] == ':') {
-		int year = atoi(ptr);
-		int month = atoi(ptr + 5);
-		int day = atoi(ptr + 8);
-		int hour = atoi(ptr + 11);
-		int minute = atoi(ptr + 14);
-		int second = atoi(ptr + 17);
-		item.time = QDateTime(QDate(year, month, day), QTime(hour, minute, second));
-		ptr += 25;
-	} else {
-		return false;
-	}
-
-	SkipSpace();
-	item.line_number = atoi(ptr);
-
-	*out = item;
-	return true;
-}
-
-QString textWithoutTab(char const *ptr, char const *end)
-{
-	std::vector<char> vec;
-	vec.reserve(end - ptr);
-	int x = 0;
-	while (ptr < end) {
-		int c = *ptr & 0xff;
-		if (c == '\t') {
-			do {
-				vec.push_back(' ');
-				x++;
-			} while (x % 4 != 0);
-		} else if (c < ' ') {
-			vec.push_back('.');
-			x++;
-		} else {
-			vec.push_back(c);
-			x++;
-		}
-		ptr++;
-	}
-	if (vec.empty()) return QString();
-	return QString::fromUtf8(&vec[0], vec.size());
-}
-
-} // end namespace
-
 QList<BlameItem> BlameWindow::parseBlame(char const *begin, char const *end)
 {
 	QList<BlameItem> list;
-	char const *ptr = begin;
-	while (ptr < end) {
-		char const *mid = nullptr;
-		char const *eol = ptr;
-		while (eol < end) {
-			if (!mid && eol + 1 < end && eol[0] == ')' && eol[1] == ' ') {
-				mid = eol + 2;
-			}
-			if (*eol == '\r' || *eol == '\n') {
-				break;
-			}
-			eol++;
-		}
-		if (mid) {
-			BlameItem t;
-			parseBlameHeader(ptr, mid, &t);
-			t.text = textWithoutTab(mid, eol);
-			list.push_back(t);
-		}
-		ptr = eol;
-		if (ptr < end) {
-			if (*ptr == '\r') {
-				ptr++;
-				if (ptr < end && *ptr == '\n') {
-					ptr++;
+	std::vector<std::string> lines;
+	misc::splitLines(begin, end, &lines, false);
+	BlameItem item;
+	for (std::string const &line : lines) {
+		if (line[0] == '\t') {
+			item.text = QString::fromUtf8(line.c_str() + 1);
+			list.push_back(item);
+			item.commit_id = QString();
+			item.text = QString();
+		} else {
+			char const *p = line.c_str();
+			char const *q = strchr(p, ' ');
+			if (q) {
+				QString label = QString::fromLatin1(p, q - p);
+				if (item.commit_id.isEmpty()) {
+					item.commit_id = label;
+					int a, b, c;
+					if (sscanf(q + 1, "%d %d %d", &a, &b, &c) >= 2) {
+						item.line_number = b;
+					}
+				} else {
+					auto Value = [&](){
+						return QString::fromLatin1(q + 1);
+					};
+					if (label == "author") {
+						item.author = Value();
+					} else if (label == "author-time") {
+						qint64 t = Value().toLong();
+						item.time = QDateTime::fromMSecsSinceEpoch(t * 1000);
+					}
 				}
-			} else if (*ptr == '\n') {
-				ptr++;
 			}
 		}
 	}

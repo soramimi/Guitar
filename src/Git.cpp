@@ -1317,7 +1317,7 @@ void Git::FileStatus::parse(QString const &text)
 
 QByteArray Git::blame(QString const &path)
 {
-	QString cmd = "blame --abbrev=40 \"%1\"";
+	QString cmd = "blame --porcelain --abbrev=40 \"%1\"";
 	cmd = cmd.arg(path);
 	if (git(cmd)) {
 		return toQByteArray();
