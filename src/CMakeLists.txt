@@ -1,5 +1,5 @@
 file(GLOB_RECURSE Guitar_SOURCES  ./*.cpp)
-file(GLOB Guitar_HEADERS  ./*.h)
+file(GLOB_RECURSE Guitar_HEADERS  ./*.h)
 
 
 if(WIN32)
