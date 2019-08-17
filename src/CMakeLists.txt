@@ -1,3 +1,5 @@
+add_definitions(-DAPP_GUITAR)
+
 # Sourceを再帰的に取得
 file(GLOB_RECURSE Guitar_SOURCES  ./*.cpp)
 

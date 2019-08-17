@@ -6,7 +6,6 @@ project(Guitar
 )
 set(CMAKE_CXX_EXTENSIONS  OFF)
 set(CMAKE_CXX_STANDARD    11)
-add_definitions(-DAPP_GUITAR)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
