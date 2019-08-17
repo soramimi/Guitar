@@ -1,19 +1,15 @@
+# Sourceを再帰的に取得
 file(GLOB_RECURSE Guitar_SOURCES  ./*.cpp)
-file(GLOB_RECURSE Guitar_HEADERS  ./*.h)
 
 
 if(WIN32)
 # win32環境においてunix関係のアイテムを使用しないように
 	file(GLOB uinx_src ./unix/*.cpp)
-	file(GLOB unix_h ./unix/*.h)
 	list(REMOVE_ITEM Guitar_SOURCES ${uinx_src})
-	list(REMOVE_ITEM Guitar_HEADERS ${uinx_h})
 elseif(UNIX)
 # unix環境においてwin32関係のアイテムを使用しないように
 	file(GLOB_RECURSE win32_src ./win32/*.cpp)
-	file(GLOB_RECURSE win32_h ./win32/*.h)
 	list(REMOVE_ITEM Guitar_SOURCES ${win32_src})
-	list(REMOVE_ITEM Guitar_HEADERS ${win32_src})
 endif()
 
 # main.cppは別個にコンパイルしたいのでリストから除外
