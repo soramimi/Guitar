@@ -1172,6 +1172,118 @@ void MainWindow::updateStatusBarText()
 	setStatusBarText(text);
 }
 
+void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff)
+{
+	if (commit.isEmpty()) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->mergeBranch(commit, ff);
+	openRepository(true);
+}
+
+void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff)
+{
+	if (!commit) return;
+	mergeBranch(commit->commit_id, ff);
+}
+
+void MainWindow::rebaseBranch(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QString text = tr("Are you sure you want to rebase the commit ?");
+	text += "\n\n";
+	text += "> git rebase " + commit->commit_id;
+	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
+	if (r == QMessageBox::Ok) {
+		g->rebaseBranch(commit->commit_id);
+		openRepository(true);
+	}
+}
+
+void MainWindow::cherrypick(Git::CommitItem const *commit)
+{
+	if (!commit) return;
+
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	g->cherrypick(commit->commit_id);
+	openRepository(true);
+}
+
+void MainWindow::merge(Git::CommitItem const *commit)
+{
+	if (isThereUncommitedChanges()) return;
+
+	if (!commit) {
+		int row = selectedLogIndex();
+		commit = commitItem(row);
+		if (!commit) return;
+	}
+
+	if (!Git::isValidID(commit->commit_id)) return;
+
+	static const char MergeFastForward[] = "MergeFastForward";
+
+	QString fastforward;
+	{
+		MySettings s;
+		s.beginGroup("Behavior");
+		fastforward = s.value(MergeFastForward).toString();
+		s.endGroup();
+	}
+
+	std::vector<QString> labels;
+	{
+		int row = selectedLogIndex();
+		QList<Label> const *v = label(row);
+		for (Label const &label : *v) {
+			if (label.kind == Label::LocalBranch || label.kind == Label::Tag) {
+				labels.push_back(label.text);
+			}
+		}
+		std::sort(labels.begin(), labels.end());
+		labels.erase(std::unique(labels.begin(), labels.end()), labels.end());
+	}
+
+	labels.push_back(commit->commit_id);
+
+	QString branch_name = currentBranchName();
+
+	MergeDialog dlg(fastforward, labels, branch_name, this);
+	if (dlg.exec() == QDialog::Accepted) {
+		fastforward = dlg.getFastForwardPolicy();
+		{
+			MySettings s;
+			s.beginGroup("Behavior");
+			s.setValue(MergeFastForward, fastforward);
+			s.endGroup();
+		}
+		QString from = dlg.mergeFrom();
+		mergeBranch(from, MergeDialog::ff(fastforward));
+	}
+}
+
+void MainWindow::showStatus()
+{
+	auto g = git();
+	if (!g->isValidWorkingCopy()) {
+		msgNoRepositorySelected();
+		return;
+	}
+	QString s = g->status();
+	TextEditDialog dlg(this);
+	dlg.setWindowTitle(tr("Status"));
+	dlg.setText(s, true);
+	dlg.exec();
+}
+
 void MainWindow::on_action_commit_triggered()
 {
 	commit();
@@ -1236,20 +1348,6 @@ void MainWindow::on_toolButton_push_clicked()
 void MainWindow::on_toolButton_pull_clicked()
 {
 	ui->action_pull->trigger();
-}
-
-void MainWindow::showStatus()
-{
-	auto g = git();
-	if (!g->isValidWorkingCopy()) {
-		msgNoRepositorySelected();
-		return;
-	}
-	QString s = g->status();
-	TextEditDialog dlg(this);
-	dlg.setWindowTitle(tr("Status"));
-	dlg.setText(s, true);
-	dlg.exec();
 }
 
 void MainWindow::on_toolButton_status_clicked()
@@ -1483,7 +1581,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_merge) {
-				mergeBranch(commit, Git::MergeFastForward::Default);
+				merge(commit);
 				return;
 			}
 			if (a == a_rebase) {
@@ -2047,7 +2145,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
 	int c = event->key();
 	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
-		test();
+		merge();
 		return;
 	}
 	if (QApplication::focusWidget() == ui->widget_log) {
@@ -2300,51 +2398,6 @@ void MainWindow::on_action_repo_jump_triggered()
 			setCurrentLogRow(row);
 		}
 	}
-}
-
-void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff)
-{
-	if (commit.isEmpty()) return;
-
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	g->mergeBranch(commit, ff);
-	openRepository(true);
-}
-
-void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff)
-{
-	if (!commit) return;
-	mergeBranch(commit->commit_id, ff);
-}
-
-void MainWindow::rebaseBranch(Git::CommitItem const *commit)
-{
-	if (!commit) return;
-
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	QString text = tr("Are you sure you want to rebase the commit ?");
-	text += "\n\n";
-	text += "> git rebase " + commit->commit_id;
-	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
-	if (r == QMessageBox::Ok) {
-		g->rebaseBranch(commit->commit_id);
-		openRepository(true);
-	}
-}
-
-void MainWindow::cherrypick(Git::CommitItem const *commit)
-{
-	if (!commit) return;
-
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	g->cherrypick(commit->commit_id);
-	openRepository(true);
 }
 
 void MainWindow::on_action_repo_checkout_triggered()
@@ -2807,61 +2860,9 @@ void MainWindow::on_action_repo_jump_to_head_triggered()
 
 }
 
-void MainWindow::test()
+void MainWindow::on_action_repo_merge_triggered()
 {
-	// wip: MergeDialog
-
-	if (isThereUncommitedChanges()) return;
-
-	int row = selectedLogIndex();
-	Git::CommitItem const *commit = commitItem(row);
-	if (commit && Git::isValidID(commit->commit_id)) {
-
-		static const char MergeFastForward[] = "MergeFastForward";
-
-		QString fastforward;
-		{
-			MySettings s;
-			s.beginGroup("Behavior");
-			fastforward = s.value(MergeFastForward).toString();
-			s.endGroup();
-		}
-
-		std::vector<QString> labels;
-		{
-			int row = selectedLogIndex();
-			QList<Label> const *v = label(row);
-			for (Label const &label : *v) {
-				if (label.kind == Label::LocalBranch || label.kind == Label::Tag) {
-					labels.push_back(label.text);
-				}
-			}
-		}
-		std::sort(labels.begin(), labels.end());
-
-		labels.push_back(commit->commit_id);
-
-		QString branch_name = currentBranchName();
-
-		MergeDialog dlg(fastforward, labels, branch_name, this);
-		if (dlg.exec() == QDialog::Accepted) {
-			fastforward = dlg.getFastForwardPolicy();
-			{
-				MySettings s;
-				s.beginGroup("Behavior");
-				s.setValue(MergeFastForward, fastforward);
-				s.endGroup();
-			}
-			QString from = dlg.mergeFrom();
-			mergeBranch(from, MergeDialog::ff(fastforward));
-		}
-	}
+	merge();
 }
-
-
-
-
-
-
 
 

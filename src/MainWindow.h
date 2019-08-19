@@ -79,6 +79,7 @@ private:
 	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff);
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
+	void merge(const Git::CommitItem *commit = nullptr);
 	void detectGitServerType(const GitPtr &g);
 	void setRemoteOnline(bool f, bool update_ui, bool save);
 	void startTimers();
@@ -90,7 +91,6 @@ private:
 	void execAreYouSureYouWantToContinueConnectingDialog();
 	void deleteRemoteBranch(Git::CommitItem const *commit);
 	QStringList remoteBranches(QString const &id, QStringList *all);
-	void test();
 	bool isUninitialized();
 	void doLogCurrentItemChanged();
 	void findNext();
@@ -200,6 +200,8 @@ private slots:
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
+	void on_action_repo_merge_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
