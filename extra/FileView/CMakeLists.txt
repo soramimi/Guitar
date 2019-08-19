@@ -10,55 +10,43 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS Core Widgets Network Svg REQUIRED)
+# 再帰的にSourceを取得...としたいけど不要なものをとりすぎてしまうので限定的
+file(GLOB_RECURSE FileView_SOURCES ${CMAKE_SOURCE_DIR}/src/texteditor/*.cpp)
+file(GLOB_RECURSE common ${CMAKE_SOURCE_DIR}/src/common/*.cpp)
+list(APPEND FileView_SOURCES
+	${common}
+	${CMAKE_SOURCE_DIR}/src/FileViewWidget.cpp
+	${CMAKE_SOURCE_DIR}/src/ImageViewWidget.cpp
+	${CMAKE_SOURCE_DIR}/src/MemoryReader.cpp
+	${CMAKE_SOURCE_DIR}/src/Photoshop.cpp)
 
-set(FileView_SOURCES
-    main.cpp
-    MainWindow.cpp
-    ../../src/texteditor/AbstractCharacterBasedApplication.cpp
-    ../../src/texteditor/InputMethodPopup.cpp
-    ../../src/texteditor/TextEditorTheme.cpp
-    ../../src/texteditor/TextEditorWidget.cpp
-    ../../src/texteditor/unicode.cpp
-    ../../src/texteditor/UnicodeWidth.cpp
-    ../../src/FileViewWidget.cpp
-    ../../src/common/joinpath.cpp
-    ../../src/common/misc.cpp
-    ../../src/ImageViewWidget.cpp
-    ../../src/MemoryReader.cpp
-    ../../src/Photoshop.cpp
-    ../../src/ImageViewWidget.cpp
-    )
+# MainWindow.cppをSWAP
+list(APPEND FileView_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/MainWindow.cpp)
+list(REMOVE_ITEM FileView_SOURCES ${CMAKE_SOURCE_DIR}/src/MainWindow.cpp)
+list(REMOVE_ITEM FileView_SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
-set(FileView_HEADERS
-    MainWindow.h
-    ../../src/texteditor/AbstractCharacterBasedApplication.h
-    ../../src/texteditor/InputMethodPopup.h
-    ../../src/texteditor/TextEditorTheme.h
-    ../../src/texteditor/TextEditorWidget.h
-    ../../src/texteditor/unicode.h
-    ../../src/texteditor/UnicodeWidth.h
-    ../../src/FileViewWidget.h
-    ../../src/common/joinpath.h
-    ../../src/common/misc.h
-    ../../src/ImageViewWidget.h
-    ../../src/MemoryReader.h
-    ../../src/Photoshop.h
-    ../../src/ImageViewWidget.h
-    )
+# main.cpp以外のSourceをコンパイル
+add_library(fileview-lib ${FileView_SOURCES})
+target_link_libraries(fileview-lib PUBLIC
+	Qt5::Widgets
+	Qt5::Network
+	Qt5::Svg)
+target_include_directories(fileview-lib PUBLIC ${CMAKE_BINARY_DIR})
+target_include_directories(fileview-lib PUBLIC ${PROJECT_SOURCE_DIR})
+target_include_directories(fileview-lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(fileview-lib PUBLIC ${CMAKE_SOURCE_DIR}/src/texteditor)
+target_include_directories(fileview-lib PUBLIC ${CMAKE_SOURCE_DIR}/src/common)
 
-set(FileView_UIS
-    MainWindow.ui
-    )
+set_target_properties(fileview-lib PROPERTIES OUTPUT_NAME fileview)
 
+
+file(GLOB_RECURSE FileView_UIS ./*.ui)
+
+# main.cppをコンパイル
 add_executable(${PROJECT_NAME}
-    ${FileView_SOURCES}
-    ${FileView_HEADERS}
-    ${FileView_UIS}
-    )
+	main.cpp
+	${FileView_UIS})
 
-target_link_libraries(${PROJECT_NAME}
-    Qt5::Widgets
-    Qt5::Network
-    Qt5::Svg
-)
+
+# 結合
+target_link_libraries(${PROJECT_NAME} fileview-lib)
