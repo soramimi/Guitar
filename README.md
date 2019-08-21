@@ -11,6 +11,18 @@ Git GUI Client
 * Written in C++
 * Powered by Qt 5
 
+## Download
+
+* https://files.soramimi.jp/guitar/
+* [Countinuous build (x86_64.AppImage)](https://github.com/soramimi/Guitar/releases/tag/continuous)
+
+## Documents
+
+* how to build : https://soramimi.github.io/Guitar/build-en.html (in English)
+* more information : https://soramimi.github.io/Guitar/ (in Japanese)
+
+## Screenshots
+
 ### Windows
 ![Windows](https://soramimi.github.io/Guitar/screenshots/windows.png "Windows")
 
@@ -35,12 +47,3 @@ Git GUI Client
 ### Diff View
 ![Diff View](https://soramimi.github.io/Guitar/screenshots/diffview.png "Diff View")
 
-## Binaries
-
-* https://files.soramimi.jp/guitar/
-* [Countinuous build (x86_64.AppImage)](https://github.com/soramimi/Guitar/releases/tag/continuous)
-
-## Documents
-
-* how to build : https://soramimi.github.io/Guitar/build-en.html (in English)
-* more information : https://soramimi.github.io/Guitar/ (in Japanese)
