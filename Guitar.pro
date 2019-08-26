@@ -103,6 +103,7 @@ SOURCES += \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
 	src/CheckoutDialog.cpp \
+	src/CherryPickDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
@@ -217,6 +218,7 @@ HEADERS  += \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \
 	src/CheckoutDialog.h \
+	src/CherryPickDialog.h \
 	src/ClearButton.h \
 	src/CloneDialog.h \
 	src/CloneFromGitHubDialog.h \
@@ -328,6 +330,7 @@ FORMS    += \
 	src/BigDiffWindow.ui \
 	src/BlameWindow.ui \
 	src/CheckoutDialog.ui \
+	src/CherryPickDialog.ui \
 	src/CloneDialog.ui \
 	src/CloneFromGitHubDialog.ui \
 	src/CommitDialog.ui \

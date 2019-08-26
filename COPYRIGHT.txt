@@ -19,3 +19,8 @@ Rui Maciel
 Alexey Khromov
 	- Russian translation
 
+probonopd
+	- TravisCI/AppImage support
+
+Suse-quantum
+	- Chineese translation

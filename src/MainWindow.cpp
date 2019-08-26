@@ -25,6 +25,7 @@
 #include "TextEditDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "CherryPickDialog.h"
 #include "MergeDialog.h"
 #include "platform.h"
 #include "webclient.h"
@@ -1213,7 +1214,38 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->cherrypick(commit->commit_id);
+
+
+	int n = commit->parent_ids.size();
+	if (n == 1) {
+		g->cherrypick(commit->commit_id);
+	} else if (n > 1) {
+		Git::CommitItem head;
+		Git::CommitItem pick;
+		g->queryCommit(g->rev_parse("HEAD"), &head);
+		g->queryCommit(commit->commit_id, &pick);
+		QList<Git::CommitItem> parents;
+		for (int i = 0; i < n; i++) {
+			QString id = commit->commit_id + QString("^%1").arg(i + 1);
+			id = g->rev_parse(id);
+			Git::CommitItem item;
+			g->queryCommit(id, &item);
+			parents.push_back(item);
+		}
+		CherryPickDialog dlg(this, head, pick, parents);
+		if (dlg.exec() == QDialog::Accepted) {
+			QString cmd = "-m %1 ";
+			cmd = cmd.arg(dlg.number());
+			if (dlg.allowEmpty()) {
+				cmd += "--allow-empty ";
+			}
+			cmd += commit->commit_id;
+			g->cherrypick(cmd);
+		} else {
+			return;
+		}
+	}
+
 	openRepository(true);
 }
 
@@ -1533,13 +1565,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
 		QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
 
-		QAction *a_reset_head = nullptr;
-#if 0 // 下手に使うと危険なので、とりあえず無効にしておく
-		if (is_valid_commit_id && commit->commit_id == head_id_) {
-			a_reset_head = menu.addAction(tr("Reset HEAD"));
-		}
-#endif
-
 		menu.addSeparator();
 
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
@@ -1602,12 +1627,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 			if (a == a_explore) {
 				execCommitExploreWindow(this, commit);
-				return;
-			}
-			if (a == a_reset_head) {
-				reopenRepository(false, [](GitPtr g){
-					g->reset_head1();
-				});
 				return;
 			}
 			if (copy_label_actions.find(a) != copy_label_actions.end()) {
@@ -2145,7 +2164,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
 	int c = event->key();
 	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
-		merge();
+		test();
 		return;
 	}
 	if (QApplication::focusWidget() == ui->widget_log) {
@@ -2865,4 +2884,6 @@ void MainWindow::on_action_repo_merge_triggered()
 	merge();
 }
 
-
+void MainWindow::test()
+{
+}

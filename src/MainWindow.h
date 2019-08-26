@@ -118,6 +118,7 @@ public:
 	int selectedLogIndex() const override;
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(const QString &id);
+	void test();
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();
