@@ -960,7 +960,7 @@ void Git::pull(AbstractPtyProcess *pty)
 
 void Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	QString cmd = "fetch --tags";
+	QString cmd = "fetch --tags -f";
 	if (prune) {
 		cmd += " --prune";
 	}
