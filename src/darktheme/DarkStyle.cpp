@@ -1352,9 +1352,9 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			}
 
 			if (o->features & QStyleOptionButton::HasMenu) {
-#ifdef Q_OS_MAC
 				QStyleOptionButton newBtn = *o;
 				QRect rect = option->rect;
+#ifdef Q_OS_MAC
 				{
 					int margin = pixelMetric(PM_ButtonMargin, option, nullptr);
 					if (margin > 0) {
@@ -1366,18 +1366,11 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 						}
 					}
 				}
+#endif
 				int mbi = pixelMetric(PM_IndicatorWidth, o, widget);
 				rect = QRect(rect.x() + rect.width() - mbi, rect.y(), mbi - 4, rect.height());
-				newBtn.rect = rect;
+				newBtn.rect = rect.adjusted(1, 1, -1, -1);
 				drawPrimitive(PE_IndicatorSpinDown, &newBtn, p, widget);
-#else
-				QStyleOptionButton newBtn = *o;
-				int mbiw = 0, mbih = 0;
-				QRect r = subElementRect(SE_PushButtonContents, option, nullptr);
-				r = QRect(r.right() - mbiw - 2, option->rect.top() + (option->rect.height() / 2) - (mbih / 2), mbiw + 1, mbih + 1);
-				newBtn.rect = QStyle::visualRect(option->direction, option->rect, r);
-				drawPrimitive(PE_IndicatorArrowDown, &newBtn, p, widget);
-#endif
 			}
 		}
 		return;
@@ -1458,7 +1451,14 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				drawSelectedItemFrame(p, option->rect, true);
 			}
 
-			int xm = windowsItemFrame + checkcol + windowsItemHMargin + (gutterWidth - o->rect.x()) - 1;
+			int xm = windowsItemFrame;
+#ifdef Q_OS_WIN
+			xm += windowsItemHMargin + (gutterWidth - o->rect.x()) - 1;
+#endif
+			if (!ignoreCheckMark) {
+				xm += checkcol;
+			}
+
 			int xpos = o->rect.x() + xm;
 
 			if (checked && !ignoreCheckMark) {
