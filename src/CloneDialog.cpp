@@ -39,6 +39,11 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
+
+
+#ifdef Q_OS_MACX
+	ui->comboBox->setMinimumWidth(100);
+#endif
 }
 
 CloneDialog::~CloneDialog()

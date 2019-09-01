@@ -4,7 +4,7 @@ $product_name = "Guitar"
 $copyright_year = 2019
 $version_a = 1
 $version_b = 1
-$version_c = 0
+$version_c = 999
 $version_d = 0
 
 # v1.1.0 2019-08-29

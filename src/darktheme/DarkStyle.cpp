@@ -934,6 +934,12 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_PanelMenu) {
+#ifdef Q_OS_MACX
+		if (qobject_cast<const QComboBox *>(widget->parent())) {
+			p->fillRect(option->rect, option->palette.color(QPalette::Light));
+			return;
+		}
+#endif
 		QRect r = option->rect;
 		drawFrame(p, r, Qt::black, Qt::black);
 		r = r.adjusted(1, 1, -1, -1);
@@ -1346,12 +1352,32 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			}
 
 			if (o->features & QStyleOptionButton::HasMenu) {
+#ifdef Q_OS_MAC
+				QStyleOptionButton newBtn = *o;
+				QRect rect = option->rect;
+				{
+					int margin = pixelMetric(PM_ButtonMargin, option, nullptr);
+					if (margin > 0) {
+						int n = rect.height();
+						if (n > margin * 2) {
+							n = (n - margin * 2) / 2;
+							if (n > margin) n = margin;
+							rect = rect.adjusted(n, n, -n, -n);
+						}
+					}
+				}
+				int mbi = pixelMetric(PM_IndicatorWidth, o, widget);
+				rect = QRect(rect.x() + rect.width() - mbi, rect.y(), mbi - 4, rect.height());
+				newBtn.rect = rect;
+				drawPrimitive(PE_IndicatorSpinDown, &newBtn, p, widget);
+#else
+				QStyleOptionButton newBtn = *o;
 				int mbiw = 0, mbih = 0;
 				QRect r = subElementRect(SE_PushButtonContents, option, nullptr);
-				QStyleOptionButton newBtn = *o;
-				r = QRect(r.right() - mbiw - 2, option->rect.top() + (option->rect.height()/2) - (mbih/2), mbiw + 1, mbih + 1);
+				r = QRect(r.right() - mbiw - 2, option->rect.top() + (option->rect.height() / 2) - (mbih / 2), mbiw + 1, mbih + 1);
 				newBtn.rect = QStyle::visualRect(option->direction, option->rect, r);
 				drawPrimitive(PE_IndicatorArrowDown, &newBtn, p, widget);
+#endif
 			}
 		}
 		return;
@@ -1396,14 +1422,11 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			bool ignoreCheckMark = false;
 			if (qobject_cast<const QComboBox*>(widget)) {
-				{ // bg
-					int x = option->rect.x();
-					int y = option->rect.y();
-					int w = option->rect.width();
-					int h = option->rect.height();
-					p->fillRect(x, y, w, h, option->palette.color(QPalette::Light));
-				}
+				// bg
+				p->fillRect(option->rect, option->palette.color(QPalette::Light));
+#ifndef Q_OS_MACX
 				ignoreCheckMark = true; //ignore the checkmarks provided by the QComboMenuDelegate
+#endif
 			}
 
 			//draw vertical menu line
