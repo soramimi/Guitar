@@ -4,10 +4,16 @@ $product_name = "Guitar"
 $copyright_year = 2019
 $version_a = 1
 $version_b = 1
-$version_c = 999
+$version_c = 1
 $version_d = 0
 
-# v1.1.0 2019-08-29
+
+# v1.1.1 2019-09-xx
+# - ダークテーマ描画修正
+# - 初回起動時のウェルカムダイアログボックスの改良
+# - 小さな修正
+#
+# v1.1.0 2019-09-01
 # - 中国語対応
 # -	日本語翻訳ファイルのtypo修正
 # -	Windows版インストーラー対応
