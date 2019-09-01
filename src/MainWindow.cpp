@@ -232,8 +232,6 @@ bool MainWindow::shown()
 	}
 	updateUI();
 
-	setUnknownRepositoryInfo();
-
 	postStartEvent(); // 開始イベント
 
 	return true;
@@ -258,6 +256,9 @@ void MainWindow::onStartEvent()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
+
+		// メインウィンドウのタイトルを設定
+		updateWindowTitle(git());
 
 		// プログラムバーション表示
 		writeLog(AboutDialog::appVersion() + '\n');
