@@ -1367,7 +1367,16 @@ void MainWindow::on_action_fetch_triggered()
 	}
 }
 
-
+void MainWindow::on_action_fetch_tags_f_triggered()
+{
+	if (isOnlineMode()) {
+		reopenRepository(true, [&](GitPtr g){
+			fetch_tags_f(g);
+		});
+	} else {
+		updateRepository();
+	}
+}
 
 void MainWindow::on_action_fetch_prune_triggered()
 {
