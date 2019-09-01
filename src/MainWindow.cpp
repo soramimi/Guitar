@@ -220,7 +220,7 @@ bool MainWindow::shown()
 			settings.beginGroup("Remote");
 			bool f = settings.value("Online", true).toBool();
 			settings.endGroup();
-			setRemoteOnline(f, false, false);
+			setRemoteOnline(f, false);
 		}
 		{
 			settings.beginGroup("MainWindow");
@@ -2483,11 +2483,11 @@ bool MainWindow::isOnlineMode() const
 	return m->is_online_mode;
 }
 
-void MainWindow::setRemoteOnline(bool f, bool update_ui, bool save)
+void MainWindow::setRemoteOnline(bool f, bool save)
 {
 	m->is_online_mode = f;
 
-	if (update_ui) {
+	{
 		QRadioButton *rb = nullptr;
 		rb = f ? ui->radioButton_remote_online : ui->radioButton_remote_offline;
 		rb->blockSignals(true);
@@ -2512,12 +2512,12 @@ void MainWindow::setRemoteOnline(bool f, bool update_ui, bool save)
 
 void MainWindow::on_radioButton_remote_online_clicked()
 {
-	setRemoteOnline(true, true, true);
+	setRemoteOnline(true, true);
 }
 
 void MainWindow::on_radioButton_remote_offline_clicked()
 {
-	setRemoteOnline(false, true, true);
+	setRemoteOnline(false, true);
 }
 
 void MainWindow::on_verticalScrollBar_log_valueChanged(int)

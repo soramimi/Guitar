@@ -81,7 +81,7 @@ private:
 	void cherrypick(Git::CommitItem const *commit);
 	void merge(const Git::CommitItem *commit = nullptr);
 	void detectGitServerType(const GitPtr &g);
-	void setRemoteOnline(bool f, bool update_ui, bool save);
+	void setRemoteOnline(bool f, bool save);
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);
 	void setNetworkingCommandsEnabled(bool enabled);
