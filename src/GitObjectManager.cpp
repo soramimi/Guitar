@@ -241,11 +241,16 @@ void GitObjectCache::setup(GitPtr const &g)
 {
 	items.clear();
 	revparsemap.clear();
-	object_manager.setup(g->dup());
+	if (g) {
+		object_manager.setup(g->dup());
+	}
 }
 
 QString GitObjectCache::revParse(QString const &name)
 {
+	GitPtr g = git();
+	if (!g) return QString();
+
 	{
 		QMutexLocker lock(&object_manager.mutex);
 		auto it = revparsemap.find(name);
@@ -254,7 +259,7 @@ QString GitObjectCache::revParse(QString const &name)
 		}
 	}
 
-	QString id = git()->rev_parse(name);
+	QString id = g->rev_parse(name);
 
 	{
 		QMutexLocker lock(&object_manager.mutex);

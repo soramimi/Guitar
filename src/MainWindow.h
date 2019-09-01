@@ -96,7 +96,9 @@ private:
 	void findNext();
 	void findText(const QString &text);
 	void showStatus();
+	void onStartEvent();
 protected:
+	void customEvent(QEvent *);
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void timerEvent(QTimerEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
@@ -119,6 +121,7 @@ public:
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(const QString &id);
 	void test();
+	void postStartEvent();
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();

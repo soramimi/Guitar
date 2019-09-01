@@ -251,11 +251,17 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 
 GitPtr BasicMainWindow::git(QString const &dir) const
 {
-	const_cast<BasicMainWindow *>(this)->checkGitCommand();
+//	const_cast<BasicMainWindow *>(this)->checkGitCommand();
 
 	GitPtr g = std::make_shared<Git>(m->gcx, dir);
-	g->setLogCallback(git_callback, (void *)this);
-	return g;
+	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
+		g->setLogCallback(git_callback, (void *)this);
+		return g;
+	} else {
+		QString text = tr("git command not specified") + '\n';
+		const_cast<BasicMainWindow *>(this)->writeLog(text);
+		return GitPtr();
+	}
 }
 
 GitPtr BasicMainWindow::git()
@@ -1729,6 +1735,7 @@ void BasicMainWindow::writeLog_(QByteArray ba)
 
 void BasicMainWindow::queryRemotes(GitPtr const &g)
 {
+	if (!g) return;
 	m->remotes = g->getRemotes();
 	std::sort(m->remotes.begin(), m->remotes.end());
 }

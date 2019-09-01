@@ -39,6 +39,18 @@
 #include <QStandardPaths>
 #include <QTimer>
 
+enum class CustomEvent {
+	Start = QEvent::User,
+};
+
+class StartEvent : public QEvent {
+public:
+	StartEvent()
+		: QEvent((QEvent::Type)CustomEvent::Start)
+	{
+	}
+};
+
 FileDiffWidget::DrawData::DrawData()
 {
 	bgcolor_text = QColor(255, 255, 255);
@@ -189,30 +201,18 @@ void MainWindow::notifyRemoteChanged(bool f)
 	}, QVariant(f));
 }
 
-bool MainWindow::isUninitialized()
+void MainWindow::postStartEvent()
 {
-	return !misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command);
+	QTimer::singleShot(100, [&](){
+		QApplication::postEvent(this, new StartEvent);
+	});
 }
 
 bool MainWindow::shown()
 {
-	while (isUninitialized()) {
-		if (!execWelcomeWizardDialog()) {
-			return false;
-		}
-	}
-
 	m->repos_panel_width = ui->stackedWidget_leftpanel->width();
 	ui->stackedWidget_leftpanel->setCurrentWidget(ui->page_repos);
 	ui->action_repositories_panel->setChecked(true);
-
-	setGitCommand(appsettings()->git_command, false);
-	setFileCommand(appsettings()->file_command, false);
-
-	writeLog(AboutDialog::appVersion() + '\n'); // print application version
-	logGitVersion(); // print git command version
-
-	setGpgCommand(appsettings()->gpg_command, false);
 
 	{
 		MySettings settings;
@@ -234,9 +234,36 @@ bool MainWindow::shown()
 
 	setUnknownRepositoryInfo();
 
-	checkUser();
+	postStartEvent(); // 開始イベント
 
 	return true;
+}
+
+bool MainWindow::isUninitialized()
+{
+	return !misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command);
+}
+
+void MainWindow::onStartEvent()
+{
+	if (isUninitialized()) { // gitコマンドの有効性チェック
+		if (!execWelcomeWizardDialog()) { // ようこそダイアログを表示
+			close(); // キャンセルされたらプログラム終了
+		}
+	}
+	if (isUninitialized()) { // 正しく初期設定されたか
+		postStartEvent(); // 初期設定されなかったら、もういちどようこそダイアログを出す。
+	} else {
+		// 外部コマンド登録
+		setGitCommand(appsettings()->git_command, false);
+		setFileCommand(appsettings()->file_command, false);
+		setGpgCommand(appsettings()->gpg_command, false);
+
+		// プログラムバーション表示
+		writeLog(AboutDialog::appVersion() + '\n');
+		// gitコマンドバージョン表示
+		logGitVersion();
+	}
 }
 
 void MainWindow::startTimers()
@@ -277,25 +304,6 @@ void MainWindow::setCurrentLogRow(int row)
 		ui->tableWidget_log->setFocus();
 		updateStatusBarText();
 	}
-}
-
-bool MainWindow::event(QEvent *event)
-{
-	QEvent::Type et = event->type();
-	if (et == QEvent::KeyPress) {
-		auto *e = dynamic_cast<QKeyEvent *>(event);
-		Q_ASSERT(e);
-		int k = e->key();
-		if (k == Qt::Key_Escape) {
-			emit onEscapeKeyPressed();
-		} else if (k == Qt::Key_Delete) {
-			if (qApp->focusWidget() == ui->treeWidget_repos) {
-				removeSelectedRepositoryFromBookmark(true);
-				return true;
-			}
-		}
-	}
-	return BasicMainWindow::event(event);
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -401,6 +409,33 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 	return false;
 }
 
+bool MainWindow::event(QEvent *event)
+{
+	QEvent::Type et = event->type();
+	if (et == QEvent::KeyPress) {
+		auto *e = dynamic_cast<QKeyEvent *>(event);
+		Q_ASSERT(e);
+		int k = e->key();
+		if (k == Qt::Key_Escape) {
+			emit onEscapeKeyPressed();
+		} else if (k == Qt::Key_Delete) {
+			if (qApp->focusWidget() == ui->treeWidget_repos) {
+				removeSelectedRepositoryFromBookmark(true);
+				return true;
+			}
+		}
+	}
+	return BasicMainWindow::event(event);
+}
+
+void MainWindow::customEvent(QEvent *e)
+{
+	if (e->type() == (QEvent::Type)CustomEvent::Start) {
+		onStartEvent();
+		return;
+	}
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
 	MySettings settings;
@@ -439,8 +474,6 @@ void MainWindow::clearStatusBarText()
 {
 	setStatusBarText(QString());
 }
-
-
 
 void MainWindow::onLogVisibilityChanged()
 {
@@ -977,6 +1010,7 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 		clearRepositoryInfo();
 	}
 
+	if (!g) return;
 
 	updateRemoteInfo();
 

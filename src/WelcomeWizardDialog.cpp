@@ -30,7 +30,7 @@ WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
 		setAvatar(icon);
 	});
 
-	ui->lineEdit_user_name->setFocus();
+	ui->stackedWidget->setCurrentWidget(ui->page_helper_tools);
 }
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
@@ -134,6 +134,13 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 			set_user_name(user.name);
 			set_user_email(user.email);
 		}
+		if (user_name().isEmpty()) {
+			ui->lineEdit_user_name->setFocus();
+		} if (user_email().isEmpty()) {
+			ui->lineEdit_user_email->setFocus();
+		} else {
+			ui->pushButton_next->setFocus();
+		}
 	} else if (w == ui->page_default_working_folder) {
 		ui->lineEdit_default_working_folder->setFocus();
 	} else if (w == ui->page_finish) {
@@ -143,6 +150,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		ui->lineEdit_preview_git->setText(ui->lineEdit_git->text());
 		ui->lineEdit_preview_file->setText(ui->lineEdit_file->text());
 		next_text = tr("Finish");
+		ui->pushButton_next->setFocus();
 	}
 	ui->pushButton_prev->setText(prev_text.isEmpty() ? tr("<< Prev") : prev_text);
 	ui->pushButton_next->setText(next_text.isEmpty() ? tr("Next >>") : next_text);
