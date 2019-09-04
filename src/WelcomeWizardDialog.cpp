@@ -136,7 +136,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		}
 		if (user_name().isEmpty()) {
 			ui->lineEdit_user_name->setFocus();
-		} if (user_email().isEmpty()) {
+		} else if (user_email().isEmpty()) {
 			ui->lineEdit_user_email->setFocus();
 		} else {
 			ui->pushButton_next->setFocus();
