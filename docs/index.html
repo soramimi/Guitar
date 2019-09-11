@@ -3,7 +3,7 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="style/style.css" type="text/css" />
+<link rel="stylesheet" href="html/style/style.css" type="text/css" />
 <!-- #BeginEditable "doctitle" -->
 <title>Guitar - the graphical git client</title>
 <style>
@@ -15,18 +15,18 @@ table#screenshots, table#screenshots tr, table#screenshots td {
 </style>
 <!-- #EndEditable -->
 </head>
-<body bgcolor="#f0f0f0" background="style/bg.gif">
+<body bgcolor="#f0f0f0" background="html/style/bg.gif">
 <div id="body">
 <div id="header">
-<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
+<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="html/banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
 <div style="text-align: right;">under development</div>
 <div style="clear: both;"></div>
 </div>
 <!-- #BeginEditable "content" -->
 <p>Windows、macOS、Linuxで動作する、バージョン管理ツール Git のクライアントアプリケーションです。</p>
-<p><img src="github.png" width="20" height="16" alt="github"><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a><br>
-<img src="qiita.png" width="20" height="16" alt=""/><a href="https://qiita.com/soramimi_jp/items/8425196ddc28bf283333">https://qiita.com/soramimi_jp/items/8425196ddc28bf283333<br>
-</a><a href="https://qiita.com/soramimi_jp/items/2bca23c52ae677ad7b3d"><img src="qiita.png" width="20" height="16" alt=""/>https://qiita.com/soramimi_jp/items/2bca23c52ae677ad7b3d</a></p>
+<p><img src="html/github.png" width="20" height="16" alt="github"><a href="https://github.com/soramimi/Guitar">https://github.com/soramimi/Guitar</a><br>
+<img src="html/qiita.png" width="20" height="16" alt=""/><a href="https://qiita.com/soramimi_jp/items/8425196ddc28bf283333">https://qiita.com/soramimi_jp/items/8425196ddc28bf283333<br>
+</a><a href="https://qiita.com/soramimi_jp/items/2bca23c52ae677ad7b3d"><img src="html/qiita.png" width="20" height="16" alt=""/>https://qiita.com/soramimi_jp/items/2bca23c52ae677ad7b3d</a></p>
 <p>多くのGitクライアントアプリは何かしら問題を抱えています。起動時間が遅すぎるとか、よく落ちるとか、ダウンロードの際のユーザー登録が面倒だとか、商用利用するには有料だとか、マルチプラットフォーム対応してないとか、アニメーションや視覚効果のような演出が過剰でウザいとか、ソースコードが公開されていない、といったものです。そのような不都合をできる限り排除するようにしました。 最初はGitの使い方を私自身が習得するためと、内部の仕組みに興味があったので、自分の勉強のために開発に着手しました。</p>
 <p>今時の優秀なエンジニアの方は、GUIでGitなんて、、、と思う方もいらっしゃるかもしれません。それはそれで大いに結構なことです。私自身も、めったに使わないコマンドを実行したいときは、無理してGUIに頼らず、ターミナルを開いてgitコマンドを手入力することもあります。これは便利だと思う機能を見つけたら、このアプリに組み込んだりします。日常で頻繁に使うGit操作を快適に行いたいとか、コミットグラフを綺麗に見たいとか、そのような用途だけでもお使いいただけます。使いたがらない人にGUIを強要する考えはないので、ブランチの流れをビジュアルに見たいだけの理由でこのアプリを使っていただくのでも嬉しいです。なので、高機能なクライアントアプリとしてではなく、GUI支援アプリと思っていただいても結構です。</p>
 <h4>特徴</h4>
@@ -44,9 +44,9 @@ table#screenshots, table#screenshots tr, table#screenshots td {
 <table id="screenshots" width="100%" border="0" cellpadding="0" cellspacing="0">
   <tbody>
     <tr style="text-align: center">
-      <td bgcolor="#FFFFFF"><a href="screenshots/windows.png"><img src="screenshots/windows.png" width="320" height="184" alt=""/></a></td>
-      <td bgcolor="#FFFFFF"><a href="screenshots/macos.png"><img src="screenshots/macos.png" width="320" height="198" alt=""/></a></td>
-      <td bgcolor="#FFFFFF"><a href="screenshots/ubuntu.png"><img src="screenshots/ubuntu.png" width="320" height="240" alt=""/></a></td>
+      <td bgcolor="#FFFFFF"><a href="html/screenshots/windows.png"><img src="html/screenshots/windows.png" width="320" height="184" alt=""/></a></td>
+      <td bgcolor="#FFFFFF"><a href="html/screenshots/macos.png"><img src="html/screenshots/macos.png" width="320" height="198" alt=""/></a></td>
+      <td bgcolor="#FFFFFF"><a href="html/screenshots/ubuntu.png"><img src="html/screenshots/ubuntu.png" width="320" height="240" alt=""/></a></td>
     </tr>
     <tr style="text-align: center">
       <td bgcolor="#FFFFFF">▲Windows</td>
@@ -54,9 +54,9 @@ table#screenshots, table#screenshots tr, table#screenshots td {
       <td bgcolor="#FFFFFF">▲Ubuntu</td>
     </tr>
     <tr style="text-align: center">
-      <td bgcolor="#FFFFFF"><a href="screenshots/raspberrypi0.jpg"><img src="screenshots/raspberrypi0.jpg" width="320" height="240" alt=""/></a></td>
-      <td bgcolor="#FFFFFF"><a href="screenshots/raspberrypi1.jpg"><img src="screenshots/raspberrypi1.jpg" width="320" height="240" alt=""/></a></td>
-      <td bgcolor="#FFFFFF"><span class="background-transparent" style="text-align: center;"><a href="screenshots/commitgraph.png"><img src="screenshots/commitgraph.png" alt="" width="320" height="211" class="border"/></a></span></td>
+      <td bgcolor="#FFFFFF"><a href="html/screenshots/raspberrypi0.jpg"><img src="html/screenshots/raspberrypi0.jpg" width="320" height="240" alt=""/></a></td>
+      <td bgcolor="#FFFFFF"><a href="html/screenshots/raspberrypi1.jpg"><img src="html/screenshots/raspberrypi1.jpg" width="320" height="240" alt=""/></a></td>
+      <td bgcolor="#FFFFFF"><span class="background-transparent" style="text-align: center;"><a href="html/screenshots/commitgraph.png"><img src="html/screenshots/commitgraph.png" alt="" width="320" height="211" class="border"/></a></span></td>
     </tr>
     <tr style="text-align: center">
       <td bgcolor="#FFFFFF">▲Raspbian</td>
@@ -64,7 +64,7 @@ table#screenshots, table#screenshots tr, table#screenshots td {
       <td bgcolor="#FFFFFF">▲コミットグラフとログ</td>
     </tr>
     <tr style="text-align: center">
-      <td bgcolor="#FFFFFF"><span class="background-transparent" style="text-align: center;"><a href="screenshots/diffview.png"><img src="screenshots/diffview.png" alt="" width="320" height="243" class="border"/></a></span></td>
+      <td bgcolor="#FFFFFF"><span class="background-transparent" style="text-align: center;"><a href="html/screenshots/diffview.png"><img src="html/screenshots/diffview.png" alt="" width="320" height="243" class="border"/></a></span></td>
       <td bgcolor="#FFFFFF">&nbsp;</td>
       <td bgcolor="#FFFFFF">&nbsp;</td>
     </tr>
@@ -112,12 +112,12 @@ table#screenshots, table#screenshots tr, table#screenshots td {
 ※ .deb は今回のバージョンよりお試しで対応したものです。たぶんインストールできると思います（？）</p>
 <h2>ビルド方法</h2>
 <ul>
-  <li><a href="build.html">ビルド方法</a></li>
-    <li><a href="build-en.html">How to build the Guitar (en) (draft)</a></li>
+  <li><a href="html/build.html">ビルド方法</a></li>
+    <li><a href="html/build-en.html">How to build the Guitar (en) (draft)</a></li>
 </ul>
 <h2>開発</h2>
 <ul>
-  <li><a href="codingstyle.html">コーディングスタイル</a></li>
+  <li><a href="html/codingstyle.html">コーディングスタイル</a></li>
 </ul>
 <h2>最初の起動</h2>
 <p>Guitarを起動すると、初回だけgitコマンドとfileコマンド（Windowsの場合は、git.exeとfile.exe）の場所を尋ねられます。PATHが通っている場合は、候補が表示されますので、適切なものを選択してOKを押してください。候補が無い場合はインストールする必要があります。</p>
@@ -160,5 +160,5 @@ table#screenshots, table#screenshots tr, table#screenshots td {
 <span id="copyright"></span>
 </div>
 </body>
-<script type="text/javascript" src="common.js"></script>
+<script type="text/javascript" src="html/common.js"></script>
 <!-- InstanceEnd --></html>

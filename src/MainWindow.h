@@ -142,7 +142,6 @@ private slots:
 	void on_action_exit_triggered();
 	void on_action_explorer_triggered();
 	void on_action_fetch_triggered();
-	void on_action_fetch_tags_f_triggered();
 	void on_action_fetch_prune_triggered();
 	void on_action_find_next_triggered();
 	void on_action_find_triggered();

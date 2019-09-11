@@ -11,7 +11,7 @@
 <body bgcolor="#f0f0f0" background="style/bg.gif">
 <div id="body">
 <div id="header">
-<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="../banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
+<div style="float: left"><a href="https://soramimi.github.io/Guitar/"><img src="../html/banner.png" width="443" height="48" alt="Guitar - the graphical git client"></a></div>
 <div style="text-align: right;">under development</div>
 <div style="clear: both;"></div>
 </div>

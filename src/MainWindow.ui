@@ -1015,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1102,7 +1102,6 @@
     <addaction name="action_push"/>
     <addaction name="action_push_u"/>
     <addaction name="action_push_all_tags"/>
-    <addaction name="action_fetch_tags_f"/>
     <addaction name="separator"/>
     <addaction name="action_clone"/>
     <addaction name="separator"/>
@@ -1621,14 +1620,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+H</string>
-   </property>
-  </action>
-  <action name="action_fetch_tags_f">
-   <property name="text">
-    <string>Fetch tags -f</string>
-   </property>
-   <property name="toolTip">
-    <string>Fetch tags -f</string>
    </property>
   </action>
   <action name="action_repo_merge">

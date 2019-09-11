@@ -182,10 +182,6 @@ ul.foldertree ul {
 	padding-left: 10px;
 }
 
-ul li.transparent {
-	list-style-image: url(transparent.gif);
-}
-
 blockquote.border {
 	border-left: 4px solid #c0c0c0;
 	padding-left: 8px;

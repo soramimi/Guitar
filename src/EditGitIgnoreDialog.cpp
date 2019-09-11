@@ -60,6 +60,6 @@ void EditGitIgnoreDialog::on_pushButton_edit_file_clicked()
 {
 	if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", text() + '\n')) {
 		mainwindow()->updateCurrentFilesList();
-		done(QDialog::Accepted);
+		done(QDialog::Rejected);
 	}
 }
