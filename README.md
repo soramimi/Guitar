@@ -21,7 +21,7 @@ Git GUI Client
 * how to build : https://soramimi.github.io/Guitar/html/build-en.html (in English)
 * more information : https://soramimi.github.io/Guitar/ (in Japanese)
 
-markdown documents:
+markdown format:
 * how to build: https://github.com/soramimi/Guitar/blob/master/docs/build_guide-en/build_guide_origin.md (in English)
 
 ## Screenshots
