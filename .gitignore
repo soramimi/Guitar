@@ -20,3 +20,4 @@ packaging/mac/Guitar.app
 packaging/mac/Guitar.app/Contents/Frameworks/QtCore.framework/QtCore
 packaging/mac/*.zip
 packaging/mac/Guitar-macos.zip
+docs/src_docs/
