@@ -10,6 +10,7 @@
 
 - Generate source code documents with `doxygen`:
 
+
 	cd ${YOUR_DIR}/Guitar
 	./generate_src_docs.sh
 
