@@ -8,11 +8,9 @@
 
 # Source code documents:
 
-- Generate source code documents with `doxygen`:
-
+Generate source code documents with `doxygen`: 
 
 	cd ${YOUR_DIR}/Guitar
 	./generate_src_docs.sh
 
-
-- Then you'll get a folder at `${YOUR_DIR}/Guitar/docs/src_docs` for source code documents.
+Then you'll get a folder at `${YOUR_DIR}/Guitar/docs/src_docs` for source code documents.
