@@ -14,4 +14,5 @@
 	cd ${YOUR_DIR}/Guitar
 	./generate_src_docs.sh
 
+
 - Then you'll get a folder at `${YOUR_DIR}/Guitar/docs/src_docs` for source code documents.
