@@ -37,21 +37,19 @@ OpenSSL : https://www.openssl.org/source/ | https://github.com/openssl/openssl.g
 
 - Guitar
 
-	(https) git clone https://github.com/soramimi/Guitar.git
-	(ssh) git clone git@github.com:soramimi/Guitar.git
+	`(https) git clone https://github.com/soramimi/Guitar.git`
+	`(ssh) git clone git@github.com:soramimi/Guitar.git`
 
 - zlib
 
-	git clone https://github.com/madler/zlib.git
+	`git clone https://github.com/madler/zlib.git`
 
 - OpenSSL
 
-	git clone https://github.com/openssl/openssl.git
-	...or download source from https://www.openssl.org/source/
+	`git clone https://github.com/openssl/openssl.git`
+	`...or download source from https://www.openssl.org/source/`
 
- 
-
-## 0.3 Directories (example)
+## 0.4 Directories (example)
 
 	/home/my/work/Guitar
 	/home/my/work/openssl
