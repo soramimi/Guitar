@@ -97,6 +97,7 @@ private:
 	void findText(const QString &text);
 	void showStatus();
 	void onStartEvent();
+	void showLogWindow(bool show);
 protected:
 	void customEvent(QEvent *);
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -204,6 +205,17 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_verticalScrollBar_log_valueChanged(int);
 	void on_action_repo_merge_triggered();
+
+	void on_action_expand_commit_log_triggered();
+
+	void on_action_expand_file_list_triggered();
+
+	void on_action_expand_diff_view_triggered();
+
+	void on_action_wide_triggered();
+
+	void on_action_sidebar_triggered();
+
 
 protected:
 	void closeEvent(QCloseEvent *event) override;

@@ -80,6 +80,9 @@ struct MainWindow::Private {
 	int repos_panel_width = 0;
 
 	std::set<QString> ancestors;
+
+	QWidget *focused_widget = nullptr;
+	QList<int> splitter_h_sizes;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -2399,9 +2402,14 @@ void MainWindow::on_action_set_config_user_triggered()
 	execSetUserDialog(global_user, repo_user, currentRepositoryName());
 }
 
+void MainWindow::showLogWindow(bool show)
+{
+	ui->dockWidget_log->setVisible(show);
+}
+
 void MainWindow::on_action_window_log_triggered(bool checked)
 {
-	ui->dockWidget_log->setVisible(checked);
+	showLogWindow(checked);
 }
 
 void MainWindow::on_action_repo_jump_triggered()
@@ -2913,3 +2921,52 @@ void MainWindow::on_action_repo_merge_triggered()
 void MainWindow::test()
 {
 }
+
+void MainWindow::on_action_expand_commit_log_triggered()
+{
+	ui->splitter_h->setSizes({10000, 1, 1});
+}
+
+void MainWindow::on_action_expand_file_list_triggered()
+{
+	ui->splitter_h->setSizes({1, 10000, 1});
+}
+
+void MainWindow::on_action_expand_diff_view_triggered()
+{
+	ui->splitter_h->setSizes({1, 1, 10000});
+}
+
+void MainWindow::on_action_sidebar_triggered()
+{
+	bool f = ui->stackedWidget_leftpanel->isVisible();
+	f = !f;
+	ui->stackedWidget_leftpanel->setVisible(f);
+}
+
+
+
+void MainWindow::on_action_wide_triggered()
+{
+	QWidget *w = focusWidget();
+
+	if (w == m->focused_widget) {
+		ui->splitter_h->setSizes(m->splitter_h_sizes);
+		m->focused_widget = nullptr;
+	} else {
+		m->focused_widget = w;
+		m->splitter_h_sizes = ui->splitter_h->sizes();
+
+		if (w == ui->tableWidget_log) {
+			ui->splitter_h->setSizes({10000, 1, 1});
+		} else if (ui->stackedWidget_filelist->isAncestorOf(w)) {
+			ui->splitter_h->setSizes({1, 10000, 1});
+		} else if (ui->frame_diff_view->isAncestorOf(w)) {
+			ui->splitter_h->setSizes({1, 1, 10000});
+		}
+	}
+}
+
+
+
+

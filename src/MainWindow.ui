@@ -966,7 +966,7 @@
          </layout>
         </widget>
        </widget>
-       <widget class="QFrame" name="frame_6">
+       <widget class="QFrame" name="frame_diff_view">
         <property name="frameShape">
          <enum>QFrame::Panel</enum>
         </property>
@@ -1015,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>848</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1120,6 +1120,16 @@
     <addaction name="separator"/>
     <addaction name="action_clean_df"/>
    </widget>
+   <widget class="QMenu" name="menuExperimental">
+    <property name="title">
+     <string>Experimental</string>
+    </property>
+    <addaction name="action_expand_commit_log"/>
+    <addaction name="action_expand_file_list"/>
+    <addaction name="action_expand_diff_view"/>
+    <addaction name="action_sidebar"/>
+    <addaction name="action_wide"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
@@ -1128,6 +1138,7 @@
    <addaction name="menuDestructive_3"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
+   <addaction name="menuExperimental"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="dockWidget_log">
@@ -1443,6 +1454,9 @@
    <property name="text">
     <string>&amp;Log</string>
    </property>
+   <property name="shortcut">
+    <string>F4</string>
+   </property>
   </action>
   <action name="action_repo_jump">
    <property name="text">
@@ -1625,6 +1639,46 @@
   <action name="action_repo_merge">
    <property name="text">
     <string>Merge...</string>
+   </property>
+  </action>
+  <action name="action_expand_commit_log">
+   <property name="text">
+    <string>Expand commit log</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="action_expand_file_list">
+   <property name="text">
+    <string>Expand file list</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
+   </property>
+  </action>
+  <action name="action_expand_diff_view">
+   <property name="text">
+    <string>Expand diff view</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+4</string>
+   </property>
+  </action>
+  <action name="action_sidebar">
+   <property name="text">
+    <string>Sidebar</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+  </action>
+  <action name="action_wide">
+   <property name="text">
+    <string>Wide</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
    </property>
   </action>
  </widget>

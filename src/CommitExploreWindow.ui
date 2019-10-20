@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>710</width>
-    <height>483</height>
+    <width>1094</width>
+    <height>696</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -206,15 +206,15 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+  <customwidget>
    <class>FileViewWidget</class>
    <extends>QWidget</extends>
    <header>FileViewWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
