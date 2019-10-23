@@ -42,6 +42,10 @@ win32:msvc {
 	INCLUDEPATH += C:\openssl\include
 	INCLUDEPATH += $$PWD/../zlib
 	LIBS += -LC:\openssl\lib
+	# OpenSSL 1.0
+	LIBS += -llibeay32 -lssleay32
+	# OpenSSL 1.1
+#	LIBS += -llibcrypto -llibssl
 }
 
 win32:gcc {
