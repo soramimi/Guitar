@@ -33,7 +33,13 @@ win32:LIBS += $$PWD/misc/winpty/winpty.lib
 
 # OpenSSL
 
-linux:LIBS += -lssl -lcrypto
+linux {
+	static_link_openssl {
+		LIBS += $$OPENSSL_LIB_DIR/libssl.a $$OPENSSL_LIB_DIR/libcrypto.a -ldl
+	} else {
+		LIBS += -lssl -lcrypto
+	}
+}
 haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
