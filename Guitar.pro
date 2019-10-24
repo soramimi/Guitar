@@ -81,9 +81,12 @@ win32:gcc {
 }
 
 !haiku {
-	unix:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libzd.a
-	unix:CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.a
-	#unix:LIBS += -lz
+	use_system_zlib {
+		unix:LIBS += -lz
+	} else {
+		unix:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libzd.a
+		unix:CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.a
+	}
 }
 
 haiku:LIBS += -lz
