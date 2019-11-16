@@ -31,6 +31,7 @@
 #include "webclient.h"
 #include <QClipboard>
 #include <QDirIterator>
+#include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QMessageBox>
@@ -2918,10 +2919,6 @@ void MainWindow::on_action_repo_merge_triggered()
 	merge();
 }
 
-void MainWindow::test()
-{
-}
-
 void MainWindow::on_action_expand_commit_log_triggered()
 {
 	ui->splitter_h->setSizes({10000, 1, 1});
@@ -2965,6 +2962,28 @@ void MainWindow::on_action_wide_triggered()
 			ui->splitter_h->setSizes({1, 1, 10000});
 		}
 	}
+}
+
+void MainWindow::test()
+{
+	QElapsedTimer t;
+	t.start();
+	{
+		QPixmap pm(1, 1);
+		QPainter pr(&pm);
+		pr.setFont(QFont("MS Gothic", 30));
+		char tmp[2];
+		for (int i = 0x20; i < 0x80; i++) {
+			tmp[0] = i;
+			tmp[1] = 0;
+			QString s = tmp;
+			int w = pr.fontMetrics().size(0, s).width();
+			qDebug() << w;
+
+		}
+
+	}
+	qDebug() << QString("%1ms").arg(t.elapsed());
 }
 
 

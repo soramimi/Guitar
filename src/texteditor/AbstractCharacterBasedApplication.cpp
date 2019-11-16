@@ -97,7 +97,7 @@ struct AbstractCharacterBasedApplication::Private {
 	int parsed_col_index = -1;
 	bool parsed_for_edit = false;
 	QByteArray parsed_line;
-	std::vector<uint32_t> prepared_current_line;
+	std::vector<AbstractCharacterBasedApplication::Char> prepared_current_line;
 	QList<Document::CharAttr_> syntax_table;
 	bool dialog_mode = false;
 	DialogHandler dialog_handler;
@@ -405,16 +405,21 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	return res;
 }
 
-void AbstractCharacterBasedApplication::fetchCurrentLine() const
+QByteArray AbstractCharacterBasedApplication::fetchLine(int row) const
 {
 	QByteArray line;
-	const int row = cx()->current_row;
 	int lines = documentLines();
 	if (row >= 0 && row < lines) {
 		line = cx()->engine->document.lines[row].text;
 	}
+	return line;
+}
+
+void AbstractCharacterBasedApplication::fetchCurrentLine() const
+{
+	int row = cx()->current_row;
+	m->parsed_line = fetchLine(row);
 	m->parsed_row_index = row;
-	m->parsed_line = line;
 }
 
 void AbstractCharacterBasedApplication::clearParsedLine()
@@ -463,13 +468,17 @@ void AbstractCharacterBasedApplication::setPaintingSuppressed(bool f)
 	m->is_painting_suppressed = f;
 }
 
-void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &vec)
+void AbstractCharacterBasedApplication::commitLine(std::vector<Char> const &vec)
 {
 	if (isReadOnly()) return;
 
 	QByteArray ba;
 	if (!vec.empty()){
-		utf32 u32(&vec[0], vec.size());
+		std::vector<uint32_t> v;
+		for (Char const &c : vec) {
+			v.push_back(c.unicode);
+		}
+		utf32 u32(&v[0], v.size());
 		u32.to_utf8([&](char c, int pos){
 			(void)pos;
 			ba.push_back(c);
@@ -497,7 +506,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<uint32_t> const &
 	}
 }
 
-void AbstractCharacterBasedApplication::parseLine(std::vector<uint32_t> *vec, int increase_hint, bool force)
+void AbstractCharacterBasedApplication::parseLine(std::vector<Char> *vec, int increase_hint, bool force)
 {
 	if (force) {
 		clearParsedLine();
@@ -505,13 +514,20 @@ void AbstractCharacterBasedApplication::parseLine(std::vector<uint32_t> *vec, in
 
 	if (force || !m->parsed_for_edit) {
 		fetchCurrentLine();
-		m->parsed_col_index = internalParseLine(vec ? vec : &m->prepared_current_line, increase_hint);
+		m->parsed_col_index = internalParseLine(m->parsed_line, vec ? vec : &m->prepared_current_line, increase_hint);
 		m->parsed_for_edit = true;
 	} else {
 		if (vec) {
 			*vec = m->prepared_current_line;
 		}
 	}
+}
+
+int AbstractCharacterBasedApplication::parseLine2(int row, std::vector<Char> *vec) const
+{
+	QByteArray line = fetchLine(row);
+	int index = internalParseLine(line, vec, 0);
+	return index;
 }
 
 QByteArray AbstractCharacterBasedApplication::parsedLine() const
@@ -811,11 +827,11 @@ void AbstractCharacterBasedApplication::clearRect(int x, int y, int w, int h)
 	}
 }
 
-int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<uint32_t> &vec, int index) const
+int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<Char> &vec, int index) const
 {
 	int col = 0;
 	for (int i = 0; i < index; i++) {
-		uint32_t c = vec.at(i);
+		uint32_t c = vec.at(i).unicode;
 		if (c == '\t') {
 			col += cx()->tab_span;
 			col -= col % cx()->tab_span;
@@ -901,7 +917,7 @@ void AbstractCharacterBasedApplication::setCursorPos(int row, int col)
 	setCursorCol(col, false);
 }
 
-void AbstractCharacterBasedApplication::setCursorColByIndex(std::vector<uint32_t> const &vec, int col_index)
+void AbstractCharacterBasedApplication::setCursorColByIndex(std::vector<Char> const &vec, int col_index)
 {
 	int col = calcIndexToColumn(vec, col_index);
 	setCursorCol(col);
@@ -914,7 +930,7 @@ int AbstractCharacterBasedApplication::nextTabStop(int x) const
 	return x;
 }
 
-void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vector<uint32_t> *cutbuffer)
+void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vector<Char> *cutbuffer)
 {
 	if (isReadOnly() && op == EditOperation::Cut) {
 		op = EditOperation::Copy;
@@ -933,7 +949,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	if (cutbuffer) {
 		cutbuffer->clear();
 	}
-	std::list<std::vector<uint32_t>> cutlist;
+	std::list<std::vector<Char>> cutlist;
 
 	if (a.row > b.row) {
 		std::swap(a, b);
@@ -950,12 +966,12 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	cx()->current_col = b.col;
 
 	if (a.row == b.row) {
-		std::vector<uint32_t> vec1;
+		std::vector<Char> vec1;
 		parseLine(&vec1, 0, true);
 		auto begin = vec1.begin() + calcColumnToIndex(a.col);
 		auto end = vec1.begin() + calcColumnToIndex(b.col);
 		if (cutbuffer) {
-			std::vector<uint32_t> cut;
+			std::vector<Char> cut;
 			cut.insert(cut.end(), begin, end);
 			cutlist.push_back(std::move(cut));
 		}
@@ -965,13 +981,13 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			UpdateVisibility();
 		}
 	} else {
-		std::vector<uint32_t> vec1;
+		std::vector<Char> vec1;
 		parseLine(&vec1, 0, true);
 		{
 			auto begin = vec1.begin();
 			auto end = vec1.begin() + calcColumnToIndex(b.col);
 			if (cutbuffer) {
-				std::vector<uint32_t> cut;
+				std::vector<Char> cut;
 				cut.insert(cut.end(), begin, end);
 				cutlist.push_back(std::move(cut));
 			}
@@ -987,7 +1003,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			if (cutbuffer && i > 0) {
 				cx()->current_row = b.row - i;
 				cx()->current_col = 0;
-				std::vector<uint32_t> cut;
+				std::vector<Char> cut;
 				parseLine(&cut, 0, true);
 				cutlist.push_back(std::move(cut));
 			}
@@ -999,10 +1015,10 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		cx()->current_row = a.row;
 		cx()->current_col = a.col;
 		int index = calcColumnToIndex(a.col);
-		std::vector<uint32_t> vec2;
+		std::vector<Char> vec2;
 		parseLine(&vec2, 0, true);
 		if (cutbuffer) {
-			std::vector<uint32_t> cut;
+			std::vector<Char> cut;
 			cut.insert(cut.end(), vec2.begin() + index, vec2.end());
 			cutlist.push_back(std::move(cut));
 		}
@@ -1017,12 +1033,12 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 
 	if (cutbuffer) {
 		size_t size = 0;
-		for (std::vector<uint32_t> const &v : cutlist) {
+		for (std::vector<Char> const &v : cutlist) {
 			size += v.size();
 		}
 		cutbuffer->reserve(size);
 		for (auto it = cutlist.rbegin(); it != cutlist.rend(); it++) {
-			std::vector<uint32_t> const &v = *it;
+			std::vector<Char> const &v = *it;
 			cutbuffer->insert(cutbuffer->end(), v.begin(), v.end());
 		}
 	}
@@ -1044,13 +1060,13 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 
 void AbstractCharacterBasedApplication::edit_(EditOperation op)
 {
-	std::vector<uint32_t> u32buf;
+	std::vector<Char> u32buf;
 	editSelected(op, &u32buf);
 	if (u32buf.empty()) return;
 
 	std::vector<ushort> u16buf;
 	u16buf.reserve(1024);
-	utf32(&u32buf[0], u32buf.size()).to_utf16([&](uint16_t c){
+	utf32(&u32buf[0].unicode, u32buf.size()).to_utf16([&](uint16_t c){
 		u16buf.push_back(c);
 		return true;
 	});
@@ -1081,11 +1097,11 @@ void AbstractCharacterBasedApplication::doDelete()
 	}
 
 	parseLine(nullptr, 0, false);
-	std::vector<uint32_t> *vec = &m->prepared_current_line;
+	std::vector<Char> *vec = &m->prepared_current_line;
 	int index = m->parsed_col_index;
 	int c = -1;
 	if (index >= 0 && index < (int)vec->size()) {
-		c = (*vec)[index];
+		c = (*vec)[index].unicode;
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
 		if (index == 0) {
@@ -1097,7 +1113,7 @@ void AbstractCharacterBasedApplication::doDelete()
 		} else {
 			if (c != -1) {
 				vec->erase(vec->begin() + index);
-				if (c == '\r' && index < (int)vec->size() && (*vec)[index] == '\n') {
+				if (c == '\r' && index < (int)vec->size() && (*vec)[index].unicode == '\n') {
 					vec->erase(vec->begin() + index);
 				}
 			}
@@ -1211,16 +1227,16 @@ void AbstractCharacterBasedApplication::closeDialog(bool result)
 	}
 }
 
-int AbstractCharacterBasedApplication::internalParseLine(std::vector<uint32_t> *vec, int increase_hint) const
+int AbstractCharacterBasedApplication::internalParseLine(QByteArray const &parsed_line, std::vector<Char> *vec, int increase_hint) const
 {
 	vec->clear();
 
 	int index = -1;
 	int col = 0;
-	int len = m->parsed_line.size();
+	int len = parsed_line.size();
 	if (len > 0) {
 		vec->reserve(len + increase_hint);
-		char const *src = m->parsed_line.data();
+		char const *src = parsed_line.data();
 		utf8 u8(src, len);
 		while (1) {
 			int n = 0;
@@ -1240,7 +1256,7 @@ int AbstractCharacterBasedApplication::internalParseLine(std::vector<uint32_t> *
 			}
 			if (c == 0) break;
 			col += n;
-			vec->push_back(c);
+			vec->push_back(Char(c, 0));
 		}
 	}
 	return index;
@@ -1449,7 +1465,7 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 	int newcol = 0;
 	int index;
 	for (index = 0; index < (int)m->prepared_current_line.size(); index++) {
-		ushort c = m->prepared_current_line[index];
+		uint32_t c = m->prepared_current_line[index].unicode;
 		if (c == '\r' || c == '\n') {
 			break;
 		}
@@ -1487,7 +1503,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	while (1) {
 		int c = -1;
 		if (i < (int)m->prepared_current_line.size()) {
-			c = m->prepared_current_line[i];
+			c = m->prepared_current_line[i].unicode;
 		}
 		if (c == '\r' || c == '\n' || c == -1) {
 			if (!isSingleLineMode()) {
@@ -1592,12 +1608,12 @@ void AbstractCharacterBasedApplication::addNewLineToBottom()
 	}
 }
 
-void AbstractCharacterBasedApplication::appendNewLine(std::vector<uint32_t> *vec)
+void AbstractCharacterBasedApplication::appendNewLine(std::vector<Char> *vec)
 {
 	if (isSingleLineMode()) return;
 
-	vec->push_back('\r');
-	vec->push_back('\n');
+	vec->emplace_back('\r', 0);
+	vec->emplace_back('\n', 0);
 }
 
 void AbstractCharacterBasedApplication::writeNewLine()
@@ -1608,14 +1624,14 @@ void AbstractCharacterBasedApplication::writeNewLine()
 
 	invalidateAreaBelowTheCurrentLine();
 
-	std::vector<uint32_t> curr_line;
+	std::vector<Char> curr_line;
 	parseLine(&curr_line, 0, false);
 	int index = m->parsed_col_index;
 	if (index < 0) {
 		addNewLineToBottom();
 		index = 0;
 	}
-	std::vector<uint32_t> next_line;
+	std::vector<Char> next_line;
 	// split line
 	next_line.insert(next_line.end(), curr_line.begin() + index, curr_line.end());
 	// shrink current line
@@ -1641,7 +1657,7 @@ void AbstractCharacterBasedApplication::writeNewLine()
 void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 {
 	out->clear();
-	std::vector<uint32_t> const *line = &m->prepared_current_line;
+	std::vector<Char> const *line = &m->prepared_current_line;
 	int x = 0;
 	while (1) {
 		size_t index = out->size();
@@ -1649,7 +1665,7 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 		int n;
 		int c = -1;
 		if (index < line->size()) {
-			c = line->at(index);
+			c = line->at(index).unicode;
 		}
 		if (c == '\r' || c == '\n' || c == -1) {
 			break;
@@ -2232,21 +2248,21 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 		index = 0;
 	}
 
-	std::vector<uint32_t> *vec = &m->prepared_current_line;
+	std::vector<Char> *vec = &m->prepared_current_line;
 
 	auto WriteChar = [&](ushort c){
 		if (isInsertMode()) {
-			vec->insert(vec->begin() + index, c);
+			vec->insert(vec->begin() + index, Char(c, 0));
 		} else if (isOverwriteMode()) {
 			if (index < (int)vec->size()) {
-				ushort d = vec->at(index);
+				uint32_t d = vec->at(index).unicode;
 				if (d == '\n' || d == '\r') {
-					vec->insert(vec->begin() + index, c);
+					vec->insert(vec->begin() + index, Char(c, 0));
 				} else {
-					vec->at(index) = c;
+					vec->at(index) = Char(c, 0);
 				}
 			} else {
-				vec->push_back(c);
+				vec->emplace_back(c, 0);
 			}
 		}
 		Document::CharAttr_ a;
@@ -2583,3 +2599,9 @@ void Document::retrieveLastText(std::vector<char> *out, int maxlen) const
 		remain -= n;
 	}
 }
+
+//AbstractCharacterBasedApplication::Char::operator unsigned int() const
+//{
+//	qDebug();
+//	return 'A';
+//}

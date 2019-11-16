@@ -199,6 +199,19 @@ public:
 		CharAttr a;
 	};
 
+	struct Char {
+		unsigned int pos = 0;
+		uint32_t unicode = 0;
+		Char() = default;
+		Char(uint32_t unicode, unsigned int pos)
+			: unicode(unicode)
+			, pos(pos)
+		{
+
+		}
+//		operator unsigned int () const = delete;
+	};
+
 	enum LineFlag {
 		LineChanged = 1,
 	};
@@ -240,6 +253,7 @@ protected:
 	void initEditor();
 
 	void fetchCurrentLine() const;
+	QByteArray fetchLine(int row) const;
 	void clearParsedLine();
 
 	int cursorX() const;
@@ -271,10 +285,10 @@ protected:
 	void makeBuffer();
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
 
-	int calcIndexToColumn(const std::vector<uint32_t> &vec, int index) const;
+	int calcIndexToColumn(const std::vector<Char> &vec, int index) const;
 
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
-	void commitLine(const std::vector<uint32_t> &vec);
+	void commitLine(const std::vector<Char> &vec);
 
 	void doDelete();
 	void doBackspace();
@@ -286,7 +300,7 @@ protected:
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	void toggleSelectionAnchor();
 private:
-	int internalParseLine(std::vector<uint32_t> *vec, int increase_hint) const;
+	int internalParseLine(const QByteArray &parsed_line, std::vector<Char> *vec, int increase_hint) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -299,7 +313,7 @@ private:
 		Cut,
 		Copy,
 	};
-	void editSelected(EditOperation op, std::vector<uint32_t> *cutbuffer);
+	void editSelected(EditOperation op, std::vector<Char> *cutbuffer);
 	void deselect();
 	int calcColumnToIndex(int column);
 	void edit_(EditOperation op);
@@ -310,13 +324,13 @@ private:
 	static int findSyntax(const QList<Document::CharAttr_> *list, size_t offset);
 	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 protected:
-
-	void parseLine(std::vector<uint32_t> *vec, int increase_hint, bool force);
+	void parseLine(std::vector<Char> *vec, int increase_hint, bool force);
+	int parseLine2(int row, std::vector<Char> *vec) const;
 	QByteArray parsedLine() const;
 	void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	void setCursorCol(int col, bool auto_scroll = true, bool by_mouse = false);
 	void setCursorPos(int row, int col);
-	void setCursorColByIndex(const std::vector<uint32_t> &vec, int col_index);
+	void setCursorColByIndex(const std::vector<Char> &vec, int col_index);
 	int nextTabStop(int x) const;
 	int scrollBottomLimit() const;
 	bool isPaintingSuppressed() const;
@@ -325,7 +339,7 @@ protected:
 	void scrollLeft();
 
 	void addNewLineToBottom();
-	void appendNewLine(std::vector<uint32_t> *vec);
+	void appendNewLine(std::vector<Char> *vec);
 	void writeNewLine();
 	void updateCursorPos(bool auto_scroll);
 

@@ -78,10 +78,10 @@ const TextEditorTheme *FileViewWidget::theme() const
 	return ui_page_text->theme();
 }
 
-int FileViewWidget::latin1Width() const
-{
-	return ui_page_text->latin1Width();
-}
+//int FileViewWidget::latin1Width(QString const &s) const
+//{
+//	return ui_page_text->latin1Width(s);
+//}
 
 int FileViewWidget::lineHeight() const
 {

@@ -58,7 +58,7 @@ public:
 
 	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
-	int latin1Width() const;
+//	int latin1Width(const QString &s) const;
 	int lineHeight() const;
 
 	TextEditorTheme const *theme() const;

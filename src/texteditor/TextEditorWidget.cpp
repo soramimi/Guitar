@@ -17,6 +17,66 @@
 #include "InputMethodPopup.h"
 #include "unicode.h"
 
+class CharacterSize {
+private:
+	QFont font_;
+	mutable int ascii_[128];
+	mutable int height_ = 0;
+	mutable std::map<unsigned int, int> map_;
+public:
+	void reset(QFont const &font)
+	{
+		font_ = font;
+		height_ = 0;
+		map_.clear();
+		for (int i = 0; i < 128; i++) {
+			ascii_[i] = 0;
+		}
+	}
+	int width(unsigned int c) const
+	{
+		if (height_ == 0) {
+			QPixmap pm(1, 1);
+			QPainter pr(&pm);
+			pr.setFont(font_);
+			QFontMetrics fm = pr.fontMetrics();
+			height_ = fm.ascent() + fm.descent();
+			for (int i = 0; i < 0x20; i++) {
+				ascii_[i] = 0;
+			}
+			for (int i = 0x20; i < 0x80; i++) {
+				char tmp[2];
+				tmp[0] = i;
+				tmp[1] = 0;
+				ascii_[i] = fm.size(0, tmp).width();
+			}
+		}
+		if (c < 0x80) {
+			return ascii_[c];
+		}
+		auto it = map_.find(c);
+		if (it != map_.end()) {
+			return it->second;
+		} else {
+			QPixmap pm(1, 1);
+			QPainter pr(&pm);
+			pr.setFont(font_);
+			QFontMetrics fm = pr.fontMetrics();
+			QString s = QChar(c);
+			int w = fm.size(0, s).width();
+			map_[c] = w;
+			return w;
+		}
+	}
+	int height() const
+	{
+		if (height_ == 0) {
+			width(' ');
+		}
+		return height_;
+	}
+};
+
 struct TextEditorWidget::Private {
 	TextEditorWidget::RenderingMode rendering_mode = TextEditorWidget::CharacterMode;
 	PreEditText preedit;
@@ -24,8 +84,9 @@ struct TextEditorWidget::Private {
 	InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
-	int latin1_width = 0;
-	int line_height = 0;
+	CharacterSize character_size;
+//	int latin1_width_ = 0;
+//	int line_height_ = 0;
 	int ascent = 0;
 	int descent = 0;
 
@@ -49,16 +110,17 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	, m(new Private)
 {
 #ifdef Q_OS_WIN
-	m->text_font = QFont("MS Gothic", 10);
+	setTextFont(QFont("MS Gothic", 10));
+//	setTextFont(QFont("MS PGothic", 16));
 #endif
 #ifdef Q_OS_LINUX
-	m->text_font = QFont("Monospace", 9);
+	setTextFont(QFont("Monospace", 9));
 #endif
 #ifdef Q_OS_MACX
-	m->text_font = QFontDatabase().font("Osaka", "Regular-Mono", 14);
+	setTextFont(QFontDatabase().font("Osaka", "Regular-Mono", 14));
 #endif
 #ifdef Q_OS_HAIKU
-    m->text_font = QFont("Noto Mono", 9);
+	setTextFont(QFont("Noto Mono", 9));
 #endif
 
 	m->top_margin = 0;
@@ -69,8 +131,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	QFontMetrics fm = pr.fontMetrics();
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
-	m->latin1_width = fm.width('l');
-	m->line_height = m->ascent + m->descent + m->top_margin + m->bottom_margin;
+//	m->latin1_width = fm.width('l');
+//	m->line_height_ = m->ascent + m->descent + m->top_margin + m->bottom_margin;
 //	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
 
 	initEditor();
@@ -111,6 +173,12 @@ TextEditorTheme const *TextEditorWidget::theme() const
 	return m->theme.get();
 }
 
+void TextEditorWidget::setTextFont(QFont const &font)
+{
+	m->text_font = font;
+	m->character_size.reset(m->text_font);
+}
+
 void TextEditorWidget::setRenderingMode(RenderingMode mode)
 {
 	m->rendering_mode = mode;
@@ -148,26 +216,69 @@ bool TextEditorWidget::event(QEvent *event)
 	return QWidget::event(event);
 }
 
-int TextEditorWidget::latin1Width() const
+int TextEditorWidget::charWidth2(unsigned int c) const
 {
-	return m->latin1_width;
+	return m->character_size.width(c);
 }
 
 int TextEditorWidget::lineHeight() const
 {
-	return m->line_height;
+	return m->character_size.height() + m->top_margin + m->bottom_margin;
+}
+
+int TextEditorWidget::defaultCharWidth() const
+{
+	return m->character_size.width('8');
+//	return charWidth2('W');
+}
+
+int TextEditorWidget::parseLine3(int row, std::vector<Char> *vec) const
+{
+	int index = parseLine2(row, vec);
+	{
+		int pos = 0;
+		for (int i = 0; i < (int)vec->size(); i++) {
+			vec->at(i).pos = pos;
+			pos += m->character_size.width(vec->at(i).unicode);
+		}
+	}
+	return index;
 }
 
 QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
 {
-	int x = pt.x() / latin1Width();
+	if (1) {
+//		int x = pt.x() / defaultCharWidth();
+		int y = pt.y() / lineHeight();
+		int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
+		int w = defaultCharWidth();
+		int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
+//		int x   = pt.x() + cx()->scroll_col_pos - cx()->viewport_org_x;
+		std::vector<Char> vec;
+		parseLine3(row, &vec);
+//		{
+//			int pos = 0;
+//			for (int i = 0; i < (int)vec.size(); i++) {
+//				vec[i].pos = pos;
+//				pos += m->character_size.width(vec[i].unicode);
+//			}
+//		}
+		for (int col = 0; col + 1 < (int)vec.size(); col++) {
+			if (x < vec[col + 1].pos) {
+				return QPoint(col, row);
+			}
+		}
+		return QPoint(vec.size(), row);
+	}
+
+	int x = pt.x() / defaultCharWidth();
 	int y = pt.y() / lineHeight();
 	return QPoint(x, y);
 }
 
 QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
 {
-	int x = pt.x() * latin1Width();
+	int x = pt.x() * defaultCharWidth();
 	int y = pt.y() * lineHeight();
 	return QPoint(x, y);
 }
@@ -193,10 +304,10 @@ QRect TextEditorWidget::updateCursorRect(bool auto_scroll)
 
 	int x = cx()->viewport_org_x + cursorX();
 	int y = cx()->viewport_org_y + cursorY();
-	x *= latin1Width();
+	x *= defaultCharWidth();
 	y *= lineHeight();
 	QPoint pt = QPoint(x, y);
-	int w = cx()->current_char_span * latin1Width();
+	int w = cx()->current_char_span * defaultCharWidth();
 	int h = lineHeight();
 	cx()->cursor_rect = QRect(pt.x(), pt.y(), w, h);
 
@@ -319,6 +430,8 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 	int h = screenHeight();
 	for (int y = 0; y < h; y++) {
 		int x = 0;
+		int x2 = 0;
+		int x3 = 0;
 		while (x < w) {
 			std::vector<uint16_t> text;
 			text.reserve(w);
@@ -362,14 +475,20 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 					text.push_back(c);
 					text.push_back(d);
 				}
+				x3 += charWidth2(unicode);
 				n += cw;
 			}
 			if (n == 0) {
 				n = 1;
+				x3 += defaultCharWidth();
 			} else if (!text.empty()) {
 				QString str = QString::fromUtf16(&text[0], text.size());
-				int px = x * latin1Width();
+				if (str.startsWith("#include")) {
+					qDebug() << str;
+				}
+				int px = x * defaultCharWidth();
 				int py = y * lineHeight();
+				px = x2;
 				painter->setFont(textFont());
 				QFontMetrics fm = painter->fontMetrics();
 				int w = fm.width(str);
@@ -378,22 +497,37 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 				QColor bgcolor = colorForIndex(charattr, false);
 				painter->fillRect(px, py, w, h, bgcolor);
 				painter->setPen(fgcolor);
+
 				drawText(painter, px, py, str);
 			}
 			x += n;
+			x2 = x3;
 		}
 	}
 }
 
 void TextEditorWidget::drawCursor(QPainter *pr)
 {
-	int x = cx()->viewport_org_x + cursorX();
-	int y = cx()->viewport_org_y + cursorY();
-	if (x < cx()->viewport_org_x || x >= cx()->viewport_org_x + cx()->viewport_width) return;
-	if (y < cx()->viewport_org_y || y >= cx()->viewport_org_y + cx()->viewport_height) return;
-	x *= latin1Width();
-	y *= lineHeight();
+	int col = cx()->viewport_org_x + cursorX();
+	int row = cx()->viewport_org_y + cursorY();
+	if (col < cx()->viewport_org_x || col >= cx()->viewport_org_x + cx()->viewport_width) return;
+	if (row < cx()->viewport_org_y || row >= cx()->viewport_org_y + cx()->viewport_height) return;
 	int h = lineHeight();
+	int x = col * defaultCharWidth();
+	int y = row * h;
+	{
+		col = cursorX();
+		std::vector<Char> vec;
+		parseLine3(row, &vec);
+		if (vec.empty()) {
+			x = 0;
+		} else if (col >= 0 && col < vec.size()) {
+			x = vec[col].pos;
+		} else {
+			x = vec.back().pos;
+		}
+	}
+	x += cx()->viewport_org_x * defaultCharWidth();
 	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
 	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
 	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
@@ -445,11 +579,12 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		if (isCursorVisible()) {
 			// current line
 			if (renderingMode() == DecoratedMode) {
-				int x = cx()->viewport_org_x * latin1Width();
+				int x = cx()->viewport_org_x * defaultCharWidth();
 				int y = visualY(cx()) * lineHeight();
 				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
 				pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
 			}
+			int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 			drawCursor(&pr);
 		}
 	}
@@ -457,7 +592,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 	paintScreen(&pr);
 
 	if (renderingMode() == DecoratedMode) {
-		int linenum_width = editor_cx->viewport_org_x * latin1Width();
+		int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};
@@ -486,7 +621,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 				}
 				if (mark) {
 					pr.setPen(theme()->fgDefault());
-					drawText(&pr, linenum_width - latin1Width() * 3 / 2, y * lineHeight(), mark);
+					drawText(&pr, linenum_width - defaultCharWidth() * 3 / 2, y * lineHeight(), mark);
 				}
 			}
 		});
@@ -510,12 +645,9 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 void TextEditorWidget::moveCursorByMouse()
 {
 	QPoint mousepos = mapFromGlobal(QCursor::pos());
-	int row, col;
-	{
-		QPoint pos = mapFromPixel(mousepos);
-		row = pos.y() + cx()->scroll_row_pos - cx()->viewport_org_y;
-		col = pos.x() + cx()->scroll_col_pos - cx()->viewport_org_x;
-	}
+	QPoint pos = mapFromPixel(mousepos);
+	int row = pos.y();
+	int col = pos.x();
 
 	// row
 	if (!isSingleLineMode()) {
@@ -530,29 +662,6 @@ void TextEditorWidget::moveCursorByMouse()
 		}
 	}
 	setCursorRow(row, false, true);
-
-	// column
-	{
-		if (col < 0) {
-			col = 0;
-		} else {
-			int mouse_x = mousepos.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * m->latin1_width;
-			parseLine(nullptr, 0, true);
-			std::vector<int> pts;
-			makeColumnPosList(&pts);
-			int newcol = 0;
-			int distance = -1;
-			for (int pt : pts) {
-				int x = pt * m->latin1_width;
-				int d = abs(x - mouse_x);
-				if (distance < 0 || d < distance) {
-					distance = d;
-					newcol = x;
-				}
-			}
-			col = newcol / m->latin1_width;
-		}
-	}
 	setCursorCol(col, false, true);
 
 	clearParsedLine();
@@ -659,7 +768,7 @@ void TextEditorWidget::layoutEditor()
 {
 	if (isAutoLayout()) {
 		int h = height() / lineHeight();
-		int w = width() / latin1Width();
+		int w = width() / defaultCharWidth();
 		setScreenSize(w, h, false);
 	}
 	AbstractTextEditorApplication::layoutEditor();
