@@ -244,6 +244,7 @@ private:
 protected:
 	SelectionAnchor selection_anchor_0;
 	SelectionAnchor selection_anchor_1;
+	int reference_char_width_ = 1;
 protected:
 
 	std::vector<Character> *screen();

@@ -1582,7 +1582,8 @@ void AbstractCharacterBasedApplication::movePageDown()
 void AbstractCharacterBasedApplication::scrollRight()
 {
 	if (cx()->scroll_col_pos > 0) {
-		cx()->scroll_col_pos--;
+//		cx()->scroll_col_pos--;
+		cx()->scroll_col_pos -= reference_char_width_;
 	} else {
 		cx()->scroll_col_pos = 0;
 	}
@@ -1593,7 +1594,8 @@ void AbstractCharacterBasedApplication::scrollRight()
 
 void AbstractCharacterBasedApplication::scrollLeft()
 {
-	cx()->scroll_col_pos++;
+//	cx()->scroll_col_pos++;
+	cx()->scroll_col_pos += reference_char_width_;
 	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, true, true);

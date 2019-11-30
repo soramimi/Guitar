@@ -111,7 +111,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 {
 #ifdef Q_OS_WIN
 	setTextFont(QFont("MS Gothic", 10));
-//	setTextFont(QFont("MS PGothic", 16));
+//	setTextFont(QFont("MS PGothic", 20));
 #endif
 #ifdef Q_OS_LINUX
 	setTextFont(QFont("Monospace", 9));
@@ -131,9 +131,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	QFontMetrics fm = pr.fontMetrics();
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
-//	m->latin1_width = fm.width('l');
-//	m->line_height_ = m->ascent + m->descent + m->top_margin + m->bottom_margin;
-//	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
+//	reference_char_width_ = fm.width('A');
 
 	initEditor();
 
@@ -333,8 +331,8 @@ void TextEditorWidget::internalUpdateScrollBar()
 	if (sb) {
 		int w = editorViewportWidth();
 		sb->blockSignals(true);
-		sb->setRange(0, w + 100);
-		sb->setPageStep(w);
+		sb->setRange(0, (w + 100) * reference_char_width_);
+		sb->setPageStep(w * reference_char_width_);
 		sb->setValue(cx()->scroll_col_pos);
 		sb->blockSignals(false);
 	}
@@ -484,7 +482,7 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 			} else if (!text.empty()) {
 				QString str = QString::fromUtf16(&text[0], text.size());
 				if (str.startsWith("#include")) {
-					qDebug() << str;
+//					qDebug() << str;
 				}
 				int px = x * defaultCharWidth();
 				int py = y * lineHeight();
@@ -518,7 +516,16 @@ void TextEditorWidget::drawCursor(QPainter *pr)
 	{
 		col = cursorX();
 		std::vector<Char> vec;
-		parseLine3(row, &vec);
+		int r = cursorY() + cx()->scroll_row_pos - cx()->viewport_org_y;
+
+		parseLine3(r, &vec);
+		{
+			QString s;
+			for (auto t : vec) {
+				s += t.unicode;
+			}
+			qDebug() << s;
+		}
 		if (vec.empty()) {
 			x = 0;
 		} else if (col >= 0 && col < vec.size()) {
