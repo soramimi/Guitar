@@ -483,9 +483,9 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 				x3 += defaultCharWidth();
 			} else if (!text.empty()) {
 				QString str = QString::fromUtf16(&text[0], text.size());
-				if (str.startsWith("#include")) {
-					qDebug() << str;
-				}
+//				if (str.startsWith("#include")) {
+//					qDebug() << str;
+//				}
 				int px = x * defaultCharWidth();
 				int py = y * lineHeight();
 				px = x2;

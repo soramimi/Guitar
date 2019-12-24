@@ -91,54 +91,43 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 		d_stream.zfree = nullptr;
 		d_stream.opaque = nullptr;
 
-		d_stream.next_in  = nullptr;
 		d_stream.avail_in = 0;
 
 		err = inflateInit(&d_stream);
-
 		if (err != Z_OK) {
 			throw QString("failed: inflateInit");
 		}
 
+		int flush = Z_NO_FLUSH;
 		while (1) {
-			if (expanded_size > 0 && (size_t)out->size() > expanded_size) {
-				throw QString("file too large");
-			}
-			uint8_t src[1024];
-			uint8_t tmp[65536];
-			if (d_stream.next_in != src && d_stream.avail_in > 0) {
-				memmove(src, d_stream.next_in, d_stream.avail_in);
-			}
-			d_stream.next_in = src;
-			if (d_stream.avail_in < sizeof(src)) {
-				int n = sizeof(src) - d_stream.avail_in;
-				n = in->read((char *)(src + d_stream.avail_in), n);
-				if (n >= 0) {
-					d_stream.avail_in += n;
+			uint8_t ibuf[65536];
+			uint8_t obuf[65536];
+			size_t ilen = d_stream.avail_in;
+			d_stream.next_in = ibuf;
+			d_stream.next_out = obuf;
+			d_stream.avail_out = sizeof(obuf);
+			err = ::inflate(&d_stream, flush);
+			if (err == Z_BUF_ERROR) {
+				d_stream.avail_in = in->read((char *)ibuf, sizeof(ibuf));
+				if (d_stream.avail_in == 0) {
+					flush = Z_FINISH;
 				}
+				continue;
 			}
+			ilen -= d_stream.avail_in;
+			if (consumed) *consumed += ilen;
+			if (crc) *crc = crc32(*crc, ibuf, ilen);
 
-			d_stream.next_out = tmp;
-			size_t l = expanded_size - out->size();
-			if (l > sizeof(tmp)) l = sizeof(tmp);
-			d_stream.avail_out = l;
-			uLong total = d_stream.total_out;
-
-			err = ::inflate(&d_stream, Z_NO_FLUSH);
-
-			int in_len = (uint8_t *)d_stream.next_in - src;
-			if (consumed) *consumed += in_len;
-
-			if (crc) *crc = crc32(*crc, src, in_len);
-
-			int out_len = d_stream.total_out - total;
-			out->append((char const *)tmp, out_len);
-
+			size_t n = sizeof(obuf) - d_stream.avail_out;
+			out->append((char const *)obuf, n);
 			if (err == Z_STREAM_END) {
 				break;
 			}
 			if (err != Z_OK) {
 				throw QString("failed: inflate");
+			}
+			if (expanded_size > 0 && (size_t)out->size() > expanded_size) {
+				throw QString("file too large");
 			}
 		}
 
