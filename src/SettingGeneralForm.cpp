@@ -34,6 +34,7 @@ QList<SelectItemDialog::Item> SettingGeneralForm::languages()
 	langs.push_back(SelectItemDialog::Item("ja", tr("Japanese")));
 	langs.push_back(SelectItemDialog::Item("ru", tr("Russian")));
 	langs.push_back(SelectItemDialog::Item("zh-CN", tr("Chinese (Simplified)")));
+	langs.push_back(SelectItemDialog::Item("zh-TW", tr("Chinese (Taiwan)")));
 	return langs;
 }
 
