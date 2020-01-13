@@ -12,6 +12,8 @@ DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
+TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-CN.ts
+TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-TW.ts
 
 DEFINES += APP_GUITAR
 
@@ -154,6 +156,7 @@ SOURCES += \
 	src/ImageViewWidget.cpp \
 	src/InputNewTagDialog.cpp \
 	src/JumpDialog.cpp \
+	src/Languages.cpp \
 	src/LineEditDialog.cpp \
 	src/LocalSocketReader.cpp \
 	src/LogTableWidget.cpp \
@@ -269,6 +272,7 @@ HEADERS  += \
 	src/ImageViewWidget.h \
 	src/InputNewTagDialog.h \
 	src/JumpDialog.h \
+	src/Languages.h \
 	src/LineEditDialog.h \
 	src/LocalSocketReader.h \
 	src/LogTableWidget.h \

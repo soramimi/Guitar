@@ -15,8 +15,8 @@ class SettingGeneralForm : public AbstractSettingForm
 	Q_OBJECT
 private:
 	Ui::SettingGeneralForm *ui;
-	QList<SelectItemDialog::Item> langs;
-	QList<SelectItemDialog::Item> themes;
+	QList<Languages::Item> langs;
+	QList<Languages::Item> themes;
 
 	void updateLanguage();
 	void updateTheme();
@@ -25,8 +25,8 @@ public:
 	~SettingGeneralForm() override;
 
 	void exchange(bool save) override;
-	static QList<SelectItemDialog::Item> languages();
-	static void execSelectLanguageDialog(QWidget *parent, const QList<SelectItemDialog::Item> &langs, const std::function<void ()> &done);
+	static QList<Languages::Item> languages();
+	static void execSelectLanguageDialog(QWidget *parent, const QList<Languages::Item> &langs, const std::function<void ()> &done);
 private slots:
 	void on_pushButton_browse_default_working_dir_clicked();
 	void on_pushButton_change_language_clicked();

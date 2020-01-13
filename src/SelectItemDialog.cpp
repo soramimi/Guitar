@@ -36,13 +36,13 @@ void SelectItemDialog::select(QString const &id)
 	}
 }
 
-SelectItemDialog::Item SelectItemDialog::item() const
+Languages::Item SelectItemDialog::item() const
 {
-	Item ret;
+	Languages::Item ret;
 	QListWidgetItem *p = ui->listWidget->currentItem();
 	if (p) {
 		ret.id = p->data(Qt::UserRole).toString();
-		ret.text = p->text();
+		ret.description = p->text();
 	}
 	return ret;
 }

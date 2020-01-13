@@ -82,6 +82,7 @@ Git::Object::Type GitPack::stripHeader(QByteArray *out)
 
 bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed, uint32_t *crc)
 {
+	qDebug() << Q_FUNC_INFO << expanded_size;
 	if (consumed) *consumed = 0;
 	try {
 		int err;
@@ -108,6 +109,9 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 			d_stream.avail_out = sizeof(obuf);
 			err = ::inflate(&d_stream, flush);
 			if (err == Z_BUF_ERROR) {
+				if (flush == Z_FINISH) {
+					throw QString("failed: inflate");
+				}
 				d_stream.avail_in = in->read((char *)ibuf, sizeof(ibuf));
 				if (d_stream.avail_in == 0) {
 					flush = Z_FINISH;
@@ -117,6 +121,10 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 			ilen -= d_stream.avail_in;
 			if (consumed) *consumed += ilen;
 			if (crc) *crc = crc32(*crc, ibuf, ilen);
+
+			if (ilen > 0 && d_stream.avail_in > 0) {
+				memmove(ibuf, ibuf + ilen, d_stream.avail_in);
+			}
 
 			size_t n = sizeof(obuf) - d_stream.avail_out;
 			out->append((char const *)obuf, n);
