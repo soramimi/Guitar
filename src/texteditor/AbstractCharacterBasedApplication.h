@@ -246,8 +246,8 @@ protected:
 	SelectionAnchor selection_anchor_1;
 protected:
 
-	std::vector<Character> *screen();
-	std::vector<Character> const *screen() const;
+	std::vector<Character> *char_screen();
+	std::vector<Character> const *char_screen() const;
 	std::vector<uint8_t> *line_flags();
 
 	void initEditor();

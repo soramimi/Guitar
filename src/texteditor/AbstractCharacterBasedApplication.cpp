@@ -218,12 +218,12 @@ QString AbstractCharacterBasedApplication::recentlyUsedPath()
 	return m->recently_used_path;
 }
 
-std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::screen()
+std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen()
 {
 	return &m->screen;
 }
 
-const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::screen() const
+const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen() const
 {
 	return &m->screen;
 }

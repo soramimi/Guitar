@@ -437,7 +437,7 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 			text.reserve(w);
 			int o = y * w;
 			CharAttr charattr;
-			Character const *line = &screen()->at(o);
+			Character const *line = &char_screen()->at(o);
 			int n = 0;
 			while (x + n < w) {
 				uint32_t c = line[x + n].c;
