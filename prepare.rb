@@ -71,6 +71,8 @@ File.open("Info.plist", "w") {|f|
 <dict>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<string>True</string>
 	<key>CFBundleIconFile</key>
 	<string>#{$product_name}.icns</string>
 	<key>CFBundlePackageType</key>
