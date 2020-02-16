@@ -51,8 +51,9 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int defaultCharWidth() const;
 	int parseLine3(int row, std::vector<Char> *vec) const;
+public:
+	int defaultCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;
@@ -73,7 +74,7 @@ public:
 	int charWidth2(unsigned int c) const;
 	int lineHeight() const;
 
-	void setPreEditText(PreEditText const &preedit);
+//	void setPreEditText(PreEditText const &preedit);
 
 	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) override;
 

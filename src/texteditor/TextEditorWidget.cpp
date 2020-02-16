@@ -139,9 +139,9 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 
 	setAttribute(Qt::WA_InputMethodEnabled);
 #ifdef Q_OS_WIN
-	m->ime_popup = new InputMethodPopup();
-	m->ime_popup->setFont(font());
-	m->ime_popup->setPreEditText(PreEditText());
+//	m->ime_popup = new InputMethodPopup();
+//	m->ime_popup->setFont(font());
+//	m->ime_popup->setPreEditText(PreEditText());
 #endif
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
@@ -262,7 +262,7 @@ QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
 //			}
 //		}
 		for (int col = 0; col + 1 < (int)vec.size(); col++) {
-			if (x < vec[col + 1].pos) {
+			if (x < (int)vec[col + 1].pos) {
 				return QPoint(col, row);
 			}
 		}
@@ -378,11 +378,11 @@ void TextEditorWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, 
 	}
 }
 
-void TextEditorWidget::setPreEditText(const PreEditText &preedit)
-{
-	m->preedit = preedit;
-	update();
-}
+//void TextEditorWidget::setPreEditText(const PreEditText &preedit)
+//{
+//	m->preedit = preedit;
+//	update();
+//}
 
 QFont TextEditorWidget::textFont()
 {
@@ -435,7 +435,7 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 			text.reserve(w);
 			int o = y * w;
 			CharAttr charattr;
-			Character const *line = &screen()->at(o);
+			Character const *line = &char_screen()->at(o);
 			int n = 0;
 			while (x + n < w) {
 				uint32_t c = line[x + n].c;
@@ -481,9 +481,6 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 				x3 += defaultCharWidth();
 			} else if (!text.empty()) {
 				QString str = QString::fromUtf16(&text[0], text.size());
-				if (str.startsWith("#include")) {
-//					qDebug() << str;
-				}
 				int px = x * defaultCharWidth();
 				int py = y * lineHeight();
 				px = x2;
@@ -528,7 +525,7 @@ void TextEditorWidget::drawCursor(QPainter *pr)
 		}
 		if (vec.empty()) {
 			x = 0;
-		} else if (col >= 0 && col < vec.size()) {
+		} else if (col >= 0 && col < (int)vec.size()) {
 			x = vec[col].pos;
 		} else {
 			x = vec.back().pos;
@@ -591,15 +588,17 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
 				pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
 			}
-			int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 			drawCursor(&pr);
 		}
 	}
 
+	int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
+
+
+
 	paintScreen(&pr);
 
 	if (renderingMode() == DecoratedMode) {
-		int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};
@@ -750,10 +749,10 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 		m->ime_popup->hide();
 	} else {
 		QPoint pt = mapToGlobal(cx()->cursor_rect.topLeft());
-		m->ime_popup->move(pt);
-		m->ime_popup->setFont(font());
-		m->ime_popup->setPreEditText(preedit);
-		m->ime_popup->show();
+//		m->ime_popup->move(pt);
+//		m->ime_popup->setFont(font());
+//		m->ime_popup->setPreEditText(preedit);
+//		m->ime_popup->show();
 	}
 #endif
 //	qDebug() << e->preeditString() << e->commitString();

@@ -81,8 +81,8 @@ struct AbstractCharacterBasedApplication::Private {
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int header_line = 1;
-	int footer_line = 1;
+	int header_line = 0;
+	int footer_line = 0;
 	int screen_width = 80;
 	int screen_height = 24;
 	bool auto_layout = false;
@@ -218,12 +218,12 @@ QString AbstractCharacterBasedApplication::recentlyUsedPath()
 	return m->recently_used_path;
 }
 
-std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::screen()
+std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen()
 {
 	return &m->screen;
 }
 
-const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::screen() const
+const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen() const
 {
 	return &m->screen;
 }
@@ -1043,7 +1043,6 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		}
 	}
 
-
 	if (op == EditOperation::Cut) {
 		deselect();
 		setCursorPos(a.row, a.col);
@@ -1060,13 +1059,19 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 
 void AbstractCharacterBasedApplication::edit_(EditOperation op)
 {
-	std::vector<Char> u32buf;
-	editSelected(op, &u32buf);
-	if (u32buf.empty()) return;
+	std::vector<Char> cutbuf;
+	editSelected(op, &cutbuf);
+	if (cutbuf.empty()) return;
+
+	std::vector<uint32_t> u32buf;
+	u32buf.reserve(cutbuf.size());
+	for (Char const &c : cutbuf) {
+		u32buf.push_back(c.unicode);
+	}
 
 	std::vector<ushort> u16buf;
 	u16buf.reserve(1024);
-	utf32(&u32buf[0].unicode, u32buf.size()).to_utf16([&](uint16_t c){
+	utf32(u32buf.data(), u32buf.size()).to_utf16([&](uint16_t c){
 		u16buf.push_back(c);
 		return true;
 	});

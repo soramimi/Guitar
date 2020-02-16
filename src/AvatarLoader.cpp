@@ -8,7 +8,7 @@
 
 namespace {
 const int MAX_CACHE_COUNT = 1000;
-const int ICON_SIZE = 64;
+const int ICON_SIZE = 128;
 }
 
 using WebClientPtr = std::shared_ptr<WebClient>;

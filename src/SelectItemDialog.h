@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <vector>
+#include "Languages.h"
 
 class QListWidgetItem;
 
@@ -15,23 +16,12 @@ class SelectItemDialog : public QDialog {
 private:
 	Ui::SelectItemDialog *ui;
 public:
-	struct Item {
-		QString id;
-		QString text;
-		Item() = default;
-		Item(QString const &id, QString const &text)
-			: id(id)
-			, text(text)
-		{
-		}
-	};
-public:
 	explicit SelectItemDialog(QWidget *parent = nullptr);
 	~SelectItemDialog() override;
 
 	void addItem(QString const &id, QString const &text);
 
-	Item item() const;
+	Languages::Item item() const;
 	void select(QString const &id);
 private slots:
 	void on_listWidget_itemDoubleClicked(QListWidgetItem *);
