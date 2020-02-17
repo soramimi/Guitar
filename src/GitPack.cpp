@@ -82,7 +82,6 @@ Git::Object::Type GitPack::stripHeader(QByteArray *out)
 
 bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed, uint32_t *crc)
 {
-	qDebug() << Q_FUNC_INFO << expanded_size;
 	if (consumed) *consumed = 0;
 	try {
 		int err;
