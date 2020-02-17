@@ -31,10 +31,6 @@ struct PreEditText {
 class TextEditorWidget : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
-	enum RenderingMode {
-		CharacterMode,
-		DecoratedMode,
-	};
 private:
 	struct Private;
 	Private *m;
@@ -43,7 +39,6 @@ private:
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
 	QRect updateCursorRect(bool auto_scroll);
-	RenderingMode renderingMode() const;
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
@@ -51,7 +46,7 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int parseLine3(int row, std::vector<Char> *vec) const;
+	int parseLine3(int row, std::vector<Char> *vec, int *last_pos) const;
 public:
 	int defaultCharWidth() const;
 protected:
@@ -62,7 +57,7 @@ protected:
 	void wheelEvent(QWheelEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
 	void contextMenuEvent(QContextMenuEvent *event) override;
-	QFont textFont();
+	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
 public:
 	explicit TextEditorWidget(QWidget *parent = nullptr);

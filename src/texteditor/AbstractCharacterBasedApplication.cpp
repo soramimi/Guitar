@@ -405,6 +405,21 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	return res;
 }
 
+bool AbstractCharacterBasedApplication::isValidRowIndex(int row_index) const
+{
+	return row_index >= 0 && row_index < engine()->document.lines.size();
+}
+
+QList<AbstractCharacterBasedApplication::FormattedLine> AbstractCharacterBasedApplication::formatLine2(int row_index) const
+{
+	QList<FormattedLine> formatted_lines;
+	if (isValidRowIndex(row_index)) {
+		Document::Line const *line = &engine()->document.lines[row_index];
+		formatted_lines = formatLine(*line, cx()->tab_span);
+	}
+	return formatted_lines;
+}
+
 QByteArray AbstractCharacterBasedApplication::fetchLine(int row) const
 {
 	QByteArray line;
@@ -645,7 +660,7 @@ const TextEditorContext *AbstractCharacterBasedApplication::cx() const
 	return const_cast<AbstractCharacterBasedApplication *>(this)->cx();
 }
 
-TextEditorEnginePtr AbstractCharacterBasedApplication::engine()
+TextEditorEnginePtr AbstractCharacterBasedApplication::engine() const
 {
 	Q_ASSERT(cx()->engine);
 	return cx()->engine;
@@ -795,10 +810,12 @@ int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &lin
 				break;
 			}
 			if (c == '\t') {
-				x += cx()->tab_span;
-				x -= x % cx()->tab_span;
+//				x += cx()->tab_span;
+//				x -= x % cx()->tab_span;
+				x++;
 			} else {
-				x += charWidth(c);
+//				x += charWidth(c);
+				x++;
 			}
 		}
 	}
@@ -1476,9 +1493,11 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 		}
 		newcol = col;
 		if (c == '\t') {
-			col = nextTabStop(col);
+//			col = nextTabStop(col);
+			col++;
 		} else {
-			col += charWidth(c);
+//			col += charWidth(c);
+			col++;
 		}
 		if (col >= cx()->current_col) {
 			break;
@@ -1524,9 +1543,11 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 			break;
 		}
 		if (c == '\t') {
-			col = nextTabStop(col);
+//			col = nextTabStop(col);
+			col++;
 		} else {
-			col += charWidth(c);
+//			col += charWidth(c);
+			col++;
 		}
 		if (col > cx()->current_col) {
 			break;
@@ -1679,9 +1700,11 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 		}
 		if (c == '\t') {
 			int z = nextTabStop(x);
-			n = z - x;
+//			n = z - x;
+			n = 1;
 		} else {
-			n = charWidth(c);
+//			n = charWidth(c);
+			n = 1;
 		}
 		x += n;
 	}

@@ -48,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->widget->bindScrollBar(ui->verticalScrollBar, ui->horizontalScrollBar);
 //	ui->widget->setReadOnly(true);
 
+//	ui->widget->setRenderingMode(TextEditorWidget::CharacterMode);
+
 	ui->widget->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
