@@ -849,12 +849,13 @@ int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<Char>
 	int col = 0;
 	for (int i = 0; i < index; i++) {
 		uint32_t c = vec.at(i).unicode;
-		if (c == '\t') {
-			col += cx()->tab_span;
-			col -= col % cx()->tab_span;
-		} else {
-			col += charWidth(c);
-		}
+//		if (c == '\t') {
+//			col += cx()->tab_span;
+//			col -= col % cx()->tab_span;
+//		} else {
+//			col += charWidth(c);
+//		}
+		col++;
 	}
 	return col;
 }
@@ -2280,7 +2281,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 
 	std::vector<Char> *vec = &m->prepared_current_line;
 
-	auto WriteChar = [&](ushort c){
+	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
 			vec->insert(vec->begin() + index, Char(c, 0));
 		} else if (isOverwriteMode()) {

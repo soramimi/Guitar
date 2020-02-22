@@ -46,7 +46,8 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int parseLine3(int row, std::vector<Char> *vec, int *last_pos) const;
+	int parseLine3(int row, int col, std::vector<Char> *vec) const;
+	int xScrollPosInPixel();
 public:
 	int defaultCharWidth() const;
 protected:

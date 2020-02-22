@@ -84,8 +84,6 @@ struct TextEditorWidget::Private {
 	int top_margin = 0;
 	int bottom_margin = 0;
 	CharacterSize character_size;
-//	int latin1_width_ = 0;
-//	int line_height_ = 0;
 	int ascent = 0;
 	int descent = 0;
 
@@ -130,7 +128,6 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	QFontMetrics fm = pr.fontMetrics();
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
-//	reference_char_width_ = fm.width('A');
 
 	initEditor();
 
@@ -244,69 +241,57 @@ public:
 	}
 };
 
-int TextEditorWidget::parseLine3(int row, std::vector<Char> *vec, int *last_pos) const
+int TextEditorWidget::parseLine3(int row, int col, std::vector<Char> *vec) const
 {
-	int index = parseLine2(row, vec);
-#if 0
-	{
-		int pos = 0;
-		for (int i = 0; i < (int)vec->size(); i++) {
-			vec->at(i).pos = pos;
-			pos += m->character_size.width(vec->at(i).unicode);
-		}
-	}
-#else
+	parseLine2(row, vec);
 	QPixmap pm(1, 1);
 	QPainter pr(&pm);
 	pr.setFont(m->text_font);
 	int pos = 0;
-	size_t i = 0;
 	QString s;
-	chars in(vec->data(), vec->size());
-	in.to_utf16([&](uint16_t c){
+	for (size_t i = 0; i < vec->size(); i++) {
 		vec->at(i).pos = pos;
-		s += QChar(c);
+		ushort tmp[3];
+		uint32_t u = vec->at(i).unicode;
+		if (u >= 0x10000 && u < 0x110000) {
+			// サロゲートペア
+			uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
+			uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
+			tmp[0] = h;
+			tmp[1] = l;
+			tmp[2] = 0;
+		} else {
+			tmp[0] = u;
+			tmp[1] = 0;
+		}
+		s += QString::fromUtf16(tmp);
 		pos = pr.fontMetrics().size(0, s).width();
-		i++;
-		return true;
-	});
-	if (last_pos) *last_pos = pos;
-
-#endif
-	return index;
+	}
+	if (vec->empty()) {
+		pos = 0;
+	} else if (col >= 0 && col < (int)vec->size()) {
+		pos = vec->at(col).pos;
+	} else {
+		pos = pos;
+	}
+	return pos;
 }
 
 QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
 {
-	if (1) {
-		int col = cx()->current_col;
-		qDebug() << col;
-//		int x = pt.x() / defaultCharWidth();
-		int y = pt.y() / lineHeight();
-		int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-		int w = defaultCharWidth();
-		int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
-//		int x   = pt.x() + cx()->scroll_col_pos - cx()->viewport_org_x;
-		std::vector<Char> vec;
-		parseLine3(row, &vec, nullptr);
-//		{
-//			int pos = 0;
-//			for (int i = 0; i < (int)vec.size(); i++) {
-//				vec[i].pos = pos;
-//				pos += m->character_size.width(vec[i].unicode);
-//			}
-//		}
-		for (int col = 0; col + 1 < (int)vec.size(); col++) {
-			if (x < (int)vec[col + 1].pos) {
-				return QPoint(col, row);
-			}
+	const int col = cx()->current_col;
+	const int y = pt.y() / lineHeight();
+	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
+	const int w = defaultCharWidth();
+	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
+	std::vector<Char> vec;
+	parseLine3(row, col, &vec);
+	for (int col = 0; col + 1 < (int)vec.size(); col++) {
+		if (x < (int)vec[col + 1].pos) {
+			return QPoint(col, row);
 		}
-		return QPoint(vec.size(), row);
 	}
-
-	int x = pt.x() / defaultCharWidth();
-	int y = pt.y() / lineHeight();
-	return QPoint(x, y);
+	return QPoint(vec.size(), row);
 }
 
 QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
@@ -536,44 +521,35 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 	}
 }
 
-void TextEditorWidget::drawCursor(QPainter *pr)
-{
-	int col = cx()->viewport_org_x + cursorX();
-	int row = cx()->viewport_org_y + cursorY();
-	if (col < cx()->viewport_org_x || col >= cx()->viewport_org_x + cx()->viewport_width) return;
-	if (row < cx()->viewport_org_y || row >= cx()->viewport_org_y + cx()->viewport_height) return;
-	int h = lineHeight();
-	int x = col * defaultCharWidth();
-	int y = row * h;
-	{
-		col = cursorX();
-		qDebug() << col;
-		std::vector<Char> vec;
-		int r = cursorY() + cx()->scroll_row_pos - cx()->viewport_org_y;
-
-		parseLine3(r, &vec, &x);
-		{
-			QString s;
-			for (auto t : vec) {
-				s += t.unicode;
-			}
-		}
-		if (vec.empty()) {
-			x = 0;
-		} else if (col >= 0 && col < (int)vec.size()) {
-			x = vec[col].pos;
-		}
-	}
-	x += cx()->viewport_org_x * defaultCharWidth();
-	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
-	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
-	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
-}
-
 void TextEditorWidget::drawFocusFrame(QPainter *pr)
 {
 	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
 	misc::drawFrame(pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
+}
+
+#define SCROLL_BY_PIXEL 0
+int TextEditorWidget::xScrollPosInPixel()
+{
+#if SCROLL_BY_PIXEL
+	return editor_cx->scroll_col_pos;// * defaultCharWidth();
+#else
+		return editor_cx->scroll_col_pos * defaultCharWidth();
+#endif
+}
+
+void TextEditorWidget::drawCursor(QPainter *pr)
+{
+	std::vector<Char> vec;
+	int row = cursorY() + cx()->scroll_row_pos - cx()->viewport_org_y;
+	const int col = cx()->current_col;
+	int x = parseLine3(row, col, &vec);
+	x += cx()->viewport_org_x * defaultCharWidth();
+	x -= xScrollPosInPixel();
+	const int lineheight = lineHeight();
+	const int y = (cx()->viewport_org_y + cursorY()) * lineheight;
+	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
+	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
+	pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
 }
 
 void TextEditorWidget::paintEvent(QPaintEvent *)
@@ -611,39 +587,37 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		return context->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
 	};
 
-	// draw cursor
+	// カーソル描画
 	if (has_focus) {
 		if (isCursorVisible()) {
-			// current line
+			// 現在行の下線
 			if (renderingMode() == DecoratedMode) {
 				int x = cx()->viewport_org_x * defaultCharWidth();
 				int y = visualY(cx()) * lineHeight();
 				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
 				pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
 			}
+			// カーソル
 			drawCursor(&pr);
 		}
 	}
 
 	int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 
+	// テキスト描画
 	if (renderingMode() == DecoratedMode) {
-//		pr.fillRect(linenum_width, 0, width() - linenum_width, height(), Qt::blue);
 		int view_row = 0;
 		int line_row = editor_cx->scroll_row_pos;
 		int lh = lineHeight();
 		pr.save();
 		pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
-		auto ScrollXinPixel = [&](){
-			return editor_cx->scroll_col_pos * defaultCharWidth();
-		};
 		while (isValidRowIndex(line_row)) {
-			int x = linenum_width - ScrollXinPixel();
+			int x = linenum_width - xScrollPosInPixel();
 			int y = view_row * lh;
 			if (y >= height()) break;
 			QList<FormattedLine> fline = formatLine2(line_row);
 			for (FormattedLine const &fl : fline) {
-				pr.setPen(QPen(Qt::white));
+				pr.setPen(defaultForegroundColor());
 				pr.drawText(QRect(x, y, width() - linenum_width, lh), fl.text);
 			}
 			view_row++;
@@ -654,6 +628,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		paintScreen(&pr);
 	}
 
+	// 行番号描画
 	if (renderingMode() == DecoratedMode) {
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
@@ -699,6 +674,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
+	// フォーカス枠描画
 	if (m->is_focus_frame_visible && has_focus) {
 		drawFocusFrame(&pr);
 	}
