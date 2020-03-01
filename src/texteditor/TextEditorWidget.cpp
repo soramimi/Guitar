@@ -17,6 +17,8 @@
 #include "InputMethodPopup.h"
 #include "unicode.h"
 
+#define PROPORTIONAL_FONT_SUPPORT 0
+
 class CharacterSize {
 private:
 	QFont font_;
@@ -107,8 +109,15 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	, m(new Private)
 {
 #ifdef Q_OS_WIN
+
+
+#if PROPORTIONAL_FONT_SUPPORT
+	setTextFont(QFont("MS PGothic", 30));
+#else
 	setTextFont(QFont("MS Gothic", 10));
-//	setTextFont(QFont("MS PGothic", 20));
+#endif
+
+
 #endif
 #ifdef Q_OS_LINUX
 	setTextFont(QFont("Monospace", 9));
@@ -145,6 +154,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	setRenderingMode(DecoratedMode);
 
 	updateCursorRect(true);
+
+	setScrollUnit(ScrollByCharacter);
 
 	startTimer(100);
 }
@@ -279,19 +290,28 @@ int TextEditorWidget::parseLine3(int row, int col, std::vector<Char> *vec) const
 
 QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
 {
-	const int col = cx()->current_col;
+//	const int col = cx()->current_col;
 	const int y = pt.y() / lineHeight();
 	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
 	const int w = defaultCharWidth();
 	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
 	std::vector<Char> vec;
-	parseLine3(row, col, &vec);
-	for (int col = 0; col + 1 < (int)vec.size(); col++) {
-		if (x < (int)vec[col + 1].pos) {
-			return QPoint(col, row);
+	int end = parseLine3(row, -1, &vec);
+	int left = 0;
+	for (int col = 0; col < (int)vec.size(); col++) {
+		int right = (col + 1 < (int)vec.size()) ? vec[col + 1].pos : end;
+		if (x < right) {
+			int l = left - x;
+			int r = right - x;
+			if (l * l < r * r) {
+				return QPoint(col, row);
+			} else {
+				return QPoint(col + 1, row);
+			}
 		}
+		left = right;
 	}
-	return QPoint(vec.size(), row);
+	return QPoint(end, row);
 }
 
 QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
@@ -527,14 +547,22 @@ void TextEditorWidget::drawFocusFrame(QPainter *pr)
 	misc::drawFrame(pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
 }
 
-#define SCROLL_BY_PIXEL 0
+void TextEditorWidget::setScrollUnit(int n)
+{
+	scroll_unit_ = n;
+}
+
+int TextEditorWidget::scrollUnit() const
+{
+	return scroll_unit_;
+}
+
 int TextEditorWidget::xScrollPosInPixel()
 {
-#if SCROLL_BY_PIXEL
-	return editor_cx->scroll_col_pos;// * defaultCharWidth();
-#else
-		return editor_cx->scroll_col_pos * defaultCharWidth();
-#endif
+	int u = scrollUnit();
+	int n = editor_cx->scroll_col_pos;
+	n *= (u == ScrollByCharacter) ? defaultCharWidth() : u;
+	return n;
 }
 
 void TextEditorWidget::drawCursor(QPainter *pr)

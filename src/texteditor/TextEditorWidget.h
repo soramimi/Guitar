@@ -91,6 +91,12 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
+	enum ScrollUnit {
+		ScrollByCharacter = 0,
+	};
+	int scroll_unit_ = ScrollByCharacter;
+	void setScrollUnit(int n);
+	int scrollUnit() const;
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
