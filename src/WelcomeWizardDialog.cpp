@@ -129,7 +129,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		if (user_name().isEmpty() && user_email().isEmpty()) {
 			Git::Context gcx;
 			gcx.git_command = git_command_path();
-			Git g(gcx, QString());
+			Git g(gcx, {}, {});
 			Git::User user = g.getUser(Git::Source::Global);
 			set_user_name(user.name);
 			set_user_email(user.email);

@@ -7,6 +7,7 @@
 
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QThread>
 
 enum SearchRepository {
@@ -104,7 +105,7 @@ void CloneDialog::on_comboBox_currentIndexChanged(int index)
 
 void CloneDialog::on_pushButton_test_clicked()
 {
-	mainwindow()->testRemoteRepositoryValidity(url());
+	mainwindow()->testRemoteRepositoryValidity(url(), overridedSshKey());
 }
 
 void CloneDialog::on_pushButton_browse_clicked()
@@ -140,4 +141,23 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 		m->action = CloneDialog::Action::AddExisting;
 		done(Accepted);
 	}
+}
+
+QString CloneDialog::overridedSshKey() const
+{
+	return ui->lineEdit_ssh_key_override->text();
+}
+
+void CloneDialog::on_pushButton_ssh_key_override_clicked()
+{
+	QString path = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh", QStandardPaths::LocateDirectory);
+	path = QFileDialog::getOpenFileName(this, tr("SSH key override"), path);
+	if (!path.isEmpty()) {
+		ui->lineEdit_ssh_key_override->setText(path);
+	}
+}
+
+void CloneDialog::on_pushButton_clear_ssh_key_override_clicked()
+{
+	ui->lineEdit_ssh_key_override->clear();
 }

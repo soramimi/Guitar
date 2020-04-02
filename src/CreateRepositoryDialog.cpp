@@ -127,6 +127,6 @@ void CreateRepositoryDialog::on_groupBox_remote_toggled(bool)
 void CreateRepositoryDialog::on_pushButton_test_repo_clicked()
 {
 	QString url = ui->lineEdit_remote_url->text();
-	mainwindow()->testRemoteRepositoryValidity(url);
+	mainwindow()->testRemoteRepositoryValidity(url, {});
 	validate(false);
 }

@@ -91,6 +91,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	GetValue<QString>(s, "GitCommand")                       >> as->git_command;
 	GetValue<QString>(s, "FileCommand")                      >> as->file_command;
 	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
+	GetValue<QString>(s, "SshCommand")                       >> as->ssh_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
@@ -120,6 +121,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	SetValue<QString>(s, "GitCommand")                       << as->git_command;
 	SetValue<QString>(s, "FileCommand")                      << as->file_command;
 	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
+	SetValue<QString>(s, "SshCommand")                       << as->ssh_command;
 	s.endGroup();
 
 	s.beginGroup("UI");

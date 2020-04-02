@@ -32,7 +32,7 @@ public:
 
 	QPixmap const &digitsPixmap() const;
 
-	QString currentWorkingCopyDir() const override;
+//	QString currentWorkingCopyDir() const override;
 
 	QColor color(unsigned int i);
 

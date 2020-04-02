@@ -72,6 +72,11 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *
 				writer.writeCharacters(local);
 				writer.writeEndElement(); // local
 			}
+			if (!item.ssh_key.isEmpty()) {
+				writer.writeStartElement("sshkey");
+				writer.writeCharacters(item.ssh_key);
+				writer.writeEndElement(); // sshkey
+			}
 			writer.writeEndElement(); // repository
 		}
 		writer.writeEndElement(); // repositories
@@ -104,6 +109,8 @@ QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
 						item.group = atts.value("group").toString();
 					} else if (state == "/repositories/repository/local") {
 						text = QString();
+					} else if (state == "/repositories/repository/sshkey") {
+						text = QString();
 					}
 				}
 				break;
@@ -111,6 +118,8 @@ QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
 				if (state == "/repositories/repository/local") {
 					item.local_dir = text;
 					item.local_dir.replace('\\', '/');
+				} else if (state == "/repositories/repository/sshkey") {
+					item.ssh_key = text;
 				} else if (state == "/repositories/repository") {
 					items.push_back(item);
 				}

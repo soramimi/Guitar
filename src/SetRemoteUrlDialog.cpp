@@ -56,7 +56,7 @@ void SetRemoteUrlDialog::accept()
 void SetRemoteUrlDialog::on_pushButton_test_clicked()
 {
 	QString url = ui->lineEdit_url->text();
-	mainwindow()->testRemoteRepositoryValidity(url);
+	mainwindow()->testRemoteRepositoryValidity(url, {});
 }
 
 

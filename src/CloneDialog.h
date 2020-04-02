@@ -14,10 +14,13 @@ class BasicMainWindow;
 class CloneDialog : public QDialog {
 	Q_OBJECT
 private:
+	Ui::CloneDialog *ui;
 	struct Private;
 	Private *m;
 
 	using GitPtr = std::shared_ptr<Git>;
+private:
+	BasicMainWindow *mainwindow();
 public:
 	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
 	~CloneDialog() override;
@@ -30,16 +33,15 @@ public:
 
 	QString url();
 	QString dir();
-private:
-	Ui::CloneDialog *ui;
-
-	BasicMainWindow *mainwindow();
+	QString overridedSshKey() const;
 private slots:
 	void on_lineEdit_repo_location_textChanged(QString const &text);
 	void on_pushButton_test_clicked();
 	void on_comboBox_currentIndexChanged(int index);
 	void on_pushButton_browse_clicked();
 	void on_pushButton_open_existing_clicked();
+	void on_pushButton_ssh_key_override_clicked();
+	void on_pushButton_clear_ssh_key_override_clicked();
 };
 
 #endif // CLONEDIALOG_H

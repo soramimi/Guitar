@@ -133,7 +133,7 @@ private:
 	QString tempfileHeader() const;
 	void deleteTempFiles();
 	QString getCommitIdFromTag(QString const &tag);
-	bool isValidRemoteURL(QString const &url);
+	bool isValidRemoteURL(QString const &url, const QString &sshkey);
 	QString getObjectID(QListWidgetItem *item);
 	void addWorkingCopyDir(QString dir, QString name, bool open);
 	static QString makeRepositoryName(QString const &loc);
@@ -162,6 +162,7 @@ protected:
 	void setGitCommand(QString const &path, bool save);
 	void setFileCommand(QString const &path, bool save);
 	void setGpgCommand(QString const &path, bool save);
+	void setSshCommand(QString const &path, bool save);
 	void logGitVersion();
 	void setUnknownRepositoryInfo();
 	void internalClearRepositoryInfo();
@@ -312,7 +313,7 @@ public:
 	WebContext *webContext();
 	QString gitCommand() const;
 	void autoOpenRepository(QString dir);
-	GitPtr git(QString const &dir) const;
+	GitPtr git(QString const &dir, const QString &sshkey = {}) const;
 	GitPtr git();
 	QPixmap getTransparentPixmap();
 	QIcon committerIcon(int row) const;
@@ -321,7 +322,7 @@ public:
 	virtual QString currentWorkingCopyDir() const;
 	const QList<Label> *label(int row) const;
 	bool saveAs(QString const &id, QString const &dstpath);
-	bool testRemoteRepositoryValidity(QString const &url);
+	bool testRemoteRepositoryValidity(QString const &url, const QString &sshkey);
 	QString defaultWorkingDir() const;
 	void addWorkingCopyDir(const QString &dir, bool open);
 	bool queryCommit(QString const &id, Git::CommitItem *out);
@@ -337,6 +338,7 @@ public:
 	QString selectGitCommand(bool save);
 	QString selectFileCommand(bool save);
 	QString selectGpgCommand(bool save);
+	QString selectSshCommand(bool save);
 	Git::Branch const &currentBranch() const;
 	void setCurrentBranch(Git::Branch const &b);
 	const RepositoryItem &currentRepository() const;

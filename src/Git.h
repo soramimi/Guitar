@@ -56,6 +56,7 @@ public:
 	class Context {
 	public:
 		QString git_command;
+		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 	};
 
 	struct Object {
@@ -318,7 +319,7 @@ private:
 	Git();
 	QString encodeQuotedText(QString const &str);
 public:
-	Git(Context const &cx, QString const &repodir);
+	Git(Context const &cx, QString const &repodir, QString const &sshkey = {});
 	Git(Git &&r) = delete;
 	 ~Git() override;
 
@@ -327,7 +328,7 @@ public:
 	void setLogCallback(callback_t func, void *cookie);
 
 	QByteArray toQByteArray() const;
-	void setGitCommand(QString const &path);
+	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
 	QString gitCommand() const;
 	void clearResult();
 	QString resultText() const;
@@ -338,7 +339,7 @@ public:
 		return git(arg, true);
 	}
 
-	void setWorkingRepositoryDir(QString const &repo);
+	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey);
 	QString const &workingRepositoryDir() const;
 
 	QString getCurrentBranchName();

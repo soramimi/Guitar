@@ -249,11 +249,11 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 	}
 }
 
-GitPtr BasicMainWindow::git(QString const &dir) const
+GitPtr BasicMainWindow::git(QString const &dir, QString const &sshkey) const
 {
 //	const_cast<BasicMainWindow *>(this)->checkGitCommand();
 
-	GitPtr g = std::make_shared<Git>(m->gcx, dir);
+	GitPtr g = std::make_shared<Git>(m->gcx, dir, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
 		g->setLogCallback(git_callback, (void *)this);
 		return g;
@@ -266,7 +266,9 @@ GitPtr BasicMainWindow::git(QString const &dir) const
 
 GitPtr BasicMainWindow::git()
 {
-	return git(currentWorkingCopyDir());
+	RepositoryItem const &item = currentRepository();
+//	return git(currentWorkingCopyDir());
+	return git(item.local_dir, item.ssh_key);
 }
 
 QPixmap BasicMainWindow::getTransparentPixmap()
@@ -363,12 +365,12 @@ bool BasicMainWindow::saveAs(QString const &id, QString const &dstpath)
 	}
 }
 
-bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url)
+bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url, QString const &sshkey)
 {
 	bool ok;
 	{
 		OverrideWaitCursor;
-		ok = isValidRemoteURL(url);
+		ok = isValidRemoteURL(url, sshkey);
 	}
 
 	QString pass = tr("The URL is a valid repository");
@@ -602,6 +604,21 @@ QString BasicMainWindow::selectGpgCommand(bool save)
 	cmdlist.push_back(GPG_COMMAND);
 	cmdlist.push_back(GPG2_COMMAND);
 	return selectCommand_("GPG", cmdlist, list, path, fn);
+}
+
+QString BasicMainWindow::selectSshCommand(bool save)
+{
+	QString path = m->gcx.ssh_command;
+
+	auto fn = [&](QString const &path){
+		setSshCommand(path, save);
+	};
+
+	QStringList list = whichCommand_(SSH_COMMAND);
+
+	QStringList cmdlist;
+	cmdlist.push_back(SSH_COMMAND);
+	return selectCommand_("ssh", cmdlist, list, path, fn);
 }
 
 Git::Branch const &BasicMainWindow::currentBranch() const
@@ -1368,10 +1385,6 @@ QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString cons
 	return list;
 }
 
-
-
-
-
 void BasicMainWindow::setWindowTitle_(Git::User const &user)
 {
 	if (user.name.isEmpty() && user.email.isEmpty()) {
@@ -1521,13 +1534,13 @@ QString BasicMainWindow::getCommitIdFromTag(QString const &tag)
 	return getObjCache()->getCommitIdFromTag(tag);
 }
 
-bool BasicMainWindow::isValidRemoteURL(QString const &url)
+bool BasicMainWindow::isValidRemoteURL(QString const &url, QString const &sshkey)
 {
 	if (url.indexOf('\"') >= 0) {
 		return false;
 	}
 	stopPtyProcess();
-	GitPtr g = git(QString());
+	GitPtr g = git(QString(), sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
 	bool f = g->git(cmd, false, false, getPtyProcess());
@@ -1878,7 +1891,7 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 	dlg.set_default_working_folder(appsettings()->default_working_dir);
 	if (misc::isExecutable(appsettings()->git_command)) {
 		gitCommand() = appsettings()->git_command;
-		Git g(m->gcx, QString());
+		Git g(m->gcx, {}, {});
 		Git::User user = g.getUser(Git::Source::Global);
 		dlg.set_user_name(user.name);
 		dlg.set_user_email(user.email);
@@ -1961,6 +1974,11 @@ void BasicMainWindow::setGpgCommand(QString const &path, bool save)
 	}
 }
 
+void BasicMainWindow::setSshCommand(QString const &path, bool save)
+{
+	internalSetCommand(path, save, "SshCommand", &m->gcx.ssh_command);
+}
+
 void BasicMainWindow::logGitVersion()
 {
 	GitPtr g = git();
@@ -1975,7 +1993,7 @@ void BasicMainWindow::setUnknownRepositoryInfo()
 {
 	setRepositoryInfo("---", "");
 
-	Git g(m->gcx, QString());
+	Git g(m->gcx, {}, {});
 	Git::User user = g.getUser(Git::Source::Global);
 	setWindowTitle_(user);
 }
@@ -1990,7 +2008,7 @@ void BasicMainWindow::internalClearRepositoryInfo()
 
 void BasicMainWindow::checkUser()
 {
-	Git g(m->gcx, QString());
+	Git g(m->gcx, {}, {});
 	while (1) {
 		Git::User user = g.getUser(Git::Source::Global);
 		if (!user.name.isEmpty() && !user.email.isEmpty()) {
@@ -2342,8 +2360,9 @@ void BasicMainWindow::clone(QString url, QString dir)
 			data.local_dir = dir;
 			data.local_dir.replace('\\', '/');
 			data.name = makeRepositoryName(dir);
+			data.ssh_key = dlg.overridedSshKey();
 
-			GitPtr g = git(QString());
+			GitPtr g = git(QString(), data.ssh_key);
 			setPtyUserData(QVariant::fromValue<RepositoryItem>(data));
 			setPtyCondition(PtyCondition::Clone);
 			setPtyProcessOk(true);

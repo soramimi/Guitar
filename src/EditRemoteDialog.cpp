@@ -58,7 +58,7 @@ int EditRemoteDialog::exec()
 void EditRemoteDialog::on_pushButton_test_clicked()
 {
 	QString url = ui->lineEdit_url->text();
-	if (mainwindow()->testRemoteRepositoryValidity(url)) {
+	if (mainwindow()->testRemoteRepositoryValidity(url, {})) {
 		ui->pushButton_ok->setFocus();
 	} else {
 		ui->lineEdit_url->setFocus();

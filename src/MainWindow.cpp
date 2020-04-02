@@ -260,6 +260,7 @@ void MainWindow::onStartEvent()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
+		setSshCommand(appsettings()->ssh_command, false);
 
 		// メインウィンドウのタイトルを設定
 		updateWindowTitle(git());
@@ -573,18 +574,18 @@ QColor MainWindow::color(unsigned int i)
 	return Qt::black;
 }
 
-QString MainWindow::currentWorkingCopyDir() const
-{
-	QString workdir = BasicMainWindow::currentWorkingCopyDir();
-	if (workdir.isEmpty()) {
-		RepositoryItem const *repo = selectedRepositoryItem();
-		if (repo) {
-			workdir = repo->local_dir;
-			return workdir;
-		}
-	}
-	return workdir;
-}
+//QString MainWindow::currentWorkingCopyDir() const
+//{
+//	QString workdir = BasicMainWindow::currentWorkingCopyDir();
+//	if (workdir.isEmpty()) {
+//		RepositoryItem const *repo = selectedRepositoryItem();
+//		if (repo) {
+//			workdir = repo->local_dir;
+//			return workdir;
+//		}
+//	}
+//	return workdir;
+//}
 
 RepositoryItem const *BasicMainWindow::findRegisteredRepository(QString *workdir) const
 {
@@ -619,7 +620,7 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 RepositoryItem const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
-	auto const &repos = getRepos();
+	QList<RepositoryItem> const &repos = getRepos();
 	return (row >= 0 && row < repos.size()) ? &repos[row] : nullptr;
 }
 
