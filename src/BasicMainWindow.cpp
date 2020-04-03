@@ -251,8 +251,6 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 
 GitPtr BasicMainWindow::git(QString const &dir, QString const &sshkey) const
 {
-//	const_cast<BasicMainWindow *>(this)->checkGitCommand();
-
 	GitPtr g = std::make_shared<Git>(m->gcx, dir, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
 		g->setLogCallback(git_callback, (void *)this);
@@ -2304,7 +2302,7 @@ void BasicMainWindow::clone(QString url, QString dir)
 
 	while (1) {
 		dir = defaultWorkingDir();
-		CloneDialog dlg(this, url, dir);
+		CloneDialog dlg(this, url, dir, m->gcx);
 		if (dlg.exec() != QDialog::Accepted) {
 			return;
 		}

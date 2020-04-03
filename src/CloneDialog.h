@@ -22,7 +22,7 @@ private:
 private:
 	BasicMainWindow *mainwindow();
 public:
-	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
+	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context &gcx);
 	~CloneDialog() override;
 
 	enum class Action {

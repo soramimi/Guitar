@@ -1,10 +1,10 @@
 #include "CloneDialog.h"
 #include "ui_CloneDialog.h"
-#include "common/misc.h"
-#include "common/joinpath.h"
+#include "ApplicationGlobal.h"
 #include "BasicMainWindow.h"
 #include "SearchFromGitHubDialog.h"
-
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QStandardPaths>
@@ -24,7 +24,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir)
+CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const &gcx)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -41,6 +41,12 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
 
+	if (gcx.ssh_command.isEmpty()) {
+		ui->pushButton_ssh_key_override->setEnabled(false);
+		ui->pushButton_clear_ssh_key_override->setEnabled(false);
+		ui->lineEdit_ssh_key_override->setEnabled(false);
+		ui->lineEdit_ssh_key_override->setText(tr("SSH command is not registered."));
+	}
 
 #ifdef Q_OS_MACX
 	ui->comboBox->setMinimumWidth(100);
@@ -145,7 +151,11 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 
 QString CloneDialog::overridedSshKey() const
 {
-	return ui->lineEdit_ssh_key_override->text();
+	if (ui->lineEdit_ssh_key_override->isEnabled()) {
+		return ui->lineEdit_ssh_key_override->text();
+	} else {
+		return {};
+	}
 }
 
 void CloneDialog::on_pushButton_ssh_key_override_clicked()
