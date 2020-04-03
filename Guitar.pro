@@ -202,6 +202,7 @@ SOURCES += \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
+    src/UserEvent.cpp \
 	src/WelcomeWizardDialog.cpp \
 	src/charvec.cpp \
 	src/common/joinpath.cpp \
@@ -318,6 +319,7 @@ HEADERS  += \
 	src/Terminal.h \
 	src/TextEditDialog.h \
 	src/Theme.h \
+	src/UserEvent.h \
 	src/WelcomeWizardDialog.h \
 	src/charvec.h \
 	src/common/joinpath.h \

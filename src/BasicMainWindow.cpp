@@ -24,6 +24,7 @@
 #include "SettingsDialog.h"
 #include "Terminal.h"
 #include "TextEditDialog.h"
+#include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
@@ -176,29 +177,12 @@ QString BasicMainWindow::gitCommand() const
 
 namespace {
 
-enum UserEvent {
-	EventUserFunction = QEvent::User,
-};
-
-class UserFunctionEvent : public QEvent {
-public:
-	std::function<void(QVariant &)> func;
-	QVariant var;
-
-	explicit UserFunctionEvent(std::function<void(QVariant const &)> const &func, QVariant const &var)
-		: QEvent((QEvent::Type)EventUserFunction)
-		, func(func)
-		, var(var)
-	{
-	}
-};
-
 } // namespace
 
 bool BasicMainWindow::event(QEvent *event)
 {
 	if (event->type() == (QEvent::Type)EventUserFunction) {
-		if (auto *e = dynamic_cast<UserFunctionEvent *>(event)) {
+		if (auto *e = (UserFunctionEvent *)event) {
 			e->func(e->var);
 			return true;
 		}

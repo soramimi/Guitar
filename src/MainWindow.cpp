@@ -23,6 +23,7 @@
 #include "SettingsDialog.h"
 #include "StatusLabel.h"
 #include "TextEditDialog.h"
+#include "UserEvent.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "CherryPickDialog.h"
@@ -40,17 +41,6 @@
 #include <QStandardPaths>
 #include <QTimer>
 
-enum class CustomEvent {
-	Start = QEvent::User,
-};
-
-class StartEvent : public QEvent {
-public:
-	StartEvent()
-		: QEvent((QEvent::Type)CustomEvent::Start)
-	{
-	}
-};
 
 FileDiffWidget::DrawData::DrawData()
 {
@@ -436,7 +426,7 @@ bool MainWindow::event(QEvent *event)
 
 void MainWindow::customEvent(QEvent *e)
 {
-	if (e->type() == (QEvent::Type)CustomEvent::Start) {
+	if (e->type() == (QEvent::Type)UserEvent::Start) {
 		onStartEvent();
 		return;
 	}
