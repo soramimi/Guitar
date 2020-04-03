@@ -86,6 +86,7 @@ public:
 struct UnixPtyProcess::Private {
 	QMutex mutex;
 	std::string command;
+	std::string env;
 	int pty_master;
 	std::deque<char> output_queue;
 	std::vector<char> output_vector;
@@ -130,10 +131,11 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(QString const &cmd, QVariant const &userdata)
+void UnixPtyProcess::start(QString const &cmd, QString const &env, QVariant const &userdata)
 {
 	if (isRunning()) return;
 	m->command = cmd.toStdString();
+	m->env = env.toStdString();
 	user_data = userdata;
 	QThread::start();
 }
@@ -159,6 +161,11 @@ void UnixPtyProcess::run()
 	if (pid == 0) {
 		setsid();
 		setenv("LANG", "C", 1);
+		if (!m->env.empty()) {
+			char *env = (char *)alloca(m->env.size() + 1);
+			strcpy(env, m->env.c_str());
+			putenv(env);
+		}
 
 		char *pts_name = ptsname(m->pty_master);
 		int pty_slave = open(pts_name, O_RDWR);
