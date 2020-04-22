@@ -3,6 +3,7 @@
 
 #include <QEvent>
 #include <QVariant>
+#include <functional>
 
 enum UserEvent {
 	Start = QEvent::User,
