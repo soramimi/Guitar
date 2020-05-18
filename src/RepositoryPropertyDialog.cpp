@@ -6,9 +6,10 @@
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, Git::Context const *gcx, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
+	, gcx(gcx)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -40,7 +41,21 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
-
+void BasicMainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
+{
+	bool changed = false;
+	QList<RepositoryItem> *repos = getReposPtr();
+	for (int i = 0; i < repos->size(); i++) {
+		RepositoryItem *item = &(*repos)[i];
+		if (item->local_dir == localdir) {
+			item->ssh_key = sshkey;
+			changed = true;
+		}
+	}
+	if (changed) {
+		saveRepositoryBookmarks();
+	}
+}
 
 bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
 {
@@ -59,12 +74,14 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		remote->name = "origin";
 	}
 
-	EditRemoteDialog dlg(mainwindow(), op);
+	EditRemoteDialog dlg(mainwindow(), op, gcx);
 	dlg.setName(remote->name);
 	dlg.setUrl(remote->url);
+	dlg.setSshKey(remote->ssh_key);
 	if (dlg.exec() == QDialog::Accepted) {
 		remote->name = dlg.name();
 		remote->url = dlg.url();
+		remote->ssh_key = dlg.sshKey();
 		GitPtr g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
 			bool ok = true;
@@ -76,11 +93,18 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 				}
 			}
 			if (ok) {
-				g->addRemoteURL(remote->name, remote->url);
+				g->addRemoteURL(*remote);
 			}
 		} else if (op == EditRemoteDialog::RemoteSet) {
-			g->setRemoteURL(remote->name, remote->url);
+			g->setRemoteURL(*remote);
 		}
+
+		// wip
+		QString localdir = ui->lineEdit_local_dir->text();
+		mainwindow()->changeSshKey(localdir, remote->ssh_key);
+		setSshKey_(remote->ssh_key);
+		getRemotes_();
+
 		updateRemotesTable();
 		return true;
 	}

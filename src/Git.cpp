@@ -63,6 +63,16 @@ QString const &Git::workingRepositoryDir() const
 	return m->working_repo_dir;
 }
 
+QString const &Git::sshKey() const
+{
+	return m->ssh_key_override;
+}
+
+void Git::setSshKey(QString const &sshkey) const
+{
+	m->ssh_key_override = sshkey;
+}
+
 bool Git::isValidID(QString const &id)
 {
 	int zero = 0;
@@ -1143,6 +1153,7 @@ void Git::getRemoteURLs(QList<Remote> *out)
 			r.name = line.mid(0, i);
 			r.url = line.mid(i + 1, j - i - 1);
 			r.purpose = line.mid(j + 1);
+			r.ssh_key = m->ssh_key_override;
 			if (r.purpose.startsWith('(') && r.purpose.endsWith(')')) {
 				r.purpose = r.purpose.mid(1, r.purpose.size() - 2);
 			}
@@ -1151,17 +1162,18 @@ void Git::getRemoteURLs(QList<Remote> *out)
 	}
 }
 
-void Git::setRemoteURL(QString const &name, QString const &url)
+void Git::setRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
 	git(cmd);
 }
 
-void Git::addRemoteURL(QString const &name, QString const &url)
+void Git::addRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote add \"%1\" \"%2\"";
-	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
+	m->ssh_key_override = remote.ssh_key;
 	git(cmd);
 }
 

@@ -19,13 +19,13 @@ private:
 	Ui::RepositoryPropertyDialog *ui;
 	RepositoryItem repository;
 	bool remote_changed = false;
-
+	Git::Context const *gcx;
 	void updateRemotesTable();
 	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
 	Git::Remote selectedRemote() const;
 	void toggleRemoteMenuActivity();
 public:
-	explicit RepositoryPropertyDialog(BasicMainWindow *parent, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(BasicMainWindow *parent, const Git::Context *gcx, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

@@ -2584,7 +2584,8 @@ void MainWindow::blame()
 
 void MainWindow::on_action_repository_property_triggered()
 {
-	execRepositoryPropertyDialog(currentWorkingCopyDir());
+	RepositoryItem repo = currentRepository();
+	execRepositoryPropertyDialog(repo.local_dir);
 }
 
 void MainWindow::on_action_set_gpg_signing_triggered()

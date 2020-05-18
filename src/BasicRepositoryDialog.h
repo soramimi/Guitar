@@ -21,6 +21,8 @@ protected:
 	QString updateRemotesTable(QTableWidget *tablewidget);
 
 	const QList<Git::Remote> *remotes() const;
+	void getRemotes_();
+	void setSshKey_(const QString &sshkey);
 };
 
 #endif // BASICREPOSITORYDIALOG_H

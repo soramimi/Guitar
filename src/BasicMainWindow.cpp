@@ -1913,8 +1913,8 @@ void BasicMainWindow::execRepositoryPropertyDialog(QString workdir, bool open_re
 	if (name.isEmpty()) {
 		name = makeRepositoryName(workdir);
 	}
-	GitPtr g = git(workdir);
-	RepositoryPropertyDialog dlg(this, g, *repo, open_repository_menu);
+	GitPtr g = git(workdir, repo->ssh_key);
+	RepositoryPropertyDialog dlg(this, &m->gcx, g, *repo, open_repository_menu);
 	dlg.exec();
 	if (dlg.isRemoteChanged()) {
 		emit remoteInfoChanged();
@@ -2286,7 +2286,7 @@ void BasicMainWindow::clone(QString url, QString dir)
 
 	while (1) {
 		dir = defaultWorkingDir();
-		CloneDialog dlg(this, url, dir, m->gcx);
+		CloneDialog dlg(this, url, dir, &m->gcx);
 		if (dlg.exec() != QDialog::Accepted) {
 			return;
 		}
@@ -2501,7 +2501,7 @@ void BasicMainWindow::push()
 
 	if (g->getRemotes().isEmpty()) {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		execRepositoryPropertyDialog(QString(), true);
+		execRepositoryPropertyDialog({}, true);
 		return;
 	}
 
@@ -2858,7 +2858,10 @@ void BasicMainWindow::createRepository(QString const &dir)
 					QString remote_name = dlg.remoteName();
 					QString remote_url = dlg.remoteURL();
 					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
-						g->addRemoteURL(remote_name, remote_url);
+						Git::Remote r;
+						r.name = remote_name;
+						r.url = remote_url;
+						g->addRemoteURL(r);
 					}
 				}
 			}

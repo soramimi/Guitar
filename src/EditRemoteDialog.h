@@ -2,6 +2,7 @@
 #define EDITREMOTEDIALOG_H
 
 #include <QDialog>
+#include "Git.h"
 
 class BasicMainWindow;
 
@@ -20,17 +21,21 @@ private:
 	Ui::EditRemoteDialog *ui;
 	BasicMainWindow *mainwindow();
 public:
-	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op);
+	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op, const Git::Context *gcx);
 	~EditRemoteDialog() override;
 
 	void setName(QString const &s) const;
 	void setUrl(QString const &s) const;
+	void setSshKey(const QString &s) const;
 
 	QString name() const;
 	QString url() const;
+	QString sshKey() const;
 	int exec() override;
 private slots:
 	void on_pushButton_test_clicked();
+	void on_pushButton_clear_ssh_key_clicked();
+	void on_pushButton_override_ssh_key_clicked();
 };
 
 #endif // EDITREMOTEDIALOG_H

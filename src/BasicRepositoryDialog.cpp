@@ -41,14 +41,25 @@ QList<Git::Remote> const *BasicRepositoryDialog::remotes() const
 	return &m->remotes;
 }
 
-QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
+void BasicRepositoryDialog::getRemotes_()
 {
-	tablewidget->clear();
-	m->remotes.clear();
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
 		g->getRemoteURLs(&m->remotes);
 	}
+}
+
+void BasicRepositoryDialog::setSshKey_(QString const &sshkey)
+{
+	m->git->setSshKey(sshkey);
+}
+
+
+QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
+{
+	tablewidget->clear();
+	m->remotes.clear();
+	getRemotes_();
 	QString url;
 	QString alturl;
 	int rows = m->remotes.size();

@@ -25,6 +25,7 @@ struct GitHubRepositoryInfo {
 
 class BasicMainWindow : public QMainWindow {
 	Q_OBJECT
+	friend class RepositoryPropertyDialog;
 public:
 	struct Label {
 		enum {
@@ -376,6 +377,7 @@ public:
 
 	virtual bool isOnlineMode() const = 0;
 	virtual int selectedLogIndex() const = 0;
+	void changeSshKey(const QString &localdir, const QString &sshkey);
 protected slots:
 	void onAvatarUpdated();
 public slots:

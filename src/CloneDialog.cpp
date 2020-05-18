@@ -24,7 +24,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const &gcx)
+CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -41,7 +41,7 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
 
-	if (gcx.ssh_command.isEmpty()) {
+	if (gcx->ssh_command.isEmpty()) {
 		ui->pushButton_ssh_key_override->setEnabled(false);
 		ui->pushButton_clear_ssh_key_override->setEnabled(false);
 		ui->lineEdit_ssh_key_override->setEnabled(false);
