@@ -376,6 +376,8 @@ public:
 
 	virtual bool isOnlineMode() const = 0;
 	virtual int selectedLogIndex() const = 0;
+
+	void saveApplicationSettings();
 protected slots:
 	void onAvatarUpdated();
 public slots:

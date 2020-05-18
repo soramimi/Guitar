@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>848</width>
+    <width>854</width>
     <height>596</height>
    </rect>
   </property>
@@ -1014,8 +1014,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>848</width>
-     <height>21</height>
+     <width>854</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1034,6 +1034,7 @@
      <string>&amp;View</string>
     </property>
     <addaction name="action_view_refresh"/>
+    <addaction name="action_show_labels"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -1679,6 +1680,17 @@
    </property>
    <property name="shortcut">
     <string>F2</string>
+   </property>
+  </action>
+  <action name="action_show_labels">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show labels</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
    </property>
   </action>
  </widget>
