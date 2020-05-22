@@ -98,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	qApp->installEventFilter(this);
 
+	setShowLabels(appsettings()->show_labels, false);
+
 	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log, themeForTextEditor());
 	onLogVisibilityChanged();
 
@@ -2955,6 +2957,32 @@ void MainWindow::on_action_wide_triggered()
 	}
 }
 
+void MainWindow::setShowLabels(bool show, bool save)
+{
+	ApplicationSettings *as = appsettings();
+	as->show_labels = show;
+
+	bool b = ui->action_show_labels->blockSignals(true);
+	ui->action_show_labels->setChecked(show);
+	ui->action_show_labels->blockSignals(b);
+
+	if (save) {
+		saveApplicationSettings();
+	}
+}
+
+bool MainWindow::isLabelsVisible() const
+{
+	return appsettings()->show_labels;
+}
+
+void MainWindow::on_action_show_labels_triggered()
+{
+	bool f = ui->action_show_labels->isChecked();
+	setShowLabels(f, true);
+	ui->tableWidget_log->viewport()->update();
+}
+
 void MainWindow::test()
 {
 	QElapsedTimer t;
@@ -2976,6 +3004,7 @@ void MainWindow::test()
 	}
 	qDebug() << QString("%1ms").arg(t.elapsed());
 }
+
 
 
 

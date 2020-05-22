@@ -9,6 +9,7 @@
 #include <QProxyStyle>
 #include <cmath>
 #include <map>
+#include "ApplicationGlobal.h"
 
 struct LogTableWidget::Private {
 };
@@ -92,6 +93,10 @@ private:
 		QList<BasicMainWindow::Label> const *labels = mainwindow()->label(row);
 		if (labels) {
 			painter->save();
+
+			bool show = global->mainwindow->isLabelsVisible();
+			painter->setOpacity(show ? 1.0 : 0.0625);
+
 			painter->setRenderHint(QPainter::Antialiasing);
 			QFontMetrics fm = painter->fontMetrics();
 			const int space = 8;

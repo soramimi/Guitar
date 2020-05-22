@@ -1865,6 +1865,11 @@ void BasicMainWindow::abortPtyProcess()
 	setInteractionCanceled(true);
 }
 
+void BasicMainWindow::saveApplicationSettings()
+{
+	SettingsDialog::saveSettings(&m->appsettings);
+}
+
 bool BasicMainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
@@ -1882,7 +1887,7 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 		appsettings()->git_command  = gitCommand()   = dlg.git_command_path();
 		appsettings()->file_command = global->file_command = dlg.file_command_path();
 		appsettings()->default_working_dir = dlg.default_working_folder();
-		SettingsDialog::saveSettings(&m->appsettings);
+		saveApplicationSettings();
 
 		if (misc::isExecutable(appsettings()->git_command)) {
 			GitPtr g = git();

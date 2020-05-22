@@ -123,6 +123,8 @@ public:
 	bool isAncestorCommit(const QString &id);
 	void test();
 	void postStartEvent();
+	void setShowLabels(bool show, bool save);
+	bool isLabelsVisible() const;
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();
@@ -216,6 +218,8 @@ private slots:
 
 	void on_action_sidebar_triggered();
 
+
+	void on_action_show_labels_triggered();
 
 protected:
 	void closeEvent(QCloseEvent *event) override;
