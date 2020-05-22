@@ -40,8 +40,6 @@ private slots:
 	void on_comboBox_currentIndexChanged(int index);
 	void on_pushButton_browse_clicked();
 	void on_pushButton_open_existing_clicked();
-	void on_pushButton_ssh_key_override_clicked();
-	void on_pushButton_clear_ssh_key_override_clicked();
 };
 
 #endif // CLONEDIALOG_H

@@ -158,7 +158,7 @@ protected:
 	void abortPtyProcess();
 
 	bool execWelcomeWizardDialog();
-	void execRepositoryPropertyDialog(QString workdir, bool open_repository_menu = false);
+	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
 	void execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame);
 	void setGitCommand(QString const &path, bool save);
 	void setFileCommand(QString const &path, bool save);

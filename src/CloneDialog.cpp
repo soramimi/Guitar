@@ -41,12 +41,7 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
 
-	if (gcx->ssh_command.isEmpty()) {
-		ui->pushButton_ssh_key_override->setEnabled(false);
-		ui->pushButton_clear_ssh_key_override->setEnabled(false);
-		ui->lineEdit_ssh_key_override->setEnabled(false);
-		ui->lineEdit_ssh_key_override->setText(tr("SSH command is not registered."));
-	}
+	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 
 #ifdef Q_OS_MACX
 	ui->comboBox->setMinimumWidth(100);
@@ -151,23 +146,9 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 
 QString CloneDialog::overridedSshKey() const
 {
-	if (ui->lineEdit_ssh_key_override->isEnabled()) {
-		return ui->lineEdit_ssh_key_override->text();
-	} else {
-		return {};
-	}
+	return ui->advanced_option->sshKey();
 }
 
-void CloneDialog::on_pushButton_ssh_key_override_clicked()
-{
-	QString path = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh", QStandardPaths::LocateDirectory);
-	path = QFileDialog::getOpenFileName(this, tr("SSH key override"), path);
-	if (!path.isEmpty()) {
-		ui->lineEdit_ssh_key_override->setText(path);
-	}
-}
 
-void CloneDialog::on_pushButton_clear_ssh_key_override_clicked()
-{
-	ui->lineEdit_ssh_key_override->clear();
-}
+
+

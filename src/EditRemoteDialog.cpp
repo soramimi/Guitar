@@ -15,13 +15,7 @@ EditRemoteDialog::EditRemoteDialog(BasicMainWindow *parent, Operation op, const 
 		ui->lineEdit_name->setEnabled(false);
 	}
 
-	if (gcx->ssh_command.isEmpty()) {
-		ui->pushButton_override_ssh_key->setEnabled(false);
-		ui->pushButton_clear_ssh_key->setEnabled(false);
-		ui->lineEdit_ssh_key->setEnabled(false);
-		ui->lineEdit_ssh_key->setText(tr("SSH command is not registered."));
-	}
-
+	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 }
 
 EditRemoteDialog::~EditRemoteDialog()
@@ -46,7 +40,7 @@ void EditRemoteDialog::setUrl(QString const &s) const
 
 void EditRemoteDialog::setSshKey(QString const &s) const
 {
-	ui->lineEdit_ssh_key->setText(s);
+	ui->advanced_option->setSshKey(s);
 }
 
 QString EditRemoteDialog::name() const
@@ -61,7 +55,7 @@ QString EditRemoteDialog::url() const
 
 QString EditRemoteDialog::sshKey() const
 {
-	return ui->lineEdit_ssh_key->text();
+	return ui->advanced_option->sshKey();
 }
 
 int EditRemoteDialog::exec()
@@ -84,17 +78,7 @@ void EditRemoteDialog::on_pushButton_test_clicked()
 	}
 }
 
-void EditRemoteDialog::on_pushButton_clear_ssh_key_clicked()
-{
-	ui->lineEdit_ssh_key->clear();
-}
 
 
-void EditRemoteDialog::on_pushButton_override_ssh_key_clicked()
-{
-	QString path = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh", QStandardPaths::LocateDirectory);
-	path = QFileDialog::getOpenFileName(this, tr("SSH key override"), path);
-	if (!path.isEmpty()) {
-		ui->lineEdit_ssh_key->setText(path);
-	}
-}
+
+

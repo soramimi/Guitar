@@ -1522,7 +1522,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_properties) {
-				execRepositoryPropertyDialog(repo->local_dir);
+				execRepositoryPropertyDialog(*repo);
 				return;
 			}
 		}
@@ -2584,8 +2584,7 @@ void MainWindow::blame()
 
 void MainWindow::on_action_repository_property_triggered()
 {
-	RepositoryItem repo = currentRepository();
-	execRepositoryPropertyDialog(repo.local_dir);
+	execRepositoryPropertyDialog(currentRepository());
 }
 
 void MainWindow::on_action_set_gpg_signing_triggered()

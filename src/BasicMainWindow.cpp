@@ -1897,24 +1897,19 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 	return false;
 }
 
-void BasicMainWindow::execRepositoryPropertyDialog(QString workdir, bool open_repository_menu)
+void BasicMainWindow::execRepositoryPropertyDialog(RepositoryItem const &repo, bool open_repository_menu)
 {
+	QString workdir = repo.local_dir;
+
 	if (workdir.isEmpty()) {
 		workdir = currentWorkingCopyDir();
 	}
-	QString name;
-	RepositoryItem const *repo = findRegisteredRepository(&workdir);
-	if (repo) {
-		name = repo->name;
-	} else {
-		QMessageBox::warning(this, tr("Repository Property"), tr("Not a valid git repository") + "\n\n" + workdir);
-		return;
-	}
+	QString name = repo.name;
 	if (name.isEmpty()) {
 		name = makeRepositoryName(workdir);
 	}
-	GitPtr g = git(workdir, repo->ssh_key);
-	RepositoryPropertyDialog dlg(this, &m->gcx, g, *repo, open_repository_menu);
+	GitPtr g = git(workdir, repo.ssh_key);
+	RepositoryPropertyDialog dlg(this, &m->gcx, g, repo, open_repository_menu);
 	dlg.exec();
 	if (dlg.isRemoteChanged()) {
 		emit remoteInfoChanged();
@@ -2501,7 +2496,8 @@ void BasicMainWindow::push()
 
 	if (g->getRemotes().isEmpty()) {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		execRepositoryPropertyDialog({}, true);
+		RepositoryItem const &repo = currentRepository();
+		execRepositoryPropertyDialog(repo, true);
 		return;
 	}
 

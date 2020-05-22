@@ -177,6 +177,7 @@ SOURCES += \
 	src/ReadOnlyLineEdit.cpp \
 	src/ReadOnlyPlainTextEdit.cpp \
 	src/ReflogWindow.cpp \
+	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
 	src/RemoteWatcher.cpp \
 	src/RepositoriesTreeWidget.cpp \
@@ -294,6 +295,7 @@ HEADERS  += \
 	src/ReadOnlyLineEdit.h \
 	src/ReadOnlyPlainTextEdit.h \
 	src/ReflogWindow.h \
+	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
 	src/RemoteWatcher.h \
 	src/RepositoriesTreeWidget.h \
@@ -378,6 +380,7 @@ FORMS    += \
 	src/ObjectBrowserDialog.ui \
 	src/PushDialog.ui \
 	src/ReflogWindow.ui \
+	src/RemoteAdvancedOptionWidget.ui \
 	src/RepositoryPropertyDialog.ui \
 	src/SearchFromGitHubDialog.ui \
 	src/SelectCommandDialog.ui \

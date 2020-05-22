@@ -34,8 +34,6 @@ public:
 	int exec() override;
 private slots:
 	void on_pushButton_test_clicked();
-	void on_pushButton_clear_ssh_key_clicked();
-	void on_pushButton_override_ssh_key_clicked();
 };
 
 #endif // EDITREMOTEDIALOG_H

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>545</width>
-    <height>147</height>
+    <width>612</width>
+    <height>211</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -60,29 +60,13 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Advanced Option</string>
+    <widget class="RemoteAdvancedOptionWidget" name="advanced_option" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>78</height>
+      </size>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QPushButton" name="pushButton_ssh_key_override">
-        <property name="text">
-         <string>SSH key override...</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_clear_ssh_key_override">
-        <property name="text">
-         <string>Clear</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="ReadOnlyLineEdit" name="lineEdit_ssh_key_override"/>
-      </item>
-     </layout>
     </widget>
    </item>
    <item>
@@ -156,9 +140,10 @@
    <header>DirectoryLineEdit.h</header>
   </customwidget>
   <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
+   <class>RemoteAdvancedOptionWidget</class>
+   <extends>QWidget</extends>
+   <header>RemoteAdvancedOptionWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
