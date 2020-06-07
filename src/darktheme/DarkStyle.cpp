@@ -18,6 +18,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include <QPainterPath>
+
 #define MBI_NORMAL                  1
 #define MBI_HOT                     2
 #define MBI_PUSHED                  3

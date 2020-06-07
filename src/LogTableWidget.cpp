@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QProxyStyle>
 #include <cmath>
 #include <map>
