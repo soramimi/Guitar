@@ -172,6 +172,8 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
+	ui->action_sidebar->setChecked(true);
+
 	startTimers();
 }
 
@@ -2932,10 +2934,10 @@ void MainWindow::on_action_sidebar_triggered()
 	bool f = ui->stackedWidget_leftpanel->isVisible();
 	f = !f;
 	ui->stackedWidget_leftpanel->setVisible(f);
+	ui->action_sidebar->setChecked(f);
 }
 
-
-
+#if 0
 void MainWindow::on_action_wide_triggered()
 {
 	QWidget *w = focusWidget();
@@ -2956,6 +2958,7 @@ void MainWindow::on_action_wide_triggered()
 		}
 	}
 }
+#endif
 
 void MainWindow::setShowLabels(bool show, bool save)
 {

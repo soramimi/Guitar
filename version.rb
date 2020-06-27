@@ -1,14 +1,27 @@
 #!/dev/null
 
 $product_name = "Guitar"
-$copyright_year = 2019
+$copyright_year = 2020
 $version_a = 1
-$version_b = 1
-$version_c = 999
+$version_b = 2
+$version_c = 0
 $version_d = 0
 
+# Future plans
+#
+# v1.3.0 xxxx-xx-xx
+# - submodule support
+# - word oriented diffs
+#
 
-# v1.1.1 2019-09-xx
+# History
+#
+# v1.2.0 2020-06-27
+# - SSHキーオーバーライド機能
+# - ウィンドウレイアウト（仮）
+# - 中国語（簡体字）
+#
+# v1.1.1 2019-09-02
 # - ダークテーマ描画修正
 # - 初回起動時のウェルカムダイアログボックスの改良
 # - 小さな修正

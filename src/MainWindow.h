@@ -214,7 +214,7 @@ private slots:
 
 	void on_action_expand_diff_view_triggered();
 
-	void on_action_wide_triggered();
+//	void on_action_wide_triggered();
 
 	void on_action_sidebar_triggered();
 
