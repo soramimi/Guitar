@@ -196,3 +196,21 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	}
 }
 
+
+void WelcomeWizardDialog::on_lineEdit_git_textChanged(const QString &arg1)
+{
+	QString ss;
+	if (!misc::isExecutable(arg1)) {
+		ss = "* { background-color: #ffc0c0; }";
+	}
+	ui->lineEdit_git->setStyleSheet(ss);
+}
+
+void WelcomeWizardDialog::on_lineEdit_file_textChanged(const QString &arg1)
+{
+	QString ss;
+	if (!misc::isExecutable(arg1)) {
+		ss = "* { background-color: #ffc0c0; }";
+	}
+	ui->lineEdit_file->setStyleSheet(ss);
+}

@@ -113,7 +113,7 @@ private:
 	bool checkGitCommand();
 	bool checkFileCommand();
 	bool checkExecutable(QString const &path);
-	void internalSetCommand(QString const &path, bool save, QString const &name, QString *out);
+	void internalSaveCommandPath(QString const &path, bool save, QString const &name);
 	QStringList whichCommand_(QString const &cmdfile1, QString const &cmdfile2 = QString());
 
 	void setWindowTitle_(Git::User const &user);
@@ -148,6 +148,7 @@ private:
 	void queryRemotes(const GitPtr &g);
 	bool runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo);
 	void clearSshAuthentication();
+	QString executableOrEmpty(const QString &path);
 protected:
 	static QString getFilePath(QListWidgetItem *item);
 	static bool isGroupItem(QTreeWidgetItem *item);
@@ -165,10 +166,10 @@ protected:
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
 	void execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame);
-	void setGitCommand(QString const &path, bool save);
-	void setFileCommand(QString const &path, bool save);
-	void setGpgCommand(QString const &path, bool save);
-	void setSshCommand(QString const &path, bool save);
+	void setGitCommand(QString path, bool save);
+	void setFileCommand(QString path, bool save);
+	void setGpgCommand(QString path, bool save);
+	void setSshCommand(QString path, bool save);
 	void logGitVersion();
 	void setUnknownRepositoryInfo();
 	void internalClearRepositoryInfo();
@@ -385,6 +386,7 @@ public:
 	virtual int selectedLogIndex() const = 0;
 	void changeSshKey(const QString &localdir, const QString &sshkey);
 	void saveApplicationSettings();
+	void loadApplicationSettings();
 protected slots:
 	void onAvatarUpdated();
 public slots:

@@ -135,7 +135,7 @@ BasicMainWindow::BasicMainWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, m(new Private)
 {
-	SettingsDialog::loadSettings(&m->appsettings);
+	loadApplicationSettings();
 	m->starting_dir = QDir::current().absolutePath();
 
 	{ // load graphic resources
@@ -1331,18 +1331,15 @@ bool BasicMainWindow::checkExecutable(QString const &path)
 	return false;
 }
 
-void BasicMainWindow::internalSetCommand(QString const &path, bool save, QString const &name, QString *out)
+void BasicMainWindow::internalSaveCommandPath(QString const &path, bool save, QString const &name)
 {
-	if (!path.isEmpty() && checkExecutable(path)) {
+	if (checkExecutable(path)) {
 		if (save) {
 			MySettings s;
 			s.beginGroup("Global");
 			s.setValue(name, path);
 			s.endGroup();
 		}
-		*out = path;
-	} else {
-		*out = QString();
 	}
 }
 
@@ -1871,6 +1868,11 @@ void BasicMainWindow::saveApplicationSettings()
 	SettingsDialog::saveSettings(&m->appsettings);
 }
 
+void BasicMainWindow::loadApplicationSettings()
+{
+	SettingsDialog::loadSettings(&m->appsettings);
+}
+
 bool BasicMainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
@@ -1885,8 +1887,12 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 		dlg.set_user_email(user.email);
 	}
 	if (dlg.exec() == QDialog::Accepted) {
-		appsettings()->git_command  = gitCommand()   = dlg.git_command_path();
-		appsettings()->file_command = global->file_command = dlg.file_command_path();
+		setGitCommand(dlg.git_command_path(), false);
+		setFileCommand(dlg.file_command_path(), false);
+//		appsettings()->git_command  = dlg.git_command_path();
+		appsettings()->file_command = dlg.file_command_path();
+//		m->gcx.git_command = appsettings()->git_command;
+		global->file_command = appsettings()->file_command;
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		saveApplicationSettings();
 
@@ -1938,28 +1944,41 @@ void BasicMainWindow::execSetUserDialog(Git::User const &global_user, Git::User 
 	}
 }
 
-void BasicMainWindow::setGitCommand(QString const &path, bool save)
+QString BasicMainWindow::executableOrEmpty(QString const &path)
 {
-	internalSetCommand(path, save, "GitCommand", &m->gcx.git_command);
+	return checkExecutable(path) ? path : QString();
 }
 
-void BasicMainWindow::setFileCommand(QString const &path, bool save)
+void BasicMainWindow::setGitCommand(QString path, bool save)
 {
-	internalSetCommand(path, save, "FileCommand", &global->file_command);
+	appsettings()->git_command = m->gcx.git_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "GitCommand");
 }
 
-void BasicMainWindow::setGpgCommand(QString const &path, bool save)
+void BasicMainWindow::setFileCommand(QString path, bool save)
 {
-	internalSetCommand(path, save, "GpgCommand", &global->gpg_command);
+	appsettings()->file_command = global->file_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "FileCommand");
+}
+
+void BasicMainWindow::setGpgCommand(QString path, bool save)
+{
+	appsettings()->gpg_command = global->gpg_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "GpgCommand");
 	if (!global->gpg_command.isEmpty()) {
 		GitPtr g = git();
 		g->configGpgProgram(global->gpg_command, true);
 	}
 }
 
-void BasicMainWindow::setSshCommand(QString const &path, bool save)
+void BasicMainWindow::setSshCommand(QString path, bool save)
 {
-	internalSetCommand(path, save, "SshCommand", &m->gcx.ssh_command);
+	appsettings()->ssh_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "SshCommand");
 }
 
 void BasicMainWindow::logGitVersion()
