@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>366</width>
-    <height>135</height>
+    <height>251</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,6 +79,7 @@
   <tabstop>radioButton_head_detached</tabstop>
   <tabstop>radioButton_existing_local_branch</tabstop>
   <tabstop>radioButton_create_local_branch</tabstop>
+  <tabstop>comboBox_branch_name</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>
