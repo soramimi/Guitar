@@ -53,67 +53,65 @@
 <context>
     <name>BasicMainWindow</name>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="261"/>
+        <location filename="../../BasicMainWindow.cpp" line="243"/>
         <source>git command not specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="374"/>
+        <location filename="../../BasicMainWindow.cpp" line="358"/>
         <source>The URL is a valid repository</source>
         <translation>此URL是一個有效的儲存庫</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="375"/>
+        <location filename="../../BasicMainWindow.cpp" line="359"/>
         <source>Failed to access the URL</source>
         <translation>無法存取此URL</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="380"/>
+        <location filename="../../BasicMainWindow.cpp" line="364"/>
         <source>Remote Repository</source>
         <translation>遠端儲存庫</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="405"/>
+        <location filename="../../BasicMainWindow.cpp" line="389"/>
         <source>&amp;Property</source>
         <translation>內容(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1273"/>
+        <location filename="../../BasicMainWindow.cpp" line="1272"/>
         <source>Select %1 command</source>
         <translation>選擇 %1 指令</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1452"/>
+        <location filename="../../BasicMainWindow.cpp" line="1447"/>
         <source>Revert all files</source>
         <translation>放棄所有檔案更動</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1610"/>
+        <location filename="../../BasicMainWindow.cpp" line="1605"/>
         <source>The folder is not a valid git repository.</source>
         <translation>此資料夾不是一個有效的Git儲存庫。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1614"/>
+        <location filename="../../BasicMainWindow.cpp" line="1609"/>
         <source>Do you want to initialize it as a git repository ?</source>
         <translation>是否要將其初始化為git儲存庫?</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1615"/>
+        <location filename="../../BasicMainWindow.cpp" line="1610"/>
         <source>Initialize Repository</source>
         <translation>初始化儲存庫</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1745"/>
+        <location filename="../../BasicMainWindow.cpp" line="1740"/>
         <source>No repository selected</source>
         <translation>未選擇儲存庫</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1915"/>
         <source>Repository Property</source>
-        <translation>儲存庫內容</translation>
+        <translation type="vanished">儲存庫內容</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1915"/>
         <location filename="../../BasicMainWindow.cpp" line="2017"/>
         <source>Not a valid git repository</source>
         <translation>不是有效的git儲存庫。</translation>
@@ -188,43 +186,43 @@
         <translation>此資料夾並不存在。是否建立?</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2398"/>
+        <location filename="../../BasicMainWindow.cpp" line="2402"/>
         <source>Commit</source>
         <translation>提交</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2398"/>
+        <location filename="../../BasicMainWindow.cpp" line="2402"/>
         <source>Commit message can not be omitted.</source>
         <translation>提交訊息不能為空白。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2415"/>
+        <location filename="../../BasicMainWindow.cpp" line="2419"/>
         <source>Failed to commit</source>
         <translation>提交失敗</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2449"/>
-        <location filename="../../BasicMainWindow.cpp" line="2533"/>
+        <location filename="../../BasicMainWindow.cpp" line="2453"/>
+        <location filename="../../BasicMainWindow.cpp" line="2538"/>
         <source>Connection refused.</source>
         <translation>連線被拒。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2502"/>
+        <location filename="../../BasicMainWindow.cpp" line="2506"/>
         <source>No remote repository is registered.</source>
         <translation>遠端儲存庫尚未被註冊。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2524"/>
+        <location filename="../../BasicMainWindow.cpp" line="2529"/>
         <source>The current branch %1 has no upstream branch.</source>
         <translation>目前的分支「%1」沒有上游分支。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2527"/>
+        <location filename="../../BasicMainWindow.cpp" line="2532"/>
         <source>You try push --set-upstream</source>
         <translation>請嘗試使用 push --set-upstream </translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2616"/>
+        <location filename="../../BasicMainWindow.cpp" line="2621"/>
         <source>Failed to delete the branch &apos;%1&apos;</source>
         <translation>無法刪除分支「%1」</translation>
     </message>
@@ -234,17 +232,17 @@
         <translation type="vanished">無法刪除分支: &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2680"/>
+        <location filename="../../BasicMainWindow.cpp" line="2685"/>
         <source>Are you sure you want to run the following command ?</source>
         <translation>您確定要執行以下指令嗎?</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2701"/>
+        <location filename="../../BasicMainWindow.cpp" line="2706"/>
         <source>Reset a file</source>
         <translation>重置文件</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2715"/>
+        <location filename="../../BasicMainWindow.cpp" line="2720"/>
         <source>Unnamed</source>
         <translation>未命名</translation>
     </message>
@@ -252,17 +250,17 @@
 <context>
     <name>BasicRepositoryDialog</name>
     <message>
-        <location filename="../../BasicRepositoryDialog.cpp" line="66"/>
+        <location filename="../../BasicRepositoryDialog.cpp" line="77"/>
         <source>Name</source>
         <translation>名稱</translation>
     </message>
     <message>
-        <location filename="../../BasicRepositoryDialog.cpp" line="67"/>
+        <location filename="../../BasicRepositoryDialog.cpp" line="78"/>
         <source>Purpose</source>
         <translation>用途</translation>
     </message>
     <message>
-        <location filename="../../BasicRepositoryDialog.cpp" line="68"/>
+        <location filename="../../BasicRepositoryDialog.cpp" line="79"/>
         <source>URL</source>
         <translation>網址</translation>
     </message>
@@ -400,7 +398,7 @@
     <name>CloneDialog</name>
     <message>
         <location filename="../../CloneDialog.ui" line="14"/>
-        <location filename="../../CloneDialog.ui" line="103"/>
+        <location filename="../../CloneDialog.ui" line="113"/>
         <source>Clone</source>
         <translation>複製</translation>
     </message>
@@ -425,32 +423,32 @@
         <translation>瀏覽</translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.ui" line="83"/>
+        <location filename="../../CloneDialog.ui" line="93"/>
         <source>Open existing local directory...</source>
         <translation>打開現有的本地資料夾...</translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.ui" line="113"/>
+        <location filename="../../CloneDialog.ui" line="123"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.cpp" line="40"/>
+        <location filename="../../CloneDialog.cpp" line="41"/>
         <source>Search</source>
         <translation>搜尋</translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.cpp" line="41"/>
+        <location filename="../../CloneDialog.cpp" line="42"/>
         <source>GitHub</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.cpp" line="113"/>
+        <location filename="../../CloneDialog.cpp" line="115"/>
         <source>Checkout into</source>
         <translation>簽出至</translation>
     </message>
     <message>
-        <location filename="../../CloneDialog.cpp" line="125"/>
+        <location filename="../../CloneDialog.cpp" line="127"/>
         <source>Open existing directory</source>
         <translation>打開現有的資料夾</translation>
     </message>
@@ -536,17 +534,22 @@
         <translation>設定...</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="198"/>
+        <location filename="../../CommitDialog.ui" line="203"/>
         <source>Message</source>
         <translation>訊息</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="223"/>
+        <location filename="../../CommitDialog.ui" line="210"/>
+        <source>Amend</source>
+        <translation>修改</translation>
+    </message>
+    <message>
+        <location filename="../../CommitDialog.ui" line="237"/>
         <source>OK</source>
         <translation>確定</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="233"/>
+        <location filename="../../CommitDialog.ui" line="247"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -980,12 +983,12 @@
         <translation>測試(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../EditRemoteDialog.ui" line="81"/>
+        <location filename="../../EditRemoteDialog.ui" line="104"/>
         <source>OK</source>
         <translation>確定</translation>
     </message>
     <message>
-        <location filename="../../EditRemoteDialog.ui" line="88"/>
+        <location filename="../../EditRemoteDialog.ui" line="111"/>
         <source>Close</source>
         <translation>關閉</translation>
     </message>
@@ -1079,6 +1082,14 @@
         <location filename="../../FilePropertyDialog.ui" line="78"/>
         <source>&amp;Close</source>
         <translation>關閉(&amp;C)</translation>
+    </message>
+</context>
+<context>
+    <name>FileViewWidget</name>
+    <message>
+        <location filename="../../FileViewWidget.cpp" line="30"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1226,15 +1237,15 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="96"/>
-        <location filename="../../MainWindow.ui" line="1421"/>
-        <location filename="../../MainWindow.ui" line="1424"/>
+        <location filename="../../MainWindow.ui" line="1416"/>
+        <location filename="../../MainWindow.ui" line="1419"/>
         <source>Clone</source>
         <translation>複製</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="131"/>
-        <location filename="../../MainWindow.cpp" line="1140"/>
-        <location filename="../../MainWindow.cpp" line="1141"/>
+        <location filename="../../MainWindow.cpp" line="1135"/>
+        <location filename="../../MainWindow.cpp" line="1136"/>
         <source>Fetch</source>
         <translation>提取</translation>
     </message>
@@ -1250,13 +1261,13 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="303"/>
-        <location filename="../../MainWindow.ui" line="1548"/>
+        <location filename="../../MainWindow.ui" line="1543"/>
         <source>Terminal</source>
         <translation>終端機</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="338"/>
-        <location filename="../../MainWindow.ui" line="1557"/>
+        <location filename="../../MainWindow.ui" line="1552"/>
         <source>Explorer</source>
         <translation>檔案總管</translation>
     </message>
@@ -1272,19 +1283,19 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="483"/>
-        <location filename="../../MainWindow.ui" line="1592"/>
+        <location filename="../../MainWindow.ui" line="1587"/>
         <source>Offline</source>
         <translation>離線</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="473"/>
-        <location filename="../../MainWindow.ui" line="1587"/>
+        <location filename="../../MainWindow.ui" line="1582"/>
         <source>Online</source>
         <translation>在线</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="799"/>
-        <location filename="../../MainWindow.cpp" line="1853"/>
+        <location filename="../../MainWindow.cpp" line="1848"/>
         <source>Unstage</source>
         <translation>取消暫存變更</translation>
     </message>
@@ -1295,13 +1306,13 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="863"/>
-        <location filename="../../MainWindow.cpp" line="1723"/>
+        <location filename="../../MainWindow.cpp" line="1718"/>
         <source>Stage</source>
         <translation>暫存變更</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="892"/>
-        <location filename="../../MainWindow.cpp" line="879"/>
+        <location filename="../../MainWindow.cpp" line="874"/>
         <source>Commit</source>
         <translation>提交</translation>
     </message>
@@ -1316,7 +1327,7 @@
         <translation>檢視(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1040"/>
+        <location filename="../../MainWindow.ui" line="1041"/>
         <source>&amp;Edit</source>
         <translation>編輯(&amp;E)</translation>
     </message>
@@ -1325,86 +1336,86 @@
         <translation type="vanished">需要注意的指令</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1412"/>
+        <location filename="../../MainWindow.ui" line="1407"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1434"/>
-        <location filename="../../MainWindow.cpp" line="1595"/>
+        <location filename="../../MainWindow.ui" line="1429"/>
+        <location filename="../../MainWindow.cpp" line="1590"/>
         <source>Edit tags...</source>
         <translation>編輯標籤...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1437"/>
+        <location filename="../../MainWindow.ui" line="1432"/>
         <source>Edit tags</source>
         <translation>編輯標籤</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1562"/>
+        <location filename="../../MainWindow.ui" line="1557"/>
         <source>Clean -df</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1567"/>
+        <location filename="../../MainWindow.ui" line="1562"/>
         <source>Reset --hard</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1494"/>
+        <location filename="../../MainWindow.ui" line="1489"/>
         <source>Create a repository</source>
         <translation>建立儲存庫</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1481"/>
+        <location filename="../../MainWindow.ui" line="1476"/>
         <source>Push upstream</source>
         <translation>推送至上游</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1503"/>
+        <location filename="../../MainWindow.ui" line="1498"/>
         <source>Stop process</source>
         <translation>停止處理</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1508"/>
+        <location filename="../../MainWindow.ui" line="1503"/>
         <source>E&amp;xit</source>
         <translation>離開(&amp;X)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1511"/>
+        <location filename="../../MainWindow.ui" line="1506"/>
         <source>Ctrl+Q</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1516"/>
+        <location filename="../../MainWindow.ui" line="1511"/>
         <source>Reflog...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1521"/>
+        <location filename="../../MainWindow.ui" line="1516"/>
         <source>Property...</source>
         <translation>內容...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1526"/>
-        <location filename="../../MainWindow.ui" line="1529"/>
+        <location filename="../../MainWindow.ui" line="1521"/>
+        <location filename="../../MainWindow.ui" line="1524"/>
         <source>Set GPG signing</source>
         <translation>設定GPG簽名</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1539"/>
+        <location filename="../../MainWindow.ui" line="1534"/>
         <source>Fetch --prune</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1055"/>
+        <location filename="../../MainWindow.ui" line="1056"/>
         <source>&amp;Help</source>
         <translation>說明(&amp;H)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="252"/>
-        <location filename="../../MainWindow.ui" line="1628"/>
-        <location filename="../../MainWindow.cpp" line="1353"/>
+        <location filename="../../MainWindow.ui" line="1623"/>
+        <location filename="../../MainWindow.cpp" line="1348"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1414,274 +1425,279 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1061"/>
+        <location filename="../../MainWindow.ui" line="1062"/>
         <source>&amp;Window</source>
         <translation>視窗(&amp;W)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1067"/>
+        <location filename="../../MainWindow.ui" line="1073"/>
         <source>&amp;Repository</source>
         <translation>儲存庫(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1071"/>
-        <location filename="../../MainWindow.ui" line="1572"/>
+        <location filename="../../MainWindow.ui" line="1077"/>
+        <location filename="../../MainWindow.ui" line="1567"/>
         <source>Stash</source>
         <translation>擱置</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1098"/>
+        <location filename="../../MainWindow.ui" line="1104"/>
         <source>Re&amp;mote</source>
         <translation>遠端(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1113"/>
+        <location filename="../../MainWindow.ui" line="1119"/>
         <source>&amp;Destructive</source>
         <translation>注意(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1125"/>
-        <source>Experimental</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.ui" line="1155"/>
+        <location filename="../../MainWindow.ui" line="1150"/>
         <source>Log</source>
         <translation>日誌</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1325"/>
+        <location filename="../../MainWindow.ui" line="1320"/>
         <source>&amp;Open existing working copy...</source>
         <translation>打開所有工作副本(&amp;O)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1328"/>
-        <location filename="../../MainWindow.cpp" line="2027"/>
+        <location filename="../../MainWindow.ui" line="1323"/>
+        <location filename="../../MainWindow.cpp" line="2022"/>
         <source>Add existing working copy</source>
         <translation>新增所有工作副本</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1333"/>
-        <location filename="../../MainWindow.ui" line="1336"/>
+        <location filename="../../MainWindow.ui" line="1328"/>
+        <location filename="../../MainWindow.ui" line="1331"/>
         <source>Refresh</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1339"/>
+        <location filename="../../MainWindow.ui" line="1334"/>
         <source>F5</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1348"/>
+        <location filename="../../MainWindow.ui" line="1343"/>
         <source>&amp;Commit</source>
         <translation>提交(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1357"/>
+        <location filename="../../MainWindow.ui" line="1352"/>
         <source>&amp;Push</source>
         <translation>推送(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1365"/>
+        <location filename="../../MainWindow.ui" line="1360"/>
         <source>test</source>
         <translation>測試</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1368"/>
+        <location filename="../../MainWindow.ui" line="1363"/>
         <source>Ctrl+T</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1377"/>
+        <location filename="../../MainWindow.ui" line="1372"/>
         <source>Pu&amp;ll</source>
         <translation>拉取(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1386"/>
+        <location filename="../../MainWindow.ui" line="1381"/>
         <source>&amp;Fetch</source>
         <translation>提取(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1391"/>
-        <location filename="../../MainWindow.ui" line="1394"/>
+        <location filename="../../MainWindow.ui" line="1386"/>
+        <location filename="../../MainWindow.ui" line="1389"/>
         <source>Edit global .gitconfig</source>
         <translation>編輯全域.gitignore</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1399"/>
+        <location filename="../../MainWindow.ui" line="1394"/>
         <source>Edit .git/config</source>
         <translation>編輯.git/config</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1404"/>
+        <location filename="../../MainWindow.ui" line="1399"/>
         <source>Edit .gitignore</source>
         <translation>編輯.gitignore</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1409"/>
+        <location filename="../../MainWindow.ui" line="1404"/>
         <source>&amp;Settings...</source>
         <translation>設定(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1458"/>
+        <location filename="../../MainWindow.ui" line="1453"/>
         <source>F4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1463"/>
+        <location filename="../../MainWindow.ui" line="1458"/>
         <source>&amp;Jump...</source>
         <translation>移至(&amp;J)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1466"/>
+        <location filename="../../MainWindow.ui" line="1461"/>
         <source>Ctrl+J</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1471"/>
+        <location filename="../../MainWindow.ui" line="1466"/>
         <source>Check&amp;out...</source>
         <translation>簽出(&amp;O)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1476"/>
-        <location filename="../../MainWindow.cpp" line="1600"/>
+        <location filename="../../MainWindow.ui" line="1471"/>
+        <location filename="../../MainWindow.cpp" line="1595"/>
         <source>Delete branch...</source>
         <translation>刪除分支...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1577"/>
+        <location filename="../../MainWindow.ui" line="1572"/>
         <source>Apply</source>
         <translation>套用</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1582"/>
+        <location filename="../../MainWindow.ui" line="1577"/>
         <source>Drop</source>
         <translation>丟棄</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1600"/>
+        <location filename="../../MainWindow.ui" line="1595"/>
         <source>Repositories panel</source>
         <translation>儲存庫面板</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1603"/>
+        <location filename="../../MainWindow.ui" line="1598"/>
         <source>Ctrl+R</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1608"/>
+        <location filename="../../MainWindow.ui" line="1603"/>
         <source>&amp;Find...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1611"/>
+        <location filename="../../MainWindow.ui" line="1606"/>
         <source>Ctrl+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1616"/>
+        <location filename="../../MainWindow.ui" line="1611"/>
         <source>Find next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1619"/>
+        <location filename="../../MainWindow.ui" line="1614"/>
         <source>F3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1633"/>
+        <location filename="../../MainWindow.ui" line="1628"/>
         <source>Jump to &amp;HEAD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1636"/>
+        <location filename="../../MainWindow.ui" line="1631"/>
         <source>Ctrl+H</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1641"/>
+        <location filename="../../MainWindow.ui" line="1636"/>
         <source>Merge...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1646"/>
+        <location filename="../../MainWindow.ui" line="1641"/>
         <source>Expand commit log</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1649"/>
+        <location filename="../../MainWindow.ui" line="1644"/>
         <source>Ctrl+2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1654"/>
+        <location filename="../../MainWindow.ui" line="1649"/>
         <source>Expand file list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1657"/>
+        <location filename="../../MainWindow.ui" line="1652"/>
         <source>Ctrl+3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1662"/>
+        <location filename="../../MainWindow.ui" line="1657"/>
         <source>Expand diff view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1665"/>
+        <location filename="../../MainWindow.ui" line="1660"/>
         <source>Ctrl+4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1670"/>
+        <location filename="../../MainWindow.ui" line="1668"/>
         <source>Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1673"/>
-        <source>F1</source>
+        <location filename="../../MainWindow.ui" line="1671"/>
+        <source>Ctrl+1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1678"/>
+        <location filename="../../MainWindow.ui" line="1687"/>
+        <source>Show labels</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.ui" line="1690"/>
+        <source>Ctrl+L</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.ui" line="1676"/>
         <source>Wide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1681"/>
+        <location filename="../../MainWindow.ui" line="1679"/>
         <source>F2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1486"/>
-        <location filename="../../MainWindow.ui" line="1489"/>
+        <location filename="../../MainWindow.ui" line="1481"/>
+        <location filename="../../MainWindow.ui" line="1484"/>
         <source>Reset HEAD~1</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1534"/>
-        <location filename="../../MainWindow.cpp" line="1601"/>
+        <location filename="../../MainWindow.ui" line="1529"/>
+        <location filename="../../MainWindow.cpp" line="1596"/>
         <source>Delete remote branch...</source>
         <translation>刪除遠端分支...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1429"/>
+        <location filename="../../MainWindow.ui" line="1424"/>
         <source>&amp;About</source>
         <translation>關於Guitar(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1442"/>
+        <location filename="../../MainWindow.ui" line="1437"/>
         <source>Push all tags</source>
         <translation>推送所有標籤</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1447"/>
+        <location filename="../../MainWindow.ui" line="1442"/>
         <source>Set config user</source>
         <translation>設定使用者訊息</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1455"/>
+        <location filename="../../MainWindow.ui" line="1450"/>
         <source>&amp;Log</source>
         <translation>日誌(&amp;L)</translation>
     </message>
@@ -1690,22 +1706,22 @@
         <translation type="vanished">未命名</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="679"/>
+        <location filename="../../MainWindow.cpp" line="674"/>
         <source>Default</source>
         <translation>預設</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="878"/>
+        <location filename="../../MainWindow.cpp" line="873"/>
         <source>Graph</source>
         <translation>線圖</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="880"/>
+        <location filename="../../MainWindow.cpp" line="875"/>
         <source>Date</source>
         <translation>日期</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="881"/>
+        <location filename="../../MainWindow.cpp" line="876"/>
         <source>Author</source>
         <translation>作者</translation>
     </message>
@@ -1714,8 +1730,8 @@
         <translation type="vanished">描述</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1029"/>
-        <location filename="../../MainWindow.cpp" line="1199"/>
+        <location filename="../../MainWindow.cpp" line="1024"/>
+        <location filename="../../MainWindow.cpp" line="1194"/>
         <source>Uncommited changes</source>
         <translation>未提交的變更</translation>
     </message>
@@ -1748,57 +1764,57 @@
         <translation type="vanished">儲存庫內容</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1457"/>
+        <location filename="../../MainWindow.cpp" line="1452"/>
         <source>&amp;Add new group</source>
         <translation>新增群組(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1458"/>
+        <location filename="../../MainWindow.cpp" line="1453"/>
         <source>&amp;Delete group</source>
         <translation>刪除群組(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1459"/>
+        <location filename="../../MainWindow.cpp" line="1454"/>
         <source>&amp;Rename group</source>
         <translation>重新命名群組(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1464"/>
+        <location filename="../../MainWindow.cpp" line="1459"/>
         <source>New group</source>
         <translation>新群組</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1488"/>
+        <location filename="../../MainWindow.cpp" line="1483"/>
         <source>Open &amp;terminal</source>
         <translation>開啟終端機(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1489"/>
+        <location filename="../../MainWindow.cpp" line="1484"/>
         <source>Open command promp&amp;t</source>
         <translation>開啟命令提示字元(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1491"/>
+        <location filename="../../MainWindow.cpp" line="1486"/>
         <source>&amp;Open</source>
         <translation>開啟(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1502"/>
+        <location filename="../../MainWindow.cpp" line="1497"/>
         <source>Open &amp;folder</source>
         <translation>打開資料夾(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1507"/>
+        <location filename="../../MainWindow.cpp" line="1502"/>
         <source>&amp;Remove</source>
         <translation>刪除(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1550"/>
+        <location filename="../../MainWindow.cpp" line="1545"/>
         <source>Copy commit id (7 letters)</source>
         <translation>複製提交ID（7個字母）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1551"/>
+        <location filename="../../MainWindow.cpp" line="1546"/>
         <source>Copy commit id (completely)</source>
         <translation>複製提交ID(全部)</translation>
     </message>
@@ -1807,13 +1823,13 @@
         <translation type="vanished">編輯提交訊息...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1242"/>
-        <location filename="../../MainWindow.cpp" line="1593"/>
+        <location filename="../../MainWindow.cpp" line="1237"/>
+        <location filename="../../MainWindow.cpp" line="1588"/>
         <source>Rebase</source>
         <translation>Rebase</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1605"/>
+        <location filename="../../MainWindow.cpp" line="1600"/>
         <source>Explore</source>
         <translation>瀏覽</translation>
     </message>
@@ -1822,36 +1838,36 @@
         <translation type="vanished">重置HEAD</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="882"/>
+        <location filename="../../MainWindow.cpp" line="877"/>
         <source>Message</source>
         <translation>訊息</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1679"/>
-        <location filename="../../MainWindow.cpp" line="1728"/>
-        <location filename="../../MainWindow.cpp" line="1854"/>
+        <location filename="../../MainWindow.cpp" line="1674"/>
+        <location filename="../../MainWindow.cpp" line="1723"/>
+        <location filename="../../MainWindow.cpp" line="1849"/>
         <source>History</source>
         <translation>歷史紀錄</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2436"/>
-        <location filename="../../MainWindow.cpp" line="2450"/>
+        <location filename="../../MainWindow.cpp" line="2431"/>
+        <location filename="../../MainWindow.cpp" line="2445"/>
         <source>No such commit</source>
         <translation>沒有這樣的提交</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1143"/>
-        <location filename="../../MainWindow.cpp" line="1144"/>
+        <location filename="../../MainWindow.cpp" line="1138"/>
+        <location filename="../../MainWindow.cpp" line="1139"/>
         <source>Update</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2762"/>
+        <location filename="../../MainWindow.cpp" line="2757"/>
         <source>Authentication Failed</source>
         <translation>認證失敗</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1596"/>
+        <location filename="../../MainWindow.cpp" line="1591"/>
         <source>Revert</source>
         <translation>放棄變更</translation>
     </message>
@@ -1880,55 +1896,55 @@
         <translation type="vanished">內容(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1567"/>
+        <location filename="../../MainWindow.cpp" line="1562"/>
         <source>Checkout/Branch...</source>
         <translation>簽出/分支...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1589"/>
+        <location filename="../../MainWindow.cpp" line="1584"/>
         <source>Edit message...</source>
         <translation>編輯訊息...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1592"/>
+        <location filename="../../MainWindow.cpp" line="1587"/>
         <source>Merge</source>
         <translation>合併</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1594"/>
+        <location filename="../../MainWindow.cpp" line="1589"/>
         <source>Cherry-pick</source>
         <translation>擇優挑選</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1678"/>
-        <location filename="../../MainWindow.cpp" line="1727"/>
+        <location filename="../../MainWindow.cpp" line="1673"/>
+        <location filename="../../MainWindow.cpp" line="1722"/>
         <source>Untrack</source>
         <translation>不追蹤</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1680"/>
-        <location filename="../../MainWindow.cpp" line="1729"/>
-        <location filename="../../MainWindow.cpp" line="1855"/>
+        <location filename="../../MainWindow.cpp" line="1675"/>
+        <location filename="../../MainWindow.cpp" line="1724"/>
+        <location filename="../../MainWindow.cpp" line="1850"/>
         <source>Blame</source>
         <translation>作者及版本修訂訊息</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1688"/>
+        <location filename="../../MainWindow.cpp" line="1683"/>
         <source>Delete selected files.</source>
         <translation>刪除選擇的檔案。</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1699"/>
+        <location filename="../../MainWindow.cpp" line="1694"/>
         <source>rm --cached files</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1724"/>
+        <location filename="../../MainWindow.cpp" line="1719"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1725"/>
+        <location filename="../../MainWindow.cpp" line="1720"/>
         <source>Ignore</source>
         <translation>忽略</translation>
     </message>
@@ -1937,7 +1953,7 @@
         <translation type="vanished">重置檔案</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1239"/>
+        <location filename="../../MainWindow.cpp" line="1234"/>
         <source>Are you sure you want to rebase the commit ?</source>
         <translation></translation>
     </message>
@@ -1946,8 +1962,8 @@
         <translation type="vanished">沒有選擇儲存庫</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1677"/>
-        <location filename="../../MainWindow.cpp" line="1726"/>
+        <location filename="../../MainWindow.cpp" line="1672"/>
+        <location filename="../../MainWindow.cpp" line="1721"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
@@ -1992,8 +2008,8 @@
         <translation type="vanished">遠端儲存庫</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2436"/>
-        <location filename="../../MainWindow.cpp" line="2450"/>
+        <location filename="../../MainWindow.cpp" line="2431"/>
+        <location filename="../../MainWindow.cpp" line="2445"/>
         <source>Jump</source>
         <translation>移至</translation>
     </message>
@@ -2230,6 +2246,39 @@
     </message>
 </context>
 <context>
+    <name>RemoteAdvancedOptionWidget</name>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.ui" line="32"/>
+        <source>Advanced Option</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.ui" line="38"/>
+        <source>SSH key override...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.ui" line="45"/>
+        <source>Clear</source>
+        <translation type="unfinished">清除</translation>
+    </message>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.cpp" line="24"/>
+        <source>SSH command is not registered.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../RemoteAdvancedOptionWidget.cpp" line="30"/>
+        <source>SSH key override</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>RemoteRepositoriesTableWidget</name>
     <message>
         <location filename="../../RemoteRepositoriesTableWidget.cpp" line="27"/>
@@ -2291,12 +2340,12 @@
         <translation>關閉</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="131"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="155"/>
         <source>Confirm Remove</source>
         <translation>確定移除</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="131"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="155"/>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos; ?</source>
         <translation>確定要從儲存庫「%2」中移除遠端「%1」嗎?</translation>
     </message>
@@ -2830,6 +2879,7 @@
         <location filename="../../SettingProgramsForm.ui" line="29"/>
         <location filename="../../SettingProgramsForm.ui" line="48"/>
         <location filename="../../SettingProgramsForm.ui" line="67"/>
+        <location filename="../../SettingProgramsForm.ui" line="86"/>
         <source>Browse...</source>
         <translation>瀏覽...</translation>
     </message>
@@ -2842,6 +2892,11 @@
         <location filename="../../SettingProgramsForm.ui" line="58"/>
         <source>GPG command (option)</source>
         <translation>GPG指令(可選)</translation>
+    </message>
+    <message>
+        <location filename="../../SettingProgramsForm.ui" line="77"/>
+        <source>SSH command (option)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
