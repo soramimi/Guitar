@@ -2376,8 +2376,13 @@ void BasicMainWindow::commit(bool amend)
 		QString id = g->getCherryPicking();
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
-		} else if (getLogs().size() > 1) {
-			previousMessage = getLogs()[1].message;
+		} else {
+			for (Git::CommitItem const &item : getLogs()) {
+				if (!item.commit_id.isEmpty()) {
+					previousMessage = item.message;
+					break;
+				}
+			}
 		}
 	}
 
