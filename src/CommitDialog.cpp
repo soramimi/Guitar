@@ -4,7 +4,7 @@
 #include "ConfigSigningDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key)
+CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage)
 	: QDialog(parent)
 	, ui(new Ui::CommitDialog)
 {
@@ -14,10 +14,16 @@ CommitDialog::CommitDialog(BasicMainWindow *parent, QString const &reponame, Git
 	setWindowFlags(flags);
 
 	key_ = key;
+	previousMessage_ = previousMessage;
 
 	ui->label_reponame->setText(reponame);
 	ui->label_commit_author->setText(user.name);
 	ui->label_commit_mail->setText(user.email);
+
+	ui->checkbox_amend->setChecked(false);
+	if (previousMessage_.isEmpty()) {
+		ui->checkbox_amend->hide();
+	}
 
 	updateSigningInfo();
 
@@ -60,6 +66,11 @@ bool CommitDialog::isSigningEnabled() const
 	return ui->groupBox_gpg_sign->isChecked();
 }
 
+bool CommitDialog::isAmend() const
+{
+	return ui->checkbox_amend->isChecked();
+}
+
 void CommitDialog::setText(QString const &text)
 {
 	ui->plainTextEdit->setPlainText(text);
@@ -92,4 +103,9 @@ void CommitDialog::on_pushButton_config_signing_clicked()
 	if (dlg.exec() == QDialog::Accepted) {
 		updateSigningInfo();
 	}
+}
+
+void CommitDialog::on_checkbox_amend_stateChanged(int state)
+{
+	setText(state == Qt::Checked ? previousMessage_ : QString(""));
 }

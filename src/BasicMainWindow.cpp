@@ -2368,6 +2368,7 @@ void BasicMainWindow::commit(bool amend)
 	if (!isValidWorkingCopy(g)) return;
 
 	QString message;
+	QString previousMessage;
 
 	if (amend) {
 		message = getLogs()[0].message;
@@ -2375,6 +2376,13 @@ void BasicMainWindow::commit(bool amend)
 		QString id = g->getCherryPicking();
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
+		} else {
+			for (Git::CommitItem const &item : getLogs()) {
+				if (!item.commit_id.isEmpty()) {
+					previousMessage = item.message;
+					break;
+				}
+			}
 		}
 	}
 
@@ -2391,7 +2399,7 @@ void BasicMainWindow::commit(bool amend)
 				}
 			}
 		}
-		CommitDialog dlg(this, currentRepositoryName(), user, key);
+		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
 		dlg.setText(message);
 		if (dlg.exec() == QDialog::Accepted) {
 			QString text = dlg.text();
@@ -2401,7 +2409,7 @@ void BasicMainWindow::commit(bool amend)
 			}
 			bool sign = dlg.isSigningEnabled();
 			bool ok;
-			if (amend) {
+			if (amend || dlg.isAmend()) {
 				ok = g->commit_amend_m(text, sign, getPtyProcess());
 			} else {
 				ok = g->commit(text, sign, getPtyProcess());
