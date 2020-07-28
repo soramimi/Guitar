@@ -35,6 +35,9 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, std::vector<Submodule> mods)
 		item->setText(mods[row].head.message);
 		ui->tableWidget->setItem(row, 4, item);
 	}
+
+	ui->tableWidget->resizeColumnsToContents();
+	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
 SubmodulesDialog::~SubmodulesDialog()

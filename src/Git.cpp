@@ -807,7 +807,6 @@ std::vector<Git::Submodule> Git::submodules()
 
 	git("submodule");
 	QString text = resultText();
-	int i = 0;
 	ushort c = text.utf16()[0];
 	if (c == ' ' || c == '-') {
 		text = text.mid(1);
