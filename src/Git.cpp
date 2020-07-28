@@ -147,7 +147,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	bool ok = false;
 	QString cwd = QDir::currentPath();
 	QString dir = workingRepositoryDir();
-	if (isValidWorkingCopy(dir) && QDir::setCurrent(dir)) {
+	if (QDir::setCurrent(dir)) {
 
 		ok = fn();
 
@@ -169,7 +169,6 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 	timer.start();
 #endif
 	clearResult();
-
 
 	QString env;
 	if (m->ssh_command.isEmpty() || m->ssh_key_override.isEmpty()) {
@@ -800,6 +799,63 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	}
 
 	return ok;
+}
+
+std::vector<Git::Submodule> Git::submodules()
+{
+	std::vector<Git::Submodule> mods;
+
+	git("submodule");
+	QString text = resultText();
+	int i = 0;
+	ushort c = text.utf16()[0];
+	if (c == ' ' || c == '-') {
+		text = text.mid(1);
+	}
+	QStringList words = misc::splitWords(text);
+	if (words.size() >= 2) {
+		Submodule sm;
+		sm.id = words[0];
+		sm.path = words[1];
+		if (isValidID(sm.id)) {
+			if (words.size() >= 3) {
+				sm.refs = words[2];
+				if (sm.refs.startsWith('(') && sm.refs.endsWith(')')) {
+					sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
+				}
+			}
+			mods.push_back(sm);
+		}
+	}
+	return mods;
+}
+
+bool Git::submodule_add(CloneData const &data, AbstractPtyProcess *pty)
+{
+	bool ok = false;
+
+	QString cmd = "submodule add \"%1\" \"%2\"";
+	cmd = cmd.arg(data.url).arg(data.subdir);
+	ok = git(cmd, true, true, pty);
+
+	return ok;
+}
+
+bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *pty)
+{
+	bool ok = false;
+
+	QString cmd = "submodule update";
+	if (data.init) {
+		cmd += " --init";
+	}
+	if (data.recursive) {
+		cmd += " --recursive";
+	}
+	ok = git(cmd, true, true, pty);
+
+	return ok;
+
 }
 
 QString Git::encodeQuotedText(QString const &str)

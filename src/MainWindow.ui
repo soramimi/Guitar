@@ -1015,7 +1015,7 @@
      <x>0</x>
      <y>0</y>
      <width>863</width>
-     <height>35</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1126,6 +1126,14 @@
     <addaction name="separator"/>
     <addaction name="action_clean_df"/>
    </widget>
+   <widget class="QMenu" name="menuExperimental">
+    <property name="title">
+     <string>Experimental</string>
+    </property>
+    <addaction name="action_submodules"/>
+    <addaction name="action_submodule_add"/>
+    <addaction name="action_submodule_update"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
@@ -1134,6 +1142,7 @@
    <addaction name="menuDestructive_3"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
+   <addaction name="menuExperimental"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="dockWidget_log">
@@ -1688,6 +1697,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="action_submodule_add">
+   <property name="text">
+    <string>Submodule add...</string>
+   </property>
+  </action>
+  <action name="action_submodules">
+   <property name="text">
+    <string>Submodules</string>
+   </property>
+  </action>
+  <action name="action_submodule_update">
+   <property name="text">
+    <string>Submodule update...</string>
    </property>
   </action>
  </widget>

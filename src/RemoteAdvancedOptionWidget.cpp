@@ -40,7 +40,7 @@ void RemoteAdvancedOptionWidget::on_pushButton_clear_ssh_key_clicked()
 
 QString RemoteAdvancedOptionWidget::sshKey() const
 {
-	return ui->lineEdit_ssh_key->text();
+	return ui->lineEdit_ssh_key->isEnabled() ? ui->lineEdit_ssh_key->text() : QString();
 }
 
 void RemoteAdvancedOptionWidget::setSshKey(const QString &s)

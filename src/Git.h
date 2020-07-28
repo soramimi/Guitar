@@ -493,6 +493,21 @@ public:
 	bool stash();
 	bool stash_apply();
 	bool stash_drop();
+
+	struct Submodule {
+		QString id;
+		QString path;
+		QString refs;
+	};
+
+	struct SubmoduleUpdateData {
+		bool init = true;
+		bool recursive = true;
+	};
+
+	std::vector<Submodule> submodules();
+	bool submodule_add(const CloneData &data, AbstractPtyProcess *pty);
+	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);

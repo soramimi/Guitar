@@ -27,7 +27,10 @@
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "CherryPickDialog.h"
+#include "CloneDialog.h"
 #include "MergeDialog.h"
+#include "SubmoduleUpdateDialog.h"
+#include "SubmodulesDialog.h"
 #include "platform.h"
 #include "webclient.h"
 #include <QClipboard>
@@ -3008,7 +3011,43 @@ void MainWindow::test()
 	qDebug() << QString("%1ms").arg(t.elapsed());
 }
 
+void MainWindow::on_action_submodules_triggered()
+{
+	GitPtr g = git();
+	std::vector<Git::Submodule> mods = g->submodules();
+
+	std::vector<SubmodulesDialog::Submodule> mods2;
+	mods2.resize(mods.size());
+
+	for (size_t i = 0; i < mods.size(); i++) {
+		const Git::Submodule mod = mods[i];
+		mods2[i].submodule = mod;
+
+		GitPtr g2 = git(g->workingRepositoryDir() / mod.path, g->sshKey());
+		g2->queryCommit(mod.id, &mods2[i].head);
+	}
+
+	SubmodulesDialog dlg(this, mods2);
+	dlg.exec();
+}
+
+void MainWindow::on_action_submodule_add_triggered()
+{
+	QString dir = currentRepository().local_dir;
+	submodule_add({}, dir);
+}
 
 
 
 
+void MainWindow::on_action_submodule_update_triggered()
+{
+	SubmoduleUpdateDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		GitPtr g = git();
+		Git::SubmoduleUpdateData data;
+		data.init = dlg.isInit();
+		data.recursive = dlg.isRecursive();
+		g->submodule_update(data, getPtyProcess());
+	}
+}

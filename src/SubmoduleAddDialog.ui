@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CloneDialog</class>
- <widget class="QDialog" name="CloneDialog">
+ <class>SubmoduleAddDialog</class>
+ <widget class="QDialog" name="SubmoduleAddDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>211</height>
+    <height>283</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,13 +23,10 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="RepositoryLineEdit" name="lineEdit_repo_location">
-       <property name="minimumSize">
-        <size>
-         <width>320</width>
-         <height>0</height>
-        </size>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pushButton_browse">
+       <property name="text">
+        <string>Browse</string>
        </property>
       </widget>
      </item>
@@ -40,6 +37,9 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="1">
+      <widget class="DirectoryLineEdit" name="lineEdit_working_dir"/>
+     </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
@@ -47,17 +47,40 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="DirectoryLineEdit" name="lineEdit_working_dir"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="pushButton_browse">
-       <property name="text">
-        <string>Browse</string>
+     <item row="0" column="1">
+      <widget class="RepositoryLineEdit" name="lineEdit_repo_location">
+       <property name="minimumSize">
+        <size>
+         <width>320</width>
+         <height>0</height>
+        </size>
        </property>
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Options</string>
+     </property>
+     <widget class="QCheckBox" name="checkBox_force">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>88</width>
+        <height>19</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>--force</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </widget>
    </item>
    <item>
     <widget class="RemoteAdvancedOptionWidget" name="advanced_option" native="true">
@@ -71,29 +94,6 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QComboBox" name="comboBox"/>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton_open_existing">
-       <property name="text">
-        <string>Open existing local directory...</string>
-       </property>
-      </widget>
-     </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -110,7 +110,7 @@
      <item>
       <widget class="QPushButton" name="pushButton">
        <property name="text">
-        <string>Clone</string>
+        <string>OK</string>
        </property>
        <property name="default">
         <bool>true</bool>
@@ -150,9 +150,6 @@
   <tabstop>lineEdit_repo_location</tabstop>
   <tabstop>pushButton_test</tabstop>
   <tabstop>lineEdit_working_dir</tabstop>
-  <tabstop>pushButton_browse</tabstop>
-  <tabstop>comboBox</tabstop>
-  <tabstop>pushButton_open_existing</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>
@@ -161,7 +158,7 @@
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>CloneDialog</receiver>
+   <receiver>SubmoduleAddDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -177,7 +174,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>CloneDialog</receiver>
+   <receiver>SubmoduleAddDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

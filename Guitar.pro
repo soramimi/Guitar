@@ -1,5 +1,5 @@
 
-QT       += core gui widgets svg network
+QT += core gui widgets svg network
 win32:QT += winextras
 
 CONFIG(debug,debug|release):TARGET = Guitard
@@ -200,6 +200,9 @@ SOURCES += \
 	src/SettingProgramsForm.cpp \
 	src/SettingsDialog.cpp \
 	src/StatusLabel.cpp \
+    src/SubmoduleAddDialog.cpp \
+    src/SubmoduleUpdateDialog.cpp \
+    src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
@@ -318,6 +321,9 @@ HEADERS  += \
 	src/SettingProgramsForm.h \
 	src/SettingsDialog.h \
 	src/StatusLabel.h \
+	src/SubmoduleAddDialog.h \
+	src/SubmoduleUpdateDialog.h \
+	src/SubmodulesDialog.h \
 	src/Terminal.h \
 	src/TextEditDialog.h \
 	src/Theme.h \
@@ -396,6 +402,9 @@ FORMS    += \
 	src/SettingNetworkForm.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingsDialog.ui \
+	src/SubmoduleAddDialog.ui \
+	src/SubmoduleUpdateDialog.ui \
+	src/SubmodulesDialog.ui \
 	src/TextEditDialog.ui \
 	src/WelcomeWizardDialog.ui
 

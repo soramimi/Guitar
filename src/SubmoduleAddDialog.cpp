@@ -1,5 +1,5 @@
-#include "CloneDialog.h"
-#include "ui_CloneDialog.h"
+#include "SubmoduleAddDialog.h"
+#include "ui_SubmoduleAddDialog.h"
 #include "ApplicationGlobal.h"
 #include "BasicMainWindow.h"
 #include "SearchFromGitHubDialog.h"
@@ -15,18 +15,17 @@ enum SearchRepository {
 	GitHub,
 };
 
-struct CloneDialog::Private {
+struct SubmoduleAddDialog::Private {
 	QString url;
 	QString repo_name;
 	QString default_working_dir;
 	bool ok = false;
 	QString errmsg;
-	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
+SubmoduleAddDialog::SubmoduleAddDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
 	: QDialog(parent)
-	, ui(new Ui::CloneDialog)
+	, ui(new Ui::SubmoduleAddDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
@@ -38,45 +37,35 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	ui->lineEdit_working_dir->setText(m->default_working_dir);
 	ui->lineEdit_repo_location->setText(url);
 
-	ui->comboBox->addItem(tr("Search"));
-	ui->comboBox->addItem(tr("GitHub"));
-
 	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 
 #ifdef Q_OS_MACX
 	ui->comboBox->setMinimumWidth(100);
 #endif
-
-	ui->lineEdit_repo_location->setFocus();
 }
 
-CloneDialog::~CloneDialog()
+SubmoduleAddDialog::~SubmoduleAddDialog()
 {
 	delete m;
 	delete ui;
 }
 
-CloneDialog::Action CloneDialog::action() const
-{
-	return m->action;
-}
-
-BasicMainWindow *CloneDialog::mainwindow()
+BasicMainWindow *SubmoduleAddDialog::mainwindow()
 {
 	return qobject_cast<BasicMainWindow *>(parent());
 }
 
-QString CloneDialog::url()
+QString SubmoduleAddDialog::url()
 {
 	return ui->lineEdit_repo_location->text();
 }
 
-QString CloneDialog::dir()
+QString SubmoduleAddDialog::dir()
 {
 	return ui->lineEdit_working_dir->text();
 }
 
-void CloneDialog::on_lineEdit_repo_location_textChanged(QString const &text)
+void SubmoduleAddDialog::on_lineEdit_repo_location_textChanged(QString const &text)
 {
 	QString path;
 	int i = text.lastIndexOf('/');
@@ -95,23 +84,14 @@ void CloneDialog::on_lineEdit_repo_location_textChanged(QString const &text)
 	ui->lineEdit_working_dir->setText(path);
 }
 
-void CloneDialog::on_comboBox_currentIndexChanged(int index)
-{
-	if (index == GitHub) {
-		SearchFromGitHubDialog dlg(this, mainwindow());
-		if (dlg.exec() == QDialog::Accepted) {
-			ui->lineEdit_repo_location->setText(dlg.url());
-		}
-	}
-	ui->comboBox->setCurrentIndex(0);
-}
 
-void CloneDialog::on_pushButton_test_clicked()
+
+void SubmoduleAddDialog::on_pushButton_test_clicked()
 {
 	mainwindow()->testRemoteRepositoryValidity(url(), overridedSshKey());
 }
 
-void CloneDialog::on_pushButton_browse_clicked()
+void SubmoduleAddDialog::on_pushButton_browse_clicked()
 {
 	QString path = ui->lineEdit_working_dir->text();
 	path = QFileDialog::getExistingDirectory(this, tr("Checkout into"), path);
@@ -123,7 +103,7 @@ void CloneDialog::on_pushButton_browse_clicked()
 	}
 }
 
-void CloneDialog::on_pushButton_open_existing_clicked()
+void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 {
 	QString dir = mainwindow()->defaultWorkingDir();
 	dir = QFileDialog::getExistingDirectory(this, tr("Open existing directory"), dir);
@@ -141,12 +121,11 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 		}
 		ui->lineEdit_repo_location->setText(url);
 		ui->lineEdit_working_dir->setText(dir);
-		m->action = CloneDialog::Action::AddExisting;
 		done(Accepted);
 	}
 }
 
-QString CloneDialog::overridedSshKey() const
+QString SubmoduleAddDialog::overridedSshKey() const
 {
 	return ui->advanced_option->sshKey();
 }

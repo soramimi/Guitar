@@ -28,6 +28,7 @@
 #include "WelcomeWizardDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "SubmoduleAddDialog.h"
 #include "gpg.h"
 #include "gunzip.h"
 #include "platform.h"
@@ -2284,17 +2285,32 @@ void BasicMainWindow::clone(QString url, QString dir)
 {
 	if (!isOnlineMode()) return;
 
-	while (1) {
+	if (dir.isEmpty()) {
 		dir = defaultWorkingDir();
+	}
+
+	while (1) {
+		QString ssh_key;
 		CloneDialog dlg(this, url, dir, &m->gcx);
 		if (dlg.exec() != QDialog::Accepted) {
 			return;
 		}
-
+		const CloneDialog::Action action = dlg.action();
 		url = dlg.url();
 		dir = dlg.dir();
+		ssh_key = dlg.overridedSshKey();
 
-		if (dlg.action() == CloneDialog::Action::Clone) {
+		RepositoryItem repos_item_data;
+		repos_item_data.local_dir = dir;
+		repos_item_data.local_dir.replace('\\', '/');
+		repos_item_data.name = makeRepositoryName(dir);
+		repos_item_data.ssh_key = ssh_key;
+
+		// クローン先ディレクトリを求める
+
+		Git::CloneData clone_data = Git::preclone(url, dir);
+
+		if (action == CloneDialog::Action::Clone) {
 			// 既存チェック
 
 			QFileInfo info(dir);
@@ -2308,10 +2324,6 @@ void BasicMainWindow::clone(QString url, QString dir)
 				QMessageBox::warning(this, tr("Clone"), msg);
 				continue;
 			}
-
-			// クローン先ディレクトリを求める
-
-			Git::CloneData clone_data = Git::preclone(url, dir);
 
 			// クローン先ディレクトリの存在チェック
 
@@ -2338,20 +2350,48 @@ void BasicMainWindow::clone(QString url, QString dir)
 				QDir(base).mkpath(sub);
 			}
 
-			RepositoryItem data;
-			data.local_dir = dir;
-			data.local_dir.replace('\\', '/');
-			data.name = makeRepositoryName(dir);
-			data.ssh_key = dlg.overridedSshKey();
-
-			GitPtr g = git(QString(), data.ssh_key);
-			setPtyUserData(QVariant::fromValue<RepositoryItem>(data));
+			GitPtr g = git(QString(), repos_item_data.ssh_key);
+			setPtyUserData(QVariant::fromValue<RepositoryItem>(repos_item_data));
 			setPtyCondition(PtyCondition::Clone);
 			setPtyProcessOk(true);
 			g->clone(clone_data, getPtyProcess());
-		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
+		} else if (action == CloneDialog::Action::AddExisting) {
 			addWorkingCopyDir(dir, true);
 		}
+
+		return; // done
+	}
+}
+
+void BasicMainWindow::submodule_add(QString url, QString dir)
+{
+	if (!isOnlineMode()) return;
+
+	if (dir.isEmpty()) {
+		dir = defaultWorkingDir();
+	}
+
+	while (1) {
+		SubmoduleAddDialog dlg(this, url, dir, &m->gcx);
+		if (dlg.exec() != QDialog::Accepted) {
+			return;
+		}
+		url = dlg.url();
+		dir = dlg.dir();
+		const QString ssh_key = dlg.overridedSshKey();
+
+		RepositoryItem repos_item_data;
+		repos_item_data.local_dir = dir;
+		repos_item_data.local_dir.replace('\\', '/');
+		repos_item_data.name = makeRepositoryName(dir);
+		repos_item_data.ssh_key = ssh_key;
+
+		// クローン先ディレクトリを求める
+
+		Git::CloneData clone_data = Git::preclone(url, dir);
+
+		GitPtr g = git(QString(), repos_item_data.ssh_key);
+		g->submodule_add(clone_data, getPtyProcess());
 
 		return; // done
 	}

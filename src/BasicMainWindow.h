@@ -50,6 +50,11 @@ public:
 		HunkIndexRole,
 		HeaderRole,
 	};
+	enum CloneOperation {
+		Clone,
+		SubmoduleAdd,
+	};
+
 protected:
 
 	enum class PtyCondition {
@@ -187,7 +192,8 @@ protected:
 	QString makeCommitInfoText(int row, QList<Label> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 
-	void clone(QString url = QString(), QString dir = QString());
+	void clone(QString url = {}, QString dir = {});
+	void submodule_add(QString url = {}, QString dir = {});
 	void checkout();
 	void commit(bool amend = false);
 	void commitAmend();

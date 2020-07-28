@@ -221,6 +221,12 @@ private slots:
 
 	void on_action_show_labels_triggered();
 
+	void on_action_submodule_add_triggered();
+
+	void on_action_submodules_triggered();
+
+	void on_action_submodule_update_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len) override;
