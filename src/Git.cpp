@@ -829,11 +829,15 @@ std::vector<Git::Submodule> Git::submodules()
 	return mods;
 }
 
-bool Git::submodule_add(CloneData const &data, AbstractPtyProcess *pty)
+bool Git::submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty)
 {
 	bool ok = false;
 
-	QString cmd = "submodule add \"%1\" \"%2\"";
+	QString cmd = "submodule add";
+	if (force) {
+		cmd += " -f";
+	}
+	cmd += " \"%1\" \"%2\"";
 	cmd = cmd.arg(data.url).arg(data.subdir);
 	ok = git(cmd, true, true, pty);
 

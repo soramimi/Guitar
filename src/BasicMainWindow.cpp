@@ -744,13 +744,20 @@ void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_
 
 	listwidget->clear();
 
-	auto AddItem = [&](QString const &filename, QString header, int idiff){
+	auto AddItem = [&](ObjectData const &data){
+		QString header = data.header;
 		if (header.isEmpty()) {
 			header = "(??\?) "; // damn trigraph
 		}
-		QListWidgetItem *item = new QListWidgetItem(filename);
-		item->setData(FilePathRole, filename);
-		item->setData(DiffIndexRole, idiff);
+		QString text = data.path;
+		if (data.submod) {
+			text += " : ";
+			text += data.submod->id.mid(0, 7);
+		}
+		QListWidgetItem *item = new QListWidgetItem(text);
+		item->setSizeHint(QSize(item->sizeHint().width(), 18));
+		item->setData(FilePathRole, data.path);
+		item->setData(DiffIndexRole, data.idiff);
 		item->setData(HunkIndexRole, -1);
 		item->setData(HeaderRole, header);
 		listwidget->addItem(item);
@@ -821,6 +828,8 @@ void BasicMainWindow::clearLogs()
 {
 	m->logs.clear();
 }
+
+
 
 BasicMainWindow::PtyCondition BasicMainWindow::getPtyCondition()
 {
@@ -2128,7 +2137,7 @@ bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 	return true; // success
 }
 
-void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item)
+void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (ObjectData const &data)> &add_item)
 {
 	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
 		Git::Diff const &diff = diff_list->at(idiff);
@@ -2144,7 +2153,13 @@ void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std:
 		case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
 		}
 
-		add_item(diff.path, header, idiff);
+		ObjectData data;
+		data.id = diff.blob.b_id;
+		data.path = diff.path;
+		data.submod = nullptr;
+		data.header = header;
+		data.idiff = idiff;
+		add_item(data);
 	}
 }
 
@@ -2382,13 +2397,12 @@ void BasicMainWindow::clone(QString url, QString dir)
 	}
 }
 
-void BasicMainWindow::submodule_add(QString url, QString dir)
+void BasicMainWindow::submodule_add(QString url, QString local_dir)
 {
 	if (!isOnlineMode()) return;
+	if (local_dir.isEmpty()) return;
 
-	if (dir.isEmpty()) {
-		dir = defaultWorkingDir();
-	}
+	QString dir = local_dir;
 
 	while (1) {
 		SubmoduleAddDialog dlg(this, url, dir, &m->gcx);
@@ -2405,12 +2419,33 @@ void BasicMainWindow::submodule_add(QString url, QString dir)
 		repos_item_data.name = makeRepositoryName(dir);
 		repos_item_data.ssh_key = ssh_key;
 
-		// クローン先ディレクトリを求める
+		Git::CloneData data = Git::preclone(url, dir);
+		bool force = dlg.isForce();
 
-		Git::CloneData clone_data = Git::preclone(url, dir);
+		GitPtr g = git(local_dir, repos_item_data.ssh_key);
 
-		GitPtr g = git(QString(), repos_item_data.ssh_key);
-		g->submodule_add(clone_data, getPtyProcess());
+		auto callback = [&](GitPtr const &g){
+			g->submodule_add(data, force, getPtyProcess());
+		};
+
+		{
+			setRemoteMonitoringEnabled(false);
+
+			OverrideWaitCursor;
+			{
+				setLogEnabled(g, true);
+				AsyncExecGitThread_ th(g, callback);
+				th.start();
+				while (1) {
+					if (th.wait(1)) break;
+					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+				}
+				setLogEnabled(g, false);
+			}
+			openRepository_(g);
+
+			setRemoteMonitoringEnabled(true);
+		}
 
 		return; // done
 	}
@@ -2998,6 +3033,7 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 		openRepository(false, false);
 	}
 }
+
 
 
 

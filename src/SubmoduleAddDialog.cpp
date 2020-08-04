@@ -42,6 +42,8 @@ SubmoduleAddDialog::SubmoduleAddDialog(BasicMainWindow *parent, QString const &u
 #ifdef Q_OS_MACX
 	ui->comboBox->setMinimumWidth(100);
 #endif
+
+	ui->lineEdit_repo_location->setFocus();
 }
 
 SubmoduleAddDialog::~SubmoduleAddDialog()
@@ -63,6 +65,11 @@ QString SubmoduleAddDialog::url()
 QString SubmoduleAddDialog::dir()
 {
 	return ui->lineEdit_working_dir->text();
+}
+
+bool SubmoduleAddDialog::isForce() const
+{
+	return ui->checkBox_force->isChecked();
 }
 
 void SubmoduleAddDialog::on_lineEdit_repo_location_textChanged(QString const &text)

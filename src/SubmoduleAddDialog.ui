@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>283</height>
+    <height>400</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -64,22 +64,18 @@
      <property name="title">
       <string>Options</string>
      </property>
-     <widget class="QCheckBox" name="checkBox_force">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>30</y>
-        <width>88</width>
-        <height>19</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>--force</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="checkBox_force">
+        <property name="text">
+         <string>--force</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -87,7 +83,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>78</height>
+       <height>110</height>
       </size>
      </property>
     </widget>
@@ -150,6 +146,8 @@
   <tabstop>lineEdit_repo_location</tabstop>
   <tabstop>pushButton_test</tabstop>
   <tabstop>lineEdit_working_dir</tabstop>
+  <tabstop>pushButton_browse</tabstop>
+  <tabstop>checkBox_force</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>
@@ -162,8 +160,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>152</x>
-     <y>269</y>
+     <x>508</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
      <x>104</x>
@@ -178,8 +176,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>244</x>
-     <y>270</y>
+     <x>597</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
      <x>238</x>

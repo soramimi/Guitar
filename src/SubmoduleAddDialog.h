@@ -28,6 +28,7 @@ public:
 	QString url();
 	QString dir();
 	QString overridedSshKey() const;
+	bool isForce() const;
 private slots:
 	void on_lineEdit_repo_location_textChanged(QString const &text);
 	void on_pushButton_test_clicked();

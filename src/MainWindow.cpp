@@ -746,6 +746,7 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 	ui->label_branch_name->setText(brname);
 }
 
+
 void MainWindow::updateFilesList(QString id, bool wait)
 {
 	GitPtr g = git();
@@ -755,20 +756,71 @@ void MainWindow::updateFilesList(QString id, bool wait)
 
 	clearFileList();
 
+// wip submodule support
+#if 0
+	{
+		GitObjectCache objcache;
+		objcache.setup(g);
+		GitCommit tree;
+		tree.parseCommit(&objcache, id);
+		Git::Object obj = objcache.catFile(tree.tree_id);
+		if (obj.type == Git::Object::Type::TREE) {
+			QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
+			for (QString const &line : lines) {
+				int i = line.indexOf('\t');
+				if (i > 0) {
+					struct FileItem {
+						int attr = 0;
+						enum class Type {
+							unknown,
+							blob,
+							commit,
+						};
+						Type type = Type::unknown;
+						QString id;
+						QString name;
+					};
+					FileItem item;
+					item.name = line.mid(i + 1);
+					QStringList list = misc::splitWords(line);
+					if (list.size() >= 3) {
+						item.attr = list[0].toInt();
+						QString type = list[1];
+						if (type == "blob") {
+							item.type = FileItem::Type::blob;
+						} else if (type == "commit") {
+							item.type = FileItem::Type::commit;
+						}
+						item.id = list[2];
+					}
+					qDebug() << item.attr << (int)item.type << item.id << item.name;
+				}
+			}
+		}
+		qDebug() << tree.tree_id;
+	}
+#endif
+
 	Git::FileStatusList stats = g->status_s();
 	setUncommitedChanges(!stats.empty());
 
 	FilesListType files_list_type = FilesListType::SingleList;
 
 	bool staged = false;
-	auto AddItem = [&](QString const &filename, QString header, int idiff){
+	auto AddItem = [&](ObjectData const &data){
+		QString header = data.header;
 		if (header.isEmpty()) {
 			header = "(??\?) "; // damn trigraph
 		}
-		QListWidgetItem *item = new QListWidgetItem(filename);
+		QString text = data.path;
+		if (data.submod) {
+			text += " : ";
+			text += data.submod->id.mid(0, 7);
+		}
+		QListWidgetItem *item = new QListWidgetItem(text);
 		item->setSizeHint(QSize(item->sizeHint().width(), 18));
-		item->setData(FilePathRole, filename);
-		item->setData(DiffIndexRole, idiff);
+		item->setData(FilePathRole, data.path);
+		item->setData(DiffIndexRole, data.idiff);
 		item->setData(HunkIndexRole, -1);
 		item->setData(HeaderRole, header);
 		switch (files_list_type) {
@@ -831,7 +883,11 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			} else if (s.code_x() == 'M' || s.code_y() == 'M') {
 				header = "(chg) ";
 			}
-			AddItem(path, header, idiff);
+			ObjectData data;
+			data.path = path;
+			data.header = header;
+			data.idiff = idiff;
+			AddItem(data);
 		}
 	} else {
 		if (!makeDiff(id, diffResult())) {
@@ -863,10 +919,10 @@ void MainWindow::updateCurrentFilesList()
 	auto logs = getLogs();
 	QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
 	if (!item) return;
-	int row = item->data(IndexRole).toInt();
+	int index = item->data(IndexRole).toInt();
 	int count = (int)logs.size();
-	if (row < count) {
-		updateFilesList(logs[row], true);
+	if (index < count) {
+		updateFilesList(logs[index], true);
 	}
 }
 
@@ -1916,8 +1972,8 @@ void MainWindow::doLogCurrentItemChanged()
 	QTableWidgetItem *item = ui->tableWidget_log->item(row, 0);
 	if (item) {
 		auto const &logs = getLogs();
-		int row = item->data(IndexRole).toInt();
-		if (row < (int)logs.size()) {
+		int index = item->data(IndexRole).toInt();
+		if (index < (int)logs.size()) {
 			updateStatusBarText();
 			*ptrUpdateFilesListCounter() = 200;
 		}

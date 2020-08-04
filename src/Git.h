@@ -505,8 +505,9 @@ public:
 		bool recursive = true;
 	};
 
+
 	std::vector<Submodule> submodules();
-	bool submodule_add(const CloneData &data, AbstractPtyProcess *pty);
+	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 };
 

@@ -181,7 +181,14 @@ protected:
 //	void checkRemoteUpdate();
 	bool isThereUncommitedChanges() const;
 	bool makeDiff(QString id, QList<Git::Diff> *out);
-	void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item);
+	struct ObjectData {
+		QString id;
+		QString path;
+		Git::Submodule const *submod = nullptr;
+		QString header;
+		int idiff;
+	};
+	void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (ObjectData const &data)> &add_item);
 	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
 
 	void queryBranches(const GitPtr &g);
@@ -194,7 +201,7 @@ protected:
 	void removeRepositoryFromBookmark(int index, bool ask);
 
 	void clone(QString url = {}, QString dir = {});
-	void submodule_add(QString url = {}, QString dir = {});
+	void submodule_add(QString url = {}, QString local_dir = {});
 	void checkout();
 	void commit(bool amend = false);
 	void commitAmend();
