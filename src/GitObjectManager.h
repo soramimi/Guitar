@@ -71,7 +71,7 @@ public:
 	QString tree_id;
 	QStringList parents;
 
-	bool parseCommit(GitObjectCache *objcache, QString const &id);
+	static bool parseCommit(GitObjectCache *objcache, QString const &id, GitCommit *out);
 };
 
 struct GitTreeItem {
@@ -79,6 +79,7 @@ struct GitTreeItem {
 		UNKNOWN,
 		TREE,
 		BLOB,
+		COMMIT,
 	};
 	Type type = UNKNOWN;
 	QString name;
@@ -125,5 +126,9 @@ public:
 };
 
 QString lookupFileID(GitObjectCache *objcache, QString const &commit_id, QString const &file);
+
+void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTreeItemList *out);
+bool parseGitTreeObject(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out);
+
 
 #endif // GITOBJECTMANAGER_H

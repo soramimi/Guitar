@@ -746,7 +746,6 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 	ui->label_branch_name->setText(brname);
 }
 
-
 void MainWindow::updateFilesList(QString id, bool wait)
 {
 	GitPtr g = git();
@@ -757,48 +756,38 @@ void MainWindow::updateFilesList(QString id, bool wait)
 	clearFileList();
 
 // wip submodule support
-#if 0
+#if 1
+	std::vector<Git::Submodule> submodules;
 	{
+		GitTreeItemList list;
 		GitObjectCache objcache;
 		objcache.setup(g);
 		GitCommit tree;
-		tree.parseCommit(&objcache, id);
-		Git::Object obj = objcache.catFile(tree.tree_id);
-		if (obj.type == Git::Object::Type::TREE) {
-			QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
-			for (QString const &line : lines) {
-				int i = line.indexOf('\t');
-				if (i > 0) {
-					struct FileItem {
-						int attr = 0;
-						enum class Type {
-							unknown,
-							blob,
-							commit,
-						};
-						Type type = Type::unknown;
-						QString id;
-						QString name;
-					};
-					FileItem item;
-					item.name = line.mid(i + 1);
-					QStringList list = misc::splitWords(line);
-					if (list.size() >= 3) {
-						item.attr = list[0].toInt();
-						QString type = list[1];
-						if (type == "blob") {
-							item.type = FileItem::Type::blob;
-						} else if (type == "commit") {
-							item.type = FileItem::Type::commit;
-						}
-						item.id = list[2];
-					}
-					qDebug() << item.attr << (int)item.type << item.id << item.name;
+		GitCommit::parseCommit(&objcache, id, &tree);
+		parseGitTreeObject(&objcache, tree.tree_id, {}, &list);
+		for (GitTreeItem const &item : list) {
+			if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
+				Git::Object obj = objcache.catFile(item.id);
+				if (!obj.content.isEmpty()) {
+					parseGitSubModules(obj.content, &submodules);
 				}
 			}
 		}
-		qDebug() << tree.tree_id;
+		for (GitTreeItem const &item : list) {
+			if (item.type == GitTreeItem::Type::BLOB && item.mode == "160000") {
+				for (int i = 0; i < submodules.size(); i++) {
+					if (submodules[i].path == item.name) {
+						submodules[i].id = item.id;
+						break;
+					}
+				}
+			}
+		}
 	}
+	for (Git::Submodule const &m : submodules) {
+		qDebug() << m.name << m.path << m.url << m.id;
+	}
+
 #endif
 
 	Git::FileStatusList stats = g->status_s();

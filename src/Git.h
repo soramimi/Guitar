@@ -495,9 +495,11 @@ public:
 	bool stash_drop();
 
 	struct Submodule {
+		QString name;
 		QString id;
 		QString path;
 		QString refs;
+		QString url;
 	};
 
 	struct SubmoduleUpdateData {
@@ -512,5 +514,8 @@ public:
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
+
+void parseGitSubModules(QByteArray const &ba, std::vector<Git::Submodule> *out);
+
 
 #endif // GIT_H

@@ -823,6 +823,7 @@ std::vector<Git::Submodule> Git::submodules()
 					sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
 				}
 			}
+
 			mods.push_back(sm);
 		}
 	}
@@ -1567,3 +1568,45 @@ void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 	}
 }
 
+
+void parseGitSubModules(const QByteArray &ba, std::vector<Git::Submodule> *out)
+{
+	*out = {};
+	QStringList lines = misc::splitLines(QString::fromUtf8(ba));
+	Git::Submodule submod;
+	auto Push = [&](){
+		if (!submod.name.isEmpty()) {
+			out->push_back(submod);
+		}
+		submod = {};
+	};
+	for (int i = 0; i < lines.size(); i++) {
+		QString line = lines[i].trimmed();
+		if (line.startsWith('[')) {
+			Push();
+			if (line.startsWith("[submodule ") && line.endsWith(']')) {
+				int i = 11;
+				int j = line.size() - 1;
+				if (i + 1 < j && line[i] == '\"') {
+					if (line[j - 1] == '\"') {
+						i++;
+						j--;
+					}
+				}
+				submod.name = line.mid(i, j - i);
+			}
+		} else {
+			int i = line.indexOf('=');
+			if (i > 0) {
+				QString key = line.mid(0, i).trimmed();
+				QString val = line.mid(i + 1).trimmed();
+				if (key == "path") {
+					submod.path = val;
+				} else if (key == "url") {
+					submod.url = val;
+				}
+			}
+		}
+	}
+	Push();
+}

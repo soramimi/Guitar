@@ -64,7 +64,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, BasicMainWindow *mainw
 
 	{
 		GitCommit c;
-		c.parseCommit(objcache, m->commit->commit_id);
+		GitCommit::parseCommit(objcache, m->commit->commit_id, &c);
 		m->root_tree_id = c.tree_id;
 	}
 
