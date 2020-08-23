@@ -41,8 +41,8 @@ public:
 		this->objcache = objcache;
 	}
 
-	bool diff(QString const &id, QList<Git::Diff> *out);
-	bool diff_uncommited(QList<Git::Diff> *out);
+	bool diff(QString const &id, const QList<Git::Submodule> &submodules, QList<Git::Diff> *out);
+	bool diff_uncommited(const QList<Git::Submodule> &submodules, QList<Git::Diff> *out);
 
 	void interrupt()
 	{

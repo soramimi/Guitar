@@ -150,7 +150,13 @@ void GitDiff::retrieveCompleteTree(QString const &dir, GitTreeItemList const *fi
 	}
 }
 
-bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
+/**
+ * @brief コミットの差分を取得する
+ * @param id コミットID
+ * @param out
+ * @return
+ */
+bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();
@@ -251,7 +257,6 @@ bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 
 					for (auto const &pair : diffmap) {
 						diffs.push_back(pair.second);
-
 					}
 				}
 			}
@@ -293,6 +298,18 @@ bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 
 		}
 
+		for (int i = 0; i < diffs.size(); i++) {
+			Git::Diff *diff = &diffs[i];
+			if (diff->isSubmodule()) {
+				for (int i = 0; i < submodules.size(); i++) {
+					if (submodules[i].path == diff->path) {
+						diff->submodule = submodules[i];
+						break;
+					}
+				}
+			}
+		}
+
 		std::sort(diffs.begin(), diffs.end(), [](Git::Diff const &left, Git::Diff const &right){
 			return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
 		});
@@ -305,9 +322,9 @@ bool GitDiff::diff(QString const &id, QList<Git::Diff> *out)
 	return false;
 }
 
-bool GitDiff::diff_uncommited(QList<Git::Diff> *out)
+bool GitDiff::diff_uncommited(const QList<Git::Submodule> &submodules, QList<Git::Diff> *out)
 {
-	return diff(QString(), out);
+	return diff({}, submodules, out);
 }
 
 // GitCommitTree

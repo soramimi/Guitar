@@ -82,6 +82,7 @@ struct BasicMainWindow::Private {
 	QList<RepositoryItem> repos;
 	Git::CommitItemList logs;
 	QList<Git::Diff> diff_result;
+	QList<Git::Submodule> submodules;
 
 	QStringList added;
 	QStringList remotes;
@@ -737,6 +738,30 @@ QString BasicMainWindow::findFileID(QString const &commit_id, QString const &fil
 	return lookupFileID(getObjCache(), commit_id, file);
 }
 
+/**
+ * @brief ファイルリストのテキストを作成
+ * @param data
+ * @return
+ */
+std::pair<QString, QString> BasicMainWindow::makeFileItemText(ObjectData const &data)
+{
+	QString header = data.header;
+	if (header.isEmpty()) {
+		header = "(??\?) "; // damn trigraph
+	}
+	QString text = data.path;
+	if (data.submod) {
+		text += QString(" @ %0").arg(data.submod.id.mid(0, 7));
+	}
+	return {header, text};
+}
+
+/**
+ * @brief ファイルリストを更新
+ * @param id
+ * @param diff_list
+ * @param listwidget
+ */
 void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
@@ -745,15 +770,7 @@ void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_
 	listwidget->clear();
 
 	auto AddItem = [&](ObjectData const &data){
-		QString header = data.header;
-		if (header.isEmpty()) {
-			header = "(??\?) "; // damn trigraph
-		}
-		QString text = data.path;
-		if (data.submod) {
-			text += " : ";
-			text += data.submod->id.mid(0, 7);
-		}
+		auto [header, text] = makeFileItemText(data);
 		QListWidgetItem *item = new QListWidgetItem(text);
 		item->setSizeHint(QSize(item->sizeHint().width(), 18));
 		item->setData(FilePathRole, data.path);
@@ -764,7 +781,7 @@ void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_
 	};
 
 	GitDiff dm(getObjCache());
-	if (!dm.diff(id, diff_list)) return;
+	if (!dm.diff(id, submodules(), diff_list)) return;
 
 	addDiffItems(diff_list, AddItem);
 }
@@ -935,6 +952,21 @@ void BasicMainWindow::setUncommitedChanges(bool uncommited_changes)
 QList<Git::Diff> *BasicMainWindow::diffResult()
 {
 	return &m->diff_result;
+}
+
+void BasicMainWindow::setDiffResult(const QList<Git::Diff> &diffs)
+{
+	m->diff_result = diffs;
+}
+
+const QList<Git::Submodule> &BasicMainWindow::submodules() const
+{
+	return m->submodules;
+}
+
+void BasicMainWindow::setSubmodules(const QList<Git::Submodule> &submodules)
+{
+	m->submodules = submodules;
 }
 
 std::map<QString, Git::Diff> *BasicMainWindow::getDiffCacheMap()
@@ -2113,10 +2145,21 @@ bool BasicMainWindow::isThereUncommitedChanges() const
 	return m->uncommited_changes;
 }
 
-bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
+/**
+ * @brief コミットに対応する差分情報を作成
+ * @param id コミットID
+ * @param ok
+ * @return
+ */
+QList<Git::Diff> BasicMainWindow::makeDiffs(QString id, bool *ok)
 {
+	QList<Git::Diff> out;
+
 	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return false;
+	if (!isValidWorkingCopy(g)) {
+		if (ok) *ok = false;
+		return {};
+	}
 
 	Git::FileStatusList list = g->status_s();
 	setUncommitedChanges(!list.empty());
@@ -2125,16 +2168,19 @@ bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
 		id = getObjCache()->revParse("HEAD");
 	}
 
+	updateSubmodules(g, id);
+
 	bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
 
 	GitDiff dm(getObjCache());
 	if (uncommited) {
-		dm.diff_uncommited(out);
+		dm.diff_uncommited(submodules(), &out);
 	} else {
-		dm.diff(id, out);
+		dm.diff(id, submodules(), &out);
 	}
 
-	return true; // success
+	if (ok) *ok = true;
+	return out;
 }
 
 void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (ObjectData const &data)> &add_item)
@@ -2156,7 +2202,7 @@ void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std:
 		ObjectData data;
 		data.id = diff.blob.b_id;
 		data.path = diff.path;
-		data.submod = nullptr;
+		data.submod = diff.submodule;
 		data.header = header;
 		data.idiff = idiff;
 		add_item(data);

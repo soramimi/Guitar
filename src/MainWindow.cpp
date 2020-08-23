@@ -746,19 +746,16 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 	ui->label_branch_name->setText(brname);
 }
 
-void MainWindow::updateFilesList(QString id, bool wait)
+/**
+ * @brief サブモジュールを更新
+ * @param id コミットID
+ */
+void BasicMainWindow::updateSubmodules(GitPtr g, QString id)
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	if (!wait) return;
-
-	clearFileList();
-
-// wip submodule support
-#if 1
-	std::vector<Git::Submodule> submodules;
-	{
+	QList<Git::Submodule> submodules;
+	if (id.isEmpty()) {
+		submodules = g->submodules();
+	} else {
 		GitTreeItemList list;
 		GitObjectCache objcache;
 		objcache.setup(g);
@@ -784,11 +781,25 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			}
 		}
 	}
-	for (Git::Submodule const &m : submodules) {
-		qDebug() << m.name << m.path << m.url << m.id;
-	}
+//	for (Git::Submodule const &m : submodules) {
+//		qDebug() << m.name << m.path << m.url << m.id;
+//	}
+	setSubmodules(submodules);
+}
 
-#endif
+/**
+ * @brief ファイルリストを更新
+ * @param id コミットID
+ * @param wait
+ */
+void MainWindow::updateFilesList(QString id, bool wait)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	if (!wait) return;
+
+	clearFileList();
 
 	Git::FileStatusList stats = g->status_s();
 	setUncommitedChanges(!stats.empty());
@@ -797,15 +808,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 
 	bool staged = false;
 	auto AddItem = [&](ObjectData const &data){
-		QString header = data.header;
-		if (header.isEmpty()) {
-			header = "(??\?) "; // damn trigraph
-		}
-		QString text = data.path;
-		if (data.submod) {
-			text += " : ";
-			text += data.submod->id.mid(0, 7);
-		}
+		auto [header, text] = makeFileItemText(data);
 		QListWidgetItem *item = new QListWidgetItem(text);
 		item->setSizeHint(QSize(item->sizeHint().width(), 18));
 		item->setData(FilePathRole, data.path);
@@ -831,9 +834,10 @@ void MainWindow::updateFilesList(QString id, bool wait)
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
 		}
-		if (!makeDiff(uncommited ? QString() : id, diffResult())) {
-			return;
-		}
+		bool ok = false;
+		auto diffs = makeDiffs(uncommited ? QString() : id, &ok);
+		setDiffResult(diffs);
+		if (!ok) return;
 
 		std::map<QString, int> diffmap;
 
@@ -852,8 +856,10 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			int idiff = -1;
 			QString header;
 			auto it = diffmap.find(s.path1());
+			Git::Diff const *diff = nullptr;
 			if (it != diffmap.end()) {
 				idiff = it->second;
+				diff = &diffResult()->at(idiff);
 			}
 			QString path = s.path1();
 			if (s.code() == Git::FileStatusCode::Unknown) {
@@ -876,12 +882,15 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			data.path = path;
 			data.header = header;
 			data.idiff = idiff;
+			if (diff) data.submod = diff->submodule;
 			AddItem(data);
 		}
 	} else {
-		if (!makeDiff(id, diffResult())) {
-			return;
-		}
+		bool ok = false;
+		auto diffs = makeDiffs(id, &ok);
+		setDiffResult(diffs);
+		if (!ok) return;
+
 		showFileList(files_list_type);
 		addDiffItems(diffResult(), AddItem);
 	}
@@ -3059,7 +3068,7 @@ void MainWindow::test()
 void MainWindow::on_action_submodules_triggered()
 {
 	GitPtr g = git();
-	std::vector<Git::Submodule> mods = g->submodules();
+	QList<Git::Submodule> mods = g->submodules();
 
 	std::vector<SubmodulesDialog::Submodule> mods2;
 	mods2.resize(mods.size());

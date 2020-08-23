@@ -6,7 +6,7 @@ CONFIG(debug,debug|release):TARGET = Guitard
 CONFIG(release,debug|release):TARGET = Guitar
 TEMPLATE = app
 
-CONFIG += c++11
+CONFIG += c++17
 
 DESTDIR = $$PWD/_bin
 

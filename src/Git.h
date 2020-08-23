@@ -74,6 +74,18 @@ public:
 		QByteArray content;
 	};
 
+	struct Submodule {
+		QString name;
+		QString id;
+		QString path;
+		QString refs;
+		QString url;
+		operator bool () const
+		{
+			return !id.isEmpty();
+		}
+	};
+
 	class Hunk {
 	public:
 		std::string at;
@@ -101,10 +113,15 @@ public:
 			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
+		Submodule submodule;
 		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
 		{
 			makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
+		}
+		bool isSubmodule() const
+		{
+			return mode == "160000";
 		}
 	private:
 		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
@@ -494,28 +511,20 @@ public:
 	bool stash_apply();
 	bool stash_drop();
 
-	struct Submodule {
-		QString name;
-		QString id;
-		QString path;
-		QString refs;
-		QString url;
-	};
-
 	struct SubmoduleUpdateData {
 		bool init = true;
 		bool recursive = true;
 	};
 
 
-	std::vector<Submodule> submodules();
+	QList<Submodule> submodules();
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
 
-void parseGitSubModules(QByteArray const &ba, std::vector<Git::Submodule> *out);
+void parseGitSubModules(QByteArray const &ba, QList<Git::Submodule> *out);
 
 
 #endif // GIT_H

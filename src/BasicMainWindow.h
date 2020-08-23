@@ -180,11 +180,11 @@ protected:
 	void openSelectedRepository();
 //	void checkRemoteUpdate();
 	bool isThereUncommitedChanges() const;
-	bool makeDiff(QString id, QList<Git::Diff> *out);
+	QList<Git::Diff> makeDiffs(QString id, bool *ok);
 	struct ObjectData {
 		QString id;
 		QString path;
-		Git::Submodule const *submod = nullptr;
+		Git::Submodule submod;
 		QString header;
 		int idiff;
 	};
@@ -320,6 +320,8 @@ protected:
 	virtual void updateStatusBarText() {}
 	void msgNoRepositorySelected();
 	bool isRepositoryOpened() const;
+	void updateSubmodules(GitPtr g, QString id);
+	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
 public:
 	explicit BasicMainWindow(QWidget *parent = nullptr);
 	~BasicMainWindow() override;
@@ -394,6 +396,9 @@ public:
 	void changeSshKey(const QString &localdir, const QString &sshkey);
 	void saveApplicationSettings();
 	void loadApplicationSettings();
+	void setDiffResult(const QList<Git::Diff> &diffs);
+	const QList<Git::Submodule> &submodules() const;
+	void setSubmodules(const QList<Git::Submodule> &submodules);
 protected slots:
 	void onAvatarUpdated();
 public slots:

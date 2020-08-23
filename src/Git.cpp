@@ -801,14 +801,14 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	return ok;
 }
 
-std::vector<Git::Submodule> Git::submodules()
+QList<Git::Submodule> Git::submodules()
 {
-	std::vector<Git::Submodule> mods;
+	QList<Git::Submodule> mods;
 
 	git("submodule");
 	QString text = resultText();
 	ushort c = text.utf16()[0];
-	if (c == ' ' || c == '-') {
+	if (c == ' ' || c == '+' || c == '-') {
 		text = text.mid(1);
 	}
 	QStringList words = misc::splitWords(text);
@@ -1569,7 +1569,7 @@ void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 }
 
 
-void parseGitSubModules(const QByteArray &ba, std::vector<Git::Submodule> *out)
+void parseGitSubModules(const QByteArray &ba, QList<Git::Submodule> *out)
 {
 	*out = {};
 	QStringList lines = misc::splitLines(QString::fromUtf8(ba));
