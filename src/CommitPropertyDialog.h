@@ -5,6 +5,7 @@
 
 #include "Git.h"
 
+class MainWindow;
 class QLabel;
 
 namespace Ui {
@@ -19,8 +20,8 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, Git::CommitItem const *commit);
-	explicit CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, QString const &commit_id);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
 	~CommitPropertyDialog() override;
 
 	void showCheckoutButton(bool f);
@@ -32,8 +33,8 @@ private slots:
 	void on_pushButton_jump_clicked();
 private:
 	Ui::CommitPropertyDialog *ui;
-	void init(BasicMainWindow *mw);
-	BasicMainWindow *mainwindow();
+	void init(MainWindow *mw);
+	MainWindow *mainwindow();
 	void setAvatar(const QIcon &icon, QLabel *label);
 	void updateAvatar(bool request);
 };

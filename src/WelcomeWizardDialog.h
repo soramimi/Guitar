@@ -5,7 +5,7 @@
 
 #include <QDialog>
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class WelcomeWizardDialog;
@@ -14,11 +14,11 @@ class WelcomeWizardDialog;
 class WelcomeWizardDialog : public QDialog {
 	Q_OBJECT
 private:
-	BasicMainWindow *mainwindow_;
+	MainWindow *mainwindow_;
 	AvatarLoader avatar_loader_;
 	QList<QWidget *> pages_;
 public:
-	explicit WelcomeWizardDialog(BasicMainWindow *parent = nullptr);
+	explicit WelcomeWizardDialog(MainWindow *parent = nullptr);
 	~WelcomeWizardDialog() override;
 
 	void set_user_name(QString const &v);

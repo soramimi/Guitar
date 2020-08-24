@@ -1,7 +1,7 @@
 #include "CloneDialog.h"
 #include "ui_CloneDialog.h"
 #include "ApplicationGlobal.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
@@ -24,7 +24,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
+CloneDialog::CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -61,9 +61,9 @@ CloneDialog::Action CloneDialog::action() const
 	return m->action;
 }
 
-BasicMainWindow *CloneDialog::mainwindow()
+MainWindow *CloneDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 QString CloneDialog::url()

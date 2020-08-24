@@ -42,7 +42,7 @@ private:
 
 	void collectFileHistory();
 	void updateDiffView();
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 };
 
 #endif // FILEHISTORYWINDOW_H

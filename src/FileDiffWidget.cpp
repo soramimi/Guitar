@@ -22,7 +22,7 @@ enum {
 };
 
 struct FileDiffWidget::Private {
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	FileDiffWidget::InitParam_ init_param_;
 	Git::CommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
@@ -98,7 +98,7 @@ FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 
 
 
-void FileDiffWidget::bind(BasicMainWindow *mw)
+void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
 	m->mainwindow = mw;
@@ -109,7 +109,7 @@ void FileDiffWidget::bind(BasicMainWindow *mw)
 	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
 }
 
-BasicMainWindow *FileDiffWidget::mainwindow()
+MainWindow *FileDiffWidget::mainwindow()
 {
 	return m->mainwindow;
 }

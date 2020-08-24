@@ -1,5 +1,5 @@
 #include "FileHistoryWindow.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "FileDiffWidget.h"
 #include "GitDiff.h"
 #include "MyTableWidgetDelegate.h"
@@ -75,9 +75,9 @@ FileHistoryWindow::~FileHistoryWindow()
 	delete ui;
 }
 
-BasicMainWindow *FileHistoryWindow::mainwindow()
+MainWindow *FileHistoryWindow::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 void FileHistoryWindow::prepare(GitPtr const &g, QString const &path)
@@ -135,7 +135,7 @@ void FileHistoryWindow::collectFileHistory()
 			col++;
 		};
 
-		QString commit_id = BasicMainWindow::abbrevCommitID(commit);
+		QString commit_id = MainWindow::abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
@@ -154,15 +154,15 @@ void FileHistoryWindow::collectFileHistory()
 
 class FindFileIdThread : public QThread {
 private:
-	BasicMainWindow *mainwindow;
+	MainWindow *mainwindow;
 	GitPtr g;
 	QString commit_id;
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(BasicMainWindow *BasicMainWindow, GitPtr const &g, QString const &commit_id, QString const &file)
+	FindFileIdThread(MainWindow *mw, GitPtr const &g, QString const &commit_id, QString const &file)
 	{
-		this->mainwindow = BasicMainWindow;
+		this->mainwindow = mw;
 		this->g = g;
 		this->commit_id = commit_id;
 		this->file = file;

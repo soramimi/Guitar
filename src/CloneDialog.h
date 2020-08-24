@@ -9,7 +9,7 @@ namespace Ui {
 class CloneDialog;
 }
 
-class BasicMainWindow;
+class MainWindow;
 
 class CloneDialog : public QDialog {
 	Q_OBJECT
@@ -20,9 +20,9 @@ private:
 
 	using GitPtr = std::shared_ptr<Git>;
 private:
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 public:
-	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
+	explicit CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
 	~CloneDialog() override;
 
 	enum class Action {

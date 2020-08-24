@@ -6,7 +6,7 @@
 
 #include <QDialog>
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class CommitDialog;
@@ -15,7 +15,7 @@ class CommitDialog;
 class CommitDialog : public QDialog {
 	Q_OBJECT
 public:
-	explicit CommitDialog(BasicMainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage);
+	explicit CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage);
 	~CommitDialog() override;
 
 	void setText(QString const &text);
@@ -30,7 +30,7 @@ private:
 	QString previousMessage_;
 
 	// QDialog interface
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 	void updateSigningInfo();
 private slots:
 	void on_pushButton_config_signing_clicked();

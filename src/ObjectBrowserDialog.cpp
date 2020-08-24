@@ -1,4 +1,4 @@
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "ui_ObjectBrowserDialog.h"
 #include "ObjectBrowserDialog.h"
 #include <QMessageBox>
@@ -8,7 +8,7 @@ enum {
 	TypeRole,
 };
 
-ObjectBrowserDialog::ObjectBrowserDialog(BasicMainWindow *parent, const QStringList &list)
+ObjectBrowserDialog::ObjectBrowserDialog(MainWindow *parent, const QStringList &list)
 	: QDialog(parent)
 	, ui(new Ui::ObjectBrowserDialog)
 {
@@ -59,9 +59,9 @@ ObjectBrowserDialog::~ObjectBrowserDialog()
 	delete ui;
 }
 
-BasicMainWindow *ObjectBrowserDialog::mainwindow()
+MainWindow *ObjectBrowserDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 GitPtr ObjectBrowserDialog::git()

@@ -9,7 +9,7 @@ namespace Ui {
 class SubmoduleAddDialog;
 }
 
-class BasicMainWindow;
+class MainWindow;
 
 class SubmoduleAddDialog : public QDialog {
 	Q_OBJECT
@@ -20,9 +20,9 @@ private:
 
 	using GitPtr = std::shared_ptr<Git>;
 private:
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 public:
-	explicit SubmoduleAddDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
+	explicit SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
 	~SubmoduleAddDialog() override;
 
 	QString url();

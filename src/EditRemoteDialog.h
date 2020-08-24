@@ -4,7 +4,7 @@
 #include <QDialog>
 #include "Git.h"
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class EditRemoteDialog;
@@ -19,9 +19,9 @@ public:
 	};
 private:
 	Ui::EditRemoteDialog *ui;
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 public:
-	explicit EditRemoteDialog(BasicMainWindow *parent, Operation op, const Git::Context *gcx);
+	explicit EditRemoteDialog(MainWindow *parent, Operation op, const Git::Context *gcx);
 	~EditRemoteDialog() override;
 
 	void setName(QString const &s) const;

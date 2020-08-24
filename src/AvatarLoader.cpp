@@ -1,5 +1,5 @@
 #include "AvatarLoader.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "MemoryReader.h"
 #include "webclient.h"
 #include <QCryptographicHash>
@@ -18,7 +18,7 @@ struct AvatarLoader::Private {
 	QWaitCondition condition;
 	std::deque<RequestItem> requested;
 	std::deque<RequestItem> completed;
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	WebClientPtr web;
 };
 
@@ -32,7 +32,7 @@ AvatarLoader::~AvatarLoader()
 	delete m;
 }
 
-void AvatarLoader::start(BasicMainWindow *mainwindow)
+void AvatarLoader::start(MainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
 	QThread::start();

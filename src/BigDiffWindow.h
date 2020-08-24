@@ -18,7 +18,7 @@ public:
 	explicit BigDiffWindow(QWidget *parent = nullptr);
 	~BigDiffWindow() override;
 
-	void init(BasicMainWindow *mw, const FileDiffWidget::InitParam_ &param);
+	void init(MainWindow *mw, const FileDiffWidget::InitParam_ &param);
 	void setTextCodec(QTextCodec *codec);
 private:
 	Ui::BigDiffWindow *ui;

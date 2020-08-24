@@ -7,14 +7,14 @@ namespace Ui {
 class CreateRepositoryDialog;
 }
 
-class BasicMainWindow;
+class MainWindow;
 
 class CreateRepositoryDialog : public QDialog {
 	Q_OBJECT
 private:
 	QString already_exists_;
 public:
-	explicit CreateRepositoryDialog(BasicMainWindow *parent, QString const &dir = QString());
+	explicit CreateRepositoryDialog(MainWindow *parent, QString const &dir = QString());
 	~CreateRepositoryDialog() override;
 
 	QString path() const;
@@ -33,7 +33,7 @@ private slots:
 private:
 	Ui::CreateRepositoryDialog *ui;
 	void validate(bool change_name);
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 
 public slots:
 	void accept() override;

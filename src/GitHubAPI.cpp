@@ -1,6 +1,6 @@
 
 #include "GitHubAPI.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "MemoryReader.h"
 #include "charvec.h"
 #include "common/misc.h"
@@ -15,7 +15,7 @@
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	WebClientPtr web;
 };
 
@@ -29,7 +29,7 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
-void GitHubRequestThread::start(BasicMainWindow *mainwindow)
+void GitHubRequestThread::start(MainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
 	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());

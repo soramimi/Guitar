@@ -5,7 +5,7 @@
 
 #include <QDialog>
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class SetUserDialog;
@@ -19,9 +19,9 @@ private:
 	Private *m;
 
 	void setAvatar(const QIcon &icon);
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 public:
-	explicit SetUserDialog(BasicMainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo);
+	explicit SetUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo);
 	~SetUserDialog() override;
 
 	bool isGlobalChecked() const;

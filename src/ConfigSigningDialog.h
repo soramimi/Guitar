@@ -6,7 +6,7 @@
 
 #include <QDialog>
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class ConfigSigningDialog;
@@ -16,13 +16,13 @@ class ConfigSigningDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit ConfigSigningDialog(QWidget *parent, BasicMainWindow *mw, bool local_enable);
+	explicit ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool local_enable);
 	~ConfigSigningDialog() override;
 
 private:
 	Ui::ConfigSigningDialog *ui;
-	BasicMainWindow *mainwindow_;
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow_;
+	MainWindow *mainwindow();
 	Git::SignPolicy gpol_;
 	Git::SignPolicy lpol_;
 

@@ -11,7 +11,7 @@ MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 
 }
 
-void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, BasicMainWindow *mw, QString const &object_id, QString const &object_path)
+void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	this->mainwindow = mw;
 	this->object_id = object_id;

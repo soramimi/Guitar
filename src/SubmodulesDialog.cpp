@@ -1,6 +1,6 @@
 #include "SubmodulesDialog.h"
 #include "ui_SubmodulesDialog.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "common/misc.h"
 
 SubmodulesDialog::SubmodulesDialog(QWidget *parent, std::vector<Submodule> mods)
@@ -20,7 +20,7 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, std::vector<Submodule> mods)
 		ui->tableWidget->setItem(row, 0, item);
 
 		item = new QTableWidgetItem();
-		item->setText(BasicMainWindow::abbrevCommitID(mods[row].head));
+		item->setText(MainWindow::abbrevCommitID(mods[row].head));
 		ui->tableWidget->setItem(row, 1, item);
 
 		item = new QTableWidgetItem();

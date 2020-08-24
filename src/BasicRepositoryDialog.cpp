@@ -1,15 +1,15 @@
 #include "BasicRepositoryDialog.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include <QTableWidget>
 #include <QHeaderView>
 
 struct BasicRepositoryDialog::Private {
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	GitPtr git;
 	QList<Git::Remote> remotes;
 };
 
-BasicRepositoryDialog::BasicRepositoryDialog(BasicMainWindow *mainwindow, GitPtr const &g)
+BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr const &g)
 	: QDialog(mainwindow)
 	, m(new Private)
 {
@@ -26,7 +26,7 @@ BasicRepositoryDialog::~BasicRepositoryDialog()
 	delete m;
 }
 
-BasicMainWindow *BasicRepositoryDialog::mainwindow()
+MainWindow *BasicRepositoryDialog::mainwindow()
 {
 	return m->mainwindow;
 }

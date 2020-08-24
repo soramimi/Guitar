@@ -7,7 +7,7 @@
 #include <QDialog>
 #include "Git.h"
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class RepositoryPropertyDialog;
@@ -25,7 +25,7 @@ private:
 	Git::Remote selectedRemote() const;
 	void toggleRemoteMenuActivity();
 public:
-	explicit RepositoryPropertyDialog(BasicMainWindow *parent, const Git::Context *gcx, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

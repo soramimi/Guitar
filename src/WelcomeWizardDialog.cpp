@@ -5,7 +5,7 @@
 #include "common/misc.h"
 #include "Git.h"
 
-WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
+WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	: QDialog(parent)
 	, ui(new Ui::WelcomeWizardDialog)
 {

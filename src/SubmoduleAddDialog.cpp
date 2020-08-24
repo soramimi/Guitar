@@ -1,7 +1,7 @@
 #include "SubmoduleAddDialog.h"
 #include "ui_SubmoduleAddDialog.h"
 #include "ApplicationGlobal.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
@@ -23,7 +23,7 @@ struct SubmoduleAddDialog::Private {
 	QString errmsg;
 };
 
-SubmoduleAddDialog::SubmoduleAddDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
+SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
 	: QDialog(parent)
 	, ui(new Ui::SubmoduleAddDialog)
 	, m(new Private)
@@ -52,9 +52,9 @@ SubmoduleAddDialog::~SubmoduleAddDialog()
 	delete ui;
 }
 
-BasicMainWindow *SubmoduleAddDialog::mainwindow()
+MainWindow *SubmoduleAddDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 QString SubmoduleAddDialog::url()

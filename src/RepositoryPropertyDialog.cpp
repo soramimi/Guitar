@@ -6,7 +6,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, Git::Context const *gcx, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, gcx(gcx)
@@ -41,7 +41,7 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
-void BasicMainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
+void MainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
 {
 	bool changed = false;
 	QList<RepositoryItem> *repos = getReposPtr();

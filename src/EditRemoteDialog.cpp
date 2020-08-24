@@ -1,10 +1,10 @@
 #include "EditRemoteDialog.h"
 #include "ui_EditRemoteDialog.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include <QFileDialog>
 #include <QStandardPaths>
 
-EditRemoteDialog::EditRemoteDialog(BasicMainWindow *parent, Operation op, const Git::Context *gcx)
+EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op, const Git::Context *gcx)
 	: QDialog(parent)
 	, ui(new Ui::EditRemoteDialog)
 {
@@ -23,9 +23,9 @@ EditRemoteDialog::~EditRemoteDialog()
 	delete ui;
 }
 
-BasicMainWindow *EditRemoteDialog::mainwindow()
+MainWindow *EditRemoteDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 void EditRemoteDialog::setName(QString const &s) const
