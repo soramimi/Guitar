@@ -43,7 +43,12 @@ public:
 
 GitPtr GitDiff::git()
 {
-	return objcache->git()->dup();
+	return objcache->git();
+}
+
+GitPtr GitDiff::git(Git::Submodule const &submod)
+{
+	return objcache->git(submod);
 }
 
 QString GitDiff::makeKey(QString const &a_id, QString const &b_id)
@@ -304,6 +309,11 @@ bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, Q
 				for (int i = 0; i < submodules.size(); i++) {
 					if (submodules[i].path == diff->path) {
 						diff->submodule = submodules[i];
+						{
+							GitPtr g = git(diff->submodule);
+							g->queryCommit(diff->submodule.id, &diff->submodule_commit);
+							qDebug() << diff->submodule_commit.message;
+						}
 						break;
 					}
 				}

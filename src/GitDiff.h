@@ -30,6 +30,7 @@ private:
 	using MapList = std::list<LookupTable>;
 
 	GitPtr git();
+	GitPtr git(const Git::Submodule &submod);
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 

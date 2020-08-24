@@ -883,6 +883,10 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			data.header = header;
 			data.idiff = idiff;
 			if (diff) data.submod = diff->submodule;
+			if (data.submod) {
+				GitPtr g = git(data.submod);
+				g->queryCommit(data.submod.id, &data.submod_commit);
+			}
 			AddItem(data);
 		}
 	} else {
@@ -1962,6 +1966,9 @@ void BasicMainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
+/**
+ * @brief コミットログの選択が変化した
+ */
 void MainWindow::doLogCurrentItemChanged()
 {
 	clearFileList();

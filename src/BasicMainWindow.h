@@ -185,6 +185,7 @@ protected:
 		QString id;
 		QString path;
 		Git::Submodule submod;
+		Git::CommitItem submod_commit;
 		QString header;
 		int idiff;
 	};
@@ -332,6 +333,7 @@ public:
 	void autoOpenRepository(QString dir);
 	GitPtr git(QString const &dir, const QString &sshkey = {}) const;
 	GitPtr git();
+	GitPtr git(const Git::Submodule &submod);
 	QPixmap getTransparentPixmap();
 	QIcon committerIcon(int row) const;
 	Git::CommitItem const *commitItem(int row) const;

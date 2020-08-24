@@ -86,6 +86,23 @@ public:
 		}
 	};
 
+	struct CommitItem {
+		QString commit_id;
+		QStringList parent_ids;
+		QString author;
+		QString email;
+		QString message;
+		QDateTime commit_date;
+		std::vector<TreeLine> parent_lines;
+		QByteArray fingerprint;
+		char signature = 0; // git log format:%G?
+		bool has_child = false;
+		int marker_depth = -1;
+		bool resolved =  false;
+		bool strange_date = false;
+	};
+	using CommitItemList = std::vector<CommitItem>;
+
 	class Hunk {
 	public:
 		std::string at;
@@ -114,6 +131,7 @@ public:
 		} blob;
 		QList<Hunk> hunks;
 		Submodule submodule;
+		CommitItem submodule_commit;
 		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
 		{
@@ -157,23 +175,6 @@ public:
 		}
 		return SignatureGrade::Unknown;
 	}
-
-	struct CommitItem {
-		QString commit_id;
-		QStringList parent_ids;
-		QString author;
-		QString email;
-		QString message;
-		QDateTime commit_date;
-		std::vector<TreeLine> parent_lines;
-		QByteArray fingerprint;
-		char signature = 0; // git log format:%G?
-		bool has_child = false;
-		int marker_depth = -1;
-		bool resolved =  false;
-		bool strange_date = false;
-	};
-	using CommitItemList = std::vector<CommitItem>;
 
 	static bool isUncommited(CommitItem const &item)
 	{

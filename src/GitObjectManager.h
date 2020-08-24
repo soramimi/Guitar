@@ -6,6 +6,7 @@
 #include "GitPack.h"
 #include "GitPackIdxV2.h"
 #include <map>
+#include "common/joinpath.h"
 
 class GitPackIdxV2;
 
@@ -32,7 +33,13 @@ private:
 	bool loadObject(QString const &id, QByteArray *out, Git::Object::Type *type);
 	GitPtr git()
 	{
-		return g;
+		return g->dup();
+	}
+	GitPtr git(Git::Submodule const &submod)
+	{
+		GitPtr g2 = g->dup();
+		g2->setWorkingRepositoryDir(g->workingRepositoryDir() / submod.path, g->sshKey());
+		return g2;
 	}
 public:
 	GitObjectManager();
@@ -58,6 +65,10 @@ public:
 	GitPtr git()
 	{
 		return object_manager.git();
+	}
+	GitPtr git(Git::Submodule const &submod)
+	{
+		return object_manager.git(submod);
 	}
 
 	void setup(const GitPtr &g);

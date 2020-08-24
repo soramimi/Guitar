@@ -251,8 +251,14 @@ GitPtr BasicMainWindow::git(QString const &dir, QString const &sshkey) const
 GitPtr BasicMainWindow::git()
 {
 	RepositoryItem const &item = currentRepository();
-//	return git(currentWorkingCopyDir());
 	return git(item.local_dir, item.ssh_key);
+}
+
+GitPtr BasicMainWindow::git(Git::Submodule const &submod)
+{
+	if (!submod) return {};
+	RepositoryItem const &item = currentRepository();
+	return git(item.local_dir / submod.path, item.ssh_key);
 }
 
 QPixmap BasicMainWindow::getTransparentPixmap()
@@ -751,7 +757,7 @@ std::pair<QString, QString> BasicMainWindow::makeFileItemText(ObjectData const &
 	}
 	QString text = data.path;
 	if (data.submod) {
-		text += QString(" @ %0").arg(data.submod.id.mid(0, 7));
+		text += QString(" <%0> %1").arg(data.submod.id.mid(0, 7)).arg(data.submod_commit.message);
 	}
 	return {header, text};
 }
@@ -2133,13 +2139,6 @@ void BasicMainWindow::openSelectedRepository()
 	}
 }
 
-//void BasicMainWindow::checkRemoteUpdate()
-//{
-//	if (getPtyProcess()->isRunning()) return;
-
-//	emit signalCheckRemoteUpdate();
-//}
-
 bool BasicMainWindow::isThereUncommitedChanges() const
 {
 	return m->uncommited_changes;
@@ -2203,12 +2202,18 @@ void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std:
 		data.id = diff.blob.b_id;
 		data.path = diff.path;
 		data.submod = diff.submodule;
+		data.submod_commit = diff.submodule_commit;
 		data.header = header;
 		data.idiff = idiff;
 		add_item(data);
 	}
 }
 
+/**
+ * @brief コミットログを取得する
+ * @param g
+ * @return
+ */
 Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr const &g)
 {
 	Git::CommitItemList list = g->log(limitLogCount());
