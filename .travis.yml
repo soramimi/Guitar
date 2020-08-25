@@ -4,11 +4,11 @@ sudo: require
 dist: trusty
 
 before_install:
-  - sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y
+  - sudo add-apt-repository ppa:beineri/opt-qt-5.14.2-focal -y
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get -y install qt59base qt59svg libgl1-mesa-dev libssl-dev zlib1g-dev ruby # openssl-1.1.x is not supported!
+  - sudo apt-get -y install qt514base qt514svg libgl1-mesa-dev libssl-dev zlib1g-dev ruby
   - source /opt/qt*/bin/qt*-env.sh
 
 script:
