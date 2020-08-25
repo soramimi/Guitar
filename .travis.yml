@@ -12,24 +12,19 @@ install:
   - source /opt/qt*/bin/qt*-env.sh
 
 script:
+  - export PATH=./packaging/continuous-x86_64:$PATH
   - ruby prepare.rb
-  - mkdir -p _bin/ && cp /usr/lib/x86_64-linux-gnu/libz.a _bin/ # FIXME: Why is this needed?
+  - mkdir -p _bin/ && cp /usr/lib/x86_64-linux-gnu/libz.a _bin/
   - qmake CONFIG+=release PREFIX=/usr
   - make -j$(nproc)
-  # FIXME: make: Nothing to be done for `install'.
-  # make INSTALL_ROOT=appdir -j$(nproc) install ; find appdir/
   - mkdir -p appdir/usr/bin && cp _bin/Guitar appdir/usr/bin/guitar && strip appdir/usr/bin/guitar && chmod a+x appdir/usr/bin/guitar
   - mkdir -p appdir/usr/share/icons/hicolor/scalable/apps && cp LinuxDesktop/Guitar.svg appdir/usr/share/icons/hicolor/scalable/apps/guitar.svg
   - mkdir -p appdir/usr/share/applications && cp LinuxDesktop/guitar.desktop appdir/usr/share/applications/
   - mkdir -p appdir/usr/share/metainfo && cp LinuxDesktop/guitar.appdata.xml appdir/usr/share/metainfo/
-  - find appdir/
-  - wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
-  - chmod a+x linuxdeployqt-continuous-x86_64.AppImage
-  - ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -appimage
+  - linuxdeployqt appdir/usr/share/applications/*.desktop -appimage
 
 after_success:
-  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - bash upload.sh Guitar*.AppImage*
+  - ./packaging/continuous-x86_64/upload.sh Guitar*.AppImage*
   
 branches:
   except:
