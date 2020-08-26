@@ -612,7 +612,11 @@ std::pair<QString, QString> MainWindow::makeFileItemText(ObjectData const &data)
 	}
 	QString text = data.path;
 	if (data.submod) {
-		text += QString(" <%0> %1").arg(data.submod.id.mid(0, 7)).arg(data.submod_commit.message);
+		text += QString(" <%0> [%1] %2")
+				.arg(data.submod.id.mid(0, 7))
+				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
+				.arg(data.submod_commit.message)
+				;
 	}
 	return {header, text};
 }

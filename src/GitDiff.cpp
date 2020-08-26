@@ -306,9 +306,9 @@ bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, Q
 		for (int i = 0; i < diffs.size(); i++) {
 			Git::Diff *diff = &diffs[i];
 			if (diff->isSubmodule()) {
-				for (int i = 0; i < submodules.size(); i++) {
-					if (submodules[i].path == diff->path) {
-						diff->submodule = submodules[i];
+				for (int j = 0; j < submodules.size(); j++) {
+					if (submodules[j].path == diff->path) {
+						diff->submodule = submodules[j];
 						{
 							GitPtr g = git(diff->submodule);
 							g->queryCommit(diff->submodule.id, &diff->submodule_commit);

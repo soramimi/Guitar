@@ -391,9 +391,34 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 	m->init_param_.diff.blob.a_id = id;
 }
 
+
+
 void FileDiffWidget::setOriginalLines_(QByteArray const &ba)
 {
 	m->original_lines.clear();
+
+	if (m->init_param_.diff.mode == "160000") {
+		Git::CommitItem commit;
+		Git::Submodule const *submod = mainwindow()->querySubmoduleByPath(m->init_param_.diff.path, &commit);
+		if (submod) {
+			QString text;
+			text += "name: " + submod->name + '\n';
+			text += "path: " + submod->path + '\n';
+			text += "url: " + submod->url + '\n';
+			text += "commit: " + submod->id + '\n';
+			text += "date: " + misc::makeDateTimeString(commit.commit_date) + '\n';
+			text += "author: " + commit.author + '\n';
+			text += "email: " + commit.email + '\n';
+			text += '\n';
+			text += commit.message;
+			auto lines = misc::splitLines(text);
+			for (QString const &line : lines) {
+				m->original_lines.push_back(line.toStdString());
+			}
+		}
+		return;
+	}
+
 	if (!ba.isEmpty()) {
 		char const *begin = ba.data();
 		char const *end = begin + ba.size();

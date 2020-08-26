@@ -437,6 +437,7 @@ public:
 	QIcon verifiedIcon(char s) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
+	Git::Submodule const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
 public slots:
 	void writeLog_(QByteArray ba);
 private slots:

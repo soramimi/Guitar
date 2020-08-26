@@ -569,6 +569,27 @@ QString MainWindow::defaultWorkingDir() const
 	return appsettings()->default_working_dir;
 }
 
+/**
+ * @brief サブモジュール情報を取得する
+ * @param path
+ * @param commit コミット情報を取得（nullptr可）
+ * @return
+ */
+Git::Submodule const *MainWindow::querySubmoduleByPath(const QString &path, Git::CommitItem *commit)
+{
+	if (commit) *commit = {};
+	for (auto const &submod : m1->submodules) {
+		if (submod.path == path) {
+			if (commit) {
+				GitPtr g = git(submod);
+				g->queryCommit(submod.id, commit);
+			}
+			return &submod;
+		}
+	}
+	return nullptr;
+}
+
 QColor MainWindow::color(unsigned int i)
 {
 	unsigned int n = m2->graph_color.width();
@@ -769,31 +790,42 @@ void MainWindow::updateSubmodules(GitPtr g, QString id)
 		GitTreeItemList list;
 		GitObjectCache objcache;
 		objcache.setup(g);
-		GitCommit tree;
-		GitCommit::parseCommit(&objcache, id, &tree);
-		parseGitTreeObject(&objcache, tree.tree_id, {}, &list);
-		for (GitTreeItem const &item : list) {
-			if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
-				Git::Object obj = objcache.catFile(item.id);
-				if (!obj.content.isEmpty()) {
-					parseGitSubModules(obj.content, &submodules);
-				}
-			}
-		}
-		for (GitTreeItem const &item : list) {
-			if (item.type == GitTreeItem::Type::BLOB && item.mode == "160000") {
-				for (int i = 0; i < submodules.size(); i++) {
-					if (submodules[i].path == item.name) {
-						submodules[i].id = item.id;
-						break;
+		// サブモジュールリストを取得する
+		{
+			GitCommit tree;
+			GitCommit::parseCommit(&objcache, id, &tree);
+			parseGitTreeObject(&objcache, tree.tree_id, {}, &list);
+			for (GitTreeItem const &item : list) {
+				if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
+					Git::Object obj = objcache.catFile(item.id);
+					if (!obj.content.isEmpty()) {
+						parseGitSubModules(obj.content, &submodules);
 					}
 				}
 			}
 		}
+		// サブモジュールに対応するIDを求める
+		for (int i = 0; i < submodules.size(); i++) {
+			QStringList vars = submodules[i].path.split('/');
+			for (int j = 0; j < vars.size(); j++) {
+				for (int k = 0; k < list.size(); k++) {
+					if (list[k].name == vars[j]) {
+						if (list[k].type == GitTreeItem::Type::BLOB) {
+							if (j + 1 == vars.size()) {
+								submodules[i].id = list[k].id;
+								goto done;
+							}
+						} else if (list[k].type == GitTreeItem::Type::TREE) {
+							Git::Object obj = objcache.catFile(list[k].id);
+							parseGitTreeObject(obj.content, {}, &list);
+							break;
+						}
+					}
+				}
+			}
+done:;
+		}
 	}
-//	for (Git::Submodule const &m : submodules) {
-//		qDebug() << m.name << m.path << m.url << m.id;
-//	}
 	setSubmodules(submodules);
 }
 
@@ -2247,6 +2279,10 @@ int MainWindow::selectedLogIndex() const
 	return -1;
 }
 
+/**
+ * @brief ファイル差分表示を更新する
+ * @param item
+ */
 void MainWindow::updateDiffView(QListWidgetItem *item)
 {
 	clearDiffView();
