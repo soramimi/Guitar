@@ -575,7 +575,7 @@ QString MainWindow::defaultWorkingDir() const
  * @param commit コミット情報を取得（nullptr可）
  * @return
  */
-Git::Submodule const *MainWindow::querySubmoduleByPath(const QString &path, Git::CommitItem *commit)
+Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, Git::CommitItem *commit)
 {
 	if (commit) *commit = {};
 	for (auto const &submod : m1->submodules) {
@@ -778,12 +778,15 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 }
 
 /**
- * @brief サブモジュールを更新
- * @param id コミットID
+ * @brief 指定のコミットにおけるサブモジュールリストを取得
+ * @param g
+ * @param id
+ * @param out
  */
-void MainWindow::updateSubmodules(GitPtr g, QString id)
+void MainWindow::updateSubmodules(GitPtr g, QString const &id, QList<Git::SubmoduleItem> *out)
 {
-	QList<Git::Submodule> submodules;
+	*out = {};
+	QList<Git::SubmoduleItem> submodules;
 	if (id.isEmpty()) {
 		submodules = g->submodules();
 	} else {
@@ -826,7 +829,7 @@ void MainWindow::updateSubmodules(GitPtr g, QString id)
 done:;
 		}
 	}
-	setSubmodules(submodules);
+	*out = submodules;
 }
 
 /**
@@ -924,10 +927,12 @@ void MainWindow::updateFilesList(QString id, bool wait)
 			data.path = path;
 			data.header = header;
 			data.idiff = idiff;
-			if (diff) data.submod = diff->submodule;
-			if (data.submod) {
-				GitPtr g = git(data.submod);
-				g->queryCommit(data.submod.id, &data.submod_commit);
+			if (diff) {
+				data.submod = diff->b_submodule.item; // TODO:
+				if (data.submod) {
+					GitPtr g = git(data.submod);
+					g->queryCommit(data.submod.id, &data.submod_commit);
+				}
 			}
 			AddItem(data);
 		}
@@ -3190,13 +3195,13 @@ void MainWindow::test()
 void MainWindow::on_action_submodules_triggered()
 {
 	GitPtr g = git();
-	QList<Git::Submodule> mods = g->submodules();
+	QList<Git::SubmoduleItem> mods = g->submodules();
 
 	std::vector<SubmodulesDialog::Submodule> mods2;
 	mods2.resize(mods.size());
 
 	for (size_t i = 0; i < mods.size(); i++) {
-		const Git::Submodule mod = mods[i];
+		const Git::SubmoduleItem mod = mods[i];
 		mods2[i].submodule = mod;
 
 		GitPtr g2 = git(g->workingRepositoryDir() / mod.path, g->sshKey());

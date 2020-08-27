@@ -74,7 +74,7 @@ public:
 		QByteArray content;
 	};
 
-	struct Submodule {
+	struct SubmoduleItem {
 		QString name;
 		QString id;
 		QString path;
@@ -130,8 +130,10 @@ public:
 			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
-		Submodule submodule;
-		CommitItem submodule_commit;
+		struct SubmoduleDetail {
+			Git::SubmoduleItem item;
+			Git::CommitItem commit;
+		} a_submodule, b_submodule;
 		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
 		{
@@ -518,14 +520,14 @@ public:
 	};
 
 
-	QList<Submodule> submodules();
+	QList<SubmoduleItem> submodules();
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
 
-void parseGitSubModules(QByteArray const &ba, QList<Git::Submodule> *out);
+void parseGitSubModules(QByteArray const &ba, QList<Git::SubmoduleItem> *out);
 
 
 #endif // GIT_H

@@ -118,9 +118,10 @@ private:
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
 	void refrectScrollBar();
-	void setOriginalLines_(QByteArray const &ba);
+	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
 	QString diffObjects(const GitPtr &g, QString const &a_id, QString const &b_id);
 	MainWindow *mainwindow();
+	bool setSubmodule(const Git::Diff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;

@@ -174,7 +174,7 @@ GitPtr MainWindow::git()
 	return git(item.local_dir, item.ssh_key);
 }
 
-GitPtr MainWindow::git(Git::Submodule const &submod)
+GitPtr MainWindow::git(Git::SubmoduleItem const &submod)
 {
 	if (!submod) return {};
 	RepositoryItem const &item = currentRepository();
@@ -824,12 +824,12 @@ void MainWindow::setDiffResult(const QList<Git::Diff> &diffs)
 	m1->diff_result = diffs;
 }
 
-const QList<Git::Submodule> &MainWindow::submodules() const
+const QList<Git::SubmoduleItem> &MainWindow::submodules() const
 {
 	return m1->submodules;
 }
 
-void MainWindow::setSubmodules(const QList<Git::Submodule> &submodules)
+void MainWindow::setSubmodules(const QList<Git::SubmoduleItem> &submodules)
 {
 	m1->submodules = submodules;
 }
@@ -2022,7 +2022,9 @@ QList<Git::Diff> MainWindow::makeDiffs(QString id, bool *ok)
 		id = getObjCache()->revParse("HEAD");
 	}
 
-	updateSubmodules(g, id);
+	QList<Git::SubmoduleItem> mods;
+	updateSubmodules(g, id, &mods);
+	setSubmodules(mods);
 
 	bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
 
@@ -2056,8 +2058,8 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 		ObjectData data;
 		data.id = diff.blob.b_id;
 		data.path = diff.path;
-		data.submod = diff.submodule;
-		data.submod_commit = diff.submodule_commit;
+		data.submod = diff.b_submodule.item;
+		data.submod_commit = diff.b_submodule.commit;
 		data.header = header;
 		data.idiff = idiff;
 		add_item(data);

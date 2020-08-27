@@ -691,6 +691,7 @@ Git::CommitItemList Git::log(int maxcount)
 
 bool Git::queryCommit(QString const &id, CommitItem *out)
 {
+	*out = {};
 	if (objectType(id) == "commit") {
 		out->commit_id = id;
 		QByteArray ba;
@@ -801,9 +802,9 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	return ok;
 }
 
-QList<Git::Submodule> Git::submodules()
+QList<Git::SubmoduleItem> Git::submodules()
 {
-	QList<Git::Submodule> mods;
+	QList<Git::SubmoduleItem> mods;
 
 	git("submodule");
 	QString text = resultText();
@@ -813,7 +814,7 @@ QList<Git::Submodule> Git::submodules()
 	}
 	QStringList words = misc::splitWords(text);
 	if (words.size() >= 2) {
-		Submodule sm;
+		SubmoduleItem sm;
 		sm.id = words[0];
 		sm.path = words[1];
 		if (isValidID(sm.id)) {
@@ -1569,11 +1570,11 @@ void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 }
 
 
-void parseGitSubModules(const QByteArray &ba, QList<Git::Submodule> *out)
+void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 {
 	*out = {};
 	QStringList lines = misc::splitLines(QString::fromUtf8(ba));
-	Git::Submodule submod;
+	Git::SubmoduleItem submod;
 	auto Push = [&](){
 		if (!submod.name.isEmpty()) {
 			out->push_back(submod);

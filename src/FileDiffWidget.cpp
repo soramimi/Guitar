@@ -393,31 +393,9 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 
 
 
-void FileDiffWidget::setOriginalLines_(QByteArray const &ba)
+void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit)
 {
 	m->original_lines.clear();
-
-	if (m->init_param_.diff.mode == "160000") {
-		Git::CommitItem commit;
-		Git::Submodule const *submod = mainwindow()->querySubmoduleByPath(m->init_param_.diff.path, &commit);
-		if (submod) {
-			QString text;
-			text += "name: " + submod->name + '\n';
-			text += "path: " + submod->path + '\n';
-			text += "url: " + submod->url + '\n';
-			text += "commit: " + submod->id + '\n';
-			text += "date: " + misc::makeDateTimeString(commit.commit_date) + '\n';
-			text += "author: " + commit.author + '\n';
-			text += "email: " + commit.email + '\n';
-			text += '\n';
-			text += commit.message;
-			auto lines = misc::splitLines(text);
-			for (QString const &line : lines) {
-				m->original_lines.push_back(line.toStdString());
-			}
-		}
-		return;
-	}
 
 	if (!ba.isEmpty()) {
 		char const *begin = ba.data();
@@ -433,7 +411,7 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
 
-	setOriginalLines_(ba);
+	setOriginalLines_(ba, &diff.a_submodule.item, &diff.a_submodule.commit);
 
 	if (setupPreviewWidget() == FileViewType::Text) {
 
@@ -449,6 +427,45 @@ void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
 	}
 }
 
+bool FileDiffWidget::setSubmodule(Git::Diff const &diff)
+{
+	Git::SubmoduleItem const &submod_a = diff.a_submodule.item;
+	Git::SubmoduleItem const &submod_b = diff.b_submodule.item;
+	Git::CommitItem const &submod_commit_a = diff.a_submodule.commit;
+	Git::CommitItem const &submod_commit_b = diff.b_submodule.commit;
+	if (submod_a || submod_b) {
+		auto Text = [](Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit, TextDiffLineList *out){
+			*out = {};
+			if (submodule && *submodule) {
+				QString text;
+				text += "name: " + submodule->name + '\n';
+				text += "path: " + submodule->path + '\n';
+				text += "url: " + submodule->url + '\n';
+				text += "commit: " + submodule->id + '\n';
+				text += "date: " + misc::makeDateTimeString(submodule_commit->commit_date) + '\n';
+				text += "author: " + submodule_commit->author + '\n';
+				text += "email: " + submodule_commit->email + '\n';
+				text += '\n';
+				text += submodule_commit->message;
+				for (QString const &line : misc::splitLines(text)) {
+					out->push_back(Document::Line(line.toStdString()));
+				}
+			}
+		};
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
+		if (submod_a) {
+			Text(&submod_a, &submod_commit_a, &left_lines);
+		}
+		if (submod_b) {
+			Text(&submod_b, &submod_commit_b, &right_lines);
+		}
+		setDiffText(diff, left_lines, right_lines);
+		return true;
+	}
+	return false;
+}
+
 void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 {
 	m->init_param_ = InitParam_();
@@ -456,9 +473,11 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 	m->init_param_.bytes_b = ba;
 	m->init_param_.diff = diff;
 
-	setOriginalLines_(ba);
+	setOriginalLines_(ba, &diff.b_submodule.item, &diff.b_submodule.commit);
 
-	if (setupPreviewWidget() == FileViewType::Text) {
+	if (setSubmodule(diff)) {
+		// ok
+	} else if (setupPreviewWidget() == FileViewType::Text) {
 
 		TextDiffLineList left_lines;
 		TextDiffLineList right_lines;
@@ -481,16 +500,20 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 	m->init_param_.uncommited = uncommited;
 	m->init_param_.workingdir = workingdir;
 
-	setOriginalLines_(ba);
+	setOriginalLines_(ba, {}, {});
 
-	if (setupPreviewWidget() == FileViewType::Text) {
+	if (setSubmodule(diff)) {
+		// ok
+	} else {
+		if (setupPreviewWidget() == FileViewType::Text) {
 
-		TextDiffLineList left_lines;
-		TextDiffLineList right_lines;
+			TextDiffLineList left_lines;
+			TextDiffLineList right_lines;
 
-		makeSideBySideDiffData(diff, m->original_lines, &left_lines, &right_lines);
+			makeSideBySideDiffData(diff, m->original_lines, &left_lines, &right_lines);
 
-		setDiffText(diff, left_lines, right_lines);
+			setDiffText(diff, left_lines, right_lines);
+		}
 	}
 }
 
@@ -502,7 +525,7 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 	m->init_param_.bytes_b = ba_b;
 	m->init_param_.workingdir = workingdir;
 
-	setOriginalLines_(ba_a);
+	setOriginalLines_(ba_a, {}, {});
 
 	if (setupPreviewWidget() == FileViewType::Text) {
 

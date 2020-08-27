@@ -35,7 +35,7 @@ private:
 	{
 		return g->dup();
 	}
-	GitPtr git(Git::Submodule const &submod)
+	GitPtr git(Git::SubmoduleItem const &submod)
 	{
 		GitPtr g2 = g->dup();
 		g2->setWorkingRepositoryDir(g->workingRepositoryDir() / submod.path, g->sshKey());
@@ -66,7 +66,7 @@ public:
 	{
 		return object_manager.git();
 	}
-	GitPtr git(Git::Submodule const &submod)
+	GitPtr git(Git::SubmoduleItem const &submod)
 	{
 		return object_manager.git(submod);
 	}

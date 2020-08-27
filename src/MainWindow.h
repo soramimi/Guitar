@@ -54,7 +54,7 @@ private:
 		QList<RepositoryItem> repos;
 		Git::CommitItemList logs;
 		QList<Git::Diff> diff_result;
-		QList<Git::Submodule> submodules;
+		QList<Git::SubmoduleItem> submodules;
 
 		QStringList added;
 		QStringList remotes;
@@ -111,7 +111,7 @@ private:
 	struct ObjectData {
 		QString id;
 		QString path;
-		Git::Submodule submod;
+		Git::SubmoduleItem submod;
 		Git::CommitItem submod_commit;
 		QString header;
 		int idiff;
@@ -286,8 +286,8 @@ private:
 	void saveApplicationSettings();
 	void loadApplicationSettings();
 	void setDiffResult(const QList<Git::Diff> &diffs);
-	const QList<Git::Submodule> &submodules() const;
-	void setSubmodules(const QList<Git::Submodule> &submodules);
+	const QList<Git::SubmoduleItem> &submodules() const;
+	void setSubmodules(const QList<Git::SubmoduleItem> &submodules);
 	bool runOnRepositoryDir(const std::function<void (QString)> &callback, const RepositoryItem *repo);
 	NamedCommitList namedCommitItems(int flags);
 	static QString getFilePath(QListWidgetItem *item);
@@ -295,7 +295,7 @@ private:
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
 	static int getHunkIndex(QListWidgetItem *item);
-	void updateSubmodules(GitPtr g, QString id);
+	static void updateSubmodules(GitPtr g, const QString &id, QList<Git::SubmoduleItem> *out);
 	void saveRepositoryBookmark(RepositoryItem item);
 	int rowFromCommitId(const QString &id);
 	QList<Git::Tag> findTag(const QString &id);
@@ -407,7 +407,7 @@ public:
 	QString currentBranchName() const;
 	GitPtr git(const QString &dir, const QString &sshkey = {}) const;
 	GitPtr git();
-	GitPtr git(const Git::Submodule &submod);
+	GitPtr git(const Git::SubmoduleItem &submod);
 	void autoOpenRepository(QString dir);
 	bool queryCommit(const QString &id, Git::CommitItem *out);
 	void checkout(QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});
@@ -437,7 +437,7 @@ public:
 	QIcon verifiedIcon(char s) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
-	Git::Submodule const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
+	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
 public slots:
 	void writeLog_(QByteArray ba);
 private slots:

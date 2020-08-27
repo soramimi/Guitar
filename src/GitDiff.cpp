@@ -46,7 +46,7 @@ GitPtr GitDiff::git()
 	return objcache->git();
 }
 
-GitPtr GitDiff::git(Git::Submodule const &submod)
+GitPtr GitDiff::git(Git::SubmoduleItem const &submod)
 {
 	return objcache->git(submod);
 }
@@ -95,6 +95,10 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
 	out->path = info->path;
 	out->blob = info->blob;
+	out->a_submodule.item = info->a_submodule.item;
+	out->a_submodule.commit = info->a_submodule.commit;
+	out->b_submodule.item = info->b_submodule.item;
+	out->b_submodule.commit = info->b_submodule.commit;
 
 	bool atat = false;
 	for (std::string const &line : lines) {
@@ -161,7 +165,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, GitTreeItemList const *fi
  * @param out
  * @return
  */
-bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff(QString const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();
@@ -300,7 +304,6 @@ bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, Q
 
 				diffs.push_back(item);
 			}
-
 		}
 
 		for (int i = 0; i < diffs.size(); i++) {
@@ -308,11 +311,17 @@ bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, Q
 			if (diff->isSubmodule()) {
 				for (int j = 0; j < submodules.size(); j++) {
 					if (submodules[j].path == diff->path) {
-						diff->submodule = submodules[j];
-						{
-							GitPtr g = git(diff->submodule);
-							g->queryCommit(diff->submodule.id, &diff->submodule_commit);
-							qDebug() << diff->submodule_commit.message;
+						diff->a_submodule.item = diff->b_submodule.item = submodules[j];
+						diff->a_submodule.item.id = diff->blob.a_id;
+						diff->b_submodule.item.id = diff->blob.b_id;
+
+						GitPtr g = git(submodules[j]);
+						g->queryCommit(diff->a_submodule.item.id, &diff->a_submodule.commit);
+						g->queryCommit(diff->b_submodule.item.id, &diff->b_submodule.commit);
+
+						// なぜか逆に来ることがあるみたい？
+						if (diff->a_submodule.commit.commit_date > diff->b_submodule.commit.commit_date) {
+							std::swap(diff->a_submodule, diff->b_submodule);
 						}
 						break;
 					}
@@ -332,7 +341,7 @@ bool GitDiff::diff(QString const &id, const QList<Git::Submodule> &submodules, Q
 	return false;
 }
 
-bool GitDiff::diff_uncommited(const QList<Git::Submodule> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff_uncommited(const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	return diff({}, submodules, out);
 }
@@ -438,8 +447,14 @@ QString GitCommitTree::parseCommit(QString const &commit_id)
 
 //
 
+/**
+ * @brief 指定されたコミットに属するファイルのIDを求める
+ * @param objcache
+ * @param commit_id
+ * @param file
+ * @return
+ */
 QString lookupFileID(GitObjectCache *objcache, QString const &commit_id, QString const &file)
-// 指定されたコミットに属するファイルのIDを求める
 {
 	GitCommitTree commit_tree(objcache);
 	commit_tree.parseCommit(commit_id);

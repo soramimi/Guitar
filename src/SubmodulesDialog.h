@@ -13,7 +13,7 @@ class SubmodulesDialog : public QDialog {
 	Q_OBJECT
 public:
 	struct Submodule {
-		Git::Submodule submodule;
+		Git::SubmoduleItem submodule;
 		Git::CommitItem head;
 	};
 public:
