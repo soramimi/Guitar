@@ -39,10 +39,6 @@ SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, Q
 
 	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 
-#ifdef Q_OS_MACX
-	ui->comboBox->setMinimumWidth(100);
-#endif
-
 	ui->lineEdit_repo_location->setFocus();
 }
 
