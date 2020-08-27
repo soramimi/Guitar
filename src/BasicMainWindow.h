@@ -52,6 +52,7 @@ public:
 		DiffIndexRole,
 		HunkIndexRole,
 		HeaderRole,
+		IsSubmoduleRole,
 	};
 	enum CloneOperation {
 		Clone,

@@ -971,14 +971,20 @@ Git::FileStatusList Git::status_s()
 
 QString Git::objectType(QString const &id)
 {
-	git("cat-file -t " + id);
-	return resultText().trimmed();
+	if (isValidID(id)) {
+		git("cat-file -t " + id);
+		return resultText().trimmed();
+	}
+	return {};
 }
 
 QByteArray Git::cat_file_(QString const &id)
 {
-	git("cat-file -p " + id);
-	return toQByteArray();
+	if (isValidID(id)) {
+		git("cat-file -p " + id);
+		return toQByteArray();
+	}
+	return {};
 }
 
 bool Git::cat_file(QString const &id, QByteArray *out)

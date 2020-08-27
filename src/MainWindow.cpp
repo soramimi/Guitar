@@ -833,6 +833,75 @@ done:;
 }
 
 /**
+ * @brief リストウィジェット用ファイルアイテムを作成する
+ * @param data
+ * @return
+ */
+QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const &data)
+{
+	const bool issubmodule = data.submod; // サブモジュール
+
+	QString header = data.header; // ヘッダ（バッジ識別子）
+	if (header.isEmpty()) {
+		header = "(??\?) "; // damn trigraph
+	}
+
+
+	QString text = data.path; // テキスト
+	if (issubmodule) {
+		text += QString(" <%0> [%1] %2")
+				.arg(data.submod.id.mid(0, 7))
+				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
+				.arg(data.submod_commit.message)
+				;
+	}
+
+	QListWidgetItem *item = new QListWidgetItem(text);
+	item->setSizeHint(QSize(item->sizeHint().width(), 18));
+	item->setData(FilePathRole, data.path);
+	item->setData(DiffIndexRole, data.idiff);
+	item->setData(HunkIndexRole, -1);
+	item->setData(HeaderRole, header);
+	item->setData(IsSubmoduleRole, issubmodule);
+	if (issubmodule) {
+		item->setToolTip(text); // ツールチップ
+	}
+	return item;
+}
+
+/**
+ * @brief 差分リスト情報をもとにリストウィジェットへアイテムを追加する
+ * @param diff_list
+ * @param fn_add_item
+ */
+void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (ObjectData const &data)> &fn_add_item)
+{
+	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
+		Git::Diff const &diff = diff_list->at(idiff);
+		QString header;
+
+		switch (diff.type) {
+		case Git::Diff::Type::Modify:   header = "(chg) "; break;
+		case Git::Diff::Type::Copy:     header = "(cpy) "; break;
+		case Git::Diff::Type::Rename:   header = "(ren) "; break;
+		case Git::Diff::Type::Create:   header = "(add) "; break;
+		case Git::Diff::Type::Delete:   header = "(del) "; break;
+		case Git::Diff::Type::ChType:   header = "(chg) "; break;
+		case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
+		}
+
+		ObjectData data;
+		data.id = diff.blob.b_id;
+		data.path = diff.path;
+		data.submod = diff.b_submodule.item;
+		data.submod_commit = diff.b_submodule.commit;
+		data.header = header;
+		data.idiff = idiff;
+		fn_add_item(data);
+	}
+}
+
+/**
  * @brief ファイルリストを更新
  * @param id コミットID
  * @param wait
@@ -853,13 +922,7 @@ void MainWindow::updateFilesList(QString id, bool wait)
 
 	bool staged = false;
 	auto AddItem = [&](ObjectData const &data){
-		auto [header, text] = makeFileItemText(data);
-		QListWidgetItem *item = new QListWidgetItem(text);
-		item->setSizeHint(QSize(item->sizeHint().width(), 18));
-		item->setData(FilePathRole, data.path);
-		item->setData(DiffIndexRole, data.idiff);
-		item->setData(HunkIndexRole, -1);
-		item->setData(HeaderRole, header);
+		QListWidgetItem *item = NewListWidgetFileItem(data);
 		switch (files_list_type) {
 		case FilesListType::SingleList:
 			ui->listWidget_files->addItem(item);
@@ -950,6 +1013,30 @@ void MainWindow::updateFilesList(QString id, bool wait)
 		QString key = GitDiff::makeKey(diff);
 		(*getDiffCacheMap())[key] = diff;
 	}
+}
+
+/**
+ * @brief ファイルリストを更新
+ * @param id
+ * @param diff_list
+ * @param listwidget
+ */
+void MainWindow::updateFilesList2(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	listwidget->clear();
+
+	auto AddItem = [&](ObjectData const &data){
+		QListWidgetItem *item = NewListWidgetFileItem(data);
+		listwidget->addItem(item);
+	};
+
+	GitDiff dm(getObjCache());
+	if (!dm.diff(id, submodules(), diff_list)) return;
+
+	addDiffItems(diff_list, AddItem);
 }
 
 void MainWindow::updateFilesList(Git::CommitItem const &commit, bool wait)

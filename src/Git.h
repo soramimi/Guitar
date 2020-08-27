@@ -82,7 +82,7 @@ public:
 		QString url;
 		operator bool () const
 		{
-			return !id.isEmpty();
+			return isValidID(id);
 		}
 	};
 

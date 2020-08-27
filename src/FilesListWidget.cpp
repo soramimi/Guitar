@@ -31,12 +31,19 @@ public:
 		badge_map["(ren) "] = Badge("Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
 		badge_map["(cpy) "] = Badge("Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
 	}
+	/**
+	 * @brief ファイルリストの1行分を描画する
+	 * @param painter
+	 * @param option
+	 * @param index
+	 */
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
 	{
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);
 
 		QString header = index.data(BasicMainWindow::HeaderRole).toString();
+		bool isSubmodule = index.data(BasicMainWindow::IsSubmoduleRole).toBool();
 
 		int x = o.rect.x();
 		int y = o.rect.y();
@@ -86,6 +93,13 @@ public:
 			}
 		}
 		o.rect.adjust(w, 0, 0, 0);
+
+#if 0
+		// サブモジュール
+		if (isSubmodule) {
+			o.rect.adjust(h, 0, 0, 0);
+		}
+#endif
 
 		// アイテムテキスト描画
 		option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &o, painter, option.widget);

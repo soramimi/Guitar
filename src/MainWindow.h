@@ -261,7 +261,7 @@ private:
 	int limitLogCount() const;
 	Git::Object cat_file_(const GitPtr &g, const QString &id);
 	bool isThereUncommitedChanges() const;
-	void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
+	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
 	std::map<QString, QList<Git::Branch> > &branchMapRef();
 	void updateCommitTableLater();
@@ -360,6 +360,7 @@ private:
 	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
 	QString gitCommand() const;
 	QPixmap getTransparentPixmap();
+	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
 protected:
 	void customEvent(QEvent *);
 	void dragEnterEvent(QDragEnterEvent *event) override;
