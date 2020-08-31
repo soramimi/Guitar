@@ -22,3 +22,4 @@ packaging/mac/*.zip
 packaging/mac/Guitar-macos.zip
 docs/src_docs/
 packaging/deb/Guitar
+packaging/win/packages/jp.soramimi.guitar/

@@ -1,9 +1,9 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/Qt5.7.1/5.7/msvc2013"
+$qt = "C:/Qt/5.15.0/msvc2019"
 #$qt = "" # スタティックリンクのとき
 
-$openssl = "C:/openssl"
+$openssl = "C:/Program Files (x86)/OpenSSL"
 
 require 'fileutils'
 
@@ -22,8 +22,8 @@ FileUtils.mkpath($dstdir)
 FileUtils.cp("_bin/#{$product_name}.exe", $dstdir)
 #FileUtils.cp("src/resources/translations/Guitar_ja.qm", $dstdir)
 
-FileUtils.cp($openssl + "/bin/libeay32.dll", $dstdir)
-FileUtils.cp($openssl + "/bin/ssleay32.dll", $dstdir)
+FileUtils.cp($openssl + "/bin/libssl-1_1.dll", $dstdir)
+FileUtils.cp($openssl + "/bin/libcrypto-1_1.dll", $dstdir)
 
 `7z x -o#{$dstdir} misc/win32tools.zip`
 `move #{$dstdir}\\win32tools\\* #{$dstdir}`
