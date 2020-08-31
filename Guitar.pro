@@ -47,13 +47,13 @@ macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
-	INCLUDEPATH += C:\openssl\include
+    INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
 	INCLUDEPATH += $$PWD/../zlib
-	LIBS += -LC:\openssl\lib
+	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
 	# OpenSSL 1.0
-	LIBS += -llibeay32 -lssleay32
+#	LIBS += -llibeay32 -lssleay32
 	# OpenSSL 1.1
-#    LIBS += -llibcrypto -llibssl
+	LIBS += -llibcrypto -llibssl
 }
 
 win32:gcc {
