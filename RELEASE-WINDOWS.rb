@@ -83,7 +83,3 @@ Dir.chdir($workdir) {
 	`7z a #{pkgfilename} #{$product_name}`
 }
 
-Dir.chdir("packaging/win") {
-	`mk.bat #{pkgfilename}`
-}
-
