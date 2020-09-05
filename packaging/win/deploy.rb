@@ -17,6 +17,7 @@ def run(cmd)
 	end
 end
 
+Dir.chdir $script_dir
 FileUtils.rm_rf "zlib"
 run "git clone https://github.com/madler/zlib"
 FileUtils.cp "../../zlib.pro", "zlib/"
@@ -24,7 +25,7 @@ Dir.chdir("zlib") {
 	run "C:/Qt/5.15.0/msvc2019/bin/qmake.exe zlib.pro"
 	run "C:/Qt/Tools/QtCreator/bin/jom.exe"
 }
-#ENV["INCLUDE"] = $script_path + "/zlib;" + ENV["INCLUDE"]
+ENV["INCLUDE"] = $script_dir + "/zlib;" + ENV["INCLUDE"]
 
 Dir.chdir $script_dir + "/../../"
 FileUtils.mkpath "_bin"
