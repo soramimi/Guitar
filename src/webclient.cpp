@@ -8,10 +8,6 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #pragma comment(lib, "ws2_32.lib")
-//#if USE_OPENSSL
-//#pragma comment(lib, "libeay32.lib")
-//#pragma comment(lib, "ssleay32.lib")
-//#endif
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
 #else

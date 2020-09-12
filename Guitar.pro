@@ -6,7 +6,7 @@ CONFIG(debug,debug|release):TARGET = Guitard
 CONFIG(release,debug|release):TARGET = Guitar
 TEMPLATE = app
 
-CONFIG += c++17
+CONFIG += c++17 nostrip debug_info
 
 DESTDIR = $$PWD/_bin
 
@@ -25,7 +25,7 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-s
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
-linux:QTPLUGIN += ibusplatforminputcontextplugin
+#linux:QTPLUGIN += ibusplatforminputcontextplugin
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
