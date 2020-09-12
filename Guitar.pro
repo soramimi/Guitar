@@ -187,6 +187,7 @@ SOURCES += \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryLineEdit.cpp \
 	src/RepositoryPropertyDialog.cpp \
+    src/RepositoryWrapperFrame.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
@@ -204,6 +205,7 @@ SOURCES += \
 	src/SettingsDialog.cpp \
 	src/StatusLabel.cpp \
     src/SubmoduleAddDialog.cpp \
+    src/SubmoduleMainWindow.cpp \
     src/SubmoduleUpdateDialog.cpp \
     src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
@@ -316,6 +318,7 @@ HEADERS  += \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
+	src/RepositoryWrapperFrame.h \
 	src/SaturationBrightnessWidget.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
@@ -334,6 +337,7 @@ HEADERS  += \
 	src/SettingsDialog.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
+	src/SubmoduleMainWindow.h \
 	src/SubmoduleUpdateDialog.h \
 	src/SubmodulesDialog.h \
 	src/Terminal.h \
@@ -422,6 +426,7 @@ FORMS    += \
 	src/SettingVisualForm.ui \
 	src/SettingsDialog.ui \
 	src/SubmoduleAddDialog.ui \
+	src/SubmoduleMainWindow.ui \
 	src/SubmoduleUpdateDialog.ui \
 	src/SubmodulesDialog.ui \
 	src/TextEditDialog.ui \

@@ -11,17 +11,22 @@
 #include <cmath>
 #include <map>
 #include "ApplicationGlobal.h"
+#include "RepositoryWrapperFrame.h"
 
 struct LogTableWidget::Private {
+	RepositoryWrapperFrame *frame = nullptr;
 };
 
+/**
+ * @brief コミットログを描画するためのdelegate
+ */
 class LogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
-	MainWindow *mainwindow() const
+	RepositoryWrapperFrame *mainwindow() const
 	{
 		auto *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
-		return w->mainwindow();
+		return w->frame();
 	}
 
 	static QColor hiliteColor(QColor const &color)
@@ -149,7 +154,7 @@ public:
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 
-		MainWindow *mw = mainwindow();
+		RepositoryWrapperFrame *mw = mainwindow();
 
 		enum {
 			Graph,
@@ -199,16 +204,23 @@ LogTableWidget::~LogTableWidget()
 	delete m;
 }
 
-MainWindow *LogTableWidget::mainwindow()
+void LogTableWidget::bind(RepositoryWrapperFrame *frame)
 {
-	auto *mw = qobject_cast<MainWindow *>(window());
-	Q_ASSERT(mw);
-	return mw;
+	m->frame = frame;
+}
+
+RepositoryWrapperFrame *LogTableWidget::frame()
+{
+//	auto *mw = qobject_cast<RepositoryWrapperFrame *>(window());
+//	Q_ASSERT(mw);
+//	return mw;
+	Q_ASSERT(m->frame);
+	return m->frame;
 }
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
 {
-	const double k = 0.55228475;
+	const double k = 0.55228475; // 三次ベジェ曲線で円を近似するための定数
 	if (x0 == x1) {
 		path->moveTo(x0, y0);
 		path->lineTo(x1, y1);
@@ -253,7 +265,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const *list = &mainwindow()->getLogs();
+	Git::CommitItemList const *list = &frame()->getLogs();
 
 	int indent_span = 16;
 
@@ -270,7 +282,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto IsAncestor = [&](Git::CommitItem const &item){
-		return mainwindow()->isAncestorCommit(item.commit_id);
+		return frame()->isAncestorCommit(item.commit_id);
 	};
 
 	auto ItemPoint = [&](int depth, QRect const &rect){
@@ -282,7 +294,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto SetPen = [&](QPainter *pr, int level, bool thick){
-		QColor c = mainwindow()->color(level + 1);
+		QColor c = frame()->color(level + 1);
 		Qt::PenStyle s = Qt::SolidLine;
 		pr->setPen(QPen(c, thick ? thick_line_width : line_width, s));
 	};
@@ -367,7 +379,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	// draw marks
 
 	pr.setOpacity(1);
-	pr.setBrush(mainwindow()->color(0));
+	pr.setBrush(frame()->color(0));
 
 	for (size_t i = 0; i < list->size(); i++) {
 		double y = DrawMark(i, i);
@@ -377,13 +389,13 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 
 void LogTableWidget::resizeEvent(QResizeEvent *e)
 {
-	mainwindow()->updateAncestorCommitMap();
+	frame()->updateAncestorCommitMap();
 	QTableWidget::resizeEvent(e);
 }
 
 void LogTableWidget::verticalScrollbarValueChanged(int value)
 {
 	(void)value;
-	mainwindow()->updateAncestorCommitMap();
+	frame()->updateAncestorCommitMap();
 }
 

@@ -155,7 +155,7 @@ void CommitPropertyDialog::on_pushButton_checkout_clicked()
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(m->commit.commit_id);
+	mainwindow()->jumpToCommit(mainwindow()->frame(), m->commit.commit_id);
 	done(QDialog::Accepted);
 }
 

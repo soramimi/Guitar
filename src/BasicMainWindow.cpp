@@ -188,11 +188,11 @@ QPixmap MainWindow::getTransparentPixmap()
 	return m1->transparent_pixmap;
 }
 
-QIcon MainWindow::committerIcon(int row) const
+QIcon MainWindow::committerIcon(RepositoryWrapperFrame const *frame, int row) const
 {
 	QIcon icon;
 	if (isAvatarEnabled() && isOnlineMode()) {
-		auto const &logs = getLogs();
+		auto const &logs = getLogs(frame);
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
 			if (commit.email.indexOf('@') > 0) {
@@ -204,9 +204,9 @@ QIcon MainWindow::committerIcon(int row) const
 	return icon;
 }
 
-Git::CommitItem const *MainWindow::commitItem(int row) const
+Git::CommitItem const *MainWindow::commitItem(RepositoryWrapperFrame *frame, int row) const
 {
-	auto const &logs = getLogs();
+	auto const &logs = getLogs(frame);
 	if (row >= 0 && row < (int)logs.size()) {
 		return &logs[row];
 	}
@@ -321,13 +321,13 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 
 
 
-void MainWindow::jumpToCommit(QString id)
+void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 {
 	GitPtr g = git();
 	id = g->rev_parse(id);
 	if (!id.isEmpty()) {
-		int row = rowFromCommitId(id);
-		setCurrentLogRow(row);
+		int row = rowFromCommitId(frame, id);
+		setCurrentLogRow(frame, row);
 	}
 }
 
@@ -542,10 +542,10 @@ QString MainWindow::determinFileType(QByteArray in, bool mime)
 	});
 }
 
-QList<Git::Tag> MainWindow::queryTagList()
+QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)
 {
 	QList<Git::Tag> list;
-	Git::CommitItem const *commit = selectedCommitItem();
+	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit && Git::isValidID(commit->commit_id)) {
 		list = findTag(commit->commit_id);
 	}
@@ -637,30 +637,15 @@ QIcon MainWindow::getRepositoryIcon() const
 	return m1->repository_icon;
 }
 
-const Git::CommitItemList &MainWindow::getLogs() const
-{
-	return m1->logs;
-}
 
-Git::CommitItem const *MainWindow::getLog(int index) const
-{
-	return (index >= 0 && index < (int)m1->logs.size()) ? &m1->logs[index] : nullptr;
-}
 
-Git::CommitItemList *MainWindow::getLogsPtr()
-{
-	return &m1->logs;
-}
 
-void MainWindow::setLogs(const Git::CommitItemList &logs)
-{
-	m1->logs = logs;
-}
 
-void MainWindow::clearLogs()
-{
-	m1->logs.clear();
-}
+
+
+
+
+
 
 
 
@@ -865,10 +850,10 @@ QVariant const &MainWindow::getTempRepoForCloneCompleteV() const
 	return m1->pty_process_completion_data;
 }
 
-void MainWindow::updateCommitGraph()
+void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
-	auto const &logs = getLogs();
-	auto *logsp = getLogsPtr();
+	auto const &logs = getLogs(frame);
+	auto *logsp = getLogsPtr(frame);
 
 
 	const size_t LogCount = logs.size();
@@ -1305,7 +1290,7 @@ void MainWindow::revertAllFiles()
 	}
 }
 
-void MainWindow::deleteTags(Git::CommitItem const &commit)
+void MainWindow::deleteTags(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
 	auto it = ptrTagMap()->find(commit.commit_id);
 	if (it != ptrTagMap()->end()) {
@@ -1314,7 +1299,7 @@ void MainWindow::deleteTags(Git::CommitItem const &commit)
 		for (Git::Tag const &tag : tags) {
 			names.push_back(tag.name);
 		}
-		deleteTags(names);
+		deleteTags(frame, names);
 	}
 }
 
@@ -2090,10 +2075,10 @@ void MainWindow::updateWindowTitle(GitPtr const &g)
 	}
 }
 
-QString MainWindow::makeCommitInfoText(int row, QList<BranchLabel> *label_list)
+QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list)
 {
 	QString message_ex;
-	Git::CommitItem const *commit = &getLogs()[row];
+	Git::CommitItem const *commit = &getLogs(frame)[row];
 	{ // branch
 		if (label_list) {
 			if (commit->commit_id == getHeadId()) {
@@ -2282,7 +2267,7 @@ void MainWindow::submodule_add(QString url, QString local_dir)
 
 
 
-void MainWindow::commit(bool amend)
+void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2291,13 +2276,13 @@ void MainWindow::commit(bool amend)
 	QString previousMessage;
 
 	if (amend) {
-		message = getLogs()[0].message;
+		message = getLogs(frame)[0].message;
 	} else {
 		QString id = g->getCherryPicking();
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
 		} else {
-			for (Git::CommitItem const &item : getLogs()) {
+			for (Git::CommitItem const &item : getLogs(frame)) {
 				if (!item.commit_id.isEmpty()) {
 					previousMessage = item.message;
 					break;
@@ -2336,7 +2321,7 @@ void MainWindow::commit(bool amend)
 			}
 			if (ok) {
 				setForceFetch(true);
-				updateStatusBarText();
+				updateStatusBarText(frame);
 				openRepository(true);
 			} else {
 				QString err = g->errorMessage().trimmed();
@@ -2350,9 +2335,9 @@ void MainWindow::commit(bool amend)
 	}
 }
 
-void MainWindow::commitAmend()
+void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
 {
-	commit(true);
+	commit(frame, true);
 }
 
 void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
@@ -2508,10 +2493,10 @@ void MainWindow::openExplorer(RepositoryItem const *repo)
 	}, repo);
 }
 
-Git::CommitItem const *MainWindow::selectedCommitItem() const
+Git::CommitItem const *MainWindow::selectedCommitItem(RepositoryWrapperFrame *frame) const
 {
-	int i = selectedLogIndex();
-	return commitItem(i);
+	int i = selectedLogIndex(frame);
+	return commitItem(frame, i);
 }
 
 void MainWindow::deleteBranch(Git::CommitItem const *commit)
@@ -2552,9 +2537,9 @@ void MainWindow::deleteBranch(Git::CommitItem const *commit)
 	}
 }
 
-void MainWindow::deleteBranch()
+void MainWindow::deleteBranch(RepositoryWrapperFrame *frame)
 {
-	deleteBranch(selectedCommitItem());
+	deleteBranch(selectedCommitItem(frame));
 }
 
 QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
@@ -2685,7 +2670,7 @@ void MainWindow::internalDeleteTags(QStringList const &tagnames)
 	}
 }
 
-bool MainWindow::internalAddTag(QString const &name)
+bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, QString const &name)
 {
 	if (name.isEmpty()) return false;
 
@@ -2694,7 +2679,7 @@ bool MainWindow::internalAddTag(QString const &name)
 
 	QString commit_id;
 
-	Git::CommitItem const *commit = selectedCommitItem();
+	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit && !commit->commit_id.isEmpty()) {
 		commit_id = commit->commit_id;
 	}
@@ -2757,9 +2742,9 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	return items;
 }
 
-int MainWindow::rowFromCommitId(QString const &id)
+int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, QString const &id)
 {
-	auto const &logs = getLogs();
+	auto const &logs = getLogs(frame);
 	for (size_t i = 0; i < logs.size(); i++) {
 		Git::CommitItem const &item = logs[i];
 		if (item.commit_id == id) {
