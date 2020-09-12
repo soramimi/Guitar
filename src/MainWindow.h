@@ -12,6 +12,7 @@
 #include "AvatarLoader.h"
 #include "GitObjectManager.h"
 #include "Theme.h"
+#include "BranchLabel.h"
 
 namespace Ui {
 class MainWindow;
@@ -38,7 +39,6 @@ class MainWindow : public BasicMainWindow {
 	friend class AboutDialog;
 private:
 	struct Private1 {
-		ApplicationSettings appsettings;
 
 		QIcon repository_icon;
 		QIcon folder_icon;
@@ -88,7 +88,7 @@ private:
 
 		std::map<QString, QList<Git::Branch>> branch_map;
 		std::map<QString, QList<Git::Tag>> tag_map;
-		std::map<int, QList<Label>> label_map;
+		std::map<int, QList<BranchLabel>> label_map;
 		std::map<QString, Git::Diff> diff_cache;
 		GitObjectCache objcache;
 
@@ -266,7 +266,7 @@ private:
 	std::map<QString, QList<Git::Branch> > &branchMapRef();
 	void updateCommitTableLater();
 	void updateWindowTitle(const GitPtr &g);
-	QString makeCommitInfoText(int row, QList<BasicMainWindow::Label> *label_list);
+	QString makeCommitInfoText(int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryItem *repo);
 	void openExplorer(const RepositoryItem *repo);
@@ -282,7 +282,7 @@ private:
 	QStringList findGitObject(const QString &id) const;
 	void writeLog(const char *ptr, int len);
 	void writeLog(const QString &str);
-	QList<BasicMainWindow::Label> sortedLabels(int row) const;
+	QList<BranchLabel> sortedLabels(int row) const;
 	void saveApplicationSettings();
 	void loadApplicationSettings();
 	void setDiffResult(const QList<Git::Diff> &diffs);
@@ -344,8 +344,8 @@ private:
 	void setRemoteChanged(bool remote_changed);
 	void setServerType(const ServerType &server_type);
 	GitHubRepositoryInfo *ptrGitHub();
-	std::map<int, QList<BasicMainWindow::Label> > *getLabelMap();
-	const std::map<int, QList<BasicMainWindow::Label> > *getLabelMap() const;
+	std::map<int, QList<BranchLabel> > *getLabelMap();
+	const std::map<int, QList<BranchLabel> > *getLabelMap() const;
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
 	bool getForceFetch() const;
@@ -384,7 +384,6 @@ public:
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(const QString &id);
-	void test();
 	void postStartEvent();
 	void setShowLabels(bool show, bool save);
 	bool isLabelsVisible() const;
@@ -430,7 +429,7 @@ public:
 	void changeSshKey(const QString &localdir, const QString &sshkey);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 	const Git::CommitItemList &getLogs() const;
-	const QList<BasicMainWindow::Label> *label(int row) const;
+	const QList<BranchLabel> *label(int row) const;
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	QString defaultWorkingDir() const;
@@ -544,6 +543,7 @@ private slots:
 	void on_action_submodule_update_triggered();
 
 	void onAvatarUpdated();
+	void test();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len);

@@ -3,8 +3,6 @@
 
 #include "AbstractSettingForm.h"
 
-#include <QWidget>
-
 namespace Ui {
 class SettingExampleForm;
 }

@@ -79,12 +79,14 @@ BasicMainWindow::~BasicMainWindow()
 
 ApplicationSettings *MainWindow::appsettings()
 {
-	return &m1->appsettings;
+	return &global->appsettings;
+//	return &m1->appsettings;
 }
 
 const ApplicationSettings *MainWindow::appsettings() const
 {
-	return &m1->appsettings;
+	return &global->appsettings;
+//	return &m1->appsettings;
 }
 
 WebContext *MainWindow::webContext()
@@ -237,7 +239,7 @@ bool MainWindow::isRepositoryOpened() const
 	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
 
-QList<BasicMainWindow::Label> const *MainWindow::label(int row) const
+QList<BranchLabel> const *MainWindow::label(int row) const
 {
 	auto it = getLabelMap()->find(row);
 	if (it != getLabelMap()->end()) {
@@ -246,14 +248,14 @@ QList<BasicMainWindow::Label> const *MainWindow::label(int row) const
 	return nullptr;
 }
 
-QList<BasicMainWindow::Label> MainWindow::sortedLabels(int row) const
+QList<BranchLabel> MainWindow::sortedLabels(int row) const
 {
-	QList<BasicMainWindow::Label> list;
+	QList<BranchLabel> list;
 	auto const *p = const_cast<MainWindow *>(this)->label(row);
 	if (p && !p->empty()) {
 		list = *p;
-		std::sort(list.begin(), list.end(), [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
-			auto Compare = [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
+		std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
+			auto Compare = [](BranchLabel const &l, BranchLabel const &r){
 				if (l.kind < r.kind) return -1;
 				if (l.kind > r.kind) return 1;
 				if (l.text < r.text) return -1;
@@ -601,7 +603,8 @@ QString MainWindow::findFileID(QString const &commit_id, QString const &file)
 
 void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
-	m1->appsettings = appsettings;
+	global->appsettings = appsettings;
+//	m1->appsettings = appsettings;
 }
 
 QPixmap MainWindow::getTransparentPixmap() const
@@ -807,12 +810,12 @@ GitHubRepositoryInfo *MainWindow::ptrGitHub()
 	return &m1->github;
 }
 
-std::map<int, QList<BasicMainWindow::Label>> *MainWindow::getLabelMap()
+std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap()
 {
 	return &m1->label_map;
 }
 
-std::map<int, QList<BasicMainWindow::Label>> const *MainWindow::getLabelMap() const
+std::map<int, QList<BranchLabel>> const *MainWindow::getLabelMap() const
 {
 	return &m1->label_map;
 }
@@ -1719,12 +1722,13 @@ void MainWindow::abortPtyProcess()
 
 void MainWindow::saveApplicationSettings()
 {
-	SettingsDialog::saveSettings(&m1->appsettings);
+	SettingsDialog::saveSettings(appsettings());
+//	SettingsDialog::saveSettings(&m1->appsettings);
 }
 
 void MainWindow::loadApplicationSettings()
 {
-	SettingsDialog::loadSettings(&m1->appsettings);
+	SettingsDialog::loadSettings(appsettings());
 }
 
 bool MainWindow::execWelcomeWizardDialog()
@@ -2086,14 +2090,14 @@ void MainWindow::updateWindowTitle(GitPtr const &g)
 	}
 }
 
-QString MainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Label> *label_list)
+QString MainWindow::makeCommitInfoText(int row, QList<BranchLabel> *label_list)
 {
 	QString message_ex;
 	Git::CommitItem const *commit = &getLogs()[row];
 	{ // branch
 		if (label_list) {
 			if (commit->commit_id == getHeadId()) {
-				Label label(Label::Head);
+				BranchLabel label(BranchLabel::Head);
 				label.text = "HEAD";
 				label_list->push_back(label);
 			}
@@ -2102,10 +2106,10 @@ QString MainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Label> *l
 		for (Git::Branch const &b : list) {
 			if (b.flags & Git::Branch::HeadDetachedAt) continue;
 			if (b.flags & Git::Branch::HeadDetachedFrom) continue;
-			Label label(Label::LocalBranch);
+			BranchLabel label(BranchLabel::LocalBranch);
 			label.text = b.name;
 			if (!b.remote.isEmpty()) {
-				label.kind = Label::RemoteBranch;
+				label.kind = BranchLabel::RemoteBranch;
 				label.text = "remotes" / b.remote / label.text;
 			}
 			if (b.ahead > 0) {
@@ -2121,7 +2125,7 @@ QString MainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Label> *l
 	{ // tag
 		QList<Git::Tag> list = findTag(commit->commit_id);
 		for (Git::Tag const &t : list) {
-			Label label(Label::Tag);
+			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
 			message_ex += QString(" {#%1}").arg(label.text);
 			if (label_list) label_list->push_back(label);

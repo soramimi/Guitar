@@ -33,6 +33,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	AddPage(ui->page_programs);
 	AddPage(ui->page_behavior);
 	AddPage(ui->page_network);
+	AddPage(ui->page_visual);
 //	AddPage(ui->page_example);
 
 	ui->treeWidget->setCurrentItem(ui->treeWidget->topLevelItem(page_number));
@@ -55,11 +56,22 @@ public:
 		, name(name)
 	{
 	}
-	void operator >> (T &value)
-	{
-		value = settings.value(name, value).template value<T>();
-	}
+//	void operator >> (T &value)
+//	{
+//		value = settings.value(name, value).template value<T>();
+//	}
 };
+
+template <typename T> void operator >> (GetValue<T> const &l, T &r)
+{
+	r = l.settings.value(l.name, r).template value<T>();
+}
+
+template <> void operator >> (GetValue<QColor> const &l, QColor &r)
+{
+	r = l.settings.value(l.name, r).template value<QString>(); // 文字列で取得
+
+}
 
 template <typename T> class SetValue {
 private:
@@ -71,11 +83,22 @@ public:
 		, name(name)
 	{
 	}
-	void operator << (T const &value)
-	{
-		settings.setValue(name, value);
-	}
+//	void operator << (T const &value)
+//	{
+//		settings.setValue(name, value);
+//	}
 };
+
+template <typename T> void operator << (SetValue<T> const &l, T const &r) // 左辺をconstにしないとビルドが通らない
+{
+	const_cast<SetValue<T> *>(&l)->settings.setValue(l.name, r);
+}
+
+template <> void operator << (SetValue<QColor> const &l, QColor const &r)
+{
+	QString s = QString::asprintf("#%02x%02x%02x", r.red(), r.green(), r.blue());
+	const_cast<SetValue<QColor> *>(&l)->settings.setValue(l.name, s);
+}
 
 } // namespace
 
@@ -110,6 +133,13 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	GetValue<bool>(s, "AutomaticFetch")                      >> as->automatically_fetch_when_opening_the_repository;
 	GetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   >> as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
+
+	s.beginGroup("Visual");
+	GetValue<QColor>(s, "LabelColorHead")                    >> as->branch_label_color.head;
+	GetValue<QColor>(s, "LabelColorLocalBranch")             >> as->branch_label_color.local;
+	GetValue<QColor>(s, "LabelColorRemoteBranch")            >> as->branch_label_color.remote;
+	GetValue<QColor>(s, "LabelColorTag")                     >> as->branch_label_color.tag;
+	s.endGroup();
 }
 
 void SettingsDialog::saveSettings(ApplicationSettings const *as)
@@ -139,6 +169,13 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.beginGroup("Behavior");
 	SetValue<bool>(s, "AutomaticFetch")                      << as->automatically_fetch_when_opening_the_repository;
 	SetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   << as->maximum_number_of_commit_item_acquisitions;
+	s.endGroup();
+
+	s.beginGroup("Visual");
+	SetValue<QColor>(s, "LabelColorHead")                    << as->branch_label_color.head;
+	SetValue<QColor>(s, "LabelColorLocalBranch")             << as->branch_label_color.local;
+	SetValue<QColor>(s, "LabelColorRemoteBranch")            << as->branch_label_color.remote;
+	SetValue<QColor>(s, "LabelColorTag")                     << as->branch_label_color.tag;
 	s.endGroup();
 
 }

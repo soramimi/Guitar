@@ -1,6 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#include <QColor>
 #include <QString>
 
 #define ORGANIZATION_NAME "soramimi.jp"
@@ -21,6 +22,15 @@ public:
 	bool automatically_fetch_when_opening_the_repository = true;
 	unsigned int maximum_number_of_commit_item_acquisitions = 10000;
 	bool show_labels = true;
+
+	struct {
+		QColor head;
+		QColor local;
+		QColor remote;
+		QColor tag;
+	} branch_label_color;
+
+
 	static ApplicationSettings defaultSettings();
 };
 

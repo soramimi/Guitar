@@ -29,6 +29,7 @@ macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
+INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
 win32:INCLUDEPATH += $$PWD/misc/winpty
 win32:LIBS += $$PWD/misc/winpty/winpty.lib
@@ -117,11 +118,13 @@ SOURCES += \
 	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
+    src/BranchLabel.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
+    src/ColorButton.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
 	src/CommitPropertyDialog.cpp \
@@ -179,7 +182,6 @@ SOURCES += \
 	src/ReflogWindow.cpp \
 	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
-	src/RemoteWatcher.cpp \
 	src/RepositoriesTreeWidget.cpp \
 	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
@@ -198,6 +200,7 @@ SOURCES += \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
 	src/SettingProgramsForm.cpp \
+    src/SettingVisualForm.cpp \
 	src/SettingsDialog.cpp \
 	src/StatusLabel.cpp \
     src/SubmoduleAddDialog.cpp \
@@ -209,6 +212,12 @@ SOURCES += \
     src/UserEvent.cpp \
 	src/WelcomeWizardDialog.cpp \
 	src/charvec.cpp \
+    src/coloredit/ColorDialog.cpp \
+    src/coloredit/ColorEditWidget.cpp \
+    src/coloredit/ColorPreviewWidget.cpp \
+    src/coloredit/ColorSlider.cpp \
+    src/coloredit/ColorSquareWidget.cpp \
+    src/coloredit/RingSlider.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
@@ -238,11 +247,13 @@ HEADERS  += \
 	src/BasicRepositoryDialog.h \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \
+	src/BranchLabel.h \
 	src/CheckoutDialog.h \
 	src/CherryPickDialog.h \
 	src/ClearButton.h \
 	src/CloneDialog.h \
 	src/CloneFromGitHubDialog.h \
+	src/ColorButton.h \
 	src/CommitDialog.h \
 	src/CommitExploreWindow.h \
 	src/CommitPropertyDialog.h \
@@ -300,12 +311,12 @@ HEADERS  += \
 	src/ReflogWindow.h \
 	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
-	src/RemoteWatcher.h \
 	src/RepositoriesTreeWidget.h \
 	src/RepositoryData.h \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
+	src/SaturationBrightnessWidget.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
 	src/SelectGpgKeyDialog.h \
@@ -319,6 +330,7 @@ HEADERS  += \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
 	src/SettingProgramsForm.h \
+	src/SettingVisualForm.h \
 	src/SettingsDialog.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
@@ -330,6 +342,12 @@ HEADERS  += \
 	src/UserEvent.h \
 	src/WelcomeWizardDialog.h \
 	src/charvec.h \
+	src/coloredit/ColorDialog.h \
+	src/coloredit/ColorEditWidget.h \
+	src/coloredit/ColorPreviewWidget.h \
+	src/coloredit/ColorSlider.h \
+	src/coloredit/ColorSquareWidget.h \
+	src/coloredit/RingSlider.h \
 	src/common/joinpath.h \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \
@@ -401,12 +419,15 @@ FORMS    += \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
 	src/SettingProgramsForm.ui \
+	src/SettingVisualForm.ui \
 	src/SettingsDialog.ui \
 	src/SubmoduleAddDialog.ui \
 	src/SubmoduleUpdateDialog.ui \
 	src/SubmodulesDialog.ui \
 	src/TextEditDialog.ui \
-	src/WelcomeWizardDialog.ui
+	src/WelcomeWizardDialog.ui \
+	src/coloredit/ColorDialog.ui \
+	src/coloredit/ColorEditWidget.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

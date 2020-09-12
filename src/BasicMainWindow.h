@@ -30,22 +30,6 @@ class BasicMainWindow : public QMainWindow {
 	Q_OBJECT
 //	friend class RepositoryPropertyDialog;
 public:
-	struct Label {
-		enum {
-			Head,
-			LocalBranch,
-			RemoteBranch,
-			Tag,
-		};
-		int kind;
-		QString text;
-		QString info;
-		Label(int kind = LocalBranch)
-			: kind(kind)
-		{
-
-		}
-	};
 	enum {
 		IndexRole = Qt::UserRole,
 		FilePathRole,

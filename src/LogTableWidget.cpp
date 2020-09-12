@@ -24,17 +24,6 @@ private:
 		return w->mainwindow();
 	}
 
-	static QColor labelColor(int kind)
-	{
-		switch (kind) {
-		case BasicMainWindow::Label::Head:         return QColor(255, 192, 224); // blue
-		case BasicMainWindow::Label::LocalBranch:  return QColor(192, 224, 255); // blue
-		case BasicMainWindow::Label::RemoteBranch: return QColor(192, 240, 224); // green
-		case BasicMainWindow::Label::Tag:          return QColor(255, 224, 192); // orange
-		}
-		return QColor(224, 224, 224); // gray
-	}
-
 	static QColor hiliteColor(QColor const &color)
 	{
 		int r = color.red();
@@ -88,10 +77,10 @@ private:
 		}
 	}
 
-	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
+	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
 	{
 		int row = index.row();
-		QList<BasicMainWindow::Label> const *labels = mainwindow()->label(row);
+		QList<BranchLabel> const *labels = mainwindow()->label(row);
 		if (labels) {
 			painter->save();
 
@@ -108,22 +97,40 @@ private:
 			int i = labels->size();
 			while (i > 0) {
 				i--;
-				BasicMainWindow::Label const &label = labels->at(i);
+				BranchLabel const &label = labels->at(i);
 				QString text = misc::abbrevBranchName(label.text + label.info);
 				int w = fm.size(0, text).width() + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
-				painter->setPen(Qt::NoPen);
-				auto DrawRect = [&](int dx, int dy, QColor color){
+
+				bool bold = false;
+				if (text == current_branch) { // 現在のブランチ名と一致するなら太字
+					bold = true;
+				}
+
+				// ラベル枠の描画
+				auto DrawLabelFrame = [&](int dx, int dy, QColor color){
 					painter->setBrush(color);
 					painter->drawRoundedRect(r.adjusted(lround(dx + 3), lround(dy + 3), lround(dx - 3), lround(dy - 3)), 3, 3);
 				};
-				QColor color = labelColor(label.kind);
+
+				QColor color = BranchLabel::color(label.kind);
 				QColor hilite = hiliteColor(color);
 				QColor shadow = shadowColor(color);
-				DrawRect(-1, -1, hilite);
-				DrawRect(1, 1, shadow);
-				DrawRect(0, 0, color);
+
+				painter->setPen(Qt::NoPen);
+				DrawLabelFrame(-1, -1, hilite);
+				DrawLabelFrame(1, 1, shadow);
+				DrawLabelFrame(0, 0, color);
+
+				// フォントの設定
+				{
+					QFont font = painter->font();
+					font.setBold(bold);
+					painter->setFont(font);
+				}
+
+				// ラベルテキストの描画
 				painter->setPen(Qt::black);
 				painter->setBrush(Qt::NoBrush);
 				QApplication::style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
@@ -142,6 +149,8 @@ public:
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 
+		MainWindow *mw = mainwindow();
+
 		enum {
 			Graph,
 			CommitId,
@@ -157,7 +166,7 @@ public:
 
 		// コミット日時
 		if (index.column() == Date) {
-			Git::CommitItem const *commit = mainwindow()->commitItem(index.row());
+			Git::CommitItem const *commit = mw->commitItem(index.row());
 			if (commit && commit->strange_date) {
 				QColor color(255, 0, 0, 128);
 				QRect r = option.rect.adjusted(1, 1, -1, -2);
@@ -172,7 +181,8 @@ public:
 
 		// ラベルの描画
 		if (index.column() == Message) {
-			drawLabels(painter, option, index);
+			QString current_branch = mw->currentBranchName();
+			drawLabels(painter, option, index, current_branch);
 		}
 	}
 };

@@ -35,6 +35,12 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 {
 	ApplicationSettings s;
 	s.proxy_server = "http://squid:3128/";
+
+	s.branch_label_color.head = QColor(255, 192, 224); // pink
+	s.branch_label_color.local = QColor(192, 224, 255); // blue
+	s.branch_label_color.remote = QColor(192, 240, 224); // green
+	s.branch_label_color.tag = QColor(255, 224, 192); // orange
+
 	return s;
 }
 

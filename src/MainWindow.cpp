@@ -34,8 +34,10 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
+#include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <coloredit/ColorDialog.h>
 
 
 FileDiffWidget::DrawData::DrawData()
@@ -151,6 +153,8 @@ MainWindow::MainWindow(QWidget *parent)
 		setRemoteChanged(f);
 		updateButton();
 	});
+
+	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	//
 
@@ -1501,9 +1505,9 @@ void MainWindow::merge(Git::CommitItem const *commit)
 	std::vector<QString> labels;
 	{
 		int row = selectedLogIndex();
-		QList<Label> const *v = label(row);
-		for (Label const &label : *v) {
-			if (label.kind == Label::LocalBranch || label.kind == Label::Tag) {
+		QList<BranchLabel> const *v = label(row);
+		for (BranchLabel const &label : *v) {
+			if (label.kind == BranchLabel::LocalBranch || label.kind == BranchLabel::Tag) {
 				labels.push_back(label.text);
 			}
 		}
@@ -1740,10 +1744,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		std::set<QAction *> copy_label_actions;
 		{
-			QList<BasicMainWindow::Label> v = sortedLabels(row);
+			QList<BranchLabel> v = sortedLabels(row);
 			if (!v.isEmpty()) {
 				auto *copy_lebel_menu = menu.addMenu("Copy label");
-				for (BasicMainWindow::Label const &l : v) {
+				for (BranchLabel const &l : v) {
 					QAction *a = copy_lebel_menu->addAction(l.text);
 					copy_label_actions.insert(copy_label_actions.end(), a);
 				}
@@ -1763,11 +1767,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			if (Git::isUncommited(*commit)) return false; // 未コミットがないこと
 			bool is_head = false;
 			bool has_remote_branch = false;
-			QList<Label> const *labels = label(row);
-			for (const Label &label : *labels) {
-				if (label.kind == Label::Head) {
+			QList<BranchLabel> const *labels = label(row);
+			for (const BranchLabel &label : *labels) {
+				if (label.kind == BranchLabel::Head) {
 					is_head = true;
-				} else if (label.kind == Label::RemoteBranch) {
+				} else if (label.kind == BranchLabel::RemoteBranch) {
 					has_remote_branch = true;
 				}
 			}
@@ -3257,28 +3261,6 @@ void MainWindow::on_action_show_labels_triggered()
 	ui->tableWidget_log->viewport()->update();
 }
 
-void MainWindow::test()
-{
-	QElapsedTimer t;
-	t.start();
-	{
-		QPixmap pm(1, 1);
-		QPainter pr(&pm);
-		pr.setFont(QFont("MS Gothic", 30));
-		char tmp[2];
-		for (int i = 0x20; i < 0x80; i++) {
-			tmp[0] = i;
-			tmp[1] = 0;
-			QString s = tmp;
-			int w = pr.fontMetrics().size(0, s).width();
-			qDebug() << w;
-
-		}
-
-	}
-	qDebug() << QString("%1ms").arg(t.elapsed());
-}
-
 void MainWindow::on_action_submodules_triggered()
 {
 	GitPtr g = git();
@@ -3318,4 +3300,12 @@ void MainWindow::on_action_submodule_update_triggered()
 		data.recursive = dlg.isRecursive();
 		g->submodule_update(data, getPtyProcess());
 	}
+}
+
+
+void MainWindow::test()
+{
+	ColorDialog dlg(this, {});
+	dlg.exec();
+
 }
