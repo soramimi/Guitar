@@ -37,9 +37,9 @@ SetUserDialog::SetUserDialog(MainWindow *parent, Git::User const &global_user, G
 	ui->lineEdit_name->setFocus();
 
 	m->avatar_loader.start(mainwindow());
-	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
+	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
 		QString email = ui->lineEdit_mail->text();
-		QIcon icon = m->avatar_loader.fetch(email.toStdString(), false);
+		QIcon icon = m->avatar_loader.fetch(frame.pointer, email.toStdString(), false);
 		setAvatar(icon);
 	});
 }
@@ -121,7 +121,7 @@ void SetUserDialog::on_pushButton_get_icon_clicked()
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_mail->text();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = m->avatar_loader.fetch(email.toStdString(), true);
+		QIcon icon = m->avatar_loader.fetch(nullptr, email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

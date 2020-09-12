@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationName(global->application_name);
 
 	qRegisterMetaType<RepositoryItem>("RepositoryItem");
+	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 
 	{
 		MySettings s;

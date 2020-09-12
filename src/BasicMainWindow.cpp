@@ -99,26 +99,6 @@ QString MainWindow::gitCommand() const
 	return m1->gcx.git_command;
 }
 
-namespace {
-
-} // namespace
-
-//bool BasicMainWindow::event(QEvent *event)
-//{
-//	if (event->type() == (QEvent::Type)EventUserFunction) {
-//		if (auto *e = (UserFunctionEvent *)event) {
-//			e->func(e->var);
-//			return true;
-//		}
-//	}
-//	return QMainWindow::event(event);
-//}
-
-void MainWindow::postUserFunctionEvent(const std::function<void(QVariant const &)> &fn, QVariant const &v)
-{
-	qApp->postEvent(this, new UserFunctionEvent(fn, v));
-}
-
 void MainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryItem const &item){
@@ -188,7 +168,7 @@ QPixmap MainWindow::getTransparentPixmap()
 	return m1->transparent_pixmap;
 }
 
-QIcon MainWindow::committerIcon(RepositoryWrapperFrame const *frame, int row) const
+QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 {
 	QIcon icon;
 	if (isAvatarEnabled() && isOnlineMode()) {
@@ -197,7 +177,7 @@ QIcon MainWindow::committerIcon(RepositoryWrapperFrame const *frame, int row) co
 			Git::CommitItem const &commit = logs[row];
 			if (commit.email.indexOf('@') > 0) {
 				std::string email = commit.email.toStdString();
-				icon = getAvatarLoader()->fetch(email, true); // from gavatar
+				icon = getAvatarLoader()->fetch(frame, email, true); // from gavatar
 			}
 		}
 	}
@@ -318,8 +298,6 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 {
 	return menu->addAction(tr("&Property"));
 }
-
-
 
 void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 {
@@ -705,15 +683,15 @@ AvatarLoader const *MainWindow::getAvatarLoader() const
 	return &m1->avatar_loader;
 }
 
-int *MainWindow::ptrUpdateFilesListCounter()
-{
-	return &m1->update_files_list_counter;
-}
+//int *MainWindow::ptrUpdateFilesListCounter()
+//{
+//	return &m1->update_files_list_counter;
+//}
 
-int *MainWindow::ptrUpdateCommitTableCounter()
-{
-	return &m1->update_commit_table_counter;
-}
+//int *MainWindow::ptrUpdateCommitTableCounter()
+//{
+//	return &m1->update_commit_table_counter;
+//}
 
 bool MainWindow::interactionCanceled() const
 {
@@ -1494,10 +1472,7 @@ void MainWindow::clearAuthentication()
 	m1->http_pwd.clear();
 }
 
-void MainWindow::onAvatarUpdated()
-{
-	updateCommitTableLater();
-}
+
 
 QStringList MainWindow::findGitObject(const QString &id) const
 {
@@ -2040,11 +2015,6 @@ void MainWindow::queryBranches(GitPtr const &g)
 std::map<QString, QList<Git::Branch>> &MainWindow::branchMapRef()
 {
 	return m1->branch_map;
-}
-
-void MainWindow::updateCommitTableLater()
-{
-	*ptrUpdateCommitTableCounter() = 200;
 }
 
 void MainWindow::updateRemoteInfo()

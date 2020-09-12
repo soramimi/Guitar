@@ -88,12 +88,11 @@ private:
 		QList<BranchLabel> const *labels = mainwindow()->label(row);
 		if (labels) {
 			painter->save();
+			painter->setRenderHint(QPainter::Antialiasing);
 
-			bool show = global->mainwindow->isLabelsVisible();
+			bool show = global->mainwindow->isLabelsVisible(); // ラベル透過モード
 			painter->setOpacity(show ? 1.0 : 0.0625);
 
-			painter->setRenderHint(QPainter::Antialiasing);
-			QFontMetrics fm = painter->fontMetrics();
 			const int space = 8;
 			int x = opt.rect.x() + opt.rect.width() - 3;
 			int x1 = x;
@@ -102,16 +101,29 @@ private:
 			int i = labels->size();
 			while (i > 0) {
 				i--;
+
+				// ラベル
 				BranchLabel const &label = labels->at(i);
 				QString text = misc::abbrevBranchName(label.text + label.info);
-				int w = fm.size(0, text).width() + space * 2; // 幅
+
+				// 現在のブランチ名と一致するなら太字
+				bool bold = false;
+				if (text.startsWith(current_branch)) {
+					auto c = text.utf16()[current_branch.size()];
+					if (c == 0 || c == ',') {
+						bold = true;
+					}
+				}
+
+				// フォントの設定
+				QFont font = painter->font();
+				font.setBold(bold);
+				painter->setFont(font);
+
+				// ラベルの矩形
+				int w = painter->fontMetrics().size(0, text).width() + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
-
-				bool bold = false;
-				if (text == current_branch) { // 現在のブランチ名と一致するなら太字
-					bold = true;
-				}
 
 				// ラベル枠の描画
 				auto DrawLabelFrame = [&](int dx, int dy, QColor color){
@@ -119,21 +131,14 @@ private:
 					painter->drawRoundedRect(r.adjusted(lround(dx + 3), lround(dy + 3), lround(dx - 3), lround(dy - 3)), 3, 3);
 				};
 
-				QColor color = BranchLabel::color(label.kind);
-				QColor hilite = hiliteColor(color);
-				QColor shadow = shadowColor(color);
+				QColor color = BranchLabel::color(label.kind); // ラベル表面の色
+				QColor hilite = hiliteColor(color); // ハイライトの色
+				QColor shadow = shadowColor(color); // 陰の色
 
 				painter->setPen(Qt::NoPen);
 				DrawLabelFrame(-1, -1, hilite);
 				DrawLabelFrame(1, 1, shadow);
 				DrawLabelFrame(0, 0, color);
-
-				// フォントの設定
-				{
-					QFont font = painter->font();
-					font.setBold(bold);
-					painter->setFont(font);
-				}
 
 				// ラベルテキストの描画
 				painter->setPen(Qt::black);

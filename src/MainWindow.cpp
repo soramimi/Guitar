@@ -41,17 +41,23 @@
 #include <coloredit/ColorDialog.h>
 
 
-FileDiffWidget::DrawData::DrawData()
-{
-	bgcolor_text = QColor(255, 255, 255);
-	bgcolor_gray = QColor(224, 224, 224);
-	bgcolor_add = QColor(192, 240, 192);
-	bgcolor_del = QColor(255, 224, 224);
-	bgcolor_add_dark = QColor(64, 192, 64);
-	bgcolor_del_dark = QColor(240, 64, 64);
-}
+
+
+struct EventItem {
+	QObject *receiver = nullptr;
+	QEvent *event = nullptr;
+	QDateTime at;
+	EventItem(QObject *receiver, QEvent *event, QDateTime const &at)
+		: receiver(receiver)
+		, event(event)
+		, at(at)
+	{
+	}
+};
 
 struct MainWindow::Private2 {
+	std::vector<EventItem> event_item_list;
+
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
@@ -171,11 +177,12 @@ MainWindow::MainWindow(QWidget *parent)
 	*getReposPtr() = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 
-	webContext()->set_keep_alive_enabled(true);
-	getAvatarLoader()->start(this);
-	connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
-
-	*ptrUpdateFilesListCounter() = 0;
+	{
+		// アイコン取得機能
+		webContext()->set_keep_alive_enabled(true);
+		getAvatarLoader()->start(this);
+		connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
+	}
 
 	connect(frame()->filediffwidget(), &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(frame()); });
 
@@ -200,6 +207,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+	cancelPendingUserEvents();
+
 	stopPtyProcess();
 
 	getAvatarLoader()->stop();
@@ -221,19 +230,115 @@ RepositoryWrapperFrame const *MainWindow::frame() const
 	return ui->frame_repository_wrapper;
 }
 
-void MainWindow::notifyRemoteChanged(bool f)
+/**
+ * @brief イベントをポストする
+ * @param receiver 宛先
+ * @param event イベント
+ * @param ms_later 遅延時間（0なら即座）
+ */
+void MainWindow::postEvent(QObject *receiver, QEvent *event, int ms_later)
 {
-	postUserFunctionEvent([&](QVariant const &v){
-		setRemoteChanged(v.toBool());
-		updateButton();
-	}, QVariant(f));
+	if (ms_later <= 0) {
+		QApplication::postEvent(this, event);
+	} else {
+		auto at = QDateTime::currentDateTime().addMSecs(ms_later);
+		m2->event_item_list.emplace_back(receiver, event, at);
+		std::stable_sort(m2->event_item_list.begin(), m2->event_item_list.end(), [](EventItem const &l, EventItem const &r){
+			return l.at > r.at; // 降順
+		});
+	}
 }
 
-void MainWindow::postStartEvent()
+/**
+ * @brief ユーザー関数イベントをポストする
+ * @param fn 関数
+ * @param v QVariant
+ * @param p ポインタ
+ * @param ms_later 遅延時間（0なら即座）
+ */
+void MainWindow::postUserFunctionEvent(const std::function<void (const QVariant &, void *ptr)> &fn, const QVariant &v, void *p, int ms_later)
 {
-	QTimer::singleShot(100, [&](){
-		QApplication::postEvent(this, new StartEvent);
-	});
+	postEvent(this, new UserFunctionEvent(fn, v, p), ms_later);
+}
+
+/**
+ * @brief 未送信のイベントをすべて削除する
+ */
+void MainWindow::cancelPendingUserEvents()
+{
+	for (auto &item : m2->event_item_list) {
+		delete item.event;
+	}
+	m2->event_item_list.clear();
+}
+
+/**
+ * @brief 開始イベントをポストする
+ */
+void MainWindow::postStartEvent(int ms_later)
+{
+	postEvent(this, new StartEvent, ms_later);
+}
+
+/**
+ * @brief インターバルタイマを開始する
+ */
+void MainWindow::startTimers()
+{
+	// タイマ開始
+	connect(&m2->interval_10ms_timer, &QTimer::timeout, this, &MainWindow::onInterval10ms);
+	m2->interval_10ms_timer.setInterval(10);
+	m2->interval_10ms_timer.start();
+}
+
+/**
+ * @brief 10ms間隔のインターバルタイマ
+ */
+void MainWindow::onInterval10ms()
+{
+	{
+		// ユーザーイベントの処理
+
+		std::vector<EventItem> items; // 処理するイベント
+
+		QDateTime now = QDateTime::currentDateTime(); // 現在時刻
+
+		size_t i = m2->event_item_list.size(); // 後ろから走査
+		while (i > 0) {
+			i--;
+			if (m2->event_item_list[i].at <= now) { // 予約時間を過ぎていたら
+				items.push_back(m2->event_item_list[i]); // 処理リストに追加
+				m2->event_item_list.erase(m2->event_item_list.begin() + i); // 処理待ちリストから削除
+			}
+		}
+
+		// イベントをポストする
+		for (auto it = items.rbegin(); it != items.rend(); it++) {
+			QApplication::postEvent(it->receiver, it->event);
+		}
+	}
+
+	{
+		// PTYプロセスの監視
+
+		bool running = getPtyProcess()->isRunning();
+		if (ui->toolButton_stop_process->isEnabled() != running) {
+			ui->toolButton_stop_process->setEnabled(running); // ボタンの状態を設定
+			ui->action_stop_process->setEnabled(running);
+			setNetworkingCommandsEnabled(!running);
+		}
+		if (!running) {
+			setInteractionMode(InteractionMode::None);
+		}
+
+		// PTYプロセスの出力をログに書き込む
+		while (1) {
+			char tmp[1024];
+			int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
+			if (len < 1) break;
+			writeLog(tmp, len);
+		}
+	}
 }
 
 bool MainWindow::shown()
@@ -260,7 +365,7 @@ bool MainWindow::shown()
 	}
 	updateUI();
 
-	postStartEvent(); // 開始イベント
+	postStartEvent(100); // 開始イベント（100ms後）
 
 	return true;
 }
@@ -278,7 +383,7 @@ void MainWindow::onStartEvent()
 		}
 	}
 	if (isUninitialized()) { // 正しく初期設定されたか
-		postStartEvent(); // 初期設定されなかったら、もういちどようこそダイアログを出す。
+		postStartEvent(100); // 初期設定されなかったら、もういちどようこそダイアログを出す（100ms後）
 	} else {
 		// 外部コマンド登録
 		setGitCommand(appsettings()->git_command, false);
@@ -296,43 +401,12 @@ void MainWindow::onStartEvent()
 	}
 }
 
-void MainWindow::startTimers()
-{
-	// interval 10ms
-
-	connect(&m2->interval_10ms_timer, &QTimer::timeout, [&](){
-		const int ms = 10;
-		auto *p1 = ptrUpdateCommitTableCounter();
-		if (*p1 > 0) {
-			if (*p1 > ms) {
-				*p1 -= ms;
-			} else {
-				*p1 = 0;
-				frame()->logtablewidget()->viewport()->update();
-			}
-		}
-		auto *p2 = ptrUpdateFilesListCounter();
-		if (*p2 > 0) {
-			if (*p2 > ms) {
-				*p2 -= ms;
-			} else {
-				*p2 = 0;
-				updateCurrentFilesList(frame());
-			}
-		}
-	});
-	m2->interval_10ms_timer.setInterval(10);
-	m2->interval_10ms_timer.start();
-
-	startTimer(10);
-}
-
 void MainWindow::setCurrentLogRow(RepositoryWrapperFrame *frame, int row)
 {
 	if (row >= 0 && row < frame->logtablewidget()->rowCount()) {
-		frame->logtablewidget()->setCurrentCell(row, 2);
-		frame->logtablewidget()->setFocus();
 		updateStatusBarText(frame);
+		frame->logtablewidget()->setFocus();
+		frame->logtablewidget()->setCurrentCell(row, 2);
 	}
 }
 
@@ -454,9 +528,9 @@ bool MainWindow::event(QEvent *event)
 				return true;
 			}
 		}
-	} else if (et == (QEvent::Type)EventUserFunction) {
+	} else if (et == (QEvent::Type)UserEvent::UserFunction) {
 		if (auto *e = (UserFunctionEvent *)event) {
-			e->func(e->var);
+			e->func(e->var, e->ptr);
 			return true;
 		}
 	}
@@ -773,6 +847,10 @@ void MainWindow::showFileList(FilesListType files_list_type)
 	}
 }
 
+/**
+ * @brief ファイルリストを消去
+ * @param frame
+ */
 void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
 {
 	showFileList(FilesListType::SingleList);
@@ -948,6 +1026,22 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 		data.idiff = idiff;
 		fn_add_item(data);
 	}
+}
+
+/**
+ * @brief コミットログを更新（100ms遅延）
+ */
+void MainWindow::updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later)
+{
+	if (!frame) {
+		qDebug();
+	}
+	postUserFunctionEvent([&](QVariant const &, void *ptr){
+		if (ptr) {
+			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
+			frame->logtablewidget()->viewport()->update();
+		}
+	}, {}, reinterpret_cast<void *>(frame), ms_later);
 }
 
 /**
@@ -1221,7 +1315,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		}
 
 		frame->logtablewidget()->setEnabled(true);
-		updateCommitTableLater();
+		updateCommitLogTableLater(frame, 100); // ミコットログを更新（100ms後）
 		if (canceled) return;
 
 		QString branch_name;
@@ -1657,9 +1751,9 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 	openSelectedRepository();
 }
 
-void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)
+void MainWindow::execCommitPropertyDialog(QWidget *parent, RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
 {
-	CommitPropertyDialog dlg(parent, this, commit);
+	CommitPropertyDialog dlg(parent, this, frame, commit);
 	dlg.exec();
 }
 
@@ -1841,7 +1935,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_properties) {
-				execCommitPropertyDialog(this, commit);
+				execCommitPropertyDialog(this, frame(), commit);
 				return;
 			}
 			if (a == a_edit_message) {
@@ -2220,8 +2314,13 @@ void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 		auto const &logs = getLogs(frame);
 		int index = item->data(IndexRole).toInt();
 		if (index < (int)logs.size()) {
+			// ステータスバー更新
 			updateStatusBarText(frame);
-			*ptrUpdateFilesListCounter() = 200;
+			// 少し待ってファイルリストを更新する
+			postUserFunctionEvent([&](QVariant const &, void *p){
+				RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(p);
+				updateCurrentFilesList(frame);
+			}, {}, reinterpret_cast<void *>(frame), 300); // 300ms後（キーボードのオートリピート想定）
 		}
 	} else {
 		row = -1;
@@ -2474,26 +2573,6 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 	}
 }
 
-void MainWindow::timerEvent(QTimerEvent *)
-{
-	bool running = getPtyProcess()->isRunning();
-	if (ui->toolButton_stop_process->isEnabled() != running) {
-		ui->toolButton_stop_process->setEnabled(running);
-		ui->action_stop_process->setEnabled(running);
-		setNetworkingCommandsEnabled(!running);
-	}
-	if (!running) {
-		setInteractionMode(InteractionMode::None);
-	}
-
-	while (1) {
-		char tmp[1024];
-		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
-		if (len < 1) break;
-		writeLog(tmp, len);
-	}
-}
-
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
 	int c = event->key();
@@ -2655,7 +2734,7 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 {
 	Git::CommitItem const *commit = selectedCommitItem(frame());
 	if (commit) {
-		execCommitPropertyDialog(this, commit);
+		execCommitPropertyDialog(this, frame(), commit);
 	}
 }
 
@@ -3120,7 +3199,7 @@ void MainWindow::postOpenRepositoryFromGitHub(QString const &username, QString c
 	QVariantList list;
 	list.push_back(username);
 	list.push_back(reponame);
-	postUserFunctionEvent([&](QVariant const &v){
+	postUserFunctionEvent([&](QVariant const &v, void *){
 		QVariantList l = v.toList();
 		QString uname = l[0].toString();
 		QString rname = l[1].toString();
@@ -3320,9 +3399,6 @@ void MainWindow::on_action_submodule_add_triggered()
 	submodule_add({}, dir);
 }
 
-
-
-
 void MainWindow::on_action_submodule_update_triggered()
 {
 	SubmoduleUpdateDialog dlg(this);
@@ -3335,6 +3411,13 @@ void MainWindow::on_action_submodule_update_triggered()
 	}
 }
 
+/**
+ * @brief アイコンの読み込みが完了した
+ */
+void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
+{
+	updateCommitLogTableLater(frame.pointer, 100); // コミットログを更新（100ms後）
+}
 
 void MainWindow::test()
 {

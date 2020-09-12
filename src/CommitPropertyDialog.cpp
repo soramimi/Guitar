@@ -13,7 +13,7 @@ struct CommitPropertyDialog::Private {
 	AvatarLoader avatar_loader;
 };
 
-void CommitPropertyDialog::init(MainWindow *mw)
+void CommitPropertyDialog::init(MainWindow *mw, RepositoryWrapperFrame *frame)
 {
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
@@ -75,40 +75,40 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	}
 
 	m->avatar_loader.start(mainwindow());
-	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
-		updateAvatar(false);
+	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
+		updateAvatar(frame.pointer, false);
 	});
-	updateAvatar(true);
+	updateAvatar(frame, true);
 }
 
-void CommitPropertyDialog::updateAvatar(bool request)
+void CommitPropertyDialog::updateAvatar(RepositoryWrapperFrame *frame, bool request)
 {
 	if (!mainwindow()->isOnlineMode()) return;
 
-	auto SetAvatar = [&](QString const &email, QLabel *label){
+	auto SetAvatar = [&](RepositoryWrapperFrame *frame, QString const &email, QLabel *label){
 		if (mainwindow()->appsettings()->get_committer_icon) {
 			label->setFixedSize(QSize(48, 48));
-			QIcon icon = m->avatar_loader.fetch(email.toStdString(), request);
+			QIcon icon = m->avatar_loader.fetch(frame, email.toStdString(), request);
 			setAvatar(icon, label);
 		} else {
 			label->setVisible(false);
 		}
 	};
-	SetAvatar(ui->lineEdit_mail->text(), ui->label_user_avatar);
-	SetAvatar(ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
+	SetAvatar(frame, ui->lineEdit_mail->text(), ui->label_user_avatar);
+	SetAvatar(frame, ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
 	m->commit = *commit;
-	init(mw);
+	init(mw, frame);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, QString const &commit_id)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -116,7 +116,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QStr
 	ui->setupUi(this);
 
 	mw->queryCommit(commit_id, &m->commit);
-	init(mw);
+	init(mw, frame);
 }
 
 CommitPropertyDialog::~CommitPropertyDialog()

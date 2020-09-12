@@ -16,7 +16,7 @@ struct FileHistoryWindow::Private {
 	QString path;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
-	FileDiffWidget::DrawData draw_data;
+//	FileDiffWidget::DrawData draw_data;
 };
 
 FileDiffWidget::DiffData *FileHistoryWindow::diffdata()
@@ -29,25 +29,25 @@ const FileDiffWidget::DiffData *FileHistoryWindow::diffdata() const
 	return &m->diff_data;
 }
 
-FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
-{
-	return &m->draw_data;
-}
+//FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
+//{
+//	return &m->draw_data;
+//}
 
-const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
-{
-	return &m->draw_data;
-}
+//const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
+//{
+//	return &m->draw_data;
+//}
 
 int FileHistoryWindow::totalTextLines() const
 {
 	return diffdata()->left->lines.size();
 }
 
-int FileHistoryWindow::fileviewScrollPos() const
-{
-	return drawdata()->v_scroll_pos;
-}
+//int FileHistoryWindow::fileviewScrollPos() const
+//{
+//	return drawdata()->v_scroll_pos;
+//}
 
 FileHistoryWindow::FileHistoryWindow(BasicMainWindow *parent)
 	: QDialog(parent)
@@ -243,7 +243,7 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, commit);
+			mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), commit);
 			return;
 		}
 	}

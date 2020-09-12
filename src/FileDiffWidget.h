@@ -52,20 +52,28 @@ public:
 		}
 	};
 
-	struct DrawData {
-		int v_scroll_pos = 0;
-		int h_scroll_pos = 0;
-		int char_width = 0;
-		int line_height = 0;
-		QColor bgcolor_text;
-		QColor bgcolor_add;
-		QColor bgcolor_del;
-		QColor bgcolor_add_dark;
-		QColor bgcolor_del_dark;
-		QColor bgcolor_gray;
-		QWidget *forcus = nullptr;
-		DrawData();
-	};
+//	struct DrawData {
+//		int v_scroll_pos = 0;
+//		int h_scroll_pos = 0;
+//		int char_width = 0;
+//		int line_height = 0;
+//		QColor bgcolor_text;
+//		QColor bgcolor_add;
+//		QColor bgcolor_del;
+//		QColor bgcolor_add_dark;
+//		QColor bgcolor_del_dark;
+//		QColor bgcolor_gray;
+//		QWidget *forcus = nullptr;
+//		DrawData()
+//		{
+//			bgcolor_text = QColor(255, 255, 255);
+//			bgcolor_gray = QColor(224, 224, 224);
+//			bgcolor_add = QColor(192, 240, 192);
+//			bgcolor_del = QColor(255, 224, 224);
+//			bgcolor_add_dark = QColor(64, 192, 64);
+//			bgcolor_del_dark = QColor(240, 64, 64);
+//		}
+//	};
 
 	enum ViewStyle {
 		None,

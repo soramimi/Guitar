@@ -24,9 +24,9 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	on_stackedWidget_currentChanged(0);
 
 	avatar_loader_.start(mainwindow_);
-	connect(&avatar_loader_, &AvatarLoader::updated, [&](){
+	connect(&avatar_loader_, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
 		QString email = ui->lineEdit_user_email->text();
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), false);
+		QIcon icon = avatar_loader_.fetch(frame.pointer, email.toStdString(), false);
 		setAvatar(icon);
 	});
 
@@ -189,7 +189,7 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_user_email->text();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
+		QIcon icon = avatar_loader_.fetch(nullptr, email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

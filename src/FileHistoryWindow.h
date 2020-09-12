@@ -21,10 +21,10 @@ private:
 
 	FileDiffWidget::DiffData *diffdata();
 	FileDiffWidget::DiffData const *diffdata() const;
-	FileDiffWidget::DrawData *drawdata();
-	FileDiffWidget::DrawData const *drawdata() const;
+//	FileDiffWidget::DrawData *drawdata();
+//	FileDiffWidget::DrawData const *drawdata() const;
 	int totalTextLines() const;
-	int fileviewScrollPos() const;
+//	int fileviewScrollPos() const;
 public:
 	explicit FileHistoryWindow(BasicMainWindow *parent);
 	~FileHistoryWindow() override;

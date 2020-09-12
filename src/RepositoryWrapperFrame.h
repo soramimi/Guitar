@@ -56,4 +56,12 @@ public:
 	void selectLogTableRow(int row);
 };
 
+struct RepositoryWrapperFrameP {
+	RepositoryWrapperFrame *pointer;
+	RepositoryWrapperFrameP(RepositoryWrapperFrame *pointer = nullptr)
+		: pointer(pointer)
+	{
+	}
+};
+
 #endif // REPOSITORYWRAPPERFRAME_H

@@ -82,8 +82,8 @@ private:
 		WebContext webcx;
 
 		AvatarLoader avatar_loader;
-		int update_files_list_counter = 0;
-		int update_commit_table_counter = 0;
+//		int update_files_list_counter = 0;
+//		int update_commit_table_counter = 0;
 
 		bool interaction_canceled = false;
 		InteractionMode interaction_mode = InteractionMode::None;
@@ -138,6 +138,9 @@ public:
 	bool isOnlineMode() const;
 private:
 	Ui::MainWindow *ui;
+
+	void postEvent(QObject *receiver, QEvent *event, int ms_later);
+	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> &fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
 
 	void updateFilesList(RepositoryWrapperFrame *frame, QString id, bool wait);
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit, bool wait);
@@ -273,7 +276,7 @@ private:
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
 	std::map<QString, QList<Git::Branch> > &branchMapRef();
-	void updateCommitTableLater();
+	void updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later);
 	void updateWindowTitle(const GitPtr &g);
 	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
@@ -317,7 +320,6 @@ private:
 //	const Git::CommitItemList &getLogs() const;
 	const Git::CommitItem *getLog(RepositoryWrapperFrame const *frame, int index) const;
 	void updateCommitGraph(RepositoryWrapperFrame *frame);
-	void postUserFunctionEvent(const std::function<void(QVariant const &)> &fn, QVariant const &v = QVariant());
 	void initNetworking();
 	bool saveRepositoryBookmarks() const;
 	QString getBookmarksFilePath() const;
@@ -338,8 +340,8 @@ private:
 	QList<RepositoryItem> *getReposPtr();
 	AvatarLoader *getAvatarLoader();
 	const AvatarLoader *getAvatarLoader() const;
-	int *ptrUpdateFilesListCounter();
-	int *ptrUpdateCommitTableCounter();
+//	int *ptrUpdateFilesListCounter();
+//	int *ptrUpdateCommitTableCounter();
 	bool interactionCanceled() const;
 	void setInteractionCanceled(bool canceled);
 	BasicMainWindow::InteractionMode interactionMode() const;
@@ -370,10 +372,11 @@ private:
 	QString gitCommand() const;
 	QPixmap getTransparentPixmap();
 	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
+	void cancelPendingUserEvents();
 protected:
 	void customEvent(QEvent *);
 	void dragEnterEvent(QDragEnterEvent *event) override;
-	void timerEvent(QTimerEvent *) override;
+//	void timerEvent(QTimerEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
@@ -388,17 +391,16 @@ public:
 	void deleteTags(RepositoryWrapperFrame *frame, QStringList const &tagnames);
 	bool addTag(RepositoryWrapperFrame *frame, QString const &name);
 	void updateCurrentFilesList(RepositoryWrapperFrame *frame);
-	void notifyRemoteChanged(bool f);
 	void postOpenRepositoryFromGitHub(const QString &username, const QString &reponame);
 	int selectedLogIndex(RepositoryWrapperFrame *frame) const;
 	void updateAncestorCommitMap(RepositoryWrapperFrame *frame);
 	bool isAncestorCommit(const QString &id);
-	void postStartEvent();
+	void postStartEvent(int ms_later);
 	void setShowLabels(bool show, bool save);
 	bool isLabelsVisible() const;
 	void updateFilesList2(const QString &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
-	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
+	void execCommitPropertyDialog(QWidget *parent, RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
 	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
 	void execFileHistory(const QString &path);
 	void execFileHistory(QListWidgetItem *item);
@@ -434,7 +436,7 @@ public:
 	void emitWriteLog(const QByteArray &ba);
 	QString findFileID(const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
-	QIcon committerIcon(const RepositoryWrapperFrame *frame, int row) const;
+	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
 	void changeSshKey(const QString &localdir, const QString &sshkey);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 	const Git::CommitItemList &getLogs(RepositoryWrapperFrame const *frame) const;
@@ -551,8 +553,9 @@ private slots:
 
 	void on_action_submodule_update_triggered();
 
-	void onAvatarUpdated();
+	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void test();
+	void onInterval10ms();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len);

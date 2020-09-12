@@ -24,7 +24,7 @@ using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 struct ImageViewWidget::Private {
 	QMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
-	FileDiffWidget::DrawData *draw_data = nullptr;
+//	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
 	QScrollBar *h_scroll_bar = nullptr;
 	QString mime_type;
