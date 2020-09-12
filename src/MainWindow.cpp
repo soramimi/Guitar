@@ -135,7 +135,7 @@ MainWindow::MainWindow(QWidget *parent)
 	m2->digits.load(":/image/digits.png");
 	m2->graph_color = global->theme->graphColorMap();
 
-	prepareLogTableWidget();
+	frame()->prepareLogTableWidget();
 
 #ifdef Q_OS_WIN
 	{
@@ -1033,10 +1033,8 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
  */
 void MainWindow::updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later)
 {
-	if (!frame) {
-		qDebug();
-	}
 	postUserFunctionEvent([&](QVariant const &, void *ptr){
+		qDebug() << (void *)ptr;
 		if (ptr) {
 			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
 			frame->logtablewidget()->viewport()->update();
@@ -1205,10 +1203,10 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 	}
 }
 
-void MainWindow::prepareLogTableWidget()
-{
-	ui->frame_repository_wrapper->prepareLogTableWidget();
-}
+//void MainWindow::prepareLogTableWidget(RepositoryWrapperFrame *frame)
+//{
+//	frame->prepareLogTableWidget();
+//}
 
 void MainWindow::detectGitServerType(GitPtr const &g)
 {
@@ -1352,7 +1350,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		p->insert(p->begin(), item);
 	}
 
-	prepareLogTableWidget();
+	frame->prepareLogTableWidget();
 
 	auto const &logs = getLogs(frame);
 	const int count = logs.size();

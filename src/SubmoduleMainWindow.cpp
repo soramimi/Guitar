@@ -7,14 +7,14 @@ SubmoduleMainWindow::SubmoduleMainWindow(MainWindow *parent)
 {
 	ui->setupUi(this);
 	mw_ = parent;
-	ui->frame_repository_wrapper->bind(mw_
+	ui->frame_repository_wrapper2->bind(mw_
 									   , ui->tableWidget_log
 									   , ui->listWidget_files
 									   , ui->listWidget_unstaged
 									   , ui->listWidget_staged
 									   , ui->widget_diff_view
 									   );
-	ui->frame_repository_wrapper->prepareLogTableWidget();
+	ui->frame_repository_wrapper2->prepareLogTableWidget();
 }
 
 SubmoduleMainWindow::~SubmoduleMainWindow()
@@ -29,12 +29,12 @@ MainWindow *SubmoduleMainWindow::mainwindow()
 
 RepositoryWrapperFrame *SubmoduleMainWindow::frame()
 {
-	return ui->frame_repository_wrapper;
+	return ui->frame_repository_wrapper2;
 }
 
 void SubmoduleMainWindow::reset()
 {
 	GitPtr g = mainwindow()->git();
-	mainwindow()->openRepository_(ui->frame_repository_wrapper, g);
+	mainwindow()->openRepository_(ui->frame_repository_wrapper2, g);
 
 }

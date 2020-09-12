@@ -149,7 +149,7 @@ private:
 	void openRepository_(GitPtr g, bool keep_selection = false);
 	void openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
 
-	void prepareLogTableWidget();
+//	void prepareLogTableWidget(RepositoryWrapperFrame *frame);
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> const &fn);
