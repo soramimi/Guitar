@@ -2,6 +2,7 @@
 //#include "misc.h"
 #include <QKeyEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <math.h>
 
 void RingSlider::updateGeometry()

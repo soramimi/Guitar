@@ -69,8 +69,10 @@ template <typename T> void operator >> (GetValue<T> const &l, T &r)
 
 template <> void operator >> (GetValue<QColor> const &l, QColor &r)
 {
-	r = l.settings.value(l.name, r).template value<QString>(); // 文字列で取得
-
+	QString s = l.settings.value(l.name, QString()).template value<QString>(); // 文字列で取得
+	if (s.startsWith('#')) {
+		r = s;
+	}
 }
 
 template <typename T> class SetValue {
