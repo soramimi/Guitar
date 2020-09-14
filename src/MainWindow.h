@@ -374,7 +374,7 @@ private:
 	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
 	void cancelPendingUserEvents();
 protected:
-	void customEvent(QEvent *);
+	void customEvent(QEvent *) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
 //	void timerEvent(QTimerEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;

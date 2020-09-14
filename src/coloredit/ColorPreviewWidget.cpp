@@ -14,7 +14,7 @@ void ColorPreviewWidget::setColor(const QColor &color)
 	update();
 }
 
-void ColorPreviewWidget::paintEvent(QPaintEvent *event)
+void ColorPreviewWidget::paintEvent(QPaintEvent *)
 {
 	int w = width();
 	int h = height();

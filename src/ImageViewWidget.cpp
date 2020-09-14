@@ -346,7 +346,7 @@ void ImageViewWidget::wheelEvent(QWheelEvent *e)
 	if (isValidImage()) {
 		double scale = 1;
 		const double mul = 1.189207115; // sqrt(sqrt(2))
-		m->wheel_delta += e->delta();
+		m->wheel_delta += e->angleDelta().y();
 		while (m->wheel_delta >= 120) {
 			m->wheel_delta -= 120;
 			scale *= mul;

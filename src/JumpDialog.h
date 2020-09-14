@@ -13,10 +13,12 @@ class QTableWidgetItem;
 
 class JumpDialog : public QDialog {
 	Q_OBJECT
-public:
 private:
+	Ui::JumpDialog *ui;
 	struct Private;
 	Private *m;
+	void updateTable();
+	void internalUpdateTable(const NamedCommitList &list2);
 public:
 	explicit JumpDialog(QWidget *parent, NamedCommitList const &items);
 	~JumpDialog() override;
@@ -26,10 +28,6 @@ private slots:
 	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-private:
-	Ui::JumpDialog *ui;
-	void updateTable();
-	void internalUpdateTable(const NamedCommitList &list2);
 };
 
 #endif // JUMPDIALOG_H

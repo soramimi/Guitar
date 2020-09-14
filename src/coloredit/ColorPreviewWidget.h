@@ -7,7 +7,7 @@ class ColorPreviewWidget : public QWidget {
 private:
 	QColor color_;
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *);
 public:
 	ColorPreviewWidget(QWidget *parent);
 	void setColor(QColor const &color);

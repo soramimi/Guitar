@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <stdint.h>
 #include <QMouseEvent>
-#include <omp.h>
+//#include <omp.h>
 
 struct ColorSquareWidget::Private {
 	int hue = 0;
