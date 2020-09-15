@@ -2,6 +2,7 @@
 #define SUBMODULEMAINWINDOW_H
 
 #include <QMainWindow>
+#include "Git.h"
 
 class MainWindow;
 class RepositoryWrapperFrame;
@@ -15,9 +16,11 @@ class SubmoduleMainWindow : public QMainWindow {
 private:
 	Ui::SubmoduleMainWindow *ui;
 	MainWindow *mw_;
+	GitPtr g_;
 	MainWindow *mainwindow();
+	GitPtr git();
 public:
-	explicit SubmoduleMainWindow(MainWindow *parent = nullptr);
+	explicit SubmoduleMainWindow(MainWindow *parent, GitPtr g);
 	~SubmoduleMainWindow();
 
 	RepositoryWrapperFrame *frame();

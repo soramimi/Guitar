@@ -43,7 +43,7 @@ public:
 		QStyledItemDelegate::initStyleOption(&o, index);
 
 		QString header = index.data(BasicMainWindow::HeaderRole).toString();
-		bool isSubmodule = index.data(BasicMainWindow::IsSubmoduleRole).toBool();
+//		bool isSubmodule = !index.data(BasicMainWindow::SubmodulePathRole).toString().isEmpty();
 
 		int x = o.rect.x();
 		int y = o.rect.y();

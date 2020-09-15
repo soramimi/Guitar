@@ -82,7 +82,7 @@ public:
 		QString url;
 		operator bool () const
 		{
-			return isValidID(id);
+			return isValidID(id) && !path.isEmpty();
 		}
 	};
 
@@ -339,7 +339,7 @@ private:
 	Git();
 	QString encodeQuotedText(QString const &str);
 public:
-	Git(Context const &cx, QString const &repodir, QString const &sshkey = {});
+	Git(Context const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
 	 ~Git() override;
 
@@ -359,8 +359,8 @@ public:
 		return git(arg, true);
 	}
 
-	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey);
-	QString const &workingRepositoryDir() const;
+	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);
+	QString workingDir() const;
 	QString const &sshKey() const;
 	void setSshKey(const QString &sshkey) const;
 

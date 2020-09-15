@@ -59,7 +59,7 @@
          <property name="childrenCollapsible">
           <bool>false</bool>
          </property>
-         <widget class="LogTableWidget" name="tableWidget_log">
+         <widget class="LogTableWidget" name="tableWidget_log2">
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -438,7 +438,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>tableWidget_log</tabstop>
+  <tabstop>tableWidget_log2</tabstop>
   <tabstop>listWidget_unstaged</tabstop>
   <tabstop>toolButton_select_all</tabstop>
   <tabstop>toolButton_stage</tabstop>

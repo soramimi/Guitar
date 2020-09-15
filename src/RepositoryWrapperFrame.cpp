@@ -68,12 +68,12 @@ QIcon RepositoryWrapperFrame::verifiedIcon(char s) const
 
 QIcon RepositoryWrapperFrame::committerIcon(int row) const
 {
-	return mainwindow()->committerIcon(const_cast<RepositoryWrapperFrame *>(mainwindow()->frame()), row);
+	return mainwindow()->committerIcon(const_cast<RepositoryWrapperFrame *>(this), row);
 }
 
 QList<BranchLabel> const *RepositoryWrapperFrame::label(int row) const
 {
-	return mainwindow()->label(row);
+	return mainwindow()->label(this, row);
 }
 
 QString RepositoryWrapperFrame::currentBranchName() const
@@ -83,7 +83,7 @@ QString RepositoryWrapperFrame::currentBranchName() const
 
 const Git::CommitItemList &RepositoryWrapperFrame::getLogs() const
 {
-	return mainwindow()->getLogs(mainwindow()->frame());
+	return mainwindow()->getLogs(this);
 }
 
 bool RepositoryWrapperFrame::isAncestorCommit(const QString &id)

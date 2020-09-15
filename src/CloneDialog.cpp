@@ -129,7 +129,7 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 	dir = QFileDialog::getExistingDirectory(this, tr("Open existing directory"), dir);
 	if (QFileInfo(dir).isDir()) {
 		QString url;
-		GitPtr g = mainwindow()->git(dir);
+		GitPtr g = mainwindow()->git(dir, {}, {});
 		QList<Git::Remote> vec;
 		if (g->isValidWorkingCopy()) {
 			g->getRemoteURLs(&vec);

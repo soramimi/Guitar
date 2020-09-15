@@ -42,7 +42,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 				QString path = mainwindow->currentWorkingCopyDir() / object_path;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					mainwindow->saveAs(id, dstpath);
+					mainwindow->saveAs(mainwindow->frame(), id, dstpath);
 				}
 				update();
 				return;

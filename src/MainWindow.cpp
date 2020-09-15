@@ -26,6 +26,7 @@
 #include "TextEditDialog.h"
 #include "UserEvent.h"
 #include "SubmoduleMainWindow.h"
+#include "FilePropertyDialog.h"
 #include "common/misc.h"
 #include <QClipboard>
 #include <QDir>
@@ -987,9 +988,10 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 	item->setSizeHint(QSize(item->sizeHint().width(), 18));
 	item->setData(FilePathRole, data.path);
 	item->setData(DiffIndexRole, data.idiff);
-	item->setData(HunkIndexRole, -1);
+	item->setData(ObjectIdRole, data.id);
+//	item->setData(HunkIndexRole, -1);
 	item->setData(HeaderRole, header);
-	item->setData(IsSubmoduleRole, issubmodule);
+	item->setData(SubmodulePathRole, data.submod.path);
 	if (issubmodule) {
 		item->setToolTip(text); // ツールチップ
 	}
@@ -1042,6 +1044,24 @@ void MainWindow::updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms
 	}, {}, reinterpret_cast<void *>(frame), ms_later);
 }
 
+QString MainWindow::getObjectID(QListWidgetItem *item)
+{
+	if (!item) return {};
+	return item->data(ObjectIdRole).toString();
+}
+
+QString MainWindow::getFilePath(QListWidgetItem *item)
+{
+	if (!item) return {};
+	return item->data(FilePathRole).toString();
+}
+
+QString MainWindow::getSubmodulePath(QListWidgetItem *item)
+{
+	if (!item) return {};
+	return item->data(SubmodulePathRole).toString();
+}
+
 /**
  * @brief ファイルリストを更新
  * @param id コミットID
@@ -1084,7 +1104,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool
 			files_list_type = FilesListType::SideBySide;
 		}
 		bool ok = false;
-		auto diffs = makeDiffs(uncommited ? QString() : id, &ok);
+		auto diffs = makeDiffs(frame, uncommited ? QString() : id, &ok);
 		setDiffResult(diffs);
 		if (!ok) return;
 
@@ -1142,7 +1162,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool
 		}
 	} else {
 		bool ok = false;
-		auto diffs = makeDiffs(id, &ok);
+		auto diffs = makeDiffs(frame, id, &ok);
 		setDiffResult(diffs);
 		if (!ok) return;
 
@@ -1152,7 +1172,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool
 
 	for (Git::Diff const &diff : *diffResult()) {
 		QString key = GitDiff::makeKey(diff);
-		(*getDiffCacheMap())[key] = diff;
+		(*getDiffCacheMap(frame))[key] = diff;
 	}
 }
 
@@ -1162,7 +1182,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool
  * @param diff_list
  * @param listwidget
  */
-void MainWindow::updateFilesList2(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::updateFilesList2(RepositoryWrapperFrame *frame, QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -1174,7 +1194,7 @@ void MainWindow::updateFilesList2(QString const &id, QList<Git::Diff> *diff_list
 		listwidget->addItem(item);
 	};
 
-	GitDiff dm(getObjCache());
+	GitDiff dm(getObjCache(frame));
 	if (!dm.diff(id, submodules(), diff_list)) return;
 
 	addDiffItems(diff_list, AddItem);
@@ -1257,7 +1277,7 @@ void MainWindow::detectGitServerType(GitPtr const &g)
 void MainWindow::clearLog(RepositoryWrapperFrame *frame)
 {
 	clearLogs(frame);
-	clearLabelMap();
+	clearLabelMap(frame);
 	setUncommitedChanges(false);
 	frame->clearLogContents();
 }
@@ -1269,7 +1289,7 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 
 void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
 {
-	getObjCache()->setup(g);
+	getObjCache(frame)->setup(g);
 
 	int scroll_pos = -1;
 	int select_row = -1;
@@ -1279,7 +1299,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		select_row = frame->logtablewidget()->currentRow();
 	}
 
-	if (isValidWorkingCopy(g)) {
+	if (isValidWorkingCopy(g), 1) { ///
 
 		bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
 		setForceFetch(false);
@@ -1302,14 +1322,14 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		// ログを取得
 		setLogs(frame, retrieveCommitLog(g));
 		// ブランチを取得
-		queryBranches(g);
+		queryBranches(frame, g);
 		// タグを取得
-		ptrTagMap()->clear();
+		ptrTagMap(frame)->clear();
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
 			Git::Tag t = tag;
-			t.id = getObjCache()->getCommitIdFromTag(t.id);
-			(*ptrTagMap())[t.id].push_back(t);
+			t.id = getObjCache(frame)->getCommitIdFromTag(t.id);
+			(*ptrTagMap(frame))[t.id].push_back(t);
 		}
 
 		frame->logtablewidget()->setEnabled(true);
@@ -1340,7 +1360,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 
 	updateWindowTitle(g);
 
-	setHeadId(getObjCache()->revParse("HEAD"));
+	setHeadId(getObjCache(frame)->revParse("HEAD"));
 
 	if (isThereUncommitedChanges()) {
 		Git::CommitItem item;
@@ -1405,7 +1425,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 			datetime = misc::makeDateTimeString(commit->commit_date);
 			author = commit->author;
 			message = commit->message;
-			message_ex = makeCommitInfoText(frame, row, &(*getLabelMap())[row]);
+			message_ex = makeCommitInfoText(frame, row, &(*getLabelMap(frame))[row]);
 		}
 		AddColumn(commit_id, false, QString());
 		AddColumn(datetime, false, QString());
@@ -1630,7 +1650,7 @@ void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem const *com
 	std::vector<QString> labels;
 	{
 		int row = selectedLogIndex(frame);
-		QList<BranchLabel> const *v = label(row);
+		QList<BranchLabel> const *v = label(frame, row);
 		for (BranchLabel const &label : *v) {
 			if (label.kind == BranchLabel::LocalBranch || label.kind == BranchLabel::Tag) {
 				labels.push_back(label.text);
@@ -1869,7 +1889,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 		std::set<QAction *> copy_label_actions;
 		{
-			QList<BranchLabel> v = sortedLabels(row);
+			QList<BranchLabel> v = sortedLabels(frame(), row);
 			if (!v.isEmpty()) {
 				auto *copy_lebel_menu = menu.addMenu("Copy label");
 				for (BranchLabel const &l : v) {
@@ -1892,7 +1912,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			if (Git::isUncommited(*commit)) return false; // 未コミットがないこと
 			bool is_head = false;
 			bool has_remote_branch = false;
-			QList<BranchLabel> const *labels = label(row);
+			QList<BranchLabel> const *labels = label(frame(), row);
 			for (const BranchLabel &label : *labels) {
 				if (label.kind == BranchLabel::Head) {
 					is_head = true;
@@ -1915,7 +1935,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		menu.addSeparator();
 
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
-		QAction *a_delrembranch = remoteBranches(commit->commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
+		QAction *a_delrembranch = remoteBranches(frame(), commit->commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 
 		menu.addSeparator();
 
@@ -1941,15 +1961,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_checkout) {
-				checkout(this, commit);
+				checkout(frame(), this, commit);
 				return;
 			}
 			if (a == a_delbranch) {
-				deleteBranch(commit);
+				deleteBranch(frame(), commit);
 				return;
 			}
 			if (a == a_delrembranch) {
-				deleteRemoteBranch(commit);
+				deleteRemoteBranch(frame(), commit);
 				return;
 			}
 			if (a == a_merge) {
@@ -1973,7 +1993,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_explore) {
-				execCommitExploreWindow(this, commit);
+				execCommitExploreWindow(frame(), this, commit);
 				return;
 			}
 			if (copy_label_actions.find(a) != copy_label_actions.end()) {
@@ -2024,7 +2044,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		} else if (a == a_blame) {
 			blame(item);
 		} else if (a == a_properties) {
-			execFilePropertyDialog(item);
+			showObjectProperty(item);
 		}
 	}
 }
@@ -2149,7 +2169,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				return;
 			}
 			if (a == a_properties) {
-				execFilePropertyDialog(item);
+				showObjectProperty(item);
 				return;
 			}
 		}
@@ -2183,7 +2203,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 				} else if (a == a_blame) {
 					blame(item);
 				} else if (a == a_properties) {
-					execFilePropertyDialog(item);
+					showObjectProperty(item);
 				}
 			}
 		}
@@ -2227,7 +2247,37 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::checkout(QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback)
+/**
+ * @brief オブジェクトプロパティ
+ * @param item
+ */
+void MainWindow::showObjectProperty(QListWidgetItem *item)
+{
+	if (item) {
+		QString submodpath = getSubmodulePath(item);
+		if (!submodpath.isEmpty()) {
+			// サブモジュールウィンドウを表示する
+			Git::SubmoduleItem submod;
+			submod.path = submodpath;
+			submod.id = getObjectID(item);
+			if (submod) {
+				OverrideWaitCursor;
+				GitPtr g = git(submod);
+				SubmoduleMainWindow *w = new SubmoduleMainWindow(this, g);
+				w->show();
+				w->reset();
+			}
+		} else {
+			// ファイルプロパティダイアログを表示する
+			QString path = getFilePath(item);
+			QString id = getObjectID(item);
+			FilePropertyDialog dlg(this);
+			dlg.exec(this, path, id);
+		}
+	}
+}
+
+void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback)
 {
 	if (!commit) return;
 
@@ -2239,7 +2289,7 @@ void MainWindow::checkout(QWidget *parent, const Git::CommitItem *commit, std::f
 	QStringList local_branches;
 	QStringList remote_branches;
 	{
-		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
+		NamedCommitList named_commits = namedCommitItems(frame, Branches | Tags | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
 			QString name = item.name;
 			if (item.id == commit->commit_id) {
@@ -2296,7 +2346,7 @@ void MainWindow::checkout(QWidget *parent, const Git::CommitItem *commit, std::f
 
 void MainWindow::checkout(RepositoryWrapperFrame *frame)
 {
-	checkout(this, selectedCommitItem(frame));
+	checkout(frame, this, selectedCommitItem(frame));
 }
 
 /**
@@ -2521,8 +2571,8 @@ void MainWindow::updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *
 	if (idiff >= 0 && idiff < diffResult()->size()) {
 		Git::Diff const &diff = diffResult()->at(idiff);
 		QString key = GitDiff::makeKey(diff);
-		auto it = getDiffCacheMap()->find(key);
-		if (it != getDiffCacheMap()->end()) {
+		auto it = getDiffCacheMap(frame)->find(key);
+		if (it != getDiffCacheMap(frame)->end()) {
 			auto const &logs = getLogs(frame);
 			int row = frame->logtablewidget()->currentRow();
 			bool uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
@@ -2738,17 +2788,17 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 
 void MainWindow::on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem * item)
 {
-	execFilePropertyDialog(item);
+	showObjectProperty(item);
 }
 
 void MainWindow::on_listWidget_staged_itemDoubleClicked(QListWidgetItem *item)
 {
-	execFilePropertyDialog(item);
+	showObjectProperty(item);
 }
 
 void MainWindow::on_listWidget_files_itemDoubleClicked(QListWidgetItem *item)
 {
-	execFilePropertyDialog(item);
+	showObjectProperty(item);
 }
 
 QListWidgetItem *MainWindow::currentFileItem() const
@@ -2798,7 +2848,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	NamedCommitList items = namedCommitItems(Branches | Tags | Remotes);
+	NamedCommitList items = namedCommitItems(frame(), Branches | Tags | Remotes);
 	{
 		NamedCommitItem head;
 		head.name = "HEAD";
@@ -2823,7 +2873,7 @@ void MainWindow::on_action_repo_jump_triggered()
 			}
 		}
 		if (g->objectType(id) == "tag") {
-			id = getObjCache()->getCommitIdFromTag(id);
+			id = getObjCache(frame())->getCommitIdFromTag(id);
 		}
 		int row = rowFromCommitId(frame(), id);
 		if (row < 0) {
@@ -3163,7 +3213,7 @@ void MainWindow::on_action_push_u_triggered()
 
 void MainWindow::on_action_delete_remote_branch_triggered()
 {
-	deleteRemoteBranch(selectedCommitItem(frame()));
+	deleteRemoteBranch(frame(), selectedCommitItem(frame()));
 }
 
 void MainWindow::on_action_terminal_triggered()
@@ -3383,7 +3433,7 @@ void MainWindow::on_action_submodules_triggered()
 		const Git::SubmoduleItem mod = mods[i];
 		mods2[i].submodule = mod;
 
-		GitPtr g2 = git(g->workingRepositoryDir() / mod.path, g->sshKey());
+		GitPtr g2 = git(g->workingDir(), mod.path, g->sshKey());
 		g2->queryCommit(mod.id, &mods2[i].head);
 	}
 
@@ -3419,7 +3469,4 @@ void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
 
 void MainWindow::test()
 {
-	SubmoduleMainWindow *w = new SubmoduleMainWindow(this);
-	w->show();
-	w->reset();
 }

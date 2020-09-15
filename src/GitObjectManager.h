@@ -38,7 +38,7 @@ private:
 	GitPtr git(Git::SubmoduleItem const &submod)
 	{
 		GitPtr g2 = g->dup();
-		g2->setWorkingRepositoryDir(g->workingRepositoryDir() / submod.path, g->sshKey());
+		g2->setWorkingRepositoryDir(g->workingDir(), submod.path, g->sshKey());
 		return g2;
 	}
 public:

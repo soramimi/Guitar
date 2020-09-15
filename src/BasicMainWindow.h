@@ -34,9 +34,10 @@ public:
 		IndexRole = Qt::UserRole,
 		FilePathRole,
 		DiffIndexRole,
-		HunkIndexRole,
+		ObjectIdRole,
+//		HunkIndexRole,
 		HeaderRole,
-		IsSubmoduleRole,
+		SubmodulePathRole,
 	};
 	enum CloneOperation {
 		Clone,

@@ -149,7 +149,7 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwindow()->checkout(this, &m->commit, [&](){ hide(); });
+	mainwindow()->checkout(mainwindow()->frame(), this, &m->commit, [&](){ hide(); });
 	done(QDialog::Rejected);
 }
 
@@ -166,6 +166,6 @@ void CommitPropertyDialog::on_pushButton_details_clicked()
 
 void CommitPropertyDialog::on_pushButton_explorer_clicked()
 {
-	mainwindow()->execCommitExploreWindow(this, &m->commit);
+	mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &m->commit);
 
 }

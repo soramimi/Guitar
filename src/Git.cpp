@@ -18,15 +18,19 @@
 using callback_t = Git::callback_t;
 
 struct Git::Private {
-	QString git_command;
+	struct Info {
+		QString git_command;
+		QString working_repo_dir;
+		QString submodule_path;
+		callback_t fn_log_writer_callback = nullptr;
+		void *callback_cookie = nullptr;
+	};
+	Info info;
 	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 	QString ssh_key_override;// = "C:/a/id_rsa";
 	std::vector<char> result;
 	QString error_message;
 	int process_exit_code = 0;
-	QString working_repo_dir;
-	callback_t fn_log_writer_callback = nullptr;
-	void *callback_cookie = nullptr;
 };
 
 Git::Git()
@@ -34,11 +38,11 @@ Git::Git()
 {
 }
 
-Git::Git(const Context &cx, QString const &repodir, const QString &sshkey)
+Git::Git(const Context &cx, QString const &repodir, const QString &submodpath, const QString &sshkey)
 	: m(new Private)
 {
 	setGitCommand(cx.git_command, cx.ssh_command);
-	setWorkingRepositoryDir(repodir, sshkey);
+	setWorkingRepositoryDir(repodir, submodpath, sshkey);
 }
 
 Git::~Git()
@@ -48,19 +52,24 @@ Git::~Git()
 
 void Git::setLogCallback(callback_t func, void *cookie)
 {
-	m->fn_log_writer_callback = func;
-	m->callback_cookie = cookie;
+	m->info.fn_log_writer_callback = func;
+	m->info.callback_cookie = cookie;
 }
 
-void Git::setWorkingRepositoryDir(QString const &repo, QString const &sshkey)
+void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
-	m->working_repo_dir = repo;
+	m->info.working_repo_dir = repo;
+	m->info.submodule_path = submodpath;
 	m->ssh_key_override = sshkey;
 }
 
-QString const &Git::workingRepositoryDir() const
+QString Git::workingDir() const
 {
-	return m->working_repo_dir;
+	QString dir = m->info.working_repo_dir;
+	if (!m->info.submodule_path.isEmpty()) {
+		dir = dir / m->info.submodule_path;
+	}
+	return dir;
 }
 
 QString const &Git::sshKey() const
@@ -115,14 +124,14 @@ QString Git::resultText() const
 }
 void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 {
-	m->git_command = gitcmd;
+	m->info.git_command = gitcmd;
 	m->ssh_command = sshcmd;
 }
 
 QString Git::gitCommand() const
 {
 	Q_ASSERT(m);
-	return m->git_command;
+	return m->info.git_command;
 }
 
 void Git::clearResult()
@@ -146,7 +155,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 {
 	bool ok = false;
 	QString cwd = QDir::currentPath();
-	QString dir = workingRepositoryDir();
+	QString dir = workingDir();
 	if (QDir::setCurrent(dir)) {
 
 		ok = fn();
@@ -184,12 +193,12 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 		QString cmd = QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (m->fn_log_writer_callback) {
+		if (m->info.fn_log_writer_callback) {
 			QByteArray ba;
 			ba.append("> git ");
 			ba.append(arg);
 			ba.append('\n');
-			m->fn_log_writer_callback(m->callback_cookie, ba.data(), (int)ba.size());
+			m->info.fn_log_writer_callback(m->info.callback_cookie, ba.data(), (int)ba.size());
 		}
 
 		if (pty) {
@@ -215,7 +224,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 
 	if (chdir) {
 		if (pty) {
-			pty->setChangeDir(workingRepositoryDir());
+			pty->setChangeDir(workingDir());
 			ok = DoIt();
 		} else {
 			ok = chdirexec(DoIt);
@@ -234,10 +243,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 GitPtr Git::dup() const
 {
 	Git *p = new Git();
-	p->m->git_command = m->git_command;
-	p->m->working_repo_dir = m->working_repo_dir;
-	p->m->fn_log_writer_callback = m->fn_log_writer_callback;
-	p->m->callback_cookie = m->callback_cookie;
+	p->m->info = m->info;
 	return GitPtr(p);
 }
 
@@ -248,7 +254,7 @@ bool Git::isValidWorkingCopy(QString const &dir)
 
 bool Git::isValidWorkingCopy() const
 {
-	return isValidWorkingCopy(workingRepositoryDir());
+	return isValidWorkingCopy(workingDir());
 }
 
 QString Git::version()
@@ -263,7 +269,7 @@ bool Git::init()
 {
 	bool ok = false;
 	QDir cwd = QDir::current();
-	QString dir = workingRepositoryDir();
+	QString dir = workingDir();
 	if (QDir::setCurrent(dir)) {
 		QString gitdir = dir / ".git";
 		if (!QFileInfo(gitdir).isDir()) {
@@ -778,7 +784,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
-	m->working_repo_dir = misc::normalizePathSeparator(clone_to);
+	m->info.working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
@@ -1093,7 +1099,7 @@ void Git::cherrypick(QString const &name)
 
 QString Git::getCherryPicking() const
 {
-	QString dir = workingRepositoryDir();
+	QString dir = workingDir();
 	QString path = dir / ".git/CHERRY_PICK_HEAD";
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {

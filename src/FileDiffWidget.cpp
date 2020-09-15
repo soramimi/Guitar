@@ -125,7 +125,7 @@ GitPtr FileDiffWidget::git()
 
 Git::Object FileDiffWidget::cat_file(GitPtr const &/*g*/, QString const &id)
 {
-	return mainwindow()->cat_file(id);
+	return mainwindow()->cat_file(mainwindow()->frame(), id);
 }
 
 int FileDiffWidget::totalTextLines() const
@@ -541,8 +541,8 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 QString FileDiffWidget::diffObjects(GitPtr const &g, QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
-		Git::Object obj_a = mainwindow()->cat_file_(g, a_id);
-		Git::Object obj_b = mainwindow()->cat_file_(g, b_id);
+		Git::Object obj_a = mainwindow()->cat_file_(mainwindow()->frame(), g, a_id);
+		Git::Object obj_b = mainwindow()->cat_file_(mainwindow()->frame(), g, b_id);
 		if (obj_b.type == Git::Object::Type::UNKNOWN) {
 			obj_b.type = Git::Object::Type::BLOB;
 		}
@@ -586,7 +586,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		QString mime_a = mainwindow()->determinFileType(obj_a.content, true);
 		QString mime_b = mainwindow()->determinFileType(obj_b.content, true);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide_(obj_a.content, obj_b.content, g->workingRepositoryDir());
+			setSideBySide_(obj_a.content, obj_b.content, g->workingDir());
 			return;
 		}
 	}
@@ -604,7 +604,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		if (isValidID_(diff.blob.a_id)) { // 左が有効
 			obj = cat_file(g, diff.blob.a_id);
 			if (isValidID_(diff.blob.b_id)) { // 右が有効
-				setSideBySide(obj.content, diff, uncommited, g->workingRepositoryDir()); // 通常のdiff表示
+				setSideBySide(obj.content, diff, uncommited, g->workingDir()); // 通常のdiff表示
 			} else {
 				setLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
 			}
@@ -630,7 +630,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = cat_file(g, diff.blob.a_id);
-	setSideBySide(obj.content, diff, false, g->workingRepositoryDir());
+	setSideBySide(obj.content, diff, false, g->workingDir());
 
 	ui->widget_diff_slider->clear(false);
 

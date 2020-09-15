@@ -22,7 +22,7 @@ struct LogTableWidget::Private {
  */
 class LogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
-	RepositoryWrapperFrame *mainwindow() const
+	RepositoryWrapperFrame *frame() const
 	{
 		auto *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
 		Q_ASSERT(w);
@@ -49,9 +49,9 @@ private:
 	{
 		if (!opt.widget->isEnabled()) return;
 
-		Git::CommitItem const *commit = mainwindow()->commitItem(index.row());
+		Git::CommitItem const *commit = frame()->commitItem(index.row());
 		if (commit) {
-			QIcon icon = mainwindow()->verifiedIcon(commit->signature);
+			QIcon icon = frame()->verifiedIcon(commit->signature);
 			if (!icon.isNull()) {
 				QRect r = opt.rect.adjusted(6, 3, 0, -3);
 				int h = r.height();
@@ -68,7 +68,7 @@ private:
 		if (!opt.widget->isEnabled()) return;
 
 		int row = index.row();
-		QIcon icon = mainwindow()->committerIcon(row);
+		QIcon icon = frame()->committerIcon(row);
 		if (!icon.isNull()) {
 			int h = opt.rect.height();
 			int w = h;
@@ -85,7 +85,7 @@ private:
 	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
 	{
 		int row = index.row();
-		QList<BranchLabel> const *labels = mainwindow()->label(row);
+		QList<BranchLabel> const *labels = frame()->label(row);
 		if (labels) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
@@ -159,8 +159,6 @@ public:
 	{
 		MyTableWidgetDelegate::paint(painter, option, index);
 
-		RepositoryWrapperFrame *mw = mainwindow();
-
 		enum {
 			Graph,
 			CommitId,
@@ -176,7 +174,7 @@ public:
 
 		// コミット日時
 		if (index.column() == Date) {
-			Git::CommitItem const *commit = mw->commitItem(index.row());
+			Git::CommitItem const *commit = frame()->commitItem(index.row());
 			if (commit && commit->strange_date) {
 				QColor color(255, 0, 0, 128);
 				QRect r = option.rect.adjusted(1, 1, -1, -2);
@@ -191,7 +189,7 @@ public:
 
 		// ラベルの描画
 		if (index.column() == Message) {
-			QString current_branch = mw->currentBranchName();
+			QString current_branch = frame()->currentBranchName();
 			drawLabels(painter, option, index, current_branch);
 		}
 	}

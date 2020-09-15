@@ -3,6 +3,7 @@
 
 #include "BranchLabel.h"
 #include "Git.h"
+#include "GitObjectManager.h"
 
 #include <QFrame>
 
@@ -23,6 +24,14 @@ private:
 	FilesListWidget *unstagedfileslistwidget_ = nullptr;
 	FilesListWidget *stagesfileslistwidget_ = nullptr;
 	FileDiffWidget *filediffwidget_ = nullptr;
+
+	std::map<QString, QList<Git::Branch>> branch_map;
+	std::map<QString, QList<Git::Tag>> tag_map;
+	std::map<int, QList<BranchLabel>> label_map;
+	std::map<QString, Git::Diff> diff_cache;
+
+	GitObjectCache objcache;
+
 	MainWindow *mainwindow();
 	MainWindow const *mainwindow() const;
 public:

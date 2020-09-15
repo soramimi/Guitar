@@ -171,7 +171,7 @@ public:
 protected:
 	void run() override
 	{
-		result = mainwindow->findFileID(commit_id, file);
+		result = mainwindow->findFileID(mainwindow->frame(), commit_id, file);
 	}
 };
 
@@ -199,7 +199,7 @@ void FileHistoryWindow::updateDiffView()
 		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
+		QString id = mainwindow()->findFileID(mainwindow()->frame(), commit.commit_id, m->path);
 
 		Git::Diff diff(id, m->path, QString());
 		ui->widget_diff_view->updateDiffView(diff, false);

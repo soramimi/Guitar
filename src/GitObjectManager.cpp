@@ -23,7 +23,7 @@ void GitObjectManager::setup(GitPtr const &g)
 
 QString GitObjectManager::workingDir()
 {
-	return g->workingRepositoryDir();
+	return g->workingDir();
 }
 
 void GitObjectManager::loadIndexes()
