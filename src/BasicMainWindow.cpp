@@ -1731,6 +1731,9 @@ void MainWindow::execRepositoryPropertyDialog(RepositoryItem const &repo, bool o
 	if (dlg.isRemoteChanged()) {
 		emit remoteInfoChanged();
 	}
+    if (dlg.isNameChanged()) {
+        this->changeRepositoryBookmarkName(repo, dlg.getName());
+    }
 }
 
 void MainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
@@ -2605,6 +2608,12 @@ void MainWindow::saveRepositoryBookmark(RepositoryItem item)
 	}
 	saveRepositoryBookmarks();
 	updateRepositoriesList();
+}
+
+void MainWindow::changeRepositoryBookmarkName(RepositoryItem item, QString new_name)
+{
+    item.name = new_name;
+    saveRepositoryBookmark(item);
 }
 
 void MainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
