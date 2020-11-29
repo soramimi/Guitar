@@ -18,7 +18,7 @@ SetGpgSigningDialog::SetGpgSigningDialog(QWidget *parent, QString const &repo, Q
 {
 	ui->setupUi(this);
 
-	gpg::listKeys(global->gpg_command, &m->keys);
+	gpg::listKeys(global->appsettings.gpg_command, &m->keys);
 
 	m->global_key_id = global_key_id;
 	m->repository_key_id = repository_key_id;
@@ -97,7 +97,7 @@ QString SetGpgSigningDialog::mail() const
 
 void SetGpgSigningDialog::on_pushButton_select_clicked()
 {
-	gpg::listKeys(global->gpg_command, &m->keys);
+	gpg::listKeys(global->appsettings.gpg_command, &m->keys);
 	SelectGpgKeyDialog dlg(this, m->keys);
 	if (dlg.exec() == QDialog::Accepted) {
 		gpg::Data key = dlg.key();

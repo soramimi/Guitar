@@ -39,7 +39,7 @@ void CommitPropertyDialog::init(MainWindow *mw, RepositoryWrapperFrame *frame)
 	int n1 = m->commit.fingerprint.size();
 	if (n1 > 0) {
 		QList<gpg::Data> keys;
-		if (gpg::listKeys(global->gpg_command, &keys)) {
+		if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
 			for (gpg::Data const &k : keys) {
 				int n2 = k.fingerprint.size();
 				if (n2 > 0) {
