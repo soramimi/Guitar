@@ -1,9 +1,9 @@
 #include "ColorButton.h"
 
-#include <ColorDialog.h>
 #include <QPainter>
 #include <QProxyStyle>
 #include <QStyleOption>
+#include "coloredit/ColorDialog.h"
 #include "common/misc.h"
 
 ColorButton::ColorButton(QWidget *parent)
