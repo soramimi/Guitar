@@ -39,7 +39,7 @@
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <coloredit/ColorDialog.h>
+#include "coloredit/ColorDialog.h"
 
 
 
