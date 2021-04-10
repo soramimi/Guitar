@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>375</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -262,6 +262,17 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>lineEdit_name</tabstop>
+  <tabstop>pushButton_edit_name</tabstop>
+  <tabstop>lineEdit_local_dir</tabstop>
+  <tabstop>tableWidget</tabstop>
+  <tabstop>pushButton_remote_add</tabstop>
+  <tabstop>pushButton_remote_edit</tabstop>
+  <tabstop>pushButton_remote_remove</tabstop>
+  <tabstop>pushButton_remote_menu</tabstop>
+  <tabstop>pushButton_close</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

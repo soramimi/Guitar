@@ -1,6 +1,7 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
 #include "MainWindow.h"
+#include "BasicRepositoryDialog.h"
 #include "common/misc.h"
 #include <QClipboard>
 #include <QMenu>
@@ -25,6 +26,8 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Cont
     ui->lineEdit_name->setText(repository.name);
     ui->lineEdit_name->setVisible(false);
     ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
+
+	ui->pushButton_close->setFocus();
 
 	updateRemotesTable();
 }
@@ -180,24 +183,40 @@ void RepositoryPropertyDialog::on_pushButton_remote_menu_clicked()
 	toggleRemoteMenuActivity();
 }
 
+
+void RepositoryPropertyDialog::setNameEditMode(bool f)
+{
+	ui->lineEdit_name->setVisible(f);
+	ui->label_editable_name->setVisible(!f);
+	ui->pushButton_edit_name->setText(f ? tr("Save") : tr("Edit Name"));
+	if (f) {
+		ui->lineEdit_name->setText(repository.name);
+		ui->lineEdit_name->setFocus();
+	} else {
+		if (!ui->lineEdit_name->text().isEmpty()) {
+			repository.name = ui->lineEdit_name->text();
+			ui->label_editable_name->setText(repository.name);
+			name_changed = true;
+		}
+		ui->pushButton_close->setFocus();
+	}
+}
+
+bool RepositoryPropertyDialog::isNameEditMode() const
+{
+	return ui->lineEdit_name->isVisible();
+}
+
 void RepositoryPropertyDialog::on_pushButton_edit_name_clicked()
 {
-    if (ui->pushButton_edit_name->text() == "Edit Name")
-    {
-        ui->pushButton_edit_name->setText("Save");
-        ui->label_editable_name->setVisible(false);
-        ui->lineEdit_name->setVisible(true);
-    }
-    else
-    {
-        if (!ui->lineEdit_name->text().isEmpty())
-        {
-            name_changed = true;
-            repository.name = ui->lineEdit_name->text();
-            ui->label_editable_name->setText(ui->lineEdit_name->text());
-            ui->pushButton_edit_name->setText("Edit Name");
-            ui->label_editable_name->setVisible(true);
-            ui->lineEdit_name->setVisible(false);
-        }
-    }
+	setNameEditMode(!isNameEditMode());
+}
+
+void RepositoryPropertyDialog::reject()
+{
+	if (isNameEditMode()) {
+		setNameEditMode(false);
+	} else {
+		BasicRepositoryDialog::reject();
+	}
 }
