@@ -310,6 +310,7 @@ private:
 //	static int getHunkIndex(QListWidgetItem *item);
 	static void updateSubmodules(GitPtr g, const QString &id, QList<Git::SubmoduleItem> *out);
 	void saveRepositoryBookmark(RepositoryItem item);
+    void changeRepositoryBookmarkName(RepositoryItem item, QString new_name);
 	int rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id);
 	QList<Git::Tag> findTag(RepositoryWrapperFrame *frame, const QString &id);
 	void sshSetPassphrase(const std::string &user, const std::string &pass);
