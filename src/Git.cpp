@@ -1117,7 +1117,7 @@ QString Git::getMessage(QString const &id)
 	return resultText().trimmed();
 }
 
-void Git::mergeBranch(QString const &name, MergeFastForward ff)
+void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 {
 	QString cmd = "merge ";
 	switch (ff) {
@@ -1130,6 +1130,9 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff)
 	default:
 		cmd += "--ff ";
 		break;
+	}
+	if (squash) {
+		cmd += "--squash ";
 	}
 	git(cmd + name);
 }

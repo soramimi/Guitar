@@ -178,8 +178,8 @@ private:
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
 	void revertCommit(RepositoryWrapperFrame *frame);
-	void mergeBranch(const QString &commit, Git::MergeFastForward ff);
-	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff);
+	void mergeBranch(const QString &commit, Git::MergeFastForward ff, bool squash);
+	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff, bool squash);
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
 	void merge(RepositoryWrapperFrame *frame, const Git::CommitItem *commit = nullptr);
