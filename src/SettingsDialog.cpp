@@ -91,15 +91,15 @@ public:
 //	}
 };
 
-template <typename T> void operator << (SetValue<T> const &l, T const &r) // 左辺をconstにしないとビルドが通らない
+template <typename T> void operator << (SetValue<T> &&l, T const &r)
 {
-	const_cast<SetValue<T> *>(&l)->settings.setValue(l.name, r);
+	l.settings.setValue(l.name, r);
 }
 
-template <> void operator << (SetValue<QColor> const &l, QColor const &r)
+template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 {
 	QString s = QString::asprintf("#%02x%02x%02x", r.red(), r.green(), r.blue());
-	const_cast<SetValue<QColor> *>(&l)->settings.setValue(l.name, s);
+	l.settings.setValue(l.name, s);
 }
 
 } // namespace
@@ -117,6 +117,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	GetValue<QString>(s, "FileCommand")                      >> as->file_command;
 	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
 	GetValue<QString>(s, "SshCommand")                       >> as->ssh_command;
+	GetValue<QString>(s, "TerminalCommand")                  >> as->terminal_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
@@ -155,6 +156,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	SetValue<QString>(s, "FileCommand")                      << as->file_command;
 	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
 	SetValue<QString>(s, "SshCommand")                       << as->ssh_command;
+	SetValue<QString>(s, "TerminalCommand")                  << as->terminal_command;
 	s.endGroup();
 
 	s.beginGroup("UI");

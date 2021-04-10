@@ -41,6 +41,12 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	s.branch_label_color.remote = QColor(192, 240, 224); // green
 	s.branch_label_color.tag = QColor(255, 224, 192); // orange
 
+#ifndef __HAIKU__
+	s.terminal_command = "x-terminal-emulator";
+#else
+	s.terminal_command = "Terminal";
+#endif
+
 	return s;
 }
 
