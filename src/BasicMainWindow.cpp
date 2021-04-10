@@ -2450,7 +2450,9 @@ void MainWindow::openExplorer(RepositoryItem const *repo)
 		cmd = cmd.arg(dir);
 		QProcess::execute(cmd);
 #else
-		QDesktopServices::openUrl(dir);
+		QString url = QString::fromLatin1(QUrl::toPercentEncoding(dir));
+		url = "file://" + url.replace("%2F", "/");
+		QDesktopServices::openUrl(url);
 #endif
 	}, repo);
 }
