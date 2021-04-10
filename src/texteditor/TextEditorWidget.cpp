@@ -17,6 +17,8 @@
 #include "InputMethodPopup.h"
 #include "unicode.h"
 
+#define PROPORTIONAL_FONT_SUPPORT 0
+
 class CharacterSize {
 private:
 	QFont font_;
@@ -78,15 +80,12 @@ public:
 };
 
 struct TextEditorWidget::Private {
-	TextEditorWidget::RenderingMode rendering_mode = TextEditorWidget::CharacterMode;
 	PreEditText preedit;
 	QFont text_font;
 	InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
 	CharacterSize character_size;
-//	int latin1_width_ = 0;
-//	int line_height_ = 0;
 	int ascent = 0;
 	int descent = 0;
 
@@ -110,8 +109,15 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	, m(new Private)
 {
 #ifdef Q_OS_WIN
+
+
+#if PROPORTIONAL_FONT_SUPPORT
+	setTextFont(QFont("MS PGothic", 30));
+#else
 	setTextFont(QFont("MS Gothic", 10));
-//	setTextFont(QFont("MS PGothic", 16));
+#endif
+
+
 #endif
 #ifdef Q_OS_LINUX
 	setTextFont(QFont("Monospace", 9));
@@ -131,9 +137,6 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	QFontMetrics fm = pr.fontMetrics();
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
-//	m->latin1_width = fm.width('l');
-//	m->line_height_ = m->ascent + m->descent + m->top_margin + m->bottom_margin;
-//	qDebug() << latin1Width() << fm.width("\xe3\x80\x93"); // GETA MARK
 
 	initEditor();
 
@@ -141,9 +144,9 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 
 	setAttribute(Qt::WA_InputMethodEnabled);
 #ifdef Q_OS_WIN
-	m->ime_popup = new InputMethodPopup();
-	m->ime_popup->setFont(font());
-	m->ime_popup->setPreEditText(PreEditText());
+//	m->ime_popup = new InputMethodPopup();
+//	m->ime_popup->setFont(font());
+//	m->ime_popup->setPreEditText(PreEditText());
 #endif
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
@@ -151,6 +154,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	setRenderingMode(DecoratedMode);
 
 	updateCursorRect(true);
+
+	setScrollUnit(ScrollByCharacter);
 
 	startTimer(100);
 }
@@ -181,18 +186,13 @@ void TextEditorWidget::setTextFont(QFont const &font)
 
 void TextEditorWidget::setRenderingMode(RenderingMode mode)
 {
-	m->rendering_mode = mode;
-	if (m->rendering_mode == DecoratedMode) {
+	rendering_mode = mode;
+	if (rendering_mode == DecoratedMode) {
 		showLineNumber(false);
 	} else {
 		showLineNumber(true);
 	}
 	update();
-}
-
-TextEditorWidget::RenderingMode TextEditorWidget::renderingMode() const
-{
-	return m->rendering_mode;
 }
 
 void AbstractCharacterBasedApplication::loadExampleFile()
@@ -232,48 +232,86 @@ int TextEditorWidget::defaultCharWidth() const
 //	return charWidth2('W');
 }
 
-int TextEditorWidget::parseLine3(int row, std::vector<Char> *vec) const
-{
-	int index = parseLine2(row, vec);
+class chars : public abstract_unicode_reader {
+private:
+	TextEditorWidget::Char const *ptr;
+	size_t len;
+	size_t pos = 0;
+public:
+	chars(TextEditorWidget::Char const *ptr, size_t len)
+		: ptr(ptr)
+		, len(len)
 	{
-		int pos = 0;
-		for (int i = 0; i < (int)vec->size(); i++) {
-			vec->at(i).pos = pos;
-			pos += m->character_size.width(vec->at(i).unicode);
-		}
 	}
-	return index;
+	virtual uint32_t next() override
+	{
+		if (pos < len) {
+			return ptr[pos++].unicode;
+		}
+		return 0;
+	}
+};
+
+int TextEditorWidget::parseLine3(int row, int col, std::vector<Char> *vec) const
+{
+	parseLine2(row, vec);
+	QPixmap pm(1, 1);
+	QPainter pr(&pm);
+	pr.setFont(m->text_font);
+	int pos = 0;
+	QString s;
+	for (size_t i = 0; i < vec->size(); i++) {
+		vec->at(i).pos = pos;
+		ushort tmp[3];
+		uint32_t u = vec->at(i).unicode;
+		if (u >= 0x10000 && u < 0x110000) {
+			// サロゲートペア
+			uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
+			uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
+			tmp[0] = h;
+			tmp[1] = l;
+			tmp[2] = 0;
+		} else {
+			tmp[0] = u;
+			tmp[1] = 0;
+		}
+		s += QString::fromUtf16(tmp);
+		pos = pr.fontMetrics().size(0, s).width();
+	}
+	if (vec->empty()) {
+		pos = 0;
+	} else if (col >= 0 && col < (int)vec->size()) {
+		pos = vec->at(col).pos;
+	} else {
+		pos = pos;
+	}
+	return pos;
 }
 
 QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
 {
-	if (1) {
-//		int x = pt.x() / defaultCharWidth();
-		int y = pt.y() / lineHeight();
-		int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-		int w = defaultCharWidth();
-		int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
-//		int x   = pt.x() + cx()->scroll_col_pos - cx()->viewport_org_x;
-		std::vector<Char> vec;
-		parseLine3(row, &vec);
-//		{
-//			int pos = 0;
-//			for (int i = 0; i < (int)vec.size(); i++) {
-//				vec[i].pos = pos;
-//				pos += m->character_size.width(vec[i].unicode);
-//			}
-//		}
-		for (int col = 0; col + 1 < (int)vec.size(); col++) {
-			if (x < vec[col + 1].pos) {
+//	const int col = cx()->current_col;
+	const int y = pt.y() / lineHeight();
+	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
+	const int w = defaultCharWidth();
+	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
+	std::vector<Char> vec;
+	int end = parseLine3(row, -1, &vec);
+	int left = 0;
+	for (int col = 0; col < (int)vec.size(); col++) {
+		int right = (col + 1 < (int)vec.size()) ? vec[col + 1].pos : end;
+		if (x < right) {
+			int l = left - x;
+			int r = right - x;
+			if (l * l < r * r) {
 				return QPoint(col, row);
+			} else {
+				return QPoint(col + 1, row);
 			}
 		}
-		return QPoint(vec.size(), row);
+		left = right;
 	}
-
-	int x = pt.x() / defaultCharWidth();
-	int y = pt.y() / lineHeight();
-	return QPoint(x, y);
+	return QPoint(end, row);
 }
 
 QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
@@ -333,8 +371,8 @@ void TextEditorWidget::internalUpdateScrollBar()
 	if (sb) {
 		int w = editorViewportWidth();
 		sb->blockSignals(true);
-		sb->setRange(0, w + 100);
-		sb->setPageStep(w);
+		sb->setRange(0, (w + 100) * reference_char_width_);
+		sb->setPageStep(w * reference_char_width_);
 		sb->setValue(cx()->scroll_col_pos);
 		sb->blockSignals(false);
 	}
@@ -380,13 +418,13 @@ void TextEditorWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, 
 	}
 }
 
-void TextEditorWidget::setPreEditText(const PreEditText &preedit)
-{
-	m->preedit = preedit;
-	update();
-}
+//void TextEditorWidget::setPreEditText(const PreEditText &preedit)
+//{
+//	m->preedit = preedit;
+//	update();
+//}
 
-QFont TextEditorWidget::textFont()
+QFont TextEditorWidget::textFont() const
 {
 	return m->text_font;
 }
@@ -483,9 +521,6 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 				x3 += defaultCharWidth();
 			} else if (!text.empty()) {
 				QString str = QString::fromUtf16(&text[0], text.size());
-//				if (str.startsWith("#include")) {
-//					qDebug() << str;
-//				}
 				int px = x * defaultCharWidth();
 				int py = y * lineHeight();
 				px = x2;
@@ -506,37 +541,43 @@ void TextEditorWidget::paintScreen(QPainter *painter)
 	}
 }
 
-void TextEditorWidget::drawCursor(QPainter *pr)
-{
-	int col = cx()->viewport_org_x + cursorX();
-	int row = cx()->viewport_org_y + cursorY();
-	if (col < cx()->viewport_org_x || col >= cx()->viewport_org_x + cx()->viewport_width) return;
-	if (row < cx()->viewport_org_y || row >= cx()->viewport_org_y + cx()->viewport_height) return;
-	int h = lineHeight();
-	int x = col * defaultCharWidth();
-	int y = row * h;
-	{
-		col = cursorX();
-		std::vector<Char> vec;
-		parseLine3(row, &vec);
-		if (vec.empty()) {
-			x = 0;
-		} else if (col >= 0 && col < vec.size()) {
-			x = vec[col].pos;
-		} else {
-			x = vec.back().pos;
-		}
-	}
-	x += cx()->viewport_org_x * defaultCharWidth();
-	pr->fillRect(x -1, y, 2, h, theme()->fgCursor());
-	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
-	pr->fillRect(x - 2, y + h - 2, 4, 2, theme()->fgCursor());
-}
-
 void TextEditorWidget::drawFocusFrame(QPainter *pr)
 {
 	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
 	misc::drawFrame(pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
+}
+
+void TextEditorWidget::setScrollUnit(int n)
+{
+	scroll_unit_ = n;
+}
+
+int TextEditorWidget::scrollUnit() const
+{
+	return scroll_unit_;
+}
+
+int TextEditorWidget::xScrollPosInPixel()
+{
+	int u = scrollUnit();
+	int n = editor_cx->scroll_col_pos;
+	n *= (u == ScrollByCharacter) ? defaultCharWidth() : u;
+	return n;
+}
+
+void TextEditorWidget::drawCursor(QPainter *pr)
+{
+	std::vector<Char> vec;
+	int row = cursorY() + cx()->scroll_row_pos - cx()->viewport_org_y;
+	const int col = cx()->current_col;
+	int x = parseLine3(row, col, &vec);
+	x += cx()->viewport_org_x * defaultCharWidth();
+	x -= xScrollPosInPixel();
+	const int lineheight = lineHeight();
+	const int y = (cx()->viewport_org_y + cursorY()) * lineheight;
+	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
+	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
+	pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
 }
 
 void TextEditorWidget::paintEvent(QPaintEvent *)
@@ -574,25 +615,49 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		return context->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
 	};
 
-
+	// カーソル描画
 	if (has_focus) {
 		if (isCursorVisible()) {
-			// current line
+			// 現在行の下線
 			if (renderingMode() == DecoratedMode) {
 				int x = cx()->viewport_org_x * defaultCharWidth();
 				int y = visualY(cx()) * lineHeight();
 				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
 				pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
 			}
-			int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
+			// カーソル
 			drawCursor(&pr);
 		}
 	}
 
-	paintScreen(&pr);
+	int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
 
+	// テキスト描画
 	if (renderingMode() == DecoratedMode) {
-		int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
+		int view_row = 0;
+		int line_row = editor_cx->scroll_row_pos;
+		int lh = lineHeight();
+		pr.save();
+		pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
+		while (isValidRowIndex(line_row)) {
+			int x = linenum_width - xScrollPosInPixel();
+			int y = view_row * lh;
+			if (y >= height()) break;
+			QList<FormattedLine> fline = formatLine2(line_row);
+			for (FormattedLine const &fl : fline) {
+				pr.setPen(defaultForegroundColor());
+				pr.drawText(QRect(x, y, width() - linenum_width, lh), fl.text);
+			}
+			view_row++;
+			line_row++;
+		}
+		pr.restore();
+	} else {
+		paintScreen(&pr);
+	}
+
+	// 行番号描画
+	if (renderingMode() == DecoratedMode) {
 		auto FillLineNumberBG = [&](int y, int h, QColor color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};
@@ -637,6 +702,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 		}
 	}
 
+	// フォーカス枠描画
 	if (m->is_focus_frame_visible && has_focus) {
 		drawFocusFrame(&pr);
 	}
@@ -740,13 +806,13 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 		}
 	}
 	if (preedit.text.isEmpty()) {
-		m->ime_popup->hide();
+//		m->ime_popup->hide();
 	} else {
 		QPoint pt = mapToGlobal(cx()->cursor_rect.topLeft());
-		m->ime_popup->move(pt);
-		m->ime_popup->setFont(font());
-		m->ime_popup->setPreEditText(preedit);
-		m->ime_popup->show();
+//		m->ime_popup->move(pt);
+//		m->ime_popup->setFont(font());
+//		m->ime_popup->setPreEditText(preedit);
+//		m->ime_popup->show();
 	}
 #endif
 //	qDebug() << e->preeditString() << e->commitString();

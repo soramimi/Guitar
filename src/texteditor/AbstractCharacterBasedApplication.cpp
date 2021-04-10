@@ -81,8 +81,8 @@ struct AbstractCharacterBasedApplication::Private {
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int header_line = 1;
-	int footer_line = 1;
+	int header_line = 0;
+	int footer_line = 0;
 	int screen_width = 80;
 	int screen_height = 24;
 	bool auto_layout = false;
@@ -405,6 +405,21 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	return res;
 }
 
+bool AbstractCharacterBasedApplication::isValidRowIndex(int row_index) const
+{
+	return row_index >= 0 && row_index < engine()->document.lines.size();
+}
+
+QList<AbstractCharacterBasedApplication::FormattedLine> AbstractCharacterBasedApplication::formatLine2(int row_index) const
+{
+	QList<FormattedLine> formatted_lines;
+	if (isValidRowIndex(row_index)) {
+		Document::Line const *line = &engine()->document.lines[row_index];
+		formatted_lines = formatLine(*line, cx()->tab_span);
+	}
+	return formatted_lines;
+}
+
 QByteArray AbstractCharacterBasedApplication::fetchLine(int row) const
 {
 	QByteArray line;
@@ -645,7 +660,7 @@ const TextEditorContext *AbstractCharacterBasedApplication::cx() const
 	return const_cast<AbstractCharacterBasedApplication *>(this)->cx();
 }
 
-TextEditorEnginePtr AbstractCharacterBasedApplication::engine()
+TextEditorEnginePtr AbstractCharacterBasedApplication::engine() const
 {
 	Q_ASSERT(cx()->engine);
 	return cx()->engine;
@@ -795,10 +810,12 @@ int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &lin
 				break;
 			}
 			if (c == '\t') {
-				x += cx()->tab_span;
-				x -= x % cx()->tab_span;
+//				x += cx()->tab_span;
+//				x -= x % cx()->tab_span;
+				x++;
 			} else {
-				x += charWidth(c);
+//				x += charWidth(c);
+				x++;
 			}
 		}
 	}
@@ -832,12 +849,13 @@ int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<Char>
 	int col = 0;
 	for (int i = 0; i < index; i++) {
 		uint32_t c = vec.at(i).unicode;
-		if (c == '\t') {
-			col += cx()->tab_span;
-			col -= col % cx()->tab_span;
-		} else {
-			col += charWidth(c);
-		}
+//		if (c == '\t') {
+//			col += cx()->tab_span;
+//			col -= col % cx()->tab_span;
+//		} else {
+//			col += charWidth(c);
+//		}
+		col++;
 	}
 	return col;
 }
@@ -1476,9 +1494,11 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 		}
 		newcol = col;
 		if (c == '\t') {
-			col = nextTabStop(col);
+//			col = nextTabStop(col);
+			col++;
 		} else {
-			col += charWidth(c);
+//			col += charWidth(c);
+			col++;
 		}
 		if (col >= cx()->current_col) {
 			break;
@@ -1524,9 +1544,11 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 			break;
 		}
 		if (c == '\t') {
-			col = nextTabStop(col);
+//			col = nextTabStop(col);
+			col++;
 		} else {
-			col += charWidth(c);
+//			col += charWidth(c);
+			col++;
 		}
 		if (col > cx()->current_col) {
 			break;
@@ -1587,7 +1609,8 @@ void AbstractCharacterBasedApplication::movePageDown()
 void AbstractCharacterBasedApplication::scrollRight()
 {
 	if (cx()->scroll_col_pos > 0) {
-		cx()->scroll_col_pos--;
+//		cx()->scroll_col_pos--;
+		cx()->scroll_col_pos -= reference_char_width_;
 	} else {
 		cx()->scroll_col_pos = 0;
 	}
@@ -1598,7 +1621,8 @@ void AbstractCharacterBasedApplication::scrollRight()
 
 void AbstractCharacterBasedApplication::scrollLeft()
 {
-	cx()->scroll_col_pos++;
+//	cx()->scroll_col_pos++;
+	cx()->scroll_col_pos += reference_char_width_;
 	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, true, true);
@@ -1677,9 +1701,11 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 		}
 		if (c == '\t') {
 			int z = nextTabStop(x);
-			n = z - x;
+//			n = z - x;
+			n = 1;
 		} else {
-			n = charWidth(c);
+//			n = charWidth(c);
+			n = 1;
 		}
 		x += n;
 	}
@@ -2255,7 +2281,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 
 	std::vector<Char> *vec = &m->prepared_current_line;
 
-	auto WriteChar = [&](ushort c){
+	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
 			vec->insert(vec->begin() + index, Char(c, 0));
 		} else if (isOverwriteMode()) {

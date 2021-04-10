@@ -31,10 +31,6 @@ struct PreEditText {
 class TextEditorWidget : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
-	enum RenderingMode {
-		CharacterMode,
-		DecoratedMode,
-	};
 private:
 	struct Private;
 	Private *m;
@@ -43,7 +39,6 @@ private:
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
 	QRect updateCursorRect(bool auto_scroll);
-	RenderingMode renderingMode() const;
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
@@ -51,8 +46,10 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
+	int parseLine3(int row, int col, std::vector<Char> *vec) const;
+	int xScrollPosInPixel();
+public:
 	int defaultCharWidth() const;
-	int parseLine3(int row, std::vector<Char> *vec) const;
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;
@@ -61,7 +58,7 @@ protected:
 	void wheelEvent(QWheelEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
 	void contextMenuEvent(QContextMenuEvent *event) override;
-	QFont textFont();
+	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
 public:
 	explicit TextEditorWidget(QWidget *parent = nullptr);
@@ -73,7 +70,7 @@ public:
 	int charWidth2(unsigned int c) const;
 	int lineHeight() const;
 
-	void setPreEditText(PreEditText const &preedit);
+//	void setPreEditText(PreEditText const &preedit);
 
 	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) override;
 
@@ -94,6 +91,12 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
+	enum ScrollUnit {
+		ScrollByCharacter = 0,
+	};
+	int scroll_unit_ = ScrollByCharacter;
+	void setScrollUnit(int n);
+	int scrollUnit() const;
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

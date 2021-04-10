@@ -149,6 +149,11 @@ using DialogHandler = std::function<void (bool, QString const &)>;
 
 class AbstractCharacterBasedApplication {
 public:
+	enum RenderingMode {
+		CharacterMode,
+		DecoratedMode,
+	};
+
 	static const int LEFT_MARGIN = 8;
 	static const int RIGHT_MARGIN = 10;
 
@@ -238,12 +243,15 @@ public:
 	};
 
 	QList<FormattedLine> formatLine(const Document::Line &line, int tab_span, int anchor_a = -1, int anchor_b = -1) const;
+	QList<FormattedLine> formatLine2(int row_index) const;
+
 private:
 	struct Private;
 	Private *m;
 protected:
 	SelectionAnchor selection_anchor_0;
 	SelectionAnchor selection_anchor_1;
+	int reference_char_width_ = 1;
 protected:
 
 	std::vector<Character> *char_screen();
@@ -355,6 +363,12 @@ protected:
 	void savePos();
 	void restorePos();
 public:
+	RenderingMode rendering_mode = CharacterMode;
+	RenderingMode renderingMode() const
+	{
+		return rendering_mode;
+	}
+
 	virtual void layoutEditor();
 	void scrollUp();
 	void scrollDown();
@@ -371,7 +385,7 @@ public:
 
 	AbstractCharacterBasedApplication();
 	virtual ~AbstractCharacterBasedApplication();
-	TextEditorEnginePtr engine();
+	TextEditorEnginePtr engine() const;
 	int screenWidth() const;
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
@@ -425,6 +439,7 @@ protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
+	bool isValidRowIndex(int row_index) const;
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

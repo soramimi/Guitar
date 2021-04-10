@@ -1,9 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "texteditor/InputMethodPopup.h"
+//#include "texteditor/InputMethodPopup.h"
 
 #include <QMainWindow>
+#include "texteditor/AbstractCharacterBasedApplication.h"
 
 namespace Ui {
 class MainWindow;
