@@ -1,0 +1,2 @@
+#include "coloredit/ColorSlider.h"
+

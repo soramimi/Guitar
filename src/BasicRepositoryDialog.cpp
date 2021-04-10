@@ -1,15 +1,15 @@
 #include "BasicRepositoryDialog.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include <QTableWidget>
 #include <QHeaderView>
 
 struct BasicRepositoryDialog::Private {
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	GitPtr git;
 	QList<Git::Remote> remotes;
 };
 
-BasicRepositoryDialog::BasicRepositoryDialog(BasicMainWindow *mainwindow, GitPtr const &g)
+BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr const &g)
 	: QDialog(mainwindow)
 	, m(new Private)
 {
@@ -26,7 +26,7 @@ BasicRepositoryDialog::~BasicRepositoryDialog()
 	delete m;
 }
 
-BasicMainWindow *BasicRepositoryDialog::mainwindow()
+MainWindow *BasicRepositoryDialog::mainwindow()
 {
 	return m->mainwindow;
 }
@@ -41,14 +41,25 @@ QList<Git::Remote> const *BasicRepositoryDialog::remotes() const
 	return &m->remotes;
 }
 
-QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
+void BasicRepositoryDialog::getRemotes_()
 {
-	tablewidget->clear();
-	m->remotes.clear();
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
 		g->getRemoteURLs(&m->remotes);
 	}
+}
+
+void BasicRepositoryDialog::setSshKey_(QString const &sshkey)
+{
+	m->git->setSshKey(sshkey);
+}
+
+
+QString BasicRepositoryDialog::updateRemotesTable(QTableWidget *tablewidget)
+{
+	tablewidget->clear();
+	m->remotes.clear();
+	getRemotes_();
 	QString url;
 	QString alturl;
 	int rows = m->remotes.size();

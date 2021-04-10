@@ -52,20 +52,28 @@ public:
 		}
 	};
 
-	struct DrawData {
-		int v_scroll_pos = 0;
-		int h_scroll_pos = 0;
-		int char_width = 0;
-		int line_height = 0;
-		QColor bgcolor_text;
-		QColor bgcolor_add;
-		QColor bgcolor_del;
-		QColor bgcolor_add_dark;
-		QColor bgcolor_del_dark;
-		QColor bgcolor_gray;
-		QWidget *forcus = nullptr;
-		DrawData();
-	};
+//	struct DrawData {
+//		int v_scroll_pos = 0;
+//		int h_scroll_pos = 0;
+//		int char_width = 0;
+//		int line_height = 0;
+//		QColor bgcolor_text;
+//		QColor bgcolor_add;
+//		QColor bgcolor_del;
+//		QColor bgcolor_add_dark;
+//		QColor bgcolor_del_dark;
+//		QColor bgcolor_gray;
+//		QWidget *forcus = nullptr;
+//		DrawData()
+//		{
+//			bgcolor_text = QColor(255, 255, 255);
+//			bgcolor_gray = QColor(224, 224, 224);
+//			bgcolor_add = QColor(192, 240, 192);
+//			bgcolor_del = QColor(255, 224, 224);
+//			bgcolor_add_dark = QColor(64, 192, 64);
+//			bgcolor_del_dark = QColor(240, 64, 64);
+//		}
+//	};
 
 	enum ViewStyle {
 		None,
@@ -118,9 +126,10 @@ private:
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
 	void refrectScrollBar();
-	void setOriginalLines_(QByteArray const &ba);
+	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
 	QString diffObjects(const GitPtr &g, QString const &a_id, QString const &b_id);
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
+	bool setSubmodule(const Git::Diff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
@@ -128,7 +137,7 @@ public:
 	explicit FileDiffWidget(QWidget *parent = nullptr);
 	~FileDiffWidget() override;
 
-	void bind(BasicMainWindow *mw);
+	void bind(MainWindow *mw);
 
 	void clearDiffView();
 

@@ -1,5 +1,5 @@
 #include "Terminal.h"
-
+#include "ApplicationGlobal.h"
 #include <QFileInfo>
 
 #ifdef Q_OS_WIN
@@ -36,19 +36,7 @@ void Terminal::open(QString const &dir)
 void Terminal::open(QString const &dir)
 {
 	if (dir.indexOf('\"') < 0 && QFileInfo(dir).isDir()) {
-		auto GetTerm = [&](std::vector<char const *> const &vec){
-			#ifndef __HAIKU__
-				for (char const *name : vec) {
-					char const *p = getenv(name);
-					if (p && *p) return p;
-				}
-				return "x-terminal-emulator";
-			#else
-				return "Terminal";
-			#endif
-		};
-		QString term = GetTerm({"COLORTERM", "TERM"});
-
+		QString term = global->appsettings.terminal_command;
 		QString cmd = "/bin/sh -c \"cd \\\"%1\\\" && %2\" &";
 		cmd = cmd.arg(dir).arg(term);
 		int r = system(cmd.toStdString().c_str());

@@ -43,10 +43,13 @@ void SetRemoteUrlDialog::accept()
 	if (g->isValidWorkingCopy()) {
 		QString rem = ui->lineEdit_name->text();
 		QString url = ui->lineEdit_url->text();
+		Git::Remote r;
+		r.name = rem;
+		r.url = url;
 		if (remotes.contains(rem)) {
-			g->setRemoteURL(rem, url);
+			g->setRemoteURL(r);
 		} else {
-			g->addRemoteURL(rem, url);
+			g->addRemoteURL(r);
 		}
 		updateRemotesTable();
 	}
@@ -56,7 +59,7 @@ void SetRemoteUrlDialog::accept()
 void SetRemoteUrlDialog::on_pushButton_test_clicked()
 {
 	QString url = ui->lineEdit_url->text();
-	mainwindow()->testRemoteRepositoryValidity(url);
+	mainwindow()->testRemoteRepositoryValidity(url, {});
 }
 
 

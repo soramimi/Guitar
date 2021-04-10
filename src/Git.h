@@ -56,6 +56,7 @@ public:
 	class Context {
 	public:
 		QString git_command;
+		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 	};
 
 	struct Object {
@@ -72,6 +73,35 @@ public:
 		Type type = Type::UNKNOWN;
 		QByteArray content;
 	};
+
+	struct SubmoduleItem {
+		QString name;
+		QString id;
+		QString path;
+		QString refs;
+		QString url;
+		operator bool () const
+		{
+			return isValidID(id) && !path.isEmpty();
+		}
+	};
+
+	struct CommitItem {
+		QString commit_id;
+		QStringList parent_ids;
+		QString author;
+		QString email;
+		QString message;
+		QDateTime commit_date;
+		std::vector<TreeLine> parent_lines;
+		QByteArray fingerprint;
+		char signature = 0; // git log format:%G?
+		bool has_child = false;
+		int marker_depth = -1;
+		bool resolved =  false;
+		bool strange_date = false;
+	};
+	using CommitItemList = std::vector<CommitItem>;
 
 	class Hunk {
 	public:
@@ -100,10 +130,18 @@ public:
 			QString b_id;
 		} blob;
 		QList<Hunk> hunks;
+		struct SubmoduleDetail {
+			Git::SubmoduleItem item;
+			Git::CommitItem commit;
+		} a_submodule, b_submodule;
 		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
 		{
 			makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
+		}
+		bool isSubmodule() const
+		{
+			return mode == "160000";
 		}
 	private:
 		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
@@ -139,23 +177,6 @@ public:
 		}
 		return SignatureGrade::Unknown;
 	}
-
-	struct CommitItem {
-		QString commit_id;
-		QStringList parent_ids;
-		QString author;
-		QString email;
-		QString message;
-		QDateTime commit_date;
-		std::vector<TreeLine> parent_lines;
-		QByteArray fingerprint;
-		char signature = 0; // git log format:%G?
-		bool has_child = false;
-		int marker_depth = -1;
-		bool resolved =  false;
-		bool strange_date = false;
-	};
-	using CommitItemList = std::vector<CommitItem>;
 
 	static bool isUncommited(CommitItem const &item)
 	{
@@ -318,7 +339,7 @@ private:
 	Git();
 	QString encodeQuotedText(QString const &str);
 public:
-	Git(Context const &cx, QString const &repodir);
+	Git(Context const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
 	 ~Git() override;
 
@@ -327,7 +348,7 @@ public:
 	void setLogCallback(callback_t func, void *cookie);
 
 	QByteArray toQByteArray() const;
-	void setGitCommand(QString const &path);
+	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
 	QString gitCommand() const;
 	void clearResult();
 	QString resultText() const;
@@ -338,8 +359,10 @@ public:
 		return git(arg, true);
 	}
 
-	void setWorkingRepositoryDir(QString const &repo);
-	QString const &workingRepositoryDir() const;
+	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);
+	QString workingDir() const;
+	QString const &sshKey() const;
+	void setSshKey(const QString &sshkey) const;
 
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy() const;
@@ -394,6 +417,7 @@ public:
 		QString name;
 		QString url;
 		QString purpose;
+		QString ssh_key;
 	};
 
 	QList<DiffRaw> diff_raw(QString const &old_id, QString const &new_id);
@@ -408,7 +432,7 @@ public:
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
-	void mergeBranch(QString const &name, MergeFastForward ff);
+	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);
 	void rebaseBranch(QString const &name);
 	static bool isValidWorkingCopy(QString const &dir);
 	QString diff_to_file(QString const &old_id, QString const &path);
@@ -420,8 +444,8 @@ public:
 	QList<Tag> tags2();
 	bool tag(QString const &name, QString const &id = QString());
 	void delete_tag(QString const &name, bool remote);
-	void setRemoteURL(QString const &name, QString const &url);
-	void addRemoteURL(QString const &name, QString const &url);
+	void setRemoteURL(const Remote &remote);
+	void addRemoteURL(const Remote &remote);
 	void removeRemote(QString const &name);
 	QStringList getRemotes();
 
@@ -490,8 +514,20 @@ public:
 	bool stash_apply();
 	bool stash_drop();
 
+	struct SubmoduleUpdateData {
+		bool init = true;
+		bool recursive = true;
+	};
+
+
+	QList<SubmoduleItem> submodules();
+	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
+	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 };
 
 void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
+
+void parseGitSubModules(QByteArray const &ba, QList<Git::SubmoduleItem> *out);
+
 
 #endif // GIT_H

@@ -7,7 +7,7 @@
 #include <functional>
 #include <memory>
 
-class BasicMainWindow;
+class MainWindow;
 class WebContext;
 class WebClient;
 
@@ -31,9 +31,9 @@ public:
 		double score = 0;
 	};
 
-	BasicMainWindow *mainwindow_;
+	MainWindow *mainwindow_;
 
-	GitHubAPI(BasicMainWindow *mainwindow)
+	GitHubAPI(MainWindow *mainwindow)
 		: mainwindow_(mainwindow)
 	{
 	}
@@ -57,7 +57,7 @@ public:
 	bool ok = false;
 	std::string text;
 	std::function<bool(std::string const &text)> callback;
-	void start(BasicMainWindow *mainwindow);
+	void start(MainWindow *mainwindow);
 };
 
 #endif // GITHUBAPI_H

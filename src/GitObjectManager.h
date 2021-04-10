@@ -6,6 +6,7 @@
 #include "GitPack.h"
 #include "GitPackIdxV2.h"
 #include <map>
+#include "common/joinpath.h"
 
 class GitPackIdxV2;
 
@@ -32,7 +33,13 @@ private:
 	bool loadObject(QString const &id, QByteArray *out, Git::Object::Type *type);
 	GitPtr git()
 	{
-		return g;
+		return g->dup();
+	}
+	GitPtr git(Git::SubmoduleItem const &submod)
+	{
+		GitPtr g2 = g->dup();
+		g2->setWorkingRepositoryDir(g->workingDir(), submod.path, g->sshKey());
+		return g2;
 	}
 public:
 	GitObjectManager();
@@ -59,6 +66,10 @@ public:
 	{
 		return object_manager.git();
 	}
+	GitPtr git(Git::SubmoduleItem const &submod)
+	{
+		return object_manager.git(submod);
+	}
 
 	void setup(const GitPtr &g);
 	QString revParse(QString const &name);
@@ -71,7 +82,7 @@ public:
 	QString tree_id;
 	QStringList parents;
 
-	bool parseCommit(GitObjectCache *objcache, QString const &id);
+	static bool parseCommit(GitObjectCache *objcache, QString const &id, GitCommit *out);
 };
 
 struct GitTreeItem {
@@ -79,6 +90,7 @@ struct GitTreeItem {
 		UNKNOWN,
 		TREE,
 		BLOB,
+		COMMIT,
 	};
 	Type type = UNKNOWN;
 	QString name;
@@ -125,5 +137,9 @@ public:
 };
 
 QString lookupFileID(GitObjectCache *objcache, QString const &commit_id, QString const &file);
+
+void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTreeItemList *out);
+bool parseGitTreeObject(GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out);
+
 
 #endif // GITOBJECTMANAGER_H

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>545</width>
-    <height>140</height>
+    <width>632</width>
+    <height>290</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,6 +58,16 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="RemoteAdvancedOptionWidget" name="advanced_option" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>110</height>
+      </size>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -129,11 +139,20 @@
    <extends>QLineEdit</extends>
    <header>DirectoryLineEdit.h</header>
   </customwidget>
+  <customwidget>
+   <class>RemoteAdvancedOptionWidget</class>
+   <extends>QWidget</extends>
+   <header>RemoteAdvancedOptionWidget.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>lineEdit_repo_location</tabstop>
   <tabstop>pushButton_test</tabstop>
   <tabstop>lineEdit_working_dir</tabstop>
+  <tabstop>pushButton_browse</tabstop>
+  <tabstop>comboBox</tabstop>
+  <tabstop>pushButton_open_existing</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>

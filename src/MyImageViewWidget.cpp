@@ -41,7 +41,7 @@ void MyImageViewWidget::contextMenuEvent(QContextMenuEvent *e)
 				QString path = mw->currentWorkingCopyDir() / path_;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					mw->saveAs(id, dstpath);
+					mw->saveAs(mw->frame(), id, dstpath);
 				}
 				update();
 				return;

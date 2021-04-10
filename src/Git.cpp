@@ -18,13 +18,19 @@
 using callback_t = Git::callback_t;
 
 struct Git::Private {
-	QString git_command;
+	struct Info {
+		QString git_command;
+		QString working_repo_dir;
+		QString submodule_path;
+		callback_t fn_log_writer_callback = nullptr;
+		void *callback_cookie = nullptr;
+	};
+	Info info;
+	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
+	QString ssh_key_override;// = "C:/a/id_rsa";
 	std::vector<char> result;
 	QString error_message;
 	int process_exit_code = 0;
-	QString working_repo_dir;
-	callback_t fn_log_writer_callback = nullptr;
-	void *callback_cookie = nullptr;
 };
 
 Git::Git()
@@ -32,11 +38,11 @@ Git::Git()
 {
 }
 
-Git::Git(const Context &cx, QString const &repodir)
+Git::Git(const Context &cx, QString const &repodir, const QString &submodpath, const QString &sshkey)
 	: m(new Private)
 {
-	setGitCommand(cx.git_command);
-	setWorkingRepositoryDir(repodir);
+	setGitCommand(cx.git_command, cx.ssh_command);
+	setWorkingRepositoryDir(repodir, submodpath, sshkey);
 }
 
 Git::~Git()
@@ -46,18 +52,34 @@ Git::~Git()
 
 void Git::setLogCallback(callback_t func, void *cookie)
 {
-	m->fn_log_writer_callback = func;
-	m->callback_cookie = cookie;
+	m->info.fn_log_writer_callback = func;
+	m->info.callback_cookie = cookie;
 }
 
-void Git::setWorkingRepositoryDir(QString const &repo)
+void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
-	m->working_repo_dir = repo;
+	m->info.working_repo_dir = repo;
+	m->info.submodule_path = submodpath;
+	m->ssh_key_override = sshkey;
 }
 
-QString const &Git::workingRepositoryDir() const
+QString Git::workingDir() const
 {
-	return m->working_repo_dir;
+	QString dir = m->info.working_repo_dir;
+	if (!m->info.submodule_path.isEmpty()) {
+		dir = dir / m->info.submodule_path;
+	}
+	return dir;
+}
+
+QString const &Git::sshKey() const
+{
+	return m->ssh_key_override;
+}
+
+void Git::setSshKey(QString const &sshkey) const
+{
+	m->ssh_key_override = sshkey;
 }
 
 bool Git::isValidID(QString const &id)
@@ -100,15 +122,16 @@ QString Git::resultText() const
 {
 	return QString::fromUtf8(toQByteArray());
 }
-void Git::setGitCommand(QString const &path)
+void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 {
-	m->git_command = path;
+	m->info.git_command = gitcmd;
+	m->ssh_command = sshcmd;
 }
 
 QString Git::gitCommand() const
 {
 	Q_ASSERT(m);
-	return m->git_command;
+	return m->info.git_command;
 }
 
 void Git::clearResult()
@@ -132,8 +155,8 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 {
 	bool ok = false;
 	QString cwd = QDir::currentPath();
-	QString dir = workingRepositoryDir();
-	if (isValidWorkingCopy(dir) && QDir::setCurrent(dir)) {
+	QString dir = workingDir();
+	if (QDir::setCurrent(dir)) {
 
 		ok = fn();
 
@@ -156,20 +179,30 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 #endif
 	clearResult();
 
+	QString env;
+	if (m->ssh_command.isEmpty() || m->ssh_key_override.isEmpty()) {
+		// nop
+	} else {
+		if (m->ssh_command.indexOf('\"') >= 0) return false;
+		if (m->ssh_key_override.indexOf('\"') >= 0) return false;
+		if (!QFileInfo(m->ssh_command).isExecutable()) return false;
+		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(m->ssh_command).arg(m->ssh_key_override);
+	}
+
 	auto DoIt = [&](){
 		QString cmd = QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (m->fn_log_writer_callback) {
+		if (m->info.fn_log_writer_callback) {
 			QByteArray ba;
 			ba.append("> git ");
 			ba.append(arg);
 			ba.append('\n');
-			m->fn_log_writer_callback(m->callback_cookie, ba.data(), (int)ba.size());
+			m->info.fn_log_writer_callback(m->info.callback_cookie, ba.data(), (int)ba.size());
 		}
 
 		if (pty) {
-			pty->start(cmd, pty->userVariant());
+			pty->start(cmd, env, pty->userVariant());
 			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;
@@ -191,7 +224,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 
 	if (chdir) {
 		if (pty) {
-			pty->setChangeDir(workingRepositoryDir());
+			pty->setChangeDir(workingDir());
 			ok = DoIt();
 		} else {
 			ok = chdirexec(DoIt);
@@ -210,10 +243,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 GitPtr Git::dup() const
 {
 	Git *p = new Git();
-	p->m->git_command = m->git_command;
-	p->m->working_repo_dir = m->working_repo_dir;
-	p->m->fn_log_writer_callback = m->fn_log_writer_callback;
-	p->m->callback_cookie = m->callback_cookie;
+	p->m->info = m->info;
 	return GitPtr(p);
 }
 
@@ -224,7 +254,7 @@ bool Git::isValidWorkingCopy(QString const &dir)
 
 bool Git::isValidWorkingCopy() const
 {
-	return isValidWorkingCopy(workingRepositoryDir());
+	return isValidWorkingCopy(workingDir());
 }
 
 QString Git::version()
@@ -239,7 +269,7 @@ bool Git::init()
 {
 	bool ok = false;
 	QDir cwd = QDir::current();
-	QString dir = workingRepositoryDir();
+	QString dir = workingDir();
 	if (QDir::setCurrent(dir)) {
 		QString gitdir = dir / ".git";
 		if (!QFileInfo(gitdir).isDir()) {
@@ -667,6 +697,7 @@ Git::CommitItemList Git::log(int maxcount)
 
 bool Git::queryCommit(QString const &id, CommitItem *out)
 {
+	*out = {};
 	if (objectType(id) == "commit") {
 		out->commit_id = id;
 		QByteArray ba;
@@ -753,7 +784,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
-	m->working_repo_dir = misc::normalizePathSeparator(clone_to);
+	m->info.working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
@@ -775,6 +806,67 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	}
 
 	return ok;
+}
+
+QList<Git::SubmoduleItem> Git::submodules()
+{
+	QList<Git::SubmoduleItem> mods;
+
+	git("submodule");
+	QString text = resultText();
+	ushort c = text.utf16()[0];
+	if (c == ' ' || c == '+' || c == '-') {
+		text = text.mid(1);
+	}
+	QStringList words = misc::splitWords(text);
+	if (words.size() >= 2) {
+		SubmoduleItem sm;
+		sm.id = words[0];
+		sm.path = words[1];
+		if (isValidID(sm.id)) {
+			if (words.size() >= 3) {
+				sm.refs = words[2];
+				if (sm.refs.startsWith('(') && sm.refs.endsWith(')')) {
+					sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
+				}
+			}
+
+			mods.push_back(sm);
+		}
+	}
+	return mods;
+}
+
+bool Git::submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty)
+{
+	bool ok = false;
+
+	QString cmd = "submodule add";
+	if (force) {
+		cmd += " -f";
+	}
+	cmd += " \"%1\" \"%2\"";
+	cmd = cmd.arg(data.url).arg(data.subdir);
+	ok = git(cmd, true, true, pty);
+
+	return ok;
+}
+
+bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *pty)
+{
+	bool ok = false;
+
+	QString cmd = "submodule update";
+	if (data.init) {
+		cmd += " --init";
+	}
+	if (data.recursive) {
+		cmd += " --recursive";
+	}
+	ok = git(cmd, true, true, pty);
+
+	return ok;
+
 }
 
 QString Git::encodeQuotedText(QString const &str)
@@ -885,14 +977,20 @@ Git::FileStatusList Git::status_s()
 
 QString Git::objectType(QString const &id)
 {
-	git("cat-file -t " + id);
-	return resultText().trimmed();
+	if (isValidID(id)) {
+		git("cat-file -t " + id);
+		return resultText().trimmed();
+	}
+	return {};
 }
 
 QByteArray Git::cat_file_(QString const &id)
 {
-	git("cat-file -p " + id);
-	return toQByteArray();
+	if (isValidID(id)) {
+		git("cat-file -p " + id);
+		return toQByteArray();
+	}
+	return {};
 }
 
 bool Git::cat_file(QString const &id, QByteArray *out)
@@ -1001,7 +1099,7 @@ void Git::cherrypick(QString const &name)
 
 QString Git::getCherryPicking() const
 {
-	QString dir = workingRepositoryDir();
+	QString dir = workingDir();
 	QString path = dir / ".git/CHERRY_PICK_HEAD";
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
@@ -1019,7 +1117,7 @@ QString Git::getMessage(QString const &id)
 	return resultText().trimmed();
 }
 
-void Git::mergeBranch(QString const &name, MergeFastForward ff)
+void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 {
 	QString cmd = "merge ";
 	switch (ff) {
@@ -1032,6 +1130,9 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff)
 	default:
 		cmd += "--ff ";
 		break;
+	}
+	if (squash) {
+		cmd += "--squash ";
 	}
 	git(cmd + name);
 }
@@ -1128,6 +1229,7 @@ void Git::getRemoteURLs(QList<Remote> *out)
 			r.name = line.mid(0, i);
 			r.url = line.mid(i + 1, j - i - 1);
 			r.purpose = line.mid(j + 1);
+			r.ssh_key = m->ssh_key_override;
 			if (r.purpose.startsWith('(') && r.purpose.endsWith(')')) {
 				r.purpose = r.purpose.mid(1, r.purpose.size() - 2);
 			}
@@ -1136,17 +1238,18 @@ void Git::getRemoteURLs(QList<Remote> *out)
 	}
 }
 
-void Git::setRemoteURL(QString const &name, QString const &url)
+void Git::setRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
 	git(cmd);
 }
 
-void Git::addRemoteURL(QString const &name, QString const &url)
+void Git::addRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote add \"%1\" \"%2\"";
-	cmd = cmd.arg(encodeQuotedText(name)).arg(encodeQuotedText(url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
+	m->ssh_key_override = remote.ssh_key;
 	git(cmd);
 }
 
@@ -1481,3 +1584,45 @@ void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 	}
 }
 
+
+void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
+{
+	*out = {};
+	QStringList lines = misc::splitLines(QString::fromUtf8(ba));
+	Git::SubmoduleItem submod;
+	auto Push = [&](){
+		if (!submod.name.isEmpty()) {
+			out->push_back(submod);
+		}
+		submod = {};
+	};
+	for (int i = 0; i < lines.size(); i++) {
+		QString line = lines[i].trimmed();
+		if (line.startsWith('[')) {
+			Push();
+			if (line.startsWith("[submodule ") && line.endsWith(']')) {
+				int i = 11;
+				int j = line.size() - 1;
+				if (i + 1 < j && line[i] == '\"') {
+					if (line[j - 1] == '\"') {
+						i++;
+						j--;
+					}
+				}
+				submod.name = line.mid(i, j - i);
+			}
+		} else {
+			int i = line.indexOf('=');
+			if (i > 0) {
+				QString key = line.mid(0, i).trimmed();
+				QString val = line.mid(i + 1).trimmed();
+				if (key == "path") {
+					submod.path = val;
+				} else if (key == "url") {
+					submod.url = val;
+				}
+			}
+		}
+	}
+	Push();
+}

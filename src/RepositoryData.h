@@ -13,6 +13,7 @@ struct RepositoryItem {
 	QString name;
 	QString group;
 	QString local_dir;
+	QString ssh_key;
 };
 Q_DECLARE_METATYPE(RepositoryItem);
 

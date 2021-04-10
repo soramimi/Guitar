@@ -1,8 +1,8 @@
+#include "SettingGeneralForm.h"
+#include "ui_SettingGeneralForm.h"
 #include "MySettings.h"
 #include "SelectItemDialog.h"
 #include "ApplicationGlobal.h"
-#include "SettingGeneralForm.h"
-#include "ui_SettingGeneralForm.h"
 #include "Languages.h"
 #include "common/misc.h"
 

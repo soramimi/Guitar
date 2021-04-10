@@ -18,11 +18,13 @@ extern "C" char **environ;
 #define FILE_COMMAND "file.exe"
 #define GPG_COMMAND "gpg.exe"
 #define GPG2_COMMAND "gpg2.exe"
+#define SSH_COMMAND "ssh.exe"
 #else
 #define GIT_COMMAND "git"
 #define FILE_COMMAND "file"
 #define GPG_COMMAND "gpg"
 #define GPG2_COMMAND "gpg2"
+#define SSH_COMMAND "ssh"
 #endif
 
 #endif // PLATFORM_H

@@ -1,11 +1,12 @@
 #include "EditRemoteDialog.h"
 #include "ui_EditRemoteDialog.h"
+#include "MainWindow.h"
+#include <QFileDialog>
+#include <QStandardPaths>
 
-#include "BasicMainWindow.h"
-
-EditRemoteDialog::EditRemoteDialog(BasicMainWindow *parent, Operation op) :
-	QDialog(parent),
-	ui(new Ui::EditRemoteDialog)
+EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op, const Git::Context *gcx)
+	: QDialog(parent)
+	, ui(new Ui::EditRemoteDialog)
 {
 	ui->setupUi(this);
 
@@ -13,6 +14,8 @@ EditRemoteDialog::EditRemoteDialog(BasicMainWindow *parent, Operation op) :
 		ui->lineEdit_name->setReadOnly(true);
 		ui->lineEdit_name->setEnabled(false);
 	}
+
+	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 }
 
 EditRemoteDialog::~EditRemoteDialog()
@@ -20,9 +23,9 @@ EditRemoteDialog::~EditRemoteDialog()
 	delete ui;
 }
 
-BasicMainWindow *EditRemoteDialog::mainwindow()
+MainWindow *EditRemoteDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 void EditRemoteDialog::setName(QString const &s) const
@@ -35,6 +38,11 @@ void EditRemoteDialog::setUrl(QString const &s) const
 	ui->lineEdit_url->setText(s);
 }
 
+void EditRemoteDialog::setSshKey(QString const &s) const
+{
+	ui->advanced_option->setSshKey(s);
+}
+
 QString EditRemoteDialog::name() const
 {
 	return ui->lineEdit_name->text();
@@ -43,6 +51,11 @@ QString EditRemoteDialog::name() const
 QString EditRemoteDialog::url() const
 {
 	return ui->lineEdit_url->text();
+}
+
+QString EditRemoteDialog::sshKey() const
+{
+	return ui->advanced_option->sshKey();
 }
 
 int EditRemoteDialog::exec()
@@ -58,9 +71,14 @@ int EditRemoteDialog::exec()
 void EditRemoteDialog::on_pushButton_test_clicked()
 {
 	QString url = ui->lineEdit_url->text();
-	if (mainwindow()->testRemoteRepositoryValidity(url)) {
+	if (mainwindow()->testRemoteRepositoryValidity(url, sshKey())) {
 		ui->pushButton_ok->setFocus();
 	} else {
 		ui->lineEdit_url->setFocus();
 	}
 }
+
+
+
+
+

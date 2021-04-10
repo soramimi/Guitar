@@ -1,14 +1,16 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
 #include "MainWindow.h"
+#include "BasicRepositoryDialog.h"
 #include "common/misc.h"
 #include <QClipboard>
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
+	, gcx(gcx)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -19,8 +21,13 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(BasicMainWindow *parent, GitP
 
 	ui->groupBox_remote->setVisible(open_repository_menu);
 
-	ui->label_name->setText(repository.name);
-	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
+    ui->label_editable_name->setText(repository.name);
+    ui->label_editable_name->setVisible(true);
+    ui->lineEdit_name->setText(repository.name);
+    ui->lineEdit_name->setVisible(false);
+    ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
+
+	ui->pushButton_close->setFocus();
 
 	updateRemotesTable();
 }
@@ -40,7 +47,21 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
-
+void MainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
+{
+	bool changed = false;
+	QList<RepositoryItem> *repos = getReposPtr();
+	for (int i = 0; i < repos->size(); i++) {
+		RepositoryItem *item = &(*repos)[i];
+		if (item->local_dir == localdir) {
+			item->ssh_key = sshkey;
+			changed = true;
+		}
+	}
+	if (changed) {
+		saveRepositoryBookmarks();
+	}
+}
 
 bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
 {
@@ -59,12 +80,14 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		remote->name = "origin";
 	}
 
-	EditRemoteDialog dlg(mainwindow(), op);
+	EditRemoteDialog dlg(mainwindow(), op, gcx);
 	dlg.setName(remote->name);
 	dlg.setUrl(remote->url);
+	dlg.setSshKey(remote->ssh_key);
 	if (dlg.exec() == QDialog::Accepted) {
 		remote->name = dlg.name();
 		remote->url = dlg.url();
+		remote->ssh_key = dlg.sshKey();
 		GitPtr g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
 			bool ok = true;
@@ -76,11 +99,18 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 				}
 			}
 			if (ok) {
-				g->addRemoteURL(remote->name, remote->url);
+				g->addRemoteURL(*remote);
 			}
 		} else if (op == EditRemoteDialog::RemoteSet) {
-			g->setRemoteURL(remote->name, remote->url);
+			g->setRemoteURL(*remote);
 		}
+
+		// wip
+		QString localdir = ui->lineEdit_local_dir->text();
+		mainwindow()->changeSshKey(localdir, remote->ssh_key);
+		setSshKey_(remote->ssh_key);
+		getRemotes_();
+
 		updateRemotesTable();
 		return true;
 	}
@@ -102,6 +132,16 @@ Git::Remote RepositoryPropertyDialog::selectedRemote() const
 bool RepositoryPropertyDialog::isRemoteChanged() const
 {
 	return remote_changed;
+}
+
+bool RepositoryPropertyDialog::isNameChanged() const
+{
+    return name_changed;
+}
+
+QString RepositoryPropertyDialog::getName()
+{
+    return repository.name;
 }
 
 void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
@@ -141,4 +181,42 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 void RepositoryPropertyDialog::on_pushButton_remote_menu_clicked()
 {
 	toggleRemoteMenuActivity();
+}
+
+
+void RepositoryPropertyDialog::setNameEditMode(bool f)
+{
+	ui->lineEdit_name->setVisible(f);
+	ui->label_editable_name->setVisible(!f);
+	ui->pushButton_edit_name->setText(f ? tr("Save") : tr("Edit Name"));
+	if (f) {
+		ui->lineEdit_name->setText(repository.name);
+		ui->lineEdit_name->setFocus();
+	} else {
+		if (!ui->lineEdit_name->text().isEmpty()) {
+			repository.name = ui->lineEdit_name->text();
+			ui->label_editable_name->setText(repository.name);
+			name_changed = true;
+		}
+		ui->pushButton_close->setFocus();
+	}
+}
+
+bool RepositoryPropertyDialog::isNameEditMode() const
+{
+	return ui->lineEdit_name->isVisible();
+}
+
+void RepositoryPropertyDialog::on_pushButton_edit_name_clicked()
+{
+	setNameEditMode(!isNameEditMode());
+}
+
+void RepositoryPropertyDialog::reject()
+{
+	if (isNameEditMode()) {
+		setNameEditMode(false);
+	} else {
+		BasicRepositoryDialog::reject();
+	}
 }

@@ -1,5 +1,5 @@
 #include "AvatarLoader.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "MemoryReader.h"
 #include "webclient.h"
 #include <QCryptographicHash>
@@ -18,7 +18,7 @@ struct AvatarLoader::Private {
 	QWaitCondition condition;
 	std::deque<RequestItem> requested;
 	std::deque<RequestItem> completed;
-	BasicMainWindow *mainwindow = nullptr;
+	MainWindow *mainwindow = nullptr;
 	WebClientPtr web;
 };
 
@@ -32,7 +32,7 @@ AvatarLoader::~AvatarLoader()
 	delete m;
 }
 
-void AvatarLoader::start(BasicMainWindow *mainwindow)
+void AvatarLoader::start(MainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
 	QThread::start();
@@ -97,7 +97,7 @@ void AvatarLoader::run()
 								}
 								m->completed.push_front(item);
 							}
-							emit updated();
+							emit updated(item.frame);
 							continue;
 						}
 					}
@@ -111,10 +111,11 @@ void AvatarLoader::run()
 	}
 }
 
-QIcon AvatarLoader::fetch(std::string const &email, bool request) const
+QIcon AvatarLoader::fetch(RepositoryWrapperFrame *frame, std::string const &email, bool request) const
 {
 	QMutexLocker lock(&m->mutex);
 	RequestItem item;
+	item.frame = frame;
 	item.email = email;
 	for (size_t i = 0; i < m->completed.size(); i++) {
 		if (item.email == m->completed[i].email) {

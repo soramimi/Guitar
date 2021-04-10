@@ -18,7 +18,7 @@ FilePropertyDialog::~FilePropertyDialog()
 	delete ui;
 }
 
-void FilePropertyDialog::exec(BasicMainWindow *mw, QString const &path, QString const &id)
+void FilePropertyDialog::exec(MainWindow *mw, QString const &path, QString const &id)
 {
 	mainwindow = mw;
 

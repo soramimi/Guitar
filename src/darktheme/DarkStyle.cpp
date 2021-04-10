@@ -9,6 +9,7 @@
 #include <QInputDialog>
 #include <QListView>
 #include <QMessageBox>
+#include <QPainterPath>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
 #include <QStyleOptionFrameV3>
@@ -17,6 +18,8 @@
 #include <QToolTip>
 #include <cmath>
 #include <cstdint>
+
+#include <QPainterPath>
 
 #define MBI_NORMAL                  1
 #define MBI_HOT                     2
@@ -1264,7 +1267,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 #endif
 	if (ce == CE_ShapedFrame) {
-		if (auto const *o = qstyleoption_cast<QStyleOptionFrameV3 const *>(option)) {
+		if (auto const *o = qstyleoption_cast<QStyleOptionFrame const *>(option)) {
 			int lw = o->lineWidth;
 			if (lw > 0) {
 				QRect r = o->rect;

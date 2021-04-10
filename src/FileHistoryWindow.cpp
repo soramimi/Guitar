@@ -1,5 +1,5 @@
 #include "FileHistoryWindow.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "FileDiffWidget.h"
 #include "GitDiff.h"
 #include "MyTableWidgetDelegate.h"
@@ -16,7 +16,7 @@ struct FileHistoryWindow::Private {
 	QString path;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
-	FileDiffWidget::DrawData draw_data;
+//	FileDiffWidget::DrawData draw_data;
 };
 
 FileDiffWidget::DiffData *FileHistoryWindow::diffdata()
@@ -29,25 +29,25 @@ const FileDiffWidget::DiffData *FileHistoryWindow::diffdata() const
 	return &m->diff_data;
 }
 
-FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
-{
-	return &m->draw_data;
-}
+//FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
+//{
+//	return &m->draw_data;
+//}
 
-const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
-{
-	return &m->draw_data;
-}
+//const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
+//{
+//	return &m->draw_data;
+//}
 
 int FileHistoryWindow::totalTextLines() const
 {
 	return diffdata()->left->lines.size();
 }
 
-int FileHistoryWindow::fileviewScrollPos() const
-{
-	return drawdata()->v_scroll_pos;
-}
+//int FileHistoryWindow::fileviewScrollPos() const
+//{
+//	return drawdata()->v_scroll_pos;
+//}
 
 FileHistoryWindow::FileHistoryWindow(BasicMainWindow *parent)
 	: QDialog(parent)
@@ -75,9 +75,9 @@ FileHistoryWindow::~FileHistoryWindow()
 	delete ui;
 }
 
-BasicMainWindow *FileHistoryWindow::mainwindow()
+MainWindow *FileHistoryWindow::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 void FileHistoryWindow::prepare(GitPtr const &g, QString const &path)
@@ -135,7 +135,7 @@ void FileHistoryWindow::collectFileHistory()
 			col++;
 		};
 
-		QString commit_id = BasicMainWindow::abbrevCommitID(commit);
+		QString commit_id = MainWindow::abbrevCommitID(commit);
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
@@ -154,15 +154,15 @@ void FileHistoryWindow::collectFileHistory()
 
 class FindFileIdThread : public QThread {
 private:
-	BasicMainWindow *mainwindow;
+	MainWindow *mainwindow;
 	GitPtr g;
 	QString commit_id;
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(BasicMainWindow *BasicMainWindow, GitPtr const &g, QString const &commit_id, QString const &file)
+	FindFileIdThread(MainWindow *mw, GitPtr const &g, QString const &commit_id, QString const &file)
 	{
-		this->mainwindow = BasicMainWindow;
+		this->mainwindow = mw;
 		this->g = g;
 		this->commit_id = commit_id;
 		this->file = file;
@@ -171,7 +171,7 @@ public:
 protected:
 	void run() override
 	{
-		result = mainwindow->findFileID(commit_id, file);
+		result = mainwindow->findFileID(mainwindow->frame(), commit_id, file);
 	}
 };
 
@@ -199,7 +199,7 @@ void FileHistoryWindow::updateDiffView()
 		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
+		QString id = mainwindow()->findFileID(mainwindow()->frame(), commit.commit_id, m->path);
 
 		Git::Diff diff(id, m->path, QString());
 		ui->widget_diff_view->updateDiffView(diff, false);
@@ -243,7 +243,7 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, commit);
+			mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), commit);
 			return;
 		}
 	}

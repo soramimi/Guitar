@@ -1,6 +1,6 @@
 #include "SearchFromGitHubDialog.h"
 #include "ui_SearchFromGitHubDialog.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "common/misc.h"
 #include "urlencode.h"
 #include <QDebug>
@@ -16,7 +16,7 @@ static QString toQString(std::string const &s)
 	return QString::fromUtf8(s.c_str(), s.size());
 }
 
-SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent, BasicMainWindow *mw)
+SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent, MainWindow *mw)
 	: QDialog(parent)
 	, ui(new Ui::SearchFromGitHubDialog)
 	, mainwindow(mw)

@@ -16,12 +16,12 @@ public:
 	bool isRunning() const override;
 	void writeInput(char const *ptr, int len) override;
 	int readOutput(char *ptr, int len) override;
-	void start(QString const &cmd, QVariant const &userdata) override;
+	void start(QString const &cmd, QString const &env, QVariant const &userdata) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
 	int getExitCode() const override;
 	QString getMessage() const override;
-	void readResult(std::vector<char> *out);
+	void readResult(std::vector<char> *out) override;
 };
 
 #endif // UNIXPTYPROCESS_H

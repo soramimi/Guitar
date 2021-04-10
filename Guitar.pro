@@ -1,12 +1,12 @@
 
-QT       += core gui widgets svg network
+QT += core gui widgets svg network
 win32:QT += winextras
 
 CONFIG(debug,debug|release):TARGET = Guitard
 CONFIG(release,debug|release):TARGET = Guitar
 TEMPLATE = app
 
-CONFIG += c++11
+CONFIG += c++1z nostrip debug_info
 
 DESTDIR = $$PWD/_bin
 
@@ -25,10 +25,11 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-s
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
-linux:QTPLUGIN += ibusplatforminputcontextplugin
+#linux:QTPLUGIN += ibusplatforminputcontextplugin
 #linux:QTPLUGIN += fcitxplatforminputcontextplugin
 
 INCLUDEPATH += $$PWD/src
+INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
 win32:INCLUDEPATH += $$PWD/misc/winpty
 win32:LIBS += $$PWD/misc/winpty/winpty.lib
@@ -47,13 +48,13 @@ macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
-	INCLUDEPATH += C:\openssl\include
+    INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
 	INCLUDEPATH += $$PWD/../zlib
-	LIBS += -LC:\openssl\lib
+	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
 	# OpenSSL 1.0
-	LIBS += -llibeay32 -lssleay32
+#	LIBS += -llibeay32 -lssleay32
 	# OpenSSL 1.1
-#	LIBS += -llibcrypto -llibssl
+	LIBS += -llibcrypto -llibssl
 }
 
 win32:gcc {
@@ -117,11 +118,13 @@ SOURCES += \
 	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
+    src/BranchLabel.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
+    src/ColorButton.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
 	src/CommitPropertyDialog.cpp \
@@ -177,13 +180,14 @@ SOURCES += \
 	src/ReadOnlyLineEdit.cpp \
 	src/ReadOnlyPlainTextEdit.cpp \
 	src/ReflogWindow.cpp \
+	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
-	src/RemoteWatcher.cpp \
 	src/RepositoriesTreeWidget.cpp \
 	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryLineEdit.cpp \
 	src/RepositoryPropertyDialog.cpp \
+    src/RepositoryWrapperFrame.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
@@ -197,13 +201,25 @@ SOURCES += \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
 	src/SettingProgramsForm.cpp \
+    src/SettingVisualForm.cpp \
 	src/SettingsDialog.cpp \
 	src/StatusLabel.cpp \
+    src/SubmoduleAddDialog.cpp \
+    src/SubmoduleMainWindow.cpp \
+    src/SubmoduleUpdateDialog.cpp \
+    src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
+    src/UserEvent.cpp \
 	src/WelcomeWizardDialog.cpp \
 	src/charvec.cpp \
+    src/coloredit/ColorDialog.cpp \
+    src/coloredit/ColorEditWidget.cpp \
+    src/coloredit/ColorPreviewWidget.cpp \
+    src/coloredit/ColorSlider.cpp \
+    src/coloredit/ColorSquareWidget.cpp \
+    src/coloredit/RingSlider.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
@@ -233,11 +249,13 @@ HEADERS  += \
 	src/BasicRepositoryDialog.h \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \
+	src/BranchLabel.h \
 	src/CheckoutDialog.h \
 	src/CherryPickDialog.h \
 	src/ClearButton.h \
 	src/CloneDialog.h \
 	src/CloneFromGitHubDialog.h \
+	src/ColorButton.h \
 	src/CommitDialog.h \
 	src/CommitExploreWindow.h \
 	src/CommitPropertyDialog.h \
@@ -293,13 +311,15 @@ HEADERS  += \
 	src/ReadOnlyLineEdit.h \
 	src/ReadOnlyPlainTextEdit.h \
 	src/ReflogWindow.h \
+	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
-	src/RemoteWatcher.h \
 	src/RepositoriesTreeWidget.h \
 	src/RepositoryData.h \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
+	src/RepositoryWrapperFrame.h \
+	src/SaturationBrightnessWidget.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
 	src/SelectGpgKeyDialog.h \
@@ -313,13 +333,25 @@ HEADERS  += \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
 	src/SettingProgramsForm.h \
+	src/SettingVisualForm.h \
 	src/SettingsDialog.h \
 	src/StatusLabel.h \
+	src/SubmoduleAddDialog.h \
+	src/SubmoduleMainWindow.h \
+	src/SubmoduleUpdateDialog.h \
+	src/SubmodulesDialog.h \
 	src/Terminal.h \
 	src/TextEditDialog.h \
 	src/Theme.h \
+	src/UserEvent.h \
 	src/WelcomeWizardDialog.h \
 	src/charvec.h \
+	src/coloredit/ColorDialog.h \
+	src/coloredit/ColorEditWidget.h \
+	src/coloredit/ColorPreviewWidget.h \
+	src/coloredit/ColorSlider.h \
+	src/coloredit/ColorSquareWidget.h \
+	src/coloredit/RingSlider.h \
 	src/common/joinpath.h \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \
@@ -376,6 +408,7 @@ FORMS    += \
 	src/ObjectBrowserDialog.ui \
 	src/PushDialog.ui \
 	src/ReflogWindow.ui \
+	src/RemoteAdvancedOptionWidget.ui \
 	src/RepositoryPropertyDialog.ui \
 	src/SearchFromGitHubDialog.ui \
 	src/SelectCommandDialog.ui \
@@ -390,9 +423,16 @@ FORMS    += \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
 	src/SettingProgramsForm.ui \
+	src/SettingVisualForm.ui \
 	src/SettingsDialog.ui \
+	src/SubmoduleAddDialog.ui \
+	src/SubmoduleMainWindow.ui \
+	src/SubmoduleUpdateDialog.ui \
+	src/SubmodulesDialog.ui \
 	src/TextEditDialog.ui \
-	src/WelcomeWizardDialog.ui
+	src/WelcomeWizardDialog.ui \
+	src/coloredit/ColorDialog.ui \
+	src/coloredit/ColorEditWidget.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

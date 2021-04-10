@@ -5,7 +5,7 @@
 #include "common/misc.h"
 #include "Git.h"
 
-WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
+WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	: QDialog(parent)
 	, ui(new Ui::WelcomeWizardDialog)
 {
@@ -24,9 +24,9 @@ WelcomeWizardDialog::WelcomeWizardDialog(BasicMainWindow *parent)
 	on_stackedWidget_currentChanged(0);
 
 	avatar_loader_.start(mainwindow_);
-	connect(&avatar_loader_, &AvatarLoader::updated, [&](){
+	connect(&avatar_loader_, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
 		QString email = ui->lineEdit_user_email->text();
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), false);
+		QIcon icon = avatar_loader_.fetch(frame.pointer, email.toStdString(), false);
 		setAvatar(icon);
 	});
 
@@ -129,7 +129,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		if (user_name().isEmpty() && user_email().isEmpty()) {
 			Git::Context gcx;
 			gcx.git_command = git_command_path();
-			Git g(gcx, QString());
+			Git g(gcx, {}, {}, {});
 			Git::User user = g.getUser(Git::Source::Global);
 			set_user_name(user.name);
 			set_user_email(user.email);
@@ -189,10 +189,28 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_user_email->text();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
+		QIcon icon = avatar_loader_.fetch(nullptr, email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}
 	}
 }
 
+
+void WelcomeWizardDialog::on_lineEdit_git_textChanged(const QString &arg1)
+{
+	QString ss;
+	if (!misc::isExecutable(arg1)) {
+		ss = "* { background-color: #ffc0c0; }";
+	}
+	ui->lineEdit_git->setStyleSheet(ss);
+}
+
+void WelcomeWizardDialog::on_lineEdit_file_textChanged(const QString &arg1)
+{
+	QString ss;
+	if (!misc::isExecutable(arg1)) {
+		ss = "* { background-color: #ffc0c0; }";
+	}
+	ui->lineEdit_file->setStyleSheet(ss);
+}

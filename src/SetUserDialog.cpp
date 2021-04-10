@@ -1,7 +1,7 @@
 #include "SetUserDialog.h"
 #include "ui_SetUserDialog.h"
 #include "AvatarLoader.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "common/misc.h"
 
 struct SetUserDialog::Private  {
@@ -10,7 +10,7 @@ struct SetUserDialog::Private  {
 	AvatarLoader avatar_loader;
 };
 
-SetUserDialog::SetUserDialog(BasicMainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo)
+SetUserDialog::SetUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo)
 	: QDialog(parent)
 	, ui(new Ui::SetUserDialog)
 	, m(new Private)
@@ -37,9 +37,9 @@ SetUserDialog::SetUserDialog(BasicMainWindow *parent, Git::User const &global_us
 	ui->lineEdit_name->setFocus();
 
 	m->avatar_loader.start(mainwindow());
-	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
+	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
 		QString email = ui->lineEdit_mail->text();
-		QIcon icon = m->avatar_loader.fetch(email.toStdString(), false);
+		QIcon icon = m->avatar_loader.fetch(frame.pointer, email.toStdString(), false);
 		setAvatar(icon);
 	});
 }
@@ -51,9 +51,9 @@ SetUserDialog::~SetUserDialog()
 	delete ui;
 }
 
-BasicMainWindow *SetUserDialog::mainwindow()
+MainWindow *SetUserDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 bool SetUserDialog::isGlobalChecked() const
@@ -121,7 +121,7 @@ void SetUserDialog::on_pushButton_get_icon_clicked()
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_mail->text();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = m->avatar_loader.fetch(email.toStdString(), true);
+		QIcon icon = m->avatar_loader.fetch(nullptr, email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

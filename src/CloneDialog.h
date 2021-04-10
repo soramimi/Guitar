@@ -9,17 +9,20 @@ namespace Ui {
 class CloneDialog;
 }
 
-class BasicMainWindow;
+class MainWindow;
 
 class CloneDialog : public QDialog {
 	Q_OBJECT
 private:
+	Ui::CloneDialog *ui;
 	struct Private;
 	Private *m;
 
 	using GitPtr = std::shared_ptr<Git>;
+private:
+	MainWindow *mainwindow();
 public:
-	explicit CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir);
+	explicit CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
 	~CloneDialog() override;
 
 	enum class Action {
@@ -30,10 +33,7 @@ public:
 
 	QString url();
 	QString dir();
-private:
-	Ui::CloneDialog *ui;
-
-	BasicMainWindow *mainwindow();
+	QString overridedSshKey() const;
 private slots:
 	void on_lineEdit_repo_location_textChanged(QString const &text);
 	void on_pushButton_test_clicked();

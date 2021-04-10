@@ -5,7 +5,7 @@
 
 #include <QDialog>
 
-class BasicMainWindow;
+class MainWindow;
 
 namespace Ui {
 class CommitViewWindow;
@@ -16,9 +16,9 @@ class CommitViewWindow : public QDialog {
 private:
 	struct Private;
 	Private *m;
-	BasicMainWindow *mainwindow();
+	MainWindow *mainwindow();
 public:
-	explicit CommitViewWindow(BasicMainWindow *parent, Git::CommitItem const *commit);
+	explicit CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit);
 	~CommitViewWindow() override;
 
 private slots:

@@ -183,7 +183,7 @@ void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
 	QString id = currentCommitId();
 	if (Git::isValidID(id)) {
-		CommitPropertyDialog dlg(this, mainwindow(), id);
+		CommitPropertyDialog dlg(this, mainwindow(), mainwindow()->frame(), id);
 		dlg.showCheckoutButton(false);
 		dlg.showJumpButton(true);
 		if (dlg.exec() == QDialog::Accepted) {
@@ -208,7 +208,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, &commit);
+			mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), &commit);
 			return;
 		}
 	}

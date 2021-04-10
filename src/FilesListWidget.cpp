@@ -31,19 +31,26 @@ public:
 		badge_map["(ren) "] = Badge("Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
 		badge_map["(cpy) "] = Badge("Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
 	}
+	/**
+	 * @brief ファイルリストの1行分を描画する
+	 * @param painter
+	 * @param option
+	 * @param index
+	 */
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
 	{
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);
 
 		QString header = index.data(BasicMainWindow::HeaderRole).toString();
+//		bool isSubmodule = !index.data(BasicMainWindow::SubmodulePathRole).toString().isEmpty();
 
 		int x = o.rect.x();
 		int y = o.rect.y();
 		int h = o.rect.height();
 		int w = 2 + h + painter->fontMetrics().size(0, " Aaa").width() + 2;
 
-		// draw badge
+		// バッジの描画
 		Badge badge;
 		if (header == "(unmerged) ") {
 			badge = Badge("Unmerged", QColor(255, 80, 160), QIcon());
@@ -68,6 +75,7 @@ public:
 				painter->drawRoundedRect(r_badge.translated(1, 1), 3, 3);
 				painter->setBrush(QBrush(color));
 				painter->drawRoundedRect(r_badge, 3, 3);
+				// アイコン描画
 				if (!badge.icon.isNull()) {
 					painter->save();
 					painter->setOpacity(0.5);
@@ -80,12 +88,20 @@ public:
 				if (badge.text.isEmpty()) {
 					badge.text = "?";
 				}
+				// バッジテキスト描画
 				painter->drawText(r_text, badge.text, to);
 			}
 		}
 		o.rect.adjust(w, 0, 0, 0);
 
-		// draw text
+#if 0
+		// サブモジュール
+		if (isSubmodule) {
+			o.rect.adjust(h, 0, 0, 0);
+		}
+#endif
+
+		// アイテムテキスト描画
 		option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &o, painter, option.widget);
 	}
 };

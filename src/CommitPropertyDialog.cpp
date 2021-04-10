@@ -2,18 +2,18 @@
 #include "ui_CommitPropertyDialog.h"
 #include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include "common/misc.h"
 #include "gpg.h"
 #include "main.h"
 
 struct CommitPropertyDialog::Private {
-	BasicMainWindow *mainwindow;
+	MainWindow *mainwindow;
 	Git::CommitItem commit;
 	AvatarLoader avatar_loader;
 };
 
-void CommitPropertyDialog::init(BasicMainWindow *mw)
+void CommitPropertyDialog::init(MainWindow *mw, RepositoryWrapperFrame *frame)
 {
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
@@ -75,40 +75,40 @@ void CommitPropertyDialog::init(BasicMainWindow *mw)
 	}
 
 	m->avatar_loader.start(mainwindow());
-	connect(&m->avatar_loader, &AvatarLoader::updated, [&](){
-		updateAvatar(false);
+	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
+		updateAvatar(frame.pointer, false);
 	});
-	updateAvatar(true);
+	updateAvatar(frame, true);
 }
 
-void CommitPropertyDialog::updateAvatar(bool request)
+void CommitPropertyDialog::updateAvatar(RepositoryWrapperFrame *frame, bool request)
 {
 	if (!mainwindow()->isOnlineMode()) return;
 
-	auto SetAvatar = [&](QString const &email, QLabel *label){
+	auto SetAvatar = [&](RepositoryWrapperFrame *frame, QString const &email, QLabel *label){
 		if (mainwindow()->appsettings()->get_committer_icon) {
 			label->setFixedSize(QSize(48, 48));
-			QIcon icon = m->avatar_loader.fetch(email.toStdString(), request);
+			QIcon icon = m->avatar_loader.fetch(frame, email.toStdString(), request);
 			setAvatar(icon, label);
 		} else {
 			label->setVisible(false);
 		}
 	};
-	SetAvatar(ui->lineEdit_mail->text(), ui->label_user_avatar);
-	SetAvatar(ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
+	SetAvatar(frame, ui->lineEdit_mail->text(), ui->label_user_avatar);
+	SetAvatar(frame, ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, Git::CommitItem const *commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
 	m->commit = *commit;
-	init(mw);
+	init(mw, frame);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw, QString const &commit_id)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, QString const &commit_id)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -116,7 +116,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, BasicMainWindow *mw,
 	ui->setupUi(this);
 
 	mw->queryCommit(commit_id, &m->commit);
-	init(mw);
+	init(mw, frame);
 }
 
 CommitPropertyDialog::~CommitPropertyDialog()
@@ -126,7 +126,7 @@ CommitPropertyDialog::~CommitPropertyDialog()
 	delete ui;
 }
 
-BasicMainWindow *CommitPropertyDialog::mainwindow()
+MainWindow *CommitPropertyDialog::mainwindow()
 {
 	return m->mainwindow;
 }
@@ -149,13 +149,13 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwindow()->checkout(this, &m->commit, [&](){ hide(); });
+	mainwindow()->checkout(mainwindow()->frame(), this, &m->commit, [&](){ hide(); });
 	done(QDialog::Rejected);
 }
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(m->commit.commit_id);
+	mainwindow()->jumpToCommit(mainwindow()->frame(), m->commit.commit_id);
 	done(QDialog::Accepted);
 }
 
@@ -166,6 +166,6 @@ void CommitPropertyDialog::on_pushButton_details_clicked()
 
 void CommitPropertyDialog::on_pushButton_explorer_clicked()
 {
-	mainwindow()->execCommitExploreWindow(this, &m->commit);
+	mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &m->commit);
 
 }

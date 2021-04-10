@@ -24,7 +24,7 @@ using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 struct ImageViewWidget::Private {
 	QMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
-	FileDiffWidget::DrawData *draw_data = nullptr;
+//	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
 	QScrollBar *h_scroll_bar = nullptr;
 	QString mime_type;
@@ -194,7 +194,7 @@ QMainWindow *ImageViewWidget::mainwindow()
 QBrush ImageViewWidget::getTransparentBackgroundBrush()
 {
 #ifdef APP_GUITAR
-	return qobject_cast<BasicMainWindow *>(mainwindow())->getTransparentPixmap();
+	return qobject_cast<MainWindow *>(mainwindow())->getTransparentPixmap();
 #else
 	if (m->transparent_pixmap.isNull()) {
 		m->transparent_pixmap = QPixmap(":/image/transparent.png");
@@ -346,7 +346,7 @@ void ImageViewWidget::wheelEvent(QWheelEvent *e)
 	if (isValidImage()) {
 		double scale = 1;
 		const double mul = 1.189207115; // sqrt(sqrt(2))
-		m->wheel_delta += e->delta();
+		m->wheel_delta += e->angleDelta().y();
 		while (m->wheel_delta >= 120) {
 			m->wheel_delta -= 120;
 			scale *= mul;

@@ -2,12 +2,29 @@
 #define MAINWINDOW_H
 
 #include "BasicMainWindow.h"
+#include "Git.h"
+
+#include "GitHubAPI.h"
+#include "RepositoryData.h"
+#include "MyProcess.h"
+#include "main.h"
+#include "webclient.h"
+#include "AvatarLoader.h"
+#include "GitObjectManager.h"
+#include "Theme.h"
+#include "BranchLabel.h"
+
+class RepositoryWrapperFrame;
+class LogTableWidget;
+class QListWidgetItem;
+class QListWidget;
+class QTreeWidgetItem;
+class QTableWidgetItem;
 
 namespace Ui {
 class MainWindow;
 }
 
-class QTableWidgetItem;
 
 class HunkItem {
 public:
@@ -18,43 +35,129 @@ public:
 
 class MainWindow : public BasicMainWindow {
 	Q_OBJECT
+	friend class RepositoryWrapperFrame;
+	friend class SubmoduleMainWindow;
 	friend class ImageViewWidget;
 	friend class FileDiffSliderWidget;
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
 private:
-	struct Private;
-	Private *m;
+	struct Private1 {
+
+		QIcon repository_icon;
+		QIcon folder_icon;
+		QIcon signature_good_icon;
+		QIcon signature_dubious_icon;
+		QIcon signature_bad_icon;
+		QPixmap transparent_pixmap;
+
+		QString starting_dir;
+		Git::Context gcx;
+		RepositoryItem current_repo;
+
+		QList<RepositoryItem> repos;
+//		Git::CommitItemList logs;
+		QList<Git::Diff> diff_result;
+		QList<Git::SubmoduleItem> submodules;
+
+		QStringList added;
+		QStringList remotes;
+		QString current_remote_name;
+		Git::Branch current_branch;
+		unsigned int temp_file_counter = 0;
+
+		std::string ssh_passphrase_user;
+		std::string ssh_passphrase_pass;
+
+		std::string http_uid;
+		std::string http_pwd;
+
+		std::map<QString, GitHubAPI::User> committer_map; // key is email
+
+		PtyProcess pty_process;
+		bool pty_process_ok = false;
+		PtyCondition pty_condition = PtyCondition::None;
+
+		WebContext webcx;
+
+		AvatarLoader avatar_loader;
+//		int update_files_list_counter = 0;
+//		int update_commit_table_counter = 0;
+
+		bool interaction_canceled = false;
+		InteractionMode interaction_mode = InteractionMode::None;
+
+		QString repository_filter_text;
+		bool uncommited_changes = false;
+
+//		std::map<QString, QList<Git::Branch>> branch_map;
+//		std::map<QString, QList<Git::Tag>> tag_map;
+//		std::map<int, QList<BranchLabel>> label_map;
+//		std::map<QString, Git::Diff> diff_cache;
+//		GitObjectCache objcache;
+
+		bool remote_changed = false;
+
+		ServerType server_type = ServerType::Standard;
+		GitHubRepositoryInfo github;
+
+		QString head_id;
+		bool force_fetch = false;
+
+		RepositoryItem temp_repo_for_clone_complete;
+		QVariant pty_process_completion_data;
+	};
+	Private1 *m1;
+
+	struct Private2;
+	Private2 *m2;
+
+	struct ObjectData {
+		QString id;
+		QString path;
+		Git::SubmoduleItem submod;
+		Git::CommitItem submod_commit;
+		QString header;
+		int idiff;
+	};
+
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
 	~MainWindow() override;
 
+	RepositoryWrapperFrame *frame();
+	RepositoryWrapperFrame const *frame() const;
+
 	QPixmap const &digitsPixmap() const;
 
-	QString currentWorkingCopyDir() const override;
+//	QString currentWorkingCopyDir() const override;
 
 	QColor color(unsigned int i);
 
-	bool isOnlineMode() const override;
+	bool isOnlineMode() const;
 private:
 	Ui::MainWindow *ui;
 
-	void updateFilesList(QString id, bool wait) override;
-	void updateFilesList(Git::CommitItem const &commit, bool wait);
-	void updateRepositoriesList() override;
+	void postEvent(QObject *receiver, QEvent *event, int ms_later);
+	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> &fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
 
-	void openRepository_(GitPtr g, bool keep_selection = false) override;
+	void updateFilesList(RepositoryWrapperFrame *frame, QString id, bool wait);
+	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit, bool wait);
+	void updateRepositoriesList();
 
-	void prepareLogTableWidget();
+	void openRepository_(GitPtr g, bool keep_selection = false);
+	void openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
+
+//	void prepareLogTableWidget(RepositoryWrapperFrame *frame);
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> const &fn);
 	void showFileList(FilesListType files_list_type);
 
-	void clearLog();
-	void clearFileList() override;
-	void clearDiffView();
+	void clearLog(RepositoryWrapperFrame *frame);
+	void clearFileList(RepositoryWrapperFrame *frame);
+	void clearDiffView(RepositoryWrapperFrame *frame);
 	void clearRepositoryInfo();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
@@ -64,22 +167,22 @@ private:
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
 	void refrectRepositories();
 
-	void updateDiffView(QListWidgetItem *item);
-	void updateDiffView();
-	void updateUnstagedFileCurrentItem();
-	void updateStagedFileCurrentItem();
-	void updateStatusBarText() override;
-	void setRepositoryInfo(QString const &reponame, QString const &brname) override;
+	void updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *item);
+	void updateDiffView(RepositoryWrapperFrame *frame);
+	void updateUnstagedFileCurrentItem(RepositoryWrapperFrame *frame);
+	void updateStagedFileCurrentItem(RepositoryWrapperFrame *frame);
+	void updateStatusBarText(RepositoryWrapperFrame *frame);
+	void setRepositoryInfo(QString const &reponame, QString const &brname);
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 	void clearRepoFilter();
 	void appendCharToRepoFilter(ushort c);
 	void backspaceRepoFilter();
-	void revertCommit();
-	void mergeBranch(const QString &commit, Git::MergeFastForward ff);
-	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff);
+	void revertCommit(RepositoryWrapperFrame *frame);
+	void mergeBranch(const QString &commit, Git::MergeFastForward ff, bool squash);
+	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff, bool squash);
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
-	void merge(const Git::CommitItem *commit = nullptr);
+	void merge(RepositoryWrapperFrame *frame, const Git::CommitItem *commit = nullptr);
 	void detectGitServerType(const GitPtr &g);
 	void setRemoteOnline(bool f, bool save);
 	void startTimers();
@@ -89,19 +192,193 @@ private:
 	void blame();
 	QListWidgetItem *currentFileItem() const;
 	void execAreYouSureYouWantToContinueConnectingDialog();
-	void deleteRemoteBranch(Git::CommitItem const *commit);
-	QStringList remoteBranches(QString const &id, QStringList *all);
+	void deleteRemoteBranch(RepositoryWrapperFrame *frame, Git::CommitItem const *commit);
+	QStringList remoteBranches(RepositoryWrapperFrame *frame, QString const &id, QStringList *all);
 	bool isUninitialized();
-	void doLogCurrentItemChanged();
-	void findNext();
+	void doLogCurrentItemChanged(RepositoryWrapperFrame *frame);
+	void findNext(RepositoryWrapperFrame *frame);
 	void findText(const QString &text);
 	void showStatus();
 	void onStartEvent();
 	void showLogWindow(bool show);
+	bool isValidRemoteURL(const QString &url, const QString &sshkey);
+	QStringList whichCommand_(const QString &cmdfile1, const QString &cmdfile2 = {});
+	QString selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, const std::function<void (const QString &)> &callback);
+	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, const QString &path, const std::function<void (const QString &)> &callback);
+	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
+	static bool git_callback(void *cookie, const char *ptr, int len);
+	bool execSetGlobalUserDialog();
+	void revertAllFiles();
+	void addWorkingCopyDir(QString dir, QString name, bool open);
+	bool execWelcomeWizardDialog();
+	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
+	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
+	void setGitCommand(QString path, bool save);
+	void setFileCommand(QString path, bool save);
+	void setGpgCommand(QString path, bool save);
+	void setSshCommand(QString path, bool save);
+	bool checkGitCommand();
+	bool checkFileCommand();
+	bool saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
+	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
+	static QString makeRepositoryName(const QString &loc);
+	bool saveFileAs(const QString &srcpath, const QString &dstpath);
+	QString saveAsTemp(RepositoryWrapperFrame *frame, const QString &id);
+	QString executableOrEmpty(const QString &path);
+	bool checkExecutable(const QString &path);
+	void internalSaveCommandPath(const QString &path, bool save, const QString &name);
+	void logGitVersion();
+	void internalClearRepositoryInfo();
+	void checkUser();
+	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
+	void updateRepository();
+	void reopenRepository(bool log, const std::function<void (const GitPtr &)> &callback);
+	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
+	void openSelectedRepository();
+	QList<Git::Diff> makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok);
+	void queryBranches(RepositoryWrapperFrame *frame, const GitPtr &g);
+	void updateRemoteInfo();
+	void queryRemotes(const GitPtr &g);
+	void clone(QString url = {}, QString dir = {});
+	void submodule_add(QString url = {}, QString local_dir = {});
+	const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
+	void commit(RepositoryWrapperFrame *frame, bool amend = false);
+	void commitAmend(RepositoryWrapperFrame *framae);
+	void pushSetUpstream(const QString &remote, const QString &branch);
+	bool pushSetUpstream(bool testonly);
+	void push();
+	void deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
+	void deleteBranch(RepositoryWrapperFrame *frame);
+	void resetFile(const QStringList &paths);
+	void clearAuthentication();
+	void clearSshAuthentication();
+	void internalDeleteTags(const QStringList &tagnames);
+	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
+	void createRepository(const QString &dir);
+	void setLogEnabled(const GitPtr &g, bool f);
+	void doGitCommand(const std::function<void (GitPtr)> &callback);
+	void setWindowTitle_(const Git::User &user);
+	void setUnknownRepositoryInfo();
+	void setCurrentRemoteName(const QString &name);
+	void deleteTags(RepositoryWrapperFrame *frame, const Git::CommitItem &commit);
+	bool isAvatarEnabled() const;
+	bool isGitHub() const;
+	QStringList remotes() const;
+	QList<Git::Branch> findBranch(RepositoryWrapperFrame *frame, const QString &id);
+	QString tempfileHeader() const;
+	void deleteTempFiles();
+	QString getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag);
+	QString newTempFilePath();
+	int limitLogCount() const;
+	Git::Object cat_file_(RepositoryWrapperFrame *frame, const GitPtr &g, const QString &id);
+	bool isThereUncommitedChanges() const;
+	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
+	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
+	std::map<QString, QList<Git::Branch> > &branchMapRef(RepositoryWrapperFrame *frame);
+	void updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later);
+	void updateWindowTitle(const GitPtr &g);
+	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
+	void removeRepositoryFromBookmark(int index, bool ask);
+	void openTerminal(const RepositoryItem *repo);
+	void openExplorer(const RepositoryItem *repo);
+	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
+	bool editFile(const QString &path, const QString &title);
+	void setAppSettings(const ApplicationSettings &appsettings);
+	QIcon getRepositoryIcon() const;
+	QIcon getFolderIcon() const;
+	QIcon getSignatureGoodIcon() const;
+	QIcon getSignatureDubiousIcon() const;
+	QIcon getSignatureBadIcon() const;
+	QPixmap getTransparentPixmap() const;
+	QStringList findGitObject(const QString &id) const;
+	void writeLog(const char *ptr, int len);
+	void writeLog(const QString &str);
+	QList<BranchLabel> sortedLabels(RepositoryWrapperFrame *frame, int row) const;
+	void saveApplicationSettings();
+	void loadApplicationSettings();
+	void setDiffResult(const QList<Git::Diff> &diffs);
+	const QList<Git::SubmoduleItem> &submodules() const;
+	void setSubmodules(const QList<Git::SubmoduleItem> &submodules);
+	bool runOnRepositoryDir(const std::function<void (QString)> &callback, const RepositoryItem *repo);
+	NamedCommitList namedCommitItems(RepositoryWrapperFrame *frame, int flags);
+	static QString getObjectID(QListWidgetItem *item);
+	static QString getFilePath(QListWidgetItem *item);
+	static QString getSubmodulePath(QListWidgetItem *item);
+	static bool isGroupItem(QTreeWidgetItem *item);
+	static int indexOfLog(QListWidgetItem *item);
+	static int indexOfDiff(QListWidgetItem *item);
+//	static int getHunkIndex(QListWidgetItem *item);
+	static void updateSubmodules(GitPtr g, const QString &id, QList<Git::SubmoduleItem> *out);
+	void saveRepositoryBookmark(RepositoryItem item);
+    void changeRepositoryBookmarkName(RepositoryItem item, QString new_name);
+	int rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id);
+	QList<Git::Tag> findTag(RepositoryWrapperFrame *frame, const QString &id);
+	void sshSetPassphrase(const std::string &user, const std::string &pass);
+	std::string sshPassphraseUser() const;
+	std::string sshPassphrasePass() const;
+	void httpSetAuthentication(const std::string &user, const std::string &pass);
+	std::string httpAuthenticationUser() const;
+	std::string httpAuthenticationPass() const;
+//	const Git::CommitItemList &getLogs() const;
+	const Git::CommitItem *getLog(RepositoryWrapperFrame const *frame, int index) const;
+	void updateCommitGraph(RepositoryWrapperFrame *frame);
+	void initNetworking();
+	bool saveRepositoryBookmarks() const;
+	QString getBookmarksFilePath() const;
+	void stopPtyProcess();
+	void abortPtyProcess();
+	Git::CommitItemList *getLogsPtr(RepositoryWrapperFrame *frame);
+	void setLogs(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
+	void clearLogs(RepositoryWrapperFrame *frame);
+	PtyProcess *getPtyProcess();
+	bool getPtyProcessOk() const;
+	BasicMainWindow::PtyCondition getPtyCondition();
+	void setPtyUserData(const QVariant &userdata);
+	void setPtyProcessOk(bool pty_process_ok);
+	bool fetch(const GitPtr &g, bool prune);
+	bool fetch_tags_f(const GitPtr &g);
+	void setPtyCondition(const PtyCondition &ptyCondition);
+	const QList<RepositoryItem> &getRepos() const;
+	QList<RepositoryItem> *getReposPtr();
+	AvatarLoader *getAvatarLoader();
+	const AvatarLoader *getAvatarLoader() const;
+//	int *ptrUpdateFilesListCounter();
+//	int *ptrUpdateCommitTableCounter();
+	bool interactionCanceled() const;
+	void setInteractionCanceled(bool canceled);
+	BasicMainWindow::InteractionMode interactionMode() const;
+	void setInteractionMode(const InteractionMode &im);
+	QString getRepositoryFilterText() const;
+	void setRepositoryFilterText(const QString &text);
+	void setUncommitedChanges(bool uncommited_changes);
+	QList<Git::Diff> *diffResult();
+	std::map<QString, Git::Diff> *getDiffCacheMap(RepositoryWrapperFrame *frame);
+	bool getRemoteChanged() const;
+	void setRemoteChanged(bool remote_changed);
+	void setServerType(const ServerType &server_type);
+	GitHubRepositoryInfo *ptrGitHub();
+	std::map<int, QList<BranchLabel> > *getLabelMap(RepositoryWrapperFrame *frame);
+	const std::map<int, QList<BranchLabel> > *getLabelMap(const RepositoryWrapperFrame *frame) const;
+	void clearLabelMap(RepositoryWrapperFrame *frame);
+	GitObjectCache *getObjCache(RepositoryWrapperFrame *frame);
+	bool getForceFetch() const;
+	void setForceFetch(bool force_fetch);
+	std::map<QString, QList<Git::Tag> > *ptrTagMap(RepositoryWrapperFrame *frame);
+	QString getHeadId() const;
+	void setHeadId(const QString &head_id);
+	void setPtyProcessCompletionData(const QVariant &value);
+	const QVariant &getTempRepoForCloneCompleteV() const;
+	void msgNoRepositorySelected();
+	bool isRepositoryOpened() const;
+	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
+	QString gitCommand() const;
+	QPixmap getTransparentPixmap();
+	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
+	void cancelPendingUserEvents();
 protected:
-	void customEvent(QEvent *);
+	void customEvent(QEvent *) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
-	void timerEvent(QTimerEvent *) override;
+//	void timerEvent(QTimerEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
@@ -111,18 +388,71 @@ public:
 	int digitHeight() const;
 	void setStatusBarText(QString const &text);
 	void clearStatusBarText();
-	void setCurrentLogRow(int row) override;
+	void setCurrentLogRow(RepositoryWrapperFrame *frame, int row);
 	bool shown();
-	void deleteTags(QStringList const &tagnames) override;
-	bool addTag(QString const &name);
-	void updateCurrentFilesList();
-	void notifyRemoteChanged(bool f);
+	void deleteTags(RepositoryWrapperFrame *frame, QStringList const &tagnames);
+	bool addTag(RepositoryWrapperFrame *frame, QString const &name);
+	void updateCurrentFilesList(RepositoryWrapperFrame *frame);
 	void postOpenRepositoryFromGitHub(const QString &username, const QString &reponame);
-	int selectedLogIndex() const override;
-	void updateAncestorCommitMap();
+	int selectedLogIndex(RepositoryWrapperFrame *frame) const;
+	void updateAncestorCommitMap(RepositoryWrapperFrame *frame);
 	bool isAncestorCommit(const QString &id);
-	void test();
-	void postStartEvent();
+	void postStartEvent(int ms_later);
+	void setShowLabels(bool show, bool save);
+	bool isLabelsVisible() const;
+	void updateFilesList2(RepositoryWrapperFrame *frame, const QString &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
+	void execCommitViewWindow(const Git::CommitItem *commit);
+	void execCommitPropertyDialog(QWidget *parent, RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
+	void execCommitExploreWindow(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit);
+	void execFileHistory(const QString &path);
+	void execFileHistory(QListWidgetItem *item);
+	void showObjectProperty(QListWidgetItem *item);
+	bool testRemoteRepositoryValidity(const QString &url, const QString &sshkey);
+	QString selectGitCommand(bool save);
+	QString selectFileCommand(bool save);
+	QString selectGpgCommand(bool save);
+	QString selectSshCommand(bool save);
+	const Git::Branch &currentBranch() const;
+	void setCurrentBranch(const Git::Branch &b);
+	const RepositoryItem &currentRepository() const;
+	QString currentRepositoryName() const;
+	QString currentRemoteName() const;
+	QString currentBranchName() const;
+	GitPtr git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
+	GitPtr git();
+	GitPtr git(Git::SubmoduleItem const &submodpath);
+	void autoOpenRepository(QString dir);
+	bool queryCommit(const QString &id, Git::CommitItem *out);
+	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});
+	void checkout(RepositoryWrapperFrame *frame);
+	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);
+	Git::Object cat_file(RepositoryWrapperFrame *frame, const QString &id);
+	void addWorkingCopyDir(const QString &dir, bool open);
+	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
+	QString determinFileType_(const QString &path, bool mime, const std::function<void (const QString &, QByteArray *)> &callback) const;
+	QString determinFileType(const QString &path, bool mime);
+	QString determinFileType(QByteArray in, bool mime);
+	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
+	TextEditorThemePtr themeForTextEditor();
+	bool isValidWorkingCopy(const GitPtr &g) const;
+	void emitWriteLog(const QByteArray &ba);
+	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
+	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
+	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
+	void changeSshKey(const QString &localdir, const QString &sshkey);
+	static QString abbrevCommitID(const Git::CommitItem &commit);
+	const Git::CommitItemList &getLogs(RepositoryWrapperFrame const *frame) const;
+	const QList<BranchLabel> *label(const RepositoryWrapperFrame *frame, int row) const;
+	ApplicationSettings *appsettings();
+	const ApplicationSettings *appsettings() const;
+	QString defaultWorkingDir() const;
+	WebContext *webContext();
+	QIcon verifiedIcon(char s) const;
+	QAction *addMenuActionProperty(QMenu *menu);
+	QString currentWorkingCopyDir() const;
+	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
+public slots:
+	void writeLog_(QByteArray ba);
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();
@@ -212,19 +542,32 @@ private slots:
 
 	void on_action_expand_diff_view_triggered();
 
-	void on_action_wide_triggered();
+//	void on_action_wide_triggered();
 
 	void on_action_sidebar_triggered();
 
 
+	void on_action_show_labels_triggered();
+
+	void on_action_submodule_add_triggered();
+
+	void on_action_submodules_triggered();
+
+	void on_action_submodule_update_triggered();
+
+	void onAvatarUpdated(RepositoryWrapperFrameP frame);
+	void test();
+	void onInterval10ms();
 protected:
 	void closeEvent(QCloseEvent *event) override;
-	void internalWriteLog(const char *ptr, int len) override;
-	RepositoryItem const *selectedRepositoryItem() const override;
-	void removeSelectedRepositoryFromBookmark(bool ask) override;
+	void internalWriteLog(const char *ptr, int len);
+	RepositoryItem const *selectedRepositoryItem() const;
+	void removeSelectedRepositoryFromBookmark(bool ask);
 protected slots:
 	void onLogIdle();
 signals:
+	void signalWriteLog(QByteArray ba);
+	void remoteInfoChanged();
 	void signalSetRemoteChanged(bool f);
 	void onEscapeKeyPressed();
 	void updateButton();

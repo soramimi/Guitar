@@ -24,9 +24,11 @@
 #include "SettingsDialog.h"
 #include "Terminal.h"
 #include "TextEditDialog.h"
+#include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "SubmoduleAddDialog.h"
 #include "gpg.h"
 #include "gunzip.h"
 #include "platform.h"
@@ -63,155 +65,41 @@ protected:
 
 //
 
-struct BasicMainWindow::Private {
-	ApplicationSettings appsettings;
-
-	QIcon repository_icon;
-	QIcon folder_icon;
-	QIcon signature_good_icon;
-	QIcon signature_dubious_icon;
-	QIcon signature_bad_icon;
-	QPixmap transparent_pixmap;
-
-	QString starting_dir;
-	Git::Context gcx;
-	RepositoryItem current_repo;
-
-	QList<RepositoryItem> repos;
-	Git::CommitItemList logs;
-	QList<Git::Diff> diff_result;
-
-	QStringList added;
-	QStringList remotes;
-	QString current_remote_name;
-	Git::Branch current_branch;
-	unsigned int temp_file_counter = 0;
-
-	std::string ssh_passphrase_user;
-	std::string ssh_passphrase_pass;
-
-	std::string http_uid;
-	std::string http_pwd;
-
-	std::map<QString, GitHubAPI::User> committer_map; // key is email
-
-	PtyProcess pty_process;
-	bool pty_process_ok = false;
-	PtyCondition pty_condition = PtyCondition::None;
-
-	WebContext webcx;
-
-	AvatarLoader avatar_loader;
-	int update_files_list_counter = 0;
-	int update_commit_table_counter = 0;
-
-	bool interaction_canceled = false;
-	InteractionMode interaction_mode = InteractionMode::None;
-
-	QString repository_filter_text;
-	bool uncommited_changes = false;
-
-	std::map<QString, QList<Git::Branch>> branch_map;
-	std::map<QString, QList<Git::Tag>> tag_map;
-	std::map<int, QList<Label>> label_map;
-	std::map<QString, Git::Diff> diff_cache;
-	GitObjectCache objcache;
-
-	bool remote_changed = false;
-
-	ServerType server_type = ServerType::Standard;
-	GitHubRepositoryInfo github;
-
-	QString head_id;
-	bool force_fetch = false;
-
-	RepositoryItem temp_repo_for_clone_complete;
-	QVariant pty_process_completion_data;
-};
 
 BasicMainWindow::BasicMainWindow(QWidget *parent)
 	: QMainWindow(parent)
-	, m(new Private)
+//	, m1(new Private1)
 {
-	SettingsDialog::loadSettings(&m->appsettings);
-	m->starting_dir = QDir::current().absolutePath();
-
-	{ // load graphic resources
-		QFileIconProvider icons;
-		m->folder_icon = icons.icon(QFileIconProvider::Folder);
-		m->repository_icon = QIcon(":/image/repository.png");
-		m->signature_good_icon = QIcon(":/image/signature-good.png");
-		m->signature_bad_icon = QIcon(":/image/signature-bad.png");
-		m->signature_dubious_icon = QIcon(":/image/signature-dubious.png");
-		m->transparent_pixmap = QPixmap(":/image/transparent.png");
-	}
 }
 
 BasicMainWindow::~BasicMainWindow()
 {
-	setRemoteMonitoringEnabled(false);
-	deleteTempFiles();
-	delete m;
+//	delete m1;
 }
 
-ApplicationSettings *BasicMainWindow::appsettings()
+ApplicationSettings *MainWindow::appsettings()
 {
-	return &m->appsettings;
+	return &global->appsettings;
+//	return &m1->appsettings;
 }
 
-const ApplicationSettings *BasicMainWindow::appsettings() const
+const ApplicationSettings *MainWindow::appsettings() const
 {
-	return &m->appsettings;
+	return &global->appsettings;
+//	return &m1->appsettings;
 }
 
-WebContext *BasicMainWindow::webContext()
+WebContext *MainWindow::webContext()
 {
-	return &m->webcx;
+	return &m1->webcx;
 }
 
-QString BasicMainWindow::gitCommand() const
+QString MainWindow::gitCommand() const
 {
-	return m->gcx.git_command;
+	return m1->gcx.git_command;
 }
 
-namespace {
-
-enum UserEvent {
-	EventUserFunction = QEvent::User,
-};
-
-class UserFunctionEvent : public QEvent {
-public:
-	std::function<void(QVariant &)> func;
-	QVariant var;
-
-	explicit UserFunctionEvent(std::function<void(QVariant const &)> const &func, QVariant const &var)
-		: QEvent((QEvent::Type)EventUserFunction)
-		, func(func)
-		, var(var)
-	{
-	}
-};
-
-} // namespace
-
-bool BasicMainWindow::event(QEvent *event)
-{
-	if (event->type() == (QEvent::Type)EventUserFunction) {
-		if (auto *e = dynamic_cast<UserFunctionEvent *>(event)) {
-			e->func(e->var);
-			return true;
-		}
-	}
-	return QMainWindow::event(event);
-}
-
-void BasicMainWindow::postUserFunctionEvent(const std::function<void(QVariant const &)> &fn, QVariant const &v)
-{
-	qApp->postEvent(this, new UserFunctionEvent(fn, v));
-}
-
-void BasicMainWindow::autoOpenRepository(QString dir)
+void MainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryItem const &item){
 		setCurrentRepository(item, true);
@@ -225,7 +113,7 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 	}
 
 	RepositoryItem newitem;
-	GitPtr g = git(dir);
+	GitPtr g = git(dir, {}, {});
 	if (isValidWorkingCopy(g)) {
 		ushort const *left = dir.utf16();
 		ushort const *right = left + dir.size();
@@ -249,99 +137,106 @@ void BasicMainWindow::autoOpenRepository(QString dir)
 	}
 }
 
-GitPtr BasicMainWindow::git(QString const &dir) const
+GitPtr MainWindow::git(QString const &dir, QString const &submodpath, QString const &sshkey) const
 {
-//	const_cast<BasicMainWindow *>(this)->checkGitCommand();
-
-	GitPtr g = std::make_shared<Git>(m->gcx, dir);
+	GitPtr g = std::make_shared<Git>(m1->gcx, dir, submodpath, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
 		g->setLogCallback(git_callback, (void *)this);
 		return g;
 	} else {
 		QString text = tr("git command not specified") + '\n';
-		const_cast<BasicMainWindow *>(this)->writeLog(text);
+		const_cast<MainWindow *>(this)->writeLog(text);
 		return GitPtr();
 	}
 }
 
-GitPtr BasicMainWindow::git()
+GitPtr MainWindow::git()
 {
-	return git(currentWorkingCopyDir());
+	RepositoryItem const &item = currentRepository();
+	return git(item.local_dir, {}, item.ssh_key);
 }
 
-QPixmap BasicMainWindow::getTransparentPixmap()
+
+GitPtr MainWindow::git(Git::SubmoduleItem const &submod)
 {
-	return m->transparent_pixmap;
+	if (!submod) return {};
+	RepositoryItem const &item = currentRepository();
+	return git(item.local_dir, submod.path, item.ssh_key);
 }
 
-QIcon BasicMainWindow::committerIcon(int row) const
+QPixmap MainWindow::getTransparentPixmap()
+{
+	return m1->transparent_pixmap;
+}
+
+QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 {
 	QIcon icon;
 	if (isAvatarEnabled() && isOnlineMode()) {
-		auto const &logs = getLogs();
+		auto const &logs = getLogs(frame);
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
 			if (commit.email.indexOf('@') > 0) {
 				std::string email = commit.email.toStdString();
-				icon = getAvatarLoader()->fetch(email, true); // from gavatar
+				icon = getAvatarLoader()->fetch(frame, email, true); // from gavatar
 			}
 		}
 	}
 	return icon;
 }
 
-Git::CommitItem const *BasicMainWindow::commitItem(int row) const
+Git::CommitItem const *MainWindow::commitItem(RepositoryWrapperFrame *frame, int row) const
 {
-	auto const &logs = getLogs();
+	auto const &logs = getLogs(frame);
 	if (row >= 0 && row < (int)logs.size()) {
 		return &logs[row];
 	}
 	return nullptr;
 }
 
-QIcon BasicMainWindow::verifiedIcon(char s) const
+QIcon MainWindow::verifiedIcon(char s) const
 {
 	Git::SignatureGrade g = Git::evaluateSignature(s);
 	switch (g) {
 	case Git::SignatureGrade::Good:
-		return m->signature_good_icon;
+		return m1->signature_good_icon;
 	case Git::SignatureGrade::Bad:
-		return m->signature_bad_icon;
+		return m1->signature_bad_icon;
 	case Git::SignatureGrade::Unknown:
 	case Git::SignatureGrade::Dubious:
 	case Git::SignatureGrade::Missing:
-		return m->signature_dubious_icon;
+		return m1->signature_dubious_icon;
 	}
 	return QIcon();
 }
 
-QString BasicMainWindow::currentWorkingCopyDir() const
+QString MainWindow::currentWorkingCopyDir() const
 {
-	return m->current_repo.local_dir;
+	return m1->current_repo.local_dir;
 }
 
-bool BasicMainWindow::isRepositoryOpened() const
+bool MainWindow::isRepositoryOpened() const
 {
 	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
 
-QList<BasicMainWindow::Label> const *BasicMainWindow::label(int row) const
+QList<BranchLabel> const *MainWindow::label(RepositoryWrapperFrame const *frame, int row) const
 {
-	auto it = getLabelMap()->find(row);
-	if (it != getLabelMap()->end()) {
+	auto it = getLabelMap(frame)->find(row);
+	if (it != getLabelMap(frame)->end()) {
 		return &it->second;
 	}
 	return nullptr;
 }
 
-QList<BasicMainWindow::Label> BasicMainWindow::sortedLabels(int row) const
+QList<BranchLabel> MainWindow::sortedLabels(RepositoryWrapperFrame *frame, int row) const
 {
-	QList<BasicMainWindow::Label> list;
-	auto const *p = const_cast<BasicMainWindow *>(this)->label(row);
+	QList<BranchLabel> list;
+	auto const *p = const_cast<MainWindow *>(this)->label(frame, row);
 	if (p && !p->empty()) {
 		list = *p;
-		std::sort(list.begin(), list.end(), [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
-			auto Compare = [](BasicMainWindow::Label const &l, BasicMainWindow::Label const &r){
+		std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
+			auto Compare = [](BranchLabel const &l, BranchLabel const &r){
 				if (l.kind < r.kind) return -1;
 				if (l.kind > r.kind) return 1;
 				if (l.text < r.text) return -1;
@@ -354,21 +249,21 @@ QList<BasicMainWindow::Label> BasicMainWindow::sortedLabels(int row) const
 	return list;
 }
 
-bool BasicMainWindow::saveAs(QString const &id, QString const &dstpath)
+bool MainWindow::saveAs(RepositoryWrapperFrame *frame, QString const &id, QString const &dstpath)
 {
 	if (id.startsWith(PATH_PREFIX)) {
 		return saveFileAs(id.mid(1), dstpath);
 	} else {
-		return saveBlobAs(id, dstpath);
+		return saveBlobAs(frame, id, dstpath);
 	}
 }
 
-bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url)
+bool MainWindow::testRemoteRepositoryValidity(QString const &url, QString const &sshkey)
 {
 	bool ok;
 	{
 		OverrideWaitCursor;
-		ok = isValidRemoteURL(url);
+		ok = isValidRemoteURL(url, sshkey);
 	}
 
 	QString pass = tr("The URL is a valid repository");
@@ -388,113 +283,46 @@ bool BasicMainWindow::testRemoteRepositoryValidity(QString const &url)
 	return ok;
 }
 
-void BasicMainWindow::addWorkingCopyDir(QString const &dir, bool open)
+void MainWindow::addWorkingCopyDir(QString const &dir, bool open)
 {
 	addWorkingCopyDir(dir, QString(), open);
 }
 
-bool BasicMainWindow::queryCommit(QString const &id, Git::CommitItem *out)
+bool MainWindow::queryCommit(QString const &id, Git::CommitItem *out)
 {
 	*out = Git::CommitItem();
 	GitPtr g = git();
 	return g->queryCommit(id, out);
 }
 
-QAction *BasicMainWindow::addMenuActionProperty(QMenu *menu)
+QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 {
 	return menu->addAction(tr("&Property"));
 }
 
-void BasicMainWindow::checkout(QWidget *parent, Git::CommitItem const *commit, std::function<void()> accepted_callback)
-{
-	if (!commit) return;
-
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	QStringList tags;
-	QStringList all_local_branches;
-	QStringList local_branches;
-	QStringList remote_branches;
-	{
-		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
-		for (NamedCommitItem const &item : named_commits) {
-			QString name = item.name;
-			if (item.id == commit->commit_id) {
-				if (item.type == NamedCommitItem::Type::Tag) {
-					tags.push_back(name);
-				} else if (item.type == NamedCommitItem::Type::BranchLocal || item.type == NamedCommitItem::Type::BranchRemote) {
-					int i = name.lastIndexOf('/');
-					if (i < 0 && name == "HEAD") continue;
-					if (i > 0 && name.mid(i + 1) == "HEAD") continue;
-					if (item.type == NamedCommitItem::Type::BranchLocal) {
-						local_branches.push_back(name);
-					} else if (item.type == NamedCommitItem::Type::BranchRemote) {
-						remote_branches.push_back(name);
-					}
-				}
-			}
-			if (item.type == NamedCommitItem::Type::BranchLocal) {
-				all_local_branches.push_back(name);
-			}
-		}
-	}
-
-	CheckoutDialog dlg(parent, tags, all_local_branches, local_branches, remote_branches);
-	if (dlg.exec() == QDialog::Accepted) {
-		if (accepted_callback) {
-			accepted_callback();
-		}
-		CheckoutDialog::Operation op = dlg.operation();
-		QString name = dlg.branchName();
-		QString id = commit->commit_id;
-		if (id.isEmpty() && !commit->parent_ids.isEmpty()) {
-			id = commit->parent_ids.front();
-		}
-		bool ok = false;
-		setLogEnabled(g, true);
-		if (op == CheckoutDialog::Operation::HeadDetached) {
-			if (!id.isEmpty()) {
-				ok = g->git(QString("checkout \"%1\"").arg(id), true);
-			}
-		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
-			if (!name.isEmpty() && !id.isEmpty()) {
-				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
-			}
-		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
-			if (!name.isEmpty()) {
-				ok = g->git(QString("checkout \"%1\"").arg(name), true);
-			}
-		}
-		if (ok) {
-			openRepository(true);
-		}
-	}
-}
-
-void BasicMainWindow::jumpToCommit(QString id)
+void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 {
 	GitPtr g = git();
 	id = g->rev_parse(id);
 	if (!id.isEmpty()) {
-		int row = rowFromCommitId(id);
-		setCurrentLogRow(row);
+		int row = rowFromCommitId(frame, id);
+		setCurrentLogRow(frame, row);
 	}
 }
 
-void BasicMainWindow::execCommitViewWindow(Git::CommitItem const *commit)
+void MainWindow::execCommitViewWindow(Git::CommitItem const *commit)
 {
 	CommitViewWindow win(this, commit);
 	win.exec();
 }
 
-void BasicMainWindow::execCommitExploreWindow(QWidget *parent, Git::CommitItem const *commit)
+void MainWindow::execCommitExploreWindow(RepositoryWrapperFrame *frame, QWidget *parent, Git::CommitItem const *commit)
 {
-	CommitExploreWindow win(parent, this, getObjCache(), commit);
+	CommitExploreWindow win(parent, this, getObjCache(frame), commit);
 	win.exec();
 }
 
-void BasicMainWindow::execFileHistory(QString const &path)
+void MainWindow::execFileHistory(QString const &path)
 {
 	if (path.isEmpty()) return;
 
@@ -506,17 +334,9 @@ void BasicMainWindow::execFileHistory(QString const &path)
 	dlg.exec();
 }
 
-void BasicMainWindow::execFilePropertyDialog(QListWidgetItem *item)
-{
-	if (item) {
-		QString path = getFilePath(item);
-		QString id = getObjectID(item);
-		FilePropertyDialog dlg(this);
-		dlg.exec(this, path, id);
-	}
-}
 
-QString BasicMainWindow::selectGitCommand(bool save)
+
+QString MainWindow::selectGitCommand(bool save)
 {
 	char const *exe = GIT_COMMAND;
 
@@ -557,7 +377,7 @@ QString BasicMainWindow::selectGitCommand(bool save)
 	return selectCommand_("Git", exe, list, path, fn);
 }
 
-QString BasicMainWindow::selectFileCommand(bool save)
+QString MainWindow::selectFileCommand(bool save)
 {
 	char const *exe = FILE_COMMAND;
 
@@ -588,7 +408,7 @@ QString BasicMainWindow::selectFileCommand(bool save)
 	return selectCommand_("File", exe, list, path, fn);
 }
 
-QString BasicMainWindow::selectGpgCommand(bool save)
+QString MainWindow::selectGpgCommand(bool save)
 {
 	QString path = global->gpg_command;
 
@@ -604,55 +424,70 @@ QString BasicMainWindow::selectGpgCommand(bool save)
 	return selectCommand_("GPG", cmdlist, list, path, fn);
 }
 
-Git::Branch const &BasicMainWindow::currentBranch() const
+QString MainWindow::selectSshCommand(bool save)
 {
-	return m->current_branch;
+	QString path = m1->gcx.ssh_command;
+
+	auto fn = [&](QString const &path){
+		setSshCommand(path, save);
+	};
+
+	QStringList list = whichCommand_(SSH_COMMAND);
+
+	QStringList cmdlist;
+	cmdlist.push_back(SSH_COMMAND);
+	return selectCommand_("ssh", cmdlist, list, path, fn);
 }
 
-void BasicMainWindow::setCurrentBranch(Git::Branch const &b)
+Git::Branch const &MainWindow::currentBranch() const
 {
-	m->current_branch = b;
+	return m1->current_branch;
 }
 
-RepositoryItem const &BasicMainWindow::currentRepository() const
+void MainWindow::setCurrentBranch(Git::Branch const &b)
 {
-	return m->current_repo;
+	m1->current_branch = b;
 }
 
-QString BasicMainWindow::currentRepositoryName() const
+RepositoryItem const &MainWindow::currentRepository() const
+{
+	return m1->current_repo;
+}
+
+QString MainWindow::currentRepositoryName() const
 {
 	return currentRepository().name;
 }
 
-QString BasicMainWindow::currentRemoteName() const
+QString MainWindow::currentRemoteName() const
 {
-	return m->current_remote_name;
+	return m1->current_remote_name;
 }
 
-QString BasicMainWindow::currentBranchName() const
+QString MainWindow::currentBranchName() const
 {
 	return currentBranch().name;
 }
 
-bool BasicMainWindow::isValidWorkingCopy(const GitPtr &g) const
+bool MainWindow::isValidWorkingCopy(const GitPtr &g) const
 {
 	return g && g->isValidWorkingCopy();
 }
 
-QString BasicMainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const
+QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const
 {
-	const_cast<BasicMainWindow *>(this)->checkFileCommand();
+	const_cast<MainWindow *>(this)->checkFileCommand();
 	return misc::determinFileType(global->file_command, path, mime, callback);
 }
 
-QString BasicMainWindow::determinFileType(QString const &path, bool mime)
+QString MainWindow::determinFileType(QString const &path, bool mime)
 {
 	return determinFileType_(path, mime, [](QString const &cmd, QByteArray *ba){
 		misc2::runCommand(cmd, ba);
 	});
 }
 
-QString BasicMainWindow::determinFileType(QByteArray in, bool mime)
+QString MainWindow::determinFileType(QByteArray in, bool mime)
 {
 	if (in.isEmpty()) return QString();
 
@@ -678,33 +513,33 @@ QString BasicMainWindow::determinFileType(QByteArray in, bool mime)
 	});
 }
 
-QList<Git::Tag> BasicMainWindow::queryTagList()
+QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)
 {
 	QList<Git::Tag> list;
-	Git::CommitItem const *commit = selectedCommitItem();
+	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit && Git::isValidID(commit->commit_id)) {
-		list = findTag(commit->commit_id);
+		list = findTag(frame, commit->commit_id);
 	}
 	return list;
 }
 
-int BasicMainWindow::limitLogCount() const
+int MainWindow::limitLogCount() const
 {
 	int n = appsettings()->maximum_number_of_commit_item_acquisitions;
 	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
-TextEditorThemePtr BasicMainWindow::themeForTextEditor()
+TextEditorThemePtr MainWindow::themeForTextEditor()
 {
 	return global->theme->text_editor_theme;
 }
 
-Git::Object BasicMainWindow::cat_file_(GitPtr const &g, QString const &id)
+Git::Object MainWindow::cat_file_(RepositoryWrapperFrame *frame, GitPtr const &g, QString const &id)
 {
 	if (isValidWorkingCopy(g)) {
 		QString path_prefix = PATH_PREFIX;
 		if (id.startsWith(path_prefix)) {
-			QString path = g->workingRepositoryDir();
+			QString path = g->workingDir();
 			path = path / id.mid(path_prefix.size());
 			QFile file(path);
 			if (file.open(QFile::ReadOnly)) {
@@ -713,305 +548,289 @@ Git::Object BasicMainWindow::cat_file_(GitPtr const &g, QString const &id)
 				return obj;
 			}
 		} else if (Git::isValidID(id)) {
-			return getObjCache()->catFile(id);;
+			return getObjCache(frame)->catFile(id);;
 		}
 	}
 	return Git::Object();
 }
 
-Git::Object BasicMainWindow::cat_file(QString const &id)
+Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, QString const &id)
 {
-	return cat_file_(git(), id);
+	return cat_file_(frame, git(), id);
 }
 
-QString BasicMainWindow::newTempFilePath()
+QString MainWindow::newTempFilePath()
 {
 	QString tmpdir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-	QString path = tmpdir / tempfileHeader() + QString::number(m->temp_file_counter);
-	m->temp_file_counter++;
+	QString path = tmpdir / tempfileHeader() + QString::number(m1->temp_file_counter);
+	m1->temp_file_counter++;
 	return path;
 }
 
-QString BasicMainWindow::findFileID(QString const &commit_id, QString const &file)
+QString MainWindow::findFileID(RepositoryWrapperFrame *frame, QString const &commit_id, QString const &file)
 {
-	return lookupFileID(getObjCache(), commit_id, file);
+	return lookupFileID(getObjCache(frame), commit_id, file);
 }
 
-void BasicMainWindow::updateFilesList(QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	listwidget->clear();
-
-	auto AddItem = [&](QString const &filename, QString header, int idiff){
-		if (header.isEmpty()) {
-			header = "(??\?) "; // damn trigraph
-		}
-		QListWidgetItem *item = new QListWidgetItem(filename);
-		item->setData(FilePathRole, filename);
-		item->setData(DiffIndexRole, idiff);
-		item->setData(HunkIndexRole, -1);
-		item->setData(HeaderRole, header);
-		listwidget->addItem(item);
-	};
-
-	GitDiff dm(getObjCache());
-	if (!dm.diff(id, diff_list)) return;
-
-	addDiffItems(diff_list, AddItem);
+	global->appsettings = appsettings;
+//	m1->appsettings = appsettings;
 }
 
-void BasicMainWindow::setAppSettings(const ApplicationSettings &appsettings)
+QPixmap MainWindow::getTransparentPixmap() const
 {
-	m->appsettings = appsettings;
+	return m1->transparent_pixmap;
 }
 
-QPixmap BasicMainWindow::getTransparentPixmap() const
+QIcon MainWindow::getSignatureBadIcon() const
 {
-	return m->transparent_pixmap;
+	return m1->signature_bad_icon;
 }
 
-QIcon BasicMainWindow::getSignatureBadIcon() const
+QIcon MainWindow::getSignatureDubiousIcon() const
 {
-	return m->signature_bad_icon;
+	return m1->signature_dubious_icon;
 }
 
-QIcon BasicMainWindow::getSignatureDubiousIcon() const
+QIcon MainWindow::getSignatureGoodIcon() const
 {
-	return m->signature_dubious_icon;
+	return m1->signature_good_icon;
 }
 
-QIcon BasicMainWindow::getSignatureGoodIcon() const
+QIcon MainWindow::getFolderIcon() const
 {
-	return m->signature_good_icon;
+	return m1->folder_icon;
 }
 
-QIcon BasicMainWindow::getFolderIcon() const
+QIcon MainWindow::getRepositoryIcon() const
 {
-	return m->folder_icon;
-}
-
-QIcon BasicMainWindow::getRepositoryIcon() const
-{
-	return m->repository_icon;
-}
-
-const Git::CommitItemList &BasicMainWindow::getLogs() const
-{
-	return m->logs;
-}
-
-Git::CommitItem const *BasicMainWindow::getLog(int index) const
-{
-	return (index >= 0 && index < (int)m->logs.size()) ? &m->logs[index] : nullptr;
-}
-
-Git::CommitItemList *BasicMainWindow::getLogsPtr()
-{
-	return &m->logs;
-}
-
-void BasicMainWindow::setLogs(const Git::CommitItemList &logs)
-{
-	m->logs = logs;
-}
-
-void BasicMainWindow::clearLogs()
-{
-	m->logs.clear();
-}
-
-BasicMainWindow::PtyCondition BasicMainWindow::getPtyCondition()
-{
-	return m->pty_condition;
-}
-
-void BasicMainWindow::setPtyUserData(QVariant const &userdata)
-{
-	m->pty_process.setVariant(userdata);
-}
-
-void BasicMainWindow::setPtyCondition(const PtyCondition &ptyCondition)
-{
-	m->pty_condition = ptyCondition;
+	return m1->repository_icon;
 }
 
 
-PtyProcess *BasicMainWindow::getPtyProcess()
+
+
+
+
+
+
+
+
+
+
+
+BasicMainWindow::PtyCondition MainWindow::getPtyCondition()
 {
-	return &m->pty_process;
+	return m1->pty_condition;
 }
 
-bool BasicMainWindow::getPtyProcessOk() const
+void MainWindow::setPtyUserData(QVariant const &userdata)
 {
-	return m->pty_process_ok;
+	m1->pty_process.setVariant(userdata);
 }
 
-void BasicMainWindow::setPtyProcessOk(bool pty_process_ok)
+void MainWindow::setPtyCondition(const PtyCondition &ptyCondition)
 {
-	m->pty_process_ok = pty_process_ok;
+	m1->pty_condition = ptyCondition;
 }
 
-const QList<RepositoryItem> &BasicMainWindow::getRepos() const
+
+PtyProcess *MainWindow::getPtyProcess()
 {
-	return m->repos;
+	return &m1->pty_process;
 }
 
-QList<RepositoryItem> *BasicMainWindow::getReposPtr()
+bool MainWindow::getPtyProcessOk() const
 {
-	return &m->repos;
+	return m1->pty_process_ok;
 }
 
-void BasicMainWindow::setCurrentRemoteName(QString const &name)
+void MainWindow::setPtyProcessOk(bool pty_process_ok)
 {
-	m->current_remote_name = name;
+	m1->pty_process_ok = pty_process_ok;
 }
 
-AvatarLoader *BasicMainWindow::getAvatarLoader()
+const QList<RepositoryItem> &MainWindow::getRepos() const
 {
-	return &m->avatar_loader;
+	return m1->repos;
 }
 
-AvatarLoader const *BasicMainWindow::getAvatarLoader() const
+QList<RepositoryItem> *MainWindow::getReposPtr()
 {
-	return &m->avatar_loader;
+	return &m1->repos;
 }
 
-int *BasicMainWindow::ptrUpdateFilesListCounter()
+void MainWindow::setCurrentRemoteName(QString const &name)
 {
-	return &m->update_files_list_counter;
+	m1->current_remote_name = name;
 }
 
-int *BasicMainWindow::ptrUpdateCommitTableCounter()
+AvatarLoader *MainWindow::getAvatarLoader()
 {
-	return &m->update_commit_table_counter;
+	return &m1->avatar_loader;
 }
 
-bool BasicMainWindow::interactionCanceled() const
+AvatarLoader const *MainWindow::getAvatarLoader() const
 {
-	return m->interaction_canceled;
+	return &m1->avatar_loader;
 }
 
-void BasicMainWindow::setInteractionCanceled(bool canceled)
+//int *MainWindow::ptrUpdateFilesListCounter()
+//{
+//	return &m1->update_files_list_counter;
+//}
+
+//int *MainWindow::ptrUpdateCommitTableCounter()
+//{
+//	return &m1->update_commit_table_counter;
+//}
+
+bool MainWindow::interactionCanceled() const
 {
-	m->interaction_canceled = canceled;
+	return m1->interaction_canceled;
 }
 
-BasicMainWindow::InteractionMode BasicMainWindow::interactionMode() const
+void MainWindow::setInteractionCanceled(bool canceled)
 {
-	return m->interaction_mode;
+	m1->interaction_canceled = canceled;
 }
 
-void BasicMainWindow::setInteractionMode(const InteractionMode &im)
+BasicMainWindow::InteractionMode MainWindow::interactionMode() const
 {
-	m->interaction_mode = im;
+	return m1->interaction_mode;
 }
 
-QString BasicMainWindow::getRepositoryFilterText() const
+void MainWindow::setInteractionMode(const InteractionMode &im)
 {
-	return m->repository_filter_text;
+	m1->interaction_mode = im;
 }
 
-void BasicMainWindow::setRepositoryFilterText(QString const &text)
+QString MainWindow::getRepositoryFilterText() const
 {
-	m->repository_filter_text = text;
+	return m1->repository_filter_text;
 }
 
-void BasicMainWindow::setUncommitedChanges(bool uncommited_changes)
+void MainWindow::setRepositoryFilterText(QString const &text)
 {
-	m->uncommited_changes = uncommited_changes;
+	m1->repository_filter_text = text;
 }
 
-QList<Git::Diff> *BasicMainWindow::diffResult()
+void MainWindow::setUncommitedChanges(bool uncommited_changes)
 {
-	return &m->diff_result;
+	m1->uncommited_changes = uncommited_changes;
 }
 
-std::map<QString, Git::Diff> *BasicMainWindow::getDiffCacheMap()
+QList<Git::Diff> *MainWindow::diffResult()
 {
-	return &m->diff_cache;
+	return &m1->diff_result;
 }
 
-bool BasicMainWindow::getRemoteChanged() const
+void MainWindow::setDiffResult(const QList<Git::Diff> &diffs)
 {
-	return m->remote_changed;
+	m1->diff_result = diffs;
 }
 
-void BasicMainWindow::setRemoteChanged(bool remote_changed)
+const QList<Git::SubmoduleItem> &MainWindow::submodules() const
 {
-	m->remote_changed = remote_changed;
+	return m1->submodules;
 }
 
-void BasicMainWindow::setServerType(const ServerType &server_type)
+void MainWindow::setSubmodules(const QList<Git::SubmoduleItem> &submodules)
 {
-	m->server_type = server_type;
+	m1->submodules = submodules;
 }
 
-GitHubRepositoryInfo *BasicMainWindow::ptrGitHub()
+std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap(RepositoryWrapperFrame *frame)
 {
-	return &m->github;
+//	return &m1->diff_cache;
+	return &frame->diff_cache;
 }
 
-std::map<int, QList<BasicMainWindow::Label>> *BasicMainWindow::getLabelMap()
+bool MainWindow::getRemoteChanged() const
 {
-	return &m->label_map;
+	return m1->remote_changed;
 }
 
-std::map<int, QList<BasicMainWindow::Label>> const *BasicMainWindow::getLabelMap() const
+void MainWindow::setRemoteChanged(bool remote_changed)
 {
-	return &m->label_map;
+	m1->remote_changed = remote_changed;
 }
 
-void BasicMainWindow::clearLabelMap()
+void MainWindow::setServerType(const ServerType &server_type)
 {
-	m->label_map.clear();
+	m1->server_type = server_type;
 }
 
-GitObjectCache *BasicMainWindow::getObjCache()
+GitHubRepositoryInfo *MainWindow::ptrGitHub()
 {
-	return &m->objcache;
+	return &m1->github;
 }
 
-bool BasicMainWindow::getForceFetch() const
+std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap(RepositoryWrapperFrame *frame)
 {
-	return m->force_fetch;
+//	return &m1->label_map;
+	return &frame->label_map;
 }
 
-void BasicMainWindow::setForceFetch(bool force_fetch)
+std::map<int, QList<BranchLabel>> const *MainWindow::getLabelMap(RepositoryWrapperFrame const *frame) const
 {
-	m->force_fetch = force_fetch;
+//	return &m1->label_map;
+	return &frame->label_map;
 }
 
-std::map<QString, QList<Git::Tag>> *BasicMainWindow::ptrTagMap()
+void MainWindow::clearLabelMap(RepositoryWrapperFrame *frame)
 {
-	return &m->tag_map;
+	frame->label_map.clear();
+//	m1->label_map.clear();
 }
 
-QString BasicMainWindow::getHeadId() const
+GitObjectCache *MainWindow::getObjCache(RepositoryWrapperFrame *frame)
 {
-	return m->head_id;
+	return &frame->objcache;
+//	return &m1->objcache;
 }
 
-void BasicMainWindow::setHeadId(QString const &head_id)
+bool MainWindow::getForceFetch() const
 {
-	m->head_id = head_id;
+	return m1->force_fetch;
 }
 
-void BasicMainWindow::setPtyProcessCompletionData(QVariant const &value)
+void MainWindow::setForceFetch(bool force_fetch)
 {
-	m->pty_process_completion_data = value;
+	m1->force_fetch = force_fetch;
 }
 
-QVariant const &BasicMainWindow::getTempRepoForCloneCompleteV() const
+std::map<QString, QList<Git::Tag>> *MainWindow::ptrTagMap(RepositoryWrapperFrame *frame)
 {
-	return m->pty_process_completion_data;
+//	return &m1->tag_map;
+	return &frame->tag_map;
 }
 
-void BasicMainWindow::updateCommitGraph()
+QString MainWindow::getHeadId() const
 {
-	auto const &logs = getLogs();
-	auto *logsp = getLogsPtr();
+	return m1->head_id;
+}
+
+void MainWindow::setHeadId(QString const &head_id)
+{
+	m1->head_id = head_id;
+}
+
+void MainWindow::setPtyProcessCompletionData(QVariant const &value)
+{
+	m1->pty_process_completion_data = value;
+}
+
+QVariant const &MainWindow::getTempRepoForCloneCompleteV() const
+{
+	return m1->pty_process_completion_data;
+}
+
+void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
+{
+	auto const &logs = getLogs(frame);
+	auto *logsp = getLogsPtr(frame);
 
 
 	const size_t LogCount = logs.size();
@@ -1237,7 +1056,7 @@ DONE:;
 	}
 }
 
-bool BasicMainWindow::fetch(GitPtr const &g, bool prune)
+bool MainWindow::fetch(GitPtr const &g, bool prune)
 {
 	setPtyCondition(PtyCondition::Fetch);
 	setPtyProcessOk(true);
@@ -1249,7 +1068,7 @@ bool BasicMainWindow::fetch(GitPtr const &g, bool prune)
 	return getPtyProcessOk();
 }
 
-bool BasicMainWindow::fetch_tags_f(GitPtr const &g)
+bool MainWindow::fetch_tags_f(GitPtr const &g)
 {
 	setPtyCondition(PtyCondition::Fetch);
 	setPtyProcessOk(true);
@@ -1261,14 +1080,14 @@ bool BasicMainWindow::fetch_tags_f(GitPtr const &g)
 	return getPtyProcessOk();
 }
 
-bool BasicMainWindow::git_callback(void *cookie, const char *ptr, int len)
+bool MainWindow::git_callback(void *cookie, const char *ptr, int len)
 {
-	auto *mw = (BasicMainWindow *)cookie;
+	auto *mw = (MainWindow *)cookie;
 	mw->emitWriteLog(QByteArray(ptr, len));
 	return true;
 }
 
-QString BasicMainWindow::selectCommand_(QString const &cmdname, QStringList const &cmdfiles, QStringList const &list, QString path, std::function<void (QString const &)> const &callback)
+QString MainWindow::selectCommand_(QString const &cmdname, QStringList const &cmdfiles, QStringList const &list, QString path, std::function<void (QString const &)> const &callback)
 {
 	QString window_title = tr("Select %1 command");
 	window_title = window_title.arg(cmdfiles.front());
@@ -1287,14 +1106,14 @@ QString BasicMainWindow::selectCommand_(QString const &cmdname, QStringList cons
 	return QString();
 }
 
-QString BasicMainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString const &path, std::function<void (QString const &)> const &callback)
+QString MainWindow::selectCommand_(QString const &cmdname, QString const &cmdfile, QStringList const &list, QString const &path, std::function<void (QString const &)> const &callback)
 {
 	QStringList cmdfiles;
 	cmdfiles.push_back(cmdfile);
 	return selectCommand_(cmdname, cmdfiles, list, path, callback);
 }
 
-bool BasicMainWindow::checkGitCommand()
+bool MainWindow::checkGitCommand()
 {
 	while (1) {
 		if (misc::isExecutable(gitCommand())) {
@@ -1307,7 +1126,7 @@ bool BasicMainWindow::checkGitCommand()
 	}
 }
 
-bool BasicMainWindow::checkFileCommand()
+bool MainWindow::checkFileCommand()
 {
 	while (1) {
 		if (misc::isExecutable(global->file_command)) {
@@ -1320,7 +1139,7 @@ bool BasicMainWindow::checkFileCommand()
 	}
 }
 
-bool BasicMainWindow::checkExecutable(QString const &path)
+bool MainWindow::checkExecutable(QString const &path)
 {
 	if (QFileInfo(path).isExecutable()) {
 		return true;
@@ -1331,22 +1150,19 @@ bool BasicMainWindow::checkExecutable(QString const &path)
 	return false;
 }
 
-void BasicMainWindow::internalSetCommand(QString const &path, bool save, QString const &name, QString *out)
+void MainWindow::internalSaveCommandPath(QString const &path, bool save, QString const &name)
 {
-	if (!path.isEmpty() && checkExecutable(path)) {
+	if (checkExecutable(path)) {
 		if (save) {
 			MySettings s;
 			s.beginGroup("Global");
 			s.setValue(name, path);
 			s.endGroup();
 		}
-		*out = path;
-	} else {
-		*out = QString();
 	}
 }
 
-QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString const &cmdfile2)
+QStringList MainWindow::whichCommand_(QString const &cmdfile1, QString const &cmdfile2)
 {
 	QStringList list;
 
@@ -1368,11 +1184,7 @@ QStringList BasicMainWindow::whichCommand_(QString const &cmdfile1, QString cons
 	return list;
 }
 
-
-
-
-
-void BasicMainWindow::setWindowTitle_(Git::User const &user)
+void MainWindow::setWindowTitle_(Git::User const &user)
 {
 	if (user.name.isEmpty() && user.email.isEmpty()) {
 		setWindowTitle(qApp->applicationName());
@@ -1385,7 +1197,7 @@ void BasicMainWindow::setWindowTitle_(Git::User const &user)
 	}
 }
 
-bool BasicMainWindow::execSetGlobalUserDialog()
+bool MainWindow::execSetGlobalUserDialog()
 {
 	SetGlobalUserDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -1398,7 +1210,7 @@ bool BasicMainWindow::execSetGlobalUserDialog()
 	return false;
 }
 
-bool BasicMainWindow::saveByteArrayAs(const QByteArray &ba, QString const &dstpath)
+bool MainWindow::saveByteArrayAs(const QByteArray &ba, QString const &dstpath)
 {
 	QFile file(dstpath);
 	if (file.open(QFile::WriteOnly)) {
@@ -1412,7 +1224,7 @@ bool BasicMainWindow::saveByteArrayAs(const QByteArray &ba, QString const &dstpa
 	return false;
 }
 
-bool BasicMainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
+bool MainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 {
 	QFile f(srcpath);
 	if (f.open(QFile::ReadOnly)) {
@@ -1428,9 +1240,9 @@ bool BasicMainWindow::saveFileAs(QString const &srcpath, QString const &dstpath)
 	return false;
 }
 
-bool BasicMainWindow::saveBlobAs(QString const &id, QString const &dstpath)
+bool MainWindow::saveBlobAs(RepositoryWrapperFrame *frame, QString const &id, QString const &dstpath)
 {
-	Git::Object obj = cat_file(id);
+	Git::Object obj = cat_file(frame, id);
 	if (!obj.content.isEmpty()) {
 		if (saveByteArrayAs(obj.content, dstpath)) {
 			return true;
@@ -1443,7 +1255,7 @@ bool BasicMainWindow::saveBlobAs(QString const &id, QString const &dstpath)
 	return false;
 }
 
-void BasicMainWindow::revertAllFiles()
+void MainWindow::revertAllFiles()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -1455,57 +1267,57 @@ void BasicMainWindow::revertAllFiles()
 	}
 }
 
-void BasicMainWindow::deleteTags(Git::CommitItem const &commit)
+void MainWindow::deleteTags(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
-	auto it = ptrTagMap()->find(commit.commit_id);
-	if (it != ptrTagMap()->end()) {
+	auto it = ptrTagMap(frame)->find(commit.commit_id);
+	if (it != ptrTagMap(frame)->end()) {
 		QStringList names;
 		QList<Git::Tag> const &tags = it->second;
 		for (Git::Tag const &tag : tags) {
 			names.push_back(tag.name);
 		}
-		deleteTags(names);
+		deleteTags(frame, names);
 	}
 }
 
-bool BasicMainWindow::isAvatarEnabled() const
+bool MainWindow::isAvatarEnabled() const
 {
 	return appsettings()->get_committer_icon;
 }
 
-bool BasicMainWindow::isGitHub() const
+bool MainWindow::isGitHub() const
 {
-	return m->server_type == ServerType::GitHub;
+	return m1->server_type == ServerType::GitHub;
 }
 
-QStringList BasicMainWindow::remotes() const
+QStringList MainWindow::remotes() const
 {
-	return m->remotes;
+	return m1->remotes;
 }
 
-QList<Git::Branch> BasicMainWindow::findBranch(QString const &id)
+QList<Git::Branch> MainWindow::findBranch(RepositoryWrapperFrame *frame, QString const &id)
 {
-	auto it = branchMapRef().find(id);
-	if (it != branchMapRef().end()) {
+	auto it = branchMapRef(frame).find(id);
+	if (it != branchMapRef(frame).end()) {
 		return it->second;
 	}
 	return QList<Git::Branch>();
 }
 
-QString BasicMainWindow::saveAsTemp(QString const &id)
+QString MainWindow::saveAsTemp(RepositoryWrapperFrame *frame, QString const &id)
 {
 	QString path = newTempFilePath();
-	saveAs(id, path);
+	saveAs(frame, id, path);
 	return path;
 }
 
-QString BasicMainWindow::tempfileHeader() const
+QString MainWindow::tempfileHeader() const
 {
 	QString name = "jp_soramimi_Guitar_%1_";
 	return name.arg(QApplication::applicationPid());
 }
 
-void BasicMainWindow::deleteTempFiles()
+void MainWindow::deleteTempFiles()
 {
 	QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
 	QString name = tempfileHeader();
@@ -1516,18 +1328,18 @@ void BasicMainWindow::deleteTempFiles()
 	}
 }
 
-QString BasicMainWindow::getCommitIdFromTag(QString const &tag)
+QString MainWindow::getCommitIdFromTag(RepositoryWrapperFrame *frame, QString const &tag)
 {
-	return getObjCache()->getCommitIdFromTag(tag);
+	return getObjCache(frame)->getCommitIdFromTag(tag);
 }
 
-bool BasicMainWindow::isValidRemoteURL(QString const &url)
+bool MainWindow::isValidRemoteURL(QString const &url, QString const &sshkey)
 {
 	if (url.indexOf('\"') >= 0) {
 		return false;
 	}
 	stopPtyProcess();
-	GitPtr g = git(QString());
+	GitPtr g = git({}, {}, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
 	bool f = g->git(cmd, false, false, getPtyProcess());
@@ -1582,17 +1394,9 @@ bool BasicMainWindow::isValidRemoteURL(QString const &url)
 	return false;
 }
 
-QString BasicMainWindow::getObjectID(QListWidgetItem *item)
-{
-	int i = indexOfDiff(item);
-	if (i >= 0 && i < diffResult()->size()) {
-		Git::Diff const &diff = diffResult()->at(i);
-		return diff.blob.a_id;
-	}
-	return QString();
-}
 
-void BasicMainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
+
+void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 {
 	if (dir.endsWith(".git")) {
 		int i = dir.size();
@@ -1631,12 +1435,12 @@ void BasicMainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 
 	if (open) {
 		setCurrentRepository(item, true);
-		GitPtr g = git(item.local_dir);
+		GitPtr g = git(item.local_dir, {}, {});
 		openRepository_(g);
 	}
 }
 
-QString BasicMainWindow::makeRepositoryName(QString const &loc)
+QString MainWindow::makeRepositoryName(QString const &loc)
 {
 	int i = loc.lastIndexOf('/');
 	int j = loc.lastIndexOf('\\');
@@ -1652,19 +1456,16 @@ QString BasicMainWindow::makeRepositoryName(QString const &loc)
 	return QString();
 }
 
-void BasicMainWindow::clearAuthentication()
+void MainWindow::clearAuthentication()
 {
 	clearSshAuthentication();
-	m->http_uid.clear();
-	m->http_pwd.clear();
+	m1->http_uid.clear();
+	m1->http_pwd.clear();
 }
 
-void BasicMainWindow::onAvatarUpdated()
-{
-	updateCommitTableLater();
-}
 
-QStringList BasicMainWindow::findGitObject(const QString &id) const
+
+QStringList MainWindow::findGitObject(const QString &id) const
 {
 	QStringList list;
 	std::set<QString> set;
@@ -1672,7 +1473,7 @@ QStringList BasicMainWindow::findGitObject(const QString &id) const
 		{
 			QString a = id.mid(0, 2);
 			QString b = id.mid(2);
-			QString dir = m->current_repo.local_dir / ".git/objects" / a;
+			QString dir = m1->current_repo.local_dir / ".git/objects" / a;
 			QDirIterator it(dir);
 			while (it.hasNext()) {
 				it.next();
@@ -1686,7 +1487,7 @@ QStringList BasicMainWindow::findGitObject(const QString &id) const
 			}
 		}
 		{
-			QString dir = m->current_repo.local_dir / ".git/objects/pack";
+			QString dir = m1->current_repo.local_dir / ".git/objects/pack";
 			QDirIterator it(dir);
 			while (it.hasNext()) {
 				it.next();
@@ -1710,45 +1511,45 @@ QStringList BasicMainWindow::findGitObject(const QString &id) const
 	return list;
 }
 
-void BasicMainWindow::writeLog(const char *ptr, int len)
+void MainWindow::writeLog(const char *ptr, int len)
 {
 	internalWriteLog(ptr, len);
 }
 
-void BasicMainWindow::writeLog(const QString &str)
+void MainWindow::writeLog(const QString &str)
 {
 	std::string s = str.toStdString();
 	writeLog(s.c_str(), s.size());
 }
 
-void BasicMainWindow::emitWriteLog(QByteArray const &ba)
+void MainWindow::emitWriteLog(QByteArray const &ba)
 {
 	emit signalWriteLog(ba);
 }
 
-void BasicMainWindow::writeLog_(QByteArray ba)
+void MainWindow::writeLog_(QByteArray ba)
 {
 	if (!ba.isEmpty()) {
 		writeLog(ba.data(), ba.size());
 	}
 }
 
-void BasicMainWindow::queryRemotes(GitPtr const &g)
+void MainWindow::queryRemotes(GitPtr const &g)
 {
 	if (!g) return;
-	m->remotes = g->getRemotes();
-	std::sort(m->remotes.begin(), m->remotes.end());
+	m1->remotes = g->getRemotes();
+	std::sort(m1->remotes.begin(), m1->remotes.end());
 }
 
-void BasicMainWindow::msgNoRepositorySelected()
+void MainWindow::msgNoRepositorySelected()
 {
 	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
 }
 
-bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo)
+bool MainWindow::runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo)
 {
 	if (!repo) {
-		repo = &m->current_repo;
+		repo = &m1->current_repo;
 	}
 	QString dir = repo->local_dir;
 	dir.replace('\\', '/');
@@ -1760,21 +1561,17 @@ bool BasicMainWindow::runOnRepositoryDir(std::function<void (QString)> const &ca
 	return false;
 }
 
-void BasicMainWindow::clearSshAuthentication()
+void MainWindow::clearSshAuthentication()
 {
-	m->ssh_passphrase_user.clear();
-	m->ssh_passphrase_pass.clear();
+	m1->ssh_passphrase_user.clear();
+	m1->ssh_passphrase_pass.clear();
 }
 
 
 
-QString BasicMainWindow::getFilePath(QListWidgetItem *item)
-{
-	if (!item) return QString();
-	return item->data(FilePathRole).toString();
-}
 
-bool BasicMainWindow::isGroupItem(QTreeWidgetItem *item)
+
+bool MainWindow::isGroupItem(QTreeWidgetItem *item)
 {
 	if (item) {
 		int index = item->data(0, IndexRole).toInt();
@@ -1785,25 +1582,25 @@ bool BasicMainWindow::isGroupItem(QTreeWidgetItem *item)
 	return false;
 }
 
-int BasicMainWindow::indexOfLog(QListWidgetItem *item)
+int MainWindow::indexOfLog(QListWidgetItem *item)
 {
 	if (!item) return -1;
 	return item->data(IndexRole).toInt();
 }
 
-int BasicMainWindow::indexOfDiff(QListWidgetItem *item)
+int MainWindow::indexOfDiff(QListWidgetItem *item)
 {
 	if (!item) return -1;
 	return item->data(DiffIndexRole).toInt();
 }
 
-int BasicMainWindow::getHunkIndex(QListWidgetItem *item)
-{
-	if (!item) return -1;
-	return item->data(HunkIndexRole).toInt();
-}
+//int MainWindow::getHunkIndex(QListWidgetItem *item)
+//{
+//	if (!item) return -1;
+//	return item->data(HunkIndexRole).toInt();
+//}
 
-void BasicMainWindow::initNetworking()
+void MainWindow::initNetworking()
 {
 	std::string http_proxy;
 	std::string https_proxy;
@@ -1841,36 +1638,47 @@ void BasicMainWindow::initNetworking()
 	webContext()->set_https_proxy(https_proxy);
 }
 
-QString BasicMainWindow::abbrevCommitID(Git::CommitItem const &commit)
+QString MainWindow::abbrevCommitID(Git::CommitItem const &commit)
 {
 	return commit.commit_id.mid(0, 7);
 }
 
-bool BasicMainWindow::saveRepositoryBookmarks() const
+bool MainWindow::saveRepositoryBookmarks() const
 {
 	QString path = getBookmarksFilePath();
 	return RepositoryBookmark::save(path, &getRepos());
 }
 
-QString BasicMainWindow::getBookmarksFilePath() const
+QString MainWindow::getBookmarksFilePath() const
 {
 	return global->app_config_dir / "bookmarks.xml";
 }
 
-void BasicMainWindow::stopPtyProcess()
+void MainWindow::stopPtyProcess()
 {
 	getPtyProcess()->stop();
-	QDir::setCurrent(m->starting_dir);
+	QDir::setCurrent(m1->starting_dir);
 }
 
-void BasicMainWindow::abortPtyProcess()
+void MainWindow::abortPtyProcess()
 {
 	stopPtyProcess();
 	setPtyProcessOk(false);
 	setInteractionCanceled(true);
 }
 
-bool BasicMainWindow::execWelcomeWizardDialog()
+void MainWindow::saveApplicationSettings()
+{
+	SettingsDialog::saveSettings(appsettings());
+//	SettingsDialog::saveSettings(&m1->appsettings);
+}
+
+void MainWindow::loadApplicationSettings()
+{
+	SettingsDialog::loadSettings(appsettings());
+}
+
+bool MainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
 	dlg.set_git_command_path(appsettings()->git_command);
@@ -1878,16 +1686,20 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 	dlg.set_default_working_folder(appsettings()->default_working_dir);
 	if (misc::isExecutable(appsettings()->git_command)) {
 		gitCommand() = appsettings()->git_command;
-		Git g(m->gcx, QString());
+		Git g(m1->gcx, {}, {}, {});
 		Git::User user = g.getUser(Git::Source::Global);
 		dlg.set_user_name(user.name);
 		dlg.set_user_email(user.email);
 	}
 	if (dlg.exec() == QDialog::Accepted) {
-		appsettings()->git_command  = gitCommand()   = dlg.git_command_path();
-		appsettings()->file_command = global->file_command = dlg.file_command_path();
+		setGitCommand(dlg.git_command_path(), false);
+		setFileCommand(dlg.file_command_path(), false);
+//		appsettings()->git_command  = dlg.git_command_path();
+		appsettings()->file_command = dlg.file_command_path();
+//		m->gcx.git_command = appsettings()->git_command;
+		global->file_command = appsettings()->file_command;
 		appsettings()->default_working_dir = dlg.default_working_folder();
-		SettingsDialog::saveSettings(&m->appsettings);
+		saveApplicationSettings();
 
 		if (misc::isExecutable(appsettings()->git_command)) {
 			GitPtr g = git();
@@ -1902,31 +1714,29 @@ bool BasicMainWindow::execWelcomeWizardDialog()
 	return false;
 }
 
-void BasicMainWindow::execRepositoryPropertyDialog(QString workdir, bool open_repository_menu)
+void MainWindow::execRepositoryPropertyDialog(RepositoryItem const &repo, bool open_repository_menu)
 {
+	QString workdir = repo.local_dir;
+
 	if (workdir.isEmpty()) {
 		workdir = currentWorkingCopyDir();
 	}
-	QString name;
-	RepositoryItem const *repo = findRegisteredRepository(&workdir);
-	if (repo) {
-		name = repo->name;
-	} else {
-		QMessageBox::warning(this, tr("Repository Property"), tr("Not a valid git repository") + "\n\n" + workdir);
-		return;
-	}
+	QString name = repo.name;
 	if (name.isEmpty()) {
 		name = makeRepositoryName(workdir);
 	}
-	GitPtr g = git(workdir);
-	RepositoryPropertyDialog dlg(this, g, *repo, open_repository_menu);
+	GitPtr g = git(workdir, {}, repo.ssh_key);
+	RepositoryPropertyDialog dlg(this, &m1->gcx, g, repo, open_repository_menu);
 	dlg.exec();
 	if (dlg.isRemoteChanged()) {
 		emit remoteInfoChanged();
 	}
+    if (dlg.isNameChanged()) {
+        this->changeRepositoryBookmarkName(repo, dlg.getName());
+    }
 }
 
-void BasicMainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
+void MainWindow::execSetUserDialog(Git::User const &global_user, Git::User const &repo_user, QString const &reponame)
 {
 	SetUserDialog dlg(this, global_user, repo_user, reponame);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -1942,26 +1752,44 @@ void BasicMainWindow::execSetUserDialog(Git::User const &global_user, Git::User 
 	}
 }
 
-void BasicMainWindow::setGitCommand(QString const &path, bool save)
+QString MainWindow::executableOrEmpty(QString const &path)
 {
-	internalSetCommand(path, save, "GitCommand", &m->gcx.git_command);
+	return checkExecutable(path) ? path : QString();
 }
 
-void BasicMainWindow::setFileCommand(QString const &path, bool save)
+void MainWindow::setGitCommand(QString path, bool save)
 {
-	internalSetCommand(path, save, "FileCommand", &global->file_command);
+	appsettings()->git_command = m1->gcx.git_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "GitCommand");
 }
 
-void BasicMainWindow::setGpgCommand(QString const &path, bool save)
+void MainWindow::setFileCommand(QString path, bool save)
 {
-	internalSetCommand(path, save, "GpgCommand", &global->gpg_command);
+	appsettings()->file_command = global->file_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "FileCommand");
+}
+
+void MainWindow::setGpgCommand(QString path, bool save)
+{
+	appsettings()->gpg_command = global->gpg_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "GpgCommand");
 	if (!global->gpg_command.isEmpty()) {
 		GitPtr g = git();
 		g->configGpgProgram(global->gpg_command, true);
 	}
 }
 
-void BasicMainWindow::logGitVersion()
+void MainWindow::setSshCommand(QString path, bool save)
+{
+	appsettings()->ssh_command = executableOrEmpty(path);
+
+	internalSaveCommandPath(path, save, "SshCommand");
+}
+
+void MainWindow::logGitVersion()
 {
 	GitPtr g = git();
 	QString s = g->version();
@@ -1971,26 +1799,26 @@ void BasicMainWindow::logGitVersion()
 	}
 }
 
-void BasicMainWindow::setUnknownRepositoryInfo()
+void MainWindow::setUnknownRepositoryInfo()
 {
 	setRepositoryInfo("---", "");
 
-	Git g(m->gcx, QString());
+	Git g(m1->gcx, {}, {}, {});
 	Git::User user = g.getUser(Git::Source::Global);
 	setWindowTitle_(user);
 }
 
-void BasicMainWindow::internalClearRepositoryInfo()
+void MainWindow::internalClearRepositoryInfo()
 {
 	setHeadId(QString());
 	setCurrentBranch(Git::Branch());
 	setServerType(ServerType::Standard);
-	m->github = GitHubRepositoryInfo();
+	m1->github = GitHubRepositoryInfo();
 }
 
-void BasicMainWindow::checkUser()
+void MainWindow::checkUser()
 {
-	Git g(m->gcx, QString());
+	Git g(m1->gcx, {}, {}, {});
 	while (1) {
 		Git::User user = g.getUser(Git::Source::Global);
 		if (!user.name.isEmpty() && !user.email.isEmpty()) {
@@ -2002,7 +1830,7 @@ void BasicMainWindow::checkUser()
 	}
 }
 
-void BasicMainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
+void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
 {
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
@@ -2029,7 +1857,7 @@ void BasicMainWindow::openRepository(bool validate, bool waitcursor, bool keep_s
 	openRepository_(g, keep_selection);
 }
 
-void BasicMainWindow::updateRepository()
+void MainWindow::updateRepository()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2038,12 +1866,10 @@ void BasicMainWindow::updateRepository()
 	openRepository_(g);
 }
 
-void BasicMainWindow::reopenRepository(bool log, std::function<void(GitPtr const &)> const &callback)
+void MainWindow::reopenRepository(bool log, std::function<void(GitPtr const &)> const &callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
-
-	setRemoteMonitoringEnabled(false);
 
 	OverrideWaitCursor;
 	if (log) {
@@ -2059,11 +1885,9 @@ void BasicMainWindow::reopenRepository(bool log, std::function<void(GitPtr const
 		callback(g);
 	}
 	openRepository_(g);
-
-	setRemoteMonitoringEnabled(true);
 }
 
-void BasicMainWindow::openSelectedRepository()
+void MainWindow::openSelectedRepository()
 {
 	RepositoryItem const *repo = selectedRepositoryItem();
 	if (repo) {
@@ -2072,63 +1896,57 @@ void BasicMainWindow::openSelectedRepository()
 	}
 }
 
-//void BasicMainWindow::checkRemoteUpdate()
-//{
-//	if (getPtyProcess()->isRunning()) return;
-
-//	emit signalCheckRemoteUpdate();
-//}
-
-bool BasicMainWindow::isThereUncommitedChanges() const
+bool MainWindow::isThereUncommitedChanges() const
 {
-	return m->uncommited_changes;
+	return m1->uncommited_changes;
 }
 
-bool BasicMainWindow::makeDiff(QString id, QList<Git::Diff> *out)
+/**
+ * @brief コミットに対応する差分情報を作成
+ * @param id コミットID
+ * @param ok
+ * @return
+ */
+QList<Git::Diff> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok)
 {
+	QList<Git::Diff> out;
+
 	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return false;
+	if (!isValidWorkingCopy(g)) {
+		if (ok) *ok = false;
+		return {};
+	}
 
 	Git::FileStatusList list = g->status_s();
 	setUncommitedChanges(!list.empty());
 
 	if (id.isEmpty() && !isThereUncommitedChanges()) {
-		id = getObjCache()->revParse("HEAD");
+		id = getObjCache(frame)->revParse("HEAD");
 	}
+
+	QList<Git::SubmoduleItem> mods;
+	updateSubmodules(g, id, &mods);
+	setSubmodules(mods);
 
 	bool uncommited = (id.isEmpty() && isThereUncommitedChanges());
 
-	GitDiff dm(getObjCache());
+	GitDiff dm(getObjCache(frame));
 	if (uncommited) {
-		dm.diff_uncommited(out);
+		dm.diff_uncommited(submodules(), &out);
 	} else {
-		dm.diff(id, out);
+		dm.diff(id, submodules(), &out);
 	}
 
-	return true; // success
+	if (ok) *ok = true;
+	return out;
 }
 
-void BasicMainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (QString const &, QString, int)> &add_item)
-{
-	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
-		Git::Diff const &diff = diff_list->at(idiff);
-		QString header;
-
-		switch (diff.type) {
-		case Git::Diff::Type::Modify:   header = "(chg) "; break;
-		case Git::Diff::Type::Copy:     header = "(cpy) "; break;
-		case Git::Diff::Type::Rename:   header = "(ren) "; break;
-		case Git::Diff::Type::Create:   header = "(add) "; break;
-		case Git::Diff::Type::Delete:   header = "(del) "; break;
-		case Git::Diff::Type::ChType:   header = "(chg) "; break;
-		case Git::Diff::Type::Unmerged: header = "(unmerged) "; break;
-		}
-
-		add_item(diff.path, header, idiff);
-	}
-}
-
-Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr const &g)
+/**
+ * @brief コミットログを取得する
+ * @param g
+ * @return
+ */
+Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr const &g)
 {
 	Git::CommitItemList list = g->log(limitLogCount());
 
@@ -2171,48 +1989,45 @@ Git::CommitItemList BasicMainWindow::retrieveCommitLog(GitPtr const &g)
 	return list;
 }
 
-void BasicMainWindow::queryBranches(GitPtr const &g)
+void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr const &g)
 {
 	Q_ASSERT(g);
-	m->branch_map.clear();
+//	m1->branch_map.clear();
+	frame->branch_map.clear();
 	QList<Git::Branch> branches = g->branches();
 	for (Git::Branch const &b : branches) {
 		if (b.isCurrent()) {
 			setCurrentBranch(b);
 		}
-		branchMapRef()[b.id].append(b);
+		branchMapRef(frame)[b.id].append(b);
 	}
 }
 
-std::map<QString, QList<Git::Branch>> &BasicMainWindow::branchMapRef()
+std::map<QString, QList<Git::Branch>> &MainWindow::branchMapRef(RepositoryWrapperFrame *frame)
 {
-	return m->branch_map;
+//	return m1->branch_map;
+	return frame->branch_map;
 }
 
-void BasicMainWindow::updateCommitTableLater()
-{
-	*ptrUpdateCommitTableCounter() = 200;
-}
-
-void BasicMainWindow::updateRemoteInfo()
+void MainWindow::updateRemoteInfo()
 {
 	queryRemotes(git());
 
-	m->current_remote_name = QString();
+	m1->current_remote_name = QString();
 	{
 		Git::Branch const &r = currentBranch();
-		m->current_remote_name = r.remote;
+		m1->current_remote_name = r.remote;
 	}
-	if (m->current_remote_name.isEmpty()) {
-		if (m->remotes.size() == 1) {
-			m->current_remote_name = m->remotes[0];
+	if (m1->current_remote_name.isEmpty()) {
+		if (m1->remotes.size() == 1) {
+			m1->current_remote_name = m1->remotes[0];
 		}
 	}
 
 	emit remoteInfoChanged();
 }
 
-void BasicMainWindow::updateWindowTitle(GitPtr const &g)
+void MainWindow::updateWindowTitle(GitPtr const &g)
 {
 	if (isValidWorkingCopy(g)) {
 		Git::User user = g->getUser(Git::Source::Default);
@@ -2222,26 +2037,26 @@ void BasicMainWindow::updateWindowTitle(GitPtr const &g)
 	}
 }
 
-QString BasicMainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Label> *label_list)
+QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list)
 {
 	QString message_ex;
-	Git::CommitItem const *commit = &getLogs()[row];
+	Git::CommitItem const *commit = &getLogs(frame)[row];
 	{ // branch
 		if (label_list) {
 			if (commit->commit_id == getHeadId()) {
-				Label label(Label::Head);
+				BranchLabel label(BranchLabel::Head);
 				label.text = "HEAD";
 				label_list->push_back(label);
 			}
 		}
-		QList<Git::Branch> list = findBranch(commit->commit_id);
+		QList<Git::Branch> list = findBranch(frame, commit->commit_id);
 		for (Git::Branch const &b : list) {
 			if (b.flags & Git::Branch::HeadDetachedAt) continue;
 			if (b.flags & Git::Branch::HeadDetachedFrom) continue;
-			Label label(Label::LocalBranch);
+			BranchLabel label(BranchLabel::LocalBranch);
 			label.text = b.name;
 			if (!b.remote.isEmpty()) {
-				label.kind = Label::RemoteBranch;
+				label.kind = BranchLabel::RemoteBranch;
 				label.text = "remotes" / b.remote / label.text;
 			}
 			if (b.ahead > 0) {
@@ -2255,9 +2070,9 @@ QString BasicMainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Labe
 		}
 	}
 	{ // tag
-		QList<Git::Tag> list = findTag(commit->commit_id);
+		QList<Git::Tag> list = findTag(frame, commit->commit_id);
 		for (Git::Tag const &t : list) {
-			Label label(Label::Tag);
+			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
 			message_ex += QString(" {#%1}").arg(label.text);
 			if (label_list) label_list->push_back(label);
@@ -2266,7 +2081,7 @@ QString BasicMainWindow::makeCommitInfoText(int row, QList<BasicMainWindow::Labe
 	return message_ex;
 }
 
-void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
+void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 {
 	if (ask) {
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
@@ -2280,21 +2095,36 @@ void BasicMainWindow::removeRepositoryFromBookmark(int index, bool ask)
 	}
 }
 
-void BasicMainWindow::clone(QString url, QString dir)
+void MainWindow::clone(QString url, QString dir)
 {
 	if (!isOnlineMode()) return;
 
-	while (1) {
+	if (dir.isEmpty()) {
 		dir = defaultWorkingDir();
-		CloneDialog dlg(this, url, dir);
+	}
+
+	while (1) {
+		QString ssh_key;
+		CloneDialog dlg(this, url, dir, &m1->gcx);
 		if (dlg.exec() != QDialog::Accepted) {
 			return;
 		}
-
+		const CloneDialog::Action action = dlg.action();
 		url = dlg.url();
 		dir = dlg.dir();
+		ssh_key = dlg.overridedSshKey();
 
-		if (dlg.action() == CloneDialog::Action::Clone) {
+		RepositoryItem repos_item_data;
+		repos_item_data.local_dir = dir;
+		repos_item_data.local_dir.replace('\\', '/');
+		repos_item_data.name = makeRepositoryName(dir);
+		repos_item_data.ssh_key = ssh_key;
+
+		// クローン先ディレクトリを求める
+
+		Git::CloneData clone_data = Git::preclone(url, dir);
+
+		if (action == CloneDialog::Action::Clone) {
 			// 既存チェック
 
 			QFileInfo info(dir);
@@ -2308,10 +2138,6 @@ void BasicMainWindow::clone(QString url, QString dir)
 				QMessageBox::warning(this, tr("Clone"), msg);
 				continue;
 			}
-
-			// クローン先ディレクトリを求める
-
-			Git::CloneData clone_data = Git::preclone(url, dir);
 
 			// クローン先ディレクトリの存在チェック
 
@@ -2338,17 +2164,12 @@ void BasicMainWindow::clone(QString url, QString dir)
 				QDir(base).mkpath(sub);
 			}
 
-			RepositoryItem data;
-			data.local_dir = dir;
-			data.local_dir.replace('\\', '/');
-			data.name = makeRepositoryName(dir);
-
-			GitPtr g = git(QString());
-			setPtyUserData(QVariant::fromValue<RepositoryItem>(data));
+			GitPtr g = git({}, {}, repos_item_data.ssh_key);
+			setPtyUserData(QVariant::fromValue<RepositoryItem>(repos_item_data));
 			setPtyCondition(PtyCondition::Clone);
 			setPtyProcessOk(true);
 			g->clone(clone_data, getPtyProcess());
-		} else if (dlg.action() == CloneDialog::Action::AddExisting) {
+		} else if (action == CloneDialog::Action::AddExisting) {
 			addWorkingCopyDir(dir, true);
 		}
 
@@ -2356,24 +2177,79 @@ void BasicMainWindow::clone(QString url, QString dir)
 	}
 }
 
-void BasicMainWindow::checkout()
+void MainWindow::submodule_add(QString url, QString local_dir)
 {
-	checkout(this, selectedCommitItem());
+	if (!isOnlineMode()) return;
+	if (local_dir.isEmpty()) return;
+
+	QString dir = local_dir;
+
+	while (1) {
+		SubmoduleAddDialog dlg(this, url, dir, &m1->gcx);
+		if (dlg.exec() != QDialog::Accepted) {
+			return;
+		}
+		url = dlg.url();
+		dir = dlg.dir();
+		const QString ssh_key = dlg.overridedSshKey();
+
+		RepositoryItem repos_item_data;
+		repos_item_data.local_dir = dir;
+		repos_item_data.local_dir.replace('\\', '/');
+		repos_item_data.name = makeRepositoryName(dir);
+		repos_item_data.ssh_key = ssh_key;
+
+		Git::CloneData data = Git::preclone(url, dir);
+		bool force = dlg.isForce();
+
+		GitPtr g = git(local_dir, {}, repos_item_data.ssh_key);
+
+		auto callback = [&](GitPtr const &g){
+			g->submodule_add(data, force, getPtyProcess());
+		};
+
+		{
+			OverrideWaitCursor;
+			{
+				setLogEnabled(g, true);
+				AsyncExecGitThread_ th(g, callback);
+				th.start();
+				while (1) {
+					if (th.wait(1)) break;
+					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+				}
+				setLogEnabled(g, false);
+			}
+			openRepository_(g);
+		}
+
+		return; // done
+	}
 }
 
-void BasicMainWindow::commit(bool amend)
+
+
+void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
 	QString message;
+	QString previousMessage;
 
 	if (amend) {
-		message = getLogs()[0].message;
+		message = getLogs(frame)[0].message;
 	} else {
 		QString id = g->getCherryPicking();
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
+		} else {
+			for (Git::CommitItem const &item : getLogs(frame)) {
+				if (!item.commit_id.isEmpty()) {
+					previousMessage = item.message;
+					break;
+				}
+			}
 		}
 	}
 
@@ -2390,7 +2266,7 @@ void BasicMainWindow::commit(bool amend)
 				}
 			}
 		}
-		CommitDialog dlg(this, currentRepositoryName(), user, key);
+		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
 		dlg.setText(message);
 		if (dlg.exec() == QDialog::Accepted) {
 			QString text = dlg.text();
@@ -2400,14 +2276,14 @@ void BasicMainWindow::commit(bool amend)
 			}
 			bool sign = dlg.isSigningEnabled();
 			bool ok;
-			if (amend) {
+			if (amend || dlg.isAmend()) {
 				ok = g->commit_amend_m(text, sign, getPtyProcess());
 			} else {
 				ok = g->commit(text, sign, getPtyProcess());
 			}
 			if (ok) {
 				setForceFetch(true);
-				updateStatusBarText();
+				updateStatusBarText(frame);
 				openRepository(true);
 			} else {
 				QString err = g->errorMessage().trimmed();
@@ -2421,12 +2297,12 @@ void BasicMainWindow::commit(bool amend)
 	}
 }
 
-void BasicMainWindow::commitAmend()
+void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
 {
-	commit(true);
+	commit(frame, true);
 }
 
-void BasicMainWindow::pushSetUpstream(QString const &remote, QString const &branch)
+void MainWindow::pushSetUpstream(QString const &remote, QString const &branch)
 {
 	if (remote.isEmpty()) return;
 	if (branch.isEmpty()) return;
@@ -2454,7 +2330,7 @@ void BasicMainWindow::pushSetUpstream(QString const &remote, QString const &bran
 	updateRemoteInfo();
 }
 
-bool BasicMainWindow::pushSetUpstream(bool testonly)
+bool MainWindow::pushSetUpstream(bool testonly)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
@@ -2491,7 +2367,7 @@ bool BasicMainWindow::pushSetUpstream(bool testonly)
 	return false;
 }
 
-void BasicMainWindow::push()
+void MainWindow::push()
 {
 	if (!isOnlineMode()) return;
 
@@ -2500,7 +2376,8 @@ void BasicMainWindow::push()
 
 	if (g->getRemotes().isEmpty()) {
 		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		execRepositoryPropertyDialog(QString(), true);
+		RepositoryItem const &repo = currentRepository();
+		execRepositoryPropertyDialog(repo, true);
 		return;
 	}
 
@@ -2550,7 +2427,7 @@ bool isValidDir(QString const &dir)
 #include <QProcess>
 #endif
 
-void BasicMainWindow::openTerminal(RepositoryItem const *repo)
+void MainWindow::openTerminal(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -2564,7 +2441,7 @@ void BasicMainWindow::openTerminal(RepositoryItem const *repo)
 	}, repo);
 }
 
-void BasicMainWindow::openExplorer(RepositoryItem const *repo)
+void MainWindow::openExplorer(RepositoryItem const *repo)
 {
 	runOnRepositoryDir([](QString dir){
 #ifdef Q_OS_MAC
@@ -2578,13 +2455,13 @@ void BasicMainWindow::openExplorer(RepositoryItem const *repo)
 	}, repo);
 }
 
-Git::CommitItem const *BasicMainWindow::selectedCommitItem() const
+Git::CommitItem const *MainWindow::selectedCommitItem(RepositoryWrapperFrame *frame) const
 {
-	int i = selectedLogIndex();
-	return commitItem(i);
+	int i = selectedLogIndex(frame);
+	return commitItem(frame, i);
 }
 
-void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
+void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -2594,7 +2471,7 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 	QStringList all_branch_names;
 	QStringList current_local_branch_names;
 	{
-		NamedCommitList named_commits = namedCommitItems(Branches);
+		NamedCommitList named_commits = namedCommitItems(frame, Branches);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.name == "HEAD") continue;
 			if (item.id == commit->commit_id) {
@@ -2622,12 +2499,12 @@ void BasicMainWindow::deleteBranch(Git::CommitItem const *commit)
 	}
 }
 
-void BasicMainWindow::deleteBranch()
+void MainWindow::deleteBranch(RepositoryWrapperFrame *frame)
 {
-	deleteBranch(selectedCommitItem());
+	deleteBranch(frame, selectedCommitItem(frame));
 }
 
-QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
+QStringList MainWindow::remoteBranches(RepositoryWrapperFrame *frame, QString const &id, QStringList *all)
 {
 	if (all) all->clear();
 
@@ -2635,7 +2512,7 @@ QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
 
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
+		NamedCommitList named_commits = namedCommitItems(frame, Branches | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == id && !item.remote.isEmpty()) {
 				list.push_back(item.remote / item.name);
@@ -2649,7 +2526,7 @@ QStringList MainWindow::remoteBranches(QString const &id, QStringList *all)
 	return list;
 }
 
-void MainWindow::deleteRemoteBranch(Git::CommitItem const *commit)
+void MainWindow::deleteRemoteBranch(RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
 {
 	if (!commit) return;
 
@@ -2657,7 +2534,7 @@ void MainWindow::deleteRemoteBranch(Git::CommitItem const *commit)
 	if (!isValidWorkingCopy(g)) return;
 
 	QStringList all_branches;
-	QStringList remote_branches = remoteBranches(commit->commit_id, &all_branches);
+	QStringList remote_branches = remoteBranches(frame, commit->commit_id, &all_branches);
 	if (remote_branches.isEmpty()) return;
 
 	DeleteBranchDialog dlg(this, true, all_branches, remote_branches);
@@ -2675,7 +2552,7 @@ void MainWindow::deleteRemoteBranch(Git::CommitItem const *commit)
 	}
 }
 
-bool BasicMainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
+bool MainWindow::askAreYouSureYouWantToRun(QString const &title, QString const &command)
 {
 	QString message = tr("Are you sure you want to run the following command ?");
 	QString text = "%1\n\n%2";
@@ -2683,12 +2560,12 @@ bool BasicMainWindow::askAreYouSureYouWantToRun(QString const &title, QString co
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
-bool BasicMainWindow::editFile(QString const &path, QString const &title)
+bool MainWindow::editFile(QString const &path, QString const &title)
 {
 	return TextEditDialog::editFile(this, path, title);
 }
 
-void BasicMainWindow::resetFile(QStringList const &paths)
+void MainWindow::resetFile(QStringList const &paths)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2707,7 +2584,7 @@ void BasicMainWindow::resetFile(QStringList const &paths)
 	}
 }
 
-void BasicMainWindow::saveRepositoryBookmark(RepositoryItem item)
+void MainWindow::saveRepositoryBookmark(RepositoryItem item)
 {
 	if (item.local_dir.isEmpty()) return;
 
@@ -2733,15 +2610,21 @@ void BasicMainWindow::saveRepositoryBookmark(RepositoryItem item)
 	updateRepositoriesList();
 }
 
-void BasicMainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
+void MainWindow::changeRepositoryBookmarkName(RepositoryItem item, QString new_name)
+{
+    item.name = new_name;
+    saveRepositoryBookmark(item);
+}
+
+void MainWindow::setCurrentRepository(RepositoryItem const &repo, bool clear_authentication)
 {
 	if (clear_authentication) {
 		clearAuthentication();
 	}
-	m->current_repo = repo;
+	m1->current_repo = repo;
 }
 
-void BasicMainWindow::internalDeleteTags(QStringList const &tagnames)
+void MainWindow::internalDeleteTags(QStringList const &tagnames)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2755,7 +2638,7 @@ void BasicMainWindow::internalDeleteTags(QStringList const &tagnames)
 	}
 }
 
-bool BasicMainWindow::internalAddTag(QString const &name)
+bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, QString const &name)
 {
 	if (name.isEmpty()) return false;
 
@@ -2764,7 +2647,7 @@ bool BasicMainWindow::internalAddTag(QString const &name)
 
 	QString commit_id;
 
-	Git::CommitItem const *commit = selectedCommitItem();
+	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit && !commit->commit_id.isEmpty()) {
 		commit_id = commit->commit_id;
 	}
@@ -2779,11 +2662,11 @@ bool BasicMainWindow::internalAddTag(QString const &name)
 	return ok;
 }
 
-NamedCommitList BasicMainWindow::namedCommitItems(int flags)
+NamedCommitList MainWindow::namedCommitItems(RepositoryWrapperFrame *frame, int flags)
 {
 	NamedCommitList items;
 	if (flags & Branches) {
-		for (auto const &pair: branchMapRef()) {
+		for (auto const &pair: branchMapRef(frame)) {
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
@@ -2810,7 +2693,7 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 		}
 	}
 	if (flags & Tags) {
-		for (auto const &pair: *ptrTagMap()) {
+		for (auto const &pair: *ptrTagMap(frame)) {
 			QList<Git::Tag> const &list = pair.second;
 			for (Git::Tag const &t : list) {
 				NamedCommitItem item;
@@ -2827,9 +2710,9 @@ NamedCommitList BasicMainWindow::namedCommitItems(int flags)
 	return items;
 }
 
-int BasicMainWindow::rowFromCommitId(QString const &id)
+int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, QString const &id)
 {
-	auto const &logs = getLogs();
+	auto const &logs = getLogs(frame);
 	for (size_t i = 0; i < logs.size(); i++) {
 		Git::CommitItem const &item = logs[i];
 		if (item.commit_id == id) {
@@ -2839,7 +2722,7 @@ int BasicMainWindow::rowFromCommitId(QString const &id)
 	return -1;
 }
 
-void BasicMainWindow::createRepository(QString const &dir)
+void MainWindow::createRepository(QString const &dir)
 {
 	CreateRepositoryDialog dlg(this, dir);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -2848,7 +2731,7 @@ void BasicMainWindow::createRepository(QString const &dir)
 			if (Git::isValidWorkingCopy(path)) {
 				// A valid git repository already exists there.
 			} else {
-				GitPtr g = git(path);
+				GitPtr g = git(path, {}, {});
 				if (g->init()) {
 					QString name = dlg.name();
 					if (!name.isEmpty()) {
@@ -2857,7 +2740,10 @@ void BasicMainWindow::createRepository(QString const &dir)
 					QString remote_name = dlg.remoteName();
 					QString remote_url = dlg.remoteURL();
 					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
-						g->addRemoteURL(remote_name, remote_url);
+						Git::Remote r;
+						r.name = remote_name;
+						r.url = remote_url;
+						g->addRemoteURL(r);
 					}
 				}
 			}
@@ -2867,7 +2753,7 @@ void BasicMainWindow::createRepository(QString const &dir)
 	}
 }
 
-void BasicMainWindow::setLogEnabled(GitPtr const &g, bool f)
+void MainWindow::setLogEnabled(GitPtr const &g, bool f)
 {
 	if (f) {
 		g->setLogCallback(git_callback, this);
@@ -2876,48 +2762,48 @@ void BasicMainWindow::setLogEnabled(GitPtr const &g, bool f)
 	}
 }
 
-QList<Git::Tag> BasicMainWindow::findTag(QString const &id)
+QList<Git::Tag> MainWindow::findTag(RepositoryWrapperFrame *frame, QString const &id)
 {
-	auto it = ptrTagMap()->find(id);
-	if (it != ptrTagMap()->end()) {
+	auto it = ptrTagMap(frame)->find(id);
+	if (it != ptrTagMap(frame)->end()) {
 		return it->second;
 	}
 	return QList<Git::Tag>();
 }
 
-void BasicMainWindow::sshSetPassphrase(std::string const &user, std::string const &pass)
+void MainWindow::sshSetPassphrase(std::string const &user, std::string const &pass)
 {
-	m->ssh_passphrase_user = user;
-	m->ssh_passphrase_pass = pass;
+	m1->ssh_passphrase_user = user;
+	m1->ssh_passphrase_pass = pass;
 }
 
-std::string BasicMainWindow::sshPassphraseUser() const
+std::string MainWindow::sshPassphraseUser() const
 {
-	return m->ssh_passphrase_user;
+	return m1->ssh_passphrase_user;
 }
 
-std::string BasicMainWindow::sshPassphrasePass() const
+std::string MainWindow::sshPassphrasePass() const
 {
-	return m->ssh_passphrase_pass;
+	return m1->ssh_passphrase_pass;
 }
 
-void BasicMainWindow::httpSetAuthentication(std::string const &user, std::string const &pass)
+void MainWindow::httpSetAuthentication(std::string const &user, std::string const &pass)
 {
-	m->http_uid = user;
-	m->http_pwd = pass;
+	m1->http_uid = user;
+	m1->http_pwd = pass;
 }
 
-std::string BasicMainWindow::httpAuthenticationUser() const
+std::string MainWindow::httpAuthenticationUser() const
 {
-	return m->http_uid;
+	return m1->http_uid;
 }
 
-std::string BasicMainWindow::httpAuthenticationPass() const
+std::string MainWindow::httpAuthenticationPass() const
 {
-	return m->http_pwd;
+	return m1->http_pwd;
 }
 
-void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback)
+void MainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback)
 {
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
@@ -2926,6 +2812,7 @@ void BasicMainWindow::doGitCommand(std::function<void(GitPtr g)> const &callback
 		openRepository(false, false);
 	}
 }
+
 
 
 

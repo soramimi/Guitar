@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>574</width>
-    <height>129</height>
+    <width>700</width>
+    <height>347</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -61,6 +61,29 @@
     </widget>
    </item>
    <item>
+    <widget class="RemoteAdvancedOptionWidget" name="advanced_option" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>106</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -98,6 +121,12 @@
    <class>RepositoryLineEdit</class>
    <extends>QLineEdit</extends>
    <header>RepositoryLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>RemoteAdvancedOptionWidget</class>
+   <extends>QWidget</extends>
+   <header>RemoteAdvancedOptionWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>

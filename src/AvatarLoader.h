@@ -2,6 +2,7 @@
 #define AVATARLOADER_H
 
 #include "GitHubAPI.h"
+#include "RepositoryWrapperFrame.h"
 #include <QIcon>
 #include <QThread>
 #include <QMutex>
@@ -9,13 +10,14 @@
 #include <set>
 #include <string>
 
-class BasicMainWindow;
+class MainWindow;
 class WebContext;
 
 class AvatarLoader : public QThread {
 	Q_OBJECT
 private:
 	struct RequestItem {
+		RepositoryWrapperFrame *frame = nullptr;
 		std::string email;
 		QImage image;
 	};
@@ -27,11 +29,11 @@ protected:
 public:
 	AvatarLoader();
 	~AvatarLoader() override;
-	QIcon fetch(std::string const &email, bool request) const;
+	QIcon fetch(RepositoryWrapperFrame *frame, std::string const &email, bool request) const;
 	void stop();
-	void start(BasicMainWindow *mainwindow);
+	void start(MainWindow *mainwindow);
 signals:
-	void updated();
+	void updated(RepositoryWrapperFrameP frame);
 };
 
 #endif // AVATARLOADER_H

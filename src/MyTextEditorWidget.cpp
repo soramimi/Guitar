@@ -11,7 +11,7 @@ MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 
 }
 
-void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, BasicMainWindow *mw, QString const &object_id, QString const &object_path)
+void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	this->mainwindow = mw;
 	this->object_id = object_id;
@@ -42,7 +42,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 				QString path = mainwindow->currentWorkingCopyDir() / object_path;
 				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
 				if (!dstpath.isEmpty()) {
-					mainwindow->saveAs(id, dstpath);
+					mainwindow->saveAs(mainwindow->frame(), id, dstpath);
 				}
 				update();
 				return;

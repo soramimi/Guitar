@@ -1,12 +1,13 @@
 #include "CloneDialog.h"
 #include "ui_CloneDialog.h"
-#include "common/misc.h"
-#include "common/joinpath.h"
-#include "BasicMainWindow.h"
+#include "ApplicationGlobal.h"
+#include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
-
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QThread>
 
 enum SearchRepository {
@@ -23,7 +24,7 @@ struct CloneDialog::Private {
 	CloneDialog::Action action = CloneDialog::Action::Clone;
 };
 
-CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString const &defworkdir)
+CloneDialog::CloneDialog(MainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
 	: QDialog(parent)
 	, ui(new Ui::CloneDialog)
 	, m(new Private)
@@ -40,10 +41,13 @@ CloneDialog::CloneDialog(BasicMainWindow *parent, QString const &url, QString co
 	ui->comboBox->addItem(tr("Search"));
 	ui->comboBox->addItem(tr("GitHub"));
 
+	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 
 #ifdef Q_OS_MACX
 	ui->comboBox->setMinimumWidth(100);
 #endif
+
+	ui->lineEdit_repo_location->setFocus();
 }
 
 CloneDialog::~CloneDialog()
@@ -57,9 +61,9 @@ CloneDialog::Action CloneDialog::action() const
 	return m->action;
 }
 
-BasicMainWindow *CloneDialog::mainwindow()
+MainWindow *CloneDialog::mainwindow()
 {
-	return qobject_cast<BasicMainWindow *>(parent());
+	return qobject_cast<MainWindow *>(parent());
 }
 
 QString CloneDialog::url()
@@ -104,7 +108,7 @@ void CloneDialog::on_comboBox_currentIndexChanged(int index)
 
 void CloneDialog::on_pushButton_test_clicked()
 {
-	mainwindow()->testRemoteRepositoryValidity(url());
+	mainwindow()->testRemoteRepositoryValidity(url(), overridedSshKey());
 }
 
 void CloneDialog::on_pushButton_browse_clicked()
@@ -125,7 +129,7 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 	dir = QFileDialog::getExistingDirectory(this, tr("Open existing directory"), dir);
 	if (QFileInfo(dir).isDir()) {
 		QString url;
-		GitPtr g = mainwindow()->git(dir);
+		GitPtr g = mainwindow()->git(dir, {}, {});
 		QList<Git::Remote> vec;
 		if (g->isValidWorkingCopy()) {
 			g->getRemoteURLs(&vec);
@@ -141,3 +145,12 @@ void CloneDialog::on_pushButton_open_existing_clicked()
 		done(Accepted);
 	}
 }
+
+QString CloneDialog::overridedSshKey() const
+{
+	return ui->advanced_option->sshKey();
+}
+
+
+
+

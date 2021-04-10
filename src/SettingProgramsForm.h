@@ -19,7 +19,9 @@ private slots:
 	void on_pushButton_select_git_command_clicked();
 	void on_pushButton_select_file_command_clicked();
 	void on_pushButton_select_gpg_command_clicked();
-
+	void on_pushButton_select_ssh_command_clicked();
+	void on_pushButton_select_term_command_clicked();
+	void on_pushButton_reset_term_command_clicked();
 };
 
 #endif // SETTINGPROGRAMSFORM_H

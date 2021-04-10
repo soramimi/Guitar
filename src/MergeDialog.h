@@ -20,6 +20,7 @@ public:
 	void setFastForwardPolicy(const QString &ff);
 	QString mergeFrom() const;
 	static Git::MergeFastForward ff(const QString &ff);
+	bool isSquashEnabled() const;
 private slots:
 	void on_listWidget_from_itemDoubleClicked(QListWidgetItem *item);
 

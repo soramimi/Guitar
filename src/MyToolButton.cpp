@@ -1,6 +1,7 @@
 #include "MyToolButton.h"
 
 #include "MainWindow.h"
+#include "SubmoduleMainWindow.h"
 
 #include <QPainter>
 
@@ -33,7 +34,7 @@ void MyToolButton::paintEvent(QPaintEvent *event)
 {
 	QToolButton::paintEvent(event);
 
-	auto *mw = qobject_cast<MainWindow *>(window());
+	MainWindow *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 
 	if (indicator == Dot && number > 0) {

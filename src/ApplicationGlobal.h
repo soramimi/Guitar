@@ -4,6 +4,7 @@
 #include <QColor>
 #include <QString>
 #include "Theme.h"
+#include "main.h"
 
 class MainWindow;
 
@@ -21,6 +22,17 @@ struct ApplicationGlobal {
 	QString gpg_command;
 	QColor panel_bg_color;
 	ThemePtr theme;
+
+	ApplicationSettings appsettings;
+
+//	struct {
+//		QColor head;
+//		QColor local;
+//		QColor remote;
+//		QColor tag;
+//	} branch_label_color;
+
+	ApplicationGlobal();
 };
 
 extern ApplicationGlobal *global;
