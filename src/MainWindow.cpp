@@ -802,7 +802,7 @@ void MainWindow::updateRepositoriesList()
 			if (!parent) {
 				QStringList list = group.split('/', QString::SkipEmptyParts);
 				if (list.isEmpty()) {
-					list.push_back(tr("Default"));
+					list.push_back("Default");
 				}
 				for (QString const &name : list) {
 					if (name.isEmpty()) continue;
