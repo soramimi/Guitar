@@ -12,6 +12,7 @@ DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
+TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-CN.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-TW.ts
 
@@ -319,7 +320,6 @@ HEADERS  += \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositoryWrapperFrame.h \
-	src/SaturationBrightnessWidget.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
 	src/SelectGpgKeyDialog.h \

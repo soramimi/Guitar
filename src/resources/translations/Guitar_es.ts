@@ -1221,11 +1221,16 @@
     </message>
     <message>
         <location filename="../../Languages.cpp" line="9"/>
+        <source>Spanish</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Languages.cpp" line="10"/>
         <source>Chinese (Simplified)</source>
         <translation>Chino (Simplificado)</translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="10"/>
+        <location filename="../../Languages.cpp" line="11"/>
         <source>Chinese (Traditional/Taiwan)</source>
         <translation>Chino (Tradicional/Taiwan)</translation>
     </message>

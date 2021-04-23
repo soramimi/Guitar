@@ -48,6 +48,7 @@
         <file>image/cpy.svg</file>
         <file>image/status.svg</file>
         <file>translations/Guitar_zh-CN.qm</file>
-		<file>translations/Guitar_zh-TW.qm</file>
+        <file>translations/Guitar_zh-TW.qm</file>
+        <file>translations/Guitar_es.qm</file>
     </qresource>
 </RCC>
