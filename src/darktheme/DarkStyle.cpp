@@ -9,6 +9,7 @@
 #include <QInputDialog>
 #include <QListView>
 #include <QMessageBox>
+#include <QPainterPath>
 #include <QPixmapCache>
 #include <QStyleOptionComplex>
 #include <QStyleOptionFrameV3>

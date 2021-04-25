@@ -92,15 +92,15 @@ public:
 //	}
 };
 
-template <typename T> void operator << (SetValue<T> const &l, T const &r) // 左辺をconstにしないとビルドが通らない
+template <typename T> void operator << (SetValue<T> &&l, T const &r)
 {
-	const_cast<SetValue<T> *>(&l)->settings.setValue(l.name, r);
+	l.settings.setValue(l.name, r);
 }
 
-template <> void operator << (SetValue<QColor> const &l, QColor const &r)
+template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 {
 	QString s = QString::asprintf("#%02x%02x%02x", r.red(), r.green(), r.blue());
-	const_cast<SetValue<QColor> *>(&l)->settings.setValue(l.name, s);
+	l.settings.setValue(l.name, s);
 }
 
 } // namespace

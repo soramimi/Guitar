@@ -1,5 +1,5 @@
 #include "MySettings.h"
-#include <common/joinpath.h>
+#include "common/joinpath.h"
 #include <QApplication>
 #include <QDir>
 #include <QString>

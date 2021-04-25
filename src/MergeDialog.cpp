@@ -65,6 +65,10 @@ QString MergeDialog::mergeFrom() const
 	return p ? p->text() : QString();
 }
 
+bool MergeDialog::isSquashEnabled() const
+{
+	return ui->checkBox_squash->isChecked();
+}
 
 void MergeDialog::on_listWidget_from_itemDoubleClicked(QListWidgetItem *item)
 {

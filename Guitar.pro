@@ -12,6 +12,7 @@ DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
+TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-CN.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-TW.ts
 
@@ -31,8 +32,12 @@ macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
+
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
-#win32:LIBS += $$PWD/misc/winpty/winpty.lib
+
+# winpty x86
+#win32:LIBS += $$PWD/misc/winpty/ia32/lib/winpty.lib
+# winpty x86_64
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib
 
 # OpenSSL
@@ -50,10 +55,14 @@ macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += $$PWD/../zlib
-#    INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
+
+	# OpenSSL x86
+#	INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
 #	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
+	# OpenSSL x86_64
 	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
 	LIBS += "-LC:\Program Files\OpenSSL\lib"
+
 	# OpenSSL 1.0
 #	LIBS += -llibeay32 -lssleay32
 	# OpenSSL 1.1
@@ -323,7 +332,6 @@ HEADERS  += \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositoryWrapperFrame.h \
-	src/SaturationBrightnessWidget.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
 	src/SelectGpgKeyDialog.h \

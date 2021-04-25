@@ -39,7 +39,7 @@
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <coloredit/ColorDialog.h>
+#include "coloredit/ColorDialog.h"
 
 
 
@@ -802,7 +802,7 @@ void MainWindow::updateRepositoriesList()
 			if (!parent) {
 				QStringList list = group.split('/', QString::SkipEmptyParts);
 				if (list.isEmpty()) {
-					list.push_back(tr("Default"));
+					list.push_back("Default");
 				}
 				for (QString const &name : list) {
 					if (name.isEmpty()) continue;
@@ -1549,21 +1549,21 @@ void MainWindow::updateStatusBarText(RepositoryWrapperFrame *frame)
 	setStatusBarText(text);
 }
 
-void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff)
+void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff, bool squash)
 {
 	if (commit.isEmpty()) return;
 
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g->mergeBranch(commit, ff);
+	g->mergeBranch(commit, ff, squash);
 	openRepository(true);
 }
 
-void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff)
+void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff, bool squash)
 {
 	if (!commit) return;
-	mergeBranch(commit->commit_id, ff);
+	mergeBranch(commit->commit_id, ff, squash);
 }
 
 void MainWindow::rebaseBranch(Git::CommitItem const *commit)
@@ -1667,6 +1667,7 @@ void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem const *com
 	MergeDialog dlg(fastforward, labels, branch_name, this);
 	if (dlg.exec() == QDialog::Accepted) {
 		fastforward = dlg.getFastForwardPolicy();
+		bool squash = dlg.isSquashEnabled();
 		{
 			MySettings s;
 			s.beginGroup("Behavior");
@@ -1674,7 +1675,7 @@ void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem const *com
 			s.endGroup();
 		}
 		QString from = dlg.mergeFrom();
-		mergeBranch(from, MergeDialog::ff(fastforward));
+		mergeBranch(from, MergeDialog::ff(fastforward), squash);
 	}
 }
 

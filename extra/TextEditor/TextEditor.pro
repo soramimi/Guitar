@@ -7,41 +7,41 @@
 QT       += core gui widgets
 
 CONFIG += c++11
-TARGET = TextEditor
+TARGET = ore
 TEMPLATE = app
+
+DESTDIR = $$PWD/_bin
 
 unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
 
 INCLUDEPATH += $$PWD/src
-INCLUDEPATH += $$PWD/../../src/texteditor
-INCLUDEPATH += $$PWD/../../src
+INCLUDEPATH += $$PWD/src/texteditor
+INCLUDEPATH += ../../src
 
 linux:LIBS += -lncursesw
 macx:LIBS += -lncurses
 
 SOURCES += \
-	$$PWD/../../src/common/joinpath.cpp \
-	$$PWD/../../src/common/misc.cpp \
-	$$PWD/../../src/texteditor/AbstractCharacterBasedApplication.cpp \
-	$$PWD/../../src/texteditor/InputMethodPopup.cpp \
-	$$PWD/../../src/texteditor/TextEditorTheme.cpp \
-	$$PWD/../../src/texteditor/TextEditorWidget.cpp \
-	$$PWD/../../src/texteditor/UnicodeWidth.cpp \
-	$$PWD/../../src/texteditor/unicode.cpp \
+	../../src/common/joinpath.cpp \
+	../../src/common/misc.cpp \
+	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
+	../../src/texteditor/TextEditorTheme.cpp \
+	../../src/texteditor/TextEditorWidget.cpp \
+	../../src/texteditor/UnicodeWidth.cpp \
+	../../src/texteditor/unicode.cpp \
 	src/MainWindow.cpp \
 	src/MySettings.cpp \
 	src/main.cpp\
 	src/cmain.cpp
 
 HEADERS  += \
-	$$PWD/../../src/common/joinpath.h \
-	$$PWD/../../src/common/misc.h \
-	$$PWD/../../src/texteditor/AbstractCharacterBasedApplication.h \
-	$$PWD/../../src/texteditor/InputMethodPopup.h \
-	$$PWD/../../src/texteditor/TextEditorTheme.h \
-	$$PWD/../../src/texteditor/TextEditorWidget.h \
-	$$PWD/../../src/texteditor/UnicodeWidth.h \
-	$$PWD/../../src/texteditor/unicode.h \
+	../../src/common/joinpath.h \
+	../../src/common/misc.h \
+	../../src/texteditor/AbstractCharacterBasedApplication.h \
+	../../src/texteditor/TextEditorTheme.h \
+	../../src/texteditor/TextEditorWidget.h \
+	../../src/texteditor/UnicodeWidth.h \
+	../../src/texteditor/unicode.h \
 	src/MainWindow.h \
 	src/MySettings.h \
 	src/cmain.h
