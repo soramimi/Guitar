@@ -91,32 +91,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_terminal">
-     <property name="title">
-      <string>Terminal command (option)</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_8">
-      <item>
-       <widget class="QLineEdit" name="lineEdit_terminal_command"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_reset_term_command">
-        <property name="text">
-         <string>Reset</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_select_term_command">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

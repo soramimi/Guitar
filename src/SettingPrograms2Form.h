@@ -18,6 +18,7 @@ public:
 private slots:
 	void on_pushButton_select_terminal_command_clicked();
 	void on_pushButton_select_explorer_command_clicked();
+	void on_pushButton_reset_terminal_command_clicked();
 };
 
 #endif // SETTINGPROGRAMS2FORM_H

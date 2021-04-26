@@ -33,6 +33,9 @@ void Terminal::open(QString const &dir, QString const &ssh_key)
 {
 	if (dir.indexOf('\"') < 0 && QFileInfo(dir).isDir()) {
 		QString term = global->appsettings.terminal_command;
+		if (term.isEmpty()) {
+			term = ApplicationSettings::defaultSettings().terminal_command;
+		}
 		QString cmd = "/bin/sh -c \"cd \\\"%1\\\" && %2\" &";
 		cmd = cmd.arg(dir).arg(term);
 		if (!global->appsettings.ssh_command.isEmpty() && !ssh_key.isEmpty()) {

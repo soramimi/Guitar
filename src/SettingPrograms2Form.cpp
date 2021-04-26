@@ -30,7 +30,7 @@ void SettingPrograms2Form::exchange(bool save)
 
 void SettingPrograms2Form::on_pushButton_select_terminal_command_clicked()
 {
-	QString path = mainwindow()->selectGitCommand(false);
+	QString path = QFileDialog::getOpenFileName(window(), tr("Terminal Command"), "/usr/bin");
 	if (!path.isEmpty()) {
 		settings()->terminal_command = path;
 		ui->lineEdit_terminal_command->setText(path);
@@ -39,10 +39,15 @@ void SettingPrograms2Form::on_pushButton_select_terminal_command_clicked()
 
 void SettingPrograms2Form::on_pushButton_select_explorer_command_clicked()
 {
-	QString path = mainwindow()->selectFileCommand(false);
+	QString path = QFileDialog::getOpenFileName(window(), tr("Explorer Command"), "/usr/bin");
 	if (!path.isEmpty()) {
 		settings()->explorer_command = path;
 		ui->lineEdit_explorer_command->setText(path);
 	}
 }
 
+void SettingPrograms2Form::on_pushButton_reset_terminal_command_clicked()
+{
+	QString path = ApplicationSettings::defaultSettings().terminal_command;
+	ui->lineEdit_terminal_command->setText(path);
+}
