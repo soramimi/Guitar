@@ -5,7 +5,7 @@
 
 class Terminal {
 public:
-	static void open(QString const &dir);
+	static void open(QString const &dir, QString const &ssh_key);
 };
 
 

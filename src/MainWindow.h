@@ -299,7 +299,7 @@ private:
 	void setDiffResult(const QList<Git::Diff> &diffs);
 	const QList<Git::SubmoduleItem> &submodules() const;
 	void setSubmodules(const QList<Git::SubmoduleItem> &submodules);
-	bool runOnRepositoryDir(const std::function<void (QString)> &callback, const RepositoryItem *repo);
+	bool runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryItem *repo);
 	NamedCommitList namedCommitItems(RepositoryWrapperFrame *frame, int flags);
 	static QString getObjectID(QListWidgetItem *item);
 	static QString getFilePath(QListWidgetItem *item);

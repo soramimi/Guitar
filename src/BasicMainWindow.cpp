@@ -1546,7 +1546,7 @@ void MainWindow::msgNoRepositorySelected()
 	QMessageBox::warning(this, qApp->applicationName(), tr("No repository selected"));
 }
 
-bool MainWindow::runOnRepositoryDir(std::function<void (QString)> const &callback, RepositoryItem const *repo)
+bool MainWindow::runOnRepositoryDir(std::function<void (QString, QString)> const &callback, RepositoryItem const *repo)
 {
 	if (!repo) {
 		repo = &m1->current_repo;
@@ -1554,7 +1554,7 @@ bool MainWindow::runOnRepositoryDir(std::function<void (QString)> const &callbac
 	QString dir = repo->local_dir;
 	dir.replace('\\', '/');
 	if (QFileInfo(dir).isDir()) {
-		callback(dir);
+		callback(dir, repo->ssh_key);
 		return true;
 	}
 	msgNoRepositorySelected();
@@ -2425,21 +2425,22 @@ bool isValidDir(QString const &dir)
 
 void MainWindow::openTerminal(RepositoryItem const *repo)
 {
-	runOnRepositoryDir([](QString dir){
+	runOnRepositoryDir([](QString dir, QString ssh_key){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
 		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args \"%1\"";
 		cmd = cmd.arg(dir);
 		QProcess::execute(cmd);
 #else
-		Terminal::open(dir);
+		Terminal::open(dir, ssh_key);
 #endif
 	}, repo);
 }
 
 void MainWindow::openExplorer(RepositoryItem const *repo)
 {
-	runOnRepositoryDir([](QString dir){
+	runOnRepositoryDir([](QString dir, QString ssh_key){
+		(void)ssh_key;
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
 		QString cmd = "open \"%1\"";

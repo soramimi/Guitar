@@ -9,7 +9,7 @@
 #include <QDir>
 #include <windows.h>
 
-void Terminal::open(QString const &dir)
+void Terminal::open(QString const &dir, QString const &ssh_key)
 {
 	QString cmd = global->appsettings.terminal_command;
 	QDir::setCurrent(dir);
@@ -29,12 +29,16 @@ void Terminal::open(QString const &dir)
 
 #else
 
-void Terminal::open(QString const &dir)
+void Terminal::open(QString const &dir, QString const &ssh_key)
 {
 	if (dir.indexOf('\"') < 0 && QFileInfo(dir).isDir()) {
 		QString term = global->appsettings.terminal_command;
 		QString cmd = "/bin/sh -c \"cd \\\"%1\\\" && %2\" &";
 		cmd = cmd.arg(dir).arg(term);
+		if (!global->appsettings.ssh_command.isEmpty() && !ssh_key.isEmpty()) {
+			QString env = QString("GIT_SSH_COMMAND=\"%1 -i %2\" ").arg(global->appsettings.ssh_command).arg(ssh_key);
+			cmd = env + cmd;
+		}
 		int r = system(cmd.toStdString().c_str());
 		(void)r;
 	}
