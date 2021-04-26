@@ -18,19 +18,10 @@ struct ApplicationGlobal {
 	QString generic_config_dir;
 	QString app_config_dir;
 	QString config_file_path;
-	QString file_command;
-	QString gpg_command;
 	QColor panel_bg_color;
 	ThemePtr theme;
 
 	ApplicationSettings appsettings;
-
-//	struct {
-//		QColor head;
-//		QColor local;
-//		QColor remote;
-//		QColor tag;
-//	} branch_label_color;
 
 	ApplicationGlobal();
 };

@@ -381,7 +381,7 @@ QString MainWindow::selectFileCommand(bool save)
 {
 	char const *exe = FILE_COMMAND;
 
-	QString path = global->file_command;
+	QString path = global->appsettings.file_command;
 
 	auto fn = [&](QString const &path){
 		setFileCommand(path, save);
@@ -410,7 +410,7 @@ QString MainWindow::selectFileCommand(bool save)
 
 QString MainWindow::selectGpgCommand(bool save)
 {
-	QString path = global->gpg_command;
+	QString path = global->appsettings.gpg_command;
 
 	auto fn = [&](QString const &path){
 		setGpgCommand(path, save);
@@ -477,7 +477,7 @@ bool MainWindow::isValidWorkingCopy(const GitPtr &g) const
 QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const
 {
 	const_cast<MainWindow *>(this)->checkFileCommand();
-	return misc::determinFileType(global->file_command, path, mime, callback);
+	return misc::determinFileType(global->appsettings.file_command, path, mime, callback);
 }
 
 QString MainWindow::determinFileType(QString const &path, bool mime)
@@ -1129,7 +1129,7 @@ bool MainWindow::checkGitCommand()
 bool MainWindow::checkFileCommand()
 {
 	while (1) {
-		if (misc::isExecutable(global->file_command)) {
+		if (misc::isExecutable(global->appsettings.file_command)) {
 			return true;
 		}
 		if (selectFileCommand(true).isEmpty()) {
@@ -1697,7 +1697,7 @@ bool MainWindow::execWelcomeWizardDialog()
 //		appsettings()->git_command  = dlg.git_command_path();
 		appsettings()->file_command = dlg.file_command_path();
 //		m->gcx.git_command = appsettings()->git_command;
-		global->file_command = appsettings()->file_command;
+//		global->file_command = appsettings()->file_command;
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		saveApplicationSettings();
 
@@ -1766,25 +1766,25 @@ void MainWindow::setGitCommand(QString path, bool save)
 
 void MainWindow::setFileCommand(QString path, bool save)
 {
-	appsettings()->file_command = global->file_command = executableOrEmpty(path);
+	appsettings()->file_command = executableOrEmpty(path);
 
 	internalSaveCommandPath(path, save, "FileCommand");
 }
 
 void MainWindow::setGpgCommand(QString path, bool save)
 {
-	appsettings()->gpg_command = global->gpg_command = executableOrEmpty(path);
+	appsettings()->gpg_command = executableOrEmpty(path);
 
 	internalSaveCommandPath(path, save, "GpgCommand");
-	if (!global->gpg_command.isEmpty()) {
+	if (!global->appsettings.gpg_command.isEmpty()) {
 		GitPtr g = git();
-		g->configGpgProgram(global->gpg_command, true);
+		g->configGpgProgram(global->appsettings.gpg_command, true);
 	}
 }
 
 void MainWindow::setSshCommand(QString path, bool save)
 {
-	appsettings()->ssh_command = executableOrEmpty(path);
+	appsettings()->ssh_command = m1->gcx.ssh_command = executableOrEmpty(path);
 
 	internalSaveCommandPath(path, save, "SshCommand");
 }
@@ -2259,7 +2259,7 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 		gpg::Data key;
 		{
 			QList<gpg::Data> keys;
-			gpg::listKeys(global->gpg_command, &keys);
+			gpg::listKeys(global->appsettings.gpg_command, &keys);
 			for (gpg::Data const &k : keys) {
 				if (k.id == sign_id) {
 					key = k;

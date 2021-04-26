@@ -56,7 +56,8 @@ public:
 	class Context {
 	public:
 		QString git_command;
-		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
+		QString ssh_command;
+		QString ssh_private_key;
 	};
 
 	struct Object {

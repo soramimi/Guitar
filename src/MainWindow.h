@@ -451,6 +451,7 @@ public:
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
 	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
+	void refresh();
 public slots:
 	void writeLog_(QByteArray ba);
 private slots:

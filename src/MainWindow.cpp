@@ -2476,9 +2476,14 @@ void MainWindow::on_action_open_existing_working_copy_triggered()
 	addWorkingCopyDir(dir, false);
 }
 
-void MainWindow::on_action_view_refresh_triggered()
+void MainWindow::refresh()
 {
 	openRepository(true);
+}
+
+void MainWindow::on_action_view_refresh_triggered()
+{
+	refresh();
 }
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
@@ -2662,6 +2667,7 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGitCommand(appsettings()->git_command, false);
 		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
+		setSshCommand(appsettings()->ssh_command, false);
 	}
 }
 
@@ -3457,6 +3463,7 @@ void MainWindow::on_action_submodule_update_triggered()
 		data.init = dlg.isInit();
 		data.recursive = dlg.isRecursive();
 		g->submodule_update(data, getPtyProcess());
+		refresh();
 	}
 }
 
