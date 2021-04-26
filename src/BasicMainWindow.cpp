@@ -1670,7 +1670,6 @@ void MainWindow::abortPtyProcess()
 void MainWindow::saveApplicationSettings()
 {
 	SettingsDialog::saveSettings(appsettings());
-//	SettingsDialog::saveSettings(&m1->appsettings);
 }
 
 void MainWindow::loadApplicationSettings()
@@ -1694,10 +1693,7 @@ bool MainWindow::execWelcomeWizardDialog()
 	if (dlg.exec() == QDialog::Accepted) {
 		setGitCommand(dlg.git_command_path(), false);
 		setFileCommand(dlg.file_command_path(), false);
-//		appsettings()->git_command  = dlg.git_command_path();
 		appsettings()->file_command = dlg.file_command_path();
-//		m->gcx.git_command = appsettings()->git_command;
-//		global->file_command = appsettings()->file_command;
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		saveApplicationSettings();
 
@@ -2451,7 +2447,12 @@ void MainWindow::openExplorer(RepositoryItem const *repo)
 		QProcess::execute(cmd);
 #else
 		QString url = QString::fromLatin1(QUrl::toPercentEncoding(dir));
-		url = "file://" + url.replace("%2F", "/");
+#ifdef Q_OS_WIN
+		QString scheme = "file:///";
+#else
+		QString scheme = "file://";
+#endif
+		url = scheme + url.replace("%2F", "/");
 		QDesktopServices::openUrl(url);
 #endif
 	}, repo);

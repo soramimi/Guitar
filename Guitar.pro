@@ -32,8 +32,13 @@ macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
-win32:INCLUDEPATH += $$PWD/misc/winpty
-win32:LIBS += $$PWD/misc/winpty/winpty.lib
+
+win32:INCLUDEPATH += $$PWD/misc/winpty/include
+
+# winpty x86
+#win32:LIBS += $$PWD/misc/winpty/ia32/lib/winpty.lib
+# winpty x86_64
+win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib
 
 # OpenSSL
 
@@ -49,9 +54,15 @@ macx:INCLUDEPATH += /usr/local/include
 macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
 
 win32:msvc {
-    INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
 	INCLUDEPATH += $$PWD/../zlib
-	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
+
+	# OpenSSL x86
+#	INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
+#	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
+	# OpenSSL x86_64
+	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
+	LIBS += "-LC:\Program Files\OpenSSL\lib"
+
 	# OpenSSL 1.0
 #	LIBS += -llibeay32 -lssleay32
 	# OpenSSL 1.1
@@ -201,6 +212,7 @@ SOURCES += \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
+	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
     src/SettingVisualForm.cpp \
 	src/SettingsDialog.cpp \
@@ -332,6 +344,7 @@ HEADERS  += \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
+	src/SettingPrograms2Form.h \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
 	src/SettingsDialog.h \
@@ -422,6 +435,7 @@ FORMS    += \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
+	src/SettingPrograms2Form.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingVisualForm.ui \
 	src/SettingsDialog.ui \

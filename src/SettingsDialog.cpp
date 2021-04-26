@@ -31,6 +31,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	};
 	AddPage(ui->page_general);
 	AddPage(ui->page_programs);
+	AddPage(ui->page_programs2);
 	AddPage(ui->page_behavior);
 	AddPage(ui->page_network);
 	AddPage(ui->page_visual);
@@ -118,6 +119,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
 	GetValue<QString>(s, "SshCommand")                       >> as->ssh_command;
 	GetValue<QString>(s, "TerminalCommand")                  >> as->terminal_command;
+	GetValue<QString>(s, "ExplorerCommand")                  >> as->explorer_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
@@ -157,6 +159,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
 	SetValue<QString>(s, "SshCommand")                       << as->ssh_command;
 	SetValue<QString>(s, "TerminalCommand")                  << as->terminal_command;
+	SetValue<QString>(s, "ExplorerCommand")                  << as->explorer_command;
 	s.endGroup();
 
 	s.beginGroup("UI");
