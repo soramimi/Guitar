@@ -10,10 +10,6 @@ SettingProgramsForm::SettingProgramsForm(QWidget *parent) :
 	ui(new Ui::SettingProgramsForm)
 {
 	ui->setupUi(this);
-
-#ifdef Q_OS_WIN
-	ui->groupBox_terminal->setVisible(false);
-#endif
 }
 
 SettingProgramsForm::~SettingProgramsForm()
