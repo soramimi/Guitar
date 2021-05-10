@@ -29,4 +29,6 @@ struct ApplicationGlobal {
 
 extern ApplicationGlobal *global;
 
+#define PATH_PREFIX "*"
+
 #endif // APPLICATIONGLOBAL_H

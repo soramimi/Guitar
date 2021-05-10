@@ -1,5 +1,5 @@
 #include "FilesListWidget.h"
-#include "BasicMainWindow.h"
+#include "MainWindow.h"
 #include <QDebug>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -42,8 +42,7 @@ public:
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);
 
-		QString header = index.data(BasicMainWindow::HeaderRole).toString();
-//		bool isSubmodule = !index.data(BasicMainWindow::SubmodulePathRole).toString().isEmpty();
+		QString header = index.data(MainWindow::HeaderRole).toString();
 
 		int x = o.rect.x();
 		int y = o.rect.y();

@@ -26,9 +26,6 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-s
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
-#linux:QTPLUGIN += ibusplatforminputcontextplugin
-#linux:QTPLUGIN += fcitxplatforminputcontextplugin
-
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
@@ -106,7 +103,7 @@ win32:gcc {
 
 haiku:LIBS += -lz
 
-#
+# filetype library
 
 !win32:LIBS += -lmagic
 win32:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/filetyped.lib
@@ -135,7 +132,6 @@ SOURCES += \
 	src/ApplicationGlobal.cpp \
 	src/AreYouSureYouWantToContinueConnectingDialog.cpp \
 	src/AvatarLoader.cpp \
-	src/BasicMainWindow.cpp \
 	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
@@ -268,7 +264,6 @@ HEADERS  += \
 	src/ApplicationGlobal.h \
 	src/AreYouSureYouWantToContinueConnectingDialog.h \
 	src/AvatarLoader.h \
-	src/BasicMainWindow.h \
 	src/BasicRepositoryDialog.h \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \

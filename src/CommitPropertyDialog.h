@@ -13,8 +13,6 @@ namespace Ui {
 class CommitPropertyDialog;
 }
 
-class BasicMainWindow;
-
 class CommitPropertyDialog : public QDialog {
 	Q_OBJECT
 private:

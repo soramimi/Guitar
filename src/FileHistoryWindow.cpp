@@ -49,7 +49,7 @@ int FileHistoryWindow::totalTextLines() const
 //	return drawdata()->v_scroll_pos;
 //}
 
-FileHistoryWindow::FileHistoryWindow(BasicMainWindow *parent)
+FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
 	: QDialog(parent)
 	, ui(new Ui::FileHistoryWindow)
 	, m(new Private)

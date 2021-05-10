@@ -1,8 +1,8 @@
 
 #include "GitDiff.h"
-#include "BasicMainWindow.h"
 #include <QDebug>
 #include <QThread>
+#include "ApplicationGlobal.h"
 
 // PathToIdMap
 
