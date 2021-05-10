@@ -3,6 +3,7 @@
 
 #include <QColor>
 #include <QString>
+#include <filetype/filetype.h>
 #include "Theme.h"
 #include "main.h"
 
@@ -21,9 +22,9 @@ struct ApplicationGlobal {
 	QColor panel_bg_color;
 	ThemePtr theme;
 
-	ApplicationSettings appsettings;
+	FileType filetype;
 
-	ApplicationGlobal();
+	ApplicationSettings appsettings;
 };
 
 extern ApplicationGlobal *global;

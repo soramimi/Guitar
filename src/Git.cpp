@@ -1373,6 +1373,7 @@ QString Git::trimPath(QString const &s)
 
 Git::FileStatusCode Git::FileStatus::parseFileStatusCode(char x, char y)
 {
+	if (x == ' ' && y == 'A') return FileStatusCode::AddedToIndex;
 	if (x == ' ' && (y == 'M' || y == 'D')) return FileStatusCode::NotUpdated;
 	if (x == 'M' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::UpdatedInIndex;
 	if (x == 'A' && (y == 'M' || y == 'D' || y == ' ')) return FileStatusCode::AddedToIndex;

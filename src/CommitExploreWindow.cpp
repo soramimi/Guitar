@@ -237,7 +237,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		m->content_object = m->objcache->catFile(id);
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-		QString mimetype = mainwindow()->determinFileType(m->content_object.content, true);
+		QString mimetype = mainwindow()->determinFileType(m->content_object.content);
 		if (misc::isImage(mimetype)) {
 			ui->widget_fileview->setImage(mimetype, m->content_object.content, id, path);
 		} else {

@@ -106,6 +106,15 @@ win32:gcc {
 
 haiku:LIBS += -lz
 
+#
+
+!win32:LIBS += -lmagic
+win32:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/filetyped.lib
+win32:CONFIG(release, debug|release):LIBS += $$PWD/_bin/filetype.lib
+!win32:SOURCES += filetype/filetype.cpp
+
+#
+
 win32 {
 	LIBS += -ladvapi32 -lshell32 -luser32 -lws2_32
 	RC_FILE = win.rc
@@ -252,6 +261,7 @@ SOURCES += \
 	src/webclient.cpp \
 
 HEADERS  += \
+	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \

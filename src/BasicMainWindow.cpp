@@ -46,6 +46,9 @@
 #include <functional>
 #include <memory>
 
+#include "filetype/filetype.h"
+
+
 class AsyncExecGitThread_ : public QThread {
 private:
 	GitPtr g;
@@ -474,20 +477,7 @@ bool MainWindow::isValidWorkingCopy(const GitPtr &g) const
 	return g && g->isValidWorkingCopy();
 }
 
-QString MainWindow::determinFileType_(QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback) const
-{
-	const_cast<MainWindow *>(this)->checkFileCommand();
-	return misc::determinFileType(global->appsettings.file_command, path, mime, callback);
-}
-
-QString MainWindow::determinFileType(QString const &path, bool mime)
-{
-	return determinFileType_(path, mime, [](QString const &cmd, QByteArray *ba){
-		misc2::runCommand(cmd, ba);
-	});
-}
-
-QString MainWindow::determinFileType(QByteArray in, bool mime)
+QString MainWindow::determinFileType(QByteArray in)
 {
 	if (in.isEmpty()) return QString();
 
@@ -504,13 +494,16 @@ QString MainWindow::determinFileType(QByteArray in, bool mime)
 		}
 	}
 
-	// ファイル名を "-" にすると、リダイレクトで標準入力へ流し込める。
-	return determinFileType_("-", mime, [&](QString const &cmd, QByteArray *ba){
-		int r = misc2::runCommand(cmd, &in, ba);
-		if (r != 0) {
-			ba->clear();
+	QString mimetype;
+	if (!in.isEmpty()) {
+		std::string s = global->filetype.mime_by_data(in.data(), in.size());
+		auto i = s.find(';');
+		if (i != std::string::npos) {
+			s = s.substr(0, i);
 		}
-	});
+		mimetype = QString::fromStdString(s).trimmed();
+	}
+	return mimetype;
 }
 
 QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)

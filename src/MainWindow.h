@@ -429,9 +429,7 @@ public:
 	Git::Object cat_file(RepositoryWrapperFrame *frame, const QString &id);
 	void addWorkingCopyDir(const QString &dir, bool open);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
-	QString determinFileType_(const QString &path, bool mime, const std::function<void (const QString &, QByteArray *)> &callback) const;
-	QString determinFileType(const QString &path, bool mime);
-	QString determinFileType(QByteArray in, bool mime);
+	QString determinFileType(QByteArray in);
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
 	TextEditorThemePtr themeForTextEditor();
 	bool isValidWorkingCopy(const GitPtr &g) const;

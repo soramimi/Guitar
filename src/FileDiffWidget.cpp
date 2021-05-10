@@ -357,8 +357,9 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 {
 	clearDiffView();
 
-	QString mimetype_l = mainwindow()->determinFileType(m->init_param_.bytes_a, true);
-	QString mimetype_r = mainwindow()->determinFileType(m->init_param_.bytes_b, true);
+	QString mimetype_l = mainwindow()->determinFileType(m->init_param_.bytes_a);
+	QString mimetype_r = mainwindow()->determinFileType(m->init_param_.bytes_b);
+	qDebug() << mimetype_l << mimetype_r;
 
 	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 
@@ -583,8 +584,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (isValidID_(info.blob.a_id) && isValidID_(info.blob.b_id)) {
 		Git::Object obj_a = cat_file(g, info.blob.a_id);
 		Git::Object obj_b = cat_file(g, info.blob.b_id);
-		QString mime_a = mainwindow()->determinFileType(obj_a.content, true);
-		QString mime_b = mainwindow()->determinFileType(obj_b.content, true);
+		QString mime_a = mainwindow()->determinFileType(obj_a.content);
+		QString mime_b = mainwindow()->determinFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
 			setSideBySide_(obj_a.content, obj_b.content, g->workingDir());
 			return;
