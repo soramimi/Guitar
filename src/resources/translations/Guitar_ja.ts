@@ -85,7 +85,7 @@
         <translation type="vanished">フォルダは有効なGitリポジトリではありません。</translation>
     </message>
     <message>
-        <source>Do you want to initialize it as a git repository ?</source>
+        <source>Do you want to initialize it as a git repository?</source>
         <translation type="vanished">Gitリポジトリとして初期化しますか？</translation>
     </message>
     <message>
@@ -113,7 +113,7 @@
         <translation type="vanished">そのようなフォルダはありません</translation>
     </message>
     <message>
-        <source>Remove from bookmark ?</source>
+        <source>Remove from bookmark?</source>
         <translation type="vanished">ブックマークから削除しますか？</translation>
     </message>
     <message>
@@ -121,7 +121,7 @@
         <translation type="vanished">削除の確認</translation>
     </message>
     <message>
-        <source>Are you sure you want to remove the repository from bookmarks ?</source>
+        <source>Are you sure you want to remove the repository from bookmarks?</source>
         <translation type="vanished">リポジトリをブックマークから削除してよろしいですか？</translation>
     </message>
     <message>
@@ -145,7 +145,7 @@
         <translation type="vanished">無効なフォルダ</translation>
     </message>
     <message>
-        <source>No such folder. Create it now ?</source>
+        <source>No such folder. Create it now?</source>
         <translation type="vanished">このフォルダはありません。作成しますか？</translation>
     </message>
     <message>
@@ -186,7 +186,7 @@
         <translation type="vanished">ブランチの削除に失敗しました : &apos;%1&apos;</translation>
     </message>
     <message>
-        <source>Are you sure you want to run the following command ?</source>
+        <source>Are you sure you want to run the following command?</source>
         <translation type="vanished">次のコマンドを実行してよろしいですか？</translation>
     </message>
     <message>
@@ -277,12 +277,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../../CheckoutDialog.ui" line="63"/>
+        <location filename="../../CheckoutDialog.ui" line="76"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../CheckoutDialog.ui" line="70"/>
+        <location filename="../../CheckoutDialog.ui" line="83"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
@@ -1261,17 +1261,17 @@
         <location filename="../../MainWindow.ui" line="96"/>
         <location filename="../../MainWindow.ui" line="1461"/>
         <location filename="../../MainWindow.ui" line="1464"/>
-        <location filename="../../BasicMainWindow.cpp" line="2133"/>
-        <location filename="../../BasicMainWindow.cpp" line="2138"/>
-        <location filename="../../BasicMainWindow.cpp" line="2151"/>
-        <location filename="../../BasicMainWindow.cpp" line="2156"/>
+        <location filename="../../MainWindow.cpp" line="1332"/>
+        <location filename="../../MainWindow.cpp" line="1337"/>
+        <location filename="../../MainWindow.cpp" line="1350"/>
+        <location filename="../../MainWindow.cpp" line="1355"/>
         <source>Clone</source>
         <translation>クローン</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="131"/>
-        <location filename="../../MainWindow.cpp" line="1477"/>
-        <location filename="../../MainWindow.cpp" line="1478"/>
+        <location filename="../../MainWindow.cpp" line="3647"/>
+        <location filename="../../MainWindow.cpp" line="3648"/>
         <source>Fetch</source>
         <translation>フェッチ</translation>
     </message>
@@ -1321,7 +1321,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="832"/>
-        <location filename="../../MainWindow.cpp" line="2191"/>
+        <location filename="../../MainWindow.cpp" line="4379"/>
         <source>Unstage</source>
         <translation>除外</translation>
     </message>
@@ -1332,13 +1332,13 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="896"/>
-        <location filename="../../MainWindow.cpp" line="2061"/>
+        <location filename="../../MainWindow.cpp" line="4249"/>
         <source>Stage</source>
         <translation>追加</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="925"/>
-        <location filename="../../BasicMainWindow.cpp" line="2274"/>
+        <location filename="../../MainWindow.cpp" line="1477"/>
         <source>Commit</source>
         <translation>コミット</translation>
     </message>
@@ -1368,7 +1368,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1474"/>
-        <location filename="../../MainWindow.cpp" line="1933"/>
+        <location filename="../../MainWindow.cpp" line="4121"/>
         <source>Edit tags...</source>
         <translation>タグの編集...</translation>
     </message>
@@ -1441,7 +1441,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="252"/>
         <location filename="../../MainWindow.ui" line="1668"/>
-        <location filename="../../MainWindow.cpp" line="1691"/>
+        <location filename="../../MainWindow.cpp" line="3861"/>
         <source>Status</source>
         <translation>ステータス</translation>
     </message>
@@ -1493,7 +1493,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1368"/>
-        <location filename="../../MainWindow.cpp" line="2475"/>
+        <location filename="../../MainWindow.cpp" line="4979"/>
         <source>Add existing working copy</source>
         <translation>既存の作業コピーを追加</translation>
     </message>
@@ -1581,7 +1581,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1516"/>
-        <location filename="../../MainWindow.cpp" line="1938"/>
+        <location filename="../../MainWindow.cpp" line="4126"/>
         <source>Delete branch...</source>
         <translation>ブランチの削除...</translation>
     </message>
@@ -1723,7 +1723,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1574"/>
-        <location filename="../../MainWindow.cpp" line="1939"/>
+        <location filename="../../MainWindow.cpp" line="4127"/>
         <source>Delete remote branch...</source>
         <translation>リモートブランチの削除...</translation>
     </message>
@@ -1748,14 +1748,9 @@
         <translation>ログ(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2594"/>
+        <location filename="../../MainWindow.cpp" line="2114"/>
         <source>Unnamed</source>
         <translation>無名</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="805"/>
-        <source>Default</source>
-        <translation></translation>
     </message>
     <message>
         <source>Graph</source>
@@ -1774,39 +1769,39 @@
         <translation type="vanished">概要</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1368"/>
-        <location filename="../../MainWindow.cpp" line="1536"/>
+        <location filename="../../MainWindow.cpp" line="3538"/>
+        <location filename="../../MainWindow.cpp" line="3706"/>
         <source>Uncommited changes</source>
         <translation>コミットされていない変更があります</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2087"/>
-        <source>Are you sure you want to remove the repository from bookmarks ?</source>
+        <location filename="../../MainWindow.cpp" line="2933"/>
+        <source>Are you sure you want to remove the repository from bookmarks?</source>
         <translation>リポジトリをブックマークから削除してよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2087"/>
+        <location filename="../../MainWindow.cpp" line="2933"/>
         <source>(Files will NOT be deleted)</source>
         <translation>（ファルは削除されません）</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1838"/>
-        <location filename="../../BasicMainWindow.cpp" line="1845"/>
+        <location filename="../../MainWindow.cpp" line="1156"/>
+        <location filename="../../MainWindow.cpp" line="1163"/>
         <source>Open Repository</source>
         <translation>リポジトリを開く</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1838"/>
+        <location filename="../../MainWindow.cpp" line="1156"/>
         <source>No such folder</source>
         <translation>そのようなフォルダはありません</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1845"/>
+        <location filename="../../MainWindow.cpp" line="1163"/>
         <source>Not a valid git repository</source>
         <translation>有効なリポジトリではありません</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2274"/>
+        <location filename="../../MainWindow.cpp" line="1477"/>
         <source>Commit message can not be omitted.</source>
         <translation>コミットメッセージを空にすることはできません。</translation>
     </message>
@@ -1815,57 +1810,57 @@
         <translation type="vanished">リポジトリのプロパティ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1795"/>
+        <location filename="../../MainWindow.cpp" line="3983"/>
         <source>&amp;Add new group</source>
         <translation>新しいグループを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1796"/>
+        <location filename="../../MainWindow.cpp" line="3984"/>
         <source>&amp;Delete group</source>
         <translation>グループを削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1797"/>
+        <location filename="../../MainWindow.cpp" line="3985"/>
         <source>&amp;Rename group</source>
         <translation>グループ名の変更(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1802"/>
+        <location filename="../../MainWindow.cpp" line="3990"/>
         <source>New group</source>
         <translation>新しいグループ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1826"/>
+        <location filename="../../MainWindow.cpp" line="4014"/>
         <source>Open &amp;terminal</source>
         <translation>端末を開く(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1827"/>
+        <location filename="../../MainWindow.cpp" line="4015"/>
         <source>Open command promp&amp;t</source>
         <translation>コマンドプロンプトを開く(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1829"/>
+        <location filename="../../MainWindow.cpp" line="4017"/>
         <source>&amp;Open</source>
         <translation>開く(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1840"/>
+        <location filename="../../MainWindow.cpp" line="4028"/>
         <source>Open &amp;folder</source>
         <translation>フォルダを開く(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1845"/>
+        <location filename="../../MainWindow.cpp" line="4033"/>
         <source>&amp;Remove</source>
         <translation>削除(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1888"/>
+        <location filename="../../MainWindow.cpp" line="4076"/>
         <source>Copy commit id (7 letters)</source>
         <translation>コミットIDをコピー（7文字）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1889"/>
+        <location filename="../../MainWindow.cpp" line="4077"/>
         <source>Copy commit id (completely)</source>
         <translation>コミットIDをコピー（すべて）</translation>
     </message>
@@ -1874,13 +1869,13 @@
         <translation type="vanished">コメントを編集...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1579"/>
-        <location filename="../../MainWindow.cpp" line="1931"/>
+        <location filename="../../MainWindow.cpp" line="3749"/>
+        <location filename="../../MainWindow.cpp" line="4119"/>
         <source>Rebase</source>
         <translation>リベース</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1943"/>
+        <location filename="../../MainWindow.cpp" line="4131"/>
         <source>Explore</source>
         <translation>探索</translation>
     </message>
@@ -1893,237 +1888,237 @@
         <translation type="vanished">メッセージ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2017"/>
-        <location filename="../../MainWindow.cpp" line="2066"/>
-        <location filename="../../MainWindow.cpp" line="2192"/>
+        <location filename="../../MainWindow.cpp" line="4205"/>
+        <location filename="../../MainWindow.cpp" line="4254"/>
+        <location filename="../../MainWindow.cpp" line="4380"/>
         <source>History</source>
         <translation>履歴</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2867"/>
-        <location filename="../../MainWindow.cpp" line="2881"/>
+        <location filename="../../MainWindow.cpp" line="5492"/>
+        <location filename="../../MainWindow.cpp" line="5506"/>
         <source>No such commit</source>
         <translation>そのようなコミットはありません</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1480"/>
-        <location filename="../../MainWindow.cpp" line="1481"/>
+        <location filename="../../MainWindow.cpp" line="3650"/>
+        <location filename="../../MainWindow.cpp" line="3651"/>
         <source>Update</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3193"/>
+        <location filename="../../MainWindow.cpp" line="5866"/>
         <source>Authentication Failed</source>
         <translation>認証が失敗しました</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1934"/>
+        <location filename="../../MainWindow.cpp" line="4122"/>
         <source>Revert</source>
         <translation>変更を破棄する</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2291"/>
+        <location filename="../../MainWindow.cpp" line="1494"/>
         <source>Failed to commit</source>
         <translation>コミット失敗</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2378"/>
+        <location filename="../../MainWindow.cpp" line="1581"/>
         <source>No remote repository is registered.</source>
         <translation>リモートリポジトリが登録されていません。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2401"/>
+        <location filename="../../MainWindow.cpp" line="1604"/>
         <source>The current branch %1 has no upstream branch.</source>
         <translation>現在のブランチ「%1」には上流ブランチがありません。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2404"/>
+        <location filename="../../MainWindow.cpp" line="1607"/>
         <source>You try push --set-upstream</source>
         <translation>--set-upstream を試してください</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2325"/>
-        <location filename="../../BasicMainWindow.cpp" line="2410"/>
+        <location filename="../../MainWindow.cpp" line="1528"/>
+        <location filename="../../MainWindow.cpp" line="1613"/>
         <source>Connection refused.</source>
         <translation>接続が拒否されました。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="300"/>
+        <location filename="../../MainWindow.cpp" line="781"/>
         <source>&amp;Property</source>
         <translation>プロパティ(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1905"/>
+        <location filename="../../MainWindow.cpp" line="4093"/>
         <source>Checkout/Branch...</source>
         <translation>チェックアウト／ブランチ...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1927"/>
+        <location filename="../../MainWindow.cpp" line="4115"/>
         <source>Edit message...</source>
         <translation>メッセージの編集...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1930"/>
+        <location filename="../../MainWindow.cpp" line="4118"/>
         <source>Merge</source>
         <translation>マージ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1932"/>
+        <location filename="../../MainWindow.cpp" line="4120"/>
         <source>Cherry-pick</source>
         <translation>チェリーピック</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2016"/>
-        <location filename="../../MainWindow.cpp" line="2065"/>
+        <location filename="../../MainWindow.cpp" line="4204"/>
+        <location filename="../../MainWindow.cpp" line="4253"/>
         <source>Untrack</source>
         <translation>追跡しない</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2018"/>
-        <location filename="../../MainWindow.cpp" line="2067"/>
-        <location filename="../../MainWindow.cpp" line="2193"/>
+        <location filename="../../MainWindow.cpp" line="4206"/>
+        <location filename="../../MainWindow.cpp" line="4255"/>
+        <location filename="../../MainWindow.cpp" line="4381"/>
         <source>Blame</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2026"/>
+        <location filename="../../MainWindow.cpp" line="4214"/>
         <source>Delete selected files.</source>
         <translation>選択されたファイルを削除します。</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2037"/>
+        <location filename="../../MainWindow.cpp" line="4225"/>
         <source>rm --cached files</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2062"/>
+        <location filename="../../MainWindow.cpp" line="4250"/>
         <source>Reset</source>
         <translation>リセット</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2063"/>
+        <location filename="../../MainWindow.cpp" line="4251"/>
         <source>Ignore</source>
         <translation>無視する</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2580"/>
+        <location filename="../../MainWindow.cpp" line="1672"/>
         <source>Reset a file</source>
         <translation>ファイルをリセットします</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1576"/>
-        <source>Are you sure you want to rebase the commit ?</source>
+        <location filename="../../MainWindow.cpp" line="3746"/>
+        <source>Are you sure you want to rebase the commit?</source>
         <translation>コミットをリベースしてよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1546"/>
+        <location filename="../../MainWindow.cpp" line="2726"/>
         <source>No repository selected</source>
         <translation>リポジトリが選択されていません</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2015"/>
-        <location filename="../../MainWindow.cpp" line="2064"/>
+        <location filename="../../MainWindow.cpp" line="4203"/>
+        <location filename="../../MainWindow.cpp" line="4252"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2559"/>
-        <source>Are you sure you want to run the following command ?</source>
+        <location filename="../../MainWindow.cpp" line="2982"/>
+        <source>Are you sure you want to run the following command?</source>
         <translation>次のコマンドを実行してよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1264"/>
+        <location filename="../../MainWindow.cpp" line="867"/>
         <source>Revert all files</source>
         <translation>すべてのファイルの変更を破棄</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="147"/>
+        <location filename="../../MainWindow.cpp" line="4603"/>
         <source>git command not specified</source>
         <translation>gitコマンドが指定されていません</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1092"/>
+        <location filename="../../MainWindow.cpp" line="5443"/>
         <source>Select %1 command</source>
         <translation>%1 コマンドの選択</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1414"/>
+        <location filename="../../MainWindow.cpp" line="888"/>
         <source>The folder is not a valid git repository.</source>
         <translation>フォルダは有効なGitリポジトリではありません。</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1418"/>
-        <source>Do you want to initialize it as a git repository ?</source>
+        <location filename="../../MainWindow.cpp" line="892"/>
+        <source>Do you want to initialize it as a git repository?</source>
         <translation>Gitリポジトリとして初期化しますか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1419"/>
+        <location filename="../../MainWindow.cpp" line="893"/>
         <source>Initialize Repository</source>
         <translation>リポジトリの初期化</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="1838"/>
-        <source>Remove from bookmark ?</source>
+        <location filename="../../MainWindow.cpp" line="1156"/>
+        <source>Remove from bookmark?</source>
         <translation>ブックマークから削除しますか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2063"/>
+        <location filename="../../MainWindow.cpp" line="2909"/>
         <source>, %1 ahead</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2066"/>
+        <location filename="../../MainWindow.cpp" line="2912"/>
         <source>, %1 behind</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2087"/>
+        <location filename="../../MainWindow.cpp" line="2933"/>
         <source>Confirm Remove</source>
         <translation>削除の確認</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2132"/>
+        <location filename="../../MainWindow.cpp" line="1331"/>
         <source>A file with same name already exists</source>
         <translation>同じ名前のファイルが既に存在しています</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2137"/>
+        <location filename="../../MainWindow.cpp" line="1336"/>
         <source>A folder with same name already exists</source>
         <translation>同じ名前のフォルダが既に存在しています</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2150"/>
+        <location filename="../../MainWindow.cpp" line="1349"/>
         <source>Invalid folder</source>
         <translation>無効なフォルダ</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2155"/>
-        <source>No such folder. Create it now ?</source>
+        <location filename="../../MainWindow.cpp" line="1354"/>
+        <source>No such folder. Create it now?</source>
         <translation>このフォルダはありません。作成しますか？</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="2495"/>
+        <location filename="../../MainWindow.cpp" line="1648"/>
         <source>Failed to delete the branch &apos;%1&apos;</source>
         <translation>ブランチ「%1」の削除に失敗しました</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="269"/>
+        <location filename="../../MainWindow.cpp" line="4477"/>
         <source>The URL is a valid repository</source>
         <translation>このURLは有効なリポジトリです</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="270"/>
+        <location filename="../../MainWindow.cpp" line="4478"/>
         <source>Failed to access the URL</source>
         <translation>このURLへのアクセスに失敗しました</translation>
     </message>
     <message>
-        <location filename="../../BasicMainWindow.cpp" line="275"/>
+        <location filename="../../MainWindow.cpp" line="4483"/>
         <source>Remote Repository</source>
         <translation>リモートリポジトリ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2867"/>
-        <location filename="../../MainWindow.cpp" line="2881"/>
+        <location filename="../../MainWindow.cpp" line="5492"/>
+        <location filename="../../MainWindow.cpp" line="5506"/>
         <source>Jump</source>
         <translation>移動</translation>
     </message>
@@ -2472,8 +2467,12 @@
     </message>
     <message>
         <location filename="../../RepositoryPropertyDialog.cpp" line="171"/>
+        <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos; ?</source>
-        <translation>リポジトリ「%2」からリモート「%1」を削除してよろしいですか？</translation>
+        <translation type="vanished">リポジトリ「%2」からリモート「%1」を削除してよろしいですか？</translation>
     </message>
     <message>
         <location filename="../../RepositoryPropertyDialog.cpp" line="191"/>
@@ -3019,6 +3018,45 @@
     </message>
 </context>
 <context>
+    <name>SettingPrograms2Form</name>
+    <message>
+        <location filename="../../SettingPrograms2Form.ui" line="14"/>
+        <source>Programs 2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.ui" line="20"/>
+        <source>Terminal command (option)</source>
+        <translation type="unfinished">ターミナルコマンド（オプション）</translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.ui" line="29"/>
+        <source>Reset</source>
+        <translation type="unfinished">リセット</translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.ui" line="36"/>
+        <location filename="../../SettingPrograms2Form.ui" line="55"/>
+        <source>Browse...</source>
+        <translation type="unfinished">参照...</translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.ui" line="46"/>
+        <source>File manager command (option)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.cpp" line="33"/>
+        <source>Terminal Command</source>
+        <translation type="unfinished">ターミナルコマンド</translation>
+    </message>
+    <message>
+        <location filename="../../SettingPrograms2Form.cpp" line="42"/>
+        <source>Explorer Command</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingProgramsForm</name>
     <message>
         <location filename="../../SettingProgramsForm.ui" line="14"/>
@@ -3034,38 +3072,33 @@
         <location filename="../../SettingProgramsForm.ui" line="29"/>
         <location filename="../../SettingProgramsForm.ui" line="48"/>
         <location filename="../../SettingProgramsForm.ui" line="67"/>
-        <location filename="../../SettingProgramsForm.ui" line="86"/>
-        <location filename="../../SettingProgramsForm.ui" line="112"/>
         <source>Browse...</source>
         <translation>参照...</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.ui" line="39"/>
         <source>File command</source>
-        <translation>File コマンド</translation>
+        <translation type="vanished">File コマンド</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.ui" line="58"/>
+        <location filename="../../SettingProgramsForm.ui" line="39"/>
         <source>GPG command (option)</source>
         <translation>GPGコマンド（オプション）</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.ui" line="77"/>
+        <location filename="../../SettingProgramsForm.ui" line="58"/>
         <source>SSH command (option)</source>
         <translation>SSHコマンド（オプション）</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.ui" line="96"/>
         <source>Terminal command (option)</source>
-        <translation>ターミナルコマンド（オプション）</translation>
+        <translation type="vanished">ターミナルコマンド（オプション）</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.ui" line="105"/>
         <source>Reset</source>
-        <translation>リセット</translation>
+        <translation type="vanished">リセット</translation>
     </message>
     <message>
-        <location filename="../../SettingProgramsForm.cpp" line="79"/>
+        <location filename="../../SettingProgramsForm.cpp" line="64"/>
         <source>Terminal Command</source>
         <translation>ターミナルコマンド</translation>
     </message>
@@ -3116,12 +3149,12 @@
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../SettingsDialog.ui" line="142"/>
+        <location filename="../../SettingsDialog.ui" line="143"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../SettingsDialog.ui" line="149"/>
+        <location filename="../../SettingsDialog.ui" line="150"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

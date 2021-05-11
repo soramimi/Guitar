@@ -889,7 +889,7 @@ void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 			text += '\n';
 			text += dir + '\n';
 			text += '\n';
-			text += tr("Do you want to initialize it as a git repository ?") + '\n';
+			text += tr("Do you want to initialize it as a git repository?") + '\n';
 			int r = QMessageBox::information(this, tr("Initialize Repository") , text, QMessageBox::Yes, QMessageBox::No);
 			if (r == QMessageBox::Yes) {
 				createRepository(dir);
@@ -1153,7 +1153,7 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
 		if (!QFileInfo(dir).isDir()) {
-			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark ?"), QMessageBox::Ok, QMessageBox::Cancel);
+			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark?"), QMessageBox::Ok, QMessageBox::Cancel);
 			if (r == QMessageBox::Ok) {
 				removeSelectedRepositoryFromBookmark(false);
 			}
@@ -1351,7 +1351,7 @@ void MainWindow::clone(QString url, QString dir)
 					continue;
 				}
 
-				QString msg = basedir + "\n\n" + tr("No such folder. Create it now ?");
+				QString msg = basedir + "\n\n" + tr("No such folder. Create it now?");
 				if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
 					continue;
 				}
@@ -2930,7 +2930,7 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 {
 	if (ask) {
-		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks ?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
+		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
 	auto *repos = getReposPtr();
@@ -2979,7 +2979,7 @@ void MainWindow::openExplorer(const RepositoryItem *repo)
 
 bool MainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &command)
 {
-	QString message = tr("Are you sure you want to run the following command ?");
+	QString message = tr("Are you sure you want to run the following command?");
 	QString text = "%1\n\n%2";
 	text = text.arg(message).arg(command);
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
@@ -3743,7 +3743,7 @@ void MainWindow::rebaseBranch(Git::CommitItem const *commit)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QString text = tr("Are you sure you want to rebase the commit ?");
+	QString text = tr("Are you sure you want to rebase the commit?");
 	text += "\n\n";
 	text += "> git rebase " + commit->commit_id;
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
