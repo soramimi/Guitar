@@ -1,6 +1,6 @@
 #include "filetype.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string>

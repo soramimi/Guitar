@@ -40,7 +40,7 @@ QColor ColorEditWidget::color() const
 	return color_;
 }
 
-void ColorEditWidget::setColor(QColor color)
+void ColorEditWidget::setColor(QColor const &color)
 {
 	color_ = color;
 

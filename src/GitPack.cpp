@@ -35,8 +35,8 @@ void GitPack::decodeTree(QByteArray *out)
 				for (int i = 0; i < 20; i++) {
 					sprintf(p, "%02x", ptr[i]);
 					p += 2;
-				}
-				ba.append(tmp, p - tmp);
+                }
+                ba.append(tmp, int(p - tmp));
 				ba.append('\t');
 				ba.append(name.c_str(), name.size());
 				ba.append('\n');

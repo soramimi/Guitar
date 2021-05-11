@@ -15,7 +15,7 @@ GitObjectManager::GitObjectManager()
 	subdir_git_objects_pack = subdir_git_objects / "pack";
 }
 
-void GitObjectManager::setup(GitPtr const &g)
+void GitObjectManager::setup(GitPtr g)
 {
 	this->g = g;
 	clearIndexes();
@@ -237,7 +237,7 @@ size_t GitObjectCache::size() const
 	return size;
 }
 
-void GitObjectCache::setup(GitPtr const &g)
+void GitObjectCache::setup(GitPtr g)
 {
 	items.clear();
 	revparsemap.clear();
@@ -342,8 +342,8 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 			if (!obj.content.isEmpty()) {
 				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
 					if (commit_id.isEmpty()) {
-						if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
-							QString id = QString::fromUtf8(ptr + 7, len - 7).trimmed();
+                        if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
+                            QString id = QString::fromUtf8(ptr + 7, int(len - 7)).trimmed();
 							if (Git::isValidID(id)) {
 								commit_id = id;
 							}

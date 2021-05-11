@@ -9,7 +9,7 @@ struct BasicRepositoryDialog::Private {
 	QList<Git::Remote> remotes;
 };
 
-BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr const &g)
+BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr g)
 	: QDialog(mainwindow)
 	, m(new Private)
 {

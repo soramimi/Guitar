@@ -423,7 +423,7 @@ public:
 						*p++ = 0;
 						auto IS = [&](char const *name){ return stricmp(begin, name) == 0; };
 						if (IS("content-length")) {
-							content_length = strtol(p, nullptr, 10);
+							content_length = (int)strtol(p, nullptr, 10);
 						} else if (IS("connection")) {
 							if (stristr(p, "keep-alive")) {
 								connection_keep_alive = true;
@@ -459,7 +459,7 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	while (1) {
 		int n;
 		if (rh.state == ResponseHeader::Content && rh.content_length >= 0) {
-			n = rh.pos + rh.content_length - pos;
+			n = (int)rh.pos + rh.content_length - pos;
 			if (n > (int)sizeof(buf)) {
 				n = sizeof(buf);
 			}
@@ -1122,12 +1122,12 @@ static const unsigned char _decode_table[] = {
 	0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
-static inline unsigned char enc(int c)
+static inline char enc(int c)
 {
 	return _encode_table[c & 63];
 }
 
-static inline unsigned char dec(int c)
+static inline char dec(int c)
 {
 	return _decode_table[c & 127];
 }

@@ -62,8 +62,8 @@ QStringList misc::splitLines(QString const &text)
 		if (ptr < end) {
 			c = *ptr;
 		}
-		if (c == '\n' || c == '\r' || c == 0) {
-			list.push_back(QString::fromUtf16(left, ptr - left));
+        if (c == '\n' || c == '\r' || c == 0) {
+            list.push_back(QString::fromUtf16(left, int(ptr - left)));
 			if (c == 0) break;
 			if (c == '\n') {
 				ptr++;
@@ -132,8 +132,8 @@ QStringList misc::splitWords(QString const &text)
 			c = *ptr;
 		}
 		if (QChar::isSpace(c) || c == 0) {
-			if (left < ptr) {
-				list.push_back(QString::fromUtf16(left, ptr - left));
+            if (left < ptr) {
+                list.push_back(QString::fromUtf16(left, int(ptr - left)));
 			}
 			if (c == 0) break;
 			ptr++;
@@ -287,8 +287,8 @@ void misc::dump(uint8_t const *ptr, size_t len)
 						c = '.';
 					}
 					pos++;
-				}
-				*dst = c;
+                }
+                *dst = (char)c;
 				dst++;
 			}
 			*dst = 0;

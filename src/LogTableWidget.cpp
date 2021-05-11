@@ -126,9 +126,9 @@ private:
 				QRect r(x0, y0, x1 - x0, y1 - y0);
 
 				// ラベル枠の描画
-				auto DrawLabelFrame = [&](int dx, int dy, QColor color){
-					painter->setBrush(color);
-					painter->drawRoundedRect(r.adjusted(lround(dx + 3), lround(dy + 3), lround(dx - 3), lround(dy - 3)), 3, 3);
+                auto DrawLabelFrame = [&](int dx, int dy, QColor const &color){
+                    painter->setBrush(color);
+                    painter->drawRoundedRect(r.adjusted((int)lround(dx + 3), (int)lround(dy + 3), (int)lround(dx - 3), (int)lround(dy - 3)), 3, 3);
 				};
 
 				QColor color = BranchLabel::color(label.kind); // ラベル表面の色

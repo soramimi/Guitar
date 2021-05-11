@@ -676,8 +676,8 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 							tmp[0] = c;
 							tmp[1] = d;
 							tmp[2] = 0;
-							int v = strtol(tmp, nullptr, 16);
-							item.fingerprint.push_back(v);
+                            char v = (char)strtol(tmp, nullptr, 16);
+                            item.fingerprint.push_back(v);
 						} else {
 							break;
 						}
@@ -1279,8 +1279,8 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 				c = *ptr;
 			}
 			if (c == '\r' || c == '\n' || c == 0) {
-				int d = 0;
-				QString line = QString::fromUtf8(left, ptr - left);
+                int d = 0;
+                QString line = QString::fromUtf8(left, int(ptr - left));
 				if (left < ptr) {
 					d = *left & 0xff;
 				}
@@ -1367,8 +1367,8 @@ QString Git::trimPath(QString const &s)
 		}
 		return QString::fromUtf8(ba);
 	}
-	if (left == begin && right == end) return s;
-	return QString::fromUtf16(left, right - left);
+    if (left == begin && right == end) return s;
+    return QString::fromUtf16(left, int(right - left));
 }
 
 Git::FileStatusCode Git::FileStatus::parseFileStatusCode(char x, char y)

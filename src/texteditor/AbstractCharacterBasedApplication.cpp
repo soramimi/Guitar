@@ -278,8 +278,8 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	}
 
 	std::vector<ushort> vec;
-	vec.reserve(ba.size() + 100);
-	size_t len = ba.size();
+    vec.reserve((size_t)ba.size() + 100);
+    size_t len = (size_t)ba.size();
 	QList<FormattedLine> res;
 
 	int col = 0;
@@ -295,7 +295,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 				if (i + 1 < m->syntax_table.size()) {
 					*next_offset = m->syntax_table[i + 1].offset;
 				} else {
-					*next_offset = -1;
+                    *next_offset = (size_t)-1;
 				}
 			}
 			static int color[] = {
@@ -314,7 +314,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			}
 		}
 		if (next_offset) {
-			*next_offset = -1;
+            *next_offset = (size_t)-1;
 		}
 		return 0;
 	};
@@ -333,17 +333,17 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			ushort const *right = left + vec.size();
 			while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
 			if (left < right) {
-				res.push_back(FormattedLine(QString::fromUtf16(left, right - left), atts));
+				res.push_back(FormattedLine(QString::fromUtf16(left, int(right - left)), atts));
 			}
 			vec.clear();
 		} else {
-			*next_offset = -1;
+            *next_offset = (size_t)-1;
 		}
 		col_start = col;
 	};
 
-	size_t offset = 0;
-	size_t next_offset = -1;
+    size_t offset = 0;
+    size_t next_offset = (size_t)-1;
 	if (len > 0) {
 		{
 			size_t o = line.byte_offset;
@@ -373,17 +373,17 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			} else {
 				int cw = charWidth(c);
 				if (c < 0xffff) {
-					vec.push_back(c);
+                    vec.push_back((ushort)c);
 				} else {
-					int a = c >> 16;
+                    unsigned int a = c >> 16;
 					if (a > 0 && a <= 0x20) {
 						a--;
-						int b = c & 0x03ff;
+                        unsigned int b = c & 0x03ff;
 						a = (a << 6) | ((c >> 10) & 0x003f);
 						a |= 0xd800;
-						b |= 0xdc00;
-						vec.push_back(a);
-						vec.push_back(b);
+                        b |= 0xdc00;
+                        vec.push_back((ushort)a);
+                        vec.push_back((ushort)b);
 					}
 				}
 				col += cw;
@@ -490,6 +490,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Char> const &vec)
 	QByteArray ba;
 	if (!vec.empty()){
 		std::vector<uint32_t> v;
+		v.reserve(vec.size());
 		for (Char const &c : vec) {
 			v.push_back(c.unicode);
 		}
@@ -688,8 +689,8 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 			linenum++;
 			Document::Line line(file.readLine());
 			line.byte_offset = offset;
-			line.type = Document::Line::Normal;
-			line.line_number = linenum;
+            line.type = Document::Line::Normal;
+            line.line_number = (int)linenum;
 			document()->lines.push_back(line);
 			offset += line.text.size();
 		}
@@ -1727,8 +1728,8 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 		std::vector<int> pts;
 		makeColumnPosList(&pts);
 		if (pts.size() > 1) {
-			int newcol = pts.back();
-			int newindex = pts.size() - 1;
+            int newcol = pts.back();
+            int newindex = (int)pts.size() - 1;
 			for (size_t i = 0; i + 1 < pts.size(); i++) {
 				int x = pts[i];
 				if (x <= col && col < pts[i + 1]) {
@@ -1866,7 +1867,7 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 	return end_of_line_y;
 }
 
-void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> const &draw)
+void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw)
 {
 	auto Line = [&](int index)->Document::Line &{
 		return editor_cx->engine->document.lines[index];
@@ -1947,7 +1948,7 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 
 	if (m->show_line_number) {
 		Option opt_normal;
-		paintLineNumbers([&](int y, QString text, Document::Line const *line){
+        paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
 			(void)line;
 			print(0, y, text + '|', opt_normal);
 		});

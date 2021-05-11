@@ -1,34 +1,23 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-
-
-
-//#include "AvatarLoader.h"
-//#include "BranchLabel.h"
 #include "BranchLabel.h"
 #include "Git.h"
-#include "RepositoryData.h"
-//#include "GitHubAPI.h"
-//#include "GitObjectManager.h"
 #include "MyProcess.h"
+#include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
-//#include "RepositoryData.h"
-//#include "Theme.h"
-//#include "main.h"
-//#include "webclient.h"
+#include <QMainWindow>
 
-class RepositoryWrapperFrame;
-class LogTableWidget;
-class QListWidgetItem;
-class QListWidget;
-class QTreeWidgetItem;
-class QTableWidgetItem;
 class AvatarLoader;
-class GitHubRepositoryInfo;
 class GitObjectCache;
+class LogTableWidget;
+class QListWidget;
+class QListWidgetItem;
+class QTableWidgetItem;
+class QTreeWidgetItem;
+class RepositoryWrapperFrame;
 class WebContext;
+struct GitHubRepositoryInfo;
 
 namespace Ui {
 class MainWindow;
@@ -41,19 +30,22 @@ struct GitHubRepositoryInfo {
 
 class AsyncExecGitThread_ : public QThread {
 private:
-	GitPtr g;
-	std::function<void(GitPtr g)> callback;
+    GitPtr g;
+    std::function<void(GitPtr g)> callback;
 public:
-		AsyncExecGitThread_(GitPtr const &g, std::function<void(GitPtr const &g)> const &callback)
-		: g(g)
-		, callback(callback)
-	{
-	}
+    AsyncExecGitThread_(GitPtr g, std::function<void(GitPtr g)> const &callback)
+        : g(g)
+        , callback(callback)
+    {
+    }
+    virtual ~AsyncExecGitThread_() override
+    {
+    }
 protected:
-	void run() override
-	{
-		callback(g);
-	}
+    void run() override
+    {
+        callback(g);
+    }
 };
 
 class HunkItem {
@@ -141,6 +133,8 @@ private:
 		int idiff;
 	};
 
+    Ui::MainWindow *ui;
+
 	struct Private;
 	Private *m;
 
@@ -157,7 +151,6 @@ public:
 
 	bool isOnlineMode() const;
 private:
-	Ui::MainWindow *ui;
 
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> &fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
@@ -202,7 +195,7 @@ private:
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
 	void merge(RepositoryWrapperFrame *frame, const Git::CommitItem *commit = nullptr);
-	void detectGitServerType(const GitPtr &g);
+    void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f, bool save);
 	void startTimers();
 	void onCloneCompleted(bool success, const QVariant &userdata);
@@ -232,9 +225,9 @@ private:
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
-	void setGitCommand(QString path, bool save);
-	void setGpgCommand(QString path, bool save);
-	void setSshCommand(QString path, bool save);
+	void setGitCommand(const QString &path, bool save);
+	void setGpgCommand(const QString &path, bool save);
+	void setSshCommand(const QString &path, bool save);
 	bool checkGitCommand();
 	bool saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
@@ -249,16 +242,16 @@ private:
 	void checkUser();
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
-	void reopenRepository(bool log, const std::function<void (const GitPtr &)> &callback);
+    void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
 	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
 	void openSelectedRepository();
 	QList<Git::Diff> makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok);
-	void queryBranches(RepositoryWrapperFrame *frame, const GitPtr &g);
+    void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
-	void queryRemotes(const GitPtr &g);
+    void queryRemotes(GitPtr g);
 	void clone(QString url = {}, QString dir = {});
-	void submodule_add(QString url = {}, QString local_dir = {});
-	const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
+    void submodule_add(QString url = {}, const QString &local_dir = {});
+    const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
 	void pushSetUpstream(const QString &remote, const QString &branch);
@@ -272,7 +265,7 @@ private:
 	void internalDeleteTags(const QStringList &tagnames);
 	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
-	void setLogEnabled(const GitPtr &g, bool f);
+    void setLogEnabled(GitPtr g, bool f);
 	void doGitCommand(const std::function<void (GitPtr)> &callback);
 	void setWindowTitle_(const Git::User &user);
 	void setUnknownRepositoryInfo();
@@ -287,13 +280,13 @@ private:
 	QString getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag);
 	QString newTempFilePath();
 	int limitLogCount() const;
-	Git::Object cat_file_(RepositoryWrapperFrame *frame, const GitPtr &g, const QString &id);
+    Git::Object cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
-	Git::CommitItemList retrieveCommitLog(const GitPtr &g);
+    Git::CommitItemList retrieveCommitLog(GitPtr g);
 	std::map<QString, QList<Git::Branch> > &branchMapRef(RepositoryWrapperFrame *frame);
 	void updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later);
-	void updateWindowTitle(const GitPtr &g);
+    void updateWindowTitle(GitPtr g);
 	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryItem *repo);
@@ -350,8 +343,8 @@ private:
 	PtyCondition getPtyCondition();
 	void setPtyUserData(const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
-	bool fetch(const GitPtr &g, bool prune);
-	bool fetch_tags_f(const GitPtr &g);
+    bool fetch(GitPtr g, bool prune);
+    bool fetch_tags_f(GitPtr g);
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryItem> &getRepos() const;
 	QList<RepositoryItem> *getReposPtr();
@@ -443,7 +436,7 @@ public:
 	QString determinFileType(QByteArray in);
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
 	TextEditorThemePtr themeForTextEditor();
-	bool isValidWorkingCopy(const GitPtr &g) const;
+    bool isValidWorkingCopy(GitPtr g) const;
 	void emitWriteLog(const QByteArray &ba);
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;

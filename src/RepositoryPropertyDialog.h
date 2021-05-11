@@ -28,7 +28,7 @@ private:
 	bool isNameEditMode() const;
 	void setNameEditMode(bool f);
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, const GitPtr &g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

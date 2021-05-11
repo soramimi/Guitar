@@ -123,8 +123,9 @@ GitPtr FileDiffWidget::git()
 	return mainwindow()->git();
 }
 
-Git::Object FileDiffWidget::cat_file(GitPtr const &/*g*/, QString const &id)
+Git::Object FileDiffWidget::cat_file(GitPtr g, QString const &id)
 {
+    (void)g;
 	return mainwindow()->cat_file(mainwindow()->frame(), id);
 }
 
@@ -187,7 +188,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 			auto ParseNumber = [&](){
 				size_t v = 0;
 				while (isdigit(*p & 0xff)) {
-					v = v * 10 + (*p - '0');
+                    v = v * 10 + size_t(*p - '0');
 					p++;
 				}
 				return v;
@@ -215,8 +216,8 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 	});
 	size_t h = hunks.size();
 	while (linenum > 0 || h > 0) {
-		while (h > 0) {
-			int hunk_number = h - 1;
+        while (h > 0) {
+            int hunk_number = int(h - 1);
 			HunkItem const &hi = hunks[hunk_number];
 			if (hi.pos + hi.len < linenum) {
 				break;
@@ -396,6 +397,9 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 
 void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit)
 {
+    (void)submodule;
+    (void)submodule_commit;
+
 	m->original_lines.clear();
 
 	if (!ba.isEmpty()) {
@@ -539,7 +543,7 @@ void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba
 	}
 }
 
-QString FileDiffWidget::diffObjects(GitPtr const &g, QString const &a_id, QString const &b_id)
+QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
 		Git::Object obj_a = mainwindow()->cat_file_(mainwindow()->frame(), g, a_id);
@@ -711,7 +715,6 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 
 void FileDiffWidget::setFocusAcceptable(Qt::FocusPolicy focuspolicy)
 {
-//	Qt::FocusPolicy focuspolicy = f ? Qt::ClickFocus : Qt::NoFocus;
 	ui->widget_diff_left->setFocusPolicy(focuspolicy);
 	ui->widget_diff_right->setFocusPolicy(focuspolicy);
 }

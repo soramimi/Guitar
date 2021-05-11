@@ -5,7 +5,7 @@
 #include "common/misc.h"
 #include <QMessageBox>
 
-SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr const &g)
+SetRemoteUrlDialog::SetRemoteUrlDialog(MainWindow *mainwindow, QStringList const &remotes, GitPtr g)
 	: BasicRepositoryDialog(mainwindow, g)
 	, ui(new Ui::SetRemoteUrlDialog)
 {

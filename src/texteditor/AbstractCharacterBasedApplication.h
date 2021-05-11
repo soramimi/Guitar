@@ -357,7 +357,7 @@ protected:
 	void setRecentlyUsedPath(QString const &path);
 	QString recentlyUsedPath();
 	void clearRect(int x, int y, int w, int h);
-	void paintLineNumbers(std::function<void(int, QString, Document::Line const *line)> const &draw);
+    void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	void invalidateArea(int top_y = 0);
 	void savePos();

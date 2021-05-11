@@ -16,7 +16,7 @@ static void url_encode_(char const *ptr, char const *end, std::vector<char> *out
 		int c = (unsigned char)*ptr;
 		ptr++;
 		if (isalnum(c) || strchr("_.-~", c)) {
-			print(out, c);
+			print(out, (char)c);
 		} else if (c == ' ') {
 			print(out, '+');
 		} else {
@@ -84,7 +84,7 @@ std::string url_encode(std::string const &str)
 static void url_decode_(char const *ptr, char const *end, std::vector<char> *out)
 {
 	while (ptr < end) {
-		int c = (unsigned char)*ptr;
+		unsigned char c = (unsigned char)*ptr;
 		ptr++;
 		if (c == '+') {
 			c = ' ';
@@ -93,10 +93,10 @@ static void url_decode_(char const *ptr, char const *end, std::vector<char> *out
 			tmp[0] = ptr[0];
 			tmp[1] = ptr[1];
 			tmp[2] = 0;
-			c = strtol(tmp, nullptr, 16);
+			c = (unsigned char)strtol(tmp, nullptr, 16);
 			ptr += 2;
-		}
-		print(out, c);
+        }
+        print(out, (char)c);
 	}
 }
 
@@ -106,8 +106,8 @@ std::string url_decode(char const *str, char const *end)
 		return std::string();
 	}
 
-	std::vector<char> out;
-	out.reserve(end - str + 10);
+    std::vector<char> out;
+    out.reserve(size_t(end - str + 10));
 
 	url_decode_(str, end, &out);
 

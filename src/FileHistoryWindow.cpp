@@ -80,7 +80,7 @@ MainWindow *FileHistoryWindow::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-void FileHistoryWindow::prepare(GitPtr const &g, QString const &path)
+void FileHistoryWindow::prepare(GitPtr g, QString const &path)
 {
 	Q_ASSERT(g);
 	Q_ASSERT(g->isValidWorkingCopy());
@@ -160,7 +160,7 @@ private:
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(MainWindow *mw, GitPtr const &g, QString const &commit_id, QString const &file)
+	FindFileIdThread(MainWindow *mw, GitPtr g, QString const &commit_id, QString const &file)
 	{
 		this->mainwindow = mw;
 		this->g = g;

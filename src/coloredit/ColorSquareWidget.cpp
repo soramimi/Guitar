@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QPainter>
-#include <stdint.h>
+#include <cstdint>
 #include <QMouseEvent>
 //#include <omp.h>
 

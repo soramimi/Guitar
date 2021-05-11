@@ -59,17 +59,17 @@ void SettingProgramsForm::on_pushButton_select_ssh_command_clicked()
 	}
 }
 
-void SettingProgramsForm::on_pushButton_select_term_command_clicked()
-{
-	QString path = QFileDialog::getOpenFileName(window(), tr("Terminal Command"), "/usr/bin");
-	if (!path.isEmpty()) {
-		settings()->terminal_command = path;
-//		ui->lineEdit_terminal_command->setText(path);
-	}
-}
+//void SettingProgramsForm::on_pushButton_select_term_command_clicked()
+//{
+//	QString path = QFileDialog::getOpenFileName(window(), tr("Terminal Command"), "/usr/bin");
+//	if (!path.isEmpty()) {
+//		settings()->terminal_command = path;
+////		ui->lineEdit_terminal_command->setText(path);
+//	}
+//}
 
-void SettingProgramsForm::on_pushButton_reset_term_command_clicked()
-{
-	QString path = ApplicationSettings::defaultSettings().terminal_command;
-//	ui->lineEdit_terminal_command->setText(path);
-}
+//void SettingProgramsForm::on_pushButton_reset_term_command_clicked()
+//{
+//	QString path = ApplicationSettings::defaultSettings().terminal_command;
+////	ui->lineEdit_terminal_command->setText(path);
+//}

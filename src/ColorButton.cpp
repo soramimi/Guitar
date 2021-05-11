@@ -46,6 +46,7 @@ void ColorButton::setColor(QColor const &color)
  */
 void ColorButton::paintEvent(QPaintEvent *event)
 {
+    (void)event;
 	QPainter pr(this);
 	QStyleOptionToolButton o;
 	QStyleOptionButton o2;

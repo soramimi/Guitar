@@ -3,7 +3,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <math.h>
+#include <cmath>
 
 void RingSlider::updateGeometry()
 {
@@ -172,8 +172,8 @@ void RingSlider::mouseDoubleClickEvent(QMouseEvent *e)
 {
 	int w = slider_rect_.width();
 	if (w > 1) {
-		double x = (e->pos().x() - slider_rect_.x()) * (maximum() - minimum()) / (w - 1);
-		int v = floor(x + 0.5);
+        double x = double(e->pos().x() - slider_rect_.x()) * (maximum() - minimum()) / (w - 1);
+        int v = (int)floor(x + 0.5);
 		v = std::clamp(v, minimum(), maximum());
 		setValue(v);
 	}

@@ -43,7 +43,7 @@ private:
 	}
 public:
 	GitObjectManager();
-	void setup(const GitPtr &g);
+	void setup(GitPtr g);
 	bool catFile(QString const &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
 };
@@ -71,7 +71,7 @@ public:
 		return object_manager.git(submod);
 	}
 
-	void setup(const GitPtr &g);
+	void setup(GitPtr g);
 	QString revParse(QString const &name);
 	Git::Object catFile(QString const &id);
 	QString getCommitIdFromTag(QString const &tag);

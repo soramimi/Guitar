@@ -16,7 +16,7 @@
 #include <QProxyStyle>
 #include <QStandardPaths>
 #include <QTranslator>
-#include <signal.h>
+#include <csignal>
 #include <string>
 
 #ifdef Q_OS_WIN

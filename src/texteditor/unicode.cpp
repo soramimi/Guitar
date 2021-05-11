@@ -67,33 +67,36 @@ int decode_utf8(utf8_reader_state_t *state, uint8_t c)
 
 void encode_utf8(writer8 *writer, uint32_t code)
 {
+	auto PUT = [&](uint32_t c){
+		writer->put((char)c);
+	};
 	if (code < 0x80) {
-		writer->put(code);
+		PUT(code);
 	} else if (code < 0x800) {
-		writer->put((code >> 6) | 0xc0);
-		writer->put((code & 0x3f) | 0x80);
+		PUT((code >> 6) | 0xc0);
+		PUT((code & 0x3f) | 0x80);
 	} else if (code < 0x10000) {
-		writer->put((code >> 12) | 0xe0);
-		writer->put(((code >> 6) & 0x3f) | 0x80);
-		writer->put((code & 0x3f) | 0x80);
+		PUT((code >> 12) | 0xe0);
+		PUT(((code >> 6) & 0x3f) | 0x80);
+		PUT((code & 0x3f) | 0x80);
 	} else if (code < 0x200000) {
-		writer->put((code >> 18) | 0xf0);
-		writer->put(((code >> 12) & 0x3f) | 0x80);
-		writer->put(((code >> 6) & 0x3f) | 0x80);
-		writer->put((code & 0x3f) | 0x80);
+		PUT((code >> 18) | 0xf0);
+		PUT(((code >> 12) & 0x3f) | 0x80);
+		PUT(((code >> 6) & 0x3f) | 0x80);
+		PUT((code & 0x3f) | 0x80);
 	} else if (code < 0x4000000) {
-		writer->put((code >> 24) | 0xf8);
-		writer->put(((code >> 18) & 0x3f) | 0x80);
-		writer->put(((code >> 12) & 0x3f) | 0x80);
-		writer->put(((code >> 6) & 0x3f) | 0x80);
-		writer->put((code & 0x3f) | 0x80);
+		PUT((code >> 24) | 0xf8);
+		PUT(((code >> 18) & 0x3f) | 0x80);
+		PUT(((code >> 12) & 0x3f) | 0x80);
+		PUT(((code >> 6) & 0x3f) | 0x80);
+		PUT((code & 0x3f) | 0x80);
 	} else {
-		writer->put((code >> 30) | 0xfc);
-		writer->put(((code >> 24) & 0x3f) | 0x80);
-		writer->put(((code >> 18) & 0x3f) | 0x80);
-		writer->put(((code >> 12) & 0x3f) | 0x80);
-		writer->put(((code >> 6) & 0x3f) | 0x80);
-		writer->put((code & 0x3f) | 0x80);
+		PUT((code >> 30) | 0xfc);
+		PUT(((code >> 24) & 0x3f) | 0x80);
+		PUT(((code >> 18) & 0x3f) | 0x80);
+		PUT(((code >> 12) & 0x3f) | 0x80);
+		PUT(((code >> 6) & 0x3f) | 0x80);
+		PUT((code & 0x3f) | 0x80);
 	}
 }
 
@@ -213,7 +216,7 @@ public:
 	~internal_writer() override = default;
 	void put(int c) override
 	{
-		dst[len++] = c;
+		dst[len++] = (char)c;
 	}
 };
 

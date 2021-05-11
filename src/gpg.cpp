@@ -61,17 +61,17 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 						q2 = q3 = q4;
 					}
 					char const *e = q2 ? q2 : (p + strlen(p));
-					while (p < e && isspace((unsigned char)e[-1])) e--;
-					key->name = QString::fromUtf8(p, e - p);
+                    while (p < e && isspace((unsigned char)e[-1])) e--;
+                    key->name = QString::fromUtf8(p, int(e - p));
 					if (q2 && q3 && q2 < q3 && *q2 == '(') {
-						q2++;
-						key->comment = QString::fromUtf8(q2, q3 - q2);
+                        q2++;
+                        key->comment = QString::fromUtf8(q2, int(q3 - q2));
 					}
 					if (q4) {
 						q4++;
 						char const *q5 = strchr(q4, '>');
-						if (q5) {
-							key->mail = QString::fromUtf8(q4, q5 - q4);
+                        if (q5) {
+                            key->mail = QString::fromUtf8(q4, int(q5 - q4));
 						}
 					}
 				};
@@ -102,9 +102,9 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 								char tmp[3];
 								tmp[0] = p[0];
 								tmp[1] = p[1];
-								tmp[2] = 0;
-								int v = strtol(tmp, nullptr, 16);
-								fingerprint.push_back(v);
+                                tmp[2] = 0;
+                                int v = (int)strtol(tmp, nullptr, 16);
+                                fingerprint.push_back((char)v);
 								p += 2;
 							} else {
 								p++;

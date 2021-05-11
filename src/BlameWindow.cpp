@@ -138,8 +138,8 @@ QList<BlameItem> BlameWindow::parseBlame(char const *begin, char const *end)
 		} else {
 			char const *p = line.c_str();
 			char const *q = strchr(p, ' ');
-			if (q) {
-				QString label = QString::fromLatin1(p, q - p);
+            if (q) {
+                QString label = QString::fromLatin1(p, int(q - p));
 				if (item.commit_id.isEmpty()) {
 					item.commit_id = label;
 					int a, b, c;

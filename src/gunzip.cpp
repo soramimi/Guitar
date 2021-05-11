@@ -140,26 +140,26 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 				unsigned char obuf[65536];
 				stream.next_out = obuf;            /* discard the output */
 				stream.avail_out = sizeof(obuf);
-				if (maxsize != -1 && stream.total_out + stream.avail_out > (unsigned)maxsize && (unsigned)maxsize >= stream.total_out) {
-					stream.avail_out = maxsize - stream.total_out;
+                if (maxsize != -1 && stream.total_out + stream.avail_out > (unsigned)maxsize && (unsigned)maxsize >= stream.total_out) {
+                    stream.avail_out = size_t(maxsize - stream.total_out);
 				}
 				uLong total_out = stream.total_out;
-				err = ::inflate(&stream, Z_NO_FLUSH);
-				int n = stream.total_out - total_out;
+                err = ::inflate(&stream, Z_NO_FLUSH);
+                int n = int(stream.total_out - total_out);
 
 				if (write) {
 					if (!write(output, (char const *)obuf, n)) {
 						ok = false;
 					}
-				} else {
-					int w = output->write((char const *)obuf, n);
+                } else {
+                    int w = (int)output->write((char const *)obuf, n);
 					if (w != n) {
 						ok = false;
 					}
 				}
 				if (!ok) throw QString("failed to write to the output device");
 
-				crc = crc32(crc, (unsigned char const *)obuf, n);
+                crc = crc32(crc, (unsigned char const *)obuf, (size_t)n);
 				if (err == Z_STREAM_END) {
 					break;
 				}

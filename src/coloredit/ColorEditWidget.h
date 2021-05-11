@@ -27,7 +27,7 @@ public:
 	void bind(ColorSquareWidget *w);
 
 	QColor color() const;
-	void setColor(QColor color);
+	void setColor(const QColor &color);
 private:
 	ColorSquareWidget *pickupper();
 private slots:

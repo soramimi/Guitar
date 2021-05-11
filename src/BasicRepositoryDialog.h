@@ -9,7 +9,7 @@ class MainWindow;
 
 class BasicRepositoryDialog : public QDialog {
 public:
-	explicit BasicRepositoryDialog(MainWindow *mainwindow, const GitPtr &g);
+    explicit BasicRepositoryDialog(MainWindow *mainwindow, GitPtr g);
 	 ~BasicRepositoryDialog() override;
 private:
 	struct Private;

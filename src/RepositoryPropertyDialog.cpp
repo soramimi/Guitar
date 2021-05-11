@@ -7,7 +7,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr const &g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr g, RepositoryItem const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, gcx(gcx)

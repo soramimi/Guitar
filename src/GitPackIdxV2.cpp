@@ -65,8 +65,8 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 
 		QCryptographicHash sha1(QCryptographicHash::Sha1);
-		sha1.addData((char const *)&d.header, sizeof(d.header));
-		sha1.addData((char const *)&d.objects[0], size * 20);
+        sha1.addData((char const *)&d.header, sizeof(d.header));
+        sha1.addData((char const *)&d.objects[0], int(size * 20));
 		sha1.addData((char const *)&d.checksums[0], size4);
 		sha1.addData((char const *)&d.offsets[0], size4);
 		sha1.addData((char const *)&d.trailer.packfile_checksum, sizeof(d.trailer) - 20);
