@@ -36,7 +36,6 @@ private slots:
 	void on_stackedWidget_currentChanged(int arg1);
 	void on_pushButton_browse_default_workiing_folder_clicked();
 	void on_pushButton_browse_git_clicked();
-	void on_pushButton_browse_file_clicked();
 	void on_pushButton_get_icon_clicked();
 	void on_pushButton_prev_clicked();
 	void on_pushButton_next_clicked();

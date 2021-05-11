@@ -10,7 +10,6 @@
 class ApplicationSettings {
 public:
 	QString git_command;
-	QString file_command;
 	QString gpg_command;
 	QString ssh_command;
 	QString terminal_command;

@@ -233,11 +233,9 @@ private:
 	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
 	void setGitCommand(QString path, bool save);
-	void setFileCommand(QString path, bool save);
 	void setGpgCommand(QString path, bool save);
 	void setSshCommand(QString path, bool save);
 	bool checkGitCommand();
-	bool checkFileCommand();
 	bool saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	static QString makeRepositoryName(const QString &loc);
@@ -423,7 +421,6 @@ public:
 	void showObjectProperty(QListWidgetItem *item);
 	bool testRemoteRepositoryValidity(const QString &url, const QString &sshkey);
 	QString selectGitCommand(bool save);
-	QString selectFileCommand(bool save);
 	QString selectGpgCommand(bool save);
 	QString selectSshCommand(bool save);
 	const Git::Branch &currentBranch() const;

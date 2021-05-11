@@ -172,12 +172,6 @@ void WelcomeWizardDialog::on_pushButton_browse_git_clicked()
 	ui->lineEdit_git->setText(s);
 }
 
-void WelcomeWizardDialog::on_pushButton_browse_file_clicked()
-{
-	QString s = mainwindow_->selectFileCommand(false);
-	ui->lineEdit_file->setText(s);
-}
-
 void WelcomeWizardDialog::setAvatar(QIcon const &icon)
 {
 	QPixmap pm = icon.pixmap(QSize(64, 64));

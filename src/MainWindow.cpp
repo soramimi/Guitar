@@ -463,7 +463,7 @@ bool MainWindow::shown()
 
 bool MainWindow::isUninitialized()
 {
-	return !misc::isExecutable(appsettings()->git_command) || !misc::isExecutable(appsettings()->file_command);
+	return !misc::isExecutable(appsettings()->git_command);
 }
 
 void MainWindow::onStartEvent()
@@ -478,7 +478,6 @@ void MainWindow::onStartEvent()
 	} else {
 		// 外部コマンド登録
 		setGitCommand(appsettings()->git_command, false);
-		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
 		setSshCommand(appsettings()->ssh_command, false);
 
@@ -919,7 +918,6 @@ bool MainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
 	dlg.set_git_command_path(appsettings()->git_command);
-	dlg.set_file_command_path(appsettings()->file_command);
 	dlg.set_default_working_folder(appsettings()->default_working_dir);
 	if (misc::isExecutable(appsettings()->git_command)) {
 		gitCommand() = appsettings()->git_command;
@@ -930,8 +928,6 @@ bool MainWindow::execWelcomeWizardDialog()
 	}
 	if (dlg.exec() == QDialog::Accepted) {
 		setGitCommand(dlg.git_command_path(), false);
-		setFileCommand(dlg.file_command_path(), false);
-		appsettings()->file_command = dlg.file_command_path();
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		saveApplicationSettings();
 
@@ -993,13 +989,6 @@ void MainWindow::setGitCommand(QString path, bool save)
 	internalSaveCommandPath(path, save, "GitCommand");
 }
 
-void MainWindow::setFileCommand(QString path, bool save)
-{
-	appsettings()->file_command = executableOrEmpty(path);
-
-	internalSaveCommandPath(path, save, "FileCommand");
-}
-
 void MainWindow::setGpgCommand(QString path, bool save)
 {
 	appsettings()->gpg_command = executableOrEmpty(path);
@@ -1025,19 +1014,6 @@ bool MainWindow::checkGitCommand()
 			return true;
 		}
 		if (selectGitCommand(true).isEmpty()) {
-			close();
-			return false;
-		}
-	}
-}
-
-bool MainWindow::checkFileCommand()
-{
-	while (1) {
-		if (misc::isExecutable(global->appsettings.file_command)) {
-			return true;
-		}
-		if (selectFileCommand(true).isEmpty()) {
 			close();
 			return false;
 		}
@@ -4556,37 +4532,6 @@ QString MainWindow::selectGitCommand(bool save)
 	return selectCommand_("Git", exe, list, path, fn);
 }
 
-QString MainWindow::selectFileCommand(bool save)
-{
-	char const *exe = FILE_COMMAND;
-
-	QString path = global->appsettings.file_command;
-
-	auto fn = [&](QString const &path){
-		setFileCommand(path, save);
-	};
-
-	QStringList list = whichCommand_(exe);
-
-#ifdef Q_OS_WIN
-	QString dir = misc::getApplicationDir();
-	QString path1 = dir / FILE_COMMAND;
-	QString path2;
-	int i = dir.lastIndexOf('/');
-	int j = dir.lastIndexOf('\\');
-	if (i < j) i = j;
-	if (i > 0) {
-		path2 = dir.mid(0, i) / FILE_COMMAND;
-	}
-	path1 = misc::normalizePathSeparator(path1);
-	path2 = misc::normalizePathSeparator(path2);
-	if (misc::isExecutable(path1)) list.push_back(path1);
-	if (misc::isExecutable(path2)) list.push_back(path2);
-#endif
-
-	return selectCommand_("File", exe, list, path, fn);
-}
-
 QString MainWindow::selectGpgCommand(bool save)
 {
 	QString path = global->appsettings.gpg_command;
@@ -5231,7 +5176,6 @@ void MainWindow::on_action_edit_settings_triggered()
 		ApplicationSettings const &newsettings = dlg.settings();
 		setAppSettings(newsettings);
 		setGitCommand(appsettings()->git_command, false);
-		setFileCommand(appsettings()->file_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
 		setSshCommand(appsettings()->ssh_command, false);
 	}

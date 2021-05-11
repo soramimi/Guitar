@@ -115,7 +115,6 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	GetValue<bool>(s, "SaveWindowPosition")                  >> as->remember_and_restore_window_position;
 	GetValue<QString>(s, "DefaultWorkingDirectory")          >> as->default_working_dir;
 	GetValue<QString>(s, "GitCommand")                       >> as->git_command;
-	GetValue<QString>(s, "FileCommand")                      >> as->file_command;
 	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
 	GetValue<QString>(s, "SshCommand")                       >> as->ssh_command;
 	GetValue<QString>(s, "TerminalCommand")                  >> as->terminal_command;
@@ -155,7 +154,6 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	SetValue<bool>(s, "SaveWindowPosition")                  << as->remember_and_restore_window_position;
 	SetValue<QString>(s, "DefaultWorkingDirectory")          << as->default_working_dir;
 	SetValue<QString>(s, "GitCommand")                       << as->git_command;
-	SetValue<QString>(s, "FileCommand")                      << as->file_command;
 	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
 	SetValue<QString>(s, "SshCommand")                       << as->ssh_command;
 	SetValue<QString>(s, "TerminalCommand")                  << as->terminal_command;
