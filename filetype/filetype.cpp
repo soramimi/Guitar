@@ -55,7 +55,13 @@ bool FileType::open()
 		return false;
 	}
 
-	if (magic_load(magic_cookie, nullptr) != 0) {
+#ifdef __APPLE__
+	char const *mgcfile = "/usr/share/file/magic.mgc";
+#else
+	char const *mgcfile = nullptr;
+#endif
+
+	if (magic_load(magic_cookie, mgcfile) != 0) {
 		fprintf(stderr, "cannot load magic database - %s\n", magic_error(magic_cookie));
 		magic_close(magic_cookie);
 		return false;

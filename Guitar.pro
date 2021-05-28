@@ -105,7 +105,8 @@ haiku:LIBS += -lz
 
 # filetype library
 
-!win32:LIBS += -lmagic
+linux:LIBS += -lmagic
+macx:LIBS += /usr/local/lib/libmagic.a
 win32:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/filetyped.lib
 win32:CONFIG(release, debug|release):LIBS += $$PWD/_bin/filetype.lib
 !win32:SOURCES += filetype/filetype.cpp
