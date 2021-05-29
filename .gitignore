@@ -23,3 +23,6 @@ packaging/mac/Guitar-macos.zip
 docs/src_docs/
 packaging/deb/Guitar
 packaging/win/packages/jp.soramimi.guitar/
+packaging/win/filetype.pro
+packaging/win/filetype/
+packaging/win/zlib/

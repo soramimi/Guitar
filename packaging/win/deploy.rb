@@ -27,11 +27,22 @@ Dir.chdir("zlib") {
 }
 ENV["INCLUDE"] = $script_dir + "/zlib;" + ENV["INCLUDE"]
 
+Dir.chdir $script_dir
+FileUtils.rm_rf "filetype"
+FileUtils.rmdir "filetype"
+FileUtils.cp_r "../../filetype", "."
+FileUtils.cp "../../filetype.pro", "."
+Dir.chdir("filetype") {
+	run "C:/Qt/5.15.0/msvc2019_64/bin/qmake.exe ../filetype.pro"
+	run "C:/Qt/Tools/QtCreator/bin/jom.exe"
+}
+
 Dir.chdir $script_dir + "/../../"
 FileUtils.mkpath "_bin"
 run "ruby prepare.rb"
 
 FileUtils.cp $script_dir + "/zlib/_bin/libz.lib", "_bin/"
+FileUtils.cp $script_dir + "/_bin/filetype.lib", "_bin/"
 
 mkcd $script_dir + "/build"
 run "C:/Qt/5.15.0/msvc2019_64/bin/qmake.exe ../../../Guitar.pro"

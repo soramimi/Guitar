@@ -307,7 +307,6 @@ MainWindow::~MainWindow()
     deleteTempFiles();
 
     delete m;
-    delete m;
     delete ui;
 }
 
