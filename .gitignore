@@ -26,3 +26,4 @@ packaging/win/packages/jp.soramimi.guitar/
 packaging/win/filetype.pro
 packaging/win/filetype/
 packaging/win/zlib/
+packaging/win/_build/
