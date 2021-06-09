@@ -360,7 +360,7 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 
 	QString mimetype_l = mainwindow()->determinFileType(m->init_param_.bytes_a);
 	QString mimetype_r = mainwindow()->determinFileType(m->init_param_.bytes_b);
-	qDebug() << mimetype_l << mimetype_r;
+//	qDebug() << mimetype_l << mimetype_r;
 
 	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 

@@ -27,13 +27,15 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: seccomp.c,v 1.6 2018/06/26 20:29:29 christos Exp $")
+FILE_RCSID("@(#)$File: seccomp.c,v 1.20 2021/04/30 22:07:03 christos Exp $")
 #endif	/* lint */
 
 #if HAVE_LIBSECCOMP
 #include <seccomp.h> /* libseccomp */
 #include <sys/prctl.h> /* prctl */
+#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <termios.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -49,8 +51,14 @@ FILE_RCSID("@(#)$File: seccomp.c,v 1.6 2018/06/26 20:29:29 christos Exp $")
 	    goto out; \
     while (/*CONSTCOND*/0)
 
-static scmp_filter_ctx ctx;
+#define ALLOW_IOCTL_RULE(param) \
+    do \
+	if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1, \
+	    SCMP_CMP(1, SCMP_CMP_EQ, param)) == -1) \
+		goto out; \
+    while (/*CONSTCOND*/0)
 
+static scmp_filter_ctx ctx;
 
 int
 enable_sandbox_basic(void)
@@ -126,14 +134,14 @@ enable_sandbox_basic(void)
 	DENY_RULE (socket);
 	// ...
 
-	
+
 	// applying filter...
 	if (seccomp_load (ctx) == -1)
 		goto out;
 	// free ctx after the filter has been loaded into the kernel
 	seccomp_release(ctx);
 	return 0;
-	
+
 out:
 	seccomp_release(ctx);
 	return -1;
@@ -151,7 +159,7 @@ enable_sandbox_full(void)
 
 	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) == -1)
 		return -1;
-	
+
 	// initialize the filter
 	ctx = seccomp_init(SCMP_ACT_KILL);
 	if (ctx == NULL)
@@ -163,19 +171,38 @@ enable_sandbox_full(void)
 	ALLOW_RULE(dup2);
 	ALLOW_RULE(exit);
 	ALLOW_RULE(exit_group);
-	ALLOW_RULE(fcntl);  
- 	ALLOW_RULE(fcntl64);  
+#ifdef __NR_faccessat
+	ALLOW_RULE(faccessat);
+#endif
+	ALLOW_RULE(fcntl);
+ 	ALLOW_RULE(fcntl64);
 	ALLOW_RULE(fstat);
- 	ALLOW_RULE(fstat64);  
+ 	ALLOW_RULE(fstat64);
+#ifdef __NR_fstatat64
+	ALLOW_RULE(fstatat64);
+#endif
+	ALLOW_RULE(futex);
 	ALLOW_RULE(getdents);
 #ifdef __NR_getdents64
 	ALLOW_RULE(getdents64);
 #endif
-	ALLOW_RULE(ioctl);
+#ifdef FIONREAD
+	// called in src/compress.c under sread
+	ALLOW_IOCTL_RULE(FIONREAD);
+#endif
+#ifdef TIOCGWINSZ
+	// musl libc may call ioctl TIOCGWINSZ on stdout
+	ALLOW_IOCTL_RULE(TIOCGWINSZ);
+#endif
+#ifdef TCGETS
+	// glibc may call ioctl TCGETS on stdout on physical terminal
+	ALLOW_IOCTL_RULE(TCGETS);
+#endif
 	ALLOW_RULE(lseek);
  	ALLOW_RULE(_llseek);
 	ALLOW_RULE(lstat);
  	ALLOW_RULE(lstat64);
+	ALLOW_RULE(madvise);
 	ALLOW_RULE(mmap);
  	ALLOW_RULE(mmap2);
 	ALLOW_RULE(mprotect);
@@ -189,21 +216,27 @@ enable_sandbox_full(void)
 	ALLOW_RULE(pread64);
 	ALLOW_RULE(read);
 	ALLOW_RULE(readlink);
+#ifdef __NR_readlinkat
+	ALLOW_RULE(readlinkat);
+#endif
 	ALLOW_RULE(rt_sigaction);
 	ALLOW_RULE(rt_sigprocmask);
 	ALLOW_RULE(rt_sigreturn);
 	ALLOW_RULE(select);
 	ALLOW_RULE(stat);
+	ALLOW_RULE(statx);
 	ALLOW_RULE(stat64);
 	ALLOW_RULE(sysinfo);
+	ALLOW_RULE(umask);	// Used in file_pipe2file()
+	ALLOW_RULE(getpid);	// Used by glibc in file_pipe2file()
 	ALLOW_RULE(unlink);
 	ALLOW_RULE(write);
+	ALLOW_RULE(writev);
 
 
 #if 0
 	// needed by valgrind
 	ALLOW_RULE(gettid);
-	ALLOW_RULE(getpid);
 	ALLOW_RULE(rt_sigtimedwait);
 #endif
 

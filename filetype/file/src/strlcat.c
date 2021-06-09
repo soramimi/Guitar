@@ -16,8 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __APPLE__
-
 /* OPENBSD ORIGINAL: lib/libc/string/strlcat.c */
 #include "file.h"
 
@@ -58,5 +56,3 @@ strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));	/* count does not include NUL */
 }
-
-#endif // __APPLE__

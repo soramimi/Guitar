@@ -40,15 +40,17 @@ public:
 
 #else
 
+#include <QByteArray>
 #include <magic.h>
 
 class FileType {
 private:
-	magic_t magic_cookie;
+	QByteArray mgcdata_;
+	magic_t magic_cookie = nullptr;
 public:
 	FileType()
 	{
-		open();
+//		open(); // このインスタンスを作成した側でopen()を呼ぶこと
 	}
 	~FileType()
 	{

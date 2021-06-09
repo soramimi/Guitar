@@ -1,6 +1,6 @@
-# Makefile for file(1) cmd. 
+# Makefile for file(1) cmd.
 # Copyright (c) Ian F. Darwin 86/09/01 - see LEGAL.NOTICE.
-# @(#)$Id: Makefile.std,v 1.19 2014-06-03 19:17:27 christos Exp $
+# @(#)$Id: Makefile.std,v 1.20 2018/09/09 20:33:28 christos Exp $
 #
 # This software is not subject to any license of the American Telephone
 # and Telegraph Company or of the Regents of the University of California.
@@ -37,7 +37,7 @@ SHAR	= bundle
 OFILE	= /usr/bin/file		# old or distributed version, for comparison
 # Where new binary lives; typically /usr/local (BSD), /usr/lbin (USG).
 BINDIR	= /usr/local/bin
-# For installing our man pages; 
+# For installing our man pages;
 # MANCxxx is manual section for Commands, MANFxxx is section for file formats.
 # MANxDIR is directory names; MANxEXT is the filename extension. Usual values:
 # Variable	V7		4BSD		Sys V

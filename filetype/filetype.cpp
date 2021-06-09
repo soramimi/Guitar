@@ -1,9 +1,10 @@
 #include "filetype.h"
 
-#include <cstdio>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <string>
+//#include <cstdio>
+//#include <fcntl.h>
+//#include <sys/stat.h>
+//#include <QFile>
+//#include <string>
 
 #ifdef _WIN32
 #include <io.h>
@@ -44,7 +45,10 @@ std::string filetype_mime_by_data(magic_t magic_cookie, char const *bin, int len
 
 #else
 
-#include <magic.h>
+#include "filetype/file/src/magic.h"
+
+#include <QDebug>
+#include <QFile>
 
 bool FileType::open()
 {
@@ -55,10 +59,11 @@ bool FileType::open()
 		return false;
 	}
 
+#if 0
 #ifdef __APPLE__
 	char const *mgcfile = "/usr/share/file/magic.mgc";
 #else
-	char const *mgcfile = nullptr;
+	char const *mgcfile = "/home/soramimi/develop/filetype/docker/magic.mgc" ;//nullptr;
 #endif
 
 	if (magic_load(magic_cookie, mgcfile) != 0) {
@@ -66,18 +71,34 @@ bool FileType::open()
 		magic_close(magic_cookie);
 		return false;
 	}
+#else
+	QFile file(":/filemagic/magic.mgc");
+	file.open(QFile::ReadOnly);
+	mgcdata_ = file.readAll();
+	void *bufs[1];
+	size_t sizes[1];
+	bufs[0] = mgcdata_.data();
+	sizes[0] = mgcdata_.size();
+	auto r = magic_load_buffers(magic_cookie, bufs, sizes, 1);
+	Q_ASSERT(r == 0);
+#endif
 
 	return true;
 }
 
 void FileType::close()
 {
-	magic_close(magic_cookie);
+	if (magic_cookie) {
+		magic_close(magic_cookie);
+		magic_cookie = nullptr;
+	}
 }
 
 std::string FileType::mime_by_data(const char *bin, int len)
 {
-	std::string s = magic_buffer(magic_cookie, bin, len);
+	auto *p = magic_buffer(magic_cookie, bin, len);
+	std::string s;
+	if (p) s = p;
 	auto i = s.find(';');
 	if (i != std::string::npos) {
 		s = s.substr(0, i);

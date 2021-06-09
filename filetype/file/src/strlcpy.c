@@ -16,8 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __APPLE__
-
 /* OPENBSD ORIGINAL: lib/libc/string/strlcpy.c */
 #include "file.h"
 
@@ -54,5 +52,3 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 	return(s - src - 1);	/* count does not include NUL */
 }
-
-#endif // __APPLE__

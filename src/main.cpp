@@ -72,7 +72,6 @@ void onSigTerm(int)
 	}
 }
 
-
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
@@ -104,6 +103,8 @@ int main(int argc, char *argv[])
 
 	QApplication a(argc, argv);
 	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+	global->init();
 
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);

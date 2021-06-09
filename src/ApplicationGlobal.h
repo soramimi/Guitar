@@ -25,6 +25,8 @@ struct ApplicationGlobal {
 	FileType filetype;
 
 	ApplicationSettings appsettings;
+
+	void init();
 };
 
 extern ApplicationGlobal *global;

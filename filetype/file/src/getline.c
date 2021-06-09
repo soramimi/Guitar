@@ -33,7 +33,7 @@
 #if !HAVE_GETLINE
 #include <stdlib.h>
 #include <stdio.h>
-#include <my_unistd.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 

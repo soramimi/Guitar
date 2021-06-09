@@ -2,7 +2,7 @@
  * Copyright (c) Ian F. Darwin 1986-1995.
  * Software written by Ian F. Darwin and others;
  * maintained 1995-present by Christos Zoulas and others.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -51,7 +51,7 @@ form must reproduce the above copyright notice, this list of conditions and
 the following disclaimer in the documentation and/or other materials
 provided with the distribution. The name of the author may not be used to
 endorse or promote products derived from this software without specific
-prior written permission. 
+prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -96,7 +96,7 @@ the buffer can have a shorter length. But what? If you really need to write
 HUGE string, don't use printf!
 During the process, some other memory is allocated (1024 bytes minimum)
 to handle the output of partial sprintf() calls. If you have only 10000 bytes
-free in memory, you *may* not be able to nprintf() a 8000 bytes-long text.
+free in memory, you *may* not be able to nprintf() an 8000 bytes-long text.
 
 note: if a buffer overflow occurs, exit() is called. This situation should
 never appear ... but if you want to be *really* sure, you have to modify the
@@ -108,7 +108,7 @@ you use strange formats.
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: vasprintf.c,v 1.14 2017/08/13 00:21:47 christos Exp $")
+FILE_RCSID("@(#)$File: vasprintf.c,v 1.19 2021/02/23 00:51:11 christos Exp $")
 #endif	/* lint */
 
 #include <assert.h>
@@ -116,12 +116,8 @@ FILE_RCSID("@(#)$File: vasprintf.c,v 1.14 2017/08/13 00:21:47 christos Exp $")
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef HAVE_LIMITS_H
 #include <limits.h>
-#endif
-#ifdef HAVE_STDDEF_H
 #include <stddef.h>
-#endif
 
 #define ALLOC_CHUNK 2048
 #define ALLOC_SECURITY_MARGIN 1024   /* big value because some platforms have very big 'G' exponent */
@@ -135,7 +131,7 @@ FILE_RCSID("@(#)$File: vasprintf.c,v 1.14 2017/08/13 00:21:47 christos Exp $")
  *  structure, which is passed among nearly every sub-functions.
  */
 typedef struct {
-  const char * src_string;        /* current position into intput string */
+  const char * src_string;        /* current position into input string */
   char *       buffer_base;       /* output buffer */
   char *       dest_string;       /* current position into output string */
   size_t       buffer_len;        /* length of output buffer */
@@ -150,7 +146,7 @@ typedef struct {
 /*
  *  Realloc buffer if needed
  *  Return value:  0 = ok
- *               EOF = not enought memory
+ *               EOF = not enough memory
  */
 static int realloc_buff(xprintf_struct *s, size_t len)
 {
@@ -182,7 +178,7 @@ static int usual_char(xprintf_struct * s)
 {
   size_t len;
 
-  len = strcspn(s->src_string, "%");     /* reachs the next '%' or end of input string */
+  len = strcspn(s->src_string, "%");     /* reaches the next '%' or end of input string */
   /* note: 'len' is never 0 because the presence of '%' */
   /* or end-of-line is checked in the calling function  */
 
@@ -249,7 +245,7 @@ static int type_s(xprintf_struct *s, int width, int prec,
   if (arg_string == NULL)
     return print_it(s, (size_t)6, "(null)", 0);
 
-  /* hand-made strlen() whitch stops when 'prec' is reached. */
+  /* hand-made strlen() which stops when 'prec' is reached. */
   /* if 'prec' is -1 then it is never reached. */
   string_len = 0;
   while (arg_string[string_len] != 0 && (size_t)prec != string_len)
@@ -262,7 +258,7 @@ static int type_s(xprintf_struct *s, int width, int prec,
 }
 
 /*
- *  Read a serie of digits. Stop when non-digit is found.
+ *  Read a series of digits. Stop when non-digit is found.
  *  Return value: the value read (between 0 and 32767).
  *  Note: no checks are made against overflow. If the string contain a big
  *  number, then the return value won't be what we want (but, in this case,
