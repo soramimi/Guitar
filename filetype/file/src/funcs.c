@@ -809,6 +809,7 @@ file_print_guid(char *str, size_t len, const uint64_t *guid)
 	    g->data4[6], g->data4[7]);
 }
 
+#ifndef _WIN32
 protected int
 file_pipe_closexec(int *fds)
 {
@@ -827,6 +828,7 @@ protected int
 file_clear_closexec(int fd) {
 	return fcntl(fd, F_SETFD, 0);
 }
+#endif
 
 protected char *
 file_strtrim(char *str)

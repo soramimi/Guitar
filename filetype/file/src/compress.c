@@ -445,6 +445,9 @@ protected int
 file_pipe2file(struct magic_set *ms, int fd, const void *startbuf,
     size_t nbytes)
 {
+#ifdef _WIN32
+	return -1;
+#else
 	char buf[4096];
 	ssize_t r;
 	int tfd;
@@ -471,7 +474,7 @@ file_pipe2file(struct magic_set *ms, int fd, const void *startbuf,
 #endif
 	if (tfd == -1) {
 		file_error(ms, errno,
-		    "cannot create temporary file for pipe copy");
+			"cannot create temporary file for pipe copy");
 		return -1;
 	}
 
@@ -509,6 +512,7 @@ file_pipe2file(struct magic_set *ms, int fd, const void *startbuf,
 		return -1;
 	}
 	return fd;
+#endif
 }
 #if HAVE_FORK
 #ifdef BUILTIN_DECOMPRESS

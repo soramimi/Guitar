@@ -72,7 +72,7 @@ FILE_RCSID("@(#)$File: magic.c,v 1.114 2021/02/05 21:33:49 christos Exp $")
 private void close_and_restore(const struct magic_set *, const char *, int,
     const struct stat *);
 private int unreadable_info(struct magic_set *, mode_t, const char *);
-private const char* get_default_magic(void);
+//private const char* get_default_magic(void);
 #ifndef COMPILE_ONLY
 private const char *file_or_fd(struct magic_set *, const char *, int);
 #endif
@@ -81,7 +81,7 @@ private const char *file_or_fd(struct magic_set *, const char *, int);
 #define	STDIN_FILENO	0
 #endif
 
-#ifdef WIN32
+#if 0//def WIN32
 /* HINSTANCE of this shared library. Needed for get_default_magic() */
 static HINSTANCE _w32_dll_instance = NULL;
 
@@ -167,7 +167,6 @@ DllMain(HINSTANCE hinstDLL, DWORD fdwReason,
 		_w32_dll_instance = hinstDLL;
 	return 1;
 }
-#endif
 
 private const char *
 get_default_magic(void)
@@ -256,6 +255,7 @@ magic_getpath(const char *magicfile, int action)
 
 	return action == FILE_LOAD ? get_default_magic() : MAGIC;
 }
+#endif
 
 public struct magic_set *
 magic_open(int flags)
@@ -460,8 +460,10 @@ file_or_fd(struct magic_set *ms, const char *inname, int fd)
 			rv = 0;
 			goto done;
 		}
+#ifndef _WIN32
 #if O_CLOEXEC == 0
 		(void)fcntl(fd, F_SETFD, FD_CLOEXEC);
+#endif
 #endif
 	}
 

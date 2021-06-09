@@ -3,7 +3,7 @@
 
 #include <string>
 
-#ifdef _WIN32
+#if 0//def _WIN32
 
 #include <filetype/file/src/magic.h>
 

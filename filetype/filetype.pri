@@ -2,9 +2,10 @@
 INCLUDEPATH += filetype/misc
 INCLUDEPATH += filetype/src
 INCLUDEPATH += filetype/pcre2/src
-win32:INCLUDEPATH += dirent/include
+win32:INCLUDEPATH += filetype/win32
 
-DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
+win32:DEFINES += "HAVE_CONFIG_H=1" "PCRE2_CODE_UNIT_WIDTH=8"
+!win32:DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 
 SOURCES += \
 	filetype/file/src/apprentice.c \
@@ -73,6 +74,7 @@ SOURCES += \
 	filetype/pcre2/src/pcre2posix.c
 
 HEADERS += \
+	$$PWD/win32/unistd.h \
 	filetype/file/src/cdf.h \
 	filetype/file/src/der.h \
 	filetype/file/src/elfclass.h \
@@ -94,4 +96,4 @@ HEADERS += \
 	filetype/pcre2/src/pcre2posix.h \
 	filetype/pcre2/src/regex.h
 
-win32:HEADERS += filetype/dirent.h
+win32:HEADERS += filetype/dirent/include/dirent.h

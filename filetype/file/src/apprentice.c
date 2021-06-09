@@ -684,8 +684,10 @@ file_apprentice(struct magic_set *ms, const char *fn, int action)
 
 	(void)file_reset(ms, 0);
 
+#if 0
 	if ((fn = magic_getpath(fn, action)) == NULL)
 		return -1;
+#endif
 
 	init_file_tables();
 
