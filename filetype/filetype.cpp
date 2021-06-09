@@ -13,20 +13,7 @@ bool FileType::open()
 		return false;
 	}
 
-#if 0
-#ifdef __APPLE__
-	char const *mgcfile = "/usr/share/file/magic.mgc";
-#else
-	char const *mgcfile = "/home/soramimi/develop/filetype/docker/magic.mgc" ;//nullptr;
-#endif
-
-	if (magic_load(magic_cookie, mgcfile) != 0) {
-		fprintf(stderr, "cannot load magic database - %s\n", magic_error(magic_cookie));
-		magic_close(magic_cookie);
-		return false;
-	}
-#else
-	QFile file(":/filemagic/magic.mgc");
+	QFile file(":/filemagic/magic.mgc"); // load magic from resource
 	file.open(QFile::ReadOnly);
 	mgcdata_ = file.readAll();
 	void *bufs[1];
@@ -34,10 +21,7 @@ bool FileType::open()
 	bufs[0] = mgcdata_.data();
 	sizes[0] = mgcdata_.size();
 	auto r = magic_load_buffers(magic_cookie, bufs, sizes, 1);
-	Q_ASSERT(r == 0);
-#endif
-
-	return true;
+	return r == 0;
 }
 
 void FileType::close()

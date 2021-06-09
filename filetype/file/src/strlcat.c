@@ -17,6 +17,7 @@
  */
 
 /* OPENBSD ORIGINAL: lib/libc/string/strlcat.c */
+#ifndef __APPLE__
 #include "file.h"
 
 #include <sys/types.h>
@@ -56,3 +57,4 @@ strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));	/* count does not include NUL */
 }
+#endif

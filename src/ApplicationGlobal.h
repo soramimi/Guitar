@@ -26,7 +26,7 @@ struct ApplicationGlobal {
 
 	ApplicationSettings appsettings;
 
-	void init();
+	void init(QApplication *a);
 };
 
 extern ApplicationGlobal *global;

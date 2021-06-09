@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	QApplication a(argc, argv);
 	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-	global->init();
+	global->init(&a);
 
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);

@@ -3,6 +3,7 @@ INCLUDEPATH += filetype/misc
 INCLUDEPATH += filetype/src
 INCLUDEPATH += filetype/pcre2/src
 win32:INCLUDEPATH += filetype/win32
+macx:INCLUDEPATH += filetype/macos
 
 win32:DEFINES += "HAVE_CONFIG_H=1" "PCRE2_CODE_UNIT_WIDTH=8"
 !win32:DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"

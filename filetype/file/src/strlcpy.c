@@ -17,10 +17,12 @@
  */
 
 /* OPENBSD ORIGINAL: lib/libc/string/strlcpy.c */
+#ifndef __APPLE__
 #include "file.h"
 
 #include <sys/types.h>
 #include <string.h>
+
 
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
@@ -52,3 +54,5 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 	return(s - src - 1);	/* count does not include NUL */
 }
+
+#endif
