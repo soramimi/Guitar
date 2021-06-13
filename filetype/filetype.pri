@@ -52,7 +52,6 @@ SOURCES += \
 	filetype/pcre2/src/pcre2_dfa_match.c \
 	filetype/pcre2/src/pcre2_error.c \
 	filetype/pcre2/src/pcre2_find_bracket.c \
-	filetype/pcre2/src/pcre2_fuzzsupport.c \
 	filetype/pcre2/src/pcre2_jit_compile.c \
 	filetype/pcre2/src/pcre2_jit_match.c \
 	filetype/pcre2/src/pcre2_jit_misc.c \
