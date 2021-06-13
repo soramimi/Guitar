@@ -42,7 +42,7 @@ class Win32ProcessThread : public QThread {
 private:
 public:
 	QMutex *mutex = nullptr;
-	std::string command;
+	QString command;
 	DWORD exit_code = -1;
 	std::deque<char> inq;
 	std::deque<char> outq;
@@ -116,7 +116,7 @@ protected:
 
 			// プロセス起動
 			PROCESS_INFORMATION pi;
-			STARTUPINFOA si;
+			STARTUPINFOW si;
 
 			ZeroMemory(&si, sizeof(STARTUPINFO));
 			si.cb = sizeof(STARTUPINFO);
@@ -126,9 +126,11 @@ protected:
 			si.hStdOutput = hOutputWrite; // 標準出力ハンドル
 			si.hStdError = hErrorWrite; // エラー出力ハンドル
 
-			char *tmp = (char *)alloca(command.size() + 1);
-			strcpy(tmp, command.c_str());
-			if (!CreateProcessA(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+			int len = command.size();
+			wchar_t *tmp = (wchar_t *)alloca(sizeof(wchar_t) * (len + 1));
+			memcpy(tmp, command.utf16(), sizeof(wchar_t) * len);
+			tmp[len] = 0;
+			if (!CreateProcessW(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
 				throw std::string("Failed to CreateProcess");
 			}
 
@@ -222,10 +224,7 @@ Win32Process::~Win32Process()
 
 void Win32Process::start(QString const &command, bool use_input)
 {
-	QTextCodec *sjis = QTextCodec::codecForName("Shift_JIS");
-	Q_ASSERT(sjis);
-
-	QByteArray ba = sjis->fromUnicode(command);
+	QByteArray ba = command.toUtf8();
 	ba.push_back((char)0);
 	char const *cmd = ba.data();
 
