@@ -1,30 +1,29 @@
 
 #include "webclient.h"
 #include <cstring>
-#include <cstdint>
 
 #ifdef _WIN32
 #include <winsock2.h>
-#include <ws2tcpip.h>
 #include <windows.h>
 #pragma comment(lib, "ws2_32.lib")
+#if USE_OPENSSL
+#pragma comment(lib, "libeay32.lib")
+#pragma comment(lib, "ssleay32.lib")
+#endif
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
 #else
-#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
 #include <net/if.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 #define closesocket(S) ::close(S)
 using socket_t = int;
 #define INVALID_SOCKET (-1)
 #define SOCKET_ERROR (-1)
-#define stricmp(A, B) strcasecmp(A, B)
-#define strnicmp(A, B, C) strncasecmp(A, B, C)
 #endif
 
 #if USE_OPENSSL
@@ -39,12 +38,38 @@ typedef void SSL;
 typedef void SSL_CTX;
 #endif
 
+#include <set>
 #include <cassert>
 #include "charvec.h"
+#include "common/base64.h"
+#include "common/misc.h"
 
 #define USER_AGENT "Generic Web Client"
 
+class HostNameResolver {
+private:
+	char buf[2048];
+	struct hostent tmp;
+public:
+	struct hostent *gethostbyname(char const *name)
+	{
+		struct hostent *he = nullptr;
+		{
+			int err = 0;
+#if 1
+			gethostbyname_r(name, &tmp, buf, sizeof(buf), &he, &err);
+#elif 1
+			host = gethostbyname_r(name, &h, buf, sizeof(buf), &err);
+#else
+			host = gethostbyname(name);
+#endif
+		}
+		return he;
+	}
+};
+
 struct WebContext::Private {
+	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
 	SSL_CTX *ctx = nullptr;
 	bool use_keep_alive = false;
 	WebProxy http_proxy;
@@ -111,6 +136,7 @@ struct WebClient::Private {
 	Error error;
 	WebClient::Response response;
 	WebContext *webcx;
+	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
 	int crlf_state = 0;
 	size_t content_offset = 0;
 	std::string last_host_name;
@@ -125,12 +151,18 @@ WebClient::WebClient(WebContext *webcx)
 {
 	assert(webcx);
 	m->webcx = webcx;
+	set_http_version(m->webcx->m->http_version);
 }
 
 WebClient::~WebClient()
 {
 	close();
 	delete m;
+}
+
+void WebClient::set_http_version(HttpVersion httpver)
+{
+	m->http_version = httpver;
 }
 
 void WebClient::initialize()
@@ -222,13 +254,21 @@ static inline std::string to_s(size_t n)
 	return tmp;
 }
 
-void WebClient::set_default_header(Request const &req, Post const *post, RequestOption const &opt)
+void WebClient::set_default_header(Request const &url, Post const *post, RequestOption const &opt)
 {
 	std::vector<std::string> header;
+	std::set<std::string> names;
 	auto AddHeader = [&](std::string const &s){
-		header.push_back(s);
+		size_t i = s.find(':');
+		if (i != std::string::npos) {
+			std::string name = s.substr(0, i);
+			if (names.find(name) == names.end()) {
+				names.insert(names.end(), name);
+				header.push_back(s);
+			}
+		}
 	};
-	AddHeader("Host: " + req.url.host());
+	AddHeader("Host: " + url.url.host());
 	AddHeader("User-Agent: " USER_AGENT);
 	AddHeader("Accept: */*");
 	if (opt.keep_alive) {
@@ -240,8 +280,8 @@ void WebClient::set_default_header(Request const &req, Post const *post, Request
 		AddHeader("Content-Length: " + to_s(post->data.size()));
 		std::string ct = "Content-Type: ";
 		if (post->content_type.empty()) {
-			ct += CT_APPLICATION_OCTET_STREAM;
-		} else if (post->content_type == CT_MULTIPART_FORM_DATA) {
+			ct += ContentType::APPLICATION_OCTET_STREAM;
+		} else if (post->content_type == ContentType::MULTIPART_FORM_DATA) {
 			ct += post->content_type;
 			if (!post->boundary.empty()) {
 				ct += "; boundary=";
@@ -252,28 +292,38 @@ void WebClient::set_default_header(Request const &req, Post const *post, Request
 		}
 		AddHeader(ct);
 	}
-	if (req.auth.type == Authorization::Basic) {
-		std::string s = req.auth.uid + ':' + req.auth.pwd;
+	if (url.auth.type == Authorization::Basic) {
+		std::string s = url.auth.uid + ':' + url.auth.pwd;
 		AddHeader("Authorization: Basic " + base64_encode(s));
 	}
-//	header.insert(header.end(), m->request_header.begin(), m->request_header.end());
-	header.insert(header.end(), req.headers.begin(), req.headers.end());
+	for (std::string const &h : url.headers) {
+		AddHeader(h);
+	}
 	m->request_header = std::move(header);
 }
 
-std::string WebClient::make_http_request(Request const &req, Post const *post, WebProxy const *proxy, bool https)
+std::string WebClient::make_http_request(Request const &url, Post const *post, WebProxy const *proxy, bool https)
 {
 	std::string str;
 
 	str = post ? "POST " : "GET ";
 
+	char const *httpver = "1.0";
+	switch (m->http_version) {
+	case HTTP_1_1:
+		httpver = "1.1";
+		break;
+	}
+
 	if (proxy && !https) {
-		str += req.url.data.full_request;
-		str += " HTTP/1.0";
+		str += url.url.data.full_request;
+		str += " HTTP/";
+		str += httpver;
 		str += "\r\n";
 	} else {
-		str += req.url.path();
-		str += " HTTP/1.0";
+		str += url.url.path();
+		str += " HTTP/";
+		str += httpver;
 		str += "\r\n";
 	}
 
@@ -329,7 +379,8 @@ void WebClient::parse_http_header(char const *begin, char const *end, WebClient:
 static void send_(socket_t s, char const *ptr, int len)
 {
 	while (len > 0) {
-		int n = send(s, ptr, len, 0);
+		int n = std::min(len, 65536);
+		n = send(s, ptr, n, 0);
 		if (n < 1 || n > len) {
 			throw WebClient::Error("send request failed.");
 		}
@@ -390,7 +441,7 @@ static char *stristr(char *str1, char const *str2)
 	size_t len1 = strlen(str1);
 	size_t len2 = strlen(str2);
 	for (size_t i = 0; i + len2 <= len1; i++) {
-		if (strnicmp(str1 + i, str2, len2) == 0) {
+		if (misc::strnicmp(str1 + i, str2, len2) == 0) {
 			return str1 + i;
 		}
 	}
@@ -421,9 +472,9 @@ public:
 					char *p = strchr(begin, ':');
 					if (p && *p == ':') {
 						*p++ = 0;
-						auto IS = [&](char const *name){ return stricmp(begin, name) == 0; };
+						auto IS = [&](char const *name){ return misc::stricmp(begin, name) == 0; };
 						if (IS("content-length")) {
-							content_length = (int)strtol(p, nullptr, 10);
+							content_length = strtol(p, nullptr, 10);
 						} else if (IS("connection")) {
 							if (stristr(p, "keep-alive")) {
 								connection_keep_alive = true;
@@ -459,7 +510,7 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	while (1) {
 		int n;
 		if (rh.state == ResponseHeader::Content && rh.content_length >= 0) {
-			n = (int)rh.pos + rh.content_length - pos;
+			n = rh.pos + rh.content_length - pos;
 			if (n > (int)sizeof(buf)) {
 				n = sizeof(buf);
 			}
@@ -486,45 +537,6 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	}
 }
 
-namespace {
-struct sockaddr_in getinetaddr(char const *name)
-{
-	struct sockaddr_in addr = {};
-
-#if 0
-	struct hostent *host;
-	uint32_t a = inet_addr(name);
-	if (a != INADDR_NONE) {
-		host = gethostbyaddr((const char *)&a, 4, AF_INET);
-	} else {
-		host = gethostbyname(name);
-	}
-	if (!host) {
-		throw WebClient::Error(std::string("gethostbyname failed: ") + name);
-	}
-	addr.sin_family = AF_INET;
-	memcpy((char *)&addr.sin_addr, host->h_addr, host->h_length);
-#else
-	struct addrinfo hints = {};
-	struct addrinfo *res = nullptr;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_family = AF_INET;
-	getaddrinfo(name, nullptr, &hints, &res);
-	if (res) {
-		if (res->ai_family == AF_INET) {
-			addr = *reinterpret_cast<struct sockaddr_in *>(res->ai_addr);
-		}
-		freeaddrinfo(res);
-	}
-	if (addr.sin_family == 0) {
-		throw WebClient::Error(std::string("getaddrinfo failed: ") + name);
-	}
-#endif
-	return addr;
-}
-}
-
-
 bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, std::vector<char> *out)
 {
 	clear_error();
@@ -546,7 +558,17 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 	if (!m->keep_alive) close();
 
 	if (m->sock == INVALID_SOCKET) {
-		struct sockaddr_in server = getinetaddr(server_req.url.host().c_str());
+		struct hostent *host = HostNameResolver().gethostbyname(hostname.c_str());
+		if (!host) {
+			throw Error("gethostbyname failed.");
+		}
+
+		struct sockaddr_in server;
+		memset((char *)&server, 0, sizeof(server));
+		server.sin_family = AF_INET;
+
+		memcpy((char *)&server.sin_addr, host->h_addr, host->h_length);
+
 		server.sin_port = htons(port);
 
 		m->sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -565,6 +587,7 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 
 	std::string req = make_http_request(request, post, proxy, false);
 
+//	fprintf(stderr, "%s", req.c_str());
 	send_(m->sock, req.c_str(), (int)req.size());
 	if (post && !post->data.empty()) {
 		send_(m->sock, (char const *)&post->data[0], (int)post->data.size());
@@ -620,7 +643,19 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 	socket_t sock = m->sock;
 	SSL *ssl = m->ssl;
 	if (sock == INVALID_SOCKET || !ssl) {
-		struct sockaddr_in server = getinetaddr(server_req.url.host().c_str());
+		int ret;
+
+		struct hostent *host = HostNameResolver().gethostbyname(server_req.url.host().c_str());
+		if (!host) {
+			throw Error("gethostbyname failed: " + server_req.url.host());
+		}
+
+		struct sockaddr_in server;
+		memset((char *)&server, 0, sizeof(server));
+		server.sin_family = AF_INET;
+
+		memcpy((char *)&server.sin_addr, host->h_addr, host->h_length);
+
 		server.sin_port = htons(port);
 
 		if (sock == INVALID_SOCKET) {
@@ -668,7 +703,6 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 		SSL_set_options(ssl, SSL_OP_NO_SSLv2);
 		SSL_set_options(ssl, SSL_OP_NO_SSLv3);
 
-		int ret;
 		ret = SSL_set_fd(ssl, sock);
 		if (ret == 0) {
 			throw Error(get_ssl_error());
@@ -894,7 +928,7 @@ std::string WebClient::header_value(std::vector<std::string> const *header, std:
 		char const *end = begin + line.size();
 		char const *colon = strchr(begin, ':');
 		if (colon) {
-			if (strnicmp(begin, name.c_str(), name.size()) == 0) {
+			if (misc::strnicmp(begin, name.c_str(), name.size()) == 0) {
 				char const *ptr = colon + 1;
 				while (ptr < end && isspace(*ptr & 0xff)) ptr++;
 				return std::string(ptr, end);
@@ -976,14 +1010,14 @@ WebClient::Response const &WebClient::response() const
 void WebClient::make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out)
 {
 	*out = WebClient::Post();
-	out->content_type = CT_APPLICATION_X_WWW_FORM_URLENCODED;
+	out->content_type = ContentType::APPLICATION_X_WWW_FORM_URLENCODED;
 	print(&out->data, begin, end - begin);
 }
 
 void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClient::Post *out, std::string const &boundary)
 {
 	*out = WebClient::Post();
-	out->content_type = CT_MULTIPART_FORM_DATA;
+	out->content_type = ContentType::MULTIPART_FORM_DATA;
 	out->boundary = boundary;
 
 	for (Part const &part : parts) {
@@ -1036,13 +1070,15 @@ void WebClient::make_multipart_form_data(char const *data, size_t size, WebClien
 
 //
 
-WebContext::WebContext()
+WebContext::WebContext(WebClient::HttpVersion httpver)
 	: m(new Private)
 {
+	set_http_version(httpver);
 #if USE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
 	m->ctx = SSL_CTX_new(SSLv23_client_method());
+	SSL_CTX_set_default_verify_paths(m->ctx);
 #endif
 }
 
@@ -1052,6 +1088,11 @@ WebContext::~WebContext()
 	SSL_CTX_free(m->ctx);
 #endif
 	delete m;
+}
+
+void WebContext::set_http_version(WebClient::HttpVersion httpver)
+{
+	m->http_version = httpver;
 }
 
 void WebContext::set_keep_alive_enabled(bool f)
@@ -1098,136 +1139,5 @@ bool WebContext::load_cacert(char const *path)
 #else
 	return false;
 #endif
-}
-
-//
-
-static unsigned char const PAD = '=';
-
-static const unsigned char _encode_table[] = {
-	0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
-	0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
-	0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76,
-	0x77, 0x78, 0x79, 0x7a, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x2b, 0x2f,
-};
-
-static const unsigned char _decode_table[] = {
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3e, 0xff, 0xff, 0xff, 0x3f,
-	0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
-	0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-	0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0xff, 0xff, 0xff, 0xff, 0xff,
-};
-
-static inline char enc(int c)
-{
-	return _encode_table[c & 63];
-}
-
-static inline char dec(int c)
-{
-	return _decode_table[c & 127];
-}
-
-void base64_encode(char const *src, size_t length, std::vector<char> *out)
-{
-	size_t srcpos, dstlen, dstpos;
-
-	dstlen = (length + 2) / 3 * 4;
-	out->resize(dstlen);
-	if (dstlen == 0) {
-		return;
-	}
-	char *dst = &out->at(0);
-	dstpos = 0;
-	for (srcpos = 0; srcpos < length; srcpos += 3) {
-		int v = (unsigned char)src[srcpos] << 16;
-		if (srcpos + 1 < length) {
-			v |= (unsigned char)src[srcpos + 1] << 8;
-			if (srcpos + 2 < length) {
-				v |= (unsigned char)src[srcpos + 2];
-				dst[dstpos + 3] = enc(v);
-			} else {
-				dst[dstpos + 3] = PAD;
-			}
-			dst[dstpos + 2] = enc(v >> 6);
-		} else {
-			dst[dstpos + 2] = PAD;
-			dst[dstpos + 3] = PAD;
-		}
-		dst[dstpos + 1] = enc(v >> 12);
-		dst[dstpos] = enc(v >> 18);
-		dstpos += 4;
-	}
-}
-
-void base64_decode(char const *src, size_t length, std::vector<char> *out)
-{
-	unsigned char const *begin = (unsigned char const *)src;
-	unsigned char const *end = begin + length;
-	unsigned char const *ptr = begin;
-	out->clear();
-	out->reserve(length * 3 / 4);
-	int count = 0;
-	int bits = 0;
-	while (1) {
-		if (isspace(*ptr)) {
-			ptr++;
-		} else {
-			unsigned char c = 0xff;
-			if (ptr < end && *ptr < 0x80) {
-				c = dec(*ptr);
-			}
-			if (c < 0x40) {
-				bits = (bits << 6) | c;
-				count++;
-			} else {
-				if (count < 4) {
-					bits <<= (4 - count) * 6;
-				}
-				c = 0xff;
-			}
-			if (count == 4 || c == 0xff) {
-				if (count >= 2) {
-					out->push_back(bits >> 16);
-					if (count >= 3) {
-						out->push_back(bits >> 8);
-						if (count == 4) {
-							out->push_back(bits);
-						}
-					}
-				}
-				count = 0;
-				bits = 0;
-				if (c == 0xff) {
-					break;
-				}
-			}
-			ptr++;
-		}
-	}
-}
-
-void base64_encode(std::vector<char> const *src, std::vector<char> *out)
-{
-	base64_encode(&src->at(0), src->size(), out);
-}
-
-void base64_decode(std::vector<char> const *src, std::vector<char> *out)
-{
-	base64_decode(&src->at(0), src->size(), out);
-}
-
-void base64_encode(char const *src, std::vector<char> *out)
-{
-	base64_encode((char const *)src, strlen(src), out);
-}
-
-void base64_decode(char const *src, std::vector<char> *out)
-{
-	base64_decode((char const *)src, strlen(src), out);
 }
 

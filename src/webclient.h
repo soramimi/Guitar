@@ -37,12 +37,14 @@ public:
 	}
 };
 
-#define CT_APPLICATION_OCTET_STREAM "application/octet-stream"
-#define CT_APPLICATION_X_WWW_FORM_URLENCODED "application/x-www-form-urlencoded"
-#define CT_MULTIPART_FORM_DATA "multipart/form-data"
-
 class WebClient {
 public:
+	class ContentType {
+	public:
+		static constexpr const char *APPLICATION_OCTET_STREAM = "application/octet-stream";
+		static constexpr const char *APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
+		static constexpr const char *MULTIPART_FORM_DATA = "multipart/form-data";
+	};
 	class URL {
 		friend class WebClient;
 	private:
@@ -61,6 +63,10 @@ public:
 		int port() const { return data.port; }
 		std::string const &path() const { return data.path; }
 		bool isssl() const;
+	};
+	enum HttpVersion {
+		HTTP_1_0,
+		HTTP_1_1,
 	};
 	struct Authorization {
 		enum Type {
@@ -97,6 +103,10 @@ public:
 		{
 			set_authorization(WebClient::Authorization::Basic, uid, pwd);
 		}
+		void add_header(std::string const &s)
+		{
+			headers.push_back(s);
+		}
 	};
 	class Error {
 	private:
@@ -107,6 +117,7 @@ public:
 			: msg_(message)
 		{
 		}
+		virtual ~Error() = default;
 		std::string message() const
 		{
 			return msg_;
@@ -158,12 +169,12 @@ private:
 	Private *m;
 	void clear_error();
 	static int get_port(URL const *url, char const *scheme, char const *protocol);
-	void set_default_header(const Request &req, Post const *post, const RequestOption &opt);
-	std::string make_http_request(const Request &req, Post const *post, const WebProxy *proxy, bool https);
+	void set_default_header(const Request &url, Post const *post, const RequestOption &opt);
+	std::string make_http_request(const Request &url, Post const *post, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, Response *out);
 	bool http_get(const Request &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out);
-	bool https_get(const Request &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out);
+	bool https_get(const Request &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
 	bool get(const Request &req, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
@@ -180,6 +191,8 @@ public:
 	~WebClient();
 	WebClient(WebClient const &) = delete;
 	void operator = (WebClient const &) = delete;
+
+	void set_http_version(HttpVersion httpver);
 
 	Error const &error() const;
 	int get(const Request &req, WebClientHandler *handler = nullptr);
@@ -204,11 +217,12 @@ private:
 	struct Private;
 	Private *m;
 public:
-	WebContext();
+	WebContext(WebClient::HttpVersion httpver);
 	~WebContext();
 	WebContext(WebContext const &r) = delete;
 	void operator = (WebContext const &r) = delete;
 
+	void set_http_version(WebClient::HttpVersion httpver);
 	void set_keep_alive_enabled(bool f);
 
 	void set_http_proxy(std::string const &proxy);
@@ -218,31 +232,5 @@ public:
 
 	bool load_cacert(char const *path);
 };
-
-//
-
-void base64_encode(char const *src, size_t length, std::vector<char> *out);
-void base64_decode(char const *src, size_t length, std::vector<char> *out);
-void base64_encode(std::vector<char> const *src, std::vector<char> *out);
-void base64_decode(std::vector<char> const *src, std::vector<char> *out);
-void base64_encode(char const *src, std::vector<char> *out);
-void base64_decode(char const *src, std::vector<char> *out);
-static inline std::string to_s_(std::vector<char> const *vec)
-{
-	if (!vec || vec->empty()) return std::string();
-	return std::string((char const *)&(*vec)[0], vec->size());
-}
-static inline std::string base64_encode(std::string const &src)
-{
-	std::vector<char> vec;
-	base64_encode((char const *)src.c_str(), src.size(), &vec);
-	return to_s_(&vec);
-}
-static inline std::string base64_decode(std::string const &src)
-{
-	std::vector<char> vec;
-	base64_decode((char const *)src.c_str(), src.size(), &vec);
-	return to_s_(&vec);
-}
 
 #endif

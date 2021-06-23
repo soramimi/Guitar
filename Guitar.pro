@@ -105,7 +105,8 @@ haiku:LIBS += -lz
 
 # filetype library
 
-SOURCES += filetype/filetype.cpp
+SOURCES += filetype/filetype.cpp \
+	src/common/base64.cpp
 
 #
 
@@ -367,6 +368,7 @@ HEADERS  += \
 	src/coloredit/ColorSlider.h \
 	src/coloredit/ColorSquareWidget.h \
 	src/coloredit/RingSlider.h \
+	src/common/base64.h \
 	src/common/joinpath.h \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \

@@ -127,7 +127,7 @@ struct MainWindow::Private {
     bool pty_process_ok = false;
     MainWindow::PtyCondition pty_condition = MainWindow::PtyCondition::None;
 
-    WebContext webcx;
+	WebContext webcx = {WebClient::HTTP_1_0};
 
     AvatarLoader avatar_loader;
 
@@ -270,7 +270,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     {
         // アイコン取得機能
-        webContext()->set_keep_alive_enabled(true);
+		webContext()->set_keep_alive_enabled(true);
         getAvatarLoader()->start(this);
         connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
     }

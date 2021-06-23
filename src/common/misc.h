@@ -13,6 +13,24 @@ class QContextMenuEvent;
 
 class misc {
 public:
+	static int stricmp(char const *s1, char const *s2)
+	{
+#ifdef _WIN32
+		return ::stricmp(s1, s2);
+#else
+		return ::strcasecmp(s1, s2);
+#endif
+	}
+
+	static int strnicmp(char const *s1, char const *s2, size_t n)
+	{
+#ifdef _WIN32
+		return ::strnicmp(s1, s2, n);
+#else
+		return ::strncasecmp(s1, s2, n);
+#endif
+	}
+
 	static QString getApplicationDir();
 	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);

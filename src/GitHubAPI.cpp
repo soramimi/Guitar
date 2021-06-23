@@ -16,6 +16,7 @@ using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
 	MainWindow *mainwindow = nullptr;
+	WebContext webcx = {WebClient::HTTP_1_0};
 	WebClientPtr web;
 };
 
@@ -32,7 +33,8 @@ GitHubRequestThread::~GitHubRequestThread()
 void GitHubRequestThread::start(MainWindow *mainwindow)
 {
 	m->mainwindow = mainwindow;
-	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());
+	m->webcx.set_keep_alive_enabled(false);
+	m->web = std::make_shared<WebClient>(&m->webcx);
 	QThread::start();
 }
 
