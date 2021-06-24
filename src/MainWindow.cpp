@@ -1962,42 +1962,46 @@ void MainWindow::updateRepositoriesList()
             continue;
         }
         QTreeWidgetItem *parent = nullptr;
-        {
-            QString group = repo.group;
-            if (group.startsWith('/')) {
-                group = group.mid(1);
-            }
-            auto it = parentmap.find(group);
-            if (it != parentmap.end()) {
-                parent = it->second;
-            }
-            if (!parent) {
-                QStringList list = group.split('/', QString::SkipEmptyParts);
-                if (list.isEmpty()) {
-                    list.push_back("Default");
-                }
-                for (QString const &name : list) {
-                    if (name.isEmpty()) continue;
-                    if (!parent) {
-                        auto it = parentmap.find(name);
-                        if (it != parentmap.end()) {
-                            parent = it->second;
-                        } else {
-                            parent = newQTreeWidgetFolderItem(name);
-                            ui->treeWidget_repos->addTopLevelItem(parent);
-                        }
-                    } else {
-                        QTreeWidgetItem *child = newQTreeWidgetFolderItem(name);
-                        parent->addChild(child);
-                        parent = child;
-                    }
-                    parent->setExpanded(true);
-                }
-                Q_ASSERT(parent);
-                parentmap[group] = parent;
-            }
-            parent->setData(0, FilePathRole, "");
+
+        QString group = repo.group;
+        if (group.startsWith('/')) {
+            group = group.mid(1);
         }
+        if (group == "") {
+            group = "Default";
+        }
+        auto it = parentmap.find(group);
+        if (it != parentmap.end()) {
+            parent = it->second;
+        } else {
+            QStringList list = group.split('/', QString::SkipEmptyParts);
+            if (list.isEmpty()) {
+                list.push_back("Default");
+            }
+            QString groupPath = "", groupPathWithCurrent;
+            for (QString const &name : list) {
+                if (name.isEmpty()) continue;
+                groupPathWithCurrent = groupPath + name;
+                auto it = parentmap.find(groupPathWithCurrent);
+                if (it != parentmap.end()) {
+                    parent = it->second;
+                } else {
+                    QTreeWidgetItem *newItem = newQTreeWidgetFolderItem(name);
+                    if (!parent) {
+                        ui->treeWidget_repos->addTopLevelItem(newItem);
+                    } else {
+                        parent->addChild(newItem);
+                    }
+                    parent = newItem;
+                    parentmap[groupPathWithCurrent] = newItem;
+                    newItem->setExpanded(true);
+                }
+                groupPath = groupPathWithCurrent + '/';
+            }
+            Q_ASSERT(parent);
+        }
+        parent->setData(0, FilePathRole, "");
+
         QTreeWidgetItem *child = newQTreeWidgetItem();
         child->setText(0, repo.name);
         child->setData(0, IndexRole, i);
