@@ -7,8 +7,8 @@
 #include <windows.h>
 #pragma comment(lib, "ws2_32.lib")
 #if USE_OPENSSL
-#pragma comment(lib, "libeay32.lib")
-#pragma comment(lib, "ssleay32.lib")
+//#pragma comment(lib, "libeay32.lib")
+//#pragma comment(lib, "ssleay32.lib")
 #endif
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
@@ -46,6 +46,13 @@ typedef void SSL_CTX;
 
 #define USER_AGENT "Generic Web Client"
 
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 class HostNameResolver {
 private:
 	char buf[2048];
@@ -56,12 +63,14 @@ public:
 		struct hostent *he = nullptr;
 		{
 			int err = 0;
-#if 1
-			gethostbyname_r(name, &tmp, buf, sizeof(buf), &he, &err);
+#ifdef _WIN32
+			he = ::gethostbyname(name);
 #elif 1
-			host = gethostbyname_r(name, &h, buf, sizeof(buf), &err);
+			gethostbyname_r(name, &tmp, buf, sizeof(buf), &he, &err);
+#elif 0
+			he = gethostbyname_r(name, &h, buf, sizeof(buf), &err);
 #else
-			host = gethostbyname(name);
+			he = ::gethostbyname(name);
 #endif
 		}
 		return he;
