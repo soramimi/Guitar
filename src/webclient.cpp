@@ -63,14 +63,10 @@ public:
 		struct hostent *he = nullptr;
 		{
 			int err = 0;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 			he = ::gethostbyname(name);
-#elif 1
-			gethostbyname_r(name, &tmp, buf, sizeof(buf), &he, &err);
-#elif 0
-			he = gethostbyname_r(name, &h, buf, sizeof(buf), &err);
 #else
-			he = ::gethostbyname(name);
+			gethostbyname_r(name, &tmp, buf, sizeof(buf), &he, &err);
 #endif
 		}
 		return he;
