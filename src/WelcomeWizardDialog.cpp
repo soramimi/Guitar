@@ -60,11 +60,6 @@ void WelcomeWizardDialog::set_git_command_path(QString const &v)
 	ui->lineEdit_git->setText(v);
 }
 
-void WelcomeWizardDialog::set_file_command_path(QString const &v)
-{
-	ui->lineEdit_file->setText(v);
-}
-
 QString WelcomeWizardDialog::user_name() const
 {
 	return ui->lineEdit_user_name->text();
@@ -83,11 +78,6 @@ QString WelcomeWizardDialog::default_working_folder() const
 QString WelcomeWizardDialog::git_command_path() const
 {
 	return ui->lineEdit_git->text();
-}
-
-QString WelcomeWizardDialog::file_command_path() const
-{
-	return ui->lineEdit_file->text();
 }
 
 void WelcomeWizardDialog::on_pushButton_prev_clicked()
@@ -148,7 +138,6 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		ui->lineEdit_preview_email->setText(ui->lineEdit_user_email->text());
 		ui->lineEdit_preview_folder->setText(ui->lineEdit_default_working_folder->text());
 		ui->lineEdit_preview_git->setText(ui->lineEdit_git->text());
-		ui->lineEdit_preview_file->setText(ui->lineEdit_file->text());
 		next_text = tr("Finish");
 		ui->pushButton_next->setFocus();
 	}
@@ -190,7 +179,6 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	}
 }
 
-
 void WelcomeWizardDialog::on_lineEdit_git_textChanged(const QString &arg1)
 {
 	QString ss;
@@ -200,11 +188,3 @@ void WelcomeWizardDialog::on_lineEdit_git_textChanged(const QString &arg1)
 	ui->lineEdit_git->setStyleSheet(ss);
 }
 
-void WelcomeWizardDialog::on_lineEdit_file_textChanged(const QString &arg1)
-{
-	QString ss;
-	if (!misc::isExecutable(arg1)) {
-		ss = "* { background-color: #ffc0c0; }";
-	}
-	ui->lineEdit_file->setStyleSheet(ss);
-}

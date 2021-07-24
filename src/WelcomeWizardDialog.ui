@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>295</height>
+    <height>413</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,6 +55,13 @@
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_browse_git">
+           <property name="text">
+            <string>Browse</string>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
@@ -64,30 +71,6 @@
          </item>
          <item row="0" column="1">
           <widget class="QLineEdit" name="lineEdit_git"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_browse_git">
-           <property name="text">
-            <string>Browse</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>file</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="lineEdit_file"/>
-         </item>
-         <item row="1" column="2">
-          <widget class="QPushButton" name="pushButton_browse_file">
-           <property name="text">
-            <string>Browse</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
