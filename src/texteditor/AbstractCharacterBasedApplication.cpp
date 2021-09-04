@@ -1793,7 +1793,7 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 
 	m->parsed_col_index = index;
 
-	setCurrentCol(col);
+//	setCurrentCol(col);
 
 	if (char_span < 1) {
 		char_span = 1;

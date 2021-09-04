@@ -46,8 +46,8 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int calcPixelPosX(int row, int col, std::vector<Char> *vec_out) const;
-	int scrollPosInPixelX();
+	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const;
+	int scrollPosX() const;
 public:
 	int basisCharWidth() const;
 protected:
@@ -111,6 +111,10 @@ public:
 	// AbstractCharacterBasedApplication interface
 protected:
 	void setCursorCol(int col);
+
+	// AbstractCharacterBasedApplication interface
+protected:
+	void setCursorRow(int row, bool auto_scroll, bool by_mouse);
 };
 
 

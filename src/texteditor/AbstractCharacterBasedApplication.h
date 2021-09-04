@@ -353,7 +353,9 @@ private:
 protected:
 	void parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
 	void parseLine(int row, std::vector<Char> *vec) const;
-	void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
+	virtual int scrollPosX() { return 0; }
+
+	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
 	{
 		setCursorCol_(col, true, false);

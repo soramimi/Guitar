@@ -222,15 +222,22 @@ int TextEditorWidget::charWidth2(unsigned int c) const
     return m->character_size.width(c);
 }
 
+/**
+ * @brief 行の高さ
+ * @return
+ */
 int TextEditorWidget::lineHeight() const
 {
     return m->character_size.height() + m->top_margin + m->bottom_margin;
 }
 
+/**
+ * @brief 基準文字幅
+ * @return
+ */
 int TextEditorWidget::basisCharWidth() const
 {
-    return m->character_size.width('8');
-//	return charWidth2('W');
+	return m->character_size.width('0');
 }
 
 class chars : public abstract_unicode_reader {
@@ -260,42 +267,48 @@ public:
  * @param vec_out 文字配列(nullptr可)
  * @return
  */
-int TextEditorWidget::calcPixelPosX(int row, int col, std::vector<Char> *vec_out) const
+int TextEditorWidget::calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const
 {
 	if (!vec_out) {
 		std::vector<Char> tmp;
-		return calcPixelPosX(row, col, &tmp);
+		return calcPixelPosX(row, col, adjust_scroll, &tmp);
 	}
 
 	parseLine(row, vec_out);
-    QPixmap pm(1, 1);
-    QPainter pr(&pm);
-    pr.setFont(m->text_font);
+	QPixmap pm(1, 1);
+	QPainter pr(&pm);
+	pr.setFont(m->text_font);
 	int x = 0;
-    QString s;
+	QString s;
 	for (size_t i = 0; i < vec_out->size(); i++) {
 		vec_out->at(i).pos = x;
-        ushort tmp[3];
+		ushort tmp[3];
 		uint32_t u = vec_out->at(i).unicode;
-        if (u >= 0x10000 && u < 0x110000) {
-            // サロゲートペア
-            uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
-            uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
-            tmp[0] = h;
-            tmp[1] = l;
-            tmp[2] = 0;
-        } else {
-            tmp[0] = u;
-            tmp[1] = 0;
-        }
-        s += QString::fromUtf16(tmp);
+		if (u >= 0x10000 && u < 0x110000) {
+			// サロゲートペア
+			uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
+			uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
+			tmp[0] = h;
+			tmp[1] = l;
+			tmp[2] = 0;
+		} else {
+			tmp[0] = u;
+			tmp[1] = 0;
+		}
+		s += QString::fromUtf16(tmp);
 		x = pr.fontMetrics().size(0, s).width();
-    }
+	}
+
 	if (vec_out->empty()) {
 		x = 0;
 	} else if (col >= 0 && col < (int)vec_out->size()) {
 		x = (int)vec_out->at(col).pos;
 	}
+
+	if (adjust_scroll) { // 原点とスクロール位置に応じてずらす
+		x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
+	}
+
 	return x;
 }
 
@@ -306,7 +319,7 @@ RowCol TextEditorWidget::mapFromPixel(QPoint const &pt)
 	const int w = basisCharWidth(); // 基準文字幅
     const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
     std::vector<Char> vec;
-	int end = calcPixelPosX(row, -1, &vec);
+	int end = calcPixelPosX(row, -1, false, &vec);
     int left = 0;
     for (size_t col = 0; col < vec.size(); col++) {
         int right = int((col + 1 < vec.size()) ? vec[col + 1].pos : (size_t)end);
@@ -329,6 +342,34 @@ QPoint TextEditorWidget::mapToPixel(RowCol const &pt)
 	int x = pt.col * basisCharWidth();
 	int y = pt.row * lineHeight();
     return QPoint(x, y);
+}
+
+void TextEditorWidget::setCursorRow(int row, bool auto_scroll, bool by_mouse)
+{
+	AbstractCharacterBasedApplication::setCursorRow(row, auto_scroll, by_mouse);
+
+	// ピクセル座標を更新
+	cx()->current_row_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
+
+	// ピクセル座標から桁位置を再計算する（プロポーショナルフォント対応）
+	int x = cx()->current_col_x;
+	int y = cx()->current_row_y;
+	auto cr = mapFromPixel(QPoint(x, y)); // ピクセル座標から行と桁を求める
+	setCurrentCol(cr.col); // 桁位置
+}
+
+/**
+ * @brief 桁位置を変更する
+ * @param col
+ */
+void TextEditorWidget::setCursorCol(int col)
+{
+	AbstractCharacterBasedApplication::setCursorCol(col);
+
+	// 水平ピクセル座標を更新
+	int x = calcPixelPosX(currentRow(), currentCol(), true, nullptr); // 行と桁位置から水平座標を求める
+	 // 原点とスクロール位置に応じてずらす
+	cx()->current_col_x = x;// + cx()->viewport_org_x * basisCharWidth() - scrollPosX();
 }
 
 void TextEditorWidget::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -396,19 +437,6 @@ void TextEditorWidget::internalUpdateVisibility(bool ensure_current_line_visible
 
     updateCursorRect(auto_scroll);
 
-	// カーソル位置を計算
-	{
-		const int y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
-		const int row = currentRow(); // 行位置
-		const int col = currentCol(); // 桁位置
-		int x = calcPixelPosX(row, col, nullptr); // 行と桁位置から水平座標を求める
-		 // 原点とスクロール位置に応じてずらす
-		x += cx()->viewport_org_x * basisCharWidth();
-		x -= scrollPosInPixelX();
-		cx()->current_col_x = x;
-		cx()->current_row_y = y;
-	}
-
     if (change_col) {
 		cx()->current_col_hint = currentCol();
     }
@@ -438,12 +466,6 @@ void TextEditorWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, 
         internalUpdateVisibility(false, true, auto_scroll);
     }
 }
-
-//void TextEditorWidget::setPreEditText(const PreEditText &preedit)
-//{
-//	m->preedit = preedit;
-//	update();
-//}
 
 QFont TextEditorWidget::textFont() const
 {
@@ -582,7 +604,7 @@ int TextEditorWidget::scrollUnit() const
  * @brief 水平スクロール位置のピクセル値を取得
  * @return
  */
-int TextEditorWidget::scrollPosInPixelX()
+int TextEditorWidget::scrollPosX() const
 {
     int u = scrollUnit();
     int n = editor_cx->scroll_col_pos;
@@ -596,9 +618,14 @@ int TextEditorWidget::scrollPosInPixelX()
  */
 void TextEditorWidget::drawCursor(QPainter *pr)
 {
-	const int lineheight = lineHeight();
-	const int x = cx()->current_col_x;
+//	int x = cx()->current_col_x;
 	const int y = cx()->current_row_y;
+
+	int x = calcPixelPosX(currentRow(), currentCol(), true, nullptr); // 行と桁位置から水平座標を求める
+	 // 原点とスクロール位置に応じてずらす
+//	x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
+
+	const int lineheight = lineHeight();
 	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
     pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
     pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
@@ -667,7 +694,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
         pr.save();
         pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
         while (isValidRowIndex(line_row)) {
-			int x = linenum_width - scrollPosInPixelX();
+			int x = linenum_width - scrollPosX();
             int y = view_row * lh;
             if (y >= height()) break;
             QList<FormattedLine> fline = formatLine2(line_row);
@@ -909,11 +936,6 @@ void TextEditorWidget::moveCursorDown()
 {
 	AbstractTextEditorApplication::moveCursorDown();
 
-}
-
-void TextEditorWidget::setCursorCol(int col)
-{
-	AbstractCharacterBasedApplication::setCursorCol(col);
 }
 
 void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
