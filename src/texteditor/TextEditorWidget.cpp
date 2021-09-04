@@ -120,7 +120,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 
 #endif
 #ifdef Q_OS_LINUX
-    setTextFont(QFont("Monospace", 9));
+//    setTextFont(QFont("Monospace", 9));
+	setTextFont(QFont("Times", 20));
 #endif
 #ifdef Q_OS_MACX
     setTextFont(QFontDatabase().font("Osaka", "Regular-Mono", 14));
@@ -202,7 +203,7 @@ void AbstractCharacterBasedApplication::loadExampleFile()
 #elif defined(Q_OS_MAC)
     QString path = "/Users/soramimi/develop/ore/example.txt";
 #else
-    QString path = "/home/soramimi/develop/ore/example.txt";
+	QString path = "/tmp/example.txt";
 #endif
     openFile(path);
 }
@@ -226,7 +227,7 @@ int TextEditorWidget::lineHeight() const
     return m->character_size.height() + m->top_margin + m->bottom_margin;
 }
 
-int TextEditorWidget::defaultCharWidth() const
+int TextEditorWidget::basisCharWidth() const
 {
     return m->character_size.width('8');
 //	return charWidth2('W');
@@ -252,18 +253,30 @@ public:
     }
 };
 
-int TextEditorWidget::parseLine3(int row, int col, std::vector<Char> *vec) const
+/**
+ * @brief 行と桁からピクセルX座標を求める
+ * @param row
+ * @param col
+ * @param vec_out 文字配列(nullptr可)
+ * @return
+ */
+int TextEditorWidget::calcPixelPosX(int row, int col, std::vector<Char> *vec_out) const
 {
-    parseLine2(row, vec);
+	if (!vec_out) {
+		std::vector<Char> tmp;
+		return calcPixelPosX(row, col, &tmp);
+	}
+
+	parseLine(row, vec_out);
     QPixmap pm(1, 1);
     QPainter pr(&pm);
     pr.setFont(m->text_font);
-    int pos = 0;
+	int x = 0;
     QString s;
-    for (size_t i = 0; i < vec->size(); i++) {
-        vec->at(i).pos = pos;
+	for (size_t i = 0; i < vec_out->size(); i++) {
+		vec_out->at(i).pos = x;
         ushort tmp[3];
-        uint32_t u = vec->at(i).unicode;
+		uint32_t u = vec_out->at(i).unicode;
         if (u >= 0x10000 && u < 0x110000) {
             // サロゲートペア
             uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
@@ -276,25 +289,24 @@ int TextEditorWidget::parseLine3(int row, int col, std::vector<Char> *vec) const
             tmp[1] = 0;
         }
         s += QString::fromUtf16(tmp);
-        pos = pr.fontMetrics().size(0, s).width();
+		x = pr.fontMetrics().size(0, s).width();
     }
-    if (vec->empty()) {
-        pos = 0;
-    } else if (col >= 0 && col < (int)vec->size()) {
-        pos = (int)vec->at(col).pos;
-    }
-    return pos;
+	if (vec_out->empty()) {
+		x = 0;
+	} else if (col >= 0 && col < (int)vec_out->size()) {
+		x = (int)vec_out->at(col).pos;
+	}
+	return x;
 }
 
-QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
+RowCol TextEditorWidget::mapFromPixel(QPoint const &pt)
 {
-//	const int col = cx()->current_col;
     const int y = pt.y() / lineHeight();
     const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-    const int w = defaultCharWidth();
+	const int w = basisCharWidth(); // 基準文字幅
     const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
     std::vector<Char> vec;
-    int end = parseLine3(row, -1, &vec);
+	int end = calcPixelPosX(row, -1, &vec);
     int left = 0;
     for (size_t col = 0; col < vec.size(); col++) {
         int right = int((col + 1 < vec.size()) ? vec[col + 1].pos : (size_t)end);
@@ -302,20 +314,20 @@ QPoint TextEditorWidget::mapFromPixel(QPoint const &pt)
             int l = left - x;
             int r = right - x;
             if (l * l < r * r) {
-                return QPoint((int)col, row);
+				return RowCol(row, (int)col);
             } else {
-                return QPoint((int)col + 1, row);
+				return RowCol(row, (int)col + 1);
             }
         }
         left = right;
     }
-    return QPoint(end, row);
+	return RowCol(row, end);
 }
 
-QPoint TextEditorWidget::mapToPixel(QPoint const &pt)
+QPoint TextEditorWidget::mapToPixel(RowCol const &pt)
 {
-    int x = pt.x() * defaultCharWidth();
-    int y = pt.y() * lineHeight();
+	int x = pt.col * basisCharWidth();
+	int y = pt.row * lineHeight();
     return QPoint(x, y);
 }
 
@@ -334,22 +346,20 @@ void TextEditorWidget::setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, TextE
     layoutEditor();
 }
 
-QRect TextEditorWidget::updateCursorRect(bool auto_scroll)
+void TextEditorWidget::updateCursorRect(bool auto_scroll)
 {
-    updateCursorPos(auto_scroll);
+	updateCursorPos(auto_scroll);
 
-    int x = cx()->viewport_org_x + cursorX();
-    int y = cx()->viewport_org_y + cursorY();
-    x *= defaultCharWidth();
+	int x = cx()->viewport_org_x + cursorCol();
+	int y = cx()->viewport_org_y + cursorRow();
+	x *= basisCharWidth();
     y *= lineHeight();
     QPoint pt = QPoint(x, y);
-    int w = cx()->current_char_span * defaultCharWidth();
+	int w = cx()->current_char_span * basisCharWidth();
     int h = lineHeight();
     cx()->cursor_rect = QRect(pt.x(), pt.y(), w, h);
 
     QApplication::inputMethod()->update(Qt::ImCursorRectangle);
-
-    return cx()->cursor_rect;
 }
 
 void TextEditorWidget::internalUpdateScrollBar()
@@ -386,8 +396,21 @@ void TextEditorWidget::internalUpdateVisibility(bool ensure_current_line_visible
 
     updateCursorRect(auto_scroll);
 
+	// カーソル位置を計算
+	{
+		const int y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
+		const int row = currentRow(); // 行位置
+		const int col = currentCol(); // 桁位置
+		int x = calcPixelPosX(row, col, nullptr); // 行と桁位置から水平座標を求める
+		 // 原点とスクロール位置に応じてずらす
+		x += cx()->viewport_org_x * basisCharWidth();
+		x -= scrollPosInPixelX();
+		cx()->current_col_x = x;
+		cx()->current_row_y = y;
+	}
+
     if (change_col) {
-        cx()->current_col_hint = cx()->current_col;
+		cx()->current_col_hint = currentCol();
     }
 
     if (isPaintingSuppressed()) {
@@ -402,14 +425,14 @@ void TextEditorWidget::internalUpdateVisibility(bool ensure_current_line_visible
 void TextEditorWidget::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
 {
     internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
-    emit moved(cx()->current_row, cx()->current_col, cx()->scroll_row_pos, cx()->scroll_col_pos);
+	emit moved(currentRow(), currentCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
 }
 
 void TextEditorWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
-    if ((cur_row >= 0 && cx()->current_row != cur_row) || (cur_col >= 0 && cx()->current_col != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
-        if (cur_row >= 0) cx()->current_row = cur_row;
-        if (cur_col >= 0) cx()->current_col = cur_col;
+	if ((cur_row >= 0 && currentRow() != cur_row) || (cur_col >= 0 && currentCol() != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
+		if (cur_row >= 0) setCurrentRow(cur_row);
+		if (cur_col >= 0) setCurrentCol(cur_col);
         if (scr_row >= 0) cx()->scroll_row_pos = scr_row;
         if (scr_col >= 0) cx()->scroll_col_pos = scr_col;
         internalUpdateVisibility(false, true, auto_scroll);
@@ -516,10 +539,10 @@ void TextEditorWidget::paintScreen(QPainter *painter)
             }
             if (n == 0) {
                 n = 1;
-                x3 += defaultCharWidth();
+				x3 += basisCharWidth();
             } else if (!text.empty()) {
                 QString str = QString::fromUtf16(&text[0], text.size());
-                int px = x * defaultCharWidth();
+				int px = x * basisCharWidth();
                 int py = y * lineHeight();
                 px = x2;
                 painter->setFont(textFont());
@@ -555,29 +578,35 @@ int TextEditorWidget::scrollUnit() const
     return scroll_unit_;
 }
 
-int TextEditorWidget::xScrollPosInPixel()
+/**
+ * @brief 水平スクロール位置のピクセル値を取得
+ * @return
+ */
+int TextEditorWidget::scrollPosInPixelX()
 {
     int u = scrollUnit();
     int n = editor_cx->scroll_col_pos;
-    n *= (u == ScrollByCharacter) ? defaultCharWidth() : u;
+	n *= (u == ScrollByCharacter) ? basisCharWidth() : u;
     return n;
 }
 
+/**
+ * @brief カーソルを描画
+ * @param pr
+ */
 void TextEditorWidget::drawCursor(QPainter *pr)
 {
-    std::vector<Char> vec;
-    int row = cursorY() + cx()->scroll_row_pos - cx()->viewport_org_y;
-    const int col = cx()->current_col;
-    int x = parseLine3(row, col, &vec);
-    x += cx()->viewport_org_x * defaultCharWidth();
-    x -= xScrollPosInPixel();
-    const int lineheight = lineHeight();
-    const int y = (cx()->viewport_org_y + cursorY()) * lineheight;
-    pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
+	const int lineheight = lineHeight();
+	const int x = cx()->current_col_x;
+	const int y = cx()->current_row_y;
+	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
     pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
     pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
 }
 
+/**
+ * @brief 描画
+ */
 void TextEditorWidget::paintEvent(QPaintEvent *)
 {
     bool has_focus = hasFocus();
@@ -610,7 +639,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
     }
 
     auto visualY = [&](TextEditorContext const *context){
-        return context->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
+		return context->viewport_org_y + editor_cx->current_row - editor_cx->scroll_row_pos;
     };
 
     // カーソル描画
@@ -618,7 +647,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
         if (isCursorVisible()) {
             // 現在行の下線
             if (renderingMode() == DecoratedMode) {
-                int x = cx()->viewport_org_x * defaultCharWidth();
+				int x = cx()->viewport_org_x * basisCharWidth();
                 int y = visualY(cx()) * lineHeight();
                 pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
                 pr.fillRect(x, y + lineHeight() - 1, width() - x, 1, theme()->fgCursor());
@@ -628,7 +657,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
         }
     }
 
-    int linenum_width = editor_cx->viewport_org_x * defaultCharWidth();
+	int linenum_width = editor_cx->viewport_org_x * basisCharWidth();
 
     // テキスト描画
     if (renderingMode() == DecoratedMode) {
@@ -638,7 +667,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
         pr.save();
         pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
         while (isValidRowIndex(line_row)) {
-            int x = linenum_width - xScrollPosInPixel();
+			int x = linenum_width - scrollPosInPixelX();
             int y = view_row * lh;
             if (y >= height()) break;
             QList<FormattedLine> fline = formatLine2(line_row);
@@ -684,7 +713,7 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
                 }
                 if (mark) {
                     pr.setPen(theme()->fgDefault());
-                    drawText(&pr, linenum_width - defaultCharWidth() * 3 / 2, y * lineHeight(), mark);
+					drawText(&pr, linenum_width - basisCharWidth() * 3 / 2, y * lineHeight(), mark);
                 }
             }
         });
@@ -708,25 +737,22 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
 
 void TextEditorWidget::moveCursorByMouse()
 {
-    QPoint mousepos = mapFromGlobal(QCursor::pos());
-    QPoint pos = mapFromPixel(mousepos);
-    int row = pos.y();
-    int col = pos.x();
+	QPoint mousepos = mapFromGlobal(QCursor::pos()); // マウス座標をグローバルからローカルへ変換
+	RowCol pos = mapFromPixel(mousepos); // ローカルマウス座標からカーソル座標へ変換
 
     // row
     if (!isSingleLineMode()) {
-        if (row < 0) {
-            row = 0;
+		if (pos.row < 0) {
+			pos.row = 0;
         } else {
             int maxrow = cx()->engine->document.lines.size();
             maxrow = maxrow > 0 ? (maxrow - 1) : 0;
-            if (row > maxrow) {
-                row = maxrow;
+			if (pos.row > maxrow) {
+				pos.row = maxrow;
             }
         }
     }
-    setCursorRow(row, false, true);
-    setCursorCol(col, false, true);
+	setCursorPosByMouse(pos, mousepos);
 
     clearParsedLine();
     updateVisibility(false, true, false);
@@ -813,8 +839,6 @@ void TextEditorWidget::inputMethodEvent(QInputMethodEvent *e)
 //		m->ime_popup->show();
     }
 #endif
-//	qDebug() << e->preeditString() << e->commitString();
-
     QString const &commit_text = e->commitString();
     if (!commit_text.isEmpty()) {
         write_(commit_text, true);
@@ -832,7 +856,7 @@ void TextEditorWidget::layoutEditor()
 {
     if (isAutoLayout()) {
         int h = height() / lineHeight();
-        int w = width() / defaultCharWidth();
+		int w = width() / basisCharWidth();
         setScreenSize(w, h, false);
     }
     AbstractTextEditorApplication::layoutEditor();
@@ -878,7 +902,18 @@ void TextEditorWidget::timerEvent(QTimerEvent *)
             m->idle_count = 0;
             emit idle();
         }
-    }
+	}
+}
+
+void TextEditorWidget::moveCursorDown()
+{
+	AbstractTextEditorApplication::moveCursorDown();
+
+}
+
+void TextEditorWidget::setCursorCol(int col)
+{
+	AbstractCharacterBasedApplication::setCursorCol(col);
 }
 
 void TextEditorWidget::contextMenuEvent(QContextMenuEvent *event)

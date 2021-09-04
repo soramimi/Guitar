@@ -52,6 +52,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->widget->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
+	ui->widget->loadExampleFile();
+
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }
 
@@ -76,7 +78,7 @@ bool MainWindow::event(QEvent *e)
 	if (e->type() == QEvent::WindowActivate) {
 		if (m->need_to_layout) {
 			m->need_to_layout = false;
-			int w = ui->widget->defaultCharWidth() * ui->widget->screenWidth();
+			int w = ui->widget->basisCharWidth() * ui->widget->screenWidth();
 			int h = ui->widget->lineHeight() * ui->widget->screenHeight();
 			int sb = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
 			w += sb;
@@ -149,7 +151,7 @@ void MainWindow::on_action_file_open_triggered()
 
 void MainWindow::on_action_file_save_triggered()
 {
-	ui->widget->saveFile("d:/test.txt");
+	ui->widget->saveFile("/tmp/test.txt");
 }
 
 void MainWindow::updateIm()

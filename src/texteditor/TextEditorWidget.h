@@ -38,7 +38,7 @@ private:
 	void paintScreen(QPainter *painter);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
-	QRect updateCursorRect(bool auto_scroll);
+	void updateCursorRect(bool auto_scroll);
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
@@ -46,10 +46,10 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int parseLine3(int row, int col, std::vector<Char> *vec) const;
-	int xScrollPosInPixel();
+	int calcPixelPosX(int row, int col, std::vector<Char> *vec_out) const;
+	int scrollPosInPixelX();
 public:
-	int defaultCharWidth() const;
+	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;
@@ -79,8 +79,8 @@ public:
 	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
 	void setupForLogWidget(QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 
-	QPoint mapFromPixel(const QPoint &pt);
-	QPoint mapToPixel(const QPoint &pt);
+	RowCol mapFromPixel(const QPoint &pt);
+	QPoint mapToPixel(const RowCol &pt);
 
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;
@@ -103,6 +103,14 @@ signals:
 	void idle();
 protected:
 	void timerEvent(QTimerEvent *) override;
+
+	// AbstractCharacterBasedApplication interface
+public:
+	void moveCursorDown();
+
+	// AbstractCharacterBasedApplication interface
+protected:
+	void setCursorCol(int col);
 };
 
 
