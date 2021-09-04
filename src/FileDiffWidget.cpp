@@ -53,8 +53,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	}, global->theme);
 
 	connect(ui->widget_diff_slider, &FileDiffSliderWidget::valueChanged, this, &FileDiffWidget::scrollTo);
-	connect(ui->widget_diff_left->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
-	connect(ui->widget_diff_right->texteditor(), &TextEditorWidget::moved, this, &FileDiffWidget::onMoved);
+	connect(ui->widget_diff_left->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
+	connect(ui->widget_diff_right->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
 
 	setFocusAcceptable(Qt::ClickFocus);
 	QWidget::setTabOrder(ui->widget_diff_slider, ui->widget_diff_left);

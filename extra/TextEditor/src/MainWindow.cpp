@@ -32,27 +32,26 @@ MainWindow::MainWindow(QWidget *parent)
 	setWindowFlags(flags);
 	m->need_to_layout = true;
 
-	ui->widget->setTheme(TextEditorTheme::Dark());
+	texteditor()->setTheme(TextEditorTheme::Dark());
 
-//	setFont(ui->widget->font());
+//	setFont(texteditor()->font());
 
 	m->engine = TextEditorEnginePtr(new TextEditorEngine);
-	ui->widget->setTextEditorEngine(m->engine);
+	texteditor()->setTextEditorEngine(m->engine);
 
 	if (1) {
-		ui->widget->setNormalTextEditorMode(true);
+		texteditor()->setNormalTextEditorMode(true);
 	} else {
-		ui->widget->setTerminalMode(true);
+		texteditor()->setTerminalMode(true);
 	}
 
-	ui->widget->bindScrollBar(ui->verticalScrollBar, ui->horizontalScrollBar);
-//	ui->widget->setReadOnly(true);
+//	texteditor()->setReadOnly(true);
 
-//	ui->widget->setRenderingMode(TextEditorWidget::CharacterMode);
+//	texteditor()->setRenderingMode(TextEditorView::CharacterMode);
 
-	ui->widget->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
+	texteditor()->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
-	ui->widget->loadExampleFile();
+	texteditor()->loadExampleFile();
 
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }
@@ -63,11 +62,16 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
+TextEditorView *MainWindow::texteditor()
+{
+	return ui->widget->view();
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *e)
 {
-	ui->widget->write(e);
+	texteditor()->write(e);
 
-	if (ui->widget->state() == TextEditorWidget::State::Exit) {
+	if (texteditor()->state() == TextEditorView::State::Exit) {
 		close();
 	}
 }
@@ -78,8 +82,8 @@ bool MainWindow::event(QEvent *e)
 	if (e->type() == QEvent::WindowActivate) {
 		if (m->need_to_layout) {
 			m->need_to_layout = false;
-			int w = ui->widget->basisCharWidth() * ui->widget->screenWidth();
-			int h = ui->widget->lineHeight() * ui->widget->screenHeight();
+			int w = texteditor()->basisCharWidth() * texteditor()->screenWidth();
+			int h = texteditor()->lineHeight() * texteditor()->screenHeight();
 			int sb = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
 			w += sb;
 			h += sb;
@@ -102,32 +106,32 @@ Document *MainWindow::document()
 
 void MainWindow::upArrow()
 {
-	ui->widget->moveCursorUp();
+	texteditor()->moveCursorUp();
 }
 
 void MainWindow::downArrow()
 {
-	ui->widget->moveCursorDown();
+	texteditor()->moveCursorDown();
 }
 
 void MainWindow::leftArrow()
 {
-	ui->widget->moveCursorLeft();
+	texteditor()->moveCursorLeft();
 }
 
 void MainWindow::rightArrow()
 {
-	ui->widget->moveCursorRight();
+	texteditor()->moveCursorRight();
 }
 
 void MainWindow::on_verticalScrollBar_valueChanged(int /*value*/)
 {
-	ui->widget->refrectScrollBar();
+	texteditor()->refrectScrollBar();
 }
 
 void MainWindow::on_horizontalScrollBar_valueChanged(int /*value*/)
 {
-	ui->widget->refrectScrollBar();
+	texteditor()->refrectScrollBar();
 }
 
 void MainWindow::on_action_file_open_triggered()
@@ -145,13 +149,13 @@ void MainWindow::on_action_file_open_triggered()
 			s.beginGroup("File");
 			s.setValue("LastUsedFile", path);
 		}
-		ui->widget->openFile(path);
+		texteditor()->openFile(path);
 	}
 }
 
 void MainWindow::on_action_file_save_triggered()
 {
-	ui->widget->saveFile("/tmp/test.txt");
+	texteditor()->saveFile("/tmp/test.txt");
 }
 
 void MainWindow::updateIm()
@@ -169,6 +173,6 @@ void MainWindow::moveEvent(QMoveEvent *)
 void MainWindow::on_action_test_triggered()
 {
 	std::string cmd = "\x1b[36mHello, \x1b[34mworld\n";
-	ui->widget->write(cmd);
+	texteditor()->write(cmd);
 
 }

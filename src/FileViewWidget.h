@@ -67,7 +67,7 @@ public:
 	void refrectScrollBar();
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
-	TextEditorWidget *texteditor();
+	TextEditorView *texteditor();
 	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 };
 

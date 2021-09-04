@@ -26,6 +26,7 @@ SOURCES += \
 	../../src/common/misc.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \
+	../../src/texteditor/TextEditorView.cpp \
 	../../src/texteditor/TextEditorWidget.cpp \
 	../../src/texteditor/UnicodeWidth.cpp \
 	../../src/texteditor/unicode.cpp \
@@ -39,6 +40,7 @@ HEADERS  += \
 	../../src/common/misc.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
 	../../src/texteditor/TextEditorTheme.h \
+	../../src/texteditor/TextEditorView.h \
 	../../src/texteditor/TextEditorWidget.h \
 	../../src/texteditor/UnicodeWidth.h \
 	../../src/texteditor/unicode.h \
