@@ -621,13 +621,8 @@ int TextEditorView::scrollPosX() const
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-//	int x = cx()->current_col_x;
 	const int y = cx()->current_row_y;
-
-	int x = calcPixelPosX(currentRow(), currentCol(), true, nullptr); // 行と桁位置から水平座標を求める
-	 // 原点とスクロール位置に応じてずらす
-//	x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
-
+	const int x = calcPixelPosX(currentRow(), currentCol(), true, nullptr); // 行と桁位置から水平座標を求める
 	const int lineheight = lineHeight();
 	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
     pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
