@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>907</width>
-    <height>465</height>
+    <height>624</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,7 +39,6 @@
     <widget class="QLabel" name="label_warning">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -81,33 +80,40 @@
      <property name="checked">
       <bool>true</bool>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Name</string>
-        </property>
-       </widget>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEdit_remote_name"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>URL</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="RepositoryLineEdit" name="lineEdit_remote_url"/>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="pushButton_test_repo">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="lineEdit_remote_name"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>URL</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="RepositoryLineEdit" name="lineEdit_remote_url"/>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="pushButton_test_repo">
-        <property name="text">
-         <string>Test</string>
-        </property>
-       </widget>
+      <item>
+       <widget class="RemoteAdvancedOptionWidget" name="widget_ssh_override" native="true"/>
       </item>
      </layout>
     </widget>
@@ -168,6 +174,12 @@
    <class>DirectoryLineEdit</class>
    <extends>QLineEdit</extends>
    <header>DirectoryLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>RemoteAdvancedOptionWidget</class>
+   <extends>QWidget</extends>
+   <header>RemoteAdvancedOptionWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

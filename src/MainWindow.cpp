@@ -1745,12 +1745,15 @@ void MainWindow::createRepository(const QString &dir)
                     }
                     QString remote_name = dlg.remoteName();
                     QString remote_url = dlg.remoteURL();
-                    if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
+					QString ssh_key = dlg.overridedSshKey();
+					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
                         Git::Remote r;
                         r.name = remote_name;
                         r.url = remote_url;
+						r.ssh_key = ssh_key;
                         g->addRemoteURL(r);
-                    }
+						changeSshKey(path, ssh_key);
+					}
                 }
             }
         } else {

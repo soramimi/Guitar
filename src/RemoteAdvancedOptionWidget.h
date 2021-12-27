@@ -10,7 +10,9 @@ class RemoteAdvancedOptionWidget;
 class RemoteAdvancedOptionWidget : public QWidget
 {
 	Q_OBJECT
-
+private:
+	Ui::RemoteAdvancedOptionWidget *ui;
+	void updateInformation();
 public:
 	explicit RemoteAdvancedOptionWidget(QWidget *parent = nullptr);
 	~RemoteAdvancedOptionWidget();
@@ -21,8 +23,7 @@ public:
 private slots:
 	void on_pushButton_browse_ssh_key_clicked();
 	void on_pushButton_clear_ssh_key_clicked();
-private:
-	Ui::RemoteAdvancedOptionWidget *ui;
+	void on_lineEdit_ssh_key_textChanged(const QString &arg1);
 };
 
 #endif // REMOTEADVANCEDOPTIONWIDGET_H
