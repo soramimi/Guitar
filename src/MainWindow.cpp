@@ -1504,7 +1504,7 @@ void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
     commit(frame, true);
 }
 
-void MainWindow::pushSetUpstream(const QString &remote, const QString &branch)
+void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force)
 {
     if (remote.isEmpty()) return;
     if (branch.isEmpty()) return;
@@ -1513,7 +1513,7 @@ void MainWindow::pushSetUpstream(const QString &remote, const QString &branch)
     QString errormsg;
 
     reopenRepository(true, [&](GitPtr g){
-        g->push_u(remote, branch, getPtyProcess());
+		g->push_u(set_upstream, remote, branch, force, getPtyProcess());
         while (1) {
             if (getPtyProcess()->wait(1)) break;
             QApplication::processEvents();
@@ -1559,9 +1559,11 @@ bool MainWindow::pushSetUpstream(bool testonly)
         if (a == PushDialog::PushSimple) {
             push();
         } else if (a == PushDialog::PushSetUpstream) {
+			bool set_upstream = dlg.isSetUpStream();
             QString remote = dlg.remote();
             QString branch = dlg.branch();
-            pushSetUpstream(remote, branch);
+			bool force = dlg.isForce();
+			pushSetUpstream(set_upstream, remote, branch, force);
         }
         return true;
     }
@@ -5719,7 +5721,7 @@ void MainWindow::deleteRemoteBranch(RepositoryWrapperFrame *frame, const Git::Co
             if (i > 0) {
                 QString remote = name.mid(0, i);
                 QString branch = ':' + name.mid(i + 1);
-                pushSetUpstream(remote, branch);
+				pushSetUpstream(true, remote, branch, false);
             }
         }
     }

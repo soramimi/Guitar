@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>581</height>
+    <width>847</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -416,7 +416,6 @@
             <property name="font">
              <font>
               <pointsize>14</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1050,8 +1049,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>816</width>
-     <height>25</height>
+     <width>847</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1518,6 +1517,9 @@
   </action>
   <action name="action_push_u">
    <property name="text">
+    <string>Push upstream...</string>
+   </property>
+   <property name="toolTip">
     <string>Push upstream</string>
    </property>
   </action>
@@ -1754,6 +1756,11 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
+  </customwidget>
+  <customwidget>
    <class>FileDiffWidget</class>
    <extends>QWidget</extends>
    <header>FileDiffWidget.h</header>
@@ -1779,11 +1786,6 @@
    <extends>QFrame</extends>
    <header>RepositoryWrapperFrame.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>TextEditorWidget</class>

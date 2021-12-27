@@ -928,13 +928,20 @@ bool Git::revert(QString const &id)
 	return git(cmd);
 }
 
-void Git::push_u(QString const &remote, QString const &branch, AbstractPtyProcess *pty)
+void Git::push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
 {
 	if (remote.indexOf('\"') >= 0 || branch.indexOf('\"') >= 0) {
 		return;
 	}
-	QString cmd = "push -u \"%1\" \"%2\"";
-	git(cmd.arg(remote).arg(branch), true, false, pty);
+	QString cmd = "push";
+	if (force) {
+		cmd += " --force";
+	}
+	if (set_upstream && !remote.isEmpty() && !branch.isEmpty()) {
+		cmd += " -u \"%1\" \"%2\"";
+		cmd = cmd.arg(remote).arg(branch);
+	}
+	git(cmd, true, false, pty);
 }
 
 bool Git::push_(bool tags, AbstractPtyProcess *pty)

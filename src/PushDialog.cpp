@@ -24,6 +24,8 @@ PushDialog::PushDialog(QWidget *parent, QStringList const &remotes, QStringList 
 	if (!remote_branch.branch.isEmpty()) {
 		ui->comboBox_branch->setCurrentText(remote_branch.branch);
 	}
+
+	updateUI();
 }
 
 PushDialog::~PushDialog()
@@ -43,14 +45,38 @@ PushDialog::Action PushDialog::action() const
 #endif
 }
 
+bool PushDialog::isSetUpStream() const
+{
+	return ui->groupBox_set_upstream->isChecked();
+}
+
 QString PushDialog::remote() const
 {
-	return ui->comboBox_remote->currentText();
+	return isSetUpStream() ? ui->comboBox_remote->currentText() : QString();
 }
 
 QString PushDialog::branch() const
 {
-	return ui->comboBox_branch->currentText();
+	return isSetUpStream() ? ui->comboBox_branch->currentText() : QString();
+}
+
+void PushDialog::updateUI()
+{
+	bool ok = true;
+	if (ui->checkBox_force->isChecked()) {
+		ui->checkBox_really_force->setVisible(true);
+		if (!ui->checkBox_really_force->isChecked()) {
+			ok = false;
+		}
+	} else {
+		ui->checkBox_really_force->setVisible(false);
+	}
+	ui->pushButton_ok->setEnabled(ok);
+}
+
+bool PushDialog::isForce() const
+{
+	return ui->checkBox_force->isChecked() && ui->checkBox_really_force->isChecked();
 }
 
 #if 0
@@ -64,3 +90,15 @@ void PushDialog::on_radioButton_push_set_upstream_clicked()
 	ui->frame_set_upstream->setEnabled(true);
 }
 #endif
+
+void PushDialog::on_checkBox_force_clicked()
+{
+	updateUI();
+}
+
+
+void PushDialog::on_checkBox_really_force_clicked()
+{
+	updateUI();
+}
+

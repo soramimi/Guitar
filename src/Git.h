@@ -466,7 +466,7 @@ public:
 	bool reset_head1();
 	bool reset_hard();
 	bool clean_df();
-	void push_u(QString const &remote, QString const &branch, AbstractPtyProcess *pty);
+	void push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
 	QString objectType(QString const &id);
 	bool rm_cached(QString const &file);
 	void cherrypick(QString const &name);

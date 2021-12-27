@@ -11,6 +11,7 @@ class PushDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::PushDialog *ui;
+	void updateUI();
 public:
 	struct RemoteBranch {
 		QString remote;
@@ -32,8 +33,13 @@ public:
 	};
 
 	Action action() const;
+	bool isSetUpStream() const;
 	QString remote() const;
 	QString branch() const;
+	bool isForce() const;
+private slots:
+	void on_checkBox_force_clicked();
+	void on_checkBox_really_force_clicked();
 };
 
 #endif // PUSHDIALOG_H
