@@ -460,6 +460,9 @@ public:
 	int content_length = -1;
 	bool connection_keep_alive = false;
 	bool connection_close = false;
+	struct {
+		bool chunked = false;
+	} internal;
 	int lf = 0;
 	enum State {
 		Header,
@@ -486,6 +489,38 @@ public:
 							} else if (stristr(p, "close")) {
 								connection_close = true;
 							}
+						} else if (IS("transfer-encoding")) {
+							std::vector<std::string> vec;
+							auto SPLIT = [](char const *str, char sep, std::vector<std::string> *out){
+								out->clear();
+								char const *begin = str;
+								char const *end = begin + strlen(str);
+								char const *ptr = begin;
+								char const *left = ptr;
+								while (1) {
+									char c = 0;
+									if (ptr < end) {
+										c = *ptr;
+									}
+									if (c == sep || c == 0) {
+										if (left < ptr) {
+											char const *l = left;
+											char const *r = ptr;
+											while (l < r && isspace((unsigned char)*l)) l++;
+											while (l < r && isspace((unsigned char)r[-1])) r--;
+											out->emplace_back(l, r);
+										}
+										if (c == 0) break;
+										ptr++;
+										left = ptr;
+									} else {
+										ptr++;
+									}
+								}
+							};
+							SPLIT(p, ',', &vec);
+							auto it = std::find(vec.begin(), vec.end(), "chunked");
+							internal.chunked = it != vec.end();
 						}
 					}
 					line.clear();
@@ -507,15 +542,14 @@ public:
 	}
 };
 
-void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int)> const &rcv, std::vector<char> *out)
+void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int)> const &rcv, ResponseHeader *rh, std::vector<char> *out)
 {
 	char buf[4096];
 	size_t pos = 0;
-	ResponseHeader rh;
 	while (1) {
 		int n;
-		if (rh.state == ResponseHeader::Content && rh.content_length >= 0) {
-			n = rh.pos + rh.content_length - pos;
+		if (rh->state == ResponseHeader::Content && rh->content_length >= 0) {
+			n = rh->pos + rh->content_length - pos;
 			if (n > (int)sizeof(buf)) {
 				n = sizeof(buf);
 			}
@@ -525,16 +559,13 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 		}
 		n = rcv(buf, n);
 		if (n < 1) break;
-		if (0) { // debug
-			fwrite(buf, 1, n, stderr);
-		}
 		append(buf, n, out, opt.handler);
 		pos += n;
-		if (rh.state == ResponseHeader::Header) {
+		if (rh->state == ResponseHeader::Header) {
 			for (int i = 0; i < n; i++) {
-				rh.put(buf[i]);
-				if (rh.state == ResponseHeader::Content) {
-					m->keep_alive = rh.connection_keep_alive && !rh.connection_close;
+				rh->put(buf[i]);
+				if (rh->state == ResponseHeader::Content) {
+					m->keep_alive = rh->connection_keep_alive && !rh->connection_close;
 					break;
 				}
 			}
@@ -542,7 +573,7 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	}
 }
 
-bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, std::vector<char> *out)
+bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 	clear_error();
 	out->clear();
@@ -592,7 +623,6 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 
 	std::string req = make_http_request(request, post, proxy, false);
 
-//	fprintf(stderr, "%s", req.c_str());
 	send_(m->sock, req.c_str(), (int)req.size());
 	if (post && !post->data.empty()) {
 		send_(m->sock, (char const *)&post->data[0], (int)post->data.size());
@@ -603,14 +633,14 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 
 	receive_(opt, [&](char *ptr, int len){
 		return recv(m->sock, ptr, len, 0);
-	}, out);
+	}, rh, out);
 
 	if (!m->keep_alive) close();
 
 	return true;
 }
 
-bool WebClient::https_get(Request const &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out)
+bool WebClient::https_get(Request const &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 #if USE_OPENSSL
 
@@ -822,13 +852,46 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 
 	receive_(opt, [&](char *ptr, int len){
 		return SSL_read(ssl, ptr, len);
-	}, out);
+	}, rh, out);
 
 	m->sock = sock;
 	m->ssl = ssl;
 	if (!m->keep_alive) close();
 	return true;
 #endif
+	return false;
+}
+
+bool decode_chunked(char const *ptr, char const *end, std::vector<char> *out)
+{
+	out->clear();
+	int length = 0;
+	while (ptr < end) {
+		if (isxdigit((unsigned char)*ptr)) {
+			if (*ptr == '0' && length == 0) {
+				if (ptr + 2 < end && ptr[1] == '\r' && ptr[2] == '\n') {
+					return true; // normal exit
+				}
+				return false;
+			}
+			length *= 16;
+			if (isdigit(*ptr)) {
+				length += *ptr - '0';
+			} else {
+				length += toupper(*ptr) - 'A' + 10;
+			}
+			ptr++;
+		} else {
+			if (ptr + length + 4 < end && ptr[0] == '\r' && ptr[1] == '\n' && ptr[length + 2] == '\r' && ptr[length + 3] == '\n') {
+				ptr += 2;
+				out->insert(out->end(), ptr, ptr + length);
+				ptr += length + 2;
+			} else {
+				return false;
+			}
+			length = 0;
+		}
+	}
 	return false;
 }
 
@@ -842,20 +905,28 @@ bool WebClient::get(Request const &req, Post const *post, Response *out, WebClie
 		RequestOption opt;
 		opt.keep_alive = m->webcx->m->use_keep_alive;
 		opt.handler = handler;
+		ResponseHeader rh;
 		std::vector<char> res;
 		if (req.url.isssl()) {
 #if USE_OPENSSL
-			https_get(req, post, opt, &res);
+			https_get(req, post, opt, &rh, &res);
 #endif
 		} else {
-			http_get(req, post, opt, &res);
+			http_get(req, post, opt, &rh, &res);
 		}
 		if (!res.empty()) {
 			char const *begin = &res[0];
 			char const *end = begin + res.size();
 			char const *ptr = begin + m->content_offset;
 			if (ptr < end) {
-				out->content.assign(ptr, end);
+				if (rh.internal.chunked) {
+					if (!decode_chunked(ptr, end, &out->content)) {
+						out->content.clear();
+						return false;
+					}
+				} else {
+					out->content.assign(ptr, end);
+				}
 			}
 		}
 		return true;
