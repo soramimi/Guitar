@@ -59,17 +59,25 @@ bool GitPackIdxV2::parse(QIODevice *in)
 		d.objects.resize(size);
 		d.checksums.resize(size);
 		d.offsets.resize(size);
-		if (!Read(&d.objects[0], size * 20))       throw QString("failed to read the objects");
-		if (!Read(&d.checksums[0], size4))         throw QString("failed to read the checksums");
-		if (!Read(&d.offsets[0], size4))           throw QString("failed to read the offsets");
-		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 
 		QCryptographicHash sha1(QCryptographicHash::Sha1);
-        sha1.addData((char const *)&d.header, sizeof(d.header));
-        sha1.addData((char const *)&d.objects[0], int(size * 20));
-		sha1.addData((char const *)&d.checksums[0], size4);
-		sha1.addData((char const *)&d.offsets[0], size4);
+		sha1.addData((char const *)&d.header, sizeof(d.header));
+		if (!Read(d.objects.data(), size * 20))       throw QString("failed to read the objects");
+		sha1.addData((char const *)d.objects.data(), int(size * 20));
+		if (!Read(d.checksums.data(), size4))         throw QString("failed to read the checksums");
+		sha1.addData((char const *)d.checksums.data(), size4);
+		if (!Read(d.offsets.data(), size4))           throw QString("failed to read the offset_values");
+		sha1.addData((char const *)d.offsets.data(), size4);
+		for (size_t i = 0; i < d.offsets.size(); i++) {
+			if (d.offsets[i] & 0x80) { // MSB in network byte order
+				uint64_t t;
+				if (!Read(&t, sizeof(uint64_t))) throw QString("failed to read the offset_entrie");
+				sha1.addData((char const *)&t, sizeof(uint64_t));
+			}
+		}
+		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 		sha1.addData((char const *)&d.trailer.packfile_checksum, sizeof(d.trailer) - 20);
+
 		QByteArray chksum = sha1.result();
 		Q_ASSERT(chksum.size() == 20);
 		if (memcmp(chksum.data(), d.trailer.idxfile_checksum, 20) != 0) {
