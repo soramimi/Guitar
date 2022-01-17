@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>847</width>
+    <width>885</width>
     <height>642</height>
    </rect>
   </property>
@@ -416,6 +416,7 @@
             <property name="font">
              <font>
               <pointsize>14</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1049,8 +1050,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>847</width>
-     <height>31</height>
+     <width>885</width>
+     <height>35</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1091,6 +1092,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="action_about"/>
+    <addaction name="action_create_desktop_launcher_file"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -1750,6 +1752,11 @@
   <action name="action_submodule_update">
    <property name="text">
     <string>Submodule update...</string>
+   </property>
+  </action>
+  <action name="action_create_desktop_launcher_file">
+   <property name="text">
+    <string>Create desktop launcher file...</string>
    </property>
   </action>
  </widget>

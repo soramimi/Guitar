@@ -6151,8 +6151,60 @@ void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
     updateCommitLogTableLater(frame.pointer, 100); // コミットログを更新（100ms後）
 }
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
+void MainWindow::on_action_create_desktop_launcher_file_triggered()
+{
+#ifdef Q_OS_UNIX
+	QString exec = QApplication::applicationFilePath();
+
+	QString home = QDir::home().absolutePath();
+	QString icon_dir = home / ".local/share/icons/jp.soramimi/";
+	QString launcher_dir = home / ".local/share/applications/";
+
+	QString name = "jp.soramimi.Guitar";
+
+	QString iconfile;
+	QFile src(":/image/Guitar.svg");
+	if (src.open(QFile::ReadOnly)) {
+		QByteArray ba = src.readAll();
+		src.close();
+		QDir d;
+		d.mkpath(icon_dir);
+		iconfile = icon_dir / name + ".svg";
+		QFile dst(iconfile);
+		if (dst.open(QFile::WriteOnly)) {
+			dst.write(ba);
+			dst.close();
+
+			d.mkpath(launcher_dir);
+			QString launcher_path = launcher_dir / name + ".desktop";
+			QFile out(launcher_path);
+			if (out.open(QFile::WriteOnly)) {
+QString data = R"---([Desktop Entry]
+Type=Application
+Name=Guitar
+Categories=Development
+Exec=%1
+Icon=%2
+Terminal=false
+)---";
+				data = data.arg(exec).arg(iconfile);
+				std::string s = data.toStdString();
+				out.write(s.c_str(), s.size());
+				out.close();
+				std::string path = launcher_path.toStdString();
+				chmod(path.c_str(), 0755);
+			}
+		}
+	}
+#endif
+}
+
 void MainWindow::test()
 {
 }
+
 
 

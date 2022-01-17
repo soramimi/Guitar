@@ -550,6 +550,8 @@ private slots:
 	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void test();
 	void onInterval10ms();
+	void on_action_create_desktop_launcher_file_triggered();
+
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len);
