@@ -125,7 +125,8 @@ int main(int argc, char *argv[])
 		s.endGroup();
 	}
 
-	QApplication::setStyle(global->theme->newStyle());
+	a.setStyle(global->theme->newStyle());
+	a.setPalette(a.style()->standardPalette());
 
 	if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
 		global->start_with_shift_key = true;
