@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QDockWidget>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QPainterPath>
