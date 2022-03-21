@@ -46,9 +46,10 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int calcPixelPosX(int row, int col, bool adjust_scroll, bool pixel, std::vector<Char> *vec_out) const;
+	int calcPixelPosX(int row, int col, bool adjust_scroll, bool proportional, std::vector<Char> *vec_out) const;
 	int scrollPosX() const;
-	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, bool pixel, std::vector<Char> *vec_out) const;
+	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, bool proportional, std::vector<Char> *vec_out) const;
+	int view_y_from_row(int row);
 public:
 	int basisCharWidth() const;
 protected:
@@ -61,6 +62,10 @@ protected:
 	void contextMenuEvent(QContextMenuEvent *event) override;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
+protected:
+	void timerEvent(QTimerEvent *) override;
+	void setCursorCol(int col);
+	void setCursorRow(int row, bool auto_scroll, bool by_mouse);
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -98,24 +103,12 @@ public:
 	int scroll_unit_ = ScrollByCharacter;
 	void setScrollUnit(int n);
 	int scrollUnit() const;
+
+	void moveCursorDown();
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
 	void idle();
-protected:
-	void timerEvent(QTimerEvent *) override;
-
-	// AbstractCharacterBasedApplication interface
-public:
-	void moveCursorDown();
-
-	// AbstractCharacterBasedApplication interface
-protected:
-	void setCursorCol(int col);
-
-	// AbstractCharacterBasedApplication interface
-protected:
-	void setCursorRow(int row, bool auto_scroll, bool by_mouse);
 };
 
 

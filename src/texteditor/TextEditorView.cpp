@@ -183,8 +183,8 @@ void TextEditorView::setTextFont(QFont const &font)
 
 void TextEditorView::setRenderingMode(RenderingMode mode)
 {
-	rendering_mode = mode;
-	if (rendering_mode == DecoratedMode) {
+	rendering_mode_ = mode;
+	if (renderingMode() == DecoratedMode) {
 		showLineNumber(false);
 	} else {
 		showLineNumber(true);
@@ -263,7 +263,7 @@ public:
  * @param vec_out 文字配列(nullptr可)
  * @return
  */
-int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, bool pixel, std::vector<Char> *vec_out) const
+int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, bool proportional, std::vector<Char> *vec_out) const
 {
 	int x = 0;
 	int chrs = 0;
@@ -283,7 +283,7 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, boo
 			tmp[0] = u;
 			tmp[1] = 0;
 		}
-		if (pixel) {
+		if (proportional) {
 			s += QString::fromUtf16(tmp);
 			int t = fm.size(0, s).width();
 			t += t & 1;
@@ -292,6 +292,7 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, boo
 			chrs += charWidth(u);
 			x = basisCharWidth() * chrs;
 		}
+		vec_out->at(i).size = x - vec_out->at(i).pos;
 	}
 
 	if (vec_out->empty()) {
@@ -301,11 +302,11 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, boo
 	}
 	return x;
 }
-int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, bool pixel, std::vector<Char> *vec_out) const
+int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, bool proportional, std::vector<Char> *vec_out) const
 {
 	if (!vec_out) {
 		std::vector<Char> tmp;
-		return calcPixelPosX(row, col, adjust_scroll, true, &tmp);
+		return calcPixelPosX(row, col, adjust_scroll, proportional, &tmp);
 	}
 
 	parseLine(row, vec_out);
@@ -313,7 +314,7 @@ int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, bool pix
 	QPainter pr(&pm);
 	pr.setFont(m->text_font);
 
-	int x = calcPixelPosX2(pr.fontMetrics(), row, col, pixel, vec_out);
+	int x = calcPixelPosX2(pr.fontMetrics(), row, col, proportional, vec_out);
 
 	if (adjust_scroll) { // 原点とスクロール位置に応じてずらす
 		x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
@@ -329,10 +330,15 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 	const int w = basisCharWidth(); // 基準文字幅
 	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
 	std::vector<Char> vec;
-	int end = calcPixelPosX(row, -1, false, true, &vec);
+	calcPixelPosX(row, -1, false, true, &vec);
+	size_t end = vec.size();
+	while (end > 0) {
+		if (charWidth(vec[end - 1].unicode) != 0) break;
+		end--;
+	}
 	int left = 0;
-	for (size_t col = 0; col < vec.size(); col++) {
-		int right = int((col + 1 < vec.size()) ? vec[col + 1].pos : (size_t)end);
+	for (size_t col = 0; col < end; col++) {
+		int right = vec[col].pos + vec[col].size;
 		if (x < right) {
 			int l = left - x;
 			int r = right - x;
@@ -363,6 +369,8 @@ QPoint TextEditorView::mapToPixel(RowCol const &pt)
 void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 {
 	AbstractCharacterBasedApplication::setCursorRow(row, auto_scroll, by_mouse);
+	auto *chrs = parseCurrentLine(nullptr, 0, true);
+	calcPixelPosX(row, -1, false, false, chrs);
 
 	// ピクセル座標を更新
 	cx()->current_row_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
@@ -370,7 +378,37 @@ void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 	// ピクセル座標から桁位置を再計算する（プロポーショナルフォント対応）
 	int x = cx()->current_col_x;
 	int y = cx()->current_row_y;
-	auto cr = mapFromPixel(QPoint(x, y)); // ピクセル座標から行と桁を求める
+
+	auto MapFromPixel = [&](QPoint const &pt){
+		const int y = pt.y() / lineHeight();
+		const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
+		const int w = basisCharWidth(); // 基準文字幅
+		const int x = pt.x() + scrollPosX() - cx()->viewport_org_x * w;
+		std::vector<Char> const &vec = *chrs;
+		size_t end = vec.size();
+		while (end > 0) {
+			if (charWidth(vec[end - 1].unicode) != 0) break;
+			end--;
+		}
+		int left = 0;
+		for (size_t col = 0; col < end; col++) {
+			int right = vec[col].pos + vec[col].size;
+			if (x < right) {
+				int l = left - x;
+				int r = right - x;
+				if (l * l < r * r) {
+					return RowCol(row, (int)col);
+				} else {
+					return RowCol(row, (int)col + 1);
+				}
+			}
+			left = right;
+		}
+		return RowCol(row, end);
+	};
+
+	auto cr = MapFromPixel(QPoint(x, y)); // ピクセル座標から行と桁を求める
+
 	setCurrentCol(cr.col); // 桁位置
 }
 
@@ -383,7 +421,9 @@ void TextEditorView::setCursorCol(int col)
 	AbstractCharacterBasedApplication::setCursorCol(col);
 
 	// 水平ピクセル座標を更新
-	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, true, nullptr); // 行と桁位置から水平座標を求める
+//	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, true, nullptr); // 行と桁位置から水平座標を求める
+	auto *chrs = parseCurrentLine(nullptr, 0, true);
+	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, false, chrs);
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -660,15 +700,22 @@ int TextEditorView::scrollPosX() const
 	return n;
 }
 
+int TextEditorView::view_y_from_row(int row)
+{
+	return (editor_cx->viewport_org_y + row - editor_cx->scroll_row_pos) * lineHeight();
+}
+
 /**
  * @brief カーソルを描画
  * @param pr
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	const int y = cx()->current_row_y;
-	const int x = calcPixelPosX(currentRow(), currentCol(), true, false, nullptr); // 行と桁位置から水平座標を求める
 	const int lineheight = lineHeight();
+	const int row = currentRow();
+	const int col = currentCol();
+	const int y = view_y_from_row(row);
+	const int x = calcPixelPosX(row, col, true, false, nullptr); // 行と桁位置から水平座標を求める
 	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
 	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
 	pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
@@ -689,8 +736,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	// diff mode
 	if (renderingMode() == DecoratedMode) {
 		auto FillRowBackground = [&](int row, QColor const &color){
-			int y = editor_cx->viewport_org_y + row - editor_cx->scroll_row_pos;
-			y *= lineHeight();
+//			int y = editor_cx->viewport_org_y + row - editor_cx->scroll_row_pos;
+//			y *= lineHeight();
+			int y = view_y_from_row(row);
 			pr.fillRect(0, y, width(), lineHeight(), color);
 		};
 		Document const &doc = editor_cx->engine->document;

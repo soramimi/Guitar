@@ -217,7 +217,8 @@ public:
 	};
 
 	struct Char {
-		unsigned int pos = 0;
+		int pos = 0;
+		int size = 0;
 		uint32_t unicode = 0;
 		CharAttr attr;
 		Char() = default;
@@ -352,7 +353,7 @@ private:
 	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
 protected:
-	void parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
+	std::vector<Char> *parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
 	void parseLine(int row, std::vector<Char> *vec) const;
 	virtual int scrollPosX() { return 0; }
 
@@ -397,10 +398,15 @@ protected:
 	void savePos();
 	void restorePos();
 public:
-	RenderingMode rendering_mode = CharacterMode;
+	RenderingMode rendering_mode_ = CharacterMode;
+
+	void set_rendering_mode(RenderingMode m)
+	{
+		rendering_mode_ = m;
+	}
 	RenderingMode renderingMode() const
 	{
-		return rendering_mode;
+		return rendering_mode_;
 	}
 
 	virtual void layoutEditor();

@@ -96,8 +96,8 @@ struct AbstractCharacterBasedApplication::Private {
 	int parsed_row_index = -1;
 	int parsed_col_index = -1;
 	bool parsed_for_edit = false;
-	QByteArray parsed_line;
-	std::vector<AbstractCharacterBasedApplication::Char> prepared_current_line;
+	QByteArray current_line_data;
+	std::vector<AbstractCharacterBasedApplication::Char> parsed_current_line;
 	QList<Document::CharAttr_> syntax_table;
 	bool dialog_mode = false;
 	DialogHandler dialog_handler;
@@ -463,7 +463,7 @@ void AbstractCharacterBasedApplication::setCurrentCol(int col)
 void AbstractCharacterBasedApplication::fetchCurrentLine() const
 {
 	int row = currentRow();
-	m->parsed_line = fetchLine(row);
+	m->current_line_data = fetchLine(row);
 	m->parsed_row_index = row;
 }
 
@@ -471,7 +471,7 @@ void AbstractCharacterBasedApplication::clearParsedLine()
 {
 	m->parsed_row_index = -1;
 	m->parsed_for_edit = false;
-	m->parsed_line.clear();
+	m->current_line_data.clear();
 }
 
 int AbstractCharacterBasedApplication::cursorCol() const
@@ -533,6 +533,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Char> const &vec)
 	}
 	if (m->parsed_row_index == 0 && engine()->document.lines.empty()) {
 		Document::Line newline;
+		newline.type = Document::Line::Normal;
 		engine()->document.lines.push_back(newline);
 	}
 	Document::Line *line = &engine()->document.lines[m->parsed_row_index];
@@ -558,21 +559,27 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Char> const &vec)
  * @param increase_hint
  * @param force
  */
-void AbstractCharacterBasedApplication::parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force)
+std::vector<AbstractCharacterBasedApplication::Char> *AbstractCharacterBasedApplication::parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force)
 {
 	if (force) {
 		clearParsedLine();
 	}
 
+	if (!vec) {
+		vec = &m->parsed_current_line;
+	}
+
 	if (force || !m->parsed_for_edit) {
 		fetchCurrentLine();
-		m->parsed_col_index = internalParseLine(m->parsed_line, currentCol(), vec ? vec : &m->prepared_current_line, increase_hint);
+		m->parsed_col_index = internalParseLine(m->current_line_data, currentCol(), vec, increase_hint);
 		m->parsed_for_edit = true;
 	} else {
 		if (vec) {
-			*vec = m->prepared_current_line;
+			*vec = m->parsed_current_line;
 		}
 	}
+
+	return vec;
 }
 
 /**
@@ -783,6 +790,14 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 		m->valid_line_index = (int)document()->lines.size();
 		setRecentlyUsedPath(path);
 	}
+
+	if (document()->lines.empty()) {
+		Document::Line line;
+		line.type = Document::Line::Normal;
+		line.line_number = 1;
+		document()->lines.push_back(line);
+	}
+
 	scrollToTop();
 }
 
@@ -979,7 +994,6 @@ void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll, 
 	}
 
 	m->cursor_moved_by_mouse = by_mouse;
-
 }
 
 void AbstractCharacterBasedApplication::setCursorCol_(int col, bool auto_scroll, bool by_mouse)
@@ -1195,7 +1209,7 @@ void AbstractCharacterBasedApplication::doDelete()
 	}
 
 	parseCurrentLine(nullptr, 0, false);
-	std::vector<Char> *vec = &m->prepared_current_line;
+	std::vector<Char> *vec = &m->parsed_current_line;
 	int index = m->parsed_col_index;
 	int c = -1;
 	if (index >= 0 && index < (int)vec->size()) {
@@ -1331,9 +1345,9 @@ int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
 	if (column > 0) {
 		fetchCurrentLine();
 		int col = 0;
-		int len = m->parsed_line.size();
+		int len = m->current_line_data.size();
 		if (len > 0) {
-			char const *src = m->parsed_line.data();
+			char const *src = m->current_line_data.data();
 			utf8 u8(src, len);
 			while (1) {
 				uint32_t c = u8.next();
@@ -1407,7 +1421,7 @@ void AbstractCharacterBasedApplication::moveCursorOut()
 void AbstractCharacterBasedApplication::moveCursorHome()
 {
 	fetchCurrentLine();
-	QString line = m->parsed_line;
+	QString line = m->current_line_data;
 	ushort const *ptr = line.utf16();
 	ushort const *end = ptr + line.size();
 	int x = 0;
@@ -1436,7 +1450,7 @@ void AbstractCharacterBasedApplication::moveCursorHome()
 void AbstractCharacterBasedApplication::moveCursorEnd()
 {
 	fetchCurrentLine();
-	QByteArray line = m->parsed_line;
+	QByteArray line = m->current_line_data;
 	int col = calcVisualWidth(Document::Line(line));
 	setCursorCol(col);
 	clearParsedLine();
@@ -1470,7 +1484,6 @@ void AbstractCharacterBasedApplication::moveCursorUp()
 		// nop
 	} else if (currentRow() > 0) {
 		setCursorRow(currentRow() - 1); // カーソルを1行上へ
-		clearParsedLine(); // 解析済み行情報を破棄
 		updateVisibility(true, false, true);
 	}
 }
@@ -1481,7 +1494,6 @@ void AbstractCharacterBasedApplication::moveCursorDown()
 		// nop
 	} else if (currentRow() + 1 < (int)document()->lines.size()) {
 		setCursorRow(currentRow() + 1); // カーソルを1行下へ
-		clearParsedLine(); // 解析済み行情報を破棄
 		updateVisibility(true, false, true);
 	}
 }
@@ -1527,8 +1539,8 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 	int col = 0;
 	int newcol = 0;
 	int index;
-	for (index = 0; index < (int)m->prepared_current_line.size(); index++) {
-		uint32_t c = m->prepared_current_line[index].unicode;
+	for (index = 0; index < (int)m->parsed_current_line.size(); index++) {
+		uint32_t c = m->parsed_current_line[index].unicode;
 		if (c == '\r' || c == '\n') {
 			break;
 		}
@@ -1567,8 +1579,8 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	int i = 0;
 	while (1) {
 		int c = -1;
-		if (i < (int)m->prepared_current_line.size()) {
-			c = m->prepared_current_line[i].unicode;
+		if (i < (int)m->parsed_current_line.size()) {
+			c = m->parsed_current_line[i].unicode;
 		}
 		if (c == '\r' || c == '\n' || c == -1) {
 			if (!isSingleLineMode()) {
@@ -1681,7 +1693,7 @@ void AbstractCharacterBasedApplication::appendNewLine(std::vector<Char> *vec)
 {
 	if (isSingleLineMode()) return;
 
-	vec->emplace_back('\r', 0);
+//	vec->emplace_back('\r', 0);
 	vec->emplace_back('\n', 0);
 }
 
@@ -1689,7 +1701,6 @@ void AbstractCharacterBasedApplication::writeNewLine()
 {
 	if (isReadOnly()) return;
 	if (isSingleLineMode()) return;
-	if (!isCurrentLineWritable()) return;
 
 	invalidateAreaBelowTheCurrentLine();
 
@@ -1730,7 +1741,7 @@ void AbstractCharacterBasedApplication::writeNewLine()
 void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 {
 	out->clear();
-	std::vector<Char> const *line = &m->prepared_current_line;
+	std::vector<Char> const *line = &m->parsed_current_line;
 	int x = 0;
 	while (1) {
 		size_t index = out->size();
@@ -1761,7 +1772,7 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 		return;
 	}
 
-	parseCurrentLine(&m->prepared_current_line, 0, false);
+	parseCurrentLine(&m->parsed_current_line, 0, false);
 
 	int index = 0;
 	int char_span = 0;
@@ -1925,6 +1936,9 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 		memset(tmp, ' ', left_margin);
 		tmp[left_margin] = 0;
 		int row = editor_cx->scroll_row_pos + i;
+		auto PrintLineNum = [&](char *ptr, int linenum){
+			sprintf(ptr, "%*u ", left_margin - rightpadding, linenum);
+		};
 		Document::Line *line = nullptr;
 		if (row < (int)editor_cx->engine->document.lines.size()) {
 			if (m->valid_line_index < 0) {
@@ -1937,12 +1951,11 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 					num++;
 				}
 			}
-			line = &Line(row);
 			if (row >= m->valid_line_index) {
 				{
-					Document::Line const &line = Line(m->valid_line_index);
-					offset = line.byte_offset;
-					num = line.line_number;
+					Document::Line const &line2 = Line(m->valid_line_index);
+					offset = line2.byte_offset;
+					num = line2.line_number;
 				}
 				while (m->valid_line_index <= row) {
 					Document::Line const &line = Line(m->valid_line_index);
@@ -1959,6 +1972,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 				}
 			}
 			if (left_margin > 1) {
+				line = &Line(row);
 				unsigned int linenum = -1;
 				if (row < m->valid_line_index) {
 #if 1
@@ -1968,9 +1982,11 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 #endif
 				}
 				if (linenum != (unsigned int)-1 && line->type != Document::Line::Unknown) {
-					sprintf(tmp, "%*u ", left_margin - rightpadding, linenum);
+					PrintLineNum(tmp, linenum);
 				}
 			}
+		} else if (row == 0 && editor_cx->engine->document.lines.empty()) {
+			PrintLineNum(tmp, 1);
 		}
 		int y = editor_cx->viewport_org_y + i;
 		draw(y, tmp, line);
@@ -2199,7 +2215,7 @@ bool AbstractCharacterBasedApplication::isTerminalMode() const
 bool AbstractCharacterBasedApplication::isBottom() const
 {
 	if (currentRow() == m->parsed_row_index) {
-		if (m->parsed_col_index == (int)m->prepared_current_line.size()) {
+		if (m->parsed_col_index == (int)m->parsed_current_line.size()) {
 			return true;
 		}
 	}
@@ -2232,7 +2248,7 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 		setCurrentRow(currentRow() - 1);
 		clearParsedLine();
 		fetchCurrentLine();
-		int col = calcVisualWidth(Document::Line(m->parsed_line));
+		int col = calcVisualWidth(Document::Line(m->current_line_data));
 		setCurrentCol(col);
 		cx()->current_col_hint = col;
 	}
@@ -2323,7 +2339,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 		index = 0;
 	}
 
-	std::vector<Char> *vec = &m->prepared_current_line;
+	std::vector<Char> *vec = &m->parsed_current_line;
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
