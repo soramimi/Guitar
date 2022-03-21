@@ -10,6 +10,7 @@
 #include <QFileDialog>
 #include <QTimer>
 #include <QStyle>
+#include <memory>
 
 
 struct MainWindow::Private {
@@ -26,17 +27,17 @@ MainWindow::MainWindow(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	auto flags = windowFlags();
-	flags &= ~Qt::WindowMaximizeButtonHint;
-	flags |= Qt::MSWindowsFixedSizeDialogHint;
-	setWindowFlags(flags);
+//	auto flags = windowFlags();
+//	flags &= ~Qt::WindowMaximizeButtonHint;
+//	flags |= Qt::MSWindowsFixedSizeDialogHint;
+//	setWindowFlags(flags);
 	m->need_to_layout = true;
 
 	texteditor()->setTheme(TextEditorTheme::Dark());
 
 //	setFont(texteditor()->font());
 
-	m->engine = TextEditorEnginePtr(new TextEditorEngine);
+	m->engine = std::make_shared<TextEditorEngine>();
 	texteditor()->setTextEditorEngine(m->engine);
 
 	if (1) {
@@ -88,7 +89,7 @@ bool MainWindow::event(QEvent *e)
 			w += sb;
 			h += sb;
 			h += ui->menuBar->height();
-			setFixedSize(w, h);
+//			setFixedSize(w, h);
 		}
 	}
 	return r;

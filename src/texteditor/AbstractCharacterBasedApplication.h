@@ -219,6 +219,7 @@ public:
 	struct Char {
 		unsigned int pos = 0;
 		uint32_t unicode = 0;
+		CharAttr attr;
 		Char() = default;
 		Char(uint32_t unicode, unsigned int pos)
 			: unicode(unicode)

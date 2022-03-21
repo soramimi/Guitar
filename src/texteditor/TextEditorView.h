@@ -46,8 +46,9 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const;
+	int calcPixelPosX(int row, int col, bool adjust_scroll, bool pixel, std::vector<Char> *vec_out) const;
 	int scrollPosX() const;
+	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, bool pixel, std::vector<Char> *vec_out) const;
 public:
 	int basisCharWidth() const;
 protected:
