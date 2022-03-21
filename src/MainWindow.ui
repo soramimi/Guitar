@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>581</height>
+    <width>885</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1050,8 +1050,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>816</width>
-     <height>23</height>
+     <width>885</width>
+     <height>35</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1092,6 +1092,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="action_about"/>
+    <addaction name="action_create_desktop_launcher_file"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -1497,6 +1498,9 @@
   </action>
   <action name="action_push_u">
    <property name="text">
+    <string>Push upstream...</string>
+   </property>
+   <property name="toolTip">
     <string>Push upstream</string>
    </property>
   </action>
@@ -1729,6 +1733,11 @@
     <string>Submodule update...</string>
    </property>
   </action>
+  <action name="action_create_desktop_launcher_file">
+   <property name="text">
+    <string>Create desktop launcher file...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -1737,6 +1746,9 @@
    <extends>QWidget</extends>
    <header>../../src/texteditor/TextEditorWidget.h</header>
    <container>1</container>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>FileDiffWidget</class>
@@ -1769,6 +1781,10 @@
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>
    <header>ReadOnlyLineEdit.h</header>
+   <class>TextEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>TextEditorWidget.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>ClearButton</class>

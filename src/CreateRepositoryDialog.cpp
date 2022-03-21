@@ -59,7 +59,11 @@ void CreateRepositoryDialog::accept()
 
 void CreateRepositoryDialog::on_pushButton_browse_path_clicked()
 {
-	QString path = QFileDialog::getExistingDirectory(this, tr("Destination Path"), mainwindow()->defaultWorkingDir());
+	QString path = ui->lineEdit_path->text();
+	if (path.isEmpty()) {
+		path = mainwindow()->defaultWorkingDir();
+	}
+	path = QFileDialog::getExistingDirectory(this, tr("Destination Path"), path);
 	if (!path.isEmpty()) {
 		path = misc::normalizePathSeparator(path);
 		ui->lineEdit_path->setText(path);
@@ -109,6 +113,11 @@ void CreateRepositoryDialog::validate(bool change_name)
 	}
 }
 
+QString CreateRepositoryDialog::overridedSshKey()
+{
+	return ui->widget_ssh_override->sshKey();
+}
+
 void CreateRepositoryDialog::on_lineEdit_path_textChanged(QString const &)
 {
 	validate(true);
@@ -127,6 +136,7 @@ void CreateRepositoryDialog::on_groupBox_remote_toggled(bool)
 void CreateRepositoryDialog::on_pushButton_test_repo_clicked()
 {
 	QString url = ui->lineEdit_remote_url->text();
-	mainwindow()->testRemoteRepositoryValidity(url, {});
+	QString sshkey = overridedSshKey();
+	mainwindow()->testRemoteRepositoryValidity(url, sshkey);
 	validate(false);
 }

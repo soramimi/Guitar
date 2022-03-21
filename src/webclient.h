@@ -37,6 +37,8 @@ public:
 	}
 };
 
+struct ResponseHeader;
+
 class WebClient {
 public:
 	class ContentType {
@@ -173,14 +175,14 @@ private:
 	std::string make_http_request(const Request &url, Post const *post, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, Response *out);
-	bool http_get(const Request &request_req, Post const *post, RequestOption const &opt, std::vector<char> *out);
-	bool https_get(const Request &request_url, Post const *post, RequestOption const &opt, std::vector<char> *out);
+	bool http_get(const Request &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
+	bool https_get(const Request &request_url, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
 	bool get(const Request &req, Post const *post, Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, WebClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);
 	void on_end_header(const std::vector<char> *vec, WebClientHandler *handler);
-	void receive_(const RequestOption &opt, std::function<int (char *, int)> const &, std::vector<char> *out);
+	void receive_(const RequestOption &opt, std::function<int (char *, int)> const &, ResponseHeader *rh, std::vector<char> *out);
 	void output_debug_string(char const *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
 	static void cleanup();

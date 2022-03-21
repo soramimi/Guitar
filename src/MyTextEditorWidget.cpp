@@ -6,9 +6,13 @@
 #include "common/joinpath.h"
 
 MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
-	: TextEditorWidget(parent)
+	: TextEditorView(parent)
 {
+}
 
+TextEditorView *MyTextEditorWidget::view()
+{
+	return this;
 }
 
 void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)

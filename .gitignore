@@ -8,8 +8,9 @@ _release
 image/about.psd
 extra/_build_*
 misc/win32tools
-_bin/
 build/
+_bin/
+_build/
 src/version.h
 *.autosave
 src/version.h

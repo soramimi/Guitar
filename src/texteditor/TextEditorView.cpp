@@ -120,7 +120,10 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 #endif
 #ifdef Q_OS_LINUX
-	setTextFont(QFont("Monospace", 9));
+//	QFont font("Monospace", 9);
+//	font.setStyleHint(QFont::TypeWriter);
+//	setTextFont(font);
+	setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 //	setTextFont(QFont("Times", 20));
 #endif
 #ifdef Q_OS_MACX

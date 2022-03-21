@@ -5,7 +5,7 @@
 
 class MainWindow;
 
-class MyTextEditorWidget : public TextEditorWidget {
+class MyTextEditorWidget : public TextEditorView {
 private:
 	MainWindow *mainwindow;
 	QString object_id;
@@ -15,6 +15,7 @@ protected:
 public:
 	MyTextEditorWidget(QWidget *parent = nullptr);
 	void setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path);
+	TextEditorView *view();
 };
 
 #endif // MYTEXTEDITORWIDGET_H

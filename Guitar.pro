@@ -105,6 +105,7 @@ haiku:LIBS += -lz
 
 # filetype library
 
+INCLUDEPATH += $$PWD/filetype/file/src
 SOURCES += filetype/filetype.cpp \
 	src/common/base64.cpp \
 	src/texteditor/TextEditorView.cpp
