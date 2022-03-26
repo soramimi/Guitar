@@ -163,7 +163,7 @@ class AbstractCharacterBasedApplication {
 public:
 	enum RenderingMode {
 		CharacterMode,
-		DecoratedMode,
+		GraphicMode,
 	};
 
 	static const int LEFT_MARGIN = 8;

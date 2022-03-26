@@ -1,83 +1,21 @@
-#include "TextEditorView.h"
-#include "TextEditorView.h"
 
+#include "TextEditorView.h"
+#include "InputMethodPopup.h"
+#include "common/misc.h"
+#include "unicode.h"
+#include <QApplication>
 #include <QDebug>
 #include <QFile>
 #include <QFontDatabase>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QPainter>
 #include <QScrollBar>
-#include <QApplication>
-#include <functional>
-#include <QMenu>
 #include <QTextCodec>
 #include <QTimer>
-
-#include "common/misc.h"
-#include "InputMethodPopup.h"
-#include "unicode.h"
+#include <functional>
 
 #define PROPORTIONAL_FONT_SUPPORT 0
-
-class CharacterSize {
-private:
-	QFont font_;
-	mutable int ascii_[128];
-	mutable int height_ = 0;
-	mutable std::map<unsigned int, int> map_;
-public:
-	void reset(QFont const &font)
-	{
-		font_ = font;
-		height_ = 0;
-		map_.clear();
-		for (int i = 0; i < 128; i++) {
-			ascii_[i] = 0;
-		}
-	}
-	int width(unsigned int c) const
-	{
-		if (height_ == 0) {
-			QPixmap pm(1, 1);
-			QPainter pr(&pm);
-			pr.setFont(font_);
-			QFontMetrics fm = pr.fontMetrics();
-			height_ = fm.ascent() + fm.descent();
-			for (int i = 0; i < 0x20; i++) {
-				ascii_[i] = 0;
-			}
-			for (int i = 0x20; i < 0x80; i++) {
-				char tmp[2];
-				tmp[0] = (char)i;
-				tmp[1] = 0;
-				ascii_[i] = fm.size(0, tmp).width();
-			}
-		}
-		if (c < 0x80) {
-			return ascii_[c];
-		}
-		auto it = map_.find(c);
-		if (it != map_.end()) {
-			return it->second;
-		} else {
-			QPixmap pm(1, 1);
-			QPainter pr(&pm);
-			pr.setFont(font_);
-			QFontMetrics fm = pr.fontMetrics();
-			QString s = QChar(c);
-			int w = fm.size(0, s).width();
-			map_[c] = w;
-			return w;
-		}
-	}
-	int height() const
-	{
-		if (height_ == 0) {
-			width(' ');
-		}
-		return height_;
-	}
-};
 
 struct TextEditorView::Private {
 	PreEditText preedit;
@@ -85,7 +23,7 @@ struct TextEditorView::Private {
 	InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
-	CharacterSize character_size;
+	QSize basic_character_size;
 	int ascent = 0;
 	int descent = 0;
 
@@ -114,7 +52,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 #if PROPORTIONAL_FONT_SUPPORT
 	setTextFont(QFont("MS PGothic", 30));
 #else
-	setTextFont(QFont("MS Gothic", 10));
+	setTextFont(QFont("MS Gothic", 20));
 #endif
 
 #else
@@ -127,12 +65,6 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	m->top_margin = 0;
 	m->bottom_margin = 1;
-	QPixmap pm(1, 1);
-	QPainter pr(&pm);
-	pr.setFont(textFont());
-	QFontMetrics fm = pr.fontMetrics();
-	m->ascent = fm.ascent();
-	m->descent = fm.descent();
 
 	initEditor();
 
@@ -147,8 +79,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
 
-	//    setRenderingMode(DecoratedMode);
-	setRenderingMode(CharacterMode);
+	setRenderingMode(GraphicMode);
+//	setRenderingMode(CharacterMode);
 
 	updateCursorRect(true);
 
@@ -178,13 +110,21 @@ TextEditorTheme const *TextEditorView::theme() const
 void TextEditorView::setTextFont(QFont const &font)
 {
 	m->text_font = font;
-	m->character_size.reset(m->text_font);
+
+	QPixmap pm(1, 1);
+	QPainter pr(&pm);
+	pr.setFont(m->text_font);
+	QFontMetrics fm = pr.fontMetrics();
+	m->ascent = fm.ascent();
+	m->descent = fm.descent();
+	m->basic_character_size = fm.size(0, "0");
+
 }
 
 void TextEditorView::setRenderingMode(RenderingMode mode)
 {
 	rendering_mode_ = mode;
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		showLineNumber(false);
 	} else {
 		showLineNumber(true);
@@ -213,10 +153,10 @@ bool TextEditorView::event(QEvent *event)
 	return QWidget::event(event);
 }
 
-int TextEditorView::charWidth2(unsigned int c) const
-{
-	return m->character_size.width(c);
-}
+//int TextEditorView::charWidth2(unsigned int c) const
+//{
+//	return m->character_size.width(c);
+//}
 
 /**
  * @brief 行の高さ
@@ -224,7 +164,7 @@ int TextEditorView::charWidth2(unsigned int c) const
  */
 int TextEditorView::lineHeight() const
 {
-	return m->character_size.height() + m->top_margin + m->bottom_margin;
+	return m->basic_character_size.height() + m->top_margin + m->bottom_margin;
 }
 
 /**
@@ -233,7 +173,7 @@ int TextEditorView::lineHeight() const
  */
 int TextEditorView::basisCharWidth() const
 {
-	return m->character_size.width('0');
+	return m->basic_character_size.width();
 }
 
 class chars : public abstract_unicode_reader {
@@ -263,8 +203,10 @@ public:
  * @param vec_out 文字配列(nullptr可)
  * @return
  */
-int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, bool proportional, std::vector<Char> *vec_out) const
+int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, std::vector<Char> *vec_out) const
 {
+	bool proportional = isProportional();
+
 	int x = 0;
 	int chrs = 0;
 	QString s;
@@ -302,11 +244,11 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, boo
 	}
 	return x;
 }
-int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, bool proportional, std::vector<Char> *vec_out) const
+int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const
 {
 	if (!vec_out) {
 		std::vector<Char> tmp;
-		return calcPixelPosX(row, col, adjust_scroll, proportional, &tmp);
+		return calcPixelPosX(row, col, adjust_scroll, &tmp);
 	}
 
 	parseLine(row, vec_out);
@@ -314,7 +256,7 @@ int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, bool pro
 	QPainter pr(&pm);
 	pr.setFont(m->text_font);
 
-	int x = calcPixelPosX2(pr.fontMetrics(), row, col, proportional, vec_out);
+	int x = calcPixelPosX2(pr.fontMetrics(), row, col, vec_out);
 
 	if (adjust_scroll) { // 原点とスクロール位置に応じてずらす
 		x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
@@ -330,7 +272,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 	const int w = basisCharWidth(); // 基準文字幅
 	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
 	std::vector<Char> vec;
-	calcPixelPosX(row, -1, false, true, &vec);
+	calcPixelPosX(row, -1, false, &vec);
 	size_t end = vec.size();
 	while (end > 0) {
 		if (charWidth(vec[end - 1].unicode) != 0) break;
@@ -370,7 +312,7 @@ void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 {
 	AbstractCharacterBasedApplication::setCursorRow(row, auto_scroll, by_mouse);
 	auto *chrs = parseCurrentLine(nullptr, 0, true);
-	calcPixelPosX(row, -1, false, false, chrs);
+	calcPixelPosX(row, -1, false, chrs);
 
 	// ピクセル座標を更新
 	cx()->current_row_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
@@ -423,7 +365,7 @@ void TextEditorView::setCursorCol(int col)
 	// 水平ピクセル座標を更新
 //	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, true, nullptr); // 行と桁位置から水平座標を求める
 	auto *chrs = parseCurrentLine(nullptr, 0, true);
-	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, false, chrs);
+	cx()->current_col_x = calcPixelPosX(currentRow(), currentCol(), true, chrs);
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -532,7 +474,7 @@ void TextEditorView::drawText(QPainter *painter, int px, int py, QString const &
 
 QColor TextEditorView::defaultForegroundColor()
 {
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		return theme()->fgDefault();
 	}
 	return Qt::white;
@@ -540,7 +482,7 @@ QColor TextEditorView::defaultForegroundColor()
 
 QColor TextEditorView::defaultBackgroundColor()
 {
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		return theme()->bgDefault();
 	}
 	return Qt::black;
@@ -564,21 +506,16 @@ void TextEditorView::paintScreen(QPainter *painter)
 	int rows = screenHeight();
 	for (int row = 0; row < rows; row++) {
 		int col = 0;
-		int x2 = 0;
-		int x3 = 0;
 		std::vector<Char> text32;
-		int x = 0;
 		while (col < cols) {
-//			std::vector<uint16_t> text;
-//			text.reserve(cols);
 			int o = row * cols;
-//			CharAttr ch.attr;
 			Character const *line = &char_screen()->at(o);
 			int n = 0;
 			while (col + n < cols) {
 				uint32_t c = line[col + n].c;
 				uint32_t d = 0;
-				if (c == 0 || c == 0xffff) break;
+				if (c == 0) break;
+				if (c == 0xffff) break;
 				if ((c & 0xfc00) == 0xdc00) {
 					// surrogate 2nd
 					break;
@@ -606,45 +543,19 @@ void TextEditorView::paintScreen(QPainter *painter)
 				} else if (ch.attr != line[col + n].a) {
 					break;
 				}
-//				if (d == 0) {
-//					text.push_back(c);
-//				} else { // surrogate pair
-//					text.push_back(c);
-//					text.push_back(d);
-//				}
 				ch.unicode = unicode;
-//				ch.pos = basisCharWidth() * (col + n);
-//				ch.attr = ch.attr;
 				text32.push_back(ch);
-//				x3 += charWidth2(unicode);
 				n += cw;
 			}
 			if (n == 0) {
+				Char ch;
+				ch.unicode = ' ';
+				text32.push_back(ch);
 				n = 1;
-//				x3 += basisCharWidth();
-//			} else if (!text.empty()) {
-//#if 0
-//				QString str = QString::fromUtf16(&text[0], text.size());
-//				int px = col * basisCharWidth();
-//				int py = row * lineHeight();
-//				px = x2;
-//				painter->setFont(textFont());
-//				QFontMetrics fm = painter->fontMetrics();
-//				int w = fm.width(str);
-//				int h = lineHeight();
-//				QColor fgcolor = colorForIndex(charattr, true);
-//				QColor bgcolor = colorForIndex(charattr, false);
-//				painter->fillRect(px, py, w, h, bgcolor);
-//				painter->setPen(fgcolor);
-
-//				drawText(painter, px, py, str);
-//#else
-//#endif
 			}
 			col += n;
-//			x2 = x3;
 		}
-		calcPixelPosX2(painter->fontMetrics(), row, col, false, &text32);
+		calcPixelPosX2(painter->fontMetrics(), row, col, &text32);
 
 		for (size_t i = 0; i < text32.size(); i++) {
 			QString str;
@@ -705,6 +616,11 @@ int TextEditorView::view_y_from_row(int row)
 	return (editor_cx->viewport_org_y + row - editor_cx->scroll_row_pos) * lineHeight();
 }
 
+bool TextEditorView::isProportional() const
+{
+	return false;
+}
+
 /**
  * @brief カーソルを描画
  * @param pr
@@ -715,7 +631,7 @@ void TextEditorView::drawCursor(QPainter *pr)
 	const int row = currentRow();
 	const int col = currentCol();
 	const int y = view_y_from_row(row);
-	const int x = calcPixelPosX(row, col, true, false, nullptr); // 行と桁位置から水平座標を求める
+	const int x = calcPixelPosX(row, col, true, nullptr); // 行と桁位置から水平座標を求める
 	pr->fillRect(x -1, y, 2, lineheight, theme()->fgCursor());
 	pr->fillRect(x - 2, y, 4, 2, theme()->fgCursor());
 	pr->fillRect(x - 2, y + lineheight - 2, 4, 2, theme()->fgCursor());
@@ -734,10 +650,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 
 	// diff mode
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		auto FillRowBackground = [&](int row, QColor const &color){
-//			int y = editor_cx->viewport_org_y + row - editor_cx->scroll_row_pos;
-//			y *= lineHeight();
 			int y = view_y_from_row(row);
 			pr.fillRect(0, y, width(), lineHeight(), color);
 		};
@@ -764,7 +678,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	if (has_focus) {
 		if (isCursorVisible()) {
 			// 現在行の下線
-			if (renderingMode() == DecoratedMode) {
+			if (renderingMode() == GraphicMode) {
 				int x = cx()->viewport_org_x * basisCharWidth();
 				int y = visualY(cx()) * lineHeight();
 				pr.fillRect(x, y, width() - x, lineHeight(), theme()->bgCurrentLine());
@@ -778,7 +692,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	int linenum_width = editor_cx->viewport_org_x * basisCharWidth();
 
 	// テキスト描画
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		int view_row = 0;
 		int line_row = editor_cx->scroll_row_pos;
 		int lh = lineHeight();
@@ -793,7 +707,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			QList<FormattedLine> fline = formatLine2(line_row);
 			for (FormattedLine const &fl : fline) {
 				pr.setPen(defaultForegroundColor());
-				pr.drawText(QRect(x, y, width() - linenum_width, lh), fl.text, opt);
+				pr.drawText(QRect(x, y, width() - x, lh), fl.text, opt);
 			}
 			view_row++;
 			line_row++;
@@ -804,7 +718,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 
 	// 行番号描画
-	if (renderingMode() == DecoratedMode) {
+	if (renderingMode() == GraphicMode) {
 		auto FillLineNumberBG = [&](int y, int h, QColor const &color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};

@@ -1,13 +1,13 @@
 #ifndef TEXTEDITORVIEW_H
 #define TEXTEDITORVIEW_H
 
-#include <QTextFormat>
-#include <QWidget>
-#include <vector>
-#include <cstdint>
-#include <memory>
 #include "AbstractCharacterBasedApplication.h"
 #include "TextEditorTheme.h"
+#include <QTextFormat>
+#include <QWidget>
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 class QScrollBar;
 
@@ -46,10 +46,11 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	void setTextFont(const QFont &font);
-	int calcPixelPosX(int row, int col, bool adjust_scroll, bool proportional, std::vector<Char> *vec_out) const;
+	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const;
 	int scrollPosX() const;
-	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, bool proportional, std::vector<Char> *vec_out) const;
+	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, std::vector<Char> *vec_out) const;
 	int view_y_from_row(int row);
+	bool isProportional() const;
 public:
 	int basisCharWidth() const;
 protected:
@@ -73,7 +74,7 @@ public:
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
 
-	int charWidth2(unsigned int c) const;
+//	int charWidth2(unsigned int c) const;
 	int lineHeight() const;
 
 //	void setPreEditText(PreEditText const &preedit);
