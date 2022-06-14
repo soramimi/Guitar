@@ -177,7 +177,7 @@ void FileDiffSliderWidget::mouseMoveEvent(QMouseEvent *e)
 void FileDiffSliderWidget::wheelEvent(QWheelEvent *e)
 {
 	int pos = 0;
-	m->wheel_delta += e->delta();
+	m->wheel_delta += e->angleDelta().y();
 	while (m->wheel_delta >= 40) {
 		m->wheel_delta -= 40;
 		pos--;

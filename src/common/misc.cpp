@@ -292,7 +292,6 @@ void misc::dump(uint8_t const *ptr, size_t len)
 				dst++;
 			}
 			*dst = 0;
-			qDebug() << tmp;
 		}
 	}
 }

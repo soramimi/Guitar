@@ -524,7 +524,7 @@ void TextEditorWidget::paintScreen(QPainter *painter)
                 px = x2;
                 painter->setFont(textFont());
                 QFontMetrics fm = painter->fontMetrics();
-                int w = fm.width(str);
+				int w = fm.boundingRect(str).width();
                 int h = lineHeight();
                 QColor fgcolor = colorForIndex(charattr, true);
                 QColor bgcolor = colorForIndex(charattr, false);
@@ -849,7 +849,7 @@ void TextEditorWidget::resizeEvent(QResizeEvent * /*event*/)
 void TextEditorWidget::wheelEvent(QWheelEvent *event)
 {
     int pos = 0;
-    m->wheel_delta += event->delta();
+	m->wheel_delta += event->angleDelta().y();
     while (m->wheel_delta >= 40) {
         m->wheel_delta -= 40;
         pos--;

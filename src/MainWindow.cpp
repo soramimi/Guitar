@@ -575,8 +575,11 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 row = 0;
                 w->setCurrentRow(row);
             }
-            w->setItemSelected(w->item(row), true);
-            w->viewport()->update();
+			auto *item = w->item(row);
+			if (item) {
+				item->setSelected(true);
+				w->viewport()->update();
+			}
         };
         // ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
         if (watched == frame()->unstagedFileslistwidget()) {
@@ -1979,7 +1982,7 @@ void MainWindow::updateRepositoriesList()
         if (it != parentmap.end()) {
             parent = it->second;
         } else {
-            QStringList list = group.split('/', QString::SkipEmptyParts);
+			QStringList list = group.split('/', Qt::SkipEmptyParts);
             if (list.isEmpty()) {
                 list.push_back("Default");
             }
@@ -2874,7 +2877,6 @@ std::map<QString, QList<Git::Branch> > &MainWindow::branchMapRef(RepositoryWrapp
 void MainWindow::updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later)
 {
     postUserFunctionEvent([&](QVariant const &, void *ptr){
-        qDebug() << (void *)ptr;
         if (ptr) {
             RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
             frame->logtablewidget()->viewport()->update();
@@ -3423,7 +3425,7 @@ void MainWindow::detectGitServerType(GitPtr g)
 
     auto Check = [&](QString const &s){
         int i = push_url.indexOf(s);
-        if (i > 0) return i + s.size();
+		if (i > 0) return i + (int)s.size();
         return 0;
     };
 
@@ -5375,7 +5377,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
     cmd = cmd.arg(url);
     bool f = g->git(cmd, false, false, getPtyProcess());
     {
-        QTime time;
+		QElapsedTimer time;
         time.start();
         while (!getPtyProcess()->wait(10)) {
             if (time.elapsed() > 10000) {

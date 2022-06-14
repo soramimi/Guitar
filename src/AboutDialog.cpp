@@ -3,6 +3,7 @@
 #include "common/misc.h"
 
 #include <QPainter>
+#include <QTextBlock>
 
 #include "version.h"
 
@@ -24,20 +25,59 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
 	setWindowTitle(tr("About %1").arg(qApp->applicationName()));
 
-	setStyleSheet("QLabel { color: black; }");
+	const int FONTSIZE = 14;
 
-	ui->label_title->setText(appVersion());
-	ui->label_copyright->setText(QString("Copyright (C) %1 %2").arg(copyright_year).arg(copyright_holder));
-	ui->label_twitter->setText(twitter_account.isEmpty() ? QString() : QString("(@%1)").arg(twitter_account));
-	QString t = QString("Qt %1").arg(qVersion());
+	QString html = R"--(
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html>
+<head>
+<meta name="qrichtext" content="1" />
+<meta charset="utf-8" />
+<style type="text/css">
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+</style>
+</head>
+<body style="font-family:'Sans Serif'; font-size:%1px; font-weight:400; font-style:normal;">
+<div style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:4px; -qt-block-indent:0; text-indent:0px; color: #000000;" >
+<p style="text-align: right;">%2</p>
+<p style="text-align: right;">Copyright (C) %3 %4</p>
+<p style="text-align: right;">%5</p>
+<p style="text-align: right;">%6</p>
+</div>
+</body>
+</html>
+)--";
+	QString devenv = QString("Qt %1").arg(qVersion());
 #if defined(_MSC_VER)
-	t += QString(", msvc=%1").arg(_MSC_VER);
+	devenv += QString(", msvc=%1").arg(_MSC_VER);
 #elif defined(__clang__)
-	t += QString(", clang=%1.%2").arg(__clang_major__).arg(__clang_minor__);
+	devenv += QString(", clang=%1.%2").arg(__clang_major__).arg(__clang_minor__);
 #elif defined(__GNUC__)
-	t += QString(", gcc=%1.%2.%3").arg(__GNUC__).arg(__GNUC_MINOR__).arg(__GNUC_PATCHLEVEL__);
+	devenv += QString(", gcc=%1.%2.%3").arg(__GNUC__).arg(__GNUC_MINOR__).arg(__GNUC_PATCHLEVEL__);
 #endif
-	ui->label_qt->setText(t);
+	html = html
+			.arg(FONTSIZE)
+			.arg(appVersion())
+			.arg(copyright_year)
+			.arg(copyright_holder)
+			.arg(twitter_account.isEmpty() ? QString() : QString("(@%1)").arg(twitter_account))
+			.arg(devenv)
+			;
+	ui->textBrowser->viewport()->setAutoFillBackground(false);
+	ui->textBrowser->setHtml(html);
+	QTextDocument *doc =  ui->textBrowser->document();
+	QTextCursor textcursor = ui->textBrowser->textCursor();
+	for(QTextBlock it = doc->begin(); it != doc->end(); it = it.next()) {
+		QTextBlockFormat tbf = it.blockFormat();
+		tbf.setLineHeight(FONTSIZE, QTextBlockFormat::FixedHeight);
+		textcursor.setPosition(it.position());
+		textcursor.setBlockFormat(tbf);
+		ui->textBrowser->setTextCursor(textcursor);
+	}
+	QFont font("Sans Serif");
+	font.setPixelSize(FONTSIZE);
+	ui->label->setFont(font);
 }
 
 AboutDialog::~AboutDialog()

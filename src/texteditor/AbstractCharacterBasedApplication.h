@@ -10,6 +10,7 @@
 #include <functional>
 #include <QKeyEvent>
 #include <QColor>
+#include <QTextCodec>
 
 namespace EscapeCode {
 enum EscapeCode {

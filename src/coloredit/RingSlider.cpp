@@ -181,7 +181,7 @@ void RingSlider::mouseDoubleClickEvent(QMouseEvent *e)
 
 void RingSlider::wheelEvent(QWheelEvent *e)
 {
-	int delta = e->delta();
+	int delta = e->angleDelta().y();
 	bool sign = (delta < 0);
 	if (sign) delta = -delta;
 	delta = (delta + 119) / 120;

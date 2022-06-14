@@ -22,7 +22,8 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	QTreeWidgetItem *item;
 
 	auto AddPage = [&](QWidget *page){
-		page->layout()->setMargin(0);
+//		page->layout()->setMargin(0);
+		page->layout()->setContentsMargins(0, 0, 0, 0);
 		QString name = page->windowTitle();
 		item = new QTreeWidgetItem();
 		item->setText(0, name);
