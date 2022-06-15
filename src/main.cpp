@@ -90,7 +90,7 @@ void DebugMessageHandler::abort(QMessageLogContext const &context, const QString
 
 void debugMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message)
 {
-	QTextStream(stderr) << qFormatLogMessage(type, context, message) << Qt::endl;
+	(QTextStream(stderr) << qFormatLogMessage(type, context, message) << '\n').flush();
 
 	if (type == QtFatalMsg) {
 		DebugMessageHandler::abort(context, message);

@@ -386,15 +386,15 @@ QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
 	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id).arg(new_id);
 	git(cmd);
 	QString text = resultText();
-	QStringList lines = text.split('\n', Qt::SkipEmptyParts);
+	QStringList lines = text.split('\n', _SkipEmptyParts);
 	for (QString const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		DiffRaw item;
 		int colon = line.indexOf(':');
 		int tab = line.indexOf('\t');
 		if (colon >= 0 && colon < tab) {
-			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', Qt::SkipEmptyParts); // コロンとタブの間の文字列を空白で分割
+			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', _SkipEmptyParts); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
-				QStringList files = line.mid(tab + 1).split('\t', Qt::SkipEmptyParts); // タブより後ろはファイルパス
+				QStringList files = line.mid(tab + 1).split('\t', _SkipEmptyParts); // タブより後ろはファイルパス
 				if (!files.empty()) {
 					for (QString &file : files) {
 						file = Git::trimPath(file);
@@ -654,7 +654,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						} else if (key == "key") {
 							signed_key = val;
 						} else if (key == "parent") {
-							item.parent_ids = val.split(' ', Qt::SkipEmptyParts);
+							item.parent_ids = val.split(' ', _SkipEmptyParts);
 						} else if (key == "author") {
 							item.author = val;
 						} else if (key == "mail") {

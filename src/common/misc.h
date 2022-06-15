@@ -9,6 +9,12 @@
 #include <cstdint>
 #include <QColor>
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+#define _SkipEmptyParts QString::SkipEmptyParts
+#else
+#define _SkipEmptyParts Qt::SkipEmptyParts
+#endif
+
 class QContextMenuEvent;
 
 class misc {
