@@ -10,6 +10,7 @@
 #include "ui_FileDiffWidget.h"
 #include <QBuffer>
 #include <QDebug>
+#include <QFile>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>

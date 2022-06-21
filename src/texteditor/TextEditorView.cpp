@@ -572,7 +572,7 @@ void TextEditorView::paintScreen(QPainter *painter)
 			}
 			int px = ch.pos;
 			int py = row * lineHeight();
-			int w = painter->fontMetrics().width(str);
+			int w = painter->fontMetrics().boundingRect(str).width();
 			int h = lineHeight();
 			QColor fgcolor = colorForIndex(ch.attr, true);
 			QColor bgcolor = colorForIndex(ch.attr, false);
@@ -907,7 +907,7 @@ void TextEditorView::resizeEvent(QResizeEvent * /*event*/)
 void TextEditorView::wheelEvent(QWheelEvent *event)
 {
 	int pos = 0;
-	m->wheel_delta += event->delta();
+	m->wheel_delta += event->angleDelta().y();
 	while (m->wheel_delta >= 40) {
 		m->wheel_delta -= 40;
 		pos--;

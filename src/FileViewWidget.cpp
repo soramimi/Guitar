@@ -31,7 +31,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->setCurrentIndex(1);
 	QMetaObject::connectSlotsByName(this);
 
-	ui_page_text->view()->setRenderingMode(TextEditorView::DecoratedMode);
+	ui_page_text->view()->setRenderingMode(TextEditorView::GraphicMode);
 	ui_page_text->view()->setTheme(TextEditorTheme::Light());
 	ui_page_text->view()->showHeader(false);
 	ui_page_text->view()->showFooter(false);

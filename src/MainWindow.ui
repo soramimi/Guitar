@@ -416,7 +416,6 @@
             <property name="font">
              <font>
               <pointsize>14</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1051,7 +1050,7 @@
      <x>0</x>
      <y>0</y>
      <width>885</width>
-     <height>35</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

@@ -3,6 +3,7 @@
 #include <QXmlStreamReader>
 #include <QFile>
 #include <vector>
+#include <QStringRef>
 
 class TagState {
 private:
@@ -19,7 +20,7 @@ public:
 		arr[s] = '/';
 		std::copy_n(tag.utf16(), t, &arr[s + 1]);
 	}
-	void push(QStringRef const &tag)
+	void push(QStringView const &tag)
 	{
 		push(tag.toString());
 	}

@@ -72,6 +72,36 @@ void onSigTerm(int)
 	}
 }
 
+class QMessageLogContext;
+
+class DebugMessageHandler {
+public:
+	DebugMessageHandler() = delete;
+
+	static void install();
+
+	static void abort(const QMessageLogContext &context, const QString &message);
+};
+
+void DebugMessageHandler::abort(QMessageLogContext const &context, const QString &message)
+{
+	::abort();
+}
+
+void debugMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message)
+{
+	(QTextStream(stderr) << qFormatLogMessage(type, context, message) << '\n').flush();
+
+	if (type == QtFatalMsg) {
+		DebugMessageHandler::abort(context, message);
+	}
+}
+
+void DebugMessageHandler::install()
+{
+	qInstallMessageHandler(debugMessageHandler);
+}
+
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
@@ -79,6 +109,8 @@ int main(int argc, char *argv[])
 #else
 	setenv("UNICODEMAP_JP", "cp932", 1);
 #endif
+
+	DebugMessageHandler::install();
 
 	ApplicationGlobal g;
 	global = &g;
@@ -93,13 +125,20 @@ int main(int argc, char *argv[])
 		QDir().mkpath(global->app_config_dir);
 	}
 
-	if (isHighDpiScalingEnabled()){
 #if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
+	if (isHighDpiScalingEnabled()){
 		qDebug() << "High DPI scaling is not supported";
-#else
-		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 	}
+#else
+	if (isHighDpiScalingEnabled()){
+		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
+		QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling, false);
+	} else {
+		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling, false);
+		QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling, true);
+	}
+#endif
+//	qputenv("QT_SCALE_FACTOR", "1.5");
 
 	QApplication a(argc, argv);
 	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -176,7 +215,7 @@ int main(int argc, char *argv[])
 
 	MainWindow w;
 	global->mainwindow = &w;
-	global->panel_bg_color = w.palette().color(QPalette::Background);
+	global->panel_bg_color = w.palette().color(QPalette::Window);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();
 	w.shown();
