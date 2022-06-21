@@ -2660,7 +2660,7 @@ void AbstractCharacterBasedApplication::write(QKeyEvent *e)
 	} else if (c == Qt::Key_Escape) {
 		write(0x1b, true);
 	} else if (isControlModifierPressed()) {
-		if (QChar(c).isLetter()) {
+		if (c < 0x80 && QChar(c).isLetter()) {
 			c = QChar(c).toUpper().unicode();
 			if (c >= 0x40 && c < 0x60) {
 				write(c - 0x40, true);

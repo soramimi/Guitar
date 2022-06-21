@@ -121,10 +121,10 @@ void CursesOreApplication::paintScreen()
 						}
 					}
 					if (d == 0) {
-						text.push_back(c);
+						text.push_back((ushort)c);
 					} else {
-						text.push_back(c);
-						text.push_back(d);
+						text.push_back((ushort)c);
+						text.push_back((ushort)d);
 					}
 					n += cw;
 				}
