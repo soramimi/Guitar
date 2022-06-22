@@ -45,7 +45,6 @@ private:
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
-	void setTextFont(const QFont &font);
 	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const;
 	int scrollPosX() const;
 	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, std::vector<Char> *vec_out) const;
@@ -106,6 +105,7 @@ public:
 	int scrollUnit() const;
 
 	void moveCursorDown();
+	void setTextFont(const QFont &font);
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

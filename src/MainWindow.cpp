@@ -58,12 +58,15 @@
 #include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileIconProvider>
+#include <QFontDatabase>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef Q_OS_MAC
 namespace {
@@ -242,6 +245,8 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 	
+	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
 	connect(this, &MainWindow::signalWriteLog, this, &MainWindow::writeLog_);
 	
 	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
@@ -6152,9 +6157,6 @@ void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
 {
 	updateCommitLogTableLater(frame.pointer, 100); // コミットログを更新（100ms後）
 }
-
-#include <fcntl.h>
-#include <sys/stat.h>
 
 void MainWindow::on_action_create_desktop_launcher_file_triggered()
 {

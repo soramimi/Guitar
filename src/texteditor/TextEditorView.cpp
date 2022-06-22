@@ -58,7 +58,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 #else
 
 	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-	font.setPointSize(10);
+//	font.setPointSize(10);
 	setTextFont(font);
 
 #endif

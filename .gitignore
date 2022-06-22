@@ -29,3 +29,4 @@ packaging/win/filetype/
 packaging/win/zlib/
 packaging/win/_build/
 extra/build-*
+extra/_build-*
