@@ -5063,7 +5063,6 @@ void MainWindow::on_toolButton_stage_clicked()
 	if (!isValidWorkingCopy(g)) return;
 
 	if (m->last_focused_file_list == ui->listWidget_unstaged) {
-
 		QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
 		if (items.size() == ui->listWidget_unstaged->count()) {
 			g->add_A();
@@ -5083,9 +5082,16 @@ void MainWindow::on_toolButton_unstage_clicked()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
-	
-	g->unstage(selectedFiles());
-	updateCurrentFilesList(frame());
+
+	if (m->last_focused_file_list == ui->listWidget_staged) {
+		QList<QListWidgetItem *> items = ui->listWidget_staged->selectedItems();
+		if (items.size() == ui->listWidget_staged->count()) {
+			g->unstage_all();
+		} else {
+			g->unstage(selectedFiles());
+		}
+		updateCurrentFilesList(frame());
+	}
 }
 
 void MainWindow::on_toolButton_select_all_clicked()

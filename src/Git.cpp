@@ -1068,6 +1068,7 @@ void Git::unstage(QString const &path)
 
 void Git::unstage(QStringList const &paths)
 {
+	if (paths.isEmpty()) return;
 	QString cmd = "reset HEAD";
 	for (QString const &path : paths) {
 		cmd += " \"";
@@ -1075,6 +1076,11 @@ void Git::unstage(QStringList const &paths)
 		cmd += '\"';
 	}
 	git(cmd);
+}
+
+void Git::unstage_all()
+{
+	git("reset HEAD");
 }
 
 void Git::pull(AbstractPtyProcess *pty)
