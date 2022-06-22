@@ -221,7 +221,7 @@ private:
 	static bool git_callback(void *cookie, const char *ptr, int len);
 	bool execSetGlobalUserDialog();
 	void revertAllFiles();
-	void addWorkingCopyDir(QString dir, QString name, bool open);
+	bool addExistingLocalRepository(QString dir, QString name, bool open);
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
@@ -265,7 +265,8 @@ private:
 	void internalDeleteTags(const QStringList &tagnames);
 	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
-    void setLogEnabled(GitPtr g, bool f);
+	void addRepository(const QString &dir);
+	void setLogEnabled(GitPtr g, bool f);
 	void doGitCommand(const std::function<void (GitPtr)> &callback);
 	void setWindowTitle_(const Git::User &user);
 	void setUnknownRepositoryInfo();
@@ -431,7 +432,7 @@ public:
 	void checkout(RepositoryWrapperFrame *frame);
 	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);
 	Git::Object cat_file(RepositoryWrapperFrame *frame, const QString &id);
-	void addWorkingCopyDir(const QString &dir, bool open);
+	bool addExistingLocalRepository(const QString &dir, bool open);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
 	QString determinFileType(QByteArray in);
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
@@ -463,6 +464,7 @@ private slots:
 	void onRepositoriesTreeDropped();
 	void on_action_about_triggered();
 	void on_action_clean_df_triggered();
+	void on_action_add_repository_triggered();
 	void on_action_clone_triggered();
 	void on_action_commit_triggered();
 	void on_action_create_a_repository_triggered();
@@ -551,6 +553,9 @@ private slots:
 	void test();
 	void onInterval10ms();
 	void on_action_create_desktop_launcher_file_triggered();
+
+
+	void on_toolButton_add_clicked();
 
 protected:
 	void closeEvent(QCloseEvent *event) override;

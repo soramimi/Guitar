@@ -47,6 +47,7 @@
 #include "WelcomeWizardDialog.h"
 #include "coloredit/ColorDialog.h"
 #include "common/misc.h"
+#include "AddRepositoryDialog.h"
 #include "gunzip.h"
 #include "platform.h"
 #include "webclient.h"
@@ -877,7 +878,7 @@ void MainWindow::revertAllFiles()
 	}
 }
 
-void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
+bool MainWindow::addExistingLocalRepository(QString dir, QString name, bool open)
 {
 	if (dir.endsWith(".git")) {
 		int i = dir.size();
@@ -902,7 +903,7 @@ void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 				createRepository(dir);
 			}
 		}
-		return;
+		return false;
 	}
 	
 	if (name.isEmpty()) {
@@ -919,6 +920,8 @@ void MainWindow::addWorkingCopyDir(QString dir, QString name, bool open)
 		GitPtr g = git(item.local_dir, {}, {});
 		openRepository_(g);
 	}
+
+	return true;
 }
 
 bool MainWindow::execWelcomeWizardDialog()
@@ -1376,7 +1379,7 @@ void MainWindow::clone(QString url, QString dir)
 			setPtyProcessOk(true);
 			g->clone(clone_data, getPtyProcess());
 		} else if (action == CloneDialog::Action::AddExisting) {
-			addWorkingCopyDir(dir, true);
+			addExistingLocalRepository(dir, true);
 		}
 		
 		return; // done
@@ -1751,7 +1754,42 @@ void MainWindow::createRepository(const QString &dir)
 				if (g->init()) {
 					QString name = dlg.name();
 					if (!name.isEmpty()) {
-						addWorkingCopyDir(path, name, true);
+						addExistingLocalRepository(path, name, true);
+					}
+					QString remote_name = dlg.remoteName();
+					QString remote_url = dlg.remoteURL();
+					QString ssh_key = dlg.overridedSshKey();
+					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
+						Git::Remote r;
+						r.name = remote_name;
+						r.url = remote_url;
+						r.ssh_key = ssh_key;
+						g->addRemoteURL(r);
+						changeSshKey(path, ssh_key);
+					}
+				}
+			}
+		} else {
+			// not dir
+		}
+	}
+}
+
+// experimental
+void MainWindow::addRepository(const QString &dir)
+{
+	AddRepositoryDialog dlg(this, dir);
+	if (dlg.exec() == QDialog::Accepted) {
+		QString path = dlg.localPath();
+		if (QFileInfo(path).isDir()) {
+			if (Git::isValidWorkingCopy(path)) {
+				// A valid git repository already exists there.
+			} else {
+				GitPtr g = git(path, {}, {});
+				if (g->init()) {
+					QString name = dlg.name();
+					if (!name.isEmpty()) {
+						addExistingLocalRepository(path, name, true);
 					}
 					QString remote_name = dlg.remoteName();
 					QString remote_url = dlg.remoteURL();
@@ -4767,9 +4805,9 @@ Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, const QString &i
 	return cat_file_(frame, git(), id);
 }
 
-void MainWindow::addWorkingCopyDir(const QString &dir, bool open)
+bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
 {
-	addWorkingCopyDir(dir, QString(), open);
+	return addExistingLocalRepository(dir, {}, open);
 }
 
 bool MainWindow::saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath)
@@ -4993,7 +5031,7 @@ void MainWindow::on_action_open_existing_working_copy_triggered()
 {
 	QString dir = defaultWorkingDir();
 	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
-	addWorkingCopyDir(dir, false);
+	addExistingLocalRepository(dir, false);
 }
 
 void MainWindow::refresh()
@@ -5217,6 +5255,12 @@ void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 	setPtyCondition(PtyCondition::None);
 }
 
+
+void MainWindow::on_action_add_repository_triggered()
+{
+	addRepository(QString());
+}
+
 void MainWindow::on_action_clone_triggered()
 {
 	clone();
@@ -5231,6 +5275,12 @@ void MainWindow::on_action_about_triggered()
 void MainWindow::on_toolButton_clone_clicked()
 {
 	ui->action_clone->trigger();
+}
+
+void MainWindow::on_toolButton_add_clicked()
+{
+	ui->action_add_repository->trigger();
+
 }
 
 void MainWindow::on_toolButton_fetch_clicked()
@@ -6209,6 +6259,4 @@ Terminal=false
 void MainWindow::test()
 {
 }
-
-
 

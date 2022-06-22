@@ -300,7 +300,7 @@
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
-          <string>Terminal</string>
+          <string>Term</string>
          </property>
          <property name="icon">
           <iconset resource="resources/resources.qrc">
@@ -335,7 +335,7 @@
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
-          <string>Explorer</string>
+          <string>File</string>
          </property>
          <property name="icon">
           <iconset resource="resources/resources.qrc">
@@ -1050,7 +1050,7 @@
      <x>0</x>
      <y>0</y>
      <width>885</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1166,6 +1166,8 @@
     <property name="title">
      <string>Experimental</string>
     </property>
+    <addaction name="action_add_repository"/>
+    <addaction name="separator"/>
     <addaction name="action_submodules"/>
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
@@ -1737,17 +1739,26 @@
     <string>Create desktop launcher file...</string>
    </property>
   </action>
+  <action name="action_add_repository">
+   <property name="icon">
+    <iconset resource="resources/resources.qrc">
+     <normaloff>:/image/clone.svg</normaloff>:/image/clone.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Add repository...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>TextEditorWidget</class>
-   <extends>QWidget</extends>
-   <header>../../src/texteditor/TextEditorWidget.h</header>
-   <container>1</container>
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>
    <header>ReadOnlyLineEdit.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>FileDiffWidget</class>
@@ -1777,9 +1788,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>ReadOnlyLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ReadOnlyLineEdit.h</header>
    <class>TextEditorWidget</class>
    <extends>QWidget</extends>
    <header>TextEditorWidget.h</header>

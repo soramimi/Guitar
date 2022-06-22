@@ -111,6 +111,7 @@ haiku:LIBS += -lz
 
 INCLUDEPATH += $$PWD/filetype/file/src
 SOURCES += filetype/filetype.cpp \
+	src/AddRepositoryDialog.cpp \
 	src/common/base64.cpp \
 	src/texteditor/TextEditorView.cpp
 
@@ -265,6 +266,7 @@ HEADERS  += \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
+	src/AddRepositoryDialog.h \
 	src/ApplicationGlobal.h \
 	src/AreYouSureYouWantToContinueConnectingDialog.h \
 	src/AvatarLoader.h \
@@ -399,6 +401,7 @@ HEADERS += src/version.h
 
 FORMS    += \
 	src/AboutDialog.ui \
+	src/AddRepositoryDialog.ui \
 	src/AreYouSureYouWantToContinueConnectingDialog.ui \
 	src/BigDiffWindow.ui \
 	src/BlameWindow.ui \

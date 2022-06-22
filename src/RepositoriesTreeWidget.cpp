@@ -75,7 +75,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 					i++;
 				}
 #endif
-				mainwindow()->addWorkingCopyDir(path.mid(i), false);
+				mainwindow()->addExistingLocalRepository(path.mid(i), false);
 			} else if (path.startsWith("https://github.com/")) {
 				int i = 19;
 				int j = path.indexOf('/', i);
