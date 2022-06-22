@@ -19,8 +19,8 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_page_none->setObjectName(QStringLiteral("page_none"));
 	ui_stackedWidget->addWidget(ui_page_none);
 	ui_page_text = new X_TextEditorWidget();
-	ui_page_text->setObjectName(QStringLiteral("page_text"));
-	ui_page_text->setFocusPolicy(Qt::ClickFocus);
+	ui_page_text->view()->setObjectName(QStringLiteral("page_text"));
+	ui_page_text->view()->setFocusPolicy(Qt::ClickFocus);
 	ui_stackedWidget->addWidget(ui_page_text);
 	ui_page_image = new X_ImageViewWidget();
 	ui_page_image->setObjectName(QStringLiteral("page_image"));
@@ -31,14 +31,14 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->setCurrentIndex(1);
 	QMetaObject::connectSlotsByName(this);
 
-	ui_page_text->setRenderingMode(TextEditorWidget::DecoratedMode);
-	ui_page_text->setTheme(TextEditorTheme::Light());
-	ui_page_text->showHeader(false);
-	ui_page_text->showFooter(false);
-	ui_page_text->setAutoLayout(true);
-	ui_page_text->setReadOnly(true);
-	ui_page_text->setToggleSelectionAnchorEnabled(false);
-	ui_page_text->setFocusFrameVisible(true);
+	ui_page_text->view()->setRenderingMode(TextEditorView::GraphicMode);
+	ui_page_text->view()->setTheme(TextEditorTheme::Light());
+	ui_page_text->view()->showHeader(false);
+	ui_page_text->view()->showFooter(false);
+	ui_page_text->view()->setAutoLayout(true);
+	ui_page_text->view()->setReadOnly(true);
+	ui_page_text->view()->setToggleSelectionAnchorEnabled(false);
+	ui_page_text->view()->setFocusFrameVisible(true);
 
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
 }
@@ -47,14 +47,14 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 
 void FileViewWidget::setTextCodec(QTextCodec *codec)
 {
-	ui_page_text->setTextCodec(codec);
+	ui_page_text->view()->setTextCodec(codec);
 }
 
 void FileViewWidget::bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
-	ui_page_text->bindScrollBar(vsb, hsb);
+	ui_page_text->view()->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(mw, fdw, vsb, hsb);
-	ui_page_text->setTheme(theme);
+	ui_page_text->view()->setTheme(theme);
 }
 
 void FileViewWidget::setViewType(FileViewType type)
@@ -75,30 +75,30 @@ void FileViewWidget::setViewType(FileViewType type)
 
 const TextEditorTheme *FileViewWidget::theme() const
 {
-	return ui_page_text->theme();
+	return ui_page_text->view()->theme();
 }
 
 //int FileViewWidget::latin1Width(QString const &s) const
 //{
-//	return ui_page_text->latin1Width(s);
+//	return ui_page_text->view()->latin1Width(s);
 //}
 
 int FileViewWidget::lineHeight() const
 {
-	return ui_page_text->lineHeight();
+	return ui_page_text->view()->lineHeight();
 }
 
 void FileViewWidget::setDiffMode(TextEditorEnginePtr const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)
 {
-	ui_page_text->setTextEditorEngine(editor_engine);
-	return ui_page_text->bindScrollBar(vsb, hsb);
+	ui_page_text->view()->setTextEditorEngine(editor_engine);
+	return ui_page_text->view()->bindScrollBar(vsb, hsb);
 }
 
 void FileViewWidget::refrectScrollBar()
 {
 	switch (view_type) {
 	case FileViewType::Text:
-		ui_page_text->refrectScrollBar();
+		ui_page_text->view()->refrectScrollBar();
 		return;
 	case FileViewType::Image:
 		ui_page_image->refrectScrollBar();
@@ -108,7 +108,7 @@ void FileViewWidget::refrectScrollBar()
 
 void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
-	return ui_page_text->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
+	return ui_page_text->view()->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
 }
 
 void FileViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
@@ -131,7 +131,7 @@ void FileViewWidget::setText(const QList<Document::Line> *source, QMainWindow *m
 	scrollToTop();
 	texteditor()->moveCursorOut(); // 現在行を -1 にして、カーソルを非表示にする。
 #else
-	ui_page_text->setDocument(source);
+	ui_page_text->view()->setDocument(source);
 	scrollToTop();
 #endif
 }
@@ -155,16 +155,16 @@ void FileViewWidget::setText(QByteArray const &ba, QMainWindow *mw, QString cons
 
 void FileViewWidget::scrollToTop()
 {
-	ui_page_text->scrollToTop();
+	ui_page_text->view()->scrollToTop();
 }
 
 void FileViewWidget::write(QKeyEvent *e)
 {
-	ui_page_text->write(e);
+	ui_page_text->view()->write(e);
 }
 
-TextEditorWidget *FileViewWidget::texteditor()
+TextEditorView *FileViewWidget::texteditor()
 {
-	return ui_page_text;
+	return ui_page_text->view();
 }
 

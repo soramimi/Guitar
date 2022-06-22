@@ -1308,51 +1308,30 @@
          </widget>
         </item>
         <item>
+         <widget class="TextEditorWidget" name="widget_log" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="Line" name="line_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
-        </item>
-        <item>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item row="0" column="1">
-           <widget class="QScrollBar" name="verticalScrollBar_log">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="TextEditorWidget" name="widget_log" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>80</height>
-             </size>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::ClickFocus</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QScrollBar" name="horizontalScrollBar_log">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>
@@ -1762,6 +1741,10 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
+   <class>TextEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>../../src/texteditor/TextEditorWidget.h</header>
+   <container>1</container>
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>
    <header>ReadOnlyLineEdit.h</header>
@@ -1794,6 +1777,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>ReadOnlyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ReadOnlyLineEdit.h</header>
    <class>TextEditorWidget</class>
    <extends>QWidget</extends>
    <header>TextEditorWidget.h</header>
@@ -1827,7 +1813,6 @@
   <tabstop>listWidget_files</tabstop>
   <tabstop>widget_diff_view</tabstop>
   <tabstop>toolButton_stop_process</tabstop>
-  <tabstop>widget_log</tabstop>
  </tabstops>
  <resources>
   <include location="resources/resources.qrc"/>

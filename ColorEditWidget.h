@@ -1,2 +1,0 @@
-#include "coloredit/ColorEditWidget.h"
-

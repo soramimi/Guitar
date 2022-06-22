@@ -111,7 +111,8 @@ haiku:LIBS += -lz
 
 INCLUDEPATH += $$PWD/filetype/file/src
 SOURCES += filetype/filetype.cpp \
-	src/common/base64.cpp
+	src/common/base64.cpp \
+	src/texteditor/TextEditorView.cpp
 
 #
 
@@ -387,6 +388,7 @@ HEADERS  += \
 	src/texteditor/AbstractCharacterBasedApplication.h \
 	src/texteditor/InputMethodPopup.h \
 	src/texteditor/TextEditorTheme.h \
+	src/texteditor/TextEditorView.h \
 	src/texteditor/TextEditorWidget.h \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \

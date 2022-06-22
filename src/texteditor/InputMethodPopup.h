@@ -1,7 +1,7 @@
 #ifndef INPUTMETHODPOPUP_H
 #define INPUTMETHODPOPUP_H
 
-#include "TextEditorWidget.h"
+#include "TextEditorView.h"
 
 #include <QWidget>
 

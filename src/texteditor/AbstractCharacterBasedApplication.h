@@ -129,8 +129,10 @@ struct TextEditorContext {
 	QRect cursor_rect;
 	bool single_line = false;
 	int current_row = 0;
-	int current_col = 0;
+	int current_col = 0; // 桁位置
 	int current_col_hint = 0;
+	int current_col_x = 0; // 桁ピクセル座標
+	int current_row_y = 0; // 行ピクセル座標
 	int saved_row = 0;
 	int saved_col = 0;
 	int saved_col_hint = 0;
@@ -146,13 +148,23 @@ struct TextEditorContext {
 	TextEditorEnginePtr engine;
 };
 
+struct RowCol {
+	int row = 0;
+	int col = 0;
+	RowCol(int row = 0, int col = 0)
+		: row(row)
+		, col(col)
+	{
+	}
+};
+
 using DialogHandler = std::function<void (bool, QString const &)>;
 
 class AbstractCharacterBasedApplication {
 public:
 	enum RenderingMode {
 		CharacterMode,
-		DecoratedMode,
+		GraphicMode,
 	};
 
 	static const int LEFT_MARGIN = 8;
@@ -206,8 +218,10 @@ public:
 	};
 
 	struct Char {
-		unsigned int pos = 0;
+		int pos = 0;
+		int size = 0;
 		uint32_t unicode = 0;
+		CharAttr attr;
 		Char() = default;
 		Char(uint32_t unicode, unsigned int pos)
 			: unicode(unicode)
@@ -265,8 +279,14 @@ protected:
 	QByteArray fetchLine(int row) const;
 	void clearParsedLine();
 
-	int cursorX() const;
-	int cursorY() const;
+	int currentRow() const;
+	int currentCol() const;
+	int currentColX() const;
+	void setCurrentRow(int row);
+	void setCurrentCol(int col);
+
+	int cursorCol() const;
+	int cursorRow() const;
 
 	int editorViewportWidth() const;
 	int editorViewportHeight() const;
@@ -309,7 +329,7 @@ protected:
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	void toggleSelectionAnchor();
 private:
-	int internalParseLine(const QByteArray &parsed_line, std::vector<Char> *vec, int increase_hint) const;
+	int internalParseLine(const QByteArray &parsed_line, int current_col, std::vector<Char> *vec, int increase_hint) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -332,13 +352,28 @@ private:
 	bool deleteIfSelected();
 	static int findSyntax(const QList<Document::CharAttr_> *list, size_t offset);
 	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
+	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
 protected:
-	void parseLine(std::vector<Char> *vec, int increase_hint, bool force);
-	int parseLine2(int row, std::vector<Char> *vec) const;
-	QByteArray parsedLine() const;
-	void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
-	void setCursorCol(int col, bool auto_scroll = true, bool by_mouse = false);
-	void setCursorPos(int row, int col);
+	std::vector<Char> *parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
+	void parseLine(int row, std::vector<Char> *vec) const;
+	virtual int scrollPosX() { return 0; }
+
+	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
+	virtual void setCursorCol(int col)
+	{
+		setCursorCol_(col, true, false);
+	}
+	void setCursorPosByMouse(RowCol pos, QPoint pt)
+	{
+		setCursorRow(pos.row, false, true);
+		setCursorCol_(pos.col, false, true);
+		cx()->current_col_x = pt.x();
+	}
+	void setCursorPos(int row, int col)
+	{
+		setCursorRow(row, false);
+		setCursorCol_(col, 0, false);
+	}
 	void setCursorColByIndex(const std::vector<Char> &vec, int col_index);
 	int nextTabStop(int x) const;
 	int scrollBottomLimit() const;
@@ -364,10 +399,15 @@ protected:
 	void savePos();
 	void restorePos();
 public:
-	RenderingMode rendering_mode = CharacterMode;
+	RenderingMode rendering_mode_ = CharacterMode;
+
+	void set_rendering_mode(RenderingMode m)
+	{
+		rendering_mode_ = m;
+	}
 	RenderingMode renderingMode() const
 	{
-		return rendering_mode;
+		return rendering_mode_;
 	}
 
 	virtual void layoutEditor();
@@ -377,7 +417,7 @@ public:
 	void moveCursorHome();
 	void moveCursorEnd();
 	void moveCursorUp();
-	void moveCursorDown();
+	virtual void moveCursorDown();
 	void moveCursorLeft();
 	void moveCursorRight();
 	void movePageUp();

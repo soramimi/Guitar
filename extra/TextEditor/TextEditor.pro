@@ -1,12 +1,10 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2016-03-14T22:31:35
-#
-#-------------------------------------------------
 
 QT       += core gui widgets
+greaterThan(QT_MAJOR_VERSION, 5) {
+    QT += core5compat
+}
 
-CONFIG += c++11
+CONFIG += c++17
 TARGET = ore
 TEMPLATE = app
 
@@ -26,6 +24,7 @@ SOURCES += \
 	../../src/common/misc.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \
+	../../src/texteditor/TextEditorView.cpp \
 	../../src/texteditor/TextEditorWidget.cpp \
 	../../src/texteditor/UnicodeWidth.cpp \
 	../../src/texteditor/unicode.cpp \
@@ -39,6 +38,7 @@ HEADERS  += \
 	../../src/common/misc.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
 	../../src/texteditor/TextEditorTheme.h \
+	../../src/texteditor/TextEditorView.h \
 	../../src/texteditor/TextEditorWidget.h \
 	../../src/texteditor/UnicodeWidth.h \
 	../../src/texteditor/unicode.h \

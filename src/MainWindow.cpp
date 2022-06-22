@@ -58,12 +58,15 @@
 #include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileIconProvider>
+#include <QFontDatabase>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef Q_OS_MAC
 namespace {
@@ -216,7 +219,7 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	setShowLabels(appsettings()->show_labels, false);
 	
-	ui->widget_log->setupForLogWidget(ui->verticalScrollBar_log, ui->horizontalScrollBar_log, themeForTextEditor());
+	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
 	
 	initNetworking();
@@ -242,10 +245,12 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 #endif
 	
+	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
 	connect(this, &MainWindow::signalWriteLog, this, &MainWindow::writeLog_);
 	
 	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
-	connect(ui->widget_log, &TextEditorWidget::idle, this, &MainWindow::onLogIdle);
+	connect(ui->widget_log->view(), &TextEditorView::idle, this, &MainWindow::onLogIdle);
 	
 	connect(ui->treeWidget_repos, &RepositoriesTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
 	
@@ -683,9 +688,9 @@ void MainWindow::onLogVisibilityChanged()
 
 void MainWindow::internalWriteLog(char const *ptr, int len)
 {
-	ui->widget_log->logicalMoveToBottom();
-	ui->widget_log->write(ptr, len, false);
-	ui->widget_log->setChanged(false);
+	ui->widget_log->view()->logicalMoveToBottom();
+	ui->widget_log->view()->write(ptr, len, false);
+	ui->widget_log->view()->setChanged(false);
 	setInteractionCanceled(false);
 }
 
@@ -5599,12 +5604,12 @@ void MainWindow::on_radioButton_remote_offline_clicked()
 
 void MainWindow::on_verticalScrollBar_log_valueChanged(int)
 {
-	ui->widget_log->refrectScrollBar();
+	ui->widget_log->view()->refrectScrollBar();
 }
 
 void MainWindow::on_horizontalScrollBar_log_valueChanged(int)
 {
-	ui->widget_log->refrectScrollBar();
+	ui->widget_log->view()->refrectScrollBar();
 }
 
 void MainWindow::on_toolButton_stop_process_clicked()
@@ -5762,7 +5767,7 @@ void MainWindow::onLogIdle()
 	static char const fatal_authentication_failed_for[] = "fatal: Authentication failed for '";
 	
 	std::vector<char> vec;
-	ui->widget_log->retrieveLastText(&vec, 100);
+	ui->widget_log->view()->retrieveLastText(&vec, 100);
 	if (!vec.empty()) {
 		std::string line;
 		size_t n = vec.size();
@@ -6152,9 +6157,6 @@ void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
 {
 	updateCommitLogTableLater(frame.pointer, 100); // コミットログを更新（100ms後）
 }
-
-#include <fcntl.h>
-#include <sys/stat.h>
 
 void MainWindow::on_action_create_desktop_launcher_file_triggered()
 {

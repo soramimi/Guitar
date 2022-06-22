@@ -9,6 +9,7 @@ class UnicodeWidth {
 public:
 	enum class Type {
 		Unknown,
+		Control,
 		Neutral,
 		Narrow,
 		Half,

@@ -1,18 +1,18 @@
 
 #ifndef _WIN32
 
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <ncurses.h>
-#include <locale.h>
-#include <string>
-#include <vector>
-#include <AbstractCharacterBasedApplication.h>
-#include <string.h>
-#include <QtGlobal>
-#include <QDebug>
+#include "../../src/texteditor/AbstractCharacterBasedApplication.h"
 #include "cmain.h"
+#include <QDebug>
+#include <QtGlobal>
+#include <locale.h>
+#include <ncurses.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <string>
+#include <unistd.h>
+#include <vector>
 
 void siginthandler(int param)
 {
@@ -64,7 +64,7 @@ void CursesOreApplication::paintScreen()
 	};
 	for (int y = 0; y < m->height; y++) {
 		if (line_flags()->at(y) & LineChanged) {
-			Character const *line = &screen()->at(m->width * y);
+			Character const *line = &char_screen()->at(m->width * y);
 			std::vector<char> vec;
 			vec.reserve(m->width * 3);
 			int x = 0;
@@ -121,10 +121,10 @@ void CursesOreApplication::paintScreen()
 						}
 					}
 					if (d == 0) {
-						text.push_back(c);
+						text.push_back((ushort)c);
 					} else {
-						text.push_back(c);
-						text.push_back(d);
+						text.push_back((ushort)c);
+						text.push_back((ushort)d);
 					}
 					n += cw;
 				}
@@ -161,8 +161,8 @@ void CursesOreApplication::updateVisibility(bool ensure_current_line_visible, bo
 //	clearParsedLine();
 	updateCursorPos(true);
 
-	int x = cx()->viewport_org_x + cursorX();
-	int y = cx()->viewport_org_y + cursorY();
+	int x = cx()->viewport_org_x + cursorCol();
+	int y = cx()->viewport_org_y + cursorRow();
 
 	if (change_col) {
 		cx()->current_col_hint = cx()->current_col;

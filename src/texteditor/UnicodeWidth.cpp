@@ -5,6 +5,7 @@
 
 UnicodeWidth::Type UnicodeWidth::type(uint32_t c)
 {
+	if (c < 0x20) return Type::Control;
 	static Range widthtype_table[] = {
 		0x00000000, 0x0000001f, Type::Neutral,
 		0x00000020, 0x0000007e, Type::Narrow,

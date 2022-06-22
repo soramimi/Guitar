@@ -6,6 +6,8 @@
 #include <QMainWindow>
 #include "texteditor/AbstractCharacterBasedApplication.h"
 
+class TextEditorView;
+
 namespace Ui {
 class MainWindow;
 }
@@ -31,6 +33,7 @@ private:
 
 	TextEditorEnginePtr engine();
 	Document *document();
+	TextEditorView *texteditor();
 protected:
 	void keyPressEvent(QKeyEvent *);
 
