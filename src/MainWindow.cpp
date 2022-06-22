@@ -5061,9 +5061,22 @@ void MainWindow::on_toolButton_stage_clicked()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
-	
-	g->stage(selectedFiles());
-	updateCurrentFilesList(frame());
+
+	if (m->last_focused_file_list == ui->listWidget_unstaged) {
+
+		QList<QListWidgetItem *> items = ui->listWidget_unstaged->selectedItems();
+		if (items.size() == ui->listWidget_unstaged->count()) {
+			g->add_A();
+		} else {
+			QStringList list;
+			for (QListWidgetItem *item : items) {
+				QString path = getFilePath(item);
+				list.push_back(path);
+			}
+			g->stage(list);
+		}
+		updateCurrentFilesList(frame());
+	}
 }
 
 void MainWindow::on_toolButton_unstage_clicked()

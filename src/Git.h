@@ -389,6 +389,7 @@ public:
 
 	void removeFile(QString const &path);
 
+	void add_A();
 	void stage(QString const &path);
 	void stage(QStringList const &paths);
 	void unstage(QString const &path);

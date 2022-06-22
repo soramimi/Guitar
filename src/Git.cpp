@@ -1038,6 +1038,11 @@ void Git::removeFile(QString const &path)
 	git("rm " + path);
 }
 
+void Git::add_A()
+{
+	git("add -A");
+}
+
 void Git::stage(QString const &path)
 {
 	git("add " + path);
