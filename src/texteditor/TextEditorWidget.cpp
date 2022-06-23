@@ -635,16 +635,17 @@ void TextEditorWidget::paintEvent(QPaintEvent *)
         int view_row = 0;
         int line_row = editor_cx->scroll_row_pos;
         int lh = lineHeight();
+        int scroll = xScrollPosInPixel();
         pr.save();
         pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
         while (isValidRowIndex(line_row)) {
-            int x = linenum_width - xScrollPosInPixel();
+            int x = linenum_width - scroll;
             int y = view_row * lh;
             if (y >= height()) break;
             QList<FormattedLine> fline = formatLine2(line_row);
             for (FormattedLine const &fl : fline) {
                 pr.setPen(defaultForegroundColor());
-                pr.drawText(QRect(x, y, width() - linenum_width, lh), fl.text);
+                pr.drawText(QRect(x, y, width() - linenum_width + scroll, lh), Qt::TextSingleLine, fl.text);
             }
             view_row++;
             line_row++;
