@@ -60,7 +60,7 @@ void AvatarLoader::run()
 
 	std::chrono::system_clock::time_point time_notify;
 
-	const int NOTIFY_DELAY_ms = 500;
+	const int NOTIFY_DELAY_ms = 200;
 
 	bool notify = false;
 
@@ -84,7 +84,6 @@ void AvatarLoader::run()
 				} else {
 					if (notify) {
 						notify = false;
-						qDebug() << "notify";
 						for (QObject *listener : m->listeners) {
 							QApplication::postEvent(listener, new QEvent((QEvent::Type)UserEvent::AvatarReady));
 						}
