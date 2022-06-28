@@ -1,10 +1,16 @@
 #include "AvatarLoader.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
+#include "UserEvent.h"
 #include "webclient.h"
+#include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>
-#include <QWaitCondition>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <chrono>
 
 namespace {
 const int MAX_CACHE_COUNT = 1000;
@@ -14,12 +20,15 @@ const int ICON_SIZE = 128;
 using WebClientPtr = std::shared_ptr<WebClient>;
 
 struct AvatarLoader::Private {
-	QMutex mutex;
-	QWaitCondition condition;
-	std::deque<RequestItem> requested;
-	std::deque<RequestItem> completed;
+	volatile bool interrupted = false;
+	std::mutex mutex;
+	std::condition_variable condition;
+	std::thread thread;
+	std::deque<AvatarLoader::RequestItem> requests;
 	MainWindow *mainwindow = nullptr;
 	WebClientPtr web;
+
+	std::set<QObject *> listeners;
 };
 
 AvatarLoader::AvatarLoader()
@@ -32,38 +41,67 @@ AvatarLoader::~AvatarLoader()
 	delete m;
 }
 
-void AvatarLoader::start(MainWindow *mainwindow)
+bool AvatarLoader::isInterruptionRequested() const
 {
-	m->mainwindow = mainwindow;
-	QThread::start();
+	return m->interrupted;
 }
+
+void AvatarLoader::requestInterruption()
+{
+	m->interrupted = true;
+	m->condition.notify_all();
+}
+
+
 
 void AvatarLoader::run()
 {
-	m->web = std::make_shared<WebClient>(m->mainwindow->webContext());
+	m->web = std::make_shared<WebClient>(&global->webcx);
+
+	std::chrono::system_clock::time_point time_notify;
+
+	const int NOTIFY_DELAY_ms = 500;
+
+	bool notify = false;
 
 	while (1) {
-		if (isInterruptionRequested()) return;
-
-		std::deque<RequestItem> requests;
+		RequestItem request;
 		{
-			QMutexLocker lock(&m->mutex);
-			if (m->requested.empty()) {
-				m->condition.wait(&m->mutex);
+			std::unique_lock lock(m->mutex);
+			if (isInterruptionRequested()) return;
+			for (int i = 0; i < m->requests.size(); i++) {
+				if (m->requests[i].state == Idle) {
+					m->requests[i].state = Busy;
+					request = m->requests[i];
+					break;
+				}
 			}
-			if (!m->requested.empty()) {
-				std::swap(requests, m->requested);
+			if (request.state == Idle) {
+				std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+				if (now < time_notify) {
+					m->condition.wait_for(lock, time_notify - now);
+					notify = true;
+				} else {
+					if (notify) {
+						notify = false;
+						qDebug() << "notify";
+						for (QObject *listener : m->listeners) {
+							QApplication::postEvent(listener, new QEvent((QEvent::Type)UserEvent::AvatarReady));
+						}
+					}
+					m->condition.wait(lock);
+				}
+				time_notify = std::chrono::system_clock::time_point();
 			}
+			if (isInterruptionRequested()) return;
 		}
 
-		for (RequestItem &item : requests) {
-			if (isInterruptionRequested()) return;
-
-			if (strchr(item.email.c_str(), '@')) {
+		if (request.state == Busy) {
+			if (strchr(request.email.c_str(), '@')) {
 				QString id;
 				{
 					QCryptographicHash hash(QCryptographicHash::Md5);
-					hash.addData(item.email.c_str(), item.email.size());
+					hash.addData(request.email.c_str(), request.email.size());
 					QByteArray ba = hash.result();
 					char tmp[100];
 					for (int i = 0; i < ba.size(); i++) {
@@ -82,23 +120,8 @@ void AvatarLoader::run()
 						int w = image.width();
 						int h = image.height();
 						if (w > 0 && h > 0) {
-							item.image = image;
-							{
-								QMutexLocker lock(&m->mutex);
-								size_t i = m->requested.size();
-								while (i > 0) {
-									i--;
-									if (m->requested[i].email == item.email) {
-										m->requested.erase(m->requested.begin() + i);
-									}
-								}
-								while (m->completed.size() >= MAX_CACHE_COUNT) {
-									m->completed.pop_back();
-								}
-								m->completed.push_front(item);
-							}
-							emit updated(item.frame);
-							continue;
+							request.image = image;
+							request.state = Done;
 						}
 					}
 				} else {
@@ -107,56 +130,81 @@ void AvatarLoader::run()
 					m->mainwindow->emitWriteLog(msg.toUtf8());
 				}
 			}
+			{
+				std::lock_guard lock(m->mutex);
+				for (int i = 0; i < m->requests.size(); i++) {
+					if (m->requests[i].email == request.email) {
+						if (request.state == Done) {
+							m->requests[i] = request;
+							time_notify = std::chrono::system_clock::now() + std::chrono::milliseconds(NOTIFY_DELAY_ms);
+						} else {
+							m->requests.erase(m->requests.begin() + i);
+						}
+						break;
+					}
+				}
+			}
 		}
 	}
 }
 
-QIcon AvatarLoader::fetch(RepositoryWrapperFrame *frame, std::string const &email, bool request) const
+void AvatarLoader::start(MainWindow *mainwindow)
 {
-	QMutexLocker lock(&m->mutex);
-	RequestItem item;
-	item.frame = frame;
-	item.email = email;
-	for (size_t i = 0; i < m->completed.size(); i++) {
-		if (item.email == m->completed[i].email) {
-			item = m->completed[i];
-			m->completed.erase(m->completed.begin() + i);
-			m->completed.insert(m->completed.begin(), item);
-			return QIcon(QPixmap::fromImage(item.image));
-		}
-	}
-	if (request) {
-		bool waiting = false;
-		for (RequestItem const &r : m->requested) {
-			if (item.email == r.email) {
-				waiting = true;
-				break;
-			}
-		}
-		if (!waiting) {
-			m->requested.push_back(item);
-			m->condition.wakeOne();
-		}
-	}
-	return QIcon();
+	m->mainwindow = mainwindow;
+	m->interrupted = false;
+	m->thread = std::thread([&](){
+		run();
+	});
 }
 
 void AvatarLoader::stop()
 {
-	{
-		QMutexLocker lock(&m->mutex);
-		requestInterruption();
-		m->requested.clear();
-		m->condition.wakeAll();
+	requestInterruption();
+	if (m->thread.joinable()) {
+		m->thread.join();
 	}
-	if (!wait(3000)) {
-		terminate();
-	}
+	m->requests.clear();
 	if (m->web) {
 		m->web->close();
 		m->web.reset();
 	}
-	m->completed.clear();
 }
 
+QIcon AvatarLoader::fetch(std::string const &email, bool request) const
+{
+	std::lock_guard lock(m->mutex);
+	bool found = false;
+	for (size_t i = 0; i < m->requests.size(); i++) {
+		if (m->requests[i].email == email) {
+			found = true;
+			if (m->requests[i].state == Done) {
+				RequestItem item = m->requests[i];
+				m->requests.erase(m->requests.begin() + i);
+				m->requests.insert(m->requests.begin(), item);
+				return QIcon(QPixmap::fromImage(item.image));
+			}
+		}
+	}
+	if (request && !found) {
+		RequestItem item;
+		item.state = Idle;
+		item.email = email;
+		m->requests.push_back(item);
+		m->condition.notify_all();
+	}
+	return QIcon();
+}
+
+void AvatarLoader::addListener(QObject *listener)
+{
+	m->listeners.insert(m->listeners.end(), listener);
+}
+
+void AvatarLoader::removeListener(QObject *listener)
+{
+	auto it = m->listeners.find(listener);
+	if (it != m->listeners.end()) {
+		m->listeners.erase(it);
+	}
+}
 

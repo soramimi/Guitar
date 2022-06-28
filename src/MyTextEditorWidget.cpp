@@ -1,13 +1,16 @@
 #include "MyTextEditorWidget.h"
 #include "MainWindow.h"
-#include "common/misc.h"
-#include <QMenu>
-#include <QFileDialog>
 #include "common/joinpath.h"
+#include "common/misc.h"
+#include <QFileDialog>
+#include <QFontDatabase>
+#include <QMenu>
 
 MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 	: TextEditorView(parent)
 {
+	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+	view()->setTextFont(font);
 }
 
 TextEditorView *MyTextEditorWidget::view()

@@ -349,8 +349,8 @@ private:
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryItem> &getRepos() const;
 	QList<RepositoryItem> *getReposPtr();
-	AvatarLoader *getAvatarLoader();
-	const AvatarLoader *getAvatarLoader() const;
+//	AvatarLoader *getAvatarLoader();
+//	const AvatarLoader *getAvatarLoader() const;
 	bool interactionCanceled() const;
 	void setInteractionCanceled(bool canceled);
 	InteractionMode interactionMode() const;
@@ -408,7 +408,7 @@ public:
 	bool isLabelsVisible() const;
 	void updateFilesList2(RepositoryWrapperFrame *frame, const QString &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
-	void execCommitPropertyDialog(QWidget *parent, RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
+	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
 	void execCommitExploreWindow(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit);
 	void execFileHistory(const QString &path);
 	void execFileHistory(QListWidgetItem *item);
@@ -449,7 +449,6 @@ public:
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	QString defaultWorkingDir() const;
-	WebContext *webContext();
 	QIcon verifiedIcon(char s) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;

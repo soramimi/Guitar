@@ -48,6 +48,7 @@
 #include "coloredit/ColorDialog.h"
 #include "common/misc.h"
 #include "AddRepositoryDialog.h"
+#include "GitHubAPI.h"
 #include "gunzip.h"
 #include "platform.h"
 #include "webclient.h"
@@ -130,10 +131,6 @@ struct MainWindow::Private {
 	PtyProcess pty_process;
 	bool pty_process_ok = false;
 	MainWindow::PtyCondition pty_condition = MainWindow::PtyCondition::None;
-	
-	WebContext webcx = {WebClient::HTTP_1_0};
-	
-	AvatarLoader avatar_loader;
 	
 	bool interaction_canceled = false;
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
@@ -220,6 +217,10 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	setShowLabels(appsettings()->show_labels, false);
 	
+	{
+		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		ui->widget_log->view()->setTextFont(font);
+	}
 	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
 	
@@ -274,12 +275,8 @@ MainWindow::MainWindow(QWidget *parent)
 	*getReposPtr() = RepositoryBookmark::load(path);
 	updateRepositoriesList();
 	
-	{
-		// アイコン取得機能
-		webContext()->set_keep_alive_enabled(true);
-		getAvatarLoader()->start(this);
-		connect(getAvatarLoader(), &AvatarLoader::updated, this, &MainWindow::onAvatarUpdated);
-	}
+	// アイコン取得機能
+	global->avatar_loader.addListener(ui->frame_repository_wrapper);
 	
 	connect(frame()->filediffwidget(), &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(frame()); });
 	
@@ -307,8 +304,6 @@ MainWindow::~MainWindow()
 	cancelPendingUserEvents();
 	
 	stopPtyProcess();
-	
-	getAvatarLoader()->stop();
 	
 	deleteTempFiles();
 	
@@ -763,10 +758,10 @@ QString MainWindow::defaultWorkingDir() const
 	return appsettings()->default_working_dir;
 }
 
-WebContext *MainWindow::webContext()
-{
-	return &m->webcx;
-}
+//WebContext *MainWindow::webContext()
+//{
+//	return &m->webcx;
+//}
 
 QIcon MainWindow::verifiedIcon(char s) const
 {
@@ -2538,8 +2533,8 @@ void MainWindow::initNetworking()
 	} else if (appsettings()->proxy_type == "manual") {
 		http_proxy = appsettings()->proxy_server.toStdString();
 	}
-	webContext()->set_http_proxy(http_proxy);
-	webContext()->set_https_proxy(https_proxy);
+	global->webcx.set_http_proxy(http_proxy);
+	global->webcx.set_https_proxy(https_proxy);
 }
 
 bool MainWindow::saveRepositoryBookmarks() const
@@ -2645,15 +2640,15 @@ QList<RepositoryItem> *MainWindow::getReposPtr()
 	return &m->repos;
 }
 
-AvatarLoader *MainWindow::getAvatarLoader()
-{
-	return &m->avatar_loader;
-}
+//AvatarLoader *MainWindow::getAvatarLoader()
+//{
+//	return &global->avatar_loader;
+//}
 
-const AvatarLoader *MainWindow::getAvatarLoader() const
-{
-	return &m->avatar_loader;
-}
+//const AvatarLoader *MainWindow::getAvatarLoader() const
+//{
+//	return &global->avatar_loader;
+//}
 
 bool MainWindow::interactionCanceled() const
 {
@@ -3994,9 +3989,9 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 	openSelectedRepository();
 }
 
-void MainWindow::execCommitPropertyDialog(QWidget *parent, RepositoryWrapperFrame *frame, Git::CommitItem const *commit)
+void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)
 {
-	CommitPropertyDialog dlg(parent, this, frame, commit);
+	CommitPropertyDialog dlg(parent, this, commit);
 	dlg.exec();
 }
 
@@ -4196,7 +4191,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 				return;
 			}
 			if (a == a_properties) {
-				execCommitPropertyDialog(this, frame(), commit);
+				execCommitPropertyDialog(this, commit);
 				return;
 			}
 			if (a == a_edit_message) {
@@ -4896,7 +4891,7 @@ QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 			Git::CommitItem const &commit = logs[row];
 			if (commit.email.indexOf('@') > 0) {
 				std::string email = commit.email.toStdString();
-				icon = getAvatarLoader()->fetch(frame, email, true); // from gavatar
+				icon = global->avatar_loader.fetch(email, true); // from gavatar
 			}
 		}
 	}
@@ -5384,7 +5379,7 @@ void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
 {
 	Git::CommitItem const *commit = selectedCommitItem(frame());
 	if (commit) {
-		execCommitPropertyDialog(this, frame(), commit);
+		execCommitPropertyDialog(this, commit);
 	}
 }
 

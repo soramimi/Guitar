@@ -4,6 +4,7 @@
 #include "MainWindow.h"
 #include "common/misc.h"
 #include "Git.h"
+#include "UserEvent.h"
 
 WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	: QDialog(parent)
@@ -23,12 +24,13 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	ui->stackedWidget->setCurrentWidget(pages_[0]);
 	on_stackedWidget_currentChanged(0);
 
+	avatar_loader_.addListener(this);
 	avatar_loader_.start(mainwindow_);
-	connect(&avatar_loader_, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
-		QString email = ui->lineEdit_user_email->text();
-		QIcon icon = avatar_loader_.fetch(frame.pointer, email.toStdString(), false);
-		setAvatar(icon);
-	});
+//	connect(&avatar_loader_, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
+//		QString email = ui->lineEdit_user_email->text();
+//		QIcon icon = avatar_loader_.fetch(frame.pointer, email.toStdString(), false);
+//		setAvatar(icon);
+//	});
 
 	ui->stackedWidget->setCurrentWidget(ui->page_helper_tools);
 }
@@ -36,6 +38,7 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
 	avatar_loader_.stop();
+	avatar_loader_.removeListener(this);
 	delete ui;
 }
 
@@ -167,12 +170,22 @@ void WelcomeWizardDialog::setAvatar(QIcon const &icon)
 	ui->label_avatar->setPixmap(pm);
 }
 
+void WelcomeWizardDialog::customEvent(QEvent *event)
+{
+	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
+		QString email = ui->lineEdit_user_email->text();
+		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
+		setAvatar(icon);
+		return;
+	}
+}
+
 void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 {
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_user_email->text();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = avatar_loader_.fetch(nullptr, email.toStdString(), true);
+		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

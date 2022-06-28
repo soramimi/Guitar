@@ -1,11 +1,7 @@
 #ifndef AVATARLOADER_H
 #define AVATARLOADER_H
 
-#include "GitHubAPI.h"
-#include "RepositoryWrapperFrame.h"
 #include <QIcon>
-#include <QThread>
-#include <QMutex>
 #include <deque>
 #include <set>
 #include <string>
@@ -13,27 +9,33 @@
 class MainWindow;
 class WebContext;
 
-class AvatarLoader : public QThread {
-	Q_OBJECT
+class AvatarLoader {
 private:
+	enum State {
+		Idle,
+		Busy,
+		Done,
+	};
 	struct RequestItem {
-		RepositoryWrapperFrame *frame = nullptr;
+		State state = Idle;
 		std::string email;
 		QImage image;
 	};
 	struct Private;
 	Private *m;
 
+	bool isInterruptionRequested() const;
 protected:
-	void run() override;
+	void run();
 public:
 	AvatarLoader();
-	~AvatarLoader() override;
-	QIcon fetch(RepositoryWrapperFrame *frame, std::string const &email, bool request) const;
+	~AvatarLoader();
+	void requestInterruption();
+	QIcon fetch(std::string const &email, bool request) const;
 	void stop();
 	void start(MainWindow *mainwindow);
-signals:
-	void updated(RepositoryWrapperFrameP frame);
+	void addListener(QObject *listener);
+	void removeListener(QObject *listener);
 };
 
 #endif // AVATARLOADER_H

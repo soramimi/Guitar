@@ -113,7 +113,7 @@ void ObjectBrowserDialog::on_pushButton_inspect_clicked()
 		if (Git::isValidID(id) && ty == "commit") {
 			Git::CommitItem commit;
 			if (g->queryCommit(id, &commit)) {
-				mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), &commit);
+				mainwindow()->execCommitPropertyDialog(this, &commit);
 			}
 		} else {
 			QMessageBox::information(this, tr("Object Inspection"), id + "\n\n" + ty);

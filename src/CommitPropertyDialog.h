@@ -19,8 +19,8 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, Git::CommitItem const *commit);
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, RepositoryWrapperFrame *frame, QString const &commit_id);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
 	~CommitPropertyDialog() override;
 
 	void showCheckoutButton(bool f);
@@ -32,10 +32,14 @@ private slots:
 	void on_pushButton_jump_clicked();
 private:
 	Ui::CommitPropertyDialog *ui;
-	void init(MainWindow *mw, RepositoryWrapperFrame *frame);
+	void init(MainWindow *mw);
 	MainWindow *mainwindow();
 	void setAvatar(const QIcon &icon, QLabel *label);
-	void updateAvatar(RepositoryWrapperFrame *frame, bool request);
+	void updateAvatar(bool request);
+
+	// QObject interface
+protected:
+	void customEvent(QEvent *event);
 };
 
 #endif // COMMITPROPERTYDIALOG_H

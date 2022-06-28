@@ -20,6 +20,7 @@ private:
 
 	void setAvatar(const QIcon &icon);
 	MainWindow *mainwindow();
+	QString email() const;
 public:
 	explicit SetUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &repo_user, QString const &repo);
 	~SetUserDialog() override;
@@ -34,6 +35,10 @@ private slots:
 	void on_lineEdit_name_textChanged(QString const &text);
 	void on_lineEdit_mail_textChanged(QString const &text);
 	void on_pushButton_get_icon_clicked();
+
+	// QObject interface
+protected:
+	void customEvent(QEvent *event);
 };
 
 #endif // SETUSERDIALOG_H

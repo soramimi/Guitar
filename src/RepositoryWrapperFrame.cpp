@@ -1,6 +1,7 @@
 #include "LogTableWidget.h"
 #include "MainWindow.h"
 #include "RepositoryWrapperFrame.h"
+#include "UserEvent.h"
 
 RepositoryWrapperFrame::RepositoryWrapperFrame(QWidget *parent)
 	: QFrame(parent)
@@ -114,6 +115,13 @@ void RepositoryWrapperFrame::setFocusToLogTable()
 void RepositoryWrapperFrame::selectLogTableRow(int row)
 {
 	logtablewidget_->selectRow(row);
+}
+
+void RepositoryWrapperFrame::customEvent(QEvent *e)
+{
+	if (e->type() == (QEvent::Type)UserEvent::AvatarReady) {
+		updateLogTableView();
+	}
 }
 
 void RepositoryWrapperFrame::prepareLogTableWidget()

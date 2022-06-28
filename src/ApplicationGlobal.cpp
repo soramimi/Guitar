@@ -5,5 +5,4 @@ void ApplicationGlobal::init(QApplication *a)
 {
 	(void)a;
 	filetype.open();
-
 }

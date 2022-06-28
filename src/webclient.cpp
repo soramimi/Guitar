@@ -79,6 +79,7 @@ struct WebContext::Private {
 	bool use_keep_alive = false;
 	WebProxy http_proxy;
 	WebProxy https_proxy;
+	bool broken_pipe = false;
 };
 
 WebClient::URL::URL(std::string const &addr)
@@ -138,7 +139,7 @@ void WebClientHandler::abort(std::string const &message)
 
 struct WebClient::Private {
 	std::vector<std::string> request_header;
-	Error error;
+	WebClient::Error error;
 	WebClient::Response response;
 	WebContext *webcx;
 	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
@@ -898,10 +899,12 @@ bool decode_chunked(char const *ptr, char const *end, std::vector<char> *out)
 bool WebClient::get(Request const &req, Post const *post, Response *out, WebClientHandler *handler)
 {
 	reset();
+	bool ok = false;
 	try {
 		if (!m->webcx->m) {
 			throw Error("WebContext is null.");
 		}
+		m->webcx->m->broken_pipe = false;
 		RequestOption opt;
 		opt.keep_alive = m->webcx->m->use_keep_alive;
 		opt.handler = handler;
@@ -929,13 +932,19 @@ bool WebClient::get(Request const &req, Post const *post, Response *out, WebClie
 				}
 			}
 		}
-		return true;
+		ok = true;
 	} catch (Error const &e) {
 		m->error = e;
 		close();
 	}
-	*out = Response();
-	return false;
+	if (m->webcx->m->broken_pipe) {
+		m->webcx->m->broken_pipe = false;
+		ok = false;
+	}
+	if (!ok) {
+		*out = Response();
+	}
+	return ok;
 }
 
 void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)
@@ -1215,5 +1224,10 @@ bool WebContext::load_cacert(char const *path)
 #else
 	return false;
 #endif
+}
+
+void WebContext::notify_broken_pipe()
+{
+	m->broken_pipe = true;
 }
 

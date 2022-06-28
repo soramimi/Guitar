@@ -109,7 +109,7 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 			return;
 		}
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), &commit);
+			mainwindow()->execCommitPropertyDialog(this, &commit);
 			return;
 		}
 	}
@@ -122,5 +122,5 @@ void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 	Git::CommitItem commit;
 	if (!currentCommit(&commit)) return;
 
-	mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), &commit);
+	mainwindow()->execCommitPropertyDialog(this, &commit);
 }

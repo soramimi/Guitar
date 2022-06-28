@@ -3,6 +3,7 @@
 #include "AvatarLoader.h"
 #include "MainWindow.h"
 #include "common/misc.h"
+#include "UserEvent.h"
 
 struct SetUserDialog::Private  {
 	Git::User global_user;
@@ -36,17 +37,19 @@ SetUserDialog::SetUserDialog(MainWindow *parent, Git::User const &global_user, G
 	ui->radioButton_global->click();
 	ui->lineEdit_name->setFocus();
 
+	m->avatar_loader.addListener(this);
 	m->avatar_loader.start(mainwindow());
-	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
-		QString email = ui->lineEdit_mail->text();
-		QIcon icon = m->avatar_loader.fetch(frame.pointer, email.toStdString(), false);
-		setAvatar(icon);
-	});
+//	connect(&m->avatar_loader, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
+//		QString email = ui->lineEdit_mail->text();
+//		QIcon icon = m->avatar_loader.fetch(frame.pointer, email.toStdString(), false);
+//		setAvatar(icon);
+//	});
 }
 
 SetUserDialog::~SetUserDialog()
 {
 	m->avatar_loader.stop();
+	m->avatar_loader.removeListener(this);
 	delete m;
 	delete ui;
 }
@@ -76,6 +79,7 @@ Git::User SetUserDialog::user() const
 
 void SetUserDialog::setAvatar(QIcon const &icon)
 {
+	if (icon.isNull()) return;
 	QPixmap pm = icon.pixmap(QSize(64, 64));
 	ui->label_avatar->setPixmap(pm);
 }
@@ -116,15 +120,28 @@ void SetUserDialog::on_lineEdit_mail_textChanged(QString const &text)
 	}
 }
 
+QString SetUserDialog::email() const
+{
+	return ui->lineEdit_mail->text();
+}
+
 void SetUserDialog::on_pushButton_get_icon_clicked()
 {
 	ui->label_avatar->setPixmap(QPixmap());
-	QString email = ui->lineEdit_mail->text();
+	QString email = this->email();
 	if (email.indexOf('@') > 0) {
-		QIcon icon = m->avatar_loader.fetch(nullptr, email.toStdString(), true);
-		if (!icon.isNull()) {
-			setAvatar(icon);
-		}
+		QIcon icon = m->avatar_loader.fetch(email.toStdString(), true);
+		setAvatar(icon);
+	}
+}
+
+void SetUserDialog::customEvent(QEvent *event)
+{
+	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
+		QString email = this->email();
+		QIcon icon = m->avatar_loader.fetch(email.toStdString(), false);
+		setAvatar(icon);
+		return;
 	}
 }
 

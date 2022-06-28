@@ -20,7 +20,7 @@
 struct TextEditorView::Private {
 	PreEditText preedit;
 	QFont text_font;
-	InputMethodPopup *ime_popup = nullptr;
+    InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
 	QSize basic_character_size;
@@ -57,8 +57,9 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 #else
 
-	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-//	font.setPointSize(10);
+//	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+	QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+	font.setPointSize(20);
 	setTextFont(font);
 
 #endif
@@ -68,7 +69,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	initEditor();
 
-	setFont(textFont());
+//	setFont(textFont());
 
 	setAttribute(Qt::WA_InputMethodEnabled);
 #ifdef Q_OS_WIN
@@ -118,7 +119,6 @@ void TextEditorView::setTextFont(QFont const &font)
 	m->ascent = fm.ascent();
 	m->descent = fm.descent();
 	m->basic_character_size = fm.size(0, "0");
-
 }
 
 void TextEditorView::setRenderingMode(RenderingMode mode)
@@ -164,7 +164,8 @@ bool TextEditorView::event(QEvent *event)
  */
 int TextEditorView::lineHeight() const
 {
-	return m->basic_character_size.height() + m->top_margin + m->bottom_margin;
+	int h = m->basic_character_size.height() + m->top_margin + m->bottom_margin;
+	return h > 0 ? h : 1;
 }
 
 /**
@@ -173,7 +174,8 @@ int TextEditorView::lineHeight() const
  */
 int TextEditorView::basisCharWidth() const
 {
-	return m->basic_character_size.width();
+	int w = m->basic_character_size.width();
+	return w > 0 ? w : 1;
 }
 
 class chars : public abstract_unicode_reader {
@@ -205,7 +207,7 @@ public:
  */
 int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, std::vector<Char> *vec_out) const
 {
-	bool proportional = isProportional();
+    const bool proportional = true;//isProportional();
 
 	int x = 0;
 	int chrs = 0;
@@ -225,15 +227,15 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, std
 			tmp[0] = u;
 			tmp[1] = 0;
 		}
-		if (proportional) {
+//        if (proportional) {
 			s += QString::fromUtf16(tmp);
 			int t = fm.size(0, s).width();
 			t += t & 1;
 			x = t;
-		} else {
-			chrs += charWidth(u);
-			x = basisCharWidth() * chrs;
-		}
+//		} else {
+//			chrs += charWidth(u);
+//			x = basisCharWidth() * chrs;
+//		}
 		vec_out->at(i).size = x - vec_out->at(i).pos;
 	}
 
@@ -244,6 +246,7 @@ int TextEditorView::calcPixelPosX2(QFontMetrics const &fm, int row, int col, std
 	}
 	return x;
 }
+
 int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const
 {
 	if (!vec_out) {
@@ -618,7 +621,7 @@ int TextEditorView::view_y_from_row(int row)
 
 bool TextEditorView::isProportional() const
 {
-	return false;
+    return true;
 }
 
 /**
@@ -647,6 +650,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	preparePaintScreen();
 
 	QPainter pr(this);
+	pr.setFont(m->text_font);
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 
 	// diff mode

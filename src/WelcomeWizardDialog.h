@@ -41,6 +41,10 @@ private slots:
 private:
 	Ui::WelcomeWizardDialog *ui;
 	void setAvatar(const QIcon &icon);
+
+	// QObject interface
+protected:
+	void customEvent(QEvent *event);
 };
 
 #endif // WELCOMEWIZARDDIALOG_H

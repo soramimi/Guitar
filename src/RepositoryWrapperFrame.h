@@ -63,6 +63,10 @@ public:
 	void updateLogTableView();
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
+
+	// QObject interface
+protected:
+	void customEvent(QEvent *e);
 };
 
 struct RepositoryWrapperFrameP {

@@ -8,6 +8,7 @@
 enum class UserEvent {
 	Start = QEvent::User,
 	UserFunction,
+	AvatarReady,
 };
 
 class StartEvent : public QEvent {

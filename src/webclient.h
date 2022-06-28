@@ -233,6 +233,8 @@ public:
 	WebProxy const *https_proxy() const;
 
 	bool load_cacert(char const *path);
+
+	void notify_broken_pipe();
 };
 
 #endif

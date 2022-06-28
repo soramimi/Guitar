@@ -4,8 +4,10 @@
 #include <QColor>
 #include <QString>
 #include <filetype/filetype.h>
+#include "AvatarLoader.h"
 #include "Theme.h"
 #include "main.h"
+#include "webclient.h"
 
 class MainWindow;
 
@@ -25,6 +27,9 @@ struct ApplicationGlobal {
 	FileType filetype;
 
 	ApplicationSettings appsettings;
+
+	WebContext webcx = {WebClient::HTTP_1_0};
+	AvatarLoader avatar_loader;
 
 	void init(QApplication *a);
 };

@@ -243,7 +243,7 @@ void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoi
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, mainwindow()->frame(), commit);
+			mainwindow()->execCommitPropertyDialog(this, commit);
 			return;
 		}
 	}

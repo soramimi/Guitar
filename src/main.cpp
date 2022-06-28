@@ -72,6 +72,12 @@ void onSigTerm(int)
 	}
 }
 
+void onSigPipe(int)
+{
+	qDebug() << "SIGPIPE caught";
+	global->webcx.notify_broken_pipe();
+}
+
 class QMessageLogContext;
 
 class DebugMessageHandler {
@@ -115,6 +121,7 @@ int main(int argc, char *argv[])
 	ApplicationGlobal g;
 	global = &g;
 	signal(SIGTERM, onSigTerm);
+	signal(SIGPIPE, onSigPipe);
 
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
@@ -235,7 +242,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	global->webcx.set_keep_alive_enabled(true);
+	global->avatar_loader.start(&w);
+
 	int r = QApplication::exec();
+
+	global->avatar_loader.stop();
+
 	global->mainwindow = nullptr;
 	return r;
 }
