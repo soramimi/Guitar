@@ -173,10 +173,10 @@ private:
 	void clearRepositoryInfo();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
-	RepositoryItem const *repositoryItem(const QTreeWidgetItem *item) const;
+	RepositoryData const *repositoryItem(const QTreeWidgetItem *item) const;
 
 	QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
-	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryItem> *repos);
+	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos);
 	void refrectRepositories();
 
 	void updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *item);
@@ -217,13 +217,13 @@ private:
 	QStringList whichCommand_(const QString &cmdfile1, const QString &cmdfile2 = {});
 	QString selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, const std::function<void (const QString &)> &callback);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, const QString &path, const std::function<void (const QString &)> &callback);
-	const RepositoryItem *findRegisteredRepository(QString *workdir) const;
+	const RepositoryData *findRegisteredRepository(QString *workdir) const;
 	static bool git_callback(void *cookie, const char *ptr, int len);
 	bool execSetGlobalUserDialog();
 	void revertAllFiles();
 	bool addExistingLocalRepository(QString dir, QString name, bool open);
 	bool execWelcomeWizardDialog();
-	void execRepositoryPropertyDialog(const RepositoryItem &repo, bool open_repository_menu = false);
+	void execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu = false);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
 	void setGitCommand(const QString &path, bool save);
 	void setGpgCommand(const QString &path, bool save);
@@ -243,7 +243,7 @@ private:
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
     void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
-	void setCurrentRepository(const RepositoryItem &repo, bool clear_authentication);
+	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
 	QList<Git::Diff> makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok);
     void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
@@ -290,8 +290,8 @@ private:
     void updateWindowTitle(GitPtr g);
 	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
-	void openTerminal(const RepositoryItem *repo);
-	void openExplorer(const RepositoryItem *repo);
+	void openTerminal(const RepositoryData *repo);
+	void openExplorer(const RepositoryData *repo);
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
 	bool editFile(const QString &path, const QString &title);
 	void setAppSettings(const ApplicationSettings &appsettings);
@@ -310,7 +310,7 @@ private:
 	void setDiffResult(const QList<Git::Diff> &diffs);
 	const QList<Git::SubmoduleItem> &submodules() const;
 	void setSubmodules(const QList<Git::SubmoduleItem> &submodules);
-	bool runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryItem *repo);
+	bool runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryData *repo);
 	NamedCommitList namedCommitItems(RepositoryWrapperFrame *frame, int flags);
 	static QString getObjectID(QListWidgetItem *item);
 	static QString getFilePath(QListWidgetItem *item);
@@ -319,8 +319,8 @@ private:
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
 	static void updateSubmodules(GitPtr g, const QString &id, QList<Git::SubmoduleItem> *out);
-	void saveRepositoryBookmark(RepositoryItem item);
-	void changeRepositoryBookmarkName(RepositoryItem item, QString new_name);
+	void saveRepositoryBookmark(RepositoryData item);
+	void changeRepositoryBookmarkName(RepositoryData item, QString new_name);
 	int rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id);
 	QList<Git::Tag> findTag(RepositoryWrapperFrame *frame, const QString &id);
 	void sshSetPassphrase(const std::string &user, const std::string &pass);
@@ -347,8 +347,8 @@ private:
     bool fetch(GitPtr g, bool prune);
     bool fetch_tags_f(GitPtr g);
 	void setPtyCondition(const PtyCondition &ptyCondition);
-	const QList<RepositoryItem> &getRepos() const;
-	QList<RepositoryItem> *getReposPtr();
+	const QList<RepositoryData> &getRepos() const;
+	QList<RepositoryData> *getReposPtr();
 //	AvatarLoader *getAvatarLoader();
 //	const AvatarLoader *getAvatarLoader() const;
 	bool interactionCanceled() const;
@@ -419,7 +419,7 @@ public:
 	QString selectSshCommand(bool save);
 	const Git::Branch &currentBranch() const;
 	void setCurrentBranch(const Git::Branch &b);
-	const RepositoryItem &currentRepository() const;
+	const RepositoryData &currentRepository() const;
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
@@ -454,6 +454,7 @@ public:
 	QString currentWorkingCopyDir() const;
 	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
 	void refresh();
+	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 public slots:
 	void writeLog_(QByteArray ba);
 private slots:
@@ -559,7 +560,7 @@ private slots:
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void internalWriteLog(const char *ptr, int len);
-	RepositoryItem const *selectedRepositoryItem() const;
+	RepositoryData const *selectedRepositoryItem() const;
 	void removeSelectedRepositoryFromBookmark(bool ask);
 protected slots:
 	void onLogIdle();
@@ -567,7 +568,6 @@ signals:
 	void signalWriteLog(QByteArray ba);
 	void remoteInfoChanged();
 	void signalSetRemoteChanged(bool f);
-	void onEscapeKeyPressed();
 	void updateButton();
 };
 

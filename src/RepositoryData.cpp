@@ -51,7 +51,7 @@ public:
 	}
 };
 
-bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *items)
+bool RepositoryBookmark::save(QString const &path, QList<RepositoryData> const *items)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
@@ -59,7 +59,7 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *
 		writer.setAutoFormatting(true);
 		writer.writeStartDocument();
 		writer.writeStartElement("repositories");
-		for (RepositoryItem const &item : *items) {
+		for (RepositoryData const &item : *items) {
 			if (item.name.isEmpty() && item.local_dir.isEmpty()) {
 				continue;
 			}
@@ -87,12 +87,12 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryItem> const *
 	return false;
 }
 
-QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
+QList<RepositoryData> RepositoryBookmark::load(QString const &path)
 {
-	QList<RepositoryItem> items;
+	QList<RepositoryData> items;
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
-		RepositoryItem item;
+		RepositoryData item;
 		QString text;
 		TagState state;
 		QXmlStreamReader reader(&file);
@@ -105,7 +105,7 @@ QList<RepositoryItem> RepositoryBookmark::load(QString const &path)
 				{
 					QXmlStreamAttributes atts = reader.attributes();
 					if (state == "/repositories/repository") {
-						item = RepositoryItem();
+						item = RepositoryData();
 						item.name = atts.value("name").toString();
 						item.group = atts.value("group").toString();
 					} else if (state == "/repositories/repository/local") {

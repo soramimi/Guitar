@@ -17,7 +17,7 @@ class RepositoryPropertyDialog : public BasicRepositoryDialog {
 	Q_OBJECT
 private:
 	Ui::RepositoryPropertyDialog *ui;
-	RepositoryItem repository;
+	RepositoryData repository;
 	bool remote_changed = false;
     bool name_changed = false;
 	Git::Context const *gcx;
@@ -28,7 +28,7 @@ private:
 	bool isNameEditMode() const;
 	void setNameEditMode(bool f);
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, GitPtr g, RepositoryItem const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

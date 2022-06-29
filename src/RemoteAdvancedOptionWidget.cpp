@@ -26,7 +26,7 @@ void RemoteAdvancedOptionWidget::setSshKeyOverrigingEnabled(bool enabled)
 void RemoteAdvancedOptionWidget::on_pushButton_browse_ssh_key_clicked()
 {
 	QString path = QStandardPaths::locate(QStandardPaths::HomeLocation, ".ssh", QStandardPaths::LocateDirectory);
-	path = QFileDialog::getOpenFileName(this, tr("SSH key override"), path);
+	path = QFileDialog::getOpenFileName(this, tr("SSH private key"), path);
 	if (!path.isEmpty()) {
 		setSshKey(path);
 	}

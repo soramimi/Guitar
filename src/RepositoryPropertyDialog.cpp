@@ -7,7 +7,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr g, RepositoryItem const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu)
 	: BasicRepositoryDialog(parent, g)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, gcx(gcx)
@@ -50,9 +50,9 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 void MainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
 {
 	bool changed = false;
-	QList<RepositoryItem> *repos = getReposPtr();
+	QList<RepositoryData> *repos = getReposPtr();
 	for (int i = 0; i < repos->size(); i++) {
-		RepositoryItem *item = &(*repos)[i];
+		RepositoryData *item = &(*repos)[i];
 		if (item->local_dir == localdir) {
 			item->ssh_key = sshkey;
 			changed = true;

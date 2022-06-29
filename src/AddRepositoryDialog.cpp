@@ -5,6 +5,7 @@
 #include "ui_AddRepositoryDialog.h"
 
 #include <QFileDialog>
+#include <QFocusEvent>
 #include <QMessageBox>
 #include "Git.h"
 
@@ -17,23 +18,49 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	ui->lineEdit_remote_url->installEventFilter(this);
+
 	already_exists_ = tr("A valid git repository exists.");
 
 	ui->lineEdit_local_path->setText(dir);
 	ui->groupBox_remote->setChecked(false);
 	ui->lineEdit_remote_name->setText("origin");
 
-	ui->radioButton_clone->click();
-
 	ui->comboBox_search->addItem(tr("Search"));
 	ui->comboBox_search->addItem(tr("GitHub"));
 
 	validate(false);
+
+	ui->stackedWidget->setCurrentWidget(ui->page_first);
+	ui->radioButton_clone->click();
+	ui->radioButton_clone->setFocus();
+	updateUI();
 }
 
 AddRepositoryDialog::~AddRepositoryDialog()
 {
 	delete ui;
+}
+
+bool AddRepositoryDialog::eventFilter(QObject *watched, QEvent *event)
+{
+	if (event->type() == QEvent::FocusOut) {
+		if (watched == ui->lineEdit_remote_url) {
+			complementRemoteURL(false);
+		}
+	}
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *e = static_cast<QKeyEvent *>(event);
+		if (e->key() == Qt::Key_Space && (e->modifiers() & Qt::ControlModifier)) {
+			complementRemoteURL(true);
+		}
+	}
+	return QDialog::eventFilter(watched, event);
+}
+
+QString AddRepositoryDialog::repositoryName() const
+{
+	return reponame_;
 }
 
 MainWindow *AddRepositoryDialog::mainwindow()
@@ -51,8 +78,128 @@ AddRepositoryDialog::Mode AddRepositoryDialog::mode() const
 	return mode_;
 }
 
+QString AddRepositoryDialog::defaultWorkingDir() const
+{
+	return mainwindow()->defaultWorkingDir();
+}
+
+void AddRepositoryDialog::browseLocalPath()
+{
+	QString dir = ui->lineEdit_local_path->text();
+	if (dir.isEmpty()) {
+		dir = defaultWorkingDir();
+	}
+	dir = QFileDialog::getExistingDirectory(this, tr("Local Path"), dir);
+	if (!dir.isEmpty()) {
+		dir = misc::normalizePathSeparator(dir);
+		ui->lineEdit_local_path->setText(dir);
+	}
+}
+
+void AddRepositoryDialog::on_pushButton_browse_local_path_clicked()
+{
+	browseLocalPath();
+}
+
+QString AddRepositoryDialog::localPath(bool cook) const
+{
+	QString s = ui->lineEdit_local_path->text();
+	if (cook) {
+		s = s.replace('\\', '/');
+	}
+	return s;
+
+}
+
+QString AddRepositoryDialog::remoteName() const
+{
+	return ui->lineEdit_remote_name->text();
+}
+
+QString AddRepositoryDialog::remoteURL() const
+{
+	return ui->lineEdit_remote_url->text();
+}
+
+void AddRepositoryDialog::validate(bool change_name)
+{
+	QString path = localPath(false);
+	{
+		QString text;
+		if (Git::isValidWorkingCopy(path)) {
+			text = already_exists_;
+		}
+		ui->label_warning->setText(text);
+	}
+
+//	if (change_name) {
+//		if (path != defaultWorkingDir()) {
+//			auto i = path.lastIndexOf('/');
+//			auto j = path.lastIndexOf('\\');
+//			if (i < j) i = j;
+//		}
+//	}
+}
+
+void AddRepositoryDialog::updateUI()
+{
+	ui->pushButton_prev->setEnabled(ui->stackedWidget->currentWidget() != ui->page_first);
+
+	bool okbutton = false;
+	switch (mode()) {
+	case Clone:
+		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
+		break;
+	case Initialize:
+		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
+		break;
+	case AddExisting:
+		break;
+	}
+	if (okbutton) {
+		ui->pushButton_ok->setText(tr("OK"));
+	} else {
+		ui->pushButton_ok->setText(tr("Next"));
+	}
+}
+
 void AddRepositoryDialog::accept()
 {
+	auto *currpage = ui->stackedWidget->currentWidget();
+	if (currpage == ui->page_first) {
+		switch (mode()) {
+		case Clone:
+			ui->lineEdit_local_path->setText(defaultWorkingDir());
+			ui->stackedWidget->setCurrentWidget(ui->page_remote);
+			ui->lineEdit_remote_url->setFocus();
+			break;
+		case Initialize:
+			ui->stackedWidget->setCurrentWidget(ui->page_local);
+			browseLocalPath();
+			break;
+		case AddExisting:
+			ui->stackedWidget->setCurrentWidget(ui->page_local);
+			browseLocalPath();
+			break;
+		}
+		updateUI();
+		return;
+	} else if (mode() == Clone) {
+		if (currpage == ui->page_remote) {
+			ui->stackedWidget->setCurrentWidget(ui->page_local);
+		} else if (currpage == ui->page_local) {
+			done(QDialog::Accepted);
+			return;
+		}
+		updateUI();
+		return;
+	} else if (mode() == AddExisting) {
+		QString dir = ui->lineEdit_local_path->text();
+		if (global->mainwindow->addExistingLocalRepository(dir, true)) {
+			done(QDialog::Accepted);
+		}
+		return;
+	}
 	QString path = ui->lineEdit_local_path->text();
 	if (!QFileInfo(path).isDir()) {
 		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
@@ -73,78 +220,20 @@ void AddRepositoryDialog::accept()
 	done(QDialog::Accepted);
 }
 
-QString AddRepositoryDialog::defaultWorkingDir() const
+void AddRepositoryDialog::on_pushButton_prev_clicked()
 {
-	return mainwindow()->defaultWorkingDir();
-}
-
-QString AddRepositoryDialog::browseLocalPath()
-{
-	QString dir = ui->lineEdit_local_path->text();
-	if (dir.isEmpty()) {
-		dir = defaultWorkingDir();
-	}
-	dir = QFileDialog::getExistingDirectory(this, tr("Local Path"), dir);
-	if (!dir.isEmpty()) {
-		dir = misc::normalizePathSeparator(dir);
-		ui->lineEdit_local_path->setText(dir);
-	}
-	return dir;
-}
-
-void AddRepositoryDialog::on_pushButton_browse_local_path_clicked()
-{
-	browseLocalPath();
-}
-
-QString AddRepositoryDialog::localPath() const
-{
-	return ui->lineEdit_local_path->text();
-}
-
-QString AddRepositoryDialog::name() const
-{
-	return ui->lineEdit_bookmark_name->text();
-}
-
-QString AddRepositoryDialog::remoteName() const
-{
-	return ui->groupBox_remote->isChecked() ? ui->lineEdit_remote_name->text() : QString();
-}
-
-QString AddRepositoryDialog::remoteURL() const
-{
-	return ui->groupBox_remote->isChecked() ? ui->lineEdit_remote_url->text() : QString();
-}
-
-void AddRepositoryDialog::validate(bool change_name)
-{
-	QString path = localPath();
-	{
-		QString text;
-		if (Git::isValidWorkingCopy(path)) {
-			text = already_exists_;
-		}
-		ui->label_warning->setText(text);
+	auto *currpage = ui->stackedWidget->currentWidget();
+	if (currpage == ui->page_local && mode() == Clone) {
+		ui->stackedWidget->setCurrentWidget(ui->page_remote);
+	} else if (currpage != ui->page_first) {
+		ui->stackedWidget->setCurrentWidget(ui->page_first);
 	}
 
-	if (change_name) {
-		if (path == defaultWorkingDir()) {
-			ui->lineEdit_bookmark_name->setText({});
-		} else {
-			auto i = path.lastIndexOf('/');
-			auto j = path.lastIndexOf('\\');
-			if (i < j) i = j;
-
-			if (i >= 0) {
-				QString name = path.mid(i + 1);
-				ui->lineEdit_bookmark_name->setText(name);
-			}
-		}
-	}
+	updateUI();
 }
 
-QString AddRepositoryDialog::overridedSshKey()
+
+QString AddRepositoryDialog::overridedSshKey() const
 {
 	return ui->widget_ssh_override->sshKey();
 }
@@ -172,46 +261,19 @@ void AddRepositoryDialog::on_pushButton_test_repo_clicked()
 	validate(false);
 }
 
-void AddRepositoryDialog::updateUI()
-{
-	ui->comboBox_search->setEnabled(mode_ == Clone);
-
-	if (mode_ == Clone) {
-		ui->groupBox_remote->setChecked(true);
-	}
-
-	if (mode_ == Initialize) {
-		ui->comboBox_search->setEnabled(false);
-	}
-}
-
 void AddRepositoryDialog::on_radioButton_clone_clicked()
 {
 	mode_ = Clone;
-	updateUI();
-
-	ui->lineEdit_local_path->setText(defaultWorkingDir());
-
-	ui->lineEdit_remote_url->setFocus();
 }
 
-void AddRepositoryDialog::on_radioButton_init_clicked()
+void AddRepositoryDialog::on_radioButton_initialize_clicked()
 {
 	mode_ = Initialize;
-	updateUI();
-
-	ui->lineEdit_local_path->setFocus();
 }
 
 void AddRepositoryDialog::on_radioButton_add_existing_clicked()
 {
-	QString dir = browseLocalPath();
-	if (global->mainwindow->addExistingLocalRepository(dir, true)) {
-		done(QDialog::Accepted);
-		return;
-	}
-
-	ui->radioButton_clone->click();
+	mode_ = AddExisting;
 }
 
 void AddRepositoryDialog::setRemoteURL(QString const &url)
@@ -232,7 +294,6 @@ void AddRepositoryDialog::on_comboBox_search_currentIndexChanged(int index)
 
 void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text)
 {
-	QString reponame;
 	auto i = text.lastIndexOf('/');
 	auto j = text.lastIndexOf('\\');
 	if (i < j) i = j;
@@ -247,13 +308,45 @@ void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text
 	}
 
 	if (i >= 0 && i < j) {
-		reponame = text.mid(i, j - i);
+		reponame_ = text.mid(i, j - i);
 	}
-	ui->lineEdit_bookmark_name->setText(reponame);
 
-	QString path = defaultWorkingDir() / reponame;
+	QString path = defaultWorkingDir() / reponame_;
 	path = misc::normalizePathSeparator(path);
 	ui->lineEdit_local_path->setText(path);
 }
 
+Git::CloneData AddRepositoryDialog::makeCloneData() const
+{
+	QString url = remoteURL();
+	QString dir = localPath(false);
+	Git::CloneData clonedata = Git::preclone(url, dir);
+	return clonedata;
+}
 
+RepositoryData AddRepositoryDialog::makeRepositoryData() const
+{
+	RepositoryData reposdata;
+	reposdata.local_dir = localPath(true);
+	reposdata.name = repositoryName();
+	reposdata.ssh_key = overridedSshKey();
+	return reposdata;
+}
+
+void AddRepositoryDialog::complementRemoteURL(bool toggle)
+{
+	QString url = ui->lineEdit_remote_url->text();
+	if (toggle && url.startsWith("https://github.com/")) {
+		url = "git@github.com:" + url.mid(19);
+		ui->lineEdit_remote_url->setText(url);
+	} else if (toggle && url.startsWith("git@github.com:")) {
+		url = "https://github.com/" + url.mid(15);
+		ui->lineEdit_remote_url->setText(url);
+	} else {
+		QStringList s = misc::splitWords(url);
+		if (s.size() == 3 && s[0] == "github") {
+			QString url = "https://github.com/" + s[1] + '/' + s[2] + ".git";
+			ui->lineEdit_remote_url->setText(url);
+		}
+	}
+}
