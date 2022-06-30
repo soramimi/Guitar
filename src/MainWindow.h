@@ -255,8 +255,7 @@ private:
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
 	void pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force);
-	bool pushSetUpstream(bool testonly);
-	void push();
+	bool pushSetUpstream();
 	void deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
 	void deleteBranch(RepositoryWrapperFrame *frame);
 	void resetFile(const QStringList &paths);
@@ -349,8 +348,6 @@ private:
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &getRepos() const;
 	QList<RepositoryData> *getReposPtr();
-//	AvatarLoader *getAvatarLoader();
-//	const AvatarLoader *getAvatarLoader() const;
 	bool interactionCanceled() const;
 	void setInteractionCanceled(bool canceled);
 	InteractionMode interactionMode() const;
@@ -382,12 +379,17 @@ private:
 	QPixmap getTransparentPixmap();
 	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
 	void cancelPendingUserEvents();
+	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
 protected:
+	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
+	void internalWriteLog(const char *ptr, int len);
+	RepositoryData const *selectedRepositoryItem() const;
+	void removeSelectedRepositoryFromBookmark(bool ask);
 public:
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	int digitWidth() const;
@@ -462,12 +464,16 @@ private slots:
 	void onLogVisibilityChanged();
 	void onPtyProcessCompleted(bool ok, const QVariant &userdata);
 	void onRepositoriesTreeDropped();
+	void onAvatarUpdated(RepositoryWrapperFrameP frame);
+	void onInterval10ms();
+
 	void on_action_about_triggered();
-	void on_action_clean_df_triggered();
 	void on_action_add_repository_triggered();
+	void on_action_clean_df_triggered();
 	void on_action_clone_triggered();
 	void on_action_commit_triggered();
 	void on_action_create_a_repository_triggered();
+	void on_action_create_desktop_launcher_file_triggered();
 	void on_action_delete_branch_triggered();
 	void on_action_delete_remote_branch_triggered();
 	void on_action_edit_git_config_triggered();
@@ -490,7 +496,6 @@ private slots:
 	void on_action_pull_triggered();
 	void on_action_push_all_tags_triggered();
 	void on_action_push_triggered();
-	void on_action_push_u_triggered();
 	void on_action_reflog_triggered();
 	void on_action_repo_checkout_triggered();
 	void on_action_repo_jump_to_head_triggered();
@@ -515,7 +520,6 @@ private slots:
 	void on_action_terminal_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_window_log_triggered(bool checked);
-	void on_horizontalScrollBar_log_valueChanged(int);
 	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_listWidget_files_currentRowChanged(int currentRow);
 	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
@@ -547,21 +551,9 @@ private slots:
 	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
-	void on_verticalScrollBar_log_valueChanged(int);
 
-	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void test();
-	void onInterval10ms();
-	void on_action_create_desktop_launcher_file_triggered();
 
-
-	void on_toolButton_add_clicked();
-
-protected:
-	void closeEvent(QCloseEvent *event) override;
-	void internalWriteLog(const char *ptr, int len);
-	RepositoryData const *selectedRepositoryItem() const;
-	void removeSelectedRepositoryFromBookmark(bool ask);
 protected slots:
 	void onLogIdle();
 signals:

@@ -69,7 +69,7 @@ void AvatarLoader::run()
 		{
 			std::unique_lock lock(m->mutex);
 			if (isInterruptionRequested()) return;
-			for (int i = 0; i < m->requests.size(); i++) {
+			for (size_t i = 0; i < m->requests.size(); i++) {
 				if (m->requests[i].state == Idle) {
 					m->requests[i].state = Busy;
 					request = m->requests[i];
@@ -131,7 +131,7 @@ void AvatarLoader::run()
 			}
 			{
 				std::lock_guard lock(m->mutex);
-				for (int i = 0; i < m->requests.size(); i++) {
+				for (size_t i = 0; i < m->requests.size(); i++) {
 					if (m->requests[i].email == request.email) {
 						if (request.state == Done) {
 							m->requests[i] = request;

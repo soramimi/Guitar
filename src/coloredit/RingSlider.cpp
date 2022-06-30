@@ -61,6 +61,8 @@ void RingSlider::keyPressEvent(QKeyEvent *e)
 		offset(pageStep());
 		return;
 	}
+
+	QSlider::keyPressEvent(e);
 }
 
 void RingSlider::paintEvent(QPaintEvent *)

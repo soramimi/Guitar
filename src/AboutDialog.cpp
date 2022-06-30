@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <QTextBlock>
 
-#include "version.h"
+#include "../version.h"
 
 AboutDialog::AboutDialog(QWidget *parent) :
 	QDialog(parent),

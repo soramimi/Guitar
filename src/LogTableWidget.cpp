@@ -223,39 +223,21 @@ RepositoryWrapperFrame *LogTableWidget::frame()
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
 {
-	const double k = 0.55228475; // 三次ベジェ曲線で円を近似するための定数
 	if (x0 == x1) {
 		path->moveTo(x0, y0);
-		path->lineTo(x1, y1);
-	} else {
-		double ym = bend_early ? (y0 + r) : (y1 - r);
-		double h = fabs(y1 - y0);
-		double w = fabs(x1 - x0);
-		if (r > h / 2) r = h / 2;
-		if (r > w / 2) r = w / 2;
-		double s = r;
-		if (x0 > x1) r = -r;
-		if (y0 > y1) s = -s;
-
-		if (0) {
-			path->moveTo(x0, y0);
-			path->lineTo(x0, ym - s);
-			path->cubicTo(x0, ym - s + s * k, x0 + r - r * k, ym, x0 + r, ym);
-			path->lineTo(x1 - r, ym);
-			path->cubicTo(x1 - r + r * k, ym, x1, ym + s - s * k, x1, ym + s);
-			path->lineTo(x1, y1);
-		} else {
-			if (bend_early) {
-				path->moveTo(x0, y0);
-				path->cubicTo(x0, ym, x1, ym, x1, ym + ym - y0);
-				path->lineTo(x1, y1);
-			} else {
-				path->moveTo(x0, y0);
-				path->lineTo(x0, ym + ym - y1);
-				path->cubicTo(x0, ym, x1, ym, x1, y1);
-			}
-		}
-	}
+        path->lineTo(x1, y1);
+    } else {
+        double ym = bend_early ? (y0 + r) : (y1 - r);
+        if (bend_early) {
+            path->moveTo(x0, y0);
+            path->cubicTo(x0, ym, x1, ym, x1, ym + ym - y0);
+            path->lineTo(x1, y1);
+        } else {
+            path->moveTo(x0, y0);
+            path->lineTo(x0, ym + ym - y1);
+            path->cubicTo(x0, ym, x1, ym, x1, y1);
+        }
+    }
 }
 
 void LogTableWidget::paintEvent(QPaintEvent *e)

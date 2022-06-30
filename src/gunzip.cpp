@@ -72,7 +72,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		};
 
 		if (h->flg & FEXTRA) {
-			n = input->read((char *)ibuf, 2);
+            input->read((char *)ibuf, 2);
 			n = ((uint8_t)ibuf[1] << 8) | (uint8_t)ibuf[0];
 			input->seek(input->pos() + n);
 		}
@@ -177,7 +177,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		Close();
 
 		input->seek(inpos + stream.total_in);
-		n = input->read((char *)ibuf, 8);
+        input->read((char *)ibuf, 8);
 
 		auto ReadU32LE = [](void const *p)->uint32_t{
 			auto const *q = (uint8_t const *)p;

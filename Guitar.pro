@@ -96,24 +96,9 @@ win32:gcc {
 	CONFIG(release, debug|release):LIBS += $$PWD/_bin/liblibz.a
 }
 
-!haiku {
-	use_system_zlib {
-		unix:LIBS += -lz
-	} else {
-		unix:CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libzd.a
-		unix:CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.a
-	}
+!win32 {
+	LIBS += -lz
 }
-
-haiku:LIBS += -lz
-
-# filetype library
-
-INCLUDEPATH += $$PWD/filetype/file/src
-SOURCES += filetype/filetype.cpp \
-	src/AddRepositoryDialog.cpp \
-	src/common/base64.cpp \
-	src/texteditor/TextEditorView.cpp
 
 #
 
@@ -131,22 +116,21 @@ macx {
 }
 
 SOURCES += \
-	src/AboutDialog.cpp \
+    src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
+	src/AddRepositoryDialog.cpp \
 	src/ApplicationGlobal.cpp \
 	src/AreYouSureYouWantToContinueConnectingDialog.cpp \
 	src/AvatarLoader.cpp \
 	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
-    src/BranchLabel.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
-    src/ColorButton.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
 	src/CommitPropertyDialog.cpp \
@@ -209,7 +193,6 @@ SOURCES += \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryLineEdit.cpp \
 	src/RepositoryPropertyDialog.cpp \
-    src/RepositoryWrapperFrame.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
@@ -224,25 +207,14 @@ SOURCES += \
 	src/SettingNetworkForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
-    src/SettingVisualForm.cpp \
 	src/SettingsDialog.cpp \
 	src/StatusLabel.cpp \
-    src/SubmoduleAddDialog.cpp \
-    src/SubmoduleMainWindow.cpp \
-    src/SubmoduleUpdateDialog.cpp \
-    src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
-    src/UserEvent.cpp \
 	src/WelcomeWizardDialog.cpp \
 	src/charvec.cpp \
-    src/coloredit/ColorDialog.cpp \
-    src/coloredit/ColorEditWidget.cpp \
-    src/coloredit/ColorPreviewWidget.cpp \
-    src/coloredit/ColorSlider.cpp \
-    src/coloredit/ColorSquareWidget.cpp \
-    src/coloredit/RingSlider.cpp \
+	src/common/base64.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
@@ -255,11 +227,28 @@ SOURCES += \
 	src/texteditor/AbstractCharacterBasedApplication.cpp \
 	src/texteditor/InputMethodPopup.cpp \
 	src/texteditor/TextEditorTheme.cpp \
+	src/texteditor/TextEditorView.cpp \
 	src/texteditor/TextEditorWidget.cpp \
 	src/texteditor/UnicodeWidth.cpp \
 	src/texteditor/unicode.cpp \
 	src/urlencode.cpp \
 	src/webclient.cpp \
+	src/BranchLabel.cpp \
+	src/ColorButton.cpp \
+	src/RepositoryWrapperFrame.cpp \
+	src/SettingVisualForm.cpp \
+	src/SubmoduleAddDialog.cpp \
+	src/SubmoduleMainWindow.cpp \
+	src/SubmoduleUpdateDialog.cpp \
+	src/SubmodulesDialog.cpp \
+	src/UserEvent.cpp \
+	src/coloredit/ColorDialog.cpp \
+	src/coloredit/ColorEditWidget.cpp \
+	src/coloredit/ColorPreviewWidget.cpp \
+	src/coloredit/ColorSlider.cpp \
+	src/coloredit/ColorSquareWidget.cpp \
+	src/coloredit/RingSlider.cpp \
+	version.c
 
 HEADERS  += \
 	filetype/filetype.h \
@@ -397,7 +386,7 @@ HEADERS  += \
 	src/urlencode.h \
 	src/webclient.h
 
-HEADERS += src/version.h
+HEADERS += version.h
 
 FORMS    += \
 	src/AboutDialog.ui \
@@ -492,5 +481,4 @@ win32 {
 }
 
 include(filetype/filetype.pri)
-
 

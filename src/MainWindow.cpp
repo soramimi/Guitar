@@ -1517,8 +1517,10 @@ void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
 
 void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force)
 {
-	if (remote.isEmpty()) return;
-	if (branch.isEmpty()) return;
+	if (set_upstream) {
+		if (remote.isEmpty()) return;
+		if (branch.isEmpty()) return;
+	}
 	
 	int exitcode = 0;
 	QString errormsg;
@@ -1543,7 +1545,7 @@ void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const
 	updateRemoteInfo();
 }
 
-bool MainWindow::pushSetUpstream(bool testonly)
+bool MainWindow::pushSetUpstream()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
@@ -1560,72 +1562,17 @@ bool MainWindow::pushSetUpstream(bool testonly)
 		return false;
 	}
 	
-	if (testonly) {
-		return true;
-	}
-	
 	PushDialog dlg(this, remotes, branches, PushDialog::RemoteBranch(QString(), current_branch));
 	if (dlg.exec() == QDialog::Accepted) {
-		PushDialog::Action a = dlg.action();
-		if (a == PushDialog::PushSimple) {
-			push();
-		} else if (a == PushDialog::PushSetUpstream) {
-			bool set_upstream = dlg.isSetUpStream();
-			QString remote = dlg.remote();
-			QString branch = dlg.branch();
-			bool force = dlg.isForce();
-			pushSetUpstream(set_upstream, remote, branch, force);
-		}
+		bool set_upstream = dlg.isSetUpStream();
+		QString remote = dlg.remote();
+		QString branch = dlg.branch();
+		bool force = dlg.isForce();
+		pushSetUpstream(set_upstream, remote, branch, force);
 		return true;
 	}
 	
 	return false;
-}
-
-void MainWindow::push()
-{
-	if (!isOnlineMode()) return;
-	
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-	
-	if (g->getRemotes().isEmpty()) {
-		QMessageBox::warning(this, qApp->applicationName(), tr("No remote repository is registered."));
-		RepositoryData const &repo = currentRepository();
-		execRepositoryPropertyDialog(repo, true);
-		return;
-	}
-	
-	int exitcode = 0;
-	QString errormsg;
-	
-	reopenRepository(true, [&](GitPtr g){
-		g->push(false, getPtyProcess());
-		while (1) {
-			if (getPtyProcess()->wait(1)) break;
-			QApplication::processEvents();
-		}
-		exitcode = getPtyProcess()->getExitCode();
-		errormsg = getPtyProcess()->getMessage();
-	});
-	
-	if (exitcode == 128) {
-		if (errormsg.indexOf("no upstream branch") >= 0) {
-			QString brname = currentBranchName();
-			
-			QString msg = tr("The current branch %1 has no upstream branch.");
-			msg = msg.arg(brname);
-			msg += '\n';
-			msg += tr("You try push --set-upstream");
-			QMessageBox::warning(this, qApp->applicationName(), msg);
-			pushSetUpstream(false);
-			return;
-		}
-		if (errormsg.indexOf("Connection refused") >= 0) {
-			QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
-			return;
-		}
-	}
 }
 
 void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem *commit)
@@ -1775,6 +1722,24 @@ void MainWindow::createRepository(const QString &dir)
 	}
 }
 
+void MainWindow::initRepository(QString const &path, QString const &reponame, Git::Remote const &remote)
+{
+	if (QFileInfo(path).isDir()) {
+		if (Git::isValidWorkingCopy(path)) {
+			// A valid git repository already exists there.
+		} else {
+			GitPtr g = git(path, {}, {});
+			if (g->init()) {
+				if (!remote.name.isEmpty() && !remote.url.isEmpty()) {
+					g->addRemoteURL(remote);
+					changeSshKey(path, remote.ssh_key);
+				}
+				addExistingLocalRepository(path, reponame, true);
+			}
+		}
+	}
+}
+
 // experimental
 void MainWindow::addRepository(const QString &dir)
 {
@@ -1784,34 +1749,17 @@ void MainWindow::addRepository(const QString &dir)
 			auto cdata = dlg.makeCloneData();
 			auto rdata = dlg.makeRepositoryData();
 			cloneRepository(cdata, rdata);
-		} else {
-			QString path = dlg.localPath(false);
-			if (QFileInfo(path).isDir()) {
-				if (Git::isValidWorkingCopy(path)) {
-					// A valid git repository already exists there.
-				} else {
-					GitPtr g = git(path, {}, {});
-					if (g->init()) {
-						QString name = dlg.repositoryName();
-						if (!name.isEmpty()) {
-							addExistingLocalRepository(path, name, true);
-						}
-						QString remote_name = dlg.remoteName();
-						QString remote_url = dlg.remoteURL();
-						QString ssh_key = dlg.overridedSshKey();
-						if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
-							Git::Remote r;
-							r.name = remote_name;
-							r.url = remote_url;
-							r.ssh_key = ssh_key;
-							g->addRemoteURL(r);
-							changeSshKey(path, ssh_key);
-						}
-					}
-				}
-			} else {
-				// not dir
-			}
+		} else if (dlg.mode() == AddRepositoryDialog::AddExisting) {
+			QString dir = dlg.localPath(false);
+			addExistingLocalRepository(dir, true);
+		} else if (dlg.mode() == AddRepositoryDialog::Initialize) {
+			QString dir = dlg.localPath(false);
+			QString name = dlg.repositoryName();
+			Git::Remote r;
+			r.name = dlg.remoteName();
+			r.url = dlg.remoteURL();
+			r.ssh_key = dlg.overridedSshKey();
+			initRepository(dir, name, r);
 		}
 	}
 }
@@ -3714,7 +3662,6 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 	ui->action_fetch_prune->setEnabled(enabled);
 	ui->action_pull->setEnabled(enabled);
 	ui->action_push->setEnabled(enabled);
-	ui->action_push_u->setEnabled(enabled);
 	ui->action_push_all_tags->setEnabled(enabled);
 	
 	ui->toolButton_pull->setEnabled(enabled);
@@ -3952,7 +3899,12 @@ void MainWindow::on_action_fetch_prune_triggered()
 
 void MainWindow::on_action_push_triggered()
 {
-	push();
+	pushSetUpstream();
+}
+
+void MainWindow::on_toolButton_push_clicked()
+{
+	ui->action_push->trigger();
 }
 
 void MainWindow::on_action_pull_triggered()
@@ -3968,11 +3920,6 @@ void MainWindow::on_action_pull_triggered()
 			QApplication::processEvents();
 		}
 	});
-}
-
-void MainWindow::on_toolButton_push_clicked()
-{
-	ui->action_push->trigger();
 }
 
 void MainWindow::on_toolButton_pull_clicked()
@@ -5302,11 +5249,7 @@ void MainWindow::on_toolButton_clone_clicked()
 	ui->action_clone->trigger();
 }
 
-void MainWindow::on_toolButton_add_clicked()
-{
-	ui->action_add_repository->trigger();
 
-}
 
 void MainWindow::on_toolButton_fetch_clicked()
 {
@@ -5382,7 +5325,7 @@ bool MainWindow::addTag(RepositoryWrapperFrame *frame, QString const &name)
 void MainWindow::on_action_push_all_tags_triggered()
 {
 	reopenRepository(false, [&](GitPtr g){
-		g->push(true);
+		g->push_tags();
 	});
 }
 
@@ -5677,15 +5620,9 @@ void MainWindow::on_radioButton_remote_offline_clicked()
 	setRemoteOnline(false, true);
 }
 
-void MainWindow::on_verticalScrollBar_log_valueChanged(int)
-{
-	ui->widget_log->view()->refrectScrollBar();
-}
 
-void MainWindow::on_horizontalScrollBar_log_valueChanged(int)
-{
-	ui->widget_log->view()->refrectScrollBar();
-}
+
+
 
 void MainWindow::on_toolButton_stop_process_clicked()
 {
@@ -5969,11 +5906,6 @@ void MainWindow::on_action_edit_tags_triggered()
 		EditTagsDialog dlg(this, commit);
 		dlg.exec();
 	}
-}
-
-void MainWindow::on_action_push_u_triggered()
-{
-	pushSetUpstream(false);
 }
 
 void MainWindow::on_action_delete_remote_branch_triggered()
@@ -6284,4 +6216,8 @@ Terminal=false
 void MainWindow::test()
 {
 }
+
+
+
+
 

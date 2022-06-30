@@ -33,18 +33,6 @@ PushDialog::~PushDialog()
 	delete ui;
 }
 
-PushDialog::Action PushDialog::action() const
-{
-#if 1
-	return PushSetUpstream;
-#else
-	if (ui->radioButton_push_set_upstream->isChecked()) {
-		return PushSetUpstream;
-	}
-	return PushSimple;
-#endif
-}
-
 bool PushDialog::isSetUpStream() const
 {
 	return ui->groupBox_set_upstream->isChecked();

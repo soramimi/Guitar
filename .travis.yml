@@ -4,17 +4,17 @@ sudo: require
 dist: focal
 
 before_install:
-  - sudo add-apt-repository ppa:beineri/opt-qt-5.14.2-focal -y
+  - sudo add-apt-repository ppa:beineri/opt-qt-5.15.4-focal -y
   - sudo apt-get update -q
 
 install:
-  - sudo apt-get -y install qt514base qt514svg libgl1-mesa-dev libssl-dev zlib1g-dev ruby patchelf automake libmagic-dev
+  - sudo apt-get -y install qt515base qt515svg libgl1-mesa-dev libssl-dev zlib1g-dev ruby patchelf automake libmagic-dev
   - source /opt/qt*/bin/qt*-env.sh
 
 script:
   - export PATH=./packaging/continuous-x86_64:$PATH
   - ruby prepare.rb
-  - mkdir -p _bin/ && cp /usr/lib/x86_64-linux-gnu/libz.a _bin/
+  - mkdir -p _bin
   - qmake CONFIG+=release PREFIX=/usr
   - make -j$(nproc)
   - mkdir -p appdir/usr/bin && cp _bin/Guitar appdir/usr/bin/guitar && strip appdir/usr/bin/guitar && chmod a+x appdir/usr/bin/guitar

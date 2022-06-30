@@ -96,4 +96,6 @@ HEADERS += \
 	filetype/pcre2/src/pcre2posix.h \
 	filetype/pcre2/src/regex.h
 
+SOURCES += filetype/filetype.cpp
+
 win32:HEADERS += filetype/dirent/include/dirent.h

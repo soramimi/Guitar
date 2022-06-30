@@ -123,7 +123,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-	GetValue<bool>(s, "EnableHighDpiScaling")                >> as->enable_high_dpi_scaling;
+//	GetValue<bool>(s, "EnableHighDpiScaling")                >> as->enable_high_dpi_scaling;
 	GetValue<bool>(s, "ShowLabels")                          >> as->show_labels;
 	s.endGroup();
 
@@ -162,7 +162,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-	SetValue<bool>(s, "EnableHighDpiScaling")                << as->enable_high_dpi_scaling;
+//	SetValue<bool>(s, "EnableHighDpiScaling")                << as->enable_high_dpi_scaling;
 	SetValue<bool>(s, "ShowLabels")                          << as->show_labels;
 	s.endGroup();
 

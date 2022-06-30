@@ -1,13 +1,12 @@
 #include "AddRepositoryDialog.h"
-#include "MainWindow.h"
-#include "common/misc.h"
-#include "SearchFromGitHubDialog.h"
 #include "ui_AddRepositoryDialog.h"
-
+#include "Git.h"
+#include "MainWindow.h"
+#include "SearchFromGitHubDialog.h"
+#include "common/misc.h"
 #include <QFileDialog>
 #include <QFocusEvent>
 #include <QMessageBox>
-#include "Git.h"
 
 AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir) :
 	QDialog(parent),
@@ -29,11 +28,11 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	ui->comboBox_search->addItem(tr("Search"));
 	ui->comboBox_search->addItem(tr("GitHub"));
 
-	validate(false);
+	validate();
 
 	ui->stackedWidget->setCurrentWidget(ui->page_first);
-	ui->radioButton_clone->click();
 	ui->radioButton_clone->setFocus();
+	ui->radioButton_clone->click();
 	updateUI();
 }
 
@@ -121,24 +120,26 @@ QString AddRepositoryDialog::remoteURL() const
 	return ui->lineEdit_remote_url->text();
 }
 
-void AddRepositoryDialog::validate(bool change_name)
+void AddRepositoryDialog::validate()
 {
 	QString path = localPath(false);
 	{
 		QString text;
 		if (Git::isValidWorkingCopy(path)) {
-			text = already_exists_;
+			switch (mode()) {
+			case AddRepositoryDialog::Clone:
+				text = tr("A valid git repository already exists.");
+				break;
+			case AddRepositoryDialog::Initialize:
+				break;
+			case AddRepositoryDialog::AddExisting:
+				text = tr("A valid git repository.");
+				break;
+			}
+
 		}
 		ui->label_warning->setText(text);
 	}
-
-//	if (change_name) {
-//		if (path != defaultWorkingDir()) {
-//			auto i = path.lastIndexOf('/');
-//			auto j = path.lastIndexOf('\\');
-//			if (i < j) i = j;
-//		}
-//	}
 }
 
 void AddRepositoryDialog::updateUI()
@@ -151,9 +152,10 @@ void AddRepositoryDialog::updateUI()
 		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
 		break;
 	case Initialize:
-		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
+		okbutton = (ui->stackedWidget->currentWidget() == ui->page_remote);
 		break;
 	case AddExisting:
+		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
 		break;
 	}
 	if (okbutton) {
@@ -171,6 +173,8 @@ void AddRepositoryDialog::accept()
 		case Clone:
 			ui->lineEdit_local_path->setText(defaultWorkingDir());
 			ui->stackedWidget->setCurrentWidget(ui->page_remote);
+			ui->groupBox_remote->setCheckable(false);
+			ui->comboBox_search->setVisible(true);
 			ui->lineEdit_remote_url->setFocus();
 			break;
 		case Initialize:
@@ -194,37 +198,32 @@ void AddRepositoryDialog::accept()
 		updateUI();
 		return;
 	} else if (mode() == AddExisting) {
-		QString dir = ui->lineEdit_local_path->text();
-		if (global->mainwindow->addExistingLocalRepository(dir, true)) {
+		if (currpage == ui->page_remote) {
 			done(QDialog::Accepted);
 		}
+		updateUI();
+		return;
+	} else if (mode() == Initialize) {
+		if (currpage == ui->page_local) {
+			ui->stackedWidget->setCurrentWidget(ui->page_remote);
+			ui->groupBox_remote->setCheckable(true);
+			ui->groupBox_remote->setChecked(false);
+			ui->comboBox_search->setVisible(false);
+		} else if (currpage == ui->page_remote) {
+			done(QDialog::Accepted);
+		}
+		updateUI();
 		return;
 	}
-	QString path = ui->lineEdit_local_path->text();
-	if (!QFileInfo(path).isDir()) {
-		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
-		return;
-	}
-	if (Git::isValidWorkingCopy(path)) {
-		QMessageBox::warning(this, tr("Create Repository"), already_exists_);
-		return;
-	}
-	if (!QFileInfo(path).isDir()) {
-		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
-		return;
-	}
-	if (remoteName().indexOf('\"') >= 0 || remoteURL().indexOf('\"') >= 0) { // 手抜き
-		QMessageBox::warning(this, tr("Create Repository"), tr("Remote name is invalid."));
-		return;
-	}
-	done(QDialog::Accepted);
 }
 
 void AddRepositoryDialog::on_pushButton_prev_clicked()
 {
 	auto *currpage = ui->stackedWidget->currentWidget();
-	if (currpage == ui->page_local && mode() == Clone) {
+	if (mode() == Clone && currpage == ui->page_local) {
 		ui->stackedWidget->setCurrentWidget(ui->page_remote);
+	} else if (mode() == Initialize && currpage == ui->page_remote) {
+		ui->stackedWidget->setCurrentWidget(ui->page_local);
 	} else if (currpage != ui->page_first) {
 		ui->stackedWidget->setCurrentWidget(ui->page_first);
 	}
@@ -240,17 +239,17 @@ QString AddRepositoryDialog::overridedSshKey() const
 
 void AddRepositoryDialog::on_lineEdit_local_path_textChanged(QString const &)
 {
-	validate(true);
+	validate();
 }
 
 void AddRepositoryDialog::on_lineEdit_bookmark_name_textChanged(QString const &)
 {
-	validate(false);
+	validate();
 }
 
 void AddRepositoryDialog::on_groupBox_remote_toggled(bool)
 {
-	validate(false);
+	validate();
 }
 
 void AddRepositoryDialog::on_pushButton_test_repo_clicked()
@@ -258,7 +257,7 @@ void AddRepositoryDialog::on_pushButton_test_repo_clicked()
 	QString url = ui->lineEdit_remote_url->text();
 	QString sshkey = overridedSshKey();
 	mainwindow()->testRemoteRepositoryValidity(url, sshkey);
-	validate(false);
+	validate();
 }
 
 void AddRepositoryDialog::on_radioButton_clone_clicked()

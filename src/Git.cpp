@@ -958,20 +958,11 @@ void Git::push_u(bool set_upstream, QString const &remote, QString const &branch
 	git(cmd, true, false, pty);
 }
 
-bool Git::push_(bool tags, AbstractPtyProcess *pty)
+bool Git::push_tags(AbstractPtyProcess *pty)
 {
-	QString cmd = "push";
-	if (tags) {
-		cmd += " --tags";
-	}
+	QString cmd = "push --tags";
 	return git(cmd, true, false, pty);
 }
-
-bool Git::push(bool tags, AbstractPtyProcess *pty)
-{
-	return push_(tags, pty);
-}
-
 
 Git::FileStatusList Git::status_s_()
 {

@@ -68,13 +68,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkBox_enable_high_dpi_scaling">
-     <property name="text">
-      <string>Enable high DPI scaling</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -101,6 +94,7 @@
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>
    <header>ReadOnlyLineEdit.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -109,7 +103,6 @@
   <tabstop>lineEdit_theme</tabstop>
   <tabstop>pushButton_change_theme</tabstop>
   <tabstop>checkBox_save_window_pos</tabstop>
-  <tabstop>checkBox_enable_high_dpi_scaling</tabstop>
  </tabstops>
  <resources/>
  <connections/>

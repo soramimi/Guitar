@@ -1,7 +1,6 @@
 *.user
 win.rc
 Info.plist
-version.c
 _notes
 _release
 .DS_Store
@@ -11,9 +10,8 @@ misc/win32tools
 build/
 _bin/
 _build/
-src/version.h
 *.autosave
-src/version.h
+version.c
 *.deb
 packaging/win/packages/jp.soramimi.guitar/data/
 packaging/win/GuitarSetup.exe

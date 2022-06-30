@@ -171,7 +171,7 @@ DarkStyle::DarkStyle(QColor const &base_color)
 	: m(new Private)
 {
 	setBaseColor(base_color);
-	setDpiScalingEnabled(QApplication::testAttribute(Qt::AA_EnableHighDpiScaling));
+//	setDpiScalingEnabled(QApplication::testAttribute(Qt::AA_EnableHighDpiScaling));
 }
 
 DarkStyle::~DarkStyle()
@@ -799,7 +799,6 @@ QRect DarkStyle::indicatorRect(const QStyleOption *option, const QWidget *widget
 		auto e = std::min(w, h);
 		x += (extent - e) / 2;
 		y += (extent - e) / 2;
-		extent = e;
 	}
 	return {x, y, w, h};
 }
@@ -1772,12 +1771,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 #endif
 					}
 				}
-			} else {
-				if (o->icon.isNull()) {
-					checkcol = 0;
-				} else {
-					checkcol = o->maxIconWidth;
-				}
 			}
 
 			p->setPen(o->palette.buttonText().color());
@@ -2541,16 +2534,6 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 
 		{
 			QRect r = subControlRect(CC_ScrollBar, option, SC_ScrollBarSlider, widget);
-			int w, h;
-			if (ishorz) {
-				h = extent;
-				int d = r.height();
-				w = (d == 0) ? 0 : (h * r.width() / d);
-			} else {
-				w = extent;
-				int d = r.width();
-				h = (d == 0) ? 0 : (w * r.height() / d);
-			}
 #ifdef Q_OS_MAC // macだとズレて見えるので調整する
 			if (ishorz) {
 				r = r.translated(1, 0);

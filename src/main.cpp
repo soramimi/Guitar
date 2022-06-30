@@ -54,14 +54,6 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	return s;
 }
 
-static bool isHighDpiScalingEnabled()
-{
-	MySettings s;
-	s.beginGroup("UI");
-	QVariant v = s.value("EnableHighDpiScaling");
-	return v.isNull() || v.toBool();
-}
-
 void setEnvironmentVariable(QString const &name, QString const &value);
 
 void onSigTerm(int)
@@ -89,7 +81,7 @@ public:
 	static void abort(const QMessageLogContext &context, const QString &message);
 };
 
-void DebugMessageHandler::abort(QMessageLogContext const &context, const QString &message)
+void DebugMessageHandler::abort(QMessageLogContext const &/*context*/, const QString &/*message*/)
 {
 	::abort();
 }
@@ -121,7 +113,9 @@ int main(int argc, char *argv[])
 	ApplicationGlobal g;
 	global = &g;
 	signal(SIGTERM, onSigTerm);
+#ifndef _WIN32
 	signal(SIGPIPE, onSigPipe);
+#endif
 
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
@@ -132,23 +126,10 @@ int main(int argc, char *argv[])
 		QDir().mkpath(global->app_config_dir);
 	}
 
-#if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
-	if (isHighDpiScalingEnabled()){
-		qDebug() << "High DPI scaling is not supported";
-	}
-#else
-	if (isHighDpiScalingEnabled()){
-		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
-		QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling, false);
-	} else {
-		QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling, false);
-		QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling, true);
-	}
-#endif
 //	qputenv("QT_SCALE_FACTOR", "1.5");
 
 	QApplication a(argc, argv);
-	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
+//	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	global->init(&a);
 

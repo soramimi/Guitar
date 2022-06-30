@@ -28,10 +28,6 @@ ColorSquareWidget::ColorSquareWidget(QWidget *parent)
 			source = std::string(ba.begin(), ba.end());
 		}
 	}
-
-#if USE_OPENCL
-	prog.build(getCL(), source, "saturation_brightness");
-#endif
 }
 
 ColorSquareWidget::~ColorSquareWidget()
@@ -51,34 +47,9 @@ static void drawFrame(QPainter *pr, int x, int y, int w, int h)
 	}
 }
 
-#if USE_OPENCL
-MiraCL *SaturationBrightnessWidget::getCL()
-{
-	return theApp->getCL();
-}
-#endif
-
 QImage ColorSquareWidget::createImage(int w, int h)
 {
 	QImage image(w, h, QImage::Format_RGB32);
-#if USE_OPENCL
-	QColor color = QColor::fromHsv(hue, 255, 255);
-	cl_uint r = color.red();
-	cl_uint g = color.green();
-	cl_uint b = color.blue();
-	MiraCL::Buffer buff(getCL());
-	buff.alloc(w * h * sizeof(uint32_t));
-	prog.arg(0, &w);
-	prog.arg(1, &h);
-	prog.arg(2, &r);
-	prog.arg(3, &g);
-	prog.arg(4, &b);
-	prog.arg(5, &buff);
-	prog.run(w, h);
-	buff.read(0, w * h * sizeof(uint32_t), image.bits());
-	getCL()->flush();
-	getCL()->finish();
-#else
 	for (int y = 0; y < h; y++) {
 		int bri = 255 - 255 * y / h;
 		QRgb *dst = (QRgb *)image.scanLine(y);
@@ -88,7 +59,6 @@ QImage ColorSquareWidget::createImage(int w, int h)
 			dst[x] = qRgb(color.red(), color.green(), color.blue());
 		}
 	}
-#endif
 	return image;
 }
 

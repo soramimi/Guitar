@@ -364,7 +364,6 @@ void WebClient::parse_http_header(char const *begin, char const *end, std::vecto
 						right++;
 					}
 					right++;
-					left = right;
 					break;
 				}
 				left = right;

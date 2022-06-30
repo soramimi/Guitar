@@ -3,7 +3,6 @@
 
 #include "Git.h"
 #include "RepositoryData.h"
-
 #include <QDialog>
 
 namespace Ui {
@@ -36,7 +35,9 @@ private:
 	MainWindow const *mainwindow() const;
 	QString defaultWorkingDir() const;
 
-	void validate(bool change_name);
+	bool eventFilter(QObject *watched, QEvent *event);
+
+	void validate();
 	void setRemoteURL(const QString &url);
 	void browseLocalPath();
 	void updateUI();
@@ -54,28 +55,19 @@ public:
 	Git::CloneData makeCloneData() const;
 	RepositoryData makeRepositoryData() const;
 private slots:
+	void on_comboBox_search_currentIndexChanged(int index);
 	void on_groupBox_remote_toggled(bool arg1);
 	void on_lineEdit_bookmark_name_textChanged(QString const &arg1);
 	void on_lineEdit_local_path_textChanged(QString const &arg1);
-	void on_pushButton_test_repo_clicked();
-	void on_radioButton_clone_clicked();
-	void on_radioButton_add_existing_clicked();
-	void on_radioButton_initialize_clicked();
-	void on_comboBox_search_currentIndexChanged(int index);
-
 	void on_lineEdit_remote_url_textChanged(const QString &arg1);
-
 	void on_pushButton_browse_local_path_clicked();
-
-
 	void on_pushButton_prev_clicked();
-
+	void on_pushButton_test_repo_clicked();
+	void on_radioButton_add_existing_clicked();
+	void on_radioButton_clone_clicked();
+	void on_radioButton_initialize_clicked();
 public slots:
 	void accept() override;
-
-	// QObject interface
-public:
-	bool eventFilter(QObject *watched, QEvent *event);
 };
 
 #endif // ADDREPOSITORYDIALOG_H

@@ -335,7 +335,7 @@ private:
 	QByteArray cat_file_(QString const &id);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
-	bool push_(bool tags, AbstractPtyProcess *pty);
+//	bool push_(bool tags, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
 	QString encodeQuotedText(QString const &str);
@@ -432,7 +432,7 @@ public:
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(QString const &id);
-	bool push(bool tags, AbstractPtyProcess *pty = nullptr);
+	bool push_tags(AbstractPtyProcess *pty = nullptr);
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);

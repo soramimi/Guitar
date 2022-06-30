@@ -9,10 +9,6 @@ class MainWindow;
 class ColorSquareWidget : public QWidget {
 	Q_OBJECT
 private:
-#if USE_OPENCL
-	MiraCL *getCL();
-	MiraCL::Program prog;
-#endif
 	struct Private;
 	Private *m;
 	MainWindow *mainwindow();
