@@ -18,7 +18,7 @@ def get_revision()
 	return rev
 end
 
-File.open("src/version.c", "w") {|f|
+File.open("version.c", "w") {|f|
 	f.puts <<_____
 int copyright_year = #{$copyright_year};
 char const product_version[] = "#{$version_a}.#{$version_b}.#{$version_c}";
