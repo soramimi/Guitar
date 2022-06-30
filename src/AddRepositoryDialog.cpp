@@ -198,7 +198,7 @@ void AddRepositoryDialog::accept()
 		updateUI();
 		return;
 	} else if (mode() == AddExisting) {
-		if (currpage == ui->page_remote) {
+		if (currpage == ui->page_local) {
 			done(QDialog::Accepted);
 		}
 		updateUI();
