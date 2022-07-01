@@ -247,8 +247,7 @@ SOURCES += \
 	src/coloredit/ColorPreviewWidget.cpp \
 	src/coloredit/ColorSlider.cpp \
 	src/coloredit/ColorSquareWidget.cpp \
-	src/coloredit/RingSlider.cpp \
-	version.c
+    src/coloredit/RingSlider.cpp
 
 HEADERS  += \
 	filetype/filetype.h \
