@@ -344,7 +344,11 @@ void AddRepositoryDialog::complementRemoteURL(bool toggle)
 	} else {
 		QStringList s = misc::splitWords(url);
 		if (s.size() == 3 && s[0] == "github") {
-			QString url = "https://github.com/" + s[1] + '/' + s[2] + ".git";
+			QString name = s[2];
+			if (name.endsWith(".git")) {
+				name = name.mid(0, name.size() - 4);
+			}
+			QString url = "https://github.com/" + s[1] + '/' + name + ".git";
 			ui->lineEdit_remote_url->setText(url);
 		}
 	}
