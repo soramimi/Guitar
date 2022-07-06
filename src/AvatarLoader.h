@@ -15,6 +15,7 @@ private:
 		Idle,
 		Busy,
 		Done,
+		Fail,
 	};
 	struct RequestItem {
 		State state = Idle;

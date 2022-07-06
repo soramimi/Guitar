@@ -830,6 +830,9 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 	set_default_header(request_req, post, opt);
 
 	std::string request = make_http_request(request_req, post, proxy, true);
+	if (0) { // for debug
+		fprintf(stderr, "%s\n", request.c_str());
+	}
 
 	auto SEND = [&](char const *ptr, int len){
 		while (len > 0) {
@@ -948,6 +951,11 @@ bool WebClient::get(Request const &req, Post const *post, Response *out, WebClie
 
 void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)
 {
+	if (0) { // for debug
+		for (std::string const &s : *header) {
+			fprintf(stderr, "%s\n", s.c_str());
+		}
+	}
 	if (!header->empty()) {
 		std::string const &line = header->at(0);
 		char const *begin = line.c_str();

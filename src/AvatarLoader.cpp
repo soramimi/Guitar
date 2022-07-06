@@ -26,6 +26,8 @@ struct AvatarLoader::Private {
 	std::thread thread;
 	std::deque<AvatarLoader::RequestItem> requests;
 	MainWindow *mainwindow = nullptr;
+
+	WebContext webcx = {WebClient::HTTP_1_1};
 	WebClientPtr web;
 
 	std::set<QObject *> listeners;
@@ -56,7 +58,7 @@ void AvatarLoader::requestInterruption()
 
 void AvatarLoader::run()
 {
-	m->web = std::make_shared<WebClient>(&global->webcx);
+	m->web = std::make_shared<WebClient>(&m->webcx);
 
 	std::chrono::system_clock::time_point time_notify;
 
@@ -128,6 +130,9 @@ void AvatarLoader::run()
 					QString msg = QString::fromStdString(m->web->error().message() + '\n');
 					m->mainwindow->emitWriteLog(msg.toUtf8());
 				}
+			}
+			if (request.state == Busy) {
+				request.state = Fail;
 			}
 			{
 				std::lock_guard lock(m->mutex);
