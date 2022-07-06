@@ -63,6 +63,8 @@ void CursesOreApplication::paintScreen()
 		attrset(a);
 	};
 	for (int y = 0; y < m->height; y++) {
+		int i = m->width * y;
+		if (i < 0 || i >= char_screen()->size()) continue;
 		if (line_flags()->at(y) & LineChanged) {
 			Character const *line = &char_screen()->at(m->width * y);
 			std::vector<char> vec;

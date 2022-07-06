@@ -59,6 +59,13 @@ public:
 		{
 			text.append(str.c_str(), str.size());
 		}
+
+		bool endsWithNewLine() const
+		{
+			int c = text.isEmpty() ? 0 : text.at(text.size() - 1);
+			return c == '\n' || c == '\r';
+
+		}
 	};
 
 	QList<Line> lines;
@@ -76,12 +83,11 @@ public:
 
 struct SelectionAnchor {
 	enum Enabled {
-		No,
-		EnabledHard,
-		EnabledEasy,
+		False,
+		True,
 	};
 
-	Enabled enabled = No;
+	Enabled enabled = False;
 	int row = 0;
 	int col = 0;
 	int compare(SelectionAnchor const &a) const
@@ -131,8 +137,8 @@ struct TextEditorContext {
 	int current_row = 0;
 	int current_col = 0; // 桁位置
 	int current_col_hint = 0;
-	int current_col_x = 0; // 桁ピクセル座標
-	int current_row_y = 0; // 行ピクセル座標
+	int current_col_pixel_x = 0; // 桁ピクセル座標
+	int current_row_pixel_y = 0; // 行ピクセル座標
 	int saved_row = 0;
 	int saved_col = 0;
 	int saved_col_hint = 0;
@@ -218,14 +224,14 @@ public:
 	};
 
 	struct Char {
-		int pos = 0;
-		int size = 0;
+//		int view_x = 0;
+		int right_x = 0;
 		uint32_t unicode = 0;
 		CharAttr attr;
 		Char() = default;
-		Char(uint32_t unicode, unsigned int pos)
+		Char(uint32_t unicode)
 			: unicode(unicode)
-			, pos(pos)
+//			, view_x(pos)
 		{
 
 		}
@@ -264,8 +270,8 @@ private:
 	struct Private;
 	Private *m;
 protected:
-	SelectionAnchor selection_anchor_0;
-	SelectionAnchor selection_anchor_1;
+	SelectionAnchor selection_start;
+	SelectionAnchor selection_end;
 	int reference_char_width_ = 1;
 protected:
 
@@ -314,8 +320,6 @@ protected:
 	void makeBuffer();
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
 
-	int calcIndexToColumn(const std::vector<Char> &vec, int index) const;
-
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	void commitLine(const std::vector<Char> &vec);
 
@@ -327,7 +331,6 @@ protected:
 	void closeDialog(bool result);
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
-	void toggleSelectionAnchor();
 private:
 	int internalParseLine(const QByteArray &parsed_line, int current_col, std::vector<Char> *vec, int increase_hint) const;
 	void internalWrite(const ushort *begin, const ushort *end);
@@ -343,7 +346,6 @@ private:
 		Copy,
 	};
 	void editSelected(EditOperation op, std::vector<Char> *cutbuffer);
-	void deselect();
 	int calcColumnToIndex(int column);
 	void edit_(EditOperation op);
 	bool isCurrentLineWritable() const;
@@ -354,9 +356,9 @@ private:
 	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
 protected:
+	void deselect();
 	std::vector<Char> *parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
 	void parseLine(int row, std::vector<Char> *vec) const;
-	virtual int scrollPosX() { return 0; }
 
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
@@ -367,14 +369,13 @@ protected:
 	{
 		setCursorRow(pos.row, false, true);
 		setCursorCol_(pos.col, false, true);
-		cx()->current_col_x = pt.x();
+		cx()->current_col_pixel_x = pt.x();
 	}
 	void setCursorPos(int row, int col)
 	{
 		setCursorRow(row, false);
-		setCursorCol_(col, 0, false);
+		setCursorCol_(col, false, false);
 	}
-	void setCursorColByIndex(const std::vector<Char> &vec, int col_index);
 	int nextTabStop(int x) const;
 	int scrollBottomLimit() const;
 	bool isPaintingSuppressed() const;
@@ -444,7 +445,6 @@ public:
 	void setAutoLayout(bool f);
 	void setDocument(const QList<Document::Line> *source);
 	void setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll);
-	bool isSelectionAnchorEnabled() const;
 	void setNormalTextEditorMode(bool f);
 	void setToggleSelectionAnchorEnabled(bool f);
 	void setReadOnly(bool f);
@@ -476,11 +476,15 @@ public:
 	bool isChanged() const;
 	void setChanged(bool f);
 	void logicalMoveToBottom();
+	void write_raw(const char *ptr, int len);
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
 	bool isValidRowIndex(int row_index) const;
+	bool hasSelection() const;
+	void updateSelectionAnchor1(bool auto_scroll);
+	void updateSelectionAnchor2(bool auto_scroll);
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

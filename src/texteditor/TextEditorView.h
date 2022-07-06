@@ -36,6 +36,7 @@ private:
 	Private *m;
 
 	void paintScreen(QPainter *painter);
+	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
 	void updateCursorRect(bool auto_scroll);
@@ -45,11 +46,10 @@ private:
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
-	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *vec_out) const;
+	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
 	int scrollPosX() const;
-	int calcPixelPosX2(const QFontMetrics &fm, int row, int col, std::vector<Char> *vec_out) const;
-	int view_y_from_row(int row);
-	bool isProportional() const;
+	static void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm);
+	int view_y_from_row(int row) const;
 public:
 	int basisCharWidth() const;
 protected:
@@ -64,8 +64,8 @@ protected:
 	void drawText(QPainter *painter, int px, int py, QString const &str);
 protected:
 	void timerEvent(QTimerEvent *) override;
-	void setCursorCol(int col);
-	void setCursorRow(int row, bool auto_scroll, bool by_mouse);
+	void setCursorCol(int col) override;
+	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -73,10 +73,7 @@ public:
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
 
-//	int charWidth2(unsigned int c) const;
 	int lineHeight() const;
-
-//	void setPreEditText(PreEditText const &preedit);
 
 	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) override;
 
@@ -86,7 +83,6 @@ public:
 	void setupForLogWidget(const TextEditorThemePtr &theme);
 
 	RowCol mapFromPixel(const QPoint &pt);
-	QPoint mapToPixel(const RowCol &pt);
 
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;
@@ -104,8 +100,15 @@ public:
 	void setScrollUnit(int n);
 	int scrollUnit() const;
 
-	void moveCursorDown();
 	void setTextFont(const QFont &font);
+	void updateLayout();
+
+	struct PointInView {
+		int x = 0;
+		int y = 0;
+		int height = 0;
+	};
+	PointInView pointInView(int row, int col) const;
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

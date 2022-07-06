@@ -380,6 +380,7 @@ private:
 	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
 	void cancelPendingUserEvents();
 	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
+	void updatePocessLog(bool processevents);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;

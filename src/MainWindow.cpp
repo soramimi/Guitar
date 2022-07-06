@@ -69,6 +69,9 @@
 #include <QTimer>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <thread>
+#include <chrono>
+#include <QFile>
 
 #ifdef Q_OS_MAC
 namespace {
@@ -382,6 +385,23 @@ void MainWindow::startTimers()
 	m->interval_10ms_timer.start();
 }
 
+
+/**
+ * @brief PTYプロセスの出力をログに書き込む
+ */
+void MainWindow::updatePocessLog(bool processevents)
+{
+	while (1) {
+		char tmp[1024];
+		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
+		if (len < 1) break;
+		writeLog(tmp, len);
+		if (processevents) {
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
+	}
+}
+
 /**
  * @brief 10ms間隔のインターバルタイマ
  */
@@ -423,12 +443,7 @@ void MainWindow::onInterval10ms()
 		}
 		
 		// PTYプロセスの出力をログに書き込む
-		while (1) {
-			char tmp[1024];
-			int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
-			if (len < 1) break;
-			writeLog(tmp, len);
-		}
+		updatePocessLog(true);
 	}
 }
 
@@ -681,8 +696,10 @@ void MainWindow::onLogVisibilityChanged()
 void MainWindow::internalWriteLog(char const *ptr, int len)
 {
 	ui->widget_log->view()->logicalMoveToBottom();
-	ui->widget_log->view()->write(ptr, len, false);
+	ui->widget_log->view()->write_raw(ptr, len);
 	ui->widget_log->view()->setChanged(false);
+	ui->widget_log->updateLayout();
+	ui->widget_log->updateView();
 	setInteractionCanceled(false);
 }
 
@@ -994,7 +1011,7 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 {
 	appsettings()->gpg_command = executableOrEmpty(path);
 	
-	internalSaveCommandPath(path, save, "GpgCommand");
+	internalSaveCommandPath(appsettings()->gpg_command, save, "GpgCommand");
 	if (!global->appsettings.gpg_command.isEmpty()) {
 		GitPtr g = git();
 		g->configGpgProgram(global->appsettings.gpg_command, true);
@@ -1091,7 +1108,10 @@ QString MainWindow::saveAsTemp(RepositoryWrapperFrame *frame, const QString &id)
 
 QString MainWindow::executableOrEmpty(const QString &path)
 {
-	return checkExecutable(path) ? path : QString();
+	if (!path.isEmpty() && checkExecutable(path)) {
+		return path;
+	}
+	return QString();
 }
 
 bool MainWindow::checkExecutable(const QString &path)
@@ -1107,14 +1127,14 @@ bool MainWindow::checkExecutable(const QString &path)
 
 void MainWindow::internalSaveCommandPath(const QString &path, bool save, const QString &name)
 {
-	if (checkExecutable(path)) {
+//	if (checkExecutable(path)) {
 		if (save) {
 			MySettings s;
 			s.beginGroup("Global");
 			s.setValue(name, path);
 			s.endGroup();
 		}
-	}
+//	}
 }
 
 void MainWindow::logGitVersion()
@@ -5217,8 +5237,11 @@ void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 	}
 }
 
+#include "unix/UnixPtyProcess.h"
+
 void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 {
+	updatePocessLog(false);
 	switch (getPtyCondition()) {
 	case PtyCondition::Clone:
 		onCloneCompleted(getPtyProcessOk(), userdata);
@@ -6173,26 +6196,16 @@ void MainWindow::on_action_create_desktop_launcher_file_triggered()
 	QString home = QDir::home().absolutePath();
 	QString icon_dir = home / ".local/share/icons/jp.soramimi/";
 	QString launcher_dir = home / ".local/share/applications/";
-	
 	QString name = "jp.soramimi.Guitar";
-	
-	QString iconfile;
-	QFile src(":/image/Guitar.svg");
-	if (src.open(QFile::ReadOnly)) {
-		QByteArray ba = src.readAll();
-		src.close();
-		QDir d;
-		d.mkpath(icon_dir);
-		iconfile = icon_dir / name + ".svg";
-		QFile dst(iconfile);
-		if (dst.open(QFile::WriteOnly)) {
-			dst.write(ba);
-			dst.close();
-			
-			d.mkpath(launcher_dir);
-			QString launcher_path = launcher_dir / name + ".desktop";
-			QFile out(launcher_path);
-			if (out.open(QFile::WriteOnly)) {
+	QString iconfile = icon_dir / name + ".svg";
+	QString launcher_path = launcher_dir / name + ".desktop";
+	launcher_path = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Luancher files (*.desktop)");
+
+	bool ok = false;
+
+	if (!launcher_path.isEmpty()) {
+		QFile out(launcher_path);
+		if (out.open(QFile::WriteOnly)) {
 QString data = R"---([Desktop Entry]
 Type=Application
 Name=Guitar
@@ -6201,15 +6214,30 @@ Exec=%1
 Icon=%2
 Terminal=false
 )---";
-				data = data.arg(exec).arg(iconfile);
-				std::string s = data.toStdString();
-				out.write(s.c_str(), s.size());
-				out.close();
-				std::string path = launcher_path.toStdString();
-				chmod(path.c_str(), 0755);
+			data = data.arg(exec).arg(iconfile);
+			std::string s = data.toStdString();
+			out.write(s.c_str(), s.size());
+			out.close();
+			std::string path = launcher_path.toStdString();
+			chmod(path.c_str(), 0755);
+			ok = true;
+		}
+	}
+
+	if (ok) {
+		QFile src(":/image/Guitar.svg");
+		if (src.open(QFile::ReadOnly)) {
+			QByteArray ba = src.readAll();
+			src.close();
+			QDir().mkpath(icon_dir);
+			QFile dst(iconfile);
+			if (dst.open(QFile::WriteOnly)) {
+				dst.write(ba);
+				dst.close();
 			}
 		}
 	}
+
 #endif
 }
 

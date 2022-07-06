@@ -57,7 +57,7 @@ public:
 private slots:
 	void on_comboBox_search_currentIndexChanged(int index);
 	void on_groupBox_remote_toggled(bool arg1);
-	void on_lineEdit_bookmark_name_textChanged(QString const &arg1);
+//	void on_lineEdit_bookmark_name_textChanged(QString const &arg1);
 	void on_lineEdit_local_path_textChanged(QString const &arg1);
 	void on_lineEdit_remote_url_textChanged(const QString &arg1);
 	void on_pushButton_browse_local_path_clicked();

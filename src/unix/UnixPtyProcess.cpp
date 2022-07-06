@@ -47,38 +47,6 @@ void make_argv(char *command, std::vector<char *> *out)
 	}
 }
 
-class OutputReaderThread : public QThread {
-private:
-	QMutex *mutex;
-	int pty_master;
-	std::deque<char> *output_queue;
-	std::vector<char> *output_vector;
-protected:
-	void run() override
-	{
-		while (1) {
-			if (isInterruptionRequested()) break;
-			char buf[1024];
-			int len = read(pty_master, buf, sizeof(buf));
-			if (len < 1) break;
-			{
-				QMutexLocker lock(mutex);
-				output_queue->insert(output_queue->end(), buf, buf + len);
-				output_vector->insert(output_vector->end(), buf, buf + len);
-			}
-		}
-	}
-public:
-	void start(QMutex *mutex, int pty_master, std::deque<char> *outq, std::vector<char> *outv)
-	{
-		this->mutex = mutex;
-		this->pty_master = pty_master;
-		this->output_queue = outq;
-		this->output_vector = outv;
-		QThread::start();
-	}
-};
-
 } // namespace
 
 // UnixPtyProcess
@@ -90,7 +58,6 @@ struct UnixPtyProcess::Private {
 	int pty_master;
 	std::deque<char> output_queue;
 	std::vector<char> output_vector;
-	OutputReaderThread th_output_reader;
 	int exit_code = -1;
 };
 
@@ -198,14 +165,11 @@ void UnixPtyProcess::run()
 
 		bool ok = false;
 
-		m->th_output_reader.start(&m->mutex, m->pty_master, &m->output_queue, &m->output_vector);
-
 		while (1) {
 			if (isInterruptionRequested()) break;
 			int status = 0;
 			int r = waitpid(pid, &status, WNOHANG);
 			if (r < 0) break;
-			QThread::msleep(1);
 			if (r > 0) {
 				if (WIFEXITED(status)) {
 					m->exit_code = WEXITSTATUS(status);
@@ -216,11 +180,29 @@ void UnixPtyProcess::run()
 					break;
 				}
 			}
+
+			{
+				fd_set fds;
+				FD_ZERO(&fds);
+				FD_SET(m->pty_master, &fds);
+				timeval tv;
+				tv.tv_sec = 0;
+				tv.tv_usec = 10000;
+				int r = select(m->pty_master + 1, &fds, nullptr, nullptr, &tv);
+				if (r < 0) break;
+				if (r > 0) {
+					char buf[1024];
+					int len = read(m->pty_master, buf, sizeof(buf));
+					if (len > 0) {
+						QMutexLocker lock(&m->mutex);
+						m->output_queue.insert(m->output_queue.end(), buf, buf + len);
+						m->output_vector.insert(m->output_vector.end(), buf, buf + len);
+					}
+				}
+			}
 		}
 
 		kill(pid, SIGTERM);
-		m->th_output_reader.requestInterruption();
-		m->th_output_reader.wait();
 		close(m->pty_master);
 		m->pty_master = -1;
 
@@ -253,3 +235,4 @@ void UnixPtyProcess::readResult(std::vector<char> *out)
 	*out = m->output_vector;
 	m->output_vector.clear();
 }
+

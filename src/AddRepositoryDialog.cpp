@@ -242,10 +242,10 @@ void AddRepositoryDialog::on_lineEdit_local_path_textChanged(QString const &)
 	validate();
 }
 
-void AddRepositoryDialog::on_lineEdit_bookmark_name_textChanged(QString const &)
-{
-	validate();
-}
+//void AddRepositoryDialog::on_lineEdit_bookmark_name_textChanged(QString const &)
+//{
+//	validate();
+//}
 
 void AddRepositoryDialog::on_groupBox_remote_toggled(bool)
 {

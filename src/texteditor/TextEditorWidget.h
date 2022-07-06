@@ -19,6 +19,14 @@ public:
 	{
 		return view_;
 	}
+	void updateLayout()
+	{
+		view_->updateLayout();
+	}
+	void updateView()
+	{
+		view_->update();
+	}
 };
 
 #endif // TEXTEDITORWIDGET_H

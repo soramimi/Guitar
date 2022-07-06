@@ -1,12 +1,7 @@
-#include <memory>
-
-#include <memory>
-
 
 #include "AbstractCharacterBasedApplication.h"
 #include "UnicodeWidth.h"
 #include "unicode.h"
-
 #include <QApplication>
 #include <QClipboard>
 #include <QDebug>
@@ -93,8 +88,8 @@ struct AbstractCharacterBasedApplication::Private {
 	QString dialog_value;
 	std::vector<Character> screen;
 	std::vector<uint8_t> line_flags;
-	int parsed_row_index = -1;
-	int parsed_col_index = -1;
+	int parsed_row_index = -1; //@
+	int parsed_col_index = -1; //@
 	bool parsed_for_edit = false;
 	QByteArray current_line_data;
 	std::vector<AbstractCharacterBasedApplication::Char> parsed_current_line;
@@ -447,7 +442,7 @@ int AbstractCharacterBasedApplication::currentCol() const
 
 int AbstractCharacterBasedApplication::currentColX() const
 {
-	return cx()->current_col_x;
+	return cx()->current_col_pixel_x;
 }
 
 void AbstractCharacterBasedApplication::setCurrentRow(int row)
@@ -619,7 +614,7 @@ int AbstractCharacterBasedApplication::internalParseLine(QByteArray const &parse
 			}
 			if (c == 0) break;
 			col += n;
-			vec->push_back(Char(c, 0));
+			vec->emplace_back(c);
 		}
 	}
 	return index;
@@ -938,22 +933,6 @@ void AbstractCharacterBasedApplication::clearRect(int x, int y, int w, int h)
 	}
 }
 
-int AbstractCharacterBasedApplication::calcIndexToColumn(const std::vector<Char> &vec, int index) const
-{
-	int col = 0;
-	for (int i = 0; i < index; i++) {
-		uint32_t c = vec.at(i).unicode;
-//		if (c == '\t') {
-//			col += cx()->tab_span;
-//			col -= col % cx()->tab_span;
-//		} else {
-//			col += charWidth(c);
-//		}
-		col++;
-	}
-	return col;
-}
-
 void AbstractCharacterBasedApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
@@ -974,24 +953,47 @@ void AbstractCharacterBasedApplication::restorePos()
 	}
 }
 
+void AbstractCharacterBasedApplication::deselect()
+{
+	selection_end = {};
+	selection_start = {};
+}
+
+bool AbstractCharacterBasedApplication::hasSelection() const
+{
+	return selection_end.enabled == SelectionAnchor::False;
+}
+
+void AbstractCharacterBasedApplication::updateSelectionAnchor1(bool auto_scroll)
+{
+	if (isShiftModifierPressed()) {
+		if (selection_end.enabled == SelectionAnchor::False) {
+			setSelectionAnchor(SelectionAnchor::True, true, auto_scroll);
+			selection_start = selection_end;
+		}
+	} else if (selection_end.enabled == SelectionAnchor::True) {
+		// 選択中でShiftが押されていなければ選択解除
+		setSelectionAnchor(SelectionAnchor::False, false, auto_scroll);
+	}
+}
+
+void AbstractCharacterBasedApplication::updateSelectionAnchor2(bool auto_scroll)
+{
+	if (selection_end.enabled == SelectionAnchor::True) {
+		// 選択中なら、現在位置で更新
+		setSelectionAnchor(selection_end.enabled, true, auto_scroll);
+	}
+}
+
 void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 {
 	if (currentRow() == row) return;
 
-	if (isShiftModifierPressed()) {
-		if (selection_anchor_0.enabled == SelectionAnchor::No) {
-			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
-			selection_anchor_1 = selection_anchor_0;
-		}
-	} else if (selection_anchor_0.enabled == SelectionAnchor::EnabledEasy) {
-		setSelectionAnchor(SelectionAnchor::No, false, auto_scroll);
-	}
+	updateSelectionAnchor1(false);
 
 	setCurrentRow(row);
 
-	if (selection_anchor_0.enabled != SelectionAnchor::No) {
-		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
-	}
+	updateSelectionAnchor2(auto_scroll);
 
 	m->cursor_moved_by_mouse = by_mouse;
 }
@@ -1003,31 +1005,14 @@ void AbstractCharacterBasedApplication::setCursorCol_(int col, bool auto_scroll,
 		return;
 	}
 
-	if (isShiftModifierPressed()) {
-		if (selection_anchor_0.enabled == SelectionAnchor::No) {
-			setSelectionAnchor(SelectionAnchor::EnabledEasy, true, auto_scroll);
-			selection_anchor_1 = selection_anchor_0;
-		}
-	} else if (selection_anchor_0.enabled == SelectionAnchor::EnabledEasy) {
-		setSelectionAnchor(SelectionAnchor::No, false, auto_scroll);
-	}
+	updateSelectionAnchor1(false);
 
 	setCurrentCol(col);
 	cx()->current_col_hint = col;
 
-	if (selection_anchor_0.enabled != SelectionAnchor::No) {
-		setSelectionAnchor(selection_anchor_0.enabled, true, auto_scroll);
-	}
+	updateSelectionAnchor2(auto_scroll);
 
 	m->cursor_moved_by_mouse = by_mouse;
-}
-
-
-
-void AbstractCharacterBasedApplication::setCursorColByIndex(std::vector<Char> const &vec, int col_index)
-{
-	int col = calcIndexToColumn(vec, col_index);
-	setCursorCol(col);
 }
 
 int AbstractCharacterBasedApplication::nextTabStop(int x) const
@@ -1043,8 +1028,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		op = EditOperation::Copy;
 	}
 
-	SelectionAnchor a = selection_anchor_0;
-	SelectionAnchor b = selection_anchor_1;
+	SelectionAnchor a = selection_end;
+	SelectionAnchor b = selection_start;
 	if (!a.enabled) return;
 	if (!b.enabled) return;
 	if (a == b) return;
@@ -1190,8 +1175,8 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 
 bool AbstractCharacterBasedApplication::deleteIfSelected()
 {
-	if (selection_anchor_0.enabled && selection_anchor_1.enabled) {
-		if (selection_anchor_0 != selection_anchor_1) {
+	if (selection_end.enabled && selection_start.enabled) {
+		if (selection_end != selection_start) {
 			editSelected(EditOperation::Cut, nullptr);
 			return true;
 		}
@@ -1236,7 +1221,7 @@ void AbstractCharacterBasedApplication::doDelete()
 				}
 			} else {
 				commitLine(*vec);
-				setCursorColByIndex(*vec, index);
+				setCursorCol(index);
 				if (index == (int)vec->size()) {
 					int nextrow = currentRow() + 1;
 					int lines = documentLines();
@@ -1254,7 +1239,7 @@ void AbstractCharacterBasedApplication::doDelete()
 	} else {
 		vec->erase(vec->begin() + index);
 		commitLine(*vec);
-		setCursorColByIndex(*vec, index);
+		setCursorCol(index);
 		updateVisibility(true, true, true);
 	}
 }
@@ -1484,6 +1469,7 @@ void AbstractCharacterBasedApplication::moveCursorUp()
 		// nop
 	} else if (currentRow() > 0) {
 		setCursorRow(currentRow() - 1); // カーソルを1行上へ
+		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
 }
@@ -1494,6 +1480,7 @@ void AbstractCharacterBasedApplication::moveCursorDown()
 		// nop
 	} else if (currentRow() + 1 < (int)document()->lines.size()) {
 		setCursorRow(currentRow() + 1); // カーソルを1行下へ
+		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
 }
@@ -1512,9 +1499,9 @@ void AbstractCharacterBasedApplication::scrollToTop()
 
 void AbstractCharacterBasedApplication::moveCursorLeft()
 {
-	if (!isShiftModifierPressed() && selection_anchor_0.enabled && selection_anchor_1.enabled) { // 選択領域があったら
-		if (selection_anchor_0 != selection_anchor_1) {
-			SelectionAnchor a = std::min(selection_anchor_0, selection_anchor_1);
+	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
+		if (selection_end != selection_start) {
+			SelectionAnchor a = std::min(selection_end, selection_start);
 			deselect();
 			setCursorRow(a.row);
 			setCursorCol(a.col);
@@ -1523,50 +1510,28 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 		}
 	}
 
-	if (currentCol() == 0) {
+	if (currentCol() == 0) { // 行頭なら
 		if (isSingleLineMode()) {
 			// nop
 		} else {
 			if (currentRow() > 0) {
-				setCursorRow(currentRow() - 1);
+				setCursorRow(currentRow() - 1); // 上へ移動
 				clearParsedLine();
-				moveCursorEnd();
+				moveCursorEnd(); // 行末へ移動
 			}
 		}
 		return;
 	}
 
-	int col = 0;
-	int newcol = 0;
-	int index;
-	for (index = 0; index < (int)m->parsed_current_line.size(); index++) {
-		uint32_t c = m->parsed_current_line[index].unicode;
-		if (c == '\r' || c == '\n') {
-			break;
-		}
-		newcol = col;
-		if (c == '\t') {
-//			col = nextTabStop(col);
-			col++;
-		} else {
-//			col += charWidth(c);
-			col++;
-		}
-		if (col >= currentCol()) {
-			break;
-		}
-	}
-	m->parsed_col_index = index;
-	setCursorCol(newcol);
-
+	setCursorCol(currentCol() - 1);
 	updateVisibility(true, true, true);
 }
 
 void AbstractCharacterBasedApplication::moveCursorRight()
 {
-	if (!isShiftModifierPressed() && selection_anchor_0.enabled && selection_anchor_1.enabled) { // 選択領域があったら
-		if (selection_anchor_0 != selection_anchor_1) {
-			SelectionAnchor a = std::max(selection_anchor_0, selection_anchor_1);
+	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
+		if (selection_end != selection_start) {
+			SelectionAnchor a = std::max(selection_end, selection_start);
 			deselect();
 			setCursorRow(a.row);
 			setCursorCol(a.col);
@@ -1595,7 +1560,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 			}
 			break;
 		}
-		if (c == '\t') {
+		if (c == '\t') { //@
 //			col = nextTabStop(col);
 			col++;
 		} else {
@@ -1693,8 +1658,8 @@ void AbstractCharacterBasedApplication::appendNewLine(std::vector<Char> *vec)
 {
 	if (isSingleLineMode()) return;
 
-//	vec->emplace_back('\r', 0);
-	vec->emplace_back('\n', 0);
+//	vec->emplace_back('\r');
+	vec->emplace_back('\n');
 }
 
 void AbstractCharacterBasedApplication::writeNewLine()
@@ -1728,7 +1693,7 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	// commit next line
 	commitLine(next_line);
 
-	setCursorColByIndex(next_line, 0);
+	setCursorCol(0);
 
 	clearParsedLine();
 	updateVisibility(true, true, true);
@@ -2017,14 +1982,14 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 	SelectionAnchor anchor_b;
 
 	auto MakeSelectionAnchor = [&](){
-		if (selection_anchor_0.enabled != SelectionAnchor::No) {
-			anchor_a = selection_anchor_0;
+		if (selection_end.enabled != SelectionAnchor::False) {
+			anchor_a = selection_end;
 #if 0
 			anchor_b.row = cx()->current_row;
 			anchor_b.col = cx()->current_col;
 			anchor_b.enabled = selection_anchor_0.enabled;
 #else
-			anchor_b = selection_anchor_1;
+			anchor_b = selection_start;
 #endif
 		}
 	};
@@ -2104,17 +2069,6 @@ SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor
 	return a;
 }
 
-void AbstractCharacterBasedApplication::deselect()
-{
-	selection_anchor_0.enabled = SelectionAnchor::No;
-	selection_anchor_1.enabled = SelectionAnchor::No;
-}
-
-bool AbstractCharacterBasedApplication::isSelectionAnchorEnabled() const
-{
-	return selection_anchor_0.enabled != SelectionAnchor::No;
-}
-
 void AbstractCharacterBasedApplication::setToggleSelectionAnchorEnabled(bool f)
 {
 	m->is_toggle_selection_anchor_enabled = f;
@@ -2133,20 +2087,12 @@ bool AbstractCharacterBasedApplication::isReadOnly() const
 void AbstractCharacterBasedApplication::setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll)
 {
 	if (update_anchor) {
-		selection_anchor_0 = currentAnchor(enabled);
+		selection_end = currentAnchor(enabled);
 	} else {
-		selection_anchor_0.enabled = enabled;
+		selection_end.enabled = enabled;
 	}
 	clearParsedLine();
 	updateVisibility(false, false, auto_scroll);
-}
-
-void AbstractCharacterBasedApplication::toggleSelectionAnchor()
-{
-	if (!m->is_toggle_selection_anchor_enabled) return;
-
-	setSelectionAnchor(isSelectionAnchorEnabled() ? SelectionAnchor::No : SelectionAnchor::EnabledHard, true, true);
-	selection_anchor_1 = selection_anchor_0;
 }
 
 void AbstractCharacterBasedApplication::editPaste()
@@ -2343,17 +2289,17 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
-			vec->insert(vec->begin() + index, Char(c, 0));
+			vec->insert(vec->begin() + index, Char(c));
 		} else if (isOverwriteMode()) {
 			if (index < (int)vec->size()) {
 				uint32_t d = vec->at(index).unicode;
 				if (d == '\n' || d == '\r') {
-					vec->insert(vec->begin() + index, Char(c, 0));
+					vec->insert(vec->begin() + index, Char(c));
 				} else {
-					vec->at(index) = Char(c, 0);
+					vec->at(index) = Char(c);
 				}
 			} else {
-				vec->emplace_back(c, 0);
+				vec->emplace_back(c);
 			}
 		}
 		Document::CharAttr_ a;
@@ -2383,7 +2329,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	}
 	m->parsed_col_index = index;
 	commitLine(*vec);
-	setCursorColByIndex(*vec, index);
+	setCursorCol(index);
 	updateVisibility(true, true, true);
 }
 
@@ -2397,9 +2343,6 @@ void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
 	}
 	c = toupper(c);
 	switch (c) {
-	case 'A':
-		toggleSelectionAnchor();
-		break;
 	case 'Q':
 		onQuit();
 		break;
@@ -2515,6 +2458,18 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			break;
 		}
 	}
+}
+
+void AbstractCharacterBasedApplication::write_raw(char const *ptr, int len)
+{
+	if (!cx()->engine->document.lines.empty()) {
+		if (!cx()->engine->document.lines.back().endsWithNewLine()) {
+			cx()->engine->document.lines.back().text.append(ptr, len);
+			return;
+		}
+	}
+	Document::Line line(QByteArray(ptr, len));
+	cx()->engine->document.lines.push_back(line);
 }
 
 void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_keyboard)
@@ -2696,3 +2651,5 @@ void Document::retrieveLastText(std::vector<char> *out, int maxlen) const
 //	qDebug();
 //	return 'A';
 //}
+
+
