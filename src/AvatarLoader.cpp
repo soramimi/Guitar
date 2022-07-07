@@ -66,7 +66,18 @@ void AvatarLoader::run()
 
 	bool notify = false;
 
+	auto Notify = [&](){
+		for (QObject *listener : m->listeners) {
+			QApplication::postEvent(listener, new QEvent((QEvent::Type)UserEvent::AvatarReady));
+		}
+	};
+
 	while (1) {
+		if (notify) {
+			Notify();
+			notify = false;
+			time_notify = {};
+		}
 		RequestItem request;
 		{
 			std::unique_lock lock(m->mutex);
@@ -79,24 +90,19 @@ void AvatarLoader::run()
 				}
 			}
 			if (request.state == Idle) {
-				std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-				if (now < time_notify) {
-					m->condition.wait_for(lock, time_notify - now);
-					notify = true;
-				} else {
-					if (notify) {
-						notify = false;
-						for (QObject *listener : m->listeners) {
-							QApplication::postEvent(listener, new QEvent((QEvent::Type)UserEvent::AvatarReady));
-						}
-					}
+				auto now = std::chrono::system_clock::now();
+				if (time_notify == std::chrono::system_clock::time_point()) {
 					m->condition.wait(lock);
+				} else {
+					if (time_notify > now) {
+						m->condition.wait_for(lock, time_notify - now);
+					}
+					notify = true;
 				}
-				time_notify = std::chrono::system_clock::time_point();
+				time_notify = {};
 			}
 			if (isInterruptionRequested()) return;
 		}
-
 		if (request.state == Busy) {
 			if (strchr(request.email.c_str(), '@')) {
 				QString id;
@@ -136,11 +142,16 @@ void AvatarLoader::run()
 			}
 			{
 				std::lock_guard lock(m->mutex);
+				auto now = std::chrono::system_clock::now();
 				for (size_t i = 0; i < m->requests.size(); i++) {
 					if (m->requests[i].email == request.email) {
 						if (request.state == Done) {
 							m->requests[i] = request;
-							time_notify = std::chrono::system_clock::now() + std::chrono::milliseconds(NOTIFY_DELAY_ms);
+							if (time_notify == std::chrono::system_clock::time_point()) {
+								time_notify = now + std::chrono::milliseconds(NOTIFY_DELAY_ms);
+							} else if (time_notify <= now) {
+								notify = true;
+							}
 						} else {
 							m->requests.erase(m->requests.begin() + i);
 						}

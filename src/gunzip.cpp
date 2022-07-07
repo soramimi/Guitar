@@ -105,24 +105,28 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 			throw QString("inflateInit2 faled");
 		}
 
-		if (open) {
-			if (!open(output)) {
-				ok = false;
+		if (output) {
+			if (open) {
+				if (!open(output)) {
+					ok = false;
+				}
+			} else {
+				if (!output->open(QIODevice::WriteOnly)) {
+					ok = false;
+				}
 			}
-		} else {
-			if (!output->open(QIODevice::WriteOnly)) {
-				ok = false;
-			}
+			if (!ok) throw QString("failed to open the output device");
 		}
-		if (!ok) throw QString("failed to open the output device");
 
 		int64_t inpos = input->pos();
 
 		auto Close = [&](){
-			if (close) {
-				close(output);
-			} else {
-				output->close();
+			if (output) {
+				if (close) {
+					close(output);
+				} else {
+					output->close();
+				}
 			}
 			inflateEnd(&stream);
 		};
@@ -147,17 +151,19 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
                 err = ::inflate(&stream, Z_NO_FLUSH);
                 int n = int(stream.total_out - total_out);
 
-				if (write) {
-					if (!write(output, (char const *)obuf, n)) {
-						ok = false;
+				if (output) {
+					if (write) {
+						if (!write(output, (char const *)obuf, n)) {
+							ok = false;
+						}
+					} else {
+						int w = (int)output->write((char const *)obuf, n);
+						if (w != n) {
+							ok = false;
+						}
 					}
-                } else {
-                    int w = (int)output->write((char const *)obuf, n);
-					if (w != n) {
-						ok = false;
-					}
+					if (!ok) throw QString("failed to write to the output device");
 				}
-				if (!ok) throw QString("failed to write to the output device");
 
                 crc = crc32(crc, (unsigned char const *)obuf, (size_t)n);
 				if (err == Z_STREAM_END) {

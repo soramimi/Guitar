@@ -4671,7 +4671,7 @@ void MainWindow::autoOpenRepository(QString dir)
 		while (left + 1 < p && !(p[-1] == '/' || p[-1] == '\\')) p--;
 		if (p < right) {
 			newitem.local_dir = dir;
-			newitem.name = QString::fromUtf16(p, int(right - p));
+			newitem.name = QString::fromUtf16((char16_t const *)p, int(right - p));
 			saveRepositoryBookmark(newitem);
 			Open(newitem);
 			return;

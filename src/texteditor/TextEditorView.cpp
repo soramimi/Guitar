@@ -775,10 +775,10 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					right_x = 0;
 				} else {
 					if (selmin.row == line_row) {
-						left_x = (selmin.col > 0 && selmin.col - 1 < chars.size()) ? chars[selmin.col - 1].right_x : 0;
+						left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
 					}
 					if (selmax.row == line_row) {
-						right_x = (selmax.col > 0 && selmax.col - 1 < chars.size()) ? chars[selmax.col - 1].right_x : 0;
+						right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
 					}
 				}
 				if (left_x < right_x) {

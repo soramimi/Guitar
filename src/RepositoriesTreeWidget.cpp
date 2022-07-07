@@ -52,7 +52,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 
 		QByteArray ba = event->mimeData()->data("text/uri-list");
 		if (ba.size() > 4 && memcmp(ba.data(), "h\0t\0t\0p\0", 8) == 0) {
-			QString path = QString::fromUtf16((ushort const *)ba.data(), ba.size() / 2);
+			QString path = QString::fromUtf16((char16_t const *)ba.data(), ba.size() / 2);
 			int i = path.indexOf('\n');
 			if (i >= 0) {
 				path = path.mid(0, i);

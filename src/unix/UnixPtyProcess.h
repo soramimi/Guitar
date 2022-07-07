@@ -8,6 +8,8 @@ class UnixPtyProcess : public AbstractPtyProcess, public QThread {
 private:
 	struct Private;
 	Private *m;
+	bool wait_(unsigned long time = ULONG_MAX);
+	void stop_();
 protected:
 	void run() override;
 public:

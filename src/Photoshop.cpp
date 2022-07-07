@@ -45,6 +45,7 @@ void photoshop::readThumbnail(QIODevice *in, std::vector<char> *jpeg)
 		in->seek(in->pos() + len);
 		in->read(tmp, 4);
 		len = read_uint32_be(tmp);
+		(void)len;
 
 		while (1) {
 			struct ImageResourceHeader {

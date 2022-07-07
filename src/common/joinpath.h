@@ -13,10 +13,10 @@ static inline std::string operator / (std::string const &left, std::string const
 }
 
 #include <QString>
-QString qjoinpath(ushort const *left, ushort const *right);
+QString qjoinpath(char16_t const *left, char16_t const *right);
 inline QString joinpath(QString const &left, QString const &right)
 {
-	return qjoinpath(left.utf16(), right.utf16());
+	return qjoinpath((char16_t const *)left.utf16(), (char16_t const *)right.utf16());
 }
 
 static inline QString operator / (QString const &left, QString const &right)

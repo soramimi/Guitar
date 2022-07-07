@@ -68,7 +68,7 @@ UnixPtyProcess::UnixPtyProcess()
 
 UnixPtyProcess::~UnixPtyProcess()
 {
-	stop();
+	stop_();
 	delete m;
 }
 
@@ -107,9 +107,14 @@ void UnixPtyProcess::start(QString const &cmd, QString const &env, QVariant cons
 	QThread::start();
 }
 
-bool UnixPtyProcess::wait(unsigned long time)
+bool UnixPtyProcess::wait_(unsigned long time)
 {
 	return QThread::wait(time);
+}
+
+bool UnixPtyProcess::wait(unsigned long time)
+{
+	return wait_(time);
 }
 
 void UnixPtyProcess::run()
@@ -210,10 +215,15 @@ void UnixPtyProcess::run()
 	}
 }
 
-void UnixPtyProcess::stop()
+void UnixPtyProcess::stop_()
 {
 	requestInterruption();
-	wait();
+	wait_();
+}
+
+void UnixPtyProcess::stop()
+{
+	stop_();
 }
 
 int UnixPtyProcess::getExitCode() const

@@ -272,7 +272,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 		ba = line.text;
 	}
 
-	std::vector<ushort> vec;
+	std::vector<char16_t> vec;
     vec.reserve((size_t)ba.size() + 100);
     size_t len = (size_t)ba.size();
 	QList<FormattedLine> res;
@@ -324,8 +324,8 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 					atts |= FormattedLine::Selected;
 				}
 			}
-			ushort const *left = &vec[0];
-			ushort const *right = left + vec.size();
+			char16_t const *left = &vec[0];
+			char16_t const *right = left + vec.size();
 			while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
 			if (left < right) {
 				res.push_back(FormattedLine(QString::fromUtf16(left, int(right - left)), atts));
@@ -1161,7 +1161,7 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 		u32buf.push_back(c.unicode);
 	}
 
-	std::vector<ushort> u16buf;
+	std::vector<char16_t> u16buf;
 	u16buf.reserve(1024);
 	utf32(u32buf.data(), u32buf.size()).to_utf16([&](uint16_t c){
 		u16buf.push_back(c);
@@ -1716,11 +1716,11 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 		if (index < line->size()) {
 			c = line->at(index).unicode;
 		}
-		if (c == '\r' || c == '\n' || c == -1) {
+		if (c == '\r' || c == '\n' || c == (uint32_t)-1) {
 			break;
 		}
-		if (c == '\t') {
-			int z = nextTabStop(x);
+		if (c == '\t') { //@
+//			int z = nextTabStop(x);
 //			n = z - x;
 			n = 1;
 		} else {
@@ -1759,11 +1759,11 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 				}
 			}
 			index = newindex;
-			col = newcol;
-		} else if (!pts.empty()) {
-			col = pts.back();
-		} else {
-			col = 0;
+//@			col = newcol;
+//		} else if (!pts.empty()) {
+//			col = pts.back();
+//		} else {
+//			col = 0;
 		}
 	}
 

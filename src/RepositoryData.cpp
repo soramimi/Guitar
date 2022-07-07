@@ -47,7 +47,7 @@ public:
 	}
 	QString str() const
 	{
-		return arr.empty() ? QString() : QString::fromUtf16(&arr[0], arr.size());
+		return arr.empty() ? QString() : QString::fromUtf16((char16_t const *)&arr[0], arr.size());
 	}
 };
 

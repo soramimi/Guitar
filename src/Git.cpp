@@ -902,7 +902,7 @@ QString Git::encodeQuotedText(QString const &str)
 		}
 	}
 	vec.push_back('\"');
-	return QString::fromUtf16(&vec[0], vec.size());
+	return QString::fromUtf16((char16_t const *)&vec[0], vec.size());
 }
 
 bool Git::commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty)
@@ -1391,7 +1391,7 @@ QString Git::trimPath(QString const &s)
 		return QString::fromUtf8(ba);
 	}
     if (left == begin && right == end) return s;
-    return QString::fromUtf16(left, int(right - left));
+	return QString::fromUtf16((char16_t const *)left, int(right - left));
 }
 
 Git::FileStatusCode Git::FileStatus::parseFileStatusCode(char x, char y)

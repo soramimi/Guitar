@@ -7,6 +7,7 @@
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include <QMainWindow>
+#include <QThread>
 
 class AvatarLoader;
 class GitObjectCache;

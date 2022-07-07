@@ -57,11 +57,11 @@ std::string joinpath(std::string const &left, std::string const &right)
 	return joinpath(left.c_str(), right.c_str());
 }
 
-QString qjoinpath(ushort const *left, ushort const *right)
+QString qjoinpath(char16_t const *left, char16_t const *right)
 {
-    std::vector<ushort> vec;
+	std::vector<char16_t> vec;
 	joinpath_(left, right, &vec);
     if (vec.empty()) return QString();
-    return QString::fromUtf16(&vec[0], vec.size());
+	return QString::fromUtf16(&vec[0], vec.size());
 }
 

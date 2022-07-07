@@ -63,7 +63,7 @@ QStringList misc::splitLines(QString const &text)
 			c = *ptr;
 		}
         if (c == '\n' || c == '\r' || c == 0) {
-            list.push_back(QString::fromUtf16(left, int(ptr - left)));
+			list.push_back(QString::fromUtf16((char16_t const *)left, int(ptr - left)));
 			if (c == 0) break;
 			if (c == '\n') {
 				ptr++;
@@ -133,7 +133,7 @@ QStringList misc::splitWords(QString const &text)
 		}
 		if (QChar::isSpace(c) || c == 0) {
             if (left < ptr) {
-                list.push_back(QString::fromUtf16(left, int(ptr - left)));
+				list.push_back(QString::fromUtf16((char16_t const *)left, int(ptr - left)));
 			}
 			if (c == 0) break;
 			ptr++;
