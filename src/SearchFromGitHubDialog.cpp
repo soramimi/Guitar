@@ -9,8 +9,6 @@
 #include <QUrl>
 #include <functional>
 
-using SearchResultItem = GitHubAPI::SearchResultItem;
-
 static QString toQString(std::string const &s)
 {
 	return QString::fromUtf8(s.c_str(), s.size());
@@ -46,8 +44,6 @@ QString SearchFromGitHubDialog::url() const
 void SearchFromGitHubDialog::on_pushButton_search_clicked()
 {
 	std::string q = ui->lineEdit_keywords->text().trimmed().toStdString();
-	q = url_encode(q);
-	if (q.empty()) return;
 
 	GitHubAPI github(mainwindow);
 	items = github.searchRepository(q);
@@ -69,7 +65,7 @@ void SearchFromGitHubDialog::on_pushButton_search_clicked()
 	}
 
 	for (int row = 0; row < items.size(); row++) {
-		SearchResultItem const &item = items[row];
+		RepositorySearchResultItem const &item = items[row];
 		QTableWidgetItem *p;
 
 		QString name = QString::fromStdString(item.full_name);
@@ -139,7 +135,7 @@ void SearchFromGitHubDialog::on_tableWidget_currentItemChanged(QTableWidgetItem 
 	if (p) {
 		int i = p->data(Qt::UserRole).toInt();
 		if (i < items.size()) {
-			SearchResultItem const &item = items[i];
+			RepositorySearchResultItem const &item = items[i];
 			ui->lineEdit_ssh->setText(toQString(item.ssh_url));
 			ui->lineEdit_http->setText(toQString(item.clone_url));
 			ui->label_hyperlink->setText(toQString(item.html_url));

@@ -330,6 +330,7 @@ HEADERS  += \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
+	src/RepositorySearchResultItem.h \
 	src/RepositoryWrapperFrame.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
@@ -366,6 +367,7 @@ HEADERS  += \
 	src/coloredit/RingSlider.h \
 	src/common/base64.h \
 	src/common/joinpath.h \
+	src/common/jstream.h \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/NinePatch.h \

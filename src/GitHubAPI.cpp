@@ -65,9 +65,12 @@ GitHubAPI::WebClientPtr GitHubRequestThread::web()
 	return m->web;
 }
 
-QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const &q)
+QList<RepositorySearchResultItem> GitHubAPI::searchRepository(std::string q)
 {
-	QList<GitHubAPI::SearchResultItem> items;
+	q = url_encode(q);
+	if (q.empty()) return {};
+
+	QList<RepositorySearchResultItem> items;
 
 	GitHubRequestThread th;
 	{
@@ -84,7 +87,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 		QJsonArray a1 = doc.object().value("items").toArray();
 		for (QJsonValueRef const &v1 : a1) {
 			QJsonObject o1 = v1.toObject();
-			SearchResultItem item;
+			RepositorySearchResultItem item;
 			auto String = [&](QString const &key){
 				return o1.value(key).toString().toStdString();
 			};
@@ -100,7 +103,7 @@ QList<GitHubAPI::SearchResultItem> GitHubAPI::searchRepository(std::string const
 		}
 	}
 
-	std::sort(items.begin(), items.end(), [](SearchResultItem const &l, SearchResultItem const &r){
+	std::sort(items.begin(), items.end(), [](RepositorySearchResultItem const &l, RepositorySearchResultItem const &r){
 		return l.score > r.score; // 降順
 	});
 

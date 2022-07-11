@@ -1,6 +1,8 @@
 #ifndef GITHUBAPI_H
 #define GITHUBAPI_H
 
+#include "RepositorySearchResultItem.h"
+
 #include <QImage>
 #include <QThread>
 #include <string>
@@ -22,15 +24,6 @@ public:
 		std::string email;
 	};
 
-	struct SearchResultItem {
-		std::string full_name;
-		std::string description;
-		std::string ssh_url;
-		std::string clone_url;
-		std::string html_url;
-		double score = 0;
-	};
-
 	MainWindow *mainwindow_;
 
 	GitHubAPI(MainWindow *mainwindow)
@@ -38,7 +31,7 @@ public:
 	{
 	}
 
-	QList<GitHubAPI::SearchResultItem> searchRepository(std::string const &q);
+	QList<RepositorySearchResultItem> searchRepository(std::string q);
 };
 
 

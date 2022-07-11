@@ -3,6 +3,7 @@
 
 #include "MyTableWidgetDelegate.h"
 #include "GitHubAPI.h"
+#include "RepositorySearchResultItem.h"
 
 #include <QDialog>
 
@@ -17,7 +18,7 @@ class SearchFromGitHubDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::SearchFromGitHubDialog *ui;
-	QList<GitHubAPI::SearchResultItem> items;
+	QList<RepositorySearchResultItem> items;
 	QString url_;
 	MyTableWidgetDelegate item_delegate;
 	MainWindow *mainwindow;

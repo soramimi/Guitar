@@ -32,7 +32,8 @@ using socket_t = int;
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <openssl/x509.h>
+//#include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #else
 typedef void SSL;
 typedef void SSL_CTX;
@@ -737,6 +738,11 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 
 		SSL_set_options(ssl, SSL_OP_NO_SSLv2);
 		SSL_set_options(ssl, SSL_OP_NO_SSLv3);
+		SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+		if (!SSL_set1_host(ssl, hostname.c_str())) {
+			throw Error(get_ssl_error());
+		}
+		SSL_set_tlsext_host_name(ssl, hostname.c_str());
 
 		ret = SSL_set_fd(ssl, sock);
 		if (ret == 0) {
@@ -1169,7 +1175,8 @@ WebContext::WebContext(WebClient::HttpVersion httpver)
 #if USE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
-	m->ctx = SSL_CTX_new(SSLv23_client_method());
+//	m->ctx = SSL_CTX_new(SSLv23_client_method());
+	m->ctx = SSL_CTX_new(TLS_client_method());
 	SSL_CTX_set_default_verify_paths(m->ctx);
 #endif
 }
