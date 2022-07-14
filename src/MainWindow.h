@@ -446,7 +446,7 @@ public:
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
 	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
-	void changeSshKey(const QString &localdir, const QString &sshkey);
+	void changeSshKey(const QString &local_dir, const QString &ssh_key);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 	const Git::CommitItemList &getLogs(RepositoryWrapperFrame const *frame) const;
 	const QList<BranchLabel> *label(const RepositoryWrapperFrame *frame, int row) const;

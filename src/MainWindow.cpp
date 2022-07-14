@@ -4881,6 +4881,28 @@ QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 	return icon;
 }
 
+void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key)
+{
+	bool changed = false;
+
+	QList<RepositoryData> *repos = getReposPtr();
+	for (int i = 0; i < repos->size(); i++) {
+		RepositoryData *item = &(*repos)[i];
+		if (item->local_dir == local_dir) {
+			item->ssh_key = ssh_key;
+			changed = true;
+		}
+	}
+
+	if (changed) {
+		saveRepositoryBookmarks();
+	}
+
+	if (m->current_repo.local_dir == local_dir) {
+		m->current_repo.ssh_key = ssh_key;
+	}
+}
+
 QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 {
 	return commit.commit_id.mid(0, 7);

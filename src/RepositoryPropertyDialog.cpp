@@ -47,21 +47,7 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
-void MainWindow::changeSshKey(QString const &localdir, QString const &sshkey)
-{
-	bool changed = false;
-	QList<RepositoryData> *repos = getReposPtr();
-	for (int i = 0; i < repos->size(); i++) {
-		RepositoryData *item = &(*repos)[i];
-		if (item->local_dir == localdir) {
-			item->ssh_key = sshkey;
-			changed = true;
-		}
-	}
-	if (changed) {
-		saveRepositoryBookmarks();
-	}
-}
+
 
 bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
 {
@@ -105,7 +91,6 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 			g->setRemoteURL(*remote);
 		}
 
-		// wip
 		QString localdir = ui->lineEdit_local_dir->text();
 		mainwindow()->changeSshKey(localdir, remote->ssh_key);
 		setSshKey_(remote->ssh_key);
