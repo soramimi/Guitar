@@ -479,6 +479,8 @@ win32 {
         src/win32/mutex.h \
         src/win32/thread.h \
         src/win32/win32.h
+
+    LIBS += -lole32
 }
 
 include(filetype/filetype.pri)

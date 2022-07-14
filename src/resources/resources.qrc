@@ -51,5 +51,6 @@
         <file>translations/Guitar_zh-TW.qm</file>
         <file>translations/Guitar_es.qm</file>
         <file>filemagic/magic.mgc</file>
+        <file>Guitar.ico</file>
     </qresource>
 </RCC>

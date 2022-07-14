@@ -203,6 +203,11 @@ MainWindow::MainWindow(QWidget *parent)
 		m->transparent_pixmap = QPixmap(":/image/transparent.png");
 	}
 	
+#ifdef Q_OS_WIN
+	ui->action_create_desktop_launcher_file->setText(tr("Create shortcut file..."));
+
+#endif
+
 #ifdef Q_OS_MACX
 	ui->action_about->setText("About Guitar...");
 	ui->action_edit_settings->setText("Settings...");
@@ -6237,6 +6242,31 @@ Terminal=false
 			}
 		}
 	}
+
+#endif
+
+#ifdef Q_OS_WIN
+	QString desktop_dir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+	QString target_path = QApplication::applicationFilePath();
+
+	Win32ShortcutData data;
+	data.targetpath = (wchar_t const *)target_path.utf16();
+
+	QString home = QDir::home().absolutePath();
+	QString launcher_dir = desktop_dir;
+	QString name = APPLICATION_NAME;
+	QString iconpath = target_path;//icon_dir / name + ".ico";
+	QString launcher_path = launcher_dir / name + ".lnk";
+	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Luancher files (*.lnk)");
+	data.iconpath = (wchar_t const *)iconpath.utf16();
+	data.lnkpath = (wchar_t const *)lnkpath.utf16();
+
+//	QFile::copy(":/Guitar.ico", iconpath);
+
+	if (!launcher_path.isEmpty()) {
+		createWin32Shortcut(data);
+	}
+
 
 #endif
 }
