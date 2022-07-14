@@ -9,7 +9,29 @@
 #include <shlobj.h>
 #include <shellapi.h>
 #include <commoncontrols.h>
+
+#include "thread.h"
+#include "event.h"
+#include <deque>
+
+#define FAILED_(TEXT) throw std::string(TEXT)
+
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 #include <QtWinExtras/QtWinExtras>
+
+QPixmap pixmapFromHICON(HICON hIcon)
+{
+	return QtWin::fromHICON(hIcon);
+}
+
+#else
+
+QPixmap pixmapFromHICON(HICON hIcon)
+{
+	return QPixmap::fromImage(QImage::fromHICON(hIcon));
+}
+
+#endif
 
 
 std::wstring replace_slash_to_backslash(std::wstring const &str)
@@ -42,12 +64,6 @@ QString getAppDataLocation()
 	}
 	return QString();
 }
-
-
-#include "thread.h"
-#include "event.h"
-#include <deque>
-#define FAILED_(TEXT) throw std::string(TEXT)
 
 class ProcessThread : public Thread {
 	friend class StreamThread;
@@ -335,7 +351,7 @@ QIcon iconFromExtension_(QString const &ext, UINT flag)
 	SHFILEINFOW shinfo;
 	if (SHGetFileInfoW((wchar_t const *)name.utf16(), 0, &shinfo, sizeof(shinfo), flag | SHGFI_ICON | SHGFI_USEFILEATTRIBUTES) != 0) {
 		if (shinfo.hIcon) {
-			QPixmap pm = QtWin::fromHICON(shinfo.hIcon);
+			QPixmap pm = pixmapFromHICON(shinfo.hIcon);
 			if (!pm.isNull()) {
 				icon = QIcon(pm);
 			}

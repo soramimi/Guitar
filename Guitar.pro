@@ -3,8 +3,9 @@ QT += core gui widgets svg network
 greaterThan(QT_MAJOR_VERSION, 5) {
 	QT += core5compat
 }
-
-win32:QT += winextras
+win32:lessThan(QT_MAJOR_VERSION, 6) {
+    QT += winextras
+}
 
 CONFIG(debug,debug|release):TARGET = Guitard
 CONFIG(release,debug|release):TARGET = Guitar
