@@ -1,5 +1,6 @@
-#include "RepositoryLineEdit.h"
 
+#include "RepositoryLineEdit.h"
+#include "common/misc.h"
 #include <QDebug>
 #include <QDropEvent>
 #include <QMimeData>
@@ -7,6 +8,27 @@
 RepositoryLineEdit::RepositoryLineEdit(QWidget *parent)
 	: QLineEdit(parent)
 {
+	installEventFilter(this);
+}
+
+bool RepositoryLineEdit::eventFilter(QObject *watched, QEvent *event)
+{
+	if (event->type() == QEvent::FocusOut) {
+		if (watched == this) {
+			QString s = text();
+			s = misc::complementRemoteURL(s, false);
+			setText(s);
+		}
+	}
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *e = static_cast<QKeyEvent *>(event);
+		if (e->key() == Qt::Key_Space && (e->modifiers() & Qt::ControlModifier)) {
+			QString s = text();
+			s = misc::complementRemoteURL(s, true);
+			setText(s);
+		}
+	}
+	return QLineEdit::eventFilter(watched, event);
 
 }
 

@@ -7,6 +7,7 @@ class RepositoryLineEdit : public QLineEdit {
 	Q_OBJECT
 protected:
 	void dropEvent(QDropEvent *event) override;
+	bool eventFilter(QObject *watched, QEvent *event);
 public:
 	explicit RepositoryLineEdit(QWidget *parent = nullptr);
 };

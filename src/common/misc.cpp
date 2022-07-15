@@ -364,67 +364,6 @@ QString misc::abbrevBranchName(QString const &name)
 	return newname;
 }
 
-//QString misc::determinFileType(QString const &filecommand, QString const &path, bool mime, std::function<void (QString const &, QByteArray *)> const &callback)
-//{ // ファイルタイプを調べる
-//	if (QFileInfo(filecommand).isExecutable()) {
-//		QString const &file = filecommand;
-//		QString mgc;
-//#ifdef Q_OS_WIN
-//		int i = file.lastIndexOf('/');
-//		int j = file.lastIndexOf('\\');
-//		if (i < j) i = j;
-//		if (i >= 0) {
-//			mgc = file.mid(0, i + 1) + "magic.mgc";
-//			if (QFileInfo(mgc).isReadable()) {
-//				// ok
-//			} else {
-//				mgc = QString();
-//			}
-//		}
-//#endif
-//		QString cmd;
-//		if (mgc.isEmpty()) {
-//			cmd = "\"%1\"";
-//			cmd = cmd.arg(file);
-//		} else {
-//			cmd = "\"%1\" -m \"%2\"";
-//			cmd = cmd.arg(file).arg(mgc);
-//			cmd = cmd.replace('\\', '/');
-//		}
-//		if (mime) {
-//			cmd += " --mime";
-//		}
-//		cmd += " --brief ";
-//		if (path == "-") {
-//			cmd += path;
-//		} else {
-//			cmd += QString("\"%1\"").arg(path);
-//		}
-//		cmd = misc::normalizePathSeparator(cmd);
-
-//		// run file command
-
-//		QByteArray ba;
-
-//		callback(cmd, &ba);
-
-//		// parse file type
-
-//		if (!ba.isEmpty()) {
-//			QString s = QString::fromUtf8(ba).trimmed();
-//			QStringList list = s.split(';', QString::SkipEmptyParts);
-//			if (!list.isEmpty()) {
-//				QString mimetype = list[0].trimmed();
-//				return mimetype;
-//			}
-//		}
-
-//	} else {
-//		qDebug() << "No executable 'file' command";
-//	}
-//	return QString();
-//}
-
 std::string misc::makeProxyServerURL(std::string text)
 {
 	if (!text.empty() && !strstr(text.c_str(), "://")) {
@@ -459,4 +398,23 @@ bool misc::isExecutable(QString const &cmd)
 {
 	QFileInfo info(cmd);
 	return info.isExecutable();
+}
+
+QString misc::complementRemoteURL(QString url, bool toggle)
+{
+	if (toggle && url.startsWith("https://github.com/")) {
+		url = "git@github.com:" + url.mid(19);
+	} else if (toggle && url.startsWith("git@github.com:")) {
+		url = "https://github.com/" + url.mid(15);
+	} else {
+		QStringList s = misc::splitWords(url);
+		if (s.size() == 3 && s[0] == "github") {
+			QString name = s[2];
+			if (name.endsWith(".git")) {
+				name = name.mid(0, name.size() - 4);
+			}
+			url = "https://github.com/" + s[1] + '/' + name + ".git";
+		}
+	}
+	return url;
 }

@@ -58,11 +58,11 @@ public:
 	static bool isSVG(QString const &mimetype);
 	static bool isPSD(QString const &mimetype);
 	static QString abbrevBranchName(QString const &name);
-//	static QString determinFileType(QString const &filecommand, QString const &path, bool mime, std::function<void(QString const &, QByteArray *)> const &callback);
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);
 	static QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);
 	static bool isExecutable(QString const &cmd);
+	static QString complementRemoteURL(QString url, bool toggle);
 };
 
 class OverrideWaitCursor_ {

@@ -8,16 +8,14 @@
 #include <QFocusEvent>
 #include <QMessageBox>
 
-AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir) :
-	QDialog(parent),
-	ui(new Ui::AddRepositoryDialog)
+AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
+	: QDialog(parent)
+	, ui(new Ui::AddRepositoryDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-
-	ui->lineEdit_remote_url->installEventFilter(this);
 
 	already_exists_ = tr("A valid git repository exists.");
 
@@ -39,22 +37,6 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 AddRepositoryDialog::~AddRepositoryDialog()
 {
 	delete ui;
-}
-
-bool AddRepositoryDialog::eventFilter(QObject *watched, QEvent *event)
-{
-	if (event->type() == QEvent::FocusOut) {
-		if (watched == ui->lineEdit_remote_url) {
-			complementRemoteURL(false);
-		}
-	}
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *e = static_cast<QKeyEvent *>(event);
-		if (e->key() == Qt::Key_Space && (e->modifiers() & Qt::ControlModifier)) {
-			complementRemoteURL(true);
-		}
-	}
-	return QDialog::eventFilter(watched, event);
 }
 
 QString AddRepositoryDialog::repositoryName() const
@@ -231,7 +213,6 @@ void AddRepositoryDialog::on_pushButton_prev_clicked()
 	updateUI();
 }
 
-
 QString AddRepositoryDialog::overridedSshKey() const
 {
 	return ui->widget_ssh_override->sshKey();
@@ -241,11 +222,6 @@ void AddRepositoryDialog::on_lineEdit_local_path_textChanged(QString const &)
 {
 	validate();
 }
-
-//void AddRepositoryDialog::on_lineEdit_bookmark_name_textChanged(QString const &)
-//{
-//	validate();
-//}
 
 void AddRepositoryDialog::on_groupBox_remote_toggled(bool)
 {
@@ -332,26 +308,4 @@ RepositoryData AddRepositoryDialog::makeRepositoryData() const
 	reposdata.name = repositoryName();
 	reposdata.ssh_key = overridedSshKey();
 	return reposdata;
-}
-
-void AddRepositoryDialog::complementRemoteURL(bool toggle)
-{
-	QString url = ui->lineEdit_remote_url->text();
-	if (toggle && url.startsWith("https://github.com/")) {
-		url = "git@github.com:" + url.mid(19);
-		ui->lineEdit_remote_url->setText(url);
-	} else if (toggle && url.startsWith("git@github.com:")) {
-		url = "https://github.com/" + url.mid(15);
-		ui->lineEdit_remote_url->setText(url);
-	} else {
-		QStringList s = misc::splitWords(url);
-		if (s.size() == 3 && s[0] == "github") {
-			QString name = s[2];
-			if (name.endsWith(".git")) {
-				name = name.mid(0, name.size() - 4);
-			}
-			QString url = "https://github.com/" + s[1] + '/' + name + ".git";
-			ui->lineEdit_remote_url->setText(url);
-		}
-	}
 }
