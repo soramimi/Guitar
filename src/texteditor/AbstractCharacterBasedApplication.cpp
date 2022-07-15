@@ -1895,7 +1895,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 	int left_margin = editor_cx->viewport_org_x;
 	int num = 1;
 	size_t offset = 0;
-	for (int i = 0; i < editor_cx->viewport_height; i++) {
+	for (int i = 0; i <= editor_cx->viewport_height; i++) {
 		char tmp[100];
 		Q_ASSERT(left_margin < (int)sizeof(tmp));
 		memset(tmp, ' ', left_margin);

@@ -684,7 +684,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			pr.fillRect(0, y, width(), lineHeight(), color);
 		};
 		Document const &doc = editor_cx->engine->document;
-		for (int i = 0; i < editor_cx->viewport_height; i++) {
+		for (int i = 0; i <= editor_cx->viewport_height; i++) {
 			int row = i + editor_cx->scroll_row_pos;
 			if (row >= 0 && row < doc.lines.size()) {
 				auto type = doc.lines[row].type;
@@ -807,14 +807,14 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		int bottom = editor_cx->bottom_line_y;
 
 		int view_y = editor_cx->viewport_org_y;
-		int view_h = editor_cx->viewport_height;
+		int view_h = editor_cx->viewport_height + 1;
 		view_y *= lineHeight();
 		view_h *= lineHeight();
 		FillLineNumberBG(view_y, view_h, theme()->bgLineNumber());
 
 		paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
-			if (isCursorVisible() && y == visualY(editor_cx.get())) {
+			if (isCursorVisible() && y == visualY(editor_cx.get())) { // 現在の行の背景
 				FillLineNumberBG(y * lineHeight(), lineHeight(), theme()->bgCurrentLineNumber());
 			}
 			pr.setBackground(Qt::transparent);
