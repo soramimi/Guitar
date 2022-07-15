@@ -177,11 +177,11 @@ void AddRepositoryDialog::accept()
 			ui->comboBox_search->setVisible(true);
 			ui->lineEdit_remote_url->setFocus();
 			break;
-		case Initialize:
+		case AddExisting:
 			ui->stackedWidget->setCurrentWidget(ui->page_local);
 			browseLocalPath();
 			break;
-		case AddExisting:
+		case Initialize:
 			ui->stackedWidget->setCurrentWidget(ui->page_local);
 			browseLocalPath();
 			break;
@@ -310,9 +310,11 @@ void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text
 		reponame_ = text.mid(i, j - i);
 	}
 
-	QString path = defaultWorkingDir() / reponame_;
-	path = misc::normalizePathSeparator(path);
-	ui->lineEdit_local_path->setText(path);
+	if (mode() == Clone) {
+		QString path = defaultWorkingDir() / reponame_;
+		path = misc::normalizePathSeparator(path);
+		ui->lineEdit_local_path->setText(path);
+	}
 }
 
 Git::CloneData AddRepositoryDialog::makeCloneData() const
