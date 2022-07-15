@@ -164,6 +164,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.beginGroup("UI");
 //	SetValue<bool>(s, "EnableHighDpiScaling")                << as->enable_high_dpi_scaling;
 	SetValue<bool>(s, "ShowLabels")                          << as->show_labels;
+	SetValue<bool>(s, "ShowGraph")                           << as->show_graph;
 	s.endGroup();
 
 	s.beginGroup("Network");

@@ -409,7 +409,9 @@ public:
 	bool isAncestorCommit(const QString &id);
 	void postStartEvent(int ms_later);
 	void setShowLabels(bool show, bool save);
+	void setShowGraph(bool show, bool save);
 	bool isLabelsVisible() const;
+	bool isGraphVisible() const;
 	void updateFilesList2(RepositoryWrapperFrame *frame, const QString &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem *commit);
@@ -511,6 +513,7 @@ private slots:
 	void on_action_set_config_user_triggered();
 	void on_action_set_gpg_signing_triggered();
 	void on_action_show_labels_triggered();
+	void on_action_show_graph_triggered();
 	void on_action_sidebar_triggered();
 	void on_action_stash_apply_triggered();
 	void on_action_stash_drop_triggered();
@@ -555,6 +558,7 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
 	void test();
+
 
 protected slots:
 	void onLogIdle();

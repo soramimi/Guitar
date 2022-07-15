@@ -224,7 +224,8 @@ MainWindow::MainWindow(QWidget *parent)
 	qApp->installEventFilter(this);
 	
 	setShowLabels(appsettings()->show_labels, false);
-	
+	setShowGraph(appsettings()->show_graph, false);
+
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 		ui->widget_log->view()->setTextFont(font);
@@ -6156,15 +6157,41 @@ void MainWindow::setShowLabels(bool show, bool save)
 	}
 }
 
+void MainWindow::setShowGraph(bool show, bool save)
+{
+	ApplicationSettings *as = appsettings();
+	as->show_graph = show;
+
+	bool b = ui->action_show_graph->blockSignals(true);
+	ui->action_show_graph->setChecked(show);
+	ui->action_show_graph->blockSignals(b);
+
+	if (save) {
+		saveApplicationSettings();
+	}
+}
+
 bool MainWindow::isLabelsVisible() const
 {
 	return appsettings()->show_labels;
+}
+
+bool MainWindow::isGraphVisible() const
+{
+	return appsettings()->show_graph;
 }
 
 void MainWindow::on_action_show_labels_triggered()
 {
 	bool f = ui->action_show_labels->isChecked();
 	setShowLabels(f, true);
+	frame()->updateLogTableView();
+}
+
+void MainWindow::on_action_show_graph_triggered()
+{
+	bool f = ui->action_show_graph->isChecked();
+	setShowGraph(f, true);
 	frame()->updateLogTableView();
 }
 
@@ -6296,6 +6323,7 @@ Terminal=false
 void MainWindow::test()
 {
 }
+
 
 
 

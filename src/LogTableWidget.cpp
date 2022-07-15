@@ -214,9 +214,6 @@ void LogTableWidget::bind(RepositoryWrapperFrame *frame)
 
 RepositoryWrapperFrame *LogTableWidget::frame()
 {
-//	auto *mw = qobject_cast<RepositoryWrapperFrame *>(window());
-//	Q_ASSERT(mw);
-//	return mw;
 	Q_ASSERT(m->frame);
 	return m->frame;
 }
@@ -351,25 +348,32 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		return y;
 	};
 
-	// draw lines
+	auto DrawGraph = [&](){
+		bool show = global->mainwindow->isGraphVisible(); // グラフ表示モード
+		double opacity = show ? 1.0 : 0.125;
 
-	pr.setOpacity(0.5);
-	pr.setBrush(Qt::NoBrush);
+		// draw lines
 
-	for (size_t i = 0; i < list->size(); i++) {
-		double y = DrawLine(i, i);
-		if (y >= height()) break;
-	}
+		pr.setOpacity(opacity * 0.5);
+		pr.setBrush(Qt::NoBrush);
 
-	// draw marks
+		for (size_t i = 0; i < list->size(); i++) {
+			double y = DrawLine(i, i);
+			if (y >= height()) break;
+		}
 
-	pr.setOpacity(1);
-	pr.setBrush(frame()->color(0));
+		// draw marks
 
-	for (size_t i = 0; i < list->size(); i++) {
-		double y = DrawMark(i, i);
-		if (y >= height()) break;
-	}
+		pr.setOpacity(opacity * 1);
+		pr.setBrush(frame()->color(0));
+
+		for (size_t i = 0; i < list->size(); i++) {
+			double y = DrawMark(i, i);
+			if (y >= height()) break;
+		}
+	};
+
+	DrawGraph();
 }
 
 void LogTableWidget::resizeEvent(QResizeEvent *e)

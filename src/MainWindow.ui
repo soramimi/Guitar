@@ -1069,6 +1069,7 @@
      <string>&amp;View</string>
     </property>
     <addaction name="action_view_refresh"/>
+    <addaction name="action_show_graph"/>
     <addaction name="action_show_labels"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -1746,6 +1747,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="action_show_graph">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show graph</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
    </property>
   </action>
  </widget>
