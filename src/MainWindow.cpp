@@ -207,8 +207,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->action_create_desktop_launcher_file->setText(tr("Create shortcut file..."));
 #endif
 #ifdef Q_OS_MACX
-//	delete ui->menu_Help;
-	ui->menu_Help->menuAction()->setVisible(false);
+	ui->action_create_desktop_launcher_file->setVisible(false);
 #endif
 
 #ifdef Q_OS_MACX
