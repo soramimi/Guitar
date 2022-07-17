@@ -8,6 +8,7 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QPainterPath>
+#include <QPalette>
 #include <QProgressBar>
 #include <QTableWidget>
 #include "darkstylehelper.i"
@@ -2169,7 +2170,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				return;
 			}
 
-			auto const *v2 = qstyleoption_cast<const QStyleOptionDockWidgetV2*>(o);
+			auto const *v2 = qstyleoption_cast<const QStyleOptionDockWidget*>(o);
 			bool verticalTitleBar = v2 && v2->verticalTitleBar;
 
 			if (verticalTitleBar) {
@@ -2180,8 +2181,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				p->translate(-rect.left() + 1, -rect.top());
 			}
 
-			p->setBrush(option->palette.background().color().darker(110));
-			p->setPen(option->palette.background().color().darker(130));
+			p->setBrush(option->palette.color(QPalette::Normal, QPalette::Window).darker(110));
+			p->setPen(option->palette.color(QPalette::Normal, QPalette::Window).darker(130));
 			p->drawRect(rect.adjusted(0, 1, -1, -3));
 
 			int buttonMargin = 4;
