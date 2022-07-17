@@ -2982,9 +2982,16 @@ void MainWindow::openTerminal(const RepositoryData *repo)
 	runOnRepositoryDir([](QString dir, QString ssh_key){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
-		QString cmd = "open -n -a /Applications/Utilities/Terminal.app --args \"%1\"";
-		cmd = cmd.arg(dir);
-		QProcess::execute(cmd);
+		QString app = "/Applications/Utilities/Terminal.app";
+		if (!QFileInfo(app).exists()) {
+			app = "/System/Applications/Utilities/Terminal.app";
+			if (!QFileInfo(app).exists()) {
+				return;
+			}
+		}
+		QString cmd = "/usr/bin/open -n -a \"%1\" --args \"%2\"";
+		cmd = cmd.arg(app).arg(dir);
+		system(cmd.toStdString().c_str());
 #else
 		Terminal::open(dir, ssh_key);
 #endif
@@ -2999,7 +3006,7 @@ void MainWindow::openExplorer(const RepositoryData *repo)
 		if (!isValidDir(dir)) return;
 		QString cmd = "open \"%1\"";
 		cmd = cmd.arg(dir);
-		QProcess::execute(cmd);
+		system(cmd.toStdString().c_str());
 #else
 		QString url = QString::fromLatin1(QUrl::toPercentEncoding(dir));
 #ifdef Q_OS_WIN
