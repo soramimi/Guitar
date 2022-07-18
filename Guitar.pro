@@ -54,10 +54,12 @@ linux {
 haiku:LIBS += -lssl -lcrypto -lnetwork
 #macx:INCLUDEPATH += /usr/local/include
 #macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
-macx:INCLUDEPATH += /opt/homebrew/Cellar/openssl@3/3.0.5/include
 #macx:LIBS += -L/usr/local/Cellar/openssl@3/3.0.1/lib
 #macx:LIBS += -lssl -lcrypto
-macx:LIBS += /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libssl.a /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libcrypto.a
+#macx:INCLUDEPATH += /opt/homebrew/Cellar/openssl@3/3.0.5/include
+#macx:LIBS += /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libssl.a /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libcrypto.a
+macx:INCLUDEPATH += /usr/local/opt/openssl@3/include
+macx:LIBS += /usr/local/opt/openssl@3/lib/libssl.a /usr/local/opt/openssl@3/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += $$PWD/../zlib
