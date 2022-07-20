@@ -118,8 +118,9 @@ win32 {
 macx {
 	QMAKE_INFO_PLIST = Info.plist
 	ICON += src/resources/Guitar.icns
-	t.path=Contents/Resources
-	QMAKE_BUNDLE_DATA += t
+	macres.files = $$ICON
+	macres.path = Contents/Resources
+	QMAKE_BUNDLE_DATA += macres
 }
 
 SOURCES += \
@@ -374,7 +375,6 @@ HEADERS  += \
 	src/coloredit/RingSlider.h \
 	src/common/base64.h \
 	src/common/joinpath.h \
-	src/common/jstream.h \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/NinePatch.h \
