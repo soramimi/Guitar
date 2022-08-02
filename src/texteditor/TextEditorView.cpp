@@ -221,30 +221,53 @@ int TextEditorView::basisCharWidth() const
 	return w > 0 ? w : 1;
 }
 
+static QString appendUnicode(QString const &s, uint32_t u)
+{
+	char16_t tmp[3];
+	if (u >= 0x10000 && u < 0x110000) {
+		// サロゲートペア
+		uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
+		uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
+		tmp[0] = h;
+		tmp[1] = l;
+		tmp[2] = 0;
+	} else {
+		tmp[0] = u;
+		tmp[1] = 0;
+	}
+	return s + QString::fromUtf16(tmp);
+}
+
 /**
  * @brief 全文字のX座標を計算する
  * @param chars
  * @param fm
  */
-void TextEditorView::calcPixelPosX(std::vector<Char> *chars, QFontMetrics const &fm)
+void TextEditorView::calcPixelPosX(std::vector<Char> *chars, QFontMetrics const &fm) const
 {
+	int base_x = 0;
+	int left_x = 0;
 	QString text;
 	for (size_t i = 0; i < chars->size(); i++) {
-		char16_t tmp[3];
+		chars->at(i).left_x = left_x;
 		uint32_t u = chars->at(i).unicode;
-		if (u >= 0x10000 && u < 0x110000) {
-			// サロゲートペア
-			uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
-			uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
-			tmp[0] = h;
-			tmp[1] = l;
-			tmp[2] = 0;
+		if (u == '\t') {
+			int right_x = left_x;
+			int n = basisCharWidth() * editor_cx->tab_span;
+			if (n > 0) {
+				right_x = left_x + n;
+				right_x -= left_x % n;
+			}
+			chars->at(i).right_x = right_x;
+			left_x = right_x;
+			base_x = left_x;
+			text = {};
 		} else {
-			tmp[0] = u;
-			tmp[1] = 0;
+			text = appendUnicode(text, u);
+			int right_x = base_x + fm.size(0, text).width();
+			chars->at(i).right_x = right_x;
+			left_x = right_x;
 		}
-		text += QString::fromUtf16(tmp);
-		chars->at(i).right_x = fm.size(0, text).width();
 	}
 }
 
@@ -281,6 +304,11 @@ int TextEditorView::calcPixelPosX(int row, int col, bool adjust_scroll, std::vec
 	}
 
 	return x;
+}
+
+void TextEditorView::parse(int row, std::vector<Char> *chars) const
+{
+	calcPixelPosX(row, 0, false, chars);
 }
 
 /**
@@ -677,25 +705,58 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	pr.setFont(m->text_font);
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 
+	const int linenum_width = editor_cx->viewport_org_x * basisCharWidth();
+	const int text_origin_x = linenum_width - scrollPosX();
+
 	// diff mode
 	if (renderingMode() == GraphicMode) {
-		auto FillRowBackground = [&](int row, QColor const &color){
+		auto FillRowBackground = [&](int x, int w, int row, QColor const &color){
 			int y = view_y_from_row(row);
-			pr.fillRect(0, y, width(), lineHeight(), color);
+			pr.fillRect(x, y, w, lineHeight(), color);
 		};
 		Document const &doc = editor_cx->engine->document;
 		for (int i = 0; i <= editor_cx->viewport_height; i++) {
 			int row = i + editor_cx->scroll_row_pos;
+			std::vector<Char> chars;
+			parse(row, &chars);
+#if 1
 			if (row >= 0 && row < doc.lines.size()) {
-				auto type = doc.lines[row].type;
+				int x = 0;
+				int w = width();
+				int type;
+				type = doc.lines[row].type;
 				if (type == Document::Line::Unknown) {
-					FillRowBackground(row, theme()->bgDiffUnknown());
+					FillRowBackground(x, w, row, theme()->bgDiffUnknown());
 				} else if (type == Document::Line::Add) {
-					FillRowBackground(row, theme()->bgDiffAdd());
+					FillRowBackground(x, w, row, theme()->bgDiffAdd());
 				} else if (type == Document::Line::Del) {
-					FillRowBackground(row, theme()->bgDiffDel());
+					FillRowBackground(x, w, row, theme()->bgDiffDel());
 				}
 			}
+#else
+			int x0 = 0;
+			if (row >= 0 && row < doc.lines.size()) {
+				for (int j = 0; j < chars.size(); j++) {
+					int x1 = chars[j].right_x;
+					int x = text_origin_x + x0;
+					int w = text_origin_x + x1 - x;
+					int type;
+//					type = Document::Line::Unknown;
+					type = doc.lines[row].type;
+					if (type == Document::Line::Unknown) {
+						FillRowBackground(x, w, row, theme()->bgDiffUnknown());
+					} else if (type == Document::Line::Add) {
+						FillRowBackground(x, w, row, theme()->bgDiffAdd());
+					} else if (type == Document::Line::Del) {
+						FillRowBackground(x, w, row, theme()->bgDiffDel());
+					}
+					x0 = x1;
+				}
+			}
+			if (x0 < width()) {
+				FillRowBackground(x0, width() - x0, row, theme()->bgDiffUnknown());
+			}
+#endif
 		}
 	}
 
@@ -731,8 +792,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 	}
 
-	int linenum_width = editor_cx->viewport_org_x * basisCharWidth();
-
 	// テキスト描画
 	if (renderingMode() == GraphicMode) {
 		int view_row = 0;
@@ -755,7 +814,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 
 		while (isValidRowIndex(line_row)) {
-			int x = linenum_width - scrollPosX();
+			int x = text_origin_x;
 			int y = view_row * lh;
 			if (y >= height()) break;
 			QList<FormattedLine> fline = formatLine2(line_row);
@@ -786,11 +845,45 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					pr.fillRect(x + left_x, y, w, lh, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
 				}
 			}
-
+#if 0
 			for (FormattedLine const &fl : fline) {
 				pr.setPen(defaultForegroundColor());
 				pr.drawText(QRect(x, y, width() - x, lh), fl.text, opt);
 			}
+#else
+			std::vector<Char> chars;
+			parse(line_row, &chars); // 行データを取得
+			int left_x = 0;
+			int right_x = 0;
+			int i = 0;
+			while (i < chars.size()) {
+				int n = 0;
+				QString text;
+				while (i + n < chars.size()) {
+					if (n == 0) {
+						left_x = chars[i].left_x;
+						right_x = chars[i].right_x;
+					} else if (right_x != chars[n + i].left_x) { // x座標がつながっていないなら抜ける
+						break;
+					}
+					auto u = chars[n + i].unicode;
+					if (u == '\t') break; // タブなら抜ける
+					text = appendUnicode(text, u); // 文字を追加
+					right_x = chars[n + i].right_x;
+					n++;
+				}
+				if (!text.isEmpty() && left_x < right_x) {
+					pr.setPen(defaultForegroundColor()); // 文字色
+					int x = text_origin_x + left_x;
+					int w = right_x - left_x;
+					pr.drawText(QRect(x, y, w, lh), text, opt); // テキスト描画
+				}
+				if (n == 0) {
+					n = 1;
+				}
+				i += n;
+			}
+#endif
 			view_row++;
 			line_row++;
 		}

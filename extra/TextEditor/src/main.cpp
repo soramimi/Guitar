@@ -7,6 +7,8 @@ QString makeApplicationDataDir();
 
 int main(int argc, char *argv[])
 {
+	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
+
 	bool opt_qt = false;
 
 	int i = 1;

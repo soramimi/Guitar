@@ -16,15 +16,15 @@ static void url_encode_(char const *ptr, char const *end, std::vector<char> *out
 		int c = (unsigned char)*ptr;
 		ptr++;
 		if (isalnum(c) || strchr("_.-~", c)) {
-			print(out, (char)c);
+			vecprint(out, (char)c);
 		} else if (c == ' ') {
-			print(out, '+');
+			vecprint(out, '+');
 		} else {
 			char tmp[10];
 			sprintf(tmp, "%%%02X", c);
-			print(out, tmp[0]);
-			print(out, tmp[1]);
-			print(out, tmp[2]);
+			vecprint(out, tmp[0]);
+			vecprint(out, tmp[1]);
+			vecprint(out, tmp[2]);
 		}
 	}
 }
@@ -96,7 +96,7 @@ static void url_decode_(char const *ptr, char const *end, std::vector<char> *out
 			c = (unsigned char)strtol(tmp, nullptr, 16);
 			ptr += 2;
         }
-        print(out, (char)c);
+        vecprint(out, (char)c);
 	}
 }
 

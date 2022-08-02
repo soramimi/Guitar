@@ -47,8 +47,9 @@ private:
 	void internalUpdateScrollBar();
 	void moveCursorByMouse();
 	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
+	void parse(int row, std::vector<Char> *chars) const;
 	int scrollPosX() const;
-	static void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm);
+	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
 	int view_y_from_row(int row) const;
 public:
 	int basisCharWidth() const;

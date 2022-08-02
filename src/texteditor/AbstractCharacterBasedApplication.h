@@ -224,14 +224,13 @@ public:
 	};
 
 	struct Char {
-//		int view_x = 0;
+		int left_x = 0;
 		int right_x = 0;
 		uint32_t unicode = 0;
 		CharAttr attr;
 		Char() = default;
 		Char(uint32_t unicode)
 			: unicode(unicode)
-//			, view_x(pos)
 		{
 
 		}
@@ -272,7 +271,7 @@ private:
 protected:
 	SelectionAnchor selection_start;
 	SelectionAnchor selection_end;
-	int reference_char_width_ = 1;
+	const int reference_char_width_ = 1; // TODO: remove
 protected:
 
 	std::vector<Character> *char_screen();
@@ -380,8 +379,6 @@ protected:
 	int scrollBottomLimit() const;
 	bool isPaintingSuppressed() const;
 	void setPaintingSuppressed(bool f);
-	void scrollRight();
-	void scrollLeft();
 
 	void addNewLineToBottom();
 	void appendNewLine(std::vector<Char> *vec);

@@ -2,37 +2,37 @@
 #include <cstring>
 #include <cstdlib>
 
-void print(std::vector<char> *out, char c)
+void vecprint(std::vector<char> *out, char c)
 {
 	out->push_back(c);
 }
 
-void print(std::vector<char> *out, char const *begin, char const *end)
+void vecprint(std::vector<char> *out, char const *begin, char const *end)
 {
 	out->insert(out->end(), begin, end);
 }
 
-void print(std::vector<char> *out, char const *ptr, size_t len)
+void vecprint(std::vector<char> *out, char const *ptr, size_t len)
 {
-	print(out, ptr, ptr + len);
+	vecprint(out, ptr, ptr + len);
 }
 
-void print(std::vector<char> *out, char const *s)
+void vecprint(std::vector<char> *out, char const *s)
 {
-	print(out, s, s + strlen(s));
+	vecprint(out, s, s + strlen(s));
 }
 
-void print(std::vector<char> *out, std::string const &s)
+void vecprint(std::vector<char> *out, std::string const &s)
 {
-	print(out, s.c_str(), s.size());
+	vecprint(out, s.c_str(), s.size());
 }
 
-void print(std::vector<char> *out, std::vector<char> const *in)
+void vecprint(std::vector<char> *out, std::vector<char> const *in)
 {
 	if (in && !in->empty()) {
 		char const *begin = &(*in)[0];
 		char const *end = begin + in->size();
-		print(out, begin, end);
+		vecprint(out, begin, end);
 	}
 }
 

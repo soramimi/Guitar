@@ -70,36 +70,6 @@ void onSigPipe(int)
 	global->webcx.notify_broken_pipe();
 }
 
-class QMessageLogContext;
-
-class DebugMessageHandler {
-public:
-	DebugMessageHandler() = delete;
-
-	static void install();
-
-	static void abort(const QMessageLogContext &context, const QString &message);
-};
-
-void DebugMessageHandler::abort(QMessageLogContext const &/*context*/, const QString &/*message*/)
-{
-	::abort();
-}
-
-void debugMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message)
-{
-	(QTextStream(stderr) << qFormatLogMessage(type, context, message) << '\n').flush();
-
-	if (type == QtFatalMsg) {
-		DebugMessageHandler::abort(context, message);
-	}
-}
-
-void DebugMessageHandler::install()
-{
-	qInstallMessageHandler(debugMessageHandler);
-}
-
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
@@ -108,7 +78,7 @@ int main(int argc, char *argv[])
 	setenv("UNICODEMAP_JP", "cp932", 1);
 #endif
 
-	DebugMessageHandler::install();
+	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
 
 	ApplicationGlobal g;
 	global = &g;

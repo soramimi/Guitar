@@ -1109,7 +1109,7 @@ void WebClient::make_application_www_form_urlencoded(char const *begin, char con
 {
 	*out = WebClient::Post();
 	out->content_type = ContentType::APPLICATION_X_WWW_FORM_URLENCODED;
-	print(&out->data, begin, end - begin);
+	vecprint(&out->data, begin, end - begin);
 }
 
 void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClient::Post *out, std::string const &boundary)
@@ -1119,9 +1119,9 @@ void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClie
 	out->boundary = boundary;
 
 	for (Part const &part : parts) {
-		print(&out->data, "--");
-		print(&out->data, out->boundary);
-		print(&out->data, "\r\n");
+		vecprint(&out->data, "--");
+		vecprint(&out->data, out->boundary);
+		vecprint(&out->data, "\r\n");
 		if (!part.content_disposition.type.empty()) {
 			ContentDisposition const &cd = part.content_disposition;
 			std::string s;
@@ -1136,23 +1136,23 @@ void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClie
 			};
 			Add("name", cd.name);
 			Add("filename", cd.filename);
-			print(&out->data, s);
-			print(&out->data, "\r\n");
+			vecprint(&out->data, s);
+			vecprint(&out->data, "\r\n");
 		}
 		if (!part.content_type.empty()) {
-			print(&out->data, "Content-Type: " + part.content_type + "\r\n");
+			vecprint(&out->data, "Content-Type: " + part.content_type + "\r\n");
 		}
 		if (!part.content_transfer_encoding.empty()) {
-			print(&out->data, "Content-Transfer-Encoding: " + part.content_transfer_encoding + "\r\n");
+			vecprint(&out->data, "Content-Transfer-Encoding: " + part.content_transfer_encoding + "\r\n");
 		}
-		print(&out->data, "\r\n");
-		print(&out->data, part.data, part.size);
-		print(&out->data, "\r\n");
+		vecprint(&out->data, "\r\n");
+		vecprint(&out->data, part.data, part.size);
+		vecprint(&out->data, "\r\n");
 	}
 
-	print(&out->data, "--");
-	print(&out->data, out->boundary);
-	print(&out->data, "--\r\n");
+	vecprint(&out->data, "--");
+	vecprint(&out->data, out->boundary);
+	vecprint(&out->data, "--\r\n");
 }
 
 void WebClient::make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary)

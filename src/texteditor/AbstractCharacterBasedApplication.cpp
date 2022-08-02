@@ -314,7 +314,6 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 		return 0;
 	};
 
-
 	auto Flush = [&](size_t offset, size_t *next_offset){
 		if (!vec.empty()) {
 			int atts = 0;
@@ -1621,28 +1620,6 @@ void AbstractCharacterBasedApplication::movePageDown()
 		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
-}
-
-void AbstractCharacterBasedApplication::scrollRight()
-{
-	if (cx()->scroll_col_pos > 0) {
-//		cx()->scroll_col_pos--;
-		cx()->scroll_col_pos -= reference_char_width_;
-	} else {
-		cx()->scroll_col_pos = 0;
-	}
-	invalidateArea();
-	clearParsedLine();
-	updateVisibility(true, true, true);
-}
-
-void AbstractCharacterBasedApplication::scrollLeft()
-{
-//	cx()->scroll_col_pos++;
-	cx()->scroll_col_pos += reference_char_width_;
-	invalidateArea();
-	clearParsedLine();
-	updateVisibility(true, true, true);
 }
 
 void AbstractCharacterBasedApplication::addNewLineToBottom()
