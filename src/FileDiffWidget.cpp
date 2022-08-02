@@ -137,6 +137,8 @@ int FileDiffWidget::totalTextLines() const
 
 void FileDiffWidget::clearDiffView()
 {
+	ui->widget_diff_left->clear();
+	ui->widget_diff_right->clear();
 	ui->widget_diff_slider->clear(false);
 }
 
@@ -572,6 +574,11 @@ QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const
 	return GitDiff::diffObjects(g, a_id, b_id);
 }
 
+/**
+ * @brief コミットIDの検証
+ * @param id
+ * @return
+ */
 bool FileDiffWidget::isValidID_(QString const &id)
 {
 	if (id.startsWith(PATH_PREFIX)) {
@@ -580,6 +587,11 @@ bool FileDiffWidget::isValidID_(QString const &id)
 	return Git::isValidID(id);
 }
 
+/**
+ * @brief 差分ビューを更新
+ * @param info
+ * @param uncommited
+ */
 void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 {
 	GitPtr g = git();
@@ -621,6 +633,12 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	}
 }
 
+/**
+ * @brief 差分ビューを更新
+ * @param id_left
+ * @param id_right
+ * @param path
+ */
 void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_right, QString const &path)
 {
 	GitPtr g = git();

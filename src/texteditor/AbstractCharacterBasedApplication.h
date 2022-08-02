@@ -474,6 +474,7 @@ public:
 	void setChanged(bool f);
 	void logicalMoveToBottom();
 	void write_raw(const char *ptr, int len);
+	void clear();
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);

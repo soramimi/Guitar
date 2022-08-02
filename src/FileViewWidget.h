@@ -69,6 +69,8 @@ public:
 
 	TextEditorView *texteditor();
 	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
+
+	void clear();
 };
 
 #endif // FILEVIEWWIDGET_H

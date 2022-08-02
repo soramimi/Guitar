@@ -897,7 +897,7 @@ void MainWindow::revertAllFiles()
 bool MainWindow::addExistingLocalRepository(QString dir, QString name, bool open)
 {
 	if (dir.endsWith(".git")) {
-		int i = dir.size();
+		auto i = dir.size();
 		if (i > 4) {
 			ushort c = dir.utf16()[i - 5];
 			if (c == '/' || c == '\\') {
@@ -1077,8 +1077,8 @@ bool MainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpath)
 
 QString MainWindow::makeRepositoryName(const QString &loc)
 {
-	int i = loc.lastIndexOf('/');
-	int j = loc.lastIndexOf('\\');
+	auto i = loc.lastIndexOf('/');
+	auto j = loc.lastIndexOf('\\');
 	if (i < j) i = j;
 	if (i >= 0) {
 		i++;
@@ -1768,7 +1768,7 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
 	}
 }
 
-// experimental
+// experimental:
 void MainWindow::addRepository(const QString &dir)
 {
 	AddRepositoryDialog dlg(this, dir);
@@ -1976,6 +1976,9 @@ QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
 	return item;
 }
 
+/**
+ * @brief リポジトリリストを更新
+ */
 void MainWindow::updateRepositoriesList()
 {
 	QString path = getBookmarksFilePath();
@@ -2045,14 +2048,20 @@ void MainWindow::updateRepositoriesList()
 	}
 }
 
+/**
+ * @brief ファイルリストの表示切り替え
+ * @param files_list_type
+ */
 void MainWindow::showFileList(FilesListType files_list_type)
 {
+	clearDiffView();
+
 	switch (files_list_type) {
 	case FilesListType::SingleList:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files);
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
 		break;
 	case FilesListType::SideBySide:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited);
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
 		break;
 	}
 }
@@ -2069,11 +2078,27 @@ void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
 	frame->fileslistwidget()->clear();
 }
 
+/**
+ * @brief 差分ビューを消去
+ * @param frame
+ */
 void MainWindow::clearDiffView(RepositoryWrapperFrame *frame)
 {
 	frame->filediffwidget()->clearDiffView();
 }
 
+/**
+ * @brief 差分ビューを消去
+ * @param frame
+ */
+void MainWindow::clearDiffView()
+{
+	clearDiffView(ui->frame_repository_wrapper);
+}
+
+/**
+ * @brief リポジトリ情報を消去
+ */
 void MainWindow::clearRepositoryInfo()
 {
 	internalClearRepositoryInfo();
@@ -2257,14 +2282,16 @@ const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, i
 	return (index >= 0 && index < (int)logs.size()) ? &logs[index] : nullptr;
 }
 
+/**
+ * @brief 樹形図情報を構築する
+ * @param frame
+ */
 void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
 	auto const &logs = getLogs(frame);
 	auto *logsp = getLogsPtr(frame);
 	
-	
 	const int LogCount = (int)logs.size();
-	// 樹形図情報を構築する
 	if (LogCount > 0) {
 		auto LogItem = [&](int i)->Git::CommitItem &{ return logsp->at((size_t)i); };
 		enum { // 有向グラフを構築するあいだ CommitItem::marker_depth をフラグとして使用する
@@ -2627,16 +2654,6 @@ QList<RepositoryData> *MainWindow::getReposPtr()
 	return &m->repos;
 }
 
-//AvatarLoader *MainWindow::getAvatarLoader()
-//{
-//	return &global->avatar_loader;
-//}
-
-//const AvatarLoader *MainWindow::getAvatarLoader() const
-//{
-//	return &global->avatar_loader;
-//}
-
 bool MainWindow::interactionCanceled() const
 {
 	return m->interaction_canceled;
@@ -2790,8 +2807,7 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 	if (header.isEmpty()) {
 		header = "(??\?) "; // damn trigraph
 	}
-	
-	
+
 	QString text = data.path; // テキスト
 	if (issubmodule) {
 		text += QString(" <%0> [%1] %2")
@@ -2892,7 +2908,6 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 
 std::map<QString, QList<Git::Branch> > &MainWindow::branchMapRef(RepositoryWrapperFrame *frame)
 {
-	//	return m1->branch_map;
 	return frame->branch_map;
 }
 
@@ -3279,7 +3294,7 @@ int MainWindow::indexOfDiff(QListWidgetItem *item)
  * @param id コミットID
  * @param wait
  */
-void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool wait)
+void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &id, bool wait)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -3310,7 +3325,8 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString id, bool
 		}
 	};
 	
-	if (id.isEmpty()) {
+	if (id.isEmpty()) { // Uncommited changed が選択されているとき
+
 		bool uncommited = isThereUncommitedChanges();
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
@@ -3456,18 +3472,18 @@ void MainWindow::detectGitServerType(GitPtr g)
 	}
 	
 	auto Check = [&](QString const &s){
-		int i = push_url.indexOf(s);
+		int i = (int)push_url.indexOf(s);
 		if (i > 0) return i + (int)s.size();
 		return 0;
 	};
 	
 	// check GitHub
-	int pos = Check("@github.com:");
+	auto pos = Check("@github.com:");
 	if (pos == 0) {
 		pos = Check("://github.com/");
 	}
 	if (pos > 0) {
-		int end = push_url.size();
+		auto end = push_url.size();
 		{
 			QString s = ".git";
 			if (push_url.endsWith(s)) {
@@ -3475,7 +3491,7 @@ void MainWindow::detectGitServerType(GitPtr g)
 			}
 		}
 		QString s = push_url.mid(pos, end - pos);
-		int i = s.indexOf('/');
+		auto i = s.indexOf('/');
 		if (i > 0) {
 			auto *p = ptrGitHub();
 			QString user = s.mid(0, i);
@@ -3920,8 +3936,6 @@ void MainWindow::on_action_fetch_triggered()
 		updateRepository();
 	}
 }
-
-
 
 void MainWindow::on_action_fetch_prune_triggered()
 {
@@ -6332,9 +6346,3 @@ Terminal=false
 void MainWindow::test()
 {
 }
-
-
-
-
-
-

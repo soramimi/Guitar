@@ -16,6 +16,7 @@ public:
 	MyTextEditorWidget(QWidget *parent = nullptr);
 	void setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path);
 	TextEditorView *view();
+	void clear();
 };
 
 #endif // MYTEXTEDITORWIDGET_H

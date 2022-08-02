@@ -751,9 +751,18 @@ void AbstractCharacterBasedApplication::setTextEditorEngine(TextEditorEnginePtr 
 	cx()->engine = e;
 }
 
+void AbstractCharacterBasedApplication::clear()
+{
+	setDocument(nullptr);
+}
+
 void AbstractCharacterBasedApplication::setDocument(QList<Document::Line> const *source)
 {
-	document()->lines = *source;
+	if (source) {
+		document()->lines = *source;
+	} else {
+		document()->lines.clear();
+	}
 }
 
 void AbstractCharacterBasedApplication::openFile(QString const &path)

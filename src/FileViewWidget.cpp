@@ -43,8 +43,6 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
 }
 
-
-
 void FileViewWidget::setTextCodec(QTextCodec *codec)
 {
 	ui_page_text->view()->setTextCodec(codec);
@@ -109,6 +107,20 @@ void FileViewWidget::refrectScrollBar()
 void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
 	return ui_page_text->view()->move(cur_row, cur_col, scr_row, scr_col, auto_scroll);
+}
+
+void FileViewWidget::clear()
+{
+	setViewType(FileViewType::None);
+	this->source_id = {};
+#ifdef APP_GUITAR
+	ui_page_text->clear();
+	scrollToTop();
+	texteditor()->moveCursorOut();
+#else
+	ui_page_text->view()->setDocument(nullptr);
+	scrollToTop();
+#endif
 }
 
 void FileViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)

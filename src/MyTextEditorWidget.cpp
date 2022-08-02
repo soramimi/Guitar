@@ -18,6 +18,15 @@ TextEditorView *MyTextEditorWidget::view()
 	return this;
 }
 
+void MyTextEditorWidget::clear()
+{
+	this->mainwindow = nullptr;
+	this->object_id = {};
+	this->object_path = {};
+	view()->clear();
+	update();
+}
+
 void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
 {
 	this->mainwindow = mw;
@@ -60,5 +69,4 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 			}
 		}
 	}
-
 }
