@@ -261,7 +261,7 @@ void TextEditorView::calcPixelPosX(std::vector<Char> *chars, QFontMetrics const 
 			chars->at(i).right_x = right_x;
 			left_x = right_x;
 			base_x = left_x;
-			text = {};
+			text.clear();
 		} else {
 			text = appendUnicode(text, u);
 			int right_x = base_x + fm.size(0, text).width();

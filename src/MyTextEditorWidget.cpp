@@ -21,8 +21,8 @@ TextEditorView *MyTextEditorWidget::view()
 void MyTextEditorWidget::clear()
 {
 	this->mainwindow = nullptr;
-	this->object_id = {};
-	this->object_path = {};
+	this->object_id.clear();
+	this->object_path.clear();
 	view()->clear();
 	update();
 }

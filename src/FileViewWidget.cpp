@@ -112,7 +112,7 @@ void FileViewWidget::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 void FileViewWidget::clear()
 {
 	setViewType(FileViewType::None);
-	this->source_id = {};
+	this->source_id.clear();
 #ifdef APP_GUITAR
 	ui_page_text->clear();
 	scrollToTop();
