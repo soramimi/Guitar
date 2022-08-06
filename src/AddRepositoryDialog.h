@@ -62,6 +62,8 @@ private slots:
 	void on_radioButton_add_existing_clicked();
 	void on_radioButton_clone_clicked();
 	void on_radioButton_initialize_clicked();
+	void on_groupBox_remote_clicked();
+
 public slots:
 	void accept() override;
 };

@@ -76,7 +76,7 @@
         <number>2</number>
        </property>
        <item>
-        <widget class="MyToolButton" name="toolButton_clone">
+        <widget class="MyToolButton" name="toolButton_addrepo">
          <property name="minimumSize">
           <size>
            <width>64</width>
@@ -93,7 +93,7 @@
           <enum>Qt::NoFocus</enum>
          </property>
          <property name="text">
-          <string>Clone</string>
+          <string>Add</string>
          </property>
          <property name="icon">
           <iconset resource="resources/resources.qrc">
@@ -1057,9 +1057,6 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="action_open_existing_working_copy"/>
-    <addaction name="action_create_a_repository"/>
-    <addaction name="separator"/>
     <addaction name="action_stop_process"/>
     <addaction name="separator"/>
     <addaction name="action_exit"/>
@@ -1118,6 +1115,8 @@
      <addaction name="separator"/>
      <addaction name="action_stash_drop"/>
     </widget>
+    <addaction name="action_add_repository"/>
+    <addaction name="separator"/>
     <addaction name="action_repository_status"/>
     <addaction name="action_repo_merge"/>
     <addaction name="action_commit"/>
@@ -1166,8 +1165,6 @@
     <property name="title">
      <string>Experimental</string>
     </property>
-    <addaction name="action_add_repository"/>
-    <addaction name="separator"/>
     <addaction name="action_submodules"/>
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
@@ -1509,11 +1506,6 @@
    </property>
    <property name="toolTip">
     <string>Reset HEAD~1</string>
-   </property>
-  </action>
-  <action name="action_create_a_repository">
-   <property name="text">
-    <string>Create a repository</string>
    </property>
   </action>
   <action name="action_stop_process">

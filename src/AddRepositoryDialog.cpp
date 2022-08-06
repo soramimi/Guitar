@@ -309,3 +309,11 @@ RepositoryData AddRepositoryDialog::makeRepositoryData() const
 	reposdata.ssh_key = overridedSshKey();
 	return reposdata;
 }
+
+void AddRepositoryDialog::on_groupBox_remote_clicked()
+{
+	if (ui->groupBox_remote->isChecked()) {
+		ui->lineEdit_remote_url->setFocus();
+	}
+}
+

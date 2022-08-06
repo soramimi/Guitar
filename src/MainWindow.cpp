@@ -894,7 +894,7 @@ void MainWindow::revertAllFiles()
 	}
 }
 
-bool MainWindow::addExistingLocalRepository(QString dir, QString name, bool open)
+bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open)
 {
 	if (dir.endsWith(".git")) {
 		auto i = dir.size();
@@ -929,11 +929,12 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, bool open
 	RepositoryData item;
 	item.local_dir = dir;
 	item.name = name;
+	item.ssh_key = sshkey;
 	saveRepositoryBookmark(item);
 	
 	if (open) {
 		setCurrentRepository(item, true);
-		GitPtr g = git(item.local_dir, {}, {});
+		GitPtr g = git(item.local_dir, {}, sshkey);
 		openRepository_(g);
 	}
 
@@ -1729,7 +1730,7 @@ void MainWindow::createRepository(const QString &dir)
 				if (g->init()) {
 					QString name = dlg.name();
 					if (!name.isEmpty()) {
-						addExistingLocalRepository(path, name, true);
+						addExistingLocalRepository(path, name, {}, true);
 					}
 					QString remote_name = dlg.remoteName();
 					QString remote_url = dlg.remoteURL();
@@ -1740,7 +1741,7 @@ void MainWindow::createRepository(const QString &dir)
 						r.url = remote_url;
 						r.ssh_key = ssh_key;
 						g->addRemoteURL(r);
-						changeSshKey(path, ssh_key);
+						changeSshKey(path, ssh_key, true);
 					}
 				}
 			}
@@ -1756,13 +1757,13 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
 		if (Git::isValidWorkingCopy(path)) {
 			// A valid git repository already exists there.
 		} else {
-			GitPtr g = git(path, {}, {});
+			GitPtr g = git(path, {}, remote.ssh_key);
 			if (g->init()) {
 				if (!remote.name.isEmpty() && !remote.url.isEmpty()) {
 					g->addRemoteURL(remote);
-					changeSshKey(path, remote.ssh_key);
+					changeSshKey(path, remote.ssh_key, false);
 				}
-				addExistingLocalRepository(path, reponame, true);
+				addExistingLocalRepository(path, reponame, remote.ssh_key, true);
 			}
 		}
 	}
@@ -3692,7 +3693,7 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 {
 	ui->action_clone->setEnabled(enabled);
 	
-	ui->toolButton_clone->setEnabled(enabled);
+//	ui->toolButton_clone->setEnabled(enabled);
 	
 	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
 		enabled = false;
@@ -4809,7 +4810,7 @@ Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, const QString &i
 
 bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
 {
-	return addExistingLocalRepository(dir, {}, open);
+	return addExistingLocalRepository(dir, {}, {}, open);
 }
 
 bool MainWindow::saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath)
@@ -4905,7 +4906,7 @@ QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 	return icon;
 }
 
-void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key)
+void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, bool save)
 {
 	bool changed = false;
 
@@ -4918,7 +4919,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key)
 		}
 	}
 
-	if (changed) {
+	if (save && changed) {
 		saveRepositoryBookmarks();
 	}
 
@@ -5051,12 +5052,12 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 	}
 }
 
-void MainWindow::on_action_open_existing_working_copy_triggered()
-{
-	QString dir = defaultWorkingDir();
-	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
-	addExistingLocalRepository(dir, false);
-}
+//void MainWindow::on_action_open_existing_working_copy_triggered()
+//{
+//	QString dir = defaultWorkingDir();
+//	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
+//	addExistingLocalRepository(dir, false);
+//}
 
 void MainWindow::refresh()
 {
@@ -5301,16 +5302,20 @@ void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 	setPtyCondition(PtyCondition::None);
 }
 
-
 void MainWindow::on_action_add_repository_triggered()
 {
 	addRepository(QString());
 }
 
-void MainWindow::on_action_clone_triggered()
+void MainWindow::on_toolButton_addrepo_clicked()
 {
-	clone();
+	ui->action_add_repository->trigger();
 }
+
+//void MainWindow::on_action_clone_triggered()
+//{
+//	clone();
+//}
 
 void MainWindow::on_action_about_triggered()
 {
@@ -5318,10 +5323,12 @@ void MainWindow::on_action_about_triggered()
 	dlg.exec();
 }
 
-void MainWindow::on_toolButton_clone_clicked()
-{
-	ui->action_clone->trigger();
-}
+//void MainWindow::on_toolButton_clone_clicked()
+//{
+//	ui->action_clone->trigger();
+//}
+
+
 
 
 
@@ -6346,3 +6353,4 @@ Terminal=false
 void MainWindow::test()
 {
 }
+

@@ -92,7 +92,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		}
 
 		QString localdir = ui->lineEdit_local_dir->text();
-		mainwindow()->changeSshKey(localdir, remote->ssh_key);
+		mainwindow()->changeSshKey(localdir, remote->ssh_key, true);
 		setSshKey_(remote->ssh_key);
 		getRemotes_();
 

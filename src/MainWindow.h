@@ -223,7 +223,7 @@ private:
 	static bool git_callback(void *cookie, const char *ptr, int len);
 	bool execSetGlobalUserDialog();
 	void revertAllFiles();
-	bool addExistingLocalRepository(QString dir, QString name, bool open);
+	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open);
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu = false);
 	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
@@ -449,7 +449,7 @@ public:
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
 	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
-	void changeSshKey(const QString &local_dir, const QString &ssh_key);
+	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 	const Git::CommitItemList &getLogs(RepositoryWrapperFrame const *frame) const;
 	const QList<BranchLabel> *label(const RepositoryWrapperFrame *frame, int row) const;
@@ -475,7 +475,7 @@ private slots:
 	void on_action_about_triggered();
 	void on_action_add_repository_triggered();
 	void on_action_clean_df_triggered();
-	void on_action_clone_triggered();
+//	void on_action_clone_triggered();
 	void on_action_commit_triggered();
 	void on_action_create_a_repository_triggered();
 	void on_action_create_desktop_launcher_file_triggered();
@@ -497,7 +497,7 @@ private slots:
 	void on_action_find_triggered();
 	void on_action_offline_triggered();
 	void on_action_online_triggered();
-	void on_action_open_existing_working_copy_triggered();
+//	void on_action_open_existing_working_copy_triggered();
 	void on_action_pull_triggered();
 	void on_action_push_all_tags_triggered();
 	void on_action_push_triggered();
@@ -541,7 +541,7 @@ private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
-	void on_toolButton_clone_clicked();
+//	void on_toolButton_clone_clicked();
 	void on_toolButton_commit_clicked();
 	void on_toolButton_erase_filter_clicked();
 	void on_toolButton_explorer_clicked();
@@ -560,6 +560,8 @@ private slots:
 
 	void test();
 
+
+	void on_toolButton_addrepo_clicked();
 
 protected slots:
 	void onLogIdle();
