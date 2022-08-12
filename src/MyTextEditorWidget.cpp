@@ -24,7 +24,7 @@ void MyTextEditorWidget::clear()
 	this->object_id.clear();
 	this->object_path.clear();
 	view()->clear();
-	update();
+	updateView();
 }
 
 void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, MainWindow *mw, QString const &object_id, QString const &object_path)
@@ -51,7 +51,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
 	QAction *a_copy = menu.addAction(tr("Copy"));
 	if (!menu.actions().isEmpty()) {
-		update();
+		updateView();
 		QAction *a = menu.exec(misc::contextMenuPos(this, event));
 		if (a) {
 			if (a == a_save_as) {
@@ -60,7 +60,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 				if (!dstpath.isEmpty()) {
 					mainwindow->saveAs(mainwindow->frame(), id, dstpath);
 				}
-				update();
+				updateView();
 				return;
 			}
 			if (a == a_copy) {

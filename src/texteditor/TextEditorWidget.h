@@ -25,7 +25,7 @@ public:
 	}
 	void updateView()
 	{
-		view_->update();
+		view_->updateView();
 	}
 };
 

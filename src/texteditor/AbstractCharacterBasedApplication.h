@@ -40,7 +40,7 @@ public:
 			Add,
 			Del,
 		};
-		int type = Unknown;
+		Type type = Unknown;
 		int hunk_number = -1;
 		int line_number = 0;
 		size_t byte_offset = 0;
@@ -210,6 +210,8 @@ public:
 		enum Flag {
 			Selected = 0x0001,
 			CurrentLine = 0x0002,
+			Underline1 = 0x0004, //! wip
+			Underline2 = 0x0008,
 		};
 	};
 
@@ -233,6 +235,10 @@ public:
 			: unicode(unicode)
 		{
 
+		}
+		operator uint32_t () const
+		{
+			return unicode;
 		}
 //		operator unsigned int () const = delete;
 	};
@@ -284,8 +290,6 @@ protected:
 	QByteArray fetchLine(int row) const;
 	void clearParsedLine();
 
-	int currentRow() const;
-	int currentCol() const;
 	int currentColX() const;
 	void setCurrentRow(int row);
 	void setCurrentCol(int col);
@@ -407,6 +411,9 @@ public:
 	{
 		return rendering_mode_;
 	}
+
+	int currentRow() const;
+	int currentCol() const;
 
 	virtual void layoutEditor();
 	void scrollUp();

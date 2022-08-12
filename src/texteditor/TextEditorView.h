@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <functional>
 
 class QScrollBar;
 
@@ -35,6 +36,8 @@ private:
 	struct Private;
 	Private *m;
 
+	void update() = delete;
+
 	void paintScreen(QPainter *painter);
 	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
 	void drawCursor(QPainter *pr);
@@ -52,6 +55,8 @@ private:
 	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
 	int view_y_from_row(int row) const;
 public:
+	std::vector<std::vector<Char>> *fetchLineChars();
+	void updateView();
 	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;

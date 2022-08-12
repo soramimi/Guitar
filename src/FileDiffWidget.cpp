@@ -17,6 +17,7 @@
 #include <QStyle>
 #include <QTextCodec>
 #include <memory>
+#include "dtl/dtl.hpp"
 
 enum {
 	DiffIndexRole = Qt::UserRole,
@@ -37,6 +38,8 @@ struct FileDiffWidget::Private {
 	int term_cursor_col = 0;
 
 	QTextCodec *text_codec = nullptr;
+
+	std::vector<std::pair<LineFragment, LineFragment>> linefragmentpair;
 };
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -52,6 +55,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	ui->widget_diff_slider->init([&](DiffPane pane, int width, int height){
 		return makeDiffPixmap(pane, width, height);
 	}, global->theme);
+
+//	formatLines();
 
 	connect(ui->widget_diff_slider, &FileDiffSliderWidget::valueChanged, this, &FileDiffWidget::scrollTo);
 	connect(ui->widget_diff_left->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
@@ -97,8 +102,6 @@ FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 	return m->init_param_.view_style;
 }
 
-
-
 void FileDiffWidget::bind(MainWindow *mw)
 {
 	Q_ASSERT(mw);
@@ -137,6 +140,8 @@ int FileDiffWidget::totalTextLines() const
 
 void FileDiffWidget::clearDiffView()
 {
+	m->linefragmentpair.clear();
+
 	ui->widget_diff_left->clear();
 	ui->widget_diff_right->clear();
 	ui->widget_diff_slider->clear(false);
@@ -312,6 +317,41 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 	std::reverse(right_lines->begin(), right_lines->end());
 }
 
+#if 0
+std::pair<FileDiffWidget::LineFragment, FileDiffWidget::LineFragment> const *FileDiffWidget::findPair(int row, bool first)
+{
+	int lo = 0;
+	int hi = m->linefragmentpair.size();
+	while (lo < hi) {
+		int i = (lo + hi) / 2;
+		LineFragment const *p = first ? &m->linefragmentpair[i].first : &m->linefragmentpair[i].second;
+		if (p->line_index > row) {
+			lo = i + 1;
+		} else if (p->line_index + p->line_count <= row) {
+			hi = i;
+		} else {
+			return &m->linefragmentpair[i];
+		}
+	}
+	return nullptr;
+}
+#endif
+
+void FileDiffWidget::formatLines()
+{
+	using Char = AbstractCharacterBasedApplication::Char;
+	using Pair = std::pair<LineFragment, LineFragment>;
+
+//	ui->widget_diff_left->getTextEditorView()->hoge = [&](int row, std::vector<Char> *chars){
+//		Pair const *pair = findPair(row, true);
+//		qDebug() << Q_FUNC_INFO;
+//	};
+//	ui->widget_diff_right->getTextEditorView()->hoge = [&](int row, std::vector<Char> *chars){
+//		Pair const *pair = findPair(row, false);
+//		qDebug() << Q_FUNC_INFO;
+//	};
+}
+
 void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
 {
 	m->max_line_length = 0;
@@ -351,9 +391,51 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 	SetLineNumber(left, Pane::Left, &m->left_lines);
 	SetLineNumber(right, Pane::Right, &m->right_lines);
 
+	std::vector<LineFragment> left_dels;
+	std::vector<LineFragment> right_adds;
+
+	auto Do = [](TextDiffLineList const &lines, Document::Line::Type type, std::vector<LineFragment> *blocks){
+		int i = 0;
+		while (i < lines.size()) {
+			int n = 1;
+			while (i + n < lines.size()) {
+				if (lines[i + n].type != lines[i].type) break;
+				n++;
+			}
+			if (lines[i].type == type) {
+				blocks->emplace_back(type, i, n);
+			}
+			i += n;
+		}
+	};
+	Do(m->left_lines, Document::Line::Del, &left_dels);
+	Do(m->right_lines, Document::Line::Add, &right_adds);
+
+	m->linefragmentpair.clear();
+
+	int ileft = 0;
+	int iright = 0;
+	while (ileft < left_dels.size() && iright < right_adds.size()) {
+		if (left_dels[ileft].line_index < right_adds[iright].line_index) {
+			ileft++;
+		} else if (left_dels[ileft].line_index > right_adds[iright].line_index) {
+			iright++;
+		} else {
+			if (left_dels[ileft].line_count == right_adds[iright].line_count) {
+				m->linefragmentpair.emplace_back(left_dels[ileft], right_adds[iright]);
+			}
+			ileft++;
+			iright++;
+		}
+	}
+
+
+
+
+
 	ui->widget_diff_left->setText(&m->left_lines, mainwindow(), diff.blob.a_id, diff.path);
 	ui->widget_diff_right->setText(&m->right_lines, mainwindow(), diff.blob.b_id, diff.path);
-	refrectScrollBar();
+	refrectScrollBar(true);
 	ui->widget_diff_slider->clear(true);
 }
 
@@ -395,8 +477,6 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 	m->init_param_.diff.path = path;
 	m->init_param_.diff.blob.a_id = id;
 }
-
-
 
 void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit)
 {
@@ -666,7 +746,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 
 void FileDiffWidget::resizeEvent(QResizeEvent *)
 {
-	refrectScrollBar();
+	refrectScrollBar(true);
 }
 
 void FileDiffWidget::keyPressEvent(QKeyEvent *event)
@@ -690,12 +770,12 @@ void FileDiffWidget::scrollTo(int value)
 
 void FileDiffWidget::onVerticalScrollValueChanged(int)
 {
-	refrectScrollBar();
+	refrectScrollBarV();
 }
 
 void FileDiffWidget::onHorizontalScrollValueChanged(int)
 {
-	refrectScrollBar();
+	refrectScrollBarH();
 }
 
 void FileDiffWidget::onDiffWidgetWheelScroll(int lines)
@@ -746,11 +826,61 @@ void FileDiffWidget::onUpdateSliderBar()
 	ui->widget_diff_slider->setScrollPos(total, value, page);
 }
 
-void FileDiffWidget::refrectScrollBar()
+
+void FileDiffWidget::refrectScrollBar(bool updateformat)
 {
 	ui->widget_diff_left->refrectScrollBar();
 	ui->widget_diff_right->refrectScrollBar();
+
+	if (updateformat) {
+		if (viewstyle() == SideBySideText) {
+			using Char = AbstractCharacterBasedApplication::Char;
+			std::vector<std::vector<Char>> *left = ui->widget_diff_left->getTextEditorView()->fetchLineChars();
+			std::vector<std::vector<Char>> *right = ui->widget_diff_right->getTextEditorView()->fetchLineChars();
+
+//			std::pair<FileDiffWidget::LineFragment, FileDiffWidget::LineFragment> const *FileDiffWidget::findPair(int row, bool first)
+
+			int n = std::min(left->size(), right->size());
+
+			for (int i = 0; i < n; i++) {
+				auto *l = &left->at(i);
+				auto *r = &right->at(i);
+				int il = 0;
+				int ir = 0;
+				dtl::Diff<uint32_t, std::vector<AbstractTextEditorApplication::Char>> d(*l, *r);
+				d.compose();
+				auto const &sq = d.getSes().getSequence();
+				for (std::pair<uint32_t, dtl::elemInfo> const &t : sq) {
+					switch (t.second.type) {
+					case dtl::SES_COMMON:
+						il++;
+						ir++;
+						break;
+					case dtl::SES_DELETE:
+						l->at(il).attr.flags |= AbstractCharacterBasedApplication::CharAttr::Underline1;
+						il++;
+						break;
+					case dtl::SES_ADD:
+						r->at(ir).attr.flags |= AbstractCharacterBasedApplication::CharAttr::Underline2;
+						ir++;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	onUpdateSliderBar();
+}
+
+void FileDiffWidget::refrectScrollBarV()
+{
+	refrectScrollBar(true);
+}
+
+void FileDiffWidget::refrectScrollBarH()
+{
+	refrectScrollBar(false);
 }
 
 QPixmap FileDiffWidget::makeDiffPixmap(DiffPane pane, int width, int height)
@@ -769,7 +899,7 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	(void)cur_row;
 	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
 	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
-	refrectScrollBar();
+	refrectScrollBar(true);
 	onUpdateSliderBar();
 }
 

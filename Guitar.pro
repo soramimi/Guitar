@@ -380,6 +380,14 @@ HEADERS  += \
 	src/darktheme/NinePatch.h \
 	src/darktheme/StandardStyle.h \
 	src/darktheme/TraditionalWindowsStyleTreeControl.h \
+	src/dtl/Diff.hpp \
+	src/dtl/Diff3.hpp \
+	src/dtl/Lcs.hpp \
+	src/dtl/Sequence.hpp \
+	src/dtl/Ses.hpp \
+	src/dtl/dtl.hpp \
+	src/dtl/functors.hpp \
+	src/dtl/variables.hpp \
 	src/gpg.h \
 	src/gunzip.h \
 	src/main.h \

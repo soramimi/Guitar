@@ -84,6 +84,20 @@ public:
 		SideBySideImage,
 	};
 
+	struct LineFragment {
+		Document::Line::Type type = Document::Line::Unknown;
+		int line_index;
+		int line_count;
+		LineFragment() = default;
+		LineFragment(Document::Line::Type type, int line_index, int line_count)
+			: type(type)
+			, line_index(line_index)
+			, line_count(line_count)
+		{
+		}
+	};
+
+
 private:
 	Ui::FileDiffWidget *ui;
 
@@ -125,11 +139,15 @@ private:
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
-	void refrectScrollBar();
+	void refrectScrollBar(bool updateformat);
+	void refrectScrollBarV();
+	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
 	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
 	MainWindow *mainwindow();
 	bool setSubmodule(const Git::Diff &diff);
+	void formatLines();
+//	const std::pair<LineFragment, LineFragment> *findPair(int row, bool first);
 protected:
 	void resizeEvent(QResizeEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
