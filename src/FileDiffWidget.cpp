@@ -835,8 +835,8 @@ void FileDiffWidget::refrectScrollBar(bool updateformat)
 	if (updateformat) {
 		if (viewstyle() == SideBySideText) {
 			using Char = AbstractCharacterBasedApplication::Char;
-			std::vector<std::vector<Char>> *left = ui->widget_diff_left->getTextEditorView()->fetchLineChars();
-			std::vector<std::vector<Char>> *right = ui->widget_diff_right->getTextEditorView()->fetchLineChars();
+			std::vector<std::vector<Char>> *left = ui->widget_diff_left->getTextEditorView()->fetchLines();
+			std::vector<std::vector<Char>> *right = ui->widget_diff_right->getTextEditorView()->fetchLines();
 
 //			std::pair<FileDiffWidget::LineFragment, FileDiffWidget::LineFragment> const *FileDiffWidget::findPair(int row, bool first)
 

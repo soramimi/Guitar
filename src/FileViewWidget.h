@@ -25,6 +25,9 @@ enum class FileViewType {
 #include "ImageViewWidget.h"
 #endif
 
+/**
+ * @brief ファイルコンテンツを表示するウィジェット
+ */
 class FileViewWidget : public QWidget {
 private:
 

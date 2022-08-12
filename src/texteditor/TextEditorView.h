@@ -55,7 +55,7 @@ private:
 	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
 	int view_y_from_row(int row) const;
 public:
-	std::vector<std::vector<Char>> *fetchLineChars();
+	std::vector<std::vector<Char>> *fetchLines();
 	void updateView();
 	int basisCharWidth() const;
 protected:

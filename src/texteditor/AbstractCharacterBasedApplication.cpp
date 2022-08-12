@@ -1887,7 +1887,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 		memset(tmp, ' ', left_margin);
 		tmp[left_margin] = 0;
 		int row = editor_cx->scroll_row_pos + i;
-		auto PrintLineNum = [&](char *ptr, int linenum){
+		auto LineNumberText = [&](char *ptr, int linenum){
 			sprintf(ptr, "%*u ", left_margin - rightpadding, linenum);
 		};
 		Document::Line *line = nullptr;
@@ -1933,11 +1933,11 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 #endif
 				}
 				if (linenum != (unsigned int)-1 && line->type != Document::Line::Unknown) {
-					PrintLineNum(tmp, linenum);
+					LineNumberText(tmp, linenum);
 				}
 			}
 		} else if (row == 0 && editor_cx->engine->document.lines.empty()) {
-			PrintLineNum(tmp, 1);
+			LineNumberText(tmp, 1);
 		}
 		int y = editor_cx->viewport_org_y + i;
 		draw(y, tmp, line);
