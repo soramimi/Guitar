@@ -56,8 +56,6 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 		return makeDiffPixmap(pane, width, height);
 	}, global->theme);
 
-//	formatLines();
-
 	connect(ui->widget_diff_slider, &FileDiffSliderWidget::valueChanged, this, &FileDiffWidget::scrollTo);
 	connect(ui->widget_diff_left->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
 	connect(ui->widget_diff_right->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
@@ -315,41 +313,6 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 
 	std::reverse(left_lines->begin(), left_lines->end());
 	std::reverse(right_lines->begin(), right_lines->end());
-}
-
-#if 0
-std::pair<FileDiffWidget::LineFragment, FileDiffWidget::LineFragment> const *FileDiffWidget::findPair(int row, bool first)
-{
-	int lo = 0;
-	int hi = m->linefragmentpair.size();
-	while (lo < hi) {
-		int i = (lo + hi) / 2;
-		LineFragment const *p = first ? &m->linefragmentpair[i].first : &m->linefragmentpair[i].second;
-		if (p->line_index > row) {
-			lo = i + 1;
-		} else if (p->line_index + p->line_count <= row) {
-			hi = i;
-		} else {
-			return &m->linefragmentpair[i];
-		}
-	}
-	return nullptr;
-}
-#endif
-
-void FileDiffWidget::formatLines()
-{
-	using Char = AbstractCharacterBasedApplication::Char;
-	using Pair = std::pair<LineFragment, LineFragment>;
-
-//	ui->widget_diff_left->getTextEditorView()->hoge = [&](int row, std::vector<Char> *chars){
-//		Pair const *pair = findPair(row, true);
-//		qDebug() << Q_FUNC_INFO;
-//	};
-//	ui->widget_diff_right->getTextEditorView()->hoge = [&](int row, std::vector<Char> *chars){
-//		Pair const *pair = findPair(row, false);
-//		qDebug() << Q_FUNC_INFO;
-//	};
 }
 
 void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
@@ -835,34 +798,39 @@ void FileDiffWidget::refrectScrollBar(bool updateformat)
 	if (updateformat) {
 		if (viewstyle() == SideBySideText) {
 			using Char = AbstractCharacterBasedApplication::Char;
-			std::vector<std::vector<Char>> *left = ui->widget_diff_left->getTextEditorView()->fetchLines();
-			std::vector<std::vector<Char>> *right = ui->widget_diff_right->getTextEditorView()->fetchLines();
+			using Attr = AbstractCharacterBasedApplication::CharAttr;
 
-//			std::pair<FileDiffWidget::LineFragment, FileDiffWidget::LineFragment> const *FileDiffWidget::findPair(int row, bool first)
+			// 左と右のテキストを取得
+			TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines();
+			TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines();
 
-			int n = std::min(left->size(), right->size());
+			const size_t n = std::min(llines->size(), rlines->size());
 
 			for (int i = 0; i < n; i++) {
-				auto *l = &left->at(i);
-				auto *r = &right->at(i);
-				int il = 0;
-				int ir = 0;
-				dtl::Diff<uint32_t, std::vector<AbstractTextEditorApplication::Char>> d(*l, *r);
+				std::vector<Char> *lchars = llines->chars(i);
+				std::vector<Char> *rchars = rlines->chars(i);
+				size_t l = 0;
+				size_t r = 0;
+
+				// 文字差分を求める
+				// dtl (diff template library) https://github.com/cubicdaiya/dtl
+				dtl::Diff<uint32_t, std::vector<Char>> d(*lchars, *rchars);
 				d.compose();
+
 				auto const &sq = d.getSes().getSequence();
 				for (std::pair<uint32_t, dtl::elemInfo> const &t : sq) {
 					switch (t.second.type) {
 					case dtl::SES_COMMON:
-						il++;
-						ir++;
+						l++;
+						r++;
 						break;
 					case dtl::SES_DELETE:
-						l->at(il).attr.flags |= AbstractCharacterBasedApplication::CharAttr::Underline1;
-						il++;
+						lchars->at(l).attr.flags |= Attr::Underline1;
+						l++;
 						break;
 					case dtl::SES_ADD:
-						r->at(ir).attr.flags |= AbstractCharacterBasedApplication::CharAttr::Underline2;
-						ir++;
+						rchars->at(r).attr.flags |= Attr::Underline2;
+						r++;
 						break;
 					}
 				}

@@ -33,7 +33,7 @@ struct TextEditorView::Private {
 	QScrollBar *scroll_bar_v = nullptr;
 	QScrollBar *scroll_bar_h = nullptr;
 
-	std::vector<std::vector<Char>> formatted_lines;
+	TextEditorView::FormattedLines formatted_lines;
 
 	TextEditorThemePtr theme;
 
@@ -133,7 +133,7 @@ void TextEditorView::updateLayout()
 		while (1) {
 			int c = -1;
 			if (ptr < end) {
-				c = *ptr;
+				c = (unsigned char)*ptr;
 			}
 			if (c == '\n' || c == '\r' || c < 0) {
 				if (c == '\r') {
@@ -181,7 +181,7 @@ void TextEditorView::setRenderingMode(RenderingMode mode)
 	} else {
 		showLineNumber(true);
 	}
-	updateView();
+	update();
 }
 
 void AbstractCharacterBasedApplication::loadExampleFile()
@@ -475,7 +475,7 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 
 	internalUpdateScrollBar();
 
-	updateView();
+	update();
 }
 
 void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
@@ -698,25 +698,15 @@ void TextEditorView::drawCursor(QPainter *pr)
 }
 
 /**
- * @brief TextEditorView::updateView
- */
-void TextEditorView::updateView()
-{
-//	updateFormat();
-	QWidget::update();
-}
-
-/**
  * @brief TextEditorView::fetchLines
  * @return
  */
-std::vector<std::vector<AbstractTextEditorApplication::Char>> *TextEditorView::fetchLines()
+TextEditorView::FormattedLines *TextEditorView::fetchLines()
 {
 	m->formatted_lines.clear();
 	for (int i = 0; i <= editor_cx->viewport_height; i++) {
 		int row = i + editor_cx-> scroll_row_pos;
-		m->formatted_lines.emplace_back();
-		std::vector<Char> *chars = &m->formatted_lines.back();
+		std::vector<Char> *chars = m->formatted_lines.append();
 		parse(row, chars); // 行のテキストデータを取得
 	}
 	return &m->formatted_lines;
@@ -781,17 +771,19 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			int line_row = editor_cx->scroll_row_pos; // 行インデックス（view_row位置に描画すべき論理行インデックス）
 			for (int i = 0; i < m->formatted_lines.size(); i++) {
-				const int x = text_origin_x; // テキスト描画座標X（ピクセル単位）
-				const int y = view_row * line_height; // テキスト描画座標Y（ピクセル単位）
+				const bool iscurrentline = (line_row == editor_cx->current_row); // 現在の行？
+				const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 
-				std::vector<Char> const &chars = m->formatted_lines[i];
+				const QRect rect(linenum_width, view_y_from_row(line_row), width() - linenum_width, lineHeight()); // 背景矩形
+
+				std::vector<Char> const &chars = *m->formatted_lines[i].sp;
 
 				// 背景の描画
 				auto DrawBackground = [&](){
 					auto FillBG = [&](int x, int w, Document::Line::Type type){
 						auto color = BGColor(type);
-						int y = view_y_from_row(line_row);
-						int h = lineHeight();
+						int y = rect.y();
+						int h = rect.height();
 						pr.fillRect(x, y, w, h, color);
 					};
 					Document const &doc = editor_cx->engine->document;
@@ -818,16 +810,21 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int w = width() - x;
 						FillBG(x, w, linetype);
 					}
+				};
 
-					// 現在行の背景
-					if (editor_cx->current_row == line_row) {
-						int x = 0;
-						int w = width() - x;
-						int y = view_y_from_row(line_row);
-						int h = lineHeight();
-						pr.fillRect(x, y, w, h, QColor(0, 0, 0, 32)); // 薄い黒
-						pr.fillRect(x, y + h - 1, w, 1, theme()->fgCursor()); // アンダーライン
-					}
+				// 現在行の背景
+				auto DrawCurrentLineBackground = [&](){
+					pr.fillRect(rect, QColor(0, 0, 0, 32)); // 薄い黒
+				};
+
+				// 現在行の前景
+				auto DrawCurrentLineForeground = [&](){
+					int N = 1;
+					int x = rect.x();
+					int y = rect.y() + rect.height() - N;
+					int w = rect.width();
+					int h = N;
+					pr.fillRect(x, y, w, h, theme()->fgCursor()); // アンダーライン
 				};
 
 				// 選択領域の網掛け描画
@@ -850,9 +847,11 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						}
 					}
 					if (left_x < right_x) {
-						int w =  right_x - left_x;
+						int x = text_origin_x + left_x;
+						int y = text_origin_y;
+						int w = right_x - left_x;
 						int h = line_height;
-						pr.fillRect(x + left_x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
+						pr.fillRect(x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
 					}
 				};
 
@@ -883,18 +882,31 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							n++;
 						}
 						if (!text.isEmpty() && left_x < right_x) {
-							CharAttr attr = chars[j].attr;
+							CharAttr const &attr = chars[j].attr;
 							pr.setPen(defaultForegroundColor()); // 文字色
 							int x = text_origin_x + left_x;
 							int w = right_x - left_x;
-							int h  = line_height;
+							int h = line_height;
+							auto DrawDiffMarker = [&](QColor const &color){
+								const int N = 6;
+								pr.fillRect(x, text_origin_y + h - N, w, N, color);
+							};
+#if 1
 							if (attr.flags & CharAttr::Underline1) {
-								pr.fillRect(x, y + h - 4, w, 4, QColor(240, 160, 160));
+								DrawDiffMarker(QColor(240, 160, 160));
 							}
 							if (attr.flags & CharAttr::Underline2) {
-								pr.fillRect(x, y + h - 4, w, 4, QColor(128, 192, 128));
+								DrawDiffMarker(QColor(144, 208, 144));
 							}
-							pr.drawText(QRect(x, y, w, h), text, opt); // テキスト描画
+#else
+							if (attr.flags & CharAttr::Underline1) {
+								DrawDiffMarker(QColor(255, 255, 128));
+							}
+							if (attr.flags & CharAttr::Underline2) {
+								DrawDiffMarker(QColor(255, 255, 128));
+							}
+#endif
+							pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
 						}
 						if (n == 0) {
 							n = 1;
@@ -906,12 +918,18 @@ void TextEditorView::paintEvent(QPaintEvent *)
 				switch (pass) {
 				case 0:
 					DrawBackground();
+					if (iscurrentline) {
+						DrawCurrentLineBackground();
+					}
 					break;
 				case 1:
 					DrawSelectionArea();
 					break;
 				case 2:
 					DrawText();
+					if (iscurrentline) {
+						DrawCurrentLineForeground();
+					}
 					break;
 				}
 
@@ -1048,7 +1066,7 @@ void TextEditorView::mouseReleaseEvent(QMouseEvent * /*event*/)
 		return;
 	}
 	deselect();
-	updateView();
+	update();
 }
 
 void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)

@@ -10,7 +10,7 @@
 #include <memory>
 
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
-using FormattedLine = AbstractCharacterBasedApplication::FormattedLine;
+using FormattedLine = AbstractCharacterBasedApplication::FormattedLine2;
 
 class EsccapeSequence {
 private:
@@ -263,7 +263,7 @@ int AbstractCharacterBasedApplication::charWidth(uint32_t c)
 	return UnicodeWidth::width(UnicodeWidth::type(c));
 }
 
-QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Line const &line, int tab_span, int anchor_a, int anchor_b) const
+QList<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Document::Line const &line, int tab_span, int anchor_a, int anchor_b) const
 {
 	QByteArray ba;
 	if (m->text_codec) {
@@ -275,7 +275,7 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 	std::vector<char16_t> vec;
     vec.reserve((size_t)ba.size() + 100);
     size_t len = (size_t)ba.size();
-	QList<FormattedLine> res;
+	QList<FormattedLine2> res;
 
 	int col = 0;
 	int col_start = col;
@@ -320,14 +320,14 @@ QList<FormattedLine> AbstractCharacterBasedApplication::formatLine(Document::Lin
 			atts |= Color(offset, next_offset);
 			if (anchor_a >= 0 || anchor_b >= 0) {
 				if ((anchor_a < 0 || col_start >= anchor_a) && (anchor_b == -1 || col_start < anchor_b)) {
-					atts |= FormattedLine::Selected;
+					atts |= FormattedLine2::Selected;
 				}
 			}
 			char16_t const *left = &vec[0];
 			char16_t const *right = left + vec.size();
 			while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
 			if (left < right) {
-				res.push_back(FormattedLine(QString::fromUtf16(left, int(right - left)), atts));
+				res.push_back(FormattedLine2(QString::fromUtf16(left, int(right - left)), atts));
 			}
 			vec.clear();
 		} else {
@@ -404,12 +404,12 @@ bool AbstractCharacterBasedApplication::isValidRowIndex(int row_index) const
 	return row_index >= 0 && row_index < engine()->document.lines.size();
 }
 
-QList<AbstractCharacterBasedApplication::FormattedLine> AbstractCharacterBasedApplication::formatLine2(int row_index) const
+QList<AbstractCharacterBasedApplication::FormattedLine2> AbstractCharacterBasedApplication::formatLine2_(int row_index) const
 {
-	QList<FormattedLine> formatted_lines;
+	QList<FormattedLine2> formatted_lines;
 	if (isValidRowIndex(row_index)) {
 		Document::Line const *line = &engine()->document.lines[row_index];
-		formatted_lines = formatLine(*line, cx()->tab_span);
+		formatted_lines = formatLine_(*line, cx()->tab_span);
 	}
 	return formatted_lines;
 }
@@ -891,9 +891,9 @@ int AbstractCharacterBasedApplication::decideColumnScrollPos() const
 
 int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &line) const
 {
-	QList<FormattedLine> lines = formatLine(line, cx()->tab_span);
+	QList<FormattedLine2> lines = formatLine_(line, cx()->tab_span);
 	int x = 0;
-	for (FormattedLine const &line : lines) {
+	for (FormattedLine2 const &line : lines) {
 		if (line.text.isEmpty()) continue;
 		ushort const *ptr = line.text.utf16();
 		ushort const *end = ptr + line.text.size();
@@ -1835,10 +1835,10 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 							}
 						}
 					}
-					QList<FormattedLine> lines = formatLine(line, cx->tab_span, anchor_a, anchor_b);
-					for (FormattedLine const &line : lines) {
+					QList<FormattedLine2> lines = formatLine_(line, cx->tab_span, anchor_a, anchor_b);
+					for (FormattedLine2 const &line : lines) {
 						AbstractCharacterBasedApplication::Option opt;
-						if (line.atts & FormattedLine::StyleID) {
+						if (line.atts & FormattedLine2::StyleID) {
 							opt.char_attr.color = QColor(line.atts & 0xff, (line.atts >> 8) & 0xff, (line.atts >> 16) & 0xff);
 						}
 						opt.clip = clip;

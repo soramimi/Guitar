@@ -32,11 +32,50 @@ struct PreEditText {
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
+	class FormattedLine {
+	public:
+		std::shared_ptr<std::vector<Char>> sp;
+		FormattedLine()
+			: sp(std::make_shared<std::vector<Char>>())
+		{
+		}
+	};
+	class FormattedLines {
+	public:
+		std::vector<TextEditorView::FormattedLine> lines;
+		void clear()
+		{
+			lines.clear();
+		}
+		std::vector<Char> *append()
+		{
+			lines.emplace_back();
+			return lines.back().sp.get();
+		}
+		size_t size() const
+		{
+			return lines.size();
+		}
+		FormattedLine &operator [] (size_t i)
+		{
+			return lines[i];
+		}
+		FormattedLine const &operator [] (size_t i) const
+		{
+			return lines[i];
+		}
+		std::vector<Char> *chars(size_t i)
+		{
+			return lines[i].sp.get();
+		}
+		std::vector<Char> const *chars(size_t i) const
+		{
+			return lines[i].sp.get();
+		}
+	};
 private:
 	struct Private;
 	Private *m;
-
-	void update() = delete;
 
 	void paintScreen(QPainter *painter);
 	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
@@ -55,8 +94,7 @@ private:
 	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
 	int view_y_from_row(int row) const;
 public:
-	std::vector<std::vector<Char>> *fetchLines();
-	void updateView();
+	FormattedLines *fetchLines();
 	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;

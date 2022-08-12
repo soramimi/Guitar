@@ -146,8 +146,6 @@ private:
 	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
 	MainWindow *mainwindow();
 	bool setSubmodule(const Git::Diff &diff);
-	void formatLines();
-//	const std::pair<LineFragment, LineFragment> *findPair(int row, bool first);
 protected:
 	void resizeEvent(QResizeEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;

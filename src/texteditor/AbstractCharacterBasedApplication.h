@@ -249,7 +249,7 @@ public:
 
 	static int charWidth(uint32_t c);
 
-	class FormattedLine {
+	class FormattedLine2 {
 	public:
 		QString text;
 		enum Attr {
@@ -257,7 +257,7 @@ public:
 			Selected = 0x01000000,
 		};
 		uint32_t atts;
-		FormattedLine(QString const &text, int atts)
+		FormattedLine2(QString const &text, int atts)
 			: text(text)
 			, atts(atts)
 		{
@@ -268,8 +268,8 @@ public:
 		}
 	};
 
-	QList<FormattedLine> formatLine(const Document::Line &line, int tab_span, int anchor_a = -1, int anchor_b = -1) const;
-	QList<FormattedLine> formatLine2(int row_index) const;
+	QList<FormattedLine2> formatLine_(const Document::Line &line, int tab_span, int anchor_a = -1, int anchor_b = -1) const;
+	QList<FormattedLine2> formatLine2_(int row_index) const;
 
 private:
 	struct Private;
