@@ -218,6 +218,16 @@ std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBase
 	return &m->screen;
 }
 
+int AbstractCharacterBasedApplication::char_screen_w() const
+{
+	return m->screen_width;
+}
+
+int AbstractCharacterBasedApplication::char_screen_h() const
+{
+	return m->screen_height;
+}
+
 const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen() const
 {
 	return &m->screen;

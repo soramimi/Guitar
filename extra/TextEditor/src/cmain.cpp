@@ -43,8 +43,6 @@ int CursesOreApplication::screenHeight() const
 	return m->height;
 }
 
-
-
 void CursesOreApplication::clearLine(int y)
 {
 	std::vector<char> arr(y + 1);
@@ -66,7 +64,7 @@ void CursesOreApplication::paintScreen()
 		int i = m->width * y;
 		if (i < 0 || i >= char_screen()->size()) continue;
 		if (line_flags()->at(y) & LineChanged) {
-			Character const *line = &char_screen()->at(m->width * y);
+			Character const *line = &char_screen()->at(char_screen_w() * y);
 			std::vector<char> vec;
 			vec.reserve(m->width * 3);
 			int x = 0;
@@ -84,7 +82,7 @@ void CursesOreApplication::paintScreen()
 				}
 				erase = 0;
 			};
-			while (x < m->width) {
+			while (x < std::min(screenWidth(), char_screen_w())) {
 				CharAttr attr;
 				int n = 0;
 				QString text;
@@ -226,6 +224,8 @@ int CursesOreApplication::main2()
 	keypad(stdscr, false);
 	m->width = getmaxx(stdscr);
 	m->height = getmaxy(stdscr);
+
+	setNormalTextEditorMode(true);
 
 	makeBuffer();
 	loadExampleFile();

@@ -84,7 +84,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
 
-	setRenderingMode(GraphicMode);
+//	setRenderingMode(GraphicMode);
+	showLineNumber(false);
 
 	updateCursorRect(true);
 
@@ -173,16 +174,16 @@ void TextEditorView::updateLayout()
 	fetchLines();
 }
 
-void TextEditorView::setRenderingMode(RenderingMode mode)
-{
-	rendering_mode_ = mode;
-	if (renderingMode() == GraphicMode) {
-		showLineNumber(false);
-	} else {
-		showLineNumber(true);
-	}
-	update();
-}
+//void TextEditorView::setRenderingMode(RenderingMode mode)
+//{
+//	rendering_mode_ = mode;
+//	if (renderingMode() == GraphicMode) {
+//		showLineNumber(false);
+//	} else {
+//		showLineNumber(true);
+//	}
+//	update();
+//}
 
 void AbstractCharacterBasedApplication::loadExampleFile()
 {
@@ -509,18 +510,18 @@ void TextEditorView::drawText(QPainter *painter, int px, int py, QString const &
 
 QColor TextEditorView::defaultForegroundColor()
 {
-	if (renderingMode() == GraphicMode) {
-		return theme()->fgDefault();
-	}
-	return Qt::white;
+	return theme()->fgDefault();
+//	if (renderingMode() == GraphicMode) {
+//	}
+//	return Qt::white;
 }
 
 QColor TextEditorView::defaultBackgroundColor()
 {
-	if (renderingMode() == GraphicMode) {
-		return theme()->bgDefault();
-	}
-	return Qt::black;
+	return theme()->bgDefault();
+//	if (renderingMode() == GraphicMode) {
+//	}
+//	return Qt::black;
 }
 
 QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
@@ -737,10 +738,10 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			color = theme()->bgDefault();
 			break;
 		case Document::Line::Add:
-			color = theme()->bgDiffAdd();
+			color = theme()->bgDiffLineAdd();
 			break;
 		case Document::Line::Del:
-			color = theme()->bgDiffDel();
+			color = theme()->bgDiffLineDel();
 			break;
 		default:
 			color = theme()->bgDiffUnknown();
@@ -749,7 +750,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		return color;
 	};
 
-	if (renderingMode() == GraphicMode) {
+//	if (renderingMode() == GraphicMode)
+	{
 		const int line_height = lineHeight();
 		pr.save();
 		pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
@@ -893,10 +895,10 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							};
 #if 1
 							if (attr.flags & CharAttr::Underline1) {
-								DrawDiffMarker(QColor(240, 160, 160));
+								DrawDiffMarker(theme()->bgDiffCharDel());
 							}
 							if (attr.flags & CharAttr::Underline2) {
-								DrawDiffMarker(QColor(144, 208, 144));
+								DrawDiffMarker(theme()->bgDiffCharAdd());
 							}
 #else
 							if (attr.flags & CharAttr::Underline1) {
@@ -939,8 +941,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 
 		pr.restore();
-	} else {
-		paintScreen(&pr);
+//	} else {
+//		paintScreen(&pr);
 	}
 
 	// カーソル描画
@@ -949,7 +951,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 
 	// 行番号描画
-	if (renderingMode() == GraphicMode) {
+//	if (renderingMode() == GraphicMode)
+	{
 		auto FillLineNumberBG = [&](int y, int h, QColor const &color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);
 		};

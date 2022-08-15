@@ -19,8 +19,10 @@ public:
 	QColor bg_current_line;
 	QColor bg_current_line_number;
 	QColor bg_diff_unknown;
-	QColor bg_diff_add;
-	QColor bg_diff_del;
+	QColor bg_diff_line_del;
+	QColor bg_diff_char_del;
+	QColor bg_diff_line_add;
+	QColor bg_diff_char_add;
 public:
 	TextEditorTheme() = default;
 	QColor fgDefault() const
@@ -55,13 +57,21 @@ public:
 	{
 		return bg_diff_unknown;
 	}
-	QColor bgDiffAdd() const
+	QColor bgDiffLineDel() const
 	{
-		return bg_diff_add;
+		return bg_diff_line_del;
 	}
-	QColor bgDiffDel() const
+	QColor bgDiffLineAdd() const
 	{
-		return bg_diff_del;
+		return bg_diff_line_add;
+	}
+	QColor bgDiffCharDel() const
+	{
+		return bg_diff_char_del;
+	}
+	QColor bgDiffCharAdd() const
+	{
+		return bg_diff_char_add;
 	}
 	static TextEditorThemePtr Dark();
 	static TextEditorThemePtr Light();

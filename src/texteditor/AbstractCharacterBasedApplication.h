@@ -168,10 +168,10 @@ using DialogHandler = std::function<void (bool, QString const &)>;
 
 class AbstractCharacterBasedApplication {
 public:
-	enum RenderingMode {
-		CharacterMode,
-		GraphicMode,
-	};
+//	enum RenderingMode {
+//		CharacterMode,
+//		GraphicMode,
+//	};
 
 	static const int LEFT_MARGIN = 8;
 	static const int RIGHT_MARGIN = 10;
@@ -280,6 +280,8 @@ protected:
 	const int reference_char_width_ = 1; // TODO: remove
 protected:
 
+	int char_screen_w() const;
+	int char_screen_h() const;
 	std::vector<Character> *char_screen();
 	std::vector<Character> const *char_screen() const;
 	std::vector<uint8_t> *line_flags();
@@ -401,16 +403,16 @@ protected:
 	void savePos();
 	void restorePos();
 public:
-	RenderingMode rendering_mode_ = CharacterMode;
+//	RenderingMode rendering_mode_ = CharacterMode;
 
-	void set_rendering_mode(RenderingMode m)
-	{
-		rendering_mode_ = m;
-	}
-	RenderingMode renderingMode() const
-	{
-		return rendering_mode_;
-	}
+//	void set_rendering_mode(RenderingMode m)
+//	{
+//		rendering_mode_ = m;
+//	}
+//	RenderingMode renderingMode() const
+//	{
+//		return rendering_mode_;
+//	}
 
 	int currentRow() const;
 	int currentCol() const;
