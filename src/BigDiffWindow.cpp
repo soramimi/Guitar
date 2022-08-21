@@ -65,16 +65,16 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 
 	switch (m->param.view_style) {
 	case FileDiffWidget::ViewStyle::LeftOnly:
-		ui->widget_diff->setLeftOnly(m->param.bytes_a, m->param.diff);
+		ui->widget_diff->setLeftOnly(m->param.diff, m->param.bytes_a);
 		break;
 	case FileDiffWidget::ViewStyle::RightOnly:
-		ui->widget_diff->setRightOnly(m->param.bytes_b, m->param.diff);
+		ui->widget_diff->setRightOnly(m->param.diff, m->param.bytes_b);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideText:
-		ui->widget_diff->setSideBySide(m->param.bytes_a, m->param.diff, m->param.uncommited, m->param.workingdir);
+		ui->widget_diff->setSideBySide(m->param.diff, m->param.bytes_a, m->param.uncommited, m->param.workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideImage:
-		ui->widget_diff->setSideBySide_(m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
+		ui->widget_diff->setSideBySide_(m->param.diff, m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
 		break;
 	}
 }

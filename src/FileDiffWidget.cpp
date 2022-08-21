@@ -392,10 +392,6 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 		}
 	}
 
-
-
-
-
 	ui->widget_diff_left->setText(&m->left_lines, mainwindow(), diff.blob.a_id, diff.path);
 	ui->widget_diff_right->setText(&m->right_lines, mainwindow(), diff.blob.b_id, diff.path);
 	refrectScrollBar(true);
@@ -416,6 +412,7 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 		ui->horizontalScrollBar->setVisible(false);
 		ui->widget_diff_slider->setVisible(false);
 
+		qDebug() << mimetype_l << m->init_param_.diff.blob.a_id << mimetype_r << m->init_param_.diff.blob.b_id;
 		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, m->init_param_.diff.blob.a_id, m->init_param_.diff.path);
 		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, m->init_param_.diff.blob.b_id, m->init_param_.diff.path);
 
@@ -455,7 +452,7 @@ void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem 
 	}
 }
 
-void FileDiffWidget::setLeftOnly(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::setLeftOnly(Git::Diff const &diff, QByteArray const &ba)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::LeftOnly;
@@ -517,7 +514,7 @@ bool FileDiffWidget::setSubmodule(Git::Diff const &diff)
 	return false;
 }
 
-void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
+void FileDiffWidget::setRightOnly(Git::Diff const &diff, QByteArray const &ba)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::RightOnly;
@@ -542,7 +539,7 @@ void FileDiffWidget::setRightOnly(QByteArray const &ba, Git::Diff const &diff)
 	}
 }
 
-void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setSideBySide(Git::Diff const &diff, QByteArray const &ba, bool uncommited, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideText;
@@ -568,12 +565,13 @@ void FileDiffWidget::setSideBySide(QByteArray const &ba, Git::Diff const &diff, 
 	}
 }
 
-void FileDiffWidget::setSideBySide_(QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
+void FileDiffWidget::setSideBySide_(Git::Diff const &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImage;
 	m->init_param_.bytes_a = ba_a;
 	m->init_param_.bytes_b = ba_b;
+	m->init_param_.diff = diff;
 	m->init_param_.workingdir = workingdir;
 
 	setOriginalLines_(ba_a, {}, {});
@@ -647,7 +645,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		QString mime_a = mainwindow()->determinFileType(obj_a.content);
 		QString mime_b = mainwindow()->determinFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide_(obj_a.content, obj_b.content, g->workingDir());
+			setSideBySide_(info, obj_a.content, obj_b.content, g->workingDir());
 			return;
 		}
 	}
@@ -665,13 +663,13 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		if (isValidID_(diff.blob.a_id)) { // 左が有効
 			obj = cat_file(g, diff.blob.a_id);
 			if (isValidID_(diff.blob.b_id)) { // 右が有効
-				setSideBySide(obj.content, diff, uncommited, g->workingDir()); // 通常のdiff表示
+				setSideBySide(diff, obj.content, uncommited, g->workingDir()); // 通常のdiff表示
 			} else {
-				setLeftOnly(obj.content, diff); // 右が無効の時は、削除されたファイル
+				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
 		} else if (isValidID_(diff.blob.b_id)) { // 左が無効で右が有効の時は、追加されたファイル
 			obj = cat_file(g, diff.blob.b_id);
-			setRightOnly(obj.content, diff);
+			setRightOnly(diff, obj.content);
 		}
 	}
 }
@@ -697,7 +695,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = cat_file(g, diff.blob.a_id);
-	setSideBySide(obj.content, diff, false, g->workingDir());
+	setSideBySide(diff, obj.content, false, g->workingDir());
 
 	ui->widget_diff_slider->clear(false);
 

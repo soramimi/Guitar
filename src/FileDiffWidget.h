@@ -128,10 +128,10 @@ private:
 	void setDiffText(const Git::Diff &diff, TextDiffLineList const &left, TextDiffLineList const &right);
 
 
-	void setLeftOnly(QByteArray const &ba, const Git::Diff &diff);
-	void setRightOnly(QByteArray const &ba, const Git::Diff &diff);
-	void setSideBySide(QByteArray const &ba, const Git::Diff &diff, bool uncommited, QString const &workingdir);
-	void setSideBySide_(QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
+	void setLeftOnly(const Git::Diff &diff, QByteArray const &ba);
+	void setRightOnly(const Git::Diff &diff, QByteArray const &ba);
+	void setSideBySide(const Git::Diff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
+	void setSideBySide_(const Git::Diff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
 	bool isValidID_(QString const &id);
 
