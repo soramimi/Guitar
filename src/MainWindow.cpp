@@ -607,20 +607,20 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		if (watched == frame()->unstagedFileslistwidget()) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText(frame());
-			updateUnstagedFileCurrentItem(frame());
-			SelectItem(frame()->unstagedFileslistwidget());
+//			updateUnstagedFileCurrentItem(frame());
+//			SelectItem(frame()->unstagedFileslistwidget());
 			return true;
 		}
 		if (watched == frame()->stagedFileslistwidget()) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText(frame());
-			updateStagedFileCurrentItem(frame());
-			SelectItem(frame()->stagedFileslistwidget());
+//			updateStagedFileCurrentItem(frame());
+//			SelectItem(frame()->stagedFileslistwidget());
 			return true;
 		}
 		if (watched == frame()->fileslistwidget()) {
 			m->last_focused_file_list = watched;
-			SelectItem(frame()->fileslistwidget());
+//			SelectItem(frame()->fileslistwidget());
 			return true;
 		}
 	}
