@@ -86,7 +86,9 @@ private:
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
+public://@
 	void internalUpdateScrollBar();
+private:
 	void moveCursorByMouse();
 	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
 	void parse(int row, std::vector<Char> *chars) const;

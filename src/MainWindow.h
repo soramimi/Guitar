@@ -220,7 +220,7 @@ private:
 	QString selectCommand_(const QString &cmdname, const QStringList &cmdfiles, const QStringList &list, QString path, const std::function<void (const QString &)> &callback);
 	QString selectCommand_(const QString &cmdname, const QString &cmdfile, const QStringList &list, const QString &path, const std::function<void (const QString &)> &callback);
 	const RepositoryData *findRegisteredRepository(QString *workdir) const;
-	static bool git_callback(void *cookie, const char *ptr, int len);
+	static bool git_log_callback(void *cookie, const char *ptr, int len);
 	bool execSetGlobalUserDialog();
 	void revertAllFiles();
 	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open);

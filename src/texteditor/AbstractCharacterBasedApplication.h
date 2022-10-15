@@ -383,6 +383,7 @@ protected:
 	}
 	int nextTabStop(int x) const;
 	int scrollBottomLimit() const;
+	int scrollBottomLimit2() const;
 	bool isPaintingSuppressed() const;
 	void setPaintingSuppressed(bool f);
 
@@ -482,7 +483,8 @@ public:
 	bool isChanged() const;
 	void setChanged(bool f);
 	void logicalMoveToBottom();
-	void write_raw(const char *ptr, int len);
+	void logicalMoveToBottom2();
+	void appendBulk(const char *ptr, int len);
 	void clear();
 protected:
 	void write_(char const *ptr, bool by_keyboard);

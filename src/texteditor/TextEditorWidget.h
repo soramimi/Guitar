@@ -19,13 +19,18 @@ public:
 	{
 		return view_;
 	}
-	void updateLayout()
+//	void updateLayout()
+//	{
+//		view_->updateLayout();
+//	}
+//	void updateView()
+//	{
+//		view_->update();
+//	}
+	void updateLayoutAndMoveToBottom()
 	{
 		view_->updateLayout();
-	}
-	void updateView()
-	{
-		view_->update();
+		view_->moveToBottom();
 	}
 };
 

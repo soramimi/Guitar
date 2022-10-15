@@ -769,6 +769,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			selmax = {};
 		}
 
+		fetchLines();
+
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			int line_row = editor_cx->scroll_row_pos; // 行インデックス（view_row位置に描画すべき論理行インデックス）

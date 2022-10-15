@@ -1407,6 +1407,11 @@ int AbstractCharacterBasedApplication::scrollBottomLimit() const
 	return documentLines() - editorViewportHeight() / 2;
 }
 
+int AbstractCharacterBasedApplication::scrollBottomLimit2() const
+{
+	return documentLines() - editorViewportHeight();
+}
+
 void AbstractCharacterBasedApplication::writeCR()
 {
 	deleteIfSelected();
@@ -2197,11 +2202,28 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 	cx()->scroll_row_pos = scrollBottomLimit();
 }
 
+void AbstractCharacterBasedApplication::logicalMoveToBottom2()
+{
+	deselect();
+
+	setCurrentRow(documentLines());
+	setCurrentCol(0);
+	if (currentRow() > 0) {
+		setCurrentRow(currentRow() - 1);
+		clearParsedLine();
+		fetchCurrentLine();
+		int col = calcVisualWidth(Document::Line(m->current_line_data));
+		setCurrentCol(col);
+		cx()->current_col_hint = col;
+	}
+	cx()->scroll_row_pos = scrollBottomLimit2();
+}
+
 void AbstractCharacterBasedApplication::moveToBottom()
 {
 	if (isSingleLineMode()) return;
 
-	logicalMoveToBottom();
+	logicalMoveToBottom2();
 
 	invalidateArea();
 	clearParsedLine();
@@ -2456,7 +2478,7 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 	}
 }
 
-void AbstractCharacterBasedApplication::write_raw(char const *ptr, int len)
+void AbstractCharacterBasedApplication::appendBulk(char const *ptr, int len)
 {
 	if (!cx()->engine->document.lines.empty()) {
 		if (!cx()->engine->document.lines.back().endsWithNewLine()) {

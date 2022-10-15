@@ -506,7 +506,7 @@ void MainWindow::onStartEvent()
 		
 		// メインウィンドウのタイトルを設定
 		updateWindowTitle(git());
-		
+
 		// プログラムバーション表示
 		writeLog(AboutDialog::appVersion() + '\n');
 		// gitコマンドバージョン表示
@@ -704,10 +704,10 @@ void MainWindow::onLogVisibilityChanged()
 void MainWindow::internalWriteLog(char const *ptr, int len)
 {
 	ui->widget_log->view()->logicalMoveToBottom();
-	ui->widget_log->view()->write_raw(ptr, len);
+	ui->widget_log->view()->appendBulk(ptr, len);
 	ui->widget_log->view()->setChanged(false);
-	ui->widget_log->updateLayout();
-	ui->widget_log->updateView();
+	ui->widget_log->updateLayoutAndMoveToBottom();
+
 	setInteractionCanceled(false);
 }
 
@@ -862,7 +862,7 @@ RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) con
 	return nullptr;
 }
 
-bool MainWindow::git_callback(void *cookie, const char *ptr, int len)
+bool MainWindow::git_log_callback(void *cookie, const char *ptr, int len)
 {
 	auto *mw = (MainWindow *)cookie;
 	mw->emitWriteLog(QByteArray(ptr, len));
@@ -1796,7 +1796,7 @@ void MainWindow::addRepository(const QString &dir)
 void MainWindow::setLogEnabled(GitPtr g, bool f)
 {
 	if (f) {
-		g->setLogCallback(git_callback, this);
+		g->setLogCallback(git_log_callback, this);
 	} else {
 		g->setLogCallback(nullptr, nullptr);
 	}
@@ -4654,7 +4654,7 @@ GitPtr MainWindow::git(const QString &dir, const QString &submodpath, const QStr
 {
 	GitPtr g = std::make_shared<Git>(m->gcx, dir, submodpath, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
-		g->setLogCallback(git_callback, (void *)this);
+		g->setLogCallback(git_log_callback, (void *)this);
 		return g;
 	} else {
 		QString text = tr("git command not specified") + '\n';
