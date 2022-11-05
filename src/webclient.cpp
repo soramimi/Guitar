@@ -34,6 +34,9 @@ using socket_t = int;
 #include <openssl/rand.h>
 //#include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined SSL_get_peer_certificate)
+#define SSL_get_peer_certificate(s) SSL_get1_peer_certificate(s)
+#endif
 #else
 typedef void SSL;
 typedef void SSL_CTX;
