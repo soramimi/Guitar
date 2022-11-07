@@ -565,7 +565,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 				if (!(e->modifiers() & Qt::ControlModifier)) {
-					if (k >= 0 && k < 128 && QChar((uchar)k).isLetterOrNumber()) {
+					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) {
 						appendCharToRepoFilter(k);
 						return true;
 					}
