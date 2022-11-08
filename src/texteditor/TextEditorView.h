@@ -155,6 +155,14 @@ public:
 		int height = 0;
 	};
 	PointInView pointInView(int row, int col) const;
+
+	// TODO:
+	bool something_bad_flag = false;
+	void setSomethingBadFlag(bool f)
+	{
+		something_bad_flag = f;
+	}
+
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

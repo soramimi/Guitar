@@ -769,7 +769,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			selmax = {};
 		}
 
-		fetchLines();
+		if (something_bad_flag) { // TODO:
+			fetchLines();
+		}
 
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
