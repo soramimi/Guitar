@@ -231,6 +231,7 @@ MainWindow::MainWindow(QWidget *parent)
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 		ui->widget_log->view()->setTextFont(font);
+		ui->widget_log->view()->setSomethingBadFlag(true); // TODO:
 	}
 	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
