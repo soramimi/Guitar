@@ -303,8 +303,8 @@ private:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 	QStringList findGitObject(const QString &id) const;
-	void writeLog(const char *ptr, int len);
-	void writeLog(const QString &str);
+	void writeLog(const char *ptr, int len, bool record);
+	void writeLog(const QString &str, bool record);
 	QList<BranchLabel> sortedLabels(RepositoryWrapperFrame *frame, int row) const;
 	void saveApplicationSettings();
 	void loadApplicationSettings();
@@ -383,6 +383,9 @@ private:
 	void cancelPendingUserEvents();
 	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
 	void updatePocessLog(bool processevents);
+	void appendLogHistory(const char *ptr, int len);
+	std::vector<std::string> getLogHistoryLines();
+	void clearLogHistory();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -390,7 +393,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
-	void internalWriteLog(const char *ptr, int len);
+	void internalWriteLog(const char *ptr, int len, bool record);
 	RepositoryData const *selectedRepositoryItem() const;
 	void removeSelectedRepositoryFromBookmark(bool ask);
 public:
@@ -445,7 +448,7 @@ public:
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
 	TextEditorThemePtr themeForTextEditor();
     bool isValidWorkingCopy(GitPtr g) const;
-	void emitWriteLog(const QByteArray &ba);
+	void emitWriteLog(const QByteArray &ba, bool receive);
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
 	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
@@ -463,7 +466,7 @@ public:
 	void refresh();
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 public slots:
-	void writeLog_(QByteArray ba);
+	void writeLog_(QByteArray ba, bool receive);
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();
@@ -566,7 +569,7 @@ private slots:
 protected slots:
 	void onLogIdle();
 signals:
-	void signalWriteLog(QByteArray ba);
+	void signalWriteLog(QByteArray ba, bool receive);
 	void remoteInfoChanged();
 	void signalSetRemoteChanged(bool f);
 	void updateButton();

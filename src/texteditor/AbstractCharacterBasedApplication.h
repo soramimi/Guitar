@@ -57,7 +57,7 @@ public:
 		explicit Line(std::string const &str, Type type = Normal)
 			: type(type)
 		{
-			text.append(str.c_str(), str.size());
+			text.append(str.c_str(), (int)str.size());
 		}
 
 		bool endsWithNewLine() const

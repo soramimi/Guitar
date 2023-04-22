@@ -11,7 +11,7 @@
 
 static QString toQString(std::string const &s)
 {
-	return QString::fromUtf8(s.c_str(), s.size());
+	return QString::fromUtf8(s.c_str(), (int)s.size());
 }
 
 SearchFromGitHubDialog::SearchFromGitHubDialog(QWidget *parent, MainWindow *mw)

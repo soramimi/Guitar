@@ -122,7 +122,7 @@ void FileHistoryWindow::collectFileHistory()
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 
-	int count = m->commit_item_list.size();
+	int count = (int)m->commit_item_list.size();
 	ui->tableWidget_log->setRowCount(count);
 
 	for (int row = 0; row < count; row++) {

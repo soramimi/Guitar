@@ -157,7 +157,7 @@ QString ImageViewWidget::formatText(Document::Line const &line)
 			x++;
 		}
 	}
-	return QString::fromUtf8(&vec[0], vec.size());
+	return QString::fromUtf8(&vec[0], (int)vec.size());
 }
 
 QSizeF ImageViewWidget::imageScrollRange() const
@@ -279,7 +279,7 @@ void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
 					std::vector<char> jpeg;
 					photoshop::readThumbnail(&reader, &jpeg);
 					if (!jpeg.empty()) {
-						m->pixmap.loadFromData((uchar const *)&jpeg[0], jpeg.size());
+						m->pixmap.loadFromData((uchar const *)&jpeg[0], (uint)jpeg.size());
 					}
 				}
 			}

@@ -108,7 +108,7 @@ void AvatarLoader::run()
 				QString id;
 				{
 					QCryptographicHash hash(QCryptographicHash::Md5);
-					hash.addData(request.email.c_str(), request.email.size());
+					hash.addData(request.email.c_str(), (int)request.email.size());
 					QByteArray ba = hash.result();
 					char tmp[100];
 					for (int i = 0; i < ba.size(); i++) {
@@ -132,9 +132,9 @@ void AvatarLoader::run()
 						}
 					}
 				} else {
-					m->mainwindow->emitWriteLog(QString("Failed to fetch the avatar.\n").toUtf8());
+					m->mainwindow->emitWriteLog(QString("Failed to fetch the avatar.\n").toUtf8(), false);
 					QString msg = QString::fromStdString(m->web->error().message() + '\n');
-					m->mainwindow->emitWriteLog(msg.toUtf8());
+					m->mainwindow->emitWriteLog(msg.toUtf8(), false);
 				}
 			}
 			if (request.state == Busy) {

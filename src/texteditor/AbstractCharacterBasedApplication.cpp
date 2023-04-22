@@ -1186,7 +1186,7 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 		return true;
 	});
 	if (!u16buf.empty()) {
-		QString s = QString::fromUtf16(&u16buf[0], u16buf.size());
+		QString s = QString::fromUtf16(&u16buf[0], (int)u16buf.size());
 		qApp->clipboard()->setText(s);
 	}
 }
@@ -1381,7 +1381,7 @@ void AbstractCharacterBasedApplication::invalidateArea(int top_y)
 	int y1 = cx()->viewport_height + y0;
 	top_y += y0;
 	if (y0 < top_y) y0 = top_y;
-	int n = m->line_flags.size();
+	int n = (int)m->line_flags.size();
 	if (y0 < 0) y0 = 0;
 	if (y1 > n) y1 = n;
 	for (int y = y0; y < y1; y++) {
@@ -1750,7 +1750,7 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 		if (pts.size() > 1) {
             int newcol = pts.back();
             int newindex = (int)pts.size() - 1;
-			for (size_t i = 0; i + 1 < pts.size(); i++) {
+			for (int i = 0; i + 1 < (int)pts.size(); i++) {
 				int x = pts[i];
 				if (x <= col && col < pts[i + 1]) {
 					char_span = pts[i + 1] - pts[i];
@@ -2532,7 +2532,7 @@ void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_
 void AbstractCharacterBasedApplication::write(std::string const &text)
 {
 	if (!text.empty()) {
-		write(text.c_str(), text.size(), false);
+		write(text.c_str(), (int)text.size(), false);
 	}
 }
 

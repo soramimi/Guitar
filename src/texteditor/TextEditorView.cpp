@@ -334,7 +334,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 			std::vector<Char> vec;
 			parseLine(t.row, &vec);
 			if (!vec.empty()) {
-				t.col = vec.size();
+				t.col = (int)vec.size();
 			}
 		}
 		return t;
@@ -363,7 +363,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 		}
 		left = right;
 	}
-	return RowCol(row, end);
+	return RowCol((int)row, (int)end);
 }
 
 /**
@@ -1180,7 +1180,7 @@ void TextEditorView::timerEvent(QTimerEvent *)
 {
 	if (!isChanged()) {
 		m->idle_count++;
-		if (m->idle_count >= 10) {
+		if (m->idle_count >= 5) {
 			m->idle_count = 0;
 			emit idle();
 		}

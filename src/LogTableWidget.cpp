@@ -357,7 +357,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 0.5);
 		pr.setBrush(Qt::NoBrush);
 
-		for (size_t i = 0; i < list->size(); i++) {
+		for (int i = 0; i < (int)list->size(); i++) {
 			double y = DrawLine(i, i);
 			if (y >= height()) break;
 		}
@@ -367,7 +367,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 1);
 		pr.setBrush(frame()->color(0));
 
-		for (size_t i = 0; i < list->size(); i++) {
+		for (int i = 0; i < (int)list->size(); i++) {
 			double y = DrawMark(i, i);
 			if (y >= height()) break;
 		}

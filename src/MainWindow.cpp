@@ -173,6 +173,8 @@ struct MainWindow::Private {
 	
 	QWidget *focused_widget = nullptr;
 	QList<int> splitter_h_sizes;
+
+	std::vector<char> log_history_bytes;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -404,7 +406,7 @@ void MainWindow::updatePocessLog(bool processevents)
 		char tmp[1024];
 		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		writeLog(tmp, len);
+		writeLog(tmp, len, true);
 		if (processevents) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -509,7 +511,7 @@ void MainWindow::onStartEvent()
 		updateWindowTitle(git());
 
 		// プログラムバーション表示
-		writeLog(AboutDialog::appVersion() + '\n');
+		writeLog(AboutDialog::appVersion() + '\n', true);
 		// gitコマンドバージョン表示
 		logGitVersion();
 	}
@@ -702,8 +704,57 @@ void MainWindow::onLogVisibilityChanged()
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
-void MainWindow::internalWriteLog(char const *ptr, int len)
+void MainWindow::appendLogHistory(char const *ptr, int len)
 {
+	m->log_history_bytes.insert(m->log_history_bytes.begin(), ptr, ptr + len);
+}
+
+std::vector<std::string> MainWindow::getLogHistoryLines()
+{
+	std::vector<std::string> lines;
+	if (m->log_history_bytes.empty()) return {};
+	char const *begin = m->log_history_bytes.data();
+	char const *end = begin + m->log_history_bytes.size();
+	char const *top = begin;
+	char const *ptr = begin;
+	bool cr = false;
+	while (1) {
+		int c = -1;
+		if (ptr < end) {
+			c = (unsigned char)*ptr;
+		}
+		if (c == '\r' || c == '\n' || c == -1) {
+			if (cr && c == '\n') {
+				// nop
+			} else {
+				std::string line(top, ptr - top);
+				lines.push_back(line);
+				if (c == -1) break;
+			}
+			cr = (c == '\r');
+			ptr++;
+			top = ptr;
+		} else {
+			ptr++;
+		}
+	}
+	m->log_history_bytes.erase(m->log_history_bytes.begin(), m->log_history_bytes.begin() + (ptr - begin));
+	return lines;
+}
+
+void MainWindow::clearLogHistory()
+{
+//	if (m->log_history_bytes.empty()) return;
+	m->log_history_bytes.clear();
+	qDebug() << "---";
+}
+
+void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
+{
+	if (record) { // 受信ログのみ記録
+		appendLogHistory(ptr, len);
+	}
+
 	ui->widget_log->view()->logicalMoveToBottom();
 	ui->widget_log->view()->appendBulk(ptr, len);
 	ui->widget_log->view()->setChanged(false);
@@ -866,7 +917,7 @@ RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) con
 bool MainWindow::git_log_callback(void *cookie, const char *ptr, int len)
 {
 	auto *mw = (MainWindow *)cookie;
-	mw->emitWriteLog(QByteArray(ptr, len));
+	mw->emitWriteLog(QByteArray(ptr, len), false);
 	return true;
 }
 
@@ -1131,7 +1182,7 @@ bool MainWindow::checkExecutable(const QString &path)
 	}
 	QString text = "The specified program '%1' is not executable.\n";
 	text = text.arg(path);
-	writeLog(text);
+	writeLog(text, false);
 	return false;
 }
 
@@ -1153,7 +1204,7 @@ void MainWindow::logGitVersion()
 	QString s = g->version();
 	if (!s.isEmpty()) {
 		s += '\n';
-		writeLog(s);
+		writeLog(s, true);
 	}
 }
 
@@ -1533,7 +1584,7 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 				err += "\n*** ";
 				err += tr("Failed to commit");
 				err += " ***\n";
-				writeLog(err);
+				writeLog(err, true);
 			}
 		}
 		break;
@@ -1634,7 +1685,7 @@ void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitIt
 			if (g->git(QString("branch -D \"%1\"").arg(name))) {
 				count++;
 			} else {
-				writeLog(tr("Failed to delete the branch '%1'").arg(name) + '\n');
+				writeLog(tr("Failed to delete the branch '%1'").arg(name) + '\n', true);
 			}
 		}
 		if (count > 0) {
@@ -3131,15 +3182,15 @@ QStringList MainWindow::findGitObject(const QString &id) const
 	return list;
 }
 
-void MainWindow::writeLog(const char *ptr, int len)
+void MainWindow::writeLog(const char *ptr, int len, bool record)
 {
-	internalWriteLog(ptr, len);
+	internalWriteLog(ptr, len, record);
 }
 
-void MainWindow::writeLog(const QString &str)
+void MainWindow::writeLog(const QString &str, bool record)
 {
 	std::string s = str.toStdString();
-	writeLog(s.c_str(), (int)s.size());
+	writeLog(s.c_str(), (int)s.size(), record);
 }
 
 QList<BranchLabel> MainWindow::sortedLabels(RepositoryWrapperFrame *frame, int row) const
@@ -4659,7 +4710,7 @@ GitPtr MainWindow::git(const QString &dir, const QString &submodpath, const QStr
 		return g;
 	} else {
 		QString text = tr("git command not specified") + '\n';
-		const_cast<MainWindow *>(this)->writeLog(text);
+		const_cast<MainWindow *>(this)->writeLog(text, true);
 		return GitPtr();
 	}
 }
@@ -4872,9 +4923,9 @@ bool MainWindow::isValidWorkingCopy(GitPtr g) const
 	return g && g->isValidWorkingCopy();
 }
 
-void MainWindow::emitWriteLog(const QByteArray &ba)
+void MainWindow::emitWriteLog(const QByteArray &ba, bool receive)
 {
-	emit signalWriteLog(ba);
+	emit signalWriteLog(ba, receive);
 }
 
 QString MainWindow::findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file)
@@ -5065,10 +5116,10 @@ void MainWindow::refresh()
 	openRepository(true);
 }
 
-void MainWindow::writeLog_(QByteArray ba)
+void MainWindow::writeLog_(QByteArray ba, bool receive)
 {
 	if (!ba.isEmpty()) {
-		writeLog(ba.data(), ba.size());
+		writeLog(ba.data(), ba.size(), receive);
 	}
 }
 
@@ -5859,28 +5910,61 @@ void MainWindow::onLogIdle()
 	static char const enter_passphrase[] = "Enter passphrase: ";
 	static char const enter_passphrase_for_key[] = "Enter passphrase for key '";
 	static char const fatal_authentication_failed_for[] = "fatal: Authentication failed for '";
+	static char const remote_host_identification_has_changed[] = "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!";
+
+	std::vector<std::string> lines = getLogHistoryLines();
+	clearLogHistory();
 	
-	std::vector<char> vec;
-	ui->widget_log->view()->retrieveLastText(&vec, 100);
-	if (!vec.empty()) {
-		std::string line;
-		size_t n = vec.size();
-		size_t i = n;
-		while (i > 0) {
-			i--;
-			if (i + 1 < n && vec[i] == '\n') {
-				i++;
-				line.assign(&vec[i], size_t(n - i));
+//	std::vector<char> vec;
+//	ui->widget_log->view()->retrieveLastText(&vec, 100);
+//	if (!vec.empty()) {
+//		std::string line;
+//		size_t n = vec.size();
+//		size_t i = n;
+//		while (i > 0) {
+//			i--;
+//			if (i + 1 < n && vec[i] == '\n') {
+//				i++;
+//				line.assign(&vec[i], size_t(n - i));
+//				break;
+//			}
+//		}
+	if (lines.empty()) return;
+
+	{
+		bool f = false;
+		for (std::string const &line : lines) {
+			if (strstr(line.c_str(), remote_host_identification_has_changed)) {
+				f = true;
 				break;
 			}
 		}
+		if (f) {
+			QString text;
+			{
+				for (std::string const &line : lines) {
+					QString qline = QString::fromStdString(line);
+					text += qline + '\n';
+					qDebug() << qline;
+				}
+			}
+			TextEditDialog dlg(this);
+			dlg.setWindowTitle(remote_host_identification_has_changed);
+			dlg.setText(text, true);
+			dlg.exec();
+			return;
+		}
+	}
+
+	{
+		std::string line = lines.back();
 		if (!line.empty()) {
 			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password){
 				LineEditDialog dlg(parent, title, prompt, val, password);
 				if (dlg.exec() == QDialog::Accepted) {
 					std::string ret = dlg.text().toStdString();
 					std::string str = ret + '\n';
-					getPtyProcess()->writeInput(str.c_str(), str.size());
+					getPtyProcess()->writeInput(str.c_str(), (int)str.size());
 					return ret;
 				}
 				abortPtyProcess();
@@ -5914,7 +5998,7 @@ void MainWindow::onLogIdle()
 				execAreYouSureYouWantToContinueConnectingDialog();
 				return;
 			}
-			
+
 			if (line == enter_passphrase) {
 				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
 				return;
@@ -5923,7 +6007,7 @@ void MainWindow::onLogIdle()
 			if (StartsWith(enter_passphrase_for_key)) {
 				std::string keyfile;
 				{
-					int i = strlen(enter_passphrase_for_key);
+					size_t i = strlen(enter_passphrase_for_key);
 					char const *p = line.c_str() + i;
 					char const *q = strrchr(p, ':');
 					if (q && p + 2 < q && q[-1] == '\'') {
