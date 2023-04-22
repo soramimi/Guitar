@@ -152,6 +152,7 @@ SOURCES += \
 	src/DirectoryLineEdit.cpp \
 	src/DoYouWantToInitDialog.cpp \
 	src/EditGitIgnoreDialog.cpp \
+	src/EditProfileDialog.cpp \
 	src/EditRemoteDialog.cpp \
 	src/EditTagsDialog.cpp \
 	src/ExperimentDialog.cpp \
@@ -290,6 +291,7 @@ HEADERS  += \
 	src/DirectoryLineEdit.h \
 	src/DoYouWantToInitDialog.h \
 	src/EditGitIgnoreDialog.h \
+	src/EditProfileDialog.h \
 	src/EditRemoteDialog.h \
 	src/EditTagsDialog.h \
 	src/ExperimentDialog.h \
@@ -425,6 +427,7 @@ FORMS    += \
 	src/DeleteTagsDialog.ui \
 	src/DoYouWantToInitDialog.ui \
 	src/EditGitIgnoreDialog.ui \
+	src/EditProfileDialog.ui \
 	src/EditRemoteDialog.ui \
 	src/EditTagsDialog.ui \
 	src/ExperimentDialog.ui \

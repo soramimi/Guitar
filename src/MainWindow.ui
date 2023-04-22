@@ -416,6 +416,7 @@
             <property name="font">
              <font>
               <pointsize>14</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1169,9 +1170,15 @@
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
    </widget>
+   <widget class="QMenu" name="menuProfiles">
+    <property name="title">
+     <string>Profiles</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menuProfiles"/>
    <addaction name="menu_Repository"/>
    <addaction name="menuRe_mote"/>
    <addaction name="menuDestructive_3"/>
@@ -1750,6 +1757,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionEditProfiles">
+   <property name="text">
+    <string>Edit...</string>
    </property>
   </action>
  </widget>

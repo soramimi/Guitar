@@ -386,6 +386,9 @@ private:
 	void appendLogHistory(const char *ptr, int len);
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
+	void loadProfiles();
+	void switchProfile(int index);
+	void switchProfile(const Git::User &user);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -566,6 +569,8 @@ private slots:
 
 	void on_toolButton_addrepo_clicked();
 
+	void editProfile();
+	void onSwitchProfile();
 protected slots:
 	void onLogIdle();
 signals:

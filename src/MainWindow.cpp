@@ -100,6 +100,14 @@ struct EventItem {
 	}
 };
 
+struct AccountProfile {
+	QString text_;
+	AccountProfile(QString const &text)
+		: text_(text)
+	{
+	}
+};
+
 struct MainWindow::Private {
 	
 	QIcon repository_icon;
@@ -175,6 +183,11 @@ struct MainWindow::Private {
 	QList<int> splitter_h_sizes;
 
 	std::vector<char> log_history_bytes;
+
+	QAction *action_edit_profile = nullptr;
+
+	std::vector<AccountProfile> account_profiles;
+	int current_account_profiles = -1;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -309,6 +322,8 @@ MainWindow::MainWindow(QWidget *parent)
 	}
 	
 	ui->action_sidebar->setChecked(true);
+
+	loadProfiles();
 	
 	startTimers();
 }
@@ -1058,6 +1073,8 @@ void MainWindow::execSetUserDialog(const Git::User &global_user, const Git::User
 			g->setUser(user, false);
 		}
 		updateWindowTitle(g);
+
+		switchProfile(user);
 	}
 }
 
@@ -3641,6 +3658,11 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 	updateRemoteInfo();
 	
 	updateWindowTitle(g);
+	{
+		Git::User user = g->getUser(Git::Source::Default);
+		switchProfile(user);
+
+	}
 	
 	setHeadId(getObjCache(frame)->revParse("HEAD"));
 	
@@ -5343,6 +5365,8 @@ void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 
 #include "unix/UnixPtyProcess.h"
 
+#include "EditProfileDialog.h"
+
 void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 {
 	updatePocessLog(false);
@@ -5915,45 +5939,45 @@ void MainWindow::onLogIdle()
 	std::vector<std::string> lines = getLogHistoryLines();
 	clearLogHistory();
 	
-//	std::vector<char> vec;
-//	ui->widget_log->view()->retrieveLastText(&vec, 100);
-//	if (!vec.empty()) {
-//		std::string line;
-//		size_t n = vec.size();
-//		size_t i = n;
-//		while (i > 0) {
-//			i--;
-//			if (i + 1 < n && vec[i] == '\n') {
-//				i++;
-//				line.assign(&vec[i], size_t(n - i));
-//				break;
-//			}
-//		}
+	//	std::vector<char> vec;
+	//	ui->widget_log->view()->retrieveLastText(&vec, 100);
+	//	if (!vec.empty()) {
+	//		std::string line;
+	//		size_t n = vec.size();
+	//		size_t i = n;
+	//		while (i > 0) {
+	//			i--;
+	//			if (i + 1 < n && vec[i] == '\n') {
+	//				i++;
+	//				line.assign(&vec[i], size_t(n - i));
+	//				break;
+	//			}
+	//		}
 	if (lines.empty()) return;
 
-	{
-		bool f = false;
+	auto Contains = [&](char const *kw){
 		for (std::string const &line : lines) {
-			if (strstr(line.c_str(), remote_host_identification_has_changed)) {
-				f = true;
-				break;
+			if (strstr(line.c_str(), kw)) {
+				return true;
 			}
 		}
-		if (f) {
-			QString text;
-			{
-				for (std::string const &line : lines) {
-					QString qline = QString::fromStdString(line);
-					text += qline + '\n';
-					qDebug() << qline;
-				}
+		return false;
+	};
+
+	if (Contains(remote_host_identification_has_changed)) {
+		QString text;
+		{
+			for (std::string const &line : lines) {
+				QString qline = QString::fromStdString(line);
+				text += qline + '\n';
+				qDebug() << qline;
 			}
-			TextEditDialog dlg(this);
-			dlg.setWindowTitle(remote_host_identification_has_changed);
-			dlg.setText(text, true);
-			dlg.exec();
-			return;
 		}
+		TextEditDialog dlg(this);
+		dlg.setWindowTitle(remote_host_identification_has_changed);
+		dlg.setText(text, true);
+		dlg.exec();
+		return;
 	}
 
 	{
@@ -6347,6 +6371,90 @@ void MainWindow::on_action_submodule_update_triggered()
 		g->submodule_update(data, getPtyProcess());
 		refresh();
 	}
+}
+
+void MainWindow::editProfile()
+{
+	EditProfileDialog dlg(this);
+	dlg.exec();
+}
+
+void MainWindow::switchProfile(int index)
+{
+	const int n = ui->menuProfiles->children().size();
+	for (int i = 0; i < n; i++) {
+		QObject *o = ui->menuProfiles->children().at(i);
+		if (QAction *a = qobject_cast<QAction *>(o)) {
+			if (a->data().toInt() == index) {
+				m->current_account_profiles = index;
+				a->setChecked(true);
+			} else {
+				a->setChecked(false);
+			}
+		}
+	}
+}
+
+void MainWindow::switchProfile(Git::User const &user)
+{
+	QString email = user.email.toLower();
+	int index = -1;
+	for (int i = 0; i < (int)m->account_profiles.size(); i++) {
+		AccountProfile const &profile = m->account_profiles[i];
+		QString text = profile.text_.toLower();
+		if (text.indexOf(email) >= 0) {
+			index = i;
+			break;
+		}
+	}
+	switchProfile(index);
+}
+
+void MainWindow::onSwitchProfile()
+{
+	QAction *a_current = nullptr;
+	QAction *a_switch = nullptr;
+	const int n = ui->menuProfiles->children().size();
+	for (int i = 0; i < n; i++) {
+		QObject *o = ui->menuProfiles->children().at(i);
+		if (QAction *a = qobject_cast<QAction *>(o)) {
+			if (a->isChecked()) {
+				if (m->current_account_profiles >= 0 && a->data().toInt() == m->current_account_profiles) {
+					a_current = a;
+				} else {
+					a_switch = a;
+				}
+				a->setChecked(false);
+			}
+		}
+	}
+	if (a_switch) {
+		switchProfile(a_switch->data().toInt());
+	}
+}
+
+void MainWindow::loadProfiles()
+{
+	ui->menuProfiles->clear();
+	m->action_edit_profile = ui->menuProfiles->addAction(tr("&Edit..."));
+	connect(m->action_edit_profile, &QAction::triggered, this, &MainWindow::editProfile);
+	ui->menuProfiles->addSeparator();
+
+	m->account_profiles.clear();
+	m->account_profiles.emplace_back("Foo <foo@example.com>");
+	m->account_profiles.emplace_back("Bar <bar@example.com>");
+	m->account_profiles.emplace_back("soramimi <fi7s-fct@asahi-net.or.jp>");
+
+	QAction *a;
+	for (int i = 0; i < m->account_profiles.size(); i++) {
+		AccountProfile const &t = m->account_profiles[i];
+		a = ui->menuProfiles->addAction(t.text_);
+		a->setData(QVariant(i));
+		a->setCheckable(true);
+		a->setChecked(i == m->current_account_profiles);
+		connect(a, &QAction::triggered, this, &MainWindow::onSwitchProfile);
+	}
+
 }
 
 /**
