@@ -472,7 +472,7 @@ public:
 	void write(char const *ptr, int len, bool by_keyboard);
 	void write(std::string const &text);
 	void write(QKeyEvent *e);
-	void setTextCodec(QTextCodec *codec);
+    void setTextCodec(QTextCodec *codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
 	void setModifierKeys(Qt::KeyboardModifiers keymod);
