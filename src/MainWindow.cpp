@@ -2880,10 +2880,7 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 
 	QString text = data.path; // テキスト
 	if (issubmodule) {
-		QString msg = data.submod_commit.message;
-		msg = msg.replace('\r', '\n'); // TODO: いいかんじにする
-		msg = msg.replace("\n\n", "\n");
-		msg = msg.replace('\n', ' ');
+		QString msg = misc::collapseWhitespace(data.submod_commit.message);
 		text += QString(" <%0> [%1] %2")
 				.arg(data.submod.id.mid(0, 7))
 				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))

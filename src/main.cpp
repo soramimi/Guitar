@@ -72,12 +72,6 @@ void onSigPipe(int)
 
 int main(int argc, char *argv[])
 {
-#ifdef Q_OS_WIN
-	setEnvironmentVariable("UNICODEMAP_JP", "cp932");
-#else
-	setenv("UNICODEMAP_JP", "cp932", 1);
-#endif
-
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
 
 	ApplicationGlobal g;
@@ -116,14 +110,16 @@ int main(int argc, char *argv[])
 		global->theme_id = s.value("Theme").toString();
 		if (global->theme_id.compare("dark", Qt::CaseInsensitive) == 0) {
 			global->theme = createDarkTheme();
+			a.setPalette(a.style()->standardPalette());
 		} else {
 			global->theme = createStandardTheme();
+			a.setStyle(global->theme->newStyle());
+#ifndef Q_OS_WIN
+			a.setPalette(a.style()->standardPalette());
+#endif
 		}
 		s.endGroup();
 	}
-
-	a.setStyle(global->theme->newStyle());
-	a.setPalette(a.style()->standardPalette());
 
 	if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
 		global->start_with_shift_key = true;

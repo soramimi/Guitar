@@ -19,6 +19,17 @@ QString misc::getApplicationDir()
 	return path;
 }
 
+/**
+ * @brief QByteArrayの文字列を行に分割する。
+ *
+ * 与えられたQByteArrayの文字列を行に分割し、QStringListとして返します。
+ * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
+ * また、与えられた変換関数を使用して、charの配列をQStringに変換します。
+ *
+ * @param ba 分割する対象のQByteArray。
+ * @param tos 文字列を変換する関数。charの配列とその長さを引数に取り、QStringを返す関数。
+ * @return 分割された行のリスト。
+ */
 QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos)
 {
 	QStringList list;
@@ -50,6 +61,15 @@ QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char co
 	return list;
 }
 
+/**
+ * @brief 文字列を行に分割する。
+ *
+ * 与えられた文字列を行に分割し、QStringListとして返します。
+ * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
+ *
+ * @param text 分割する対象の文字列。
+ * @return 分割された行のリスト。
+ */
 QStringList misc::splitLines(QString const &text)
 {
 	QStringList list;
@@ -81,6 +101,17 @@ QStringList misc::splitLines(QString const &text)
 	return list;
 }
 
+/**
+ * @brief 文字列を行に分割する。
+ *
+ * 与えられた文字列を行に分割し、std::vector<std::string>として返します。
+ * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
+ *
+ * @param begin 分割する対象の文字列の先頭ポインタ。
+ * @param end 分割する対象の文字列の終端ポインタ。
+ * @param[out] out 分割された行を格納するstd::vectorへのポインタ。
+ * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse。
+ */
 void misc::splitLines(char const *begin, char const *end, std::vector<std::string> *out, bool keep_newline)
 {
 	char const *ptr = begin;
@@ -119,7 +150,15 @@ void misc::splitLines(std::string const &text, std::vector<std::string> *out, bo
 	splitLines(begin, end, out, need_crlf);
 }
 
-QStringList misc::splitWords(QString const &text)
+/**
+ * @brief 文字列を単語に分割する。
+ *
+ * 与えられた文字列を単語に分割し、QStringListとして返します。分割は、空白文字を
+ * 区切りとして行われます。
+ *
+ * @param text 分割する対象の文字列。
+ * @return 分割された単語のリスト。
+ */QStringList misc::splitWords(QString const &text)
 {
 	QStringList list;
 	ushort const *begin = text.utf16();
@@ -246,6 +285,20 @@ void misc::setFixedSize(QWidget *w)
 	w->setFixedSize(w->size());
 }
 
+/**
+ * @brief 矩形のフレームを描画する。
+ *
+ * 指定された位置とサイズの矩形のフレームを描画します。フレームの上辺と左辺は、
+ * color_topleftで指定された色で描画され、右辺と下辺はcolor_bottomrightで指定された色で描画されます。
+ *
+ * @param pr フレームを描画する対象のQPainterオブジェクトへのポインタ。
+ * @param x 矩形の左上隅のX座標。
+ * @param y 矩形の左上隅のY座標。
+ * @param w 矩形の幅。
+ * @param h 矩形の高さ。
+ * @param color_topleft フレームの上辺と左辺の色。
+ * @param color_bottomright フレームの右辺と下辺の色。
+ */
 void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright)
 {
 	if (w < 3 || h < 3) {
@@ -262,6 +315,15 @@ void misc::drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topl
 	}
 }
 
+/**
+ * @brief メモリダンプを16進数で表示する。
+ *
+ * 与えられたメモリ領域を16進数でダンプし、表示します。ダンプは、
+ * アドレス、16進数データ、ASCII文字列の3つの列で構成されます。
+ *
+ * @param ptr ダンプするメモリ領域の先頭ポインタ。
+ * @param len ダンプするメモリ領域の長さ。
+ */
 void misc::dump(uint8_t const *ptr, size_t len)
 {
 	if (ptr && len > 0) {
@@ -346,6 +408,15 @@ bool misc::isImage(QString const &mimetype)
 #endif
 }
 
+/**
+ * @brief ブランチ名を短縮形に変換する。
+ *
+ * 入力されたブランチ名を短縮形に変換します。ブランチ名の各パス要素の先頭文字を抽出し、
+ * 最後のパス要素を除いて短縮形にします。
+ *
+ * @param name 短縮形に変換する対象のブランチ名。
+ * @return 短縮されたブランチ名。
+ */
 QString misc::abbrevBranchName(QString const &name)
 {
 	QStringList sl = name.split('/');
@@ -400,6 +471,19 @@ bool misc::isExecutable(QString const &cmd)
 	return info.isExecutable();
 }
 
+/**
+ * @brief リモートURLの形式を補完または変換する。
+ *
+ * 入力されたリモートURLの形式を補完または変換します。
+ * 以下の3つのパターンが対象です。
+ * 1. "https://github.com/" で始まるURLを "git@github.com:" 形式に変換
+ * 2. "git@github.com:" で始まるURLを "https://github.com/" 形式に変換
+ * 3. "github" で始まるURLを "https://github.com/" 形式に補完
+ *
+ * @param url 変換または補完対象のリモートURL。
+ * @param toggle 変換オプション。trueの場合、変換を実行。falseの場合、補完のみ実行。
+ * @return 変換または補完されたリモートURL。
+ */
 QString misc::complementRemoteURL(QString url, bool toggle)
 {
 	if (toggle && url.startsWith("https://github.com/")) {
@@ -418,3 +502,38 @@ QString misc::complementRemoteURL(QString url, bool toggle)
 	}
 	return url;
 }
+
+/**
+ * @brief 文字列内の連続する空白文字を1つのスペースにまとめる。
+ *
+ * 入力された文字列内の連続する空白文字を1つのスペースにまとめ、結果の文字列を返します。
+ *
+ * @param source 連続する空白文字をまとめる対象のQStringオブジェクト。
+ * @return 連続する空白文字が1つのスペースにまとめられたQStringオブジェクト。
+ */
+QString misc::collapseWhitespace(const QString &source)
+{
+	QChar *p = (QChar *)alloca(sizeof(QChar) * (source.size() + 1));
+	QChar const *r = source.unicode();
+	QChar *w = p;
+	bool spc = false;
+	while (1) {
+		QChar c = *r;
+		if (c > ' ') {
+			if (spc) {
+				*w++ = ' ';
+				spc = false;
+			}
+			*w++ = c;
+		} else {
+			if (c == 0) {
+				*w = QChar::Null;
+				break;
+			}
+			spc = true;
+		}
+		r++;
+	}
+	return QString(p);
+}
+
