@@ -184,7 +184,7 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 {
 	ui->label_avatar->setPixmap(QPixmap());
 	QString email = ui->lineEdit_user_email->text();
-	if (email.indexOf('@') > 0) {
+	if (misc::isValidMailAddress(email)) {
 		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);

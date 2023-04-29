@@ -65,6 +65,7 @@ public:
 	static QString complementRemoteURL(QString url, bool toggle);
 
 	static QString collapseWhitespace(QString const &source);
+	static bool isValidMailAddress(const QString &email);
 };
 
 class OverrideWaitCursor_ {

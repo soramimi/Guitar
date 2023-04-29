@@ -16,7 +16,7 @@ class RepositoryWrapperFrame : public QFrame {
 	Q_OBJECT
 	friend class MainWindow;
 private:
-	Git::CommitItemList logs;
+	Git::CommitItemList commit_log;
 
 	MainWindow *mw_ = nullptr;
 	LogTableWidget *logtablewidget_ = nullptr;

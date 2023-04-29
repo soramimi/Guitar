@@ -226,7 +226,7 @@ private:
 	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open);
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu = false);
-	void execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame);
+	void execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, const QString &reponame);
 	void setGitCommand(const QString &path, bool save);
 	void setGpgCommand(const QString &path, bool save);
 	void setSshCommand(const QString &path, bool save);
@@ -336,9 +336,10 @@ private:
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();
 	void abortPtyProcess();
-	Git::CommitItemList *getLogsPtr(RepositoryWrapperFrame *frame);
-	void setLogs(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
-	void clearLogs(RepositoryWrapperFrame *frame);
+	Git::CommitItemList *getCommitLogPtr(RepositoryWrapperFrame *frame);
+	const Git::CommitItemList &getCommitLog(RepositoryWrapperFrame const *frame) const;
+	void setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
+	void clearCommitLog(RepositoryWrapperFrame *frame);
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
 	PtyCondition getPtyCondition();
@@ -382,9 +383,11 @@ private:
 	void appendLogHistory(const char *ptr, int len);
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
-	void loadProfiles();
+	void updateProfiles();
 	void switchProfile(int index);
+	void switchProfile(QString const &email);
 	void switchProfile(const Git::User &user);
+	void loadProfiles();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -453,7 +456,6 @@ public:
 	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
-	const Git::CommitItemList &getLogs(RepositoryWrapperFrame const *frame) const;
 	const QList<BranchLabel> *label(const RepositoryWrapperFrame *frame, int row) const;
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
@@ -477,7 +479,6 @@ private slots:
 	void on_action_about_triggered();
 	void on_action_add_repository_triggered();
 	void on_action_clean_df_triggered();
-//	void on_action_clone_triggered();
 	void on_action_commit_triggered();
 	void on_action_create_a_repository_triggered();
 	void on_action_create_desktop_launcher_file_triggered();
@@ -499,7 +500,6 @@ private slots:
 	void on_action_find_triggered();
 	void on_action_offline_triggered();
 	void on_action_online_triggered();
-//	void on_action_open_existing_working_copy_triggered();
 	void on_action_pull_triggered();
 	void on_action_push_all_tags_triggered();
 	void on_action_push_triggered();
@@ -514,6 +514,7 @@ private slots:
 	void on_action_reset_HEAD_1_triggered();
 	void on_action_reset_hard_triggered();
 	void on_action_set_config_user_triggered();
+	void on_action_configure_user_triggered();
 	void on_action_set_gpg_signing_triggered();
 	void on_action_show_labels_triggered();
 	void on_action_show_graph_triggered();
@@ -543,7 +544,6 @@ private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
-//	void on_toolButton_clone_clicked();
 	void on_toolButton_commit_clicked();
 	void on_toolButton_erase_filter_clicked();
 	void on_toolButton_explorer_clicked();
@@ -567,12 +567,13 @@ private slots:
 
 	void editProfile();
 	void onSwitchProfile();
+	void detectProfile();
+
 protected slots:
 	void onLogIdle();
 signals:
 	void signalWriteLog(QByteArray ba, bool receive);
 	void remoteInfoChanged();
-//	void signalSetRemoteChanged(bool f);
 	void updateButton();
 };
 

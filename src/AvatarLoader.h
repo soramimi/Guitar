@@ -32,6 +32,7 @@ public:
 	AvatarLoader();
 	~AvatarLoader();
 	void requestInterruption();
+	QImage fetchImage(const std::string &email, bool request) const;
 	QIcon fetch(std::string const &email, bool request) const;
 	void stop();
 	void start(MainWindow *mainwindow);

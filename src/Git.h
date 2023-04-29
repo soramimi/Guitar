@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QMutex>
 #include <memory>
+#include "common/misc.h"
 
 #define SINGLE_THREAD 0
 
@@ -456,6 +457,10 @@ public:
 	struct User {
 		QString name;
 		QString email;
+		operator bool () const
+		{
+			return misc::isValidMailAddress(email);
+		}
 	};
 	enum class Source {
 		Default,

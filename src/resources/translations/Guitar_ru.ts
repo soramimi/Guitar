@@ -2800,45 +2800,45 @@
     </message>
 </context>
 <context>
-    <name>SetUserDialog</name>
+    <name>ConfigUserDialog</name>
     <message>
-        <location filename="../../SetUserDialog.ui" line="14"/>
+        <location filename="../../ConfigUserDialog.ui" line="14"/>
         <source>Set User</source>
         <translation>Выбрать пользователя</translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="20"/>
+        <location filename="../../ConfigUserDialog.ui" line="20"/>
         <source>Global</source>
         <translation>Глобально</translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="27"/>
-        <location filename="../../SetUserDialog.cpp" line="31"/>
+        <location filename="../../ConfigUserDialog.ui" line="27"/>
+        <location filename="../../ConfigUserDialog.cpp" line="31"/>
         <source>Repository</source>
         <translation>Репозиторий</translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="42"/>
+        <location filename="../../ConfigUserDialog.ui" line="42"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="52"/>
+        <location filename="../../ConfigUserDialog.ui" line="52"/>
         <source>Mail</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="66"/>
+        <location filename="../../ConfigUserDialog.ui" line="66"/>
         <source>Get icon from Gravatar</source>
         <translation>Получить аватар с Gravatar</translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="122"/>
+        <location filename="../../ConfigUserDialog.ui" line="122"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../SetUserDialog.ui" line="132"/>
+        <location filename="../../ConfigUserDialog.ui" line="132"/>
         <source>Cancel</source>
         <translation>Отмена</translation>
     </message>

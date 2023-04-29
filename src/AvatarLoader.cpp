@@ -14,7 +14,7 @@
 
 namespace {
 const int MAX_CACHE_COUNT = 1000;
-const int ICON_SIZE = 128;
+const int ICON_SIZE = 256;
 }
 
 using WebClientPtr = std::shared_ptr<WebClient>;
@@ -185,7 +185,7 @@ void AvatarLoader::stop()
 	}
 }
 
-QIcon AvatarLoader::fetch(std::string const &email, bool request) const
+QImage AvatarLoader::fetchImage(std::string const &email, bool request) const
 {
 	std::lock_guard lock(m->mutex);
 	bool found = false;
@@ -196,7 +196,7 @@ QIcon AvatarLoader::fetch(std::string const &email, bool request) const
 				RequestItem item = m->requests[i];
 				m->requests.erase(m->requests.begin() + i);
 				m->requests.insert(m->requests.begin(), item);
-				return QIcon(QPixmap::fromImage(item.image));
+				return item.image;
 			}
 		}
 	}
@@ -207,7 +207,12 @@ QIcon AvatarLoader::fetch(std::string const &email, bool request) const
 		m->requests.push_back(item);
 		m->condition.notify_all();
 	}
-	return QIcon();
+	return {};
+}
+
+QIcon AvatarLoader::fetch(std::string const &email, bool request) const
+{
+	return QIcon(QPixmap::fromImage(fetchImage(email, request)));
 }
 
 void AvatarLoader::addListener(QObject *listener)

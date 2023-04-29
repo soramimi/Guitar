@@ -537,3 +537,14 @@ QString misc::collapseWhitespace(const QString &source)
 	return QString(p);
 }
 
+/**
+ * @brief 文字列が有効なメールアドレスか判定する
+ * @param email
+ * @return
+ */
+bool misc::isValidMailAddress(const QString &email)
+{
+	int i = email.indexOf('@');
+	return i > 0 && i < email.size() - 1;
+}
+

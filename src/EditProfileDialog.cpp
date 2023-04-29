@@ -12,3 +12,20 @@ EditProfileDialog::~EditProfileDialog()
 {
 	delete ui;
 }
+
+/**
+ * @brief プロファイルを追加する
+ */
+void EditProfileDialog::on_pushButton_add_clicked()
+{
+
+}
+
+/**
+ * @brief プロファイルを削除する
+ */
+void EditProfileDialog::on_pushButton_delete_clicked()
+{
+
+}
+
