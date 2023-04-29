@@ -149,9 +149,8 @@ struct MainWindow::Private {
 	QString repository_filter_text;
 	bool uncommited_changes = false;
 	
-	bool remote_changed = false;
+//	bool remote_changed = false;
 	
-	ServerType server_type = ServerType::Standard;
 	GitHubRepositoryInfo github;
 	
 	QString head_id;
@@ -289,10 +288,10 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 	
-	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
-		setRemoteChanged(f);
-		updateButton();
-	});
+//	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
+//		setRemoteChanged(f);
+//		updateButton();
+//	});
 	
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 	
@@ -1229,7 +1228,6 @@ void MainWindow::internalClearRepositoryInfo()
 {
 	setHeadId(QString());
 	setCurrentBranch(Git::Branch());
-	setServerType(ServerType::Standard);
 	m->github = GitHubRepositoryInfo();
 }
 
@@ -1924,11 +1922,6 @@ void MainWindow::deleteTags(RepositoryWrapperFrame *frame, const Git::CommitItem
 bool MainWindow::isAvatarEnabled() const
 {
 	return appsettings()->get_committer_icon;
-}
-
-bool MainWindow::isGitHub() const
-{
-	return m->server_type == ServerType::GitHub;
 }
 
 QStringList MainWindow::remotes() const
@@ -2769,21 +2762,6 @@ std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap(RepositoryWrapperFrame
 	return &frame->diff_cache;
 }
 
-bool MainWindow::getRemoteChanged() const
-{
-	return m->remote_changed;
-}
-
-void MainWindow::setRemoteChanged(bool remote_changed)
-{
-	m->remote_changed = remote_changed;
-}
-
-void MainWindow::setServerType(const ServerType &server_type)
-{
-	m->server_type = server_type;
-}
-
 GitHubRepositoryInfo *MainWindow::ptrGitHub()
 {
 	return &m->github;
@@ -2934,6 +2912,11 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 	}
 }
 
+/**
+ * @brief コミットログを取得
+ * @param g
+ * @return
+ */
 Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 {
 	Git::CommitItemList list = g->log(limitLogCount());
@@ -3005,6 +2988,13 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	}
 }
 
+/**
+ * @brief コミット情報のテキストを作成
+ * @param frame
+ * @param row
+ * @param label_list
+ * @return
+ */
 QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list)
 {
 	QString message_ex;
@@ -3049,20 +3039,39 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 	return message_ex;
 }
 
+/**
+ * @brief リポジトリをブックマークから消去
+ * @param index 消去するリポジトリのインデックス
+ * @param ask trueならユーザーに問い合わせる
+ */
 void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 {
-	if (ask) {
+	if (ask) { // ユーザーに問い合わせ
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
 	auto *repos = getReposPtr();
 	if (index >= 0 && index < repos->size()) {
-		repos->erase(repos->begin() + index);
-		saveRepositoryBookmarks();
-		updateRepositoriesList();
+		repos->erase(repos->begin() + index); // 消す
+		saveRepositoryBookmarks(); // 保存
+		updateRepositoriesList(); // リスト更新
 	}
 }
 
+/**
+ * @brief リポジトリをブックマークから消去
+ * @param ask trueならユーザーに問い合わせる
+ */
+void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
+{
+	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
+	removeRepositoryFromBookmark(i, ask);
+}
+
+/**
+ * @brief コマンドプロンプトを開く
+ * @param repo
+ */
 void MainWindow::openTerminal(const RepositoryData *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
@@ -3084,6 +3093,10 @@ void MainWindow::openTerminal(const RepositoryData *repo)
 	}, repo);
 }
 
+/**
+ * @brief ファイルマネージャを開く
+ * @param repo
+ */
 void MainWindow::openExplorer(const RepositoryData *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
@@ -3106,6 +3119,12 @@ void MainWindow::openExplorer(const RepositoryData *repo)
 	}, repo);
 }
 
+/**
+ * @brief コマンドを実行していいか、ユーザーに尋ねる
+ * @param title ウィンドウタイトル
+ * @param command コマンド名
+ * @return
+ */
 bool MainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &command)
 {
 	QString message = tr("Are you sure you want to run the following command?");
@@ -3114,6 +3133,12 @@ bool MainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
+/**
+ * @brief テキストファイルを編集する
+ * @param path
+ * @param title
+ * @return
+ */
 bool MainWindow::editFile(const QString &path, const QString &title)
 {
 	return TextEditDialog::editFile(this, path, title);
@@ -3530,7 +3555,6 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 
 void MainWindow::detectGitServerType(GitPtr g)
 {
-	setServerType(ServerType::Standard);
 	*ptrGitHub() = GitHubRepositoryInfo();
 	
 	QString push_url;
@@ -3570,7 +3594,6 @@ void MainWindow::detectGitServerType(GitPtr g)
 			p->owner_account_name = user;
 			p->repository_name = repo;
 		}
-		setServerType(ServerType::GitHub);
 	}
 }
 
@@ -3599,8 +3622,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		select_row = frame->logtablewidget()->currentRow();
 	}
 	
-	if (isValidWorkingCopy(g), 1) { ///
-		
+	{
 		bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
 		setForceFetch(false);
 		if (do_fetch) {
@@ -3649,9 +3671,6 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
-	} else {
-		clearLog(frame);
-		clearRepositoryInfo();
 	}
 	
 	if (!g) return;
@@ -3758,23 +3777,19 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 	updateUI();
 }
 
-void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
-{
-	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
-	removeRepositoryFromBookmark(i, ask);
-}
-
+/**
+ * @brief ネットワークを使用するコマンドの可否をUIに反映する
+ * @param enabled
+ */
 void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 {
-	ui->action_clone->setEnabled(enabled);
+	ui->action_clone->setEnabled(enabled); // クローンコマンドの有効性を設定
 	
-//	ui->toolButton_clone->setEnabled(enabled);
-	
-	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
-		enabled = false;
+	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) { // 現在のディレクトリが有効なgitリポジトリなら
+		enabled = false; // その他のコマンドは無効
 	}
 	
-	bool opened = !currentRepository().name.isEmpty();
+	bool opened = !currentRepository().name.isEmpty(); // 開いてる？
 	ui->action_fetch->setEnabled(enabled || opened);
 	ui->toolButton_fetch->setEnabled(enabled || opened);
 	
@@ -3798,8 +3813,6 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 void MainWindow::updateUI()
 {
 	setNetworkingCommandsEnabled(isOnlineMode());
-	
-	ui->toolButton_fetch->setDot(getRemoteChanged());
 	
 	Git::Branch b = currentBranch();
 	ui->toolButton_push->setNumber(b.ahead > 0 ? b.ahead : -1);

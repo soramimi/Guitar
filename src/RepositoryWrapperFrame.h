@@ -34,6 +34,8 @@ private:
 
 	MainWindow *mainwindow();
 	MainWindow const *mainwindow() const;
+protected:
+	void customEvent(QEvent *e);
 public:
 	explicit RepositoryWrapperFrame(QWidget *parent = nullptr);
 	Git::CommitItem const *commitItem(int row);
@@ -63,10 +65,6 @@ public:
 	void updateLogTableView();
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
-
-	// QObject interface
-protected:
-	void customEvent(QEvent *e);
 };
 
 struct RepositoryWrapperFrameP {

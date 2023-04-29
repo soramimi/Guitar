@@ -274,7 +274,6 @@ private:
 	void setCurrentRemoteName(const QString &name);
 	void deleteTags(RepositoryWrapperFrame *frame, const Git::CommitItem &commit);
 	bool isAvatarEnabled() const;
-	bool isGitHub() const;
 	QStringList remotes() const;
 	QList<Git::Branch> findBranch(RepositoryWrapperFrame *frame, const QString &id);
 	QString tempfileHeader() const;
@@ -359,9 +358,6 @@ private:
 	void setUncommitedChanges(bool uncommited_changes);
 	QList<Git::Diff> *diffResult();
 	std::map<QString, Git::Diff> *getDiffCacheMap(RepositoryWrapperFrame *frame);
-	bool getRemoteChanged() const;
-	void setRemoteChanged(bool remote_changed);
-	void setServerType(const ServerType &server_type);
 	GitHubRepositoryInfo *ptrGitHub();
 	std::map<int, QList<BranchLabel> > *getLabelMap(RepositoryWrapperFrame *frame);
 	const std::map<int, QList<BranchLabel> > *getLabelMap(const RepositoryWrapperFrame *frame) const;
@@ -576,7 +572,7 @@ protected slots:
 signals:
 	void signalWriteLog(QByteArray ba, bool receive);
 	void remoteInfoChanged();
-	void signalSetRemoteChanged(bool f);
+//	void signalSetRemoteChanged(bool f);
 	void updateButton();
 };
 
