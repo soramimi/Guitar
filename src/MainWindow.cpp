@@ -36,7 +36,7 @@
 #include "SelectCommandDialog.h"
 #include "SetGlobalUserDialog.h"
 #include "SetGpgSigningDialog.h"
-#include "SetUserDialog.h"
+#include "ConfigUserDialog.h"
 #include "SettingsDialog.h"
 #include "StatusLabel.h"
 #include "SubmoduleAddDialog.h"
@@ -100,14 +100,6 @@ struct EventItem {
 	}
 };
 
-struct AccountProfile {
-	QString text_;
-	AccountProfile(QString const &text)
-		: text_(text)
-	{
-	}
-};
-
 struct MainWindow::Private {
 	
 	QIcon repository_icon;
@@ -149,9 +141,8 @@ struct MainWindow::Private {
 	QString repository_filter_text;
 	bool uncommited_changes = false;
 	
-	bool remote_changed = false;
+//	bool remote_changed = false;
 	
-	ServerType server_type = ServerType::Standard;
 	GitHubRepositoryInfo github;
 	
 	QString head_id;
@@ -185,8 +176,8 @@ struct MainWindow::Private {
 	std::vector<char> log_history_bytes;
 
 	QAction *action_edit_profile = nullptr;
+	QAction *action_detect_profile = nullptr;
 
-	std::vector<AccountProfile> account_profiles;
 	int current_account_profiles = -1;
 };
 
@@ -289,10 +280,10 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 	
-	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
-		setRemoteChanged(f);
-		updateButton();
-	});
+//	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
+//		setRemoteChanged(f);
+//		updateButton();
+//	});
 	
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 	
@@ -323,7 +314,7 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	ui->action_sidebar->setChecked(true);
 
-	loadProfiles();
+	updateProfiles();
 	
 	startTimers();
 }
@@ -478,7 +469,7 @@ bool MainWindow::shown()
 	m->repos_panel_width = ui->stackedWidget_leftpanel->width();
 	ui->stackedWidget_leftpanel->setCurrentWidget(ui->page_repos);
 	ui->action_repositories_panel->setChecked(true);
-	
+
 	{
 		MySettings settings;
 		{
@@ -761,7 +752,7 @@ void MainWindow::clearLogHistory()
 {
 //	if (m->log_history_bytes.empty()) return;
 	m->log_history_bytes.clear();
-	qDebug() << "---";
+//	qDebug() << "---";
 }
 
 void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
@@ -1060,18 +1051,29 @@ void MainWindow::execRepositoryPropertyDialog(const RepositoryData &repo, bool o
 	}
 }
 
-void MainWindow::execSetUserDialog(const Git::User &global_user, const Git::User &repo_user, const QString &reponame)
+void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, const QString &reponame)
 {
-	SetUserDialog dlg(this, global_user, repo_user, reponame);
+	ConfigUserDialog dlg(this, global_user, local_user, reponame);
 	if (dlg.exec() == QDialog::Accepted) {
 		GitPtr g = git();
-		Git::User user = dlg.user();
-		if (dlg.isGlobalChecked()) {
-			g->setUser(user, true);
+		Git::User user;
+
+		// global
+		user = dlg.user(true);
+		if (user) {
+			if (user.email != global_user.email || user.name != global_user.name) {
+				g->setUser(user, true);
+			}
 		}
-		if (dlg.isRepositoryChecked()) {
-			g->setUser(user, false);
+
+		// local
+		user = dlg.user(false);
+		if (user) {
+			if (user.email != local_user.email || user.name != local_user.name) {
+				g->setUser(user, false);
+			}
 		}
+
 		updateWindowTitle(g);
 
 		switchProfile(user);
@@ -1229,7 +1231,6 @@ void MainWindow::internalClearRepositoryInfo()
 {
 	setHeadId(QString());
 	setCurrentBranch(Git::Branch());
-	setServerType(ServerType::Standard);
 	m->github = GitHubRepositoryInfo();
 }
 
@@ -1549,13 +1550,13 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 	QString previousMessage;
 	
 	if (amend) {
-		message = getLogs(frame)[0].message;
+		message = getCommitLog(frame)[0].message;
 	} else {
 		QString id = g->getCherryPicking();
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
 		} else {
-			for (Git::CommitItem const &item : getLogs(frame)) {
+			for (Git::CommitItem const &item : getCommitLog(frame)) {
 				if (!item.commit_id.isEmpty()) {
 					previousMessage = item.message;
 					break;
@@ -1926,11 +1927,6 @@ bool MainWindow::isAvatarEnabled() const
 	return appsettings()->get_committer_icon;
 }
 
-bool MainWindow::isGitHub() const
-{
-	return m->server_type == ServerType::GitHub;
-}
-
 QStringList MainWindow::remotes() const
 {
 	return m->remotes;
@@ -2271,7 +2267,7 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_n
 
 int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id)
 {
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	for (size_t i = 0; i < logs.size(); i++) {
 		Git::CommitItem const &item = logs[i];
 		if (item.commit_id == id) {
@@ -2322,11 +2318,6 @@ std::string MainWindow::httpAuthenticationPass() const
 	return m->http_pwd;
 }
 
-const Git::CommitItemList &MainWindow::getLogs(RepositoryWrapperFrame const *frame) const
-{
-	return frame->logs;
-}
-
 const QList<BranchLabel> *MainWindow::label(const RepositoryWrapperFrame *frame, int row) const
 {
 	auto it = getLabelMap(frame)->find(row);
@@ -2348,7 +2339,7 @@ const ApplicationSettings *MainWindow::appsettings() const
 
 const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, int index) const
 {
-	Git::CommitItemList const &logs = frame->logs;
+	Git::CommitItemList const &logs = frame->commit_log;
 	return (index >= 0 && index < (int)logs.size()) ? &logs[index] : nullptr;
 }
 
@@ -2358,8 +2349,8 @@ const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, i
  */
 void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
-	auto const &logs = getLogs(frame);
-	auto *logsp = getLogsPtr(frame);
+	auto const &logs = getCommitLog(frame);
+	auto *logsp = getCommitLogPtr(frame);
 	
 	const int LogCount = (int)logs.size();
 	if (LogCount > 0) {
@@ -2645,19 +2636,24 @@ void MainWindow::abortPtyProcess()
 	setInteractionCanceled(true);
 }
 
-Git::CommitItemList *MainWindow::getLogsPtr(RepositoryWrapperFrame *frame)
+Git::CommitItemList *MainWindow::getCommitLogPtr(RepositoryWrapperFrame *frame)
 {
-	return &frame->logs;
+	return &frame->commit_log;
 }
 
-void MainWindow::setLogs(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs)
+const Git::CommitItemList &MainWindow::getCommitLog(RepositoryWrapperFrame const *frame) const
 {
-	frame->logs = logs;
+	return frame->commit_log;
 }
 
-void MainWindow::clearLogs(RepositoryWrapperFrame *frame)
+void MainWindow::setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs)
 {
-	frame->logs.clear();
+	frame->commit_log = logs;
+}
+
+void MainWindow::clearCommitLog(RepositoryWrapperFrame *frame)
+{
+	frame->commit_log.clear();
 }
 
 PtyProcess *MainWindow::getPtyProcess()
@@ -2769,21 +2765,6 @@ std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap(RepositoryWrapperFrame
 	return &frame->diff_cache;
 }
 
-bool MainWindow::getRemoteChanged() const
-{
-	return m->remote_changed;
-}
-
-void MainWindow::setRemoteChanged(bool remote_changed)
-{
-	m->remote_changed = remote_changed;
-}
-
-void MainWindow::setServerType(const ServerType &server_type)
-{
-	m->server_type = server_type;
-}
-
 GitHubRepositoryInfo *MainWindow::ptrGitHub()
 {
 	return &m->github;
@@ -2880,10 +2861,11 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 
 	QString text = data.path; // テキスト
 	if (issubmodule) {
+		QString msg = misc::collapseWhitespace(data.submod_commit.message);
 		text += QString(" <%0> [%1] %2")
 				.arg(data.submod.id.mid(0, 7))
 				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
-				.arg(data.submod_commit.message)
+				.arg(msg)
 				;
 	}
 	
@@ -2933,6 +2915,11 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 	}
 }
 
+/**
+ * @brief コミットログを取得
+ * @param g
+ * @return
+ */
 Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 {
 	Git::CommitItemList list = g->log(limitLogCount());
@@ -3004,10 +2991,17 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	}
 }
 
+/**
+ * @brief コミット情報のテキストを作成
+ * @param frame
+ * @param row
+ * @param label_list
+ * @return
+ */
 QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list)
 {
 	QString message_ex;
-	Git::CommitItem const *commit = &getLogs(frame)[row];
+	Git::CommitItem const *commit = &getCommitLog(frame)[row];
 	{ // branch
 		if (label_list) {
 			if (commit->commit_id == getHeadId()) {
@@ -3048,20 +3042,39 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 	return message_ex;
 }
 
+/**
+ * @brief リポジトリをブックマークから消去
+ * @param index 消去するリポジトリのインデックス
+ * @param ask trueならユーザーに問い合わせる
+ */
 void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 {
-	if (ask) {
+	if (ask) { // ユーザーに問い合わせ
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
 	auto *repos = getReposPtr();
 	if (index >= 0 && index < repos->size()) {
-		repos->erase(repos->begin() + index);
-		saveRepositoryBookmarks();
-		updateRepositoriesList();
+		repos->erase(repos->begin() + index); // 消す
+		saveRepositoryBookmarks(); // 保存
+		updateRepositoriesList(); // リスト更新
 	}
 }
 
+/**
+ * @brief リポジトリをブックマークから消去
+ * @param ask trueならユーザーに問い合わせる
+ */
+void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
+{
+	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
+	removeRepositoryFromBookmark(i, ask);
+}
+
+/**
+ * @brief コマンドプロンプトを開く
+ * @param repo
+ */
 void MainWindow::openTerminal(const RepositoryData *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
@@ -3083,6 +3096,10 @@ void MainWindow::openTerminal(const RepositoryData *repo)
 	}, repo);
 }
 
+/**
+ * @brief ファイルマネージャを開く
+ * @param repo
+ */
 void MainWindow::openExplorer(const RepositoryData *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
@@ -3105,6 +3122,12 @@ void MainWindow::openExplorer(const RepositoryData *repo)
 	}, repo);
 }
 
+/**
+ * @brief コマンドを実行していいか、ユーザーに尋ねる
+ * @param title ウィンドウタイトル
+ * @param command コマンド名
+ * @return
+ */
 bool MainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &command)
 {
 	QString message = tr("Are you sure you want to run the following command?");
@@ -3113,6 +3136,12 @@ bool MainWindow::askAreYouSureYouWantToRun(const QString &title, const QString &
 	return QMessageBox::warning(this, title, text, QMessageBox::Ok, QMessageBox::Cancel) == QMessageBox::Ok;
 }
 
+/**
+ * @brief テキストファイルを編集する
+ * @param path
+ * @param title
+ * @return
+ */
 bool MainWindow::editFile(const QString &path, const QString &title)
 {
 	return TextEditDialog::editFile(this, path, title);
@@ -3517,7 +3546,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem 
 
 void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 {
-	auto logs = getLogs(frame);
+	auto logs = getCommitLog(frame);
 	QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame), 0);
 	if (!item) return;
 	int index = item->data(IndexRole).toInt();
@@ -3529,7 +3558,6 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 
 void MainWindow::detectGitServerType(GitPtr g)
 {
-	setServerType(ServerType::Standard);
 	*ptrGitHub() = GitHubRepositoryInfo();
 	
 	QString push_url;
@@ -3569,13 +3597,12 @@ void MainWindow::detectGitServerType(GitPtr g)
 			p->owner_account_name = user;
 			p->repository_name = repo;
 		}
-		setServerType(ServerType::GitHub);
 	}
 }
 
 void MainWindow::clearLog(RepositoryWrapperFrame *frame)
 {
-	clearLogs(frame);
+	clearCommitLog(frame);
 	clearLabelMap(frame);
 	setUncommitedChanges(false);
 	frame->clearLogContents();
@@ -3598,8 +3625,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		select_row = frame->logtablewidget()->currentRow();
 	}
 	
-	if (isValidWorkingCopy(g), 1) { ///
-		
+	{
 		bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
 		setForceFetch(false);
 		if (do_fetch) {
@@ -3619,7 +3645,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		frame->logtablewidget()->setEnabled(false);
 		
 		// ログを取得
-		setLogs(frame, retrieveCommitLog(g));
+		setCommitLog(frame, retrieveCommitLog(g));
 		// ブランチを取得
 		queryBranches(frame, g);
 		// タグを取得
@@ -3648,9 +3674,6 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
-	} else {
-		clearLog(frame);
-		clearRepositoryInfo();
 	}
 	
 	if (!g) return;
@@ -3670,13 +3693,13 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		Git::CommitItem item;
 		item.parent_ids.push_back(currentBranch().id);
 		item.message = tr("Uncommited changes");
-		auto p = getLogsPtr(frame);
+		auto p = getCommitLogPtr(frame);
 		p->insert(p->begin(), item);
 	}
 	
 	frame->prepareLogTableWidget();
 	
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	const int count = (int)logs.size();
 	
 	frame->logtablewidget()->setRowCount(count);
@@ -3757,23 +3780,19 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 	updateUI();
 }
 
-void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
-{
-	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
-	removeRepositoryFromBookmark(i, ask);
-}
-
+/**
+ * @brief ネットワークを使用するコマンドの可否をUIに反映する
+ * @param enabled
+ */
 void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 {
-	ui->action_clone->setEnabled(enabled);
+	ui->action_clone->setEnabled(enabled); // クローンコマンドの有効性を設定
 	
-//	ui->toolButton_clone->setEnabled(enabled);
-	
-	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) {
-		enabled = false;
+	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) { // 現在のディレクトリが有効なgitリポジトリなら
+		enabled = false; // その他のコマンドは無効
 	}
 	
-	bool opened = !currentRepository().name.isEmpty();
+	bool opened = !currentRepository().name.isEmpty(); // 開いてる？
 	ui->action_fetch->setEnabled(enabled || opened);
 	ui->toolButton_fetch->setEnabled(enabled || opened);
 	
@@ -3796,22 +3815,23 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 
 void MainWindow::updateUI()
 {
+	GitPtr g = git();
+	bool isopened = isValidWorkingCopy(g);
+
 	setNetworkingCommandsEnabled(isOnlineMode());
-	
-	ui->toolButton_fetch->setDot(getRemoteChanged());
 	
 	Git::Branch b = currentBranch();
 	ui->toolButton_push->setNumber(b.ahead > 0 ? b.ahead : -1);
 	ui->toolButton_pull->setNumber(b.behind > 0 ? b.behind : -1);
-	
-	{
-		bool f = isRepositoryOpened();
-		ui->toolButton_status->setEnabled(f);
-		ui->toolButton_terminal->setEnabled(f);
-		ui->toolButton_explorer->setEnabled(f);
-		ui->action_repository_status->setEnabled(f);
-		ui->action_terminal->setEnabled(f);
-		ui->action_explorer->setEnabled(f);
+
+	ui->toolButton_status->setEnabled(isopened);
+	ui->toolButton_terminal->setEnabled(isopened);
+	ui->toolButton_explorer->setEnabled(isopened);
+	ui->action_repository_status->setEnabled(isopened);
+	ui->action_terminal->setEnabled(isopened);
+	ui->action_explorer->setEnabled(isopened);
+	if (m->action_detect_profile) {
+		m->action_detect_profile->setEnabled(isopened);
 	}
 }
 
@@ -3831,7 +3851,7 @@ void MainWindow::updateStatusBarText(RepositoryWrapperFrame *frame)
 	} else if (w == frame->logtablewidget()) {
 		QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame), 0);
 		if (item) {
-			auto const &logs = getLogs(frame);
+			auto const &logs = getCommitLog(frame);
 			int row = item->data(IndexRole).toInt();
 			if (row < (int)logs.size()) {
 				Git::CommitItem const &commit = logs[row];
@@ -4957,7 +4977,7 @@ QString MainWindow::findFileID(RepositoryWrapperFrame *frame, const QString &com
 
 const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame *frame, int row) const
 {
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	if (row >= 0 && row < (int)logs.size()) {
 		return &logs[row];
 	}
@@ -4968,10 +4988,10 @@ QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
 {
 	QIcon icon;
 	if (isAvatarEnabled() && isOnlineMode()) {
-		auto const &logs = getLogs(frame);
+		auto const &logs = getCommitLog(frame);
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
-			if (commit.email.indexOf('@') > 0) {
+			if (misc::isValidMailAddress(commit.email)) {
 				std::string email = commit.email.toStdString();
 				icon = global->avatar_loader.fetch(email, true); // from gavatar
 			}
@@ -5017,7 +5037,7 @@ void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 	int row = selectedLogIndex(frame);
 	QTableWidgetItem *item = frame->logtablewidget()->item(row, 0);
 	if (item) {
-		auto const &logs = getLogs(frame);
+		auto const &logs = getCommitLog(frame);
 		int index = item->data(IndexRole).toInt();
 		if (index < (int)logs.size()) {
 			// ステータスバー更新
@@ -5040,7 +5060,7 @@ void MainWindow::findNext(RepositoryWrapperFrame *frame)
 	if (m->search_text.isEmpty()) {
 		return;
 	}
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	for (int pass = 0; pass < 2; pass++) {
 		int row = 0;
 		if (pass == 0) {
@@ -5082,7 +5102,7 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 {
 	m->ancestors.clear();
 	
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	const int LogCount = (int)logs.size();
 	const int index = selectedLogIndex(frame);
 	if (index >= 0 && index < LogCount) {
@@ -5091,7 +5111,7 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 		return;
 	}
 	
-	auto *logsp = getLogsPtr(frame);
+	auto *logsp = getCommitLogPtr(frame);
 	auto LogItem = [&](int i)->Git::CommitItem &{ return logsp->at((size_t)i); };
 	
 	std::map<QString, size_t> commit_to_index_map;
@@ -5236,7 +5256,7 @@ void MainWindow::on_action_edit_gitignore_triggered()
 
 int MainWindow::selectedLogIndex(RepositoryWrapperFrame *frame) const
 {
-	auto const &logs = getLogs(frame);
+	auto const &logs = getCommitLog(frame);
 	int i = frame->logtablewidget()->currentRow();
 	if (i >= 0 && i < (int)logs.size()) {
 		return i;
@@ -5262,7 +5282,7 @@ void MainWindow::updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *
 		QString key = GitDiff::makeKey(diff);
 		auto it = getDiffCacheMap(frame)->find(key);
 		if (it != getDiffCacheMap(frame)->end()) {
-			auto const &logs = getLogs(frame);
+			auto const &logs = getCommitLog(frame);
 			int row = frame->logtablewidget()->currentRow();
 			bool uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
 			frame->filediffwidget()->updateDiffView(it->second, uncommited);
@@ -5538,7 +5558,20 @@ void MainWindow::on_action_set_config_user_triggered()
 	}
 	global_user = g->getUser(Git::Source::Global);
 	
-	execSetUserDialog(global_user, repo_user, currentRepositoryName());
+	execConfigUserDialog(global_user, repo_user, currentRepositoryName());
+}
+
+void MainWindow::on_action_configure_user_triggered()
+{
+	Git::User global_user;
+	Git::User repo_user;
+	GitPtr g = git();
+	if (isValidWorkingCopy(g)) {
+		repo_user = g->getUser(Git::Source::Local);
+	}
+	global_user = g->getUser(Git::Source::Global);
+
+	execConfigUserDialog(global_user, repo_user, currentRepositoryName());
 }
 
 void MainWindow::showLogWindow(bool show)
@@ -6181,7 +6214,7 @@ void MainWindow::on_action_find_triggered()
 {
 	m->searching = false;
 	
-	if (getLogs(frame()).empty()) {
+	if (getCommitLog(frame()).empty()) {
 		return;
 	}
 	
@@ -6364,6 +6397,38 @@ void MainWindow::editProfile()
 	dlg.exec();
 }
 
+void MainWindow::detectProfile()
+{
+	qDebug() << Q_FUNC_INFO;
+
+	AccountProfile const *candidate = nullptr;
+
+	std::map<QString, AccountProfile const *> map;
+	for (AccountProfile const &a : global->account_profiles) {
+		map[a.email.toLower()] = &a;
+	}
+
+	auto const &logs = getCommitLog(frame());
+	for (Git::CommitItem const &item : logs) {
+		QString email = item.email.toLower();
+		auto it = map.find(email);
+		if (it != map.end()) {
+			candidate = it->second;
+			break;
+		}
+	}
+
+	if (candidate) {
+		QString text = QString("%1 <%2>").arg(candidate->name).arg(candidate->email);
+		auto r = QMessageBox::question(this, tr("Profile Candidate"), text, QMessageBox::Ok, QMessageBox::Cancel);
+		if (r == QMessageBox::Ok) {
+			switchProfile(candidate->email);
+		}
+	} else {
+		QMessageBox::information(this, tr("Profile Candidate"), tr("No candidate."), QMessageBox::Ok);
+	}
+}
+
 void MainWindow::switchProfile(int index)
 {
 	const int n = ui->menuProfiles->children().size();
@@ -6380,19 +6445,24 @@ void MainWindow::switchProfile(int index)
 	}
 }
 
-void MainWindow::switchProfile(Git::User const &user)
+void MainWindow::switchProfile(const QString &email)
 {
-	QString email = user.email.toLower();
 	int index = -1;
-	for (int i = 0; i < (int)m->account_profiles.size(); i++) {
-		AccountProfile const &profile = m->account_profiles[i];
-		QString text = profile.text_.toLower();
+	for (int i = 0; i < (int)global->account_profiles.size(); i++) {
+		AccountProfile const &profile = global->account_profiles[i];
+		QString text = profile.text().toLower();
 		if (text.indexOf(email) >= 0) {
 			index = i;
 			break;
 		}
 	}
 	switchProfile(index);
+}
+
+void MainWindow::switchProfile(Git::User const &user)
+{
+	QString email = user.email.toLower();
+	switchProfile(email);
 }
 
 void MainWindow::onSwitchProfile()
@@ -6420,26 +6490,38 @@ void MainWindow::onSwitchProfile()
 
 void MainWindow::loadProfiles()
 {
+	global->account_profiles.clear();
+	global->account_profiles.emplace_back("foo@example.com", "Foo");
+	global->account_profiles.emplace_back("bar@example.com", "Bar");
+	global->account_profiles.emplace_back("fi7s-fct@asahi-net.or.jp", "soramimi");
+}
+
+void MainWindow::updateProfiles()
+{
 	ui->menuProfiles->clear();
+
+	// プロファイルを読み込む
+	loadProfiles();
+
+	// 編集メニュー
 	m->action_edit_profile = ui->menuProfiles->addAction(tr("&Edit..."));
 	connect(m->action_edit_profile, &QAction::triggered, this, &MainWindow::editProfile);
+
+	// 検出メニュー
+	m->action_detect_profile = ui->menuProfiles->addAction(tr("Detect"));
+	connect(m->action_detect_profile, &QAction::triggered, this, &MainWindow::detectProfile);
+
 	ui->menuProfiles->addSeparator();
 
-	m->account_profiles.clear();
-	m->account_profiles.emplace_back("Foo <foo@example.com>");
-	m->account_profiles.emplace_back("Bar <bar@example.com>");
-	m->account_profiles.emplace_back("soramimi <fi7s-fct@asahi-net.or.jp>");
-
 	QAction *a;
-	for (int i = 0; i < m->account_profiles.size(); i++) {
-		AccountProfile const &t = m->account_profiles[i];
-		a = ui->menuProfiles->addAction(t.text_);
+	for (int i = 0; i < global->account_profiles.size(); i++) {
+		AccountProfile const &t = global->account_profiles[i];
+		a = ui->menuProfiles->addAction(t.text());
 		a->setData(QVariant(i));
 		a->setCheckable(true);
 		a->setChecked(i == m->current_account_profiles);
 		connect(a, &QAction::triggered, this, &MainWindow::onSwitchProfile);
 	}
-
 }
 
 /**
@@ -6531,4 +6613,5 @@ Terminal=false
 void MainWindow::test()
 {
 }
+
 

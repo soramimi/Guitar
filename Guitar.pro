@@ -145,6 +145,7 @@ SOURCES += \
 	src/CommitViewWindow.cpp \
 	src/ConfigCredentialHelperDialog.cpp \
 	src/ConfigSigningDialog.cpp \
+	src/ConfigUserDialog.cpp \
 	src/CreateRepositoryDialog.cpp \
 	src/DeleteBranchDialog.cpp \
 	src/DeleteTagsDialog.cpp \
@@ -209,7 +210,6 @@ SOURCES += \
 	src/SetGlobalUserDialog.cpp \
 	src/SetGpgSigningDialog.cpp \
 	src/SetRemoteUrlDialog.cpp \
-	src/SetUserDialog.cpp \
 	src/SettingBehaviorForm.cpp \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
@@ -217,6 +217,7 @@ SOURCES += \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
 	src/SettingsDialog.cpp \
+	src/SimpleImageWidget.cpp \
 	src/StatusLabel.cpp \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
@@ -283,6 +284,7 @@ HEADERS  += \
 	src/CommitViewWindow.h \
 	src/ConfigCredentialHelperDialog.h \
 	src/ConfigSigningDialog.h \
+	src/ConfigUserDialog.h \
 	src/CreateRepositoryDialog.h \
 	src/Debug.h \
 	src/DeleteBranchDialog.h \
@@ -349,7 +351,6 @@ HEADERS  += \
 	src/SetGlobalUserDialog.h \
 	src/SetGpgSigningDialog.h \
 	src/SetRemoteUrlDialog.h \
-	src/SetUserDialog.h \
 	src/SettingBehaviorForm.h \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
@@ -358,6 +359,7 @@ HEADERS  += \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
 	src/SettingsDialog.h \
+	src/SimpleImageWidget.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
 	src/SubmoduleMainWindow.h \
@@ -422,6 +424,7 @@ FORMS    += \
 	src/CommitViewWindow.ui \
 	src/ConfigCredentialHelperDialog.ui \
 	src/ConfigSigningDialog.ui \
+	src/ConfigUserDialog.ui \
 	src/CreateRepositoryDialog.ui \
 	src/DeleteBranchDialog.ui \
 	src/DeleteTagsDialog.ui \
@@ -452,7 +455,6 @@ FORMS    += \
 	src/SetGlobalUserDialog.ui \
 	src/SetGpgSigningDialog.ui \
 	src/SetRemoteUrlDialog.ui \
-	src/SetUserDialog.ui \
 	src/SettingBehaviorForm.ui \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \

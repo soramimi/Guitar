@@ -15,6 +15,19 @@ template <typename T> static inline void trimquot(T const **begin, T const **end
 	}
 }
 
+/**
+ * @brief 2つのパスを結合する。
+ *
+ * 左右のパス文字列を結合して、1つのパス文字列にします。
+ * 与えられた2つのパス文字列の両端のクォートや不要な区切り文字を取り除いた後、
+ * 2つのパスを '/' 区切り文字で結合します。
+ *
+ * @tparam T 文字列要素の型（char, wchar_t など）。
+ * @tparam U 結合されたパスを格納するコンテナの型（std::string, std::wstring など）。
+ * @param left 結合する左側のパス文字列。
+ * @param right 結合する右側のパス文字列。
+ * @param vec 結合されたパスを格納するコンテナへのポインタ。
+ */
 template <typename T, typename U> void joinpath_(T const *left, T const *right, U *vec)
 {
 	size_t llen = 0;

@@ -4,11 +4,6 @@
 #include <QList>
 #include <QMetaType>
 
-enum class ServerType {
-	Standard,
-	GitHub,
-};
-
 struct RepositoryData {
 	QString name;
 	QString group;

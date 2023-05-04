@@ -416,7 +416,6 @@
             <property name="font">
              <font>
               <pointsize>14</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1077,7 +1076,7 @@
     <addaction name="action_edit_gitignore"/>
     <addaction name="action_edit_git_config"/>
     <addaction name="action_edit_global_gitconfig"/>
-    <addaction name="action_set_config_user"/>
+    <addaction name="action_configure_user"/>
     <addaction name="action_set_gpg_signing"/>
     <addaction name="separator"/>
     <addaction name="action_find"/>
@@ -1473,11 +1472,6 @@
     <string>Push all tags</string>
    </property>
   </action>
-  <action name="action_set_config_user">
-   <property name="text">
-    <string>Set config user</string>
-   </property>
-  </action>
   <action name="action_window_log">
    <property name="checkable">
     <bool>true</bool>
@@ -1762,6 +1756,11 @@
   <action name="actionEditProfiles">
    <property name="text">
     <string>Edit...</string>
+   </property>
+  </action>
+  <action name="action_configure_user">
+   <property name="text">
+    <string>Configure user</string>
    </property>
   </action>
  </widget>

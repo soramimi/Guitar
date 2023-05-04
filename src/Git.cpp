@@ -624,6 +624,12 @@ QList<Git::Branch> Git::branches()
 	return branches;
 }
 
+/**
+ * @brief コミットログを取得する
+ * @param id コミットID
+ * @param maxcount 最大アイテム数
+ * @return
+ */
 Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 {
 	CommitItemList items;

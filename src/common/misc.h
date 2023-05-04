@@ -63,6 +63,9 @@ public:
 	static QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);
 	static bool isExecutable(QString const &cmd);
 	static QString complementRemoteURL(QString url, bool toggle);
+
+	static QString collapseWhitespace(QString const &source);
+	static bool isValidMailAddress(const QString &email);
 };
 
 class OverrideWaitCursor_ {

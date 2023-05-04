@@ -84,7 +84,7 @@ QString RepositoryWrapperFrame::currentBranchName() const
 
 const Git::CommitItemList &RepositoryWrapperFrame::getLogs() const
 {
-	return mainwindow()->getLogs(this);
+	return mainwindow()->getCommitLog(this);
 }
 
 bool RepositoryWrapperFrame::isAncestorCommit(const QString &id)
