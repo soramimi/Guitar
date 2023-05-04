@@ -5938,21 +5938,7 @@ void MainWindow::onLogIdle()
 
 	std::vector<std::string> lines = getLogHistoryLines();
 	clearLogHistory();
-	
-	//	std::vector<char> vec;
-	//	ui->widget_log->view()->retrieveLastText(&vec, 100);
-	//	if (!vec.empty()) {
-	//		std::string line;
-	//		size_t n = vec.size();
-	//		size_t i = n;
-	//		while (i > 0) {
-	//			i--;
-	//			if (i + 1 < n && vec[i] == '\n') {
-	//				i++;
-	//				line.assign(&vec[i], size_t(n - i));
-	//				break;
-	//			}
-	//		}
+
 	if (lines.empty()) return;
 
 	auto Contains = [&](char const *kw){
@@ -5970,7 +5956,6 @@ void MainWindow::onLogIdle()
 			for (std::string const &line : lines) {
 				QString qline = QString::fromStdString(line);
 				text += qline + '\n';
-				qDebug() << qline;
 			}
 		}
 		TextEditDialog dlg(this);
