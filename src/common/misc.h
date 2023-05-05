@@ -66,6 +66,7 @@ public:
 
 	static QString collapseWhitespace(QString const &source);
 	static bool isValidMailAddress(const QString &email);
+	static bool isValidMailAddress(const std::string &email);
 };
 
 class OverrideWaitCursor_ {

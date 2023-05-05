@@ -104,7 +104,7 @@ void AvatarLoader::run()
 			if (isInterruptionRequested()) return;
 		}
 		if (request.state == Busy) {
-			if (strchr(request.email.c_str(), '@')) {
+			if (misc::isValidMailAddress(request.email)) {
 				QString id;
 				{
 					QCryptographicHash hash(QCryptographicHash::Md5);
@@ -116,25 +116,49 @@ void AvatarLoader::run()
 					}
 					id = tmp;
 				}
-				QString url = "https://www.gravatar.com/avatar/%1?s=%2";
-				url = url.arg(id).arg(ICON_SIZE);
-				if (m->web->get(WebClient::Request(url.toStdString())) == 200) {
-					if (!m->web->response().content.empty()) {
-						MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
-						reader.open(MemoryReader::ReadOnly);
-						QImage image;
-						image.load(&reader, nullptr);
-						int w = image.width();
-						int h = image.height();
-						if (w > 0 && h > 0) {
-							request.image = image;
-							request.state = Done;
+
+				QStringList urls;
+				auto const &provider = global->appsettings.avatar_provider;
+				if (provider.gravatar)   urls.append(QString("https://www.gravatar.com/avatar/%1?s=%2").arg(id).arg(ICON_SIZE));
+				if (provider.libravatar) urls.append(QString("https://www.libravatar.org/avatar/%1?s=%2").arg(id).arg(ICON_SIZE));
+
+				auto getAvatar = [&](QString const &url)->std::optional<QImage>{
+					if (m->web->get(WebClient::Request(url.toStdString())) == 200) {
+						if (!m->web->response().content.empty()) {
+							MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
+							reader.open(MemoryReader::ReadOnly);
+							QImage image;
+							image.load(&reader, nullptr);
+							int w = image.width();
+							int h = image.height();
+							if (w > 0 && h > 0) {
+								return std::optional(image);
+							}
 						}
 					}
+					return std::nullopt;
+				};
+
+				QImage image;
+				for (QString const &url : urls) {
+					auto avatar = getAvatar(url);
+					if (avatar) {
+						image = avatar.value();
+						break;
+					}
+				}
+
+				if (image.width() > 0 && image.height() > 0) {
+					request.image = image;
+					request.state = Done;
 				} else {
+#if 0
 					m->mainwindow->emitWriteLog(QString("Failed to fetch the avatar.\n").toUtf8(), false);
 					QString msg = QString::fromStdString(m->web->error().message() + '\n');
 					m->mainwindow->emitWriteLog(msg.toUtf8(), false);
+#else
+					qDebug() << QString("Failed to fetch the avatar.\n").toUtf8();
+#endif
 				}
 			}
 			if (request.state == Busy) {

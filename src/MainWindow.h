@@ -226,7 +226,7 @@ private:
 	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open);
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu = false);
-	void execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, const QString &reponame);
+	void execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, bool enable_local_user, const QString &reponame);
 	void setGitCommand(const QString &path, bool save);
 	void setGpgCommand(const QString &path, bool save);
 	void setSshCommand(const QString &path, bool save);

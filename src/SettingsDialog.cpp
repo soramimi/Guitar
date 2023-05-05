@@ -123,14 +123,15 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-//	GetValue<bool>(s, "EnableHighDpiScaling")                >> as->enable_high_dpi_scaling;
 	GetValue<bool>(s, "ShowLabels")                          >> as->show_labels;
 	s.endGroup();
 
 	s.beginGroup("Network");
 	GetValue<QString>(s, "ProxyType")                        >> as->proxy_type;
 	GetValue<QString>(s, "ProxyServer")                      >> as->proxy_server;
-	GetValue<bool>(s, "GetCommitterIcon")                    >> as->get_committer_icon;
+	GetValue<bool>(s, "GetCommitterIcon")                    >> as->get_avatar_icon_from_network_enabled;
+	GetValue<bool>(s, "AvatarProvider_gravatar")             >> as->avatar_provider.gravatar;
+	GetValue<bool>(s, "AvatarProvider_libravatar")           >> as->avatar_provider.libravatar;
 	s.endGroup();
 	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
 
@@ -162,7 +163,6 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.endGroup();
 
 	s.beginGroup("UI");
-//	SetValue<bool>(s, "EnableHighDpiScaling")                << as->enable_high_dpi_scaling;
 	SetValue<bool>(s, "ShowLabels")                          << as->show_labels;
 	SetValue<bool>(s, "ShowGraph")                           << as->show_graph;
 	s.endGroup();
@@ -170,7 +170,9 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 	s.beginGroup("Network");
 	SetValue<QString>(s, "ProxyType")                        << as->proxy_type;
 	SetValue<QString>(s, "ProxyServer")                      << misc::makeProxyServerURL(as->proxy_server);
-	SetValue<bool>(s, "GetCommitterIcon")                    << as->get_committer_icon;
+	SetValue<bool>(s, "GetCommitterIcon")                    << as->get_avatar_icon_from_network_enabled;
+	SetValue<bool>(s, "AvatarProvider_gravatar")             << as->avatar_provider.gravatar;
+	SetValue<bool>(s, "AvatarProvider_libravatar")           << as->avatar_provider.libravatar;
 	s.endGroup();
 
 	s.beginGroup("Behavior");

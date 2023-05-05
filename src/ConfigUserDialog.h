@@ -22,7 +22,7 @@ private:
 	QString email() const;
 	void updateAvatar(const QString &email, bool request);
 public:
-	explicit ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, QString const &repo);
+	explicit ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo);
 	~ConfigUserDialog() override;
 
 	Git::User user(bool global) const;

@@ -11,7 +11,7 @@ struct ConfigUserDialog::Private  {
 	AvatarLoader avatar_loader;
 };
 
-ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, QString const &repo)
+ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo)
 	: QDialog(parent)
 	, ui(new Ui::ConfigUserDialog)
 	, m(new Private)
@@ -29,6 +29,8 @@ ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_u
 	ui->lineEdit_global_email->setText(m->global_user.email);
 	ui->lineEdit_local_name->setText(m->local_user.name);
 	ui->lineEdit_local_email->setText(m->local_user.email);
+
+	ui->groupBox_local->setEnabled(enable_local_user);
 
 	ui->checkBox_unset_local->setChecked(!misc::isValidMailAddress(m->local_user.email));
 

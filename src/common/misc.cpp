@@ -548,3 +548,7 @@ bool misc::isValidMailAddress(const QString &email)
 	return i > 0 && i < email.size() - 1;
 }
 
+bool misc::isValidMailAddress(const std::string &email)
+{
+	return isValidMailAddress(QString::fromStdString(email));
+}

@@ -152,7 +152,7 @@
            <item>
             <widget class="QPushButton" name="pushButton_get_icon">
              <property name="text">
-              <string>Get icon from Gravatar</string>
+              <string>Get icon from network</string>
              </property>
             </widget>
            </item>

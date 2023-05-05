@@ -1051,9 +1051,9 @@ void MainWindow::execRepositoryPropertyDialog(const RepositoryData &repo, bool o
 	}
 }
 
-void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, const QString &reponame)
+void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, bool enable_local_user, const QString &reponame)
 {
-	ConfigUserDialog dlg(this, global_user, local_user, reponame);
+	ConfigUserDialog dlg(this, global_user, local_user, enable_local_user, reponame);
 	if (dlg.exec() == QDialog::Accepted) {
 		GitPtr g = git();
 		Git::User user;
@@ -1924,7 +1924,7 @@ void MainWindow::deleteTags(RepositoryWrapperFrame *frame, const Git::CommitItem
 
 bool MainWindow::isAvatarEnabled() const
 {
-	return appsettings()->get_committer_icon;
+	return appsettings()->get_avatar_icon_from_network_enabled;
 }
 
 QStringList MainWindow::remotes() const
@@ -5548,30 +5548,30 @@ QListWidgetItem *MainWindow::currentFileItem() const
 	return nullptr;
 }
 
-void MainWindow::on_action_set_config_user_triggered()
-{
-	Git::User global_user;
-	Git::User repo_user;
-	GitPtr g = git();
-	if (isValidWorkingCopy(g)) {
-		repo_user = g->getUser(Git::Source::Local);
-	}
-	global_user = g->getUser(Git::Source::Global);
-	
-	execConfigUserDialog(global_user, repo_user, currentRepositoryName());
-}
-
 void MainWindow::on_action_configure_user_triggered()
 {
 	Git::User global_user;
-	Git::User repo_user;
+	Git::User local_user;
+	bool enable_local_user = false;
+
 	GitPtr g = git();
-	if (isValidWorkingCopy(g)) {
-		repo_user = g->getUser(Git::Source::Local);
-	}
+
+	// グローバルユーザーを取得
 	global_user = g->getUser(Git::Source::Global);
 
-	execConfigUserDialog(global_user, repo_user, currentRepositoryName());
+	// ローカルユーザーを取得
+	if (isValidWorkingCopy(g)) {
+		local_user = g->getUser(Git::Source::Local);
+		enable_local_user = true;
+	}
+
+	// ダイアログを開く
+	execConfigUserDialog(global_user, local_user, enable_local_user, currentRepositoryName());
+}
+
+void MainWindow::on_action_set_config_user_triggered()
+{
+	on_action_configure_user_triggered();
 }
 
 void MainWindow::showLogWindow(bool show)

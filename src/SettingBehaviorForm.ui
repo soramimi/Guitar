@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>258</height>
+    <width>474</width>
+    <height>311</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,10 +41,35 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkBox_get_committer_icon">
-     <property name="text">
-      <string>Get committer's icon from gravatar.com</string>
+    <widget class="QGroupBox" name="groupBox_avatar_icon_provider">
+     <property name="title">
+      <string>Avatar icon provider</string>
      </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="checkBox_avatar_provider_gravatar">
+        <property name="text">
+         <string>gravatar.com</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_avatar_provider_libravatar">
+        <property name="text">
+         <string>libravatar.org</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -123,7 +148,6 @@
   <tabstop>lineEdit_default_working_dir</tabstop>
   <tabstop>pushButton_browse_default_working_dir</tabstop>
   <tabstop>checkBox_auto_fetch</tabstop>
-  <tabstop>checkBox_get_committer_icon</tabstop>
   <tabstop>spinBox_max_commit_item_acquisitions</tabstop>
   <tabstop>pushButton_signing_policy</tabstop>
  </tabstops>

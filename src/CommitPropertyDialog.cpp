@@ -86,7 +86,7 @@ void CommitPropertyDialog::updateAvatar(bool request)
 	if (!mainwindow()->isOnlineMode()) return;
 
 	auto SetAvatar = [&](QString const &email, QLabel *label){
-		if (mainwindow()->appsettings()->get_committer_icon) {
+		if (mainwindow()->appsettings()->get_avatar_icon_from_network_enabled) {
 			label->setFixedSize(QSize(48, 48));
 			QIcon icon = global->avatar_loader.fetch(email.toStdString(), request);
 			setAvatar(icon, label);

@@ -17,7 +17,13 @@ public:
 	QString default_working_dir;
 	QString proxy_type;
 	QString proxy_server;
-	bool get_committer_icon = true;
+
+	bool get_avatar_icon_from_network_enabled = true;
+	struct {
+		bool gravatar = true; // www.gravatar.com
+		bool libravatar = true; // www.libravatar.org
+	} avatar_provider;
+
 	bool remember_and_restore_window_position = false;
 //	bool enable_high_dpi_scaling = true;
 	bool automatically_fetch_when_opening_the_repository = true;
