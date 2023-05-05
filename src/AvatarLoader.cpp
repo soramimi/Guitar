@@ -54,8 +54,6 @@ void AvatarLoader::requestInterruption()
 	m->condition.notify_all();
 }
 
-
-
 void AvatarLoader::run()
 {
 	m->web = std::make_shared<WebClient>(&m->webcx);

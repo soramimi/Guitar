@@ -12,7 +12,6 @@
 struct CommitPropertyDialog::Private {
 	MainWindow *mainwindow;
 	Git::CommitItem commit;
-//	AvatarLoader avatar_loader;
 };
 
 void CommitPropertyDialog::init(MainWindow *mw)
@@ -77,7 +76,6 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	}
 
 	global->avatar_loader.addListener(this);
-//	m->avatar_loader.start(mainwindow());
 	updateAvatar(true);
 }
 
@@ -85,17 +83,17 @@ void CommitPropertyDialog::updateAvatar(bool request)
 {
 	if (!mainwindow()->isOnlineMode()) return;
 
-	auto SetAvatar = [&](QString const &email, QLabel *label){
+	auto SetAvatar = [&](QString const &email, SimpleImageWidget *widget){
 		if (mainwindow()->appsettings()->get_avatar_icon_from_network_enabled) {
-			label->setFixedSize(QSize(48, 48));
-			QIcon icon = global->avatar_loader.fetch(email.toStdString(), request);
-			setAvatar(icon, label);
+			widget->setFixedSize(QSize(64, 64));
+			QImage icon = global->avatar_loader.fetchImage(email.toStdString(), request);
+			setAvatar(icon, widget);
 		} else {
-			label->setVisible(false);
+			widget->setVisible(false);
 		}
 	};
-	SetAvatar(ui->lineEdit_mail->text(), ui->label_user_avatar);
-	SetAvatar(ui->lineEdit_sign_mail->text(), ui->label_sign_avatar);
+	SetAvatar(ui->lineEdit_mail->text(), ui->widget_user_avatar);
+	SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
 }
 
 void CommitPropertyDialog::customEvent(QEvent *event)
@@ -129,7 +127,6 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QStr
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
-//	m->avatar_loader.stop();
 	global->avatar_loader.removeListener(this);
 	delete m;
 	delete ui;
@@ -140,10 +137,9 @@ MainWindow *CommitPropertyDialog::mainwindow()
 	return m->mainwindow;
 }
 
-void CommitPropertyDialog::setAvatar(QIcon const &icon, QLabel *label)
+void CommitPropertyDialog::setAvatar(QImage const &image, SimpleImageWidget *widget)
 {
-	QPixmap pm = icon.pixmap(label->size());
-	label->setPixmap(pm);
+	widget->setImage(image);
 }
 
 void CommitPropertyDialog::showCheckoutButton(bool f)

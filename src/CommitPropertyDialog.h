@@ -8,6 +8,7 @@
 class MainWindow;
 class RepositoryWrapperFrame;
 class QLabel;
+class SimpleImageWidget;
 
 namespace Ui {
 class CommitPropertyDialog;
@@ -34,7 +35,7 @@ private:
 	Ui::CommitPropertyDialog *ui;
 	void init(MainWindow *mw);
 	MainWindow *mainwindow();
-	void setAvatar(const QIcon &icon, QLabel *label);
+	void setAvatar(const QImage &image, SimpleImageWidget *widget);
 	void updateAvatar(bool request);
 
 	// QObject interface
