@@ -383,11 +383,7 @@ private:
 	void appendLogHistory(const char *ptr, int len);
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
-	void updateProfiles();
-	void switchProfile(int index);
-	void switchProfile(QString const &email);
-	void switchProfile(const Git::User &user);
-	void loadProfiles();
+	void updateAvatar(const Git::User &user, bool request);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -453,7 +449,7 @@ public:
 	void emitWriteLog(const QByteArray &ba, bool receive);
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
-	QIcon committerIcon(RepositoryWrapperFrame *frame, int row) const;
+	QImage committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 	const QList<BranchLabel> *label(const RepositoryWrapperFrame *frame, int row) const;
@@ -466,6 +462,7 @@ public:
 	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
 	void refresh();
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
+	Git::User currentGitUser() const;
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
 private slots:
@@ -480,7 +477,10 @@ private slots:
 	void on_action_add_repository_triggered();
 	void on_action_clean_df_triggered();
 	void on_action_commit_triggered();
-	void on_action_create_a_repository_triggered();
+//	void on_action_create_a_repository_triggered()
+//	{
+//		createRepository(QString());
+//	}
 	void on_action_create_desktop_launcher_file_triggered();
 	void on_action_delete_branch_triggered();
 	void on_action_delete_remote_branch_triggered();
@@ -513,7 +513,10 @@ private slots:
 	void on_action_repository_status_triggered();
 	void on_action_reset_HEAD_1_triggered();
 	void on_action_reset_hard_triggered();
-	void on_action_set_config_user_triggered();
+//	void on_action_set_config_user_triggered()
+//	{
+//		on_action_configure_user_triggered();
+//	}
 	void on_action_configure_user_triggered();
 	void on_action_set_gpg_signing_triggered();
 	void on_action_show_labels_triggered();
@@ -559,15 +562,10 @@ private slots:
 	void on_treeWidget_repos_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 	void on_treeWidget_repos_customContextMenuRequested(const QPoint &pos);
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
+	void on_toolButton_addrepo_clicked();
 
 	void test();
 
-
-	void on_toolButton_addrepo_clicked();
-
-	void editProfile();
-	void onSwitchProfile();
-	void detectProfile();
 
 protected slots:
 	void onLogIdle();

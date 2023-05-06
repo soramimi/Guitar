@@ -15,7 +15,6 @@ class WelcomeWizardDialog : public QDialog {
 	Q_OBJECT
 private:
 	MainWindow *mainwindow_;
-	AvatarLoader avatar_loader_;
 	QList<QWidget *> pages_;
 public:
 	explicit WelcomeWizardDialog(MainWindow *parent = nullptr);
@@ -40,7 +39,7 @@ private slots:
 	void on_lineEdit_git_textChanged(const QString &arg1);
 private:
 	Ui::WelcomeWizardDialog *ui;
-	void setAvatar(const QIcon &icon);
+	void setAvatar(const QImage &icon);
 
 	// QObject interface
 protected:

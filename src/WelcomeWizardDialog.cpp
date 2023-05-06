@@ -24,21 +24,14 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	ui->stackedWidget->setCurrentWidget(pages_[0]);
 	on_stackedWidget_currentChanged(0);
 
-	avatar_loader_.addListener(this);
-	avatar_loader_.start(mainwindow_);
-//	connect(&avatar_loader_, &AvatarLoader::updated, [&](RepositoryWrapperFrameP frame){
-//		QString email = ui->lineEdit_user_email->text();
-//		QIcon icon = avatar_loader_.fetch(frame.pointer, email.toStdString(), false);
-//		setAvatar(icon);
-//	});
+	global->avatar_loader.addListener(this);
 
 	ui->stackedWidget->setCurrentWidget(ui->page_helper_tools);
 }
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
-	avatar_loader_.stop();
-	avatar_loader_.removeListener(this);
+	global->avatar_loader.removeListener(this);
 	delete ui;
 }
 
@@ -164,17 +157,16 @@ void WelcomeWizardDialog::on_pushButton_browse_git_clicked()
 	ui->lineEdit_git->setText(s);
 }
 
-void WelcomeWizardDialog::setAvatar(QIcon const &icon)
+void WelcomeWizardDialog::setAvatar(QImage const &icon)
 {
-	QPixmap pm = icon.pixmap(QSize(64, 64));
-	ui->label_avatar->setPixmap(pm);
+	ui->widget->setImage(icon);
 }
 
 void WelcomeWizardDialog::customEvent(QEvent *event)
 {
 	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
 		QString email = ui->lineEdit_user_email->text();
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
+		auto icon = global->avatar_loader.fetch(email, true);
 		setAvatar(icon);
 		return;
 	}
@@ -182,10 +174,10 @@ void WelcomeWizardDialog::customEvent(QEvent *event)
 
 void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 {
-	ui->label_avatar->setPixmap(QPixmap());
+	ui->widget->setImage({});
 	QString email = ui->lineEdit_user_email->text();
 	if (misc::isValidMailAddress(email)) {
-		QIcon icon = avatar_loader_.fetch(email.toStdString(), true);
+		auto icon = global->avatar_loader.fetch(email, true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

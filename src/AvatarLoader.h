@@ -19,7 +19,7 @@ private:
 	};
 	struct RequestItem {
 		State state = Idle;
-		std::string email;
+		QString email;
 		QImage image;
 	};
 	struct Private;
@@ -32,8 +32,7 @@ public:
 	AvatarLoader();
 	~AvatarLoader();
 	void requestInterruption();
-	QImage fetchImage(const std::string &email, bool request) const;
-	QIcon fetch(std::string const &email, bool request) const;
+	QImage fetch(const QString &email, bool request) const;
 	void stop();
 	void start(MainWindow *mainwindow);
 	void addListener(QObject *listener);

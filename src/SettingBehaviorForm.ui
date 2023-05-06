@@ -43,7 +43,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_avatar_icon_provider">
      <property name="title">
-      <string>Avatar icon provider</string>
+      <string>Use avatar icon provider</string>
      </property>
      <property name="checkable">
       <bool>true</bool>

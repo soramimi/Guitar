@@ -8,9 +8,9 @@
 
 #include <QFileDialog>
 
-SettingGeneralForm::SettingGeneralForm(QWidget *parent) :
-	AbstractSettingForm(parent),
-	ui(new Ui::SettingGeneralForm)
+SettingGeneralForm::SettingGeneralForm(QWidget *parent)
+	: AbstractSettingForm(parent)
+	, ui(new Ui::SettingGeneralForm)
 {
 	ui->setupUi(this);
 

@@ -41,6 +41,7 @@ struct ApplicationGlobal {
 	QString generic_config_dir;
 	QString app_config_dir;
 	QString config_file_path;
+	QString profiles_xml_path;
 	QColor panel_bg_color;
 	ThemePtr theme;
 

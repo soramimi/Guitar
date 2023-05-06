@@ -40,7 +40,7 @@ public:
 	explicit RepositoryWrapperFrame(QWidget *parent = nullptr);
 	Git::CommitItem const *commitItem(int row);
 	QIcon verifiedIcon(char s) const;
-	QIcon committerIcon(int row) const;
+	QImage committerIcon(int row, QSize size) const;
 	const QList<BranchLabel> *label(int row) const;
 	QString currentBranchName() const;
 	const Git::CommitItemList &getLogs() const;

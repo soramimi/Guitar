@@ -67,17 +67,18 @@ private:
 	{
 		if (!opt.widget->isEnabled()) return;
 
+		int h = opt.rect.height();
+		int w = h;
+		int x = opt.rect.x() + opt.rect.width() - w;
+		int y = opt.rect.y();
+
 		int row = index.row();
-		QIcon icon = frame()->committerIcon(row);
+		auto icon = frame()->committerIcon(row, {w, h});
 		if (!icon.isNull()) {
-			int h = opt.rect.height();
-			int w = h;
-			int x = opt.rect.x() + opt.rect.width() - w;
-			int y = opt.rect.y();
 
 			painter->save();
 			painter->setOpacity(0.5); // 半透明で描画
-			icon.paint(painter, x, y, w, h);
+			painter->drawImage(QRect(x, y, w, h), icon);
 			painter->restore();
 		}
 	}

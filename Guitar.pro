@@ -134,6 +134,7 @@ SOURCES += \
 	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
+	src/BlockSignals.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
 	src/ClearButton.cpp \
@@ -153,7 +154,7 @@ SOURCES += \
 	src/DirectoryLineEdit.cpp \
 	src/DoYouWantToInitDialog.cpp \
 	src/EditGitIgnoreDialog.cpp \
-	src/EditProfileDialog.cpp \
+	src/EditProfilesDialog.cpp \
 	src/EditRemoteDialog.cpp \
 	src/EditTagsDialog.cpp \
 	src/ExperimentDialog.cpp \
@@ -214,6 +215,7 @@ SOURCES += \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
+	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
 	src/SettingsDialog.cpp \
@@ -223,6 +225,7 @@ SOURCES += \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
 	src/WelcomeWizardDialog.cpp \
+	src/XmlTagState.cpp \
 	src/charvec.cpp \
 	src/common/base64.cpp \
 	src/common/joinpath.cpp \
@@ -271,6 +274,7 @@ HEADERS  += \
 	src/BasicRepositoryDialog.h \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \
+	src/BlockSignals.h \
 	src/BranchLabel.h \
 	src/CheckoutDialog.h \
 	src/CherryPickDialog.h \
@@ -293,7 +297,7 @@ HEADERS  += \
 	src/DirectoryLineEdit.h \
 	src/DoYouWantToInitDialog.h \
 	src/EditGitIgnoreDialog.h \
-	src/EditProfileDialog.h \
+	src/EditProfilesDialog.h \
 	src/EditRemoteDialog.h \
 	src/EditTagsDialog.h \
 	src/ExperimentDialog.h \
@@ -355,6 +359,7 @@ HEADERS  += \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
+	src/SettingOptionsForm.h \
 	src/SettingPrograms2Form.h \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
@@ -370,6 +375,7 @@ HEADERS  += \
 	src/Theme.h \
 	src/UserEvent.h \
 	src/WelcomeWizardDialog.h \
+	src/XmlTagState.h \
 	src/charvec.h \
 	src/coloredit/ColorDialog.h \
 	src/coloredit/ColorEditWidget.h \
@@ -430,7 +436,7 @@ FORMS    += \
 	src/DeleteTagsDialog.ui \
 	src/DoYouWantToInitDialog.ui \
 	src/EditGitIgnoreDialog.ui \
-	src/EditProfileDialog.ui \
+	src/EditProfilesDialog.ui \
 	src/EditRemoteDialog.ui \
 	src/EditTagsDialog.ui \
 	src/ExperimentDialog.ui \
@@ -459,6 +465,7 @@ FORMS    += \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
+	src/SettingOptionsForm.ui \
 	src/SettingPrograms2Form.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingVisualForm.ui \

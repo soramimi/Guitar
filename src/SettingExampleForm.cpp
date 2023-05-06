@@ -1,9 +1,9 @@
 #include "SettingExampleForm.h"
 #include "ui_SettingExampleForm.h"
 
-SettingExampleForm::SettingExampleForm(QWidget *parent) :
-	AbstractSettingForm(parent),
-	ui(new Ui::SettingExampleForm)
+SettingExampleForm::SettingExampleForm(QWidget *parent)
+	: AbstractSettingForm(parent)
+	, ui(new Ui::SettingExampleForm)
 {
 	ui->setupUi(this);
 }

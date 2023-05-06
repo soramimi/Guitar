@@ -21,10 +21,12 @@ private:
 	MainWindow *mainwindow();
 	QString email() const;
 	void updateAvatar(const QString &email, bool request);
+	void updateAvatar();
 public:
 	explicit ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo);
 	~ConfigUserDialog() override;
 
+	bool isLocalUnset() const;
 	Git::User user(bool global) const;
 protected:
 	void customEvent(QEvent *event);
@@ -35,6 +37,7 @@ private slots:
 	void on_lineEdit_local_name_textEdited(const QString &text);
 	void on_lineEdit_local_email_textEdited(const QString &text);
 	void on_checkBox_unset_local_stateChanged(int arg1);
+	void on_pushButton_profiles_clicked();
 };
 
 #endif // CONFIGUSERDIALOG_H

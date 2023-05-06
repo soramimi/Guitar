@@ -1204,9 +1204,14 @@ Git::User Git::getUser(Source purpose)
 
 void Git::setUser(const User &user, bool global)
 {
+	bool unset = !user;
 	bool chdir = !global;
-	git(QString("config %1 user.name %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.name)), chdir);
-	git(QString("config %1 user.email %2").arg(global ? "--global" : "").arg(encodeQuotedText(user.email)), chdir);
+	QString opt = global ? "--global" : "--local";
+	if (unset) {
+		opt += " --unset";
+	}
+	git(QString("config %1 user.name %2").arg(opt).arg(encodeQuotedText(user.name)), chdir);
+	git(QString("config %1 user.email %2").arg(opt).arg(encodeQuotedText(user.email)), chdir);
 }
 
 bool Git::reset_head1()

@@ -67,9 +67,9 @@ QIcon RepositoryWrapperFrame::verifiedIcon(char s) const
 	return mainwindow()->verifiedIcon(s);
 }
 
-QIcon RepositoryWrapperFrame::committerIcon(int row) const
+QImage RepositoryWrapperFrame::committerIcon(int row, QSize size) const
 {
-	return mainwindow()->committerIcon(const_cast<RepositoryWrapperFrame *>(this), row);
+	return mainwindow()->committerIcon(const_cast<RepositoryWrapperFrame *>(this), row, size);
 }
 
 QList<BranchLabel> const *RepositoryWrapperFrame::label(int row) const

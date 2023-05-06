@@ -10,8 +10,7 @@ namespace Ui {
 class SettingGeneralForm;
 }
 
-class SettingGeneralForm : public AbstractSettingForm
-{
+class SettingGeneralForm : public AbstractSettingForm {
 	Q_OBJECT
 private:
 	Ui::SettingGeneralForm *ui;

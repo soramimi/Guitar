@@ -112,6 +112,8 @@ struct MainWindow::Private {
 	QString starting_dir;
 	Git::Context gcx;
 	RepositoryData current_repo;
+
+	Git::User current_git_user;
 	
 	QList<RepositoryData> repos;
 	QList<Git::Diff> diff_result;
@@ -280,11 +282,6 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 	
-//	connect(this, &MainWindow::signalSetRemoteChanged, [&](bool f){
-//		setRemoteChanged(f);
-//		updateButton();
-//	});
-	
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 	
 	//
@@ -294,6 +291,7 @@ MainWindow::MainWindow(QWidget *parent)
 	updateRepositoriesList();
 	
 	// アイコン取得機能
+	global->avatar_loader.addListener(this);
 	global->avatar_loader.addListener(ui->frame_repository_wrapper);
 	
 	connect(frame()->filediffwidget(), &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(frame()); });
@@ -314,13 +312,14 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	ui->action_sidebar->setChecked(true);
 
-	updateProfiles();
-	
 	startTimers();
 }
 
 MainWindow::~MainWindow()
 {
+	global->avatar_loader.removeListener(this);
+	global->avatar_loader.removeListener(ui->frame_repository_wrapper);
+
 	cancelPendingUserEvents();
 	
 	stopPtyProcess();
@@ -662,6 +661,10 @@ void MainWindow::customEvent(QEvent *e)
 {
 	if (e->type() == (QEvent::Type)UserEvent::Start) {
 		onStartEvent();
+		return;
+	}
+	if (e->type() == (QEvent::Type)UserEvent::AvatarReady) {
+		updateAvatar(currentGitUser(), false);
 		return;
 	}
 }
@@ -1067,16 +1070,18 @@ void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::U
 		}
 
 		// local
-		user = dlg.user(false);
-		if (user) {
-			if (user.email != local_user.email || user.name != local_user.name) {
-				g->setUser(user, false);
+		if (dlg.isLocalUnset()) {
+			g->setUser({}, false);
+		} else {
+			user = dlg.user(false);
+			if (user) {
+				if (user.email != local_user.email || user.name != local_user.name) {
+					g->setUser(user, false);
+				}
 			}
 		}
 
 		updateWindowTitle(g);
-
-		switchProfile(user);
 	}
 }
 
@@ -1882,8 +1887,21 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 	}
 }
 
+void MainWindow::updateAvatar(const Git::User &user, bool request)
+{
+	m->current_git_user = user;
+
+	QImage icon;
+	if (isAvatarEnabled()) {
+		icon = global->avatar_loader.fetch(user.email, request);
+	}
+	ui->widget_avatar_icon->setImage(icon);
+}
+
 void MainWindow::setWindowTitle_(const Git::User &user)
 {
+	updateAvatar(user, true);
+
 	if (user.name.isEmpty() && user.email.isEmpty()) {
 		setWindowTitle(qApp->applicationName());
 	} else {
@@ -3681,11 +3699,6 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 	updateRemoteInfo();
 	
 	updateWindowTitle(g);
-	{
-		Git::User user = g->getUser(Git::Source::Default);
-		switchProfile(user);
-
-	}
 	
 	setHeadId(getObjCache(frame)->revParse("HEAD"));
 	
@@ -4770,6 +4783,11 @@ GitPtr MainWindow::git(const Git::SubmoduleItem &submod)
 	return git(item.local_dir, submod.path, item.ssh_key);
 }
 
+Git::User MainWindow::currentGitUser() const
+{
+	return m->current_git_user;
+}
+
 void MainWindow::autoOpenRepository(QString dir)
 {
 	auto Open = [&](RepositoryData const &item){
@@ -4984,16 +5002,18 @@ const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame *frame, int
 	return nullptr;
 }
 
-QIcon MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row) const
+QImage MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const
 {
-	QIcon icon;
+	QImage icon;
 	if (isAvatarEnabled() && isOnlineMode()) {
 		auto const &logs = getCommitLog(frame);
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
 			if (misc::isValidMailAddress(commit.email)) {
-				std::string email = commit.email.toStdString();
-				icon = global->avatar_loader.fetch(email, true); // from gavatar
+				icon = global->avatar_loader.fetch(commit.email, true); // from gavatar
+				if (!size.isValid()) {
+					icon = icon.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+				}
 			}
 		}
 	}
@@ -5370,6 +5390,7 @@ void MainWindow::on_action_edit_settings_triggered()
 		setGitCommand(appsettings()->git_command, false);
 		setGpgCommand(appsettings()->gpg_command, false);
 		setSshCommand(appsettings()->ssh_command, false);
+		updateAvatar(currentGitUser(), true);
 	}
 }
 
@@ -5385,7 +5406,7 @@ void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 
 #include "unix/UnixPtyProcess.h"
 
-#include "EditProfileDialog.h"
+#include "EditProfilesDialog.h"
 
 void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 {
@@ -5569,10 +5590,7 @@ void MainWindow::on_action_configure_user_triggered()
 	execConfigUserDialog(global_user, local_user, enable_local_user, currentRepositoryName());
 }
 
-void MainWindow::on_action_set_config_user_triggered()
-{
-	on_action_configure_user_triggered();
-}
+
 
 void MainWindow::showLogWindow(bool show)
 {
@@ -5763,10 +5781,7 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	openRepository(false);
 }
 
-void MainWindow::on_action_create_a_repository_triggered()
-{
-	createRepository(QString());
-}
+
 
 bool MainWindow::isOnlineMode() const
 {
@@ -6388,139 +6403,6 @@ void MainWindow::on_action_submodule_update_triggered()
 		data.recursive = dlg.isRecursive();
 		g->submodule_update(data, getPtyProcess());
 		refresh();
-	}
-}
-
-void MainWindow::editProfile()
-{
-	EditProfileDialog dlg(this);
-	dlg.exec();
-}
-
-void MainWindow::detectProfile()
-{
-	qDebug() << Q_FUNC_INFO;
-
-	AccountProfile const *candidate = nullptr;
-
-	std::map<QString, AccountProfile const *> map;
-	for (AccountProfile const &a : global->account_profiles) {
-		map[a.email.toLower()] = &a;
-	}
-
-	auto const &logs = getCommitLog(frame());
-	for (Git::CommitItem const &item : logs) {
-		QString email = item.email.toLower();
-		auto it = map.find(email);
-		if (it != map.end()) {
-			candidate = it->second;
-			break;
-		}
-	}
-
-	if (candidate) {
-		QString text = QString("%1 <%2>").arg(candidate->name).arg(candidate->email);
-		auto r = QMessageBox::question(this, tr("Profile Candidate"), text, QMessageBox::Ok, QMessageBox::Cancel);
-		if (r == QMessageBox::Ok) {
-			switchProfile(candidate->email);
-		}
-	} else {
-		QMessageBox::information(this, tr("Profile Candidate"), tr("No candidate."), QMessageBox::Ok);
-	}
-}
-
-void MainWindow::switchProfile(int index)
-{
-	const int n = ui->menuProfiles->children().size();
-	for (int i = 0; i < n; i++) {
-		QObject *o = ui->menuProfiles->children().at(i);
-		if (QAction *a = qobject_cast<QAction *>(o)) {
-			if (a->data().toInt() == index) {
-				m->current_account_profiles = index;
-				a->setChecked(true);
-			} else {
-				a->setChecked(false);
-			}
-		}
-	}
-}
-
-void MainWindow::switchProfile(const QString &email)
-{
-	int index = -1;
-	for (int i = 0; i < (int)global->account_profiles.size(); i++) {
-		AccountProfile const &profile = global->account_profiles[i];
-		QString text = profile.text().toLower();
-		if (text.indexOf(email) >= 0) {
-			index = i;
-			break;
-		}
-	}
-	switchProfile(index);
-}
-
-void MainWindow::switchProfile(Git::User const &user)
-{
-	QString email = user.email.toLower();
-	switchProfile(email);
-}
-
-void MainWindow::onSwitchProfile()
-{
-	QAction *a_current = nullptr;
-	QAction *a_switch = nullptr;
-	const int n = ui->menuProfiles->children().size();
-	for (int i = 0; i < n; i++) {
-		QObject *o = ui->menuProfiles->children().at(i);
-		if (QAction *a = qobject_cast<QAction *>(o)) {
-			if (a->isChecked()) {
-				if (m->current_account_profiles >= 0 && a->data().toInt() == m->current_account_profiles) {
-					a_current = a;
-				} else {
-					a_switch = a;
-				}
-				a->setChecked(false);
-			}
-		}
-	}
-	if (a_switch) {
-		switchProfile(a_switch->data().toInt());
-	}
-}
-
-void MainWindow::loadProfiles()
-{
-	global->account_profiles.clear();
-	global->account_profiles.emplace_back("foo@example.com", "Foo");
-	global->account_profiles.emplace_back("bar@example.com", "Bar");
-	global->account_profiles.emplace_back("fi7s-fct@asahi-net.or.jp", "soramimi");
-}
-
-void MainWindow::updateProfiles()
-{
-	ui->menuProfiles->clear();
-
-	// プロファイルを読み込む
-	loadProfiles();
-
-	// 編集メニュー
-	m->action_edit_profile = ui->menuProfiles->addAction(tr("&Edit..."));
-	connect(m->action_edit_profile, &QAction::triggered, this, &MainWindow::editProfile);
-
-	// 検出メニュー
-	m->action_detect_profile = ui->menuProfiles->addAction(tr("Detect"));
-	connect(m->action_detect_profile, &QAction::triggered, this, &MainWindow::detectProfile);
-
-	ui->menuProfiles->addSeparator();
-
-	QAction *a;
-	for (int i = 0; i < global->account_profiles.size(); i++) {
-		AccountProfile const &t = global->account_profiles[i];
-		a = ui->menuProfiles->addAction(t.text());
-		a->setData(QVariant(i));
-		a->setCheckable(true);
-		a->setChecked(i == m->current_account_profiles);
-		connect(a, &QAction::triggered, this, &MainWindow::onSwitchProfile);
 	}
 }
 

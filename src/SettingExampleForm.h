@@ -9,13 +9,12 @@ class SettingExampleForm;
 
 class SettingExampleForm : public AbstractSettingForm {
 	Q_OBJECT
+private:
+	Ui::SettingExampleForm *ui;
 public:
 	explicit SettingExampleForm(QWidget *parent = nullptr);
 	~SettingExampleForm() override;
 	void exchange(bool save) override;
-
-private:
-	Ui::SettingExampleForm *ui;
 };
 
 #endif // SETTINGEXAMPLEFORM_H

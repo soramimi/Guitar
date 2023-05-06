@@ -353,22 +353,6 @@
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_6">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>8</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -435,20 +419,20 @@
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
+        <widget class="SimpleImageWidget" name="widget_avatar_icon" native="true">
+         <property name="minimumSize">
           <size>
-           <width>4</width>
-           <height>20</height>
+           <width>56</width>
+           <height>48</height>
           </size>
          </property>
-        </spacer>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>48</height>
+          </size>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -1169,15 +1153,9 @@
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
    </widget>
-   <widget class="QMenu" name="menuProfiles">
-    <property name="title">
-     <string>Profiles</string>
-    </property>
-   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Edit"/>
-   <addaction name="menuProfiles"/>
    <addaction name="menu_Repository"/>
    <addaction name="menuRe_mote"/>
    <addaction name="menuDestructive_3"/>
@@ -1766,6 +1744,12 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
+  <customwidget>
+   <class>SimpleImageWidget</class>
+   <extends>QWidget</extends>
+   <header>SimpleImageWidget.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>

@@ -49,7 +49,7 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>5</number>
        </property>
        <widget class="SettingGeneralForm" name="page_general"/>
        <widget class="SettingBehaviorForm" name="page_behavior">
@@ -101,6 +101,7 @@
          </property>
         </layout>
        </widget>
+       <widget class="SettingOptionsForm" name="page_options"/>
        <widget class="SettingVisualForm" name="page_visual"/>
        <widget class="SettingExampleForm" name="page_example">
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -196,6 +197,12 @@
    <class>SettingPrograms2Form</class>
    <extends>QWidget</extends>
    <header>SettingPrograms2Form.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingOptionsForm</class>
+   <extends>QWidget</extends>
+   <header>SettingOptionsForm.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

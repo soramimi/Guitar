@@ -1,55 +1,10 @@
 #include "RepositoryData.h"
+#include "XmlTagState.h"
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 #include <QFile>
 #include <vector>
 #include <QStringRef>
-
-class TagState {
-private:
-	std::vector<ushort> arr;
-public:
-	void push(QString const &tag)
-	{
-		if (arr.empty()) {
-			arr.reserve(100);
-		}
-		size_t s = arr.size();
-		size_t t = tag.size();
-		arr.resize(s + t + 1);
-		arr[s] = '/';
-		std::copy_n(tag.utf16(), t, &arr[s + 1]);
-	}
-	void push(QStringView const &tag)
-	{
-		push(tag.toString());
-	}
-	void pop()
-	{
-		size_t s = arr.size();
-		while (s > 0) {
-			s--;
-			if (arr[s] == '/') break;
-		}
-		arr.resize(s);
-	}
-	bool is(char const *path) const
-	{
-		size_t s = arr.size();
-		for (size_t i = 0; i < s; i++) {
-			if (arr[i] != path[i]) return false;
-		}
-		return path[s] == 0;
-	}
-	bool operator == (char const *path) const
-	{
-		return is(path);
-	}
-	QString str() const
-	{
-		return arr.empty() ? QString() : QString::fromUtf16((char16_t const *)&arr[0], arr.size());
-	}
-};
 
 bool RepositoryBookmark::save(QString const &path, QList<RepositoryData> const *items)
 {
@@ -94,7 +49,7 @@ QList<RepositoryData> RepositoryBookmark::load(QString const &path)
 	if (file.open(QFile::ReadOnly)) {
 		RepositoryData item;
 		QString text;
-		TagState state;
+		XmlTagState state;
 		QXmlStreamReader reader(&file);
 		reader.setNamespaceProcessing(false);
 		while (!reader.atEnd()) {

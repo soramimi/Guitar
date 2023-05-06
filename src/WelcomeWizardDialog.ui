@@ -29,7 +29,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page_helper_tools">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -37,7 +37,6 @@
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -95,7 +94,6 @@
         <widget class="QLabel" name="label">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -146,9 +144,22 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
             <widget class="QPushButton" name="pushButton_get_icon">
              <property name="text">
-              <string>Get icon from Gravatar</string>
+              <string>Get icon from network</string>
              </property>
             </widget>
            </item>
@@ -168,9 +179,12 @@
           </layout>
          </item>
          <item>
-          <widget class="QLabel" name="label_avatar">
-           <property name="text">
-            <string/>
+          <widget class="SimpleImageWidget" name="widget" native="true">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>128</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -197,7 +211,6 @@
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -255,7 +268,6 @@
         <widget class="QLabel" name="label_8">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -422,6 +434,12 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>SimpleImageWidget</class>
+   <extends>QWidget</extends>
+   <header>SimpleImageWidget.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>ReadOnlyLineEdit</class>
    <extends>QLineEdit</extends>

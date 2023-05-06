@@ -105,8 +105,9 @@ void AvatarLoader::run()
 			if (misc::isValidMailAddress(request.email)) {
 				QString id;
 				{
+					std::string email = request.email.trimmed().toLower().toStdString();
 					QCryptographicHash hash(QCryptographicHash::Md5);
-					hash.addData(request.email.c_str(), (int)request.email.size());
+					hash.addData(email.c_str(), (int)email.size());
 					QByteArray ba = hash.result();
 					char tmp[100];
 					for (int i = 0; i < ba.size(); i++) {
@@ -207,34 +208,31 @@ void AvatarLoader::stop()
 	}
 }
 
-QImage AvatarLoader::fetchImage(std::string const &email, bool request) const
+QImage AvatarLoader::fetch(QString const &email, bool request) const
 {
-	std::lock_guard lock(m->mutex);
-	bool found = false;
-	for (size_t i = 0; i < m->requests.size(); i++) {
-		if (m->requests[i].email == email) {
-			found = true;
-			if (m->requests[i].state == Done) {
-				RequestItem item = m->requests[i];
-				m->requests.erase(m->requests.begin() + i);
-				m->requests.insert(m->requests.begin(), item);
-				return item.image;
+	if (misc::isValidMailAddress(email)) {
+		std::lock_guard lock(m->mutex);
+		bool found = false;
+		for (size_t i = 0; i < m->requests.size(); i++) {
+			if (m->requests[i].email == email) {
+				found = true;
+				if (m->requests[i].state == Done) {
+					RequestItem item = m->requests[i];
+					m->requests.erase(m->requests.begin() + i);
+					m->requests.insert(m->requests.begin(), item);
+					return item.image;
+				}
 			}
 		}
-	}
-	if (request && !found) {
-		RequestItem item;
-		item.state = Idle;
-		item.email = email;
-		m->requests.push_back(item);
-		m->condition.notify_all();
+		if (request && !found) {
+			RequestItem item;
+			item.state = Idle;
+			item.email = email;
+			m->requests.push_back(item);
+			m->condition.notify_all();
+		}
 	}
 	return {};
-}
-
-QIcon AvatarLoader::fetch(std::string const &email, bool request) const
-{
-	return QIcon(QPixmap::fromImage(fetchImage(email, request)));
 }
 
 void AvatarLoader::addListener(QObject *listener)

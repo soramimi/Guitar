@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
 	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
 	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
 	global->config_file_path = joinpath(global->app_config_dir, global->application_name + ".ini");
+	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
 	if (!QFileInfo(global->app_config_dir).isDir()) {
 		QDir().mkpath(global->app_config_dir);
 	}

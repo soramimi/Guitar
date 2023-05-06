@@ -1,14 +1,15 @@
 #include "ConfigUserDialog.h"
 #include "ui_ConfigUserDialog.h"
+#include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
+#include "EditProfilesDialog.h"
 #include "MainWindow.h"
-#include "common/misc.h"
 #include "UserEvent.h"
+#include "common/misc.h"
 
 struct ConfigUserDialog::Private  {
 	Git::User global_user;
 	Git::User local_user;
-	AvatarLoader avatar_loader;
 };
 
 ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo)
@@ -40,16 +41,21 @@ ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_u
 	}
 	ui->groupBox_local->setTitle(text);
 
-	m->avatar_loader.addListener(this);
-	m->avatar_loader.start(mainwindow());
+	global->avatar_loader.addListener(this);
+
+	updateAvatar();
 }
 
 ConfigUserDialog::~ConfigUserDialog()
 {
-	m->avatar_loader.stop();
-	m->avatar_loader.removeListener(this);
+	global->avatar_loader.removeListener(this);
 	delete m;
 	delete ui;
+}
+
+bool ConfigUserDialog::isLocalUnset() const
+{
+	return ui->checkBox_unset_local->isChecked();
 }
 
 MainWindow *ConfigUserDialog::mainwindow()
@@ -62,23 +68,37 @@ Git::User ConfigUserDialog::user(bool global) const
 	if (!global && ui->checkBox_unset_local->isChecked()) return {};
 
 	Git::User user;
-	user.name  = (global ? ui->lineEdit_global_name  : ui->lineEdit_local_name )->text();
-	user.email = (global ? ui->lineEdit_global_email : ui->lineEdit_local_email)->text();
+	if (global) { // グローバル
+		user.name = ui->lineEdit_global_name->text();
+		user.email = ui->lineEdit_global_email->text();
+	} else { // ローカル
+		if (!ui->checkBox_unset_local->isChecked()) { // 未設定でないなら
+			user.name = ui->lineEdit_local_name->text();
+			user.email = ui->lineEdit_local_email->text();
+		}
+	}
 	return user;
 }
 
 void ConfigUserDialog::updateAvatar(QString const &email, bool request)
 {
-	QImage image = m->avatar_loader.fetchImage(email.toStdString(), request);
+	QImage image = global->avatar_loader.fetch(email, request);
 	ui->widget_avatar->setImage(image);
+}
+
+void ConfigUserDialog::updateAvatar()
+{
+	updateAvatar(email(), true);
 }
 
 QString ConfigUserDialog::email() const
 {
 	QString email;
 
-	email = ui->lineEdit_local_email->text();
-	if (misc::isValidMailAddress(email)) return email;
+	if (!ui->checkBox_unset_local->isChecked()) {
+		email = ui->lineEdit_local_email->text();
+		if (misc::isValidMailAddress(email)) return email;
+	}
 
 	email = ui->lineEdit_global_email->text();
 	if (misc::isValidMailAddress(email)) return email;
@@ -133,9 +153,27 @@ void ConfigUserDialog::on_lineEdit_local_email_textEdited(const QString &text)
 
 void ConfigUserDialog::on_checkBox_unset_local_stateChanged(int arg1)
 {
-	if (ui->checkBox_unset_local->isChecked()) {
-		ui->lineEdit_local_name->clear();
-		ui->lineEdit_local_email->clear();
+	bool f = ui->checkBox_unset_local->isChecked();
+	ui->lineEdit_local_name->setEnabled(!f);
+	ui->lineEdit_local_email->setEnabled(!f);
+	updateAvatar();
+}
+
+void ConfigUserDialog::on_pushButton_profiles_clicked()
+{
+	QString xmlpath = global->profiles_xml_path;
+	EditProfilesDialog::Item item1;
+	item1.name = ui->lineEdit_local_name->text();
+	item1.email = ui->lineEdit_local_email->text();
+	EditProfilesDialog dlg(this);
+	dlg.loadXML(xmlpath);
+	if (dlg.exec(item1) == QDialog::Accepted) {
+		dlg.saveXML(xmlpath);
+		EditProfilesDialog::Item item2 = dlg.selectedItem();
+		ui->lineEdit_local_name->setText(item2.name);
+		ui->lineEdit_local_email->setText(item2.email);
+		ui->checkBox_unset_local->setChecked(false);
+		updateAvatar();
 	}
 }
 
