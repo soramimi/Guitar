@@ -384,6 +384,7 @@ private:
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
 	void updateAvatar(const Git::User &user, bool request);
+	void cleanSubModule(QListWidgetItem *item);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
