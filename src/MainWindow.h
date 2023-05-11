@@ -388,6 +388,7 @@ private:
 	void switchProfile(QString const &email);
 	void switchProfile(const Git::User &user);
 	void loadProfiles();
+	void cleanSubModule(QListWidgetItem *item);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;

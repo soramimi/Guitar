@@ -7,16 +7,19 @@
 #include "BlameWindow.h"
 #include "CheckoutDialog.h"
 #include "CherryPickDialog.h"
+#include "CleanSubModuleDialog.h"
 #include "CloneDialog.h"
 #include "CloneFromGitHubDialog.h"
 #include "CommitDialog.h"
 #include "CommitExploreWindow.h"
 #include "CommitPropertyDialog.h"
 #include "CommitViewWindow.h"
+#include "ConfigUserDialog.h"
 #include "CreateRepositoryDialog.h"
 #include "DeleteBranchDialog.h"
 #include "DoYouWantToInitDialog.h"
 #include "EditGitIgnoreDialog.h"
+#include "EditProfileDialog.h"
 #include "EditTagsDialog.h"
 #include "FileHistoryWindow.h"
 #include "FilePropertyDialog.h"
@@ -36,7 +39,6 @@
 #include "SelectCommandDialog.h"
 #include "SetGlobalUserDialog.h"
 #include "SetGpgSigningDialog.h"
-#include "ConfigUserDialog.h"
 #include "SettingsDialog.h"
 #include "StatusLabel.h"
 #include "SubmoduleAddDialog.h"
@@ -51,6 +53,7 @@
 #include "common/misc.h"
 #include "gunzip.h"
 #include "platform.h"
+#include "unix/UnixPtyProcess.h"
 #include "webclient.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -58,6 +61,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QFontDatabase>
@@ -67,11 +71,10 @@
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <chrono>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <thread>
-#include <chrono>
-#include <QFile>
 
 #ifdef Q_OS_MAC
 namespace {
@@ -86,7 +89,6 @@ bool isValidDir(QString const &dir)
 
 #include <QProcess>
 #endif
-
 
 struct EventItem {
 	QObject *receiver = nullptr;
@@ -4350,17 +4352,28 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 	
+	QListWidgetItem *item = frame()->fileslistwidget()->currentItem();
+
+	QString submodpath = getSubmodulePath(item);
+
 	QMenu menu;
 	QAction *a_delete = menu.addAction(tr("Delete"));
 	QAction *a_untrack = menu.addAction(tr("Untrack"));
 	QAction *a_history = menu.addAction(tr("History"));
-	QAction *a_blame = menu.addAction(tr("Blame"));
-	QAction *a_properties = addMenuActionProperty(&menu);
+	QAction *a_blame = nullptr;
+	QAction *a_clean = nullptr;
 	
+	if (submodpath.isEmpty()) { // not submodule
+		a_blame = menu.addAction(tr("Blame"));
+	} else { // if submodule
+		a_clean = menu.addAction(tr("Clean"));
+	}
+
+	QAction *a_properties = addMenuActionProperty(&menu);
+
 	QPoint pt = frame()->fileslistwidget()->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
 	if (a) {
-		QListWidgetItem *item = frame()->fileslistwidget()->currentItem();
 		if (a == a_delete) {
 			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
 				for_each_selected_files([&](QString const &path){
@@ -4383,6 +4396,8 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 			execFileHistory(item);
 		} else if (a == a_blame) {
 			blame(item);
+		} else if (a == a_clean) {
+			cleanSubModule(item);
 		} else if (a == a_properties) {
 			showObjectProperty(item);
 		}
@@ -4613,6 +4628,28 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 			QString id = getObjectID(item);
 			FilePropertyDialog dlg(this);
 			dlg.exec(this, path, id);
+		}
+	}
+}
+
+void MainWindow::cleanSubModule(QListWidgetItem *item)
+{
+	QString submodpath = getSubmodulePath(item);
+	if (submodpath.isEmpty()) return;
+
+	Git::SubmoduleItem submod;
+	submod.path = submodpath;
+	submod.id = getObjectID(item);
+
+	CleanSubModuleDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		auto opt = dlg.options();
+		GitPtr g = git(submod);
+		if (opt.reset_hard) {
+			g->reset_hard();
+		}
+		if (opt.clean_df) {
+			g->clean_df();
 		}
 	}
 }
@@ -5382,10 +5419,6 @@ void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 		openRepository(true);
 	}
 }
-
-#include "unix/UnixPtyProcess.h"
-
-#include "EditProfileDialog.h"
 
 void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 {

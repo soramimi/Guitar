@@ -310,10 +310,10 @@ bool GitDiff::diff(QString const &id, const QList<Git::SubmoduleItem> &submodule
             Git::Diff *diff = &diffs[i];
             if (diff->isSubmodule()) {
                 for (int j = 0; j < (int)submodules.size(); j++) {
-                    if (submodules[j].path == diff->path) {
-                        GitPtr g = git(submodules[j]);
-                        auto Do = [&](QString const &id, Git::Diff::SubmoduleDetail *out){
-                            Git::SubmoduleItem const &mods = submodules[j];
+					if (submodules[j].path == diff->path) {
+						GitPtr g = git(submodules[j]);
+						auto Do = [&](QString const &id, Git::Diff::SubmoduleDetail *out){
+							Git::SubmoduleItem const &mods = submodules[j];
 							if (id.startsWith('*')) {
 								out->item = mods;
 								out->item.id = g->rev_parse("HEAD");
@@ -325,17 +325,10 @@ bool GitDiff::diff(QString const &id, const QList<Git::SubmoduleItem> &submodule
 							} else {
 								*out = {};
 							}
-                        };
-                        Do(diff->blob.a_id, &diff->a_submodule);
-                        Do(diff->blob.b_id, &diff->b_submodule);
-
-						if (diff->a_submodule.commit.commit_date.isValid() && diff->b_submodule.commit.commit_date.isValid()) {
-							// なぜか逆に来ることがあるみたい？(ﾜｶﾗﾝ)
-							if (diff->a_submodule.commit.commit_date > diff->b_submodule.commit.commit_date) {
-								std::swap(diff->a_submodule, diff->b_submodule);
-							}
-                        }
-                        break;
+						};
+						Do(diff->blob.a_id, &diff->a_submodule);
+						Do(diff->blob.b_id, &diff->b_submodule);
+						break;
                     }
                 }
             }

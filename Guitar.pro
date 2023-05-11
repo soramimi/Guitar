@@ -136,6 +136,7 @@ SOURCES += \
 	src/BlameWindow.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
+	src/CleanSubModuleDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
@@ -274,6 +275,7 @@ HEADERS  += \
 	src/BranchLabel.h \
 	src/CheckoutDialog.h \
 	src/CherryPickDialog.h \
+	src/CleanSubModuleDialog.h \
 	src/ClearButton.h \
 	src/CloneDialog.h \
 	src/CloneFromGitHubDialog.h \
@@ -416,6 +418,7 @@ FORMS    += \
 	src/BlameWindow.ui \
 	src/CheckoutDialog.ui \
 	src/CherryPickDialog.ui \
+	src/CleanSubModuleDialog.ui \
 	src/CloneDialog.ui \
 	src/CloneFromGitHubDialog.ui \
 	src/CommitDialog.ui \
