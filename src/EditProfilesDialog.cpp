@@ -286,7 +286,7 @@ bool EditProfilesDialog::loadXML(QString const &path)
 				if (state == "/profiles/profile") {
 					item = {};
 				}
-				text = {};
+				text.clear();
 				break;
 			case QXmlStreamReader::EndElement:
 				if (state == "/profiles/profile") {
