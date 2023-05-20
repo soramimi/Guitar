@@ -292,8 +292,7 @@ MainWindow::MainWindow(QWidget *parent)
 	updateRepositoriesList();
 	
 	// アイコン取得機能
-	global->avatar_loader.addListener(this);
-	global->avatar_loader.addListener(ui->frame_repository_wrapper);
+	global->avatar_loader.connectAvatarReady(this, &MainWindow::avatarReady);
 	
 	connect(frame()->filediffwidget(), &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(frame()); });
 	
@@ -318,8 +317,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-	global->avatar_loader.removeListener(this);
-	global->avatar_loader.removeListener(ui->frame_repository_wrapper);
+	global->avatar_loader.disconnectAvatarReady(this, &MainWindow::avatarReady);
 
 	cancelPendingUserEvents();
 	
@@ -662,10 +660,6 @@ void MainWindow::customEvent(QEvent *e)
 {
 	if (e->type() == (QEvent::Type)UserEvent::Start) {
 		onStartEvent();
-		return;
-	}
-	if (e->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		updateAvatar(currentGitUser(), false);
 		return;
 	}
 }
@@ -1897,6 +1891,11 @@ void MainWindow::updateAvatar(const Git::User &user, bool request)
 		icon = global->avatar_loader.fetch(user.email, request);
 	}
 	ui->widget_avatar_icon->setImage(icon);
+}
+
+void MainWindow::avatarReady()
+{
+	updateAvatar(currentGitUser(), false);
 }
 
 void MainWindow::setWindowTitle_(const Git::User &user)

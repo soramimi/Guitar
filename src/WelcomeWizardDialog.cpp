@@ -24,14 +24,14 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	ui->stackedWidget->setCurrentWidget(pages_[0]);
 	on_stackedWidget_currentChanged(0);
 
-	global->avatar_loader.addListener(this);
+	global->avatar_loader.connectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
 
 	ui->stackedWidget->setCurrentWidget(ui->page_helper_tools);
 }
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
-	global->avatar_loader.removeListener(this);
+	global->avatar_loader.disconnectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
 	delete ui;
 }
 
@@ -48,7 +48,6 @@ void WelcomeWizardDialog::set_user_email(QString const &v)
 void WelcomeWizardDialog::set_default_working_folder(QString const &v)
 {
 	ui->lineEdit_default_working_folder->setText(v);
-
 }
 
 void WelcomeWizardDialog::set_git_command_path(QString const &v)
@@ -150,7 +149,6 @@ void WelcomeWizardDialog::on_pushButton_browse_default_workiing_folder_clicked()
 	ui->lineEdit_default_working_folder->setText(s);
 }
 
-
 void WelcomeWizardDialog::on_pushButton_browse_git_clicked()
 {
 	QString s = mainwindow_->selectGitCommand(false);
@@ -162,14 +160,11 @@ void WelcomeWizardDialog::setAvatar(QImage const &icon)
 	ui->widget->setImage(icon);
 }
 
-void WelcomeWizardDialog::customEvent(QEvent *event)
+void WelcomeWizardDialog::avatarReady()
 {
-	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		QString email = ui->lineEdit_user_email->text();
-		auto icon = global->avatar_loader.fetch(email, true);
-		setAvatar(icon);
-		return;
-	}
+	QString email = ui->lineEdit_user_email->text();
+	auto icon = global->avatar_loader.fetch(email, true);
+	setAvatar(icon);
 }
 
 void WelcomeWizardDialog::on_pushButton_get_icon_clicked()

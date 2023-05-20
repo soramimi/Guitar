@@ -17,8 +17,14 @@ class CommitPropertyDialog;
 class CommitPropertyDialog : public QDialog {
 	Q_OBJECT
 private:
+	Ui::CommitPropertyDialog *ui;
 	struct Private;
 	Private *m;
+
+	void init(MainWindow *mw);
+	MainWindow *mainwindow();
+	void setAvatar(const QImage &image, SimpleImageWidget *widget);
+	void updateAvatar(bool request);
 public:
 	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
 	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
@@ -27,20 +33,11 @@ public:
 	void showCheckoutButton(bool f);
 	void showJumpButton(bool f);
 private slots:
+	void avatarReady();
 	void on_pushButton_checkout_clicked();
 	void on_pushButton_details_clicked();
 	void on_pushButton_explorer_clicked();
 	void on_pushButton_jump_clicked();
-private:
-	Ui::CommitPropertyDialog *ui;
-	void init(MainWindow *mw);
-	MainWindow *mainwindow();
-	void setAvatar(const QImage &image, SimpleImageWidget *widget);
-	void updateAvatar(bool request);
-
-	// QObject interface
-protected:
-	void customEvent(QEvent *event);
 };
 
 #endif // COMMITPROPERTYDIALOG_H

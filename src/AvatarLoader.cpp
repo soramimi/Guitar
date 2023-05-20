@@ -30,11 +30,12 @@ struct AvatarLoader::Private {
 	WebContext webcx = {WebClient::HTTP_1_1};
 	WebClientPtr web;
 
-	std::set<QObject *> listeners;
+//	std::set<QObject *> listeners;
 };
 
-AvatarLoader::AvatarLoader()
-	: m(new Private)
+AvatarLoader::AvatarLoader(QObject *parent)
+	: QObject(parent)
+	, m(new Private)
 {
 }
 
@@ -64,15 +65,9 @@ void AvatarLoader::run()
 
 	bool notify = false;
 
-	auto Notify = [&](){
-		for (QObject *listener : m->listeners) {
-			QApplication::postEvent(listener, new QEvent((QEvent::Type)UserEvent::AvatarReady));
-		}
-	};
-
 	while (1) {
 		if (notify) {
-			Notify();
+			emit ready();
 			notify = false;
 			time_notify = {};
 		}
@@ -234,17 +229,3 @@ QImage AvatarLoader::fetch(QString const &email, bool request) const
 	}
 	return {};
 }
-
-void AvatarLoader::addListener(QObject *listener)
-{
-	m->listeners.insert(m->listeners.end(), listener);
-}
-
-void AvatarLoader::removeListener(QObject *listener)
-{
-	auto it = m->listeners.find(listener);
-	if (it != m->listeners.end()) {
-		m->listeners.erase(it);
-	}
-}
-

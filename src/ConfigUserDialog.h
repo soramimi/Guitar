@@ -28,8 +28,6 @@ public:
 
 	bool isLocalUnset() const;
 	Git::User user(bool global) const;
-protected:
-	void customEvent(QEvent *event);
 private slots:
 	void on_pushButton_get_icon_clicked();
 	void on_lineEdit_global_name_textChanged(const QString &text);
@@ -38,6 +36,8 @@ private slots:
 	void on_lineEdit_local_email_textEdited(const QString &text);
 	void on_checkBox_unset_local_stateChanged(int arg1);
 	void on_pushButton_profiles_clicked();
+private slots:
+	void avatarReady();
 };
 
 #endif // CONFIGUSERDIALOG_H

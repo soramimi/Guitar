@@ -19,12 +19,12 @@ EditProfilesDialog::EditProfilesDialog(QWidget *parent)
 	, ui(new Ui::EditProfilesDialog)
 {
 	ui->setupUi(this);
-	global->avatar_loader.addListener(this);
+	global->avatar_loader.connectAvatarReady(this, &EditProfilesDialog::avatarReady);
 }
 
 EditProfilesDialog::~EditProfilesDialog()
 {
-	global->avatar_loader.removeListener(this);
+	global->avatar_loader.disconnectAvatarReady(this, &EditProfilesDialog::avatarReady);
 	delete ui;
 }
 
@@ -61,14 +61,9 @@ void EditProfilesDialog::updateAvatar(QString const &email, bool request)
 	}
 }
 
-
-
-void EditProfilesDialog::customEvent(QEvent *event)
+void EditProfilesDialog::avatarReady()
 {
-	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		updateAvatar(current_email_, false);
-		return;
-	}
+	updateAvatar(current_email_, false);
 }
 
 /**

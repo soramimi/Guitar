@@ -44,9 +44,8 @@ public:
 	bool saveXML(const QString &path) const;
 	bool loadXML(const QString &path);
 	Item selectedItem() const;
-protected:
-	void customEvent(QEvent *event);
 private slots:
+	void avatarReady();
 	void on_pushButton_add_clicked();
 	void on_pushButton_delete_clicked();
 	void on_lineEdit_name_textChanged(const QString &text);

@@ -11,7 +11,6 @@
 
 class AvatarLoader;
 class GitObjectCache;
-class LogTableWidget;
 class QListWidget;
 class QListWidgetItem;
 class QTableWidgetItem;
@@ -473,15 +472,12 @@ private slots:
 	void onRepositoriesTreeDropped();
 	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void onInterval10ms();
+	void avatarReady();
 
 	void on_action_about_triggered();
 	void on_action_add_repository_triggered();
 	void on_action_clean_df_triggered();
 	void on_action_commit_triggered();
-//	void on_action_create_a_repository_triggered()
-//	{
-//		createRepository(QString());
-//	}
 	void on_action_create_desktop_launcher_file_triggered();
 	void on_action_delete_branch_triggered();
 	void on_action_delete_remote_branch_triggered();
@@ -514,10 +510,6 @@ private slots:
 	void on_action_repository_status_triggered();
 	void on_action_reset_HEAD_1_triggered();
 	void on_action_reset_hard_triggered();
-//	void on_action_set_config_user_triggered()
-//	{
-//		on_action_configure_user_triggered();
-//	}
 	void on_action_configure_user_triggered();
 	void on_action_set_gpg_signing_triggered();
 	void on_action_show_labels_triggered();
@@ -566,8 +558,6 @@ private slots:
 	void on_toolButton_addrepo_clicked();
 
 	void test();
-
-
 protected slots:
 	void onLogIdle();
 signals:

@@ -34,10 +34,9 @@ private:
 
 	MainWindow *mainwindow();
 	MainWindow const *mainwindow() const;
-protected:
-	void customEvent(QEvent *e);
 public:
 	explicit RepositoryWrapperFrame(QWidget *parent = nullptr);
+	~RepositoryWrapperFrame() override;
 	Git::CommitItem const *commitItem(int row);
 	QIcon verifiedIcon(char s) const;
 	QImage committerIcon(int row, QSize size) const;
@@ -65,6 +64,8 @@ public:
 	void updateLogTableView();
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
+public slots:
+	void avatarReady();
 };
 
 struct RepositoryWrapperFrameP {

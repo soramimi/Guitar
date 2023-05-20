@@ -1,6 +1,7 @@
 
 #include "main.h"
 #include "ApplicationGlobal.h"
+#include "AvatarLoader.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
@@ -101,8 +102,9 @@ int main(int argc, char *argv[])
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);
 
-	qRegisterMetaType<RepositoryData>("RepositoryData");
-	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
+	qRegisterMetaType<AvatarLoader::Item>();
+	qRegisterMetaType<RepositoryData>();
+	qRegisterMetaType<RepositoryWrapperFrameP>();
 
 	{
 		MySettings s;

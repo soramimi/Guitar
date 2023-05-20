@@ -6,7 +6,12 @@
 RepositoryWrapperFrame::RepositoryWrapperFrame(QWidget *parent)
 	: QFrame(parent)
 {
+	global->avatar_loader.disconnectAvatarReady(this, &RepositoryWrapperFrame::avatarReady);
+}
 
+RepositoryWrapperFrame::~RepositoryWrapperFrame()
+{
+	global->avatar_loader.connectAvatarReady(this, &RepositoryWrapperFrame::avatarReady);
 }
 
 void RepositoryWrapperFrame::bind(MainWindow *mw, LogTableWidget *logtablewidget, FilesListWidget *fileslistwidget, FilesListWidget *unstagedfileslistwidget, FilesListWidget *stagesfileslistwidget, FileDiffWidget *filediffwidget)
@@ -117,11 +122,9 @@ void RepositoryWrapperFrame::selectLogTableRow(int row)
 	logtablewidget_->selectRow(row);
 }
 
-void RepositoryWrapperFrame::customEvent(QEvent *e)
+void RepositoryWrapperFrame::avatarReady()
 {
-	if (e->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		updateLogTableView();
-	}
+	updateLogTableView();
 }
 
 void RepositoryWrapperFrame::prepareLogTableWidget()

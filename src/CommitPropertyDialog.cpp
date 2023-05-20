@@ -14,6 +14,34 @@ struct CommitPropertyDialog::Private {
 	Git::CommitItem commit;
 };
 
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
+	: QDialog(parent)
+	, ui(new Ui::CommitPropertyDialog)
+	, m(new Private)
+{
+	ui->setupUi(this);
+	m->commit = *commit;
+	init(mw);
+}
+
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
+	: QDialog(parent)
+	, ui(new Ui::CommitPropertyDialog)
+	, m(new Private)
+{
+	ui->setupUi(this);
+
+	mw->queryCommit(commit_id, &m->commit);
+	init(mw);
+}
+
+CommitPropertyDialog::~CommitPropertyDialog()
+{
+	global->avatar_loader.disconnectAvatarReady(this, &CommitPropertyDialog::avatarReady);
+	delete m;
+	delete ui;
+}
+
 void CommitPropertyDialog::init(MainWindow *mw)
 {
 	Qt::WindowFlags flags = windowFlags();
@@ -75,7 +103,7 @@ void CommitPropertyDialog::init(MainWindow *mw)
 		ui->lineEdit_sign_mail->setText(key.mail);
 	}
 
-	global->avatar_loader.addListener(this);
+	global->avatar_loader.connectAvatarReady(this, &CommitPropertyDialog::avatarReady);
 	updateAvatar(true);
 }
 
@@ -96,40 +124,10 @@ void CommitPropertyDialog::updateAvatar(bool request)
 	SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
 }
 
-void CommitPropertyDialog::customEvent(QEvent *event)
+void CommitPropertyDialog::avatarReady()
 {
-	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		updateAvatar(false);
-		return;
-	}
-}
-
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
-	: QDialog(parent)
-	, ui(new Ui::CommitPropertyDialog)
-	, m(new Private)
-{
-	ui->setupUi(this);
-	m->commit = *commit;
-	init(mw);
-}
-
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
-	: QDialog(parent)
-	, ui(new Ui::CommitPropertyDialog)
-	, m(new Private)
-{
-	ui->setupUi(this);
-
-	mw->queryCommit(commit_id, &m->commit);
-	init(mw);
-}
-
-CommitPropertyDialog::~CommitPropertyDialog()
-{
-	global->avatar_loader.removeListener(this);
-	delete m;
-	delete ui;
+	qDebug() << Q_FUNC_INFO;
+	updateAvatar(false);
 }
 
 MainWindow *CommitPropertyDialog::mainwindow()

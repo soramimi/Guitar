@@ -41,14 +41,14 @@ ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_u
 	}
 	ui->groupBox_local->setTitle(text);
 
-	global->avatar_loader.addListener(this);
+	global->avatar_loader.connectAvatarReady(this, &ConfigUserDialog::avatarReady);
 
 	updateAvatar();
 }
 
 ConfigUserDialog::~ConfigUserDialog()
 {
-	global->avatar_loader.removeListener(this);
+	global->avatar_loader.disconnectAvatarReady(this, &ConfigUserDialog::avatarReady);
 	delete m;
 	delete ui;
 }
@@ -86,6 +86,11 @@ void ConfigUserDialog::updateAvatar(QString const &email, bool request)
 	ui->widget_avatar->setImage(image);
 }
 
+void ConfigUserDialog::avatarReady()
+{
+	updateAvatar(email(), false);
+}
+
 void ConfigUserDialog::updateAvatar()
 {
 	updateAvatar(email(), true);
@@ -115,19 +120,10 @@ void ConfigUserDialog::on_pushButton_get_icon_clicked()
 	}
 }
 
-void ConfigUserDialog::customEvent(QEvent *event)
-{
-	if (event->type() == (QEvent::Type)UserEvent::AvatarReady) {
-		updateAvatar(email(), false);
-		return;
-	}
-}
-
 void ConfigUserDialog::on_lineEdit_global_name_textChanged(const QString &text)
 {
 	m->global_user.name = text;
 }
-
 
 void ConfigUserDialog::on_lineEdit_global_email_textEdited(const QString &text)
 {
@@ -138,7 +134,6 @@ void ConfigUserDialog::on_lineEdit_local_name_textEdited(const QString &text)
 {
 	m->local_user.name = text;
 }
-
 
 void ConfigUserDialog::on_lineEdit_local_email_textEdited(const QString &text)
 {

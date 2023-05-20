@@ -14,6 +14,10 @@ class WelcomeWizardDialog;
 class WelcomeWizardDialog : public QDialog {
 	Q_OBJECT
 private:
+private:
+	Ui::WelcomeWizardDialog *ui;
+	void setAvatar(const QImage &icon);
+
 	MainWindow *mainwindow_;
 	QList<QWidget *> pages_;
 public:
@@ -30,6 +34,7 @@ public:
 	QString default_working_folder() const;
 	QString git_command_path() const;
 private slots:
+	void avatarReady();
 	void on_stackedWidget_currentChanged(int arg1);
 	void on_pushButton_browse_default_workiing_folder_clicked();
 	void on_pushButton_browse_git_clicked();
@@ -37,13 +42,6 @@ private slots:
 	void on_pushButton_prev_clicked();
 	void on_pushButton_next_clicked();
 	void on_lineEdit_git_textChanged(const QString &arg1);
-private:
-	Ui::WelcomeWizardDialog *ui;
-	void setAvatar(const QImage &icon);
-
-	// QObject interface
-protected:
-	void customEvent(QEvent *event);
 };
 
 #endif // WELCOMEWIZARDDIALOG_H
