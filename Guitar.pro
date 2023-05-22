@@ -7,13 +7,14 @@ win32:lessThan(QT_MAJOR_VERSION, 6) {
     QT += winextras
 }
 
-CONFIG(debug,debug|release):TARGET = Guitard
-CONFIG(release,debug|release):TARGET = Guitar
+#CONFIG(debug,debug|release):TARGET = Guitard
+#CONFIG(release,debug|release):TARGET = Guitar
+TARGET = Guitar
 TEMPLATE = app
 
-CONFIG += c++1z nostrip debug_info
+CONFIG += c++17 nostrip debug_info
 
-DESTDIR = $$PWD/_bin
+#DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
