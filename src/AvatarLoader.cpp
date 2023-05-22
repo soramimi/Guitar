@@ -7,10 +7,11 @@
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>
-#include <mutex>
-#include <condition_variable>
-#include <thread>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <thread>
 
 namespace {
 const int MAX_CACHE_COUNT = 1000;
