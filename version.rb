@@ -1,7 +1,7 @@
 #!/dev/null
 
 $product_name = "Guitar"
-$copyright_year = 2022
+$copyright_year = 2023
 $version_a = 1
 $version_b = 2
 $version_c = 999
@@ -10,8 +10,9 @@ $version_d = 0
 # Future plans
 #
 # v1.3.0 xxxx-xx-xx
-# - submodule support
-# - word oriented diffs
+# - サブモジュール対応
+# - 文字単位diff
+# - プロファイル切り替え機能
 #
 
 # History

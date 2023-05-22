@@ -1,6 +1,5 @@
 Guitar, The Git GUI Client
-Copyright (C) 2022 Shinichi Fuchita
+Copyright (C) 2023 Shinichi Fuchita
 repository: https://github.com/soramimi/Guitar
-web: http://www.soramimi.jp/
 mail: fi7s-fct@asahi-net.or.jp
 twitter: @soramimi_jp
