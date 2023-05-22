@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);
 
-	qRegisterMetaType<AvatarLoader::Item>();
-	qRegisterMetaType<RepositoryData>();
-	qRegisterMetaType<RepositoryWrapperFrameP>();
+	qRegisterMetaType<AvatarLoader::Item>("AvatarLoader::Item");
+	qRegisterMetaType<RepositoryData>("RepositoryData");
+	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 
 	{
 		MySettings s;
