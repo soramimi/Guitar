@@ -6,10 +6,10 @@ cp /usr/lib/arm-linux-gnueabihf/libz.a _bin
 cd packaging/deb
 mkdir _build
 cd _build
-qmake ../../../Guitar.pro
+qmake "CONFIG+=release" ../../../Guitar.pri
 make -j2
 cd ..
-cp ../../_bin/Guitar .
+cp _build/Guitar .
 ruby mk-deb.rb
 file=`./debname.rb`
 curl -T $file ftp://10.10.10.5/Public/pub/nightlybuild/

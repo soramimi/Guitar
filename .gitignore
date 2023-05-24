@@ -29,3 +29,5 @@ packaging/win/_build/
 extra/build-*
 extra/_build-*
 bin/
+_appdir/
+Guitar-*.AppImage

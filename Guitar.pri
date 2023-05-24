@@ -7,14 +7,10 @@ win32:lessThan(QT_MAJOR_VERSION, 6) {
     QT += winextras
 }
 
-#CONFIG(debug,debug|release):TARGET = Guitard
-#CONFIG(release,debug|release):TARGET = Guitar
 TARGET = Guitar
 TEMPLATE = app
 
 CONFIG += c++17 nostrip debug_info static
-
-#DESTDIR = $$PWD/_bin
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
@@ -37,10 +33,6 @@ INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
-
-# winpty x86
-#win32:LIBS += $$PWD/misc/winpty/ia32/lib/winpty.lib
-# winpty x86_64
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib
 
 # OpenSSL
@@ -53,22 +45,12 @@ linux {
 	}
 }
 haiku:LIBS += -lssl -lcrypto -lnetwork
-#macx:INCLUDEPATH += /usr/local/include
-#macx:LIBS += /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
-#macx:LIBS += -L/usr/local/Cellar/openssl@3/3.0.1/lib
-#macx:LIBS += -lssl -lcrypto
 macx:INCLUDEPATH += /opt/homebrew/Cellar/openssl@3/3.0.5/include
 macx:LIBS += /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libssl.a /opt/homebrew/Cellar/openssl@3/3.0.5/lib/libcrypto.a
-#macx:INCLUDEPATH += /usr/local/opt/openssl@3/include
-#macx:LIBS += /usr/local/opt/openssl@3/lib/libssl.a /usr/local/opt/openssl@3/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += $$PWD/../zlib
 
-	# OpenSSL x86
-#	INCLUDEPATH += "C:\Program Files (x86)\OpenSSL\include"
-#	LIBS += "-LC:\Program Files (x86)\OpenSSL\lib"
-	# OpenSSL x86_64
 	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
 	LIBS += "-LC:\Program Files\OpenSSL\lib"
 

@@ -1,3 +1,4 @@
+#ifdef _WIN32
 /*	$File: localtime_r.c,v 1.1 2015/01/09 19:28:32 christos Exp $	*/
 
 #include "file.h"
@@ -17,3 +18,4 @@ localtime_r(const time_t *t, struct tm *tm)
 	memcpy(tm, tmp, sizeof(*tm));
 	return tmp;
 }
+#endif
