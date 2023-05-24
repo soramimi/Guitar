@@ -74,7 +74,7 @@ void AvatarLoader::run()
 		}
 		RequestItem request;
 		{
-			std::unique_lock lock(m->mutex);
+			std::unique_lock<std::mutex> lock(m->mutex);
 			if (isInterruptionRequested()) return;
 			for (size_t i = 0; i < m->requests.size(); i++) {
 				if (m->requests[i].state == Idle) {
