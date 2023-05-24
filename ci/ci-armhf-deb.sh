@@ -9,7 +9,7 @@ cd _build
 qmake "CONFIG+=release" ../../../Guitar.pri
 make -j2
 cd ..
-cp build/Guitar .
+cp _build/Guitar .
 ruby mk-deb.rb
 file=`./debname.rb`
 curl -T $file ftp://10.10.10.5/Public/pub/nightlybuild/
