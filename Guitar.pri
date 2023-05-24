@@ -10,7 +10,9 @@ win32:lessThan(QT_MAJOR_VERSION, 6) {
 TARGET = Guitar
 TEMPLATE = app
 
-CONFIG += c++17 nostrip debug_info static
+CPP_STD = c++17
+
+CONFIG += $$CPP_STD nostrip debug_info static
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
@@ -24,7 +26,7 @@ DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
 
-gcc:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
+gcc:QMAKE_CXXFLAGS += -std=$$CPP_STD -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
