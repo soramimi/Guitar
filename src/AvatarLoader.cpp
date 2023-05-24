@@ -160,7 +160,7 @@ void AvatarLoader::run()
 				request.state = Fail;
 			}
 			{
-				std::lock_guard lock(m->mutex);
+				std::lock_guard<std::mutex> lock(m->mutex);
 				auto now = std::chrono::system_clock::now();
 				for (size_t i = 0; i < m->requests.size(); i++) {
 					if (m->requests[i].email == request.email) {
@@ -207,7 +207,7 @@ void AvatarLoader::stop()
 QImage AvatarLoader::fetch(QString const &email, bool request) const
 {
 	if (misc::isValidMailAddress(email)) {
-		std::lock_guard lock(m->mutex);
+		std::lock_guard<std::mutex> lock(m->mutex);
 		bool found = false;
 		for (size_t i = 0; i < m->requests.size(); i++) {
 			if (m->requests[i].email == email) {
