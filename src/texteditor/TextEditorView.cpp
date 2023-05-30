@@ -699,13 +699,13 @@ void TextEditorView::drawCursor(QPainter *pr)
 }
 
 /**
- * @brief TextEditorView::fetchLines
+ * @brief ビューに表示されている範囲のテキストを取得
  * @return
  */
 TextEditorView::FormattedLines *TextEditorView::fetchLines()
 {
 	m->formatted_lines.clear();
-	for (int i = 0; i <= editor_cx->viewport_height; i++) {
+	for (int i = 0; i <= editor_cx->viewport_height; i++) { // 見えている行数だけループ
 		int row = i + editor_cx-> scroll_row_pos;
 		std::vector<Char> *chars = m->formatted_lines.append();
 		parse(row, chars); // 行のテキストデータを取得

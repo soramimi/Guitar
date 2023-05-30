@@ -56,8 +56,13 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 		return makeDiffPixmap(pane, width, height);
 	}, global->theme);
 
+	// 左端のスライダー
 	connect(ui->widget_diff_slider, &FileDiffSliderWidget::valueChanged, this, &FileDiffWidget::scrollTo);
+
+	// 左のテキストビュー
 	connect(ui->widget_diff_left->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
+
+	// 右のテキストビュー
 	connect(ui->widget_diff_right->texteditor(), &TextEditorView::moved, this, &FileDiffWidget::onMoved);
 
 	setFocusAcceptable(Qt::ClickFocus);
@@ -83,6 +88,26 @@ FileDiffWidget::~FileDiffWidget()
 	delete ui;
 }
 
+/**
+ * @brief スクロールバーのセットアップ
+ * @param mw
+ */
+void FileDiffWidget::bind(MainWindow *mw)
+{
+	Q_ASSERT(mw);
+	m->mainwindow = mw;
+	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
+	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
+
+	connect(ui->verticalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged);
+	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
+}
+
+MainWindow *FileDiffWidget::mainwindow()
+{
+	return m->mainwindow;
+}
+
 void FileDiffWidget::setViewType(FileViewType type)
 {
 	ui->widget_diff_left->setViewType(type);
@@ -98,22 +123,6 @@ void FileDiffWidget::setMaximizeButtonEnabled(bool f)
 FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 {
 	return m->init_param_.view_style;
-}
-
-void FileDiffWidget::bind(MainWindow *mw)
-{
-	Q_ASSERT(mw);
-	m->mainwindow = mw;
-	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
-	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
-
-	connect(ui->verticalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged);
-	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
-}
-
-MainWindow *FileDiffWidget::mainwindow()
-{
-	return m->mainwindow;
 }
 
 GitPtr FileDiffWidget::git()
@@ -398,13 +407,16 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 	ui->widget_diff_slider->clear(true);
 }
 
+/**
+ * @brief テキストか画像かでビューを切り替える
+ * @return
+ */
 FileViewType FileDiffWidget::setupPreviewWidget()
 {
 	clearDiffView();
 
 	QString mimetype_l = mainwindow()->determinFileType(m->init_param_.bytes_a);
 	QString mimetype_r = mainwindow()->determinFileType(m->init_param_.bytes_b);
-//	qDebug() << mimetype_l << mimetype_r;
 
 	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 
@@ -729,11 +741,17 @@ void FileDiffWidget::scrollTo(int value)
 	ui->verticalScrollBar->setValue(value);
 }
 
+/**
+ * @brief 縦スクロールバーが操作された
+ */
 void FileDiffWidget::onVerticalScrollValueChanged(int)
 {
 	refrectScrollBarV();
 }
 
+/**
+ * @brief 横スクロールバーが操作された
+ */
 void FileDiffWidget::onHorizontalScrollValueChanged(int)
 {
 	refrectScrollBarH();
@@ -787,20 +805,25 @@ void FileDiffWidget::onUpdateSliderBar()
 	ui->widget_diff_slider->setScrollPos(total, value, page);
 }
 
-
+/**
+ * @brief スクロールバーの状態を反映
+ * @param updateformat
+ */
 void FileDiffWidget::refrectScrollBar(bool updateformat)
 {
 	ui->widget_diff_left->refrectScrollBar();
 	ui->widget_diff_right->refrectScrollBar();
 
 	if (updateformat) {
+
+		// 左と右のテキストを取得
+		TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines();
+		TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines();
+
+		// サイドバイサイドのとき文字差分を求める
 		if (viewstyle() == SideBySideText) {
 			using Char = AbstractCharacterBasedApplication::Char;
 			using Attr = AbstractCharacterBasedApplication::CharAttr;
-
-			// 左と右のテキストを取得
-			TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines();
-			TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines();
 
 			const size_t n = std::min(llines->size(), rlines->size());
 
@@ -839,11 +862,17 @@ void FileDiffWidget::refrectScrollBar(bool updateformat)
 	onUpdateSliderBar();
 }
 
+/**
+ * @brief 縦スクロールバーの状態を反映
+ */
 void FileDiffWidget::refrectScrollBarV()
 {
 	refrectScrollBar(true);
 }
 
+/**
+ * @brief 横スクロールバーの状態を反映
+ */
 void FileDiffWidget::refrectScrollBarH()
 {
 	refrectScrollBar(false);
@@ -859,6 +888,13 @@ QPixmap FileDiffWidget::makeDiffPixmap(DiffPane pane, int width, int height)
 	return QPixmap();
 }
 
+/**
+ * @brief スクロール位置の行と桁を設定
+ * @param cur_row
+ * @param cur_col
+ * @param scr_row
+ * @param scr_col
+ */
 void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 {
 	(void)cur_col;
