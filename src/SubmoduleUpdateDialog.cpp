@@ -6,6 +6,7 @@ SubmoduleUpdateDialog::SubmoduleUpdateDialog(QWidget *parent) :
 	ui(new Ui::SubmoduleUpdateDialog)
 {
 	ui->setupUi(this);
+	ui->pushButton_ok->setFocus();
 }
 
 SubmoduleUpdateDialog::~SubmoduleUpdateDialog()

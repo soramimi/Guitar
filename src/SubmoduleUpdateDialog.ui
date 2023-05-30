@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>91</height>
+    <height>100</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,14 +47,17 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="pushButton_ok">
        <property name="text">
         <string>OK</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="pushButton_cancel">
        <property name="text">
         <string>Cancel</string>
        </property>
@@ -67,7 +70,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>pushButton_ok</sender>
    <signal>clicked()</signal>
    <receiver>SubmoduleUpdateDialog</receiver>
    <slot>accept()</slot>
@@ -83,7 +86,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_2</sender>
+   <sender>pushButton_cancel</sender>
    <signal>clicked()</signal>
    <receiver>SubmoduleUpdateDialog</receiver>
    <slot>reject()</slot>

@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_first">
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -220,13 +220,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="pushButton_cancel">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -253,6 +246,13 @@
        </property>
        <property name="default">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_cancel">
+       <property name="text">
+        <string>Cancel</string>
        </property>
       </widget>
      </item>
@@ -284,14 +284,13 @@
   <tabstop>radioButton_initialize</tabstop>
   <tabstop>lineEdit_local_path</tabstop>
   <tabstop>pushButton_browse_local_path</tabstop>
-  <tabstop>groupBox_remote</tabstop>
-  <tabstop>comboBox_search</tabstop>
   <tabstop>lineEdit_remote_name</tabstop>
   <tabstop>lineEdit_remote_url</tabstop>
   <tabstop>pushButton_test_repo</tabstop>
-  <tabstop>pushButton_cancel</tabstop>
+  <tabstop>comboBox_search</tabstop>
   <tabstop>pushButton_prev</tabstop>
   <tabstop>pushButton_ok</tabstop>
+  <tabstop>pushButton_cancel</tabstop>
  </tabstops>
  <resources/>
  <connections>
