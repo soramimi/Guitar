@@ -30,3 +30,6 @@ clean:
 	-rm -fr build
 	-rm guitar_*.deb
 
+ubuntu:
+	sudo apt install qttools5-dev
+	sudo apt install qttools5-dev

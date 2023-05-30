@@ -3,7 +3,7 @@
 
 #include <QColor>
 #include <QString>
-#include <filetype/filetype.h>
+#include "../filetype/filetype.h"
 #include "AvatarLoader.h"
 #include "Theme.h"
 #include "main.h"

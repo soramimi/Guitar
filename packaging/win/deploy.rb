@@ -53,4 +53,4 @@ FileUtils.mv "Guitar", "data"
 Dir.chdir $script_dir
 run "C:/Qt/QtIFW-3.2.2/bin/binarycreator.exe -c config/config.xml -p packages GuitarSetup.exe"
 
-run "curl -T GuitarSetup.exe ftp://10.10.10.5:/Public/pub/nightlybuild/"
+run "curl -T GuitarSetup.exe ftp://10.0.0.5:/Public/pub/nightlybuild/"

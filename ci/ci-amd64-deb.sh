@@ -5,11 +5,11 @@ ruby prepare.rb
 cd packaging/deb
 mkdir _build
 cd _build
-/opt/qt6static/bin/qmake "CONFIG+=release" ../../../Guitar.pri
+qmake "CONFIG+=release" ../../../Guitar.pri
 make -j2
 cd ..
 cp _build/Guitar .
 ruby mk-deb.rb
 file=`./debname.rb`
-curl -T $file ftp://10.10.10.5/Public/pub/nightlybuild/
+curl -T $file ftp://10.0.0.5/Public/pub/nightlybuild/
 

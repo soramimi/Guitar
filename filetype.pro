@@ -2,7 +2,7 @@ TEMPLATE = lib
 CONFIG += staticlib
 CONFIG += console c++11
 CONFIG -= app_bundle
-CONFIG -= qt
+#CONFIG -= qt
 CONFIG(debug,debug|release):TARGET = filetyped
 CONFIG(release,debug|release):TARGET = filetype
 
