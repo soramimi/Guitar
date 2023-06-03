@@ -15,6 +15,8 @@ appimage:
 	cp ../../LinuxDesktop/Guitar.svg _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg
 	cp ../../src/resources/image/guitar.png _appdir/usr/share/icons/hicolor/256x256/apps/Guitar.png
 	cp Guitar.desktop _appdir/Guitar.desktop
+	mkdir -p _appdir/usr/bin/platforminputcontexts/
+	cp /home/soramimi/develop/fcitx-qt5/build/qt5/platforminputcontext/libfcitxplatforminputcontextplugin.so _appdir/usr/bin/platforminputcontexts/
 
 	./linuxdeploy-x86_64.AppImage --appdir _appdir -i _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg -d _appdir/Guitar.desktop --output appimage
 
@@ -27,7 +29,7 @@ clean:
 
 build:
 	-mkdir _build
-	cd _build; /opt/qt6static/bin/qmake6 "CONFIG+=release" ../../../Guitar.pri; make -j$(NPROC)
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../Guitar.pri; make -j$(NPROC)
 
 archlinux:
 	sudo pacman -S --noconfirm base-devel double-conversion libb2 ruby
@@ -36,3 +38,6 @@ archlinux:
 ubuntu:
 	sudo apt install -y ruby libmagic-dev libssl-dev
 	sudo apt install -y libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev
+
+deploy:
+	curl -T Guitar-x86_64.AppImage ftp://10.0.0.5/Public/pub/nightlybuild/
