@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/soramimi/Guitar.svg?branch=master)](https://travis-ci.com/soramimi/Guitar)
-
 # Guitar
 Git GUI Client
 
@@ -14,7 +12,6 @@ Git GUI Client
 ## Download
 
 * https://files.soramimi.jp/guitar/
-* [Continuous build (x86_64.AppImage)](https://github.com/soramimi/Guitar/releases/tag/continuous)
 
 ## Documents
 
