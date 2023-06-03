@@ -4,6 +4,7 @@ NPROC := $(shell nproc)
 all: build appimage
 
 appimage:
+	rm -f Guitar-*.AppImage
 	mkdir -p _appdir/usr/bin
 	mkdir -p _appdir/usr/share/applications
 	mkdir -p _appdir/usr/share/icons/hicolor/256x256/apps
