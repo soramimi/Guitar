@@ -9,9 +9,9 @@ Git GUI Client
 * Written in C++
 * Powered by Qt 5
 
-## Download
+## Download Nightly Builds
 
-* https://files.soramimi.jp/guitar/
+* https://files.soramimi.jp/guitar/nightly/information.html
 
 ## Documents
 
