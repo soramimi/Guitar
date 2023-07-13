@@ -6456,7 +6456,7 @@ void MainWindow::on_action_create_desktop_launcher_file_triggered()
 	QString name = "jp.soramimi.Guitar";
 	QString iconfile = icon_dir / name + ".svg";
 	QString launcher_path = launcher_dir / name + ".desktop";
-	launcher_path = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Luancher files (*.desktop)");
+	launcher_path = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.desktop)");
 
 	bool ok = false;
 
@@ -6509,7 +6509,7 @@ Terminal=false
 	QString name = APPLICATION_NAME;
 	QString iconpath = target_path;//icon_dir / name + ".ico";
 	QString launcher_path = launcher_dir / name + ".lnk";
-	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Luancher files (*.lnk)");
+	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.lnk)");
 	data.iconpath = (wchar_t const *)iconpath.utf16();
 	data.lnkpath = (wchar_t const *)lnkpath.utf16();
 
