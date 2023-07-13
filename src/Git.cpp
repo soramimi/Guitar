@@ -249,7 +249,24 @@ GitPtr Git::dup() const
 
 bool Git::isValidWorkingCopy(QString const &dir)
 {
-	return QFileInfo(dir).isDir() && QDir(dir / ".git").exists();
+	if (QFileInfo(dir).isDir()) {
+		QString git = dir / ".git";
+		QFileInfo info(git);
+		if (info.isFile()) { // submodule?
+			QFile file(git);
+			if (file.open(QFile::ReadOnly)) {
+				QString line = QString::fromUtf8(file.readLine());
+				if (line.startsWith("gitdir:")) {
+					return true;
+				}
+			}
+		} else if (info.isDir()) { // regular dir
+			if (QFileInfo(git).isDir()) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 bool Git::isValidWorkingCopy() const
