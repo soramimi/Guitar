@@ -51,7 +51,8 @@ public:
 class GitObjectCache {
 public:
 	struct Item {
-		QString id;
+//		QString id;
+		QByteArray id;
 		QByteArray ba;
 		Git::Object::Type type;
 	};
@@ -75,6 +76,11 @@ public:
 	QString revParse(QString const &name);
 	Git::Object catFile(QString const &id);
 	QString getCommitIdFromTag(QString const &tag);
+
+	QStringView item_id(int i) const
+	{
+		return QStringView((QStringView::storage_type const *)items[i]->id.data(), sizeof(QStringView::storage_type) * items[i]->id.size());
+	}
 };
 
 class GitCommit {

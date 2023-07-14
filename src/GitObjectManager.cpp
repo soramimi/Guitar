@@ -35,8 +35,8 @@ void GitObjectManager::loadIndexes()
 		while (it.hasNext()) {
 			it.next();
 			GitPackIdxPtr idx = std::make_shared<GitPackIdxV2>();
-			idx->basename = it.fileInfo().baseName();
-			idx->parse(it.filePath());
+			idx->pack_idx_path = it.filePath();
+			idx->parse(idx->pack_idx_path, true);
 			git_idx_list.push_back(idx);
 		}
 	}
@@ -142,8 +142,7 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr const &idx, QIODevice *pac
 bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out)
 {
 	*out = GitPack::Object();
-	QString packfilepath = workingDir() / subdir_git_objects_pack / (idx->basename + ".pack");
-	QFile packfile(packfilepath);
+	QFile packfile(idx->pack_file_path());
 	if (packfile.open(QFile::ReadOnly)) {
 		if (loadPackedObject(idx, &packfile, item, out)) {
 			if (out->type == Git::Object::Type::TREE) {
@@ -276,7 +275,7 @@ Git::Object GitObjectCache::catFile(QString const &id)
 		size_t i = n;
 		while (i > 0) {
 			i--;
-			if (items[i]->id == id) {
+			if (item_id(i) == id) {
 				ItemPtr item = items[i];
 				if (i + 1 < n) {
 					items.erase(items.begin() + i);
@@ -300,7 +299,9 @@ Git::Object GitObjectCache::catFile(QString const &id)
 	auto Store = [&](){
 		QMutexLocker lock(&object_manager.mutex);
 		Item *item = new Item();
-		item->id = id;
+//		item->id = id;
+		item->id = QByteArray((char const *)id.data(), sizeof(QString::value_type) * id.size());
+//		item->id = id.toUtf8();
 		item->ba = std::move(ba);
 		item->type = type;
 		items.push_back(ItemPtr(item));
