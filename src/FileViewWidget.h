@@ -61,7 +61,6 @@ public:
 
 	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
-//	int latin1Width(const QString &s) const;
 	int lineHeight() const;
 
 	TextEditorTheme const *theme() const;
@@ -71,6 +70,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorView *texteditor();
+	TextEditorView const *texteditor() const;
 	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 
 	void clear();
