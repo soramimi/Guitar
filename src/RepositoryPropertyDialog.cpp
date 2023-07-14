@@ -47,8 +47,12 @@ void RepositoryPropertyDialog::toggleRemoteMenuActivity()
 	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
-
-
+/**
+ * @brief リポジトリプロパティダイアログ
+ * @param remote
+ * @param op
+ * @return
+ */
 bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
 {
 	auto const *list = remotes();

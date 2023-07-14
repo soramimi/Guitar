@@ -288,7 +288,7 @@ MainWindow::MainWindow(QWidget *parent)
 	//
 	
 	QString path = getBookmarksFilePath();
-	*getReposPtr() = RepositoryBookmark::load(path);
+    setRepos(RepositoryBookmark::load(path));
 	updateRepositoriesList();
 	
 	// アイコン取得機能
@@ -797,7 +797,7 @@ void MainWindow::refrectRepositories()
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
 		buildRepoTree(QString(), item, &newrepos);
 	}
-	*getReposPtr() = std::move(newrepos);
+    setRepos(newrepos);
 	saveRepositoryBookmarks();
 }
 
@@ -2067,8 +2067,8 @@ void MainWindow::updateRepositoriesList()
 {
 	QString path = getBookmarksFilePath();
 
-	auto *repos = getReposPtr();
-	*repos = RepositoryBookmark::load(path);
+    setRepos(RepositoryBookmark::load(path));
+    auto const *repos = &getRepos();
 
 	QString filter = getRepositoryFilterText();
 
@@ -2259,10 +2259,10 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		item.name = tr("Unnamed");
 	}
 	
-	auto *repos = getReposPtr();
+    auto repos = getRepos();
 	
 	bool done = false;
-	for (auto &repo : *repos) {
+    for (auto &repo : repos) {
 		RepositoryData *p = &repo;
 		if (item.local_dir == p->local_dir) {
 			*p = item;
@@ -2271,8 +2271,9 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		}
 	}
 	if (!done) {
-		repos->push_back(item);
+        repos.push_back(item);
 	}
+    setRepos(repos);
 	saveRepositoryBookmarks();
 	updateRepositoriesList();
 }
@@ -2733,9 +2734,9 @@ const QList<RepositoryData> &MainWindow::getRepos() const
 	return m->repos;
 }
 
-QList<RepositoryData> *MainWindow::getReposPtr()
+void MainWindow::setRepos(QList<RepositoryData> const &list)
 {
-	return &m->repos;
+    m->repos = list;
 }
 
 bool MainWindow::interactionCanceled() const
@@ -3071,12 +3072,13 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	auto *repos = getReposPtr();
-	if (index >= 0 && index < repos->size()) {
-		repos->erase(repos->begin() + index); // 消す
+    auto repos = getRepos();
+    if (index >= 0 && index < repos.size()) {
+        repos.erase(repos.begin() + index); // 消す
 		saveRepositoryBookmarks(); // 保存
 		updateRepositoriesList(); // リスト更新
 	}
+    setRepos(repos);
 }
 
 /**
@@ -5059,14 +5061,24 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 {
 	bool changed = false;
 
-	QList<RepositoryData> *repos = getReposPtr();
-	for (int i = 0; i < repos->size(); i++) {
-		RepositoryData *item = &(*repos)[i];
-		if (item->local_dir == local_dir) {
+    QString locdir = local_dir;
+#ifdef Q_OS_WIN
+    locdir = locdir.toLower().replace('\\', '/');
+#endif
+
+    auto repos = getRepos();
+    for (int i = 0; i < repos.size(); i++) {
+        RepositoryData *item = &(repos)[i];
+        QString repodir = item->local_dir;
+#ifdef Q_OS_WIN
+        repodir = repodir.toLower().replace('\\', '/');
+#endif
+        if (locdir == repodir) {
 			item->ssh_key = ssh_key;
 			changed = true;
 		}
 	}
+    setRepos(repos);
 
 	if (save && changed) {
 		saveRepositoryBookmarks();
@@ -5200,13 +5212,6 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 		}
 	}
 }
-
-//void MainWindow::on_action_open_existing_working_copy_triggered()
-//{
-//	QString dir = defaultWorkingDir();
-//	dir = QFileDialog::getExistingDirectory(this, tr("Add existing working copy"), dir);
-//	addExistingLocalRepository(dir, false);
-//}
 
 void MainWindow::refresh()
 {

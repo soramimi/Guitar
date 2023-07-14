@@ -348,8 +348,8 @@ private:
     bool fetch_tags_f(GitPtr g);
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &getRepos() const;
-	QList<RepositoryData> *getReposPtr();
-	bool interactionCanceled() const;
+    void setRepos(QList<RepositoryData> const &list);
+    bool interactionCanceled() const;
 	void setInteractionCanceled(bool canceled);
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
