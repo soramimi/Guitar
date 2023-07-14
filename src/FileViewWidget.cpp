@@ -96,6 +96,7 @@ void FileViewWidget::refrectScrollBar()
 	switch (view_type) {
 	case FileViewType::Text:
 		ui_page_text->view()->refrectScrollBar();
+		ui_page_text->view()->fetchLines(); // スクロールバーの値に合わせて、テキスト領域をスクロールする
 		return;
 	case FileViewType::Image:
 		ui_page_image->refrectScrollBar();
