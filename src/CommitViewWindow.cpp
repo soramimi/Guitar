@@ -23,9 +23,9 @@ CommitViewWindow::CommitViewWindow(MainWindow *parent, Git::CommitItem const *co
 	ui->widget_diff->bind(mainwindow());
 
 	ui->lineEdit_message->setText(m->commit->message);
-	ui->lineEdit_id->setText(m->commit->commit_id);
+	ui->lineEdit_id->setText(m->commit->commit_id.toQString());
 
-	mainwindow()->updateFilesList2(mainwindow()->frame(), m->commit->commit_id, &m->diff_list, ui->listWidget_files);
+	mainwindow()->updateFilesList2(mainwindow()->frame(), m->commit->commit_id.toQString(), &m->diff_list, ui->listWidget_files);
 
 	ui->listWidget_files->setCurrentRow(0);
 }

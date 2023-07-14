@@ -148,7 +148,7 @@ struct MainWindow::Private {
 
 	GitHubRepositoryInfo github;
 
-	QString head_id;
+	Git::CommitID head_id;
 	bool force_fetch = false;
 
 	RepositoryData temp_repo_for_clone_complete;
@@ -1336,7 +1336,7 @@ QList<Git::Diff> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id
 	setUncommitedChanges(!list.empty());
 
 	if (id.isEmpty() && !isThereUncommitedChanges()) {
-		id = getObjCache(frame)->revParse("HEAD");
+		id = getObjCache(frame)->revParse("HEAD").toQString();
 	}
 
 	QList<Git::SubmoduleItem> mods;
@@ -1365,7 +1365,7 @@ void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
 		if (b.isCurrent()) {
 			setCurrentBranch(b);
 		}
-		branchMapRef(frame)[b.id].append(b);
+		commitToBranchMapRef(frame)[b.id].append(b);
 	}
 }
 
@@ -1557,7 +1557,7 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 			message = g->getMessage(id);
 		} else {
 			for (Git::CommitItem const &item : getCommitLog(frame)) {
-				if (!item.commit_id.isEmpty()) {
+				if (item.commit_id.isValid()) {
 					previousMessage = item.message;
 					break;
 				}
@@ -1687,7 +1687,7 @@ void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitIt
 		NamedCommitList named_commits = namedCommitItems(frame, Branches);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.name == "HEAD") continue;
-			if (item.id == commit->commit_id) {
+			if (item.id == commit->commit_id.toQString()) {
 				current_local_branch_names.push_back(item.name);
 			}
 			all_branch_names.push_back(item.name);
@@ -1773,8 +1773,8 @@ bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, const QString &na
 	QString commit_id;
 
 	Git::CommitItem const *commit = selectedCommitItem(frame);
-	if (commit && !commit->commit_id.isEmpty()) {
-		commit_id = commit->commit_id;
+	if (commit && commit->commit_id.isValid()) {
+		commit_id = commit->commit_id.toQString();
 	}
 
 	if (!Git::isValidID(commit_id)) return false;
@@ -1929,8 +1929,8 @@ void MainWindow::setCurrentRemoteName(const QString &name)
 
 void MainWindow::deleteTags(RepositoryWrapperFrame *frame, const Git::CommitItem &commit)
 {
-	auto it = ptrTagMap(frame)->find(commit.commit_id);
-	if (it != ptrTagMap(frame)->end()) {
+	auto it = ptrCommitToTagMap(frame)->find(commit.commit_id.toQString());
+	if (it != ptrCommitToTagMap(frame)->end()) {
 		QStringList names;
 		QList<Git::Tag> const &tags = it->second;
 		for (Git::Tag const &tag : tags) {
@@ -1950,10 +1950,10 @@ QStringList MainWindow::remotes() const
 	return m->remotes;
 }
 
-QList<Git::Branch> MainWindow::findBranch(RepositoryWrapperFrame *frame, const QString &id)
+QList<Git::Branch> MainWindow::findBranch(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
-	auto it = branchMapRef(frame).find(id);
-	if (it != branchMapRef(frame).end()) {
+	auto it = commitToBranchMapRef(frame).find(id);
+	if (it != commitToBranchMapRef(frame).end()) {
 		return it->second;
 	}
 	return QList<Git::Branch>();
@@ -1976,7 +1976,7 @@ void MainWindow::deleteTempFiles()
 	}
 }
 
-QString MainWindow::getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag)
+Git::CommitID MainWindow::getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag)
 {
 	return getObjCache(frame)->getCommitIdFromTag(tag);
 }
@@ -2290,7 +2290,7 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_n
 	saveRepositoryBookmark(item);
 }
 
-int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id)
+int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
 	auto const &logs = getCommitLog(frame);
 	for (size_t i = 0; i < logs.size(); i++) {
@@ -2304,8 +2304,8 @@ int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, const QString &id
 
 QList<Git::Tag> MainWindow::findTag(RepositoryWrapperFrame *frame, const QString &id)
 {
-	auto it = ptrTagMap(frame)->find(id);
-	if (it != ptrTagMap(frame)->end()) {
+	auto it = ptrCommitToTagMap(frame)->find(id);
+	if (it != ptrCommitToTagMap(frame)->end()) {
 		return it->second;
 	}
 	return QList<Git::Tag>();
@@ -2395,7 +2395,7 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 				item->resolved = true;
 			} else {
 				for (int j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
-					QString const &parent_id = item->parent_ids[j]; // 親のハッシュ値
+					Git::CommitID const &parent_id = item->parent_ids[j]; // 親のハッシュ値
 					for (int k = i + 1; k < (int)LogCount; k++) { // 親を探す
 						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親
 							item->parent_lines.emplace_back(k); // インデックス値を記憶
@@ -2825,17 +2825,17 @@ void MainWindow::setForceFetch(bool force_fetch)
 	m->force_fetch = force_fetch;
 }
 
-std::map<QString, QList<Git::Tag> > *MainWindow::ptrTagMap(RepositoryWrapperFrame *frame)
+std::map<Git::CommitID, QList<Git::Tag> > *MainWindow::ptrCommitToTagMap(RepositoryWrapperFrame *frame)
 {
 	return &frame->tag_map;
 }
 
-QString MainWindow::getHeadId() const
+Git::CommitID MainWindow::getHeadId() const
 {
 	return m->head_id;
 }
 
-void MainWindow::setHeadId(const QString &head_id)
+void MainWindow::setHeadId(Git::CommitID const &head_id)
 {
 	m->head_id = head_id;
 }
@@ -2888,7 +2888,7 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 	if (issubmodule) {
 		QString msg = misc::collapseWhitespace(data.submod_commit.message);
 		text += QString(" <%0> [%1] %2")
-				.arg(data.submod.id.mid(0, 7))
+				.arg(data.submod.id.toQString(7))
 				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
 				.arg(msg)
 				;
@@ -2959,20 +2959,20 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 	size_t i = 0;
 	while (i < count) {
 		size_t newpos = (size_t)-1;
-		for (QString const &parent : list[i].parent_ids) {
-			if (set.find(parent) != set.end()) {
+		for (Git::CommitID const &parent : list[i].parent_ids) {
+			if (set.find(parent.toQString()) != set.end()) {
 				for (size_t j = 0; j < i; j++) {
-					if (parent == list[j].commit_id) {
+					if (parent == list[j].commit_id.toQString()) {
 						if (newpos == (size_t)-1 || j < newpos) {
 							newpos = j;
 						}
-						qDebug() << "fix commit order" << list[i].commit_id;
+						qDebug() << "fix commit order" << list[i].commit_id.toQString();
 						break;
 					}
 				}
 			}
 		}
-		set.insert(set.end(), list[i].commit_id);
+		set.insert(set.end(), list[i].commit_id.toQString());
 		if (newpos != (size_t)-1) {
 			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
 			Git::CommitItem t = list[i];
@@ -2988,7 +2988,7 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 	return list;
 }
 
-std::map<QString, QList<Git::Branch> > &MainWindow::branchMapRef(RepositoryWrapperFrame *frame)
+std::map<Git::CommitID, QList<Git::Branch>> &MainWindow::commitToBranchMapRef(RepositoryWrapperFrame *frame)
 {
 	return frame->branch_map;
 }
@@ -3029,7 +3029,7 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 	Git::CommitItem const *commit = &getCommitLog(frame)[row];
 	{ // branch
 		if (label_list) {
-			if (commit->commit_id == getHeadId()) {
+			if (commit->commit_id.toQString() == getHeadId()) {
 				BranchLabel label(BranchLabel::Head);
 				label.text = "HEAD";
 				label_list->push_back(label);
@@ -3056,7 +3056,7 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 		}
 	}
 	{ // tag
-		QList<Git::Tag> list = findTag(frame, commit->commit_id);
+		QList<Git::Tag> list = findTag(frame, commit->commit_id.toQString());
 		for (Git::Tag const &t : list) {
 			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
@@ -3330,7 +3330,7 @@ NamedCommitList MainWindow::namedCommitItems(RepositoryWrapperFrame *frame, int 
 {
 	NamedCommitList items;
 	if (flags & Branches) {
-		for (auto const &pair: branchMapRef(frame)) {
+		for (auto const &pair : commitToBranchMapRef(frame)) {
 			QList<Git::Branch> const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
@@ -3357,7 +3357,7 @@ NamedCommitList MainWindow::namedCommitItems(RepositoryWrapperFrame *frame, int 
 		}
 	}
 	if (flags & Tags) {
-		for (auto const &pair: *ptrTagMap(frame)) {
+		for (auto const &pair: *ptrCommitToTagMap(frame)) {
 			QList<Git::Tag> const &list = pair.second;
 			for (Git::Tag const &t : list) {
 				NamedCommitItem item;
@@ -3536,7 +3536,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
  * @param diff_list
  * @param listwidget
  */
-void MainWindow::updateFilesList2(RepositoryWrapperFrame *frame, QString const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::updateFilesList2(RepositoryWrapperFrame *frame, Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -3566,7 +3566,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem 
 	if (Git::isUncommited(commit)) {
 		// empty id for uncommited changes
 	} else {
-		id = commit.commit_id;
+		id = commit.commit_id.toQString();
 	}
 	updateFilesList(frame, id, wait);
 }
@@ -3676,12 +3676,12 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		// ブランチを取得
 		queryBranches(frame, g);
 		// タグを取得
-		ptrTagMap(frame)->clear();
+		ptrCommitToTagMap(frame)->clear();
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
 			Git::Tag t = tag;
-			t.id = getObjCache(frame)->getCommitIdFromTag(t.id); // TOOD: too slow
-			(*ptrTagMap(frame))[t.id].push_back(t);
+//			t.id = getObjCache(frame)->getCommitIdFromTag(t.id.toQString()); // TOOD: too slow
+			(*ptrCommitToTagMap(frame))[t.id].push_back(t);
 		}
 
 		frame->logtablewidget()->setEnabled(true);
@@ -3758,7 +3758,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		QString author;
 		QString message;
 		QString message_ex;
-		bool isHEAD = (commit->commit_id == getHeadId());
+		bool isHEAD = (commit->commit_id.toQString() == getHeadId());
 		bool bold = false;
 		{
 			if (Git::isUncommited(*commit)) { // 未コミットの時
@@ -3880,7 +3880,7 @@ void MainWindow::updateStatusBarText(RepositoryWrapperFrame *frame)
 				if (Git::isUncommited(commit)) {
 					text = tr("Uncommited changes");
 				} else {
-					QString id = commit.commit_id;
+					QString id = commit.commit_id.toQString();
 					text = QString("%1 : %2%3")
 							.arg(id.mid(0, 7))
 							.arg(commit.message)
@@ -3908,7 +3908,7 @@ void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff, bo
 void MainWindow::mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff, bool squash)
 {
 	if (!commit) return;
-	mergeBranch(commit->commit_id, ff, squash);
+	mergeBranch(commit->commit_id.toQString(), ff, squash);
 }
 
 void MainWindow::rebaseBranch(Git::CommitItem const *commit)
@@ -3920,10 +3920,10 @@ void MainWindow::rebaseBranch(Git::CommitItem const *commit)
 
 	QString text = tr("Are you sure you want to rebase the commit?");
 	text += "\n\n";
-	text += "> git rebase " + commit->commit_id;
+	text += "> git rebase " + commit->commit_id.toQString();
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
 	if (r == QMessageBox::Ok) {
-		g->rebaseBranch(commit->commit_id);
+		g->rebaseBranch(commit->commit_id.toQString());
 		openRepository(true);
 	}
 }
@@ -3939,18 +3939,18 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 
 	int n = commit->parent_ids.size();
 	if (n == 1) {
-		g->cherrypick(commit->commit_id);
+		g->cherrypick(commit->commit_id.toQString());
 	} else if (n > 1) {
 		Git::CommitItem head;
 		Git::CommitItem pick;
 		g->queryCommit(g->rev_parse("HEAD"), &head);
-		g->queryCommit(commit->commit_id, &pick);
+		g->queryCommit(commit->commit_id.toQString(), &pick);
 		QList<Git::CommitItem> parents;
 		for (int i = 0; i < n; i++) {
-			QString id = commit->commit_id + QString("^%1").arg(i + 1);
-			id = g->rev_parse(id);
+			QString id = commit->commit_id.toQString() + QString("^%1").arg(i + 1);
+			Git::CommitID id2 = g->rev_parse(id);
 			Git::CommitItem item;
-			g->queryCommit(id, &item);
+			g->queryCommit(id2, &item);
 			parents.push_back(item);
 		}
 		CherryPickDialog dlg(this, head, pick, parents);
@@ -3960,7 +3960,7 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 			if (dlg.allowEmpty()) {
 				cmd += "--allow-empty ";
 			}
-			cmd += commit->commit_id;
+			cmd += commit->commit_id.toQString();
 			g->cherrypick(cmd);
 		} else {
 			return;
@@ -3980,7 +3980,7 @@ void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem const *com
 		if (!commit) return;
 	}
 
-	if (!Git::isValidID(commit->commit_id)) return;
+	if (!Git::isValidID(commit->commit_id.toQString())) return;
 
 	static const char MergeFastForward[] = "MergeFastForward";
 
@@ -4005,7 +4005,7 @@ void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem const *com
 		labels.erase(std::unique(labels.begin(), labels.end()), labels.end());
 	}
 
-	labels.push_back(commit->commit_id);
+	labels.push_back(commit->commit_id.toQString());
 
 	QString branch_name = currentBranchName();
 
@@ -4242,7 +4242,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	int row = selectedLogIndex(frame());
 	Git::CommitItem const *commit = commitItem(frame(), row);
 	if (commit) {
-		bool is_valid_commit_id = Git::isValidID(commit->commit_id);
+		bool is_valid_commit_id = Git::isValidID(commit->commit_id.toQString());
 
 		QMenu menu;
 
@@ -4297,7 +4297,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		menu.addSeparator();
 
 		QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
-		QAction *a_delrembranch = remoteBranches(frame(), commit->commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
+		QAction *a_delrembranch = remoteBranches(frame(), commit->commit_id.toQString(), nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 
 		menu.addSeparator();
 
@@ -4307,11 +4307,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		QAction *a = menu.exec(frame()->logtablewidget()->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 		if (a) {
 			if (a == a_copy_id_7letters) {
-				qApp->clipboard()->setText(commit->commit_id.mid(0, 7));
+				qApp->clipboard()->setText(commit->commit_id.toQString(7));
 				return;
 			}
 			if (a == a_copy_id_complete) {
-				qApp->clipboard()->setText(commit->commit_id);
+				qApp->clipboard()->setText(commit->commit_id.toQString());
 				return;
 			}
 			if (a == a_properties) {
@@ -4892,7 +4892,7 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const 
 		NamedCommitList named_commits = namedCommitItems(frame, Branches | Tags | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
 			QString name = item.name;
-			if (item.id == commit->commit_id) {
+			if (item.id == commit->commit_id.toQString()) {
 				if (item.type == NamedCommitItem::Type::Tag) {
 					tags.push_back(name);
 				} else if (item.type == NamedCommitItem::Type::BranchLocal || item.type == NamedCommitItem::Type::BranchRemote) {
@@ -4919,19 +4919,19 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const 
 		}
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
-		QString id = commit->commit_id;
-		if (id.isEmpty() && !commit->parent_ids.isEmpty()) {
+		Git::CommitID id = commit->commit_id.toQString();
+		if (!id.isValid() && !commit->parent_ids.isEmpty()) {
 			id = commit->parent_ids.front();
 		}
 		bool ok = false;
 		setLogEnabled(g, true);
 		if (op == CheckoutDialog::Operation::HeadDetached) {
-			if (!id.isEmpty()) {
-				ok = g->git(QString("checkout \"%1\"").arg(id), true);
+			if (id.isValid()) {
+				ok = g->git(QString("checkout \"%1\"").arg(id.toQString()), true);
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
-			if (!name.isEmpty() && !id.isEmpty()) {
-				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id), true);
+			if (!name.isEmpty() && id.isValid()) {
+				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id.toQString()), true);
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
 			if (!name.isEmpty()) {
@@ -4952,9 +4952,9 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame)
 void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 {
 	GitPtr g = git();
-	id = g->rev_parse(id);
-	if (!id.isEmpty()) {
-		int row = rowFromCommitId(frame, id);
+	Git::CommitID id2 = g->rev_parse(id);
+	if (id2.isValid()) {
+		int row = rowFromCommitId(frame, id2);
 		setCurrentLogRow(frame, row);
 	}
 }
@@ -5011,8 +5011,8 @@ QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)
 {
 	QList<Git::Tag> list;
 	Git::CommitItem const *commit = selectedCommitItem(frame);
-	if (commit && Git::isValidID(commit->commit_id)) {
-		list = findTag(frame, commit->commit_id);
+	if (commit && Git::isValidID(commit->commit_id.toQString())) {
+		list = findTag(frame, commit->commit_id.toQString());
 	}
 	return list;
 }
@@ -5098,7 +5098,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 
 QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 {
-	return commit.commit_id.mid(0, 7);
+	return commit.commit_id.toQString(7);
 }
 
 /**
@@ -5195,7 +5195,7 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 	if (index < end) {
 		for (int i = index; i < end; i++) {
 			Git::CommitItem const &commit = LogItem(i);
-			commit_to_index_map[commit.commit_id] = (size_t)i;
+			commit_to_index_map[commit.commit_id.toQString()] = (size_t)i;
 			auto *item = frame->logtablewidget()->item((int)i, 0);
 			QRect r = frame->logtablewidget()->visualItemRect(item);
 			if (r.y() >= frame->logtablewidget()->height()) {
@@ -5207,14 +5207,14 @@ void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 
 	Git::CommitItem *item = &LogItem(index);
 	if (item) {
-		m->ancestors.insert(m->ancestors.end(), item->commit_id);
+		m->ancestors.insert(m->ancestors.end(), item->commit_id.toQString());
 	}
 
 	for (int i = index; i < end; i++) {
 		Git::CommitItem *item = &LogItem(i);
-		if (isAncestorCommit(item->commit_id)) {
-			for (QString const &parent : item->parent_ids) {
-				m->ancestors.insert(m->ancestors.end(), parent);
+		if (isAncestorCommit(item->commit_id.toQString())) {
+			for (Git::CommitID const &parent : item->parent_ids) {
+				m->ancestors.insert(m->ancestors.end(), parent.toQString());
 			}
 		}
 	}
@@ -5548,7 +5548,7 @@ void MainWindow::revertCommit(RepositoryWrapperFrame *frame)
 
 	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit) {
-		g->revert(commit->commit_id);
+		g->revert(commit->commit_id.toQString());
 		openRepository(false);
 	}
 }
@@ -5770,8 +5770,8 @@ void MainWindow::on_action_repo_jump_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
 		if (text.isEmpty()) return;
-		QString id = g->rev_parse(text);
-		if (id.isEmpty() && Git::isValidID(text)) {
+		Git::CommitID id = g->rev_parse(text);
+		if (!id.isValid() && Git::isValidID(text)) {
 			QStringList list = findGitObject(text);
 			if (list.isEmpty()) {
 				QMessageBox::warning(this, tr("Jump"), QString("%1\n\n").arg(text) + tr("No such commit"));
@@ -5780,15 +5780,15 @@ void MainWindow::on_action_repo_jump_triggered()
 			ObjectBrowserDialog dlg2(this, list);
 			if (dlg2.exec() == QDialog::Accepted) {
 				id = dlg2.text();
-				if (id.isEmpty()) return;
+				if (!id.isValid()) return;
 			}
 		}
 		if (g->objectType(id) == "tag") {
-			id = getObjCache(frame())->getCommitIdFromTag(id);
+			id = getObjCache(frame())->getCommitIdFromTag(id.toQString());
 		}
 		int row = rowFromCommitId(frame(), id);
 		if (row < 0) {
-			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(id) + tr("No such commit"));
+			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(id.toQString()) + tr("No such commit"));
 		} else {
 			setCurrentLogRow(frame(), row);
 		}
@@ -5976,7 +5976,7 @@ void MainWindow::deleteRemoteBranch(RepositoryWrapperFrame *frame, const Git::Co
 	if (!isValidWorkingCopy(g)) return;
 
 	QStringList all_branches;
-	QStringList remote_branches = remoteBranches(frame, commit->commit_id, &all_branches);
+	QStringList remote_branches = remoteBranches(frame, commit->commit_id.toQString(), &all_branches);
 	if (remote_branches.isEmpty()) return;
 
 	DeleteBranchDialog dlg(this, true, all_branches, remote_branches);
@@ -6168,7 +6168,7 @@ void MainWindow::onLogIdle()
 void MainWindow::on_action_edit_tags_triggered()
 {
 	Git::CommitItem const *commit = selectedCommitItem(frame());
-	if (commit && Git::isValidID(commit->commit_id)) {
+	if (commit && Git::isValidID(commit->commit_id.toQString())) {
 		EditTagsDialog dlg(this, commit);
 		dlg.exec();
 	}
@@ -6297,7 +6297,7 @@ void MainWindow::on_action_repo_jump_to_head_triggered()
 {
 	QString name = "HEAD";
 	GitPtr g = git();
-	QString id = g->rev_parse(name);
+	auto id = g->rev_parse(name);
 	int row = rowFromCommitId(frame(), id);
 	if (row < 0) {
 		qDebug() << "No such commit";

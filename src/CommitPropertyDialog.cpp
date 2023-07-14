@@ -53,14 +53,14 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	m->mainwindow = mw;
 
 	ui->lineEdit_message->setText(m->commit.message);
-	ui->lineEdit_commit_id->setText(m->commit.commit_id);
+	ui->lineEdit_commit_id->setText(m->commit.commit_id.toQString());
 	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
 	ui->lineEdit_author->setText(m->commit.author);
 	ui->lineEdit_mail->setText(m->commit.email);
 
 	QString text;
-	for (QString const &id : m->commit.parent_ids) {
-		text += id + '\n';
+	for (Git::CommitID const &id : m->commit.parent_ids) {
+		text += id.toQString() + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
@@ -158,7 +158,7 @@ void CommitPropertyDialog::on_pushButton_checkout_clicked()
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(mainwindow()->frame(), m->commit.commit_id);
+	mainwindow()->jumpToCommit(mainwindow()->frame(), m->commit.commit_id.toQString());
 	done(QDialog::Accepted);
 }
 

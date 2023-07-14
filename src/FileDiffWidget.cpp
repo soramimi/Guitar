@@ -501,7 +501,7 @@ bool FileDiffWidget::setSubmodule(Git::Diff const &diff)
 				text += "name: " + submodule->name + '\n';
 				text += "path: " + submodule->path + '\n';
 				text += "url: " + submodule->url + '\n';
-				text += "commit: " + submodule->id + '\n';
+				text += "commit: " + submodule->id.toQString() + '\n';
 				text += "date: " + misc::makeDateTimeString(submodule_commit->commit_date) + '\n';
 				text += "author: " + submodule_commit->author + '\n';
 				text += "email: " + submodule_commit->email + '\n';

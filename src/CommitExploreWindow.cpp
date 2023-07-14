@@ -58,13 +58,13 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	ui->splitter->setSizes({100, 100, 200});
 
 	// set text
-	ui->lineEdit_commit_id->setText(commit->commit_id);
+	ui->lineEdit_commit_id->setText(commit->commit_id.toQString());
 	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
 	ui->lineEdit_author->setText(commit->author);
 
 	{
 		GitCommit c;
-		GitCommit::parseCommit(objcache, m->commit->commit_id, &c);
+		GitCommit::parseCommit(objcache, m->commit->commit_id.toQString(), &c);
 		m->root_tree_id = c.tree_id;
 	}
 

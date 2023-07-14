@@ -25,8 +25,8 @@ private:
 	FilesListWidget *stagesfileslistwidget_ = nullptr;
 	FileDiffWidget *filediffwidget_ = nullptr;
 
-	std::map<QString, QList<Git::Branch>> branch_map;
-	std::map<QString, QList<Git::Tag>> tag_map;
+	std::map<Git::CommitID, QList<Git::Branch>> branch_map;
+	std::map<Git::CommitID, QList<Git::Tag>> tag_map;
 	std::map<int, QList<BranchLabel>> label_map;
 	std::map<QString, Git::Diff> diff_cache;
 

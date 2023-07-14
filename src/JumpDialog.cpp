@@ -131,11 +131,7 @@ void JumpDialog::on_lineEdit_filter_textChanged(QString const &text)
 	updateTable();
 }
 
-void JumpDialog::on_toolButton_clicked()
-{
-	ui->lineEdit_filter->clear();
-	ui->lineEdit_filter->setFocus();
-}
+
 
 void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {

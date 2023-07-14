@@ -27,10 +27,10 @@ private:
 	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type);
+	bool extractObjectFromPackFile(const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes();
-	QString findObjectPath(QString const &id);
-	bool loadObject(QString const &id, QByteArray *out, Git::Object::Type *type);
+	QString findObjectPath(const Git::CommitID &id);
+	bool loadObject(const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	GitPtr git()
 	{
 		return g->dup();
@@ -44,15 +44,14 @@ private:
 public:
 	GitObjectManager();
 	void setup(GitPtr g);
-	bool catFile(QString const &id, QByteArray *out, Git::Object::Type *type);
+	bool catFile(const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
 };
 
 class GitObjectCache {
 public:
 	struct Item {
-//		QString id;
-		QByteArray id;
+		Git::CommitID id;
 		QByteArray ba;
 		Git::Object::Type type;
 	};
@@ -60,7 +59,7 @@ private:
 	GitObjectManager object_manager;
 	using ItemPtr = std::shared_ptr<Item>;
 	std::vector<ItemPtr> items;
-	std::map<QString, QString> revparsemap;
+	std::map<QString, Git::CommitID> revparsemap;
 	size_t size() const;
 public:
 	GitPtr git()
@@ -73,13 +72,13 @@ public:
 	}
 
 	void setup(GitPtr g);
-	QString revParse(QString const &name);
-	Git::Object catFile(QString const &id);
-	QString getCommitIdFromTag(QString const &tag);
+	Git::CommitID revParse(QString const &name);
+	Git::Object catFile(const Git::CommitID &id);
+	Git::CommitID getCommitIdFromTag(const QString &tag);
 
-	QStringView item_id(int i) const
+	Git::CommitID const &item_id(int i) const
 	{
-		return QStringView((QStringView::storage_type const *)items[i]->id.data(), sizeof(QStringView::storage_type) * items[i]->id.size());
+		return items[i]->id;
 	}
 };
 
@@ -88,7 +87,7 @@ public:
 	QString tree_id;
 	QStringList parents;
 
-	static bool parseCommit(GitObjectCache *objcache, QString const &id, GitCommit *out);
+	static bool parseCommit(GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out);
 };
 
 struct GitTreeItem {

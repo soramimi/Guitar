@@ -154,7 +154,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPa
 	return false;
 }
 
-bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::extractObjectFromPackFile(Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	loadIndexes();
 
@@ -174,13 +174,14 @@ bool GitObjectManager::extractObjectFromPackFile(QString const &id, QByteArray *
 	return false;
 }
 
-QString GitObjectManager::findObjectPath(QString const &id)
+QString GitObjectManager::findObjectPath(Git::CommitID const &id)
 {
 	if (Git::isValidID(id)) {
 		int count = 0;
 		QString absolute_path;
-		QString xx = id.mid(0, 2); // leading two xdigits
-		QString name = id.mid(2);  // remaining xdigits
+		QString name = id.toQString();
+		QString xx = name.mid(0, 2); // leading two xdigits
+		name = name.mid(2);  // remaining xdigits
 		QString dir = workingDir() / subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
 		QDirIterator it(dir, QDir::Files);
 		while (it.hasNext()) {
@@ -194,12 +195,12 @@ QString GitObjectManager::findObjectPath(QString const &id)
 			}
 		}
 		if (count == 1) return absolute_path;
-		if (count > 1) qDebug() << Q_FUNC_INFO << "ambiguous id" << id;
+		if (count > 1) qDebug() << Q_FUNC_INFO << "ambiguous id" << id.toQString();
 	}
-	return QString(); // not found
+	return {};
 }
 
-bool GitObjectManager::loadObject(QString const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::loadObject(Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	QString path = findObjectPath(id);
 	if (!path.isEmpty()) {
@@ -217,7 +218,7 @@ bool GitObjectManager::loadObject(QString const &id, QByteArray *out, Git::Objec
 	return false;
 }
 
-bool GitObjectManager::catFile(QString const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::catFile(Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	*type = Git::Object::Type::UNKNOWN;
 	if (loadObject(id, out, type)) return true;
@@ -245,7 +246,7 @@ void GitObjectCache::setup(GitPtr g)
 	}
 }
 
-QString GitObjectCache::revParse(QString const &name)
+Git::CommitID GitObjectCache::revParse(QString const &name)
 {
 	GitPtr g = git();
 	if (!g) return QString();
@@ -258,7 +259,7 @@ QString GitObjectCache::revParse(QString const &name)
 		}
 	}
 
-	QString id = g->rev_parse(name);
+	auto id = g->rev_parse(name);
 
 	{
 		QMutexLocker lock(&object_manager.mutex);
@@ -267,7 +268,7 @@ QString GitObjectCache::revParse(QString const &name)
 	}
 }
 
-Git::Object GitObjectCache::catFile(QString const &id)
+Git::Object GitObjectCache::catFile(Git::CommitID const &id)
 {
 	{
 		QMutexLocker lock(&object_manager.mutex);
@@ -275,7 +276,7 @@ Git::Object GitObjectCache::catFile(QString const &id)
 		size_t i = n;
 		while (i > 0) {
 			i--;
-			if (item_id(i) == id) {
+			if (item_id(i) == id.toQString()) {
 				ItemPtr item = items[i];
 				if (i + 1 < n) {
 					items.erase(items.begin() + i);
@@ -299,9 +300,7 @@ Git::Object GitObjectCache::catFile(QString const &id)
 	auto Store = [&](){
 		QMutexLocker lock(&object_manager.mutex);
 		Item *item = new Item();
-//		item->id = id;
-		item->id = QByteArray((char const *)id.data(), sizeof(QString::value_type) * id.size());
-//		item->id = id.toUtf8();
+		item->id = id;
 		item->ba = std::move(ba);
 		item->type = type;
 		items.push_back(ItemPtr(item));
@@ -318,22 +317,22 @@ Git::Object GitObjectCache::catFile(QString const &id)
 	if (true) {
 		if (git()->cat_file(id, &ba)) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
-			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id;
+			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
 			return Store();
 		}
 	}
 
-	qDebug() << "failed to cat file: " << id;
+	qDebug() << "failed to cat file: " << id.toQString();
 
 	return Git::Object();
 }
 
-QString GitObjectCache::getCommitIdFromTag(QString const &tag)
+Git::CommitID GitObjectCache::getCommitIdFromTag(QString const &tag)
 {
-	QString commit_id;
+	Git::CommitID commit_id;
 	GitPtr g = git();
 	if (g && g->isValidWorkingCopy()) {
-		QString id = g->rev_parse(tag);
+		Git::CommitID id(g->rev_parse(tag));
 		Git::Object obj = catFile(id);
 		switch (obj.type) {
 		case Git::Object::Type::COMMIT:
@@ -342,11 +341,11 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 		case Git::Object::Type::TAG:
 			if (!obj.content.isEmpty()) {
 				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
-					if (commit_id.isEmpty()) {
+					if (!commit_id.isValid()) {
                         if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
-                            QString id = QString::fromUtf8(ptr + 7, int(len - 7)).trimmed();
-							if (Git::isValidID(id)) {
-								commit_id = id;
+                            Git::CommitID id2(QString::fromUtf8(ptr + 7, int(len - 7)).trimmed());
+							if (Git::isValidID(id2)) {
+								commit_id = id2;
 							}
 						}
 					}
@@ -362,13 +361,13 @@ QString GitObjectCache::getCommitIdFromTag(QString const &tag)
 
 
 
-bool GitCommit::parseCommit(GitObjectCache *objcache, QString const &id, GitCommit *out)
+bool GitCommit::parseCommit(GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
 {
 	*out = {};
-	if (!id.isEmpty()) {
+	if (id.isValid()) {
 		QStringList parents;
 		{
-			Git::Object obj = objcache->catFile(id);
+			Git::Object obj = objcache->catFile(id.toQString());
 			if (!obj.content.isEmpty()) {
 				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
 				for (QString const &line : lines) {

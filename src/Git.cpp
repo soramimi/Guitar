@@ -15,6 +15,71 @@
 
 #define DEBUGLOG 0
 
+
+
+Git::CommitID::CommitID(const QString &qid)
+{
+	assign(qid);
+}
+
+void Git::CommitItem::setParents(const QStringList &list)
+{
+	parent_ids.clear();
+	for (QString const &id : list) {
+		parent_ids.append(id);
+	}
+}
+
+void Git::CommitID::assign(const QString &qid)
+{
+	if (!qid.isEmpty()) {
+		valid = true;
+		if (qid.size() == GIT_ID_LENGTH) {
+			char tmp[3];
+			tmp[2] = 0;
+			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
+				tmp[0] = qid[i * 2 + 0].toLatin1();
+				tmp[1] = qid[i * 2 + 1].toLatin1();
+				char c = qid[i * 2 + 0].toLatin1();
+				char d = qid[i * 2 + 1].toLatin1();
+				if (std::isxdigit((unsigned char)tmp[0]) && std::isxdigit((unsigned char)tmp[1])) {
+					id[i] = strtol(tmp, nullptr, 16);
+				} else {
+					valid = false;
+					break;
+				}
+			}
+		}
+	}
+}
+
+QString Git::CommitID::toQString(int maxlen) const
+{
+	if (valid) {
+		char tmp[GIT_ID_LENGTH + 1];
+		for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
+			sprintf(tmp + i * 2, "%02x", id[i]);
+		}
+		if (maxlen < 0 || maxlen > GIT_ID_LENGTH) {
+			maxlen = GIT_ID_LENGTH;
+		}
+		tmp[maxlen] = 0;
+		return QString::fromLatin1(tmp, maxlen);
+	}
+	return {};
+}
+
+bool Git::CommitID::isValid() const
+{
+	if (!valid) return false;
+	uint8_t c = 0;
+	for (int i = 0; i < sizeof(id); i++) {
+		c |= id[i];
+	}
+	return c != 0; // すべて0ならfalse
+}
+
+
 using callback_t = Git::callback_t;
 
 struct Git::Private {
@@ -300,14 +365,14 @@ bool Git::init()
 	return ok;
 }
 
-QString Git::rev_parse(QString const &name)
+Git::CommitID Git::rev_parse(QString const &name)
 {
 	QString cmd = "rev-parse %1";
 	cmd = cmd.arg(name);
 	if (git(cmd)) {
-		return resultText().trimmed();
+		return Git::CommitID(resultText().trimmed());
 	}
-	return QString();
+	return {};
 }
 
 QList<Git::Tag> Git::tags()
@@ -396,11 +461,11 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultText();
 }
 
-QList<Git::DiffRaw> Git::diff_raw(QString const &old_id, QString const &new_id)
+QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
 {
 	QList<DiffRaw> list;
 	QString cmd = "diff --raw --abbrev=%1 %2 %3";
-	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id).arg(new_id);
+	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id.toQString()).arg(new_id.toQString());
 	git(cmd);
 	QString text = resultText();
 	QStringList lines = text.split('\n', _SkipEmptyParts);
@@ -534,7 +599,11 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 
 QList<Git::Branch> Git::branches()
 {
-	QList<Branch> branches;
+	struct BranchItem {
+		Branch branch;
+		QString alternate_name;
+	};
+	QList<BranchItem> branches;
 	git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
 	QString s = resultText();
 #if DEBUGLOG
@@ -579,15 +648,15 @@ QList<Git::Branch> Git::branches()
 				}
 				text = text.mid(pos);
 
-				Branch b;
+				BranchItem item;
 
 				if (name.startsWith("HEAD detached at ")) {
-					b.flags |= Branch::HeadDetachedAt;
+					item.branch.flags |= Branch::HeadDetachedAt;
 					name = name.mid(17);
 				}
 
 				if (name.startsWith("HEAD detached from ")) {
-					b.flags |= Branch::HeadDetachedFrom;
+					item.branch.flags |= Branch::HeadDetachedFrom;
 					name = name.mid(19);
 				}
 
@@ -595,50 +664,56 @@ QList<Git::Branch> Git::branches()
 					name = name.mid(8);
 					int i = name.indexOf('/');
 					if (i > 0) {
-						b.remote = name.mid(0, i);
+						item.branch.remote = name.mid(0, i);
 						name = name.mid(i + 1);
 					}
 				}
 
-				b.name = name;
+				item.branch.name = name;
 
 				if (text.startsWith("-> ")) {
-					b.id = ">" + text.mid(3);
+					item.alternate_name = text.mid(3);
 				} else {
 					int i = text.indexOf(' ');
 					if (i == GIT_ID_LENGTH) {
-						b.id = text.mid(0, GIT_ID_LENGTH);
+						item.branch.id = text.mid(0, GIT_ID_LENGTH);
 					}
 					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
 						i++;
 					}
 					text = text.mid(i);
-					parseAheadBehind(text, &b);
+					parseAheadBehind(text, &item.branch);
 				}
 
 				if (line.startsWith('*')) {
-					b.flags |= Branch::Current;
+					item.branch.flags |= Branch::Current;
 				}
 
-				branches.push_back(b);
+				branches.push_back(item);
 			}
 		}
 	}
+
+	QList<Branch> ret;
+
 	for (int i = 0; i < branches.size(); i++) {
-		Branch *b = &branches[i];
-		if (b->id.startsWith('>')) {
-			QString name = b->id.mid(1);
+		BranchItem *b = &branches[i];
+		if (b->alternate_name.isEmpty()) {
+			ret.append(b->branch);
+		} else {
 			for (int j = 0; j < branches.size(); j++) {
 				if (j != i) {
-					if (branches[j].name == name) {
-						branches[i].id = branches[j].id;
+					if (branches[j].branch.name == b->alternate_name) {
+						b->branch.id = branches[j].branch.id;
+						ret.append(b->branch);
 						break;
 					}
 				}
 			}
 		}
 	}
-	return branches;
+
+	return ret;
 }
 
 /**
@@ -677,7 +752,7 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 						} else if (key == "key") {
 							signed_key = val;
 						} else if (key == "parent") {
-							item.parent_ids = val.split(' ', _SkipEmptyParts);
+							item.setParents(val.split(' ', _SkipEmptyParts));
 						} else if (key == "author") {
 							item.author = val;
 						} else if (key == "mail") {
@@ -731,7 +806,7 @@ Git::CommitItemList Git::log(int maxcount)
 	return log_all(QString(), maxcount);
 }
 
-bool Git::queryCommit(QString const &id, CommitItem *out)
+bool Git::queryCommit(CommitID const &id, CommitItem *out)
 {
 	*out = {};
 	if (objectType(id) == "commit") {
@@ -1010,25 +1085,25 @@ Git::FileStatusList Git::status_s()
 	return status_s_();
 }
 
-QString Git::objectType(QString const &id)
+QString Git::objectType(CommitID const &id)
 {
 	if (isValidID(id)) {
-		git("cat-file -t " + id);
+		git("cat-file -t " + id.toQString());
 		return resultText().trimmed();
 	}
 	return {};
 }
 
-QByteArray Git::cat_file_(QString const &id)
+QByteArray Git::cat_file_(CommitID const &id)
 {
 	if (isValidID(id)) {
-		git("cat-file -p " + id);
+		git("cat-file -p " + id.toQString());
 		return toQByteArray();
 	}
 	return {};
 }
 
-bool Git::cat_file(QString const &id, QByteArray *out)
+bool Git::cat_file(CommitID const &id, QByteArray *out)
 {
 	if (isValidID(id)) {
 		*out = cat_file_(id);
@@ -1678,3 +1753,5 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 	}
 	Push();
 }
+
+

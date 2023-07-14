@@ -25,7 +25,6 @@ public:
 	QString text() const;
 	static void sort(NamedCommitList *items);
 private slots:
-	void on_toolButton_clicked();
 	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 };

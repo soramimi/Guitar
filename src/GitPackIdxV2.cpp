@@ -69,7 +69,7 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		if (!Read(&d.header, sizeof(d.header)))    throw QString("failed to read the idx header");
 		if (memcmp(d.header.magic, magic, 8) != 0) throw QString("invalid idx header");
 		uint32_t size = get_fanout(&d.header, 255);
-		if (size > 1000000) throw QString("number of objects in the idx file is too big");
+		if (size > 2000000) throw QString("number of objects in the idx file is too big");
 		size_t size4 = size * sizeof(uint32_t);
 
 		d.objects.resize(size);
@@ -172,22 +172,23 @@ void GitPackIdxV2::fetch() const
 	}
 }
 
-GitPackIdxItem const *GitPackIdxV2::item(QString const &id) const
+GitPackIdxItem const *GitPackIdxV2::item(const Git::CommitID &id) const
 {
 	fetch();
 #if 0
 	for (const auto *p : d.item_list) {
-		if (p->qid() == id) {
+		if (p->qid() == id.toQString()) {
 			return p;
 		}
 	}
 #else
-	if (id.size() == GIT_ID_LENGTH) {
+	QString id1 = id.toQString();
+	if (id1.size() == GIT_ID_LENGTH) {
 		uint8_t id2[GIT_ID_LENGTH / 2];
 		char tmp[3];
 		for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
-			tmp[0] = id[i * 2 + 0].toLatin1();
-			tmp[1] = id[i * 2 + 1].toLatin1();
+			tmp[0] = id1[i * 2 + 0].toLatin1();
+			tmp[1] = id1[i * 2 + 1].toLatin1();
 			tmp[2] = 0;
 			id2[i] = strtol(tmp, nullptr, 16);
 		}

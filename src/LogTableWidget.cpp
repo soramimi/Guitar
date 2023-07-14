@@ -265,7 +265,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto IsAncestor = [&](Git::CommitItem const &item){
-		return frame()->isAncestorCommit(item.commit_id);
+		return frame()->isAncestorCommit(item.commit_id.toQString());
 	};
 
 	auto ItemPoint = [&](int depth, QRect const &rect){
