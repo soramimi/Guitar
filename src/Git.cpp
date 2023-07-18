@@ -1657,8 +1657,8 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, QString const &id_a, QString 
 {
 	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
 	diff->index = QString("index %1..%2 %3").arg(id_a).arg(id_b).arg(0);
-	diff->blob.a_id = id_a;
-	diff->blob.b_id = id_b;
+	diff->blob.a_id_or_path = id_a;
+	diff->blob.b_id_or_path = id_b;
 	diff->path = path;
 	diff->mode = mode;
 	diff->type = Git::Diff::Type::Create;
@@ -1677,7 +1677,7 @@ void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
+	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
 	out->path = info->path;
 	out->blob = info->blob;
 

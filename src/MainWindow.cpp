@@ -2930,7 +2930,7 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 		}
 
 		ObjectData data;
-		data.id = diff.blob.b_id;
+		data.id = diff.blob.b_id_or_path;
 		data.path = diff.path;
 		data.submod = diff.b_submodule.item;
 		data.submod_commit = diff.b_submodule.commit;

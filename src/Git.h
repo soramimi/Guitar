@@ -133,8 +133,8 @@ public:
 		QString path;
 		QString mode;
 		struct BLOB_AB_ {
-			QString a_id;
-			QString b_id;
+			QString a_id_or_path; // コミットIDまたはファイルパス。パスのときは PATH_PREFIX（'*'）で始まる
+			QString b_id_or_path;
 		} blob;
 		QList<Hunk> hunks;
 		struct SubmoduleDetail {

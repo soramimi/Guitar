@@ -51,14 +51,14 @@ GitPtr GitDiff::git(Git::SubmoduleItem const &submod)
     return objcache->git(submod);
 }
 
-QString GitDiff::makeKey(Git::CommitID const &a_id, Git::CommitID const &b_id)
+QString GitDiff::makeKey(QString const &a_id, QString const &b_id)
 {
-    return  a_id.toQString() + ".." + b_id.toQString();
+    return  a_id + ".." + b_id;
 }
 
 QString GitDiff::makeKey(Git::Diff const &diff)
 {
-    return makeKey(diff.blob.a_id, diff.blob.b_id);
+    return makeKey(diff.blob.a_id_or_path, diff.blob.b_id_or_path);
 }
 
 QString GitDiff::prependPathPrefix(QString const &path)
@@ -92,7 +92,7 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
     }
 
     out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-    out->index = QString("index ") + info->blob.a_id + ".." + info->blob.b_id + ' ' + info->mode;
+    out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
     out->path = info->path;
     out->blob = info->blob;
     out->a_submodule.item = info->a_submodule.item;
@@ -217,8 +217,8 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
                         diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
                         diff.path = file;
                         diff.mode = item.b.mode;
-                        if (Git::isValidID(item.a.id)) diff.blob.a_id = item.a.id;
-                        if (Git::isValidID(item.b.id)) diff.blob.b_id = item.b.id;
+                        if (Git::isValidID(item.a.id)) diff.blob.a_id_or_path = item.a.id;
+                        if (Git::isValidID(item.b.id)) diff.blob.b_id_or_path = item.b.id;
 
 #if 0
                         if (!diff.blob.a_id.isEmpty()) {
@@ -286,20 +286,20 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
 
                 GitTreeItem treeitem;
                 if (head_tree.lookup(path, &treeitem)) {
-                    item.blob.a_id = treeitem.id; // HEADにおけるこのファイルのID
+                    item.blob.a_id_or_path = treeitem.id; // HEADにおけるこのファイルのID
                     if (fs.isDeleted()) { // 削除されてる
-                        item.blob.b_id = zeros; // 削除された
+                        item.blob.b_id_or_path = zeros; // 削除された
                     } else {
-                        item.blob.b_id = prependPathPrefix(path); // IDの代わりに実在するファイルパスを入れる
+                        item.blob.b_id_or_path = prependPathPrefix(path); // IDの代わりに実在するファイルパスを入れる
                     }
                     item.mode = treeitem.mode;
                 } else {
-                    item.blob.a_id = zeros;
-                    item.blob.b_id = prependPathPrefix(path); // 実在するファイルパス
+                    item.blob.a_id_or_path = zeros;
+                    item.blob.b_id_or_path = prependPathPrefix(path); // 実在するファイルパス
                 }
 
                 item.diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-                item.index = QString("index %1..%2 %3").arg(item.blob.a_id).arg(zeros).arg(item.mode);
+                item.index = QString("index %1..%2 %3").arg(item.blob.a_id_or_path).arg(zeros).arg(item.mode);
                 item.path = path;
 
                 diffs.push_back(item);
@@ -326,8 +326,8 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
 								*out = {};
 							}
 						};
-						Do(diff->blob.a_id, &diff->a_submodule);
-						Do(diff->blob.b_id, &diff->b_submodule);
+						Do(diff->blob.a_id_or_path, &diff->a_submodule);
+						Do(diff->blob.b_id_or_path, &diff->b_submodule);
 						break;
                     }
                 }

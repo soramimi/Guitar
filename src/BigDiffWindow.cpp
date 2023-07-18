@@ -60,8 +60,8 @@ void BigDiffWindow::init(MainWindow *mw, FileDiffWidget::InitParam_ const &param
 		}
 		return id;
 	};
-	ui->lineEdit_left->setText(Text(m->param.diff.blob.a_id));
-	ui->lineEdit_right->setText(Text(m->param.diff.blob.b_id));
+	ui->lineEdit_left->setText(Text(m->param.diff.blob.a_id_or_path));
+	ui->lineEdit_right->setText(Text(m->param.diff.blob.b_id_or_path));
 
 	switch (m->param.view_style) {
 	case FileDiffWidget::ViewStyle::LeftOnly:
