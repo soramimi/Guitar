@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 			a.setStyle(global->theme->newStyle());
 			a.setPalette(a.style()->standardPalette());
 		} else {
-			global->theme = createStandardTheme();
+			global->theme = createLightTheme();
 			a.setStyle(global->theme->newStyle());
 #ifndef Q_OS_WIN
 			a.setPalette(a.style()->standardPalette());

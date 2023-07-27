@@ -1,6 +1,6 @@
-#include "StandardStyle.h"
+#include "LightStyle.h"
 
-void StandardStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget) const
+void LightStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget) const
 {
 	if (element == QStyle::PE_IndicatorBranch) {
 		if (legacy_windows_.drawPrimitive(element, option, painter, widget)) {

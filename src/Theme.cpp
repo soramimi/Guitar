@@ -9,40 +9,40 @@
 
 
 
-// StandardTheme
+// LightTheme
 
-#include "darktheme/StandardStyle.h"
+#include "darktheme/LightStyle.h"
 
-QStyle *StandardTheme::newStyle()
+QStyle *LightTheme::newStyle()
 {
-	return new StandardStyle();
+	return new LightStyle();
 }
 
-QImage StandardTheme::graphColorMap()
+QImage LightTheme::graphColorMap()
 {
 	QImage image;
 	image.load(":/image/graphcolor.png");
 	return image;
 }
 
-QPixmap StandardTheme::resource_clear_png()
+QPixmap LightTheme::resource_clear_png()
 {
 	return QPixmap(":/image/clear.png");
 }
 
-QPixmap StandardTheme::resource_maximize_png()
+QPixmap LightTheme::resource_maximize_png()
 {
 	return QPixmap(":/image/maximize.png");
 }
 
-QPixmap StandardTheme::resource_menu_png()
+QPixmap LightTheme::resource_menu_png()
 {
 	return QPixmap(":/image/menu.png");
 }
 
-ThemePtr createStandardTheme()
+ThemePtr createLightTheme()
 {
-	AbstractTheme *p = new StandardTheme;
+	AbstractTheme *p = new LightTheme;
 	p->text_editor_theme = TextEditorTheme::Light();
 
 	p->dialog_header_frame_bg = Qt::white;

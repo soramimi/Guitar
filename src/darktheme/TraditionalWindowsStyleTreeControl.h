@@ -8,6 +8,9 @@
 class QPainter;
 class QWidget;
 
+/**
+ * @brief Windows95スタイルのツリーコントロールの見た目にする
+ */
 class TraditionalWindowsStyleTreeControl {
 private:
 	QBrush br_branch;

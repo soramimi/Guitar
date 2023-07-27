@@ -1,20 +1,18 @@
-#ifndef STANDARDSTYLE_H
-#define STANDARDSTYLE_H
+#ifndef LIGHTSTYLE_H
+#define LIGHTSTYLE_H
 
 #include "TraditionalWindowsStyleTreeControl.h"
-
 #include <QProxyStyle>
 
-
-class StandardStyle : public QProxyStyle {
+class LightStyle : public QProxyStyle {
 private:
 	TraditionalWindowsStyleTreeControl legacy_windows_;
 public:
-	StandardStyle()
+	LightStyle()
 		: QProxyStyle(nullptr)
 	{
 	}
 	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const override;
 };
 
-#endif // STANDARDSTYLE_H
+#endif // LIGHTSTYLE_H

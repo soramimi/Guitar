@@ -765,6 +765,11 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 		break;
 	case PM_IndicatorHeight:
 	case PM_IndicatorWidth:
+#ifdef Q_OS_WIN
+        val = 11;
+        break;
+#endif
+        // fallthru
 	case PM_ExclusiveIndicatorHeight:
 	case PM_ExclusiveIndicatorWidth:
 		val = 16;
@@ -1316,12 +1321,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	}
 #endif
 	if (pe == PE_IndicatorCheckBox) {
-//		if (option->state & State_NoChange) {
-//			p->setPen(option->palette.windowText().color());
-//			p->fillRect(option->rect, option->palette.brush(QPalette::Button));
-//			p->drawRect(option->rect);
-//			p->drawLine(option->rect.topLeft(), option->rect.bottomRight());
-//		} else
 		{
 			QRect rect = indicatorRect(option, widget, option->rect);
 			int x = rect.x();
@@ -1335,7 +1334,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				p->setPen(QPen(option->palette.windowText(), 2));
 				int w = extent - 4;
 				int h = extent - 4;
-				p->setClipRect(0, 0, w, h);
+				p->setClipRect(2, 2, w -3, h -3);
 				int x0 = w - 1;
 				int y0 = 1;
 				int n = w * 0.6;
@@ -1352,9 +1351,9 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_IndicatorRadioButton) {
-		QRectF rect = indicatorRect(option, widget, option->rect);
+		QRect rect = indicatorRect(option, widget, option->rect);
 		p->setPen(option->palette.dark().color());
-		drawShadeEllipse(p, option->rect, option->palette, QStyle::State_Sunken);
+		drawShadeEllipse(p, rect, option->palette, QStyle::State_Sunken);
 		if (option->state & (State_Sunken | State_On)) {
 			const int N = 3;
 			rect.adjust(N, N, -N, -N);
@@ -2038,7 +2037,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			QColor color(0, 128, 255);
 
-			bool horz = true; //@ = (o->orientation == Qt::Horizontal);
+			bool horz = o->state & QStyle::State_Horizontal;
 
 			QString key;
 			QImage const *image;

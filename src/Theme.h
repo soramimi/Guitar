@@ -32,16 +32,16 @@ public:
 
 using ThemePtr = std::shared_ptr<AbstractTheme>;
 
-class StandardTheme : public AbstractTheme {
+class LightTheme : public AbstractTheme {
 public:
-	StandardTheme() = default;
+	LightTheme() = default;
 	QStyle *newStyle() override;
 	QImage graphColorMap() override;
 	QPixmap resource_clear_png() override;
 	QPixmap resource_maximize_png() override;
 	QPixmap resource_menu_png() override;
 };
-ThemePtr createStandardTheme();
+ThemePtr createLightTheme();
 
 #ifdef USE_DARK_THEME
 

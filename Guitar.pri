@@ -218,7 +218,7 @@ SOURCES += \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
 	src/darktheme/NinePatch.cpp \
-	src/darktheme/StandardStyle.cpp \
+	src/darktheme/LightStyle.cpp \
 	src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
 	src/gpg.cpp \
 	src/gunzip.cpp \
@@ -375,7 +375,7 @@ HEADERS  += \
 	src/common/misc.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/NinePatch.h \
-	src/darktheme/StandardStyle.h \
+	src/darktheme/LightStyle.h \
 	src/darktheme/TraditionalWindowsStyleTreeControl.h \
 	src/dtl/Diff.hpp \
 	src/dtl/Diff3.hpp \

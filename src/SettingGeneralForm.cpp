@@ -16,7 +16,7 @@ SettingGeneralForm::SettingGeneralForm(QWidget *parent)
 
 	langs = languages();
 
-	themes.push_back(Languages::Item("standard", tr("Standard")));
+	themes.push_back(Languages::Item("light", tr("Light")));
 	themes.push_back(Languages::Item("dark", tr("Dark")));
 
 	updateLanguage();
