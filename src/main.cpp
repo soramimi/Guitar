@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
 		global->theme_id = s.value("Theme").toString();
 		if (global->theme_id.compare("dark", Qt::CaseInsensitive) == 0) {
 			global->theme = createDarkTheme();
+			a.setStyle(global->theme->newStyle());
 			a.setPalette(a.style()->standardPalette());
 		} else {
 			global->theme = createStandardTheme();
