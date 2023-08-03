@@ -53,8 +53,10 @@ macx:LIBS += /usr/local/Cellar/openssl@3/3.1.1/lib/libssl.a /usr/local/Cellar/op
 win32:msvc {
 	INCLUDEPATH += $$PWD/../zlib
 
-	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
-	LIBS += "-LC:\Program Files\OpenSSL\lib"
+#	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
+#	LIBS += "-LC:\Program Files\OpenSSL\lib"
+	INCLUDEPATH += "C:\Qt\Tools\OpenSSLv3\Win_x64\include"
+	LIBS += "-LC:\Qt\Tools\OpenSSLv3\Win_x64\lib"
 
 	# OpenSSL 1.0
 #	LIBS += -llibeay32 -lssleay32
