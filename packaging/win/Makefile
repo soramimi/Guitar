@@ -1,6 +1,6 @@
 
-QMAKE = C:\Qt\5.15.0\msvc2019_64\bin\qmake.exe
-WINDEPLOYQT = C:\Qt\5.15.0\msvc2019_64\bin\windeployqt.exe
+QMAKE = C:\Qt\6.5.2\msvc2019_64\bin\qmake.exe
+WINDEPLOYQT = C:\Qt\6.5.2\msvc2019_64\bin\windeployqt.exe
 JOM = C:\Qt\Tools\QtCreator\bin\jom.exe
 7Z = "C:\Program Files\7-Zip\7z.exe"
 

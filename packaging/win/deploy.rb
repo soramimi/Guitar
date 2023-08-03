@@ -22,7 +22,7 @@ FileUtils.rm_rf "zlib"
 run "git clone https://github.com/madler/zlib"
 FileUtils.cp "../../zlib.pro", "zlib/"
 Dir.chdir("zlib") {
-	run "C:/Qt/6.6.0/msvc2019_64/bin/qmake.exe CONFIG+=release zlib.pro"
+	run "C:/Qt/6.5.2/msvc2019_64/bin/qmake.exe CONFIG+=release zlib.pro"
 	run "C:/Qt/Tools/QtCreator/bin/jom.exe"
 }
 ENV["INCLUDE"] = $script_dir + "/zlib;" + ENV["INCLUDE"]
@@ -34,7 +34,7 @@ run "ruby prepare.rb"
 FileUtils.cp $script_dir + "/zlib/_bin/libz.lib", "_bin/"
 
 mkcd $script_dir + "/build"
-run "C:/Qt/6.6.0/msvc2019_64/bin/qmake.exe CONFIG+=release ../../../Guitar.pro"
+run "C:/Qt/6.5.2/msvc2019_64/bin/qmake.exe CONFIG+=release ../../../Guitar.pro"
 run "C:/Qt/Tools/QtCreator/bin/jom.exe"
 
 Dir.chdir $script_dir + "/../../"
