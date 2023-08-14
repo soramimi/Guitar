@@ -403,7 +403,7 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 
 	ui->widget_diff_left->setText(&m->left_lines, mainwindow(), diff.blob.a_id_or_path, diff.path);
 	ui->widget_diff_right->setText(&m->right_lines, mainwindow(), diff.blob.b_id_or_path, diff.path);
-	refrectScrollBar(true);
+	refrectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
 
@@ -719,7 +719,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 
 void FileDiffWidget::resizeEvent(QResizeEvent *)
 {
-	refrectScrollBar(true);
+	refrectScrollBar();
 }
 
 void FileDiffWidget::keyPressEvent(QKeyEvent *event)
@@ -809,11 +809,12 @@ void FileDiffWidget::onUpdateSliderBar()
  * @brief スクロールバーの状態を反映
  * @param updateformat
  */
-void FileDiffWidget::refrectScrollBar(bool updateformat)
+void FileDiffWidget::refrectScrollBar(/*bool updateformat*/)
 {
 	ui->widget_diff_left->refrectScrollBar();
 	ui->widget_diff_right->refrectScrollBar();
 
+	const bool updateformat = true;
 	if (updateformat) {
 
 		// 左と右のテキストを取得
@@ -867,7 +868,7 @@ void FileDiffWidget::refrectScrollBar(bool updateformat)
  */
 void FileDiffWidget::refrectScrollBarV()
 {
-	refrectScrollBar(true);
+	refrectScrollBar();
 }
 
 /**
@@ -875,7 +876,7 @@ void FileDiffWidget::refrectScrollBarV()
  */
 void FileDiffWidget::refrectScrollBarH()
 {
-	refrectScrollBar(false);
+	refrectScrollBar();
 }
 
 QPixmap FileDiffWidget::makeDiffPixmap(DiffPane pane, int width, int height)
@@ -901,7 +902,7 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	(void)cur_row;
 	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
 	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
-	refrectScrollBar(true);
+	refrectScrollBar();
 	onUpdateSliderBar();
 }
 

@@ -120,7 +120,7 @@ private:
 
 	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
-	void refrectScrollBar(bool updateformat);
+	void refrectScrollBar();
 	void refrectScrollBarV();
 	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
