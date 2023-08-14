@@ -283,6 +283,9 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->lineEdit_remote->setText(currentRemoteName());
 	});
 
+	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
+	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
+
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	//
@@ -5632,8 +5635,6 @@ void MainWindow::on_action_configure_user_triggered()
 	// ダイアログを開く
 	execConfigUserDialog(global_user, local_user, enable_local_user, currentRepositoryName());
 }
-
-
 
 void MainWindow::showLogWindow(bool show)
 {
