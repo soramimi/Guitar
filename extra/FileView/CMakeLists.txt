@@ -28,9 +28,17 @@ list(REMOVE_ITEM FileView_SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
 # main.cpp以外のSourceをコンパイル
 add_library(fileview-lib ${FileView_SOURCES})
 target_link_libraries(fileview-lib PUBLIC
-	Qt5::Widgets
-	Qt5::Network
-	Qt5::Svg)
+	Qt${QT_VERSION_MAJOR}::Core
+	Qt${QT_VERSION_MAJOR}::Network
+	Qt${QT_VERSION_MAJOR}::Gui
+	Qt${QT_VERSION_MAJOR}::Widgets
+	Qt${QT_VERSION_MAJOR}::Svg
+)
+
+if(QT_VERSION_MAJOR EQUAL 6)
+	target_link_libraries(fileview-lib PUBLIC Qt${QT_VERSION_MAJOR}::Core5Compat)
+endif()
+
 target_include_directories(fileview-lib PUBLIC ${CMAKE_BINARY_DIR})
 target_include_directories(fileview-lib PUBLIC ${PROJECT_SOURCE_DIR})
 target_include_directories(fileview-lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
