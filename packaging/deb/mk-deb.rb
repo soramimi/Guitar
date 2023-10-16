@@ -4,7 +4,12 @@ require 'fileutils'
 
 load '../../version.rb'
 
-$package = "guitar"
+$suffix = ENV['SUFFIX']
+if $suffix.nil?
+	$suffix = ''
+end
+
+$package = "guitar" + $suffix
 $maintainer = "nobody <nobody@example.com>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "build"
