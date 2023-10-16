@@ -73,7 +73,7 @@ bool Git::CommitID::isValid() const
 {
 	if (!valid) return false;
 	uint8_t c = 0;
-	for (int i = 0; i < sizeof(id); i++) {
+	for (std::size_t i = 0; i < sizeof(id); i++) {
 		c |= id[i];
 	}
 	return c != 0; // すべて0ならfalse
