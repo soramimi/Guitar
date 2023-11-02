@@ -1114,7 +1114,7 @@ bool Git::cat_file(CommitID const &id, QByteArray *out)
 
 void Git::resetFile(QString const &path)
 {
-	git("checkout -- " + path);
+	git("checkout -- \"" + path + "\"");
 }
 
 void Git::resetAllFiles()
