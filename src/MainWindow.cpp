@@ -73,6 +73,7 @@
 #include <chrono>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <QProcess>
 #include <thread>
 
 #ifdef Q_OS_MAC
@@ -2893,7 +2894,7 @@ QPixmap MainWindow::getTransparentPixmap()
  * @param data
  * @return
  */
-QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const &data)
+QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const &data)
 {
 	const bool issubmodule = data.submod; // サブモジュール
 
@@ -2919,6 +2920,7 @@ QListWidgetItem *MainWindow::NewListWidgetFileItem(MainWindow::ObjectData const 
 	item->setData(ObjectIdRole, data.id);
 	item->setData(HeaderRole, header);
 	item->setData(SubmodulePathRole, data.submod.path);
+	item->setData(SubmoduleCommitIdRole, data.submod.id.toQString());
 	if (issubmodule) {
 		item->setToolTip(text); // ツールチップ
 	}
@@ -3410,6 +3412,12 @@ QString MainWindow::getSubmodulePath(QListWidgetItem *item)
 	return item->data(SubmodulePathRole).toString();
 }
 
+QString MainWindow::getSubmoduleCommitId(QListWidgetItem *item)
+{
+	if (!item) return {};
+	return item->data(SubmoduleCommitIdRole).toString();
+}
+
 bool MainWindow::isGroupItem(QTreeWidgetItem *item)
 {
 	if (item) {
@@ -3454,7 +3462,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 
 	bool staged = false;
 	auto AddItem = [&](ObjectData const &data){
-		QListWidgetItem *item = NewListWidgetFileItem(data);
+		QListWidgetItem *item = newListWidgetFileItem(data);
 		switch (files_list_type) {
 		case FilesListType::SingleList:
 			frame->fileslistwidget()->addItem(item);
@@ -3562,7 +3570,7 @@ void MainWindow::updateFilesList2(RepositoryWrapperFrame *frame, Git::CommitID c
 	listwidget->clear();
 
 	auto AddItem = [&](ObjectData const &data){
-		QListWidgetItem *item = NewListWidgetFileItem(data);
+		QListWidgetItem *item = newListWidgetFileItem(data);
 		listwidget->addItem(item);
 	};
 
@@ -4649,6 +4657,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 	if (item) {
 		QString submodpath = getSubmodulePath(item);
 		if (!submodpath.isEmpty()) {
+#if 0
 			// サブモジュールウィンドウを表示する
 			Git::SubmoduleItem submod;
 			submod.path = submodpath;
@@ -4660,6 +4669,12 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 				w->show();
 				w->reset();
 			}
+#else
+			QString commit_id = getSubmoduleCommitId(item);
+			QString path = currentWorkingCopyDir() / submodpath;
+			qDebug() << path << commit_id;
+			QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
+#endif
 		} else {
 			// ファイルプロパティダイアログを表示する
 			QString path = getFilePath(item);
@@ -4850,16 +4865,21 @@ Git::User MainWindow::currentGitUser() const
 	return m->current_git_user;
 }
 
-void MainWindow::autoOpenRepository(QString dir)
+void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 {
-	auto Open = [&](RepositoryData const &item){
+	auto Open = [&](RepositoryData const &item, QString const &commit_id){
 		setCurrentRepository(item, true);
 		openRepository(false, true);
+		if (!commit_id.isEmpty()) {
+			if (!locateCommitID(frame(), commit_id)) {
+				QMessageBox::information(this, tr("Open Repository"), tr("The specified commit ID was not found."));
+			}
+		}
 	};
 
 	RepositoryData const *repo = findRegisteredRepository(&dir);
 	if (repo) {
-		Open(*repo);
+		Open(*repo, commit_id);
 		return;
 	}
 
@@ -4877,7 +4897,7 @@ void MainWindow::autoOpenRepository(QString dir)
 			newitem.local_dir = dir;
 			newitem.name = QString::fromUtf16((char16_t const *)p, int(right - p));
 			saveRepositoryBookmark(newitem);
-			Open(newitem);
+			Open(newitem, commit_id);
 			return;
 		}
 	} else {
@@ -5177,6 +5197,25 @@ void MainWindow::findNext(RepositoryWrapperFrame *frame)
 			row++;
 		}
 	}
+}
+
+bool MainWindow::locateCommitID(RepositoryWrapperFrame *frame, QString const &commit_id)
+{
+	auto const &logs = getCommitLog(frame);
+	int row = 0;
+	while (row < (int)logs.size()) {
+		Git::CommitItem const commit = logs[row];
+		if (!Git::isUncommited(commit)) {
+			if (commit.commit_id.toQString().startsWith(commit_id)) {
+				bool b = frame->logtablewidget()->blockSignals(true);
+				setCurrentLogRow(frame, row);
+				frame->logtablewidget()->blockSignals(b);
+				return true;
+			}
+		}
+		row++;
+	}
+	return false;
 }
 
 void MainWindow::findText(QString const &text)

@@ -72,6 +72,7 @@ public:
 		ObjectIdRole,
 		HeaderRole,
 		SubmodulePathRole,
+		SubmoduleCommitIdRole,
 	};
 	enum CloneOperation {
 		Clone,
@@ -211,6 +212,7 @@ private:
 	void doLogCurrentItemChanged(RepositoryWrapperFrame *frame);
 	void findNext(RepositoryWrapperFrame *frame);
 	void findText(const QString &text);
+	bool locateCommitID(RepositoryWrapperFrame *frame, QString const &commit_id);
 	void showStatus();
 	void onStartEvent();
 	void showLogWindow(bool show);
@@ -314,6 +316,7 @@ private:
 	static QString getObjectID(QListWidgetItem *item);
 	static QString getFilePath(QListWidgetItem *item);
 	static QString getSubmodulePath(QListWidgetItem *item);
+	static QString getSubmoduleCommitId(QListWidgetItem *item);
 	static bool isGroupItem(QTreeWidgetItem *item);
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
@@ -376,7 +379,7 @@ private:
 	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
 	QString gitCommand() const;
 	QPixmap getTransparentPixmap();
-	static QListWidgetItem *NewListWidgetFileItem(const MainWindow::ObjectData &data);
+	static QListWidgetItem *newListWidgetFileItem(const MainWindow::ObjectData &data);
 	void cancelPendingUserEvents();
 	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
 	void updatePocessLog(bool processevents);
@@ -435,7 +438,7 @@ public:
 	GitPtr git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
 	GitPtr git();
 	GitPtr git(Git::SubmoduleItem const &submod);
-	void autoOpenRepository(QString dir);
+	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	bool queryCommit(const QString &id, Git::CommitItem *out);
 	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});
 	void checkout(RepositoryWrapperFrame *frame);
