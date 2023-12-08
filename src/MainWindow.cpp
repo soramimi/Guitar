@@ -200,6 +200,7 @@ MainWindow::MainWindow(QWidget *parent)
 									   );
 
 	loadApplicationSettings();
+	setupExternalPrograms();
 	m->starting_dir = QDir::current().absolutePath();
 
 	{ // load graphic resources
@@ -499,6 +500,13 @@ bool MainWindow::isUninitialized()
 	return !misc::isExecutable(appsettings()->git_command);
 }
 
+void MainWindow::setupExternalPrograms()
+{
+	setGitCommand(appsettings()->git_command, false);
+	setGpgCommand(appsettings()->gpg_command, false);
+	setSshCommand(appsettings()->ssh_command, false);
+}
+
 void MainWindow::onStartEvent()
 {
 	if (isUninitialized()) { // gitコマンドの有効性チェック
@@ -510,9 +518,7 @@ void MainWindow::onStartEvent()
 		postStartEvent(100); // 初期設定されなかったら、もういちどようこそダイアログを出す（100ms後）
 	} else {
 		// 外部コマンド登録
-		setGitCommand(appsettings()->git_command, false);
-		setGpgCommand(appsettings()->gpg_command, false);
-		setSshCommand(appsettings()->ssh_command, false);
+		setupExternalPrograms();
 
 		// メインウィンドウのタイトルを設定
 		updateWindowTitle(git());
@@ -1274,7 +1280,11 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 		return;
 	}
 
-	GitPtr g = git(); // ポインタの有効性チェックはしない（nullptrでも続行）
+	GitPtr g = git();
+	if (!g) {
+		qDebug() << "Guitar: git pointer is null";
+		return;
+	}
 	openRepository_(g, keep_selection);
 }
 
@@ -5442,9 +5452,7 @@ void MainWindow::on_action_edit_settings_triggered()
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
 		setAppSettings(newsettings);
-		setGitCommand(appsettings()->git_command, false);
-		setGpgCommand(appsettings()->gpg_command, false);
-		setSshCommand(appsettings()->ssh_command, false);
+		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
 	}
 }

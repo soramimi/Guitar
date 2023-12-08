@@ -464,6 +464,7 @@ public:
 	void refresh();
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 	Git::User currentGitUser() const;
+	void setupExternalPrograms();
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
 private slots:
