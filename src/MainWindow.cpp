@@ -908,7 +908,7 @@ RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) con
 	workdir->replace('\\', '/');
 
 	if (Git::isValidWorkingCopy(*workdir)) {
-		for (RepositoryData const &item : getRepos()) {
+		for (RepositoryData const &item : cRepositories()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
 			cs = Qt::CaseInsensitive;
@@ -2027,7 +2027,7 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 {
 	if (item) {
 		int i = item->data(0, IndexRole).toInt();
-		if (i >= 0 && i < getRepos().size()) {
+		if (i >= 0 && i < cRepositories().size()) {
 			return i;
 		}
 	}
@@ -2037,7 +2037,7 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 RepositoryData const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
-	QList<RepositoryData> const &repos = getRepos();
+	QList<RepositoryData> const &repos = cRepositories();
 	return (row >= 0 && row < repos.size()) ? &repos[row] : nullptr;
 }
 
@@ -2071,7 +2071,7 @@ void MainWindow::updateRepositoriesList()
 	QString path = getBookmarksFilePath();
 
 	setRepos(RepositoryBookmark::load(path));
-	auto const *repos = &getRepos();
+	auto const *repos = &cRepositories();
 
 	QString filter = getRepositoryFilterText();
 
@@ -2268,7 +2268,7 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		item.name = tr("Unnamed");
 	}
 
-	auto repos = getRepos();
+	auto repos = cRepositories();
 
 	bool done = false;
 	for (auto &repo : repos) {
@@ -2643,7 +2643,7 @@ void MainWindow::initNetworking()
 bool MainWindow::saveRepositoryBookmarks() const
 {
 	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &getRepos());
+	return RepositoryBookmark::save(path, &cRepositories());
 }
 
 QString MainWindow::getBookmarksFilePath() const
@@ -2738,9 +2738,14 @@ void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
 	m->pty_condition = ptyCondition;
 }
 
-const QList<RepositoryData> &MainWindow::getRepos() const
+const QList<RepositoryData> &MainWindow::cRepositories() const
 {
 	return m->repos;
+}
+
+QList<RepositoryData> *MainWindow::pRepositories()
+{
+	return &m->repos;
 }
 
 void MainWindow::setRepos(QList<RepositoryData> const &list)
@@ -3081,13 +3086,13 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	auto repos = getRepos();
-	if (index >= 0 && index < repos.size()) {
-		repos.erase(repos.begin() + index); // 消す
+	auto *repos = pRepositories();
+	if (index >= 0 && index < repos->size()) {
+		repos->erase(repos->begin() + index); // 消す
 		saveRepositoryBookmarks(); // 保存
 		updateRepositoriesList(); // リスト更新
 	}
-	setRepos(repos);
+	setRepos(*repos);
 }
 
 /**
@@ -5076,7 +5081,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 	locdir = locdir.toLower().replace('\\', '/');
 #endif
 
-	auto repos = getRepos();
+	auto repos = cRepositories();
 	for (int i = 0; i < repos.size(); i++) {
 		RepositoryData *item = &(repos)[i];
 		QString repodir = item->local_dir;
