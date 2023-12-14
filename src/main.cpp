@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
 
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
+	global->this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
 	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
 	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
 	global->config_file_path = joinpath(global->app_config_dir, global->application_name + ".ini");
@@ -131,18 +132,28 @@ int main(int argc, char *argv[])
 
 	WebClient::initialize();
 
-	bool f_open_here = false;
+	bool a_open_here = false;
+	QString a_commit_id;
 
 	QStringList args;
 
-	for (int i = 1; i < argc; i++) {
-		std::string arg = argv[i];
-		if (arg[0] == '-') {
-			if (arg == "--open-here") {
-				f_open_here = true;
+	{
+		int i = 1;
+		while (i < argc) {
+			std::string arg = argv[i];
+			if (arg[0] == '-') {
+				if (arg == "--open-here") {
+					a_open_here = true;
+				} else if (arg == "--commit-id") {
+					if (i + 1 < argc) {
+						i++;
+						a_commit_id = argv[i];
+					}
+				}
+			} else {
+				args.push_back(QString::fromStdString(arg));
 			}
-		} else {
-			args.push_back(QString::fromStdString(arg));
+			i++;
 		}
 	}
 
@@ -178,9 +189,9 @@ int main(int argc, char *argv[])
 	w.show();
 	w.shown();
 
-	if (f_open_here) {
+	if (a_open_here) {
 		QString dir = QDir::current().absolutePath();
-		w.autoOpenRepository(dir);
+		w.autoOpenRepository(dir, a_commit_id);
 	} else if (args.size() == 1) {
 		QString dir = args[0] / QString();
 		if (dir.startsWith("./") || dir.startsWith(".\\")) {
@@ -189,7 +200,7 @@ int main(int argc, char *argv[])
 		QFileInfo fi(dir);
 		if (fi.isDir()) {
 			dir = fi.absolutePath();
-			w.autoOpenRepository(dir);
+			w.autoOpenRepository(dir, a_commit_id);
 		}
 	}
 

@@ -385,8 +385,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 
 	m->linefragmentpair.clear();
 
-	int ileft = 0;
-	int iright = 0;
+	std::size_t ileft = 0;
+	std::size_t iright = 0;
 	while (ileft < left_dels.size() && iright < right_adds.size()) {
 		if (left_dels[ileft].line_index < right_adds[iright].line_index) {
 			ileft++;
@@ -828,7 +828,7 @@ void FileDiffWidget::refrectScrollBar(/*bool updateformat*/)
 
 			const size_t n = std::min(llines->size(), rlines->size());
 
-			for (int i = 0; i < n; i++) {
+			for (std::size_t i = 0; i < n; i++) {
 				std::vector<Char> *lchars = llines->chars(i);
 				std::vector<Char> *rchars = rlines->chars(i);
 				size_t l = 0;

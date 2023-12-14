@@ -1,8 +1,7 @@
 add_definitions(-DAPP_GUITAR)
 
 # Sourceを再帰的に取得
-file(GLOB_RECURSE Guitar_SOURCES  ./*.cpp)
-
+file(GLOB_RECURSE Guitar_SOURCES  ./*.cpp ../filetype/*.cpp)
 
 if(WIN32)
 # win32環境においてunix関係のアイテムを使用しないように
@@ -22,7 +21,7 @@ file(GLOB_RECURSE Guitar_UIS  ./*.ui)
 file(GLOB_RECURSE Guitar_RESOURCES   ./resources/*.qrc)
 
 file(GLOB_RECURSE Guitar_TRANSLATIONS  ./resources/translations/*.ts)
-qt5_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
+qt_add_translation(Guitar_QM_FILES ${Guitar_TRANSLATIONS})
 
 configure_file(${Guitar_RESOURCES} ${CMAKE_BINARY_DIR} COPYONLY)
 
@@ -33,19 +32,26 @@ add_dependencies(resources translations)
 # Sourceをライブラリとして構築する
 add_library(guitar-lib ${Guitar_SOURCES})
 target_link_libraries(guitar-lib PUBLIC
-	Qt5::Widgets
-	Qt5::Network
-	Qt5::Svg
+	Qt${QT_VERSION_MAJOR}::Core
+	Qt${QT_VERSION_MAJOR}::Network
+	Qt${QT_VERSION_MAJOR}::Gui
+	Qt${QT_VERSION_MAJOR}::Widgets
+	Qt${QT_VERSION_MAJOR}::Svg
 	zlib 
 	OpenSSL::SSL
 	OpenSSL::Crypto
+	${MAGIC_LIBRARIES}
 	)
 
+if(QT_VERSION_MAJOR EQUAL 6)
+	target_link_libraries(guitar-lib PUBLIC Qt${QT_VERSION_MAJOR}::Core5Compat)
+endif()
 
 # ライブラリに読み込むHeaderの設定
 target_include_directories(guitar-lib PUBLIC ${CMAKE_BINARY_DIR})
 target_include_directories(guitar-lib PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(guitar-lib PUBLIC ${PROJECT_SOURCE_DIR}/src/texteditor)
+target_include_directories(guitar-lib PUBLIC ${PROJECT_SOURCE_DIR}/src/coloredit)
 
 set_target_properties(guitar-lib PROPERTIES OUTPUT_NAME guitar)
 

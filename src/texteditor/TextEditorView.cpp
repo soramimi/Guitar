@@ -776,7 +776,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			int line_row = editor_cx->scroll_row_pos; // 行インデックス（view_row位置に描画すべき論理行インデックス）
-			for (int i = 0; i < m->formatted_lines.size(); i++) {
+			for (std::size_t i = 0; i < m->formatted_lines.size(); i++) {
 				const bool iscurrentline = (line_row == editor_cx->current_row); // 現在の行？
 				const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 
@@ -865,7 +865,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 				auto DrawText = [&](){
 					int left_x = 0;
 					int right_x = 0;
-					int j = 0;
+					std::size_t j = 0;
 					while (j < chars.size()) {
 						int n = 0;
 						QString text;

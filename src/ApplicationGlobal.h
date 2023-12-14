@@ -36,6 +36,7 @@ struct ApplicationGlobal {
 	bool start_with_shift_key = false;
 	QString organization_name;
 	QString application_name;
+	QString this_executive_program;
 	QString language_id;
 	QString theme_id;
 	QString generic_config_dir;
