@@ -11,4 +11,4 @@ cd ..
 cp _build/Guitar .
 SUFFIX=-dev ruby mk-deb.rb
 file=`SUFFIX=-dev ./debname.rb`
-curl -T $file ftp://10.0.0.5/Public/pub/_tmp/
+curl -T $file ftp://192.168.0.5/Public/pub/_tmp/
