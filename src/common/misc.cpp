@@ -158,7 +158,8 @@ void misc::splitLines(std::string const &text, std::vector<std::string> *out, bo
  *
  * @param text 分割する対象の文字列。
  * @return 分割された単語のリスト。
- */QStringList misc::splitWords(QString const &text)
+ */
+QStringList misc::splitWords(QString const &text)
 {
 	QStringList list;
 	ushort const *begin = text.utf16();

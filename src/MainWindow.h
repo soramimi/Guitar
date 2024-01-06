@@ -279,7 +279,7 @@ private:
 	QList<Git::Branch> findBranch(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	QString tempfileHeader() const;
 	void deleteTempFiles();
-	Git::CommitID getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag);
+        Git::CommitID idFromTag(RepositoryWrapperFrame *frame, const QString &tag);
 	QString newTempFilePath();
 	int limitLogCount() const;
     Git::Object cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
@@ -388,6 +388,21 @@ private:
 	void clearLogHistory();
 	void updateAvatar(const Git::User &user, bool request);
 	void cleanSubModule(QListWidgetItem *item);
+
+	class GitFile {
+	public:
+		Git::Object::Type type = Git::Object::Type::NONE;
+		QByteArray data;
+		operator bool () const
+		{
+			return type != Git::Object::Type::NONE;
+		}
+		bool is(Git::Object::Type t) const
+		{
+			return t == type;
+		}
+	};
+	GitFile catFile(const Git::CommitID &id, GitPtr g);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;

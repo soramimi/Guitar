@@ -47,7 +47,6 @@ void GitPack::decodeTree(QByteArray *out)
 		}
 		*out = std::move(ba);
 	}
-
 }
 
 Git::Object::Type GitPack::stripHeader(QByteArray *out)

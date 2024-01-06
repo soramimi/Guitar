@@ -66,7 +66,8 @@ public:
 	};
 
 	struct Object {
-		enum class Type {
+		enum class Type { // 値は固定。packフォーマットで決まってる
+			NONE = -1,
 			UNKNOWN = 0,
 			COMMIT = 1,
 			TREE = 2,

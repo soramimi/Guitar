@@ -75,6 +75,7 @@
 #include <sys/stat.h>
 #include <QProcess>
 #include <thread>
+#include "GitObjectManager.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -1990,7 +1991,15 @@ void MainWindow::deleteTempFiles()
 	}
 }
 
-Git::CommitID MainWindow::getCommitIdFromTag(RepositoryWrapperFrame *frame, const QString &tag)
+/**
+ * @brief MainWindow::idFromTag
+ * @param frame
+ * @param tag
+ * @return
+ *
+ * タグ名からコミットIDを取得する
+ */
+Git::CommitID MainWindow::idFromTag(RepositoryWrapperFrame *frame, const QString &tag)
 {
 	return getObjCache(frame)->getCommitIdFromTag(tag);
 }
@@ -2007,26 +2016,6 @@ int MainWindow::limitLogCount() const
 {
 	const int n = appsettings()->maximum_number_of_commit_item_acquisitions;
 	return (n >= 1 && n <= 100000) ? n : 10000;
-}
-
-Git::Object MainWindow::cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id)
-{
-	if (isValidWorkingCopy(g)) {
-		QString path_prefix = PATH_PREFIX;
-		if (id.startsWith(path_prefix)) {
-			QString path = g->workingDir();
-			path = path / id.mid(path_prefix.size());
-			QFile file(path);
-			if (file.open(QFile::ReadOnly)) {
-				Git::Object obj;
-				obj.content = file.readAll();
-				return obj;
-			}
-		} else if (Git::isValidID(id)) {
-			return getObjCache(frame)->catFile(id);;
-		}
-	}
-	return Git::Object();
 }
 
 bool MainWindow::isThereUncommitedChanges() const
@@ -3666,6 +3655,44 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 	openRepository_(frame(), g, keep_selection);
 }
 
+MainWindow::GitFile MainWindow::catFile(Git::CommitID const &id, GitPtr g)
+{
+	GitFile file;
+	if (0) {
+		g->cat_file(id, &file.data);
+	} else {
+		Git::Object::Type type;
+		GitObjectManager om(g);
+		om.catFile(id, &file.data, &file.type);
+	}
+	return file;
+}
+
+Git::Object MainWindow::cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id) //@TODO:
+{
+	if (isValidWorkingCopy(g)) {
+		QString path_prefix = PATH_PREFIX;
+		if (id.startsWith(path_prefix)) {
+			QString path = g->workingDir();
+			path = path / id.mid(path_prefix.size());
+			QFile file(path);
+			if (file.open(QFile::ReadOnly)) {
+				Git::Object obj;
+				obj.content = file.readAll();
+				return obj;
+			}
+		} else if (Git::isValidID(id)) {
+			return getObjCache(frame)->catFile(id);;
+		}
+	}
+	return Git::Object();
+}
+
+Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, const QString &id) //@TODO:
+{
+	return cat_file_(frame, git(), id);
+}
+
 void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
 {
 	getObjCache(frame)->setup(g);
@@ -3706,7 +3733,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
 			Git::Tag t = tag;
-//			t.id = getObjCache(frame)->getCommitIdFromTag(t.id.toQString()); // TOOD: too slow
+			t.id = idFromTag(frame, tag.id.toQString());
 			(*ptrCommitToTagMap(frame))[t.id].push_back(t);
 		}
 
@@ -4995,11 +5022,6 @@ void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 		int row = rowFromCommitId(frame, id2);
 		setCurrentLogRow(frame, row);
 	}
-}
-
-Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, const QString &id)
-{
-	return cat_file_(frame, git(), id);
 }
 
 bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
