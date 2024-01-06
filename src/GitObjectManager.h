@@ -41,8 +41,10 @@ private:
 		g2->setWorkingRepositoryDir(g->workingDir(), submod.path, g->sshKey());
 		return g2;
 	}
+	void init();
 public:
 	GitObjectManager();
+	GitObjectManager(GitPtr g);
 	void setup(GitPtr g);
 	bool catFile(const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();

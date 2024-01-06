@@ -11,6 +11,17 @@
 
 GitObjectManager::GitObjectManager()
 {
+	init();
+}
+
+GitObjectManager::GitObjectManager(GitPtr g)
+{
+	init();
+	setup(g);
+}
+
+void GitObjectManager::init()
+{
 	subdir_git_objects = ".git/objects";
 	subdir_git_objects_pack = subdir_git_objects / "pack";
 }
