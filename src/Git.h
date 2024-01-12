@@ -47,6 +47,7 @@ public:
 	public:
 		CommitID() = default;
 		CommitID(QString const &qid);
+		CommitID(char const *id);
 		void assign(const QString &qid);
 		QString toQString(int maxlen = -1) const;
 		bool isValid() const;
@@ -540,6 +541,7 @@ public:
 	QList<SubmoduleItem> submodules();
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
+	static Git::CommitItem parseCommit(const QByteArray &ba);
 };
 
 struct NamedCommitItem {

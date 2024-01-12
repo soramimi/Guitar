@@ -6612,6 +6612,23 @@ Terminal=false
 
 void MainWindow::test()
 {
+	QElapsedTimer t;
+	t.start();
+	std::vector<Git::CommitID> ids;
+	ids.emplace_back("48b37ac7b4119ae01180db65477613297971889c");
+	std::map<Git::CommitID, Git::CommitItem> map;
+	int total = 0;
+	while (total < 10000 && !ids.empty()) {
+		Git::CommitID id = ids.back();
+		ids.pop_back();
+		if (map.find(id) != map.end()) continue;
+		GitFile file = catFile(id, git());
+		Git::CommitItem commit = Git::parseCommit(file.data);
+		ids.insert(ids.end(), commit.parent_ids.begin(), commit.parent_ids.end());
+		map[id] = commit;
+		total++;
+	}
+	qDebug() << total << t.elapsed();
 }
 
 

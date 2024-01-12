@@ -22,6 +22,11 @@ Git::CommitID::CommitID(const QString &qid)
 	assign(qid);
 }
 
+Git::CommitID::CommitID(const char *id)
+{
+	assign(id);
+}
+
 void Git::CommitItem::setParents(const QStringList &list)
 {
 	parent_ids.clear();
@@ -806,6 +811,57 @@ Git::CommitItemList Git::log(int maxcount)
 	return log_all(QString(), maxcount);
 }
 
+Git::CommitItem Git::parseCommit(QByteArray const &ba)
+{
+	CommitItem out;
+	QStringList lines = misc::splitLines(ba, [](char const *p, size_t n){
+		return QString::fromUtf8(p, (int)n);
+	});
+	while (!lines.empty() && lines[lines.size() - 1].isEmpty()) {
+		lines.pop_back();
+	}
+
+	int i;
+	for (i = 0; i < lines.size(); i++) {
+		QString const &line = lines[i];
+		if (line.isEmpty()) {
+			i++;
+			for (; i < lines.size(); i++) {
+				QString const &line = lines[i];
+				if (!out.message.isEmpty()) {
+					out.message.append('\n');
+				}
+				out.message.append(line);
+			}
+			break;
+		}
+		if (line.startsWith("parent ")) {
+			out.parent_ids.push_back(line.mid(7));
+		} else if (line.startsWith("author ")) {
+			QStringList arr = misc::splitWords(line);
+			int n = arr.size();
+			if (n > 4) {
+				n -= 2;
+				//						out->commit_date = QDateTime::fromTime_t(atol(arr[n].toStdString().c_str()));
+				out.commit_date = QDateTime::fromSecsSinceEpoch(atol(arr[n].toStdString().c_str()));
+				n--;
+				out.email = arr[n];
+				if (out.email.startsWith('<') && out.email.endsWith('>')) {
+					int n = out.email.size();
+					out.email = out.email.mid(1, n - 2);
+				}
+				for (int i = 1; i < n; i++) {
+					if (!out.author.isEmpty()) {
+						out.author += ' ';
+					}
+					out.author += arr[i];
+				}
+			}
+		}
+	}
+	return out;
+};
+
 bool Git::queryCommit(CommitID const &id, CommitItem *out)
 {
 	*out = {};
@@ -813,51 +869,7 @@ bool Git::queryCommit(CommitID const &id, CommitItem *out)
 		out->commit_id = id;
 		QByteArray ba;
 		if (cat_file(id, &ba)) {
-			QStringList lines = misc::splitLines(ba, [](char const *p, size_t n){
-				return QString::fromUtf8(p, (int)n);
-			});
-			while (!lines.empty() && lines[lines.size() - 1].isEmpty()) {
-				lines.pop_back();
-			}
-
-			int i;
-			for (i = 0; i < lines.size(); i++) {
-				QString const &line = lines[i];
-				if (line.isEmpty()) {
-					i++;
-					for (; i < lines.size(); i++) {
-						QString const &line = lines[i];
-						if (!out->message.isEmpty()) {
-							out->message.append('\n');
-						}
-						out->message.append(line);
-					}
-					break;
-				}
-				if (line.startsWith("parent ")) {
-					out->parent_ids.push_back(line.mid(7));
-				} else if (line.startsWith("author ")) {
-					QStringList arr = misc::splitWords(line);
-					int n = arr.size();
-					if (n > 4) {
-						n -= 2;
-//						out->commit_date = QDateTime::fromTime_t(atol(arr[n].toStdString().c_str()));
-						out->commit_date = QDateTime::fromSecsSinceEpoch(atol(arr[n].toStdString().c_str()));
-						n--;
-						out->email = arr[n];
-						if (out->email.startsWith('<') && out->email.endsWith('>')) {
-							int n = out->email.size();
-							out->email = out->email.mid(1, n - 2);
-						}
-						for (int i = 1; i < n; i++) {
-							if (!out->author.isEmpty()) {
-								out->author += ' ';
-							}
-							out->author += arr[i];
-						}
-					}
-				}
-			}
+			*out = parseCommit(ba);
 		}
 		return true;
 	}
