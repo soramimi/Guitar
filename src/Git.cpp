@@ -238,9 +238,6 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 
 bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty, QString const &prefix)
 {
-	QElapsedTimer e;
-	e.start();
-
 	qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -318,7 +315,6 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 	qDebug() << timer.elapsed() << "ms";
 #endif
 
-	qDebug() << e.elapsed();
 	return ok;
 }
 
