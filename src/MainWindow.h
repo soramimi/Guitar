@@ -402,7 +402,6 @@ private:
 			return t == type;
 		}
 	};
-	GitFile catFile(const Git::CommitID &id, GitPtr g);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -453,6 +452,7 @@ public:
 	GitPtr git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
 	GitPtr git();
 	GitPtr git(Git::SubmoduleItem const &submod);
+	GitFile catFile(const Git::CommitID &id, GitPtr g);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	bool queryCommit(const QString &id, Git::CommitItem *out);
 	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});

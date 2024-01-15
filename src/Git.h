@@ -102,6 +102,7 @@ public:
 		QString message;
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
+		QString gpgsig;
 		QByteArray fingerprint;
 		char signature = 0; // git log format:%G?
 		bool has_child = false;
@@ -378,7 +379,7 @@ public:
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(QString const &id, int maxcount);
 	CommitItemList log(int maxcount);
-	bool queryCommit(const CommitID &id, CommitItem *out);
+	std::optional<CommitItem> queryCommit(const CommitID &id);
 
 	struct CloneData {
 		QString url;

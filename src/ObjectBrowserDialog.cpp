@@ -111,9 +111,9 @@ void ObjectBrowserDialog::on_pushButton_inspect_clicked()
 		QString id = item->data(IdRole).toString();
 		QString ty = item->data(TypeRole).toString();
 		if (Git::isValidID(id) && ty == "commit") {
-			Git::CommitItem commit;
-			if (g->queryCommit(id, &commit)) {
-				mainwindow()->execCommitPropertyDialog(this, &commit);
+			auto commit = g->queryCommit(id);
+			if (commit) {
+				mainwindow()->execCommitPropertyDialog(this, &*commit);
 			}
 		} else {
 			QMessageBox::information(this, tr("Object Inspection"), id + "\n\n" + ty);

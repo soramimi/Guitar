@@ -317,11 +317,17 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
 							if (id.startsWith('*')) {
 								out->item = mods;
 								out->item.id = g->rev_parse("HEAD");
-								g->queryCommit(out->item.id, &out->commit);
+								auto commit = g->queryCommit(out->item.id);
+								if (commit) {
+									out->commit = *commit;
+								}
 							} else if (Git::isValidID(id)) {
 								out->item = mods;
 								out->item.id = id;
-								g->queryCommit(out->item.id, &out->commit);
+								auto commit = g->queryCommit(out->item.id);
+								if (commit) {
+									out->commit = *commit;
+								}
 							} else {
 								*out = {};
 							}

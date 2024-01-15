@@ -12,6 +12,7 @@
 #include <QThread>
 #include <QTimer>
 #include <set>
+#include <optional>
 
 #define DEBUGLOG 0
 
@@ -237,6 +238,10 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 
 bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty)
 {
+	QElapsedTimer e;
+	e.start();
+
+	qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
@@ -307,6 +312,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 	qDebug() << timer.elapsed() << "ms";
 #endif
 
+	qDebug() << e.elapsed();
 	return ok;
 }
 
@@ -732,7 +738,8 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 	CommitItemList items;
 	QString text;
 
-	QString cmd = "log --pretty=format:\"commit:%H#gpg:%G?#key:%GK#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+	// QString cmd = "log --pretty=format:\"commit:%H#gpg:%G?#key:%GK#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2"; // TODO: gpg関連の情報を取得すると遅すぎるので取得しない
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
 	if (getProcessExitCode() == 0) {
@@ -821,6 +828,9 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 		lines.pop_back();
 	}
 
+	bool gpgsig = false;
+	bool message = false;
+
 	int i;
 	for (i = 0; i < lines.size(); i++) {
 		QString const &line = lines[i];
@@ -835,6 +845,26 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 			}
 			break;
 		}
+		if (gpgsig) {
+			if (line[0] == ' ') {
+				QString s = line.mid(1);
+				out.gpgsig += s + '\n';
+				if (s == "-----END PGP SIGNATURE-----") {
+					gpgsig = false;
+				}
+			}
+			continue;
+		}
+		if (line.isEmpty()) {
+			message = true;
+			continue;
+		}
+		if (message) {
+			if (!out.message.isEmpty()) {
+				out.message += '\n';
+			}
+			out.message += line;
+		}
 		if (line.startsWith("parent ")) {
 			out.parent_ids.push_back(line.mid(7));
 		} else if (line.startsWith("author ")) {
@@ -842,7 +872,6 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 			int n = arr.size();
 			if (n > 4) {
 				n -= 2;
-				//						out->commit_date = QDateTime::fromTime_t(atol(arr[n].toStdString().c_str()));
 				out.commit_date = QDateTime::fromSecsSinceEpoch(atol(arr[n].toStdString().c_str()));
 				n--;
 				out.email = arr[n];
@@ -857,23 +886,27 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 					out.author += arr[i];
 				}
 			}
+		} else if (line.startsWith("commiter ")) {
+			// nop
+		} else if (line.startsWith("gpgsig -----BEGIN PGP SIGNATURE-----")) {
+			out.gpgsig.append(line.mid(7));
+			gpgsig = true;
 		}
 	}
 	return out;
-};
+}
 
-bool Git::queryCommit(CommitID const &id, CommitItem *out)
+std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)
 {
-	*out = {};
-	if (objectType(id) == "commit") {
-		out->commit_id = id;
-		QByteArray ba;
-		if (cat_file(id, &ba)) {
-			*out = parseCommit(ba);
-		}
-		return true;
+	Git::CommitItem ret;
+	if (objectType(id) != "commit") return std::nullopt;
+
+	ret.commit_id = id;
+	QByteArray ba;
+	if (cat_file(id, &ba)) {
+		ret = parseCommit(ba);
 	}
-	return false;
+	return ret;
 }
 
 Git::CloneData Git::preclone(QString const &url, QString const &path)

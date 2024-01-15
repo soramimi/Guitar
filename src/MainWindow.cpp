@@ -890,7 +890,8 @@ Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, 
 		if (submod.path == path) {
 			if (commit) {
 				GitPtr g = git(submod);
-				g->queryCommit(submod.id, commit);
+				auto c = g->queryCommit(submod.id);
+				if (c) *commit = *c;
 			}
 			return &submod;
 		}
@@ -3524,7 +3525,10 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 				data.submod = diff->b_submodule.item; // TODO:
 				if (data.submod) {
 					GitPtr g = git(data.submod);
-					g->queryCommit(data.submod.id, &data.submod_commit);
+					auto sc = g->queryCommit(data.submod.id);
+					if (sc) {
+						data.submod_commit = *sc;
+					}
 				}
 			}
 			AddItem(data);
@@ -3733,7 +3737,7 @@ void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool k
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
 			Git::Tag t = tag;
-			t.id = idFromTag(frame, tag.id.toQString());
+			// t.id = idFromTag(frame, tag.id.toQString()); //@TODO: これいらないのでは？
 			(*ptrCommitToTagMap(frame))[t.id].push_back(t);
 		}
 
@@ -3994,19 +3998,16 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 	if (n == 1) {
 		g->cherrypick(commit->commit_id.toQString());
 	} else if (n > 1) {
-		Git::CommitItem head;
-		Git::CommitItem pick;
-		g->queryCommit(g->rev_parse("HEAD"), &head);
-		g->queryCommit(commit->commit_id.toQString(), &pick);
+		auto head = g->queryCommit(g->rev_parse("HEAD"));
+		auto pick = g->queryCommit(commit->commit_id.toQString());
 		QList<Git::CommitItem> parents;
 		for (int i = 0; i < n; i++) {
 			QString id = commit->commit_id.toQString() + QString("^%1").arg(i + 1);
 			Git::CommitID id2 = g->rev_parse(id);
-			Git::CommitItem item;
-			g->queryCommit(id2, &item);
-			parents.push_back(item);
+			auto item = g->queryCommit(id2);
+			parents.push_back(*item);
 		}
-		CherryPickDialog dlg(this, head, pick, parents);
+		CherryPickDialog dlg(this, *head, *pick, parents);
 		if (dlg.exec() == QDialog::Accepted) {
 			QString cmd = "-m %1 ";
 			cmd = cmd.arg(dlg.number());
@@ -4937,9 +4938,14 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 
 bool MainWindow::queryCommit(const QString &id, Git::CommitItem *out)
 {
-	*out = Git::CommitItem();
 	GitPtr g = git();
-	return g->queryCommit(id, out);
+	auto commit = g->queryCommit(id);
+	if (commit) {
+		*out = *commit;
+		return true;
+	}
+	*out = {};
+	return false;
 }
 
 void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback)
@@ -6498,7 +6504,10 @@ void MainWindow::on_action_submodules_triggered()
 		mods2[i].submodule = mod;
 
 		GitPtr g2 = git(g->workingDir(), mod.path, g->sshKey());
-		g2->queryCommit(mod.id, &mods2[i].head);
+		auto commit = g2->queryCommit(mod.id);
+		if (commit) {
+			mods2[i].head = *commit;
+		}
 	}
 
 	SubmodulesDialog dlg(this, mods2);

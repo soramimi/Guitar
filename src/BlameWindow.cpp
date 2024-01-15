@@ -198,17 +198,17 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	int row = ui->tableWidget->currentRow();
 	if (row < 0 || row >= m->list.size()) return;
 
-	Git::CommitItem commit;
 	BlameItem blame = m->list[row];
 	GitPtr g = mainwindow()->git();
-	if (!g->queryCommit(blame.commit_id, &commit)) return;
+	auto commit = g->queryCommit(blame.commit_id);
+	if (!commit) return;
 
 	QMenu menu;
 	QAction *a_property = mainwindow()->addMenuActionProperty(&menu);
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, &commit);
+			mainwindow()->execCommitPropertyDialog(this, &*commit);
 			return;
 		}
 	}
@@ -226,12 +226,12 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 			info = it->second;
 		} else {
 			GitPtr g = mainwindow()->git();
-			Git::CommitItem commit;
-			if (g->queryCommit(id, &commit)) {
-				info.datetime = misc::makeDateTimeString(commit.commit_date);
-				info.author = commit.author;
-				info.email = commit.email;
-				info.message = commit.message;
+			auto commit = g->queryCommit(id);
+			if (commit) {
+				info.datetime = misc::makeDateTimeString(commit->commit_date);
+				info.author = commit->author;
+				info.email = commit->email;
+				info.message = commit->message;
 			}
 		}
 	} else {
