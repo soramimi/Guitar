@@ -928,9 +928,9 @@ std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)
 	if (objectType(id) != "commit") return std::nullopt;
 
 	ret.commit_id = id;
-	QByteArray ba;
-	if (cat_file(id, &ba)) {
-		ret = parseCommit(ba);
+	auto ba = cat_file(id);
+	if (ba) {
+		ret = parseCommit(*ba);
 	}
 	return ret;
 }
@@ -1174,13 +1174,13 @@ QByteArray Git::cat_file_(CommitID const &id)
 	return {};
 }
 
-bool Git::cat_file(CommitID const &id, QByteArray *out)
+std::optional<QByteArray> Git::cat_file(CommitID const &id)
 {
+	QByteArray out;
 	if (isValidID(id)) {
-		*out = cat_file_(id);
-		return true;
+		return cat_file_(id);
 	}
-	return false;
+	return std::nullopt;
 }
 
 void Git::resetFile(QString const &path)

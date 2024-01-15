@@ -75,24 +75,20 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
-bool ReflogWindow::currentCommit(Git::CommitItem *out)
+std::optional<Git::CommitItem> ReflogWindow::currentCommit()
 {
-	bool ok = false;
-	*out = Git::CommitItem();
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
 		Git::ReflogItem const &logitem = reflog_[row];
-		if (mainwindow()->queryCommit(logitem.id, out)) {
-			ok = true;
-		}
+		return mainwindow()->queryCommit(logitem.id);
 	}
-	return ok;
+	return std::nullopt;
 }
 
 void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
-	Git::CommitItem commit;
-	if (!currentCommit(&commit)) return;
+	auto commit = currentCommit();
+	if (!commit) return;
 
 	QMenu menu;
 	QAction *a_checkout = menu.addAction(tr("Checkout"));
@@ -101,15 +97,15 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_checkout) {
-			mainwindow()->checkout(mainwindow()->frame(), this, &commit);
+			mainwindow()->checkout(mainwindow()->frame(), this, &*commit);
 			return;
 		}
 		if (a == a_explorer) {
-			mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &commit);
+			mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &*commit);
 			return;
 		}
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, &commit);
+			mainwindow()->execCommitPropertyDialog(this, &*commit);
 			return;
 		}
 	}
@@ -119,8 +115,8 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	(void)item;
-	Git::CommitItem commit;
-	if (!currentCommit(&commit)) return;
-
-	mainwindow()->execCommitPropertyDialog(this, &commit);
+	auto commit = currentCommit();
+	if (commit) {
+		mainwindow()->execCommitPropertyDialog(this, &*commit);
+	}
 }

@@ -454,7 +454,7 @@ public:
 	GitPtr git(Git::SubmoduleItem const &submod);
 	GitFile catFile(const Git::CommitID &id, GitPtr g);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
-	bool queryCommit(const QString &id, Git::CommitItem *out);
+	std::optional<Git::CommitItem> queryCommit(const QString &id);
 	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});
 	void checkout(RepositoryWrapperFrame *frame);
 	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);

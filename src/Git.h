@@ -2,15 +2,14 @@
 #define GIT_H
 
 #include "AbstractProcess.h"
-
+#include "common/misc.h"
 #include <QDateTime>
-#include <QObject>
-#include <functional>
-
 #include <QDebug>
 #include <QMutex>
+#include <QObject>
+#include <functional>
 #include <memory>
-#include "common/misc.h"
+#include <optional>
 
 #define SINGLE_THREAD 0
 
@@ -397,7 +396,7 @@ public:
 	bool clone(CloneData const &data, AbstractPtyProcess *pty);
 
 	FileStatusList status_s();
-	bool cat_file(const CommitID &id, QByteArray *out);
+	std::optional<QByteArray> cat_file(const CommitID &id);
 	void resetFile(QString const &path);
 	void resetAllFiles();
 

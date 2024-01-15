@@ -326,7 +326,8 @@ Git::Object GitObjectCache::catFile(Git::CommitID const &id)
 	}
 
 	if (true) {
-		if (git()->cat_file(id, &ba)) { // 外部コマンド起動の git cat-file -p を試してみる
+		auto ba = git()->cat_file(id);
+		if (ba) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
 			return Store();

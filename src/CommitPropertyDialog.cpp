@@ -31,7 +31,12 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QStr
 {
 	ui->setupUi(this);
 
-	mw->queryCommit(commit_id, &m->commit);
+	auto commit = mw->queryCommit(commit_id);
+	if (commit) {
+		m->commit = *commit;
+	} else {
+		m->commit.commit_id = commit_id;
+	}
 	init(mw);
 }
 

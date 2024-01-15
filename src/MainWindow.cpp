@@ -3662,8 +3662,11 @@ void MainWindow::openRepository_(GitPtr g, bool keep_selection)
 MainWindow::GitFile MainWindow::catFile(Git::CommitID const &id, GitPtr g)
 {
 	GitFile file;
-	if (0) {
-		g->cat_file(id, &file.data);
+	if (0) { //@TODO:いつか消す
+		auto ba = g->cat_file(id);
+		if (ba) {
+			file.data = *ba;
+		}
 	} else {
 		Git::Object::Type type;
 		GitObjectManager om(g);
@@ -4936,16 +4939,9 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 	}
 }
 
-bool MainWindow::queryCommit(const QString &id, Git::CommitItem *out)
+std::optional<Git::CommitItem> MainWindow::queryCommit(const QString &id)
 {
-	GitPtr g = git();
-	auto commit = g->queryCommit(id);
-	if (commit) {
-		*out = *commit;
-		return true;
-	}
-	*out = {};
-	return false;
+	return git()->queryCommit(id);
 }
 
 void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback)
