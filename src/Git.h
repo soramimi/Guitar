@@ -113,6 +113,12 @@ public:
 	};
 	using CommitItemList = std::vector<CommitItem>;
 
+	struct Signature {
+		QString text;
+		QString author;
+		QDateTime date;
+	};
+
 	class Hunk {
 	public:
 		std::string at;
@@ -361,7 +367,7 @@ public:
 	void clearResult();
 	QString resultText() const;
 	bool chdirexec(std::function<bool ()> const &fn);
-	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr);
+	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {});
 	bool git(QString const &arg)
 	{
 		return git(arg, true);
@@ -379,6 +385,7 @@ public:
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(QString const &id, int maxcount);
 	CommitItemList log(int maxcount);
+	std::optional<Git::Signature> log_show_signature(CommitID const &id);
 	std::optional<CommitItem> queryCommit(const CommitID &id);
 
 	struct CloneData {

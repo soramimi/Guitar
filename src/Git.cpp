@@ -236,7 +236,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty)
+bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty, QString const &prefix)
 {
 	QElapsedTimer e;
 	e.start();
@@ -265,7 +265,13 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 	}
 
 	auto DoIt = [&](){
-		QString cmd = QString("\"%1\" --no-pager ").arg(gitCommand());
+		QString cmd;
+#ifdef _WIN32
+		cmd = prefix;
+#else
+
+#endif
+		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
 		if (m->info.fn_log_writer_callback) {
@@ -894,6 +900,30 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 		}
 	}
 	return out;
+}
+
+/**
+ * @brief Git::log_show_signature
+ * @param id コミットID
+ * @return
+ *
+ * コミットに署名が付いている場合は署名情報を返す
+ */
+std::optional<Git::Signature> Git::log_show_signature(CommitID const &id)
+{
+	Git::Signature sig;
+	QString cmd = "log --show-signature -1 %1";
+	cmd = cmd.arg(id.toQString());
+	if (!git(cmd, true)) return std::nullopt;
+	QString text = resultText();
+	QStringList lines = misc::splitLines(text);
+	for (int i = 0; i < lines.size(); i++) {
+		QString const &line = lines[i];
+		if (line.startsWith("gpg:") || line.startsWith("Primary key fubgerorubt:")) {
+			sig.text += line.trimmed() + '\n';
+		}
+	}
+	return sig;
 }
 
 std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)

@@ -65,9 +65,10 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
 
-	auto file = mainwindow()->catFile(m->commit.commit_id, mainwindow()->git());
-	Git::CommitItem c = Git::parseCommit(file.data);
-	(void)c; //@todo
+	// auto file = mainwindow()->catFile(m->commit.commit_id, mainwindow()->git());
+	// Git::CommitItem c = Git::parseCommit(file.data);
+	// (void)c; //@todo
+	auto sig = mainwindow()->git()->log_show_signature(m->commit.commit_id);
 
 	gpg::Data key;
 	int n1 = m->commit.fingerprint.size();

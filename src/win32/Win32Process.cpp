@@ -8,6 +8,15 @@
 #include <QDateTime>
 #include <QMutex>
 
+QString GetErrorMessage(DWORD e)
+{
+	QString msg;
+	wchar_t *p = nullptr;
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, e, 0, (wchar_t *)&p, 0, nullptr);
+	msg = QString::fromUtf16((ushort const *)p);
+	LocalFree(p);
+	return msg;
+}
 
 class OutputReaderThread : public QThread {
 private:
@@ -130,8 +139,27 @@ protected:
 			wchar_t *tmp = (wchar_t *)alloca(sizeof(wchar_t) * (len + 1));
 			memcpy(tmp, command.utf16(), sizeof(wchar_t) * len);
 			tmp[len] = 0;
-			if (!CreateProcessW(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-				throw std::string("Failed to CreateProcess");
+			std::vector<wchar_t> env;
+			{
+#if 1
+				wchar_t *p = GetEnvironmentStringsW();
+				if (p) {
+					int i = 0;
+					while (p[i] || p[i + 1]) {
+						i++;
+					}
+					env.insert(env.end(), p, p + i + 1);
+					FreeEnvironmentStringsW(p);
+				}
+#endif
+				wchar_t const *e = L"LANG=en_US.UTF8";
+				env.insert(env.end(), e, e + wcslen(e) + 1);
+				env.push_back(0);
+			}
+			if (!CreateProcessW(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, (void *)env.data(), nullptr, &si, &pi)) {
+				DWORD e = GetLastError();
+				qDebug() << e << GetErrorMessage(e);
+				throw std::string("Failed to CreateProcess: ");
 			}
 
 			// 不要なハンドルを閉じる
@@ -148,26 +176,31 @@ protected:
 			t1.start();
 			t2.start();
 
-			while (WaitForSingleObject(pi.hProcess, 1) != WAIT_OBJECT_0) {
-				QMutexLocker lock(mutex);
-				int n = inq.size();
-				if (n > 0) {
-					while (n > 0) {
-						char tmp[1024];
-						int l = n;
-						if (l > sizeof(tmp)) {
-							l = sizeof(tmp);
+			while (1) {
+				auto r = WaitForSingleObject(pi.hProcess, 1);
+				if (r == WAIT_OBJECT_0) break;
+				if (r == WAIT_FAILED) break;
+				{
+					QMutexLocker lock(mutex);
+					int n = inq.size();
+					if (n > 0) {
+						while (n > 0) {
+							char tmp[1024];
+							int l = n;
+							if (l > sizeof(tmp)) {
+								l = sizeof(tmp);
+							}
+							std::copy(inq.begin(), inq.begin() + l, tmp);
+							inq.erase(inq.begin(), inq.begin() + l);
+							if (hInputWrite != INVALID_HANDLE_VALUE) {
+								DWORD written;
+								WriteFile(hInputWrite, tmp, l, &written, nullptr);
+							}
+							n -= l;
 						}
-						std::copy(inq.begin(), inq.begin() + l, tmp);
-						inq.erase(inq.begin(), inq.begin() + l);
-						if (hInputWrite != INVALID_HANDLE_VALUE) {
-							DWORD written;
-							WriteFile(hInputWrite, tmp, l, &written, nullptr);
-						}
-						n -= l;
+					} else if (close_input_later) {
+						closeInput();
 					}
-				} else if (close_input_later) {
-					closeInput();
 				}
 			}
 
