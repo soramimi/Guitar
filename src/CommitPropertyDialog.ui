@@ -131,36 +131,50 @@
           </widget>
          </item>
          <item>
-          <layout class="QFormLayout" name="formLayout_2">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>ID</string>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <layout class="QFormLayout" name="formLayout_2">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>ID</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_id"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_name"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>Mail</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_mail"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="SimpleImageWidget" name="widget_sign_avatar" native="true">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>80</height>
+              </size>
              </property>
             </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="ReadOnlyLineEdit" name="lineEdit_sign_id"/>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_7">
-             <property name="text">
-              <string>Name</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="ReadOnlyLineEdit" name="lineEdit_sign_name"/>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>Mail</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="ReadOnlyLineEdit" name="lineEdit_sign_mail"/>
            </item>
           </layout>
          </item>

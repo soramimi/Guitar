@@ -77,10 +77,10 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	auto s = mainwindow()->git()->log_show_signature(m->commit.commit_id);
 	if (s) {
 		sig = *s;
-		int n = sig.fingerprint.size();
-		if (n > 0) {
-			QList<gpg::Data> keys;
-			if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
+		QList<gpg::Data> keys;
+		if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
+			int n = sig.fingerprint.size();
+			if (n > 0) {
 				for (gpg::Data const &key : keys) {
 					if (n == key.fingerprint.size()) {
 						auto const *p1 = sig.fingerprint.data();
@@ -135,8 +135,8 @@ void CommitPropertyDialog::updateAvatar(bool request)
 			widget->setVisible(false);
 		}
 	};
-	// SetAvatar(ui->lineEdit_mail->text(), ui->widget_user_avatar);
-	// SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
+	SetAvatar(ui->lineEdit_mail->text(), ui->widget_user_avatar);
+	SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
 }
 
 void CommitPropertyDialog::avatarReady()
