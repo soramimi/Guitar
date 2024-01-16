@@ -10,6 +10,8 @@
 
 #include "MyProcess.h"
 
+#include "common/misc.h"
+
 void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 {
 	char const *ptr = begin;
@@ -79,6 +81,8 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 					gpg::Data key;
 					ParseKey(SkipHeader(pub.c_str()), &key);
 					ParseUID(SkipHeader(uid.c_str()), &key);
+					key.pub = QString::fromStdString(pub);
+					key.sub = QString::fromStdString(sub);
 					key.fingerprint = fingerprint;
 					keys->push_back(key);
 				}
@@ -87,11 +91,11 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 			} else if (line < ptr) {
 				std::string s(line, ptr - line);
 				if (strncmp(s.c_str(), "pub ", 4) == 0) {
-					pub = s;
+					pub = misc::trimmed(s.substr(4));
 				} else if (strncmp(s.c_str(), "uid ", 4) == 0) {
-					uid = s;
+					uid = misc::trimmed(s.substr(4));
 				} else if (strncmp(s.c_str(), "sub ", 4) == 0) {
-					sub = s;
+					sub = misc::trimmed(s.substr(4));
 				} else if (!pub.empty() && uid.empty()) {
 					char const *p = strchr(s.c_str(), '=');
 					if (p) {

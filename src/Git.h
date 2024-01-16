@@ -116,6 +116,7 @@ public:
 		QString text;
 		QString author;
 		QDateTime date;
+		std::vector<uint8_t> fingerprint;
 	};
 
 	class Hunk {

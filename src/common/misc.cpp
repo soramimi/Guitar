@@ -553,3 +553,12 @@ bool misc::isValidMailAddress(const std::string &email)
 {
 	return isValidMailAddress(QString::fromStdString(email));
 }
+
+std::string_view misc::trimmed(const std::string_view &s)
+{
+	size_t i = 0;
+	size_t n = s.size();
+	while (i < n && isspace((unsigned char)s[i])) i++;
+	while (i < n && isspace((unsigned char)s[n - 1])) n--;
+	return s.substr(i, n - i);
+}

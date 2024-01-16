@@ -14,6 +14,8 @@ public:
 		QString name;
 		QString comment;
 		QString mail;
+		QString pub;
+		QString sub;
 		QByteArray fingerprint;
 	};
 

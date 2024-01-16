@@ -63,55 +63,59 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	ui->lineEdit_author->setText(m->commit.author);
 	ui->lineEdit_mail->setText(m->commit.email);
 
+	// ui->label_signature_icon->setVisible(false);
+
 	QString text;
 	for (Git::CommitID const &id : m->commit.parent_ids) {
 		text += id.toQString() + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-
-	// auto file = mainwindow()->catFile(m->commit.commit_id, mainwindow()->git());
-	// Git::CommitItem c = Git::parseCommit(file.data);
-	// (void)c; //@todo
-	auto sig = mainwindow()->git()->log_show_signature(m->commit.commit_id);
-
-	gpg::Data key;
-	int n1 = m->commit.fingerprint.size();
-	if (n1 > 0) {
-		QList<gpg::Data> keys;
-		if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
-			for (gpg::Data const &k : keys) {
-				int n2 = k.fingerprint.size();
-				if (n2 > 0) {
-					int n = std::min(n1, n2);
-					char const *p1 = m->commit.fingerprint.data() + n1 - n;
-					char const *p2 = k.fingerprint.data() + n2 - n;
-					if (memcmp(p1, p2, n) == 0) {
-						key = k;
-						break;
+	gpg::Data gpg;
+	Git::Signature sig;
+	bool gpgsig = false;
+	auto s = mainwindow()->git()->log_show_signature(m->commit.commit_id);
+	if (s) {
+		sig = *s;
+		int n = sig.fingerprint.size();
+		if (n > 0) {
+			QList<gpg::Data> keys;
+			if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
+				for (gpg::Data const &key : keys) {
+					if (n == key.fingerprint.size()) {
+						auto const *p1 = sig.fingerprint.data();
+						auto const *p2 = key.fingerprint.data();
+						if (memcmp(p1, p2, n) == 0) {
+							gpg = key;
+							break;
+						}
 					}
 				}
+			} else {
+				qDebug() << "Failed to get gpg keys";
 			}
-		} else {
-			qDebug() << "Failed to get gpg keys";
+			if (gpg.id.isEmpty()) {
+				// gpgコマンドが登録されていないなど、keyidが取得できなかったとき
+				gpg.id = tr("<Unknown>");
+			}
 		}
-		if (key.id.isEmpty()) {
-			// gpgコマンドが登録されていないなど、keyidが取得できなかったとき
-			key.id = tr("<Unknown>");
-		}
+		gpgsig = true;
 	}
-	if (key.id.isEmpty()) {
-		ui->frame_sign->setVisible(false);
+
+	if (gpgsig) {
+		ui->frame_sign->setVisible(true);
+		ui->textEdit_signature->setPlainText(sig.text);
+		// {
+			// int w = ui->label_signature_icon->width();
+			// int h = ui->label_signature_icon->width();
+			// QIcon icon = mainwindow()->verifiedIcon(m->commit.signature);
+			// ui->label_signature_icon->setPixmap(icon.pixmap(w, h));
+		// }
+		ui->lineEdit_sign_id->setText(gpg.id);
+		ui->lineEdit_sign_name->setText(gpg.name);
+		ui->lineEdit_sign_mail->setText(gpg.mail);
 	} else {
-		{
-			int w = ui->label_signature_icon->width();
-			int h = ui->label_signature_icon->width();
-			QIcon icon = mainwindow()->verifiedIcon(m->commit.signature);
-			ui->label_signature_icon->setPixmap(icon.pixmap(w, h));
-		}
-		ui->lineEdit_sign_id->setText(key.id);
-		ui->lineEdit_sign_name->setText(key.name);
-		ui->lineEdit_sign_mail->setText(key.mail);
+		ui->frame_sign->setVisible(false);
 	}
 
 	global->avatar_loader.connectAvatarReady(this, &CommitPropertyDialog::avatarReady);
@@ -131,8 +135,8 @@ void CommitPropertyDialog::updateAvatar(bool request)
 			widget->setVisible(false);
 		}
 	};
-	SetAvatar(ui->lineEdit_mail->text(), ui->widget_user_avatar);
-	SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
+	// SetAvatar(ui->lineEdit_mail->text(), ui->widget_user_avatar);
+	// SetAvatar(ui->lineEdit_sign_mail->text(), ui->widget_sign_avatar);
 }
 
 void CommitPropertyDialog::avatarReady()

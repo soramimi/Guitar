@@ -907,6 +907,7 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
  */
 std::optional<Git::Signature> Git::log_show_signature(CommitID const &id)
 {
+	bool gpg = false;
 	Git::Signature sig;
 	QString cmd = "log --show-signature -1 %1";
 	cmd = cmd.arg(id.toQString());
@@ -915,10 +916,36 @@ std::optional<Git::Signature> Git::log_show_signature(CommitID const &id)
 	QStringList lines = misc::splitLines(text);
 	for (int i = 0; i < lines.size(); i++) {
 		QString const &line = lines[i];
-		if (line.startsWith("gpg:") || line.startsWith("Primary key fubgerorubt:")) {
-			sig.text += line.trimmed() + '\n';
+		if (line.startsWith("gpg:")) {
+			gpg = true;
+			if (!sig.text.isEmpty()) {
+				sig.text += '\n';
+			}
+			sig.text += line.trimmed();
+		} else if (line.startsWith("Primary key fingerprint:")) {
+			std::string s = line.toStdString();
+			unsigned char const *p = (unsigned char const *)strchr(s.c_str(), ':');
+			if (p) {
+				p++;
+				while (1) {
+					if (isspace(*p)) {
+						p++;
+					} else if (isxdigit(p[0]) && isxdigit(p[1])) {
+						char tmp[3];
+						tmp[0] = p[0];
+						tmp[1] = p[1];
+						tmp[2] = 0;
+						long c = (char)strtol(tmp, nullptr, 16);
+						sig.fingerprint.push_back((uint8_t)c);
+						p += 2;
+					} else {
+						break;
+					}
+				}
+			}
 		}
 	}
+	if (!gpg) return std::nullopt;
 	return sig;
 }
 
