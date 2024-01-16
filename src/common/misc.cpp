@@ -549,11 +549,21 @@ bool misc::isValidMailAddress(const QString &email)
 	return i > 0 && i < email.size() - 1;
 }
 
+/**
+ * @brief 文字列が有効なメールアドレスか判定する
+ * @param email
+ * @return
+ */
 bool misc::isValidMailAddress(const std::string &email)
 {
 	return isValidMailAddress(QString::fromStdString(email));
 }
 
+/**
+ * @brief 文字列の両端から空白文字を取り除く
+ * @param s
+ * @return
+ */
 std::string_view misc::trimmed(const std::string_view &s)
 {
 	size_t i = 0;
@@ -561,4 +571,57 @@ std::string_view misc::trimmed(const std::string_view &s)
 	while (i < n && isspace((unsigned char)s[i])) i++;
 	while (i < n && isspace((unsigned char)s[n - 1])) n--;
 	return s.substr(i, n - i);
+}
+
+/**
+ * @brief バイナリデータを16進数文字列に変換する
+ * @param begin
+ * @param end
+ * @return
+ */
+std::string misc::bin_to_hex_string(const void *begin, const void *end)
+{
+	std::vector<char> vec;
+	uint8_t const *p = (uint8_t const *)begin;
+	uint8_t const *e = (uint8_t const *)end;
+	vec.reserve((e - p) * 2);
+	while (p < e) {
+		char tmp[3];
+		sprintf(tmp, "%02x", *p);
+		vec.push_back(tmp[0]);
+		vec.push_back(tmp[1]);
+		p++;
+	}
+	return std::string(&vec[0], vec.size());
+}
+
+/**
+ * @brief 16進数文字列をバイナリデータに変換する
+ * @param s
+ * @param sep
+ * @return
+ */
+std::vector<uint8_t> misc::hex_string_to_bin(const std::string_view &s, char const *sep)
+{
+	std::vector<uint8_t> vec;
+	vec.reserve(s.size() / 2);
+	unsigned char const *begin = (unsigned char const *)s.data();
+	unsigned char const *end = begin + s.size();
+	unsigned char const *p = begin;
+	while (p + 1 < end) {
+		if (isxdigit(p[0]) && isxdigit(p[1])) {
+			char tmp[3];
+			tmp[0] = p[0];
+			tmp[1] = p[1];
+			tmp[2] = 0;
+			uint8_t c = (uint8_t)strtol(tmp, nullptr, 16);
+			vec.push_back(c);
+			p += 2;
+		} else if (sep && strchr(sep, *p)) {
+			p++;
+		} else {
+			break;
+		}
+	}
+	return vec;
 }

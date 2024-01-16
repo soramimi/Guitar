@@ -79,11 +79,11 @@ void CommitPropertyDialog::init(MainWindow *mw)
 		sig = *s;
 		QList<gpg::Data> keys;
 		if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
-			int n = sig.fingerprint.size();
+			int n = sig.primary_key_fingerprint.size();
 			if (n > 0) {
 				for (gpg::Data const &key : keys) {
 					if (n == key.fingerprint.size()) {
-						auto const *p1 = sig.fingerprint.data();
+						auto const *p1 = sig.primary_key_fingerprint.data();
 						auto const *p2 = key.fingerprint.data();
 						if (memcmp(p1, p2, n) == 0) {
 							gpg = key;
@@ -112,8 +112,8 @@ void CommitPropertyDialog::init(MainWindow *mw)
 			// ui->label_signature_icon->setPixmap(icon.pixmap(w, h));
 		// }
 		ui->lineEdit_sign_id->setText(gpg.id);
-		ui->lineEdit_sign_name->setText(gpg.name);
-		ui->lineEdit_sign_mail->setText(gpg.mail);
+		ui->lineEdit_sign_name->setText(gpg.name.isEmpty() ? sig.signature_from.name : gpg.name); //@TODO: きれいにする
+		ui->lineEdit_sign_mail->setText(gpg.mail.isEmpty() ? sig.signature_from.mail : gpg.mail);
 	} else {
 		ui->frame_sign->setVisible(false);
 	}

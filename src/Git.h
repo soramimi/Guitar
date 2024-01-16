@@ -113,10 +113,21 @@ public:
 	using CommitItemList = std::vector<CommitItem>;
 
 	struct Signature {
+		enum How {
+			No,
+			Bad,
+			Good,
+		};
 		QString text;
 		QString author;
 		QDateTime date;
-		std::vector<uint8_t> fingerprint;
+		std::vector<uint8_t> primary_key_fingerprint;
+		struct From {
+			How how = No;
+			QString name;
+			QString mail;
+			QString trust;
+		} signature_from;
 	};
 
 	class Hunk {

@@ -38,17 +38,19 @@ void Git::CommitItem::setParents(const QStringList &list)
 
 void Git::CommitID::assign(const QString &qid)
 {
-	if (!qid.isEmpty()) {
+	if (qid.isEmpty()) {
+		valid = false;
+	} else {
 		valid = true;
 		if (qid.size() == GIT_ID_LENGTH) {
 			char tmp[3];
 			tmp[2] = 0;
 			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
-				tmp[0] = qid[i * 2 + 0].toLatin1();
-				tmp[1] = qid[i * 2 + 1].toLatin1();
-				char c = qid[i * 2 + 0].toLatin1();
-				char d = qid[i * 2 + 1].toLatin1();
-				if (std::isxdigit((unsigned char)tmp[0]) && std::isxdigit((unsigned char)tmp[1])) {
+				unsigned char c = qid[i * 2 + 0].toLatin1();
+				unsigned char d = qid[i * 2 + 1].toLatin1();
+				if (std::isxdigit(c) && std::isxdigit(d)) {
+					tmp[0] = c;
+					tmp[1] = d;
 					id[i] = strtol(tmp, nullptr, 16);
 				} else {
 					valid = false;
@@ -58,6 +60,8 @@ void Git::CommitID::assign(const QString &qid)
 		}
 	}
 }
+
+
 
 QString Git::CommitID::toQString(int maxlen) const
 {
@@ -914,34 +918,65 @@ std::optional<Git::Signature> Git::log_show_signature(CommitID const &id)
 	if (!git(cmd, true)) return std::nullopt;
 	QString text = resultText();
 	QStringList lines = misc::splitLines(text);
+	const QString good = "Good signature from";
+	const QString bad = "BAD signature from";
 	for (int i = 0; i < lines.size(); i++) {
-		QString const &line = lines[i];
+		QString line = lines[i];
 		if (line.startsWith("gpg:")) {
 			gpg = true;
 			if (!sig.text.isEmpty()) {
 				sig.text += '\n';
 			}
-			sig.text += line.trimmed();
+			//@TODO: きれいにする
+			line = line.trimmed();
+			sig.text += line;
+			int g = line.indexOf(good, 0, Qt::CaseInsensitive);
+			int b = line.indexOf(bad, 0, Qt::CaseInsensitive);
+			if (g > 0 && b < 0) {
+				sig.signature_from.how = Git::Signature::Good;
+				line = line.mid(g + good.size());
+			}
+			if (b > 0 && g < 0) {
+				sig.signature_from.how = Git::Signature::Bad;
+				line = line.mid(b + bad.size());
+			}
+			if (g > 0 || b > 0) {
+				line = line.trimmed();
+				int k = line.lastIndexOf('[');
+				if (k > 0) {
+					int l = k + 1;
+					int m = line.indexOf(']', l);
+					if (m > 0) {
+						sig.signature_from.trust = line.mid(l, m - l);
+					}
+					line = line.mid(0, k).trimmed();
+				}
+				int j = 0;
+				k = line.size();
+				if (line[j] == '"') j++;
+				if (line[k - 1] == '"') k--;
+				line = line.mid(j, k - j);
+				int l = line.indexOf('<');
+				if (l >= 0) {
+					int m = line.indexOf('>', l + 1);
+					if (m > 0) {
+						QString mail = line.mid(l + 1, m - l - 1).trimmed();
+						int a = mail.indexOf('@');
+						if (a > 0 && mail.indexOf('.', a + 1) > 0) {
+							sig.signature_from.mail = mail;
+						}
+					}
+					sig.signature_from.name = line.mid(0, l).trimmed();
+				}
+			}
 		} else if (line.startsWith("Primary key fingerprint:")) {
 			std::string s = line.toStdString();
-			unsigned char const *p = (unsigned char const *)strchr(s.c_str(), ':');
-			if (p) {
-				p++;
-				while (1) {
-					if (isspace(*p)) {
-						p++;
-					} else if (isxdigit(p[0]) && isxdigit(p[1])) {
-						char tmp[3];
-						tmp[0] = p[0];
-						tmp[1] = p[1];
-						tmp[2] = 0;
-						long c = (char)strtol(tmp, nullptr, 16);
-						sig.fingerprint.push_back((uint8_t)c);
-						p += 2;
-					} else {
-						break;
-					}
-				}
+			char const *begin = s.c_str();
+			char const *end = begin + s.size();
+			char const *eq = strchr(begin, ':');
+			if (eq) {
+				eq++;
+				sig.primary_key_fingerprint = misc::hex_string_to_bin({eq, end - eq}, " ");
 			}
 		}
 	}
