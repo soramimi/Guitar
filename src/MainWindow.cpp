@@ -1966,6 +1966,13 @@ QStringList MainWindow::remotes() const
 	return m->remotes;
 }
 
+/**
+ * @brief MainWindow::findBranch
+ * @param frame
+ * @param id
+ *
+ * コミットIDからブランチを検索する
+ */
 QList<Git::Branch> MainWindow::findBranch(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
 	auto it = commitToBranchMapRef(frame).find(id);
@@ -1981,6 +1988,11 @@ QString MainWindow::tempfileHeader() const
 	return name.arg(QApplication::applicationPid());
 }
 
+/**
+ * @brief MainWindow::deleteTempFiles
+ *
+ * 一時ファイルを削除する
+ */
 void MainWindow::deleteTempFiles()
 {
 	QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
@@ -2373,8 +2385,10 @@ const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, i
 }
 
 /**
- * @brief 樹形図情報を構築する
+ * @brief MainWindow::updateCommitGraph
  * @param frame
+ *
+ * 樹形図情報を構築する
  */
 void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
@@ -3220,49 +3234,7 @@ QPixmap MainWindow::getTransparentPixmap() const
 
 QStringList MainWindow::findGitObject(const QString &id) const
 {
-	QStringList list;
-	std::set<QString> set;
-	if (Git::isValidID(id)) {
-		{
-			QString a = id.mid(0, 2);
-			QString b = id.mid(2);
-			QString dir = m->current_repo.local_dir / ".git/objects" / a;
-			QDirIterator it(dir);
-			while (it.hasNext()) {
-				it.next();
-				QFileInfo info = it.fileInfo();
-				if (info.isFile()) {
-					QString c = info.fileName();
-					if (c.startsWith(b)) {
-						set.insert(set.end(), a + c);
-					}
-				}
-			}
-		}
-		{
-			QString dir = m->current_repo.local_dir / ".git/objects/pack";
-			QDirIterator it(dir);
-			while (it.hasNext()) {
-				it.next();
-				QFileInfo info = it.fileInfo();
-				if (info.isFile() && info.fileName().startsWith("pack-") && info.fileName().endsWith(".idx")) {
-					GitPackIdxV2 idx;
-					idx.parse(info.absoluteFilePath(), false);
-					idx.each([&](GitPackIdxItem const *item){
-						QString item_id = GitPackIdxItem::qid(*item);
-						if (item_id.startsWith(id)) {
-							set.insert(item_id);
-						}
-						return true;
-					});
-				}
-			}
-		}
-		for (QString const &s : set) {
-			list.push_back(s);
-		}
-	}
-	return list;
+	return GitObjectManager::findObject(id, m->current_repo.local_dir);
 }
 
 void MainWindow::writeLog(const char *ptr, int len, bool record)

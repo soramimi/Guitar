@@ -19,7 +19,6 @@ struct GitPackIdxItem {
 
 class GitPackIdxV2 {
 	friend class GitObjectManager;
-	friend class MainWindow; // for debug
 private:
 	QString pack_idx_path; // e.g. "/path/to/pack-56430ed038c968ded87eb3756dcde85bfafc10ce.idx"
 

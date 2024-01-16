@@ -48,6 +48,8 @@ public:
 	void setup(GitPtr g);
 	bool catFile(const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
+
+	static QStringList findObject(const QString &id, const QString &repo_local_dir);
 };
 
 class GitObjectCache {

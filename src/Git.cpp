@@ -1853,3 +1853,4 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 }
 
 
+
