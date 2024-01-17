@@ -116,19 +116,6 @@ public:
 	};
 	using CommitItemList = std::vector<CommitItem>;
 
-	struct Signature_ {
-		enum Status {
-			No,
-			BAD,
-			Good,
-		};
-		Status status = No;
-		std::string text;
-		std::string name;
-		std::string mail;
-		std::string trust; // marginal, full, ultimate, ...
-	};
-
 	class Hunk {
 	public:
 		std::string at;
@@ -396,9 +383,8 @@ public:
 	bool init();
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(QString const &id, int maxcount);
-	std::optional<CommitItem> log_signature(const QString &id);
+	std::optional<CommitItem> log_signature(CommitID const &id);
 	CommitItemList log(int maxcount);
-	std::optional<Git::Signature_> log_show_signature_(CommitID const &id);
 	std::optional<CommitItem> queryCommit(const CommitID &id);
 
 	struct CloneData {
@@ -563,7 +549,6 @@ public:
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	static CommitItem parseCommit(const QByteArray &ba);
-	static void parseSignatureFrom(std::string_view const &line, Git::Signature_ *sig);
 };
 
 struct NamedCommitItem {

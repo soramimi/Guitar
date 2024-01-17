@@ -61,8 +61,6 @@ void Git::CommitID::assign(const QString &qid)
 	}
 }
 
-
-
 QString Git::CommitID::toQString(int maxlen) const
 {
 	if (valid) {
@@ -656,7 +654,6 @@ QList<Git::Branch> Git::branches()
 						}
 					}
 				}
-//				pos = text.indexOf(')');
 				if (pos > 1) {
 					name = text.mid(1, pos - 1);
 					pos++;
@@ -828,10 +825,10 @@ Git::CommitItemList Git::log_all(QString const &id, int maxcount)
  *
  * コミットに関連する署名情報を取得する
  */
-std::optional<Git::CommitItem> Git::log_signature(QString const &id)
+std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
-	cmd = cmd.arg(id);
+	cmd = cmd.arg(id.toQString());
 	git(cmd);
 	if (getProcessExitCode() == 0) {
 		QString gpgtext;
@@ -851,43 +848,6 @@ std::optional<Git::CommitItem> Git::log_signature(QString const &id)
 				}
 			}
 		}
-	}
-	return std::nullopt;
-}
-
-/**
- * @brief Git::log_show_signature
- * @param id コミットID
- * @return
- *
- * コミットに署名が付いている場合は署名情報を返す
- */
-std::optional<Git::Signature_> Git::log_show_signature_(CommitID const &id)
-{
-	QString cmd = "log --show-signature -1 %1";
-	cmd = cmd.arg(id.toQString());
-	if (git(cmd, true)) {
-		bool gpg = false;
-		Git::Signature_ sig;
-		std::vector<std::string> lines;
-		{
-			std::string text = resultStdString();
-			misc::splitLines(text, &lines, false);
-		}
-		for (int i = 0; i < lines.size(); i++) {
-			std::string const &line = lines[i];
-			if (strncmp(line.c_str(), "gpg:", 4) == 0) {
-				gpg = true;
-				if (!sig.text.empty()) {
-					sig.text += '\n';
-				}
-				sig.text += line;
-				if (strstr(line.c_str(), "signature from")) {
-					parseSignatureFrom(line, &sig);
-				}
-			}
-		}
-		if (gpg) return sig;
 	}
 	return std::nullopt;
 }
@@ -973,60 +933,6 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 		}
 	}
 	return out;
-}
-
-void Git::parseSignatureFrom(std::string_view const &line, Git::Signature_ *sig)
-{
-	static const std::string sig_good = "Good signature from";
-	static const std::string sig_bad = "BAD signature from";
-
-	// status
-	auto i = line.find(sig_good);
-	if (i != std::string::npos) {
-		sig->status = Git::Signature_::Good;
-		i += sig_good.size();
-	} else {
-		i = line.find(sig_bad);
-		if (i != std::string::npos) {
-			sig->status = Git::Signature_::BAD;
-			i += sig_bad.size();
-		}
-	}
-
-	if (i != std::string::npos) {
-		std::string_view s = line.substr(i);
-		s = misc::trimmed(s);
-		// trust
-		i = s.find("[");
-		if (i != std::string::npos) {
-			std::string_view trust = s.substr(i + 1);
-			auto j = trust.find(']');
-			if (j != std::string::npos) {
-				trust = trust.substr(0, j);
-				sig->trust = trust;
-			}
-			s = s.substr(0, i);
-		}
-		s = misc::trimmed(s);
-		// remove quotes
-		if (s.size() >= 2 && s[0] == '"' && s[s.size() - 1] == '"') {
-			s = s.substr(1, s.size() - 2);
-		}
-		// name and mail
-		i = s.find('<');
-		if (i != std::string::npos) {
-			std::string_view name = s.substr(0, i);
-			sig->name = misc::trimmed(name);
-			std::string_view mail = s.substr(i + 1);
-			i = mail.find('>');
-			if (i != std::string::npos) {
-				mail = mail.substr(0, i);
-				if (mail.find('@') != std::string::npos) {
-					sig->mail = misc::trimmed(mail);
-				}
-			}
-		}
-	}
 }
 
 std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)
