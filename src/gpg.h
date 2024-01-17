@@ -16,7 +16,7 @@ public:
 		QString mail;
 		QString pub;
 		QString sub;
-		QByteArray fingerprint;
+		std::vector<uint8_t> fingerprint;
 	};
 
 	static void parse(char const *begin, char const *end, QList<gpg::Data> *keys);

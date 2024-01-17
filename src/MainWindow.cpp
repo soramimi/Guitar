@@ -6589,6 +6589,7 @@ Terminal=false
 
 void MainWindow::test()
 {
+#if 0
 	QElapsedTimer t;
 	t.start();
 	std::vector<Git::CommitID> ids;
@@ -6606,6 +6607,14 @@ void MainWindow::test()
 		total++;
 	}
 	qDebug() << total << t.elapsed();
+#else
+	QString id = "be56ea13adedd678ea2ff111f065d094d532dbf6";
+	auto a = git()->log_signature(id);
+	if (a) {
+		Git::CommitItem const &item = *a;
+		qDebug() << item.sign.key_fingerprint;
+	}
+#endif
 }
 
 

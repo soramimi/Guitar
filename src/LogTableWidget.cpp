@@ -51,7 +51,7 @@ private:
 
 		Git::CommitItem const *commit = frame()->commitItem(index.row());
 		if (commit) {
-			QIcon icon = frame()->verifiedIcon(commit->signature);
+			QIcon icon = frame()->verifiedIcon(commit->sign.verify);
 			if (!icon.isNull()) {
 				QRect r = opt.rect.adjusted(6, 3, 0, -3);
 				int h = r.height();

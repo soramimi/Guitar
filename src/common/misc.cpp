@@ -567,10 +567,10 @@ bool misc::isValidMailAddress(const std::string &email)
 std::string_view misc::trimmed(const std::string_view &s)
 {
 	size_t i = 0;
-	size_t n = s.size();
-	while (i < n && isspace((unsigned char)s[i])) i++;
-	while (i < n && isspace((unsigned char)s[n - 1])) n--;
-	return s.substr(i, n - i);
+	size_t j = s.size();
+	while (i < j && std::isspace((unsigned char)s[i])) i++;
+	while (i < j && std::isspace((unsigned char)s[j - 1])) j--;
+	return s.substr(i, j - i);
 }
 
 /**
@@ -624,4 +624,30 @@ std::vector<uint8_t> misc::hex_string_to_bin(const std::string_view &s, char con
 		}
 	}
 	return vec;
+}
+
+int misc::compare(uint8_t const *a, size_t n, uint8_t const *b, size_t m)
+{
+	size_t i = 0;
+	while (1) {
+		if (i < n && i < m) {
+			uint8_t c = a[i];
+			uint8_t d = b[i];
+			if (c < d) return -1;
+			if (c > d) return 1;
+			i++;
+		} else if (i < n) {
+			return 1;
+		} else if (i < m) {
+			return -1;
+		} else {
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int misc::compare(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)
+{
+	return compare(a.data(), a.size(), b.data(), b.size());
 }

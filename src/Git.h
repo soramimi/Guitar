@@ -102,8 +102,12 @@ public:
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
 		QString gpgsig;
-		QByteArray fingerprint;
-		char signature = 0; // git log format:%G?
+		struct {
+			QString text;
+			char verify = 0; // git log format:%G?
+			std::vector<uint8_t> key_fingerprint;
+			QString trust;
+		} sign;
 		bool has_child = false;
 		int marker_depth = -1;
 		bool resolved =  false;
@@ -112,22 +116,17 @@ public:
 	};
 	using CommitItemList = std::vector<CommitItem>;
 
-	struct Signature {
-		enum How {
+	struct Signature_ {
+		enum Status {
 			No,
-			Bad,
+			BAD,
 			Good,
 		};
-		QString text;
-		QString author;
-		QDateTime date;
-		std::vector<uint8_t> primary_key_fingerprint;
-		struct From {
-			How how = No;
-			QString name;
-			QString mail;
-			QString trust;
-		} signature_from;
+		Status status = No;
+		std::string text;
+		std::string name;
+		std::string mail;
+		std::string trust; // marginal, full, ultimate, ...
 	};
 
 	class Hunk {
@@ -363,6 +362,7 @@ private:
 	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
 	QString encodeQuotedText(QString const &str);
+	static std::optional<CommitItem> parseCommitItem(const QString &line);
 public:
 	Git(Context const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
@@ -376,7 +376,8 @@ public:
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
 	QString gitCommand() const;
 	void clearResult();
-	QString resultText() const;
+	std::string resultStdString() const;
+	QString resultQString() const;
 	bool chdirexec(std::function<bool ()> const &fn);
 	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {});
 	bool git(QString const &arg)
@@ -395,8 +396,9 @@ public:
 	bool init();
 	QStringList getUntrackedFiles();
 	CommitItemList log_all(QString const &id, int maxcount);
+	std::optional<CommitItem> log_signature(const QString &id);
 	CommitItemList log(int maxcount);
-	std::optional<Git::Signature> log_show_signature(CommitID const &id);
+	std::optional<Git::Signature_> log_show_signature_(CommitID const &id);
 	std::optional<CommitItem> queryCommit(const CommitID &id);
 
 	struct CloneData {
@@ -560,7 +562,8 @@ public:
 	QList<SubmoduleItem> submodules();
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
-	static Git::CommitItem parseCommit(const QByteArray &ba);
+	static CommitItem parseCommit(const QByteArray &ba);
+	static void parseSignatureFrom(std::string_view const &line, Git::Signature_ *sig);
 };
 
 struct NamedCommitItem {

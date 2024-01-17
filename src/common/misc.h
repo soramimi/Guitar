@@ -71,6 +71,9 @@ public:
 	static std::string_view trimmed(std::string_view const &s);
 	static std::string bin_to_hex_string(const void *begin, const void *end);
 	static std::vector<uint8_t> hex_string_to_bin(std::string_view const &s, const char *sep = nullptr);
+
+	static int compare(uint8_t const *a, size_t n, uint8_t const *b, size_t m);
+	static int compare(std::vector<uint8_t> const &a, std::vector<uint8_t> const &b);
 };
 
 class OverrideWaitCursor_ {

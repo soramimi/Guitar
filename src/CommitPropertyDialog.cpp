@@ -71,49 +71,58 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	gpg::Data gpg;
-	Git::Signature sig;
-	bool gpgsig = false;
-	auto s = mainwindow()->git()->log_show_signature(m->commit.commit_id);
-	if (s) {
-		sig = *s;
-		QList<gpg::Data> keys;
-		if (gpg::listKeys(global->appsettings.gpg_command, &keys)) {
-			int n = sig.primary_key_fingerprint.size();
-			if (n > 0) {
-				for (gpg::Data const &key : keys) {
-					if (n == key.fingerprint.size()) {
-						auto const *p1 = sig.primary_key_fingerprint.data();
-						auto const *p2 = key.fingerprint.data();
-						if (memcmp(p1, p2, n) == 0) {
-							gpg = key;
-							break;
-						}
-					}
+	auto sig = mainwindow()->git()->log_signature(m->commit.commit_id.toQString());
+	if (sig) {
+		QString status;
+		QString sig_name;
+		QString sig_mail;
+		switch (sig->sign.verify) {
+		case 'G':
+			status = tr("Good");
+			break;
+		case 'B':
+			status = tr("BAD");
+			break;
+		case 'U':
+			status = tr("Unknown");
+			break;
+		case 'X':
+			status = tr("Expired");
+			break;
+		case 'Y':
+			status = tr("Expired");
+			break;
+		case 'R':
+			status = tr("Revoked");
+			break;
+		case 'E':
+			status = tr("Error");
+			break;
+		case 'N':
+			status = tr("None");
+			break;
+		}
+		if (status.isEmpty()) {
+			status = "?";
+		} else {
+			status += " [" + sig->sign.trust + ']';
+		}
+		{
+			QList<gpg::Data> keys;
+			gpg::listKeys(global->appsettings.gpg_command, &keys);
+			for (gpg::Data const &key : keys) {
+				if (misc::compare(key.fingerprint, sig->sign.key_fingerprint) == 0) {
+					sig_name = key.name;
+					sig_mail = key.mail;
+					break;
 				}
-			} else {
-				qDebug() << "Failed to get gpg keys";
-			}
-			if (gpg.id.isEmpty()) {
-				// gpgコマンドが登録されていないなど、keyidが取得できなかったとき
-				gpg.id = tr("<Unknown>");
 			}
 		}
-		gpgsig = true;
-	}
-
-	if (gpgsig) {
+		ui->lineEdit_sign_status->setText(status);
+		ui->lineEdit_sign_name->setText(sig_name);
+		ui->lineEdit_sign_mail->setText(sig_mail);
+		ui->textEdit_sign_text->setPlainText(sig->sign.text);
 		ui->frame_sign->setVisible(true);
-		ui->textEdit_signature->setPlainText(sig.text);
-		// {
-			// int w = ui->label_signature_icon->width();
-			// int h = ui->label_signature_icon->width();
-			// QIcon icon = mainwindow()->verifiedIcon(m->commit.signature);
-			// ui->label_signature_icon->setPixmap(icon.pixmap(w, h));
-		// }
-		ui->lineEdit_sign_id->setText(gpg.id);
-		ui->lineEdit_sign_name->setText(gpg.name.isEmpty() ? sig.signature_from.name : gpg.name); //@TODO: きれいにする
-		ui->lineEdit_sign_mail->setText(gpg.mail.isEmpty() ? sig.signature_from.mail : gpg.mail);
 	} else {
 		ui->frame_sign->setVisible(false);
 	}

@@ -17,7 +17,7 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 	char const *ptr = begin;
 	char const *line = ptr;
 	std::string pub, uid, sub;
-	QByteArray fingerprint;
+	std::vector<uint8_t> fingerprint;
 	while (1) {
 		int c = 0;
 		if (ptr < end) {
@@ -99,21 +99,7 @@ void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 				} else if (!pub.empty() && uid.empty()) {
 					char const *p = strchr(s.c_str(), '=');
 					if (p) {
-						p++;
-						fingerprint.clear();
-						while (p[0] && p[1]) {
-							if (isxdigit(p[0] & 0xff) && isxdigit(p[1] & 0xff)) {
-								char tmp[3];
-								tmp[0] = p[0];
-								tmp[1] = p[1];
-                                tmp[2] = 0;
-                                int v = (int)strtol(tmp, nullptr, 16);
-                                fingerprint.push_back((char)v);
-								p += 2;
-							} else {
-								p++;
-							}
-						}
+						fingerprint = misc::hex_string_to_bin({p + 1}, " ");
 					}
 				}
 			}

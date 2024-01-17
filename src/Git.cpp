@@ -184,7 +184,7 @@ bool Git::isValidID(QString const &id)
 QString Git::status()
 {
 	git("status");
-	return resultText();
+	return resultQString();
 }
 
 QByteArray Git::toQByteArray() const
@@ -193,10 +193,18 @@ QByteArray Git::toQByteArray() const
 	return QByteArray(&m->result[0], m->result.size());
 }
 
-QString Git::resultText() const
+std::string Git::resultStdString() const
+{
+	auto const &v = m->result;
+	if (v.empty()) return {};
+	return std::string(v.begin(), v.end());
+}
+
+QString Git::resultQString() const
 {
 	return QString::fromUtf8(toQByteArray());
 }
+
 void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 {
 	m->info.git_command = gitcmd;
@@ -359,7 +367,7 @@ bool Git::isValidWorkingCopy() const
 QString Git::version()
 {
 	git("--version", false);
-	return resultText().trimmed();
+	return resultQString().trimmed();
 }
 
 
@@ -387,7 +395,7 @@ Git::CommitID Git::rev_parse(QString const &name)
 	QString cmd = "rev-parse %1";
 	cmd = cmd.arg(name);
 	if (git(cmd)) {
-		return Git::CommitID(resultText().trimmed());
+		return Git::CommitID(resultQString().trimmed());
 	}
 	return {};
 }
@@ -427,7 +435,7 @@ QList<Git::Tag> Git::tags2()
 {
 	QList<Tag> list;
 	git("show-ref");
-	QStringList lines = misc::splitLines(resultText());
+	QStringList lines = misc::splitLines(resultQString());
 	for (QString const &line : lines) {
 		QStringList l = misc::splitWords(line);
 		if (l.size() >= 2) {
@@ -467,7 +475,7 @@ QString Git::diff(QString const &old_id, QString const &new_id)
 	QString cmd = "diff --full-index -a %1 %2";
 	cmd = cmd.arg(old_id).arg(new_id);
 	git(cmd);
-	return resultText();
+	return resultQString();
 }
 
 QString Git::diff_file(QString const &old_path, QString const &new_path)
@@ -475,7 +483,7 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	QString cmd = "diff --full-index -a -- %1 %2";
 	cmd = cmd.arg(old_path).arg(new_path);
 	git(cmd);
-	return resultText();
+	return resultQString();
 }
 
 QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
@@ -484,7 +492,7 @@ QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id
 	QString cmd = "diff --raw --abbrev=%1 %2 %3";
 	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id.toQString()).arg(new_id.toQString());
 	git(cmd);
-	QString text = resultText();
+	QString text = resultQString();
 	QStringList lines = text.split('\n', _SkipEmptyParts);
 	for (QString const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		DiffRaw item;
@@ -518,7 +526,7 @@ QString Git::diff_to_file(QString const &old_id, QString const &path)
 	QString cmd = "diff --full-index -a %1 -- \"%2\"";
 	cmd = cmd.arg(old_id).arg(path);
 	git(cmd);
-	return resultText();
+	return resultQString();
 #else
 	return diff_(old_id, new_id);
 #endif
@@ -528,7 +536,7 @@ QString Git::getCurrentBranchName()
 {
 	if (isValidWorkingCopy()) {
 		git("rev-parse --abbrev-ref HEAD");
-		QString s = resultText().trimmed();
+		QString s = resultQString().trimmed();
 		if (!s.isEmpty() && !s.startsWith("fatal:") && s.indexOf(' ') < 0) {
 			return s;
 		}
@@ -622,7 +630,7 @@ QList<Git::Branch> Git::branches()
 	};
 	QList<BranchItem> branches;
 	git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
-	QString s = resultText();
+	QString s = resultQString();
 #if DEBUGLOG
 	qDebug() << s;
 #endif
@@ -733,6 +741,60 @@ QList<Git::Branch> Git::branches()
 	return ret;
 }
 
+std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
+{
+	int i = line.indexOf("##");
+	if (i > 0) {
+		Git::CommitItem item;
+		std::string sign_fp; // 署名フィンガープリント
+		item.message = line.mid(i + 2);
+		QStringList atts = line.mid(0, i).split('#');
+		for (QString const &s : atts) {
+			int j = s.indexOf(':');
+			if (j > 0) {
+				QString key = s.mid(0, j);
+				QString val = s.mid(j + 1);
+				if (key == "id") {
+					item.commit_id = val;
+				} else if (key == "gpg") { // %G? 署名検証結果
+					item.sign.verify = *val.utf16();
+				} else if (key == "key") { // %GF 署名フィンガープリント
+					sign_fp = val.toStdString();
+				} else if (key == "trust") {
+					item.sign.trust = val;
+				} else if (key == "parent") {
+					item.setParents(val.split(' ', _SkipEmptyParts));
+				} else if (key == "author") {
+					item.author = val;
+				} else if (key == "mail") {
+					item.email = val;
+				} else if (key == "date") {
+					auto ParseDateTime = [](char const *s){
+						int year, month, day, hour, minute, second;
+						if (sscanf(s, "%d-%d-%d %d:%d:%d"
+								   , &year
+								   , &month
+								   , &day
+								   , &hour
+								   , &minute
+								   , &second
+								   ) == 6) {
+							return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
+						}
+						return QDateTime();
+					};
+					item.commit_date = ParseDateTime(val.toStdString().c_str());
+				}
+			}
+		}
+		if (!sign_fp.empty()) {
+			item.sign.key_fingerprint = misc::hex_string_to_bin(sign_fp);
+		}
+		return item;
+	}
+	return std::nullopt;
+}
+
 /**
  * @brief コミットログを取得する
  * @param id コミットID
@@ -742,81 +804,92 @@ QList<Git::Branch> Git::branches()
 Git::CommitItemList Git::log_all(QString const &id, int maxcount)
 {
 	CommitItemList items;
-	QString text;
 
-	// QString cmd = "log --pretty=format:\"commit:%H#gpg:%G?#key:%GK#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
-	QString cmd = "log --pretty=format:\"commit:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2"; // TODO: gpg関連の情報を取得すると遅すぎるので取得しない
+	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id);
 	git(cmd);
 	if (getProcessExitCode() == 0) {
-		text = resultText().trimmed();
+		QString text = resultQString().trimmed();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
-			int i = line.indexOf("##");
-			if (i > 0) {
-				Git::CommitItem item;
-				QString signed_key;
-				item.message = line.mid(i + 2);
-				QStringList atts = line.mid(0, i).split('#');
-				for (QString const &s : atts) {
-					int j = s.indexOf(':');
-					if (j > 0) {
-						QString key = s.mid(0, j);
-						QString val = s.mid(j + 1);
-						if (key == "commit") {
-							item.commit_id = val;
-						} else if (key == "gpg") {
-							item.signature = *val.utf16();
-						} else if (key == "key") {
-							signed_key = val;
-						} else if (key == "parent") {
-							item.setParents(val.split(' ', _SkipEmptyParts));
-						} else if (key == "author") {
-							item.author = val;
-						} else if (key == "mail") {
-							item.email = val;
-						} else if (key == "date") {
-							auto ParseDateTime = [](char const *s){
-								int year, month, day, hour, minute, second;
-								if (sscanf(s, "%d-%d-%d %d:%d:%d"
-										   , &year
-										   , &month
-										   , &day
-										   , &hour
-										   , &minute
-										   , &second
-										   ) == 6) {
-									return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
-								}
-								return QDateTime();
-							};
-							item.commit_date = ParseDateTime(val.toStdString().c_str());
-						}
-					}
-				}
-				if (!signed_key.isEmpty()) {
-					ushort const *begin = signed_key.utf16();
-					int n = signed_key.size();
-					for (int i = 0; i + 1 < n; i += 2) {
-						ushort c = begin[i];
-						ushort d = begin[i + 1];
-						if (c < 0x80 && isxdigit(c) && isxdigit(d)) {
-							char tmp[3];
-							tmp[0] = c;
-							tmp[1] = d;
-							tmp[2] = 0;
-                            char v = (char)strtol(tmp, nullptr, 16);
-                            item.fingerprint.push_back(v);
-						} else {
-							break;
-						}
-					}
-				}
-				items.push_back(item);
+			auto item = parseCommitItem(line);
+			if (item) {
+				items.push_back(*item);
 			}
 		}
 	}
 	return items;
+}
+
+/**
+ * @brief Git::log_signature
+ * @param id コミットID
+ * @return
+ *
+ * コミットに関連する署名情報を取得する
+ */
+std::optional<Git::CommitItem> Git::log_signature(QString const &id)
+{
+	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
+	cmd = cmd.arg(id);
+	git(cmd);
+	if (getProcessExitCode() == 0) {
+		QString gpgtext;
+		QString text = resultQString().trimmed();
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			if (line.startsWith("gpg:")) {
+				if (!gpgtext.isEmpty()) {
+					gpgtext += '\n';
+				}
+				gpgtext += line;
+			} else {
+				auto item = parseCommitItem(line);
+				if (item) {
+					item->sign.text = gpgtext;
+					return item;
+				}
+			}
+		}
+	}
+	return std::nullopt;
+}
+
+/**
+ * @brief Git::log_show_signature
+ * @param id コミットID
+ * @return
+ *
+ * コミットに署名が付いている場合は署名情報を返す
+ */
+std::optional<Git::Signature_> Git::log_show_signature_(CommitID const &id)
+{
+	QString cmd = "log --show-signature -1 %1";
+	cmd = cmd.arg(id.toQString());
+	if (git(cmd, true)) {
+		bool gpg = false;
+		Git::Signature_ sig;
+		std::vector<std::string> lines;
+		{
+			std::string text = resultStdString();
+			misc::splitLines(text, &lines, false);
+		}
+		for (int i = 0; i < lines.size(); i++) {
+			std::string const &line = lines[i];
+			if (strncmp(line.c_str(), "gpg:", 4) == 0) {
+				gpg = true;
+				if (!sig.text.empty()) {
+					sig.text += '\n';
+				}
+				sig.text += line;
+				if (strstr(line.c_str(), "signature from")) {
+					parseSignatureFrom(line, &sig);
+				}
+			}
+		}
+		if (gpg) return sig;
+	}
+	return std::nullopt;
 }
 
 Git::CommitItemList Git::log(int maxcount)
@@ -902,86 +975,58 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 	return out;
 }
 
-/**
- * @brief Git::log_show_signature
- * @param id コミットID
- * @return
- *
- * コミットに署名が付いている場合は署名情報を返す
- */
-std::optional<Git::Signature> Git::log_show_signature(CommitID const &id)
+void Git::parseSignatureFrom(std::string_view const &line, Git::Signature_ *sig)
 {
-	bool gpg = false;
-	Git::Signature sig;
-	QString cmd = "log --show-signature -1 %1";
-	cmd = cmd.arg(id.toQString());
-	if (!git(cmd, true)) return std::nullopt;
-	QString text = resultText();
-	QStringList lines = misc::splitLines(text);
-	const QString good = "Good signature from";
-	const QString bad = "BAD signature from";
-	for (int i = 0; i < lines.size(); i++) {
-		QString line = lines[i];
-		if (line.startsWith("gpg:")) {
-			gpg = true;
-			if (!sig.text.isEmpty()) {
-				sig.text += '\n';
+	static const std::string sig_good = "Good signature from";
+	static const std::string sig_bad = "BAD signature from";
+
+	// status
+	auto i = line.find(sig_good);
+	if (i != std::string::npos) {
+		sig->status = Git::Signature_::Good;
+		i += sig_good.size();
+	} else {
+		i = line.find(sig_bad);
+		if (i != std::string::npos) {
+			sig->status = Git::Signature_::BAD;
+			i += sig_bad.size();
+		}
+	}
+
+	if (i != std::string::npos) {
+		std::string_view s = line.substr(i);
+		s = misc::trimmed(s);
+		// trust
+		i = s.find("[");
+		if (i != std::string::npos) {
+			std::string_view trust = s.substr(i + 1);
+			auto j = trust.find(']');
+			if (j != std::string::npos) {
+				trust = trust.substr(0, j);
+				sig->trust = trust;
 			}
-			//@TODO: きれいにする
-			line = line.trimmed();
-			sig.text += line;
-			int g = line.indexOf(good, 0, Qt::CaseInsensitive);
-			int b = line.indexOf(bad, 0, Qt::CaseInsensitive);
-			if (g > 0 && b < 0) {
-				sig.signature_from.how = Git::Signature::Good;
-				line = line.mid(g + good.size());
-			}
-			if (b > 0 && g < 0) {
-				sig.signature_from.how = Git::Signature::Bad;
-				line = line.mid(b + bad.size());
-			}
-			if (g > 0 || b > 0) {
-				line = line.trimmed();
-				int k = line.lastIndexOf('[');
-				if (k > 0) {
-					int l = k + 1;
-					int m = line.indexOf(']', l);
-					if (m > 0) {
-						sig.signature_from.trust = line.mid(l, m - l);
-					}
-					line = line.mid(0, k).trimmed();
+			s = s.substr(0, i);
+		}
+		s = misc::trimmed(s);
+		// remove quotes
+		if (s.size() >= 2 && s[0] == '"' && s[s.size() - 1] == '"') {
+			s = s.substr(1, s.size() - 2);
+		}
+		// name and mail
+		i = s.find('<');
+		if (i != std::string::npos) {
+			std::string_view name = s.substr(0, i);
+			sig->name = misc::trimmed(name);
+			std::string_view mail = s.substr(i + 1);
+			i = mail.find('>');
+			if (i != std::string::npos) {
+				mail = mail.substr(0, i);
+				if (mail.find('@') != std::string::npos) {
+					sig->mail = misc::trimmed(mail);
 				}
-				int j = 0;
-				k = line.size();
-				if (line[j] == '"') j++;
-				if (line[k - 1] == '"') k--;
-				line = line.mid(j, k - j);
-				int l = line.indexOf('<');
-				if (l >= 0) {
-					int m = line.indexOf('>', l + 1);
-					if (m > 0) {
-						QString mail = line.mid(l + 1, m - l - 1).trimmed();
-						int a = mail.indexOf('@');
-						if (a > 0 && mail.indexOf('.', a + 1) > 0) {
-							sig.signature_from.mail = mail;
-						}
-					}
-					sig.signature_from.name = line.mid(0, l).trimmed();
-				}
-			}
-		} else if (line.startsWith("Primary key fingerprint:")) {
-			std::string s = line.toStdString();
-			char const *begin = s.c_str();
-			char const *end = begin + s.size();
-			char const *eq = strchr(begin, ':');
-			if (eq) {
-				eq++;
-				sig.primary_key_fingerprint = misc::hex_string_to_bin({eq, end - eq}, " ");
 			}
 		}
 	}
-	if (!gpg) return std::nullopt;
-	return sig;
 }
 
 std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)
@@ -1058,7 +1103,7 @@ QList<Git::SubmoduleItem> Git::submodules()
 	QList<Git::SubmoduleItem> mods;
 
 	git("submodule");
-	QString text = resultText();
+	QString text = resultQString();
 	ushort c = text.utf16()[0];
 	if (c == ' ' || c == '+' || c == '-') {
 		text = text.mid(1);
@@ -1199,7 +1244,7 @@ Git::FileStatusList Git::status_s_()
 {
 	FileStatusList files;
 	if (git("status -s -u --porcelain")) {
-		QString text = resultText();
+		QString text = resultQString();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
 			if (line.size() > 3) {
@@ -1222,7 +1267,7 @@ QString Git::objectType(CommitID const &id)
 {
 	if (isValidID(id)) {
 		git("cat-file -t " + id.toQString());
-		return resultText().trimmed();
+		return resultQString().trimmed();
 	}
 	return {};
 }
@@ -1328,7 +1373,7 @@ void Git::fetch_tags_f(AbstractPtyProcess *pty)
 QStringList Git::make_branch_list_()
 {
 	QStringList list;
-	QStringList l = misc::splitLines(resultText());
+	QStringList l = misc::splitLines(resultQString());
 	for (QString const &s : l) {
 		if (s.startsWith("* ")) list.push_back(s.mid(2));
 		if (s.startsWith("  ")) list.push_back(s.mid(2));
@@ -1368,7 +1413,7 @@ QString Git::getCherryPicking() const
 QString Git::getMessage(QString const &id)
 {
 	git("show --no-patch --pretty=%s " + id);
-	return resultText().trimmed();
+	return resultQString().trimmed();
 }
 
 void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
@@ -1400,7 +1445,7 @@ QStringList Git::getRemotes()
 {
 	QStringList ret;
 	git("remote");
-	QStringList lines = misc::splitLines(resultText());
+	QStringList lines = misc::splitLines(resultQString());
 	for (QString const &line: lines) {
 		if (!line.isEmpty()) {
 			ret.push_back(line);
@@ -1419,10 +1464,10 @@ Git::User Git::getUser(Source purpose)
 	if (local) arg1 = "--local";
 	bool chdir = !global;
 	if (git(QString("config %1 user.name").arg(arg1), chdir)) {
-		user.name = resultText().trimmed();
+		user.name = resultQString().trimmed();
 	}
 	if (git(QString("config %1 user.email").arg(arg1), chdir)) {
-		user.email = resultText().trimmed();
+		user.email = resultQString().trimmed();
 	}
 	return user;
 }
@@ -1479,7 +1524,7 @@ void Git::getRemoteURLs(QList<Remote> *out)
 {
 	out->clear();
 	git("remote -v");
-	QStringList lines = misc::splitLines(resultText());
+	QStringList lines = misc::splitLines(resultQString());
 	for (QString const &line : lines) {
 		int i = line.indexOf('\t');
 		int j = line.indexOf(" (");
@@ -1693,7 +1738,7 @@ QList<Git::RemoteInfo> Git::ls_remote()
 	QList<RemoteInfo> list;
 	QString cmd = "ls-remote";
 	if (git(cmd)) {
-		QStringList lines = misc::splitLines(resultText());
+		QStringList lines = misc::splitLines(resultQString());
 		for (QString const &line : lines) {
 			QStringList words = misc::splitWords(line);
 			if (words.size() == 2 && isValidID(words[0])) {
@@ -1716,7 +1761,7 @@ QString Git::signingKey(Source purpose)
 	cmd = cmd.arg(arg1);
 	bool chdir = purpose != Source::Global;
 	if (git(cmd, chdir)) {
-		return resultText().trimmed();
+		return resultQString().trimmed();
 	}
 	return QString();
 }
@@ -1741,7 +1786,7 @@ Git::SignPolicy Git::signPolicy(Source source)
 	cmd = cmd.arg(arg1);
 	bool chdir = source != Source::Global;
 	if (git(cmd, chdir)) {
-		QString t = resultText().trimmed();
+		QString t = resultQString().trimmed();
 		if (t == "false") return SignPolicy::False;
 		if (t == "true")  return SignPolicy::True;
 	}
