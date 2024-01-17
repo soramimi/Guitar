@@ -97,7 +97,7 @@ private:
 	ViewStyle viewstyle() const;
 
 	GitPtr git();
-	Git::Object cat_file(GitPtr g, QString const &id);
+	Git::Object catFile(QString const &id);
 
 	int totalTextLines() const;
 
@@ -124,7 +124,7 @@ private:
 	void refrectScrollBarV();
 	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
-	QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
+	QString diffObjects(QString const &a_id, QString const &b_id);
 	MainWindow *mainwindow();
 	bool setSubmodule(const Git::Diff &diff);
 protected:

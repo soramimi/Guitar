@@ -160,8 +160,8 @@ private:
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit, bool wait);
 	void updateRepositoriesList();
 
-	void openRepository_(GitPtr g, bool keep_selection = false);
-	void openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
+	void internalOpenRepository(GitPtr g, bool keep_selection = false);
+	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -282,7 +282,7 @@ private:
         Git::CommitID idFromTag(RepositoryWrapperFrame *frame, const QString &tag);
 	QString newTempFilePath();
 	int limitLogCount() const;
-    Git::Object cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
+	Git::Object internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
     Git::CommitItemList retrieveCommitLog(GitPtr g);
@@ -392,7 +392,7 @@ private:
 	class GitFile {
 	public:
 		Git::Object::Type type = Git::Object::Type::NONE;
-		QByteArray data;
+		QByteArray content;
 		operator bool () const
 		{
 			return type != Git::Object::Type::NONE;
@@ -452,13 +452,13 @@ public:
 	GitPtr git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
 	GitPtr git();
 	GitPtr git(Git::SubmoduleItem const &submod);
-	GitFile catFile(const Git::CommitID &id, GitPtr g);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const QString &id);
 	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit, std::function<void ()> accepted_callback = {});
 	void checkout(RepositoryWrapperFrame *frame);
 	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);
-	Git::Object cat_file(RepositoryWrapperFrame *frame, const QString &id);
+	Git::Object internalCatFile(RepositoryWrapperFrame *frame, const QString &id);
+	Git::Object catFile(const QString &id);
 	bool addExistingLocalRepository(const QString &dir, bool open);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
 	QString determinFileType(QByteArray in);

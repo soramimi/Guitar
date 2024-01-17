@@ -146,8 +146,6 @@ struct MainWindow::Private {
 	QString repository_filter_text;
 	bool uncommited_changes = false;
 
-//	bool remote_changed = false;
-
 	GitHubRepositoryInfo github;
 
 	Git::CommitID head_id;
@@ -625,20 +623,15 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		if (watched == frame()->unstagedFileslistwidget()) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText(frame());
-//			updateUnstagedFileCurrentItem(frame());
-//			SelectItem(frame()->unstagedFileslistwidget());
 			return true;
 		}
 		if (watched == frame()->stagedFileslistwidget()) {
 			m->last_focused_file_list = watched;
 			updateStatusBarText(frame());
-//			updateStagedFileCurrentItem(frame());
-//			SelectItem(frame()->stagedFileslistwidget());
 			return true;
 		}
 		if (watched == frame()->fileslistwidget()) {
 			m->last_focused_file_list = watched;
-//			SelectItem(frame()->fileslistwidget());
 			return true;
 		}
 	}
@@ -759,9 +752,7 @@ std::vector<std::string> MainWindow::getLogHistoryLines()
 
 void MainWindow::clearLogHistory()
 {
-//	if (m->log_history_bytes.empty()) return;
 	m->log_history_bytes.clear();
-//	qDebug() << "---";
 }
 
 void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
@@ -845,11 +836,6 @@ QString MainWindow::defaultWorkingDir() const
 {
 	return appsettings()->default_working_dir;
 }
-
-//WebContext *MainWindow::webContext()
-//{
-//	return &m->webcx;
-//}
 
 QIcon MainWindow::verifiedIcon(char s) const
 {
@@ -1003,7 +989,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	if (open) {
 		setCurrentRepository(item, true);
 		GitPtr g = git(item.local_dir, {}, sshkey);
-		openRepository_(g);
+		internalOpenRepository(g);
 	}
 
 	return true;
@@ -1132,7 +1118,7 @@ bool MainWindow::checkGitCommand()
 
 bool MainWindow::saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath)
 {
-	Git::Object obj = cat_file(frame, id);
+	Git::Object obj = internalCatFile(frame, id);
 	if (!obj.content.isEmpty()) {
 		if (saveByteArrayAs(obj.content, dstpath)) {
 			return true;
@@ -1219,14 +1205,12 @@ bool MainWindow::checkExecutable(const QString &path)
 
 void MainWindow::internalSaveCommandPath(const QString &path, bool save, const QString &name)
 {
-//	if (checkExecutable(path)) {
-		if (save) {
-			MySettings s;
-			s.beginGroup("Global");
-			s.setValue(name, path);
-			s.endGroup();
-		}
-//	}
+	if (save) {
+		MySettings s;
+		s.beginGroup("Global");
+		s.setValue(name, path);
+		s.endGroup();
+	}
 }
 
 void MainWindow::logGitVersion()
@@ -1288,7 +1272,7 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 		qDebug() << "Guitar: git pointer is null";
 		return;
 	}
-	openRepository_(g, keep_selection);
+	internalOpenRepository(g, keep_selection);
 }
 
 void MainWindow::updateRepository()
@@ -1297,7 +1281,7 @@ void MainWindow::updateRepository()
 	if (!isValidWorkingCopy(g)) return;
 
 	OverrideWaitCursor;
-	openRepository_(g);
+	internalOpenRepository(g);
 }
 
 void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> &callback)
@@ -1318,7 +1302,7 @@ void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> 
 	} else {
 		callback(g);
 	}
-	openRepository_(g);
+	internalOpenRepository(g);
 }
 
 void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_authentication)
@@ -1544,7 +1528,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 				}
 				setLogEnabled(g, false);
 			}
-			openRepository_(g);
+			internalOpenRepository(g);
 		}
 
 		return; // done
@@ -3626,28 +3610,7 @@ void MainWindow::clearLog(RepositoryWrapperFrame *frame)
 	frame->clearLogContents();
 }
 
-void MainWindow::openRepository_(GitPtr g, bool keep_selection)
-{
-	openRepository_(frame(), g, keep_selection);
-}
-
-MainWindow::GitFile MainWindow::catFile(Git::CommitID const &id, GitPtr g)
-{
-	GitFile file;
-	if (0) { //@TODO:いつか消す
-		auto ba = g->cat_file(id);
-		if (ba) {
-			file.data = *ba;
-		}
-	} else {
-		Git::Object::Type type;
-		GitObjectManager om(g);
-		om.catFile(id, &file.data, &file.type);
-	}
-	return file;
-}
-
-Git::Object MainWindow::cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const QString &id) //@TODO:
+Git::Object MainWindow::internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id) //@TODO:
 {
 	if (isValidWorkingCopy(g)) {
 		QString path_prefix = PATH_PREFIX;
@@ -3664,15 +3627,25 @@ Git::Object MainWindow::cat_file_(RepositoryWrapperFrame *frame, GitPtr g, const
 			return getObjCache(frame)->catFile(id);;
 		}
 	}
-	return Git::Object();
+	return {};
 }
 
-Git::Object MainWindow::cat_file(RepositoryWrapperFrame *frame, const QString &id) //@TODO:
+Git::Object MainWindow::internalCatFile(RepositoryWrapperFrame *frame, const QString &id) //@TODO:
 {
-	return cat_file_(frame, git(), id);
+	return internalCatFile(frame, git(), id);
 }
 
-void MainWindow::openRepository_(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
+Git::Object MainWindow::catFile(QString const &id)
+{
+	return internalCatFile(frame(), git(), id);
+}
+
+void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
+{
+	openRepositoryWithFrame(frame(), g, keep_selection);
+}
+
+void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
 {
 	getObjCache(frame)->setup(g);
 
@@ -4660,24 +4633,11 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 	if (item) {
 		QString submodpath = getSubmodulePath(item);
 		if (!submodpath.isEmpty()) {
-#if 0
-			// サブモジュールウィンドウを表示する
-			Git::SubmoduleItem submod;
-			submod.path = submodpath;
-			submod.id = getObjectID(item);
-			if (submod) {
-				OverrideWaitCursor;
-				GitPtr g = git(submod);
-				SubmoduleMainWindow *w = new SubmoduleMainWindow(this, g);
-				w->show();
-				w->reset();
-			}
-#else
+			// サブモジュールのときは新しいプロセスを起動する
 			QString commit_id = getSubmoduleCommitId(item);
 			QString path = currentWorkingCopyDir() / submodpath;
 			qDebug() << path << commit_id;
 			QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
-#endif
 		} else {
 			// ファイルプロパティダイアログを表示する
 			QString path = getFilePath(item);

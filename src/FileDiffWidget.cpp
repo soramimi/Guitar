@@ -134,10 +134,9 @@ GitPtr FileDiffWidget::git()
 	return mainwindow()->git();
 }
 
-Git::Object FileDiffWidget::cat_file(GitPtr g, QString const &id)
+Git::Object FileDiffWidget::catFile(QString const &id)
 {
-    (void)g;
-	return mainwindow()->cat_file(mainwindow()->frame(), id);
+	return mainwindow()->catFile(id);
 }
 
 int FileDiffWidget::totalTextLines() const
@@ -599,11 +598,11 @@ void FileDiffWidget::setSideBySide_(Git::Diff const &diff, QByteArray const &ba_
 	}
 }
 
-QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
+QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
-		Git::Object obj_a = mainwindow()->cat_file_(mainwindow()->frame(), g, a_id);
-		Git::Object obj_b = mainwindow()->cat_file_(mainwindow()->frame(), g, b_id);
+		Git::Object obj_a = mainwindow()->catFile(a_id);
+		Git::Object obj_b = mainwindow()->catFile(b_id);
 		if (obj_b.type == Git::Object::Type::UNKNOWN) {
 			obj_b.type = Git::Object::Type::BLOB;
 		}
@@ -617,14 +616,14 @@ QString FileDiffWidget::diffObjects(GitPtr g, QString const &a_id, QString const
 				file_b.write(m->text_codec->toUnicode(obj_b.content).toUtf8());
 				file_a.close();
 				file_b.close();
-				QString s = g->diff_file(path_a, path_b);
+				QString s = git()->diff_file(path_a, path_b);
 				file_a.remove();
 				file_b.remove();
 				return s;
 			}
 		}
 	}
-	return GitDiff::diffObjects(g, a_id, b_id);
+	return GitDiff::diffObjects(git(), a_id, b_id);
 }
 
 /**
@@ -652,8 +651,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g->isValidWorkingCopy()) return;
 
 	if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
-		Git::Object obj_a = cat_file(g, info.blob.a_id_or_path);
-		Git::Object obj_b = cat_file(g, info.blob.b_id_or_path);
+		Git::Object obj_a = catFile(info.blob.a_id_or_path);
+		Git::Object obj_b = catFile(info.blob.b_id_or_path);
 		QString mime_a = mainwindow()->determinFileType(obj_a.content);
 		QString mime_b = mainwindow()->determinFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
@@ -665,7 +664,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	{
 		Git::Diff diff;
 		if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
-			std::string text = diffObjects(g, info.blob.a_id_or_path, info.blob.b_id_or_path).toStdString();
+			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path).toStdString();
 			GitDiff::parseDiff(text, &info, &diff);
 		} else {
 			diff = info;
@@ -673,14 +672,14 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 
 		Git::Object obj;
 		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
-			obj = cat_file(g, diff.blob.a_id_or_path);
+			obj = catFile(diff.blob.a_id_or_path);
 			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
 				setSideBySide(diff, obj.content, uncommited, g->workingDir()); // 通常のdiff表示
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
 		} else if (isValidID_(diff.blob.b_id_or_path)) { // 左が無効で右が有効の時は、追加されたファイル
-			obj = cat_file(g, diff.blob.b_id_or_path);
+			obj = catFile(diff.blob.b_id_or_path);
 			setRightOnly(diff, obj.content);
 		}
 	}
@@ -703,10 +702,10 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 	diff.blob.a_id_or_path = id_left;
 	diff.blob.b_id_or_path = id_right;
 	diff.mode = "0";
-	std::string text = diffObjects(g, diff.blob.a_id_or_path, diff.blob.b_id_or_path).toStdString();
+	std::string text = diffObjects(diff.blob.a_id_or_path, diff.blob.b_id_or_path).toStdString();
 	GitDiff::parseDiff(text, &diff, &diff);
 
-	Git::Object obj = cat_file(g, diff.blob.a_id_or_path);
+	Git::Object obj = catFile(diff.blob.a_id_or_path);
 	setSideBySide(diff, obj.content, false, g->workingDir());
 
 	ui->widget_diff_slider->clear(false);

@@ -448,10 +448,10 @@ QList<Git::Tag> Git::tags2()
 	return list;
 }
 
-bool Git::tag(QString const &name, QString const &id)
+bool Git::tag(QString const &name, CommitID const &id)
 {
 	QString cmd = "tag \"%1\" %2";
-	cmd = cmd.arg(name).arg(id);
+	cmd = cmd.arg(name).arg(id.toQString());
 	return git(cmd);
 }
 
@@ -798,12 +798,12 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
  * @param maxcount 最大アイテム数
  * @return
  */
-Git::CommitItemList Git::log_all(QString const &id, int maxcount)
+Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 {
 	CommitItemList items;
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
-	cmd = cmd.arg(maxcount).arg(id);
+	cmd = cmd.arg(maxcount).arg(id.toQString());
 	git(cmd);
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
@@ -1117,10 +1117,10 @@ bool Git::commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty
 	return commit_(text, true, sign, pty);
 }
 
-bool Git::revert(QString const &id)
+bool Git::revert(CommitID const &id)
 {
 	QString cmd = "revert %1";
-	cmd = cmd.arg(id);
+	cmd = cmd.arg(id.toQString());
 	return git(cmd);
 }
 

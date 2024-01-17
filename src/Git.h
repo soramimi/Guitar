@@ -77,7 +77,7 @@ public:
 			OFS_DELTA = 6,
 			REF_DELTA = 7,
 		};
-		Type type = Type::UNKNOWN;
+		Type type = Type::NONE;
 		QByteArray content;
 	};
 
@@ -382,7 +382,7 @@ public:
 	QString version();
 	bool init();
 	QStringList getUntrackedFiles();
-	CommitItemList log_all(QString const &id, int maxcount);
+	CommitItemList log_all(CommitID const &id, int maxcount);
 	std::optional<CommitItem> log_signature(CommitID const &id);
 	CommitItemList log(int maxcount);
 	std::optional<CommitItem> queryCommit(const CommitID &id);
@@ -448,7 +448,7 @@ public:
 	QString status();
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
-	bool revert(QString const &id);
+	bool revert(const CommitID &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
 	void getRemoteURLs(QList<Remote> *out);
 	void createBranch(QString const &name);
@@ -463,7 +463,7 @@ public:
 	CommitID rev_parse(QString const &name);
 	QList<Tag> tags();
 	QList<Tag> tags2();
-	bool tag(QString const &name, QString const &id = QString());
+	bool tag(QString const &name, const CommitID &id = QString());
 	void delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const Remote &remote);
 	void addRemoteURL(const Remote &remote);
