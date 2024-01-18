@@ -246,9 +246,9 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *pty, QString const &prefix)
+bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPtyProcess *pty, QString const &prefix)
 {
-	qDebug() << "git: " << arg;
+	// qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
@@ -281,7 +281,7 @@ bool Git::git(QString const &arg, bool chdir, bool errout, AbstractPtyProcess *p
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (m->info.fn_log_writer_callback) {
+		if (log && m->info.fn_log_writer_callback) {
 			QByteArray ba;
 			ba.append("> git ");
 			ba.append(arg.toUtf8());
@@ -755,6 +755,7 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 					item.commit_id = val;
 				} else if (key == "gpg") { // %G? 署名検証結果
 					item.sign.verify = *val.utf16();
+					item.sign.sg = Git::evaluateSignature(item.sign.verify);
 				} else if (key == "key") { // %GF 署名フィンガープリント
 					sign_fp = val.toStdString();
 				} else if (key == "trust") {
@@ -804,7 +805,7 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
-	git(cmd);
+	git_(cmd, true, false, false, nullptr, {});
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
 		QStringList lines = misc::splitLines(text);
@@ -829,7 +830,7 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
-	git(cmd);
+	git_(cmd, true, false, false, nullptr, {});
 	if (getProcessExitCode() == 0) {
 		QString gpgtext;
 		QString text = resultQString().trimmed();

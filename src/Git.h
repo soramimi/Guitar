@@ -57,6 +57,10 @@ public:
 			if (!valid && !other.valid) return 0;
 			return memcmp(id, other.id, sizeof(id));
 		}
+		operator bool () const
+		{
+			return isValid();
+		}
 	};
 	class Context {
 	public:
@@ -93,6 +97,15 @@ public:
 		}
 	};
 
+	enum class SignatureGrade {
+		NoSignature,
+		Unknown,
+		Good,
+		Dubious,
+		Missing,
+		Bad,
+	};
+
 	struct CommitItem {
 		CommitID commit_id;
 		QList<CommitID> parent_ids;
@@ -107,6 +120,7 @@ public:
 			char verify = 0; // git log format:%G?
 			std::vector<uint8_t> key_fingerprint;
 			QString trust;
+			SignatureGrade sg;
 		} sign;
 		bool has_child = false;
 		int marker_depth = -1;
@@ -160,18 +174,9 @@ public:
 		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
 	};
 
-	enum class SignatureGrade {
-		NoSignature,
-		Unknown,
-		Good,
-		Dubious,
-		Missing,
-		Bad,
-	};
-
-	static SignatureGrade evaluateSignature(char s)
+	static SignatureGrade evaluateSignature(char c)
 	{
-		switch (s) {
+		switch (c) {
 		case 'G':
 			return SignatureGrade::Good;
 		case 'U':
@@ -366,7 +371,11 @@ public:
 	std::string resultStdString() const;
 	QString resultQString() const;
 	bool chdirexec(std::function<bool ()> const &fn);
-	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {});
+	bool git_(QString const &arg, bool chdir, bool log = true, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {});
+	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {})
+	{
+		return git_(arg, chdir, true, errout, pty, prefix);
+	}
 	bool git(QString const &arg)
 	{
 		return git(arg, true);

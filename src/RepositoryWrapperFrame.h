@@ -38,7 +38,7 @@ public:
 	explicit RepositoryWrapperFrame(QWidget *parent = nullptr);
 	~RepositoryWrapperFrame() override;
 	Git::CommitItem const *commitItem(int row);
-	QIcon verifiedIcon(char s) const;
+	QIcon signatureVerificationIcon(char s, int row) const;
 	QImage committerIcon(int row, QSize size) const;
 	const QList<BranchLabel> *label(int row) const;
 	QString currentBranchName() const;

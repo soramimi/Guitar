@@ -111,6 +111,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/CommitDetailGetter.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -251,6 +252,7 @@ SOURCES += \
     src/coloredit/RingSlider.cpp
 
 HEADERS  += \
+	$$PWD/src/CommitDetailGetter.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \

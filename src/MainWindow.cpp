@@ -75,6 +75,7 @@
 #include <sys/stat.h>
 #include <QProcess>
 #include <thread>
+#include "CommitDetailGetter.h"
 #include "GitObjectManager.h"
 
 #ifdef Q_OS_MAC
@@ -182,6 +183,8 @@ struct MainWindow::Private {
 	QAction *action_detect_profile = nullptr;
 
 	int current_account_profiles = -1;
+
+	CommitDetailGetter commit_detail_getter;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -289,6 +292,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
+	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
+
 	//
 
 	QString path = getBookmarksFilePath();
@@ -296,7 +301,7 @@ MainWindow::MainWindow(QWidget *parent)
 	updateRepositoriesList();
 
 	// アイコン取得機能
-	global->avatar_loader.connectAvatarReady(this, &MainWindow::avatarReady);
+	global->avatar_loader.connectAvatarReady(this, &MainWindow::onAvatarReady);
 
 	connect(frame()->filediffwidget(), &FileDiffWidget::textcodecChanged, [&](){ updateDiffView(frame()); });
 
@@ -321,7 +326,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-	global->avatar_loader.disconnectAvatarReady(this, &MainWindow::avatarReady);
+	global->avatar_loader.disconnectAvatarReady(this, &MainWindow::onAvatarReady);
 
 	cancelPendingUserEvents();
 
@@ -837,10 +842,18 @@ QString MainWindow::defaultWorkingDir() const
 	return appsettings()->default_working_dir;
 }
 
-QIcon MainWindow::verifiedIcon(char s) const
+QIcon MainWindow::signatureVerificationIcon(char c, int row) const
 {
-	Git::SignatureGrade g = Git::evaluateSignature(s);
-	switch (g) {
+	{ //@TODO: なんかもっといいかんじにする
+		auto const *commit = commitItem(frame(), row);
+		if (commit) {
+			auto const &item = m->commit_detail_getter.request(commit->commit_id);
+			c = (char)item.value;
+		}
+	}
+
+	Git::SignatureGrade sg = Git::evaluateSignature(c);
+	switch (sg) {
 	case Git::SignatureGrade::Good:
 		return m->signature_good_icon;
 	case Git::SignatureGrade::Bad:
@@ -1893,9 +1906,34 @@ void MainWindow::updateAvatar(const Git::User &user, bool request)
 	ui->widget_avatar_icon->setImage(icon);
 }
 
-void MainWindow::avatarReady()
+void MainWindow::updateCommitLog(int delay)
+{
+	(void)delay; //TODO:
+
+	ui->tableWidget_log->viewport()->update();
+}
+
+void MainWindow::onAvatarReady()
 {
 	updateAvatar(currentGitUser(), false);
+	updateCommitLog(100);
+}
+
+Git::SignatureGrade MainWindow::hoge(int row) const //TODO: rename function
+{
+	Git::CommitItemList const &list = getCommitLog(frame());
+	if (row >= 0 && row < list.size()) {
+		Git::SignatureGrade sg = list[row].sign.sg;
+		return sg;
+	}
+	return Git::SignatureGrade::Unknown;
+}
+
+void MainWindow::onCommitDetailGetterReady()
+{
+	auto *logptr = getCommitLogPtr(frame());
+	m->commit_detail_getter.apply(logptr);
+	updateCommitLog(100);
 }
 
 void MainWindow::setWindowTitle_(const Git::User &user)
@@ -3804,6 +3842,9 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		frame->logtablewidget()->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
 	}
 
+	m->commit_detail_getter.stop();
+	m->commit_detail_getter.start(g->dup());
+
 	updateUI();
 }
 
@@ -5031,7 +5072,7 @@ QString MainWindow::findFileID(RepositoryWrapperFrame *frame, const QString &com
 	return lookupFileID(getObjCache(frame), commit_id, file);
 }
 
-const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame *frame, int row) const
+const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame const *frame, int row) const
 {
 	auto const &logs = getCommitLog(frame);
 	if (row >= 0 && row < (int)logs.size()) {
@@ -5047,11 +5088,9 @@ QImage MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row, QSize s
 		auto const &logs = getCommitLog(frame);
 		if (row >= 0 && row < (int)logs.size()) {
 			Git::CommitItem const &commit = logs[row];
-			if (misc::isValidMailAddress(commit.email)) {
-				icon = global->avatar_loader.fetch(commit.email, true); // from gavatar
-				if (!size.isValid()) {
-					icon = icon.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-				}
+			icon = global->avatar_loader.fetch(commit.email, true); // from gavatar
+			if (!size.isValid()) {
+				icon = icon.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 			}
 		}
 	}
@@ -5102,22 +5141,18 @@ void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 {
 	clearFileList(frame);
 
-	int row = selectedLogIndex(frame);
-	QTableWidgetItem *item = frame->logtablewidget()->item(row, 0);
-	if (item) {
-		auto const &logs = getCommitLog(frame);
-		int index = item->data(IndexRole).toInt();
-		if (index < (int)logs.size()) {
-			// ステータスバー更新
-			updateStatusBarText(frame);
-			// 少し待ってファイルリストを更新する
-			postUserFunctionEvent([&](QVariant const &, void *p){
-				RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(p);
-				updateCurrentFilesList(frame);
-			}, {}, reinterpret_cast<void *>(frame), 300); // 300ms後（キーボードのオートリピート想定）
+	Git::CommitItem const *commit = selectedCommitItem(frame);
+	if (commit) {
+		if (commit->commit_id) {
+			m->commit_detail_getter.request(commit->commit_id);
 		}
-	} else {
-		row = -1;
+		// ステータスバー更新
+		updateStatusBarText(frame);
+		// 少し待ってファイルリストを更新する
+		postUserFunctionEvent([&](QVariant const &, void *p){
+			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(p);
+			updateCurrentFilesList(frame);
+		}, {}, reinterpret_cast<void *>(frame), 300); // 300ms後（キーボードのオートリピート想定）
 	}
 	updateAncestorCommitMap(frame);
 	frame->logtablewidget()->viewport()->update();
@@ -5415,6 +5450,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 	int c = event->key();
 	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
 		test();
+		return;
+	}
+	if (QApplication::focusWidget() == ui->tableWidget_log && (c == Qt::Key_Return || c == Qt::Key_Enter)) {
+		Git::CommitItem const *commit = selectedCommitItem(frame());
+		if (commit) {
+			execCommitPropertyDialog(this, commit);
+		}
 		return;
 	}
 	if (QApplication::focusWidget() == ui->widget_log) {

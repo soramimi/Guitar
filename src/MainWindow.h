@@ -467,7 +467,7 @@ public:
     bool isValidWorkingCopy(GitPtr g) const;
 	void emitWriteLog(const QByteArray &ba, bool receive);
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
-	const Git::CommitItem *commitItem(RepositoryWrapperFrame *frame, int row) const;
+	const Git::CommitItem *commitItem(const RepositoryWrapperFrame *frame, int row) const;
 	QImage committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
@@ -475,7 +475,7 @@ public:
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	QString defaultWorkingDir() const;
-	QIcon verifiedIcon(char s) const;
+	QIcon signatureVerificationIcon(char c, int row) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
 	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
@@ -483,6 +483,8 @@ public:
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
+	void updateCommitLog(int delay);
+	Git::SignatureGrade hoge(int row) const;
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
 private slots:
@@ -492,7 +494,8 @@ private slots:
 	void onRepositoriesTreeDropped();
 	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void onInterval10ms();
-	void avatarReady();
+	void onAvatarReady();
+	void onCommitDetailGetterReady();
 
 	void on_action_about_triggered();
 	void on_action_add_repository_triggered();
