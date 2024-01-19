@@ -821,16 +821,45 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 	cmd = cmd.arg(id.toQString());
 	git_(cmd, true, false, false, nullptr, {});
 	if (getProcessExitCode() == 0) {
+		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
+			QStringList list;
+			ushort const *begin = text.utf16();
+			ushort const *end = begin + text.size();
+			ushort const *ptr = begin;
+			ushort const *left = ptr;
+			while (1) {
+				ushort c = 0;
+				if (ptr < end) {
+					c = *ptr;
+				}
+				if (c == '\n' /*|| c == '\r'*/ || c == 0) { // '\r'では分割しない（Windowsで git log の結果に単独の'\r'が現れることがある）
+					QString s = QString::fromUtf16((char16_t const *)left, int(ptr - left));
+					s = s.trimmed(); // '\r'などの空行を除去
+					list.push_back(s);
+					if (c == 0) break;
+					if (c == '\n') {
+						ptr++;
+					}
+					left = ptr;
+				} else {
+					ptr++;
+				}
+			}
+			return list;
+		};
+
 		QString gpgtext;
 		QString text = resultQString().trimmed();
-		QStringList lines = misc::splitLines(text);
+		QStringList lines = splitLines(text);
 		for (QString const &line : lines) {
 			if (line.startsWith("gpg:")) {
 				if (!gpgtext.isEmpty()) {
 					gpgtext += '\n';
 				}
 				gpgtext += line;
-			} else {
+			} else if (line.startsWith("Primary key fingerprint:")) {
+				// nop
+			} else if (line.startsWith("id:")) {
 				auto item = parseCommitItem(line);
 				if (item) {
 					item->sign.text = gpgtext;
