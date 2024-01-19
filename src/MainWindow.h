@@ -279,7 +279,7 @@ private:
 	QList<Git::Branch> findBranch(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	QString tempfileHeader() const;
 	void deleteTempFiles();
-        Git::CommitID idFromTag(RepositoryWrapperFrame *frame, const QString &tag);
+	Git::CommitID idFromTag(RepositoryWrapperFrame *frame, const QString &tag);
 	QString newTempFilePath();
 	int limitLogCount() const;
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
@@ -287,7 +287,6 @@ private:
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
     Git::CommitItemList retrieveCommitLog(GitPtr g);
 	std::map<Git::CommitID, QList<Git::Branch> > &commitToBranchMapRef(RepositoryWrapperFrame *frame);
-	void updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later);
     void updateWindowTitle(GitPtr g);
 	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
@@ -402,6 +401,8 @@ private:
 			return t == type;
 		}
 	};
+
+	void updateUncommitedChanges();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -468,6 +469,7 @@ public:
 	void emitWriteLog(const QByteArray &ba, bool receive);
 	QString findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file);
 	const Git::CommitItem *commitItem(const RepositoryWrapperFrame *frame, int row) const;
+	const Git::CommitItem *commitItem(const RepositoryWrapperFrame *frame, Git::CommitID const &id) const;
 	QImage committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
@@ -475,7 +477,7 @@ public:
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	QString defaultWorkingDir() const;
-	QIcon signatureVerificationIcon(char c, int row) const;
+	QIcon signatureVerificationIcon(const Git::CommitID &id) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
 	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
@@ -483,8 +485,8 @@ public:
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
-	void updateCommitLog(int delay);
-	Git::SignatureGrade hoge(int row) const;
+	void updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_ms);
+	void updateCommitLogTable(int delay_ms);
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
 private slots:

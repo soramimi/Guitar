@@ -146,6 +146,7 @@ struct MainWindow::Private {
 
 	QString repository_filter_text;
 	bool uncommited_changes = false;
+	Git::FileStatusList uncommited_changes_file_list;
 
 	GitHubRepositoryInfo github;
 
@@ -185,6 +186,8 @@ struct MainWindow::Private {
 	int current_account_profiles = -1;
 
 	CommitDetailGetter commit_detail_getter;
+
+	QTimer update_commit_log_timer;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -293,6 +296,10 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
+
+	connect(&m->update_commit_log_timer, &QTimer::timeout, [&](){
+		updateCommitLogTable(0);
+	});
 
 	//
 
@@ -842,14 +849,16 @@ QString MainWindow::defaultWorkingDir() const
 	return appsettings()->default_working_dir;
 }
 
-QIcon MainWindow::signatureVerificationIcon(char c, int row) const
+QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 {
-	{ //@TODO: なんかもっといいかんじにする
-		auto const *commit = commitItem(frame(), row);
-		if (commit) {
-			auto const &item = m->commit_detail_getter.request(commit->commit_id);
-			c = (char)item.value;
-		}
+	char c = 0;
+
+	auto const *commit = commitItem(frame(), id);
+	if (commit && commit->sign.verify) {
+		c = commit->sign.verify;
+	} else {
+		auto a = m->commit_detail_getter.query(commit->commit_id, true, true);
+		c = a.sign_verify;
 	}
 
 	Git::SignatureGrade sg = Git::evaluateSignature(c);
@@ -1345,9 +1354,6 @@ QList<Git::Diff> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id
 		return {};
 	}
 
-	Git::FileStatusList list = g->status_s();
-	setUncommitedChanges(!list.empty());
-
 	if (id.isEmpty() && !isThereUncommitedChanges()) {
 		id = getObjCache(frame)->revParse("HEAD").toQString();
 	}
@@ -1569,7 +1575,7 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 		if (Git::isValidID(id)) {
 			message = g->getMessage(id);
 		} else {
-			for (Git::CommitItem const &item : getCommitLog(frame)) {
+			for (Git::CommitItem const &item : getCommitLog(frame).list) {
 				if (item.commit_id.isValid()) {
 					previousMessage = item.message;
 					break;
@@ -1895,6 +1901,38 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 	}
 }
 
+/**
+ * @brief MainWindow::updateCommitLogTable
+ * @param frame
+ * @param delay_ms
+ *
+ * コミットログテーブルを更新する
+ */
+void MainWindow::updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_ms)
+{
+#if 0
+	postUserFunctionEvent([&](QVariant const &, void *ptr){
+		if (ptr) {
+			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
+			frame->logtablewidget()->viewport()->update();
+		}
+	}, {}, reinterpret_cast<void *>(frame), delay_ms);
+#else
+	if (delay_ms == 0) {
+		frame->logtablewidget()->viewport()->update();
+	}
+	if (!m->update_commit_log_timer.isActive()) {
+		m->update_commit_log_timer.setSingleShot(true);
+		m->update_commit_log_timer.start(delay_ms);
+	}
+#endif
+}
+
+void MainWindow::updateCommitLogTable(int delay_ms)
+{
+	updateCommitLogTable(frame(), delay_ms);
+}
+
 void MainWindow::updateAvatar(const Git::User &user, bool request)
 {
 	m->current_git_user = user;
@@ -1906,34 +1944,15 @@ void MainWindow::updateAvatar(const Git::User &user, bool request)
 	ui->widget_avatar_icon->setImage(icon);
 }
 
-void MainWindow::updateCommitLog(int delay)
-{
-	(void)delay; //TODO:
-
-	ui->tableWidget_log->viewport()->update();
-}
-
 void MainWindow::onAvatarReady()
 {
 	updateAvatar(currentGitUser(), false);
-	updateCommitLog(100);
-}
-
-Git::SignatureGrade MainWindow::hoge(int row) const //TODO: rename function
-{
-	Git::CommitItemList const &list = getCommitLog(frame());
-	if (row >= 0 && row < list.size()) {
-		Git::SignatureGrade sg = list[row].sign.sg;
-		return sg;
-	}
-	return Git::SignatureGrade::Unknown;
+	updateCommitLogTable(300);
 }
 
 void MainWindow::onCommitDetailGetterReady()
 {
-	auto *logptr = getCommitLogPtr(frame());
-	m->commit_detail_getter.apply(logptr);
-	updateCommitLog(100);
+	updateCommitLogTable(300);
 }
 
 void MainWindow::setWindowTitle_(const Git::User &user)
@@ -2424,7 +2443,7 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 			UNKNOWN = 0,
 			KNOWN = 1,
 		};
-		for (Git::CommitItem &item : *logsp) {
+		for (Git::CommitItem &item : logsp->list) {
 			item.marker_depth = UNKNOWN;
 		}
 		// コミットハッシュを検索して、親コミットのインデックスを求める
@@ -2490,7 +2509,7 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 			}
 		}
 		// 線情報をクリア
-		for (Git::CommitItem &item : *logsp) {
+		for (Git::CommitItem &item : logsp->list) {
 			item.marker_depth = -1;
 			item.parent_lines.clear();
 		}
@@ -3023,33 +3042,21 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
 			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
 			Git::CommitItem t = list[i];
 			t.strange_date = true;
-			list.erase(list.begin() + (int)i);
-			list.insert(list.begin() + (int)newpos, t);
+			list.list.erase(list.list.begin() + (int)i);
+			list.list.insert(list.list.begin() + (int)newpos, t);
 			i = newpos;
 			limit--;
 		}
 		i++;
 	}
 
+	list.updateIndex();
 	return list;
 }
 
 std::map<Git::CommitID, QList<Git::Branch>> &MainWindow::commitToBranchMapRef(RepositoryWrapperFrame *frame)
 {
 	return frame->branch_map;
-}
-
-/**
- * @brief コミットログを更新（100ms遅延）
- */
-void MainWindow::updateCommitLogTableLater(RepositoryWrapperFrame *frame, int ms_later)
-{
-	postUserFunctionEvent([&](QVariant const &, void *ptr){
-		if (ptr) {
-			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
-			frame->logtablewidget()->viewport()->update();
-		}
-	}, {}, reinterpret_cast<void *>(frame), ms_later);
 }
 
 void MainWindow::updateWindowTitle(GitPtr g)
@@ -3425,6 +3432,12 @@ int MainWindow::indexOfDiff(QListWidgetItem *item)
 	return item->data(DiffIndexRole).toInt();
 }
 
+void MainWindow::updateUncommitedChanges()
+{
+	m->uncommited_changes_file_list = git()->status_s();
+	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
+}
+
 /**
  * @brief ファイルリストを更新
  * @param id コミットID
@@ -3438,9 +3451,6 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 	if (!wait) return;
 
 	clearFileList(frame);
-
-	Git::FileStatusList stats = g->status_s();
-	setUncommitedChanges(!stats.empty());
 
 	FilesListType files_list_type = FilesListType::SingleList;
 
@@ -3463,6 +3473,8 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 
 	if (id.isEmpty()) { // Uncommited changed が選択されているとき
 
+		updateUncommitedChanges();
+
 		bool uncommited = isThereUncommitedChanges();
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
@@ -3484,7 +3496,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 
 		showFileList(files_list_type);
 
-		for (Git::FileStatus const &s : stats) {
+		for (Git::FileStatus const &s : m->uncommited_changes_file_list) {
 			staged = (s.isStaged() && s.code_y() == ' ');
 			int idiff = -1;
 			QString header;
@@ -3706,13 +3718,15 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 
 		clearLog(frame);
 		clearRepositoryInfo();
-
 		detectGitServerType(g);
 
 		updateFilesList(frame, QString(), true);
 
 		bool canceled = false;
 		frame->logtablewidget()->setEnabled(false);
+
+		//
+		updateUncommitedChanges();
 
 		// ログを取得
 		setCommitLog(frame, retrieveCommitLog(g));
@@ -3722,13 +3736,11 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		ptrCommitToTagMap(frame)->clear();
 		QList<Git::Tag> tags = g->tags();
 		for (Git::Tag const &tag : tags) {
-			Git::Tag t = tag;
-			// t.id = idFromTag(frame, tag.id.toQString()); //@TODO: これいらないのでは？
-			(*ptrCommitToTagMap(frame))[t.id].push_back(t);
+			(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
 		}
 
 		frame->logtablewidget()->setEnabled(true);
-		updateCommitLogTableLater(frame, 100); // ミコットログを更新（100ms後）
+		updateCommitLogTable(frame, 100); // ミコットログを更新（100ms後）
 		if (canceled) return;
 
 		QString branch_name;
@@ -3758,8 +3770,9 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		Git::CommitItem item;
 		item.parent_ids.push_back(currentBranch().id);
 		item.message = tr("Uncommited changes");
-		auto p = getCommitLogPtr(frame);
-		p->insert(p->begin(), item);
+		auto logptr = getCommitLogPtr(frame);
+		logptr->list.insert(logptr->list.begin(), item);
+		logptr->updateIndex();
 	}
 
 	frame->prepareLogTableWidget();
@@ -5081,6 +5094,21 @@ const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame const *fram
 	return nullptr;
 }
 
+const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame const *frame, Git::CommitID const &id) const
+{
+	auto const &logs = getCommitLog(frame);
+#if 0
+	for (auto const &item : logs.list) {
+		if (item.commit_id == id) {
+			return &item;
+		}
+	}
+	return nullptr;
+#else
+	return logs.find(id);
+#endif
+}
+
 QImage MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const
 {
 	QImage icon;
@@ -5143,9 +5171,8 @@ void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 
 	Git::CommitItem const *commit = selectedCommitItem(frame);
 	if (commit) {
-		if (commit->commit_id) {
-			m->commit_detail_getter.request(commit->commit_id);
-		}
+		m->commit_detail_getter.query(commit->commit_id, true, true); // 詳細情報の更新要求
+
 		// ステータスバー更新
 		updateStatusBarText(frame);
 		// 少し待ってファイルリストを更新する
@@ -6508,7 +6535,7 @@ void MainWindow::on_action_submodule_update_triggered()
  */
 void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
 {
-	updateCommitLogTableLater(frame.pointer, 100); // コミットログを更新（100ms後）
+	updateCommitLogTable(frame.pointer, 100); // コミットログを更新（100ms後）
 }
 
 void MainWindow::on_action_create_desktop_launcher_file_triggered()

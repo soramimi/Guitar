@@ -120,7 +120,6 @@ public:
 			char verify = 0; // git log format:%G?
 			std::vector<uint8_t> key_fingerprint;
 			QString trust;
-			SignatureGrade sg;
 		} sign;
 		bool has_child = false;
 		int marker_depth = -1;
@@ -128,7 +127,59 @@ public:
 		bool strange_date = false;
 		void setParents(QStringList const &list);
 	};
-	using CommitItemList = std::vector<CommitItem>;
+
+	class CommitItemList {
+	public:
+		std::vector<CommitItem> list;
+		std::map<CommitID, size_t> index;
+		size_t size() const
+		{
+			return list.size();
+		}
+		CommitItem &at(size_t i)
+		{
+			return list.at(i);
+		}
+		CommitItem const &at(size_t i) const
+		{
+			return list.at(i);
+		}
+		CommitItem &operator [] (size_t i)
+		{
+			return at(i);
+		}
+		CommitItem const &operator [] (size_t i) const
+		{
+			return at(i);
+		}
+		void clear()
+		{
+			list.clear();
+		}
+		bool empty() const
+		{
+			return list.empty();
+		}
+		void updateIndex()
+		{
+			index.clear();
+			for (size_t i = 0; i < list.size(); i++) {
+				index[list[i].commit_id] = i;
+			}
+		}
+		CommitItem *find(CommitID const &id)
+		{
+			auto it = index.find(id);
+			if (it != index.end()) {
+				return &list[it->second];
+			}
+			return nullptr;
+		}
+		CommitItem const *find(CommitID const &id) const
+		{
+			return const_cast<CommitItemList *>(this)->find(id);
+		}
+	};
 
 	class Hunk {
 	public:

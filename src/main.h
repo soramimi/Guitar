@@ -25,9 +25,8 @@ public:
 	} avatar_provider;
 
 	bool remember_and_restore_window_position = false;
-//	bool enable_high_dpi_scaling = true;
 	bool automatically_fetch_when_opening_the_repository = true;
-	unsigned int maximum_number_of_commit_item_acquisitions = 10000;
+	int maximum_number_of_commit_item_acquisitions = 10000;
 	bool show_labels = true;
 	bool show_graph = true;
 

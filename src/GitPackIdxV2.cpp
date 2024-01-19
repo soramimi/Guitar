@@ -82,23 +82,33 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 
 		QCryptographicHash sha1(QCryptographicHash::Sha1);
 
-		sha1.addData((char const *)&d.header, sizeof(d.header));
-		sha1.addData((char const *)d.objects.data(), int(size * 20));
+#if (QT_VERSION < QT_VERSION_CHECK(6, 4, 0))
+		auto sha1AddData = [&](void const *p, size_t n){
+			sha1.addData((char const *)p, n);
+		};
+#else
+		auto sha1AddData = [&](void const *p, size_t n){
+			sha1.addData(QByteArrayView((char const *)p, n));
+		};
+#endif
+
+		sha1AddData((char const *)&d.header, sizeof(d.header));
+		sha1AddData((char const *)d.objects.data(), int(size * 20));
 
 		if (!Read(checksums.data(), size4))         throw QString("failed to read the checksums");
-		sha1.addData((char const *)checksums.data(), size4);
+		sha1AddData((char const *)checksums.data(), size4);
 		if (!Read(offsets.data(), size4))           throw QString("failed to read the offset_values");
-		sha1.addData((char const *)offsets.data(), size4);
+		sha1AddData((char const *)offsets.data(), size4);
 
 		for (size_t i = 0; i < offsets.size(); i++) {
 			if (offsets[i] & 0x80) { // MSB in network byte order
 				uint64_t t;
 				if (!Read(&t, sizeof(uint64_t))) throw QString("failed to read the offset_entrie");
-				sha1.addData((char const *)&t, sizeof(uint64_t));
+				sha1AddData((char const *)&t, sizeof(uint64_t));
 			}
 		}
 		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
-		sha1.addData((char const *)&d.trailer.packfile_checksum, sizeof(d.trailer) - 20);
+		sha1AddData((char const *)&d.trailer.packfile_checksum, sizeof(d.trailer) - 20);
 
 		QByteArray chksum = sha1.result();
 		Q_ASSERT(chksum.size() == 20);

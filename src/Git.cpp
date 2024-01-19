@@ -14,10 +14,6 @@
 #include <set>
 #include <optional>
 
-#define DEBUGLOG 0
-
-
-
 Git::CommitID::CommitID(const QString &qid)
 {
 	assign(qid);
@@ -254,11 +250,10 @@ bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPt
 		qDebug() << "Invalid git command: " << gitCommand();
 		return false;
 	}
-#if DEBUGLOG
-	qDebug() << "exec: git " << arg;
-	QTime timer;
-	timer.start();
-#endif
+
+	QElapsedTimer _timer;
+	_timer.start();
+
 	clearResult();
 
 	QString env;
@@ -321,9 +316,7 @@ bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPt
 		ok = DoIt();
 	}
 
-#if DEBUGLOG
-	qDebug() << timer.elapsed() << "ms";
-#endif
+	// qDebug() << _timer.elapsed() << "ms";
 
 	return ok;
 }
@@ -629,9 +622,6 @@ QList<Git::Branch> Git::branches()
 	QList<BranchItem> branches;
 	git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
 	QString s = resultQString();
-#if DEBUGLOG
-	qDebug() << s;
-#endif
 
 	QStringList lines = misc::splitLines(s);
 	for (QString const &line : lines) {
@@ -755,7 +745,6 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 					item.commit_id = val;
 				} else if (key == "gpg") { // %G? 署名検証結果
 					item.sign.verify = *val.utf16();
-					item.sign.sg = Git::evaluateSignature(item.sign.verify);
 				} else if (key == "key") { // %GF 署名フィンガープリント
 					sign_fp = val.toStdString();
 				} else if (key == "trust") {
@@ -812,7 +801,7 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 		for (QString const &line : lines) {
 			auto item = parseCommitItem(line);
 			if (item) {
-				items.push_back(*item);
+				items.list.push_back(*item);
 			}
 		}
 	}

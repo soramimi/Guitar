@@ -138,7 +138,7 @@ void SettingsDialog::loadSettings(ApplicationSettings *as)
 
 	s.beginGroup("Behavior");
 	GetValue<bool>(s, "AutomaticFetch")                      >> as->automatically_fetch_when_opening_the_repository;
-	GetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   >> as->maximum_number_of_commit_item_acquisitions;
+	GetValue<int>(s, "MaxCommitItemAcquisitions")            >> as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 
 	s.beginGroup("Visual");
@@ -178,7 +178,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 
 	s.beginGroup("Behavior");
 	SetValue<bool>(s, "AutomaticFetch")                      << as->automatically_fetch_when_opening_the_repository;
-	SetValue<unsigned int>(s, "MaxCommitItemAcquisitions")   << as->maximum_number_of_commit_item_acquisitions;
+	SetValue<int>(s, "MaxCommitItemAcquisitions")            << as->maximum_number_of_commit_item_acquisitions;
 	s.endGroup();
 
 	s.beginGroup("Visual");

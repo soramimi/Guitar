@@ -67,9 +67,9 @@ const Git::CommitItem *RepositoryWrapperFrame::commitItem(int row)
 	return mainwindow()->commitItem(mainwindow()->frame(), row);
 }
 
-QIcon RepositoryWrapperFrame::signatureVerificationIcon(char s, int row) const
+QIcon RepositoryWrapperFrame::signatureVerificationIcon(Git::CommitID const &id) const
 {
-	return mainwindow()->signatureVerificationIcon(s, row);
+	return mainwindow()->signatureVerificationIcon(id);
 }
 
 QImage RepositoryWrapperFrame::committerIcon(int row, QSize size) const

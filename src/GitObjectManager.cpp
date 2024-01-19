@@ -288,7 +288,7 @@ Git::Object GitObjectCache::catFile(Git::CommitID const &id)
 		size_t i = n;
 		while (i > 0) {
 			i--;
-			if (item_id(i) == id.toQString()) {
+			if (item_id(i) == id) {
 				ItemPtr item = items[i];
 				if (i + 1 < n) {
 					items.erase(items.begin() + i);
