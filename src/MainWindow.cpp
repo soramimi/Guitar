@@ -4980,15 +4980,15 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, const 
 		setLogEnabled(g, true);
 		if (op == CheckoutDialog::Operation::HeadDetached) {
 			if (id.isValid()) {
-				ok = g->git(QString("checkout \"%1\"").arg(id.toQString()), true);
+				ok = g->git(QString("checkout \"%1\"").arg(id.toQString()));
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
-				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id.toQString()), true);
+				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id.toQString()));
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
 			if (!name.isEmpty()) {
-				ok = g->git(QString("checkout \"%1\"").arg(name), true);
+				ok = g->git(QString("checkout \"%1\"").arg(name));
 			}
 		}
 		if (ok) {
@@ -5727,7 +5727,10 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	GitPtr g = git({}, {}, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
-	bool f = g->git(cmd, false, false, getPtyProcess());
+	Git::Option opt;
+	opt.chdir = false;
+	opt.pty = getPtyProcess();
+	bool f = g->git(cmd, opt);
 	{
 		QElapsedTimer time;
 		time.start();

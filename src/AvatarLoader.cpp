@@ -30,8 +30,6 @@ struct AvatarLoader::Private {
 
 	WebContext webcx = {WebClient::HTTP_1_1};
 	WebClientPtr web;
-
-//	std::set<QObject *> listeners;
 };
 
 AvatarLoader::AvatarLoader(QObject *parent)
@@ -60,40 +58,23 @@ void AvatarLoader::run()
 {
 	m->web = std::make_shared<WebClient>(&m->webcx);
 
-	std::chrono::system_clock::time_point time_notify;
-
-	const int NOTIFY_DELAY_ms = 200;
-
-	bool notify = false;
-
 	while (1) {
-		if (notify) {
-			emit ready();
-			notify = false;
-			time_notify = {};
-		}
 		RequestItem request;
 		{
 			std::unique_lock<std::mutex> lock(m->mutex);
 			if (isInterruptionRequested()) return;
-			for (size_t i = 0; i < m->requests.size(); i++) {
-				if (m->requests[i].state == Idle) {
-					m->requests[i].state = Busy;
-					request = m->requests[i];
+			size_t i = m->requests.size();
+			while (i > 0) {
+				i--;
+				RequestItem *req = &m->requests[i];
+				if (req->state == Idle) {
+					req->state = Busy;
+					request = *req;
 					break;
 				}
 			}
 			if (request.state == Idle) {
-				auto now = std::chrono::system_clock::now();
-				if (time_notify == std::chrono::system_clock::time_point()) {
-					m->condition.wait(lock);
-				} else {
-					if (time_notify > now) {
-						m->condition.wait_for(lock, time_notify - now);
-					}
-					notify = true;
-				}
-				time_notify = {};
+				m->condition.wait(lock);
 			}
 			if (isInterruptionRequested()) return;
 		}
@@ -114,8 +95,8 @@ void AvatarLoader::run()
 
 				QStringList urls;
 				auto const &provider = global->appsettings.avatar_provider;
-				if (provider.gravatar)   urls.append(QString("https://www.gravatar.com/avatar/%1?s=%2").arg(id).arg(ICON_SIZE));
-				if (provider.libravatar) urls.append(QString("https://www.libravatar.org/avatar/%1?s=%2").arg(id).arg(ICON_SIZE));
+				if (provider.gravatar)   urls.append(QString("https://www.gravatar.com/avatar/%1?s=%2&d=404").arg(id).arg(ICON_SIZE));
+				if (provider.libravatar) urls.append(QString("https://www.libravatar.org/avatar/%1?s=%2&d=404").arg(id).arg(ICON_SIZE));
 
 				auto getAvatar = [&](QString const &url)->std::optional<QImage>{
 					if (m->web->get(WebClient::Request(url.toStdString())) == 200) {
@@ -147,36 +128,35 @@ void AvatarLoader::run()
 					request.image = image;
 					request.state = Done;
 				} else {
-#if 0
-					m->mainwindow->emitWriteLog(QString("Failed to fetch the avatar.\n").toUtf8(), false);
-					QString msg = QString::fromStdString(m->web->error().message() + '\n');
-					m->mainwindow->emitWriteLog(msg.toUtf8(), false);
-#else
-					qDebug() << QString("Failed to fetch the avatar.\n").toUtf8();
-#endif
+					QImage img(ICON_SIZE, ICON_SIZE, QImage::Format_ARGB32);
+					img.fill(Qt::transparent);
+					request.image = img;
+					request.state = Fail;
 				}
 			}
 			if (request.state == Busy) {
 				request.state = Fail;
 			}
+			bool notify = false;
 			{
 				std::lock_guard<std::mutex> lock(m->mutex);
-				auto now = std::chrono::system_clock::now();
-				for (size_t i = 0; i < m->requests.size(); i++) {
-					if (m->requests[i].email == request.email) {
-						if (request.state == Done) {
-							m->requests[i] = request;
-							if (time_notify == std::chrono::system_clock::time_point()) {
-								time_notify = now + std::chrono::milliseconds(NOTIFY_DELAY_ms);
-							} else if (time_notify <= now) {
-								notify = true;
-							}
+				size_t i = m->requests.size();
+				while (i > 0) {
+					i--;
+					RequestItem *req = &m->requests[i];
+					if (req->email == request.email) {
+						if (request.state == Done || request.state == Fail) {
+							*req = request;
+							notify = true;
 						} else {
 							m->requests.erase(m->requests.begin() + i);
 						}
 						break;
 					}
 				}
+			}
+			if (notify) {
+				emit ready();
 			}
 		}
 	}

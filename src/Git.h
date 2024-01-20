@@ -422,14 +422,29 @@ public:
 	std::string resultStdString() const;
 	QString resultQString() const;
 	bool chdirexec(std::function<bool ()> const &fn);
-	bool git_(QString const &arg, bool chdir, bool log = true, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {});
-	bool git(QString const &arg, bool chdir, bool errout = false, AbstractPtyProcess *pty = nullptr, const QString &prefix = {})
-	{
-		return git_(arg, chdir, true, errout, pty, prefix);
-	}
+	struct Option {
+		bool chdir = true;
+		bool log = true;
+		bool errout = false;
+		AbstractPtyProcess *pty = nullptr;
+		QString prefix;
+	};
+	bool git(QString const &arg, Option const &opt);
 	bool git(QString const &arg)
 	{
-		return git(arg, true);
+		return git(arg, {});
+	}
+	bool git_nolog(QString const &arg)
+	{
+		Option opt;
+		opt.log = false;
+		return git(arg, opt);
+	}
+	bool git_nochdir(QString const &arg)
+	{
+		Option opt;
+		opt.chdir = false;
+		return git(arg, opt);
 	}
 
 	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);

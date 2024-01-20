@@ -242,7 +242,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPtyProcess *pty, QString const &prefix)
+bool Git::git(QString const &arg, Option const &opt)
 {
 	// qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
@@ -269,14 +269,14 @@ bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPt
 	auto DoIt = [&](){
 		QString cmd;
 #ifdef _WIN32
-		cmd = prefix;
+		cmd = opt.prefix;
 #else
 
 #endif
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (log && m->info.fn_log_writer_callback) {
+		if (opt.log && m->info.fn_log_writer_callback) {
 			QByteArray ba;
 			ba.append("> git ");
 			ba.append(arg.toUtf8());
@@ -284,17 +284,20 @@ bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPt
 			m->info.fn_log_writer_callback(m->info.callback_cookie, ba.data(), (int)ba.size());
 		}
 
-		if (pty) {
-			pty->start(cmd, env, pty->userVariant());
+		if (opt.pty) {
+			opt.pty->start(cmd, env, opt.pty->userVariant());
 			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;
 			proc.start(cmd, false);
 			m->process_exit_code = proc.wait();
 
-			if (errout) {
+			if (opt.errout) {
 				m->result = proc.errbytes;
 			} else {
+				if (!proc.errbytes.empty()) {
+					qDebug() << proc.errstring();
+				}
 				m->result = proc.outbytes;
 			}
 			m->error_message = proc.errstring();
@@ -305,9 +308,9 @@ bool Git::git_(QString const &arg, bool chdir, bool log, bool errout, AbstractPt
 
 	bool ok = false;
 
-	if (chdir) {
-		if (pty) {
-			pty->setChangeDir(workingDir());
+	if (opt.chdir) {
+		if (opt.pty) {
+			opt.pty->setChangeDir(workingDir());
 			ok = DoIt();
 		} else {
 			ok = chdirexec(DoIt);
@@ -357,7 +360,7 @@ bool Git::isValidWorkingCopy() const
 
 QString Git::version()
 {
-	git("--version", false);
+	git_nochdir("--version");
 	return resultQString().trimmed();
 }
 
@@ -371,7 +374,7 @@ bool Git::init()
 	if (QDir::setCurrent(dir)) {
 		QString gitdir = dir / ".git";
 		if (!QFileInfo(gitdir).isDir()) {
-			git("init", false);
+			git_nochdir("init");
 			if (QFileInfo(gitdir).isDir()) {
 				ok = true;
 			}
@@ -794,7 +797,7 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
-	git_(cmd, true, false, false, nullptr, {});
+	git_nolog(cmd);
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
 		QStringList lines = misc::splitLines(text);
@@ -819,7 +822,7 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
-	git_(cmd, true, false, false, nullptr, {});
+	git_nolog(cmd);
 	if (getProcessExitCode() == 0) {
 		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
 			QStringList list;
@@ -1007,7 +1010,7 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	auto DoIt = [&](){
 		QString cmd = "clone --progress \"%1\" \"%2\"";
 		cmd = cmd.arg(data.url).arg(data.subdir);
-		ok = git(cmd, false, true, pty);
+		ok = git_nochdir(cmd);
 	};
 
 	if (pty) {
@@ -1062,15 +1065,16 @@ bool Git::submodule_add(const CloneData &data, bool force, AbstractPtyProcess *p
 	}
 	cmd += " \"%1\" \"%2\"";
 	cmd = cmd.arg(data.url).arg(data.subdir);
-	ok = git(cmd, true, true, pty);
+	Option opt;
+	opt.errout = true;
+	opt.pty = pty;
+	ok = git(cmd, opt);
 
 	return ok;
 }
 
 bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *pty)
 {
-	bool ok = false;
-
 	QString cmd = "submodule update";
 	if (data.init) {
 		cmd += " --init";
@@ -1078,10 +1082,10 @@ bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *
 	if (data.recursive) {
 		cmd += " --recursive";
 	}
-	ok = git(cmd, true, true, pty);
-
-	return ok;
-
+	Option opt;
+	opt.errout = true;
+	opt.pty = pty;
+	return git(cmd, opt);
 }
 
 QString Git::encodeQuotedText(QString const &str)
@@ -1123,7 +1127,9 @@ bool Git::commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess 
 	text = encodeQuotedText(text);
 	cmd += QString(" -m %1").arg(text);
 
-	return git(cmd, true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	return git(cmd, opt);
 }
 
 bool Git::commit(QString const &text, bool sign, AbstractPtyProcess *pty)
@@ -1156,13 +1162,17 @@ void Git::push_u(bool set_upstream, QString const &remote, QString const &branch
 		cmd += " -u \"%1\" \"%2\"";
 		cmd = cmd.arg(remote).arg(branch);
 	}
-	git(cmd, true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	git(cmd, opt);
 }
 
 bool Git::push_tags(AbstractPtyProcess *pty)
 {
 	QString cmd = "push --tags";
-	return git(cmd, true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	return git(cmd, opt);
 }
 
 Git::FileStatusList Git::status_s_()
@@ -1277,7 +1287,9 @@ void Git::unstage_all()
 
 void Git::pull(AbstractPtyProcess *pty)
 {
-	git("pull", true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	git("pull", opt);
 }
 
 void Git::fetch(AbstractPtyProcess *pty, bool prune)
@@ -1286,13 +1298,17 @@ void Git::fetch(AbstractPtyProcess *pty, bool prune)
 	if (prune) {
 		cmd += " --prune";
 	}
-	git(cmd, true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	git(cmd, opt);
 }
 
 void Git::fetch_tags_f(AbstractPtyProcess *pty)
 {
 	QString cmd = "fetch --tags -f";
-	git(cmd, true, false, pty);
+	Option opt;
+	opt.pty = pty;
+	git(cmd, opt);
 }
 
 QStringList Git::make_branch_list_()
@@ -1387,11 +1403,12 @@ Git::User Git::getUser(Source purpose)
 	QString arg1;
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
-	bool chdir = !global;
-	if (git(QString("config %1 user.name").arg(arg1), chdir)) {
+	Option opt;
+	opt.chdir = !global;
+	if (git(QString("config %1 user.name").arg(arg1), opt)) {
 		user.name = resultQString().trimmed();
 	}
-	if (git(QString("config %1 user.email").arg(arg1), chdir)) {
+	if (git(QString("config %1 user.email").arg(arg1), opt)) {
 		user.email = resultQString().trimmed();
 	}
 	return user;
@@ -1400,13 +1417,14 @@ Git::User Git::getUser(Source purpose)
 void Git::setUser(const User &user, bool global)
 {
 	bool unset = !user;
-	bool chdir = !global;
-	QString opt = global ? "--global" : "--local";
+	QString config = global ? "--global" : "--local";
 	if (unset) {
-		opt += " --unset";
+		config += " --unset";
 	}
-	git(QString("config %1 user.name %2").arg(opt).arg(encodeQuotedText(user.name)), chdir);
-	git(QString("config %1 user.email %2").arg(opt).arg(encodeQuotedText(user.email)), chdir);
+	Option opt;
+	opt.chdir = !global;
+	git(QString("config %1 user.name %2").arg(config).arg(encodeQuotedText(user.name)), opt);
+	git(QString("config %1 user.email %2").arg(config).arg(encodeQuotedText(user.email)), opt);
 }
 
 bool Git::reset_head1()
@@ -1684,8 +1702,9 @@ QString Git::signingKey(Source purpose)
 	if (purpose == Source::Local) arg1 = "--local";
 	QString cmd = "config %1 user.signingkey";
 	cmd = cmd.arg(arg1);
-	bool chdir = purpose != Source::Global;
-	if (git(cmd, chdir)) {
+	Option opt;
+	opt.chdir = purpose != Source::Global;
+	if (git(cmd, opt)) {
 		return resultQString().trimmed();
 	}
 	return QString();
@@ -1699,7 +1718,9 @@ bool Git::setSigningKey(QString const &id, bool global)
 
 	QString cmd = "config %1 %2 user.signingkey %3";
 	cmd = cmd.arg(global ? "--global" : "--local").arg(id.isEmpty() ? "--unset" : "").arg(id);
-	return git(cmd, !global);
+	Option opt;
+	opt.chdir = !global;
+	return git(cmd, opt);
 }
 
 Git::SignPolicy Git::signPolicy(Source source)
@@ -1709,8 +1730,9 @@ Git::SignPolicy Git::signPolicy(Source source)
 	if (source == Source::Local)  arg1 = "--local";
 	QString cmd = "config %1 commit.gpgsign";
 	cmd = cmd.arg(arg1);
-	bool chdir = source != Source::Global;
-	if (git(cmd, chdir)) {
+	Option opt;
+	opt.chdir = source != Source::Global;
+	if (git(cmd, opt)) {
 		QString t = resultQString().trimmed();
 		if (t == "false") return SignPolicy::False;
 		if (t == "true")  return SignPolicy::True;
@@ -1734,8 +1756,9 @@ bool Git::setSignPolicy(Source source, SignPolicy policy)
 		arg2 = "--unset";
 	}
 	cmd = cmd.arg(arg1).arg(arg2).arg(arg3);
-	bool chdir = source != Source::Global;
-	return git(cmd, chdir);
+	Option opt;
+	opt.chdir = source != Source::Global;
+	return git(cmd, opt);
 }
 
 bool Git::configGpgProgram(QString const &path, bool global)
@@ -1751,7 +1774,7 @@ bool Git::configGpgProgram(QString const &path, bool global)
 	if (!path.isEmpty()) {
 		cmd += QString("\"%1\"").arg(path);
 	}
-	return git(cmd, false);
+	return git_nochdir(cmd);
 }
 
 // Diff
