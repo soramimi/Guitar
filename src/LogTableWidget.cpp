@@ -221,19 +221,19 @@ void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, 
 {
 	if (x0 == x1) {
 		path->moveTo(x0, y0);
-        path->lineTo(x1, y1);
-    } else {
-        double ym = bend_early ? (y0 + r) : (y1 - r);
-        if (bend_early) {
-            path->moveTo(x0, y0);
-            path->cubicTo(x0, ym, x1, ym, x1, ym + ym - y0);
-            path->lineTo(x1, y1);
-        } else {
-            path->moveTo(x0, y0);
-            path->lineTo(x0, ym + ym - y1);
-            path->cubicTo(x0, ym, x1, ym, x1, y1);
-        }
-    }
+		path->lineTo(x1, y1);
+	} else {
+		double ym = bend_early ? (y0 + r) : (y1 - r);
+		if (bend_early) {
+			path->moveTo(x0, y0);
+			path->cubicTo(x0, ym, x1, ym, x1, ym + ym - y0);
+			path->lineTo(x1, y1);
+		} else {
+			path->moveTo(x0, y0);
+			path->lineTo(x0, ym + ym - y1);
+			path->cubicTo(x0, ym, x1, ym, x1, y1);
+		}
+	}
 }
 
 void LogTableWidget::paintEvent(QPaintEvent *e)

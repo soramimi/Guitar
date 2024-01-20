@@ -72,7 +72,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		};
 
 		if (h->flg & FEXTRA) {
-            input->read((char *)ibuf, 2);
+			input->read((char *)ibuf, 2);
 			n = ((uint8_t)ibuf[1] << 8) | (uint8_t)ibuf[0];
 			input->seek(input->pos() + n);
 		}
@@ -144,12 +144,12 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 				unsigned char obuf[65536];
 				stream.next_out = obuf;            /* discard the output */
 				stream.avail_out = sizeof(obuf);
-                if (maxsize != -1 && stream.total_out + stream.avail_out > (unsigned)maxsize && (unsigned)maxsize >= stream.total_out) {
-                    stream.avail_out = size_t(maxsize - stream.total_out);
+				if (maxsize != -1 && stream.total_out + stream.avail_out > (unsigned)maxsize && (unsigned)maxsize >= stream.total_out) {
+					stream.avail_out = size_t(maxsize - stream.total_out);
 				}
 				uLong total_out = stream.total_out;
-                err = ::inflate(&stream, Z_NO_FLUSH);
-                int n = int(stream.total_out - total_out);
+				err = ::inflate(&stream, Z_NO_FLUSH);
+				int n = int(stream.total_out - total_out);
 
 				if (output) {
 					if (write) {
@@ -165,7 +165,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 					if (!ok) throw QString("failed to write to the output device");
 				}
 
-                crc = crc32(crc, (unsigned char const *)obuf, (size_t)n);
+				crc = crc32(crc, (unsigned char const *)obuf, (size_t)n);
 				if (err == Z_STREAM_END) {
 					break;
 				}
@@ -183,7 +183,7 @@ bool gunzip::decode(QIODevice *input, QIODevice *output)
 		Close();
 
 		input->seek(inpos + stream.total_in);
-        input->read((char *)ibuf, 8);
+		input->read((char *)ibuf, 8);
 
 		auto ReadU32LE = [](void const *p)->uint32_t{
 			auto const *q = (uint8_t const *)p;

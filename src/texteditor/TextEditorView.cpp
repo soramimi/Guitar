@@ -22,7 +22,7 @@ struct TextEditorView::Private {
 
 	PreEditText preedit;
 	QFont text_font;
-    InputMethodPopup *ime_popup = nullptr;
+	InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
 	QSize basic_character_size;

@@ -202,7 +202,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 			auto ParseNumber = [&](){
 				size_t v = 0;
 				while (isdigit(*p & 0xff)) {
-                    v = v * 10 + size_t(*p - '0');
+					v = v * 10 + size_t(*p - '0');
 					p++;
 				}
 				return v;
@@ -230,8 +230,8 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 	});
 	size_t h = hunks.size();
 	while (linenum > 0 || h > 0) {
-        while (h > 0) {
-            int hunk_number = int(h - 1);
+		while (h > 0) {
+			int hunk_number = int(h - 1);
 			HunkItem const &hi = hunks[hunk_number];
 			if (hi.pos + hi.len < linenum) {
 				break;
@@ -451,8 +451,8 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 
 void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit)
 {
-    (void)submodule;
-    (void)submodule_commit;
+	(void)submodule;
+	(void)submodule_commit;
 
 	m->original_lines.clear();
 

@@ -21,11 +21,11 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Cont
 
 	ui->groupBox_remote->setVisible(open_repository_menu);
 
-    ui->label_editable_name->setText(repository.name);
-    ui->label_editable_name->setVisible(true);
-    ui->lineEdit_name->setText(repository.name);
-    ui->lineEdit_name->setVisible(false);
-    ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
+	ui->label_editable_name->setText(repository.name);
+	ui->label_editable_name->setVisible(true);
+	ui->lineEdit_name->setText(repository.name);
+	ui->lineEdit_name->setVisible(false);
+	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
 
 	ui->pushButton_close->setFocus();
 

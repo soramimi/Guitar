@@ -30,21 +30,21 @@ static unsigned char minus_image[9][9] = {
 TraditionalWindowsStyleTreeControl::TraditionalWindowsStyleTreeControl()
 {
 	// create brush
-    {
-        QImage img(2, 2, QImage::Format_RGB32);
-        QRgb *p;
-        QRgb t = qRgb(0xff, 0xff, 0xff);
-        QRgb u = qRgb(0x80, 0x80, 0x80);
+	{
+		QImage img(2, 2, QImage::Format_RGB32);
+		QRgb *p;
+		QRgb t = qRgb(0xff, 0xff, 0xff);
+		QRgb u = qRgb(0x80, 0x80, 0x80);
 		p = reinterpret_cast<QRgb *>(img.scanLine(0));
-        p[0] = u;
-        p[1] = t;
+		p[0] = u;
+		p[1] = t;
 		p = reinterpret_cast<QRgb *>(img.scanLine(1));
-        p[0] = t;
-        p[1] = u;
-        br_branch = QBrush(img);
-    }
+		p[0] = t;
+		p[1] = u;
+		br_branch = QBrush(img);
+	}
 
-    // create open/close buttons
+	// create open/close buttons
 	QImage img_plus(9, 9, QImage::Format_RGB32);
 	QImage img_minus(9, 9, QImage::Format_RGB32);
 	for (int y = 0; y < 9; y++) {

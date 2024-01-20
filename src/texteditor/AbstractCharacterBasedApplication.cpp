@@ -1748,8 +1748,8 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 		std::vector<int> pts;
 		makeColumnPosList(&pts);
 		if (pts.size() > 1) {
-            int newcol = pts.back();
-            int newindex = (int)pts.size() - 1;
+			int newcol = pts.back();
+			int newindex = (int)pts.size() - 1;
 			for (int i = 0; i + 1 < (int)pts.size(); i++) {
 				int x = pts[i];
 				if (x <= col && col < pts[i + 1]) {
@@ -1760,11 +1760,6 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 				}
 			}
 			index = newindex;
-//@			col = newcol;
-//		} else if (!pts.empty()) {
-//			col = pts.back();
-//		} else {
-//			col = 0;
 		}
 	}
 

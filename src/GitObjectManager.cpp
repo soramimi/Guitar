@@ -355,8 +355,8 @@ Git::CommitID GitObjectCache::getCommitIdFromTag(QString const &tag)
 			if (!obj.content.isEmpty()) {
 				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
 					if (!commit_id.isValid()) {
-                        if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
-                            Git::CommitID id2(QString::fromUtf8(ptr + 7, int(len - 7)).trimmed());
+						if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
+							Git::CommitID id2(QString::fromUtf8(ptr + 7, int(len - 7)).trimmed());
 							if (Git::isValidID(id2)) {
 								commit_id = id2;
 							}

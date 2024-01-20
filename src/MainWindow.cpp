@@ -619,18 +619,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 		}
 	} else if (et == QEvent::FocusIn) {
-		auto SelectItem = [](QListWidget *w){
-			int row = w->currentRow();
-			if (row < 0) {
-				row = 0;
-				w->setCurrentRow(row);
-			}
-			auto *item = w->item(row);
-			if (item) {
-				item->setSelected(true);
-				w->viewport()->update();
-			}
-		};
 		// ファイルリストがフォーカスを得たとき、diffビューを更新する。（コンテキストメニュー対応）
 		if (watched == frame()->unstagedFileslistwidget()) {
 			m->last_focused_file_list = watched;

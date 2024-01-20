@@ -174,8 +174,8 @@ void RingSlider::mouseDoubleClickEvent(QMouseEvent *e)
 {
 	int w = slider_rect_.width();
 	if (w > 1) {
-        double x = double(e->pos().x() - slider_rect_.x()) * (maximum() - minimum()) / (w - 1);
-        int v = (int)floor(x + 0.5);
+		double x = double(e->pos().x() - slider_rect_.x()) * (maximum() - minimum()) / (w - 1);
+		int v = (int)floor(x + 0.5);
 		v = std::clamp(v, minimum(), maximum());
 		setValue(v);
 	}

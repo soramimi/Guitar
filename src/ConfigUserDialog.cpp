@@ -148,6 +148,7 @@ void ConfigUserDialog::on_lineEdit_local_email_textEdited(const QString &text)
 
 void ConfigUserDialog::on_checkBox_unset_local_stateChanged(int arg1)
 {
+	(void)arg1;
 	bool f = ui->checkBox_unset_local->isChecked();
 	ui->lineEdit_local_name->setEnabled(!f);
 	ui->lineEdit_local_email->setEnabled(!f);

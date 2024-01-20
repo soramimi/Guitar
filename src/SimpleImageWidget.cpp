@@ -24,6 +24,8 @@ void SimpleImageWidget::setImage(const QImage &image)
  */
 void SimpleImageWidget::paintEvent(QPaintEvent *event)
 {
+	(void)event;
+
 	// ウィンドウに内接するように画像を描画
 
 	int dw = width();

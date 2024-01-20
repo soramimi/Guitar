@@ -235,6 +235,9 @@ void EditProfilesDialog::on_pushButton_down_clicked()
 
 void EditProfilesDialog::on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)
 {
+	(void)current;
+	(void)previous;
+
 	updateUI();
 
 	int row = ui->tableWidget->currentRow();
@@ -350,6 +353,7 @@ void EditProfilesDialog::on_pushButton_get_icon_from_network_clicked()
 
 void EditProfilesDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
+	(void)item;
 	if (enable_double_click_) {
 		done(QDialog::Accepted);
 	}

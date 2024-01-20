@@ -634,7 +634,7 @@ struct NamedCommitItem {
 		Tag,
 	};
 	Type type = Type::None;
-    QString remote;
+	QString remote;
 	QString name;
 	Git::CommitID id;
 };

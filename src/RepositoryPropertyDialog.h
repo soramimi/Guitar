@@ -19,7 +19,7 @@ private:
 	Ui::RepositoryPropertyDialog *ui;
 	RepositoryData repository;
 	bool remote_changed = false;
-    bool name_changed = false;
+	bool name_changed = false;
 	Git::Context const *gcx;
 	void updateRemotesTable();
 	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
@@ -32,14 +32,14 @@ public:
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;
-    bool isNameChanged() const;
+	bool isNameChanged() const;
 	QString getName();
 private slots:
 	void on_pushButton_remote_add_clicked();
 	void on_pushButton_remote_edit_clicked();
 	void on_pushButton_remote_remove_clicked();
 	void on_pushButton_remote_menu_clicked();
-    void on_pushButton_edit_name_clicked();
+	void on_pushButton_edit_name_clicked();
 
 	// QDialog interface
 public slots:

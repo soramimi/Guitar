@@ -74,7 +74,7 @@ QString qjoinpath(char16_t const *left, char16_t const *right)
 {
 	std::vector<char16_t> vec;
 	joinpath_(left, right, &vec);
-    if (vec.empty()) return QString();
+	if (vec.empty()) return QString();
 	return QString::fromUtf16(&vec[0], vec.size());
 }
 

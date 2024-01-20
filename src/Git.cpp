@@ -1526,8 +1526,8 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 				c = *ptr;
 			}
 			if (c == '\r' || c == '\n' || c == 0) {
-                int d = 0;
-                QString line = QString::fromUtf8(left, int(ptr - left));
+				int d = 0;
+				QString line = QString::fromUtf8(left, int(ptr - left));
 				if (left < ptr) {
 					d = *left & 0xff;
 				}
@@ -1614,7 +1614,7 @@ QString Git::trimPath(QString const &s)
 		}
 		return QString::fromUtf8(ba);
 	}
-    if (left == begin && right == end) return s;
+	if (left == begin && right == end) return s;
 	return QString::fromUtf16((char16_t const *)left, int(right - left));
 }
 

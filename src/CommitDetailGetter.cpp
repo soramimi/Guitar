@@ -18,7 +18,7 @@ void CommitDetailGetter::start(GitPtr git)
 	git_ = git;
 	threads_.clear();
 	threads_.resize(4);
-	for (int i = 0; i < threads_.size(); i++) {
+	for (size_t i = 0; i < threads_.size(); i++) {
 		std::thread th([&](){
 			while (1) {
 				Request item;
@@ -90,7 +90,7 @@ void CommitDetailGetter::stop()
 		requests_.clear();
 		cache_.clear();
 	}
-	for (int i = 0; i < threads_.size(); i++) {
+	for (size_t i = 0; i < threads_.size(); i++) {
 		if (threads_[i].joinable()) {
 			threads_[i].join();
 		}
@@ -139,7 +139,7 @@ CommitDetailGetter::Data CommitDetailGetter::query(Git::CommitID const &id, bool
 			item.id = id;
 			requests_.push_back(item);
 
-			const int MAX = std::min(1000, global->appsettings.maximum_number_of_commit_item_acquisitions);
+			const size_t MAX = std::min(1000, global->appsettings.maximum_number_of_commit_item_acquisitions);
 
 			size_t n = requests_.size();
 			if (n > MAX) {

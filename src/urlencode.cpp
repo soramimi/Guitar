@@ -95,8 +95,8 @@ static void url_decode_(char const *ptr, char const *end, std::vector<char> *out
 			tmp[2] = 0;
 			c = (unsigned char)strtol(tmp, nullptr, 16);
 			ptr += 2;
-        }
-        vecprint(out, (char)c);
+		}
+		vecprint(out, (char)c);
 	}
 }
 
@@ -106,8 +106,8 @@ std::string url_decode(char const *str, char const *end)
 		return std::string();
 	}
 
-    std::vector<char> out;
-    out.reserve(size_t(end - str + 10));
+	std::vector<char> out;
+	out.reserve(size_t(end - str + 10));
 
 	url_decode_(str, end, &out);
 

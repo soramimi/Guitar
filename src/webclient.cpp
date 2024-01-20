@@ -806,7 +806,12 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 						X509_NAME_ENTRY *entry = X509_NAME_get_entry(x509name, i);
 						ASN1_STRING *asn1str = X509_NAME_ENTRY_get_data(entry);
 						int asn1len = ASN1_STRING_length(asn1str);
+#if 0
 						unsigned char *p = ASN1_STRING_data(asn1str);
+#else
+						unsigned char const *p = ASN1_STRING_get0_data(asn1str);
+
+#endif
 						std::string str((char const *)p, asn1len);
 						out->push_back(str);
 					}
