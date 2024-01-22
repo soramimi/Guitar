@@ -1,8 +1,6 @@
 #include "MyToolButton.h"
-
 #include "MainWindow.h"
 #include "SubmoduleMainWindow.h"
-
 #include <QPainter>
 
 MyToolButton::MyToolButton(QWidget *parent)
@@ -37,7 +35,7 @@ void MyToolButton::paintEvent(QPaintEvent *event)
 	MainWindow *mw = qobject_cast<MainWindow *>(window());
 	Q_ASSERT(mw);
 
-	if (indicator == Dot && number > 0) {
+	if (indicator == Dot && number > 0) { // draw red dot
 		QPainter pr(this);
 		pr.setRenderHint(QPainter::Antialiasing);
 		int z = 10;
@@ -45,16 +43,16 @@ void MyToolButton::paintEvent(QPaintEvent *event)
 		pr.setPen(Qt::NoPen);
 		pr.setBrush(QColor(255, 0, 0));
 		pr.drawEllipse(r);
-	} else if (indicator == Number && number >= 0) {
-		int w = mw->digitWidth();
-		int h = mw->digitHeight();
+	} else if (indicator == Number && number >= 0) { // draw red number
+		int w = MainWindow::DIGIT_WIDTH;
+		int h = MainWindow::DIGIT_HEIGHT;
 		QPixmap pm;
 		{
 			char tmp[100];
 			int n = sprintf(tmp, "%u", number);
 
 			pm = QPixmap((w + 1) * n + 3, h + 4);
-			pm.fill(Qt::red);
+			pm.fill(Qt::red); // fill with red
 
 			QPainter pr(&pm);
 			for (int i = 0; i < n; i++) {

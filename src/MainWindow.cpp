@@ -815,28 +815,53 @@ const QPixmap &MainWindow::digitsPixmap() const
 	return m->digits;
 }
 
-int MainWindow::digitWidth() const
-{
-	return 5;
-}
 
-int MainWindow::digitHeight() const
-{
-	return 7;
-}
 
+
+/**
+ * @brief MainWindow::drawDigit
+ * @param pr QPainter
+ * @param x X座標
+ * @param y Y座標
+ * @param n 数字
+ * @return
+ *
+ * 0〜9の小さい数字を描画する
+ */
 void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
 {
-	int w = digitWidth();
-	int h = digitHeight();
+	int w = DIGIT_WIDTH;
+	int h = DIGIT_HEIGHT;
 	pr->drawPixmap(x, y, w, h, m->digits, n * w, 0, w, h);
 }
 
+/**
+ * @brief MainWindow::defaultWorkingDir
+ *
+ * デフォルトの作業ディレクトリを返す
+ */
 QString MainWindow::defaultWorkingDir() const
 {
 	return appsettings()->default_working_dir;
 }
 
+/**
+ * @brief MainWindow::currentWorkingCopyDir
+ * @return 現在の作業ディレクトリ
+ *
+ * 現在の作業ディレクトリを返す
+ */
+QString MainWindow::currentWorkingCopyDir() const
+{
+	return m->current_repo.local_dir;
+}
+
+/**
+ * @brief MainWindow::signatureVerificationIcon
+ * @param id コミットID
+ *
+ * コミットの署名検証結果に応じたアイコンを返す
+ */
 QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 {
 	char c = 0;
@@ -851,26 +876,28 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 
 	Git::SignatureGrade sg = Git::evaluateSignature(c);
 	switch (sg) {
-	case Git::SignatureGrade::Good:
+	case Git::SignatureGrade::Good: // 署名あり、検証OK
 		return m->signature_good_icon;
-	case Git::SignatureGrade::Bad:
+	case Git::SignatureGrade::Bad: // 署名あり、検証NG
 		return m->signature_bad_icon;
 	case Git::SignatureGrade::Unknown:
 	case Git::SignatureGrade::Dubious:
 	case Git::SignatureGrade::Missing:
-		return m->signature_dubious_icon;
+		return m->signature_dubious_icon; // 署名あり、検証不明
 	}
-	return QIcon();
+
+	return QIcon(); // 署名なし
 }
 
+/**
+ * @brief MainWindow::addMenuActionProperty
+ * @param menu メニュー
+ *
+ * プロパティメニューを追加する
+ */
 QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 {
 	return menu->addAction(tr("&Property"));
-}
-
-QString MainWindow::currentWorkingCopyDir() const
-{
-	return m->current_repo.local_dir;
 }
 
 /**
@@ -895,18 +922,31 @@ Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, 
 	return nullptr;
 }
 
-QColor MainWindow::color(unsigned int i)
+/**
+ * @brief MainWindow::color
+ * @param depth 階層の深さ
+ * @return 色
+ *
+ * 階層の深さに応じた色を返す
+ */
+QColor MainWindow::color(unsigned int depth)
 {
 	unsigned int n = (unsigned int)m->graph_color.width();
 	if (n > 0) {
 		n--;
-		if (i > n) i = n;
+		if (depth > n) depth = n;
 		QRgb const *p = reinterpret_cast<QRgb const *>(m->graph_color.scanLine(0));
-		return QColor(qRed(p[i]), qGreen(p[i]), qBlue(p[i]));
+		return QColor(qRed(p[depth]), qGreen(p[depth]), qBlue(p[depth]));
 	}
 	return Qt::black;
 }
 
+/**
+ * @brief MainWindow::findRegisteredRepository
+ * @param workdir 作業ディレクトリ
+ *
+ * 登録済みのリポジトリを探す
+ */
 RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) const
 {
 	*workdir = QDir(*workdir).absolutePath();
@@ -926,6 +966,14 @@ RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) con
 	return nullptr;
 }
 
+/**
+ * @brief MainWindow::git_log_callback
+ * @param cookie
+ * @param ptr
+ * @param len
+ *
+ * git logのコールバック関数
+ */
 bool MainWindow::git_log_callback(void *cookie, const char *ptr, int len)
 {
 	auto *mw = (MainWindow *)cookie;
@@ -933,6 +981,28 @@ bool MainWindow::git_log_callback(void *cookie, const char *ptr, int len)
 	return true;
 }
 
+/**
+ * @brief MainWindow::revertAllFiles
+ *
+ * すべてのファイルをHEADに戻す
+ */
+void MainWindow::revertAllFiles()
+{
+	GitPtr g = git();
+	if (!isValidWorkingCopy(g)) return;
+
+	QString cmd = "git reset --hard HEAD";
+	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
+		g->resetAllFiles();
+		openRepository(true);
+	}
+}
+
+/**
+ * @brief MainWindow::execSetGlobalUserDialog
+ *
+ * グローバルユーザー設定ダイアログを表示する
+ */
 bool MainWindow::execSetGlobalUserDialog()
 {
 	SetGlobalUserDialog dlg(this);
@@ -946,18 +1016,15 @@ bool MainWindow::execSetGlobalUserDialog()
 	return false;
 }
 
-void MainWindow::revertAllFiles()
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	QString cmd = "git reset --hard HEAD";
-	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
-		g->resetAllFiles();
-		openRepository(true);
-	}
-}
-
+/**
+ * @brief MainWindow::addExistingLocalRepository
+ * @param dir ディレクトリ
+ * @param name 名前
+ * @param sshkey SSHキー
+ * @param open 開く
+ *
+ * 既存のリポジトリを追加する
+ */
 bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open)
 {
 	if (dir.endsWith(".git")) {
@@ -1005,6 +1072,11 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	return true;
 }
 
+/**
+ * @brief MainWindow::execWelcomeWizardDialog
+ *
+ * ようこそダイアログを表示する
+ */
 bool MainWindow::execWelcomeWizardDialog()
 {
 	WelcomeWizardDialog dlg(this);
@@ -1035,6 +1107,13 @@ bool MainWindow::execWelcomeWizardDialog()
 	return false;
 }
 
+/**
+ * @brief MainWindow::execRepositoryPropertyDialog
+ * @param repo リポジトリ
+ * @param open_repository_menu リポジトリメニューを開く
+ *
+ * リポジトリプロパティダイアログを表示する
+ */
 void MainWindow::execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu)
 {
 	QString workdir = repo.local_dir;
@@ -1057,6 +1136,15 @@ void MainWindow::execRepositoryPropertyDialog(const RepositoryData &repo, bool o
 	}
 }
 
+/**
+ * @brief MainWindow::execConfigUserDialog
+ * @param global_user グローバルユーザー
+ * @param local_user ローカルユーザー
+ * @param enable_local_user ローカルユーザーを有効にする
+ * @param reponame リポジトリ名
+ *
+ * ユーザー設定ダイアログを表示する
+ */
 void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, bool enable_local_user, const QString &reponame)
 {
 	ConfigUserDialog dlg(this, global_user, local_user, enable_local_user, reponame);
@@ -1088,6 +1176,13 @@ void MainWindow::execConfigUserDialog(const Git::User &global_user, const Git::U
 	}
 }
 
+/**
+ * @brief MainWindow::setGitCommand
+ * @param path パス
+ * @param save 保存する
+ *
+ * gitコマンドのパスを設定する
+ */
 void MainWindow::setGitCommand(QString const &path, bool save)
 {
 	appsettings()->git_command = m->gcx.git_command = executableOrEmpty(path);
@@ -1095,6 +1190,13 @@ void MainWindow::setGitCommand(QString const &path, bool save)
 	internalSaveCommandPath(path, save, "GitCommand");
 }
 
+/**
+ * @brief MainWindow::setGpgCommand
+ * @param path パス
+ * @param save 保存する
+ *
+ * gpgコマンドのパスを設定する
+ */
 void MainWindow::setGpgCommand(QString const &path, bool save)
 {
 	appsettings()->gpg_command = executableOrEmpty(path);
@@ -1106,6 +1208,13 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 	}
 }
 
+/**
+ * @brief MainWindow::setSshCommand
+ * @param path パス
+ * @param save 保存する
+ *
+ * sshコマンドのパスを設定する
+ */
 void MainWindow::setSshCommand(QString const &path, bool save)
 {
 	appsettings()->ssh_command = m->gcx.ssh_command = executableOrEmpty(path);
@@ -1113,6 +1222,11 @@ void MainWindow::setSshCommand(QString const &path, bool save)
 	internalSaveCommandPath(path, save, "SshCommand");
 }
 
+/**
+ * @brief MainWindow::checkGitCommand
+ *
+ * gitコマンドの有効性をチェックする
+ */
 bool MainWindow::checkGitCommand()
 {
 	while (1) {
@@ -1126,6 +1240,14 @@ bool MainWindow::checkGitCommand()
 	}
 }
 
+/**
+ * @brief MainWindow::saveBlobAs
+ * @param frame フレーム
+ * @param id ID
+ * @param dstpath 保存先
+ *
+ * ファイルを保存する
+ */
 bool MainWindow::saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath)
 {
 	Git::Object obj = internalCatFile(frame, id);
@@ -1141,6 +1263,14 @@ bool MainWindow::saveBlobAs(RepositoryWrapperFrame *frame, const QString &id, co
 	return false;
 }
 
+/**
+ * @brief MainWindow::saveByteArrayAs
+ * @param ba バイト配列
+ * @param dstpath 保存先
+ * @return
+ *
+ * バイト配列を保存する
+ */
 bool MainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpath)
 {
 	QFile file(dstpath);
@@ -1155,6 +1285,12 @@ bool MainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpath)
 	return false;
 }
 
+/**
+ * @brief MainWindow::makeRepositoryName
+ * @param loc ロケーション
+ *
+ * リポジトリ名を作成する
+ */
 QString MainWindow::makeRepositoryName(const QString &loc)
 {
 	auto i = loc.lastIndexOf('/');
@@ -1171,6 +1307,13 @@ QString MainWindow::makeRepositoryName(const QString &loc)
 	return QString();
 }
 
+/**
+ * @brief MainWindow::saveFileAs
+ * @param srcpath 保存元
+ * @param dstpath 保存先
+ *
+ * ファイルを保存する
+ */
 bool MainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
 {
 	QFile f(srcpath);
@@ -1187,13 +1330,13 @@ bool MainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
 	return false;
 }
 
-QString MainWindow::saveAsTemp(RepositoryWrapperFrame *frame, const QString &id)
-{
-	QString path = newTempFilePath();
-	saveAs(frame, id, path);
-	return path;
-}
-
+/**
+ * @brief MainWindow::checkExecutable
+ * @param path パス
+ * @return
+ *
+ * 実行可能かチェックする
+ */
 QString MainWindow::executableOrEmpty(const QString &path)
 {
 	if (!path.isEmpty() && checkExecutable(path)) {
@@ -1202,6 +1345,13 @@ QString MainWindow::executableOrEmpty(const QString &path)
 	return QString();
 }
 
+/**
+ * @brief MainWindow::checkExecutable
+ * @param path パス
+ * @return
+ *
+ * 実行可能かチェックする
+ */
 bool MainWindow::checkExecutable(const QString &path)
 {
 	if (QFileInfo(path).isExecutable()) {
@@ -1213,6 +1363,14 @@ bool MainWindow::checkExecutable(const QString &path)
 	return false;
 }
 
+/**
+ * @brief MainWindow::internalSaveCommandPath
+ * @param path パス
+ * @param save 保存する
+ * @param name 名前
+ *
+ * コマンドのパスを保存する
+ */
 void MainWindow::internalSaveCommandPath(const QString &path, bool save, const QString &name)
 {
 	if (save) {
@@ -1223,6 +1381,11 @@ void MainWindow::internalSaveCommandPath(const QString &path, bool save, const Q
 	}
 }
 
+/**
+ * @brief MainWindow::logGitVersion
+ *
+ * gitコマンドのバージョンをログに書き込む
+ */
 void MainWindow::logGitVersion()
 {
 	GitPtr g = git();
@@ -1233,6 +1396,11 @@ void MainWindow::logGitVersion()
 	}
 }
 
+/**
+ * @brief MainWindow::internalClearRepositoryInfo
+ *
+ * リポジトリ情報をクリアする
+ */
 void MainWindow::internalClearRepositoryInfo()
 {
 	setHeadId(QString());
@@ -1240,6 +1408,11 @@ void MainWindow::internalClearRepositoryInfo()
 	m->github = GitHubRepositoryInfo();
 }
 
+/**
+ * @brief MainWindow::checkUser
+ *
+ * ユーザーをチェックする
+ */
 void MainWindow::checkUser()
 {
 	Git g(m->gcx, {}, {}, {});
@@ -1248,12 +1421,20 @@ void MainWindow::checkUser()
 		if (!user.name.isEmpty() && !user.email.isEmpty()) {
 			return; // ok
 		}
-		if (!execSetGlobalUserDialog()) {
+		if (!execSetGlobalUserDialog()) { // ユーザー設定ダイアログを表示
 			return;
 		}
 	}
 }
 
+/**
+ * @brief MainWindow::openRepository
+ * @param validate バリデート
+ * @param waitcursor ウェイトカーソル
+ * @param keep_selection 選択を保持する
+ *
+ * リポジトリを開く
+ */
 void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
 {
 	if (validate) {
@@ -1285,6 +1466,11 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 	internalOpenRepository(g, keep_selection);
 }
 
+/**
+ * @brief MainWindow::updateRepository
+ *
+ * リポジトリを更新する
+ */
 void MainWindow::updateRepository()
 {
 	GitPtr g = git();
@@ -1294,6 +1480,13 @@ void MainWindow::updateRepository()
 	internalOpenRepository(g);
 }
 
+/**
+ * @brief MainWindow::reopenRepository
+ * @param log ログ
+ * @param callback コールバック
+ *
+ * リポジトリを再オープンする
+ */
 void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> &callback)
 {
 	GitPtr g = git();
@@ -1315,6 +1508,13 @@ void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> 
 	internalOpenRepository(g);
 }
 
+/**
+ * @brief MainWindow::setCurrentRepository
+ * @param repo リポジトリ
+ * @param clear_authentication 認証情報をクリアする
+ *
+ * 現在のリポジトリを設定する
+ */
 void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_authentication)
 {
 	if (clear_authentication) {
@@ -1323,6 +1523,11 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
 	m->current_repo = repo;
 }
 
+/**
+ * @brief MainWindow::openSelectedRepository
+ *
+ * 選択されたリポジトリを開く
+ */
 void MainWindow::openSelectedRepository()
 {
 	RepositoryData const *repo = selectedRepositoryItem();
@@ -1332,14 +1537,20 @@ void MainWindow::openSelectedRepository()
 	}
 }
 
-QList<Git::Diff> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok)
+/**
+ * @brief MainWindow::makeDiffs
+ * @param frame フレーム
+ * @param id ID
+ *
+ * 差分を作成する
+ */
+std::optional<QList<Git::Diff>> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id)
 {
 	QList<Git::Diff> out;
 
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) {
-		if (ok) *ok = false;
-		return {};
+		return std::nullopt;
 	}
 
 	if (id.isEmpty() && !isThereUncommitedChanges()) {
@@ -1359,10 +1570,16 @@ QList<Git::Diff> MainWindow::makeDiffs(RepositoryWrapperFrame *frame, QString id
 		dm.diff(id, submodules(), &out);
 	}
 
-	if (ok) *ok = true;
 	return out;
 }
 
+/**
+ * @brief MainWindow::queryBranches
+ * @param frame フレーム
+ * @param g git
+ *
+ * ブランチを取得する
+ */
 void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
 {
 	Q_ASSERT(g);
@@ -1376,6 +1593,11 @@ void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
 	}
 }
 
+/**
+ * @brief MainWindow::updateRemoteInfo
+ *
+ * リモート情報を更新する
+ */
 void MainWindow::updateRemoteInfo()
 {
 	queryRemotes(git());
@@ -1394,6 +1616,12 @@ void MainWindow::updateRemoteInfo()
 	emit remoteInfoChanged();
 }
 
+/**
+ * @brief MainWindow::queryRemotes
+ * @param g git
+ *
+ * リモートを取得する
+ */
 void MainWindow::queryRemotes(GitPtr g)
 {
 	if (!g) return;
@@ -1401,6 +1629,14 @@ void MainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
+/**
+ * @brief MainWindow::cloneRepository
+ * @param clonedata クローンデータ
+ * @param repodata リポジトリデータ
+ * @return
+ *
+ * リポジトリをクローンする
+ */
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
 {
 	// 既存チェック
@@ -1451,6 +1687,13 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	return true;
 }
 
+/**
+ * @brief MainWindow::clone
+ * @param url URL
+ * @param dir ディレクトリ
+ *
+ * クローンする
+ */
 void MainWindow::clone(QString url, QString dir)
 {
 	if (!isOnlineMode()) return;
@@ -1492,6 +1735,13 @@ void MainWindow::clone(QString url, QString dir)
 	}
 }
 
+/**
+ * @brief MainWindow::submodule_add
+ * @param url URL
+ * @param local_dir ローカルディレクトリ
+ *
+ * サブモジュールを追加する
+ */
 void MainWindow::submodule_add(QString url, QString const &local_dir)
 {
 	if (!isOnlineMode()) return;
@@ -1542,12 +1792,26 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	}
 }
 
+/**
+ * @brief MainWindow::selectedCommitItem
+ * @param frame フレーム
+ * @return コミットアイテム
+ *
+ * 選択されたコミットアイテムを返す
+ */
 const Git::CommitItem *MainWindow::selectedCommitItem(RepositoryWrapperFrame *frame) const
 {
 	int i = selectedLogIndex(frame);
 	return commitItem(frame, i);
 }
 
+/**
+ * @brief MainWindow::commit
+ * @param frame フレーム
+ * @param amend
+ *
+ * コミットする
+ */
 void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 {
 	GitPtr g = git();
@@ -1616,11 +1880,26 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 	}
 }
 
+/**
+ * @brief MainWindow::commitAmend
+ * @param frame フレーム
+ *
+ * コミットを修正する
+ */
 void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
 {
 	commit(frame, true);
 }
 
+/**
+ * @brief MainWindow::pushSetUpstream
+ * @param -uオプションを有効にする
+ * @param remote リモート
+ * @param branch ブランチ
+ * @param force 強制
+ *
+ * pushする
+ */
 void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force)
 {
 	if (set_upstream) {
@@ -1651,6 +1930,12 @@ void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const
 	updateRemoteInfo();
 }
 
+/**
+ * @brief MainWindow::pushSetUpstream
+ * @return
+ *
+ * pushする
+ */
 bool MainWindow::pushSetUpstream()
 {
 	GitPtr g = git();
@@ -1681,6 +1966,13 @@ bool MainWindow::pushSetUpstream()
 	return false;
 }
 
+/**
+ * @brief MainWindow::deleteBranch
+ * @param frame フレーム
+ * @param commit コミット
+ *
+ * ブランチを削除する
+ */
 void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem *commit)
 {
 	if (!commit) return;
@@ -1719,11 +2011,23 @@ void MainWindow::deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitIt
 	}
 }
 
+/**
+ * @brief MainWindow::deleteBranch
+ * @param frame フレーム
+ *
+ * ブランチを削除する
+ */
 void MainWindow::deleteBranch(RepositoryWrapperFrame *frame)
 {
 	deleteBranch(frame, selectedCommitItem(frame));
 }
 
+/**
+ * @brief MainWindow::resetFile
+ * @param paths パス
+ *
+ * ファイルをリセットする
+ */
 void MainWindow::resetFile(const QStringList &paths)
 {
 	GitPtr g = git();
@@ -1743,6 +2047,11 @@ void MainWindow::resetFile(const QStringList &paths)
 	}
 }
 
+/**
+ * @brief MainWindow::clearAuthentication
+ *
+ * 認証情報をクリアする
+ */
 void MainWindow::clearAuthentication()
 {
 	clearSshAuthentication();
@@ -1750,12 +2059,23 @@ void MainWindow::clearAuthentication()
 	m->http_pwd.clear();
 }
 
+/**
+ * @brief MainWindow::clearSshAuthentication
+ *
+ * SSH認証情報をクリアする
+ */
 void MainWindow::clearSshAuthentication()
 {
 	m->ssh_passphrase_user.clear();
 	m->ssh_passphrase_pass.clear();
 }
 
+/**
+ * @brief MainWindow::internalDeleteTags
+ * @param tagnames タグ名
+ *
+ * タグを削除する
+ */
 void MainWindow::internalDeleteTags(const QStringList &tagnames)
 {
 	GitPtr g = git();
@@ -1770,6 +2090,14 @@ void MainWindow::internalDeleteTags(const QStringList &tagnames)
 	}
 }
 
+/**
+ * @brief MainWindow::internalAddTag
+ * @param frame フレーム
+ * @param name 名前
+ * @return
+ *
+ * タグを追加する
+ */
 bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, const QString &name)
 {
 	if (name.isEmpty()) return false;
@@ -1794,6 +2122,12 @@ bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, const QString &na
 	return ok;
 }
 
+/**
+ * @brief MainWindow::createRepository
+ * @param dir ディレクトリ
+ *
+ * リポジトリを作成する
+ */
 void MainWindow::createRepository(const QString &dir)
 {
 	CreateRepositoryDialog dlg(this, dir);
@@ -1828,6 +2162,14 @@ void MainWindow::createRepository(const QString &dir)
 	}
 }
 
+/**
+ * @brief MainWindow::initRepository
+ * @param path パス
+ * @param reponame リポジトリ名
+ * @param remote リモート
+ *
+ * リポジトリを初期化する
+ */
 void MainWindow::initRepository(QString const &path, QString const &reponame, Git::Remote const &remote)
 {
 	if (QFileInfo(path).isDir()) {
@@ -1846,19 +2188,24 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
 	}
 }
 
-// experimental:
+/**
+ * @brief MainWindow::addRepository
+ * @param dir ディレクトリ
+ *
+ * リポジトリを追加する（クローンしたり初期化することもできる）
+ */
 void MainWindow::addRepository(const QString &dir)
 {
-	AddRepositoryDialog dlg(this, dir);
+	AddRepositoryDialog dlg(this, dir); // リポジトリを追加するダイアログ
 	if (dlg.exec() == QDialog::Accepted) {
-		if (dlg.mode() == AddRepositoryDialog::Clone) {
+		if (dlg.mode() == AddRepositoryDialog::Clone) { // クローン
 			auto cdata = dlg.makeCloneData();
 			auto rdata = dlg.makeRepositoryData();
 			cloneRepository(cdata, rdata);
-		} else if (dlg.mode() == AddRepositoryDialog::AddExisting) {
+		} else if (dlg.mode() == AddRepositoryDialog::AddExisting) { // 既存のリポジトリを追加
 			QString dir = dlg.localPath(false);
 			addExistingLocalRepository(dir, true);
-		} else if (dlg.mode() == AddRepositoryDialog::Initialize) {
+		} else if (dlg.mode() == AddRepositoryDialog::Initialize) { // リポジトリを初期化する
 			QString dir = dlg.localPath(false);
 			QString name = dlg.repositoryName();
 			Git::Remote r;
@@ -1879,6 +2226,12 @@ void MainWindow::setLogEnabled(GitPtr g, bool f)
 	}
 }
 
+/**
+ * @brief MainWindow::doGitCommand
+ * @param callback コールバック
+ *
+ * gitコマンドを実行する
+ */
 void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 {
 	GitPtr g = git();
@@ -3467,10 +3820,13 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 		if (uncommited) {
 			files_list_type = FilesListType::SideBySide;
 		}
-		bool ok = false;
-		auto diffs = makeDiffs(frame, uncommited ? QString() : id, &ok);
-		setDiffResult(diffs);
-		if (!ok) return;
+		auto diffs = makeDiffs(frame, uncommited ? QString() : id);
+		if (diffs) {
+			setDiffResult(*diffs);
+		} else {
+			setDiffResult({});
+			return;
+		}
 
 		std::map<QString, int> diffmap;
 
@@ -3528,11 +3884,13 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 			AddItem(data);
 		}
 	} else {
-		bool ok = false;
-		auto diffs = makeDiffs(frame, id, &ok);
-		setDiffResult(diffs);
-		if (!ok) return;
-
+		auto diffs = makeDiffs(frame, id);
+		if (diffs) {
+			setDiffResult(*diffs);
+		} else {
+			setDiffResult({});
+			return;
+		}
 		showFileList(files_list_type);
 		addDiffItems(diffResult(), AddItem);
 	}

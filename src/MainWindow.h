@@ -236,7 +236,6 @@ private:
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
 	static QString makeRepositoryName(const QString &loc);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
-	QString saveAsTemp(RepositoryWrapperFrame *frame, const QString &id);
 	QString executableOrEmpty(const QString &path);
 	bool checkExecutable(const QString &path);
 	void internalSaveCommandPath(const QString &path, bool save, const QString &name);
@@ -248,7 +247,7 @@ private:
 	void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
-	QList<Git::Diff> makeDiffs(RepositoryWrapperFrame *frame, QString id, bool *ok);
+	std::optional<QList<Git::Diff> > makeDiffs(RepositoryWrapperFrame *frame, QString id);
 	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
 	void queryRemotes(GitPtr g);
@@ -415,8 +414,8 @@ protected:
 	void removeSelectedRepositoryFromBookmark(bool ask);
 public:
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
-	int digitWidth() const;
-	int digitHeight() const;
+	static constexpr int DIGIT_WIDTH = 5;
+	static constexpr int DIGIT_HEIGHT = 7;
 	void setStatusBarText(QString const &text);
 	void clearStatusBarText();
 	void setCurrentLogRow(RepositoryWrapperFrame *frame, int row);

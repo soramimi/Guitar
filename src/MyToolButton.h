@@ -3,6 +3,13 @@
 
 #include <QToolButton>
 
+/**
+ * @brief The MyToolButton class
+ *
+ * This class is used to draw a red dot or a red number on a QToolButton.
+ *
+ * @see MainWindow::drawDigit
+ */
 class MyToolButton : public QToolButton {
 	Q_OBJECT
 public:
