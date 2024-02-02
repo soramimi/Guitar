@@ -51,16 +51,8 @@ macx:INCLUDEPATH += /usr/local/Cellar/openssl@3/3.1.1/include
 macx:LIBS += /usr/local/Cellar/openssl@3/3.1.1/lib/libssl.a /usr/local/Cellar/openssl@3/3.1.1/lib/libcrypto.a
 
 win32:msvc {
-	INCLUDEPATH += $$PWD/../zlib
-
-#	INCLUDEPATH += "C:\Program Files\OpenSSL\include"
-#	LIBS += "-LC:\Program Files\OpenSSL\lib"
 	INCLUDEPATH += "C:\Qt\Tools\OpenSSLv3\Win_x64\include"
 	LIBS += "-LC:\Qt\Tools\OpenSSLv3\Win_x64\lib"
-
-	# OpenSSL 1.0
-#	LIBS += -llibeay32 -lssleay32
-	# OpenSSL 1.1
 	LIBS += -llibcrypto -llibssl
 }
 
@@ -69,6 +61,10 @@ win32:gcc {
 	LIBS += -LC:\Qt\Tools\mingw530_32\opt\lib
 	LIBS += -lcrypto -lssl
 }
+
+# zlib
+
+win32:msvc:INCLUDEPATH += $$PWD/../zlib
 
 # execute 'ruby prepare.rb' automatically
 

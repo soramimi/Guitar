@@ -12,6 +12,12 @@
 class WebContext;
 class WebClient;
 
+typedef void _in_addr;
+class HostNameResolver {
+public:
+	bool resolve(char const *name, _in_addr *out);
+};
+
 class WebClientHandler {
 protected:
 	void abort(std::string const &message = {});
@@ -210,6 +216,9 @@ public:
 	static void make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out);
 	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, std::string const &boundary);
 	static void make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary);
+
+	static std::string get(const std::string &url);
+	static std::string checkip();
 };
 
 class WebContext {
