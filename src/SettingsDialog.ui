@@ -49,7 +49,7 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>5</number>
+        <number>2</number>
        </property>
        <widget class="SettingGeneralForm" name="page_general"/>
        <widget class="SettingBehaviorForm" name="page_behavior">
@@ -68,6 +68,7 @@
          </property>
         </layout>
        </widget>
+       <widget class="SettingWorkingFolderForm" name="page_workingfolder"/>
        <widget class="SettingProgramsForm" name="page_programs">
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
@@ -203,6 +204,12 @@
    <class>SettingOptionsForm</class>
    <extends>QWidget</extends>
    <header>SettingOptionsForm.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingWorkingFolderForm</class>
+   <extends>QWidget</extends>
+   <header>SettingWorkingFolderForm.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

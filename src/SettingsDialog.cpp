@@ -23,7 +23,10 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 
 	auto AddPage = [&](QWidget *page){
 //		page->layout()->setMargin(0);
-		page->layout()->setContentsMargins(0, 0, 0, 0);
+		auto *l = page->layout();
+		if (l) {
+			l->setContentsMargins(0, 0, 0, 0);
+		}
 		QString name = page->windowTitle();
 		item = new QTreeWidgetItem();
 		item->setText(0, name);
@@ -32,6 +35,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	};
 	AddPage(ui->page_general);
 	AddPage(ui->page_behavior);
+	AddPage(ui->page_workingfolder);
 	AddPage(ui->page_visual);
 	AddPage(ui->page_network);
 	AddPage(ui->page_programs);

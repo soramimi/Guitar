@@ -17,6 +17,11 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	working_dir_ = mainwindow()->defaultWorkingDir();
+
+	ui->comboBox_folder->addItem(working_dir_);
+	ui->comboBox_folder->addItem(tr("Browse..."));
+
 	already_exists_ = tr("A valid git repository exists.");
 
 	ui->lineEdit_local_path->setText(dir);
@@ -59,21 +64,38 @@ AddRepositoryDialog::Mode AddRepositoryDialog::mode() const
 	return mode_;
 }
 
-QString AddRepositoryDialog::defaultWorkingDir() const
+QString AddRepositoryDialog::workingDir() const
 {
-	return mainwindow()->defaultWorkingDir();
+	return working_dir_;
+}
+
+void AddRepositoryDialog::setWorkingDir(QString const &dir)
+{
+	working_dir_ = dir;
+	ui->lineEdit_local_path->setText(dir);
 }
 
 void AddRepositoryDialog::browseLocalPath()
 {
 	QString dir = ui->lineEdit_local_path->text();
 	if (dir.isEmpty()) {
-		dir = defaultWorkingDir();
+		dir = workingDir();
 	}
 	dir = QFileDialog::getExistingDirectory(this, tr("Local Path"), dir);
 	if (!dir.isEmpty()) {
 		dir = misc::normalizePathSeparator(dir);
 		ui->lineEdit_local_path->setText(dir);
+		QFileInfo info(dir);
+		if (info.isDir()) {
+			auto i = dir.lastIndexOf('/');
+			if (i > 0) {
+				reponame_ = dir.mid(i + 1);
+				dir = dir.mid(0, i);
+				bool b = ui->comboBox_folder->blockSignals(true);
+				ui->comboBox_folder->setItemText(0, dir);
+				ui->comboBox_folder->blockSignals(b);
+			}
+		}
 	}
 }
 
@@ -153,7 +175,7 @@ void AddRepositoryDialog::accept()
 	if (currpage == ui->page_first) {
 		switch (mode()) {
 		case Clone:
-			ui->lineEdit_local_path->setText(defaultWorkingDir());
+			setWorkingDir(workingDir());
 			ui->stackedWidget->setCurrentWidget(ui->page_remote);
 			ui->groupBox_remote->setCheckable(false);
 			ui->comboBox_search->setVisible(true);
@@ -267,6 +289,13 @@ void AddRepositoryDialog::on_comboBox_search_currentIndexChanged(int index)
 	ui->comboBox_search->setCurrentIndex(0);
 }
 
+void AddRepositoryDialog::updateLocalPath()
+{
+	QString path = workingDir() / reponame_;
+	path = misc::normalizePathSeparator(path);
+	ui->lineEdit_local_path->setText(path);
+}
+
 void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text)
 {
 	auto i = text.lastIndexOf('/');
@@ -287,9 +316,7 @@ void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text
 	}
 
 	if (mode() == Clone) {
-		QString path = defaultWorkingDir() / reponame_;
-		path = misc::normalizePathSeparator(path);
-		ui->lineEdit_local_path->setText(path);
+		updateLocalPath();
 	}
 }
 
@@ -315,5 +342,22 @@ void AddRepositoryDialog::on_groupBox_remote_clicked()
 	if (ui->groupBox_remote->isChecked()) {
 		ui->lineEdit_remote_url->setFocus();
 	}
+}
+
+
+void AddRepositoryDialog::on_comboBox_folder_currentTextChanged(const QString &arg1)
+{
+	QString dir;
+	if (ui->comboBox_folder->currentIndex() == 1) {
+		dir = QFileDialog::getExistingDirectory(this, tr("Working Folder"), workingDir());
+		if (!dir.isEmpty()) {
+			ui->comboBox_folder->setCurrentIndex(0);
+			ui->comboBox_folder->setCurrentText(dir);
+		}
+	} else {
+		dir = arg1;
+	}
+	setWorkingDir(dir);
+	updateLocalPath();
 }
 

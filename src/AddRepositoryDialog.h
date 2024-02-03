@@ -27,18 +27,22 @@ private:
 		GitHub,
 	};
 
+	QString working_dir_;
+
 	Mode mode_ = Clone;
 	QString reponame_;
 	QString already_exists_;
 
 	MainWindow *mainwindow();
 	MainWindow const *mainwindow() const;
-	QString defaultWorkingDir() const;
+	QString workingDir() const;
 
 	void validate();
 	void setRemoteURL(const QString &url);
 	void browseLocalPath();
 	void updateUI();
+	void setWorkingDir(const QString &dir);
+	void updateLocalPath();
 public:
 	explicit AddRepositoryDialog(MainWindow *parent, QString const &dir = QString());
 	~AddRepositoryDialog() override;
@@ -63,6 +67,8 @@ private slots:
 	void on_radioButton_clone_clicked();
 	void on_radioButton_initialize_clicked();
 	void on_groupBox_remote_clicked();
+
+	void on_comboBox_folder_currentTextChanged(const QString &arg1);
 
 public slots:
 	void accept() override;

@@ -15,6 +15,7 @@ public:
 	QString terminal_command;
 	QString explorer_command;
 	QString default_working_dir;
+	QStringList favorite_working_dirs;
 	QString proxy_type;
 	QString proxy_server;
 

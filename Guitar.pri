@@ -203,6 +203,7 @@ SOURCES += \
 	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
+	src/SettingWorkingFolderForm.cpp \
 	src/SettingsDialog.cpp \
 	src/SimpleImageWidget.cpp \
 	src/StatusLabel.cpp \
@@ -350,6 +351,7 @@ HEADERS  += \
 	src/SettingPrograms2Form.h \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
+	src/SettingWorkingFolderForm.h \
 	src/SettingsDialog.h \
 	src/SimpleImageWidget.h \
 	src/StatusLabel.h \
@@ -457,6 +459,7 @@ FORMS    += \
 	src/SettingPrograms2Form.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingVisualForm.ui \
+	src/SettingWorkingFolderForm.ui \
 	src/SettingsDialog.ui \
 	src/SubmoduleAddDialog.ui \
 	src/SubmoduleMainWindow.ui \
@@ -499,4 +502,3 @@ win32 {
 }
 
 include(filetype/filetype.pri)
-

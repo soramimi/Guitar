@@ -15,25 +15,6 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>Default working folder</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QLineEdit" name="lineEdit_default_working_dir"/>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_browse_default_working_dir">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <widget class="QCheckBox" name="checkBox_auto_fetch">
      <property name="text">
       <string>Automatically fetch when opening the repository</string>
@@ -145,8 +126,6 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>lineEdit_default_working_dir</tabstop>
-  <tabstop>pushButton_browse_default_working_dir</tabstop>
   <tabstop>checkBox_auto_fetch</tabstop>
   <tabstop>spinBox_max_commit_item_acquisitions</tabstop>
   <tabstop>pushButton_signing_policy</tabstop>
