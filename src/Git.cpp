@@ -251,9 +251,6 @@ bool Git::git(QString const &arg, Option const &opt)
 		return false;
 	}
 
-	QElapsedTimer _timer;
-	_timer.start();
-
 	clearResult();
 
 	QString env;

@@ -453,7 +453,6 @@ void MainWindow::onInterval10ms()
 				m->event_item_list.erase(m->event_item_list.begin() + (int)i); // 処理待ちリストから削除
 			}
 		}
-
 		// イベントをポストする
 		for (auto it = items.rbegin(); it != items.rend(); it++) {
 			QApplication::postEvent(it->receiver, it->event);
