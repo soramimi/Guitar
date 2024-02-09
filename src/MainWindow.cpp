@@ -1816,6 +1816,9 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
+	QList<gpg::Data> gpg_keys;
+	gpg::listKeys(global->appsettings.gpg_command, &gpg_keys);
+
 	QString message;
 	QString previousMessage;
 
@@ -1839,13 +1842,9 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 		Git::User user = g->getUser(Git::Source::Default);
 		QString sign_id = g->signingKey(Git::Source::Default);
 		gpg::Data key;
-		{
-			QList<gpg::Data> keys;
-			gpg::listKeys(global->appsettings.gpg_command, &keys);
-			for (gpg::Data const &k : keys) {
-				if (k.id == sign_id) {
-					key = k;
-				}
+		for (gpg::Data const &k : gpg_keys) {
+			if (k.id == sign_id) {
+				key = k;
 			}
 		}
 		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
