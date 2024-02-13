@@ -357,7 +357,7 @@ bool Git::isValidWorkingCopy() const
 
 QString Git::version()
 {
-	git_nochdir("--version");
+	git_nochdir("--version", nullptr);
 	return resultQString().trimmed();
 }
 
@@ -371,7 +371,7 @@ bool Git::init()
 	if (QDir::setCurrent(dir)) {
 		QString gitdir = dir / ".git";
 		if (!QFileInfo(gitdir).isDir()) {
-			git_nochdir("init");
+			git_nochdir("init", nullptr);
 			if (QFileInfo(gitdir).isDir()) {
 				ok = true;
 			}
@@ -794,7 +794,7 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
-	git_nolog(cmd);
+	git_nolog(cmd, nullptr);
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
 		QStringList lines = misc::splitLines(text);
@@ -819,7 +819,7 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
-	git_nolog(cmd);
+	git_nolog(cmd, nullptr);
 	if (getProcessExitCode() == 0) {
 		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
 			QStringList list;
@@ -1007,7 +1007,7 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	auto DoIt = [&](){
 		QString cmd = "clone --progress \"%1\" \"%2\"";
 		cmd = cmd.arg(data.url).arg(data.subdir);
-		ok = git_nochdir(cmd);
+		ok = git_nochdir(cmd, pty);
 	};
 
 	if (pty) {
@@ -1771,7 +1771,7 @@ bool Git::configGpgProgram(QString const &path, bool global)
 	if (!path.isEmpty()) {
 		cmd += QString("\"%1\"").arg(path);
 	}
-	return git_nochdir(cmd);
+	return git_nochdir(cmd, nullptr);
 }
 
 // Diff

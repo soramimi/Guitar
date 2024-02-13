@@ -434,15 +434,17 @@ public:
 	{
 		return git(arg, {});
 	}
-	bool git_nolog(QString const &arg)
+	bool git_nolog(QString const &arg, AbstractPtyProcess *pty)
 	{
 		Option opt;
+		opt.pty = pty;
 		opt.log = false;
 		return git(arg, opt);
 	}
-	bool git_nochdir(QString const &arg)
+	bool git_nochdir(QString const &arg, AbstractPtyProcess *pty)
 	{
 		Option opt;
+		opt.pty = pty;
 		opt.chdir = false;
 		return git(arg, opt);
 	}

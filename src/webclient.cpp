@@ -76,7 +76,7 @@ std::string_view trimmed(const std::string_view &s)
 	return s.substr(i, j - i);
 }
 
-int _stricmp(char const *s1, char const *s2)
+int x_stricmp(char const *s1, char const *s2)
 {
 #ifdef _WIN32
 	return ::stricmp(s1, s2);
@@ -85,7 +85,7 @@ int _stricmp(char const *s1, char const *s2)
 #endif
 }
 
-int _strnicmp(char const *s1, char const *s2, size_t n)
+int x_strnicmp(char const *s1, char const *s2, size_t n)
 {
 #ifdef _WIN32
 	return ::strnicmp(s1, s2, n);
@@ -486,7 +486,7 @@ static char *stristr(char *str1, char const *str2)
 	size_t len1 = strlen(str1);
 	size_t len2 = strlen(str2);
 	for (size_t i = 0; i + len2 <= len1; i++) {
-		if (_strnicmp(str1 + i, str2, len2) == 0) {
+		if (x_strnicmp(str1 + i, str2, len2) == 0) {
 			return str1 + i;
 		}
 	}
@@ -520,7 +520,7 @@ public:
 					char *p = strchr(begin, ':');
 					if (p && *p == ':') {
 						*p++ = 0;
-						auto IS = [&](char const *name){ return _stricmp(begin, name) == 0; };
+						auto IS = [&](char const *name){ return x_stricmp(begin, name) == 0; };
 						if (IS("content-length")) {
 							content_length = strtol(p, nullptr, 10);
 						} else if (IS("connection")) {
@@ -1054,7 +1054,7 @@ std::string WebClient::header_value(std::vector<std::string> const *header, std:
 		char const *end = begin + line.size();
 		char const *colon = strchr(begin, ':');
 		if (colon) {
-			if (_strnicmp(begin, name.c_str(), name.size()) == 0) {
+			if (x_strnicmp(begin, name.c_str(), name.size()) == 0) {
 				char const *ptr = colon + 1;
 				while (ptr < end && isspace(*ptr & 0xff)) ptr++;
 				return std::string(ptr, end);
