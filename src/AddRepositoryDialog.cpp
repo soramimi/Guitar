@@ -3,10 +3,15 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
+#include "ManageWorkingFolderDialog.h"
 #include "common/misc.h"
 #include <QFileDialog>
 #include <QFocusEvent>
 #include <QMessageBox>
+
+enum {
+	Manage = -100,
+};
 
 AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	: QDialog(parent)
@@ -19,8 +24,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 
 	working_dir_ = mainwindow()->defaultWorkingDir();
 
-	ui->comboBox_folder->addItem(working_dir_);
-	ui->comboBox_folder->addItem(tr("Browse..."));
+	updateComboBoxFolders();
 
 	already_exists_ = tr("A valid git repository exists.");
 
@@ -43,6 +47,19 @@ AddRepositoryDialog::~AddRepositoryDialog()
 {
 	delete ui;
 }
+
+void AddRepositoryDialog::updateComboBoxFolders()
+{
+	ui->comboBox_folder->clear();
+	ui->comboBox_folder->addItem(working_dir_);
+	{
+		for (QString const &s : global->appsettings.favorite_working_dirs) {
+			ui->comboBox_folder->addItem(s);
+		}
+	}
+	ui->comboBox_folder->addItem(tr("Manage..."), QVariant((int)Manage));
+}
+
 
 QString AddRepositoryDialog::repositoryName() const
 {
@@ -348,16 +365,21 @@ void AddRepositoryDialog::on_groupBox_remote_clicked()
 void AddRepositoryDialog::on_comboBox_folder_currentTextChanged(const QString &arg1)
 {
 	QString dir;
-	if (ui->comboBox_folder->currentIndex() == 1) {
-		dir = QFileDialog::getExistingDirectory(this, tr("Working Folder"), workingDir());
-		if (!dir.isEmpty()) {
-			ui->comboBox_folder->setCurrentIndex(0);
-			ui->comboBox_folder->setCurrentText(dir);
-		}
-	} else {
-		dir = arg1;
+	if (ui->comboBox_folder->currentData() == Manage) {
+		ManageWorkingFolderDialog dlg(this);
+		dlg.exec();
+		ui->comboBox_folder->setCurrentIndex(0);
+		updateComboBoxFolders();
+		return;
 	}
+	dir = arg1;
 	setWorkingDir(dir);
 	updateLocalPath();
+}
+
+
+void AddRepositoryDialog::on_pushButton_manage_favorite_dirs_clicked()
+{
+
 }
 

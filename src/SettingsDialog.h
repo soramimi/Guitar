@@ -15,7 +15,7 @@ class SettingsDialog : public QDialog
 {
 	Q_OBJECT
 public:
-	ApplicationSettings set;
+	ApplicationSettings settings_;
 private:
 	Ui::SettingsDialog *ui;
 	MainWindow *mainwindow_;
@@ -41,7 +41,7 @@ public:
 
 	ApplicationSettings const &settings() const
 	{
-		return set;
+		return settings_;
 	}
 
 	static void loadSettings(ApplicationSettings *as);

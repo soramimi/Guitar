@@ -64,6 +64,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_up">
+       <property name="text">
+        <string>Up</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_down">
+       <property name="text">
+        <string>Down</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -71,6 +85,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>pushButton</tabstop>
+  <tabstop>lineEdit_recentry_used</tabstop>
+  <tabstop>pushButton_add</tabstop>
+  <tabstop>pushButton_remove</tabstop>
+  <tabstop>pushButton_up</tabstop>
+  <tabstop>pushButton_down</tabstop>
+  <tabstop>listWidget_favorites</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

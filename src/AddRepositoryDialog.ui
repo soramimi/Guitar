@@ -79,13 +79,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="pushButton_manage_favorite_dirs">
-            <property name="text">
-             <string>Manage...</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
@@ -304,7 +297,6 @@
   <tabstop>radioButton_add_existing</tabstop>
   <tabstop>radioButton_initialize</tabstop>
   <tabstop>comboBox_folder</tabstop>
-  <tabstop>pushButton_manage_favorite_dirs</tabstop>
   <tabstop>lineEdit_local_path</tabstop>
   <tabstop>pushButton_browse_local_path</tabstop>
   <tabstop>lineEdit_remote_name</tabstop>

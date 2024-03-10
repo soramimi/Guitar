@@ -246,7 +246,8 @@ SOURCES += \
 	src/coloredit/ColorPreviewWidget.cpp \
 	src/coloredit/ColorSlider.cpp \
 	src/coloredit/ColorSquareWidget.cpp \
-    src/coloredit/RingSlider.cpp
+	src/ManageWorkingFolderDialog.cpp \
+	src/coloredit/RingSlider.cpp
 
 HEADERS  += \
 	$$PWD/src/CommitDetailGetter.h \
@@ -399,6 +400,7 @@ HEADERS  += \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \
 	src/urlencode.h \
+	src/ManageWorkingFolderDialog.h \
 	src/webclient.h
 
 HEADERS += version.h
@@ -468,7 +470,8 @@ FORMS    += \
 	src/TextEditDialog.ui \
 	src/WelcomeWizardDialog.ui \
 	src/coloredit/ColorDialog.ui \
-	src/coloredit/ColorEditWidget.ui
+	src/coloredit/ColorEditWidget.ui \
+	src/ManageWorkingFolderDialog.ui
 
 RESOURCES += \
 	src/resources/resources.qrc

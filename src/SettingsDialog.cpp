@@ -17,18 +17,15 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 
 	mainwindow_ = parent;
 
-	loadSettings();
-
-	QTreeWidgetItem *item;
-
-	auto AddPage = [&](QWidget *page){
+	auto AddPage = [&](AbstractSettingForm *page){
 //		page->layout()->setMargin(0);
 		auto *l = page->layout();
 		if (l) {
 			l->setContentsMargins(0, 0, 0, 0);
 		}
+		page->reset(mainwindow_, &settings_);
 		QString name = page->windowTitle();
-		item = new QTreeWidgetItem();
+		QTreeWidgetItem *item = new QTreeWidgetItem();
 		item->setText(0, name);
 		item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
 		ui->treeWidget->addTopLevelItem(item);
@@ -42,6 +39,8 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	AddPage(ui->page_programs2);
 	AddPage(ui->page_options);
 //	AddPage(ui->page_example);
+
+	loadSettings();
 
 	ui->treeWidget->setCurrentItem(ui->treeWidget->topLevelItem(page_number));
 }
@@ -196,7 +195,7 @@ void SettingsDialog::saveSettings(ApplicationSettings const *as)
 
 void SettingsDialog::saveSettings()
 {
-	saveSettings(&set);
+	saveSettings(&settings_);
 }
 
 void SettingsDialog::exchange(bool save)
@@ -209,7 +208,7 @@ void SettingsDialog::exchange(bool save)
 
 void SettingsDialog::loadSettings()
 {
-	loadSettings(&set);
+	loadSettings(&settings_);
 	exchange(false);
 }
 

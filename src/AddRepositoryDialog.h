@@ -43,6 +43,7 @@ private:
 	void updateUI();
 	void setWorkingDir(const QString &dir);
 	void updateLocalPath();
+	void updateComboBoxFolders();
 public:
 	explicit AddRepositoryDialog(MainWindow *parent, QString const &dir = QString());
 	~AddRepositoryDialog() override;
@@ -69,6 +70,8 @@ private slots:
 	void on_groupBox_remote_clicked();
 
 	void on_comboBox_folder_currentTextChanged(const QString &arg1);
+
+	void on_pushButton_manage_favorite_dirs_clicked();
 
 public slots:
 	void accept() override;
