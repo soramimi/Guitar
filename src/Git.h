@@ -512,6 +512,14 @@ public:
 		QString url;
 		QString purpose;
 		QString ssh_key;
+		bool operator == (Remote const &r) const
+		{
+			return url == r.url;
+		}
+		bool operator < (Remote const &r) const
+		{
+			return url < r.url;
+		}
 	};
 
 	QList<DiffRaw> diff_raw(CommitID const &old_id, CommitID const &new_id);

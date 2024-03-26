@@ -4549,7 +4549,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	if (!treeitem) return;
 
 	RepositoryData const *repo = repositoryItem(treeitem);
-
+	
 	int index = indexOfRepository(treeitem);
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;
@@ -4584,10 +4584,34 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			}
 		}
 	} else if (repo) { // repository item
+		QStringList strings;
+		strings.push_back(repo->name);
+		strings.push_back(repo->local_dir);
+		{
+			QList<Git::Remote> remotes;
+			git(repo->local_dir, {}, {})->getRemoteURLs(&remotes);
+			std::sort(remotes.begin(), remotes.end());
+			auto it = std::unique(remotes.begin(), remotes.end());
+			remotes.resize(it - remotes.begin());
+			for (Git::Remote const &r : remotes) {
+				strings.push_back(r.url);
+			}
+		}
+		
 		QString open_terminal = tr("Open &terminal");
 		QString open_commandprompt = tr("Open command promp&t");
 		QMenu menu;
 		QAction *a_open = menu.addAction(tr("&Open"));
+		menu.addSeparator();
+		
+		std::map<QAction *, QString> copymap;		
+		QMenu *a_copy = menu.addMenu(tr("&Copy"));
+		{
+			for (QString const &s : strings) {
+				QAction *a = a_copy->addAction(s);
+				copymap[a] = s;
+			}
+		}
 		menu.addSeparator();
 #ifdef Q_OS_WIN
 		QAction *a_open_terminal = menu.addAction(open_commandprompt);
@@ -4631,6 +4655,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			}
 			if (a == a_properties) {
 				execRepositoryPropertyDialog(*repo);
+				return;
+			}
+			auto it = copymap.find(a);
+			if (it != copymap.end()) {
+				QApplication::clipboard()->setText(it->second);
 				return;
 			}
 		}
