@@ -65,7 +65,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		*remote = Git::Remote();
 	}
 
-	if (remote->name.isEmpty() && list->isEmpty()) {
+	if (remote->name.isEmpty() && list->empty()) {
 		op = EditRemoteDialog::RemoteAdd;
 		remote->name = "origin";
 	}

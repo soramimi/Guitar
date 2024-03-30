@@ -6,7 +6,7 @@
 struct BasicRepositoryDialog::Private {
 	MainWindow *mainwindow = nullptr;
 	GitPtr git;
-	QList<Git::Remote> remotes;
+	std::vector<Git::Remote> remotes;
 };
 
 BasicRepositoryDialog::BasicRepositoryDialog(MainWindow *mainwindow, GitPtr g)
@@ -36,7 +36,7 @@ GitPtr BasicRepositoryDialog::git()
 	return m->git;
 }
 
-QList<Git::Remote> const *BasicRepositoryDialog::remotes() const
+std::vector<Git::Remote> const *BasicRepositoryDialog::remotes() const
 {
 	return &m->remotes;
 }

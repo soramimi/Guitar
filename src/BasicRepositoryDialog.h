@@ -20,7 +20,7 @@ protected:
 	GitPtr git();
 	QString updateRemotesTable(QTableWidget *tablewidget);
 
-	const QList<Git::Remote> *remotes() const;
+	const std::vector<Git::Remote> *remotes() const;
 	void getRemotes_();
 	void setSshKey_(const QString &sshkey);
 };

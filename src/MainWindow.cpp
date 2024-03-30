@@ -3957,7 +3957,7 @@ void MainWindow::detectGitServerType(GitPtr g)
 	*ptrGitHub() = GitHubRepositoryInfo();
 
 	QString push_url;
-	QList<Git::Remote> remotes;
+	std::vector<Git::Remote> remotes;
 	g->getRemoteURLs(&remotes);
 	for (Git::Remote const &r : remotes) {
 		if (r.purpose == "push") {
@@ -4588,7 +4588,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		strings.push_back(repo->name);
 		strings.push_back(repo->local_dir);
 		{
-			QList<Git::Remote> remotes;
+			std::vector<Git::Remote> remotes;
 			git(repo->local_dir, {}, {})->getRemoteURLs(&remotes);
 			std::sort(remotes.begin(), remotes.end());
 			auto it = std::unique(remotes.begin(), remotes.end());

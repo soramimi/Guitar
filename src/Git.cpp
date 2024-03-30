@@ -1460,7 +1460,7 @@ bool Git::rm_cached(QString const &file)
 	return git(cmd.arg(file));
 }
 
-void Git::getRemoteURLs(QList<Remote> *out)
+void Git::getRemoteURLs(std::vector<Remote> *out)
 {
 	out->clear();
 	git("remote -v");

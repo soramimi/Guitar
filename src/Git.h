@@ -535,7 +535,7 @@ public:
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const CommitID &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
-	void getRemoteURLs(QList<Remote> *out);
+	void getRemoteURLs(std::vector<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);

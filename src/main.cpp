@@ -93,10 +93,14 @@ int main(int argc, char *argv[])
 		QDir().mkpath(global->app_config_dir);
 	}
 
-//	qputenv("QT_SCALE_FACTOR", "1.5");
+#ifdef Q_OS_WIN
+	putenv("QT_ENABLE_HIGHDPI_SCALING=1");
+	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+	// qputenv("QT_SCALE_FACTOR", "1.5");
+
 
 	QApplication a(argc, argv);
-//	a.setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	global->init(&a);
 
