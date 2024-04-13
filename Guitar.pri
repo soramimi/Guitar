@@ -123,7 +123,6 @@ SOURCES += \
 	src/CherryPickDialog.cpp \
 	src/CleanSubModuleDialog.cpp \
 	src/ClearButton.cpp \
-	src/CloneDialog.cpp \
 	src/CloneFromGitHubDialog.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
@@ -187,12 +186,12 @@ SOURCES += \
 	src/RepositoriesTreeWidget.cpp \
 	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
-	src/RepositoryLineEdit.cpp \
 	src/RepositoryPropertyDialog.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
 	src/SelectItemDialog.cpp \
+	src/RepositoryUrlComboBox.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/SetGpgSigningDialog.cpp \
 	src/SetRemoteUrlDialog.cpp \
@@ -252,6 +251,7 @@ SOURCES += \
 HEADERS  += \
 	$$PWD/src/CommitDetailGetter.h \
 	filetype/filetype.h \
+	src/RepositoryUrlComboBox.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
@@ -268,7 +268,6 @@ HEADERS  += \
 	src/CherryPickDialog.h \
 	src/CleanSubModuleDialog.h \
 	src/ClearButton.h \
-	src/CloneDialog.h \
 	src/CloneFromGitHubDialog.h \
 	src/ColorButton.h \
 	src/CommitDialog.h \
@@ -333,7 +332,6 @@ HEADERS  += \
 	src/RepositoriesTreeWidget.h \
 	src/RepositoryData.h \
 	src/RepositoryInfoFrame.h \
-	src/RepositoryLineEdit.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositorySearchResultItem.h \
 	src/RepositoryWrapperFrame.h \
@@ -414,7 +412,6 @@ FORMS    += \
 	src/CheckoutDialog.ui \
 	src/CherryPickDialog.ui \
 	src/CleanSubModuleDialog.ui \
-	src/CloneDialog.ui \
 	src/CloneFromGitHubDialog.ui \
 	src/CommitDialog.ui \
 	src/CommitExploreWindow.ui \

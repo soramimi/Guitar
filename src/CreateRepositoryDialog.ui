@@ -101,7 +101,17 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="RepositoryLineEdit" name="lineEdit_remote_url"/>
+         <widget class="RepositoryUrlComboBox" name="comboBox_url">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item row="1" column="2">
          <widget class="QPushButton" name="pushButton_test_repo">
@@ -166,11 +176,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>RepositoryLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>RepositoryLineEdit.h</header>
-  </customwidget>
-  <customwidget>
    <class>DirectoryLineEdit</class>
    <extends>QLineEdit</extends>
    <header>DirectoryLineEdit.h</header>
@@ -180,6 +185,11 @@
    <extends>QWidget</extends>
    <header>RemoteAdvancedOptionWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RepositoryUrlComboBox</class>
+   <extends>QComboBox</extends>
+   <header>RepositoryUrlComboBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

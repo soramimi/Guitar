@@ -30,10 +30,10 @@ public:
 	QString overridedSshKey() const;
 	bool isForce() const;
 private slots:
-	void on_lineEdit_repo_location_textChanged(QString const &text);
 	void on_pushButton_test_clicked();
 	void on_pushButton_browse_clicked();
 	void on_pushButton_open_existing_clicked();
+	void on_comboBox_remote_currentTextChanged(const QString &text);
 };
 
 #endif // SUBMODULEADDDIALOG_H

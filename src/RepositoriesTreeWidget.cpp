@@ -82,7 +82,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 				if (j > i) {
 					QString username = path.mid(i, j - i);
 					QString reponame = path.mid(j + 1);
-					mainwindow()->postOpenRepositoryFromGitHub(username, reponame);
+					// mainwindow()->postOpenRepositoryFromGitHub(username, reponame);
 				}
 			}
 		}

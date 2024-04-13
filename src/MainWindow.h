@@ -251,7 +251,6 @@ private:
 	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
 	void queryRemotes(GitPtr g);
-	void clone(QString url = {}, QString dir = {});
 	void submodule_add(QString url = {}, const QString &local_dir = {});
 	const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
@@ -423,7 +422,6 @@ public:
 	void deleteTags(RepositoryWrapperFrame *frame, QStringList const &tagnames);
 	bool addTag(RepositoryWrapperFrame *frame, QString const &name);
 	void updateCurrentFilesList(RepositoryWrapperFrame *frame);
-	void postOpenRepositoryFromGitHub(const QString &username, const QString &reponame);
 	int selectedLogIndex(RepositoryWrapperFrame *frame) const;
 	void updateAncestorCommitMap(RepositoryWrapperFrame *frame);
 	bool isAncestorCommit(const QString &id);

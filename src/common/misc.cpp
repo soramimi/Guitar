@@ -473,38 +473,6 @@ bool misc::isExecutable(QString const &cmd)
 }
 
 /**
- * @brief リモートURLの形式を補完または変換する。
- *
- * 入力されたリモートURLの形式を補完または変換します。
- * 以下の3つのパターンが対象です。
- * 1. "https://github.com/" で始まるURLを "git@github.com:" 形式に変換
- * 2. "git@github.com:" で始まるURLを "https://github.com/" 形式に変換
- * 3. "github" で始まるURLを "https://github.com/" 形式に補完
- *
- * @param url 変換または補完対象のリモートURL。
- * @param toggle 変換オプション。trueの場合、変換を実行。falseの場合、補完のみ実行。
- * @return 変換または補完されたリモートURL。
- */
-QString misc::complementRemoteURL(QString url, bool toggle)
-{
-	if (toggle && url.startsWith("https://github.com/")) {
-		url = "git@github.com:" + url.mid(19);
-	} else if (toggle && url.startsWith("git@github.com:")) {
-		url = "https://github.com/" + url.mid(15);
-	} else {
-		QStringList s = misc::splitWords(url);
-		if (s.size() == 3 && s[0] == "github") {
-			QString name = s[2];
-			if (name.endsWith(".git")) {
-				name = name.mid(0, name.size() - 4);
-			}
-			url = "https://github.com/" + s[1] + '/' + name + ".git";
-		}
-	}
-	return url;
-}
-
-/**
  * @brief 文字列内の連続する空白文字を1つのスペースにまとめる。
  *
  * 入力された文字列内の連続する空白文字を1つのスペースにまとめ、結果の文字列を返します。

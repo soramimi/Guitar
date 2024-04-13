@@ -8,7 +8,6 @@
 #include "CheckoutDialog.h"
 #include "CherryPickDialog.h"
 #include "CleanSubModuleDialog.h"
-#include "CloneDialog.h"
 #include "CloneFromGitHubDialog.h"
 #include "CommitDialog.h"
 #include "CommitExploreWindow.h"
@@ -1684,54 +1683,6 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	g->clone(clonedata, getPtyProcess());
 
 	return true;
-}
-
-/**
- * @brief MainWindow::clone
- * @param url URL
- * @param dir ディレクトリ
- *
- * クローンする
- */
-void MainWindow::clone(QString url, QString dir)
-{
-	if (!isOnlineMode()) return;
-
-	if (dir.isEmpty()) {
-		dir = defaultWorkingDir();
-	}
-
-	while (1) {
-		QString ssh_key;
-		CloneDialog dlg(this, url, dir, &m->gcx);
-		if (dlg.exec() != QDialog::Accepted) {
-			return;
-		}
-		const CloneDialog::Action action = dlg.action();
-		url = dlg.url();
-		dir = dlg.dir();
-		ssh_key = dlg.overridedSshKey();
-
-		RepositoryData reposdata;
-		reposdata.local_dir = dir;
-		reposdata.local_dir.replace('\\', '/');
-		reposdata.name = makeRepositoryName(dir);
-		reposdata.ssh_key = ssh_key;
-
-		// クローン先ディレクトリを求める
-
-		Git::CloneData clonedata = Git::preclone(url, dir);
-
-		if (action == CloneDialog::Action::Clone) {
-			if (!cloneRepository(clonedata, reposdata)) {
-				continue;
-			}
-		} else if (action == CloneDialog::Action::AddExisting) {
-			addExistingLocalRepository(dir, true);
-		}
-
-		return; // done
-	}
 }
 
 /**
@@ -6657,22 +6608,6 @@ void MainWindow::on_action_clean_df_triggered()
 	doGitCommand([&](GitPtr g){
 		g->clean_df();
 	});
-}
-
-void MainWindow::postOpenRepositoryFromGitHub(QString const &username, QString const &reponame)
-{
-	QVariantList list;
-	list.push_back(username);
-	list.push_back(reponame);
-	postUserFunctionEvent([&](QVariant const &v, void *){
-		QVariantList l = v.toList();
-		QString uname = l[0].toString();
-		QString rname = l[1].toString();
-		CloneFromGitHubDialog dlg(this, uname, rname);
-		if (dlg.exec() == QDialog::Accepted) {
-			clone(dlg.url());
-		}
-	}, QVariant(list));
 }
 
 void MainWindow::on_action_stash_triggered()

@@ -60,7 +60,7 @@ private slots:
 	void on_comboBox_search_currentIndexChanged(int index);
 	void on_groupBox_remote_toggled(bool arg1);
 	void on_lineEdit_local_path_textChanged(QString const &arg1);
-	void on_lineEdit_remote_url_textChanged(const QString &arg1);
+	void on_comboBox_remote_url_currentTextChanged(const QString &arg1);
 	void on_pushButton_browse_local_path_clicked();
 	void on_pushButton_prev_clicked();
 	void on_pushButton_test_repo_clicked();
@@ -72,6 +72,7 @@ private slots:
 	void on_comboBox_folder_currentTextChanged(const QString &arg1);
 
 	void on_pushButton_manage_favorite_dirs_clicked();
+
 
 public slots:
 	void accept() override;
