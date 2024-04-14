@@ -24,7 +24,7 @@ public:
 	QVariant var;
 	void *ptr = nullptr;
 
-	explicit UserFunctionEvent(std::function<void(QVariant const &, void *ptr)> const &func, QVariant const &var, void *ptr = nullptr)
+	explicit UserFunctionEvent(std::function<void(QVariant const &, void *ptr)> func, QVariant const &var, void *ptr = nullptr)
 		: QEvent((QEvent::Type)UserEvent::UserFunction)
 		, func(func)
 		, var(var)

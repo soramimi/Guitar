@@ -3,6 +3,14 @@
 #include <QKeyEvent>
 #include <QDebug>
 
+class CtrlSpaceEvent : public QEvent {
+public:
+	CtrlSpaceEvent()
+		: QEvent(QEvent::User)
+	{
+	}
+};
+
 RepositoryUrlComboBox::RepositoryUrlComboBox(QWidget *parent)
 	: QComboBox{parent}
 {
@@ -11,12 +19,6 @@ RepositoryUrlComboBox::RepositoryUrlComboBox(QWidget *parent)
 
 	connect(this, &QComboBox::editTextChanged, [this](const QString &text) {
 		setText(text);
-	});
-
-	connect(&timer_, &QTimer::timeout, [this]() {
-		bool b = blockSignals(true);
-		setNextRepositoryUrlCandidate();
-		blockSignals(b);
 	});
 }
 
@@ -76,9 +78,18 @@ void RepositoryUrlComboBox::setNextRepositoryUrlCandidate()
 	for (int i = 0; url_candidates_.size(); i++) {
 		if (url_candidates_[i] == url) {
 			i = (i + 1) % url_candidates_.size();
+			bool b = blockSignals(true);
 			setText(url_candidates_[i]);
+			blockSignals(b);
 			break;
 		}
+	}
+}
+
+void RepositoryUrlComboBox::customEvent(QEvent *event)
+{
+	if (event->type() == QEvent::User) {
+		setNextRepositoryUrlCandidate();
 	}
 }
 
@@ -98,7 +109,7 @@ QString RepositoryUrlComboBox::text() const
  * @param text
  *
  * テキストをセットする
- * この関数は、テキストからリポジトリのURLを推測し、候補を表示する
+ * テキストからリポジトリのURLを推測し、候補を表示する
  * また、候補の中から次の候補を選択する
  * textはurl_candidates_の要素を指していることがあるため参照で受け取ることはできない
  */
@@ -128,11 +139,10 @@ bool RepositoryUrlComboBox::eventFilter(QObject *watched, QEvent *event)
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *e = static_cast<QKeyEvent *>(event);
 		if (e->key() == Qt::Key_Space && (e->modifiers() & Qt::ControlModifier)) {
-			timer_.setSingleShot(true);
-			timer_.start(10);
-			event->accept();
+			QApplication::postEvent(this, new CtrlSpaceEvent{});
 			return true;
 		}
 	}
 	return QComboBox::eventFilter(watched, event);
 }
+

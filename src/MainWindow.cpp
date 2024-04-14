@@ -380,7 +380,7 @@ void MainWindow::postEvent(QObject *receiver, QEvent *event, int ms_later)
  * @param p ポインタ
  * @param ms_later 遅延時間（0なら即座）
  */
-void MainWindow::postUserFunctionEvent(const std::function<void (const QVariant &, void *ptr)> &fn, const QVariant &v, void *p, int ms_later)
+void MainWindow::postUserFunctionEvent(const std::function<void (const QVariant &, void *ptr)> fn, const QVariant &v, void *p, int ms_later)
 {
 	postEvent(this, new UserFunctionEvent(fn, v, p), ms_later);
 }
