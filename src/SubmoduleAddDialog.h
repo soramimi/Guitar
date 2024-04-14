@@ -30,10 +30,10 @@ public:
 	QString overridedSshKey() const;
 	bool isForce() const;
 private slots:
-	void on_pushButton_test_clicked();
+	void on_lineEdit_remote_textChanged(const QString &arg1);
 	void on_pushButton_browse_clicked();
 	void on_pushButton_open_existing_clicked();
-	void on_comboBox_remote_currentTextChanged(const QString &text);
+	void on_pushButton_test_clicked();
 };
 
 #endif // SUBMODULEADDDIALOG_H

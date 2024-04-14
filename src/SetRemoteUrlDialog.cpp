@@ -34,7 +34,7 @@ int SetRemoteUrlDialog::exec()
 void SetRemoteUrlDialog::updateRemotesTable()
 {
 	QString url = BasicRepositoryDialog::updateRemotesTable(ui->tableWidget);
-	ui->comboBox_url->setText(url);
+	ui->lineEdit_url->setText(url);
 }
 
 void SetRemoteUrlDialog::accept()
@@ -42,7 +42,7 @@ void SetRemoteUrlDialog::accept()
 	GitPtr g = git();
 	if (g->isValidWorkingCopy()) {
 		QString rem = ui->lineEdit_name->text();
-		QString url = ui->comboBox_url->text();
+		QString url = ui->lineEdit_url->text();
 		Git::Remote r;
 		r.name = rem;
 		r.url = url;
@@ -58,7 +58,7 @@ void SetRemoteUrlDialog::accept()
 
 void SetRemoteUrlDialog::on_pushButton_test_clicked()
 {
-	QString url = ui->comboBox_url->text();
+	QString url = ui->lineEdit_url->text();
 	mainwindow()->testRemoteRepositoryValidity(url, {});
 }
 

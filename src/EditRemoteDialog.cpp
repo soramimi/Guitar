@@ -35,7 +35,7 @@ void EditRemoteDialog::setName(QString const &s) const
 
 void EditRemoteDialog::setUrl(QString const &s) const
 {
-	ui->comboBox_url->setText(s);
+	ui->lineEdit_url->setText(s);
 }
 
 void EditRemoteDialog::setSshKey(QString const &s) const
@@ -50,7 +50,7 @@ QString EditRemoteDialog::name() const
 
 QString EditRemoteDialog::url() const
 {
-	return ui->comboBox_url->text();
+	return ui->lineEdit_url->text();
 }
 
 QString EditRemoteDialog::sshKey() const
@@ -63,18 +63,18 @@ int EditRemoteDialog::exec()
 	if (ui->lineEdit_name->text().isEmpty()) {
 		ui->lineEdit_name->setFocus();
 	} else {
-		ui->comboBox_url->setFocus();
+		ui->lineEdit_url->setFocus();
 	}
 	return QDialog::exec();
 }
 
 void EditRemoteDialog::on_pushButton_test_clicked()
 {
-	QString url = ui->comboBox_url->text();
+	QString url = ui->lineEdit_url->text();
 	if (mainwindow()->testRemoteRepositoryValidity(url, sshKey())) {
 		ui->pushButton_ok->setFocus();
 	} else {
-		ui->comboBox_url->setFocus();
+		ui->lineEdit_url->setFocus();
 	}
 }
 

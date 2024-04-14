@@ -35,11 +35,11 @@ SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, Q
 
 	m->default_working_dir = defworkdir;
 	ui->lineEdit_working_dir->setText(m->default_working_dir);
-	ui->comboBox_remote->setText(url);
+	ui->lineEdit_remote->setText(url);
 
 	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
 
-	ui->comboBox_remote->setFocus();
+	ui->lineEdit_remote->setFocus();
 }
 
 SubmoduleAddDialog::~SubmoduleAddDialog()
@@ -55,7 +55,7 @@ MainWindow *SubmoduleAddDialog::mainwindow()
 
 QString SubmoduleAddDialog::url()
 {
-	return ui->comboBox_remote->text();
+	return ui->lineEdit_remote->text();
 }
 
 QString SubmoduleAddDialog::dir()
@@ -69,7 +69,7 @@ bool SubmoduleAddDialog::isForce() const
 }
 
 
-void SubmoduleAddDialog::on_comboBox_remote_currentTextChanged(const QString &text)
+void SubmoduleAddDialog::on_lineEdit_remote_textChanged(const QString &text)
 {
 	QString path;
 	int i = text.lastIndexOf('/');
@@ -123,7 +123,7 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 				url = r.url;
 			}
 		}
-		ui->comboBox_remote->setText(url);
+		ui->lineEdit_remote->setText(url);
 		ui->lineEdit_working_dir->setText(dir);
 		done(Accepted);
 	}

@@ -101,14 +101,14 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="RepositoryUrlComboBox" name="comboBox_url">
+         <widget class="RepositoryUrlLineEdit" name="lineEdit_url">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="editable">
+          <property name="editable" stdset="0">
            <bool>true</bool>
           </property>
          </widget>
@@ -187,9 +187,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>RepositoryUrlComboBox</class>
-   <extends>QComboBox</extends>
-   <header>RepositoryUrlComboBox.h</header>
+   <class>RepositoryUrlLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>RepositoryUrlLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

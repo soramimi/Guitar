@@ -138,7 +138,7 @@ QString AddRepositoryDialog::remoteName() const
 
 QString AddRepositoryDialog::remoteURL() const
 {
-	return ui->comboBox_remote_url->text();
+	return ui->lineEdit_remote_url->text();
 }
 
 void AddRepositoryDialog::validate()
@@ -196,7 +196,7 @@ void AddRepositoryDialog::accept()
 			ui->stackedWidget->setCurrentWidget(ui->page_remote);
 			ui->groupBox_remote->setCheckable(false);
 			ui->comboBox_search->setVisible(true);
-			ui->comboBox_remote_url->setFocus();
+			ui->lineEdit_remote_url->setFocus();
 			break;
 		case AddExisting:
 			ui->stackedWidget->setCurrentWidget(ui->page_local);
@@ -292,7 +292,7 @@ void AddRepositoryDialog::on_radioButton_add_existing_clicked()
 
 void AddRepositoryDialog::setRemoteURL(QString const &url)
 {
-	ui->comboBox_remote_url->setCurrentText(url);
+	ui->lineEdit_remote_url->setText(url);
 }
 
 void AddRepositoryDialog::on_comboBox_search_currentIndexChanged(int index)
@@ -315,7 +315,7 @@ void AddRepositoryDialog::updateLocalPath()
 
 
 
-void AddRepositoryDialog::on_comboBox_remote_url_currentTextChanged(const QString &text)
+void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text)
 {
 	auto i = text.lastIndexOf('/');
 	auto j = text.lastIndexOf('\\');
@@ -359,7 +359,7 @@ RepositoryData AddRepositoryDialog::makeRepositoryData() const
 void AddRepositoryDialog::on_groupBox_remote_clicked()
 {
 	if (ui->groupBox_remote->isChecked()) {
-		ui->comboBox_remote_url->setFocus();
+		ui->lineEdit_remote_url->setFocus();
 	}
 }
 
@@ -384,6 +384,7 @@ void AddRepositoryDialog::on_pushButton_manage_favorite_dirs_clicked()
 {
 
 }
+
 
 
 

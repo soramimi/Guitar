@@ -89,7 +89,7 @@ QString CreateRepositoryDialog::remoteName() const
 
 QString CreateRepositoryDialog::remoteURL() const
 {
-	return ui->groupBox_remote->isChecked() ? ui->comboBox_url->text() : QString();
+	return ui->groupBox_remote->isChecked() ? ui->lineEdit_url->text() : QString();
 }
 
 void CreateRepositoryDialog::validate(bool change_name)
@@ -137,7 +137,7 @@ void CreateRepositoryDialog::on_groupBox_remote_toggled(bool)
 
 void CreateRepositoryDialog::on_pushButton_test_repo_clicked()
 {
-	QString url = ui->comboBox_url->text();
+	QString url = ui->lineEdit_url->text();
 	QString sshkey = overridedSshKey();
 	mainwindow()->testRemoteRepositoryValidity(url, sshkey);
 	validate(false);

@@ -157,8 +157,8 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="RepositoryUrlComboBox" name="comboBox_remote_url">
-              <property name="editable">
+             <widget class="RepositoryUrlLineEdit" name="lineEdit_remote_url">
+              <property name="editable" stdset="0">
                <bool>true</bool>
               </property>
              </widget>
@@ -291,9 +291,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>RepositoryUrlComboBox</class>
-   <extends>QComboBox</extends>
-   <header>RepositoryUrlComboBox.h</header>
+   <class>RepositoryUrlLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>RepositoryUrlLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -304,6 +304,7 @@
   <tabstop>lineEdit_local_path</tabstop>
   <tabstop>pushButton_browse_local_path</tabstop>
   <tabstop>lineEdit_remote_name</tabstop>
+  <tabstop>lineEdit_remote_url</tabstop>
   <tabstop>pushButton_test_repo</tabstop>
   <tabstop>comboBox_search</tabstop>
   <tabstop>pushButton_prev</tabstop>

@@ -108,6 +108,8 @@ macx {
 
 SOURCES += \
 	$$PWD/src/CommitDetailGetter.cpp \
+	$$PWD/src/DropDownListFrame.cpp \
+	$$PWD/src/RepositoryUrlLineEdit.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -191,7 +193,6 @@ SOURCES += \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
 	src/SelectItemDialog.cpp \
-	src/RepositoryUrlComboBox.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/SetGpgSigningDialog.cpp \
 	src/SetRemoteUrlDialog.cpp \
@@ -250,8 +251,9 @@ SOURCES += \
 
 HEADERS  += \
 	$$PWD/src/CommitDetailGetter.h \
+	$$PWD/src/DropDownListFrame.h \
+	$$PWD/src/RepositoryUrlLineEdit.h \
 	filetype/filetype.h \
-	src/RepositoryUrlComboBox.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
