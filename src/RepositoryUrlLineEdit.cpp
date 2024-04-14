@@ -8,37 +8,38 @@
 #include <QStyle>
 #include <QStyleOption>
 
-class CtrlSpaceEvent : public QEvent {
+namespace {
+
+class MyEvent : public QEvent {
 public:
-	bool forward_ = true;
-	CtrlSpaceEvent(bool forward)
+	int key = 0;
+	MyEvent(int key)
 		: QEvent(QEvent::User)
-		, forward_(forward)
+		, key(key)
 	{
 	}
 };
 
+} // namespace
+
 struct RepositoryUrlLineEdit::Private {
 	QStringList url_candidates;
-	DropDownListFrame *drop_down_frame = nullptr;
-	QRect drop_down_botton_rect;
+	DropDownListFrame *drop_down_list = nullptr;
 };
 
 RepositoryUrlLineEdit::RepositoryUrlLineEdit(QWidget *parent)
 	: QLineEdit{parent}
 	, m{new Private}
 {
-	m->drop_down_frame = new DropDownListFrame(this);
-
 	installEventFilter(this);
-
-	connect(m->drop_down_frame, &DropDownListFrame::itemClicked, [this](QString const &text) {
-		setText(text);
-		m->drop_down_frame->hide();
+	
+	m->drop_down_list = new DropDownListFrame(this);
+	connect(m->drop_down_list, &DropDownListFrame::itemClicked, [this](const QString &item) {
+		setText(item);
 	});
-
-	connect(this, &QLineEdit::textChanged, [this](const QString &text) {
-		setText(text);
+	connect(m->drop_down_list, &DropDownListFrame::done, [this]() {
+		m->drop_down_list->close();
+		qApp->postEvent(this, new QFocusEvent(QEvent::FocusIn));
 	});
 }
 
@@ -142,78 +143,21 @@ void RepositoryUrlLineEdit::setNextRepositoryUrlCandidate(bool forward)
 	}
 }
 
-/**
- * @brief RepositoryUrlLineEdit::showDropDown
- *
- * ドロップダウンリストを表示する
- */
-void RepositoryUrlLineEdit::showDropDown()
-{
-	updateRepositoryUrlCandidates();
-	m->drop_down_frame->setItems(m->url_candidates);
-	m->drop_down_frame->show();
-}
-
-void RepositoryUrlLineEdit::paintEvent(QPaintEvent *event)
-{
-	const int w = width();
-	const int h = height();
-	m->drop_down_botton_rect = QRect(w - h, 0, h, h);
-
-	QLineEdit::paintEvent(event);
-	QPainter pr(this);
-	QStyleOption opt;
-	opt.initFrom(this);
-	opt.rect = m->drop_down_botton_rect;
-	qApp->style()->drawPrimitive(QStyle::PE_IndicatorButtonDropDown, &opt, &pr, this);
-}
-
-void RepositoryUrlLineEdit::mouseMoveEvent(QMouseEvent *event)
-{
-	QPoint p = event->pos();
-	if (m->drop_down_botton_rect.contains(p)) {
-		setCursor(Qt::ArrowCursor);
-		event->accept();
-		return;
-	}
-	QLineEdit::mouseMoveEvent(event);
-}
-
-void RepositoryUrlLineEdit::mousePressEvent(QMouseEvent *event)
-{
-	QPoint p = event->pos();
-	if (m->drop_down_botton_rect.contains(p)) {
-		showDropDown();
-		event->accept();
-		return;
-	}
-	QLineEdit::mousePressEvent(event);
-}
-
-void RepositoryUrlLineEdit::mouseDoubleClickEvent(QMouseEvent *event)
-{
-	QPoint p = event->pos();
-	if (m->drop_down_botton_rect.contains(p)) {
-		showDropDown();
-		event->accept();
-		return;
-	}
-	QLineEdit::mouseDoubleClickEvent(event);
-}
-
-void RepositoryUrlLineEdit::keyPressEvent(QKeyEvent *event)
-{
-	if (event->key() == Qt::Key_Down) {
-		showDropDown();
-	}
-	QLineEdit::keyPressEvent(event);
-}
-
 void RepositoryUrlLineEdit::customEvent(QEvent *event)
 {
 	if (event->type() == QEvent::User) {
-		CtrlSpaceEvent *e = static_cast<CtrlSpaceEvent *>(event);
-		setNextRepositoryUrlCandidate(e->forward_);
+		MyEvent *e = static_cast<MyEvent *>(event);
+		if (e->key == Qt::Key_Space) {
+			setNextRepositoryUrlCandidate(true);
+			return;
+		}
+		if (e->key == Qt::Key_Down) {
+			updateRepositoryUrlCandidates();
+			m->drop_down_list->setItems(m->url_candidates);
+			m->drop_down_list->show();
+			return;
+		}
+		return;
 	}
 }
 
@@ -222,8 +166,11 @@ bool RepositoryUrlLineEdit::eventFilter(QObject *watched, QEvent *event)
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *e = static_cast<QKeyEvent *>(event);
 		if (e->key() == Qt::Key_Space && (e->modifiers() & Qt::ControlModifier)) {
-			bool forward = !(e->modifiers() & Qt::ShiftModifier);
-			QApplication::postEvent(this, new CtrlSpaceEvent(forward));
+			QApplication::postEvent(this, new MyEvent(e->key()));
+			return true;
+		}
+		if (e->key() == Qt::Key_Down) {
+			QApplication::postEvent(this, new MyEvent(e->key()));
 			return true;
 		}
 	}

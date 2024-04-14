@@ -5,15 +5,16 @@
 #include <QVariant>
 #include <functional>
 
-enum class UserEvent {
+enum class UserEventEnum {
 	Start = QEvent::User,
 	UserFunction,
 };
+#define UserEvent(e) QEvent::Type(UserEventEnum::e)
 
 class StartEvent : public QEvent {
 public:
 	StartEvent()
-		: QEvent((QEvent::Type)UserEvent::Start)
+		: QEvent(UserEvent(Start))
 	{
 	}
 };
@@ -25,7 +26,7 @@ public:
 	void *ptr = nullptr;
 
 	explicit UserFunctionEvent(std::function<void(QVariant const &, void *ptr)> func, QVariant const &var, void *ptr = nullptr)
-		: QEvent((QEvent::Type)UserEvent::UserFunction)
+		: QEvent(UserEvent(UserFunction))
 		, func(func)
 		, var(var)
 		, ptr(ptr)

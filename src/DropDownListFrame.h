@@ -13,13 +13,16 @@ public:
 	DropDownListFrame(QWidget *parent);
 	void addItem(QString const &text);
 	void setItems(QStringList const &list);
-	void show();
+	void show_();
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 	void focusOutEvent(QFocusEvent *event);
 	void keyPressEvent(QKeyEvent *event);
+public slots:
+	void setVisible(bool visible);
 signals:
 	void itemClicked(QString const &text);
+	void done();
 };
 
 #endif // DROPDOWNLISTFRAME_H

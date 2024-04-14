@@ -11,13 +11,19 @@ DropDownListFrame::DropDownListFrame(QWidget *parent)
 {
 	qApp->installEventFilter(this);
 	installEventFilter(this);
-
+	
 	setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
 	auto *layout = new QVBoxLayout;
 	layout->setContentsMargins(0, 0, 0, 0);
 	setLayout(layout);
 	listw_ = new QListWidget;
 	layout->addWidget(listw_);
+	
+	connect(listw_, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
+		QString s = item->text();
+		emit itemClicked(item->text());
+		emit done();
+	});
 }
 
 void DropDownListFrame::addItem(const QString &text)
@@ -33,7 +39,7 @@ void DropDownListFrame::setItems(const QStringList &list)
 	}
 }
 
-void DropDownListFrame::show()
+void DropDownListFrame::show_()
 {
 	QWidget *par = parentWidget();
 	QPoint pt = par->geometry().bottomLeft();
@@ -43,31 +49,38 @@ void DropDownListFrame::show()
 	listw_->setFixedHeight(height);
 	setFixedHeight(height);
 	setGeometry(pt.x(), pt.y(), par->geometry().width(), height);
-	QFrame::show();
+	QFrame::setVisible(true);
 	activateWindow();
 	listw_->setFocus();
 	listw_->setCurrentRow(0);
+}
+
+void DropDownListFrame::setVisible(bool visible)
+{
+	if (visible) {
+		show_();
+	} else {
+		QFrame::setVisible(false);
+	}
 }
 
 void DropDownListFrame::keyPressEvent(QKeyEvent *event)
 {
 	switch (event->key()) {
 	case Qt::Key_Escape:
-		hide();
+		emit done();
 		return;
 	case Qt::Key_Return:
 		emit itemClicked(listw_->currentItem()->text());
-		hide();
+		emit done();
 		return;
 	}
 	QFrame::keyPressEvent(event);
 }
 
-
-
 void DropDownListFrame::focusOutEvent(QFocusEvent *event)
 {
-	hide();
+	emit done();
 	event->accept();
 }
 
@@ -78,15 +91,28 @@ bool DropDownListFrame::eventFilter(QObject *watched, QEvent *event)
 		if (isVisible()) {
 			QKeyEvent *e = static_cast<QKeyEvent *>(event);
 			if (e->key() == Qt::Key_Tab || e->key() == Qt::Key_Backtab) {
-				hide();
+				emit done();
 				return true;
 			}
 		}
 		break;
 	case QEvent::WindowDeactivate:
 		if (watched == this) {
-			hide();
+			emit done();
 			return true;
+		}
+		break;
+	case QEvent::MouseButtonPress:
+		{
+			QWidget *w = qobject_cast<QWidget *>(watched);
+			if (w) {
+				QPoint p = static_cast<QMouseEvent *>(event)->pos();
+				p = w->mapToGlobal(p);
+				if (!geometry().contains(p)) { // clicked outside
+					emit done();
+					return true;
+				}
+			}
 		}
 		break;
 	}

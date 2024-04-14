@@ -649,7 +649,7 @@ bool MainWindow::event(QEvent *event)
 				return true;
 			}
 		}
-	} else if (et == (QEvent::Type)UserEvent::UserFunction) {
+	} else if (et == UserEvent(UserFunction)) {
 		if (auto *e = (UserFunctionEvent *)event) {
 			e->func(e->var, e->ptr);
 			return true;
@@ -660,7 +660,7 @@ bool MainWindow::event(QEvent *event)
 
 void MainWindow::customEvent(QEvent *e)
 {
-	if (e->type() == (QEvent::Type)UserEvent::Start) {
+	if (e->type() == UserEvent(Start)) {
 		onStartEvent();
 		return;
 	}
