@@ -57,7 +57,7 @@ RepositoryUrlLineEdit::~RepositoryUrlLineEdit()
 void RepositoryUrlLineEdit::updateRepositoryUrlCandidates()
 {
 	QString url = text();
-	m->url_candidates = {};
+	m->url_candidates.clear();
 
 	bool github = true;
 	bool gitlab = true;
