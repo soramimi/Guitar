@@ -695,6 +695,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	QMainWindow::closeEvent(event);
 }
 
+void MainWindow::toggleMaximized()
+{
+	auto state = windowState();
+	state ^= Qt::WindowMaximized;
+	setWindowState(state);
+}
+
 void MainWindow::setStatusBarText(QString const &text)
 {
 	m->status_bar_label->setText(text);
@@ -5801,6 +5808,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 	int c = event->key();
 	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
 		test();
+		return;
+	}
+	if (c == Qt::Key_F11) {
+		toggleMaximized();
 		return;
 	}
 	if (QApplication::focusWidget() == ui->tableWidget_log && (c == Qt::Key_Return || c == Qt::Key_Enter)) {
