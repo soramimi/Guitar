@@ -23,6 +23,7 @@ public:
 } // namespace
 
 struct RepositoryUrlLineEdit::Private {
+	QString original_location;
 	QStringList url_candidates;
 	DropDownListFrame *drop_down_list = nullptr;
 };
@@ -32,6 +33,10 @@ RepositoryUrlLineEdit::RepositoryUrlLineEdit(QWidget *parent)
 	, m{new Private}
 {
 	installEventFilter(this);
+	
+	connect(this, &QLineEdit::textChanged, [this](const QString &text) {
+		m->original_location = text;
+	});
 	
 	m->drop_down_list = new DropDownListFrame(this);
 	connect(m->drop_down_list, &DropDownListFrame::itemClicked, [this](const QString &item) {
@@ -56,7 +61,7 @@ RepositoryUrlLineEdit::~RepositoryUrlLineEdit()
  */
 void RepositoryUrlLineEdit::updateRepositoryUrlCandidates()
 {
-	QString url = text();
+	QString loc = m->original_location;
 	m->url_candidates.clear();
 
 	bool github = true;
@@ -67,35 +72,38 @@ void RepositoryUrlLineEdit::updateRepositoryUrlCandidates()
 	const QString github_git = "git@github.com:";
 	const QString gitlab_https = "https://gitlab.com/";
 	const QString gitlab_git = "git@gitlab.com:";
-	if (url.startsWith(github_https)) {
-		QString s = url.mid(github_https.size());
+	if (loc.startsWith(github_https)) {
+		QString s = loc.mid(github_https.size());
 		int i = s.indexOf('/');
 		username = s.left(i);
 		reponame = s.mid(i + 1);
-	} else if (url.startsWith(github_git)) {
-		QString s = url.mid(github_git.size());
+	} else if (loc.startsWith(github_git)) {
+		QString s = loc.mid(github_git.size());
 		int i = s.indexOf('/');
 		username = s.left(i);
 		reponame = s.mid(i + 1);
-	} else if (url.startsWith(gitlab_https)) {
-		QString s = url.mid(gitlab_https.size());
+	} else if (loc.startsWith(gitlab_https)) {
+		QString s = loc.mid(gitlab_https.size());
 		int i = s.indexOf('/');
 		username = s.left(i);
 		reponame = s.mid(i + 1);
-	} else if (url.startsWith(gitlab_git)) {
-		QString s = url.mid(gitlab_git.size());
+	} else if (loc.startsWith(gitlab_git)) {
+		QString s = loc.mid(gitlab_git.size());
 		int i = s.indexOf('/');
 		username = s.left(i);
 		reponame = s.mid(i + 1);
 	} else {
-		QStringList s = misc::splitWords(url);
+		m->original_location = loc;
+		QStringList s = misc::splitWords(loc);
 		if (s.size() == 2) {
 			username = s[0];
 			reponame = s[1];
 		} else if (s.size() == 3) {
 			if (s[0] == "github") {
 				github = true;
+				gitlab = false;
 			} else if (s[0] == "gitlab") {
+				github = false;
 				gitlab = true;
 			}
 			username = s[1];
@@ -115,7 +123,13 @@ void RepositoryUrlLineEdit::updateRepositoryUrlCandidates()
 			m->url_candidates.push_back(gitlab_https + username + '/' + reponame + ".git");
 			m->url_candidates.push_back(gitlab_git + username + '/' + reponame + ".git");
 		}
-		m->url_candidates.push_back(username + ' ' + reponame);
+		if (github && gitlab) {
+			m->original_location = username + ' ' + reponame;
+		}
+		auto it = std::find(m->url_candidates.begin(), m->url_candidates.end(), m->original_location);
+		if (it == m->url_candidates.end()) {
+			m->url_candidates.push_back(loc);
+		}
 	}
 }
 
@@ -128,7 +142,7 @@ void RepositoryUrlLineEdit::setNextRepositoryUrlCandidate(bool forward)
 {
 	updateRepositoryUrlCandidates();
 	QString url = text();
-	for (int i = 0; m->url_candidates.size(); i++) {
+	for (int i = 0; i < m->url_candidates.size(); i++) {
 		if (m->url_candidates[i] == url) {
 			if (forward) {
 				i = (i + 1) % m->url_candidates.size();
