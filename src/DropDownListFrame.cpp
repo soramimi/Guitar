@@ -103,7 +103,7 @@ bool DropDownListFrame::eventFilter(QObject *watched, QEvent *event)
 		}
 		break;
 	case QEvent::MouseButtonPress:
-		{
+		if (watched == this) {
 			QWidget *w = qobject_cast<QWidget *>(watched);
 			if (w) {
 				QPoint p = static_cast<QMouseEvent *>(event)->pos();
