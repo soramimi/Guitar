@@ -6,234 +6,180 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>732</width>
-    <height>315</height>
+    <width>690</width>
+    <height>423</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Add Repository</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QStackedWidget" name="stackedWidget">
-     <property name="currentIndex">
-      <number>2</number>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>Operation</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QRadioButton" name="radioButton_clone">
+          <property name="text">
+           <string>Clone</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButton_add_existing">
+          <property name="text">
+           <string>Add existing</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButton_initialize">
+          <property name="text">
+           <string>Initialize</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox_search"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QWidget" name="page_first">
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QRadioButton" name="radioButton_clone">
-         <property name="text">
-          <string>Clone</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_add_existing">
-         <property name="text">
-          <string>Add existing</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButton_initialize">
-         <property name="text">
-          <string>Initialize</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>160</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="page_local">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QGroupBox" name="groupBox_local">
-         <property name="title">
-          <string>Local</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Folder</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="comboBox_folder">
-            <property name="editable">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Path</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="DirectoryLineEdit" name="lineEdit_local_path"/>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="pushButton_browse_local_path">
-            <property name="text">
-             <string>Browse...</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_warning">
-         <property name="font">
-          <font>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>149</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="page_remote">
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QGroupBox" name="groupBox_remote">
-         <property name="title">
-          <string>Remote</string>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_4">
-              <property name="text">
-               <string>Name</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit_remote_name"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>URL</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="RepositoryUrlLineEdit" name="lineEdit_remote_url">
-              <property name="editable" stdset="0">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QPushButton" name="pushButton_test_repo">
-              <property name="text">
-               <string>Test</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="Line" name="line_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="RemoteAdvancedOptionWidget" name="widget_ssh_override" native="true"/>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QComboBox" name="comboBox_search"/>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
     </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_remote">
+     <property name="title">
+      <string>Remote</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEdit_remote_name"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>URL</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="RepositoryUrlLineEdit" name="lineEdit_remote_repository_url">
+          <property name="editable" stdset="0">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="pushButton_test_repo">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="RemoteAdvancedOptionWidget" name="widget_ssh_override" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_local">
+     <property name="title">
+      <string>Local</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Folder</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBox_local_working_folder">
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Path</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="WorkingDirLineEdit" name="lineEdit_local_path"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="pushButton_browse_local_path">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>27</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -280,11 +226,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>DirectoryLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>DirectoryLineEdit.h</header>
-  </customwidget>
-  <customwidget>
    <class>RemoteAdvancedOptionWidget</class>
    <extends>QWidget</extends>
    <header>RemoteAdvancedOptionWidget.h</header>
@@ -295,21 +236,26 @@
    <extends>QLineEdit</extends>
    <header>RepositoryUrlLineEdit.h</header>
   </customwidget>
+  <customwidget>
+   <class>WorkingDirLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>WorkingDirLineEdit.h</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>radioButton_clone</tabstop>
   <tabstop>radioButton_add_existing</tabstop>
   <tabstop>radioButton_initialize</tabstop>
-  <tabstop>comboBox_folder</tabstop>
+  <tabstop>comboBox_search</tabstop>
+  <tabstop>lineEdit_remote_name</tabstop>
+  <tabstop>lineEdit_remote_repository_url</tabstop>
+  <tabstop>pushButton_test_repo</tabstop>
+  <tabstop>comboBox_local_working_folder</tabstop>
   <tabstop>lineEdit_local_path</tabstop>
   <tabstop>pushButton_browse_local_path</tabstop>
-  <tabstop>lineEdit_remote_name</tabstop>
-  <tabstop>lineEdit_remote_url</tabstop>
-  <tabstop>pushButton_test_repo</tabstop>
-  <tabstop>comboBox_search</tabstop>
   <tabstop>pushButton_prev</tabstop>
   <tabstop>pushButton_ok</tabstop>
   <tabstop>pushButton_cancel</tabstop>
+  <tabstop>radioButton_clone</tabstop>
  </tabstops>
  <resources/>
  <connections>

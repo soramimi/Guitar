@@ -24,7 +24,7 @@
       </widget>
      </item>
      <item>
-      <widget class="DirectoryLineEdit" name="lineEdit_path"/>
+      <widget class="WorkingDirLineEdit" name="lineEdit_path"/>
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_browse_path">
@@ -176,9 +176,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>DirectoryLineEdit</class>
+   <class>WorkingDirLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>DirectoryLineEdit.h</header>
+   <header>WorkingDirLineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>RemoteAdvancedOptionWidget</class>

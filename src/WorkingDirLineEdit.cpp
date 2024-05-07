@@ -1,4 +1,4 @@
-#include "DirectoryLineEdit.h"
+#include "WorkingDirLineEdit.h"
 
 #include <QDebug>
 #include <QDragEnterEvent>
@@ -6,13 +6,13 @@
 #include <QMimeData>
 #include "common/misc.h"
 
-DirectoryLineEdit::DirectoryLineEdit(QWidget *parent)
+WorkingDirLineEdit::WorkingDirLineEdit(QWidget *parent)
 	: QLineEdit(parent)
 {
 
 }
 
-void DirectoryLineEdit::dragEnterEvent(QDragEnterEvent *event)
+void WorkingDirLineEdit::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (event->mimeData()->hasUrls()) {
 		event->acceptProposedAction();
@@ -22,7 +22,7 @@ void DirectoryLineEdit::dragEnterEvent(QDragEnterEvent *event)
 	QLineEdit::dragEnterEvent(event);
 }
 
-void DirectoryLineEdit::dropEvent(QDropEvent *event)
+void WorkingDirLineEdit::dropEvent(QDropEvent *event)
 {
 	QList<QUrl> urls = event->mimeData()->urls();
 	if (urls.size() == 1) {

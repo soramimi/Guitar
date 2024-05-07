@@ -35,7 +35,10 @@ RepositoryUrlLineEdit::RepositoryUrlLineEdit(QWidget *parent)
 	installEventFilter(this);
 	
 	connect(this, &QLineEdit::textChanged, [this](const QString &text) {
-		m->original_location = text;
+		if (text.indexOf('/') < 0 && text.indexOf(':') < 0 && text.indexOf('.') < 0 && text.indexOf('@') < 0 && text.indexOf('~') < 0) {
+			m->original_location = text;
+		}
+		updateRepositoryUrlCandidates();
 	});
 	
 	m->drop_down_list = new DropDownListFrame(this);
@@ -149,9 +152,11 @@ void RepositoryUrlLineEdit::setNextRepositoryUrlCandidate(bool forward)
 			} else {
 				i = (i + m->url_candidates.size() - 1) % m->url_candidates.size();
 			}
+			QString text = m->url_candidates[i];
 			bool b = blockSignals(true);
-			setText(m->url_candidates[i]);
+			setText(text);
 			blockSignals(b);
+			emit textChanged(text);
 			break;
 		}
 	}

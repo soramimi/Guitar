@@ -43,7 +43,8 @@ private:
 	void updateUI();
 	void setWorkingDir(const QString &dir);
 	void updateLocalPath();
-	void updateComboBoxFolders();
+	void updateWorkingDirComboBoxFolders();
+	void parseAndUpdateRemoteURL();
 public:
 	explicit AddRepositoryDialog(MainWindow *parent, QString const &dir = QString());
 	~AddRepositoryDialog() override;
@@ -57,12 +58,12 @@ public:
 	Git::CloneData makeCloneData() const;
 	RepositoryData makeRepositoryData() const;
 private slots:
-	void on_comboBox_folder_currentTextChanged(const QString &arg1);
+	void on_comboBox_local_working_folder_currentTextChanged(const QString &arg1);
 	void on_comboBox_search_currentIndexChanged(int index);
 	void on_groupBox_remote_clicked();
 	void on_groupBox_remote_toggled(bool arg1);
 	void on_lineEdit_local_path_textChanged(QString const &arg1);
-	void on_lineEdit_remote_url_textChanged(const QString &arg1);
+	void on_lineEdit_remote_repository_url_textChanged(const QString &);
 	void on_pushButton_browse_local_path_clicked();
 	void on_pushButton_manage_favorite_dirs_clicked();
 	void on_pushButton_prev_clicked();

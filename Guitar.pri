@@ -110,6 +110,7 @@ SOURCES += \
 	$$PWD/src/CommitDetailGetter.cpp \
 	$$PWD/src/DropDownListFrame.cpp \
 	$$PWD/src/RepositoryUrlLineEdit.cpp \
+	$$PWD/src/WorkingDirLineEdit.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -137,7 +138,6 @@ SOURCES += \
 	src/DeleteBranchDialog.cpp \
 	src/DeleteTagsDialog.cpp \
 	src/DialogHeaderFrame.cpp \
-	src/DirectoryLineEdit.cpp \
 	src/DoYouWantToInitDialog.cpp \
 	src/EditGitIgnoreDialog.cpp \
 	src/EditProfilesDialog.cpp \
@@ -253,6 +253,7 @@ HEADERS  += \
 	$$PWD/src/CommitDetailGetter.h \
 	$$PWD/src/DropDownListFrame.h \
 	$$PWD/src/RepositoryUrlLineEdit.h \
+	$$PWD/src/WorkingDirLineEdit.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
@@ -284,7 +285,6 @@ HEADERS  += \
 	src/DeleteBranchDialog.h \
 	src/DeleteTagsDialog.h \
 	src/DialogHeaderFrame.h \
-	src/DirectoryLineEdit.h \
 	src/DoYouWantToInitDialog.h \
 	src/EditGitIgnoreDialog.h \
 	src/EditProfilesDialog.h \

@@ -22,9 +22,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	working_dir_ = mainwindow()->defaultWorkingDir();
-
-	updateComboBoxFolders();
+	updateWorkingDirComboBoxFolders();
 
 	already_exists_ = tr("A valid git repository exists.");
 
@@ -37,7 +35,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 
 	validate();
 
-	ui->stackedWidget->setCurrentWidget(ui->page_first);
+	// ui->stackedWidget->setCurrentWidget(ui->page_first);
 	ui->radioButton_clone->setFocus();
 	ui->radioButton_clone->click();
 	updateUI();
@@ -48,16 +46,20 @@ AddRepositoryDialog::~AddRepositoryDialog()
 	delete ui;
 }
 
-void AddRepositoryDialog::updateComboBoxFolders()
+void AddRepositoryDialog::updateWorkingDirComboBoxFolders()
 {
-	ui->comboBox_folder->clear();
-	ui->comboBox_folder->addItem(working_dir_);
-	{
-		for (QString const &s : global->appsettings.favorite_working_dirs) {
-			ui->comboBox_folder->addItem(s);
-		}
+	ui->comboBox_local_working_folder->clear();
+	bool b = ui->comboBox_local_working_folder->blockSignals(true);
+
+	for (auto const &s : global->appsettings.favorite_working_dirs) {
+		ui->comboBox_local_working_folder->addItem(s);
 	}
-	ui->comboBox_folder->addItem(tr("Manage..."), QVariant((int)Manage));
+
+	ui->comboBox_local_working_folder->addItem(tr("Manage..."), QVariant((int)Manage));
+	ui->comboBox_local_working_folder->setCurrentText(global->appsettings.default_working_dir);
+
+	ui->comboBox_local_working_folder->blockSignals(b);
+
 }
 
 
@@ -83,18 +85,19 @@ AddRepositoryDialog::Mode AddRepositoryDialog::mode() const
 
 QString AddRepositoryDialog::workingDir() const
 {
-	return working_dir_;
+	// return working_dir_;
+	return ui->comboBox_local_working_folder->currentText();
 }
 
 void AddRepositoryDialog::setWorkingDir(QString const &dir)
 {
-	working_dir_ = dir;
-	ui->lineEdit_local_path->setText(dir);
+	// working_dir_ = dir;
+	// ui->lineEdit_local_path->setText(dir);
 }
 
 void AddRepositoryDialog::browseLocalPath()
 {
-	QString dir = ui->lineEdit_local_path->text();
+	QString dir = workingDir();//ui->lineEdit_local_path->text();
 	if (dir.isEmpty()) {
 		dir = workingDir();
 	}
@@ -108,9 +111,9 @@ void AddRepositoryDialog::browseLocalPath()
 			if (i > 0) {
 				reponame_ = dir.mid(i + 1);
 				dir = dir.mid(0, i);
-				bool b = ui->comboBox_folder->blockSignals(true);
-				ui->comboBox_folder->setItemText(0, dir);
-				ui->comboBox_folder->blockSignals(b);
+				bool b = ui->comboBox_local_working_folder->blockSignals(true);
+				ui->comboBox_local_working_folder->setItemText(0, dir);
+				ui->comboBox_local_working_folder->blockSignals(b);
 			}
 		}
 	}
@@ -138,7 +141,7 @@ QString AddRepositoryDialog::remoteName() const
 
 QString AddRepositoryDialog::remoteURL() const
 {
-	return ui->lineEdit_remote_url->text();
+	return ui->lineEdit_remote_repository_url->text();
 }
 
 void AddRepositoryDialog::validate()
@@ -159,24 +162,35 @@ void AddRepositoryDialog::validate()
 			}
 
 		}
-		ui->label_warning->setText(text);
+		// ui->label_warning->setText(text);
 	}
 }
 
 void AddRepositoryDialog::updateUI()
 {
-	ui->pushButton_prev->setEnabled(ui->stackedWidget->currentWidget() != ui->page_first);
+	// ui->pushButton_prev->setEnabled(ui->stackedWidget->currentWidget() != ui->page_first);
+
+	ui->groupBox_remote->setCheckable(true);
 
 	bool okbutton = false;
 	switch (mode()) {
 	case Clone:
-		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
-		break;
-	case Initialize:
-		okbutton = (ui->stackedWidget->currentWidget() == ui->page_remote);
+		ui->comboBox_search->setEnabled(true);
+		ui->groupBox_remote->setEnabled(true);
+		ui->groupBox_remote->setChecked(true);
+		// okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
 		break;
 	case AddExisting:
-		okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
+		ui->comboBox_search->setEnabled(false);
+		ui->groupBox_remote->setEnabled(false);
+		ui->groupBox_remote->setChecked(false);
+		// okbutton = (ui->stackedWidget->currentWidget() == ui->page_local);
+		break;
+	case Initialize:
+		ui->comboBox_search->setEnabled(false);
+		ui->groupBox_remote->setEnabled(false);
+		ui->groupBox_remote->setChecked(false);
+		// okbutton = (ui->stackedWidget->currentWidget() == ui->page_remote);
 		break;
 	}
 	if (okbutton) {
@@ -188,66 +202,63 @@ void AddRepositoryDialog::updateUI()
 
 void AddRepositoryDialog::accept()
 {
-	auto *currpage = ui->stackedWidget->currentWidget();
-	if (currpage == ui->page_first) {
-		switch (mode()) {
-		case Clone:
-			setWorkingDir(workingDir());
-			ui->stackedWidget->setCurrentWidget(ui->page_remote);
-			ui->groupBox_remote->setCheckable(false);
-			ui->comboBox_search->setVisible(true);
-			ui->lineEdit_remote_url->setFocus();
-			break;
-		case AddExisting:
-			ui->stackedWidget->setCurrentWidget(ui->page_local);
-			browseLocalPath();
-			break;
-		case Initialize:
-			ui->stackedWidget->setCurrentWidget(ui->page_local);
-			browseLocalPath();
-			break;
-		}
-		updateUI();
-		return;
+	// auto *currpage = ui->stackedWidget->currentWidget();
+	if (0) {//if (currpage == ui->page_first) {
+		// switch (mode()) {
+		// case Clone:
+		// 	setWorkingDir(workingDir());
+		// 	ui->stackedWidget->setCurrentWidget(ui->page_remote);
+		// 	ui->groupBox_remote->setCheckable(false);
+		// 	ui->comboBox_search->setVisible(true);
+		// 	ui->lineEdit_remote_repository_url->setFocus();
+		// 	break;
+		// case AddExisting:
+		// 	ui->stackedWidget->setCurrentWidget(ui->page_local);
+		// 	browseLocalPath();
+		// 	break;
+		// case Initialize:
+		// 	ui->stackedWidget->setCurrentWidget(ui->page_local);
+		// 	browseLocalPath();
+		// 	break;
+		// }
+		// updateUI();
+		// return;
 	} else if (mode() == Clone) {
-		if (currpage == ui->page_remote) {
-			ui->stackedWidget->setCurrentWidget(ui->page_local);
-		} else if (currpage == ui->page_local) {
+		// if (currpage == ui->page_remote) {
+			// ui->stackedWidget->setCurrentWidget(ui->page_local);
+		// } else if (currpage == ui->page_local) {
 			done(QDialog::Accepted);
 			return;
-		}
-		updateUI();
+		// }
+		// updateUI();
 		return;
 	} else if (mode() == AddExisting) {
-		if (currpage == ui->page_local) {
+		// if (currpage == ui->page_local) {
 			done(QDialog::Accepted);
-		}
-		updateUI();
+		// }
+		// updateUI();
 		return;
 	} else if (mode() == Initialize) {
-		if (currpage == ui->page_local) {
-			ui->stackedWidget->setCurrentWidget(ui->page_remote);
-			ui->groupBox_remote->setCheckable(true);
-			ui->groupBox_remote->setChecked(false);
-			ui->comboBox_search->setVisible(false);
-		} else if (currpage == ui->page_remote) {
+		// if (currpage == ui->page_local) {
+			// ui->stackedWidget->setCurrentWidget(ui->page_remote);
+		// } else if (currpage == ui->page_remote) {
 			done(QDialog::Accepted);
-		}
-		updateUI();
+		// }
+		// updateUI();
 		return;
 	}
 }
 
 void AddRepositoryDialog::on_pushButton_prev_clicked()
 {
-	auto *currpage = ui->stackedWidget->currentWidget();
-	if (mode() == Clone && currpage == ui->page_local) {
-		ui->stackedWidget->setCurrentWidget(ui->page_remote);
-	} else if (mode() == Initialize && currpage == ui->page_remote) {
-		ui->stackedWidget->setCurrentWidget(ui->page_local);
-	} else if (currpage != ui->page_first) {
-		ui->stackedWidget->setCurrentWidget(ui->page_first);
-	}
+	// auto *currpage = ui->stackedWidget->currentWidget();
+	// if (mode() == Clone && currpage == ui->page_local) {
+	// 	ui->stackedWidget->setCurrentWidget(ui->page_remote);
+	// } else if (mode() == Initialize && currpage == ui->page_remote) {
+	// 	ui->stackedWidget->setCurrentWidget(ui->page_local);
+	// } else if (currpage != ui->page_first) {
+	// 	ui->stackedWidget->setCurrentWidget(ui->page_first);
+	// }
 
 	updateUI();
 }
@@ -278,21 +289,25 @@ void AddRepositoryDialog::on_pushButton_test_repo_clicked()
 void AddRepositoryDialog::on_radioButton_clone_clicked()
 {
 	mode_ = Clone;
+	updateUI();
+}
+
+void AddRepositoryDialog::on_radioButton_add_existing_clicked()
+
+{
+	mode_ = AddExisting;
+	updateUI();
 }
 
 void AddRepositoryDialog::on_radioButton_initialize_clicked()
 {
 	mode_ = Initialize;
-}
-
-void AddRepositoryDialog::on_radioButton_add_existing_clicked()
-{
-	mode_ = AddExisting;
+	updateUI();
 }
 
 void AddRepositoryDialog::setRemoteURL(QString const &url)
 {
-	ui->lineEdit_remote_url->setText(url);
+	ui->lineEdit_remote_repository_url->setText(url);
 }
 
 void AddRepositoryDialog::on_comboBox_search_currentIndexChanged(int index)
@@ -313,30 +328,34 @@ void AddRepositoryDialog::updateLocalPath()
 	ui->lineEdit_local_path->setText(path);
 }
 
-
-
-void AddRepositoryDialog::on_lineEdit_remote_url_textChanged(const QString &text)
+void AddRepositoryDialog::parseAndUpdateRemoteURL()
 {
-	auto i = text.lastIndexOf('/');
-	auto j = text.lastIndexOf('\\');
+	QString url = remoteURL();
+	auto i = url.lastIndexOf('/');
+	auto j = url.lastIndexOf('\\');
 	if (i < j) i = j;
 
 	if (i > 0) {
 		i++;
 	}
 
-	j = text.size();
-	if (i + 4 < j && text.endsWith(".git")) {
+	j = url.size();
+	if (i + 4 < j && url.endsWith(".git")) {
 		j -= 4;
 	}
 
 	if (i >= 0 && i < j) {
-		reponame_ = text.mid(i, j - i);
+		reponame_ = url.mid(i, j - i);
 	}
 
 	if (mode() == Clone) {
 		updateLocalPath();
 	}
+}
+
+void AddRepositoryDialog::on_lineEdit_remote_repository_url_textChanged(const QString &)
+{
+	parseAndUpdateRemoteURL();
 }
 
 Git::CloneData AddRepositoryDialog::makeCloneData() const
@@ -359,23 +378,25 @@ RepositoryData AddRepositoryDialog::makeRepositoryData() const
 void AddRepositoryDialog::on_groupBox_remote_clicked()
 {
 	if (ui->groupBox_remote->isChecked()) {
-		ui->lineEdit_remote_url->setFocus();
+		ui->lineEdit_remote_repository_url->setFocus();
 	}
 }
 
 
-void AddRepositoryDialog::on_comboBox_folder_currentTextChanged(const QString &arg1)
+void AddRepositoryDialog::on_comboBox_local_working_folder_currentTextChanged(const QString &arg1)
 {
 	QString dir;
-	if (ui->comboBox_folder->currentData() == Manage) {
+	if (ui->comboBox_local_working_folder->currentData() == Manage) {
 		ManageWorkingFolderDialog dlg(this);
-		dlg.exec();
-		ui->comboBox_folder->setCurrentIndex(0);
-		updateComboBoxFolders();
-		return;
+		if (dlg.exec() == QDialog::Accepted) {
+			ui->comboBox_local_working_folder->setCurrentIndex(0);
+			updateWorkingDirComboBoxFolders();
+		}
 	}
 	dir = arg1;
-	setWorkingDir(dir);
+	// setWorkingDir(dir);
+	working_dir_ = dir;
+	ui->lineEdit_local_path->setText(dir);
 	updateLocalPath();
 }
 
