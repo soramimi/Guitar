@@ -1,6 +1,7 @@
+#include "RepositoryWrapperFrame.h"
+#include "ApplicationGlobal.h"
 #include "LogTableWidget.h"
 #include "MainWindow.h"
-#include "RepositoryWrapperFrame.h"
 #include "UserEvent.h"
 
 RepositoryWrapperFrame::RepositoryWrapperFrame(QWidget *parent)

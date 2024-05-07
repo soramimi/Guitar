@@ -1,8 +1,7 @@
 #ifndef MANAGEWORKINGFOLDERDIALOG_H
 #define MANAGEWORKINGFOLDERDIALOG_H
 
-#include "main.h"
-
+#include "ApplicationSettings.h"
 #include <QDialog>
 
 namespace Ui {

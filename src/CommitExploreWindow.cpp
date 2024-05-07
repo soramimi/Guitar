@@ -1,11 +1,11 @@
 
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
+#include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
 #include "ImageViewWidget.h"
 #include "MainWindow.h"
 #include "common/misc.h"
-#include "main.h"
 #include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>
@@ -25,7 +25,6 @@ enum {
 };
 
 struct CommitExploreWindow::Private {
-	MainWindow *mainwindow;
 	GitObjectCache *objcache;
 	Git::CommitItem const *commit;
 	QString root_tree_id;
@@ -46,13 +45,11 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	flags |= Qt::WindowMaximizeButtonHint;
 	setWindowFlags(flags);
 
-	m->mainwindow = mainwin;
-
 	m->objcache = objcache;
 	m->commit = commit;
 
 	m->text_editor_engine = std::make_shared<TextEditorEngine>();
-	ui->widget_fileview->bind(mainwin, nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwin->themeForTextEditor());
+	ui->widget_fileview->bind(nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwin->themeForTextEditor());
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	ui->splitter->setSizes({100, 100, 200});
@@ -94,7 +91,7 @@ CommitExploreWindow::~CommitExploreWindow()
 
 MainWindow *CommitExploreWindow::mainwindow()
 {
-	return m->mainwindow;
+	return global->mainwindow;
 }
 
 void CommitExploreWindow::clearContent()
@@ -241,7 +238,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		if (misc::isImage(mimetype)) {
 			ui->widget_fileview->setImage(mimetype, m->content_object.content, id, path);
 		} else {
-			ui->widget_fileview->setText(m->content_object.content, mainwindow(), id, path);
+			ui->widget_fileview->setText(m->content_object.content, id, path);
 		}
 	} else {
 		clearContent();

@@ -1,6 +1,7 @@
-#include "EditProfilesDialog.h"
 #include "SettingOptionsForm.h"
 #include "ui_SettingOptionsForm.h"
+#include "ApplicationGlobal.h"
+#include "EditProfilesDialog.h"
 
 SettingOptionsForm::SettingOptionsForm(QWidget *parent)
 	: AbstractSettingForm(parent)

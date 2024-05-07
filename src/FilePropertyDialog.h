@@ -17,7 +17,7 @@ public:
 	explicit FilePropertyDialog(QWidget *parent = nullptr);
 	~FilePropertyDialog() override;
 
-	void exec(MainWindow *mw, QString const &path, QString const &id);
+	void exec(QString const &path, QString const &id);
 private:
 	Ui::FilePropertyDialog *ui;
 };

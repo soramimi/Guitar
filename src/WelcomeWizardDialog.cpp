@@ -1,10 +1,11 @@
 #include "WelcomeWizardDialog.h"
 #include "ui_WelcomeWizardDialog.h"
-#include <QFileDialog>
-#include "MainWindow.h"
-#include "common/misc.h"
+#include "ApplicationGlobal.h"
 #include "Git.h"
+#include "MainWindow.h"
 #include "UserEvent.h"
+#include "common/misc.h"
+#include <QFileDialog>
 
 WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	: QDialog(parent)

@@ -1,9 +1,9 @@
 #ifndef SETTINGSDIALOG_H
 #define SETTINGSDIALOG_H
 
-#include <QDialog>
+#include "ApplicationSettings.h"
 #include "MainWindow.h"
-#include "main.h"
+#include <QDialog>
 
 namespace Ui {
 class SettingsDialog;
@@ -44,8 +44,8 @@ public:
 		return settings_;
 	}
 
-	static void loadSettings(ApplicationSettings *as);
-	static void saveSettings(const ApplicationSettings *as);
+	// static void loadSettings(ApplicationSettings *as);
+	// static void saveSettings(const ApplicationSettings *as);
 private slots:
 	void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 public slots:

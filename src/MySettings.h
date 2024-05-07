@@ -3,10 +3,12 @@
 
 #include <QSettings>
 
+class ApplicationBasicData;
+
 class MySettings : public QSettings {
 	Q_OBJECT
 public:
-	explicit MySettings(QObject *parent = nullptr);
+	explicit MySettings();
 };
 
 #endif // MYSETTINGS_H

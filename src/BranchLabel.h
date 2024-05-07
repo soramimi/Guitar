@@ -2,7 +2,7 @@
 #define BRANCHLABEL_H
 
 #include <QColor>
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 
 
 /**
@@ -24,17 +24,7 @@ public:
 	{
 	}
 
-	static QColor color(Type type)
-	{
-
-		switch (type) {
-		case Head:         return global->appsettings.branch_label_color.head;
-		case LocalBranch:  return global->appsettings.branch_label_color.local;
-		case RemoteBranch: return global->appsettings.branch_label_color.remote;
-		case Tag:          return global->appsettings.branch_label_color.tag;
-		}
-		return QColor(224, 224, 224); // gray
-	}
+	static QColor color(Type type);
 };
 
 #endif // BRANCHLABEL_H

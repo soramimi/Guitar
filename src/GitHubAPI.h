@@ -50,7 +50,7 @@ public:
 	bool ok = false;
 	std::string text;
 	std::function<bool(std::string const &text)> callback;
-	void start(MainWindow *mainwindow);
+	void start();
 };
 
 #endif // GITHUBAPI_H

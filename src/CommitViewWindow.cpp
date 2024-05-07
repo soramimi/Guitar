@@ -1,12 +1,17 @@
 #include "CommitViewWindow.h"
 #include "ui_CommitViewWindow.h"
-
+#include "ApplicationGlobal.h"
 #include <QMenu>
 
 struct CommitViewWindow::Private {
 	Git::CommitItem const *commit = nullptr;
 	QList<Git::Diff> diff_list;
 };
+
+MainWindow *CommitViewWindow::mainwindow()
+{
+	return global->mainwindow;
+}
 
 CommitViewWindow::CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit)
 	: QDialog(parent)
@@ -20,7 +25,7 @@ CommitViewWindow::CommitViewWindow(MainWindow *parent, Git::CommitItem const *co
 
 	m->commit = commit;
 
-	ui->widget_diff->bind(mainwindow());
+	ui->widget_diff->init();
 
 	ui->lineEdit_message->setText(m->commit->message);
 	ui->lineEdit_id->setText(m->commit->commit_id.toQString());
@@ -34,11 +39,6 @@ CommitViewWindow::~CommitViewWindow()
 {
 	delete m;
 	delete ui;
-}
-
-MainWindow *CommitViewWindow::mainwindow()
-{
-	return qobject_cast<MainWindow *>(parent());
 }
 
 void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)

@@ -1,9 +1,10 @@
 #include "AddRepositoryDialog.h"
 #include "ui_AddRepositoryDialog.h"
+#include "ApplicationGlobal.h"
 #include "Git.h"
 #include "MainWindow.h"
-#include "SearchFromGitHubDialog.h"
 #include "ManageWorkingFolderDialog.h"
+#include "SearchFromGitHubDialog.h"
 #include "common/misc.h"
 #include <QFileDialog>
 #include <QFocusEvent>

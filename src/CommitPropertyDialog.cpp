@@ -3,11 +3,9 @@
 #include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "MainWindow.h"
+#include "UserEvent.h"
 #include "common/misc.h"
 #include "gpg.h"
-#include "main.h"
-
-#include "UserEvent.h"
 
 struct CommitPropertyDialog::Private {
 	MainWindow *mainwindow;

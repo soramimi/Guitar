@@ -1,7 +1,6 @@
 #include "ReadOnlyPlainTextEdit.h"
-#include "main.h"
-#include "common/misc.h"
 #include "ApplicationGlobal.h"
+#include "common/misc.h"
 #include <QPainter>
 
 ReadOnlyPlainTextEdit::ReadOnlyPlainTextEdit(QWidget *parent)

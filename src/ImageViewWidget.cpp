@@ -1,5 +1,6 @@
 
 #include "ImageViewWidget.h"
+#include "ApplicationGlobal.h"
 #include "FileDiffSliderWidget.h"
 #include "FileDiffWidget.h"
 #include "MainWindow.h"
@@ -22,9 +23,7 @@
 using SvgRendererPtr = std::shared_ptr<QSvgRenderer>;
 
 struct ImageViewWidget::Private {
-	QMainWindow *mainwindow = nullptr;
 	FileDiffWidget *filediffwidget = nullptr;
-//	FileDiffWidget::DrawData *draw_data = nullptr;
 	QScrollBar *v_scroll_bar = nullptr;
 	QScrollBar *h_scroll_bar = nullptr;
 	QString mime_type;
@@ -69,9 +68,8 @@ ImageViewWidget::~ImageViewWidget()
 	delete m;
 }
 
-void ImageViewWidget::bind(QMainWindow *mainwindow, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
+void ImageViewWidget::bind(FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb)
 {
-	m->mainwindow = mainwindow;
 	m->filediffwidget = filediffwidget;
 	m->v_scroll_bar = vsb;
 	m->h_scroll_bar = hsb;
@@ -188,7 +186,7 @@ void ImageViewWidget::updateScrollBarRange()
 
 QMainWindow *ImageViewWidget::mainwindow()
 {
-	return m->mainwindow;
+	return global->mainwindow;
 }
 
 QBrush ImageViewWidget::getTransparentBackgroundBrush()

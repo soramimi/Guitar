@@ -4,7 +4,6 @@
 #include "FileDiffSliderWidget.h"
 #include "FileViewWidget.h"
 #include "Git.h"
-#include "MainWindow.h"
 #include "texteditor/AbstractCharacterBasedApplication.h"
 #include <QDialog>
 #include <memory>
@@ -18,6 +17,8 @@ enum class ViewType {
 	Left,
 	Right
 };
+
+class MainWindow;
 
 using TextDiffLine = Document::Line;
 using TextDiffLineList = QList<Document::Line>;
@@ -94,6 +95,8 @@ private:
 		QString workingdir;
 	};
 
+	MainWindow *mainwindow();
+
 	ViewStyle viewstyle() const;
 
 	GitPtr git();
@@ -125,7 +128,6 @@ private:
 	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
 	QString diffObjects(QString const &a_id, QString const &b_id);
-	MainWindow *mainwindow();
 	bool setSubmodule(const Git::Diff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;
@@ -134,7 +136,7 @@ public:
 	explicit FileDiffWidget(QWidget *parent = nullptr);
 	~FileDiffWidget() override;
 
-	void bind(MainWindow *mw);
+	void init();
 
 	void clearDiffView();
 

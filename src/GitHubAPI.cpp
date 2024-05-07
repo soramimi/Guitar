@@ -1,5 +1,6 @@
 
 #include "GitHubAPI.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "charvec.h"
@@ -15,7 +16,7 @@
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
-	MainWindow *mainwindow = nullptr;
+	// MainWindow *mainwindow = nullptr;
 	WebContext webcx = {WebClient::HTTP_1_0};
 	WebClientPtr web;
 };
@@ -30,9 +31,9 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
-void GitHubRequestThread::start(MainWindow *mainwindow)
+void GitHubRequestThread::start()
 {
-	m->mainwindow = mainwindow;
+	// m->mainwindow = mainwindow;
 	m->webcx.set_keep_alive_enabled(false);
 	m->web = std::make_shared<WebClient>(&m->webcx);
 	QThread::start();
@@ -53,9 +54,9 @@ void GitHubRequestThread::run()
 	} else {
 		std::string msg = web()->error().message();
 		if (!msg.empty()) {
-			m->mainwindow->emitWriteLog(QString::fromStdString("Failed to access the site: " + url + '\n').toUtf8(), false);
+			global->mainwindow->emitWriteLog(QString::fromStdString("Failed to access the site: " + url + '\n').toUtf8(), false);
 			QString s = QString::fromStdString(msg + '\n');
-			m->mainwindow->emitWriteLog(s.toUtf8(), false);
+			global->mainwindow->emitWriteLog(s.toUtf8(), false);
 		}
 	}
 }
@@ -76,7 +77,7 @@ QList<RepositorySearchResultItem> GitHubAPI::searchRepository(std::string q)
 	{
 		OverrideWaitCursor;
 		th.url = "https://api.github.com/search/repositories?q=" + q;
-		th.start(mainwindow_);
+		th.start();
 		while (!th.wait(1)) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}

@@ -15,6 +15,8 @@
 
 #define GIT_ID_LENGTH (40)
 
+#define PATH_PREFIX "*"
+
 class Win32PtyProcess;
 
 enum class LineSide {

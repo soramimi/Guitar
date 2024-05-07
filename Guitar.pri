@@ -107,6 +107,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/ApplicationSettings.cpp \
 	$$PWD/src/CommitDetailGetter.cpp \
 	$$PWD/src/DropDownListFrame.cpp \
 	$$PWD/src/RepositoryUrlLineEdit.cpp \
@@ -250,6 +251,7 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS  += \
+	$$PWD/src/ApplicationSettings.h \
 	$$PWD/src/CommitDetailGetter.h \
 	$$PWD/src/DropDownListFrame.h \
 	$$PWD/src/RepositoryUrlLineEdit.h \
@@ -390,7 +392,6 @@ HEADERS  += \
 	src/dtl/variables.hpp \
 	src/gpg.h \
 	src/gunzip.h \
-	src/main.h \
 	src/platform.h \
 	src/texteditor/AbstractCharacterBasedApplication.h \
 	src/texteditor/InputMethodPopup.h \

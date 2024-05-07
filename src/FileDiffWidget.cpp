@@ -1,12 +1,13 @@
 
+#include "FileDiffWidget.h"
 #include "ApplicationGlobal.h"
 #include "BigDiffWindow.h"
-#include "FileDiffWidget.h"
 #include "GitDiff.h"
 #include "MainWindow.h"
 #include "Theme.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "dtl/dtl.hpp"
 #include "ui_FileDiffWidget.h"
 #include <QBuffer>
 #include <QDebug>
@@ -17,14 +18,12 @@
 #include <QStyle>
 #include <QTextCodec>
 #include <memory>
-#include "dtl/dtl.hpp"
 
 enum {
 	DiffIndexRole = Qt::UserRole,
 };
 
 struct FileDiffWidget::Private {
-	MainWindow *mainwindow = nullptr;
 	FileDiffWidget::InitParam_ init_param_;
 	Git::CommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
@@ -88,24 +87,22 @@ FileDiffWidget::~FileDiffWidget()
 	delete ui;
 }
 
+MainWindow *FileDiffWidget::mainwindow()
+{
+	return global->mainwindow;
+}
+
 /**
  * @brief スクロールバーのセットアップ
  * @param mw
  */
-void FileDiffWidget::bind(MainWindow *mw)
+void FileDiffWidget::init()
 {
-	Q_ASSERT(mw);
-	m->mainwindow = mw;
-	ui->widget_diff_left->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
-	ui->widget_diff_right->bind(mw, this, ui->verticalScrollBar, ui->horizontalScrollBar, mw->themeForTextEditor());
+	ui->widget_diff_left->bind(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
+	ui->widget_diff_right->bind(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
 
 	connect(ui->verticalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged);
 	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
-}
-
-MainWindow *FileDiffWidget::mainwindow()
-{
-	return m->mainwindow;
 }
 
 void FileDiffWidget::setViewType(FileViewType type)
@@ -400,8 +397,8 @@ void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &
 		}
 	}
 
-	ui->widget_diff_left->setText(&m->left_lines, mainwindow(), diff.blob.a_id_or_path, diff.path);
-	ui->widget_diff_right->setText(&m->right_lines, mainwindow(), diff.blob.b_id_or_path, diff.path);
+	ui->widget_diff_left->setText(&m->left_lines, diff.blob.a_id_or_path, diff.path);
+	ui->widget_diff_right->setText(&m->right_lines, diff.blob.b_id_or_path, diff.path);
 	refrectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
@@ -786,7 +783,7 @@ void FileDiffWidget::on_toolButton_fullscreen_clicked()
 
 	BigDiffWindow win(mainwindow());
 	win.setWindowState(Qt::WindowMaximized);
-	win.init(mainwindow(), m->init_param_);
+	win.init(m->init_param_);
 	win.exec();
 }
 

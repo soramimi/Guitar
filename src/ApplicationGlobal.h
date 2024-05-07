@@ -1,14 +1,14 @@
 #ifndef APPLICATIONGLOBAL_H
 #define APPLICATIONGLOBAL_H
 
-#include <QColor>
-#include <QString>
 #include "../filetype/filetype.h"
+#include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "Theme.h"
-#include "main.h"
-#include "webclient.h"
 #include "common/misc.h"
+#include "webclient.h"
+#include <QColor>
+#include <QString>
 
 class MainWindow;
 
@@ -31,17 +31,12 @@ struct AccountProfile {
 	}
 };
 
-struct ApplicationGlobal {
+class ApplicationGlobal : public ApplicationBasicData {
+public:
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
-	QString organization_name;
-	QString application_name;
-	QString this_executive_program;
 	QString language_id;
 	QString theme_id;
-	QString generic_config_dir;
-	QString app_config_dir;
-	QString config_file_path;
 	QString profiles_xml_path;
 	QColor panel_bg_color;
 	ThemePtr theme;
@@ -59,7 +54,5 @@ struct ApplicationGlobal {
 };
 
 extern ApplicationGlobal *global;
-
-#define PATH_PREFIX "*"
 
 #endif // APPLICATIONGLOBAL_H

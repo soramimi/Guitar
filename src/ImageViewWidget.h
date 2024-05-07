@@ -39,7 +39,7 @@ public:
 	explicit ImageViewWidget(QWidget *parent = nullptr);
 	~ImageViewWidget() override;
 
-	void bind(QMainWindow *m, FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb);
+	void bind(FileDiffWidget *filediffwidget, QScrollBar *vsb, QScrollBar *hsb);
 
 	void clear();
 

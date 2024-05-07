@@ -6,9 +6,11 @@
 #include "MyProcess.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
+#include "TextEditorTheme.h"
 #include <QMainWindow>
 #include <QThread>
 
+class ApplicationSettings;
 class AvatarLoader;
 class GitObjectCache;
 class QListWidget;

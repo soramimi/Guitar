@@ -1,5 +1,6 @@
 #include "ManageWorkingFolderDialog.h"
 #include "ui_ManageWorkingFolderDialog.h"
+#include "ApplicationGlobal.h"
 
 ManageWorkingFolderDialog::ManageWorkingFolderDialog(QWidget *parent) :
 	QDialog(parent),

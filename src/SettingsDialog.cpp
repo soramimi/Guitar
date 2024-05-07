@@ -6,9 +6,9 @@
 
 static int page_number = 0;
 
-SettingsDialog::SettingsDialog(MainWindow *parent) :
-	QDialog(parent),
-	ui(new Ui::SettingsDialog)
+SettingsDialog::SettingsDialog(MainWindow *parent)
+	: QDialog(parent)
+	, ui(new Ui::SettingsDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -18,7 +18,6 @@ SettingsDialog::SettingsDialog(MainWindow *parent) :
 	mainwindow_ = parent;
 
 	auto AddPage = [&](AbstractSettingForm *page){
-//		page->layout()->setMargin(0);
 		auto *l = page->layout();
 		if (l) {
 			l->setContentsMargins(0, 0, 0, 0);
@@ -50,152 +49,9 @@ SettingsDialog::~SettingsDialog()
 	delete ui;
 }
 
-namespace {
-
-template <typename T> class GetValue {
-private:
-public:
-	MySettings &settings;
-	QString name;
-	GetValue(MySettings &s, QString const &name)
-		: settings(s)
-		, name(name)
-	{
-	}
-//	void operator >> (T &value)
-//	{
-//		value = settings.value(name, value).template value<T>();
-//	}
-};
-
-template <typename T> void operator >> (GetValue<T> const &l, T &r)
-{
-	r = l.settings.value(l.name, r).template value<T>();
-}
-
-template <> void operator >> (GetValue<QColor> const &l, QColor &r)
-{
-	QString s = l.settings.value(l.name, QString()).template value<QString>(); // 文字列で取得
-	if (s.startsWith('#')) {
-		r = s;
-	}
-}
-
-template <typename T> class SetValue {
-private:
-public:
-	MySettings &settings;
-	QString name;
-	SetValue(MySettings &s, QString const &name)
-		: settings(s)
-		, name(name)
-	{
-	}
-//	void operator << (T const &value)
-//	{
-//		settings.setValue(name, value);
-//	}
-};
-
-template <typename T> void operator << (SetValue<T> &&l, T const &r)
-{
-	l.settings.setValue(l.name, r);
-}
-
-template <> void operator << (SetValue<QColor> &&l, QColor const &r)
-{
-	QString s = QString::asprintf("#%02x%02x%02x", r.red(), r.green(), r.blue());
-	l.settings.setValue(l.name, s);
-}
-
-} // namespace
-
-void SettingsDialog::loadSettings(ApplicationSettings *as)
-{
-	MySettings s;
-
-	*as = ApplicationSettings::defaultSettings();
-
-	s.beginGroup("Global");
-	GetValue<bool>(s, "SaveWindowPosition")                  >> as->remember_and_restore_window_position;
-	GetValue<QString>(s, "DefaultWorkingDirectory")          >> as->default_working_dir;
-	GetValue<QString>(s, "GitCommand")                       >> as->git_command;
-	GetValue<QString>(s, "GpgCommand")                       >> as->gpg_command;
-	GetValue<QString>(s, "SshCommand")                       >> as->ssh_command;
-	GetValue<QString>(s, "TerminalCommand")                  >> as->terminal_command;
-	GetValue<QString>(s, "ExplorerCommand")                  >> as->explorer_command;
-	s.endGroup();
-
-	s.beginGroup("UI");
-	GetValue<bool>(s, "ShowLabels")                          >> as->show_labels;
-	s.endGroup();
-
-	s.beginGroup("Network");
-	GetValue<QString>(s, "ProxyType")                        >> as->proxy_type;
-	GetValue<QString>(s, "ProxyServer")                      >> as->proxy_server;
-	GetValue<bool>(s, "GetCommitterIcon")                    >> as->get_avatar_icon_from_network_enabled;
-	GetValue<bool>(s, "AvatarProvider_gravatar")             >> as->avatar_provider.gravatar;
-	GetValue<bool>(s, "AvatarProvider_libravatar")           >> as->avatar_provider.libravatar;
-	s.endGroup();
-	as->proxy_server = misc::makeProxyServerURL(as->proxy_server);
-
-	s.beginGroup("Behavior");
-	GetValue<bool>(s, "AutomaticFetch")                      >> as->automatically_fetch_when_opening_the_repository;
-	GetValue<int>(s, "MaxCommitItemAcquisitions")            >> as->maximum_number_of_commit_item_acquisitions;
-	s.endGroup();
-
-	s.beginGroup("Visual");
-	GetValue<QColor>(s, "LabelColorHead")                    >> as->branch_label_color.head;
-	GetValue<QColor>(s, "LabelColorLocalBranch")             >> as->branch_label_color.local;
-	GetValue<QColor>(s, "LabelColorRemoteBranch")            >> as->branch_label_color.remote;
-	GetValue<QColor>(s, "LabelColorTag")                     >> as->branch_label_color.tag;
-	s.endGroup();
-}
-
-void SettingsDialog::saveSettings(ApplicationSettings const *as)
-{
-	MySettings s;
-
-	s.beginGroup("Global");
-	SetValue<bool>(s, "SaveWindowPosition")                  << as->remember_and_restore_window_position;
-	SetValue<QString>(s, "DefaultWorkingDirectory")          << as->default_working_dir;
-	SetValue<QString>(s, "GitCommand")                       << as->git_command;
-	SetValue<QString>(s, "GpgCommand")                       << as->gpg_command;
-	SetValue<QString>(s, "SshCommand")                       << as->ssh_command;
-	SetValue<QString>(s, "TerminalCommand")                  << as->terminal_command;
-	SetValue<QString>(s, "ExplorerCommand")                  << as->explorer_command;
-	s.endGroup();
-
-	s.beginGroup("UI");
-	SetValue<bool>(s, "ShowLabels")                          << as->show_labels;
-	SetValue<bool>(s, "ShowGraph")                           << as->show_graph;
-	s.endGroup();
-
-	s.beginGroup("Network");
-	SetValue<QString>(s, "ProxyType")                        << as->proxy_type;
-	SetValue<QString>(s, "ProxyServer")                      << misc::makeProxyServerURL(as->proxy_server);
-	SetValue<bool>(s, "GetCommitterIcon")                    << as->get_avatar_icon_from_network_enabled;
-	SetValue<bool>(s, "AvatarProvider_gravatar")             << as->avatar_provider.gravatar;
-	SetValue<bool>(s, "AvatarProvider_libravatar")           << as->avatar_provider.libravatar;
-	s.endGroup();
-
-	s.beginGroup("Behavior");
-	SetValue<bool>(s, "AutomaticFetch")                      << as->automatically_fetch_when_opening_the_repository;
-	SetValue<int>(s, "MaxCommitItemAcquisitions")            << as->maximum_number_of_commit_item_acquisitions;
-	s.endGroup();
-
-	s.beginGroup("Visual");
-	SetValue<QColor>(s, "LabelColorHead")                    << as->branch_label_color.head;
-	SetValue<QColor>(s, "LabelColorLocalBranch")             << as->branch_label_color.local;
-	SetValue<QColor>(s, "LabelColorRemoteBranch")            << as->branch_label_color.remote;
-	SetValue<QColor>(s, "LabelColorTag")                     << as->branch_label_color.tag;
-	s.endGroup();
-
-}
-
 void SettingsDialog::saveSettings()
 {
-	saveSettings(&settings_);
+	settings_.saveSettings();
 }
 
 void SettingsDialog::exchange(bool save)
@@ -208,7 +64,7 @@ void SettingsDialog::exchange(bool save)
 
 void SettingsDialog::loadSettings()
 {
-	loadSettings(&settings_);
+	settings_ = ApplicationSettings::loadSettings();
 	exchange(false);
 }
 

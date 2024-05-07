@@ -1,5 +1,4 @@
 #include "ReadOnlyLineEdit.h"
-#include "main.h"
 #include "ApplicationGlobal.h"
 
 #include <QPainter>

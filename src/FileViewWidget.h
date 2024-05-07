@@ -56,8 +56,8 @@ public:
 	void setViewType(FileViewType type);
 
 	void setImage(const QString &mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
-	void setText(const QList<Document::Line> *source, QMainWindow *mw, QString const &object_id, const QString &object_path);
-	void setText(const QByteArray &ba, QMainWindow *mw, const QString &object_id, const QString &object_path);
+	void setText(const QList<Document::Line> *source, QString const &object_id, const QString &object_path);
+	void setText(const QByteArray &ba, const QString &object_id, const QString &object_path);
 
 	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
@@ -71,7 +71,7 @@ public:
 
 	TextEditorView *texteditor();
 	TextEditorView const *texteditor() const;
-	void bind(QMainWindow *mw, FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
+	void bind(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 
 	void clear();
 

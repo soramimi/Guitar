@@ -1,10 +1,10 @@
 #ifndef ABSTRACTSETTINGFORM_H
 #define ABSTRACTSETTINGFORM_H
 
-#include <QWidget>
-#include "main.h"
 #include "SettingsDialog.h"
+#include <QWidget>
 
+class ApplicationSettings;
 class MainWindow;
 
 class AbstractSettingForm : public QWidget {

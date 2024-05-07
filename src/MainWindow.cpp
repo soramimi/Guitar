@@ -236,7 +236,7 @@ MainWindow::MainWindow(QWidget *parent)
 	m->status_bar_label = new StatusLabel(this);
 	ui->statusBar->addWidget(m->status_bar_label);
 
-	frame()->filediffwidget()->bind(this);
+	frame()->filediffwidget()->init();
 
 	qApp->installEventFilter(this);
 
@@ -3596,12 +3596,12 @@ QList<BranchLabel> MainWindow::sortedLabels(RepositoryWrapperFrame *frame, int r
 
 void MainWindow::saveApplicationSettings()
 {
-	SettingsDialog::saveSettings(appsettings());
+	appsettings()->saveSettings();
 }
 
 void MainWindow::loadApplicationSettings()
 {
-	SettingsDialog::loadSettings(appsettings());
+	*appsettings() = ApplicationSettings::loadSettings();
 }
 
 void MainWindow::setDiffResult(const QList<Git::Diff> &diffs)
@@ -5028,7 +5028,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 			QString path = getFilePath(item);
 			QString id = getObjectID(item);
 			FilePropertyDialog dlg(this);
-			dlg.exec(this, path, id);
+			dlg.exec(path, id);
 		}
 	}
 }

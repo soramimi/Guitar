@@ -1,11 +1,12 @@
 #include "FileHistoryWindow.h"
-#include "MainWindow.h"
+#include "ui_FileHistoryWindow.h"
+#include "ApplicationGlobal.h"
 #include "FileDiffWidget.h"
 #include "GitDiff.h"
+#include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "ui_FileHistoryWindow.h"
 #include <QMenu>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -63,7 +64,7 @@ FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
 
 	ui->splitter->setSizes({100, 200});
 
-	ui->widget_diff_view->bind(mainwindow());
+	ui->widget_diff_view->init();
 
 //	connect(ui->widget_diff_view, &FileDiffWidget::moveNextItem, this, &FileHistoryWindow::onMoveNextItem);
 //	connect(ui->widget_diff_view, &FileDiffWidget::movePreviousItem, this, &FileHistoryWindow::onMovePreviousItem);
@@ -154,15 +155,17 @@ void FileHistoryWindow::collectFileHistory()
 
 class FindFileIdThread : public QThread {
 private:
-	MainWindow *mainwindow;
+	MainWindow *mainwindow()
+	{
+		return global->mainwindow;
+	}
 	GitPtr g;
 	QString commit_id;
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(MainWindow *mw, GitPtr g, QString const &commit_id, QString const &file)
+	FindFileIdThread(GitPtr g, QString const &commit_id, QString const &file)
 	{
-		this->mainwindow = mw;
 		this->g = g;
 		this->commit_id = commit_id;
 		this->file = file;
@@ -171,7 +174,7 @@ public:
 protected:
 	void run() override
 	{
-		result = mainwindow->findFileID(mainwindow->frame(), commit_id, file);
+		result = mainwindow()->findFileID(mainwindow()->frame(), commit_id, file);
 	}
 };
 
@@ -187,8 +190,8 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		FindFileIdThread left_thread(mainwindow(), m->g->dup(), commit_left.commit_id.toQString(), m->path);
-		FindFileIdThread right_thread(mainwindow(), m->g->dup(), commit_right.commit_id.toQString(), m->path);
+		FindFileIdThread left_thread(m->g->dup(), commit_left.commit_id.toQString(), m->path);
+		FindFileIdThread right_thread(m->g->dup(), commit_right.commit_id.toQString(), m->path);
 		left_thread.start();
 		right_thread.start();
 		left_thread.wait();
