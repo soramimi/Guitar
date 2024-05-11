@@ -2207,14 +2207,6 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
  */
 void MainWindow::updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_ms)
 {
-#if 0
-	postUserFunctionEvent([&](QVariant const &, void *ptr){
-		if (ptr) {
-			RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(ptr);
-			frame->logtablewidget()->viewport()->update();
-		}
-	}, {}, reinterpret_cast<void *>(frame), delay_ms);
-#else
 	if (delay_ms == 0) {
 		frame->logtablewidget()->viewport()->update();
 	}
@@ -2222,7 +2214,6 @@ void MainWindow::updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_m
 		m->update_commit_log_timer.setSingleShot(true);
 		m->update_commit_log_timer.start(delay_ms);
 	}
-#endif
 }
 
 void MainWindow::updateCommitLogTable(int delay_ms)

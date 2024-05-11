@@ -1602,7 +1602,7 @@ QString Git::trimPath(QString const &s)
 			ptr++;
 			if (c == '\\') {
 				c = 0;
-				while (ptr < right && QChar(*ptr).isDigit()) { // decode \oct
+				for (int i = 0; i < 3 && ptr < right && QChar(*ptr).isDigit(); i++) { // decode \oct
 					c = c * 8 + (*ptr - '0');
 					ptr++;
 				}
