@@ -24,9 +24,9 @@ EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &giti
 	
 	auto SetText = [](QRadioButton *button, QString const &text) {
 		if (!text.isEmpty()) {
-		button->setText(text);
-		button->setObjectName(text);
-		button->setVisible(true);
+			button->setText(text);
+			button->setObjectName(text);
+			button->setVisible(true);
 		}
 	};
 	
