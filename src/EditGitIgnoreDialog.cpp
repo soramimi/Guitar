@@ -2,7 +2,6 @@
 #include "MainWindow.h"
 #include "TextEditDialog.h"
 #include "ui_EditGitIgnoreDialog.h"
-
 #include <QFileInfo>
 
 EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file)
@@ -22,10 +21,10 @@ EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &giti
 	ui->radioButton_3->setVisible(false);
 	ui->radioButton_4->setVisible(false);
 	
-	auto SetText = [](QRadioButton *button, QString const &text) {
+	auto SetText = [&](QRadioButton *button, QString const &text) {
 		if (!text.isEmpty()) {
+			text_map_[button] = text;
 			button->setText(text);
-			button->setObjectName(text);
 			button->setVisible(true);
 		}
 	};
@@ -57,10 +56,15 @@ MainWindow *EditGitIgnoreDialog::mainwindow()
 
 QString EditGitIgnoreDialog::text() const
 {
-	if (ui->radioButton_1->isChecked()) return ui->radioButton_1->objectName();
-	if (ui->radioButton_2->isChecked()) return ui->radioButton_2->objectName();
-	if (ui->radioButton_3->isChecked()) return ui->radioButton_3->objectName();
-	if (ui->radioButton_4->isChecked()) return ui->radioButton_4->objectName();
+	std::array<QRadioButton *, 4> arr = {ui->radioButton_1, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4};
+	for (auto button : arr) {
+		if (button->isChecked()) {
+			auto it = text_map_.find(button);
+			if (it != text_map_.end()) {
+				return it->second;
+			}
+		}
+	}
 	return QString();
 }
 
