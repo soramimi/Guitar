@@ -1034,7 +1034,7 @@
      <x>0</x>
      <y>0</y>
      <width>885</width>
-     <height>21</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1077,7 +1077,7 @@
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
-     <string>&amp;Window</string>
+     <string>Wi&amp;ndow</string>
     </property>
     <addaction name="action_window_log"/>
     <addaction name="separator"/>
@@ -1147,7 +1147,7 @@
    </widget>
    <widget class="QMenu" name="menuExperimental">
     <property name="title">
-     <string>Experimental</string>
+     <string>E&amp;xperimental</string>
     </property>
     <addaction name="action_submodules"/>
     <addaction name="action_submodule_add"/>
@@ -1332,7 +1332,7 @@
   </action>
   <action name="action_view_refresh">
    <property name="text">
-    <string>Refresh</string>
+    <string>&amp;Refresh</string>
    </property>
    <property name="toolTip">
     <string>Refresh</string>
@@ -1396,7 +1396,7 @@
   </action>
   <action name="action_edit_global_gitconfig">
    <property name="text">
-    <string>Edit global .gitconfig</string>
+    <string>Ed&amp;it global .gitconfig</string>
    </property>
    <property name="toolTip">
     <string>Edit global .gitconfig</string>
@@ -1404,12 +1404,12 @@
   </action>
   <action name="action_edit_git_config">
    <property name="text">
-    <string>Edit .git/config</string>
+    <string>E&amp;dit .git/config</string>
    </property>
   </action>
   <action name="action_edit_gitignore">
    <property name="text">
-    <string>Edit .gitignore</string>
+    <string>&amp;Edit .gitignore</string>
    </property>
   </action>
   <action name="action_edit_settings">
@@ -1426,7 +1426,7 @@
      <normaloff>:/image/clone.svg</normaloff>:/image/clone.svg</iconset>
    </property>
    <property name="text">
-    <string>Clone</string>
+    <string>&amp;Clone</string>
    </property>
    <property name="toolTip">
     <string>Clone</string>
@@ -1439,7 +1439,7 @@
   </action>
   <action name="action_edit_tags">
    <property name="text">
-    <string>Edit tags...</string>
+    <string>&amp;Edit tags...</string>
    </property>
    <property name="toolTip">
     <string>Edit tags</string>
@@ -1447,7 +1447,7 @@
   </action>
   <action name="action_push_all_tags">
    <property name="text">
-    <string>Push all tags</string>
+    <string>Push &amp;all tags</string>
    </property>
   </action>
   <action name="action_window_log">
@@ -1476,12 +1476,12 @@
   </action>
   <action name="action_delete_branch">
    <property name="text">
-    <string>Delete branch...</string>
+    <string>&amp;Delete branch...</string>
    </property>
   </action>
   <action name="action_reset_HEAD_1">
    <property name="text">
-    <string>Reset HEAD~1</string>
+    <string>&amp;Reset HEAD~1</string>
    </property>
    <property name="toolTip">
     <string>Reset HEAD~1</string>
@@ -1493,7 +1493,7 @@
      <normaloff>:/image/redsquare.svg</normaloff>:/image/redsquare.svg</iconset>
    </property>
    <property name="text">
-    <string>Stop process</string>
+    <string>&amp;Stop process</string>
    </property>
   </action>
   <action name="action_exit">
@@ -1506,17 +1506,17 @@
   </action>
   <action name="action_reflog">
    <property name="text">
-    <string>Reflog...</string>
+    <string>&amp;Reflog...</string>
    </property>
   </action>
   <action name="action_repository_property">
    <property name="text">
-    <string>Property...</string>
+    <string>&amp;Property...</string>
    </property>
   </action>
   <action name="action_set_gpg_signing">
    <property name="text">
-    <string>Set GPG signing</string>
+    <string>Set &amp;GPG signing</string>
    </property>
    <property name="toolTip">
     <string>Set GPG signing</string>
@@ -1524,12 +1524,12 @@
   </action>
   <action name="action_delete_remote_branch">
    <property name="text">
-    <string>Delete remote branch...</string>
+    <string>Delete remote &amp;branch...</string>
    </property>
   </action>
   <action name="action_fetch_prune">
    <property name="text">
-    <string>Fetch --prune</string>
+    <string>&amp;Fetch --prune</string>
    </property>
   </action>
   <action name="action_terminal">
@@ -1538,7 +1538,7 @@
      <normaloff>:/image/terminal.svg</normaloff>:/image/terminal.svg</iconset>
    </property>
    <property name="text">
-    <string>Terminal</string>
+    <string>&amp;Terminal</string>
    </property>
   </action>
   <action name="action_explorer">
@@ -1547,42 +1547,42 @@
      <normaloff>:/image/explorer.svg</normaloff>:/image/explorer.svg</iconset>
    </property>
    <property name="text">
-    <string>Explorer</string>
+    <string>E&amp;xplorer</string>
    </property>
   </action>
   <action name="action_clean_df">
    <property name="text">
-    <string>Clean -df</string>
+    <string>&amp;Clean -df</string>
    </property>
   </action>
   <action name="action_reset_hard">
    <property name="text">
-    <string>Reset --hard</string>
+    <string>Reset --&amp;hard</string>
    </property>
   </action>
   <action name="action_stash">
    <property name="text">
-    <string>Stash</string>
+    <string>&amp;Stash</string>
    </property>
   </action>
   <action name="action_stash_apply">
    <property name="text">
-    <string>Apply</string>
+    <string>&amp;Apply</string>
    </property>
   </action>
   <action name="action_stash_drop">
    <property name="text">
-    <string>Drop</string>
+    <string>&amp;Drop</string>
    </property>
   </action>
   <action name="action_online">
    <property name="text">
-    <string>Online</string>
+    <string>&amp;Online</string>
    </property>
   </action>
   <action name="action_offline">
    <property name="text">
-    <string>Offline</string>
+    <string>Offl&amp;ine</string>
    </property>
   </action>
   <action name="action_repositories_panel">
@@ -1606,7 +1606,7 @@
   </action>
   <action name="action_find_next">
    <property name="text">
-    <string>Find next</string>
+    <string>Find &amp;next</string>
    </property>
    <property name="shortcut">
     <string>F3</string>
@@ -1618,7 +1618,7 @@
      <normaloff>:/image/status.svg</normaloff>:/image/status.svg</iconset>
    </property>
    <property name="text">
-    <string>Status</string>
+    <string>&amp;Status</string>
    </property>
   </action>
   <action name="action_repo_jump_to_head">
@@ -1631,12 +1631,12 @@
   </action>
   <action name="action_repo_merge">
    <property name="text">
-    <string>Merge...</string>
+    <string>&amp;Merge...</string>
    </property>
   </action>
   <action name="action_expand_commit_log">
    <property name="text">
-    <string>Expand commit log</string>
+    <string>&amp;Expand commit log</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+2</string>
@@ -1644,7 +1644,7 @@
   </action>
   <action name="action_expand_file_list">
    <property name="text">
-    <string>Expand file list</string>
+    <string>Expand &amp;file list</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+3</string>
@@ -1652,7 +1652,7 @@
   </action>
   <action name="action_expand_diff_view">
    <property name="text">
-    <string>Expand diff view</string>
+    <string>Expand &amp;diff view</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+4</string>
@@ -1663,7 +1663,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Sidebar</string>
+    <string>&amp;Sidebar</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+1</string>
@@ -1682,7 +1682,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show labels</string>
+    <string>Show &amp;labels</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
@@ -1690,22 +1690,22 @@
   </action>
   <action name="action_submodule_add">
    <property name="text">
-    <string>Submodule add...</string>
+    <string>Submodule &amp;add...</string>
    </property>
   </action>
   <action name="action_submodules">
    <property name="text">
-    <string>Submodules</string>
+    <string>&amp;Submodules</string>
    </property>
   </action>
   <action name="action_submodule_update">
    <property name="text">
-    <string>Submodule update...</string>
+    <string>Submodule &amp;update...</string>
    </property>
   </action>
   <action name="action_create_desktop_launcher_file">
    <property name="text">
-    <string>Create desktop launcher file...</string>
+    <string>&amp;Create desktop launcher file...</string>
    </property>
   </action>
   <action name="action_add_repository">
@@ -1716,16 +1716,13 @@
    <property name="text">
     <string>&amp;Add repository...</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
-   </property>
   </action>
   <action name="action_show_graph">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show graph</string>
+    <string>&amp;Show graph</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
@@ -1738,7 +1735,7 @@
   </action>
   <action name="action_configure_user">
    <property name="text">
-    <string>Configure user</string>
+    <string>&amp;Configure user</string>
    </property>
   </action>
  </widget>

@@ -293,6 +293,7 @@ MainWindow::MainWindow(QWidget *parent)
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
 	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
 
+	// connect(new QShortcut(QKeySequence("Ctrl+A"), this), &QShortcut::activated, this, &MainWindow::onCtrlA);
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
@@ -591,7 +592,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					openSelectedRepository();
 					return true;
 				}
-				if (!(e->modifiers() & Qt::ControlModifier)) {
+				if (e->modifiers() & Qt::ControlModifier) {
+					if (k == Qt::Key_A) {
+						on_action_add_repository_triggered();
+						return true;
+					}
+				} else {
 					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) {
 						appendCharToRepoFilter(k);
 						return true;
@@ -5807,10 +5813,6 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
 	int c = event->key();
-	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
-		test();
-		return;
-	}
 	if (c == Qt::Key_F11) {
 		toggleMaximized();
 		return;
@@ -5884,6 +5886,13 @@ void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
 void MainWindow::on_action_add_repository_triggered()
 {
 	addRepository(QString());
+}
+
+void MainWindow::onCtrlA()
+{
+	if (QApplication::focusWidget() == ui->treeWidget_repos) {
+		on_action_add_repository_triggered();
+	}
 }
 
 void MainWindow::on_toolButton_addrepo_clicked()
