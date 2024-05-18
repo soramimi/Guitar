@@ -1,0 +1,41 @@
+#!/bin/sh
+
+cd /root
+git clone https://github.com/file/file
+cd file
+
+cp /usr/share/automake-1.16/compile .
+cp /usr/share/automake-1.16/config.sub .
+cp /usr/share/automake-1.16/config.guess .
+cp /usr/share/automake-1.16/install-sh .
+cp /usr/share/automake-1.16/missing .
+cp /usr/share/libtool/build-aux/ltmain.sh .
+
+autoheader
+aclocal
+automake -a -c
+autoconf
+./configure
+
+make -j10
+make install
+
+cp /usr/local/bin/file ../docker/
+cp /usr/local/lib/libmagic.so ../docker/
+cp /usr/local/share/misc/magic.mgc ../docker/
+cp src/magic.h ../docker
+cd ../docker
+chmod 777 file
+chmod 666 libmagic.so
+chmod 666 magic.mgc
+chmod 666 magic.h
+chown nobody.nogroup file
+chown nobody.nogroup libmagic.so
+chown nobody.nogroup magic.mgc
+chown nobody.nogroup magic.h
+
+#while :
+#do
+#	sleep 1
+#done
+

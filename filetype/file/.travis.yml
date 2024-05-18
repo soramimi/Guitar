@@ -1,0 +1,28 @@
+# $File: .travis.yml,v 1.8 2016/06/28 06:34:34 kim Exp $
+
+language: c
+
+os:
+ - linux
+ - osx
+
+compiler:
+ - gcc
+ - clang
+
+before_install:
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update -qq; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -qq automake libtool make python zlib1g-dev; fi
+
+script:
+ - autoreconf -f -i
+ - ./configure --disable-silent-rules
+ - make -j4
+ - make -C tests check
+
+notifications:
+ email:
+  recipients:
+   - file-tests@mx.gw.com
+  on_success: change
+  on_failure: always

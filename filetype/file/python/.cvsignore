@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+build
+temp
+Magic_file_extensions.egg-info
+magic.pyc
+.gitignore
