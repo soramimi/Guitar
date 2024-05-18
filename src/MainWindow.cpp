@@ -8,7 +8,7 @@
 #include "CheckoutDialog.h"
 #include "CherryPickDialog.h"
 #include "CleanSubModuleDialog.h"
-#include "CloneFromGitHubDialog.h"
+#include "CommitDetailGetter.h"
 #include "CommitDialog.h"
 #include "CommitExploreWindow.h"
 #include "CommitPropertyDialog.h"
@@ -25,12 +25,14 @@
 #include "FindCommitDialog.h"
 #include "GitDiff.h"
 #include "GitHubAPI.h"
+#include "GitObjectManager.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MemoryReader.h"
 #include "MergeDialog.h"
 #include "MySettings.h"
 #include "ObjectBrowserDialog.h"
+#include "OverrideWaitCursor.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
 #include "RepositoryPropertyDialog.h"
@@ -47,11 +49,9 @@
 #include "TextEditDialog.h"
 #include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
-#include "coloredit/ColorDialog.h"
 #include "common/misc.h"
 #include "gunzip.h"
 #include "platform.h"
-#include "unix/UnixPtyProcess.h"
 #include "webclient.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -66,17 +66,12 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
+#include <QProcess>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <chrono>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <QProcess>
-#include <thread>
-#include "CommitDetailGetter.h"
-#include "CommitMessageGenerator.h"
-#include "GitObjectManager.h"
 
 #ifdef Q_OS_MAC
 namespace {

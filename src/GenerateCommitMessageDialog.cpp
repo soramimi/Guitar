@@ -1,4 +1,5 @@
 #include "GenerateCommitMessageDialog.h"
+#include "OverrideWaitCursor.h"
 #include "ui_GenerateCommitMessageDialog.h"
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
@@ -23,13 +24,12 @@ QString GenerateCommitMessageDialog::text() const
 
 void GenerateCommitMessageDialog::generate()
 {
-	qApp->setOverrideCursor(Qt::WaitCursor);
-
-	CommitMessageGenerator gen;
-	auto list = gen.generate(global->mainwindow->git());
-
-	qApp->restoreOverrideCursor();
-
+	QStringList list;
+	{
+		OverrideWaitCursor;
+		CommitMessageGenerator gen;
+		list = gen.generate(global->mainwindow->git());
+	}
 	if (!list.isEmpty()) {
 		ui->listWidget->addItems(list);
 		ui->listWidget->setCurrentRow(0);
@@ -40,4 +40,3 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 {
 	generate();
 }
-

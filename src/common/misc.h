@@ -75,17 +75,4 @@ public:
 	static int compare(std::vector<uint8_t> const &a, std::vector<uint8_t> const &b);
 };
 
-class OverrideWaitCursor_ {
-public:
-	OverrideWaitCursor_()
-	{
-		qApp->setOverrideCursor(Qt::WaitCursor);
-	}
-	~OverrideWaitCursor_()
-	{
-		qApp->restoreOverrideCursor();
-	}
-};
-#define OverrideWaitCursor OverrideWaitCursor_ waitcursor_; (void)waitcursor_;
-
 #endif // MISC_H

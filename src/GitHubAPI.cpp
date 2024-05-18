@@ -3,6 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
+#include "OverrideWaitCursor.h"
 #include "charvec.h"
 #include "common/misc.h"
 #include "urlencode.h"

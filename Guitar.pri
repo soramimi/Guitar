@@ -108,6 +108,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/GenerateCommitMessageDialog.cpp \
+	$$PWD/src/OverrideWaitCursor.cpp \
 	src/ApplicationSettings.cpp \
 	src/CommitDetailGetter.cpp \
 	src/CommitMessageGenerator.cpp \
@@ -254,6 +255,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/GenerateCommitMessageDialog.h \
+	$$PWD/src/OverrideWaitCursor.h \
 	$$PWD/src/common/strformat.h \
 	src/ApplicationSettings.h \
 	src/CommitDetailGetter.h \
