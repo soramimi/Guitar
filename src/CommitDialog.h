@@ -35,6 +35,7 @@ private:
 private slots:
 	void on_pushButton_config_signing_clicked();
 	void on_checkbox_amend_stateChanged(int state);
+	void on_pushButton_generate_with_ai_clicked();
 };
 
 #endif // COMMITDIALOG_H

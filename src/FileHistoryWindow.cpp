@@ -2,10 +2,9 @@
 #include "ui_FileHistoryWindow.h"
 #include "ApplicationGlobal.h"
 #include "FileDiffWidget.h"
-#include "GitDiff.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
-#include "common/joinpath.h"
+#include "OverrideWaitCursor.h"
 #include "common/misc.h"
 #include <QMenu>
 #include <QPainter>
@@ -17,7 +16,6 @@ struct FileHistoryWindow::Private {
 	QString path;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
-//	FileDiffWidget::DrawData draw_data;
 };
 
 FileDiffWidget::DiffData *FileHistoryWindow::diffdata()
@@ -30,25 +28,10 @@ const FileDiffWidget::DiffData *FileHistoryWindow::diffdata() const
 	return &m->diff_data;
 }
 
-//FileDiffWidget::DrawData *FileHistoryWindow::drawdata()
-//{
-//	return &m->draw_data;
-//}
-
-//const FileDiffWidget::DrawData *FileHistoryWindow::drawdata() const
-//{
-//	return &m->draw_data;
-//}
-
 int FileHistoryWindow::totalTextLines() const
 {
 	return diffdata()->left->lines.size();
 }
-
-//int FileHistoryWindow::fileviewScrollPos() const
-//{
-//	return drawdata()->v_scroll_pos;
-//}
 
 FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
 	: QDialog(parent)
@@ -65,9 +48,6 @@ FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
 	ui->splitter->setSizes({100, 200});
 
 	ui->widget_diff_view->init();
-
-//	connect(ui->widget_diff_view, &FileDiffWidget::moveNextItem, this, &FileHistoryWindow::onMoveNextItem);
-//	connect(ui->widget_diff_view, &FileDiffWidget::movePreviousItem, this, &FileHistoryWindow::onMovePreviousItem);
 }
 
 FileHistoryWindow::~FileHistoryWindow()

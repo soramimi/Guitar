@@ -1,7 +1,9 @@
 #include "CommitDialog.h"
 #include "ui_CommitDialog.h"
-#include "MainWindow.h"
+#include "ApplicationGlobal.h"
 #include "ConfigSigningDialog.h"
+#include "GenerateCommitMessageDialog.h"
+#include "MainWindow.h"
 #include <QDir>
 
 CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage)
@@ -12,6 +14,8 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::Use
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
+
+	ui->pushButton_generate_with_ai->setVisible(global->appsettings.generate_commit_message_by_ai);
 
 	key_ = key;
 	previousMessage_ = previousMessage;
@@ -109,3 +113,18 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 {
 	setText(state == Qt::Checked ? previousMessage_ : QString(""));
 }
+
+void CommitDialog::on_pushButton_generate_with_ai_clicked()
+{
+	GenerateCommitMessageDialog dlg(this);
+	dlg.show();
+	dlg.generate();
+	if (dlg.exec() == QDialog::Accepted) {
+		QString text = dlg.text();
+		if (!text.isEmpty()) {
+			setText(text);
+		}
+	}
+	ui->plainTextEdit->setFocus();
+}
+

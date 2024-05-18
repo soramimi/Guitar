@@ -1,9 +1,8 @@
-#ifdef _WIN32
-/*	$File: localtime_r.c,v 1.1 2015/01/09 19:28:32 christos Exp $	*/
+/*	$File: localtime_r.c,v 1.4 2022/09/24 20:30:13 christos Exp $	*/
 
 #include "file.h"
 #ifndef	lint
-FILE_RCSID("@(#)$File: localtime_r.c,v 1.1 2015/01/09 19:28:32 christos Exp $")
+FILE_RCSID("@(#)$File: localtime_r.c,v 1.4 2022/09/24 20:30:13 christos Exp $")
 #endif	/* lint */
 #include <time.h>
 #include <string.h>
@@ -18,4 +17,3 @@ localtime_r(const time_t *t, struct tm *tm)
 	memcpy(tm, tmp, sizeof(*tm));
 	return tmp;
 }
-#endif

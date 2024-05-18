@@ -1,6 +1,8 @@
 #include "ApplicationSettings.h"
 #include "MySettings.h"
+#include "common/joinpath.h"
 #include "common/misc.h"
+#include <QStandardPaths>
 
 namespace {
 
@@ -54,6 +56,21 @@ template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 
 } // namespace
 
+QString ApplicationSettings::loadOpenAiApiKey()
+{
+	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+	QSettings s(home / ".aicommits", QSettings::IniFormat);
+	QString key = s.value("OPENAI_KEY").toString();
+	return key;
+}
+
+void ApplicationSettings::saveOpenAiApiKey(QString const &key)
+{
+	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+	QSettings s(home / ".aicommits", QSettings::IniFormat);
+	s.setValue("OPENAI_KEY", key);
+}
+
 ApplicationSettings ApplicationSettings::loadSettings()
 {
 	ApplicationSettings as(defaultSettings());
@@ -94,6 +111,12 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorRemoteBranch")            >> as.branch_label_color.remote;
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
 	s.endGroup();
+
+	s.beginGroup("Options");
+	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
+	s.endGroup();
+
+	as.openai_api_key = loadOpenAiApiKey();
 
 	return as;
 }
@@ -136,4 +159,12 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QColor>(s, "LabelColorRemoteBranch")            << this->branch_label_color.remote;
 	SetValue<QColor>(s, "LabelColorTag")                     << this->branch_label_color.tag;
 	s.endGroup();
+
+	s.beginGroup("Options");
+	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
+	s.endGroup();
+
+	if (0) { // ここでは保存しない
+		saveOpenAiApiKey(this->openai_api_key);
+	}
 }

@@ -32,7 +32,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: fsmagic.c,v 1.81 2019/07/16 13:30:32 christos Exp $")
+FILE_RCSID("@(#)$File: fsmagic.c,v 1.85 2022/12/26 17:31:14 christos Exp $")
 #endif	/* lint */
 
 #include "magic.h"
@@ -67,7 +67,7 @@ FILE_RCSID("@(#)$File: fsmagic.c,v 1.81 2019/07/16 13:30:32 christos Exp $")
 #endif
 #undef HAVE_MAJOR
 #ifdef	S_IFLNK
-private int
+file_private int
 bad_link(struct magic_set *ms, int err, char *buf)
 {
 	int mime = ms->flags & MAGIC_MIME;
@@ -87,7 +87,7 @@ bad_link(struct magic_set *ms, int err, char *buf)
 	return 1;
 }
 #endif
-private int
+file_private int
 handle_mime(struct magic_set *ms, int mime, const char *str)
 {
 	if ((mime & MAGIC_MIME_TYPE)) {
@@ -102,7 +102,7 @@ handle_mime(struct magic_set *ms, int mime, const char *str)
 	return 0;
 }
 
-protected int
+file_protected int
 file_fsmagic(struct magic_set *ms, const char *fn, struct stat *sb)
 {
 	int ret, did = 0;
@@ -327,7 +327,7 @@ file_fsmagic(struct magic_set *ms, const char *fn, struct stat *sb)
 			char *tmp;
 			char buf2[BUFSIZ+BUFSIZ+4];
 
-			if ((tmp = strrchr(fn,  '/')) == NULL) {
+			if ((tmp = CCAST(char *, strrchr(fn,  '/'))) == NULL) {
 				tmp = buf; /* in current directory anyway */
 			} else {
 				if (tmp - fn + 1 > BUFSIZ) {

@@ -8,7 +8,7 @@
 #include "CheckoutDialog.h"
 #include "CherryPickDialog.h"
 #include "CleanSubModuleDialog.h"
-#include "CloneFromGitHubDialog.h"
+#include "CommitDetailGetter.h"
 #include "CommitDialog.h"
 #include "CommitExploreWindow.h"
 #include "CommitPropertyDialog.h"
@@ -25,12 +25,14 @@
 #include "FindCommitDialog.h"
 #include "GitDiff.h"
 #include "GitHubAPI.h"
+#include "GitObjectManager.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MemoryReader.h"
 #include "MergeDialog.h"
 #include "MySettings.h"
 #include "ObjectBrowserDialog.h"
+#include "OverrideWaitCursor.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
 #include "RepositoryPropertyDialog.h"
@@ -47,11 +49,9 @@
 #include "TextEditDialog.h"
 #include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
-#include "coloredit/ColorDialog.h"
 #include "common/misc.h"
 #include "gunzip.h"
 #include "platform.h"
-#include "unix/UnixPtyProcess.h"
 #include "webclient.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -66,16 +66,12 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
+#include <QProcess>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <chrono>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <QProcess>
-#include <thread>
-#include "CommitDetailGetter.h"
-#include "GitObjectManager.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -292,6 +288,7 @@ MainWindow::MainWindow(QWidget *parent)
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
 	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
 
+	// connect(new QShortcut(QKeySequence("Ctrl+A"), this), &QShortcut::activated, this, &MainWindow::onCtrlA);
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
@@ -590,7 +587,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					openSelectedRepository();
 					return true;
 				}
-				if (!(e->modifiers() & Qt::ControlModifier)) {
+				if (e->modifiers() & Qt::ControlModifier) {
+					if (k == Qt::Key_A) {
+						on_action_add_repository_triggered();
+						return true;
+					}
+				} else {
 					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) {
 						appendCharToRepoFilter(k);
 						return true;
@@ -5797,10 +5799,6 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
 	int c = event->key();
-	if (c == Qt::Key_T && (event->modifiers() & Qt::ControlModifier)) {
-		test();
-		return;
-	}
 	if (c == Qt::Key_F11) {
 		toggleMaximized();
 		return;
@@ -5841,6 +5839,9 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
+		if (global->appsettings.openai_api_key != newsettings.openai_api_key) {
+			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key);
+		}
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
@@ -5873,30 +5874,23 @@ void MainWindow::on_action_add_repository_triggered()
 	addRepository(QString());
 }
 
+void MainWindow::onCtrlA()
+{
+	if (QApplication::focusWidget() == ui->treeWidget_repos) {
+		on_action_add_repository_triggered();
+	}
+}
+
 void MainWindow::on_toolButton_addrepo_clicked()
 {
 	ui->action_add_repository->trigger();
 }
-
-//void MainWindow::on_action_clone_triggered()
-//{
-//	clone();
-//}
 
 void MainWindow::on_action_about_triggered()
 {
 	AboutDialog dlg(this);
 	dlg.exec();
 }
-
-//void MainWindow::on_toolButton_clone_clicked()
-//{
-//	ui->action_clone->trigger();
-//}
-
-
-
-
 
 void MainWindow::on_toolButton_fetch_clicked()
 {
@@ -6726,29 +6720,6 @@ void MainWindow::on_action_sidebar_triggered()
 	ui->action_sidebar->setChecked(f);
 }
 
-#if 0
-void MainWindow::on_action_wide_triggered()
-{
-	QWidget *w = focusWidget();
-
-	if (w == m->focused_widget) {
-		ui->splitter_h->setSizes(m->splitter_h_sizes);
-		m->focused_widget = nullptr;
-	} else {
-		m->focused_widget = w;
-		m->splitter_h_sizes = ui->splitter_h->sizes();
-
-		if (w == frame->logtablewidget()) {
-			ui->splitter_h->setSizes({10000, 1, 1});
-		} else if (ui->stackedWidget_filelist->isAncestorOf(w)) {
-			ui->splitter_h->setSizes({1, 10000, 1});
-		} else if (ui->frame_diff_view->isAncestorOf(w)) {
-			ui->splitter_h->setSizes({1, 1, 10000});
-		}
-	}
-}
-#endif
-
 void MainWindow::setShowLabels(bool show, bool save)
 {
 	ApplicationSettings *as = appsettings();
@@ -6931,32 +6902,5 @@ Terminal=false
 
 void MainWindow::test()
 {
-#if 0
-	QElapsedTimer t;
-	t.start();
-	std::vector<Git::CommitID> ids;
-	ids.emplace_back("48b37ac7b4119ae01180db65477613297971889c");
-	std::map<Git::CommitID, Git::CommitItem> map;
-	int total = 0;
-	while (total < 10000 && !ids.empty()) {
-		Git::CommitID id = ids.back();
-		ids.pop_back();
-		if (map.find(id) != map.end()) continue;
-		GitFile file = catFile(id, git());
-		Git::CommitItem commit = Git::parseCommit(file.data);
-		ids.insert(ids.end(), commit.parent_ids.begin(), commit.parent_ids.end());
-		map[id] = commit;
-		total++;
-	}
-	qDebug() << total << t.elapsed();
-#else
-	QString id = "be56ea13adedd678ea2ff111f065d094d532dbf6";
-	auto a = git()->log_signature(id);
-	if (a) {
-		Git::CommitItem const &item = *a;
-		qDebug() << item.sign.key_fingerprint;
-	}
-#endif
+
 }
-
-

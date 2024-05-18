@@ -107,11 +107,14 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/ApplicationSettings.cpp \
-	$$PWD/src/CommitDetailGetter.cpp \
-	$$PWD/src/DropDownListFrame.cpp \
-	$$PWD/src/RepositoryUrlLineEdit.cpp \
-	$$PWD/src/WorkingDirLineEdit.cpp \
+	$$PWD/src/GenerateCommitMessageDialog.cpp \
+	$$PWD/src/OverrideWaitCursor.cpp \
+	src/ApplicationSettings.cpp \
+	src/CommitDetailGetter.cpp \
+	src/CommitMessageGenerator.cpp \
+	src/DropDownListFrame.cpp \
+	src/RepositoryUrlLineEdit.cpp \
+	src/WorkingDirLineEdit.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -250,12 +253,17 @@ SOURCES += \
 	src/ManageWorkingFolderDialog.cpp \
 	src/coloredit/RingSlider.cpp
 
-HEADERS  += \
-	$$PWD/src/ApplicationSettings.h \
-	$$PWD/src/CommitDetailGetter.h \
-	$$PWD/src/DropDownListFrame.h \
-	$$PWD/src/RepositoryUrlLineEdit.h \
-	$$PWD/src/WorkingDirLineEdit.h \
+HEADERS += \
+	$$PWD/src/GenerateCommitMessageDialog.h \
+	$$PWD/src/OverrideWaitCursor.h \
+	$$PWD/src/common/strformat.h \
+	src/ApplicationSettings.h \
+	src/CommitDetailGetter.h \
+	src/CommitMessageGenerator.h \
+	src/DropDownListFrame.h \
+	src/RepositoryUrlLineEdit.h \
+	src/WorkingDirLineEdit.h \
+	src/common/jstream.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
@@ -407,6 +415,7 @@ HEADERS  += \
 HEADERS += version.h
 
 FORMS    += \
+	$$PWD/src/GenerateCommitMessageDialog.ui \
 	src/AboutDialog.ui \
 	src/AddRepositoryDialog.ui \
 	src/AreYouSureYouWantToContinueConnectingDialog.ui \

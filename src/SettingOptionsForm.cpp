@@ -18,7 +18,11 @@ SettingOptionsForm::~SettingOptionsForm()
 void SettingOptionsForm::exchange(bool save)
 {
 	if (save) {
+		settings()->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
+		settings()->openai_api_key = ui->lineEdit_openai_api_key->text();
 	} else {
+		ui->groupBox_generate_commit_message_by_ai->setChecked(settings()->generate_commit_message_by_ai);
+		ui->lineEdit_openai_api_key->setText(settings()->openai_api_key);
 	}
 }
 

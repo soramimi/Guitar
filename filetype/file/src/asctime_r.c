@@ -1,8 +1,8 @@
-/*	$File$	*/
+/*	$File: asctime_r.c,v 1.3 2022/09/24 20:30:13 christos Exp $	*/
 
 #include "file.h"
 #ifndef	lint
-FILE_RCSID("@(#)$File: ascmagic.c,v 1.84 2011/12/08 12:38:24 rrt Exp $")
+FILE_RCSID("@(#)$File: asctime_r.c,v 1.3 2022/09/24 20:30:13 christos Exp $")
 #endif	/* lint */
 #include <time.h>
 #include <string.h>
