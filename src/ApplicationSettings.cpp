@@ -71,6 +71,17 @@ void ApplicationSettings::saveOpenAiApiKey(QString const &key)
 	s.setValue("OPENAI_KEY", key.trimmed());
 }
 
+QStringList ApplicationSettings::openai_gpt_models()
+{
+	QStringList list;
+	list.append("gpt-3.5-turbo");
+	list.append("gpt-4-turbo");
+	list.append("gpt-4");
+	list.sort();
+	// list.append("gpt-4o");
+	return list;
+}
+
 ApplicationSettings ApplicationSettings::loadSettings()
 {
 	ApplicationSettings as(defaultSettings());
@@ -114,8 +125,13 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
+	GetValue<QString>(s, "OpenAI_GPT_Model")                  >> as.openai_gpt_model;
 	s.endGroup();
-
+	
+	if (as.openai_gpt_model.isEmpty()) {
+		as.openai_gpt_model = "gpt-4";
+	}
+	
 	as.openai_api_key = loadOpenAiApiKey();
 
 	return as;
@@ -162,6 +178,7 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
+	SetValue<QString>(s, "OpenAI_GPT_Model")                  << this->openai_gpt_model;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない

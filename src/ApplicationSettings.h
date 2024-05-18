@@ -31,6 +31,7 @@ public:
 
 	bool generate_commit_message_by_ai = false;
 	QString openai_api_key;
+	QString openai_gpt_model;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
@@ -58,6 +59,8 @@ public:
 
 	static QString loadOpenAiApiKey();
 	static void saveOpenAiApiKey(const QString &key);
+	
+	static QStringList openai_gpt_models();
 };
 
 #endif // APPLICATIONSETTINGS_H
