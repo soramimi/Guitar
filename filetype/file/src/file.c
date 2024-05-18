@@ -32,7 +32,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: file.c,v 1.216 2023/12/29 18:04:48 christos Exp $")
+FILE_RCSID("@(#)$File: file.c,v 1.189 2021/02/05 21:33:49 christos Exp $")
 #endif	/* lint */
 
 #include "magic.h"
@@ -56,15 +56,6 @@ FILE_RCSID("@(#)$File: file.c,v 1.216 2023/12/29 18:04:48 christos Exp $")
 #endif
 #ifdef HAVE_WCHAR_H
 #include <wchar.h>
-#endif
-#ifdef HAVE_WCTYPE_H
-#include <wctype.h>
-#endif
-#if defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH) && \
-   defined(HAVE_WCTYPE_H)
-#define FILE_WIDE_SUPPORT
-#else
-#include <ctype.h>
 #endif
 
 #if defined(HAVE_GETOPT_H) && defined(HAVE_STRUCT_OPTION)
@@ -97,14 +88,14 @@ int getopt_long(int, char * const *, const char *,
     "       %s -C [-m <magicfiles>]\n" \
     "       %s [--help]\n"
 
-file_private int 		/* Global command-line options 		*/
+private int 		/* Global command-line options 		*/
 	bflag = 0,	/* brief output format	 		*/
 	nopad = 0,	/* Don't pad output			*/
 	nobuffer = 0,   /* Do not buffer stdout 		*/
 	nulsep = 0;	/* Append '\0' to the separator		*/
 
-file_private const char *separator = ":";	/* Default field separator	*/
-file_private const struct option long_options[] = {
+private const char *separator = ":";	/* Default field separator	*/
+private const struct option long_options[] = {
 #define OPT_HELP		1
 #define OPT_APPLE		2
 #define OPT_EXTENSIONS		3
@@ -121,7 +112,7 @@ file_private const struct option long_options[] = {
     {0, 0, NULL, 0}
     };
 
-file_private const struct {
+private const struct {
 	const char *name;
 	int value;
 } nv[] = {
@@ -135,58 +126,53 @@ file_private const struct {
 	{ "soft",	MAGIC_NO_CHECK_SOFT },
 	{ "tar",	MAGIC_NO_CHECK_TAR },
 	{ "json",	MAGIC_NO_CHECK_JSON },
-	{ "simh",	MAGIC_NO_CHECK_SIMH },
 	{ "text",	MAGIC_NO_CHECK_TEXT },	/* synonym for ascii */
 	{ "tokens",	MAGIC_NO_CHECK_TOKENS }, /* OBSOLETE: ignored for backwards compatibility */
 };
 
-file_private struct {
+private struct {
 	const char *name;
+	int tag;
 	size_t value;
+	int set;
 	size_t def;
 	const char *desc;
-	int tag;
-	int set;
 } pm[] = {
-	{ "bytes", 0, FILE_BYTES_MAX, "max bytes to look inside file",
-	    MAGIC_PARAM_BYTES_MAX, 0 },
-	{ "elf_notes", 0, FILE_ELF_NOTES_MAX, "max ELF notes processed",
-	    MAGIC_PARAM_ELF_NOTES_MAX, 0 },
-	{ "elf_phnum", 0, FILE_ELF_PHNUM_MAX, "max ELF prog sections processed",
-	    MAGIC_PARAM_ELF_PHNUM_MAX, 0 },
-	{ "elf_shnum", 0, FILE_ELF_SHNUM_MAX, "max ELF sections processed",
-	    MAGIC_PARAM_ELF_SHNUM_MAX, 0 },
-	{ "elf_shsize", 0, FILE_ELF_SHSIZE_MAX, "max ELF section size",
-	    MAGIC_PARAM_ELF_SHSIZE_MAX, 0 },
-	{ "encoding", 0, FILE_ENCODING_MAX, "max bytes to scan for encoding",
-	    MAGIC_PARAM_ENCODING_MAX, 0 },
-	{ "indir", 0, FILE_INDIR_MAX, "recursion limit for indirection",
-	    MAGIC_PARAM_INDIR_MAX, 0 },
-	{ "name", 0, FILE_NAME_MAX, "use limit for name/use magic",
-	    MAGIC_PARAM_NAME_MAX, 0 },
-	{ "regex", 0, FILE_REGEX_MAX, "length limit for REGEX searches",
-	    MAGIC_PARAM_REGEX_MAX, 0 },
-	{ "magwarn", 0, FILE_MAGWARN_MAX, "maximum number of magic warnings",
-	    MAGIC_PARAM_MAGWARN_MAX, 0 },
+	{ "bytes",	MAGIC_PARAM_BYTES_MAX, 0, 0, FILE_BYTES_MAX,
+	    "max bytes to look inside file" },
+	{ "elf_notes",	MAGIC_PARAM_ELF_NOTES_MAX, 0, 0, FILE_ELF_NOTES_MAX,
+	    "max ELF notes processed" },
+	{ "elf_phnum",	MAGIC_PARAM_ELF_PHNUM_MAX, 0, 0, FILE_ELF_PHNUM_MAX,
+	    "max ELF prog sections processed" },
+	{ "elf_shnum",	MAGIC_PARAM_ELF_SHNUM_MAX, 0, 0, FILE_ELF_SHNUM_MAX,
+	    "max ELF sections processed" },
+	{ "encoding",	MAGIC_PARAM_ENCODING_MAX, 0, 0, FILE_ENCODING_MAX,
+	    "max bytes to scan for encoding" },
+	{ "indir",	MAGIC_PARAM_INDIR_MAX, 0, 0, FILE_INDIR_MAX,
+	    "recursion limit for indirection" },
+	{ "name",	MAGIC_PARAM_NAME_MAX, 0, 0, FILE_NAME_MAX,
+	    "use limit for name/use magic" },
+	{ "regex",	MAGIC_PARAM_REGEX_MAX, 0, 0, FILE_REGEX_MAX,
+	    "length limit for REGEX searches" },
 };
 
-file_private int posixly;
+private int posixly;
 
 #ifdef __dead
 __dead
 #endif
-file_private void usage(void);
-file_private void docprint(const char *, int);
+private void usage(void);
+private void docprint(const char *, int);
 #ifdef __dead
 __dead
 #endif
-file_private void help(void);
+private void help(void);
 
-file_private int unwrap(struct magic_set *, const char *);
-file_private int process(struct magic_set *ms, const char *, int);
-file_private struct magic_set *load(const char *, int);
-file_private void setparam(const char *);
-file_private void applyparam(magic_t);
+private int unwrap(struct magic_set *, const char *);
+private int process(struct magic_set *ms, const char *, int);
+private struct magic_set *load(const char *, int);
+private void setparam(const char *);
+private void applyparam(magic_t);
 
 
 /*
@@ -196,7 +182,7 @@ int
 main(int argc, char *argv[])
 {
 	int c;
-	size_t i, j, wid, nw;
+	size_t i;
 	int action = 0, didsomefiles = 0, errflg = 0;
 	int flags = 0, e = 0;
 #ifdef HAVE_LIBSECCOMP
@@ -371,8 +357,6 @@ main(int argc, char *argv[])
 	if (sandbox && enable_sandbox_full() == -1)
 #endif
 		file_err(EXIT_FAILURE, "SECCOMP initialisation failed");
-	if (sandbox)
-		flags |= MAGIC_NO_COMPRESS_FORK;
 #endif /* HAVE_LIBSECCOMP */
 
 	if (MAGIC_VERSION != magic_version())
@@ -424,36 +408,33 @@ main(int argc, char *argv[])
 	if (optind == argc) {
 		if (!didsomefiles)
 			usage();
-		goto out;
 	}
-
-	for (wid = 0, j = CAST(size_t, optind); j < CAST(size_t, argc);
-	    j++) {
-		nw = file_mbswidth(magic, argv[j]);
-		if (nw > wid)
-			wid = nw;
+	else {
+		size_t j, wid, nw;
+		for (wid = 0, j = CAST(size_t, optind); j < CAST(size_t, argc);
+		    j++) {
+			nw = file_mbswidth(argv[j]);
+			if (nw > wid)
+				wid = nw;
+		}
+		/*
+		 * If bflag is only set twice, set it depending on
+		 * number of files [this is undocumented, and subject to change]
+		 */
+		if (bflag == 2) {
+			bflag = optind >= argc - 1;
+		}
+		for (; optind < argc; optind++)
+			e |= process(magic, argv[optind], wid);
 	}
-
-	/*
-	 * If bflag is only set twice, set it depending on
-	 * number of files [this is undocumented, and subject to change]
-	 */
-	if (bflag == 2) {
-		bflag = optind >= argc - 1;
-	}
-	for (; optind < argc; optind++)
-		e |= process(magic, argv[optind], wid);
 
 out:
-	if (!nobuffer)
-		e |= fflush(stdout) != 0;
-
 	if (magic)
 		magic_close(magic);
 	return e;
 }
 
-file_private void
+private void
 applyparam(magic_t magic)
 {
 	size_t i;
@@ -466,13 +447,13 @@ applyparam(magic_t magic)
 	}
 }
 
-file_private void
+private void
 setparam(const char *p)
 {
 	size_t i;
 	char *s;
 
-	if ((s = CCAST(char *, strchr(p, '='))) == NULL)
+	if ((s = strchr(p, '=')) == NULL)
 		goto badparm;
 
 	for (i = 0; i < __arraycount(pm); i++) {
@@ -486,7 +467,7 @@ badparm:
 	file_errx(EXIT_FAILURE, "Unknown param %s", p);
 }
 
-file_private struct magic_set *
+private struct magic_set *
 /*ARGSUSED*/
 load(const char *magicfile, int flags)
 {
@@ -510,7 +491,7 @@ load(const char *magicfile, int flags)
 /*
  * unwrap -- read a file of filenames, do each one.
  */
-file_private int
+private int
 unwrap(struct magic_set *ms, const char *fn)
 {
 	FILE *f;
@@ -519,187 +500,108 @@ unwrap(struct magic_set *ms, const char *fn)
 	size_t llen = 0;
 	int wid = 0, cwid;
 	int e = 0;
-	size_t fi = 0, fimax = 0;
-	char **flist = NULL;
 
-	if (strcmp("-", fn) == 0)
+	if (strcmp("-", fn) == 0) {
 		f = stdin;
-	else {
+		wid = 1;
+	} else {
 		if ((f = fopen(fn, "r")) == NULL) {
 			file_warn("Cannot open `%s'", fn);
 			return 1;
 		}
+
+		while ((len = getline(&line, &llen, f)) > 0) {
+			if (line[len - 1] == '\n')
+				line[len - 1] = '\0';
+			cwid = file_mbswidth(line);
+			if (cwid > wid)
+				wid = cwid;
+		}
+
+		rewind(f);
 	}
 
 	while ((len = getline(&line, &llen, f)) > 0) {
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		cwid = file_mbswidth(ms, line);
-		if (nobuffer) {
-			e |= process(ms, line, cwid);
-			free(line);
-			line = NULL;
-			llen = 0;
-			continue;
-		}
-		if (cwid > wid)
-			wid = cwid;
-		if (fi >= fimax) {
-			fimax += 100;
-			char **nf = CAST(char **,
-			    realloc(flist, fimax * sizeof(*flist)));
-			if (nf == NULL) {
-				file_err(EXIT_FAILURE,
-				    "Cannot allocate memory for file list");
-			}
-			flist = nf;
-		}
-		flist[fi++] = line;
-		line = NULL;
-		llen = 0;
+		e |= process(ms, line, wid);
 	}
 
-	if (!nobuffer) {
-		fimax = fi;
-		for (fi = 0; fi < fimax; fi++) {
-			e |= process(ms, flist[fi], wid);
-			free(flist[fi]);
-		}
-	}
-	free(flist);
-
-	if (f != stdin)
-		(void)fclose(f);
+	free(line);
+	(void)fclose(f);
 	return e;
-}
-
-file_private void
-file_octal(unsigned char c)
-{
-	(void)putc('\\', stdout);
-	(void)putc(((c >> 6) & 7) + '0', stdout);
-	(void)putc(((c >> 3) & 7) + '0', stdout);
-	(void)putc(((c >> 0) & 7) + '0', stdout);
-}
-
-file_private void
-fname_print(const char *inname)
-{
-	size_t n = strlen(inname);
-#ifdef FILE_WIDE_SUPPORT
-	mbstate_t state;
-	wchar_t nextchar;
-	size_t bytesconsumed;
-
-
-	(void)memset(&state, 0, sizeof(state));
-	while (n > 0) {
-		bytesconsumed = mbrtowc(&nextchar, inname, n, &state);
-		if (bytesconsumed == CAST(size_t, -1) ||
-		    bytesconsumed == CAST(size_t, -2))  {
-			nextchar = *inname++;
-			n--;
-			(void)memset(&state, 0, sizeof(state));
-			file_octal(CAST(unsigned char, nextchar));
-			continue;
-		}
-		inname += bytesconsumed;
-		n -= bytesconsumed;
-		if (iswprint(nextchar)) {
-			printf("%lc", (wint_t)nextchar);
-			continue;
-		}
-		/* XXX: What if it is > 255? */
-		file_octal(CAST(unsigned char, nextchar));
-	}
-#else
-	size_t i;
-	for (i = 0; i < n; i++) {
-		unsigned char c = CAST(unsigned char, inname[i]);
-		if (isprint(c)) {
-			(void)putc(c, stdout);
-			continue;
-		}
-		file_octal(c);
-	}
-#endif
 }
 
 /*
  * Called for each input file on the command line (or in a list of files)
  */
-file_private int
+private int
 process(struct magic_set *ms, const char *inname, int wid)
 {
 	const char *type, c = nulsep > 1 ? '\0' : '\n';
 	int std_in = strcmp(inname, "-") == 0;
-	int haderror = 0;
 
 	if (wid > 0 && !bflag) {
-		const char *pname = std_in ? "/dev/stdin" : inname;
-		if ((ms->flags & MAGIC_RAW) == 0)
-			fname_print(pname);
-		else
-			(void)printf("%s", pname);
+		(void)printf("%s", std_in ? "/dev/stdin" : inname);
 		if (nulsep)
 			(void)putc('\0', stdout);
 		if (nulsep < 2) {
 			(void)printf("%s", separator);
 			(void)printf("%*s ", CAST(int, nopad ? 0
-			    : (wid - file_mbswidth(ms, inname))), "");
+			    : (wid - file_mbswidth(inname))), "");
 		}
 	}
 
 	type = magic_file(ms, std_in ? NULL : inname);
 
 	if (type == NULL) {
-		haderror |= printf("ERROR: %s%c", magic_error(ms), c);
+		(void)printf("ERROR: %s%c", magic_error(ms), c);
 	} else {
-		haderror |= printf("%s%c", type, c) < 0;
+		(void)printf("%s%c", type, c);
 	}
 	if (nobuffer)
-		haderror |= fflush(stdout) != 0;
-	return haderror || type == NULL;
+		(void)fflush(stdout);
+	return type == NULL;
 }
 
-file_protected size_t
-file_mbswidth(struct magic_set *ms, const char *s)
+protected size_t
+file_mbswidth(const char *s)
 {
-	size_t width = 0;
-#ifdef FILE_WIDE_SUPPORT
-	size_t bytesconsumed, n;
+#if defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
+	size_t bytesconsumed, old_n, n, width = 0;
 	mbstate_t state;
 	wchar_t nextchar;
-
-	(void)memset(&state, 0, sizeof(state));
-	n = strlen(s);
+	(void)memset(&state, 0, sizeof(mbstate_t));
+	old_n = n = strlen(s);
 
 	while (n > 0) {
 		bytesconsumed = mbrtowc(&nextchar, s, n, &state);
 		if (bytesconsumed == CAST(size_t, -1) ||
 		    bytesconsumed == CAST(size_t, -2)) {
-			nextchar = *s;
-			bytesconsumed = 1;
-			(void)memset(&state, 0, sizeof(state));
-			width += 4;
+			/* Something went wrong, return something reasonable */
+			return old_n;
+		}
+		if (s[0] == '\n') {
+			/*
+			 * do what strlen() would do, so that caller
+			 * is always right
+			 */
+			width++;
 		} else {
 			int w = wcwidth(nextchar);
-			width += ((ms->flags & MAGIC_RAW) != 0
-			    || iswprint(nextchar)) ? (w > 0 ? w : 1) : 4;
+			if (w > 0)
+				width += w;
 		}
 
 		s += bytesconsumed, n -= bytesconsumed;
 	}
-#else
-	for (; *s; s++) {
-		width += (ms->flags & MAGIC_RAW) != 0
-		    || isprint(CAST(unsigned char, *s)) ? 1 : 4;
-	}
-#endif
 	return width;
+#else
+	return strlen(s);
+#endif
 }
 
-file_private void
+private void
 usage(void)
 {
 	const char *pn = file_getprogname();
@@ -707,26 +609,26 @@ usage(void)
 	exit(EXIT_FAILURE);
 }
 
-file_private void
+private void
 defprint(int def)
 {
 	if (!def)
 		return;
 	if (((def & 1) && posixly) || ((def & 2) && !posixly))
-		(void)fprintf(stdout, " (default)");
-	(void)putc('\n', stdout);
+		fprintf(stdout, " (default)");
+	fputc('\n', stdout);
 }
 
-file_private void
+private void
 docprint(const char *opts, int def)
 {
 	size_t i;
 	int comma, pad;
 	char *sp, *p;
 
-	p = CCAST(char *, strchr(opts, '%'));
+	p = strchr(opts, '%');
 	if (p == NULL) {
-		(void)fprintf(stdout, "%s", opts);
+		fprintf(stdout, "%s", opts);
 		defprint(def);
 		return;
 	}
@@ -734,26 +636,26 @@ docprint(const char *opts, int def)
 	for (sp = p - 1; sp > opts && *sp == ' '; sp--)
 		continue;
 
-	(void)printf("%.*s", CAST(int, p - opts), opts);
+	fprintf(stdout, "%.*s", CAST(int, p - opts), opts);
 	pad = (int)CAST(int, p - sp - 1);
 
 	switch (*++p) {
 	case 'e':
 		comma = 0;
 		for (i = 0; i < __arraycount(nv); i++) {
-			(void)printf("%s%s", comma++ ? ", " : "", nv[i].name);
+			fprintf(stdout, "%s%s", comma++ ? ", " : "", nv[i].name);
 			if (i && i % 5 == 0 && i != __arraycount(nv) - 1) {
-				(void)printf(",\n%*s", pad, "");
+				fprintf(stdout, ",\n%*s", pad, "");
 				comma = 0;
 			}
 		}
 		break;
 	case 'P':
 		for (i = 0; i < __arraycount(pm); i++) {
-			(void)printf("%9s %7zu %s", pm[i].name, pm[i].def,
+			fprintf(stdout, "%9s %7zu %s", pm[i].name, pm[i].def,
 			    pm[i].desc);
 			if (i != __arraycount(pm) - 1)
-				(void)printf("\n%*s", pad, "");
+				fprintf(stdout, "\n%*s", pad, "");
 		}
 		break;
 	default:
@@ -761,11 +663,11 @@ docprint(const char *opts, int def)
 		   *p);
 		break;
 	}
-	(void)printf("%s", opts + (p - opts) + 1);
+	fprintf(stdout, "%s", opts + (p - opts) + 1);
 
 }
 
-file_private void
+private void
 help(void)
 {
 	(void)fputs(
@@ -773,89 +675,89 @@ help(void)
 "Determine type of FILEs.\n"
 "\n", stdout);
 #define OPT(shortname, longname, opt, def, doc)      \
-	(void)printf("  -%c, --" longname, shortname), \
+	fprintf(stdout, "  -%c, --" longname, shortname), \
 	docprint(doc, def);
 #define OPT_LONGONLY(longname, opt, def, doc, id)    	\
-	(void)printf("      --" longname),	\
+	fprintf(stdout, "      --" longname),	\
 	docprint(doc, def);
 #include "file_opts.h"
 #undef OPT
 #undef OPT_LONGONLY
-	(void)printf("\nReport bugs to https://bugs.astron.com/\n");
+	fprintf(stdout, "\nReport bugs to https://bugs.astron.com/\n");
 	exit(EXIT_SUCCESS);
 }
 
-file_private const char *file_progname;
+private const char *file_progname;
 
-file_protected void
+protected void
 file_setprogname(const char *progname)
 {
 	file_progname = progname;
 }
 
-file_protected const char *
+protected const char *
 file_getprogname(void)
 {
 	return file_progname;
 }
 
-file_protected void
+protected void
 file_err(int e, const char *fmt, ...)
 {
 	va_list ap;
 	int se = errno;
 
 	va_start(ap, fmt);
-	(void)fprintf(stderr, "%s: ", file_progname);
-	(void)vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "%s: ", file_progname);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	if (se)
-		(void)fprintf(stderr, " (%s)\n", strerror(se));
+		fprintf(stderr, " (%s)\n", strerror(se));
 	else
 		fputc('\n', stderr);
 	exit(e);
 }
 
-file_protected void
+protected void
 file_errx(int e, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	(void)fprintf(stderr, "%s: ", file_progname);
-	(void)vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "%s: ", file_progname);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	(void)fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 	exit(e);
 }
 
-file_protected void
+protected void
 file_warn(const char *fmt, ...)
 {
 	va_list ap;
 	int se = errno;
 
 	va_start(ap, fmt);
-	(void)fprintf(stderr, "%s: ", file_progname);
-	(void)vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "%s: ", file_progname);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	if (se)
-		(void)fprintf(stderr, " (%s)\n", strerror(se));
+		fprintf(stderr, " (%s)\n", strerror(se));
 	else
 		fputc('\n', stderr);
 	errno = se;
 }
 
-file_protected void
+protected void
 file_warnx(const char *fmt, ...)
 {
 	va_list ap;
 	int se = errno;
 
 	va_start(ap, fmt);
-	(void)fprintf(stderr, "%s: ", file_progname);
-	(void)vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "%s: ", file_progname);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	(void)fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 	errno = se;
 }

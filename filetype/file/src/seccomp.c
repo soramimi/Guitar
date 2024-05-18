@@ -27,7 +27,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: seccomp.c,v 1.27 2024/05/14 13:46:09 christos Exp $")
+FILE_RCSID("@(#)$File: seccomp.c,v 1.20 2021/04/30 22:07:03 christos Exp $")
 #endif	/* lint */
 
 #if HAVE_LIBSECCOMP
@@ -54,32 +54,11 @@ FILE_RCSID("@(#)$File: seccomp.c,v 1.27 2024/05/14 13:46:09 christos Exp $")
 #define ALLOW_IOCTL_RULE(param) \
     do \
 	if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1, \
-	    SCMP_CMP(1, SCMP_CMP_EQ, (scmp_datum_t)param, \
-		     (scmp_datum_t)0)) == -1) \
+	    SCMP_CMP(1, SCMP_CMP_EQ, param)) == -1) \
 		goto out; \
     while (/*CONSTCOND*/0)
 
 static scmp_filter_ctx ctx;
-
-static int
-apply_filter(void)
-{
-#if defined(PR_SET_VMA) && defined(PR_SET_VMA_ANON_NAME)
-	/* allow glibc to name malloc areas */
-	if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(prctl), 2,
-	    SCMP_CMP32(0, SCMP_CMP_EQ, PR_SET_VMA),
-	    SCMP_CMP64(1, SCMP_CMP_EQ, PR_SET_VMA_ANON_NAME)) == -1)
-		return 0;
-#endif
-
-	// applying filter...
-	if (seccomp_load(ctx) == -1)
-		return 0;
-	// free ctx after the filter has been loaded into the kernel
-	seccomp_release(ctx);
-	return 1;
-}
-
 
 int
 enable_sandbox_basic(void)
@@ -88,10 +67,8 @@ enable_sandbox_basic(void)
 	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1)
 		return -1;
 
-#if 0
 	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) == -1)
 		return -1;
-#endif
 
 	// initialize the filter
 	ctx = seccomp_init(SCMP_ACT_ALLOW);
@@ -153,13 +130,13 @@ enable_sandbox_basic(void)
 	DENY_RULE(vmsplice);
 
 	// blocking dangerous syscalls that file should not need
-	DENY_RULE(execve);
-	DENY_RULE(socket);
+	DENY_RULE (execve);
+	DENY_RULE (socket);
 	// ...
 
-	memory
+
 	// applying filter...
-	if (seccomp_load(ctx) == -1)
+	if (seccomp_load (ctx) == -1)
 		goto out;
 	// free ctx after the filter has been loaded into the kernel
 	seccomp_release(ctx);
@@ -180,10 +157,8 @@ enable_sandbox_full(void)
 	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1)
 		return -1;
 
-#if 0
 	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) == -1)
 		return -1;
-#endif
 
 	// initialize the filter
 	ctx = seccomp_init(SCMP_ACT_KILL);
@@ -201,9 +176,7 @@ enable_sandbox_full(void)
 #endif
 	ALLOW_RULE(fcntl);
  	ALLOW_RULE(fcntl64);
-#ifdef __NR_fstat
 	ALLOW_RULE(fstat);
-#endif
  	ALLOW_RULE(fstat64);
 #ifdef __NR_fstatat64
 	ALLOW_RULE(fstatat64);
@@ -257,7 +230,6 @@ enable_sandbox_full(void)
 	ALLOW_RULE(umask);	// Used in file_pipe2file()
 	ALLOW_RULE(getpid);	// Used by glibc in file_pipe2file()
 	ALLOW_RULE(unlink);
-	ALLOW_RULE(utimes);
 	ALLOW_RULE(write);
 	ALLOW_RULE(writev);
 
@@ -299,8 +271,12 @@ enable_sandbox_full(void)
 		 goto out;
 #endif
 
-	if (!apply_filter())
+	// applying filter...
+	if (seccomp_load(ctx) == -1)
 		goto out;
+	// free ctx after the filter has been loaded into the kernel
+	seccomp_release(ctx);
+	return 0;
 
 out:
 	// something went wrong

@@ -1,6 +1,0 @@
-homepage: "http://www.darwinsys.com/file/"
-primary_contact: "zoulasc@gmail.com"
-sanitizers:
-  - address
-  - memory
-  - undefined

@@ -32,13 +32,12 @@
 #include "file.h"
 
 #ifndef lint
-FILE_RCSID("@(#)$File: is_csv.c,v 1.14 2024/04/08 17:00:04 christos Exp $")
+FILE_RCSID("@(#)$File: is_csv.c,v 1.6 2020/08/09 16:43:36 christos Exp $")
 #endif
 
 #include <string.h>
 #include "magic.h"
 #else
-#define CAST(a, b)	((a)(b))
 #include <sys/types.h>
 #endif
 
@@ -108,7 +107,7 @@ csv_parse(const unsigned char *uc, const unsigned char *ue)
 			nl++;
 #if CSV_LINES
 			if (nl == CSV_LINES)
-				return tf > 1 && tf == nf;
+				return tf != 0 && tf == nf;
 #endif
 			if (tf == 0) {
 				// First time and no fields, give up
@@ -126,13 +125,12 @@ csv_parse(const unsigned char *uc, const unsigned char *ue)
 			break;
 		}
 	}
-	return tf > 1 && nl >= 2;
+	return tf && nl > 2;
 }
 
 #ifndef TEST
 int
-file_is_csv(struct magic_set *ms, const struct buffer *b, int looks_text,
-    const char *code)
+file_is_csv(struct magic_set *ms, const struct buffer *b, int looks_text)
 {
 	const unsigned char *uc = CAST(const unsigned char *, b->fbuf);
 	const unsigned char *ue = uc + b->flen;
@@ -156,8 +154,7 @@ file_is_csv(struct magic_set *ms, const struct buffer *b, int looks_text,
 		return 1;
 	}
 
-	if (file_printf(ms, "CSV %s%stext", code ? code : "",
-	    code ? " " : "") == -1)
+	if (file_printf(ms, "CSV text") == -1)
 		return -1;
 
 	return 1;
@@ -177,7 +174,7 @@ file_is_csv(struct magic_set *ms, const struct buffer *b, int looks_text,
 int
 main(int argc, char *argv[])
 {
-	int fd;
+	int fd, rv;
 	struct stat st;
 	unsigned char *p;
 
@@ -187,7 +184,7 @@ main(int argc, char *argv[])
 	if (fstat(fd, &st) == -1)
 		err(EXIT_FAILURE, "Can't stat `%s'", argv[1]);
 
-	if ((p = CAST(char *, malloc(st.st_size))) == NULL)
+	if ((p = malloc(st.st_size)) == NULL)
 		err(EXIT_FAILURE, "Can't allocate %jd bytes",
 		    (intmax_t)st.st_size);
 	if (read(fd, p, st.st_size) != st.st_size)

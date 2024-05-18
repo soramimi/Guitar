@@ -1,8 +1,0 @@
-version: '2'
-services:
-  file:
-    build: .
-    image: file
-    container_name: file
-    volumes:
-      - ./:/root/docker

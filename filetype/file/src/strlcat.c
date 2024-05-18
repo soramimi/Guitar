@@ -17,10 +17,8 @@
  */
 
 /* OPENBSD ORIGINAL: lib/libc/string/strlcat.c */
+#ifndef __APPLE__
 #include "file.h"
-#ifndef lint
-FILE_RCSID("@(#)$File: strlcat.c,v 1.5 2022/09/24 20:30:13 christos Exp $")
-#endif
 
 #include <sys/types.h>
 #include <string.h>
@@ -59,3 +57,4 @@ strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));	/* count does not include NUL */
 }
+#endif

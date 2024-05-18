@@ -204,7 +204,11 @@
 #define HAVE_UINT8_T 1
 
 /* Define to 1 if you have the <my_unistd.h> header file. */
+#ifdef _WIN32
+#undef HAVE_UNISTD_H
+#else
 #define HAVE_UNISTD_H 1
+#endif
 
 /* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME

@@ -8,7 +8,6 @@ win32:DEFINES += "HAVE_CONFIG_H=1" "PCRE2_CODE_UNIT_WIDTH=8"
 !win32:DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 
 SOURCES += \
-	$$PWD/file/src/is_simh.c \
 	filetype/file/src/apprentice.c \
 	filetype/file/src/apptype.c \
 	filetype/file/src/ascmagic.c \
@@ -41,6 +40,7 @@ SOURCES += \
 	filetype/file/src/strcasestr.c \
 	filetype/file/src/strlcat.c \
 	filetype/file/src/strlcpy.c \
+	filetype/file/src/teststrchr.c \
 	filetype/file/src/vasprintf.c \
 	filetype/pcre2/src/pcre2_auto_possess.c \
 	filetype/pcre2/src/pcre2_chartables.c \
