@@ -60,7 +60,7 @@ QString ApplicationSettings::loadOpenAiApiKey()
 {
 	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
 	QSettings s(home / ".aicommits", QSettings::IniFormat);
-	QString key = s.value("OPENAI_KEY").toString();
+	QString key = s.value("OPENAI_KEY").toString().trimmed();
 	return key;
 }
 
@@ -68,7 +68,7 @@ void ApplicationSettings::saveOpenAiApiKey(QString const &key)
 {
 	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
 	QSettings s(home / ".aicommits", QSettings::IniFormat);
-	s.setValue("OPENAI_KEY", key);
+	s.setValue("OPENAI_KEY", key.trimmed());
 }
 
 ApplicationSettings ApplicationSettings::loadSettings()

@@ -1,8 +1,9 @@
 #include "EditGitIgnoreDialog.h"
+#include "ui_EditGitIgnoreDialog.h"
 #include "MainWindow.h"
 #include "TextEditDialog.h"
-#include "ui_EditGitIgnoreDialog.h"
 #include <QFileInfo>
+#include <array>
 
 EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file)
 	: QDialog(parent)

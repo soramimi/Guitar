@@ -4,6 +4,7 @@
 #include "common/misc.h"
 #include "common/strformat.h"
 #include "webclient.h"
+#include <QFile>
 #include <QString>
 
 namespace {
@@ -84,8 +85,11 @@ std::string decode_json_string(std::string const &in)
 	return out.toStdString();
 }
 
-std::vector<std::string> parse_openai_response(std::string const &in)
+} // namespace
+
+std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in)
 {
+	error_.clear();
 	std::vector<std::string> lines;
 	bool ok1 = false;
 	std::string text;
@@ -99,6 +103,9 @@ std::vector<std::string> parse_openai_response(std::string const &in)
 			}
 		} else if (r.match("{choices[{message{content")) {
 			text = decode_json_string(r.string());
+		} else if (r.match("{error{type")) {
+			error_ = r.string();
+			return {};
 		}
 	}
 	if (ok1) {
@@ -137,8 +144,6 @@ std::vector<std::string> parse_openai_response(std::string const &in)
 	return {};
 }
 
-} // namespace
-
 QStringList CommitMessageGenerator::generate(GitPtr g)
 {
 	QString diff = g->diff_head();
@@ -160,6 +165,13 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		{"role": "user", "content": "%s"}]})---";
 	json = strformat(json)(model)(encode_json_string(content));
 
+	if (0) {
+		QFile file("c:/a/a.txt");
+		if (file.open(QIODevice::WriteOnly)) {
+			file.write(json.c_str(), json.size());
+		}
+	}
+
 	std::string url = "https://api.openai.com/v1/chat/completions";
 	WebClient::Request rq(url);
 	rq.add_header("Authorization: Bearer " + global->appsettings.openai_api_key.toStdString());
@@ -171,6 +183,12 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (http.post(rq, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
+		if (0) {
+			QFile file("c:/a/b.txt");
+			if (file.open(QIODevice::WriteOnly)) {
+				file.write(data, size);
+			}
+		}
 		std::string text(data, size);
 		auto list = parse_openai_response(text);
 		QStringList out;

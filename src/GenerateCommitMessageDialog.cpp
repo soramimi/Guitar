@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <thread>
 #include <mutex>
+#include <QMessageBox>
 
 struct GenerateCommitMessageDialog::Private {
 	std::mutex mutex;
@@ -36,12 +37,14 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 				std::swap(requested, m->requested);
 			}
 			if (requested) {
-				OverrideWaitCursor;
-				QStringList list = m->gen.generate(global->mainwindow->git());
+				QStringList list;
+				{
+					OverrideWaitCursor;
+					list = m->gen.generate(global->mainwindow->git());
+				}
 				emit ready(list);
 			}
 		}
-		generate();
 	});	
 }
 
@@ -65,10 +68,13 @@ void GenerateCommitMessageDialog::generate()
 {
 	ui->listWidget->clear();
 	ui->pushButton_regenerate->setEnabled(false);
-	
-	m->interrupted = false;
-	m->requested = true;
-	m->cv.notify_all();
+
+	{
+		std::lock_guard lock(m->mutex);
+		m->interrupted = false;
+		m->requested = true;
+		m->cv.notify_all();
+	}
 }
 
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
@@ -78,7 +84,9 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 
 void GenerateCommitMessageDialog::onReady(const QStringList &list)
 {
-	if (!list.isEmpty()) {
+	if (list.isEmpty()) {
+		QMessageBox::warning(this, "Error", tr("Failed to generate commit message."));
+	} else {
 		ui->listWidget->addItems(list);
 		ui->listWidget->setCurrentRow(0);
 	}
