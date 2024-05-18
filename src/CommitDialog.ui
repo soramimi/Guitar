@@ -226,7 +226,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Generate with AI</string>
+        <string>Generate with &amp;AI</string>
        </property>
       </widget>
      </item>

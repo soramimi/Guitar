@@ -124,5 +124,6 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 			setText(text);
 		}
 	}
+	ui->plainTextEdit->setFocus();
 }
 

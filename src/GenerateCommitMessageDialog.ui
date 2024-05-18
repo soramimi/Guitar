@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>689</width>
-    <height>145</height>
+    <width>763</width>
+    <height>193</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,14 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QListWidget" name="listWidget"/>
+    <widget class="QListWidget" name="listWidget">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -75,8 +82,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>508</x>
-     <y>124</y>
+     <x>665</x>
+     <y>185</y>
     </hint>
     <hint type="destinationlabel">
      <x>205</x>
@@ -91,12 +98,28 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>598</x>
-     <y>118</y>
+     <x>755</x>
+     <y>185</y>
     </hint>
     <hint type="destinationlabel">
      <x>394</x>
      <y>119</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>listWidget</sender>
+   <signal>doubleClicked(QModelIndex)</signal>
+   <receiver>GenerateCommitMessageDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>219</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>225</x>
+     <y>169</y>
     </hint>
    </hints>
   </connection>
