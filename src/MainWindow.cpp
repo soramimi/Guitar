@@ -5891,25 +5891,11 @@ void MainWindow::on_toolButton_addrepo_clicked()
 	ui->action_add_repository->trigger();
 }
 
-//void MainWindow::on_action_clone_triggered()
-//{
-//	clone();
-//}
-
 void MainWindow::on_action_about_triggered()
 {
 	AboutDialog dlg(this);
 	dlg.exec();
 }
-
-//void MainWindow::on_toolButton_clone_clicked()
-//{
-//	ui->action_clone->trigger();
-//}
-
-
-
-
 
 void MainWindow::on_toolButton_fetch_clicked()
 {
@@ -6738,29 +6724,6 @@ void MainWindow::on_action_sidebar_triggered()
 	ui->stackedWidget_leftpanel->setVisible(f);
 	ui->action_sidebar->setChecked(f);
 }
-
-#if 0
-void MainWindow::on_action_wide_triggered()
-{
-	QWidget *w = focusWidget();
-
-	if (w == m->focused_widget) {
-		ui->splitter_h->setSizes(m->splitter_h_sizes);
-		m->focused_widget = nullptr;
-	} else {
-		m->focused_widget = w;
-		m->splitter_h_sizes = ui->splitter_h->sizes();
-
-		if (w == frame->logtablewidget()) {
-			ui->splitter_h->setSizes({10000, 1, 1});
-		} else if (ui->stackedWidget_filelist->isAncestorOf(w)) {
-			ui->splitter_h->setSizes({1, 10000, 1});
-		} else if (ui->frame_diff_view->isAncestorOf(w)) {
-			ui->splitter_h->setSizes({1, 1, 10000});
-		}
-	}
-}
-#endif
 
 void MainWindow::setShowLabels(bool show, bool save)
 {
