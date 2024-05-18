@@ -1,12 +1,12 @@
 #include "GenerateCommitMessageDialog.h"
-#include "ui_ChoiceCommitMessageDialog.h"
+#include "ui_GenerateCommitMessageDialog.h"
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 
 GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 	: QDialog(parent)
-	, ui(new Ui::GenerateCommitMessageWithAiDialog)
+	, ui(new Ui::GenerateCommitMessageDialog)
 {
 	ui->setupUi(this);
 }
@@ -36,4 +36,8 @@ void GenerateCommitMessageDialog::generate()
 	}
 }
 
+void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
+{
+	generate();
+}
 

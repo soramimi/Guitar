@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GenerateCommitMessageWithAiDialog</class>
- <widget class="QDialog" name="GenerateCommitMessageWithAiDialog">
+ <class>GenerateCommitMessageDialog</class>
+ <widget class="QDialog" name="GenerateCommitMessageDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -20,6 +20,13 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QPushButton" name="pushButton_regenerate">
+       <property name="text">
+        <string>Regenerate</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -37,6 +44,9 @@
        <property name="text">
         <string>OK</string>
        </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -50,12 +60,18 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>listWidget</tabstop>
+  <tabstop>pushButton_regenerate</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_2</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
    <sender>pushButton</sender>
    <signal>clicked()</signal>
-   <receiver>GenerateCommitMessageWithAiDialog</receiver>
+   <receiver>GenerateCommitMessageDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -71,7 +87,7 @@
   <connection>
    <sender>pushButton_2</sender>
    <signal>clicked()</signal>
-   <receiver>GenerateCommitMessageWithAiDialog</receiver>
+   <receiver>GenerateCommitMessageDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

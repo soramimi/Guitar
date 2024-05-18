@@ -4,18 +4,20 @@
 #include <QDialog>
 
 namespace Ui {
-class GenerateCommitMessageWithAiDialog;
+class GenerateCommitMessageDialog;
 }
 
 class GenerateCommitMessageDialog : public QDialog {
 	Q_OBJECT
 private:
-	Ui::GenerateCommitMessageWithAiDialog *ui;
+	Ui::GenerateCommitMessageDialog *ui;
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent = nullptr);
 	~GenerateCommitMessageDialog();
 	QString text() const;
 	void generate();
+private slots:
+	void on_pushButton_regenerate_clicked();
 };
 
 #endif // GENERATECOMMITMESSAGEDIALOG_H
