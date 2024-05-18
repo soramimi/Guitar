@@ -107,7 +107,7 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/ChoiceCommitMessageDialog.cpp \
+	$$PWD/src/GenerateCommitMessageDialog.cpp \
 	src/ApplicationSettings.cpp \
 	src/CommitDetailGetter.cpp \
 	src/CommitMessageGenerator.cpp \
@@ -253,7 +253,7 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
-	$$PWD/src/ChoiceCommitMessageDialog.h \
+	$$PWD/src/GenerateCommitMessageDialog.h \
 	$$PWD/src/common/strformat.h \
 	src/ApplicationSettings.h \
 	src/CommitDetailGetter.h \
@@ -413,7 +413,7 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS    += \
-	$$PWD/src/ChoiceCommitMessageDialog.ui \
+	$$PWD/src/GenerateCommitMessageDialog.ui \
 	src/AboutDialog.ui \
 	src/AddRepositoryDialog.ui \
 	src/AreYouSureYouWantToContinueConnectingDialog.ui \

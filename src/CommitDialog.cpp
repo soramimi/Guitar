@@ -1,9 +1,8 @@
 #include "CommitDialog.h"
 #include "ui_CommitDialog.h"
 #include "ApplicationGlobal.h"
-#include "CommitMessageGenerator.h"
 #include "ConfigSigningDialog.h"
-#include "ChoiceCommitMessageDialog.h"
+#include "GenerateCommitMessageDialog.h"
 #include "MainWindow.h"
 #include <QDir>
 
@@ -117,20 +116,12 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	qApp->setOverrideCursor(Qt::WaitCursor);
-
-	CommitMessageGenerator gen;
-	auto list = gen.generate(mainwindow()->git());
-
-	qApp->restoreOverrideCursor();
-
-	if (!list.isEmpty()) {
-		ChoiceCommitMessageDialog dlg(list, this);
-		if (dlg.exec() == QDialog::Accepted) {
-			QString text = dlg.text();
-			if (!text.isEmpty()) {
-				setText(text);
-			}
+	GenerateCommitMessageDialog dlg(this);
+	dlg.generate();
+	if (dlg.exec() == QDialog::Accepted) {
+		QString text = dlg.text();
+		if (!text.isEmpty()) {
+			setText(text);
 		}
 	}
 }
