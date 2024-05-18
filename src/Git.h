@@ -500,6 +500,8 @@ public:
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
 
+	QString diff_head();
+
 	struct DiffRaw {
 		struct AB {
 			QString id;

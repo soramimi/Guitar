@@ -477,6 +477,13 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultQString();
 }
 
+QString Git::diff_head()
+{
+	QString cmd = "diff HEAD";
+	git(cmd);
+	return resultQString();
+}
+
 QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
 {
 	QList<DiffRaw> list;

@@ -29,6 +29,9 @@ public:
 	QString proxy_type;
 	QString proxy_server;
 
+	bool generate_commit_message_by_ai = false;
+	QString openai_api_key;
+
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
 		bool gravatar = true; // www.gravatar.com
@@ -52,6 +55,9 @@ public:
 	void saveSettings() const;
 
 	static ApplicationSettings defaultSettings();
+
+	static QString loadOpenAiApiKey();
+	static void saveOpenAiApiKey(const QString &key);
 };
 
 #endif // APPLICATIONSETTINGS_H

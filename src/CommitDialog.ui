@@ -19,7 +19,6 @@
      <property name="font">
       <font>
        <pointsize>16</pointsize>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -60,7 +59,6 @@
        </property>
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -86,7 +84,6 @@
        </property>
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -131,7 +128,6 @@
          <widget class="QLabel" name="label_sign_id">
           <property name="font">
            <font>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -151,7 +147,6 @@
          <widget class="QLabel" name="label_sign_name">
           <property name="font">
            <font>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -171,7 +166,6 @@
          <widget class="QLabel" name="label_sign_mail">
           <property name="font">
            <font>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -199,8 +193,40 @@
      </property>
      <item alignment="Qt::AlignLeft">
       <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="text">
         <string>Message</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_generate_with_ai">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Generate with AI</string>
        </property>
       </widget>
      </item>
@@ -252,6 +278,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>groupBox_gpg_sign</tabstop>
+  <tabstop>pushButton_config_signing</tabstop>
+  <tabstop>pushButton_generate_with_ai</tabstop>
+  <tabstop>checkbox_amend</tabstop>
+  <tabstop>plainTextEdit</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_2</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -261,8 +296,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>398</x>
-     <y>345</y>
+     <x>470</x>
+     <y>381</y>
     </hint>
     <hint type="destinationlabel">
      <x>370</x>
@@ -277,8 +312,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>544</x>
-     <y>344</y>
+     <x>560</x>
+     <y>381</y>
     </hint>
     <hint type="destinationlabel">
      <x>562</x>

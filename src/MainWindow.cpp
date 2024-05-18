@@ -75,6 +75,7 @@
 #include <QProcess>
 #include <thread>
 #include "CommitDetailGetter.h"
+#include "CommitMessageGenerator.h"
 #include "GitObjectManager.h"
 
 #ifdef Q_OS_MAC
@@ -5850,6 +5851,9 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
+		if (global->appsettings.openai_api_key != newsettings.openai_api_key) {
+			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key);
+		}
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
@@ -6940,32 +6944,5 @@ Terminal=false
 
 void MainWindow::test()
 {
-#if 0
-	QElapsedTimer t;
-	t.start();
-	std::vector<Git::CommitID> ids;
-	ids.emplace_back("48b37ac7b4119ae01180db65477613297971889c");
-	std::map<Git::CommitID, Git::CommitItem> map;
-	int total = 0;
-	while (total < 10000 && !ids.empty()) {
-		Git::CommitID id = ids.back();
-		ids.pop_back();
-		if (map.find(id) != map.end()) continue;
-		GitFile file = catFile(id, git());
-		Git::CommitItem commit = Git::parseCommit(file.data);
-		ids.insert(ids.end(), commit.parent_ids.begin(), commit.parent_ids.end());
-		map[id] = commit;
-		total++;
-	}
-	qDebug() << total << t.elapsed();
-#else
-	QString id = "be56ea13adedd678ea2ff111f065d094d532dbf6";
-	auto a = git()->log_signature(id);
-	if (a) {
-		Git::CommitItem const &item = *a;
-		qDebug() << item.sign.key_fingerprint;
-	}
-#endif
+
 }
-
-
