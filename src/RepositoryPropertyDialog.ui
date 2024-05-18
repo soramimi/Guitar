@@ -151,9 +151,6 @@
        </layout>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEdit_remote_url"/>
-      </item>
-      <item>
        <widget class="QLabel" name="label">
         <property name="text">
          <string>Remote URLs</string>
@@ -164,54 +161,18 @@
        <widget class="RemoteRepositoriesTableWidget" name="tableWidget"/>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_remote">
-        <property name="title">
-         <string>Remote</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QPushButton" name="pushButton_remote_add">
-           <property name="text">
-            <string>Add</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_remote_edit">
-           <property name="text">
-            <string>Edit</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>118</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_remote_remove">
-           <property name="text">
-            <string>Remove</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QPushButton" name="pushButton_remote_menu">
+         <widget class="QPushButton" name="pushButton_remote_add">
           <property name="text">
-           <string>&amp;Remote menu</string>
+           <string>Add</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_remote_remove">
+          <property name="text">
+           <string>Remove</string>
           </property>
          </widget>
         </item>
@@ -269,9 +230,7 @@
   <tabstop>lineEdit_local_dir</tabstop>
   <tabstop>tableWidget</tabstop>
   <tabstop>pushButton_remote_add</tabstop>
-  <tabstop>pushButton_remote_edit</tabstop>
   <tabstop>pushButton_remote_remove</tabstop>
-  <tabstop>pushButton_remote_menu</tabstop>
   <tabstop>pushButton_close</tabstop>
  </tabstops>
  <resources/>

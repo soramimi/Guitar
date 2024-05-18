@@ -116,12 +116,13 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 		GitPtr g = mainwindow()->git(dir, {}, {});
 		std::vector<Git::Remote> vec;
 		if (g->isValidWorkingCopy()) {
-			g->getRemoteURLs(&vec);
+			g->remote_v(&vec);
 		}
 		for (Git::Remote const &r : vec) {
-			if (r.purpose == "push" || url.isEmpty()) {
-				url = r.url;
-			}
+			url = r.url_fetch;
+			if (!url.isEmpty()) break;
+			url = r.url_push;
+			if (!url.isEmpty()) break;
 		}
 		ui->lineEdit_remote->setText(url);
 		ui->lineEdit_working_dir->setText(dir);

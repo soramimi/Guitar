@@ -1467,7 +1467,7 @@ bool Git::rm_cached(QString const &file)
 	return git(cmd.arg(file));
 }
 
-void Git::getRemoteURLs(std::vector<Remote> *out)
+void Git::remote_v(std::vector<Remote> *out)
 {
 	out->clear();
 	git("remote -v");
@@ -1478,13 +1478,37 @@ void Git::getRemoteURLs(std::vector<Remote> *out)
 		if (i > 0 && i < j) {
 			Remote r;
 			r.name = line.mid(0, i);
-			r.url = line.mid(i + 1, j - i - 1);
-			r.purpose = line.mid(j + 1);
 			r.ssh_key = m->ssh_key_override;
-			if (r.purpose.startsWith('(') && r.purpose.endsWith(')')) {
-				r.purpose = r.purpose.mid(1, r.purpose.size() - 2);
+			QString url = line.mid(i + 1, j - i - 1);
+			QString type = line.mid(j + 1);
+			if (type.startsWith('(') && type.endsWith(')')) {
+				type = type.mid(1, type.size() - 2);
+				if (type == "fetch") {
+					r.url_fetch = url;
+				} else if (type == "push") {
+					r.url_push = url;
+				}
 			}
 			out->push_back(r);
+		}
+	}
+	std::sort(out->begin(), out->end(), [](Remote const &a, Remote const &b){
+		return a.name < b.name;
+	});
+	size_t i = out->size();
+	if (i > 1) {
+		i--;
+		while (i > 0) {
+			i--;
+			if ((*out)[i].name == (*out)[i + 1].name) {
+				if ((*out)[i].url_fetch.isEmpty()) {
+					(*out)[i].url_fetch = (*out)[i + 1].url_fetch;
+				}
+				if ((*out)[i].url_push.isEmpty()) {
+					(*out)[i].url_push = (*out)[i + 1].url_push;
+				}
+				out->erase(out->begin() + i + 1);
+			}
 		}
 	}
 }
@@ -1492,14 +1516,14 @@ void Git::getRemoteURLs(std::vector<Remote> *out)
 void Git::setRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url_fetch));
 	git(cmd);
 }
 
 void Git::addRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote add \"%1\" \"%2\"";
-	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url));
+	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url_fetch));
 	m->ssh_key_override = remote.ssh_key;
 	git(cmd);
 }

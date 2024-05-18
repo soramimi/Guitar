@@ -2,7 +2,6 @@
 #define REPOSITORYPROPERTYDIALOG_H
 
 #include "RepositoryData.h"
-#include "BasicRepositoryDialog.h"
 #include "EditRemoteDialog.h"
 #include <QDialog>
 #include "Git.h"
@@ -24,7 +23,6 @@ private:
 	MainWindow *mainwindow();
 	
 	GitPtr git();
-	QString updateRemotesTable(QTableWidget *tablewidget);
 	
 	const std::vector<Git::Remote> *remotes() const;
 	void getRemotes_();
@@ -39,9 +37,9 @@ private:
 	void updateRemotesTable();
 	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
 	Git::Remote selectedRemote() const;
-	void toggleRemoteMenuActivity();
 	bool isNameEditMode() const;
 	void setNameEditMode(bool f);
+	void reflectRemotesTable();
 public:
 	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
@@ -51,12 +49,11 @@ public:
 	QString getName();
 private slots:
 	void on_pushButton_remote_add_clicked();
-	void on_pushButton_remote_edit_clicked();
+	// void on_pushButton_remote_edit_clicked();
 	void on_pushButton_remote_remove_clicked();
-	void on_pushButton_remote_menu_clicked();
 	void on_pushButton_edit_name_clicked();
 
-	// QDialog interface
+	
 public slots:
 	void reject();
 };

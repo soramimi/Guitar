@@ -11,7 +11,7 @@ RemoteRepositoriesTableWidget::RemoteRepositoriesTableWidget(QWidget *parent)
 	setFocusPolicy(Qt::StrongFocus);
 	setSelectionMode(QAbstractItemView::SingleSelection);
 	setSelectionBehavior(QAbstractItemView::SelectRows);
-	setEditTriggers(QAbstractItemView::NoEditTriggers);
+	// setEditTriggers(QAbstractItemView::NoEditTriggers);
 	setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 	setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 
@@ -28,9 +28,11 @@ void RemoteRepositoriesTableWidget::contextMenuEvent(QContextMenuEvent *)
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_copy_url) {
-			QString url = item(row, 2)->text();
+			QString url = item(row, 1)->text();
 			qApp->clipboard()->setText(url);
 			return;
 		}
 	}
 }
+
+

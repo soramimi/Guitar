@@ -2107,7 +2107,7 @@ void MainWindow::createRepository(const QString &dir)
 					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
 						Git::Remote r;
 						r.name = remote_name;
-						r.url = remote_url;
+						r.set_url(remote_url);
 						r.ssh_key = ssh_key;
 						g->addRemoteURL(r);
 						changeSshKey(path, ssh_key, true);
@@ -2136,7 +2136,7 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
 		} else {
 			GitPtr g = git(path, {}, remote.ssh_key);
 			if (g->init()) {
-				if (!remote.name.isEmpty() && !remote.url.isEmpty()) {
+				if (!remote.name.isEmpty() && !remote.url_fetch.isEmpty()) {
 					g->addRemoteURL(remote);
 					changeSshKey(path, remote.ssh_key, false);
 				}
@@ -2168,7 +2168,7 @@ void MainWindow::addRepository(const QString &dir)
 			QString name = dlg.repositoryName();
 			Git::Remote r;
 			r.name = dlg.remoteName();
-			r.url = dlg.remoteURL();
+			r.set_url(dlg.remoteURL());
 			r.ssh_key = dlg.overridedSshKey();
 			initRepository(dir, name, r);
 		}
@@ -3907,17 +3907,25 @@ void MainWindow::detectGitServerType(GitPtr g)
 {
 	*ptrGitHub() = GitHubRepositoryInfo();
 
-	QString push_url;
-	std::vector<Git::Remote> remotes;
-	g->getRemoteURLs(&remotes);
-	for (Git::Remote const &r : remotes) {
-		if (r.purpose == "push") {
-			push_url = r.url;
+	QString url;
+	{
+		Git::Remote remote;
+		std::vector<Git::Remote> remotes;
+		g->remote_v(&remotes);
+		for (Git::Remote const &r : remotes) {
+			if (r.name == "origin") {
+				remote = r;
+				break;
+			}
+			if (!r.url().isEmpty()) {
+				remote = r;
+			}
 		}
+		url = remote.url();
 	}
 
 	auto Check = [&](QString const &s){
-		int i = (int)push_url.indexOf(s);
+		int i = (int)url.indexOf(s);
 		if (i > 0) return i + (int)s.size();
 		return 0;
 	};
@@ -3928,14 +3936,14 @@ void MainWindow::detectGitServerType(GitPtr g)
 		pos = Check("://github.com/");
 	}
 	if (pos > 0) {
-		auto end = push_url.size();
+		auto end = url.size();
 		{
 			QString s = ".git";
-			if (push_url.endsWith(s)) {
+			if (url.endsWith(s)) {
 				end -= s.size();
 			}
 		}
-		QString s = push_url.mid(pos, end - pos);
+		QString s = url.mid(pos, end - pos);
 		auto i = s.indexOf('/');
 		if (i > 0) {
 			auto *p = ptrGitHub();
@@ -4539,14 +4547,20 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		strings.push_back(repo->name);
 		strings.push_back(repo->local_dir);
 		{
+			QStringList urls;
 			std::vector<Git::Remote> remotes;
-			git(repo->local_dir, {}, {})->getRemoteURLs(&remotes);
-			std::sort(remotes.begin(), remotes.end());
-			auto it = std::unique(remotes.begin(), remotes.end());
-			remotes.resize(it - remotes.begin());
+			git(repo->local_dir, {}, {})->remote_v(&remotes);
 			for (Git::Remote const &r : remotes) {
-				strings.push_back(r.url);
+				urls.push_back(r.url_fetch);
+				urls.push_back(r.url_push);
 			}
+			urls.sort();
+			auto it = std::unique(urls.begin(), urls.end());
+			urls.resize(it - urls.begin());
+			if (!urls.isEmpty() && urls.front().isEmpty()) {
+				urls.pop_front();
+			}
+			strings.append(urls);
 		}
 		
 		QString open_terminal = tr("Open &terminal");

@@ -513,16 +513,21 @@ public:
 
 	struct Remote {
 		QString name;
-		QString url;
-		QString purpose;
+		QString url_fetch;
+		QString url_push;
 		QString ssh_key;
-		bool operator == (Remote const &r) const
-		{
-			return url == r.url;
-		}
 		bool operator < (Remote const &r) const
 		{
-			return url < r.url;
+			return name < r.name;
+		}
+		QString const &url() const
+		{
+			return url_fetch;
+		}
+		void set_url(QString const &url)
+		{
+			url_fetch = url;
+			url_push = url;
 		}
 	};
 
@@ -539,7 +544,7 @@ public:
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const CommitID &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
-	void getRemoteURLs(std::vector<Remote> *out);
+	void remote_v(std::vector<Remote> *out);
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);

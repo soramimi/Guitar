@@ -1,13 +1,14 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "common/misc.h"
 #include <QClipboard>
 #include <QMenu>
 #include <QMessageBox>
+#include <QItemDelegate>
 
 struct RepositoryPropertyDialog::Private {
-	MainWindow *mainwindow = nullptr;
 	GitPtr git;
 	std::vector<Git::Remote> remotes;
 };
@@ -20,9 +21,7 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Cont
 {
 	ui->setupUi(this);
 	
-	m->mainwindow = parent;
 	m->git = g;
-	
 	
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
@@ -30,17 +29,20 @@ RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Cont
 
 	repository = item;
 
-	ui->groupBox_remote->setVisible(open_repository_menu);
-
 	ui->label_editable_name->setText(repository.name);
 	ui->label_editable_name->setVisible(true);
 	ui->lineEdit_name->setText(repository.name);
 	ui->lineEdit_name->setVisible(false);
 	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
-
+	
+	connect(ui->tableWidget->itemDelegate(), &QItemDelegate::closeEditor, this, [this](QWidget *editor, QAbstractItemDelegate::EndEditHint hint){
+		reflectRemotesTable();
+	});
+	
 	ui->pushButton_close->setFocus();
-
+	
 	updateRemotesTable();
+	
 }
 
 RepositoryPropertyDialog::~RepositoryPropertyDialog()
@@ -51,7 +53,7 @@ RepositoryPropertyDialog::~RepositoryPropertyDialog()
 
 MainWindow *RepositoryPropertyDialog::mainwindow()
 {
-	return m->mainwindow;
+	return global->mainwindow;
 }
 
 GitPtr RepositoryPropertyDialog::git()
@@ -59,16 +61,24 @@ GitPtr RepositoryPropertyDialog::git()
 	return m->git;
 }
 
-QString RepositoryPropertyDialog::updateRemotesTable(QTableWidget *tablewidget)
+void RepositoryPropertyDialog::getRemotes_()
 {
-	tablewidget->clear();
+	GitPtr g = git();
+	if (g->isValidWorkingCopy()) {
+		g->remote_v(&m->remotes);
+	}
+}
+
+void RepositoryPropertyDialog::updateRemotesTable()
+{
+	ui->tableWidget->clear();
 	m->remotes.clear();
 	getRemotes_();
 	QString url;
 	QString alturl;
 	int rows = m->remotes.size();
-	tablewidget->setColumnCount(3);
-	tablewidget->setRowCount(rows);
+	ui->tableWidget->setColumnCount(2);
+	ui->tableWidget->setRowCount(rows);
 	auto newQTableWidgetItem = [](QString const &text){
 		auto *item = new QTableWidgetItem;
 		item->setSizeHint(QSize(20, 20));
@@ -76,31 +86,41 @@ QString RepositoryPropertyDialog::updateRemotesTable(QTableWidget *tablewidget)
 		return item;
 	};
 	auto SetHeaderItem = [&](int col, QString const &text){
-		tablewidget->setHorizontalHeaderItem(col, newQTableWidgetItem(text));
+		ui->tableWidget->setHorizontalHeaderItem(col, newQTableWidgetItem(text));
 	};
 	SetHeaderItem(0, tr("Name"));
-	SetHeaderItem(1, tr("Purpose"));
-	SetHeaderItem(2, tr("URL"));
+	SetHeaderItem(1, tr("URL"));
 	for (int row = 0; row < rows; row++) {
 		Git::Remote const &r = m->remotes[row];
-		if (r.purpose == "push") {
-			url = r.url;
-		} else {
-			alturl = r.url;
-		}
-		auto SetItem = [&](int col, QString const &text){
-			tablewidget->setItem(row, col, newQTableWidgetItem(text));
+		url = r.url_fetch;
+		auto SetItem = [&](int col, QString const &text, bool editable){
+			auto item = newQTableWidgetItem(text);
+			auto flags = item->flags();
+			if (editable) {
+				flags |= Qt::ItemIsEditable;
+			} else {
+				flags &= ~Qt::ItemIsEditable;
+			}
+			item->setFlags(flags);
+			ui->tableWidget->setItem(row, col, item);
 		};
-		SetItem(0, r.name);
-		SetItem(1, r.purpose);
-		SetItem(2, r.url);
+		SetItem(0, r.name, false);
+		SetItem(1, r.url(), true);
 	}
-	tablewidget->horizontalHeader()->setStretchLastSection(true);
-	
-	if (url.isEmpty()) {
-		url = alturl;
+	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+}
+
+void RepositoryPropertyDialog::reflectRemotesTable()
+{
+	int rows = m->remotes.size();
+	for (int row = 0; row < rows; row++) {
+		Git::Remote *r = &m->remotes[row];
+		QString url = ui->tableWidget->item(row, 1)->text();
+		if (r->url() != url) {
+			r->set_url(url);
+			git()->setRemoteURL(*r);
+		}
 	}
-	return url;
 }
 
 const std::vector<Git::Remote> *RepositoryPropertyDialog::remotes() const
@@ -108,27 +128,9 @@ const std::vector<Git::Remote> *RepositoryPropertyDialog::remotes() const
 	return &m->remotes;
 }
 
-void RepositoryPropertyDialog::getRemotes_()
-{
-	GitPtr g = git();
-	if (g->isValidWorkingCopy()) {
-		g->getRemoteURLs(&m->remotes);
-	}
-}
-
 void RepositoryPropertyDialog::setSshKey_(const QString &sshkey)
 {
 	m->git->setSshKey(sshkey);
-}
-
-void RepositoryPropertyDialog::updateRemotesTable()
-{
-	updateRemotesTable(ui->tableWidget);
-}
-
-void RepositoryPropertyDialog::toggleRemoteMenuActivity()
-{
-	ui->groupBox_remote->setVisible(!ui->groupBox_remote->isVisible());
 }
 
 /**
@@ -156,11 +158,11 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 
 	EditRemoteDialog dlg(mainwindow(), op, gcx);
 	dlg.setName(remote->name);
-	dlg.setUrl(remote->url);
+	dlg.setUrl(remote->url_fetch);
 	dlg.setSshKey(remote->ssh_key);
 	if (dlg.exec() == QDialog::Accepted) {
 		remote->name = dlg.name();
-		remote->url = dlg.url();
+		remote->set_url(dlg.url());
 		remote->ssh_key = dlg.sshKey();
 		GitPtr g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
@@ -225,17 +227,17 @@ void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 	}
 }
 
-void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
-{
-	int row = ui->tableWidget->currentRow();
-	if (row < 0) {
-		ui->tableWidget->setCurrentCell(0, 0);
-	}
-	Git::Remote remote = selectedRemote();
-	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
-		remote_changed = true;
-	}
-}
+// void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
+// {
+// 	int row = ui->tableWidget->currentRow();
+// 	if (row < 0) {
+// 		ui->tableWidget->setCurrentCell(0, 0);
+// 	}
+// 	Git::Remote remote = selectedRemote();
+// 	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
+// 		remote_changed = true;
+// 	}
+// }
 
 void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
@@ -250,12 +252,6 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 		}
 	}
 }
-
-void RepositoryPropertyDialog::on_pushButton_remote_menu_clicked()
-{
-	toggleRemoteMenuActivity();
-}
-
 
 void RepositoryPropertyDialog::setNameEditMode(bool f)
 {
@@ -293,3 +289,5 @@ void RepositoryPropertyDialog::reject()
 		QDialog::reject();
 	}
 }
+
+
