@@ -11,6 +11,8 @@ class GenerateCommitMessageDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::GenerateCommitMessageDialog *ui;
+	struct Private;
+	Private *m;
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent = nullptr);
 	~GenerateCommitMessageDialog();
@@ -18,6 +20,9 @@ public:
 	void generate();
 private slots:
 	void on_pushButton_regenerate_clicked();
+	void onReady(QStringList const &list);
+signals:
+	void ready(QStringList const &list);
 };
 
 #endif // GENERATECOMMITMESSAGEDIALOG_H
