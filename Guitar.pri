@@ -122,7 +122,6 @@ SOURCES += \
 	src/ApplicationGlobal.cpp \
 	src/AreYouSureYouWantToContinueConnectingDialog.cpp \
 	src/AvatarLoader.cpp \
-	src/BasicRepositoryDialog.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
 	src/BlockSignals.cpp \
@@ -199,7 +198,6 @@ SOURCES += \
 	src/SelectItemDialog.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/SetGpgSigningDialog.cpp \
-	src/SetRemoteUrlDialog.cpp \
 	src/SettingBehaviorForm.cpp \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
@@ -272,7 +270,6 @@ HEADERS += \
 	src/ApplicationGlobal.h \
 	src/AreYouSureYouWantToContinueConnectingDialog.h \
 	src/AvatarLoader.h \
-	src/BasicRepositoryDialog.h \
 	src/BigDiffWindow.h \
 	src/BlameWindow.h \
 	src/BlockSignals.h \
@@ -353,7 +350,6 @@ HEADERS += \
 	src/SelectItemDialog.h \
 	src/SetGlobalUserDialog.h \
 	src/SetGpgSigningDialog.h \
-	src/SetRemoteUrlDialog.h \
 	src/SettingBehaviorForm.h \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
@@ -461,7 +457,6 @@ FORMS    += \
 	src/SelectItemDialog.ui \
 	src/SetGlobalUserDialog.ui \
 	src/SetGpgSigningDialog.ui \
-	src/SetRemoteUrlDialog.ui \
 	src/SettingBehaviorForm.ui \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \

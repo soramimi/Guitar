@@ -8,15 +8,30 @@
 #include "Git.h"
 
 class MainWindow;
+class QTableWidget;
 
 namespace Ui {
 class RepositoryPropertyDialog;
 }
 
-class RepositoryPropertyDialog : public BasicRepositoryDialog {
+class RepositoryPropertyDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::RepositoryPropertyDialog *ui;
+	struct Private;
+	Private *m;
+	
+	MainWindow *mainwindow();
+	
+	GitPtr git();
+	QString updateRemotesTable(QTableWidget *tablewidget);
+	
+	const std::vector<Git::Remote> *remotes() const;
+	void getRemotes_();
+	void setSshKey_(const QString &sshkey);
+	
+	
+	
 	RepositoryData repository;
 	bool remote_changed = false;
 	bool name_changed = false;
