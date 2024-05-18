@@ -3,9 +3,9 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 
-FilePropertyDialog::FilePropertyDialog(QWidget *parent) :
-	QDialog(parent),
-	ui(new Ui::FilePropertyDialog)
+FilePropertyDialog::FilePropertyDialog(QWidget *parent)
+	: QDialog(parent)
+	, ui(new Ui::FilePropertyDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
@@ -22,6 +22,7 @@ void FilePropertyDialog::exec(QString const &path, QString const &id)
 {
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
 	ui->lineEdit_path->setText(path);
+	ui->lineEdit_type->setText(global->filetype.mime_by_data(path.toUtf8().constData(), path.size()).c_str());
 	ui->lineEdit_id->setText(id);
 
 	QDialog::exec();
