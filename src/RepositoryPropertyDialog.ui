@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>700</width>
-    <height>502</height>
+    <height>319</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,7 +102,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Edit Name</string>
+           <string>Edit &amp;Name</string>
           </property>
          </widget>
         </item>
@@ -134,7 +134,10 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Local dir :</string>
+           <string>&amp;Local directory :</string>
+          </property>
+          <property name="buddy">
+           <cstring>lineEdit_local_dir</cstring>
           </property>
          </widget>
         </item>
@@ -153,7 +156,10 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Remote URLs</string>
+         <string>Remote &amp;URLs</string>
+        </property>
+        <property name="buddy">
+         <cstring>tableWidget</cstring>
         </property>
        </widget>
       </item>
@@ -165,7 +171,14 @@
         <item>
          <widget class="QPushButton" name="pushButton_remote_add">
           <property name="text">
-           <string>Add</string>
+           <string>&amp;Add</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_remote_edit">
+          <property name="text">
+           <string>&amp;Edit</string>
           </property>
          </widget>
         </item>
@@ -192,7 +205,7 @@
         <item>
          <widget class="QPushButton" name="pushButton_close">
           <property name="text">
-           <string>Close</string>
+           <string>&amp;Close</string>
           </property>
           <property name="default">
            <bool>true</bool>
@@ -230,6 +243,7 @@
   <tabstop>lineEdit_local_dir</tabstop>
   <tabstop>tableWidget</tabstop>
   <tabstop>pushButton_remote_add</tabstop>
+  <tabstop>pushButton_remote_edit</tabstop>
   <tabstop>pushButton_remote_remove</tabstop>
   <tabstop>pushButton_close</tabstop>
  </tabstops>

@@ -11,7 +11,7 @@ RemoteRepositoriesTableWidget::RemoteRepositoriesTableWidget(QWidget *parent)
 	setFocusPolicy(Qt::StrongFocus);
 	setSelectionMode(QAbstractItemView::SingleSelection);
 	setSelectionBehavior(QAbstractItemView::SelectRows);
-	// setEditTriggers(QAbstractItemView::NoEditTriggers);
+	setEditTriggers(QAbstractItemView::NoEditTriggers);
 	setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 	setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 

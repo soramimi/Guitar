@@ -96,11 +96,11 @@ void RepositoryPropertyDialog::updateRemotesTable()
 		auto SetItem = [&](int col, QString const &text, bool editable){
 			auto item = newQTableWidgetItem(text);
 			auto flags = item->flags();
-			if (editable) {
-				flags |= Qt::ItemIsEditable;
-			} else {
+			// if (editable) {
+			// 	flags |= Qt::ItemIsEditable;
+			// } else {
 				flags &= ~Qt::ItemIsEditable;
-			}
+			// }
 			item->setFlags(flags);
 			ui->tableWidget->setItem(row, col, item);
 		};
@@ -227,17 +227,17 @@ void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 	}
 }
 
-// void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
-// {
-// 	int row = ui->tableWidget->currentRow();
-// 	if (row < 0) {
-// 		ui->tableWidget->setCurrentCell(0, 0);
-// 	}
-// 	Git::Remote remote = selectedRemote();
-// 	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
-// 		remote_changed = true;
-// 	}
-// }
+void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
+{
+	int row = ui->tableWidget->currentRow();
+	if (row < 0) {
+		ui->tableWidget->setCurrentCell(0, 0);
+	}
+	Git::Remote remote = selectedRemote();
+	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
+		remote_changed = true;
+	}
+}
 
 void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
@@ -290,4 +290,8 @@ void RepositoryPropertyDialog::reject()
 	}
 }
 
+void RepositoryPropertyDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+	on_pushButton_remote_edit_clicked();
+}
 

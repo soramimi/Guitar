@@ -3,7 +3,6 @@
 #include <QDebug>
 #include <QMimeData>
 #include <QApplication>
-#include "CloneFromGitHubDialog.h"
 #include "MainWindow.h"
 
 RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)

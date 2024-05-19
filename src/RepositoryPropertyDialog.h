@@ -8,6 +8,7 @@
 
 class MainWindow;
 class QTableWidget;
+class QTableWidgetItem;
 
 namespace Ui {
 class RepositoryPropertyDialog;
@@ -48,12 +49,11 @@ public:
 	bool isNameChanged() const;
 	QString getName();
 private slots:
-	void on_pushButton_remote_add_clicked();
-	// void on_pushButton_remote_edit_clicked();
-	void on_pushButton_remote_remove_clicked();
 	void on_pushButton_edit_name_clicked();
-
-	
+	void on_pushButton_remote_add_clicked();
+	void on_pushButton_remote_edit_clicked();
+	void on_pushButton_remote_remove_clicked();
+	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 public slots:
 	void reject();
 };
