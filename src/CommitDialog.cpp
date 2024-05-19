@@ -15,7 +15,7 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::Use
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	ui->pushButton_generate_with_ai->setVisible(global->appsettings.generate_commit_message_by_ai);
+	ui->pushButton_generate_with_ai->setEnabled(global->appsettings.generate_commit_message_by_ai);
 
 	key_ = key;
 	previousMessage_ = previousMessage;
