@@ -117,15 +117,17 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			std::string_view sv = lines[i];
 			char const *ptr = sv.data();
 			char const *end = ptr + sv.size();
-			bool ok2 = false;
-			bool ok3 = false;
-			while (ptr < end && isdigit((unsigned char)*ptr)) {
-				ok2 = true;
+			while (ptr < end && *ptr == '`') ptr++;
+			while (ptr < end && end[-1] == '`') end--;
+			if (ptr < end && *ptr == '-') {
 				ptr++;
-			}
-			if (ptr < end && *ptr == '.') {
-				ok3 = true;
-				ptr++;
+			} else {
+				while (ptr < end && isdigit((unsigned char)*ptr)) {
+					ptr++;
+				}
+				if (ptr < end && *ptr == '.') {
+					ptr++;
+				}
 			}
 			while (ptr < end && isspace((unsigned char)*ptr)) {
 				ptr++;
@@ -134,7 +136,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 				ptr++;
 				end--;
 			}
-			if (ok2 && ok3 && ptr < end) {
+			if (ptr < end) {
 				lines[i] = std::string(ptr, end);
 			} else {
 				lines.erase(lines.begin() + i);
@@ -157,13 +159,14 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 						  "Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 						  "Exclude anything unnecessary such as translation. "
 						  "Your entire response will be passed directly into git commit. "
-						  "Please generate 3 examples of answers.";
+						  "Please generate 3 examples of answers and start with '- ' in a bulleted list. "
+			;
 	content = content + "\n\n" + diff.toStdString();
 
 	std::string json = R"---({
 	"model": "%s",
 	"messages": [
-		{"role": "system", "content": "You are a helpful assistant."},
+		{"role": "system", "content": "You are a experienced engineer."},
 		{"role": "user", "content": "%s"}]})---";
 	json = strformat(json)(model)(encode_json_string(content));
 
@@ -185,7 +188,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (http.post(rq, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
-		if (0) {
+		if (1) {
 			QFile file("c:/a/b.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);

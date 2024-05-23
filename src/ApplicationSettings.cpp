@@ -75,10 +75,10 @@ QStringList ApplicationSettings::openai_gpt_models()
 {
 	QStringList list;
 	list.append("gpt-3.5-turbo");
-	list.append("gpt-4-turbo");
 	list.append("gpt-4");
+	list.append("gpt-4-turbo");
+	list.append("gpt-4o");
 	list.sort();
-	// list.append("gpt-4o");
 	return list;
 }
 
@@ -129,7 +129,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	s.endGroup();
 	
 	if (as.openai_gpt_model.isEmpty()) {
-		as.openai_gpt_model = "gpt-4";
+		as.openai_gpt_model = "gpt-4o";
 	}
 	
 	as.openai_api_key = loadOpenAiApiKey();

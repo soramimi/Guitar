@@ -37,11 +37,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 				std::swap(requested, m->requested);
 			}
 			if (requested) {
-				QStringList list;
-				{
-					OverrideWaitCursor;
-					list = m->gen.generate(global->mainwindow->git());
-				}
+				QStringList list = m->gen.generate(global->mainwindow->git());
 				emit ready(list);
 			}
 		}
@@ -66,6 +62,8 @@ QString GenerateCommitMessageDialog::text() const
 
 void GenerateCommitMessageDialog::generate()
 {
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+
 	ui->listWidget->clear();
 	ui->pushButton_regenerate->setEnabled(false);
 
@@ -84,6 +82,8 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 
 void GenerateCommitMessageDialog::onReady(const QStringList &list)
 {
+	QApplication::restoreOverrideCursor();
+
 	if (list.isEmpty()) {
 		QMessageBox::warning(this, "Error", tr("Failed to generate commit message."));
 	} else {

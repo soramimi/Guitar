@@ -16,6 +16,9 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QListWidget" name="listWidget">
+     <property name="frameShape">
+      <enum>QFrame::WinPanel</enum>
+     </property>
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
      </property>
