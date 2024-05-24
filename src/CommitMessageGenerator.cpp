@@ -153,7 +153,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (diff.isEmpty()) return {};
 
 	std::string model = global->appsettings.openai_gpt_model.toStdString();
-	if (model.empty()) model = "gpt-4";
+	if (model.empty()) model = "gpt-4o";
 
 	std::string prompt = // Referring to https://github.com/Nutlope/aicommits
 						  "Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
