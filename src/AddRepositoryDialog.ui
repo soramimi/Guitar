@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="page_first">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -58,14 +58,14 @@
         </widget>
        </item>
        <item>
-        <spacer name="verticalSpacer_3">
+        <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
+          <enum>Qt::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>93</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
@@ -121,13 +121,6 @@
              </layout>
             </item>
             <item>
-             <widget class="Line" name="line_2">
-              <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="RemoteAdvancedOptionWidget" name="widget_ssh_override" native="true"/>
             </item>
            </layout>
@@ -136,14 +129,14 @@
         </layout>
        </item>
        <item>
-        <spacer name="verticalSpacer_2">
+        <spacer name="verticalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
+          <enum>Qt::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>68</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
@@ -158,10 +151,13 @@
           <string>Local</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_2">
+          <item row="1" column="1">
+           <widget class="WorkingDirLineEdit" name="lineEdit_local_path"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>Folder</string>
+             <string>Path</string>
             </property>
            </widget>
           </item>
@@ -172,15 +168,12 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Path</string>
+             <string>Folder</string>
             </property>
            </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="WorkingDirLineEdit" name="lineEdit_local_path"/>
           </item>
           <item row="1" column="2">
            <widget class="QPushButton" name="pushButton_browse_local_path">
@@ -195,12 +188,12 @@
        <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
+          <enum>Qt::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>95</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
@@ -217,7 +210,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
+        <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

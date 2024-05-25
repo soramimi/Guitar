@@ -22,10 +22,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-	
-	ui->groupBox->setAlignment(Qt::AlignLeft);
-	qDebug() << ui->groupBox->alignment();
-	
+
 	updateWorkingDirComboBoxFolders();
 
 	already_exists_ = tr("A valid git repository exists.");
@@ -39,7 +36,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 
 	validate();
 
-	// ui->stackedWidget->setCurrentWidget(ui->page_first);
+	ui->stackedWidget->setCurrentWidget(ui->page_first);
 	ui->radioButton_clone->setFocus();
 	ui->radioButton_clone->click();
 	updateUI();
