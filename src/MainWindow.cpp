@@ -4547,20 +4547,21 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		strings.push_back(repo->name);
 		strings.push_back(repo->local_dir);
 		{
-			QStringList urls;
+			std::vector<QString> urls;
 			std::vector<Git::Remote> remotes;
 			git(repo->local_dir, {}, {})->remote_v(&remotes);
 			for (Git::Remote const &r : remotes) {
 				urls.push_back(r.url_fetch);
 				urls.push_back(r.url_push);
 			}
-			urls.sort();
+			std::sort(urls.begin(), urls.end());
 			auto it = std::unique(urls.begin(), urls.end());
 			urls.resize(it - urls.begin());
-			if (!urls.isEmpty() && urls.front().isEmpty()) {
-				urls.pop_front();
+			for (QString const &s : urls) {
+				if (!s.isEmpty()) {
+					strings.push_back(s);
+				}
 			}
-			strings.append(urls);
 		}
 		
 		QString open_terminal = tr("Open &terminal");
