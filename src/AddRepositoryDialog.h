@@ -65,7 +65,6 @@ private slots:
 	void on_lineEdit_local_path_textChanged(QString const &arg1);
 	void on_lineEdit_remote_repository_url_textChanged(const QString &);
 	void on_pushButton_browse_local_path_clicked();
-	void on_pushButton_manage_favorite_dirs_clicked();
 	void on_pushButton_prev_clicked();
 	void on_pushButton_test_repo_clicked();
 	void on_radioButton_add_existing_clicked();
