@@ -22,19 +22,12 @@ private:
 	Private *m;
 	
 	MainWindow *mainwindow();
-	
 	GitPtr git();
 	
 	const std::vector<Git::Remote> *remotes() const;
 	void getRemotes_();
 	void setSshKey_(const QString &sshkey);
 	
-	
-	
-	RepositoryData repository;
-	bool remote_changed = false;
-	bool name_changed = false;
-	Git::Context const *gcx;
 	void updateRemotesTable();
 	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
 	Git::Remote selectedRemote() const;

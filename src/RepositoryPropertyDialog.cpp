@@ -4,36 +4,40 @@
 #include "MainWindow.h"
 #include "common/misc.h"
 #include <QClipboard>
+#include <QItemDelegate>
 #include <QMenu>
 #include <QMessageBox>
-#include <QItemDelegate>
 
 struct RepositoryPropertyDialog::Private {
 	GitPtr git;
 	std::vector<Git::Remote> remotes;
+	RepositoryData repository;
+	bool remote_changed = false;
+	bool name_changed = false;
+	Git::Context const *gcx;
 };
 
 RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu)
 	: QDialog(parent)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, m(new Private)
-	, gcx(gcx)
 {
 	ui->setupUi(this);
 	
+	m->gcx = gcx;
 	m->git = g;
 	
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	repository = item;
+	m->repository = item;
 
-	ui->label_editable_name->setText(repository.name);
+	ui->label_editable_name->setText(m->repository.name);
 	ui->label_editable_name->setVisible(true);
-	ui->lineEdit_name->setText(repository.name);
+	ui->lineEdit_name->setText(m->repository.name);
 	ui->lineEdit_name->setVisible(false);
-	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(repository.local_dir));
+	ui->lineEdit_local_dir->setText(misc::normalizePathSeparator(m->repository.local_dir));
 	
 	connect(ui->tableWidget->itemDelegate(), &QItemDelegate::closeEditor, this, [this](QWidget *editor, QAbstractItemDelegate::EndEditHint hint){
 		reflectRemotesTable();
@@ -96,11 +100,7 @@ void RepositoryPropertyDialog::updateRemotesTable()
 		auto SetItem = [&](int col, QString const &text, bool editable){
 			auto item = newQTableWidgetItem(text);
 			auto flags = item->flags();
-			// if (editable) {
-			// 	flags |= Qt::ItemIsEditable;
-			// } else {
-				flags &= ~Qt::ItemIsEditable;
-			// }
+			flags &= ~Qt::ItemIsEditable;
 			item->setFlags(flags);
 			ui->tableWidget->setItem(row, col, item);
 		};
@@ -156,7 +156,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		remote->name = "origin";
 	}
 
-	EditRemoteDialog dlg(mainwindow(), op, gcx);
+	EditRemoteDialog dlg(mainwindow(), op, m->gcx);
 	dlg.setName(remote->name);
 	dlg.setUrl(remote->url_fetch);
 	dlg.setSshKey(remote->ssh_key);
@@ -206,24 +206,24 @@ Git::Remote RepositoryPropertyDialog::selectedRemote() const
 
 bool RepositoryPropertyDialog::isRemoteChanged() const
 {
-	return remote_changed;
+	return m->remote_changed;
 }
 
 bool RepositoryPropertyDialog::isNameChanged() const
 {
-    return name_changed;
+    return m->name_changed;
 }
 
 QString RepositoryPropertyDialog::getName()
 {
-    return repository.name;
+    return m->repository.name;
 }
 
 void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 {
 	Git::Remote r;
 	if (execEditRemoteDialog(&r, EditRemoteDialog::RemoteAdd)) {
-		remote_changed = true;
+		m->remote_changed = true;
 	}
 }
 
@@ -235,7 +235,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 	}
 	Git::Remote remote = selectedRemote();
 	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
-		remote_changed = true;
+		m->remote_changed = true;
 	}
 }
 
@@ -243,12 +243,12 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
 	Git::Remote remote = selectedRemote();
 	if (!remote.name.isEmpty()) {
-		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(repository.name), QMessageBox::Ok, QMessageBox::Cancel);
+		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r == QMessageBox::Ok) {
 			GitPtr g = git();
 			g->removeRemote(remote.name);
 			updateRemotesTable();
-			remote_changed = true;
+			m->remote_changed = true;
 		}
 	}
 }
@@ -259,13 +259,13 @@ void RepositoryPropertyDialog::setNameEditMode(bool f)
 	ui->label_editable_name->setVisible(!f);
 	ui->pushButton_edit_name->setText(f ? tr("Save") : tr("Edit Name"));
 	if (f) {
-		ui->lineEdit_name->setText(repository.name);
+		ui->lineEdit_name->setText(m->repository.name);
 		ui->lineEdit_name->setFocus();
 	} else {
 		if (!ui->lineEdit_name->text().isEmpty()) {
-			repository.name = ui->lineEdit_name->text();
-			ui->label_editable_name->setText(repository.name);
-			name_changed = true;
+			m->repository.name = ui->lineEdit_name->text();
+			ui->label_editable_name->setText(m->repository.name);
+			m->name_changed = true;
 		}
 		ui->pushButton_close->setFocus();
 	}
