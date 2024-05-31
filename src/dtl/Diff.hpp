@@ -38,6 +38,8 @@
 #ifndef DTL_DIFF_H
 #define DTL_DIFF_H
 
+#include "variables.hpp"
+
 namespace dtl {
     
     /**
@@ -164,7 +166,7 @@ namespace dtl {
             return trivial;
         }
         
-        void enableTrivial () const {
+        void enableTrivial () {
             this->trivial = true;
         }
         
