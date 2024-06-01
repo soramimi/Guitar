@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
-$qt = "C:/Qt/6.5.2/msvc2019_64"
-$windeployqt = "C:/Qt/6.5.2/msvc2019_64/bin/windeployqt.exe"
+$qt = "C:/Qt/6.6.3/msvc2019_64"
+$windeployqt = "C:/Qt/6.6.3/msvc2019_64/bin/windeployqt.exe"
 #$qt = "" # スタティックリンクのとき
 
 $openssl = "C:/Program Files/OpenSSL"
@@ -11,7 +11,7 @@ require 'fileutils'
 load 'version.rb'
 
 $workdir = "_release"
-$dstdir = $workdir + "/" + $product_name
+$dstdir = $workdir + "/soramimi.jp/" + $product_name
 
 FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
@@ -31,6 +31,6 @@ FileUtils.rmdir("#{$dstdir}\\win32tools")
 pkgfilename = "#{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
 
 Dir.chdir($workdir) {
-	`7z a #{pkgfilename} #{$product_name}`
+	`7z a #{pkgfilename} soramimi.jp`
 }
 
