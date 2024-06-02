@@ -1008,7 +1008,14 @@ public:
 	std::string str()
 	{
 		int n = length();
-		char *p = (char *)alloca(n);
+		char *p;
+		std::vector<char> tmp;
+		if (n < 0x20000) {
+			p = (char *)alloca(n);
+		} else {
+			tmp.reserve(n);
+			p = tmp.data();
+		}
 		char *d = p;
 		render([&](char const *ptr, int len){
 			memcpy(d, ptr, len);

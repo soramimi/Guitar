@@ -152,6 +152,11 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	QString diff = g->diff_head();
 	if (diff.isEmpty()) return {};
 
+	if (diff.size() > 100000) {
+		qDebug() << "diff too large";
+		return {};
+	}
+
 	std::string model = global->appsettings.openai_gpt_model.toStdString();
 	if (model.empty()) model = "gpt-4o";
 
@@ -162,6 +167,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 						  "Please generate 3 messages, bulleted, and start writing with '-'. "
 			;
 	prompt = prompt + "\n\n" + diff.toStdString();
+	qDebug() << diff.size();
 
 	std::string json = R"---({
 	"model": "%s",

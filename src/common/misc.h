@@ -57,6 +57,7 @@ public:
 	static bool isImage(QString const &mimetype);
 	static bool isSVG(QString const &mimetype);
 	static bool isPSD(QString const &mimetype);
+	static bool isPDF(QString const &mimetype);
 	static QString abbrevBranchName(QString const &name);
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);

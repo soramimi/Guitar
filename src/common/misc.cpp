@@ -390,6 +390,12 @@ bool misc::isPSD(QString const &mimetype)
 	return false;
 }
 
+bool misc::isPDF(QString const &mimetype)
+{
+	if (mimetype == "application/pdf") return true;
+	return false;
+}
+
 bool misc::isImage(QString const &mimetype)
 {
 #if 0
@@ -405,6 +411,7 @@ bool misc::isImage(QString const &mimetype)
 	if (isPSD(mimetype)) return true;
 	return false;
 #else
+	if (isPDF(mimetype)) return true;
 	return mimetype.startsWith("image/");
 #endif
 }
