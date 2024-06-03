@@ -162,8 +162,8 @@ private:
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit, bool wait);
 	void updateRepositoriesList();
 
-	void internalOpenRepository(GitPtr g, bool keep_selection = false);
-	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
+	bool internalOpenRepository(GitPtr g, bool keep_selection = false);
+	bool openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -244,11 +244,11 @@ private:
 	void logGitVersion();
 	void internalClearRepositoryInfo();
 	void checkUser();
-	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
+	bool openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
 	void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
-	void openSelectedRepository();
+	bool openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(RepositoryWrapperFrame *frame, QString id);
 	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
@@ -267,7 +267,7 @@ private:
 	void internalDeleteTags(const QStringList &tagnames);
 	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
-	void addRepository(const QString &dir);
+	void addRepository(const QString &local_dir, const QString &group = {});
 	void setLogEnabled(GitPtr g, bool f);
 	void doGitCommand(const std::function<void (GitPtr)> &callback);
 	void setWindowTitle_(const Git::User &user);
@@ -351,7 +351,7 @@ private:
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
-	void setRepos(QList<RepositoryData> const &list);
+	void setRepositoryList(QList<RepositoryData> &&list);
 	bool interactionCanceled() const;
 	void setInteractionCanceled(bool canceled);
 	InteractionMode interactionMode() const;
@@ -404,6 +404,9 @@ private:
 
 	void updateUncommitedChanges();
 	void enableDragAndDropOnRepositoryTree(bool enabled);
+	static QString treeItemName(QTreeWidgetItem *item);
+	static QString treeItemGroup(QTreeWidgetItem *item);
+	QString preferredRepositoryGroup() const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;

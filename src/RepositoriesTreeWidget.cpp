@@ -13,6 +13,8 @@ RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
 	});
 }
 
+
+
 MainWindow *RepositoriesTreeWidget::mainwindow()
 {
 	return qobject_cast<MainWindow *>(window());

@@ -46,7 +46,7 @@ private:
 	void updateWorkingDirComboBoxFolders();
 	void parseAndUpdateRemoteURL();
 public:
-	explicit AddRepositoryDialog(MainWindow *parent, QString const &dir = QString());
+	explicit AddRepositoryDialog(MainWindow *parent, QString const &local_dir = QString());
 	~AddRepositoryDialog() override;
 
 	QString repositoryName() const;

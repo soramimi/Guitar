@@ -183,6 +183,8 @@ struct MainWindow::Private {
 	CommitDetailGetter commit_detail_getter;
 
 	QTimer update_commit_log_timer;
+
+	QString add_repository_into_group;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -300,7 +302,7 @@ MainWindow::MainWindow(QWidget *parent)
 	//
 
 	QString path = getBookmarksFilePath();
-	setRepos(RepositoryBookmark::load(path));
+	setRepositoryList(RepositoryBookmark::load(path));
 	updateRepositoriesList();
 
 	// アイコン取得機能
@@ -776,9 +778,30 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 	setInteractionCanceled(false);
 }
 
+QString MainWindow::treeItemName(QTreeWidgetItem *item)
+{
+	return item->text(0);
+}
+
+QString MainWindow::treeItemGroup(QTreeWidgetItem *item)
+{
+	QString group;
+	QTreeWidgetItem *p = item;
+	while (1) {
+		p = p->parent();
+		if (!p) break;
+		group = treeItemName(p) / group;
+	}
+	if (group.endsWith('/')) {
+		group.chop(1);
+	}
+	group = '/' + group;
+	return group;
+}
+
 void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos)
 {
-	QString name = item->text(0);
+	QString name = treeItemName(item);
 	if (isGroupItem(item)) {
 		int n = item->childCount();
 		for (int i = 0; i < n; i++) {
@@ -798,6 +821,12 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 	}
 }
 
+/**
+ * @brief MainWindow::refrectRepositories()
+ * @param repos
+ *
+ * リポジトリツリーの状態をリポジトリリストに反映する
+ */
 void MainWindow::refrectRepositories()
 {
 	QList<RepositoryData> newrepos;
@@ -806,7 +835,7 @@ void MainWindow::refrectRepositories()
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
 		buildRepoTree(QString(), item, &newrepos);
 	}
-	setRepos(newrepos);
+	setRepositoryList(std::move(newrepos));
 	saveRepositoryBookmarks();
 }
 
@@ -1442,7 +1471,7 @@ void MainWindow::checkUser()
  *
  * リポジトリを開く
  */
-void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
+bool MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
 {
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
@@ -1451,26 +1480,25 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 			if (r == QMessageBox::Ok) {
 				removeSelectedRepositoryFromBookmark(false);
 			}
-			return;
+			return true;
 		}
 		if (!Git::isValidWorkingCopy(dir)) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-			return;
+			return false;
 		}
 	}
 
 	if (waitcursor) {
 		OverrideWaitCursor;
-		openRepository(false, false, keep_selection);
-		return;
+		return openRepository(false, false, keep_selection);
 	}
 
 	GitPtr g = git();
 	if (!g) {
 		qDebug() << "Guitar: git pointer is null";
-		return;
+		return false;
 	}
-	internalOpenRepository(g, keep_selection);
+	return internalOpenRepository(g, keep_selection);
 }
 
 /**
@@ -1535,12 +1563,14 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
  *
  * 選択されたリポジトリを開く
  */
-void MainWindow::openSelectedRepository()
+bool MainWindow::openSelectedRepository()
 {
 	RepositoryData const *repo = selectedRepositoryItem();
 	if (repo) {
 		setCurrentRepository(*repo, true);
-		openRepository(true);
+		return openRepository(true);
+	} else {
+		return false;
 	}
 }
 
@@ -2148,13 +2178,15 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
 
 /**
  * @brief MainWindow::addRepository
- * @param dir ディレクトリ
+ * @param local_dir ディレクトリ
  *
  * リポジトリを追加する（クローンしたり初期化することもできる）
  */
-void MainWindow::addRepository(const QString &dir)
+void MainWindow::addRepository(const QString &local_dir, const QString &group)
 {
-	AddRepositoryDialog dlg(this, dir); // リポジトリを追加するダイアログ
+	m->add_repository_into_group = group;
+
+	AddRepositoryDialog dlg(this, local_dir); // リポジトリを追加するダイアログ
 	if (dlg.exec() == QDialog::Accepted) {
 		if (dlg.mode() == AddRepositoryDialog::Clone) { // クローン
 			auto cdata = dlg.makeCloneData();
@@ -2414,7 +2446,7 @@ void MainWindow::updateRepositoriesList()
 {
 	QString path = getBookmarksFilePath();
 
-	setRepos(RepositoryBookmark::load(path));
+	setRepositoryList(RepositoryBookmark::load(path));
 	auto const *repos = &cRepositories();
 
 	QString filter = getRepositoryFilterText();
@@ -2604,6 +2636,11 @@ done:;
 	*out = submodules;
 }
 
+QString MainWindow::preferredRepositoryGroup() const
+{
+	return m->add_repository_into_group;
+}
+
 void MainWindow::saveRepositoryBookmark(RepositoryData item)
 {
 	if (item.local_dir.isEmpty()) return;
@@ -2612,7 +2649,9 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		item.name = tr("Unnamed");
 	}
 
-	auto repos = cRepositories();
+	item.group = preferredRepositoryGroup();
+
+	QList<RepositoryData> repos = cRepositories();
 
 	bool done = false;
 	for (auto &repo : repos) {
@@ -2626,7 +2665,7 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 	if (!done) {
 		repos.push_back(item);
 	}
-	setRepos(repos);
+	setRepositoryList(std::move(repos));
 	saveRepositoryBookmarks();
 	updateRepositoriesList();
 }
@@ -3094,9 +3133,9 @@ QList<RepositoryData> *MainWindow::pRepositories()
 	return &m->repos;
 }
 
-void MainWindow::setRepos(QList<RepositoryData> const &list)
+void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
 {
-	m->repos = list;
+	m->repos = std::move(list);
 }
 
 bool MainWindow::interactionCanceled() const
@@ -3422,7 +3461,8 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 		saveRepositoryBookmarks(); // 保存
 		updateRepositoriesList(); // リスト更新
 	}
-	setRepos(*repos);
+	auto list = *repos;
+	setRepositoryList(std::move(list));
 }
 
 /**
@@ -3988,12 +4028,12 @@ Git::Object MainWindow::catFile(QString const &id)
 	return internalCatFile(frame(), git(), id);
 }
 
-void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
+bool MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
 {
-	openRepositoryWithFrame(frame(), g, keep_selection);
+	return openRepositoryWithFrame(frame(), g, keep_selection);
 }
 
-void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
+bool MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
 {
 	getObjCache(frame)->setup(g);
 
@@ -4010,7 +4050,7 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		setForceFetch(false);
 		if (do_fetch) {
 			if (!fetch(g, false)) {
-				return;
+				return false;
 			}
 		}
 
@@ -4039,7 +4079,7 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 
 		frame->logtablewidget()->setEnabled(true);
 		updateCommitLogTable(frame, 100); // ミコットログを更新（100ms後）
-		if (canceled) return;
+		if (canceled) return false;
 
 		QString branch_name;
 		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
@@ -4056,7 +4096,7 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		setRepositoryInfo(repo_name, branch_name);
 	}
 
-	if (!g) return;
+	if (!g) return false;
 
 	updateRemoteInfo();
 
@@ -4157,6 +4197,8 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 	m->commit_detail_getter.start(g->dup());
 
 	updateUI();
+
+	return true;
 }
 
 /**
@@ -4464,7 +4506,9 @@ void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*curr
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
 {
-	openSelectedRepository();
+	if (openSelectedRepository()) return;
+
+	// 戻り値がfalseで、フォルダがダブルクリックされたときは、そのフォルダを開く（規定の動作）
 }
 
 void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)
@@ -4510,6 +4554,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
 		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
 		QAction *a_rename_group = menu.addAction(tr("&Rename group"));
+		menu.addSeparator();
+		QAction *a_add_repository = menu.addAction(tr("&Add repository"));
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -4534,6 +4580,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			}
 			if (a == a_rename_group) {
 				ui->treeWidget_repos->editItem(treeitem);
+				return;
+			}
+			if (a == a_add_repository) {
+				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
+				addRepository({}, group);
 				return;
 			}
 		}
@@ -5480,7 +5531,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 			changed = true;
 		}
 	}
-	setRepos(repos);
+	setRepositoryList(std::move(repos));
 
 	if (save && changed) {
 		saveRepositoryBookmarks();

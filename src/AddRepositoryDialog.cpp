@@ -14,7 +14,7 @@ enum {
 	Manage = -100,
 };
 
-AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
+AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &local_dir)
 	: QDialog(parent)
 	, ui(new Ui::AddRepositoryDialog)
 {
@@ -27,7 +27,7 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &dir)
 
 	already_exists_ = tr("A valid git repository exists.");
 
-	ui->lineEdit_local_path->setText(dir);
+	ui->lineEdit_local_path->setText(local_dir);
 	ui->groupBox_remote->setChecked(false);
 	ui->lineEdit_remote_name->setText("origin");
 
