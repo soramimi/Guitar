@@ -3124,11 +3124,6 @@ QString MainWindow::getRepositoryFilterText() const
 	return m->repository_filter_text;
 }
 
-void MainWindow::setRepositoryFilterText(const QString &text)
-{
-	m->repository_filter_text = text;
-}
-
 void MainWindow::setUncommitedChanges(bool uncommited_changes)
 {
 	m->uncommited_changes = uncommited_changes;
@@ -5801,6 +5796,14 @@ void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 	updateDiffView(frame(), frame()->fileslistwidget()->currentItem());
 }
 
+void MainWindow::enableDragAndDropOnRepositoryTree(bool enabled)
+{
+	ui->treeWidget_repos->setDragEnabled(enabled);
+	ui->treeWidget_repos->setAcceptDrops(enabled);
+	ui->treeWidget_repos->setDropIndicatorShown(enabled);
+	ui->treeWidget_repos->viewport()->setAcceptDrops(enabled);
+}
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (QApplication::modalWindow()) return;
@@ -5912,33 +5915,63 @@ void MainWindow::on_toolButton_fetch_clicked()
 	ui->action_fetch->trigger();
 }
 
-void MainWindow::clearRepoFilter()
+/**
+ * @brief リポジトリフィルタを設定する
+ * @param text
+ */
+void MainWindow::setRepositoryFilterText(QString const &text)
 {
-	ui->lineEdit_filter->clear();
+	bool b = ui->lineEdit_filter->blockSignals(true);
+	ui->lineEdit_filter->setText(text);
+	ui->lineEdit_filter->blockSignals(b);
+
+	m->repository_filter_text = text;
+
+	updateRepositoriesList();
+
+	bool enabled = text.isEmpty();
+	enableDragAndDropOnRepositoryTree(enabled);
 }
 
+/**
+ * @brief リポジトリフィルタを消去する
+ * @return
+ */
+void MainWindow::clearRepoFilter()
+{
+	setRepositoryFilterText({});
+}
+
+/**
+ * @brief リポジトリフィルタに文字を追加する
+ * @return
+ */
 void MainWindow::appendCharToRepoFilter(ushort c)
 {
 	if (QChar(c).isLetter()) {
 		c = QChar(c).toLower().unicode();
 	}
-	ui->lineEdit_filter->setText(getRepositoryFilterText() + QChar(c));
+	QString text = getRepositoryFilterText() + QChar(c);
+	setRepositoryFilterText(text);
 }
 
+/**
+ * @brief リポジトリフィルタの文字列から1文字削除する
+ * @return
+ */
 void MainWindow::backspaceRepoFilter()
 {
-	QString s = getRepositoryFilterText();
-	int n = s.size();
+	QString text = getRepositoryFilterText();
+	int n = text.size();
 	if (n > 0) {
-		s = s.mid(0, n - 1);
+		text = text.mid(0, n - 1);
 	}
-	ui->lineEdit_filter->setText(s);
+	setRepositoryFilterText(text);
 }
 
 void MainWindow::on_lineEdit_filter_textChanged(QString const &text)
 {
 	setRepositoryFilterText(text);
-	updateRepositoriesList();
 }
 
 void MainWindow::on_toolButton_erase_filter_clicked()

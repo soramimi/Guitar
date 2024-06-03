@@ -403,6 +403,7 @@ private:
 	};
 
 	void updateUncommitedChanges();
+	void enableDragAndDropOnRepositoryTree(bool enabled);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
