@@ -66,6 +66,7 @@ class MainWindow : public QMainWindow {
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
+	friend class RepositoriesTreeWidget; // TODO
 public:
 	enum {
 		IndexRole = Qt::UserRole,
@@ -226,7 +227,6 @@ private:
 	static bool git_log_callback(void *cookie, const char *ptr, int len);
 	bool execSetGlobalUserDialog();
 	void revertAllFiles();
-	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open);
 	bool execWelcomeWizardDialog();
 	void execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu = false);
 	void execConfigUserDialog(const Git::User &global_user, const Git::User &local_user, bool enable_local_user, const QString &reponame);
@@ -268,6 +268,7 @@ private:
 	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
 	void addRepository(const QString &local_dir, const QString &group = {});
+	void scanFolderAndRegister(const QString &group);
 	void setLogEnabled(GitPtr g, bool f);
 	void doGitCommand(const std::function<void (GitPtr)> &callback);
 	void setWindowTitle_(const Git::User &user);
@@ -334,6 +335,7 @@ private:
 	void updateCommitGraph(RepositoryWrapperFrame *frame);
 	void initNetworking();
 	bool saveRepositoryBookmarks() const;
+	void saveRepositoryBookmarks2();
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();
 	void abortPtyProcess();
@@ -407,6 +409,10 @@ private:
 	static QString treeItemName(QTreeWidgetItem *item);
 	static QString treeItemGroup(QTreeWidgetItem *item);
 	QString preferredRepositoryGroup() const;
+	void setPreferredRepositoryGroup(const QString &group);
+	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save = true, bool msgbox_if_err = true);
+	void addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group);
+	bool addExistingLocalRepository(const QString &dir, bool open);
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -463,7 +469,6 @@ public:
 	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, const QString &id);
 	Git::Object catFile(const QString &id);
-	bool addExistingLocalRepository(const QString &dir, bool open);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
 	QString determinFileType(QByteArray in);
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);

@@ -1052,6 +1052,45 @@ bool MainWindow::execSetGlobalUserDialog()
 	return false;
 }
 
+QString MainWindow::preferredRepositoryGroup() const
+{
+	return m->add_repository_into_group;
+}
+
+void MainWindow::setPreferredRepositoryGroup(QString const &group)
+{
+	m->add_repository_into_group = group;
+}
+
+void MainWindow::saveRepositoryBookmark(RepositoryData item)
+{
+	if (item.local_dir.isEmpty()) return;
+
+	if (item.name.isEmpty()) {
+		item.name = tr("Unnamed");
+	}
+
+	item.group = preferredRepositoryGroup();
+
+	QList<RepositoryData> repos = cRepositories();
+
+	bool done = false;
+	for (auto &repo : repos) {
+		RepositoryData *p = &repo;
+		if (item.local_dir == p->local_dir) {
+			*p = item;
+			done = true;
+			break;
+		}
+	}
+	if (!done) {
+		repos.push_back(item);
+	}
+	setRepositoryList(std::move(repos));
+	saveRepositoryBookmarks();
+	updateRepositoriesList();
+}
+
 /**
  * @brief MainWindow::addExistingLocalRepository
  * @param dir ディレクトリ
@@ -1061,7 +1100,7 @@ bool MainWindow::execSetGlobalUserDialog()
  *
  * 既存のリポジトリを追加する
  */
-bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open)
+bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save, bool msgbox_if_err)
 {
 	if (dir.endsWith(".git")) {
 		auto i = dir.size();
@@ -1074,7 +1113,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	}
 
 	if (!Git::isValidWorkingCopy(dir)) {
-		if (QFileInfo(dir).isDir()) {
+		if (msgbox_if_err && QFileInfo(dir).isDir()) {
 			QString text;
 			text += tr("The folder is not a valid git repository.") + '\n';
 			text += '\n';
@@ -1096,8 +1135,11 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	RepositoryData item;
 	item.local_dir = dir;
 	item.name = name;
+	item.group = preferredRepositoryGroup();
 	item.ssh_key = sshkey;
-	saveRepositoryBookmark(item);
+	if (save) {
+		saveRepositoryBookmark(item);
+	}
 
 	if (open) {
 		setCurrentRepository(item, true);
@@ -1106,6 +1148,29 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	}
 
 	return true;
+}
+
+void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group)
+{
+	// setPreferredRepositoryGroup(group);
+	// addExistingLocalRepository(dir, {}, {}, false, false, false);
+	QFileInfo info1(dir);
+	if (info1.isDir()) {
+		QFileInfo info2(dir / ".git");
+		if (info2.isDir()) {
+			RepositoryData item;
+			item.local_dir = info1.absoluteFilePath();
+			item.name = makeRepositoryName(item.local_dir);
+			item.group = group;
+			// TODO: check duplicated
+			m->repos.append(item);
+		}
+	}
+}
+
+bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
+{
+	return addExistingLocalRepository(dir, {}, {}, open);
 }
 
 /**
@@ -2184,7 +2249,7 @@ void MainWindow::initRepository(QString const &path, QString const &reponame, Gi
  */
 void MainWindow::addRepository(const QString &local_dir, const QString &group)
 {
-	m->add_repository_into_group = group;
+	setPreferredRepositoryGroup(group);
 
 	AddRepositoryDialog dlg(this, local_dir); // リポジトリを追加するダイアログ
 	if (dlg.exec() == QDialog::Accepted) {
@@ -2204,6 +2269,22 @@ void MainWindow::addRepository(const QString &local_dir, const QString &group)
 			r.ssh_key = dlg.overridedSshKey();
 			initRepository(dir, name, r);
 		}
+	}
+}
+
+void MainWindow::scanFolderAndRegister(QString const &group)
+{
+	QString path = QFileDialog::getExistingDirectory(this, tr("Select a folder"), QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	if (!path.isEmpty()) {
+		QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot);
+		while (it.hasNext()) {
+			it.next();
+			QFileInfo info = it.fileInfo();
+			QString local_dir = info.absoluteFilePath();
+			addExistingLocalRepositoryWithGroup(local_dir, group);
+		}
+		saveRepositoryBookmarks2();
+		updateRepositoriesList();
 	}
 }
 
@@ -2636,35 +2717,15 @@ done:;
 	*out = submodules;
 }
 
-QString MainWindow::preferredRepositoryGroup() const
+bool MainWindow::saveRepositoryBookmarks() const
 {
-	return m->add_repository_into_group;
+	QString path = getBookmarksFilePath();
+	return RepositoryBookmark::save(path, &cRepositories());
 }
 
-void MainWindow::saveRepositoryBookmark(RepositoryData item)
+void MainWindow::saveRepositoryBookmarks2() // TODO: rename
 {
-	if (item.local_dir.isEmpty()) return;
-
-	if (item.name.isEmpty()) {
-		item.name = tr("Unnamed");
-	}
-
-	item.group = preferredRepositoryGroup();
-
 	QList<RepositoryData> repos = cRepositories();
-
-	bool done = false;
-	for (auto &repo : repos) {
-		RepositoryData *p = &repo;
-		if (item.local_dir == p->local_dir) {
-			*p = item;
-			done = true;
-			break;
-		}
-	}
-	if (!done) {
-		repos.push_back(item);
-	}
 	setRepositoryList(std::move(repos));
 	saveRepositoryBookmarks();
 	updateRepositoriesList();
@@ -3023,12 +3084,6 @@ void MainWindow::initNetworking()
 	}
 	global->webcx.set_http_proxy(http_proxy);
 	global->webcx.set_https_proxy(https_proxy);
-}
-
-bool MainWindow::saveRepositoryBookmarks() const
-{
-	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &cRepositories());
 }
 
 QString MainWindow::getBookmarksFilePath() const
@@ -4556,6 +4611,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_rename_group = menu.addAction(tr("&Rename group"));
 		menu.addSeparator();
 		QAction *a_add_repository = menu.addAction(tr("&Add repository"));
+		QAction *a_scan_folder_and_register = menu.addAction(tr("&Scan folder and register"));
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -4585,6 +4641,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			if (a == a_add_repository) {
 				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
 				addRepository({}, group);
+				return;
+			}
+			if (a == a_scan_folder_and_register) {
+				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
+				scanFolderAndRegister(group);
 				return;
 			}
 		}
@@ -5395,11 +5456,6 @@ void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
 		int row = rowFromCommitId(frame, id2);
 		setCurrentLogRow(frame, row);
 	}
-}
-
-bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
-{
-	return addExistingLocalRepository(dir, {}, {}, open);
 }
 
 bool MainWindow::saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath)
