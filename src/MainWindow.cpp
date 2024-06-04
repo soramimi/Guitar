@@ -821,6 +821,42 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 	}
 }
 
+const QList<RepositoryData> &MainWindow::cRepositories() const
+{
+	return m->repos;
+}
+
+QList<RepositoryData> *MainWindow::pRepositories()
+{
+	return &m->repos;
+}
+
+void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
+{
+	m->repos = std::move(list);
+}
+
+/**
+ * @brief MainWindow::saveRepositoryBookmarks
+ * @param update_list リポジトリリストを更新するかどうか
+ *
+ * リポジトリブックマークをファイルに保存する
+ */
+bool MainWindow::saveRepositoryBookmarks(bool update_list)
+{
+	QString path = getBookmarksFilePath();
+
+	if (!RepositoryBookmark::save(path, &cRepositories())) return false;
+
+	if (update_list) {
+		updateRepositoriesList();
+	}
+
+	return true;
+}
+
+
+
 /**
  * @brief MainWindow::refrectRepositories()
  * @param repos
@@ -836,7 +872,7 @@ void MainWindow::refrectRepositories()
 		buildRepoTree(QString(), item, &newrepos);
 	}
 	setRepositoryList(std::move(newrepos));
-	saveRepositoryBookmarks();
+	saveRepositoryBookmarks(false);
 }
 
 void MainWindow::onRepositoriesTreeDropped()
@@ -850,9 +886,6 @@ const QPixmap &MainWindow::digitsPixmap() const
 {
 	return m->digits;
 }
-
-
-
 
 /**
  * @brief MainWindow::drawDigit
@@ -1057,11 +1090,23 @@ QString MainWindow::preferredRepositoryGroup() const
 	return m->add_repository_into_group;
 }
 
+/**
+ * @brief MainWindow::setPreferredRepositoryGroup
+ * @param group グループ
+ *
+ * リポジトリ追加時のデフォルトグループを設定する
+ */
 void MainWindow::setPreferredRepositoryGroup(QString const &group)
 {
 	m->add_repository_into_group = group;
 }
 
+/**
+ * @brief MainWindow::saveRepositoryBookmark
+ * @param item リポジトリ情報
+ *
+ * リポジトリブックマークを保存する
+ */
 void MainWindow::saveRepositoryBookmark(RepositoryData item)
 {
 	if (item.local_dir.isEmpty()) return;
@@ -1087,8 +1132,7 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		repos.push_back(item);
 	}
 	setRepositoryList(std::move(repos));
-	saveRepositoryBookmarks();
-	updateRepositoriesList();
+	saveRepositoryBookmarks(true);
 }
 
 /**
@@ -1150,20 +1194,31 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	return true;
 }
 
+/**
+ * @brief MainWindow::addExistingLocalRepositoryWithGroup
+ * @param dir ディレクトリ
+ * @param group グループ
+ *
+ * 既存のリポジトリを追加する
+ */
 void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group)
 {
-	// setPreferredRepositoryGroup(group);
-	// addExistingLocalRepository(dir, {}, {}, false, false, false);
+	std::set<QString> existing;
+	for (RepositoryData const &item : m->repos) {
+		existing.insert(item.local_dir);
+	}
+
 	QFileInfo info1(dir);
 	if (info1.isDir()) {
 		QFileInfo info2(dir / ".git");
 		if (info2.isDir()) {
 			RepositoryData item;
 			item.local_dir = info1.absoluteFilePath();
-			item.name = makeRepositoryName(item.local_dir);
-			item.group = group;
-			// TODO: check duplicated
-			m->repos.append(item);
+			if (existing.find(item.local_dir) == existing.end()) { // 重複していなければ
+				item.name = makeRepositoryName(item.local_dir);
+				item.group = group;
+				m->repos.append(item); // 追加
+			}
 		}
 	}
 }
@@ -2283,8 +2338,7 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 			QString local_dir = info.absoluteFilePath();
 			addExistingLocalRepositoryWithGroup(local_dir, group);
 		}
-		saveRepositoryBookmarks2();
-		updateRepositoriesList();
+		saveRepositoryBookmarks(true);
 	}
 }
 
@@ -2664,12 +2718,6 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
  */
 void MainWindow::updateSubmodules(GitPtr g, QString const &id, QList<Git::SubmoduleItem> *out)
 {
-//	{
-//		GitObjectCache objcache;
-//		objcache.setup(g);
-//		GitCommit tree;
-//		GitCommit::parseCommit(&objcache, id, &tree);
-//	}
 	*out = {};
 	QList<Git::SubmoduleItem> submodules;
 	if (id.isEmpty()) {
@@ -2715,20 +2763,6 @@ done:;
 		}
 	}
 	*out = submodules;
-}
-
-bool MainWindow::saveRepositoryBookmarks() const
-{
-	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &cRepositories());
-}
-
-void MainWindow::saveRepositoryBookmarks2() // TODO: rename
-{
-	QList<RepositoryData> repos = cRepositories();
-	setRepositoryList(std::move(repos));
-	saveRepositoryBookmarks();
-	updateRepositoriesList();
 }
 
 void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_name)
@@ -3178,21 +3212,6 @@ void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
 	m->pty_condition = ptyCondition;
 }
 
-const QList<RepositoryData> &MainWindow::cRepositories() const
-{
-	return m->repos;
-}
-
-QList<RepositoryData> *MainWindow::pRepositories()
-{
-	return &m->repos;
-}
-
-void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
-{
-	m->repos = std::move(list);
-}
-
 bool MainWindow::interactionCanceled() const
 {
 	return m->interaction_canceled;
@@ -3513,8 +3532,7 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 	auto *repos = pRepositories();
 	if (index >= 0 && index < repos->size()) {
 		repos->erase(repos->begin() + index); // 消す
-		saveRepositoryBookmarks(); // 保存
-		updateRepositoriesList(); // リスト更新
+		saveRepositoryBookmarks(true); // 保存
 	}
 	auto list = *repos;
 	setRepositoryList(std::move(list));
@@ -5590,7 +5608,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 	setRepositoryList(std::move(repos));
 
 	if (save && changed) {
-		saveRepositoryBookmarks();
+		saveRepositoryBookmarks(false);
 	}
 
 	if (m->current_repo.local_dir == local_dir) {

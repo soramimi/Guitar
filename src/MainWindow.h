@@ -334,8 +334,7 @@ private:
 	const Git::CommitItem *getLog(RepositoryWrapperFrame const *frame, int index) const;
 	void updateCommitGraph(RepositoryWrapperFrame *frame);
 	void initNetworking();
-	bool saveRepositoryBookmarks() const;
-	void saveRepositoryBookmarks2();
+	bool saveRepositoryBookmarks(bool update_list);
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();
 	void abortPtyProcess();
