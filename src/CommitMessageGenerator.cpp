@@ -160,14 +160,16 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	std::string model = global->appsettings.openai_gpt_model.toStdString();
 	if (model.empty()) model = "gpt-4o";
 
-	std::string prompt = // Referring to https://github.com/Nutlope/aicommits
+	constexpr int max = 5;
+
+	// Referring to https://github.com/Nutlope/aicommits
+	std::string prompt = strformat(
 						  "Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 						  "Exclude anything unnecessary such as translation. "
 						  "Your entire response will be passed directly into git commit. "
-						  "Please generate 3 messages, bulleted, and start writing with '-'. "
+						  "Please generate %d messages, bulleted, and start writing with '-'. ")(max);
 			;
 	prompt = prompt + "\n\n" + diff.toStdString();
-	qDebug() << diff.size();
 
 	std::string json = R"---({
 	"model": "%s",
@@ -203,8 +205,8 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		std::string text(data, size);
 		auto list = parse_openai_response(text);
 		QStringList out;
-		for (std::string const &line : list) {
-			out.push_back(QString::fromStdString(line));
+		for (int i = 0; i < max && i < list.size(); i++) {
+			out.push_back(QString::fromStdString(list[i]));
 		}
 		return out;
 	}
