@@ -50,6 +50,7 @@
 #include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
+#include "AddRepositoriesCollectivelyDialog.h"
 #include "gunzip.h"
 #include "platform.h"
 #include "webclient.h"
@@ -1203,22 +1204,15 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
  */
 void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group)
 {
-	std::set<QString> existing;
-	for (RepositoryData const &item : m->repos) {
-		existing.insert(item.local_dir);
-	}
-
 	QFileInfo info1(dir);
 	if (info1.isDir()) {
 		QFileInfo info2(dir / ".git");
 		if (info2.isDir()) {
 			RepositoryData item;
 			item.local_dir = info1.absoluteFilePath();
-			if (existing.find(item.local_dir) == existing.end()) { // 重複していなければ
-				item.name = makeRepositoryName(item.local_dir);
-				item.group = group;
-				m->repos.append(item); // 追加
-			}
+			item.name = makeRepositoryName(item.local_dir);
+			item.group = group;
+			m->repos.append(item);
 		}
 	}
 }
@@ -2331,14 +2325,34 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 {
 	QString path = QFileDialog::getExistingDirectory(this, tr("Select a folder"), QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 	if (!path.isEmpty()) {
+		QStringList dirs;
+		std::set<QString> existing;
+		for (RepositoryData const &item : m->repos) {
+			existing.insert(item.local_dir);
+		}
 		QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot);
 		while (it.hasNext()) {
 			it.next();
 			QFileInfo info = it.fileInfo();
 			QString local_dir = info.absoluteFilePath();
-			addExistingLocalRepositoryWithGroup(local_dir, group);
+			if (existing.find(local_dir) == existing.end()) {
+				if (Git::isValidWorkingCopy(local_dir)) {
+					dirs.push_back(local_dir);
+				}
+			}
 		}
-		saveRepositoryBookmarks(true);
+		if (dirs.isEmpty()) {
+			QMessageBox::warning(this, tr("No repositories found"), tr("No repositories found in the folder."));
+		} else {
+			AddRepositoriesCollectivelyDialog dlg(this, dirs);
+			if (dlg.exec() == QDialog::Accepted) {
+				dirs = dlg.selectedDirs();
+				for (QString const &dir : dirs) {
+					addExistingLocalRepositoryWithGroup(dir, group);
+				}
+				saveRepositoryBookmarks(true);
+			}
+		}
 	}
 }
 
@@ -4629,7 +4643,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a_rename_group = menu.addAction(tr("&Rename group"));
 		menu.addSeparator();
 		QAction *a_add_repository = menu.addAction(tr("&Add repository"));
-		QAction *a_scan_folder_and_register = menu.addAction(tr("&Scan folder and register"));
+		QAction *a_scan_folder_and_add = menu.addAction(tr("&Scan folder and add"));
 		QPoint pt = ui->treeWidget_repos->mapToGlobal(pos);
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
@@ -4661,7 +4675,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				addRepository({}, group);
 				return;
 			}
-			if (a == a_scan_folder_and_register) {
+			if (a == a_scan_folder_and_add) {
 				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
 				scanFolderAndRegister(group);
 				return;
