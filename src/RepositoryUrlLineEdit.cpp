@@ -145,6 +145,7 @@ void RepositoryUrlLineEdit::setNextRepositoryUrlCandidate(bool forward)
 {
 	updateRepositoryUrlCandidates();
 	QString url = text();
+	url = misc::splitWords(url).join(' '); // remove extra spaces
 	for (int i = 0; i < m->url_candidates.size(); i++) {
 		if (m->url_candidates[i] == url) {
 			if (forward) {
