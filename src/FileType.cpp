@@ -34,6 +34,7 @@ void FileType::close()
 
 std::string FileType::mime_by_data(const char *bin, int len)
 {
+	if (!bin || len < 1) return std::string();
 	auto *p = magic_buffer(magic_cookie, bin, len);
 	std::string s;
 	if (p) s = p;
