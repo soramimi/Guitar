@@ -131,11 +131,11 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
-	GetValue<QString>(s, "AiMode")                            >> as.ai_model.model;
+	GetValue<QString>(s, "AiModel")                            >> as.ai_model.model;
 	s.endGroup();
 	
 	if (as.ai_model.model.isEmpty()) {
-		as = {"gpt-4o"};
+		as.ai_model = {"gpt-4o"};
 	}
 
 #if 0
@@ -190,7 +190,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_anthropic_api_key_environment_value;
 	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
-	SetValue<QString>(s, "AiMode")                            << this->ai_model.model;
+	SetValue<QString>(s, "AiModel")                            << this->ai_model.model;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない
