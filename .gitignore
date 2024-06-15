@@ -31,3 +31,6 @@ extra/_build-*
 bin/
 _appdir/
 Guitar-*.AppImage
+filetype2/docker/libmagic.so
+filetype2/docker/magic.mgc
+filetype2/file/magic/Magdir/varied.out
