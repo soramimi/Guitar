@@ -187,7 +187,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 
 	std::string url = "https://api.openai.com/v1/chat/completions";
 	WebClient::Request rq(url);
-	rq.add_header("Authorization: Bearer " + global->appsettings.openai_api_key.toStdString());
+	rq.add_header("Authorization: Bearer " + global->OpenAiApiKey().toStdString());
 	WebClient::Post post;
 	post.content_type = "application/json";
 	post.data.insert(post.data.end(), json.begin(), json.end());

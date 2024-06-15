@@ -6007,8 +6007,8 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
-		if (global->appsettings.openai_api_key != newsettings.openai_api_key) {
-			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key);
+		if (global->appsettings.openai_api_key_by_aicommits != newsettings.openai_api_key_by_aicommits) {
+			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key_by_aicommits);
 		}
 		setAppSettings(newsettings);
 		setupExternalPrograms();

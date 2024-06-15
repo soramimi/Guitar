@@ -30,7 +30,8 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_by_ai = false;
-	QString openai_api_key;
+	bool use_OPENAI_API_KEY_env_value = false;
+	QString openai_api_key_by_aicommits;
 	QString openai_gpt_model;
 
 	bool get_avatar_icon_from_network_enabled = true;

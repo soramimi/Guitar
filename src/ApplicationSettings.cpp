@@ -125,6 +125,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
+	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_OPENAI_API_KEY_env_value;
 	GetValue<QString>(s, "OpenAI_GPT_Model")                  >> as.openai_gpt_model;
 	s.endGroup();
 	
@@ -132,7 +133,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		as.openai_gpt_model = "gpt-4o";
 	}
 	
-	as.openai_api_key = loadOpenAiApiKey();
+	as.openai_api_key_by_aicommits = loadOpenAiApiKey();
 
 	return as;
 }
@@ -178,10 +179,11 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
+	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_OPENAI_API_KEY_env_value;
 	SetValue<QString>(s, "OpenAI_GPT_Model")                  << this->openai_gpt_model;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない
-		saveOpenAiApiKey(this->openai_api_key);
+		saveOpenAiApiKey(this->openai_api_key_by_aicommits);
 	}
 }

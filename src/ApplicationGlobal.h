@@ -51,6 +51,15 @@ public:
 	std::vector<AccountProfile> account_profiles;
 
 	void init(QApplication *a);
+
+	QString OpenAiApiKey() const
+	{
+		if (appsettings.use_OPENAI_API_KEY_env_value) {
+			return getenv("OPENAI_API_KEY");
+		} else {
+			return appsettings.openai_api_key_by_aicommits;
+		}
+	}
 };
 
 extern ApplicationGlobal *global;
