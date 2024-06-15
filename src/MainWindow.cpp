@@ -5528,6 +5528,17 @@ QString MainWindow::determinFileType(QByteArray in) const
 	return mimetype;
 }
 
+QString MainWindow::determinFileType(QString const &path) const
+{
+	QString mimetype;
+	QFile file(path);
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray in = file.read(1024 * 1024);
+		mimetype = determinFileType(in);
+	}
+	return mimetype;
+}
+
 QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)
 {
 	QList<Git::Tag> list;

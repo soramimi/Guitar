@@ -1,6 +1,8 @@
 
 #include "Git.h"
+#include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
+#include "MainWindow.h"
 #include "MyProcess.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
@@ -11,8 +13,8 @@
 #include <QProcess>
 #include <QThread>
 #include <QTimer>
-#include <set>
 #include <optional>
+#include <set>
 
 Git::CommitID::CommitID(const QString &qid)
 {
@@ -491,11 +493,12 @@ QString Git::diff_head()
 	QString diff;
 	for (auto file : files) {
 		if (file.isEmpty()) continue;
-		cmd = "diff -a --full-index HEAD -- " + file;
+		QString mimetype = global->mainwindow->determinFileType(file);
+		if (mimetype == "application/pdf") continue; // PDFはdiffしない
+		cmd = "diff --full-index HEAD -- " + file;
 		git(cmd);
 		diff += resultQString();
 	}
-	qDebug() << diff;
 	return diff;
 #endif	
 }
