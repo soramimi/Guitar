@@ -513,5 +513,4 @@ win32 {
     LIBS += -lole32
 }
 
-# include(filetype.pri)
-include(filetype2.pri)
+include(filetype.pri)

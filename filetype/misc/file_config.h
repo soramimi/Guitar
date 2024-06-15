@@ -60,7 +60,7 @@
 #undef HAVE_GETLINE
 
 /* Define to 1 if you have the <getopt.h> header file. */
-#define HAVE_GETOPT_H 1
+// #define HAVE_GETOPT_H 1
  
 /* Define to 1 if you have the `getopt_long' function. */
 #undef HAVE_GETOPT_LONG
@@ -96,7 +96,7 @@
 #undef HAVE_MKOSTEMP
 
 /* Define to 1 if you have the `mkstemp' function. */
-#define HAVE_MKSTEMP 1
+// #define HAVE_MKSTEMP 1
 
 /* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP
@@ -203,12 +203,8 @@
 /* Define to 1 if the system has the type `uint8_t'. */
 #define HAVE_UINT8_T 1
 
-/* Define to 1 if you have the <my_unistd.h> header file. */
-#ifdef _WIN32
-#undef HAVE_UNISTD_H
-#else
-#define HAVE_UNISTD_H 1
-#endif
+/* Define to 1 if you have the <unistd.h> header file. */
+// #define HAVE_UNISTD_H 1
 
 /* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
@@ -230,7 +226,7 @@
 
 /* Define to 1 or 0, depending whether the compiler supports simple visibility
    declarations. */
-#undef HAVE_VISIBILITY
+// #define HAVE_VISIBILITY 1
 
 /* Define to 1 if you have the <wchar.h> header file. */
 #define HAVE_WCHAR_H 1

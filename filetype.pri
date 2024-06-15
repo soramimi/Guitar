@@ -1,11 +1,14 @@
 
 INCLUDEPATH += filetype/misc
-INCLUDEPATH += filetype/src
+INCLUDEPATH += filetype/file/src
 INCLUDEPATH += filetype/pcre2/src
 win32:INCLUDEPATH += filetype/win32
+win32:INCLUDEPATH += filetype/dirent/include
 
-win32:DEFINES += "HAVE_CONFIG_H=1" "PCRE2_CODE_UNIT_WIDTH=8"
-!win32:DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
+DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
+!win32:DEFINES += "HAVE_MKSTEMP=1"
+
+win32:HEADERS += filetype/dirent/include/dirent.h
 
 SOURCES += \
 	filetype/file/src/apprentice.c \
@@ -28,6 +31,7 @@ SOURCES += \
 	filetype/file/src/gmtime_r.c \
 	filetype/file/src/is_csv.c \
 	filetype/file/src/is_json.c \
+	filetype/file/src/is_simh.c \
 	filetype/file/src/is_tar.c \
 	filetype/file/src/localtime_r.c \
 	filetype/file/src/magic.c \
@@ -50,6 +54,7 @@ SOURCES += \
 	filetype/pcre2/src/pcre2_dfa_match.c \
 	filetype/pcre2/src/pcre2_error.c \
 	filetype/pcre2/src/pcre2_find_bracket.c \
+	filetype/pcre2/src/pcre2_fuzzsupport.c \
 	filetype/pcre2/src/pcre2_jit_compile.c \
 	filetype/pcre2/src/pcre2_jit_match.c \
 	filetype/pcre2/src/pcre2_jit_misc.c \
@@ -72,8 +77,6 @@ SOURCES += \
 	filetype/pcre2/src/pcre2posix.c
 
 HEADERS += \
-	filetype/misc/my_unistd.h \
-	win32/unistd.h \
 	filetype/file/src/cdf.h \
 	filetype/file/src/der.h \
 	filetype/file/src/elfclass.h \
@@ -88,13 +91,11 @@ HEADERS += \
 	filetype/misc/file_config.h \
 	filetype/misc/pcre2.h \
 	filetype/misc/pcre2_config.h \
+	filetype/misc/unistd.h \
 	filetype/pcre2/src/pcre2_internal.h \
 	filetype/pcre2/src/pcre2_intmodedep.h \
 	filetype/pcre2/src/pcre2_ucp.h \
 	filetype/pcre2/src/pcre2posix.h \
 	filetype/pcre2/src/regex.h
 
-SOURCES += filetype/filetype.cpp
-
-win32:HEADERS += filetype/dirent/include/dirent.h
 
