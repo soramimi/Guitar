@@ -5499,26 +5499,28 @@ bool MainWindow::saveAs(RepositoryWrapperFrame *frame, const QString &id, const 
 	}
 }
 
-QString MainWindow::determinFileType(QByteArray in) const
+QString MainWindow::determinFileType(QByteArray const &in) const
 {
 	if (in.isEmpty()) return QString();
 
-	if (in.size() > 10) {
-		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+	QByteArray in2 = in;
+
+	if (in2.size() > 10) {
+		if (memcmp(in2.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
 			QBuffer buf;
-			MemoryReader reader(in.data(), in.size());
+			MemoryReader reader(in2.data(), in2.size());
 			reader.open(MemoryReader::ReadOnly);
 			buf.open(QBuffer::WriteOnly);
 			gunzip z;
 			z.set_maximul_size(100000);
 			z.decode(&reader, &buf);
-			in = buf.buffer();
+			in2 = buf.buffer();
 		}
 	}
 
 	QString mimetype;
-	if (!in.isEmpty()) {
-		std::string s = global->filetype.mime_by_data(in.data(), in.size());
+	if (!in2.isEmpty()) {
+		std::string s = global->filetype.mime_by_data(in2.data(), in2.size());
 		auto i = s.find(';');
 		if (i != std::string::npos) {
 			s = s.substr(0, i);
@@ -5530,13 +5532,14 @@ QString MainWindow::determinFileType(QByteArray in) const
 
 QString MainWindow::determinFileType(QString const &path) const
 {
-	QString mimetype;
 	QFile file(path);
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray in = file.read(1024 * 1024);
-		mimetype = determinFileType(in);
+	if (file.open(QIODevice::ReadOnly)) {
+		QByteArray ba;
+		ba = file.read(65536);
+		file.close();
+		return determinFileType(ba);
 	}
-	return mimetype;
+	return QString();
 }
 
 QList<Git::Tag> MainWindow::queryTagList(RepositoryWrapperFrame *frame)
@@ -6007,9 +6010,11 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
-		if (global->appsettings.openai_api_key_by_aicommits != newsettings.openai_api_key_by_aicommits) {
-			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key_by_aicommits);
+#if 0
+		if (global->appsettings.openai_api_key != newsettings.openai_api_key) {
+			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key);
 		}
+#endif
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
@@ -7098,18 +7103,16 @@ Terminal=false
 #endif
 }
 
-QString MainWindow::currentFileMimeFileType() const
+#include "FileType.h"
+
+void MainWindow::test()
 {
 	QListWidgetItem *item = currentFileItem();
 	QString path = getFilePath(item);
 	QFile file(path);
-	if (!file.open(QFile::ReadOnly)) return QString();
+	if (!file.open(QFile::ReadOnly)) return;
 	QByteArray ba = file.readAll();
 	QString mime = determinFileType(ba);
-	return mime;
-}
+	qDebug() << mime;
 
-void MainWindow::test()
-{
-	git()->diff_head();
 }

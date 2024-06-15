@@ -54,10 +54,18 @@ public:
 
 	QString OpenAiApiKey() const
 	{
-		if (appsettings.use_OPENAI_API_KEY_env_value) {
+		if (appsettings.use_openai_api_key_environment_value) {
 			return getenv("OPENAI_API_KEY");
 		} else {
-			return appsettings.openai_api_key_by_aicommits;
+			return appsettings.openai_api_key;
+		}
+	}
+	QString AnthropicAiApiKey() const
+	{
+		if (appsettings.use_anthropic_api_key_environment_value) {
+			return getenv("ANTHROPIC_API_KEY");
+		} else {
+			return appsettings.anthropic_api_key;
 		}
 	}
 };

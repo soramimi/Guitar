@@ -88,7 +88,7 @@ std::string decode_json_string(std::string const &in)
 
 } // namespace
 
-std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in)
+std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, AI_Type ai_type)
 {
 	error_.clear();
 	std::vector<std::string> lines;
@@ -97,16 +97,33 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 	char const *begin = in.c_str();
 	char const *end = begin + in.size();
 	jstream::Reader r(begin, end);
-	while (r.next()) {
-		if (r.match("{object")) {
-			if (r.string() == "chat.completion") {
-				ok1 = true;
+	if (ai_type == GPT) {
+		while (r.next()) {
+			if (r.match("{object")) {
+				if (r.string() == "chat.completion") {
+					ok1 = true;
+				}
+			} else if (r.match("{choices[{message{content")) {
+				text = decode_json_string(r.string());
+			} else if (r.match("{error{type")) {
+				error_ = r.string();
+				return {};
 			}
-		} else if (r.match("{choices[{message{content")) {
-			text = decode_json_string(r.string());
-		} else if (r.match("{error{type")) {
-			error_ = r.string();
-			return {};
+		}
+	} else if (ai_type == CLAUDE) {
+		while (r.next()) {
+			fprintf(stderr, "%d\n", r.path().c_str());
+			fflush(stderr);
+			if (r.match("{stop_reason")) {
+				if (r.string() == "end_turn") {
+					ok1 = true;
+				}
+			} else if (r.match("{content[{text")) {
+				text = decode_json_string(r.string());
+			// } else if (r.match("{error{type")) {
+			// 	error_ = r.string();
+			// 	return {};
+			}
 		}
 	}
 	if (ok1) {
@@ -119,30 +136,37 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			char const *end = ptr + sv.size();
 			while (ptr < end && *ptr == '`') ptr++;
 			while (ptr < end && end[-1] == '`') end--;
+			bool accept = false;
 			if (ptr < end && *ptr == '-') {
+				accept = true;
 				ptr++;
 			} else {
 				while (ptr < end && isdigit((unsigned char)*ptr)) {
+					accept = true;
 					ptr++;
 				}
 				if (ptr < end && *ptr == '.') {
 					ptr++;
 				}
 			}
-			while (ptr < end && isspace((unsigned char)*ptr)) {
-				ptr++;
-			}
-			if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
-				ptr++;
-				end--;
-			}
-			if (ptr < end) {
-				lines[i] = std::string(ptr, end);
-			} else {
-				lines.erase(lines.begin() + i);
+			if (accept) {
+				while (ptr < end && isspace((unsigned char)*ptr)) {
+					ptr++;
+				}
+				if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
+					ptr++;
+					end--;
+				}
+				if (ptr < end) {
+					lines[i] = std::string(ptr, end);
+				} else {
+					lines.erase(lines.begin() + i);
+				}
 			}
 		}
 		return lines;
+	} else {
+		error_ = text;
 	}
 	return {};
 }
@@ -157,26 +181,61 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		return {};
 	}
 
-	std::string model = global->appsettings.openai_gpt_model.toStdString();
-	if (model.empty()) model = "gpt-4o";
+	GenerativeAiModel model = global->appsettings.ai_model;
+	if (model.model.isEmpty()) model.model = "gpt-4o";
+
+	AI_Type ai_type = GPT;
+	if (model.model.startsWith("gpt-")) {
+		ai_type = GPT;
+	} else if (model.model.startsWith("claude-")) {
+		ai_type = CLAUDE;
+	}
 
 	constexpr int max = 5;
+
+	std::string apikey;
+	std::string url;
 
 	// Referring to https://github.com/Nutlope/aicommits
 	std::string prompt = strformat(
 						  "Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
-						  "Exclude anything unnecessary such as translation. "
-						  "Your entire response will be passed directly into git commit. "
-						  "Please generate %d messages, bulleted, and start writing with '-'. ")(max);
+						  "Please generate %d messages, bulleted, and start writing with '-'. "
+						  "No headers and footers other than bullet items. "
+							 )(max);
 			;
 	prompt = prompt + "\n\n" + diff.toStdString();
 
-	std::string json = R"---({
+	std::string json;
+
+	if (ai_type == GPT) {
+		url = "https://api.openai.com/v1/chat/completions";
+		apikey = global->OpenAiApiKey().toStdString();
+		json = R"---(
+{
 	"model": "%s",
 	"messages": [
 		{"role": "system", "content": "You are a experienced engineer."},
-		{"role": "user", "content": "%s"}]})---";
-	json = strformat(json)(model)(encode_json_string(prompt));
+		{"role": "user", "content": "%s"}]
+}
+)---";
+	} else if (ai_type == CLAUDE) {
+		url = "https://api.anthropic.com/v1/messages";
+		model.model = "claude-3-opus-20240229";
+		apikey = global->AnthropicAiApiKey().toStdString();
+		json = R"---(
+{
+	"model": "%s",
+	"messages": [
+		{"role": "user", "content": "%s"}
+	]
+	,
+	"max_tokens": 200,
+	"temperature": 0.7
+}
+)---";
+	}
+
+	json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
 
 	if (0) {
 		QFile file("c:/a/a.txt");
@@ -185,9 +244,14 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		}
 	}
 
-	std::string url = "https://api.openai.com/v1/chat/completions";
 	WebClient::Request rq(url);
-	rq.add_header("Authorization: Bearer " + global->OpenAiApiKey().toStdString());
+	if (ai_type == GPT) {
+		rq.add_header("Authorization: Bearer " + apikey);
+	} else if (ai_type == CLAUDE) {
+		rq.add_header("x-api-key: " + apikey);
+		rq.add_header("anthropic-version: 2023-06-01");
+	}
+
 	WebClient::Post post;
 	post.content_type = "application/json";
 	post.data.insert(post.data.end(), json.begin(), json.end());
@@ -196,14 +260,14 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (http.post(rq, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
-		if (0) {
-			QFile file("c:/a/b.txt");
+		if (1) {
+			QFile file("c:/a/a.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
 			}
 		}
 		std::string text(data, size);
-		auto list = parse_openai_response(text);
+		auto list = parse_openai_response(text, ai_type);
 		QStringList out;
 		for (int i = 0; i < max && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));
@@ -213,7 +277,8 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 
 	if (0) { // response example
 
-		std::string example = R"---({
+		std::string gpt_example = R"---(
+{
 	  "id": "chatcmpl-9Q9tzFdQIw3NYSpwbgyFrG8EOJw29",
 	  "object": "chat.completion",
 	  "created": 1716021619,
@@ -223,7 +288,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		  "index": 0,
 		  "message": {
 			"role": "assistant",
-			"content": "1. \"Upgrade C++ version from C++11 to C++17 in strformat.pro\"\n2. \"Update strformat.pro to use C++17 instead of C++11\"\n3. \"Change C++ version in CONFIG from C++11 to C++17 in strformat.pro\""
+			"content": "- \"Upgrade C++ version from C++11 to C++17 in strformat.pro\"\n- \"Update strformat.pro to use C++17 instead of C++11\"\n- \"Change C++ version in CONFIG from C++11 to C++17 in strformat.pro\""
 		  },
 		  "logprobs": null,
 		  "finish_reason": "stop"
@@ -237,8 +302,30 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	  "system_fingerprint": null
 	}
 )---";
+
+		std::string claude_example = R"---(
+{
+	"id":"msg_01HqUHZ5u6uVJnZBANdU3iRx",
+	"type":"message",
+	"role":"assistant",
+	"model":"claude-3-opus-20240229",
+	"content":[
 		{
-			std::vector<std::string> lines = parse_openai_response(example);
+			"type":"text",
+			"text":"- Add support for Anthropic Claude API for generating commit messages\n- Switch to Claude-3-Opus model for commit message generation\n- Update JSON payload and headers for Anthropic API compatibility\n- Increase max_tokens to 200 and set temperature to 0.7 for generation\n- Enable writing API response to file for debugging purposes"
+		}
+	],
+	"stop_reason":"end_turn",
+	"stop_sequence":null,
+	"usage":{
+		"input_tokens":1066,
+		"output_tokens":77
+	}
+}
+)---";
+
+		{
+			std::vector<std::string> lines = parse_openai_response(gpt_example, GPT);
 
 			for (std::string const &line : lines) {
 				fprintf(stderr, "%s\n", line.c_str());

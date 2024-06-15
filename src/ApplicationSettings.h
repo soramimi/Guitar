@@ -7,6 +7,15 @@
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
 
+struct GenerativeAiModel {
+	QString model;
+	GenerativeAiModel() = default;
+	GenerativeAiModel(const QString &model)
+		: model(model)
+	{
+	}
+};
+
 class ApplicationBasicData {
 public:
 	QString organization_name = ORGANIZATION_NAME;
@@ -30,9 +39,11 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_by_ai = false;
-	bool use_OPENAI_API_KEY_env_value = false;
-	QString openai_api_key_by_aicommits;
-	QString openai_gpt_model;
+	bool use_openai_api_key_environment_value = false;
+	bool use_anthropic_api_key_environment_value = false;
+	QString openai_api_key;
+	QString anthropic_api_key;
+	GenerativeAiModel ai_model;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
@@ -58,10 +69,12 @@ public:
 
 	static ApplicationSettings defaultSettings();
 
+#if 0
 	static QString loadOpenAiApiKey();
 	static void saveOpenAiApiKey(const QString &key);
+#endif
 	
-	static QStringList openai_gpt_models();
+	static std::vector<GenerativeAiModel> generative_ai_models();
 };
 
 #endif // APPLICATIONSETTINGS_H

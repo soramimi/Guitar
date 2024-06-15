@@ -9,8 +9,12 @@ SettingOptionsForm::SettingOptionsForm(QWidget *parent)
 {
 	ui->setupUi(this);
 	
-	QStringList list = ApplicationSettings::openai_gpt_models();
-	ui->comboBox_openai_gpt_model->addItems(list);
+	QStringList list;
+	auto vec = ApplicationSettings::generative_ai_models();
+	for (auto &m : vec) {
+		list.push_back(m.model);
+	}
+	ui->comboBox_ai_model->addItems(list);
 }
 
 SettingOptionsForm::~SettingOptionsForm()
@@ -22,17 +26,24 @@ void SettingOptionsForm::exchange(bool save)
 {
 	if (save) {
 		settings()->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
-		settings()->use_OPENAI_API_KEY_env_value = ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked();
-		settings()->openai_api_key_by_aicommits = ui->lineEdit_openai_api_key->text();
-		settings()->openai_gpt_model = ui->comboBox_openai_gpt_model->currentText();
+		settings()->use_openai_api_key_environment_value = ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked();
+		settings()->use_anthropic_api_key_environment_value = ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked();
+		settings()->openai_api_key = openai_api_key_;
+		settings()->anthropic_api_key = anthropic_api_key_;
+		settings()->ai_model = ui->comboBox_ai_model->currentText();
 	} else {
 		ui->groupBox_generate_commit_message_by_ai->setChecked(settings()->generate_commit_message_by_ai);
-		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_OPENAI_API_KEY_env_value);
-		ui->lineEdit_openai_api_key->setText(settings()->openai_api_key_by_aicommits);
-		ui->comboBox_openai_gpt_model->setCurrentText(settings()->openai_gpt_model);
+		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
+		ui->checkBox_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
+		ui->lineEdit_openai_api_key->setText(settings()->openai_api_key);
+		ui->lineEdit_anthropic_api_key->setText(settings()->anthropic_api_key);
+		ui->comboBox_ai_model->setCurrentText(settings()->ai_model.model);
 
-		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_OPENAI_API_KEY_env_value);
-		refrectSettingsToUI();
+		openai_api_key_ = settings()->openai_api_key;
+		anthropic_api_key_ = settings()->anthropic_api_key;
+		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
+		ui->checkBox_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
+		refrectSettingsToUI(true, true);
 	}
 }
 
@@ -47,21 +58,62 @@ void SettingOptionsForm::on_pushButton_edit_profiles_clicked()
 	}
 }
 
-void SettingOptionsForm::refrectSettingsToUI()
+void SettingOptionsForm::refrectSettingsToUI(bool openai, bool anthropic)
 {
-	QString apikey;
-	if (ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked()) {
-		apikey = getenv("OPENAI_API_KEY");
+	{
+		QString apikey;
+		if (ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked()) {
+			apikey = getenv("OPENAI_API_KEY");
+			ui->lineEdit_openai_api_key->setEnabled(false);
+		} else {
+			apikey = openai_api_key_;
+			ui->lineEdit_openai_api_key->setEnabled(true);
+		}
+		bool b = ui->lineEdit_openai_api_key->blockSignals(true);
 		ui->lineEdit_openai_api_key->setText(apikey);
-	} else {
-		apikey = settings()->openai_api_key_by_aicommits;
+		ui->lineEdit_openai_api_key->blockSignals(b);
 	}
-	ui->lineEdit_openai_api_key->setText(apikey);
+
+	{
+		QString apikey;
+		if (ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
+			apikey = getenv("ANTHROPIC_API_KEY");
+			ui->lineEdit_anthropic_api_key->setEnabled(false);
+		} else {
+			apikey = anthropic_api_key_;
+			ui->lineEdit_anthropic_api_key->setEnabled(true);
+		}
+		bool b = ui->lineEdit_anthropic_api_key->blockSignals(true);
+		ui->lineEdit_anthropic_api_key->setText(apikey);
+		ui->lineEdit_anthropic_api_key->blockSignals(b);
+	}
 }
 
 
 void SettingOptionsForm::on_checkBox_use_OPENAI_API_KEY_env_value_stateChanged(int)
 {
-	refrectSettingsToUI();
+	refrectSettingsToUI(true, false);
+}
+
+
+void SettingOptionsForm::on_checkBox_use_ANTHROPIC_API_KEY_env_value_stateChanged(int)
+{
+	refrectSettingsToUI(false, true);
+}
+
+
+void SettingOptionsForm::on_lineEdit_openai_api_key_textChanged(const QString &arg1)
+{
+	if (!ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked()) {
+		openai_api_key_ = arg1;
+	}
+}
+
+
+void SettingOptionsForm::on_lineEdit_anthropic_api_key_textChanged(const QString &arg1)
+{
+	if (!ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
+		anthropic_api_key_ = arg1;
+	}
 }
 

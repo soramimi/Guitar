@@ -5,10 +5,15 @@
 #include <string>
 #include <vector>
 
+enum AI_Type {
+	GPT,
+	CLAUDE,
+};
+
 class CommitMessageGenerator {
 private:
 	std::string error_;
-	std::vector<std::string> parse_openai_response(const std::string &in);
+	std::vector<std::string> parse_openai_response(const std::string &in, AI_Type ai_type);
 public:
 	CommitMessageGenerator() = default;
 	QStringList generate(GitPtr g);

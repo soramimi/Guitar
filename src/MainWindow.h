@@ -470,7 +470,7 @@ public:
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, const QString &id);
 	Git::Object catFile(const QString &id);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
-	QString determinFileType(QByteArray in) const;
+	QString determinFileType(QByteArray const &in) const;
 	QString determinFileType(const QString &path) const;
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
 	TextEditorThemePtr themeForTextEditor();

@@ -56,6 +56,7 @@ template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 
 } // namespace
 
+#if 0
 QString ApplicationSettings::loadOpenAiApiKey()
 {
 	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
@@ -70,16 +71,17 @@ void ApplicationSettings::saveOpenAiApiKey(QString const &key)
 	QSettings s(home / ".aicommits", QSettings::IniFormat);
 	s.setValue("OPENAI_KEY", key.trimmed());
 }
+#endif
 
-QStringList ApplicationSettings::openai_gpt_models()
+std::vector<GenerativeAiModel> ApplicationSettings::generative_ai_models()
 {
-	QStringList list;
-	list.append("gpt-3.5-turbo");
-	list.append("gpt-4");
-	list.append("gpt-4-turbo");
-	list.append("gpt-4o");
-	list.sort();
-	return list;
+	std::vector<GenerativeAiModel> models;
+	models.emplace_back("gpt-3.5-turbo");
+	models.emplace_back("gpt-4");
+	models.emplace_back("gpt-4-turbo");
+	models.emplace_back("gpt-4o");
+	models.emplace_back("claude-3-opus-20240229");
+	return models;
 }
 
 ApplicationSettings ApplicationSettings::loadSettings()
@@ -125,15 +127,20 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
-	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_OPENAI_API_KEY_env_value;
-	GetValue<QString>(s, "OpenAI_GPT_Model")                  >> as.openai_gpt_model;
+	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_openai_api_key_environment_value;
+	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
+	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
+	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
+	GetValue<QString>(s, "AiMode")                            >> as.ai_model.model;
 	s.endGroup();
 	
-	if (as.openai_gpt_model.isEmpty()) {
-		as.openai_gpt_model = "gpt-4o";
+	if (as.ai_model.model.isEmpty()) {
+		as = {"gpt-4o"};
 	}
-	
-	as.openai_api_key_by_aicommits = loadOpenAiApiKey();
+
+#if 0
+	as.openai_api_key = loadOpenAiApiKey();
+#endif
 
 	return as;
 }
@@ -179,11 +186,16 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_OPENAI_API_KEY_env_value;
-	SetValue<QString>(s, "OpenAI_GPT_Model")                  << this->openai_gpt_model;
+	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_openai_api_key_environment_value;
+	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_anthropic_api_key_environment_value;
+	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
+	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
+	SetValue<QString>(s, "AiMode")                            << this->ai_model.model;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない
-		saveOpenAiApiKey(this->openai_api_key_by_aicommits);
+#if 0
+		saveOpenAiApiKey(this->openai_api_key);
+#endif
 	}
 }

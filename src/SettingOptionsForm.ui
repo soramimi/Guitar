@@ -41,19 +41,19 @@
    <item>
     <widget class="QGroupBox" name="groupBox_generate_commit_message_by_ai">
      <property name="title">
-      <string>Ge&amp;nerate commit message powered by OpenAI</string>
+      <string>Ge&amp;nerate commit message with AI</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QComboBox" name="comboBox_openai_gpt_model"/>
+       <widget class="QComboBox" name="comboBox_ai_model"/>
       </item>
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>OpenAI API Key</string>
+         <string>API Key</string>
         </property>
        </widget>
       </item>
@@ -66,6 +66,16 @@
       </item>
       <item>
        <widget class="QLineEdit" name="lineEdit_openai_api_key"/>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_use_ANTHROPIC_API_KEY_env_value">
+        <property name="text">
+         <string>Use ANTHROPIC_API_KEY environment value</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_anthropic_api_key"/>
       </item>
      </layout>
     </widget>
@@ -88,9 +98,11 @@
  <tabstops>
   <tabstop>pushButton_edit_profiles</tabstop>
   <tabstop>groupBox_generate_commit_message_by_ai</tabstop>
-  <tabstop>comboBox_openai_gpt_model</tabstop>
+  <tabstop>comboBox_ai_model</tabstop>
   <tabstop>checkBox_use_OPENAI_API_KEY_env_value</tabstop>
   <tabstop>lineEdit_openai_api_key</tabstop>
+  <tabstop>checkBox_use_ANTHROPIC_API_KEY_env_value</tabstop>
+  <tabstop>lineEdit_anthropic_api_key</tabstop>
  </tabstops>
  <resources/>
  <connections/>
