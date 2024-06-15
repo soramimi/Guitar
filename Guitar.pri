@@ -107,31 +107,29 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/GenerateCommitMessageDialog.cpp \
-	$$PWD/src/OverrideWaitCursor.cpp \
-	src/ApplicationSettings.cpp \
-	src/CommitDetailGetter.cpp \
-	src/CommitMessageGenerator.cpp \
-	src/DropDownListFrame.cpp \
-	src/RepositoryUrlLineEdit.cpp \
-	src/WorkingDirLineEdit.cpp \
-    src/AboutDialog.cpp \
+	$$PWD/src/FileType.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
+	src/AddRepositoriesCollectivelyDialog.cpp \
 	src/AddRepositoryDialog.cpp \
 	src/ApplicationGlobal.cpp \
+	src/ApplicationSettings.cpp \
 	src/AreYouSureYouWantToContinueConnectingDialog.cpp \
 	src/AvatarLoader.cpp \
 	src/BigDiffWindow.cpp \
 	src/BlameWindow.cpp \
 	src/BlockSignals.cpp \
+	src/BranchLabel.cpp \
 	src/CheckoutDialog.cpp \
 	src/CherryPickDialog.cpp \
 	src/CleanSubModuleDialog.cpp \
 	src/ClearButton.cpp \
 	src/CloneFromGitHubDialog.cpp \
+	src/ColorButton.cpp \
+	src/CommitDetailGetter.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
+	src/CommitMessageGenerator.cpp \
 	src/CommitPropertyDialog.cpp \
 	src/CommitViewWindow.cpp \
 	src/ConfigCredentialHelperDialog.cpp \
@@ -142,6 +140,7 @@ SOURCES += \
 	src/DeleteTagsDialog.cpp \
 	src/DialogHeaderFrame.cpp \
 	src/DoYouWantToInitDialog.cpp \
+	src/DropDownListFrame.cpp \
 	src/EditGitIgnoreDialog.cpp \
 	src/EditProfilesDialog.cpp \
 	src/EditRemoteDialog.cpp \
@@ -155,6 +154,7 @@ SOURCES += \
 	src/FileViewWidget.cpp \
 	src/FilesListWidget.cpp \
 	src/FindCommitDialog.cpp \
+	src/GenerateCommitMessageDialog.cpp \
 	src/Git.cpp \
 	src/GitDiff.cpp \
 	src/GitHubAPI.cpp \
@@ -170,6 +170,7 @@ SOURCES += \
 	src/LocalSocketReader.cpp \
 	src/LogTableWidget.cpp \
 	src/MainWindow.cpp \
+	src/ManageWorkingFolderDialog.cpp \
 	src/MaximizeButton.cpp \
 	src/MemoryReader.cpp \
 	src/MenuButton.cpp \
@@ -181,6 +182,7 @@ SOURCES += \
 	src/MyTextEditorWidget.cpp \
 	src/MyToolButton.cpp \
 	src/ObjectBrowserDialog.cpp \
+	src/OverrideWaitCursor.cpp \
 	src/Photoshop.cpp \
 	src/PushDialog.cpp \
 	src/ReadOnlyLineEdit.cpp \
@@ -192,6 +194,8 @@ SOURCES += \
 	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryPropertyDialog.cpp \
+	src/RepositoryUrlLineEdit.cpp \
+	src/RepositoryWrapperFrame.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
@@ -205,22 +209,34 @@ SOURCES += \
 	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
+	src/SettingVisualForm.cpp \
 	src/SettingWorkingFolderForm.cpp \
 	src/SettingsDialog.cpp \
 	src/SimpleImageWidget.cpp \
 	src/StatusLabel.cpp \
+	src/SubmoduleAddDialog.cpp \
+	src/SubmoduleMainWindow.cpp \
+	src/SubmoduleUpdateDialog.cpp \
+	src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
+	src/UserEvent.cpp \
 	src/WelcomeWizardDialog.cpp \
+	src/WorkingDirLineEdit.cpp \
 	src/XmlTagState.cpp \
 	src/charvec.cpp \
+	src/coloredit/ColorDialog.cpp \
+	src/coloredit/ColorEditWidget.cpp \
+	src/coloredit/ColorPreviewWidget.cpp \
+	src/coloredit/ColorSlider.cpp \
+	src/coloredit/ColorSquareWidget.cpp \
 	src/common/base64.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
-	src/darktheme/NinePatch.cpp \
 	src/darktheme/LightStyle.cpp \
+	src/darktheme/NinePatch.cpp \
 	src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
 	src/gpg.cpp \
 	src/gunzip.cpp \
@@ -234,40 +250,19 @@ SOURCES += \
 	src/texteditor/unicode.cpp \
 	src/urlencode.cpp \
 	src/webclient.cpp \
-	src/BranchLabel.cpp \
-	src/ColorButton.cpp \
-	src/RepositoryWrapperFrame.cpp \
-	src/SettingVisualForm.cpp \
-	src/SubmoduleAddDialog.cpp \
-	src/SubmoduleMainWindow.cpp \
-	src/SubmoduleUpdateDialog.cpp \
-	src/SubmodulesDialog.cpp \
-	src/UserEvent.cpp \
-	src/coloredit/ColorDialog.cpp \
-	src/coloredit/ColorEditWidget.cpp \
-	src/coloredit/ColorPreviewWidget.cpp \
-	src/coloredit/ColorSlider.cpp \
-	src/coloredit/ColorSquareWidget.cpp \
-	src/ManageWorkingFolderDialog.cpp \
+    src/AboutDialog.cpp \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
-	$$PWD/src/GenerateCommitMessageDialog.h \
-	$$PWD/src/OverrideWaitCursor.h \
-	$$PWD/src/common/strformat.h \
-	src/ApplicationSettings.h \
-	src/CommitDetailGetter.h \
-	src/CommitMessageGenerator.h \
-	src/DropDownListFrame.h \
-	src/RepositoryUrlLineEdit.h \
-	src/WorkingDirLineEdit.h \
-	src/common/jstream.h \
+	$$PWD/src/FileType.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
+	src/AddRepositoriesCollectivelyDialog.h \
 	src/AddRepositoryDialog.h \
 	src/ApplicationGlobal.h \
+	src/ApplicationSettings.h \
 	src/AreYouSureYouWantToContinueConnectingDialog.h \
 	src/AvatarLoader.h \
 	src/BigDiffWindow.h \
@@ -280,8 +275,10 @@ HEADERS += \
 	src/ClearButton.h \
 	src/CloneFromGitHubDialog.h \
 	src/ColorButton.h \
+	src/CommitDetailGetter.h \
 	src/CommitDialog.h \
 	src/CommitExploreWindow.h \
+	src/CommitMessageGenerator.h \
 	src/CommitPropertyDialog.h \
 	src/CommitViewWindow.h \
 	src/ConfigCredentialHelperDialog.h \
@@ -293,6 +290,7 @@ HEADERS += \
 	src/DeleteTagsDialog.h \
 	src/DialogHeaderFrame.h \
 	src/DoYouWantToInitDialog.h \
+	src/DropDownListFrame.h \
 	src/EditGitIgnoreDialog.h \
 	src/EditProfilesDialog.h \
 	src/EditRemoteDialog.h \
@@ -305,6 +303,7 @@ HEADERS += \
 	src/FileUtil.h \
 	src/FilesListWidget.h \
 	src/FindCommitDialog.h \
+	src/GenerateCommitMessageDialog.h \
 	src/Git.h \
 	src/GitDiff.h \
 	src/GitHubAPI.h \
@@ -320,6 +319,7 @@ HEADERS += \
 	src/LocalSocketReader.h \
 	src/LogTableWidget.h \
 	src/MainWindow.h \
+	src/ManageWorkingFolderDialog.h \
 	src/MaximizeButton.h \
 	src/MemoryReader.h \
 	src/MenuButton.h \
@@ -331,6 +331,7 @@ HEADERS += \
 	src/MyTextEditorWidget.h \
 	src/MyToolButton.h \
 	src/ObjectBrowserDialog.h \
+	src/OverrideWaitCursor.h \
 	src/Photoshop.h \
 	src/PushDialog.h \
 	src/ReadOnlyLineEdit.h \
@@ -343,6 +344,7 @@ HEADERS += \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositorySearchResultItem.h \
+	src/RepositoryUrlLineEdit.h \
 	src/RepositoryWrapperFrame.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
@@ -371,6 +373,7 @@ HEADERS += \
 	src/Theme.h \
 	src/UserEvent.h \
 	src/WelcomeWizardDialog.h \
+	src/WorkingDirLineEdit.h \
 	src/XmlTagState.h \
 	src/charvec.h \
 	src/coloredit/ColorDialog.h \
@@ -381,10 +384,12 @@ HEADERS += \
 	src/coloredit/RingSlider.h \
 	src/common/base64.h \
 	src/common/joinpath.h \
+	src/common/jstream.h \
 	src/common/misc.h \
+	src/common/strformat.h \
 	src/darktheme/DarkStyle.h \
-	src/darktheme/NinePatch.h \
 	src/darktheme/LightStyle.h \
+	src/darktheme/NinePatch.h \
 	src/darktheme/TraditionalWindowsStyleTreeControl.h \
 	src/dtl/Diff.hpp \
 	src/dtl/Diff3.hpp \
@@ -405,14 +410,13 @@ HEADERS += \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \
 	src/urlencode.h \
-	src/ManageWorkingFolderDialog.h \
 	src/webclient.h
 
 HEADERS += version.h
 
 FORMS    += \
-	$$PWD/src/GenerateCommitMessageDialog.ui \
 	src/AboutDialog.ui \
+	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \
 	src/AreYouSureYouWantToContinueConnectingDialog.ui \
 	src/BigDiffWindow.ui \
@@ -441,6 +445,7 @@ FORMS    += \
 	src/FileHistoryWindow.ui \
 	src/FilePropertyDialog.ui \
 	src/FindCommitDialog.ui \
+	src/GenerateCommitMessageDialog.ui \
 	src/InputNewTagDialog.ui \
 	src/JumpDialog.ui \
 	src/LineEditDialog.ui \
@@ -508,4 +513,5 @@ win32 {
     LIBS += -lole32
 }
 
-include(filetype.pri)
+# include(filetype.pri)
+include(filetype2.pri)

@@ -1,0 +1,31 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "file-magic"
+version = "0.4.1"
+description = "Python front end for libmagic(3)"
+readme = "README.md"
+authors = [{ name = "Christos Zoulas", email = "christos@astron.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["file", "magic"]
+dependencies = [
+]
+requires-python = ">=2.7"
+
+[project.optional-dependencies]
+dev = []
+
+[project.urls]
+Homepage = "https://https://darwinsys.com/file/"
+
+[project.scripts]
+realpython = "example.__main__:main"

@@ -7087,7 +7087,16 @@ Terminal=false
 #endif
 }
 
+#include "FileType.h"
+
 void MainWindow::test()
 {
+	QListWidgetItem *item = currentFileItem();
+	QString path = getFilePath(item);
+	QFile file(path);
+	if (!file.open(QFile::ReadOnly)) return;
+	QByteArray ba = file.readAll();
+	QString mime = determinFileType(ba);
+	qDebug() << mime;
 
 }

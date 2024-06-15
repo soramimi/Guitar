@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{958b9548-ec37-4dcb-8ac0-83d1c6f1ccd0}</ProjectGuid>
+    <RootNamespace>filetype</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)_build/x86_64\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_build/x86_64\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)_build/x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_build/x86\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)_build/x86_64\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_build/x86_64\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)_build/x86\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)_build/x86\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H=1;PCRE2_CODE_UNIT_WIDTH=8</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>pcre2/src;misc;dirent/include</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>unistd.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4996;4703</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H=1;PCRE2_CODE_UNIT_WIDTH=8</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>pcre2/src;misc;dirent/include</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>unistd.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4996;4703</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H=1;PCRE2_CODE_UNIT_WIDTH=8</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>pcre2/src;misc;dirent/include</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>unistd.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4996;4703</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H=1;PCRE2_CODE_UNIT_WIDTH=8</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>pcre2/src;misc;dirent/include</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>unistd.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4996;4703</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="file\src\apprentice.c" />
+    <ClCompile Include="file\src\apptype.c" />
+    <ClCompile Include="file\src\ascmagic.c" />
+    <ClCompile Include="file\src\asctime_r.c" />
+    <ClCompile Include="file\src\asprintf.c" />
+    <ClCompile Include="file\src\buffer.c" />
+    <ClCompile Include="file\src\cdf.c" />
+    <ClCompile Include="file\src\cdf_time.c" />
+    <ClCompile Include="file\src\compress.c" />
+    <ClCompile Include="file\src\ctime_r.c" />
+    <ClCompile Include="file\src\der.c" />
+    <ClCompile Include="file\src\dprintf.c" />
+    <ClCompile Include="file\src\encoding.c" />
+    <ClCompile Include="file\src\fmtcheck.c" />
+    <ClCompile Include="file\src\fsmagic.c" />
+    <ClCompile Include="file\src\funcs.c" />
+    <ClCompile Include="file\src\getline.c" />
+    <ClCompile Include="file\src\gmtime_r.c" />
+    <ClCompile Include="file\src\is_csv.c" />
+    <ClCompile Include="file\src\is_json.c" />
+    <ClCompile Include="file\src\is_simh.c" />
+    <ClCompile Include="file\src\is_tar.c" />
+    <ClCompile Include="file\src\localtime_r.c" />
+    <ClCompile Include="file\src\magic.c" />
+    <ClCompile Include="file\src\pread.c" />
+    <ClCompile Include="file\src\print.c" />
+    <ClCompile Include="file\src\readcdf.c" />
+    <ClCompile Include="file\src\readelf.c" />
+    <ClCompile Include="file\src\seccomp.c" />
+    <ClCompile Include="file\src\softmagic.c" />
+    <ClCompile Include="file\src\strcasestr.c" />
+    <ClCompile Include="file\src\strlcat.c" />
+    <ClCompile Include="file\src\strlcpy.c" />
+    <ClCompile Include="file\src\vasprintf.c" />
+    <ClCompile Include="pcre2\src\pcre2grep.c" />
+    <ClCompile Include="pcre2\src\pcre2posix.c" />
+    <ClCompile Include="pcre2\src\pcre2_auto_possess.c" />
+    <ClCompile Include="pcre2\src\pcre2_chartables.c" />
+    <ClCompile Include="pcre2\src\pcre2_compile.c" />
+    <ClCompile Include="pcre2\src\pcre2_config.c" />
+    <ClCompile Include="pcre2\src\pcre2_context.c" />
+    <ClCompile Include="pcre2\src\pcre2_convert.c" />
+    <ClCompile Include="pcre2\src\pcre2_dfa_match.c" />
+    <ClCompile Include="pcre2\src\pcre2_error.c" />
+    <ClCompile Include="pcre2\src\pcre2_find_bracket.c" />
+    <ClCompile Include="pcre2\src\pcre2_fuzzsupport.c" />
+    <ClCompile Include="pcre2\src\pcre2_jit_compile.c" />
+    <ClCompile Include="pcre2\src\pcre2_maketables.c" />
+    <ClCompile Include="pcre2\src\pcre2_match.c" />
+    <ClCompile Include="pcre2\src\pcre2_match_data.c" />
+    <ClCompile Include="pcre2\src\pcre2_newline.c" />
+    <ClCompile Include="pcre2\src\pcre2_ord2utf.c" />
+    <ClCompile Include="pcre2\src\pcre2_pattern_info.c" />
+    <ClCompile Include="pcre2\src\pcre2_serialize.c" />
+    <ClCompile Include="pcre2\src\pcre2_string_utils.c" />
+    <ClCompile Include="pcre2\src\pcre2_study.c" />
+    <ClCompile Include="pcre2\src\pcre2_substitute.c" />
+    <ClCompile Include="pcre2\src\pcre2_substring.c" />
+    <ClCompile Include="pcre2\src\pcre2_tables.c" />
+    <ClCompile Include="pcre2\src\pcre2_ucd.c" />
+    <ClCompile Include="pcre2\src\pcre2_valid_utf.c" />
+    <ClCompile Include="pcre2\src\pcre2_xclass.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="file\src\cdf.h" />
+    <ClInclude Include="file\src\der.h" />
+    <ClInclude Include="file\src\elfclass.h" />
+    <ClInclude Include="file\src\file.h" />
+    <ClInclude Include="file\src\file_opts.h" />
+    <ClInclude Include="file\src\mygetopt.h" />
+    <ClInclude Include="file\src\readelf.h" />
+    <ClInclude Include="file\src\tar.h" />
+    <ClInclude Include="misc\unistd.h" />
+    <ClInclude Include="pcre2\src\pcre2posix.h" />
+    <ClInclude Include="pcre2\src\pcre2_internal.h" />
+    <ClInclude Include="pcre2\src\pcre2_intmodedep.h" />
+    <ClInclude Include="pcre2\src\pcre2_ucp.h" />
+    <ClInclude Include="pcre2\src\regex.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
