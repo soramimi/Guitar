@@ -412,6 +412,7 @@ private:
 	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save = true, bool msgbox_if_err = true);
 	void addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group);
 	bool addExistingLocalRepository(const QString &dir, bool open);
+	QString currentFileMimeFileType() const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void customEvent(QEvent *) override;
@@ -469,7 +470,7 @@ public:
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, const QString &id);
 	Git::Object catFile(const QString &id);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
-	QString determinFileType(QByteArray in);
+	QString determinFileType(QByteArray in) const;
 	QList<Git::Tag> queryTagList(RepositoryWrapperFrame *frame);
 	TextEditorThemePtr themeForTextEditor();
 	bool isValidWorkingCopy(GitPtr g) const;

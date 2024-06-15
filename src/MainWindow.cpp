@@ -5499,7 +5499,7 @@ bool MainWindow::saveAs(RepositoryWrapperFrame *frame, const QString &id, const 
 	}
 }
 
-QString MainWindow::determinFileType(QByteArray in)
+QString MainWindow::determinFileType(QByteArray in) const
 {
 	if (in.isEmpty()) return QString();
 
@@ -7087,16 +7087,18 @@ Terminal=false
 #endif
 }
 
-#include "FileType.h"
-
-void MainWindow::test()
+QString MainWindow::currentFileMimeFileType() const
 {
 	QListWidgetItem *item = currentFileItem();
 	QString path = getFilePath(item);
 	QFile file(path);
-	if (!file.open(QFile::ReadOnly)) return;
+	if (!file.open(QFile::ReadOnly)) return QString();
 	QByteArray ba = file.readAll();
 	QString mime = determinFileType(ba);
-	qDebug() << mime;
+	return mime;
+}
 
+void MainWindow::test()
+{
+	git()->diff_head();
 }

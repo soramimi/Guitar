@@ -479,9 +479,25 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 
 QString Git::diff_head()
 {
+#if 0
 	QString cmd = "diff HEAD";
 	git(cmd);
 	return resultQString();
+#else
+	QString cmd = "diff --name-only HEAD";
+	git(cmd);
+	QStringList files = misc::splitLines(resultQString());
+	
+	QString diff;
+	for (auto file : files) {
+		if (file.isEmpty()) continue;
+		cmd = "diff -a --full-index HEAD -- " + file;
+		git(cmd);
+		diff += resultQString();
+	}
+	qDebug() << diff;
+	return diff;
+#endif	
 }
 
 QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
