@@ -2,11 +2,13 @@
 INCLUDEPATH += filetype2/misc
 INCLUDEPATH += filetype2/file/src
 INCLUDEPATH += filetype2/pcre2/src
+win32:INCLUDEPATH += filetype2/win32
+win32:INCLUDEPATH += filetype2/dirent/include
 
 DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 !win32:DEFINES += "HAVE_MKSTEMP=1"
 
-win32:HEADERS += filetype2/dirent.h
+win32:HEADERS += filetype2/dirent/include/dirent.h
 
 SOURCES += \
 	filetype2/file/src/apprentice.c \
