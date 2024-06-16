@@ -202,23 +202,31 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			} else if (r.match("{choices[{message{content")) {
 				text = decode_json_string(r.string());
 			} else if (r.match("{error{type")) {
+				error_status_ = r.string();
+				ok1 = false;
+			} else if (r.match("{error{message")) {
 				error_message_ = r.string();
-				return {};
+				ok1 = false;
 			}
 		}
 	} else if (ai_type == GenerativeAI::CLAUDE) {
 		while (r.next()) {
-			fprintf(stderr, "%d\n", r.path().c_str());
-			fflush(stderr);
 			if (r.match("{stop_reason")) {
 				if (r.string() == "end_turn") {
 					ok1 = true;
 				}
 			} else if (r.match("{content[{text")) {
 				text = decode_json_string(r.string());
-			// } else if (r.match("{error{type")) {
-			// 	error_ = r.string();
-			// 	return {};
+			} else if (r.match("{type")) {
+				if (r.string() == "error") {
+					ok1 = false;
+				}
+			} else if (r.match("{error{type")) {
+				error_status_ = r.string();
+				ok1 = false;
+			} else if (r.match("{error{message")) {				
+				error_message_ = r.string();
+				ok1 = false;
 			}
 		}
 	} else if (ai_type == GenerativeAI::GEMINI) {
