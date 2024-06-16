@@ -30,6 +30,7 @@ private slots:
 	void on_lineEdit_anthropic_api_key_textChanged(const QString &arg1);
 	void on_lineEdit_google_api_key_textChanged(const QString &arg1);
 	void on_checkBox_use_GOOGLE_API_KEY_env_value_stateChanged(int arg1);
+	void on_groupBox_generate_commit_message_by_ai_clicked(bool checked);
 };
 
 #endif // SETTINGAIFORM_H

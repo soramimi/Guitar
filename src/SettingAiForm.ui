@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>411</width>
-    <height>411</height>
+    <height>478</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,13 @@
    <item>
     <widget class="QGroupBox" name="groupBox_generate_commit_message_by_ai">
      <property name="title">
-      <string>Ge&amp;nerate commit message with AI</string>
+      <string>Enable commit message generation with AI</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -72,9 +75,6 @@
    </item>
    <item>
     <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>

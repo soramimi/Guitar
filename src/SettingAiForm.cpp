@@ -4,6 +4,8 @@
 #include "EditProfilesDialog.h"
 #include "GenerativeAI.h"
 
+#include <QMessageBox>
+
 SettingAiForm::SettingAiForm(QWidget *parent)
 	: AbstractSettingForm(parent)
 	, ui(new Ui::SettingAiForm)
@@ -145,4 +147,19 @@ void SettingAiForm::on_lineEdit_google_api_key_textChanged(const QString &arg1)
 	}
 }
 
+void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool checked)
+{
+	if (checked) {
+		QString msg = tr("ATTENTION");
+		msg += "\n\n";
+		// ja: AIを利用したコミットメッセージの生成機能を有効にすると、ローカルコンテンツの一部がクラウドサービスに送信されることに同意したものと見なされます。
+		msg += tr("By enabling the commit message generation feature using AI, you are deemed to agree that part of your local content will be sent to the cloud service.");
+		msg += "\n\n";
+		// ja: あなたは機密保持とモデルの選択、APIの利用料金に注意する必要があります。
+		msg += tr("You should be aware of confidentiality, model selection, and API usage fees.");
+		if (QMessageBox::warning(this, tr("Commit Message Generation with AI"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok)	{
+			ui->groupBox_generate_commit_message_by_ai->setChecked(false);
+		}
+	}
+}
 
