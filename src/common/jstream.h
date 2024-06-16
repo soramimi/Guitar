@@ -85,7 +85,8 @@ private:
 		*out = strtod(vec.data(), nullptr);
 		return ptr - begin;
 	}
-
+	
+public:
 	static int parse_string(char const *begin, char const *end, std::string *out)
 	{
 		char const *ptr = begin;

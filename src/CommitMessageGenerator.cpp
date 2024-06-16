@@ -11,6 +11,11 @@
 
 namespace {
 
+/**
+ * @brief Encode a string for JSON.
+ * @param in The string to encode.
+ * @return The encoded string.
+ */
 std::string encode_json_string(std::string const &in)
 {
 	std::string out;
@@ -43,6 +48,11 @@ std::string encode_json_string(std::string const &in)
 	return out;
 }
 
+/**
+ * @brief Decode a JSON string.
+ * @param in The JSON string.
+ * @return The decoded string.
+ */
 std::string decode_json_string(std::string const &in)
 {
 	QString out;
@@ -184,7 +194,13 @@ static std::string example_gemini_response()
 )---";
 }
 
-GeneratedCommitMessage CommitMessageGenerator::parse_openai_response(std::string const &in, GenerativeAI::Type ai_type)
+/**
+ * @brief Parse the response from the AI model.
+ * @param in The response.
+ * @param ai_type The AI model type.
+ * @return The generated commit message.
+ */
+GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Type ai_type)
 {
 	error_message_.clear();
 	bool ok1 = false;
@@ -307,7 +323,13 @@ GeneratedCommitMessage CommitMessageGenerator::parse_openai_response(std::string
 	}
 }
 
-std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
+/**
+ * @brief Generate a prompt for the given diff.
+ * @param diff The diff.
+ * @param max The maximum number of messages to generate.
+ * @return The prompt.
+ */
+std::string CommitMessageGenerator::generatePrompt(QString const &diff, int max)
 {
 	std::string prompt = strformat(
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
@@ -319,7 +341,14 @@ std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
 	return prompt;
 }
 
-std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, QString diff, int max_message_count)
+/**
+ * @brief Generate a JSON string for the given AI model.
+ * @param model The AI model.
+ * @param diff The diff to generate the commit message for.
+ * @param max_message_count The maximum number of messages to generate.
+ * @return The JSON string.
+ */
+std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, QString const &diff, int max_message_count)
 {
 	std::string prompt = generatePrompt(diff, max_message_count);
 	std::string json;
@@ -370,9 +399,14 @@ GeneratedCommitMessage CommitMessageGenerator::test()
 {
 	std::string s = R"---(
 )---";
-	return parse_openai_response(s, GenerativeAI::CLAUDE);
+	return parse_response(s, GenerativeAI::CLAUDE);
 }
 
+/**
+ * @brief Generate a commit message using the given diff.
+ * @param g The Git object.
+ * @return The generated commit message.
+ */
 GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 {
 	constexpr int max_message_count = 5;
@@ -442,7 +476,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 			}
 		}
 		std::string text(data, size);
-		auto list = parse_openai_response(text, model_type);
+		auto list = parse_response(text, model_type);
 		if (!error_status_.empty()) {
 			return GeneratedCommitMessage::Error(QString::fromStdString(error_status_), QString::fromStdString(error_message_));
 		}

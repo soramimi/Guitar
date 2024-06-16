@@ -107,10 +107,9 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/SettingAiForm.cpp \
-	$$PWD/src/SettingOptionsForm.cpp \
+	src/SettingAiForm.cpp \
+	src/SettingOptionsForm.cpp \
 	src/FileType.cpp \
-	src/GenerativeAI.cpp \
 	src/GenerativeAI.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -257,8 +256,8 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
-	$$PWD/src/SettingAiForm.h \
-	$$PWD/src/SettingOptionsForm.h \
+	src/SettingAiForm.h \
+	src/SettingOptionsForm.h \
 	src/FileType.h \
 	src/GenerativeAI.h \
 	src/GenerativeAI.h \
