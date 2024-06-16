@@ -120,7 +120,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
-	GetValue<QString>(s, "AiModel")                            >> as.ai_model.model;
+	GetValue<QString>(s, "AiModel")                           >> as.ai_model.model;
 	s.endGroup();
 	
 	if (as.ai_model.model.isEmpty()) {

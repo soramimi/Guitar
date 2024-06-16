@@ -12,8 +12,9 @@ enum Type {
 };
 
 struct Model {
-	QString model;
 	Type type = Unknown;
+	QString model;
+	QString version;
 	Model() = default;
 	Model(const QString &model)
 		: model(model)
@@ -22,6 +23,7 @@ struct Model {
 			type = GPT;
 		} else if (model.startsWith("claude-")) {
 			type = CLAUDE;
+			version = "2023-06-01";
 		}
 	}
 };

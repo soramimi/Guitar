@@ -301,7 +301,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		url = "https://api.anthropic.com/v1/messages";
 		apikey = global->AnthropicAiApiKey().toStdString();
 		rq.add_header("x-api-key: " + apikey);
-		rq.add_header("anthropic-version: 2023-06-01");
+		rq.add_header("anthropic-version: " + model.version.toStdString());
 	}
 	rq.set_location(url);
 	
