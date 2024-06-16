@@ -350,7 +350,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (http.post(rq, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
-		if (1) {
+		if (0) {
 			QFile file("/tmp/response.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
