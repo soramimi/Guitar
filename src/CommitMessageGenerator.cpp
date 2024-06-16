@@ -140,7 +140,7 @@ static std::string example_claude_response()
 )---";
 }
 
-std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, AI_Type ai_type)
+std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, GenerativeAI::Type ai_type)
 {
 	error_.clear();
 	std::vector<std::string> lines;
@@ -149,7 +149,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 	char const *begin = in.c_str();
 	char const *end = begin + in.size();
 	jstream::Reader r(begin, end);
-	if (ai_type == GPT) {
+	if (ai_type == GenerativeAI::GPT) {
 		while (r.next()) {
 			if (r.match("{object")) {
 				if (r.string() == "chat.completion") {
@@ -162,7 +162,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 				return {};
 			}
 		}
-	} else if (ai_type == CLAUDE) {
+	} else if (ai_type == GenerativeAI::CLAUDE) {
 		while (r.next()) {
 			fprintf(stderr, "%d\n", r.path().c_str());
 			fflush(stderr);
@@ -235,12 +235,12 @@ std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
 	return prompt;
 }
 
-std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, AI_Type ai_type, QString diff, int max_message_count)
+std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, QString diff, int max_message_count)
 {
 	std::string prompt = generatePrompt(diff, max_message_count);
 	std::string json;
 
-	if (ai_type == GPT) {
+	if (model.type == GenerativeAI::GPT) {
 		
 		json = R"---(
 {
@@ -251,7 +251,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 }
 )---";
 		
-	} else if (ai_type == CLAUDE) {
+	} else if (model.type == GenerativeAI::CLAUDE) {
 		
 		json = R"---(
 {
@@ -265,6 +265,8 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 }
 )---";
 		
+	} else {
+		return {};
 	}
 
 	json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
@@ -287,16 +289,15 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		return {};
 	}
 	
-	AI_Type ai_type = model.type();
 	std::string url;
 	std::string apikey;
 	WebClient::Request rq;
 	
-	if (ai_type == GPT) {
+	if (model.type == GenerativeAI::GPT) {
 		url = "https://api.openai.com/v1/chat/completions";
 		apikey = global->OpenAiApiKey().toStdString();
 		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (ai_type == CLAUDE) {
+	} else if (model.type == GenerativeAI::CLAUDE) {
 		url = "https://api.anthropic.com/v1/messages";
 		apikey = global->AnthropicAiApiKey().toStdString();
 		rq.add_header("x-api-key: " + apikey);
@@ -306,7 +307,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	
 	constexpr int max_message_count = 5;
 	
-	std::string json = generatePromptJSON(model, ai_type, diff, max_message_count);
+	std::string json = generatePromptJSON(model, diff, max_message_count);
 	
 	if (0) {
 		QFile file("c:/a/a.txt");
@@ -330,7 +331,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 			}
 		}
 		std::string text(data, size);
-		auto list = parse_openai_response(text, ai_type);
+		auto list = parse_openai_response(text, model.type);
 		QStringList out;
 		for (int i = 0; i < max_message_count && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));
