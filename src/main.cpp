@@ -19,6 +19,7 @@
 #include <QTranslator>
 #include <csignal>
 #include <string>
+#include "CommitMessageGenerator.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<AvatarLoader::Item>("AvatarLoader::Item");
 	qRegisterMetaType<RepositoryData>("RepositoryData");
 	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
+	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
 
 	{
 		MySettings s;

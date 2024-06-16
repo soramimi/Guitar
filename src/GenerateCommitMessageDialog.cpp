@@ -25,7 +25,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 {
 	ui->setupUi(this);
 	
-	connect(this, &GenerateCommitMessageDialog::ready, this, &GenerateCommitMessageDialog::onReady);	
+	connect(this, &GenerateCommitMessageDialog::ready, this, &GenerateCommitMessageDialog::onReady);
 	
 	m->thread = std::thread([this] {
 		while (1) {
@@ -37,8 +37,8 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 				std::swap(requested, m->requested);
 			}
 			if (requested) {
-				QStringList list = m->gen.generate(global->mainwindow->git());
-				emit ready(list);
+				auto result = m->gen.generate(global->mainwindow->git());
+				emit ready(result);
 			}
 		}
 	});	
@@ -80,15 +80,16 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 	generate();
 }
 
-void GenerateCommitMessageDialog::onReady(const QStringList &list)
+void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 {
 	QApplication::restoreOverrideCursor();
 
-	if (list.isEmpty()) {
-		QMessageBox::warning(this, "Error", tr("Failed to generate commit message."));
-	} else {
-		ui->listWidget->addItems(list);
+	if (result) {
+		ui->listWidget->addItems(result.messages);
 		ui->listWidget->setCurrentRow(0);
+	} else {
+		QString text = result.error_status + "\n\n" + result.error_message;
+		QMessageBox::warning(this, tr("Failed to generate commit message."), text);
 	}
 	
 	ui->pushButton_regenerate->setEnabled(true);	

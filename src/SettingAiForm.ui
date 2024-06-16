@@ -57,6 +57,16 @@
       <item>
        <widget class="QLineEdit" name="lineEdit_anthropic_api_key"/>
       </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_use_GOOGLE_API_KEY_env_value">
+        <property name="text">
+         <string>Use GOOGLE_API_KEY environment value</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_google_api_key"/>
+      </item>
      </layout>
     </widget>
    </item>
@@ -82,6 +92,8 @@
   <tabstop>lineEdit_openai_api_key</tabstop>
   <tabstop>checkBox_use_ANTHROPIC_API_KEY_env_value</tabstop>
   <tabstop>lineEdit_anthropic_api_key</tabstop>
+  <tabstop>checkBox_use_GOOGLE_API_KEY_env_value</tabstop>
+  <tabstop>lineEdit_google_api_key</tabstop>
  </tabstops>
  <resources/>
  <connections/>

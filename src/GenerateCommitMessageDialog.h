@@ -1,6 +1,8 @@
 #ifndef GENERATECOMMITMESSAGEDIALOG_H
 #define GENERATECOMMITMESSAGEDIALOG_H
 
+#include "CommitMessageGenerator.h"
+
 #include <QDialog>
 
 namespace Ui {
@@ -20,9 +22,9 @@ public:
 	void generate();
 private slots:
 	void on_pushButton_regenerate_clicked();
-	void onReady(QStringList const &list);
+	void onReady(GeneratedCommitMessage const &list);
 signals:
-	void ready(QStringList const &list);
+	void ready(GeneratedCommitMessage const &result);
 };
 
 #endif // GENERATECOMMITMESSAGEDIALOG_H

@@ -118,8 +118,10 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
 	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_openai_api_key_environment_value;
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
+	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_google_api_key_environment_value;
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
+	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
 	GetValue<QString>(s, "AiModel")                           >> as.ai_model.model;
 	s.endGroup();
 	
@@ -177,9 +179,11 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
 	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_openai_api_key_environment_value;
 	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_anthropic_api_key_environment_value;
+	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_google_api_key_environment_value;
 	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
-	SetValue<QString>(s, "AiModel")                            << this->ai_model.model;
+	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
+	SetValue<QString>(s, "AiModel")                           << this->ai_model.model;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない

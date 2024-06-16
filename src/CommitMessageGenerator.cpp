@@ -140,9 +140,53 @@ static std::string example_claude_response()
 )---";
 }
 
+static std::string example_gemini_response()
+{
+	return R"---({
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "- Adds support for the Gemini Pro model.\n- Implements Gemini support for commit message generation.\n- Adds Gemini API key to application settings.\n- Integrates Gemini Pro model into the commit message generator.\n- Enables generating commit messages using Google's Gemini Pro model. \n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0,
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "NEGLIGIBLE"
+        }
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 1731,
+    "candidatesTokenCount": 56,
+    "totalTokenCount": 1787
+  }
+}
+)---";
+}
+
 std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, GenerativeAI::Type ai_type)
 {
-	error_.clear();
+	error_message_.clear();
 	std::vector<std::string> lines;
 	bool ok1 = false;
 	std::string text;
@@ -158,7 +202,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			} else if (r.match("{choices[{message{content")) {
 				text = decode_json_string(r.string());
 			} else if (r.match("{error{type")) {
-				error_ = r.string();
+				error_message_ = r.string();
 				return {};
 			}
 		}
@@ -175,6 +219,19 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			// } else if (r.match("{error{type")) {
 			// 	error_ = r.string();
 			// 	return {};
+			}
+		}
+	} else if (ai_type == GenerativeAI::GEMINI) {
+		while (r.next()) {
+			if (r.match("{candidates[{content{parts[{text")) {
+				text = decode_json_string(r.string());
+				ok1 = true;
+			} else if (r.match("{error{message")) {
+				error_message_ = r.string();
+				ok1 = false;
+			} else if (r.match("{error{status")) {
+				error_status_ = r.string();
+				ok1 = false;
 			}
 		}
 	}
@@ -209,6 +266,10 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 					ptr++;
 					end--;
 				}
+				while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
+					ptr++;
+					end--;
+				}
 				if (ptr < end) {
 					// ok
 				} else {
@@ -222,8 +283,6 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			}
 		}
 		return lines;
-	} else {
-		error_ = text;
 	}
 	return {};
 }
@@ -248,19 +307,17 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 	auto type = model.type();
 	if (type == GenerativeAI::GPT) {
 		
-		json = R"---(
-{
+		json = R"---({
 	"model": "%s",
 	"messages": [
 		{"role": "system", "content": "You are a experienced engineer."},
 		{"role": "user", "content": "%s"}]
-}
-)---";
+})---";
+		json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
 		
 	} else if (type == GenerativeAI::CLAUDE) {
 		
-		json = R"---(
-{
+		json = R"---({
 	"model": "%s",
 	"messages": [
 		{"role": "user", "content": "%s"}
@@ -268,31 +325,42 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 	,
 	"max_tokens": 100,
 	"temperature": 0.7
-}
-)---";
+})---";
+		json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
+		
+	} else if (type == GenerativeAI::GEMINI) {
+		
+		json = R"---({
+	"contents": [{
+		"parts": [{
+			"text": "%s"
+		}]
+	}]
+})---";
+		json = strformat(json)(encode_json_string(prompt));
 		
 	} else {
 		return {};
 	}
 
-	json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
 	return json;
 }
 
-std::vector<std::string> CommitMessageGenerator::debug()
+std::vector<std::string> CommitMessageGenerator::test()
 {
 	std::string s = R"---(
-{"id":"msg_017bUhddgPKzSUhcv1oTjJm5","type":"message","role":"assistant","model":"claude-3-haiku-20240307","content":[{"type":"text","text":"Here are 5 concise git commit messages written in present tense for the given code diff:\n\n- Add editable feature to AI model combo box\n- Refactor generatePromptJSON function to handle both GPT and CLAUDE models\n- Improve request and response logging for debugging purposes\n- Update GenerativeAI model struct to provide cleaner type and version handling\n- Enhance CommitMessageGenerator to generate up to the specified maximum number of messages"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":1848,"output_tokens":100}}
 )---";
 	return parse_openai_response(s, GenerativeAI::CLAUDE);
 }
 
-QStringList CommitMessageGenerator::generate(GitPtr g)
+GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 {
 	constexpr int max_message_count = 5;
 	
+	constexpr bool save_log = true;
+	
 	if (0) { // for debugging JSON parsing
-		auto list = debug();
+		auto list = test();
 		QStringList out;
 		for (int i = 0; i < max_message_count && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));
@@ -305,14 +373,12 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (diff.isEmpty()) return {};
 
 	if (diff.size() > 100000) {
-		qDebug() << "diff too large";
-		return {};
+		return GeneratedCommitMessage::Error("error", "diff too large");
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
 	if (model.model.isEmpty()) {
-		// QMessageBox::warning(nullptr, "Error", "AI model is not set.");
-		return {};
+		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
 	
 	std::string url;
@@ -329,13 +395,18 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		apikey = global->AnthropicAiApiKey().toStdString();
 		rq.add_header("x-api-key: " + apikey);
 		rq.add_header("anthropic-version: " + model.anthropic_version().toStdString());
+	} else if (model_type == GenerativeAI::GEMINI) {
+		apikey = global->GoogleApiKey().toStdString();
+		url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apikey;
+	} else {
+		return {};
 	}
 	rq.set_location(url);
 	
 
 	std::string json = generatePromptJSON(model, diff, max_message_count);
 	
-	if (0) {
+	if (save_log) {
 		QFile file("/tmp/request.txt");
 		if (file.open(QIODevice::WriteOnly)) {
 			file.write(json.c_str(), json.size());
@@ -350,7 +421,7 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	if (http.post(rq, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
-		if (0) {
+		if (save_log) {
 			QFile file("/tmp/response.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
@@ -358,6 +429,9 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		}
 		std::string text(data, size);
 		auto list = parse_openai_response(text, model_type);
+		if (!error_status_.empty()) {
+			return GeneratedCommitMessage::Error(QString::fromStdString(error_status_), QString::fromStdString(error_message_));
+		}
 		QStringList out;
 		for (int i = 0; i < max_message_count && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));

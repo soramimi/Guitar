@@ -68,6 +68,14 @@ public:
 			return appsettings.anthropic_api_key;
 		}
 	}
+	QString GoogleApiKey() const
+	{
+		if (appsettings.use_google_api_key_environment_value) {
+			return getenv("GOOGLE_API_KEY");
+		} else {
+			return appsettings.google_api_key;
+		}
+	}
 };
 
 extern ApplicationGlobal *global;

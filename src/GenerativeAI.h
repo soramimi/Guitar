@@ -9,6 +9,7 @@ enum Type {
 	Unknown,
 	GPT,
 	CLAUDE,
+	GEMINI,
 };
 
 struct Model {
@@ -25,6 +26,9 @@ struct Model {
 		}
 		if (model.startsWith("claude-")) {
 			return CLAUDE;
+		}
+		if (model.startsWith("gemini-")) {
+			return GEMINI;
 		}
 		return Unknown;
 	}
@@ -44,6 +48,7 @@ static std::vector<Model> available_models()
 	models.emplace_back("claude-3-haiku-20240307");
 	models.emplace_back("claude-3-sonnet-20240229");
 	models.emplace_back("claude-3-opus-20240229");
+	models.emplace_back("gemini-pro");
 	return models;
 }
 
