@@ -117,10 +117,12 @@ void SettingAiForm::on_checkBox_use_ANTHROPIC_API_KEY_env_value_stateChanged(int
 	refrectSettingsToUI_anthropic();
 }
 
-void SettingAiForm::on_checkBox_use_GOOGLE_API_KEY_env_value_checkStateChanged(const Qt::CheckState &arg1)
+void SettingAiForm::on_checkBox_use_GOOGLE_API_KEY_env_value_stateChanged(int arg1)
 {
 	refrectSettingsToUI_google();
 }
+
+
 
 void SettingAiForm::on_lineEdit_openai_api_key_textChanged(const QString &arg1)
 {
@@ -128,7 +130,6 @@ void SettingAiForm::on_lineEdit_openai_api_key_textChanged(const QString &arg1)
 		openai_api_key_ = arg1;
 	}
 }
-
 
 void SettingAiForm::on_lineEdit_anthropic_api_key_textChanged(const QString &arg1)
 {
@@ -143,4 +144,5 @@ void SettingAiForm::on_lineEdit_google_api_key_textChanged(const QString &arg1)
 		google_api_key_ = arg1;
 	}
 }
+
 

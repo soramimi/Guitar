@@ -28,8 +28,8 @@ private slots:
 	void on_checkBox_use_ANTHROPIC_API_KEY_env_value_stateChanged(int);
 	void on_lineEdit_openai_api_key_textChanged(const QString &arg1);
 	void on_lineEdit_anthropic_api_key_textChanged(const QString &arg1);
-	void on_checkBox_use_GOOGLE_API_KEY_env_value_checkStateChanged(const Qt::CheckState &arg1);
 	void on_lineEdit_google_api_key_textChanged(const QString &arg1);
+	void on_checkBox_use_GOOGLE_API_KEY_env_value_stateChanged(int arg1);
 };
 
 #endif // SETTINGAIFORM_H
