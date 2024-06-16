@@ -108,6 +108,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/FileType.cpp \
+	$$PWD/src/GenerativeAI.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -255,6 +256,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/FileType.h \
+	$$PWD/src/GenerativeAI.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \

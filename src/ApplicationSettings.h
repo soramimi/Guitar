@@ -1,20 +1,13 @@
 #ifndef APPLICATIONSETTINGS_H
 #define APPLICATIONSETTINGS_H
 
+#include "GenerativeAI.h"
+
 #include <QColor>
 #include <QString>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
-
-struct GenerativeAiModel {
-	QString model;
-	GenerativeAiModel() = default;
-	GenerativeAiModel(const QString &model)
-		: model(model)
-	{
-	}
-};
 
 class ApplicationBasicData {
 public:
@@ -43,7 +36,7 @@ public:
 	bool use_anthropic_api_key_environment_value = false;
 	QString openai_api_key;
 	QString anthropic_api_key;
-	GenerativeAiModel ai_model;
+	GenerativeAI::Model ai_model;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
@@ -74,7 +67,7 @@ public:
 	static void saveOpenAiApiKey(const QString &key);
 #endif
 	
-	static std::vector<GenerativeAiModel> generative_ai_models();
+	static std::vector<GenerativeAI::Model> generative_ai_models();
 };
 
 #endif // APPLICATIONSETTINGS_H

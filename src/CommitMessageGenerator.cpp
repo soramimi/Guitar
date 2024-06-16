@@ -6,6 +6,7 @@
 #include "common/strformat.h"
 #include "webclient.h"
 #include <QFile>
+#include <QMessageBox>
 #include <QString>
 
 namespace {
@@ -87,6 +88,57 @@ std::string decode_json_string(std::string const &in)
 }
 
 } // namespace
+
+static std::string example_gpt_response()
+{
+	return R"---({
+	  "id": "chatcmpl-9Q9tzFdQIw3NYSpwbgyFrG8EOJw29",
+	  "object": "chat.completion",
+	  "created": 1716021619,
+	  "model": "gpt-4-0613",
+	  "choices": [
+		{
+		  "index": 0,
+		  "message": {
+			"role": "assistant",
+			"content": "- \"Upgrade C++ version from C++11 to C++17 in strformat.pro\"\n- \"Update strformat.pro to use C++17 instead of C++11\"\n- \"Change C++ version in CONFIG from C++11 to C++17 in strformat.pro\""
+		  },
+		  "logprobs": null,
+		  "finish_reason": "stop"
+		}
+	  ],
+	  "usage": {
+		"prompt_tokens": 145,
+		"completion_tokens": 60,
+		"total_tokens": 205
+	  },
+	  "system_fingerprint": null
+	}
+)---";
+}
+
+static std::string example_claude_response()
+{
+	return R"---({
+	"id":"msg_01HqUHZ5u6uVJnZBANdU3iRx",
+	"type":"message",
+	"role":"assistant",
+	"model":"claude-3-opus-20240229",
+	"content":[
+		{
+			"type":"text",
+			"text":"- Add support for Anthropic Claude API for generating commit messages\n- Switch to Claude-3-Opus model for commit message generation\n- Update JSON payload and headers for Anthropic API compatibility\n- Increase max_tokens to 200 and set temperature to 0.7 for generation\n- Enable writing API response to file for debugging purposes"
+		}
+	],
+	"stop_reason":"end_turn",
+	"stop_sequence":null,
+	"usage":{
+		"input_tokens":1066,
+		"output_tokens":77
+	}
+}
+)---";
+}
 
 std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, AI_Type ai_type)
 {
@@ -171,6 +223,54 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 	return {};
 }
 
+std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
+{
+	std::string prompt = strformat(
+		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
+		"Please generate %d messages, bulleted, and start writing with '-'. "
+		"No headers and footers other than bullet items. "
+		"\n\n%s"
+		)(max);
+	prompt = prompt + "\n\n" + diff.toStdString();
+	return prompt;
+}
+
+std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, AI_Type ai_type, QString diff, int max_message_count)
+{
+	std::string prompt = generatePrompt(diff, max_message_count);
+	std::string json;
+
+	if (ai_type == GPT) {
+		
+		json = R"---(
+{
+	"model": "%s",
+	"messages": [
+		{"role": "system", "content": "You are a experienced engineer."},
+		{"role": "user", "content": "%s"}]
+}
+)---";
+		
+	} else if (ai_type == CLAUDE) {
+		
+		json = R"---(
+{
+	"model": "%s",
+	"messages": [
+		{"role": "user", "content": "%s"}
+	]
+	,
+	"max_tokens": 100,
+	"temperature": 0.7
+}
+)---";
+		
+	}
+
+	json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
+	return json;
+}
+
 QStringList CommitMessageGenerator::generate(GitPtr g)
 {
 	QString diff = g->diff_head();
@@ -181,75 +281,38 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		return {};
 	}
 
-	GenerativeAiModel model = global->appsettings.ai_model;
-	if (model.model.isEmpty()) model.model = "gpt-4o";
-
-	AI_Type ai_type = GPT;
-	if (model.model.startsWith("gpt-")) {
-		ai_type = GPT;
-	} else if (model.model.startsWith("claude-")) {
-		ai_type = CLAUDE;
+	GenerativeAI::Model model = global->appsettings.ai_model;
+	if (model.model.isEmpty()) {
+		// QMessageBox::warning(nullptr, "Error", "AI model is not set.");
+		return {};
 	}
-
-	constexpr int max = 5;
-
-	std::string apikey;
+	
+	AI_Type ai_type = model.type();
 	std::string url;
-
-	// Referring to https://github.com/Nutlope/aicommits
-	std::string prompt = strformat(
-						  "Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
-						  "Please generate %d messages, bulleted, and start writing with '-'. "
-						  "No headers and footers other than bullet items. "
-							 )(max);
-			;
-	prompt = prompt + "\n\n" + diff.toStdString();
-
-	std::string json;
-
+	std::string apikey;
+	WebClient::Request rq;
+	
 	if (ai_type == GPT) {
 		url = "https://api.openai.com/v1/chat/completions";
 		apikey = global->OpenAiApiKey().toStdString();
-		json = R"---(
-{
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are a experienced engineer."},
-		{"role": "user", "content": "%s"}]
-}
-)---";
+		rq.add_header("Authorization: Bearer " + apikey);
 	} else if (ai_type == CLAUDE) {
 		url = "https://api.anthropic.com/v1/messages";
-		model.model = "claude-3-opus-20240229";
 		apikey = global->AnthropicAiApiKey().toStdString();
-		json = R"---(
-{
-	"model": "%s",
-	"messages": [
-		{"role": "user", "content": "%s"}
-	]
-	,
-	"max_tokens": 200,
-	"temperature": 0.7
-}
-)---";
+		rq.add_header("x-api-key: " + apikey);
+		rq.add_header("anthropic-version: 2023-06-01");
 	}
-
-	json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
-
+	rq.set_location(url);
+	
+	constexpr int max_message_count = 5;
+	
+	std::string json = generatePromptJSON(model, ai_type, diff, max_message_count);
+	
 	if (0) {
 		QFile file("c:/a/a.txt");
 		if (file.open(QIODevice::WriteOnly)) {
 			file.write(json.c_str(), json.size());
 		}
-	}
-
-	WebClient::Request rq(url);
-	if (ai_type == GPT) {
-		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (ai_type == CLAUDE) {
-		rq.add_header("x-api-key: " + apikey);
-		rq.add_header("anthropic-version: 2023-06-01");
 	}
 
 	WebClient::Post post;
@@ -269,69 +332,10 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		std::string text(data, size);
 		auto list = parse_openai_response(text, ai_type);
 		QStringList out;
-		for (int i = 0; i < max && i < list.size(); i++) {
+		for (int i = 0; i < max_message_count && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));
 		}
 		return out;
-	}
-
-	if (0) { // response example
-
-		std::string gpt_example = R"---(
-{
-	  "id": "chatcmpl-9Q9tzFdQIw3NYSpwbgyFrG8EOJw29",
-	  "object": "chat.completion",
-	  "created": 1716021619,
-	  "model": "gpt-4-0613",
-	  "choices": [
-		{
-		  "index": 0,
-		  "message": {
-			"role": "assistant",
-			"content": "- \"Upgrade C++ version from C++11 to C++17 in strformat.pro\"\n- \"Update strformat.pro to use C++17 instead of C++11\"\n- \"Change C++ version in CONFIG from C++11 to C++17 in strformat.pro\""
-		  },
-		  "logprobs": null,
-		  "finish_reason": "stop"
-		}
-	  ],
-	  "usage": {
-		"prompt_tokens": 145,
-		"completion_tokens": 60,
-		"total_tokens": 205
-	  },
-	  "system_fingerprint": null
-	}
-)---";
-
-		std::string claude_example = R"---(
-{
-	"id":"msg_01HqUHZ5u6uVJnZBANdU3iRx",
-	"type":"message",
-	"role":"assistant",
-	"model":"claude-3-opus-20240229",
-	"content":[
-		{
-			"type":"text",
-			"text":"- Add support for Anthropic Claude API for generating commit messages\n- Switch to Claude-3-Opus model for commit message generation\n- Update JSON payload and headers for Anthropic API compatibility\n- Increase max_tokens to 200 and set temperature to 0.7 for generation\n- Enable writing API response to file for debugging purposes"
-		}
-	],
-	"stop_reason":"end_turn",
-	"stop_sequence":null,
-	"usage":{
-		"input_tokens":1066,
-		"output_tokens":77
-	}
-}
-)---";
-
-		{
-			std::vector<std::string> lines = parse_openai_response(gpt_example, GPT);
-
-			for (std::string const &line : lines) {
-				fprintf(stderr, "%s\n", line.c_str());
-
-			}
-		}
 	}
 
 	return {};
