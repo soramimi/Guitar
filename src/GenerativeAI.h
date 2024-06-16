@@ -12,19 +12,25 @@ enum Type {
 };
 
 struct Model {
-	Type type = Unknown;
 	QString model;
-	QString version;
 	Model() = default;
 	Model(const QString &model)
 		: model(model)
 	{
+	}
+	Type type() const
+	{
 		if (model.startsWith("gpt-")) {
-			type = GPT;
-		} else if (model.startsWith("claude-")) {
-			type = CLAUDE;
-			version = "2023-06-01";
+			return GPT;
 		}
+		if (model.startsWith("claude-")) {
+			return CLAUDE;
+		}
+		return Unknown;
+	}
+	QString anthropic_version() const
+	{
+		return "2023-06-01";
 	}
 };
 

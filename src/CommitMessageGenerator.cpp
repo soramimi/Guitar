@@ -192,7 +192,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 			if (ptr < end && *ptr == '-') {
 				accept = true;
 				ptr++;
-			} else {
+			} else if (isdigit((unsigned char)*ptr)) {
 				while (ptr < end && isdigit((unsigned char)*ptr)) {
 					accept = true;
 					ptr++;
@@ -210,10 +210,15 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 					end--;
 				}
 				if (ptr < end) {
-					lines[i] = std::string(ptr, end);
+					// ok
 				} else {
-					lines.erase(lines.begin() + i);
+					accept = false;
 				}
+			}
+			if (accept) {
+				lines[i] = std::string(ptr, end);
+			} else {
+				lines.erase(lines.begin() + i);
 			}
 		}
 		return lines;
@@ -228,7 +233,7 @@ std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
 	std::string prompt = strformat(
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
-		"No headers and footers other than bullet items. "
+		"No headers and footers other than bulleted messages. "
 		"\n\n%s"
 		)(max);
 	prompt = prompt + "\n\n" + diff.toStdString();
@@ -239,8 +244,9 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 {
 	std::string prompt = generatePrompt(diff, max_message_count);
 	std::string json;
-
-	if (model.type == GenerativeAI::GPT) {
+	
+	auto type = model.type();
+	if (type == GenerativeAI::GPT) {
 		
 		json = R"---(
 {
@@ -251,7 +257,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 }
 )---";
 		
-	} else if (model.type == GenerativeAI::CLAUDE) {
+	} else if (type == GenerativeAI::CLAUDE) {
 		
 		json = R"---(
 {
@@ -273,8 +279,28 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 	return json;
 }
 
+std::vector<std::string> CommitMessageGenerator::debug()
+{
+	std::string s = R"---(
+{"id":"msg_017bUhddgPKzSUhcv1oTjJm5","type":"message","role":"assistant","model":"claude-3-haiku-20240307","content":[{"type":"text","text":"Here are 5 concise git commit messages written in present tense for the given code diff:\n\n- Add editable feature to AI model combo box\n- Refactor generatePromptJSON function to handle both GPT and CLAUDE models\n- Improve request and response logging for debugging purposes\n- Update GenerativeAI model struct to provide cleaner type and version handling\n- Enhance CommitMessageGenerator to generate up to the specified maximum number of messages"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":1848,"output_tokens":100}}
+)---";
+	return parse_openai_response(s, GenerativeAI::CLAUDE);
+}
+
 QStringList CommitMessageGenerator::generate(GitPtr g)
 {
+	constexpr int max_message_count = 5;
+	
+	if (0) { // for debugging JSON parsing
+		auto list = debug();
+		QStringList out;
+		for (int i = 0; i < max_message_count && i < list.size(); i++) {
+			out.push_back(QString::fromStdString(list[i]));
+		}
+		return out;
+		
+	}
+	
 	QString diff = g->diff_head();
 	if (diff.isEmpty()) return {};
 
@@ -293,24 +319,24 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 	std::string apikey;
 	WebClient::Request rq;
 	
-	if (model.type == GenerativeAI::GPT) {
+	auto model_type = model.type();
+	if (model_type == GenerativeAI::GPT) {
 		url = "https://api.openai.com/v1/chat/completions";
 		apikey = global->OpenAiApiKey().toStdString();
 		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (model.type == GenerativeAI::CLAUDE) {
+	} else if (model_type == GenerativeAI::CLAUDE) {
 		url = "https://api.anthropic.com/v1/messages";
 		apikey = global->AnthropicAiApiKey().toStdString();
 		rq.add_header("x-api-key: " + apikey);
-		rq.add_header("anthropic-version: " + model.version.toStdString());
+		rq.add_header("anthropic-version: " + model.anthropic_version().toStdString());
 	}
 	rq.set_location(url);
 	
-	constexpr int max_message_count = 5;
-	
+
 	std::string json = generatePromptJSON(model, diff, max_message_count);
 	
 	if (0) {
-		QFile file("c:/a/a.txt");
+		QFile file("/tmp/request.txt");
 		if (file.open(QIODevice::WriteOnly)) {
 			file.write(json.c_str(), json.size());
 		}
@@ -325,13 +351,13 @@ QStringList CommitMessageGenerator::generate(GitPtr g)
 		char const *data = http.content_data();
 		size_t size = http.content_length();
 		if (1) {
-			QFile file("c:/a/a.txt");
+			QFile file("/tmp/response.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
 			}
 		}
 		std::string text(data, size);
-		auto list = parse_openai_response(text, model.type);
+		auto list = parse_openai_response(text, model_type);
 		QStringList out;
 		for (int i = 0; i < max_message_count && i < list.size(); i++) {
 			out.push_back(QString::fromStdString(list[i]));
