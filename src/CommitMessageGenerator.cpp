@@ -184,10 +184,9 @@ static std::string example_gemini_response()
 )---";
 }
 
-std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::string const &in, GenerativeAI::Type ai_type)
+GeneratedCommitMessage CommitMessageGenerator::parse_openai_response(std::string const &in, GenerativeAI::Type ai_type)
 {
 	error_message_.clear();
-	std::vector<std::string> lines;
 	bool ok1 = false;
 	std::string text;
 	char const *begin = in.c_str();
@@ -244,6 +243,7 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 		}
 	}
 	if (ok1) {
+		std::vector<std::string> lines;
 		misc::splitLines(text, &lines, false);
 		size_t i = lines.size();
 		while (i > 0) {
@@ -290,9 +290,18 @@ std::vector<std::string> CommitMessageGenerator::parse_openai_response(std::stri
 				lines.erase(lines.begin() + i);
 			}
 		}
-		return lines;
+		QStringList ret;
+		for (auto const &line : lines) {
+			ret.push_back(QString::fromStdString(line));
+		}
+		return ret;
+	} else {
+		GeneratedCommitMessage ret;
+		ret.error = true;
+		ret.error_status = QString::fromStdString(error_status_);
+		ret.error_message = QString::fromStdString(error_message_);
+		return ret;
 	}
-	return {};
 }
 
 std::string CommitMessageGenerator::generatePrompt(QString diff, int max)
@@ -354,7 +363,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 	return json;
 }
 
-std::vector<std::string> CommitMessageGenerator::test()
+GeneratedCommitMessage CommitMessageGenerator::test()
 {
 	std::string s = R"---(
 )---";
@@ -368,13 +377,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 	constexpr bool save_log = true;
 	
 	if (0) { // for debugging JSON parsing
-		auto list = test();
-		QStringList out;
-		for (int i = 0; i < max_message_count && i < list.size(); i++) {
-			out.push_back(QString::fromStdString(list[i]));
-		}
-		return out;
-		
+		return test();
 	}
 	
 	QString diff = g->diff_head();
@@ -440,11 +443,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 		if (!error_status_.empty()) {
 			return GeneratedCommitMessage::Error(QString::fromStdString(error_status_), QString::fromStdString(error_message_));
 		}
-		QStringList out;
-		for (int i = 0; i < max_message_count && i < list.size(); i++) {
-			out.push_back(QString::fromStdString(list[i]));
-		}
-		return out;
+		return list;
 	}
 
 	return {};
