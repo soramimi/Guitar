@@ -18,12 +18,13 @@ struct GenerateCommitMessageDialog::Private {
 	CommitMessageGenerator gen;
 };
 
-GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
+GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, QString const &model_name)
 	: QDialog(parent)
 	, ui(new Ui::GenerateCommitMessageDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
+	ui->label->setText(model_name);
 	
 	connect(this, &GenerateCommitMessageDialog::ready, this, &GenerateCommitMessageDialog::onReady);
 	

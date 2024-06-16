@@ -122,10 +122,10 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
-	GetValue<QString>(s, "AiModel")                           >> as.ai_model.model;
+	GetValue<QString>(s, "AiModel")                           >> as.ai_model.name;
 	s.endGroup();
 	
-	if (as.ai_model.model.isEmpty()) {
+	if (as.ai_model.name.isEmpty()) {
 		as.ai_model = {"gpt-4o"};
 	}
 
@@ -183,7 +183,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
-	SetValue<QString>(s, "AiModel")                           << this->ai_model.model;
+	SetValue<QString>(s, "AiModel")                           << this->ai_model.name;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない

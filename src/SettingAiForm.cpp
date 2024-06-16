@@ -13,7 +13,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	QStringList list;
 	auto vec =GenerativeAI::available_models();
 	for (auto &m : vec) {
-		list.push_back(m.model);
+		list.push_back(m.name);
 	}
 	ui->comboBox_ai_model->addItems(list);
 }
@@ -42,7 +42,7 @@ void SettingAiForm::exchange(bool save)
 		ui->lineEdit_openai_api_key->setText(settings()->openai_api_key);
 		ui->lineEdit_anthropic_api_key->setText(settings()->anthropic_api_key);
 		ui->lineEdit_google_api_key->setText(settings()->google_api_key);
-		ui->comboBox_ai_model->setCurrentText(settings()->ai_model.model);
+		ui->comboBox_ai_model->setCurrentText(settings()->ai_model.name);
 
 		openai_api_key_ = settings()->openai_api_key;
 		anthropic_api_key_ = settings()->anthropic_api_key;

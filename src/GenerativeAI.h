@@ -13,21 +13,21 @@ enum Type {
 };
 
 struct Model {
-	QString model;
+	QString name;
 	Model() = default;
-	Model(const QString &model)
-		: model(model)
+	Model(const QString &name)
+		: name(name)
 	{
 	}
 	Type type() const
 	{
-		if (model.startsWith("gpt-")) {
+		if (name.startsWith("gpt-")) {
 			return GPT;
 		}
-		if (model.startsWith("claude-")) {
+		if (name.startsWith("claude-")) {
 			return CLAUDE;
 		}
-		if (model.startsWith("gemini-")) {
+		if (name.startsWith("gemini-")) {
 			return GEMINI;
 		}
 		return Unknown;

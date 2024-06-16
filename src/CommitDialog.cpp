@@ -116,7 +116,7 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	GenerateCommitMessageDialog dlg(this);
+	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.name);
 	dlg.show();
 	dlg.generate();
 	if (dlg.exec() == QDialog::Accepted) {

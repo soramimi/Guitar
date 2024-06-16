@@ -330,7 +330,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 		{"role": "system", "content": "You are a experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-		json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
+		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt));
 		
 	} else if (type == GenerativeAI::CLAUDE) {
 		
@@ -343,7 +343,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 	"max_tokens": 100,
 	"temperature": 0.7
 })---";
-		json = strformat(json)(model.model.toStdString())(encode_json_string(prompt));
+		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt));
 		
 	} else if (type == GenerativeAI::GEMINI) {
 		
@@ -388,7 +388,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
-	if (model.model.isEmpty()) {
+	if (model.name.isEmpty()) {
 		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
 	
