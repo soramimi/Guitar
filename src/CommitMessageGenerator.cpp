@@ -213,6 +213,9 @@ GeneratedCommitMessage CommitMessageGenerator::parse_openai_response(std::string
 			if (r.match("{stop_reason")) {
 				if (r.string() == "end_turn") {
 					ok1 = true;
+				} else {
+					ok1 = false;
+					error_status_ = r.string();
 				}
 			} else if (r.match("{content[{text")) {
 				text = decode_json_string(r.string());
@@ -340,7 +343,7 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 		{"role": "user", "content": "%s"}
 	]
 	,
-	"max_tokens": 100,
+	"max_tokens": 200,
 	"temperature": 0.7
 })---";
 		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt));
@@ -374,7 +377,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = true;
+	constexpr bool save_log = false;
 	
 	if (0) { // for debugging JSON parsing
 		return test();

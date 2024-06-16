@@ -48,7 +48,10 @@ static std::vector<Model> available_models()
 	models.emplace_back("claude-3-haiku-20240307");
 	models.emplace_back("claude-3-sonnet-20240229");
 	models.emplace_back("claude-3-opus-20240229");
-	models.emplace_back("gemini-pro");
+	models.emplace_back("gemini-1.0-ultra");
+	models.emplace_back("gemini-1.0-pro");
+	models.emplace_back("gemini-1.0-flash");
+	models.emplace_back("gemini-1.0-nano");
 	return models;
 }
 
