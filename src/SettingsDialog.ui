@@ -31,7 +31,7 @@
         </size>
        </property>
        <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
+        <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
        </property>
        <property name="rootIsDecorated">
         <bool>false</bool>
@@ -49,7 +49,7 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>3</number>
        </property>
        <widget class="SettingGeneralForm" name="page_general"/>
        <widget class="SettingBehaviorForm" name="page_behavior">
@@ -69,6 +69,7 @@
         </layout>
        </widget>
        <widget class="SettingWorkingFolderForm" name="page_workingfolder"/>
+       <widget class="SettingOptionsForm" name="page_options"/>
        <widget class="SettingProgramsForm" name="page_programs">
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
@@ -102,7 +103,7 @@
          </property>
         </layout>
        </widget>
-       <widget class="SettingOptionsForm" name="page_options"/>
+       <widget class="SettingAiForm" name="page_ai"/>
        <widget class="SettingVisualForm" name="page_visual"/>
        <widget class="SettingExampleForm" name="page_example">
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -129,7 +130,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -201,15 +202,21 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>SettingOptionsForm</class>
-   <extends>QWidget</extends>
-   <header>SettingOptionsForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>SettingWorkingFolderForm</class>
    <extends>QWidget</extends>
    <header>SettingWorkingFolderForm.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingAiForm</class>
+   <extends>QWidget</extends>
+   <header>SettingAiForm.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SettingOptionsForm</class>
+   <extends>QWidget</extends>
+   <header>SettingOptionsForm.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

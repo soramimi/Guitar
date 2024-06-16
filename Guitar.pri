@@ -107,9 +107,11 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/FileType.cpp \
-	$$PWD/src/GenerativeAI.cpp \
-	$$PWD/src/GenerativeAI.cpp \
+	$$PWD/src/SettingAiForm.cpp \
+	$$PWD/src/SettingOptionsForm.cpp \
+	src/FileType.cpp \
+	src/GenerativeAI.cpp \
+	src/GenerativeAI.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -208,7 +210,6 @@ SOURCES += \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
-	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
 	src/SettingVisualForm.cpp \
@@ -256,9 +257,11 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
-	$$PWD/src/FileType.h \
-	$$PWD/src/GenerativeAI.h \
-	$$PWD/src/GenerativeAI.h \
+	$$PWD/src/SettingAiForm.h \
+	$$PWD/src/SettingOptionsForm.h \
+	src/FileType.h \
+	src/GenerativeAI.h \
+	src/GenerativeAI.h \
 	filetype/filetype.h \
 	src/AboutDialog.h \
 	src/AbstractProcess.h \
@@ -360,7 +363,6 @@ HEADERS += \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
-	src/SettingOptionsForm.h \
 	src/SettingPrograms2Form.h \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
@@ -419,6 +421,8 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS    += \
+	$$PWD/src/SettingAiForm.ui \
+	$$PWD/src/SettingOptionsForm.ui \
 	src/AboutDialog.ui \
 	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \
@@ -470,7 +474,6 @@ FORMS    += \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
-	src/SettingOptionsForm.ui \
 	src/SettingPrograms2Form.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingVisualForm.ui \

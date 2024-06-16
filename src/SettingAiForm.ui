@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingAiForm</class>
+ <widget class="QWidget" name="SettingAiForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>411</width>
+    <height>411</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>AI</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QGroupBox" name="groupBox_generate_commit_message_by_ai">
+     <property name="title">
+      <string>Ge&amp;nerate commit message with AI</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QComboBox" name="comboBox_ai_model"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>API Key</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_use_OPENAI_API_KEY_env_value">
+        <property name="text">
+         <string>Use OPENAI_API_KEY environment value</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_openai_api_key"/>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_use_ANTHROPIC_API_KEY_env_value">
+        <property name="text">
+         <string>Use ANTHROPIC_API_KEY environment value</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_anthropic_api_key"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>247</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>groupBox_generate_commit_message_by_ai</tabstop>
+  <tabstop>comboBox_ai_model</tabstop>
+  <tabstop>checkBox_use_OPENAI_API_KEY_env_value</tabstop>
+  <tabstop>lineEdit_openai_api_key</tabstop>
+  <tabstop>checkBox_use_ANTHROPIC_API_KEY_env_value</tabstop>
+  <tabstop>lineEdit_anthropic_api_key</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

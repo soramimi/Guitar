@@ -36,6 +36,7 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 	AddPage(ui->page_network);
 	AddPage(ui->page_programs);
 	AddPage(ui->page_programs2);
+	AddPage(ui->page_ai);
 	AddPage(ui->page_options);
 //	AddPage(ui->page_example);
 
