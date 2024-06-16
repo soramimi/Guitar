@@ -66,8 +66,6 @@ public:
 	static QString loadOpenAiApiKey();
 	static void saveOpenAiApiKey(const QString &key);
 #endif
-	
-	static std::vector<GenerativeAI::Model> generative_ai_models();
 };
 
 #endif // APPLICATIONSETTINGS_H

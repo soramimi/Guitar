@@ -2,6 +2,7 @@
 #include "ui_SettingOptionsForm.h"
 #include "ApplicationGlobal.h"
 #include "EditProfilesDialog.h"
+#include "GenerativeAI.h"
 
 SettingOptionsForm::SettingOptionsForm(QWidget *parent)
 	: AbstractSettingForm(parent)
@@ -10,7 +11,7 @@ SettingOptionsForm::SettingOptionsForm(QWidget *parent)
 	ui->setupUi(this);
 	
 	QStringList list;
-	auto vec = ApplicationSettings::generative_ai_models();
+	auto vec =GenerativeAI::available_models();
 	for (auto &m : vec) {
 		list.push_back(m.model);
 	}

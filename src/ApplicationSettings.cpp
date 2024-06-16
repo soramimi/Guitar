@@ -73,17 +73,6 @@ void ApplicationSettings::saveOpenAiApiKey(QString const &key)
 }
 #endif
 
-std::vector<GenerativeAI::Model> ApplicationSettings::generative_ai_models()
-{
-	std::vector<GenerativeAI::Model> models;
-	models.emplace_back("gpt-3.5-turbo");
-	models.emplace_back("gpt-4");
-	models.emplace_back("gpt-4-turbo");
-	models.emplace_back("gpt-4o");
-	models.emplace_back("claude-3-opus-20240229");
-	return models;
-}
-
 ApplicationSettings ApplicationSettings::loadSettings()
 {
 	ApplicationSettings as(defaultSettings());
