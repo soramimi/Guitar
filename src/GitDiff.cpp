@@ -42,11 +42,6 @@ public:
 
 // GitDiff
 
-// GitPtr GitDiff::git()
-// {
-// 	return objcache->git();
-// }
-
 GitPtr GitDiff::git(Git::SubmoduleItem const &submod)
 {
 	return global->mainwindow->git(submod);
@@ -364,11 +359,6 @@ GitCommitTree::GitCommitTree(GitObjectCache *objcache)
 	: objcache(objcache)
 {
 }
-
-// GitPtr GitCommitTree::git()
-// {
-// 	return objcache->git();
-// }
 
 QString GitCommitTree::lookup_(GitPtr g, QString const &file, GitTreeItem *out)
 {

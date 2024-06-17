@@ -371,9 +371,6 @@ Git::CommitID GitObjectCache::getCommitIdFromTag(GitPtr g, QString const &tag)
 	return commit_id;
 }
 
-
-
-
 bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
 {
 	*out = {};

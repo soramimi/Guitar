@@ -31,16 +31,6 @@ private:
 	void loadIndexes(GitPtr g);
 	QString findObjectPath(GitPtr g, const Git::CommitID &id);
 	bool loadObject(GitPtr g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
-	// GitPtr git()
-	// {
-	// 	return g->dup();
-	// }
-	// GitPtr git(Git::SubmoduleItem const &submod)
-	// {
-	// 	GitPtr g2 = g->dup();
-	// 	g2->setWorkingRepositoryDir(g->workingDir(), submod.path, g->sshKey());
-	// 	return g2;
-	// }
 	void init();
 public:
 	GitObjectManager();

@@ -2708,7 +2708,6 @@ void MainWindow::onShowFileList(const ExchangeData &data)
  */
 void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
 {
-	showFileList(FilesListType::SingleList);
 	frame->unstagedFileslistwidget()->clear();
 	frame->stagedFileslistwidget()->clear();
 	frame->fileslistwidget()->clear();
@@ -3885,6 +3884,8 @@ void MainWindow::addFileObjectData(ExchangeData const &data, CallType calltype)
 		emit addFileObjectData(data);
 		return;
 	}
+
+	clearFileList(data.frame);
 
 	for (ObjectData const &obj : data.object_data) {
 		QListWidgetItem *item = newListWidgetFileItem(obj);
@@ -5708,6 +5709,7 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
  */
 void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 {
+	showFileList(FilesListType::SingleList);
 	clearFileList(frame);
 
 	Git::CommitItem const *commit = selectedCommitItem(frame);
