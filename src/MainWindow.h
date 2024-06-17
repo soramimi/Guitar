@@ -59,6 +59,7 @@ public:
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
+	friend class MainWindowHelperThread;
 	friend class RepositoryWrapperFrame;
 	friend class SubmoduleMainWindow;
 	friend class ImageViewWidget;
@@ -126,6 +127,11 @@ public:
 		GroupItem = -1,
 	};
 
+	enum class CallType {
+		DIRECT,
+		EMIT_SIGNAL,
+	};
+
 private:
 
 	struct ObjectData {
@@ -135,6 +141,7 @@ private:
 		Git::CommitItem submod_commit;
 		QString header;
 		int idiff;
+		bool staged = false;
 	};
 
 	Ui::MainWindow *ui;
@@ -159,8 +166,8 @@ private:
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
 
-	void updateFilesList(RepositoryWrapperFrame *frame, QString const &id, bool wait);
-	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit, bool wait);
+	void updateFilesList(RepositoryWrapperFrame *frame, QString const &id);
+	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 	void updateRepositoriesList();
 
 	bool internalOpenRepository(GitPtr g, bool keep_selection = false);
@@ -169,8 +176,6 @@ private:
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> const &fn);
-	void showFileList(FilesListType files_list_type);
-
 	void clearLog(RepositoryWrapperFrame *frame);
 	void clearFileList(RepositoryWrapperFrame *frame);
 	void clearDiffView(RepositoryWrapperFrame *frame);
@@ -249,7 +254,7 @@ private:
 	void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	bool openSelectedRepository();
-	std::optional<QList<Git::Diff> > makeDiffs(RepositoryWrapperFrame *frame, QString id);
+	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, QString id);
 	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
 	void queryRemotes(GitPtr g);
@@ -596,10 +601,26 @@ private slots:
 	void toggleMaximized();
 protected slots:
 	void onLogIdle();
+public:
+	struct ExchangeData {
+		RepositoryWrapperFrame *frame = nullptr;
+		MainWindow::FilesListType files_list_type;
+		std::vector<ObjectData> object_data;
+	};
+private:
+	void showFileList(FilesListType files_list_type, CallType calltype = CallType::DIRECT);
+	void addFileObjectData(const ExchangeData &data, CallType calltype = CallType::DIRECT);
+private slots:
+	void onShowFileList(const ExchangeData &data);
+	void onAddFileObjectData(const ExchangeData &data);
+signals:
+	void doShowFileList(const ExchangeData &data);
+	void doAddFileObjectData(const ExchangeData &data);
 signals:
 	void signalWriteLog(QByteArray ba, bool receive);
 	void remoteInfoChanged();
 	void updateButton();
 };
+Q_DECLARE_METATYPE(MainWindow::ExchangeData)
 
 #endif // MAINWINDOW_H

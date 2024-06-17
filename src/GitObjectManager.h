@@ -76,7 +76,7 @@ public:
 	}
 
 	void setup(GitPtr g);
-	Git::CommitID revParse(QString const &name);
+	Git::CommitID revParse(GitPtr g, QString const &name);
 	Git::Object catFile(const Git::CommitID &id);
 	Git::CommitID getCommitIdFromTag(const QString &tag);
 

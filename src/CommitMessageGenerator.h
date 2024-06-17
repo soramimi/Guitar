@@ -30,7 +30,7 @@ public:
 		return ret;
 	}
 };
-Q_DECLARE_METATYPE(GeneratedCommitMessage);
+Q_DECLARE_METATYPE(GeneratedCommitMessage)
 
 class CommitMessageGenerator {
 private:

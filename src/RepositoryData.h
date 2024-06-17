@@ -10,7 +10,7 @@ struct RepositoryData {
 	QString local_dir;
 	QString ssh_key;
 };
-Q_DECLARE_METATYPE(RepositoryData);
+Q_DECLARE_METATYPE(RepositoryData)
 
 class RepositoryBookmark {
 public:

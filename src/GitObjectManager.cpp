@@ -258,9 +258,8 @@ void GitObjectCache::setup(GitPtr g)
 	}
 }
 
-Git::CommitID GitObjectCache::revParse(QString const &name)
+Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 {
-	GitPtr g = git();
 	if (!g) return QString();
 
 	{

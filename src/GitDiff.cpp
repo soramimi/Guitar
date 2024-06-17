@@ -165,7 +165,7 @@ void GitDiff::retrieveCompleteTree(QString const &dir, GitTreeItemList const *fi
  * @param out
  * @return
  */
-bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();
@@ -271,8 +271,8 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
 			}
 		} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-			GitPtr g = objcache->git();
-			QString head_id = objcache->revParse("HEAD").toQString();
+			// GitPtr g = objcache->git();
+			QString head_id = objcache->revParse(g, "HEAD").toQString();
 			Git::FileStatusList stats = g->status_s(); // git status
 
 			GitCommitTree head_tree(objcache);
@@ -352,9 +352,9 @@ bool GitDiff::diff(Git::CommitID const &id, const QList<Git::SubmoduleItem> &sub
 	return false;
 }
 
-bool GitDiff::diff_uncommited(const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff_uncommited(GitPtr g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
-	return diff({}, submodules, out);
+	return diff(g, {}, submodules, out);
 }
 
 // GitCommitTree

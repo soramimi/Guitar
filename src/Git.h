@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <functional>
 
 #define SINGLE_THREAD 0
 
@@ -413,9 +414,9 @@ public:
 	Git(Git &&r) = delete;
 	 ~Git() override;
 
-	using callback_t = bool (*)(void *, const char *, int);
+	// using callback_t = bool (*)(void *, const char *, int);
 
-	void setLogCallback(callback_t func, void *cookie);
+	void setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie);
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});

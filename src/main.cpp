@@ -23,8 +23,6 @@
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
-
-#include "SettingGeneralForm.h"
 #endif
 
 #ifndef APP_GUITAR
@@ -114,6 +112,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<RepositoryData>("RepositoryData");
 	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
+	qRegisterMetaType<MainWindow::ExchangeData>("MainWindow::ExchangeData");
 
 	{
 		MySettings s;

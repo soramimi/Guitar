@@ -86,14 +86,14 @@ bool Git::CommitID::isValid() const
 }
 
 
-using callback_t = Git::callback_t;
+// using callback_t = Git::callback_t;
 
 struct Git::Private {
 	struct Info {
 		QString git_command;
 		QString working_repo_dir;
 		QString submodule_path;
-		callback_t fn_log_writer_callback = nullptr;
+		std::function<bool (void *, const char *, int)> fn_log_writer_callback;
 		void *callback_cookie = nullptr;
 	};
 	Info info;
@@ -121,7 +121,7 @@ Git::~Git()
 	delete m;
 }
 
-void Git::setLogCallback(callback_t func, void *cookie)
+void Git::setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie)
 {
 	m->info.fn_log_writer_callback = func;
 	m->info.callback_cookie = cookie;
