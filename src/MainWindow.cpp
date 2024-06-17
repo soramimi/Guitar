@@ -1598,7 +1598,7 @@ void MainWindow::checkUser()
  *
  * リポジトリを開く
  */
-bool MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
+void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_selection)
 {
 	if (validate) {
 		QString dir = currentWorkingCopyDir();
@@ -1607,25 +1607,27 @@ bool MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 			if (r == QMessageBox::Ok) {
 				removeSelectedRepositoryFromBookmark(false);
 			}
-			return true;
+			return;
 		}
 		if (!Git::isValidWorkingCopy(dir)) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-			return false;
+			return;
 		}
 	}
 
 	if (waitcursor) {
 		OverrideWaitCursor;
-		return openRepository(false, false, keep_selection);
+		openRepository(false, false, keep_selection);
+		return;
 	}
 
 	GitPtr g = git();
 	if (!g) {
 		qDebug() << "Guitar: git pointer is null";
-		return false;
+		return;
 	}
-	return internalOpenRepository(g, keep_selection);
+	
+	internalOpenRepository(g, keep_selection);
 }
 
 /**
@@ -1690,14 +1692,12 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
  *
  * 選択されたリポジトリを開く
  */
-bool MainWindow::openSelectedRepository()
+void MainWindow::openSelectedRepository()
 {
 	RepositoryData const *repo = selectedRepositoryItem();
 	if (repo) {
 		setCurrentRepository(*repo, true);
-		return openRepository(true);
-	} else {
-		return false;
+		openRepository(true);
 	}
 }
 
@@ -4170,83 +4170,15 @@ Git::Object MainWindow::catFile(QString const &id)
 	return internalCatFile(frame(), git(), id);
 }
 
-bool MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
+void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
 {
-	return openRepositoryWithFrame(frame(), g, keep_selection);
+	openRepositoryWithFrame(frame(), g, keep_selection);
 }
 
-bool MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
+void MainWindow::makeCommitLog(GitPtr g, RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
 {
-	getObjCache(frame)->setup(g);
-
-	int scroll_pos = -1;
-	int select_row = -1;
-
-	if (keep_selection) {
-		scroll_pos = frame->logtablewidget()->verticalScrollBar()->value();
-		select_row = frame->logtablewidget()->currentRow();
-	}
-
-	{
-		bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
-		setForceFetch(false);
-		if (do_fetch) {
-			if (!fetch(g, false)) {
-				return false;
-			}
-		}
-
-		clearLog(frame);
-		clearRepositoryInfo();
-		detectGitServerType(g);
-
-		updateFilesList(frame, QString());
-
-		bool canceled = false;
-		frame->logtablewidget()->setEnabled(false);
-
-		//
-		updateUncommitedChanges();
-
-		// ログを取得
-		setCommitLog(frame, retrieveCommitLog(g));
-		// ブランチを取得
-		queryBranches(frame, g);
-		// タグを取得
-		ptrCommitToTagMap(frame)->clear();
-		QList<Git::Tag> tags = g->tags();
-		for (Git::Tag const &tag : tags) {
-			(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
-		}
-
-		frame->logtablewidget()->setEnabled(true);
-		updateCommitLogTable(frame, 100); // ミコットログを更新（100ms後）
-		if (canceled) return false;
-
-		QString branch_name;
-		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
-			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
-		}
-		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
-			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
-		}
-		if (branch_name.isEmpty()) {
-			branch_name = currentBranchName();
-		}
-
-		QString repo_name = currentRepositoryName();
-		setRepositoryInfo(repo_name, branch_name);
-	}
-
-	if (!g) return false;
-
-	updateRemoteInfo();
-
-	updateWindowTitle(g);
-
-	setHeadId(getObjCache(frame)->revParse(g, "HEAD"));
-
-	if (isThereUncommitedChanges()) {
+	bool uncommited_changes = isThereUncommitedChanges();
+	if (uncommited_changes) {
 		Git::CommitItem item;
 		item.parent_ids.push_back(currentBranch().id);
 		item.message = tr("Uncommited changes");
@@ -4254,16 +4186,16 @@ bool MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		logptr->list.insert(logptr->list.begin(), item);
 		logptr->updateIndex();
 	}
-
+	
 	frame->prepareLogTableWidget();
-
+	
 	auto const &logs = getCommitLog(frame);
 	const int count = (int)logs.size();
-
+	
 	frame->logtablewidget()->setRowCount(count);
-
+	
 	int selrow = 0;
-
+	
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const *commit = &logs[row];
 		{
@@ -4301,7 +4233,7 @@ bool MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 				bold = true; // 太字
 				selrow = row;
 			} else {
-				if (isHEAD && !isThereUncommitedChanges()) { // HEADで、未コミットがないとき
+				if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
 					bold = true; // 太字
 					selrow = row;
 				}
@@ -4323,24 +4255,93 @@ bool MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 	frame->logtablewidget()->setColumnWidth(0, t);
 	frame->logtablewidget()->horizontalHeader()->setStretchLastSection(false);
 	frame->logtablewidget()->horizontalHeader()->setStretchLastSection(true);
-
+	
 	m->last_focused_file_list = nullptr;
-
+	
 	frame->logtablewidget()->setFocus();
-
+	
 	if (select_row < 0) {
 		setCurrentLogRow(frame, selrow);
 	} else {
 		setCurrentLogRow(frame, select_row);
 		frame->logtablewidget()->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
 	}
-
+	
 	m->commit_detail_getter.stop();
 	m->commit_detail_getter.start(g->dup());
-
+	
 	updateUI();
+}
 
-	return true;
+void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
+{
+	getObjCache(frame)->setup(g);
+
+	int scroll_pos = -1;
+	int select_row = -1;
+
+	if (keep_selection) {
+		scroll_pos = frame->logtablewidget()->verticalScrollBar()->value();
+		select_row = frame->logtablewidget()->currentRow();
+	}
+
+	{
+		clearLog(frame);
+		clearRepositoryInfo();
+		detectGitServerType(g);
+
+		updateFilesList(frame, QString());
+
+		frame->logtablewidget()->setEnabled(false);
+
+		//
+		updateUncommitedChanges();
+
+		// ログを取得
+		setCommitLog(frame, retrieveCommitLog(g));
+		// ブランチを取得
+		queryBranches(frame, g);
+		// タグを取得
+		ptrCommitToTagMap(frame)->clear();
+		QList<Git::Tag> tags = g->tags();
+		for (Git::Tag const &tag : tags) {
+			(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
+		}
+
+		frame->logtablewidget()->setEnabled(true);
+		updateCommitLogTable(frame, 100); // ミコットログを更新（100ms後）
+
+		QString branch_name;
+		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
+			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
+		}
+		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
+			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
+		}
+		if (branch_name.isEmpty()) {
+			branch_name = currentBranchName();
+		}
+
+		QString repo_name = currentRepositoryName();
+		setRepositoryInfo(repo_name, branch_name);
+	}
+	
+	if (g) {
+		updateRemoteInfo();
+		
+		updateWindowTitle(g);
+		
+		setHeadId(getObjCache(frame)->revParse(g, "HEAD"));
+		
+		makeCommitLog(g, frame, scroll_pos, select_row);
+	}
+
+	
+	bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
+	setForceFetch(false);
+	if (do_fetch) {
+		fetch(g, false);
+	}
 }
 
 /**
@@ -4648,9 +4649,7 @@ void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*curr
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
 {
-	if (openSelectedRepository()) return;
-
-	// 戻り値がfalseで、フォルダがダブルクリックされたときは、そのフォルダを開く（規定の動作）
+	openSelectedRepository();
 }
 
 void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const *commit)

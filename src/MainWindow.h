@@ -170,8 +170,9 @@ private:
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 	void updateRepositoriesList();
 
-	bool internalOpenRepository(GitPtr g, bool keep_selection = false);
-	bool openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
+	void internalOpenRepository(GitPtr g, bool keep_selection = false);
+	void makeCommitLog(GitPtr g, RepositoryWrapperFrame *frame, int scroll_pos, int select_row);
+	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -249,11 +250,11 @@ private:
 	void logGitVersion();
 	void internalClearRepositoryInfo();
 	void checkUser();
-	bool openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
+	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
 	void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
-	bool openSelectedRepository();
+	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, QString id);
 	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo();
