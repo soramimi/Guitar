@@ -200,8 +200,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	// m->helper.moveToThread(&m->helper_thread);
-	// m->helper_thread.start();
+	hideProgress();
+	setUnknownRepositoryInfo();
+
 	connect(this, &MainWindow::doShowFileList, this, &MainWindow::onShowFileList);
 
 	ui->frame_repository_wrapper->bind(this
@@ -790,6 +791,24 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 	ui->widget_log->updateLayoutAndMoveToBottom();
 
 	setInteractionCanceled(false);
+}
+
+void MainWindow::setProgress(float progress)
+{
+	ui->label_progress->setProgress(progress);
+}
+
+void MainWindow::showProgress(QString const &text, bool cancel_button)
+{
+	ui->toolButton_cancel->setVisible(cancel_button);
+	ui->label_progress->setText(text);
+	ui->label_progress->setProgress(0.0f);
+	ui->frame_progress->setVisible(true);
+}
+
+void MainWindow::hideProgress()
+{
+	ui->frame_progress->setVisible(false);
 }
 
 QString MainWindow::treeItemName(QTreeWidgetItem *item)
@@ -3224,11 +3243,18 @@ bool MainWindow::fetch(GitPtr g, bool prune)
 {
 	setPtyCondition(PtyCondition::Fetch);
 	setPtyProcessOk(true);
-	g->fetch(getPtyProcess(), prune);
+	setProgress(-1.0f);
+	showProgress(tr("Fetching..."), false);
+	PtyProcess *pty = getPtyProcess();
+	std::thread th([this, g, prune, pty](){
+		g->fetch(pty, prune);
+	});
 	while (1) {
-		if (getPtyProcess()->wait(1)) break;
-		QApplication::processEvents();
+		if (pty->wait(1)) break;
+		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
+	th.join();
+	hideProgress();
 	return getPtyProcessOk();
 }
 

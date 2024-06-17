@@ -107,6 +107,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/ProgressTextLabel.cpp \
 	src/SettingAiForm.cpp \
 	src/SettingOptionsForm.cpp \
 	src/FileType.cpp \
@@ -256,6 +257,7 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
+	$$PWD/src/ProgressTextLabel.h \
 	src/SettingAiForm.h \
 	src/SettingOptionsForm.h \
 	src/FileType.h \

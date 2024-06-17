@@ -600,6 +600,10 @@ private slots:
 
 	void test();
 	void toggleMaximized();
+public:
+	void setProgress(float progress);
+	void showProgress(const QString &text, bool cancel_button);
+	void hideProgress();
 protected slots:
 	void onLogIdle();
 public:
