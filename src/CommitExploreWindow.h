@@ -20,10 +20,11 @@ private:
 	struct Private;
 	Private *m;
 
-	void loadTree(QString const &tree_id);
-	void doTreeItemChanged_(QTreeWidgetItem *current);
-	void expandTreeItem_(QTreeWidgetItem *item);
+	void loadTree(GitPtr g, QString const &tree_id);
+	void doTreeItemChanged_(GitPtr g, QTreeWidgetItem *current);
+	void expandTreeItem_(GitPtr g, QTreeWidgetItem *item);
 	MainWindow *mainwindow();
+	GitPtr git();
 public:
 	explicit CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);
 	~CommitExploreWindow() override;

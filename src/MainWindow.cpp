@@ -2538,7 +2538,7 @@ void MainWindow::deleteTempFiles()
  */
 Git::CommitID MainWindow::idFromTag(RepositoryWrapperFrame *frame, const QString &tag)
 {
-	return getObjCache(frame)->getCommitIdFromTag(tag);
+	return getObjCache(frame)->getCommitIdFromTag(git(), tag);
 }
 
 QString MainWindow::newTempFilePath()
@@ -2767,11 +2767,11 @@ void MainWindow::updateSubmodules(GitPtr g, QString const &id, QList<Git::Submod
 		// サブモジュールリストを取得する
 		{
 			GitCommit tree;
-			GitCommit::parseCommit(&objcache, id, &tree);
-			parseGitTreeObject(&objcache, tree.tree_id, {}, &list);
+			GitCommit::parseCommit(g, &objcache, id, &tree);
+			parseGitTreeObject(g, &objcache, tree.tree_id, {}, &list);
 			for (GitTreeItem const &item : list) {
 				if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
-					Git::Object obj = objcache.catFile(item.id);
+					Git::Object obj = objcache.catFile(g, item.id);
 					if (!obj.content.isEmpty()) {
 						parseGitSubModules(obj.content, &submodules);
 					}
@@ -2790,7 +2790,7 @@ void MainWindow::updateSubmodules(GitPtr g, QString const &id, QList<Git::Submod
 								goto done;
 							}
 						} else if (list[k].type == GitTreeItem::Type::TREE) {
-							Git::Object obj = objcache.catFile(list[k].id);
+							Git::Object obj = objcache.catFile(g, list[k].id);
 							parseGitTreeObject(obj.content, {}, &list);
 							break;
 						}
@@ -4153,7 +4153,7 @@ Git::Object MainWindow::internalCatFile(RepositoryWrapperFrame *frame, GitPtr g,
 				return obj;
 			}
 		} else if (Git::isValidID(id)) {
-			return getObjCache(frame)->catFile(id);;
+			return getObjCache(frame)->catFile(g, id);
 		}
 	}
 	return {};
@@ -5623,7 +5623,7 @@ void MainWindow::emitWriteLog(const QByteArray &ba, bool receive)
 
 QString MainWindow::findFileID(RepositoryWrapperFrame *frame, const QString &commit_id, const QString &file)
 {
-	return lookupFileID(getObjCache(frame), commit_id, file);
+	return lookupFileID(git(), getObjCache(frame), commit_id, file);
 }
 
 const Git::CommitItem *MainWindow::commitItem(RepositoryWrapperFrame const *frame, int row) const
@@ -6442,7 +6442,7 @@ void MainWindow::on_action_repo_jump_triggered()
 			}
 		}
 		if (g->objectType(id) == "tag") {
-			id = getObjCache(frame())->getCommitIdFromTag(id.toQString());
+			id = getObjCache(frame())->getCommitIdFromTag(g, id.toQString());
 		}
 		int row = rowFromCommitId(frame(), id);
 		if (row < 0) {

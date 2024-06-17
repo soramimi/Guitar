@@ -59,15 +59,16 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
 	ui->lineEdit_author->setText(commit->author);
 
+	GitPtr g = git();
 	{
 		GitCommit c;
-		GitCommit::parseCommit(objcache, m->commit->commit_id.toQString(), &c);
+		GitCommit::parseCommit(g, objcache, m->commit->commit_id.toQString(), &c);
 		m->root_tree_id = c.tree_id;
 	}
 
 	{
 		GitCommitTree tree(objcache);
-		tree.parseTree(m->root_tree_id);
+		tree.parseTree(g, m->root_tree_id);
 	}
 
 	{
@@ -77,7 +78,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 		rootitem->setData(0, ObjectIdRole, m->root_tree_id);
 		ui->treeWidget->addTopLevelItem(rootitem);
 
-		loadTree(m->root_tree_id);
+		loadTree(g, m->root_tree_id);
 
 		rootitem->setExpanded(true);
 	}
@@ -94,12 +95,17 @@ MainWindow *CommitExploreWindow::mainwindow()
 	return global->mainwindow;
 }
 
+GitPtr CommitExploreWindow::git()
+{
+	return mainwindow()->git();
+}
+
 void CommitExploreWindow::clearContent()
 {
 	m->content = ObjectContent();
 }
 
-void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
+void CommitExploreWindow::expandTreeItem_(GitPtr g, QTreeWidgetItem *item)
 {
 	if (item->childCount() == 1) {
 		if (item->child(0)->text(0).isEmpty()) {
@@ -114,7 +120,7 @@ void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 		QString path = item->data(0, FilePathRole).toString();
 
 		QString tree_id = item->data(0, ObjectIdRole).toString();
-		loadTree(tree_id);
+		loadTree(g, tree_id);
 
 		for (GitTreeItem const &ti : m->tree_item_list) {
 			if (ti.type == GitTreeItem::TREE) {
@@ -134,13 +140,13 @@ void CommitExploreWindow::expandTreeItem_(QTreeWidgetItem *item)
 
 void CommitExploreWindow::on_treeWidget_itemExpanded(QTreeWidgetItem *item)
 {
-	expandTreeItem_(item);
+	expandTreeItem_(git(), item);
 }
 
-void CommitExploreWindow::loadTree(QString const &tree_id)
+void CommitExploreWindow::loadTree(GitPtr g, QString const &tree_id)
 {
 	GitCommitTree tree(m->objcache);
-	tree.parseTree(tree_id);
+	tree.parseTree(g, tree_id);
 
 	m->tree_item_list = *tree.treelist();
 
@@ -152,7 +158,7 @@ void CommitExploreWindow::loadTree(QString const &tree_id)
 	});
 }
 
-void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
+void CommitExploreWindow::doTreeItemChanged_(GitPtr g, QTreeWidgetItem *current)
 {
 	ui->listWidget->clear();
 
@@ -160,7 +166,7 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 
 	QString tree_id = current->data(0, ObjectIdRole).toString();
 
-	loadTree(tree_id);
+	loadTree(g, tree_id);
 
 	QFileIconProvider icons;
 
@@ -195,7 +201,8 @@ void CommitExploreWindow::doTreeItemChanged_(QTreeWidgetItem *current)
 void CommitExploreWindow::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem * /*previous*/)
 {
 	clearContent();
-	doTreeItemChanged_(current);
+	GitPtr g = git();
+	doTreeItemChanged_(g, current);
 }
 
 void CommitExploreWindow::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
@@ -207,7 +214,8 @@ void CommitExploreWindow::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
 		QString tree_id = item->data(ObjectIdRole).toString();
 		clearContent();
 		QTreeWidgetItem *parent = ui->treeWidget->currentItem();
-		expandTreeItem_(parent);
+		GitPtr g = git();
+		expandTreeItem_(g, parent);
 		parent->setExpanded(true);
 		int n = parent->childCount();
 		for (int i = 0; i < n; i++) {
@@ -231,7 +239,8 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::BLOB) {
 		QString id = current->data(ObjectIdRole).toString();
-		m->content_object = m->objcache->catFile(id);
+		GitPtr g = git();
+		m->content_object = m->objcache->catFile(g, id);
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
 		QString mimetype = mainwindow()->determinFileType(m->content_object.content);

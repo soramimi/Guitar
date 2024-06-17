@@ -29,13 +29,13 @@ private:
 
 	using MapList = std::list<LookupTable>;
 
-	GitPtr git();
+	// GitPtr git();
 	GitPtr git(const Git::SubmoduleItem &submod);
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out);
-	void retrieveCompleteTree(QString const &dir, GitTreeItemList const *files);
+	void retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out);
+	void retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files);
 public:
 	GitDiff(GitObjectCache *objcache)
 	{
@@ -57,8 +57,8 @@ public:
 	static QString makeKey(const QString &a_id, const QString &b_id);
 	static QString makeKey(const Git::Diff &diff);
 	static QString prependPathPrefix(QString const &path);
-
-
 };
+
+QString lookupFileID(GitPtr g, GitObjectCache *objcache, QString const &commit_id, QString const &file);
 
 #endif // GITDIFF_H
