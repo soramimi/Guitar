@@ -3,19 +3,12 @@
 #include "ApplicationGlobal.h"
 #include "CommitMessageGenerator.h"
 #include "MainWindow.h"
-#include "OverrideWaitCursor.h"
-#include <condition_variable>
-#include <thread>
-#include <mutex>
+#include "GenerateCommitMessageThread.h"
 #include <QMessageBox>
 
 struct GenerateCommitMessageDialog::Private {
-	std::mutex mutex;
-	std::thread thread;
-	std::condition_variable cv;
-	bool requested = false;
-	bool interrupted = false;
-	CommitMessageGenerator gen;
+	QString diff;
+	GenerateCommitMessageThread generator;
 };
 
 GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, QString const &model_name)
@@ -26,59 +19,45 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, QStrin
 	ui->setupUi(this);
 	ui->label->setText(model_name);
 	
-	connect(this, &GenerateCommitMessageDialog::ready, this, &GenerateCommitMessageDialog::onReady);
+	m->generator.start();
 	
-	m->thread = std::thread([this] {
-		while (1) {
-			bool requested = false;
-			{
-				std::unique_lock lock(m->mutex);
-				if (m->interrupted)	break;
-				m->cv.wait(lock);
-				std::swap(requested, m->requested);
-			}
-			if (requested) {
-				auto result = m->gen.generate(global->mainwindow->git());
-				emit ready(result);
-			}
-		}
-	});	
+	connect(&m->generator, &GenerateCommitMessageThread::ready, this, &GenerateCommitMessageDialog::onReady);
+	
 }
 
 GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
 {
-	m->interrupted = true;
-	m->cv.notify_all();
-	if (m->thread.joinable()) {
-		m->thread.join();
-	}
+	m->generator.stop();
 	delete ui;
 	delete m;
 }
 
-QString GenerateCommitMessageDialog::text() const
+void GenerateCommitMessageDialog::generate(QString const &diff)
 {
-	return ui->listWidget->currentItem()->text();
-}
-
-void GenerateCommitMessageDialog::generate()
-{
+	m->diff = diff;
+	
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
 	ui->listWidget->clear();
 	ui->pushButton_regenerate->setEnabled(false);
+	
+	m->generator.request(CommitMessageGenerator::CommitMessage, diff);
+}
 
-	{
-		std::lock_guard lock(m->mutex);
-		m->interrupted = false;
-		m->requested = true;
-		m->cv.notify_all();
-	}
+QString GenerateCommitMessageDialog::diffText() const
+{
+	return m->diff;
+}
+
+QString GenerateCommitMessageDialog::message() const
+{
+	return ui->listWidget->currentItem()->text();
 }
 
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 {
-	generate();
+	QString diff = global->mainwindow->git()->diff_head();
+	generate(diff);
 }
 
 void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
@@ -95,3 +74,6 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 	
 	ui->pushButton_regenerate->setEnabled(true);	
 }
+
+
+

@@ -2,9 +2,8 @@
 #define COMMITMESSAGEGENERATOR_H
 
 #include "GenerativeAI.h"
-#include "Git.h"
+#include <QObject>
 #include <string>
-#include <vector>
 
 class GeneratedCommitMessage {
 public:
@@ -33,16 +32,27 @@ public:
 Q_DECLARE_METATYPE(GeneratedCommitMessage)
 
 class CommitMessageGenerator {
+public:
+	enum Kind {
+		CommitMessage,
+		DetailedComment,
+	};
 private:
+	Kind kind;
 	std::string error_status_;
 	std::string error_message_;
 	GeneratedCommitMessage parse_response(const std::string &in, GenerativeAI::Type ai_type);
 	std::string generatePrompt(const QString &diff, int max);
-	std::string generatePromptJSON(const GenerativeAI::Model &model, const QString &diff, int max);
+	std::string generateDetailedPrompt(QString const &diff, const QString &commit_message);
+	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
 	GeneratedCommitMessage test();
 public:
 	CommitMessageGenerator() = default;
-	GeneratedCommitMessage generate(GitPtr g);
+	CommitMessageGenerator(Kind kind)
+		: kind(kind)
+	{
+	}
+	GeneratedCommitMessage generate(const QString &diff, QString const &hint = {});
 	std::string error() const
 	{
 		return error_message_;

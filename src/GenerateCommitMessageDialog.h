@@ -2,8 +2,8 @@
 #define GENERATECOMMITMESSAGEDIALOG_H
 
 #include "CommitMessageGenerator.h"
-
 #include <QDialog>
+#include <QObject>
 
 namespace Ui {
 class GenerateCommitMessageDialog;
@@ -18,13 +18,12 @@ private:
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent, const QString &model_name);
 	~GenerateCommitMessageDialog();
-	QString text() const;
-	void generate();
+	void generate(QString const &diff);
+	QString diffText() const;
+	QString message() const;
 private slots:
 	void on_pushButton_regenerate_clicked();
 	void onReady(GeneratedCommitMessage const &list);
-signals:
-	void ready(GeneratedCommitMessage const &result);
 };
 
 #endif // GENERATECOMMITMESSAGEDIALOG_H

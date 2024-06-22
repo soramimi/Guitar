@@ -262,58 +262,101 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 		}
 	}
 	if (ok1) {
-		std::vector<std::string> lines;
-		misc::splitLines(text, &lines, false);
-		size_t i = lines.size();
-		while (i > 0) {
-			i--;
-			std::string_view sv = lines[i];
-			char const *ptr = sv.data();
-			char const *end = ptr + sv.size();
-			while (ptr < end && *ptr == '`') ptr++;
-			while (ptr < end && end[-1] == '`') end--;
-			bool accept = false;
-			if (ptr < end && *ptr == '-') {
-				accept = true;
-				ptr++;
-			} else if (isdigit((unsigned char)*ptr)) {
-				while (ptr < end && isdigit((unsigned char)*ptr)) {
+		if (kind == CommitMessage) {
+			std::vector<std::string> lines;
+			misc::splitLines(text, &lines, false);
+			size_t i = lines.size();
+			while (i > 0) {
+				i--;
+				std::string_view sv = lines[i];
+				char const *ptr = sv.data();
+				char const *end = ptr + sv.size();
+				while (ptr < end && *ptr == '`') ptr++;
+				while (ptr < end && end[-1] == '`') end--;
+				bool accept = false;
+				if (ptr < end && *ptr == '-') {
 					accept = true;
 					ptr++;
+				} else if (isdigit((unsigned char)*ptr)) {
+					while (ptr < end && isdigit((unsigned char)*ptr)) {
+						accept = true;
+						ptr++;
+					}
+					if (ptr < end && *ptr == '.') {
+						ptr++;
+					}
 				}
-				if (ptr < end && *ptr == '.') {
-					ptr++;
+				if (accept) {
+					while (ptr < end && isspace((unsigned char)*ptr)) {
+						ptr++;
+					}
+					if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
+						ptr++;
+						end--;
+					}
+					while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
+						ptr++;
+						end--;
+					}
+					if (ptr < end) {
+						// ok
+					} else {
+						accept = false;
+					}
 				}
-			}
-			if (accept) {
-				while (ptr < end && isspace((unsigned char)*ptr)) {
-					ptr++;
-				}
-				if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
-					ptr++;
-					end--;
-				}
-				while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
-					ptr++;
-					end--;
-				}
-				if (ptr < end) {
-					// ok
+				if (accept) {
+					lines[i] = std::string(ptr, end);
 				} else {
-					accept = false;
+					lines.erase(lines.begin() + i);
 				}
 			}
-			if (accept) {
-				lines[i] = std::string(ptr, end);
-			} else {
-				lines.erase(lines.begin() + i);
+			QStringList ret;
+			for (auto const &line : lines) {
+				ret.push_back(QString::fromStdString(line));
 			}
+			return ret;
+		} else if (kind == DetailedComment) {
+			QStringList ret;
+			char const *begin = text.c_str();
+			char const *end = begin + text.size();
+			char const *ptr = begin;
+			while (ptr < end) {
+				while (ptr < end && isspace((unsigned char)*ptr)) ptr++;
+				char const *left = ptr;
+				if (ptr < end && isdigit((unsigned char)*ptr)) {
+					do {
+						ptr++;
+					} while (ptr < end && isdigit((unsigned char)*ptr));
+					if (ptr < end && *ptr == '.') ptr++;
+				}
+				char quote = 0;
+				while (1) {
+					int c = 0;
+					if (ptr < end) {
+						c = *ptr;
+					}
+					if (quote) {
+						if (*ptr == quote) {
+							quote = 0;
+						}
+					} else {
+						if (*ptr == '"' || *ptr == '\'' || *ptr == '`') {
+							quote = *ptr;
+						} else if (*ptr == '.' || *ptr == '\n' || c == 0) {
+							if (*ptr == '.') ptr++;
+							if (ptr > left) {
+								ret.push_back(QString::fromStdString(std::string(left, ptr)));
+							}
+							break;
+						}
+					}
+					ptr++;
+				}
+			}
+			return ret;
+		} else {
+			return {}; // invalid kind
 		}
-		QStringList ret;
-		for (auto const &line : lines) {
-			ret.push_back(QString::fromStdString(line));
-		}
-		return ret;
 	} else {
 		GeneratedCommitMessage ret;
 		ret.error = true;
@@ -335,10 +378,24 @@ std::string CommitMessageGenerator::generatePrompt(QString const &diff, int max)
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
 		"No headers and footers other than bulleted messages. "
-		"\n\n%s"
 		)(max);
 	prompt = prompt + "\n\n" + diff.toStdString();
 	return prompt;
+}
+
+std::string CommitMessageGenerator::generateDetailedPrompt(QString const &diff, const QString &commit_message)
+{
+	std::string prompt = strformat(
+		"Generate a supplemental comment explaining a bit more about the following commit message to `git diff` below. "
+		"Please keep it concise, about 5 lines or less of comment. "
+		"Output should be body text only; do not generate headers, footers, and greetings. "
+		"Omit anything like \"The commit\", \"This commit\" or \"This changes\" at the beginning."
+		"The commit message: %s \n"
+		"The git diff:\n"
+		)(commit_message.toStdString());
+	prompt = prompt + "\n\n" + diff.toStdString();
+	return prompt;
+	
 }
 
 /**
@@ -348,9 +405,8 @@ std::string CommitMessageGenerator::generatePrompt(QString const &diff, int max)
  * @param max_message_count The maximum number of messages to generate.
  * @return The JSON string.
  */
-std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const &model, QString const &diff, int max_message_count)
+std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt, GenerativeAI::Model const &model)
 {
-	std::string prompt = generatePrompt(diff, max_message_count);
 	std::string json;
 	
 	auto type = model.type();
@@ -372,10 +428,10 @@ std::string CommitMessageGenerator::generatePromptJSON(GenerativeAI::Model const
 		{"role": "user", "content": "%s"}
 	]
 	,
-	"max_tokens": 200,
+	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt));
+		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
 		
 	} else if (type == GenerativeAI::GEMINI) {
 		
@@ -407,7 +463,7 @@ GeneratedCommitMessage CommitMessageGenerator::test()
  * @param g The Git object.
  * @return The generated commit message.
  */
-GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
+GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QString const &hint)
 {
 	constexpr int max_message_count = 5;
 	
@@ -417,7 +473,6 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 		return test();
 	}
 	
-	QString diff = g->diff_head();
 	if (diff.isEmpty()) return {};
 
 	if (diff.size() > 100000) {
@@ -451,8 +506,21 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 	}
 	rq.set_location(url);
 	
-
-	std::string json = generatePromptJSON(model, diff, max_message_count);
+	
+	std::string prompt;
+	switch (kind) {
+	case CommitMessage:
+		prompt = generatePrompt(diff, max_message_count);
+		break;
+	case DetailedComment:
+		prompt = generateDetailedPrompt(diff, hint);
+		break;
+	default:
+		return {};
+	}
+	
+	
+	std::string json = generatePromptJSON(prompt, model);
 	
 	if (save_log) {
 		QFile file("/tmp/request.txt");
@@ -476,11 +544,8 @@ GeneratedCommitMessage CommitMessageGenerator::generate(GitPtr g)
 			}
 		}
 		std::string text(data, size);
-		auto list = parse_response(text, model_type);
-		if (!error_status_.empty()) {
-			return GeneratedCommitMessage::Error(QString::fromStdString(error_status_), QString::fromStdString(error_message_));
-		}
-		return list;
+		GeneratedCommitMessage ret = parse_response(text, model_type);
+		return ret;
 	}
 
 	return {};

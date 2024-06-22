@@ -2,8 +2,8 @@
 #include "ui_CommitDialog.h"
 #include "ApplicationGlobal.h"
 #include "ConfigSigningDialog.h"
-#include "GenerateCommitMessageDialog.h"
 #include "MainWindow.h"
+#include "GenerateCommitMessageDialog.h"
 #include <QDir>
 
 CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage)
@@ -14,8 +14,11 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::Use
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-
-	ui->pushButton_generate_with_ai->setEnabled(global->appsettings.generate_commit_message_by_ai);
+	
+	connect(&generator_, &GenerateCommitMessageThread::ready, this, &CommitDialog::onReady);
+	generator_.start();
+	
+	updateUI(true);
 
 	key_ = key;
 	previousMessage_ = previousMessage;
@@ -36,7 +39,17 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::Use
 
 CommitDialog::~CommitDialog()
 {
+	generator_.stop();
 	delete ui;
+}
+
+void CommitDialog::updateUI(bool enable)
+{
+	bool is_ai_enabled = enable && global->appsettings.generate_commit_message_by_ai;
+	bool is_detailed_enabled = is_ai_enabled && !ui->plainTextEdit->toPlainText().isEmpty();
+	
+	ui->pushButton_generate_with_ai->setEnabled(is_ai_enabled);
+	ui->pushButton_generate_detailed_comment->setEnabled(is_detailed_enabled);
 }
 
 MainWindow *CommitDialog::mainwindow()
@@ -88,6 +101,40 @@ QString CommitDialog::text() const
 	return ui->plainTextEdit->toPlainText();
 }
 
+void CommitDialog::onReady(GeneratedCommitMessage const &msg)
+{
+	QApplication::restoreOverrideCursor();
+	updateUI(true);
+	
+	if (msg && !msg.messages.empty()) {
+		QStringList lines;
+		lines.append(commit_message_);
+		lines.append(QString());
+		for (QString const &line : msg.messages) {
+			lines.append(line);
+		}
+		QString text = lines.join('\n');
+		setText(text);
+	}
+}
+
+void CommitDialog::generateDetailedComment()
+{
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	updateUI(false);
+	
+	commit_message_ = ui->plainTextEdit->toPlainText();
+	QStringList lines = commit_message_.split('\n');
+	if (lines.empty()) {
+		commit_message_ = {};
+	} else {
+		commit_message_ = lines.first().trimmed();
+	}
+	if (commit_message_.isEmpty()) return;
+	if (diff_.isEmpty()) return;
+	
+	generator_.request(CommitMessageGenerator::DetailedComment, diff_, commit_message_);
+}
 
 void CommitDialog::keyPressEvent(QKeyEvent *event)
 {
@@ -116,15 +163,28 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
+	diff_ = mainwindow()->git()->diff_head();
+	
 	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.name);
 	dlg.show();
-	dlg.generate();
+	dlg.generate(diff_);
 	if (dlg.exec() == QDialog::Accepted) {
-		QString text = dlg.text();
+		QString text = dlg.message();
 		if (!text.isEmpty()) {
 			setText(text);
+			QString diff = dlg.diffText();
 		}
 	}
 	ui->plainTextEdit->setFocus();
+}
+
+void CommitDialog::on_pushButton_generate_detailed_comment_clicked()
+{
+	generateDetailedComment();
+}
+
+void CommitDialog::on_plainTextEdit_textChanged()
+{
+	updateUI(true);
 }
 

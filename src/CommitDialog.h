@@ -1,6 +1,7 @@
 #ifndef COMMITDIALOG_H
 #define COMMITDIALOG_H
 
+#include "GenerateCommitMessageThread.h"
 #include "Git.h"
 #include "gpg.h"
 
@@ -28,14 +29,21 @@ private:
 	Ui::CommitDialog *ui;
 	gpg::Data key_;
 	QString previousMessage_;
+	QString diff_;
+	GenerateCommitMessageThread generator_;
+	QString commit_message_;
 
-	// QDialog interface
 	MainWindow *mainwindow();
 	void updateSigningInfo();
+	void generateDetailedComment();
+	void updateUI(bool enable);
 private slots:
 	void on_pushButton_config_signing_clicked();
 	void on_checkbox_amend_stateChanged(int state);
 	void on_pushButton_generate_with_ai_clicked();
+	void on_pushButton_generate_detailed_comment_clicked();
+	void onReady(GeneratedCommitMessage const &message);
+	void on_plainTextEdit_textChanged();
 };
 
 #endif // COMMITDIALOG_H
