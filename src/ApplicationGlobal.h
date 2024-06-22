@@ -52,6 +52,10 @@ public:
 
 	void init(QApplication *a);
 
+	void writeLog(const char *ptr, int len, bool record);
+	void writeLog(const std::string_view &str, bool record);
+	void writeLog(const QString &str, bool record);
+
 	QString OpenAiApiKey() const
 	{
 		if (appsettings.use_openai_api_key_environment_value) {

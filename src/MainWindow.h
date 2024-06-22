@@ -127,11 +127,6 @@ public:
 		GroupItem = -1,
 	};
 
-	enum class CallType {
-		DIRECT,
-		EMIT_SIGNAL,
-	};
-
 private:
 
 	struct ObjectData {
@@ -309,8 +304,6 @@ private:
 	QIcon getSignatureBadIcon() const;
 	QPixmap getTransparentPixmap() const;
 	QStringList findGitObject(const QString &id) const;
-	void writeLog(const char *ptr, int len, bool record);
-	void writeLog(const QString &str, bool record);
 	QList<BranchLabel> sortedLabels(RepositoryWrapperFrame *frame, int row) const;
 	void saveApplicationSettings();
 	void loadApplicationSettings();
@@ -600,10 +593,20 @@ private slots:
 
 	void test();
 	void toggleMaximized();
+
+	// progress handler
+private:
+	void setupProgressHandler();
 public:
 	void setProgress(float progress);
 	void showProgress(const QString &text, bool cancel_button);
 	void hideProgress();
+signals:
+	void signalSetProgress(float progress);
+	void signalShowProgress(const QString &text, bool cancel_button);
+	void signalHideProgress();
+
+	// log handler
 protected slots:
 	void onLogIdle();
 public:
@@ -612,17 +615,26 @@ public:
 		MainWindow::FilesListType files_list_type;
 		std::vector<ObjectData> object_data;
 	};
-private:
-	void showFileList(FilesListType files_list_type, CallType calltype = CallType::DIRECT);
-	void addFileObjectData(const ExchangeData &data, CallType calltype = CallType::DIRECT);
-private slots:
-	void onShowFileList(const ExchangeData &data);
-	void onAddFileObjectData(const ExchangeData &data);
-signals:
-	void doShowFileList(const ExchangeData &data);
-	void doAddFileObjectData(const ExchangeData &data);
+	void writeLog(const char *ptr, int len, bool record);
+	void writeLog(std::string_view const &str, bool record);
+	void writeLog(const QString &str, bool record);
 signals:
 	void signalWriteLog(QByteArray ba, bool receive);
+
+private:
+	void showFileList(FilesListType files_list_type);
+signals:
+	void signalShowFileList(FilesListType files_list_type);
+private:
+	void setupShowFileListHandler();
+
+private:
+	void setupAddFileObjectData();
+	void addFileObjectData(const ExchangeData &data);
+signals:
+	void signalAddFileObjectData(const ExchangeData &data);
+
+
 	void remoteInfoChanged();
 	void updateButton();
 };

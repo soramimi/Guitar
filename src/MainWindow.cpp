@@ -200,10 +200,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	hideProgress();
-	setUnknownRepositoryInfo();
+	setupShowFileListHandler();
+	setupProgressHandler();
+	setupAddFileObjectData();
 
-	connect(this, &MainWindow::doShowFileList, this, &MainWindow::onShowFileList);
+	setUnknownRepositoryInfo();
+	hideProgress();
 
 	ui->frame_repository_wrapper->bind(this
 									   , ui->tableWidget_log
@@ -793,22 +795,35 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 	setInteractionCanceled(false);
 }
 
+void MainWindow::setupProgressHandler()
+{
+	connect(this, &MainWindow::signalSetProgress, this, [&](float progress) {
+		ui->label_progress->setProgress(progress);
+	});
+	connect(this, &MainWindow::signalHideProgress, this, [&]() {
+		ui->frame_progress->setVisible(false);
+	});
+	connect(this, &MainWindow::signalShowProgress, this, [&](QString const &text, bool cancel_button) {
+		ui->toolButton_cancel->setVisible(cancel_button);
+		ui->label_progress->setText(text);
+		ui->label_progress->setProgress(0.0f);
+		ui->frame_progress->setVisible(true);
+	});
+}
+
 void MainWindow::setProgress(float progress)
 {
-	ui->label_progress->setProgress(progress);
+	emit signalSetProgress(progress);
 }
 
 void MainWindow::showProgress(QString const &text, bool cancel_button)
 {
-	ui->toolButton_cancel->setVisible(cancel_button);
-	ui->label_progress->setText(text);
-	ui->label_progress->setProgress(0.0f);
-	ui->frame_progress->setVisible(true);
+	emit signalShowProgress(text, cancel_button);
 }
 
 void MainWindow::hideProgress()
 {
-	ui->frame_progress->setVisible(false);
+	emit signalHideProgress();
 }
 
 QString MainWindow::treeItemName(QTreeWidgetItem *item)
@@ -2692,36 +2707,6 @@ void MainWindow::updateRepositoriesList()
 }
 
 /**
- * @brief ファイルリストの表示切り替え
- * @param files_list_type
- */
-void MainWindow::showFileList(FilesListType files_list_type, CallType calltype)
-{
-	if (calltype == CallType::EMIT_SIGNAL) {
-		ExchangeData data;
-		data.files_list_type = files_list_type;
-		emit doShowFileList(data);
-		return;
-	}
-
-	clearDiffView();
-
-	switch (files_list_type) {
-	case FilesListType::SingleList:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
-		break;
-	case FilesListType::SideBySide:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
-		break;
-	}
-}
-
-void MainWindow::onShowFileList(const ExchangeData &data)
-{
-	showFileList(data.files_list_type, CallType::DIRECT);
-}
-
-/**
  * @brief ファイルリストを消去
  * @param frame
  */
@@ -3241,21 +3226,28 @@ void MainWindow::setPtyProcessOk(bool pty_process_ok)
 
 bool MainWindow::fetch(GitPtr g, bool prune)
 {
-	setPtyCondition(PtyCondition::Fetch);
-	setPtyProcessOk(true);
-	setProgress(-1.0f);
-	showProgress(tr("Fetching..."), false);
-	PtyProcess *pty = getPtyProcess();
-	std::thread th([this, g, prune, pty](){
-		g->fetch(pty, prune);
-	});
-	while (1) {
-		if (pty->wait(1)) break;
-		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-	}
+	bool ret = false;
+
+	std::thread th([&](GitPtr g, bool prune){
+		setProgress(-1.0f);
+		showProgress(tr("Fetching..."), false);
+		setPtyCondition(PtyCondition::Fetch);
+		setPtyProcessOk(true);
+		PtyProcess *pty = getPtyProcess();
+		// std::thread th2([this, g, prune, pty](){
+			g->fetch(pty, prune);
+		// });
+		while (1) {
+			if (pty->wait(1)) break;
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
+		// th2.join();
+		ret = getPtyProcessOk();
+		hideProgress();
+	}, g, prune);
+
 	th.join();
-	hideProgress();
-	return getPtyProcessOk();
+	return ret;
 }
 
 bool MainWindow::fetch_tags_f(GitPtr g)
@@ -3732,6 +3724,11 @@ void MainWindow::writeLog(const char *ptr, int len, bool record)
 	internalWriteLog(ptr, len, record);
 }
 
+void MainWindow::writeLog(const std::string_view &str, bool record)
+{
+	internalWriteLog(str.data(), (int)str.size(), record);
+}
+
 void MainWindow::writeLog(const QString &str, bool record)
 {
 	std::string s = str.toStdString();
@@ -3904,35 +3901,76 @@ void MainWindow::updateUncommitedChanges()
  * @param id コミットID
  * @param wait
  */
-void MainWindow::addFileObjectData(ExchangeData const &data, CallType calltype)
+void MainWindow::setupAddFileObjectData()
 {
-	if (calltype == CallType::EMIT_SIGNAL) {
-		emit addFileObjectData(data);
-		return;
-	}
+	connect(this, &MainWindow::signalAddFileObjectData, this, [&](const ExchangeData &data){
+		clearFileList(data.frame);
 
-	clearFileList(data.frame);
-
-	for (ObjectData const &obj : data.object_data) {
-		QListWidgetItem *item = newListWidgetFileItem(obj);
-		switch (data.files_list_type) {
-		case FilesListType::SingleList:
-			data.frame->fileslistwidget()->addItem(item);
-			break;
-		case FilesListType::SideBySide:
-			if (obj.staged) {
-				data.frame->stagedFileslistwidget()->addItem(item);
-			} else {
-				data.frame->unstagedFileslistwidget()->addItem(item);
+		for (ObjectData const &obj : data.object_data) {
+			QListWidgetItem *item = newListWidgetFileItem(obj);
+			switch (data.files_list_type) {
+			case FilesListType::SingleList:
+				data.frame->fileslistwidget()->addItem(item);
+				break;
+			case FilesListType::SideBySide:
+				if (obj.staged) {
+					data.frame->stagedFileslistwidget()->addItem(item);
+				} else {
+					data.frame->unstagedFileslistwidget()->addItem(item);
+				}
+				break;
 			}
-			break;
 		}
-	}
+	});
 }
 
-void MainWindow::onAddFileObjectData(ExchangeData const &data)
+void MainWindow::addFileObjectData(ExchangeData const &data)
 {
-	addFileObjectData(data);
+	emit signalAddFileObjectData(data);
+}
+
+
+
+/**
+ * @brief ファイルリストの表示切り替え
+ * @param files_list_type
+ */
+void MainWindow::showFileList(FilesListType files_list_type)
+{
+	// if (calltype == CallType::EMIT_SIGNAL) {
+	// 	ExchangeData data;
+	// 	data.files_list_type = files_list_type;
+	// 	emit signalShowFileList(data);
+	// 	return;
+	// }
+
+	// clearDiffView();
+
+	// switch (files_list_type) {
+	// case FilesListType::SingleList:
+	// 	ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
+	// 	break;
+	// case FilesListType::SideBySide:
+	// 	ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
+	// 	break;
+	// }
+	emit signalShowFileList(files_list_type);
+}
+
+void MainWindow::setupShowFileListHandler()
+{
+	connect(this, &MainWindow::signalShowFileList, this, [&](FilesListType files_list_type){
+		clearDiffView();
+
+		switch (files_list_type) {
+		case FilesListType::SingleList:
+			ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
+			break;
+		case FilesListType::SideBySide:
+			ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
+			break;
+		}
+	});
 }
 
 void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &id)
@@ -3978,7 +4016,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 				}
 			}
 
-			showFileList(xdata.files_list_type, CallType::EMIT_SIGNAL);
+			showFileList(xdata.files_list_type);
 
 			for (Git::FileStatus const &s : m->uncommited_changes_file_list) {
 				bool staged = (s.isStaged() && s.code_y() == ' ');
@@ -4044,7 +4082,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 			addDiffItems(diffResult(), AddItem);
 		}
 
-		addFileObjectData(xdata, CallType::EMIT_SIGNAL);
+		addFileObjectData(xdata);
 
 		for (Git::Diff const &diff : *diffResult()) {
 			QString key = GitDiff::makeKey(diff);
@@ -7181,6 +7219,4 @@ Terminal=false
 
 void MainWindow::test()
 {
-	MainWindow::ExchangeData data;
-	emit doShowFileList(data);
 }
