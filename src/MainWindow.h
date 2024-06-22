@@ -57,6 +57,8 @@ public:
 	std::vector<std::string> lines;
 };
 
+class AbstractGitCommandItem;
+
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 	friend class MainWindowHelperThread;
@@ -631,12 +633,18 @@ private:
 private:
 	void setupAddFileObjectData();
 	void addFileObjectData(const ExchangeData &data);
+
 signals:
 	void signalAddFileObjectData(const ExchangeData &data);
 
-
 	void remoteInfoChanged();
+private:
+	bool pull(GitPtr g);
+
 	void updateButton();
+	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);
+protected:
+public:
 };
 Q_DECLARE_METATYPE(MainWindow::ExchangeData)
 

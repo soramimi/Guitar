@@ -205,7 +205,6 @@ MainWindow::MainWindow(QWidget *parent)
 	setupProgressHandler();
 	setupAddFileObjectData();
 
-	setUnknownRepositoryInfo();
 
 	ui->frame_repository_wrapper->bind(this
 									   , ui->tableWidget_log
@@ -217,6 +216,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 	loadApplicationSettings();
 	setupExternalPrograms();
+
+	setUnknownRepositoryInfo();
+
 	m->starting_dir = QDir::current().absolutePath();
 
 	{ // load graphic resources
@@ -2061,7 +2063,7 @@ void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const
 	reopenRepository(true, [&](GitPtr g){
 		g->push_u(set_upstream, remote, branch, force, getPtyProcess());
 		while (1) {
-			if (getPtyProcess()->wait(1)) break;
+			if (getPtyProcess()->wait(10)) break;
 			QApplication::processEvents();
 		}
 		exitcode = getPtyProcess()->getExitCode();
@@ -3224,56 +3226,105 @@ void MainWindow::setPtyProcessOk(bool pty_process_ok)
 	m->pty_process_ok = pty_process_ok;
 }
 
-bool MainWindow::fetch(GitPtr g, bool prune)
+void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
+{
+	m->pty_condition = ptyCondition;
+}
+
+//
+
+class AbstractGitCommandItem {
+public:
+	GitPtr g;
+	PtyProcess *pty = nullptr;
+	QString progress_message;
+	AbstractGitCommandItem(QString const &progress_message)
+		: progress_message(progress_message)
+	{
+	}
+	virtual ~AbstractGitCommandItem() = default;
+	virtual void perform() = 0;
+};
+
+class GitCommandItem_fetch : public AbstractGitCommandItem {
+public:
+	bool prune;
+	GitCommandItem_fetch(QString const &progress_message, bool prune)
+		: AbstractGitCommandItem(progress_message)
+		, prune(prune)
+	{
+	}
+	void perform() override
+	{
+		g->fetch(pty, prune);
+	}
+};
+
+class GitCommandItem_fetch_tags_f : public AbstractGitCommandItem {
+public:
+	GitCommandItem_fetch_tags_f(QString const &progress_message)
+		: AbstractGitCommandItem(progress_message)
+	{
+	}
+	void perform() override
+	{
+		g->fetch_tags_f(pty);
+	}
+};
+
+class GitCommandItem_pull : public AbstractGitCommandItem {
+public:
+	GitCommandItem_pull(QString const &progress_message)
+		: AbstractGitCommandItem(progress_message)
+	{
+	}
+	void perform() override
+	{
+		g->pull(pty);
+	}
+};
+
+
+bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params)
 {
 	bool ret = false;
+	params->g = g;
 
-	struct FetchParams {
-		PtyProcess *pty = nullptr;
-		GitPtr g;
-		bool prune;
-	};
-	FetchParams params;
-	params.g = g;
-	params.prune = prune;
-
-	auto Func = [&](FetchParams params){
-		params.g->fetch(params.pty, params.prune);
-	};
-
-	std::thread th([&](FetchParams params){
+	std::thread th([&](std::shared_ptr<AbstractGitCommandItem> params){
 		setProgress(-1.0f);
-		showProgress(tr("Fetching..."), false);
+		showProgress(params->progress_message, false);
 		setPtyCondition(PtyCondition::Fetch);
 		setPtyProcessOk(true);
-		params.pty = getPtyProcess();
+		params->pty = getPtyProcess();
 
-		Func(params);
+		params->perform();
 
-		while (!params.pty->wait(1));
+		while (!params->pty->wait(1));
 		ret = getPtyProcessOk();
 		hideProgress();
 	}, params);
 
 	th.join();
 	return ret;
+
+}
+
+bool MainWindow::fetch(GitPtr g, bool prune)
+{
+	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
+	return runPtyGit(g, params);
 }
 
 bool MainWindow::fetch_tags_f(GitPtr g)
 {
-	setPtyCondition(PtyCondition::Fetch);
-	setPtyProcessOk(true);
-	g->fetch_tags_f(getPtyProcess());
-	while (1) {
-		if (getPtyProcess()->wait(1)) break;
-		QApplication::processEvents();
-	}
-	return getPtyProcessOk();
+	std::shared_ptr<GitCommandItem_fetch_tags_f> params = std::make_shared<GitCommandItem_fetch_tags_f>(tr("Fetching tags..."));
+	return runPtyGit(g, params);
 }
 
-void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
+bool MainWindow::pull(GitPtr g)
 {
-	m->pty_condition = ptyCondition;
+	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
+	return runPtyGit(g, params);
 }
 
 bool MainWindow::interactionCanceled() const
@@ -4690,13 +4741,7 @@ void MainWindow::on_action_pull_triggered()
 	if (!isOnlineMode()) return;
 
 	reopenRepository(true, [&](GitPtr g){
-		setPtyCondition(PtyCondition::Pull);
-		setPtyProcessOk(true);
-		g->pull(getPtyProcess());
-		while (1) {
-			if (getPtyProcess()->wait(1)) break;
-			QApplication::processEvents();
-		}
+		pull(g);
 	});
 }
 
