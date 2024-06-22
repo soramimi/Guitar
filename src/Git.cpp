@@ -1248,6 +1248,31 @@ std::optional<QByteArray> Git::cat_file(CommitID const &id)
 	return std::nullopt;
 }
 
+QString Git::queryEntireCommitMessage(CommitID const &id)
+{
+	QString ret;
+	auto file = cat_file(id);
+	if (file) {
+		QString message = QString::fromUtf8(file->constData(), file->size());
+		QStringList lines = message.split('\n');
+		bool header = true;
+		for (int i = 0; i < lines.size(); i++) {
+			QString line = lines[i];
+			if (header) {
+				if (line.isEmpty()) {
+					header = false;
+				}
+			} else {
+				if (!ret.isEmpty()) {
+					ret += '\n';
+				}
+				ret += lines[i];
+			}
+		}
+	}
+	return ret;
+}
+
 void Git::resetFile(QString const &path)
 {
 	git("checkout -- \"" + path + "\"");

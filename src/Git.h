@@ -644,6 +644,7 @@ public:
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	static CommitItem parseCommit(const QByteArray &ba);
+	QString queryEntireCommitMessage(const CommitID &id);
 };
 
 struct NamedCommitItem {

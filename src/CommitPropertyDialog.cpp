@@ -22,7 +22,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git:
 	init(mw);
 }
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)  // used by BlameWindow
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -54,14 +54,27 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	ui->pushButton_jump->setVisible(false);
 
 	m->mainwindow = mw;
-
-	ui->lineEdit_message->setText(m->commit.message);
+	
+	QString message = m->commit.message;
+	QString detail;
+	{
+		QString s = mainwindow()->git()->queryEntireCommitMessage(m->commit.commit_id);
+		if (s.startsWith(message)) {
+			s = s.mid(message.length());
+		}
+		detail = s.trimmed();
+	}
+	if (detail.isEmpty()) {
+		ui->plainTextEdit_message_detail->setVisible(false);
+	} else {
+		ui->plainTextEdit_message_detail->setPlainText(detail);
+	}
+	
+	ui->lineEdit_message->setText(message);
 	ui->lineEdit_commit_id->setText(m->commit.commit_id.toQString());
 	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
 	ui->lineEdit_author->setText(m->commit.author);
 	ui->lineEdit_mail->setText(m->commit.email);
-
-	// ui->label_signature_icon->setVisible(false);
 
 	QString text;
 	for (Git::CommitID const &id : m->commit.parent_ids) {
