@@ -199,13 +199,13 @@ MainWindow::MainWindow(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
+	ui->frame_progress->setVisible(false);
 
 	setupShowFileListHandler();
 	setupProgressHandler();
 	setupAddFileObjectData();
 
 	setUnknownRepositoryInfo();
-	hideProgress();
 
 	ui->frame_repository_wrapper->bind(this
 									   , ui->tableWidget_log
@@ -3228,23 +3228,32 @@ bool MainWindow::fetch(GitPtr g, bool prune)
 {
 	bool ret = false;
 
-	std::thread th([&](GitPtr g, bool prune){
+	struct FetchParams {
+		PtyProcess *pty = nullptr;
+		GitPtr g;
+		bool prune;
+	};
+	FetchParams params;
+	params.g = g;
+	params.prune = prune;
+
+	auto Func = [&](FetchParams params){
+		params.g->fetch(params.pty, params.prune);
+	};
+
+	std::thread th([&](FetchParams params){
 		setProgress(-1.0f);
 		showProgress(tr("Fetching..."), false);
 		setPtyCondition(PtyCondition::Fetch);
 		setPtyProcessOk(true);
-		PtyProcess *pty = getPtyProcess();
-		// std::thread th2([this, g, prune, pty](){
-			g->fetch(pty, prune);
-		// });
-		while (1) {
-			if (pty->wait(1)) break;
-			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		}
-		// th2.join();
+		params.pty = getPtyProcess();
+
+		Func(params);
+
+		while (!params.pty->wait(1));
 		ret = getPtyProcessOk();
 		hideProgress();
-	}, g, prune);
+	}, params);
 
 	th.join();
 	return ret;

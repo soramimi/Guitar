@@ -235,7 +235,8 @@ void Win32PtyProcess::start(QString const &cmdline, QString const &env, QVariant
 
 bool Win32PtyProcess::wait(unsigned long time)
 {
-	return QThread::wait(time) && m->th_output_reader.wait(time);
+	std::this_thread::sleep_for(std::chrono::milliseconds(time));
+	return m->th_output_reader.wait(time);
 }
 
 void Win32PtyProcess::stop()
