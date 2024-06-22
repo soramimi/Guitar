@@ -2,7 +2,6 @@
 #define FILETYPE_H
 
 #include <magic.h>
-#include <string>
 #include <QByteArray>
 
 class FileType {
@@ -20,7 +19,8 @@ public:
 	}
 	bool open();
 	void close();
-	std::string mime_by_data(char const *bin, int len);
+	QString mime_by_data(char const *bin, int len);
+	QString mime_by_file(const QString &path);
 };
 
 #endif // FILETYPE_H

@@ -32,15 +32,27 @@ void FileType::close()
 	}
 }
 
-std::string FileType::mime_by_data(const char *bin, int len)
+QString FileType::mime_by_data(const char *bin, int len)
 {
-	if (!bin || len < 1) return std::string();
+	Q_ASSERT(magic_cookie); // not called open() yet or failed to load magic file
+
+	if (!bin || len < 1) return {};
 	auto *p = magic_buffer(magic_cookie, bin, len);
-	std::string s;
-	if (p) s = p;
-	auto i = s.find(';');
-	if (i != std::string::npos) {
-		s = s.substr(0, i);
+	if (!p) return {};
+	QString s = p;
+	auto i = s.indexOf(';');
+	if (i >= 0) {
+		s = s.left(i);
 	}
-	return s;
+	return s.trimmed();
+}
+
+QString FileType::mime_by_file(QString const &path)
+{
+	QFile file(path);
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		return mime_by_data(ba.data(), ba.size());
+	}
+	return {};
 }

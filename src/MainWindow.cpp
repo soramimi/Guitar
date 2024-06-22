@@ -5638,12 +5638,7 @@ QString MainWindow::determinFileType(QByteArray const &in) const
 
 	QString mimetype;
 	if (!in2.isEmpty()) {
-		std::string s = global->filetype.mime_by_data(in2.data(), in2.size());
-		auto i = s.find(';');
-		if (i != std::string::npos) {
-			s = s.substr(0, i);
-		}
-		mimetype = QString::fromStdString(s).trimmed();
+		mimetype = global->filetype.mime_by_data(in2.data(), in2.size());
 	}
 	return mimetype;
 }
@@ -7219,4 +7214,11 @@ Terminal=false
 
 void MainWindow::test()
 {
+	QFile file("C:/develop/Guitar/src/resources/image/Guitar2.png");
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		auto mime = global->filetype.mime_by_data(ba.data(), ba.size());
+		qDebug() << mime;
+	}
+
 }

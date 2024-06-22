@@ -1,11 +1,11 @@
 #ifndef APPLICATIONGLOBAL_H
 #define APPLICATIONGLOBAL_H
 
-#include "../filetype/filetype.h"
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "Theme.h"
 #include "common/misc.h"
+#include "FileType.h"
 #include "webclient.h"
 #include <QColor>
 #include <QString>
