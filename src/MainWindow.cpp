@@ -2001,18 +2001,22 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 
 	QString message;
 	QString previousMessage;
-
-	if (amend) {
-		message = getCommitLog(frame)[0].message;
-	} else {
-		QString id = g->getCherryPicking();
-		if (Git::isValidID(id)) {
-			message = g->getMessage(id);
+	
+	{
+		std::lock_guard lock(frame->commit_log_mutex);
+		
+		if (amend) {
+			message = getCommitLog(frame)[0].message;
 		} else {
-			for (Git::CommitItem const &item : getCommitLog(frame).list) {
-				if (item.commit_id.isValid()) {
-					previousMessage = item.message;
-					break;
+			QString id = g->getCherryPicking();
+			if (Git::isValidID(id)) {
+				message = g->getMessage(id);
+			} else {
+				for (Git::CommitItem const &item : getCommitLog(frame).list) {
+					if (item.commit_id.isValid()) {
+						previousMessage = item.message;
+						break;
+					}
 				}
 			}
 		}
@@ -4341,16 +4345,21 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 	bool block = logtablewidget->blockSignals(true);
 	{
 		frame->prepareLogTableWidget();
-
-		auto const &logs = getCommitLog(frame);
-		const int count = (int)logs.size();
+		
+		Git::CommitItemList commit_log;
+		{
+			std::lock_guard lock(frame->commit_log_mutex);
+			commit_log = frame->commit_log;
+		}
+		
+		const int count = (int)commit_log.size();
 
 		logtablewidget->setRowCount(count);
 
 		int selrow = 0;
 
 		for (int row = 0; row < count; row++) {
-			Git::CommitItem const *commit = &logs[row];
+			Git::CommitItem const *commit = &commit_log[row];
 			{
 				auto *item = new QTableWidgetItem;
 				item->setData(IndexRole, row);
@@ -4396,7 +4405,7 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 				datetime = misc::makeDateTimeString(commit->commit_date);
 				author = commit->author;
 				message = commit->message;
-				message_ex = makeCommitInfoText(frame, row, &(*getLabelMap(frame))[row], true);
+				message_ex = makeCommitInfoText(frame, row, &(*getLabelMap(frame))[row], false);
 			}
 			AddColumn(commit_id, false, QString());
 			AddColumn(datetime, false, QString());
@@ -4682,7 +4691,7 @@ void MainWindow::updateStatusBarText(RepositoryWrapperFrame *frame)
 					;
 		}
 	} else if (w == frame->logtablewidget()) {
-		QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame), 0);
+		QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame, false), 0);
 		if (item) {
 			std::lock_guard lock(frame->commit_log_mutex);
 			auto const &logs = getCommitLog(frame);
@@ -5985,7 +5994,7 @@ void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 	
 	Git::CommitItem const selected_commit = selectedCommitItem(frame);
 	
-	m->commit_detail_getter.query(selected_commit.commit_id, true, true); // 詳細情報の更新要求
+	// m->commit_detail_getter.query(selected_commit.commit_id, true, true); // 詳細情報の更新要求
 	
 	// ステータスバー更新
 	updateStatusBarText(frame);

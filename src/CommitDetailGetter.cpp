@@ -15,11 +15,14 @@ CommitDetailGetter::~CommitDetailGetter()
 void CommitDetailGetter::start(GitPtr git)
 {
 	stop();
+	interrupted_ = false;
+	
 	git_ = git;
+	
 	threads_.clear();
 	threads_.resize(4);
 	for (size_t i = 0; i < threads_.size(); i++) {
-		std::thread th([&](){
+		threads_[i] = std::thread([&](){
 			while (1) {
 				Request item;
 				{
@@ -72,7 +75,6 @@ void CommitDetailGetter::start(GitPtr git)
 				}
 			}
 		});
-		threads_[i] = std::move(th);
 	}
 }
 
@@ -96,7 +98,6 @@ void CommitDetailGetter::stop()
 		}
 	}
 	threads_.clear();
-	interrupted_ = false;
 }
 
 /**
