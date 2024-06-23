@@ -4552,7 +4552,9 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 
 	Git::User user;
 
-	std::thread th([this, g, &user](){
+	//// スレッドで並列処理したら、タイミングによって、queryCommitLogが失敗することがあるので、ひとつずつ実行する
+	// std::thread th([this, g, &user](){
+	{
 		// HEAD を取得
 		updateHEAD(g);
 
@@ -4561,13 +4563,13 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 
 		// ユーザー情報を取得
 		user = g->getUser(Git::Source::Default);
-	});
-
+	}
+	// });
 
 	// コミットログとブランチ情報を取得
 	queryCommitLog(frame, g);
 
-	th.join(); // HEADとタグとユーザー情報の取得が終わるまで待つ
+	// th.join(); // HEADとタグとユーザー情報の取得が終わるまで待つ
 
 	// ポジトリの情報を設定
 	{
@@ -7473,11 +7475,6 @@ Terminal=false
 
 void MainWindow::test()
 {
-	QFile file("C:/develop/Guitar/src/resources/image/Guitar2.png");
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray ba = file.readAll();
-		auto mime = global->filetype.mime_by_data(ba.data(), ba.size());
-		qDebug() << mime;
-	}
-
+	Git::CommitItemList list = git()->log_all({}, 10);
+	qDebug() << list.size();
 }
