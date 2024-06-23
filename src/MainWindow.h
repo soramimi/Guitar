@@ -151,7 +151,7 @@ private:
 	void internalOpenRepository(GitPtr g, bool keep_selection = false);
 
 	// void clearLog(RepositoryWrapperFrame *frame);
-	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
+	void openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -196,7 +196,7 @@ private:
 	void deleteRemoteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem &commit);
 	QStringList remoteBranches(RepositoryWrapperFrame *frame, const Git::CommitID &id, QStringList *all);
 	bool isUninitialized();
-	void doLogCurrentItemChanged(RepositoryWrapperFrame *frame);
+	void onLogCurrentItemChanged(RepositoryWrapperFrame *frame);
 	void findNext(RepositoryWrapperFrame *frame);
 	void findText(const QString &text);
 	bool locateCommitID(RepositoryWrapperFrame *frame, QString const &commit_id);
@@ -640,6 +640,7 @@ private:
 	void updateHEAD(GitPtr g);
 	void jump(GitPtr g, const Git::CommitID &id);
 	void jump(GitPtr g, const QString &text);
+	void queryTags(GitPtr g);
 protected:
 public:
 	void runFetch_(GitPtr g);

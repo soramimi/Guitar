@@ -4332,7 +4332,7 @@ Git::Object MainWindow::catFile(QString const &id)
 
 void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
 {
-	openRepositoryWithFrame(frame(), g, true, true, false, keep_selection);
+	openRepositoryMain(frame(), g, true, true, false, keep_selection);
 }
 
 void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
@@ -4429,7 +4429,7 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 void MainWindow::setupUpdateCommitLog()
 {
 	connect(this, &MainWindow::signalUpdateCommitLog, this, [this](){
-		openRepositoryWithFrame(frame(), git(), false, false, false, true);
+		openRepositoryMain(frame(), git(), false, false, false, true);
 	});
 }
 
@@ -4454,8 +4454,6 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 	// ブランチを取得
 	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要なので、ここでブランチを取得
 	std::thread t_branches([this, frame, g](){
-		QElapsedTimer t1;
-		t1.start();
 		frame->branch_map.clear();
 		QList<Git::Branch> branches = g->branches();
 		for (Git::Branch const &b : branches) {
@@ -4464,14 +4462,10 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 			}
 			commitToBranchMapRef(frame)[b.id].append(b);
 		}
-		qDebug() << "branches: " << t1.elapsed();
 	});
 
 	std::thread t_commit_log([this, frame, g](){
-		QElapsedTimer t1;
-		t1.start();
 		setCommitLog(frame, retrieveCommitLog(g));
-		qDebug() << "commit log: " << t1.elapsed();
 	});
 
 	t_branches.join();
@@ -4493,7 +4487,16 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 			}
 		}
 	}
+}
 
+void MainWindow::queryTags(GitPtr g)
+{
+	// タグを取得
+	ptrCommitToTagMap(frame())->clear();
+	QList<Git::Tag> tags = g->tags();
+	for (Git::Tag const &tag : tags) {
+		(*ptrCommitToTagMap(frame()))[tag.id].push_back(tag);
+	}
 }
 
 void MainWindow::runFetch_(GitPtr g)
@@ -4504,14 +4507,7 @@ void MainWindow::runFetch_(GitPtr g)
 	
 	updateFilesList(frame, Git::CommitID());
 	
-	// ログを取得
 	queryCommitLog(frame, g);
-	// タグを取得
-	ptrCommitToTagMap(frame)->clear();
-	QList<Git::Tag> tags = g->tags();
-	for (Git::Tag const &tag : tags) {
-		(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
-	}
 
 	updateRemoteInfo(g);
 }
@@ -4522,9 +4518,12 @@ void MainWindow::updateHEAD(GitPtr g)
 	setHeadId(head);
 }
 
-void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
+void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
 	if (!isValidWorkingCopy(g)) return;
+	
+	QElapsedTimer t;
+	t.start();
 
 	getObjCache(frame)->setup(g);
 
@@ -4532,8 +4531,6 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		clearCommitLog(frame);
 	}
 
-	// frame->logtablewidget()->setEnabled(false);
-	// {
 	// リポジトリ情報をクリア
 	{
 		clearLabelMap(frame);
@@ -4544,28 +4541,26 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		ui->label_repo_name->setText(QString());
 		ui->label_branch_name->setText(QString());
 	}
-
-	// HEAD を取得
-	{
+	
+	Git::User user;
+	
+	std::thread th([this, g, &user](){
+		// HEAD を取得
 		updateHEAD(g);
-	}
-
+		
+		// タグを取得		
+		queryTags(g);
+		
+		// ユーザー情報を取得
+		user = g->getUser(Git::Source::Default);
+	});
+	
+	
 	// コミットログとブランチ情報を取得
-	{
-		// QElapsedTimer t;
-		// t.start();
-		queryCommitLog(frame, g);
-		// qDebug() << "queryCommitLog:" << t.elapsed();
-	}
-
-	if (do_fetch) {
-		do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
-		setForceFetch(false);
-		if (do_fetch) {
-			fetch(g, false);
-		}
-	}
-
+	queryCommitLog(frame, g);
+	
+	th.join(); // HEADとタグとユーザー情報の取得が終わるまで待つ
+	
 	// ポジトリの情報を設定
 	{
 		QString branch_name;
@@ -4582,14 +4577,7 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
 	}
-
-	// ユーザー情報を取得、ウィンドウタイトルを設定
-	{
-		Git::User user = g->getUser(Git::Source::Default);
-		updateWindowTitle(user);
-	}
-
-
+	
 	// コミットログを作成
 	{
 		int scroll_pos = -1;
@@ -4601,15 +4589,28 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 
 		makeCommitLog(frame, scroll_pos, select_row);
 	}
-	// }
-	// frame->logtablewidget()->setEnabled(true);
-
+	
+	// ウィンドウタイトルを更新
+	updateWindowTitle(user);
+	
+	// コミットログテーブルを更新	
 	updateCommitLogTable(frame, 0);
-
+	
+	// ファイルリストを更新
+	onLogCurrentItemChanged(frame);
+	
+	//
+	
 	m->commit_detail_getter.stop();
 	m->commit_detail_getter.start(g->dup());
-
-	doLogCurrentItemChanged(frame);
+	
+	if (do_fetch) {
+		do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
+		setForceFetch(false);
+		if (do_fetch) {
+			fetch(g, false);
+		}
+	}
 }
 
 /**
@@ -5977,7 +5978,7 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 /**
  * @brief コミットログの選択が変化した
  */
-void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
+void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 {
 	showFileList(FilesListType::SingleList);
 	clearFileList(frame);
@@ -6133,7 +6134,7 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {
-	doLogCurrentItemChanged(frame());
+	onLogCurrentItemChanged(frame());
 	m->searching = false;
 }
 
