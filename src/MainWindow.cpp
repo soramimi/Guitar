@@ -117,9 +117,9 @@ protected:
 	void run() override
 	{
 		global->mainwindow->setLogEnabled(g, true);
-		
+
 		callback(g);
-		
+
 		global->mainwindow->setLogEnabled(g, false);
 	}
 };
@@ -1022,7 +1022,7 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 			auto a = m->commit_detail_getter.query(commit.commit_id, true, true);
 			c = a.sign_verify;
 		}
-		
+
 		Git::SignatureGrade sg = Git::evaluateSignature(c);
 		switch (sg) {
 		case Git::SignatureGrade::Good: // 署名あり、検証OK
@@ -1037,7 +1037,7 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 	} else {
 		qDebug();
 	}
-	
+
 	return {}; // 署名なし
 }
 
@@ -1700,7 +1700,7 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 		qDebug() << "Guitar: git pointer is null";
 		return;
 	}
-	
+
 	internalOpenRepository(g, keep_selection);
 }
 
@@ -1828,7 +1828,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
 void MainWindow::updateRemoteInfo(GitPtr g)
 {
 	queryRemotes(g);
-	
+
 	m->current_remote_name = QString();
 	{
 		Git::Branch const &r = currentBranch();
@@ -2001,10 +2001,10 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 
 	QString message;
 	QString previousMessage;
-	
+
 	{
 		std::lock_guard lock(frame->commit_log_mutex);
-		
+
 		if (amend) {
 			message = getCommitLog(frame)[0].message;
 		} else {
@@ -2041,11 +2041,15 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 			}
 			bool sign = dlg.isSigningEnabled();
 			bool ok;
+
+			PtyProcess *pty = getPtyProcess();
 			if (amend || dlg.isAmend()) {
-				ok = g->commit_amend_m(text, sign, getPtyProcess());
+				ok = g->commit_amend_m(text, sign, pty);
 			} else {
-				ok = g->commit(text, sign, getPtyProcess());
+				ok = g->commit(text, sign, pty);
 			}
+			while (!pty->wait(1)); // wait for the process to finish
+
 			if (ok) {
 				setForceFetch(true);
 				updateStatusBarText(frame);
@@ -2843,7 +2847,7 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_n
 int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	auto const &logs = getCommitLog(frame);
 	for (size_t i = 0; i < logs.size(); i++) {
 		Git::CommitItem const &item = logs[i];
@@ -2929,7 +2933,7 @@ const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, i
 void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	auto const &logs = getCommitLog(frame);
 	auto *logsp = getCommitLogPtr(frame);
 
@@ -3323,7 +3327,7 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 {
 	bool ret = false;
 	params->g = g;
-	
+
 	if (1) { // for debug
 		params->perform();
 	} else {
@@ -3333,21 +3337,21 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 			setPtyCondition(PtyCondition::Fetch);
 			setPtyProcessOk(true);
 			params->pty = getPtyProcess();
-			
+
 			params->perform();
-			
+
 			while (!params->pty->wait(1));
 			ret = getPtyProcessOk();
 			hideProgress();
-			
+
 			if (params->update_commit_log) {
 				updateCommitLog();
 			}
 		}, params);
-		
+
 		th.join();
 	}
-	
+
 	return ret;
 }
 
@@ -3565,7 +3569,7 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
  * @param g
  * @return
  */
-Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g)
+Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
 {
 	Git::CommitItemList list = g->log(limitLogCount());
 
@@ -3645,11 +3649,11 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 		std::lock_guard lock(frame->commit_log_mutex);
 		return makeCommitInfoText(frame, row, label_list, false);
 	}
-	
+
 	QString message_ex;
-	
+
 	Git::CommitItem commit = getCommitLog(frame)[row];
-	
+
 	{ // branch
 		if (label_list) {
 			if (commit.commit_id == getHeadId()) {
@@ -4101,12 +4105,12 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 			showFileList(xdata.files_list_type);
 			xdata.frame = frame;
 			xdata.files_list_type = xdata.files_list_type;
-			
+
 			auto AddItem = [&](ObjectData const &obj){
 				xdata.object_data.push_back(obj);
 			};
 			addDiffItems(diffResult(), AddItem);
-			
+
 		} else { // Uncommited changes が選択されているとき
 
 			updateUncommitedChanges();
@@ -4345,13 +4349,13 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 	bool block = logtablewidget->blockSignals(true);
 	{
 		frame->prepareLogTableWidget();
-		
+
 		Git::CommitItemList commit_log;
 		{
 			std::lock_guard lock(frame->commit_log_mutex);
 			commit_log = frame->commit_log;
 		}
-		
+
 		const int count = (int)commit_log.size();
 
 		logtablewidget->setRowCount(count);
@@ -4460,25 +4464,20 @@ void MainWindow::updateCommitLog()
  */
 void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 {
-	// ブランチを取得
-	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要なので、ここでブランチを取得
-	std::thread t_branches([this, frame, g](){
-		frame->branch_map.clear();
-		QList<Git::Branch> branches = g->branches();
-		for (Git::Branch const &b : branches) {
-			if (b.isCurrent()) {
-				setCurrentBranch(b);
-			}
-			commitToBranchMapRef(frame)[b.id].append(b);
+	frame->branch_map.clear();
+
+	Git::CommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
+	QList<Git::Branch> branches = g->branches(); // ブランチを取得
+
+	setCommitLog(frame, commit_log);
+
+	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
+	for (Git::Branch const &b : branches) {
+		if (b.isCurrent()) {
+			setCurrentBranch(b);
 		}
-	});
-
-	std::thread t_commit_log([this, frame, g](){
-		setCommitLog(frame, retrieveCommitLog(g));
-	});
-
-	t_branches.join();
-	t_commit_log.join();
+		commitToBranchMapRef(frame)[b.id].append(b);
+	}
 
 	{
 		// Uncommited changes の処理
@@ -4489,7 +4488,7 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 			item.message = tr("Uncommited changes");
 			{
 				std::lock_guard lock(frame->commit_log_mutex);
-				
+
 				auto logptr = getCommitLogPtr(frame);
 				logptr->list.insert(logptr->list.begin(), item);
 				logptr->updateIndex();
@@ -4511,11 +4510,11 @@ void MainWindow::queryTags(GitPtr g)
 void MainWindow::runFetch_(GitPtr g)
 {
 	RepositoryWrapperFrame *frame = this->frame();
-	
+
 	detectGitServerType(g);
-	
+
 	updateFilesList(frame, Git::CommitID());
-	
+
 	queryCommitLog(frame, g);
 
 	updateRemoteInfo(g);
@@ -4530,7 +4529,7 @@ void MainWindow::updateHEAD(GitPtr g)
 void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
 	if (!isValidWorkingCopy(g)) return;
-	
+
 	QElapsedTimer t;
 	t.start();
 
@@ -4550,26 +4549,26 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 		ui->label_repo_name->setText(QString());
 		ui->label_branch_name->setText(QString());
 	}
-	
+
 	Git::User user;
-	
+
 	std::thread th([this, g, &user](){
 		// HEAD を取得
 		updateHEAD(g);
-		
-		// タグを取得		
+
+		// タグを取得
 		queryTags(g);
-		
+
 		// ユーザー情報を取得
 		user = g->getUser(Git::Source::Default);
 	});
-	
-	
+
+
 	// コミットログとブランチ情報を取得
 	queryCommitLog(frame, g);
-	
+
 	th.join(); // HEADとタグとユーザー情報の取得が終わるまで待つ
-	
+
 	// ポジトリの情報を設定
 	{
 		QString branch_name;
@@ -4586,7 +4585,7 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
 	}
-	
+
 	// コミットログを作成
 	{
 		int scroll_pos = -1;
@@ -4598,21 +4597,21 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 
 		makeCommitLog(frame, scroll_pos, select_row);
 	}
-	
+
 	// ウィンドウタイトルを更新
 	updateWindowTitle(user);
-	
-	// コミットログテーブルを更新	
+
+	// コミットログテーブルを更新
 	updateCommitLogTable(frame, 0);
-	
+
 	// ファイルリストを更新
 	onLogCurrentItemChanged(frame);
-	
+
 	//
-	
+
 	m->commit_detail_getter.stop();
 	m->commit_detail_getter.start(g->dup());
-	
+
 	if (do_fetch) {
 		do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
 		setForceFetch(false);
@@ -4789,7 +4788,7 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 void MainWindow::merge(RepositoryWrapperFrame *frame, Git::CommitItem commit)
 {
 	if (isThereUncommitedChanges()) return;
-	
+
 	if (!commit) {
 		int row = selectedLogIndex(frame);
 		commit = commitItem(frame, row);
@@ -4959,7 +4958,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	if (!treeitem) return;
 
 	RepositoryData const *repo = repositoryItem(treeitem);
-	
+
 	int index = indexOfRepository(treeitem);
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;
@@ -5027,14 +5026,14 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				}
 			}
 		}
-		
+
 		QString open_terminal = tr("Open &terminal");
 		QString open_commandprompt = tr("Open command promp&t");
 		QMenu menu;
 		QAction *a_open = menu.addAction(tr("&Open"));
 		menu.addSeparator();
-		
-		std::map<QAction *, QString> copymap;		
+
+		std::map<QAction *, QString> copymap;
 		QMenu *a_copy = menu.addMenu(tr("&Copy"));
 		{
 			for (QString const &s : strings) {
@@ -5099,16 +5098,16 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	int row = selectedLogIndex(frame());
-	
+
 	Git::CommitItem const commit = commitItem(frame(), row);
 	bool is_valid_commit_id = Git::isValidID(commit.commit_id.toQString());
 	// if is_valid_commit_id == false, commit is uncommited changes.
-	
+
 	QMenu menu;
-	
+
 	QAction *a_copy_id_7letters = is_valid_commit_id ? menu.addAction(tr("Copy commit id (7 letters)")) : nullptr;
 	QAction *a_copy_id_complete = is_valid_commit_id ? menu.addAction(tr("Copy commit id (completely)")) : nullptr;
-	
+
 	std::set<QAction *> copy_label_actions;
 	{
 		QList<BranchLabel> v = sortedLabels(frame(), row);
@@ -5120,15 +5119,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			}
 		}
 	}
-	
+
 	menu.addSeparator();
-	
+
 	QAction *a_checkout = menu.addAction(tr("Checkout/Branch..."));
-	
+
 	menu.addSeparator();
-	
+
 	QAction *a_edit_message = nullptr;
-	
+
 	auto canEditMessage = [&](){
 		if (commit.has_child) return false; // 子がないこと
 		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
@@ -5147,23 +5146,23 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	if (canEditMessage()) {
 		a_edit_message = menu.addAction(tr("Edit message..."));
 	}
-	
+
 	QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
 	QAction *a_rebase = is_valid_commit_id ? menu.addAction(tr("Rebase")) : nullptr;
 	QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 	QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
 	QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
-	
+
 	menu.addSeparator();
-	
+
 	QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
 	QAction *a_delrembranch = remoteBranches(frame(), commit.commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
-	
+
 	menu.addSeparator();
-	
+
 	QAction *a_explore = is_valid_commit_id ? menu.addAction(tr("Explore")) : nullptr;
 	QAction *a_properties = addMenuActionProperty(&menu);
-	
+
 	QAction *a = menu.exec(frame()->logtablewidget()->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_copy_id_7letters) {
@@ -5906,11 +5905,11 @@ QString MainWindow::findFileID(RepositoryWrapperFrame *frame, const QString &com
 Git::CommitItem MainWindow::commitItem(RepositoryWrapperFrame const *frame, int row) const
 {
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	if (row >= 0 && row < (int)frame->commit_log.size()) {
 		return frame->commit_log[row];
 	}
-	
+
 	return {};
 }
 
@@ -5919,9 +5918,9 @@ Git::CommitItem MainWindow::commitItem(RepositoryWrapperFrame const *frame, Git:
 	if (!frame) { // TODO:
 		frame = this->frame();
 	}
-	
+
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	return *frame->commit_log.find(id);
 }
 
@@ -5991,11 +5990,11 @@ void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 {
 	showFileList(FilesListType::SingleList);
 	clearFileList(frame);
-	
+
 	Git::CommitItem const selected_commit = selectedCommitItem(frame);
-	
+
 	// m->commit_detail_getter.query(selected_commit.commit_id, true, true); // 詳細情報の更新要求
-	
+
 	// ステータスバー更新
 	updateStatusBarText(frame);
 	// 少し待ってファイルリストを更新する
@@ -6003,7 +6002,7 @@ void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 		RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(p);
 		updateCurrentFilesList(frame);
 	}, {}, reinterpret_cast<void *>(frame), 300); // 300ms後（キーボードのオートリピート想定）
-	
+
 	updateAncestorCommitMap(frame);
 	frame->logtablewidget()->viewport()->update();
 }
@@ -6013,9 +6012,9 @@ void MainWindow::findNext(RepositoryWrapperFrame *frame)
 	if (m->search_text.isEmpty()) {
 		return;
 	}
-	
+
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	auto const &logs = getCommitLog(frame);
 	for (int pass = 0; pass < 2; pass++) {
 		int row = 0;
@@ -6046,7 +6045,7 @@ void MainWindow::findNext(RepositoryWrapperFrame *frame)
 bool MainWindow::locateCommitID(RepositoryWrapperFrame *frame, QString const &commit_id)
 {
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	auto const &logs = getCommitLog(frame);
 	int row = 0;
 	while (row < (int)logs.size()) {
@@ -6078,9 +6077,9 @@ bool MainWindow::isAncestorCommit(QString const &id)
 void MainWindow::updateAncestorCommitMap(RepositoryWrapperFrame *frame)
 {
 	m->ancestors.clear();
-	
+
 	std::lock_guard lock(frame->commit_log_mutex);
-	
+
 	auto *logsp = getCommitLogPtr(frame);
 	const int LogCount = (int)logsp->size();
 	const int index = selectedLogIndex(frame, false);
@@ -6231,7 +6230,7 @@ int MainWindow::selectedLogIndex(RepositoryWrapperFrame *frame, bool lock) const
 		std::lock_guard lock(frame->commit_log_mutex);
 		return selectedLogIndex(frame, false);
 	}
-	
+
 	auto const &logs = getCommitLog(frame);
 	int i = frame->logtablewidget()->currentRow();
 	if (i >= 0 && i < (int)logs.size()) {
@@ -6709,7 +6708,7 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 void MainWindow::jump(GitPtr g, Git::CommitID const &id)
 {
 	if (!id.isValid()) return;
-	
+
 	int row = rowFromCommitId(frame(), id);
 	if (row < 0) {
 		// No such commit
@@ -6721,7 +6720,7 @@ void MainWindow::jump(GitPtr g, Git::CommitID const &id)
 void MainWindow::jump(GitPtr g, QString const &text)
 {
 	if (text.isEmpty()) return;
-	
+
 	Git::CommitID id = g->rev_parse(text);
 	if (!id.isValid() && Git::isValidID(text)) {
 		QStringList list = findGitObject(text);
@@ -6735,11 +6734,11 @@ void MainWindow::jump(GitPtr g, QString const &text)
 			if (!id.isValid()) return;
 		}
 	}
-	
+
 	if (g->objectType(id) == "tag") {
 		id = getObjCache(frame())->getCommitIdFromTag(g, text);
 	}
-	
+
 	int row = rowFromCommitId(frame(), id);
 	if (row < 0) {
 		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
@@ -7222,11 +7221,11 @@ void MainWindow::on_action_repositories_panel_triggered()
 void MainWindow::on_action_find_triggered()
 {
 	m->searching = false;
-	
+
 	{ // TODO:
 		auto *f = frame();
 		std::lock_guard lock(f->commit_log_mutex);
-		
+
 		if (getCommitLog(f).empty()) {
 			return;
 		}

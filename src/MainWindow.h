@@ -270,7 +270,7 @@ private:
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id);
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
-	Git::CommitItemList retrieveCommitLog(GitPtr g);
+	Git::CommitItemList retrieveCommitLog(GitPtr g) const;
 	std::map<Git::CommitID, QList<Git::Branch> > &commitToBranchMapRef(RepositoryWrapperFrame *frame);
 
 	void updateWindowTitle(const Git::User &user);
