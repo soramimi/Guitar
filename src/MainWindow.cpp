@@ -4419,7 +4419,8 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 		qDebug() << "commit log: " << t1.elapsed();
 	});
 
-	t_branches.join(); // ブランチの処理の終了を待つ
+	t_branches.join();
+	t_commit_log.join();
 
 	{
 		// Uncommited changes の処理
@@ -4434,15 +4435,11 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 		}
 	}
 
-	t_commit_log.join(); // コミットログの処理の終了を待つ
 }
 
 void MainWindow::runFetch_(GitPtr g)
 {
 	RepositoryWrapperFrame *frame = this->frame();
-
-
-	getObjCache(frame)->setup(g);
 
 	detectGitServerType(g);
 
@@ -4458,20 +4455,27 @@ void MainWindow::runFetch_(GitPtr g)
 	}
 
 	updateRemoteInfo(g);
+}
 
-	setHeadId(getObjCache(frame)->revParse(g, "HEAD"));
+void MainWindow::updateHEAD(GitPtr g)
+{
+	auto head = getObjCache(frame())->revParse(g, "HEAD");
+	setHeadId(head);
 }
 
 void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
 	if (!isValidWorkingCopy(g)) return;
 
-	if (clear_log) {
+	getObjCache(frame)->setup(g);
+
+	if (clear_log) { // ログをクリア
 		clearCommitLog(frame);
 	}
 
-	frame->logtablewidget()->setEnabled(false);
-
+	// frame->logtablewidget()->setEnabled(false);
+	// {
+	// リポジトリ情報をクリア
 	{
 		clearLabelMap(frame);
 		setUncommitedChanges(false);
@@ -4482,11 +4486,17 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		ui->label_branch_name->setText(QString());
 	}
 
-	if (query) {
-		QElapsedTimer t;
-		t.start();
+	// HEAD を取得
+	{
+		updateHEAD(g);
+	}
+
+	// コミットログとブランチ情報を取得
+	{
+		// QElapsedTimer t;
+		// t.start();
 		queryCommitLog(frame, g);
-		qDebug() << "queryCommitLog:" << t.elapsed();
+		// qDebug() << "queryCommitLog:" << t.elapsed();
 	}
 
 	if (do_fetch) {
@@ -4497,6 +4507,7 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		}
 	}
 
+	// ポジトリの情報を設定
 	{
 		QString branch_name;
 		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
@@ -4513,9 +4524,14 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		setRepositoryInfo(repo_name, branch_name);
 	}
 
-	Git::User user = g->getUser(Git::Source::Default);
-	updateWindowTitle(user);
+	// ユーザー情報を取得、ウィンドウタイトルを設定
+	{
+		Git::User user = g->getUser(Git::Source::Default);
+		updateWindowTitle(user);
+	}
 
+
+	// コミットログを作成
 	{
 		int scroll_pos = -1;
 		int select_row = -1;
@@ -4526,13 +4542,15 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 
 		makeCommitLog(frame, scroll_pos, select_row);
 	}
-
-	frame->logtablewidget()->setEnabled(true);
+	// }
+	// frame->logtablewidget()->setEnabled(true);
 
 	updateCommitLogTable(frame, 0);
 
 	m->commit_detail_getter.stop();
 	m->commit_detail_getter.start(g->dup());
+
+	doLogCurrentItemChanged(frame);
 }
 
 /**
@@ -5891,9 +5909,9 @@ void MainWindow::doLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 	showFileList(FilesListType::SingleList);
 	clearFileList(frame);
 
-	Git::CommitItem const *commit = selectedCommitItem(frame);
-	if (commit) {
-		m->commit_detail_getter.query(commit->commit_id, true, true); // 詳細情報の更新要求
+	Git::CommitItem const *selected_commit = selectedCommitItem(frame);
+	if (selected_commit) {
+		m->commit_detail_getter.query(selected_commit->commit_id, true, true); // 詳細情報の更新要求
 
 		// ステータスバー更新
 		updateStatusBarText(frame);

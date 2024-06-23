@@ -655,6 +655,7 @@ private:
 	void updateButton();
 	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);
 	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
+	void updateHEAD(GitPtr g);
 protected:
 public:
 	void runFetch_(GitPtr g);
