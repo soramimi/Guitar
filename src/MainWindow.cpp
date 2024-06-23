@@ -5778,6 +5778,17 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, Git::C
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
 				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id.toQString()));
+				if (!ok) {
+					Git::CommitID id = g->rev_parse(name);
+					if (id.isValid()) {
+						if (QMessageBox::question(parent, tr("Create Local Branch"),
+												  tr("Failed to create a local branch.\n"
+													 "Do you want to jump to the existing commit?"
+													 ), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+							jump(g, id);
+						}
+					}
+				}
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
 			if (!name.isEmpty()) {
@@ -5795,7 +5806,7 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame)
 	checkout(frame, this, selectedCommitItem(frame));
 }
 
-void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString id)
+void MainWindow::jumpToCommit(RepositoryWrapperFrame *frame, QString const &id)
 {
 	GitPtr g = git();
 	Git::CommitID id2 = g->rev_parse(id);
@@ -6685,6 +6696,48 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 	showLogWindow(checked);
 }
 
+void MainWindow::jump(GitPtr g, Git::CommitID const &id)
+{
+	if (!id.isValid()) return;
+	
+	int row = rowFromCommitId(frame(), id);
+	if (row < 0) {
+		// No such commit
+	} else {
+		setCurrentLogRow(frame(), row);
+	}
+}
+
+void MainWindow::jump(GitPtr g, QString const &text)
+{
+	if (text.isEmpty()) return;
+	
+	Git::CommitID id = g->rev_parse(text);
+	if (!id.isValid() && Git::isValidID(text)) {
+		QStringList list = findGitObject(text);
+		if (list.isEmpty()) {
+			QMessageBox::warning(this, tr("Jump"), QString("%1\n\n").arg(text) + tr("No such commit"));
+			return;
+		}
+		ObjectBrowserDialog dlg2(this, list);
+		if (dlg2.exec() == QDialog::Accepted) {
+			id = Git::CommitID(dlg2.text());
+			if (!id.isValid()) return;
+		}
+	}
+	
+	if (g->objectType(id) == "tag") {
+		id = getObjCache(frame())->getCommitIdFromTag(g, text);
+	}
+	
+	int row = rowFromCommitId(frame(), id);
+	if (row < 0) {
+		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
+	} else {
+		setCurrentLogRow(frame(), row);
+	}
+}
+
 void MainWindow::on_action_repo_jump_triggered()
 {
 	GitPtr g = git();
@@ -6700,29 +6753,7 @@ void MainWindow::on_action_repo_jump_triggered()
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
-		if (text.isEmpty()) return;
-		Git::CommitID id = g->rev_parse(text);
-		if (!id.isValid() && Git::isValidID(text)) {
-			QStringList list = findGitObject(text);
-			if (list.isEmpty()) {
-				QMessageBox::warning(this, tr("Jump"), QString("%1\n\n").arg(text) + tr("No such commit"));
-				return;
-			}
-			ObjectBrowserDialog dlg2(this, list);
-			if (dlg2.exec() == QDialog::Accepted) {
-				id = Git::CommitID(dlg2.text());
-				if (!id.isValid()) return;
-			}
-		}
-		if (g->objectType(id) == "tag") {
-			id = getObjCache(frame())->getCommitIdFromTag(g, id.toQString());
-		}
-		int row = rowFromCommitId(frame(), id);
-		if (row < 0) {
-			QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(id.toQString()) + tr("No such commit"));
-		} else {
-			setCurrentLogRow(frame(), row);
-		}
+		jump(g, text);
 	}
 }
 

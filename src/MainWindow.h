@@ -451,7 +451,7 @@ public:
 	std::optional<Git::CommitItem> queryCommit(const Git::CommitID &id);
 	void checkout(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem &commit, std::function<void ()> accepted_callback = {});
 	void checkout(RepositoryWrapperFrame *frame);
-	void jumpToCommit(RepositoryWrapperFrame *frame, QString id);
+	void jumpToCommit(RepositoryWrapperFrame *frame, const QString &id);
 	Git::Object internalCatFile(RepositoryWrapperFrame *frame, const QString &id);
 	Git::Object catFile(const QString &id);
 	bool saveAs(RepositoryWrapperFrame *frame, const QString &id, const QString &dstpath);
@@ -638,6 +638,8 @@ private:
 	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);
 	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateHEAD(GitPtr g);
+	void jump(GitPtr g, const Git::CommitID &id);
+	void jump(GitPtr g, const QString &text);
 protected:
 public:
 	void runFetch_(GitPtr g);
