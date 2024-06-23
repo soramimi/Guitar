@@ -115,7 +115,7 @@ CommitDetailGetter::Data CommitDetailGetter::query(Git::CommitID const &id, bool
 		std::lock_guard l(mutex_);
 		return query(id, request_if_not_found, false);
 	}
-	if (id.isValid()) {
+	if (id) {
 		auto it = cache_.find(id);
 		if (it != cache_.end()) {
 			return it->second;

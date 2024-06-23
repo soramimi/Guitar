@@ -30,26 +30,6 @@ struct GitHubRepositoryInfo {
 	QString repository_name;
 };
 
-class AsyncExecGitThread_ : public QThread {
-private:
-	GitPtr g;
-	std::function<void(GitPtr g)> callback;
-public:
-	AsyncExecGitThread_(GitPtr g, std::function<void(GitPtr g)> const &callback)
-		: g(g)
-		, callback(callback)
-	{
-	}
-	virtual ~AsyncExecGitThread_() override
-	{
-	}
-protected:
-	void run() override
-	{
-		callback(g);
-	}
-};
-
 class HunkItem {
 public:
 	int hunk_number = -1;
@@ -69,7 +49,8 @@ class MainWindow : public QMainWindow {
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
-	friend class RepositoriesTreeWidget; // TODO
+	friend class RepositoriesTreeWidget; // TODO:
+	friend class AsyncExecGitThread_; //TODO:
 public:
 	enum {
 		IndexRole = Qt::UserRole,
@@ -249,7 +230,7 @@ private:
 	void checkUser();
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
-	void reopenRepository(bool log, const std::function<void (GitPtr )> &callback);
+	void reopenRepository(bool log, const std::function<void (GitPtr)> callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID id);
@@ -295,7 +276,7 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
+	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list, bool lock);
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryData *repo);
 	void openExplorer(const RepositoryData *repo);
@@ -438,7 +419,7 @@ public:
 	void deleteTags(RepositoryWrapperFrame *frame, QStringList const &tagnames);
 	bool addTag(RepositoryWrapperFrame *frame, QString const &name);
 	void updateCurrentFilesList(RepositoryWrapperFrame *frame);
-	int selectedLogIndex(RepositoryWrapperFrame *frame) const;
+	int selectedLogIndex(RepositoryWrapperFrame *frame, bool lock = true) const;
 	void updateAncestorCommitMap(RepositoryWrapperFrame *frame);
 	bool isAncestorCommit(const QString &id);
 	void postStartEvent(int ms_later);
