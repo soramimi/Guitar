@@ -260,8 +260,8 @@ private:
 	const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
-	void pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force);
-	bool pushSetUpstream();
+	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
+	bool push();
 	void deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem *commit);
 	void deleteBranch(RepositoryWrapperFrame *frame);
 	void resetFile(const QStringList &paths);

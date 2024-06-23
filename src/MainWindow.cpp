@@ -2034,7 +2034,7 @@ void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
 }
 
 /**
- * @brief MainWindow::pushSetUpstream
+ * @brief MainWindow::push
  * @param -uオプションを有効にする
  * @param remote リモート
  * @param branch ブランチ
@@ -2042,7 +2042,7 @@ void MainWindow::commitAmend(RepositoryWrapperFrame *frame)
  *
  * pushする
  */
-void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const QString &branch, bool force)
+void MainWindow::push(bool set_upstream, const QString &remote, const QString &branch, bool force)
 {
 	if (set_upstream) {
 		if (remote.isEmpty()) return;
@@ -2070,15 +2070,16 @@ void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const
 	}
 
 	updateRemoteInfo(git());
+	updateCommitLog();
 }
 
 /**
- * @brief MainWindow::pushSetUpstream
+ * @brief MainWindow::push
  * @return
  *
  * pushする
  */
-bool MainWindow::pushSetUpstream()
+bool MainWindow::push()
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return false;
@@ -2101,7 +2102,7 @@ bool MainWindow::pushSetUpstream()
 		QString remote = dlg.remote();
 		QString branch = dlg.branch();
 		bool force = dlg.isForce();
-		pushSetUpstream(set_upstream, remote, branch, force);
+		push(set_upstream, remote, branch, force);
 		return true;
 	}
 
@@ -4794,7 +4795,7 @@ void MainWindow::on_action_fetch_prune_triggered()
 
 void MainWindow::on_action_push_triggered()
 {
-	pushSetUpstream();
+	push();
 }
 
 void MainWindow::on_toolButton_push_clicked()
@@ -6820,7 +6821,7 @@ void MainWindow::deleteRemoteBranch(RepositoryWrapperFrame *frame, const Git::Co
 			if (i > 0) {
 				QString remote = name.mid(0, i);
 				QString branch = ':' + name.mid(i + 1);
-				pushSetUpstream(true, remote, branch, false);
+				push(true, remote, branch, false);
 			}
 		}
 	}
