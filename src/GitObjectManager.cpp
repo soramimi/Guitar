@@ -124,7 +124,7 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr const &idx, QIODevice *pac
 		if (info.type == Git::Object::Type::OFS_DELTA) {
 			source_item = idx->item(item->offset - info.offset);
 		} else if (info.type == Git::Object::Type::REF_DELTA) {
-			source_item = idx->item(info.ref_id);
+			source_item = idx->item(Git::CommitID(info.ref_id));
 		}
 		if (source_item) { // if deltified object
 			GitPack::Object source;
@@ -260,7 +260,7 @@ void GitObjectCache::setup(GitPtr g)
 
 Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 {
-	if (!g) return QString();
+	if (!g) return {};
 
 	{
 		QMutexLocker lock(&object_manager.mutex);
@@ -377,7 +377,7 @@ bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, Git::CommitID co
 	if (id.isValid()) {
 		QStringList parents;
 		{
-			Git::Object obj = objcache->catFile(g, id.toQString());
+			Git::Object obj = objcache->catFile(g, id);
 			if (!obj.content.isEmpty()) {
 				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
 				for (QString const &line : lines) {
@@ -434,11 +434,11 @@ void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTre
 	}
 }
 
-bool parseGitTreeObject(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out)
+bool parseGitTreeObject(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as Git::CommitID
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {
-		Git::Object obj = objcache->catFile(g, commit_id);
+		Git::Object obj = objcache->catFile(g, Git::CommitID(commit_id));
 		if (!obj.content.isEmpty()) { // 内容を取得
 			parseGitTreeObject(obj.content, path_prefix, out);
 			return true;

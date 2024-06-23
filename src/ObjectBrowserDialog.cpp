@@ -39,7 +39,7 @@ ObjectBrowserDialog::ObjectBrowserDialog(MainWindow *parent, const QStringList &
 
 	for (int row = 0; row < list.size(); row++) {
 		QString const &text = list[row];
-		QString type = g->objectType(text);
+		QString type = g->objectType(Git::CommitID(text));
 		auto *item0 = NewQTableWidgetItem();
 		item0->setData(IdRole, text);
 		item0->setData(TypeRole, type);
@@ -111,9 +111,9 @@ void ObjectBrowserDialog::on_pushButton_inspect_clicked()
 		QString id = item->data(IdRole).toString();
 		QString ty = item->data(TypeRole).toString();
 		if (Git::isValidID(id) && ty == "commit") {
-			auto commit = g->queryCommit(id);
+			std::optional<Git::CommitItem> commit = g->queryCommitItem(Git::CommitID(id));
 			if (commit) {
-				mainwindow()->execCommitPropertyDialog(this, &*commit);
+				mainwindow()->execCommitPropertyDialog(this, *commit);
 			}
 		} else {
 			QMessageBox::information(this, tr("Object Inspection"), id + "\n\n" + ty);

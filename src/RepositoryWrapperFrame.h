@@ -6,6 +6,7 @@
 #include "GitObjectManager.h"
 
 #include <QFrame>
+#include <mutex>
 
 class MainWindow;
 class LogTableWidget;
@@ -16,6 +17,9 @@ class RepositoryWrapperFrame : public QFrame {
 	Q_OBJECT
 	friend class MainWindow;
 private:
+	
+	mutable std::mutex commit_log_mutex;
+	
 	Git::CommitItemList commit_log;
 
 	MainWindow *mw_ = nullptr;
@@ -37,7 +41,7 @@ private:
 public:
 	explicit RepositoryWrapperFrame(QWidget *parent = nullptr);
 	~RepositoryWrapperFrame() override;
-	Git::CommitItem const *commitItem(int row);
+	Git::CommitItem commitItem(int row) const;
 	QIcon signatureVerificationIcon(const Git::CommitID &id) const;
 	QImage committerIcon(int row, QSize size) const;
 	const QList<BranchLabel> *label(int row) const;

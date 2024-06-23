@@ -1,6 +1,8 @@
 #ifndef BLAMEWINDOW_H
 #define BLAMEWINDOW_H
 
+#include "Git.h"
+
 #include <QDateTime>
 #include <QDialog>
 
@@ -39,8 +41,8 @@ private:
 	MainWindow *mainwindow();
 
 	// QObject interface
-	QString getCommitId(QTableWidgetItem *item) const;
-	QString currentCommitId() const;
+	Git::CommitID getCommitId(QTableWidgetItem *item) const;
+	Git::CommitID currentCommitId() const;
 };
 
 #endif // BLAMEWINDOW_H

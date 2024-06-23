@@ -163,14 +163,14 @@ QList<BlameItem> BlameWindow::parseBlame(char const *begin, char const *end)
 	return list;
 }
 
-QString BlameWindow::getCommitId(QTableWidgetItem *item) const
+Git::CommitID BlameWindow::getCommitId(QTableWidgetItem *item) const
 {
-	return item ? item->data(CommidIdRole).toString() : QString();
+	return item ? Git::CommitID(item->data(CommidIdRole).toString()) : Git::CommitID();
 }
 
-QString BlameWindow::currentCommitId() const
+Git::CommitID BlameWindow::currentCommitId() const
 {
-	QString id;
+	Git::CommitID id;
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < m->list.size()) {
 		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
@@ -181,9 +181,10 @@ QString BlameWindow::currentCommitId() const
 
 void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
-	QString id = currentCommitId();
-	if (Git::isValidID(id)) {
-		CommitPropertyDialog dlg(this, mainwindow(), id);
+	Git::CommitID commit_id = currentCommitId();
+	if (Git::isValidID(commit_id)) {
+		Git::CommitItem commit_item = mainwindow()->commitItem(nullptr, commit_id);
+		CommitPropertyDialog dlg(this, mainwindow(), commit_item);
 		dlg.showCheckoutButton(false);
 		dlg.showJumpButton(true);
 		if (dlg.exec() == QDialog::Accepted) {
@@ -200,7 +201,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 	BlameItem blame = m->list[row];
 	GitPtr g = mainwindow()->git();
-	auto commit = g->queryCommit(blame.commit_id);
+	std::optional<Git::CommitItem> commit = g->queryCommitItem(Git::CommitID(blame.commit_id));
 	if (!commit) return;
 
 	QMenu menu;
@@ -208,7 +209,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QAction *a = menu.exec(QCursor::pos() + QPoint(8, -8));
 	if (a) {
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, &*commit);
+			mainwindow()->execCommitPropertyDialog(this, *commit);
 			return;
 		}
 	}
@@ -218,30 +219,31 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 {
 	(void)current;
 	(void)previous;
-	QString id = currentCommitId();
+	Git::CommitID commit_id = currentCommitId();
 	CommitInfo info;
-	if (Git::isValidID(id)) {
-		auto it = m->commit_cache.find(id);
+	if (Git::isValidID(commit_id)) {
+		auto it = m->commit_cache.find(commit_id.toQString());
 		if (it != m->commit_cache.end()) {
 			info = it->second;
 		} else {
 			GitPtr g = mainwindow()->git();
-			auto commit = g->queryCommit(id);
+			auto commit = g->queryCommitItem(commit_id);
 			if (commit) {
 				info.datetime = misc::makeDateTimeString(commit->commit_date);
 				info.author = commit->author;
 				info.email = commit->email;
 				info.message = commit->message;
+				m->commit_cache[commit_id.toQString()] = info;
 			}
 		}
 	} else {
-		id = QString();
+		commit_id = {};
 	}
 	QString author = info.author;
 	if (!info.email.isEmpty()) {
 		author = author + " <" + info.email + '>';
 	}
-	ui->lineEdit_commit_id->setText(id);
+	ui->lineEdit_commit_id->setText(commit_id.toQString());
 	ui->lineEdit_date->setText(info.datetime);
 	ui->lineEdit_author->setText(author);
 	ui->lineEdit_message->setText(info.message);

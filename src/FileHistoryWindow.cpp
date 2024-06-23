@@ -78,7 +78,7 @@ void FileHistoryWindow::prepare(GitPtr g, QString const &path)
 
 	{
 		OverrideWaitCursor;
-		m->commit_item_list = m->g->log_all(m->path, mainwindow()->limitLogCount());
+		m->commit_item_list = m->g->log_all(Git::CommitID(m->path), mainwindow()->limitLogCount());
 	}
 
 	collectFileHistory();
@@ -214,10 +214,10 @@ void FileHistoryWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *
 void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	(void)pos;
-	Git::CommitItem const *commit = nullptr;
+	Git::CommitItem commit;
 	int row = ui->tableWidget_log->currentRow();
 	if (row >= 0 && row < (int)m->commit_item_list.size()) {
-		commit = &m->commit_item_list[row];
+		commit = m->commit_item_list[row];
 	}
 	if (!commit) return;
 

@@ -63,7 +63,7 @@ FileDiffWidget *RepositoryWrapperFrame::filediffwidget()
 	return filediffwidget_;
 }
 
-const Git::CommitItem *RepositoryWrapperFrame::commitItem(int row)
+Git::CommitItem RepositoryWrapperFrame::commitItem(int row) const
 {
 	return mainwindow()->commitItem(mainwindow()->frame(), row);
 }

@@ -45,11 +45,11 @@ private:
 		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
 	}
 
-	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, Git::CommitItem const *commit) const
+	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, Git::CommitItem const &commit) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
-		QIcon icon = frame()->signatureVerificationIcon(commit->commit_id);
+		QIcon icon = frame()->signatureVerificationIcon(commit.commit_id);
 		if (!icon.isNull()) {
 			QRect r = opt.rect.adjusted(6, 3, 0, -3);
 			int h = r.height();
@@ -164,7 +164,7 @@ public:
 			Message,
 		};
 
-		Git::CommitItem const *commit = frame()->commitItem(index.row());
+		Git::CommitItem commit = frame()->commitItem(index.row());
 
 		// 署名アイコンの描画
 		if (index.column() == CommitId) {
@@ -173,7 +173,7 @@ public:
 
 		// コミット日時
 		if (index.column() == Date) {
-			if (commit && commit->strange_date) {
+			if (commit.strange_date) {
 				QColor color(255, 0, 0, 128);
 				QRect r = option.rect.adjusted(1, 1, -1, -2);
 				misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);

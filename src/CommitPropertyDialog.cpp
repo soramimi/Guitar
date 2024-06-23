@@ -3,7 +3,6 @@
 #include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "MainWindow.h"
-#include "UserEvent.h"
 #include "common/misc.h"
 #include "gpg.h"
 
@@ -12,16 +11,17 @@ struct CommitPropertyDialog::Private {
 	Git::CommitItem commit;
 };
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const &commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	m->commit = *commit;
+	m->commit = commit;
 	init(mw);
 }
 
+#if 0
 CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)  // used by BlameWindow
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
@@ -33,10 +33,11 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QStr
 	if (commit) {
 		m->commit = *commit;
 	} else {
-		m->commit.commit_id = commit_id;
+		m->commit.commit_id = Git::CommitID(commit_id);
 	}
 	init(mw);
 }
+#endif
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
@@ -82,7 +83,7 @@ void CommitPropertyDialog::init(MainWindow *mw)
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	auto sig = mainwindow()->git()->log_signature(m->commit.commit_id.toQString());
+	auto sig = mainwindow()->git()->log_signature(m->commit.commit_id);
 	if (sig) {
 		QString status;
 		QString sig_name;
@@ -187,7 +188,7 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwindow()->checkout(mainwindow()->frame(), this, &m->commit, [&](){ hide(); });
+	mainwindow()->checkout(mainwindow()->frame(), this, m->commit, [&](){ hide(); });
 	done(QDialog::Rejected);
 }
 

@@ -14,7 +14,11 @@
 #include <QThread>
 #include <QTimer>
 #include <optional>
-#include <set>
+
+Git::CommitID::CommitID()
+{
+	
+}
 
 Git::CommitID::CommitID(const QString &qid)
 {
@@ -30,7 +34,7 @@ void Git::CommitItem::setParents(const QStringList &list)
 {
 	parent_ids.clear();
 	for (QString const &id : list) {
-		parent_ids.append(id);
+		parent_ids.append(Git::CommitID(id));
 	}
 }
 
@@ -435,7 +439,7 @@ QList<Git::Tag> Git::tags2()
 			if (isValidID(l[0]) && l[1].startsWith("refs/tags/")) {
 				Tag t;
 				t.name = l[1].mid(10);
-				t.id = l[0];
+				t.id = Git::CommitID(l[0]);
 				list.push_back(t);
 			}
 		}
@@ -714,7 +718,7 @@ QList<Git::Branch> Git::branches()
 				} else {
 					int i = text.indexOf(' ');
 					if (i == GIT_ID_LENGTH) {
-						item.branch.id = text.mid(0, GIT_ID_LENGTH);
+						item.branch.id = Git::CommitID(text.mid(0, GIT_ID_LENGTH));
 					}
 					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
 						i++;
@@ -768,7 +772,7 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 				QString key = s.mid(0, j);
 				QString val = s.mid(j + 1);
 				if (key == "id") {
-					item.commit_id = val;
+					item.commit_id = Git::CommitID(val);
 				} else if (key == "gpg") { // %G? 署名検証結果
 					item.sign.verify = *val.utf16();
 				} else if (key == "key") { // %GF 署名フィンガープリント
@@ -899,7 +903,7 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 
 Git::CommitItemList Git::log(int maxcount)
 {
-	return log_all(QString(), maxcount);
+	return log_all({}, maxcount);
 }
 
 Git::CommitItem Git::parseCommit(QByteArray const &ba)
@@ -950,7 +954,7 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 			out.message += line;
 		}
 		if (line.startsWith("parent ")) {
-			out.parent_ids.push_back(line.mid(7));
+			out.parent_ids.push_back(Git::CommitID(line.mid(7)));
 		} else if (line.startsWith("author ")) {
 			QStringList arr = misc::splitWords(line);
 			int n = arr.size();
@@ -980,7 +984,7 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 	return out;
 }
 
-std::optional<Git::CommitItem> Git::queryCommit(CommitID const &id)
+std::optional<Git::CommitItem> Git::queryCommitItem(CommitID const &id)
 {
 	Git::CommitItem ret;
 	if (objectType(id) != "commit") return std::nullopt;
@@ -1062,7 +1066,7 @@ QList<Git::SubmoduleItem> Git::submodules()
 	QStringList words = misc::splitWords(text);
 	if (words.size() >= 2) {
 		SubmoduleItem sm;
-		sm.id = words[0];
+		sm.id = Git::CommitID(words[0]);
 		sm.path = words[1];
 		if (isValidID(sm.id)) {
 			if (words.size() >= 3) {

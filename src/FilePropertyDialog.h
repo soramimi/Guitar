@@ -1,6 +1,8 @@
 #ifndef FILEPROPERTYDIALOG_H
 #define FILEPROPERTYDIALOG_H
 
+#include "Git.h"
+
 #include <QDialog>
 
 namespace Ui {
@@ -17,7 +19,7 @@ public:
 	explicit FilePropertyDialog(QWidget *parent = nullptr);
 	~FilePropertyDialog() override;
 
-	void exec(QString const &path, QString const &id);
+	void exec(QString const &path, const Git::CommitID &id);
 private:
 	Ui::FilePropertyDialog *ui;
 };

@@ -22,7 +22,7 @@ FilePropertyDialog::~FilePropertyDialog()
 	delete ui;
 }
 
-void FilePropertyDialog::exec(QString const &path, QString const &id)
+void FilePropertyDialog::exec(QString const &path, Git::CommitID const &id)
 {
 	QFileInfo info(path);
 	if (!info.exists()) {
@@ -38,7 +38,7 @@ void FilePropertyDialog::exec(QString const &path, QString const &id)
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
 	ui->lineEdit_path->setText(path);
 	ui->lineEdit_type->setText(mimetype);
-	ui->lineEdit_id->setText(id);
+	ui->lineEdit_id->setText(id.toQString());
 
 	QDialog::exec();
 }

@@ -75,19 +75,19 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
-std::optional<Git::CommitItem> ReflogWindow::currentCommit()
+std::optional<Git::CommitItem> ReflogWindow::currentCommitItem()
 {
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
 		Git::ReflogItem const &logitem = reflog_[row];
-		return mainwindow()->queryCommit(logitem.id);
+		return mainwindow()->queryCommit(Git::CommitID(logitem.id));
 	}
 	return std::nullopt;
 }
 
 void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
-	auto commit = currentCommit();
+	std::optional<Git::CommitItem> commit = currentCommitItem();
 	if (!commit) return;
 
 	QMenu menu;
@@ -97,7 +97,7 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_checkout) {
-			mainwindow()->checkout(mainwindow()->frame(), this, &*commit);
+			mainwindow()->checkout(mainwindow()->frame(), this, *commit);
 			return;
 		}
 		if (a == a_explorer) {
@@ -105,7 +105,7 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 			return;
 		}
 		if (a == a_property) {
-			mainwindow()->execCommitPropertyDialog(this, &*commit);
+			mainwindow()->execCommitPropertyDialog(this, *commit);
 			return;
 		}
 	}
@@ -115,8 +115,8 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	(void)item;
-	auto commit = currentCommit();
+	std::optional<Git::CommitItem> commit = currentCommitItem();
 	if (commit) {
-		mainwindow()->execCommitPropertyDialog(this, &*commit);
+		mainwindow()->execCommitPropertyDialog(this, *commit);
 	}
 }

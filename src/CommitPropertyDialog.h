@@ -26,8 +26,8 @@ private:
 	void setAvatar(const QImage &image, SimpleImageWidget *widget);
 	void updateAvatar(bool request);
 public:
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const *commit);
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
+	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const &commit);
+	// explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
 	~CommitPropertyDialog() override;
 
 	void showCheckoutButton(bool f);

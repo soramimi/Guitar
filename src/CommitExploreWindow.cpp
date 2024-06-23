@@ -62,7 +62,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, MainWindow *mainwin, G
 	GitPtr g = git();
 	{
 		GitCommit c;
-		GitCommit::parseCommit(g, objcache, m->commit->commit_id.toQString(), &c);
+		GitCommit::parseCommit(g, objcache, m->commit->commit_id, &c);
 		m->root_tree_id = c.tree_id;
 	}
 
@@ -238,16 +238,16 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::BLOB) {
-		QString id = current->data(ObjectIdRole).toString();
+		QString commit_id = current->data(ObjectIdRole).toString();
 		GitPtr g = git();
-		m->content_object = m->objcache->catFile(g, id);
+		m->content_object = m->objcache->catFile(g, Git::CommitID(commit_id));
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
 		QString mimetype = mainwindow()->determinFileType(m->content_object.content);
 		if (misc::isImage(mimetype)) {
-			ui->widget_fileview->setImage(mimetype, m->content_object.content, id, path);
+			ui->widget_fileview->setImage(mimetype, m->content_object.content, commit_id, path);
 		} else {
-			ui->widget_fileview->setText(m->content_object.content, id, path);
+			ui->widget_fileview->setText(m->content_object.content, commit_id, path);
 		}
 	} else {
 		clearContent();

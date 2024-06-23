@@ -47,9 +47,9 @@ public:
 		bool valid = false;
 		uint8_t id[GIT_ID_LENGTH / 2];
 	public:
-		CommitID() = default;
-		CommitID(QString const &qid);
-		CommitID(char const *id);
+		CommitID();
+		explicit CommitID(QString const &qid);
+		explicit CommitID(char const *id);
 		void assign(const QString &qid);
 		QString toQString(int maxlen = -1) const;
 		bool isValid() const;
@@ -129,6 +129,10 @@ public:
 		bool resolved =  false;
 		bool strange_date = false;
 		void setParents(QStringList const &list);
+		operator bool () const
+		{
+			return commit_id;
+		}
 	};
 
 	class CommitItemList {
@@ -465,7 +469,7 @@ public:
 	CommitItemList log_all(CommitID const &id, int maxcount);
 	std::optional<CommitItem> log_signature(CommitID const &id);
 	CommitItemList log(int maxcount);
-	std::optional<CommitItem> queryCommit(const CommitID &id);
+	std::optional<CommitItem> queryCommitItem(const CommitID &id);
 
 	struct CloneData {
 		QString url;
@@ -558,7 +562,7 @@ public:
 	CommitID rev_parse(QString const &name);
 	QList<Tag> tags();
 	QList<Tag> tags2();
-	bool tag(QString const &name, const CommitID &id = QString());
+	bool tag(QString const &name, CommitID const &id = {});
 	void delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const Remote &remote);
 	void addRemoteURL(const Remote &remote);
