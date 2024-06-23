@@ -80,7 +80,11 @@ public:
 			return appsettings.google_api_key;
 		}
 	}
+	
+	static bool isMainThread();
 };
+
+#define ASSERT_MAIN_THREAD() Q_ASSERT(ApplicationGlobal::isMainThread())
 
 extern ApplicationGlobal *global;
 

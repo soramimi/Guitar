@@ -13,6 +13,8 @@ ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)
 
 void ReadOnlyLineEdit::setText(QString const &text)
 {
+	ASSERT_MAIN_THREAD();
+	
 	QLineEdit::setText(text);
 	setSelection(0, 0);
 }

@@ -323,9 +323,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect((AbstractPtyProcess *)getPtyProcess(), &AbstractPtyProcess::completed, this, &MainWindow::onPtyProcessCompleted);
 
-	connect(this, &MainWindow::remoteInfoChanged, [&](){
-		ui->lineEdit_remote->setText(currentRemoteName());
-	});
+	connect(this, &MainWindow::remoteInfoChanged, this, &MainWindow::onRemoteInfoChanged);
 
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
 	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
@@ -1341,6 +1339,11 @@ bool MainWindow::execWelcomeWizardDialog()
 	return false;
 }
 
+void MainWindow::onRemoteInfoChanged()
+{
+	ui->lineEdit_remote->setText(currentRemoteName());
+}
+
 /**
  * @brief MainWindow::execRepositoryPropertyDialog
  * @param repo リポジトリ
@@ -1825,7 +1828,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
 void MainWindow::updateRemoteInfo(GitPtr g)
 {
 	queryRemotes(g);
-
+	
 	m->current_remote_name = QString();
 	{
 		Git::Branch const &r = currentBranch();
@@ -3316,28 +3319,32 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 {
 	bool ret = false;
 	params->g = g;
-
-	std::thread th([&](std::shared_ptr<AbstractGitCommandItem> params){
-		setProgress(-1.0f);
-		showProgress(params->progress_message, false);
-		setPtyCondition(PtyCondition::Fetch);
-		setPtyProcessOk(true);
-		params->pty = getPtyProcess();
-
+	
+	if (1) { // for debug
 		params->perform();
-
-		while (!params->pty->wait(1));
-		ret = getPtyProcessOk();
-		hideProgress();
-
-		if (params->update_commit_log) {
-			updateCommitLog();
-		}
-	}, params);
-
-	th.join();
+	} else {
+		std::thread th([&](std::shared_ptr<AbstractGitCommandItem> params){
+			setProgress(-1.0f);
+			showProgress(params->progress_message, false);
+			setPtyCondition(PtyCondition::Fetch);
+			setPtyProcessOk(true);
+			params->pty = getPtyProcess();
+			
+			params->perform();
+			
+			while (!params->pty->wait(1));
+			ret = getPtyProcessOk();
+			hideProgress();
+			
+			if (params->update_commit_log) {
+				updateCommitLog();
+			}
+		}, params);
+		
+		th.join();
+	}
+	
 	return ret;
-
 }
 
 bool MainWindow::fetch(GitPtr g, bool prune)
@@ -4492,11 +4499,11 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 void MainWindow::runFetch_(GitPtr g)
 {
 	RepositoryWrapperFrame *frame = this->frame();
-
+	
 	detectGitServerType(g);
 	
 	updateFilesList(frame, Git::CommitID());
-
+	
 	// ログを取得
 	queryCommitLog(frame, g);
 	// タグを取得

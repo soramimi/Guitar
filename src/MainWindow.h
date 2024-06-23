@@ -589,6 +589,7 @@ private slots:
 	void toggleMaximized();
 
 	// progress handler
+	void onRemoteInfoChanged();
 private:
 	void setupProgressHandler();
 public:

@@ -248,8 +248,9 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git(QString const &arg, Option const &opt)
+bool Git::git(QString const &arg, Option const &opt, bool debug_)
 {
+	if (debug_) return true;
 	// qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {

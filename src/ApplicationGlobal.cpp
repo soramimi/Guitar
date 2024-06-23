@@ -22,3 +22,8 @@ void ApplicationGlobal::writeLog(const QString &str, bool record)
 {
 	mainwindow->writeLog(str, record);
 }
+
+bool ApplicationGlobal::isMainThread()
+{
+	return QThread::currentThread() == QCoreApplication::instance()->thread();
+}

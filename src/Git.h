@@ -436,7 +436,7 @@ public:
 		AbstractPtyProcess *pty = nullptr;
 		QString prefix;
 	};
-	bool git(QString const &arg, Option const &opt);
+	bool git(QString const &arg, Option const &opt, bool debug_ = false);
 	bool git(QString const &arg)
 	{
 		return git(arg, {});
