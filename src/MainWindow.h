@@ -163,7 +163,7 @@ private:
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
 
-	void updateFilesList(RepositoryWrapperFrame *frame, QString const &id);
+	void updateFilesList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 	void updateRepositoriesList();
 

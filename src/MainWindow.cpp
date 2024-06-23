@@ -4028,7 +4028,7 @@ void MainWindow::setupShowFileListHandler()
 	});
 }
 
-void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &id) // TODO: change id as Git::CommitID
+void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -4039,13 +4039,30 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 		m->update_files_list_thread.join();
 	}
 
-	m->update_files_list_thread = std::thread([this](GitPtr g, RepositoryWrapperFrame *frame, QString const &id){
+	m->update_files_list_thread = std::thread([this](GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID const &id){
 
 		ExchangeData xdata;
 		xdata.frame = frame;
 		xdata.files_list_type = FilesListType::SingleList;
 
-		if (id.isEmpty()) { // Uncommited changes が選択されているとき
+		if (id) {
+			auto diffs = makeDiffs(g, frame, Git::CommitID(id));
+			if (diffs) {
+				setDiffResult(*diffs);
+			} else {
+				setDiffResult({});
+				return;
+			}
+			showFileList(xdata.files_list_type);
+			xdata.frame = frame;
+			xdata.files_list_type = xdata.files_list_type;
+			
+			auto AddItem = [&](ObjectData const &obj){
+				xdata.object_data.push_back(obj);
+			};
+			addDiffItems(diffResult(), AddItem);
+			
+		} else { // Uncommited changes が選択されているとき
 
 			updateUncommitedChanges();
 
@@ -4053,7 +4070,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 			if (uncommited) {
 				xdata.files_list_type = FilesListType::SideBySide;
 			}
-			auto diffs = makeDiffs(g, frame, Git::CommitID(uncommited ? QString() : id));
+			auto diffs = makeDiffs(g, frame, uncommited ? Git::CommitID() : id);
 			if (diffs) {
 				setDiffResult(*diffs);
 			} else {
@@ -4119,22 +4136,6 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 				xdata.files_list_type = xdata.files_list_type;
 				xdata.object_data.push_back(obj);
 			}
-		} else {
-			auto diffs = makeDiffs(g, frame, Git::CommitID(id));
-			if (diffs) {
-				setDiffResult(*diffs);
-			} else {
-				setDiffResult({});
-				return;
-			}
-			showFileList(xdata.files_list_type);
-			xdata.frame = frame;
-			xdata.files_list_type = xdata.files_list_type;
-
-			auto AddItem = [&](ObjectData const &obj){
-				xdata.object_data.push_back(obj);
-			};
-			addDiffItems(diffResult(), AddItem);
 		}
 
 		addFileObjectData(xdata);
@@ -4178,11 +4179,11 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 
 void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
-	QString id;
+	Git::CommitID id;
 	if (Git::isUncommited(commit)) {
 		// empty id for uncommited changes
 	} else {
-		id = commit.commit_id.toQString();
+		id = commit.commit_id;
 	}
 	updateFilesList(frame, id);
 }
@@ -4448,8 +4449,8 @@ void MainWindow::runFetch_(GitPtr g)
 	RepositoryWrapperFrame *frame = this->frame();
 
 	detectGitServerType(g);
-
-	updateFilesList(frame, QString());
+	
+	updateFilesList(frame, Git::CommitID());
 
 	// ログを取得
 	queryCommitLog(frame, g);
