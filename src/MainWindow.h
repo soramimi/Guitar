@@ -168,17 +168,17 @@ private:
 	void updateRepositoriesList();
 
 	void internalOpenRepository(GitPtr g, bool keep_selection = false);
-	void makeCommitLog(GitPtr g, RepositoryWrapperFrame *frame, int scroll_pos, int select_row);
-	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection = false);
+
+	// void clearLog(RepositoryWrapperFrame *frame);
+	void openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
 	void for_each_selected_files(std::function<void (QString const &)> const &fn);
-	void clearLog(RepositoryWrapperFrame *frame);
 	void clearFileList(RepositoryWrapperFrame *frame);
 	void clearDiffView(RepositoryWrapperFrame *frame);
 	void clearDiffView();
-	void clearRepositoryInfo();
+	// void clearRepositoryInfo();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryData const *repositoryItem(const QTreeWidgetItem *item) const;
@@ -253,8 +253,8 @@ private:
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, QString id);
-	void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
-	void updateRemoteInfo();
+	// void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
+	void updateRemoteInfo(GitPtr g);
 	void queryRemotes(GitPtr g);
 	void submodule_add(QString url = {}, const QString &local_dir = {});
 	const Git::CommitItem *selectedCommitItem(RepositoryWrapperFrame *frame) const;
@@ -291,7 +291,10 @@ private:
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	Git::CommitItemList retrieveCommitLog(GitPtr g);
 	std::map<Git::CommitID, QList<Git::Branch> > &commitToBranchMapRef(RepositoryWrapperFrame *frame);
+
+	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
+
 	QString makeCommitInfoText(RepositoryWrapperFrame *frame, int row, QList<BranchLabel> *label_list);
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryData *repo);
@@ -497,6 +500,14 @@ public:
 	void setupExternalPrograms();
 	void updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_ms);
 	void updateCommitLogTable(int delay_ms);
+private:
+	void makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row);
+	void setupUpdateCommitLog();
+signals:
+	void signalUpdateCommitLog();
+public:
+	void updateCommitLog();
+
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
 	void onCtrlA();
@@ -643,8 +654,10 @@ private:
 
 	void updateButton();
 	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);
+	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
 protected:
 public:
+	void runFetch_(GitPtr g);
 };
 Q_DECLARE_METATYPE(MainWindow::ExchangeData)
 

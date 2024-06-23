@@ -47,6 +47,6 @@ RepositoryWrapperFrame *SubmoduleMainWindow::frame()
 void SubmoduleMainWindow::reset()
 {
 	GitPtr g = git();
-	mainwindow()->openRepositoryWithFrame(ui->frame_repository_wrapper2, g);
+	mainwindow()->openRepositoryWithFrame(ui->frame_repository_wrapper2, g, true, true, true, false);
 
 }

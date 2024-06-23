@@ -204,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setupShowFileListHandler();
 	setupProgressHandler();
 	setupAddFileObjectData();
-
+	setupUpdateCommitLog();
 
 	ui->frame_repository_wrapper->bind(this
 									   , ui->tableWidget_log
@@ -1772,34 +1772,26 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
 	return out;
 }
 
-/**
- * @brief MainWindow::queryBranches
- * @param frame フレーム
- * @param g git
- *
- * ブランチを取得する
- */
-void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
-{
-	Q_ASSERT(g);
-	frame->branch_map.clear();
-	QList<Git::Branch> branches = g->branches();
-	for (Git::Branch const &b : branches) {
-		if (b.isCurrent()) {
-			setCurrentBranch(b);
-		}
-		commitToBranchMapRef(frame)[b.id].append(b);
-	}
-}
+// /**
+//  * @brief MainWindow::queryBranches
+//  * @param frame フレーム
+//  * @param g git
+//  *
+//  * ブランチを取得する
+//  */
+// void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
+// {
+// 	Q_ASSERT(g);
+// }
 
 /**
  * @brief MainWindow::updateRemoteInfo
  *
  * リモート情報を更新する
  */
-void MainWindow::updateRemoteInfo()
+void MainWindow::updateRemoteInfo(GitPtr g)
 {
-	queryRemotes(git());
+	queryRemotes(g);
 
 	m->current_remote_name = QString();
 	{
@@ -2077,7 +2069,7 @@ void MainWindow::pushSetUpstream(bool set_upstream, const QString &remote, const
 		}
 	}
 
-	updateRemoteInfo();
+	updateRemoteInfo(git());
 }
 
 /**
@@ -2737,15 +2729,12 @@ void MainWindow::clearDiffView()
 	clearDiffView(ui->frame_repository_wrapper);
 }
 
-/**
- * @brief リポジトリ情報を消去
- */
-void MainWindow::clearRepositoryInfo()
-{
-	internalClearRepositoryInfo();
-	ui->label_repo_name->setText(QString());
-	ui->label_branch_name->setText(QString());
-}
+// /**
+//  * @brief リポジトリ情報を消去
+//  */
+// void MainWindow::clearRepositoryInfo()
+// {
+// }
 
 void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
 {
@@ -3238,6 +3227,7 @@ public:
 	GitPtr g;
 	PtyProcess *pty = nullptr;
 	QString progress_message;
+	bool update_commit_log = false;
 	AbstractGitCommandItem(QString const &progress_message)
 		: progress_message(progress_message)
 	{
@@ -3253,10 +3243,12 @@ public:
 		: AbstractGitCommandItem(progress_message)
 		, prune(prune)
 	{
+		update_commit_log = true;
 	}
 	void perform() override
 	{
 		g->fetch(pty, prune);
+		global->mainwindow->runFetch_(g);
 	}
 };
 
@@ -3265,6 +3257,7 @@ public:
 	GitCommandItem_fetch_tags_f(QString const &progress_message)
 		: AbstractGitCommandItem(progress_message)
 	{
+		update_commit_log = true;
 	}
 	void perform() override
 	{
@@ -3302,6 +3295,10 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		while (!params->pty->wait(1));
 		ret = getPtyProcessOk();
 		hideProgress();
+
+		if (params->update_commit_log) {
+			updateCommitLog();
+		}
 	}, params);
 
 	th.join();
@@ -3572,14 +3569,22 @@ std::map<Git::CommitID, QList<Git::Branch>> &MainWindow::commitToBranchMapRef(Re
 	return frame->branch_map;
 }
 
-void MainWindow::updateWindowTitle(GitPtr g)
+void MainWindow::updateWindowTitle(Git::User const &user)
 {
-	if (isValidWorkingCopy(g)) {
-		Git::User user = g->getUser(Git::Source::Default);
+	if (user) {
 		setWindowTitle_(user);
 	} else {
 		setUnknownRepositoryInfo();
 	}
+}
+
+void MainWindow::updateWindowTitle(GitPtr g)
+{
+	Git::User user;
+	if (isValidWorkingCopy(g)) {
+		user = g->getUser(Git::Source::Default);
+	}
+	updateWindowTitle(user);
 }
 
 /**
@@ -3997,23 +4002,6 @@ void MainWindow::addFileObjectData(ExchangeData const &data)
  */
 void MainWindow::showFileList(FilesListType files_list_type)
 {
-	// if (calltype == CallType::EMIT_SIGNAL) {
-	// 	ExchangeData data;
-	// 	data.files_list_type = files_list_type;
-	// 	emit signalShowFileList(data);
-	// 	return;
-	// }
-
-	// clearDiffView();
-
-	// switch (files_list_type) {
-	// case FilesListType::SingleList:
-	// 	ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
-	// 	break;
-	// case FilesListType::SideBySide:
-	// 	ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
-	// 	break;
-	// }
 	emit signalShowFileList(files_list_type);
 }
 
@@ -4050,7 +4038,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, QString const &i
 		xdata.frame = frame;
 		xdata.files_list_type = FilesListType::SingleList;
 
-		if (id.isEmpty()) { // Uncommited changed が選択されているとき
+		if (id.isEmpty()) { // Uncommited changes が選択されているとき
 
 			updateUncommitedChanges();
 
@@ -4256,14 +4244,6 @@ void MainWindow::detectGitServerType(GitPtr g)
 	}
 }
 
-void MainWindow::clearLog(RepositoryWrapperFrame *frame)
-{
-	clearCommitLog(frame);
-	clearLabelMap(frame);
-	setUncommitedChanges(false);
-	frame->clearLogContents();
-}
-
 Git::Object MainWindow::internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id) //@TODO:
 {
 	if (isValidWorkingCopy(g)) {
@@ -4296,145 +4276,227 @@ Git::Object MainWindow::catFile(QString const &id)
 
 void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
 {
-	openRepositoryWithFrame(frame(), g, keep_selection);
+	openRepositoryWithFrame(frame(), g, true, true, false, keep_selection);
 }
 
-void MainWindow::makeCommitLog(GitPtr g, RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
+void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
 {
-	bool uncommited_changes = isThereUncommitedChanges();
-	if (uncommited_changes) {
-		Git::CommitItem item;
-		item.parent_ids.push_back(currentBranch().id);
-		item.message = tr("Uncommited changes");
-		auto logptr = getCommitLogPtr(frame);
-		logptr->list.insert(logptr->list.begin(), item);
-		logptr->updateIndex();
-	}
-	
-	frame->prepareLogTableWidget();
-	
-	auto const &logs = getCommitLog(frame);
-	const int count = (int)logs.size();
-	
-	frame->logtablewidget()->setRowCount(count);
-	
-	int selrow = 0;
-	
-	for (int row = 0; row < count; row++) {
-		Git::CommitItem const *commit = &logs[row];
-		{
-			auto *item = new QTableWidgetItem;
-			item->setData(IndexRole, row);
-			frame->logtablewidget()->setItem(row, 0, item);
-		}
-		int col = 1; // カラム0はコミットグラフなので、その次から
-		auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
-			auto *item = new QTableWidgetItem(text);
-			if (!tooltip.isEmpty()) {
-				QString tt = tooltip;
-				tt.replace('\n', ' ');
-				tt = tt.toHtmlEscaped();
-				tt = "<p style='white-space: pre'>" + tt + "</p>";
-				item->setToolTip(tt);
+	LogTableWidget *logtablewidget = frame->logtablewidget();
+	bool block = logtablewidget->blockSignals(true);
+	{
+		frame->prepareLogTableWidget();
+
+		auto const &logs = getCommitLog(frame);
+		const int count = (int)logs.size();
+
+		logtablewidget->setRowCount(count);
+
+		int selrow = 0;
+
+		for (int row = 0; row < count; row++) {
+			Git::CommitItem const *commit = &logs[row];
+			{
+				auto *item = new QTableWidgetItem;
+				item->setData(IndexRole, row);
+				logtablewidget->setItem(row, 0, item);
 			}
-			if (bold) {
-				QFont font = item->font();
-				font.setBold(true);
-				item->setFont(font);
-			}
-			frame->logtablewidget()->setItem(row, col, item);
-			col++;
-		};
-		QString commit_id;
-		QString datetime;
-		QString author;
-		QString message;
-		QString message_ex;
-		bool isHEAD = (commit->commit_id.toQString() == getHeadId());
-		bool bold = false;
-		{
-			if (Git::isUncommited(*commit)) { // 未コミットの時
-				bold = true; // 太字
-				selrow = row;
-			} else {
-				if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+			int col = 1; // カラム0はコミットグラフなので、その次から
+			auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
+				auto *item = new QTableWidgetItem(text);
+				if (!tooltip.isEmpty()) {
+					QString tt = tooltip;
+					tt.replace('\n', ' ');
+					tt = tt.toHtmlEscaped();
+					tt = "<p style='white-space: pre'>" + tt + "</p>";
+					item->setToolTip(tt);
+				}
+				if (bold) {
+					QFont font = item->font();
+					font.setBold(true);
+					item->setFont(font);
+				}
+				logtablewidget->setItem(row, col, item);
+				col++;
+			};
+			QString commit_id;
+			QString datetime;
+			QString author;
+			QString message;
+			QString message_ex;
+			bool isHEAD = (commit->commit_id.toQString() == getHeadId());
+			bool bold = false;
+			{
+				if (Git::isUncommited(*commit)) { // 未コミットの時
 					bold = true; // 太字
 					selrow = row;
+				} else {
+					bool uncommited_changes = isThereUncommitedChanges();
+					if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+						bold = true; // 太字
+						selrow = row;
+					}
+					commit_id = abbrevCommitID(*commit);
 				}
-				commit_id = abbrevCommitID(*commit);
+				datetime = misc::makeDateTimeString(commit->commit_date);
+				author = commit->author;
+				message = commit->message;
+				message_ex = makeCommitInfoText(frame, row, &(*getLabelMap(frame))[row]);
 			}
-			datetime = misc::makeDateTimeString(commit->commit_date);
-			author = commit->author;
-			message = commit->message;
-			message_ex = makeCommitInfoText(frame, row, &(*getLabelMap(frame))[row]);
+			AddColumn(commit_id, false, QString());
+			AddColumn(datetime, false, QString());
+			AddColumn(author, false, QString());
+			AddColumn(message, bold, message + message_ex);
+			logtablewidget->setRowHeight(row, 24);
 		}
-		AddColumn(commit_id, false, QString());
-		AddColumn(datetime, false, QString());
-		AddColumn(author, false, QString());
-		AddColumn(message, bold, message + message_ex);
-		frame->logtablewidget()->setRowHeight(row, 24);
+		int t = logtablewidget->columnWidth(0);
+		logtablewidget->resizeColumnsToContents();
+		logtablewidget->setColumnWidth(0, t);
+		logtablewidget->horizontalHeader()->setStretchLastSection(false);
+		logtablewidget->horizontalHeader()->setStretchLastSection(true);
+
+		m->last_focused_file_list = nullptr;
+
+		logtablewidget->setFocus();
+
+		if (select_row < 0) {
+			setCurrentLogRow(frame, selrow);
+		} else {
+			setCurrentLogRow(frame, select_row);
+			logtablewidget->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+		}
 	}
-	int t = frame->logtablewidget()->columnWidth(0);
-	frame->logtablewidget()->resizeColumnsToContents();
-	frame->logtablewidget()->setColumnWidth(0, t);
-	frame->logtablewidget()->horizontalHeader()->setStretchLastSection(false);
-	frame->logtablewidget()->horizontalHeader()->setStretchLastSection(true);
-	
-	m->last_focused_file_list = nullptr;
-	
-	frame->logtablewidget()->setFocus();
-	
-	if (select_row < 0) {
-		setCurrentLogRow(frame, selrow);
-	} else {
-		setCurrentLogRow(frame, select_row);
-		frame->logtablewidget()->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
-	}
-	
-	m->commit_detail_getter.stop();
-	m->commit_detail_getter.start(g->dup());
-	
+	logtablewidget->blockSignals(block);
+
 	updateUI();
 }
 
-void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool keep_selection)
+void MainWindow::setupUpdateCommitLog()
 {
+	connect(this, &MainWindow::signalUpdateCommitLog, this, [this](){
+		openRepositoryWithFrame(frame(), git(), false, false, false, true);
+	});
+}
+
+void MainWindow::updateCommitLog()
+{
+	emit signalUpdateCommitLog();
+}
+
+// void MainWindow::clearLog(RepositoryWrapperFrame *frame)
+// {
+// }
+
+/**
+ * @brief MainWindow::queryCommitLog
+ * @param frame
+ * @param g
+ *
+ * コミットログとブランチ情報を取得
+ */
+void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
+{
+	// ブランチを取得
+	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要なので、ここでブランチを取得
+	std::thread t_branches([this, frame, g](){
+		QElapsedTimer t1;
+		t1.start();
+		frame->branch_map.clear();
+		QList<Git::Branch> branches = g->branches();
+		for (Git::Branch const &b : branches) {
+			if (b.isCurrent()) {
+				setCurrentBranch(b);
+			}
+			commitToBranchMapRef(frame)[b.id].append(b);
+		}
+		qDebug() << "branches: " << t1.elapsed();
+	});
+
+	std::thread t_commit_log([this, frame, g](){
+		QElapsedTimer t1;
+		t1.start();
+		setCommitLog(frame, retrieveCommitLog(g));
+		qDebug() << "commit log: " << t1.elapsed();
+	});
+
+	t_branches.join(); // ブランチの処理の終了を待つ
+
+	{
+		// Uncommited changes の処理
+		updateUncommitedChanges();
+		if (isThereUncommitedChanges()) {
+			Git::CommitItem item;
+			item.parent_ids.push_back(currentBranch().id);
+			item.message = tr("Uncommited changes");
+			auto logptr = getCommitLogPtr(frame);
+			logptr->list.insert(logptr->list.begin(), item);
+			logptr->updateIndex();
+		}
+	}
+
+	t_commit_log.join(); // コミットログの処理の終了を待つ
+}
+
+void MainWindow::runFetch_(GitPtr g)
+{
+	RepositoryWrapperFrame *frame = this->frame();
+
+
 	getObjCache(frame)->setup(g);
 
-	int scroll_pos = -1;
-	int select_row = -1;
+	detectGitServerType(g);
 
-	if (keep_selection) {
-		scroll_pos = frame->logtablewidget()->verticalScrollBar()->value();
-		select_row = frame->logtablewidget()->currentRow();
+	updateFilesList(frame, QString());
+
+	// ログを取得
+	queryCommitLog(frame, g);
+	// タグを取得
+	ptrCommitToTagMap(frame)->clear();
+	QList<Git::Tag> tags = g->tags();
+	for (Git::Tag const &tag : tags) {
+		(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
+	}
+
+	updateRemoteInfo(g);
+
+	setHeadId(getObjCache(frame)->revParse(g, "HEAD"));
+}
+
+void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
+{
+	if (!isValidWorkingCopy(g)) return;
+
+	if (clear_log) {
+		clearCommitLog(frame);
+	}
+
+	frame->logtablewidget()->setEnabled(false);
+
+	{
+		clearLabelMap(frame);
+		setUncommitedChanges(false);
+		frame->clearLogContents();
+
+		internalClearRepositoryInfo();
+		ui->label_repo_name->setText(QString());
+		ui->label_branch_name->setText(QString());
+	}
+
+	if (query) {
+		QElapsedTimer t;
+		t.start();
+		queryCommitLog(frame, g);
+		qDebug() << "queryCommitLog:" << t.elapsed();
+	}
+
+	if (do_fetch) {
+		do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
+		setForceFetch(false);
+		if (do_fetch) {
+			fetch(g, false);
+		}
 	}
 
 	{
-		clearLog(frame);
-		clearRepositoryInfo();
-		detectGitServerType(g);
-
-		updateFilesList(frame, QString());
-
-		frame->logtablewidget()->setEnabled(false);
-
-		//
-		updateUncommitedChanges();
-
-		// ログを取得
-		setCommitLog(frame, retrieveCommitLog(g));
-		// ブランチを取得
-		queryBranches(frame, g);
-		// タグを取得
-		ptrCommitToTagMap(frame)->clear();
-		QList<Git::Tag> tags = g->tags();
-		for (Git::Tag const &tag : tags) {
-			(*ptrCommitToTagMap(frame))[tag.id].push_back(tag);
-		}
-
-		frame->logtablewidget()->setEnabled(true);
-		updateCommitLogTable(frame, 100); // ミコットログを更新（100ms後）
-
 		QString branch_name;
 		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
 			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
@@ -4449,23 +4511,27 @@ void MainWindow::openRepositoryWithFrame(RepositoryWrapperFrame *frame, GitPtr g
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
 	}
-	
-	if (g) {
-		updateRemoteInfo();
-		
-		updateWindowTitle(g);
-		
-		setHeadId(getObjCache(frame)->revParse(g, "HEAD"));
-		
-		makeCommitLog(g, frame, scroll_pos, select_row);
+
+	Git::User user = g->getUser(Git::Source::Default);
+	updateWindowTitle(user);
+
+	{
+		int scroll_pos = -1;
+		int select_row = -1;
+		if (keep_selection) {
+			scroll_pos = frame->logtablewidget()->verticalScrollBar()->value();
+			select_row = frame->logtablewidget()->currentRow();
+		}
+
+		makeCommitLog(frame, scroll_pos, select_row);
 	}
 
-	
-	bool do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
-	setForceFetch(false);
-	if (do_fetch) {
-		fetch(g, false);
-	}
+	frame->logtablewidget()->setEnabled(true);
+
+	updateCommitLogTable(frame, 0);
+
+	m->commit_detail_getter.stop();
+	m->commit_detail_getter.start(g->dup());
 }
 
 /**

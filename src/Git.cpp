@@ -345,7 +345,9 @@ bool Git::isValidWorkingCopy(QString const &dir)
 			}
 		} else if (info.isDir()) { // regular dir
 			if (QFileInfo(git).isDir()) {
-				return true;
+				if (QFileInfo(git / "config").isFile()) { // git repository
+					return true;
+				}
 			}
 		}
 	}
@@ -362,8 +364,6 @@ QString Git::version()
 	git_nochdir("--version", nullptr);
 	return resultQString().trimmed();
 }
-
-
 
 bool Git::init()
 {
