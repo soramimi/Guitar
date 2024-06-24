@@ -88,9 +88,10 @@ QString RepositoryWrapperFrame::currentBranchName() const
 	return mainwindow()->currentBranchName();
 }
 
-const Git::CommitItemList &RepositoryWrapperFrame::getLogs() const
+Git::CommitItemList RepositoryWrapperFrame::getLogs() const
 {
-	return mainwindow()->getCommitLog(this);
+	std::lock_guard lock(commit_log_mutex);
+	return commit_log;
 }
 
 bool RepositoryWrapperFrame::isAncestorCommit(const QString &id)

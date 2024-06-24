@@ -2006,13 +2006,13 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 		std::lock_guard lock(frame->commit_log_mutex);
 
 		if (amend) {
-			message = getCommitLog(frame)[0].message;
+			message = frame->commit_log[0].message;
 		} else {
 			QString id = g->getCherryPicking();
 			if (Git::isValidID(id)) {
 				message = g->getMessage(id);
 			} else {
-				for (Git::CommitItem const &item : getCommitLog(frame).list) {
+				for (Git::CommitItem const &item : frame->commit_log.list) {
 					if (item.commit_id.isValid()) {
 						previousMessage = item.message;
 						break;
@@ -2848,7 +2848,7 @@ int MainWindow::rowFromCommitId(RepositoryWrapperFrame *frame, Git::CommitID con
 {
 	std::lock_guard lock(frame->commit_log_mutex);
 
-	auto const &logs = getCommitLog(frame);
+	auto const &logs = frame->commit_log;
 	for (size_t i = 0; i < logs.size(); i++) {
 		Git::CommitItem const &item = logs[i];
 		if (item.commit_id == id) {
@@ -2934,7 +2934,7 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
 	std::lock_guard lock(frame->commit_log_mutex);
 
-	auto const &logs = getCommitLog(frame);
+	auto const &logs = frame->commit_log;
 	auto *logsp = getCommitLogPtr(frame);
 
 	const int LogCount = (int)logs.size();
@@ -3220,20 +3220,20 @@ Git::CommitItemList *MainWindow::getCommitLogPtr(RepositoryWrapperFrame *frame)
 	return &frame->commit_log;
 }
 
-const Git::CommitItemList &MainWindow::getCommitLog(RepositoryWrapperFrame const *frame) const
-{
-	return frame->commit_log;
-}
+// const Git::CommitItemList &MainWindow::getCommitLog(RepositoryWrapperFrame const *frame) const
+// {
+// 	return frame->commit_log;
+// }
 
-void MainWindow::setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs)
-{
-	frame->commit_log = logs;
-}
+// void MainWindow::setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs)
+// {
+// 	frame->commit_log = logs;
+// }
 
-void MainWindow::clearCommitLog(RepositoryWrapperFrame *frame)
-{
-	frame->commit_log.clear();
-}
+// void MainWindow::clearCommitLog(RepositoryWrapperFrame *frame)
+// {
+// 	frame->commit_log.clear();
+// }
 
 PtyProcess *MainWindow::getPtyProcess()
 {
@@ -3652,7 +3652,7 @@ QString MainWindow::makeCommitInfoText(RepositoryWrapperFrame *frame, int row, Q
 
 	QString message_ex;
 
-	Git::CommitItem commit = getCommitLog(frame)[row];
+	Git::CommitItem commit = frame->commit_log[row];
 
 	{ // branch
 		if (label_list) {
@@ -4246,7 +4246,7 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 		int index = item->data(IndexRole).toInt();
 		{
 			std::lock_guard lock(frame->commit_log_mutex);
-			auto const &logs = getCommitLog(frame);
+			auto const &logs = frame->commit_log;
 			int count = (int)logs.size();
 			Q_ASSERT(index >= 0 && index < count);
 			commit = logs[index];
@@ -4468,8 +4468,13 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 
 	Git::CommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
 	QList<Git::Branch> branches = g->branches(); // ブランチを取得
-
-	setCommitLog(frame, commit_log);
+	
+	{
+		std::lock_guard lock(frame->commit_log_mutex);
+		
+		frame->commit_log = commit_log;
+	}	
+	// setCommitLog(frame, commit_log);
 
 	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
 	for (Git::Branch const &b : branches) {
@@ -4536,7 +4541,8 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 	getObjCache(frame)->setup(g);
 
 	if (clear_log) { // ログをクリア
-		clearCommitLog(frame);
+		std::lock_guard lock(frame->commit_log_mutex);
+		frame->commit_log.clear();
 	}
 
 	// リポジトリ情報をクリア
@@ -4695,7 +4701,7 @@ void MainWindow::updateStatusBarText(RepositoryWrapperFrame *frame)
 		QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame, false), 0);
 		if (item) {
 			std::lock_guard lock(frame->commit_log_mutex);
-			auto const &logs = getCommitLog(frame);
+			auto const &logs = frame->commit_log;
 			int row = item->data(IndexRole).toInt();
 			if (row < (int)logs.size()) {
 				Git::CommitItem const &commit = logs[row];
@@ -5920,10 +5926,15 @@ Git::CommitItem MainWindow::commitItem(RepositoryWrapperFrame const *frame, Git:
 	if (!frame) { // TODO:
 		frame = this->frame();
 	}
-
-	std::lock_guard lock(frame->commit_log_mutex);
-
-	return *frame->commit_log.find(id);
+	
+	Git::CommitItem ret;
+	
+	{
+		std::lock_guard lock(frame->commit_log_mutex);
+		ret = *frame->commit_log.find(id);
+	}
+	
+	return ret;
 }
 
 QImage MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row, QSize size) const
@@ -5933,7 +5944,7 @@ QImage MainWindow::committerIcon(RepositoryWrapperFrame *frame, int row, QSize s
 		Git::CommitItem commit;
 		{
 			std::lock_guard lock(frame->commit_log_mutex);
-			auto const &logs = getCommitLog(frame);
+			auto const &logs = frame->commit_log;
 			if (row >= 0 && row < (int)logs.size()) {
 				commit = logs[row];
 			}
@@ -6017,7 +6028,7 @@ void MainWindow::findNext(RepositoryWrapperFrame *frame)
 
 	std::lock_guard lock(frame->commit_log_mutex);
 
-	auto const &logs = getCommitLog(frame);
+	auto const &logs = frame->commit_log;
 	for (int pass = 0; pass < 2; pass++) {
 		int row = 0;
 		if (pass == 0) {
@@ -6048,7 +6059,7 @@ bool MainWindow::locateCommitID(RepositoryWrapperFrame *frame, QString const &co
 {
 	std::lock_guard lock(frame->commit_log_mutex);
 
-	auto const &logs = getCommitLog(frame);
+	auto const &logs = frame->commit_log;
 	int row = 0;
 	while (row < (int)logs.size()) {
 		Git::CommitItem const commit = logs[row];
@@ -6233,7 +6244,7 @@ int MainWindow::selectedLogIndex(RepositoryWrapperFrame *frame, bool lock) const
 		return selectedLogIndex(frame, false);
 	}
 
-	auto const &logs = getCommitLog(frame);
+	auto const &logs = frame->commit_log;
 	int i = frame->logtablewidget()->currentRow();
 	if (i >= 0 && i < (int)logs.size()) {
 		return i;
@@ -6260,7 +6271,7 @@ void MainWindow::updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *
 		auto it = getDiffCacheMap(frame)->find(key);
 		if (it != getDiffCacheMap(frame)->end()) {
 			std::lock_guard lock(frame->commit_log_mutex);
-			auto const &logs = getCommitLog(frame);
+			auto const &logs = frame->commit_log;
 			int row = frame->logtablewidget()->currentRow();
 			bool uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
 			frame->filediffwidget()->updateDiffView(it->second, uncommited);
@@ -7228,7 +7239,7 @@ void MainWindow::on_action_find_triggered()
 		auto *f = frame();
 		std::lock_guard lock(f->commit_log_mutex);
 
-		if (getCommitLog(f).empty()) {
+		if (f->commit_log.empty()) {
 			return;
 		}
 	}

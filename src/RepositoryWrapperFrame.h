@@ -46,7 +46,7 @@ public:
 	QImage committerIcon(int row, QSize size) const;
 	const QList<BranchLabel> *label(int row) const;
 	QString currentBranchName() const;
-	const Git::CommitItemList &getLogs() const;
+	Git::CommitItemList getLogs() const;
 	bool isAncestorCommit(const QString &id);
 	QColor color(unsigned int i);
 	void updateAncestorCommitMap();

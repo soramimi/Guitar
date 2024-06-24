@@ -246,7 +246,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const *list = &frame()->getLogs();
+	Git::CommitItemList const list = frame()->getLogs();
 
 	int indent_span = 16;
 
@@ -282,15 +282,15 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 
 	auto DrawLine = [&](size_t index, int itemrow){
 		QRect rc1;
-		if (index < list->size()) {
-			Git::CommitItem const &item1 = list->at(index);
+		if (index < list.size()) {
+			Git::CommitItem const &item1 = list.at(index);
 			rc1 = ItemRect(itemrow);
 			QPointF pt1 = ItemPoint(item1.marker_depth, rc1);
 			double halfheight = rc1.height() / 2.0;
 			for (TreeLine const &line : item1.parent_lines) {
 				if (line.depth >= 0) {
 					QPainterPath *path = nullptr;
-					Git::CommitItem const &item2 = list->at(line.index);
+					Git::CommitItem const &item2 = list.at(line.index);
 					QRect rc2 = ItemRect(line.index);
 					if (index + 1 == (size_t)line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);
@@ -322,8 +322,8 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	auto DrawMark = [&](size_t index, int row){
 		double x, y;
 		y = 0;
-		if (index < list->size()) {
-			Git::CommitItem const &item = list->at(index);
+		if (index < list.size()) {
+			Git::CommitItem const &item = list.at(index);
 			QRect rc = ItemRect(row);
 			QPointF pt = ItemPoint(item.marker_depth, rc);
 			double r = 4;
@@ -356,7 +356,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 0.5);
 		pr.setBrush(Qt::NoBrush);
 
-		for (int i = 0; i < (int)list->size(); i++) {
+		for (int i = 0; i < (int)list.size(); i++) {
 			double y = DrawLine(i, i);
 			if (y >= height()) break;
 		}
@@ -366,7 +366,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 1);
 		pr.setBrush(frame()->color(0));
 
-		for (int i = 0; i < (int)list->size(); i++) {
+		for (int i = 0; i < (int)list.size(); i++) {
 			double y = DrawMark(i, i);
 			if (y >= height()) break;
 		}

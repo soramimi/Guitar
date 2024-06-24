@@ -324,9 +324,9 @@ private:
 	void stopPtyProcess();
 	void abortPtyProcess();
 	Git::CommitItemList *getCommitLogPtr(RepositoryWrapperFrame *frame);
-	const Git::CommitItemList &getCommitLog(RepositoryWrapperFrame const *frame) const;
-	void setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
-	void clearCommitLog(RepositoryWrapperFrame *frame);
+	// const Git::CommitItemList &getCommitLog(RepositoryWrapperFrame const *frame) const;
+	// void setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
+	// void clearCommitLog(RepositoryWrapperFrame *frame);
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
 	PtyCondition getPtyCondition();
