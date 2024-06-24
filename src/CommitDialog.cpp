@@ -163,7 +163,7 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	diff_ = mainwindow()->git()->diff_head();
+	diff_ = CommitMessageGenerator::diff_head();
 	
 	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.name);
 	dlg.show();

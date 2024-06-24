@@ -484,7 +484,7 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultQString();
 }
 
-QString Git::diff_head()
+QString Git::diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept)
 {
 #if 0
 	QString cmd = "diff HEAD";
@@ -499,7 +499,12 @@ QString Git::diff_head()
 	for (auto file : files) {
 		if (file.isEmpty()) continue;
 		QString mimetype = global->mainwindow->determinFileType(file);
+		if (mimetype.startsWith("image/")) continue; // 画像ファイルはdiffしない
+		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
+		if (fn_accept) {
+			if (!fn_accept(file, mimetype)) continue; // ファイルの種類によるフィルタリング
+		}
 		cmd = "diff --full-index HEAD -- " + file;
 		git(cmd);
 		diff += resultQString();

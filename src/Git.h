@@ -505,7 +505,7 @@ public:
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
 
-	QString diff_head();
+	QString diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept = nullptr);
 
 	struct DiffRaw {
 		struct AB {

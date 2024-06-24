@@ -5799,9 +5799,8 @@ void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, Git::C
 					Git::CommitID id = g->rev_parse(name);
 					if (id.isValid()) {
 						if (QMessageBox::question(parent, tr("Create Local Branch"),
-												  tr("Failed to create a local branch.\n"
-													 "Do you want to jump to the existing commit?"
-													 ), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+												  tr("Failed to create a local branch.") + "\n" + tr("Do you want to jump to the existing commit?"),
+												  QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
 							jump(g, id);
 						}
 					}

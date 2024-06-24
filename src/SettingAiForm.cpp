@@ -155,8 +155,8 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 		// ja: AIを利用したコミットメッセージの生成機能を有効にすると、ローカルコンテンツの一部がクラウドサービスに送信されることに同意したものと見なされます。
 		msg += tr("By enabling the commit message generation feature using AI, you are deemed to agree that part of your local content will be sent to the cloud service.");
 		msg += "\n\n";
-		// ja: あなたは機密保持とモデルの選択、APIの利用料金に注意する必要があります。
-		msg += tr("You should be aware of confidentiality, model selection, and API usage fees.");
+		// ja: あなたはAIモデルの選択、APIの利用料金、情報セキュリティに注意する必要があります。
+		msg += tr("You should be aware of AI model selection, API usage fees, and information security.");
 		if (QMessageBox::warning(this, tr("Commit Message Generation with AI"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok)	{
 			ui->groupBox_generate_commit_message_by_ai->setChecked(false);
 		}

@@ -57,6 +57,7 @@ public:
 	{
 		return error_message_;
 	}
+	static QString diff_head();
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

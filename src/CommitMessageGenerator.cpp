@@ -1,6 +1,7 @@
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
 #include "ApplicationSettings.h"
+#include "MainWindow.h"
 #include "common/jstream.h"
 #include "common/misc.h"
 #include "common/strformat.h"
@@ -549,5 +550,14 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	}
 
 	return {};
+}
+
+QString CommitMessageGenerator::diff_head()
+{
+	QString diff = global->mainwindow->git()->diff_head([&](QString const &name, QString const &mime) {
+		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Qtの翻訳TSファイルはdiffしない（行番号など変更箇所が大量になるため）
+		return true;
+	});
+	return diff;
 }
 

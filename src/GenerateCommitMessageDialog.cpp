@@ -56,7 +56,7 @@ QString GenerateCommitMessageDialog::message() const
 
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 {
-	QString diff = global->mainwindow->git()->diff_head();
+	QString diff = CommitMessageGenerator::diff_head();
 	generate(diff);
 }
 
