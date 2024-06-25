@@ -752,6 +752,16 @@ private:
 	{
 		return format_pointer(val);
 	}
+	void reset_format_params()
+	{
+		upper_ = false;
+		zero_padding_ = false;
+		align_left_ = false;
+		plus_ = false;
+		width_ = -1;
+		precision_ = -1;
+		lflag_ = 0;
+	}
 	void format(std::function<Part *(int)> const &callback, int width, int precision)
 	{
 		if (advance(false)) {
@@ -759,13 +769,7 @@ private:
 				next_++;
 			}
 
-			upper_ = false;
-			zero_padding_ = false;
-			align_left_ = false;
-			plus_ = false;
-			width_ = -1;
-			precision_ = -1;
-			lflag_ = 0;
+			reset_format_params();
 
 			while (1) {
 				int c = (unsigned char)*next_;
@@ -851,6 +855,10 @@ private:
 			}
 
 			head_ = next_;
+		} else {
+			reset_format_params();
+			Part *p = callback('s');
+			add_part(&list_, p);
 		}
 	}
 	int length()
