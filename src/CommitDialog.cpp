@@ -126,7 +126,7 @@ void CommitDialog::generateDetailedComment()
 	commit_message_ = ui->plainTextEdit->toPlainText();
 	QStringList lines = commit_message_.split('\n');
 	if (lines.empty()) {
-		commit_message_ = {};
+		commit_message_ = QString();
 	} else {
 		commit_message_ = lines.first().trimmed();
 	}
