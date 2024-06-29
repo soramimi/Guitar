@@ -7469,6 +7469,7 @@ Terminal=false
 
 void MainWindow::test()
 {
-	fetch(git(), false);
+	// fetch(git(), false);
+	reopenRepository();
 }
 
