@@ -115,7 +115,7 @@ GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool
 void GitCommandItem_fetch::run()
 {
 	g->fetch(pty, prune);
-	global->mainwindow->runFetch_(g);
+	global->mainwindow->internalAfterFetch(g);
 }
 
 //

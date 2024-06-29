@@ -149,7 +149,7 @@ private:
 	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 	void updateRepositoriesList();
 
-	void internalOpenRepository(GitPtr g, bool keep_selection = false);
+	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
 
 	// void clearLog(RepositoryWrapperFrame *frame);
 	void openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
@@ -231,7 +231,7 @@ private:
 	void checkUser();
 	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
 	void updateRepository();
-	void reopenRepository(bool log, const std::function<void (GitPtr)> callback);
+	// void reopenRepository(bool log, const std::function<void (GitPtr)> callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID id);
@@ -655,7 +655,7 @@ private:
 	void queryTags(GitPtr g);
 protected:
 public:
-	void runFetch_(GitPtr g);
+	void internalAfterFetch(GitPtr g);
 };
 Q_DECLARE_METATYPE(MainWindow::ExchangeData)
 

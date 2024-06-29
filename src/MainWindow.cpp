@@ -1295,7 +1295,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	if (open) {
 		setCurrentRepository(item, true);
 		GitPtr g = git(item.local_dir, {}, sshkey);
-		internalOpenRepository(g);
+		internalOpenRepository(g, false, false);
 	}
 
 	return true;
@@ -1725,7 +1725,7 @@ void MainWindow::openRepository(bool validate, bool waitcursor, bool keep_select
 		return;
 	}
 
-	internalOpenRepository(g, keep_selection);
+	internalOpenRepository(g, true, keep_selection);
 }
 
 /**
@@ -1739,35 +1739,35 @@ void MainWindow::updateRepository()
 	if (!isValidWorkingCopy(g)) return;
 
 	OverrideWaitCursor;
-	internalOpenRepository(g);
+	internalOpenRepository(g, false, false);
 }
 
-/**
- * @brief MainWindow::reopenRepository
- * @param log ログ
- * @param callback コールバック
- *
- * リポジトリを再オープンする
- */
-void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr)> callback)
-{
-	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return;
+// /**
+//  * @brief MainWindow::reopenRepository
+//  * @param log ログ
+//  * @param callback コールバック
+//  *
+//  * リポジトリを再オープンする
+//  */
+// void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr)> callback)
+// {
+// 	GitPtr g = git();
+// 	if (!isValidWorkingCopy(g)) return;
 
-	OverrideWaitCursor;
-	if (log) {
-		AsyncExecGitThread_ th(g, callback);
-		th.start();
-		while (1) {
-			if (th.wait(1)) break;
-			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-		}
-		internalOpenRepository(g);
-	} else {
-		callback(g);
-		internalOpenRepository(g);
-	}
-}
+// 	OverrideWaitCursor;
+// 	if (log) {
+// 		AsyncExecGitThread_ th(g, callback);
+// 		th.start();
+// 		while (1) {
+// 			if (th.wait(1)) break;
+// 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+// 		}
+// 		internalOpenRepository(g);
+// 	} else {
+// 		callback(g);
+// 		internalOpenRepository(g);
+// 	}
+// }
 
 /**
  * @brief MainWindow::setCurrentRepository
@@ -1989,7 +1989,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 				}
 				setLogEnabled(g, false);
 			}
-			internalOpenRepository(g);
+			internalOpenRepository(g, false, false);
 		}
 
 		return; // done
@@ -3358,27 +3358,6 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	if (0) { // for debug
 		params->run();
 	} else {
-#if 0
-		std::thread th([&](std::shared_ptr<AbstractGitCommandItem> params){
-			setProgress(-1.0f);
-			showProgress(params->progress_message, false);
-			setPtyCondition(PtyCondition::Fetch);
-			setPtyProcessOk(true);
-			params->pty = getPtyProcess();
-
-			params->perform();
-
-			while (!params->pty->wait(1));
-			ret = getPtyProcessOk();
-			hideProgress();
-
-			if (params->update_commit_log) {
-				updateCommitLog();
-			}
-		}, params);
-
-		th.join();
-#else
 		{
 			QApplication::setOverrideCursor(Qt::WaitCursor);
 			setProgress(-1.0f);
@@ -3405,7 +3384,7 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 			hideProgress();
 
 			if (req.params->reopen_repository) {
-				internalOpenRepository(git());
+				internalOpenRepository(git(), false, false);
 			} else if (req.params->update_commit_log) {
 				openRepositoryMain(frame(), git(), false, false, false, true);
 			}
@@ -3414,7 +3393,6 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		};
 
 		m->git_process_thread.request(std::move(req));
-#endif
 	}
 
 	return ret;
@@ -4385,9 +4363,9 @@ Git::Object MainWindow::catFile(QString const &id)
 	return internalCatFile(frame(), git(), id);
 }
 
-void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
+void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selection)
 {
-	openRepositoryMain(frame(), g, true, true, false, keep_selection);
+	openRepositoryMain(frame(), g, true, true, fetch, keep_selection);
 }
 
 void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
@@ -4501,13 +4479,11 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 
 	Git::CommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
 	QList<Git::Branch> branches = g->branches(); // ブランチを取得
-	
+
 	{
 		std::lock_guard lock(frame->commit_log_mutex);
-		
 		frame->commit_log = commit_log;
-	}	
-	// setCommitLog(frame, commit_log);
+	}
 
 	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
 	for (Git::Branch const &b : branches) {
@@ -4545,7 +4521,7 @@ void MainWindow::queryTags(GitPtr g)
 	}
 }
 
-void MainWindow::runFetch_(GitPtr g)
+void MainWindow::internalAfterFetch(GitPtr g)
 {
 	RepositoryWrapperFrame *frame = this->frame();
 
@@ -4566,10 +4542,9 @@ void MainWindow::updateHEAD(GitPtr g)
 
 void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
-	if (!isValidWorkingCopy(g)) return;
+	ASSERT_MAIN_THREAD();
 
-	QElapsedTimer t;
-	t.start();
+	if (!isValidWorkingCopy(g)) return;
 
 	getObjCache(frame)->setup(g);
 
@@ -7510,5 +7485,5 @@ Terminal=false
 
 void MainWindow::test()
 {
-	showProgress("test", false);
+	fetch(git(), false);
 }
