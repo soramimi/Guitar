@@ -19,6 +19,7 @@ class QTableWidgetItem;
 class QTreeWidgetItem;
 class RepositoryWrapperFrame;
 class WebContext;
+class GitProcessRequest;
 struct GitHubRepositoryInfo;
 
 namespace Ui {
@@ -249,7 +250,7 @@ private:
 	void clearAuthentication();
 	void clearSshAuthentication();
 	void internalDeleteTags(const QStringList &tagnames);
-	bool internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
+	void internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
 	void addRepository(const QString &local_dir, const QString &group = {});
 	void scanFolderAndRegister(const QString &group);
@@ -332,8 +333,15 @@ private:
 	PtyCondition getPtyCondition();
 	void setPtyUserData(const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
+
 	bool fetch(GitPtr g, bool prune);
 	bool fetch_tags_f(GitPtr g);
+	bool pull(GitPtr g);
+	bool push_tags(GitPtr g);
+	bool delete_tags(GitPtr g, const QStringList &tagnames);
+	bool add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
+
+
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
@@ -417,7 +425,7 @@ public:
 	void setCurrentLogRow(RepositoryWrapperFrame *frame, int row);
 	bool shown();
 	void deleteTags(RepositoryWrapperFrame *frame, QStringList const &tagnames);
-	bool addTag(RepositoryWrapperFrame *frame, QString const &name);
+	void addTag(RepositoryWrapperFrame *frame, QString const &name);
 	void updateCurrentFilesList(RepositoryWrapperFrame *frame);
 	int selectedLogIndex(RepositoryWrapperFrame *frame, bool lock = true) const;
 	void updateAncestorCommitMap(RepositoryWrapperFrame *frame);
@@ -590,6 +598,11 @@ private slots:
 
 	// progress handler
 	void onRemoteInfoChanged();
+	void onGitProcessThreadDone(const GitProcessRequest &req);
+	void onShowProgress(const QString &text, bool cancel_button);
+	void onSetProgress(float progress);
+	void onHideProgress();
+	void onUpdateCommitLog();
 private:
 	void setupProgressHandler();
 public:
@@ -632,7 +645,6 @@ signals:
 
 	void remoteInfoChanged();
 private:
-	bool pull(GitPtr g);
 
 	void updateButton();
 	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);

@@ -51,6 +51,7 @@
 #include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
+#include "GitProcessThread.h"
 #include "gunzip.h"
 #include "platform.h"
 #include "webclient.h"
@@ -123,7 +124,6 @@ protected:
 		global->mainwindow->setLogEnabled(g, false);
 	}
 };
-
 
 struct MainWindow::Private {
 
@@ -216,6 +216,8 @@ struct MainWindow::Private {
 	QString add_repository_into_group;
 
 	std::thread update_files_list_thread;
+
+	GitProcessThread git_process_thread;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -362,6 +364,9 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
+	connect(&m->git_process_thread, &GitProcessThread::done, this, &MainWindow::onGitProcessThreadDone);
+	m->git_process_thread.start();
+
 	ui->action_sidebar->setChecked(true);
 
 	startTimers();
@@ -369,6 +374,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+	m->git_process_thread.stop();
+
 	if (m->update_files_list_thread.joinable()) {
 		m->update_files_list_thread.join();
 	}
@@ -754,6 +761,11 @@ void MainWindow::toggleMaximized()
 	setWindowState(state);
 }
 
+void MainWindow::onGitProcessThreadDone(GitProcessRequest const &req)
+{
+	req.done(req);
+}
+
 void MainWindow::setStatusBarText(QString const &text)
 {
 	m->status_bar_label->setText(text);
@@ -828,18 +840,15 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 
 void MainWindow::setupProgressHandler()
 {
-	connect(this, &MainWindow::signalSetProgress, this, [&](float progress) {
-		ui->label_progress->setProgress(progress);
-	});
-	connect(this, &MainWindow::signalHideProgress, this, [&]() {
-		ui->frame_progress->setVisible(false);
-	});
-	connect(this, &MainWindow::signalShowProgress, this, [&](QString const &text, bool cancel_button) {
-		ui->toolButton_cancel->setVisible(cancel_button);
-		ui->label_progress->setText(text);
-		ui->label_progress->setProgress(0.0f);
-		ui->frame_progress->setVisible(true);
-	});
+	connect(this, &MainWindow::signalSetProgress, this, &MainWindow::onSetProgress);
+	connect(this, &MainWindow::signalHideProgress, this, &MainWindow::onHideProgress);
+	connect(this, &MainWindow::signalShowProgress, this, &MainWindow::onShowProgress);
+}
+
+void MainWindow::onSetProgress(float progress)
+{
+	ASSERT_MAIN_THREAD();
+	ui->label_progress->setProgress(progress);
 }
 
 void MainWindow::setProgress(float progress)
@@ -847,9 +856,24 @@ void MainWindow::setProgress(float progress)
 	emit signalSetProgress(progress);
 }
 
+void MainWindow::onShowProgress(const QString &text, bool cancel_button)
+{
+	ASSERT_MAIN_THREAD();
+	ui->toolButton_cancel->setVisible(cancel_button);
+	ui->label_progress->setText(text);
+	ui->label_progress->setProgress(-1.0f);
+	ui->frame_progress->setVisible(true);
+}
+
 void MainWindow::showProgress(QString const &text, bool cancel_button)
 {
 	emit signalShowProgress(text, cancel_button);
+}
+
+void MainWindow::onHideProgress()
+{
+	ASSERT_MAIN_THREAD();
+	ui->frame_progress->setVisible(false);
 }
 
 void MainWindow::hideProgress()
@@ -1725,7 +1749,7 @@ void MainWindow::updateRepository()
  *
  * リポジトリを再オープンする
  */
-void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> callback)
+void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr)> callback)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -1738,10 +1762,11 @@ void MainWindow::reopenRepository(bool log, const std::function<void (GitPtr )> 
 			if (th.wait(1)) break;
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
+		internalOpenRepository(g);
 	} else {
 		callback(g);
+		internalOpenRepository(g);
 	}
-	internalOpenRepository(g);
 }
 
 /**
@@ -1983,6 +2008,23 @@ Git::CommitItem MainWindow::selectedCommitItem(RepositoryWrapperFrame *frame) co
 	int i = selectedLogIndex(frame);
 	return commitItem(frame, i);
 }
+
+//
+void MainWindow::setupUpdateCommitLog()
+{
+	connect(this, &MainWindow::signalUpdateCommitLog, this, &MainWindow::onUpdateCommitLog);
+}
+
+void MainWindow::onUpdateCommitLog()
+{
+	openRepositoryMain(frame(), git(), false, false, false, true);
+}
+
+void MainWindow::updateCommitLog()
+{
+	emit signalUpdateCommitLog();
+}
+
 
 /**
  * @brief MainWindow::commit
@@ -2267,11 +2309,7 @@ void MainWindow::internalDeleteTags(const QStringList &tagnames)
 	if (!isValidWorkingCopy(g)) return;
 
 	if (!tagnames.isEmpty()) {
-		reopenRepository(false, [&](GitPtr g){
-			for (QString const &name : tagnames) {
-				g->delete_tag(name, true);
-			}
-		});
+		delete_tags(g, tagnames);
 	}
 }
 
@@ -2283,26 +2321,17 @@ void MainWindow::internalDeleteTags(const QStringList &tagnames)
  *
  * タグを追加する
  */
-bool MainWindow::internalAddTag(RepositoryWrapperFrame *frame, const QString &name)
+void MainWindow::internalAddTag(RepositoryWrapperFrame *frame, const QString &name)
 {
-	if (name.isEmpty()) return false;
+	if (name.isEmpty()) return;
 
 	GitPtr g = git();
-	if (!isValidWorkingCopy(g)) return false;
+	if (!isValidWorkingCopy(g)) return;
 
-	Git::CommitID commit_id;
+	Git::CommitID commit_id = selectedCommitItem(frame).commit_id;
+	if (!Git::isValidID(commit_id)) return;
 
-	Git::CommitItem const commit = selectedCommitItem(frame);
-	commit_id = commit.commit_id;
-
-	if (!Git::isValidID(commit_id)) return false;
-
-	bool ok = false;
-	reopenRepository(false, [&](GitPtr g){
-		ok = g->tag(name, commit_id);
-	});
-
-	return ok;
+	add_tag(g, name, commit_id);
 }
 
 /**
@@ -3267,70 +3296,15 @@ void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
 
 //
 
-class AbstractGitCommandItem {
-public:
-	GitPtr g;
-	PtyProcess *pty = nullptr;
-	QString progress_message;
-	bool update_commit_log = false;
-	AbstractGitCommandItem(QString const &progress_message)
-		: progress_message(progress_message)
-	{
-	}
-	virtual ~AbstractGitCommandItem() = default;
-	virtual void perform() = 0;
-};
-
-class GitCommandItem_fetch : public AbstractGitCommandItem {
-public:
-	bool prune;
-	GitCommandItem_fetch(QString const &progress_message, bool prune)
-		: AbstractGitCommandItem(progress_message)
-		, prune(prune)
-	{
-		update_commit_log = true;
-	}
-	void perform() override
-	{
-		g->fetch(pty, prune);
-		global->mainwindow->runFetch_(g);
-	}
-};
-
-class GitCommandItem_fetch_tags_f : public AbstractGitCommandItem {
-public:
-	GitCommandItem_fetch_tags_f(QString const &progress_message)
-		: AbstractGitCommandItem(progress_message)
-	{
-		update_commit_log = true;
-	}
-	void perform() override
-	{
-		g->fetch_tags_f(pty);
-	}
-};
-
-class GitCommandItem_pull : public AbstractGitCommandItem {
-public:
-	GitCommandItem_pull(QString const &progress_message)
-		: AbstractGitCommandItem(progress_message)
-	{
-	}
-	void perform() override
-	{
-		g->pull(pty);
-	}
-};
-
-
 bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params)
 {
 	bool ret = false;
-	params->g = g;
+	params->g = g->dup();
 
-	if (1) { // for debug
-		params->perform();
+	if (0) { // for debug
+		params->run();
 	} else {
+#if 0
 		std::thread th([&](std::shared_ptr<AbstractGitCommandItem> params){
 			setProgress(-1.0f);
 			showProgress(params->progress_message, false);
@@ -3350,6 +3324,49 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		}, params);
 
 		th.join();
+#else
+		{
+			QApplication::setOverrideCursor(Qt::WaitCursor);
+			setProgress(-1.0f);
+			showProgress(params->progress_message, false);
+		}
+		GitProcessRequest req;
+		req.params = params;
+
+		req.run = [this](GitProcessRequest const &req){
+			setPtyCondition(PtyCondition::Fetch);
+			setPtyProcessOk(true);
+			req.params->pty = getPtyProcess();
+
+			req.params->run();
+		};
+
+		req.done = [this](GitProcessRequest const &req){
+			ASSERT_MAIN_THREAD();
+
+			if (req.params->done) {
+				req.params->done();
+			}
+
+			getPtyProcessOk();
+			if (req.params->update_commit_log) {
+				openRepositoryMain(frame(), git(), false, false, false, true);
+			}
+
+			hideProgress();
+
+			if (req.params->reopen_repository) {
+				QElapsedTimer t;
+				t.start();
+				internalOpenRepository(git());
+				qDebug() << "reopen repository:" << t.elapsed() << "ms";
+			}
+
+			QApplication::restoreOverrideCursor();
+		};
+
+		m->git_process_thread.request(std::move(req));
+#endif
 	}
 
 	return ret;
@@ -3370,6 +3387,24 @@ bool MainWindow::fetch_tags_f(GitPtr g)
 bool MainWindow::pull(GitPtr g)
 {
 	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::push_tags(GitPtr g)
+{
+	std::shared_ptr<GitCommandItem_push_tags> params = std::make_shared<GitCommandItem_push_tags>(tr("Pushing tags..."));
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
+{
+	std::shared_ptr<GitCommandItem_delete_tags> params = std::make_shared<GitCommandItem_delete_tags>(tagnames);
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
+{
+	std::shared_ptr<GitCommandItem_add_tag> params = std::make_shared<GitCommandItem_add_tag>(name, commit_id);
 	return runPtyGit(g, params);
 }
 
@@ -4345,6 +4380,8 @@ void MainWindow::internalOpenRepository(GitPtr g, bool keep_selection)
 
 void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
 {
+	ASSERT_MAIN_THREAD();
+
 	LogTableWidget *logtablewidget = frame->logtablewidget();
 	bool block = logtablewidget->blockSignals(true);
 	{
@@ -4438,22 +4475,6 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 
 	updateUI();
 }
-
-void MainWindow::setupUpdateCommitLog()
-{
-	connect(this, &MainWindow::signalUpdateCommitLog, this, [this](){
-		openRepositoryMain(frame(), git(), false, false, false, true);
-	});
-}
-
-void MainWindow::updateCommitLog()
-{
-	emit signalUpdateCommitLog();
-}
-
-// void MainWindow::clearLog(RepositoryWrapperFrame *frame)
-// {
-// }
 
 /**
  * @brief MainWindow::queryCommitLog
@@ -4868,22 +4889,19 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	if (isOnlineMode()) {
-		reopenRepository(true, [&](GitPtr g){
-			fetch(g, false);
-		});
-	} else {
+	if (!isOnlineMode()) {
 		updateRepository();
+		return;
 	}
+
+	fetch(git(), false);
 }
 
 void MainWindow::on_action_fetch_prune_triggered()
 {
 	if (!isOnlineMode()) return;
 
-	reopenRepository(true, [&](GitPtr g){
-		fetch(g, true);
-	});
+	fetch(git(), true);
 }
 
 void MainWindow::on_action_push_triggered()
@@ -4900,9 +4918,7 @@ void MainWindow::on_action_pull_triggered()
 {
 	if (!isOnlineMode()) return;
 
-	reopenRepository(true, [&](GitPtr g){
-		pull(g);
-	});
+	pull(git());
 }
 
 void MainWindow::on_toolButton_pull_clicked()
@@ -6515,21 +6531,18 @@ void MainWindow::revertCommit(RepositoryWrapperFrame *frame)
 	}
 }
 
-bool MainWindow::addTag(RepositoryWrapperFrame *frame, QString const &name)
+void MainWindow::addTag(RepositoryWrapperFrame *frame, QString const &name)
 {
 	int row = frame->logtablewidget()->currentRow();
 
-	bool ok = internalAddTag(frame, name);
+	internalAddTag(frame, name);
 
 	frame->selectLogTableRow(row);
-	return ok;
 }
 
 void MainWindow::on_action_push_all_tags_triggered()
 {
-	reopenRepository(false, [&](GitPtr g){
-		g->push_tags();
-	});
+	push_tags(git());
 }
 
 void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
@@ -7485,6 +7498,5 @@ Terminal=false
 
 void MainWindow::test()
 {
-	Git::CommitItemList list = git()->log_all({}, 10);
-	qDebug() << list.size();
+	showProgress("test", false);
 }

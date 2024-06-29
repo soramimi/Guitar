@@ -108,6 +108,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/GenerateCommitMessageThread.cpp \
+	$$PWD/src/GitProcessThread.cpp \
 	src/ProgressTextLabel.cpp \
 	src/SettingAiForm.cpp \
 	src/SettingOptionsForm.cpp \
@@ -259,6 +260,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/GenerateCommitMessageThread.h \
+	$$PWD/src/GitProcessThread.h \
 	src/ProgressTextLabel.h \
 	src/SettingAiForm.h \
 	src/SettingOptionsForm.h \

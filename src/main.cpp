@@ -23,6 +23,8 @@
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
+
+#include "GitProcessThread.h"
 #endif
 
 #ifndef APP_GUITAR
@@ -113,6 +115,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
 	qRegisterMetaType<MainWindow::ExchangeData>("MainWindow::ExchangeData");
+	qRegisterMetaType<GitProcessRequest>("GitProcessRequest");
 
 	{
 		MySettings s;
