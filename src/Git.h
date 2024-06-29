@@ -553,7 +553,10 @@ public:
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);
+
 	void rebaseBranch(QString const &name);
+	void rebase_abort();
+
 	static bool isValidWorkingCopy(QString const &dir);
 	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage() const;

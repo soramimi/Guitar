@@ -1440,6 +1440,11 @@ void Git::rebaseBranch(QString const &name)
 	git("rebase " + name);
 }
 
+void Git::rebase_abort()
+{
+	git("rebase --abort");
+}
+
 QStringList Git::getRemotes()
 {
 	QStringList ret;

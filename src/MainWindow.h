@@ -613,6 +613,8 @@ private slots:
 	void onSetProgress(float progress);
 	void onHideProgress();
 	void onUpdateCommitLog();
+	void on_action_rebase_abort_triggered();
+
 private:
 	void setupProgressHandler();
 public:

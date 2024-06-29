@@ -4749,6 +4749,13 @@ void MainWindow::rebaseBranch(Git::CommitItem const *commit)
 	}
 }
 
+void MainWindow::on_action_rebase_abort_triggered()
+{
+	doGitCommand([&](GitPtr g){
+		g->rebase_abort();
+	});
+}
+
 void MainWindow::cherrypick(Git::CommitItem const *commit)
 {
 	if (!commit) return;
@@ -7472,3 +7479,4 @@ void MainWindow::test()
 {
 	fetch(git(), false);
 }
+

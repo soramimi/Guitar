@@ -1264,6 +1264,7 @@
     <addaction name="action_submodules"/>
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
+    <addaction name="action_rebase_abort"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -1848,6 +1849,11 @@
   <action name="action_configure_user">
    <property name="text">
     <string>&amp;Configure user</string>
+   </property>
+  </action>
+  <action name="action_rebase_abort">
+   <property name="text">
+    <string>Rebase --abort</string>
    </property>
   </action>
  </widget>
