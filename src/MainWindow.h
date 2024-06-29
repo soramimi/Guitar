@@ -242,8 +242,17 @@ private:
 	Git::CommitItem selectedCommitItem(RepositoryWrapperFrame *frame) const;
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
+
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
+	bool fetch(GitPtr g, bool prune);
+	bool fetch_tags_f(GitPtr g);
+	bool pull(GitPtr g);
+	bool push_tags(GitPtr g);
+	bool delete_tags(GitPtr g, const QStringList &tagnames);
+	bool add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
+
 	bool push();
+
 	void deleteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem &commit);
 	void deleteSelectedBranch(RepositoryWrapperFrame *frame);
 	void resetFile(const QStringList &paths);
@@ -333,15 +342,6 @@ private:
 	PtyCondition getPtyCondition();
 	void setPtyUserData(const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
-
-	bool fetch(GitPtr g, bool prune);
-	bool fetch_tags_f(GitPtr g);
-	bool pull(GitPtr g);
-	bool push_tags(GitPtr g);
-	bool delete_tags(GitPtr g, const QStringList &tagnames);
-	bool add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
-
-
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();

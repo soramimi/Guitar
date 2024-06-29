@@ -133,6 +133,22 @@ void GitCommandItem_fetch_tags_f::run()
 
 //
 
+GitCommandItem_push::GitCommandItem_push(const QString &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force)
+	: AbstractGitCommandItem(progress_message)
+	, set_upstream_(set_upstream)
+	, remote_(remote)
+	, branch_(branch)
+	, force_(force)
+{
+}
+
+void GitCommandItem_push::run()
+{
+	g->push_u(set_upstream_, remote_, branch_, force_, pty);
+}
+
+//
+
 GitCommandItem_pull::GitCommandItem_pull(const QString &progress_message)
 	: AbstractGitCommandItem(progress_message)
 {
@@ -189,3 +205,4 @@ void GitCommandItem_add_tag::run()
 {
 	g->tag(name_, commit_id_);
 }
+

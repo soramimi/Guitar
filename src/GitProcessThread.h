@@ -15,7 +15,7 @@ public:
 	PtyProcess *pty = nullptr;
 	QString progress_message;
 	bool update_commit_log = false;
-	std::function<void ()> done;
+	std::vector<std::function<void (AbstractGitCommandItem const *)>> done;
 	bool reopen_repository = true;
 	AbstractGitCommandItem(QString const &progress_message)
 		: progress_message(progress_message)
@@ -35,6 +35,21 @@ public:
 class GitCommandItem_fetch_tags_f : public AbstractGitCommandItem {
 public:
 	GitCommandItem_fetch_tags_f(QString const &progress_message);
+	void run() override;
+};
+
+class GitCommandItem_push : public AbstractGitCommandItem {
+private:
+	bool set_upstream_ = false;
+	QString remote_;
+	QString branch_;
+	bool force_ = false;
+private:
+	friend class MainWindow;
+	int exitcode_ = 0;
+	QString errormsg_;
+public:
+	GitCommandItem_push(QString const &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force);
 	void run() override;
 };
 

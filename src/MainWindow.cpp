@@ -2135,6 +2135,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 		if (branch.isEmpty()) return;
 	}
 
+#if 0
 	int exitcode = 0;
 	QString errormsg;
 
@@ -2157,6 +2158,59 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 	updateRemoteInfo(git());
 	updateCommitLog();
+#else
+	std::shared_ptr<GitCommandItem_push> params = std::make_shared<GitCommandItem_push>(tr("Pushing..."), set_upstream, remote, branch, force);
+	params->done.push_back([&](AbstractGitCommandItem const *p){
+		ASSERT_MAIN_THREAD();
+		GitCommandItem_push const *cmd = static_cast<GitCommandItem_push const *>(p);
+		if (cmd->exitcode_ == 128) {
+			if (cmd->errormsg_.indexOf("Connection refused") >= 0) {
+				QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
+				return;
+			}
+		}
+		updateRemoteInfo(git());
+		updateCommitLog();
+	});
+	runPtyGit(git(), params);
+
+#endif
+}
+
+bool MainWindow::fetch(GitPtr g, bool prune)
+{
+	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::fetch_tags_f(GitPtr g)
+{
+	std::shared_ptr<GitCommandItem_fetch_tags_f> params = std::make_shared<GitCommandItem_fetch_tags_f>(tr("Fetching tags..."));
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::pull(GitPtr g)
+{
+	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::push_tags(GitPtr g)
+{
+	std::shared_ptr<GitCommandItem_push_tags> params = std::make_shared<GitCommandItem_push_tags>(tr("Pushing tags..."));
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
+{
+	std::shared_ptr<GitCommandItem_delete_tags> params = std::make_shared<GitCommandItem_delete_tags>(tagnames);
+	return runPtyGit(g, params);
+}
+
+bool MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
+{
+	std::shared_ptr<GitCommandItem_add_tag> params = std::make_shared<GitCommandItem_add_tag>(name, commit_id);
+	return runPtyGit(g, params);
 }
 
 /**
@@ -3344,22 +3398,16 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		req.done = [this](GitProcessRequest const &req){
 			ASSERT_MAIN_THREAD();
 
-			if (req.params->done) {
-				req.params->done();
-			}
-
-			getPtyProcessOk();
-			if (req.params->update_commit_log) {
-				openRepositoryMain(frame(), git(), false, false, false, true);
+			for (auto done : req.params->done) {
+				done(req.params.get());
 			}
 
 			hideProgress();
 
 			if (req.params->reopen_repository) {
-				QElapsedTimer t;
-				t.start();
 				internalOpenRepository(git());
-				qDebug() << "reopen repository:" << t.elapsed() << "ms";
+			} else if (req.params->update_commit_log) {
+				openRepositoryMain(frame(), git(), false, false, false, true);
 			}
 
 			QApplication::restoreOverrideCursor();
@@ -3370,42 +3418,6 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	}
 
 	return ret;
-}
-
-bool MainWindow::fetch(GitPtr g, bool prune)
-{
-	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
-	return runPtyGit(g, params);
-}
-
-bool MainWindow::fetch_tags_f(GitPtr g)
-{
-	std::shared_ptr<GitCommandItem_fetch_tags_f> params = std::make_shared<GitCommandItem_fetch_tags_f>(tr("Fetching tags..."));
-	return runPtyGit(g, params);
-}
-
-bool MainWindow::pull(GitPtr g)
-{
-	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
-	return runPtyGit(g, params);
-}
-
-bool MainWindow::push_tags(GitPtr g)
-{
-	std::shared_ptr<GitCommandItem_push_tags> params = std::make_shared<GitCommandItem_push_tags>(tr("Pushing tags..."));
-	return runPtyGit(g, params);
-}
-
-bool MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
-{
-	std::shared_ptr<GitCommandItem_delete_tags> params = std::make_shared<GitCommandItem_delete_tags>(tagnames);
-	return runPtyGit(g, params);
-}
-
-bool MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
-{
-	std::shared_ptr<GitCommandItem_add_tag> params = std::make_shared<GitCommandItem_add_tag>(name, commit_id);
-	return runPtyGit(g, params);
 }
 
 bool MainWindow::interactionCanceled() const
