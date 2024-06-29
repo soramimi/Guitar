@@ -113,7 +113,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="FilesListWidget" name="listWidget_unstaged">
+             <widget class="FileListWidget" name="listWidget_unstaged">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
@@ -314,7 +314,7 @@
              </widget>
             </item>
             <item>
-             <widget class="FilesListWidget" name="listWidget_staged">
+             <widget class="FileListWidget" name="listWidget_staged">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
@@ -346,7 +346,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="FilesListWidget" name="listWidget_files">
+             <widget class="FileListWidget" name="listWidget_files">
               <property name="contextMenuPolicy">
                <enum>Qt::CustomContextMenu</enum>
               </property>
@@ -426,9 +426,9 @@
    <header>LogTableWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>FilesListWidget</class>
+   <class>FileListWidget</class>
    <extends>QListWidget</extends>
-   <header>FilesListWidget.h</header>
+   <header>FileListWidget.h</header>
   </customwidget>
   <customwidget>
    <class>RepositoryWrapperFrame</class>

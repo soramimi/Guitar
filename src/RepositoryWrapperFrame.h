@@ -10,7 +10,7 @@
 
 class MainWindow;
 class LogTableWidget;
-class FilesListWidget;
+class FileListWidget;
 class FileDiffWidget;
 
 class RepositoryWrapperFrame : public QFrame {
@@ -24,9 +24,9 @@ private:
 
 	MainWindow *mw_ = nullptr;
 	LogTableWidget *logtablewidget_ = nullptr;
-	FilesListWidget *fileslistwidget_ = nullptr;
-	FilesListWidget *unstagedfileslistwidget_ = nullptr;
-	FilesListWidget *stagesfileslistwidget_ = nullptr;
+	FileListWidget *filelistwidget_ = nullptr;
+	FileListWidget *unstagedfilelistwidget_ = nullptr;
+	FileListWidget *stagesfilelistwidget_ = nullptr;
 	FileDiffWidget *filediffwidget_ = nullptr;
 
 	std::map<Git::CommitID, QList<Git::Branch>> branch_map;
@@ -52,19 +52,19 @@ public:
 	void updateAncestorCommitMap();
 	void bind(MainWindow *mw
 			  , LogTableWidget *logtablewidget
-			  , FilesListWidget *fileslistwidget
-			  , FilesListWidget *unstagedfileslistwidget
-			  , FilesListWidget *stagesfileslistwidget
+			  , FileListWidget *filelistwidget
+			  , FileListWidget *unstagedfilelistwidget
+			  , FileListWidget *stagesfilelistwidget
 			  , FileDiffWidget *filediffwidget
 			  );
 
 	void prepareLogTableWidget();
 	void clearLogContents();
 	LogTableWidget *logtablewidget();
-	FilesListWidget *fileslistwidget();
-	FilesListWidget *unstagedFileslistwidget();
+	FileListWidget *filelistwidget();
+	FileListWidget *unstagedFileslistwidget();
 	FileDiffWidget *filediffwidget();
-	FilesListWidget *stagedFileslistwidget();
+	FileListWidget *stagedFileslistwidget();
 	void updateLogTableView();
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);

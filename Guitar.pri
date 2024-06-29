@@ -107,6 +107,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/FileListWidget.cpp \
 	$$PWD/src/GenerateCommitMessageThread.cpp \
 	$$PWD/src/GitProcessThread.cpp \
 	src/ProgressTextLabel.cpp \
@@ -158,7 +159,6 @@ SOURCES += \
 	src/FilePropertyDialog.cpp \
 	src/FileUtil.cpp \
 	src/FileViewWidget.cpp \
-	src/FilesListWidget.cpp \
 	src/FindCommitDialog.cpp \
 	src/GenerateCommitMessageDialog.cpp \
 	src/Git.cpp \
@@ -259,6 +259,7 @@ SOURCES += \
 	src/coloredit/RingSlider.cpp
 
 HEADERS += \
+	$$PWD/src/FileListWidget.h \
 	$$PWD/src/GenerateCommitMessageThread.h \
 	$$PWD/src/GitProcessThread.h \
 	src/ProgressTextLabel.h \
@@ -312,7 +313,6 @@ HEADERS += \
 	src/FileHistoryWindow.h \
 	src/FilePropertyDialog.h \
 	src/FileUtil.h \
-	src/FilesListWidget.h \
 	src/FindCommitDialog.h \
 	src/GenerateCommitMessageDialog.h \
 	src/Git.h \

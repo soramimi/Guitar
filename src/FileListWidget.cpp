@@ -1,4 +1,4 @@
-#include "FilesListWidget.h"
+#include "FileListWidget.h"
 #include "MainWindow.h"
 #include <QDebug>
 #include <QPainter>
@@ -106,7 +106,7 @@ public:
 };
 }
 
-FilesListWidget::FilesListWidget(QWidget *parent)
+FileListWidget::FileListWidget(QWidget *parent)
 	: QListWidget(parent)
 {
 	item_delegate = new ItemDelegate(this);

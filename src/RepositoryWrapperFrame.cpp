@@ -15,13 +15,13 @@ RepositoryWrapperFrame::~RepositoryWrapperFrame()
 	global->avatar_loader.connectAvatarReady(this, &RepositoryWrapperFrame::avatarReady);
 }
 
-void RepositoryWrapperFrame::bind(MainWindow *mw, LogTableWidget *logtablewidget, FilesListWidget *fileslistwidget, FilesListWidget *unstagedfileslistwidget, FilesListWidget *stagesfileslistwidget, FileDiffWidget *filediffwidget)
+void RepositoryWrapperFrame::bind(MainWindow *mw, LogTableWidget *logtablewidget, FileListWidget *filelistwidget, FileListWidget *unstagedfilelistwidget, FileListWidget *stagesfilelistwidget, FileDiffWidget *filediffwidget)
 {
 	mw_ = mw;
 	logtablewidget_ = logtablewidget;
-	fileslistwidget_ = fileslistwidget;
-	unstagedfileslistwidget_ = unstagedfileslistwidget;
-	stagesfileslistwidget_ = stagesfileslistwidget;
+	filelistwidget_ = filelistwidget;
+	unstagedfilelistwidget_ = unstagedfilelistwidget;
+	stagesfilelistwidget_ = stagesfilelistwidget;
 	filediffwidget_ = filediffwidget;
 	logtablewidget->bind(this);
 }
@@ -43,19 +43,19 @@ LogTableWidget *RepositoryWrapperFrame::logtablewidget()
 	return logtablewidget_;
 }
 
-FilesListWidget *RepositoryWrapperFrame::fileslistwidget()
+FileListWidget *RepositoryWrapperFrame::filelistwidget()
 {
-	return fileslistwidget_;
+	return filelistwidget_;
 }
 
-FilesListWidget *RepositoryWrapperFrame::unstagedFileslistwidget()
+FileListWidget *RepositoryWrapperFrame::unstagedFileslistwidget()
 {
-	return unstagedfileslistwidget_;
+	return unstagedfilelistwidget_;
 }
 
-FilesListWidget *RepositoryWrapperFrame::stagedFileslistwidget()
+FileListWidget *RepositoryWrapperFrame::stagedFileslistwidget()
 {
-	return stagesfileslistwidget_;
+	return stagesfilelistwidget_;
 }
 
 FileDiffWidget *RepositoryWrapperFrame::filediffwidget()

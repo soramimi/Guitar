@@ -668,7 +668,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					ui->treeWidget_repos->setFocus();
 					return true;
 				}
-			} else if (watched == frame()->fileslistwidget() || watched == frame()->unstagedFileslistwidget() || watched == frame()->stagedFileslistwidget()) {
+			} else if (watched == frame()->filelistwidget() || watched == frame()->unstagedFileslistwidget() || watched == frame()->stagedFileslistwidget()) {
 				if (k == Qt::Key_Escape) {
 					frame()->logtablewidget()->setFocus();
 					return true;
@@ -687,7 +687,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			updateStatusBarText(frame());
 			return true;
 		}
-		if (watched == frame()->fileslistwidget()) {
+		if (watched == frame()->filelistwidget()) {
 			m->last_focused_file_list = watched;
 			return true;
 		}
@@ -2799,7 +2799,7 @@ void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
 	ASSERT_MAIN_THREAD();
 	frame->unstagedFileslistwidget()->clear();
 	frame->stagedFileslistwidget()->clear();
-	frame->fileslistwidget()->clear();
+	frame->filelistwidget()->clear();
 }
 
 /**
@@ -4077,7 +4077,7 @@ void MainWindow::onAddFileObjectData(ExchangeData const &data)
 		QListWidgetItem *item = newListWidgetFileItem(obj);
 		switch (data.files_list_type) {
 		case FilesListType::SingleList:
-			data.frame->fileslistwidget()->addItem(item);
+			data.frame->filelistwidget()->addItem(item);
 			break;
 		case FilesListType::SideBySide:
 			if (obj.staged) {
@@ -5229,7 +5229,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QListWidgetItem *item = frame()->fileslistwidget()->currentItem();
+	QListWidgetItem *item = frame()->filelistwidget()->currentItem();
 
 	QString submodpath = getSubmodulePath(item);
 
@@ -5248,7 +5248,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 
 	QAction *a_properties = addMenuActionProperty(&menu);
 
-	QPoint pt = frame()->fileslistwidget()->mapToGlobal(pos) + QPoint(8, -8);
+	QPoint pt = frame()->filelistwidget()->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
 	if (a) {
 		if (a == a_delete) {
@@ -6292,7 +6292,7 @@ void MainWindow::on_listWidget_staged_currentRowChanged(int /*currentRow*/)
 
 void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 {
-	updateDiffView(frame(), frame()->fileslistwidget()->currentItem());
+	updateDiffView(frame(), frame()->filelistwidget()->currentItem());
 }
 
 void MainWindow::enableDragAndDropOnRepositoryTree(bool enabled)
