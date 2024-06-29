@@ -141,6 +141,11 @@ public:
 
 	bool isOnlineMode() const;
 private:
+	struct BasicCommitLog {
+		Git::CommitItemList commit_log;
+		std::map<Git::CommitID, QList<Git::Branch>> branch_map;
+	};
+
 
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
@@ -327,7 +332,10 @@ private:
 	std::string httpAuthenticationUser() const;
 	std::string httpAuthenticationPass() const;
 	const Git::CommitItem *getLog(RepositoryWrapperFrame const *frame, int index) const;
+
+	static void updateCommitGraph(Git::CommitItemList *logs);
 	void updateCommitGraph(RepositoryWrapperFrame *frame);
+
 	void initNetworking();
 	bool saveRepositoryBookmarks(bool update_list);
 	QString getBookmarksFilePath() const;

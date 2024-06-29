@@ -1852,6 +1852,8 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
  */
 void MainWindow::updateRemoteInfo(GitPtr g)
 {
+	qDebug() << Q_FUNC_INFO;
+
 	queryRemotes(g);
 
 	m->current_remote_name = QString();
@@ -2179,6 +2181,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 bool MainWindow::fetch(GitPtr g, bool prune)
 {
+	qDebug() << Q_FUNC_INFO;
 	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
 	return runPtyGit(g, params);
 }
@@ -3013,21 +3016,16 @@ const Git::CommitItem *MainWindow::getLog(RepositoryWrapperFrame const *frame, i
  *
  * 樹形図情報を構築する
  */
-void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
+void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
 {
-	std::lock_guard lock(frame->commit_log_mutex);
-
-	auto const &logs = frame->commit_log;
-	auto *logsp = getCommitLogPtr(frame);
-
-	const int LogCount = (int)logs.size();
+	const int LogCount = (int)logs->size();
 	if (LogCount > 0) {
-		auto LogItem = [&](int i)->Git::CommitItem &{ return logsp->at((size_t)i); };
+		auto LogItem = [&](int i)->Git::CommitItem &{ return logs->at((size_t)i); };
 		enum { // 有向グラフを構築するあいだ CommitItem::marker_depth をフラグとして使用する
 			UNKNOWN = 0,
 			KNOWN = 1,
 		};
-		for (Git::CommitItem &item : logsp->list) {
+		for (Git::CommitItem &item : logs->list) {
 			item.marker_depth = UNKNOWN;
 		}
 		// コミットハッシュを検索して、親コミットのインデックスを求める
@@ -3093,7 +3091,7 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 			}
 		}
 		// 線情報をクリア
-		for (Git::CommitItem &item : logsp->list) {
+		for (Git::CommitItem &item : logs->list) {
 			item.marker_depth = -1;
 			item.parent_lines.clear();
 		}
@@ -3242,6 +3240,64 @@ DONE:;
 	}
 }
 
+void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
+{
+	std::lock_guard lock(frame->commit_log_mutex);
+
+	Git::CommitItemList *logs = &frame->commit_log;
+	updateCommitGraph(logs);
+}
+
+/**
+ * @brief MainWindow::queryCommitLog
+ * @param p
+ * @param g
+ *
+ * コミットログとブランチ情報を取得
+ */
+void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
+{
+	qDebug() << Q_FUNC_INFO;
+
+	auto Do = [this, g](BasicCommitLog *p){
+
+		p->commit_log = retrieveCommitLog(g); // コミットログを取得
+
+		// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
+		QList<Git::Branch> branches = g->branches(); // ブランチを取得
+		for (Git::Branch const &b : branches) {
+			if (b.isCurrent()) {
+				setCurrentBranch(b);
+			}
+			p->branch_map[b.id].append(b);
+		}
+
+		// Uncommited changes の処理
+		updateUncommitedChanges();
+		if (isThereUncommitedChanges()) {
+			Git::CommitItem item;
+			item.parent_ids.push_back(currentBranch().id);
+			item.message = tr("Uncommited changes");
+			p->commit_log.list.insert(p->commit_log.list.begin(), item);
+			p->commit_log.updateIndex();
+		}
+
+		QElapsedTimer t;
+		t.start();
+		updateCommitGraph(&p->commit_log);
+		qDebug() << "updateCommitGraph:" << t.elapsed() << "ms";
+	};
+
+	BasicCommitLog log;
+	Do(&log);
+	{
+		std::lock_guard lock(frame->commit_log_mutex);
+		frame->commit_log = log.commit_log;
+		frame->branch_map = log.branch_map;
+	}
+
+}
+
 void MainWindow::initNetworking()
 {
 	std::string http_proxy;
@@ -3367,6 +3423,7 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		req.params = params;
 
 		req.run = [this](GitProcessRequest const &req){
+			qDebug() << Q_FUNC_INFO;
 			setPtyCondition(PtyCondition::Fetch);
 			setPtyProcessOk(true);
 			req.params->pty = getPtyProcess();
@@ -3375,6 +3432,7 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		};
 
 		req.done = [this](GitProcessRequest const &req){
+			qDebug() << Q_FUNC_INFO;
 			ASSERT_MAIN_THREAD();
 
 			for (auto done : req.params->done) {
@@ -4253,6 +4311,7 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 
 void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
+	qDebug() << Q_FUNC_INFO;
 	Git::CommitID id;
 	if (Git::isUncommited(commit)) {
 		// empty id for uncommited changes
@@ -4283,6 +4342,7 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 
 void MainWindow::detectGitServerType(GitPtr g)
 {
+	qDebug() << Q_FUNC_INFO;
 	*ptrGitHub() = GitHubRepositoryInfo();
 
 	QString url;
@@ -4365,6 +4425,7 @@ Git::Object MainWindow::catFile(QString const &id)
 
 void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selection)
 {
+	qDebug() << Q_FUNC_INFO;
 	openRepositoryMain(frame(), g, true, true, fetch, keep_selection);
 }
 
@@ -4466,51 +4527,6 @@ void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, in
 	updateUI();
 }
 
-/**
- * @brief MainWindow::queryCommitLog
- * @param frame
- * @param g
- *
- * コミットログとブランチ情報を取得
- */
-void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
-{
-	frame->branch_map.clear();
-
-	Git::CommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
-	QList<Git::Branch> branches = g->branches(); // ブランチを取得
-
-	{
-		std::lock_guard lock(frame->commit_log_mutex);
-		frame->commit_log = commit_log;
-	}
-
-	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
-	for (Git::Branch const &b : branches) {
-		if (b.isCurrent()) {
-			setCurrentBranch(b);
-		}
-		commitToBranchMapRef(frame)[b.id].append(b);
-	}
-
-	{
-		// Uncommited changes の処理
-		updateUncommitedChanges();
-		if (isThereUncommitedChanges()) {
-			Git::CommitItem item;
-			item.parent_ids.push_back(currentBranch().id);
-			item.message = tr("Uncommited changes");
-			{
-				std::lock_guard lock(frame->commit_log_mutex);
-
-				auto logptr = getCommitLogPtr(frame);
-				logptr->list.insert(logptr->list.begin(), item);
-				logptr->updateIndex();
-			}
-		}
-	}
-}
-
 void MainWindow::queryTags(GitPtr g)
 {
 	// タグを取得
@@ -4523,6 +4539,8 @@ void MainWindow::queryTags(GitPtr g)
 
 void MainWindow::internalAfterFetch(GitPtr g)
 {
+	qDebug() << Q_FUNC_INFO;
+
 	RepositoryWrapperFrame *frame = this->frame();
 
 	detectGitServerType(g);
@@ -4542,6 +4560,7 @@ void MainWindow::updateHEAD(GitPtr g)
 
 void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
+	qDebug() << Q_FUNC_INFO;
 	ASSERT_MAIN_THREAD();
 
 	if (!isValidWorkingCopy(g)) return;
