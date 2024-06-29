@@ -234,8 +234,10 @@ private:
 	void logGitVersion();
 	void internalClearRepositoryInfo();
 	void checkUser();
-	void openRepository(bool validate, bool waitcursor = true, bool keep_selection = false);
-	void updateRepository();
+
+	void openRepository(bool validate, bool waitcursor, bool keep_selection);
+	void reopenRepository();
+
 	// void reopenRepository(bool log, const std::function<void (GitPtr)> callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
