@@ -40,6 +40,8 @@ public:
 
 class AbstractGitCommandItem;
 
+class ExchangeData;
+
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 	friend class MainWindowHelperThread;
@@ -52,6 +54,7 @@ class MainWindow : public QMainWindow {
 	friend class AboutDialog;
 	friend class RepositoriesTreeWidget; // TODO:
 	friend class AsyncExecGitThread_; //TODO:
+	friend class ExchangeData;
 public:
 	enum {
 		IndexRole = Qt::UserRole,
@@ -112,7 +115,6 @@ public:
 	};
 
 private:
-
 	struct ObjectData {
 		QString id;
 		QString path;
@@ -122,6 +124,7 @@ private:
 		int idiff;
 		bool staged = false;
 	};
+private:
 
 	Ui::MainWindow *ui;
 
@@ -615,6 +618,8 @@ private slots:
 	void onUpdateCommitLog();
 	void on_action_rebase_abort_triggered();
 
+	void onShowFileList(FilesListType files_list_type);
+	void onAddFileObjectData(const ExchangeData &data);
 private:
 	void setupProgressHandler();
 public:
@@ -630,11 +635,6 @@ signals:
 protected slots:
 	void onLogIdle();
 public:
-	struct ExchangeData {
-		RepositoryWrapperFrame *frame = nullptr;
-		MainWindow::FilesListType files_list_type;
-		std::vector<ObjectData> object_data;
-	};
 	void writeLog(const char *ptr, int len, bool record);
 	void writeLog(std::string_view const &str, bool record);
 	void writeLog(const QString &str, bool record);
@@ -654,7 +654,6 @@ private:
 
 signals:
 	void signalAddFileObjectData(const ExchangeData &data);
-
 	void remoteInfoChanged();
 private:
 
@@ -669,6 +668,14 @@ protected:
 public:
 	void internalAfterFetch(GitPtr g);
 };
-Q_DECLARE_METATYPE(MainWindow::ExchangeData)
+
+class ExchangeData {
+public:
+	RepositoryWrapperFrame *frame = nullptr;
+	MainWindow::FilesListType files_list_type;
+	std::vector<MainWindow::ObjectData> object_data;
+};
+
+Q_DECLARE_METATYPE(ExchangeData)
 
 #endif // MAINWINDOW_H

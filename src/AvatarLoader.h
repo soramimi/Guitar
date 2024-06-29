@@ -10,13 +10,15 @@
 class MainWindow;
 class WebContext;
 
+struct AvatarLoaderItem {
+	std::string email;
+	QImage image;
+};
+Q_DECLARE_METATYPE(AvatarLoaderItem)
+
 class AvatarLoader : public QObject {
 	Q_OBJECT
 public:
-	struct Item {
-		std::string email;
-		QImage image;
-	};
 private:
 	enum State {
 		Idle,

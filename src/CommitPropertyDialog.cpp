@@ -162,7 +162,6 @@ void CommitPropertyDialog::updateAvatar(bool request)
 
 void CommitPropertyDialog::avatarReady()
 {
-	qDebug() << Q_FUNC_INFO;
 	updateAvatar(false);
 }
 

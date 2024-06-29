@@ -1816,8 +1816,6 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
  */
 void MainWindow::updateRemoteInfo(GitPtr g)
 {
-	qDebug() << Q_FUNC_INFO;
-
 	queryRemotes(g);
 
 	m->current_remote_name = QString();
@@ -2147,7 +2145,6 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 bool MainWindow::fetch(GitPtr g, bool prune)
 {
-	qDebug() << Q_FUNC_INFO;
 	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
 	return runPtyGit(g, params);
 }
@@ -2799,6 +2796,7 @@ void MainWindow::updateRepositoriesList()
  */
 void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
 {
+	ASSERT_MAIN_THREAD();
 	frame->unstagedFileslistwidget()->clear();
 	frame->stagedFileslistwidget()->clear();
 	frame->fileslistwidget()->clear();
@@ -3223,8 +3221,6 @@ void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
  */
 void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 {
-	qDebug() << Q_FUNC_INFO;
-
 	auto Do = [this, g](BasicCommitLog *p){
 
 		p->commit_log = retrieveCommitLog(g); // コミットログを取得
@@ -3248,10 +3244,7 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 			p->commit_log.updateIndex();
 		}
 
-		QElapsedTimer t;
-		t.start();
 		updateCommitGraph(&p->commit_log);
-		qDebug() << "updateCommitGraph:" << t.elapsed() << "ms";
 	};
 
 	BasicCommitLog log;
@@ -3377,6 +3370,8 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	bool ret = false;
 	params->g = g->dup();
 
+	// updateFilesList(frame, Git::CommitID());
+
 	if (0) { // for debug
 		params->run();
 	} else {
@@ -3389,7 +3384,6 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		req.params = params;
 
 		req.run = [this](GitProcessRequest const &req){
-			qDebug() << Q_FUNC_INFO;
 			setPtyCondition(PtyCondition::Fetch);
 			setPtyProcessOk(true);
 			req.params->pty = getPtyProcess();
@@ -3398,7 +3392,6 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		};
 
 		req.done = [this](GitProcessRequest const &req){
-			qDebug() << Q_FUNC_INFO;
 			ASSERT_MAIN_THREAD();
 
 			for (auto done : req.params->done) {
@@ -4073,25 +4066,28 @@ void MainWindow::updateUncommitedChanges()
  */
 void MainWindow::setupAddFileObjectData()
 {
-	connect(this, &MainWindow::signalAddFileObjectData, this, [&](const ExchangeData &data){
-		clearFileList(data.frame);
+	connect(this, &MainWindow::signalAddFileObjectData, this, &MainWindow::onAddFileObjectData);
+}
 
-		for (ObjectData const &obj : data.object_data) {
-			QListWidgetItem *item = newListWidgetFileItem(obj);
-			switch (data.files_list_type) {
-			case FilesListType::SingleList:
-				data.frame->fileslistwidget()->addItem(item);
-				break;
-			case FilesListType::SideBySide:
-				if (obj.staged) {
-					data.frame->stagedFileslistwidget()->addItem(item);
-				} else {
-					data.frame->unstagedFileslistwidget()->addItem(item);
-				}
-				break;
+void MainWindow::onAddFileObjectData(ExchangeData const &data)
+{
+	clearFileList(data.frame);
+
+	for (ObjectData const &obj : data.object_data) {
+		QListWidgetItem *item = newListWidgetFileItem(obj);
+		switch (data.files_list_type) {
+		case FilesListType::SingleList:
+			data.frame->fileslistwidget()->addItem(item);
+			break;
+		case FilesListType::SideBySide:
+			if (obj.staged) {
+				data.frame->stagedFileslistwidget()->addItem(item);
+			} else {
+				data.frame->unstagedFileslistwidget()->addItem(item);
 			}
+			break;
 		}
-	});
+	}
 }
 
 void MainWindow::addFileObjectData(ExchangeData const &data)
@@ -4099,32 +4095,32 @@ void MainWindow::addFileObjectData(ExchangeData const &data)
 	emit signalAddFileObjectData(data);
 }
 
+void MainWindow::setupShowFileListHandler()
+{
+	connect(this, &MainWindow::signalShowFileList, this, &MainWindow::onShowFileList);
+}
 
+void MainWindow::onShowFileList(FilesListType files_list_type)
+{
+	ASSERT_MAIN_THREAD();
 
-/**
- * @brief ファイルリストの表示切り替え
- * @param files_list_type
- */
+	clearDiffView();
+
+	switch (files_list_type) {
+	case FilesListType::SingleList:
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
+		break;
+	case FilesListType::SideBySide:
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
+		break;
+	}
+}
+
 void MainWindow::showFileList(FilesListType files_list_type)
 {
 	emit signalShowFileList(files_list_type);
 }
 
-void MainWindow::setupShowFileListHandler()
-{
-	connect(this, &MainWindow::signalShowFileList, this, [&](FilesListType files_list_type){
-		clearDiffView();
-
-		switch (files_list_type) {
-		case FilesListType::SingleList:
-			ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
-			break;
-		case FilesListType::SideBySide:
-			ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
-			break;
-		}
-	});
-}
 
 void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
@@ -4136,6 +4132,15 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 	if (m->update_files_list_thread.joinable()) {
 		m->update_files_list_thread.join();
 	}
+
+	FilesListType files_list_type = FilesListType::SingleList;
+	if (!id) {
+		updateUncommitedChanges();
+		if (isThereUncommitedChanges()) {
+			files_list_type = FilesListType::SideBySide;
+		}
+	}
+	showFileList(files_list_type);
 
 	m->update_files_list_thread = std::thread([this](GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID const &id){
 
@@ -4162,7 +4167,6 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 
 		} else { // Uncommited changes が選択されているとき
 
-			updateUncommitedChanges();
 
 			bool uncommited = isThereUncommitedChanges();
 			if (uncommited) {
@@ -4185,8 +4189,6 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 					diffmap[filename] = idiff;
 				}
 			}
-
-			showFileList(xdata.files_list_type);
 
 			for (Git::FileStatus const &s : m->uncommited_changes_file_list) {
 				bool staged = (s.isStaged() && s.code_y() == ' ');
@@ -4277,7 +4279,6 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 
 void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
-	qDebug() << Q_FUNC_INFO;
 	Git::CommitID id;
 	if (Git::isUncommited(commit)) {
 		// empty id for uncommited changes
@@ -4289,6 +4290,8 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem 
 
 void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 {
+	ASSERT_MAIN_THREAD();
+
 	Git::CommitItem commit;
 	{
 		QTableWidgetItem *item = frame->logtablewidget()->item(selectedLogIndex(frame, false), 0);
@@ -4308,7 +4311,6 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 
 void MainWindow::detectGitServerType(GitPtr g)
 {
-	qDebug() << Q_FUNC_INFO;
 	*ptrGitHub() = GitHubRepositoryInfo();
 
 	QString url;
@@ -4391,7 +4393,6 @@ Git::Object MainWindow::catFile(QString const &id)
 
 void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selection)
 {
-	qDebug() << Q_FUNC_INFO;
 	openRepositoryMain(frame(), g, true, true, fetch, keep_selection);
 }
 
@@ -4505,13 +4506,9 @@ void MainWindow::queryTags(GitPtr g)
 
 void MainWindow::internalAfterFetch(GitPtr g)
 {
-	qDebug() << Q_FUNC_INFO;
-
 	RepositoryWrapperFrame *frame = this->frame();
 
 	detectGitServerType(g);
-
-	updateFilesList(frame, Git::CommitID());
 
 	queryCommitLog(frame, g);
 
@@ -4526,7 +4523,6 @@ void MainWindow::updateHEAD(GitPtr g)
 
 void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
 {
-	qDebug() << Q_FUNC_INFO;
 	ASSERT_MAIN_THREAD();
 
 	if (!isValidWorkingCopy(g)) return;
@@ -5997,10 +5993,6 @@ void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 {
 	showFileList(FilesListType::SingleList);
 	clearFileList(frame);
-
-	Git::CommitItem const selected_commit = selectedCommitItem(frame);
-
-	// m->commit_detail_getter.query(selected_commit.commit_id, true, true); // 詳細情報の更新要求
 
 	// ステータスバー更新
 	updateStatusBarText(frame);

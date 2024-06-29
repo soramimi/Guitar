@@ -20,6 +20,7 @@
 #include <csignal>
 #include <string>
 #include "CommitMessageGenerator.h"
+#include "GitProcessThread.h"
 
 #ifdef Q_OS_WIN
 #include "win32/win32.h"
@@ -110,11 +111,11 @@ int main(int argc, char *argv[])
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);
 
-	qRegisterMetaType<AvatarLoader::Item>("AvatarLoader::Item");
+	qRegisterMetaType<AvatarLoaderItem>("AvatarLoaderItem");
 	qRegisterMetaType<RepositoryData>("RepositoryData");
 	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
-	qRegisterMetaType<MainWindow::ExchangeData>("MainWindow::ExchangeData");
+	qRegisterMetaType<ExchangeData>("ExchangeData");
 	qRegisterMetaType<GitProcessRequest>("GitProcessRequest");
 
 	{
