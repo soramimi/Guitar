@@ -2173,6 +2173,8 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 		}
 		updateRemoteInfo(git());
 		updateCommitLog();
+
+		fetch(git(), false);
 	});
 	runPtyGit(git(), params);
 
