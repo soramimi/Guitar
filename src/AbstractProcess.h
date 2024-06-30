@@ -15,11 +15,11 @@ protected:
 	std::function<void (bool, const QVariant &)> completed_fn;
 public:
 	void setChangeDir(QString const &dir);
-	void setVariant(QVariant const &value);
 	QVariant const &userVariant() const;
-	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn)
+	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, QVariant const &userdata)
 	{
 		completed_fn = fn;
+		user_data = userdata;
 	}
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;

@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
 	qRegisterMetaType<ExchangeData>("ExchangeData");
 	qRegisterMetaType<GitProcessRequest>("GitProcessRequest");
+	qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
+	qRegisterMetaType<ProcessStatus>("ProcessStatus");
 
 	{
 		MySettings s;

@@ -15,7 +15,6 @@ public:
 	PtyProcess *pty = nullptr;
 	QString progress_message;
 	bool update_commit_log = false;
-	std::vector<std::function<void (AbstractGitCommandItem const *)>> done;
 	bool reopen_repository = true;
 	AbstractGitCommandItem(QString const &progress_message)
 		: progress_message(progress_message)
@@ -25,9 +24,18 @@ public:
 	virtual void run() = 0;
 };
 
-class GitCommandItem_fetch : public AbstractGitCommandItem {
+class GitCommandItem_clone : public AbstractGitCommandItem {
+private:
+	Git::CloneData clonedata_;
 public:
+	GitCommandItem_clone(QString const &progress_message, const Git::CloneData &clonedata);
+	void run() override;
+};
+
+class GitCommandItem_fetch : public AbstractGitCommandItem {
+private:
 	bool prune;
+public:
 	GitCommandItem_fetch(QString const &progress_message, bool prune);
 	void run() override;
 };
@@ -98,7 +106,8 @@ public:
 	bool override_wait_cursor = true;
 	std::shared_ptr<AbstractGitCommandItem> params;
 	std::function<void (GitProcessRequest const &req)> run;
-	// std::function<void (GitProcessRequest const &req)> done;
+	QVariant userdata;
+	std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback;
 };
 Q_DECLARE_METATYPE(GitProcessRequest)
 

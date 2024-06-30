@@ -15,4 +15,12 @@ using Process = UnixProcess;
 using PtyProcess = UnixPtyProcess;
 #endif
 
+class ProcessStatus {
+public:
+	bool ok = false;
+	int exit_code = 0;
+	QString error_message;
+};
+Q_DECLARE_METATYPE(ProcessStatus)
+
 #endif // PROCESS_H

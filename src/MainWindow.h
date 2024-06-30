@@ -42,6 +42,14 @@ class AbstractGitCommandItem;
 
 class ExchangeData;
 
+class PtyProcessCompleted {
+public:
+	ProcessStatus status;
+	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
+	QVariant userdata;
+};
+Q_DECLARE_METATYPE(PtyProcessCompleted)
+
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 	friend class MainWindowHelperThread;
@@ -196,7 +204,6 @@ private:
 	void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f, bool save);
 	void startTimers();
-	void onCloneCompleted(bool success, const QVariant &userdata);
 	void setNetworkingCommandsEnabled(bool enabled);
 	void blame(QListWidgetItem *item);
 	void blame();
@@ -252,14 +259,15 @@ private:
 	Git::CommitItem selectedCommitItem(RepositoryWrapperFrame *frame) const;
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
-
+	
+	void clone(GitPtr g, const Git::CloneData &clonedata, std::function<void (const ProcessStatus &, const QVariant &)> callback, const QVariant &userdata);
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
-	bool fetch(GitPtr g, bool prune);
-	bool fetch_tags_f(GitPtr g);
-	bool pull(GitPtr g);
-	bool push_tags(GitPtr g);
-	bool delete_tags(GitPtr g, const QStringList &tagnames);
-	bool add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
+	void fetch(GitPtr g, bool prune);
+	void fetch_tags_f(GitPtr g);
+	void pull(GitPtr g);
+	void push_tags(GitPtr g);
+	void delete_tags(GitPtr g, const QStringList &tagnames);
+	void add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
 
 	bool push();
 
@@ -657,7 +665,7 @@ signals:
 private:
 
 	void updateButton();
-	bool runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params);
+	void runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params, std::function<void (const ProcessStatus &, const QVariant &)> callback, QVariant const &userdata);
 	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateHEAD(GitPtr g);
 	void jump(GitPtr g, const Git::CommitID &id);
@@ -666,11 +674,14 @@ private:
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	
-	void onPtyCloneCompleted(bool ok, const QVariant &userdata);
-	void onPtyFetchCompleted(bool ok, QVariant const &userdata);
+	void onPtyCloneCompleted(const ProcessStatus &status, const QVariant &userdata);
+	void onPtyFetchCompleted(const ProcessStatus &status, QVariant const &userdata);
+private slots:
+	void onPtyProcessCompleted(PtyProcessCompleted const &data);
 signals:
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
 	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);
+	void sigPtyProcessCompleted(PtyProcessCompleted const &data);
 public:
 	void internalAfterFetch(GitPtr g);
 	
@@ -682,7 +693,6 @@ public:
 	MainWindow::FilesListType files_list_type;
 	std::vector<MainWindow::ObjectData> object_data;
 };
-
 Q_DECLARE_METATYPE(ExchangeData)
 
 #endif // MAINWINDOW_H

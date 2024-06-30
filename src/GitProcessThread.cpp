@@ -103,6 +103,19 @@ bool GitProcessThread::wait()
 	}
 }
 
+
+GitCommandItem_clone::GitCommandItem_clone(const QString &progress_message, Git::CloneData const &clonedata)
+	: AbstractGitCommandItem(progress_message)
+	, clonedata_(clonedata)
+{
+	
+}
+
+void GitCommandItem_clone::run()
+{
+	g->clone(clonedata_, pty);
+}
+
 GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool prune)
 	: AbstractGitCommandItem(progress_message)
 	, prune(prune)

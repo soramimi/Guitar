@@ -1795,18 +1795,6 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitPtr g, RepositoryWrappe
 	return out;
 }
 
-// /**
-//  * @brief MainWindow::queryBranches
-//  * @param frame フレーム
-//  * @param g git
-//  *
-//  * ブランチを取得する
-//  */
-// void MainWindow::queryBranches(RepositoryWrapperFrame *frame, GitPtr g)
-// {
-// 	Q_ASSERT(g);
-// }
-
 /**
  * @brief MainWindow::updateRemoteInfo
  *
@@ -1843,27 +1831,24 @@ void MainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
-void MainWindow::onPtyCloneCompleted(bool /*ok*/, QVariant const &userdata)
+void MainWindow::onPtyCloneCompleted(ProcessStatus const &status, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
 	
-	updatePocessLog(false);
-	switch (getPtyCondition()) {
-	case PtyCondition::Clone:
-		onCloneCompleted(getPtyProcessOk(), userdata);
-		break;
+	if (status.ok) {
+		RepositoryData const &r = userdata.value<RepositoryData>();
+		saveRepositoryBookmark(r);
+		setCurrentRepository(r, false);
+		reopenRepository();
 	}
-	setPtyCondition(PtyCondition::None);
 }
 
-void MainWindow::onPtyFetchCompleted(bool /*ok*/, QVariant const &userdata)
+void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
 	
 	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
 	Q_ASSERT(req.params);
-	
-	hideProgress();
 	
 	if (req.params->reopen_repository) {
 		internalOpenRepository(git(), false, false);
@@ -1874,10 +1859,18 @@ void MainWindow::onPtyFetchCompleted(bool /*ok*/, QVariant const &userdata)
 	QApplication::restoreOverrideCursor();
 }
 
+void MainWindow::onPtyProcessCompleted(PtyProcessCompleted const &data)
+{
+	ASSERT_MAIN_THREAD();
+	
+	if (data.callback) {
+		data.callback(data.status, data.userdata);
+	}
+}
+
 void MainWindow::connectPtyProcessCompleted()
 {
-	connect(this, &MainWindow::sigPtyCloneCompleted, this, &MainWindow::onPtyCloneCompleted);
-	connect(this, &MainWindow::sigPtyFetchCompleted, this, &MainWindow::onPtyFetchCompleted);
+	connect(this, &MainWindow::sigPtyProcessCompleted, this, &MainWindow::onPtyProcessCompleted);
 }
 
 /**
@@ -1888,10 +1881,16 @@ void MainWindow::connectPtyProcessCompleted()
  *
  * リポジトリをクローンする
  */
+void MainWindow::clone(GitPtr g, Git::CloneData const &clonedata, std::function<void (ProcessStatus const &, QVariant const &)> callback, QVariant const &userdata)
+{
+	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), clonedata);
+	runPtyGit(g, params, callback, userdata);
+}
+
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
 {
 	// 既存チェック
-
+	
 	QFileInfo info(repodata.local_dir);
 	if (info.isFile()) {
 		QString msg = repodata.local_dir + "\n\n" + tr("A file with same name already exists");
@@ -1903,9 +1902,9 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 		QMessageBox::warning(this, tr("Clone"), msg);
 		return false;
 	}
-
+	
 	// クローン先ディレクトリの存在チェック
-
+	
 	QString basedir = misc::normalizePathSeparator(clonedata.basedir);
 	if (!QFileInfo(basedir).isDir()) {
 		int i = basedir.indexOf('/');
@@ -1916,27 +1915,24 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 			QMessageBox::warning(this, tr("Clone"), msg);
 			return false;
 		}
-
+		
 		QString msg = basedir + "\n\n" + tr("No such folder. Create it now?");
 		if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
 			return false;
 		}
-
+		
 		// ディレクトリを作成
-
+		
 		QString base = basedir.mid(0, i + 1);
 		QString sub = basedir.mid(i + 1);
 		QDir(base).mkpath(sub);
 	}
-
+	
 	GitPtr g = git({}, {}, repodata.ssh_key);
-	setCompletedHandler([this](bool ok, const QVariant &userdata){
-		emit sigPtyCloneCompleted(ok, userdata);
-	}, QVariant::fromValue<RepositoryData>(repodata));
-	setPtyCondition(PtyCondition::Clone);
-	setPtyProcessOk(true);
-	g->clone(clonedata, getPtyProcess());
-
+	clone(g, clonedata, [this](ProcessStatus const &status, const QVariant &userdata){
+			onPtyCloneCompleted(status, userdata);
+		}, QVariant::fromValue(repodata));
+	
 	return true;
 }
 
@@ -2137,57 +2133,57 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 	}
 
 	std::shared_ptr<GitCommandItem_push> params = std::make_shared<GitCommandItem_push>(tr("Pushing..."), set_upstream, remote, branch, force);
-	params->done.push_back([&](AbstractGitCommandItem const *p){
+	runPtyGit(git(), params, [this](ProcessStatus const &status, const QVariant &userdata){
 		ASSERT_MAIN_THREAD();
-		GitCommandItem_push const *cmd = static_cast<GitCommandItem_push const *>(p);
-		if (cmd->exitcode_ == 128) {
-			if (cmd->errormsg_.indexOf("Connection refused") >= 0) {
+		if (status.exit_code == 128) {
+			if (status.error_message.indexOf("Connection refused") >= 0) {
 				QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
 				return;
 			}
 		}
 		updateRemoteInfo(git());
-		updateCommitLog();
-
-		fetch(git(), false);
-	});
-	runPtyGit(git(), params);
+		// updateCommitLog();
+		reopenRepository();
+		
+		// fetch(git(), false);
+		
+	}, {});
 }
 
-bool MainWindow::fetch(GitPtr g, bool prune)
+void MainWindow::fetch(GitPtr g, bool prune)
 {
 	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
-bool MainWindow::fetch_tags_f(GitPtr g)
+void MainWindow::fetch_tags_f(GitPtr g)
 {
 	std::shared_ptr<GitCommandItem_fetch_tags_f> params = std::make_shared<GitCommandItem_fetch_tags_f>(tr("Fetching tags..."));
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
-bool MainWindow::pull(GitPtr g)
+void MainWindow::pull(GitPtr g)
 {
 	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
-bool MainWindow::push_tags(GitPtr g)
+void MainWindow::push_tags(GitPtr g)
 {
 	std::shared_ptr<GitCommandItem_push_tags> params = std::make_shared<GitCommandItem_push_tags>(tr("Pushing tags..."));
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
-bool MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
+void MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
 {
 	std::shared_ptr<GitCommandItem_delete_tags> params = std::make_shared<GitCommandItem_delete_tags>(tagnames);
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
-bool MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
+void MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
 {
 	std::shared_ptr<GitCommandItem_add_tag> params = std::make_shared<GitCommandItem_add_tag>(name, commit_id);
-	return runPtyGit(g, params);
+	runPtyGit(g, params, nullptr, {});
 }
 
 /**
@@ -3360,8 +3356,7 @@ MainWindow::PtyCondition MainWindow::getPtyCondition()
 
 void MainWindow::setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata)
 {
-	m->pty_process.setCompletedHandler(fn);
-	m->pty_process.setVariant(userdata);
+	m->pty_process.setCompletedHandler(fn, userdata);
 }
 
 void MainWindow::setPtyProcessOk(bool pty_process_ok)
@@ -3376,43 +3371,36 @@ void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
 
 //
 
-
-bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params)
+void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params, std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback, QVariant const &userdata)
 {
-	bool ret = false;
 	params->g = g->dup();
-
-	// updateFilesList(frame, Git::CommitID());
-
-	if (0) { // for debug
-		params->run();
-	} else {
-		{
-			QApplication::setOverrideCursor(Qt::WaitCursor);
-			setProgress(-1.0f);
-			showProgress(params->progress_message, false);
-		}
-		GitProcessRequest req;
-		req.params = params;
+	
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	setProgress(-1.0f);
+	showProgress(params->progress_message, false);
+	
+	GitProcessRequest req;
+	req.run = [this](GitProcessRequest const &req){
+		setCompletedHandler([this](bool ok, const QVariant &d){
+			hideProgress();
+			QApplication::restoreOverrideCursor();
+			GitProcessRequest const &req = d.value<GitProcessRequest>();
+			PtyProcessCompleted data;
+			data.status.ok = ok;
+			data.callback = req.callback;
+			data.userdata = req.userdata;
+			emit sigPtyProcessCompleted(data);
+		}, QVariant::fromValue(req));
+		setPtyCondition(PtyCondition::Fetch);
+		setPtyProcessOk(true);
+		req.params->pty = getPtyProcess();
 		
-		req.run = [this](GitProcessRequest const &req){
-			setCompletedHandler([this](bool ok, const QVariant &userdata){
-				emit sigPtyFetchCompleted(ok, userdata);
-			}, QVariant::fromValue(req));
-			setPtyCondition(PtyCondition::Fetch);
-			setPtyProcessOk(true);
-			req.params->pty = getPtyProcess();
-			
-			req.params->run();
-		};
-		
-		// req.done = [this](GitProcessRequest const &req){
-		// };
-		
-		m->git_process_thread.request(std::move(req));
-	}
-
-	return ret;
+		req.params->run();
+	};
+	req.params = params;
+	req.callback = callback;
+	req.userdata = userdata;
+	m->git_process_thread.request(std::move(req));
 }
 
 bool MainWindow::interactionCanceled() const
@@ -6367,16 +6355,6 @@ void MainWindow::on_action_edit_settings_triggered()
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
-	}
-}
-
-void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
-{
-	if (success) {
-		RepositoryData r = userdata.value<RepositoryData>();
-		saveRepositoryBookmark(r);
-		setCurrentRepository(r, false);
-		reopenRepository();
 	}
 }
 

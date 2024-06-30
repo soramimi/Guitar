@@ -104,8 +104,7 @@ struct Git::Private {
 	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 	QString ssh_key_override;// = "C:/a/id_rsa";
 	std::vector<char> result;
-	QString error_message;
-	int process_exit_code = 0;
+	ProcessStatus exit_status;
 };
 
 Git::Git()
@@ -220,18 +219,18 @@ QString Git::gitCommand() const
 void Git::clearResult()
 {
 	m->result.clear();
-	m->process_exit_code = 0;
-	m->error_message = QString();
+	m->exit_status.exit_code = 0;
+	m->exit_status.error_message = QString();
 }
 
 QString Git::errorMessage() const
 {
-	return m->error_message;
+	return m->exit_status.error_message;
 }
 
 int Git::getProcessExitCode() const
 {
-	return m->process_exit_code;
+	return m->exit_status.exit_code;
 }
 
 bool Git::chdirexec(std::function<bool()> const &fn)
@@ -290,11 +289,11 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 		if (opt.pty) {
 			opt.pty->start(cmd, env, opt.pty->userVariant());
-			m->process_exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
+			m->exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;
 			proc.start(cmd, false);
-			m->process_exit_code = proc.wait();
+			m->exit_status.exit_code = proc.wait();
 
 			if (opt.errout) {
 				m->result = proc.errbytes;
@@ -304,10 +303,10 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 				}
 				m->result = proc.outbytes;
 			}
-			m->error_message = proc.errstring();
+			m->exit_status.error_message = proc.errstring();
 		}
 
-		return m->process_exit_code == 0;
+		return m->exit_status.exit_code == 0;
 	};
 
 	bool ok = false;
