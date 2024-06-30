@@ -120,6 +120,7 @@ GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool
 	: AbstractGitCommandItem(progress_message)
 	, prune(prune)
 {
+	after_operation = Reopen;
 	update_commit_log = true;
 }
 

@@ -15,7 +15,12 @@ public:
 	PtyProcess *pty = nullptr;
 	QString progress_message;
 	bool update_commit_log = false;
-	bool reopen_repository = true;
+	enum AfterOperation {
+		None,
+		Fetch,
+		Reopen,
+	};
+	AfterOperation after_operation = Fetch;
 	AbstractGitCommandItem(QString const &progress_message)
 		: progress_message(progress_message)
 	{

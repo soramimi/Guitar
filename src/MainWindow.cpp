@@ -1816,10 +1816,18 @@ void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const
 	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
 	Q_ASSERT(req.params);
 	
-	if (req.params->reopen_repository) {
+	switch (req.params->after_operation) {
+	case AbstractGitCommandItem::Reopen:
 		internalOpenRepository(git(), false, false);
-	} else if (req.params->update_commit_log) {
-		openRepositoryMain(frame(), git(), false, false, false, true);
+		break;
+	case AbstractGitCommandItem::Fetch:
+		fetch(git(), false);
+		break;
+	default:
+		if (req.params->update_commit_log) {
+			openRepositoryMain(frame(), git(), false, false, false, true);
+		}
+		break;
 	}
 }
 
