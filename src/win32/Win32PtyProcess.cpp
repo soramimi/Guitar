@@ -166,9 +166,11 @@ void Win32PtyProcess::run()
 	m->hOutput = INVALID_HANDLE_VALUE;
 	m->hProcess = INVALID_HANDLE_VALUE;
 
-	emit completed(ok, user_data);
-
 	QDir::setCurrent(cwd);
+
+	if (completed_fn) {
+		completed_fn(ok, user_data);
+	}
 }
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)

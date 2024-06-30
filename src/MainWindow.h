@@ -3,7 +3,7 @@
 
 #include "BranchLabel.h"
 #include "Git.h"
-#include "Process.h"
+#include "MyProcess.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include "TextEditorTheme.h"

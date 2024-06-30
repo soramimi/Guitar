@@ -110,7 +110,7 @@ SOURCES += \
 	$$PWD/src/FileListWidget.cpp \
 	$$PWD/src/GenerateCommitMessageThread.cpp \
 	$$PWD/src/GitProcessThread.cpp \
-	$$PWD/src/Process.cpp \
+	$$PWD/src/MyProcess.cpp \
 	src/ProgressTextLabel.cpp \
 	src/SettingAiForm.cpp \
 	src/SettingOptionsForm.cpp \
@@ -262,7 +262,7 @@ HEADERS += \
 	$$PWD/src/FileListWidget.h \
 	$$PWD/src/GenerateCommitMessageThread.h \
 	$$PWD/src/GitProcessThread.h \
-	$$PWD/src/Process.h \
+	$$PWD/src/MyProcess.h \
 	src/ProgressTextLabel.h \
 	src/SettingAiForm.h \
 	src/SettingOptionsForm.h \

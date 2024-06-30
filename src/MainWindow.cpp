@@ -1821,17 +1821,17 @@ void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const
 	} else if (req.params->update_commit_log) {
 		openRepositoryMain(frame(), git(), false, false, false, true);
 	}
-	
-	QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::onPtyProcessCompleted(PtyProcessCompleted const &data)
 {
 	ASSERT_MAIN_THREAD();
-	
+
 	if (data.callback) {
 		data.callback(data.status, data.userdata);
 	}
+
+	QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -3303,7 +3303,6 @@ void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	req.run = [this](GitProcessRequest const &req){
 		setCompletedHandler([this](bool ok, const QVariant &d){
 			hideProgress();
-			QApplication::restoreOverrideCursor();
 			GitProcessRequest const &req = d.value<GitProcessRequest>();
 			PtyProcessCompleted data;
 			data.status.ok = ok;
@@ -6762,9 +6761,9 @@ void MainWindow::blame(QListWidgetItem *item)
 		}
 	}
 	if (!list.isEmpty()) {
-		qApp->setOverrideCursor(Qt::WaitCursor);
+		QApplication::setOverrideCursor(Qt::WaitCursor);
 		BlameWindow win(this, path, list);
-		qApp->restoreOverrideCursor();
+		QApplication::restoreOverrideCursor();
 		win.exec();
 	}
 }

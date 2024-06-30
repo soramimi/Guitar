@@ -8,7 +8,7 @@
 #include <QJsonArray>
 #include <QDebug>
 
-#include "Process.h"
+#include "MyProcess.h"
 
 #include "common/misc.h"
 

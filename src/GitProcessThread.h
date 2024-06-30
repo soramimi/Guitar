@@ -3,7 +3,7 @@
 
 #include "ApplicationGlobal.h"
 #include "Git.h"
-#include "Process.h"
+#include "MyProcess.h"
 #include <QMetaType>
 #include <QObject>
 #include <QString>

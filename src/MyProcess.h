@@ -1,5 +1,7 @@
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef MYPROCESS_H
+#define MYPROCESS_H
+
+// Process.h というファイルはWindows環境に既存なので MyProcess.h にした
 
 #include <QtGlobal>
 
@@ -23,4 +25,4 @@ public:
 };
 Q_DECLARE_METATYPE(ProcessStatus)
 
-#endif // PROCESS_H
+#endif // MYPROCESS_H
