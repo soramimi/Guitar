@@ -2136,30 +2136,6 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 		if (branch.isEmpty()) return;
 	}
 
-#if 0
-	int exitcode = 0;
-	QString errormsg;
-
-	reopenRepository(true, [&](GitPtr g){
-		g->push_u(set_upstream, remote, branch, force, getPtyProcess());
-		while (1) {
-			if (getPtyProcess()->wait(10)) break;
-			QApplication::processEvents();
-		}
-		exitcode = getPtyProcess()->getExitCode();
-		errormsg = getPtyProcess()->getMessage();
-	});
-
-	if (exitcode == 128) {
-		if (errormsg.indexOf("Connection refused") >= 0) {
-			QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
-			return;
-		}
-	}
-
-	updateRemoteInfo(git());
-	updateCommitLog();
-#else
 	std::shared_ptr<GitCommandItem_push> params = std::make_shared<GitCommandItem_push>(tr("Pushing..."), set_upstream, remote, branch, force);
 	params->done.push_back([&](AbstractGitCommandItem const *p){
 		ASSERT_MAIN_THREAD();
@@ -2176,8 +2152,6 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 		fetch(git(), false);
 	});
 	runPtyGit(git(), params);
-
-#endif
 }
 
 bool MainWindow::fetch(GitPtr g, bool prune)

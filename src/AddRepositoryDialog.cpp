@@ -390,6 +390,5 @@ void AddRepositoryDialog::on_pushButton_manage_local_fonder_clicked()
 		ui->comboBox_local_working_folder->setCurrentIndex(0);
 		updateWorkingDirComboBoxFolders();
 	}
-	
 }
 
