@@ -99,6 +99,16 @@ public:
 	void run() override;
 };
 
+class GitCommandItem_submodule_add : public AbstractGitCommandItem {
+private:
+	Git::CloneData data_;
+	bool force_ = false;
+public:
+	GitCommandItem_submodule_add(QString const &progress_message, Git::CloneData data, bool force);
+	void run() override;
+};
+
+
 class GitProcessRequest {
 public:
 	typedef unsigned int request_id_t;

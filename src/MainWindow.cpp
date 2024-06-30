@@ -101,34 +101,7 @@ struct EventItem {
 	}
 };
 
-class AsyncExecGitThread_ : public QThread {
-private:
-	GitPtr g;
-	std::function<void(GitPtr g)> callback;
-public:
-	AsyncExecGitThread_(GitPtr g, std::function<void(GitPtr g)> const &callback)
-		: g(g)
-		, callback(callback)
-	{
-	}
-	virtual ~AsyncExecGitThread_() override
-	{
-	}
-protected:
-	void run() override
-	{
-		global->mainwindow->setLogEnabled(g, true);
-
-		callback(g);
-
-		global->mainwindow->setLogEnabled(g, false);
-	}
-};
-
 struct MainWindow::Private {
-
-	// MainWindowHelperThread helper;
-	// QThread helper_thread;
 
 	QIcon repository_icon;
 	QIcon folder_icon;
@@ -323,8 +296,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->treeWidget_repos, &RepositoriesTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
 
-	// connect((AbstractPtyProcess *)getPtyProcess(), &AbstractPtyProcess::completed, this, &MainWindow::onPtyProcessCompleted);
-	
 	connectPtyProcessCompleted();
 
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
@@ -760,11 +731,6 @@ void MainWindow::toggleMaximized()
 	state ^= Qt::WindowMaximized;
 	setWindowState(state);
 }
-
-// void MainWindow::onGitProcessThreadDone(GitProcessRequest const &req)
-// {
-// 	req.done(req);
-// }
 
 void MainWindow::setStatusBarText(QString const &text)
 {
@@ -1949,48 +1915,28 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	if (local_dir.isEmpty()) return;
 
 	QString dir = local_dir;
-
-	while (1) {
-		SubmoduleAddDialog dlg(this, url, dir, &m->gcx);
-		if (dlg.exec() != QDialog::Accepted) {
-			return;
-		}
-		url = dlg.url();
-		dir = dlg.dir();
-		const QString ssh_key = dlg.overridedSshKey();
-
-		RepositoryData repos_item_data;
-		repos_item_data.local_dir = dir;
-		repos_item_data.local_dir.replace('\\', '/');
-		repos_item_data.name = makeRepositoryName(dir);
-		repos_item_data.ssh_key = ssh_key;
-
-		Git::CloneData data = Git::preclone(url, dir);
-		bool force = dlg.isForce();
-
-		GitPtr g = git(local_dir, {}, repos_item_data.ssh_key);
-
-		auto callback = [&](GitPtr g){
-			g->submodule_add(data, force, getPtyProcess());
-		};
-
-		{
-			OverrideWaitCursor;
-			{
-				setLogEnabled(g, true);
-				AsyncExecGitThread_ th(g, callback);
-				th.start();
-				while (1) {
-					if (th.wait(1)) break;
-					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-				}
-				setLogEnabled(g, false);
-			}
-			internalOpenRepository(g, false, false);
-		}
-
-		return; // done
+	
+	SubmoduleAddDialog dlg(this, url, dir, &m->gcx);
+	if (dlg.exec() != QDialog::Accepted) {
+		return;
 	}
+	url = dlg.url();
+	dir = dlg.dir();
+	const QString ssh_key = dlg.overridedSshKey();
+	
+	RepositoryData repos_item_data;
+	repos_item_data.local_dir = dir;
+	repos_item_data.local_dir.replace('\\', '/');
+	repos_item_data.name = makeRepositoryName(dir);
+	repos_item_data.ssh_key = ssh_key;
+	
+	Git::CloneData data = Git::preclone(url, dir);
+	bool force = dlg.isForce();
+	
+	GitPtr g = git(local_dir, {}, repos_item_data.ssh_key);
+	
+	std::shared_ptr<GitCommandItem_submodule_add> params = std::make_shared<GitCommandItem_submodule_add>(tr("Submodule..."), data, force);
+	runPtyGit(g, params, nullptr, {});
 }
 
 /**
@@ -2142,11 +2088,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 			}
 		}
 		updateRemoteInfo(git());
-		// updateCommitLog();
 		reopenRepository();
-		
-		// fetch(git(), false);
-		
 	}, {});
 }
 
@@ -2828,13 +2770,6 @@ void MainWindow::clearDiffView()
 	clearDiffView(ui->frame_repository_wrapper);
 }
 
-// /**
-//  * @brief リポジトリ情報を消去
-//  */
-// void MainWindow::clearRepositoryInfo()
-// {
-// }
-
 void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
 {
 	ui->label_repo_name->setText(reponame);
@@ -3323,21 +3258,6 @@ Git::CommitItemList *MainWindow::getCommitLogPtr(RepositoryWrapperFrame *frame)
 {
 	return &frame->commit_log;
 }
-
-// const Git::CommitItemList &MainWindow::getCommitLog(RepositoryWrapperFrame const *frame) const
-// {
-// 	return frame->commit_log;
-// }
-
-// void MainWindow::setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs)
-// {
-// 	frame->commit_log = logs;
-// }
-
-// void MainWindow::clearCommitLog(RepositoryWrapperFrame *frame)
-// {
-// 	frame->commit_log.clear();
-// }
 
 PtyProcess *MainWindow::getPtyProcess()
 {
@@ -7435,7 +7355,6 @@ Terminal=false
 
 #endif
 }
-
 
 void MainWindow::test()
 {

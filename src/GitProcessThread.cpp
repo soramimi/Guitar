@@ -219,3 +219,15 @@ void GitCommandItem_add_tag::run()
 	g->tag(name_, commit_id_);
 }
 
+
+GitCommandItem_submodule_add::GitCommandItem_submodule_add(const QString &progress_message, Git::CloneData data, bool force)
+	: AbstractGitCommandItem(progress_message)
+	, data_(data)
+	, force_(force)
+{
+}
+
+void GitCommandItem_submodule_add::run()
+{
+	g->submodule_add(data_, force_, pty);
+}

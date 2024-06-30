@@ -61,7 +61,6 @@ class MainWindow : public QMainWindow {
 	friend class FileDiffWidget;
 	friend class AboutDialog;
 	friend class RepositoriesTreeWidget; // TODO:
-	friend class AsyncExecGitThread_; //TODO:
 	friend class ExchangeData;
 public:
 	enum {
