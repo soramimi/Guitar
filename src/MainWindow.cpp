@@ -958,8 +958,6 @@ bool MainWindow::saveRepositoryBookmarks(bool update_list)
 	return true;
 }
 
-
-
 /**
  * @brief MainWindow::refrectRepositories()
  * @param repos
@@ -1848,7 +1846,7 @@ void MainWindow::queryRemotes(GitPtr g)
 void MainWindow::onPtyCloneCompleted(bool /*ok*/, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
-	qDebug() << Q_FUNC_INFO;
+	
 	updatePocessLog(false);
 	switch (getPtyCondition()) {
 	case PtyCondition::Clone:
@@ -1861,14 +1859,9 @@ void MainWindow::onPtyCloneCompleted(bool /*ok*/, QVariant const &userdata)
 void MainWindow::onPtyFetchCompleted(bool /*ok*/, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
-	qDebug() << Q_FUNC_INFO;
 	
 	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
 	Q_ASSERT(req.params);
-	
-	// for (auto done : req.params->done) {
-	// 	done(req.params.get());
-	// }
 	
 	hideProgress();
 	
@@ -1879,8 +1872,6 @@ void MainWindow::onPtyFetchCompleted(bool /*ok*/, QVariant const &userdata)
 	}
 	
 	QApplication::restoreOverrideCursor();
-	
-	
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -3254,9 +3245,7 @@ DONE:;
 void MainWindow::updateCommitGraph(RepositoryWrapperFrame *frame)
 {
 	std::lock_guard lock(frame->commit_log_mutex);
-
-	Git::CommitItemList *logs = &frame->commit_log;
-	updateCommitGraph(logs);
+	updateCommitGraph(&frame->commit_log);
 }
 
 /**
@@ -7498,7 +7487,5 @@ Terminal=false
 
 void MainWindow::test()
 {
-	// fetch(git(), false);
-	reopenRepository();
 }
 
