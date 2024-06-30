@@ -2854,6 +2854,7 @@ void MainWindow::clearFileList(RepositoryWrapperFrame *frame)
  */
 void MainWindow::clearDiffView(RepositoryWrapperFrame *frame)
 {
+	std::lock_guard lock(frame->commit_log_mutex);
 	frame->filediffwidget()->clearDiffView();
 }
 
@@ -4158,7 +4159,7 @@ void MainWindow::showFileList(FilesListType files_list_type)
 }
 
 
-void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID const &id)
+void MainWindow::updateFileList(RepositoryWrapperFrame *frame, Git::CommitID const &id)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -4178,10 +4179,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 	}
 	showFileList(files_list_type);
 	
-	QElapsedTimer t;
-	t.start();
-	
-	m->update_files_list_thread = std::thread([this](GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID const &id){
+	{
 
 		ExchangeData xdata;
 		xdata.frame = frame;
@@ -4205,7 +4203,6 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 			addDiffItems(diffResult(), AddItem);
 
 		} else { // Uncommited changes が選択されているとき
-
 
 			bool uncommited = isThereUncommitedChanges();
 			if (uncommited) {
@@ -4281,13 +4278,9 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 
 		for (Git::Diff const &diff : *diffResult()) {
 			QString key = GitDiff::makeKey(diff);
-			(*getDiffCacheMap(frame))[key] = diff;
+			frame->diff_cache[key] = diff;
 		}
-	}, g, frame, id);
-	
-	m->update_files_list_thread.join(); //@ TODO: シングルスレッドでいいか
-	
-	qDebug() << "updateFilesList: " << t.elapsed() << "ms";	
+	}
 }
 
 /**
@@ -4296,7 +4289,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
  * @param diff_list
  * @param listwidget
  */
-void MainWindow::updateFilesList2(RepositoryWrapperFrame *frame, Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::updateFileList2(RepositoryWrapperFrame *frame, Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -4320,7 +4313,7 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 	win.exec();
 }
 
-void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
+void MainWindow::updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit)
 {
 	Git::CommitID id;
 	if (Git::isUncommited(commit)) {
@@ -4328,7 +4321,7 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem 
 	} else {
 		id = commit.commit_id;
 	}
-	updateFilesList(frame, id);
+	updateFileList(frame, id);
 }
 
 void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
@@ -4349,7 +4342,7 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 		}
 	}
 	// if commit is invalid, it means uncommited changes
-	updateFilesList(frame, commit);
+	updateFileList(frame, commit);
 }
 
 void MainWindow::detectGitServerType(GitPtr g)
@@ -6294,16 +6287,20 @@ void MainWindow::updateDiffView(RepositoryWrapperFrame *frame, QListWidgetItem *
 	if (!item) return;
 
 	int idiff = indexOfDiff(item);
-	if (idiff >= 0 && idiff < diffResult()->size()) {
-		Git::Diff const &diff = diffResult()->at(idiff);
-		QString key = GitDiff::makeKey(diff);
-		auto it = getDiffCacheMap(frame)->find(key);
-		if (it != getDiffCacheMap(frame)->end()) {
+	QList<Git::Diff> const *diffs = diffResult();
+	if (idiff >= 0 && idiff < diffs->size()) {
+		Git::Diff const &diff = diffs->at(idiff);
+		bool updatediffview = false;
+		bool uncommited = false;
+		{
 			std::lock_guard lock(frame->commit_log_mutex);
 			auto const &logs = frame->commit_log;
 			int row = frame->logtablewidget()->currentRow();
-			bool uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
-			frame->filediffwidget()->updateDiffView(it->second, uncommited);
+			uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
+			updatediffview = true;
+		}
+		if (updatediffview) {
+			frame->filediffwidget()->updateDiffView(diff, uncommited);
 		}
 	}
 }

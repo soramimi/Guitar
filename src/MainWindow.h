@@ -153,8 +153,8 @@ private:
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
 
-	void updateFilesList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
-	void updateFilesList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
+	void updateFileList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
+	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 	void updateRepositoriesList();
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
@@ -448,7 +448,7 @@ public:
 	void setShowGraph(bool show, bool save);
 	bool isLabelsVisible() const;
 	bool isGraphVisible() const;
-	void updateFilesList2(RepositoryWrapperFrame *frame, const Git::CommitID &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
+	void updateFileList2(RepositoryWrapperFrame *frame, const Git::CommitID &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem &commit);
 	void execCommitExploreWindow(RepositoryWrapperFrame *frame, QWidget *parent, const Git::CommitItem *commit);

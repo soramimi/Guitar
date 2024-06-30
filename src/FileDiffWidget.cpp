@@ -322,6 +322,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 
 void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
 {
+	ASSERT_MAIN_THREAD();
 	m->max_line_length = 0;
 
 	enum Pane {
@@ -643,6 +644,8 @@ bool FileDiffWidget::isValidID_(QString const &id)
  */
 void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 {
+	ASSERT_MAIN_THREAD();
+	
 	GitPtr g = git();
 	if (!g) return;
 	if (!g->isValidWorkingCopy()) return;
