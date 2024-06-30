@@ -323,9 +323,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui->treeWidget_repos, &RepositoriesTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
 
-	connect((AbstractPtyProcess *)getPtyProcess(), &AbstractPtyProcess::completed, this, &MainWindow::onPtyProcessCompleted);
-
-	connect(this, &MainWindow::remoteInfoChanged, this, &MainWindow::onRemoteInfoChanged);
+	// connect((AbstractPtyProcess *)getPtyProcess(), &AbstractPtyProcess::completed, this, &MainWindow::onPtyProcessCompleted);
+	
+	connectPtyProcessCompleted();
 
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
 	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
@@ -364,7 +364,7 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-	connect(&m->git_process_thread, &GitProcessThread::done, this, &MainWindow::onGitProcessThreadDone);
+	// connect(&m->git_process_thread, &GitProcessThread::done, this, &MainWindow::onGitProcessThreadDone);
 	m->git_process_thread.start();
 
 	ui->action_sidebar->setChecked(true);
@@ -761,10 +761,10 @@ void MainWindow::toggleMaximized()
 	setWindowState(state);
 }
 
-void MainWindow::onGitProcessThreadDone(GitProcessRequest const &req)
-{
-	req.done(req);
-}
+// void MainWindow::onGitProcessThreadDone(GitProcessRequest const &req)
+// {
+// 	req.done(req);
+// }
 
 void MainWindow::setStatusBarText(QString const &text)
 {
@@ -1845,6 +1845,50 @@ void MainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
+void MainWindow::onPtyCloneCompleted(bool /*ok*/, QVariant const &userdata)
+{
+	ASSERT_MAIN_THREAD();
+	qDebug() << Q_FUNC_INFO;
+	updatePocessLog(false);
+	switch (getPtyCondition()) {
+	case PtyCondition::Clone:
+		onCloneCompleted(getPtyProcessOk(), userdata);
+		break;
+	}
+	setPtyCondition(PtyCondition::None);
+}
+
+void MainWindow::onPtyFetchCompleted(bool /*ok*/, QVariant const &userdata)
+{
+	ASSERT_MAIN_THREAD();
+	qDebug() << Q_FUNC_INFO;
+	
+	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
+	Q_ASSERT(req.params);
+	
+	// for (auto done : req.params->done) {
+	// 	done(req.params.get());
+	// }
+	
+	hideProgress();
+	
+	if (req.params->reopen_repository) {
+		internalOpenRepository(git(), false, false);
+	} else if (req.params->update_commit_log) {
+		openRepositoryMain(frame(), git(), false, false, false, true);
+	}
+	
+	QApplication::restoreOverrideCursor();
+	
+	
+}
+
+void MainWindow::connectPtyProcessCompleted()
+{
+	connect(this, &MainWindow::sigPtyCloneCompleted, this, &MainWindow::onPtyCloneCompleted);
+	connect(this, &MainWindow::sigPtyFetchCompleted, this, &MainWindow::onPtyFetchCompleted);
+}
+
 /**
  * @brief MainWindow::cloneRepository
  * @param clonedata クローンデータ
@@ -1895,7 +1939,9 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	}
 
 	GitPtr g = git({}, {}, repodata.ssh_key);
-	setPtyUserData(QVariant::fromValue<RepositoryData>(repodata));
+	setCompletedHandler([this](bool ok, const QVariant &userdata){
+		emit sigPtyCloneCompleted(ok, userdata);
+	}, QVariant::fromValue<RepositoryData>(repodata));
 	setPtyCondition(PtyCondition::Clone);
 	setPtyProcessOk(true);
 	g->clone(clonedata, getPtyProcess());
@@ -3348,8 +3394,9 @@ MainWindow::PtyCondition MainWindow::getPtyCondition()
 	return m->pty_condition;
 }
 
-void MainWindow::setPtyUserData(const QVariant &userdata)
+void MainWindow::setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata)
 {
+	m->pty_process.setCompletedHandler(fn);
 	m->pty_process.setVariant(userdata);
 }
 
@@ -3364,6 +3411,7 @@ void MainWindow::setPtyCondition(const MainWindow::PtyCondition &ptyCondition)
 }
 
 //
+
 
 bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params)
 {
@@ -3382,33 +3430,21 @@ bool MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 		}
 		GitProcessRequest req;
 		req.params = params;
-
+		
 		req.run = [this](GitProcessRequest const &req){
+			setCompletedHandler([this](bool ok, const QVariant &userdata){
+				emit sigPtyFetchCompleted(ok, userdata);
+			}, QVariant::fromValue(req));
 			setPtyCondition(PtyCondition::Fetch);
 			setPtyProcessOk(true);
 			req.params->pty = getPtyProcess();
-
+			
 			req.params->run();
 		};
-
-		req.done = [this](GitProcessRequest const &req){
-			ASSERT_MAIN_THREAD();
-
-			for (auto done : req.params->done) {
-				done(req.params.get());
-			}
-
-			hideProgress();
-
-			if (req.params->reopen_repository) {
-				internalOpenRepository(git(), false, false);
-			} else if (req.params->update_commit_log) {
-				openRepositoryMain(frame(), git(), false, false, false, true);
-			}
-
-			QApplication::restoreOverrideCursor();
-		};
-
+		
+		// req.done = [this](GitProcessRequest const &req){
+		// };
+		
 		m->git_process_thread.request(std::move(req));
 	}
 
@@ -4141,7 +4177,10 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 		}
 	}
 	showFileList(files_list_type);
-
+	
+	QElapsedTimer t;
+	t.start();
+	
 	m->update_files_list_thread = std::thread([this](GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID const &id){
 
 		ExchangeData xdata;
@@ -4245,6 +4284,10 @@ void MainWindow::updateFilesList(RepositoryWrapperFrame *frame, Git::CommitID co
 			(*getDiffCacheMap(frame))[key] = diff;
 		}
 	}, g, frame, id);
+	
+	m->update_files_list_thread.join(); //@ TODO: シングルスレッドでいいか
+	
+	qDebug() << "updateFilesList: " << t.elapsed() << "ms";	
 }
 
 /**
@@ -6375,17 +6418,6 @@ void MainWindow::onCloneCompleted(bool success, QVariant const &userdata)
 		setCurrentRepository(r, false);
 		reopenRepository();
 	}
-}
-
-void MainWindow::onPtyProcessCompleted(bool /*ok*/, QVariant const &userdata)
-{
-	updatePocessLog(false);
-	switch (getPtyCondition()) {
-	case PtyCondition::Clone:
-		onCloneCompleted(getPtyProcessOk(), userdata);
-		break;
-	}
-	setPtyCondition(PtyCondition::None);
 }
 
 void MainWindow::on_action_add_repository_triggered()

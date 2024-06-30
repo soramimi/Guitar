@@ -3,7 +3,7 @@
 
 #include "ApplicationGlobal.h"
 #include "Git.h"
-#include "MyProcess.h"
+#include "Process.h"
 #include <QMetaType>
 #include <QObject>
 #include <QString>
@@ -98,7 +98,7 @@ public:
 	bool override_wait_cursor = true;
 	std::shared_ptr<AbstractGitCommandItem> params;
 	std::function<void (GitProcessRequest const &req)> run;
-	std::function<void (GitProcessRequest const &req)> done;
+	// std::function<void (GitProcessRequest const &req)> done;
 };
 Q_DECLARE_METATYPE(GitProcessRequest)
 

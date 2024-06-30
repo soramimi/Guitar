@@ -211,7 +211,9 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		emit completed(ok, user_data);
+		if (completed_fn) {
+			completed_fn(ok, user_data);
+		}
 	}
 }
 

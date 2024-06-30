@@ -110,6 +110,7 @@ SOURCES += \
 	$$PWD/src/FileListWidget.cpp \
 	$$PWD/src/GenerateCommitMessageThread.cpp \
 	$$PWD/src/GitProcessThread.cpp \
+	$$PWD/src/Process.cpp \
 	src/ProgressTextLabel.cpp \
 	src/SettingAiForm.cpp \
 	src/SettingOptionsForm.cpp \
@@ -182,7 +183,6 @@ SOURCES += \
 	src/MenuButton.cpp \
 	src/MergeDialog.cpp \
 	src/MyImageViewWidget.cpp \
-	src/MyProcess.cpp \
 	src/MySettings.cpp \
 	src/MyTableWidgetDelegate.cpp \
 	src/MyTextEditorWidget.cpp \
@@ -262,6 +262,7 @@ HEADERS += \
 	$$PWD/src/FileListWidget.h \
 	$$PWD/src/GenerateCommitMessageThread.h \
 	$$PWD/src/GitProcessThread.h \
+	$$PWD/src/Process.h \
 	src/ProgressTextLabel.h \
 	src/SettingAiForm.h \
 	src/SettingOptionsForm.h \
@@ -336,7 +337,6 @@ HEADERS += \
 	src/MenuButton.h \
 	src/MergeDialog.h \
 	src/MyImageViewWidget.h \
-	src/MyProcess.h \
 	src/MySettings.h \
 	src/MyTableWidgetDelegate.h \
 	src/MyTextEditorWidget.h \

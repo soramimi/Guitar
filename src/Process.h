@@ -1,5 +1,5 @@
-#ifndef MYPROCESS_H
-#define MYPROCESS_H
+#ifndef PROCESS_H
+#define PROCESS_H
 
 #include <QtGlobal>
 
@@ -15,10 +15,4 @@ using Process = UnixProcess;
 using PtyProcess = UnixPtyProcess;
 #endif
 
-class misc2 {
-public:
-	static int runCommand(QString const &cmd, QByteArray *out);
-	static int runCommand(QString const &cmd, QByteArray const *in, QByteArray *out);
-};
-
-#endif // MYPROCESS_H
+#endif // PROCESS_H

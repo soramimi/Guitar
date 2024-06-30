@@ -3,7 +3,7 @@
 
 #include "BranchLabel.h"
 #include "Git.h"
-#include "MyProcess.h"
+#include "Process.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include "TextEditorTheme.h"
@@ -353,7 +353,7 @@ private:
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
 	PtyCondition getPtyCondition();
-	void setPtyUserData(const QVariant &userdata);
+	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
 	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &cRepositories() const;
@@ -516,7 +516,6 @@ public slots:
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();
-	void onPtyProcessCompleted(bool ok, const QVariant &userdata);
 	void onRepositoriesTreeDropped();
 	void onAvatarUpdated(RepositoryWrapperFrameP frame);
 	void onInterval10ms();
@@ -611,7 +610,7 @@ private slots:
 
 	// progress handler
 	void onRemoteInfoChanged();
-	void onGitProcessThreadDone(const GitProcessRequest &req);
+	// void onGitProcessThreadDone(const GitProcessRequest &req);
 	void onShowProgress(const QString &text, bool cancel_button);
 	void onSetProgress(float progress);
 	void onHideProgress();
@@ -646,7 +645,7 @@ private:
 signals:
 	void signalShowFileList(FilesListType files_list_type);
 private:
-	void setupShowFileListHandler();
+	void connectShowFileListHandler();
 
 private:
 	void setupAddFileObjectData();
@@ -664,9 +663,17 @@ private:
 	void jump(GitPtr g, const Git::CommitID &id);
 	void jump(GitPtr g, const QString &text);
 	void queryTags(GitPtr g);
-protected:
+	void connectPtyProcessCompleted();
+	void setupShowFileListHandler();
+	
+	void onPtyCloneCompleted(bool ok, const QVariant &userdata);
+	void onPtyFetchCompleted(bool ok, QVariant const &userdata);
+signals:
+	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
+	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);
 public:
 	void internalAfterFetch(GitPtr g);
+	
 };
 
 class ExchangeData {

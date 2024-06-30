@@ -3,7 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
 #include "MainWindow.h"
-#include "MyProcess.h"
+#include "Process.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include <QDateTime>

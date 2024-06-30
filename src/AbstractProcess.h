@@ -12,10 +12,15 @@ class AbstractPtyProcess : public QObject {
 protected:
 	QString change_dir;
 	QVariant user_data;
+	std::function<void (bool, const QVariant &)> completed_fn;
 public:
 	void setChangeDir(QString const &dir);
 	void setVariant(QVariant const &value);
 	QVariant const &userVariant() const;
+	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn)
+	{
+		completed_fn = fn;
+	}
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual int readOutput(char *ptr, int len) = 0;
@@ -25,8 +30,8 @@ public:
 	virtual int getExitCode() const = 0;
 	virtual QString getMessage() const = 0;
 	virtual void readResult(std::vector<char> *out) = 0;
-signals:
-	void completed(bool, QVariant);
+// signals:
+// 	void completed(bool, QVariant);
 };
 
 #endif // ABSTRACTPROCESS_H
