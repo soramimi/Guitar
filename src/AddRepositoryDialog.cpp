@@ -56,7 +56,6 @@ void AddRepositoryDialog::updateWorkingDirComboBoxFolders()
 		ui->comboBox_local_working_folder->addItem(s);
 	}
 
-	ui->comboBox_local_working_folder->addItem(tr("Manage..."), QVariant((int)Manage));
 	ui->comboBox_local_working_folder->setCurrentText(global->appsettings.default_working_dir);
 
 	ui->comboBox_local_working_folder->blockSignals(b);
@@ -379,16 +378,18 @@ void AddRepositoryDialog::on_groupBox_remote_clicked()
 
 void AddRepositoryDialog::on_comboBox_local_working_folder_currentTextChanged(const QString &arg1)
 {
-	QString dir;
-	if (ui->comboBox_local_working_folder->currentData() == Manage) {
-		ManageWorkingFolderDialog dlg(this);
-		if (dlg.exec() == QDialog::Accepted) {
-			ui->comboBox_local_working_folder->setCurrentIndex(0);
-			updateWorkingDirComboBoxFolders();
-		}
-	}
-	dir = arg1;
-	working_dir_ = dir;
-	ui->lineEdit_local_path->setText(dir);
+	working_dir_ = arg1;
+	ui->lineEdit_local_path->setText(arg1);
 	updateLocalPath();
 }
+
+void AddRepositoryDialog::on_pushButton_manage_local_fonder_clicked()
+{
+	ManageWorkingFolderDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		ui->comboBox_local_working_folder->setCurrentIndex(0);
+		updateWorkingDirComboBoxFolders();
+	}
+	
+}
+

@@ -70,6 +70,8 @@ private slots:
 	void on_radioButton_add_existing_clicked();
 	void on_radioButton_clone_clicked();
 	void on_radioButton_initialize_clicked();
+	void on_pushButton_manage_local_fonder_clicked();
+	
 public slots:
 	void accept() override;
 };
