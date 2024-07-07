@@ -9,6 +9,7 @@ qmake "CONFIG+=release" ../../../Guitar.pri
 make -j2
 cd ..
 cp _build/Guitar .
-SUFFIX=-dev ruby mk-deb.rb
+ruby mk-deb.rb
 file=`SUFFIX=-dev ./debname.rb`
-curl -T $file ftp://192.168.0.5/Public/pub/_tmp/
+curl -T $file ftp://192.168.0.5/Public/pub/nightlybuild/
+
