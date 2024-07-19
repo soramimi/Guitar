@@ -42,8 +42,6 @@ SOURCES += \
 	filetype/file/src/seccomp.c \
 	filetype/file/src/softmagic.c \
 	filetype/file/src/strcasestr.c \
-	filetype/file/src/strlcat.c \
-	filetype/file/src/strlcpy.c \
 	filetype/file/src/vasprintf.c \
 	filetype/pcre2/src/pcre2_auto_possess.c \
 	filetype/pcre2/src/pcre2_chartables.c \
@@ -99,3 +97,6 @@ HEADERS += \
 	filetype/pcre2/src/regex.h
 
 
+!macx:SOURCES += \
+    filetype/file/src/strlcat.c \
+	filetype/file/src/strlcpy.c
