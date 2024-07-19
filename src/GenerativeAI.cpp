@@ -4,6 +4,7 @@ std::vector<GenerativeAI::Model> GenerativeAI::available_models()
 {
 	std::vector<Model> models;
 	models.emplace_back("gpt-4o");
+	models.emplace_back("gpt-4o-mini");
 	models.emplace_back("gpt-4-turbo");
 	models.emplace_back("gpt-4");
 	models.emplace_back("gpt-3.5-turbo");
