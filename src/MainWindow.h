@@ -262,6 +262,7 @@ private:
 	void clone(GitPtr g, const Git::CloneData &clonedata, std::function<void (const ProcessStatus &, const QVariant &)> callback, const QVariant &userdata);
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
 	void fetch(GitPtr g, bool prune);
+	void stage(GitPtr g, const QStringList &paths);
 	void fetch_tags_f(GitPtr g);
 	void pull(GitPtr g);
 	void push_tags(GitPtr g);
@@ -674,13 +675,13 @@ private:
 	void setupShowFileListHandler();
 	
 	void onPtyCloneCompleted(const ProcessStatus &status, const QVariant &userdata);
-	void onPtyFetchCompleted(const ProcessStatus &status, QVariant const &userdata);
+	// void onPtyFetchCompleted(const ProcessStatus &status, QVariant const &userdata);
 private slots:
-	void onPtyProcessCompleted(PtyProcessCompleted const &data);
+	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 signals:
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
 	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);
-	void sigPtyProcessCompleted(PtyProcessCompleted const &data);
+	void sigPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 public:
 	void internalAfterFetch(GitPtr g);
 	

@@ -249,7 +249,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 
 bool Git::git(QString const &arg, Option const &opt, bool debug_)
 {
-	if (debug_) return true;
+	if (debug_) return false;
 	// qDebug() << "git: " << arg;
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
@@ -454,7 +454,7 @@ bool Git::tag(QString const &name, CommitID const &id)
 	return git(cmd);
 }
 
-void Git::delete_tag(QString const &name, bool remote)
+bool Git::delete_tag(QString const &name, bool remote)
 {
 	QString cmd = "tag --delete \"%1\"";
 	cmd = cmd.arg(name);
@@ -465,6 +465,8 @@ void Git::delete_tag(QString const &name, bool remote)
 		cmd = cmd.arg(name);
 		git(cmd);
 	}
+
+	return true;
 }
 
 QString Git::diff(QString const &old_id, QString const &new_id)
@@ -1181,10 +1183,10 @@ bool Git::revert(CommitID const &id)
 	return git(cmd);
 }
 
-void Git::push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
+bool Git::push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
 {
 	if (remote.indexOf('\"') >= 0 || branch.indexOf('\"') >= 0) {
-		return;
+		return false;
 	}
 	QString cmd = "push";
 	if (force) {
@@ -1196,7 +1198,7 @@ void Git::push_u(bool set_upstream, QString const &remote, QString const &branch
 	}
 	Option opt;
 	opt.pty = pty;
-	git(cmd, opt);
+	return git(cmd, opt);
 }
 
 bool Git::push_tags(AbstractPtyProcess *pty)
@@ -1307,8 +1309,10 @@ void Git::stage(QString const &path)
 	git("add " + path);
 }
 
-void Git::stage(QStringList const &paths)
+bool Git::stage(QStringList const &paths, AbstractPtyProcess *pty)
 {
+	if (paths.isEmpty()) return false;
+
 	QString cmd = "add";
 	for (QString const &path : paths) {
 		cmd += ' ';
@@ -1316,7 +1320,10 @@ void Git::stage(QStringList const &paths)
 		cmd += path;
 		cmd += '\"';
 	}
-	git(cmd);
+
+	Option opt;
+	opt.pty = pty;
+	return git(cmd, opt);
 }
 
 void Git::unstage(QString const &path)
@@ -1337,19 +1344,19 @@ void Git::unstage(QStringList const &paths)
 	git(cmd);
 }
 
-void Git::unstage_all()
+bool Git::unstage_all()
 {
-	git("reset HEAD");
+	return git("reset HEAD");
 }
 
-void Git::pull(AbstractPtyProcess *pty)
+bool Git::pull(AbstractPtyProcess *pty)
 {
 	Option opt;
 	opt.pty = pty;
-	git("pull", opt);
+	return git("pull", opt);
 }
 
-void Git::fetch(AbstractPtyProcess *pty, bool prune)
+bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
 	QString cmd = "fetch --tags -f";
 	if (prune) {
@@ -1357,15 +1364,15 @@ void Git::fetch(AbstractPtyProcess *pty, bool prune)
 	}
 	Option opt;
 	opt.pty = pty;
-	git(cmd, opt);
+	return git(cmd, opt);
 }
 
-void Git::fetch_tags_f(AbstractPtyProcess *pty)
+bool Git::fetch_tags_f(AbstractPtyProcess *pty)
 {
 	QString cmd = "fetch --tags -f";
 	Option opt;
 	opt.pty = pty;
-	git(cmd, opt);
+	return git(cmd, opt);
 }
 
 QStringList Git::make_branch_list_()

@@ -487,16 +487,16 @@ public:
 	void removeFile(QString const &path);
 
 	void add_A();
-	void unstage_all();
+	bool unstage_all();
 
 	void stage(QString const &path);
-	void stage(QStringList const &paths);
+	bool stage(QStringList const &paths, AbstractPtyProcess *pty);
 	void unstage(QString const &path);
 	void unstage(QStringList const &paths);
-	void pull(AbstractPtyProcess *pty = nullptr);
+	bool pull(AbstractPtyProcess *pty = nullptr);
 
-	void fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
-	void fetch_tags_f(AbstractPtyProcess *pty);
+	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
+	bool fetch_tags_f(AbstractPtyProcess *pty);
 
 	QList<Branch> branches();
 
@@ -566,7 +566,7 @@ public:
 	QList<Tag> tags();
 	QList<Tag> tags2();
 	bool tag(QString const &name, CommitID const &id = {});
-	void delete_tag(QString const &name, bool remote);
+	bool delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const Remote &remote);
 	void addRemoteURL(const Remote &remote);
 	void removeRemote(QString const &name);
@@ -592,7 +592,7 @@ public:
 	bool reset_head1();
 	bool reset_hard();
 	bool clean_df();
-	void push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
+	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
 	QString objectType(const CommitID &id);
 	bool rm_cached(QString const &file);
 	void cherrypick(QString const &name);

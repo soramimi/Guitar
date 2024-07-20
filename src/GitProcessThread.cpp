@@ -53,7 +53,7 @@ void GitProcessThread::start()
 			}
 			if (ok) {
 				m->cv_done.notify_all();
-				emit done(req);
+				// emit done(req);
 			}
 		}
 	});
@@ -111,9 +111,9 @@ GitCommandItem_clone::GitCommandItem_clone(const QString &progress_message, Git:
 	
 }
 
-void GitCommandItem_clone::run()
+bool GitCommandItem_clone::run()
 {
-	g->clone(clonedata_, pty);
+	return g->clone(clonedata_, pty);
 }
 
 GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool prune)
@@ -124,12 +124,25 @@ GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool
 	update_commit_log = true;
 }
 
+bool GitCommandItem_fetch::run()
+{
+	bool ok = g->fetch(pty, prune);
+	global->mainwindow->internalAfterFetch(g);
+	return ok;
+}
+
 //
 
-void GitCommandItem_fetch::run()
+GitCommandItem_stage::GitCommandItem_stage(const QString &progress_message, QStringList const &paths)
+	: AbstractGitCommandItem(progress_message)
+	, paths(paths)
 {
-	g->fetch(pty, prune);
-	global->mainwindow->internalAfterFetch(g);
+	after_operation = UpdateFiles;
+}
+
+bool GitCommandItem_stage::run()
+{
+	return g->stage(paths, pty);
 }
 
 //
@@ -140,9 +153,9 @@ GitCommandItem_fetch_tags_f::GitCommandItem_fetch_tags_f(const QString &progress
 	update_commit_log = true;
 }
 
-void GitCommandItem_fetch_tags_f::run()
+bool GitCommandItem_fetch_tags_f::run()
 {
-	g->fetch_tags_f(pty);
+	return g->fetch_tags_f(pty);
 }
 
 //
@@ -156,9 +169,9 @@ GitCommandItem_push::GitCommandItem_push(const QString &progress_message, bool s
 {
 }
 
-void GitCommandItem_push::run()
+bool GitCommandItem_push::run()
 {
-	g->push_u(set_upstream_, remote_, branch_, force_, pty);
+	return g->push_u(set_upstream_, remote_, branch_, force_, pty);
 }
 
 //
@@ -168,9 +181,9 @@ GitCommandItem_pull::GitCommandItem_pull(const QString &progress_message)
 {
 }
 
-void GitCommandItem_pull::run()
+bool GitCommandItem_pull::run()
 {
-	g->pull(pty);
+	return g->pull(pty);
 }
 
 GitCommandItem_push_tags::GitCommandItem_push_tags(const QString &progress_message)
@@ -178,9 +191,9 @@ GitCommandItem_push_tags::GitCommandItem_push_tags(const QString &progress_messa
 {
 }
 
-void GitCommandItem_push_tags::run()
+bool GitCommandItem_push_tags::run()
 {
-	g->push_tags(pty);
+	return g->push_tags(pty);
 }
 
 GitCommandItem_delete_tag::GitCommandItem_delete_tag(const QString &name, bool remote)
@@ -190,9 +203,9 @@ GitCommandItem_delete_tag::GitCommandItem_delete_tag(const QString &name, bool r
 {
 }
 
-void GitCommandItem_delete_tag::run()
+bool GitCommandItem_delete_tag::run()
 {
-	g->delete_tag(name_, remote_);
+	return g->delete_tag(name_, remote_);
 }
 
 GitCommandItem_delete_tags::GitCommandItem_delete_tags(const QStringList &tagnames)
@@ -201,11 +214,15 @@ GitCommandItem_delete_tags::GitCommandItem_delete_tags(const QStringList &tagnam
 {
 }
 
-void GitCommandItem_delete_tags::run()
+bool GitCommandItem_delete_tags::run()
 {
+	bool ok = false;
 	for (QString const &name : tagnames) {
-		g->delete_tag(name, true);
+		if (g->delete_tag(name, true)) {
+			ok = true;
+		}
 	}
+	return ok;
 }
 
 GitCommandItem_add_tag::GitCommandItem_add_tag(const QString &name, Git::CommitID const &commit_id)
@@ -215,9 +232,9 @@ GitCommandItem_add_tag::GitCommandItem_add_tag(const QString &name, Git::CommitI
 {
 }
 
-void GitCommandItem_add_tag::run()
+bool GitCommandItem_add_tag::run()
 {
-	g->tag(name_, commit_id_);
+	return g->tag(name_, commit_id_);
 }
 
 
@@ -228,7 +245,7 @@ GitCommandItem_submodule_add::GitCommandItem_submodule_add(const QString &progre
 {
 }
 
-void GitCommandItem_submodule_add::run()
+bool GitCommandItem_submodule_add::run()
 {
-	g->submodule_add(data_, force_, pty);
+	return g->submodule_add(data_, force_, pty);
 }

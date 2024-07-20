@@ -1800,7 +1800,7 @@ void MainWindow::queryRemotes(GitPtr g)
 void MainWindow::onPtyCloneCompleted(ProcessStatus const &status, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
-	
+
 	if (status.ok) {
 		RepositoryData const &r = userdata.value<RepositoryData>();
 		saveRepositoryBookmark(r);
@@ -1809,34 +1809,47 @@ void MainWindow::onPtyCloneCompleted(ProcessStatus const &status, QVariant const
 	}
 }
 
-void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const &userdata)
+void MainWindow::internalAfterFetch(GitPtr g)
 {
-	ASSERT_MAIN_THREAD();
-	
-	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
-	Q_ASSERT(req.params);
-	
-	switch (req.params->after_operation) {
-	case AbstractGitCommandItem::Reopen:
-		internalOpenRepository(git(), false, false);
-		break;
-	case AbstractGitCommandItem::Fetch:
-		fetch(git(), false);
-		break;
-	default:
-		if (req.params->update_commit_log) {
-			openRepositoryMain(frame(), git(), false, false, false, true);
-		}
-		break;
-	}
+	RepositoryWrapperFrame *frame = this->frame();
+
+	detectGitServerType(g);
+
+	queryCommitLog(frame, g);
+
+	updateRemoteInfo(g);
 }
 
-void MainWindow::onPtyProcessCompleted(PtyProcessCompleted const &data)
+// void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const &userdata)
+// {
+// 	ASSERT_MAIN_THREAD();
+	
+// 	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
+// 	Q_ASSERT(req.params);
+	
+// 	switch (req.params->after_operation) {
+// 	case AbstractGitCommandItem::Reopen:
+// 		internalOpenRepository(git(), false, false);
+// 		break;
+// 	case AbstractGitCommandItem::Fetch:
+// 		fetch(git(), false);
+// 		break;
+// 	default:
+// 		if (req.params->update_commit_log) {
+// 			openRepositoryMain(frame(), git(), false, false, false, true);
+// 		}
+// 		break;
+// 	}
+// }
+
+void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 {
 	ASSERT_MAIN_THREAD();
 
-	if (data.callback) {
-		data.callback(data.status, data.userdata);
+	if (ok) {
+		if (data.callback) {
+			data.callback(data.status, data.userdata);
+		}
 	}
 
 	QApplication::restoreOverrideCursor();
@@ -1904,8 +1917,8 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	
 	GitPtr g = git({}, {}, repodata.ssh_key);
 	clone(g, clonedata, [this](ProcessStatus const &status, const QVariant &userdata){
-			onPtyCloneCompleted(status, userdata);
-		}, QVariant::fromValue(repodata));
+		onPtyCloneCompleted(status, userdata);
+	}, QVariant::fromValue(repodata));
 	
 	return true;
 }
@@ -2103,6 +2116,12 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 void MainWindow::fetch(GitPtr g, bool prune)
 {
 	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
+	runPtyGit(g, params, nullptr, {});
+}
+
+void MainWindow::stage(GitPtr g, QStringList const &paths)
+{
+	std::shared_ptr<GitCommandItem_stage> params = std::make_shared<GitCommandItem_stage>(tr("Stageing..."), paths);
 	runPtyGit(g, params, nullptr, {});
 }
 
@@ -3316,13 +3335,17 @@ void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 			data.status.ok = ok;
 			data.callback = req.callback;
 			data.userdata = req.userdata;
-			emit sigPtyProcessCompleted(data);
+			emit sigPtyProcessCompleted(true, data);
 		}, QVariant::fromValue(req));
 		setPtyCondition(PtyCondition::Fetch);
 		setPtyProcessOk(true);
 		req.params->pty = getPtyProcess();
 		
-		req.params->run();
+		if (req.params->run()) {
+			// nop
+		} else {
+			emit sigPtyProcessCompleted(false, {});
+		}
 	};
 	req.params = params;
 	req.callback = callback;
@@ -4416,17 +4439,6 @@ void MainWindow::queryTags(GitPtr g)
 	for (Git::Tag const &tag : tags) {
 		(*ptrCommitToTagMap(frame()))[tag.id].push_back(tag);
 	}
-}
-
-void MainWindow::internalAfterFetch(GitPtr g)
-{
-	RepositoryWrapperFrame *frame = this->frame();
-
-	detectGitServerType(g);
-
-	queryCommitLog(frame, g);
-
-	updateRemoteInfo(g);
 }
 
 void MainWindow::updateHEAD(GitPtr g)
@@ -6074,7 +6086,12 @@ void MainWindow::on_toolButton_stage_clicked()
 				QString path = getFilePath(item);
 				list.push_back(path);
 			}
+#if 0
 			g->stage(list);
+#else
+			stage(g, list);
+
+#endif
 		}
 		updateCurrentFilesList(frame());
 	}

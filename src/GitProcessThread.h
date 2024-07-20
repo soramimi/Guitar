@@ -19,6 +19,7 @@ public:
 		None,
 		Fetch,
 		Reopen,
+		UpdateFiles,
 	};
 	AfterOperation after_operation = Fetch;
 	AbstractGitCommandItem(QString const &progress_message)
@@ -26,7 +27,7 @@ public:
 	{
 	}
 	virtual ~AbstractGitCommandItem() = default;
-	virtual void run() = 0;
+	virtual bool run() = 0;
 };
 
 class GitCommandItem_clone : public AbstractGitCommandItem {
@@ -34,7 +35,7 @@ private:
 	Git::CloneData clonedata_;
 public:
 	GitCommandItem_clone(QString const &progress_message, const Git::CloneData &clonedata);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_fetch : public AbstractGitCommandItem {
@@ -42,13 +43,21 @@ private:
 	bool prune;
 public:
 	GitCommandItem_fetch(QString const &progress_message, bool prune);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_fetch_tags_f : public AbstractGitCommandItem {
 public:
 	GitCommandItem_fetch_tags_f(QString const &progress_message);
-	void run() override;
+	bool run() override;
+};
+
+class GitCommandItem_stage : public AbstractGitCommandItem {
+private:
+	QStringList paths;
+public:
+	GitCommandItem_stage(QString const &progress_message, QStringList const &paths);
+	bool run() override;
 };
 
 class GitCommandItem_push : public AbstractGitCommandItem {
@@ -63,19 +72,19 @@ private:
 	QString errormsg_;
 public:
 	GitCommandItem_push(QString const &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_pull : public AbstractGitCommandItem {
 public:
 	GitCommandItem_pull(QString const &progress_message);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_push_tags : public AbstractGitCommandItem {
 public:
 	GitCommandItem_push_tags(QString const &progress_message);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_delete_tag : public AbstractGitCommandItem {
@@ -84,7 +93,7 @@ private:
 	bool remote_;
 public:
 	GitCommandItem_delete_tag(const QString &name, bool remote);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_delete_tags : public AbstractGitCommandItem {
@@ -92,7 +101,7 @@ private:
 	QStringList tagnames;
 public:
 	GitCommandItem_delete_tags(const QStringList &tagnames);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_add_tag : public AbstractGitCommandItem {
@@ -101,7 +110,7 @@ private:
 	Git::CommitID commit_id_;
 public:
 	GitCommandItem_add_tag(const QString &name, const Git::CommitID &commit_id);
-	void run() override;
+	bool run() override;
 };
 
 class GitCommandItem_submodule_add : public AbstractGitCommandItem {
@@ -110,7 +119,7 @@ private:
 	bool force_ = false;
 public:
 	GitCommandItem_submodule_add(QString const &progress_message, Git::CloneData data, bool force);
-	void run() override;
+	bool run() override;
 };
 
 
@@ -142,7 +151,7 @@ public:
 	void cancel(request_id_t reqid);
 	bool wait();
 signals:
-	void done(GitProcessRequest const &req);
+	// void done(GitProcessRequest const &req);
 };
 
 #endif // GITPROCESSTHREAD_H
