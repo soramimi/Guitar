@@ -1797,18 +1797,6 @@ void MainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
-void MainWindow::onPtyCloneCompleted(ProcessStatus const &status, QVariant const &userdata)
-{
-	ASSERT_MAIN_THREAD();
-
-	if (status.ok) {
-		RepositoryData const &r = userdata.value<RepositoryData>();
-		saveRepositoryBookmark(r);
-		setCurrentRepository(r, false);
-		reopenRepository();
-	}
-}
-
 void MainWindow::internalAfterFetch(GitPtr g)
 {
 	RepositoryWrapperFrame *frame = this->frame();
@@ -1858,6 +1846,18 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 void MainWindow::connectPtyProcessCompleted()
 {
 	connect(this, &MainWindow::sigPtyProcessCompleted, this, &MainWindow::onPtyProcessCompleted);
+}
+
+void MainWindow::doReopenRepository(ProcessStatus const &status, QVariant const &userdata)
+{
+	ASSERT_MAIN_THREAD();
+
+	if (status.ok) {
+		RepositoryData const &r = userdata.value<RepositoryData>();
+		saveRepositoryBookmark(r);
+		setCurrentRepository(r, false);
+		reopenRepository();
+	}
 }
 
 /**
@@ -1917,7 +1917,7 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	
 	GitPtr g = git({}, {}, repodata.ssh_key);
 	clone(g, clonedata, [this](ProcessStatus const &status, const QVariant &userdata){
-		onPtyCloneCompleted(status, userdata);
+			doReopenRepository(status, userdata);
 	}, QVariant::fromValue(repodata));
 	
 	return true;
@@ -2134,7 +2134,9 @@ void MainWindow::fetch_tags_f(GitPtr g)
 void MainWindow::pull(GitPtr g)
 {
 	std::shared_ptr<GitCommandItem_pull> params = std::make_shared<GitCommandItem_pull>(tr("Pulling..."));
-	runPtyGit(g, params, nullptr, {});
+	runPtyGit(g, params, [this](ProcessStatus const &status, const QVariant &userdata){
+			doReopenRepository(status, userdata);
+		}, QVariant::fromValue(m->current_repo));
 }
 
 void MainWindow::push_tags(GitPtr g)

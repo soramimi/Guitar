@@ -674,7 +674,7 @@ private:
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	
-	void onPtyCloneCompleted(const ProcessStatus &status, const QVariant &userdata);
+	void doReopenRepository(const ProcessStatus &status, const QVariant &userdata);
 	// void onPtyFetchCompleted(const ProcessStatus &status, QVariant const &userdata);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
