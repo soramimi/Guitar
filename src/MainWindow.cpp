@@ -3089,7 +3089,6 @@ void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
 									elements.erase(elements.begin() + j); // 移動元を削除
 									elements.insert(elements.begin() + i, std::move(t)); // 現在位置の次に挿入
 									index1 = index2;
-									f = e;
 								} else {
 									j++;
 								}
@@ -4211,7 +4210,7 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 		{
 			std::lock_guard lock(frame->commit_log_mutex);
 			auto const &logs = frame->commit_log;
-			int count = (int)logs.size();
+			const int count = (int)logs.size();
 			Q_ASSERT(index >= 0 && index < count);
 			commit = logs[index];
 		}

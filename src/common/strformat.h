@@ -1016,6 +1016,7 @@ public:
 	std::string str()
 	{
 		int n = length();
+		if (n < 1) return {};
 		char *p;
 		std::vector<char> tmp;
 		if (n < 0x20000) {

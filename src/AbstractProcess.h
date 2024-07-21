@@ -41,17 +41,23 @@ public:
 	}
 	void writeInput(const char *ptr, int len)
 	{
+		(void)ptr;
+		(void)len;
 	}
 	int readOutput(char *ptr, int len)
 	{
+		(void)ptr;
+		(void)len;
 		return 0;
 	}
 	void start(const QString &cmd, const QString &env)
 	{
+		(void)env;
 		command_ = cmd;
 	}
 	bool wait(unsigned long time)
 	{
+		(void)time;
 		return true;
 	}
 	void stop()
