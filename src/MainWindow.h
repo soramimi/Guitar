@@ -259,7 +259,7 @@ private:
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
 	
-	void clone(GitPtr g, const Git::CloneData &clonedata, std::function<void (const ProcessStatus &, const QVariant &)> callback, const QVariant &userdata);
+	void clone(GitPtr g, const Git::CloneData &clonedata, const RepositoryData &repodata);
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
 	void fetch(GitPtr g, bool prune);
 	void stage(GitPtr g, const QStringList &paths);

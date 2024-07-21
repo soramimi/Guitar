@@ -1845,10 +1845,12 @@ void MainWindow::doReopenRepository(ProcessStatus const &status, QVariant const 
  *
  * リポジトリをクローンする
  */
-void MainWindow::clone(GitPtr g, Git::CloneData const &clonedata, std::function<void (ProcessStatus const &, QVariant const &)> callback, QVariant const &userdata)
+void MainWindow::clone(GitPtr g, Git::CloneData const &clonedata, RepositoryData const &repodata)
 {
 	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), clonedata);
-	runPtyGit(g, params, callback, userdata);
+	runPtyGit(g, params, [&](ProcessStatus const &status, QVariant const &userdata){
+		doReopenRepository(status, userdata);
+	}, QVariant::fromValue(repodata));
 }
 
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
@@ -1893,10 +1895,8 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 	}
 	
 	GitPtr g = git({}, {}, repodata.ssh_key);
-	clone(g, clonedata, [this](ProcessStatus const &status, const QVariant &userdata){
-			doReopenRepository(status, userdata);
-	}, QVariant::fromValue(repodata));
-	
+	clone(g, clonedata, repodata);
+
 	return true;
 }
 
