@@ -53,7 +53,6 @@ void GitProcessThread::start()
 			}
 			if (ok) {
 				m->cv_done.notify_all();
-				// emit done(req);
 			}
 		}
 	});
@@ -126,9 +125,7 @@ GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool
 
 bool GitCommandItem_fetch::run()
 {
-	bool ok = g->fetch(pty, prune);
-	global->mainwindow->internalAfterFetch(g);
-	return ok;
+	return g->fetch(pty, prune);
 }
 
 //

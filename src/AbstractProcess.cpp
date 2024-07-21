@@ -2,11 +2,5 @@
 
 void AbstractPtyProcess::setChangeDir(QString const &dir)
 {
-	change_dir = dir;
+	change_dir_ = dir;
 }
-
-QVariant const &AbstractPtyProcess::userVariant() const
-{
-	return user_data;
-}
-

@@ -288,7 +288,7 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 		}
 
 		if (opt.pty) {
-			opt.pty->start(cmd, env, opt.pty->userVariant());
+			opt.pty->start(cmd, env);
 			m->exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;

@@ -683,7 +683,7 @@ signals:
 	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);
 	void sigPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 public:
-	void internalAfterFetch(GitPtr g);
+	void internalAfterFetch();
 	
 };
 

@@ -1797,38 +1797,15 @@ void MainWindow::queryRemotes(GitPtr g)
 	std::sort(m->remotes.begin(), m->remotes.end());
 }
 
-void MainWindow::internalAfterFetch(GitPtr g)
+void MainWindow::internalAfterFetch()
 {
-	RepositoryWrapperFrame *frame = this->frame();
+	ASSERT_MAIN_THREAD();
 
+	GitPtr g = git();
 	detectGitServerType(g);
-
-	queryCommitLog(frame, g);
-
+	queryCommitLog(frame(), g);
 	updateRemoteInfo(g);
 }
-
-// void MainWindow::onPtyFetchCompleted(ProcessStatus const &status, QVariant const &userdata)
-// {
-// 	ASSERT_MAIN_THREAD();
-	
-// 	GitProcessRequest const &req = userdata.value<GitProcessRequest>();
-// 	Q_ASSERT(req.params);
-	
-// 	switch (req.params->after_operation) {
-// 	case AbstractGitCommandItem::Reopen:
-// 		internalOpenRepository(git(), false, false);
-// 		break;
-// 	case AbstractGitCommandItem::Fetch:
-// 		fetch(git(), false);
-// 		break;
-// 	default:
-// 		if (req.params->update_commit_log) {
-// 			openRepositoryMain(frame(), git(), false, false, false, true);
-// 		}
-// 		break;
-// 	}
-// }
 
 void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 {
@@ -2116,7 +2093,9 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 void MainWindow::fetch(GitPtr g, bool prune)
 {
 	std::shared_ptr<GitCommandItem_fetch> params = std::make_shared<GitCommandItem_fetch>(tr("Fetching..."), prune);
-	runPtyGit(g, params, nullptr, {});
+	runPtyGit(g, params, [&](ProcessStatus const &status, QVariant const &userdata){
+		global->mainwindow->internalAfterFetch();
+	}, {});
 }
 
 void MainWindow::stage(GitPtr g, QStringList const &paths)

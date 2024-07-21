@@ -98,12 +98,11 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(QString const &cmd, QString const &env, QVariant const &userdata)
+void UnixPtyProcess::start(QString const &cmd, QString const &env)
 {
 	if (isRunning()) return;
 	m->command = cmd.toStdString();
 	m->env = env.toStdString();
-	user_data = userdata;
 	QThread::start();
 }
 
@@ -157,7 +156,7 @@ void UnixPtyProcess::run()
 		dup2(pty_slave, STDERR_FILENO);
 		close(pty_slave);
 
-		QDir::setCurrent(change_dir);
+		QDir::setCurrent(change_dir_);
 
 		char *command = (char *)alloca(m->command.size() + 1);
 		strcpy(command, m->command.c_str());
@@ -211,8 +210,8 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		if (completed_fn) {
-			completed_fn(ok, user_data);
+		if (completed_fn_) {
+			completed_fn_(ok, user_data_);
 		}
 	}
 }

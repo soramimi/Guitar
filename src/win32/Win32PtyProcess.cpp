@@ -120,7 +120,7 @@ void Win32PtyProcess::run()
 	program = getProgram(m->command);
 
 	QString cwd = QDir::currentPath();
-	QDir::setCurrent(change_dir);
+	QDir::setCurrent(change_dir_);
 
 	winpty_config_t *agent_cfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
 	winpty_t *pty = winpty_open(agent_cfg, nullptr);
@@ -168,8 +168,8 @@ void Win32PtyProcess::run()
 
 	QDir::setCurrent(cwd);
 
-	if (completed_fn) {
-		completed_fn(ok, user_data);
+	if (completed_fn_) {
+		completed_fn_(ok, user_data_);
 	}
 }
 
@@ -226,12 +226,12 @@ void Win32PtyProcess::writeInput(char const *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::start(QString const &cmdline, QString const &env, QVariant const &userdata)
+void Win32PtyProcess::start(QString const &cmdline, QString const &env)
 {
 	if (isRunning()) return;
 	m->command = cmdline;
 	m->env = env;
-	this->user_data = userdata;
+	this->user_data_ = userdata;
 	QThread::start();
 }
 
