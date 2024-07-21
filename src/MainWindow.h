@@ -77,14 +77,6 @@ public:
 		SubmoduleAdd,
 	};
 
-	enum class PtyCondition {
-		None,
-		Clone,
-		Fetch,
-		Pull,
-		Push,
-	};
-
 	enum InteractionMode {
 		None,
 		Busy,
@@ -166,7 +158,6 @@ private:
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
 
-	// void clearLog(RepositoryWrapperFrame *frame);
 	void openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
@@ -175,7 +166,6 @@ private:
 	void clearFileList(RepositoryWrapperFrame *frame);
 	void clearDiffView(RepositoryWrapperFrame *frame);
 	void clearDiffView();
-	// void clearRepositoryInfo();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryData const *repositoryItem(const QTreeWidgetItem *item) const;
@@ -247,11 +237,9 @@ private:
 	void openRepository(bool validate, bool waitcursor, bool keep_selection);
 	void reopenRepository();
 
-	// void reopenRepository(bool log, const std::function<void (GitPtr)> callback);
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, RepositoryWrapperFrame *frame, Git::CommitID id);
-	// void queryBranches(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateRemoteInfo(GitPtr g);
 	void queryRemotes(GitPtr g);
 	void submodule_add(QString url = {}, const QString &local_dir = {});
@@ -355,15 +343,10 @@ private:
 	void stopPtyProcess();
 	void abortPtyProcess();
 	Git::CommitItemList *getCommitLogPtr(RepositoryWrapperFrame *frame);
-	// const Git::CommitItemList &getCommitLog(RepositoryWrapperFrame const *frame) const;
-	// void setCommitLog(RepositoryWrapperFrame *frame, const Git::CommitItemList &logs);
-	// void clearCommitLog(RepositoryWrapperFrame *frame);
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
-	PtyCondition getPtyCondition();
 	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
-	void setPtyCondition(const PtyCondition &ptyCondition);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
 	void setRepositoryList(QList<RepositoryData> &&list);
@@ -618,7 +601,6 @@ private slots:
 
 	// progress handler
 	void onRemoteInfoChanged();
-	// void onGitProcessThreadDone(const GitProcessRequest &req);
 	void onShowProgress(const QString &text, bool cancel_button);
 	void onSetProgress(float progress);
 	void onHideProgress();
@@ -675,7 +657,6 @@ private:
 	void setupShowFileListHandler();
 	
 	void doReopenRepository(const ProcessStatus &status, const QVariant &userdata);
-	// void onPtyFetchCompleted(const ProcessStatus &status, QVariant const &userdata);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 signals:

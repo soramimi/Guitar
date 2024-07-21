@@ -193,8 +193,8 @@ bool GitCommandItem_push_tags::run()
 	return g->push_tags(pty);
 }
 
-GitCommandItem_delete_tag::GitCommandItem_delete_tag(const QString &name, bool remote)
-	: AbstractGitCommandItem(QString())
+GitCommandItem_delete_tag::GitCommandItem_delete_tag(const QString &progress_message, const QString &name, bool remote)
+	: AbstractGitCommandItem(progress_message)
 	, name_(name)
 	, remote_(remote)
 {
@@ -205,8 +205,8 @@ bool GitCommandItem_delete_tag::run()
 	return g->delete_tag(name_, remote_);
 }
 
-GitCommandItem_delete_tags::GitCommandItem_delete_tags(const QStringList &tagnames)
-	: AbstractGitCommandItem(QString())
+GitCommandItem_delete_tags::GitCommandItem_delete_tags(const QString &progress_message, const QStringList &tagnames)
+	: AbstractGitCommandItem(progress_message)
 	, tagnames(tagnames)
 {
 }
@@ -222,8 +222,8 @@ bool GitCommandItem_delete_tags::run()
 	return ok;
 }
 
-GitCommandItem_add_tag::GitCommandItem_add_tag(const QString &name, Git::CommitID const &commit_id)
-	: AbstractGitCommandItem(QString())
+GitCommandItem_add_tag::GitCommandItem_add_tag(const QString &progress_message, const QString &name, Git::CommitID const &commit_id)
+	: AbstractGitCommandItem(progress_message)
 	, name_(name)
 	, commit_id_(commit_id)
 {
