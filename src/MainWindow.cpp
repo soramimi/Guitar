@@ -4455,6 +4455,11 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 
 	if (!isValidWorkingCopy(g)) return;
 
+	PtyProcess *pty = getPtyProcess();
+	if (pty) {
+		pty->wait();
+	}
+
 	getObjCache(frame)->setup(g);
 
 	if (clear_log) { // ログをクリア
