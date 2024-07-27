@@ -47,8 +47,8 @@ linux {
 	}
 }
 haiku:LIBS += -lssl -lcrypto -lnetwork
-macx:INCLUDEPATH += /opt/homebrew/Cellar/openssl@3/3.2.1/include
-macx:LIBS += /opt/homebrew/Cellar/openssl@3/3.2.1/lib/libssl.a /opt/homebrew/Cellar/openssl@3/3.2.1/lib/libcrypto.a
+macx:INCLUDEPATH += /opt/homebrew/include
+macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 
 win32:msvc {
 	INCLUDEPATH += "C:\Qt\Tools\OpenSSLv3\Win_x64\include"
