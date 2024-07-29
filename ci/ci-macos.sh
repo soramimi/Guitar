@@ -1,5 +1,5 @@
 mkdir _bin
-QT=~/Qt/6.7.0/macos
+QT=~/Qt/6.7.2/macos
 cd packaging/mac
 rm -fr build
 mkdir build
