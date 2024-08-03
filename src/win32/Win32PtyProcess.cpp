@@ -231,7 +231,6 @@ void Win32PtyProcess::start(QString const &cmdline, QString const &env)
 	if (isRunning()) return;
 	m->command = cmdline;
 	m->env = env;
-	this->user_data_ = userdata;
 	QThread::start();
 }
 
