@@ -50,6 +50,13 @@ void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor
 	return drawFrame(pr, r.x(), r.y(), r.width(), r.height(), color_topleft, color_bottomright);
 }
 
+/**
+ * @brief RaisedやSunkenのある枠を描く
+ * @param p
+ * @param rect
+ * @param palette
+ * @param state
+ */
 void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
 {
 	QColor topleft;
@@ -64,7 +71,45 @@ void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QSt
 	drawFrame(p, rect, topleft, bottomright);
 }
 
-void drawShadeEllipse(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+/**
+ * @brief タブの外枠を描く
+ * @param p
+ * @param rect
+ * @param palette
+ */
+void drawTabFrame(QPainter *p, const QRect &rect, const QPalette &palette)
+{
+	p->save();
+	int x = rect.x();
+	int y = rect.y();
+	int w = rect.width();
+	int h = rect.height();
+	p->setClipRect(x, y, w, h);
+	p->fillRect(x, y, w, h, palette.color(QPalette::Window));
+	drawShadeFrame(p, rect, palette, QStyle::State_Raised);
+	p->restore();
+}
+
+/**
+ * @brief チェックボックスの枠（凹んだ矩形）を描く
+ * @param p
+ * @param rect
+ * @param palette
+ * @param state
+ */
+inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+{
+	drawShadeFrame(p, rect, palette, state);
+}
+
+/**
+ * @brief ラジオボタンの枠（凹んだ円）を描く
+ * @param p
+ * @param rect
+ * @param palette
+ * @param state
+ */
+void drawRadioButtonFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
 {
 	QColor topleft;
 	QColor bottomright;
@@ -81,19 +126,6 @@ void drawShadeEllipse(QPainter *p, QRect const &rect, QPalette const &palette, Q
 	p->drawArc(rect, 45 * 16, 180 * 16);
 	p->setPen(bottomright);
 	p->drawArc(rect, 225 * 16, 180 * 16);
-	p->restore();
-}
-
-void drawTabFrame(QPainter *p, const QRect &rect, const QPalette &palette)
-{
-	p->save();
-	int x = rect.x();
-	int y = rect.y();
-	int w = rect.width();
-	int h = rect.height();
-	p->setClipRect(x, y, w, h);
-	p->fillRect(x, y, w, h, palette.color(QPalette::Window));
-	drawShadeFrame(p, rect, palette, QStyle::State_Raised);
 	p->restore();
 }
 
@@ -172,7 +204,6 @@ DarkStyle::DarkStyle(QColor const &base_color)
 	: m(new Private)
 {
 	setBaseColor(base_color);
-//	setDpiScalingEnabled(QApplication::testAttribute(Qt::AA_EnableHighDpiScaling));
 }
 
 DarkStyle::~DarkStyle()
@@ -267,16 +298,9 @@ private:
 public:
 	Lighten()
 	{
-#if 0
-		const double x = 0.75;
-		for (int i = 0; i < 256; i++) {
-			lut[i] = (int)(pow(i / 255.0, x) * 255);
-		}
-#else
 		for (int i = 0; i < 256; i++) {
 			lut[i] = 255 - (255 - i) * 192 / 256;
 		}
-#endif
 	}
 	int operator [] (int i)
 	{
@@ -698,7 +722,7 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	case PM_SliderLength:
 		val = std::min(widget->width(), widget->height());
 		return val; // Do not dpi-scale
-//		break;
+		//		break;
 	case PM_SliderThickness:
 		val = 15;
 		break;
@@ -766,10 +790,11 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	case PM_IndicatorHeight:
 	case PM_IndicatorWidth:
 #ifdef Q_OS_WIN
-        val = 11;
-        break;
+		// val = 11;
+		val = 14;
+		break;
 #endif
-        // fallthru
+		// fallthru
 	case PM_ExclusiveIndicatorHeight:
 	case PM_ExclusiveIndicatorWidth:
 		val = 16;
@@ -794,17 +819,22 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	}
 }
 
+/**
+ * @brief チェックボックスとラジオボタンの凹みの矩形を求める
+ * @param option
+ * @param widget
+ * @param rect
+ * @return
+ */
 QRect DarkStyle::indicatorRect(const QStyleOption *option, const QWidget *widget, QRect const &rect) const
 {
 	int w = proxy()->pixelMetric(PM_IndicatorWidth, option, widget);
 	int h = proxy()->pixelMetric(PM_IndicatorHeight, option, widget);
 	int x = rect.x();
 	int y = rect.y();
-	int extent = std::min(rect.width(), rect.height());
-	if (extent > w || extent > h) {
-		auto e = std::min(w, h);
-		x += (extent - e) / 2;
-		y += (extent - e) / 2;
+	int extent = rect.height();
+	if (extent > h) {
+		y += (extent - h) / 2;
 	}
 	return {x, y, w, h};
 }
@@ -958,10 +988,6 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 
 	case SH_MessageBox_TextInteractionFlags:
 		return Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse;
-		//#if QT_CONFIG(wizard)
-		//	case SH_WizardStyle:
-		//		return QWizard::ClassicStyle;
-		//#endif
 	case SH_Menu_SubMenuPopupDelay:
 		return 225; // default from GtkMenu
 
@@ -987,91 +1013,6 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 	return QCommonStyle::styleHint(hint, option, widget, returnData);
 }
 
-#if 0
-static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth)
-{
-	qreal height = 0;
-	qreal widthUsed = 0;
-	textLayout.beginLayout();
-	while (true) {
-		QTextLine line = textLayout.createLine();
-		if (!line.isValid())
-			break;
-		line.setLineWidth(lineWidth);
-		line.setPosition(QPointF(0, height));
-		height += line.height();
-		widthUsed = qMax(widthUsed, line.naturalTextWidth());
-	}
-	textLayout.endLayout();
-	return QSizeF(widthUsed, height);
-}
-
-void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect) const
-{
-	const QWidget *widget = option->widget;
-	const int textMargin = pixelMetric(QStyle::PM_FocusFrameHMargin, 0, widget) + 1;
-
-	QRect textRect = rect.adjusted(textMargin, 0, -textMargin, 0); // remove width padding
-	const bool wrapText = option->features & QStyleOptionViewItem::WrapText;
-	QTextOption textOption;
-	textOption.setWrapMode(wrapText ? QTextOption::WordWrap : QTextOption::ManualWrap);
-	textOption.setTextDirection(option->direction);
-	textOption.setAlignment(QStyle::visualAlignment(option->direction, option->displayAlignment));
-	QTextLayout textLayout(option->text, option->font);
-	textLayout.setTextOption(textOption);
-
-	viewItemTextLayout(textLayout, textRect.width());
-
-	const QRectF boundingRect = textLayout.boundingRect();
-	const QRect layoutRect = QStyle::alignedRect(option->direction, option->displayAlignment, boundingRect.size().toSize(), textRect);
-	const QPointF position = layoutRect.topLeft();
-	const int lineCount = textLayout.lineCount();
-
-	qreal height = 0;
-	for (int i = 0; i < lineCount; ++i) {
-		const QTextLine line = textLayout.lineAt(i);
-		height += line.height();
-
-		// above visible rect
-		if (height + layoutRect.top() <= textRect.top()) continue;
-
-		const int start = line.textStart();
-		const int length = line.textLength();
-
-		const bool drawElided = line.naturalTextWidth() > textRect.width();
-		bool elideLastVisibleLine = false;
-		if (!drawElided && i + 1 < lineCount) {
-			const QTextLine nextLine = textLayout.lineAt(i + 1);
-			const int nextHeight = height + nextLine.height() / 2;
-			// elide when less than the next half line is visible
-			if (nextHeight + layoutRect.top() > textRect.height() + textRect.top()) {
-				elideLastVisibleLine = true;
-			}
-		}
-
-		if (drawElided || elideLastVisibleLine) {
-			QString text = textLayout.text().mid(start, length);
-			if (elideLastVisibleLine) {
-				text += QChar(0x2026);
-			}
-			//			const QStackTextEngine engine(text, option->font);
-			const QString elidedText = text;//engine.elidedText(option->textElideMode, textRect.width());
-			const QPointF pos(position.x() + line.x(), position.y() + line.y() + line.ascent());
-			p->save();
-			p->setFont(option->font);
-			p->drawText(pos, elidedText);
-			p->restore();
-		} else {
-			line.draw(p, position);
-		}
-
-		// below visible text, can stop
-		if (height + layoutRect.top() >= textRect.bottom()) {
-			break;
-		}
-	}
-}
-#else
 void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const
 {
 	bool enabled = (option->state & State_Enabled);
@@ -1094,21 +1035,11 @@ void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option
 	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, text, QPalette::NoRole);
 	p->restore();
 }
-#endif
 
 void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
 #ifndef Q_OS_MAC
 	if (pe == PE_FrameFocusRect) {
-		//		if (auto const *w = qobject_cast<QTableView const *>(widget)) {
-		//			if (w->selectionBehavior() == QAbstractItemView::SelectRows) {
-		//				if (auto const *v = w->viewport()) {
-		//					QRect r(0, option->rect.y(), v->width(), option->rect.height());
-		//					return;
-		//				}
-
-		//			}
-		//		}
 		drawFocusFrame(p, option->rect, 0);
 		return;
 	}
@@ -1165,7 +1096,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					imagePainter.translate(sx + bsx, sy + bsy);
 					imagePainter.setPen(option->palette.buttonText().color());
 					imagePainter.setBrush(option->palette.buttonText());
-//					imagePainter.setRenderHint(QPainter::Qt4CompatiblePainting);
 
 					if (!(option->state & State_Enabled)) {
 						imagePainter.translate(1, 1);
@@ -1251,20 +1181,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 			drawSelectedItemFrame(p, r, focus);
 		};
 		if (auto const *tableview = qobject_cast<QTableView const *>(widget)) {
-#if 0
-			Qt::PenStyle grid_pen_style = Qt::NoPen;
-			if (tableview->showGrid()) {
-				grid_pen_style = tableview->gridStyle();
-			}
-			if (grid_pen_style != Qt::NoPen) {
-				int x = option->rect.x();
-				int y = option->rect.y();
-				int w = option->rect.width();
-				int h = option->rect.height();
-				p->fillRect(x + w - 1, y, 1, h, option->palette.color(QPalette::Dark));
-				p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
-			}
-#endif
 			QAbstractItemView::SelectionBehavior selection_behavior = tableview->selectionBehavior();
 			if (option->state & State_Selected) {
 				p->save();
@@ -1323,10 +1239,11 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	if (pe == PE_IndicatorCheckBox) {
 		{
 			QRect rect = indicatorRect(option, widget, option->rect);
+			qDebug() << "PE_IndicatorCheckBox" << rect;
 			int x = rect.x();
 			int y = rect.y();
 			int extent = rect.height();
-			drawShadeFrame(p, rect, option->palette, State_Sunken);
+			drawCheckBoxFrame(p, rect, option->palette, State_Sunken);
 			if (option->state & (State_Sunken | State_On)) {
 				p->save();
 				p->translate(x + 2, y + 2);
@@ -1334,17 +1251,17 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				p->setPen(QPen(option->palette.windowText(), 2));
 				int w = extent - 4;
 				int h = extent - 4;
-				p->setClipRect(2, 2, w -3, h -3);
+				p->setClipRect(1, 1, w - 2, h - 2);
 				int x0 = w - 1;
 				int y0 = 1;
-				int n = w * 0.6;
-				auto Do = [&](int x1, int y1){
+				int n = w * 0.55;
+				auto LiveTo = [&](int x1, int y1){
 					p->drawLine(x0, y0, x1, y1);
 					x0 = x1;
 					y0 = y1;
 				};
-				Do(x0 - n, h - 1);
-				Do(x0 - n, 1);
+				LiveTo(x0 - n, h - 1);
+				LiveTo(x0 - n, 1);
 				p->restore();
 			}
 		}
@@ -1353,7 +1270,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 	if (pe == PE_IndicatorRadioButton) {
 		QRect rect = indicatorRect(option, widget, option->rect);
 		p->setPen(option->palette.dark().color());
-		drawShadeEllipse(p, rect, option->palette, QStyle::State_Sunken);
+		drawRadioButtonFrame(p, rect, option->palette, QStyle::State_Sunken);
 		if (option->state & (State_Sunken | State_On)) {
 			const int N = 3;
 			rect.adjust(N, N, -N, -N);
@@ -1363,7 +1280,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		}
 		return;
 	}
-	//	qDebug() << pe;
 	QCommonStyle::drawPrimitive(pe, option, p, widget);
 }
 
@@ -1842,7 +1758,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			bool leftAligned = (!rtlHorTabs && tabBarAlignment == Qt::AlignLeft) || (rtlHorTabs && tabBarAlignment == Qt::AlignRight);
 			bool rightAligned = (!rtlHorTabs && tabBarAlignment == Qt::AlignRight) || (rtlHorTabs && tabBarAlignment == Qt::AlignLeft);
 
-//			const int borderThinkness = 1;//proxy()->pixelMetric(PM_TabBarBaseOverlap, o, widget);
+			//			const int borderThinkness = 1;//proxy()->pixelMetric(PM_TabBarBaseOverlap, o, widget);
 
 			QColor light = o->palette.light().color();
 			QColor shadow = o->palette.shadow().color();
@@ -2235,16 +2151,6 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 	}
 #endif
 	if (ce == CE_ItemViewItem) {
-#if 0
-		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
-			p->save();
-			p->setFont(o->font);
-			drawPrimitive(PE_PanelItemViewItem, option, p, widget);
-			drawItemText(p, o->rect.adjusted(2, 0, 0, 0), o->displayAlignment, option->palette, true, o->text);
-			p->restore();
-			return;
-		}
-#else
 		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(option)) {
 			p->save();
 			p->setClipRect(o->rect);
@@ -2305,24 +2211,10 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				drawItemViewText(p, o, textRect, true);
 			}
 
-#if 0
-			// draw the focus rect
-			if (o->state & QStyle::State_HasFocus) {
-				QStyleOptionFocusRect o3;
-				o3.QStyleOption::operator=(*o);
-				o3.rect = subElementRect(SE_ItemViewItemFocusRect, o, widget);
-				o3.state |= QStyle::State_KeyboardFocusChange;
-				o3.state |= QStyle::State_Item;
-				QPalette::ColorGroup cg = (o->state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
-				o3.backgroundColor = o->palette.color(cg, (o->state & QStyle::State_Selected) ? QPalette::Highlight : QPalette::Window);
-				drawPrimitive(PE_FrameFocusRect, &o3, p, widget);
-			}
-#endif
 
 			p->restore();
 		}
 		return;
-#endif
 	}
 	if (ce == CE_Header) {
 		drawControl(CE_HeaderSection, option, p, widget);
