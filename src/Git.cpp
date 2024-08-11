@@ -14,6 +14,7 @@
 #include <QThread>
 #include <QTimer>
 #include <optional>
+#include <thread>
 
 Git::CommitID::CommitID()
 {
@@ -1042,8 +1043,8 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	QDir cwd = QDir::current();
 
 	auto DoIt = [&](){
-		QString cmd = "clone --progress \"%1\" \"%2\"";
-		cmd = cmd.arg(data.url).arg(data.subdir);
+		QString cmd = "clone --recurse-submodules --progress -j%1 \"%2\" \"%3\"";
+		cmd = cmd.arg(std::thread::hardware_concurrency()).arg(data.url).arg(data.subdir);
 		ok = git_nochdir(cmd, pty);
 	};
 
