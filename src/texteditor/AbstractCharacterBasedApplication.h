@@ -475,7 +475,7 @@ public:
     void setTextCodec(QTextCodec *codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
-	void setModifierKeys(Qt::KeyboardModifiers keymod);
+	void setModifierKeys(Qt::KeyboardModifiers const &keymod);
 	bool isControlModifierPressed() const;
 	bool isShiftModifierPressed() const;
 	void clearShiftModifier();

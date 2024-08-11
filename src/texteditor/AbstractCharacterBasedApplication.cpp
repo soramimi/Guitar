@@ -119,7 +119,7 @@ AbstractCharacterBasedApplication::~AbstractCharacterBasedApplication()
 	delete m;
 }
 
-void AbstractCharacterBasedApplication::setModifierKeys(Qt::KeyboardModifiers keymod)
+void AbstractCharacterBasedApplication::setModifierKeys(Qt::KeyboardModifiers const &keymod)
 {
 	m->keyboard_modifiers = keymod;
 	m->ctrl_modifier = m->keyboard_modifiers & Qt::ControlModifier;

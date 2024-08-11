@@ -50,7 +50,7 @@ void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor
 	return drawFrame(pr, r.x(), r.y(), r.width(), r.height(), color_topleft, color_bottomright);
 }
 
-void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State const &state)
 {
 	QColor topleft;
 	QColor bottomright;
@@ -64,7 +64,7 @@ void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QSt
 	drawFrame(p, rect, topleft, bottomright);
 }
 
-void drawShadeEllipse(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+void drawShadeEllipse(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State const &state)
 {
 	QColor topleft;
 	QColor bottomright;
