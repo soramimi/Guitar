@@ -1,4 +1,6 @@
 
+QMAKE_PROJECT_DEPTH = 0
+
 QT += core gui widgets svg network
 greaterThan(QT_MAJOR_VERSION, 5) {
 	QT += core5compat

@@ -51,4 +51,4 @@ load 'version.rb'
 srcname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
 dstname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}-win32#{$suffix}.zip"
 
-run "curl -T _release/#{srcname} ftp://192.168.0.5:/Public/pub/nightlybuild/#{$dstname}"
+run "curl -T _release/#{srcname} ftp://192.168.0.5:/Public/pub/nightlybuild/#{dstname}"
