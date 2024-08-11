@@ -233,7 +233,7 @@ int Git::getProcessExitCode() const
 	return m->exit_status.exit_code;
 }
 
-bool Git::chdirexec(std::function<bool()> const &fn)
+bool Git::chdirexec(std::function<bool()> const &fn) const
 {
 	bool ok = false;
 	QString cwd = QDir::currentPath();
@@ -1375,7 +1375,7 @@ bool Git::fetch_tags_f(AbstractPtyProcess *pty)
 	return git(cmd, opt);
 }
 
-QStringList Git::make_branch_list_()
+QStringList Git::make_branch_list_() const
 {
 	QStringList list;
 	QStringList l = misc::splitLines(resultQString());

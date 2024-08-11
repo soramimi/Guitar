@@ -804,7 +804,7 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 	setInteractionCanceled(false);
 }
 
-void MainWindow::setupProgressHandler()
+void MainWindow::setupProgressHandler() const
 {
 	connect(this, &MainWindow::signalSetProgress, this, &MainWindow::onSetProgress);
 	connect(this, &MainWindow::signalHideProgress, this, &MainWindow::onHideProgress);
@@ -1855,7 +1855,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 	QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::connectPtyProcessCompleted()
+void MainWindow::connectPtyProcessCompleted() const
 {
 	connect(this, &MainWindow::sigPtyProcessCompleted, this, &MainWindow::onPtyProcessCompleted);
 }

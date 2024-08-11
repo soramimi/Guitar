@@ -31,7 +31,7 @@ public:
 	{
 	}
 
-	QList<RepositorySearchResultItem> searchRepository(std::string q);
+	static QList<RepositorySearchResultItem> searchRepository(std::string q);
 };
 
 

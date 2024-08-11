@@ -16,7 +16,7 @@ class CommitViewWindow : public QDialog {
 private:
 	struct Private;
 	Private *m;
-	MainWindow *mainwindow();
+	static MainWindow *mainwindow();
 public:
 	explicit CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit);
 	~CommitViewWindow() override;

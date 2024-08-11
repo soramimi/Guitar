@@ -144,9 +144,9 @@ QString AddRepositoryDialog::remoteURL() const
 	return ui->lineEdit_remote_repository_url->text();
 }
 
-void AddRepositoryDialog::validate()
+void AddRepositoryDialog::validate() const
 {
-	QString path = localPath(false);
+    auto const &path = localPath(false);
 	QString text;
 	if (Git::isValidWorkingCopy(path)) {
 		switch (mode()) {

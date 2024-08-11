@@ -22,11 +22,11 @@ private:
 	QString subdir_git_objects_pack;
 	std::vector<GitPackIdxPtr> git_idx_list;
 
-	QString workingDir(GitPtr g);
+	static QString workingDir(GitPtr g);
 
 	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
+	static bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPtr g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void loadIndexes(GitPtr g);
 	QString findObjectPath(GitPtr g, const Git::CommitID &id);

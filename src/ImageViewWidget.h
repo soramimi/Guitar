@@ -29,7 +29,7 @@ private:
 	void setScrollBarRange(QScrollBar *h, QScrollBar *v);
 	void updateScrollBarRange();
 protected:
-	QMainWindow *mainwindow();
+	static QMainWindow *mainwindow();
 	void resizeEvent(QResizeEvent *) override;
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;

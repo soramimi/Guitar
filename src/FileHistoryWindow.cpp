@@ -135,7 +135,7 @@ void FileHistoryWindow::collectFileHistory()
 
 class FindFileIdThread : public QThread {
 private:
-	MainWindow *mainwindow()
+	static MainWindow *mainwindow()
 	{
 		return global->mainwindow;
 	}

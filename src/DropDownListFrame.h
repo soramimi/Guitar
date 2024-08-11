@@ -11,8 +11,8 @@ private:
 public:
 	QListWidget *listw_;
 	DropDownListFrame(QWidget *parent);
-	void addItem(QString const &text);
-	void setItems(QStringList const &list);
+	void addItem(QString const &text) const;
+	void setItems(QStringList const &list) const;
 	void show_();
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);

@@ -26,12 +26,12 @@ DropDownListFrame::DropDownListFrame(QWidget *parent)
 	});
 }
 
-void DropDownListFrame::addItem(const QString &text)
+void DropDownListFrame::addItem(const QString &text) const
 {
 	listw_->addItem(text);
 }
 
-void DropDownListFrame::setItems(const QStringList &list)
+void DropDownListFrame::setItems(const QStringList &list) const
 {
 	listw_->clear();
 	for (QString const &s : list) {

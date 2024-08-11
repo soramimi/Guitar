@@ -309,7 +309,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 		if (linenum > 0) {
 			linenum--;
 			if (linenum < (size_t)original_lines.size()) {
-				std::string line = original_lines[linenum];
+                auto const &line = original_lines[linenum];
 				left_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
 				right_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
 			}

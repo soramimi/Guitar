@@ -23,7 +23,7 @@ private:
 	void loadTree(GitPtr g, QString const &tree_id);
 	void doTreeItemChanged_(GitPtr g, QTreeWidgetItem *current);
 	void expandTreeItem_(GitPtr g, QTreeWidgetItem *item);
-	MainWindow *mainwindow();
+	static MainWindow *mainwindow();
 	GitPtr git();
 public:
 	explicit CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);

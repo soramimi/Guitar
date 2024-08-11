@@ -229,7 +229,7 @@ public:
 			return mode == "160000";
 		}
 	private:
-		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
+		static void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
 	};
 
 	static SignatureGrade evaluateSignature(char c)
@@ -404,7 +404,7 @@ public:
 private:
 	struct Private;
 	Private *m;
-	QStringList make_branch_list_();
+	QStringList make_branch_list_() const;
 	QByteArray cat_file_(const CommitID &id);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
@@ -428,7 +428,7 @@ public:
 	void clearResult();
 	std::string resultStdString() const;
 	QString resultQString() const;
-	bool chdirexec(std::function<bool ()> const &fn);
+	bool chdirexec(std::function<bool ()> const &fn) const;
 	struct Option {
 		bool chdir = true;
 		bool log = true;

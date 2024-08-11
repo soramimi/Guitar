@@ -37,7 +37,7 @@ private:
 	MainWindow const *mainwindow() const;
 	QString workingDir() const;
 
-	void validate();
+	void validate() const;
 	void setRemoteURL(const QString &url);
 	void browseLocalPath();
 	void updateUI();

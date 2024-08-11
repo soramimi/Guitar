@@ -95,12 +95,12 @@ private:
 		QString workingdir;
 	};
 
-	MainWindow *mainwindow();
+	static MainWindow *mainwindow();
 
 	ViewStyle viewstyle() const;
 
-	GitPtr git();
-	Git::Object catFile(QString const &id);
+	static GitPtr git();
+	static Git::Object catFile(QString const &id);
 
 	int totalTextLines() const;
 
@@ -117,7 +117,7 @@ private:
 	void setSideBySide(const Git::Diff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
 	void setSideBySide_(const Git::Diff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
-	bool isValidID_(QString const &id);
+	static bool isValidID_(QString const &id);
 
 	FileViewType setupPreviewWidget();
 
