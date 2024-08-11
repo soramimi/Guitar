@@ -1272,7 +1272,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				QRect r = widget->rect();
 				if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
 					r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
-				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
+				} else if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectColumns) {
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
 				DrawSelectionFrame(r);
