@@ -1359,7 +1359,8 @@ bool Git::pull(AbstractPtyProcess *pty)
 
 bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	QString cmd = "fetch --tags -f";
+	QString cmd = "fetch --tags -f -j%1";
+    cmd = cmd.arg(std::thread::hardware_concurrency());
 	if (prune) {
 		cmd += " --prune";
 	}
@@ -1370,7 +1371,8 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 
 bool Git::fetch_tags_f(AbstractPtyProcess *pty)
 {
-	QString cmd = "fetch --tags -f";
+	QString cmd = "fetch --tags -f -j%1";
+    cmd = cmd.arg(std::thread::hardware_concurrency());
 	Option opt;
 	opt.pty = pty;
 	return git(cmd, opt);
