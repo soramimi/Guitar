@@ -4768,12 +4768,16 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
+#if 0
 	if (!isOnlineMode()) {
 		reopenRepository();
 		return;
 	}
 
 	fetch(git(), false);
+#else
+	openRepository(false, true, false);
+#endif
 }
 
 void MainWindow::on_action_fetch_prune_triggered()
