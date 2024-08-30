@@ -158,7 +158,7 @@ private:
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
 
-	void openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection);
+	void openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;

@@ -1801,10 +1801,8 @@ void MainWindow::internalAfterFetch()
 {
 	ASSERT_MAIN_THREAD();
 
-	GitPtr g = git();
-	detectGitServerType(g);
-	queryCommitLog(frame(), g);
-	updateRemoteInfo(g);
+	detectGitServerType(git());
+	onUpdateCommitLog();
 }
 
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
@@ -1993,7 +1991,7 @@ void MainWindow::setupUpdateCommitLog()
 
 void MainWindow::onUpdateCommitLog()
 {
-	openRepositoryMain(frame(), git(), false, false, false, true);
+	openRepositoryMain(frame(), git(), false, false, true);
 }
 
 void MainWindow::updateCommitLog()
@@ -4303,7 +4301,7 @@ Git::Object MainWindow::catFile(QString const &id)
 
 void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selection)
 {
-	openRepositoryMain(frame(), g, true, true, fetch, keep_selection);
+	openRepositoryMain(frame(), g, true, fetch, keep_selection);
 }
 
 void MainWindow::makeCommitLog(RepositoryWrapperFrame *frame, int scroll_pos, int select_row)
@@ -4420,7 +4418,7 @@ void MainWindow::updateHEAD(GitPtr g)
 	setHeadId(head);
 }
 
-void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool query, bool clear_log, bool do_fetch, bool keep_selection)
+void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, bool clear_log, bool do_fetch, bool keep_selection)
 {
 	ASSERT_MAIN_THREAD();
 
