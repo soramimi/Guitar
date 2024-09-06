@@ -1,7 +1,7 @@
 #!/dev/null
 
 $product_name = "Guitar"
-$copyright_year = 2023
+$copyright_year = 2024
 $version_a = 1
 $version_b = 2
 $version_c = 999
