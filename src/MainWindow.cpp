@@ -69,6 +69,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QProcess>
+#include <QRegExp>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
@@ -6797,7 +6798,7 @@ void MainWindow::on_action_set_gpg_signing_triggered()
 	}
 }
 
-void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
+void MainWindow::execAreYouSureYouWantToContinueConnectingDialog(QString const &windowtitle)
 {
 	using TheDlg = AreYouSureYouWantToContinueConnectingDialog;
 
@@ -6806,6 +6807,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog()
 	QApplication::restoreOverrideCursor();
 
 	TheDlg dlg(this);
+	dlg.setLabel(windowtitle);
 	if (dlg.exec() == QDialog::Accepted) {
 		TheDlg::Result r = dlg.result();
 		if (r == TheDlg::Result::Yes) {
@@ -6876,27 +6878,79 @@ void MainWindow::onLogIdle()
 	if (interactionCanceled()) return;
 	if (interactionMode() != InteractionMode::None) return;
 
-	static char const are_you_sure_you_want_to_continue_connecting[] = "Are you sure you want to continue connecting (yes/no)?";
-	static char const enter_passphrase[] = "Enter passphrase: ";
-	static char const enter_passphrase_for_key[] = "Enter passphrase for key '";
-	static char const fatal_authentication_failed_for[] = "fatal: Authentication failed for '";
-	static char const remote_host_identification_has_changed[] = "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!";
+	enum PatternIndex {
+		ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
+		ENTER_PASSPHRASE,
+		ENTER_PASSPHRASE_FOR_KEY,
+		FATAL_AUTHENTICATION_FAILED_FOR,
+		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
+	};
+
+	static std::vector<std::pair<int, QRegExp>> patterns;
+	if (patterns.empty()) {
+		auto PushBack = [&](int i, char const *str){
+			patterns.push_back({i, QRegExp(str)});
+		};
+		PushBack(ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
+				 "Are you sure you want to continue connecting (yes/no/[fingerprint])?");
+		PushBack(ENTER_PASSPHRASE,
+				 "Enter passphrase: ");
+		PushBack(ENTER_PASSPHRASE_FOR_KEY,
+				 "Enter passphrase for key '");
+		PushBack(FATAL_AUTHENTICATION_FAILED_FOR,
+				 "fatal: Authentication failed for '");
+		PushBack(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
+				 "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
+	}
 
 	std::vector<std::string> lines = getLogHistoryLines();
 	clearLogHistory();
 
 	if (lines.empty()) return;
 
-	auto Contains = [&](char const *kw){
+	std::string line;
+
+	auto Equals = [&](PatternIndex i){
+		std::string const &str = patterns[i].second.pattern().toStdString();
+		return line == str;
+	};
+
+	auto Contains = [&](PatternIndex i){
+		std::string const &str = patterns[i].second.pattern().toStdString();
 		for (std::string const &line : lines) {
-			if (strstr(line.c_str(), kw)) {
+			if (strstr(line.c_str(), str.c_str())) {
 				return true;
 			}
 		}
 		return false;
 	};
 
-	if (Contains(remote_host_identification_has_changed)) {
+	auto Match = [&](PatternIndex i){
+		std::string const &str = patterns[i].second.pattern().toStdString();
+		if (strncmp(line.c_str(), str.c_str(), str.size()) == 0) {
+			char const *p = line.c_str() + str.size();
+			while (1) {
+				if (!*p) return true;
+				if (!isspace((unsigned char)*p)) break;
+				p++;
+			}
+		}
+		return false;
+	};
+
+	auto StartsWith = [&](PatternIndex i){
+		std::string const &str = patterns[i].second.pattern().toStdString();
+		char const *p = str.c_str();
+		char const *s = line.c_str();
+		while (*p) {
+			if (*s != *p) return false;
+			p++;
+			s++;
+		}
+		return true;
+	};
+
+	if (Contains(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED)) {
 		QString text;
 		{
 			for (std::string const &line : lines) {
@@ -6905,14 +6959,14 @@ void MainWindow::onLogIdle()
 			}
 		}
 		TextEditDialog dlg(this);
-		dlg.setWindowTitle(remote_host_identification_has_changed);
+		dlg.setWindowTitle(patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED].second.pattern());
 		dlg.setText(text, true);
 		dlg.exec();
 		return;
 	}
 
 	{
-		std::string line = lines.back();
+		line = lines.back();
 		if (!line.empty()) {
 			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password){
 				LineEditDialog dlg(parent, title, prompt, val, password);
@@ -6926,44 +6980,21 @@ void MainWindow::onLogIdle()
 				return std::string();
 			};
 
-			auto Match = [&](char const *str){
-				size_t n = strlen(str);
-				if (strncmp(line.c_str(), str, n) == 0) {
-					char const *p = line.c_str() + n;
-					while (1) {
-						if (!*p) return true;
-						if (!isspace((unsigned char)*p)) break;
-						p++;
-					}
-				}
-				return false;
-			};
-
-			auto StartsWith = [&](char const *str){
-				char const *p = line.c_str();
-				while (*str) {
-					if (*p != *str) return false;
-					str++;
-					p++;
-				}
-				return true;
-			};
-
-			if (Match(are_you_sure_you_want_to_continue_connecting)) {
-				execAreYouSureYouWantToContinueConnectingDialog();
+			if (Match(ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
+				execAreYouSureYouWantToContinueConnectingDialog(QString::fromStdString(line).trimmed());
 				return;
 			}
 
-			if (line == enter_passphrase) {
+			if (Equals(ENTER_PASSPHRASE)) {
 				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
 				return;
 			}
 
-			if (StartsWith(enter_passphrase_for_key)) {
+			if (StartsWith(ENTER_PASSPHRASE_FOR_KEY)) {
 				std::string keyfile;
 				{
-					size_t i = strlen(enter_passphrase_for_key);
-					char const *p = line.c_str() + i;
+					std::string pattern = patterns[ENTER_PASSPHRASE_FOR_KEY].second.pattern().toStdString();
+					char const *p = line.c_str() + pattern.size();
 					char const *q = strrchr(p, ':');
 					if (q && p + 2 < q && q[-1] == '\'') {
 						keyfile.assign(p, q - 1);
@@ -7011,7 +7042,7 @@ void MainWindow::onLogIdle()
 				return;
 			}
 
-			if (StartsWith(fatal_authentication_failed_for)) {
+			if (StartsWith(FATAL_AUTHENTICATION_FAILED_FOR)) {
 				QMessageBox::critical(this, tr("Authentication Failed"), QString::fromStdString(line));
 				abortPtyProcess();
 				return;

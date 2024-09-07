@@ -21,6 +21,11 @@ AreYouSureYouWantToContinueConnectingDialog::Result AreYouSureYouWantToContinueC
 	return result_;
 }
 
+void AreYouSureYouWantToContinueConnectingDialog::setLabel(QString const &label)
+{
+	ui->label->setText(label);
+}
+
 void AreYouSureYouWantToContinueConnectingDialog::on_pushButton_continue_clicked()
 {
 	QString s = ui->lineEdit->text();

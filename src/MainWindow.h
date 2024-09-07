@@ -197,7 +197,7 @@ private:
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
-	void execAreYouSureYouWantToContinueConnectingDialog();
+	void execAreYouSureYouWantToContinueConnectingDialog(const QString &windowtitle);
 	void deleteRemoteBranch(RepositoryWrapperFrame *frame, const Git::CommitItem &commit);
 	QStringList remoteBranches(RepositoryWrapperFrame *frame, const Git::CommitID &id, QStringList *all);
 	bool isUninitialized();

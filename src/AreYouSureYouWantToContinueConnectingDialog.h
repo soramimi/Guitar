@@ -15,18 +15,19 @@ public:
 		Yes,
 		No,
 	};
+private:
+	Ui::AreYouSureYouWantToContinueConnectingDialog *ui;
+	Result result_ = Result::Cancel;
 public:
 	explicit AreYouSureYouWantToContinueConnectingDialog(QWidget *parent = nullptr);
 	~AreYouSureYouWantToContinueConnectingDialog() override;
 
+	void setLabel(const QString &label);
 	Result result() const;
 
 private slots:
 	void on_pushButton_continue_clicked();
 	void on_pushButton_close_clicked();
-private:
-	Ui::AreYouSureYouWantToContinueConnectingDialog *ui;
-	Result result_ = Result::Cancel;
 
 	// QDialog interface
 public slots:
