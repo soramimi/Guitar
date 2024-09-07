@@ -6886,21 +6886,18 @@ void MainWindow::onLogIdle()
 		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
 	};
 
-	static std::vector<std::pair<int, QRegExp>> patterns;
+	static std::map<int, QRegExp> patterns;
 	if (patterns.empty()) {
-		auto PushBack = [&](int i, char const *str){
-			patterns.push_back({i, QRegExp(str)});
-		};
-		PushBack(ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
-				 "Are you sure you want to continue connecting (yes/no/[fingerprint])?");
-		PushBack(ENTER_PASSPHRASE,
-				 "Enter passphrase: ");
-		PushBack(ENTER_PASSPHRASE_FOR_KEY,
-				 "Enter passphrase for key '");
-		PushBack(FATAL_AUTHENTICATION_FAILED_FOR,
-				 "fatal: Authentication failed for '");
-		PushBack(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
-				 "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
+		patterns[ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING] = QRegExp(
+				"Are you sure you want to continue connecting.*\\?");
+		patterns[ENTER_PASSPHRASE] = QRegExp(
+				"Enter passphrase: ");
+		patterns[ENTER_PASSPHRASE_FOR_KEY] = QRegExp(
+				"Enter passphrase for key '");
+		patterns[FATAL_AUTHENTICATION_FAILED_FOR] = QRegExp(
+				"fatal: Authentication failed for '");
+		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegExp(
+				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
 	}
 
 	std::vector<std::string> lines = getLogHistoryLines();
@@ -6910,13 +6907,18 @@ void MainWindow::onLogIdle()
 
 	std::string line;
 
+	auto RegExp = [&](PatternIndex i){
+		auto it = patterns.find(i);
+		return it == patterns.end() ? QRegExp() : it->second;
+	};
+
 	auto Equals = [&](PatternIndex i){
-		std::string const &str = patterns[i].second.pattern().toStdString();
+		std::string const &str = RegExp(i).pattern().toStdString();
 		return line == str;
 	};
 
 	auto Contains = [&](PatternIndex i){
-		std::string const &str = patterns[i].second.pattern().toStdString();
+		std::string const &str = RegExp(i).pattern().toStdString();
 		for (std::string const &line : lines) {
 			if (strstr(line.c_str(), str.c_str())) {
 				return true;
@@ -6926,20 +6928,11 @@ void MainWindow::onLogIdle()
 	};
 
 	auto Match = [&](PatternIndex i){
-		std::string const &str = patterns[i].second.pattern().toStdString();
-		if (strncmp(line.c_str(), str.c_str(), str.size()) == 0) {
-			char const *p = line.c_str() + str.size();
-			while (1) {
-				if (!*p) return true;
-				if (!isspace((unsigned char)*p)) break;
-				p++;
-			}
-		}
-		return false;
+		return RegExp(i).exactMatch(QString::fromStdString(line));
 	};
 
 	auto StartsWith = [&](PatternIndex i){
-		std::string const &str = patterns[i].second.pattern().toStdString();
+		std::string const &str = RegExp(i).pattern().toStdString();
 		char const *p = str.c_str();
 		char const *s = line.c_str();
 		while (*p) {
@@ -6959,7 +6952,7 @@ void MainWindow::onLogIdle()
 			}
 		}
 		TextEditDialog dlg(this);
-		dlg.setWindowTitle(patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED].second.pattern());
+		dlg.setWindowTitle(RegExp(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED).pattern());
 		dlg.setText(text, true);
 		dlg.exec();
 		return;
@@ -6967,6 +6960,7 @@ void MainWindow::onLogIdle()
 
 	{
 		line = lines.back();
+		line = misc::trimmed(line);
 		if (!line.empty()) {
 			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password){
 				LineEditDialog dlg(parent, title, prompt, val, password);
@@ -6993,7 +6987,7 @@ void MainWindow::onLogIdle()
 			if (StartsWith(ENTER_PASSPHRASE_FOR_KEY)) {
 				std::string keyfile;
 				{
-					std::string pattern = patterns[ENTER_PASSPHRASE_FOR_KEY].second.pattern().toStdString();
+					std::string pattern = RegExp(ENTER_PASSPHRASE_FOR_KEY).pattern().toStdString();
 					char const *p = line.c_str() + pattern.size();
 					char const *q = strrchr(p, ':');
 					if (q && p + 2 < q && q[-1] == '\'') {
