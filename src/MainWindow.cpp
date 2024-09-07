@@ -2426,19 +2426,18 @@ void MainWindow::addRepository(const QString &local_dir, const QString &group)
 	if (dlg.exec() == QDialog::Accepted) {
 		if (dlg.mode() == AddRepositoryDialog::Clone) { // クローン
 			auto cdata = dlg.makeCloneData();
-			auto rdata = dlg.makeRepositoryData();
+			auto rdata = dlg.repositoryData();
 			cloneRepository(cdata, rdata);
 		} else if (dlg.mode() == AddRepositoryDialog::AddExisting) { // 既存のリポジトリを追加
 			QString dir = dlg.localPath(false);
 			addExistingLocalRepository(dir, true);
 		} else if (dlg.mode() == AddRepositoryDialog::Initialize) { // リポジトリを初期化する
-			QString dir = dlg.localPath(false);
-			QString name = dlg.repositoryName();
+			RepositoryData repodata = dlg.repositoryData();
 			Git::Remote r;
 			r.name = dlg.remoteName();
 			r.set_url(dlg.remoteURL());
-			r.ssh_key = dlg.overridedSshKey();
-			initRepository(dir, name, r);
+			r.ssh_key = repodata.ssh_key;
+			initRepository(repodata.local_dir, repodata.name, r);
 		}
 	}
 }
