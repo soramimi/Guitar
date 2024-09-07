@@ -51,6 +51,7 @@
 #include "UserEvent.h"
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
+#include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitProcessThread.h"
 #include "gunzip.h"
 #include "platform.h"
@@ -6884,6 +6885,9 @@ void MainWindow::onLogIdle()
 		ENTER_PASSPHRASE_FOR_KEY,
 		FATAL_AUTHENTICATION_FAILED_FOR,
 		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
+		DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT,
+		// git config --global --add safe.directory
+		GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY,
 	};
 
 	static std::map<int, QRegExp> patterns;
@@ -6898,6 +6902,10 @@ void MainWindow::onLogIdle()
 				"fatal: Authentication failed for '");
 		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegExp(
 				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
+		patterns[DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT] = QRegExp(
+				"fatal: detected dubious ownership in repository at");
+		patterns[GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY] = QRegExp(
+				"git config --global --add safe\\.directory '(.+)'");
 	}
 
 	std::vector<std::string> lines = getLogHistoryLines();
@@ -6905,14 +6913,13 @@ void MainWindow::onLogIdle()
 
 	if (lines.empty()) return;
 
-	std::string line;
 
 	auto RegExp = [&](PatternIndex i){
 		auto it = patterns.find(i);
 		return it == patterns.end() ? QRegExp() : it->second;
 	};
 
-	auto Equals = [&](PatternIndex i){
+	auto Equals = [&](std::string const &line, PatternIndex i){
 		std::string const &str = RegExp(i).pattern().toStdString();
 		return line == str;
 	};
@@ -6927,11 +6934,11 @@ void MainWindow::onLogIdle()
 		return false;
 	};
 
-	auto Match = [&](PatternIndex i){
+	auto Match = [&](std::string const &line, PatternIndex i){
 		return RegExp(i).exactMatch(QString::fromStdString(line));
 	};
 
-	auto StartsWith = [&](PatternIndex i){
+	auto StartsWith = [&](std::string const &line, PatternIndex i){
 		std::string const &str = RegExp(i).pattern().toStdString();
 		char const *p = str.c_str();
 		char const *s = line.c_str();
@@ -6959,7 +6966,49 @@ void MainWindow::onLogIdle()
 	}
 
 	{
-		line = lines.back();
+		bool detected_dubious_ownership_in_repository_at = false;
+		QString git_config_global_add_safe_directory;
+		for (std::string const &line : lines) {
+			if (!detected_dubious_ownership_in_repository_at) {
+				if (StartsWith(line, DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT)) {
+					detected_dubious_ownership_in_repository_at = true;
+				}
+			} else {
+				QRegExp re = RegExp(GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY);
+				QString s = QString::fromStdString(line).trimmed();
+				if (re.isValid() && re.exactMatch(s)) {
+					QStringList list = re.capturedTexts();
+					if (list.size() >= 1) {
+						git_config_global_add_safe_directory = s.replace('\'', '\"');
+					}
+				}
+			}
+		}
+		if (!git_config_global_add_safe_directory.isEmpty()) {
+			std::vector<std::string> lines2 = lines;
+			while (!lines2.empty() && lines2.back().empty()) {
+				lines2.pop_back();
+			}
+			while (!lines2.empty() && lines2.front().empty()) {
+				lines2.erase(lines2.begin());
+			}
+			QString msg;
+			for (std::string const &line : lines2) {
+				msg += QString::fromStdString(line) + '\n';
+			}
+			GitConfigGlobalAddSafeDirectoryDialog dlg(this);
+			dlg.setMessage(msg, git_config_global_add_safe_directory);
+			if (dlg.exec() == QDialog::Accepted) {
+				// qDebug() << git_config_global_add_safe_directory;
+				Process proc;
+				proc.start(git_config_global_add_safe_directory, false);
+				proc.wait();
+			}
+		}
+	}
+
+	{
+		std::string line = lines.back();
 		line = misc::trimmed(line);
 		if (!line.empty()) {
 			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password){
@@ -6974,17 +7023,17 @@ void MainWindow::onLogIdle()
 				return std::string();
 			};
 
-			if (Match(ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
+			if (Match(line, ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
 				execAreYouSureYouWantToContinueConnectingDialog(QString::fromStdString(line).trimmed());
 				return;
 			}
 
-			if (Equals(ENTER_PASSPHRASE)) {
+			if (Equals(line, ENTER_PASSPHRASE)) {
 				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
 				return;
 			}
 
-			if (StartsWith(ENTER_PASSPHRASE_FOR_KEY)) {
+			if (StartsWith(line, ENTER_PASSPHRASE_FOR_KEY)) {
 				std::string keyfile;
 				{
 					std::string pattern = RegExp(ENTER_PASSPHRASE_FOR_KEY).pattern().toStdString();
@@ -7036,7 +7085,7 @@ void MainWindow::onLogIdle()
 				return;
 			}
 
-			if (StartsWith(FATAL_AUTHENTICATION_FAILED_FOR)) {
+			if (StartsWith(line, FATAL_AUTHENTICATION_FAILED_FOR)) {
 				QMessageBox::critical(this, tr("Authentication Failed"), QString::fromStdString(line));
 				abortPtyProcess();
 				return;

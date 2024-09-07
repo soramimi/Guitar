@@ -111,6 +111,7 @@ macx {
 SOURCES += \
 	$$PWD/src/FileListWidget.cpp \
 	$$PWD/src/GenerateCommitMessageThread.cpp \
+	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
 	$$PWD/src/GitProcessThread.cpp \
 	$$PWD/src/MyProcess.cpp \
 	src/ProgressTextLabel.cpp \
@@ -263,6 +264,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/FileListWidget.h \
 	$$PWD/src/GenerateCommitMessageThread.h \
+	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.h \
 	$$PWD/src/GitProcessThread.h \
 	$$PWD/src/MyProcess.h \
 	src/ProgressTextLabel.h \
@@ -427,6 +429,7 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS    += \
+	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.ui \
 	$$PWD/src/SettingAiForm.ui \
 	$$PWD/src/SettingOptionsForm.ui \
 	src/AboutDialog.ui \
