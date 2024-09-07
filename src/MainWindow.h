@@ -21,10 +21,17 @@ class RepositoryWrapperFrame;
 class WebContext;
 class GitProcessRequest;
 struct GitHubRepositoryInfo;
+class AddRepositoryDialog;
 
 namespace Ui {
 class MainWindow;
 }
+
+struct CloneParams {
+	Git::CloneData clonedata;
+	RepositoryData repodata;
+};
+Q_DECLARE_METATYPE(CloneParams)
 
 struct GitHubRepositoryInfo {
 	QString owner_account_name;
@@ -44,8 +51,8 @@ class ExchangeData;
 
 class PtyProcessCompleted {
 public:
+	std::function<void (ProcessStatus const &, QVariant const &)> callback;
 	ProcessStatus status;
-	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
 	QVariant userdata;
 };
 Q_DECLARE_METATYPE(PtyProcessCompleted)
@@ -247,7 +254,8 @@ private:
 	void commit(RepositoryWrapperFrame *frame, bool amend = false);
 	void commitAmend(RepositoryWrapperFrame *frame);
 	
-	void clone(GitPtr g, const Git::CloneData &clonedata, const RepositoryData &repodata);
+	void clone(CloneParams const &a);
+
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
 	void fetch(GitPtr g, bool prune);
 	void stage(GitPtr g, const QStringList &paths);
@@ -268,6 +276,7 @@ private:
 	void internalAddTag(RepositoryWrapperFrame *frame, const QString &name);
 	void createRepository(const QString &dir);
 	void addRepository(const QString &local_dir, const QString &group = {});
+	void addRepositoryAccepted(const AddRepositoryDialog &dlg);
 	void scanFolderAndRegister(const QString &group);
 	void setLogEnabled(GitPtr g, bool f);
 	void doGitCommand(const std::function<void (GitPtr)> &callback);
@@ -647,7 +656,7 @@ signals:
 private:
 
 	void updateButton();
-	void runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params, std::function<void (const ProcessStatus &, const QVariant &)> callback, QVariant const &userdata);
+	void runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
 	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateHEAD(GitPtr g);
 	void jump(GitPtr g, const Git::CommitID &id);

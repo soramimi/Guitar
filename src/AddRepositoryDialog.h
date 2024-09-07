@@ -28,8 +28,8 @@ private:
 	};
 
 	Mode mode_ = Clone;
+	bool mode_selectable_ = true;
 	QString repository_name_;
-	QString already_exists_;
 
 	MainWindow *mainwindow();
 	MainWindow const *mainwindow() const;
@@ -48,6 +48,8 @@ private:
 public:
 	explicit AddRepositoryDialog(MainWindow *parent, QString const &local_dir = QString());
 	~AddRepositoryDialog() override;
+
+	int execClone(QString const &remote_url);
 
 	QString remoteName() const;
 	QString remoteURL() const;

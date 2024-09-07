@@ -22,6 +22,7 @@ public:
 	bool ok = false;
 	int exit_code = 0;
 	QString error_message;
+	QString log_message;
 };
 Q_DECLARE_METATYPE(ProcessStatus)
 

@@ -172,7 +172,7 @@ public:
 	std::shared_ptr<AbstractGitCommandItem> params;
 	std::function<void (GitProcessRequest const &req)> run;
 	QVariant userdata;
-	std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback;
+	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
 };
 Q_DECLARE_METATYPE(GitProcessRequest)
 
@@ -191,8 +191,6 @@ public:
 	request_id_t request(GitProcessRequest &&req);
 	void cancel(request_id_t reqid);
 	bool wait();
-signals:
-	// void done(GitProcessRequest const &req);
 };
 
 #endif // GITPROCESSTHREAD_H

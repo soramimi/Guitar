@@ -25,8 +25,6 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &loca
 
 	updateWorkingDirComboBoxFolders();
 
-	already_exists_ = tr("A valid git repository exists.");
-
 	ui->lineEdit_local_path->setText(local_dir);
 	ui->groupBox_remote->setChecked(false);
 	resetRemoteRepository();
@@ -45,6 +43,16 @@ AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &loca
 AddRepositoryDialog::~AddRepositoryDialog()
 {
 	delete ui;
+}
+
+int AddRepositoryDialog::execClone(QString const &remote_url)
+{
+	mode_ = Clone;
+	mode_selectable_ = false;
+	ui->lineEdit_remote_repository_url->setText(remote_url);
+	ui->stackedWidget->setCurrentWidget(ui->page_first);
+	accept();
+	return exec();
 }
 
 void AddRepositoryDialog::updateWorkingDirComboBoxFolders()
@@ -211,26 +219,38 @@ void AddRepositoryDialog::updateUI()
 {
 	auto *currentwidget = ui->stackedWidget->currentWidget();
 	
-	ui->pushButton_prev->setEnabled(currentwidget != ui->page_first);
-	ui->comboBox_search->setVisible(currentwidget == ui->page_remote);
-	
-	bool okbutton = false;
+	bool prev_enabled = currentwidget != ui->page_first;
+	bool ok_button = false;
+
 	switch (mode()) {
 	case Clone:
-		okbutton = (currentwidget == ui->page_local);
+		if (!mode_selectable_ && currentwidget == ui->page_remote) {
+			prev_enabled = false;
+		}
+		ok_button = (currentwidget == ui->page_local);
 		break;
 	case AddExisting:
-		okbutton = (currentwidget == ui->page_local);
+		if (!mode_selectable_ && currentwidget == ui->page_local) {
+			prev_enabled = false;
+		}
+		ok_button = (currentwidget == ui->page_local);
 		break;
 	case Initialize:
-		okbutton = (currentwidget == ui->page_remote);
+		if (!mode_selectable_ && currentwidget == ui->page_local) {
+			prev_enabled = false;
+		}
+		ok_button = (currentwidget == ui->page_remote);
 		break;
 	}
-	if (okbutton) {
+	if (ok_button) {
 		ui->pushButton_ok->setText(tr("OK"));
 	} else {
 		ui->pushButton_ok->setText(tr("Next"));
 	}
+
+	ui->pushButton_prev->setEnabled(prev_enabled);
+
+	ui->comboBox_search->setVisible(currentwidget == ui->page_remote);
 }
 
 void AddRepositoryDialog::accept()
@@ -303,7 +323,9 @@ void AddRepositoryDialog::on_pushButton_prev_clicked()
 	} else if (mode() == Initialize && currpage == ui->page_remote) {
 		ui->stackedWidget->setCurrentWidget(ui->page_local);
 	} else if (currpage != ui->page_first) {
-		ui->stackedWidget->setCurrentWidget(ui->page_first);
+		if (mode_selectable_) {
+			ui->stackedWidget->setCurrentWidget(ui->page_first);
+		}
 	}
 	updateUI();
 }

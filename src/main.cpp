@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<GitProcessRequest>("GitProcessRequest");
 	qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
 	qRegisterMetaType<ProcessStatus>("ProcessStatus");
+	qRegisterMetaType<CloneParams>("CloneParams");
 
 	{
 		MySettings s;

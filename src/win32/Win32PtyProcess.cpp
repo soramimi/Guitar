@@ -53,8 +53,8 @@ struct Win32PtyProcess::Private {
 	QMutex mutex;
 	QString command;
 	QString env;
-	std::deque<char> output_queue;
-	std::vector<char> output_vector;
+	std::deque<char> output_queue; // for log
+	std::vector<char> output_vector; // for result
 	OutputReaderThread th_output_reader;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;

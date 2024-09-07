@@ -1230,6 +1230,30 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	}
 
 	if (!Git::isValidWorkingCopy(dir)) {
+		auto isBareRepository = [](QString const &dir){
+			if (QFileInfo(dir).isDir()) {
+				if (QFileInfo(dir / "config").isFile()) {
+					if (QFileInfo(dir / "objects").isDir()) {
+						if (QFileInfo(dir / "refs").isDir()) {
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+		};
+
+		if (isBareRepository(dir)) {
+			postUserFunctionEvent([this](const QVariant &var, void *ptr)->void{
+				QString dir = var.toString();
+				AddRepositoryDialog dlg(this);
+				if (dlg.execClone(dir) == QDialog::Accepted) {
+					addRepositoryAccepted(dlg);
+				}
+			}, QVariant(dir), nullptr, 1);
+			return true;
+		}
+
 		if (msgbox_if_err && QFileInfo(dir).isDir()) {
 			QString text;
 			text += tr("The folder is not a valid git repository.") + '\n';
@@ -1822,9 +1846,10 @@ void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 			hideProgress();
 			GitProcessRequest const &req = d.value<GitProcessRequest>();
 			PtyProcessCompleted data;
-			data.status.ok = ok;
 			data.callback = req.callback;
+			data.status.ok = ok;
 			data.userdata = req.userdata;
+			data.status.log_message = req.params->pty->getMessage();
 			emit sigPtyProcessCompleted(true, data);
 		}, QVariant::fromValue(req));
 		setPtyProcessOk(true);
@@ -1860,6 +1885,13 @@ void MainWindow::connectPtyProcessCompleted()
 	connect(this, &MainWindow::sigPtyProcessCompleted, this, &MainWindow::onPtyProcessCompleted);
 }
 
+/**
+ * @brief MainWindow::doReopenRepository
+ * @param status ステータス
+ * @param userdata ユーザーデータ
+ *
+ * リポジトリを再オープンする
+ */
 void MainWindow::doReopenRepository(ProcessStatus const &status, QVariant const &userdata)
 {
 	ASSERT_MAIN_THREAD();
@@ -1880,12 +1912,13 @@ void MainWindow::doReopenRepository(ProcessStatus const &status, QVariant const 
  *
  * リポジトリをクローンする
  */
-void MainWindow::clone(GitPtr g, Git::CloneData const &clonedata, RepositoryData const &repodata)
+void MainWindow::clone(CloneParams const &a)
 {
-	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), clonedata);
+	GitPtr g = git({}, {}, a.repodata.ssh_key);
+	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), a.clonedata);
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
 		doReopenRepository(status, userdata);
-	}, QVariant::fromValue(repodata));
+	}, QVariant::fromValue(a.repodata));
 }
 
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
@@ -1929,8 +1962,10 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 		QDir(base).mkpath(sub);
 	}
 	
-	GitPtr g = git({}, {}, repodata.ssh_key);
-	clone(g, clonedata, repodata);
+	CloneParams a;
+	a.clonedata = clonedata;
+	a.repodata = repodata;
+	clone(a);
 
 	return true;
 }
@@ -2424,21 +2459,26 @@ void MainWindow::addRepository(const QString &local_dir, const QString &group)
 
 	AddRepositoryDialog dlg(this, local_dir); // リポジトリを追加するダイアログ
 	if (dlg.exec() == QDialog::Accepted) {
-		if (dlg.mode() == AddRepositoryDialog::Clone) { // クローン
-			auto cdata = dlg.makeCloneData();
-			auto rdata = dlg.repositoryData();
-			cloneRepository(cdata, rdata);
-		} else if (dlg.mode() == AddRepositoryDialog::AddExisting) { // 既存のリポジトリを追加
-			QString dir = dlg.localPath(false);
-			addExistingLocalRepository(dir, true);
-		} else if (dlg.mode() == AddRepositoryDialog::Initialize) { // リポジトリを初期化する
-			RepositoryData repodata = dlg.repositoryData();
-			Git::Remote r;
-			r.name = dlg.remoteName();
-			r.set_url(dlg.remoteURL());
-			r.ssh_key = repodata.ssh_key;
-			initRepository(repodata.local_dir, repodata.name, r);
-		}
+		addRepositoryAccepted(dlg);
+	}
+}
+
+void MainWindow::addRepositoryAccepted(AddRepositoryDialog const &dlg)
+{
+	if (dlg.mode() == AddRepositoryDialog::Clone) {
+		auto cdata = dlg.makeCloneData();
+		auto rdata = dlg.repositoryData();
+		cloneRepository(cdata, rdata);
+	} else if (dlg.mode() == AddRepositoryDialog::AddExisting) {
+		QString dir = dlg.localPath(false);
+		addExistingLocalRepository(dir, true);
+	} else if (dlg.mode() == AddRepositoryDialog::Initialize) {
+		RepositoryData repodata = dlg.repositoryData();
+		Git::Remote r;
+		r.name = dlg.remoteName();
+		r.set_url(dlg.remoteURL());
+		r.ssh_key = repodata.ssh_key;
+		initRepository(repodata.local_dir, repodata.name, r);
 	}
 }
 
@@ -6885,7 +6925,6 @@ void MainWindow::onLogIdle()
 		FATAL_AUTHENTICATION_FAILED_FOR,
 		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
 		DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT,
-		// git config --global --add safe.directory
 		GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY,
 	};
 
@@ -6904,7 +6943,7 @@ void MainWindow::onLogIdle()
 		patterns[DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT] = QRegExp(
 				"fatal: detected dubious ownership in repository at");
 		patterns[GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY] = QRegExp(
-				"git config --global --add safe\\.directory '(.+)'");
+				"git config --global --add safe\\.directory '?([^']+)'?");
 	}
 
 	std::vector<std::string> lines = getLogHistoryLines();
