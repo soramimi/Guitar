@@ -359,8 +359,8 @@ private:
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
 	void setRepositoryList(QList<RepositoryData> &&list);
-	bool interactionCanceled() const;
-	void setInteractionCanceled(bool canceled);
+	bool interactionEnabled() const;
+	void setInteractionEnabled(bool enabled);
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
 	QString getRepositoryFilterText() const;
@@ -665,7 +665,12 @@ private:
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	
-	void doReopenRepository(const ProcessStatus &status, const QVariant &userdata);
+	void doReopenRepository(const ProcessStatus &status, const RepositoryData &repodata);
+	void setRetry(std::function<void (const QVariant &)> fn, const QVariant &var);
+	void clearRetry();
+	void retry();
+	bool isRetryQueued() const;
+	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 signals:

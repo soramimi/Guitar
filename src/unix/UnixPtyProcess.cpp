@@ -56,8 +56,6 @@ struct UnixPtyProcess::Private {
 	std::string command;
 	std::string env;
 	int pty_master;
-	std::deque<char> output_queue;
-	std::vector<char> output_vector;
 	int exit_code = -1;
 };
 
@@ -86,14 +84,14 @@ void UnixPtyProcess::writeInput(char const *ptr, int len)
 int UnixPtyProcess::readOutput(char *ptr, int len)
 {
 	QMutexLocker lock(&m->mutex);
-	int n = m->output_queue.size();
+	int n = output_queue_.size();
 	if (n > len) {
 		n = len;
 	}
 	if (n > 0) {
-		auto it = m->output_queue.begin();
+		auto it = output_queue_.begin();
 		std::copy(it, it + n, ptr);
-		m->output_queue.erase(it, it + n);
+		output_queue_.erase(it, it + n);
 	}
 	return n;
 }
@@ -199,8 +197,8 @@ void UnixPtyProcess::run()
 					int len = read(m->pty_master, buf, sizeof(buf));
 					if (len > 0) {
 						QMutexLocker lock(&m->mutex);
-						m->output_queue.insert(m->output_queue.end(), buf, buf + len);
-						m->output_vector.insert(m->output_vector.end(), buf, buf + len);
+						output_queue_.insert(output_queue_.end(), buf, buf + len);
+						output_vector_.insert(output_vector_.end(), buf, buf + len);
 					}
 				}
 			}
@@ -232,18 +230,9 @@ int UnixPtyProcess::getExitCode() const
 	return m->exit_code;
 }
 
-QString UnixPtyProcess::getMessage() const
-{
-	QString s;
-	if (!m->output_vector.empty()) {
-		s = QString::fromUtf8(&m->output_vector[0], m->output_vector.size());
-	}
-	return s;
-}
-
 void UnixPtyProcess::readResult(std::vector<char> *out)
 {
-	*out = m->output_vector;
-	m->output_vector.clear();
+	*out = output_vector_;
+	output_vector_.clear();
 }
 

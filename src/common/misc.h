@@ -69,6 +69,8 @@ public:
 	static bool isValidMailAddress(const std::string &email);
 
 	static std::string_view trimmed(std::string_view const &s);
+	static std::string_view trim_quotes(std::string_view s);
+
 	static std::string bin_to_hex_string(const void *begin, const void *end);
 	static std::vector<uint8_t> hex_string_to_bin(std::string_view const &s, const char *sep = nullptr);
 

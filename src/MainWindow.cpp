@@ -140,7 +140,7 @@ struct MainWindow::Private {
 	bool pty_process_ok = false;
 	// MainWindow::PtyCondition pty_condition = MainWindow::PtyCondition::None;
 
-	bool interaction_canceled = false;
+	bool interaction_enabled = false;
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
 
 	QString repository_filter_text;
@@ -193,6 +193,9 @@ struct MainWindow::Private {
 	std::thread update_files_list_thread;
 
 	GitProcessThread git_process_thread;
+
+	std::function<void (QVariant const &var)> retry_function;
+	QVariant retry_variant;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -803,7 +806,7 @@ void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
 	ui->widget_log->view()->setChanged(false);
 	ui->widget_log->updateLayoutAndMoveToBottom();
 
-	setInteractionCanceled(false);
+	setInteractionEnabled(true);
 }
 
 void MainWindow::setupProgressHandler()
@@ -1219,15 +1222,21 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
  */
 bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save, bool msgbox_if_err)
 {
+#ifdef Q_OS_WIN
+	dir = dir.replace('\\', '/');
+#endif
+
 	if (dir.endsWith(".git")) {
 		auto i = dir.size();
 		if (i > 4) {
 			ushort c = dir.utf16()[i - 5];
-			if (c == '/' || c == '\\') {
+			if (c == '/') {
 				dir = dir.mid(0, i - 5);
 			}
 		}
 	}
+
+	dir = misc::normalizePathSeparator(dir);
 
 	if (!Git::isValidWorkingCopy(dir)) {
 		auto isBareRepository = [](QString const &dir){
@@ -1864,6 +1873,7 @@ void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	req.params = params;
 	req.callback = callback;
 	req.userdata = userdata;
+	getPtyProcess()->clearMessage();
 	m->git_process_thread.request(std::move(req));
 }
 
@@ -1892,17 +1902,37 @@ void MainWindow::connectPtyProcessCompleted()
  *
  * リポジトリを再オープンする
  */
-void MainWindow::doReopenRepository(ProcessStatus const &status, QVariant const &userdata)
+void MainWindow::doReopenRepository(ProcessStatus const &status, RepositoryData const &repodata)
 {
 	ASSERT_MAIN_THREAD();
 
 	if (status.ok) {
-		RepositoryData const &r = userdata.value<RepositoryData>();
-		saveRepositoryBookmark(r);
-		setCurrentRepository(r, false);
+		saveRepositoryBookmark(repodata);
+		setCurrentRepository(repodata, false);
 		reopenRepository();
 	}
 }
+
+std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<std::string> const &lines)
+{
+	static std::string git_config_global_add_safe_directory = "git config --global --add safe.directory";
+	std::string dir;
+	bool detected_dubious_ownership_in_repository_at = false;
+	for (std::string const &line : lines) {
+		if (misc::starts_with(line, "fatal: detected dubious ownership in repository at ")) {
+			detected_dubious_ownership_in_repository_at = true;
+		} else if (detected_dubious_ownership_in_repository_at) {
+			auto pos = line.find(git_config_global_add_safe_directory);
+			if (pos != std::string::npos) {
+				dir = line.substr(pos + git_config_global_add_safe_directory.size());
+				dir = misc::trim_quotes(dir);
+				break;
+			}
+		}
+	}
+	return dir;
+}
+
 
 /**
  * @brief MainWindow::cloneRepository
@@ -1917,8 +1947,39 @@ void MainWindow::clone(CloneParams const &a)
 	GitPtr g = git({}, {}, a.repodata.ssh_key);
 	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), a.clonedata);
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
-		doReopenRepository(status, userdata);
-	}, QVariant::fromValue(a.repodata));
+		CloneParams a = userdata.value<CloneParams>();
+		std::vector<std::string> log;
+		misc::splitLines(status.log_message.toStdString(), &log, false);
+		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
+		if (dir.empty()) {
+			doReopenRepository(status, a.repodata);
+			clearRetry();
+		}
+	}, QVariant::fromValue(a));
+}
+
+void MainWindow::setRetry(std::function<void (QVariant const &var)> fn, QVariant const &var)
+{
+	m->retry_function = fn;
+	m->retry_variant = var;
+}
+
+void MainWindow::clearRetry()
+{
+	m->retry_function = nullptr;
+	m->retry_variant = QVariant();
+}
+
+void MainWindow::retry()
+{
+	if (m->retry_function) {
+		m->retry_function(m->retry_variant);
+	}
+}
+
+bool MainWindow::isRetryQueued() const
+{
+	return m->retry_function != nullptr;
 }
 
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
@@ -1961,11 +2022,17 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 		QString sub = basedir.mid(i + 1);
 		QDir(base).mkpath(sub);
 	}
-	
+
 	CloneParams a;
 	a.clonedata = clonedata;
 	a.repodata = repodata;
-	clone(a);
+	QVariant var = QVariant::fromValue(a);
+	setRetry([this](QVariant const &var){
+		CloneParams a = var.value<CloneParams>();
+		clone(a);
+	}, var);
+	retry();
+	// clone();
 
 	return true;
 }
@@ -2184,7 +2251,8 @@ void MainWindow::pull(GitPtr g)
 {
 	auto params = GitCommandItem_pull::make(tr("Pulling..."));
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
-		doReopenRepository(status, userdata);
+		RepositoryData repodata = userdata.value<RepositoryData>();
+		doReopenRepository(status, repodata);
 	}, QVariant::fromValue(m->current_repo));
 }
 
@@ -3332,7 +3400,7 @@ void MainWindow::abortPtyProcess()
 {
 	stopPtyProcess();
 	setPtyProcessOk(false);
-	setInteractionCanceled(true);
+	setInteractionEnabled(false);
 }
 
 Git::CommitItemList *MainWindow::getCommitLogPtr(RepositoryWrapperFrame *frame)
@@ -3365,14 +3433,14 @@ void MainWindow::setPtyProcessOk(bool pty_process_ok)
 	m->pty_process_ok = pty_process_ok;
 }
 
-bool MainWindow::interactionCanceled() const
+bool MainWindow::interactionEnabled() const
 {
-	return m->interaction_canceled;
+	return m->interaction_enabled;
 }
 
-void MainWindow::setInteractionCanceled(bool canceled)
+void MainWindow::setInteractionEnabled(bool enabled)
 {
-	m->interaction_canceled = canceled;
+	m->interaction_enabled = enabled;
 }
 
 MainWindow::InteractionMode MainWindow::interactionMode() const
@@ -6860,7 +6928,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog(QString const &
 		}
 	} else {
 		ui->widget_log->setFocus();
-		setInteractionCanceled(true);
+		setInteractionEnabled(false);
 	}
 	setInteractionMode(InteractionMode::Busy);
 }
@@ -6913,9 +6981,16 @@ QStringList MainWindow::remoteBranches(RepositoryWrapperFrame *frame, Git::Commi
 	return list;
 }
 
+void runCommand(QString const &cmd)
+{
+	Process proc;
+	proc.start(cmd, false);
+	proc.wait();
+}
+
 void MainWindow::onLogIdle()
 {
-	if (interactionCanceled()) return;
+	if (!interactionEnabled()) return;
 	if (interactionMode() != InteractionMode::None) return;
 
 	enum PatternIndex {
@@ -6924,8 +6999,6 @@ void MainWindow::onLogIdle()
 		ENTER_PASSPHRASE_FOR_KEY,
 		FATAL_AUTHENTICATION_FAILED_FOR,
 		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
-		DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT,
-		GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY,
 	};
 
 	static std::map<int, QRegExp> patterns;
@@ -6940,10 +7013,6 @@ void MainWindow::onLogIdle()
 				"fatal: Authentication failed for '");
 		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegExp(
 				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
-		patterns[DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT] = QRegExp(
-				"fatal: detected dubious ownership in repository at");
-		patterns[GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY] = QRegExp(
-				"git config --global --add safe\\.directory '?([^']+)'?");
 	}
 
 	std::vector<std::string> lines = getLogHistoryLines();
@@ -7004,44 +7073,43 @@ void MainWindow::onLogIdle()
 	}
 
 	{
-		bool detected_dubious_ownership_in_repository_at = false;
-		QString git_config_global_add_safe_directory;
-		for (std::string const &line : lines) {
-			if (!detected_dubious_ownership_in_repository_at) {
-				if (StartsWith(line, DETECTED_DUBIOUS_OWNERSHIP_IN_REPOSITORY_AT)) {
-					detected_dubious_ownership_in_repository_at = true;
-				}
-			} else {
-				QRegExp re = RegExp(GIT_CONFIG_GLOBAL_ADD_SAFE_DIRECTORY);
-				QString s = QString::fromStdString(line).trimmed();
-				if (re.isValid() && re.exactMatch(s)) {
-					QStringList list = re.capturedTexts();
-					if (list.size() >= 1) {
-						git_config_global_add_safe_directory = s.replace('\'', '\"');
-					}
-				}
+		QString dir = QString::fromStdString(parseDetectedDubiousOwnershipInRepositoryAt(lines));
+		if (!dir.isEmpty()) {
+
+			dir = misc::normalizePathSeparator(dir);
+
+			// remove empty lines at the end and at the beginning
+			while (!lines.empty() && lines.back().empty()) {
+				lines.pop_back();
 			}
-		}
-		if (!git_config_global_add_safe_directory.isEmpty()) {
-			std::vector<std::string> lines2 = lines;
-			while (!lines2.empty() && lines2.back().empty()) {
-				lines2.pop_back();
+			while (!lines.empty() && lines.front().empty()) {
+				lines.erase(lines.begin());
 			}
-			while (!lines2.empty() && lines2.front().empty()) {
-				lines2.erase(lines2.begin());
-			}
+
+			// join lines
 			QString msg;
-			for (std::string const &line : lines2) {
+			for (std::string const &line : lines) {
 				msg += QString::fromStdString(line) + '\n';
 			}
+
+			// make command
+			QString cmd = "git config --global --add safe.directory \"" + dir + "\"";
+
+			// show dialog
 			GitConfigGlobalAddSafeDirectoryDialog dlg(this);
-			dlg.setMessage(msg, git_config_global_add_safe_directory);
+			dlg.setMessage(msg, cmd);
 			if (dlg.exec() == QDialog::Accepted) {
-				// qDebug() << git_config_global_add_safe_directory;
-				Process proc;
-				proc.start(git_config_global_add_safe_directory, false);
-				proc.wait();
+				// run command
+				runCommand(cmd);
+
+				if (isRetryQueued()) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+					retry();
+				}
+			} else {
+				clearRetry();
 			}
+			return;
 		}
 	}
 

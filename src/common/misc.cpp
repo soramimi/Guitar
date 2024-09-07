@@ -549,6 +549,24 @@ std::string_view misc::trimmed(const std::string_view &s)
 }
 
 /**
+ * @brief 文字列の両端から空白文字と引用符を取り除く
+ * @param s
+ * @return
+ */
+std::string_view misc::trim_quotes(std::string_view s)
+{
+	s = trimmed(s);
+	if (s.size() >= 2) {
+		if (s[0] == '"' && s[s.size() - 1] == '"') {
+			s = s.substr(1, s.size() - 2);
+		} else if (s[0] == '\'' && s[s.size() - 1] == '\'') {
+			s = s.substr(1, s.size() - 2);
+		}
+	}
+	return s;
+}
+
+/**
  * @brief バイナリデータを16進数文字列に変換する
  * @param begin
  * @param end

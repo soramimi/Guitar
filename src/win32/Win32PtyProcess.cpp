@@ -53,8 +53,6 @@ struct Win32PtyProcess::Private {
 	QMutex mutex;
 	QString command;
 	QString env;
-	std::deque<char> output_queue; // for log
-	std::vector<char> output_vector; // for result
 	OutputReaderThread th_output_reader;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;
@@ -128,7 +126,7 @@ void Win32PtyProcess::run()
 
 	m->hInput = CreateFileW(winpty_conin_name(pty), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	m->hOutput = CreateFileW(winpty_conout_name(pty), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-	m->th_output_reader.start(m->hOutput, &m->output_queue, &m->output_vector);
+	m->th_output_reader.start(m->hOutput, &output_queue_, &output_vector_);
 
 	std::vector<wchar_t> envbuf;
 	if (!m->env.isEmpty()) {
@@ -175,14 +173,14 @@ void Win32PtyProcess::run()
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
 {
-	int len = m->output_queue.size();
+	int len = output_queue_.size();
 	if (len > maxlen) {
 		len = maxlen;
 	}
 	if (len > 0) {
-		auto begin = m->output_queue.begin();
+		auto begin = output_queue_.begin();
 		std::copy(begin, begin + len, dstptr);
-		m->output_queue.erase(begin, begin + len);
+		output_queue_.erase(begin, begin + len);
 	}
 	return len;
 }
@@ -258,19 +256,10 @@ int Win32PtyProcess::getExitCode() const
 	return m->exit_code;
 }
 
-QString Win32PtyProcess::getMessage() const
-{
-	QString s;
-	if (!m->output_vector.empty()) {
-		s = QString::fromUtf8(&m->output_vector[0], m->output_vector.size());
-	}
-	return s;
-}
-
 void Win32PtyProcess::readResult(std::vector<char> *out)
 {
-	*out = m->output_vector;
-	m->output_vector.clear();
+	*out = output_vector_;
+	output_vector_.clear();
 }
 
 

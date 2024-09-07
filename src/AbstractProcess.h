@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <deque>
 #include <functional>
 
 class QString;
@@ -12,6 +13,8 @@ class AbstractPtyProcess : public QObject {
 protected:
 	QString change_dir_;
 	QVariant user_data_;
+	std::deque<char> output_queue_; // for log
+	std::vector<char> output_vector_; // for result
 	std::function<void (bool, const QVariant &)> completed_fn_;
 public:
 	void setChangeDir(QString const &dir);
@@ -20,6 +23,10 @@ public:
 		completed_fn_ = fn;
 		user_data_ = userdata;
 	}
+
+	QString getMessage() const;
+	void clearMessage();
+
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual int readOutput(char *ptr, int len) = 0;
@@ -27,7 +34,6 @@ public:
 	virtual bool wait(unsigned long time = ULONG_MAX) = 0;
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
-	virtual QString getMessage() const = 0;
 	virtual void readResult(std::vector<char> *out) = 0;
 };
 
