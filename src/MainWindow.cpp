@@ -1918,13 +1918,21 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 	static std::string git_config_global_add_safe_directory = "git config --global --add safe.directory";
 	std::string dir;
 	bool detected_dubious_ownership_in_repository_at = false;
-	for (std::string const &line : lines) {
+	size_t i = 0;
+	for (i = 0; i < lines.size(); i++) {
+		std::string const &line = lines[i];
 		if (misc::starts_with(line, "fatal: detected dubious ownership in repository at ")) {
 			detected_dubious_ownership_in_repository_at = true;
 		} else if (detected_dubious_ownership_in_repository_at) {
 			auto pos = line.find(git_config_global_add_safe_directory);
 			if (pos != std::string::npos) {
 				dir = line.substr(pos + git_config_global_add_safe_directory.size());
+				if (i < lines.size()) {
+					std::string next = lines[i + 1];
+					if (next[0] != 0 && !isspace((unsigned char)next[0]) && !misc::starts_with(next, "fatal:")) {
+						dir += next;
+					}
+				}
 				dir = misc::trim_quotes(dir);
 				break;
 			}
