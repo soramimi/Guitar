@@ -155,6 +155,11 @@ private:
 		std::map<Git::CommitID, QList<Git::Branch>> branch_map;
 	};
 
+	struct OpenRepositoyOption {
+		bool validate = false;
+		bool waitcursor = true;
+		bool keep_selection = false;
+	};
 
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
 	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
@@ -241,8 +246,8 @@ private:
 	void internalClearRepositoryInfo();
 	void checkUser();
 
-	void openRepository(bool validate, bool waitcursor, bool keep_selection);
-	void reopenRepository();
+	void openRepository(OpenRepositoyOption const &opt);
+	void reopenRepository(bool validate);
 
 	void setCurrentRepository(const RepositoryData &repo, bool clear_authentication);
 	void openSelectedRepository();
