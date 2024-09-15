@@ -150,7 +150,7 @@ struct MainWindow::Private {
 	GitHubRepositoryInfo github;
 
 	Git::CommitID head_id;
-	bool force_fetch = false;
+	// bool force_fetch = false;
 
 	RepositoryData temp_repo_for_clone_complete;
 	QVariant pty_process_completion_data;
@@ -314,6 +314,8 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&m->update_commit_log_timer, &QTimer::timeout, [&](){
 		updateCommitLogTable(0);
 	});
+
+	connect(this, &MainWindow::remoteInfoChanged, this, &MainWindow::onRemoteInfoChanged);
 
 	//
 
@@ -1836,7 +1838,9 @@ void MainWindow::internalAfterFetch()
 {
 	ASSERT_MAIN_THREAD();
 
-	detectGitServerType(git());
+	GitPtr g = git();
+	detectGitServerType(g);
+	updateRemoteInfo(g);
 	onUpdateCommitLog();
 }
 
@@ -2179,7 +2183,7 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 			while (!pty->wait(1)); // wait for the process to finish
 
 			if (ok) {
-				setForceFetch(true);
+				// setForceFetch(true);
 				updateStatusBarText(frame);
 				reopenRepository();
 			} else {
@@ -3506,15 +3510,15 @@ GitObjectCache *MainWindow::getObjCache(RepositoryWrapperFrame *frame)
 	return &frame->objcache;
 }
 
-bool MainWindow::getForceFetch() const
-{
-	return m->force_fetch;
-}
+// bool MainWindow::getForceFetch() const
+// {
+// 	return m->force_fetch;
+// }
 
-void MainWindow::setForceFetch(bool force_fetch)
-{
-	m->force_fetch = force_fetch;
-}
+// void MainWindow::setForceFetch(bool force_fetch)
+// {
+// 	m->force_fetch = force_fetch;
+// }
 
 std::map<Git::CommitID, QList<Git::Tag> > *MainWindow::ptrCommitToTagMap(RepositoryWrapperFrame *frame)
 {
@@ -4629,8 +4633,8 @@ void MainWindow::openRepositoryMain(RepositoryWrapperFrame *frame, GitPtr g, boo
 	m->commit_detail_getter.start(g->dup());
 
 	if (do_fetch) {
-		do_fetch = isOnlineMode() && (getForceFetch() || appsettings()->automatically_fetch_when_opening_the_repository);
-		setForceFetch(false);
+		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
+		// setForceFetch(false);
 		if (do_fetch) {
 			fetch(g, false);
 		}
