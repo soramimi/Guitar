@@ -14,6 +14,7 @@
 #include <QThread>
 #include <QTimer>
 #include <optional>
+#include <thread>
 
 Git::CommitID::CommitID()
 {
@@ -1042,8 +1043,8 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	QDir cwd = QDir::current();
 
 	auto DoIt = [&](){
-		QString cmd = "clone --progress \"%1\" \"%2\"";
-		cmd = cmd.arg(data.url).arg(data.subdir);
+		QString cmd = "clone --recurse-submodules --progress -j%1 \"%2\" \"%3\"";
+		cmd = cmd.arg(std::thread::hardware_concurrency()).arg(data.url).arg(data.subdir);
 		ok = git_nochdir(cmd, pty);
 	};
 
@@ -1358,7 +1359,8 @@ bool Git::pull(AbstractPtyProcess *pty)
 
 bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	QString cmd = "fetch --tags -f";
+	QString cmd = "fetch --tags -f -j%1";
+    cmd = cmd.arg(std::thread::hardware_concurrency());
 	if (prune) {
 		cmd += " --prune";
 	}
@@ -1369,7 +1371,8 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 
 bool Git::fetch_tags_f(AbstractPtyProcess *pty)
 {
-	QString cmd = "fetch --tags -f";
+	QString cmd = "fetch --tags -f -j%1";
+    cmd = cmd.arg(std::thread::hardware_concurrency());
 	Option opt;
 	opt.pty = pty;
 	return git(cmd, opt);
