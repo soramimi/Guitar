@@ -4203,7 +4203,7 @@ void MainWindow::updateFileList(RepositoryWrapperFrame *frame, Git::CommitID con
 			}
 			showFileList(xdata.files_list_type);
 			xdata.frame = frame;
-			xdata.files_list_type = xdata.files_list_type;
+			xdata.files_list_type = files_list_type;
 
 			auto AddItem = [&](ObjectData const &obj){
 				xdata.object_data.push_back(obj);
@@ -4277,7 +4277,7 @@ void MainWindow::updateFileList(RepositoryWrapperFrame *frame, Git::CommitID con
 					}
 				}
 				xdata.frame = frame;
-				xdata.files_list_type = xdata.files_list_type;
+				xdata.files_list_type = files_list_type;
 				xdata.object_data.push_back(obj);
 			}
 		}
