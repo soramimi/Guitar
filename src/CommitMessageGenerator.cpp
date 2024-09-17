@@ -12,92 +12,6 @@
 
 namespace {
 
-/**
- * @brief Encode a string for JSON.
- * @param in The string to encode.
- * @return The encoded string.
- */
-std::string encode_json_string(std::string const &in)
-{
-	std::string out;
-	char const *ptr = in.c_str();
-	char const *end = ptr + in.size();
-	while (ptr < end) {
-		char c = *ptr++;
-		if (c == '"') {
-			out += "\\\"";
-		} else if (c == '\\') {
-			out += "\\\\";
-		} else if (c == '\b') {
-			out += "\\b";
-		} else if (c == '\f') {
-			out += "\\f";
-		} else if (c == '\n') {
-			out += "\\n";
-		} else if (c == '\r') {
-			out += "\\r";
-		} else if (c == '\t') {
-			out += "\\t";
-		} else if (c < 32) {
-			char tmp[10];
-			sprintf(tmp, "\\u%04x", c);
-			out += tmp;
-		} else {
-			out += c;
-		}
-	}
-	return out;
-}
-
-/**
- * @brief Decode a JSON string.
- * @param in The JSON string.
- * @return The decoded string.
- */
-std::string decode_json_string(std::string const &in)
-{
-	QString out;
-	char const *ptr = in.c_str();
-	char const *end = ptr + in.size();
-	while (ptr < end) {
-		char c = *ptr++;
-		if (c == '\\') {
-			if (ptr < end) {
-				char d = *ptr++;
-				if (d == '"') {
-					out += '"';
-				} else if (d == '\\') {
-					out += '\\';
-				} else if (d == '/') {
-					out += '/';
-				} else if (d == 'b') {
-					out += '\b';
-				} else if (d == 'f') {
-					out += '\f';
-				} else if (d == 'n') {
-					out += '\n';
-				} else if (d == 'r') {
-					out += '\r';
-				} else if (d == 't') {
-					out += '\t';
-				} else if (d == 'u') {
-					if (ptr + 4 <= end) {
-						char tmp[5];
-						memcpy(tmp, ptr, 4);
-						tmp[4] = 0;
-						ushort c = strtol(tmp, nullptr, 16);
-						out += QChar(c);
-						ptr += 4;
-					}
-				}
-			}
-		} else {
-			out += c;
-		}
-	}
-	return out.toStdString();
-}
-
 } // namespace
 
 static std::string example_gpt_response()
@@ -216,7 +130,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					ok1 = true;
 				}
 			} else if (r.match("{choices[{message{content")) {
-				text = decode_json_string(r.string());
+				text = misc::decode_json_string(r.string());
 			} else if (r.match("{error{type")) {
 				error_status_ = r.string();
 				ok1 = false;
@@ -235,7 +149,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					error_status_ = r.string();
 				}
 			} else if (r.match("{content[{text")) {
-				text = decode_json_string(r.string());
+				text = misc::decode_json_string(r.string());
 			} else if (r.match("{type")) {
 				if (r.string() == "error") {
 					ok1 = false;
@@ -243,7 +157,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 			} else if (r.match("{error{type")) {
 				error_status_ = r.string();
 				ok1 = false;
-			} else if (r.match("{error{message")) {				
+			} else if (r.match("{error{message")) {
 				error_message_ = r.string();
 				ok1 = false;
 			}
@@ -251,7 +165,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	} else if (ai_type == GenerativeAI::GEMINI) {
 		while (r.next()) {
 			if (r.match("{candidates[{content{parts[{text")) {
-				text = decode_json_string(r.string());
+				text = misc::decode_json_string(r.string());
 				ok1 = true;
 			} else if (r.match("{error{message")) {
 				error_message_ = r.string();
@@ -419,7 +333,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		{"role": "system", "content": "You are a experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt));
+		json = strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
 		
 	} else if (type == GenerativeAI::CLAUDE) {
 		
@@ -432,7 +346,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-		json = strformat(json)(model.name.toStdString())(encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+		json = strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
 		
 	} else if (type == GenerativeAI::GEMINI) {
 		
@@ -443,7 +357,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		}]
 	}]
 })---";
-		json = strformat(json)(encode_json_string(prompt));
+		json = strformat(json)(misc::encode_json_string(prompt));
 		
 	} else {
 		return {};
@@ -555,7 +469,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 QString CommitMessageGenerator::diff_head()
 {
 	QString diff = global->mainwindow->git()->diff_head([&](QString const &name, QString const &mime) {
-		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Qtの翻訳TSファイルはdiffしない（行番号など変更箇所が大量になるため）
+		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		return true;
 	});
 	return diff;

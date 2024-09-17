@@ -644,3 +644,90 @@ int misc::compare(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)
 {
 	return compare(a.data(), a.size(), b.data(), b.size());
 }
+
+/**
+ * @brief Encode a string for JSON.
+ * @param in The string to encode.
+ * @return The encoded string.
+ */
+std::string misc::encode_json_string(std::string const &in)
+{
+	std::string out;
+	char const *ptr = in.c_str();
+	char const *end = ptr + in.size();
+	while (ptr < end) {
+		char c = *ptr++;
+		if (c == '"') {
+			out += "\\\"";
+		} else if (c == '\\') {
+			out += "\\\\";
+		} else if (c == '\b') {
+			out += "\\b";
+		} else if (c == '\f') {
+			out += "\\f";
+		} else if (c == '\n') {
+			out += "\\n";
+		} else if (c == '\r') {
+			out += "\\r";
+		} else if (c == '\t') {
+			out += "\\t";
+		} else if (c < 32) {
+			char tmp[10];
+			sprintf(tmp, "\\u%04x", c);
+			out += tmp;
+		} else {
+			out += c;
+		}
+	}
+	return out;
+}
+
+/**
+ * @brief Decode a JSON string.
+ * @param in The JSON string.
+ * @return The decoded string.
+ */
+std::string misc::decode_json_string(std::string const &in)
+{
+	QString out;
+	char const *ptr = in.c_str();
+	char const *end = ptr + in.size();
+	while (ptr < end) {
+		char c = *ptr++;
+		if (c == '\\') {
+			if (ptr < end) {
+				char d = *ptr++;
+				if (d == '"') {
+					out += '"';
+				} else if (d == '\\') {
+					out += '\\';
+				} else if (d == '/') {
+					out += '/';
+				} else if (d == 'b') {
+					out += '\b';
+				} else if (d == 'f') {
+					out += '\f';
+				} else if (d == 'n') {
+					out += '\n';
+				} else if (d == 'r') {
+					out += '\r';
+				} else if (d == 't') {
+					out += '\t';
+				} else if (d == 'u') {
+					if (ptr + 4 <= end) {
+						char tmp[5];
+						memcpy(tmp, ptr, 4);
+						tmp[4] = 0;
+						ushort c = strtol(tmp, nullptr, 16);
+						out += QChar(c);
+						ptr += 4;
+					}
+				}
+			}
+		} else {
+			out += c;
+		}
+	}
+	return out.toStdString();
+}
+
