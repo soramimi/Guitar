@@ -126,6 +126,8 @@ private:
 	static Part *alloc_part(const char *data, int size)
 	{
 		Part *p = (Part *)malloc(sizeof(Part) + size);
+		if (!p)
+            return nullptr;
 		p->next = nullptr;
 		p->size = size;
 		memcpy(p->data, data, size);
@@ -177,6 +179,8 @@ private:
 	static void add_chars(PartList *list, char c, int n)
 	{
 		Part *p = (Part *)malloc(sizeof(Part) + n);
+		if (!p)
+            return;
 		p->next = nullptr;
 		p->size = n;
 		memset(p->data, c, n);
