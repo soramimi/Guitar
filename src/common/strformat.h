@@ -126,8 +126,7 @@ private:
 	static Part *alloc_part(const char *data, int size)
 	{
 		Part *p = (Part *)malloc(sizeof(Part) + size);
-		if (!p)
-            return nullptr;
+		if (!p) return nullptr;
 		p->next = nullptr;
 		p->size = size;
 		memcpy(p->data, data, size);
