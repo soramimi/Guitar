@@ -1,7 +1,7 @@
 #include "MergeDialog.h"
 #include "ui_MergeDialog.h"
 
-MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> &labels, const QString curr_branch_name, QWidget *parent)
+MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> &labels, const QString &curr_branch_name, QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::MergeDialog)
 {

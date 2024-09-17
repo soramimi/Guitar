@@ -57,7 +57,7 @@ void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor
  * @param palette
  * @param state
  */
-void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State const &state)
 {
 	QColor topleft;
 	QColor bottomright;
@@ -97,7 +97,7 @@ void drawTabFrame(QPainter *p, const QRect &rect, const QPalette &palette)
  * @param palette
  * @param state
  */
-inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State const &state)
 {
 	drawShadeFrame(p, rect, palette, state);
 }
@@ -109,7 +109,7 @@ inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &pa
  * @param palette
  * @param state
  */
-void drawRadioButtonFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
+void drawRadioButtonFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State const &state)
 {
 	QColor topleft;
 	QColor bottomright;
