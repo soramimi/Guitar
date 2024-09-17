@@ -517,7 +517,6 @@ public:
 
 public slots:
 	void writeLog_(QByteArray ba, bool receive);
-	void onCtrlA();
 private slots:
 	void updateUI();
 	void onLogVisibilityChanged();

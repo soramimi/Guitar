@@ -306,7 +306,6 @@ MainWindow::MainWindow(QWidget *parent)
 	// 右上のアイコンがクリックされたとき、ConfigUserダイアログを表示
 	connect(ui->widget_avatar_icon, &SimpleImageWidget::clicked, this, &MainWindow::on_action_configure_user_triggered);
 
-	// connect(new QShortcut(QKeySequence("Ctrl+A"), this), &QShortcut::activated, this, &MainWindow::onCtrlA);
 	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
@@ -623,10 +622,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 				if (e->modifiers() & Qt::ControlModifier) {
-					if (k == Qt::Key_A) {
-						on_action_add_repository_triggered();
-						return true;
-					}
+					// if (k == Qt::Key_A) {
+					// 	on_action_add_repository_triggered();
+					// 	return true;
+					// }
 				} else {
 					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) {
 						appendCharToRepoFilter(k);
@@ -6414,12 +6413,7 @@ void MainWindow::on_action_add_repository_triggered()
 	addRepository(QString());
 }
 
-void MainWindow::onCtrlA()
-{
-	if (QApplication::focusWidget() == ui->treeWidget_repos) {
-		on_action_add_repository_triggered();
-	}
-}
+
 
 void MainWindow::on_toolButton_addrepo_clicked()
 {

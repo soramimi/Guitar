@@ -1146,7 +1146,7 @@
      <x>0</x>
      <y>0</y>
      <width>1093</width>
-     <height>18</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1828,6 +1828,9 @@
    </property>
    <property name="text">
     <string>&amp;Add repository...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
    </property>
   </action>
   <action name="action_show_graph">
