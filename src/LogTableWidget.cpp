@@ -60,7 +60,7 @@ private:
 		}
 	}
 
-	void drawAvatar(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index) const
+	void drawAvatar(QPainter *painter, double opacity, const QStyleOptionViewItem &opt, QModelIndex const &index) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
@@ -73,7 +73,7 @@ private:
 		auto icon = frame()->committerIcon(row, {w, h});
 		if (!icon.isNull()) {
 			painter->save();
-			painter->setOpacity(0.5); // 半透明で描画
+			painter->setOpacity(opacity); // 半透明で描画
 			painter->drawImage(QRect(x, y, w, h), icon);
 			painter->restore();
 		}
@@ -182,7 +182,9 @@ public:
 
 		// avatarの描画
 		if (index.column() == Author) {
-			drawAvatar(painter, option, index);
+			bool show = global->mainwindow->isAvatarsVisible();
+			double opacity = show ? 0.5 : 0.125;
+			drawAvatar(painter, opacity, option, index);
 		}
 
 

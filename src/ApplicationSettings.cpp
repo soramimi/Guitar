@@ -91,6 +91,8 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("UI");
 	GetValue<bool>(s, "ShowLabels")                          >> as.show_labels;
+	GetValue<bool>(s, "ShowGraph")                           >> as.show_graph;
+	GetValue<bool>(s, "ShowAvatars")                         >> as.show_avatars;
 	s.endGroup();
 
 	s.beginGroup("Network");
@@ -153,6 +155,7 @@ void ApplicationSettings::saveSettings() const
 	s.beginGroup("UI");
 	SetValue<bool>(s, "ShowLabels")                          << this->show_labels;
 	SetValue<bool>(s, "ShowGraph")                           << this->show_graph;
+	SetValue<bool>(s, "ShowAvatars")                         << this->show_avatars;
 	s.endGroup();
 
 	s.beginGroup("Network");

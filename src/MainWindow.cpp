@@ -260,6 +260,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setShowLabels(appsettings()->show_labels, false);
 	setShowGraph(appsettings()->show_graph, false);
+	setShowAvatars(appsettings()->show_avatars, false);
 
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -7422,6 +7423,20 @@ void MainWindow::setShowGraph(bool show, bool save)
 	}
 }
 
+void MainWindow::setShowAvatars(bool show, bool save)
+{
+	ApplicationSettings *as = appsettings();
+	as->show_avatars = show;
+
+	bool b = ui->action_show_avatars->blockSignals(true);
+	ui->action_show_avatars->setChecked(show);
+	ui->action_show_avatars->blockSignals(b);
+
+	if (save) {
+		saveApplicationSettings();
+	}
+}
+
 bool MainWindow::isLabelsVisible() const
 {
 	return appsettings()->show_labels;
@@ -7430,6 +7445,11 @@ bool MainWindow::isLabelsVisible() const
 bool MainWindow::isGraphVisible() const
 {
 	return appsettings()->show_graph;
+}
+
+bool MainWindow::isAvatarsVisible() const
+{
+	return appsettings()->show_avatars;
 }
 
 void MainWindow::on_action_show_labels_triggered()
@@ -7443,6 +7463,13 @@ void MainWindow::on_action_show_graph_triggered()
 {
 	bool f = ui->action_show_graph->isChecked();
 	setShowGraph(f, true);
+	frame()->updateLogTableView();
+}
+
+void MainWindow::on_action_show_avatars_triggered()
+{
+	bool f = ui->action_show_avatars->isChecked();
+	setShowAvatars(f, true);
 	frame()->updateLogTableView();
 }
 
@@ -7578,4 +7605,7 @@ void MainWindow::test()
 {
 	execWelcomeWizardDialog();
 }
+
+
+
 

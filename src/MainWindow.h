@@ -451,8 +451,10 @@ public:
 	void postStartEvent(int ms_later);
 	void setShowLabels(bool show, bool save);
 	void setShowGraph(bool show, bool save);
+	void setShowAvatars(bool show, bool save);
 	bool isLabelsVisible() const;
 	bool isGraphVisible() const;
+	bool isAvatarsVisible() const;
 	void updateFileList2(RepositoryWrapperFrame *frame, const Git::CommitID &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem &commit);
@@ -566,6 +568,7 @@ private slots:
 	void on_action_set_gpg_signing_triggered();
 	void on_action_show_labels_triggered();
 	void on_action_show_graph_triggered();
+	void on_action_show_avatars_triggered();
 	void on_action_sidebar_triggered();
 	void on_action_stash_apply_triggered();
 	void on_action_stash_drop_triggered();
@@ -676,6 +679,7 @@ private:
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
+
 signals:
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
 	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);

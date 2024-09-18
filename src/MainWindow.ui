@@ -1146,7 +1146,7 @@
      <x>0</x>
      <y>0</y>
      <width>1093</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1164,6 +1164,7 @@
     <addaction name="action_view_refresh"/>
     <addaction name="action_show_graph"/>
     <addaction name="action_show_labels"/>
+    <addaction name="action_show_avatars"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -1857,6 +1858,17 @@
   <action name="action_rebase_abort">
    <property name="text">
     <string>Rebase --abort</string>
+   </property>
+  </action>
+  <action name="action_show_avatars">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show avatars</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
    </property>
   </action>
  </widget>

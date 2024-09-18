@@ -51,6 +51,7 @@ public:
 	int maximum_number_of_commit_item_acquisitions = 10000;
 	bool show_labels = true;
 	bool show_graph = true;
+	bool show_avatars = true;
 
 	struct {
 		QColor head;
