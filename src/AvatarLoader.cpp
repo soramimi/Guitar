@@ -2,12 +2,10 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
-#include "UserEvent.h"
 #include "webclient.h"
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>
-#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <optional>
@@ -188,22 +186,31 @@ QImage AvatarLoader::fetch(QString const &email, bool request) const
 {
 	if (misc::isValidMailAddress(email)) {
 		std::lock_guard<std::mutex> lock(m->mutex);
-		bool found = false;
 		for (size_t i = 0; i < m->requests.size(); i++) {
 			if (m->requests[i].email == email) {
-				found = true;
+				RequestItem item;
 				if (m->requests[i].state == Done) {
-					RequestItem item = m->requests[i];
+					item = m->requests[i];
 					m->requests.erase(m->requests.begin() + i);
 					m->requests.insert(m->requests.begin(), item);
-					return item.image;
 				}
+				return item.image;
 			}
 		}
-		if (request && !found) {
+		if (request) {
 			RequestItem item;
 			item.state = Idle;
 			item.email = email;
+			{ // remove old requests
+				size_t i = m->requests.size();
+				while (i > 0 && m->requests.size() >= MAX_CACHE_COUNT) {
+					i--;
+					RequestItem *req = &m->requests[i];
+					if (req->state == Done || req->state == Fail) {
+						m->requests.erase(m->requests.begin() + i);
+					}
+				}
+			}
 			m->requests.push_back(item);
 			m->condition.notify_all();
 		}
