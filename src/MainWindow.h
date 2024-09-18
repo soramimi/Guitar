@@ -431,7 +431,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
-	void internalWriteLog(const std::string_view &str, bool record);
+	void internalWriteLog(std::string_view text, bool record);
 	RepositoryData const *selectedRepositoryItem() const;
 	void removeSelectedRepositoryFromBookmark(bool ask);
 public:

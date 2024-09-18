@@ -2472,26 +2472,8 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 	}
 }
 
-void AbstractCharacterBasedApplication::appendBulk(std::string_view str, NewLine nl)
+void AbstractCharacterBasedApplication::appendBulk(std::string_view const &str)
 {
-	if (nl != NewLine::AsIs) {
-		str = misc::trimNewLines(str);
-		std::vector<std::string_view> lines = misc::splitLines(str, false);
-		std::string s;
-		for (std::string_view const &line : lines) {
-			s += line;
-			if (nl == NewLine::CR) {
-				s += '\r';
-			} else if (nl == NewLine::LF) {
-				s += '\n';
-			} else if (nl == NewLine::CRLF) {
-				s += "\r\n";
-			}
-		}
-		appendBulk(s, NewLine::AsIs);
-		return;
-	}
-
 	if (!cx()->engine->document.lines.empty()) {
 		if (!cx()->engine->document.lines.back().endsWithNewLine()) {
 			cx()->engine->document.lines.back().text.append(str.data(), str.size());

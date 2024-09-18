@@ -126,7 +126,7 @@ MainWindow *BlameWindow::mainwindow()
 QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
-	std::vector<std::string_view> lines = misc::splitLines(str, false);
+	std::vector<std::string> lines = misc::splitLines(str, false);
 	BlameItem item;
 	for (std::string_view const &v : lines) {
 		std::string line = std::string{v};

@@ -474,13 +474,7 @@ public:
 	void setChanged(bool f);
 	void logicalMoveToBottom();
 	void logicalMoveToBottom2();
-	enum class NewLine {
-		AsIs,
-		CR,
-		LF,
-		CRLF
-	};
-	void appendBulk(std::string_view str, NewLine nl = NewLine::AsIs);
+	void appendBulk(std::string_view const &str);
 	void clear();
 protected:
 	void write_(char const *ptr, bool by_keyboard);

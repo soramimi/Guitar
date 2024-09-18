@@ -796,14 +796,34 @@ void MainWindow::clearLogHistory()
 	m->log_history_bytes.clear();
 }
 
-void MainWindow::internalWriteLog(std::string_view const &str, bool record)
+void MainWindow::internalWriteLog(std::string_view text, bool record)
 {
 	if (record) { // 受信ログのみ記録
-		appendLogHistory(str);
+		appendLogHistory(text);
+	}
+
+	std::string str;
+	{
+		text = misc::trimNewLines(text);
+		std::vector<std::string> lines = misc::splitLines(text, false);
+		for (std::string const &line : lines) {
+			auto percent = line.find_last_of('%');
+			auto colon = line.find_last_of(':', percent);
+			if (colon != std::string::npos && percent != std::string::npos) {
+				std::string title(misc::trimmed(line.substr(0, colon)));
+				unsigned long long num, den;
+				if (sscanf(line.data() + percent, "%% (%llu/%llu)", &num, &den) == 2) {
+					showProgress(QString::fromStdString(title), false);
+					setProgress((float)num / den);
+				}
+			}
+			str += line;
+			str += '\n';
+		}
 	}
 
 	ui->widget_log->view()->logicalMoveToBottom();
-	ui->widget_log->view()->appendBulk(str, AbstractCharacterBasedApplication::NewLine::LF);
+	ui->widget_log->view()->appendBulk(str);
 	ui->widget_log->view()->setChanged(false);
 	ui->widget_log->updateLayoutAndMoveToBottom();
 
@@ -834,7 +854,7 @@ void MainWindow::onShowProgress(const QString &text, bool cancel_button)
 	ui->toolButton_cancel->setVisible(cancel_button);
 	ui->label_progress->setText(text);
 	ui->label_progress->setProgress(-1.0f);
-	ui->frame_progress->setVisible(true);
+	ui->frame_progress->setVisible(!text.isEmpty());
 }
 
 void MainWindow::showProgress(QString const &text, bool cancel_button)
@@ -1872,7 +1892,7 @@ void MainWindow::runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> par
 	GitProcessRequest req;
 	req.run = [this](GitProcessRequest const &req){
 		setCompletedHandler([this](bool ok, const QVariant &d){
-			hideProgress();
+			showProgress({}, false);
 			GitProcessRequest const &req = d.value<GitProcessRequest>();
 			PtyProcessCompleted data;
 			data.callback = req.callback;
@@ -1976,8 +1996,8 @@ void MainWindow::clone(CloneParams const &a)
 	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), a.clonedata);
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
-		std::vector<std::string_view> log = misc::splitLines(status.log_message.toStdString(), false);
-		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(misc::vector_string(log));
+		std::vector<std::string> log = misc::splitLines(status.log_message.toStdString(), false);
+		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
 		if (dir.empty()) {
 			doReopenRepository(status, a.repodata);
 			clearRetry();

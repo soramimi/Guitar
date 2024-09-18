@@ -1912,7 +1912,7 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, QString const &id_a, QString 
 
 void parseDiff(std::string_view const &s, Git::Diff const *info, Git::Diff *out)
 {
-	std::vector<std::string_view> lines = misc::splitLines(s, false);
+	std::vector<std::string> lines = misc::splitLines(s, false);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
