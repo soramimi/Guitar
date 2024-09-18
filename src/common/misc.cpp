@@ -107,13 +107,14 @@ QStringList misc::splitLines(QString const &text)
  * 与えられた文字列を行に分割し、std::vector<std::string>として返します。
  * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
  *
- * @param begin 分割する対象の文字列の先頭ポインタ。
- * @param end 分割する対象の文字列の終端ポインタ。
+ * @param str 分割する対象の文字列。
  * @param[out] out 分割された行を格納するstd::vectorへのポインタ。
  * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse。
  */
-void misc::splitLines(char const *begin, char const *end, std::vector<std::string> *out, bool keep_newline)
+void misc::splitLines(std::string_view const &str, std::vector<std::string> *out, bool keep_newline)
 {
+	char const *begin = str.data();
+	char const *end = begin + str.size();
 	char const *ptr = begin;
 	char const *left = ptr;
 	while (1) {
@@ -141,13 +142,6 @@ void misc::splitLines(char const *begin, char const *end, std::vector<std::strin
 			ptr++;
 		}
 	}
-}
-
-void misc::splitLines(std::string const &text, std::vector<std::string> *out, bool need_crlf)
-{
-	char const *begin = text.c_str();
-	char const *end = begin + text.size();
-	splitLines(begin, end, out, need_crlf);
 }
 
 /**
@@ -553,7 +547,7 @@ std::string_view misc::trimmed(const std::string_view &s)
  * @param s
  * @return
  */
-std::string_view misc::trim_quotes(std::string_view s)
+std::string_view misc::trimQuotes(std::string_view s)
 {
 	s = trimmed(s);
 	if (s.size() >= 2) {
@@ -565,6 +559,39 @@ std::string_view misc::trim_quotes(std::string_view s)
 	}
 	return s;
 }
+
+/**
+ * @brief 文字列の両端から改行文字を取り除く
+ * @param s
+ * @return
+ */
+std::string_view misc::trimNewLines(std::string_view s)
+{
+	size_t i = 0;;
+	size_t j = s.size();
+	if (i < j) {
+		if (s[i] == '\r') {
+			i++;
+			if (i < j && s[i] == '\n') {
+				i++;
+			}
+		} else if (s[i] == '\n') {
+			i++;
+		}
+	}
+	if (i < j) {
+		if (s[j - 1] == '\n') {
+			j--;
+			if (j > i && s[j - 1] == '\r') {
+				j--;
+			}
+		} else if (s[j - 1] == '\r') {
+			j--;
+		}
+	}
+	return s.substr(i, j - i);
+}
+
 
 /**
  * @brief バイナリデータを16進数文字列に変換する

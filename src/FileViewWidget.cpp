@@ -146,9 +146,7 @@ void FileViewWidget::setText(const QList<Document::Line> *source, QString const 
 void FileViewWidget::setText(QByteArray const &ba, QString const &object_id, QString const &object_path)
 {
 	std::vector<std::string> lines;
-	char const *begin = ba.data();
-	char const *end = begin + ba.size();
-	misc::splitLines(begin, end, &lines, true);
+	misc::splitLines(std::string_view{ba.data(), (size_t)ba.size()}, &lines, true);
 	QList<Document::Line> source;
 	source.reserve(lines.size());
 	int num = 0;

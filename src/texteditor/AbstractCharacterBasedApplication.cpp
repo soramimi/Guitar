@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QTextCodec>
 #include <memory>
+#include "common/misc.h"
 
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
 using FormattedLine = AbstractCharacterBasedApplication::FormattedLine2;
@@ -2471,15 +2472,34 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 	}
 }
 
-void AbstractCharacterBasedApplication::appendBulk(char const *ptr, int len)
+void AbstractCharacterBasedApplication::appendBulk(std::string_view str, NewLine nl)
 {
+	if (nl != NewLine::AsIs) {
+		std::vector<std::string> lines;
+		str = misc::trimNewLines(str);
+		misc::splitLines(str, &lines, false);
+		std::string s;
+		for (std::string const &line : lines) {
+			s += line;
+			if (nl == NewLine::CR) {
+				s += '\r';
+			} else if (nl == NewLine::LF) {
+				s += '\n';
+			} else if (nl == NewLine::CRLF) {
+				s += "\r\n";
+			}
+		}
+		appendBulk(s, NewLine::AsIs);
+		return;
+	}
+
 	if (!cx()->engine->document.lines.empty()) {
 		if (!cx()->engine->document.lines.back().endsWithNewLine()) {
-			cx()->engine->document.lines.back().text.append(ptr, len);
+			cx()->engine->document.lines.back().text.append(str.data(), str.size());
 			return;
 		}
 	}
-	Document::Line line(QByteArray(ptr, len));
+	Document::Line line(QByteArray(str.data(), str.size()));
 	cx()->engine->document.lines.push_back(line);
 }
 

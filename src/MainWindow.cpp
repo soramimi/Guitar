@@ -456,7 +456,7 @@ void MainWindow::updatePocessLog(bool processevents)
 		char tmp[1024];
 		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		writeLog(tmp, len, true);
+		writeLog({tmp, (size_t)len}, true);
 		if (processevents) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -753,9 +753,9 @@ void MainWindow::onLogVisibilityChanged()
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
-void MainWindow::appendLogHistory(char const *ptr, int len)
+void MainWindow::appendLogHistory(std::string_view const &str)
 {
-	m->log_history_bytes.insert(m->log_history_bytes.begin(), ptr, ptr + len);
+	m->log_history_bytes.insert(m->log_history_bytes.begin(), str.begin(), str.end());
 }
 
 std::vector<std::string> MainWindow::getLogHistoryLines()
@@ -796,14 +796,14 @@ void MainWindow::clearLogHistory()
 	m->log_history_bytes.clear();
 }
 
-void MainWindow::internalWriteLog(char const *ptr, int len, bool record)
+void MainWindow::internalWriteLog(std::string_view const &str, bool record)
 {
 	if (record) { // 受信ログのみ記録
-		appendLogHistory(ptr, len);
+		appendLogHistory(str);
 	}
 
 	ui->widget_log->view()->logicalMoveToBottom();
-	ui->widget_log->view()->appendBulk(ptr, len);
+	ui->widget_log->view()->appendBulk(str, AbstractCharacterBasedApplication::NewLine::LF);
 	ui->widget_log->view()->setChanged(false);
 	ui->widget_log->updateLayoutAndMoveToBottom();
 
@@ -1943,7 +1943,7 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 						dir += next;
 					}
 				}
-				dir = misc::trim_quotes(dir);
+				dir = misc::trimQuotes(dir);
 				break;
 			}
 		}
@@ -3926,20 +3926,15 @@ QStringList MainWindow::findGitObject(const QString &id) const
 	return GitObjectManager::findObject(id, m->current_repo.local_dir);
 }
 
-void MainWindow::writeLog(const char *ptr, int len, bool record)
+void MainWindow::writeLog(std::string_view const &str, bool record)
 {
-	internalWriteLog(ptr, len, record);
-}
-
-void MainWindow::writeLog(const std::string_view &str, bool record)
-{
-	internalWriteLog(str.data(), (int)str.size(), record);
+	internalWriteLog(str, record);
 }
 
 void MainWindow::writeLog(const QString &str, bool record)
 {
 	std::string s = str.toStdString();
-	writeLog(s.c_str(), (int)s.size(), record);
+	writeLog(s, record);
 }
 
 QList<BranchLabel> MainWindow::sortedLabels(RepositoryWrapperFrame *frame, int row) const
@@ -6162,7 +6157,7 @@ void MainWindow::refresh()
 void MainWindow::writeLog_(QByteArray ba, bool receive)
 {
 	if (!ba.isEmpty()) {
-		writeLog(ba.data(), ba.size(), receive);
+		writeLog({ba.data(), (size_t)ba.size()}, receive);
 	}
 }
 
@@ -6881,9 +6876,7 @@ void MainWindow::blame(QListWidgetItem *item)
 		GitPtr g = git();
 		QByteArray ba = g->blame(path);
 		if (!ba.isEmpty()) {
-			char const *begin = ba.data();
-			char const *end = begin + ba.size();
-			list = BlameWindow::parseBlame(begin, end);
+			list = BlameWindow::parseBlame(std::string_view{ba.data(), (size_t)ba.size()});
 		}
 	}
 	if (!list.isEmpty()) {

@@ -404,16 +404,6 @@ protected:
 	void savePos();
 	void restorePos();
 public:
-//	RenderingMode rendering_mode_ = CharacterMode;
-
-//	void set_rendering_mode(RenderingMode m)
-//	{
-//		rendering_mode_ = m;
-//	}
-//	RenderingMode renderingMode() const
-//	{
-//		return rendering_mode_;
-//	}
 
 	int currentRow() const;
 	int currentCol() const;
@@ -484,7 +474,13 @@ public:
 	void setChanged(bool f);
 	void logicalMoveToBottom();
 	void logicalMoveToBottom2();
-	void appendBulk(const char *ptr, int len);
+	enum class NewLine {
+		AsIs,
+		CR,
+		LF,
+		CRLF
+	};
+	void appendBulk(std::string_view str, NewLine nl = NewLine::AsIs);
 	void clear();
 protected:
 	void write_(char const *ptr, bool by_keyboard);

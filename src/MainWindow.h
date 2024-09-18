@@ -394,7 +394,7 @@ private:
 	void cancelPendingUserEvents();
 	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
 	void updatePocessLog(bool processevents);
-	void appendLogHistory(const char *ptr, int len);
+	void appendLogHistory(const std::string_view &str);
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
 	void updateAvatar(const Git::User &user, bool request);
@@ -431,7 +431,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
-	void internalWriteLog(const char *ptr, int len, bool record);
+	void internalWriteLog(const std::string_view &str, bool record);
 	RepositoryData const *selectedRepositoryItem() const;
 	void removeSelectedRepositoryFromBookmark(bool ask);
 public:
@@ -637,7 +637,6 @@ signals:
 protected slots:
 	void onLogIdle();
 public:
-	void writeLog(const char *ptr, int len, bool record);
 	void writeLog(std::string_view const &str, bool record);
 	void writeLog(const QString &str, bool record);
 signals:

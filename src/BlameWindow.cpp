@@ -123,11 +123,11 @@ MainWindow *BlameWindow::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-QList<BlameItem> BlameWindow::parseBlame(char const *begin, char const *end)
+QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
 	std::vector<std::string> lines;
-	misc::splitLines(begin, end, &lines, false);
+	misc::splitLines(str, &lines, false);
 	BlameItem item;
 	for (std::string const &line : lines) {
 		if (line[0] == '\t') {

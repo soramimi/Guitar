@@ -668,7 +668,7 @@ struct NamedCommitItem {
 };
 using NamedCommitList = QList<NamedCommitItem>;
 
-void parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out);
+void parseDiff(const std::string_view &s, Git::Diff const *info, Git::Diff *out);
 
 void parseGitSubModules(QByteArray const &ba, QList<Git::SubmoduleItem> *out);
 

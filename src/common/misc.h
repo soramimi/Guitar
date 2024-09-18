@@ -40,8 +40,7 @@ public:
 	static QString getApplicationDir();
 	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);
-	static void splitLines(char const *begin, char const *end, std::vector<std::string> *out, bool keep_newline);
-	static void splitLines(std::string const &text, std::vector<std::string> *out, bool need_crlf);
+	static void splitLines(std::string_view const &str, std::vector<std::string> *out, bool keep_newline);
 	static QStringList splitWords(QString const &text);
 	static QString getFileName(QString const &path);
 	static QString makeDateTimeString(const QDateTime &dt);
@@ -69,7 +68,8 @@ public:
 	static bool isValidMailAddress(const std::string &email);
 
 	static std::string_view trimmed(std::string_view const &s);
-	static std::string_view trim_quotes(std::string_view s);
+	static std::string_view trimQuotes(std::string_view s);
+	static std::string_view trimNewLines(std::string_view s);
 
 	static std::string bin_to_hex_string(const void *begin, const void *end);
 	static std::vector<uint8_t> hex_string_to_bin(std::string_view const &s, const char *sep = nullptr);

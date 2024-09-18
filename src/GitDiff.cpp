@@ -81,11 +81,7 @@ QString GitDiff::diffFiles(GitPtr g, QString const &a_path, QString const &b_pat
 void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 {
 	std::vector<std::string> lines;
-	{
-		char const *begin = s.c_str();
-		char const *end = begin + s.size();
-		misc::splitLines(begin, end, &lines, false);
-	}
+	misc::splitLines(s, &lines, false);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;

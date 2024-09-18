@@ -31,7 +31,7 @@ public:
 	explicit BlameWindow(MainWindow *parent, QString const &filename, QList<BlameItem> const &list);
 	~BlameWindow() override;
 
-	static QList<BlameItem> parseBlame(char const *begin, char const *end);
+	static QList<BlameItem> parseBlame(const std::string_view &str);
 private slots:
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_tableWidget_customContextMenuRequested(const QPoint &pos);
