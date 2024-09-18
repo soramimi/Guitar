@@ -561,6 +561,28 @@ QString Git::diff_to_file(QString const &old_id, QString const &path)
 #endif
 }
 
+QString Git::getDefaultBranch()
+{
+	Option opt;
+	opt.chdir = false;
+	git("config --global init.defaultBranch", opt);
+	return resultQString().trimmed();
+}
+
+void Git::setDefaultBranch(const QString &branchname)
+{
+	Option opt;
+	opt.chdir = false;
+	git(QString("config --global init.defaultBranch \"%1\"").arg(branchname), opt);
+}
+
+void Git::unsetDefaultBranch()
+{
+	Option opt;
+	opt.chdir = false;
+	git(QString("config --global --unset init.defaultBranch"), opt);
+}
+
 QString Git::getCurrentBranchName()
 {
 	if (isValidWorkingCopy()) {

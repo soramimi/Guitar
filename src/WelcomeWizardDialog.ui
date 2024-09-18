@@ -29,7 +29,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>3</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page_helper_tools">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -37,7 +37,6 @@
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -49,7 +48,7 @@
        <item>
         <widget class="Line" name="line_3">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -77,12 +76,83 @@
        <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
            <height>161</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="page_default_branch_name">
+      <layout class="QVBoxLayout" name="verticalLayout_7">
+       <item>
+        <widget class="QLabel" name="label_7">
+         <property name="font">
+          <font>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Default Branch Name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line_6">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_branch_main">
+         <property name="text">
+          <string>&quot;main&quot;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_branch_master">
+         <property name="text">
+          <string>&quot;master&quot;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButton_branch_unset">
+         <property name="text">
+          <string>unset (default)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QRadioButton" name="radioButton_branch_other">
+           <property name="text">
+            <string>other</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_default_branch_name"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>276</height>
           </size>
          </property>
         </spacer>
@@ -95,7 +165,6 @@
         <widget class="QLabel" name="label">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -107,17 +176,17 @@
        <item>
         <widget class="Line" name="line">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
         <layout class="QFormLayout" name="formLayout">
          <property name="labelAlignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
          </property>
          <property name="formAlignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_2">
@@ -148,7 +217,7 @@
            <item>
             <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -168,7 +237,7 @@
            <item>
             <spacer name="horizontalSpacer_5">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -195,7 +264,7 @@
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -213,7 +282,6 @@
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -225,7 +293,7 @@
        <item>
         <widget class="Line" name="line_2">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -253,7 +321,7 @@
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -271,7 +339,6 @@
         <widget class="QLabel" name="label_8">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -283,65 +350,16 @@
        <item>
         <widget class="Line" name="line_4">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="4" column="0" colspan="2">
-          <widget class="Line" name="line_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>email</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_email">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_9">
            <property name="text">
             <string>user</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>git</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_git">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_user">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>folder</string>
            </property>
           </widget>
          </item>
@@ -352,10 +370,73 @@
            </property>
           </widget>
          </item>
+         <item row="4" column="0" colspan="2">
+          <widget class="Line" name="line_7">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>email</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>git</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>folder</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_user">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_git">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
          <item row="2" column="0" colspan="2">
           <widget class="Line" name="line_5">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_email">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>default branch</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="ReadOnlyLineEdit" name="lineEdit_preview_default_branch">
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -364,7 +445,7 @@
        <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -395,7 +476,7 @@
      <item>
       <spacer name="horizontalSpacer_6">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -436,6 +517,27 @@
    <header>ReadOnlyLineEdit.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>lineEdit_git</tabstop>
+  <tabstop>pushButton_browse_git</tabstop>
+  <tabstop>radioButton_branch_main</tabstop>
+  <tabstop>radioButton_branch_master</tabstop>
+  <tabstop>radioButton_branch_unset</tabstop>
+  <tabstop>radioButton_branch_other</tabstop>
+  <tabstop>lineEdit_default_branch_name</tabstop>
+  <tabstop>lineEdit_user_name</tabstop>
+  <tabstop>lineEdit_user_email</tabstop>
+  <tabstop>pushButton_get_icon</tabstop>
+  <tabstop>lineEdit_default_working_folder</tabstop>
+  <tabstop>pushButton_browse_default_workiing_folder</tabstop>
+  <tabstop>lineEdit_preview_user</tabstop>
+  <tabstop>lineEdit_preview_email</tabstop>
+  <tabstop>lineEdit_preview_folder</tabstop>
+  <tabstop>lineEdit_preview_git</tabstop>
+  <tabstop>lineEdit_preview_default_branch</tabstop>
+  <tabstop>pushButton_next</tabstop>
+  <tabstop>pushButton_prev</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

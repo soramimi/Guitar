@@ -652,6 +652,10 @@ public:
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	static CommitItem parseCommit(const QByteArray &ba);
 	QString queryEntireCommitMessage(const CommitID &id);
+
+	QString getDefaultBranch();
+	void setDefaultBranch(QString const &branchname);
+	void unsetDefaultBranch();
 };
 
 struct NamedCommitItem {

@@ -19,6 +19,7 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	mainwindow_ = parent;
 
 	pages_.push_back(ui->page_helper_tools);
+	pages_.push_back(ui->page_default_branch_name);
 	pages_.push_back(ui->page_global_user_information);
 	pages_.push_back(ui->page_default_working_folder);
 	pages_.push_back(ui->page_finish);
@@ -76,6 +77,18 @@ QString WelcomeWizardDialog::git_command_path() const
 	return ui->lineEdit_git->text();
 }
 
+QString WelcomeWizardDialog::default_branch_name() const
+{
+	if (ui->radioButton_branch_main->isChecked()) {
+		return "main";
+	} else if (ui->radioButton_branch_master->isChecked()) {
+		return "master";
+	} else if (ui->radioButton_branch_other->isChecked()) {
+		return ui->lineEdit_default_branch_name->text();
+	}
+	return {};
+}
+
 void WelcomeWizardDialog::on_pushButton_prev_clicked()
 {
 	int i = pages_.indexOf(ui->stackedWidget->currentWidget());
@@ -111,6 +124,23 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 	if (w == ui->page_helper_tools) {
 		prev_text = tr("Cancel");
 		ui->lineEdit_git->setFocus();
+	} else if (w == ui->page_default_branch_name) {
+		Git::Context gcx;
+		gcx.git_command = git_command_path();
+		Git g(gcx, {}, {}, {});
+		default_branch_name_ = g.getDefaultBranch();
+		ui->lineEdit_default_branch_name->setEnabled(false);
+		if (default_branch_name_ == "main") {
+			ui->radioButton_branch_main->setChecked(true);
+		} else if (default_branch_name_ == "master") {
+			ui->radioButton_branch_master->setChecked(true);
+		} else if (default_branch_name_.isEmpty()) {
+			ui->radioButton_branch_unset->setChecked(true);
+		} else {
+			ui->radioButton_branch_other->setChecked(true);
+			ui->lineEdit_default_branch_name->setEnabled(true);
+			ui->lineEdit_default_branch_name->setText(default_branch_name_);
+		}
 	} else if (w == ui->page_global_user_information) {
 		if (user_name().isEmpty() && user_email().isEmpty()) {
 			Git::Context gcx;
@@ -134,12 +164,14 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		ui->lineEdit_preview_email->setText(ui->lineEdit_user_email->text());
 		ui->lineEdit_preview_folder->setText(ui->lineEdit_default_working_folder->text());
 		ui->lineEdit_preview_git->setText(ui->lineEdit_git->text());
+		ui->lineEdit_preview_default_branch->setText(default_branch_name_);
 		next_text = tr("Finish");
 		ui->pushButton_next->setFocus();
 	}
 	ui->pushButton_prev->setText(prev_text.isEmpty() ? tr("<< Prev") : prev_text);
 	ui->pushButton_next->setText(next_text.isEmpty() ? tr("Next >>") : next_text);
 	ui->pushButton_next->setDefault(true);
+	updateUI();
 }
 
 void WelcomeWizardDialog::on_pushButton_browse_default_workiing_folder_clicked()
@@ -187,5 +219,36 @@ void WelcomeWizardDialog::on_lineEdit_git_textChanged(const QString &arg1)
 		ss = "* { background-color: #ffc0c0; }";
 	}
 	ui->lineEdit_git->setStyleSheet(ss);
+}
+
+
+void WelcomeWizardDialog::on_lineEdit_default_branch_name_textChanged(const QString &arg1)
+{
+	default_branch_name_ = arg1;
+}
+
+void WelcomeWizardDialog::updateUI()
+{
+	ui->lineEdit_default_branch_name->setEnabled(ui->radioButton_branch_other->isChecked());
+}
+
+void WelcomeWizardDialog::on_radioButton_branch_main_clicked()
+{
+	updateUI();
+}
+
+void WelcomeWizardDialog::on_radioButton_branch_master_clicked()
+{
+	updateUI();
+}
+
+void WelcomeWizardDialog::on_radioButton_branch_unset_clicked()
+{
+	updateUI();
+}
+
+void WelcomeWizardDialog::on_radioButton_branch_other_clicked()
+{
+	updateUI();
 }
 

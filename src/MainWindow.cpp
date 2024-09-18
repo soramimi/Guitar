@@ -1356,6 +1356,16 @@ bool MainWindow::execWelcomeWizardDialog()
 			user.name = dlg.user_name();
 			user.email = dlg.user_email();
 			g->setUser(user, true);
+
+			QString old_default_branch_name = g->getDefaultBranch();
+			QString new_default_branch_name = dlg.default_branch_name();
+			if (old_default_branch_name != new_default_branch_name) {
+				if (new_default_branch_name.isEmpty()) {
+					g->unsetDefaultBranch();
+				} else {
+					g->setDefaultBranch(new_default_branch_name);
+				}
+			}
 		}
 
 		return true;
@@ -7546,5 +7556,6 @@ Terminal=false
 
 void MainWindow::test()
 {
+	execWelcomeWizardDialog();
 }
 

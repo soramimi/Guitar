@@ -20,6 +20,8 @@ private:
 
 	MainWindow *mainwindow_;
 	QList<QWidget *> pages_;
+	QString default_branch_name_;
+	void updateUI();
 public:
 	explicit WelcomeWizardDialog(MainWindow *parent = nullptr);
 	~WelcomeWizardDialog() override;
@@ -33,6 +35,8 @@ public:
 	QString user_email() const;
 	QString default_working_folder() const;
 	QString git_command_path() const;
+
+	QString default_branch_name() const;
 private slots:
 	void avatarReady();
 	void on_stackedWidget_currentChanged(int arg1);
@@ -42,6 +46,11 @@ private slots:
 	void on_pushButton_prev_clicked();
 	void on_pushButton_next_clicked();
 	void on_lineEdit_git_textChanged(const QString &arg1);
+	void on_lineEdit_default_branch_name_textChanged(const QString &arg1);
+	void on_radioButton_branch_main_clicked();
+	void on_radioButton_branch_master_clicked();
+	void on_radioButton_branch_unset_clicked();
+	void on_radioButton_branch_other_clicked();
 };
 
 #endif // WELCOMEWIZARDDIALOG_H
