@@ -40,7 +40,7 @@ public:
 	static QString getApplicationDir();
 	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);
-	static void splitLines(std::string_view const &str, std::vector<std::string_view> *out, bool keep_newline);
+	static std::vector<std::string_view> splitLines(std::string_view const &str, bool keep_newline);
 	static QStringList splitWords(QString const &text);
 	static QString getFileName(QString const &path);
 	static QString makeDateTimeString(const QDateTime &dt);

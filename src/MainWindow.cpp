@@ -1966,8 +1966,7 @@ void MainWindow::clone(CloneParams const &a)
 	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), a.clonedata);
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
-		std::vector<std::string_view> log;
-		misc::splitLines(status.log_message.toStdString(), &log, false);
+		std::vector<std::string_view> log = misc::splitLines(status.log_message.toStdString(), false);
 		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(misc::vector_string(log));
 		if (dir.empty()) {
 			doReopenRepository(status, a.repodata);
