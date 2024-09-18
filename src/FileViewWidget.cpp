@@ -145,13 +145,13 @@ void FileViewWidget::setText(const QList<Document::Line> *source, QString const 
 
 void FileViewWidget::setText(QByteArray const &ba, QString const &object_id, QString const &object_path)
 {
-	std::vector<std::string> lines;
+	std::vector<std::string_view> lines;
 	misc::splitLines(std::string_view{ba.data(), (size_t)ba.size()}, &lines, true);
 	QList<Document::Line> source;
 	source.reserve(lines.size());
 	int num = 0;
-	for (std::string const &line : lines) {
-		Document::Line t(line);
+	for (std::string_view const &line : lines) {
+		Document::Line t(std::string{line});
 		t.line_number = ++num;
 		source.push_back(t);
 	}

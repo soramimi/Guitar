@@ -80,7 +80,7 @@ QString GitDiff::diffFiles(GitPtr g, QString const &a_path, QString const &b_pat
 
 void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
 {
-	std::vector<std::string> lines;
+	std::vector<std::string_view> lines;
 	misc::splitLines(s, &lines, false);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
@@ -93,7 +93,8 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 	out->b_submodule.commit = info->b_submodule.commit;
 
 	bool atat = false;
-	for (std::string const &line : lines) {
+	for (std::string_view const &s : lines) {
+		std::string line = std::string{s};
 		int c = line[0] & 0xff;
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {

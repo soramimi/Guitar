@@ -1890,7 +1890,7 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, QString const &id_a, QString 
 
 void parseDiff(std::string_view const &s, Git::Diff const *info, Git::Diff *out)
 {
-	std::vector<std::string> lines;
+	std::vector<std::string_view> lines;
 	misc::splitLines(s, &lines, false);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
@@ -1899,7 +1899,8 @@ void parseDiff(std::string_view const &s, Git::Diff const *info, Git::Diff *out)
 	out->blob = info->blob;
 
 	bool atat = false;
-	for (std::string const &line : lines) {
+	for (std::string_view const &v : lines) {
+		std::string line = std::string{v};
 		int c = line[0] & 0xff;
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {

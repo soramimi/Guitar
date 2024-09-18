@@ -111,7 +111,7 @@ QStringList misc::splitLines(QString const &text)
  * @param[out] out 分割された行を格納するstd::vectorへのポインタ。
  * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse。
  */
-void misc::splitLines(std::string_view const &str, std::vector<std::string> *out, bool keep_newline)
+void misc::splitLines(std::string_view const &str, std::vector<std::string_view> *out, bool keep_newline)
 {
 	char const *begin = str.data();
 	char const *end = begin + str.size();
@@ -135,7 +135,7 @@ void misc::splitLines(std::string_view const &str, std::vector<std::string> *out
 			if (keep_newline) {
 				right = ptr;
 			}
-			out->push_back(std::string(left, right - left));
+			out->push_back(std::string_view(left, right - left));
 			if (c == 0) break;
 			left = ptr;
 		} else {

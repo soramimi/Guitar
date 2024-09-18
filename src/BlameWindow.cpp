@@ -126,10 +126,11 @@ MainWindow *BlameWindow::mainwindow()
 QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
-	std::vector<std::string> lines;
+	std::vector<std::string_view> lines;
 	misc::splitLines(str, &lines, false);
 	BlameItem item;
-	for (std::string const &line : lines) {
+	for (std::string_view const &v : lines) {
+		std::string line = std::string{v};
 		if (line[0] == '\t') {
 			item.text = QString::fromUtf8(line.c_str() + 1);
 			list.push_back(item);

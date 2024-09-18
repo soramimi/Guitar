@@ -178,7 +178,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	}
 	if (ok1) {
 		if (kind == CommitMessage) {
-			std::vector<std::string> lines;
+			std::vector<std::string_view> lines;
 			misc::splitLines(text, &lines, false);
 			size_t i = lines.size();
 			while (i > 0) {
@@ -220,14 +220,14 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					}
 				}
 				if (accept) {
-					lines[i] = std::string(ptr, end);
+					lines[i] = std::string_view(ptr, end - ptr);
 				} else {
 					lines.erase(lines.begin() + i);
 				}
 			}
 			QStringList ret;
 			for (auto const &line : lines) {
-				ret.push_back(QString::fromStdString(line));
+				ret.push_back(QString::fromUtf8(line.data(), line.size()));
 			}
 			return ret;
 		} else if (kind == DetailedComment) {

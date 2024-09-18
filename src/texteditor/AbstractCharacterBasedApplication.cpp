@@ -2475,11 +2475,11 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 void AbstractCharacterBasedApplication::appendBulk(std::string_view str, NewLine nl)
 {
 	if (nl != NewLine::AsIs) {
-		std::vector<std::string> lines;
+		std::vector<std::string_view> lines;
 		str = misc::trimNewLines(str);
 		misc::splitLines(str, &lines, false);
 		std::string s;
-		for (std::string const &line : lines) {
+		for (std::string_view const &line : lines) {
 			s += line;
 			if (nl == NewLine::CR) {
 				s += '\r';
