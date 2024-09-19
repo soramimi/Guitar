@@ -53,8 +53,8 @@ macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 
 win32:msvc {
-	INCLUDEPATH += "C:\Qt\Tools\OpenSSLv3\Win_x64\include"
-	LIBS += "-LC:\Qt\Tools\OpenSSLv3\Win_x64\lib"
+	INCLUDEPATH += "C:\OpenSSL\include"
+	LIBS += "-LC:\OpenSSL\lib"
 	LIBS += -llibcrypto -llibssl
 }
 
