@@ -53,6 +53,7 @@
 #include "common/misc.h"
 #include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitProcessThread.h"
+#include "ProgressWidget.h"
 #include "gunzip.h"
 #include "platform.h"
 #include "webclient.h"
@@ -161,7 +162,7 @@ struct MainWindow::Private {
 	QTimer interval_10ms_timer;
 	QImage graph_color;
 	QPixmap digits;
-	StatusLabel *status_bar_label;
+	ProgressWidget *status_bar_label;
 
 	QObject *last_focused_file_list = nullptr;
 
@@ -204,7 +205,6 @@ MainWindow::MainWindow(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	ui->frame_progress->setVisible(false);
 
 	setupShowFileListHandler();
 	setupProgressHandler();
@@ -251,7 +251,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
-	m->status_bar_label = new StatusLabel(this);
+	m->status_bar_label = new ProgressWidget(this);
 	ui->statusBar->addWidget(m->status_bar_label);
 
 	frame()->filediffwidget()->init();
@@ -739,16 +739,6 @@ void MainWindow::toggleMaximized()
 	setWindowState(state);
 }
 
-void MainWindow::setStatusBarText(QString const &text)
-{
-	m->status_bar_label->setText(text);
-}
-
-void MainWindow::clearStatusBarText()
-{
-	setStatusBarText(QString());
-}
-
 void MainWindow::onLogVisibilityChanged()
 {
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
@@ -838,10 +828,21 @@ void MainWindow::setupProgressHandler()
 	connect(this, &MainWindow::signalShowProgress, this, &MainWindow::onShowProgress);
 }
 
+void MainWindow::setStatusBarText(QString const &text)
+{
+	m->status_bar_label->setVisible(false);
+	ui->statusBar->showMessage(text);
+}
+
+void MainWindow::clearStatusBarText()
+{
+	setStatusBarText(QString());
+}
+
 void MainWindow::onSetProgress(float progress)
 {
 	ASSERT_MAIN_THREAD();
-	ui->label_progress->setProgress(progress);
+	m->status_bar_label->setProgress(progress);
 }
 
 void MainWindow::setProgress(float progress)
@@ -852,10 +853,10 @@ void MainWindow::setProgress(float progress)
 void MainWindow::onShowProgress(const QString &text, bool cancel_button)
 {
 	ASSERT_MAIN_THREAD();
-	ui->toolButton_cancel->setVisible(cancel_button);
-	ui->label_progress->setText(text);
-	ui->label_progress->setProgress(-1.0f);
-	ui->frame_progress->setVisible(!text.isEmpty());
+
+	ui->statusBar->clearMessage();
+	m->status_bar_label->setVisible(true);
+	m->status_bar_label->setText(text);
 }
 
 void MainWindow::showProgress(QString const &text, bool cancel_button)
@@ -866,7 +867,7 @@ void MainWindow::showProgress(QString const &text, bool cancel_button)
 void MainWindow::onHideProgress()
 {
 	ASSERT_MAIN_THREAD();
-	ui->frame_progress->setVisible(false);
+	m->status_bar_label->clear();
 }
 
 void MainWindow::hideProgress()

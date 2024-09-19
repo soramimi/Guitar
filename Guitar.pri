@@ -258,8 +258,9 @@ SOURCES += \
 	src/texteditor/unicode.cpp \
 	src/urlencode.cpp \
 	src/webclient.cpp \
-    src/AboutDialog.cpp \
-	src/coloredit/RingSlider.cpp
+	src/AboutDialog.cpp \
+	src/coloredit/RingSlider.cpp \
+	src/ProgressWidget.cpp
 
 HEADERS += \
 	$$PWD/src/FileListWidget.h \
@@ -424,7 +425,8 @@ HEADERS += \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \
 	src/urlencode.h \
-	src/webclient.h
+	src/webclient.h \
+	src/ProgressWidget.h
 
 HEADERS += version.h
 
@@ -496,7 +498,8 @@ FORMS    += \
 	src/WelcomeWizardDialog.ui \
 	src/coloredit/ColorDialog.ui \
 	src/coloredit/ColorEditWidget.ui \
-	src/ManageWorkingFolderDialog.ui
+	src/ManageWorkingFolderDialog.ui \
+	src/ProgressWidget.ui
 
 RESOURCES += \
 	src/resources/resources.qrc
