@@ -14,6 +14,9 @@
    <string>Repository Property</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -48,25 +51,6 @@
       </property>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="QLabel" name="label_name">
-          <property name="font">
-           <font>
-            <pointsize>15</pointsize>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QLabel {
-	background: transparent;
-}
-</string>
-          </property>
-          <property name="text">
-           <string>Name: </string>
-          </property>
-         </widget>
-        </item>
         <item>
          <widget class="QLabel" name="label_editable_name">
           <property name="sizePolicy">
