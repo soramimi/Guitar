@@ -185,8 +185,10 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 				std::string_view sv = lines[i];
 				char const *ptr = sv.data();
 				char const *end = ptr + sv.size();
-				while (ptr < end && *ptr == '`') ptr++;
-				while (ptr < end && end[-1] == '`') end--;
+				while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
+					ptr++;
+					end--;
+				}
 				bool accept = false;
 				if (ptr < end && *ptr == '-') {
 					accept = true;
