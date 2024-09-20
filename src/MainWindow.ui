@@ -1034,7 +1034,7 @@
      <x>0</x>
      <y>0</y>
      <width>1093</width>
-     <height>18</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1207,7 +1207,7 @@
        <property name="frameShadow">
         <enum>QFrame::Shadow::Sunken</enum>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -1293,6 +1293,13 @@
          </widget>
         </item>
         <item>
+         <widget class="Line" name="line_2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="TextEditorWidget" name="widget_log" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -1308,13 +1315,6 @@
           </property>
           <property name="focusPolicy">
            <enum>Qt::FocusPolicy::ClickFocus</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="Line" name="line_2">
-          <property name="orientation">
-           <enum>Qt::Orientation::Vertical</enum>
           </property>
          </widget>
         </item>
@@ -1727,7 +1727,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Show graph</string>
+    <string>Show &amp;graph</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
@@ -1745,7 +1745,7 @@
   </action>
   <action name="action_rebase_abort">
    <property name="text">
-    <string>Rebase --abort</string>
+    <string>&amp;Rebase --abort</string>
    </property>
   </action>
   <action name="action_show_avatars">
@@ -1753,7 +1753,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show avatars</string>
+    <string>Show a&amp;vatars</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+V</string>
