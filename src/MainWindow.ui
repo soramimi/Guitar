@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1093</width>
-    <height>642</height>
+    <width>1023</width>
+    <height>702</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -777,152 +777,178 @@
                  <number>0</number>
                 </property>
                 <item>
-                 <layout class="QGridLayout" name="gridLayout" columnstretch="1,1">
-                  <property name="topMargin">
-                   <number>0</number>
+                 <widget class="QFrame" name="frame_6">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
                   </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>100</height>
+                   </size>
                   </property>
-                  <property name="spacing">
-                   <number>3</number>
+                  <property name="frameShape">
+                   <enum>QFrame::Shape::NoFrame</enum>
                   </property>
-                  <item row="2" column="0" colspan="2">
-                   <widget class="Line" name="line">
-                    <property name="orientation">
-                     <enum>Qt::Orientation::Horizontal</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QToolButton" name="toolButton_unstage">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>64</width>
-                      <height>0</height>
-                     </size>
-                    </property>
-                    <property name="focusPolicy">
-                     <enum>Qt::FocusPolicy::StrongFocus</enum>
-                    </property>
-                    <property name="text">
-                     <string>Unstage</string>
-                    </property>
-                    <property name="icon">
-                     <iconset resource="resources/resources.qrc">
-                      <normaloff>:/image/unstage.svg</normaloff>:/image/unstage.svg</iconset>
-                    </property>
-                    <property name="iconSize">
-                     <size>
-                      <width>24</width>
-                      <height>24</height>
-                     </size>
-                    </property>
-                    <property name="toolButtonStyle">
-                     <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="0" colspan="2">
-                   <widget class="QToolButton" name="toolButton_select_all">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="focusPolicy">
-                     <enum>Qt::FocusPolicy::StrongFocus</enum>
-                    </property>
-                    <property name="text">
-                     <string>Select all</string>
-                    </property>
-                    <property name="icon">
-                     <iconset resource="resources/resources.qrc">
-                      <normaloff>:/image/selall.svg</normaloff>:/image/selall.svg</iconset>
-                    </property>
-                    <property name="iconSize">
-                     <size>
-                      <width>24</width>
-                      <height>18</height>
-                     </size>
-                    </property>
-                    <property name="toolButtonStyle">
-                     <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QToolButton" name="toolButton_stage">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>64</width>
-                      <height>0</height>
-                     </size>
-                    </property>
-                    <property name="focusPolicy">
-                     <enum>Qt::FocusPolicy::StrongFocus</enum>
-                    </property>
-                    <property name="text">
-                     <string>Stage</string>
-                    </property>
-                    <property name="icon">
-                     <iconset resource="resources/resources.qrc">
-                      <normaloff>:/image/stage.svg</normaloff>:/image/stage.svg</iconset>
-                    </property>
-                    <property name="iconSize">
-                     <size>
-                      <width>24</width>
-                      <height>24</height>
-                     </size>
-                    </property>
-                    <property name="toolButtonStyle">
-                     <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="3" column="0" colspan="2">
-                   <widget class="QToolButton" name="toolButton_commit">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="focusPolicy">
-                     <enum>Qt::FocusPolicy::StrongFocus</enum>
-                    </property>
-                    <property name="text">
-                     <string>Commit</string>
-                    </property>
-                    <property name="icon">
-                     <iconset resource="resources/resources.qrc">
-                      <normaloff>:/image/commit.svg</normaloff>:/image/commit.svg</iconset>
-                    </property>
-                    <property name="iconSize">
-                     <size>
-                      <width>24</width>
-                      <height>24</height>
-                     </size>
-                    </property>
-                    <property name="toolButtonStyle">
-                     <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                  <property name="frameShadow">
+                   <enum>QFrame::Shadow::Plain</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <item row="0" column="0" colspan="2">
+                    <widget class="QToolButton" name="toolButton_select_all">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="focusPolicy">
+                      <enum>Qt::FocusPolicy::StrongFocus</enum>
+                     </property>
+                     <property name="text">
+                      <string>Select all</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="resources/resources.qrc">
+                       <normaloff>:/image/selall.svg</normaloff>:/image/selall.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>24</width>
+                       <height>18</height>
+                      </size>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QToolButton" name="toolButton_stage">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>64</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="focusPolicy">
+                      <enum>Qt::FocusPolicy::StrongFocus</enum>
+                     </property>
+                     <property name="text">
+                      <string>Stage</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="resources/resources.qrc">
+                       <normaloff>:/image/stage.svg</normaloff>:/image/stage.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>24</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QToolButton" name="toolButton_unstage">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>64</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="focusPolicy">
+                      <enum>Qt::FocusPolicy::StrongFocus</enum>
+                     </property>
+                     <property name="text">
+                      <string>Unstage</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="resources/resources.qrc">
+                       <normaloff>:/image/unstage.svg</normaloff>:/image/unstage.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>24</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0" colspan="2">
+                    <widget class="Line" name="line">
+                     <property name="orientation">
+                      <enum>Qt::Orientation::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0" colspan="2">
+                    <widget class="QToolButton" name="toolButton_commit">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="focusPolicy">
+                      <enum>Qt::FocusPolicy::StrongFocus</enum>
+                     </property>
+                     <property name="text">
+                      <string>Commit</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="resources/resources.qrc">
+                       <normaloff>:/image/commit.svg</normaloff>:/image/commit.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>24</width>
+                       <height>24</height>
+                      </size>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
                 </item>
                 <item>
                  <spacer name="verticalSpacer">
@@ -1033,8 +1059,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1093</width>
-     <height>25</height>
+     <width>1023</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1225,6 +1251,12 @@
         </property>
         <item>
          <widget class="QFrame" name="frame_8">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <property name="spacing">
             <number>1</number>
@@ -1306,12 +1338,6 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>80</height>
-           </size>
           </property>
           <property name="focusPolicy">
            <enum>Qt::FocusPolicy::ClickFocus</enum>
