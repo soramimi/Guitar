@@ -110,21 +110,5 @@
     </hint>
    </hints>
   </connection>
-  <connection>
-   <sender>listWidget</sender>
-   <signal>doubleClicked(QModelIndex)</signal>
-   <receiver>GenerateCommitMessageDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>219</x>
-     <y>84</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>225</x>
-     <y>169</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
 </ui>

@@ -169,10 +169,14 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 	dlg.show();
 	dlg.generate(diff_);
 	if (dlg.exec() == QDialog::Accepted) {
-		QString text = dlg.message();
-		if (!text.isEmpty()) {
+		QStringList list = dlg.message();
+		if (!list.isEmpty()) {
+			QString text;
+			for (QString const &line : list) {
+				text.append(line);
+				text.append('\n');
+			}
 			setText(text);
-			QString diff = dlg.diffText();
 		}
 	}
 	ui->plainTextEdit->setFocus();

@@ -9,6 +9,8 @@ namespace Ui {
 class GenerateCommitMessageDialog;
 }
 
+class QListWidgetItem;
+
 class GenerateCommitMessageDialog : public QDialog {
 	Q_OBJECT
 private:
@@ -20,10 +22,15 @@ public:
 	~GenerateCommitMessageDialog();
 	void generate(QString const &diff);
 	QString diffText() const;
-	QString message() const;
+	QStringList message() const;
 private slots:
 	void on_pushButton_regenerate_clicked();
 	void onReady(GeneratedCommitMessage const &list);
+	void on_listWidget_itemDoubleClicked(QListWidgetItem *item);
+
+	// QDialog interface
+public slots:
+	void done(int stat);
 };
 
 #endif // GENERATECOMMITMESSAGEDIALOG_H

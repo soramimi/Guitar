@@ -9,6 +9,7 @@
 struct GenerateCommitMessageDialog::Private {
 	QString diff;
 	GenerateCommitMessageThread generator;
+	QStringList checked_items;
 };
 
 GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, QString const &model_name)
@@ -38,7 +39,18 @@ void GenerateCommitMessageDialog::generate(QString const &diff)
 	
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
+	m->checked_items = message();
+
 	ui->listWidget->clear();
+
+	ui->listWidget->addItems(m->checked_items);
+	for (int i = 0; i < ui->listWidget->count(); i++) {
+		auto *item = ui->listWidget->item(i);
+		if (m->checked_items.contains(item->text())) {
+			item->setCheckState(Qt::Checked);
+		}
+	}
+
 	ui->pushButton_regenerate->setEnabled(false);
 	
 	m->generator.request(CommitMessageGenerator::CommitMessage, diff);
@@ -49,9 +61,17 @@ QString GenerateCommitMessageDialog::diffText() const
 	return m->diff;
 }
 
-QString GenerateCommitMessageDialog::message() const
+QStringList GenerateCommitMessageDialog::message() const
 {
-	return ui->listWidget->currentItem()->text();
+	QStringList list;
+	int n = ui->listWidget->count();
+	for (int i = 0; i < n; i++) {
+		auto *item = ui->listWidget->item(i);
+		if (item->checkState() == Qt::Checked) {
+			list.append(item->text());
+		}
+	}
+	return list;
 }
 
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
@@ -65,7 +85,13 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 	QApplication::restoreOverrideCursor();
 
 	if (result) {
+		int i = ui->listWidget->count();
 		ui->listWidget->addItems(result.messages);
+		int n = ui->listWidget->count();;
+		while (i < n) {
+			ui->listWidget->item(i)->setCheckState(Qt::Unchecked);
+			i++;
+		}
 		ui->listWidget->setCurrentRow(0);
 	} else {
 		QString text = result.error_status + "\n\n" + result.error_message;
@@ -75,5 +101,23 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 	ui->pushButton_regenerate->setEnabled(true);	
 }
 
+void GenerateCommitMessageDialog::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
+{
+	item->setCheckState(Qt::Checked);
+	done(QDialog::Accepted);
+}
 
+void GenerateCommitMessageDialog::done(int stat)
+{
+	if (stat == QDialog::Accepted) {
+		QStringList list = message();
+		if (list.empty()) {
+			auto *item = ui->listWidget->currentItem();
+			if (item) {
+				item->setCheckState(Qt::Checked);
+			}
+		}
+	}
+	QDialog::done(stat);
+}
 
