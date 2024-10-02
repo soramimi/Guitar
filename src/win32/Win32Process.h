@@ -3,12 +3,9 @@
 
 #include <vector>
 #include <string>
-#include <stdint.h>
 #include <QByteArray>
 #include <vector>
-#include <list>
 #include <QThread>
-//#include "MyProcess.h"
 
 class Win32Process {
 private:
@@ -21,10 +18,10 @@ public:
 	Win32Process();
 	~Win32Process();
 
-	QString outstring() const;
-	QString errstring() const;
+	std::string outstring() const;
+	std::string errstring() const;
 
-	void start(QString const &command, bool use_input);
+	void start(const std::string &command, bool use_input);
 	int wait();
 	void writeInput(char const *ptr, int len);
 	void closeInput(bool justnow);

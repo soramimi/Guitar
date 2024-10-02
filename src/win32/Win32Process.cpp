@@ -232,10 +232,10 @@ public:
 	}
 };
 
-QString toQString(const std::vector<char> &vec)
+std::string toQString(const std::vector<char> &vec)
 {
-	if (vec.empty()) return QString();
-	return QString::fromUtf8(&vec[0], vec.size());
+	if (vec.empty()) return {};
+	return std::string(&vec[0], vec.size());
 }
 
 struct Win32Process::Private {
@@ -255,9 +255,9 @@ Win32Process::~Win32Process()
 	delete m;
 }
 
-void Win32Process::start(QString const &command, bool use_input)
+void Win32Process::start(std::string const &command, bool use_input)
 {
-	QByteArray ba = command.toUtf8();
+	QByteArray ba(command.c_str(), command.size());
 	ba.push_back((char)0);
 	char const *cmd = ba.data();
 
@@ -280,12 +280,12 @@ int Win32Process::wait()
 	return exit_code;
 }
 
-QString Win32Process::outstring() const
+std::string Win32Process::outstring() const
 {
 	return toQString(outbytes);
 }
 
-QString Win32Process::errstring() const
+std::string Win32Process::errstring() const
 {
 	return toQString(errbytes);
 }
