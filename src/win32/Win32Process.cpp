@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QMutex>
+#include <thread>
+#include <mutex>
 
 QString GetErrorMessage(DWORD e)
 {
@@ -18,13 +20,14 @@ QString GetErrorMessage(DWORD e)
 	return msg;
 }
 
-class OutputReaderThread : public QThread {
+class OutputReaderThread {
 private:
 	HANDLE hRead;
-	QMutex *mutex;
+	std::thread thread;
+	std::mutex *mutex;
 	std::deque<char> *buffer;
 protected:
-	void run() override
+	void run()
 	{
 		while (1) {
 			char buf[256];
@@ -38,19 +41,39 @@ protected:
 		}
 	}
 public:
-	OutputReaderThread(HANDLE hRead, QMutex *mutex, std::deque<char> *buffer)
+	OutputReaderThread(HANDLE hRead, std::mutex *mutex, std::deque<char> *buffer)
 		: hRead(hRead)
 		, mutex(mutex)
 		, buffer(buffer)
 	{
 	}
+	~OutputReaderThread()
+	{
+		stop();
+	}
+	void start()
+	{
+		thread = std::thread([this](){
+			run();
+		});
+	}
+	void stop()
+	{
+		if (thread.joinable()) {
+			thread.join();
+		}
+	}
+	void wait()
+	{
+		stop();
+	}
 };
 
-class Win32ProcessThread : public QThread {
+class Win32ProcessThread {
 	friend class Win32Process2;
-private:
 public:
-	QMutex *mutex = nullptr;
+	std::thread thread;
+	std::mutex *mutex = nullptr;
 	QString command;
 	DWORD exit_code = -1;
 	std::deque<char> inq;
@@ -74,7 +97,7 @@ public:
 	}
 
 protected:
-	void run() override
+	void run()
 	{
 		try {
 			hInputWrite = INVALID_HANDLE_VALUE;
@@ -220,6 +243,13 @@ protected:
 		}
 	}
 public:
+	Win32ProcessThread()
+	{
+	}
+	~Win32ProcessThread()
+	{
+		stop();
+	}
 	void closeInput()
 	{
 		CloseHandle(hInputWrite);
@@ -230,6 +260,22 @@ public:
 		QMutexLocker lock(mutex);
 		inq.insert(inq.end(), ptr, ptr + len);
 	}
+	void start()
+	{
+		thread = std::thread([this](){
+			run();
+		});
+	}
+	void stop()
+	{
+		if (thread.joinable()) {
+			thread.join();
+		}
+	}
+	void wait()
+	{
+		stop();
+	}
 };
 
 std::string toQString(const std::vector<char> &vec)
@@ -239,7 +285,7 @@ std::string toQString(const std::vector<char> &vec)
 }
 
 struct Win32Process::Private {
-	QMutex mutex;
+	std::mutex mutex;
 	Win32ProcessThread th;
 
 };
@@ -263,7 +309,7 @@ void Win32Process::start(std::string const &command, bool use_input)
 
 	m->th.mutex = &m->mutex;
 	m->th.use_input = use_input;
-	m->th.command = cmd;
+	m->th.command = QString::fromUtf8(cmd);
 	m->th.start();
 }
 
