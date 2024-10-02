@@ -5,11 +5,11 @@ void AbstractPtyProcess::setChangeDir(QString const &dir)
 	change_dir_ = dir;
 }
 
-QString AbstractPtyProcess::getMessage() const
+std::string AbstractPtyProcess::getMessage() const
 {
-	QString s;
+	std::string s;
 	if (!output_vector_.empty()) {
-		s = QString::fromUtf8(&output_vector_[0], output_vector_.size());
+		s = std::string(&output_vector_[0], output_vector_.size());
 	}
 	return s;
 }

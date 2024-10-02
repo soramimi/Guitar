@@ -131,7 +131,7 @@ bool gpg::listKeys(QString const &gpg_command, QList<gpg::Data> *keys)
 	cmd = cmd.arg(gpg_command);
 
 	Process proc;
-	proc.start(cmd, false);
+	proc.start(cmd.toStdString(), false);
 	proc.wait();
 	if (!proc.outbytes.empty()) {
 		char const *begin = &proc.outbytes[0];

@@ -3,10 +3,8 @@
 
 #include <vector>
 #include <string>
-#include <QString>
 #include <vector>
-#include <deque>
-#include <list>
+#include <optional>
 
 class UnixProcess {
 private:
@@ -19,15 +17,17 @@ public:
 	UnixProcess();
 	~UnixProcess();
 
-	QString outstring();
-	QString errstring();
+	std::string outstring();
+	std::string errstring();
 
 	static void parseArgs(std::string const &cmd, std::vector<std::string> *out);
 
-	void start(QString const &command, bool use_input);
+	void start(std::string const &command, bool use_input);
 	int wait();
 	void writeInput(char const *ptr, int len);
 	void closeInput(bool justnow);
+
+	static std::optional<std::string> run_and_wait(std::string const &command);
 };
 
 #endif // UNIXPROCESS_H

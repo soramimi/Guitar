@@ -1,7 +1,4 @@
 #include "UnixProcess.h"
-#include <QDebug>
-#include <QMutex>
-#include <QThread>
 #include <cstdlib>
 #include <ctime>
 #include <deque>
@@ -9,38 +6,64 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <mutex>
+#include <thread>
 
-class OutputReaderThread : public QThread {
+class OutputReaderThread {
 private:
 	int fd;
-	QMutex *mutex;
-	std::deque<char> *buffer;
+	std::thread thread_;
+	std::mutex *mutex_;
+	// QMutex *mutex;
+	std::deque<char> *buffer_;
 protected:
-	void run() override
+	void run()
 	{
 		while (1) {
 			char buf[1024];
 			int n = read(fd, buf, sizeof(buf));
 			if (n < 1) break;
-			if (buffer) {
-				QMutexLocker lock(mutex);
-				buffer->insert(buffer->end(), buf, buf + n);
+			if (buffer_) {
+				std::lock_guard<std::mutex> lock(*mutex_);
+				// QMutexLocker lock(mutex);
+				buffer_->insert(buffer_->end(), buf, buf + n);
 			}
 		}
 	}
 public:
-	OutputReaderThread(int fd, QMutex *mutex, std::deque<char> *out)
+	OutputReaderThread(int fd, std::mutex *mutex, std::deque<char> *out)
 		: fd(fd)
-		, mutex(mutex)
-		, buffer(out)
+		, mutex_(mutex)
+		, buffer_(out)
 	{
-
+	}
+	~OutputReaderThread()
+	{
+		stop();
+	}
+	void start()
+	{
+		stop();
+		thread_ = std::thread([this](){
+			run();
+		});
+	}
+	void stop()
+	{
+		if (thread_.joinable()) {
+			thread_.join();
+		}
+	}
+	void wait()
+	{
+		stop();
 	}
 };
 
-class UnixProcessThread : public QThread {
+class UnixProcessThread {
 public:
-	QMutex *mutex = nullptr;
+	std::thread thread;
+	std::mutex *mutex = nullptr;
 	std::vector<std::string> argvec;
 	std::vector<char *> args;
 	std::deque<char> inq;
@@ -53,7 +76,7 @@ public:
 	bool close_input_later = false;
 protected:
 public:
-	void init(QMutex *mutex, bool use_input)
+	void init(std::mutex *mutex, bool use_input)
 	{
 		this->mutex = mutex;
 		this->use_input = use_input;
@@ -73,7 +96,7 @@ public:
 	}
 
 protected:
-	void run() override
+	void run()
 	{
 		exit_code = -1;
 		const int R = 0;
@@ -144,7 +167,7 @@ protected:
 			t2.start();
 
 			while (1) {
-				QThread::msleep(1);
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				int status = 0;
 				if (waitpid(pid, &status, WNOHANG) == pid) {
 					if (WIFEXITED(status)) {
@@ -157,7 +180,7 @@ protected:
 					}
 				}
 				{
-					QMutexLocker lock(mutex);
+					std::lock_guard<std::mutex> lock(*mutex);
 					int n = inq.size();
 					if (n > 0) {
 						while (n > 0) {
@@ -198,9 +221,14 @@ protected:
 		}
 	}
 public:
+	UnixProcessThread() = default;
+	~UnixProcessThread()
+	{
+		stop();
+	}
 	void writeInput(char const *ptr, int len)
 	{
-		QMutexLocker lock(mutex);
+		std::lock_guard<std::mutex> lock(*mutex);
 		inq.insert(inq.end(), ptr, ptr + len);
 	}
 
@@ -211,10 +239,27 @@ public:
 			fd_in_read = -1;
 		}
 	}
+	void start()
+	{
+		stop();
+		thread = std::thread([this](){
+			run();
+		});
+	}
+	void stop()
+	{
+		if (thread.joinable()) {
+			thread.join();
+		}
+	}
+	void wait()
+	{
+		stop();
+	}
 };
 
 struct UnixProcess::Private {
-	QMutex mutex;
+	std::mutex mutex;
 	UnixProcessThread th;
 };
 
@@ -269,10 +314,9 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ou
 	}
 }
 
-void UnixProcess::start(QString const &command, bool use_input)
+void UnixProcess::start(std::string const &command, bool use_input)
 {
-	std::string cmd = command.toStdString();
-	parseArgs(cmd, &m->th.argvec);
+	parseArgs(command, &m->th.argvec);
 	if (!m->th.argvec.empty()) {
 		for (std::string const &s : m->th.argvec) {
 			m->th.args.push_back(const_cast<char *>(s.c_str()));
@@ -311,20 +355,28 @@ void UnixProcess::closeInput(bool justnow)
 	}
 }
 
-QString UnixProcess::outstring()
+std::string UnixProcess::outstring()
 {
-	if (outbytes.empty()) return QString();
+	if (outbytes.empty()) return std::string();
 	std::vector<char> v;
 	v.insert(v.end(), outbytes.begin(), outbytes.end());
-	return QString::fromUtf8(&v[0], v.size());
+	return std::string(&v[0], v.size());
 }
 
-QString UnixProcess::errstring()
+std::string UnixProcess::errstring()
 {
-	if (errbytes.empty()) return QString();
+	if (errbytes.empty()) return std::string();
 	std::vector<char> v;
 	v.insert(v.end(), errbytes.begin(), errbytes.end());
-	return QString::fromUtf8(&v[0], v.size());
+	return std::string(&v[0], v.size());
+}
+
+std::optional<std::string> UnixProcess::run_and_wait(const std::string &command)
+{
+	UnixProcess proc;
+	proc.start(command, false);
+	proc.wait();
+	return proc.outstring();
 }
 
 

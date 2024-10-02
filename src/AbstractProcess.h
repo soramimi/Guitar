@@ -24,7 +24,7 @@ public:
 		user_data_ = userdata;
 	}
 
-	QString getMessage() const;
+	std::string getMessage() const;
 	void clearMessage();
 
 	virtual bool isRunning() const = 0;

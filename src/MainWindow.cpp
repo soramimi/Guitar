@@ -1998,7 +1998,7 @@ void MainWindow::clone(CloneParams const &a)
 	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(tr("Cloning..."), a.clonedata);
 	runPtyGit(g, params, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
-		std::vector<std::string> log = misc::splitLines(status.log_message.toStdString(), false);
+		std::vector<std::string> log = misc::splitLines(status.log_message, false);
 		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
 		if (dir.empty()) {
 			doReopenRepository(status, a.repodata);
@@ -2266,7 +2266,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 	runPtyGit(git(), params, RUN_PTY_CALLBACK{
 		ASSERT_MAIN_THREAD();
 		if (status.exit_code == 128) {
-			if (status.error_message.indexOf("Connection refused") >= 0) {
+			if (status.error_message.find("Connection refused") != std::string::npos) {
 				QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
 				return;
 			}
@@ -7020,7 +7020,7 @@ QStringList MainWindow::remoteBranches(RepositoryWrapperFrame *frame, Git::Commi
 void runCommand(QString const &cmd)
 {
 	Process proc;
-	proc.start(cmd, false);
+	proc.start(cmd.toStdString(), false);
 	proc.wait();
 }
 

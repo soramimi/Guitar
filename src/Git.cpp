@@ -221,12 +221,12 @@ void Git::clearResult()
 {
 	m->result.clear();
 	m->exit_status.exit_code = 0;
-	m->exit_status.error_message = QString();
+	m->exit_status.error_message = {};
 }
 
 QString Git::errorMessage() const
 {
-	return m->exit_status.error_message;
+	return QString::fromStdString(m->exit_status.error_message);
 }
 
 int Git::getProcessExitCode() const
@@ -293,14 +293,14 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 			m->exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			Process proc;
-			proc.start(cmd, false);
+			proc.start(cmd.toStdString(), false);
 			m->exit_status.exit_code = proc.wait();
 
 			if (opt.errout) {
 				m->result = proc.errbytes;
 			} else {
 				if (!proc.errbytes.empty()) {
-					qDebug() << proc.errstring();
+					qDebug() << QString::fromStdString(proc.errstring());
 				}
 				m->result = proc.outbytes;
 			}
