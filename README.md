@@ -7,19 +7,15 @@ Git GUI Client
 * Of course, commercial purposes is also free.
 * Run on Windows, macOS and Linux
 * Written in C++
-* Powered by Qt 5
+* Powered by Qt 6
 
 ## Download Nightly Builds
 
 * https://files.soramimi.jp/guitar/nightly/information.html
 
-## Documents
+## How to build yourself
 
-* how to build : https://soramimi.github.io/Guitar/html/build-en.html (in English)
-* more information : https://soramimi.github.io/Guitar/ (in Japanese)
-
-### Markdown format:
-* how to build: https://github.com/soramimi/Guitar/blob/master/docs/build_guide-en/build_guide_origin.md (in English)
+* https://soramimi.github.io/Guitar/build-on-ubuntu22.md
 
 ### Doxygen
 * http://files.soramimi.jp/guitar/doxy/html/
