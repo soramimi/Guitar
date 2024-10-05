@@ -29,18 +29,18 @@ void SettingAiForm::exchange(bool save)
 {
 	if (save) {
 		settings()->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
-		settings()->use_openai_api_key_environment_value = ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked();
-		settings()->use_anthropic_api_key_environment_value = ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked();
-		settings()->use_google_api_key_environment_value = ui->checkBox_use_GOOGLE_API_KEY_env_value->isChecked();
+		settings()->use_openai_api_key_environment_value = ui->radioButton_use_OPENAI_API_KEY_env_value->isChecked();
+		settings()->use_anthropic_api_key_environment_value = ui->radioButton_use_ANTHROPIC_API_KEY_env_value->isChecked();
+		settings()->use_google_api_key_environment_value = ui->radioButton_use_GOOGLE_API_KEY_env_value->isChecked();
 		settings()->openai_api_key = openai_api_key_;
 		settings()->anthropic_api_key = anthropic_api_key_;
 		settings()->google_api_key = google_api_key_;
 		settings()->ai_model = ui->comboBox_ai_model->currentText();
 	} else {
 		ui->groupBox_generate_commit_message_by_ai->setChecked(settings()->generate_commit_message_by_ai);
-		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
-		ui->checkBox_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
-		ui->checkBox_use_GOOGLE_API_KEY_env_value->setChecked(settings()->use_google_api_key_environment_value);
+		ui->radioButton_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
+		ui->radioButton_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
+		ui->radioButton_use_GOOGLE_API_KEY_env_value->setChecked(settings()->use_google_api_key_environment_value);
 		ui->lineEdit_openai_api_key->setText(settings()->openai_api_key);
 		ui->lineEdit_anthropic_api_key->setText(settings()->anthropic_api_key);
 		ui->lineEdit_google_api_key->setText(settings()->google_api_key);
@@ -49,9 +49,18 @@ void SettingAiForm::exchange(bool save)
 		openai_api_key_ = settings()->openai_api_key;
 		anthropic_api_key_ = settings()->anthropic_api_key;
 		google_api_key_ = settings()->google_api_key;
-		ui->checkBox_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
-		ui->checkBox_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
-		ui->checkBox_use_GOOGLE_API_KEY_env_value->setChecked(settings()->use_google_api_key_environment_value);
+		// ui->radioButton_use_OPENAI_API_KEY_env_value->setChecked(settings()->use_openai_api_key_environment_value);
+		// ui->radioButton_use_ANTHROPIC_API_KEY_env_value->setChecked(settings()->use_anthropic_api_key_environment_value);
+		// ui->radioButton_use_GOOGLE_API_KEY_env_value->setChecked(settings()->use_google_api_key_environment_value);
+		(settings()->use_openai_api_key_environment_value ? ui->radioButton_use_OPENAI_API_KEY_env_value
+														  : ui->radioButton_use_custom_openai_api_key
+															)->setChecked(true);
+		(settings()->use_anthropic_api_key_environment_value ? ui->radioButton_use_ANTHROPIC_API_KEY_env_value
+															 : ui->radioButton_use_custom_anthropic_api_key
+															   )->setChecked(true);
+		(settings()->use_google_api_key_environment_value ? ui->radioButton_use_GOOGLE_API_KEY_env_value
+														  : ui->radioButton_use_custom_google_api_key
+															)->setChecked(true);
 		refrectSettingsToUI(true, true);
 	}
 }
@@ -59,7 +68,7 @@ void SettingAiForm::exchange(bool save)
 void SettingAiForm::refrectSettingsToUI_openai()
 {
 	QString apikey;
-	if (ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked()) {
+	if (ui->radioButton_use_OPENAI_API_KEY_env_value->isChecked()) {
 		apikey = getenv("OPENAI_API_KEY");
 		ui->lineEdit_openai_api_key->setEnabled(false);
 	} else {
@@ -74,7 +83,7 @@ void SettingAiForm::refrectSettingsToUI_openai()
 void SettingAiForm::refrectSettingsToUI_anthropic()
 {
 	QString apikey;
-	if (ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
+	if (ui->radioButton_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
 		apikey = getenv("ANTHROPIC_API_KEY");
 		ui->lineEdit_anthropic_api_key->setEnabled(false);
 	} else {
@@ -89,7 +98,7 @@ void SettingAiForm::refrectSettingsToUI_anthropic()
 void SettingAiForm::refrectSettingsToUI_google()
 {
 	QString apikey;
-	if (ui->checkBox_use_GOOGLE_API_KEY_env_value->isChecked()) {
+	if (ui->radioButton_use_GOOGLE_API_KEY_env_value->isChecked()) {
 		apikey = getenv("GOOGLE_API_KEY");
 		ui->lineEdit_google_api_key->setEnabled(false);
 	} else {
@@ -108,41 +117,23 @@ void SettingAiForm::refrectSettingsToUI(bool openai, bool anthropic)
 	refrectSettingsToUI_google();
 }
 
-void SettingAiForm::on_checkBox_use_OPENAI_API_KEY_env_value_stateChanged(int)
-{
-	refrectSettingsToUI_openai();
-}
-
-
-void SettingAiForm::on_checkBox_use_ANTHROPIC_API_KEY_env_value_stateChanged(int)
-{
-	refrectSettingsToUI_anthropic();
-}
-
-void SettingAiForm::on_checkBox_use_GOOGLE_API_KEY_env_value_stateChanged(int arg1)
-{
-	refrectSettingsToUI_google();
-}
-
-
-
 void SettingAiForm::on_lineEdit_openai_api_key_textChanged(const QString &arg1)
 {
-	if (!ui->checkBox_use_OPENAI_API_KEY_env_value->isChecked()) {
+	if (!ui->radioButton_use_OPENAI_API_KEY_env_value->isChecked()) {
 		openai_api_key_ = arg1;
 	}
 }
 
 void SettingAiForm::on_lineEdit_anthropic_api_key_textChanged(const QString &arg1)
 {
-	if (!ui->checkBox_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
+	if (!ui->radioButton_use_ANTHROPIC_API_KEY_env_value->isChecked()) {
 		anthropic_api_key_ = arg1;
 	}
 }
 
 void SettingAiForm::on_lineEdit_google_api_key_textChanged(const QString &arg1)
 {
-	if (!ui->checkBox_use_GOOGLE_API_KEY_env_value->isChecked()) {
+	if (!ui->radioButton_use_GOOGLE_API_KEY_env_value->isChecked()) {
 		google_api_key_ = arg1;
 	}
 }
@@ -160,6 +151,60 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 		if (QMessageBox::warning(this, tr("Commit Message Generation with AI"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok)	{
 			ui->groupBox_generate_commit_message_by_ai->setChecked(false);
 		}
+	}
+}
+
+void SettingAiForm::on_radioButton_use_OPENAI_API_KEY_env_value_clicked()
+{
+	refrectSettingsToUI_openai();
+}
+
+void SettingAiForm::on_radioButton_use_custom_openai_api_key_clicked()
+{
+	refrectSettingsToUI_openai();
+}
+
+void SettingAiForm::on_radioButton_use_ANTHROPIC_API_KEY_env_value_clicked()
+{
+	refrectSettingsToUI_anthropic();
+}
+
+void SettingAiForm::on_radioButton_use_custom_anthropic_api_key_clicked()
+{
+	refrectSettingsToUI_anthropic();
+}
+
+void SettingAiForm::on_radioButton_use_GOOGLE_API_KEY_env_value_clicked()
+{
+	refrectSettingsToUI_google();
+}
+
+void SettingAiForm::on_radioButton_use_custom_google_api_key_clicked()
+{
+	refrectSettingsToUI_google();
+}
+
+
+void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
+{
+	GenerativeAI::Model model(arg1);
+	GenerativeAI::Type type = model.type();
+	if (model_.type() != type) {
+		switch (type) {
+		case GenerativeAI::GPT:
+			ui->stackedWidget->setCurrentWidget(ui->page_openai);
+			break;
+		case GenerativeAI::CLAUDE:
+			ui->stackedWidget->setCurrentWidget(ui->page_anthropic);
+			break;
+		case GenerativeAI::GEMINI:
+			ui->stackedWidget->setCurrentWidget(ui->page_google);
+			break;
+		default:
+			ui->stackedWidget->setCurrentWidget(ui->page_unknown);
+			break;
+		}
+		model_ = model;
 	}
 }
 
