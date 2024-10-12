@@ -1,4 +1,20 @@
 
+#
+
 Visual Studio C++
 
 Ruby for Windows
+
+
+###
+
+
+"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+git clone https://github.com/soramimi/Guitar.git
+cd Guitar
+ruby prepare.rb
+mkdir build
+cd build
+c:\Qt\6.7.2\msvc2019_64\bin\qmake.exe ../Guitar.pro
+nmake
+
