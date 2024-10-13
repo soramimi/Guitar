@@ -172,11 +172,16 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 		QStringList list = dlg.message();
 		if (!list.isEmpty()) {
 			QString text;
-			for (int i = 0; i < list.size(); i++) {
+			int n = list.size();
+			for (int i = 0; i < n; i++) {
 				if (i > 0) {
 					text.append('\n');
 				}
-				text.append(list.at(i));
+				QString line = list.at(i);
+				if (n > 1 && !line.endsWith('.')) {
+					line += '.';
+				}
+				text.append(line);
 			}
 			setText(text);
 		}
