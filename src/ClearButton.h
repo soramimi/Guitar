@@ -6,7 +6,7 @@
 class ClearButton : public QToolButton {
 	Q_OBJECT
 private:
-	QPixmap pixmap;
+	QIcon icon_;
 public:
 	explicit ClearButton(QWidget *parent = nullptr);
 protected:

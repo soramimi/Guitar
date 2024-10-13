@@ -1,6 +1,7 @@
 #ifndef THEME_H
 #define THEME_H
 
+#include <QIcon>
 #include <QImage>
 #include <QPalette>
 #include <memory>
@@ -25,7 +26,7 @@ public:
 	virtual QStyle *newStyle() = 0;
 	virtual QImage graphColorMap() = 0;
 
-	virtual QPixmap resource_clear_png() = 0;
+	virtual QIcon resource_clear_icon() = 0;
 	virtual QPixmap resource_maximize_png() = 0;
 	virtual QPixmap resource_menu_png() = 0;
 };
@@ -37,7 +38,7 @@ public:
 	LightTheme() = default;
 	QStyle *newStyle() override;
 	QImage graphColorMap() override;
-	QPixmap resource_clear_png() override;
+	QIcon resource_clear_icon() override;
 	QPixmap resource_maximize_png() override;
 	QPixmap resource_menu_png() override;
 };
@@ -50,7 +51,7 @@ public:
 	DarkTheme() = default;
 	QStyle *newStyle() override;
 	QImage graphColorMap() override;
-	QPixmap resource_clear_png() override;
+	QIcon resource_clear_icon() override;
 	QPixmap resource_maximize_png() override;
 	QPixmap resource_menu_png() override;
 };

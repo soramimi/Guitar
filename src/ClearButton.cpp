@@ -7,17 +7,19 @@
 ClearButton::ClearButton(QWidget *parent)
 	: QToolButton(parent)
 {
-	pixmap = global->theme->resource_clear_png();
+	icon_ = global->theme->resource_clear_icon();
 }
 
 void ClearButton::paintEvent(QPaintEvent * /*event*/)
 {
 	QPainter pr(this);
+	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setOpacity(underMouse() ? 1.0 : 0.5);
-	int w = pixmap.width();
-	int h = pixmap.height();
-	int x = (width() - w) / 2;
-	int y = (height() - h) / 2;
-	int delta = isDown() ? 1 : 0;
-	pr.drawPixmap(x + delta, y + delta, w, h, pixmap);
+	QRect r = rect();
+	int n = std::min(r.width(), r.height());
+	r = {1, 1, n - 2, n - 2};
+	if (isDown()) {
+		r.translate(1, 1);
+	}
+	icon_.paint(&pr, r);
 }

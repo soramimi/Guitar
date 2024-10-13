@@ -80,11 +80,13 @@ public:
 				color.setAlpha(128);
 				painter->fillRect(r, color);
 			}
+#ifndef Q_OS_WIN
 			if (opt.state & QStyle::State_Selected) { // 選択されている場合
 				painter->setPen(opt.palette.color(QPalette::HighlightedText));
 			} else {
 				painter->setPen(opt.palette.color(QPalette::Text));
 			}
+#endif
 			painter->drawText(r, opt.displayAlignment, s); // テキストを描画
 			x += w;
 		}

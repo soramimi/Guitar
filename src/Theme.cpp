@@ -25,9 +25,9 @@ QImage LightTheme::graphColorMap()
 	return image;
 }
 
-QPixmap LightTheme::resource_clear_png()
+QIcon LightTheme::resource_clear_icon()
 {
-	return QPixmap(":/image/clear.png");
+	return QIcon(":/image/clear.svg");
 }
 
 QPixmap LightTheme::resource_maximize_png()
@@ -94,10 +94,9 @@ static QImage loadInvertedImage(QString const &path)
 	return img;
 }
 
-QPixmap DarkTheme::resource_clear_png()
+QIcon DarkTheme::resource_clear_icon()
 {
-	QImage img = loadInvertedImage(":/image/clear.png");
-	return QPixmap::fromImage(img);
+	return QIcon(":/image/clear.svg");
 }
 
 QPixmap DarkTheme::resource_maximize_png()
