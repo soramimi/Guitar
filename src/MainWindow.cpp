@@ -617,7 +617,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 			}
-			if (watched == ui->treeWidget_repos) {
+			if (watched == ui->treeWidget_repos) { // リポジトリツリー
 				if (k == Qt::Key_Enter || k == Qt::Key_Return) {
 					openSelectedRepository();
 					return true;
@@ -628,7 +628,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					// 	return true;
 					// }
 				} else {
-					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) {
+					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) { // 通常の文字キー
 						appendCharToRepoFilter(k);
 						return true;
 					}
@@ -2887,14 +2887,17 @@ void MainWindow::updateRepositoriesList()
 	QString filter = getRepositoryFilterText();
 
 	ui->treeWidget_repos->clear();
+	ui->treeWidget_repos->setFilterText(filter);
 
 	std::map<QString, QTreeWidgetItem *> parentmap;
 
 	for (int i = 0; i < repos->size(); i++) {
 		RepositoryData const &repo = repos->at(i);
-		if (!filter.isEmpty() && repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) {
-			continue;
+
+		if (!filter.isEmpty()) {
+			if (repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) continue;
 		}
+
 		QTreeWidgetItem *parent = nullptr;
 
 		QString group = repo.group;
