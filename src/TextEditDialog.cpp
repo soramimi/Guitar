@@ -26,7 +26,7 @@ void TextEditDialog::setText(QString const &text, bool readonly)
 {
 	ui->plainTextEdit->setReadOnly(readonly);
 	ui->pushButton_ok->setVisible(!readonly);
-	ui->pushButton_cancel->setText(readonly ? tr("&Close") : tr("Cacnel"));
+	ui->pushButton_cancel->setText(readonly ? tr("&Close") : tr("Cancel"));
 
 	ui->plainTextEdit->setPlainText(text);
 	QTextCursor cur = ui->plainTextEdit->textCursor();
