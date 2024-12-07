@@ -125,8 +125,7 @@ private:
 	};
 	static Part *alloc_part(const char *data, int size)
 	{
-		Part *p = (Part *)malloc(sizeof(Part) + size);
-		if (!p) return nullptr;
+		Part *p = (Part *)new char[sizeof(Part) + size];
 		p->next = nullptr;
 		p->size = size;
 		memcpy(p->data, data, size);
@@ -148,7 +147,7 @@ private:
 	static void free_part(Part **p)
 	{
 		if (p && *p) {
-			free(*p);
+			delete[] *p;
 			*p = nullptr;
 		}
 	}
@@ -177,9 +176,7 @@ private:
 	}
 	static void add_chars(PartList *list, char c, int n)
 	{
-		Part *p = (Part *)malloc(sizeof(Part) + n);
-		if (!p)
-            return;
+		Part *p = (Part *)new char[sizeof(Part) + n];
 		p->next = nullptr;
 		p->size = n;
 		memset(p->data, c, n);
@@ -1019,7 +1016,6 @@ public:
 	std::string str()
 	{
 		int n = length();
-		if (n < 1) return {};
 		char *p;
 		std::vector<char> tmp;
 		if (n < 0x20000) {
