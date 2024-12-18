@@ -15,8 +15,8 @@ appimage:
 	cp ../../LinuxDesktop/Guitar.svg _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg
 	cp ../../src/resources/image/guitar.png _appdir/usr/share/icons/hicolor/256x256/apps/Guitar.png
 	cp Guitar.desktop _appdir/Guitar.desktop
-	mkdir -p _appdir/usr/bin/platforminputcontexts/
-	cp /home/soramimi/develop/fcitx-qt5/build/qt5/platforminputcontext/libfcitxplatforminputcontextplugin.so _appdir/usr/bin/platforminputcontexts/
+	#mkdir -p _appdir/usr/bin/platforminputcontexts/
+	#cp /home/soramimi/develop/fcitx-qt5/build/qt5/platforminputcontext/libfcitxplatforminputcontextplugin.so _appdir/usr/bin/platforminputcontexts/
 
 	./linuxdeploy-x86_64.AppImage --appdir _appdir -i _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg -d _appdir/Guitar.desktop --output appimage
 
