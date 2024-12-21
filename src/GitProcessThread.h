@@ -10,176 +10,213 @@
 #include <functional>
 #include <memory>
 
-class AbstractGitCommandItem {
+class GitCommandItem_clone {
 public:
-	GitPtr g;
-	PtyProcess *pty = nullptr;
-	QString progress_message;
-	bool update_commit_log = false;
-	enum AfterOperation {
-		None,
-		Fetch,
-		Reopen,
-		UpdateFiles,
-	};
-	AfterOperation after_operation = Fetch;
-	AbstractGitCommandItem(QString const &progress_message)
-		: progress_message(progress_message)
-	{
-	}
-	virtual ~AbstractGitCommandItem() = default;
-	virtual bool run() = 0;
-};
-
-class GitCommandItem_clone : public AbstractGitCommandItem {
-private:
 	Git::CloneData clonedata_;
-public:
-	GitCommandItem_clone(QString const &progress_message, const Git::CloneData &clonedata);
-	bool run() override;
+	GitCommandItem_clone(const Git::CloneData &clonedata)
+		: clonedata_(clonedata)
+	{
+
+	}
 };
 
-class GitCommandItem_fetch : public AbstractGitCommandItem {
-private:
+class GitCommandItem_fetch {
+public:
 	bool prune;
-public:
-	GitCommandItem_fetch(QString const &progress_message, bool prune);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_fetch> make(QString const &progress_message, bool prune)
+	GitCommandItem_fetch(bool prune)
+		: prune(prune)
 	{
-		return std::make_shared<GitCommandItem_fetch>(progress_message, prune);
+	}
+	static std::shared_ptr<GitCommandItem_fetch> make(bool prune)
+	{
+		return std::make_shared<GitCommandItem_fetch>(prune);
 	}
 };
 
-class GitCommandItem_fetch_tags_f : public AbstractGitCommandItem {
+class GitCommandItem_fetch_tags_f {
 public:
-	GitCommandItem_fetch_tags_f(QString const &progress_message);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_fetch_tags_f> make(QString const &progress_message)
+	GitCommandItem_fetch_tags_f()
 	{
-		return std::make_shared<GitCommandItem_fetch_tags_f>(progress_message);
+	}
+	static std::shared_ptr<GitCommandItem_fetch_tags_f> make()
+	{
+		return std::make_shared<GitCommandItem_fetch_tags_f>();
 	}
 };
 
-class GitCommandItem_stage : public AbstractGitCommandItem {
-private:
+class GitCommandItem_stage {
+public:
 	QStringList paths;
-public:
-	GitCommandItem_stage(QString const &progress_message, QStringList const &paths);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_stage> make(QString const &progress_message, QStringList const &paths)
+	GitCommandItem_stage(QStringList const &paths)
+		: paths(paths)
 	{
-		return std::make_shared<GitCommandItem_stage>(progress_message, paths);
+	}
+	static std::shared_ptr<GitCommandItem_stage> make(QStringList const &paths)
+	{
+		return std::make_shared<GitCommandItem_stage>(paths);
 	}
 };
 
-class GitCommandItem_push : public AbstractGitCommandItem {
-private:
+class GitCommandItem_push {
+public:
 	bool set_upstream_ = false;
 	QString remote_;
 	QString branch_;
 	bool force_ = false;
-private:
-	friend class MainWindow;
 	int exitcode_ = 0;
 	QString errormsg_;
-public:
-	GitCommandItem_push(QString const &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_push> make(QString const &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force)
+	GitCommandItem_push(bool set_upstream, QString const &remote, QString const &branch, bool force)
+		: set_upstream_(set_upstream)
+		, remote_(remote)
+		, branch_(branch)
+		, force_(force)
 	{
-		return std::make_shared<GitCommandItem_push>(progress_message, set_upstream, remote, branch, force);
+	}
+	static std::shared_ptr<GitCommandItem_push> make(bool set_upstream, QString const &remote, QString const &branch, bool force)
+	{
+		return std::make_shared<GitCommandItem_push>(set_upstream, remote, branch, force);
 	}
 };
 
-class GitCommandItem_pull : public AbstractGitCommandItem {
+class GitCommandItem_pull {
 public:
-	GitCommandItem_pull(QString const &progress_message);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_pull> make(QString const &label)
+	GitCommandItem_pull()
 	{
-		return std::make_shared<GitCommandItem_pull>(label);
+	}
+	static std::shared_ptr<GitCommandItem_pull> make()
+	{
+		return std::make_shared<GitCommandItem_pull>();
 	}
 };
 
-class GitCommandItem_push_tags : public AbstractGitCommandItem {
+class GitCommandItem_push_tags {
 public:
-	GitCommandItem_push_tags(QString const &progress_message);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_push_tags> make(QString const &label)
+	GitCommandItem_push_tags()
 	{
-		return std::make_shared<GitCommandItem_push_tags>(label);
+	}
+	static std::shared_ptr<GitCommandItem_push_tags> make()
+	{
+		return std::make_shared<GitCommandItem_push_tags>();
 	}
 };
 
-class GitCommandItem_delete_tag : public AbstractGitCommandItem {
-private:
+class GitCommandItem_delete_tag {
+public:
 	QString name_;
 	bool remote_;
-public:
-	GitCommandItem_delete_tag(QString const &progress_message, const QString &name, bool remote);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_delete_tag> make(QString const &progress_message, const QString &name, bool remote)
+	GitCommandItem_delete_tag(const QString &name, bool remote)
+		: name_(name)
+		, remote_(remote)
 	{
-		return std::make_shared<GitCommandItem_delete_tag>(progress_message, name, remote);
+	}
+	static std::shared_ptr<GitCommandItem_delete_tag> make(const QString &name, bool remote)
+	{
+		return std::make_shared<GitCommandItem_delete_tag>(name, remote);
 	}
 };
 
-class GitCommandItem_delete_tags : public AbstractGitCommandItem {
-private:
+class GitCommandItem_delete_tags {
+public:
 	QStringList tagnames;
-public:
-	GitCommandItem_delete_tags(QString const &progress_message, const QStringList &tagnames);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_delete_tags> make(QString const &progress_message, const QStringList &tagnames)
+	GitCommandItem_delete_tags(const QStringList &tagnames)
+		: tagnames(tagnames)
 	{
-		return std::make_shared<GitCommandItem_delete_tags>(progress_message, tagnames);
+	}
+	static std::shared_ptr<GitCommandItem_delete_tags> make(const QStringList &tagnames)
+	{
+		return std::make_shared<GitCommandItem_delete_tags>(tagnames);
 	}
 };
 
-class GitCommandItem_add_tag : public AbstractGitCommandItem {
-private:
+class GitCommandItem_add_tag {
+public:
 	QString name_;
 	Git::CommitID commit_id_;
-public:
-	GitCommandItem_add_tag(QString const &progress_message, const QString &name, const Git::CommitID &commit_id);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_add_tag> make(QString const &progress_message, const QString &name, const Git::CommitID &commit_id)
+	GitCommandItem_add_tag(const QString &name, const Git::CommitID &commit_id)
+		: name_(name)
+		, commit_id_(commit_id)
 	{
-		return std::make_shared<GitCommandItem_add_tag>(progress_message, name, commit_id);
+	}
+	static std::shared_ptr<GitCommandItem_add_tag> make(const QString &name, const Git::CommitID &commit_id)
+	{
+		return std::make_shared<GitCommandItem_add_tag>(name, commit_id);
 	}
 };
 
-class GitCommandItem_submodule_add : public AbstractGitCommandItem {
-private:
+class GitCommandItem_submodule_add {
+public:
 	Git::CloneData data_;
 	bool force_ = false;
-public:
-	GitCommandItem_submodule_add(QString const &progress_message, Git::CloneData data, bool force);
-	bool run() override;
-	static std::shared_ptr<GitCommandItem_submodule_add> make(QString const &progress_message, Git::CloneData data, bool force)
+	GitCommandItem_submodule_add(Git::CloneData data, bool force)
+		: data_(data)
+		, force_(force)
 	{
-		return std::make_shared<GitCommandItem_submodule_add>(progress_message, data, force);
+	}
+	static std::shared_ptr<GitCommandItem_submodule_add> make(Git::CloneData data, bool force)
+	{
+		return std::make_shared<GitCommandItem_submodule_add>(data, force);
 	}
 };
 
-
-class GitProcessRequest {
+class GitCommandRunner {
 public:
+	void operator () (GitCommandItem_clone const &item);
+	void operator () (GitCommandItem_fetch const &item);
+	void operator () (GitCommandItem_fetch_tags_f const &item);
+	void operator () (GitCommandItem_stage const &item);
+	void operator () (GitCommandItem_push const &item);
+	void operator () (GitCommandItem_pull const &item);
+	void operator () (GitCommandItem_push_tags const &item);
+	void operator () (GitCommandItem_delete_tag const &item);
+	void operator () (GitCommandItem_delete_tags const &item);
+	void operator () (GitCommandItem_add_tag const &item);
+	void operator () (GitCommandItem_submodule_add const &item);
+
+	typedef std::variant<
+		GitCommandItem_clone,
+		GitCommandItem_fetch,
+		GitCommandItem_fetch_tags_f,
+		GitCommandItem_stage,
+		GitCommandItem_push,
+		GitCommandItem_pull,
+		GitCommandItem_push_tags,
+		GitCommandItem_delete_tag,
+		GitCommandItem_delete_tags,
+		GitCommandItem_add_tag,
+		GitCommandItem_submodule_add
+		> variant_t;
+
+	GitPtr g_;
+	PtyProcess *pty_ = nullptr;
 	typedef unsigned int request_id_t;
 	request_id_t request_id;
 	bool override_wait_cursor = true;
-	std::shared_ptr<AbstractGitCommandItem> params;
-	std::function<void (GitProcessRequest const &req)> run;
+	std::function<void (GitCommandRunner &req)> run;
 	QVariant userdata;
+	bool update_commit_log = false;
+	bool result = false;
+
+	GitPtr git()
+	{
+		return g_;
+	}
+	PtyProcess *pty()
+	{
+		return pty_;
+	}
+	std::string pty_message() const;
+	PtyProcess const *pty() const
+	{
+		return pty_;
+	}
 	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
 };
-Q_DECLARE_METATYPE(GitProcessRequest)
+Q_DECLARE_METATYPE(GitCommandRunner)
 
 class GitProcessThread : public QObject {
 	Q_OBJECT
 public:
-	using request_id_t = GitProcessRequest::request_id_t;
+	using request_id_t = GitCommandRunner::request_id_t;
 private:
 	struct Private;
 	Private *m;
@@ -188,7 +225,7 @@ public:
 	~GitProcessThread();
 	void start();
 	void stop();
-	request_id_t request(GitProcessRequest &&req);
+	request_id_t request(GitCommandRunner &&req);
 	void cancel(request_id_t reqid);
 	bool wait();
 };

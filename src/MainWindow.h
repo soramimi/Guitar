@@ -3,6 +3,7 @@
 
 #include "BranchLabel.h"
 #include "Git.h"
+#include "GitProcessThread.h"
 #include "MyProcess.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
@@ -19,7 +20,7 @@ class QTableWidgetItem;
 class QTreeWidgetItem;
 class RepositoryWrapperFrame;
 class WebContext;
-class GitProcessRequest;
+class GitCommandRunner;
 struct GitHubRepositoryInfo;
 class AddRepositoryDialog;
 
@@ -359,7 +360,7 @@ private:
 	Git::CommitItemList *getCommitLogPtr(RepositoryWrapperFrame *frame);
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
-	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
+	void setCompletedHandler(std::function<void (bool, QVariant const &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
@@ -662,7 +663,7 @@ signals:
 private:
 
 	void updateButton();
-	void runPtyGit(GitPtr g, std::shared_ptr<AbstractGitCommandItem> params, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
+	void runPtyGit(const QString &progress_message, GitPtr g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
 	void queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g);
 	void updateHEAD(GitPtr g);
 	void jump(GitPtr g, const Git::CommitID &id);

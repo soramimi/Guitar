@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
 	qRegisterMetaType<ExchangeData>("ExchangeData");
-	qRegisterMetaType<GitProcessRequest>("GitProcessRequest");
+	qRegisterMetaType<GitCommandRunner>("GitCommandRunner");
 	qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
 	qRegisterMetaType<ProcessStatus>("ProcessStatus");
 	qRegisterMetaType<CloneParams>("CloneParams");

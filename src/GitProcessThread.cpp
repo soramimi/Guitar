@@ -1,11 +1,10 @@
 #include "GitProcessThread.h"
-
+#include "MainWindow.h"
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
-#include "MainWindow.h"
 
 struct GitProcessThread::Private {
 	std::mutex mutex_;
@@ -13,8 +12,8 @@ struct GitProcessThread::Private {
 	std::condition_variable cv_done;
 	std::thread thread_;
 	bool interrrupt_ = false;
-	std::vector<std::shared_ptr<GitProcessRequest>> requests_;
-	GitProcessRequest::request_id_t next_request_id = 0;
+	std::vector<std::shared_ptr<GitCommandRunner>> requests_;
+	GitCommandRunner::request_id_t next_request_id = 0;
 };
 
 GitProcessThread::GitProcessThread()
@@ -33,7 +32,7 @@ void GitProcessThread::start()
 	m->interrrupt_ = false;
 	m->thread_ = std::thread([&]() {
 		while (1) {
-			GitProcessRequest req;
+			GitCommandRunner req;
 			{
 				std::unique_lock lock(m->mutex_);
 				if (m->interrrupt_) break;
@@ -67,11 +66,11 @@ void GitProcessThread::stop()
 	}
 }
 
-GitProcessThread::request_id_t GitProcessThread::request(GitProcessRequest &&req)
+GitProcessThread::request_id_t GitProcessThread::request(GitCommandRunner &&req)
 {
 	std::unique_lock lock(m->mutex_);
-	m->requests_.push_back(std::make_shared<GitProcessRequest>(std::move(req)));
-	GitProcessRequest::request_id_t reqid = m->next_request_id++;
+	m->requests_.push_back(std::make_shared<GitCommandRunner>(std::move(req)));
+	GitCommandRunner::request_id_t reqid = m->next_request_id++;
 	m->requests_.back()->request_id = reqid;
 	m->cv_request.notify_all();
 	return reqid;
@@ -102,147 +101,69 @@ bool GitProcessThread::wait()
 	}
 }
 
-
-GitCommandItem_clone::GitCommandItem_clone(const QString &progress_message, Git::CloneData const &clonedata)
-	: AbstractGitCommandItem(progress_message)
-	, clonedata_(clonedata)
-{
-	
-}
-
-bool GitCommandItem_clone::run()
-{
-	return g->clone(clonedata_, pty);
-}
-
-GitCommandItem_fetch::GitCommandItem_fetch(const QString &progress_message, bool prune)
-	: AbstractGitCommandItem(progress_message)
-	, prune(prune)
-{
-	after_operation = Reopen;
-	update_commit_log = true;
-}
-
-bool GitCommandItem_fetch::run()
-{
-	return g->fetch(pty, prune);
-}
-
 //
 
-GitCommandItem_stage::GitCommandItem_stage(const QString &progress_message, QStringList const &paths)
-	: AbstractGitCommandItem(progress_message)
-	, paths(paths)
+std::string GitCommandRunner::pty_message() const
 {
-	after_operation = UpdateFiles;
+	return pty_->getMessage();
 }
 
-bool GitCommandItem_stage::run()
+void GitCommandRunner::operator ()(GitCommandItem_clone const &item)
 {
-	return g->stage(paths, pty);
+	result = git()->clone(item.clonedata_, pty());
 }
 
-//
-
-GitCommandItem_fetch_tags_f::GitCommandItem_fetch_tags_f(const QString &progress_message)
-	: AbstractGitCommandItem(progress_message)
+void GitCommandRunner::operator ()(GitCommandItem_fetch const &item)
 {
-	update_commit_log = true;
+	result = git()->fetch(pty(), item.prune);
 }
 
-bool GitCommandItem_fetch_tags_f::run()
+void GitCommandRunner::operator ()(GitCommandItem_fetch_tags_f const &item)
 {
-	return g->fetch_tags_f(pty);
+	result = git()->fetch_tags_f(pty());
 }
 
-//
-
-GitCommandItem_push::GitCommandItem_push(const QString &progress_message, bool set_upstream, QString const &remote, QString const &branch, bool force)
-	: AbstractGitCommandItem(progress_message)
-	, set_upstream_(set_upstream)
-	, remote_(remote)
-	, branch_(branch)
-	, force_(force)
+void GitCommandRunner::operator ()(GitCommandItem_stage const &item)
 {
+	result = git()->stage(item.paths, pty());
 }
 
-bool GitCommandItem_push::run()
+void GitCommandRunner::operator ()(GitCommandItem_push const &item)
 {
-	return g->push_u(set_upstream_, remote_, branch_, force_, pty);
+	result = git()->push_u(item.set_upstream_, item.remote_, item.branch_, item.force_, pty());
 }
 
-//
-
-GitCommandItem_pull::GitCommandItem_pull(const QString &progress_message)
-	: AbstractGitCommandItem(progress_message)
+void GitCommandRunner::operator ()(GitCommandItem_pull const &item)
 {
+	result = git()->pull(pty());
 }
 
-bool GitCommandItem_pull::run()
+void GitCommandRunner::operator ()(GitCommandItem_push_tags const &item)
 {
-	return g->pull(pty);
+	result = git()->push_tags(pty());
 }
 
-GitCommandItem_push_tags::GitCommandItem_push_tags(const QString &progress_message)
-	: AbstractGitCommandItem(progress_message)
+void GitCommandRunner::operator ()(GitCommandItem_delete_tag const &item)
 {
+	result = git()->delete_tag(item.name_, item.remote_);
 }
 
-bool GitCommandItem_push_tags::run()
+void GitCommandRunner::operator ()(GitCommandItem_delete_tags const &item)
 {
-	return g->push_tags(pty);
-}
-
-GitCommandItem_delete_tag::GitCommandItem_delete_tag(const QString &progress_message, const QString &name, bool remote)
-	: AbstractGitCommandItem(progress_message)
-	, name_(name)
-	, remote_(remote)
-{
-}
-
-bool GitCommandItem_delete_tag::run()
-{
-	return g->delete_tag(name_, remote_);
-}
-
-GitCommandItem_delete_tags::GitCommandItem_delete_tags(const QString &progress_message, const QStringList &tagnames)
-	: AbstractGitCommandItem(progress_message)
-	, tagnames(tagnames)
-{
-}
-
-bool GitCommandItem_delete_tags::run()
-{
-	bool ok = false;
-	for (QString const &name : tagnames) {
-		if (g->delete_tag(name, true)) {
-			ok = true;
+	result = false;
+	for (QString const &name : item.tagnames) {
+		if (git()->delete_tag(name, true)) {
+			result = true;
 		}
 	}
-	return ok;
 }
 
-GitCommandItem_add_tag::GitCommandItem_add_tag(const QString &progress_message, const QString &name, Git::CommitID const &commit_id)
-	: AbstractGitCommandItem(progress_message)
-	, name_(name)
-	, commit_id_(commit_id)
+void GitCommandRunner::operator ()(GitCommandItem_add_tag const &item)
 {
+	result = git()->tag(item.name_, item.commit_id_);
 }
 
-bool GitCommandItem_add_tag::run()
+void GitCommandRunner::operator ()(GitCommandItem_submodule_add const &item)
 {
-	return g->tag(name_, commit_id_);
-}
-
-
-GitCommandItem_submodule_add::GitCommandItem_submodule_add(const QString &progress_message, Git::CloneData data, bool force)
-	: AbstractGitCommandItem(progress_message)
-	, data_(data)
-	, force_(force)
-{
-}
-
-bool GitCommandItem_submodule_add::run()
-{
-	return g->submodule_add(data_, force_, pty);
+	result = git()->submodule_add(item.data_, item.force_, pty());
 }
