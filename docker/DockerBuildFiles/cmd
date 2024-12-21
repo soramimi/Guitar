@@ -1,0 +1,20 @@
+if [ -e ${HOMEDIR}/.password ]; then
+  cat ${HOMEDIR}/.password | chpasswd
+  rm ${HOMEDIR}/.password
+fi
+
+chown ${UID}:${GID} -R ${HOMEDIR}
+echo "export PS1='(${CONTAINER_NAME}) \[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\w\[\033[00m\]$ '" >>/root/.bashrc
+
+if [ ${COMMAND} = "up" ]; then
+  sed -i s/65522/${SSHPORT}/ /etc/ssh/sshd_config
+  /usr/sbin/sshd -D
+  exit 0
+fi
+
+if [ ${COMMAND} = "run" ]; then
+  cd ${HOMEDIR}
+  sudo -u ${UNAME} -E bash run.sh
+  exit 0
+fi
+

@@ -29,7 +29,7 @@ clean:
 
 build:
 	-mkdir _build
-	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../Guitar.pri; make -j$(NPROC)
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../Guitar.pri; make -j8
 
 archlinux:
 	sudo pacman -S --noconfirm base-devel double-conversion libb2 ruby

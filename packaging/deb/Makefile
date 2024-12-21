@@ -2,12 +2,6 @@
 QT_SELECT=5
 
 all:
-	-mkdir build 2>/dev/null
-	cd ../..; ruby prepare.rb
-	cd build; cmake ../../..
-	cd build; make -j4
-	cp build/Guitar .
-	ruby mk-deb.rb
 
 i386:
 	-mkdir build 2>/dev/null
