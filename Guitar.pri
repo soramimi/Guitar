@@ -109,16 +109,7 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/FileListWidget.cpp \
-	$$PWD/src/GenerateCommitMessageThread.cpp \
-	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
-	$$PWD/src/GitProcessThread.cpp \
-	$$PWD/src/MyProcess.cpp \
-	src/ProgressTextLabel.cpp \
-	src/SettingAiForm.cpp \
-	src/SettingOptionsForm.cpp \
-	src/FileType.cpp \
-	src/GenerativeAI.cpp \
+    src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -160,17 +151,24 @@ SOURCES += \
 	src/FileDiffSliderWidget.cpp \
 	src/FileDiffWidget.cpp \
 	src/FileHistoryWindow.cpp \
+	src/FileListWidget.cpp \
 	src/FilePropertyDialog.cpp \
+	src/FileType.cpp \
 	src/FileUtil.cpp \
 	src/FileViewWidget.cpp \
 	src/FindCommitDialog.cpp \
 	src/GenerateCommitMessageDialog.cpp \
+	src/GenerateCommitMessageThread.cpp \
+	src/GenerativeAI.cpp \
 	src/Git.cpp \
+	src/GitCommandRunner.cpp \
+	src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
 	src/GitDiff.cpp \
 	src/GitHubAPI.cpp \
 	src/GitObjectManager.cpp \
 	src/GitPack.cpp \
 	src/GitPackIdxV2.cpp \
+	src/GitProcessThread.cpp \
 	src/HyperLinkLabel.cpp \
 	src/ImageViewWidget.cpp \
 	src/InputNewTagDialog.cpp \
@@ -186,6 +184,7 @@ SOURCES += \
 	src/MenuButton.cpp \
 	src/MergeDialog.cpp \
 	src/MyImageViewWidget.cpp \
+	src/MyProcess.cpp \
 	src/MySettings.cpp \
 	src/MyTableWidgetDelegate.cpp \
 	src/MyTextEditorWidget.cpp \
@@ -193,6 +192,8 @@ SOURCES += \
 	src/ObjectBrowserDialog.cpp \
 	src/OverrideWaitCursor.cpp \
 	src/Photoshop.cpp \
+	src/ProgressTextLabel.cpp \
+	src/ProgressWidget.cpp \
 	src/PushDialog.cpp \
 	src/ReadOnlyLineEdit.cpp \
 	src/ReadOnlyPlainTextEdit.cpp \
@@ -211,10 +212,12 @@ SOURCES += \
 	src/SelectItemDialog.cpp \
 	src/SetGlobalUserDialog.cpp \
 	src/SetGpgSigningDialog.cpp \
+	src/SettingAiForm.cpp \
 	src/SettingBehaviorForm.cpp \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
 	src/SettingNetworkForm.cpp \
+	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
 	src/SettingProgramsForm.cpp \
 	src/SettingVisualForm.cpp \
@@ -239,6 +242,7 @@ SOURCES += \
 	src/coloredit/ColorPreviewWidget.cpp \
 	src/coloredit/ColorSlider.cpp \
 	src/coloredit/ColorSquareWidget.cpp \
+	src/coloredit/RingSlider.cpp \
 	src/common/base64.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
@@ -257,24 +261,10 @@ SOURCES += \
 	src/texteditor/UnicodeWidth.cpp \
 	src/texteditor/unicode.cpp \
 	src/urlencode.cpp \
-	src/webclient.cpp \
-	src/AboutDialog.cpp \
-	src/coloredit/RingSlider.cpp \
-	src/ProgressWidget.cpp
+	src/webclient.cpp
 
 HEADERS += \
-	$$PWD/src/FileListWidget.h \
-	$$PWD/src/GenerateCommitMessageThread.h \
-	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.h \
-	$$PWD/src/GitProcessThread.h \
-	$$PWD/src/MyProcess.h \
-	src/ProgressTextLabel.h \
-	src/SettingAiForm.h \
-	src/SettingOptionsForm.h \
-	src/FileType.h \
-	src/GenerativeAI.h \
-	src/GenerativeAI.h \
-	src/AboutDialog.h \
+    src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
 	src/AddRepositoriesCollectivelyDialog.h \
@@ -317,16 +307,24 @@ HEADERS += \
 	src/FileDiffSliderWidget.h \
 	src/FileDiffWidget.h \
 	src/FileHistoryWindow.h \
+	src/FileListWidget.h \
 	src/FilePropertyDialog.h \
+	src/FileType.h \
 	src/FileUtil.h \
 	src/FindCommitDialog.h \
 	src/GenerateCommitMessageDialog.h \
+	src/GenerateCommitMessageThread.h \
+	src/GenerativeAI.h \
+	src/GenerativeAI.h \
 	src/Git.h \
+	src/GitCommandRunner.h \
+	src/GitConfigGlobalAddSafeDirectoryDialog.h \
 	src/GitDiff.h \
 	src/GitHubAPI.h \
 	src/GitObjectManager.h \
 	src/GitPack.h \
 	src/GitPackIdxV2.h \
+	src/GitProcessThread.h \
 	src/HyperLinkLabel.h \
 	src/ImageViewWidget.h \
 	src/InputNewTagDialog.h \
@@ -342,6 +340,7 @@ HEADERS += \
 	src/MenuButton.h \
 	src/MergeDialog.h \
 	src/MyImageViewWidget.h \
+	src/MyProcess.h \
 	src/MySettings.h \
 	src/MyTableWidgetDelegate.h \
 	src/MyTextEditorWidget.h \
@@ -349,6 +348,8 @@ HEADERS += \
 	src/ObjectBrowserDialog.h \
 	src/OverrideWaitCursor.h \
 	src/Photoshop.h \
+	src/ProgressTextLabel.h \
+	src/ProgressWidget.h \
 	src/PushDialog.h \
 	src/ReadOnlyLineEdit.h \
 	src/ReadOnlyPlainTextEdit.h \
@@ -368,10 +369,12 @@ HEADERS += \
 	src/SelectItemDialog.h \
 	src/SetGlobalUserDialog.h \
 	src/SetGpgSigningDialog.h \
+	src/SettingAiForm.h \
 	src/SettingBehaviorForm.h \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
 	src/SettingNetworkForm.h \
+	src/SettingOptionsForm.h \
 	src/SettingPrograms2Form.h \
 	src/SettingProgramsForm.h \
 	src/SettingVisualForm.h \
@@ -425,8 +428,7 @@ HEADERS += \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \
 	src/urlencode.h \
-	src/webclient.h \
-	src/ProgressWidget.h
+	src/webclient.h
 
 HEADERS += version.h
 

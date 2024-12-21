@@ -140,7 +140,6 @@ struct MainWindow::Private {
 
 	PtyProcess pty_process;
 	bool pty_process_ok = false;
-	// MainWindow::PtyCondition pty_condition = MainWindow::PtyCondition::None;
 
 	bool interaction_enabled = false;
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
@@ -152,7 +151,6 @@ struct MainWindow::Private {
 	GitHubRepositoryInfo github;
 
 	Git::CommitID head_id;
-	// bool force_fetch = false;
 
 	RepositoryData temp_repo_for_clone_complete;
 	QVariant pty_process_completion_data;
@@ -1996,8 +1994,7 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 void MainWindow::clone(CloneParams const &a)
 {
 	GitPtr g = git({}, {}, a.repodata.ssh_key);
-	std::shared_ptr<GitCommandItem_clone> params = std::make_shared<GitCommandItem_clone>(a.clonedata);
-	runPtyGit(tr("Cloning..."), g, *params, RUN_PTY_CALLBACK{
+	runPtyGit(tr("Cloning..."), g, Git_clone{a.clonedata}, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
 		std::vector<std::string> log = misc::splitLines(status.log_message, false);
 		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
@@ -2082,7 +2079,6 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData
 		clone(a);
 	}, var);
 	retry();
-	// clone();
 
 	return true;
 }
@@ -2120,7 +2116,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	
 	GitPtr g = git(local_dir, {}, repos_item_data.ssh_key);
 	
-	std::shared_ptr<GitCommandItem_submodule_add> params = std::make_shared<GitCommandItem_submodule_add>(data, force);
+	std::shared_ptr<Git_submodule_add> params = std::make_shared<Git_submodule_add>(data, force);
 	runPtyGit(tr("Submodule..."), g, *params, nullptr, {});
 }
 
@@ -2221,7 +2217,6 @@ void MainWindow::commit(RepositoryWrapperFrame *frame, bool amend)
 			while (!pty->wait(1)); // wait for the process to finish
 
 			if (ok) {
-				// setForceFetch(true);
 				updateStatusBarText(frame);
 				reopenRepository(true);
 			} else {
@@ -2263,8 +2258,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 		if (branch.isEmpty()) return;
 	}
 
-	auto params = GitCommandItem_push::make(set_upstream, remote, branch, force);
-	runPtyGit(tr("Pushing..."), git(), *params, RUN_PTY_CALLBACK{
+	runPtyGit(tr("Pushing..."), git(), Git_push{set_upstream, remote, branch, force}, RUN_PTY_CALLBACK{
 		ASSERT_MAIN_THREAD();
 		if (status.exit_code == 128) {
 			if (status.error_message.find("Connection refused") != std::string::npos) {
@@ -2279,28 +2273,24 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 void MainWindow::fetch(GitPtr g, bool prune)
 {
-	auto params = GitCommandItem_fetch::make(prune);
-	runPtyGit(tr("Fetching..."), g, *params, RUN_PTY_CALLBACK{
+	runPtyGit(tr("Fetching..."), g, Git_fetch{prune}, RUN_PTY_CALLBACK{
 		global->mainwindow->internalAfterFetch();
 	}, {});
 }
 
 void MainWindow::stage(GitPtr g, QStringList const &paths)
 {
-	auto params = GitCommandItem_stage::make(paths);
-	runPtyGit(tr("Stageing..."), g, *params, nullptr, {});
+	runPtyGit(tr("Stageing..."), g, Git_stage{paths}, nullptr, {});
 }
 
 void MainWindow::fetch_tags_f(GitPtr g)
 {
-	auto params = GitCommandItem_fetch_tags_f::make();
-	runPtyGit(tr("Fetching tags..."), g, *params, nullptr, {});
+	runPtyGit(tr("Fetching tags..."), g, Git_fetch_tags_f{}, nullptr, {});
 }
 
 void MainWindow::pull(GitPtr g)
 {
-	auto params = GitCommandItem_pull::make();
-	runPtyGit(tr("Pulling..."), g, *params, RUN_PTY_CALLBACK{
+	runPtyGit(tr("Pulling..."), g, Git_pull{}, RUN_PTY_CALLBACK{
 		RepositoryData repodata = userdata.value<RepositoryData>();
 		doReopenRepository(status, repodata);
 	}, QVariant::fromValue(m->current_repo));
@@ -2308,20 +2298,17 @@ void MainWindow::pull(GitPtr g)
 
 void MainWindow::push_tags(GitPtr g)
 {
-	auto params = GitCommandItem_push_tags::make();
-	runPtyGit(tr("Pushing tags..."), g, *params, nullptr, {});
+	runPtyGit(tr("Pushing tags..."), g, Git_push_tags{}, nullptr, {});
 }
 
 void MainWindow::delete_tags(GitPtr g, const QStringList &tagnames)
 {
-	auto params = std::make_shared<GitCommandItem_delete_tags>(tagnames);
-	runPtyGit(QString{}, g, *params, nullptr, {});
+	runPtyGit(QString{}, g, Git_delete_tags{tagnames}, nullptr, {});
 }
 
 void MainWindow::add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id)
 {
-	auto params = GitCommandItem_add_tag::make(name, commit_id);
-	runPtyGit(QString{}, g, *params, nullptr, {});
+	runPtyGit(QString{}, g, Git_add_tag{name, commit_id}, nullptr, {});
 }
 
 /**
@@ -3479,11 +3466,6 @@ bool MainWindow::getPtyProcessOk() const
 	return m->pty_process_ok;
 }
 
-// MainWindow::PtyCondition MainWindow::getPtyCondition()
-// {
-// 	return m->pty_condition;
-// }
-
 void MainWindow::setCompletedHandler(std::function<void (bool, QVariant const &)> fn, QVariant const &userdata)
 {
 	m->pty_process.setCompletedHandler(fn, userdata);
@@ -3558,16 +3540,6 @@ GitObjectCache *MainWindow::getObjCache(RepositoryWrapperFrame *frame)
 {
 	return &frame->objcache;
 }
-
-// bool MainWindow::getForceFetch() const
-// {
-// 	return m->force_fetch;
-// }
-
-// void MainWindow::setForceFetch(bool force_fetch)
-// {
-// 	m->force_fetch = force_fetch;
-// }
 
 std::map<Git::CommitID, QList<Git::Tag> > *MainWindow::ptrCommitToTagMap(RepositoryWrapperFrame *frame)
 {

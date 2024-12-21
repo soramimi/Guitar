@@ -46,7 +46,7 @@ public:
 	std::vector<std::string> lines;
 };
 
-class AbstractGitCommandItem;
+class AbstractGitCommand;
 
 class ExchangeData;
 

@@ -1,0 +1,169 @@
+#ifndef GITCOMMANDRUNNER_H
+#define GITCOMMANDRUNNER_H
+
+#include "Git.h"
+#include "MyProcess.h"
+
+class Git_clone {
+public:
+	Git::CloneData clonedata_;
+	Git_clone(const Git::CloneData &clonedata)
+		: clonedata_(clonedata)
+	{
+	}
+};
+
+class Git_fetch {
+public:
+	bool prune;
+	Git_fetch(bool prune)
+		: prune(prune)
+	{
+	}
+};
+
+class Git_fetch_tags_f {
+public:
+	Git_fetch_tags_f()
+	{
+	}
+};
+
+class Git_stage {
+public:
+	QStringList paths;
+	Git_stage(QStringList const &paths)
+		: paths(paths)
+	{
+	}
+};
+
+class Git_push {
+public:
+	bool set_upstream_ = false;
+	QString remote_;
+	QString branch_;
+	bool force_ = false;
+	int exitcode_ = 0;
+	QString errormsg_;
+	Git_push(bool set_upstream, QString const &remote, QString const &branch, bool force)
+		: set_upstream_(set_upstream)
+		, remote_(remote)
+		, branch_(branch)
+		, force_(force)
+	{
+	}
+};
+
+class Git_pull {
+public:
+	Git_pull()
+	{
+	}
+};
+
+class Git_push_tags {
+public:
+	Git_push_tags()
+	{
+	}
+};
+
+class Git_delete_tag {
+public:
+	QString name_;
+	bool remote_;
+	Git_delete_tag(const QString &name, bool remote)
+		: name_(name)
+		, remote_(remote)
+	{
+	}
+};
+
+class Git_delete_tags {
+public:
+	QStringList tagnames;
+	Git_delete_tags(const QStringList &tagnames)
+		: tagnames(tagnames)
+	{
+	}
+};
+
+class Git_add_tag {
+public:
+	QString name_;
+	Git::CommitID commit_id_;
+	Git_add_tag(const QString &name, const Git::CommitID &commit_id)
+		: name_(name)
+		, commit_id_(commit_id)
+	{
+	}
+};
+
+class Git_submodule_add {
+public:
+	Git::CloneData data_;
+	bool force_ = false;
+	Git_submodule_add(Git::CloneData data, bool force)
+		: data_(data)
+		, force_(force)
+	{
+	}
+};
+
+class GitCommandRunner {
+public:
+	void operator () (Git_clone const &item);
+	void operator () (Git_fetch const &item);
+	void operator () (Git_fetch_tags_f const &item);
+	void operator () (Git_stage const &item);
+	void operator () (Git_push const &item);
+	void operator () (Git_pull const &item);
+	void operator () (Git_push_tags const &item);
+	void operator () (Git_delete_tag const &item);
+	void operator () (Git_delete_tags const &item);
+	void operator () (Git_add_tag const &item);
+	void operator () (Git_submodule_add const &item);
+
+	typedef std::variant<
+		Git_clone,
+		Git_fetch,
+		Git_fetch_tags_f,
+		Git_stage,
+		Git_push,
+		Git_pull,
+		Git_push_tags,
+		Git_delete_tag,
+		Git_delete_tags,
+		Git_add_tag,
+		Git_submodule_add
+		> variant_t;
+
+	GitPtr g_;
+	PtyProcess *pty_ = nullptr;
+	typedef unsigned int request_id_t;
+	request_id_t request_id;
+	bool override_wait_cursor = true;
+	std::function<void (GitCommandRunner &req)> run;
+	QVariant userdata;
+	bool update_commit_log = false;
+	bool result = false;
+
+	GitPtr git()
+	{
+		return g_;
+	}
+	PtyProcess *pty()
+	{
+		return pty_;
+	}
+	std::string pty_message() const;
+	PtyProcess const *pty() const
+	{
+		return pty_;
+	}
+	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
+};
+Q_DECLARE_METATYPE(GitCommandRunner)
+
+#endif // GITCOMMANDRUNNER_H
