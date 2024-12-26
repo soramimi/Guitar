@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QStyledItemDelegate>
 #include <QPainter>
+#include <QFileInfo>
 #include "MainWindow.h"
 
 static int u16ncmp(ushort const *s1, ushort const *s2, int n)
@@ -116,6 +117,23 @@ RepositoriesTreeWidget::~RepositoriesTreeWidget()
 	delete m;
 }
 
+QTreeWidgetItem *RepositoriesTreeWidget::newQTreeWidgetItem()
+{
+	auto *item = new QTreeWidgetItem;
+	item->setSizeHint(0, QSize(20, 20));
+	return item;
+}
+
+QTreeWidgetItem *RepositoriesTreeWidget::newQTreeWidgetFolderItem(const QString &name)
+{
+	QTreeWidgetItem *item = newQTreeWidgetItem();
+	item->setText(0, name);
+	item->setData(0, MainWindow::IndexRole, MainWindow::GroupItem);
+	item->setIcon(0, global->graphics->folder_icon);
+	item->setFlags(item->flags() | Qt::ItemIsEditable);
+	return item;
+}
+
 void RepositoriesTreeWidget::setFilterText(const QString &filtertext)
 {
 	m->filter_text = filtertext;
@@ -130,6 +148,158 @@ QString RepositoriesTreeWidget::getFilterText() const
 void RepositoriesTreeWidget::paintEvent(QPaintEvent *event)
 {
 	QTreeWidget::paintEvent(event);
+}
+
+void RepositoriesTreeWidget::setRepositoriesListStyle(RepositoriesListStyle style)
+{
+	current_repositories_list_style_ = style;
+}
+
+void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<RepositoryData> const &repos, const QString &filter)
+{
+	RepositoriesTreeWidget *tree = this;
+	tree->clear();
+
+	// 新しいツリーウィジェットアイテムを作成
+	auto NewItem = [&](QString const &reponame, int index){
+		QTreeWidgetItem *item = newQTreeWidgetItem();
+		item->setText(0, reponame);
+		item->setData(0, MainWindow::IndexRole, index);
+		item->setIcon(0, global->graphics->repository_icon);
+		item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
+		return item;
+	};
+
+	//
+	auto EnableDragAndDropOnRepositoryTree = [&](bool enabled){
+		tree->setDragEnabled(enabled);
+		tree->setAcceptDrops(enabled);
+		tree->setDropIndicatorShown(enabled);
+		tree->viewport()->setAcceptDrops(enabled);
+	};
+
+	auto newQTreeWidgetFolderItem = [](QString const &name)->QTreeWidgetItem *{
+		QTreeWidgetItem *item = newQTreeWidgetItem();
+		item->setText(0, name);
+		item->setData(0, MainWindow::IndexRole, MainWindow::GroupItem);
+		item->setIcon(0, global->graphics->folder_icon);
+		item->setFlags(item->flags() | Qt::ItemIsEditable);
+		return item;
+	};
+
+	// リポジトリリストを更新（標準）
+	auto UpdateRepositoriesListStandard = [&](QString const &filter){
+
+		EnableDragAndDropOnRepositoryTree(filter.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
+		tree->setFilterText(filter);
+
+		std::map<QString, QTreeWidgetItem *> parentmap;
+
+		for (int i = 0; i < repos.size(); i++) {
+			RepositoryData const &repo = repos.at(i);
+
+			if (!filter.isEmpty()) { // フィルターによる検索
+				if (repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) continue; // 該当しない場合はスキップ
+			}
+
+			QTreeWidgetItem *parent = nullptr;
+			{
+				QString groupname = repo.group;
+				if (groupname.startsWith('/')) { // 先頭のスラッシュを削除
+					groupname = groupname.mid(1);
+				}
+				if (groupname == "") { // グループ名が空の場合はデフォルトに設定
+					groupname = "Default";
+				}
+				auto it = parentmap.find(groupname); // 親アイテムを取得
+				if (it != parentmap.end()) {
+					parent = it->second;
+				} else { // 親アイテムが見つからない場合は新規作成
+					QStringList list = groupname.split('/', _SkipEmptyParts);
+					if (list.isEmpty()) {
+						list.push_back("Default");
+					}
+					QString groupPath;
+					for (QString const &name : list) {
+						if (name.isEmpty()) continue;
+						QString groupPathWithCurrent = groupPath + name; // グループパスに現在のグループ名を追加
+						auto it = parentmap.find(groupPathWithCurrent);
+						if (it != parentmap.end()) {
+							parent = it->second;
+						} else {
+							QTreeWidgetItem *newitem = newQTreeWidgetFolderItem(name);
+							if (!parent) {
+								tree->addTopLevelItem(newitem); // トップレベルに追加
+							} else {
+								parent->addChild(newitem); // 親の子
+							}
+							parent = newitem;
+							parentmap[groupPathWithCurrent] = newitem; // parentmapに登録
+							newitem->setExpanded(true); // 展開
+						}
+						groupPath = groupPathWithCurrent + '/';
+					}
+					Q_ASSERT(parent);
+				}
+			}
+			parent->setData(0, MainWindow::FilePathRole, "");
+
+			auto *child = NewItem(repo.name, i);
+			parent->addChild(child);
+			parent->setExpanded(true);
+		}
+	};
+
+	// リポジトリリストを更新（最終更新日時順）
+	auto UpdateRepositoriesListSortRecent = [&](QString const &filter){
+
+		EnableDragAndDropOnRepositoryTree(false); // ドラッグ＆ドロップを無効にする
+		tree->setFilterText({});
+
+		struct Item {
+			RepositoryData const *data;
+			QFileInfo info;
+		};
+		std::vector<Item> items;
+		{
+			for (RepositoryData const &item : repos) {
+				QString gitpath = item.local_dir / ".git";
+				QFileInfo info(gitpath);
+				items.push_back({&item, info});
+			}
+			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
+				return a.info.lastModified() > b.info.lastModified();
+			});
+		}
+
+		for (Item const &item : items) {
+			QString s = misc::makeDateTimeString(item.info.lastModified());
+			s = QString("[%1] %2").arg(s).arg(item.data->name);
+			auto *child = NewItem(s, -1);
+			tree->addTopLevelItem(child);
+		}
+	};
+
+	// リポジトリリストを更新
+	switch (style) {
+	case RepositoriesTreeWidget::RepositoriesListStyle::_Keep:
+		// nop
+		break;
+	case RepositoriesTreeWidget::RepositoriesListStyle::Standard:
+		UpdateRepositoriesListStandard(filter);
+		break;
+	case RepositoriesTreeWidget::RepositoriesListStyle::SortRecent:
+		UpdateRepositoriesListSortRecent(filter);
+		break;
+	default:
+		Q_ASSERT(false);
+		break;
+	}
+}
+
+RepositoriesTreeWidget::RepositoriesListStyle RepositoriesTreeWidget::currentRepositoriesListStyle() const
+{
+	return current_repositories_list_style_;
 }
 
 MainWindow *RepositoriesTreeWidget::mainwindow()

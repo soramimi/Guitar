@@ -65,7 +65,6 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileDialog>
-#include <QFileIconProvider>
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QMimeData>
@@ -106,13 +105,6 @@ struct EventItem {
 };
 
 struct MainWindow::Private {
-
-	QIcon repository_icon;
-	QIcon folder_icon;
-	QIcon signature_good_icon;
-	QIcon signature_dubious_icon;
-	QIcon signature_bad_icon;
-	QPixmap transparent_pixmap;
 
 	QString starting_dir;
 	Git::Context gcx;
@@ -224,16 +216,6 @@ MainWindow::MainWindow(QWidget *parent)
 	setUnknownRepositoryInfo();
 
 	m->starting_dir = QDir::current().absolutePath();
-
-	{ // load graphic resources
-		QFileIconProvider icons;
-		m->folder_icon = icons.icon(QFileIconProvider::Folder);
-		m->repository_icon = QIcon(":/image/repository.png");
-		m->signature_good_icon = QIcon(":/image/signature-good.png");
-		m->signature_bad_icon = QIcon(":/image/signature-bad.png");
-		m->signature_dubious_icon = QIcon(":/image/signature-dubious.png");
-		m->transparent_pixmap = QPixmap(":/image/transparent.png");
-	}
 
 #ifdef Q_OS_WIN
 	ui->action_create_desktop_launcher_file->setText(tr("Create shortcut file..."));
@@ -1041,13 +1023,13 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 		Git::SignatureGrade sg = Git::evaluateSignature(c);
 		switch (sg) {
 		case Git::SignatureGrade::Good: // 署名あり、検証OK
-			return m->signature_good_icon;
+			return global->graphics->signature_good_icon;
 		case Git::SignatureGrade::Bad: // 署名あり、検証NG
-			return m->signature_bad_icon;
+			return global->graphics->signature_bad_icon;
 		case Git::SignatureGrade::Unknown:
 		case Git::SignatureGrade::Dubious:
 		case Git::SignatureGrade::Missing:
-			return m->signature_dubious_icon; // 署名あり、検証不明
+			return global->graphics->signature_dubious_icon; // 署名あり、検証不明
 		}
 	} else {
 		qDebug();
@@ -2845,174 +2827,38 @@ RepositoryData const *MainWindow::selectedRepositoryItem() const
 	return repositoryItem(ui->treeWidget_repos->currentItem());
 }
 
-static QTreeWidgetItem *newQTreeWidgetItem()
-{
-	auto *item = new QTreeWidgetItem;
-	item->setSizeHint(0, QSize(20, 20));
-	return item;
-}
 
-QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
+
+RepositoriesTreeWidget::RepositoriesListStyle MainWindow::repositoriesListStyle() const
 {
-	QTreeWidgetItem *item = newQTreeWidgetItem();
-	item->setText(0, name);
-	item->setData(0, IndexRole, GroupItem);
-	item->setIcon(0, getFolderIcon());
-	item->setFlags(item->flags() | Qt::ItemIsEditable);
-	return item;
+	return ui->treeWidget_repos->currentRepositoriesListStyle();
 }
 
 /**
  * @brief リポジトリリストを更新
  */
-void MainWindow::updateRepositoriesList(RepositoriesListStyle style)
+void MainWindow::updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle style)
 {
-	if (style != RepositoriesListStyle::_Keep) {
-		current_repositories_list_style_ = style;
+	if (style == RepositoriesTreeWidget::RepositoriesListStyle::_Keep) {
+		style = ui->treeWidget_repos->currentRepositoriesListStyle();
+	} else {
+		ui->treeWidget_repos->setRepositoriesListStyle(style); // リポジトリリストスタイルを設定
 	}
-	switch (current_repositories_list_style_) {
-	case RepositoriesListStyle::_Keep:
-		// nop
-		break;
-	case RepositoriesListStyle::Standard:
-		updateRepositoriesListStandard();
-		break;
-	case RepositoriesListStyle::SortRecent:
-		updateRepositoriesListSortRecent();
-		break;
-	default:
-		Q_ASSERT(false);
-		break;
-	}
-}
 
-void MainWindow::updateRepositoriesListStandard()
-{
-	auto UpdateRepositoriesListStandard = [&](){
-		QString path = getBookmarksFilePath();
+	QString path = getBookmarksFilePath();
+	setRepositoryList(RepositoryBookmark::load(path));
+	QList<RepositoryData> const &repos = cRepositories();
 
-		setRepositoryList(RepositoryBookmark::load(path));
-		auto const *repos = &cRepositories();
+	QString filter = getRepositoryFilterText();
 
-		QString filter = getRepositoryFilterText();
+	RepositoriesTreeWidget *tree = ui->treeWidget_repos;
 
-		ui->treeWidget_repos->clear();
-		ui->treeWidget_repos->setFilterText(filter);
-
-		std::map<QString, QTreeWidgetItem *> parentmap;
-
-		for (int i = 0; i < repos->size(); i++) {
-			RepositoryData const &repo = repos->at(i);
-
-			if (!filter.isEmpty()) {
-				if (repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) continue;
-			}
-
-			QTreeWidgetItem *parent = nullptr;
-
-			QString group = repo.group;
-			if (group.startsWith('/')) {
-				group = group.mid(1);
-			}
-			if (group == "") {
-				group = "Default";
-			}
-			auto it = parentmap.find(group);
-			if (it != parentmap.end()) {
-				parent = it->second;
-			} else {
-				QStringList list = group.split('/', _SkipEmptyParts);
-				if (list.isEmpty()) {
-					list.push_back("Default");
-				}
-				QString groupPath = "", groupPathWithCurrent;
-				for (QString const &name : list) {
-					if (name.isEmpty()) continue;
-					groupPathWithCurrent = groupPath + name;
-					auto it = parentmap.find(groupPathWithCurrent);
-					if (it != parentmap.end()) {
-						parent = it->second;
-					} else {
-						QTreeWidgetItem *newItem = newQTreeWidgetFolderItem(name);
-						if (!parent) {
-							ui->treeWidget_repos->addTopLevelItem(newItem);
-						} else {
-							parent->addChild(newItem);
-						}
-						parent = newItem;
-						parentmap[groupPathWithCurrent] = newItem;
-						newItem->setExpanded(true);
-					}
-					groupPath = groupPathWithCurrent + '/';
-				}
-				Q_ASSERT(parent);
-			}
-			parent->setData(0, FilePathRole, "");
-
-			QTreeWidgetItem *child = newQTreeWidgetItem();
-			child->setText(0, repo.name);
-			child->setData(0, IndexRole, i);
-			child->setIcon(0, getRepositoryIcon());
-			child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
-			parent->addChild(child);
-			parent->setExpanded(true);
-		}
-	};
-
-	UpdateRepositoriesListStandard();
-}
-
-void MainWindow::updateRepositoriesListSortRecent()
-{
-	auto UpdateRepositoriesListSortRecent = [&](){
-
-		enableDragAndDropOnRepositoryTree(false);
-
-		QString path = getBookmarksFilePath();
-
-		setRepositoryList(RepositoryBookmark::load(path));
-
-		struct Item {
-			RepositoryData const *data;
-			QFileInfo info;
-		};
-
-		QList<RepositoryData> const &repos = cRepositories();
-
-		std::vector<Item> items;
-		{
-			for (RepositoryData const &item : repos) {
-				QString gitpath = item.local_dir / ".git";
-				QFileInfo info(gitpath);
-				items.push_back({&item, info});
-			}
-
-			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
-				return a.info.lastModified() > b.info.lastModified();
-			});
-		}
-
-		ui->treeWidget_repos->clear();
-		ui->treeWidget_repos->setFilterText({});
-
-		for (Item const &item : items) {
-			QTreeWidgetItem *child = newQTreeWidgetItem();
-			QString s = misc::makeDateTimeString(item.info.lastModified());
-			s = QString("[%1] %2").arg(s).arg(item.data->name);
-			child->setText(0, s);
-			child->setData(0, IndexRole, -1);
-			child->setIcon(0, getRepositoryIcon());
-			child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
-			ui->treeWidget_repos->addTopLevelItem(child);
-		}
-	};
-
-	UpdateRepositoriesListSortRecent();
+	tree->updateList(style, repos, filter);
 }
 
 void MainWindow::onRepositoryTreeSortRecent()
 {
-	updateRepositoriesList(RepositoriesListStyle::SortRecent);
+	updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle::SortRecent);
 }
 
 /**
@@ -3659,10 +3505,7 @@ QString MainWindow::gitCommand() const
 	return m->gcx.git_command;
 }
 
-QPixmap MainWindow::getTransparentPixmap()
-{
-	return m->transparent_pixmap;
-}
+
 
 /**
  * @brief リストウィジェット用ファイルアイテムを作成する
@@ -3974,36 +3817,6 @@ bool MainWindow::editFile(const QString &path, const QString &title)
 void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
 	global->appsettings = appsettings;
-}
-
-QIcon MainWindow::getRepositoryIcon() const
-{
-	return m->repository_icon;
-}
-
-QIcon MainWindow::getFolderIcon() const
-{
-	return m->folder_icon;
-}
-
-QIcon MainWindow::getSignatureGoodIcon() const
-{
-	return m->signature_good_icon;
-}
-
-QIcon MainWindow::getSignatureDubiousIcon() const
-{
-	return m->signature_dubious_icon;
-}
-
-QIcon MainWindow::getSignatureBadIcon() const
-{
-	return m->signature_bad_icon;
-}
-
-QPixmap MainWindow::getTransparentPixmap() const
-{
-	return m->transparent_pixmap;
 }
 
 QStringList MainWindow::findGitObject(const QString &id) const
@@ -5083,7 +4896,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
 			if (a == a_add_new_group) {
-				QTreeWidgetItem *child = newQTreeWidgetFolderItem(tr("New group"));
+				QTreeWidgetItem *child = RepositoriesTreeWidget::newQTreeWidgetFolderItem(tr("New group"));
 				treeitem->addChild(child);
 				child->setFlags(child->flags() | Qt::ItemIsEditable);
 				ui->treeWidget_repos->setCurrentItem(child);
@@ -6523,7 +6336,7 @@ void MainWindow::setRepositoryFilterText(QString const &text)
 
 	m->repository_filter_text = text;
 
-	updateRepositoriesListStandard();
+	updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle::Standard);
 
 	bool enabled = text.isEmpty();
 	enableDragAndDropOnRepositoryTree(enabled);

@@ -41,6 +41,17 @@ public:
 	QColor panel_bg_color;
 	ThemePtr theme;
 
+	struct Graphics {
+		QIcon repository_icon;
+		QIcon folder_icon;
+		QIcon signature_good_icon;
+		QIcon signature_dubious_icon;
+		QIcon signature_bad_icon;
+		QPixmap transparent_pixmap;
+	};
+	std::unique_ptr<Graphics> graphics;
+
+
 	FileType filetype;
 
 	ApplicationSettings appsettings;

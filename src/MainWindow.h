@@ -5,6 +5,7 @@
 #include "Git.h"
 #include "GitProcessThread.h"
 #include "MyProcess.h"
+#include "RepositoriesTreeWidget.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include "TextEditorTheme.h"
@@ -168,20 +169,9 @@ private:
 	void updateFileList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 public:
-	enum class RepositoriesListStyle {
-		_Keep,
-		Standard,
-		SortRecent,
-	};
-	RepositoriesListStyle repositoriesListStyle() const
-	{
-		return current_repositories_list_style_;
-	}
-	void updateRepositoriesList(RepositoriesListStyle style = RepositoriesListStyle::_Keep);
+	RepositoriesTreeWidget::RepositoriesListStyle repositoriesListStyle() const;
+	void updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle style = RepositoriesTreeWidget::RepositoriesListStyle::_Keep);
 private:
-	RepositoriesListStyle current_repositories_list_style_ = RepositoriesListStyle::Standard;
-	void updateRepositoriesListStandard();
-	void updateRepositoriesListSortRecent();
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
 
@@ -197,7 +187,6 @@ private:
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
 	RepositoryData const *repositoryItem(const QTreeWidgetItem *item) const;
 
-	QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos);
 	void refrectRepositories();
 
@@ -328,12 +317,6 @@ private:
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
 	bool editFile(const QString &path, const QString &title);
 	void setAppSettings(const ApplicationSettings &appsettings);
-	QIcon getRepositoryIcon() const;
-	QIcon getFolderIcon() const;
-	QIcon getSignatureGoodIcon() const;
-	QIcon getSignatureDubiousIcon() const;
-	QIcon getSignatureBadIcon() const;
-	QPixmap getTransparentPixmap() const;
 	QStringList findGitObject(const QString &id) const;
 	QList<BranchLabel> sortedLabels(RepositoryWrapperFrame *frame, int row) const;
 	void saveApplicationSettings();
@@ -404,7 +387,6 @@ private:
 	bool isRepositoryOpened() const;
 	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
 	QString gitCommand() const;
-	QPixmap getTransparentPixmap();
 	static QListWidgetItem *newListWidgetFileItem(const MainWindow::ObjectData &data);
 	void cancelPendingUserEvents();
 	void initRepository(const QString &path, const QString &reponame, const Git::Remote &remote);
