@@ -24,7 +24,7 @@ public:
 		}
 	};
 public:
-	explicit PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches, RemoteBranch const &remote_branch);
+	explicit PushDialog(QWidget *parent, QString const &url, QStringList const &remotes, QStringList const &branches, RemoteBranch const &remote_branch);
 	~PushDialog() override;
 	bool isSetUpStream() const;
 	QString remote() const;

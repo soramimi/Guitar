@@ -2316,7 +2316,19 @@ bool MainWindow::push()
 		return false;
 	}
 
-	PushDialog dlg(this, remotes, branches, PushDialog::RemoteBranch(QString(), current_branch));
+	QString url;
+	{
+		std::vector<Git::Remote> remotes;
+		git()->remote_v(&remotes);
+		for (Git::Remote const &r : remotes) {
+			if (!r.url_push.isEmpty()) {
+				url = r.url_push;
+				break;
+			}
+		}
+	}
+
+	PushDialog dlg(this, url, remotes, branches, PushDialog::RemoteBranch(QString(), current_branch));
 	if (dlg.exec() == QDialog::Accepted) {
 		bool set_upstream = dlg.isSetUpStream();
 		QString remote = dlg.remote();
@@ -4935,11 +4947,13 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		strings.push_back(repo->local_dir);
 		{
 			std::vector<QString> urls;
-			std::vector<Git::Remote> remotes;
-			git(repo->local_dir, {}, {})->remote_v(&remotes);
-			for (Git::Remote const &r : remotes) {
-				urls.push_back(r.url_fetch);
-				urls.push_back(r.url_push);
+			{
+				std::vector<Git::Remote> remotes;
+				git(repo->local_dir, {}, {})->remote_v(&remotes);
+				for (Git::Remote const &r : remotes) {
+					urls.push_back(r.url_fetch);
+					urls.push_back(r.url_push);
+				}
 			}
 			std::sort(urls.begin(), urls.end());
 			auto it = std::unique(urls.begin(), urls.end());

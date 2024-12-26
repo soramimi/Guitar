@@ -1,11 +1,13 @@
 #include "PushDialog.h"
 #include "ui_PushDialog.h"
 
-PushDialog::PushDialog(QWidget *parent, QStringList const &remotes, QStringList const &branches, const RemoteBranch &remote_branch) :
+PushDialog::PushDialog(QWidget *parent, const QString &url, QStringList const &remotes, QStringList const &branches, const RemoteBranch &remote_branch) :
 	QDialog(parent),
 	ui(new Ui::PushDialog)
 {
 	ui->setupUi(this);
+
+	ui->lineEdit_url->setText(url);
 
 	if (remotes.isEmpty() || branches.isEmpty()) {
 		// thru
@@ -67,23 +69,10 @@ bool PushDialog::isForce() const
 	return ui->checkBox_force->isChecked() && ui->checkBox_really_force->isChecked();
 }
 
-#if 0
-void PushDialog::on_radioButton_push_simply_clicked()
-{
-	ui->frame_set_upstream->setEnabled(false);
-}
-
-void PushDialog::on_radioButton_push_set_upstream_clicked()
-{
-	ui->frame_set_upstream->setEnabled(true);
-}
-#endif
-
 void PushDialog::on_checkBox_force_clicked()
 {
 	updateUI();
 }
-
 
 void PushDialog::on_checkBox_really_force_clicked()
 {
