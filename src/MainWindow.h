@@ -167,7 +167,21 @@ private:
 
 	void updateFileList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
-	void updateRepositoriesList();
+public:
+	enum class RepositoriesListStyle {
+		_Keep,
+		Standard,
+		SortRecent,
+	};
+	RepositoriesListStyle repositoriesListStyle() const
+	{
+		return current_repositories_list_style_;
+	}
+	void updateRepositoriesList(RepositoriesListStyle style = RepositoriesListStyle::_Keep);
+private:
+	RepositoriesListStyle current_repositories_list_style_ = RepositoriesListStyle::Standard;
+	void updateRepositoriesListStandard();
+	void updateRepositoriesListSortRecent();
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
 
@@ -688,6 +702,7 @@ signals:
 public:
 	void internalAfterFetch();
 	
+	void onRepositoryTreeSortRecent();
 };
 
 class ExchangeData {

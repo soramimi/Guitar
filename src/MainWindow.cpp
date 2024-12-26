@@ -622,10 +622,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 				if (e->modifiers() & Qt::ControlModifier) {
-					// if (k == Qt::Key_A) {
-					// 	on_action_add_repository_triggered();
-					// 	return true;
-					// }
+					if (k == Qt::Key_R) {
+						onRepositoryTreeSortRecent();
+						return true;
+					}
 				} else {
 					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) { // 通常の文字キー
 						appendCharToRepoFilter(k);
@@ -2865,76 +2865,154 @@ QTreeWidgetItem *MainWindow::newQTreeWidgetFolderItem(QString const &name)
 /**
  * @brief リポジトリリストを更新
  */
-void MainWindow::updateRepositoriesList()
+void MainWindow::updateRepositoriesList(RepositoriesListStyle style)
 {
-	QString path = getBookmarksFilePath();
-
-	setRepositoryList(RepositoryBookmark::load(path));
-	auto const *repos = &cRepositories();
-
-	QString filter = getRepositoryFilterText();
-
-	ui->treeWidget_repos->clear();
-	ui->treeWidget_repos->setFilterText(filter);
-
-	std::map<QString, QTreeWidgetItem *> parentmap;
-
-	for (int i = 0; i < repos->size(); i++) {
-		RepositoryData const &repo = repos->at(i);
-
-		if (!filter.isEmpty()) {
-			if (repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) continue;
-		}
-
-		QTreeWidgetItem *parent = nullptr;
-
-		QString group = repo.group;
-		if (group.startsWith('/')) {
-			group = group.mid(1);
-		}
-		if (group == "") {
-			group = "Default";
-		}
-		auto it = parentmap.find(group);
-		if (it != parentmap.end()) {
-			parent = it->second;
-		} else {
-			QStringList list = group.split('/', _SkipEmptyParts);
-			if (list.isEmpty()) {
-				list.push_back("Default");
-			}
-			QString groupPath = "", groupPathWithCurrent;
-			for (QString const &name : list) {
-				if (name.isEmpty()) continue;
-				groupPathWithCurrent = groupPath + name;
-				auto it = parentmap.find(groupPathWithCurrent);
-				if (it != parentmap.end()) {
-					parent = it->second;
-				} else {
-					QTreeWidgetItem *newItem = newQTreeWidgetFolderItem(name);
-					if (!parent) {
-						ui->treeWidget_repos->addTopLevelItem(newItem);
-					} else {
-						parent->addChild(newItem);
-					}
-					parent = newItem;
-					parentmap[groupPathWithCurrent] = newItem;
-					newItem->setExpanded(true);
-				}
-				groupPath = groupPathWithCurrent + '/';
-			}
-			Q_ASSERT(parent);
-		}
-		parent->setData(0, FilePathRole, "");
-
-		QTreeWidgetItem *child = newQTreeWidgetItem();
-		child->setText(0, repo.name);
-		child->setData(0, IndexRole, i);
-		child->setIcon(0, getRepositoryIcon());
-		child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
-		parent->addChild(child);
-		parent->setExpanded(true);
+	if (style != RepositoriesListStyle::_Keep) {
+		current_repositories_list_style_ = style;
 	}
+	switch (current_repositories_list_style_) {
+	case RepositoriesListStyle::_Keep:
+		// nop
+		break;
+	case RepositoriesListStyle::Standard:
+		updateRepositoriesListStandard();
+		break;
+	case RepositoriesListStyle::SortRecent:
+		updateRepositoriesListSortRecent();
+		break;
+	default:
+		Q_ASSERT(false);
+		break;
+	}
+}
+
+void MainWindow::updateRepositoriesListStandard()
+{
+	auto UpdateRepositoriesListStandard = [&](){
+		QString path = getBookmarksFilePath();
+
+		setRepositoryList(RepositoryBookmark::load(path));
+		auto const *repos = &cRepositories();
+
+		QString filter = getRepositoryFilterText();
+
+		ui->treeWidget_repos->clear();
+		ui->treeWidget_repos->setFilterText(filter);
+
+		std::map<QString, QTreeWidgetItem *> parentmap;
+
+		for (int i = 0; i < repos->size(); i++) {
+			RepositoryData const &repo = repos->at(i);
+
+			if (!filter.isEmpty()) {
+				if (repo.name.indexOf(filter, 0, Qt::CaseInsensitive) < 0) continue;
+			}
+
+			QTreeWidgetItem *parent = nullptr;
+
+			QString group = repo.group;
+			if (group.startsWith('/')) {
+				group = group.mid(1);
+			}
+			if (group == "") {
+				group = "Default";
+			}
+			auto it = parentmap.find(group);
+			if (it != parentmap.end()) {
+				parent = it->second;
+			} else {
+				QStringList list = group.split('/', _SkipEmptyParts);
+				if (list.isEmpty()) {
+					list.push_back("Default");
+				}
+				QString groupPath = "", groupPathWithCurrent;
+				for (QString const &name : list) {
+					if (name.isEmpty()) continue;
+					groupPathWithCurrent = groupPath + name;
+					auto it = parentmap.find(groupPathWithCurrent);
+					if (it != parentmap.end()) {
+						parent = it->second;
+					} else {
+						QTreeWidgetItem *newItem = newQTreeWidgetFolderItem(name);
+						if (!parent) {
+							ui->treeWidget_repos->addTopLevelItem(newItem);
+						} else {
+							parent->addChild(newItem);
+						}
+						parent = newItem;
+						parentmap[groupPathWithCurrent] = newItem;
+						newItem->setExpanded(true);
+					}
+					groupPath = groupPathWithCurrent + '/';
+				}
+				Q_ASSERT(parent);
+			}
+			parent->setData(0, FilePathRole, "");
+
+			QTreeWidgetItem *child = newQTreeWidgetItem();
+			child->setText(0, repo.name);
+			child->setData(0, IndexRole, i);
+			child->setIcon(0, getRepositoryIcon());
+			child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
+			parent->addChild(child);
+			parent->setExpanded(true);
+		}
+	};
+
+	UpdateRepositoriesListStandard();
+}
+
+void MainWindow::updateRepositoriesListSortRecent()
+{
+	auto UpdateRepositoriesListSortRecent = [&](){
+
+		enableDragAndDropOnRepositoryTree(false);
+
+		QString path = getBookmarksFilePath();
+
+		setRepositoryList(RepositoryBookmark::load(path));
+
+		struct Item {
+			RepositoryData const *data;
+			QFileInfo info;
+		};
+
+		QList<RepositoryData> const &repos = cRepositories();
+
+		std::vector<Item> items;
+		{
+			for (RepositoryData const &item : repos) {
+				QString gitpath = item.local_dir / ".git";
+				QFileInfo info(gitpath);
+				items.push_back({&item, info});
+			}
+
+			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
+				return a.info.lastModified() > b.info.lastModified();
+			});
+		}
+
+		ui->treeWidget_repos->clear();
+		ui->treeWidget_repos->setFilterText({});
+
+		for (Item const &item : items) {
+			QTreeWidgetItem *child = newQTreeWidgetItem();
+			QString s = misc::makeDateTimeString(item.info.lastModified());
+			s = QString("[%1] %2").arg(s).arg(item.data->name);
+			child->setText(0, s);
+			child->setData(0, IndexRole, -1);
+			child->setIcon(0, getRepositoryIcon());
+			child->setFlags(child->flags() & ~Qt::ItemIsDropEnabled);
+			ui->treeWidget_repos->addTopLevelItem(child);
+		}
+	};
+
+	UpdateRepositoriesListSortRecent();
+}
+
+void MainWindow::onRepositoryTreeSortRecent()
+{
+	updateRepositoriesList(RepositoriesListStyle::SortRecent);
 }
 
 /**
@@ -6445,7 +6523,7 @@ void MainWindow::setRepositoryFilterText(QString const &text)
 
 	m->repository_filter_text = text;
 
-	updateRepositoriesList();
+	updateRepositoriesListStandard();
 
 	bool enabled = text.isEmpty();
 	enableDragAndDropOnRepositoryTree(enabled);

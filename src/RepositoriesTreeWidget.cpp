@@ -153,7 +153,7 @@ void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
 {
 	if (QApplication::modalWindow()) return;
 
-	if (0) {
+	if (0) { // debug
 		QMimeData const *mimedata = event->mimeData();
 		QByteArray encoded = mimedata->data("application/x-qabstractitemmodeldatalist");
 		QDataStream stream(&encoded, QIODevice::ReadOnly);
