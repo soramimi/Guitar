@@ -1,4 +1,4 @@
-#include "RepositoriesTreeWidget.h"
+#include "RepositoryTreeWidget.h"
 #include <QDropEvent>
 #include <QDebug>
 #include <QMimeData>
@@ -22,7 +22,7 @@ static int u16ncmp(ushort const *s1, ushort const *s2, int n)
 	return 0;
 }
 
-class RepositoriesTreeWidgetItemDelegate : public QStyledItemDelegate {
+class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 public:
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
@@ -30,7 +30,7 @@ public:
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
 
-		RepositoriesTreeWidget const *treewidget = qobject_cast<RepositoriesTreeWidget const *>(opt.widget);
+		RepositoryTreeWidget const *treewidget = qobject_cast<RepositoryTreeWidget const *>(opt.widget);
 		Q_ASSERT(treewidget);
 		QString filtertext = treewidget->getFilterText();
 
@@ -97,34 +97,34 @@ public:
 	}
 };
 
-struct RepositoriesTreeWidget::Private {
-	RepositoriesTreeWidgetItemDelegate delegate;
+struct RepositoryTreeWidget::Private {
+	RepositoryTreeWidgetItemDelegate delegate;
 	QString filter_text;
 };
 
-RepositoriesTreeWidget::RepositoriesTreeWidget(QWidget *parent)
+RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 	, m(new Private)
 {
 	setItemDelegate(&m->delegate);
-	connect(this, &RepositoriesTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
+	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
 		current_item = current;
 	});
 }
 
-RepositoriesTreeWidget::~RepositoriesTreeWidget()
+RepositoryTreeWidget::~RepositoryTreeWidget()
 {
 	delete m;
 }
 
-QTreeWidgetItem *RepositoriesTreeWidget::newQTreeWidgetItem()
+QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem()
 {
 	auto *item = new QTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
 	return item;
 }
 
-QTreeWidgetItem *RepositoriesTreeWidget::newQTreeWidgetFolderItem(const QString &name)
+QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetFolderItem(const QString &name)
 {
 	QTreeWidgetItem *item = newQTreeWidgetItem();
 	item->setText(0, name);
@@ -134,30 +134,30 @@ QTreeWidgetItem *RepositoriesTreeWidget::newQTreeWidgetFolderItem(const QString 
 	return item;
 }
 
-void RepositoriesTreeWidget::setFilterText(const QString &filtertext)
+void RepositoryTreeWidget::setFilterText(const QString &filtertext)
 {
 	m->filter_text = filtertext;
 	update();
 }
 
-QString RepositoriesTreeWidget::getFilterText() const
+QString RepositoryTreeWidget::getFilterText() const
 {
 	return m->filter_text;
 }
 
-void RepositoriesTreeWidget::paintEvent(QPaintEvent *event)
+void RepositoryTreeWidget::paintEvent(QPaintEvent *event)
 {
 	QTreeWidget::paintEvent(event);
 }
 
-void RepositoriesTreeWidget::setRepositoriesListStyle(RepositoriesListStyle style)
+void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 {
-	current_repositories_list_style_ = style;
+	current_repository_list_style_ = style;
 }
 
-void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<RepositoryData> const &repos, const QString &filter)
+void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryData> const &repos, const QString &filter)
 {
-	RepositoriesTreeWidget *tree = this;
+	RepositoryTreeWidget *tree = this;
 	tree->clear();
 
 	// 新しいツリーウィジェットアイテムを作成
@@ -188,7 +188,7 @@ void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<Repos
 	};
 
 	// リポジトリリストを更新（標準）
-	auto UpdateRepositoriesListStandard = [&](QString const &filter){
+	auto UpdateRepositoryListStandard = [&](QString const &filter){
 
 		EnableDragAndDropOnRepositoryTree(filter.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilterText(filter);
@@ -251,7 +251,7 @@ void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<Repos
 	};
 
 	// リポジトリリストを更新（最終更新日時順）
-	auto UpdateRepositoriesListSortRecent = [&](QString const &filter){
+	auto UpdateRepositoryListSortRecent = [&](QString const &filter){
 
 		EnableDragAndDropOnRepositoryTree(false); // ドラッグ＆ドロップを無効にする
 		tree->setFilterText({});
@@ -282,14 +282,14 @@ void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<Repos
 
 	// リポジトリリストを更新
 	switch (style) {
-	case RepositoriesTreeWidget::RepositoriesListStyle::_Keep:
+	case RepositoryTreeWidget::RepositoryListStyle::_Keep:
 		// nop
 		break;
-	case RepositoriesTreeWidget::RepositoriesListStyle::Standard:
-		UpdateRepositoriesListStandard(filter);
+	case RepositoryTreeWidget::RepositoryListStyle::Standard:
+		UpdateRepositoryListStandard(filter);
 		break;
-	case RepositoriesTreeWidget::RepositoriesListStyle::SortRecent:
-		UpdateRepositoriesListSortRecent(filter);
+	case RepositoryTreeWidget::RepositoryListStyle::SortRecent:
+		UpdateRepositoryListSortRecent(filter);
 		break;
 	default:
 		Q_ASSERT(false);
@@ -297,17 +297,17 @@ void RepositoriesTreeWidget::updateList(RepositoriesListStyle style, QList<Repos
 	}
 }
 
-RepositoriesTreeWidget::RepositoriesListStyle RepositoriesTreeWidget::currentRepositoriesListStyle() const
+RepositoryTreeWidget::RepositoryListStyle RepositoryTreeWidget::currentRepositoryListStyle() const
 {
-	return current_repositories_list_style_;
+	return current_repository_list_style_;
 }
 
-MainWindow *RepositoriesTreeWidget::mainwindow()
+MainWindow *RepositoryTreeWidget::mainwindow()
 {
 	return qobject_cast<MainWindow *>(window());
 }
 
-void RepositoriesTreeWidget::dragEnterEvent(QDragEnterEvent *event)
+void RepositoryTreeWidget::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (QApplication::modalWindow()) return;
 
@@ -319,7 +319,7 @@ void RepositoriesTreeWidget::dragEnterEvent(QDragEnterEvent *event)
 	QTreeWidget::dragEnterEvent(event);
 }
 
-void RepositoriesTreeWidget::dropEvent(QDropEvent *event)
+void RepositoryTreeWidget::dropEvent(QDropEvent *event)
 {
 	if (QApplication::modalWindow()) return;
 

@@ -109,6 +109,7 @@ macx {
 }
 
 SOURCES += \
+    $$PWD/src/RepositoryTreeWidget.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -200,7 +201,6 @@ SOURCES += \
 	src/ReflogWindow.cpp \
 	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
-	src/RepositoriesTreeWidget.cpp \
 	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryPropertyDialog.cpp \
@@ -264,6 +264,7 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+    $$PWD/src/RepositoryTreeWidget.h \
     src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
@@ -356,7 +357,6 @@ HEADERS += \
 	src/ReflogWindow.h \
 	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
-	src/RepositoriesTreeWidget.h \
 	src/RepositoryData.h \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryPropertyDialog.h \

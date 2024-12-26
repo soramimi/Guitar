@@ -576,7 +576,7 @@
           </widget>
          </item>
          <item>
-          <widget class="RepositoriesTreeWidget" name="treeWidget_repos">
+          <widget class="RepositoryTreeWidget" name="treeWidget_repos">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -1845,9 +1845,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>RepositoriesTreeWidget</class>
+   <class>RepositoryTreeWidget</class>
    <extends>QTreeWidget</extends>
-   <header>RepositoriesTreeWidget.h</header>
+   <header>RepositoryTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

@@ -281,7 +281,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
 	connect(ui->widget_log->view(), &TextEditorView::idle, this, &MainWindow::onLogIdle);
 
-	connect(ui->treeWidget_repos, &RepositoriesTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
+	connect(ui->treeWidget_repos, &RepositoryTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
 
 	connectPtyProcessCompleted();
 
@@ -302,7 +302,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	QString path = getBookmarksFilePath();
 	setRepositoryList(RepositoryBookmark::load(path));
-	updateRepositoriesList();
+	updateRepositoryList();
 
 	// アイコン取得機能
 	global->avatar_loader.connectAvatarReady(this, &MainWindow::onAvatarReady);
@@ -927,7 +927,7 @@ bool MainWindow::saveRepositoryBookmarks(bool update_list)
 	if (!RepositoryBookmark::save(path, &cRepositories())) return false;
 
 	if (update_list) {
-		updateRepositoriesList();
+		updateRepositoryList();
 	}
 
 	return true;
@@ -2829,20 +2829,20 @@ RepositoryData const *MainWindow::selectedRepositoryItem() const
 
 
 
-RepositoriesTreeWidget::RepositoriesListStyle MainWindow::repositoriesListStyle() const
+RepositoryTreeWidget::RepositoryListStyle MainWindow::repositoriesListStyle() const
 {
-	return ui->treeWidget_repos->currentRepositoriesListStyle();
+	return ui->treeWidget_repos->currentRepositoryListStyle();
 }
 
 /**
  * @brief リポジトリリストを更新
  */
-void MainWindow::updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle style)
+void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style)
 {
-	if (style == RepositoriesTreeWidget::RepositoriesListStyle::_Keep) {
-		style = ui->treeWidget_repos->currentRepositoriesListStyle();
+	if (style == RepositoryTreeWidget::RepositoryListStyle::_Keep) {
+		style = ui->treeWidget_repos->currentRepositoryListStyle();
 	} else {
-		ui->treeWidget_repos->setRepositoriesListStyle(style); // リポジトリリストスタイルを設定
+		ui->treeWidget_repos->setRepositoryListStyle(style); // リポジトリリストスタイルを設定
 	}
 
 	QString path = getBookmarksFilePath();
@@ -2851,14 +2851,14 @@ void MainWindow::updateRepositoriesList(RepositoriesTreeWidget::RepositoriesList
 
 	QString filter = getRepositoryFilterText();
 
-	RepositoriesTreeWidget *tree = ui->treeWidget_repos;
+	RepositoryTreeWidget *tree = ui->treeWidget_repos;
 
 	tree->updateList(style, repos, filter);
 }
 
 void MainWindow::onRepositoryTreeSortRecent()
 {
-	updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle::SortRecent);
+	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::SortRecent);
 }
 
 /**
@@ -4896,7 +4896,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
 			if (a == a_add_new_group) {
-				QTreeWidgetItem *child = RepositoriesTreeWidget::newQTreeWidgetFolderItem(tr("New group"));
+				QTreeWidgetItem *child = RepositoryTreeWidget::newQTreeWidgetFolderItem(tr("New group"));
 				treeitem->addChild(child);
 				child->setFlags(child->flags() | Qt::ItemIsEditable);
 				ui->treeWidget_repos->setCurrentItem(child);
@@ -6336,7 +6336,7 @@ void MainWindow::setRepositoryFilterText(QString const &text)
 
 	m->repository_filter_text = text;
 
-	updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle::Standard);
+	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
 
 	bool enabled = text.isEmpty();
 	enableDragAndDropOnRepositoryTree(enabled);

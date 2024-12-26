@@ -5,7 +5,7 @@
 #include "Git.h"
 #include "GitProcessThread.h"
 #include "MyProcess.h"
-#include "RepositoriesTreeWidget.h"
+#include "RepositoryTreeWidget.h"
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include "TextEditorTheme.h"
@@ -69,7 +69,7 @@ class MainWindow : public QMainWindow {
 	friend class FileHistoryWindow;
 	friend class FileDiffWidget;
 	friend class AboutDialog;
-	friend class RepositoriesTreeWidget; // TODO:
+	friend class RepositoryTreeWidget; // TODO:
 	friend class ExchangeData;
 public:
 	enum {
@@ -169,8 +169,8 @@ private:
 	void updateFileList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 public:
-	RepositoriesTreeWidget::RepositoriesListStyle repositoriesListStyle() const;
-	void updateRepositoriesList(RepositoriesTreeWidget::RepositoriesListStyle style = RepositoriesTreeWidget::RepositoriesListStyle::_Keep);
+	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
+	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep);
 private:
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
