@@ -42,10 +42,10 @@ up: home home/.bashrc home/.profile
 	echo CONTAINER_NAME=${NAME} >./home/.container.sh
 	docker run --device /dev/fuse --privileged --name ${NAME} -d -p ${SSHPORT}:${SSHPORT} -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e SSHPORT=${SSHPORT} -e COMMAND=up ${NAME}
 
-run: home home/.bashrc home/.profile 
+run: down home home/.bashrc home/.profile 
 	echo ${RUN} >home/run.sh
 	echo CONTAINER_NAME=${NAME} >./home/.container.sh
-	docker run --device /dev/fuse --privileged --name ${NAME} --rm -p ${SSHPORT}:${SSHPORT} -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e COMMAND=run ${NAME}
+	docker run --device /dev/fuse --privileged --name ${NAME} --rm -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e COMMAND=run ${NAME}
 	
 home:
 	-mkdir home
