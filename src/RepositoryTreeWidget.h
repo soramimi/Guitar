@@ -27,9 +27,15 @@ protected:
 	void paintEvent(QPaintEvent *event);
 	void dropEvent(QDropEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
+private:
+	enum Type {
+		Group,
+		Repository,
+	};
+	static QTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
 public:
-	static QTreeWidgetItem *newQTreeWidgetItem();
-	static QTreeWidgetItem *newQTreeWidgetFolderItem(QString const &name);
+	static QTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
+	static QTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
 public:
 	explicit RepositoryTreeWidget(QWidget *parent = nullptr);
 	~RepositoryTreeWidget();

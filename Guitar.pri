@@ -236,7 +236,7 @@ SOURCES += \
 	src/WelcomeWizardDialog.cpp \
 	src/WorkingDirLineEdit.cpp \
 	src/XmlTagState.cpp \
-	src/charvec.cpp \
+	src/common/charvec.cpp \
 	src/coloredit/ColorDialog.cpp \
 	src/coloredit/ColorEditWidget.cpp \
 	src/coloredit/ColorPreviewWidget.cpp \
@@ -393,7 +393,7 @@ HEADERS += \
 	src/WelcomeWizardDialog.h \
 	src/WorkingDirLineEdit.h \
 	src/XmlTagState.h \
-	src/charvec.h \
+	src/common/charvec.h \
 	src/coloredit/ColorDialog.h \
 	src/coloredit/ColorEditWidget.h \
 	src/coloredit/ColorPreviewWidget.h \

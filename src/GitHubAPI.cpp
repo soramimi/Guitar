@@ -4,7 +4,7 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "OverrideWaitCursor.h"
-#include "charvec.h"
+#include "common/charvec.h"
 #include "common/misc.h"
 #include "urlencode.h"
 #include "webclient.h"
@@ -17,7 +17,6 @@
 using WebClientPtr = GitHubAPI::WebClientPtr;
 
 struct GitHubRequestThread::Private {
-	// MainWindow *mainwindow = nullptr;
 	WebContext webcx = {WebClient::HTTP_1_0};
 	WebClientPtr web;
 };

@@ -34,11 +34,11 @@ void GitProcessThread::start()
 				if (m->interrrupt_) break;
 				req = *m->requests_.front();
 			}
-			req.run(req);
+			req.d.run(req);
 			bool ok = false;
 			{
 				std::unique_lock lock(m->mutex_);
-				if (m->requests_.front()->request_id == req.request_id) {
+				if (m->requests_.front()->d.request_id == req.d.request_id) {
 					m->requests_.erase(m->requests_.begin());
 					ok = true;
 				}
@@ -65,7 +65,7 @@ GitProcessThread::request_id_t GitProcessThread::request(GitCommandRunner &&req)
 	std::unique_lock lock(m->mutex_);
 	m->requests_.push_back(std::make_shared<GitCommandRunner>(std::move(req)));
 	GitCommandRunner::request_id_t reqid = m->next_request_id++;
-	m->requests_.back()->request_id = reqid;
+	m->requests_.back()->d.request_id = reqid;
 	m->cv_request.notify_all();
 	return reqid;
 }
@@ -76,7 +76,7 @@ void GitProcessThread::cancel(request_id_t reqid)
 	size_t i = m->requests_.size();
 	while (i > 0) {
 		i--;
-		if (m->requests_[i]->request_id == reqid) {
+		if (m->requests_[i]->d.request_id == reqid) {
 			m->requests_.erase(m->requests_.begin() + i);
 		}
 	}

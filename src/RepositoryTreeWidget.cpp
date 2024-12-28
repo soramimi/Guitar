@@ -157,21 +157,33 @@ void RepositoryTreeWidget::enableDragAndDrop(bool enabled)
 	viewport()->setAcceptDrops(enabled);
 }
 
-QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem()
+QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, Type type, int index)
 {
 	auto *item = new QTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
+	item->setText(0, name);
+	switch (type) {
+	case Group:
+		item->setIcon(0, global->graphics->folder_icon);
+		item->setFlags(item->flags() | Qt::ItemIsEditable);
+		break;
+	case Repository:
+		item->setIcon(0, global->graphics->repository_icon);
+		item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
+		break;
+	}
+	item->setData(0, MainWindow::IndexRole, index);
 	return item;
 }
 
-QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetFolderItem(const QString &name)
+QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetGroupItem(const QString &name)
 {
-	QTreeWidgetItem *item = newQTreeWidgetItem();
-	item->setText(0, name);
-	item->setData(0, MainWindow::IndexRole, MainWindow::GroupItem);
-	item->setIcon(0, global->graphics->folder_icon);
-	item->setFlags(item->flags() | Qt::ItemIsEditable);
-	return item;
+	return newQTreeWidgetItem(name, Group, MainWindow::GroupItem);
+}
+
+QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(const QString &name, int index)
+{
+	return newQTreeWidgetItem(name, Repository, index);
 }
 
 void RepositoryTreeWidget::setFilterText(const QString &filtertext)
@@ -199,26 +211,6 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 {
 	RepositoryTreeWidget *tree = this;
 	tree->clear();
-
-	// 新しいツリーウィジェットアイテムを作成
-	auto NewItem = [&](QString const &reponame, int index){
-		QTreeWidgetItem *item = newQTreeWidgetItem();
-		item->setText(0, reponame);
-		item->setData(0, MainWindow::IndexRole, index);
-		item->setIcon(0, global->graphics->repository_icon);
-		item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
-		return item;
-	};
-
-	//
-	auto newQTreeWidgetFolderItem = [](QString const &name)->QTreeWidgetItem *{
-		QTreeWidgetItem *item = newQTreeWidgetItem();
-		item->setText(0, name);
-		item->setData(0, MainWindow::IndexRole, MainWindow::GroupItem);
-		item->setIcon(0, global->graphics->folder_icon);
-		item->setFlags(item->flags() | Qt::ItemIsEditable);
-		return item;
-	};
 
 	// リポジトリリストを更新（標準）
 	auto UpdateRepositoryListStandard = [&](QString const &filter){
@@ -260,7 +252,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 						if (it != parentmap.end()) {
 							parent = it->second;
 						} else {
-							QTreeWidgetItem *newitem = newQTreeWidgetFolderItem(name);
+							QTreeWidgetItem *newitem = newQTreeWidgetGroupItem(name);
 							if (!parent) {
 								tree->addTopLevelItem(newitem); // トップレベルに追加
 							} else {
@@ -277,7 +269,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 			}
 			parent->setData(0, MainWindow::FilePathRole, "");
 
-			auto *child = NewItem(repo.name, i);
+			auto *child = newQTreeWidgetRepositoryItem(repo.name, i);
 			parent->addChild(child);
 			parent->setExpanded(true);
 		}
@@ -310,7 +302,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (Item const &item : items) {
 			QString s = misc::makeDateTimeString(item.info.lastModified());
 			s = QString("[%1] %2").arg(s).arg(item.data->name);
-			auto *child = NewItem(s, item.index);
+			auto *child = newQTreeWidgetRepositoryItem(s, item.index);
 			tree->addTopLevelItem(child);
 		}
 	};

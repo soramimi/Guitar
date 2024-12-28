@@ -139,28 +139,31 @@ public:
 		Git_submodule_add
 		> variant_t;
 
-	GitPtr g_;
-	PtyProcess *pty_ = nullptr;
 	typedef unsigned int request_id_t;
-	request_id_t request_id;
-	bool override_wait_cursor = true;
-	std::function<void (GitCommandRunner &req)> run;
-	QVariant userdata;
-	bool update_commit_log = false;
-	bool result = false;
+
+	struct D {
+		GitPtr g;
+		PtyProcess *pty = nullptr;
+		request_id_t request_id;
+		bool override_wait_cursor = true;
+		std::function<void (GitCommandRunner &req)> run;
+		QVariant userdata;
+		bool update_commit_log = false;
+		bool result = false;
+	} d;
 
 	GitPtr git()
 	{
-		return g_;
+		return d.g;
 	}
 	PtyProcess *pty()
 	{
-		return pty_;
+		return d.pty;
 	}
 	std::string pty_message() const;
 	PtyProcess const *pty() const
 	{
-		return pty_;
+		return d.pty;
 	}
 	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
 };

@@ -16,7 +16,6 @@ using GitPtr = std::shared_ptr<Git>;
 class GitObjectManager {
 	friend class GitObjectCache;
 private:
-	// GitPtr g;
 	QMutex mutex;
 	QString subdir_git_objects;
 	QString subdir_git_objects_pack;
@@ -56,15 +55,6 @@ private:
 	std::map<QString, Git::CommitID> revparsemap;
 	size_t size() const;
 public:
-	// GitPtr git()
-	// {
-	// 	return object_manager.git();
-	// }
-	// GitPtr git(Git::SubmoduleItem const &submod)
-	// {
-	// 	return object_manager.git(submod);
-	// }
-
 	void setup(GitPtr g);
 	Git::CommitID revParse(GitPtr g, QString const &name);
 	Git::Object catFile(GitPtr g, const Git::CommitID &id);

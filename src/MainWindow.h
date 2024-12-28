@@ -204,7 +204,6 @@ private:
 	void rebaseBranch(Git::CommitItem const *commit);
 	void cherrypick(Git::CommitItem const *commit);
 	void merge(RepositoryWrapperFrame *frame, Git::CommitItem commit = {});
-	void detectGitServerType(GitPtr g);
 	void setRemoteOnline(bool f, bool save);
 	void startTimers();
 	void setNetworkingCommandsEnabled(bool enabled);
@@ -355,7 +354,7 @@ private:
 	Git::CommitItemList *getCommitLogPtr(RepositoryWrapperFrame *frame);
 	PtyProcess *getPtyProcess();
 	bool getPtyProcessOk() const;
-	void setCompletedHandler(std::function<void (bool, QVariant const &)> fn, const QVariant &userdata);
+	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
 	const QList<RepositoryData> &cRepositories() const;
 	QList<RepositoryData> *pRepositories();
@@ -367,11 +366,10 @@ private:
 	QString getRepositoryFilterText() const;
 	void setRepositoryFilterText(const QString &text);
 	void setUncommitedChanges(bool uncommited_changes);
-	QList<Git::Diff> *diffResult();
+	QList<Git::Diff> const *diffResult() const;
 	std::map<QString, Git::Diff> *getDiffCacheMap(RepositoryWrapperFrame *frame);
-	GitHubRepositoryInfo *ptrGitHub();
-	std::map<int, QList<BranchLabel> > *getLabelMap(RepositoryWrapperFrame *frame);
-	const std::map<int, QList<BranchLabel> > *getLabelMap(const RepositoryWrapperFrame *frame) const;
+	std::map<int, QList<BranchLabel>> *getLabelMap(RepositoryWrapperFrame *frame);
+	const std::map<int, QList<BranchLabel>> *getLabelMap(const RepositoryWrapperFrame *frame) const;
 	void clearLabelMap(RepositoryWrapperFrame *frame);
 	GitObjectCache *getObjCache(RepositoryWrapperFrame *frame);
 	bool getForceFetch() const;
@@ -630,8 +628,6 @@ signals:
 	void signalSetProgress(float progress);
 	void signalShowProgress(const QString &text, bool cancel_button);
 	void signalHideProgress();
-
-	// log handler
 protected slots:
 	void onLogIdle();
 public:

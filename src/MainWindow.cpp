@@ -140,7 +140,7 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	Git::FileStatusList uncommited_changes_file_list;
 
-	GitHubRepositoryInfo github;
+	// GitHubRepositoryInfo github;
 
 	Git::CommitID head_id;
 
@@ -1672,7 +1672,6 @@ void MainWindow::internalClearRepositoryInfo()
 {
 	setHeadId({});
 	setCurrentBranch(Git::Branch());
-	m->github = GitHubRepositoryInfo();
 }
 
 /**
@@ -1851,7 +1850,6 @@ void MainWindow::internalAfterFetch()
 	ASSERT_MAIN_THREAD();
 
 	GitPtr g = git();
-	detectGitServerType(g);
 	updateRemoteInfo(g);
 	onUpdateCommitLog();
 }
@@ -1863,34 +1861,34 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 	setProgress(-1.0f);
 	showProgress(progress_message, false);
 
-	GitCommandRunner req;
-	req.run = [this, var](GitCommandRunner &req){
+	GitCommandRunner runner;
+	runner.d.run = [this, var](GitCommandRunner &runner){
 		setCompletedHandler([this](bool ok, QVariant const &d){
 			showProgress({}, false);
 			GitCommandRunner const &req = d.value<GitCommandRunner>();
 			PtyProcessCompleted data;
 			data.callback = req.callback;
 			data.status.ok = ok;
-			data.userdata = req.userdata;
+			data.userdata = req.d.userdata;
 			data.status.log_message = req.pty_message();
 			emit sigPtyProcessCompleted(true, data);
-		}, QVariant::fromValue(req));
+		}, QVariant::fromValue(runner));
 		setPtyProcessOk(true);
 
-		std::visit(req, var);
-		if (req.result) {
+		std::visit(runner, var);
+		if (runner.d.result) {
 			// nop
 		} else {
 			emit sigPtyProcessCompleted(false, {});
 		}
 	};
 
-	req.g_ = g->dup();
-	req.callback = callback;
-	req.userdata = userdata;
-	req.pty_ = getPtyProcess();
+	runner.d.g = g->dup();
+	runner.callback = callback;
+	runner.d.userdata = userdata;
+	runner.d.pty = getPtyProcess();
 	getPtyProcess()->clearMessage();
-	m->git_process_thread.request(std::move(req));
+	m->git_process_thread.request(std::move(runner));
 }
 
 void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
@@ -2832,8 +2830,6 @@ RepositoryData const *MainWindow::selectedRepositoryItem() const
 	return repositoryItem(ui->treeWidget_repos->currentItem());
 }
 
-
-
 RepositoryTreeWidget::RepositoryListStyle MainWindow::repositoriesListStyle() const
 {
 	return ui->treeWidget_repos->currentRepositoryListStyle();
@@ -3434,7 +3430,7 @@ void MainWindow::setUncommitedChanges(bool uncommited_changes)
 	m->uncommited_changes = uncommited_changes;
 }
 
-QList<Git::Diff> *MainWindow::diffResult()
+QList<Git::Diff> const *MainWindow::diffResult() const
 {
 	return &m->diff_result;
 }
@@ -3444,17 +3440,12 @@ std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap(RepositoryWrapperFrame
 	return &frame->diff_cache;
 }
 
-GitHubRepositoryInfo *MainWindow::ptrGitHub()
-{
-	return &m->github;
-}
-
-std::map<int, QList<BranchLabel> > *MainWindow::getLabelMap(RepositoryWrapperFrame *frame)
+std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap(RepositoryWrapperFrame *frame)
 {
 	return &frame->label_map;
 }
 
-const std::map<int, QList<BranchLabel> > *MainWindow::getLabelMap(const RepositoryWrapperFrame *frame) const
+const std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap(const RepositoryWrapperFrame *frame) const
 {
 	return &frame->label_map;
 }
@@ -3508,8 +3499,6 @@ QString MainWindow::gitCommand() const
 {
 	return m->gcx.git_command;
 }
-
-
 
 /**
  * @brief リストウィジェット用ファイルアイテムを作成する
@@ -4249,58 +4238,6 @@ void MainWindow::updateCurrentFilesList(RepositoryWrapperFrame *frame)
 	updateFileList(frame, commit);
 }
 
-void MainWindow::detectGitServerType(GitPtr g)
-{
-	*ptrGitHub() = GitHubRepositoryInfo();
-
-	QString url;
-	{
-		Git::Remote remote;
-		std::vector<Git::Remote> remotes;
-		g->remote_v(&remotes);
-		for (Git::Remote const &r : remotes) {
-			if (r.name == "origin") {
-				remote = r;
-				break;
-			}
-			if (!r.url().isEmpty()) {
-				remote = r;
-			}
-		}
-		url = remote.url();
-	}
-
-	auto Check = [&](QString const &s){
-		int i = (int)url.indexOf(s);
-		if (i > 0) return i + (int)s.size();
-		return 0;
-	};
-
-	// check GitHub
-	auto pos = Check("@github.com:");
-	if (pos == 0) {
-		pos = Check("://github.com/");
-	}
-	if (pos > 0) {
-		auto end = url.size();
-		{
-			QString s = ".git";
-			if (url.endsWith(s)) {
-				end -= s.size();
-			}
-		}
-		QString s = url.mid(pos, end - pos);
-		auto i = s.indexOf('/');
-		if (i > 0) {
-			auto *p = ptrGitHub();
-			QString user = s.mid(0, i);
-			QString repo = s.mid(i + 1);
-			p->owner_account_name = user;
-			p->repository_name = repo;
-		}
-	}
-}
-
 Git::Object MainWindow::internalCatFile(RepositoryWrapperFrame *frame, GitPtr g, const QString &id) //@TODO:
 {
 	if (isValidWorkingCopy(g)) {
@@ -4900,7 +4837,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		QAction *a = menu.exec(pt + QPoint(8, -8));
 		if (a) {
 			if (a == a_add_new_group) {
-				QTreeWidgetItem *child = RepositoryTreeWidget::newQTreeWidgetFolderItem(tr("New group"));
+				QTreeWidgetItem *child = RepositoryTreeWidget::newQTreeWidgetGroupItem(tr("New group"));
 				treeitem->addChild(child);
 				child->setFlags(child->flags() | Qt::ItemIsEditable);
 				ui->treeWidget_repos->setCurrentItem(child);

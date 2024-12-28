@@ -6,7 +6,7 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "Photoshop.h"
-#include "charvec.h"
+#include "common/charvec.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include <QBuffer>

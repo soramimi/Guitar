@@ -9,14 +9,13 @@ class InputNewTagDialog;
 
 class InputNewTagDialog : public QDialog {
 	Q_OBJECT
-
+private:
+	Ui::InputNewTagDialog *ui;
 public:
 	explicit InputNewTagDialog(QWidget *parent = nullptr);
 	~InputNewTagDialog() override;
 
 	QString text() const;
-private:
-	Ui::InputNewTagDialog *ui;
 };
 
 #endif // INPUTNEWTAGDIALOG_H

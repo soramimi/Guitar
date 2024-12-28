@@ -8,24 +8,11 @@
 
 class GitDiff {
 	friend class CommitListThread;
-public:
 private:
 	class LookupTable;
 private:
 	GitObjectCache *objcache = nullptr;
 	QList<Git::Diff> diffs;
-
-	bool interrupted = false;
-
-	struct Interrupted {
-	};
-
-	void checkInterrupted()
-	{
-		if (interrupted) {
-			throw Interrupted();
-		}
-	}
 
 	using MapList = std::list<LookupTable>;
 
@@ -43,11 +30,6 @@ public:
 
 	bool diff(GitPtr g, const Git::CommitID &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
 	bool diff_uncommited(GitPtr g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
-
-	void interrupt()
-	{
-		interrupted = true;
-	}
 
 public:
 	static QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
