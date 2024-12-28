@@ -33,6 +33,7 @@ public:
 public:
 	explicit RepositoryTreeWidget(QWidget *parent = nullptr);
 	~RepositoryTreeWidget();
+	void enableDragAndDrop(bool enabled);
 	void setFilterText(QString const &filtertext);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;

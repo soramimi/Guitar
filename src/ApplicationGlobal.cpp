@@ -18,6 +18,7 @@ void ApplicationGlobal::init(QApplication *a)
 		graphics->signature_bad_icon = QIcon(":/image/signature-bad.png");
 		graphics->signature_dubious_icon = QIcon(":/image/signature-dubious.png");
 		graphics->transparent_pixmap = QPixmap(":/image/transparent.png");
+		graphics->small_digits.load(":/image/digits.png");
 	}
 }
 

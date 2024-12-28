@@ -146,8 +146,6 @@ public:
 	RepositoryWrapperFrame *frame();
 	RepositoryWrapperFrame const *frame() const;
 
-	QPixmap const &digitsPixmap() const;
-
 	QColor color(unsigned int i);
 
 	bool isOnlineMode() const;

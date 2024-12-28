@@ -152,7 +152,6 @@ struct MainWindow::Private {
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
-	QPixmap digits;
 	ProgressWidget *status_bar_label;
 
 	QObject *last_focused_file_list = nullptr;
@@ -255,7 +254,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	showFileList(FilesListType::SingleList);
 
-	m->digits.load(":/image/digits.png");
 	m->graph_color = global->theme->graphColorMap();
 
 	frame()->prepareLogTableWidget();
@@ -958,11 +956,6 @@ void MainWindow::onRepositoriesTreeDropped()
 	if (item) item->setExpanded(true);
 }
 
-const QPixmap &MainWindow::digitsPixmap() const
-{
-	return m->digits;
-}
-
 /**
  * @brief MainWindow::drawDigit
  * @param pr QPainter
@@ -977,7 +970,7 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
 {
 	int w = DIGIT_WIDTH;
 	int h = DIGIT_HEIGHT;
-	pr->drawPixmap(x, y, w, h, m->digits, n * w, 0, w, h);
+	pr->drawPixmap(x, y, w, h, global->graphics->small_digits, n * w, 0, w, h);
 }
 
 /**
@@ -2864,7 +2857,6 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 	QString filter = getRepositoryFilterText();
 
 	RepositoryTreeWidget *tree = ui->treeWidget_repos;
-
 	tree->updateList(style, repos, filter);
 }
 
@@ -5672,8 +5664,6 @@ std::optional<Git::CommitItem> MainWindow::queryCommit(Git::CommitID const &id)
 
 void MainWindow::checkout(RepositoryWrapperFrame *frame, QWidget *parent, Git::CommitItem const &commit, std::function<void ()> accepted_callback)
 {
-	// if (!commit) return;
-
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
@@ -6099,12 +6089,7 @@ void MainWindow::on_toolButton_stage_clicked()
 				QString path = getFilePath(item);
 				list.push_back(path);
 			}
-#if 0
-			g->stage(list);
-#else
 			stage(g, list);
-
-#endif
 		}
 		updateCurrentFilesList(frame());
 	}
@@ -6141,8 +6126,6 @@ void MainWindow::on_toolButton_commit_clicked()
 {
 	ui->action_commit->trigger();
 }
-
-
 
 void MainWindow::on_action_edit_global_gitconfig_triggered()
 {
@@ -6243,14 +6226,6 @@ void MainWindow::on_listWidget_files_currentRowChanged(int /*currentRow*/)
 	updateDiffView(frame(), frame()->filelistwidget()->currentItem());
 }
 
-void MainWindow::enableDragAndDropOnRepositoryTree(bool enabled)
-{
-	ui->treeWidget_repos->setDragEnabled(enabled);
-	ui->treeWidget_repos->setAcceptDrops(enabled);
-	ui->treeWidget_repos->setDropIndicatorShown(enabled);
-	ui->treeWidget_repos->viewport()->setAcceptDrops(enabled);
-}
-
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (QApplication::modalWindow()) return;
@@ -6304,11 +6279,6 @@ void MainWindow::on_action_edit_settings_triggered()
 	SettingsDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		ApplicationSettings const &newsettings = dlg.settings();
-#if 0
-		if (global->appsettings.openai_api_key != newsettings.openai_api_key) {
-			ApplicationSettings::saveOpenAiApiKey(newsettings.openai_api_key);
-		}
-#endif
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
@@ -6319,8 +6289,6 @@ void MainWindow::on_action_add_repository_triggered()
 {
 	addRepository(QString());
 }
-
-
 
 void MainWindow::on_toolButton_addrepo_clicked()
 {
@@ -6351,9 +6319,6 @@ void MainWindow::setRepositoryFilterText(QString const &text)
 	m->repository_filter_text = text;
 
 	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
-
-	bool enabled = text.isEmpty();
-	enableDragAndDropOnRepositoryTree(enabled);
 }
 
 /**

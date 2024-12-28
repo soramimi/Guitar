@@ -48,6 +48,7 @@ public:
 		QIcon signature_dubious_icon;
 		QIcon signature_bad_icon;
 		QPixmap transparent_pixmap;
+		QPixmap small_digits;
 	};
 	std::unique_ptr<Graphics> graphics;
 

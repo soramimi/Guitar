@@ -23,10 +23,83 @@ static int u16ncmp(ushort const *s1, ushort const *s2, int n)
 }
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
+private:
+	void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect r, QString const &text) const
+	{
+#ifndef Q_OS_WIN
+		if (opt.state & QStyle::State_Selected) { // 選択されている場合
+			painter->setPen(opt.palette.color(QPalette::HighlightedText));
+		} else {
+			painter->setPen(opt.palette.color(QPalette::Text));
+		}
+#endif
+		painter->drawText(r, opt.displayAlignment, text); // テキストを描画
+	}
+	void drawText_default(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text) const
+	{
+		int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
+		QRect r = rect;
+		r.setWidth(w);
+		if (text.startsWith('[')) {
+			int i = text.indexOf(']');
+			Q_ASSERT(i >= 0);
+			QString s = text.mid(1, i - 1);
+			QFont font = painter->font();
+			QFont smallfont = font;
+			smallfont.setPointSize(font.pointSize() * 4 / 5);
+			painter->setFont(smallfont);
+			painter->save();
+			painter->setOpacity(0.75);
+			drawText(painter, opt, r, s);
+			painter->restore();
+			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+			r.translate(w, 0);
+			painter->setFont(font);
+			painter->setPen(opt.palette.color(QPalette::Text));
+			drawText(painter, opt, r, text.mid(i + 1));
+		} else {
+			drawText(painter, opt, r, text);
+		}
+	}
+	void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text, QString const &filtertext) const
+	{
+		std::vector<std::tuple<QString, bool>> list;
+		// フィルターがある場合
+		const int filtersize = filtertext.size();
+		int left = 0;
+		int right = 0;
+		while (right < opt.text.size()) { // テキストをフィルターで分割
+			if (u16ncmp((ushort const *)opt.text.utf16() + right, (ushort const *)filtertext.utf16(), filtersize) == 0) {
+				if (left < right) {
+					list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
+				}
+				list.push_back(std::make_tuple(opt.text.mid(right, filtersize), true));
+				left = right = right + filtersize;
+			} else {
+				right++;
+			}
+		}
+		if (left < right) { // フィルターで分割できなかった残り
+			list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
+		}
+		int x = rect.x();
+		for (auto [s, f] : list) {
+			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+			QRect r = rect;
+			r.setLeft(x);
+			r.setWidth(w);
+			if (f) { // フィルターの部分をハイライト
+				QColor color = opt.palette.color(QPalette::Highlight);
+				color.setAlpha(128);
+				painter->fillRect(r, color);
+			}
+			drawText(painter, opt, r, s);
+			x += w;
+		}
+	}
 public:
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 	{
-#if 1
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
 
@@ -49,51 +122,10 @@ public:
 		// テキストを描画
 		std::vector<std::tuple<QString, bool>> list;
 		if (filtertext.isEmpty()) { // フィルターがない場合
-			list.push_back(std::make_tuple(opt.text, false));
+			drawText_default(painter, opt, textrect, opt.text);
 		} else {
-			// フィルターがある場合
-			const int filtersize = filtertext.size();
-			int left = 0;
-			int right = 0;
-			while (right < opt.text.size()) { // テキストをフィルターで分割
-				if (u16ncmp((ushort const *)opt.text.utf16() + right, (ushort const *)filtertext.utf16(), filtersize) == 0) {
-					if (left < right) {
-						list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
-					}
-					list.push_back(std::make_tuple(opt.text.mid(right, filtersize), true));
-					left = right = right + filtersize;
-				} else {
-					right++;
-				}
-			}
-			if (left < right) { // フィルターで分割できなかった残り
-				list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
-			}
+			drawText_filted(painter, opt, textrect, opt.text, filtertext);
 		}
-		int x = textrect.x();
-		for (auto [s, f] : list) {
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
-			QRect r = textrect;
-			r.setLeft(x);
-			r.setWidth(w);
-			if (f) { // フィルターの部分をハイライト
-				QColor color = opt.palette.color(QPalette::Highlight);
-				color.setAlpha(128);
-				painter->fillRect(r, color);
-			}
-#ifndef Q_OS_WIN
-			if (opt.state & QStyle::State_Selected) { // 選択されている場合
-				painter->setPen(opt.palette.color(QPalette::HighlightedText));
-			} else {
-				painter->setPen(opt.palette.color(QPalette::Text));
-			}
-#endif
-			painter->drawText(r, opt.displayAlignment, s); // テキストを描画
-			x += w;
-		}
-#else
-		QStyledItemDelegate::paint(painter, option, index);
-#endif
 	}
 };
 
@@ -115,6 +147,14 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 RepositoryTreeWidget::~RepositoryTreeWidget()
 {
 	delete m;
+}
+
+void RepositoryTreeWidget::enableDragAndDrop(bool enabled)
+{
+	setDragEnabled(enabled);
+	setAcceptDrops(enabled);
+	setDropIndicatorShown(enabled);
+	viewport()->setAcceptDrops(enabled);
 }
 
 QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem()
@@ -171,13 +211,6 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 	};
 
 	//
-	auto EnableDragAndDropOnRepositoryTree = [&](bool enabled){
-		tree->setDragEnabled(enabled);
-		tree->setAcceptDrops(enabled);
-		tree->setDropIndicatorShown(enabled);
-		tree->viewport()->setAcceptDrops(enabled);
-	};
-
 	auto newQTreeWidgetFolderItem = [](QString const &name)->QTreeWidgetItem *{
 		QTreeWidgetItem *item = newQTreeWidgetItem();
 		item->setText(0, name);
@@ -190,7 +223,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 	// リポジトリリストを更新（標準）
 	auto UpdateRepositoryListStandard = [&](QString const &filter){
 
-		EnableDragAndDropOnRepositoryTree(filter.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
+		enableDragAndDrop(filter.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilterText(filter);
 
 		std::map<QString, QTreeWidgetItem *> parentmap;
@@ -253,19 +286,21 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 	// リポジトリリストを更新（最終更新日時順）
 	auto UpdateRepositoryListSortRecent = [&](QString const &filter){
 
-		EnableDragAndDropOnRepositoryTree(false); // ドラッグ＆ドロップを無効にする
+		enableDragAndDrop(false); // ドラッグ＆ドロップを無効にする
 		tree->setFilterText({});
 
 		struct Item {
+			int index;
 			RepositoryData const *data;
 			QFileInfo info;
 		};
 		std::vector<Item> items;
 		{
-			for (RepositoryData const &item : repos) {
+			for (int i = 0; i < repos.size(); i++) {
+				RepositoryData const &item = repos.at(i);
 				QString gitpath = item.local_dir / ".git";
 				QFileInfo info(gitpath);
-				items.push_back({&item, info});
+				items.push_back({i, &item, info});
 			}
 			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
 				return a.info.lastModified() > b.info.lastModified();
@@ -275,7 +310,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (Item const &item : items) {
 			QString s = misc::makeDateTimeString(item.info.lastModified());
 			s = QString("[%1] %2").arg(s).arg(item.data->name);
-			auto *child = NewItem(s, -1);
+			auto *child = NewItem(s, item.index);
 			tree->addTopLevelItem(child);
 		}
 	};
