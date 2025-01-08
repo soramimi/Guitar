@@ -1,5 +1,5 @@
-.\" $File: magic.man,v 1.108 2024/03/31 14:36:44 christos Exp $
-.Dd March 31, 2024
+.\" $File: magic.man,v 1.109 2024/06/18 17:04:23 christos Exp $
+.Dd June 18, 2024
 .Dt MAGIC __FSECTION__
 .Os
 .\" install as magic.4 on USG, magic.5 on V7, Berkeley and Linux systems.
@@ -146,6 +146,10 @@ An eight-byte value interpreted as a UNIX-style date, but interpreted as
 local time rather than UTC.
 .It Dv qwdate
 An eight-byte value interpreted as a Windows-style date.
+.It Dv msdosdate
+A two-byte value interpreted as FAT/DOS-style date.
+.It Dv msdostime
+A two-byte value interpreted as FAT/DOS-style time.
 .It Dv beid3
 A 32-bit ID3 length in big-endian byte order.
 .It Dv beshort
@@ -175,6 +179,12 @@ than UTC.
 .It Dv beqwdate
 An eight-byte value in big-endian byte order,
 interpreted as a Windows-style date.
+.It Dv bemsdosdate
+A two-byte value in big-endian byte order,
+interpreted as FAT/DOS-style date.
+.It Dv bemsdostime
+A two-byte value in big-endian byte order,
+interpreted as FAT/DOS-style time.
 .It Dv bestring16
 A two-byte unicode (UCS16) string in big-endian byte order.
 .It Dv leid3
@@ -206,6 +216,12 @@ than UTC.
 .It Dv leqwdate
 An eight-byte value in little-endian byte order,
 interpreted as a Windows-style date.
+.It Dv lemsdosdate
+A two-byte value in big-endian byte order,
+interpreted as FAT/DOS-style date.
+.It Dv lemsdostime
+A two-byte value in big-endian byte order,
+interpreted as FAT/DOS-style time.
 .It Dv lestring16
 A two-byte unicode (UCS16) string in little-endian byte order.
 .It Dv melong

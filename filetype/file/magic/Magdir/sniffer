@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: sniffer,v 1.35 2023/11/18 15:17:38 christos Exp $
+# $File: sniffer,v 1.36 2024/06/16 15:09:26 christos Exp $
 # sniffer:  file(1) magic for packet capture files
 #
 # From: guy@alum.mit.edu (Guy Harris)
@@ -198,7 +198,7 @@
 >20	belong&0x03FFFFFF		204		(PPP with direction pseudo-header
 >20	belong&0x03FFFFFF		205		(Cisco HDLC with direction pseudo-header
 >20	belong&0x03FFFFFF		206		(Frame Relay with direction pseudo-header
->20	belong&0x03FFFFFF		209		(Linux IPMB
+>20	belong&0x03FFFFFF		209		(Linux I2C
 >20	belong&0x03FFFFFF		215		(802.15.4 with non-ASK PHY header
 >20	belong&0x03FFFFFF		216		(Linux evdev events
 >20	belong&0x03FFFFFF		219		(MPLS with label as link-layer header

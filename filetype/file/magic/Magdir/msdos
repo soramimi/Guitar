@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: msdos,v 1.205 2024/04/06 13:29:53 christos Exp $
+# $File: msdos,v 1.206 2024/06/18 17:05:28 christos Exp $
 # msdos:  file(1) magic for MS-DOS files
 #
 
@@ -414,9 +414,11 @@
 >>>>(0x3c.l+0x03)	ubyte		x	\b.%02u
 # FOR DEBUGGING!
 # Reference:	https://wiki.osdev.org/NE
-# Create time for NE version <5 in FAT12 format (this timestamp format is not supported by magic yet)
-#>>>>(0x3c.l+0x02)	ubyte		<5
-#>>>>>(0x3c.l+0x08)	ulelong		!0	\b, Created at 0x%x
+# Create time for NE version <5 in FAT12 format
+#>>>(0x3c.l+0x02)    ubyte        <5
+#>>>>(0x3c.l+0x08)    ulelong        !0    \b, Created at
+#>>>>>(0x3c.l+0x0a)    lemsdosdate    x    %s
+#>>>>>(0x3c.l+0x08)    lemsdostime    x    %s
 # ProgFlags; Program flags, bitmapped
 #>>>(0x3c.l+0x0C)	ubyte		x	\b, ProgFlags 0x%2.2x
 # >>>(0x3c.l+0x0c)	ubyte&0x03	=0	\b, no automatic data segment

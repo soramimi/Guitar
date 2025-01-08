@@ -7,9 +7,10 @@ CONFIG -= qt
 DESTDIR = $$PWD/_bin
 
 INCLUDEPATH += misc
+win32:INCLUDEPATH += misc/win32
 INCLUDEPATH += file/src
 INCLUDEPATH += pcre2/src
-# win32:INCLUDEPATH += dirent/include
+win32:INCLUDEPATH += dirent/include
 # win32:QMAKE_CFLAGS += /FI unistd.h
 # win32:LIBS += -lshlwapi
 
@@ -90,8 +91,6 @@ HEADERS += \
 	file/src/elfclass.h \
 	file/src/file.h \
 	file/src/file_opts.h \
-	file/src/magic.h \
-	file/src/magic.h \
 	file/src/patchlevel.h \
 	file/src/readelf.h \
 	file/src/tar.h \
@@ -99,7 +98,6 @@ HEADERS += \
 	misc/file_config.h \
 	misc/pcre2.h \
 	misc/pcre2_config.h \
-	misc/unistd.h \
 	pcre2/src/pcre2_internal.h \
 	pcre2/src/pcre2_intmodedep.h \
 	pcre2/src/pcre2_ucp.h \

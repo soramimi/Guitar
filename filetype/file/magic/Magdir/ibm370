@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: ibm370,v 1.12 2024/03/01 03:32:45 christos Exp $
+# $File: ibm370,v 1.13 2024/06/19 16:52:57 christos Exp $
 # ibm370:  file(1) magic for IBM 370 and compatibles.
 #
 # "ibm370" said that 0x15d == 0535 was "ibm 370 pure executable".
@@ -48,8 +48,8 @@
 >24	belong		>0		- version %d
 
 # NETDATA (https://en.wikipedia.org/wiki/NETDATA)
-#	-\INMR01 In EBCDIC
-0	string 		\x60\xe0\xc9\xd5\xd4\xd9\xf0\xf1	IBM NETDATA file
+# INMR01 In EBCDIC starting at offset 2
+2	string		\xc9\xd5\xd4\xd9\xf0\xf1	IBM NETDATA file
 
 # z/OS Program Object executable
 # Starts with "IEWPLMH" in EBCDIC, followed by a single EBCDIC space to pad

@@ -27,7 +27,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: seccomp.c,v 1.27 2024/05/14 13:46:09 christos Exp $")
+FILE_RCSID("@(#)$File: seccomp.c,v 1.28 2024/06/16 14:53:16 christos Exp $")
 #endif	/* lint */
 
 #if HAVE_LIBSECCOMP
@@ -157,7 +157,6 @@ enable_sandbox_basic(void)
 	DENY_RULE(socket);
 	// ...
 
-	memory
 	// applying filter...
 	if (seccomp_load(ctx) == -1)
 		goto out;

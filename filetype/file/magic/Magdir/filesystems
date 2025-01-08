@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: filesystems,v 1.161 2024/03/10 21:16:25 christos Exp $
+# $File: filesystems,v 1.162 2024/06/19 16:31:14 christos Exp $
 # filesystems:  file(1) magic for different filesystems
 #
 0	name	partid
@@ -2755,3 +2755,49 @@
 >>20	uleshort	x		\b.%u
 >>24	ulelong		x		\b, block size: %u bytes
 >>28	ulelong		x		\b, %u blocks
+
+# EldOS Corporation SolidFS (aka SolFS)
+# 256 bytes page size
+0x0	string	\x08\x00\x4e\x57\x20
+>0x100	string	\x4e\x57\x00\x00\x01
+>0x1A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 256 bytes page size
+
+# 512 bytes page size
+0x0	string	\x09\x00\x4e\x57\x20
+>0x200	string	\x4e\x57\x00\x00\x01
+>0x2A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 512 bytes page size
+
+# 1 kibibyte page size
+0x0	string	\x0A\x00\x4e\x57\x20
+>0x400	string	\x4e\x57\x00\x00\x01
+>0x4A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 1KiB page size
+
+# 2 kibibyte page size
+0x0	string	\x0B\x00\x4e\x57\x20
+>0x800	string	\x4e\x57\x00\x00\x01
+>0x8A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 2KiB page size
+
+# 4 kibibyte page size
+0x0	string	\x0C\x00\x4e\x57\x20
+>0x1000	string	\x4e\x57\x00\x00\x01
+>0x10A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 4KiB page size
+
+# 8 kibibyte page size
+0x0	string	\x0D\x00\x4e\x57\x20
+>0x2000	string	\x4e\x57\x00\x00\x01
+>0x20A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 8KiB page size
+
+# 16 kibibyte page size
+0x0	string	\x0E\x00\x4e\x57\x20
+>0x4000	string	\x4e\x57\x00\x00\x01
+>0x40A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 16KiB page size
+
+# 32 kibibyte page size
+0x0	string	\x0F\x00\x4e\x57\x20
+>0x8000	string	\x4e\x57\x00\x00\x01
+>0x80A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 32KiB page size
+
+# 64 kibibyte page size
+0x0		string	\x10\x00\x4e\x57\x20
+>0x10000	string	\x4e\x57\x00\x00\x01
+>0x100A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 64KiB page size

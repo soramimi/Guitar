@@ -75,6 +75,12 @@ jsonlines1.result \
 jsonlines1.testfile \
 JW07022A.mp3.result \
 JW07022A.mp3.testfile \
+keyman-0.result \
+keyman-0.testfile \
+keyman-1.result \
+keyman-1.testfile \
+keyman-2.result \
+keyman-2.testfile \
 matilde.arm.result \
 matilde.arm.testfile \
 multiple-A.magic \

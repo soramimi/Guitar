@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: windows,v 1.64 2024/01/14 17:54:13 christos Exp $
+# $File: windows,v 1.65 2024/06/24 21:42:51 christos Exp $
 # windows:  file(1) magic for Microsoft Windows
 #
 # This file is mainly reserved for files where programs
@@ -480,77 +480,131 @@
 >>4	leshort		1		Windows
 # print non empty string above to avoid error message
 # Warning: Current entry does not yet have a description for adding a MIME type
-!:mime	application/winhelp
-!:ext	hlp
+# not officially registered at IANA
+#!:mime	application/winhelp
+#!:mime	application/winhlp
+!:mime	application/x-winhelp
 # version Minor of help file format is hint for windows version
->>>2	leshort		0x0F		3.x
->>>2	leshort		0x15		3.0
->>>2	leshort		0x21		3.1
->>>2	leshort		0x27		x.y
->>>2	leshort		0x33		95
+# HC30 Windows 3.0 help file
+>>>2	leshort		15		3.0
+# HC31 Windows 3.1 help file
+>>>2	leshort		21		3.1
+# WMVC/MMVC media view file
+>>>2	leshort		27
+# MVC or HCW 4.00 Windows 95
+>>>2	leshort		33		95
+# next line should not happen
 >>>2	default		x		y.z
 >>>>2	leshort		x		%#x
 # to complete message string like "MS Windows 3.x help file"
->>>2	leshort		x		help
+>>>2	leshort		!27
+# HLP or few MVB like NOTEPLAY.MVB
+>>>>2	leshort		x		help
+!:ext	hlp
+# URL:		http://fileformats.archiveteam.org/wiki/Multimedia_Viewer_Book
+# Reference:	http://mark0.net/download/triddefs_xml.7z/defs/m/mvb.trid.xml
+# Note:		called "Multimedia Viewer Book" by TrID and by DROID via PUID fmt/1800
+>>>2	leshort		=27		Multimedia Viewer Book
+!:ext	mvb
 # GenDate often older than file creation date
 >>>6	ldate		x		\b, %s
-#
+# flags determine the compression
+#>>>10	uleshort		x	\b, flags %#x
+>>>2	leshort		<17
+# HelpFileTitle
+>>>>12	string		x		\b, title "%s"
+>>>2	leshort		>16
+# SYSTEMREC[].RecordType type of data in record; 1~help file title 2~COPYRIGHT 3~TOPICOFFSET Contents 4~Macro 5~*.ICO 6~HPJ-structure
+#>>>>12	uleshort	x		\b, RecordType %u
+# DataSize size of data
+#>>>>14	uleshort	x		\b, DataSize %u
+>>>>12	uleshort	1
+>>>>>14	pstring/h	>\0		\b, title "%s"
 # Magic for HeLP files
+# URL:		http://fileformats.archiveteam.org/wiki/HLP_(WinHelp)
+# Reference:	http://mark0.net/download/triddefs_xml.7z/defs/h/hlp.trid.xml
+# Note:		called "Windows HELP File" by TrID, "Windows Help File" by DROID via PUID fmt/474 and
+#		"WinHelp help file" by shared MIME-info database from freedesktop.org
 0	lelong		0x00035f3f
 # ./windows (version 5.25) labeled the entry as "MS Windows 3.x help file"
 # file header magic 0x293B at DirectoryStart+9
 >(4.l+9)	uleshort	0x293B		MS
+# URL:		http://fileformats.archiveteam.org/wiki/WinHelp_annotation
+# Reference:	http://mark0.net/download/triddefs_xml.7z/defs/a/ann.trid.xml
 # look for @VERSION	bmf.. like IBMAVW.ANN
 >>0xD4		string	=\x62\x6D\x66\x01\x00	Windows help annotation
 !:mime	application/x-winhelp
 !:ext	ann
 >>0xD4		string	!\x62\x6D\x66\x01\x00
-# "GID Help index" by TrID
->>>(4.l+0x65)	string	=|Pete			Windows help Global Index
+# "GID Help index" by TrID by gid.trid.xml
+# sometimes at little higher offset like in corelap.GID
+>>>(4.l+0x65)	search/26	|Pete		Windows help Global Index
 !:mime	application/x-winhelp
 !:ext	gid
 # HeLP Bookmark or
-# "Windows HELP File" by TrID
->>>(4.l+0x65)		string		!|Pete
+# Multimedia_Viewer_Book or
+# "Windows HELP File" by TrID by hlp.trid.xml
+>>>(4.l+0x65)	default	x
 # maybe there exist a cleaner way to detect HeLP fragments
-# brute search for Magic 0x036C with matching Major maximal 7 iterations
-# discapp.hlp
->>>>16			search/0x49AF/s	\x6c\x03
+# brute search for Magic 0x036C with matching Major maximal 13 iterations
+# https://sembiance.com/fileFormatSamples/document/multimediaViewerBook/viewerht.mvb
+>>>>16			search/0x1bbc370/s \x6c\x03
 >>>>>&0			use 		help-ver-date
 >>>>>&4			leshort		!1
-# putty.hlp
->>>>>>&0		search/0x69AF/s	\x6c\x03
+# viewerht.mvb
+>>>>>>&-2		search/0x1c4b6f0/s \x6c\x03
 >>>>>>>&0		use 		help-ver-date
 >>>>>>>&4		leshort		!1
->>>>>>>>&0		search/0x49AF/s	\x6c\x03
+# https://sembiance.com/fileFormatSamples/document/multimediaViewerBook/clarkhow.mvb
+>>>>>>>>&0		search/0x34ab80/s \x6c\x03
 >>>>>>>>>&0		use 		help-ver-date
 >>>>>>>>>&4		leshort		!1
->>>>>>>>>>&0		search/0x49AF/s	\x6c\x03
+>>>>>>>>>>&0		search/0x473ab0/s \x6c\x03
 >>>>>>>>>>>&0		use 		help-ver-date
 >>>>>>>>>>>&4		leshort		!1
->>>>>>>>>>>>&0		search/0x49AF/s	\x6c\x03
+>>>>>>>>>>>>&0		search/0x739680/s \x6c\x03
 >>>>>>>>>>>>>&0		use 		help-ver-date
 >>>>>>>>>>>>>&4		leshort		!1
->>>>>>>>>>>>>>&0	search/0x49AF/s	\x6c\x03
+>>>>>>>>>>>>>>&0	search/0x76c030/s \x6c\x03
 >>>>>>>>>>>>>>>&0	use 		help-ver-date
 >>>>>>>>>>>>>>>&4	leshort		!1
->>>>>>>>>>>>>>>>&0	search/0x49AF/s	\x6c\x03
+>>>>>>>>>>>>>>>>&0	search/0x805c80/s \x6c\x03
 # GCC.HLP is detected after 7 iterations
 >>>>>>>>>>>>>>>>>&0	use 		help-ver-date
-# this only happens if bigger hlp file is detected after used search iterations
->>>>>>>>>>>>>>>>>&4	leshort		!1		Windows y.z help
-!:mime	application/winhelp
-!:ext	hlp
+>>>>>>>>>>>>>>>>>&4	leshort		!1
+>>>>>>>>>>>>>>>>>>&0	search/0x805c80/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>&0		use 		help-ver-date
+>>>>>>>>>>>>>>>>>>>&4	leshort		!1
+>>>>>>>>>>>>>>>>>>>>&0	search/0xb63480/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>>>&0	use 		help-ver-date
+>>>>>>>>>>>>>>>>>>>>>&4	leshort		!1
+>>>>>>>>>>>>>>>>>>>>>>&0	search/0xb7fe80/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>>>>>&0	use 	help-ver-date
+>>>>>>>>>>>>>>>>>>>>>>>&4	leshort	!1
+>>>>>>>>>>>>>>>>>>>>>>>>&0	search/0xb8ade0/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>>>>>>>&0	use 		help-ver-date
+>>>>>>>>>>>>>>>>>>>>>>>>>&4	leshort	!1
+>>>>>>>>>>>>>>>>>>>>>>>>>>&0	search/0x371d4/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>>>>>>>>>&0	use 	help-ver-date
+>>>>>>>>>>>>>>>>>>>>>>>>>>>&4	leshort	!1
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>&0	search/0x371d4/s \x6c\x03
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>&0	use 	help-ver-date
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>&4	leshort	!1
+# https://sembiance.com/fileFormatSamples/document/multimediaViewerBook/arivideo.mvb
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>8	lelong	!0xFFffFFff		Windows Multimedia Viewer Book
+!:mime	application/x-winhelp
+!:ext	mvb
 # repeat search again or following default line does not work
 >>>>16			search/0x49AF/s	\x6c\x03
-# remaining files should be HeLP Bookmark WinHlp32.BMK (XP 32-bit) or WinHlp32 (Windows 8.1 64-bit)
+# remaining files should be HeLP Bookmark WinHlp32.BMK (XP 32-bit) or WinHlp32 (Windows 7 8.1 64-bit)
+# typically found inside directory %LOCALAPPDATA%\Help
 >>>>16	default				x	Windows help Bookmark
 !:mime	application/x-winhelp
-!:ext	bmk
-## FirstFreeBlock normally FFFFFFFFh 10h for *ANN
-##>>8	lelong			x		\b, FirstFreeBlock %#8.8x
-# EntireFileSize
->>12	lelong			x		\b, %d bytes
+!:ext	/bmk
+# DirectoryStart offset of FILEHEADER of internal directory
+#>4	lelong		x		\b, DirectoryStart %8.8x
+## FirstFreeBlock normally for *HLP FFFFFFFFh if no free list or 10h for *ANN
+#>>8	lelong			x		\b, FirstFreeBlock %#8.8x
 ## ReservedSpace normally 042Fh AFh for *.ANN
 #>>(4.l)	lelong		x		\b, ReservedSpace %#8.8x
 ## UsedSpace normally 0426h A6h for *.ANN
@@ -581,6 +635,16 @@
 #>>(4.l+43)	ulelong		x		\b, TotalBtreeEntries %#8.8x
 ## pages of the B+ tree
 #>>(4.l+47)	ubequad		x		\b, PageStart %#16.16llx
+# GRR: offset is not reachable in few samples like STMMHLP.MVB because probably damaged file
+# or DROID fmt-474-signature-id-748.hlp
+# or for example run file command with higher --parameter bytes=30335189
+>(4.l+9)	uleshort	!0x293B		MS Windows Multimedia Viewer Book
+#!:mime	application/octet-stream
+!:ext	mvb
+# GRR: next line is not executed!
+>>12	lelong			x		(damaged or use higher '-P bytes' option)
+# EntireFileSize; biggest 1551334 for CORELDRW.HLP 30335189 for viewerht.mvb; smallest 28672 for open.mvb
+>12	lelong			x		\b, %d bytes
 
 # start with colon or semicolon for comment line like Back2Life.cnt
 0		regex		\^(:|;)

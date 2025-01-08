@@ -23,7 +23,6 @@ main:
 	@echo
 	@echo "  $ make guitar-deb        build guitar deb package"
 	@echo "  $ make guitar-appimage   build guitar appimage"
-	@echo "  (if building process does not work, run 'make down' once)"
 
 clean: down
 	rm -fr home

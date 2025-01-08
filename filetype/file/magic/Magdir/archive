@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: archive,v 1.198 2024/04/10 14:06:19 christos Exp $
+# $File: archive,v 1.199 2024/06/19 16:05:52 christos Exp $
 # archive:  file(1) magic for archive formats (see also "msdos" for self-
 #           extracting compressed archives)
 #
@@ -1821,6 +1821,15 @@
 >>>(-6.l-16)	string	APK\x20Sig\x20Block\x2042	Android package (APK), with APK Signing Block
 !:mime	application/vnd.android.package-archive
 !:ext	apk
+
+# Keyman Compiled Package File (keyman.com)
+# https://help.keyman.com/developer/current-version/reference/file-types/kmp
+# Find start of central directory
+>>>(-6.l)	string		PK\001\002
+# Scan central directory for string 'kmp.json', will suffice for a
+# package containing about 150 files
+>>>>(-6.l)	search/9000	kmp.json	Keyman Compiled Package File
+!:ext kmp
 
 # Zip archives (Greg Roelofs, c/o zip-bugs@wkuvx1.wku.edu)
 0	string		PK\005\006	Zip archive data (empty)
