@@ -2,15 +2,15 @@
 INCLUDEPATH += filetype/misc
 INCLUDEPATH += filetype/file/src
 INCLUDEPATH += filetype/pcre2/src
-win32:INCLUDEPATH += filetype/win32
-win32:INCLUDEPATH += filetype/dirent/include
+win32:INCLUDEPATH += filetype/misc/win32
+win32:INCLUDEPATH += filetype/misc/win32/dirent/include
 
 DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 !win32:DEFINES += "HAVE_MKSTEMP=1"
 
-win32:HEADERS += filetype/dirent/include/dirent.h
-win32:HEADERS += filetype/win32/unistd.h
-win32:SOURCES += filetype/win32/pipe.c
+win32:HEADERS += filetype/misc/win32/dirent/include/dirent.h
+win32:HEADERS += filetype/misc/win32/unistd.h
+win32:SOURCES += filetype/misc/win32/pipe.c
 
 SOURCES += \
 	filetype/file/src/apprentice.c \
