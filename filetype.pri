@@ -10,7 +10,7 @@ DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 
 win32:HEADERS += filetype/misc/win32/dirent/include/dirent.h
 win32:HEADERS += filetype/misc/win32/unistd.h
-win32:SOURCES += filetype/misc/win32/pipe.c
+win32:SOURCES +=
 
 SOURCES += \
 	filetype/file/src/apprentice.c \

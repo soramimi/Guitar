@@ -38,7 +38,7 @@ INCLUDEPATH += $$PWD/src/texteditor
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
-win32:QMAKE_CFLAGS += /FI $$PWD/filetype/win32/unistd.h
+win32:QMAKE_CFLAGS += /FI $$PWD/filetype/misc/win32/unistd.h
 
 # OpenSSL
 
