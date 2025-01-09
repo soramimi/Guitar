@@ -35,3 +35,12 @@ filetype2/docker/libmagic.so
 filetype2/docker/magic.mgc
 filetype2/file/magic/Magdir/varied.out
 guitar-doxy-html.tar.zst
+
+cmigemo/dict/SKK-JISYO.L
+cmigemo/dict/base-dict
+cmigemo/dict/migemo-dict
+cmigemo/dict/utf-8.d/
+cmigemo/libmigemo.so
+cmigemo/libmigemo.so.1
+cmigemo/libmigemo.so.1.1.0
+cmigemo/tags

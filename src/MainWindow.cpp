@@ -77,6 +77,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <variant>
+#include <cctype>
+#include "IncrementalSearch.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -607,7 +609,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						return true;
 					}
 				} else {
-					if (k >= 0 && k < 128 && QChar((uchar)k).isPrint()) { // 通常の文字キー
+					if (k >= 0 && k < 128 && isalnum((unsigned char)k)) { // 英数字
 						appendCharToRepoFilter(k);
 						return true;
 					}
@@ -7387,7 +7389,11 @@ Terminal=false
 
 void MainWindow::test()
 {
-	execWelcomeWizardDialog();
+	IncrementalSearch migemo;
+	if (migemo.open()) {
+		std::string re = migemo.query("hoge");
+		qDebug() << QString::fromStdString(re);
+	}
 }
 
 

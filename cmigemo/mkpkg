@@ -1,0 +1,64 @@
+#!/bin/csh
+# vim:set ts=8 sts=2 sw=2 tw=0:
+#
+# Last Change: 17-Jan-2003.
+# Written By:  MURAOKA Taro <koron@tka.att.ne.jp>
+
+set pkgname = "cmigemo"
+set pkgverex = ""
+
+if ($1 != '') then
+  set pkgver = "$1"
+else if (-e VERSION) then
+  set pkgver = `cat VERSION`
+else
+  echo ""
+  echo "Please specify package version string."
+  echo "Example: './mkpkg 1.0-xxx '"
+  exit
+endif
+
+if (-e CVS/Root) then
+  set cvsroot = `cat CVS/Root`
+else
+  set cvsroot = ':pserver:anonymous@cvs.kaoriya.net:/anonycvs'
+endif
+
+if (-e CVS/Repository) then
+  set cvsrepository = `cat CVS/Repository`
+else if (-e .cvsrepository)
+  set cvsrepository = `cat .cvsrepository`
+else
+  set cvsrepository = 'unknown'
+endif
+
+if (-e CVS/Revision) then
+  set cvsrevision = `cat CVS/Revision`
+else
+  set cvsrevision = '-D now'
+endif
+
+set pkgdir = "${pkgname}-${pkgver}${pkgverex}"
+echo "${pkgdir}: "
+cd ..
+rm -rf "$pkgdir"
+
+echo -n "  Making package dir ..."
+cvs -d $cvsroot -Q export $cvsrevision -d $pkgdir $cvsrepository
+echo "finish"
+
+echo -n "  Archiving ..."
+tar cf "${pkgdir}.tar" "$pkgdir"
+echo "finish"
+
+echo -n "  Compressing ..."
+bzip2 -f "${pkgdir}.tar"
+echo "finish"
+
+echo ""
+rm -rf "$pkgdir"
+if ("$version" =~ *Win*) then
+  start .
+else if ("$version" =~ *darwin*) then
+  open .
+endif

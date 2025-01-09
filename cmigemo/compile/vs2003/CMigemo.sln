@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CMigemo", "CMigemo\CMigemo.vcproj", "{21B67DAC-B15D-4BCD-91F4-ECAA0F7BC882}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MigemoDLL", "MigemoDLL\MigemoDLL.vcproj", "{71C5869D-757B-48C5-B68F-DA74E46702AB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{21B67DAC-B15D-4BCD-91F4-ECAA0F7BC882}.Debug.ActiveCfg = Debug|Win32
+		{21B67DAC-B15D-4BCD-91F4-ECAA0F7BC882}.Debug.Build.0 = Debug|Win32
+		{21B67DAC-B15D-4BCD-91F4-ECAA0F7BC882}.Release.ActiveCfg = Release|Win32
+		{21B67DAC-B15D-4BCD-91F4-ECAA0F7BC882}.Release.Build.0 = Release|Win32
+		{71C5869D-757B-48C5-B68F-DA74E46702AB}.Debug.ActiveCfg = Debug|Win32
+		{71C5869D-757B-48C5-B68F-DA74E46702AB}.Debug.Build.0 = Debug|Win32
+		{71C5869D-757B-48C5-B68F-DA74E46702AB}.Release.ActiveCfg = Release|Win32
+		{71C5869D-757B-48C5-B68F-DA74E46702AB}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

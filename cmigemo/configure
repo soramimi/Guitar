@@ -1,0 +1,78 @@
+#!/bin/sh
+# vim:set ts=8 sts=2 sw=2 tw=0:
+#
+# configure - Easy configuration script
+#
+# Last Change: 01-Oct-2005.
+# Author & Maintainer: MURAOKA Taro <koron@tka.att.ne.jp>
+
+config_out=config.mk
+config_in=compile/config.mk.in
+config_default=compile/config_default.mk
+
+CHECK_COMMAND() {
+  if test -e "`which $1 2>/dev/null`" ; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+PATH_PREFIX=/usr/local
+# Check arguments
+for i in $*
+do
+  arg_value=`echo "$i" | sed 's/[-_a-zA-Z0-9]*=//'`
+  case $i in
+    --prefix=*) PATH_PREFIX=$arg_value;;
+  esac
+done
+
+# Check HTTP access tool
+if CHECK_COMMAND curl ; then
+  PROGRAM_HTTP="curl -O"
+elif CHECK_COMMAND wget ; then
+  PROGRAM_HTTP="wget"
+elif CHECK_COMMAND fetch ; then
+  PROGRAM_HTTP="fetch"
+else
+  echo "ERROR: Require one of HTTP access tools (curl, wget or fetch)."
+  exit 1
+fi
+
+# Check encoding filter
+if CHECK_COMMAND qkc ; then
+  PROGRAM_ENCODEFILTER="qkc -q -u"
+elif CHECK_COMMAND nkf ; then
+  PROGRAM_ENCODEFILTER="nkf -x"
+else
+  echo "ERROR: Require qkc or nkf installed for encode filter."
+  exit 1
+fi
+
+# Check install program
+if test -x /usr/ucb/install ; then
+  PROGRAM_INSTALL="/usr/ucb/install"
+elif test -x /usr/bin/install ; then
+  PROGRAM_INSTALL="/usr/bin/install"
+else
+  PROGRAM_INSTALL="/usr/bin/install"
+  echo "WARNING: Can't find install program."
+  echo "         But set it \"/usr/bin/install\".  So need to make sure."
+fi
+
+# for Debug
+if test 0 != 0 ; then
+  echo "PATH_PREFIX=${PATH_PREFIX}" 1>&2
+  echo "PROGRAM_HTTP=${PROGRAM_HTTP}" 1>&2
+  echo "PROGRAM_ENCODEFILTER=${PROGRAM_ENCODEFILTER}" 1>&2
+  echo "PROGRAM_INSTALL=${PROGRAM_INSTALL}" 1>&2
+fi
+
+# Generate config.mk
+while read line ; do
+  case "$line" in
+    *\$\{*) eval "echo $line" ;;
+    *) echo $line
+  esac
+done < $config_in > $config_out

@@ -1,0 +1,9 @@
+// Copyright 2005 MURAOKA Taro(KoRoN)/KaoriYa
+
+#include "nsISupports.idl"
+
+[scriptable, uuid(26a1d4f8-9fbe-44de-90b6-6909c82c5fd1)]
+interface nsIMigemo : nsISupports
+{
+    AUTF8String query(in AUTF8String key);
+};

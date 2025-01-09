@@ -34,6 +34,7 @@ COPY ./environment /etc/
 RUN apt install -y file qtbase5-dev libqt5svg5-dev libssl-dev fuse
 RUN apt install -y automake autoconf shtool libtool
 RUN apt install -y doxygen graphviz
+RUN apt install -y nkf universal-ctags
 
 COPY ./cmd /tmp/
 CMD ["/bin/sh", "/tmp/cmd"]

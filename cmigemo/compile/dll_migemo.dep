@@ -1,0 +1,36 @@
+# Microsoft Developer Studio Generated Dependency File, included by dll_migemo.mak
+
+.\migemo.c : \
+	".\filename.h"\
+	".\migemo.h"\
+	".\mnode.h"\
+	".\romaji.h"\
+	".\rxgen.h"\
+	".\wordbuf.h"\
+	".\wordlist.h"\
+	
+
+.\mnode.c : \
+	".\dbg.h"\
+	".\mnode.h"\
+	".\wordbuf.h"\
+	".\wordlist.h"\
+	
+
+.\romaji.c : \
+	".\romaji.h"\
+	".\wordbuf.h"\
+	
+
+.\rxgen.c : \
+	".\rxgen.h"\
+	".\wordbuf.h"\
+	
+
+.\wordbuf.c : \
+	".\wordbuf.h"\
+	
+
+.\wordlist.c : \
+	".\wordlist.h"\
+	

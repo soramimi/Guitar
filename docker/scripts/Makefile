@@ -14,3 +14,9 @@ appimage: build
 
 doxy:
 	cd /Guitar/doxy ; make clean ; make
+
+migemo:
+	cd /Guitar/cmigemo ; ./configure
+	cd /Guitar/cmigemo ; make gcc
+	cd /Guitar/cmigemo/dict ; make utf-8
+

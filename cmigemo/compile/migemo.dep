@@ -1,0 +1,5 @@
+# Microsoft Developer Studio Generated Dependency File, included by migemo.mak
+
+.\main.c : \
+	".\migemo.h"\
+	

@@ -3,6 +3,7 @@
 
 #include <QTreeWidget>
 #include "RepositoryData.h"
+#include <variant>
 
 class MainWindow;
 struct RepositoryData;
@@ -16,12 +17,26 @@ public:
 		Standard,
 		SortRecent,
 	};
+	struct Filter {
+		QString text;
+		std::shared_ptr<QRegularExpression> re;
+		Filter() = default;
+		Filter(const QString &text)
+			: text(text)
+			, re(std::make_shared<QRegularExpression>(text, QRegularExpression::CaseInsensitiveOption))
+		{
+		}
+		bool isEmpty() const
+		{
+			return text.isEmpty();
+		}
+	};
 private:
 	struct Private;
 	Private *m;
 	MainWindow *mainwindow();
 	QTreeWidgetItem *current_item = nullptr;
-	QString getFilterText() const;
+	Filter filter() const;
 	RepositoryListStyle current_repository_list_style_ = RepositoryListStyle::Standard;
 protected:
 	void paintEvent(QPaintEvent *event);
@@ -40,10 +55,10 @@ public:
 	explicit RepositoryTreeWidget(QWidget *parent = nullptr);
 	~RepositoryTreeWidget();
 	void enableDragAndDrop(bool enabled);
-	void setFilterText(QString const &filtertext);
+	void setFilter(const Filter &filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
-	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryData> &repos, QString const &filter);
+	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryData> &repos, const QString &filtertext);
 signals:
 	void dropped();
 };

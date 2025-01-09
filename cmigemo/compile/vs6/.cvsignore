@@ -1,0 +1,7 @@
+*.lib
+*.tds
+Profile
+cmigemo
+libmigemo*dylib
+libmigemo.so*
+tmp

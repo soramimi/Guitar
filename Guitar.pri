@@ -110,6 +110,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/IncrementalSearch.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
@@ -265,6 +266,7 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+	$$PWD/src/IncrementalSearch.h \
     $$PWD/src/RepositoryTreeWidget.h \
     src/AboutDialog.h \
 	src/AbstractProcess.h \
@@ -536,3 +538,4 @@ win32 {
 }
 
 include(filetype.pri)
+include(migemo.pri)

@@ -1,0 +1,11 @@
+# .hgignore
+syntax: glob
+
+build/*
+dict/SKK-JISYO.L
+dict/base-dict
+dict/migemo-dict
+dict/utf-8.d/*.dat
+dict/utf-8.d/migemo-dict
+tags
+tmp

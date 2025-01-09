@@ -1,0 +1,358 @@
+# vi:set ts=8 sts=8 sw=8 tw=0:
+#
+# roma2hira.dat - ローマ字→平仮名変換表
+# 
+# Last Change: 13-Oct-2004.
+# Written By:  Muraoka Taro  <koron@tka.att.ne.jp>
+
+# こいつをカスタマイズすることでローマ字の入力方式が変わります。
+# 現在はMS-IME2000を参考に決定しています。
+# 漢字コードの違いを吸収する役割も果たします。
+# xnとxtuには「ん」と「っ」を指定する役割があります。
+# {from} {to}の形式です。
+# {from}と{to}の間は空白文字(isspace())で区切ります。
+
+a	あ
+i	い
+u	う
+e	え
+o	お
+
+ka	か
+ki	き
+ku	く
+ke	け
+ko	こ
+
+sa	さ
+si	し
+su	す
+se	せ
+so	そ
+
+ta	た
+ti	ち
+tu	つ
+te	て
+to	と
+
+na	な
+ni	に
+nu	ぬ
+ne	ね
+no	の
+
+ha	は
+hi	ひ
+hu	ふ
+he	へ
+ho	ほ
+
+ma	ま
+mi	み
+mu	む
+me	め
+mo	も
+
+ya	や
+yi	い
+yu	ゆ
+ye	いぇ
+yo	よ
+
+ra	ら
+ri	り
+ru	る
+re	れ
+ro	ろ
+
+wa	わ
+wi	ゐ
+wu	う
+we	ゑ
+wo	を
+
+
+ga	が
+gi	ぎ
+gu	ぐ
+ge	げ
+go	ご
+
+za	ざ
+zi	じ
+zu	ず
+ze	ぜ
+zo	ぞ
+
+da	だ
+di	ぢ
+du	づ
+de	で
+do	ど
+
+ba	ば
+bi	び
+bu	ぶ
+be	べ
+bo	ぼ
+
+pa	ぱ
+pi	ぴ
+pu	ぷ
+pe	ぺ
+po	ぽ
+
+
+la	ぁ
+li	ぃ
+lu	ぅ
+le	ぇ
+lo	ぉ
+
+lya	ゃ
+lyi	ぃ
+lyu	ゅ
+lye	ぇ
+lyo	ょ
+
+xa	ぁ
+xi	ぃ
+xu	ぅ
+xe	ぇ
+xo	ぉ
+
+xya	ゃ
+xyi	ぃ
+xyu	ゅ
+xye	ぇ
+xyo	ょ
+
+kya	きゃ
+kyi	きぃ
+kyu	きゅ
+kye	きぇ
+kyo	きょ
+
+gwa	ぐぁ
+gwi	ぐぃ
+gwu	ぐぅ
+gwe	ぐぇ
+gwo	ぐぉ
+
+gya	ぎゃ
+gyi	ぎぃ
+gyu	ぎゅ
+gye	ぎぇ
+gyo	ぎょ
+
+sha	しゃ
+shi	し
+shu	しゅ
+she	しぇ
+sho	しょ
+
+swa	すぁ
+swi	すぃ
+swu	すぅ
+swe	すぇ
+swo	すぉ
+
+sya	しゃ
+syi	しぃ
+syu	しゅ
+sye	しぇ
+syo	しょ
+
+tha	てゃ
+thi	てぃ
+thu	てゅ
+the	てぇ
+tho	てょ
+
+tsa	つぁ
+tsi	つぃ
+tsu	つ
+tse	つぇ
+tso	つぉ
+
+twa	とぁ
+twi	とぃ
+twu	とぅ
+twe	とぇ
+two	とぉ
+
+tya	ちゃ
+tyi	ちぃ
+tyu	ちゅ
+tye	ちぇ
+tyo	ちょ
+
+
+dha	でゃ
+dhi	でぃ
+dhu	でゅ
+dhe	でぇ
+dho	でょ
+
+
+nya	にゃ
+nyi	にぃ
+nyu	にゅ
+nye	にぇ
+nyo	にょ
+
+hya	ひゃ
+hyi	ひぃ
+hyu	ひゅ
+hye	ひぇ
+hyo	ひょ
+
+bya	びゃ
+byi	びぃ
+byu	びゅ
+bye	びぇ
+byo	びょ
+
+pya	ぴゃ
+pyi	ぴぃ
+pyu	ぴゅ
+pye	ぴぇ
+pyo	ぴょ
+
+mya	みゃ
+myi	みぃ
+myu	みゅ
+mye	みぇ
+myo	みょ
+
+rya	りゃ
+ryi	りぃ
+ryu	りゅ
+rye	りぇ
+ryo	りょ
+
+
+ca	か
+ci	し
+cu	く
+ce	せ
+co	こ
+
+cha	ちゃ
+chi	ち
+chu	ちゅ
+che	ちぇ
+cho	ちょ
+
+fa	ふぁ
+fi	ふぃ
+fu	ふ
+fe	ふぇ
+fo	ふぉ
+
+fwa	ふぁ
+fwi	ふぃ
+fwu	ふぅ
+fwe	ふぇ
+fwo	ふぉ
+
+fya	ふゃ
+fyi	ふぃ
+fyu	ふゅ
+fye	ふぇ
+fyo	ふょ
+
+ja	じゃ
+ji	じ
+ju	じゅ
+je	じぇ
+jo	じょ
+
+jya	じゃ
+jyi	じぃ
+jyu	じゅ
+jye	じぇ
+jyo	じょ
+
+zya	じゃ
+zyi	じぃ
+zyu	じゅ
+zye	じぇ
+zyo	じょ
+
+qa	くぁ
+qi	くぃ
+qu	く
+qe	くぇ
+qo	くぉ
+
+qwa	くぁ
+qwi	くぃ
+qwu	くぅ
+qwe	くぇ
+qwo	くぉ
+
+qya	くゃ
+qyi	くぃ
+qyu	くゅ
+qye	くぇ
+qyo	くょ
+
+va	ヴぁ
+vi	ヴぃ
+vu	ヴ
+ve	ヴぇ
+vo	ヴぉ
+
+vya	ヴゃ
+vyi	ヴぃ
+vyu	ヴゅ
+vye	ヴぇ
+vyo	ヴょ
+
+
+nn	ん
+n'	ん
+xn	ん
+ltu	っ
+xtu	っ
+lwa	ゎ
+xwa	ゎ
+lka	ヵ
+xka	ヵ
+lke	ヶ
+xke	ヶ
+kwa	くぁ
+
+-	ー
+~	～
+#,	、
+#.	。
+#[	「
+#]	」
+
+
+mba	んば
+mbi	んび
+mbu	んぶ
+mbe	んべ
+mbo	んぼ
+
+mpa	んぱ
+mpi	んぴ
+mpu	んぷ
+mpe	んぺ
+mpo	んぽ
+
+mma	んま
+mmi	んみ
+mmu	んむ
+mme	んめ
+mmo	んも
+
+tcha	っちゃ
+tchi	っち
+tchu	っちゅ
+tche	っちぇ
+tcho	っちょ
