@@ -33,6 +33,9 @@ guitar-deb:
 guitar-appimage:
 	make run RUN="make appimage"
 
+guitar-doxy:
+	make run RUN="make doxy"
+
 build:
 	cd DockerBuildFiles && docker buildx build . --build-arg UNAME=${UNAME} --build-arg GNAME=${GNAME} --build-arg UID=${UID} --build-arg GID=${GID} --build-arg HOMEDIR=${HOMEDIR} -t ${NAME}
 

@@ -12,3 +12,5 @@ deb: build
 appimage: build
 	bash make-appimage.sh
 
+doxy:
+	cd /Guitar/doxy ; make clean ; make
