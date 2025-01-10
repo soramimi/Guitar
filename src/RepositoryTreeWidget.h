@@ -3,7 +3,6 @@
 
 #include <QTreeWidget>
 #include "RepositoryData.h"
-#include <variant>
 
 class MainWindow;
 struct RepositoryData;
@@ -39,7 +38,7 @@ private:
 	Filter filter() const;
 	RepositoryListStyle current_repository_list_style_ = RepositoryListStyle::Standard;
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
 private:
@@ -48,6 +47,7 @@ private:
 		Repository,
 	};
 	static QTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
+	Filter makeFilter(const QString &filtertext);
 public:
 	static QTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
 	static QTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
@@ -58,7 +58,7 @@ public:
 	void setFilter(const Filter &filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
-	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryData> &repos, const QString &filtertext);
+	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryData> &repos, const QString &filtertext, int select_row);
 signals:
 	void dropped();
 };

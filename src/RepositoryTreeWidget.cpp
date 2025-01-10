@@ -6,8 +6,8 @@
 #include <QStyledItemDelegate>
 #include <QPainter>
 #include <QFileInfo>
+#include "IncrementalSearch.h"
 #include "MainWindow.h"
-#include <variant>
 
 static int u16ncmp(ushort const *s1, ushort const *s2, int n)
 {
@@ -21,6 +21,24 @@ static int u16ncmp(ushort const *s1, ushort const *s2, int n)
 		}
 	}
 	return 0;
+}
+
+static QString normalizeText(QString s)
+{
+	for (QChar &c : s) {
+		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
+			c = QChar(c.unicode() - 'A' + 'a');
+		} else if (c >= QChar(0x3041) && c <= QChar(0x3096)) { // ひらがなをカタカナに
+			c = QChar(c.unicode() + 0x60);
+		} else if (c >= QChar(0xFF61) && c <= QChar(0xFF9F)) { // 半角カナを全角カナに
+			c = QChar(c.unicode() - 0xFF61 + 0x30A0);
+		} else if (c >= QChar(0xFF21) && c <= QChar(0xFF3A)) { // 全角英大文字を半角英小文字に
+			c = QChar(c.unicode() - 0xFF21 + 'a');
+		} else if (c >= QChar(0xFF41) && c <= QChar(0xFF5A)) { // 全角英小文字を半角英小文字に
+			c = QChar(c.unicode() - 0xFF41 + 'a');
+		}
+	}
+	return s;
 }
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
@@ -64,26 +82,49 @@ private:
 	}
 	void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, RepositoryTreeWidget::Filter const &filter) const
 	{
-		QString const &text = opt.text;
+		QString text = opt.text;
+
+		// フィルターに一致する部分をハイライトして描画
 		std::vector<std::tuple<QString, bool>> list;
-		// フィルターがある場合
-		const int filtersize = filter.text.size();
-		int left = 0;
-		int right = 0;
-		while (right < text.size()) { // テキストをフィルターで分割
-			if (u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
+
+		if (filter.re.get()) { // 正規表現が有効な場合
+			text = normalizeText(text);
+			QRegularExpressionMatch match = filter.re->match(text);
+			int left = 0;
+			while (match.hasMatch()) {
+				int right = match.capturedStart();
 				if (left < right) {
-					list.push_back(std::make_tuple(text.mid(left, right - left), false));
+					list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
 				}
-				list.push_back(std::make_tuple(text.mid(right, filtersize), true));
-				left = right = right + filtersize;
-			} else {
-				right++;
+				auto start = match.capturedStart();
+				left = match.capturedEnd();
+				list.push_back(std::make_tuple(opt.text.mid(start, left - start), true));
+				match = filter.re->match(text, left);
+			}
+			if (left < opt.text.size()) {
+				list.push_back(std::make_tuple(opt.text.mid(left), false));
+			}
+		} else {
+			// 通常テキストフィルターの場合
+			const int filtersize = filter.text.size();
+			int left = 0;
+			int right = 0;
+			while (right < text.size()) { // テキストをフィルターで分割
+				if (u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
+					if (left < right) {
+						list.push_back(std::make_tuple(text.mid(left, right - left), false));
+					}
+					list.push_back(std::make_tuple(text.mid(right, filtersize), true));
+					left = right = right + filtersize;
+				} else {
+					right++;
+				}
+			}
+			if (left < right) { // フィルターで分割できなかった残り
+				list.push_back(std::make_tuple(text.mid(left, right - left), false));
 			}
 		}
-		if (left < right) { // フィルターで分割できなかった残り
-			list.push_back(std::make_tuple(text.mid(left, right - left), false));
-		}
+
 		int x = rect.x();
 		for (auto [s, f] : list) {
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
@@ -140,6 +181,8 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 	, m(new Private)
 {
+	IncrementalSearch::instance()->open();
+
 	setItemDelegate(&m->delegate);
 	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
 		current_item = current;
@@ -209,27 +252,32 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 	current_repository_list_style_ = style;
 }
 
-RepositoryTreeWidget::Filter makeFilter(QString const &filtertext)
+RepositoryTreeWidget::Filter RepositoryTreeWidget::makeFilter(QString const &filtertext)
 {
 	RepositoryTreeWidget::Filter filter;
 	filter.text = filtertext;
-	if (filtertext.size() >= 2) {
-		bool re = true;
-		int vowel = 0; // 母音の数
-		for (QChar c : filtertext) {
-			if (c.isLetter()) {
-				if (c == 'a' || c == 'i' || c == 'u' || c == 'e' || c == 'o') {
-					vowel++;
+	if (IncrementalSearch::instance()->migemoEnabled()) {
+		if (filtertext.size() >= 2) {
+			bool re = true;
+			int vowel = 0; // 母音の数
+			for (QChar c : filtertext) {
+				if (c.isLetter()) {
+					if (c == 'a' || c == 'i' || c == 'u' || c == 'e' || c == 'o') {
+						vowel++;
+					}
+				} else if (c.isDigit()) {
+					// thru
+				} else {
+					re = false;
+					break;
 				}
-			} else if (c.isDigit()) {
-				// thru
-			} else {
-				re = false;
-				break;
+			};
+			if (re && vowel >= 1) { // 全体が2文字以上の英数字で、母音が1文字以上含まれる場合
+				auto re = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
+				if (re) {
+					filter.re = std::make_shared<QRegularExpression>(QString::fromStdString(*re), QRegularExpression::CaseInsensitiveOption);
+				}
 			}
-		};
-		if (re && vowel >= 1) { // 全体が2文字以上の英数字で、母音が1文字以上含まれる場合
-			filter.re = std::make_shared<QRegularExpression>(filtertext, QRegularExpression::CaseInsensitiveOption);
 		}
 	}
 	return filter;
@@ -239,14 +287,15 @@ bool match(RepositoryData const &repo, RepositoryTreeWidget::Filter const &filte
 {
 	if (filter.isEmpty()) return true; // フィルターが空の場合は常にtrue
 	if (filter.re.get()) { // 正規表現が有効な場合
-		if (repo.name.contains(*filter.re)) return true;
+		QString text = normalizeText(repo.name);
+		if (text.contains(*filter.re)) return true;
 		return false;
 	}
 	// 正規表現が無効な場合
 	return repo.name.indexOf(filter.text, 0, Qt::CaseInsensitive) >= 0;
 }
 
-void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryData> const &repos, QString const &filtertext)
+void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryData> const &repos, QString const &filtertext, int select_row)
 {
 	RepositoryTreeWidget *tree = this;
 	tree->clear();
@@ -258,6 +307,8 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 
 		enableDragAndDrop(filtertext.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilter(filter);
+
+		QTreeWidgetItem *select_item = nullptr;
 
 
 		std::map<QString, QTreeWidgetItem *> parentmap;
@@ -312,6 +363,13 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 			auto *child = newQTreeWidgetRepositoryItem(repo.name, i);
 			parent->addChild(child);
 			parent->setExpanded(true);
+
+			if (i == select_row) {
+				select_item = child;
+			}
+		}
+		if (select_item) {
+			setCurrentItem(select_item);
 		}
 	};
 

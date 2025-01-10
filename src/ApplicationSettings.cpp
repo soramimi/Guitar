@@ -125,6 +125,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
 	GetValue<QString>(s, "AiModel")                           >> as.ai_model.name;
+	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
 	
 	if (as.ai_model.name.isEmpty()) {
@@ -187,6 +188,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
 	SetValue<QString>(s, "AiModel")                           << this->ai_model.name;
+	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない

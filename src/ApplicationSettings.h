@@ -53,6 +53,8 @@ public:
 	bool show_graph = true;
 	bool show_avatars = true;
 
+	bool incremental_search_with_miegemo = false;
+
 	struct {
 		QColor head;
 		QColor local;

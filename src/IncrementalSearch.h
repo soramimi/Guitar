@@ -3,6 +3,7 @@
 
 #include <string>
 #include <optional>
+#include <QString>
 
 class IncrementalSearch {
 private:
@@ -11,8 +12,18 @@ private:
 public:
 	IncrementalSearch();
 	~IncrementalSearch();
+	void init();
 	bool open();
-	std::string query(const char *word);
+	void close();
+	std::optional<std::string> queryMigemo(const char *word);
+
+	static bool migemoEnabled();
+	static std::string migemoDictDir();
+	static std::string migemoDictPath();
+	static bool setupMigemoDict();
+	static void deleteMigemoDict();
+
+	static IncrementalSearch *instance();
 };
 
 #endif // INCREMENTALSEARCH_H

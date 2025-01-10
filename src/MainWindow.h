@@ -168,7 +168,7 @@ private:
 	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
 public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
-	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep);
+	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
 private:
 
 	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
@@ -364,7 +364,7 @@ private:
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
 	QString getRepositoryFilterText() const;
-	void setRepositoryFilterText(const QString &text);
+	void setRepositoryFilterText(const QString &text, int select_row = -1);
 	void setUncommitedChanges(bool uncommited_changes);
 	QList<Git::Diff> const *diffResult() const;
 	std::map<QString, Git::Diff> *getDiffCacheMap(RepositoryWrapperFrame *frame);

@@ -2,7 +2,21 @@
 #include "MainWindow.h"
 #include <memory>
 #include <QFileIconProvider>
+#include "IncrementalSearch.h"
 
+struct ApplicationGlobal::Private {
+	IncrementalSearch incremental_search;
+};
+
+ApplicationGlobal::ApplicationGlobal()
+	: m(new Private)
+{
+}
+
+ApplicationGlobal::~ApplicationGlobal()
+{
+	delete m;
+}
 
 void ApplicationGlobal::init(QApplication *a)
 {
@@ -20,6 +34,8 @@ void ApplicationGlobal::init(QApplication *a)
 		graphics->transparent_pixmap = QPixmap(":/image/transparent.png");
 		graphics->small_digits.load(":/image/digits.png");
 	}
+
+	m->incremental_search.init();
 }
 
 void ApplicationGlobal::writeLog(const std::string_view &str, bool record)
@@ -30,6 +46,11 @@ void ApplicationGlobal::writeLog(const std::string_view &str, bool record)
 void ApplicationGlobal::writeLog(const QString &str, bool record)
 {
 	mainwindow->writeLog(str, record);
+}
+
+IncrementalSearch *ApplicationGlobal::incremental_search()
+{
+	return &m->incremental_search;
 }
 
 bool ApplicationGlobal::isMainThread()

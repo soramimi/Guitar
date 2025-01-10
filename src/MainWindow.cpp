@@ -1762,6 +1762,7 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
 	m->current_repo = repo;
 }
 
+
 /**
  * @brief MainWindow::openSelectedRepository
  *
@@ -1769,6 +1770,14 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
  */
 void MainWindow::openSelectedRepository()
 {
+	{
+		QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
+		if (item) {
+			int index = item->data(0, IndexRole).toInt();
+			setRepositoryFilterText({}, index);
+		}
+	}
+
 	RepositoryData const *repo = selectedRepositoryItem();
 	if (repo) {
 		setCurrentRepository(*repo, true);
@@ -2840,7 +2849,7 @@ RepositoryTreeWidget::RepositoryListStyle MainWindow::repositoriesListStyle() co
 /**
  * @brief リポジトリリストを更新
  */
-void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style)
+void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style, int select_row)
 {
 	if (style == RepositoryTreeWidget::RepositoryListStyle::_Keep) {
 		style = ui->treeWidget_repos->currentRepositoryListStyle();
@@ -2855,7 +2864,7 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 	QString filter = getRepositoryFilterText();
 
 	RepositoryTreeWidget *tree = ui->treeWidget_repos;
-	tree->updateList(style, repos, filter);
+	tree->updateList(style, repos, filter, select_row);
 }
 
 void MainWindow::onRepositoryTreeSortRecent()
@@ -6249,7 +6258,7 @@ void MainWindow::on_toolButton_fetch_clicked()
  * @brief リポジトリフィルタを設定する
  * @param text
  */
-void MainWindow::setRepositoryFilterText(QString const &text)
+void MainWindow::setRepositoryFilterText(QString const &text, int select_row)
 {
 	bool b = ui->lineEdit_filter->blockSignals(true);
 	ui->lineEdit_filter->setText(text);
@@ -6257,7 +6266,7 @@ void MainWindow::setRepositoryFilterText(QString const &text)
 
 	m->repository_filter_text = text;
 
-	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
+	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
 }
 
 /**
@@ -7389,11 +7398,6 @@ Terminal=false
 
 void MainWindow::test()
 {
-	IncrementalSearch migemo;
-	if (migemo.open()) {
-		std::string re = migemo.query("hoge");
-		qDebug() << QString::fromStdString(re);
-	}
 }
 
 

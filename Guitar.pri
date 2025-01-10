@@ -112,6 +112,9 @@ macx {
 SOURCES += \
 	$$PWD/src/IncrementalSearch.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
+	$$PWD/src/zip/zip.cpp \
+	$$PWD/src/zip/ziparchive.cpp \
+	$$PWD/src/zip/zipextract.cpp \
     src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -268,6 +271,8 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/IncrementalSearch.h \
     $$PWD/src/RepositoryTreeWidget.h \
+	$$PWD/src/zip/zip.h \
+	$$PWD/src/zip/zipinternal.h \
     src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \

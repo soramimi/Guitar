@@ -11,6 +11,7 @@
 #include <QString>
 
 class MainWindow;
+class IncrementalSearch;
 
 struct AccountProfile {
 	QString email;
@@ -32,7 +33,13 @@ struct AccountProfile {
 };
 
 class ApplicationGlobal : public ApplicationBasicData {
+private:
+	struct Private;
+	Private *m;
 public:
+	ApplicationGlobal();
+	~ApplicationGlobal();
+
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
 	QString language_id;
@@ -66,6 +73,8 @@ public:
 
 	void writeLog(const std::string_view &str, bool record);
 	void writeLog(const QString &str, bool record);
+
+	IncrementalSearch *incremental_search();
 
 	QString OpenAiApiKey() const
 	{
