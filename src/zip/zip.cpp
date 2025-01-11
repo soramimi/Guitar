@@ -3,6 +3,7 @@
 #include "zipinternal.h"
 #include "common/joinpath.h"
 #include <QDateTime>
+#include <QDebug>
 #include <QDirIterator>
 #include <fcntl.h>
 #include "ApplicationGlobal.h"
