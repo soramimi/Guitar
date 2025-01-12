@@ -6,8 +6,6 @@ $qtver = "6.7.2"
 
 if $suffix == nil then
 	$suffix = ""
-else
-	$suffix = '-' + $suffix
 end
 
 FileUtils.rm_rf $script_dir + "/build"
@@ -51,6 +49,6 @@ run "ruby RELEASE-WINDOWS.rb"
 load 'version.rb'
 
 srcname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
-dstname = "Guitar#{$suffix}-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
+dstname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}-win32.zip"
 
 run "curl -T _release/#{srcname} ftp://192.168.0.5:/Public/pub/nightlybuild/#{dstname}"
