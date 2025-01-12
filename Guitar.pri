@@ -112,6 +112,7 @@ macx {
 SOURCES += \
 	$$PWD/src/IncrementalSearch.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
+	$$PWD/src/Util.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
 	$$PWD/src/zip/zipextract.cpp \
@@ -271,6 +272,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/IncrementalSearch.h \
     $$PWD/src/RepositoryTreeWidget.h \
+	$$PWD/src/Util.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \
     src/AboutDialog.h \
@@ -516,28 +518,30 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
+		src/unix/UnixUtil.cpp \
 		src/unix/UnixProcess.cpp \
 		src/unix/UnixPtyProcess.cpp
 	HEADERS += \
+		src/unix/UnixUtil.h \
 		src/unix/UnixProcess.h \
 		src/unix/UnixPtyProcess.h
 }
 
 win32 {
 	SOURCES += \
-        src/win32/Win32Process.cpp \
+	$$PWD/src/win32/Win32Util.cpp \
+		src/win32/Win32Process.cpp \
         src/win32/Win32PtyProcess.cpp \
         src/win32/event.cpp \
-        src/win32/thread.cpp \
-        src/win32/win32.cpp
+        src/win32/thread.cpp
 
 	HEADERS += \
-        src/win32/Win32Process.h \
+	$$PWD/src/win32/Win32Util.h \
+		src/win32/Win32Process.h \
         src/win32/Win32PtyProcess.h \
         src/win32/event.h \
         src/win32/mutex.h \
-        src/win32/thread.h \
-        src/win32/win32.h
+        src/win32/thread.h
 
     LIBS += -lole32
 }

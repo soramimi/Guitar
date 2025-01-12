@@ -79,6 +79,7 @@
 #include <variant>
 #include <cctype>
 #include "IncrementalSearch.h"
+#include "Util.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -141,8 +142,6 @@ struct MainWindow::Private {
 	QString repository_filter_text;
 	bool uncommited_changes = false;
 	Git::FileStatusList uncommited_changes_file_list;
-
-	// GitHubRepositoryInfo github;
 
 	Git::CommitID head_id;
 
@@ -3327,7 +3326,6 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 		frame->commit_log = log.commit_log;
 		frame->branch_map = log.branch_map;
 	}
-
 }
 
 void MainWindow::initNetworking()
@@ -7320,80 +7318,7 @@ void MainWindow::onAvatarUpdated(RepositoryWrapperFrameP frame)
 
 void MainWindow::on_action_create_desktop_launcher_file_triggered()
 {
-#ifdef Q_OS_UNIX
-	QString exec = QApplication::applicationFilePath();
-
-	QString home = QDir::home().absolutePath();
-	QString icon_dir = home / ".local/share/icons/jp.soramimi/";
-	QString launcher_dir = home / ".local/share/applications/";
-	QString name = "jp.soramimi.Guitar";
-	QString iconfile = icon_dir / name + ".svg";
-	QString launcher_path = launcher_dir / name + ".desktop";
-	launcher_path = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.desktop)");
-
-	bool ok = false;
-
-	if (!launcher_path.isEmpty()) {
-		QFile out(launcher_path);
-		if (out.open(QFile::WriteOnly)) {
-QString data = R"---([Desktop Entry]
-Type=Application
-Name=Guitar
-Categories=Development
-Exec=%1
-Icon=%2
-Terminal=false
-)---";
-			data = data.arg(exec).arg(iconfile);
-			std::string s = data.toStdString();
-			out.write(s.c_str(), s.size());
-			out.close();
-			std::string path = launcher_path.toStdString();
-			chmod(path.c_str(), 0755);
-			ok = true;
-		}
-	}
-
-	if (ok) {
-		QFile src(":/image/Guitar.svg");
-		if (src.open(QFile::ReadOnly)) {
-			QByteArray ba = src.readAll();
-			src.close();
-			QDir().mkpath(icon_dir);
-			QFile dst(iconfile);
-			if (dst.open(QFile::WriteOnly)) {
-				dst.write(ba);
-				dst.close();
-			}
-		}
-	}
-
-#endif
-
-#ifdef Q_OS_WIN
-	QString desktop_dir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-	QString target_path = QApplication::applicationFilePath();
-
-	Win32ShortcutData data;
-	data.targetpath = (wchar_t const *)target_path.utf16();
-
-	QString home = QDir::home().absolutePath();
-	QString launcher_dir = desktop_dir;
-	QString name = APPLICATION_NAME;
-	QString iconpath = target_path;//icon_dir / name + ".ico";
-	QString launcher_path = launcher_dir / name + ".lnk";
-	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.lnk)");
-	data.iconpath = (wchar_t const *)iconpath.utf16();
-	data.lnkpath = (wchar_t const *)lnkpath.utf16();
-
-//	QFile::copy(":/Guitar.ico", iconpath);
-
-	if (!launcher_path.isEmpty()) {
-		createWin32Shortcut(data);
-	}
-
-
-#endif
+	platform::createApplicationShortcut(this);
 }
 
 void MainWindow::test()

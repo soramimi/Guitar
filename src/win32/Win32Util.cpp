@@ -1,7 +1,7 @@
 #include <QFileInfo>
 #include <QtGlobal>
-
-#include "win32.h"
+#include "ApplicationGlobal.h"
+#include "Win32Util.h"
 #include <Windows.h>
 #include <ShlObj.h>
 
@@ -417,4 +417,31 @@ void createWin32Shortcut(Win32ShortcutData const &data)
 	}
 }
 
+namespace platform {
+
+void createApplicationShortcut(QWidget *parent)
+{
+	QString desktop_dir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+	QString target_path = QApplication::applicationFilePath();
+
+	Win32ShortcutData data;
+	data.targetpath = (wchar_t const *)target_path.utf16();
+
+	QString home = QDir::home().absolutePath();
+	QString launcher_dir = desktop_dir;
+	QString name = APPLICATION_NAME;
+	QString iconpath = target_path;//icon_dir / name + ".ico";
+	QString launcher_path = launcher_dir / name + ".lnk";
+	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.lnk)");
+	data.iconpath = (wchar_t const *)iconpath.utf16();
+	data.lnkpath = (wchar_t const *)lnkpath.utf16();
+
+//	QFile::copy(":/Guitar.ico", iconpath);
+
+	if (!launcher_path.isEmpty()) {
+		createWin32Shortcut(data);
+	}
+}
+
+} // namespace platform
 

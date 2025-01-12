@@ -1,5 +1,5 @@
-#ifndef WIN32_H
-#define WIN32_H
+#ifndef WIN32UTIL_H
+#define WIN32UTIL_H
 #include <QtGlobal>
 #ifdef Q_OS_WIN
 
@@ -32,4 +32,4 @@ struct Win32ShortcutData {
 void createWin32Shortcut(Win32ShortcutData const &data);
 
 #endif
-#endif // WIN32_H
+#endif // WIN32UTIL_H

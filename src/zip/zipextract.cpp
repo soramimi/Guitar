@@ -58,7 +58,6 @@ bool ZipInternal::inflate(char *zptr, size_t zlen, std::vector<char> *out)
 
 bool ZipInternal::attach(char const *begin, char const *end)
 {
-	qDebug() << (end - begin);
 	// zip_end_of_central_directory_record_tを読む
 	zip_end_of_central_directory_record_t const *eocd;
 	size_t n = sizeof(zip_end_of_central_directory_record_t);
