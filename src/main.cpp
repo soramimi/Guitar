@@ -22,12 +22,6 @@
 #include "CommitMessageGenerator.h"
 #include "GitProcessThread.h"
 
-#ifdef Q_OS_WIN
-#include "win32/win32.h"
-
-#include "GitProcessThread.h"
-#endif
-
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
 #endif

@@ -346,7 +346,6 @@ private:
 	static void updateCommitGraph(Git::CommitItemList *logs);
 	void updateCommitGraph(RepositoryWrapperFrame *frame);
 
-	void initNetworking();
 	bool saveRepositoryBookmarks(bool update_list);
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();

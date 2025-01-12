@@ -4,9 +4,9 @@
 #include <QApplication>
 
 #ifdef Q_OS_WIN
-#include "win32/win32.h"
+#include "win32/Win32Util.h"
 #else
-#include <unistd.h>
+#include "unix/UnixUtil.h"
 #endif
 
 #ifdef Q_OS_MAC
@@ -24,5 +24,12 @@ extern "C" char **environ;
 #define GPG2_COMMAND "gpg2"
 #define SSH_COMMAND "ssh"
 #endif
+
+namespace platform {
+
+void initNetworking();
+
+} // namespace platform
+
 
 #endif // PLATFORM_H

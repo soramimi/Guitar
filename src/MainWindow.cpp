@@ -251,27 +251,13 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
 
-	initNetworking();
+	platform::initNetworking();
 
 	showFileList(FilesListType::SingleList);
 
 	m->graph_color = global->theme->graphColorMap();
 
 	frame()->prepareLogTableWidget();
-
-#ifdef Q_OS_WIN
-	{
-		QFont font;
-
-		font = ui->label_repo_name->font();
-		font.setFamily("Meiryo");
-		ui->label_repo_name->setFont(font);
-
-		font = ui->label_branch_name->font();
-		font.setFamily("Meiryo");
-		ui->label_branch_name->setFont(font);
-	}
-#endif
 
 	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
@@ -322,7 +308,6 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-	// connect(&m->git_process_thread, &GitProcessThread::done, this, &MainWindow::onGitProcessThreadDone);
 	m->git_process_thread.start();
 
 	ui->action_sidebar->setChecked(true);
@@ -3326,44 +3311,6 @@ void MainWindow::queryCommitLog(RepositoryWrapperFrame *frame, GitPtr g)
 		frame->commit_log = log.commit_log;
 		frame->branch_map = log.branch_map;
 	}
-}
-
-void MainWindow::initNetworking()
-{
-	std::string http_proxy;
-	std::string https_proxy;
-	if (appsettings()->proxy_type == "auto") {
-#ifdef Q_OS_WIN
-		http_proxy = misc::makeProxyServerURL(getWin32HttpProxy().toStdString());
-#else
-		auto getienv = [](std::string const &name)->char const *{
-			char **p = environ;
-			while (*p) {
-				if (strncasecmp(*p, name.c_str(), name.size()) == 0) {
-					char const *e = *p + name.size();
-					if (*e == '=') {
-						return e + 1;
-					}
-				}
-				p++;
-			}
-			return nullptr;
-		};
-		char const *p;
-		p = getienv("http_proxy");
-		if (p) {
-			http_proxy = misc::makeProxyServerURL(std::string(p));
-		}
-		p = getienv("https_proxy");
-		if (p) {
-			https_proxy = misc::makeProxyServerURL(std::string(p));
-		}
-#endif
-	} else if (appsettings()->proxy_type == "manual") {
-		http_proxy = appsettings()->proxy_server.toStdString();
-	}
-	global->webcx.set_http_proxy(http_proxy);
-	global->webcx.set_https_proxy(https_proxy);
 }
 
 QString MainWindow::getBookmarksFilePath() const

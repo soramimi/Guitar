@@ -113,6 +113,7 @@ SOURCES += \
 	$$PWD/src/IncrementalSearch.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
 	$$PWD/src/Util.cpp \
+	$$PWD/src/platform.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
 	$$PWD/src/zip/zipextract.cpp \

@@ -1,18 +1,22 @@
-#include <QFileInfo>
-#include <QtGlobal>
-#include "ApplicationGlobal.h"
+
 #include "Win32Util.h"
-#include <Windows.h>
-#include <ShlObj.h>
 
-#include <windows.h>
-#include <shlobj.h>
-#include <shellapi.h>
-#include <commoncontrols.h>
-
-#include "thread.h"
+#include "ApplicationGlobal.h"
+#include "common/joinpath.h"
 #include "event.h"
+#include "thread.h"
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QtGlobal>
+#include <ShlObj.h>
+#include <Windows.h>
+#include <commoncontrols.h>
 #include <deque>
+#include <shellapi.h>
+#include <shlobj.h>
+#include <windows.h>
 
 #define FAILED_(TEXT) throw std::string(TEXT)
 
@@ -427,16 +431,13 @@ void createApplicationShortcut(QWidget *parent)
 	Win32ShortcutData data;
 	data.targetpath = (wchar_t const *)target_path.utf16();
 
-	QString home = QDir::home().absolutePath();
 	QString launcher_dir = desktop_dir;
 	QString name = APPLICATION_NAME;
 	QString iconpath = target_path;//icon_dir / name + ".ico";
 	QString launcher_path = launcher_dir / name + ".lnk";
-	QString lnkpath = QFileDialog::getSaveFileName(this, tr("Save Launcher File"), launcher_path, "Launcher files (*.lnk)");
+	QString lnkpath = QFileDialog::getSaveFileName(parent, QApplication::tr("Save Launcher File"), launcher_path, "Launcher files (*.lnk)");
 	data.iconpath = (wchar_t const *)iconpath.utf16();
 	data.lnkpath = (wchar_t const *)lnkpath.utf16();
-
-//	QFile::copy(":/Guitar.ico", iconpath);
 
 	if (!launcher_path.isEmpty()) {
 		createWin32Shortcut(data);
