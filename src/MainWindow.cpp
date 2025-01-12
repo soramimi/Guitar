@@ -371,15 +371,13 @@ void MainWindow::postEvent(QObject *receiver, QEvent *event, int ms_later)
 }
 
 /**
- * @brief ユーザー関数イベントをポストする
- * @param fn 関数
- * @param v QVariant
- * @param p ポインタ
+ * @brief ユーザーイベントをポストする
+ * @param v データ
  * @param ms_later 遅延時間（0なら即座）
  */
-void MainWindow::postUserFunctionEvent(const std::function<void (const QVariant &, void *ptr)> fn, const QVariant &v, void *p, int ms_later)
+void MainWindow::postUserEvent(UserEventHandler::variant_t &&v, int ms_later)
 {
-	postEvent(this, new UserFunctionEvent(fn, v, p), ms_later);
+	postEvent(this, new UserEvent(std::move(v)), ms_later);
 }
 
 /**
@@ -398,7 +396,7 @@ void MainWindow::cancelPendingUserEvents()
  */
 void MainWindow::postStartEvent(int ms_later)
 {
-	postEvent(this, new StartEvent, ms_later);
+	postUserEvent(StartEventData(), ms_later);
 }
 
 /**
@@ -411,7 +409,6 @@ void MainWindow::startTimers()
 	m->interval_10ms_timer.setInterval(10);
 	m->interval_10ms_timer.start();
 }
-
 
 /**
  * @brief PTYプロセスの出力をログに書き込む
@@ -512,6 +509,11 @@ void MainWindow::setupExternalPrograms()
 	setGitCommand(appsettings()->git_command, false);
 	setGpgCommand(appsettings()->gpg_command, false);
 	setSshCommand(appsettings()->ssh_command, false);
+}
+
+void UserEventHandler::operator () (StartEventData const &)
+{
+	mainwindow->onStartEvent();
 }
 
 void MainWindow::onStartEvent()
@@ -651,21 +653,11 @@ bool MainWindow::event(QEvent *event)
 				return true;
 			}
 		}
-	} else if (et == UserEvent(UserFunction)) {
-		if (auto *e = (UserFunctionEvent *)event) {
-			e->func(e->var, e->ptr);
-			return true;
-		}
+	} else if (et == (QEvent::Type)UserEventType) {
+		UserEventHandler(this).go(static_cast<UserEvent *>(event));
+		return true;
 	}
 	return QMainWindow::event(event);
-}
-
-void MainWindow::customEvent(QEvent *e)
-{
-	if (e->type() == UserEvent(Start)) {
-		onStartEvent();
-		return;
-	}
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1194,6 +1186,15 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 	saveRepositoryBookmarks(true);
 }
 
+void UserEventHandler::operator () (AddRepositoryEventData const &e)
+{
+	AddRepositoryDialog dlg(mainwindow);
+	if (dlg.execClone(e.dir) == QDialog::Accepted) {
+		mainwindow->addRepositoryAccepted(dlg);
+	}
+
+}
+
 /**
  * @brief MainWindow::addExistingLocalRepository
  * @param dir ディレクトリ
@@ -1236,13 +1237,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 		};
 
 		if (isBareRepository(dir)) {
-			postUserFunctionEvent([this](const QVariant &var, void *ptr)->void{
-				QString dir = var.toString();
-				AddRepositoryDialog dlg(this);
-				if (dlg.execClone(dir) == QDialog::Accepted) {
-					addRepositoryAccepted(dlg);
-				}
-			}, QVariant(dir), nullptr, 1);
+			postUserEvent(AddRepositoryEventData(dir), 1);
 			return true;
 		}
 
@@ -5808,6 +5803,11 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 	return commit.commit_id.toQString(7);
 }
 
+void UserEventHandler::operator () (UpdateFileListEventData const &e)
+{
+	mainwindow->updateCurrentFilesList(e.frame);
+}
+
 /**
  * @brief コミットログの選択が変化した
  */
@@ -5818,11 +5818,9 @@ void MainWindow::onLogCurrentItemChanged(RepositoryWrapperFrame *frame)
 
 	// ステータスバー更新
 	updateStatusBarText(frame);
+
 	// 少し待ってファイルリストを更新する
-	postUserFunctionEvent([&](QVariant const &, void *p){
-		RepositoryWrapperFrame *frame = reinterpret_cast<RepositoryWrapperFrame *>(p);
-		updateCurrentFilesList(frame);
-	}, {}, reinterpret_cast<void *>(frame), 300); // 300ms後（キーボードのオートリピート想定）
+	postUserEvent(UpdateFileListEventData(frame), 300); // 300ms後（キーボードのオートリピート想定）
 
 	updateAncestorCommitMap(frame);
 	frame->logtablewidget()->viewport()->update();
@@ -6927,7 +6925,7 @@ void MainWindow::onLogIdle()
 				if (!keyfile.empty()) {
 					if (keyfile == sshPassphraseUser() && !sshPassphrasePass().empty()) {
 						std::string text = sshPassphrasePass() + '\n';
-						getPtyProcess()->writeInput(text.c_str(), text.size());
+						getPtyProcess()->writeInput(text.c_str(), (int)text.size());
 					} else {
 						std::string secret = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), QString(), true);
 						sshSetPassphrase(keyfile, secret);

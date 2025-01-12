@@ -5,33 +5,75 @@
 #include <QVariant>
 #include <functional>
 
-enum class UserEventEnum {
-	Start = QEvent::User,
-	UserFunction,
-};
-#define UserEvent(e) QEvent::Type(UserEventEnum::e)
+class MainWindow;
+class RepositoryWrapperFrame;
+class UserEvent;
 
-class StartEvent : public QEvent {
+enum {
+	UserEventType = QEvent::User,
+};
+
+class StartEventData {
 public:
-	StartEvent()
-		: QEvent(UserEvent(Start))
+	StartEventData()
 	{
 	}
 };
 
-class UserFunctionEvent : public QEvent {
+class AddRepositoryEventData {
 public:
-	std::function<void(QVariant const &, void *ptr)> func;
-	QVariant var;
-	void *ptr = nullptr;
-
-	explicit UserFunctionEvent(std::function<void(QVariant const &, void *ptr)> func, QVariant const &var, void *ptr = nullptr)
-		: QEvent(UserEvent(UserFunction))
-		, func(func)
-		, var(var)
-		, ptr(ptr)
+	QString dir;
+	AddRepositoryEventData(QString dir)
+		: dir(dir)
 	{
 	}
 };
+
+class UpdateFileListEventData {
+public:
+	RepositoryWrapperFrame *frame;
+	UpdateFileListEventData(RepositoryWrapperFrame *frame)
+		: frame(frame)
+	{
+	}
+};
+
+class UserEventHandler {
+public:
+	typedef std::variant<
+		StartEventData,
+		AddRepositoryEventData,
+		UpdateFileListEventData
+	> variant_t;
+
+	MainWindow *mainwindow;
+
+	UserEventHandler(MainWindow *mw)
+		: mainwindow(mw)
+	{
+	}
+
+	void operator () (StartEventData const &e);
+	void operator () (AddRepositoryEventData const &e);
+	void operator () (UpdateFileListEventData const &e);
+
+	void go(UserEvent *e);
+};
+
+class UserEvent : public QEvent {
+public:
+	UserEventHandler::variant_t data_;
+
+	UserEvent(UserEventHandler::variant_t &&v)
+		: QEvent((QEvent::Type)UserEventType)
+		, data_(v)
+	{
+	}
+};
+
+inline void UserEventHandler::go(UserEvent *e)
+{
+	std::visit(*this, e->data_);
+}
 
 #endif // USEREVENT_H

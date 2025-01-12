@@ -9,6 +9,7 @@
 #include "RepositoryData.h"
 #include "RepositoryWrapperFrame.h"
 #include "TextEditorTheme.h"
+#include "UserEvent.h"
 #include <QMainWindow>
 #include <QThread>
 
@@ -61,7 +62,7 @@ Q_DECLARE_METATYPE(PtyProcessCompleted)
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
-	friend class MainWindowHelperThread;
+	friend class UserEventHandler;
 	friend class RepositoryWrapperFrame;
 	friend class SubmoduleMainWindow;
 	friend class ImageViewWidget;
@@ -162,7 +163,7 @@ private:
 	};
 
 	void postEvent(QObject *receiver, QEvent *event, int ms_later);
-	void postUserFunctionEvent(const std::function<void (const QVariant &, void *)> fn, QVariant const &v = QVariant(), void *p = nullptr, int ms_later = 0);
+	void postUserEvent(UserEventHandler::variant_t &&v, int ms_later);
 
 	void updateFileList(RepositoryWrapperFrame *frame, const Git::CommitID &id);
 	void updateFileList(RepositoryWrapperFrame *frame, Git::CommitItem const &commit);
@@ -418,7 +419,6 @@ private:
 	QString currentFileMimeFileType() const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
-	void customEvent(QEvent *) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
