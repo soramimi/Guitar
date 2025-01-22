@@ -2641,8 +2641,7 @@ void MainWindow::updateCommitLogTable(RepositoryWrapperFrame *frame, int delay_m
 {
 	if (delay_ms == 0) {
 		frame->logtablewidget()->viewport()->update();
-	}
-	if (!m->update_commit_log_timer.isActive()) {
+	} else if (!m->update_commit_log_timer.isActive()) {
 		m->update_commit_log_timer.setSingleShot(true);
 		m->update_commit_log_timer.start(delay_ms);
 	}
