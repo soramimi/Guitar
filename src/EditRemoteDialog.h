@@ -21,7 +21,7 @@ private:
 	Ui::EditRemoteDialog *ui;
 	MainWindow *mainwindow();
 public:
-	explicit EditRemoteDialog(MainWindow *parent, Operation op, const Git::Context *gcx);
+	explicit EditRemoteDialog(MainWindow *parent, Operation op);
 	~EditRemoteDialog() override;
 
 	void setName(QString const &s) const;

@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QFocusEvent>
 #include <QMessageBox>
+#include "common/joinpath.h"
 
 enum {
 	Manage = -100,

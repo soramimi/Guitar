@@ -18,6 +18,14 @@ ApplicationGlobal::~ApplicationGlobal()
 	delete m;
 }
 
+Git::Context ApplicationGlobal::gcx()
+{
+	Git::Context gcx;
+	gcx.git_command = appsettings.git_command;
+	gcx.ssh_command = appsettings.ssh_command;
+	return gcx;
+}
+
 void ApplicationGlobal::init(QApplication *a)
 {
 	(void)a;
@@ -38,14 +46,14 @@ void ApplicationGlobal::init(QApplication *a)
 	m->incremental_search.init();
 }
 
-void ApplicationGlobal::writeLog(const std::string_view &str, bool record)
+void ApplicationGlobal::writeLog(const std::string_view &str)
 {
-	mainwindow->writeLog(str, record);
+	mainwindow->emitWriteLog(str);
 }
 
-void ApplicationGlobal::writeLog(const QString &str, bool record)
+void ApplicationGlobal::writeLog(const QString &str)
 {
-	mainwindow->writeLog(str, record);
+	mainwindow->emitWriteLog(str);
 }
 
 IncrementalSearch *ApplicationGlobal::incremental_search()

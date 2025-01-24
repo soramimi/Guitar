@@ -26,7 +26,7 @@ private:
 	MainWindow *mainwindow();
 	GitPtr git();
 public:
-	explicit CommitExploreWindow(QWidget *parent, MainWindow *mainwin, GitObjectCache *objcache, Git::CommitItem const *commit);
+	explicit CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, Git::CommitItem const *commit);
 	~CommitExploreWindow() override;
 
 	void clearContent();

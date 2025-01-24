@@ -22,7 +22,7 @@ private:
 private:
 	MainWindow *mainwindow();
 public:
-	explicit SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir, const Git::Context *gcx);
+	explicit SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir);
 	~SubmoduleAddDialog() override;
 
 	QString url();

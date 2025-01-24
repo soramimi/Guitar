@@ -35,7 +35,7 @@ private:
 	void setNameEditMode(bool f);
 	void reflectRemotesTable();
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, const Git::Context *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryData const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

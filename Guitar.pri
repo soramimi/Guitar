@@ -110,6 +110,8 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/CommitLogTableWidget.cpp \
+	$$PWD/src/CurrentRepositoryModel.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
 	$$PWD/src/Util.cpp \
@@ -184,7 +186,6 @@ SOURCES += \
 	src/Languages.cpp \
 	src/LineEditDialog.cpp \
 	src/LocalSocketReader.cpp \
-	src/LogTableWidget.cpp \
 	src/MainWindow.cpp \
 	src/ManageWorkingFolderDialog.cpp \
 	src/MaximizeButton.cpp \
@@ -212,7 +213,6 @@ SOURCES += \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryPropertyDialog.cpp \
 	src/RepositoryUrlLineEdit.cpp \
-	src/RepositoryWrapperFrame.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
 	src/SelectGpgKeyDialog.cpp \
@@ -233,7 +233,6 @@ SOURCES += \
 	src/SimpleImageWidget.cpp \
 	src/StatusLabel.cpp \
 	src/SubmoduleAddDialog.cpp \
-	src/SubmoduleMainWindow.cpp \
 	src/SubmoduleUpdateDialog.cpp \
 	src/SubmodulesDialog.cpp \
 	src/Terminal.cpp \
@@ -271,6 +270,8 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+	$$PWD/src/CommitLogTableWidget.h \
+	$$PWD/src/CurrentRepositoryModel.h \
 	$$PWD/src/IncrementalSearch.h \
     $$PWD/src/RepositoryTreeWidget.h \
 	$$PWD/src/Util.h \
@@ -344,7 +345,6 @@ HEADERS += \
 	src/Languages.h \
 	src/LineEditDialog.h \
 	src/LocalSocketReader.h \
-	src/LogTableWidget.h \
 	src/MainWindow.h \
 	src/ManageWorkingFolderDialog.h \
 	src/MaximizeButton.h \
@@ -373,7 +373,6 @@ HEADERS += \
 	src/RepositoryPropertyDialog.h \
 	src/RepositorySearchResultItem.h \
 	src/RepositoryUrlLineEdit.h \
-	src/RepositoryWrapperFrame.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
 	src/SelectGpgKeyDialog.h \
@@ -394,7 +393,6 @@ HEADERS += \
 	src/SimpleImageWidget.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
-	src/SubmoduleMainWindow.h \
 	src/SubmoduleUpdateDialog.h \
 	src/SubmodulesDialog.h \
 	src/Terminal.h \
@@ -504,7 +502,6 @@ FORMS    += \
 	src/SettingWorkingFolderForm.ui \
 	src/SettingsDialog.ui \
 	src/SubmoduleAddDialog.ui \
-	src/SubmoduleMainWindow.ui \
 	src/SubmoduleUpdateDialog.ui \
 	src/SubmodulesDialog.ui \
 	src/TextEditDialog.ui \

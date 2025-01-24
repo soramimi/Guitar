@@ -1,7 +1,6 @@
 #ifndef JUMPDIALOG_H
 #define JUMPDIALOG_H
 
-#include "MyTableWidgetDelegate.h"
 #include "Git.h"
 #include <QDialog>
 

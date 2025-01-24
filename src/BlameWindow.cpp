@@ -4,7 +4,7 @@
 #include "CommitPropertyDialog.h"
 #include "Git.h"
 #include "MainWindow.h"
-
+#include "ApplicationGlobal.h"
 #include <QMenu>
 #include <QToolTip>
 
@@ -118,11 +118,6 @@ BlameWindow::~BlameWindow()
 	delete ui;
 }
 
-MainWindow *BlameWindow::mainwindow()
-{
-	return qobject_cast<MainWindow *>(parent());
-}
-
 QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
@@ -183,14 +178,19 @@ void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
 	Git::CommitID commit_id = currentCommitId();
 	if (Git::isValidID(commit_id)) {
-		Git::CommitItem commit_item = mainwindow()->commitItem(nullptr, commit_id);
-		CommitPropertyDialog dlg(this, mainwindow(), commit_item);
+		Git::CommitItem commit_item = mainwindow()->commitItem(commit_id);
+		CommitPropertyDialog dlg(this, commit_item);
 		dlg.showCheckoutButton(false);
 		dlg.showJumpButton(true);
 		if (dlg.exec() == QDialog::Accepted) {
 			close();
 		}
 	}
+}
+
+MainWindow *BlameWindow::mainwindow()
+{
+	return global->mainwindow;
 }
 
 void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)

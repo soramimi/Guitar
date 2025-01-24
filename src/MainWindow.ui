@@ -658,7 +658,7 @@
         </layout>
        </widget>
       </widget>
-      <widget class="RepositoryWrapperFrame" name="frame_repository_wrapper">
+      <widget class="QFrame" name="frame_repository_wrapper">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -686,7 +686,7 @@
           <property name="childrenCollapsible">
            <bool>false</bool>
           </property>
-          <widget class="LogTableWidget" name="tableWidget_log">
+          <widget class="CommitLogTableWidget" name="tableWidget_log">
            <property name="contextMenuPolicy">
             <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
            </property>
@@ -1807,9 +1807,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>LogTableWidget</class>
+   <class>CommitLogTableWidget</class>
    <extends>QTableWidget</extends>
-   <header>LogTableWidget.h</header>
+   <header>CommitLogTableWidget.h</header>
   </customwidget>
   <customwidget>
    <class>MyToolButton</class>
@@ -1820,12 +1820,6 @@
    <class>FileListWidget</class>
    <extends>QListWidget</extends>
    <header>FileListWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>RepositoryWrapperFrame</class>
-   <extends>QFrame</extends>
-   <header>RepositoryWrapperFrame.h</header>
-   <container>1</container>
   </customwidget>
   <customwidget>
    <class>TextEditorWidget</class>

@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include "IncrementalSearch.h"
 #include "MainWindow.h"
+#include "ApplicationGlobal.h"
+#include "common/joinpath.h"
 
 static int u16ncmp(ushort const *s1, ushort const *s2, int n)
 {

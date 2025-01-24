@@ -97,11 +97,11 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	QAction *a = menu.exec(ui->tableWidget->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_checkout) {
-			mainwindow()->checkout(mainwindow()->frame(), this, *commit);
+			mainwindow()->checkout(this, *commit);
 			return;
 		}
 		if (a == a_explorer) {
-			mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &*commit);
+			mainwindow()->execCommitExploreWindow(this, &*commit);
 			return;
 		}
 		if (a == a_property) {

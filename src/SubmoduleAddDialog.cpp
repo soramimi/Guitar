@@ -23,7 +23,7 @@ struct SubmoduleAddDialog::Private {
 	QString errmsg;
 };
 
-SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir, Git::Context const *gcx)
+SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, QString const &defworkdir)
 	: QDialog(parent)
 	, ui(new Ui::SubmoduleAddDialog)
 	, m(new Private)
@@ -37,7 +37,7 @@ SubmoduleAddDialog::SubmoduleAddDialog(MainWindow *parent, QString const &url, Q
 	ui->lineEdit_working_dir->setText(m->default_working_dir);
 	ui->lineEdit_remote->setText(url);
 
-	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
+	ui->advanced_option->setSshKeyOverrigingEnabled(!global->appsettings.ssh_command.isEmpty());
 
 	ui->lineEdit_remote->setFocus();
 }

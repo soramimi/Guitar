@@ -1,5 +1,6 @@
 #include "JumpDialog.h"
 #include "ui_JumpDialog.h"
+#include "MyTableWidgetDelegate.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 
@@ -130,8 +131,6 @@ void JumpDialog::on_lineEdit_filter_textChanged(QString const &text)
 	m->filter_text = text;
 	updateTable();
 }
-
-
 
 void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
 {

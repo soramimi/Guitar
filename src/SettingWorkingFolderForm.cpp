@@ -2,6 +2,7 @@
 #include "ui_SettingWorkingFolderForm.h"
 #include "ApplicationGlobal.h"
 #include <QFileDialog>
+#include "common/joinpath.h"
 
 SettingWorkingFolderForm::SettingWorkingFolderForm(QWidget *parent)
 	: AbstractSettingForm(parent)
@@ -14,7 +15,6 @@ SettingWorkingFolderForm::SettingWorkingFolderForm(QWidget *parent)
 	for (const QString &dir : global->appsettings.favorite_working_dirs) {
 		ui->listWidget_favorites->addItem(dir);
 	}
-
 }
 
 SettingWorkingFolderForm::~SettingWorkingFolderForm()

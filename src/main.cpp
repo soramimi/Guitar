@@ -20,6 +20,7 @@
 #include <csignal>
 #include <string>
 #include "CommitMessageGenerator.h"
+#include "CurrentRepositoryModel.h"
 #include "GitProcessThread.h"
 
 #ifndef APP_GUITAR
@@ -107,13 +108,15 @@ int main(int argc, char *argv[])
 
 	qRegisterMetaType<AvatarLoaderItem>("AvatarLoaderItem");
 	qRegisterMetaType<RepositoryData>("RepositoryData");
-	qRegisterMetaType<RepositoryWrapperFrameP>("RepositoryWrapperFrameP");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
-	qRegisterMetaType<ExchangeData>("ExchangeData");
+	qRegisterMetaType<MainWindowExchangeData>("MainWindowExchangeData");
 	qRegisterMetaType<GitCommandRunner>("GitCommandRunner");
 	qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
 	qRegisterMetaType<ProcessStatus>("ProcessStatus");
 	qRegisterMetaType<CloneParams>("CloneParams");
+	qRegisterMetaType<LogData>("LogData");
+	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");
+
 
 	{
 		MySettings s;
@@ -191,7 +194,6 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow w;
-	global->mainwindow = &w;
 	global->panel_bg_color = w.palette().color(QPalette::Window);
 	w.setWindowIcon(QIcon(":/image/guitar.png"));
 	w.show();

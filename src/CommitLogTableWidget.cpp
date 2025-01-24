@@ -1,32 +1,20 @@
-#include "LogTableWidget.h"
+#include "CommitLogTableWidget.h"
+#include "ApplicationGlobal.h"
+#include "Git.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
-#include "common/misc.h"
-#include <QApplication>
-#include <QDebug>
-#include <QEvent>
+#include "BranchLabel.h"
 #include <QPainter>
 #include <QPainterPath>
-#include <QProxyStyle>
-#include <cmath>
-#include <map>
-#include "ApplicationGlobal.h"
-#include "RepositoryWrapperFrame.h"
-
-struct LogTableWidget::Private {
-	RepositoryWrapperFrame *frame = nullptr;
-};
 
 /**
  * @brief コミットログを描画するためのdelegate
  */
-class LogTableWidgetDelegate : public MyTableWidgetDelegate {
+class CommitLogTableWidgetDelegate : public MyTableWidgetDelegate {
 private:
-	RepositoryWrapperFrame *frame() const
+	MainWindow *mainwindow() const
 	{
-		auto *w = dynamic_cast<LogTableWidget *>(QStyledItemDelegate::parent());
-		Q_ASSERT(w);
-		return w->frame();
+		return static_cast<CommitLogTableWidget *>(parent())->mainwindow();
 	}
 
 	static QColor hiliteColor(QColor const &color)
@@ -49,7 +37,7 @@ private:
 	{
 		if (!opt.widget->isEnabled()) return;
 
-		QIcon icon = frame()->signatureVerificationIcon(commit.commit_id);
+		QIcon icon = mainwindow()->signatureVerificationIcon(commit.commit_id);
 		if (!icon.isNull()) {
 			QRect r = opt.rect.adjusted(6, 3, 0, -3);
 			int h = r.height();
@@ -70,7 +58,7 @@ private:
 		int y = opt.rect.y();
 
 		int row = index.row();
-		auto icon = frame()->committerIcon(row, {w, h});
+		auto icon = mainwindow()->committerIcon(row, {w, h});
 		if (!icon.isNull()) {
 			painter->save();
 			painter->setOpacity(opacity); // 半透明で描画
@@ -82,7 +70,7 @@ private:
 	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
 	{
 		int row = index.row();
-		QList<BranchLabel> const *labels = frame()->label(row);
+		QList<BranchLabel> const *labels = mainwindow()->label(row);
 		if (labels) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
@@ -148,7 +136,7 @@ private:
 	}
 
 public:
-	explicit LogTableWidgetDelegate(QObject *parent = Q_NULLPTR)
+	explicit CommitLogTableWidgetDelegate(CommitLogTableWidget *parent)
 		: MyTableWidgetDelegate(parent)
 	{
 	}
@@ -164,7 +152,7 @@ public:
 			Message,
 		};
 
-		Git::CommitItem commit = frame()->commitItem(index.row());
+		Git::CommitItem commit = global->mainwindow->commitItem(index.row());
 
 		// 署名アイコンの描画
 		if (index.column() == CommitId) {
@@ -190,33 +178,21 @@ public:
 
 		// ラベルの描画
 		if (index.column() == Message) {
-			QString current_branch = frame()->currentBranchName();
+			QString current_branch = mainwindow()->currentBranchName();
 			drawLabels(painter, option, index, current_branch);
 		}
 	}
 };
 
-LogTableWidget::LogTableWidget(QWidget *parent)
+CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
 	: QTableWidget(parent)
-	, m(new Private)
 {
-	setItemDelegate(new LogTableWidgetDelegate(this));
+	setItemDelegate(new CommitLogTableWidgetDelegate(this));
 }
 
-LogTableWidget::~LogTableWidget()
+void CommitLogTableWidget::setup(MainWindow *mw)
 {
-	delete m;
-}
-
-void LogTableWidget::bind(RepositoryWrapperFrame *frame)
-{
-	m->frame = frame;
-}
-
-RepositoryWrapperFrame *LogTableWidget::frame()
-{
-	Q_ASSERT(m->frame);
-	return m->frame;
+	mainwindow_ = mw;
 }
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
@@ -238,7 +214,7 @@ void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, 
 	}
 }
 
-void LogTableWidget::paintEvent(QPaintEvent *e)
+void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 {
 	if (rowCount() < 1) return;
 
@@ -248,7 +224,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const list = frame()->getLogs();
+	Git::CommitItemList const &list = mainwindow()->commitlog();
 
 	int indent_span = 16;
 
@@ -265,7 +241,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto IsAncestor = [&](Git::CommitItem const &item){
-		return frame()->isAncestorCommit(item.commit_id.toQString());
+		return mainwindow()->isAncestorCommit(item.commit_id.toQString());
 	};
 
 	auto ItemPoint = [&](int depth, QRect const &rect){
@@ -277,7 +253,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	};
 
 	auto SetPen = [&](QPainter *pr, int level, bool thick){
-		QColor c = frame()->color(level + 1);
+		QColor c = mainwindow()->color(level + 1);
 		Qt::PenStyle s = Qt::SolidLine;
 		pr->setPen(QPen(c, thick ? thick_line_width : line_width, s));
 	};
@@ -366,7 +342,7 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 		// draw marks
 
 		pr.setOpacity(opacity * 1);
-		pr.setBrush(frame()->color(0));
+		pr.setBrush(mainwindow()->color(0));
 
 		for (int i = 0; i < (int)list.size(); i++) {
 			double y = DrawMark(i, i);
@@ -377,15 +353,15 @@ void LogTableWidget::paintEvent(QPaintEvent *e)
 	DrawGraph();
 }
 
-void LogTableWidget::resizeEvent(QResizeEvent *e)
+void CommitLogTableWidget::resizeEvent(QResizeEvent *e)
 {
-	frame()->updateAncestorCommitMap();
+	mainwindow()->updateAncestorCommitMap();
 	QTableWidget::resizeEvent(e);
 }
 
-void LogTableWidget::verticalScrollbarValueChanged(int value)
+void CommitLogTableWidget::verticalScrollbarValueChanged(int value)
 {
 	(void)value;
-	frame()->updateAncestorCommitMap();
+	mainwindow()->updateAncestorCommitMap();
 }
 

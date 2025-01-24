@@ -32,7 +32,7 @@ MainWindow *EditTagsDialog::mainwindow()
 
 QList<Git::Tag> EditTagsDialog::queryTagList()
 {
-	return mainwindow()->queryTagList(mainwindow()->frame());
+	return mainwindow()->queryTagList();
 }
 
 void EditTagsDialog::updateTagList()
@@ -64,7 +64,7 @@ void EditTagsDialog::on_pushButton_add_clicked()
 	InputNewTagDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
-		mainwindow()->addTag(mainwindow()->frame(), text);
+		mainwindow()->addTag(text);
 		updateTagList();
 	}
 }
@@ -72,7 +72,7 @@ void EditTagsDialog::on_pushButton_add_clicked()
 void EditTagsDialog::on_pushButton_delete_clicked()
 {
 	QStringList list = selectedTags();
-	mainwindow()->deleteTags(mainwindow()->frame(), list);
+	mainwindow()->deleteTags(list);
 	updateTagList();
 }
 

@@ -14,17 +14,15 @@ struct RepositoryPropertyDialog::Private {
 	RepositoryData repository;
 	bool remote_changed = false;
 	bool name_changed = false;
-	Git::Context const *gcx;
 };
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, Git::Context const *gcx, GitPtr g, RepositoryData const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryData const &item, bool open_repository_menu)
 	: QDialog(parent)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
 	
-	m->gcx = gcx;
 	m->git = g;
 	
 	Qt::WindowFlags flags = windowFlags();
@@ -156,7 +154,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		remote->name = "origin";
 	}
 
-	EditRemoteDialog dlg(mainwindow(), op, m->gcx);
+	EditRemoteDialog dlg(mainwindow(), op);
 	dlg.setName(remote->name);
 	dlg.setUrl(remote->url_fetch);
 	dlg.setSshKey(remote->ssh_key);

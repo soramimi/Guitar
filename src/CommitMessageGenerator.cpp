@@ -178,7 +178,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	}
 	if (ok1) {
 		if (kind == CommitMessage) {
-			std::vector<std::string> lines = misc::splitLines(text, false);
+			std::vector<std::string_view> lines = misc::splitLinesV(text, false);
 			size_t i = lines.size();
 			while (i > 0) {
 				i--;

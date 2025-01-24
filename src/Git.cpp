@@ -98,8 +98,8 @@ struct Git::Private {
 		QString git_command;
 		QString working_repo_dir;
 		QString submodule_path;
-		std::function<bool (void *, const char *, int)> fn_log_writer_callback;
-		void *callback_cookie = nullptr;
+		// std::function<bool (void *, const char *, int)> fn_log_writer_callback;
+		// void *callback_cookie = nullptr;
 	};
 	Info info;
 	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
@@ -125,11 +125,12 @@ Git::~Git()
 	delete m;
 }
 
-void Git::setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie)
-{
-	m->info.fn_log_writer_callback = func;
-	m->info.callback_cookie = cookie;
-}
+//@
+// void Git::setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie)
+// {
+// 	m->info.fn_log_writer_callback = func;
+// 	m->info.callback_cookie = cookie;
+// }
 
 void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
@@ -280,12 +281,9 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 		cmd += arg;
 
-		if (opt.log && m->info.fn_log_writer_callback) {
-			QByteArray ba;
-			ba.append("> git ");
-			ba.append(arg.toUtf8());
-			ba.append('\n');
-			m->info.fn_log_writer_callback(m->info.callback_cookie, ba.data(), (int)ba.size());
+		if (opt.log) {
+			QString s = QString("> git %1\n").arg(arg);
+			global->writeLog(s);
 		}
 
 		if (opt.pty) {
@@ -1912,7 +1910,7 @@ void Git::Diff::makeForSingleFile(Git::Diff *diff, QString const &id_a, QString 
 
 void parseDiff(std::string_view const &s, Git::Diff const *info, Git::Diff *out)
 {
-	std::vector<std::string> lines = misc::splitLines(s, false);
+	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
 
 	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;

@@ -54,9 +54,8 @@ void GitHubRequestThread::run()
 	} else {
 		std::string msg = web()->error().message();
 		if (!msg.empty()) {
-			global->mainwindow->emitWriteLog(QString::fromStdString("Failed to access the site: " + url + '\n').toUtf8(), false);
-			QString s = QString::fromStdString(msg + '\n');
-			global->mainwindow->emitWriteLog(s.toUtf8(), false);
+			global->mainwindow->emitWriteLog(QString("Failed to access the site: %1\n").arg(QString::fromStdString(url)));
+			global->mainwindow->emitWriteLog(QString("%1\n").arg(QString::fromStdString(msg)));
 		}
 	}
 }

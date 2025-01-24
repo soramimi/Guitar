@@ -1,6 +1,5 @@
 #include "MyToolButton.h"
 #include "MainWindow.h"
-#include "SubmoduleMainWindow.h"
 #include <QPainter>
 
 MyToolButton::MyToolButton(QWidget *parent)

@@ -65,11 +65,11 @@ public:
 			return isValid();
 		}
 	};
+
 	class Context {
 	public:
 		QString git_command;
 		QString ssh_command;
-		QString ssh_private_key;
 	};
 
 	struct Object {
@@ -420,7 +420,8 @@ public:
 
 	// using callback_t = bool (*)(void *, const char *, int);
 
-	void setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie);
+	 //@
+	// void setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie);
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});

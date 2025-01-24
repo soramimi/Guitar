@@ -6,6 +6,7 @@
 #include "Theme.h"
 #include "common/misc.h"
 #include "FileType.h"
+#include "Git.h"
 #include "webclient.h"
 #include <QColor>
 #include <QString>
@@ -59,6 +60,7 @@ public:
 	};
 	std::unique_ptr<Graphics> graphics;
 
+	Git::Context gcx();
 
 	FileType filetype;
 
@@ -71,8 +73,8 @@ public:
 
 	void init(QApplication *a);
 
-	void writeLog(const std::string_view &str, bool record);
-	void writeLog(const QString &str, bool record);
+	void writeLog(const std::string_view &str);
+	void writeLog(const QString &str);
 
 	IncrementalSearch *incremental_search();
 

@@ -7,37 +7,18 @@
 #include "gpg.h"
 
 struct CommitPropertyDialog::Private {
-	MainWindow *mainwindow;
 	Git::CommitItem commit;
 };
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const &commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, Git::CommitItem const &commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
 	m->commit = commit;
-	init(mw);
+	init();
 }
-
-#if 0
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id)  // used by BlameWindow
-	: QDialog(parent)
-	, ui(new Ui::CommitPropertyDialog)
-	, m(new Private)
-{
-	ui->setupUi(this);
-
-	auto commit = mw->queryCommit(commit_id);
-	if (commit) {
-		m->commit = *commit;
-	} else {
-		m->commit.commit_id = Git::CommitID(commit_id);
-	}
-	init(mw);
-}
-#endif
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
@@ -46,7 +27,7 @@ CommitPropertyDialog::~CommitPropertyDialog()
 	delete ui;
 }
 
-void CommitPropertyDialog::init(MainWindow *mw)
+void CommitPropertyDialog::init()
 {
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
@@ -54,8 +35,6 @@ void CommitPropertyDialog::init(MainWindow *mw)
 
 	ui->pushButton_jump->setVisible(false);
 
-	m->mainwindow = mw;
-	
 	QString message = m->commit.message;
 	QString detail;
 	{
@@ -167,7 +146,7 @@ void CommitPropertyDialog::avatarReady()
 
 MainWindow *CommitPropertyDialog::mainwindow()
 {
-	return m->mainwindow;
+	return global->mainwindow;
 }
 
 void CommitPropertyDialog::setAvatar(QImage const &image, SimpleImageWidget *widget)
@@ -187,13 +166,13 @@ void CommitPropertyDialog::showJumpButton(bool f)
 
 void CommitPropertyDialog::on_pushButton_checkout_clicked()
 {
-	mainwindow()->checkout(mainwindow()->frame(), this, m->commit, [&](){ hide(); });
+	mainwindow()->checkout(this, m->commit, [&](){ hide(); });
 	done(QDialog::Rejected);
 }
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(mainwindow()->frame(), m->commit.commit_id.toQString());
+	mainwindow()->jumpToCommit(m->commit.commit_id.toQString());
 	done(QDialog::Accepted);
 }
 
@@ -204,6 +183,6 @@ void CommitPropertyDialog::on_pushButton_details_clicked()
 
 void CommitPropertyDialog::on_pushButton_explorer_clicked()
 {
-	mainwindow()->execCommitExploreWindow(mainwindow()->frame(), this, &m->commit);
+	mainwindow()->execCommitExploreWindow(this, &m->commit);
 
 }

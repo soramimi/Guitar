@@ -6,7 +6,6 @@
 #include <functional>
 
 class MainWindow;
-class RepositoryWrapperFrame;
 class UserEvent;
 
 enum {
@@ -31,9 +30,7 @@ public:
 
 class UpdateFileListEventData {
 public:
-	RepositoryWrapperFrame *frame;
-	UpdateFileListEventData(RepositoryWrapperFrame *frame)
-		: frame(frame)
+	UpdateFileListEventData()
 	{
 	}
 };

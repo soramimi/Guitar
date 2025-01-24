@@ -3,8 +3,9 @@
 #include "MainWindow.h"
 #include <QFileDialog>
 #include <QStandardPaths>
+#include "ApplicationGlobal.h"
 
-EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op, const Git::Context *gcx)
+EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op)
 	: QDialog(parent)
 	, ui(new Ui::EditRemoteDialog)
 {
@@ -15,7 +16,7 @@ EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op, const Git::
 		ui->lineEdit_name->setEnabled(false);
 	}
 
-	ui->advanced_option->setSshKeyOverrigingEnabled(!gcx->ssh_command.isEmpty());
+	ui->advanced_option->setSshKeyOverrigingEnabled(!global->appsettings.ssh_command.isEmpty());
 }
 
 EditRemoteDialog::~EditRemoteDialog()

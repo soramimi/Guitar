@@ -6,7 +6,6 @@
 #include "Git.h"
 
 class MainWindow;
-class RepositoryWrapperFrame;
 class QLabel;
 class SimpleImageWidget;
 
@@ -21,13 +20,12 @@ private:
 	struct Private;
 	Private *m;
 
-	void init(MainWindow *mw);
+	void init();
 	MainWindow *mainwindow();
 	void setAvatar(const QImage &image, SimpleImageWidget *widget);
 	void updateAvatar(bool request);
 public:
-	explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, Git::CommitItem const &commit);
-	// explicit CommitPropertyDialog(QWidget *parent, MainWindow *mw, QString const &commit_id);
+	explicit CommitPropertyDialog(QWidget *parent, Git::CommitItem const &commit);
 	~CommitPropertyDialog() override;
 
 	void showCheckoutButton(bool f);
