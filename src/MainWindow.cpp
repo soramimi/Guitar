@@ -1205,7 +1205,6 @@ void UserEventHandler::operator () (AddRepositoryEventData const &e)
 	if (dlg.execClone(e.dir) == QDialog::Accepted) {
 		mainwindow->addRepositoryAccepted(dlg);
 	}
-
 }
 
 /**
@@ -1502,7 +1501,6 @@ bool MainWindow::checkGitCommand()
 
 /**
  * @brief MainWindow::saveBlobAs
- * @param frame フレーム
  * @param id ID
  * @param dstpath 保存先
  *
@@ -1778,7 +1776,6 @@ void MainWindow::openSelectedRepository()
 
 /**
  * @brief MainWindow::makeDiffs
- * @param frame フレーム
  * @param id ID
  *
  * 差分を作成する
@@ -1957,7 +1954,6 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 	return dir;
 }
 
-
 /**
  * @brief MainWindow::cloneRepository
  * @param clonedata クローンデータ
@@ -2097,7 +2093,6 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 
 /**
  * @brief MainWindow::selectedCommitItem
- * @param frame フレーム
  * @return コミットアイテム
  *
  * 選択されたコミットアイテムを返す
@@ -2127,7 +2122,6 @@ void MainWindow::updateCommitLog()
 
 /**
  * @brief MainWindow::commit
- * @param frame フレーム
  * @param amend
  *
  * コミットする
@@ -2206,7 +2200,6 @@ void MainWindow::commit(bool amend)
 
 /**
  * @brief MainWindow::commitAmend
- * @param frame フレーム
  *
  * コミットを修正する
  */
@@ -2334,7 +2327,6 @@ bool MainWindow::push()
 
 /**
  * @brief MainWindow::deleteBranch
- * @param frame フレーム
  * @param commit コミット
  *
  * ブランチを削除する
@@ -2381,7 +2373,6 @@ void MainWindow::deleteBranch(Git::CommitItem const &commit)
 
 /**
  * @brief MainWindow::deleteBranch
- * @param frame フレーム
  *
  * ブランチを削除する
  */
@@ -2456,7 +2447,6 @@ void MainWindow::internalDeleteTags(const QStringList &tagnames)
 
 /**
  * @brief MainWindow::internalAddTag
- * @param frame フレーム
  * @param name 名前
  * @return
  *
@@ -2633,7 +2623,6 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 
 /**
  * @brief MainWindow::updateCommitLogTable
- * @param frame
  * @param delay_ms
  *
  * コミットログテーブルを更新する
@@ -2646,6 +2635,42 @@ void MainWindow::updateCommitLogTable(int delay_ms)
 		m->update_commit_log_timer.setSingleShot(true);
 		m->update_commit_log_timer.start(delay_ms);
 	}
+}
+
+void MainWindow::setRowLabels(int row, QList<BranchLabel> const &labels)
+{
+	auto it = currentRepositoryModel()->label_map.find(row);
+	if (it != currentRepositoryModel()->label_map.end()) {
+		it->second = labels;
+	} else {
+		currentRepositoryModel()->label_map[row] = labels;
+	}
+}
+
+QList<BranchLabel> MainWindow::labelsAtRow(int row) const
+{
+	auto const &map = currentRepositoryModel()->label_map;
+	auto it = map.find(row);
+	if (it != map.end()) {
+		return it->second;
+	}
+	return {};
+}
+
+QList<BranchLabel> MainWindow::sortedLabels(int row) const
+{
+	QList<BranchLabel> list = labelsAtRow(row);
+	std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
+		auto Compare = [](BranchLabel const &l, BranchLabel const &r){
+			if (l.kind < r.kind) return -1;
+			if (l.kind > r.kind) return 1;
+			if (l.text < r.text) return -1;
+			if (l.text > r.text) return 1;
+			return 0;
+		};
+		return Compare(l, r) < 0;
+	});
+	return list;
 }
 
 void MainWindow::updateAvatar(const Git::User &user, bool request)
@@ -2724,7 +2749,6 @@ QStringList MainWindow::remotes() const
 
 /**
  * @brief MainWindow::findBranch
- * @param frame
  * @param id
  *
  * コミットIDからブランチを検索する
@@ -2762,7 +2786,6 @@ void MainWindow::deleteTempFiles()
 
 /**
  * @brief MainWindow::idFromTag
- * @param frame
  * @param tag
  * @return
  *
@@ -2848,7 +2871,6 @@ void MainWindow::onRepositoryTreeSortRecent()
 
 /**
  * @brief ファイルリストを消去
- * @param frame
  */
 void MainWindow::clearFileList()
 {
@@ -2860,7 +2882,6 @@ void MainWindow::clearFileList()
 
 /**
  * @brief 差分ビューを消去
- * @param frame
  */
 void MainWindow::clearDiffView()
 {
@@ -2977,15 +2998,6 @@ std::string MainWindow::httpAuthenticationPass() const
 	return m->http_pwd;
 }
 
-const QList<BranchLabel> *MainWindow::label(int row) const
-{
-	auto it = getLabelMap()->find(row);
-	if (it != getLabelMap()->end()) {
-		return &it->second;
-	}
-	return nullptr;
-}
-
 ApplicationSettings *MainWindow::appsettings()
 {
 	return &global->appsettings;
@@ -3004,7 +3016,6 @@ const Git::CommitItem *MainWindow::getLog(int index) const
 
 /**
  * @brief MainWindow::updateCommitGraph
- * @param frame
  *
  * 樹形図情報を構築する
  */
@@ -3400,21 +3411,6 @@ std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap()
 	return &currentRepositoryModel()->diff_cache;
 }
 
-std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap()
-{
-	return &currentRepositoryModel()->label_map;
-}
-
-std::map<int, QList<BranchLabel>> const *MainWindow::getLabelMap() const
-{
-	return &currentRepositoryModel()->label_map;
-}
-
-const std::map<int, QList<BranchLabel>> *MainWindow::getLabelMap(const MainWindow *frame) const
-{
-	return &currentRepositoryModel()->label_map;
-}
-
 void MainWindow::clearLabelMap()
 {
 	currentRepositoryModel()->label_map.clear();
@@ -3605,28 +3601,20 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-/**
- * @brief コミット情報のテキストを作成
- * @param frame
- * @param row
- * @param label_list
- * @return
- */
-QString MainWindow::makeCommitInfoText(int row, QList<BranchLabel> *label_list)
+std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
 {
 	ASSERT_MAIN_THREAD();
 
 	QString message_ex;
+	QList<BranchLabel> label_list;
 
 	Git::CommitItem commit = commitlog()[row];
 
 	{ // branch
-		if (label_list) {
-			if (commit.commit_id == getHeadId()) {
-				BranchLabel label(BranchLabel::Head);
-				label.text = "HEAD";
-				label_list->push_back(label);
-			}
+		if (commit.commit_id == getHeadId()) {
+			BranchLabel label(BranchLabel::Head);
+			label.text = "HEAD";
+			label_list.push_back(label);
 		}
 		QList<Git::Branch> list = findBranch(commit.commit_id);
 		for (Git::Branch const &b : list) {
@@ -3645,7 +3633,7 @@ QString MainWindow::makeCommitInfoText(int row, QList<BranchLabel> *label_list)
 				label.info += tr(", %1 behind").arg(b.behind);
 			}
 			message_ex += " {" + label.text + label.info + '}';
-			if (label_list) label_list->push_back(label);
+			label_list.push_back(label);
 		}
 	}
 	{ // tag
@@ -3654,10 +3642,10 @@ QString MainWindow::makeCommitInfoText(int row, QList<BranchLabel> *label_list)
 			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
 			message_ex += QString(" {#%1}").arg(label.text);
-			if (label_list) label_list->push_back(label);
+			label_list.push_back(label);
 		}
 	}
-	return message_ex;
+	return {message_ex, label_list};
 }
 
 /**
@@ -3776,25 +3764,7 @@ QStringList MainWindow::findGitObject(const QString &id) const
 	return GitObjectManager::findObject(id, m->current_repository_model->repository_data.local_dir);
 }
 
-QList<BranchLabel> MainWindow::sortedLabels(int row) const
-{
-	QList<BranchLabel> list;
-	auto const *p = const_cast<MainWindow *>(this)->label(row);
-	if (p && !p->empty()) {
-		list = *p;
-		std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
-			auto Compare = [](BranchLabel const &l, BranchLabel const &r){
-				if (l.kind < r.kind) return -1;
-				if (l.kind > r.kind) return 1;
-				if (l.text < r.text) return -1;
-				if (l.text > r.text) return 1;
-				return 0;
-			};
-			return Compare(l, r) < 0;
-		});
-	}
-	return list;
-}
+
 
 void MainWindow::saveApplicationSettings()
 {
@@ -4215,6 +4185,9 @@ void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selectio
 	openRepositoryMain(g, true, fetch, keep_selection);
 }
 
+/**
+ * @brief コミットログテーブルウィジェットを構築
+ */
 void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 {
 	ASSERT_MAIN_THREAD();
@@ -4224,20 +4197,46 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 	{
 		Git::CommitItemList const &commit_log = commitlog();
 
-		const int count = (int)commit_log.size();
+		const int count = (int)commit_log.size(); // ログの数
 
-		ui->tableWidget_log->setRowCount(count);
+		ui->tableWidget_log->setRowCount(count); // 行数を設定
 
 		int selrow = 0;
 
 		for (int row = 0; row < count; row++) {
+			auto [message_ex, labels] = makeCommitLabels(row); // コミットコメントのツールチップ用テキストとラベル
+			setRowLabels(row, labels);
+
 			Git::CommitItem const *commit = &commit_log[row];
-			{
+
+			{ // column 0: commit graph space (empty text)
 				auto *item = new QTableWidgetItem;
 				item->setData(IndexRole, row);
 				ui->tableWidget_log->setItem(row, 0, item);
 			}
+
 			int col = 1; // カラム0はコミットグラフなので、その次から
+
+			bool bold = false;
+			QString commit_id;
+			{
+				bool isHEAD = (commit->commit_id == getHeadId());
+				if (Git::isUncommited(*commit)) { // 未コミットの時
+					bold = true; // 太字
+					selrow = row;
+				} else {
+					bool uncommited_changes = isThereUncommitedChanges();
+					if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+						bold = true; // 太字
+						selrow = row;
+					}
+					commit_id = abbrevCommitID(*commit);
+				}
+			}
+			QString datetime = misc::makeDateTimeString(commit->commit_date);
+			QString author = commit->author;
+			QString message = commit->message;
+
 			auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
 				auto *item = new QTableWidgetItem(text);
 				if (!tooltip.isEmpty()) {
@@ -4255,36 +4254,15 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 				ui->tableWidget_log->setItem(row, col, item);
 				col++;
 			};
-			QString commit_id;
-			QString datetime;
-			QString author;
-			QString message;
-			QString message_ex;
-			bool isHEAD = (commit->commit_id == getHeadId());
-			bool bold = false;
-			{
-				if (Git::isUncommited(*commit)) { // 未コミットの時
-					bold = true; // 太字
-					selrow = row;
-				} else {
-					bool uncommited_changes = isThereUncommitedChanges();
-					if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
-						bold = true; // 太字
-						selrow = row;
-					}
-					commit_id = abbrevCommitID(*commit);
-				}
-				datetime = misc::makeDateTimeString(commit->commit_date);
-				author = commit->author;
-				message = commit->message;
-				message_ex = makeCommitInfoText(row, &(*getLabelMap())[row]);
-			}
+
 			AddColumn(commit_id, false, QString());
 			AddColumn(datetime, false, QString());
 			AddColumn(author, false, QString());
 			AddColumn(message, bold, message + message_ex);
+
 			ui->tableWidget_log->setRowHeight(row, 24);
 		}
+
 		int t = ui->tableWidget_log->columnWidth(0);
 		ui->tableWidget_log->resizeColumnsToContents();
 		ui->tableWidget_log->setColumnWidth(0, t);
@@ -4351,26 +4329,17 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 		ui->label_branch_name->setText(QString());
 	}
 
-	Git::User user;
+	// HEAD を取得
+	updateHEAD(g);
 
-	//// スレッドで並列処理したら、タイミングによって、queryCommitLogが失敗することがあるので、ひとつずつ実行する
-	// std::thread th([this, g, &user](){
-	{
-		// HEAD を取得
-		updateHEAD(g);
+	// タグを取得
+	queryTags(g);
 
-		// タグを取得
-		queryTags(g);
-
-		// ユーザー情報を取得
-		user = g->getUser(Git::Source::Default);
-	}
-	// });
+	// ユーザー情報を取得
+	Git::User user = g->getUser(Git::Source::Default);
 
 	// コミットログとブランチ情報を取得
 	queryCommitLog(g);
-
-	// th.join(); // HEADとタグとユーザー情報の取得が終わるまで待つ
 
 	// ポジトリの情報を設定
 	{
@@ -4417,7 +4386,6 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	if (do_fetch) {
 		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
-		// setForceFetch(false);
 		if (do_fetch) {
 			fetch(g, false);
 		}
@@ -4505,10 +4473,11 @@ void MainWindow::updateStatusBarText()
 					text = tr("Uncommited changes");
 				} else {
 					QString id = commit.commit_id.toQString();
+					auto [message_ex, label_list] = makeCommitLabels(row);
 					text = QString("%1 : %2%3")
 							.arg(id.mid(0, 7))
 							.arg(commit.message)
-							.arg(makeCommitInfoText(row, nullptr))
+							.arg(message_ex)
 							;
 				}
 			}
@@ -4621,8 +4590,8 @@ void MainWindow::merge(Git::CommitItem commit)
 	std::vector<QString> labels;
 	{
 		int row = selectedLogIndex();
-		QList<BranchLabel> const *v = label(row);
-		for (BranchLabel const &label : *v) {
+		QList<BranchLabel> labels2 = labelsAtRow(row);
+		for (BranchLabel const &label : labels2) {
 			if (label.kind == BranchLabel::LocalBranch || label.kind == BranchLabel::Tag) {
 				labels.push_back(label.text);
 			}
@@ -4936,8 +4905,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
-		QList<BranchLabel> const *labels = label(row);
-		for (const BranchLabel &label : *labels) {
+		QList<BranchLabel> labels = labelsAtRow(row);
+		for (const BranchLabel &label : labels) {
 			if (label.kind == BranchLabel::Head) {
 				is_head = true;
 			} else if (label.kind == BranchLabel::RemoteBranch) {
@@ -7172,8 +7141,6 @@ void MainWindow::on_action_create_desktop_launcher_file_triggered()
 {
 	platform::createApplicationShortcut(this);
 }
-
-
 
 Git::CommitItemList const &MainWindow::commitlog() const
 {

@@ -70,8 +70,8 @@ private:
 	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
 	{
 		int row = index.row();
-		QList<BranchLabel> const *labels = mainwindow()->label(row);
-		if (labels) {
+		QList<BranchLabel> const &labels = mainwindow()->labelsAtRow(row);
+		if (!labels.empty()) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
 
@@ -83,12 +83,12 @@ private:
 			int x1 = x;
 			int y0 = opt.rect.y();
 			int y1 = y0 + opt.rect.height() - 1;
-			int i = labels->size();
+			int i = labels.size();
 			while (i > 0) {
 				i--;
 
 				// ラベル
-				BranchLabel const &label = labels->at(i);
+				BranchLabel const &label = labels.at(i);
 				QString text = misc::abbrevBranchName(label.text + label.info);
 
 				// 現在のブランチ名と一致するなら太字

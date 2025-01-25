@@ -311,7 +311,7 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	QString makeCommitInfoText(int row, QList<BranchLabel> *label_list);
+	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(int row);
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryData *repo);
 	void openExplorer(const RepositoryData *repo);
@@ -319,7 +319,6 @@ private:
 	bool editFile(const QString &path, const QString &title);
 	void setAppSettings(const ApplicationSettings &appsettings);
 	QStringList findGitObject(const QString &id) const;
-	QList<BranchLabel> sortedLabels(int row) const;
 	void saveApplicationSettings();
 	void loadApplicationSettings();
 	void setDiffResult(const QList<Git::Diff> &diffs);
@@ -369,9 +368,7 @@ private:
 	void setUncommitedChanges(bool uncommited_changes);
 	QList<Git::Diff> const *diffResult() const;
 	std::map<QString, Git::Diff> *getDiffCacheMap();
-	std::map<int, QList<BranchLabel>> *getLabelMap();
-	std::map<int, QList<BranchLabel>> const *getLabelMap() const;
-	const std::map<int, QList<BranchLabel>> *getLabelMap(const MainWindow *frame) const;
+
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
 	bool getForceFetch() const;
@@ -492,7 +489,6 @@ public:
 	QImage committerIcon(int row, QSize size) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
-	const QList<BranchLabel> *label(int row) const;
 	ApplicationSettings *appsettings();
 	const ApplicationSettings *appsettings() const;
 	QString defaultWorkingDir() const;
@@ -505,6 +501,10 @@ public:
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
 	void updateCommitLogTable(int delay_ms);
+public:
+	void setRowLabels(int row, const QList<BranchLabel> &labels);
+	QList<BranchLabel> labelsAtRow(int row) const;
+	QList<BranchLabel> sortedLabels(int row) const;
 private:
 	void makeCommitLog(int scroll_pos, int select_row);
 	void setupUpdateCommitLog();
