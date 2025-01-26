@@ -1,6 +1,8 @@
 #ifndef COMMITLOGTABLEWIDGET_H
 #define COMMITLOGTABLEWIDGET_H
 
+#include "Git.h"
+
 #include <QTableWidget>
 
 class MainWindow;
@@ -37,26 +39,31 @@ public:
 /**
  * @brief コミットログテーブルウィジェット
  */
-class CommitLogTableWidget : public QTableWidget {
+class CommitLogTableWidget : public QTableView {
 	Q_OBJECT
 	friend class CommitLogTableWidgetDelegate;
 private:
 	MainWindow *mainwindow_ = nullptr;
 	MainWindow *mainwindow() { return mainwindow_; }
+	MainWindow const *mainwindow() const { return mainwindow_; }
 	CommitLogTableModel *model_ = nullptr; // TODO:
+	const Git::CommitItem &commitItem(int row) const;
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);
 	void prepare();
-	void setRecords(std::vector<CommitLogTableModel::Record> &&records)
-	{
-		model_->setRecords(std::move(records));
-	}
+	void setRecords(std::vector<CommitLogTableModel::Record> &&records);
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *e) override;
 protected slots:
 	void verticalScrollbarValueChanged(int value) override;
+public:
+	int rowCount() const;
+	int currentRow() const;
+	void setCurrentCell(int row, int col);
+	int actualLogIndex() const;
+	QRect visualItemRect(int row, int col);
 };
 
 #endif // COMMITLOGTABLEWIDGET_H

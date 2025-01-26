@@ -31,7 +31,7 @@ void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
 #ifdef Q_OS_WIN
 	// 選択枠を描画
 	if (option.showDecorationSelected) {
-		QTableWidget const *tablewidget = qobject_cast<QTableWidget const *>(option.widget);
+		QTableView const *tablewidget = qobject_cast<QTableView const *>(option.widget);
 		Q_ASSERT(tablewidget);
 		int w = tablewidget->viewport()->rect().width();
 		painter->save();

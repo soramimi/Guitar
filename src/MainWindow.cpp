@@ -193,6 +193,7 @@ struct MainWindow::Private {
 	std::function<void (QVariant const &var)> retry_function;
 	QVariant retry_variant;
 
+	Git::CommitItem null_commit_item;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1001,28 +1002,25 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 {
 	char c = 0;
 
-	Git::CommitItem const commit = commitItem(id);
-	if (commit) {
-		if (commit.sign.verify) {
-			c = commit.sign.verify;
-		} else {
-			auto a = m->commit_detail_getter.query(commit.commit_id, true, true);
-			c = a.sign_verify;
-		}
+	Git::CommitItem const &commit = commitItem(id);
 
-		Git::SignatureGrade sg = Git::evaluateSignature(c);
-		switch (sg) {
-		case Git::SignatureGrade::Good: // 署名あり、検証OK
-			return global->graphics->signature_good_icon;
-		case Git::SignatureGrade::Bad: // 署名あり、検証NG
-			return global->graphics->signature_bad_icon;
-		case Git::SignatureGrade::Unknown:
-		case Git::SignatureGrade::Dubious:
-		case Git::SignatureGrade::Missing:
-			return global->graphics->signature_dubious_icon; // 署名あり、検証不明
-		}
+	if (commit.sign.verify) {
+		c = commit.sign.verify;
 	} else {
-		qDebug();
+		auto a = m->commit_detail_getter.query(commit.commit_id, true, true);
+		c = a.sign_verify;
+	}
+
+	Git::SignatureGrade sg = Git::evaluateSignature(c);
+	switch (sg) {
+	case Git::SignatureGrade::Good: // 署名あり、検証OK
+		return global->graphics->signature_good_icon;
+	case Git::SignatureGrade::Bad: // 署名あり、検証NG
+		return global->graphics->signature_bad_icon;
+	case Git::SignatureGrade::Unknown:
+	case Git::SignatureGrade::Dubious:
+	case Git::SignatureGrade::Missing:
+		return global->graphics->signature_dubious_icon; // 署名あり、検証不明
 	}
 
 	return {}; // 署名なし
@@ -2083,7 +2081,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
  *
  * 選択されたコミットアイテムを返す
  */
-Git::CommitItem MainWindow::selectedCommitItem() const
+Git::CommitItem const &MainWindow::selectedCommitItem() const
 {
 	int i = selectedLogIndex();
 	return commitItem(i);
@@ -4093,21 +4091,35 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 	win.exec();
 }
 
-void MainWindow::updateFileList(Git::CommitItem const &commit)
+void MainWindow::updateFileList(Git::CommitItem const *commit)
 {
 	Git::CommitID id;
-	if (Git::isUncommited(commit)) {
+	if (!commit) {
+		// nullptr for uncommited changes
+	} else if (Git::isUncommited(*commit)) {
 		// empty id for uncommited changes
 	} else {
-		id = commit.commit_id;
+		id = commit->commit_id;
 	}
 	updateFileList(id);
+}
+
+Git::CommitItem const *MainWindow::currentCommitItem()
+{
+	int row = ui->tableWidget_log->actualLogIndex();
+	auto const &logs = commitlog();
+	// &commit = logs[row];
+	if (row >= 0 && row < (int)logs.size()) {
+		return &logs[row];
+	}
+	return nullptr;
 }
 
 void MainWindow::updateCurrentFilesList()
 {
 	ASSERT_MAIN_THREAD();
 
+#if 0
 	Git::CommitItem commit;
 	{
 		QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
@@ -4118,8 +4130,11 @@ void MainWindow::updateCurrentFilesList()
 		Q_ASSERT(index >= 0 && index < count);
 		commit = logs[index];
 	}
-	// if commit is invalid, it means uncommited changes
+	commit = commitlog()[ui->tableWidget_log->actualLogIndex()];
 	updateFileList(commit);
+#else
+	updateFileList(currentCommitItem());
+#endif
 }
 
 Git::Object MainWindow::internalCatFile(GitPtr g, const QString &id) //@TODO:
@@ -4165,7 +4180,7 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 	ASSERT_MAIN_THREAD();
 	prepareCommitLogTableWidget();
 
-	bool block = ui->tableWidget_log->blockSignals(true);
+	// bool block = ui->tableWidget_log->blockSignals(true);
 	{
 		Git::CommitItemList const &commit_log = commitlog();
 
@@ -4174,7 +4189,7 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 		std::vector<CommitLogTableModel::Record> records;
 		records.reserve(count);
 
-		ui->tableWidget_log->setRowCount(count); // 行数を設定
+		// ui->tableWidget_log->setRowCount(count); // 行数を設定
 
 		int selrow = 0;
 
@@ -4185,9 +4200,9 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 			Git::CommitItem const *commit = &commit_log[row];
 
 			{ // column 0: commit graph space (empty text)
-				auto *item = new QTableWidgetItem;
-				item->setData(IndexRole, row);
-				ui->tableWidget_log->setItem(row, 0, item);
+				// auto *item = new QTableWidgetItem;
+				// item->setData(IndexRole, row);
+				// ui->tableWidget_log->setItem(row, 0, item);
 			}
 
 			int col = 1; // カラム0はコミットグラフなので、その次から
@@ -4213,6 +4228,7 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 			rec.message = commit->message;
 
 			auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
+#if 0
 				auto *item = new QTableWidgetItem(text);
 				if (!tooltip.isEmpty()) {
 					QString tt = CommitLogTableModel::escapeTooltipText(tooltip);
@@ -4224,6 +4240,7 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 					item->setFont(font);
 				}
 				ui->tableWidget_log->setItem(row, col, item);
+#endif
 				col++;
 			};
 
@@ -4234,18 +4251,18 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 			AddColumn(rec.author, false, QString());
 			AddColumn(rec.message, rec.bold, rec.tooltip);
 
-			ui->tableWidget_log->setRowHeight(row, 24);
+			// ui->tableWidget_log->setRowHeight(row, 24);
 
 			records.push_back(rec);
 		}
 
 		ui->tableWidget_log->setRecords(std::move(records));
 
-		int t = ui->tableWidget_log->columnWidth(0);
-		ui->tableWidget_log->resizeColumnsToContents();
-		ui->tableWidget_log->setColumnWidth(0, t);
-		ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
-		ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
+		// int t = ui->tableWidget_log->columnWidth(0);
+		// ui->tableWidget_log->resizeColumnsToContents();
+		// ui->tableWidget_log->setColumnWidth(0, t);
+		// ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
+		// ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
 
 		m->last_focused_file_list = nullptr;
 
@@ -4258,7 +4275,7 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 			ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
 		}
 	}
-	ui->tableWidget_log->blockSignals(block);
+	// ui->tableWidget_log->blockSignals(block);
 
 	updateUI();
 }
@@ -4441,24 +4458,29 @@ void MainWindow::updateStatusBarText()
 					;
 		}
 	} else if (w == ui->tableWidget_log) {
-		QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
-		if (item) {
-			auto const &logs = commitlog();
-			int row = item->data(IndexRole).toInt();
-			if (row < (int)logs.size()) {
-				Git::CommitItem const &commit = logs[row];
-				if (Git::isUncommited(commit)) {
+		{
+		// QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
+		// if (item) {
+			// auto const &logs = commitlog();
+			// int row = item->data(IndexRole).toInt();
+			// if (row < (int)logs.size()) {
+			Git::CommitItem const *commit = currentCommitItem();
+			if (commit) {
+
+				if (Git::isUncommited(*commit)) {
 					text = tr("Uncommited changes");
 				} else {
-					QString id = commit.commit_id.toQString();
+					QString id = commit->commit_id.toQString();
+					int row = ui->tableWidget_log->actualLogIndex();
 					auto [message_ex, label_list] = makeCommitLabels(row);
 					text = QString("%1 : %2%3")
-							.arg(id.mid(0, 7))
-							.arg(commit.message)
-							.arg(message_ex)
-							;
+						   .arg(id.mid(0, 7))
+						   .arg(commit->message)
+						   .arg(message_ex)
+						   ;
 				}
 			}
+											// }
 		}
 	}
 
@@ -5636,18 +5658,21 @@ QString MainWindow::findFileID(const QString &commit_id, const QString &file)
 	return lookupFileID(git(), getObjCache(), commit_id, file);
 }
 
-Git::CommitItem MainWindow::commitItem(int row) const
+Git::CommitItem const &MainWindow::commitItem(int row) const
 {
 	ASSERT_MAIN_THREAD();
 
-	if (row < 0 && row >= (int)commitlog().size()) return {};
-	return commitlog()[row];
+	if (row >= 0 && row < (int)commitlog().size()) {
+		return commitlog()[row];
+	}
+	return m->null_commit_item;
 }
 
-Git::CommitItem MainWindow::commitItem(Git::CommitID const &id) const
+Git::CommitItem const &MainWindow::commitItem(Git::CommitID const &id) const
 {
 	ASSERT_MAIN_THREAD();
-	return *commitlog().find(id);
+	auto *p = commitlog().find(id);
+	return p ? *p : m->null_commit_item;
 }
 
 QImage MainWindow::committerIcon(int row, QSize size) const
@@ -5817,8 +5842,9 @@ void MainWindow::updateAncestorCommitMap()
 		for (size_t i = index; i < end; i++) {
 			Git::CommitItem const &commit = logs.at(i);
 			commit_to_index_map[commit.commit_id.toQString()] = (size_t)i;
-			auto *item = ui->tableWidget_log->item((int)i, 0);
-			QRect r = ui->tableWidget_log->visualItemRect(item);
+			// auto *item = ui->tableWidget_log->item((int)i, 0);
+			// QRect r = ui->tableWidget_log->visualItemRect(item);
+			QRect r = ui->tableWidget_log->visualItemRect((int)i, 0);
 			if (r.y() >= ui->tableWidget_log->height()) {
 				end = i + 1;
 				break;
@@ -5935,7 +5961,7 @@ int MainWindow::selectedLogIndex() const
 	ASSERT_MAIN_THREAD();
 
 	auto const &logs = commitlog();
-	int i = ui->tableWidget_log->currentRow();
+	int i = ui->tableWidget_log->actualLogIndex();
 	if (i >= 0 && i < (int)logs.size()) {
 		return i;
 	}
@@ -5964,7 +5990,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 		bool uncommited = false;
 		{
 			auto const &logs = commitlog();
-			int row = ui->tableWidget_log->currentRow();
+			int row = ui->tableWidget_log->actualLogIndex();
 			uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
 			updatediffview = true;
 		}
@@ -7148,7 +7174,7 @@ Git::CommitItemList const &MainWindow::commitlog() const
 
 void MainWindow::clearLogContents()
 {
-	ui->tableWidget_log->clearContents();
+	// ui->tableWidget_log->clearContents();
 	ui->tableWidget_log->scrollToTop();
 }
 
@@ -7169,5 +7195,26 @@ void MainWindow::selectLogTableRow(int row)
 
 void MainWindow::test()
 {
+	std::vector<CommitLogTableModel::Record> example_records;
+	{
+		CommitLogTableModel::Record r;
+		r.commit_id = "1";
+		r.datetime = "2021-01-01 00:00:00";
+		r.author = "author";
+		r.message = "message";
+		example_records.push_back(r);
+	}
+	{
+		CommitLogTableModel::Record r;
+		r.commit_id = "2";
+		r.datetime = "2021-01-01 00:00:01";
+		r.author = "author";
+		r.message = "message";
+		example_records.push_back(r);
+	}
+
+	ui->tableWidget_log->setRecords(std::move(example_records));
+	ui->tableWidget_log->setRowHeight(0, 24);
+	ui->tableWidget_log->setRowHeight(1, 24);
 }
 

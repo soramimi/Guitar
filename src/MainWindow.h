@@ -173,7 +173,7 @@ private:
 	void postUserEvent(UserEventHandler::variant_t &&v, int ms_later);
 
 	void updateFileList(const Git::CommitID &id);
-	void updateFileList(Git::CommitItem const &commit);
+	void updateFileList(const Git::CommitItem *commit);
 public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
@@ -270,7 +270,7 @@ private:
 	void updateRemoteInfo(GitPtr g);
 	void queryRemotes(GitPtr g);
 	void submodule_add(QString url = {}, const QString &local_dir = {});
-	Git::CommitItem selectedCommitItem() const;
+	const Git::CommitItem &selectedCommitItem() const;
 	void commit(bool amend = false);
 	void commitAmend();
 	
@@ -492,8 +492,8 @@ public:
 	bool isValidWorkingCopy(GitPtr g) const;
 	void emitWriteLog(LogData const &logdata);
 	QString findFileID(const QString &commit_id, const QString &file);
-	Git::CommitItem commitItem(int row) const;
-	Git::CommitItem commitItem(Git::CommitID const &id) const;
+	const Git::CommitItem &commitItem(int row) const;
+	const Git::CommitItem &commitItem(Git::CommitID const &id) const;
 	QImage committerIcon(int row, QSize size) const;
 	void changeSshKey(const QString &local_dir, const QString &ssh_key, bool save);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
@@ -694,6 +694,8 @@ public:
 
 public:
 	const Git::CommitItemList &commitlog() const;
+	const Git::CommitItem *currentCommitItem();
+
 	void clearLogContents();
 	void updateLogTableView();
 	void setFocusToLogTable();

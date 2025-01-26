@@ -178,7 +178,7 @@ void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
 	Git::CommitID commit_id = currentCommitId();
 	if (Git::isValidID(commit_id)) {
-		Git::CommitItem commit_item = mainwindow()->commitItem(commit_id);
+		Git::CommitItem const &commit_item = mainwindow()->commitItem(commit_id);
 		CommitPropertyDialog dlg(this, commit_item);
 		dlg.showCheckoutButton(false);
 		dlg.showJumpButton(true);

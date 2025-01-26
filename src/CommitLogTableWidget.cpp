@@ -4,6 +4,7 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
+#include <QHeaderView>
 #include <QPainter>
 #include <QPainterPath>
 #include <cmath>
@@ -94,6 +95,7 @@ void CommitLogTableModel::setRecords(std::vector<Record> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
+	qDebug() << "CommitLogTableModel::setRecords: " << records_.size();
 	endResetModel();
 }
 
@@ -234,7 +236,13 @@ public:
 	}
 	void paint(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const override
 	{
-		MyTableWidgetDelegate::paint(painter, option, index);
+		CommitLogTableWidget const *tablewidget = qobject_cast<CommitLogTableWidget const *>(option.widget);
+		Q_ASSERT(tablewidget);
+
+		QStyleOptionViewItem opt = option;
+		initStyleOption(&opt, index);
+
+		MyTableWidgetDelegate::paint(painter, opt, index);
 
 		enum {
 			Graph,
@@ -244,18 +252,18 @@ public:
 			Message,
 		};
 
-		Git::CommitItem commit = global->mainwindow->commitItem(index.row());
+		Git::CommitItem const &commit = tablewidget->commitItem(index.row());
 
 		// 署名アイコンの描画
 		if (index.column() == CommitId) {
-			drawSignatureIcon(painter, option, commit);
+			drawSignatureIcon(painter, opt, commit);
 		}
 
 		// コミット日時
 		if (index.column() == Date) {
 			if (commit.strange_date) {
 				QColor color(255, 0, 0, 128);
-				QRect r = option.rect.adjusted(1, 1, -1, -2);
+				QRect r = opt.rect.adjusted(1, 1, -1, -2);
 				misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
 			}
 		}
@@ -264,23 +272,29 @@ public:
 		if (index.column() == Author) {
 			bool show = global->mainwindow->isAvatarsVisible();
 			double opacity = show ? 0.5 : 0.125;
-			drawAvatar(painter, opacity, option, index);
+			drawAvatar(painter, opacity, opt, index);
 		}
 
 
 		// ラベルの描画
 		if (index.column() == Message) {
 			QString current_branch = mainwindow()->currentBranchName();
-			drawLabels(painter, option, index, current_branch);
+			drawLabels(painter, opt, index, current_branch);
 		}
 	}
 };
 
-CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
-	: QTableWidget(parent)
+Git::CommitItem const &CommitLogTableWidget::commitItem(int row) const
 {
-	model_ = new CommitLogTableModel(this);
+	return mainwindow()->commitItem(row);
+}
+
+CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
+	: QTableView(parent)
+{
 	setItemDelegate(new CommitLogTableWidgetDelegate(this));
+	model_ = new CommitLogTableModel(this);
+	setModel(model_);
 }
 
 void CommitLogTableWidget::setup(MainWindow *mw)
@@ -298,13 +312,30 @@ void CommitLogTableWidget::prepare()
 		tr("Message"),
 	};
 	int n = cols.size();
-	setColumnCount(n);
-	setRowCount(0);
+	// setColumnCount(n);
+	// setRowCount(0);
 	for (int i = 0; i < n; i++) {
 		QString const &text = cols[i];
 		auto *item = new QTableWidgetItem(text);
-		setHorizontalHeaderItem(i, item);
+		// setHorizontalHeaderItem(i, item);
 	}
+}
+
+void CommitLogTableWidget::setRecords(std::vector<CommitLogTableModel::Record> &&records)
+{
+	int n = records.size();
+
+	model_->setRecords(std::move(records));
+
+	for (int i = 0; i < n; i++) {
+		setRowHeight(i, 24);
+	}
+
+	int t = columnWidth(0);
+	resizeColumnsToContents();
+	setColumnWidth(0, t);
+	horizontalHeader()->setStretchLastSection(false);
+	horizontalHeader()->setStretchLastSection(true);
 }
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
@@ -326,11 +357,17 @@ void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, 
 	}
 }
 
+QRect CommitLogTableWidget::visualItemRect(int row, int col)
+{
+	QModelIndex index = model_->index(row, col, QModelIndex());
+	return visualRect(index);
+}
+
 void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 {
 	if (rowCount() < 1) return;
 
-	QTableWidget::paintEvent(e);
+	QTableView::paintEvent(e);
 
 	QPainter pr(viewport());
 	pr.setRenderHint(QPainter::Antialiasing);
@@ -344,12 +381,17 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	int thick_line_width = 4;
 
 	auto ItemRect = [&](int row){
+#if 0
 		QRect r;
 		QTableWidgetItem *p = item(row, 0);
 		if (p) {
 			r = visualItemRect(p);
 		}
 		return r;
+#else
+		// return visualRect(model()->index(row, 0));
+		return visualItemRect(row, 0);
+#endif
 	};
 
 	auto IsAncestor = [&](Git::CommitItem const &item){
@@ -468,12 +510,33 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 void CommitLogTableWidget::resizeEvent(QResizeEvent *e)
 {
 	mainwindow()->updateAncestorCommitMap();
-	QTableWidget::resizeEvent(e);
+	QTableView::resizeEvent(e);
 }
 
 void CommitLogTableWidget::verticalScrollbarValueChanged(int value)
 {
 	(void)value;
 	mainwindow()->updateAncestorCommitMap();
+}
+
+int CommitLogTableWidget::rowCount() const
+{
+	return model_->rowCount(QModelIndex());
+}
+
+int CommitLogTableWidget::currentRow() const
+{
+	return currentIndex().row();
+}
+
+int CommitLogTableWidget::actualLogIndex() const
+{
+	return currentIndex().row();
+}
+
+void CommitLogTableWidget::setCurrentCell(int row, int col)
+{
+	QModelIndex index = model_->index(row, col, QModelIndex());
+	setCurrentIndex(index);
 }
 
