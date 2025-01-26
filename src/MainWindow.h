@@ -508,7 +508,7 @@ public:
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryData &repodata);
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
-	void updateCommitLogTable(int delay_ms);
+	void updateCommitLogTableView(int delay_ms);
 public:
 	void setRowLabels(int row, const QList<BranchLabel> &labels);
 	QList<BranchLabel> labelsAtRow(int row) const;
@@ -673,7 +673,6 @@ private:
 	void retry();
 	bool isRetryQueued() const;
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
-	void prepareCommitLogTableWidget();
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 

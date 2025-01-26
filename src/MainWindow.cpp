@@ -262,8 +262,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->graph_color = global->theme->graphColorMap();
 
-	prepareCommitLogTableWidget();
-
 	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
 	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
@@ -281,7 +279,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
 
 	connect(&m->update_commit_log_timer, &QTimer::timeout, [&](){
-		updateCommitLogTable(0);
+		updateCommitLogTableView(0);
 	});
 
 	connect(this, &MainWindow::remoteInfoChanged, this, &MainWindow::onRemoteInfoChanged);
@@ -2607,12 +2605,12 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 }
 
 /**
- * @brief MainWindow::updateCommitLogTable
+ * @brief MainWindow::updateCommitLogTableView
  * @param delay_ms
  *
  * コミットログテーブルを更新する
  */
-void MainWindow::updateCommitLogTable(int delay_ms)
+void MainWindow::updateCommitLogTableView(int delay_ms)
 {
 	if (delay_ms == 0) {
 		ui->tableWidget_log->viewport()->update();
@@ -2672,12 +2670,12 @@ void MainWindow::updateAvatar(const Git::User &user, bool request)
 void MainWindow::onAvatarReady()
 {
 	updateAvatar(currentGitUser(), false);
-	updateCommitLogTable(300);
+	updateCommitLogTableView(300);
 }
 
 void MainWindow::onCommitDetailGetterReady()
 {
-	updateCommitLogTable(300);
+	updateCommitLogTableView(300);
 }
 
 void MainWindow::setWindowTitle_(const Git::User &user)
@@ -3009,6 +3007,9 @@ const Git::CommitItem *MainWindow::getLog(int index) const
  */
 void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
 {
+	QElapsedTimer t;
+	t.start();
+
 	const int LogCount = (int)logs->size();
 	if (LogCount > 0) {
 		auto LogItem = [&](int i)->Git::CommitItem &{ return logs->at((size_t)i); };
@@ -3228,22 +3229,8 @@ DONE:;
 			}
 		}
 	}
-}
 
-void MainWindow::updateCommitGraph()
-{
-	Git::CommitItemList logs = commitlog();
-	updateCommitGraph(&logs);
-
-	CommitLogExchangeData log;
-	log.commit_log = logs;
-	setCommitLog(log);
-}
-
-void MainWindow::prepareCommitLogTableWidget()
-{
-	ui->tableWidget_log->prepare();
-	updateCommitGraph(); // コミットグラフを更新
+	qDebug() << "updateCommitGraph:" << t.elapsed() << "ms";
 }
 
 void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
@@ -3251,6 +3238,8 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	ASSERT_MAIN_THREAD();
 	if (log.commit_log) currentRepositoryModel()->commit_log = *log.commit_log;
 	if (log.branch_map) currentRepositoryModel()->branch_map = *log.branch_map;
+
+	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
 }
 
 void MainWindow::setCommitLog(const CommitLogExchangeData &log)
@@ -3298,7 +3287,7 @@ void MainWindow::queryCommitLog(GitPtr g)
 		commit_log.updateIndex();
 	}
 
-	updateCommitGraph(&commit_log);
+	// updateCommitGraph(&commit_log);
 
 	CommitLogExchangeData log;
 	log.commit_log = commit_log;
@@ -4172,112 +4161,88 @@ void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selectio
 	openRepositoryMain(g, true, fetch, keep_selection);
 }
 
+void MainWindow::updateCommitGraph()
+{
+	Git::CommitItemList commit_log = commitlog();
+	updateCommitGraph(&commit_log);
+
+	// CommitLogExchangeData log;
+	// log.commit_log = commit_logs;
+	// setCommitLog(log);
+}
+
 /**
  * @brief コミットログテーブルウィジェットを構築
  */
 void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 {
 	ASSERT_MAIN_THREAD();
-	prepareCommitLogTableWidget();
 
-	// bool block = ui->tableWidget_log->blockSignals(true);
-	{
-		Git::CommitItemList const &commit_log = commitlog();
+	updateCommitGraph(); // コミットグラフを更新
 
-		const int count = (int)commit_log.size(); // ログの数
+	QElapsedTimer t;
+	t.start();
 
-		std::vector<CommitLogTableModel::Record> records;
-		records.reserve(count);
+	Git::CommitItemList commit_log = commitlog();
 
-		// ui->tableWidget_log->setRowCount(count); // 行数を設定
+	updateCommitGraph(&commit_log);
 
-		int selrow = 0;
+	const int count = (int)commit_log.size(); // ログの数
 
-		for (int row = 0; row < count; row++) {
-			auto [message_ex, labels] = makeCommitLabels(row); // コミットコメントのツールチップ用テキストとラベル
-			setRowLabels(row, labels);
+	std::vector<CommitLogTableModel::Record> records;
+	records.reserve(count);
 
-			Git::CommitItem const *commit = &commit_log[row];
+	int selrow = 0;
 
-			{ // column 0: commit graph space (empty text)
-				// auto *item = new QTableWidgetItem;
-				// item->setData(IndexRole, row);
-				// ui->tableWidget_log->setItem(row, 0, item);
-			}
+	for (int row = 0; row < count; row++) {
+		auto [message_ex, labels] = makeCommitLabels(row); // コミットコメントのツールチップ用テキストとラベル
+		setRowLabels(row, labels);
 
-			int col = 1; // カラム0はコミットグラフなので、その次から
+		Git::CommitItem const &commit = commit_log[row];
 
-			CommitLogTableModel::Record rec;
+		CommitLogTableModel::Record rec;
 
-			{
-				bool isHEAD = (commit->commit_id == getHeadId());
-				if (Git::isUncommited(*commit)) { // 未コミットの時
-					rec.bold = true; // 太字
-					selrow = row;
-				} else {
-					bool uncommited_changes = isThereUncommitedChanges();
-					if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
-						rec.bold = true; // 太字
-						selrow = row;
-					}
-					rec.commit_id = abbrevCommitID(*commit);
-				}
-			}
-			rec.datetime = misc::makeDateTimeString(commit->commit_date);
-			rec.author = commit->author;
-			rec.message = commit->message;
-
-			auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
-#if 0
-				auto *item = new QTableWidgetItem(text);
-				if (!tooltip.isEmpty()) {
-					QString tt = CommitLogTableModel::escapeTooltipText(tooltip);
-					item->setToolTip(tt);
-				}
-				if (bold) {
-					QFont font = item->font();
-					font.setBold(true);
-					item->setFont(font);
-				}
-				ui->tableWidget_log->setItem(row, col, item);
-#endif
-				col++;
-			};
-
-			rec.tooltip = rec.message + message_ex;
-
-			AddColumn(rec.commit_id, false, QString());
-			AddColumn(rec.datetime, false, QString());
-			AddColumn(rec.author, false, QString());
-			AddColumn(rec.message, rec.bold, rec.tooltip);
-
-			// ui->tableWidget_log->setRowHeight(row, 24);
-
-			records.push_back(rec);
-		}
-
-		ui->tableWidget_log->setRecords(std::move(records));
-
-		// int t = ui->tableWidget_log->columnWidth(0);
-		// ui->tableWidget_log->resizeColumnsToContents();
-		// ui->tableWidget_log->setColumnWidth(0, t);
-		// ui->tableWidget_log->horizontalHeader()->setStretchLastSection(false);
-		// ui->tableWidget_log->horizontalHeader()->setStretchLastSection(true);
-
-		m->last_focused_file_list = nullptr;
-
-		ui->tableWidget_log->setFocus();
-
-		if (select_row < 0) {
-			setCurrentLogRow(selrow);
+		bool isHEAD = (commit.commit_id == getHeadId());
+		if (Git::isUncommited(commit)) { // 未コミットの時
+			rec.bold = true; // 太字
+			selrow = row;
 		} else {
-			setCurrentLogRow(select_row);
-			ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+			bool uncommited_changes = isThereUncommitedChanges();
+			if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+				rec.bold = true; // 太字
+				selrow = row;
+			}
+			rec.commit_id = abbrevCommitID(commit);
 		}
+
+		rec.datetime = misc::makeDateTimeString(commit.commit_date);
+		rec.author = commit.author;
+		rec.message = commit.message;
+		rec.tooltip = rec.message + message_ex;
+
+		records.push_back(rec);
 	}
-	// ui->tableWidget_log->blockSignals(block);
+
+	ui->tableWidget_log->setRecords(std::move(records));
+
+	qDebug() << "makeCommitLog:" << t.elapsed() << "ms";
+
+	m->last_focused_file_list = nullptr;
+
+	ui->tableWidget_log->setFocus();
+
+	if (select_row < 0) {
+		setCurrentLogRow(selrow);
+	} else {
+		setCurrentLogRow(select_row);
+		ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+	}
 
 	updateUI();
+
+	CommitLogExchangeData log;
+	log.commit_log = commit_log;
+	setCommitLog(log);
 }
 
 void MainWindow::queryTags(GitPtr g)
@@ -4367,9 +4332,6 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	// ウィンドウタイトルを更新
 	updateWindowTitle(user);
-
-	// コミットログテーブルを更新
-	updateCommitLogTable(0);
 
 	// ファイルリストを更新
 	onLogCurrentItemChanged();

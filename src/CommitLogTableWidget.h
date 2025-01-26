@@ -51,7 +51,6 @@ private:
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);
-	void prepare();
 	void setRecords(std::vector<CommitLogTableModel::Record> &&records);
 protected:
 	void paintEvent(QPaintEvent *) override;

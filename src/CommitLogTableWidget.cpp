@@ -95,7 +95,6 @@ void CommitLogTableModel::setRecords(std::vector<Record> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
-	qDebug() << "CommitLogTableModel::setRecords: " << records_.size();
 	endResetModel();
 }
 
@@ -300,25 +299,6 @@ CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
 void CommitLogTableWidget::setup(MainWindow *mw)
 {
 	mainwindow_ = mw;
-}
-
-void CommitLogTableWidget::prepare()
-{
-	QStringList cols = {
-		tr("Graph"),
-		tr("Commit"),
-		tr("Date"),
-		tr("Author"),
-		tr("Message"),
-	};
-	int n = cols.size();
-	// setColumnCount(n);
-	// setRowCount(0);
-	for (int i = 0; i < n; i++) {
-		QString const &text = cols[i];
-		auto *item = new QTableWidgetItem(text);
-		// setHorizontalHeaderItem(i, item);
-	}
 }
 
 void CommitLogTableWidget::setRecords(std::vector<CommitLogTableModel::Record> &&records)
