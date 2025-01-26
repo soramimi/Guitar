@@ -1808,7 +1808,7 @@
   </customwidget>
   <customwidget>
    <class>CommitLogTableWidget</class>
-   <extends>QTableWidget</extends>
+   <extends>QTableView</extends>
    <header>CommitLogTableWidget.h</header>
   </customwidget>
   <customwidget>

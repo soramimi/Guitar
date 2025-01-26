@@ -3325,7 +3325,7 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(Git::CommitItem const &commit)
+std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(std::map<Git::CommitID, QList<Git::Branch>> const &branch_map, Git::CommitItem const &commit)
 {
 	QString message_ex;
 	QList<BranchLabel> label_list;
@@ -3336,24 +3336,28 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(Git::Commit
 			label.text = "HEAD";
 			label_list.push_back(label);
 		}
-		QList<Git::Branch> list = findBranch(commit.commit_id);
-		for (Git::Branch const &b : list) {
-			if (b.flags & Git::Branch::HeadDetachedAt) continue;
-			if (b.flags & Git::Branch::HeadDetachedFrom) continue;
-			BranchLabel label(BranchLabel::LocalBranch);
-			label.text = b.name;
-			if (!b.remote.isEmpty()) {
-				label.kind = BranchLabel::RemoteBranch;
-				label.text = "remotes" / b.remote / label.text;
+		// QList<Git::Branch> list = findBranch(commit.commit_id);
+		auto it = branch_map.find(commit.commit_id);
+		if (it != branch_map.end() && !it->second.empty()) {
+			QList<Git::Branch> const &list = it->second;
+			for (Git::Branch const &b : list) {
+				if (b.flags & Git::Branch::HeadDetachedAt) continue;
+				if (b.flags & Git::Branch::HeadDetachedFrom) continue;
+				BranchLabel label(BranchLabel::LocalBranch);
+				label.text = b.name;
+				if (!b.remote.isEmpty()) {
+					label.kind = BranchLabel::RemoteBranch;
+					label.text = "remotes" / b.remote / label.text;
+				}
+				if (b.ahead > 0) {
+					label.info += tr(", %1 ahead").arg(b.ahead);
+				}
+				if (b.behind > 0) {
+					label.info += tr(", %1 behind").arg(b.behind);
+				}
+				message_ex += " {" + label.text + label.info + '}';
+				label_list.push_back(label);
 			}
-			if (b.ahead > 0) {
-				label.info += tr(", %1 ahead").arg(b.ahead);
-			}
-			if (b.behind > 0) {
-				label.info += tr(", %1 behind").arg(b.behind);
-			}
-			message_ex += " {" + label.text + label.info + '}';
-			label_list.push_back(label);
 		}
 	}
 
@@ -3374,7 +3378,7 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
 {
 	ASSERT_MAIN_THREAD();
 	Git::CommitItem commit = commitlog()[row];
-	return makeCommitLabels(commit);
+	return makeCommitLabels(CurrentRepositoryModel().branch_map, commit);
 }
 
 /**
@@ -4167,6 +4171,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	ASSERT_MAIN_THREAD();
 
 	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
+	std::map<Git::CommitID, QList<Git::Branch>> const &branch_map = exdata.p->branch_map.value();
 	Q_ASSERT(commit_log);
 
 	auto updatecommitgraph = std::async(std::launch::async, [&](){
@@ -4183,7 +4188,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const &commit = (*commit_log)[row];
 
-		auto [message_ex, labels] = makeCommitLabels(commit); // コミットコメントのツールチップ用テキストとラベル
+		auto [message_ex, labels] = makeCommitLabels(branch_map, commit); // コミットコメントのツールチップ用テキストとラベル
 		setRowLabels(row, labels);
 
 		CommitLogTableModel::Record rec;
@@ -6173,7 +6178,7 @@ void MainWindow::on_action_push_all_tags_triggered()
 	push_tags(git());
 }
 
-void MainWindow::on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *)
+void MainWindow::on_tableWidget_log_doubleClicked(const QModelIndex &index)
 {
 	Git::CommitItem const commit = selectedCommitItem();
 	if (commit) {

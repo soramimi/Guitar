@@ -320,7 +320,7 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(const Git::CommitItem &commit);
+	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(const std::map<Git::CommitID, QList<Git::Branch> > &branch_map, const Git::CommitItem &commit);
 	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(int row);
 
 	void removeRepositoryFromBookmark(int index, bool ask);
@@ -598,7 +598,7 @@ private slots:
 	void on_radioButton_remote_online_clicked();
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
-	void on_tableWidget_log_itemDoubleClicked(QTableWidgetItem *);
+	void on_tableWidget_log_doubleClicked(const QModelIndex &index);
 	void on_toolButton_commit_clicked();
 	void on_toolButton_erase_filter_clicked();
 	void on_toolButton_explorer_clicked();
@@ -679,6 +679,7 @@ private slots:
 
 	void onSetCommitLog(const CommitLogExchangeData &log);
 	void connectSetCommitLog();
+
 public:
 	void setCommitLog(const CommitLogExchangeData &exdata);
 
