@@ -3244,22 +3244,7 @@ void MainWindow::updateCommitGraph()
 
 void MainWindow::prepareCommitLogTableWidget()
 {
-	QStringList cols = {
-		tr("Graph"),
-		tr("Commit"),
-		tr("Date"),
-		tr("Author"),
-		tr("Message"),
-	};
-	int n = cols.size();
-	ui->tableWidget_log->setColumnCount(n);
-	ui->tableWidget_log->setRowCount(0);
-	for (int i = 0; i < n; i++) {
-		QString const &text = cols[i];
-		auto *item = new QTableWidgetItem(text);
-		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
-	}
-
+	ui->tableWidget_log->prepare();
 	updateCommitGraph(); // コミットグラフを更新
 }
 
@@ -4186,6 +4171,9 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 
 		const int count = (int)commit_log.size(); // ログの数
 
+		std::vector<CommitLogTableModel::Record> records;
+		records.reserve(count);
+
 		ui->tableWidget_log->setRowCount(count); // 行数を設定
 
 		int selrow = 0;
@@ -4204,33 +4192,30 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 
 			int col = 1; // カラム0はコミットグラフなので、その次から
 
-			bool bold = false;
-			QString commit_id;
+			CommitLogTableModel::Record rec;
+
 			{
 				bool isHEAD = (commit->commit_id == getHeadId());
 				if (Git::isUncommited(*commit)) { // 未コミットの時
-					bold = true; // 太字
+					rec.bold = true; // 太字
 					selrow = row;
 				} else {
 					bool uncommited_changes = isThereUncommitedChanges();
 					if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
-						bold = true; // 太字
+						rec.bold = true; // 太字
 						selrow = row;
 					}
-					commit_id = abbrevCommitID(*commit);
+					rec.commit_id = abbrevCommitID(*commit);
 				}
 			}
-			QString datetime = misc::makeDateTimeString(commit->commit_date);
-			QString author = commit->author;
-			QString message = commit->message;
+			rec.datetime = misc::makeDateTimeString(commit->commit_date);
+			rec.author = commit->author;
+			rec.message = commit->message;
 
 			auto AddColumn = [&](QString const &text, bool bold, QString const &tooltip){
 				auto *item = new QTableWidgetItem(text);
 				if (!tooltip.isEmpty()) {
-					QString tt = tooltip;
-					tt.replace('\n', ' ');
-					tt = tt.toHtmlEscaped();
-					tt = "<p style='white-space: pre'>" + tt + "</p>";
+					QString tt = CommitLogTableModel::escapeTooltipText(tooltip);
 					item->setToolTip(tt);
 				}
 				if (bold) {
@@ -4242,13 +4227,19 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 				col++;
 			};
 
-			AddColumn(commit_id, false, QString());
-			AddColumn(datetime, false, QString());
-			AddColumn(author, false, QString());
-			AddColumn(message, bold, message + message_ex);
+			rec.tooltip = rec.message + message_ex;
+
+			AddColumn(rec.commit_id, false, QString());
+			AddColumn(rec.datetime, false, QString());
+			AddColumn(rec.author, false, QString());
+			AddColumn(rec.message, rec.bold, rec.tooltip);
 
 			ui->tableWidget_log->setRowHeight(row, 24);
+
+			records.push_back(rec);
 		}
+
+		ui->tableWidget_log->setRecords(std::move(records));
 
 		int t = ui->tableWidget_log->columnWidth(0);
 		ui->tableWidget_log->resizeColumnsToContents();

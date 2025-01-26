@@ -2,6 +2,9 @@
 #include "ApplicationGlobal.h"
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
+#include "CommitMessageGenerator.h"
+#include "CurrentRepositoryModel.h"
+#include "GitProcessThread.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
@@ -19,9 +22,6 @@
 #include <QTranslator>
 #include <csignal>
 #include <string>
-#include "CommitMessageGenerator.h"
-#include "CurrentRepositoryModel.h"
-#include "GitProcessThread.h"
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.

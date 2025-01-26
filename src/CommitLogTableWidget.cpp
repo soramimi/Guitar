@@ -1,12 +1,103 @@
 #include "CommitLogTableWidget.h"
 #include "ApplicationGlobal.h"
+#include "BranchLabel.h"
 #include "Git.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
-#include "BranchLabel.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <cmath>
+
+
+
+QString CommitLogTableModel::escapeTooltipText(QString tooltip)
+{
+	if (!tooltip.isEmpty()) {
+		tooltip.replace('\n', ' ');
+		tooltip = tooltip.toHtmlEscaped();
+		tooltip = "<p style='white-space: pre'>" + tooltip + "</p>";
+	}
+	return tooltip;
+}
+
+CommitLogTableWidget *CommitLogTableModel::tablewidget()
+{
+	return qobject_cast<CommitLogTableWidget *>(QObject::parent());
+}
+
+QModelIndex CommitLogTableModel::index(int row, int column, const QModelIndex &parent) const
+{
+	return createIndex(row, column, (void *)global->mainwindow);
+}
+
+QModelIndex CommitLogTableModel::parent(const QModelIndex &child) const
+{
+	return QModelIndex();
+}
+
+int CommitLogTableModel::rowCount(const QModelIndex &parent) const
+{
+	return records_.size();
+}
+
+int CommitLogTableModel::columnCount(const QModelIndex &parent) const
+{
+	return 5;
+}
+
+QVariant CommitLogTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+	if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+		switch (section) {
+		case 0: return QVariant(tr("Graph"));
+		case 1: return QVariant(tr("Commit"));
+		case 2: return QVariant(tr("Date"));
+		case 3: return QVariant(tr("Author"));
+		case 4: return QVariant(tr("Message"));
+		}
+	}
+	return QVariant();
+}
+
+QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
+{
+	auto row = index.row();
+	auto col = index.column();
+	if (row >= 0 && row < (int)records_.size()) {
+		auto const &record = records_[row];
+		if (role == Qt::DisplayRole) {
+			switch (col) {
+			case 0: return QVariant();
+			case 1: return QVariant(record.commit_id);
+			case 2: return QVariant(record.datetime);
+			case 3: return QVariant(record.author);
+			case 4: return QVariant(record.message);
+			}
+		} else if (role == Qt::ToolTipRole) {
+			if (col == 4) {
+				return QVariant(escapeTooltipText(record.tooltip));
+			}
+		} else if (role == Qt::FontRole) {
+			if (col == 4) {
+				if (record.bold) {
+					QFont font;
+					font.setBold(true);
+					return QVariant(font);
+				}
+			}
+		}
+	}
+	return QVariant();
+}
+
+void CommitLogTableModel::setRecords(std::vector<Record> &&records)
+{
+	beginResetModel();
+	records_ = std::move(records);
+	endResetModel();
+}
+
+
 
 /**
  * @brief コミットログを描画するためのdelegate
@@ -188,12 +279,32 @@ public:
 CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
 	: QTableWidget(parent)
 {
+	model_ = new CommitLogTableModel(this);
 	setItemDelegate(new CommitLogTableWidgetDelegate(this));
 }
 
 void CommitLogTableWidget::setup(MainWindow *mw)
 {
 	mainwindow_ = mw;
+}
+
+void CommitLogTableWidget::prepare()
+{
+	QStringList cols = {
+		tr("Graph"),
+		tr("Commit"),
+		tr("Date"),
+		tr("Author"),
+		tr("Message"),
+	};
+	int n = cols.size();
+	setColumnCount(n);
+	setRowCount(0);
+	for (int i = 0; i < n; i++) {
+		QString const &text = cols[i];
+		auto *item = new QTableWidgetItem(text);
+		setHorizontalHeaderItem(i, item);
+	}
 }
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
