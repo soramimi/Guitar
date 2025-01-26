@@ -6,6 +6,7 @@
 #include "BranchLabel.h"
 #include <QPainter>
 #include <QPainterPath>
+#include <cmath>
 
 /**
  * @brief コミットログを描画するためのdelegate

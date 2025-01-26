@@ -107,6 +107,8 @@ struct EventItem {
 	}
 };
 
+constexpr int ASCII_BACKSPACE = 0x08;
+
 struct MainWindow::Private {
 
 	QString starting_dir;
@@ -621,7 +623,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						return true;
 					}
 					if (k == Qt::Key_Backspace) {
-						backspaceRepoFilter();
+						appendCharToRepoFilter(ASCII_BACKSPACE);
 						return true;
 					}
 				}
@@ -6136,6 +6138,10 @@ void MainWindow::clearRepoFilter()
  */
 void MainWindow::appendCharToRepoFilter(ushort c)
 {
+	if (c == ASCII_BACKSPACE) {
+		backspaceRepoFilter();
+		return;
+	}
 	if (QChar(c).isLetter()) {
 		c = QChar(c).toLower().unicode();
 	}

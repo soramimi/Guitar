@@ -33,6 +33,7 @@ Q_DECLARE_METATYPE(CloneParams)
 
 struct LogData {
 	QByteArray data;
+	LogData() = default;
 	LogData(QByteArray const &ba)
 		: data(ba)
 	{
