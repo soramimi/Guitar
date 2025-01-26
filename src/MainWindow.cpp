@@ -145,6 +145,8 @@ struct MainWindow::Private {
 	bool uncommited_changes = false;
 	Git::FileStatusList uncommited_changes_file_list;
 
+	QString commit_log_filter_text;
+
 	Git::CommitID head_id;
 
 	RepositoryData temp_repo_for_clone_complete;
@@ -584,7 +586,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			int k = e->key();
 			if (k == Qt::Key_Escape) {
 				if (qApp->focusWidget() == ui->treeWidget_repos) {
-					clearRepoFilter();
+					clearFilterText(FilterTarget::RepositorySearch);
 				} else if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
 					ui->treeWidget_repos->setFocus();
 					return true;
@@ -618,12 +620,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						return true;
 					}
 				} else {
-					if (k >= 0 && k < 128 && isalnum((unsigned char)k)) { // 英数字
-						appendCharToRepoFilter(k);
+					if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
+						appendCharToFilterText(FilterTarget::RepositorySearch, k);
 						return true;
 					}
 					if (k == Qt::Key_Backspace) {
-						appendCharToRepoFilter(ASCII_BACKSPACE);
+						appendCharToFilterText(FilterTarget::RepositorySearch, ASCII_BACKSPACE);
 						return true;
 					}
 				}
@@ -894,7 +896,7 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 			buildRepoTree(sub, child, repos);
 		}
 	} else {
-		RepositoryData const *repo = repositoryItem(item);
+		std::optional<RepositoryData> repo = repositoryItem(item);
 		if (repo) {
 			RepositoryData newrepo = *repo;
 			newrepo.name = name;
@@ -905,14 +907,9 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 	}
 }
 
-const QList<RepositoryData> &MainWindow::cRepositories() const
+QList<RepositoryData> const &MainWindow::repositoryList() const
 {
 	return m->repos;
-}
-
-QList<RepositoryData> *MainWindow::pRepositories()
-{
-	return &m->repos;
 }
 
 void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
@@ -922,21 +919,13 @@ void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
 
 /**
  * @brief MainWindow::saveRepositoryBookmarks
- * @param update_list リポジトリリストを更新するかどうか
  *
  * リポジトリブックマークをファイルに保存する
  */
-bool MainWindow::saveRepositoryBookmarks(bool update_list)
+bool MainWindow::saveRepositoryBookmarks()
 {
 	QString path = getBookmarksFilePath();
-
-	if (!RepositoryBookmark::save(path, &cRepositories())) return false;
-
-	if (update_list) {
-		updateRepositoryList();
-	}
-
-	return true;
+	return RepositoryBookmark::save(path, &repositoryList());
 }
 
 /**
@@ -954,7 +943,7 @@ void MainWindow::refrectRepositories()
 		buildRepoTree(QString(), item, &newrepos);
 	}
 	setRepositoryList(std::move(newrepos));
-	saveRepositoryBookmarks(false);
+	saveRepositoryBookmarks();
 }
 
 void MainWindow::onRepositoriesTreeDropped()
@@ -1103,7 +1092,7 @@ RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) con
 	workdir->replace('\\', '/');
 
 	if (Git::isValidWorkingCopy(*workdir)) {
-		for (RepositoryData const &item : cRepositories()) {
+		for (RepositoryData const &item : repositoryList()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
 			cs = Qt::CaseInsensitive;
@@ -1183,7 +1172,7 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 
 	item.group = preferredRepositoryGroup();
 
-	QList<RepositoryData> repos = cRepositories();
+	QList<RepositoryData> repos = repositoryList();
 
 	bool done = false;
 	for (auto &repo : repos) {
@@ -1198,7 +1187,8 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 		repos.push_back(item);
 	}
 	setRepositoryList(std::move(repos));
-	saveRepositoryBookmarks(true);
+	saveRepositoryBookmarks();
+	updateRepositoryList();
 }
 
 void UserEventHandler::operator () (AddRepositoryEventData const &e)
@@ -1753,7 +1743,6 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
 	m->current_repository_model->repository_data = repo;
 }
 
-
 /**
  * @brief MainWindow::openSelectedRepository
  *
@@ -1761,15 +1750,10 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
  */
 void MainWindow::openSelectedRepository()
 {
-	{
-		QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
-		if (item) {
-			int index = item->data(0, IndexRole).toInt();
-			setRepositoryFilterText({}, index);
-		}
-	}
+	std::optional<RepositoryData> repo = selectedRepositoryItem();
 
-	RepositoryData const *repo = selectedRepositoryItem();
+	clearAllFilter();
+
 	if (repo) {
 		setCurrentRepository(*repo, true);
 		reopenRepository(true);
@@ -2597,7 +2581,8 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 				for (QString const &dir : dirs) {
 					addExistingLocalRepositoryWithGroup(dir, group);
 				}
-				saveRepositoryBookmarks(true);
+				saveRepositoryBookmarks();
+				updateRepositoryList();
 			}
 		}
 	}
@@ -2821,21 +2806,24 @@ int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
 {
 	if (item) {
 		int i = item->data(0, IndexRole).toInt();
-		if (i >= 0 && i < cRepositories().size()) {
+		if (i >= 0 && i < repositoryList().size()) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-RepositoryData const *MainWindow::repositoryItem(QTreeWidgetItem const *item) const
+std::optional<RepositoryData> MainWindow::repositoryItem(QTreeWidgetItem const *item) const
 {
 	int row = repositoryIndex_(item);
-	QList<RepositoryData> const &repos = cRepositories();
-	return (row >= 0 && row < repos.size()) ? &repos[row] : nullptr;
+	QList<RepositoryData> const &repos = repositoryList();
+	if (row >= 0 && row < repos.size()) {
+		return repos[row];
+	}
+	return std::nullopt;
 }
 
-RepositoryData const *MainWindow::selectedRepositoryItem() const
+std::optional<RepositoryData> MainWindow::selectedRepositoryItem() const
 {
 	return repositoryItem(ui->treeWidget_repos->currentItem());
 }
@@ -2858,9 +2846,9 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 
 	QString path = getBookmarksFilePath();
 	setRepositoryList(RepositoryBookmark::load(path));
-	QList<RepositoryData> const &repos = cRepositories();
+	QList<RepositoryData> const &repos = repositoryList();
 
-	QString filter = getRepositoryFilterText();
+	QString filter = getFilterText(FilterTarget::RepositorySearch);
 
 	RepositoryTreeWidget *tree = ui->treeWidget_repos;
 	tree->updateList(style, repos, filter, select_row);
@@ -3393,10 +3381,7 @@ void MainWindow::setInteractionMode(const MainWindow::InteractionMode &im)
 	m->interaction_mode = im;
 }
 
-QString MainWindow::getRepositoryFilterText() const
-{
-	return m->repository_filter_text;
-}
+
 
 void MainWindow::setUncommitedChanges(bool uncommited_changes)
 {
@@ -3661,13 +3646,13 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	auto *repos = pRepositories();
-	if (index >= 0 && index < repos->size()) {
-		repos->erase(repos->begin() + index); // 消す
-		saveRepositoryBookmarks(true); // 保存
+	QList<RepositoryData> repos = repositoryList();
+	if (index >= 0 && index < repos.size()) {
+		repos.erase(repos.begin() + index); // 消す
+		setRepositoryList(std::move(repos));
+		saveRepositoryBookmarks(); // 保存
+		updateRepositoryList();
 	}
-	auto list = *repos;
-	setRepositoryList(std::move(list));
 }
 
 /**
@@ -4457,7 +4442,7 @@ void MainWindow::updateStatusBarText()
 
 	QWidget *w = qApp->focusWidget();
 	if (w == ui->treeWidget_repos) {
-		RepositoryData const *repo = selectedRepositoryItem();
+		std::optional<RepositoryData> repo = selectedRepositoryItem();
 		if (repo) {
 			text = QString("%1 : %2")
 					.arg(repo->name)
@@ -4729,7 +4714,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
 	if (!treeitem) return;
 
-	RepositoryData const *repo = repositoryItem(treeitem);
+	std::optional<RepositoryData> repo = repositoryItem(treeitem);
 
 	int index = indexOfRepository(treeitem);
 	if (isGroupItem(treeitem)) { // group item
@@ -4845,11 +4830,11 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_open_folder) {
-				openExplorer(repo);
+				openExplorer(&*repo);
 				return;
 			}
 			if (a == a_open_terminal) {
-				openTerminal(repo);
+				openTerminal(&*repo);
 				return;
 			}
 			if (a == a_remove) {
@@ -5704,7 +5689,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 	locdir = locdir.toLower().replace('\\', '/');
 #endif
 
-	auto repos = cRepositories();
+	auto repos = repositoryList();
 	for (int i = 0; i < repos.size(); i++) {
 		RepositoryData *item = &(repos)[i];
 		QString repodir = item->local_dir;
@@ -5719,7 +5704,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 	setRepositoryList(std::move(repos));
 
 	if (save && changed) {
-		saveRepositoryBookmarks(false);
+		saveRepositoryBookmarks();
 	}
 
 	if (m->current_repository_model->repository_data.local_dir == local_dir) {
@@ -6109,68 +6094,85 @@ void MainWindow::on_toolButton_fetch_clicked()
 }
 
 /**
- * @brief リポジトリフィルタを設定する
+ * @brief フィルタ文字列を取得する
+ * @return
+ */
+QString MainWindow::getFilterText(FilterTarget ft) const
+{
+	if (ft == FilterTarget::RepositorySearch) {
+		return m->repository_filter_text;
+	} else if (ft == FilterTarget::CommitLogSearch) {
+		return m->commit_log_filter_text;
+	}
+	return {};
+}
+
+/**
+ * @brief フィルタ文字列を設定する
  * @param text
  */
-void MainWindow::setRepositoryFilterText(QString const &text, int select_row)
+void MainWindow::setFilterText(FilterTarget ft, QString const &text, int select_row)
 {
-	bool b = ui->lineEdit_filter->blockSignals(true);
-	ui->lineEdit_filter->setText(text);
-	ui->lineEdit_filter->blockSignals(b);
+	if (ft == FilterTarget::RepositorySearch) {
+		m->repository_filter_text = text;
 
-	m->repository_filter_text = text;
+		bool b = ui->lineEdit_filter->blockSignals(true);
+		ui->lineEdit_filter->setText(text);
+		ui->lineEdit_filter->blockSignals(b);
 
-	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
+		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
+	} else if (ft == FilterTarget::CommitLogSearch) {
+		m->commit_log_filter_text = text;
+	}
 }
 
 /**
- * @brief リポジトリフィルタを消去する
- * @return
+ * @brief フィルタの文字列をクリアする
  */
-void MainWindow::clearRepoFilter()
+void MainWindow::clearFilterText(FilterTarget ft, int select_row)
 {
-	setRepositoryFilterText({});
+	setFilterText(ft, {}, select_row);
 }
 
 /**
- * @brief リポジトリフィルタに文字を追加する
+ * @brief すべてのフィルタの文字列をクリアする
+ */
+void MainWindow::clearAllFilter()
+{
+	clearFilterText(FilterTarget::RepositorySearch);
+	clearFilterText(FilterTarget::CommitLogSearch);
+}
+
+/**
+ * @brief フィルタに文字を追加する
  * @return
  */
-void MainWindow::appendCharToRepoFilter(ushort c)
+void MainWindow::appendCharToFilterText(FilterTarget ft, ushort c)
 {
+	QString text = getFilterText(ft);
 	if (c == ASCII_BACKSPACE) {
-		backspaceRepoFilter();
-		return;
+		int i = text.size();
+		if (i > 0) {
+			text.remove(i - 1, 1);
+		}
+	} else if (QChar(c).isLetter()) {
+		text.append(QChar(c).toLower());
 	}
-	if (QChar(c).isLetter()) {
-		c = QChar(c).toLower().unicode();
-	}
-	QString text = getRepositoryFilterText() + QChar(c);
-	setRepositoryFilterText(text);
+	setFilterText(ft, text);
 }
 
 /**
  * @brief リポジトリフィルタの文字列から1文字削除する
  * @return
  */
-void MainWindow::backspaceRepoFilter()
-{
-	QString text = getRepositoryFilterText();
-	int n = text.size();
-	if (n > 0) {
-		text = text.mid(0, n - 1);
-	}
-	setRepositoryFilterText(text);
-}
-
 void MainWindow::on_lineEdit_filter_textChanged(QString const &text)
 {
-	setRepositoryFilterText(text);
+	setFilterText(FilterTarget::RepositorySearch, text);
 }
 
 void MainWindow::on_toolButton_erase_filter_clicked()
 {
-	clearRepoFilter();
+	clearFilterText(FilterTarget::RepositorySearch);
 	ui->lineEdit_filter->setFocus();
 }
 

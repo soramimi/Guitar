@@ -190,7 +190,7 @@ private:
 	void clearDiffView();
 
 	int repositoryIndex_(const QTreeWidgetItem *item) const;
-	RepositoryData const *repositoryItem(const QTreeWidgetItem *item) const;
+	std::optional<RepositoryData> repositoryItem(const QTreeWidgetItem *item) const;
 
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos);
 	void refrectRepositories();
@@ -202,9 +202,17 @@ private:
 	void updateStatusBarText();
 	void setRepositoryInfo(QString const &reponame, QString const &brname);
 	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
-	void clearRepoFilter();
-	void appendCharToRepoFilter(ushort c);
-	void backspaceRepoFilter();
+
+	enum class FilterTarget {
+		RepositorySearch,
+		CommitLogSearch,
+	};
+	QString getFilterText(FilterTarget ft) const;
+	void setFilterText(FilterTarget ft, const QString &text, int select_row = -1);
+	void clearFilterText(FilterTarget ft, int select_row = -1);
+	void clearAllFilter();
+	void appendCharToFilterText(FilterTarget ft, ushort c);
+
 	void revertCommit();
 	void mergeBranch(const QString &commit, Git::MergeFastForward ff, bool squash);
 	void mergeBranch(Git::CommitItem const *commit, Git::MergeFastForward ff, bool squash);
@@ -349,7 +357,7 @@ private:
 	static void updateCommitGraph(Git::CommitItemList *logs);
 	void updateCommitGraph();
 
-	bool saveRepositoryBookmarks(bool update_list);
+	bool saveRepositoryBookmarks();
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();
 	void abortPtyProcess();
@@ -357,15 +365,14 @@ private:
 	bool getPtyProcessOk() const;
 	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
-	const QList<RepositoryData> &cRepositories() const;
-	QList<RepositoryData> *pRepositories();
+
+	const QList<RepositoryData> &repositoryList() const;
 	void setRepositoryList(QList<RepositoryData> &&list);
+
 	bool interactionEnabled() const;
 	void setInteractionEnabled(bool enabled);
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
-	QString getRepositoryFilterText() const;
-	void setRepositoryFilterText(const QString &text, int select_row = -1);
 	void setUncommitedChanges(bool uncommited_changes);
 	QList<Git::Diff> const *diffResult() const;
 	std::map<QString, Git::Diff> *getDiffCacheMap();
@@ -422,7 +429,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event) override;
 	bool event(QEvent *event) override;
 	bool eventFilter(QObject *watched, QEvent *event) override;
-	RepositoryData const *selectedRepositoryItem() const;
+	std::optional<RepositoryData> selectedRepositoryItem() const;
 	void removeSelectedRepositoryFromBookmark(bool ask);
 public:
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
