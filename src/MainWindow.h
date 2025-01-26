@@ -320,7 +320,9 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
+	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(const Git::CommitItem &commit);
 	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(int row);
+
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryData *repo);
 	void openExplorer(const RepositoryData *repo);
@@ -355,7 +357,6 @@ private:
 	const Git::CommitItem *getLog(int index) const;
 
 	static void updateCommitGraph(Git::CommitItemList *logs);
-	void updateCommitGraph();
 
 	bool saveRepositoryBookmarks();
 	QString getBookmarksFilePath() const;
@@ -514,7 +515,7 @@ public:
 	QList<BranchLabel> labelsAtRow(int row) const;
 	QList<BranchLabel> sortedLabels(int row) const;
 private:
-	void makeCommitLog(int scroll_pos, int select_row);
+	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
 	void setupUpdateCommitLog();
 signals:
 	void signalUpdateCommitLog();
@@ -659,7 +660,7 @@ private:
 
 	void updateButton();
 	void runPtyGit(const QString &progress_message, GitPtr g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
-	void queryCommitLog(GitPtr g);
+	CommitLogExchangeData queryCommitLog(GitPtr g);
 	void updateHEAD(GitPtr g);
 	bool jump(GitPtr g, const Git::CommitID &id);
 	void jump(GitPtr g, const QString &text);
@@ -679,7 +680,7 @@ private slots:
 	void onSetCommitLog(const CommitLogExchangeData &log);
 	void connectSetCommitLog();
 public:
-	void setCommitLog(const CommitLogExchangeData &log);
+	void setCommitLog(const CommitLogExchangeData &exdata);
 
 signals:
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);

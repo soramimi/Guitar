@@ -3000,251 +3000,18 @@ const Git::CommitItem *MainWindow::getLog(int index) const
 	return (index >= 0 && index < (int)logs.size()) ? &logs[index] : nullptr;
 }
 
-/**
- * @brief MainWindow::updateCommitGraph
- *
- * 樹形図情報を構築する
- */
-void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
-{
-	QElapsedTimer t;
-	t.start();
-
-	const int LogCount = (int)logs->size();
-	if (LogCount > 0) {
-		auto LogItem = [&](int i)->Git::CommitItem &{ return logs->at((size_t)i); };
-		enum { // 有向グラフを構築するあいだ CommitItem::marker_depth をフラグとして使用する
-			UNKNOWN = 0,
-			KNOWN = 1,
-		};
-		for (Git::CommitItem &item : logs->list) {
-			item.marker_depth = UNKNOWN;
-		}
-		// コミットハッシュを検索して、親コミットのインデックスを求める
-		for (int i = 0; i < LogCount; i++) {
-			Git::CommitItem *item = &LogItem(i);
-			item->parent_lines.clear();
-			if (item->parent_ids.empty()) {
-				item->resolved = true;
-			} else {
-				for (int j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
-					Git::CommitID const &parent_id = item->parent_ids[j]; // 親のハッシュ値
-					for (int k = i + 1; k < (int)LogCount; k++) { // 親を探す
-						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親
-							item->parent_lines.emplace_back(k); // インデックス値を記憶
-							LogItem(k).has_child = true;
-							LogItem(k).marker_depth = KNOWN;
-							item->resolved = true;
-							break;
-						}
-					}
-				}
-			}
-		}
-		std::vector<Element> elements; // 線分リスト
-		{ // 線分リストを作成する
-			std::deque<Task> tasks; // 未処理タスクリスト
-			{
-				for (int i = 0; i < LogCount; i++) {
-					Git::CommitItem *item = &LogItem((int)i);
-					if (item->marker_depth == UNKNOWN) {
-						int n = (int)item->parent_lines.size(); // 最初のコミットアイテム
-						for (int j = 0; j < n; j++) {
-							tasks.emplace_back(i, j); // タスクを追加
-						}
-					}
-					item->marker_depth = UNKNOWN;
-				}
-			}
-			while (!tasks.empty()) { // タスクが残っているならループ
-				Element e;
-				Task task;
-				{ // 最初のタスクを取り出す
-					task = tasks.front();
-					tasks.pop_front();
-				}
-				e.indexes.push_back(task.index); // 先頭のインデックスを追加
-				int index = LogItem(task.index).parent_lines[task.parent].index; // 開始インデックス
-				while (index > 0 && index < LogCount) { // 最後に到達するまでループ
-					e.indexes.push_back(index); // インデックスを追加
-					size_t n = LogItem(index).parent_lines.size(); // 親の数
-					if (n == 0) break; // 親がないなら終了
-					Git::CommitItem *item = &LogItem(index);
-					if (item->marker_depth == KNOWN) break; // 既知のアイテムに到達したら終了
-					item->marker_depth = KNOWN; // 既知のアイテムにする
-					for (int i = 1; i < (int)n; i++) {
-						tasks.emplace_back(index, i); // タスク追加
-					}
-					index = LogItem(index).parent_lines[0].index; // 次の親（親リストの先頭の要素）
-				}
-				if (e.indexes.size() >= 2) {
-					elements.push_back(e);
-				}
-			}
-		}
-		// 線情報をクリア
-		for (Git::CommitItem &item : logs->list) {
-			item.marker_depth = -1;
-			item.parent_lines.clear();
-		}
-		// マークと線の深さを決める
-		if (!elements.empty()) {
-			{ // 優先順位を調整する
-				std::sort(elements.begin(), elements.end(), [](Element const &left, Element const &right){
-					int i = 0;
-					{ // 長いものを優先して左へ
-						int l = left.indexes.back() - left.indexes.front();
-						int r = right.indexes.back() - right.indexes.front();
-						i = r - l; // 降順
-					}
-					if (i == 0) {
-						// コミットが新しいものを優先して左へ
-						int l = left.indexes.front();
-						int r = right.indexes.front();
-						i = l - r; // 昇順
-					}
-					return i < 0;
-				});
-				// 子の無いブランチ（タグ等）が複数連続しているとき、古いコミットを右に寄せる
-				{
-					for (int i = 0; i + 1 < (int)elements.size(); i++) {
-						Element *e = &elements[i];
-						int index1 = e->indexes.front();
-						if (index1 > 0 && !LogItem(index1).has_child) { // 子がない
-							// 新しいコミットを探す
-							for (int j = i + 1; j < (int)elements.size(); j++) { // 現在位置より後ろを探す
-								Element *f = &elements[j];
-								int index2 = f->indexes.front();
-								if (index1 == index2 + 1) { // 一つだけ新しいコミット
-									Element t = std::move(*f);
-									elements.erase(elements.begin() + j); // 移動元を削除
-									elements.insert(elements.begin() + i, std::move(t)); // 現在位置に挿入
-								}
-							}
-							// 古いコミットを探す
-							int j = 0;
-							while (j < i) { // 現在位置より前を探す
-								Element *f = &elements[j];
-								int index2 = f->indexes.front();
-								if (index1 + 1 == index2) { // 一つだけ古いコミット
-									Element t = std::move(*f);
-									elements.erase(elements.begin() + j); // 移動元を削除
-									elements.insert(elements.begin() + i, std::move(t)); // 現在位置の次に挿入
-									index1 = index2;
-								} else {
-									j++;
-								}
-							}
-						}
-					}
-				}
-			}
-			{ // 最初の線は深さを0にする
-				Element *e = &elements.front();
-				for (size_t i = 0; i < e->indexes.size(); i++) {
-					int index = e->indexes[i];
-					LogItem(index).marker_depth = 0; // マークの深さを設定
-					e->depth = 0; // 線の深さを設定
-				}
-			}
-			// 最初以外の線分の深さを決める
-			for (size_t i = 1; i < elements.size(); i++) { // 最初以外をループ
-				Element *e = &elements[i];
-				int depth = 1;
-				while (1) { // 失敗したら繰り返し
-					for (size_t j = 0; j < i; j++) { // 既に処理済みの線を調べる
-						Element const *f = &elements[j]; // 検査対象
-						if (e->indexes.size() == 2) { // 二つしかない場合
-							int from = e->indexes[0]; // 始点
-							int to = e->indexes[1];   // 終点
-							if (LogItem(from).has_child) {
-								for (size_t k = 0; k + 1 < f->indexes.size(); k++) { // 検査対象の全ての線分を調べる
-									int curr = f->indexes[k];
-									int next = f->indexes[k + 1];
-									if (from > curr && to == next) { // 決定済みの線に直結できるか判定
-										e->indexes.back() = from + 1; // 現在の一行下に直結する
-										e->depth = elements[j].depth; // 接続先の深さ
-										goto DONE; // 決定
-									}
-								}
-							}
-						}
-						if (depth == f->depth) { // 同じ深さ
-							if (e->indexes.back() > f->indexes.front() && e->indexes.front() < f->indexes.back()) { // 重なっている
-								goto FAIL; // この深さには線を置けないのでやりなおし
-							}
-						}
-					}
-					for (size_t j = 0; j < e->indexes.size(); j++) {
-						int index = e->indexes[j];
-						Git::CommitItem *item = &LogItem(index);
-						if (j == 0 && item->has_child) { // 最初のポイントで子がある場合
-							// nop
-						} else if ((j > 0 && j + 1 < e->indexes.size()) || item->marker_depth < 0) { // 最初と最後以外、または、未確定の場合
-							item->marker_depth = depth; // マークの深さを設定
-						}
-					}
-					e->depth = depth; // 深さを決定
-					goto DONE; // 決定
-FAIL:;
-					depth++; // 一段深くして再挑戦
-				}
-DONE:;
-			}
-			// 線情報を生成する
-			for (auto &e : elements) {
-				auto ColorNumber = [&](){ return e.depth; };
-				size_t count = e.indexes.size();
-				for (size_t i = 0; i + 1 < count; i++) {
-					int curr = e.indexes[i];
-					int next = e.indexes[i + 1];
-					TreeLine line(next, e.depth);
-					line.color_number = ColorNumber();
-					line.bend_early = (i + 2 < count || !LogItem(next).resolved);
-					if (i + 2 == count) {
-						int join = false;
-						if (count > 2) { // 直結ではない
-							join = true;
-						} else if (!LogItem(curr).has_child) { // 子がない
-							join = true;
-							int d = LogItem(curr).marker_depth; // 開始点の深さ
-							for (int j = curr + 1; j < next; j++) {
-								Git::CommitItem *item = &LogItem(j);
-								if (item->marker_depth == d) { // 衝突する
-									join = false; // 迂回する
-									break;
-								}
-							}
-						}
-						if (join) {
-							line.depth = LogItem(next).marker_depth; // 合流する先のアイテムの深さと同じにする
-						}
-					}
-					LogItem(curr).parent_lines.push_back(line); // 線を追加
-				}
-			}
-		} else {
-			if (LogCount == 1) { // コミットが一つだけ
-				LogItem(0).marker_depth = 0;
-			}
-		}
-	}
-
-	qDebug() << "updateCommitGraph:" << t.elapsed() << "ms";
-}
-
 void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 {
 	ASSERT_MAIN_THREAD();
-	if (log.commit_log) currentRepositoryModel()->commit_log = *log.commit_log;
-	if (log.branch_map) currentRepositoryModel()->branch_map = *log.branch_map;
+	if (log.p->commit_log) currentRepositoryModel()->commit_log = *log.p->commit_log;
+	if (log.p->branch_map) currentRepositoryModel()->branch_map = *log.p->branch_map;
 
 	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
 }
 
-void MainWindow::setCommitLog(const CommitLogExchangeData &log)
+void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
 {
-	emit sigSetCommitLog(log);
+	emit sigSetCommitLog(exdata);
 }
 
 void MainWindow::connectSetCommitLog()
@@ -3259,7 +3026,7 @@ void MainWindow::connectSetCommitLog()
  *
  * コミットログとブランチ情報を取得
  */
-void MainWindow::queryCommitLog(GitPtr g)
+CommitLogExchangeData MainWindow::queryCommitLog(GitPtr g)
 {
 	ASSERT_MAIN_THREAD();
 
@@ -3287,12 +3054,10 @@ void MainWindow::queryCommitLog(GitPtr g)
 		commit_log.updateIndex();
 	}
 
-	// updateCommitGraph(&commit_log);
-
-	CommitLogExchangeData log;
-	log.commit_log = commit_log;
-	log.branch_map = branch_map;
-	setCommitLog(log);
+	CommitLogExchangeData exdata;
+	exdata.p->commit_log = commit_log;
+	exdata.p->branch_map = branch_map;
+	return exdata;
 }
 
 QString MainWindow::getBookmarksFilePath() const
@@ -3560,14 +3325,10 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
+std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(Git::CommitItem const &commit)
 {
-	ASSERT_MAIN_THREAD();
-
 	QString message_ex;
 	QList<BranchLabel> label_list;
-
-	Git::CommitItem commit = commitlog()[row];
 
 	{ // branch
 		if (commit.commit_id == getHeadId()) {
@@ -3595,6 +3356,7 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
 			label_list.push_back(label);
 		}
 	}
+
 	{ // tag
 		QList<Git::Tag> list = findTag(commit.commit_id);
 		for (Git::Tag const &t : list) {
@@ -3604,7 +3366,15 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
 			label_list.push_back(label);
 		}
 	}
+
 	return {message_ex, label_list};
+}
+
+std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
+{
+	ASSERT_MAIN_THREAD();
+	Git::CommitItem commit = commitlog()[row];
+	return makeCommitLabels(commit);
 }
 
 /**
@@ -4161,33 +3931,249 @@ void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selectio
 	openRepositoryMain(g, true, fetch, keep_selection);
 }
 
-void MainWindow::updateCommitGraph()
+/**
+ * @brief MainWindow::updateCommitGraph
+ *
+ * 樹形図情報を構築する
+ */
+void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
 {
-	Git::CommitItemList commit_log = commitlog();
-	updateCommitGraph(&commit_log);
-
-	// CommitLogExchangeData log;
-	// log.commit_log = commit_logs;
-	// setCommitLog(log);
+	const int LogCount = (int)logs->size();
+	if (LogCount > 0) {
+		auto LogItem = [&](int i)->Git::CommitItem &{ return logs->at((size_t)i); };
+		enum { // 有向グラフを構築するあいだ CommitItem::marker_depth をフラグとして使用する
+			UNKNOWN = 0,
+			KNOWN = 1,
+		};
+		for (Git::CommitItem &item : logs->list) {
+			item.marker_depth = UNKNOWN;
+		}
+		// コミットハッシュを検索して、親コミットのインデックスを求める
+		for (int i = 0; i < LogCount; i++) {
+			Git::CommitItem *item = &LogItem(i);
+			item->parent_lines.clear();
+			if (item->parent_ids.empty()) {
+				item->resolved = true;
+			} else {
+				for (int j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
+					Git::CommitID const &parent_id = item->parent_ids[j]; // 親のハッシュ値
+					for (int k = i + 1; k < (int)LogCount; k++) { // 親を探す
+						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親
+							item->parent_lines.emplace_back(k); // インデックス値を記憶
+							LogItem(k).has_child = true;
+							LogItem(k).marker_depth = KNOWN;
+							item->resolved = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		std::vector<Element> elements; // 線分リスト
+		{ // 線分リストを作成する
+			std::deque<Task> tasks; // 未処理タスクリスト
+			{
+				for (int i = 0; i < LogCount; i++) {
+					Git::CommitItem *item = &LogItem((int)i);
+					if (item->marker_depth == UNKNOWN) {
+						int n = (int)item->parent_lines.size(); // 最初のコミットアイテム
+						for (int j = 0; j < n; j++) {
+							tasks.emplace_back(i, j); // タスクを追加
+						}
+					}
+					item->marker_depth = UNKNOWN;
+				}
+			}
+			while (!tasks.empty()) { // タスクが残っているならループ
+				Element e;
+				Task task;
+				{ // 最初のタスクを取り出す
+					task = tasks.front();
+					tasks.pop_front();
+				}
+				e.indexes.push_back(task.index); // 先頭のインデックスを追加
+				int index = LogItem(task.index).parent_lines[task.parent].index; // 開始インデックス
+				while (index > 0 && index < LogCount) { // 最後に到達するまでループ
+					e.indexes.push_back(index); // インデックスを追加
+					size_t n = LogItem(index).parent_lines.size(); // 親の数
+					if (n == 0) break; // 親がないなら終了
+					Git::CommitItem *item = &LogItem(index);
+					if (item->marker_depth == KNOWN) break; // 既知のアイテムに到達したら終了
+					item->marker_depth = KNOWN; // 既知のアイテムにする
+					for (int i = 1; i < (int)n; i++) {
+						tasks.emplace_back(index, i); // タスク追加
+					}
+					index = LogItem(index).parent_lines[0].index; // 次の親（親リストの先頭の要素）
+				}
+				if (e.indexes.size() >= 2) {
+					elements.push_back(e);
+				}
+			}
+		}
+		// 線情報をクリア
+		for (Git::CommitItem &item : logs->list) {
+			item.marker_depth = -1;
+			item.parent_lines.clear();
+		}
+		// マークと線の深さを決める
+		if (!elements.empty()) {
+			{ // 優先順位を調整する
+				std::sort(elements.begin(), elements.end(), [](Element const &left, Element const &right){
+					int i = 0;
+					{ // 長いものを優先して左へ
+						int l = left.indexes.back() - left.indexes.front();
+						int r = right.indexes.back() - right.indexes.front();
+						i = r - l; // 降順
+					}
+					if (i == 0) {
+						// コミットが新しいものを優先して左へ
+						int l = left.indexes.front();
+						int r = right.indexes.front();
+						i = l - r; // 昇順
+					}
+					return i < 0;
+				});
+				// 子の無いブランチ（タグ等）が複数連続しているとき、古いコミットを右に寄せる
+				{
+					for (int i = 0; i + 1 < (int)elements.size(); i++) {
+						Element *e = &elements[i];
+						int index1 = e->indexes.front();
+						if (index1 > 0 && !LogItem(index1).has_child) { // 子がない
+							// 新しいコミットを探す
+							for (int j = i + 1; j < (int)elements.size(); j++) { // 現在位置より後ろを探す
+								Element *f = &elements[j];
+								int index2 = f->indexes.front();
+								if (index1 == index2 + 1) { // 一つだけ新しいコミット
+									Element t = std::move(*f);
+									elements.erase(elements.begin() + j); // 移動元を削除
+									elements.insert(elements.begin() + i, std::move(t)); // 現在位置に挿入
+								}
+							}
+							// 古いコミットを探す
+							int j = 0;
+							while (j < i) { // 現在位置より前を探す
+								Element *f = &elements[j];
+								int index2 = f->indexes.front();
+								if (index1 + 1 == index2) { // 一つだけ古いコミット
+									Element t = std::move(*f);
+									elements.erase(elements.begin() + j); // 移動元を削除
+									elements.insert(elements.begin() + i, std::move(t)); // 現在位置の次に挿入
+									index1 = index2;
+								} else {
+									j++;
+								}
+							}
+						}
+					}
+				}
+			}
+			{ // 最初の線は深さを0にする
+				Element *e = &elements.front();
+				for (size_t i = 0; i < e->indexes.size(); i++) {
+					int index = e->indexes[i];
+					LogItem(index).marker_depth = 0; // マークの深さを設定
+					e->depth = 0; // 線の深さを設定
+				}
+			}
+			// 最初以外の線分の深さを決める
+			for (size_t i = 1; i < elements.size(); i++) { // 最初以外をループ
+				Element *e = &elements[i];
+				int depth = 1;
+				while (1) { // 失敗したら繰り返し
+					for (size_t j = 0; j < i; j++) { // 既に処理済みの線を調べる
+						Element const *f = &elements[j]; // 検査対象
+						if (e->indexes.size() == 2) { // 二つしかない場合
+							int from = e->indexes[0]; // 始点
+							int to = e->indexes[1];   // 終点
+							if (LogItem(from).has_child) {
+								for (size_t k = 0; k + 1 < f->indexes.size(); k++) { // 検査対象の全ての線分を調べる
+									int curr = f->indexes[k];
+									int next = f->indexes[k + 1];
+									if (from > curr && to == next) { // 決定済みの線に直結できるか判定
+										e->indexes.back() = from + 1; // 現在の一行下に直結する
+										e->depth = elements[j].depth; // 接続先の深さ
+										goto DONE; // 決定
+									}
+								}
+							}
+						}
+						if (depth == f->depth) { // 同じ深さ
+							if (e->indexes.back() > f->indexes.front() && e->indexes.front() < f->indexes.back()) { // 重なっている
+								goto FAIL; // この深さには線を置けないのでやりなおし
+							}
+						}
+					}
+					for (size_t j = 0; j < e->indexes.size(); j++) {
+						int index = e->indexes[j];
+						Git::CommitItem *item = &LogItem(index);
+						if (j == 0 && item->has_child) { // 最初のポイントで子がある場合
+							// nop
+						} else if ((j > 0 && j + 1 < e->indexes.size()) || item->marker_depth < 0) { // 最初と最後以外、または、未確定の場合
+							item->marker_depth = depth; // マークの深さを設定
+						}
+					}
+					e->depth = depth; // 深さを決定
+					goto DONE; // 決定
+FAIL:;
+					depth++; // 一段深くして再挑戦
+				}
+DONE:;
+			}
+			// 線情報を生成する
+			for (auto &e : elements) {
+				auto ColorNumber = [&](){ return e.depth; };
+				size_t count = e.indexes.size();
+				for (size_t i = 0; i + 1 < count; i++) {
+					int curr = e.indexes[i];
+					int next = e.indexes[i + 1];
+					TreeLine line(next, e.depth);
+					line.color_number = ColorNumber();
+					line.bend_early = (i + 2 < count || !LogItem(next).resolved);
+					if (i + 2 == count) {
+						int join = false;
+						if (count > 2) { // 直結ではない
+							join = true;
+						} else if (!LogItem(curr).has_child) { // 子がない
+							join = true;
+							int d = LogItem(curr).marker_depth; // 開始点の深さ
+							for (int j = curr + 1; j < next; j++) {
+								Git::CommitItem *item = &LogItem(j);
+								if (item->marker_depth == d) { // 衝突する
+									join = false; // 迂回する
+									break;
+								}
+							}
+						}
+						if (join) {
+							line.depth = LogItem(next).marker_depth; // 合流する先のアイテムの深さと同じにする
+						}
+					}
+					LogItem(curr).parent_lines.push_back(line); // 線を追加
+				}
+			}
+		} else {
+			if (LogCount == 1) { // コミットが一つだけ
+				LogItem(0).marker_depth = 0;
+			}
+		}
+	}
 }
 
 /**
  * @brief コミットログテーブルウィジェットを構築
  */
-void MainWindow::makeCommitLog(int scroll_pos, int select_row)
+void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row)
 {
 	ASSERT_MAIN_THREAD();
 
-	updateCommitGraph(); // コミットグラフを更新
+	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
+	Q_ASSERT(commit_log);
 
-	QElapsedTimer t;
-	t.start();
+	auto updatecommitgraph = std::async(std::launch::async, [&](){
+		updateCommitGraph(commit_log);
+	});
 
-	Git::CommitItemList commit_log = commitlog();
-
-	updateCommitGraph(&commit_log);
-
-	const int count = (int)commit_log.size(); // ログの数
+	const int count = (int)commit_log->size(); // ログの数
 
 	std::vector<CommitLogTableModel::Record> records;
 	records.reserve(count);
@@ -4195,10 +4181,10 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 	int selrow = 0;
 
 	for (int row = 0; row < count; row++) {
-		auto [message_ex, labels] = makeCommitLabels(row); // コミットコメントのツールチップ用テキストとラベル
-		setRowLabels(row, labels);
+		Git::CommitItem const &commit = (*commit_log)[row];
 
-		Git::CommitItem const &commit = commit_log[row];
+		auto [message_ex, labels] = makeCommitLabels(commit); // コミットコメントのツールチップ用テキストとラベル
+		setRowLabels(row, labels);
 
 		CommitLogTableModel::Record rec;
 
@@ -4225,8 +4211,6 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 
 	ui->tableWidget_log->setRecords(std::move(records));
 
-	qDebug() << "makeCommitLog:" << t.elapsed() << "ms";
-
 	m->last_focused_file_list = nullptr;
 
 	ui->tableWidget_log->setFocus();
@@ -4240,9 +4224,8 @@ void MainWindow::makeCommitLog(int scroll_pos, int select_row)
 
 	updateUI();
 
-	CommitLogExchangeData log;
-	log.commit_log = commit_log;
-	setCommitLog(log);
+	updatecommitgraph.wait();
+	setCommitLog(exdata);
 }
 
 void MainWindow::queryTags(GitPtr g)
@@ -4299,7 +4282,7 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 	Git::User user = g->getUser(Git::Source::Default);
 
 	// コミットログとブランチ情報を取得
-	queryCommitLog(g);
+	CommitLogExchangeData exdata = queryCommitLog(g);
 
 	// ポジトリの情報を設定
 	{
@@ -4327,7 +4310,7 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 			select_row = ui->tableWidget_log->currentRow();
 		}
 
-		makeCommitLog(scroll_pos, select_row);
+		makeCommitLog(exdata, scroll_pos, select_row);
 	}
 
 	// ウィンドウタイトルを更新
