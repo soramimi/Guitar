@@ -1,8 +1,7 @@
 #ifndef DELETETAGSDIALOG_H
 #define DELETETAGSDIALOG_H
 
-#include "Git.h"
-
+#include "RepositoryModel.h"
 #include <QDialog>
 
 namespace Ui {
@@ -13,7 +12,7 @@ class DeleteTagsDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit DeleteTagsDialog(QWidget *parent, QList<Git::Tag> const &list);
+	explicit DeleteTagsDialog(QWidget *parent, TagList const &list);
 	~DeleteTagsDialog() override;
 
 	QStringList selectedTags() const;

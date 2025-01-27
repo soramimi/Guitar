@@ -1,17 +1,17 @@
 #ifndef OVERRIDEWAITCURSOR_H
 #define OVERRIDEWAITCURSOR_H
 
-#include <QApplication>
+#include "ApplicationGlobal.h"
 
 class OverrideWaitCursor_ {
 public:
 	OverrideWaitCursor_()
 	{
-		QApplication::setOverrideCursor(Qt::WaitCursor);
+		GlobalSetOverrideWaitCursor();
 	}
 	~OverrideWaitCursor_()
 	{
-		QApplication::restoreOverrideCursor();
+		GlobalRestoreOverrideCursor();
 	}
 };
 #define OverrideWaitCursor OverrideWaitCursor_ waitcursor_; (void)waitcursor_;

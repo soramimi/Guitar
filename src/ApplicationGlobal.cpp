@@ -65,3 +65,13 @@ bool ApplicationGlobal::isMainThread()
 {
 	return QThread::currentThread() == QCoreApplication::instance()->thread();
 }
+
+void GlobalSetOverrideWaitCursor()
+{
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+}
+
+void GlobalRestoreOverrideCursor()
+{
+	QApplication::restoreOverrideCursor();
+}

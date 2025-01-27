@@ -671,7 +671,7 @@ void Git::parseAheadBehind(QString const &s, Branch *b)
 	}
 }
 
-QList<Git::Branch> Git::branches()
+BranchList Git::branches()
 {
 	struct BranchItem {
 		Branch branch;

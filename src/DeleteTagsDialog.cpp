@@ -1,7 +1,7 @@
 #include "DeleteTagsDialog.h"
 #include "ui_DeleteTagsDialog.h"
 
-DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const QList<Git::Tag> &list)
+DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)
 	: QDialog(parent)
 	, ui(new Ui::DeleteTagsDialog)
 {

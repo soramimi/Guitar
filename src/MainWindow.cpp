@@ -77,7 +77,7 @@
 #include <sys/stat.h>
 #include <variant>
 #include <cctype>
-#include "CurrentRepositoryModel.h"
+#include "RepositoryModel.h"
 #include "IncrementalSearch.h"
 #include "Util.h"
 
@@ -113,7 +113,7 @@ struct MainWindow::Private {
 
 	QString starting_dir;
 
-	std::shared_ptr<CurrentRepositoryModel> current_repository_model;
+	std::shared_ptr<RepositoryModel> current_repository_model;
 
 	Git::User current_git_user;
 
@@ -193,7 +193,8 @@ struct MainWindow::Private {
 	std::function<void (QVariant const &var)> retry_function;
 	QVariant retry_variant;
 
-	Git::CommitItem null_commit_item;
+	const Git::CommitItem null_commit_item;
+	const TagList null_tag_list;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -211,7 +212,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setupAddFileObjectData();
 	setupUpdateCommitLog();
 
-	m->current_repository_model = std::make_shared<CurrentRepositoryModel>();
+	m->current_repository_model = std::make_shared<RepositoryModel>();
 
 	ui->tableWidget_log->setup(this);
 
@@ -286,6 +287,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connectSetCommitLog();
 
+	connect(ui->tableWidget_log, &CommitLogTableWidget::currentRowChanged, this, &MainWindow::on_tableWidget_log_currentRowChanged);
+
 	//
 
 	QString path = getBookmarksFilePath();
@@ -338,12 +341,12 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-CurrentRepositoryModel *MainWindow::currentRepositoryModel()
+RepositoryModel *MainWindow::currentRepositoryModel()
 {
 	return m->current_repository_model.get();
 }
 
-CurrentRepositoryModel const *MainWindow::currentRepositoryModel() const
+RepositoryModel const *MainWindow::currentRepositoryModel() const
 {
 	return m->current_repository_model.get();
 }
@@ -904,6 +907,39 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 			repos->push_back(newrepo);
 		}
 	}
+}
+
+TagList const &MainWindow::findTag(Git::CommitID const &id) const
+{
+	auto const &map = tagmap();
+	auto it = map.find(id);
+	if (it != map.end()) {
+		return it->second;
+	}
+	return m->null_tag_list;
+}
+
+TagList const &MainWindow::queryCurrentCommitTagList() const
+{
+	Git::CommitItem const &commit = selectedCommitItem();
+	return findTag(commit.commit_id);
+}
+
+std::map<Git::CommitID, TagList> const &MainWindow::tagmap() const
+{
+	return currentRepositoryModel()->tag_map;
+}
+
+std::map<Git::CommitID, TagList> MainWindow::queryTags(GitPtr g)
+{
+	std::map<Git::CommitID, TagList> tag_map;
+
+	TagList tags = g->tags();
+	for (Git::Tag const &tag : tags) {
+		tag_map[tag.id].push_back(tag);
+	}
+
+	return tag_map;
 }
 
 QList<RepositoryData> const &MainWindow::repositoryList() const
@@ -1698,7 +1734,6 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 	}
 
 	if (opt.waitcursor) {
-		OverrideWaitCursor;
 		OpenRepositoyOption opt2 = opt;
 		opt2.validate = false;
 		opt2.waitcursor = false;
@@ -1833,12 +1868,13 @@ void MainWindow::internalAfterFetch()
 	GitPtr g = git();
 	updateRemoteInfo(g);
 	onUpdateCommitLog();
+
+	qDebug() << Q_FUNC_INFO;
 }
 
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
 void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback, QVariant const &userdata)
 {
-	QApplication::setOverrideCursor(Qt::WaitCursor);
 	setProgress(-1.0f);
 	showProgress(progress_message, false);
 
@@ -1857,6 +1893,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 		setPtyProcessOk(true);
 
 		std::visit(runner, var);
+
 		if (runner.d.result) {
 			// nop
 		} else {
@@ -1881,8 +1918,6 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 			data.callback(data.status, data.userdata);
 		}
 	}
-
-	QApplication::restoreOverrideCursor();
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -2594,7 +2629,6 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 {
 	GitPtr g = git();
 	if (isValidWorkingCopy(g)) {
-		OverrideWaitCursor;
 		callback(g);
 		OpenRepositoyOption opt;
 		opt.validate = false;
@@ -2620,7 +2654,7 @@ void MainWindow::updateCommitLogTableView(int delay_ms)
 	}
 }
 
-void MainWindow::setRowLabels(int row, QList<BranchLabel> const &labels)
+void MainWindow::setRowLabels(int row, BranchLabelList const &labels)
 {
 	auto it = currentRepositoryModel()->label_map.find(row);
 	if (it != currentRepositoryModel()->label_map.end()) {
@@ -2630,7 +2664,7 @@ void MainWindow::setRowLabels(int row, QList<BranchLabel> const &labels)
 	}
 }
 
-QList<BranchLabel> MainWindow::labelsAtRow(int row) const
+BranchLabelList MainWindow::labelsAtRow(int row) const
 {
 	auto const &map = currentRepositoryModel()->label_map;
 	auto it = map.find(row);
@@ -2640,9 +2674,9 @@ QList<BranchLabel> MainWindow::labelsAtRow(int row) const
 	return {};
 }
 
-QList<BranchLabel> MainWindow::sortedLabels(int row) const
+BranchLabelList MainWindow::sortedLabels(int row) const
 {
-	QList<BranchLabel> list = labelsAtRow(row);
+	BranchLabelList list = labelsAtRow(row);
 	std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
 		auto Compare = [](BranchLabel const &l, BranchLabel const &r){
 			if (l.kind < r.kind) return -1;
@@ -2709,10 +2743,11 @@ void MainWindow::setCurrentRemoteName(const QString &name)
 
 void MainWindow::deleteTags(const Git::CommitItem &commit)
 {
-	auto it = ptrCommitToTagMap()->find(commit.commit_id);
-	if (it != ptrCommitToTagMap()->end()) {
+	auto const &map = tagmap();
+	auto it = map.find(commit.commit_id);
+	if (it != map.end()) {
 		QStringList names;
-		QList<Git::Tag> const &tags = it->second;
+		TagList const &tags = it->second;
 		for (Git::Tag const &tag : tags) {
 			names.push_back(tag.name);
 		}
@@ -2736,13 +2771,13 @@ QStringList MainWindow::remotes() const
  *
  * コミットIDからブランチを検索する
  */
-QList<Git::Branch> MainWindow::findBranch(Git::CommitID const &id)
+BranchList MainWindow::findBranch(Git::CommitID const &id)
 {
 	auto it = branchmap().find(id);
 	if (it != branchmap().end()) {
 		return it->second;
 	}
-	return QList<Git::Branch>();
+	return BranchList();
 }
 
 QString MainWindow::tempfileHeader() const
@@ -2878,6 +2913,8 @@ void MainWindow::clearDiffView()
 
 void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brname)
 {
+	ASSERT_MAIN_THREAD();
+
 	ui->label_repo_name->setText(reponame);
 	ui->label_branch_name->setText(brname);
 }
@@ -2943,15 +2980,6 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_n
 	saveRepositoryBookmark(item);
 }
 
-QList<Git::Tag> MainWindow::findTag(Git::CommitID const &id)
-{
-	auto it = ptrCommitToTagMap()->find(id);
-	if (it != ptrCommitToTagMap()->end()) {
-		return it->second;
-	}
-	return QList<Git::Tag>();
-}
-
 void MainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
 {
 	m->ssh_passphrase_user = user;
@@ -3005,6 +3033,7 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	ASSERT_MAIN_THREAD();
 	if (log.p->commit_log) currentRepositoryModel()->commit_log = *log.p->commit_log;
 	if (log.p->branch_map) currentRepositoryModel()->branch_map = *log.p->branch_map;
+	if (log.p->tag_map) currentRepositoryModel()->tag_map = *log.p->tag_map;
 
 	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
 }
@@ -3031,12 +3060,12 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitPtr g)
 	ASSERT_MAIN_THREAD();
 
 	Git::CommitItemList commit_log;
-	std::map<Git::CommitID, QList<Git::Branch>> branch_map;
+	std::map<Git::CommitID, BranchList> branch_map;
 
 	commit_log = retrieveCommitLog(g); // コミットログを取得
 
 	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
-	QList<Git::Branch> branches = g->branches(); // ブランチを取得
+	BranchList branches = g->branches(); // ブランチを取得
 	for (Git::Branch const &b : branches) {
 		if (b.isCurrent()) {
 			setCurrentBranch(b);
@@ -3057,6 +3086,8 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitPtr g)
 	CommitLogExchangeData exdata;
 	exdata.p->commit_log = commit_log;
 	exdata.p->branch_map = branch_map;
+	exdata.p->tag_map = queryTags(g);
+
 	return exdata;
 }
 
@@ -3143,11 +3174,6 @@ void MainWindow::clearLabelMap()
 GitObjectCache *MainWindow::getObjCache()
 {
 	return &currentRepositoryModel()->object_cache;
-}
-
-std::map<Git::CommitID, QList<Git::Tag> > *MainWindow::ptrCommitToTagMap()
-{
-	return &currentRepositoryModel()->tag_map;
 }
 
 Git::CommitID MainWindow::getHeadId() const
@@ -3302,7 +3328,7 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
 	return list;
 }
 
-std::map<Git::CommitID, QList<Git::Branch>> const &MainWindow::branchmap() const
+std::map<Git::CommitID, BranchList> const &MainWindow::branchmap() const
 {
 	return currentRepositoryModel()->branch_map;
 }
@@ -3325,10 +3351,10 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(std::map<Git::CommitID, QList<Git::Branch>> const &branch_map, Git::CommitItem const &commit)
+std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(std::map<Git::CommitID, BranchList> const &branch_map, Git::CommitItem const &commit)
 {
 	QString message_ex;
-	QList<BranchLabel> label_list;
+	BranchLabelList label_list;
 
 	{ // branch
 		if (commit.commit_id == getHeadId()) {
@@ -3336,10 +3362,10 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(std::map<Gi
 			label.text = "HEAD";
 			label_list.push_back(label);
 		}
-		// QList<Git::Branch> list = findBranch(commit.commit_id);
+		// BranchList list = findBranch(commit.commit_id);
 		auto it = branch_map.find(commit.commit_id);
 		if (it != branch_map.end() && !it->second.empty()) {
-			QList<Git::Branch> const &list = it->second;
+			BranchList const &list = it->second;
 			for (Git::Branch const &b : list) {
 				if (b.flags & Git::Branch::HeadDetachedAt) continue;
 				if (b.flags & Git::Branch::HeadDetachedFrom) continue;
@@ -3362,7 +3388,7 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(std::map<Gi
 	}
 
 	{ // tag
-		QList<Git::Tag> list = findTag(commit.commit_id);
+		TagList list = findTag(commit.commit_id);
 		for (Git::Tag const &t : list) {
 			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
@@ -3374,11 +3400,11 @@ std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(std::map<Gi
 	return {message_ex, label_list};
 }
 
-std::tuple<QString, QList<BranchLabel>> MainWindow::makeCommitLabels(int row)
+std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(int row)
 {
 	ASSERT_MAIN_THREAD();
 	Git::CommitItem commit = commitlog()[row];
-	return makeCommitLabels(CurrentRepositoryModel().branch_map, commit);
+	return makeCommitLabels(RepositoryModel().branch_map, commit);
 }
 
 /**
@@ -3544,7 +3570,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	NamedCommitList items;
 	if (flags & Branches) {
 		for (auto const &pair : branchmap()) {
-			QList<Git::Branch> const &list = pair.second;
+			BranchList const &list = pair.second;
 			for (Git::Branch const &b : list) {
 				if (b.isHeadDetached()) continue;
 				if (flags & NamedCommitFlag::Remotes) {
@@ -3570,8 +3596,8 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 		}
 	}
 	if (flags & Tags) {
-		for (auto const &pair: *ptrCommitToTagMap()) {
-			QList<Git::Tag> const &list = pair.second;
+		for (auto const &pair: tagmap()) {
+			TagList const &list = pair.second;
 			for (Git::Tag const &t : list) {
 				NamedCommitItem item;
 				item.type = NamedCommitItem::Type::Tag;
@@ -3882,22 +3908,7 @@ void MainWindow::updateCurrentFilesList()
 {
 	ASSERT_MAIN_THREAD();
 
-#if 0
-	Git::CommitItem commit;
-	{
-		QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
-		if (!item) return;
-		int index = item->data(IndexRole).toInt();
-		auto const &logs = commitlog();
-		const int count = (int)logs.size();
-		Q_ASSERT(index >= 0 && index < count);
-		commit = logs[index];
-	}
-	commit = commitlog()[ui->tableWidget_log->actualLogIndex()];
-	updateFileList(commit);
-#else
 	updateFileList(currentCommitItem());
-#endif
 }
 
 Git::Object MainWindow::internalCatFile(GitPtr g, const QString &id) //@TODO:
@@ -4171,7 +4182,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	ASSERT_MAIN_THREAD();
 
 	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
-	std::map<Git::CommitID, QList<Git::Branch>> const &branch_map = exdata.p->branch_map.value();
+	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
 	Q_ASSERT(commit_log);
 
 	auto updatecommitgraph = std::async(std::launch::async, [&](){
@@ -4233,16 +4244,6 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	setCommitLog(exdata);
 }
 
-void MainWindow::queryTags(GitPtr g)
-{
-	// タグを取得
-	ptrCommitToTagMap()->clear();
-	QList<Git::Tag> tags = g->tags();
-	for (Git::Tag const &tag : tags) {
-		(*ptrCommitToTagMap())[tag.id].push_back(tag);
-	}
-}
-
 void MainWindow::updateHEAD(GitPtr g)
 {
 	auto head = getObjCache()->revParse(g, "HEAD");
@@ -4281,13 +4282,25 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 	updateHEAD(g);
 
 	// タグを取得
-	queryTags(g);
+	auto tagmap = queryTags(g);
 
 	// ユーザー情報を取得
 	Git::User user = g->getUser(Git::Source::Default);
 
 	// コミットログとブランチ情報を取得
 	CommitLogExchangeData exdata = queryCommitLog(g);
+
+	// コミットログを作成
+	{
+		int scroll_pos = -1;
+		int select_row = -1;
+		if (keep_selection) {
+			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
+			select_row = ui->tableWidget_log->currentRow();
+		}
+
+		makeCommitLog(exdata, scroll_pos, select_row);
+	}
 
 	// ポジトリの情報を設定
 	{
@@ -4304,18 +4317,6 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 		QString repo_name = currentRepositoryName();
 		setRepositoryInfo(repo_name, branch_name);
-	}
-
-	// コミットログを作成
-	{
-		int scroll_pos = -1;
-		int select_row = -1;
-		if (keep_selection) {
-			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
-			select_row = ui->tableWidget_log->currentRow();
-		}
-
-		makeCommitLog(exdata, scroll_pos, select_row);
 	}
 
 	// ウィンドウタイトルを更新
@@ -4540,7 +4541,7 @@ void MainWindow::merge(Git::CommitItem commit)
 	std::vector<QString> labels;
 	{
 		int row = selectedLogIndex();
-		QList<BranchLabel> labels2 = labelsAtRow(row);
+		BranchLabelList labels2 = labelsAtRow(row);
 		for (BranchLabel const &label : labels2) {
 			if (label.kind == BranchLabel::LocalBranch || label.kind == BranchLabel::Tag) {
 				labels.push_back(label.text);
@@ -4644,12 +4645,16 @@ void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*
 
 void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const &commit)
 {
+	if (!commit) return;
+
 	CommitPropertyDialog dlg(parent, commit);
 	dlg.exec();
 }
 
 void MainWindow::execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit)
 {
+	if (!commit) return;
+
 	CommitExploreWindow win(parent, getObjCache(), commit);
 	win.exec();
 }
@@ -4821,7 +4826,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 {
 	int row = selectedLogIndex();
 
-	Git::CommitItem const commit = commitItem(row);
+	Git::CommitItem const &commit = commitItem(row);
 	bool is_valid_commit_id = Git::isValidID(commit.commit_id.toQString());
 	// if is_valid_commit_id == false, commit is uncommited changes.
 
@@ -4832,7 +4837,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	std::set<QAction *> copy_label_actions;
 	{
-		QList<BranchLabel> v = sortedLabels(row);
+		BranchLabelList v = sortedLabels(row);
 		if (!v.isEmpty()) {
 			auto *copy_lebel_menu = menu.addMenu("Copy label");
 			for (BranchLabel const &l : v) {
@@ -4855,7 +4860,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
-		QList<BranchLabel> labels = labelsAtRow(row);
+		BranchLabelList labels = labelsAtRow(row);
 		for (const BranchLabel &label : labels) {
 			if (label.kind == BranchLabel::Head) {
 				is_head = true;
@@ -5578,16 +5583,6 @@ QString MainWindow::determinFileType(QString const &path) const
 	return QString();
 }
 
-QList<Git::Tag> MainWindow::queryTagList()
-{
-	QList<Git::Tag> list;
-	Git::CommitItem const commit = selectedCommitItem();
-	if (commit && Git::isValidID(commit.commit_id.toQString())) {
-		list = findTag(commit.commit_id);
-	}
-	return list;
-}
-
 TextEditorThemePtr MainWindow::themeForTextEditor()
 {
 	return global->theme->text_editor_theme;
@@ -5726,7 +5721,7 @@ void MainWindow::findNext()
 			}
 		}
 		while (row < (int)logs.size()) {
-			Git::CommitItem const commit = logs[row];
+			Git::CommitItem const &commit = logs[row];
 			if (!Git::isUncommited(commit)) {
 				if (commit.message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {
 					bool b = ui->tableWidget_log->blockSignals(true);
@@ -5748,7 +5743,7 @@ bool MainWindow::locateCommitID(QString const &commit_id)
 	Git::CommitItemList const &logs = commitlog();
 	int row = 0;
 	while (row < (int)logs.size()) {
-		Git::CommitItem const commit = logs[row];
+		Git::CommitItem const &commit = logs[row];
 		if (!Git::isUncommited(commit)) {
 			if (commit.commit_id.toQString().startsWith(commit_id)) {
 				bool b = ui->tableWidget_log->blockSignals(true);
@@ -5792,8 +5787,6 @@ void MainWindow::updateAncestorCommitMap()
 		for (size_t i = index; i < end; i++) {
 			Git::CommitItem const &commit = logs.at(i);
 			commit_to_index_map[commit.commit_id.toQString()] = (size_t)i;
-			// auto *item = ui->tableWidget_log->item((int)i, 0);
-			// QRect r = ui->tableWidget_log->visualItemRect(item);
 			QRect r = ui->tableWidget_log->visualItemRect((int)i, 0);
 			if (r.y() >= ui->tableWidget_log->height()) {
 				end = i + 1;
@@ -5822,12 +5815,6 @@ void MainWindow::refresh()
 void MainWindow::on_action_view_refresh_triggered()
 {
 	refresh();
-}
-
-void MainWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem * /*current*/, QTableWidgetItem * /*previous*/)
-{
-	onLogCurrentItemChanged();
-	m->searching = false;
 }
 
 void MainWindow::on_toolButton_stage_clicked()
@@ -5998,7 +5985,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 		return;
 	}
 	if (QApplication::focusWidget() == ui->tableWidget_log && (c == Qt::Key_Return || c == Qt::Key_Enter)) {
-		Git::CommitItem const commit = selectedCommitItem();
+		Git::CommitItem const &commit = selectedCommitItem();
 		if (commit) {
 			execCommitPropertyDialog(this, commit);
 		}
@@ -6157,7 +6144,7 @@ void MainWindow::revertCommit()
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	Git::CommitItem const commit = selectedCommitItem();
+	Git::CommitItem const &commit = selectedCommitItem();
 	if (commit) {
 		g->revert(commit.commit_id);
 		reopenRepository(false);
@@ -6180,7 +6167,7 @@ void MainWindow::on_action_push_all_tags_triggered()
 
 void MainWindow::on_tableWidget_log_doubleClicked(const QModelIndex &index)
 {
-	Git::CommitItem const commit = selectedCommitItem();
+	Git::CommitItem const &commit = selectedCommitItem();
 	if (commit) {
 		execCommitPropertyDialog(this, commit);
 	}
@@ -6522,9 +6509,9 @@ void MainWindow::blame(QListWidgetItem *item)
 		}
 	}
 	if (!list.isEmpty()) {
-		QApplication::setOverrideCursor(Qt::WaitCursor);
+		GlobalSetOverrideWaitCursor();
 		BlameWindow win(this, path, list);
-		QApplication::restoreOverrideCursor();
+		GlobalRestoreOverrideCursor();
 		win.exec();
 	}
 }
@@ -6559,7 +6546,7 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog(QString const &
 
 	setInteractionMode(InteractionMode::Busy);
 
-	QApplication::restoreOverrideCursor();
+	GlobalRestoreOverrideCursor();
 
 	TheDlg dlg(this);
 	dlg.setLabel(windowtitle);
@@ -6849,7 +6836,7 @@ void MainWindow::onLogIdle()
 
 void MainWindow::on_action_edit_tags_triggered()
 {
-	Git::CommitItem const commit = selectedCommitItem();
+	Git::CommitItem const &commit = selectedCommitItem();
 	if (commit && Git::isValidID(commit.commit_id.toQString())) {
 		EditTagsDialog dlg(this, &commit);
 		dlg.exec();
@@ -7124,7 +7111,6 @@ Git::CommitItemList const &MainWindow::commitlog() const
 
 void MainWindow::clearLogContents()
 {
-	// ui->tableWidget_log->clearContents();
 	ui->tableWidget_log->scrollToTop();
 }
 
@@ -7143,28 +7129,13 @@ void MainWindow::selectLogTableRow(int row)
 	ui->tableWidget_log->selectRow(row);
 }
 
+void MainWindow::on_tableWidget_log_currentRowChanged(int row)
+{
+	onLogCurrentItemChanged();
+	m->searching = false;
+}
+
 void MainWindow::test()
 {
-	std::vector<CommitLogTableModel::Record> example_records;
-	{
-		CommitLogTableModel::Record r;
-		r.commit_id = "1";
-		r.datetime = "2021-01-01 00:00:00";
-		r.author = "author";
-		r.message = "message";
-		example_records.push_back(r);
-	}
-	{
-		CommitLogTableModel::Record r;
-		r.commit_id = "2";
-		r.datetime = "2021-01-01 00:00:01";
-		r.author = "author";
-		r.message = "message";
-		example_records.push_back(r);
-	}
-
-	ui->tableWidget_log->setRecords(std::move(example_records));
-	ui->tableWidget_log->setRowHeight(0, 24);
-	ui->tableWidget_log->setRowHeight(1, 24);
 }
 

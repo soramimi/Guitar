@@ -37,7 +37,7 @@ void GenerateCommitMessageDialog::generate(QString const &diff)
 {
 	m->diff = diff;
 	
-	QApplication::setOverrideCursor(Qt::WaitCursor);
+	GlobalSetOverrideWaitCursor();
 
 	m->checked_items = message();
 
@@ -82,7 +82,7 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 
 void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 {
-	QApplication::restoreOverrideCursor();
+	GlobalRestoreOverrideCursor();
 
 	if (result) {
 		int i = ui->listWidget->count();

@@ -57,12 +57,15 @@ protected:
 	void resizeEvent(QResizeEvent *e) override;
 protected slots:
 	void verticalScrollbarValueChanged(int value) override;
+	void currentChanged(const QModelIndex &current, const QModelIndex &previous);
 public:
 	int rowCount() const;
 	int currentRow() const;
 	void setCurrentCell(int row, int col);
 	int actualLogIndex() const;
 	QRect visualItemRect(int row, int col);
+signals:
+	void currentRowChanged(int row);
 };
 
 #endif // COMMITLOGTABLEWIDGET_H

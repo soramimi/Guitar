@@ -163,7 +163,7 @@ private:
 	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
 	{
 		int row = index.row();
-		QList<BranchLabel> const &labels = mainwindow()->labelsAtRow(row);
+		BranchLabelList const &labels = mainwindow()->labelsAtRow(row);
 		if (!labels.empty()) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
@@ -497,6 +497,12 @@ void CommitLogTableWidget::verticalScrollbarValueChanged(int value)
 {
 	(void)value;
 	mainwindow()->updateAncestorCommitMap();
+}
+
+void CommitLogTableWidget::currentChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+	QTableView::currentChanged(current, previous);
+	emit currentRowChanged(current.row());
 }
 
 int CommitLogTableWidget::rowCount() const

@@ -3,7 +3,7 @@
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "CommitMessageGenerator.h"
-#include "CurrentRepositoryModel.h"
+#include "RepositoryModel.h"
 #include "GitProcessThread.h"
 #include "MainWindow.h"
 #include "MySettings.h"

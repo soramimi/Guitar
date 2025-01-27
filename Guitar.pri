@@ -111,8 +111,8 @@ macx {
 
 SOURCES += \
 	$$PWD/src/CommitLogTableWidget.cpp \
-	$$PWD/src/CurrentRepositoryModel.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
+	$$PWD/src/RepositoryModel.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
 	$$PWD/src/Util.cpp \
 	$$PWD/src/platform.cpp \
@@ -271,8 +271,8 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/CommitLogTableWidget.h \
-	$$PWD/src/CurrentRepositoryModel.h \
 	$$PWD/src/IncrementalSearch.h \
+	$$PWD/src/RepositoryModel.h \
     $$PWD/src/RepositoryTreeWidget.h \
 	$$PWD/src/Util.h \
 	$$PWD/src/zip/zip.h \

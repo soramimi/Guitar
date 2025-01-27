@@ -103,7 +103,7 @@ QString CommitDialog::text() const
 
 void CommitDialog::onReady(GeneratedCommitMessage const &msg)
 {
-	QApplication::restoreOverrideCursor();
+	GlobalRestoreOverrideCursor();
 	updateUI(true);
 	
 	if (msg && !msg.messages.empty()) {
@@ -120,7 +120,7 @@ void CommitDialog::onReady(GeneratedCommitMessage const &msg)
 
 void CommitDialog::generateDetailedComment()
 {
-	QApplication::setOverrideCursor(Qt::WaitCursor);
+	GlobalSetOverrideWaitCursor();
 	updateUI(false);
 	
 	commit_message_ = ui->plainTextEdit->toPlainText();

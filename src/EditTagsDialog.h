@@ -1,6 +1,7 @@
 #ifndef EDITTAGSDIALOG_H
 #define EDITTAGSDIALOG_H
 
+#include "RepositoryModel.h"
 #include "Git.h"
 
 #include <QDialog>
@@ -19,7 +20,7 @@ private:
 private:
 	QStringList selectedTags();
 	MainWindow *mainwindow();
-	QList<Git::Tag> queryTagList();
+	TagList queryTagList();
 	void updateTagList();
 public:
 	explicit EditTagsDialog(MainWindow *parent, Git::CommitItem const *commit);

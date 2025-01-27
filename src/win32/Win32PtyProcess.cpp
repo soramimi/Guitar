@@ -1,11 +1,9 @@
 #include <windows.h>
 #include "Win32PtyProcess.h"
-#include <deque>
-
-#include <winpty.h>
-
 #include <QDir>
 #include <QMutex>
+#include <deque>
+#include <winpty.h>
 
 namespace {
 

@@ -30,15 +30,15 @@ MainWindow *EditTagsDialog::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-QList<Git::Tag> EditTagsDialog::queryTagList()
+TagList EditTagsDialog::queryTagList()
 {
-	return mainwindow()->queryTagList();
+	return mainwindow()->queryCurrentCommitTagList();
 }
 
 void EditTagsDialog::updateTagList()
 {
 	ui->listWidget->clear();
-	QList<Git::Tag> list = queryTagList();
+	TagList list = queryTagList();
 	for (Git::Tag const &t : list) {
 		auto item = new QListWidgetItem(t.name);
 		ui->listWidget->addItem(item);

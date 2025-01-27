@@ -6,7 +6,6 @@
 #include <QThread>
 #include <vector>
 
-
 class Win32PtyProcess : public AbstractPtyProcess, public QThread {
 private:
 	struct Private;

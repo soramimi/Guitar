@@ -102,9 +102,13 @@ public:
 			return appsettings.google_api_key;
 		}
 	}
-	
+
 	static bool isMainThread();
 };
+
+void GlobalSetOverrideWaitCursor();
+void GlobalRestoreOverrideCursor();
+
 
 #define ASSERT_MAIN_THREAD() Q_ASSERT(ApplicationGlobal::isMainThread())
 

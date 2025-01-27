@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "RepositoryModel.h"
 #include "Git.h"
 #include "GitCommandRunner.h"
 #include "MyProcess.h"
@@ -13,7 +14,7 @@
 class AddRepositoryDialog;
 class ApplicationSettings;
 class BranchLabel;
-class CurrentRepositoryModel;
+class RepositoryModel;
 class GitObjectCache;
 class QListWidget;
 class QListWidgetItem;
@@ -305,7 +306,7 @@ private:
 	void deleteTags(const Git::CommitItem &commit);
 	bool isAvatarEnabled() const;
 	QStringList remotes() const;
-	QList<Git::Branch> findBranch(const Git::CommitID &id);
+	BranchList findBranch(const Git::CommitID &id);
 	QString tempfileHeader() const;
 	void deleteTempFiles();
 	Git::CommitID idFromTag(const QString &tag);
@@ -315,13 +316,13 @@ private:
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	Git::CommitItemList retrieveCommitLog(GitPtr g) const;
-	const std::map<Git::CommitID, QList<Git::Branch> > &branchmap() const;
+	const std::map<Git::CommitID, BranchList> &branchmap() const;
 
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(const std::map<Git::CommitID, QList<Git::Branch> > &branch_map, const Git::CommitItem &commit);
-	std::tuple<QString, QList<BranchLabel> > makeCommitLabels(int row);
+	std::tuple<QString, BranchLabelList > makeCommitLabels(const std::map<Git::CommitID, BranchList> &branch_map, const Git::CommitItem &commit);
+	std::tuple<QString, BranchLabelList > makeCommitLabels(int row);
 
 	void removeRepositoryFromBookmark(int index, bool ask);
 	void openTerminal(const RepositoryData *repo);
@@ -347,7 +348,14 @@ private:
 	static void updateSubmodules(GitPtr g, const Git::CommitID &id, QList<Git::SubmoduleItem> *out);
 	void saveRepositoryBookmark(RepositoryData item);
 	void changeRepositoryBookmarkName(RepositoryData item, QString new_name);
-	QList<Git::Tag> findTag(const Git::CommitID &id);
+
+public:
+	const TagList &queryCurrentCommitTagList() const;
+private:
+	const std::map<Git::CommitID, TagList> &tagmap() const;
+	std::map<Git::CommitID, TagList> queryTags(GitPtr g);
+	const TagList &findTag(const Git::CommitID &id) const;
+
 	void sshSetPassphrase(const std::string &user, const std::string &pass);
 	std::string sshPassphraseUser() const;
 	std::string sshPassphrasePass() const;
@@ -382,7 +390,6 @@ private:
 	GitObjectCache *getObjCache();
 	bool getForceFetch() const;
 	void setForceFetch(bool force_fetch);
-	std::map<Git::CommitID, QList<Git::Tag> > *ptrCommitToTagMap();
 	Git::CommitID getHeadId() const;
 	void setHeadId(const Git::CommitID &head_id);
 	void setPtyProcessCompletionData(const QVariant &value);
@@ -488,7 +495,7 @@ public:
 	bool saveAs(const QString &id, const QString &dstpath);
 	QString determinFileType(QByteArray const &in) const;
 	QString determinFileType(const QString &path) const;
-	QList<Git::Tag> queryTagList();
+
 	TextEditorThemePtr themeForTextEditor();
 	bool isValidWorkingCopy(GitPtr g) const;
 	void emitWriteLog(LogData const &logdata);
@@ -511,9 +518,9 @@ public:
 	void setupExternalPrograms();
 	void updateCommitLogTableView(int delay_ms);
 public:
-	void setRowLabels(int row, const QList<BranchLabel> &labels);
-	QList<BranchLabel> labelsAtRow(int row) const;
-	QList<BranchLabel> sortedLabels(int row) const;
+	void setRowLabels(int row, const BranchLabelList &labels);
+	BranchLabelList labelsAtRow(int row) const;
+	BranchLabelList sortedLabels(int row) const;
 private:
 	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
 	void setupUpdateCommitLog();
@@ -596,7 +603,6 @@ private slots:
 	void on_listWidget_unstaged_itemDoubleClicked(QListWidgetItem *item);
 	void on_radioButton_remote_offline_clicked();
 	void on_radioButton_remote_online_clicked();
-	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_tableWidget_log_doubleClicked(const QModelIndex &index);
 	void on_toolButton_commit_clicked();
@@ -664,7 +670,6 @@ private:
 	void updateHEAD(GitPtr g);
 	bool jump(GitPtr g, const Git::CommitID &id);
 	void jump(GitPtr g, const QString &text);
-	void queryTags(GitPtr g);
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	
@@ -680,6 +685,7 @@ private slots:
 	void onSetCommitLog(const CommitLogExchangeData &log);
 	void connectSetCommitLog();
 
+	void on_tableWidget_log_currentRowChanged(int row);
 public:
 	void setCommitLog(const CommitLogExchangeData &exdata);
 
@@ -702,8 +708,8 @@ public:
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
 
-	CurrentRepositoryModel *currentRepositoryModel();
-	const CurrentRepositoryModel *currentRepositoryModel() const;
+	RepositoryModel *currentRepositoryModel();
+	const RepositoryModel *currentRepositoryModel() const;
 };
 
 class MainWindowExchangeData {
