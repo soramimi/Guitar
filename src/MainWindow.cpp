@@ -1725,11 +1725,11 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 			if (r == QMessageBox::Ok) {
 				removeSelectedRepositoryFromBookmark(false);
 			}
-			return;
+			goto done;
 		}
 		if (!Git::isValidWorkingCopy(dir)) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-			return;
+			goto done;
 		}
 	}
 
@@ -1738,16 +1738,21 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 		opt2.validate = false;
 		opt2.waitcursor = false;
 		openRepository(opt2);
-		return;
+		goto done;
 	}
 
-	GitPtr g = git();
-	if (!g) {
-		qDebug() << "Guitar: git pointer is null";
-		return;
+	{
+		GitPtr g = git();
+		if (!g) {
+			qDebug() << "Guitar: git pointer is null";
+			goto done;
+		}
+
+		internalOpenRepository(g, true, opt.keep_selection);
 	}
 
-	internalOpenRepository(g, true, opt.keep_selection);
+done:;
+	clearAllFilter();
 }
 
 void MainWindow::reopenRepository(bool validate)
@@ -1782,8 +1787,6 @@ void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_aut
 void MainWindow::openSelectedRepository()
 {
 	std::optional<RepositoryData> repo = selectedRepositoryItem();
-
-	clearAllFilter();
 
 	if (repo) {
 		setCurrentRepository(*repo, true);
@@ -1868,8 +1871,6 @@ void MainWindow::internalAfterFetch()
 	GitPtr g = git();
 	updateRemoteInfo(g);
 	onUpdateCommitLog();
-
-	qDebug() << Q_FUNC_INFO;
 }
 
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
@@ -5399,7 +5400,8 @@ GitPtr MainWindow::git()
 
 GitPtr MainWindow::git(const Git::SubmoduleItem &submod)
 {
-	if (!submod) return {};
+	//// if (!submod) return {};
+	// ↑submodが無効でもnullではないオブジェクトを返す
 	RepositoryData const &item = currentRepository();
 	return git(item.local_dir, submod.path, item.ssh_key);
 }
