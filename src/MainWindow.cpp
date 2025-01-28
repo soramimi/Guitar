@@ -898,7 +898,8 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 			buildRepoTree(sub, child, repos);
 		}
 	} else {
-		std::optional<RepositoryData> repo = repositoryItem(item);
+		RepositoryTreeIndex index = repositoryTreeIndex(item);
+		std::optional<RepositoryData> repo = repositoryItem(index);
 		if (repo) {
 			RepositoryData newrepo = *repo;
 			newrepo.name = name;
@@ -1023,7 +1024,7 @@ QString MainWindow::defaultWorkingDir() const
  */
 QString MainWindow::currentWorkingCopyDir() const
 {
-	return m->current_repository_model->repository_data.local_dir;
+	return currentRepositoryModel()->repository_data.local_dir;
 }
 
 /**
@@ -1718,6 +1719,13 @@ void MainWindow::checkUser()
  */
 void MainWindow::openRepository(OpenRepositoyOption const &opt)
 {
+	struct DeferClearAllFilters {
+		~DeferClearAllFilters()
+		{
+			global->mainwindow->clearAllFilters();
+		}
+	} defer_clear_all_filters;
+
 	if (opt.validate) {
 		QString dir = currentWorkingCopyDir();
 		if (!QFileInfo(dir).isDir()) {
@@ -1725,11 +1733,11 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 			if (r == QMessageBox::Ok) {
 				removeSelectedRepositoryFromBookmark(false);
 			}
-			goto done;
+			return;
 		}
 		if (!Git::isValidWorkingCopy(dir)) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-			goto done;
+			return;
 		}
 	}
 
@@ -1738,21 +1746,18 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 		opt2.validate = false;
 		opt2.waitcursor = false;
 		openRepository(opt2);
-		goto done;
+		return;
 	}
 
 	{
 		GitPtr g = git();
 		if (!g) {
 			qDebug() << "Guitar: git pointer is null";
-			goto done;
+			return;
 		}
 
 		internalOpenRepository(g, true, opt.keep_selection);
 	}
-
-done:;
-	clearAllFilter();
 }
 
 void MainWindow::reopenRepository(bool validate)
@@ -2655,39 +2660,30 @@ void MainWindow::updateCommitLogTableView(int delay_ms)
 	}
 }
 
-void MainWindow::setRowLabels(int row, BranchLabelList const &labels)
+BranchLabelList MainWindow::rowLabels(int row, bool sorted) const
 {
-	auto it = currentRepositoryModel()->label_map.find(row);
-	if (it != currentRepositoryModel()->label_map.end()) {
-		it->second = labels;
-	} else {
-		currentRepositoryModel()->label_map[row] = labels;
+	BranchLabelList list;
+	{
+		auto const &map = currentRepositoryModel()->label_map;
+		auto it = map.find(row);
+		if (it != map.end()) {
+			list = it->second;
+		}
 	}
-}
 
-BranchLabelList MainWindow::labelsAtRow(int row) const
-{
-	auto const &map = currentRepositoryModel()->label_map;
-	auto it = map.find(row);
-	if (it != map.end()) {
-		return it->second;
+	if (sorted) {
+		std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
+			auto Compare = [](BranchLabel const &l, BranchLabel const &r){
+				if (l.kind < r.kind) return -1;
+				if (l.kind > r.kind) return 1;
+				if (l.text < r.text) return -1;
+				if (l.text > r.text) return 1;
+				return 0;
+			};
+			return Compare(l, r) < 0;
+		});
 	}
-	return {};
-}
 
-BranchLabelList MainWindow::sortedLabels(int row) const
-{
-	BranchLabelList list = labelsAtRow(row);
-	std::sort(list.begin(), list.end(), [](BranchLabel const &l, BranchLabel const &r){
-		auto Compare = [](BranchLabel const &l, BranchLabel const &r){
-			if (l.kind < r.kind) return -1;
-			if (l.kind > r.kind) return 1;
-			if (l.text < r.text) return -1;
-			if (l.text > r.text) return 1;
-			return 0;
-		};
-		return Compare(l, r) < 0;
-	});
 	return list;
 }
 
@@ -2834,30 +2830,34 @@ bool MainWindow::isThereUncommitedChanges() const
 	return m->uncommited_changes;
 }
 
-int MainWindow::repositoryIndex_(QTreeWidgetItem const *item) const
+MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem const *item) const
 {
 	if (item) {
-		int i = item->data(0, IndexRole).toInt();
-		if (i >= 0 && i < repositoryList().size()) {
-			return i;
+		bool ok = false;
+		int i = item->data(0, IndexRole).toInt(&ok);
+		if (ok && i >= 0 && i < repositoryList().size()) {
+			RepositoryTreeIndex index;
+			index.row = i;
+			return index;
 		}
 	}
-	return -1;
+	return {};
 }
 
-std::optional<RepositoryData> MainWindow::repositoryItem(QTreeWidgetItem const *item) const
+std::optional<RepositoryData> MainWindow::repositoryItem(RepositoryTreeIndex const &index) const
 {
-	int row = repositoryIndex_(item);
 	QList<RepositoryData> const &repos = repositoryList();
-	if (row >= 0 && row < repos.size()) {
-		return repos[row];
+	if (index.row >= 0 && index.row < repos.size()) {
+		return repos[index.row];
 	}
 	return std::nullopt;
 }
 
 std::optional<RepositoryData> MainWindow::selectedRepositoryItem() const
 {
-	return repositoryItem(ui->treeWidget_repos->currentItem());
+	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
+	RepositoryTreeIndex index = repositoryTreeIndex(item);
+	return repositoryItem(index);
 }
 
 RepositoryTreeWidget::RepositoryListStyle MainWindow::repositoriesListStyle() const
@@ -3035,6 +3035,7 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	if (log.p->commit_log) currentRepositoryModel()->commit_log = *log.p->commit_log;
 	if (log.p->branch_map) currentRepositoryModel()->branch_map = *log.p->branch_map;
 	if (log.p->tag_map) currentRepositoryModel()->tag_map = *log.p->tag_map;
+	if (log.p->label_map) currentRepositoryModel()->label_map = *log.p->label_map;
 
 	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
 }
@@ -3413,15 +3414,15 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(int row)
  * @param index 消去するリポジトリのインデックス
  * @param ask trueならユーザーに問い合わせる
  */
-void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
+void MainWindow::removeRepositoryFromBookmark(RepositoryTreeIndex const &index, bool ask)
 {
 	if (ask) { // ユーザーに問い合わせ
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
 	QList<RepositoryData> repos = repositoryList();
-	if (index >= 0 && index < repos.size()) {
-		repos.erase(repos.begin() + index); // 消す
+	if (index.row >= 0 && index.row < repos.size()) {
+		repos.erase(repos.begin() + index.row); // 消す
 		setRepositoryList(std::move(repos));
 		saveRepositoryBookmarks(); // 保存
 		updateRepositoryList();
@@ -3434,8 +3435,8 @@ void MainWindow::removeRepositoryFromBookmark(int index, bool ask)
  */
 void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
 {
-	int i = indexOfRepository(ui->treeWidget_repos->currentItem());
-	removeRepositoryFromBookmark(i, ask);
+	auto index = repositoryTreeIndex(ui->treeWidget_repos->currentItem());
+	removeRepositoryFromBookmark(index, ask);
 }
 
 /**
@@ -4183,8 +4184,12 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	ASSERT_MAIN_THREAD();
 
 	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
-	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
 	Q_ASSERT(commit_log);
+
+	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
+
+	exdata.p->label_map = std::map<int, BranchLabelList>();
+	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
 
 	auto updatecommitgraph = std::async(std::launch::async, [&](){
 		updateCommitGraph(commit_log);
@@ -4192,7 +4197,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 
 	const int count = (int)commit_log->size(); // ログの数
 
-	std::vector<CommitLogTableModel::Record> records;
+	std::vector<CommitRecord> records;
 	records.reserve(count);
 
 	int selrow = 0;
@@ -4201,9 +4206,9 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 		Git::CommitItem const &commit = (*commit_log)[row];
 
 		auto [message_ex, labels] = makeCommitLabels(branch_map, commit); // コミットコメントのツールチップ用テキストとラベル
-		setRowLabels(row, labels);
+		(*label_map)[row] = labels;
 
-		CommitLogTableModel::Record rec;
+		CommitRecord rec;
 
 		bool isHEAD = (commit.commit_id == getHeadId());
 		if (Git::isUncommited(commit)) { // 未コミットの時
@@ -4282,17 +4287,13 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 	// HEAD を取得
 	updateHEAD(g);
 
-	// タグを取得
-	auto tagmap = queryTags(g);
-
 	// ユーザー情報を取得
 	Git::User user = g->getUser(Git::Source::Default);
 
-	// コミットログとブランチ情報を取得
-	CommitLogExchangeData exdata = queryCommitLog(g);
-
 	// コミットログを作成
 	{
+		CommitLogExchangeData exdata = queryCommitLog(g); // コミットログとブランチ情報を取得
+
 		int scroll_pos = -1;
 		int select_row = -1;
 		if (keep_selection) {
@@ -4410,29 +4411,21 @@ void MainWindow::updateStatusBarText()
 					;
 		}
 	} else if (w == ui->tableWidget_log) {
-		{
-		// QTableWidgetItem *item = ui->tableWidget_log->item(selectedLogIndex(), 0);
-		// if (item) {
-			// auto const &logs = commitlog();
-			// int row = item->data(IndexRole).toInt();
-			// if (row < (int)logs.size()) {
-			Git::CommitItem const *commit = currentCommitItem();
-			if (commit) {
+		Git::CommitItem const *commit = currentCommitItem();
+		if (commit) {
 
-				if (Git::isUncommited(*commit)) {
-					text = tr("Uncommited changes");
-				} else {
-					QString id = commit->commit_id.toQString();
-					int row = ui->tableWidget_log->actualLogIndex();
-					auto [message_ex, label_list] = makeCommitLabels(row);
-					text = QString("%1 : %2%3")
-						   .arg(id.mid(0, 7))
-						   .arg(commit->message)
-						   .arg(message_ex)
-						   ;
-				}
+			if (Git::isUncommited(*commit)) {
+				text = tr("Uncommited changes");
+			} else {
+				QString id = commit->commit_id.toQString();
+				int row = ui->tableWidget_log->actualLogIndex();
+				auto [message_ex, label_list] = makeCommitLabels(row);
+				text = QString("%1 : %2%3")
+					   .arg(id.mid(0, 7))
+					   .arg(commit->message)
+					   .arg(message_ex)
+					   ;
 			}
-											// }
 		}
 	}
 
@@ -4539,24 +4532,24 @@ void MainWindow::merge(Git::CommitItem commit)
 		s.endGroup();
 	}
 
-	std::vector<QString> labels;
+	std::vector<QString> newlabels;
 	{
 		int row = selectedLogIndex();
-		BranchLabelList labels2 = labelsAtRow(row);
-		for (BranchLabel const &label : labels2) {
+		BranchLabelList tmplabels = rowLabels(row);
+		for (BranchLabel const &label : tmplabels) {
 			if (label.kind == BranchLabel::LocalBranch || label.kind == BranchLabel::Tag) {
-				labels.push_back(label.text);
+				newlabels.push_back(label.text);
 			}
 		}
-		std::sort(labels.begin(), labels.end());
-		labels.erase(std::unique(labels.begin(), labels.end()), labels.end());
+		std::sort(newlabels.begin(), newlabels.end());
+		newlabels.erase(std::unique(newlabels.begin(), newlabels.end()), newlabels.end());
 	}
 
-	labels.push_back(commit.commit_id.toQString());
+	newlabels.push_back(commit.commit_id.toQString());
 
 	QString branch_name = currentBranchName();
 
-	MergeDialog dlg(fastforward, labels, branch_name, this);
+	MergeDialog dlg(fastforward, newlabels, branch_name, this);
 	if (dlg.exec() == QDialog::Accepted) {
 		fastforward = dlg.getFastForwardPolicy();
 		bool squash = dlg.isSquashEnabled();
@@ -4672,20 +4665,14 @@ void MainWindow::execFileHistory(const QString &path)
 	dlg.exec();
 }
 
-int MainWindow::indexOfRepository(QTreeWidgetItem const *treeitem) const
-{
-	if (!treeitem) return -1;
-	return treeitem->data(0, IndexRole).toInt();
-}
-
 void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &pos)
 {
 	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
 	if (!treeitem) return;
 
-	std::optional<RepositoryData> repo = repositoryItem(treeitem);
+	RepositoryTreeIndex repoindex = repositoryTreeIndex(treeitem);
+	std::optional<RepositoryData> repo = repositoryItem(repoindex);
 
-	int index = indexOfRepository(treeitem);
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;
 		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
@@ -4807,7 +4794,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_remove) {
-				removeRepositoryFromBookmark(index, true);
+				removeRepositoryFromBookmark(repoindex, true);
 				return;
 			}
 			if (a == a_properties) {
@@ -4838,11 +4825,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	std::set<QAction *> copy_label_actions;
 	{
-		BranchLabelList v = sortedLabels(row);
-		if (!v.isEmpty()) {
+		BranchLabelList labels = rowLabels(row);
+		if (!labels.isEmpty()) {
 			auto *copy_lebel_menu = menu.addMenu("Copy label");
-			for (BranchLabel const &l : v) {
-				QAction *a = copy_lebel_menu->addAction(l.text);
+			for (BranchLabel const &label : labels) {
+				QAction *a = copy_lebel_menu->addAction(label.text);
 				copy_label_actions.insert(copy_label_actions.end(), a);
 			}
 		}
@@ -4861,7 +4848,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
-		BranchLabelList labels = labelsAtRow(row);
+		BranchLabelList labels = rowLabels(row);
 		for (const BranchLabel &label : labels) {
 			if (label.kind == BranchLabel::Head) {
 				is_head = true;
@@ -6093,7 +6080,7 @@ void MainWindow::clearFilterText(FilterTarget ft, int select_row)
 /**
  * @brief すべてのフィルタの文字列をクリアする
  */
-void MainWindow::clearAllFilter()
+void MainWindow::clearAllFilters()
 {
 	clearFilterText(FilterTarget::RepositorySearch);
 	clearFilterText(FilterTarget::CommitLogSearch);

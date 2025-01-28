@@ -8,19 +8,21 @@
 class MainWindow;
 class CommitLogTableWidget;
 
+struct CommitRecord {
+	bool bold = false;
+	QString commit_id;
+	QString datetime;
+	QString author;
+	QString message;
+	QString tooltip;
+};
+Q_DECLARE_METATYPE(CommitRecord)
+
 class CommitLogTableModel : public QAbstractItemModel {
 public:
-	struct Record {
-		bool bold = false;
-		QString commit_id;
-		QString datetime;
-		QString author;
-		QString message;
-		QString tooltip;
-	};
 	static QString escapeTooltipText(QString tooltip);
 private:
-	std::vector<Record> records_;
+	std::vector<CommitRecord> records_;
 	CommitLogTableWidget *tablewidget();
 public:
 	CommitLogTableModel(QObject *parent = nullptr)
@@ -33,7 +35,7 @@ public:
 	int columnCount(const QModelIndex &parent) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	QVariant data(const QModelIndex &index, int role) const;
-	void setRecords(std::vector<Record> &&records);
+	void setRecords(std::vector<CommitRecord> &&records);
 };
 
 /**
@@ -51,7 +53,7 @@ private:
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);
-	void setRecords(std::vector<CommitLogTableModel::Record> &&records);
+	void setRecords(std::vector<CommitRecord> &&records);
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *e) override;

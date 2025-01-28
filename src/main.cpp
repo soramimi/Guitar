@@ -4,14 +4,11 @@
 #include "AvatarLoader.h"
 #include "CommitMessageGenerator.h"
 #include "RepositoryModel.h"
-#include "GitProcessThread.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
 #include "common/joinpath.h"
-#include "common/misc.h"
-#include "darktheme/DarkStyle.h"
-#include "platform.h"
+#include "CommitLogTableWidget.h"
 #include "webclient.h"
 #include <QApplication>
 #include <QDebug>
@@ -116,6 +113,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<CloneParams>("CloneParams");
 	qRegisterMetaType<LogData>("LogData");
 	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");
+	qRegisterMetaType<CommitRecord>("CommitRecord");
 
 
 	{

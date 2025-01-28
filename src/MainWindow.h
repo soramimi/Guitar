@@ -190,8 +190,11 @@ private:
 	void clearFileList();
 	void clearDiffView();
 
-	int repositoryIndex_(const QTreeWidgetItem *item) const;
-	std::optional<RepositoryData> repositoryItem(const QTreeWidgetItem *item) const;
+	struct RepositoryTreeIndex {
+		int row = -1;
+	};
+	RepositoryTreeIndex repositoryTreeIndex(const QTreeWidgetItem *item) const;
+	std::optional<RepositoryData> repositoryItem(const RepositoryTreeIndex &index) const;
 
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos);
 	void refrectRepositories();
@@ -202,7 +205,6 @@ private:
 	void updateStagedFileCurrentItem();
 	void updateStatusBarText();
 	void setRepositoryInfo(QString const &reponame, QString const &brname);
-	int indexOfRepository(const QTreeWidgetItem *treeitem) const;
 
 	enum class FilterTarget {
 		RepositorySearch,
@@ -211,7 +213,7 @@ private:
 	QString getFilterText(FilterTarget ft) const;
 	void setFilterText(FilterTarget ft, const QString &text, int select_row = -1);
 	void clearFilterText(FilterTarget ft, int select_row = -1);
-	void clearAllFilter();
+	void clearAllFilters();
 	void appendCharToFilterText(FilterTarget ft, ushort c);
 
 	void revertCommit();
@@ -324,7 +326,7 @@ private:
 	std::tuple<QString, BranchLabelList > makeCommitLabels(const std::map<Git::CommitID, BranchList> &branch_map, const Git::CommitItem &commit);
 	std::tuple<QString, BranchLabelList > makeCommitLabels(int row);
 
-	void removeRepositoryFromBookmark(int index, bool ask);
+	void removeRepositoryFromBookmark(RepositoryTreeIndex const &index, bool ask);
 	void openTerminal(const RepositoryData *repo);
 	void openExplorer(const RepositoryData *repo);
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
@@ -517,10 +519,8 @@ public:
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
 	void updateCommitLogTableView(int delay_ms);
-public:
-	void setRowLabels(int row, const BranchLabelList &labels);
-	BranchLabelList labelsAtRow(int row) const;
-	BranchLabelList sortedLabels(int row) const;
+
+	BranchLabelList rowLabels(int row, bool sorted = true) const;
 private:
 	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
 	void setupUpdateCommitLog();

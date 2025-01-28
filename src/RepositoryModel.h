@@ -34,6 +34,7 @@ struct CommitLogExchangeData {
 		std::optional<Git::CommitItemList> commit_log;
 		std::optional<std::map<Git::CommitID, BranchList>> branch_map;
 		std::optional<std::map<Git::CommitID, TagList>> tag_map;
+		std::optional<std::map<int, BranchLabelList>> label_map;
 	};
 	std::shared_ptr<D> p;
 	CommitLogExchangeData()

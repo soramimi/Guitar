@@ -9,6 +9,9 @@
 #include <QPainterPath>
 #include <cmath>
 
+enum {
+	CommitRecordRole = Qt::UserRole,
+};
 
 
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
@@ -65,7 +68,7 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	auto row = index.row();
 	auto col = index.column();
 	if (row >= 0 && row < (int)records_.size()) {
-		auto const &record = records_[row];
+		CommitRecord const &record = records_[row];
 		if (role == Qt::DisplayRole) {
 			switch (col) {
 			case 0: return QVariant();
@@ -86,12 +89,14 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 					return QVariant(font);
 				}
 			}
+		} else if (role == CommitRecordRole) {
+			return QVariant::fromValue<CommitRecord>(record);
 		}
 	}
 	return QVariant();
 }
 
-void CommitLogTableModel::setRecords(std::vector<Record> &&records)
+void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
@@ -160,10 +165,8 @@ private:
 		}
 	}
 
-	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, QString const &current_branch) const
+	void drawLabels(QPainter *painter, const QStyleOptionViewItem &opt, QModelIndex const &index, BranchLabelList const &labels, QString const &current_branch) const
 	{
-		int row = index.row();
-		BranchLabelList const &labels = mainwindow()->labelsAtRow(row);
 		if (!labels.empty()) {
 			painter->save();
 			painter->setRenderHint(QPainter::Antialiasing);
@@ -241,6 +244,8 @@ public:
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
 
+		CommitRecord record = index.data(CommitRecordRole).value<CommitRecord>();
+
 		MyTableWidgetDelegate::paint(painter, opt, index);
 
 		enum {
@@ -277,8 +282,9 @@ public:
 
 		// ラベルの描画
 		if (index.column() == Message) {
+			BranchLabelList const &labels = mainwindow()->rowLabels(index.row());
 			QString current_branch = mainwindow()->currentBranchName();
-			drawLabels(painter, opt, index, current_branch);
+			drawLabels(painter, opt, index, labels, current_branch);
 		}
 	}
 };
@@ -301,7 +307,7 @@ void CommitLogTableWidget::setup(MainWindow *mw)
 	mainwindow_ = mw;
 }
 
-void CommitLogTableWidget::setRecords(std::vector<CommitLogTableModel::Record> &&records)
+void CommitLogTableWidget::setRecords(std::vector<CommitRecord> &&records)
 {
 	int n = records.size();
 
