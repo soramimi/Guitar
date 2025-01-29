@@ -32,33 +32,13 @@ QString misc::getApplicationDir()
  */
 QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos)
 {
-	QStringList list;
-	char const *begin = ba.data();
-	char const *end = begin + ba.size();
-	char const *ptr = begin;
-	char const *left = ptr;
-	while (1) {
-		ushort c = 0;
-		if (ptr < end) {
-			c = *ptr;
-		}
-		if (c == '\n' || c == '\r' || c == 0) {
-			list.push_back(tos(left, ptr - left));
-			if (c == 0) break;
-			if (c == '\n') {
-				ptr++;
-			} else if (c == '\r') {
-				ptr++;
-				if (ptr < end && *ptr == '\n') {
-					ptr++;
-				}
-			}
-			left = ptr;
-		} else {
-			ptr++;
-		}
+	QStringList ret;
+	std::vector<std::string_view> lines = misc::splitLinesV(std::string_view(ba.data(), ba.size()), false);
+	for (size_t i = 0; i < lines.size(); i++) {
+		QString s = tos(lines[i].data(), lines[i].size());
+		ret.push_back(s);
 	}
-	return list;
+	return ret;
 }
 
 /**
@@ -119,9 +99,9 @@ std::vector<std::string_view> misc::splitLinesV(std::string_view const &str, boo
 	char const *ptr = begin;
 	char const *left = ptr;
 	while (1) {
-		char c = 0;
+		int c = 0;
 		if (ptr < end) {
-			c = *ptr;
+			c = (unsigned char)*ptr;
 		}
 		if (c == '\n' || c == '\r' || c == 0) {
 			char const *right = ptr;
@@ -146,6 +126,11 @@ std::vector<std::string_view> misc::splitLinesV(std::string_view const &str, boo
 	return ret;
 }
 
+std::vector<std::string_view> misc::splitLinesV(QByteArray const &ba, bool keep_newline)
+{
+	return splitLinesV(std::string_view(ba.data(), ba.size()), keep_newline);
+}
+
 std::vector<std::string> misc::splitLines(std::string_view const &str, bool keep_newline)
 {
 	std::vector<std::string> out;
@@ -154,6 +139,32 @@ std::vector<std::string> misc::splitLines(std::string_view const &str, bool keep
 		out.emplace_back(s);
 	}
 	return out;
+}
+
+std::vector<std::string_view> misc::splitWords(std::string_view const &text)
+{
+	std::vector<std::string_view> list;
+	char const *begin = text.data();
+	char const *end = begin + text.size();
+	char const *ptr = begin;
+	char const *left = ptr;
+	while (1) {
+		int c = 0;
+		if (ptr < end) {
+			c = (unsigned char)*ptr;
+		}
+		if (isspace(c) || c == 0) {
+			if (left < ptr) {
+				list.push_back(std::string_view(left, ptr - left));
+			}
+			if (c == 0) break;
+			ptr++;
+			left = ptr;
+		} else {
+			ptr++;
+		}
+	}
+	return list;
 }
 
 /**

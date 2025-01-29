@@ -38,10 +38,13 @@ public:
 	}
 
 	static QString getApplicationDir();
+	// static std::vector<std::string_view> splitLines(const QByteArray &ba);
 	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
 	static QStringList splitLines(QString const &text);
 	static std::vector<std::string_view> splitLinesV(std::string_view const &str, bool keep_newline);
+	static std::vector<std::string_view> splitLinesV(QByteArray const &ba, bool keep_newline);
 	static std::vector<std::string> splitLines(std::string_view const &str, bool keep_newline);
+	static std::vector<std::string_view> splitWords(std::string_view const &text);
 	static QStringList splitWords(QString const &text);
 	static QString getFileName(QString const &path);
 	static QString makeDateTimeString(const QDateTime &dt);
@@ -88,6 +91,36 @@ public:
 			out.emplace_back(s);
 		}
 		return out;
+	}
+
+	template <typename T>
+	static inline T toi(std::string_view const &s, size_t *consumed = nullptr)
+	{
+		T n = 0;
+		size_t i = 0;
+		bool sign = false;
+		if (!s.empty()) {
+			while (i < s.size() && isspace((unsigned char)s[i])) {
+				i++;
+			}
+			if (i < s.size()) {
+				if (s[i] == '+') {
+					i++;
+				} else if (s[i] == '-') {
+					sign = true;
+					i++;
+				}
+			}
+			while (i < s.size()) {
+				if (s[i] < '0' || s[i] > '9') break;
+				n = n * 10 + (s[i] - '0');
+				i++;
+			}
+		}
+		if (consumed) {
+			*consumed = i;
+		}
+		return sign ? -n : n;
 	}
 };
 

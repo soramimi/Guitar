@@ -41,7 +41,6 @@
 #include "SetGlobalUserDialog.h"
 #include "SetGpgSigningDialog.h"
 #include "SettingsDialog.h"
-#include "StatusLabel.h"
 #include "SubmoduleAddDialog.h"
 #include "SubmoduleUpdateDialog.h"
 #include "SubmodulesDialog.h"
@@ -55,7 +54,6 @@
 #include "ProgressWidget.h"
 #include "gunzip.h"
 #include "platform.h"
-#include "webclient.h"
 #include <QBuffer>
 #include <QClipboard>
 #include <QDesktopServices>
@@ -78,7 +76,6 @@
 #include <variant>
 #include <cctype>
 #include "RepositoryModel.h"
-#include "IncrementalSearch.h"
 #include "Util.h"
 
 #ifdef Q_OS_MAC
@@ -910,25 +907,29 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 	}
 }
 
-TagList const &MainWindow::findTag(Git::CommitID const &id) const
+std::map<Git::CommitID, TagList> const &MainWindow::tagmap() const
 {
-	auto const &map = tagmap();
-	auto it = map.find(id);
-	if (it != map.end()) {
+	return currentRepositoryModel()->tag_map;
+}
+
+TagList MainWindow::findTag(std::map<Git::CommitID, TagList> const &tagmap, Git::CommitID const &id)
+{
+	auto it = tagmap.find(id);
+	if (it != tagmap.end()) {
 		return it->second;
 	}
-	return m->null_tag_list;
+	return {};
+}
+
+TagList MainWindow::findTag(Git::CommitID const &id) const
+{
+	return findTag(tagmap(), id);
 }
 
 TagList const &MainWindow::queryCurrentCommitTagList() const
 {
 	Git::CommitItem const &commit = selectedCommitItem();
 	return findTag(commit.commit_id);
-}
-
-std::map<Git::CommitID, TagList> const &MainWindow::tagmap() const
-{
-	return currentRepositoryModel()->tag_map;
 }
 
 std::map<Git::CommitID, TagList> MainWindow::queryTags(GitPtr g)
@@ -2799,18 +2800,6 @@ void MainWindow::deleteTempFiles()
 	}
 }
 
-/**
- * @brief MainWindow::idFromTag
- * @param tag
- * @return
- *
- * タグ名からコミットIDを取得する
- */
-Git::CommitID MainWindow::idFromTag(const QString &tag)
-{
-	return getObjCache()->getCommitIdFromTag(git(), tag);
-}
-
 QString MainWindow::newTempFilePath()
 {
 	QString tmpdir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
@@ -3353,7 +3342,7 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(std::map<Git::CommitID, BranchList> const &branch_map, Git::CommitItem const &commit)
+std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map)
 {
 	QString message_ex;
 	BranchLabelList label_list;
@@ -3390,7 +3379,7 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(std::map<Git::
 	}
 
 	{ // tag
-		TagList list = findTag(commit.commit_id);
+		TagList list = findTag(tag_map, commit.commit_id);
 		for (Git::Tag const &t : list) {
 			BranchLabel label(BranchLabel::Tag);
 			label.text = t.name;
@@ -3406,7 +3395,7 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(int row)
 {
 	ASSERT_MAIN_THREAD();
 	Git::CommitItem commit = commitlog()[row];
-	return makeCommitLabels(RepositoryModel().branch_map, commit);
+	return makeCommitLabels(commit, RepositoryModel().branch_map, RepositoryModel().tag_map);
 }
 
 /**
@@ -4187,6 +4176,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	Q_ASSERT(commit_log);
 
 	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
+	std::map<Git::CommitID, TagList> const &tag_map = exdata.p->tag_map.value();
 
 	exdata.p->label_map = std::map<int, BranchLabelList>();
 	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
@@ -4205,7 +4195,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	for (int row = 0; row < count; row++) {
 		Git::CommitItem const &commit = (*commit_log)[row];
 
-		auto [message_ex, labels] = makeCommitLabels(branch_map, commit); // コミットコメントのツールチップ用テキストとラベル
+		auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
 		(*label_map)[row] = labels;
 
 		CommitRecord rec;
@@ -6362,10 +6352,6 @@ void MainWindow::jump(GitPtr g, QString const &text)
 		}
 	}
 
-	if (g->objectType(id) == "tag") {
-		id = getObjCache()->getCommitIdFromTag(g, text);
-	}
-
 	if (!jumpToCommit(id)) {
 		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
 	}
@@ -7126,5 +7112,10 @@ void MainWindow::on_tableWidget_log_currentRowChanged(int row)
 
 void MainWindow::test()
 {
+	GitPtr g = git();
+	QElapsedTimer t;
+	t.start();
+	auto s = t.elapsed();
+	qDebug() << g->repositoryLastModifiedTime() << s;
 }
 

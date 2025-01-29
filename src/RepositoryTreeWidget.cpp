@@ -297,6 +297,17 @@ bool match(RepositoryData const &repo, RepositoryTreeWidget::Filter const &filte
 	return repo.name.indexOf(filter.text, 0, Qt::CaseInsensitive) >= 0;
 }
 
+static QDateTime repositoryLastModifiedTime(QString const &path)
+{
+#if 0
+	QFileInfo info(path);
+	return info.lastModified();
+#else
+	GitPtr g = global->mainwindow->git(path, {}, {});
+	return g->repositoryLastModifiedTime();
+#endif
+}
+
 void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryData> const &repos, QString const &filtertext, int select_row)
 {
 	RepositoryTreeWidget *tree = this;
@@ -384,23 +395,28 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		struct Item {
 			int index;
 			RepositoryData const *data;
-			QFileInfo info;
+			QDateTime lastModified;
+			// QFileInfo info;
 		};
 		std::vector<Item> items;
 		{
+			GlobalSetOverrideWaitCursor();
 			for (int i = 0; i < repos.size(); i++) {
 				RepositoryData const &item = repos.at(i);
-				QString gitpath = item.local_dir / ".git";
-				QFileInfo info(gitpath);
-				items.push_back({i, &item, info});
+				// QString gitpath = item.local_dir / ".git";
+				// QFileInfo info(gitpath);
+				// items.push_back({i, &item, info});
+				QDateTime lastmodified = repositoryLastModifiedTime(item.local_dir);
+				items.push_back({i, &item, lastmodified});
 			}
 			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
-				return a.info.lastModified() > b.info.lastModified();
+				return a.lastModified > b.lastModified;
 			});
+			GlobalRestoreOverrideCursor();
 		}
 
 		for (Item const &item : items) {
-			QString s = misc::makeDateTimeString(item.info.lastModified());
+			QString s = misc::makeDateTimeString(item.lastModified);
 			s = QString("[%1] %2").arg(s).arg(item.data->name);
 			auto *child = newQTreeWidgetRepositoryItem(s, item.index);
 			tree->addTopLevelItem(child);

@@ -866,6 +866,60 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 	return items;
 }
 
+QDateTime Git::repositoryLastModifiedTime()
+{
+#if 0
+	QString cmd = "log --pretty=format:\"%ci\" --all -1";
+	git_nolog(cmd, nullptr);
+	if (getProcessExitCode() == 0) {
+		QString text = resultQString().trimmed();
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			auto ParseDateTime = [](char const *s){
+				int year, month, day, hour, minute, second;
+				if (sscanf(s, "%d-%d-%d %d:%d:%d"
+						   , &year
+						   , &month
+						   , &day
+						   , &hour
+						   , &minute
+						   , &second
+						   ) == 6) {
+					return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
+				}
+				return QDateTime();
+			};
+			return ParseDateTime(line.toStdString().c_str());
+		}
+	}
+#else
+	if (isValidWorkingCopy()) {
+		git("rev-parse HEAD");
+		QString id = resultQString().trimmed();
+		auto file = cat_file(CommitID(id));
+		if (file) {
+			time_t time = 0;
+			QByteArray ba = file.value();
+			std::vector<std::string_view> lines = misc::splitLinesV(ba, false);
+			for (int i = 0; i < lines.size(); i++) {
+				if (lines[i].empty()) break;
+				std::vector<std::string_view> words = misc::splitWords(lines[i]);
+				if (words.size() >= 4) {
+					if (words[0] == "author" || words[0] == "committer") {
+						time_t t = misc::toi<unsigned int>(words[3]);
+						time = std::max(time, t);
+					}
+				}
+			}
+			if (time != 0) {
+				return QDateTime::fromSecsSinceEpoch(time);
+			}
+		}
+	}
+#endif
+	return {};
+}
+
 /**
  * @brief Git::log_signature
  * @param id コミットID

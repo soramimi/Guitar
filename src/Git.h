@@ -657,6 +657,7 @@ public:
 	QString getDefaultBranch();
 	void setDefaultBranch(QString const &branchname);
 	void unsetDefaultBranch();
+	QDateTime repositoryLastModifiedTime();
 };
 
 struct NamedCommitItem {

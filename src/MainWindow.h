@@ -311,7 +311,6 @@ private:
 	BranchList findBranch(const Git::CommitID &id);
 	QString tempfileHeader() const;
 	void deleteTempFiles();
-	Git::CommitID idFromTag(const QString &tag);
 	QString newTempFilePath();
 	int limitLogCount() const;
 	Git::Object internalCatFile(GitPtr g, const QString &id);
@@ -323,8 +322,8 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	std::tuple<QString, BranchLabelList > makeCommitLabels(const std::map<Git::CommitID, BranchList> &branch_map, const Git::CommitItem &commit);
-	std::tuple<QString, BranchLabelList > makeCommitLabels(int row);
+	std::tuple<QString, BranchLabelList> makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map);
+	std::tuple<QString, BranchLabelList> makeCommitLabels(int row);
 
 	void removeRepositoryFromBookmark(RepositoryTreeIndex const &index, bool ask);
 	void openTerminal(const RepositoryData *repo);
@@ -356,7 +355,8 @@ public:
 private:
 	const std::map<Git::CommitID, TagList> &tagmap() const;
 	std::map<Git::CommitID, TagList> queryTags(GitPtr g);
-	const TagList &findTag(const Git::CommitID &id) const;
+	static TagList findTag(std::map<Git::CommitID, TagList> const &tagmap, Git::CommitID const &id);
+	TagList findTag(const Git::CommitID &id) const;
 
 	void sshSetPassphrase(const std::string &user, const std::string &pass);
 	std::string sshPassphraseUser() const;

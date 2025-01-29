@@ -339,38 +339,6 @@ Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 	return Git::Object();
 }
 
-Git::CommitID GitObjectCache::getCommitIdFromTag(GitPtr g, QString const &tag)
-{
-	Git::CommitID commit_id;
-	if (g && g->isValidWorkingCopy()) {
-		Git::CommitID id(g->rev_parse(tag));
-		Git::Object obj = catFile(g, id);
-		switch (obj.type) {
-		case Git::Object::Type::COMMIT:
-			commit_id = id;
-			break;
-		case Git::Object::Type::TAG:
-			if (!obj.content.isEmpty()) {
-				misc::splitLines(obj.content, [&](char const *ptr, size_t len){
-					if (!commit_id.isValid()) {
-						if (len >= 7 + GIT_ID_LENGTH && strncmp(ptr, "object ", 7) == 0) {
-							Git::CommitID id2(QString::fromUtf8(ptr + 7, int(len - 7)).trimmed());
-							if (Git::isValidID(id2)) {
-								commit_id = id2;
-							}
-						}
-					}
-					return QString();
-				});
-			}
-			break;
-		}
-	} else {
-		qDebug() << Q_FUNC_INFO << "invalid working copy";
-	}
-	return commit_id;
-}
-
 bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
 {
 	*out = {};
