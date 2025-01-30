@@ -124,6 +124,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
+	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.deepseek_api_key;
 	GetValue<QString>(s, "AiModel")                           >> as.ai_model.name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();

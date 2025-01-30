@@ -41,144 +41,21 @@
        </widget>
       </item>
       <item>
-       <widget class="QStackedWidget" name="stackedWidget">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="QRadioButton" name="radioButton_use_environment_value">
+        <property name="text">
+         <string>Use API_KEY environment value</string>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="currentIndex">
-         <number>3</number>
-        </property>
-        <widget class="QWidget" name="page_openai">
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_OPENAI_API_KEY_env_value">
-            <property name="text">
-             <string>Use OPENAI_API_KEY environment value</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_custom_openai_api_key">
-            <property name="text">
-             <string>Custom API key</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_openai_api_key"/>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="page_anthropic">
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_ANTHROPIC_API_KEY_env_value">
-            <property name="text">
-             <string>Use ANTHROPIC_API_KEY environment value</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_custom_anthropic_api_key">
-            <property name="text">
-             <string>Custom API key</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_anthropic_api_key"/>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="page_google">
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_GOOGLE_API_KEY_env_value">
-            <property name="text">
-             <string>Use GOOGLE_API_KEY environment value</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_custom_google_api_key">
-            <property name="text">
-             <string>Custom API key</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_google_api_key"/>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="page_deepseek">
-         <layout class="QVBoxLayout" name="verticalLayout_6">
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_DEEPSEEK_API_KEY_env_value">
-            <property name="text">
-             <string>Use SEEPSEEK_API_KEY environment value</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="radioButton_use_custom_deepseek_api_key">
-            <property name="text">
-             <string>Custom API key</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_deepseek_api_key"/>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="page_unknown"/>
        </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_use_custom_api_key">
+        <property name="text">
+         <string>Custom API key</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_api_key"/>
       </item>
      </layout>
     </widget>

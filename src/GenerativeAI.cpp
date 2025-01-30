@@ -44,5 +44,5 @@ GenerativeAI::Type GenerativeAI::Model::type() const
 
 QString GenerativeAI::Model::anthropic_version() const
 {
-	return "2023-06-01";
+	return "2023-06-01"; // ref. https://docs.anthropic.com/en/api/versioning
 }
