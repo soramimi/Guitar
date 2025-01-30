@@ -323,48 +323,54 @@ std::string CommitMessageGenerator::generateDetailedPrompt(QString const &diff, 
  */
 std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt, GenerativeAI::Model const &model)
 {
-	std::string json;
-	
 	auto type = model.type();
+
 	if (type == GenerativeAI::GPT) {
-		
-		json = R"---({
+		std::string json = R"---({
 	"model": "%s",
 	"messages": [
-		{"role": "system", "content": "You are a experienced engineer."},
+		{"role": "system", "content": "You are an experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-		json = strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
-		
-	} else if (type == GenerativeAI::CLAUDE) {
-		
-		json = R"---({
+		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
+	}
+
+	if (type == GenerativeAI::CLAUDE) {
+		std::string json = R"---({
 	"model": "%s",
 	"messages": [
 		{"role": "user", "content": "%s"}
-	]
-	,
+	],
 	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-		json = strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
-		
-	} else if (type == GenerativeAI::GEMINI) {
-		
-		json = R"---({
+		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+	}
+
+	if (type == GenerativeAI::GEMINI) {
+		std::string json = R"---({
 	"contents": [{
 		"parts": [{
 			"text": "%s"
 		}]
 	}]
 })---";
-		json = strformat(json)(misc::encode_json_string(prompt));
-		
-	} else {
-		return {};
+		return strformat(json)(misc::encode_json_string(prompt));
 	}
 
-	return json;
+	if (type == GenerativeAI::DEEPSEEK) {
+		std::string json = R"---({
+		"model": "%s",
+		"messages": [
+			{"role": "system", "content": "You are an experienced engineer."},
+			{"role": "user", "content": "%s"}]
+		],
+		"stream": false
+	})---";
+		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
+	}
+
+	return {};
 }
 
 GeneratedCommitMessage CommitMessageGenerator::test()
@@ -417,6 +423,10 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	} else if (model_type == GenerativeAI::GEMINI) {
 		apikey = global->GoogleApiKey().toStdString();
 		url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apikey;
+	} else if (model_type == GenerativeAI::DEEPSEEK) {
+		url = "https://api.deepseek.com/chat/completions";
+		apikey = global->DeepSeekApiKey().toStdString();
+		rq.add_header("Authorization: Bearer " + apikey);
 	} else {
 		return {};
 	}

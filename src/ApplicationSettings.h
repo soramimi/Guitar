@@ -35,9 +35,11 @@ public:
 	bool use_openai_api_key_environment_value = false;
 	bool use_anthropic_api_key_environment_value = false;
 	bool use_google_api_key_environment_value = false;
+	bool use_deepseek_api_key_environment_value = false;
 	QString openai_api_key;
 	QString anthropic_api_key;
 	QString google_api_key;
+	QString deepseek_api_key;
 	GenerativeAI::Model ai_model;
 
 	bool get_avatar_icon_from_network_enabled = true;

@@ -55,7 +55,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>3</number>
         </property>
         <widget class="QWidget" name="page_openai">
          <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -153,6 +153,27 @@
           </item>
           <item>
            <widget class="QLineEdit" name="lineEdit_google_api_key"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="page_deepseek">
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <widget class="QRadioButton" name="radioButton_use_DEEPSEEK_API_KEY_env_value">
+            <property name="text">
+             <string>Use SEEPSEEK_API_KEY environment value</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radioButton_use_custom_deepseek_api_key">
+            <property name="text">
+             <string>Custom API key</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_deepseek_api_key"/>
           </item>
          </layout>
         </widget>

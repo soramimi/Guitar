@@ -12,12 +12,11 @@ std::vector<GenerativeAI::Model> GenerativeAI::available_models()
 	models.emplace_back("claude-3-opus-20240229");
 	models.emplace_back("claude-3-sonnet-20240229");
 	models.emplace_back("claude-3-haiku-20240307");
-	// models.emplace_back("claude-2.1");
-	// models.emplace_back("claude-2.0");
 	models.emplace_back("gemini-1.0-ultra");
 	models.emplace_back("gemini-1.0-pro");
 	models.emplace_back("gemini-1.0-flash");
 	models.emplace_back("gemini-1.0-nano");
+	models.emplace_back("deepseek-chat");
 	return models;
 }
 
@@ -36,6 +35,9 @@ GenerativeAI::Type GenerativeAI::Model::type() const
 	}
 	if (name.startsWith("gemini-")) {
 		return GEMINI;
+	}
+	if (name.startsWith("deepseek-")) {
+		return DEEPSEEK;
 	}
 	return Unknown;
 }

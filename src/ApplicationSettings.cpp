@@ -187,6 +187,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
+	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
 	SetValue<QString>(s, "AiModel")                           << this->ai_model.name;
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();

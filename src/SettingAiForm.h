@@ -16,10 +16,12 @@ private:
 	QString openai_api_key_;
 	QString anthropic_api_key_;
 	QString google_api_key_;
+	QString deepseek_api_key_;
 	void refrectSettingsToUI(bool openai, bool anthropic);
 	void refrectSettingsToUI_openai();
 	void refrectSettingsToUI_anthropic();
 	void refrectSettingsToUI_google();
+	void refrectSettingsToUI_deepseek();
 public:
 	explicit SettingAiForm(QWidget *parent = nullptr);
 	~SettingAiForm();
@@ -28,6 +30,7 @@ private slots:
 	void on_lineEdit_openai_api_key_textChanged(const QString &arg1);
 	void on_lineEdit_anthropic_api_key_textChanged(const QString &arg1);
 	void on_lineEdit_google_api_key_textChanged(const QString &arg1);
+	void on_lineEdit_deepseek_api_key_textChanged(const QString &arg1);
 	void on_groupBox_generate_commit_message_by_ai_clicked(bool checked);
 	void on_radioButton_use_OPENAI_API_KEY_env_value_clicked();
 	void on_radioButton_use_custom_openai_api_key_clicked();
@@ -35,6 +38,8 @@ private slots:
 	void on_radioButton_use_custom_anthropic_api_key_clicked();
 	void on_radioButton_use_GOOGLE_API_KEY_env_value_clicked();
 	void on_radioButton_use_custom_google_api_key_clicked();
+	void on_radioButton_use_DEEPSEEK_API_KEY_env_value_clicked();
+	void on_radioButton_use_custom_deepseek_api_key_clicked();
 	void on_comboBox_ai_model_currentTextChanged(const QString &arg1);
 };
 

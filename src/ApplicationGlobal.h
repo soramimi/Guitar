@@ -102,6 +102,14 @@ public:
 			return appsettings.google_api_key;
 		}
 	}
+	QString DeepSeekApiKey() const
+	{
+		if (appsettings.use_deepseek_api_key_environment_value) {
+			return getenv("DEEPSEEK_API_KEY");
+		} else {
+			return appsettings.deepseek_api_key;
+		}
+	}
 
 	static bool isMainThread();
 };

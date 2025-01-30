@@ -11,6 +11,7 @@ enum Type {
 	GPT,
 	CLAUDE,
 	GEMINI,
+	DEEPSEEK,
 };
 
 struct Model {

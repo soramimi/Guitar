@@ -1,7 +1,5 @@
 #include "SettingAiForm.h"
 #include "ui_SettingAiForm.h"
-#include "ApplicationGlobal.h"
-#include "EditProfilesDialog.h"
 #include "GenerativeAI.h"
 
 #include <QMessageBox>
@@ -110,6 +108,21 @@ void SettingAiForm::refrectSettingsToUI_google()
 	ui->lineEdit_google_api_key->blockSignals(b);
 }
 
+void SettingAiForm::refrectSettingsToUI_deepseek()
+{
+	QString apikey;
+	if (ui->radioButton_use_DEEPSEEK_API_KEY_env_value->isChecked()) {
+		apikey = getenv("DEEPSEEK_API_KEY");
+		ui->lineEdit_deepseek_api_key->setEnabled(false);
+	} else {
+		apikey = deepseek_api_key_;
+		ui->lineEdit_deepseek_api_key->setEnabled(true);
+	}
+	bool b = ui->lineEdit_deepseek_api_key->blockSignals(true);
+	ui->lineEdit_deepseek_api_key->setText(apikey);
+	ui->lineEdit_deepseek_api_key->blockSignals(b);
+}
+
 void SettingAiForm::refrectSettingsToUI(bool openai, bool anthropic)
 {
 	refrectSettingsToUI_openai();
@@ -135,6 +148,13 @@ void SettingAiForm::on_lineEdit_google_api_key_textChanged(const QString &arg1)
 {
 	if (!ui->radioButton_use_GOOGLE_API_KEY_env_value->isChecked()) {
 		google_api_key_ = arg1;
+	}
+}
+
+void SettingAiForm::on_lineEdit_deepseek_api_key_textChanged(const QString &arg1)
+{
+	if (!ui->radioButton_use_DEEPSEEK_API_KEY_env_value->isChecked()) {
+		deepseek_api_key_ = arg1;
 	}
 }
 
@@ -184,6 +204,15 @@ void SettingAiForm::on_radioButton_use_custom_google_api_key_clicked()
 	refrectSettingsToUI_google();
 }
 
+void SettingAiForm::on_radioButton_use_DEEPSEEK_API_KEY_env_value_clicked()
+{
+	refrectSettingsToUI_deepseek();
+}
+
+void SettingAiForm::on_radioButton_use_custom_deepseek_api_key_clicked()
+{
+	refrectSettingsToUI_deepseek();
+}
 
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
@@ -199,6 +228,9 @@ void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 			break;
 		case GenerativeAI::GEMINI:
 			ui->stackedWidget->setCurrentWidget(ui->page_google);
+			break;
+		case GenerativeAI::DEEPSEEK:
+			ui->stackedWidget->setCurrentWidget(ui->page_deepseek);
 			break;
 		default:
 			ui->stackedWidget->setCurrentWidget(ui->page_unknown);
