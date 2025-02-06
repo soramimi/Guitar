@@ -16,7 +16,7 @@ std::vector<GenerativeAI::Model> GenerativeAI::available_models()
 	models.emplace_back("gemini-1.0-pro");
 	models.emplace_back("gemini-1.0-flash");
 	models.emplace_back("gemini-1.0-nano");
-	// models.emplace_back("deepseek-chat");
+	models.emplace_back("deepseek-chat");
 	return models;
 }
 

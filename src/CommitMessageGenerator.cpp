@@ -123,7 +123,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	char const *begin = in.c_str();
 	char const *end = begin + in.size();
 	jstream::Reader r(begin, end);
-	if (ai_type == GenerativeAI::GPT) {
+	if (ai_type == GenerativeAI::GPT || ai_type == GenerativeAI::DEEPSEEK) {
 		while (r.next()) {
 			if (r.match("{object")) {
 				if (r.string() == "chat.completion") {
@@ -325,7 +325,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 {
 	auto type = model.type();
 
-	if (type == GenerativeAI::GPT) {
+	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK) {
 		std::string json = R"---({
 	"model": "%s",
 	"messages": [
