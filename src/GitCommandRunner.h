@@ -150,6 +150,8 @@ public:
 		QVariant userdata;
 		bool update_commit_log = false;
 		bool result = false;
+		QString process_name;
+		QElapsedTimer elapsed;
 	} d;
 
 	GitPtr git()

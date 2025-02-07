@@ -1886,11 +1886,16 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 	showProgress(progress_message, false);
 
 	GitCommandRunner runner;
+	runner.d.process_name = progress_message;
+	runner.d.elapsed.start();
+
 	runner.d.run = [this, var](GitCommandRunner &runner){
 		setCompletedHandler([this](bool ok, QVariant const &d){
 			showProgress({}, false);
 			GitCommandRunner const &req = d.value<GitCommandRunner>();
 			PtyProcessCompleted data;
+			data.process_name = req.d.process_name;
+			data.elapsed = req.d.elapsed;
 			data.callback = req.callback;
 			data.status.ok = ok;
 			data.userdata = req.d.userdata;
@@ -1925,6 +1930,8 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 			data.callback(data.status, data.userdata);
 		}
 	}
+
+	qDebug() << "--- Elapsed:" << data.process_name << data.elapsed.elapsed() << "ms";
 }
 
 void MainWindow::connectPtyProcessCompleted()

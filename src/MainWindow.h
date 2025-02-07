@@ -75,6 +75,8 @@ public:
 	std::function<void (ProcessStatus const &, QVariant const &)> callback;
 	ProcessStatus status;
 	QVariant userdata;
+	QString process_name;
+	QElapsedTimer elapsed;
 };
 Q_DECLARE_METATYPE(PtyProcessCompleted)
 
