@@ -164,9 +164,7 @@ void Win32PtyProcess::run()
 
 	QDir::setCurrent(cwd);
 
-	if (completed_fn_) {
-		completed_fn_(ok, user_data_);
-	}
+	notifyCompleted();
 }
 
 int Win32PtyProcess::readOutput(char *dstptr, int maxlen)

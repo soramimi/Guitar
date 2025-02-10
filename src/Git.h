@@ -399,6 +399,44 @@ public:
 	};
 	using FileStatusList = std::vector<FileStatus>;
 
+	class CommandCache {
+	public:
+		struct Data {
+			std::map<QString, std::vector<char>> map;
+		};
+		std::shared_ptr<Data> d;
+		CommandCache(bool make = false)
+		{
+			if (make) {
+				d = std::make_shared<Data>();
+			}
+		}
+		operator bool () const
+		{
+			return (bool)d;
+		}
+		void clear()
+		{
+			if (d) {
+				d->map.clear();
+			}
+		}
+		std::vector<char> *find(QString const &key)
+		{
+			if (!d) return nullptr;
+			auto it = d->map.find(key);
+			if (it != d->map.end()) {
+				return &it->second;
+			}
+			return nullptr;
+		}
+		void insert(QString const &key, std::vector<char> const &value)
+		{
+			if (!d) return;
+			d->map[key] = value;
+		}
+	};
+
 	static QString trimPath(QString const &s);
 
 private:
@@ -417,6 +455,9 @@ public:
 	Git(Context const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
 	 ~Git() override;
+
+	void setCommandCache(CommandCache const &cc);
+
 
 	// using callback_t = bool (*)(void *, const char *, int);
 

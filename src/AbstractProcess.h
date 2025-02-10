@@ -24,6 +24,13 @@ public:
 		user_data_ = userdata;
 	}
 
+	void notifyCompleted()
+	{
+		if (completed_fn_) {
+			completed_fn_(true, user_data_);
+		}
+	}
+
 	std::string getMessage() const;
 	void clearMessage();
 

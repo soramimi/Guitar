@@ -208,9 +208,7 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		if (completed_fn_) {
-			completed_fn_(ok, user_data_);
-		}
+		notifyCompleted();
 	}
 }
 

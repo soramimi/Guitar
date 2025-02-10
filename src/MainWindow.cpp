@@ -192,6 +192,9 @@ struct MainWindow::Private {
 
 	const Git::CommitItem null_commit_item;
 	const TagList null_tag_list;
+
+
+	Git::CommandCache git_command_cache;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1935,6 +1938,8 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 			data.callback(data.status, data.userdata);
 		}
 	}
+
+	m->git_command_cache.clear();
 
 	qDebug() << "--- Elapsed B:" << data.process_name << data.elapsed.elapsed() << "ms";
 }
@@ -4271,6 +4276,8 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	getObjCache()->setup(g);
 
+	m->git_command_cache = Git::CommandCache(true);
+
 	if (clear_log) { // ログをクリア
 		currentRepositoryModel()->commit_log.clear();
 	}
@@ -5373,6 +5380,7 @@ GitPtr MainWindow::git(const QString &dir, const QString &submodpath, const QStr
 {
 	GitPtr g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
+		g->setCommandCache(m->git_command_cache);
 		return g;
 	}
 

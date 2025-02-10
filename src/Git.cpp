@@ -106,6 +106,7 @@ struct Git::Private {
 	QString ssh_key_override;// = "C:/a/id_rsa";
 	std::vector<char> result;
 	ProcessStatus exit_status;
+	CommandCache command_cache;
 };
 
 Git::Git()
@@ -123,6 +124,11 @@ Git::Git(const Context &cx, QString const &repodir, const QString &submodpath, c
 Git::~Git()
 {
 	delete m;
+}
+
+void Git::setCommandCache(CommandCache const &cc)
+{
+	m->command_cache = cc;
 }
 
 //@
@@ -290,6 +296,15 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 			opt.pty->start(cmd, env);
 			m->exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
+			if (m->command_cache) {
+				auto const *a = m->command_cache.find(cmd);
+				if (a) {
+					qDebug() << "found:" << cmd;
+					m->result = *a;
+					return true;
+				}
+			}
+
 			Process proc;
 			proc.start(cmd.toStdString(), false);
 			m->exit_status.exit_code = proc.wait();
@@ -303,6 +318,13 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 				m->result = proc.outbytes;
 			}
 			m->exit_status.error_message = proc.errstring();
+
+			if (m->exit_status.exit_code == 0) {
+				if (m->command_cache) {
+					m->command_cache.insert(cmd, m->result);
+					qDebug() << "insert:" << cmd;
+				}
+			}
 		}
 
 		return m->exit_status.exit_code == 0;
