@@ -19,18 +19,11 @@ public:
 	}
 };
 
-class AddRepositoryEventData {
+class CloneRepositoryEventData {
 public:
-	QString dir;
-	AddRepositoryEventData(QString dir)
-		: dir(dir)
-	{
-	}
-};
-
-class UpdateFileListEventData {
-public:
-	UpdateFileListEventData()
+	QString remote_url;
+	CloneRepositoryEventData(QString const &remote_url)
+		: remote_url(remote_url)
 	{
 	}
 };
@@ -39,8 +32,7 @@ class UserEventHandler {
 public:
 	typedef std::variant<
 		StartEventData,
-		AddRepositoryEventData,
-		UpdateFileListEventData
+		CloneRepositoryEventData
 	> variant_t;
 
 	MainWindow *mainwindow;
@@ -51,8 +43,7 @@ public:
 	}
 
 	void operator () (StartEventData const &e);
-	void operator () (AddRepositoryEventData const &e);
-	void operator () (UpdateFileListEventData const &e);
+	void operator () (CloneRepositoryEventData const &e);
 
 	void go(UserEvent *e);
 };

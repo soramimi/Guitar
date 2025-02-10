@@ -193,6 +193,7 @@ struct MainWindow::Private {
 	const Git::CommitItem null_commit_item;
 	const TagList null_tag_list;
 
+	QTimer update_file_list_timer;
 
 	Git::CommandCache git_command_cache;
 };
@@ -288,6 +289,8 @@ MainWindow::MainWindow(QWidget *parent)
 	connectSetCommitLog();
 
 	connect(ui->tableWidget_log, &CommitLogTableWidget::currentRowChanged, this, &MainWindow::on_tableWidget_log_currentRowChanged);
+
+	initUpdateFileListTimer();
 
 	//
 
@@ -511,11 +514,6 @@ void MainWindow::setupExternalPrograms()
 	setSshCommand(appsettings()->ssh_command, false);
 }
 
-void UserEventHandler::operator () (StartEventData const &)
-{
-	mainwindow->onStartEvent();
-}
-
 void MainWindow::onStartEvent()
 {
 	if (isUninitialized()) { // gitコマンドの有効性チェック
@@ -537,6 +535,11 @@ void MainWindow::onStartEvent()
 		// gitコマンドバージョン表示
 		logGitVersion();
 	}
+}
+
+void UserEventHandler::operator () (StartEventData const &)
+{
+	mainwindow->onStartEvent();
 }
 
 bool MainWindow::setCurrentLogRow(int row)
@@ -1228,10 +1231,10 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 	updateRepositoryList();
 }
 
-void UserEventHandler::operator () (AddRepositoryEventData const &e)
+void UserEventHandler::operator () (CloneRepositoryEventData const &e)
 {
 	AddRepositoryDialog dlg(mainwindow);
-	if (dlg.execClone(e.dir) == QDialog::Accepted) {
+	if (dlg.execClone(e.remote_url) == QDialog::Accepted) {
 		mainwindow->addRepositoryAccepted(dlg);
 	}
 }
@@ -1278,7 +1281,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 		};
 
 		if (isBareRepository(dir)) {
-			postUserEvent(AddRepositoryEventData(dir), 1);
+			postUserEvent(CloneRepositoryEventData(dir), 0);
 			return true;
 		}
 
@@ -1888,7 +1891,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 	setProgress(-1.0f);
 	showProgress(progress_message, false);
 
-	qDebug() << "--- Start:" << progress_message;
+	// qDebug() << "--- Start:" << progress_message;
 
 	GitCommandRunner runner;
 	runner.d.process_name = progress_message;
@@ -1899,7 +1902,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 			showProgress({}, false);
 			GitCommandRunner const &req = d.value<GitCommandRunner>();
 			{
-				qDebug() << "--- Elapsed A:" << req.d.process_name << req.d.elapsed.elapsed() << "ms";
+				// qDebug() << "--- Elapsed A:" << req.d.process_name << req.d.elapsed.elapsed() << "ms";
 			}
 			PtyProcessCompleted data;
 			data.process_name = req.d.process_name;
@@ -1941,7 +1944,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 
 	m->git_command_cache.clear();
 
-	qDebug() << "--- Elapsed B:" << data.process_name << data.elapsed.elapsed() << "ms";
+	// qDebug() << "--- Elapsed B:" << data.process_name << data.elapsed.elapsed() << "ms";
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -3736,6 +3739,15 @@ void MainWindow::showFileList(FilesListType files_list_type)
 	emit sigShowFileList(files_list_type);
 }
 
+Git::CommitItem const *MainWindow::currentCommitItem()
+{
+	int row = ui->tableWidget_log->actualLogIndex();
+	auto const &logs = commitlog();
+	if (row >= 0 && row < (int)logs.size()) {
+		return &logs[row];
+	}
+	return nullptr;
+}
 
 void MainWindow::updateFileList(Git::CommitID const &id)
 {
@@ -3858,13 +3870,38 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 	}
 }
 
-/**
- * @brief ファイルリストを更新
- * @param id
- * @param diff_list
- * @param listwidget
- */
-void MainWindow::updateFileList2(Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::updateFileList(Git::CommitItem const *commit)
+{
+	Git::CommitID id;
+	if (!commit) {
+		// nullptr for uncommited changes
+	} else if (Git::isUncommited(*commit)) {
+		// empty id for uncommited changes
+	} else {
+		id = commit->commit_id;
+	}
+	updateFileList(id);
+}
+
+void MainWindow::updateCurrentFileList()
+{
+	ASSERT_MAIN_THREAD();
+
+	updateFileList(currentCommitItem());
+}
+
+void MainWindow::updateFileListLater(int delay_ms)
+{
+	m->update_file_list_timer.start(delay_ms);
+}
+
+void MainWindow::initUpdateFileListTimer()
+{
+	m->update_file_list_timer.setSingleShot(true);
+	connect(&m->update_file_list_timer, &QTimer::timeout, this, &MainWindow::updateCurrentFileList);
+}
+
+void MainWindow::makeDiffList(Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -3886,37 +3923,6 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 {
 	CommitViewWindow win(this, commit);
 	win.exec();
-}
-
-void MainWindow::updateFileList(Git::CommitItem const *commit)
-{
-	Git::CommitID id;
-	if (!commit) {
-		// nullptr for uncommited changes
-	} else if (Git::isUncommited(*commit)) {
-		// empty id for uncommited changes
-	} else {
-		id = commit->commit_id;
-	}
-	updateFileList(id);
-}
-
-Git::CommitItem const *MainWindow::currentCommitItem()
-{
-	int row = ui->tableWidget_log->actualLogIndex();
-	auto const &logs = commitlog();
-	// &commit = logs[row];
-	if (row >= 0 && row < (int)logs.size()) {
-		return &logs[row];
-	}
-	return nullptr;
-}
-
-void MainWindow::updateCurrentFilesList()
-{
-	ASSERT_MAIN_THREAD();
-
-	updateFileList(currentCommitItem());
 }
 
 Git::Object MainWindow::internalCatFile(GitPtr g, const QString &id) //@TODO:
@@ -5030,7 +5036,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				for_each_selected_files([&](QString const &path){
 					g->stage(path);
 				});
-				updateCurrentFilesList();
+				updateCurrentFileList();
 				return;
 			}
 			if (a == a_reset_file) {
@@ -5074,7 +5080,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 									file.write(text.toUtf8());
 								}
 							}
-							updateCurrentFilesList();
+							updateCurrentFileList();
 							return;
 						}
 					} else {
@@ -5091,7 +5097,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					}
 				});
 				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", append)) {
-					updateCurrentFilesList();
+					updateCurrentFileList();
 				}
 				return;
 			}
@@ -5587,7 +5593,7 @@ TextEditorThemePtr MainWindow::themeForTextEditor()
 	return global->theme->text_editor_theme;
 }
 
-bool MainWindow::isValidWorkingCopy(GitPtr g) const
+bool MainWindow::isValidWorkingCopy(GitPtr g)
 {
 	return g && g->isValidWorkingCopy();
 }
@@ -5677,11 +5683,6 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 	return commit.commit_id.toQString(7);
 }
 
-void UserEventHandler::operator () (UpdateFileListEventData const &e)
-{
-	mainwindow->updateCurrentFilesList();
-}
-
 /**
  * @brief コミットログの選択が変化した
  */
@@ -5694,7 +5695,7 @@ void MainWindow::onLogCurrentItemChanged()
 	updateStatusBarText();
 
 	// 少し待ってファイルリストを更新する
-	postUserEvent(UpdateFileListEventData(), 300); // 300ms後（キーボードのオートリピート想定）
+	updateFileListLater(300);
 
 	updateAncestorCommitMap();
 	ui->tableWidget_log->viewport()->update();
@@ -5833,7 +5834,7 @@ void MainWindow::on_toolButton_stage_clicked()
 			}
 			stage(g, list);
 		}
-		updateCurrentFilesList();
+		updateCurrentFileList();
 	}
 }
 
@@ -5849,7 +5850,7 @@ void MainWindow::on_toolButton_unstage_clicked()
 		} else {
 			g->unstage(selectedFiles());
 		}
-		updateCurrentFilesList();
+		updateCurrentFileList();
 	}
 }
 
@@ -5888,7 +5889,7 @@ void MainWindow::on_action_edit_gitignore_triggered()
 	QString dir = currentWorkingCopyDir();
 	QString path = dir / ".gitignore";
 	if (editFile(path, ".gitignore")) {
-		updateCurrentFilesList();
+		updateCurrentFileList();
 	}
 }
 

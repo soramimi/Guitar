@@ -692,7 +692,7 @@ public:
 	QList<SubmoduleItem> submodules();
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
-	static CommitItem parseCommit(const QByteArray &ba);
+	static std::optional<CommitItem> parseCommit(QByteArray const &ba);
 	QString queryEntireCommitMessage(const CommitID &id);
 
 	QString getDefaultBranch();

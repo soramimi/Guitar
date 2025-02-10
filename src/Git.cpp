@@ -299,7 +299,7 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 			if (m->command_cache) {
 				auto const *a = m->command_cache.find(cmd);
 				if (a) {
-					qDebug() << "found:" << cmd;
+					// qDebug() << "--- found:" << cmd;
 					m->result = *a;
 					return true;
 				}
@@ -322,7 +322,7 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 			if (m->exit_status.exit_code == 0) {
 				if (m->command_cache) {
 					m->command_cache.insert(cmd, m->result);
-					qDebug() << "insert:" << cmd;
+					// qDebug() << "--- insert:" << cmd;
 				}
 			}
 		}
@@ -1010,9 +1010,8 @@ Git::CommitItemList Git::log(int maxcount)
 	return log_all({}, maxcount);
 }
 
-Git::CommitItem Git::parseCommit(QByteArray const &ba)
+std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 {
-	CommitItem out;
 	QStringList lines = misc::splitLines(ba, [](char const *p, size_t n){
 		return QString::fromUtf8(p, (int)n);
 	});
@@ -1020,6 +1019,8 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 		lines.pop_back();
 	}
 
+	CommitItem out;
+	bool ok = false;
 	bool gpgsig = false;
 	bool message = false;
 
@@ -1057,7 +1058,9 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 			}
 			out.message += line;
 		}
-		if (line.startsWith("parent ")) {
+		if (line.startsWith("tree ")) {
+			ok = true;
+		} else if (line.startsWith("parent ")) {
 			out.parent_ids.push_back(Git::CommitID(line.mid(7)));
 		} else if (line.startsWith("author ")) {
 			QStringList arr = misc::splitWords(line);
@@ -1085,20 +1088,24 @@ Git::CommitItem Git::parseCommit(QByteArray const &ba)
 			gpgsig = true;
 		}
 	}
-	return out;
+
+	if (ok) return out;
+	return std::nullopt;
 }
 
 std::optional<Git::CommitItem> Git::queryCommitItem(CommitID const &id)
 {
-	Git::CommitItem ret;
-	if (objectType(id) != "commit") return std::nullopt;
-
-	ret.commit_id = id;
-	auto ba = cat_file(id);
-	if (ba) {
-		ret = parseCommit(*ba);
+	if (objectType(id) == "commit") {
+		auto ba = cat_file(id);
+		if (ba) {
+			auto ret = parseCommit(*ba);
+			if (ret) {
+				ret->commit_id = id;
+				return ret;
+			}
+		}
 	}
-	return ret;
+	return std::nullopt;
 }
 
 Git::CloneData Git::preclone(QString const &url, QString const &path)

@@ -177,6 +177,9 @@ private:
 
 	void updateFileList(const Git::CommitID &id);
 	void updateFileList(const Git::CommitItem *commit);
+	void updateFileListLater(int delay_ms);
+public:
+	void updateCurrentFileList();
 public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
@@ -453,7 +456,6 @@ public:
 	bool shown();
 	void deleteTags(QStringList const &tagnames);
 	void addTag(QString const &name);
-	void updateCurrentFilesList();
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(const QString &id);
@@ -464,7 +466,7 @@ public:
 	bool isLabelsVisible() const;
 	bool isGraphVisible() const;
 	bool isAvatarsVisible() const;
-	void updateFileList2(const Git::CommitID &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
+	void makeDiffList(const Git::CommitID &id, QList<Git::Diff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const Git::CommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const Git::CommitItem &commit);
 	void execCommitExploreWindow(QWidget *parent, const Git::CommitItem *commit);
@@ -501,7 +503,7 @@ public:
 	QString determinFileType(const QString &path) const;
 
 	TextEditorThemePtr themeForTextEditor();
-	bool isValidWorkingCopy(GitPtr g) const;
+	static bool isValidWorkingCopy(GitPtr g);
 	void emitWriteLog(LogData const &logdata);
 	QString findFileID(const QString &commit_id, const QString &file);
 	const Git::CommitItem &commitItem(int row) const;
@@ -681,6 +683,7 @@ private:
 	void retry();
 	bool isRetryQueued() const;
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
+	void initUpdateFileListTimer();
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 
