@@ -179,11 +179,7 @@ struct MainWindow::Private {
 
 	CommitDetailGetter commit_detail_getter;
 
-	QTimer update_commit_log_timer;
-
 	QString add_repository_into_group;
-
-	std::thread update_files_list_thread; //@
 
 	GitProcessThread git_process_thread;
 
@@ -193,6 +189,7 @@ struct MainWindow::Private {
 	const Git::CommitItem null_commit_item;
 	const TagList null_tag_list;
 
+	QTimer update_commit_log_timer;
 	QTimer update_file_list_timer;
 };
 
@@ -322,10 +319,6 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
 	m->git_process_thread.stop();
-
-	if (m->update_files_list_thread.joinable()) {
-		m->update_files_list_thread.join();
-	}
 
 	global->avatar_loader.disconnectAvatarReady(this, &MainWindow::onAvatarReady);
 
@@ -739,6 +732,9 @@ bool MainWindow::event(QEvent *event)
 void MainWindow::closeEvent(QCloseEvent *event)
 {
 	MySettings settings;
+
+	m->update_file_list_timer.stop();
+	m->update_commit_log_timer.stop();
 
 	if (appsettings()->remember_and_restore_window_position) {
 		setWindowOpacity(0);
@@ -3939,10 +3935,6 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 	if (!isValidWorkingCopy(g)) return;
 
 	clearFileList();
-
-	if (m->update_files_list_thread.joinable()) {
-		m->update_files_list_thread.join();
-	}
 
 	FilesListType files_list_type = FilesListType::SingleList;
 	if (!id) {
