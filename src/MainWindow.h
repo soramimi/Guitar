@@ -680,6 +680,7 @@ private:
 	bool isRetryQueued() const;
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 	void initUpdateFileListTimer();
+	void clearGitCommandCache();
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 

@@ -183,7 +183,7 @@ struct MainWindow::Private {
 
 	QString add_repository_into_group;
 
-	std::thread update_files_list_thread;
+	std::thread update_files_list_thread; //@
 
 	GitProcessThread git_process_thread;
 
@@ -1457,11 +1457,14 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 		pty->wait();
 	}
 
-
 	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
 
 	if (clear_log) { // ログをクリア
 		m->current_repository_data = {};
+		{ // コミットログをクリア
+			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
 	} else {
 		getObjCache()->clear();
 	}
@@ -3930,6 +3933,8 @@ Git::CommitItem const *MainWindow::currentCommitItem()
 
 void MainWindow::updateFileList(Git::CommitID const &id)
 {
+	clearGitCommandCache();
+
 	GitPtr g = git();
 	if (!isValidWorkingCopy(g)) return;
 
@@ -5797,6 +5802,11 @@ void MainWindow::refresh()
 void MainWindow::on_action_view_refresh_triggered()
 {
 	refresh();
+}
+
+void MainWindow::clearGitCommandCache()
+{
+	m->current_repository_data.git_command_cache.clear();
 }
 
 void MainWindow::on_toolButton_stage_clicked()
