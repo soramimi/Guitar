@@ -20,9 +20,9 @@ void CommitDetailGetter::start(GitPtr git)
 	git_ = git;
 	
 	threads_.clear();
-	threads_.resize(4);
+	threads_.resize(num_threads);
 	for (size_t i = 0; i < threads_.size(); i++) {
-		threads_[i] = std::thread([&](){
+		threads_[i] = std::thread([this](){
 			while (1) {
 				Request item;
 				{

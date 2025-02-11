@@ -16,6 +16,8 @@ public:
 		char sign_verify = 0;
 	};
 private:
+	static constexpr int num_threads = 1;
+
 	std::mutex mutex_;
 	std::condition_variable condition_;
 	std::vector<std::thread> threads_;
