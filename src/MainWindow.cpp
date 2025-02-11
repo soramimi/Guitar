@@ -32,7 +32,6 @@
 #include "MemoryReader.h"
 #include "MergeDialog.h"
 #include "MySettings.h"
-#include "ObjectBrowserDialog.h"
 #include "OverrideWaitCursor.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
@@ -110,7 +109,8 @@ struct MainWindow::Private {
 
 	QString starting_dir;
 
-	std::shared_ptr<RepositoryModel> current_repository_model;
+	RepositoryData current_repository;
+	RepositoryModel current_repository_data;
 
 	Git::User current_git_user;
 
@@ -194,8 +194,6 @@ struct MainWindow::Private {
 	const TagList null_tag_list;
 
 	QTimer update_file_list_timer;
-
-	Git::CommandCache git_command_cache;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -211,9 +209,6 @@ MainWindow::MainWindow(QWidget *parent)
 	setupShowFileListHandler();
 	setupProgressHandler();
 	setupAddFileObjectData();
-	setupUpdateCommitLog();
-
-	m->current_repository_model = std::make_shared<RepositoryModel>();
 
 	ui->tableWidget_log->setup(this);
 
@@ -344,14 +339,65 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-RepositoryModel *MainWindow::currentRepositoryModel()
+RepositoryModel *MainWindow::currentRepositoryData()
 {
-	return m->current_repository_model.get();
+	return &m->current_repository_data;
 }
 
-RepositoryModel const *MainWindow::currentRepositoryModel() const
+RepositoryModel const *MainWindow::currentRepositoryData() const
 {
-	return m->current_repository_model.get();
+	return &m->current_repository_data;
+}
+
+const Git::Branch &MainWindow::currentBranch() const
+{
+	return m->current_branch;
+}
+
+void MainWindow::setCurrentBranch(const Git::Branch &b)
+{
+	m->current_branch = b;
+}
+
+const RepositoryData &MainWindow::currentRepository() const
+{
+	return m->current_repository;
+}
+
+QString MainWindow::currentRepositoryName() const
+{
+	return currentRepository().name;
+}
+
+QString MainWindow::currentRemoteName() const
+{
+	return m->current_remote_name;
+}
+
+QString MainWindow::currentBranchName() const
+{
+	return currentBranch().name;
+}
+
+/**
+ * @brief MainWindow::currentWorkingCopyDir
+ * @return 現在の作業ディレクトリ
+ *
+ * 現在の作業ディレクトリを返す
+ */
+QString MainWindow::currentWorkingCopyDir() const
+{
+	return currentRepository().local_dir;
+}
+
+/**
+ * @brief MainWindow::defaultWorkingDir
+ *
+ * デフォルトの作業ディレクトリを返す
+ */
+QString MainWindow::defaultWorkingDir() const
+{
+	return appsettings()->default_working_dir;
 }
 
 /**
@@ -915,7 +961,7 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 
 std::map<Git::CommitID, TagList> const &MainWindow::tagmap() const
 {
-	return currentRepositoryModel()->tag_map;
+	return currentRepositoryData()->tag_map;
 }
 
 TagList MainWindow::findTag(std::map<Git::CommitID, TagList> const &tagmap, Git::CommitID const &id)
@@ -1011,27 +1057,6 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
 	int w = DIGIT_WIDTH;
 	int h = DIGIT_HEIGHT;
 	pr->drawPixmap(x, y, w, h, global->graphics->small_digits, n * w, 0, w, h);
-}
-
-/**
- * @brief MainWindow::defaultWorkingDir
- *
- * デフォルトの作業ディレクトリを返す
- */
-QString MainWindow::defaultWorkingDir() const
-{
-	return appsettings()->default_working_dir;
-}
-
-/**
- * @brief MainWindow::currentWorkingCopyDir
- * @return 現在の作業ディレクトリ
- *
- * 現在の作業ディレクトリを返す
- */
-QString MainWindow::currentWorkingCopyDir() const
-{
-	return currentRepositoryModel()->repository_data.local_dir;
 }
 
 /**
@@ -1240,6 +1265,274 @@ void UserEventHandler::operator () (CloneRepositoryEventData const &e)
 }
 
 /**
+ * @brief MainWindow::clearAuthentication
+ *
+ * 認証情報をクリアする
+ */
+void MainWindow::clearAuthentication()
+{
+	clearSshAuthentication();
+	m->http_uid.clear();
+	m->http_pwd.clear();
+}
+
+/**
+ * @brief MainWindow::clearSshAuthentication
+ *
+ * SSH認証情報をクリアする
+ */
+void MainWindow::clearSshAuthentication()
+{
+	m->ssh_passphrase_user.clear();
+	m->ssh_passphrase_pass.clear();
+}
+
+/**
+ * @brief MainWindow::setCurrentRepository
+ * @param repo リポジトリ
+ * @param clear_authentication 認証情報をクリアする
+ *
+ * 現在のリポジトリを設定する
+ */
+void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_authentication)
+{
+	if (clear_authentication) {
+		clearAuthentication();
+	}
+	m->current_repository = repo;
+}
+
+void MainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
+{
+	m->ssh_passphrase_user = user;
+	m->ssh_passphrase_pass = pass;
+}
+
+std::string MainWindow::sshPassphraseUser() const
+{
+	return m->ssh_passphrase_user;
+}
+
+std::string MainWindow::sshPassphrasePass() const
+{
+	return m->ssh_passphrase_pass;
+}
+
+void MainWindow::httpSetAuthentication(const std::string &user, const std::string &pass)
+{
+	m->http_uid = user;
+	m->http_pwd = pass;
+}
+
+std::string MainWindow::httpAuthenticationUser() const
+{
+	return m->http_uid;
+}
+
+std::string MainWindow::httpAuthenticationPass() const
+{
+	return m->http_pwd;
+}
+
+ApplicationSettings *MainWindow::appsettings()
+{
+	return &global->appsettings;
+}
+
+const ApplicationSettings *MainWindow::appsettings() const
+{
+	return &global->appsettings;
+}
+
+const Git::CommitItem *MainWindow::getLog(int index) const
+{
+	Git::CommitItemList const &logs = commitlog();
+	return (index >= 0 && index < (int)logs.size()) ? &logs[index] : nullptr;
+}
+
+void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
+{
+	ASSERT_MAIN_THREAD();
+	if (log.p->commit_log) currentRepositoryData()->commit_log = *log.p->commit_log;
+	if (log.p->branch_map) currentRepositoryData()->branch_map = *log.p->branch_map;
+	if (log.p->tag_map) currentRepositoryData()->tag_map = *log.p->tag_map;
+	if (log.p->label_map) currentRepositoryData()->label_map = *log.p->label_map;
+
+	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
+}
+
+void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
+{
+	emit sigSetCommitLog(exdata);
+}
+
+void MainWindow::connectSetCommitLog()
+{
+	connect(this, &MainWindow::sigSetCommitLog, this, &MainWindow::onSetCommitLog);
+}
+
+/**
+ * @brief コミットログテーブルウィジェットを構築
+ */
+void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row)
+{
+	ASSERT_MAIN_THREAD();
+
+	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
+	Q_ASSERT(commit_log);
+
+	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
+	std::map<Git::CommitID, TagList> const &tag_map = exdata.p->tag_map.value();
+
+	exdata.p->label_map = std::map<int, BranchLabelList>();
+	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
+
+	auto UpdateCommitGraph = std::async(std::launch::async, [&](){
+		updateCommitGraph(commit_log);
+	});
+
+	const int count = (int)commit_log->size(); // ログの数
+
+	std::vector<CommitRecord> records;
+	records.reserve(count);
+
+	int selrow = 0;
+
+	for (int row = 0; row < count; row++) {
+		Git::CommitItem const &commit = (*commit_log)[row];
+
+		auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
+		(*label_map)[row] = labels;
+
+		CommitRecord rec;
+
+		bool isHEAD = (commit.commit_id == getHeadId());
+		if (Git::isUncommited(commit)) { // 未コミットの時
+			rec.bold = true; // 太字
+			selrow = row;
+		} else {
+			bool uncommited_changes = isThereUncommitedChanges();
+			if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+				rec.bold = true; // 太字
+				selrow = row;
+			}
+			rec.commit_id = abbrevCommitID(commit);
+		}
+
+		rec.datetime = misc::makeDateTimeString(commit.commit_date);
+		rec.author = commit.author;
+		rec.message = commit.message;
+		rec.tooltip = rec.message + message_ex;
+
+		records.push_back(rec);
+	}
+
+	ui->tableWidget_log->setRecords(std::move(records));
+
+	m->last_focused_file_list = nullptr;
+
+	ui->tableWidget_log->setFocus();
+
+	if (select_row < 0) {
+		setCurrentLogRow(selrow);
+	} else {
+		setCurrentLogRow(select_row);
+		ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+	}
+
+	updateUI();
+
+	UpdateCommitGraph.wait();
+	setCommitLog(exdata);
+}
+
+void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, bool keep_selection)
+{
+	ASSERT_MAIN_THREAD();
+
+	if (!isValidWorkingCopy(g)) return;
+
+	PtyProcess *pty = getPtyProcess();
+	if (pty) {
+		pty->wait();
+	}
+
+	getObjCache()->setup(g);
+
+	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
+
+	if (clear_log) { // ログをクリア
+		currentRepositoryData()->commit_log.clear();
+	}
+
+	// リポジトリ情報をクリア
+	{
+		clearLabelMap();
+		setUncommitedChanges(false);
+		clearLogContents();
+
+		internalClearRepositoryInfo();
+		ui->label_repo_name->setText(QString());
+		ui->label_branch_name->setText(QString());
+	}
+
+	// HEAD を取得
+	updateHEAD(g);
+
+	// ユーザー情報を取得
+	Git::User user = g->getUser(Git::Source::Default);
+
+	// コミットログを作成
+	{
+		CommitLogExchangeData exdata = queryCommitLog(g); // コミットログとブランチ情報を取得
+
+		int scroll_pos = -1;
+		int select_row = -1;
+		if (keep_selection) {
+			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
+			select_row = ui->tableWidget_log->currentRow();
+		}
+
+		makeCommitLog(exdata, scroll_pos, select_row);
+	}
+
+	// ポジトリの情報を設定
+	{
+		QString branch_name;
+		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
+			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
+		}
+		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
+			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
+		}
+		if (branch_name.isEmpty()) {
+			branch_name = currentBranchName();
+		}
+
+		QString repo_name = currentRepositoryName();
+		setRepositoryInfo(repo_name, branch_name);
+	}
+
+	// ウィンドウタイトルを更新
+	updateWindowTitle(user);
+
+	// ファイルリストを更新
+	onLogCurrentItemChanged();
+
+	//
+
+	m->commit_detail_getter.stop();
+	m->commit_detail_getter.start(g->dup());
+
+	if (do_fetch) {
+		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
+		if (do_fetch) {
+			fetch(g, false);
+		}
+	}
+}
+
+/**
  * @brief MainWindow::addExistingLocalRepository
  * @param dir ディレクトリ
  * @param name 名前
@@ -1316,7 +1609,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 	if (open) {
 		setCurrentRepository(item, true);
 		GitPtr g = git(item.local_dir, {}, sshkey);
-		internalOpenRepository(g, false, false);
+		openRepositoryMain(g, true, false, false);
 	}
 
 	return true;
@@ -1763,7 +2056,7 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 			return;
 		}
 
-		internalOpenRepository(g, true, opt.keep_selection);
+		openRepositoryMain(g, true, true, opt.keep_selection);
 	}
 }
 
@@ -1774,21 +2067,6 @@ void MainWindow::reopenRepository(bool validate)
 	opt.waitcursor = true;
 	opt.keep_selection = false;
 	openRepository(opt);
-}
-
-/**
- * @brief MainWindow::setCurrentRepository
- * @param repo リポジトリ
- * @param clear_authentication 認証情報をクリアする
- *
- * 現在のリポジトリを設定する
- */
-void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_authentication)
-{
-	if (clear_authentication) {
-		clearAuthentication();
-	}
-	m->current_repository_model->repository_data = repo;
 }
 
 /**
@@ -1882,7 +2160,7 @@ void MainWindow::internalAfterFetch()
 
 	GitPtr g = git();
 	updateRemoteInfo(g);
-	onUpdateCommitLog();
+	openRepositoryMain(git(), false, false, true);
 }
 
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
@@ -1942,7 +2220,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 		}
 	}
 
-	m->git_command_cache.clear();
+	currentRepositoryData()->git_command_cache.clear();
 
 	// qDebug() << "--- Elapsed B:" << data.process_name << data.elapsed.elapsed() << "ms";
 }
@@ -2147,23 +2425,6 @@ Git::CommitItem const &MainWindow::selectedCommitItem() const
 	return commitItem(i);
 }
 
-//
-void MainWindow::setupUpdateCommitLog()
-{
-	connect(this, &MainWindow::signalUpdateCommitLog, this, &MainWindow::onUpdateCommitLog);
-}
-
-void MainWindow::onUpdateCommitLog()
-{
-	openRepositoryMain(git(), false, false, true);
-}
-
-void MainWindow::updateCommitLog()
-{
-	emit signalUpdateCommitLog();
-}
-
-
 /**
  * @brief MainWindow::commit
  * @param amend
@@ -2303,7 +2564,7 @@ void MainWindow::pull(GitPtr g)
 	runPtyGit(tr("Pulling..."), g, Git_pull{}, RUN_PTY_CALLBACK{
 		RepositoryData repodata = userdata.value<RepositoryData>();
 		doReopenRepository(status, repodata);
-	}, QVariant::fromValue(m->current_repository_model->repository_data));
+	}, QVariant::fromValue(m->current_repository));
 }
 
 void MainWindow::push_tags(GitPtr g)
@@ -2448,29 +2709,6 @@ void MainWindow::resetFile(const QStringList &paths)
 			reopenRepository(true);
 		}
 	}
-}
-
-/**
- * @brief MainWindow::clearAuthentication
- *
- * 認証情報をクリアする
- */
-void MainWindow::clearAuthentication()
-{
-	clearSshAuthentication();
-	m->http_uid.clear();
-	m->http_pwd.clear();
-}
-
-/**
- * @brief MainWindow::clearSshAuthentication
- *
- * SSH認証情報をクリアする
- */
-void MainWindow::clearSshAuthentication()
-{
-	m->ssh_passphrase_user.clear();
-	m->ssh_passphrase_pass.clear();
 }
 
 /**
@@ -2685,7 +2923,7 @@ BranchLabelList MainWindow::rowLabels(int row, bool sorted) const
 {
 	BranchLabelList list;
 	{
-		auto const &map = currentRepositoryModel()->label_map;
+		auto const &map = currentRepositoryData()->label_map;
 		auto it = map.find(row);
 		if (it != map.end()) {
 			list = it->second;
@@ -2990,75 +3228,6 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_n
 	saveRepositoryBookmark(item);
 }
 
-void MainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
-{
-	m->ssh_passphrase_user = user;
-	m->ssh_passphrase_pass = pass;
-}
-
-std::string MainWindow::sshPassphraseUser() const
-{
-	return m->ssh_passphrase_user;
-}
-
-std::string MainWindow::sshPassphrasePass() const
-{
-	return m->ssh_passphrase_pass;
-}
-
-void MainWindow::httpSetAuthentication(const std::string &user, const std::string &pass)
-{
-	m->http_uid = user;
-	m->http_pwd = pass;
-}
-
-std::string MainWindow::httpAuthenticationUser() const
-{
-	return m->http_uid;
-}
-
-std::string MainWindow::httpAuthenticationPass() const
-{
-	return m->http_pwd;
-}
-
-ApplicationSettings *MainWindow::appsettings()
-{
-	return &global->appsettings;
-}
-
-const ApplicationSettings *MainWindow::appsettings() const
-{
-	return &global->appsettings;
-}
-
-const Git::CommitItem *MainWindow::getLog(int index) const
-{
-	Git::CommitItemList const &logs = commitlog();
-	return (index >= 0 && index < (int)logs.size()) ? &logs[index] : nullptr;
-}
-
-void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
-{
-	ASSERT_MAIN_THREAD();
-	if (log.p->commit_log) currentRepositoryModel()->commit_log = *log.p->commit_log;
-	if (log.p->branch_map) currentRepositoryModel()->branch_map = *log.p->branch_map;
-	if (log.p->tag_map) currentRepositoryModel()->tag_map = *log.p->tag_map;
-	if (log.p->label_map) currentRepositoryModel()->label_map = *log.p->label_map;
-
-	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
-}
-
-void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
-{
-	emit sigSetCommitLog(exdata);
-}
-
-void MainWindow::connectSetCommitLog()
-{
-	connect(this, &MainWindow::sigSetCommitLog, this, &MainWindow::onSetCommitLog);
-}
-
 /**
  * @brief MainWindow::queryCommitLog
  * @param p
@@ -3174,17 +3343,17 @@ QList<Git::Diff> const *MainWindow::diffResult() const
 
 std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap()
 {
-	return &currentRepositoryModel()->diff_cache;
+	return &currentRepositoryData()->diff_cache;
 }
 
 void MainWindow::clearLabelMap()
 {
-	currentRepositoryModel()->label_map.clear();
+	currentRepositoryData()->label_map.clear();
 }
 
 GitObjectCache *MainWindow::getObjCache()
 {
-	return &currentRepositoryModel()->object_cache;
+	return &currentRepositoryData()->object_cache;
 }
 
 Git::CommitID MainWindow::getHeadId() const
@@ -3341,7 +3510,7 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
 
 std::map<Git::CommitID, BranchList> const &MainWindow::branchmap() const
 {
-	return currentRepositoryModel()->branch_map;
+	return currentRepositoryData()->branch_map;
 }
 
 void MainWindow::updateWindowTitle(Git::User const &user)
@@ -3362,7 +3531,7 @@ void MainWindow::updateWindowTitle(GitPtr g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map)
+std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map) const
 {
 	QString message_ex;
 	BranchLabelList label_list;
@@ -3373,7 +3542,6 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitIte
 			label.text = "HEAD";
 			label_list.push_back(label);
 		}
-		// BranchList list = findBranch(commit.commit_id);
 		auto it = branch_map.find(commit.commit_id);
 		if (it != branch_map.end() && !it->second.empty()) {
 			BranchList const &list = it->second;
@@ -3411,11 +3579,19 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitIte
 	return {message_ex, label_list};
 }
 
-std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(int row)
+/**
+ * @brief MainWindow::labelsInfoText
+ * @param commit
+ * @return
+ *
+ * コミットに関するラベル文字列を取得
+ *
+ * e.g. " {hoge} {fuga} {r/o/piyo}"
+ */
+QString MainWindow::labelsInfoText(Git::CommitItem const &commit)
 {
-	ASSERT_MAIN_THREAD();
-	Git::CommitItem commit = commitlog()[row];
-	return makeCommitLabels(commit, RepositoryModel().branch_map, RepositoryModel().tag_map);
+	auto tuple = makeCommitLabels(commit, m->current_repository_data.branch_map, m->current_repository_data.tag_map);
+	return std::get<0>(tuple);
 }
 
 /**
@@ -3531,10 +3707,8 @@ void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 
 QStringList MainWindow::findGitObject(const QString &id) const
 {
-	return GitObjectManager::findObject(id, m->current_repository_model->repository_data.local_dir);
+	return GitObjectManager::findObject(id, currentWorkingCopyDir());
 }
-
-
 
 void MainWindow::saveApplicationSettings()
 {
@@ -3564,7 +3738,7 @@ void MainWindow::setSubmodules(const QList<Git::SubmoduleItem> &submodules)
 bool MainWindow::runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryData *repo)
 {
 	if (!repo) {
-		repo = &m->current_repository_model->repository_data;
+		repo = &currentRepository();
 	}
 	QString dir = repo->local_dir;
 	dir.replace('\\', '/');
@@ -3865,7 +4039,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 
 		for (Git::Diff const &diff : *diffResult()) {
 			QString key = GitDiff::makeKey(diff);
-			currentRepositoryModel()->diff_cache[key] = diff;
+			currentRepositoryData()->diff_cache[key] = diff;
 		}
 	}
 }
@@ -3953,11 +4127,6 @@ Git::Object MainWindow::internalCatFile(const QString &id) //@TODO:
 Git::Object MainWindow::catFile(QString const &id)
 {
 	return internalCatFile(git(), id);
-}
-
-void MainWindow::internalOpenRepository(GitPtr g, bool fetch, bool keep_selection)
-{
-	openRepositoryMain(g, true, fetch, keep_selection);
 }
 
 /**
@@ -4188,171 +4357,10 @@ DONE:;
 	}
 }
 
-/**
- * @brief コミットログテーブルウィジェットを構築
- */
-void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row)
-{
-	ASSERT_MAIN_THREAD();
-
-	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
-	Q_ASSERT(commit_log);
-
-	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
-	std::map<Git::CommitID, TagList> const &tag_map = exdata.p->tag_map.value();
-
-	exdata.p->label_map = std::map<int, BranchLabelList>();
-	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
-
-	auto updatecommitgraph = std::async(std::launch::async, [&](){
-		updateCommitGraph(commit_log);
-	});
-
-	const int count = (int)commit_log->size(); // ログの数
-
-	std::vector<CommitRecord> records;
-	records.reserve(count);
-
-	int selrow = 0;
-
-	for (int row = 0; row < count; row++) {
-		Git::CommitItem const &commit = (*commit_log)[row];
-
-		auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
-		(*label_map)[row] = labels;
-
-		CommitRecord rec;
-
-		bool isHEAD = (commit.commit_id == getHeadId());
-		if (Git::isUncommited(commit)) { // 未コミットの時
-			rec.bold = true; // 太字
-			selrow = row;
-		} else {
-			bool uncommited_changes = isThereUncommitedChanges();
-			if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
-				rec.bold = true; // 太字
-				selrow = row;
-			}
-			rec.commit_id = abbrevCommitID(commit);
-		}
-
-		rec.datetime = misc::makeDateTimeString(commit.commit_date);
-		rec.author = commit.author;
-		rec.message = commit.message;
-		rec.tooltip = rec.message + message_ex;
-
-		records.push_back(rec);
-	}
-
-	ui->tableWidget_log->setRecords(std::move(records));
-
-	m->last_focused_file_list = nullptr;
-
-	ui->tableWidget_log->setFocus();
-
-	if (select_row < 0) {
-		setCurrentLogRow(selrow);
-	} else {
-		setCurrentLogRow(select_row);
-		ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
-	}
-
-	updateUI();
-
-	updatecommitgraph.wait();
-	setCommitLog(exdata);
-}
-
 void MainWindow::updateHEAD(GitPtr g)
 {
 	auto head = getObjCache()->revParse(g, "HEAD");
 	setHeadId(head);
-}
-
-void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, bool keep_selection)
-{
-	ASSERT_MAIN_THREAD();
-
-	if (!isValidWorkingCopy(g)) return;
-
-	PtyProcess *pty = getPtyProcess();
-	if (pty) {
-		pty->wait();
-	}
-
-	getObjCache()->setup(g);
-
-	m->git_command_cache = Git::CommandCache(true);
-
-	if (clear_log) { // ログをクリア
-		currentRepositoryModel()->commit_log.clear();
-	}
-
-	// リポジトリ情報をクリア
-	{
-		clearLabelMap();
-		setUncommitedChanges(false);
-		clearLogContents();
-
-		internalClearRepositoryInfo();
-		ui->label_repo_name->setText(QString());
-		ui->label_branch_name->setText(QString());
-	}
-
-	// HEAD を取得
-	updateHEAD(g);
-
-	// ユーザー情報を取得
-	Git::User user = g->getUser(Git::Source::Default);
-
-	// コミットログを作成
-	{
-		CommitLogExchangeData exdata = queryCommitLog(g); // コミットログとブランチ情報を取得
-
-		int scroll_pos = -1;
-		int select_row = -1;
-		if (keep_selection) {
-			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
-			select_row = ui->tableWidget_log->currentRow();
-		}
-
-		makeCommitLog(exdata, scroll_pos, select_row);
-	}
-
-	// ポジトリの情報を設定
-	{
-		QString branch_name;
-		if (currentBranch().flags & Git::Branch::HeadDetachedAt) {
-			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
-		}
-		if (currentBranch().flags & Git::Branch::HeadDetachedFrom) {
-			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
-		}
-		if (branch_name.isEmpty()) {
-			branch_name = currentBranchName();
-		}
-
-		QString repo_name = currentRepositoryName();
-		setRepositoryInfo(repo_name, branch_name);
-	}
-
-	// ウィンドウタイトルを更新
-	updateWindowTitle(user);
-
-	// ファイルリストを更新
-	onLogCurrentItemChanged();
-
-	//
-
-	m->commit_detail_getter.stop();
-	m->commit_detail_getter.start(g->dup());
-
-	if (do_fetch) {
-		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
-		if (do_fetch) {
-			fetch(g, false);
-		}
-	}
 }
 
 /**
@@ -4428,17 +4436,16 @@ void MainWindow::updateStatusBarText()
 	} else if (w == ui->tableWidget_log) {
 		Git::CommitItem const *commit = currentCommitItem();
 		if (commit) {
-
 			if (Git::isUncommited(*commit)) {
 				text = tr("Uncommited changes");
 			} else {
 				QString id = commit->commit_id.toQString();
 				int row = ui->tableWidget_log->actualLogIndex();
-				auto [message_ex, label_list] = makeCommitLabels(row);
+				QString labels = labelsInfoText(*commit);
 				text = QString("%1 : %2%3")
 					   .arg(id.mid(0, 7))
 					   .arg(commit->message)
-					   .arg(message_ex)
+					   .arg(labels)
 					   ;
 			}
 		}
@@ -5352,41 +5359,11 @@ QString MainWindow::selectSshCommand(bool save)
 	return selectCommand_("ssh", cmdlist, list, path, fn);
 }
 
-const Git::Branch &MainWindow::currentBranch() const
-{
-	return m->current_branch;
-}
-
-void MainWindow::setCurrentBranch(const Git::Branch &b)
-{
-	m->current_branch = b;
-}
-
-const RepositoryData &MainWindow::currentRepository() const
-{
-	return m->current_repository_model->repository_data;
-}
-
-QString MainWindow::currentRepositoryName() const
-{
-	return currentRepository().name;
-}
-
-QString MainWindow::currentRemoteName() const
-{
-	return m->current_remote_name;
-}
-
-QString MainWindow::currentBranchName() const
-{
-	return currentBranch().name;
-}
-
 GitPtr MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey) const
 {
 	GitPtr g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
 	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
-		g->setCommandCache(m->git_command_cache);
+		g->setCommandCache(currentRepositoryData()->git_command_cache);
 		return g;
 	}
 
@@ -5673,8 +5650,8 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 		saveRepositoryBookmarks();
 	}
 
-	if (m->current_repository_model->repository_data.local_dir == local_dir) {
-		m->current_repository_model->repository_data.ssh_key = ssh_key;
+	if (m->current_repository.local_dir == local_dir) {
+		m->current_repository.ssh_key = ssh_key;
 	}
 }
 
@@ -6360,19 +6337,6 @@ void MainWindow::jump(GitPtr g, QString const &text)
 	if (text.isEmpty()) return;
 
 	Git::CommitID id = g->rev_parse(text);
-	if (!id.isValid() && Git::isValidID(text)) {
-		QStringList list = findGitObject(text);
-		if (list.isEmpty()) {
-			QMessageBox::warning(this, tr("Jump"), QString("%1\n\n").arg(text) + tr("No such commit"));
-			return;
-		}
-		ObjectBrowserDialog dlg2(this, list);
-		if (dlg2.exec() == QDialog::Accepted) {
-			id = Git::CommitID(dlg2.text());
-			if (!id.isValid()) return;
-		}
-	}
-
 	if (!jumpToCommit(id)) {
 		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
 	}
@@ -7078,8 +7042,7 @@ void MainWindow::on_action_submodules_triggered()
 
 void MainWindow::on_action_submodule_add_triggered()
 {
-	QString dir = currentRepository().local_dir;
-	submodule_add({}, dir);
+	submodule_add({}, currentWorkingCopyDir());
 }
 
 void MainWindow::on_action_submodule_update_triggered()
@@ -7102,7 +7065,7 @@ void MainWindow::on_action_create_desktop_launcher_file_triggered()
 
 Git::CommitItemList const &MainWindow::commitlog() const
 {
-	return currentRepositoryModel()->commit_log;
+	return currentRepositoryData()->commit_log;
 }
 
 void MainWindow::clearLogContents()

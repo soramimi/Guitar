@@ -12,10 +12,7 @@ typedef QList<Git::Tag> TagList;
 typedef QList<Git::Branch> BranchList;
 typedef QList<BranchLabel> BranchLabelList;
 
-class RepositoryModel {
-public:
-	RepositoryData repository_data;
-
+struct RepositoryModel {
 	Git::CommitItemList commit_log;
 	std::map<Git::CommitID, BranchList> branch_map;
 	std::map<Git::CommitID, TagList> tag_map;
@@ -24,9 +21,7 @@ public:
 	std::map<QString, Git::Diff> diff_cache;
 	GitObjectCache object_cache;
 
-public:
-
-	void setCurrentLogRow(int row);
+	Git::CommandCache git_command_cache;
 };
 
 struct CommitLogExchangeData {

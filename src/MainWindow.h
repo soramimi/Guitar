@@ -14,7 +14,7 @@
 class AddRepositoryDialog;
 class ApplicationSettings;
 class BranchLabel;
-class RepositoryModel;
+struct RepositoryData;
 class GitObjectCache;
 class QListWidget;
 class QListWidgetItem;
@@ -184,9 +184,6 @@ public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
 private:
-
-	void internalOpenRepository(GitPtr g, bool fetch, bool keep_selection);
-
 	void openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
@@ -327,8 +324,8 @@ private:
 	void updateWindowTitle(const Git::User &user);
 	void updateWindowTitle(GitPtr g);
 
-	std::tuple<QString, BranchLabelList> makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map);
-	std::tuple<QString, BranchLabelList> makeCommitLabels(int row);
+	std::tuple<QString, BranchLabelList> makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map) const;
+	QString labelsInfoText(Git::CommitItem const &commit);
 
 	void removeRepositoryFromBookmark(RepositoryTreeIndex const &index, bool ask);
 	void openTerminal(const RepositoryData *repo);
@@ -527,11 +524,11 @@ public:
 	BranchLabelList rowLabels(int row, bool sorted = true) const;
 private:
 	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
-	void setupUpdateCommitLog();
+	// void setupUpdateCommitLog();
 signals:
 	void signalUpdateCommitLog();
 public:
-	void updateCommitLog();
+	// void updateCommitLog();
 
 public slots:
 	void internalWriteLog(const LogData &logdata);
@@ -633,7 +630,6 @@ private slots:
 	void onShowProgress(const QString &text, bool cancel_button);
 	void onSetProgress(float progress);
 	void onHideProgress();
-	void onUpdateCommitLog();
 	void on_action_rebase_abort_triggered();
 
 	void onShowFileList(FilesListType files_list_type);
@@ -713,8 +709,8 @@ public:
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
 
-	RepositoryModel *currentRepositoryModel();
-	const RepositoryModel *currentRepositoryModel() const;
+	RepositoryModel *currentRepositoryData();
+	const RepositoryModel *currentRepositoryData() const;
 };
 
 class MainWindowExchangeData {

@@ -198,7 +198,6 @@ SOURCES += \
 	src/MyTableWidgetDelegate.cpp \
 	src/MyTextEditorWidget.cpp \
 	src/MyToolButton.cpp \
-	src/ObjectBrowserDialog.cpp \
 	src/OverrideWaitCursor.cpp \
 	src/Photoshop.cpp \
 	src/ProgressTextLabel.cpp \
@@ -357,7 +356,6 @@ HEADERS += \
 	src/MyTableWidgetDelegate.h \
 	src/MyTextEditorWidget.h \
 	src/MyToolButton.h \
-	src/ObjectBrowserDialog.h \
 	src/OverrideWaitCursor.h \
 	src/Photoshop.h \
 	src/ProgressTextLabel.h \
@@ -481,7 +479,6 @@ FORMS    += \
 	src/LineEditDialog.ui \
 	src/MainWindow.ui \
 	src/MergeDialog.ui \
-	src/ObjectBrowserDialog.ui \
 	src/PushDialog.ui \
 	src/ReflogWindow.ui \
 	src/RemoteAdvancedOptionWidget.ui \
