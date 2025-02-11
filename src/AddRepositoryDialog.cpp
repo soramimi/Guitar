@@ -207,13 +207,13 @@ Git::CloneData AddRepositoryDialog::makeCloneData() const
 	return clonedata;
 }
 
-RepositoryData AddRepositoryDialog::repositoryData() const
+RepositoryInfo AddRepositoryDialog::repositoryInfo() const
 {
-	RepositoryData reposdata;
-	reposdata.local_dir = localPath(true);
-	reposdata.name = repositoryName();
-	reposdata.ssh_key = overridedSshKey();
-	return reposdata;
+	RepositoryInfo info;
+	info.local_dir = localPath(true);
+	info.name = repositoryName();
+	info.ssh_key = overridedSshKey();
+	return info;
 }
 
 void AddRepositoryDialog::updateUI()

@@ -2,7 +2,7 @@
 #include "ui_EditProfilesDialog.h"
 #include "ApplicationGlobal.h"
 #include "BlockSignals.h"
-#include "RepositoryData.cpp"
+#include "RepositoryInfo.cpp"
 #include "UserEvent.h"
 #include <QFile>
 #include <QXmlStreamWriter>

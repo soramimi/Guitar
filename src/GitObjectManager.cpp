@@ -18,7 +18,7 @@ GitObjectManager::GitObjectManager()
 GitObjectManager::GitObjectManager(GitPtr g)
 {
 	init();
-	setup(g);
+	setup();
 }
 
 void GitObjectManager::init()
@@ -27,9 +27,8 @@ void GitObjectManager::init()
 	subdir_git_objects_pack = subdir_git_objects / "pack";
 }
 
-void GitObjectManager::setup(GitPtr g)
+void GitObjectManager::setup()
 {
-	// this->g = g;
 	clearIndexes();
 }
 
@@ -40,7 +39,7 @@ QString GitObjectManager::workingDir(GitPtr g)
 
 void GitObjectManager::loadIndexes(GitPtr g)
 {
-	QMutexLocker lock(&mutex);
+	// QMutexLocker lock(&mutex);
 	if (git_idx_list.empty()) {
 		QString path = workingDir(g) / subdir_git_objects_pack;
 		QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
@@ -249,13 +248,11 @@ size_t GitObjectCache::size() const
 	return size;
 }
 
-void GitObjectCache::setup(GitPtr g)
+void GitObjectCache::clear()
 {
 	items.clear();
 	revparsemap.clear();
-	if (g) {
-		object_manager.setup(g->dup());
-	}
+	object_manager.setup();
 }
 
 Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
@@ -263,7 +260,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 	if (!g) return {};
 
 	{
-		QMutexLocker lock(&object_manager.mutex);
+		// QMutexLocker lock(&object_manager.mutex);
 		auto it = revparsemap.find(name);
 		if (it != revparsemap.end()) {
 			return it->second;
@@ -273,7 +270,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 	auto id = g->rev_parse(name);
 
 	{
-		QMutexLocker lock(&object_manager.mutex);
+		// QMutexLocker lock(&object_manager.mutex);
 		revparsemap[name] = id;
 		return id;
 	}
@@ -282,7 +279,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 {
 	{
-		QMutexLocker lock(&object_manager.mutex);
+		// QMutexLocker lock(&object_manager.mutex);
 		size_t n = items.size();
 		size_t i = n;
 		while (i > 0) {
@@ -309,7 +306,7 @@ Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 	Git::Object::Type type = Git::Object::Type::UNKNOWN;
 
 	auto Store = [&](){
-		QMutexLocker lock(&object_manager.mutex);
+		// QMutexLocker lock(&object_manager.mutex);
 		Item *item = new Item();
 		item->id = id;
 		item->ba = std::move(ba);

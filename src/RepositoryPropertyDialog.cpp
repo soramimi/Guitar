@@ -11,12 +11,12 @@
 struct RepositoryPropertyDialog::Private {
 	GitPtr git;
 	std::vector<Git::Remote> remotes;
-	RepositoryData repository;
+	RepositoryInfo repository;
 	bool remote_changed = false;
 	bool name_changed = false;
 };
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryData const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryInfo const &item, bool open_repository_menu)
 	: QDialog(parent)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, m(new Private)

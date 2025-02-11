@@ -112,6 +112,7 @@ macx {
 SOURCES += \
 	$$PWD/src/CommitLogTableWidget.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
+	$$PWD/src/RepositoryInfo.cpp \
 	$$PWD/src/RepositoryModel.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
 	$$PWD/src/Util.cpp \
@@ -208,7 +209,6 @@ SOURCES += \
 	src/ReflogWindow.cpp \
 	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
-	src/RepositoryData.cpp \
 	src/RepositoryInfoFrame.cpp \
 	src/RepositoryPropertyDialog.cpp \
 	src/RepositoryUrlLineEdit.cpp \
@@ -271,6 +271,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/CommitLogTableWidget.h \
 	$$PWD/src/IncrementalSearch.h \
+	$$PWD/src/RepositoryInfo.h \
 	$$PWD/src/RepositoryModel.h \
     $$PWD/src/RepositoryTreeWidget.h \
 	$$PWD/src/Util.h \
@@ -366,7 +367,6 @@ HEADERS += \
 	src/ReflogWindow.h \
 	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
-	src/RepositoryData.h \
 	src/RepositoryInfoFrame.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositorySearchResultItem.h \

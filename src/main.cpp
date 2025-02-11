@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationName(global->application_name);
 
 	qRegisterMetaType<AvatarLoaderItem>("AvatarLoaderItem");
-	qRegisterMetaType<RepositoryData>("RepositoryData");
+	qRegisterMetaType<RepositoryInfo>("RepositoryInfo");
 	qRegisterMetaType<GeneratedCommitMessage>("GeneratedCommitMessage");
 	qRegisterMetaType<MainWindowExchangeData>("MainWindowExchangeData");
 	qRegisterMetaType<GitCommandRunner>("GitCommandRunner");

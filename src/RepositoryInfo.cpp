@@ -1,11 +1,11 @@
-#include "RepositoryData.h"
+#include "RepositoryInfo.h"
 #include "XmlTagState.h"
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 #include <QFile>
 #include <QStringRef>
 
-bool RepositoryBookmark::save(QString const &path, QList<RepositoryData> const *items)
+bool RepositoryBookmark::save(QString const &path, QList<RepositoryInfo> const *items)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
@@ -13,7 +13,7 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryData> const *
 		writer.setAutoFormatting(true);
 		writer.writeStartDocument();
 		writer.writeStartElement("repositories");
-		for (RepositoryData const &item : *items) {
+		for (RepositoryInfo const &item : *items) {
 			if (item.name.isEmpty() && item.local_dir.isEmpty()) {
 				continue;
 			}
@@ -41,12 +41,12 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryData> const *
 	return false;
 }
 
-QList<RepositoryData> RepositoryBookmark::load(QString const &path)
+QList<RepositoryInfo> RepositoryBookmark::load(QString const &path)
 {
-	QList<RepositoryData> items;
+	QList<RepositoryInfo> items;
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
-		RepositoryData item;
+		RepositoryInfo item;
 		QString text;
 		XmlTagState state;
 		QXmlStreamReader reader(&file);
@@ -59,7 +59,7 @@ QList<RepositoryData> RepositoryBookmark::load(QString const &path)
 				{
 					QXmlStreamAttributes atts = reader.attributes();
 					if (state == "/repositories/repository") {
-						item = RepositoryData();
+						item = RepositoryInfo();
 						item.name = atts.value("name").toString();
 						item.group = atts.value("group").toString();
 					} else if (state == "/repositories/repository/local") {

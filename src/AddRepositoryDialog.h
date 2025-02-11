@@ -2,7 +2,7 @@
 #define ADDREPOSITORYDIALOG_H
 
 #include "Git.h"
-#include "RepositoryData.h"
+#include "RepositoryInfo.h"
 #include <QDialog>
 
 namespace Ui {
@@ -58,7 +58,7 @@ public:
 	QString overridedSshKey() const;
 	AddRepositoryDialog::Mode mode() const;
 	Git::CloneData makeCloneData() const;
-	RepositoryData repositoryData() const;
+	RepositoryInfo repositoryInfo() const;
 private slots:
 	void on_comboBox_local_working_folder_currentTextChanged(const QString &arg1);
 	void on_comboBox_search_currentIndexChanged(int index);

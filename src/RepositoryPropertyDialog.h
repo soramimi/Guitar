@@ -1,7 +1,7 @@
 #ifndef REPOSITORYPROPERTYDIALOG_H
 #define REPOSITORYPROPERTYDIALOG_H
 
-#include "RepositoryData.h"
+#include "RepositoryInfo.h"
 #include "EditRemoteDialog.h"
 #include <QDialog>
 #include "Git.h"
@@ -35,7 +35,7 @@ private:
 	void setNameEditMode(bool f);
 	void reflectRemotesTable();
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryData const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryInfo const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

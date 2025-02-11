@@ -3,7 +3,7 @@
 
 #include "BranchLabel.h"
 #include "GitObjectManager.h"
-#include "RepositoryData.h"
+#include "RepositoryInfo.h"
 #include <optional>
 #include <map>
 #include <memory>
@@ -12,7 +12,7 @@ typedef QList<Git::Tag> TagList;
 typedef QList<Git::Branch> BranchList;
 typedef QList<BranchLabel> BranchLabelList;
 
-struct RepositoryModel {
+struct RepositoryData {
 	Git::CommitItemList commit_log;
 	std::map<Git::CommitID, BranchList> branch_map;
 	std::map<Git::CommitID, TagList> tag_map;

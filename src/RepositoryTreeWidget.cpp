@@ -285,7 +285,7 @@ RepositoryTreeWidget::Filter RepositoryTreeWidget::makeFilter(QString const &fil
 	return filter;
 }
 
-bool match(RepositoryData const &repo, RepositoryTreeWidget::Filter const &filter)
+bool match(RepositoryInfo const &repo, RepositoryTreeWidget::Filter const &filter)
 {
 	if (filter.isEmpty()) return true; // フィルターが空の場合は常にtrue
 	if (filter.re.get()) { // 正規表現が有効な場合
@@ -308,7 +308,7 @@ static QDateTime repositoryLastModifiedTime(QString const &path)
 #endif
 }
 
-void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryData> const &repos, QString const &filtertext, int select_row)
+void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
 {
 	RepositoryTreeWidget *tree = this;
 	tree->clear();
@@ -327,7 +327,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		std::map<QString, QTreeWidgetItem *> parentmap;
 
 		for (int i = 0; i < repos.size(); i++) {
-			RepositoryData const &repo = repos.at(i);
+			RepositoryInfo const &repo = repos.at(i);
 
 			if (!match(repo, filter)) continue;
 
@@ -394,7 +394,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 
 		struct Item {
 			int index;
-			RepositoryData const *data;
+			RepositoryInfo const *data;
 			QDateTime lastModified;
 			// QFileInfo info;
 		};
@@ -407,7 +407,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 					mainwindow()->setProgress((float)i / repos.size());
 					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 				}
-				RepositoryData const &item = repos.at(i);
+				RepositoryInfo const &item = repos.at(i);
 				// QString gitpath = item.local_dir / ".git";
 				// QFileInfo info(gitpath);
 				// items.push_back({i, &item, info});

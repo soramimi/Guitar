@@ -109,12 +109,12 @@ struct MainWindow::Private {
 
 	QString starting_dir;
 
-	RepositoryData current_repository;
-	RepositoryModel current_repository_data;
+	RepositoryInfo current_repository;
+	RepositoryData current_repository_data;
 
 	Git::User current_git_user;
 
-	QList<RepositoryData> repos;
+	QList<RepositoryInfo> repos;
 	QList<Git::Diff> diff_result;
 	QList<Git::SubmoduleItem> submodules;
 
@@ -146,7 +146,7 @@ struct MainWindow::Private {
 
 	Git::CommitID head_id;
 
-	RepositoryData temp_repo_for_clone_complete;
+	RepositoryInfo temp_repo_for_clone_complete;
 	QVariant pty_process_completion_data;
 
 	std::vector<EventItem> event_item_list;
@@ -339,12 +339,12 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-RepositoryModel *MainWindow::currentRepositoryData()
+RepositoryData *MainWindow::currentRepositoryData()
 {
 	return &m->current_repository_data;
 }
 
-RepositoryModel const *MainWindow::currentRepositoryData() const
+RepositoryData const *MainWindow::currentRepositoryData() const
 {
 	return &m->current_repository_data;
 }
@@ -359,7 +359,7 @@ void MainWindow::setCurrentBranch(const Git::Branch &b)
 	m->current_branch = b;
 }
 
-const RepositoryData &MainWindow::currentRepository() const
+const RepositoryInfo &MainWindow::currentRepository() const
 {
 	return m->current_repository;
 }
@@ -936,7 +936,7 @@ QString MainWindow::treeItemGroup(QTreeWidgetItem *item)
 	return group;
 }
 
-void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryData> *repos)
+void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryInfo> *repos)
 {
 	QString name = treeItemName(item);
 	if (isGroupItem(item)) {
@@ -948,9 +948,9 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 		}
 	} else {
 		RepositoryTreeIndex index = repositoryTreeIndex(item);
-		std::optional<RepositoryData> repo = repositoryItem(index);
+		std::optional<RepositoryInfo> repo = repositoryItem(index);
 		if (repo) {
-			RepositoryData newrepo = *repo;
+			RepositoryInfo newrepo = *repo;
 			newrepo.name = name;
 			newrepo.group = group;
 			item->setData(0, IndexRole, repos->size());
@@ -996,12 +996,12 @@ std::map<Git::CommitID, TagList> MainWindow::queryTags(GitPtr g)
 	return tag_map;
 }
 
-QList<RepositoryData> const &MainWindow::repositoryList() const
+QList<RepositoryInfo> const &MainWindow::repositoryList() const
 {
 	return m->repos;
 }
 
-void MainWindow::setRepositoryList(QList<RepositoryData> &&list)
+void MainWindow::setRepositoryList(QList<RepositoryInfo> &&list)
 {
 	m->repos = std::move(list);
 }
@@ -1025,7 +1025,7 @@ bool MainWindow::saveRepositoryBookmarks()
  */
 void MainWindow::refrectRepositories()
 {
-	QList<RepositoryData> newrepos;
+	QList<RepositoryInfo> newrepos;
 	int n = ui->treeWidget_repos->topLevelItemCount();
 	for (int i = 0; i < n; i++) {
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
@@ -1151,13 +1151,13 @@ QColor MainWindow::color(unsigned int depth)
  *
  * 登録済みのリポジトリを探す
  */
-RepositoryData const *MainWindow::findRegisteredRepository(QString *workdir) const
+RepositoryInfo const *MainWindow::findRegisteredRepository(QString *workdir) const
 {
 	*workdir = QDir(*workdir).absolutePath();
 	workdir->replace('\\', '/');
 
 	if (Git::isValidWorkingCopy(*workdir)) {
-		for (RepositoryData const &item : repositoryList()) {
+		for (RepositoryInfo const &item : repositoryList()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
 			cs = Qt::CaseInsensitive;
@@ -1227,7 +1227,7 @@ void MainWindow::setPreferredRepositoryGroup(QString const &group)
  *
  * リポジトリブックマークを保存する
  */
-void MainWindow::saveRepositoryBookmark(RepositoryData item)
+void MainWindow::saveRepositoryBookmark(RepositoryInfo item)
 {
 	if (item.local_dir.isEmpty()) return;
 
@@ -1237,11 +1237,11 @@ void MainWindow::saveRepositoryBookmark(RepositoryData item)
 
 	item.group = preferredRepositoryGroup();
 
-	QList<RepositoryData> repos = repositoryList();
+	QList<RepositoryInfo> repos = repositoryList();
 
 	bool done = false;
 	for (auto &repo : repos) {
-		RepositoryData *p = &repo;
+		RepositoryInfo *p = &repo;
 		if (item.local_dir == p->local_dir) {
 			*p = item;
 			done = true;
@@ -1294,7 +1294,7 @@ void MainWindow::clearSshAuthentication()
  *
  * 現在のリポジトリを設定する
  */
-void MainWindow::setCurrentRepository(const RepositoryData &repo, bool clear_authentication)
+void MainWindow::setCurrentRepository(const RepositoryInfo &repo, bool clear_authentication)
 {
 	if (clear_authentication) {
 		clearAuthentication();
@@ -1457,12 +1457,13 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 		pty->wait();
 	}
 
-	getObjCache()->setup(g);
 
 	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
 
 	if (clear_log) { // ログをクリア
-		currentRepositoryData()->commit_log.clear();
+		m->current_repository_data = {};
+	} else {
+		getObjCache()->clear();
 	}
 
 	// リポジトリ情報をクリア
@@ -1597,7 +1598,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 		name = makeRepositoryName(dir);
 	}
 
-	RepositoryData item;
+	RepositoryInfo item;
 	item.local_dir = dir;
 	item.name = name;
 	item.group = preferredRepositoryGroup();
@@ -1628,7 +1629,7 @@ void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const Q
 	if (info1.isDir()) {
 		QFileInfo info2(dir / ".git");
 		if (info2.isDir()) {
-			RepositoryData item;
+			RepositoryInfo item;
 			item.local_dir = info1.absoluteFilePath();
 			item.name = makeRepositoryName(item.local_dir);
 			item.group = group;
@@ -1698,7 +1699,7 @@ void MainWindow::onRemoteInfoChanged()
  *
  * リポジトリプロパティダイアログを表示する
  */
-void MainWindow::execRepositoryPropertyDialog(const RepositoryData &repo, bool open_repository_menu)
+void MainWindow::execRepositoryPropertyDialog(const RepositoryInfo &repo, bool open_repository_menu)
 {
 	QString workdir = repo.local_dir;
 
@@ -2076,7 +2077,7 @@ void MainWindow::reopenRepository(bool validate)
  */
 void MainWindow::openSelectedRepository()
 {
-	std::optional<RepositoryData> repo = selectedRepositoryItem();
+	std::optional<RepositoryInfo> repo = selectedRepositoryItem();
 
 	if (repo) {
 		setCurrentRepository(*repo, true);
@@ -2237,7 +2238,7 @@ void MainWindow::connectPtyProcessCompleted()
  *
  * リポジトリを再オープンする
  */
-void MainWindow::doReopenRepository(ProcessStatus const &status, RepositoryData const &repodata)
+void MainWindow::doReopenRepository(ProcessStatus const &status, RepositoryInfo const &repodata)
 {
 	ASSERT_MAIN_THREAD();
 
@@ -2322,7 +2323,7 @@ bool MainWindow::isRetryQueued() const
 	return m->retry_function != nullptr;
 }
 
-bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryData const &repodata)
+bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryInfo const &repodata)
 {
 	// 既存チェック
 	
@@ -2398,7 +2399,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	dir = dlg.dir();
 	const QString ssh_key = dlg.overridedSshKey();
 	
-	RepositoryData repos_item_data;
+	RepositoryInfo repos_item_data;
 	repos_item_data.local_dir = dir;
 	repos_item_data.local_dir.replace('\\', '/');
 	repos_item_data.name = makeRepositoryName(dir);
@@ -2562,7 +2563,7 @@ void MainWindow::fetch_tags_f(GitPtr g)
 void MainWindow::pull(GitPtr g)
 {
 	runPtyGit(tr("Pulling..."), g, Git_pull{}, RUN_PTY_CALLBACK{
-		RepositoryData repodata = userdata.value<RepositoryData>();
+		RepositoryInfo repodata = userdata.value<RepositoryInfo>();
 		doReopenRepository(status, repodata);
 	}, QVariant::fromValue(m->current_repository));
 }
@@ -2833,13 +2834,13 @@ void MainWindow::addRepositoryAccepted(AddRepositoryDialog const &dlg)
 {
 	if (dlg.mode() == AddRepositoryDialog::Clone) {
 		auto cdata = dlg.makeCloneData();
-		auto rdata = dlg.repositoryData();
+		auto rdata = dlg.repositoryInfo();
 		cloneRepository(cdata, rdata);
 	} else if (dlg.mode() == AddRepositoryDialog::AddExisting) {
 		QString dir = dlg.localPath(false);
 		addExistingLocalRepository(dir, true);
 	} else if (dlg.mode() == AddRepositoryDialog::Initialize) {
-		RepositoryData repodata = dlg.repositoryData();
+		RepositoryInfo repodata = dlg.repositoryInfo();
 		Git::Remote r;
 		r.name = dlg.remoteName();
 		r.set_url(dlg.remoteURL());
@@ -2854,7 +2855,7 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 	if (!path.isEmpty()) {
 		QStringList dirs;
 		std::set<QString> existing;
-		for (RepositoryData const &item : m->repos) {
+		for (RepositoryInfo const &item : m->repos) {
 			existing.insert(item.local_dir);
 		}
 		QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot);
@@ -3091,16 +3092,16 @@ MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem 
 	return {};
 }
 
-std::optional<RepositoryData> MainWindow::repositoryItem(RepositoryTreeIndex const &index) const
+std::optional<RepositoryInfo> MainWindow::repositoryItem(RepositoryTreeIndex const &index) const
 {
-	QList<RepositoryData> const &repos = repositoryList();
+	QList<RepositoryInfo> const &repos = repositoryList();
 	if (index.row >= 0 && index.row < repos.size()) {
 		return repos[index.row];
 	}
 	return std::nullopt;
 }
 
-std::optional<RepositoryData> MainWindow::selectedRepositoryItem() const
+std::optional<RepositoryInfo> MainWindow::selectedRepositoryItem() const
 {
 	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
 	RepositoryTreeIndex index = repositoryTreeIndex(item);
@@ -3125,7 +3126,7 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 
 	QString path = getBookmarksFilePath();
 	setRepositoryList(RepositoryBookmark::load(path));
-	QList<RepositoryData> const &repos = repositoryList();
+	QList<RepositoryInfo> const &repos = repositoryList();
 
 	QString filter = getFilterText(FilterTarget::RepositorySearch);
 
@@ -3182,7 +3183,6 @@ void MainWindow::updateSubmodules(GitPtr g, Git::CommitID const &id, QList<Git::
 	} else {
 		GitTreeItemList list;
 		GitObjectCache objcache;
-		objcache.setup(g);
 		// サブモジュールリストを取得する
 		{
 			GitCommit tree;
@@ -3222,7 +3222,7 @@ done:;
 	*out = submodules;
 }
 
-void MainWindow::changeRepositoryBookmarkName(RepositoryData item, QString new_name)
+void MainWindow::changeRepositoryBookmarkName(RepositoryInfo item, QString new_name)
 {
 	item.name = new_name;
 	saveRepositoryBookmark(item);
@@ -3605,7 +3605,7 @@ void MainWindow::removeRepositoryFromBookmark(RepositoryTreeIndex const &index, 
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	QList<RepositoryData> repos = repositoryList();
+	QList<RepositoryInfo> repos = repositoryList();
 	if (index.row >= 0 && index.row < repos.size()) {
 		repos.erase(repos.begin() + index.row); // 消す
 		setRepositoryList(std::move(repos));
@@ -3628,7 +3628,7 @@ void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
  * @brief コマンドプロンプトを開く
  * @param repo
  */
-void MainWindow::openTerminal(const RepositoryData *repo)
+void MainWindow::openTerminal(const RepositoryInfo *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
 #ifdef Q_OS_MAC
@@ -3653,7 +3653,7 @@ void MainWindow::openTerminal(const RepositoryData *repo)
  * @brief ファイルマネージャを開く
  * @param repo
  */
-void MainWindow::openExplorer(const RepositoryData *repo)
+void MainWindow::openExplorer(const RepositoryInfo *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
 		(void)ssh_key;
@@ -3735,7 +3735,7 @@ void MainWindow::setSubmodules(const QList<Git::SubmoduleItem> &submodules)
 	m->submodules = submodules;
 }
 
-bool MainWindow::runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryData *repo)
+bool MainWindow::runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryInfo *repo)
 {
 	if (!repo) {
 		repo = &currentRepository();
@@ -4426,7 +4426,7 @@ void MainWindow::updateStatusBarText()
 
 	QWidget *w = qApp->focusWidget();
 	if (w == ui->treeWidget_repos) {
-		std::optional<RepositoryData> repo = selectedRepositoryItem();
+		std::optional<RepositoryInfo> repo = selectedRepositoryItem();
 		if (repo) {
 			text = QString("%1 : %2")
 					.arg(repo->name)
@@ -4693,7 +4693,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	if (!treeitem) return;
 
 	RepositoryTreeIndex repoindex = repositoryTreeIndex(treeitem);
-	std::optional<RepositoryData> repo = repositoryItem(repoindex);
+	std::optional<RepositoryInfo> repo = repositoryItem(repoindex);
 
 	if (isGroupItem(treeitem)) { // group item
 		QMenu menu;
@@ -5374,7 +5374,7 @@ GitPtr MainWindow::git(const QString &dir, const QString &submodpath, const QStr
 
 GitPtr MainWindow::git()
 {
-	RepositoryData const &item = currentRepository();
+	RepositoryInfo const &item = currentRepository();
 	return git(item.local_dir, {}, item.ssh_key);
 }
 
@@ -5382,7 +5382,7 @@ GitPtr MainWindow::git(const Git::SubmoduleItem &submod)
 {
 	//// if (!submod) return {};
 	// ↑submodが無効でもnullではないオブジェクトを返す
-	RepositoryData const &item = currentRepository();
+	RepositoryInfo const &item = currentRepository();
 	return git(item.local_dir, submod.path, item.ssh_key);
 }
 
@@ -5393,7 +5393,7 @@ Git::User MainWindow::currentGitUser() const
 
 void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 {
-	auto Open = [&](RepositoryData const &item, QString const &commit_id){
+	auto Open = [&](RepositoryInfo const &item, QString const &commit_id){
 		setCurrentRepository(item, true);
 		reopenRepository(false);
 		if (!commit_id.isEmpty()) {
@@ -5403,13 +5403,13 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 		}
 	};
 
-	RepositoryData const *repo = findRegisteredRepository(&dir);
+	RepositoryInfo const *repo = findRegisteredRepository(&dir);
 	if (repo) {
 		Open(*repo, commit_id);
 		return;
 	}
 
-	RepositoryData newitem;
+	RepositoryInfo newitem;
 	GitPtr g = git(dir, {}, {});
 	if (isValidWorkingCopy(g)) {
 		ushort const *left = dir.utf16();
@@ -5634,7 +5634,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 
 	auto repos = repositoryList();
 	for (int i = 0; i < repos.size(); i++) {
-		RepositoryData *item = &(repos)[i];
+		RepositoryInfo *item = &(repos)[i];
 		QString repodir = item->local_dir;
 #ifdef Q_OS_WIN
 		repodir = repodir.toLower().replace('\\', '/');

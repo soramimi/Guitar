@@ -2,10 +2,10 @@
 #define REPOSITORYTREEWIDGET_H
 
 #include <QTreeWidget>
-#include "RepositoryData.h"
+#include "RepositoryInfo.h"
 
 class MainWindow;
-struct RepositoryData;
+struct RepositoryInfo;
 
 class RepositoryTreeWidget : public QTreeWidget {
 	Q_OBJECT
@@ -58,7 +58,7 @@ public:
 	void setFilter(const Filter &filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
-	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryData> &repos, const QString &filtertext, int select_row);
+	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryInfo> &repos, const QString &filtertext, int select_row);
 signals:
 	void dropped();
 };
