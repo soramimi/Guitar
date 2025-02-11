@@ -519,16 +519,16 @@ public:
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryInfo &repodata);
 	Git::User currentGitUser() const;
 	void setupExternalPrograms();
-	void updateCommitLogTableView(int delay_ms);
+private:
+	void _updateCommitLogTableView(int delay_ms);
+public:
+	void updateCommitLogTableViewLater();
 
 	BranchLabelList rowLabels(int row, bool sorted = true) const;
 private:
 	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
-	// void setupUpdateCommitLog();
 signals:
 	void signalUpdateCommitLog();
-public:
-	// void updateCommitLog();
 
 public slots:
 	void internalWriteLog(const LogData &logdata);

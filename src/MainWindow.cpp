@@ -276,7 +276,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&m->commit_detail_getter, &CommitDetailGetter::ready, this, &MainWindow::onCommitDetailGetterReady);
 
 	connect(&m->update_commit_log_timer, &QTimer::timeout, [&](){
-		updateCommitLogTableView(0);
+		_updateCommitLogTableView(0);
 	});
 
 	connect(this, &MainWindow::remoteInfoChanged, this, &MainWindow::onRemoteInfoChanged);
@@ -1074,7 +1074,7 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 	if (commit.sign.verify) {
 		c = commit.sign.verify;
 	} else {
-		auto a = m->commit_detail_getter.query(commit.commit_id, true, true);
+		auto a = m->commit_detail_getter.query(commit.commit_id, true);
 		c = a.sign_verify;
 	}
 
@@ -1358,7 +1358,7 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	if (log.p->tag_map) currentRepositoryData()->tag_map = *log.p->tag_map;
 	if (log.p->label_map) currentRepositoryData()->label_map = *log.p->label_map;
 
-	updateCommitLogTableView(0); // コミットログテーブルの表示を更新
+	_updateCommitLogTableView(0); // コミットログテーブルの表示を更新
 }
 
 void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
@@ -2905,12 +2905,12 @@ void MainWindow::doGitCommand(const std::function<void (GitPtr)> &callback)
 }
 
 /**
- * @brief MainWindow::updateCommitLogTableView
+ * @brief MainWindow::_updateCommitLogTableView
  * @param delay_ms
  *
  * コミットログテーブルを更新する
  */
-void MainWindow::updateCommitLogTableView(int delay_ms)
+void MainWindow::_updateCommitLogTableView(int delay_ms)
 {
 	if (delay_ms == 0) {
 		ui->tableWidget_log->viewport()->update();
@@ -2918,6 +2918,11 @@ void MainWindow::updateCommitLogTableView(int delay_ms)
 		m->update_commit_log_timer.setSingleShot(true);
 		m->update_commit_log_timer.start(delay_ms);
 	}
+}
+
+void MainWindow::updateCommitLogTableViewLater()
+{
+	_updateCommitLogTableView(300);
 }
 
 BranchLabelList MainWindow::rowLabels(int row, bool sorted) const
@@ -2961,12 +2966,12 @@ void MainWindow::updateAvatar(const Git::User &user, bool request)
 void MainWindow::onAvatarReady()
 {
 	updateAvatar(currentGitUser(), false);
-	updateCommitLogTableView(300);
+	updateCommitLogTableViewLater();
 }
 
 void MainWindow::onCommitDetailGetterReady()
 {
-	updateCommitLogTableView(300);
+	updateCommitLogTableViewLater();
 }
 
 void MainWindow::setWindowTitle_(const Git::User &user)

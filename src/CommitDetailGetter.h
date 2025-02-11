@@ -41,7 +41,10 @@ public:
 	virtual ~CommitDetailGetter();
 	void start(GitPtr git);
 	void stop();
-	Data query(const Git::CommitID &id, bool request_if_not_found, bool lock);
+private:
+	Data _query(const Git::CommitID &id, bool request_if_not_found, bool lock);
+public:
+	Data query(const Git::CommitID &id, bool request_if_not_found);
 signals:
 	void ready();
 };

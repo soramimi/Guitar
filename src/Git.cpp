@@ -951,6 +951,11 @@ QDateTime Git::repositoryLastModifiedTime()
  */
 std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
+	std::optional<Git::CommitItem> ret;
+
+	QElapsedTimer t;
+	t.start();
+
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
 	git_nolog(cmd, nullptr);
@@ -997,12 +1002,14 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 				auto item = parseCommitItem(line);
 				if (item) {
 					item->sign.text = gpgtext;
-					return item;
+					ret = item;
 				}
 			}
 		}
 	}
-	return std::nullopt;
+
+	qDebug() << "Git::log_signature: " << t.elapsed() << "ms";
+	return ret;
 }
 
 Git::CommitItemList Git::log(int maxcount)
