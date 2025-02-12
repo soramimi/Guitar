@@ -376,7 +376,9 @@ private:
 	void stopPtyProcess();
 	void abortPtyProcess();
 	PtyProcess *getPtyProcess();
+	PtyProcess const *getPtyProcess() const;
 	bool getPtyProcessOk() const;
+	bool isPtyProcessRunning() const;
 	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, const QVariant &userdata);
 	void setPtyProcessOk(bool pty_process_ok);
 

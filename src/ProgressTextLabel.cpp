@@ -33,11 +33,11 @@ void ProgressTextLabel::paintEvent(QPaintEvent *event)
 		pr.fillRect(rect, Qt::black);
 		rect.adjust(1, 1, -1, -1);
 		pr.setClipRect(rect);
-		if (progress_ > 0) {
+		if (progress_ > 0) { // 進捗グラフ
 			float progress = std::min(progress_, 1.0f);
 			rect.setRight(rect.left() + rect.width() * progress);
 			pr.fillRect(rect, Qt::green);
-		} else if (progress_ < 0) {
+		} else if (progress_ < 0) { // 実行中（縞模様）
 			QBrush br0(Qt::cyan);
 			QBrush br1(Qt::black);
 			int x = animation_ - 16;

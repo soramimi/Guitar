@@ -584,7 +584,7 @@ void UserEventHandler::operator () (StartEventData const &)
 bool MainWindow::setCurrentLogRow(int row)
 {
 	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
-		updateStatusBarText();
+		// updateStatusBarText(); //@
 		ui->tableWidget_log->setFocus();
 		ui->tableWidget_log->setCurrentCell(row, 2);
 		return true;
@@ -864,19 +864,9 @@ void MainWindow::setupProgressHandler()
 	connect(this, &MainWindow::signalShowProgress, this, &MainWindow::onShowProgress);
 }
 
-void MainWindow::setStatusBarText(QString const &text)
-{
-	m->status_bar_label->setVisible(false);
-	ui->statusBar->showMessage(text);
-}
-
-void MainWindow::clearStatusBarText()
-{
-	setStatusBarText(QString());
-}
-
 void MainWindow::onSetProgress(float progress)
 {
+	qDebug() << Q_FUNC_INFO << progress;
 	ASSERT_MAIN_THREAD();
 	m->status_bar_label->setProgress(progress);
 }
@@ -889,7 +879,6 @@ void MainWindow::setProgress(float progress)
 void MainWindow::onShowProgress(const QString &text, bool cancel_button)
 {
 	ASSERT_MAIN_THREAD();
-
 	ui->statusBar->clearMessage();
 	m->status_bar_label->setVisible(true);
 	m->status_bar_label->setText(text);
@@ -909,6 +898,18 @@ void MainWindow::onHideProgress()
 void MainWindow::hideProgress()
 {
 	emit signalHideProgress();
+}
+
+void MainWindow::setStatusBarText(QString const &text)
+{
+	qDebug() << Q_FUNC_INFO << text;
+	m->status_bar_label->setVisible(false);
+	ui->statusBar->showMessage(text);
+}
+
+void MainWindow::clearStatusBarText()
+{
+	setStatusBarText(QString());
 }
 
 QString MainWindow::treeItemName(QTreeWidgetItem *item)
@@ -1349,12 +1350,15 @@ const Git::CommitItem *MainWindow::getLog(int index) const
 void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 {
 	ASSERT_MAIN_THREAD();
+
 	if (log.p->commit_log) currentRepositoryData()->commit_log = *log.p->commit_log;
 	if (log.p->branch_map) currentRepositoryData()->branch_map = *log.p->branch_map;
 	if (log.p->tag_map) currentRepositoryData()->tag_map = *log.p->tag_map;
 	if (log.p->label_map) currentRepositoryData()->label_map = *log.p->label_map;
 
 	_updateCommitLogTableView(0); // コミットログテーブルの表示を更新
+
+	updateStatusBarText();
 }
 
 void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
@@ -2163,6 +2167,7 @@ void MainWindow::queryRemotes(GitPtr g)
 
 void MainWindow::internalAfterFetch()
 {
+	qDebug() << Q_FUNC_INFO;
 	ASSERT_MAIN_THREAD();
 
 	GitPtr g = git();
@@ -2551,7 +2556,9 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 void MainWindow::fetch(GitPtr g, bool prune)
 {
+	qDebug() << Q_FUNC_INFO;
 	runPtyGit(tr("Fetching..."), g, Git_fetch{prune}, RUN_PTY_CALLBACK{
+		qDebug() << Q_FUNC_INFO << "after fetch";
 		internalAfterFetch();
 	}, {});
 }
@@ -3305,9 +3312,19 @@ PtyProcess *MainWindow::getPtyProcess()
 	return &m->pty_process;
 }
 
+PtyProcess const *MainWindow::getPtyProcess() const
+{
+	return &m->pty_process;
+}
+
 bool MainWindow::getPtyProcessOk() const
 {
 	return m->pty_process_ok;
+}
+
+bool MainWindow::isPtyProcessRunning() const
+{
+	return getPtyProcess()->isRunning();
 }
 
 void MainWindow::setCompletedHandler(std::function<void (bool, QVariant const &)> fn, QVariant const &userdata)
@@ -3898,11 +3915,12 @@ void MainWindow::showFileList(FileListType files_list_type)
 
 void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 {
+	qDebug() << Q_FUNC_INFO;
+
 	clearFileList();
 
 	for (ObjectData const &obj : data.object_data) {
 		QListWidgetItem *item = newListWidgetFileItem(obj);
-		qDebug() << Q_FUNC_INFO;
 		showFileList(data.files_list_type);
 		switch (data.files_list_type) {
 		case FileListType::SingleList:
@@ -3923,6 +3941,7 @@ void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 
 void MainWindow::addFileObjectData(MainWindowExchangeData const &data)
 {
+	qDebug() << Q_FUNC_INFO;
 	emit signalAddFileObjectData(data);
 }
 
@@ -3943,6 +3962,8 @@ Git::CommitItem const *MainWindow::currentCommitItem()
 
 void MainWindow::updateFileList(Git::CommitID const &id)
 {
+	qDebug() << Q_FUNC_INFO;
+
 	clearGitCommandCache();
 
 	GitPtr g = git();
@@ -3957,8 +3978,8 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 			files_list_type = FileListType::SideBySide;
 		}
 	}
-	qDebug() << Q_FUNC_INFO;
-	showFileList(files_list_type);
+
+	// showFileList(files_list_type); //@
 	
 	{
 
@@ -4441,6 +4462,8 @@ void MainWindow::updateStatusBarText()
 {
 	ASSERT_MAIN_THREAD();
 
+	hideProgress();
+
 	QString text;
 
 	QWidget *w = qApp->focusWidget();
@@ -4670,7 +4693,10 @@ void MainWindow::on_action_repository_status_triggered()
 
 void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*current*/, QTreeWidgetItem * /*previous*/)
 {
-	updateStatusBarText();
+	QWidget *w = qApp->focusWidget();
+	if (w == ui->treeWidget_repos) {
+		updateStatusBarText();
+	}
 }
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
@@ -5689,7 +5715,7 @@ void MainWindow::onLogCurrentItemChanged()
 	clearFileList();
 
 	// ステータスバー更新
-	updateStatusBarText();
+	// updateStatusBarText(); //@
 
 	// 少し待ってファイルリストを更新する
 	updateFileListLater(300);
@@ -7116,6 +7142,7 @@ void MainWindow::selectLogTableRow(int row)
 void MainWindow::on_tableWidget_log_currentRowChanged(int row)
 {
 	onLogCurrentItemChanged();
+	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;
 }
 
