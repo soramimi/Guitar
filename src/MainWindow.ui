@@ -984,6 +984,7 @@
              </item>
             </layout>
            </widget>
+           <widget class="QWidget" name="page_message_panel"/>
            <widget class="QWidget" name="page_files">
             <layout class="QVBoxLayout" name="verticalLayout">
              <property name="leftMargin">
@@ -1060,7 +1061,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

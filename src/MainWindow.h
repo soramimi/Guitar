@@ -116,7 +116,8 @@ public:
 		Remotes  = 0x0100,
 	};
 
-	enum class FilesListType {
+	enum class FileListType {
+		MessagePanel,
 		SingleList,
 		SideBySide,
 	};
@@ -632,7 +633,7 @@ private slots:
 	void onHideProgress();
 	void on_action_rebase_abort_triggered();
 
-	void onShowFileList(FilesListType files_list_type);
+	void onShowFileList(FileListType files_list_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 private:
 	void setupProgressHandler();
@@ -649,9 +650,9 @@ protected slots:
 signals:
 	void sigWriteLog(LogData const &logdata);
 private:
-	void showFileList(FilesListType files_list_type);
+	void showFileList(FileListType files_list_type);
 signals:
-	void sigShowFileList(FilesListType files_list_type);
+	void sigShowFileList(FileListType files_list_type);
 private:
 	void connectShowFileListHandler();
 
@@ -716,7 +717,7 @@ public:
 
 class MainWindowExchangeData {
 public:
-	MainWindow::FilesListType files_list_type;
+	MainWindow::FileListType files_list_type;
 	std::vector<MainWindow::ObjectData> object_data;
 };
 Q_DECLARE_METATYPE(MainWindowExchangeData)

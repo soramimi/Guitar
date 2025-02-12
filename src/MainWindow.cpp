@@ -252,7 +252,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	platform::initNetworking();
 
-	showFileList(FilesListType::SingleList);
+	showFileList(FileListType::SingleList);
 
 	m->graph_color = global->theme->graphColorMap();
 
@@ -1423,18 +1423,25 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 		records.push_back(rec);
 	}
 
-	ui->tableWidget_log->setRecords(std::move(records));
-
 	m->last_focused_file_list = nullptr;
 
-	ui->tableWidget_log->setFocus();
+	{
+		bool b = ui->tableWidget_log->blockSignals(true); // surpress tableWidget_log's signals
+		ui->tableWidget_log->setRecords(std::move(records));
+		ui->tableWidget_log->setFocus();
 
-	if (select_row < 0) {
-		setCurrentLogRow(selrow);
-	} else {
-		setCurrentLogRow(select_row);
-		ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+		{
+			if (select_row < 0) {
+				setCurrentLogRow(selrow);
+			} else {
+				setCurrentLogRow(select_row);
+				ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+			}
+		}
+
+		ui->tableWidget_log->blockSignals(b);
 	}
+	onLogCurrentItemChanged(); // force update tableWidget_log
 
 	updateUI();
 
@@ -1457,6 +1464,8 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	if (clear_log) { // ログをクリア
 		m->current_repository_data = {};
+		qDebug() << Q_FUNC_INFO;
+		showFileList(FileListType::MessagePanel);
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1516,20 +1525,18 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 	// ウィンドウタイトルを更新
 	updateWindowTitle(user);
 
-	// ファイルリストを更新
-	onLogCurrentItemChanged();
+	if (do_fetch) {
+		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
+	}
 
-	//
+	if (do_fetch) {
+		fetch(g, false);
+	} else {
+		onLogCurrentItemChanged(); // ファイルリストを更新
+	}
 
 	m->commit_detail_getter.stop();
 	m->commit_detail_getter.start(g->dup());
-
-	if (do_fetch) {
-		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
-		if (do_fetch) {
-			fetch(g, false);
-		}
-	}
 }
 
 /**
@@ -3865,22 +3872,50 @@ void MainWindow::setupAddFileObjectData()
 	connect(this, &MainWindow::signalAddFileObjectData, this, &MainWindow::onAddFileObjectData);
 }
 
+void MainWindow::onShowFileList(FileListType file_list_type)
+{
+	ASSERT_MAIN_THREAD();
+
+	clearDiffView();
+
+	switch (file_list_type) {
+	case FileListType::MessagePanel:
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_message_panel);
+		break;
+	case FileListType::SingleList:
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
+		break;
+	case FileListType::SideBySide:
+		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
+		break;
+	}
+}
+
+void MainWindow::showFileList(FileListType files_list_type)
+{
+	emit sigShowFileList(files_list_type);
+}
+
 void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 {
 	clearFileList();
 
 	for (ObjectData const &obj : data.object_data) {
 		QListWidgetItem *item = newListWidgetFileItem(obj);
+		qDebug() << Q_FUNC_INFO;
+		showFileList(data.files_list_type);
 		switch (data.files_list_type) {
-		case FilesListType::SingleList:
+		case FileListType::SingleList:
 			ui->listWidget_files->addItem(item);
 			break;
-		case FilesListType::SideBySide:
+		case FileListType::SideBySide:
 			if (obj.staged) {
 				ui->listWidget_staged->addItem(item);
 			} else {
 				ui->listWidget_unstaged->addItem(item);
 			}
+			break;
+		default:
 			break;
 		}
 	}
@@ -3894,27 +3929,6 @@ void MainWindow::addFileObjectData(MainWindowExchangeData const &data)
 void MainWindow::setupShowFileListHandler()
 {
 	connect(this, &MainWindow::sigShowFileList, this, &MainWindow::onShowFileList);
-}
-
-void MainWindow::onShowFileList(FilesListType files_list_type)
-{
-	ASSERT_MAIN_THREAD();
-
-	clearDiffView();
-
-	switch (files_list_type) {
-	case FilesListType::SingleList:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
-		break;
-	case FilesListType::SideBySide:
-		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
-		break;
-	}
-}
-
-void MainWindow::showFileList(FilesListType files_list_type)
-{
-	emit sigShowFileList(files_list_type);
 }
 
 Git::CommitItem const *MainWindow::currentCommitItem()
@@ -3936,19 +3950,20 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 
 	clearFileList();
 
-	FilesListType files_list_type = FilesListType::SingleList;
+	FileListType files_list_type = FileListType::SingleList;
 	if (!id) {
 		updateUncommitedChanges();
 		if (isThereUncommitedChanges()) {
-			files_list_type = FilesListType::SideBySide;
+			files_list_type = FileListType::SideBySide;
 		}
 	}
+	qDebug() << Q_FUNC_INFO;
 	showFileList(files_list_type);
 	
 	{
 
 		MainWindowExchangeData xdata;
-		xdata.files_list_type = FilesListType::SingleList;
+		xdata.files_list_type = FileListType::SingleList;
 
 		if (id) {
 			auto diffs = makeDiffs(g, Git::CommitID(id));
@@ -3958,7 +3973,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 				setDiffResult({});
 				return;
 			}
-			showFileList(xdata.files_list_type);
+			// showFileList(xdata.files_list_type); //@
 			xdata.files_list_type = files_list_type;
 
 			auto AddItem = [&](ObjectData const &obj){
@@ -3970,7 +3985,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 
 			bool uncommited = isThereUncommitedChanges();
 			if (uncommited) {
-				xdata.files_list_type = FilesListType::SideBySide;
+				xdata.files_list_type = FileListType::SideBySide;
 			}
 			auto diffs = makeDiffs(g, uncommited ? Git::CommitID() : id);
 			if (diffs) {
@@ -4061,6 +4076,7 @@ void MainWindow::updateFileList(Git::CommitItem const *commit)
 
 void MainWindow::updateCurrentFileList()
 {
+	qDebug() << Q_FUNC_INFO;
 	ASSERT_MAIN_THREAD();
 
 	updateFileList(currentCommitItem());
@@ -4068,6 +4084,7 @@ void MainWindow::updateCurrentFileList()
 
 void MainWindow::updateFileListLater(int delay_ms)
 {
+	qDebug() << Q_FUNC_INFO;
 	m->update_file_list_timer.start(delay_ms);
 }
 
@@ -5667,7 +5684,8 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
  */
 void MainWindow::onLogCurrentItemChanged()
 {
-	showFileList(FilesListType::SingleList);
+	qDebug() << Q_FUNC_INFO;
+	// showFileList(FileListType::SingleList); //@
 	clearFileList();
 
 	// ステータスバー更新
