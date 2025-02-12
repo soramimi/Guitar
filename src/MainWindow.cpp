@@ -280,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connectSetCommitLog();
 
-	connect(ui->tableWidget_log, &CommitLogTableWidget::currentRowChanged, this, &MainWindow::on_tableWidget_log_currentRowChanged);
+	connect(ui->tableWidget_log, &CommitLogTableWidget::currentRowChanged, this, &MainWindow::onCommitLogCurrentRowChanged);
 
 	initUpdateFileListTimer();
 
@@ -7139,7 +7139,7 @@ void MainWindow::selectLogTableRow(int row)
 	ui->tableWidget_log->selectRow(row);
 }
 
-void MainWindow::on_tableWidget_log_currentRowChanged(int row)
+void MainWindow::onCommitLogCurrentRowChanged(int row)
 {
 	onLogCurrentItemChanged();
 	updateStatusBarText(); // ステータスバー更新

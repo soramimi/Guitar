@@ -690,7 +690,7 @@ private slots:
 	void onSetCommitLog(const CommitLogExchangeData &log);
 	void connectSetCommitLog();
 
-	void on_tableWidget_log_currentRowChanged(int row);
+	void onCommitLogCurrentRowChanged(int row);
 public:
 	void setCommitLog(const CommitLogExchangeData &exdata);
 
