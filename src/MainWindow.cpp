@@ -76,6 +76,7 @@
 #include <cctype>
 #include "RepositoryModel.h"
 #include "Util.h"
+#include "Profile.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -866,7 +867,7 @@ void MainWindow::setupProgressHandler()
 
 void MainWindow::onSetProgress(float progress)
 {
-	qDebug() << Q_FUNC_INFO << progress;
+	PROFILE;
 	ASSERT_MAIN_THREAD();
 	m->status_bar_label->setProgress(progress);
 }
@@ -902,7 +903,7 @@ void MainWindow::hideProgress()
 
 void MainWindow::setStatusBarText(QString const &text)
 {
-	qDebug() << Q_FUNC_INFO << text;
+	PROFILE;
 	m->status_bar_label->setVisible(false);
 	ui->statusBar->showMessage(text);
 }
@@ -1468,7 +1469,6 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	if (clear_log) { // ログをクリア
 		m->current_repository_data = {};
-		qDebug() << Q_FUNC_INFO;
 		showFileList(FileListType::MessagePanel);
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
@@ -2167,7 +2167,7 @@ void MainWindow::queryRemotes(GitPtr g)
 
 void MainWindow::internalAfterFetch()
 {
-	qDebug() << Q_FUNC_INFO;
+	PROFILE;
 	ASSERT_MAIN_THREAD();
 
 	GitPtr g = git();
@@ -2556,9 +2556,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 void MainWindow::fetch(GitPtr g, bool prune)
 {
-	qDebug() << Q_FUNC_INFO;
 	runPtyGit(tr("Fetching..."), g, Git_fetch{prune}, RUN_PTY_CALLBACK{
-		qDebug() << Q_FUNC_INFO << "after fetch";
 		internalAfterFetch();
 	}, {});
 }
@@ -3915,8 +3913,6 @@ void MainWindow::showFileList(FileListType files_list_type)
 
 void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 {
-	qDebug() << Q_FUNC_INFO;
-
 	clearFileList();
 
 	for (ObjectData const &obj : data.object_data) {
@@ -3941,7 +3937,6 @@ void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 
 void MainWindow::addFileObjectData(MainWindowExchangeData const &data)
 {
-	qDebug() << Q_FUNC_INFO;
 	emit signalAddFileObjectData(data);
 }
 
@@ -3962,7 +3957,7 @@ Git::CommitItem const *MainWindow::currentCommitItem()
 
 void MainWindow::updateFileList(Git::CommitID const &id)
 {
-	qDebug() << Q_FUNC_INFO;
+	PROFILE;
 
 	clearGitCommandCache();
 
@@ -4097,7 +4092,7 @@ void MainWindow::updateFileList(Git::CommitItem const *commit)
 
 void MainWindow::updateCurrentFileList()
 {
-	qDebug() << Q_FUNC_INFO;
+	PROFILE;
 	ASSERT_MAIN_THREAD();
 
 	updateFileList(currentCommitItem());
@@ -4105,7 +4100,6 @@ void MainWindow::updateCurrentFileList()
 
 void MainWindow::updateFileListLater(int delay_ms)
 {
-	qDebug() << Q_FUNC_INFO;
 	m->update_file_list_timer.start(delay_ms);
 }
 
@@ -5710,7 +5704,7 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
  */
 void MainWindow::onLogCurrentItemChanged()
 {
-	qDebug() << Q_FUNC_INFO;
+	PROFILE;
 	// showFileList(FileListType::SingleList); //@
 	clearFileList();
 

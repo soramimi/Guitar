@@ -15,6 +15,7 @@
 #include <QTimer>
 #include <optional>
 #include <thread>
+#include "Profile.h"
 
 Git::CommitID::CommitID()
 {
@@ -951,10 +952,9 @@ QDateTime Git::repositoryLastModifiedTime()
  */
 std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 {
-	std::optional<Git::CommitItem> ret;
+	PROFILE;
 
-	QElapsedTimer t;
-	t.start();
+	std::optional<Git::CommitItem> ret;
 
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
@@ -1008,7 +1008,6 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 		}
 	}
 
-	qDebug() << "Git::log_signature: " << t.elapsed() << "ms";
 	return ret;
 }
 
