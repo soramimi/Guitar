@@ -1,5 +1,5 @@
 // String Formatter
-// Copyright (C) 2020 S.Fuchita (soramimi_jp)
+// Copyright (C) 2024 S.Fuchita (soramimi_jp)
 // This software is distributed under the MIT license.
 
 #ifndef STRFORMAT_H
@@ -910,7 +910,7 @@ public:
 		return *this;
 	}
 
-	template <typename T> string_formatter &a(T const &value, int width = -1, int precision = -1)
+	template <typename T> string_formatter &arg(T const &value, int width = -1, int precision = -1)
 	{
 		format([&](int hint){ return format(value, hint); }, width, precision);
 		return *this;
@@ -918,28 +918,28 @@ public:
 #ifndef STRFORMAT_NO_FP
 	string_formatter &f(double value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 #endif
 	string_formatter &c(char value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &d(int32_t value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &ld(int64_t value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &u(uint32_t value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &lu(uint64_t value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &o(int32_t value, int width = -1, int precision = -1)
 	{
@@ -963,11 +963,11 @@ public:
 	}
 	string_formatter &s(char const *value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &s(std::string_view const &value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	string_formatter &p(void *value, int width = -1, int precision = -1)
 	{
@@ -977,7 +977,7 @@ public:
 
 	template <typename T> string_formatter &operator () (T const &value, int width = -1, int precision = -1)
 	{
-		return a(value, width, precision);
+		return arg(value, width, precision);
 	}
 	void render(std::function<void (char const *ptr, int len)> const &to)
 	{
@@ -1018,10 +1018,10 @@ public:
 		int n = length();
 		char *p;
 		std::vector<char> tmp;
-		if (n < 0x20000) {
+		if (n < 4096) { // if smaller, use stack
 			p = (char *)alloca(n);
 		} else {
-			tmp.reserve(n);
+			tmp.reserve(n); // if larger, use heap
 			p = tmp.data();
 		}
 		char *d = p;
