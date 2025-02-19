@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<LogData>("LogData");
 	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");
 	qRegisterMetaType<CommitRecord>("CommitRecord");
-
+	qRegisterMetaType<StatusInfo>("StatusInfo");
 
 	{
 		MySettings s;

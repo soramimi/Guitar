@@ -9,6 +9,7 @@
 #include "RepositoryTreeWidget.h"
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
+#include "StatusInfo.h"
 #include <QMainWindow>
 
 class AddRepositoryDialog;
@@ -450,8 +451,8 @@ public:
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
 	static constexpr int DIGIT_WIDTH = 5;
 	static constexpr int DIGIT_HEIGHT = 7;
-	void setStatusBarText(QString const &text);
-	void clearStatusBarText();
+	void setStatusInfo(StatusInfo const &info);
+	void clearStatusInfo();
 	bool setCurrentLogRow(int row);
 	bool shown();
 	void deleteTags(QStringList const &tagnames);
@@ -630,22 +631,20 @@ private slots:
 	void toggleMaximized();
 
 	void onRemoteInfoChanged();
-	void onShowProgress(const QString &text, bool cancel_button);
-	void onSetProgress(float progress);
-	void onHideProgress();
+	void onShowStatusInfo(StatusInfo const &info);
 	void on_action_rebase_abort_triggered();
 
 	void onShowFileList(FileListType files_list_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 private:
-	void setupProgressHandler();
+	void setupStatusInfoHandler();
 public:
 	void setProgress(float progress);
-	void showProgress(const QString &text, bool cancel_button);
+	void showProgress(const QString &text, float progress = -1.0f);
 	void hideProgress();
 signals:
 	void signalSetProgress(float progress);
-	void signalShowProgress(const QString &text, bool cancel_button);
+	void signalShowStatusInfo(StatusInfo const &info);
 	void signalHideProgress();
 protected slots:
 	void onLogIdle();

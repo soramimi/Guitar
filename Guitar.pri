@@ -116,6 +116,7 @@ SOURCES += \
 	$$PWD/src/RepositoryInfo.cpp \
 	$$PWD/src/RepositoryModel.cpp \
     $$PWD/src/RepositoryTreeWidget.cpp \
+    $$PWD/src/StatusInfo.cpp \
 	$$PWD/src/Util.cpp \
 	$$PWD/src/platform.cpp \
 	$$PWD/src/zip/zip.cpp \
@@ -276,6 +277,7 @@ HEADERS += \
 	$$PWD/src/RepositoryInfo.h \
 	$$PWD/src/RepositoryModel.h \
     $$PWD/src/RepositoryTreeWidget.h \
+    $$PWD/src/StatusInfo.h \
 	$$PWD/src/Util.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \

@@ -205,7 +205,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(this, &MainWindow::sigWriteLog, this, &MainWindow::internalWriteLog);
 
 	setupShowFileListHandler();
-	setupProgressHandler();
+	setupStatusInfoHandler();
 	setupAddFileObjectData();
 
 	ui->tableWidget_log->setup(this);
@@ -841,7 +841,7 @@ void MainWindow::internalWriteLog(LogData const &logdata)
 				std::string title(misc::trimmed(line.substr(0, colon)));
 				unsigned long long num, den;
 				if (sscanf(line.data() + percent, "%% (%llu/%llu)", &num, &den) == 2) {
-					showProgress(QString::fromStdString(title), false);
+					showProgress(QString::fromStdString(title));
 					setProgress((float)num / den);
 				}
 			}
@@ -858,60 +858,58 @@ void MainWindow::internalWriteLog(LogData const &logdata)
 	setInteractionEnabled(true);
 }
 
-void MainWindow::setupProgressHandler()
+void MainWindow::setupStatusInfoHandler()
 {
-	connect(this, &MainWindow::signalSetProgress, this, &MainWindow::onSetProgress);
-	connect(this, &MainWindow::signalHideProgress, this, &MainWindow::onHideProgress);
-	connect(this, &MainWindow::signalShowProgress, this, &MainWindow::onShowProgress);
+	connect(this, &MainWindow::signalShowStatusInfo, this, &MainWindow::onShowStatusInfo);
 }
 
-void MainWindow::onSetProgress(float progress)
+void MainWindow::onShowStatusInfo(StatusInfo const &info)
 {
-	PROFILE;
 	ASSERT_MAIN_THREAD();
-	m->status_bar_label->setProgress(progress);
+	if (info.progress) {
+		if (info.message) {
+			ui->statusBar->clearMessage();
+			m->status_bar_label->setVisible(true);
+			m->status_bar_label->setText(*info.message);
+		}
+		m->status_bar_label->setProgress(*info.progress);
+	} else {
+		m->status_bar_label->clear();
+		m->status_bar_label->setVisible(false);
+		if (info.message) {
+			ui->statusBar->showMessage(*info.message);
+		}
+	}
+}
+
+void MainWindow::clearStatusInfo()
+{
+	setStatusInfo(StatusInfo::Clear());
 }
 
 void MainWindow::setProgress(float progress)
 {
-	emit signalSetProgress(progress);
+	StatusInfo info = StatusInfo::Progress(progress);
+	emit signalShowStatusInfo(info);
 }
 
-void MainWindow::onShowProgress(const QString &text, bool cancel_button)
+void MainWindow::showProgress(QString const &text, float progress)
 {
-	ASSERT_MAIN_THREAD();
-	ui->statusBar->clearMessage();
-	m->status_bar_label->setVisible(true);
-	m->status_bar_label->setText(text);
-}
-
-void MainWindow::showProgress(QString const &text, bool cancel_button)
-{
-	emit signalShowProgress(text, cancel_button);
-}
-
-void MainWindow::onHideProgress()
-{
-	ASSERT_MAIN_THREAD();
-	m->status_bar_label->clear();
+	StatusInfo info = StatusInfo::Progress(text, progress);
+	emit signalShowStatusInfo(info);
 }
 
 void MainWindow::hideProgress()
 {
-	emit signalHideProgress();
+	clearStatusInfo();
 }
 
-void MainWindow::setStatusBarText(QString const &text)
+void MainWindow::setStatusInfo(StatusInfo const &info)
 {
-	PROFILE;
-	m->status_bar_label->setVisible(false);
-	ui->statusBar->showMessage(text);
+	emit signalShowStatusInfo(info);
 }
 
-void MainWindow::clearStatusBarText()
-{
-	setStatusBarText(QString());
-}
+//
 
 QString MainWindow::treeItemName(QTreeWidgetItem *item)
 {
@@ -2178,10 +2176,7 @@ void MainWindow::internalAfterFetch()
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
 void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback, QVariant const &userdata)
 {
-	setProgress(-1.0f);
-	showProgress(progress_message, false);
-
-	// qDebug() << "--- Start:" << progress_message;
+	showProgress(progress_message, -1.0f);
 
 	GitCommandRunner runner;
 	runner.d.process_name = progress_message;
@@ -2189,11 +2184,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitPtr g, GitCommand
 
 	runner.d.run = [this, var](GitCommandRunner &runner){
 		setCompletedHandler([this](bool ok, QVariant const &d){
-			showProgress({}, false);
 			GitCommandRunner const &req = d.value<GitCommandRunner>();
-			{
-				// qDebug() << "--- Elapsed A:" << req.d.process_name << req.d.elapsed.elapsed() << "ms";
-			}
 			PtyProcessCompleted data;
 			data.process_name = req.d.process_name;
 			data.callback = req.callback;
@@ -2233,8 +2224,6 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 	}
 
 	currentRepositoryData()->git_command_cache.clear();
-
-	// qDebug() << "--- Elapsed B:" << data.process_name << data.elapsed.elapsed() << "ms";
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -4487,7 +4476,7 @@ void MainWindow::updateStatusBarText()
 		}
 	}
 
-	setStatusBarText(text);
+	setStatusInfo(StatusInfo::Message(text));
 }
 
 void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff, bool squash)

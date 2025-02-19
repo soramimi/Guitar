@@ -396,21 +396,17 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 			int index;
 			RepositoryInfo const *data;
 			QDateTime lastModified;
-			// QFileInfo info;
 		};
 		std::vector<Item> items;
 		{
 			GlobalSetOverrideWaitCursor();
 			for (int i = 0; i < repos.size(); i++) {
 				{
-					mainwindow()->showProgress(tr("Querying last modified time of %1/%2").arg(i + 1).arg(repos.size()), false);
+					mainwindow()->showProgress(tr("Querying last modified time of %1/%2").arg(i + 1).arg(repos.size()));
 					mainwindow()->setProgress((float)i / repos.size());
 					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 				}
 				RepositoryInfo const &item = repos.at(i);
-				// QString gitpath = item.local_dir / ".git";
-				// QFileInfo info(gitpath);
-				// items.push_back({i, &item, info});
 				QDateTime lastmodified = repositoryLastModifiedTime(item.local_dir);
 				items.push_back({i, &item, lastmodified});
 			}
