@@ -873,9 +873,28 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 {
 	CommitItemList items;
 
-	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
-	cmd = cmd.arg(maxcount).arg(id.toQString());
-	git_nolog(cmd, nullptr);
+	if (0) {
+		QElapsedTimer timer;
+		timer.start();
+
+		QString cmd = "rev-list -%1 %2";
+		cmd = cmd.arg(maxcount).arg(id.toQString());
+		git_nolog(cmd, nullptr);
+
+		qDebug() << "log_all_A: " << timer.elapsed() << "ms";
+	}
+
+	{
+		QElapsedTimer timer;
+		timer.start();
+
+		QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+		cmd = cmd.arg(maxcount).arg(id.toQString());
+		git_nolog(cmd, nullptr);
+
+		// qDebug() << "log_all_B: " << timer.elapsed() << "ms";
+	}
+
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
 		QStringList lines = misc::splitLines(text);
@@ -887,6 +906,11 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 		}
 	}
 	return items;
+}
+
+Git::CommitItemList Git::log(int maxcount)
+{
+	return log_all({}, maxcount);
 }
 
 QDateTime Git::repositoryLastModifiedTime()
@@ -1009,11 +1033,6 @@ std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
 	}
 
 	return ret;
-}
-
-Git::CommitItemList Git::log(int maxcount)
-{
-	return log_all({}, maxcount);
 }
 
 std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
