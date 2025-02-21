@@ -127,7 +127,7 @@ public:
 		bool has_child = false;
 		int marker_depth = -1;
 		bool resolved =  false;
-		bool strange_date = false;
+		bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
 		void setParents(QStringList const &list);
 		operator bool () const
 		{

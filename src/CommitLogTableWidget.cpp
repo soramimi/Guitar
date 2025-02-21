@@ -265,7 +265,7 @@ public:
 
 		// コミット日時
 		if (index.column() == Date) {
-			if (commit.strange_date) {
+			if (commit.order_fixed) {
 				QColor color(255, 0, 0, 128);
 				QRect r = opt.rect.adjusted(1, 1, -1, -2);
 				misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);

@@ -3474,51 +3474,72 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 	}
 }
 
-/**
- * @brief コミットログを取得
- * @param g
- * @return
- */
-Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
+static void fixCommitLogOrder(Git::CommitItemList *list)
 {
-	Git::CommitItemList list = g->log(limitLogCount());
+	Git::CommitItemList list2;
+	std::swap(list2.list, list->list);
+
+	const size_t count = list2.size();
+
+	std::vector<size_t> index(count);
+	std::iota(index.begin(), index.end(), 0);
+
+	auto LISTITEM = [&](size_t i)->Git::CommitItem &{
+		return list2[index[i]];
+	};
+
+	auto MOVEITEM = [&](size_t from, size_t to){
+		Q_ASSERT(from > to);
+		// 親子関係が整合しないコミットをリストの上の方へ移動する
+		LISTITEM(from).order_fixed = true;
+		auto a = index[from];
+		index.erase(index.begin() + from);
+		index.insert(index.begin() + to, a);
+	};
 
 	// 親子関係を調べて、順番が狂っていたら、修正する。
 
-	std::set<QString> set;
-
-	const size_t count = list.size();
+	std::set<Git::CommitID> set;
 	size_t limit = count;
-
 	size_t i = 0;
 	while (i < count) {
 		size_t newpos = (size_t)-1;
-		for (Git::CommitID const &parent : list[i].parent_ids) {
-			if (set.find(parent.toQString()) != set.end()) {
+		for (Git::CommitID const &parent : LISTITEM(i).parent_ids) {
+			if (set.find(parent) != set.end()) {
 				for (size_t j = 0; j < i; j++) {
-					if (parent == list[j].commit_id) {
+					if (parent == LISTITEM(j).commit_id) {
 						if (newpos == (size_t)-1 || j < newpos) {
 							newpos = j;
 						}
-						qDebug() << "fix commit order" << list[i].commit_id.toQString();
+						// qDebug() << "fix commit order" << list[i].commit_id.toQString();
 						break;
 					}
 				}
 			}
 		}
-		set.insert(set.end(), list[i].commit_id.toQString());
+		set.insert(set.end(), LISTITEM(i).commit_id);
 		if (newpos != (size_t)-1) {
 			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
-			Git::CommitItem t = list[i];
-			t.strange_date = true;
-			list.list.erase(list.list.begin() + (int)i);
-			list.list.insert(list.list.begin() + (int)newpos, t);
+			MOVEITEM(i, newpos);
 			i = newpos;
 			limit--;
 		}
 		i++;
 	}
 
+	//
+
+	list->list.reserve(count);
+	for (size_t i : index) {
+		list->list.push_back(LISTITEM(i));
+	}
+}
+
+Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
+{
+	PROFILE;
+	Git::CommitItemList list = g->log(limitLogCount());
+	fixCommitLogOrder(&list);
 	list.updateIndex();
 	return list;
 }
