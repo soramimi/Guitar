@@ -7184,10 +7184,10 @@ Git::CommitItemList MainWindow::log_all2(GitPtr g, Git::CommitID const &id, int 
 
 	Git::CommitItemList items;
 
-	std::vector<Git::CommitID> list = g->rev_list_all(id, maxcount);
+	QStringList list = g->rev_list_all(id, maxcount);
 
 	for (size_t i = 0; i < list.size(); i++) {
-		auto obj = catFile(list[i].toQString());
+		auto obj = catFile(list[i]);
 		if (obj.type == Git::Object::Type::COMMIT) {
 			auto item = Git::parseCommit(obj.content);
 			if (item) {

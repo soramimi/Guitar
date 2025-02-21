@@ -893,20 +893,19 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 	return items;
 }
 
-std::vector<Git::CommitID> Git::rev_list_all(CommitID const &id, int maxcount)
+QStringList Git::rev_list_all(CommitID const &id, int maxcount)
 {
-	std::vector<Git::CommitID> items;
+	QStringList items;
 
 	QString cmd = "rev-list --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
 	git_nolog(cmd, nullptr);
 
 	if (getProcessExitCode() == 0) {
-		QString text = resultQString().trimmed();
-		QStringList lines = misc::splitLines(text);
-		for (QString const &line : lines) {
-			Git::CommitID id(line);
-			if (id.isValid()) {
+		std::vector<std::string> lines = misc::splitLines(resultStdString(), false);
+		for (std::string const &line : lines) {
+			QString id = QString::fromStdString(line);
+			if (!id.isEmpty()) {
 				items.push_back(id);
 			}
 		}

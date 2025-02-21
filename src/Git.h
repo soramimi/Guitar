@@ -510,7 +510,7 @@ public:
 	QStringList getUntrackedFiles();
 
 	CommitItemList log_all(CommitID const &id, int maxcount);
-	std::vector<CommitID> rev_list_all(CommitID const &id, int maxcount);
+	QStringList rev_list_all(CommitID const &id, int maxcount);
 
 	std::optional<CommitItem> log_signature(CommitID const &id);
 	CommitItemList log(int maxcount);
