@@ -15,6 +15,7 @@ private:
 	{
 	}
 public:
+	StatusInfo() = default;
 	static StatusInfo Clear()
 	{
 		return StatusInfo(std::nullopt, std::nullopt);
