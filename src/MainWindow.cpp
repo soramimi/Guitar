@@ -4884,6 +4884,14 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	int row = selectedLogIndex();
+	const BranchLabelList labels = rowLabels(row);
+
+	BranchLabelList local_branches;
+	for (const BranchLabel &label : labels) {
+		if (label.kind == BranchLabel::LocalBranch) {
+			local_branches.push_back(label);
+		}
+	}
 
 	Git::CommitItem const &commit = commitItem(row);
 	bool is_valid_commit_id = Git::isValidID(commit.commit_id.toQString());
@@ -4896,7 +4904,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	std::set<QAction *> copy_label_actions;
 	{
-		BranchLabelList labels = rowLabels(row);
 		if (!labels.isEmpty()) {
 			auto *copy_lebel_menu = menu.addMenu("Copy label");
 			for (BranchLabel const &label : labels) {
@@ -4909,6 +4916,12 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	menu.addSeparator();
 
 	QAction *a_checkout = menu.addAction(tr("Checkout/Branch..."));
+	QAction *a_checkout_this = nullptr;
+
+	if (local_branches.size() == 1) { // このコミットのブランチが一つだけの場合
+		a_checkout_this = menu.addAction(tr("Checkout branch {%1}").arg(local_branches[0].text));
+	}
+
 
 	menu.addSeparator();
 
@@ -4919,7 +4932,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
-		BranchLabelList labels = rowLabels(row);
 		for (const BranchLabel &label : labels) {
 			if (label.kind == BranchLabel::Head) {
 				is_head = true;
@@ -4969,6 +4981,10 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 		if (a == a_checkout) {
 			checkout(this, commit);
+			return;
+		}
+		if (a == a_checkout_this) {
+			checkoutLocalBranch(local_branches[0].text);
 			return;
 		}
 		if (a == a_delbranch) {
@@ -5488,6 +5504,19 @@ std::optional<Git::CommitItem> MainWindow::queryCommit(Git::CommitID const &id)
 	return git()->queryCommitItem(id);
 }
 
+bool MainWindow::checkoutLocalBranch(QString const &name)
+{
+	if (!name.isEmpty()) {
+		GitPtr g = git();
+		bool ok = g->checkout(name);
+		if (ok) {
+			reopenRepository(true);
+			return true;
+		}
+	}
+	return false;
+}
+
 void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::function<void ()> accepted_callback)
 {
 	GitPtr g = git();
@@ -5532,15 +5561,19 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 		if (!id.isValid() && !commit.parent_ids.isEmpty()) {
 			id = commit.parent_ids.front();
 		}
-		bool ok = false;
 		if (op == CheckoutDialog::Operation::HeadDetached) {
 			if (id.isValid()) {
-				ok = g->checkout_detach(id.toQString());
+				bool ok = g->checkout_detach(id.toQString());
+				if (ok) {
+					reopenRepository(true);
+				}
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
-				ok = g->checkout(name, id.toQString());
-				if (!ok) {
+				bool ok = g->checkout(name, id.toQString());
+				if (ok) {
+					reopenRepository(true);
+				} else {
 					Git::CommitID id = g->rev_parse(name);
 					if (id.isValid()) {
 						if (QMessageBox::question(parent, tr("Create Local Branch"),
@@ -5552,12 +5585,7 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
-			if (!name.isEmpty()) {
-				ok = g->checkout(name);
-			}
-		}
-		if (ok) {
-			reopenRepository(true);
+			checkoutLocalBranch(name);
 		}
 	}
 }

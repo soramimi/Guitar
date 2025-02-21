@@ -489,6 +489,7 @@ public:
 	GitPtr git(Git::SubmoduleItem const &submod);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const Git::CommitID &id);
+	bool checkoutLocalBranch(QString const &name);
 	void checkout(QWidget *parent, const Git::CommitItem &commit, std::function<void ()> accepted_callback = {});
 	void checkout();
 private:
