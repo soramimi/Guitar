@@ -90,7 +90,7 @@ public:
 
 	struct SubmoduleItem {
 		QString name;
-		Git::CommitID id;
+		CommitID id;
 		QString path;
 		QString refs;
 		QString url;
@@ -216,8 +216,8 @@ public:
 		} blob;
 		QList<Hunk> hunks;
 		struct SubmoduleDetail {
-			Git::SubmoduleItem item;
-			Git::CommitItem commit;
+			SubmoduleItem item;
+			CommitItem commit;
 		} a_submodule, b_submodule;
 		Diff() = default;
 		Diff(QString const &id, QString const &path, QString const &mode)
@@ -229,7 +229,7 @@ public:
 			return mode == "160000";
 		}
 	private:
-		void makeForSingleFile(Git::Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
+		void makeForSingleFile(Diff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
 	};
 
 	static SignatureGrade evaluateSignature(char c)
@@ -261,7 +261,7 @@ public:
 
 	struct Branch {
 		QString name;
-		Git::CommitID id;
+		CommitID id;
 		QString remote;
 		int ahead = 0;
 		int behind = 0;
@@ -288,7 +288,7 @@ public:
 
 	struct Tag {
 		QString name;
-		Git::CommitID id;
+		CommitID id;
 	};
 
 	enum class FileStatusCode : unsigned int {
@@ -508,7 +508,10 @@ public:
 	QString version();
 	bool init();
 	QStringList getUntrackedFiles();
+
 	CommitItemList log_all(CommitID const &id, int maxcount);
+	std::vector<CommitID> rev_list_all(CommitID const &id, int maxcount);
+
 	std::optional<CommitItem> log_signature(CommitID const &id);
 	CommitItemList log(int maxcount);
 	std::optional<CommitItem> queryCommitItem(const CommitID &id);

@@ -684,6 +684,7 @@ private:
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 	void initUpdateFileListTimer();
 	void clearGitCommandCache();
+	Git::CommitItemList log_all2(GitPtr g, const Git::CommitID &id, int maxcount);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 

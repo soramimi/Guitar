@@ -7178,12 +7178,47 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 	m->searching = false;
 }
 
+Git::CommitItemList MainWindow::log_all2(GitPtr g, Git::CommitID const &id, int maxcount)
+{
+	PROFILE;
+
+	Git::CommitItemList items;
+
+	std::vector<Git::CommitID> list = g->rev_list_all(id, maxcount);
+
+	for (size_t i = 0; i < list.size(); i++) {
+		auto obj = catFile(list[i].toQString());
+		if (obj.type == Git::Object::Type::COMMIT) {
+			auto item = Git::parseCommit(obj.content);
+			if (item) {
+				items.list.push_back(*item);
+			}
+		}
+	}
+
+	return items;
+}
+
 void MainWindow::test()
 {
 	GitPtr g = git();
-	QElapsedTimer t;
-	t.start();
-	auto s = t.elapsed();
-	qDebug() << g->repositoryLastModifiedTime() << s;
+
+	{
+		QElapsedTimer t;
+		t.start();
+
+		Git::CommitItemList items = g->log_all({}, limitLogCount());
+
+		qDebug() << t.elapsed() << "ms";
+	}
+
+	{
+		QElapsedTimer t;
+		t.start();
+
+		Git::CommitItemList items = log_all2(g, {}, limitLogCount());
+
+		qDebug() << t.elapsed() << "ms";
+	}
 }
 

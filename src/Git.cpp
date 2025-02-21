@@ -871,29 +871,13 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
  */
 Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 {
+	PROFILE;
+
 	CommitItemList items;
 
-	if (0) {
-		QElapsedTimer timer;
-		timer.start();
-
-		QString cmd = "rev-list -%1 %2";
-		cmd = cmd.arg(maxcount).arg(id.toQString());
-		git_nolog(cmd, nullptr);
-
-		qDebug() << "log_all_A: " << timer.elapsed() << "ms";
-	}
-
-	{
-		QElapsedTimer timer;
-		timer.start();
-
-		QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
-		cmd = cmd.arg(maxcount).arg(id.toQString());
-		git_nolog(cmd, nullptr);
-
-		// qDebug() << "log_all_B: " << timer.elapsed() << "ms";
-	}
+	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
+	cmd = cmd.arg(maxcount).arg(id.toQString());
+	git_nolog(cmd, nullptr);
 
 	if (getProcessExitCode() == 0) {
 		QString text = resultQString().trimmed();
@@ -902,6 +886,28 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 			auto item = parseCommitItem(line);
 			if (item) {
 				items.list.push_back(*item);
+			}
+		}
+	}
+
+	return items;
+}
+
+std::vector<Git::CommitID> Git::rev_list_all(CommitID const &id, int maxcount)
+{
+	std::vector<Git::CommitID> items;
+
+	QString cmd = "rev-list --all -%1 %2";
+	cmd = cmd.arg(maxcount).arg(id.toQString());
+	git_nolog(cmd, nullptr);
+
+	if (getProcessExitCode() == 0) {
+		QString text = resultQString().trimmed();
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			Git::CommitID id(line);
+			if (id.isValid()) {
+				items.push_back(id);
 			}
 		}
 	}
