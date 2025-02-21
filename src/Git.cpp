@@ -1553,6 +1553,23 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 	git(cmd + name);
 }
 
+bool Git::checkout(QString const &name, QString const &id) // oops! `switch` is C's keyword
+{
+	// use `switch` instead of `checkout`
+	QString cmd;
+	if (id.isEmpty()) {
+		cmd = QString("switch %1").arg(name);
+	} else {
+		cmd = QString("switch -c %1 %2").arg(name).arg(id);
+	}
+	return git(cmd);
+}
+
+bool Git::checkout_detach(QString const &id)
+{
+	return git("checkout --detach " + id);
+}
+
 void Git::rebaseBranch(QString const &name)
 {
 	git("rebase " + name);

@@ -596,6 +596,9 @@ public:
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);
 
+	bool checkout(QString const &name, QString const &id = {});
+	bool checkout_detach(QString const &id);
+
 	void rebaseBranch(QString const &name);
 	void rebase_abort();
 

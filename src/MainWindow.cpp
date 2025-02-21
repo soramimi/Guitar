@@ -5535,11 +5535,11 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 		bool ok = false;
 		if (op == CheckoutDialog::Operation::HeadDetached) {
 			if (id.isValid()) {
-				ok = g->git(QString("checkout \"%1\"").arg(id.toQString()));
+				ok = g->checkout_detach(id.toQString());
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
-				ok = g->git(QString("checkout -b \"%1\" \"%2\"").arg(name).arg(id.toQString()));
+				ok = g->checkout(name, id.toQString());
 				if (!ok) {
 					Git::CommitID id = g->rev_parse(name);
 					if (id.isValid()) {
@@ -5553,7 +5553,7 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
 			if (!name.isEmpty()) {
-				ok = g->git(QString("checkout \"%1\"").arg(name));
+				ok = g->checkout(name);
 			}
 		}
 		if (ok) {
