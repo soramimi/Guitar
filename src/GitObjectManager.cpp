@@ -9,6 +9,7 @@
 #include <QFile>
 #include <memory>
 #include <set>
+#include "Profile.h"
 
 GitObjectManager::GitObjectManager()
 {
@@ -192,12 +193,12 @@ QString GitObjectManager::findObjectPath(GitPtr g, Git::CommitID const &id)
 		QString absolute_path;
 		QString name = id.toQString();
 		QString xx = name.mid(0, 2); // leading two xdigits
-		name = name.mid(2);  // remaining xdigits
+		QString name2 = name.mid(2);  // remaining xdigits
 		QString dir = workingDir(g) / subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
 		QDirIterator it(dir, QDir::Files);
 		while (it.hasNext()) {
 			it.next();
-			if (it.fileName().startsWith(name)) {
+			if (it.fileName().startsWith(name2)) {
 				QString id = xx + it.fileName(); // complete id
 				if (id.size() == GIT_ID_LENGTH && Git::isValidID(id)) {
 					absolute_path = dir / it.fileName();
@@ -278,6 +279,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 
 Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 {
+	// PROFILE;
 	{
 		// QMutexLocker lock(&object_manager.mutex);
 		size_t n = items.size();

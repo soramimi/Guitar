@@ -114,12 +114,14 @@ public:
 
 	struct CommitItem {
 		CommitID commit_id;
+		QString tree;
 		QList<CommitID> parent_ids;
 		QString author;
 		QString email;
 		QString message;
 		QDateTime commit_date;
 		std::vector<TreeLine> parent_lines;
+		bool has_gpgsig = false;
 		QString gpgsig;
 		struct {
 			QString text;

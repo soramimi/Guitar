@@ -1077,7 +1077,7 @@ QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 		Git::CommitItem const &commit = commitItem(id);
 		if (commit.sign.verify) {
 			sign_state = commit.sign.verify;
-		} else {
+		} else if (commit.has_gpgsig) {
 			auto a = m->commit_detail_getter.query(commit.commit_id, true);
 			sign_state = a.sign_verify;
 		}
@@ -1305,6 +1305,8 @@ void MainWindow::setCurrentRepository(const RepositoryInfo &repo, bool clear_aut
 		clearAuthentication();
 	}
 	m->current_repository = repo;
+	clearGitCommandCache();
+	getObjCache()->clear();
 }
 
 void MainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
@@ -1469,8 +1471,10 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	PtyProcess *pty = getPtyProcess();
 	if (pty) {
-		pty->wait();
+		if (!pty->wait(5000)) return; //@ something wrong
 	}
+
+	cancelUpdateFileList();
 
 	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
 
@@ -3540,7 +3544,9 @@ static void fixCommitLogOrder(Git::CommitItemList *list)
 Git::CommitItemList MainWindow::retrieveCommitLog(GitPtr g) const
 {
 	PROFILE;
-	Git::CommitItemList list = g->log(limitLogCount());
+	// Git::CommitItemList list = g->log(limitLogCount());
+	// Git::CommitItemList list = g->log_all({}, limitLogCount());
+	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
 	fixCommitLogOrder(&list);
 	list.updateIndex();
 	return list;
@@ -4115,6 +4121,11 @@ void MainWindow::updateCurrentFileList()
 void MainWindow::updateFileListLater(int delay_ms)
 {
 	m->update_file_list_timer.start(delay_ms);
+}
+
+void MainWindow::cancelUpdateFileList()
+{
+	m->update_file_list_timer.stop();
 }
 
 void MainWindow::initUpdateFileListTimer()
@@ -7182,7 +7193,7 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 	m->searching = false;
 }
 
-Git::CommitItemList MainWindow::log_all2(GitPtr g, Git::CommitID const &id, int maxcount)
+Git::CommitItemList MainWindow::log_all2(GitPtr g, Git::CommitID const &id, int maxcount) const
 {
 	PROFILE;
 
@@ -7191,10 +7202,12 @@ Git::CommitItemList MainWindow::log_all2(GitPtr g, Git::CommitID const &id, int 
 	QStringList list = g->rev_list_all(id, maxcount);
 
 	for (size_t i = 0; i < list.size(); i++) {
-		auto obj = catFile(list[i]);
+		QString hash = list[i];
+		auto obj = const_cast<MainWindow *>(this)->catFile(hash);
 		if (obj.type == Git::Object::Type::COMMIT) {
-			auto item = Git::parseCommit(obj.content);
+			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
 			if (item) {
+				item->commit_id = Git::CommitID(hash);
 				items.list.push_back(*item);
 			}
 		}

@@ -1078,7 +1078,6 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 	}
 
 	CommitItem out;
-	bool ok = false;
 	bool gpgsig = false;
 	bool message = false;
 
@@ -1117,7 +1116,7 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 			out.message += line;
 		}
 		if (line.startsWith("tree ")) {
-			ok = true;
+			out.tree = line.mid(5);
 		} else if (line.startsWith("parent ")) {
 			out.parent_ids.push_back(Git::CommitID(line.mid(7)));
 		} else if (line.startsWith("author ")) {
@@ -1142,13 +1141,15 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 		} else if (line.startsWith("commiter ")) {
 			// nop
 		} else if (line.startsWith("gpgsig -----BEGIN PGP SIGNATURE-----")) {
+			out.has_gpgsig = true;
 			out.gpgsig.append(line.mid(7));
 			gpgsig = true;
 		}
 	}
 
-	if (ok) return out;
-	return std::nullopt;
+	if (out.tree.isEmpty()) return std::nullopt;
+
+	return out;
 }
 
 std::optional<Git::CommitItem> Git::queryCommitItem(CommitID const &id)
