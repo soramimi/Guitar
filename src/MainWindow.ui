@@ -720,7 +720,7 @@
           </widget>
           <widget class="QStackedWidget" name="stackedWidget_filelist">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="page_uncommited">
             <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,1">
@@ -1061,7 +1061,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

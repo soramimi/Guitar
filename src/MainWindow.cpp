@@ -192,6 +192,8 @@ struct MainWindow::Private {
 
 	QTimer update_commit_log_timer;
 	QTimer update_file_list_timer;
+
+	bool background_process_work_in_progress = false;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -253,7 +255,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	platform::initNetworking();
 
-	showFileList(FileListType::SingleList);
+	showFileList(FileListType::MessagePanel);
 
 	m->graph_color = global->theme->graphColorMap();
 
@@ -867,6 +869,7 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 {
 	ASSERT_MAIN_THREAD();
 	if (info.progress) {
+		m->background_process_work_in_progress = true;
 		if (info.message) {
 			ui->statusBar->clearMessage();
 			m->status_bar_label->setVisible(true);
@@ -874,6 +877,7 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 		}
 		m->status_bar_label->setProgress(*info.progress);
 	} else {
+		m->background_process_work_in_progress = false;
 		m->status_bar_label->clear();
 		m->status_bar_label->setVisible(false);
 		if (info.message) {
@@ -3976,11 +3980,16 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 
 	clearFileList();
 
-	FileListType files_list_type = FileListType::SingleList;
-	if (!id) {
-		updateUncommitedChanges();
-		if (isThereUncommitedChanges()) {
-			files_list_type = FileListType::SideBySide;
+	FileListType files_list_type;
+	if (m->background_process_work_in_progress) {
+		files_list_type = FileListType::MessagePanel;
+	} else {
+		files_list_type = FileListType::SingleList;
+		if (!id) {
+			updateUncommitedChanges();
+			if (isThereUncommitedChanges()) {
+				files_list_type = FileListType::SideBySide;
+			}
 		}
 	}
 
