@@ -923,6 +923,30 @@ Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
 	return items;
 }
 
+Git::CommitItemList Git::log_file(QString const &path, int maxcount)
+{
+	PROFILE;
+
+	CommitItemList items;
+
+	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 -- %2";
+	cmd = cmd.arg(maxcount).arg(path);
+	git_nolog(cmd, nullptr);
+
+	if (getProcessExitCode() == 0) {
+		QString text = resultQString().trimmed();
+		QStringList lines = misc::splitLines(text);
+		for (QString const &line : lines) {
+			auto item = parseCommitItem(line);
+			if (item) {
+				items.list.push_back(*item);
+			}
+		}
+	}
+
+	return items;
+}
+
 QStringList Git::rev_list_all(CommitID const &id, int maxcount)
 {
 	QStringList items;
