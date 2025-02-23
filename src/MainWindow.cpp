@@ -4501,7 +4501,6 @@ void MainWindow::updateStatusBarText()
 				text = tr("Uncommited changes");
 			} else {
 				QString id = commit->commit_id.toQString();
-				int row = ui->tableWidget_log->actualLogIndex();
 				QString labels = labelsInfoText(*commit);
 				text = QString("%1 : %2%3")
 					   .arg(id.mid(0, 7))
