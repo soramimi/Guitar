@@ -446,7 +446,6 @@ private:
 	QByteArray cat_file_(const CommitID &id);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
-//	bool push_(bool tags, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
 	QString encodeQuotedText(QString const &str);
@@ -457,12 +456,6 @@ public:
 	 ~Git() override;
 
 	void setCommandCache(CommandCache const &cc);
-
-
-	// using callback_t = bool (*)(void *, const char *, int);
-
-	 //@
-	// void setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie);
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
@@ -599,7 +592,7 @@ public:
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);
 
-	bool checkout(QString const &name, QString const &id = {});
+	bool checkout(QString const &branch_name, QString const &id = {});
 	bool checkout_detach(QString const &id);
 
 	void rebaseBranch(QString const &name);
@@ -612,7 +605,6 @@ public:
 	GitPtr dup() const;
 	CommitID rev_parse(QString const &name);
 	QList<Tag> tags();
-	QList<Tag> tags2();
 	bool tag(QString const &name, CommitID const &id = {});
 	bool delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const Remote &remote);

@@ -91,16 +91,11 @@ bool Git::CommitID::isValid() const
 	return c != 0; // すべて0ならfalse
 }
 
-
-// using callback_t = Git::callback_t;
-
 struct Git::Private {
 	struct Info {
 		QString git_command;
 		QString working_repo_dir;
 		QString submodule_path;
-		// std::function<bool (void *, const char *, int)> fn_log_writer_callback;
-		// void *callback_cookie = nullptr;
 	};
 	Info info;
 	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
@@ -131,13 +126,6 @@ void Git::setCommandCache(CommandCache const &cc)
 {
 	m->command_cache = cc;
 }
-
-//@
-// void Git::setLogCallback(std::function<bool (void *, const char *, int)> func, void *cookie)
-// {
-// 	m->info.fn_log_writer_callback = func;
-// 	m->info.callback_cookie = cookie;
-// }
 
 void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
@@ -259,7 +247,7 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 bool Git::git(QString const &arg, Option const &opt, bool debug_)
 {
 	if (debug_) return false;
-	// qDebug() << "git: " << arg;
+
 	QFileInfo info(gitCommand());
 	if (!info.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
@@ -344,8 +332,6 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 		ok = DoIt();
 	}
 
-	// qDebug() << _timer.elapsed() << "ms";
-
 	return ok;
 }
 
@@ -421,37 +407,6 @@ Git::CommitID Git::rev_parse(QString const &name)
 
 QList<Git::Tag> Git::tags()
 {
-#if 0
-	auto MidCmp = [](QString const &line, int i, char const *ptr){
-		ushort const *p = line.utf16();
-		for (int j = 0; ptr[j]; j++) {
-			if (p[i + j] != ptr[j]) return false;
-		}
-		return true;
-	};
-	QList<Git::Tag> list;
-	QStringList lines = refs();
-	for (QString const &line : lines) {
-		Tag tag;
-		if (line.isEmpty()) continue;
-		int i = line.indexOf(' ');
-		if (i == GIT_ID_LENGTH) {
-			tag.id = line.mid(0, i);
-			if (MidCmp(line, i, " refs/tags/")) {
-				tag.name = line.mid(i + 11).trimmed();
-				if (tag.name.isEmpty()) continue;
-				list.push_back(tag);
-			}
-		}
-	}
-	return list;
-#else
-	return tags2();
-#endif
-}
-
-QList<Git::Tag> Git::tags2()
-{
 	QList<Tag> list;
 	git("show-ref");
 	QStringList lines = misc::splitLines(resultQString());
@@ -509,11 +464,6 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 
 QString Git::diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept)
 {
-#if 0
-	QString cmd = "diff HEAD";
-	git(cmd);
-	return resultQString();
-#else
 	QString cmd = "diff --name-only HEAD";
 	git(cmd);
 	QStringList files = misc::splitLines(resultQString());
@@ -533,7 +483,6 @@ QString Git::diff_head(std::function<bool (QString const &name, QString const &m
 		diff += resultQString();
 	}
 	return diff;
-#endif	
 }
 
 QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
@@ -572,14 +521,10 @@ QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id
 
 QString Git::diff_to_file(QString const &old_id, QString const &path)
 {
-#if 1
 	QString cmd = "diff --full-index -a %1 -- \"%2\"";
 	cmd = cmd.arg(old_id).arg(path);
 	git(cmd);
 	return resultQString();
-#else
-	return diff_(old_id, new_id);
-#endif
 }
 
 QString Git::getDefaultBranch()
@@ -920,31 +865,6 @@ Git::CommitItemList Git::log(int maxcount)
 
 QDateTime Git::repositoryLastModifiedTime()
 {
-#if 0
-	QString cmd = "log --pretty=format:\"%ci\" --all -1";
-	git_nolog(cmd, nullptr);
-	if (getProcessExitCode() == 0) {
-		QString text = resultQString().trimmed();
-		QStringList lines = misc::splitLines(text);
-		for (QString const &line : lines) {
-			auto ParseDateTime = [](char const *s){
-				int year, month, day, hour, minute, second;
-				if (sscanf(s, "%d-%d-%d %d:%d:%d"
-						   , &year
-						   , &month
-						   , &day
-						   , &hour
-						   , &minute
-						   , &second
-						   ) == 6) {
-					return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
-				}
-				return QDateTime();
-			};
-			return ParseDateTime(line.toStdString().c_str());
-		}
-	}
-#else
 	if (isValidWorkingCopy()) {
 		git("rev-parse HEAD");
 		QString id = resultQString().trimmed();
@@ -968,7 +888,6 @@ QDateTime Git::repositoryLastModifiedTime()
 			}
 		}
 	}
-#endif
 	return {};
 }
 
@@ -1577,14 +1496,14 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 	git(cmd + name);
 }
 
-bool Git::checkout(QString const &name, QString const &id) // oops! `switch` is C's keyword
+bool Git::checkout(QString const &branch_name, QString const &id) // oops! `switch` is C's keyword
 {
 	// use `switch` instead of `checkout`
 	QString cmd;
 	if (id.isEmpty()) {
-		cmd = QString("switch %1").arg(name);
+		cmd = QString("switch %1").arg(branch_name);
 	} else {
-		cmd = QString("switch -c %1 %2").arg(name).arg(id);
+		cmd = QString("switch -c %1 %2").arg(branch_name).arg(id);
 	}
 	return git(cmd);
 }

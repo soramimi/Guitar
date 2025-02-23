@@ -1067,18 +1067,23 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
  */
 QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
 {
-	char c = 0;
-
-	Git::CommitItem const &commit = commitItem(id);
-
-	if (commit.sign.verify) {
-		c = commit.sign.verify;
-	} else {
-		auto a = m->commit_detail_getter.query(commit.commit_id, true);
-		c = a.sign_verify;
+	if (m->background_process_work_in_progress) {
+		return {};
 	}
 
-	Git::SignatureGrade sg = Git::evaluateSignature(c);
+	char sign_state = 0;
+
+	{
+		Git::CommitItem const &commit = commitItem(id);
+		if (commit.sign.verify) {
+			sign_state = commit.sign.verify;
+		} else {
+			auto a = m->commit_detail_getter.query(commit.commit_id, true);
+			sign_state = a.sign_verify;
+		}
+	}
+
+	Git::SignatureGrade sg = Git::evaluateSignature(sign_state);
 	switch (sg) {
 	case Git::SignatureGrade::Good: // 署名あり、検証OK
 		return global->graphics->signature_good_icon;
@@ -3993,8 +3998,6 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 		}
 	}
 
-	// showFileList(files_list_type); //@
-	
 	{
 
 		MainWindowExchangeData xdata;
@@ -4008,7 +4011,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 				setDiffResult({});
 				return;
 			}
-			// showFileList(xdata.files_list_type); //@
+
 			xdata.files_list_type = files_list_type;
 
 			auto AddItem = [&](ObjectData const &obj){
