@@ -3365,11 +3365,6 @@ QList<Git::Diff> const *MainWindow::diffResult() const
 	return &m->diff_result;
 }
 
-std::map<QString, Git::Diff> *MainWindow::getDiffCacheMap()
-{
-	return &currentRepositoryData()->diff_cache;
-}
-
 void MainWindow::clearLabelMap()
 {
 	currentRepositoryData()->label_map.clear();
@@ -3409,8 +3404,6 @@ bool MainWindow::isRepositoryOpened() const
 {
 	return Git::isValidWorkingCopy(currentWorkingCopyDir());
 }
-
-
 
 /**
  * @brief リストウィジェット用ファイルアイテムを作成する
@@ -3999,7 +3992,6 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 	}
 
 	{
-
 		MainWindowExchangeData xdata;
 		xdata.files_list_type = FileListType::SingleList;
 

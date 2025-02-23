@@ -392,7 +392,6 @@ private:
 	void setInteractionMode(const InteractionMode &im);
 	void setUncommitedChanges(bool uncommited_changes);
 	QList<Git::Diff> const *diffResult() const;
-	std::map<QString, Git::Diff> *getDiffCacheMap();
 
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
