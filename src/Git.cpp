@@ -27,9 +27,14 @@ Git::CommitID::CommitID(const QString &qid)
 	assign(qid);
 }
 
-Git::CommitID::CommitID(const char *id)
+Git::CommitID::CommitID(std::string_view const &id)
 {
 	assign(id);
+}
+
+Git::CommitID::CommitID(const char *id)
+{
+	assign(std::string_view(id, strlen(id)));
 }
 
 void Git::CommitItem::setParents(const QStringList &list)
@@ -40,8 +45,85 @@ void Git::CommitItem::setParents(const QStringList &list)
 	}
 }
 
+class Latil1View {
+private:
+	QString text_;
+public:
+	Latil1View(QString const &s)
+		: text_(s)
+	{
+	}
+	bool empty() const
+	{
+		return text_.isEmpty();
+	}
+	size_t size() const
+	{
+		return text_.size();
+	}
+	char operator [](int i) const
+	{
+		return (i >= 0 && i < text_.size()) ? text_.utf16()[i] : 0;
+	}
+};
+
+template <typename VIEW> void Git::CommitID::_assign(VIEW const &id)
+{
+	if (id.empty()) {
+		valid = false;
+	} else {
+		valid = true;
+		if (id.size() == GIT_ID_LENGTH) {
+			char tmp[3];
+			tmp[2] = 0;
+			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
+				unsigned char c = id[i * 2 + 0];
+				unsigned char d = id[i * 2 + 1];
+				if (std::isxdigit(c) && std::isxdigit(d)) {
+					tmp[0] = c;
+					tmp[1] = d;
+					this->id[i] = strtol(tmp, nullptr, 16);
+				} else {
+					valid = false;
+					break;
+				}
+			}
+		}
+	}
+}
+
+void Git::CommitID::assign(std::string_view const &s)
+{
+#if 0
+	if (s.empty()) {
+		valid = false;
+	} else {
+		valid = true;
+		if (s.size() == GIT_ID_LENGTH) {
+			char tmp[3];
+			tmp[2] = 0;
+			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
+				unsigned char c = s[i * 2 + 0];
+				unsigned char d = s[i * 2 + 1];
+				if (std::isxdigit(c) && std::isxdigit(d)) {
+					tmp[0] = c;
+					tmp[1] = d;
+					id[i] = strtol(tmp, nullptr, 16);
+				} else {
+					valid = false;
+					break;
+				}
+			}
+		}
+	}
+#else
+	_assign(s);
+#endif
+}
+
 void Git::CommitID::assign(const QString &qid)
 {
+#if 0
 	if (qid.isEmpty()) {
 		valid = false;
 	} else {
@@ -63,6 +145,9 @@ void Git::CommitID::assign(const QString &qid)
 			}
 		}
 	}
+#else
+	_assign(Latil1View(qid));
+#endif
 }
 
 QString Git::CommitID::toQString(int maxlen) const

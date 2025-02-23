@@ -46,10 +46,13 @@ public:
 	private:
 		bool valid = false;
 		uint8_t id[GIT_ID_LENGTH / 2];
+		template <typename VIEW> void _assign(VIEW const &id);
 	public:
 		CommitID();
 		explicit CommitID(QString const &qid);
+		explicit CommitID(std::string_view const &id);
 		explicit CommitID(char const *id);
+		void assign(std::string_view const &qid);
 		void assign(const QString &qid);
 		QString toQString(int maxlen = -1) const;
 		bool isValid() const;
