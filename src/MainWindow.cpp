@@ -1471,7 +1471,7 @@ void MainWindow::openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, boo
 
 	PtyProcess *pty = getPtyProcess();
 	if (pty) {
-		if (!pty->wait(5000)) return; //@ something wrong
+		if (!pty->wait(5000)) /*return*/; //@ something wrong
 	}
 
 	cancelUpdateFileList();
