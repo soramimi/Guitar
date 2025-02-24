@@ -92,8 +92,8 @@ public:
 class Git_add_tag {
 public:
 	QString name_;
-	Git::CommitID commit_id_;
-	Git_add_tag(const QString &name, const Git::CommitID &commit_id)
+	Git::Hash commit_id_;
+	Git_add_tag(const QString &name, const Git::Hash &commit_id)
 		: name_(name)
 		, commit_id_(commit_id)
 	{

@@ -157,7 +157,7 @@ void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemL
  * @param out
  * @return
  */
-bool GitDiff::diff(GitRunner g, Git::CommitID const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();
@@ -180,7 +180,7 @@ bool GitDiff::diff(GitRunner g, Git::CommitID const &id, const QList<Git::Submod
 
 				QList<Git::DiffRaw> list;
 				for (QString const &parent : newer_commit.parents) {
-					QList<Git::DiffRaw> l = g.diff_raw(Git::CommitID(parent), id);
+					QList<Git::DiffRaw> l = g.diff_raw(Git::Hash(parent), id);
 					for (Git::DiffRaw const &item : l) {
 						if (item.state.startsWith('D')) {
 							deleted_set.insert(item.a.id);
@@ -313,7 +313,7 @@ bool GitDiff::diff(GitRunner g, Git::CommitID const &id, const QList<Git::Submod
 							}
 						} else if (Git::isValidID(id)) {
 							out->item = mods;
-							out->item.id = Git::CommitID(id);
+							out->item.id = Git::Hash(id);
 							auto commit = g.queryCommitItem(out->item.id);
 							if (commit) {
 								out->commit = *commit;
@@ -429,10 +429,10 @@ void GitCommitTree::parseTree(GitRunner g, QString const &tree_id)
 	parseGitTreeObject(g, objcache, tree_id, QString(), &root_item_list);
 }
 
-QString GitCommitTree::parseCommit(GitRunner g, QString const &commit_id) // TODO: change commit_id as Git::CommitID
+QString GitCommitTree::parseCommit(GitRunner g, QString const &commit_id) // TODO: change commit_id as Git::Hash
 {
 	GitCommit commit;
-	GitCommit::parseCommit(g, objcache, Git::CommitID(commit_id), &commit);
+	GitCommit::parseCommit(g, objcache, Git::Hash(commit_id), &commit);
 	parseTree(g, commit.tree_id);
 	return commit.tree_id;
 }

@@ -240,7 +240,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	if (type == GitTreeItem::BLOB) {
 		QString commit_id = current->data(ObjectIdRole).toString();
 		GitRunner g = git();
-		m->content_object = m->objcache->catFile(g, Git::CommitID(commit_id));
+		m->content_object = m->objcache->catFile(g, Git::Hash(commit_id));
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
 		QString mimetype = mainwindow()->determinFileType(m->content_object.content);

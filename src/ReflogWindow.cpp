@@ -80,7 +80,7 @@ std::optional<Git::CommitItem> ReflogWindow::currentCommitItem()
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
 		Git::ReflogItem const &logitem = reflog_[row];
-		return mainwindow()->queryCommit(Git::CommitID(logitem.id));
+		return mainwindow()->queryCommit(Git::Hash(logitem.id));
 	}
 	return std::nullopt;
 }

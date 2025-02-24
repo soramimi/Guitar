@@ -145,7 +145,7 @@ struct MainWindow::Private {
 
 	QString commit_log_filter_text;
 
-	Git::CommitID head_id;
+	Git::Hash head_id;
 
 	RepositoryInfo temp_repo_for_clone_complete;
 	QVariant pty_process_completion_data;
@@ -595,7 +595,7 @@ bool MainWindow::setCurrentLogRow(int row)
 	return false;
 }
 
-int MainWindow::rowFromCommitId(Git::CommitID const &id)
+int MainWindow::rowFromCommitId(Git::Hash const &id)
 {
 	ASSERT_MAIN_THREAD();
 
@@ -608,7 +608,7 @@ int MainWindow::rowFromCommitId(Git::CommitID const &id)
 	return -1;
 }
 
-bool MainWindow::jumpToCommit(Git::CommitID const &id)
+bool MainWindow::jumpToCommit(Git::Hash const &id)
 {
 	int row = rowFromCommitId(id);
 	return setCurrentLogRow(row);
@@ -959,12 +959,12 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 	}
 }
 
-std::map<Git::CommitID, TagList> const &MainWindow::tagmap() const
+std::map<Git::Hash, TagList> const &MainWindow::tagmap() const
 {
 	return currentRepositoryData()->tag_map;
 }
 
-TagList MainWindow::findTag(std::map<Git::CommitID, TagList> const &tagmap, Git::CommitID const &id)
+TagList MainWindow::findTag(std::map<Git::Hash, TagList> const &tagmap, Git::Hash const &id)
 {
 	auto it = tagmap.find(id);
 	if (it != tagmap.end()) {
@@ -973,7 +973,7 @@ TagList MainWindow::findTag(std::map<Git::CommitID, TagList> const &tagmap, Git:
 	return {};
 }
 
-TagList MainWindow::findTag(Git::CommitID const &id) const
+TagList MainWindow::findTag(Git::Hash const &id) const
 {
 	return findTag(tagmap(), id);
 }
@@ -984,9 +984,9 @@ TagList const &MainWindow::queryCurrentCommitTagList() const
 	return findTag(commit.commit_id);
 }
 
-std::map<Git::CommitID, TagList> MainWindow::queryTags(GitRunner g)
+std::map<Git::Hash, TagList> MainWindow::queryTags(GitRunner g)
 {
-	std::map<Git::CommitID, TagList> tag_map;
+	std::map<Git::Hash, TagList> tag_map;
 
 	TagList tags = g.tags();
 	for (Git::Tag const &tag : tags) {
@@ -1065,7 +1065,7 @@ void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
  *
  * コミットの署名検証結果に応じたアイコンを返す
  */
-QIcon MainWindow::signatureVerificationIcon(Git::CommitID const &id) const
+QIcon MainWindow::signatureVerificationIcon(Git::Hash const &id) const
 {
 	if (m->background_process_work_in_progress) {
 		return {};
@@ -1391,8 +1391,8 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
 	Q_ASSERT(commit_log);
 
-	std::map<Git::CommitID, BranchList> const &branch_map = exdata.p->branch_map.value();
-	std::map<Git::CommitID, TagList> const &tag_map = exdata.p->tag_map.value();
+	std::map<Git::Hash, BranchList> const &branch_map = exdata.p->branch_map.value();
+	std::map<Git::Hash, TagList> const &tag_map = exdata.p->tag_map.value();
 
 	exdata.p->label_map = std::map<int, BranchLabelList>();
 	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
@@ -2112,7 +2112,7 @@ void MainWindow::openSelectedRepository()
  *
  * 差分を作成する
  */
-std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::CommitID id)
+std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 {
 	QList<Git::Diff> out;
 
@@ -2121,7 +2121,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::CommitID
 	}
 
 	if (!id && !isThereUncommitedChanges()) {
-		id = Git::CommitID(getObjCache()->revParse(g, "HEAD"));
+		id = Git::Hash(getObjCache()->revParse(g, "HEAD"));
 	}
 
 	QList<Git::SubmoduleItem> mods;
@@ -2591,7 +2591,7 @@ void MainWindow::delete_tags(GitRunner g, const QStringList &tagnames)
 	runPtyGit(QString{}, g, Git_delete_tags{tagnames}, nullptr, {});
 }
 
-void MainWindow::add_tag(GitRunner g, const QString &name, Git::CommitID const &commit_id)
+void MainWindow::add_tag(GitRunner g, const QString &name, Git::Hash const &commit_id)
 {
 	runPtyGit(QString{}, g, Git_add_tag{name, commit_id}, nullptr, {});
 }
@@ -2756,7 +2756,7 @@ void MainWindow::internalAddTag(const QString &name)
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	Git::CommitID commit_id = selectedCommitItem().commit_id;
+	Git::Hash commit_id = selectedCommitItem().commit_id;
 	if (!Git::isValidID(commit_id)) return;
 
 	add_tag(g, name, commit_id);
@@ -3047,7 +3047,7 @@ QStringList MainWindow::remotes() const
  *
  * コミットIDからブランチを検索する
  */
-BranchList MainWindow::findBranch(Git::CommitID const &id)
+BranchList MainWindow::findBranch(Git::Hash const &id)
 {
 	auto it = branchmap().find(id);
 	if (it != branchmap().end()) {
@@ -3193,7 +3193,7 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
  * @param id
  * @param out
  */
-void MainWindow::updateSubmodules(GitRunner g, Git::CommitID const &id, QList<Git::SubmoduleItem> *out)
+void MainWindow::updateSubmodules(GitRunner g, Git::Hash const &id, QList<Git::SubmoduleItem> *out)
 {
 	*out = {};
 	QList<Git::SubmoduleItem> submodules;
@@ -3209,7 +3209,7 @@ void MainWindow::updateSubmodules(GitRunner g, Git::CommitID const &id, QList<Gi
 			parseGitTreeObject(g, &objcache, tree.tree_id, {}, &list);
 			for (GitTreeItem const &item : list) {
 				if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
-					Git::Object obj = objcache.catFile(g, Git::CommitID(item.id));
+					Git::Object obj = objcache.catFile(g, Git::Hash(item.id));
 					if (!obj.content.isEmpty()) {
 						parseGitSubModules(obj.content, &submodules);
 					}
@@ -3224,11 +3224,11 @@ void MainWindow::updateSubmodules(GitRunner g, Git::CommitID const &id, QList<Gi
 					if (list[k].name == vars[j]) {
 						if (list[k].type == GitTreeItem::Type::BLOB) {
 							if (j + 1 == vars.size()) {
-								submodules[i].id = Git::CommitID(list[k].id);
+								submodules[i].id = Git::Hash(list[k].id);
 								goto done;
 							}
 						} else if (list[k].type == GitTreeItem::Type::TREE) {
-							Git::Object obj = objcache.catFile(g, Git::CommitID(list[k].id));
+							Git::Object obj = objcache.catFile(g, Git::Hash(list[k].id));
 							parseGitTreeObject(obj.content, {}, &list);
 							break;
 						}
@@ -3259,7 +3259,7 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
 	ASSERT_MAIN_THREAD();
 
 	Git::CommitItemList commit_log;
-	std::map<Git::CommitID, BranchList> branch_map;
+	std::map<Git::Hash, BranchList> branch_map;
 
 	commit_log = retrieveCommitLog(g); // コミットログを取得
 
@@ -3380,12 +3380,12 @@ GitObjectCache *MainWindow::getObjCache()
 	return &currentRepositoryData()->object_cache;
 }
 
-Git::CommitID MainWindow::getHeadId() const
+Git::Hash MainWindow::getHeadId() const
 {
 	return m->head_id;
 }
 
-void MainWindow::setHeadId(Git::CommitID const &head_id)
+void MainWindow::setHeadId(Git::Hash const &head_id)
 {
 	m->head_id = head_id;
 }
@@ -3506,12 +3506,12 @@ static void fixCommitLogOrder(Git::CommitItemList *list)
 
 	// 親子関係を調べて、順番が狂っていたら、修正する。
 
-	std::set<Git::CommitID> set;
+	std::set<Git::Hash> set;
 	size_t limit = count;
 	size_t i = 0;
 	while (i < count) {
 		size_t newpos = (size_t)-1;
-		for (Git::CommitID const &parent : LISTITEM(i).parent_ids) {
+		for (Git::Hash const &parent : LISTITEM(i).parent_ids) {
 			if (set.find(parent) != set.end()) {
 				for (size_t j = 0; j < i; j++) {
 					if (parent == LISTITEM(j).commit_id) {
@@ -3553,7 +3553,7 @@ Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 	return list;
 }
 
-std::map<Git::CommitID, BranchList> const &MainWindow::branchmap() const
+std::map<Git::Hash, BranchList> const &MainWindow::branchmap() const
 {
 	return currentRepositoryData()->branch_map;
 }
@@ -3576,7 +3576,7 @@ void MainWindow::updateWindowTitle(GitRunner g)
 	updateWindowTitle(user);
 }
 
-std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map) const
+std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(Git::CommitItem const &commit, std::map<Git::Hash, BranchList> const &branch_map, std::map<Git::Hash, TagList> const &tag_map) const
 {
 	QString message_ex;
 	BranchLabelList label_list;
@@ -3843,10 +3843,10 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	return items;
 }
 
-Git::CommitID MainWindow::getObjectID(QListWidgetItem *item)
+Git::Hash MainWindow::getObjectID(QListWidgetItem *item)
 {
 	if (!item) return {};
-	return Git::CommitID(item->data(ObjectIdRole).toString());
+	return Git::Hash(item->data(ObjectIdRole).toString());
 }
 
 QString MainWindow::getFilePath(QListWidgetItem *item)
@@ -3974,7 +3974,7 @@ Git::CommitItem const *MainWindow::currentCommitItem()
 	return nullptr;
 }
 
-void MainWindow::updateFileList(Git::CommitID const &id)
+void MainWindow::updateFileList(Git::Hash const &id)
 {
 	PROFILE;
 
@@ -4003,7 +4003,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 		xdata.files_list_type = FileListType::SingleList;
 
 		if (id) {
-			auto diffs = makeDiffs(g, Git::CommitID(id));
+			auto diffs = makeDiffs(g, Git::Hash(id));
 			if (diffs) {
 				setDiffResult(*diffs);
 			} else {
@@ -4024,7 +4024,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 			if (uncommited) {
 				xdata.files_list_type = FileListType::SideBySide;
 			}
-			auto diffs = makeDiffs(g, uncommited ? Git::CommitID() : id);
+			auto diffs = makeDiffs(g, uncommited ? Git::Hash() : id);
 			if (diffs) {
 				setDiffResult(*diffs);
 			} else {
@@ -4100,7 +4100,7 @@ void MainWindow::updateFileList(Git::CommitID const &id)
 
 void MainWindow::updateFileList(Git::CommitItem const *commit)
 {
-	Git::CommitID id;
+	Git::Hash id;
 	if (!commit) {
 		// nullptr for uncommited changes
 	} else if (Git::isUncommited(*commit)) {
@@ -4135,7 +4135,7 @@ void MainWindow::initUpdateFileListTimer()
 	connect(&m->update_file_list_timer, &QTimer::timeout, this, &MainWindow::updateCurrentFileList);
 }
 
-void MainWindow::makeDiffList(Git::CommitID const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
+void MainWindow::makeDiffList(Git::Hash const &id, QList<Git::Diff> *diff_list, QListWidget *listwidget)
 {
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -4173,7 +4173,7 @@ Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id) //@TODO:
 				return obj;
 			}
 		} else if (Git::isValidID(id)) {
-			return getObjCache()->catFile(g, Git::CommitID(id));
+			return getObjCache()->catFile(g, Git::Hash(id));
 		}
 	}
 	return {};
@@ -4214,7 +4214,7 @@ void MainWindow::updateCommitGraph(Git::CommitItemList *logs)
 				item->resolved = true;
 			} else {
 				for (int j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
-					Git::CommitID const &parent_id = item->parent_ids[j]; // 親のハッシュ値
+					Git::Hash const &parent_id = item->parent_ids[j]; // 親のハッシュ値
 					for (int k = i + 1; k < (int)LogCount; k++) { // 親を探す
 						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親
 							item->parent_lines.emplace_back(k); // インデックス値を記憶
@@ -4419,7 +4419,7 @@ DONE:;
 
 void MainWindow::updateHEAD(GitRunner g)
 {
-	auto head = Git::CommitID(getObjCache()->revParse(g, "HEAD"));
+	auto head = Git::Hash(getObjCache()->revParse(g, "HEAD"));
 	setHeadId(head);
 }
 
@@ -4572,7 +4572,7 @@ void MainWindow::cherrypick(Git::CommitItem const *commit)
 		QList<Git::CommitItem> parents;
 		for (int i = 0; i < n; i++) {
 			QString id = commit->commit_id.toQString() + QString("^%1").arg(i + 1);
-			Git::CommitID id2 = g.rev_parse(id);
+			Git::Hash id2 = g.rev_parse(id);
 			auto item = g.queryCommitItem(id2);
 			parents.push_back(*item);
 		}
@@ -5313,7 +5313,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 		} else {
 			// ファイルプロパティダイアログを表示する
 			QString path = getFilePath(item);
-			Git::CommitID id = getObjectID(item);
+			Git::Hash id = getObjectID(item);
 			FilePropertyDialog dlg(this);
 			dlg.exec(path, id);
 		}
@@ -5514,7 +5514,7 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 	}
 }
 
-std::optional<Git::CommitItem> MainWindow::queryCommit(Git::CommitID const &id)
+std::optional<Git::CommitItem> MainWindow::queryCommit(Git::Hash const &id)
 {
 	return git().queryCommitItem(id);
 }
@@ -5572,7 +5572,7 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 		}
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
-		Git::CommitID id = commit.commit_id;
+		Git::Hash id = commit.commit_id;
 		if (!id.isValid() && !commit.parent_ids.isEmpty()) {
 			id = commit.parent_ids.front();
 		}
@@ -5589,7 +5589,7 @@ void MainWindow::checkout(QWidget *parent, Git::CommitItem const &commit, std::f
 				if (ok) {
 					reopenRepository(true);
 				} else {
-					Git::CommitID id = g.rev_parse(name);
+					Git::Hash id = g.rev_parse(name);
 					if (id.isValid()) {
 						if (QMessageBox::question(parent, tr("Create Local Branch"),
 												  tr("Failed to create a local branch.") + "\n" + tr("Do you want to jump to the existing commit?"),
@@ -5687,7 +5687,7 @@ Git::CommitItem const &MainWindow::commitItem(int row) const
 	return m->null_commit_item;
 }
 
-Git::CommitItem const &MainWindow::commitItem(Git::CommitID const &id) const
+Git::CommitItem const &MainWindow::commitItem(Git::Hash const &id) const
 {
 	ASSERT_MAIN_THREAD();
 	auto *p = commitlog().find(id);
@@ -5870,7 +5870,7 @@ void MainWindow::updateAncestorCommitMap()
 	for (size_t i = index; i < end; i++) {
 		Git::CommitItem const *item = &logs.at(i);
 		if (isAncestorCommit(item->commit_id.toQString())) {
-			for (Git::CommitID const &parent : item->parent_ids) {
+			for (Git::Hash const &parent : item->parent_ids) {
 				m->ancestors.insert(m->ancestors.end(), parent.toQString());
 			}
 		}
@@ -6425,7 +6425,7 @@ void MainWindow::on_action_window_log_triggered(bool checked)
 	showLogWindow(checked);
 }
 
-bool MainWindow::jump(GitRunner g, Git::CommitID const &id)
+bool MainWindow::jump(GitRunner g, Git::Hash const &id)
 {
 	return jumpToCommit(id);
 }
@@ -6434,7 +6434,7 @@ void MainWindow::jump(GitRunner g, QString const &text)
 {
 	if (text.isEmpty()) return;
 
-	Git::CommitID id = g.rev_parse(text);
+	Git::Hash id = g.rev_parse(text);
 	if (!jumpToCommit(id)) {
 		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
 	}
@@ -6651,7 +6651,7 @@ void MainWindow::deleteRemoteBranch(Git::CommitItem const &commit)
 	}
 }
 
-QStringList MainWindow::remoteBranches(Git::CommitID const &id, QStringList *all)
+QStringList MainWindow::remoteBranches(Git::Hash const &id, QStringList *all)
 {
 	if (all) all->clear();
 
@@ -7193,7 +7193,7 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 	m->searching = false;
 }
 
-Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::CommitID const &id, int maxcount) const
+Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int maxcount) const
 {
 	PROFILE;
 
@@ -7207,7 +7207,7 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::CommitID const &id, i
 		if (obj.type == Git::Object::Type::COMMIT) {
 			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
 			if (item) {
-				item->commit_id = Git::CommitID(hash);
+				item->commit_id = Git::Hash(hash);
 				items.list.push_back(*item);
 			}
 		}

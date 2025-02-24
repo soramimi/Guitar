@@ -22,7 +22,7 @@ FilePropertyDialog::~FilePropertyDialog()
 	delete ui;
 }
 
-void FilePropertyDialog::exec(QString const &path, Git::CommitID const &id)
+void FilePropertyDialog::exec(QString const &path, Git::Hash const &id)
 {
 	QFileInfo info(path);
 	if (!info.exists()) {

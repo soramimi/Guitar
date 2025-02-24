@@ -28,7 +28,7 @@ private:
 	struct Request {
 		bool done = false;
 		bool busy = false;
-		Git::CommitID id;
+		Git::Hash id;
 		Data data;
 
 		operator bool () const
@@ -37,16 +37,16 @@ private:
 		}
 	};
 	std::vector<Request> requests_;
-	std::map<Git::CommitID, Data> cache_;
+	std::map<Git::Hash, Data> cache_;
 public:
 	CommitDetailGetter() = default;
 	virtual ~CommitDetailGetter();
 	void start(GitRunner git);
 	void stop();
 private:
-	Data _query(const Git::CommitID &id, bool request_if_not_found, bool lock);
+	Data _query(const Git::Hash &id, bool request_if_not_found, bool lock);
 public:
-	Data query(const Git::CommitID &id, bool request_if_not_found);
+	Data query(const Git::Hash &id, bool request_if_not_found);
 signals:
 	void ready();
 };

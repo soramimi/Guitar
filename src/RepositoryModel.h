@@ -14,8 +14,8 @@ typedef QList<BranchLabel> BranchLabelList;
 
 struct RepositoryData {
 	Git::CommitItemList commit_log;
-	std::map<Git::CommitID, BranchList> branch_map;
-	std::map<Git::CommitID, TagList> tag_map;
+	std::map<Git::Hash, BranchList> branch_map;
+	std::map<Git::Hash, TagList> tag_map;
 	std::map<int, BranchLabelList> label_map;
 
 	std::map<QString, Git::Diff> diff_cache;
@@ -27,8 +27,8 @@ struct RepositoryData {
 struct CommitLogExchangeData {
 	struct D {
 		std::optional<Git::CommitItemList> commit_log;
-		std::optional<std::map<Git::CommitID, BranchList>> branch_map;
-		std::optional<std::map<Git::CommitID, TagList>> tag_map;
+		std::optional<std::map<Git::Hash, BranchList>> branch_map;
+		std::optional<std::map<Git::Hash, TagList>> tag_map;
 		std::optional<std::map<int, BranchLabelList>> label_map;
 	};
 	std::shared_ptr<D> p;

@@ -114,7 +114,7 @@ bool GitObjectManager::loadPackedObject(GitPackIdxPtr const &idx, QIODevice *pac
 		if (info.type == Git::Object::Type::OFS_DELTA) {
 			source_item = idx->item(item->offset - info.offset);
 		} else if (info.type == Git::Object::Type::REF_DELTA) {
-			source_item = idx->item(Git::CommitID(info.ref_id));
+			source_item = idx->item(Git::Hash(info.ref_id));
 		}
 		if (source_item) { // if deltified object
 			GitPack::Object source;
@@ -156,7 +156,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPa
 	return false;
 }
 
-bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::Hash const &id, QByteArray *out, Git::Object::Type *type)
 {
 	loadIndexes(g);
 
@@ -176,7 +176,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::CommitID cons
 	return false;
 }
 
-QString GitObjectManager::findObjectPath(GitRunner g, Git::CommitID const &id)
+QString GitObjectManager::findObjectPath(GitRunner g, Git::Hash const &id)
 {
 	if (Git::isValidID(id)) {
 		int count = 0;
@@ -202,7 +202,7 @@ QString GitObjectManager::findObjectPath(GitRunner g, Git::CommitID const &id)
 	return {};
 }
 
-bool GitObjectManager::loadObject(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::loadObject(GitRunner g, Git::Hash const &id, QByteArray *out, Git::Object::Type *type)
 {
 	QString path = findObjectPath(g, id);
 	if (!path.isEmpty()) {
@@ -220,7 +220,7 @@ bool GitObjectManager::loadObject(GitRunner g, Git::CommitID const &id, QByteArr
 	return false;
 }
 
-bool GitObjectManager::catFile(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::catFile(GitRunner g, Git::Hash const &id, QByteArray *out, Git::Object::Type *type)
 {
 	*type = Git::Object::Type::UNKNOWN;
 	if (loadObject(g, id, out, type)) return true;
@@ -246,7 +246,7 @@ void GitObjectCache::clear()
 	object_manager.setup();
 }
 
-Git::CommitID GitObjectCache::revParse(GitRunner g, QString const &name)
+Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 {
 	if (!g.isValidWorkingCopy()) return {};
 
@@ -267,7 +267,7 @@ Git::CommitID GitObjectCache::revParse(GitRunner g, QString const &name)
 	}
 }
 
-Git::Object GitObjectCache::catFile(GitRunner g, Git::CommitID const &id)
+Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 {
 	// PROFILE;
 	{
@@ -328,7 +328,7 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::CommitID const &id)
 	return Git::Object();
 }
 
-bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
+bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, Git::Hash const &id, GitCommit *out)
 {
 	*out = {};
 	if (id.isValid()) {
@@ -395,7 +395,7 @@ bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &co
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {
-		Git::Object obj = objcache->catFile(g, Git::CommitID(commit_id));
+		Git::Object obj = objcache->catFile(g, Git::Hash(commit_id));
 		if (!obj.content.isEmpty()) { // 内容を取得
 			parseGitTreeObject(obj.content, path_prefix, out);
 			return true;

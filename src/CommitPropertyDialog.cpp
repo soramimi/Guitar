@@ -57,7 +57,7 @@ void CommitPropertyDialog::init()
 	ui->lineEdit_mail->setText(m->commit.email);
 
 	QString text;
-	for (Git::CommitID const &id : m->commit.parent_ids) {
+	for (Git::Hash const &id : m->commit.parent_ids) {
 		text += id.toQString() + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);

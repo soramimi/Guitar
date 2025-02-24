@@ -17,22 +17,22 @@
 #include <thread>
 #include "Profile.h"
 
-Git::CommitID::CommitID()
+Git::Hash::Hash()
 {
 	
 }
 
-Git::CommitID::CommitID(std::string_view const &id)
+Git::Hash::Hash(std::string_view const &id)
 {
 	assign(id);
 }
 
-Git::CommitID::CommitID(const QString &qid)
+Git::Hash::Hash(const QString &qid)
 {
 	assign(qid);
 }
 
-Git::CommitID::CommitID(const char *id)
+Git::Hash::Hash(const char *id)
 {
 	assign(std::string_view(id, strlen(id)));
 }
@@ -59,12 +59,12 @@ public:
 	}
 };
 
-template <typename VIEW> void Git::CommitID::_assign(VIEW const &id)
+template <typename VIEW> void Git::Hash::_assign(VIEW const &id)
 {
 	if (id.empty()) {
-		valid = false;
+		valid_ = false;
 	} else {
-		valid = true;
+		valid_ = true;
 		if (id.size() == GIT_ID_LENGTH) {
 			char tmp[3];
 			tmp[2] = 0;
@@ -74,9 +74,9 @@ template <typename VIEW> void Git::CommitID::_assign(VIEW const &id)
 				if (std::isxdigit(c) && std::isxdigit(d)) {
 					tmp[0] = c;
 					tmp[1] = d;
-					this->id[i] = strtol(tmp, nullptr, 16);
+					id_[i] = strtol(tmp, nullptr, 16);
 				} else {
-					valid = false;
+					valid_ = false;
 					break;
 				}
 			}
@@ -84,22 +84,22 @@ template <typename VIEW> void Git::CommitID::_assign(VIEW const &id)
 	}
 }
 
-void Git::CommitID::assign(std::string_view const &s)
+void Git::Hash::assign(std::string_view const &s)
 {
 	_assign(s);
 }
 
-void Git::CommitID::assign(const QString &id)
+void Git::Hash::assign(const QString &id)
 {
 	_assign(Latil1View(id));
 }
 
-QString Git::CommitID::toQString(int maxlen) const
+QString Git::Hash::toQString(int maxlen) const
 {
-	if (valid) {
+	if (valid_) {
 		char tmp[GIT_ID_LENGTH + 1];
 		for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
-			sprintf(tmp + i * 2, "%02x", id[i]);
+			sprintf(tmp + i * 2, "%02x", id_[i]);
 		}
 		if (maxlen < 0 || maxlen > GIT_ID_LENGTH) {
 			maxlen = GIT_ID_LENGTH;
@@ -110,12 +110,12 @@ QString Git::CommitID::toQString(int maxlen) const
 	return {};
 }
 
-bool Git::CommitID::isValid() const
+bool Git::Hash::isValid() const
 {
-	if (!valid) return false;
+	if (!valid_) return false;
 	uint8_t c = 0;
-	for (std::size_t i = 0; i < sizeof(id); i++) {
-		c |= id[i];
+	for (std::size_t i = 0; i < sizeof(id_); i++) {
+		c |= id_[i];
 	}
 	return c != 0; // すべて0ならfalse
 }
@@ -124,7 +124,7 @@ void Git::CommitItem::setParents(const QStringList &list)
 {
 	parent_ids.clear();
 	for (QString const &id : list) {
-		parent_ids.append(Git::CommitID(id));
+		parent_ids.append(Git::Hash(id));
 	}
 }
 
@@ -434,12 +434,12 @@ bool Git::init()
 	return ok;
 }
 
-Git::CommitID Git::rev_parse(QString const &name)
+Git::Hash Git::rev_parse(QString const &name)
 {
 	QString cmd = "rev-parse %1";
 	cmd = cmd.arg(name);
 	if (git(cmd)) {
-		return Git::CommitID(resultQString().trimmed());
+		return Git::Hash(resultQString().trimmed());
 	}
 	return {};
 }
@@ -455,7 +455,7 @@ QList<Git::Tag> Git::tags()
 			if (isValidID(l[0]) && l[1].startsWith("refs/tags/")) {
 				Tag t;
 				t.name = l[1].mid(10);
-				t.id = Git::CommitID(l[0]);
+				t.id = Git::Hash(l[0]);
 				list.push_back(t);
 			}
 		}
@@ -463,7 +463,7 @@ QList<Git::Tag> Git::tags()
 	return list;
 }
 
-bool Git::tag(QString const &name, CommitID const &id)
+bool Git::tag(QString const &name, Hash const &id)
 {
 	QString cmd = "tag \"%1\" %2";
 	cmd = cmd.arg(name).arg(id.toQString());
@@ -524,7 +524,7 @@ QString Git::diff_head(std::function<bool (QString const &name, QString const &m
 	return diff;
 }
 
-QList<Git::DiffRaw> Git::diff_raw(CommitID const &old_id, CommitID const &new_id)
+QList<Git::DiffRaw> Git::diff_raw(Hash const &old_id, Hash const &new_id)
 {
 	QList<DiffRaw> list;
 	QString cmd = "diff --raw --abbrev=%1 %2 %3";
@@ -753,7 +753,7 @@ BranchList Git::branches()
 				} else {
 					int i = text.indexOf(' ');
 					if (i == GIT_ID_LENGTH) {
-						item.branch.id = Git::CommitID(text.mid(0, GIT_ID_LENGTH));
+						item.branch.id = Git::Hash(text.mid(0, GIT_ID_LENGTH));
 					}
 					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
 						i++;
@@ -807,7 +807,7 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 				QString key = s.mid(0, j);
 				QString val = s.mid(j + 1);
 				if (key == "id") {
-					item.commit_id = Git::CommitID(val);
+					item.commit_id = Git::Hash(val);
 				} else if (key == "gpg") { // %G? 署名検証結果
 					item.sign.verify = *val.utf16();
 				} else if (key == "key") { // %GF 署名フィンガープリント
@@ -853,7 +853,7 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
  * @param maxcount 最大アイテム数
  * @return
  */
-Git::CommitItemList Git::log_all(CommitID const &id, int maxcount)
+Git::CommitItemList Git::log_all(Hash const &id, int maxcount)
 {
 	PROFILE;
 
@@ -901,7 +901,7 @@ Git::CommitItemList Git::log_file(QString const &path, int maxcount)
 	return items;
 }
 
-QStringList Git::rev_list_all(CommitID const &id, int maxcount)
+QStringList Git::rev_list_all(Hash const &id, int maxcount)
 {
 	QStringList items;
 
@@ -931,7 +931,7 @@ QDateTime Git::repositoryLastModifiedTime()
 	if (isValidWorkingCopy()) {
 		git("rev-parse HEAD");
 		QString id = resultQString().trimmed();
-		auto file = cat_file(CommitID(id));
+		auto file = cat_file(Hash(id));
 		if (file) {
 			time_t time = 0;
 			QByteArray ba = file.value();
@@ -961,7 +961,7 @@ QDateTime Git::repositoryLastModifiedTime()
  *
  * コミットに関連する署名情報を取得する
  */
-std::optional<Git::CommitItem> Git::log_signature(CommitID const &id)
+std::optional<Git::CommitItem> Git::log_signature(Hash const &id)
 {
 	PROFILE;
 
@@ -1072,7 +1072,7 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 		if (line.startsWith("tree ")) {
 			out.tree = line.mid(5);
 		} else if (line.startsWith("parent ")) {
-			out.parent_ids.push_back(Git::CommitID(line.mid(7)));
+			out.parent_ids.push_back(Git::Hash(line.mid(7)));
 		} else if (line.startsWith("author ")) {
 			QStringList arr = misc::splitWords(line);
 			int n = arr.size();
@@ -1106,7 +1106,7 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 	return out;
 }
 
-std::optional<Git::CommitItem> Git::queryCommitItem(CommitID const &id)
+std::optional<Git::CommitItem> Git::queryCommitItem(Hash const &id)
 {
 	if (objectType(id) == "commit") {
 		auto ba = cat_file(id);
@@ -1190,7 +1190,7 @@ QList<Git::SubmoduleItem> Git::submodules()
 	QStringList words = misc::splitWords(text);
 	if (words.size() >= 2) {
 		SubmoduleItem sm;
-		sm.id = Git::CommitID(words[0]);
+		sm.id = Git::Hash(words[0]);
 		sm.path = words[1];
 		if (isValidID(sm.id)) {
 			if (words.size() >= 3) {
@@ -1293,7 +1293,7 @@ bool Git::commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty
 	return commit_(text, true, sign, pty);
 }
 
-bool Git::revert(CommitID const &id)
+bool Git::revert(Hash const &id)
 {
 	QString cmd = "revert %1";
 	cmd = cmd.arg(id.toQString());
@@ -1349,7 +1349,7 @@ Git::FileStatusList Git::status_s()
 	return status_s_();
 }
 
-QString Git::objectType(CommitID const &id)
+QString Git::objectType(Hash const &id)
 {
 	if (isValidID(id)) {
 		git("cat-file -t " + id.toQString());
@@ -1358,7 +1358,7 @@ QString Git::objectType(CommitID const &id)
 	return {};
 }
 
-QByteArray Git::cat_file_(const CommitID &id)
+QByteArray Git::cat_file_(Hash const &id)
 {
 	if (isValidID(id)) {
 		git("cat-file -p " + id.toQString());
@@ -1367,7 +1367,7 @@ QByteArray Git::cat_file_(const CommitID &id)
 	return {};
 }
 
-std::optional<QByteArray> Git::cat_file(CommitID const &id)
+std::optional<QByteArray> Git::cat_file(Hash const &id)
 {
 	QByteArray out;
 	if (isValidID(id)) {
@@ -1376,7 +1376,7 @@ std::optional<QByteArray> Git::cat_file(CommitID const &id)
 	return std::nullopt;
 }
 
-QString Git::queryEntireCommitMessage(CommitID const &id)
+QString Git::queryEntireCommitMessage(Hash const &id)
 {
 	QString ret;
 	auto file = cat_file(id);

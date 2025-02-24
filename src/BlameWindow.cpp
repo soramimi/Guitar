@@ -158,14 +158,14 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 	return list;
 }
 
-Git::CommitID BlameWindow::getCommitId(QTableWidgetItem *item) const
+Git::Hash BlameWindow::getCommitId(QTableWidgetItem *item) const
 {
-	return item ? Git::CommitID(item->data(CommidIdRole).toString()) : Git::CommitID();
+	return item ? Git::Hash(item->data(CommidIdRole).toString()) : Git::Hash();
 }
 
-Git::CommitID BlameWindow::currentCommitId() const
+Git::Hash BlameWindow::currentCommitId() const
 {
-	Git::CommitID id;
+	Git::Hash id;
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < m->list.size()) {
 		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
@@ -176,7 +176,7 @@ Git::CommitID BlameWindow::currentCommitId() const
 
 void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
-	Git::CommitID commit_id = currentCommitId();
+	Git::Hash commit_id = currentCommitId();
 	if (Git::isValidID(commit_id)) {
 		Git::CommitItem const &commit_item = mainwindow()->commitItem(commit_id);
 		CommitPropertyDialog dlg(this, commit_item);
@@ -201,7 +201,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 	BlameItem blame = m->list[row];
 	GitRunner g = mainwindow()->git();
-	std::optional<Git::CommitItem> commit = g.queryCommitItem(Git::CommitID(blame.commit_id));
+	std::optional<Git::CommitItem> commit = g.queryCommitItem(Git::Hash(blame.commit_id));
 	if (!commit) return;
 
 	QMenu menu;
@@ -219,7 +219,7 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 {
 	(void)current;
 	(void)previous;
-	Git::CommitID commit_id = currentCommitId();
+	Git::Hash commit_id = currentCommitId();
 	CommitInfo info;
 	if (Git::isValidID(commit_id)) {
 		auto it = m->commit_cache.find(commit_id.toQString());

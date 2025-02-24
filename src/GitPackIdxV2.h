@@ -60,7 +60,7 @@ public:
 	GitPackIdxV2() = default;
 	~GitPackIdxV2();
 	QString pack_file_path() const;
-	GitPackIdxItem const *item(Git::CommitID const &id) const;
+	GitPackIdxItem const *item(Git::Hash const &id) const;
 	GitPackIdxItem const *item(size_t offset) const;
 	void each(std::function<bool(GitPackIdxItem const *)> const &fn) const;
 };

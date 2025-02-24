@@ -43,26 +43,26 @@ using GitPtr = std::shared_ptr<Git>;
 class Git {
 	friend class GitRunner;
 public:
-	class CommitID {
+	class Hash {
 	private:
-		bool valid = false;
-		uint8_t id[GIT_ID_LENGTH / 2];
+		bool valid_ = false;
+		uint8_t id_[GIT_ID_LENGTH / 2];
 		template <typename VIEW> void _assign(VIEW const &id);
 	public:
-		CommitID();
-		explicit CommitID(std::string_view const &id);
-		explicit CommitID(QString const &qid);
-		explicit CommitID(char const *id);
+		Hash();
+		explicit Hash(std::string_view const &id);
+		explicit Hash(QString const &qid);
+		explicit Hash(char const *id);
 		void assign(std::string_view const &qid);
 		void assign(const QString &qid);
 		QString toQString(int maxlen = -1) const;
 		bool isValid() const;
-		int compare(CommitID const &other) const
+		int compare(Hash const &other) const
 		{
-			if (!valid && other.valid) return -1;
-			if (valid && !other.valid) return 1;
-			if (!valid && !other.valid) return 0;
-			return memcmp(id, other.id, sizeof(id));
+			if (!valid_ && other.valid_) return -1;
+			if (valid_ && !other.valid_) return 1;
+			if (!valid_ && !other.valid_) return 0;
+			return memcmp(id_, other.id_, sizeof(id_));
 		}
 		operator bool () const
 		{
@@ -94,7 +94,7 @@ public:
 
 	struct SubmoduleItem {
 		QString name;
-		CommitID id;
+		Hash id;
 		QString path;
 		QString refs;
 		QString url;
@@ -114,9 +114,9 @@ public:
 	};
 
 	struct CommitItem {
-		CommitID commit_id;
+		Hash commit_id;
 		QString tree;
-		QList<CommitID> parent_ids;
+		QList<Hash> parent_ids;
 		QString author;
 		QString email;
 		QString message;
@@ -144,7 +144,7 @@ public:
 	class CommitItemList {
 	public:
 		std::vector<CommitItem> list;
-		std::map<CommitID, size_t> index;
+		std::map<Hash, size_t> index;
 		size_t size() const
 		{
 			return list.size();
@@ -180,7 +180,7 @@ public:
 				index[list[i].commit_id] = i;
 			}
 		}
-		CommitItem *find(CommitID const &id)
+		CommitItem *find(Hash const &id)
 		{
 			auto it = index.find(id);
 			if (it != index.end()) {
@@ -188,7 +188,7 @@ public:
 			}
 			return nullptr;
 		}
-		CommitItem const *find(CommitID const &id) const
+		CommitItem const *find(Hash const &id) const
 		{
 			return const_cast<CommitItemList *>(this)->find(id);
 		}
@@ -267,7 +267,7 @@ public:
 
 	struct Branch {
 		QString name;
-		CommitID id;
+		Hash id;
 		QString remote;
 		int ahead = 0;
 		int behind = 0;
@@ -294,7 +294,7 @@ public:
 
 	struct Tag {
 		QString name;
-		CommitID id;
+		Hash id;
 	};
 
 	enum class FileStatusCode : unsigned int {
@@ -449,7 +449,7 @@ private:
 	struct Private;
 	Private *m;
 	QStringList make_branch_list_();
-	QByteArray cat_file_(const CommitID &id);
+	QByteArray cat_file_(Hash const &id);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
@@ -508,13 +508,13 @@ public:
 	bool init();
 	QStringList getUntrackedFiles();
 
-	CommitItemList log_all(CommitID const &id, int maxcount);
+	CommitItemList log_all(Hash const &id, int maxcount);
 	CommitItemList log_file(QString const &path, int maxcount);
-	QStringList rev_list_all(CommitID const &id, int maxcount);
+	QStringList rev_list_all(Hash const &id, int maxcount);
 
-	std::optional<CommitItem> log_signature(CommitID const &id);
+	std::optional<CommitItem> log_signature(Hash const &id);
 	CommitItemList log(int maxcount);
-	std::optional<CommitItem> queryCommitItem(const CommitID &id);
+	std::optional<CommitItem> queryCommitItem(const Hash &id);
 
 	struct CloneData {
 		QString url;
@@ -525,7 +525,7 @@ public:
 	bool clone(CloneData const &data, AbstractPtyProcess *pty);
 
 	FileStatusList status_s();
-	std::optional<QByteArray> cat_file(const CommitID &id);
+	std::optional<QByteArray> cat_file(Hash const &id);
 	void resetFile(QString const &path);
 	void resetAllFiles();
 
@@ -581,10 +581,10 @@ public:
 		}
 	};
 
-	QList<DiffRaw> diff_raw(CommitID const &old_id, CommitID const &new_id);
+	QList<DiffRaw> diff_raw(Hash const &old_id, Hash const &new_id);
 
 	static bool isValidID(QString const &id);
-	static bool isValidID(CommitID const &id)
+	static bool isValidID(Hash const &id)
 	{
 		return id.isValid();
 	}
@@ -592,7 +592,7 @@ public:
 	QString status();
 	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
-	bool revert(const CommitID &id);
+	bool revert(const Hash &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
 	void remote_v(std::vector<Remote> *out);
 	void createBranch(QString const &name);
@@ -610,9 +610,9 @@ public:
 	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage() const;
 
-	CommitID rev_parse(QString const &name);
+	Hash rev_parse(QString const &name);
 	QList<Tag> tags();
-	bool tag(QString const &name, CommitID const &id = {});
+	bool tag(QString const &name, Hash const &id = {});
 	bool delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const Remote &remote);
 	void addRemoteURL(const Remote &remote);
@@ -640,7 +640,7 @@ public:
 	bool reset_hard();
 	bool clean_df();
 	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
-	QString objectType(const CommitID &id);
+	QString objectType(const Hash &id);
 	bool rm_cached(QString const &file);
 	void cherrypick(QString const &name);
 	QString getCherryPicking() const;
@@ -698,7 +698,7 @@ public:
 	bool submodule_add(const CloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const SubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	static std::optional<CommitItem> parseCommit(QByteArray const &ba);
-	QString queryEntireCommitMessage(const CommitID &id);
+	QString queryEntireCommitMessage(const Hash &id);
 
 	QString getDefaultBranch();
 	void setDefaultBranch(QString const &branchname);
@@ -716,7 +716,7 @@ struct NamedCommitItem {
 	Type type = Type::None;
 	QString remote;
 	QString name;
-	Git::CommitID id;
+	Git::Hash id;
 };
 using NamedCommitList = QList<NamedCommitItem>;
 
@@ -724,12 +724,12 @@ void parseDiff(const std::string_view &s, Git::Diff const *info, Git::Diff *out)
 
 void parseGitSubModules(QByteArray const &ba, QList<Git::SubmoduleItem> *out);
 
-static inline bool operator == (Git::CommitID const &l, Git::CommitID const &r)
+static inline bool operator == (Git::Hash const &l, Git::Hash const &r)
 {
 	return l.compare(r) == 0;
 }
 
-static inline bool operator < (Git::CommitID const &l, Git::CommitID const &r)
+static inline bool operator < (Git::Hash const &l, Git::Hash const &r)
 {
 	return l.compare(r) < 0;
 }
@@ -794,7 +794,7 @@ public:
 		return git->chdirexec(fn);
 	}
 
-	Git::CommitID rev_parse(QString const &name)
+	Git::Hash rev_parse(QString const &name)
 	{
 		return git->rev_parse(name);
 	}
@@ -839,7 +839,7 @@ public:
 	{
 		return git->tags();
 	}
-	bool tag(QString const &name, Git::CommitID const &id = {})
+	bool tag(QString const &name, Git::Hash const &id = {})
 	{
 		return git->tag(name, id);
 	}
@@ -898,7 +898,7 @@ public:
 	{
 		return git->commit_amend_m(text, sign, pty);
 	}
-	bool revert(const Git::CommitID &id)
+	bool revert(const Git::Hash &id)
 	{
 		return git->revert(id);
 	}
@@ -945,7 +945,7 @@ public:
 		git->rebase_abort();
 	}
 
-	Git::CommitItemList log_all(Git::CommitID const &id, int maxcount)
+	Git::CommitItemList log_all(Git::Hash const &id, int maxcount)
 	{
 		return git->log_all(id, maxcount);
 	}
@@ -953,12 +953,12 @@ public:
 	{
 		return git->log_file(path, maxcount);
 	}
-	QStringList rev_list_all(Git::CommitID const &id, int maxcount)
+	QStringList rev_list_all(Git::Hash const &id, int maxcount)
 	{
 		return git->rev_list_all(id, maxcount);
 	}
 
-	std::optional<Git::CommitItem> log_signature(Git::CommitID const &id)
+	std::optional<Git::CommitItem> log_signature(Git::Hash const &id)
 	{
 		return git->log_signature(id);
 	}
@@ -966,7 +966,7 @@ public:
 	{
 		return git->log(maxcount);
 	}
-	std::optional<Git::CommitItem> queryCommitItem(const Git::CommitID &id)
+	std::optional<Git::CommitItem> queryCommitItem(const Git::Hash &id)
 	{
 		return git->queryCommitItem(id);
 	}
@@ -1000,12 +1000,12 @@ public:
 	{
 		return Git::parseCommit(ba);
 	}
-	QString queryEntireCommitMessage(const Git::CommitID &id)
+	QString queryEntireCommitMessage(const Git::Hash &id)
 	{
 		return git->queryEntireCommitMessage(id);
 	}
 
-	QList<Git::DiffRaw> diff_raw(Git::CommitID const &old_id, Git::CommitID const &new_id)
+	QList<Git::DiffRaw> diff_raw(Git::Hash const &old_id, Git::Hash const &new_id)
 	{
 		return git->diff_raw(old_id, new_id);
 	}
@@ -1030,7 +1030,7 @@ public:
 	{
 		return git->status_s();
 	}
-	std::optional<QByteArray> cat_file(const Git::CommitID &id)
+	std::optional<QByteArray> cat_file(const Git::Hash &id)
 	{
 		return git->cat_file(id);
 	}
@@ -1092,7 +1092,7 @@ public:
 	{
 		return git->push_u(set_upstream, remote, branch, force, pty);
 	}
-	QString objectType(const Git::CommitID &id)
+	QString objectType(const Git::Hash &id)
 	{
 		return git->objectType(id);
 	}

@@ -110,7 +110,7 @@ void CommitDetailGetter::stop()
  * コミットの詳細情報を取得する
  * 情報が存在しない場合はリクエスト予約を行う
  */
-CommitDetailGetter::Data CommitDetailGetter::_query(Git::CommitID const &id, bool request_if_not_found, bool lock)
+CommitDetailGetter::Data CommitDetailGetter::_query(Git::Hash const &id, bool request_if_not_found, bool lock)
 {
 	if (lock) {
 		std::lock_guard l(mutex_);
@@ -163,7 +163,7 @@ CommitDetailGetter::Data CommitDetailGetter::_query(Git::CommitID const &id, boo
 	return {};
 }
 
-CommitDetailGetter::Data CommitDetailGetter::query(Git::CommitID const &id, bool request_if_not_found)
+CommitDetailGetter::Data CommitDetailGetter::query(Git::Hash const &id, bool request_if_not_found)
 {
 	return _query(id, request_if_not_found, true);
 }
