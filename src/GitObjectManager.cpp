@@ -299,11 +299,11 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 
 	auto Store = [&](){
 		// QMutexLocker lock(&object_manager.mutex);
-		Item *item = new Item();
+		auto item = std::make_shared<Item>();
 		item->id = id;
 		item->ba = std::move(ba);
 		item->type = type;
-		items.push_back(ItemPtr(item));
+		items.push_back(item);
 		Git::Object obj;
 		obj.type = item->type;
 		obj.content = item->ba;
@@ -315,10 +315,11 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 	}
 
 	if (true) {
-		auto ba = g.cat_file(id);
-		if (ba) { // 外部コマンド起動の git cat-file -p を試してみる
+		auto ret = g.cat_file(id);
+		if (ret) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
+			ba = *ret;
 			return Store();
 		}
 	}
