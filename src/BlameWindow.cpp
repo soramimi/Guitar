@@ -200,8 +200,8 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 	if (row < 0 || row >= m->list.size()) return;
 
 	BlameItem blame = m->list[row];
-	GitPtr g = mainwindow()->git();
-	std::optional<Git::CommitItem> commit = g->queryCommitItem(Git::CommitID(blame.commit_id));
+	GitRunner g = mainwindow()->git();
+	std::optional<Git::CommitItem> commit = g.queryCommitItem(Git::CommitID(blame.commit_id));
 	if (!commit) return;
 
 	QMenu menu;
@@ -226,8 +226,8 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 		if (it != m->commit_cache.end()) {
 			info = it->second;
 		} else {
-			GitPtr g = mainwindow()->git();
-			auto commit = g->queryCommitItem(commit_id);
+			GitRunner g = mainwindow()->git();
+			auto commit = g.queryCommitItem(commit_id);
 			if (commit) {
 				info.datetime = misc::makeDateTimeString(commit->commit_date);
 				info.author = commit->author;

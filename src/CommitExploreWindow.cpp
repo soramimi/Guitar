@@ -59,7 +59,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
 	ui->lineEdit_author->setText(commit->author);
 
-	GitPtr g = git();
+	GitRunner g = git();
 	{
 		GitCommit c;
 		GitCommit::parseCommit(g, objcache, m->commit->commit_id, &c);
@@ -95,7 +95,7 @@ MainWindow *CommitExploreWindow::mainwindow()
 	return global->mainwindow;
 }
 
-GitPtr CommitExploreWindow::git()
+GitRunner CommitExploreWindow::git()
 {
 	return mainwindow()->git();
 }
@@ -105,7 +105,7 @@ void CommitExploreWindow::clearContent()
 	m->content = ObjectContent();
 }
 
-void CommitExploreWindow::expandTreeItem_(GitPtr g, QTreeWidgetItem *item)
+void CommitExploreWindow::expandTreeItem_(GitRunner g, QTreeWidgetItem *item)
 {
 	if (item->childCount() == 1) {
 		if (item->child(0)->text(0).isEmpty()) {
@@ -143,7 +143,7 @@ void CommitExploreWindow::on_treeWidget_itemExpanded(QTreeWidgetItem *item)
 	expandTreeItem_(git(), item);
 }
 
-void CommitExploreWindow::loadTree(GitPtr g, QString const &tree_id)
+void CommitExploreWindow::loadTree(GitRunner g, QString const &tree_id)
 {
 	GitCommitTree tree(m->objcache);
 	tree.parseTree(g, tree_id);
@@ -158,7 +158,7 @@ void CommitExploreWindow::loadTree(GitPtr g, QString const &tree_id)
 	});
 }
 
-void CommitExploreWindow::doTreeItemChanged_(GitPtr g, QTreeWidgetItem *current)
+void CommitExploreWindow::doTreeItemChanged_(GitRunner g, QTreeWidgetItem *current)
 {
 	ui->listWidget->clear();
 
@@ -201,7 +201,7 @@ void CommitExploreWindow::doTreeItemChanged_(GitPtr g, QTreeWidgetItem *current)
 void CommitExploreWindow::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem * /*previous*/)
 {
 	clearContent();
-	GitPtr g = git();
+	GitRunner g = git();
 	doTreeItemChanged_(g, current);
 }
 
@@ -214,7 +214,7 @@ void CommitExploreWindow::on_listWidget_itemDoubleClicked(QListWidgetItem *item)
 		QString tree_id = item->data(ObjectIdRole).toString();
 		clearContent();
 		QTreeWidgetItem *parent = ui->treeWidget->currentItem();
-		GitPtr g = git();
+		GitRunner g = git();
 		expandTreeItem_(g, parent);
 		parent->setExpanded(true);
 		int n = parent->childCount();
@@ -239,7 +239,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::BLOB) {
 		QString commit_id = current->data(ObjectIdRole).toString();
-		GitPtr g = git();
+		GitRunner g = git();
 		m->content_object = m->objcache->catFile(g, Git::CommitID(commit_id));
 		QString path = current->data(FilePathRole).toString();
 		clearContent();

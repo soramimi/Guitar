@@ -420,12 +420,12 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 	return ok;
 }
 
-GitPtr Git::dup() const
-{
-	Git *p = new Git();
-	p->m->info = m->info;
-	return GitPtr(p);
-}
+// GitPtr Git::dup() const
+// {
+// 	Git *p = new Git();
+// 	p->m->info = m->info;
+// 	return GitPtr(p);
+// }
 
 bool Git::isValidWorkingCopy(QString const &dir)
 {
@@ -1606,6 +1606,11 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 	git(cmd + name);
 }
 
+bool Git::deleteBranch(QString const &name)
+{
+	return git(QString("branch -D \"%1\"").arg(name));
+}
+
 bool Git::checkout(QString const &branch_name, QString const &id) // oops! `switch` is C's keyword
 {
 	// use `switch` instead of `checkout`
@@ -2149,6 +2154,16 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 	}
 	Push();
 }
+
+// GitRunner
+
+GitPtr GitRunner::dup() const
+{
+	Git *p = new Git();
+	p->m->info = git->m->info;
+	return GitPtr(p);
+}
+
 
 
 

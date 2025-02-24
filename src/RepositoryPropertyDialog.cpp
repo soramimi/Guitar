@@ -9,14 +9,14 @@
 #include <QMessageBox>
 
 struct RepositoryPropertyDialog::Private {
-	GitPtr git;
+	GitRunner git;
 	std::vector<Git::Remote> remotes;
 	RepositoryInfo repository;
 	bool remote_changed = false;
 	bool name_changed = false;
 };
 
-RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryInfo const &item, bool open_repository_menu)
+RepositoryPropertyDialog::RepositoryPropertyDialog(MainWindow *parent, GitRunner g, RepositoryInfo const &item, bool open_repository_menu)
 	: QDialog(parent)
 	, ui(new Ui::RepositoryPropertyDialog)
 	, m(new Private)
@@ -58,16 +58,16 @@ MainWindow *RepositoryPropertyDialog::mainwindow()
 	return global->mainwindow;
 }
 
-GitPtr RepositoryPropertyDialog::git()
+GitRunner RepositoryPropertyDialog::git()
 {
 	return m->git;
 }
 
 void RepositoryPropertyDialog::getRemotes_()
 {
-	GitPtr g = git();
-	if (g->isValidWorkingCopy()) {
-		g->remote_v(&m->remotes);
+	GitRunner g = git();
+	if (g.isValidWorkingCopy()) {
+		g.remote_v(&m->remotes);
 	}
 }
 
@@ -116,7 +116,7 @@ void RepositoryPropertyDialog::reflectRemotesTable()
 		QString url = ui->tableWidget->item(row, 1)->text();
 		if (r->url() != url) {
 			r->set_url(url);
-			git()->setRemoteURL(*r);
+			git().setRemoteURL(*r);
 		}
 	}
 }
@@ -128,7 +128,7 @@ const std::vector<Git::Remote> *RepositoryPropertyDialog::remotes() const
 
 void RepositoryPropertyDialog::setSshKey_(const QString &sshkey)
 {
-	m->git->setSshKey(sshkey);
+	git().setSshKey(sshkey);
 }
 
 /**
@@ -162,7 +162,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		remote->name = dlg.name();
 		remote->set_url(dlg.url());
 		remote->ssh_key = dlg.sshKey();
-		GitPtr g = git();
+		GitRunner g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
 			bool ok = true;
 			for (Git::Remote const &r : *list) {
@@ -173,10 +173,10 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 				}
 			}
 			if (ok) {
-				g->addRemoteURL(*remote);
+				g.addRemoteURL(*remote);
 			}
 		} else if (op == EditRemoteDialog::RemoteSet) {
-			g->setRemoteURL(*remote);
+			g.setRemoteURL(*remote);
 		}
 
 		QString localdir = ui->lineEdit_local_dir->text();
@@ -243,8 +243,8 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 	if (!remote.name.isEmpty()) {
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r == QMessageBox::Ok) {
-			GitPtr g = git();
-			g->removeRemote(remote.name);
+			GitRunner g = git();
+			g.removeRemote(remote.name);
 			updateRemotesTable();
 			m->remote_changed = true;
 		}

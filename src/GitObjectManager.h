@@ -21,21 +21,19 @@ private:
 	QString subdir_git_objects_pack;
 	std::vector<GitPackIdxPtr> git_idx_list;
 
-	QString workingDir(GitPtr g);
-
 	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(GitPtr g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
-	void loadIndexes(GitPtr g);
-	QString findObjectPath(GitPtr g, const Git::CommitID &id);
-	bool loadObject(GitPtr g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
+	bool extractObjectFromPackFile(GitRunner g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
+	void loadIndexes(GitRunner g);
+	QString findObjectPath(GitRunner g, const Git::CommitID &id);
+	bool loadObject(GitRunner g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void init();
 public:
 	GitObjectManager();
 	GitObjectManager(GitPtr g);
 	void setup();
-	bool catFile(GitPtr g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
+	bool catFile(GitRunner g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
 
 	static QStringList findObject(const QString &id, const QString &repo_local_dir);
@@ -56,8 +54,8 @@ private:
 	size_t size() const;
 public:
 	void clear();
-	Git::CommitID revParse(GitPtr g, QString const &name);
-	Git::Object catFile(GitPtr g, const Git::CommitID &id);
+        Git::CommitID revParse(GitRunner g, QString const &name);
+        Git::Object catFile(GitRunner g, const Git::CommitID &id);
 
 	Git::CommitID const &item_id(int i) const
 	{
@@ -70,7 +68,7 @@ public:
 	QString tree_id;
 	QStringList parents;
 
-	static bool parseCommit(GitPtr g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out);
+	static bool parseCommit(GitRunner g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out);
 };
 
 struct GitTreeItem {
@@ -108,15 +106,15 @@ private:
 
 	GitPtr git();
 
-	QString lookup_(GitPtr g, QString const &file, GitTreeItem *out);
+	QString lookup_(GitRunner g, QString const &file, GitTreeItem *out);
 public:
 	GitCommitTree(GitObjectCache *objcache);
 
-	QString lookup(GitPtr g, QString const &file);
-	bool lookup(GitPtr g, QString const &file, GitTreeItem *out);
+	QString lookup(GitRunner g, QString const &file);
+	bool lookup(GitRunner g, QString const &file, GitTreeItem *out);
 
-	void parseTree(GitPtr g, QString const &tree_id);
-	QString parseCommit(GitPtr g, QString const &commit_id);
+	void parseTree(GitRunner g, QString const &tree_id);
+	QString parseCommit(GitRunner g, QString const &commit_id);
 
 	GitTreeItemList const *treelist() const
 	{
@@ -125,6 +123,6 @@ public:
 };
 
 void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTreeItemList *out);
-bool parseGitTreeObject(GitPtr g, GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out);
+bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out);
 
 #endif // GITOBJECTMANAGER_H

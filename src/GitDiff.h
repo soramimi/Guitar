@@ -16,23 +16,23 @@ private:
 
 	using MapList = std::list<LookupTable>;
 
-	GitPtr git(const Git::SubmoduleItem &submod);
+        GitRunner git(const Git::SubmoduleItem &submod);
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
 	void retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out);
-	void retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files);
+        void retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files);
 public:
 	GitDiff(GitObjectCache *objcache)
 	{
 		this->objcache = objcache;
 	}
 
-	bool diff(GitPtr g, const Git::CommitID &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
-	bool diff_uncommited(GitPtr g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
+        bool diff(GitRunner g, const Git::CommitID &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
+        bool diff_uncommited(GitRunner g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
 
 public:
-	static QString diffObjects(GitPtr g, QString const &a_id, QString const &b_id);
+        static QString diffObjects(GitRunner g, QString const &a_id, QString const &b_id);
 	static QString diffFiles(GitPtr g, QString const &a_path, QString const &b_path);
 	static void parseDiff(std::string const &s, const Git::Diff *info, Git::Diff *out);
 	static QString makeKey(const QString &a_id, const QString &b_id);
@@ -40,6 +40,6 @@ public:
 	static QString prependPathPrefix(QString const &path);
 };
 
-QString lookupFileID(GitPtr g, GitObjectCache *objcache, QString const &commit_id, QString const &file);
+QString lookupFileID(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &file);
 
 #endif // GITDIFF_H

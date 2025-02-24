@@ -12,7 +12,7 @@ ConfigSigningDialog::ConfigSigningDialog(QWidget *parent, MainWindow *mw, bool l
 	setWindowFlags(flags);
 	mainwindow_ = mw;
 
-	if (!mainwindow()->git()->isValidWorkingCopy()) {
+	if (!mainwindow()->git().isValidWorkingCopy()) {
 		local_enable = false;
 	}
 	ui->label_local->setVisible(local_enable);
@@ -33,7 +33,7 @@ MainWindow *ConfigSigningDialog::mainwindow()
 
 void ConfigSigningDialog::updateSigningInfo()
 {
-	GitPtr g = mainwindow()->git();
+	GitRunner g = mainwindow()->git();
 
 	auto InitComboBox = [](QComboBox *cb, Git::SignPolicy pol){
 		cb->addItem("unset");
@@ -49,8 +49,8 @@ void ConfigSigningDialog::updateSigningInfo()
 		}
 		cb->setCurrentText(t);
 	};
-	gpol_ = g->signPolicy(Git::Source::Global);
-	lpol_ = g->signPolicy(Git::Source::Local);
+	gpol_ = g.signPolicy(Git::Source::Global);
+	lpol_ = g.signPolicy(Git::Source::Local);
 	InitComboBox(ui->comboBox_sign_global, gpol_);
 	InitComboBox(ui->comboBox_sign_local, lpol_);
 
@@ -58,7 +58,7 @@ void ConfigSigningDialog::updateSigningInfo()
 
 void ConfigSigningDialog::accept()
 {
-	GitPtr g = mainwindow()->git();
+	GitRunner g = mainwindow()->git();
 	auto SetSignPolicy = [&](QComboBox *cb, Git::Source src, Git::SignPolicy oldpol){
 		Git::SignPolicy pol = Git::SignPolicy::Unset;
 		QString s = cb->currentText();
@@ -67,7 +67,7 @@ void ConfigSigningDialog::accept()
 		} else if (s == "true") {
 			pol = Git::SignPolicy::True;
 		}
-		if (pol != oldpol) g->setSignPolicy(src, pol);
+		if (pol != oldpol) g.setSignPolicy(src, pol);
 	};
 	SetSignPolicy(ui->comboBox_sign_global, Git::Source::Global, gpol_);
 	SetSignPolicy(ui->comboBox_sign_local, Git::Source::Local, lpol_);

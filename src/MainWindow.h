@@ -187,7 +187,7 @@ public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
 private:
-	void openRepositoryMain(GitPtr g, bool clear_log, bool do_fetch, bool keep_selection);
+	void openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, bool keep_selection);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -274,9 +274,9 @@ private:
 
 	void setCurrentRepository(const RepositoryInfo &repo, bool clear_authentication);
 	void openSelectedRepository();
-	std::optional<QList<Git::Diff> > makeDiffs(GitPtr g, Git::CommitID id);
-	void updateRemoteInfo(GitPtr g);
-	void queryRemotes(GitPtr g);
+	std::optional<QList<Git::Diff> > makeDiffs(GitRunner g, Git::CommitID id);
+	void updateRemoteInfo(GitRunner g);
+	void queryRemotes(GitRunner g);
 	void submodule_add(QString url = {}, const QString &local_dir = {});
 	const Git::CommitItem &selectedCommitItem() const;
 	void commit(bool amend = false);
@@ -285,13 +285,13 @@ private:
 	void clone(CloneParams const &a);
 
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
-	void fetch(GitPtr g, bool prune);
-	void stage(GitPtr g, const QStringList &paths);
-	void fetch_tags_f(GitPtr g);
-	void pull(GitPtr g);
-	void push_tags(GitPtr g);
-	void delete_tags(GitPtr g, const QStringList &tagnames);
-	void add_tag(GitPtr g, const QString &name, Git::CommitID const &commit_id);
+	void fetch(GitRunner g, bool prune);
+	void stage(GitRunner g, const QStringList &paths);
+	void fetch_tags_f(GitRunner g);
+	void pull(GitRunner g);
+	void push_tags(GitRunner g);
+	void delete_tags(GitRunner g, const QStringList &tagnames);
+	void add_tag(GitRunner g, const QString &name, Git::CommitID const &commit_id);
 
 	bool push();
 
@@ -306,7 +306,7 @@ private:
 	void addRepository(const QString &local_dir, const QString &group = {});
 	void addRepositoryAccepted(const AddRepositoryDialog &dlg);
 	void scanFolderAndRegister(const QString &group);
-	void doGitCommand(const std::function<void (GitPtr)> &callback);
+	void doGitCommand(const std::function<void (GitRunner)> &callback);
 	void setWindowTitle_(const Git::User &user);
 	void setUnknownRepositoryInfo();
 	void setCurrentRemoteName(const QString &name);
@@ -318,14 +318,14 @@ private:
 	void deleteTempFiles();
 	QString newTempFilePath();
 	int limitLogCount() const;
-	Git::Object internalCatFile(GitPtr g, const QString &id);
+	Git::Object internalCatFile(GitRunner g, const QString &id);
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
-	Git::CommitItemList retrieveCommitLog(GitPtr g) const;
+	Git::CommitItemList retrieveCommitLog(GitRunner g) const;
 	const std::map<Git::CommitID, BranchList> &branchmap() const;
 
 	void updateWindowTitle(const Git::User &user);
-	void updateWindowTitle(GitPtr g);
+	void updateWindowTitle(GitRunner g);
 
 	std::tuple<QString, BranchLabelList> makeCommitLabels(Git::CommitItem const &commit, std::map<Git::CommitID, BranchList> const &branch_map, std::map<Git::CommitID, TagList> const &tag_map) const;
 	QString labelsInfoText(Git::CommitItem const &commit);
@@ -351,7 +351,7 @@ private:
 	static bool isGroupItem(QTreeWidgetItem *item);
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
-	static void updateSubmodules(GitPtr g, const Git::CommitID &id, QList<Git::SubmoduleItem> *out);
+	static void updateSubmodules(GitRunner g, const Git::CommitID &id, QList<Git::SubmoduleItem> *out);
 	void saveRepositoryBookmark(RepositoryInfo item);
 	void changeRepositoryBookmarkName(RepositoryInfo item, QString new_name);
 
@@ -359,7 +359,7 @@ public:
 	const TagList &queryCurrentCommitTagList() const;
 private:
 	const std::map<Git::CommitID, TagList> &tagmap() const;
-	std::map<Git::CommitID, TagList> queryTags(GitPtr g);
+	std::map<Git::CommitID, TagList> queryTags(GitRunner g);
 	static TagList findTag(std::map<Git::CommitID, TagList> const &tagmap, Git::CommitID const &id);
 	TagList findTag(const Git::CommitID &id) const;
 
@@ -484,9 +484,9 @@ public:
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
-	GitPtr git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
-	GitPtr git();
-	GitPtr git(Git::SubmoduleItem const &submod);
+	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
+	GitRunner git();
+	GitRunner git(Git::SubmoduleItem const &submod);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const Git::CommitID &id);
 	bool checkoutLocalBranch(QString const &name);
@@ -505,7 +505,7 @@ public:
 	QString determinFileType(const QString &path) const;
 
 	TextEditorThemePtr themeForTextEditor();
-	static bool isValidWorkingCopy(GitPtr g);
+	static bool isValidWorkingCopy(GitRunner g);
 	void emitWriteLog(LogData const &logdata);
 	QString findFileID(const QString &commit_id, const QString &file);
 	const Git::CommitItem &commitItem(int row) const;
@@ -668,11 +668,11 @@ signals:
 private:
 
 	void updateButton();
-	void runPtyGit(const QString &progress_message, GitPtr g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
-	CommitLogExchangeData queryCommitLog(GitPtr g);
-	void updateHEAD(GitPtr g);
-	bool jump(GitPtr g, const Git::CommitID &id);
-	void jump(GitPtr g, const QString &text);
+	void runPtyGit(const QString &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
+	CommitLogExchangeData queryCommitLog(GitRunner g);
+	void updateHEAD(GitRunner g);
+	bool jump(GitRunner g, const Git::CommitID &id);
+	void jump(GitRunner g, const QString &text);
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	
@@ -684,7 +684,7 @@ private:
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 	void initUpdateFileListTimer();
 	void clearGitCommandCache();
-	Git::CommitItemList log_all2(GitPtr g, const Git::CommitID &id, int maxcount) const;
+	Git::CommitItemList log_all2(GitRunner g, const Git::CommitID &id, int maxcount) const;
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 

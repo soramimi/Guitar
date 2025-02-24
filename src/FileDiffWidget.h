@@ -99,7 +99,7 @@ private:
 
 	ViewStyle viewstyle() const;
 
-	GitPtr git();
+        GitRunner git();
 	Git::Object catFile(QString const &id);
 
 	int totalTextLines() const;

@@ -40,7 +40,8 @@ struct TreeLine {
 class Git;
 using GitPtr = std::shared_ptr<Git>;
 
-class Git : QObject {
+class Git {
+	friend class GitRunner;
 public:
 	class CommitID {
 	private:
@@ -458,7 +459,7 @@ private:
 public:
 	Git(Context const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
-	 ~Git() override;
+	~Git();
 
 	void setCommandCache(CommandCache const &cc);
 
@@ -597,6 +598,7 @@ public:
 	void createBranch(QString const &name);
 	void checkoutBranch(QString const &name);
 	void mergeBranch(QString const &name, MergeFastForward ff, bool squash);
+	bool deleteBranch(QString const &name);
 
 	bool checkout(QString const &branch_name, QString const &id = {});
 	bool checkout_detach(QString const &id);
@@ -608,7 +610,7 @@ public:
 	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage() const;
 
-	GitPtr dup() const;
+	// GitPtr dup() const;
 	CommitID rev_parse(QString const &name);
 	QList<Tag> tags();
 	bool tag(QString const &name, CommitID const &id = {});
@@ -732,5 +734,415 @@ static inline bool operator < (Git::CommitID const &l, Git::CommitID const &r)
 {
 	return l.compare(r) < 0;
 }
+
+// GitRunner
+
+class GitRunner {
+private:
+public:
+	GitPtr git;
+	GitRunner() = default;
+	GitRunner(GitPtr const &git)
+		: git(git)
+	{
+	}
+	GitRunner(GitRunner const &that)
+		: git(that.git)
+	{
+	}
+	GitRunner(GitRunner &&that)
+		: git(std::move(that.git))
+	{
+	}
+	void operator = (GitRunner const &that)
+	{
+		git = that.git;
+	}
+	operator bool () const
+	{
+		return (bool)git;
+	}
+	GitPtr dup() const;
+
+	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey)
+	{
+		git->setWorkingRepositoryDir(repo, submodpath, sshkey);
+	}
+	QString workingDir() const
+	{
+		return git->workingDir();
+	}
+	QString const &sshKey() const
+	{
+		return git->sshKey();
+	}
+	void setSshKey(const QString &sshkey) const
+	{
+		git->setSshKey(sshkey);
+	}
+
+	QString getMessage(const QString &id)
+	{
+		return git->getMessage(id);
+	}
+	QString errorMessage() const
+	{
+		return git->errorMessage();
+	}
+
+	bool chdirexec(std::function<bool ()> const &fn)
+	{
+		return git->chdirexec(fn);
+	}
+
+	Git::CommitID rev_parse(QString const &name)
+	{
+		return git->rev_parse(name);
+	}
+	void setRemoteURL(const Git::Remote &remote)
+	{
+		git->setRemoteURL(remote);
+	}
+	void addRemoteURL(const Git::Remote &remote)
+	{
+		git->addRemoteURL(remote);
+	}
+	void removeRemote(QString const &name)
+	{
+		git->removeRemote(name);
+	}
+	QStringList getRemotes()
+	{
+		return git->getRemotes();
+	}
+
+	static bool isValidWorkingCopy(QString const &dir)
+	{
+		return Git::isValidWorkingCopy(dir);
+	}
+
+	bool isValidWorkingCopy() const
+	{
+		return git && git->isValidWorkingCopy();
+	}
+
+	QString version()
+	{
+		return git->version();
+	}
+
+	bool init()
+	{
+		return git->init();
+	}
+
+	QList<Git::Tag> tags()
+	{
+		return git->tags();
+	}
+	bool tag(QString const &name, Git::CommitID const &id = {})
+	{
+		return git->tag(name, id);
+	}
+	bool delete_tag(QString const &name, bool remote)
+	{
+		return git->delete_tag(name, remote);
+	}
+
+	void resetFile(QString const &path)
+	{
+		git->resetFile(path);
+	}
+	void resetAllFiles()
+	{
+		git->resetAllFiles();
+	}
+
+	void removeFile(QString const &path)
+	{
+		git->removeFile(path);
+	}
+
+	Git::User getUser(Git::Source purpose)
+	{
+		return git->getUser(purpose);
+	}
+	void setUser(Git::User const&user, bool global)
+	{
+		git->setUser(user, global);
+	}
+	QString getDefaultBranch()
+	{
+		return git->getDefaultBranch();
+	}
+	void setDefaultBranch(QString const &branchname)
+	{
+		git->setDefaultBranch(branchname);
+	}
+	void unsetDefaultBranch()
+	{
+		git->unsetDefaultBranch();
+	}
+	QDateTime repositoryLastModifiedTime()
+	{
+		return git->repositoryLastModifiedTime();
+	}
+	QString status()
+	{
+		return git->status();
+	}
+	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty)
+	{
+		return git->commit(text, sign, pty);
+	}
+	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty)
+	{
+		return git->commit_amend_m(text, sign, pty);
+	}
+	bool revert(const Git::CommitID &id)
+	{
+		return git->revert(id);
+	}
+	bool push_tags(AbstractPtyProcess *pty = nullptr)
+	{
+		return git->push_tags(pty);
+	}
+	void remote_v(std::vector<Git::Remote> *out)
+	{
+		git->remote_v(out);
+	}
+	void createBranch(QString const &name)
+	{
+		git->createBranch(name);
+	}
+	void checkoutBranch(QString const &name)
+	{
+		git->checkoutBranch(name);
+	}
+	void mergeBranch(QString const &name, Git::MergeFastForward ff, bool squash)
+	{
+		git->mergeBranch(name, ff, squash);
+	}
+	bool deleteBranch(QString const &name)
+	{
+		return git->deleteBranch(name);
+	}
+
+	bool checkout(QString const &branch_name, QString const &id = {})
+	{
+		return git->checkout(branch_name, id);
+	}
+	bool checkout_detach(QString const &id)
+	{
+		return git->checkout_detach(id);
+	}
+
+	void rebaseBranch(QString const &name)
+	{
+		git->rebaseBranch(name);
+	}
+	void rebase_abort()
+	{
+		git->rebase_abort();
+	}
+
+	Git::CommitItemList log_all(Git::CommitID const &id, int maxcount)
+	{
+		return git->log_all(id, maxcount);
+	}
+	Git::CommitItemList log_file(QString const &path, int maxcount)
+	{
+		return git->log_file(path, maxcount);
+	}
+	QStringList rev_list_all(Git::CommitID const &id, int maxcount)
+	{
+		return git->rev_list_all(id, maxcount);
+	}
+
+	std::optional<Git::CommitItem> log_signature(Git::CommitID const &id)
+	{
+		return git->log_signature(id);
+	}
+	Git::CommitItemList log(int maxcount)
+	{
+		return git->log(maxcount);
+	}
+	std::optional<Git::CommitItem> queryCommitItem(const Git::CommitID &id)
+	{
+		return git->queryCommitItem(id);
+	}
+
+	bool stash()
+	{
+		return git->stash();
+	}
+	bool stash_apply()
+	{
+		return git->stash_apply();
+	}
+	bool stash_drop()
+	{
+		return git->stash_drop();
+	}
+
+	QList<Git::SubmoduleItem> submodules()
+	{
+		return git->submodules();
+	}
+	bool submodule_add(const Git::CloneData &data, bool force, AbstractPtyProcess *pty)
+	{
+		return git->submodule_add(data, force, pty);
+	}
+	bool submodule_update(const Git::SubmoduleUpdateData &data, AbstractPtyProcess *pty)
+	{
+		return git->submodule_update(data, pty);
+	}
+	static std::optional<Git::CommitItem> parseCommit(QByteArray const &ba)
+	{
+		return Git::parseCommit(ba);
+	}
+	QString queryEntireCommitMessage(const Git::CommitID &id)
+	{
+		return git->queryEntireCommitMessage(id);
+	}
+
+	QList<Git::DiffRaw> diff_raw(Git::CommitID const &old_id, Git::CommitID const &new_id)
+	{
+		return git->diff_raw(old_id, new_id);
+	}
+	QString diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept = nullptr)
+	{
+		return git->diff_head(fn_accept);
+	}
+	QString diff(QString const &old_id, QString const &new_id)
+	{
+		return git->diff(old_id, new_id);
+	}
+	QString diff_file(QString const &old_path, QString const &new_path)
+	{
+		return git->diff_file(old_path, new_path);
+	}
+	QString diff_to_file(QString const &old_id, QString const &path)
+	{
+		return git->diff_to_file(old_id, path);
+	}
+
+	Git::FileStatusList status_s()
+	{
+		return git->status_s();
+	}
+	std::optional<QByteArray> cat_file(const Git::CommitID &id)
+	{
+		return git->cat_file(id);
+	}
+	bool clone(Git::CloneData const &data, AbstractPtyProcess *pty)
+	{
+		return git->clone(data, pty);
+	}
+	void add_A()
+	{
+		git->add_A();
+	}
+	bool unstage_all()
+	{
+		return git->unstage_all();
+	}
+
+	void stage(QString const &path)
+	{
+		git->stage(path);
+	}
+	bool stage(QStringList const &paths, AbstractPtyProcess *pty)
+	{
+		return git->stage(paths, pty);
+	}
+	void unstage(QString const &path)
+	{
+		git->unstage(path);
+	}
+	void unstage(QStringList const &paths)
+	{
+		git->unstage(paths);
+	}
+	bool pull(AbstractPtyProcess *pty = nullptr)
+	{
+		return git->pull(pty);
+	}
+
+	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false)
+	{
+		return git->fetch(pty, prune);
+	}
+	bool fetch_tags_f(AbstractPtyProcess *pty)
+	{
+		return git->fetch_tags_f(pty);
+	}
+	bool reset_head1()
+	{
+		return git->reset_head1();
+	}
+	bool reset_hard()
+	{
+		return git->reset_hard();
+	}
+	bool clean_df()
+	{
+		return git->clean_df();
+	}
+	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
+	{
+		return git->push_u(set_upstream, remote, branch, force, pty);
+	}
+	QString objectType(const Git::CommitID &id)
+	{
+		return git->objectType(id);
+	}
+	bool rm_cached(QString const &file)
+	{
+		return git->rm_cached(file);
+	}
+	void cherrypick(QString const &name)
+	{
+		git->cherrypick(name);
+	}
+	QString getCherryPicking() const
+	{
+		return git->getCherryPicking();
+	}
+	QList<Git::Branch> branches()
+	{
+		return git->branches();
+	}
+
+	QString signingKey(Git::Source purpose)
+	{
+		return git->signingKey(purpose);
+	}
+	bool setSigningKey(QString const &id, bool global)
+	{
+		return git->setSigningKey(id, global);
+	}
+	Git::SignPolicy signPolicy(Git::Source source)
+	{
+		return git->signPolicy(source);
+	}
+	bool setSignPolicy(Git::Source source, Git::SignPolicy policy)
+	{
+		return git->setSignPolicy(source, policy);
+	}
+	bool configGpgProgram(QString const &path, bool global)
+	{
+		return git->configGpgProgram(path, global);
+	}
+
+	bool reflog(Git::ReflogItemList *out, int maxcount = 100)
+	{
+		return git->reflog(out, maxcount);
+	}
+	QByteArray blame(QString const &path)
+	{
+		return git->blame(path);
+	}
+};
 
 #endif // GIT_H

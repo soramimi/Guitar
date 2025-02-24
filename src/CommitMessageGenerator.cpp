@@ -479,7 +479,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 
 QString CommitMessageGenerator::diff_head()
 {
-	QString diff = global->mainwindow->git()->diff_head([&](QString const &name, QString const &mime) {
+	QString diff = global->mainwindow->git().diff_head([&](QString const &name, QString const &mime) {
 		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		return true;
 	});

@@ -12,7 +12,7 @@
 #include <QThread>
 
 struct FileHistoryWindow::Private {
-	GitPtr g;
+	GitRunner g;
 	QString path;
 	Git::CommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
@@ -61,10 +61,9 @@ MainWindow *FileHistoryWindow::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-void FileHistoryWindow::prepare(GitPtr g, QString const &path)
+void FileHistoryWindow::prepare(GitRunner g, QString const &path)
 {
-	Q_ASSERT(g);
-	Q_ASSERT(g->isValidWorkingCopy());
+	Q_ASSERT(g.isValidWorkingCopy());
 	this->m->g = g;
 	this->m->path = path;
 
@@ -78,7 +77,7 @@ void FileHistoryWindow::prepare(GitPtr g, QString const &path)
 
 	{
 		OverrideWaitCursor;
-		m->commit_item_list = m->g->log_file(m->path, mainwindow()->limitLogCount());
+		m->commit_item_list = m->g.log_file(m->path, mainwindow()->limitLogCount());
 	}
 
 	collectFileHistory();
@@ -160,8 +159,7 @@ protected:
 
 void FileHistoryWindow::updateDiffView()
 {
-	Q_ASSERT(m->g);
-	Q_ASSERT(m->g->isValidWorkingCopy());
+	Q_ASSERT(m->g.isValidWorkingCopy());
 
 	ui->widget_diff_view->clearDiffView();
 
@@ -170,8 +168,8 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		FindFileIdThread left_thread(m->g->dup(), commit_left.commit_id.toQString(), m->path);
-		FindFileIdThread right_thread(m->g->dup(), commit_right.commit_id.toQString(), m->path);
+		FindFileIdThread left_thread(GitRunner(m->g).dup(), commit_left.commit_id.toQString(), m->path);
+		FindFileIdThread right_thread(GitRunner(m->g).dup(), commit_right.commit_id.toQString(), m->path);
 		left_thread.start();
 		right_thread.start();
 		left_thread.wait();

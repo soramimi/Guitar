@@ -122,7 +122,7 @@ FileDiffWidget::ViewStyle FileDiffWidget::viewstyle() const
 	return m->init_param_.view_style;
 }
 
-GitPtr FileDiffWidget::git()
+GitRunner FileDiffWidget::git()
 {
 	if (!mainwindow()) {
 		qDebug() << "Maybe, you forgot to call FileDiffWidget::bind()?";
@@ -616,7 +616,7 @@ QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 				file_b.write(m->text_codec->toUnicode(obj_b.content).toUtf8());
 				file_a.close();
 				file_b.close();
-				QString s = git()->diff_file(path_a, path_b);
+				QString s = git().diff_file(path_a, path_b);
 				file_a.remove();
 				file_b.remove();
 				return s;
@@ -648,9 +648,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 {
 	ASSERT_MAIN_THREAD();
 	
-	GitPtr g = git();
-	if (!g) return;
-	if (!g->isValidWorkingCopy()) return;
+	GitRunner g = git();
+	if (!g.isValidWorkingCopy()) return;
 
 	if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
 		Git::Object obj_a = catFile(info.blob.a_id_or_path);
@@ -658,7 +657,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		QString mime_a = mainwindow()->determinFileType(obj_a.content);
 		QString mime_b = mainwindow()->determinFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide_(info, obj_a.content, obj_b.content, g->workingDir());
+			setSideBySide_(info, obj_a.content, obj_b.content, g.workingDir());
 			return;
 		}
 	}
@@ -676,7 +675,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
 			obj = catFile(diff.blob.a_id_or_path);
 			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
-				setSideBySide(diff, obj.content, uncommited, g->workingDir()); // 通常のdiff表示
+				setSideBySide(diff, obj.content, uncommited, g.workingDir()); // 通常のdiff表示
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
@@ -695,9 +694,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
  */
 void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_right, QString const &path)
 {
-	GitPtr g = git();
-	if (!g) return;
-	if (!g->isValidWorkingCopy()) return;
+	GitRunner g = git();
+	if (!g.isValidWorkingCopy()) return;
 
 	Git::Diff diff;
 	diff.path = path;
@@ -708,7 +706,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 	GitDiff::parseDiff(text, &diff, &diff);
 
 	Git::Object obj = catFile(diff.blob.a_id_or_path);
-	setSideBySide(diff, obj.content, false, g->workingDir());
+	setSideBySide(diff, obj.content, false, g.workingDir());
 
 	ui->widget_diff_slider->clear(false);
 

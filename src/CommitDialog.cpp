@@ -59,9 +59,9 @@ MainWindow *CommitDialog::mainwindow()
 
 void CommitDialog::updateSigningInfo()
 {
-	GitPtr g = mainwindow()->git();
+	GitRunner g = mainwindow()->git();
 
-	Git::SignPolicy pol = g->signPolicy(Git::Source::Default);
+	Git::SignPolicy pol = g.signPolicy(Git::Source::Default);
 	if (!key_.id.isEmpty()) {
 		if (pol == Git::SignPolicy::True) {
 			ui->groupBox_gpg_sign->setCheckable(false);

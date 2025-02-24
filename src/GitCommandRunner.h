@@ -142,7 +142,7 @@ public:
 	typedef unsigned int request_id_t;
 
 	struct D {
-		GitPtr g;
+		GitRunner g;
 		PtyProcess *pty = nullptr;
 		request_id_t request_id;
 		bool override_wait_cursor = true;
@@ -154,7 +154,7 @@ public:
 		QElapsedTimer elapsed;
 	} d;
 
-	GitPtr git()
+	GitRunner git()
 	{
 		return d.g;
 	}

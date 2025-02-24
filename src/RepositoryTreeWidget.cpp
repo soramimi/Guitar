@@ -303,8 +303,8 @@ static QDateTime repositoryLastModifiedTime(QString const &path)
 	QFileInfo info(path);
 	return info.lastModified();
 #else
-	GitPtr g = global->mainwindow->git(path, {}, {});
-	return g->repositoryLastModifiedTime();
+	GitRunner g = global->mainwindow->git(path, {}, {});
+	return g.repositoryLastModifiedTime();
 #endif
 }
 

@@ -42,7 +42,7 @@ public:
 
 // GitDiff
 
-GitPtr GitDiff::git(Git::SubmoduleItem const &submod)
+GitRunner GitDiff::git(Git::SubmoduleItem const &submod)
 {
 	return global->mainwindow->git(submod);
 }
@@ -62,14 +62,14 @@ QString GitDiff::prependPathPrefix(QString const &path)
 	return PATH_PREFIX + path;
 }
 
-QString GitDiff::diffObjects(GitPtr g, QString const &a_id, QString const &b_id)
+QString GitDiff::diffObjects(GitRunner g, QString const &a_id, QString const &b_id)
 {
 	QString path_prefix = PATH_PREFIX;
 	if (b_id.startsWith(path_prefix)) {
 		QString path = b_id.mid(path_prefix.size());
-		return g->diff_to_file(a_id, path);
+		return g.diff_to_file(a_id, path);
 	} else {
-		return g->diff(a_id, b_id);
+		return g.diff(a_id, b_id);
 	}
 }
 
@@ -136,7 +136,7 @@ void GitDiff::retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList
 	}
 }
 
-void GitDiff::retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files)
+void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files)
 {
 	for (GitTreeItem const &d : *files) {
 		QString path = misc::joinWithSlash(dir, d.name);
@@ -157,7 +157,7 @@ void GitDiff::retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList
  * @param out
  * @return
  */
-bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff(GitRunner g, Git::CommitID const &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	out->clear();
 	diffs.clear();
@@ -180,7 +180,7 @@ bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::Submodule
 
 				QList<Git::DiffRaw> list;
 				for (QString const &parent : newer_commit.parents) {
-					QList<Git::DiffRaw> l = g->diff_raw(Git::CommitID(parent), id);
+					QList<Git::DiffRaw> l = g.diff_raw(Git::CommitID(parent), id);
 					for (Git::DiffRaw const &item : l) {
 						if (item.state.startsWith('D')) {
 							deleted_set.insert(item.a.id);
@@ -264,7 +264,7 @@ bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::Submodule
 
 		// GitPtr g = objcache->git();
 		QString head_id = objcache->revParse(g, "HEAD").toQString();
-		Git::FileStatusList stats = g->status_s(); // git status
+		Git::FileStatusList stats = g.status_s(); // git status
 
 		GitCommitTree head_tree(objcache);
 		head_tree.parseCommit(g, head_id); // HEADが親
@@ -302,20 +302,20 @@ bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::Submodule
 		if (diff->isSubmodule()) {
 			for (int j = 0; j < (int)submodules.size(); j++) {
 				if (submodules[j].path == diff->path) {
-					GitPtr g = git(submodules[j]);
+					GitRunner g = git(submodules[j]);
 					auto Do = [&](QString const &id, Git::Diff::SubmoduleDetail *out){
 						Git::SubmoduleItem const &mods = submodules[j];
 						if (id.startsWith('*')) {
 							out->item = mods;
-							out->item.id = g->rev_parse("HEAD");
-							auto commit = g->queryCommitItem(out->item.id);
+							out->item.id = g.rev_parse("HEAD");
+							auto commit = g.queryCommitItem(out->item.id);
 							if (commit) {
 								out->commit = *commit;
 							}
 						} else if (Git::isValidID(id)) {
 							out->item = mods;
 							out->item.id = Git::CommitID(id);
-							auto commit = g->queryCommitItem(out->item.id);
+							auto commit = g.queryCommitItem(out->item.id);
 							if (commit) {
 								out->commit = *commit;
 							}
@@ -339,7 +339,7 @@ bool GitDiff::diff(GitPtr g, Git::CommitID const &id, const QList<Git::Submodule
 	return true;
 }
 
-bool GitDiff::diff_uncommited(GitPtr g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
+bool GitDiff::diff_uncommited(GitRunner g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out)
 {
 	return diff(g, {}, submodules, out);
 }
@@ -351,7 +351,7 @@ GitCommitTree::GitCommitTree(GitObjectCache *objcache)
 {
 }
 
-QString GitCommitTree::lookup_(GitPtr g, QString const &file, GitTreeItem *out)
+QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *out)
 {
 	int i = file.lastIndexOf('/');
 	if (i >= 0) {
@@ -405,7 +405,7 @@ QString GitCommitTree::lookup_(GitPtr g, QString const &file, GitTreeItem *out)
 	return QString();
 }
 
-QString GitCommitTree::lookup(GitPtr g, QString const &file)
+QString GitCommitTree::lookup(GitRunner g, QString const &file)
 {
 	auto it = blob_map.find(file);
 	if (it != blob_map.end()) {
@@ -414,7 +414,7 @@ QString GitCommitTree::lookup(GitPtr g, QString const &file)
 	return lookup_(g, file, nullptr);
 }
 
-bool GitCommitTree::lookup(GitPtr g, QString const &file, GitTreeItem *out)
+bool GitCommitTree::lookup(GitRunner g, QString const &file, GitTreeItem *out)
 {
 	*out = GitTreeItem();
 	auto it = blob_map.find(file);
@@ -425,12 +425,12 @@ bool GitCommitTree::lookup(GitPtr g, QString const &file, GitTreeItem *out)
 	return !lookup_(g, file, out).isEmpty();
 }
 
-void GitCommitTree::parseTree(GitPtr g, QString const &tree_id)
+void GitCommitTree::parseTree(GitRunner g, QString const &tree_id)
 {
 	parseGitTreeObject(g, objcache, tree_id, QString(), &root_item_list);
 }
 
-QString GitCommitTree::parseCommit(GitPtr g, QString const &commit_id) // TODO: change commit_id as Git::CommitID
+QString GitCommitTree::parseCommit(GitRunner g, QString const &commit_id) // TODO: change commit_id as Git::CommitID
 {
 	GitCommit commit;
 	GitCommit::parseCommit(g, objcache, Git::CommitID(commit_id), &commit);
@@ -447,7 +447,7 @@ QString GitCommitTree::parseCommit(GitPtr g, QString const &commit_id) // TODO: 
  * @param file
  * @return
  */
-QString lookupFileID(GitPtr g, GitObjectCache *objcache, QString const &commit_id, QString const &file)
+QString lookupFileID(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &file)
 {
 	GitCommitTree commit_tree(objcache);
 	commit_tree.parseCommit(g, commit_id);

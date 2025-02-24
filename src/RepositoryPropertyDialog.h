@@ -22,7 +22,7 @@ private:
 	Private *m;
 	
 	MainWindow *mainwindow();
-	GitPtr git();
+	GitRunner git();
 	
 	const std::vector<Git::Remote> *remotes() const;
 	void getRemotes_();
@@ -35,7 +35,7 @@ private:
 	void setNameEditMode(bool f);
 	void reflectRemotesTable();
 public:
-	explicit RepositoryPropertyDialog(MainWindow *parent, GitPtr g, RepositoryInfo const &item, bool open_repository_menu = false);
+	explicit RepositoryPropertyDialog(MainWindow *parent, GitRunner g, RepositoryInfo const &item, bool open_repository_menu = false);
 	~RepositoryPropertyDialog() override;
 
 	bool isRemoteChanged() const;

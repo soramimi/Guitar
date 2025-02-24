@@ -33,16 +33,11 @@ void GitObjectManager::setup()
 	clearIndexes();
 }
 
-QString GitObjectManager::workingDir(GitPtr g)
-{
-	return g->workingDir();
-}
-
-void GitObjectManager::loadIndexes(GitPtr g)
+void GitObjectManager::loadIndexes(GitRunner g)
 {
 	// QMutexLocker lock(&mutex);
 	if (git_idx_list.empty()) {
-		QString path = workingDir(g) / subdir_git_objects_pack;
+		QString path = g.workingDir() / subdir_git_objects_pack;
 		QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
 		while (it.hasNext()) {
 			it.next();
@@ -166,7 +161,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPa
 	return false;
 }
 
-bool GitObjectManager::extractObjectFromPackFile(GitPtr g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	loadIndexes(g);
 
@@ -186,7 +181,7 @@ bool GitObjectManager::extractObjectFromPackFile(GitPtr g, Git::CommitID const &
 	return false;
 }
 
-QString GitObjectManager::findObjectPath(GitPtr g, Git::CommitID const &id)
+QString GitObjectManager::findObjectPath(GitRunner g, Git::CommitID const &id)
 {
 	if (Git::isValidID(id)) {
 		int count = 0;
@@ -194,7 +189,7 @@ QString GitObjectManager::findObjectPath(GitPtr g, Git::CommitID const &id)
 		QString name = id.toQString();
 		QString xx = name.mid(0, 2); // leading two xdigits
 		QString name2 = name.mid(2);  // remaining xdigits
-		QString dir = workingDir(g) / subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
+		QString dir = g.workingDir() / subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
 		QDirIterator it(dir, QDir::Files);
 		while (it.hasNext()) {
 			it.next();
@@ -212,7 +207,7 @@ QString GitObjectManager::findObjectPath(GitPtr g, Git::CommitID const &id)
 	return {};
 }
 
-bool GitObjectManager::loadObject(GitPtr g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::loadObject(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	QString path = findObjectPath(g, id);
 	if (!path.isEmpty()) {
@@ -230,7 +225,7 @@ bool GitObjectManager::loadObject(GitPtr g, Git::CommitID const &id, QByteArray 
 	return false;
 }
 
-bool GitObjectManager::catFile(GitPtr g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::catFile(GitRunner g, Git::CommitID const &id, QByteArray *out, Git::Object::Type *type)
 {
 	*type = Git::Object::Type::UNKNOWN;
 	if (loadObject(g, id, out, type)) return true;
@@ -256,9 +251,9 @@ void GitObjectCache::clear()
 	object_manager.setup();
 }
 
-Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
+Git::CommitID GitObjectCache::revParse(GitRunner g, QString const &name)
 {
-	if (!g) return {};
+	if (!g.isValidWorkingCopy()) return {};
 
 	{
 		// QMutexLocker lock(&object_manager.mutex);
@@ -268,7 +263,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 		}
 	}
 
-	auto id = g->rev_parse(name);
+	auto id = g.rev_parse(name);
 
 	{
 		// QMutexLocker lock(&object_manager.mutex);
@@ -277,7 +272,7 @@ Git::CommitID GitObjectCache::revParse(GitPtr g, QString const &name)
 	}
 }
 
-Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
+Git::Object GitObjectCache::catFile(GitRunner g, Git::CommitID const &id)
 {
 	// PROFILE;
 	{
@@ -325,7 +320,7 @@ Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 	}
 
 	if (true) {
-		auto ba = g->cat_file(id);
+		auto ba = g.cat_file(id);
 		if (ba) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
@@ -338,7 +333,7 @@ Git::Object GitObjectCache::catFile(GitPtr g, Git::CommitID const &id)
 	return Git::Object();
 }
 
-bool GitCommit::parseCommit(GitPtr g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
+bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, Git::CommitID const &id, GitCommit *out)
 {
 	*out = {};
 	if (id.isValid()) {
@@ -401,7 +396,7 @@ void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTre
 	}
 }
 
-bool parseGitTreeObject(GitPtr g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as Git::CommitID
+bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as Git::CommitID
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {

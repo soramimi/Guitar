@@ -38,7 +38,7 @@ void CommitPropertyDialog::init()
 	QString message = m->commit.message;
 	QString detail;
 	{
-		QString s = mainwindow()->git()->queryEntireCommitMessage(m->commit.commit_id);
+		QString s = mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
 		if (s.startsWith(message)) {
 			s = s.mid(message.length());
 		}
@@ -62,7 +62,7 @@ void CommitPropertyDialog::init()
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	auto sig = mainwindow()->git()->log_signature(m->commit.commit_id);
+	auto sig = mainwindow()->git().log_signature(m->commit.commit_id);
 	if (sig) {
 		QString status;
 		QString sig_name;
