@@ -155,7 +155,7 @@ struct MainWindow::Private {
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
-	ProgressWidget *status_bar_label;
+	// ProgressWidget *status_bar_label;
 
 	QObject *last_focused_file_list = nullptr;
 
@@ -234,8 +234,9 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
-	m->status_bar_label = new ProgressWidget(this);
-	ui->statusBar->addWidget(m->status_bar_label);
+	// m->status_bar_label = new ProgressWidget(this);
+	// ui->statusBar->addWidget(m->status_bar_label);
+	progress_widget()->setVisible(false);
 
 	ui->widget_diff_view->init();
 
@@ -333,6 +334,12 @@ MainWindow::~MainWindow()
 
 	delete m;
 	delete ui;
+}
+
+ProgressWidget *MainWindow::progress_widget() const
+{
+	// return m->status_bar_label;
+	return ui->widget_progress;
 }
 
 RepositoryData *MainWindow::currentRepositoryData()
@@ -871,15 +878,15 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 	if (info.progress) {
 		m->background_process_work_in_progress = true;
 		if (info.message) {
-			ui->statusBar->clearMessage();
-			m->status_bar_label->setVisible(true);
-			m->status_bar_label->setText(*info.message);
+			// ui->statusBar->clearMessage();
+			progress_widget()->setVisible(true);
+			progress_widget()->setText(*info.message);
 		}
-		m->status_bar_label->setProgress(*info.progress);
+		progress_widget()->setProgress(*info.progress);
 	} else {
 		m->background_process_work_in_progress = false;
-		m->status_bar_label->clear();
-		m->status_bar_label->setVisible(false);
+		progress_widget()->clear();
+		progress_widget()->setVisible(false);
 		if (info.message) {
 			ui->statusBar->showMessage(*info.message);
 		}

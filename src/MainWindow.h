@@ -22,6 +22,7 @@ class QListWidgetItem;
 class QTableWidgetItem;
 class QTreeWidgetItem;
 struct CommitLogExchangeData;
+class ProgressWidget;
 
 namespace Ui {
 class MainWindow;
@@ -683,6 +684,7 @@ private:
 	void initUpdateFileListTimer();
 	void clearGitCommandCache();
 	Git::CommitItemList log_all2(GitRunner g, const Git::Hash &id, int maxcount) const;
+	ProgressWidget *progress_widget() const;
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 
