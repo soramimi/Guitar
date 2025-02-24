@@ -1855,7 +1855,7 @@ bool MainWindow::checkGitCommand()
  */
 bool MainWindow::saveBlobAs(const QString &id, const QString &dstpath)
 {
-	Git::Object obj = internalCatFile(id);
+	Git::Object obj = catFile(git(), id);
 	if (!obj.content.isEmpty()) {
 		if (saveByteArrayAs(obj.content, dstpath)) {
 			return true;
@@ -2339,7 +2339,7 @@ bool MainWindow::isRetryQueued() const
 bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryInfo const &repodata)
 {
 	// 既存チェック
-	
+
 	QFileInfo info(repodata.local_dir);
 	if (info.isFile()) {
 		QString msg = repodata.local_dir + "\n\n" + tr("A file with same name already exists");
@@ -2351,9 +2351,9 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryInfo
 		QMessageBox::warning(this, tr("Clone"), msg);
 		return false;
 	}
-	
+
 	// クローン先ディレクトリの存在チェック
-	
+
 	QString basedir = misc::normalizePathSeparator(clonedata.basedir);
 	if (!QFileInfo(basedir).isDir()) {
 		int i = basedir.indexOf('/');
@@ -2364,14 +2364,14 @@ bool MainWindow::cloneRepository(Git::CloneData const &clonedata, RepositoryInfo
 			QMessageBox::warning(this, tr("Clone"), msg);
 			return false;
 		}
-		
+
 		QString msg = basedir + "\n\n" + tr("No such folder. Create it now?");
 		if (QMessageBox::warning(this, tr("Clone"), msg, QMessageBox::Ok, QMessageBox::Cancel) != QMessageBox::Ok) {
 			return false;
 		}
-		
+
 		// ディレクトリを作成
-		
+
 		QString base = basedir.mid(0, i + 1);
 		QString sub = basedir.mid(i + 1);
 		QDir(base).mkpath(sub);
@@ -2403,7 +2403,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	if (local_dir.isEmpty()) return;
 
 	QString dir = local_dir;
-	
+
 	SubmoduleAddDialog dlg(this, url, dir);
 	if (dlg.exec() != QDialog::Accepted) {
 		return;
@@ -2411,18 +2411,18 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	url = dlg.url();
 	dir = dlg.dir();
 	const QString ssh_key = dlg.overridedSshKey();
-	
+
 	RepositoryInfo repos_item_data;
 	repos_item_data.local_dir = dir;
 	repos_item_data.local_dir.replace('\\', '/');
 	repos_item_data.name = makeRepositoryName(dir);
 	repos_item_data.ssh_key = ssh_key;
-	
+
 	Git::CloneData data = Git::preclone(url, dir);
 	bool force = dlg.isForce();
-	
+
 	GitRunner g = git(local_dir, {}, repos_item_data.ssh_key);
-	
+
 	std::shared_ptr<Git_submodule_add> params = std::make_shared<Git_submodule_add>(data, force);
 	runPtyGit(tr("Submodule..."), g, *params, nullptr, {});
 }
@@ -3542,6 +3542,27 @@ static void fixCommitLogOrder(Git::CommitItemList *list)
 	}
 }
 
+Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int maxcount) const
+{
+	Git::CommitItemList items;
+
+	QStringList revlist = g.rev_list_all(id, maxcount);
+
+	for (size_t i = 0; i < revlist.size(); i++) {
+		QString hash = revlist[i];
+		auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+		if (obj.type == Git::Object::Type::COMMIT) {
+			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
+			if (item) {
+				item->commit_id = Git::Hash(hash);
+				items.list.push_back(*item);
+			}
+		}
+	}
+
+	return items;
+}
+
 Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 {
 	PROFILE;
@@ -4159,7 +4180,7 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 	win.exec();
 }
 
-Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id, std::mutex *mutex) //@TODO:
+Git::Object MainWindow::catFile(GitRunner g, const QString &id)
 {
 	if (g.isValidWorkingCopy()) {
 		QString path_prefix = PATH_PREFIX;
@@ -4173,20 +4194,10 @@ Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id, std::mut
 				return obj;
 			}
 		} else if (Git::isValidID(id)) {
-			return getObjCache()->catFile(g, Git::Hash(id), mutex);
+			return getObjCache()->catFile(g, Git::Hash(id));
 		}
 	}
 	return {};
-}
-
-Git::Object MainWindow::internalCatFile(const QString &id, std::mutex *mutex) //@TODO:
-{
-	return internalCatFile(git(), id, mutex);
-}
-
-Git::Object MainWindow::catFile(QString const &id, std::mutex *mutex)
-{
-	return internalCatFile(git(), id, mutex);
 }
 
 /**
@@ -7191,31 +7202,6 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 	onLogCurrentItemChanged();
 	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;
-}
-
-Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int maxcount) const
-{
-	PROFILE;
-
-	Git::CommitItemList items;
-
-	QStringList list = g.rev_list_all(id, maxcount);
-
-	std::mutex mutex;
-
-	for (size_t i = 0; i < list.size(); i++) {
-		QString hash = list[i];
-		auto obj = const_cast<MainWindow *>(this)->catFile(hash, &mutex);
-		if (obj.type == Git::Object::Type::COMMIT) {
-			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
-			if (item) {
-				item->commit_id = Git::Hash(hash);
-				items.list.push_back(*item);
-			}
-		}
-	}
-
-	return items;
 }
 
 void MainWindow::test()

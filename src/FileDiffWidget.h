@@ -99,8 +99,8 @@ private:
 
 	ViewStyle viewstyle() const;
 
-        GitRunner git();
-	Git::Object catFile(QString const &id);
+	GitRunner git();
+	Git::Object catFile(GitRunner g, QString const &id);
 
 	int totalTextLines() const;
 
@@ -167,8 +167,8 @@ private slots:
 	void on_toolButton_menu_clicked();
 
 signals:
-//	void moveNextItem();
-//	void movePreviousItem();
+	//	void moveNextItem();
+	//	void movePreviousItem();
 	void textcodecChanged();
 };
 

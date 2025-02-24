@@ -318,7 +318,6 @@ private:
 	void deleteTempFiles();
 	QString newTempFilePath();
 	int limitLogCount() const;
-	Git::Object internalCatFile(GitRunner g, const QString &id, std::mutex *mutex);
 	bool isThereUncommitedChanges() const;
 	static void addDiffItems(const QList<Git::Diff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	Git::CommitItemList retrieveCommitLog(GitRunner g) const;
@@ -498,8 +497,7 @@ public:
 	bool jumpToCommit(const Git::Hash &id);
 	bool jumpToCommit(const QString &id);
 
-	Git::Object internalCatFile(const QString &id, std::mutex *mutex = nullptr);
-		Git::Object catFile(const QString &id, std::mutex *mutex = nullptr);
+	Git::Object catFile(GitRunner g, const QString &id);
 	bool saveAs(const QString &id, const QString &dstpath);
 	QString determinFileType(QByteArray const &in) const;
 	QString determinFileType(const QString &path) const;

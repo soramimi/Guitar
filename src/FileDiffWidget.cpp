@@ -131,9 +131,9 @@ GitRunner FileDiffWidget::git()
 	return mainwindow()->git();
 }
 
-Git::Object FileDiffWidget::catFile(QString const &id)
+Git::Object FileDiffWidget::catFile(GitRunner g, QString const &id)
 {
-	return mainwindow()->catFile(id);
+	return mainwindow()->catFile(g, id);
 }
 
 int FileDiffWidget::totalTextLines() const
@@ -601,8 +601,9 @@ void FileDiffWidget::setSideBySide_(Git::Diff const &diff, QByteArray const &ba_
 QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
-		Git::Object obj_a = mainwindow()->catFile(a_id);
-		Git::Object obj_b = mainwindow()->catFile(b_id);
+		GitRunner g = git();
+		Git::Object obj_a = mainwindow()->catFile(g, a_id);
+		Git::Object obj_b = mainwindow()->catFile(g, b_id);
 		if (obj_b.type == Git::Object::Type::UNKNOWN) {
 			obj_b.type = Git::Object::Type::BLOB;
 		}
@@ -652,8 +653,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g.isValidWorkingCopy()) return;
 
 	if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
-		Git::Object obj_a = catFile(info.blob.a_id_or_path);
-		Git::Object obj_b = catFile(info.blob.b_id_or_path);
+		Git::Object obj_a = catFile(g, info.blob.a_id_or_path);
+		Git::Object obj_b = catFile(g, info.blob.b_id_or_path);
 		QString mime_a = mainwindow()->determinFileType(obj_a.content);
 		QString mime_b = mainwindow()->determinFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
@@ -673,14 +674,14 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 
 		Git::Object obj;
 		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
-			obj = catFile(diff.blob.a_id_or_path);
+			obj = catFile(g, diff.blob.a_id_or_path);
 			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
 				setSideBySide(diff, obj.content, uncommited, g.workingDir()); // 通常のdiff表示
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
 		} else if (isValidID_(diff.blob.b_id_or_path)) { // 左が無効で右が有効の時は、追加されたファイル
-			obj = catFile(diff.blob.b_id_or_path);
+			obj = catFile(g, diff.blob.b_id_or_path);
 			setRightOnly(diff, obj.content);
 		}
 	}
@@ -705,7 +706,7 @@ void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_ri
 	std::string text = diffObjects(diff.blob.a_id_or_path, diff.blob.b_id_or_path).toStdString();
 	GitDiff::parseDiff(text, &diff, &diff);
 
-	Git::Object obj = catFile(diff.blob.a_id_or_path);
+	Git::Object obj = catFile(g, diff.blob.a_id_or_path);
 	setSideBySide(diff, obj.content, false, g.workingDir());
 
 	ui->widget_diff_slider->clear(false);

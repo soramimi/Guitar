@@ -16,7 +16,6 @@ class Git;
 class GitObjectManager {
 	friend class GitObjectCache;
 private:
-	// QMutex mutex;
 	QString subdir_git_objects;
 	QString subdir_git_objects_pack;
 	std::vector<GitPackIdxPtr> git_idx_list;
@@ -54,7 +53,7 @@ private:
 public:
 	void clear();
 	Git::Hash revParse(GitRunner g, QString const &name);
-	Git::Object catFile(GitRunner g, const Git::Hash &id, std::mutex *mutex = nullptr);
+	Git::Object catFile(GitRunner g, const Git::Hash &id);
 
 	Git::Hash const &item_id(int i) const
 	{

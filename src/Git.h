@@ -151,7 +151,7 @@ public:
 		}
 		CommitItem &at(size_t i)
 		{
-			return list.at(i);
+			return list[i];
 		}
 		CommitItem const &at(size_t i) const
 		{
