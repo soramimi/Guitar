@@ -50,8 +50,8 @@ public:
 		template <typename VIEW> void _assign(VIEW const &id);
 	public:
 		CommitID();
-		explicit CommitID(QString const &qid);
 		explicit CommitID(std::string_view const &id);
+		explicit CommitID(QString const &qid);
 		explicit CommitID(char const *id);
 		void assign(std::string_view const &qid);
 		void assign(const QString &qid);
@@ -610,7 +610,6 @@ public:
 	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage() const;
 
-	// GitPtr dup() const;
 	CommitID rev_parse(QString const &name);
 	QList<Tag> tags();
 	bool tag(QString const &name, CommitID const &id = {});
@@ -762,7 +761,7 @@ public:
 	{
 		return (bool)git;
 	}
-	GitPtr dup() const;
+	GitRunner dup() const;
 
 	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey)
 	{

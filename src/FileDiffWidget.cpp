@@ -126,7 +126,7 @@ GitRunner FileDiffWidget::git()
 {
 	if (!mainwindow()) {
 		qDebug() << "Maybe, you forgot to call FileDiffWidget::bind()?";
-		return GitPtr();
+		return {};
 	}
 	return mainwindow()->git();
 }

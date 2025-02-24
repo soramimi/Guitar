@@ -14,11 +14,6 @@
 GitObjectManager::GitObjectManager()
 {
 	init();
-}
-
-GitObjectManager::GitObjectManager(GitPtr g)
-{
-	init();
 	setup();
 }
 
@@ -396,7 +391,7 @@ void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTre
 	}
 }
 
-bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as Git::CommitID
+bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as Git::Hash
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {

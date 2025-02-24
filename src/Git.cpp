@@ -22,27 +22,19 @@ Git::CommitID::CommitID()
 	
 }
 
-Git::CommitID::CommitID(const QString &qid)
-{
-	assign(qid);
-}
-
 Git::CommitID::CommitID(std::string_view const &id)
 {
 	assign(id);
 }
 
+Git::CommitID::CommitID(const QString &qid)
+{
+	assign(qid);
+}
+
 Git::CommitID::CommitID(const char *id)
 {
 	assign(std::string_view(id, strlen(id)));
-}
-
-void Git::CommitItem::setParents(const QStringList &list)
-{
-	parent_ids.clear();
-	for (QString const &id : list) {
-		parent_ids.append(Git::CommitID(id));
-	}
 }
 
 class Latil1View {
@@ -94,60 +86,12 @@ template <typename VIEW> void Git::CommitID::_assign(VIEW const &id)
 
 void Git::CommitID::assign(std::string_view const &s)
 {
-#if 0
-	if (s.empty()) {
-		valid = false;
-	} else {
-		valid = true;
-		if (s.size() == GIT_ID_LENGTH) {
-			char tmp[3];
-			tmp[2] = 0;
-			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
-				unsigned char c = s[i * 2 + 0];
-				unsigned char d = s[i * 2 + 1];
-				if (std::isxdigit(c) && std::isxdigit(d)) {
-					tmp[0] = c;
-					tmp[1] = d;
-					id[i] = strtol(tmp, nullptr, 16);
-				} else {
-					valid = false;
-					break;
-				}
-			}
-		}
-	}
-#else
 	_assign(s);
-#endif
 }
 
-void Git::CommitID::assign(const QString &qid)
+void Git::CommitID::assign(const QString &id)
 {
-#if 0
-	if (qid.isEmpty()) {
-		valid = false;
-	} else {
-		valid = true;
-		if (qid.size() == GIT_ID_LENGTH) {
-			char tmp[3];
-			tmp[2] = 0;
-			for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
-				unsigned char c = qid[i * 2 + 0].toLatin1();
-				unsigned char d = qid[i * 2 + 1].toLatin1();
-				if (std::isxdigit(c) && std::isxdigit(d)) {
-					tmp[0] = c;
-					tmp[1] = d;
-					id[i] = strtol(tmp, nullptr, 16);
-				} else {
-					valid = false;
-					break;
-				}
-			}
-		}
-	}
-#else
-	_assign(Latil1View(qid));
-#endif
+	_assign(Latil1View(id));
 }
 
 QString Git::CommitID::toQString(int maxlen) const
@@ -176,18 +120,37 @@ bool Git::CommitID::isValid() const
 	return c != 0; // すべて0ならfalse
 }
 
+void Git::CommitItem::setParents(const QStringList &list)
+{
+	parent_ids.clear();
+	for (QString const &id : list) {
+		parent_ids.append(Git::CommitID(id));
+	}
+}
+
+struct GitCache {
+	Git::CommandCache command_cache;
+};
+
 struct Git::Private {
 	struct Info {
 		QString git_command;
 		QString working_repo_dir;
 		QString submodule_path;
+		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
+		QString ssh_key_override;// = "C:/a/id_rsa";
 	};
 	Info info;
-	QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
-	QString ssh_key_override;// = "C:/a/id_rsa";
-	std::vector<char> result;
-	ProcessStatus exit_status;
-	CommandCache command_cache;
+	struct Var {
+		std::vector<char> result;
+		ProcessStatus exit_status;
+	} var;
+	std::shared_ptr<GitCache> cache;
+
+	Private()
+		: cache(std::make_shared<GitCache>())
+	{
+	}
 };
 
 Git::Git()
@@ -209,14 +172,14 @@ Git::~Git()
 
 void Git::setCommandCache(CommandCache const &cc)
 {
-	m->command_cache = cc;
+	m->cache->command_cache = cc;
 }
 
 void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
 	m->info.working_repo_dir = repo;
 	m->info.submodule_path = submodpath;
-	m->ssh_key_override = sshkey;
+	m->info.ssh_key_override = sshkey;
 }
 
 QString Git::workingDir() const
@@ -230,12 +193,12 @@ QString Git::workingDir() const
 
 QString const &Git::sshKey() const
 {
-	return m->ssh_key_override;
+	return m->info.ssh_key_override;
 }
 
 void Git::setSshKey(QString const &sshkey) const
 {
-	m->ssh_key_override = sshkey;
+	m->info.ssh_key_override = sshkey;
 }
 
 bool Git::isValidID(QString const &id)
@@ -270,13 +233,13 @@ QString Git::status()
 
 QByteArray Git::toQByteArray() const
 {
-	if (m->result.empty()) return QByteArray();
-	return QByteArray(&m->result[0], m->result.size());
+	if (m->var.result.empty()) return QByteArray();
+	return QByteArray(&m->var.result[0], m->var.result.size());
 }
 
 std::string Git::resultStdString() const
 {
-	auto const &v = m->result;
+	auto const &v = m->var.result;
 	if (v.empty()) return {};
 	return std::string(v.begin(), v.end());
 }
@@ -289,7 +252,7 @@ QString Git::resultQString() const
 void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 {
 	m->info.git_command = gitcmd;
-	m->ssh_command = sshcmd;
+	m->info.ssh_command = sshcmd;
 }
 
 QString Git::gitCommand() const
@@ -300,19 +263,17 @@ QString Git::gitCommand() const
 
 void Git::clearResult()
 {
-	m->result.clear();
-	m->exit_status.exit_code = 0;
-	m->exit_status.error_message = {};
+	m->var = {};
 }
 
 QString Git::errorMessage() const
 {
-	return QString::fromStdString(m->exit_status.error_message);
+	return QString::fromStdString(m->var.exit_status.error_message);
 }
 
 int Git::getProcessExitCode() const
 {
-	return m->exit_status.exit_code;
+	return m->var.exit_status.exit_code;
 }
 
 bool Git::chdirexec(std::function<bool()> const &fn)
@@ -342,13 +303,13 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 	clearResult();
 
 	QString env;
-	if (m->ssh_command.isEmpty() || m->ssh_key_override.isEmpty()) {
+	if (m->info.ssh_command.isEmpty() || m->info.ssh_key_override.isEmpty()) {
 		// nop
 	} else {
-		if (m->ssh_command.indexOf('\"') >= 0) return false;
-		if (m->ssh_key_override.indexOf('\"') >= 0) return false;
-		if (!QFileInfo(m->ssh_command).isExecutable()) return false;
-		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(m->ssh_command).arg(m->ssh_key_override);
+		if (m->info.ssh_command.indexOf('\"') >= 0) return false;
+		if (m->info.ssh_key_override.indexOf('\"') >= 0) return false;
+		if (!QFileInfo(m->info.ssh_command).isExecutable()) return false;
+		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(m->info.ssh_command).arg(m->info.ssh_key_override);
 	}
 
 	auto DoIt = [&](){
@@ -368,40 +329,40 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 		if (opt.pty) {
 			opt.pty->start(cmd, env);
-			m->exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
+			m->var.exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
-			if (m->command_cache) {
-				auto const *a = m->command_cache.find(cmd);
+			if (m->cache && m->cache->command_cache) {
+				auto const *a = m->cache->command_cache.find(cmd);
 				if (a) {
 					// qDebug() << "--- found:" << cmd;
-					m->result = *a;
+					m->var.result = *a;
 					return true;
 				}
 			}
 
 			Process proc;
 			proc.start(cmd.toStdString(), false);
-			m->exit_status.exit_code = proc.wait();
+			m->var.exit_status.exit_code = proc.wait();
 
 			if (opt.errout) {
-				m->result = proc.errbytes;
+				m->var.result = proc.errbytes;
 			} else {
 				if (!proc.errbytes.empty()) {
 					qDebug() << QString::fromStdString(proc.errstring());
 				}
-				m->result = proc.outbytes;
+				m->var.result = proc.outbytes;
 			}
-			m->exit_status.error_message = proc.errstring();
+			m->var.exit_status.error_message = proc.errstring();
 
-			if (m->exit_status.exit_code == 0) {
-				if (m->command_cache) {
-					m->command_cache.insert(cmd, m->result);
+			if (m->var.exit_status.exit_code == 0) {
+				if (m->cache && m->cache->command_cache) {
+					m->cache->command_cache.insert(cmd, m->var.result);
 					// qDebug() << "--- insert:" << cmd;
 				}
 			}
 		}
 
-		return m->exit_status.exit_code == 0;
+		return m->var.exit_status.exit_code == 0;
 	};
 
 	bool ok = false;
@@ -419,13 +380,6 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 	return ok;
 }
-
-// GitPtr Git::dup() const
-// {
-// 	Git *p = new Git();
-// 	p->m->info = m->info;
-// 	return GitPtr(p);
-// }
 
 bool Git::isValidWorkingCopy(QString const &dir)
 {
@@ -1404,7 +1358,7 @@ QString Git::objectType(CommitID const &id)
 	return {};
 }
 
-QByteArray Git::cat_file_(CommitID const &id)
+QByteArray Git::cat_file_(const CommitID &id)
 {
 	if (isValidID(id)) {
 		git("cat-file -p " + id.toQString());
@@ -1730,7 +1684,7 @@ void Git::remote_v(std::vector<Remote> *out)
 		if (i > 0 && i < j) {
 			Remote r;
 			r.name = line.mid(0, i);
-			r.ssh_key = m->ssh_key_override;
+			r.ssh_key = m->info.ssh_key_override;
 			QString url = line.mid(i + 1, j - i - 1);
 			QString type = line.mid(j + 1);
 			if (type.startsWith('(') && type.endsWith(')')) {
@@ -1776,7 +1730,7 @@ void Git::addRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote add \"%1\" \"%2\"";
 	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url_fetch));
-	m->ssh_key_override = remote.ssh_key;
+	m->info.ssh_key_override = remote.ssh_key;
 	git(cmd);
 }
 
@@ -2157,7 +2111,7 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 
 // GitRunner
 
-GitPtr GitRunner::dup() const
+GitRunner GitRunner::dup() const
 {
 	Git *p = new Git();
 	p->m->info = git->m->info;

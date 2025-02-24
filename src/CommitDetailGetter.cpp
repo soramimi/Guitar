@@ -12,7 +12,7 @@ CommitDetailGetter::~CommitDetailGetter()
  *
  * コミットの詳細情報を取得するためのスレッドを開始する
  */
-void CommitDetailGetter::start(GitPtr git)
+void CommitDetailGetter::start(GitRunner git)
 {
 	stop();
 	interrupted_ = false;
@@ -48,7 +48,7 @@ void CommitDetailGetter::start(GitPtr git)
 					}
 				}
 				if (item.id) {
-					auto c = git_->log_signature(item.id);
+					auto c = git_.log_signature(item.id);
 					if (c) {
 						Git::CommitItem const &commit = *c;
 						item.data.sign_verify = commit.sign.verify;

@@ -17,8 +17,6 @@ private:
 	Ui::SubmoduleAddDialog *ui;
 	struct Private;
 	Private *m;
-
-	using GitPtr = std::shared_ptr<Git>;
 private:
 	MainWindow *mainwindow();
 public:

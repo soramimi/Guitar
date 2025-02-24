@@ -73,9 +73,9 @@ QString GitDiff::diffObjects(GitRunner g, QString const &a_id, QString const &b_
 	}
 }
 
-QString GitDiff::diffFiles(GitPtr g, QString const &a_path, QString const &b_path)
+QString GitDiff::diffFiles(GitRunner g, QString const &a_path, QString const &b_path)
 {
-	return g->diff_file(a_path, b_path);
+	return g.diff_file(a_path, b_path);
 }
 
 void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
@@ -122,7 +122,7 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 	}
 }
 
-void GitDiff::retrieveCompleteTree(GitPtr g, QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out)
+void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out)
 {
 	for (GitTreeItem const &d : *files) {
 		QString path = misc::joinWithSlash(dir, d.name);
@@ -262,7 +262,6 @@ bool GitDiff::diff(GitRunner g, Git::CommitID const &id, const QList<Git::Submod
 		}
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-		// GitPtr g = objcache->git();
 		QString head_id = objcache->revParse(g, "HEAD").toQString();
 		Git::FileStatusList stats = g.status_s(); // git status
 

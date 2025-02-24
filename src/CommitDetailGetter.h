@@ -23,7 +23,7 @@ private:
 	std::vector<std::thread> threads_;
 	bool interrupted_ = false;
 
-	GitPtr git_;
+	GitRunner git_;
 
 	struct Request {
 		bool done = false;
@@ -41,7 +41,7 @@ private:
 public:
 	CommitDetailGetter() = default;
 	virtual ~CommitDetailGetter();
-	void start(GitPtr git);
+	void start(GitRunner git);
 	void stop();
 private:
 	Data _query(const Git::CommitID &id, bool request_if_not_found, bool lock);

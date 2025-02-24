@@ -11,7 +11,6 @@
 class GitPackIdxV2;
 
 class Git;
-using GitPtr = std::shared_ptr<Git>;
 
 class GitObjectManager {
 	friend class GitObjectCache;
@@ -31,7 +30,6 @@ private:
 	void init();
 public:
 	GitObjectManager();
-	GitObjectManager(GitPtr g);
 	void setup();
 	bool catFile(GitRunner g, const Git::CommitID &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
@@ -54,8 +52,8 @@ private:
 	size_t size() const;
 public:
 	void clear();
-        Git::CommitID revParse(GitRunner g, QString const &name);
-        Git::Object catFile(GitRunner g, const Git::CommitID &id);
+	Git::CommitID revParse(GitRunner g, QString const &name);
+	Git::Object catFile(GitRunner g, const Git::CommitID &id);
 
 	Git::CommitID const &item_id(int i) const
 	{
@@ -103,8 +101,6 @@ private:
 
 	std::map<QString, GitTreeItem> blob_map;
 	std::map<QString, QString> tree_id_map;
-
-	GitPtr git();
 
 	QString lookup_(GitRunner g, QString const &file, GitTreeItem *out);
 public:

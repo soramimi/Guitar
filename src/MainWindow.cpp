@@ -1551,7 +1551,7 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 	}
 
 	m->commit_detail_getter.stop();
-	m->commit_detail_getter.start(GitRunner(g).dup());
+	m->commit_detail_getter.start(g.dup());
 }
 
 /**
@@ -2121,7 +2121,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::CommitID
 	}
 
 	if (!id && !isThereUncommitedChanges()) {
-		id = getObjCache()->revParse(g, "HEAD");
+		id = Git::CommitID(getObjCache()->revParse(g, "HEAD"));
 	}
 
 	QList<Git::SubmoduleItem> mods;
@@ -3545,8 +3545,8 @@ static void fixCommitLogOrder(Git::CommitItemList *list)
 Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 {
 	PROFILE;
-	// Git::CommitItemList list = g->log(limitLogCount());
-	// Git::CommitItemList list = g->log_all({}, limitLogCount());
+	// Git::CommitItemList list = g.log(limitLogCount());
+	// Git::CommitItemList list = g.log_all({}, limitLogCount());
 	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
 	fixCommitLogOrder(&list);
 	list.updateIndex();
@@ -4419,7 +4419,7 @@ DONE:;
 
 void MainWindow::updateHEAD(GitRunner g)
 {
-	auto head = getObjCache()->revParse(g, "HEAD");
+	auto head = Git::CommitID(getObjCache()->revParse(g, "HEAD"));
 	setHeadId(head);
 }
 
@@ -5441,8 +5441,8 @@ QString MainWindow::selectSshCommand(bool save)
 
 GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey) const
 {
-	GitPtr g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
-	if (g && QFileInfo(g->gitCommand()).isExecutable()) {
+	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
+	if (QFileInfo(g->gitCommand()).isExecutable()) {
 		g->setCommandCache(currentRepositoryData()->git_command_cache);
 		return g;
 	}

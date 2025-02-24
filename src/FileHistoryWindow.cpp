@@ -138,12 +138,12 @@ private:
 	{
 		return global->mainwindow;
 	}
-	GitPtr g;
+	GitRunner g;
 	QString commit_id;
 	QString file;
 public:
 	QString result;
-	FindFileIdThread(GitPtr g, QString const &commit_id, QString const &file)
+	FindFileIdThread(GitRunner g, QString const &commit_id, QString const &file)
 	{
 		this->g = g;
 		this->commit_id = commit_id;
