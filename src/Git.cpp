@@ -1102,7 +1102,7 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 					if (!out.author.isEmpty()) {
 						out.author += ' ';
 					}
-					out.author += arr[i];
+					out.author += QSTR(arr[i]);
 				}
 			}
 		} else if (Starts("commiter", &val)) {
