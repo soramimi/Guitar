@@ -51,7 +51,7 @@ public:
 	public:
 		Hash();
 		explicit Hash(std::string_view const &id);
-		explicit Hash(QString const &qid);
+		explicit Hash(QString const &id);
 		explicit Hash(char const *id);
 		void assign(std::string_view const &qid);
 		void assign(const QString &qid);
@@ -115,7 +115,7 @@ public:
 
 	struct CommitItem {
 		Hash commit_id;
-		QString tree;
+		Hash tree;
 		QList<Hash> parent_ids;
 		QString author;
 		QString email;

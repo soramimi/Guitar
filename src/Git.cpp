@@ -27,9 +27,9 @@ Git::Hash::Hash(std::string_view const &id)
 	assign(id);
 }
 
-Git::Hash::Hash(const QString &qid)
+Git::Hash::Hash(const QString &id)
 {
-	assign(qid);
+	assign(id);
 }
 
 Git::Hash::Hash(const char *id)
@@ -1024,42 +1024,44 @@ std::optional<Git::CommitItem> Git::log_signature(Hash const &id)
 
 std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 {
-	QStringList lines = misc::splitLines(ba, [](char const *p, size_t n){
-		return QString::fromUtf8(p, (int)n);
-	});
-	while (!lines.empty() && lines[lines.size() - 1].isEmpty()) {
+	std::vector<std::string_view> lines = misc::splitLinesV(ba, false);
+
+	while (!lines.empty() && lines[lines.size() - 1].empty()) {
 		lines.pop_back();
 	}
 
+	auto QSTR = [](std::string_view const &s){
+		return QString(QString::fromUtf8(s.data(), s.size()));
+	};
+
 	CommitItem out;
+
 	bool gpgsig = false;
 	bool message = false;
-
-	int i;
-	for (i = 0; i < lines.size(); i++) {
-		QString const &line = lines[i];
-		if (line.isEmpty()) {
+	for (size_t i = 0; i < lines.size(); i++) {
+		std::string_view const &line = lines[i];
+		if (line.empty()) {
 			i++;
 			for (; i < lines.size(); i++) {
-				QString const &line = lines[i];
+				std::string_view const &line = lines[i];
 				if (!out.message.isEmpty()) {
 					out.message.append('\n');
 				}
-				out.message.append(line);
+				out.message.append(QSTR(line));
 			}
 			break;
 		}
 		if (gpgsig) {
 			if (line[0] == ' ') {
-				QString s = line.mid(1);
-				out.gpgsig += s + '\n';
+				std::string_view s = line.substr(1);
+				out.gpgsig += QSTR(s) + '\n';
 				if (s == "-----END PGP SIGNATURE-----") {
 					gpgsig = false;
 				}
 			}
 			continue;
 		}
-		if (line.isEmpty()) {
+		if (line.empty()) {
 			message = true;
 			continue;
 		}
@@ -1067,41 +1069,54 @@ std::optional<Git::CommitItem> Git::parseCommit(QByteArray const &ba)
 			if (!out.message.isEmpty()) {
 				out.message += '\n';
 			}
-			out.message += line;
+			out.message += QSTR(line);
 		}
-		if (line.startsWith("tree ")) {
-			out.tree = line.mid(5);
-		} else if (line.startsWith("parent ")) {
-			out.parent_ids.push_back(Git::Hash(line.mid(7)));
-		} else if (line.startsWith("author ")) {
-			QStringList arr = misc::splitWords(line);
-			int n = arr.size();
-			if (n > 4) {
-				n -= 2;
-				out.commit_date = QDateTime::fromSecsSinceEpoch(atol(arr[n].toStdString().c_str()));
-				n--;
-				out.email = arr[n];
-				if (out.email.startsWith('<') && out.email.endsWith('>')) {
-					int n = out.email.size();
-					out.email = out.email.mid(1, n - 2);
+
+		auto Starts = [&](char const *key, std::string_view *out){
+			for (size_t i = 0; i < line.size(); i++) {
+				if (line[i] == ' ' && key[i] == 0) {
+					*out = line.substr(i + 1);
+					return true;
 				}
-				for (int i = 1; i < n; i++) {
+				if (line[i] != key[i]) break;
+			}
+			return false;
+		};
+
+		std::string_view val;
+		if (Starts("tree", &val)) {
+			out.tree = Hash(val);
+		} else if (Starts("parent", &val)) {
+			out.parent_ids.push_back(Hash(val));
+		} else if (Starts("author", &val)) {
+			std::vector<std::string_view> arr = misc::splitWords(val);
+			int n = arr.size();
+			if (n >= 4) {
+				out.commit_date = QDateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
+				out.email = QSTR(arr[n - 3]);
+				if (out.email.startsWith('<') && out.email.endsWith('>')) {
+					int m = out.email.size();
+					out.email = out.email.mid(1, m - 2);
+				}
+				for (int i = 0; i < n - 3; i++) {
 					if (!out.author.isEmpty()) {
 						out.author += ' ';
 					}
 					out.author += arr[i];
 				}
 			}
-		} else if (line.startsWith("commiter ")) {
+		} else if (Starts("commiter", &val)) {
 			// nop
-		} else if (line.startsWith("gpgsig -----BEGIN PGP SIGNATURE-----")) {
-			out.has_gpgsig = true;
-			out.gpgsig.append(line.mid(7));
-			gpgsig = true;
+		} else if (Starts("gpgsig", &val)) {
+			if (val == "-----BEGIN PGP SIGNATURE-----") {
+				out.has_gpgsig = true;
+				out.gpgsig.append(QSTR(val));
+				gpgsig = true;
+			}
 		}
 	}
 
-	if (out.tree.isEmpty()) return std::nullopt;
+	if (!out.tree.isValid()) return std::nullopt;
 
 	return out;
 }
