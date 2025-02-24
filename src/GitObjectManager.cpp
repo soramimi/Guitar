@@ -267,11 +267,28 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 	}
 }
 
-Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
+Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id, std::mutex *mutex)
 {
 	// PROFILE;
+
+	class LockGuard {
+	private:
+		std::mutex *mutex_;
+	public:
+		LockGuard(std::mutex *mutex)
+			: mutex_(mutex)
+		{
+			if (mutex) mutex->lock();
+		}
+		~LockGuard()
+		{
+			if (mutex_) mutex_->unlock();
+		}
+	};
+
 	{
-		// QMutexLocker lock(&object_manager.mutex);
+		LockGuard lock(mutex);
+
 		size_t n = items.size();
 		size_t i = n;
 		while (i > 0) {
@@ -298,15 +315,18 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 	Git::Object::Type type = Git::Object::Type::UNKNOWN;
 
 	auto Store = [&](){
-		// QMutexLocker lock(&object_manager.mutex);
-		auto item = std::make_shared<Item>();
-		item->id = id;
-		item->ba = std::move(ba);
-		item->type = type;
-		items.push_back(item);
 		Git::Object obj;
-		obj.type = item->type;
-		obj.content = item->ba;
+		obj.type = type;
+		obj.content = ba;
+		{
+			LockGuard lock(mutex);
+
+			auto item = std::make_shared<Item>();
+			item->id = id;
+			item->ba = ba;
+			item->type = type;
+			items.push_back(item);
+		}
 		return obj;
 	};
 

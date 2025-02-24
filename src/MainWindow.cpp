@@ -4159,7 +4159,7 @@ void MainWindow::execCommitViewWindow(const Git::CommitItem *commit)
 	win.exec();
 }
 
-Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id) //@TODO:
+Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id, std::mutex *mutex) //@TODO:
 {
 	if (g.isValidWorkingCopy()) {
 		QString path_prefix = PATH_PREFIX;
@@ -4173,20 +4173,20 @@ Git::Object MainWindow::internalCatFile(GitRunner g, const QString &id) //@TODO:
 				return obj;
 			}
 		} else if (Git::isValidID(id)) {
-			return getObjCache()->catFile(g, Git::Hash(id));
+			return getObjCache()->catFile(g, Git::Hash(id), mutex);
 		}
 	}
 	return {};
 }
 
-Git::Object MainWindow::internalCatFile(const QString &id) //@TODO:
+Git::Object MainWindow::internalCatFile(const QString &id, std::mutex *mutex) //@TODO:
 {
-	return internalCatFile(git(), id);
+	return internalCatFile(git(), id, mutex);
 }
 
-Git::Object MainWindow::catFile(QString const &id)
+Git::Object MainWindow::catFile(QString const &id, std::mutex *mutex)
 {
-	return internalCatFile(git(), id);
+	return internalCatFile(git(), id, mutex);
 }
 
 /**
@@ -7201,9 +7201,11 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 
 	QStringList list = g.rev_list_all(id, maxcount);
 
+	std::mutex mutex;
+
 	for (size_t i = 0; i < list.size(); i++) {
 		QString hash = list[i];
-		auto obj = const_cast<MainWindow *>(this)->catFile(hash);
+		auto obj = const_cast<MainWindow *>(this)->catFile(hash, &mutex);
 		if (obj.type == Git::Object::Type::COMMIT) {
 			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
 			if (item) {

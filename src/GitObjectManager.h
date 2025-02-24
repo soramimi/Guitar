@@ -7,6 +7,7 @@
 #include "GitPackIdxV2.h"
 #include <map>
 #include "common/joinpath.h"
+#include <mutex>
 
 class GitPackIdxV2;
 
@@ -53,7 +54,7 @@ private:
 public:
 	void clear();
 	Git::Hash revParse(GitRunner g, QString const &name);
-	Git::Object catFile(GitRunner g, const Git::Hash &id);
+	Git::Object catFile(GitRunner g, const Git::Hash &id, std::mutex *mutex = nullptr);
 
 	Git::Hash const &item_id(int i) const
 	{
