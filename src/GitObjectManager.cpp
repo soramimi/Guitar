@@ -233,7 +233,7 @@ bool GitObjectManager::catFile(GitRunner g, Git::Hash const &id, QByteArray *out
 size_t GitObjectCache::size() const
 {
 	size_t size = 0;
-	for (ItemPtr const &item : items) {
+	for (ItemPtr const &item : items_) {
 		size += item->ba.size();
 	}
 	return size;
@@ -241,7 +241,7 @@ size_t GitObjectCache::size() const
 
 void GitObjectCache::clear()
 {
-	items.clear();
+	items_.clear();
 	revparsemap.clear();
 	object_manager.setup();
 }
@@ -272,25 +272,29 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 	// PROFILE;
 
 	{
-		size_t n = items.size();
+		size_t n = items_.size();
 		size_t i = n;
 		while (i > 0) {
 			i--;
-			if (item_id(i) == id) {
-				ItemPtr item = items[i];
-				if (i + 1 < n) {
-					items.erase(items.begin() + i);
-					items.push_back(item);
+			if (items_[i]) {
+				if (items_[i]->id == id) {
+					ItemPtr item = items_[i];
+					if (i + 1 < n) { // move to last
+						items_.erase(items_.begin() + i);
+						items_.push_back(item);
+					}
+					Git::Object obj;
+					obj.type = item->type;
+					obj.content = item->ba;
+					return obj;
 				}
-				Git::Object obj;
-				obj.type = item->type;
-				obj.content = item->ba;
-				return obj;
+			} else {
+				items_.erase(items_.begin() + i);
 			}
 		}
 
 		while (size() > 100000000) { // 100MB
-			items.erase(items.begin());
+			items_.erase(items_.begin());
 		}
 	}
 
@@ -306,7 +310,7 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 			item->id = id;
 			item->ba = ba;
 			item->type = type;
-			items.push_back(item);
+			items_.push_back(item);
 		}
 		return obj;
 	};

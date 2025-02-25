@@ -47,7 +47,7 @@ public:
 private:
 	GitObjectManager object_manager;
 	using ItemPtr = std::shared_ptr<Item>;
-	std::vector<ItemPtr> items;
+	std::vector<ItemPtr> items_;
 	std::map<QString, Git::Hash> revparsemap;
 	size_t size() const;
 public:
@@ -57,7 +57,7 @@ public:
 
 	Git::Hash const &item_id(int i) const
 	{
-		return items[i]->id;
+		return items_[i]->id;
 	}
 };
 

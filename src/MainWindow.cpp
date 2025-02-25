@@ -2121,8 +2121,6 @@ void MainWindow::openSelectedRepository()
  */
 std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 {
-	QList<Git::Diff> out;
-
 	if (!isValidWorkingCopy(g)) {
 		return std::nullopt;
 	}
@@ -2139,12 +2137,10 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 
 	GitDiff dm(getObjCache());
 	if (uncommited) {
-		dm.diff_uncommited(g, submodules(), &out);
+		return dm.diff_uncommited(g, submodules());
 	} else {
-		dm.diff(g, id, submodules(), &out);
+		return dm.diff(g, id, submodules());
 	}
-
-	return out;
 }
 
 /**
@@ -4176,8 +4172,7 @@ void MainWindow::makeDiffList(Git::Hash const &id, QList<Git::Diff> *diff_list, 
 	};
 
 	GitDiff dm(getObjCache());
-	if (!dm.diff(git(), id, submodules(), diff_list)) return;
-
+	*diff_list = dm.diff(g, id, submodules());
 	addDiffItems(diff_list, AddItem);
 }
 

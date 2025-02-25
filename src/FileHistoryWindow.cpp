@@ -168,8 +168,8 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		FindFileIdThread left_thread(GitRunner(m->g).dup(), commit_left.commit_id.toQString(), m->path);
-		FindFileIdThread right_thread(GitRunner(m->g).dup(), commit_right.commit_id.toQString(), m->path);
+		FindFileIdThread left_thread(m->g.dup(), commit_left.commit_id.toQString(), m->path);
+		FindFileIdThread right_thread(m->g.dup(), commit_right.commit_id.toQString(), m->path);
 		left_thread.start();
 		right_thread.start();
 		left_thread.wait();
@@ -177,12 +177,12 @@ void FileHistoryWindow::updateDiffView()
 		QString id_left = left_thread.result;
 		QString id_right = right_thread.result;
 
-		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path);
+		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
 		QString id = mainwindow()->findFileID(commit.commit_id.toQString(), m->path);
 
-		Git::Diff diff(id, m->path, QString());
+		Git::Diff diff(id, m->path, {});
 		ui->widget_diff_view->updateDiffView(diff, false);
 	}
 }

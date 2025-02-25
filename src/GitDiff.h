@@ -11,29 +11,28 @@ class GitDiff {
 private:
 	class LookupTable;
 private:
-	GitObjectCache *objcache = nullptr;
-	QList<Git::Diff> diffs;
+	GitObjectCache *objcache_ = nullptr;
+	// QList<Git::Diff> diffs_;
 
 	using MapList = std::list<LookupTable>;
 
-        GitRunner git(const Git::SubmoduleItem &submod);
+	GitRunner git(const Git::SubmoduleItem &submod);
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 
-	void retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, std::map<QString, GitTreeItem> *out);
-        void retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files);
+	void retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<Git::Diff> *diffs);
 public:
 	GitDiff(GitObjectCache *objcache)
 	{
-		this->objcache = objcache;
+		objcache_ = objcache;
 	}
 
-        bool diff(GitRunner g, const Git::Hash &id, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
-        bool diff_uncommited(GitRunner g, const QList<Git::SubmoduleItem> &submodules, QList<Git::Diff> *out);
+	QList<Git::Diff> diff(GitRunner g, const Git::Hash &id, const QList<Git::SubmoduleItem> &submodules);
+	QList<Git::Diff> diff_uncommited(GitRunner g, const QList<Git::SubmoduleItem> &submodules);
 
 public:
-        static QString diffObjects(GitRunner g, QString const &a_id, QString const &b_id);
-		static QString diffFiles(GitRunner g, QString const &a_path, QString const &b_path);
+	static QString diffObjects(GitRunner g, QString const &a_id, QString const &b_id);
+	static QString diffFiles(GitRunner g, QString const &a_path, QString const &b_path);
 	static void parseDiff(std::string const &s, const Git::Diff *info, Git::Diff *out);
 	static QString makeKey(const QString &a_id, const QString &b_id);
 	static QString makeKey(const Git::Diff &diff);

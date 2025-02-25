@@ -693,7 +693,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
  * @param id_right
  * @param path
  */
-void FileDiffWidget::updateDiffView(QString const &id_left, QString const &id_right, QString const &path)
+void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_right, QString const &path)
 {
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
