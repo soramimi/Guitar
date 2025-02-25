@@ -506,7 +506,7 @@ public:
 	TextEditorThemePtr themeForTextEditor();
 	static bool isValidWorkingCopy(GitRunner g);
 	void emitWriteLog(LogData const &logdata);
-	QString findFileID(const QString &commit_id, const QString &file);
+	QString findFileID(const Git::Hash &commit_id, const QString &file);
 	const Git::CommitItem &commitItem(int row) const;
 	const Git::CommitItem &commitItem(Git::Hash const &id) const;
 	QImage committerIcon(int row, QSize size) const;

@@ -242,8 +242,8 @@ size_t GitObjectCache::size() const
 void GitObjectCache::clear()
 {
 	items_.clear();
-	revparsemap.clear();
-	object_manager.setup();
+	rev_parse_map_.clear();
+	object_manager_.setup();
 }
 
 Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
@@ -252,8 +252,8 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 
 	{
 		// QMutexLocker lock(&object_manager.mutex);
-		auto it = revparsemap.find(name);
-		if (it != revparsemap.end()) {
+		auto it = rev_parse_map_.find(name);
+		if (it != rev_parse_map_.end()) {
 			return it->second;
 		}
 	}
@@ -262,7 +262,7 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 
 	{
 		// QMutexLocker lock(&object_manager.mutex);
-		revparsemap[name] = id;
+		rev_parse_map_[name] = id;
 		return id;
 	}
 }
@@ -276,20 +276,17 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 		size_t i = n;
 		while (i > 0) {
 			i--;
-			if (items_[i]) {
-				if (items_[i]->id == id) {
-					ItemPtr item = items_[i];
-					if (i + 1 < n) { // move to last
-						items_.erase(items_.begin() + i);
-						items_.push_back(item);
-					}
-					Git::Object obj;
-					obj.type = item->type;
-					obj.content = item->ba;
-					return obj;
+			Q_ASSERT(items_[i]);
+			if (items_[i]->id == id) {
+				ItemPtr item = items_[i];
+				if (i + 1 < n) { // move to last
+					items_.erase(items_.begin() + i);
+					items_.push_back(item);
 				}
-			} else {
-				items_.erase(items_.begin() + i);
+				Git::Object obj;
+				obj.type = item->type;
+				obj.content = item->ba;
+				return obj;
 			}
 		}
 
@@ -315,7 +312,7 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 		return obj;
 	};
 
-	if (object_manager.catFile(g, id, &ba, &type)) { // 独自実装のファイル取得
+	if (object_manager_.catFile(g, id, &ba, &type)) { // 独自実装のファイル取得
 		return Store();
 	}
 

@@ -78,18 +78,21 @@ QString GitDiff::diffFiles(GitRunner g, QString const &a_path, QString const &b_
 	return g.diff_file(a_path, b_path);
 }
 
-void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *out)
+Git::Diff GitDiff::parseDiff(std::string const &s, Git::Diff const *info)
 {
+	Git::Diff out;
+
 	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
 
-	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
-	out->path = info->path;
-	out->blob = info->blob;
-	out->a_submodule.item = info->a_submodule.item;
-	out->a_submodule.commit = info->a_submodule.commit;
-	out->b_submodule.item = info->b_submodule.item;
-	out->b_submodule.commit = info->b_submodule.commit;
+	out.diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
+	out.index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
+	out.path = info->path;
+	out.blob = info->blob;
+	out.a_submodule.item = info->a_submodule.item;
+	out.a_submodule.commit = info->a_submodule.commit;
+	out.b_submodule.item = info->b_submodule.item;
+	out.b_submodule.commit = info->b_submodule.commit;
+	out.mode = "0";
 
 	bool atat = false;
 	for (std::string_view const &s : lines) {
@@ -97,8 +100,8 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 		int c = line[0] & 0xff;
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
-				out->hunks.push_back(Git::Hunk());
-				out->hunks.back().at = line;
+				out.hunks.push_back(Git::Hunk());
+				out.hunks.back().at = line;
 				atat = true;
 			}
 		} else {
@@ -113,13 +116,15 @@ void GitDiff::parseDiff(std::string const &s, Git::Diff const *info, Git::Diff *
 					}
 				}
 				if (atat) {
-					if (!out->hunks.isEmpty()) {
-						out->hunks.back().lines.push_back(line);
+					if (!out.hunks.isEmpty()) {
+						out.hunks.back().lines.push_back(line);
 					}
 				}
 			}
 		}
 	}
+
+	return out;
 }
 
 void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<Git::Diff> *diffs)
@@ -222,7 +227,7 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 		}
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-		QString head_id = objcache_->revParse(g, "HEAD").toQString();
+		Git::Hash head_id = objcache_->revParse(g, "HEAD");
 		Git::FileStatusList stats = g.status_s(); // git status
 
 		GitCommitTree head_tree(objcache_);
@@ -388,10 +393,10 @@ void GitCommitTree::parseTree(GitRunner g, QString const &tree_id)
 	parseGitTreeObject(g, objcache, tree_id, QString(), &root_item_list);
 }
 
-QString GitCommitTree::parseCommit(GitRunner g, QString const &commit_id) // TODO: change commit_id as Git::Hash
+QString GitCommitTree::parseCommit(GitRunner g, Git::Hash const &commit_id)
 {
 	GitCommit commit;
-	GitCommit::parseCommit(g, objcache, Git::Hash(commit_id), &commit);
+	GitCommit::parseCommit(g, objcache, commit_id, &commit);
 	parseTree(g, commit.tree_id);
 	return commit.tree_id;
 }
@@ -405,10 +410,9 @@ QString GitCommitTree::parseCommit(GitRunner g, QString const &commit_id) // TOD
  * @param file
  * @return
  */
-QString lookupFileID(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &file)
+QString lookupFileID(GitRunner g, GitObjectCache *objcache, Git::Hash const &commit_id, QString const &file)
 {
 	GitCommitTree commit_tree(objcache);
 	commit_tree.parseCommit(g, commit_id);
-	QString id = commit_tree.lookup(g, file);
-	return id;
+	return commit_tree.lookup(g, file);
 }

@@ -132,31 +132,6 @@ void FileHistoryWindow::collectFileHistory()
 	ui->tableWidget_log->setCurrentCell(0, 0);
 }
 
-class FindFileIdThread : public QThread {
-private:
-	MainWindow *mainwindow()
-	{
-		return global->mainwindow;
-	}
-	GitRunner g;
-	QString commit_id;
-	QString file;
-public:
-	QString result;
-	FindFileIdThread(GitRunner g, QString const &commit_id, QString const &file)
-	{
-		this->g = g;
-		this->commit_id = commit_id;
-		this->file = file;
-	}
-
-protected:
-	void run() override
-	{
-		result = mainwindow()->findFileID(commit_id, file);
-	}
-};
-
 void FileHistoryWindow::updateDiffView()
 {
 	Q_ASSERT(m->g.isValidWorkingCopy());
@@ -168,19 +143,16 @@ void FileHistoryWindow::updateDiffView()
 		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
 		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		FindFileIdThread left_thread(m->g.dup(), commit_left.commit_id.toQString(), m->path);
-		FindFileIdThread right_thread(m->g.dup(), commit_right.commit_id.toQString(), m->path);
-		left_thread.start();
-		right_thread.start();
-		left_thread.wait();
-		right_thread.wait();
-		QString id_left = left_thread.result;
-		QString id_right = right_thread.result;
+		auto FindFileID = [&](Git::CommitItem const &commit){
+			return mainwindow()->findFileID(commit.commit_id, m->path);
+		};
+		QString id_left = FindFileID(commit_left);
+		QString id_right = FindFileID(commit_right);
 
 		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = mainwindow()->findFileID(commit.commit_id.toQString(), m->path);
+		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
 
 		Git::Diff diff(id, m->path, {});
 		ui->widget_diff_view->updateDiffView(diff, false);
@@ -191,23 +163,6 @@ void FileHistoryWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *
 {
 	updateDiffView();
 }
-
-//void FileHistoryWindow::onMoveNextItem()
-//{
-//	int row = ui->tableWidget_log->currentRow();
-//	int count = ui->tableWidget_log->rowCount();
-//	if (row + 1 < count) {
-//		ui->tableWidget_log->setCurrentCell(row + 1, 0, QItemSelectionModel::ClearAndSelect);
-//	}
-//}
-
-//void FileHistoryWindow::onMovePreviousItem()
-//{
-//	int row = ui->tableWidget_log->currentRow();
-//	if (row > 0) {
-//		ui->tableWidget_log->setCurrentCell(row - 1, 0, QItemSelectionModel::ClearAndSelect);
-//	}
-//}
 
 void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {

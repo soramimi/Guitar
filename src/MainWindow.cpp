@@ -5685,7 +5685,7 @@ void MainWindow::emitWriteLog(const LogData &logdata)
 	emit sigWriteLog(logdata);
 }
 
-QString MainWindow::findFileID(const QString &commit_id, const QString &file)
+QString MainWindow::findFileID(Git::Hash const &commit_id, const QString &file)
 {
 	return lookupFileID(git(), getObjCache(), commit_id, file);
 }

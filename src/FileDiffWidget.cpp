@@ -667,7 +667,7 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 		Git::Diff diff;
 		if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
 			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path).toStdString();
-			GitDiff::parseDiff(text, &info, &diff);
+			diff = GitDiff::parseDiff(text, &info);
 		} else {
 			diff = info;
 		}
@@ -698,13 +698,8 @@ void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_r
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
 
-	Git::Diff diff;
-	diff.path = path;
-	diff.blob.a_id_or_path = id_left;
-	diff.blob.b_id_or_path = id_right;
-	diff.mode = "0";
-	std::string text = diffObjects(diff.blob.a_id_or_path, diff.blob.b_id_or_path).toStdString();
-	GitDiff::parseDiff(text, &diff, &diff);
+	std::string text = diffObjects(id_left, id_right).toStdString();
+	Git::Diff diff = GitDiff::parseDiff(text, &diff);
 
 	Git::Object obj = catFile(g, diff.blob.a_id_or_path);
 	setSideBySide(diff, obj.content, false, g.workingDir());

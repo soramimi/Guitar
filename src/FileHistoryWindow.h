@@ -31,9 +31,7 @@ public:
 	void prepare(GitRunner g, QString const &path);
 private slots:
 	void on_tableWidget_log_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
-	
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
-	
 };
 
 #endif // FILEHISTORYWINDOW_H

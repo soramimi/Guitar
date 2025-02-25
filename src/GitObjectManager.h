@@ -45,10 +45,10 @@ public:
 		Git::Object::Type type;
 	};
 private:
-	GitObjectManager object_manager;
+	GitObjectManager object_manager_;
 	using ItemPtr = std::shared_ptr<Item>;
 	std::vector<ItemPtr> items_;
-	std::map<QString, Git::Hash> revparsemap;
+	std::map<QString, Git::Hash> rev_parse_map_;
 	size_t size() const;
 public:
 	void clear();
@@ -110,7 +110,7 @@ public:
 	bool lookup(GitRunner g, QString const &file, GitTreeItem *out);
 
 	void parseTree(GitRunner g, QString const &tree_id);
-	QString parseCommit(GitRunner g, QString const &commit_id);
+	QString parseCommit(GitRunner g, const Git::Hash &commit_id);
 
 	GitTreeItemList const *treelist() const
 	{

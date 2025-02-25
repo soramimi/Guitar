@@ -33,12 +33,12 @@ public:
 public:
 	static QString diffObjects(GitRunner g, QString const &a_id, QString const &b_id);
 	static QString diffFiles(GitRunner g, QString const &a_path, QString const &b_path);
-	static void parseDiff(std::string const &s, const Git::Diff *info, Git::Diff *out);
+	static Git::Diff parseDiff(std::string const &s, const Git::Diff *info);
 	static QString makeKey(const QString &a_id, const QString &b_id);
 	static QString makeKey(const Git::Diff &diff);
 	static QString prependPathPrefix(QString const &path);
 };
 
-QString lookupFileID(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &file);
+QString lookupFileID(GitRunner g, GitObjectCache *objcache, const Git::Hash &commit_id, QString const &file);
 
 #endif // GITDIFF_H
