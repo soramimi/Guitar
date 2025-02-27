@@ -29,6 +29,11 @@ CommitLogTableWidget *CommitLogTableModel::tablewidget()
 	return qobject_cast<CommitLogTableWidget *>(QObject::parent());
 }
 
+const CommitRecord &CommitLogTableModel::record(int row) const
+{
+	return records_[index_[row]];
+}
+
 QModelIndex CommitLogTableModel::index(int row, int column, const QModelIndex &parent) const
 {
 	return createIndex(row, column, (void *)global->mainwindow);
@@ -39,9 +44,15 @@ QModelIndex CommitLogTableModel::parent(const QModelIndex &child) const
 	return QModelIndex();
 }
 
+int CommitLogTableModel::rowcount() const
+{
+	// return records_.size();
+	return index_.size();
+}
+
 int CommitLogTableModel::rowCount(const QModelIndex &parent) const
 {
-	return records_.size();
+	return rowcount();
 }
 
 int CommitLogTableModel::columnCount(const QModelIndex &parent) const
@@ -67,43 +78,49 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 {
 	auto row = index.row();
 	auto col = index.column();
-	if (row >= 0 && row < (int)records_.size()) {
-		CommitRecord const &record = records_[row];
+	if (row >= 0 && row < rowcount()) {
+		// CommitRecord const &record = records_[row];
+		CommitRecord const &rec = record(row);
 		if (role == Qt::DisplayRole) {
 			switch (col) {
 			case 0: return QVariant();
-			case 1: return QVariant(record.commit_id);
-			case 2: return QVariant(record.datetime);
-			case 3: return QVariant(record.author);
-			case 4: return QVariant(record.message);
+			case 1: return QVariant(rec.commit_id);
+			case 2: return QVariant(rec.datetime);
+			case 3: return QVariant(rec.author);
+			case 4: return QVariant(rec.message);
 			}
 		} else if (role == Qt::ToolTipRole) {
 			if (col == 4) {
-				return QVariant(escapeTooltipText(record.tooltip));
+				return QVariant(escapeTooltipText(rec.tooltip));
 			}
 		} else if (role == Qt::FontRole) {
 			if (col == 4) {
-				if (record.bold) {
+				if (rec.bold) {
 					QFont font;
 					font.setBold(true);
 					return QVariant(font);
 				}
 			}
 		} else if (role == CommitRecordRole) {
-			return QVariant::fromValue<CommitRecord>(record);
+			return QVariant::fromValue<CommitRecord>(rec);
 		}
 	}
 	return QVariant();
+}
+
+void CommitLogTableModel::clearFilter()
+{
+	index_.resize(records_.size());
+	std::iota(index_.begin(), index_.end(), 0);
 }
 
 void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
+	clearFilter();
 	endResetModel();
 }
-
-
 
 /**
  * @brief コミットログを描画するためのdelegate

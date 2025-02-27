@@ -23,7 +23,11 @@ public:
 	static QString escapeTooltipText(QString tooltip);
 private:
 	std::vector<CommitRecord> records_;
+	std::vector<size_t> index_;
 	CommitLogTableWidget *tablewidget();
+	CommitRecord const &record(int row) const;
+	int rowcount() const;
+	void clearFilter();
 public:
 	CommitLogTableModel(QObject *parent = nullptr)
 		: QAbstractItemModel(parent)
