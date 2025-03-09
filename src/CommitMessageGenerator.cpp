@@ -426,7 +426,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = true;
+	constexpr bool save_log = false;
 	
 	if (0) { // for debugging JSON parsing
 		return test();
