@@ -12,6 +12,7 @@ enum Type {
 	CLAUDE,
 	GEMINI,
 	DEEPSEEK,
+	OLLAMA, // experimental
 };
 
 struct Model {

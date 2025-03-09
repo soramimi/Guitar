@@ -130,7 +130,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					ok1 = true;
 				}
 			} else if (r.match("{choices[{message{content")) {
-				text = misc::decode_json_string(r.string());
+				text = r.string();
 			} else if (r.match("{error{type")) {
 				error_status_ = r.string();
 				ok1 = false;
@@ -149,7 +149,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					error_status_ = r.string();
 				}
 			} else if (r.match("{content[{text")) {
-				text = misc::decode_json_string(r.string());
+				text = r.string();
 			} else if (r.match("{type")) {
 				if (r.string() == "error") {
 					ok1 = false;
@@ -165,13 +165,27 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	} else if (ai_type == GenerativeAI::GEMINI) {
 		while (r.next()) {
 			if (r.match("{candidates[{content{parts[{text")) {
-				text = misc::decode_json_string(r.string());
+				text = r.string();
 				ok1 = true;
 			} else if (r.match("{error{message")) {
 				error_message_ = r.string();
 				ok1 = false;
 			} else if (r.match("{error{status")) {
 				error_status_ = r.string();
+				ok1 = false;
+			}
+		}
+	} else if (ai_type == GenerativeAI::OLLAMA) {
+		while (r.next()) {
+			if (r.match("{model")) {
+				r.string();
+			} else if (r.match("{message{content")) {
+				text += r.string();
+			} else if (r.match("{error{type")) {
+				error_status_ = r.string();
+				ok1 = false;
+			} else if (r.match("{error{message")) {
+				error_message_ = r.string();
 				ok1 = false;
 			}
 		}
@@ -278,6 +292,9 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 		ret.error = true;
 		ret.error_status = QString::fromStdString(error_status_);
 		ret.error_message = QString::fromStdString(error_message_);
+		if (ret.error_message.isEmpty()) {
+			ret.error_message = QString::fromStdString(in);
+		}
 		return ret;
 	}
 }
@@ -325,14 +342,22 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 {
 	auto type = model.type();
 
-	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK) {
+	std::string modelname = model.name.toStdString();
+
+	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK || type == GenerativeAI::OLLAMA) {
+		if (type == GenerativeAI::OLLAMA) {
+			auto i = modelname.find('-');
+			if (i != std::string::npos) {
+				modelname = modelname.substr(i + 1);
+			}
+		}
 		std::string json = R"---({
 	"model": "%s",
 	"messages": [
 		{"role": "system", "content": "You are an experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
+		return strformat(json)(modelname)(misc::encode_json_string(prompt));
 	}
 
 	if (type == GenerativeAI::CLAUDE) {
@@ -344,7 +369,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+		return strformat(json)(modelname)(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
 	}
 
 	if (type == GenerativeAI::GEMINI) {
@@ -367,7 +392,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		],
 		"stream": false
 	})---";
-		return strformat(json)(model.name.toStdString())(misc::encode_json_string(prompt));
+		return strformat(json)(modelname)(misc::encode_json_string(prompt));
 	}
 
 	return {};
@@ -426,6 +451,10 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	} else if (model_type == GenerativeAI::DEEPSEEK) {
 		url = "https://api.deepseek.com/chat/completions";
 		apikey = global->DeepSeekApiKey().toStdString();
+		rq.add_header("Authorization: Bearer " + apikey);
+	} else if (model_type == GenerativeAI::OLLAMA) {
+		url = "http://localhost:11434/api/chat";
+		apikey = "anonymous";
 		rq.add_header("Authorization: Bearer " + apikey);
 	} else {
 		return {};

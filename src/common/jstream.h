@@ -619,26 +619,24 @@ private:
 		print(tmp);
 	}
 
-	void printString(std::string const &s)
+	static void encode_string(std::string_view const &s, std::vector<char> *out)
 	{
-		char const *ptr = s.c_str();
+		char const *ptr = s.data();
 		char const *end = ptr + s.size();
-		std::vector<char> buf;
-		buf.reserve(end - ptr + 10);
 		while (ptr < end) {
 			int c = (unsigned char)*ptr;
 			ptr++;
 			switch (c) {
-			case '\"': buf.push_back('\\'); buf.push_back('\"'); break;
-			case '\\': buf.push_back('\\'); buf.push_back('\\'); break;
-			case '\b': buf.push_back('\\'); buf.push_back('b'); break;
-			case '\f': buf.push_back('\\'); buf.push_back('f'); break;
-			case '\n': buf.push_back('\\'); buf.push_back('n'); break;
-			case '\r': buf.push_back('\\'); buf.push_back('r'); break;
-			case '\t': buf.push_back('\\'); buf.push_back('t'); break;
+			case '\"': out->push_back('\\'); out->push_back('\"'); break;
+			case '\\': out->push_back('\\'); out->push_back('\\'); break;
+			case '\b': out->push_back('\\'); out->push_back('b'); break;
+			case '\f': out->push_back('\\'); out->push_back('f'); break;
+			case '\n': out->push_back('\\'); out->push_back('n'); break;
+			case '\r': out->push_back('\\'); out->push_back('r'); break;
+			case '\t': out->push_back('\\'); out->push_back('t'); break;
 			default:
 				if (c >= 0x20 && c < 0x7f) {
-					buf.push_back(c);
+					out->push_back(c);
 				} else {
 					uint32_t u = 0;
 					if ((c & 0xe0) == 0xc0 && ptr < end) {
@@ -666,20 +664,25 @@ private:
 							uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
 							uint16_t l = (u - 0x10000) % 0x400 + 0xdc00;
 							sprintf(tmp, "\\u%04X\\u%04X", h, l);
-							buf.insert(buf.end(), tmp, tmp + 12);
+							out->insert(out->end(), tmp, tmp + 12);
 						} else {
 							sprintf(tmp, "\\u%04X", u);
-							buf.insert(buf.end(), tmp, tmp + 6);
+							out->insert(out->end(), tmp, tmp + 6);
 						}
 					}
 				}
 			}
 		}
-		print('\"');
-		if (!buf.empty()) {
-			print(buf.data(), buf.size());
-		}
-		print('\"');
+	}
+
+	void printString(std::string const &s)
+	{
+		std::vector<char> buf;
+		buf.reserve(s.size() + 10);
+		buf.push_back('\"');
+		encode_string(s, &buf);
+		buf.push_back('\"');
+		print(buf.data(), buf.size());
 	}
 
 	void printValue(std::string const &name, std::function<void ()> const &fn)

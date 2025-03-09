@@ -18,6 +18,7 @@ std::vector<GenerativeAI::Model> GenerativeAI::available_models()
 	models.emplace_back("gemini-1.0-flash");
 	models.emplace_back("gemini-1.0-nano");
 	models.emplace_back("deepseek-chat");
+	models.emplace_back("ollama-gemma2");
 	return models;
 }
 
@@ -39,6 +40,9 @@ GenerativeAI::Type GenerativeAI::Model::type() const
 	}
 	if (name.startsWith("deepseek-")) {
 		return DEEPSEEK;
+	}
+	if (name.startsWith("ollama-")) {
+		return OLLAMA;
 	}
 	return Unknown;
 }
