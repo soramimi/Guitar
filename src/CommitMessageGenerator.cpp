@@ -175,8 +175,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 				ok1 = false;
 			}
 		}
-#if 1
-	} else if (ai_type == GenerativeAI::OLLAMA) { // generate mode
+	} else if (ai_type == GenerativeAI::OLLAMA) {
 		while (r.next()) {
 			if (r.match("{model")) {
 				r.string();
@@ -191,22 +190,6 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 				ok1 = false;
 			}
 		}
-#else
-	} else if (ai_type == GenerativeAI::OLLAMA) { // chat mode
-		while (r.next()) {
-			if (r.match("{model")) {
-				r.string();
-			} else if (r.match("{message{content")) {
-				text += r.string();
-			} else if (r.match("{error{type")) {
-				error_status_ = r.string();
-				ok1 = false;
-			} else if (r.match("{error{message")) {
-				error_message_ = r.string();
-				ok1 = false;
-			}
-		}
-#endif
 	}
 	if (ok1) {
 		if (kind == CommitMessage) {
@@ -222,9 +205,13 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 					end--;
 				}
 				bool accept = false;
+
 				if (ptr < end && *ptr == '-') {
 					accept = true;
 					ptr++;
+					while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
+						ptr++;
+					}
 				} else if (isdigit((unsigned char)*ptr)) {
 					while (ptr < end && isdigit((unsigned char)*ptr)) {
 						accept = true;
@@ -412,22 +399,12 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		if (i != std::string::npos) {
 			modelname = modelname.substr(i + 1);
 		}
-#if 0
-		std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}]
-})---";
-#else
 		std::string json = R"---({
 	"model": "%s",
 	"prompt": "%s",
 	"stream": false
 })---";
-#endif
 		return strformat(json)(misc::encode_json_string(modelname))(misc::encode_json_string(prompt));
-		// return strformat(json)(misc::encode_json_string(modelname));
 	}
 
 	return {};
@@ -488,7 +465,6 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		apikey = global->DeepSeekApiKey().toStdString();
 		rq.add_header("Authorization: Bearer " + apikey);
 	} else if (model_type == GenerativeAI::OLLAMA) {
-		// url = "http://localhost:11434/api/chat";
 		url = "http://localhost:11434/api/generate";
 		apikey = "anonymous";
 		rq.add_header("Authorization: Bearer " + apikey);
