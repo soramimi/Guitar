@@ -175,7 +175,24 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 				ok1 = false;
 			}
 		}
-	} else if (ai_type == GenerativeAI::OLLAMA) {
+#if 1
+	} else if (ai_type == GenerativeAI::OLLAMA) { // generate mode
+		while (r.next()) {
+			if (r.match("{model")) {
+				r.string();
+			} else if (r.match("{response")) {
+				text = r.string();
+				ok1 = true;
+			} else if (r.match("{error{type")) {
+				error_status_ = r.string();
+				ok1 = false;
+			} else if (r.match("{error{message")) {
+				error_message_ = r.string();
+				ok1 = false;
+			}
+		}
+#else
+	} else if (ai_type == GenerativeAI::OLLAMA) { // chat mode
 		while (r.next()) {
 			if (r.match("{model")) {
 				r.string();
@@ -189,6 +206,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 				ok1 = false;
 			}
 		}
+#endif
 	}
 	if (ok1) {
 		if (kind == CommitMessage) {
@@ -344,13 +362,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 
 	std::string modelname = model.name.toStdString();
 
-	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK || type == GenerativeAI::OLLAMA) {
-		if (type == GenerativeAI::OLLAMA) {
-			auto i = modelname.find('-');
-			if (i != std::string::npos) {
-				modelname = modelname.substr(i + 1);
-			}
-		}
+	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK) {
 		std::string json = R"---({
 	"model": "%s",
 	"messages": [
@@ -385,14 +397,37 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 
 	if (type == GenerativeAI::DEEPSEEK) {
 		std::string json = R"---({
-		"model": "%s",
-		"messages": [
-			{"role": "system", "content": "You are an experienced engineer."},
-			{"role": "user", "content": "%s"}]
-		],
-		"stream": false
-	})---";
+	"model": "%s",
+	"messages": [
+		{"role": "system", "content": "You are an experienced engineer."},
+		{"role": "user", "content": "%s"}]
+	],
+	"stream": false
+})---";
 		return strformat(json)(modelname)(misc::encode_json_string(prompt));
+	}
+
+	if (type == GenerativeAI::OLLAMA) {
+		auto i = modelname.find('-');
+		if (i != std::string::npos) {
+			modelname = modelname.substr(i + 1);
+		}
+#if 0
+		std::string json = R"---({
+	"model": "%s",
+	"messages": [
+		{"role": "system", "content": "You are an experienced engineer."},
+		{"role": "user", "content": "%s"}]
+})---";
+#else
+		std::string json = R"---({
+	"model": "%s",
+	"prompt": "%s",
+	"stream": false
+})---";
+#endif
+		return strformat(json)(misc::encode_json_string(modelname))(misc::encode_json_string(prompt));
+		// return strformat(json)(misc::encode_json_string(modelname));
 	}
 
 	return {};
@@ -414,7 +449,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = false;
+	constexpr bool save_log = true;
 	
 	if (0) { // for debugging JSON parsing
 		return test();
@@ -453,7 +488,8 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		apikey = global->DeepSeekApiKey().toStdString();
 		rq.add_header("Authorization: Bearer " + apikey);
 	} else if (model_type == GenerativeAI::OLLAMA) {
-		url = "http://localhost:11434/api/chat";
+		// url = "http://localhost:11434/api/chat";
+		url = "http://localhost:11434/api/generate";
 		apikey = "anonymous";
 		rq.add_header("Authorization: Bearer " + apikey);
 	} else {
