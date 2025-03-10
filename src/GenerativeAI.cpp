@@ -1,6 +1,10 @@
 #include "GenerativeAI.h"
+#include "common/misc.h"
+#include "urlencode.h"
 
-std::vector<GenerativeAI::Model> GenerativeAI::available_models()
+namespace GenerativeAI {
+
+std::vector<Model> available_models()
 {
 	std::vector<Model> models;
 	models.emplace_back("gpt-4o");
@@ -18,40 +22,170 @@ std::vector<GenerativeAI::Model> GenerativeAI::available_models()
 	models.emplace_back("gemini-1.0-flash");
 	models.emplace_back("gemini-1.0-nano");
 	models.emplace_back("deepseek-chat");
-	models.emplace_back("ollama-gemma2");
-	models.emplace_back("openrouter-deepseek/deepseek-r1:free");
+	// models.emplace_back("ollama-llama3");
+	models.emplace_back("openrouter-anthropic/claude-3.7-sonnet"); // experimental
 	return models;
 }
 
-GenerativeAI::Model::Model(const QString &name)
+Model::Model(const std::string &name)
 	: name(name)
 {
+	set(name);
 }
 
-GenerativeAI::Type GenerativeAI::Model::type() const
+void Model::set(std::string const &name)
 {
-	if (name.startsWith("gpt-")) {
+	if (misc::starts_with(name, "gpt-")) {
+		provider = OpenAI{};
+		return;
+	}
+	if (misc::starts_with(name, "claude-")) {
+		provider = Anthropic{};
+		return;
+	}
+	if (misc::starts_with(name, "gemini-")) {
+		provider = Google{};
+		return;
+	}
+	if (misc::starts_with(name, "deepseek-")) {
+		provider = DeepSeek{};
+		return;
+	}
+	if (misc::starts_with(name, "ollama-")) {
+		provider = Ollama{};
+		return;
+	}
+	if (misc::starts_with(name, "openrouter-")) {
+		provider = OpenRouter{};
+		return;
+	}
+	provider = {};
+}
+
+Type Model::type() const
+{
+	// if (name.startsWith("gpt-")) {
+	// 	return GPT;
+	// }
+	// if (name.startsWith("claude-")) {
+	// 	return CLAUDE;
+	// }
+	// if (name.startsWith("gemini-")) {
+	// 	return GEMINI;
+	// }
+	// if (name.startsWith("deepseek-")) {
+	// 	return DEEPSEEK;
+	// }
+	// if (name.startsWith("ollama-")) {
+	// 	return OLLAMA;
+	// }
+	// if (name.startsWith("openrouter-")) {
+	// 	return OPENROUTER;
+	// }
+	if (misc::starts_with(name, "gpt-")) {
 		return GPT;
 	}
-	if (name.startsWith("claude-")) {
+	if (misc::starts_with(name, "claude-")) {
 		return CLAUDE;
 	}
-	if (name.startsWith("gemini-")) {
+	if (misc::starts_with(name, "gemini-")) {
 		return GEMINI;
 	}
-	if (name.startsWith("deepseek-")) {
+	if (misc::starts_with(name, "deepseek-")) {
 		return DEEPSEEK;
 	}
-	if (name.startsWith("ollama-")) {
+	if (misc::starts_with(name, "ollama-")) {
 		return OLLAMA;
 	}
-	if (name.startsWith("openrouter-")) {
+	if (misc::starts_with(name, "openrouter-")) {
 		return OPENROUTER;
 	}
 	return Unknown;
 }
 
-QString GenerativeAI::Model::anthropic_version() const
+QString Model::anthropic_version() const
 {
 	return "2023-06-01"; // ref. https://docs.anthropic.com/en/api/versioning
 }
+
+struct Models {
+
+	Model model_;
+	Credential cred_;
+
+	//
+
+	Request operator () (OpenAI const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
+		r.model = model_.name;
+		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		return r;
+	}
+
+	Request operator () (Anthropic const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "https://api.anthropic.com/v1/messages";
+		r.model = model_.name;
+		r.header.push_back("x-api-key: " + cred_.api_key);
+		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
+		return r;
+	}
+
+	Request operator () (Google const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.name) + ":generateContent?key=" + cred_.api_key;;
+		r.model = model_.name;
+		return r;
+	}
+
+	Request operator () (DeepSeek const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "https://api.deepseek.com/chat/completions";
+		r.model = model_.name;
+		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		return r;
+	}
+
+	Request operator () (OpenRouter const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";
+		r.model = model_.name;
+		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		return r;
+	}
+
+	Request operator () (Ollama const &provider) const
+	{
+		Request r;
+		r.endpoint_url = "http://localhost:11434/api/generate"; // experimental
+		r.model = model_.name;
+		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
+		return r;
+	}
+
+	//
+
+	Models(Model const &model, Credential const &cred)
+		: model_(model)
+		, cred_(cred)
+	{
+	}
+
+	static Request make_request(Provider const &provider, Model const &model, Credential const &cred)
+	{
+		return std::visit(Models{model, cred}, provider);
+	}
+};
+
+Request make_request(Provider const &provider, const Model &model, Credential const &cred)
+{
+	return Models::make_request(provider, model, cred);
+}
+
+} // namespace GenerativeAI

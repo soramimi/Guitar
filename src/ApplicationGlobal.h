@@ -10,6 +10,7 @@
 #include "webclient.h"
 #include <QColor>
 #include <QString>
+#include "GenerativeAI.h"
 
 class MainWindow;
 class IncrementalSearch;
@@ -78,45 +79,55 @@ public:
 
 	IncrementalSearch *incremental_search();
 
-	QString OpenAiApiKey() const
+	GenerativeAI::Credential OpenAiApiKey() const
 	{
+		GenerativeAI::Credential cred;
 		if (appsettings.use_openai_api_key_environment_value) {
-			return getenv("OPENAI_API_KEY");
+			cred.api_key = getenv("OPENAI_API_KEY");
 		} else {
-			return appsettings.openai_api_key;
+			cred.api_key = appsettings.openai_api_key.toStdString();
 		}
+		return cred;
 	}
-	QString AnthropicAiApiKey() const
+	GenerativeAI::Credential AnthropicAiApiKey() const
 	{
+		GenerativeAI::Credential cred;
 		if (appsettings.use_anthropic_api_key_environment_value) {
-			return getenv("ANTHROPIC_API_KEY");
+			cred.api_key = getenv("ANTHROPIC_API_KEY");
 		} else {
-			return appsettings.anthropic_api_key;
+			cred.api_key = appsettings.anthropic_api_key.toStdString();
 		}
+		return cred;
 	}
-	QString GoogleApiKey() const
+	GenerativeAI::Credential GoogleApiKey() const
 	{
+		GenerativeAI::Credential cred;
 		if (appsettings.use_google_api_key_environment_value) {
-			return getenv("GOOGLE_API_KEY");
+			cred.api_key = getenv("GOOGLE_API_KEY");
 		} else {
-			return appsettings.google_api_key;
+			cred.api_key = appsettings.google_api_key.toStdString();
 		}
+		return cred;
 	}
-	QString DeepSeekApiKey() const
+	GenerativeAI::Credential DeepSeekApiKey() const
 	{
+		GenerativeAI::Credential cred;
 		if (appsettings.use_deepseek_api_key_environment_value) {
-			return getenv("DEEPSEEK_API_KEY");
+			cred.api_key = getenv("DEEPSEEK_API_KEY");
 		} else {
-			return appsettings.deepseek_api_key;
+			cred.api_key = appsettings.deepseek_api_key.toStdString();
 		}
+		return cred;
 	}
-	QString OpenRouterApiKey() const
+	GenerativeAI::Credential OpenRouterApiKey() const
 	{
+		GenerativeAI::Credential cred;
 		if (appsettings.use_openrouter_api_key_environment_value) {
-			return getenv("OPENROUTER_API_KEY");
+			cred.api_key = getenv("OPENROUTER_API_KEY");
 		} else {
-			return appsettings.openrouter_api_key;
+			cred.api_key = appsettings.openrouter_api_key.toStdString();
 		}
+		return cred;
 	}
 
 	static bool isMainThread();

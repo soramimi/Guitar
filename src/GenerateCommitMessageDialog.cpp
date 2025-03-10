@@ -12,13 +12,13 @@ struct GenerateCommitMessageDialog::Private {
 	QStringList checked_items;
 };
 
-GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, QString const &model_name)
+GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, const std::string &model_name)
 	: QDialog(parent)
 	, ui(new Ui::GenerateCommitMessageDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	ui->label->setText(model_name);
+	ui->label->setText(QString::fromStdString(model_name));
 	
 	m->generator.start();
 	

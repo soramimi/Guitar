@@ -31,6 +31,11 @@ template <> void operator >> (GetValue<QColor> const &l, QColor &r)
 	}
 }
 
+template <> void operator >> (GetValue<std::string> const &l, std::string &r)
+{
+	r = l.settings.value(l.name, QString::fromStdString(r)).toString().toStdString();
+}
+
 template <typename T> class SetValue {
 private:
 public:
@@ -52,6 +57,11 @@ template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 {
 	QString s = QString::asprintf("#%02x%02x%02x", r.red(), r.green(), r.blue());
 	l.settings.setValue(l.name, s);
+}
+
+template <> void operator << (SetValue<std::string> &&l, std::string const &r)
+{
+	l.settings.setValue(l.name, QString::fromStdString(r));
 }
 
 } // namespace
@@ -116,6 +126,8 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
 	s.endGroup();
 
+	std::string ai_model_name;
+
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
 	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_openai_api_key_environment_value;
@@ -127,13 +139,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
 	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.deepseek_api_key;
 	GetValue<QString>(s, "OPENROUTER_API_KEY")                >> as.openrouter_api_key;
-	GetValue<QString>(s, "AiModel")                           >> as.ai_model.name;
+	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
 	
-	if (as.ai_model.name.isEmpty()) {
-		as.ai_model = {"gpt-4o"};
+	if (ai_model_name.empty()) {
+		ai_model_name = "gpt-4o";
 	}
+	as.ai_model = GenerativeAI::Model(ai_model_name);
 
 #if 0
 	as.openai_api_key = loadOpenAiApiKey();
@@ -194,7 +207,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
 	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
 	SetValue<QString>(s, "OPENROUTER_API_KEY")                << this->openrouter_api_key;
-	SetValue<QString>(s, "AiModel")                           << this->ai_model.name;
+	SetValue<std::string>(s, "AiModel")                       << this->ai_model.name;
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 

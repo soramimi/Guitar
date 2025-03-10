@@ -38,7 +38,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	{
 		auto vec =GenerativeAI::available_models();
 		for (auto &m : vec) {
-			list.push_back(m.name);
+			list.push_back(QString::fromStdString(m.name));
 		}
 	}
 	bool b = ui->groupBox_generate_commit_message_by_ai->blockSignals(true);
@@ -86,11 +86,11 @@ void SettingAiForm::exchange(bool save)
 			*items[i].settings_api_key = *items[i].private_custom_api_key;
 		}
 
-		s->ai_model = ui->comboBox_ai_model->currentText();
+		s->ai_model = GenerativeAI::Model(ui->comboBox_ai_model->currentText().toStdString());
 	} else {
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
-		ui->comboBox_ai_model->setCurrentText(s->ai_model.name); // on_comboBox_ai_model_currentTextChanged() が呼ばれた先で changeAI() も呼ばれる
+		ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s->ai_model.name)); // on_comboBox_ai_model_currentTextChanged() が呼ばれた先で changeAI() も呼ばれる
 
 		for (size_t i = 0; i < items.size(); i++) {
 			*items[i].private_use_env_value = *items[i].settings_use_api_key_env_value;
@@ -190,7 +190,7 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
-	GenerativeAI::Model model(arg1);
+	GenerativeAI::Model model(arg1.toStdString());
 	GenerativeAI::Type type = model.type();
 	if (m->model.type() != type) {
 		AI *ai = nullptr;

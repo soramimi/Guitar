@@ -18,7 +18,7 @@ private:
 	struct Private;
 	Private *m;
 public:
-	explicit GenerateCommitMessageDialog(QWidget *parent, const QString &model_name);
+	explicit GenerateCommitMessageDialog(QWidget *parent, std::string const &model_name);
 	~GenerateCommitMessageDialog();
 	void generate(QString const &diff);
 	QString diffText() const;

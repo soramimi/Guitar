@@ -347,7 +347,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 {
 	auto type = model.type();
 
-	std::string modelname = model.name.toStdString();
+	std::string modelname = model.name;
 
 	if (type == GenerativeAI::OPENROUTER) {
 		auto i = modelname.find('-');
@@ -448,45 +448,55 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
-	if (model.name.isEmpty()) {
+	{
+		qDebug() << QString::fromStdString(GenerativeAI::provider_name(model.provider));
+	}
+	if (model.name.empty()) {
 		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
 	
-	std::string url;
-	std::string apikey;
+	// std::string url;
+	GenerativeAI::Credential cred;
 	WebClient::Request rq;
-	
-	auto model_type = model.type();
-	if (model_type == GenerativeAI::GPT) {
-		url = "https://api.openai.com/v1/chat/completions";
-		apikey = global->OpenAiApiKey().toStdString();
-		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (model_type == GenerativeAI::CLAUDE) {
-		url = "https://api.anthropic.com/v1/messages";
-		apikey = global->AnthropicAiApiKey().toStdString();
-		rq.add_header("x-api-key: " + apikey);
-		rq.add_header("anthropic-version: " + model.anthropic_version().toStdString());
-	} else if (model_type == GenerativeAI::GEMINI) {
-		apikey = global->GoogleApiKey().toStdString();
-		url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apikey;
-	} else if (model_type == GenerativeAI::DEEPSEEK) {
-		url = "https://api.deepseek.com/chat/completions";
-		apikey = global->DeepSeekApiKey().toStdString();
-		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (model_type == GenerativeAI::OLLAMA) {
-		url = "http://localhost:11434/api/generate";
-		apikey = "anonymous";
-		rq.add_header("Authorization: Bearer " + apikey);
-	} else if (model_type == GenerativeAI::OPENROUTER) {
-		url = "https://openrouter.ai/api/v1/chat/completions";
-		apikey = global->OpenRouterApiKey().toStdString();
-		rq.add_header("Authorization: Bearer " + apikey);
-	} else {
-		return {};
+
+	{
+		auto model_type = model.type();
+		if (model_type == GenerativeAI::GPT) {
+			// url = "https://api.openai.com/v1/chat/completions";
+			cred = global->OpenAiApiKey();
+			// rq.add_header("Authorization: Bearer " + cred.api_key);
+		} else if (model_type == GenerativeAI::CLAUDE) {
+			// url = "https://api.anthropic.com/v1/messages";
+			cred = global->AnthropicAiApiKey();
+			// rq.add_header("x-api-key: " + cred.api_key);
+			// rq.add_header("anthropic-version: " + model.anthropic_version().toStdString());
+		} else if (model_type == GenerativeAI::GEMINI) {
+			cred = global->GoogleApiKey();
+			// url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + cred.api_key;
+		} else if (model_type == GenerativeAI::DEEPSEEK) {
+			// url = "https://api.deepseek.com/chat/completions";
+			cred = global->DeepSeekApiKey();
+			// rq.add_header("Authorization: Bearer " + cred.api_key);
+		} else if (model_type == GenerativeAI::OLLAMA) {
+			// url = "http://localhost:11434/api/generate";
+			cred.api_key = "anonymous";
+			// rq.add_header("Authorization: Bearer " + cred.api_key);
+		} else if (model_type == GenerativeAI::OPENROUTER) {
+			// url = "https://openrouter.ai/api/v1/chat/completions";
+			cred = global->OpenRouterApiKey();
+			// rq.add_header("Authorization: Bearer " + cred.api_key);
+		} else {
+			return {};
+		}
 	}
-	rq.set_location(url);
-	
-	
+
+	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider, model, cred);
+
+	rq.set_location(ai_req.endpoint_url);
+	for (std::string const &h : ai_req.header) {
+		rq.add_header(h);
+	}
+
 	std::string prompt;
 	switch (kind) {
 	case CommitMessage:
@@ -524,7 +534,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 			}
 		}
 		std::string text(data, size);
-		GeneratedCommitMessage ret = parse_response(text, model_type);
+		GeneratedCommitMessage ret = parse_response(text, model.type());
 		return ret;
 	}
 
