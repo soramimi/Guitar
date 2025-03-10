@@ -435,7 +435,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = true;
+	constexpr bool save_log = false;
 	
 	if (0) { // for debugging JSON parsing
 		return test();
@@ -455,48 +455,6 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
 	
-	// std::string url;
-	GenerativeAI::Credential cred;
-	WebClient::Request rq;
-
-	{
-		auto model_type = model.type();
-		if (model_type == GenerativeAI::GPT) {
-			// url = "https://api.openai.com/v1/chat/completions";
-			cred = global->OpenAiApiKey();
-			// rq.add_header("Authorization: Bearer " + cred.api_key);
-		} else if (model_type == GenerativeAI::CLAUDE) {
-			// url = "https://api.anthropic.com/v1/messages";
-			cred = global->AnthropicAiApiKey();
-			// rq.add_header("x-api-key: " + cred.api_key);
-			// rq.add_header("anthropic-version: " + model.anthropic_version().toStdString());
-		} else if (model_type == GenerativeAI::GEMINI) {
-			cred = global->GoogleApiKey();
-			// url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + cred.api_key;
-		} else if (model_type == GenerativeAI::DEEPSEEK) {
-			// url = "https://api.deepseek.com/chat/completions";
-			cred = global->DeepSeekApiKey();
-			// rq.add_header("Authorization: Bearer " + cred.api_key);
-		} else if (model_type == GenerativeAI::OLLAMA) {
-			// url = "http://localhost:11434/api/generate";
-			cred.api_key = "anonymous";
-			// rq.add_header("Authorization: Bearer " + cred.api_key);
-		} else if (model_type == GenerativeAI::OPENROUTER) {
-			// url = "https://openrouter.ai/api/v1/chat/completions";
-			cred = global->OpenRouterApiKey();
-			// rq.add_header("Authorization: Bearer " + cred.api_key);
-		} else {
-			return {};
-		}
-	}
-
-	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider, model, cred);
-
-	rq.set_location(ai_req.endpoint_url);
-	for (std::string const &h : ai_req.header) {
-		rq.add_header(h);
-	}
-
 	std::string prompt;
 	switch (kind) {
 	case CommitMessage:
@@ -509,14 +467,22 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		return {};
 	}
 	
-	
 	std::string json = generatePromptJSON(prompt, model);
 	
 	if (save_log) {
-		QFile file("c/a/request.txt");
+		QFile file("/tmp/request.txt");
 		if (file.open(QIODevice::WriteOnly)) {
 			file.write(json.c_str(), json.size());
 		}
+	}
+
+	GenerativeAI::Credential cred = GenerativeAI::get_credential(model.provider);
+	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider, model, cred);
+
+	WebClient::Request web_req;
+	web_req.set_location(ai_req.endpoint_url);
+	for (std::string const &h : ai_req.header) {
+		web_req.add_header(h);
 	}
 
 	WebClient::Post post;
@@ -524,11 +490,11 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	post.data.insert(post.data.end(), json.begin(), json.end());
 
 	WebClient http(&global->webcx);
-	if (http.post(rq, &post)) {
+	if (http.post(web_req, &post)) {
 		char const *data = http.content_data();
 		size_t size = http.content_length();
 		if (save_log) {
-			QFile file("c:/a/response.txt");
+			QFile file("/tmp/response.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
 			}

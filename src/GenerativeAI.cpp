@@ -1,6 +1,7 @@
 #include "GenerativeAI.h"
 #include "common/misc.h"
 #include "urlencode.h"
+#include "ApplicationGlobal.h"
 
 namespace GenerativeAI {
 
@@ -182,6 +183,43 @@ struct Models {
 		return std::visit(Models{model, cred}, provider);
 	}
 };
+
+struct Credentials {
+	Credential operator () (OpenAI const &provider) const
+	{
+		return global->OpenAiApiKey();
+	}
+
+	Credential operator () (Anthropic const &provider) const
+	{
+		return global->AnthropicAiApiKey();
+	}
+
+	Credential operator () (Google const &provider) const
+	{
+		return global->GoogleApiKey();
+	}
+
+	Credential operator () (DeepSeek const &provider) const
+	{
+		return global->DeepSeekApiKey();
+	}
+
+	Credential operator () (OpenRouter const &provider) const
+	{
+		return global->OpenRouterApiKey();
+	}
+
+	Credential operator () (Ollama const &provider) const
+	{
+		return {"anonymous"};
+	}
+};
+
+Credential get_credential(Provider const &provider)
+{
+	return std::visit(Credentials{}, provider);
+}
 
 Request make_request(Provider const &provider, const Model &model, Credential const &cred)
 {

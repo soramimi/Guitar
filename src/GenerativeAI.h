@@ -94,6 +94,8 @@ static inline std::string provider_name(Provider const &provider)
 	return std::visit([](auto const &p) { return p.name(); }, provider);
 }
 
+Credential get_credential(Provider const &provider);
+
 Request make_request(Provider const &provider, Model const &model, Credential const &auth);
 
 std::vector<Model> available_models();
