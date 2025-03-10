@@ -21,6 +21,7 @@ struct SettingAiForm::Private {
 	AI ai_anthropic = { "ANTHROPIC_API_KEY" };
 	AI ai_google = { "GOOGLE_API_KEY" };
 	AI ai_deepseek = { "DEEPSEEK_API_KEY" };
+	AI ai_openrouter = { "OPENROUTER_API_KEY" };
 	AI *current_ai = nullptr;
 };
 
@@ -75,6 +76,7 @@ void SettingAiForm::exchange(bool save)
 	items.emplace_back(&s->use_anthropic_api_key_environment_value, &s->anthropic_api_key, &m->ai_anthropic.use_env_value, &m->ai_anthropic.custom_api_key);
 	items.emplace_back(&s->use_google_api_key_environment_value, &s->google_api_key, &m->ai_google.use_env_value, &m->ai_google.custom_api_key);
 	items.emplace_back(&s->use_deepseek_api_key_environment_value, &s->deepseek_api_key, &m->ai_deepseek.use_env_value, &m->ai_deepseek.custom_api_key);
+	items.emplace_back(&s->use_openrouter_api_key_environment_value, &s->openrouter_api_key, &m->ai_openrouter.use_env_value, &m->ai_openrouter.custom_api_key);
 
 	if (save) {
 		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
@@ -204,6 +206,9 @@ void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 			break;
 		case GenerativeAI::DEEPSEEK:
 			ai = &m->ai_deepseek;
+			break;
+		case GenerativeAI::OPENROUTER:
+			ai = &m->ai_openrouter;
 			break;
 		}
 		if (ai) {

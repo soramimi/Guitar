@@ -123,7 +123,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	char const *begin = in.c_str();
 	char const *end = begin + in.size();
 	jstream::Reader r(begin, end);
-	if (ai_type == GenerativeAI::GPT || ai_type == GenerativeAI::DEEPSEEK) {
+	if (ai_type == GenerativeAI::GPT || ai_type == GenerativeAI::DEEPSEEK || ai_type == GenerativeAI::OPENROUTER) {
 		while (r.next()) {
 			if (r.match("{object")) {
 				if (r.string() == "chat.completion") {
@@ -349,6 +349,15 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 
 	std::string modelname = model.name.toStdString();
 
+	if (type == GenerativeAI::OPENROUTER) {
+		auto i = modelname.find('-');
+		if (i == std::string::npos) {
+			return {};
+		}
+		modelname = modelname.substr(i + 1);
+		type = GenerativeAI::GPT;
+	}
+
 	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK) {
 		std::string json = R"---({
 	"model": "%s",
@@ -426,7 +435,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = false;
+	constexpr bool save_log = true;
 	
 	if (0) { // for debugging JSON parsing
 		return test();
@@ -468,6 +477,10 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		url = "http://localhost:11434/api/generate";
 		apikey = "anonymous";
 		rq.add_header("Authorization: Bearer " + apikey);
+	} else if (model_type == GenerativeAI::OPENROUTER) {
+		url = "https://openrouter.ai/api/v1/chat/completions";
+		apikey = global->OpenRouterApiKey().toStdString();
+		rq.add_header("Authorization: Bearer " + apikey);
 	} else {
 		return {};
 	}
@@ -490,7 +503,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	std::string json = generatePromptJSON(prompt, model);
 	
 	if (save_log) {
-		QFile file("/tmp/request.txt");
+		QFile file("c/a/request.txt");
 		if (file.open(QIODevice::WriteOnly)) {
 			file.write(json.c_str(), json.size());
 		}
@@ -505,7 +518,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		char const *data = http.content_data();
 		size_t size = http.content_length();
 		if (save_log) {
-			QFile file("/tmp/response.txt");
+			QFile file("c:/a/response.txt");
 			if (file.open(QIODevice::WriteOnly)) {
 				file.write(data, size);
 			}

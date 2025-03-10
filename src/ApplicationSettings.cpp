@@ -121,10 +121,12 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_openai_api_key_environment_value;
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
 	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_google_api_key_environment_value;
+	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_openrouter_api_key_environment_value;
 	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
 	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
 	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.deepseek_api_key;
+	GetValue<QString>(s, "OPENROUTER_API_KEY")                >> as.openrouter_api_key;
 	GetValue<QString>(s, "AiModel")                           >> as.ai_model.name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
@@ -185,10 +187,13 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_openai_api_key_environment_value;
 	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_anthropic_api_key_environment_value;
 	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_google_api_key_environment_value;
+	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_deepseek_api_key_environment_value;
+	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_openrouter_api_key_environment_value;
 	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
 	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
 	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
+	SetValue<QString>(s, "OPENROUTER_API_KEY")                << this->openrouter_api_key;
 	SetValue<QString>(s, "AiModel")                           << this->ai_model.name;
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();

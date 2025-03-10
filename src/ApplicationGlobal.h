@@ -110,6 +110,14 @@ public:
 			return appsettings.deepseek_api_key;
 		}
 	}
+	QString OpenRouterApiKey() const
+	{
+		if (appsettings.use_openrouter_api_key_environment_value) {
+			return getenv("OPENROUTER_API_KEY");
+		} else {
+			return appsettings.openrouter_api_key;
+		}
+	}
 
 	static bool isMainThread();
 };

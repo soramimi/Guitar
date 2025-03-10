@@ -13,6 +13,7 @@ enum Type {
 	GEMINI,
 	DEEPSEEK,
 	OLLAMA,
+	OPENROUTER,
 };
 
 struct Model {
