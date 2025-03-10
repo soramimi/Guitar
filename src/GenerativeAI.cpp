@@ -9,19 +9,8 @@ std::vector<Model> available_models()
 {
 	std::vector<Model> models;
 	models.emplace_back("gpt-4o");
-	models.emplace_back("gpt-4o-mini");
-	models.emplace_back("gpt-4-turbo");
-	models.emplace_back("gpt-4");
-	models.emplace_back("gpt-3.5-turbo");
 	models.emplace_back("claude-3-7-sonnet-latest");
-	models.emplace_back("claude-3-5-sonnet-latest");
-	models.emplace_back("claude-3-opus-20240229");
-	models.emplace_back("claude-3-sonnet-20240229");
-	models.emplace_back("claude-3-haiku-20240307");
-	models.emplace_back("gemini-1.0-ultra");
-	models.emplace_back("gemini-1.0-pro");
-	models.emplace_back("gemini-1.0-flash");
-	models.emplace_back("gemini-1.0-nano");
+	models.emplace_back("gemini-2.0-flash");
 	models.emplace_back("deepseek-chat");
 	// models.emplace_back("ollama-llama3");
 	models.emplace_back("openrouter-anthropic/claude-3.7-sonnet"); // experimental
@@ -56,7 +45,7 @@ void Model::set(std::string const &name)
 		provider = Ollama{};
 		return;
 	}
-	if (misc::starts_with(name, "openrouter-")) {
+	if (misc::starts_with(name, "openrouter-")) { // experimental
 		provider = OpenRouter{};
 		return;
 	}
@@ -65,24 +54,6 @@ void Model::set(std::string const &name)
 
 Type Model::type() const
 {
-	// if (name.startsWith("gpt-")) {
-	// 	return GPT;
-	// }
-	// if (name.startsWith("claude-")) {
-	// 	return CLAUDE;
-	// }
-	// if (name.startsWith("gemini-")) {
-	// 	return GEMINI;
-	// }
-	// if (name.startsWith("deepseek-")) {
-	// 	return DEEPSEEK;
-	// }
-	// if (name.startsWith("ollama-")) {
-	// 	return OLLAMA;
-	// }
-	// if (name.startsWith("openrouter-")) {
-	// 	return OPENROUTER;
-	// }
 	if (misc::starts_with(name, "gpt-")) {
 		return GPT;
 	}
@@ -98,7 +69,7 @@ Type Model::type() const
 	if (misc::starts_with(name, "ollama-")) {
 		return OLLAMA;
 	}
-	if (misc::starts_with(name, "openrouter-")) {
+	if (misc::starts_with(name, "openrouter-")) { // experimental
 		return OPENROUTER;
 	}
 	return Unknown;
@@ -152,7 +123,7 @@ struct Models {
 		return r;
 	}
 
-	Request operator () (OpenRouter const &provider) const
+	Request operator () (OpenRouter const &provider) const // experimental
 	{
 		Request r;
 		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";

@@ -10,105 +10,6 @@
 #include <QMessageBox>
 #include <QString>
 
-namespace {
-
-} // namespace
-
-static std::string example_gpt_response()
-{
-	return R"---({
-	  "id": "chatcmpl-9Q9tzFdQIw3NYSpwbgyFrG8EOJw29",
-	  "object": "chat.completion",
-	  "created": 1716021619,
-	  "model": "gpt-4-0613",
-	  "choices": [
-		{
-		  "index": 0,
-		  "message": {
-			"role": "assistant",
-			"content": "- \"Upgrade C++ version from C++11 to C++17 in strformat.pro\"\n- \"Update strformat.pro to use C++17 instead of C++11\"\n- \"Change C++ version in CONFIG from C++11 to C++17 in strformat.pro\""
-		  },
-		  "logprobs": null,
-		  "finish_reason": "stop"
-		}
-	  ],
-	  "usage": {
-		"prompt_tokens": 145,
-		"completion_tokens": 60,
-		"total_tokens": 205
-	  },
-	  "system_fingerprint": null
-	}
-)---";
-}
-
-static std::string example_claude_response()
-{
-	return R"---({
-	"id":"msg_01HqUHZ5u6uVJnZBANdU3iRx",
-	"type":"message",
-	"role":"assistant",
-	"model":"claude-3-opus-20240229",
-	"content":[
-		{
-			"type":"text",
-			"text":"- Add support for Anthropic Claude API for generating commit messages\n- Switch to Claude-3-Opus model for commit message generation\n- Update JSON payload and headers for Anthropic API compatibility\n- Increase max_tokens to 200 and set temperature to 0.7 for generation\n- Enable writing API response to file for debugging purposes"
-		}
-	],
-	"stop_reason":"end_turn",
-	"stop_sequence":null,
-	"usage":{
-		"input_tokens":1066,
-		"output_tokens":77
-	}
-}
-)---";
-}
-
-static std::string example_gemini_response()
-{
-	return R"---({
-  "candidates": [
-    {
-      "content": {
-        "parts": [
-          {
-            "text": "- Adds support for the Gemini Pro model.\n- Implements Gemini support for commit message generation.\n- Adds Gemini API key to application settings.\n- Integrates Gemini Pro model into the commit message generator.\n- Enables generating commit messages using Google's Gemini Pro model. \n"
-          }
-        ],
-        "role": "model"
-      },
-      "finishReason": "STOP",
-      "index": 0,
-      "safetyRatings": [
-        {
-          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          "probability": "NEGLIGIBLE"
-        },
-        {
-          "category": "HARM_CATEGORY_HATE_SPEECH",
-          "probability": "NEGLIGIBLE"
-        },
-        {
-          "category": "HARM_CATEGORY_HARASSMENT",
-          "probability": "NEGLIGIBLE"
-        },
-        {
-          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-          "probability": "NEGLIGIBLE"
-        }
-      ]
-    }
-  ],
-  "usageMetadata": {
-    "promptTokenCount": 1731,
-    "candidatesTokenCount": 56,
-    "totalTokenCount": 1787
-  }
-}
-)---";
-}
-
 /**
  * @brief Parse the response from the AI model.
  * @param in The response.
@@ -448,9 +349,6 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
-	{
-		qDebug() << QString::fromStdString(GenerativeAI::provider_name(model.provider));
-	}
 	if (model.name.empty()) {
 		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
