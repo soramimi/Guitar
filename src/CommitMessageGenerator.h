@@ -39,7 +39,7 @@ public:
 	};
 private:
 	Kind kind;
-	GeneratedCommitMessage parse_response(const std::string &in, GenerativeAI::Type ai_type, const GenerativeAI::Provider &provider);
+	GeneratedCommitMessage parse_response(const std::string &in, const GenerativeAI::Provider &provider);
 	std::string generatePrompt(const QString &diff, int max);
 	std::string generateDetailedPrompt(QString const &diff, const QString &commit_message);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);

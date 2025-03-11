@@ -137,7 +137,7 @@ struct CommitMessageResponseParser {
  * @param ai_type The AI model type.
  * @return The generated commit message.
  */
-GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Type ai_type, GenerativeAI::Provider const &provider)
+GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Provider const &provider)
 {
 	auto r = CommitMessageResponseParser::parse(provider, in);
 
@@ -456,7 +456,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 			}
 		}
 		std::string text(data, size);
-		GeneratedCommitMessage ret = parse_response(text, model.type(), model.provider);
+		GeneratedCommitMessage ret = parse_response(text, model.provider);
 		return ret;
 	}
 

@@ -52,33 +52,7 @@ void Model::set(std::string const &name)
 	provider = {};
 }
 
-Type Model::type() const
-{
-	if (misc::starts_with(name, "gpt-")) {
-		return GPT;
-	}
-	if (misc::starts_with(name, "claude-")) {
-		return CLAUDE;
-	}
-	if (misc::starts_with(name, "gemini-")) {
-		return GEMINI;
-	}
-	if (misc::starts_with(name, "deepseek-")) {
-		return DEEPSEEK;
-	}
-	if (misc::starts_with(name, "ollama-")) {
-		return OLLAMA;
-	}
-	if (misc::starts_with(name, "openrouter-")) { // experimental
-		return OPENROUTER;
-	}
-	return Unknown;
-}
 
-QString Model::anthropic_version() const
-{
-	return "2023-06-01"; // ref. https://docs.anthropic.com/en/api/versioning
-}
 
 struct Models {
 

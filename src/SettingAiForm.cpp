@@ -1,27 +1,30 @@
 #include "SettingAiForm.h"
 #include "ui_SettingAiForm.h"
 #include "GenerativeAI.h"
-
 #include <QMessageBox>
 
 struct SettingAiForm::AI {
+	GenerativeAI::Provider provider;
 	QString custom_api_key;
-	std::string env_name;
 	bool use_env_value = false;
-	AI(std::string const &envname)
-		: env_name(envname)
+	AI(GenerativeAI::Provider const &provider)
+		: provider(provider)
 	{
+	}
+	std::string env_name() const
+	{
+		return GenerativeAI::env_name(provider);
 	}
 };
 
 struct SettingAiForm::Private {
-	GenerativeAI::Model model;
-	AI ai_unknown = { std::string() };
-	AI ai_openai = { "OPENAI_API_KEY" };
-	AI ai_anthropic = { "ANTHROPIC_API_KEY" };
-	AI ai_google = { "GOOGLE_API_KEY" };
-	AI ai_deepseek = { "DEEPSEEK_API_KEY" };
-	AI ai_openrouter = { "OPENROUTER_API_KEY" };
+	AI ai_openai = { GenerativeAI::OpenAI() };
+	AI ai_anthropic = { GenerativeAI::Anthropic() };
+	AI ai_google = { GenerativeAI::Google() };
+	AI ai_deepseek = { GenerativeAI::DeepSeek() };
+	AI ai_openrouter = { GenerativeAI::OpenRouter() };
+
+	AI ai_unknown = { {} };
 	AI *current_ai = nullptr;
 };
 
@@ -31,7 +34,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	
+
 	m->current_ai = &m->ai_unknown;
 
 	QStringList list;
@@ -132,7 +135,7 @@ void SettingAiForm::refrectSettingsToUI()
 {
 	QString apikey;
 	if (m->current_ai->use_env_value) {
-		apikey = getenv(m->current_ai->env_name.c_str());
+		apikey = getenv(m->current_ai->env_name().c_str());
 		ui->lineEdit_api_key->setEnabled(false);
 	} else {
 		apikey = m->current_ai->custom_api_key;
@@ -146,7 +149,7 @@ void SettingAiForm::refrectSettingsToUI()
 void SettingAiForm::changeAI(AI *ai)
 {
 	m->current_ai = ai;
-	QString text = tr("Use %1 environment value").arg(QString::fromStdString(m->current_ai->env_name));
+	QString text = tr("Use %1 environment value").arg(QString::fromStdString(m->current_ai->env_name()));
 	ui->radioButton_use_environment_value->setText(text);
 	refrectSettingsToUI();
 
@@ -191,25 +194,19 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
 	GenerativeAI::Model model(arg1.toStdString());
-	GenerativeAI::Type type = model.type();
-	if (m->model.type() != type) {
+
+	if (!m->current_ai || GenerativeAI::provider_id(m->current_ai->provider) != GenerativeAI::provider_id(model.provider)) {
 		AI *ai = nullptr;
-		switch (type) {
-		case GenerativeAI::GPT:
+		if (std::holds_alternative<GenerativeAI::OpenAI>(model.provider)) {
 			ai = &m->ai_openai;
-			break;
-		case GenerativeAI::CLAUDE:
+		} else if (std::holds_alternative<GenerativeAI::Anthropic>(model.provider)) {
 			ai = &m->ai_anthropic;
-			break;
-		case GenerativeAI::GEMINI:
+		} else if (std::holds_alternative<GenerativeAI::Google>(model.provider)) {
 			ai = &m->ai_google;
-			break;
-		case GenerativeAI::DEEPSEEK:
+		} else if (std::holds_alternative<GenerativeAI::DeepSeek>(model.provider)) {
 			ai = &m->ai_deepseek;
-			break;
-		case GenerativeAI::OPENROUTER:
+		} else if (std::holds_alternative<GenerativeAI::OpenRouter>(model.provider)) {
 			ai = &m->ai_openrouter;
-			break;
 		}
 		if (ai) {
 			setRadioButtons(true, ai->use_env_value);
@@ -218,7 +215,6 @@ void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 			ai = &m->ai_unknown;
 		}
 		changeAI(ai);
-		m->model = model;
 	}
 }
 
