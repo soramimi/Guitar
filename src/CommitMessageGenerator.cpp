@@ -10,91 +10,140 @@
 #include <QMessageBox>
 #include <QString>
 
+struct CommitMessageResponseParser {
+	struct Result {
+		bool completion = false;
+		std::string text;
+		std::string error_status;
+		std::string error_message;
+	};
+
+	jstream::Reader reader;
+	CommitMessageResponseParser(std::string_view const &in)
+		: reader(in.data(), in.data() + in.size())
+	{}
+
+	Result parse_openai_format()
+	{
+		Result ret;
+		while (reader.next()) {
+			if (reader.match("{object")) {
+				if (reader.string() == "chat.completion") {
+					ret.completion = true;
+				}
+			} else if (reader.match("{choices[{message{content")) {
+				ret.text = reader.string();
+			} else if (reader.match("{error{type")) {
+				ret.error_status = reader.string();
+				ret.completion = false;
+			} else if (reader.match("{error{message")) {
+				ret.error_message = reader.string();
+				ret.completion = false;
+			}
+		}
+		return ret;
+	}
+
+	Result operator () (GenerativeAI::OpenAI const &provider)
+	{
+		return parse_openai_format();
+	}
+
+	Result operator () (GenerativeAI::Anthropic const &provider)
+	{
+		Result ret;
+		while (reader.next()) {
+			if (reader.match("{stop_reason")) {
+				if (reader.string() == "end_turn") {
+					ret.completion = true;
+				} else {
+					ret.completion = false;
+					ret.error_status = reader.string();
+				}
+			} else if (reader.match("{content[{text")) {
+				ret.text = reader.string();
+			} else if (reader.match("{type")) {
+				if (reader.string() == "error") {
+					ret.completion = false;
+				}
+			} else if (reader.match("{error{type")) {
+				ret.error_status = reader.string();
+				ret.completion = false;
+			} else if (reader.match("{error{message")) {
+				ret.error_message = reader.string();
+				ret.completion = false;
+			}
+		}
+		return ret;
+	}
+
+	Result operator () (GenerativeAI::Google const &provider)
+	{
+		Result ret;
+		while (reader.next()) {
+			if (reader.match("{candidates[{content{parts[{text")) {
+				ret.text = reader.string();
+				ret.completion = true;
+			} else if (reader.match("{error{message")) {
+				ret.error_message = reader.string();
+				ret.completion = false;
+			} else if (reader.match("{error{status")) {
+				ret.error_status = reader.string();
+				ret.completion = false;
+			}
+		}
+		return ret;
+	}
+
+	Result operator () (GenerativeAI::DeepSeek const &provider)
+	{
+		return parse_openai_format();
+	}
+
+	Result operator () (GenerativeAI::OpenRouter const &provider)
+	{
+		return parse_openai_format();
+	}
+
+	Result operator () (GenerativeAI::Ollama const &provider)
+	{
+		Result ret;
+		while (reader.next()) {
+			if (reader.match("{model")) {
+				reader.string();
+			} else if (reader.match("{response")) {
+				ret.text = reader.string();
+				ret.completion = true;
+			} else if (reader.match("{error{type")) {
+				ret.error_status = reader.string();
+				ret.completion = false;
+			} else if (reader.match("{error{message")) {
+				ret.error_message = reader.string();
+				ret.completion = false;
+			}
+		}
+		return ret;
+	}
+
+	static Result parse(GenerativeAI::Provider const &provider, std::string_view const &in)
+	{
+		return std::visit(CommitMessageResponseParser{in}, provider);
+	}
+};
+
 /**
  * @brief Parse the response from the AI model.
  * @param in The response.
  * @param ai_type The AI model type.
  * @return The generated commit message.
  */
-GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Type ai_type)
+GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Type ai_type, GenerativeAI::Provider const &provider)
 {
-	error_message_.clear();
-	bool ok1 = false;
-	std::string text;
-	char const *begin = in.c_str();
-	char const *end = begin + in.size();
-	jstream::Reader r(begin, end);
-	if (ai_type == GenerativeAI::GPT || ai_type == GenerativeAI::DEEPSEEK || ai_type == GenerativeAI::OPENROUTER) {
-		while (r.next()) {
-			if (r.match("{object")) {
-				if (r.string() == "chat.completion") {
-					ok1 = true;
-				}
-			} else if (r.match("{choices[{message{content")) {
-				text = r.string();
-			} else if (r.match("{error{type")) {
-				error_status_ = r.string();
-				ok1 = false;
-			} else if (r.match("{error{message")) {
-				error_message_ = r.string();
-				ok1 = false;
-			}
-		}
-	} else if (ai_type == GenerativeAI::CLAUDE) {
-		while (r.next()) {
-			if (r.match("{stop_reason")) {
-				if (r.string() == "end_turn") {
-					ok1 = true;
-				} else {
-					ok1 = false;
-					error_status_ = r.string();
-				}
-			} else if (r.match("{content[{text")) {
-				text = r.string();
-			} else if (r.match("{type")) {
-				if (r.string() == "error") {
-					ok1 = false;
-				}
-			} else if (r.match("{error{type")) {
-				error_status_ = r.string();
-				ok1 = false;
-			} else if (r.match("{error{message")) {
-				error_message_ = r.string();
-				ok1 = false;
-			}
-		}
-	} else if (ai_type == GenerativeAI::GEMINI) {
-		while (r.next()) {
-			if (r.match("{candidates[{content{parts[{text")) {
-				text = r.string();
-				ok1 = true;
-			} else if (r.match("{error{message")) {
-				error_message_ = r.string();
-				ok1 = false;
-			} else if (r.match("{error{status")) {
-				error_status_ = r.string();
-				ok1 = false;
-			}
-		}
-	} else if (ai_type == GenerativeAI::OLLAMA) {
-		while (r.next()) {
-			if (r.match("{model")) {
-				r.string();
-			} else if (r.match("{response")) {
-				text = r.string();
-				ok1 = true;
-			} else if (r.match("{error{type")) {
-				error_status_ = r.string();
-				ok1 = false;
-			} else if (r.match("{error{message")) {
-				error_message_ = r.string();
-				ok1 = false;
-			}
-		}
-	}
-	if (ok1) {
+	auto r = CommitMessageResponseParser::parse(provider, in);
+
+	if (r.completion) {
 		if (kind == CommitMessage) {
-			std::vector<std::string_view> lines = misc::splitLinesV(text, false);
+			std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
 			size_t i = lines.size();
 			while (i > 0) {
 				i--;
@@ -153,8 +202,8 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 			return ret;
 		} else if (kind == DetailedComment) {
 			QStringList ret;
-			char const *begin = text.c_str();
-			char const *end = begin + text.size();
+			char const *begin = r.text.c_str();
+			char const *end = begin + r.text.size();
 			char const *ptr = begin;
 			while (ptr < end) {
 				while (ptr < end && isspace((unsigned char)*ptr)) ptr++;
@@ -196,8 +245,8 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 	} else {
 		GeneratedCommitMessage ret;
 		ret.error = true;
-		ret.error_status = QString::fromStdString(error_status_);
-		ret.error_message = QString::fromStdString(error_message_);
+		ret.error_status = QString::fromStdString(r.error_status);
+		ret.error_message = QString::fromStdString(r.error_message);
 		if (ret.error_message.isEmpty()) {
 			ret.error_message = QString::fromStdString(in);
 		}
@@ -246,6 +295,100 @@ std::string CommitMessageGenerator::generateDetailedPrompt(QString const &diff, 
  */
 std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt, GenerativeAI::Model const &model)
 {
+
+	struct PromptJsonGenerator {
+		Kind kind;
+		std::string prompt;
+		std::string modelname;
+		PromptJsonGenerator(std::string const &prompt, std::string const &modelname, Kind kind)
+			: prompt(prompt), modelname(modelname)
+			, kind(kind)
+		{}
+
+		std::string generate_openai_format(std::string modelname)
+		{
+			std::string json = R"---({
+	"model": "%s",
+	"messages": [
+		{"role": "system", "content": "You are an experienced engineer."},
+		{"role": "user", "content": "%s"}]
+})---";
+			return strformat(json)(modelname)(misc::encode_json_string(prompt));
+		}
+
+		std::string operator () (GenerativeAI::OpenAI const &provider)
+		{
+			return generate_openai_format(modelname);
+		}
+
+		std::string operator () (GenerativeAI::Anthropic const &provider)
+		{
+			std::string json = R"---({
+	"model": "%s",
+	"messages": [
+		{"role": "user", "content": "%s"}
+	],
+	"max_tokens": %d,
+	"temperature": 0.7
+})---";
+			return strformat(json)(modelname)(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+		}
+
+		std::string operator () (GenerativeAI::Google const &provider)
+		{
+			std::string json = R"---({
+	"contents": [{
+		"parts": [{
+			"text": "%s"
+		}]
+	}]
+})---";
+			return strformat(json)(misc::encode_json_string(prompt));
+		}
+
+		std::string operator () (GenerativeAI::DeepSeek const &provider)
+		{
+			std::string json = R"---({
+	"model": "%s",
+	"messages": [
+		{"role": "system", "content": "You are an experienced engineer."},
+		{"role": "user", "content": "%s"}]
+	],
+	"stream": false
+})---";
+			return strformat(json)(modelname)(misc::encode_json_string(prompt));
+		}
+
+		std::string operator () (GenerativeAI::Ollama const &provider)
+		{
+			std::string json = R"---({
+	"model": "%s",
+	"prompt": "%s",
+	"stream": false
+})---";
+			return strformat(json)(misc::encode_json_string(modelname))(misc::encode_json_string(prompt));
+		}
+
+		std::string operator () (GenerativeAI::OpenRouter const &provider)
+		{
+			auto i = modelname.find('-');
+			if (i == std::string::npos) {
+				return {};
+			}
+			modelname = modelname.substr(i + 1);
+			return generate_openai_format(modelname);
+		}
+
+		static std::string generate(std::string const &prompt, GenerativeAI::Provider const &provider, GenerativeAI::Model const &model, Kind kind)
+		{
+			return std::visit(PromptJsonGenerator{prompt, model.name, kind}, provider);
+		}
+	};
+
+	return PromptJsonGenerator::generate(prompt, model.provider, model, kind);
+
+
+
 	auto type = model.type();
 
 	std::string modelname = model.name;
@@ -320,12 +463,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	return {};
 }
 
-GeneratedCommitMessage CommitMessageGenerator::test()
-{
-	std::string s = R"---(
-)---";
-	return parse_response(s, GenerativeAI::CLAUDE);
-}
+
 
 /**
  * @brief Generate a commit message using the given diff.
@@ -337,10 +475,6 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	constexpr int max_message_count = 5;
 	
 	constexpr bool save_log = false;
-	
-	if (0) { // for debugging JSON parsing
-		return test();
-	}
 	
 	if (diff.isEmpty()) return {};
 
@@ -398,7 +532,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 			}
 		}
 		std::string text(data, size);
-		GeneratedCommitMessage ret = parse_response(text, model.type());
+		GeneratedCommitMessage ret = parse_response(text, model.type(), model.provider);
 		return ret;
 	}
 

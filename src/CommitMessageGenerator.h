@@ -39,13 +39,10 @@ public:
 	};
 private:
 	Kind kind;
-	std::string error_status_;
-	std::string error_message_;
-	GeneratedCommitMessage parse_response(const std::string &in, GenerativeAI::Type ai_type);
+	GeneratedCommitMessage parse_response(const std::string &in, GenerativeAI::Type ai_type, const GenerativeAI::Provider &provider);
 	std::string generatePrompt(const QString &diff, int max);
 	std::string generateDetailedPrompt(QString const &diff, const QString &commit_message);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
-	GeneratedCommitMessage test();
 public:
 	CommitMessageGenerator() = default;
 	CommitMessageGenerator(Kind kind)
@@ -53,10 +50,6 @@ public:
 	{
 	}
 	GeneratedCommitMessage generate(const QString &diff, QString const &hint = {});
-	std::string error() const
-	{
-		return error_message_;
-	}
 	static QString diff_head();
 };
 
