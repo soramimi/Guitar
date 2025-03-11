@@ -7,6 +7,12 @@
 
 namespace GenerativeAI {
 
+struct Unknown {
+	std::string id() const { return "-"; }
+	std::string description() const { return "-"; }
+	std::string envname() const { return {}; }
+};
+
 struct OpenAI {
 	std::string id() const { return "openai"; }
 	std::string description() const { return "OpenAI; GPT"; }
@@ -44,13 +50,27 @@ struct Ollama {
 };
 
 typedef std::variant<
+	Unknown,
 	OpenAI,
 	Anthropic,
 	Google,
 	DeepSeek,
-	OpenRouter, // experimental
+	OpenRouter,
 	Ollama // experimental
 	> Provider;
+
+static inline std::vector<Provider> all_providers()
+{
+	return {
+		Unknown{},
+		OpenAI{},
+		Anthropic{},
+		Google{},
+		DeepSeek{},
+		OpenRouter{},
+		// Ollama{} // experimental
+	};
+}
 
 struct Credential {
 	std::string api_key;
@@ -60,9 +80,10 @@ struct Model {
 	Provider provider;
 	std::string name;
 	Model() = default;
-	explicit Model(std::string const &name);
-	void set(std::string const &name);
+	explicit Model(Provider const &provider, std::string const &name);
 	void operator = (std::string const &name) = delete;
+
+	static Model from_name(std::string const &name);
 };
 
 struct Request {

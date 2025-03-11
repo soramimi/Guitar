@@ -21,16 +21,22 @@ private:
 	void refrectSettingsToUI();
 	void changeAI(AI *ai);
 	void setRadioButtons(bool enabled, bool use_env_value);
+	void configureModelByString(const std::string &s);
+	void configureModel(const GenerativeAI::Model &model);
+	SettingAiForm::AI *ai_from_provider(const GenerativeAI::Provider &provider);
+	void updateProviderComboBox(AI *newai);
 public:
 	explicit SettingAiForm(QWidget *parent = nullptr);
 	~SettingAiForm();
 	void exchange(bool save) override;
 private slots:
 	void on_groupBox_generate_commit_message_by_ai_clicked(bool checked);
-	void on_comboBox_ai_model_currentTextChanged(const QString &arg1);
+	// void on_comboBox_ai_model_currentTextChanged(const QString &arg1);
 	void on_lineEdit_api_key_textChanged(const QString &arg1);
 	void on_radioButton_use_environment_value_clicked();
 	void on_radioButton_use_custom_api_key_clicked();
+	void on_comboBox_provider_currentIndexChanged(int index);
+	void on_comboBox_ai_model_currentTextChanged(const QString &arg1);
 };
 
 #endif // SETTINGAIFORM_H

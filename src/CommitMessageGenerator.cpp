@@ -44,6 +44,11 @@ struct CommitMessageResponseParser {
 		return ret;
 	}
 
+	Result operator () (GenerativeAI::Unknown const &provider)
+	{
+		return {};
+	}
+
 	Result operator () (GenerativeAI::OpenAI const &provider)
 	{
 		return parse_openai_format();
@@ -315,6 +320,11 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 			return strformat(json)(modelname)(misc::encode_json_string(prompt));
 		}
 
+		std::string operator () (GenerativeAI::Unknown const &provider)
+		{
+			return {};
+		}
+
 		std::string operator () (GenerativeAI::OpenAI const &provider)
 		{
 			return generate_openai_format(modelname);
@@ -351,7 +361,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"model": "%s",
 	"messages": [
 		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}]
+		{"role": "user", "content": "%s"}
 	],
 	"stream": false
 })---";
@@ -370,11 +380,6 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 
 		std::string operator () (GenerativeAI::OpenRouter const &provider)
 		{
-			auto i = modelname.find('-');
-			if (i == std::string::npos) {
-				return {};
-			}
-			modelname = modelname.substr(i + 1);
 			return generate_openai_format(modelname);
 		}
 

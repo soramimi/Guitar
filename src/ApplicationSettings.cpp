@@ -126,6 +126,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
 	s.endGroup();
 
+	std::string ai_provider_name;
 	std::string ai_model_name;
 
 	s.beginGroup("Options");
@@ -139,14 +140,23 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
 	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.deepseek_api_key;
 	GetValue<QString>(s, "OPENROUTER_API_KEY")                >> as.openrouter_api_key;
+	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
 	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
-	
-	if (ai_model_name.empty()) {
-		ai_model_name = "gpt-4o";
+
+	auto providers = GenerativeAI::all_providers();
+	auto it = std::find_if(providers.begin(), providers.end(), [&](auto const &p) { return GenerativeAI::provider_id(p) == ai_provider_name; });
+	if (it != providers.end()) {
+		as.ai_model = GenerativeAI::Model(*it, ai_model_name);
+	} else {
+		if (ai_provider_name.empty() && ai_model_name.empty()) {
+			ai_model_name = "gpt-4o";
+		}
+		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
 	}
-	as.ai_model = GenerativeAI::Model(ai_model_name);
+
+
 
 #if 0
 	as.openai_api_key = loadOpenAiApiKey();
@@ -207,6 +217,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
 	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
 	SetValue<QString>(s, "OPENROUTER_API_KEY")                << this->openrouter_api_key;
+	SetValue<std::string>(s, "AiProvider")                    << GenerativeAI::provider_id(this->ai_model.provider);
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.name;
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();

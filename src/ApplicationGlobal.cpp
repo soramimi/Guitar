@@ -77,6 +77,11 @@ void GlobalRestoreOverrideCursor()
 }
 
 struct AiCredentials {
+	GenerativeAI::Credential operator () (GenerativeAI::Unknown const &provider) const
+	{
+		return {};
+	}
+
 	GenerativeAI::Credential operator () (GenerativeAI::OpenAI const &provider) const
 	{
 		GenerativeAI::Credential cred;

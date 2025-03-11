@@ -27,14 +27,45 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QComboBox" name="comboBox_provider"/>
-      </item>
-      <item>
-       <widget class="QComboBox" name="comboBox_ai_model">
-        <property name="editable">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Provider</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBox_ai_model">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Model</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="comboBox_provider">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QLabel" name="label">
@@ -80,8 +111,8 @@
  </widget>
  <tabstops>
   <tabstop>groupBox_generate_commit_message_by_ai</tabstop>
-  <tabstop>comboBox_provider</tabstop>
   <tabstop>comboBox_ai_model</tabstop>
+  <tabstop>comboBox_provider</tabstop>
   <tabstop>radioButton_use_environment_value</tabstop>
   <tabstop>radioButton_use_custom_api_key</tabstop>
   <tabstop>lineEdit_api_key</tabstop>

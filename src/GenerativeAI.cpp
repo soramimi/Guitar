@@ -8,48 +8,42 @@ namespace GenerativeAI {
 std::vector<Model> available_models()
 {
 	std::vector<Model> models;
-	models.emplace_back("gpt-4o");
-	models.emplace_back("claude-3-7-sonnet-latest");
-	models.emplace_back("gemini-2.0-flash");
-	models.emplace_back("deepseek-chat");
-	// models.emplace_back("ollama-llama3");
-	models.emplace_back("openrouter-anthropic/claude-3.7-sonnet"); // experimental
+	models.emplace_back(OpenAI{}, "gpt-4o");
+	models.emplace_back(Anthropic{}, "claude-3-7-sonnet-latest");
+	models.emplace_back(Google{}, "gemini-2.0-flash");
+	models.emplace_back(DeepSeek{}, "deepseek-chat");
+	models.emplace_back(OpenRouter{}, "anthropic/claude-3.7-sonnet");
+	// models.emplace_back(Ollama{}, "ollama-gemma2"); // experimental
 	return models;
 }
 
-Model::Model(const std::string &name)
-	: name(name)
+Model::Model(const Provider &provider, const std::string &name)
+	: provider(provider)
+	, name(name)
 {
-	set(name);
 }
 
-void Model::set(std::string const &name)
+Model Model::from_name(std::string const &name)
 {
+	if (name.find('/') != std::string::npos) {
+		return Model{OpenRouter{}, name};
+	}
 	if (misc::starts_with(name, "gpt-")) {
-		provider = OpenAI{};
-		return;
+		return Model{OpenAI{}, name};
 	}
 	if (misc::starts_with(name, "claude-")) {
-		provider = Anthropic{};
-		return;
+		return Model{Anthropic{}, name};
 	}
 	if (misc::starts_with(name, "gemini-")) {
-		provider = Google{};
-		return;
+		return Model{Google{}, name};
 	}
 	if (misc::starts_with(name, "deepseek-")) {
-		provider = DeepSeek{};
-		return;
+		return Model{DeepSeek{}, name};
 	}
 	if (misc::starts_with(name, "ollama-")) {
-		provider = Ollama{};
-		return;
+		return Model{Ollama{}, name.substr(7)};
 	}
-	if (misc::starts_with(name, "openrouter-")) { // experimental
-		provider = OpenRouter{};
-		return;
-	}
-	provider = {};
+	return {};
 }
 
 
@@ -60,6 +54,11 @@ struct Models {
 	Credential cred_;
 
 	//
+
+	Request operator () (Unknown const &provider) const
+	{
+		return {};
+	}
 
 	Request operator () (OpenAI const &provider) const
 	{
@@ -97,7 +96,7 @@ struct Models {
 		return r;
 	}
 
-	Request operator () (OpenRouter const &provider) const // experimental
+	Request operator () (OpenRouter const &provider) const
 	{
 		Request r;
 		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";

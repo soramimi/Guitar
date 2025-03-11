@@ -18,13 +18,14 @@ struct SettingAiForm::AI {
 };
 
 struct SettingAiForm::Private {
+	AI ai_unknown = { {} };
 	AI ai_openai = { GenerativeAI::OpenAI() };
 	AI ai_anthropic = { GenerativeAI::Anthropic() };
 	AI ai_google = { GenerativeAI::Google() };
 	AI ai_deepseek = { GenerativeAI::DeepSeek() };
 	AI ai_openrouter = { GenerativeAI::OpenRouter() };
 
-	AI ai_unknown = { {} };
+	std::vector<SettingAiForm::AI *> ais;
 	AI *current_ai = nullptr;
 };
 
@@ -35,7 +36,14 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	m->ais = { &m->ai_unknown, &m->ai_openai, &m->ai_anthropic, &m->ai_google, &m->ai_deepseek, &m->ai_openrouter };
+
 	m->current_ai = &m->ai_unknown;
+
+	for (size_t i = 0; i < m->ais.size(); i++) {
+		auto ai = m->ais[i];
+		ui->comboBox_provider->addItem(QString::fromStdString(GenerativeAI::provider_description(ai->provider)), QVariant((int)ai->provider.index()));
+	}
 
 	QStringList list;
 	{
@@ -89,11 +97,11 @@ void SettingAiForm::exchange(bool save)
 			*items[i].settings_api_key = *items[i].private_custom_api_key;
 		}
 
-		s->ai_model = GenerativeAI::Model(ui->comboBox_ai_model->currentText().toStdString());
+		s->ai_model = GenerativeAI::Model(m->current_ai->provider, ui->comboBox_ai_model->currentText().toStdString());
 	} else {
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
-		ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s->ai_model.name)); // on_comboBox_ai_model_currentTextChanged() が呼ばれた先で changeAI() も呼ばれる
+		configureModel(s->ai_model);
 
 		for (size_t i = 0; i < items.size(); i++) {
 			*items[i].private_use_env_value = *items[i].settings_use_api_key_env_value;
@@ -191,33 +199,76 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 	}
 }
 
-void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
+void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
-	GenerativeAI::Model model(arg1.toStdString());
-
-	if (!m->current_ai || GenerativeAI::provider_id(m->current_ai->provider) != GenerativeAI::provider_id(model.provider)) {
-		AI *ai = nullptr;
-		if (std::holds_alternative<GenerativeAI::OpenAI>(model.provider)) {
-			ai = &m->ai_openai;
-		} else if (std::holds_alternative<GenerativeAI::Anthropic>(model.provider)) {
-			ai = &m->ai_anthropic;
-		} else if (std::holds_alternative<GenerativeAI::Google>(model.provider)) {
-			ai = &m->ai_google;
-		} else if (std::holds_alternative<GenerativeAI::DeepSeek>(model.provider)) {
-			ai = &m->ai_deepseek;
-		} else if (std::holds_alternative<GenerativeAI::OpenRouter>(model.provider)) {
-			ai = &m->ai_openrouter;
-		}
+	(void)index;
+	int i = ui->comboBox_provider->currentData().toInt();
+	if (i >= 0 && i < (int)m->ais.size()) {
+		AI *ai = m->ais[i];
 		if (ai) {
 			setRadioButtons(true, ai->use_env_value);
 		} else {
 			setRadioButtons(false, false);
 			ai = &m->ai_unknown;
 		}
-		changeAI(ai);
+		changeAI(m->ais[i]);
 	}
 }
 
+SettingAiForm::AI *SettingAiForm::ai_from_provider(GenerativeAI::Provider const &provider)
+{
+	if (std::holds_alternative<GenerativeAI::OpenAI>(provider)) {
+		return &m->ai_openai;
+	} else if (std::holds_alternative<GenerativeAI::Anthropic>(provider)) {
+		return &m->ai_anthropic;
+	} else if (std::holds_alternative<GenerativeAI::Google>(provider)) {
+		return &m->ai_google;
+	} else if (std::holds_alternative<GenerativeAI::DeepSeek>(provider)) {
+		return &m->ai_deepseek;
+	} else if (std::holds_alternative<GenerativeAI::OpenRouter>(provider)) {
+		return &m->ai_openrouter;
+	}
+	return nullptr;
+}
 
+void SettingAiForm::updateProviderComboBox(AI *newai)
+{
+	for (auto ai : m->ais) {
+		if (ai == newai) {
+			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)ai->provider.index()));
+			break;
+		}
+	}
+}
 
+void SettingAiForm::configureModelByString(std::string const &s)
+{
+	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s));
+
+	GenerativeAI::Model model = GenerativeAI::Model::from_name(s);
+	int index = model.provider.index();
+	if (index > 0) {
+		ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
+	}
+}
+
+void SettingAiForm::configureModel(GenerativeAI::Model const &model)
+{
+	int index = model.provider.index();
+	if (index < 1) {
+		configureModelByString(model.name);
+		return;
+	}
+
+	bool b = ui->comboBox_ai_model->blockSignals(true);
+	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.name));
+	ui->comboBox_ai_model->blockSignals(b);
+
+	ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
+}
+
+void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
+{
+	configureModelByString(arg1.toStdString());
+}
 
