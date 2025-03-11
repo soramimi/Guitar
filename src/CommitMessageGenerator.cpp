@@ -295,7 +295,6 @@ std::string CommitMessageGenerator::generateDetailedPrompt(QString const &diff, 
  */
 std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt, GenerativeAI::Model const &model)
 {
-
 	struct PromptJsonGenerator {
 		Kind kind;
 		std::string prompt;
@@ -386,81 +385,6 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	};
 
 	return PromptJsonGenerator::generate(prompt, model.provider, model, kind);
-
-
-
-	auto type = model.type();
-
-	std::string modelname = model.name;
-
-	if (type == GenerativeAI::OPENROUTER) {
-		auto i = modelname.find('-');
-		if (i == std::string::npos) {
-			return {};
-		}
-		modelname = modelname.substr(i + 1);
-		type = GenerativeAI::GPT;
-	}
-
-	if (type == GenerativeAI::GPT || type == GenerativeAI::DEEPSEEK) {
-		std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}]
-})---";
-		return strformat(json)(modelname)(misc::encode_json_string(prompt));
-	}
-
-	if (type == GenerativeAI::CLAUDE) {
-		std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "user", "content": "%s"}
-	],
-	"max_tokens": %d,
-	"temperature": 0.7
-})---";
-		return strformat(json)(modelname)(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
-	}
-
-	if (type == GenerativeAI::GEMINI) {
-		std::string json = R"---({
-	"contents": [{
-		"parts": [{
-			"text": "%s"
-		}]
-	}]
-})---";
-		return strformat(json)(misc::encode_json_string(prompt));
-	}
-
-	if (type == GenerativeAI::DEEPSEEK) {
-		std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}]
-	],
-	"stream": false
-})---";
-		return strformat(json)(modelname)(misc::encode_json_string(prompt));
-	}
-
-	if (type == GenerativeAI::OLLAMA) {
-		auto i = modelname.find('-');
-		if (i != std::string::npos) {
-			modelname = modelname.substr(i + 1);
-		}
-		std::string json = R"---({
-	"model": "%s",
-	"prompt": "%s",
-	"stream": false
-})---";
-		return strformat(json)(misc::encode_json_string(modelname))(misc::encode_json_string(prompt));
-	}
-
-	return {};
 }
 
 
@@ -508,7 +432,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		}
 	}
 
-	GenerativeAI::Credential cred = GenerativeAI::get_credential(model.provider);
+	GenerativeAI::Credential cred = global->get_ai_credential(model.provider);
 	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider, model, cred);
 
 	WebClient::Request web_req;

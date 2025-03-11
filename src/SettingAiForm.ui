@@ -27,6 +27,9 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
+       <widget class="QComboBox" name="comboBox_provider"/>
+      </item>
+      <item>
        <widget class="QComboBox" name="comboBox_ai_model">
         <property name="editable">
          <bool>true</bool>
@@ -77,7 +80,11 @@
  </widget>
  <tabstops>
   <tabstop>groupBox_generate_commit_message_by_ai</tabstop>
+  <tabstop>comboBox_provider</tabstop>
   <tabstop>comboBox_ai_model</tabstop>
+  <tabstop>radioButton_use_environment_value</tabstop>
+  <tabstop>radioButton_use_custom_api_key</tabstop>
+  <tabstop>lineEdit_api_key</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -75,3 +75,76 @@ void GlobalRestoreOverrideCursor()
 {
 	QApplication::restoreOverrideCursor();
 }
+
+struct AiCredentials {
+	GenerativeAI::Credential operator () (GenerativeAI::OpenAI const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_openai_api_key_environment_value) {
+			cred.api_key = getenv(provider.envname().c_str());
+		} else {
+			cred.api_key = global->appsettings.openai_api_key.toStdString();
+		}
+		return cred;
+	}
+
+	GenerativeAI::Credential operator () (GenerativeAI::Anthropic const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_anthropic_api_key_environment_value) {
+			cred.api_key = getenv(provider.envname().c_str());
+		} else {
+			cred.api_key = global->appsettings.anthropic_api_key.toStdString();
+		}
+		return cred;
+	}
+	GenerativeAI::Credential operator () (GenerativeAI::Google const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_google_api_key_environment_value) {
+			cred.api_key = getenv(provider.envname().c_str());
+		} else {
+			cred.api_key = global->appsettings.google_api_key.toStdString();
+		}
+		return cred;
+	}
+	GenerativeAI::Credential operator () (GenerativeAI::DeepSeek const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_deepseek_api_key_environment_value) {
+			cred.api_key = getenv(provider.envname().c_str());
+		} else {
+			cred.api_key = global->appsettings.deepseek_api_key.toStdString();
+		}
+		return cred;
+	}
+	GenerativeAI::Credential operator () (GenerativeAI::OpenRouter const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_openrouter_api_key_environment_value) {
+			cred.api_key = getenv(provider.envname().c_str());
+		} else {
+			cred.api_key = global->appsettings.openrouter_api_key.toStdString();
+		}
+		return cred;
+	}
+
+	GenerativeAI::Credential operator () (GenerativeAI::Ollama const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		cred.api_key = "aonymous";
+		return cred;
+	}
+
+	static GenerativeAI::Credential credential(GenerativeAI::Provider const &provider)
+	{
+		return std::visit(AiCredentials{}, provider);
+	}
+
+};
+
+GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Provider const &provider)
+{
+	return std::visit(AiCredentials{}, provider);
+}
+
