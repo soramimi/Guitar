@@ -1,15 +1,16 @@
 #include "IncrementalSearch.h"
 #include "ApplicationGlobal.h"
 #include "common/joinpath.h"
+#include "zip/zip.h"
 #include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QRegularExpression>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <time.h>
-#include <QFile>
-#include <QDir>
-#include "zip/zip.h"
 
 #include "migemo.h"
 
@@ -135,3 +136,90 @@ void IncrementalSearch::deleteMigemoDict()
 	deleteTree(dir);
 }
 
+
+//
+
+
+MigemoFilter::MigemoFilter(const QString &text)
+	: text(text)
+	, re_(std::make_shared<QRegularExpression>(text, QRegularExpression::CaseInsensitiveOption))
+{
+}
+
+bool MigemoFilter::isEmpty() const
+{
+	return text.isEmpty();
+}
+
+void MigemoFilter::makeFilter(const QString &filtertext)
+{
+	text = filtertext;
+	if (IncrementalSearch::instance()->migemoEnabled()) {
+		if (filtertext.size() >= 2) {
+			bool re = true;
+			int vowel = 0; // 母音の数
+			for (QChar c : filtertext) {
+				if (c.isLetter()) {
+					if (c == 'a' || c == 'i' || c == 'u' || c == 'e' || c == 'o') {
+						vowel++;
+					}
+				} else if (c.isDigit()) {
+					// thru
+				} else {
+					re = false;
+					break;
+				}
+			};
+			if (re && vowel >= 1) { // 全体が2文字以上の英数字で、母音が1文字以上含まれる場合
+				auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
+				if (s) {
+					re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
+				}
+			}
+		}
+	}
+}
+
+bool MigemoFilter::match(const QString &name)
+{
+	if (isEmpty()) return true; // フィルターが空の場合は常にtrue
+	if (re_.get()) { // 正規表現が有効な場合
+		QString text = normalizeText(name);
+		if (text.contains(*re_)) return true;
+		return false;
+	}
+	// 正規表現が無効な場合
+	return name.indexOf(text, 0, Qt::CaseInsensitive) >= 0;
+}
+
+int MigemoFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
+{
+	for (int i = 0; i < n; i++) {
+		ushort c1 = s1[i];
+		ushort c2 = s2[i];
+		if (c1 < 128) c1 = toupper(c1);
+		if (c2 < 128) c2 = toupper(c2);
+		if (c1 != c2) {
+			return c1 - c2;
+		}
+	}
+	return 0;
+}
+
+QString MigemoFilter::normalizeText(QString s)
+{
+	for (QChar &c : s) {
+		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
+			c = QChar(c.unicode() - 'A' + 'a');
+		} else if (c >= QChar(0x3041) && c <= QChar(0x3096)) { // ひらがなをカタカナに
+			c = QChar(c.unicode() + 0x60);
+		} else if (c >= QChar(0xFF61) && c <= QChar(0xFF9F)) { // 半角カナを全角カナに
+			c = QChar(c.unicode() - 0xFF61 + 0x30A0);
+		} else if (c >= QChar(0xFF21) && c <= QChar(0xFF3A)) { // 全角英大文字を半角英小文字に
+			c = QChar(c.unicode() - 0xFF21 + 'a');
+		} else if (c >= QChar(0xFF41) && c <= QChar(0xFF5A)) { // 全角英小文字を半角英小文字に
+			c = QChar(c.unicode() - 0xFF41 + 'a');
+		}
+	}
+	return s;
+}

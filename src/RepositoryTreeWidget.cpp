@@ -11,38 +11,6 @@
 #include "ApplicationGlobal.h"
 #include "common/joinpath.h"
 
-static int u16ncmp(ushort const *s1, ushort const *s2, int n)
-{
-	for (int i = 0; i < n; i++) {
-		ushort c1 = s1[i];
-		ushort c2 = s2[i];
-		if (c1 < 128) c1 = toupper(c1);
-		if (c2 < 128) c2 = toupper(c2);
-		if (c1 != c2) {
-			return c1 - c2;
-		}
-	}
-	return 0;
-}
-
-static QString normalizeText(QString s)
-{
-	for (QChar &c : s) {
-		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
-			c = QChar(c.unicode() - 'A' + 'a');
-		} else if (c >= QChar(0x3041) && c <= QChar(0x3096)) { // ひらがなをカタカナに
-			c = QChar(c.unicode() + 0x60);
-		} else if (c >= QChar(0xFF61) && c <= QChar(0xFF9F)) { // 半角カナを全角カナに
-			c = QChar(c.unicode() - 0xFF61 + 0x30A0);
-		} else if (c >= QChar(0xFF21) && c <= QChar(0xFF3A)) { // 全角英大文字を半角英小文字に
-			c = QChar(c.unicode() - 0xFF21 + 'a');
-		} else if (c >= QChar(0xFF41) && c <= QChar(0xFF5A)) { // 全角英小文字を半角英小文字に
-			c = QChar(c.unicode() - 0xFF41 + 'a');
-		}
-	}
-	return s;
-}
-
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 private:
 	void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect r, QString const &text) const
@@ -82,16 +50,16 @@ private:
 			drawText(painter, opt, r, text);
 		}
 	}
-	void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, RepositoryTreeWidget::Filter const &filter) const
+	void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, MigemoFilter const &filter) const
 	{
 		QString text = opt.text;
 
 		// フィルターに一致する部分をハイライトして描画
 		std::vector<std::tuple<QString, bool>> list;
 
-		if (filter.re.get()) { // 正規表現が有効な場合
-			text = normalizeText(text);
-			QRegularExpressionMatch match = filter.re->match(text);
+		if (filter.re_.get()) { // 正規表現が有効な場合
+			text = MigemoFilter::normalizeText(text);
+			QRegularExpressionMatch match = filter.re_->match(text);
 			int left = 0;
 			while (match.hasMatch()) {
 				int right = match.capturedStart();
@@ -101,7 +69,7 @@ private:
 				auto start = match.capturedStart();
 				left = match.capturedEnd();
 				list.push_back(std::make_tuple(opt.text.mid(start, left - start), true));
-				match = filter.re->match(text, left);
+				match = filter.re_->match(text, left);
 			}
 			if (left < opt.text.size()) {
 				list.push_back(std::make_tuple(opt.text.mid(left), false));
@@ -112,7 +80,7 @@ private:
 			int left = 0;
 			int right = 0;
 			while (right < text.size()) { // テキストをフィルターで分割
-				if (u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
+				if (MigemoFilter::u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
 					if (left < right) {
 						list.push_back(std::make_tuple(text.mid(left, right - left), false));
 					}
@@ -150,7 +118,7 @@ public:
 
 		RepositoryTreeWidget const *treewidget = qobject_cast<RepositoryTreeWidget const *>(opt.widget);
 		Q_ASSERT(treewidget);
-		RepositoryTreeWidget::Filter filter = treewidget->filter();
+		MigemoFilter filter = treewidget->filter();
 
 		QRect iconrect = opt.widget->style()->subElementRect(QStyle::SE_ItemViewItemDecoration, &opt, opt.widget);
 		QRect textrect = opt.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget);
@@ -176,7 +144,7 @@ public:
 
 struct RepositoryTreeWidget::Private {
 	RepositoryTreeWidgetItemDelegate delegate;
-	RepositoryTreeWidget::Filter filter;
+	MigemoFilter filter;
 };
 
 RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
@@ -233,13 +201,13 @@ QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(const QStrin
 	return newQTreeWidgetItem(name, Repository, index);
 }
 
-void RepositoryTreeWidget::setFilter(Filter const &filter)
+void RepositoryTreeWidget::setFilter(MigemoFilter const &filter)
 {
 	m->filter = filter;
 	update();
 }
 
-RepositoryTreeWidget::Filter RepositoryTreeWidget::filter() const
+MigemoFilter RepositoryTreeWidget::filter() const
 {
 	return m->filter;
 }
@@ -254,48 +222,9 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 	current_repository_list_style_ = style;
 }
 
-RepositoryTreeWidget::Filter RepositoryTreeWidget::makeFilter(QString const &filtertext)
-{
-	RepositoryTreeWidget::Filter filter;
-	filter.text = filtertext;
-	if (IncrementalSearch::instance()->migemoEnabled()) {
-		if (filtertext.size() >= 2) {
-			bool re = true;
-			int vowel = 0; // 母音の数
-			for (QChar c : filtertext) {
-				if (c.isLetter()) {
-					if (c == 'a' || c == 'i' || c == 'u' || c == 'e' || c == 'o') {
-						vowel++;
-					}
-				} else if (c.isDigit()) {
-					// thru
-				} else {
-					re = false;
-					break;
-				}
-			};
-			if (re && vowel >= 1) { // 全体が2文字以上の英数字で、母音が1文字以上含まれる場合
-				auto re = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
-				if (re) {
-					filter.re = std::make_shared<QRegularExpression>(QString::fromStdString(*re), QRegularExpression::CaseInsensitiveOption);
-				}
-			}
-		}
-	}
-	return filter;
-}
 
-bool match(RepositoryInfo const &repo, RepositoryTreeWidget::Filter const &filter)
-{
-	if (filter.isEmpty()) return true; // フィルターが空の場合は常にtrue
-	if (filter.re.get()) { // 正規表現が有効な場合
-		QString text = normalizeText(repo.name);
-		if (text.contains(*filter.re)) return true;
-		return false;
-	}
-	// 正規表現が無効な場合
-	return repo.name.indexOf(filter.text, 0, Qt::CaseInsensitive) >= 0;
-}
+
+
 
 static QDateTime repositoryLastModifiedTime(QString const &path)
 {
@@ -316,7 +245,8 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 	// リポジトリリストを更新（標準）
 	auto UpdateRepositoryListStandard = [&](QString const &filtertext){
 
-		Filter filter = makeFilter(filtertext);
+		MigemoFilter filter;
+		filter.makeFilter(filtertext);
 
 		enableDragAndDrop(filtertext.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilter(filter);
@@ -329,7 +259,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
-			if (!match(repo, filter)) continue;
+			if (!filter.match(repo.name)) continue;
 
 			QTreeWidgetItem *parent = nullptr;
 			{

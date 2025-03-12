@@ -46,7 +46,6 @@ QModelIndex CommitLogTableModel::parent(const QModelIndex &child) const
 
 int CommitLogTableModel::rowcount() const
 {
-	// return records_.size();
 	return index_.size();
 }
 
@@ -79,7 +78,6 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	auto row = index.row();
 	auto col = index.column();
 	if (row >= 0 && row < rowcount()) {
-		// CommitRecord const &record = records_[row];
 		CommitRecord const &rec = record(row);
 		if (role == Qt::DisplayRole) {
 			switch (col) {
@@ -108,10 +106,28 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
+void CommitLogTableModel::setFilter(QString const &text)
+{
+	if (text.isEmpty()) {
+		index_.resize(records_.size());
+		std::iota(index_.begin(), index_.end(), 0);
+		filtered_ = false;
+	} else {
+		MigemoFilter filter;
+		filter.makeFilter(text);
+		int n = records_.size();
+		for (size_t i = 0; i < n; i++) {
+			if (filter.match(records_[i].message)) {
+				index_.push_back(i);
+			}
+		}
+		filtered_ = true;
+	}
+}
+
 void CommitLogTableModel::clearFilter()
 {
-	index_.resize(records_.size());
-	std::iota(index_.begin(), index_.end(), 0);
+	setFilter({});
 }
 
 void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
@@ -384,17 +400,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	int thick_line_width = 4;
 
 	auto ItemRect = [&](int row){
-#if 0
-		QRect r;
-		QTableWidgetItem *p = item(row, 0);
-		if (p) {
-			r = visualItemRect(p);
-		}
-		return r;
-#else
-		// return visualRect(model()->index(row, 0));
 		return visualItemRect(row, 0);
-#endif
 	};
 
 	auto IsAncestor = [&](Git::CommitItem const &item){
@@ -507,7 +513,9 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		}
 	};
 
-	DrawGraph();
+	if (!model_->isFiltered()) {
+		DrawGraph();
+	}
 }
 
 void CommitLogTableWidget::resizeEvent(QResizeEvent *e)
@@ -549,3 +557,8 @@ void CommitLogTableWidget::setCurrentCell(int row, int col)
 	setCurrentIndex(index);
 }
 
+void CommitLogTableWidget::setFilter(MigemoFilter const &filter)
+{
+	filter_ = filter;
+	update();
+}

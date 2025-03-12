@@ -3,6 +3,9 @@
 
 #include "Git.h"
 
+
+#include "RepositoryTreeWidget.h"
+
 #include <QTableWidget>
 
 class MainWindow;
@@ -24,9 +27,11 @@ public:
 private:
 	std::vector<CommitRecord> records_;
 	std::vector<size_t> index_;
+	bool filtered_ = false;
 	CommitLogTableWidget *tablewidget();
 	CommitRecord const &record(int row) const;
 	int rowcount() const;
+	void setFilter(const QString &text);
 	void clearFilter();
 public:
 	CommitLogTableModel(QObject *parent = nullptr)
@@ -40,6 +45,10 @@ public:
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	void setRecords(std::vector<CommitRecord> &&records);
+	bool isFiltered() const
+	{
+		return filtered_;
+	}
 };
 
 /**
@@ -53,6 +62,7 @@ private:
 	MainWindow *mainwindow() { return mainwindow_; }
 	MainWindow const *mainwindow() const { return mainwindow_; }
 	CommitLogTableModel *model_ = nullptr; // TODO:
+	MigemoFilter filter_;
 	const Git::CommitItem &commitItem(int row) const;
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
@@ -70,6 +80,7 @@ public:
 	void setCurrentCell(int row, int col);
 	int actualLogIndex() const;
 	QRect visualItemRect(int row, int col);
+	void setFilter(const MigemoFilter &filter);
 signals:
 	void currentRowChanged(int row);
 };

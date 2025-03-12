@@ -4,6 +4,8 @@
 #include <string>
 #include <optional>
 #include <QString>
+#include <memory>
+
 
 class IncrementalSearch {
 private:
@@ -24,6 +26,21 @@ public:
 	static void deleteMigemoDict();
 
 	static IncrementalSearch *instance();
+};
+
+struct MigemoFilter {
+	QString text;
+	std::shared_ptr<QRegularExpression> re_;
+	MigemoFilter() = default;
+	MigemoFilter(const QString &text);
+	bool isEmpty() const;
+	void makeFilter(const QString &filtertext);
+	bool match(const QString &name);
+
+	static QString normalizeText(QString s);
+
+
+	static int u16ncmp(const ushort *s1, const ushort *s2, int n);
 };
 
 #endif // INCREMENTALSEARCH_H
