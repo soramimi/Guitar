@@ -81,6 +81,8 @@ public:
 	int actualLogIndex() const;
 	QRect visualItemRect(int row, int col);
 	void setFilter(const QString &filter);
+	void adjustAppearance();
+	void updateViewport();
 signals:
 	void currentRowChanged(int row);
 };

@@ -347,11 +347,9 @@ void CommitLogTableWidget::setup(MainWindow *mw)
 	mainwindow_ = mw;
 }
 
-void CommitLogTableWidget::setRecords(std::vector<CommitRecord> &&records)
+void CommitLogTableWidget::adjustAppearance()
 {
-	int n = records.size();
-
-	model_->setRecords(std::move(records));
+	const int n = rowCount();
 
 	for (int i = 0; i < n; i++) {
 		setRowHeight(i, 24);
@@ -362,6 +360,13 @@ void CommitLogTableWidget::setRecords(std::vector<CommitRecord> &&records)
 	setColumnWidth(0, t);
 	horizontalHeader()->setStretchLastSection(false);
 	horizontalHeader()->setStretchLastSection(true);
+}
+
+void CommitLogTableWidget::setRecords(std::vector<CommitRecord> &&records)
+{
+	model_->setRecords(std::move(records));
+
+	adjustAppearance();
 }
 
 void drawBranch(QPainterPath *path, double x0, double y0, double x1, double y1, double r, bool bend_early)
@@ -564,9 +569,15 @@ void CommitLogTableWidget::setCurrentCell(int row, int col)
 	setCurrentIndex(index);
 }
 
+void CommitLogTableWidget::updateViewport()
+{
+	adjustAppearance();
+	viewport()->update();
+}
+
 void CommitLogTableWidget::setFilter(QString const &filter)
 {
 	if (model_->setFilter(filter)) {
-		viewport()->update();
+		updateViewport();
 	}
 }

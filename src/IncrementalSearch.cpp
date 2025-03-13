@@ -209,7 +209,6 @@ void MigemoFilter::makeFilter(const QString &filtertext)
 				auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
 				if (s) {
 					re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
-					qDebug() << filtertext << *re_;
 				}
 			}
 		}
