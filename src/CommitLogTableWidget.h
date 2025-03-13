@@ -27,12 +27,11 @@ public:
 private:
 	std::vector<CommitRecord> records_;
 	std::vector<size_t> index_;
-	bool filtered_ = false;
+	QString filter_text_;
 	CommitLogTableWidget *tablewidget();
 	CommitRecord const &record(int row) const;
 	int rowcount() const;
-	void setFilter(const QString &text);
-	void clearFilter();
+	void privateSetFilter(const QString &text);
 public:
 	CommitLogTableModel(QObject *parent = nullptr)
 		: QAbstractItemModel(parent)
@@ -45,9 +44,10 @@ public:
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	void setRecords(std::vector<CommitRecord> &&records);
+	bool setFilter(const QString &text);
 	bool isFiltered() const
 	{
-		return filtered_;
+		return !filter_text_.isEmpty();
 	}
 };
 
@@ -80,7 +80,7 @@ public:
 	void setCurrentCell(int row, int col);
 	int actualLogIndex() const;
 	QRect visualItemRect(int row, int col);
-	void setFilter(const MigemoFilter &filter);
+	void setFilter(const QString &filter);
 signals:
 	void currentRowChanged(int row);
 };

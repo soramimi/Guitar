@@ -139,11 +139,11 @@ struct MainWindow::Private {
 	bool interaction_enabled = false;
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
 
-	QString repository_filter_text;
+	QString incremental_search_text;
 	bool uncommited_changes = false;
 	Git::FileStatusList uncommited_changes_file_list;
 
-	QString commit_log_filter_text;
+	// QString commit_log_filter_text;
 
 	Git::Hash head_id;
 
@@ -637,16 +637,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		} else {
 			auto *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
-			int k = e->key();
+			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
+			const bool shift = (e->modifiers() & Qt::ShiftModifier);
+			const int k = e->key();
 			if (k == Qt::Key_Escape) {
-				if (qApp->focusWidget() == ui->treeWidget_repos) {
-					clearFilterText(FilterTarget::RepositorySearch);
-				} else if (centralWidget()->isAncestorOf(qApp->focusWidget())) {
+				clearAllFilters();
+				if (shift && centralWidget()->isAncestorOf(qApp->focusWidget())) {
 					ui->treeWidget_repos->setFocus();
 					return true;
 				}
 			}
-			if (e->modifiers() & Qt::ControlModifier) {
+			if (ctrl) {
 				if (k == Qt::Key_Up || k == Qt::Key_Down) {
 					int rows = ui->tableWidget_log->rowCount();
 					int row = ui->tableWidget_log->currentRow();
@@ -668,12 +669,13 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					openSelectedRepository();
 					return true;
 				}
-				if (e->modifiers() & Qt::ControlModifier) {
+				if (ctrl) {
 					if (k == Qt::Key_R) {
 						onRepositoryTreeSortRecent();
 						return true;
 					}
 				} else {
+					// search filter
 					if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
 						appendCharToFilterText(FilterTarget::RepositorySearch, k);
 						return true;
@@ -687,13 +689,22 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				if (k == Qt::Key_Home) {
 					setCurrentLogRow(0);
 					return true;
-				}
-				if (k == Qt::Key_Escape) {
+				} else if (shift && k == Qt::Key_Escape) {
 					ui->treeWidget_repos->setFocus();
 					return true;
+				} else {
+					// search filter
+					if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
+						appendCharToFilterText(FilterTarget::CommitLogSearch, k);
+						return true;
+					}
+					if (k == Qt::Key_Backspace) {
+						appendCharToFilterText(FilterTarget::CommitLogSearch, ASCII_BACKSPACE);
+						return true;
+					}
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
-				if (k == Qt::Key_Escape) {
+				if (shift && k == Qt::Key_Escape) {
 					ui->tableWidget_log->setFocus();
 					return true;
 				}
@@ -6141,12 +6152,12 @@ void MainWindow::on_toolButton_fetch_clicked()
  */
 QString MainWindow::getFilterText(FilterTarget ft) const
 {
-	if (ft == FilterTarget::RepositorySearch) {
-		return m->repository_filter_text;
-	} else if (ft == FilterTarget::CommitLogSearch) {
-		return m->commit_log_filter_text;
-	}
-	return {};
+	// if (ft == FilterTarget::RepositorySearch) {
+		return m->incremental_search_text;
+	// } else if (ft == FilterTarget::CommitLogSearch) {
+	// 	return m->commit_log_filter_text;
+	// }
+	// return {};
 }
 
 /**
@@ -6155,8 +6166,9 @@ QString MainWindow::getFilterText(FilterTarget ft) const
  */
 void MainWindow::setFilterText(FilterTarget ft, QString const &text, int select_row)
 {
+	m->incremental_search_text = text;
+
 	if (ft == FilterTarget::RepositorySearch) {
-		m->repository_filter_text = text;
 
 		bool b = ui->lineEdit_filter->blockSignals(true);
 		ui->lineEdit_filter->setText(text);
@@ -6164,7 +6176,7 @@ void MainWindow::setFilterText(FilterTarget ft, QString const &text, int select_
 
 		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
 	} else if (ft == FilterTarget::CommitLogSearch) {
-		m->commit_log_filter_text = text;
+		ui->tableWidget_log->setFilter(m->incremental_search_text);
 	}
 }
 

@@ -35,10 +35,9 @@ struct MigemoFilter {
 	MigemoFilter(const QString &text);
 	bool isEmpty() const;
 	void makeFilter(const QString &filtertext);
-	bool match(const QString &name);
+	bool match(QString text);
 
 	static QString normalizeText(QString s);
-
 
 	static int u16ncmp(const ushort *s1, const ushort *s2, int n);
 };

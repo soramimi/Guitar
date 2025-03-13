@@ -11,6 +11,7 @@
 #include <string.h>
 #include <string>
 #include <time.h>
+#include <QDirIterator>
 
 #include "migemo.h"
 
@@ -108,12 +109,46 @@ bool IncrementalSearch::setupMigemoDict()
 {
 	QFile file(":/misc/migemo.zip"); // load from resource
 	if (!file.open(QFile::ReadOnly)) return false;
+
 	QByteArray data = file.readAll();
 	if (data.size() == 0) {
 		qDebug() << "Failed to load the zip file.";
 		return false;
 	}
-	return zip::Zip::extract_from_data(data.data(), data.size(), global->app_config_dir.toStdString());
+
+	// extract dict files
+	if (!zip::Zip::extract_from_data(data.data(), data.size(), global->app_config_dir.toStdString())) return false;
+
+	// remove CR from migemo dict files
+	QDirIterator it(global->app_config_dir / "migemo");
+	while (it.hasNext()) {
+		it.next();
+		QFileInfo info = it.fileInfo();
+		if (info.isFile()) {
+			QFile file(info.absoluteFilePath());
+			if (file.open(QFile::ReadWrite)) {
+				file.seek(0);
+				QByteArray data = file.readAll();
+				if (data.isEmpty()) continue;
+				char *src = data.data();
+				char *end = src + data.size();
+				char *dst = src;
+				while (src < end) {
+					if (*src == '\r') {
+						src++;
+						continue;
+					}
+					*dst++ = *src++;
+				}
+				file.seek(0);
+				file.resize(0);
+				file.write(data.data(), dst - data.data());
+				file.close();
+			}
+		}
+	}
+
+	return true;
 }
 
 static void deleteTree(QString const &dir)
@@ -174,22 +209,23 @@ void MigemoFilter::makeFilter(const QString &filtertext)
 				auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
 				if (s) {
 					re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
+					qDebug() << filtertext << *re_;
 				}
 			}
 		}
 	}
 }
 
-bool MigemoFilter::match(const QString &name)
+bool MigemoFilter::match(QString text)
 {
 	if (isEmpty()) return true; // フィルターが空の場合は常にtrue
 	if (re_.get()) { // 正規表現が有効な場合
-		QString text = normalizeText(name);
+		text = normalizeText(text);
 		if (text.contains(*re_)) return true;
 		return false;
 	}
 	// 正規表現が無効な場合
-	return name.indexOf(text, 0, Qt::CaseInsensitive) >= 0;
+	return text.indexOf(text, 0, Qt::CaseInsensitive) >= 0;
 }
 
 int MigemoFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)

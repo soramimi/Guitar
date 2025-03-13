@@ -106,35 +106,42 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
-void CommitLogTableModel::setFilter(QString const &text)
+void CommitLogTableModel::privateSetFilter(QString const &text)
 {
 	if (text.isEmpty()) {
 		index_.resize(records_.size());
 		std::iota(index_.begin(), index_.end(), 0);
-		filtered_ = false;
 	} else {
 		MigemoFilter filter;
 		filter.makeFilter(text);
 		int n = records_.size();
+		index_.clear();
+		index_.reserve(n);
 		for (size_t i = 0; i < n; i++) {
 			if (filter.match(records_[i].message)) {
 				index_.push_back(i);
 			}
 		}
-		filtered_ = true;
 	}
+	filter_text_ = text;
 }
 
-void CommitLogTableModel::clearFilter()
+bool CommitLogTableModel::setFilter(QString const &text)
 {
-	setFilter({});
+	if (text == filter_text_) return false;
+	beginResetModel();
+	privateSetFilter(text);
+	endResetModel();
+	return true;
 }
+
+
 
 void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
-	clearFilter();
+	privateSetFilter({});
 	endResetModel();
 }
 
@@ -557,8 +564,9 @@ void CommitLogTableWidget::setCurrentCell(int row, int col)
 	setCurrentIndex(index);
 }
 
-void CommitLogTableWidget::setFilter(MigemoFilter const &filter)
+void CommitLogTableWidget::setFilter(QString const &filter)
 {
-	filter_ = filter;
-	update();
+	if (model_->setFilter(filter)) {
+		viewport()->update();
+	}
 }
