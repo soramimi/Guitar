@@ -484,7 +484,7 @@ public:
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
-	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
+	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
 	GitRunner git();
 	GitRunner git(Git::SubmoduleItem const &submod);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});

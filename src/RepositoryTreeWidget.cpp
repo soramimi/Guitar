@@ -232,7 +232,7 @@ static QDateTime repositoryLastModifiedTime(QString const &path)
 	QFileInfo info(path);
 	return info.lastModified();
 #else
-	GitRunner g = global->mainwindow->git(path, {}, {});
+	GitRunner g = global->mainwindow->git(path, {}, {}, false);
 	return g.repositoryLastModifiedTime();
 #endif
 }

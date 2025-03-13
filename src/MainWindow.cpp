@@ -5463,11 +5463,13 @@ QString MainWindow::selectSshCommand(bool save)
 	return selectCommand_("ssh", cmdlist, list, path, fn);
 }
 
-GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey) const
+GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
 {
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
 	if (QFileInfo(g->gitCommand()).isExecutable()) {
-		g->setCommandCache(currentRepositoryData()->git_command_cache);
+		if (use_cache) {
+			g->setCommandCache(currentRepositoryData()->git_command_cache);
+		}
 		return g;
 	}
 
