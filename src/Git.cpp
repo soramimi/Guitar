@@ -793,6 +793,22 @@ BranchList Git::branches()
 	return ret;
 }
 
+static QDateTime parseDateTime(char const *s)
+{
+	int year, month, day, hour, minute, second;
+	if (sscanf(s, "%d-%d-%d %d:%d:%d"
+			   , &year
+			   , &month
+			   , &day
+			   , &hour
+			   , &minute
+			   , &second
+			   ) == 6) {
+		return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
+	}
+	return {};
+}
+
 std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 {
 	int i = line.indexOf("##");
@@ -821,21 +837,7 @@ std::optional<Git::CommitItem> Git::parseCommitItem(QString const &line)
 				} else if (key == "mail") {
 					item.email = val;
 				} else if (key == "date") {
-					auto ParseDateTime = [](char const *s){
-						int year, month, day, hour, minute, second;
-						if (sscanf(s, "%d-%d-%d %d:%d:%d"
-								   , &year
-								   , &month
-								   , &day
-								   , &hour
-								   , &minute
-								   , &second
-								   ) == 6) {
-							return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
-						}
-						return QDateTime();
-					};
-					item.commit_date = ParseDateTime(val.toStdString().c_str());
+					item.commit_date = parseDateTime(val.toStdString().c_str());
 				}
 			}
 		}
@@ -929,6 +931,7 @@ Git::CommitItemList Git::log(int maxcount)
 QDateTime Git::repositoryLastModifiedTime()
 {
 	if (isValidWorkingCopy()) {
+#if 0
 		git("rev-parse HEAD");
 		QString id = resultQString().trimmed();
 		auto file = cat_file(Hash(id));
@@ -950,6 +953,33 @@ QDateTime Git::repositoryLastModifiedTime()
 				return QDateTime::fromSecsSinceEpoch(time);
 			}
 		}
+#elif 1
+		git("log --format=%ci --all -1");
+		std::string s = resultStdString();
+		QDateTime dt = parseDateTime(s.c_str());
+		return dt;
+#elif 0
+		git("reflog show --date=iso --all -1");
+		std::string s = resultStdString();
+		auto left = s.find("@{");
+		auto right = s.find("}", left);
+		if (left != std::string::npos && right != std::string::npos) {
+			std::string s2 = s.substr(left + 2, right - left - 2);
+			QDateTime dt = ParseDateTime(s2.c_str());
+			qDebug() << QString::fromStdString(s2);
+			return dt;
+		}
+#else
+		git("rev-list --all -1");
+		QString id = resultQString().trimmed();
+		if (!id.isEmpty()) {
+			git("show -s --format=%ci " + id);
+			std::string s = resultStdString();
+			QDateTime dt = ParseDateTime(s.c_str());
+			return dt;
+		}
+
+#endif
 	}
 	return {};
 }
