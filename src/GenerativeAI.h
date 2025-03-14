@@ -45,7 +45,7 @@ struct OpenRouter {
 
 struct Ollama {
 	std::string id() const { return "ollama"; }
-	std::string description() const { return "Ollama"; }
+	std::string description() const { return "Ollama (experimental)"; }
 	std::string envname() const { return {}; }
 };
 
@@ -68,7 +68,7 @@ static inline std::vector<Provider> all_providers()
 		Google{},
 		DeepSeek{},
 		OpenRouter{},
-		// Ollama{} // experimental
+		Ollama{} // experimental
 	};
 }
 

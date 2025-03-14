@@ -13,7 +13,7 @@ std::vector<Model> available_models()
 	models.emplace_back(Google{}, "gemini-2.0-flash");
 	models.emplace_back(DeepSeek{}, "deepseek-chat");
 	models.emplace_back(OpenRouter{}, "anthropic/claude-3.7-sonnet");
-	// models.emplace_back(Ollama{}, "ollama-gemma2"); // experimental
+	// models.emplace_back(Ollama{}, "gemma2"); // experimental
 	return models;
 }
 
@@ -108,7 +108,7 @@ struct Models {
 	Request operator () (Ollama const &provider) const
 	{
 		Request r;
-		r.endpoint_url = "http://localhost:11434/api/generate"; // experimental
+		r.endpoint_url = "http://127.0.0.1:11434/api/generate"; // experimental
 		r.model = model_.name;
 		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
 		return r;

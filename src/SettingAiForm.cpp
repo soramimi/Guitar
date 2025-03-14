@@ -24,6 +24,7 @@ struct SettingAiForm::Private {
 	AI ai_google = { GenerativeAI::Google() };
 	AI ai_deepseek = { GenerativeAI::DeepSeek() };
 	AI ai_openrouter = { GenerativeAI::OpenRouter() };
+	AI ai_ollama = { GenerativeAI::Ollama() };
 
 	std::vector<SettingAiForm::AI *> ais;
 	AI *current_ai = nullptr;
@@ -36,7 +37,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	m->ais = { &m->ai_unknown, &m->ai_openai, &m->ai_anthropic, &m->ai_google, &m->ai_deepseek, &m->ai_openrouter };
+	m->ais = { &m->ai_unknown, &m->ai_openai, &m->ai_anthropic, &m->ai_google, &m->ai_deepseek, &m->ai_openrouter, &m->ai_ollama };
 
 	m->current_ai = &m->ai_unknown;
 
@@ -88,13 +89,18 @@ void SettingAiForm::exchange(bool save)
 	items.emplace_back(&s->use_google_api_key_environment_value, &s->google_api_key, &m->ai_google.use_env_value, &m->ai_google.custom_api_key);
 	items.emplace_back(&s->use_deepseek_api_key_environment_value, &s->deepseek_api_key, &m->ai_deepseek.use_env_value, &m->ai_deepseek.custom_api_key);
 	items.emplace_back(&s->use_openrouter_api_key_environment_value, &s->openrouter_api_key, &m->ai_openrouter.use_env_value, &m->ai_openrouter.custom_api_key);
+	items.emplace_back(/*&s->use_ollama_api_key_environment_value*/nullptr, /*&s->ollama_api_key*/nullptr, &m->ai_ollama.use_env_value, &m->ai_ollama.custom_api_key);
 
 	if (save) {
 		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
 
 		for (size_t i = 0; i < items.size(); i++) {
-			*items[i].settings_use_api_key_env_value = *items[i].private_use_env_value;
-			*items[i].settings_api_key = *items[i].private_custom_api_key;
+			if (items[i].settings_use_api_key_env_value) {
+				*items[i].settings_use_api_key_env_value = *items[i].private_use_env_value;
+			}
+			if (items[i].settings_api_key) {
+				*items[i].settings_api_key = *items[i].private_custom_api_key;
+			}
 		}
 
 		s->ai_model = GenerativeAI::Model(m->current_ai->provider, ui->comboBox_ai_model->currentText().toStdString());
@@ -104,8 +110,12 @@ void SettingAiForm::exchange(bool save)
 		configureModel(s->ai_model);
 
 		for (size_t i = 0; i < items.size(); i++) {
-			*items[i].private_use_env_value = *items[i].settings_use_api_key_env_value;
-			*items[i].private_custom_api_key = *items[i].settings_api_key;
+			if (items[i].settings_use_api_key_env_value) {
+				*items[i].private_use_env_value = *items[i].settings_use_api_key_env_value;
+			}
+			if (items[i].settings_api_key) {
+				*items[i].private_custom_api_key = *items[i].settings_api_key;
+			}
 		}
 
 		if (m->current_ai) {
@@ -227,6 +237,8 @@ SettingAiForm::AI *SettingAiForm::ai_from_provider(GenerativeAI::Provider const 
 		return &m->ai_deepseek;
 	} else if (std::holds_alternative<GenerativeAI::OpenRouter>(provider)) {
 		return &m->ai_openrouter;
+	} else if (std::holds_alternative<GenerativeAI::Ollama>(provider)) {
+		return &m->ai_ollama;
 	}
 	return nullptr;
 }
@@ -241,15 +253,20 @@ void SettingAiForm::updateProviderComboBox(AI *newai)
 	}
 }
 
-void SettingAiForm::configureModelByString(std::string const &s)
+void SettingAiForm::guessProviderFromModelName(std::string const &s)
 {
-	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s));
-
 	GenerativeAI::Model model = GenerativeAI::Model::from_name(s);
 	int index = model.provider.index();
 	if (index > 0) {
 		ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
 	}
+}
+
+void SettingAiForm::configureModelByString(std::string const &s)
+{
+	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s));
+
+	guessProviderFromModelName(s);
 }
 
 void SettingAiForm::configureModel(GenerativeAI::Model const &model)
@@ -269,6 +286,6 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
-	configureModelByString(arg1.toStdString());
+	guessProviderFromModelName(arg1.toStdString());
 }
 
