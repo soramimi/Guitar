@@ -514,68 +514,6 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QFrame" name="frame_5">
-           <property name="frameShape">
-            <enum>QFrame::Shape::NoFrame</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Shadow::Plain</enum>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
-            <property name="spacing">
-             <number>2</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLineEdit" name="lineEdit_filter">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="focusPolicy">
-               <enum>Qt::FocusPolicy::ClickFocus</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ClearButton" name="toolButton_erase_filter">
-              <property name="minimumSize">
-               <size>
-                <width>22</width>
-                <height>17</height>
-               </size>
-              </property>
-              <property name="focusPolicy">
-               <enum>Qt::FocusPolicy::NoFocus</enum>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>20</width>
-                <height>15</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
           <widget class="RepositoryTreeWidget" name="treeWidget_repos">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -1127,7 +1065,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1893,11 +1831,6 @@
    <extends>QWidget</extends>
    <header>TextEditorWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ClearButton</class>
-   <extends>QToolButton</extends>
-   <header>ClearButton.h</header>
   </customwidget>
   <customwidget>
    <class>RepositoryInfoFrame</class>

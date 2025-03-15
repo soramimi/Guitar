@@ -135,7 +135,10 @@ bool CommitLogTableModel::setFilter(QString const &text)
 	return true;
 }
 
-
+int CommitLogTableModel::unfilteredIndex(int i) const
+{
+	return index_[i];
+}
 
 void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
 {
@@ -573,6 +576,12 @@ void CommitLogTableWidget::updateViewport()
 {
 	adjustAppearance();
 	viewport()->update();
+}
+
+void CommitLogTableWidget::setCurrentRow(int row)
+{
+	QModelIndex index = model_->index(row, 0, QModelIndex());
+	setCurrentIndex(index);
 }
 
 void CommitLogTableWidget::setFilter(QString const &filter)

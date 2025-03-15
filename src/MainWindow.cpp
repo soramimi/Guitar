@@ -139,7 +139,9 @@ struct MainWindow::Private {
 	bool interaction_enabled = false;
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
 
+	MainWindow::FilterTarget filter_target = MainWindow::FilterTarget::RepositorySearch;
 	QString incremental_search_text;
+	int before_search_row = -1;
 	bool uncommited_changes = false;
 	Git::FileStatusList uncommited_changes_file_list;
 
@@ -594,9 +596,8 @@ void UserEventHandler::operator () (StartEventData const &)
 bool MainWindow::setCurrentLogRow(int row)
 {
 	if (row >= 0 && row < ui->tableWidget_log->rowCount()) {
-		// updateStatusBarText(); //@
 		ui->tableWidget_log->setFocus();
-		ui->tableWidget_log->setCurrentCell(row, 2);
+		ui->tableWidget_log->setCurrentRow(row);
 		return true;
 	}
 	return false;
@@ -637,13 +638,26 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		} else {
 			auto *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
+			const int k = e->key();
+			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
-			const int k = e->key();
+			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				if (shift && centralWidget()->isAncestorOf(qApp->focusWidget())) {
 					ui->treeWidget_repos->setFocus();
+					return true;
+				}
+				return true;
+			}
+			if (alt) {
+				if (k == Qt::Key_1) {
+					ui->treeWidget_repos->setFocus();
+					return true;
+				}
+				if (k == Qt::Key_2) {
+					ui->tableWidget_log->setFocus();
 					return true;
 				}
 			}
@@ -665,7 +679,11 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 			}
 			if (watched == ui->treeWidget_repos) { // リポジトリツリー
-				if (k == Qt::Key_Enter || k == Qt::Key_Return) {
+				if (enter) {
+					if (!m->incremental_search_text.isEmpty()) {
+						applyFilter();
+						return true;
+					}
 					openSelectedRepository();
 					return true;
 				}
@@ -674,34 +692,24 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						onRepositoryTreeSortRecent();
 						return true;
 					}
-				} else {
-					// search filter
-					if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
-						appendCharToFilterText(FilterTarget::RepositorySearch, k);
-						return true;
-					}
-					if (k == Qt::Key_Backspace) {
-						appendCharToFilterText(FilterTarget::RepositorySearch, ASCII_BACKSPACE);
+				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::RepositorySearch)) {
+					return true;
+				}
+			} else if (watched == ui->tableWidget_log) {
+				if (enter) {
+					if (!m->incremental_search_text.isEmpty()) {
+						applyFilter();
 						return true;
 					}
 				}
-			} else if (watched == ui->tableWidget_log) {
 				if (k == Qt::Key_Home) {
 					setCurrentLogRow(0);
 					return true;
 				} else if (shift && k == Qt::Key_Escape) {
 					ui->treeWidget_repos->setFocus();
 					return true;
-				} else {
-					// search filter
-					if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
-						appendCharToFilterText(FilterTarget::CommitLogSearch, k);
-						return true;
-					}
-					if (k == Qt::Key_Backspace) {
-						appendCharToFilterText(FilterTarget::CommitLogSearch, ASCII_BACKSPACE);
-						return true;
-					}
+				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::CommitLogSearch)) {
+					return true;
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
 				if (shift && k == Qt::Key_Escape) {
@@ -3161,7 +3169,7 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 	setRepositoryList(RepositoryBookmark::load(path));
 	QList<RepositoryInfo> const &repos = repositoryList();
 
-	QString filter = getFilterText(FilterTarget::RepositorySearch);
+	QString filter = getFilterText();
 
 	RepositoryTreeWidget *tree = ui->treeWidget_repos;
 	tree->updateList(style, repos, filter, select_row);
@@ -4510,28 +4518,32 @@ void MainWindow::updateStatusBarText()
 
 	QString text;
 
-	QWidget *w = qApp->focusWidget();
-	if (w == ui->treeWidget_repos) {
-		std::optional<RepositoryInfo> repo = selectedRepositoryItem();
-		if (repo) {
-			text = QString("%1 : %2")
-					.arg(repo->name)
+	if (!m->incremental_search_text.isEmpty()) {
+		text = tr("Search: %1").arg(m->incremental_search_text);
+	} else {
+		QWidget *w = qApp->focusWidget();
+		if (w == ui->treeWidget_repos) {
+			std::optional<RepositoryInfo> repo = selectedRepositoryItem();
+			if (repo) {
+				text = QString("%1 : %2")
+				.arg(repo->name)
 					.arg(misc::normalizePathSeparator(repo->local_dir))
 					;
-		}
-	} else if (w == ui->tableWidget_log) {
-		Git::CommitItem const *commit = currentCommitItem();
-		if (commit) {
-			if (Git::isUncommited(*commit)) {
-				text = tr("Uncommited changes");
-			} else {
-				QString id = commit->commit_id.toQString();
-				QString labels = labelsInfoText(*commit);
-				text = QString("%1 : %2%3")
-					   .arg(id.mid(0, 7))
-					   .arg(commit->message)
-					   .arg(labels)
-					   ;
+			}
+		} else if (w == ui->tableWidget_log) {
+			Git::CommitItem const *commit = currentCommitItem();
+			if (commit) {
+				if (Git::isUncommited(*commit)) {
+					text = tr("Uncommited changes");
+				} else {
+					QString id = commit->commit_id.toQString();
+					QString labels = labelsInfoText(*commit);
+					text = QString("%1 : %2%3")
+							   .arg(id.mid(0, 7))
+							   .arg(commit->message)
+							   .arg(labels)
+						;
+				}
 			}
 		}
 	}
@@ -6152,42 +6164,58 @@ void MainWindow::on_toolButton_fetch_clicked()
  * @brief フィルタ文字列を取得する
  * @return
  */
-QString MainWindow::getFilterText(FilterTarget ft) const
+QString MainWindow::getFilterText() const
 {
-	// if (ft == FilterTarget::RepositorySearch) {
-		return m->incremental_search_text;
-	// } else if (ft == FilterTarget::CommitLogSearch) {
-	// 	return m->commit_log_filter_text;
-	// }
-	// return {};
+	return m->incremental_search_text;
 }
 
 /**
  * @brief フィルタ文字列を設定する
  * @param text
  */
-void MainWindow::setFilterText(FilterTarget ft, QString const &text, int select_row)
+void MainWindow::setFilterText(QString const &text, int select_row)
 {
+	FilterTarget ft = filtertarget();
+
+	if (m->incremental_search_text.isEmpty() && !text.isEmpty()) {
+		if (ft == FilterTarget::RepositorySearch) {
+		} else if (ft == FilterTarget::CommitLogSearch) {
+			m->before_search_row = ui->tableWidget_log->currentRow();
+		}
+	}
+
 	m->incremental_search_text = text;
 
 	if (ft == FilterTarget::RepositorySearch) {
-
-		bool b = ui->lineEdit_filter->blockSignals(true);
-		ui->lineEdit_filter->setText(text);
-		ui->lineEdit_filter->blockSignals(b);
-
 		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
 	} else if (ft == FilterTarget::CommitLogSearch) {
 		ui->tableWidget_log->setFilter(m->incremental_search_text);
 	}
 }
 
+MainWindow::FilterTarget MainWindow::filtertarget() const
+{
+	return m->filter_target;
+}
+
 /**
  * @brief フィルタの文字列をクリアする
  */
-void MainWindow::clearFilterText(FilterTarget ft, int select_row)
+void MainWindow::clearFilterText(int select_row)
 {
-	setFilterText(ft, {}, select_row);
+	int i = 0;
+
+	auto ft = filtertarget();
+	if (ft == FilterTarget::CommitLogSearch) {
+		i = m->before_search_row;
+	}
+
+	setFilterText({}, select_row);
+
+	if (ft == FilterTarget::CommitLogSearch) {
+		ui->tableWidget_log->setCurrentRow(i);
+		ui->tableWidget_log->setFocus();
+	}
 }
 
 /**
@@ -6195,17 +6223,38 @@ void MainWindow::clearFilterText(FilterTarget ft, int select_row)
  */
 void MainWindow::clearAllFilters()
 {
-	clearFilterText(FilterTarget::RepositorySearch);
-	clearFilterText(FilterTarget::CommitLogSearch);
+	clearFilterText();
+	updateStatusBarText();
+}
+
+bool MainWindow::applyFilter()
+{
+	if (m->incremental_search_text.isEmpty()) return false;
+
+	auto ft = filtertarget();
+	if (ft == FilterTarget::RepositorySearch) {
+
+	} else if (ft == FilterTarget::CommitLogSearch) {
+		int row;
+		row = ui->tableWidget_log->currentRow();
+		row = ui->tableWidget_log->unfilteredIndex(row);
+
+		clearAllFilters();
+
+		ui->tableWidget_log->setCurrentRow(row);
+		ui->tableWidget_log->setFocus();
+	}
+
+	return true;
 }
 
 /**
  * @brief フィルタに文字を追加する
  * @return
  */
-void MainWindow::appendCharToFilterText(FilterTarget ft, ushort c)
+void MainWindow::_appendCharToFilterText(ushort c)
 {
-	QString text = getFilterText(ft);
+	QString text = getFilterText();
 	if (c == ASCII_BACKSPACE) {
 		int i = text.size();
 		if (i > 0) {
@@ -6214,22 +6263,22 @@ void MainWindow::appendCharToFilterText(FilterTarget ft, ushort c)
 	} else if (QChar(c).isLetter()) {
 		text.append(QChar(c).toLower());
 	}
-	setFilterText(ft, text);
+	setFilterText(text);
 }
 
-/**
- * @brief リポジトリフィルタの文字列から1文字削除する
- * @return
- */
-void MainWindow::on_lineEdit_filter_textChanged(QString const &text)
+bool MainWindow::appendCharToFilterText(int k, MainWindow::FilterTarget ft)
 {
-	setFilterText(FilterTarget::RepositorySearch, text);
-}
+	m->filter_target = ft;
 
-void MainWindow::on_toolButton_erase_filter_clicked()
-{
-	clearFilterText(FilterTarget::RepositorySearch);
-	ui->lineEdit_filter->setFocus();
+	if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
+		_appendCharToFilterText(k);
+	} else if (k == Qt::Key_Backspace) {
+		_appendCharToFilterText(ASCII_BACKSPACE);
+	} else {
+		return false;
+	}
+	updateStatusBarText();
+	return true;
 }
 
 void MainWindow::deleteTags(QStringList const &tagnames)

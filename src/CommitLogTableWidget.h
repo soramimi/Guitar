@@ -49,6 +49,7 @@ public:
 	{
 		return !filter_text_.isEmpty();
 	}
+	int unfilteredIndex(int i) const;
 };
 
 /**
@@ -83,6 +84,11 @@ public:
 	void setFilter(const QString &filter);
 	void adjustAppearance();
 	void updateViewport();
+	int unfilteredIndex(int i) const
+	{
+		return model_->unfilteredIndex(i);
+	}
+	void setCurrentRow(int row);
 signals:
 	void currentRowChanged(int row);
 };

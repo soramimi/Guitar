@@ -216,11 +216,13 @@ private:
 		RepositorySearch,
 		CommitLogSearch,
 	};
-	QString getFilterText(FilterTarget ft) const;
-	void setFilterText(FilterTarget ft, const QString &text, int select_row = -1);
-	void clearFilterText(FilterTarget ft, int select_row = -1);
+	QString getFilterText() const;
+	void setFilterText(const QString &text, int select_row = -1);
+	void clearFilterText(int select_row = -1);
 	void clearAllFilters();
-	void appendCharToFilterText(FilterTarget ft, ushort c);
+	bool applyFilter();
+	void _appendCharToFilterText(ushort c);
+	bool appendCharToFilterText(int k, FilterTarget ft);
 
 	void revertCommit();
 	void mergeBranch(const QString &commit, Git::MergeFastForward ff, bool squash);
@@ -596,7 +598,6 @@ private slots:
 	void on_action_terminal_triggered();
 	void on_action_view_refresh_triggered();
 	void on_action_window_log_triggered(bool checked);
-	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_listWidget_files_currentRowChanged(int currentRow);
 	void on_listWidget_files_customContextMenuRequested(const QPoint &pos);
 	void on_listWidget_files_itemDoubleClicked(QListWidgetItem *item);
@@ -611,7 +612,6 @@ private slots:
 	void on_tableWidget_log_customContextMenuRequested(const QPoint &pos);
 	void on_tableWidget_log_doubleClicked(const QModelIndex &index);
 	void on_toolButton_commit_clicked();
-	void on_toolButton_erase_filter_clicked();
 	void on_toolButton_explorer_clicked();
 	void on_toolButton_fetch_clicked();
 	void on_toolButton_pull_clicked();
@@ -685,6 +685,7 @@ private:
 	void clearGitCommandCache();
 	Git::CommitItemList log_all2(GitRunner g, const Git::Hash &id, int maxcount) const;
 	ProgressWidget *progress_widget() const;
+	MainWindow::FilterTarget filtertarget() const;
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 
