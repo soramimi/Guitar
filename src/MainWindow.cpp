@@ -258,8 +258,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	platform::initNetworking();
 
-	showFileList(FileListType::MessagePanel);
-
 	m->graph_color = global->theme->graphColorMap();
 
 	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
@@ -318,6 +316,8 @@ MainWindow::MainWindow(QWidget *parent)
 	m->git_process_thread.start();
 
 	ui->action_sidebar->setChecked(true);
+
+	showFileList(FileListType::MessagePanel);
 
 	startTimers();
 }
@@ -902,6 +902,7 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 			progress_widget()->setText(*info.message);
 		}
 		progress_widget()->setProgress(*info.progress);
+		internalShowPanel(FileListType::MessagePanel);
 	} else {
 		m->background_process_work_in_progress = false;
 		progress_widget()->clear();
@@ -3949,12 +3950,8 @@ void MainWindow::setupAddFileObjectData()
 	connect(this, &MainWindow::signalAddFileObjectData, this, &MainWindow::onAddFileObjectData);
 }
 
-void MainWindow::onShowFileList(FileListType file_list_type)
+void MainWindow::internalShowPanel(FileListType file_list_type)
 {
-	ASSERT_MAIN_THREAD();
-
-	clearDiffView();
-
 	switch (file_list_type) {
 	case FileListType::MessagePanel:
 		ui->stackedWidget_filelist->setCurrentWidget(ui->page_message_panel);
@@ -3966,6 +3963,15 @@ void MainWindow::onShowFileList(FileListType file_list_type)
 		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
 		break;
 	}
+}
+
+void MainWindow::onShowFileList(FileListType panel_type)
+{
+	ASSERT_MAIN_THREAD();
+
+	clearDiffView();
+
+	internalShowPanel(panel_type);
 }
 
 void MainWindow::showFileList(FileListType files_list_type)
@@ -7271,24 +7277,5 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 
 void MainWindow::test()
 {
-	GitRunner g = git();
-
-	{
-		QElapsedTimer t;
-		t.start();
-
-		Git::CommitItemList items = g.log_all({}, limitLogCount());
-
-		qDebug() << t.elapsed() << "ms";
-	}
-
-	{
-		QElapsedTimer t;
-		t.start();
-
-		Git::CommitItemList items = log_all2(g, {}, limitLogCount());
-
-		qDebug() << t.elapsed() << "ms";
-	}
 }
 

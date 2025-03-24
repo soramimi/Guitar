@@ -634,7 +634,7 @@ private slots:
 	void onShowStatusInfo(StatusInfo const &info);
 	void on_action_rebase_abort_triggered();
 
-	void onShowFileList(FileListType files_list_type);
+	void onShowFileList(FileListType panel_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 private:
 	void setupStatusInfoHandler();
@@ -686,6 +686,7 @@ private:
 	Git::CommitItemList log_all2(GitRunner g, const Git::Hash &id, int maxcount) const;
 	ProgressWidget *progress_widget() const;
 	MainWindow::FilterTarget filtertarget() const;
+	void internalShowPanel(FileListType file_list_type);
 private slots:
 	void onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
 
