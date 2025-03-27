@@ -12,6 +12,8 @@
 #include <string>
 #include <time.h>
 #include <QDirIterator>
+#include <QPainter>
+#include <QStyleOptionViewItem>
 
 #include "migemo.h"
 
@@ -241,6 +243,23 @@ int MigemoFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
 	return 0;
 }
 
+void MigemoFilter::fillFilteredBG(QPainter *painter, const QRect &rect)
+{
+	painter->fillRect(rect, QColor(128, 128, 128, 64));
+}
+
+void MigemoFilter::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
+{
+#ifndef Q_OS_WIN
+	if (opt.state & QStyle::State_Selected) { // 選択されている場合
+		painter->setPen(opt.palette.color(QPalette::HighlightedText));
+	} else {
+		painter->setPen(opt.palette.color(QPalette::Text));
+	}
+#endif
+	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
+}
+
 QString MigemoFilter::normalizeText(QString s)
 {
 	for (QChar &c : s) {
@@ -258,3 +277,69 @@ QString MigemoFilter::normalizeText(QString s)
 	}
 	return s;
 }
+
+
+
+
+
+void MigemoFilter::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, const MigemoFilter &filter)
+{
+	QString text = opt.text;
+
+	// フィルターに一致する部分をハイライトして描画
+	std::vector<std::tuple<QString, bool>> list;
+
+	if (filter.re_.get()) { // 正規表現が有効な場合
+		text = MigemoFilter::normalizeText(text);
+		QRegularExpressionMatch match = filter.re_->match(text);
+		int left = 0;
+		while (match.hasMatch()) {
+			int right = match.capturedStart();
+			if (left < right) {
+				list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
+			}
+			auto start = match.capturedStart();
+			left = match.capturedEnd();
+			list.push_back(std::make_tuple(opt.text.mid(start, left - start), true));
+			match = filter.re_->match(text, left);
+		}
+		if (left < opt.text.size()) {
+			list.push_back(std::make_tuple(opt.text.mid(left), false));
+		}
+	} else {
+		// 通常テキストフィルターの場合
+		const int filtersize = filter.text.size();
+		int left = 0;
+		int right = 0;
+		while (right < text.size()) { // テキストをフィルターで分割
+			if (MigemoFilter::u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
+				if (left < right) {
+					list.push_back(std::make_tuple(text.mid(left, right - left), false));
+				}
+				list.push_back(std::make_tuple(text.mid(right, filtersize), true));
+				left = right = right + filtersize;
+			} else {
+				right++;
+			}
+		}
+		if (left < right) { // フィルターで分割できなかった残り
+			list.push_back(std::make_tuple(text.mid(left, right - left), false));
+		}
+	}
+
+	int x = rect.x();
+	for (auto [s, f] : list) {
+		int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+		QRect r = rect;
+		r.setLeft(x);
+		r.setWidth(w);
+		if (f) { // フィルターの部分をハイライト
+			QColor color = opt.palette.color(QPalette::Highlight);
+			color.setAlpha(128);
+			painter->fillRect(r, color);
+		}
+		drawText(painter, opt, r, s);
+		x += w;
+	}
+}
+

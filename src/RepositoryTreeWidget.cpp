@@ -13,18 +13,7 @@
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 private:
-	void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect r, QString const &text) const
-	{
-#ifndef Q_OS_WIN
-		if (opt.state & QStyle::State_Selected) { // 選択されている場合
-			painter->setPen(opt.palette.color(QPalette::HighlightedText));
-		} else {
-			painter->setPen(opt.palette.color(QPalette::Text));
-		}
-#endif
-		painter->drawText(r, opt.displayAlignment, text); // テキストを描画
-	}
-	void drawText_default(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text) const
+	static void drawText_default(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text)
 	{
 		int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
 		QRect r = rect;
@@ -39,75 +28,15 @@ private:
 			painter->setFont(smallfont);
 			painter->save();
 			painter->setOpacity(0.75);
-			drawText(painter, opt, r, s);
+			MigemoFilter::drawText(painter, opt, r, s);
 			painter->restore();
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
 			r.translate(w, 0);
 			painter->setFont(font);
 			painter->setPen(opt.palette.color(QPalette::Text));
-			drawText(painter, opt, r, text.mid(i + 1));
+			MigemoFilter::drawText(painter, opt, r, text.mid(i + 1));
 		} else {
-			drawText(painter, opt, r, text);
-		}
-	}
-	void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, MigemoFilter const &filter) const
-	{
-		QString text = opt.text;
-
-		// フィルターに一致する部分をハイライトして描画
-		std::vector<std::tuple<QString, bool>> list;
-
-		if (filter.re_.get()) { // 正規表現が有効な場合
-			text = MigemoFilter::normalizeText(text);
-			QRegularExpressionMatch match = filter.re_->match(text);
-			int left = 0;
-			while (match.hasMatch()) {
-				int right = match.capturedStart();
-				if (left < right) {
-					list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
-				}
-				auto start = match.capturedStart();
-				left = match.capturedEnd();
-				list.push_back(std::make_tuple(opt.text.mid(start, left - start), true));
-				match = filter.re_->match(text, left);
-			}
-			if (left < opt.text.size()) {
-				list.push_back(std::make_tuple(opt.text.mid(left), false));
-			}
-		} else {
-			// 通常テキストフィルターの場合
-			const int filtersize = filter.text.size();
-			int left = 0;
-			int right = 0;
-			while (right < text.size()) { // テキストをフィルターで分割
-				if (MigemoFilter::u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
-					if (left < right) {
-						list.push_back(std::make_tuple(text.mid(left, right - left), false));
-					}
-					list.push_back(std::make_tuple(text.mid(right, filtersize), true));
-					left = right = right + filtersize;
-				} else {
-					right++;
-				}
-			}
-			if (left < right) { // フィルターで分割できなかった残り
-				list.push_back(std::make_tuple(text.mid(left, right - left), false));
-			}
-		}
-
-		int x = rect.x();
-		for (auto [s, f] : list) {
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
-			QRect r = rect;
-			r.setLeft(x);
-			r.setWidth(w);
-			if (f) { // フィルターの部分をハイライト
-				QColor color = opt.palette.color(QPalette::Highlight);
-				color.setAlpha(128);
-				painter->fillRect(r, color);
-			}
-			drawText(painter, opt, r, s);
-			x += w;
+			MigemoFilter::drawText(painter, opt, r, text);
 		}
 	}
 public:
@@ -125,7 +54,7 @@ public:
 
 		// 背景を描画
 		if (!filter.isEmpty()) {
-			painter->fillRect(opt.rect, QColor(128, 128, 128, 64));
+			MigemoFilter::fillFilteredBG(painter, opt.rect);
 		}
 		opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
 
@@ -137,7 +66,7 @@ public:
 		if (filter.isEmpty()) { // フィルターがない場合
 			drawText_default(painter, opt, textrect, opt.text);
 		} else {
-			drawText_filted(painter, opt, textrect, filter);
+			MigemoFilter::drawText_filted(painter, opt, textrect, filter);
 		}
 	}
 };

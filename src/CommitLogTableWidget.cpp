@@ -9,11 +9,6 @@
 #include <QPainterPath>
 #include <cmath>
 
-enum {
-	CommitRecordRole = Qt::UserRole,
-};
-
-
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
 {
 	if (!tooltip.isEmpty()) {
@@ -32,6 +27,11 @@ CommitLogTableWidget *CommitLogTableModel::tablewidget()
 const CommitRecord &CommitLogTableModel::record(int row) const
 {
 	return records_[index_[row]];
+}
+
+const CommitRecord &CommitLogTableModel::record(QModelIndex const &index) const
+{
+	return record(index.row());
 }
 
 QModelIndex CommitLogTableModel::index(int row, int column, const QModelIndex &parent) const
@@ -99,8 +99,6 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 					return QVariant(font);
 				}
 			}
-		} else if (role == CommitRecordRole) {
-			return QVariant::fromValue<CommitRecord>(rec);
 		}
 	}
 	return QVariant();
@@ -109,16 +107,16 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 void CommitLogTableModel::privateSetFilter(QString const &text)
 {
 	if (text.isEmpty()) {
+		filter_ = {};
 		index_.resize(records_.size());
 		std::iota(index_.begin(), index_.end(), 0);
 	} else {
-		MigemoFilter filter;
-		filter.makeFilter(text);
+		filter_.makeFilter(text);
 		int n = records_.size();
 		index_.clear();
 		index_.reserve(n);
 		for (size_t i = 0; i < n; i++) {
-			if (filter.match(records_[i].message)) {
+			if (filter_.match(records_[i].message)) {
 				index_.push_back(i);
 			}
 		}
@@ -189,7 +187,7 @@ private:
 		}
 	}
 
-	void drawAvatar(QPainter *painter, double opacity, const QStyleOptionViewItem &opt, QModelIndex const &index) const
+	void drawAvatar(QPainter *painter, double opacity, const QStyleOptionViewItem &opt, int row) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
@@ -198,7 +196,6 @@ private:
 		int x = opt.rect.x() + opt.rect.width() - w;
 		int y = opt.rect.y();
 
-		int row = index.row();
 		auto icon = mainwindow()->committerIcon(row, {w, h});
 		if (!icon.isNull()) {
 			painter->save();
@@ -287,9 +284,15 @@ public:
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
 
-		CommitRecord record = index.data(CommitRecordRole).value<CommitRecord>();
+		Git::CommitItem const &commit = tablewidget->commitItem(index.row());
+		CommitRecord const &record = tablewidget->model_->record(index);
 
-		MyTableWidgetDelegate::paint(painter, opt, index);
+		if (tablewidget->model_->isFiltered()) {
+			MigemoFilter::fillFilteredBG(painter, opt.rect);
+			MigemoFilter::drawText_filted(painter, opt, opt.rect, tablewidget->model_->filter_);
+		} else {
+			MyTableWidgetDelegate::paint(painter, opt, index);
+		}
 
 		enum {
 			Graph,
@@ -299,7 +302,7 @@ public:
 			Message,
 		};
 
-		Git::CommitItem const &commit = tablewidget->commitItem(index.row());
+		const int actual_row = tablewidget->model_->unfilteredIndex(index.row()); // フィルタ適用前の行番号
 
 		// 署名アイコンの描画
 		if (index.column() == CommitId) {
@@ -319,13 +322,12 @@ public:
 		if (index.column() == Author) {
 			bool show = global->mainwindow->isAvatarsVisible();
 			double opacity = show ? 0.5 : 0.125;
-			drawAvatar(painter, opacity, opt, index);
+			drawAvatar(painter, opacity, opt, actual_row);
 		}
-
 
 		// ラベルの描画
 		if (index.column() == Message) {
-			BranchLabelList const &labels = mainwindow()->rowLabels(index.row());
+			BranchLabelList const &labels = mainwindow()->rowLabels(actual_row);
 			QString current_branch = mainwindow()->currentBranchName();
 			drawLabels(painter, opt, index, labels, current_branch);
 		}

@@ -22,14 +22,17 @@ struct CommitRecord {
 Q_DECLARE_METATYPE(CommitRecord)
 
 class CommitLogTableModel : public QAbstractItemModel {
+	friend class CommitLogTableWidgetDelegate;
 public:
 	static QString escapeTooltipText(QString tooltip);
 private:
 	std::vector<CommitRecord> records_;
 	std::vector<size_t> index_;
 	QString filter_text_;
+	MigemoFilter filter_;
 	CommitLogTableWidget *tablewidget();
 	CommitRecord const &record(int row) const;
+	CommitRecord const &record(QModelIndex const &index) const;
 	int rowcount() const;
 	void privateSetFilter(const QString &text);
 public:
@@ -63,7 +66,7 @@ private:
 	MainWindow *mainwindow() { return mainwindow_; }
 	MainWindow const *mainwindow() const { return mainwindow_; }
 	CommitLogTableModel *model_ = nullptr; // TODO:
-	MigemoFilter filter_;
+	// MigemoFilter filter_;
 	const Git::CommitItem &commitItem(int row) const;
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);

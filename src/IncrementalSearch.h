@@ -6,6 +6,9 @@
 #include <QString>
 #include <memory>
 
+class QRect;
+class QPainter;
+class QStyleOptionViewItem;
 
 class IncrementalSearch {
 private:
@@ -40,6 +43,11 @@ struct MigemoFilter {
 	static QString normalizeText(QString s);
 
 	static int u16ncmp(const ushort *s1, const ushort *s2, int n);
+
+	static void fillFilteredBG(QPainter *painter, QRect const &rect);
+
+	static void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect r, QString const &text);
+	static void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, MigemoFilter const &filter);
 };
 
 #endif // INCREMENTALSEARCH_H
