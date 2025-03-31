@@ -7,11 +7,20 @@
 
 class StatusInfo {
 public:
-	std::optional<QString> message;
-	std::optional<float> progress;
+	struct Message {
+		QString text;
+		Qt::TextFormat format = Qt::PlainText;
+		Message() = default;
+		Message(QString const &text, Qt::TextFormat format = Qt::PlainText)
+			: text(text)
+			, format(format)
+		{}
+	};
+	std::optional<Message> message_;
+	std::optional<float> progress_;
 private:
-	StatusInfo(std::optional<QString> message, std::optional<float> progress)
-		: message(message), progress(progress)
+	StatusInfo(std::optional<Message> message, std::optional<float> progress)
+		: message_(message), progress_(progress)
 	{
 	}
 public:
@@ -20,15 +29,15 @@ public:
 	{
 		return StatusInfo(std::nullopt, std::nullopt);
 	}
-	static StatusInfo Message(QString message)
+	static StatusInfo message(Message const &msg)
 	{
-		return StatusInfo(message, std::nullopt);
+		return StatusInfo(msg, std::nullopt);
 	}
-	static StatusInfo Progress(QString message, float progress = -1.0f)
+	static StatusInfo progress(Message const &msg, float progress = -1.0f)
 	{
-		return StatusInfo(message, progress);
+		return StatusInfo(msg, progress);
 	}
-	static StatusInfo Progress(float progress)
+	static StatusInfo progress(float progress)
 	{
 		return StatusInfo(std::nullopt, progress);
 	}

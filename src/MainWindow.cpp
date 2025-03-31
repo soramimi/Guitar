@@ -157,7 +157,7 @@ struct MainWindow::Private {
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
-	// ProgressWidget *status_bar_label;
+	QLabel *status_bar_label;
 
 	QObject *last_focused_file_list = nullptr;
 
@@ -236,8 +236,9 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
-	// m->status_bar_label = new ProgressWidget(this);
-	// ui->statusBar->addWidget(m->status_bar_label);
+	m->status_bar_label = new QLabel(this);
+	ui->statusBar->addWidget(m->status_bar_label);
+
 	progress_widget()->setVisible(false);
 
 	ui->widget_diff_view->init();
@@ -340,7 +341,6 @@ MainWindow::~MainWindow()
 
 ProgressWidget *MainWindow::progress_widget() const
 {
-	// return m->status_bar_label;
 	return ui->widget_progress;
 }
 
@@ -894,21 +894,24 @@ void MainWindow::setupStatusInfoHandler()
 void MainWindow::onShowStatusInfo(StatusInfo const &info)
 {
 	ASSERT_MAIN_THREAD();
-	if (info.progress) {
+	if (info.progress_) {
+		m->status_bar_label->hide();
 		m->background_process_work_in_progress = true;
-		if (info.message) {
+		if (info.message_) {
 			// ui->statusBar->clearMessage();
 			progress_widget()->setVisible(true);
-			progress_widget()->setText(*info.message);
+			progress_widget()->setText(info.message_->text);
 		}
-		progress_widget()->setProgress(*info.progress);
+		progress_widget()->setProgress(*info.progress_);
 		internalShowPanel(FileListType::MessagePanel);
 	} else {
 		m->background_process_work_in_progress = false;
 		progress_widget()->clear();
 		progress_widget()->setVisible(false);
-		if (info.message) {
-			ui->statusBar->showMessage(*info.message);
+		if (info.message_) {
+			m->status_bar_label->setTextFormat(info.message_->format);
+			m->status_bar_label->setText(info.message_->text);
+			m->status_bar_label->show();
 		}
 	}
 }
@@ -920,13 +923,13 @@ void MainWindow::clearStatusInfo()
 
 void MainWindow::setProgress(float progress)
 {
-	StatusInfo info = StatusInfo::Progress(progress);
+	StatusInfo info = StatusInfo::progress(progress);
 	emit signalShowStatusInfo(info);
 }
 
 void MainWindow::showProgress(QString const &text, float progress)
 {
-	StatusInfo info = StatusInfo::Progress(text, progress);
+	StatusInfo info = StatusInfo::progress(text, progress);
 	emit signalShowStatusInfo(info);
 }
 
@@ -4533,16 +4536,17 @@ void MainWindow::updateStatusBarText()
 
 	hideProgress();
 
-	QString text;
+	StatusInfo::Message msg;
 
 	if (!m->incremental_search_text.isEmpty()) {
-		text = tr("Search: %1").arg(m->incremental_search_text);
+		msg.text = tr("<div style='background: #80ffff;'>Search: <b>%1</b>&nbsp;</div>").arg(m->incremental_search_text.toHtmlEscaped());
+		msg.format = Qt::TextFormat::RichText;
 	} else {
 		QWidget *w = qApp->focusWidget();
 		if (w == ui->treeWidget_repos) {
 			std::optional<RepositoryInfo> repo = selectedRepositoryItem();
 			if (repo) {
-				text = QString("%1 : %2")
+				msg.text = QString("%1 : %2")
 				.arg(repo->name)
 					.arg(misc::normalizePathSeparator(repo->local_dir))
 					;
@@ -4551,11 +4555,11 @@ void MainWindow::updateStatusBarText()
 			Git::CommitItem const *commit = currentCommitItem();
 			if (commit) {
 				if (Git::isUncommited(*commit)) {
-					text = tr("Uncommited changes");
+					msg.text = tr("Uncommited changes");
 				} else {
 					QString id = commit->commit_id.toQString();
 					QString labels = labelsInfoText(*commit);
-					text = QString("%1 : %2%3")
+					msg.text = QString("%1 : %2%3")
 							   .arg(id.mid(0, 7))
 							   .arg(commit->message)
 							   .arg(labels)
@@ -4565,7 +4569,7 @@ void MainWindow::updateStatusBarText()
 		}
 	}
 
-	setStatusInfo(StatusInfo::Message(text));
+	setStatusInfo(StatusInfo::message(msg));
 }
 
 void MainWindow::mergeBranch(QString const &commit, Git::MergeFastForward ff, bool squash)
