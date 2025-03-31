@@ -62,7 +62,6 @@ public:
 		opt.icon.paint(painter, iconrect);
 
 		// テキストを描画
-		std::vector<std::tuple<QString, bool>> list;
 		if (filter.isEmpty()) { // フィルターがない場合
 			drawText_default(painter, opt, textrect, opt.text);
 		} else {
@@ -101,6 +100,11 @@ void RepositoryTreeWidget::enableDragAndDrop(bool enabled)
 	viewport()->setAcceptDrops(enabled);
 }
 
+bool RepositoryTreeWidget::isFiltered() const
+{
+	return !m->filter.isEmpty();
+}
+
 QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, Type type, int index)
 {
 	auto *item = new QTreeWidgetItem;
@@ -133,10 +137,9 @@ QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(const QStrin
 void RepositoryTreeWidget::setFilter(MigemoFilter const &filter)
 {
 	m->filter = filter;
-	update();
 }
 
-MigemoFilter RepositoryTreeWidget::filter() const
+MigemoFilter const &RepositoryTreeWidget::filter() const
 {
 	return m->filter;
 }
@@ -150,10 +153,6 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 {
 	current_repository_list_style_ = style;
 }
-
-
-
-
 
 static QDateTime repositoryLastModifiedTime(QString const &path)
 {

@@ -224,7 +224,7 @@ private:
 	QString getFilterText() const;
 	void setFilterText(const QString &text, int select_row = -1);
 	void clearFilterText(int select_row = -1);
-	void clearAllFilters();
+	void clearAllFilters(int select_row = -1);
 	bool applyFilter();
 	void _appendCharToFilterText(ushort c);
 	bool appendCharToFilterText(int k, FilterTarget ft);
@@ -440,6 +440,8 @@ private:
 	void setupStatusInfoHandler();
 	void connectSetCommitLog();
 
+	void chooseRepository(QTreeWidgetItem *item);
+	void chooseRepository();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -581,6 +583,8 @@ public:
 	const TagList &queryCurrentCommitTagList() const;
 	
 	static bool isGroupItem(QTreeWidgetItem *item);
+	static void setRepoIndex(QTreeWidgetItem *item, int index);
+	static int repoIndex(QTreeWidgetItem *item);
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
 	static void updateSubmodules(GitRunner g, const Git::Hash &id, QList<Git::SubmoduleItem> *out);

@@ -22,7 +22,7 @@ private:
 	Private *m;
 	MainWindow *mainwindow();
 	QTreeWidgetItem *current_item = nullptr;
-	MigemoFilter filter() const;
+	const MigemoFilter &filter() const;
 	RepositoryListStyle current_repository_list_style_ = RepositoryListStyle::Standard;
 protected:
 	void paintEvent(QPaintEvent *event) override;
@@ -34,7 +34,6 @@ private:
 		Repository,
 	};
 	static QTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
-	// static MigemoFilter makeFilter(const QString &filtertext);
 public:
 	static QTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
 	static QTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
@@ -42,6 +41,7 @@ public:
 	explicit RepositoryTreeWidget(QWidget *parent = nullptr);
 	~RepositoryTreeWidget();
 	void enableDragAndDrop(bool enabled);
+	bool isFiltered() const;
 	void setFilter(const MigemoFilter &filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;

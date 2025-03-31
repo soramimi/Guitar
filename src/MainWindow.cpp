@@ -680,8 +680,8 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 			if (watched == ui->treeWidget_repos) { // リポジトリツリー
 				if (enter) {
-					if (!m->incremental_search_text.isEmpty()) {
-						applyFilter();
+					if (ui->treeWidget_repos->isFiltered()) {
+						chooseRepository();
 						return true;
 					}
 					openSelectedRepository();
@@ -3922,6 +3922,17 @@ bool MainWindow::isGroupItem(QTreeWidgetItem *item)
 	return false;
 }
 
+void MainWindow::setRepoIndex(QTreeWidgetItem *item, int index)
+{
+	item->setData(0, IndexRole, index);
+}
+
+int MainWindow::repoIndex(QTreeWidgetItem *item)
+{
+	if (!item) return -1;
+	return item->data(0, IndexRole).toInt();
+}
+
 int MainWindow::indexOfLog(QListWidgetItem *item)
 {
 	if (!item) return -1;
@@ -4760,9 +4771,26 @@ void MainWindow::on_treeWidget_repos_currentItemChanged(QTreeWidgetItem * /*curr
 	}
 }
 
-void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem * /*item*/, int /*column*/)
+void MainWindow::chooseRepository(QTreeWidgetItem *item)
 {
-	openSelectedRepository();
+	chooseRepository(item);
+}
+
+void MainWindow::chooseRepository()
+{
+	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
+	int index = repoIndex(item);
+	clearAllFilters(index);
+}
+
+void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int /*column*/)
+{
+	if (ui->treeWidget_repos->isFiltered()) {
+		auto index = repoIndex(item);
+		clearAllFilters(index);
+	} else {
+		openSelectedRepository();
+	}
 }
 
 void MainWindow::execCommitPropertyDialog(QWidget *parent, Git::CommitItem const &commit)
@@ -6227,9 +6255,9 @@ void MainWindow::clearFilterText(int select_row)
 /**
  * @brief すべてのフィルタの文字列をクリアする
  */
-void MainWindow::clearAllFilters()
+void MainWindow::clearAllFilters(int select_row)
 {
-	clearFilterText();
+	clearFilterText(select_row);
 	updateStatusBarText();
 }
 
