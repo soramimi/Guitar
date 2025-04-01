@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "Win32Process.h"
 #include <QThread>
-#include <QTextCodec>
+// #include <QTextCodec>
 #include <deque>
 #include <QDir>
 #include <QDebug>

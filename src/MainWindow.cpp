@@ -66,7 +66,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QProcess>
-#include <QRegExp>
+// #include <QRegExp>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
@@ -6770,17 +6770,17 @@ void MainWindow::onLogIdle()
 		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
 	};
 
-	static std::map<int, QRegExp> patterns;
+	static std::map<int, QRegularExpression> patterns;
 	if (patterns.empty()) {
-		patterns[ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING] = QRegExp(
+		patterns[ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING] = QRegularExpression(
 				"Are you sure you want to continue connecting.*\\?");
-		patterns[ENTER_PASSPHRASE] = QRegExp(
+		patterns[ENTER_PASSPHRASE] = QRegularExpression(
 				"Enter passphrase: ");
-		patterns[ENTER_PASSPHRASE_FOR_KEY] = QRegExp(
+		patterns[ENTER_PASSPHRASE_FOR_KEY] = QRegularExpression(
 				"Enter passphrase for key '");
-		patterns[FATAL_AUTHENTICATION_FAILED_FOR] = QRegExp(
+		patterns[FATAL_AUTHENTICATION_FAILED_FOR] = QRegularExpression(
 				"fatal: Authentication failed for '");
-		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegExp(
+		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegularExpression(
 				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
 	}
 
@@ -6792,7 +6792,7 @@ void MainWindow::onLogIdle()
 
 	auto RegExp = [&](PatternIndex i){
 		auto it = patterns.find(i);
-		return it == patterns.end() ? QRegExp() : it->second;
+		return it == patterns.end() ? QRegularExpression() : it->second;
 	};
 
 	auto Equals = [&](std::string const &line, PatternIndex i){
@@ -6811,7 +6811,7 @@ void MainWindow::onLogIdle()
 	};
 
 	auto Match = [&](std::string const &line, PatternIndex i){
-		return RegExp(i).exactMatch(QString::fromStdString(line));
+		return RegExp(i).match(QString::fromStdString(line)).hasMatch();
 	};
 
 	auto StartsWith = [&](std::string const &line, PatternIndex i){

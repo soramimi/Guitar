@@ -11,7 +11,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QScrollBar>
-#include <QTextCodec>
+// #include <QTextCodec>
 #include <QTimer>
 #include <functional>
 

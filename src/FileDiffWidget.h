@@ -152,7 +152,7 @@ public:
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
-	void setTextCodec(QTextCodec *codec);
+	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 	void setTextCodec(char const *name);
 private slots:
 	void onVerticalScrollValueChanged(int);

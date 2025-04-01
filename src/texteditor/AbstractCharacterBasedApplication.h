@@ -10,7 +10,24 @@
 #include <functional>
 #include <QKeyEvent>
 #include <QColor>
-#include <QTextCodec>
+// #include <QTextCodec>
+
+class MyTextCodec {
+public:
+	MyTextCodec() = default;
+	MyTextCodec(char const *name)
+	{
+
+	}
+	QString toUnicode(QByteArray const &ba) const
+	{
+		return QString::fromUtf8(ba);
+	}
+	QByteArray fromUnicode(QString const &s) const
+	{
+		return s.toUtf8();
+	}
+};
 
 namespace EscapeCode {
 enum EscapeCode {
@@ -462,7 +479,7 @@ public:
 	void write(char const *ptr, int len, bool by_keyboard);
 	void write(std::string const &text);
 	void write(QKeyEvent *e);
-    void setTextCodec(QTextCodec *codec);
+	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
 	void setModifierKeys(Qt::KeyboardModifiers const &keymod);

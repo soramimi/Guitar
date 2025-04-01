@@ -30,7 +30,7 @@ BigDiffWindow::~BigDiffWindow()
 	delete ui;
 }
 
-void BigDiffWindow::setTextCodec(QTextCodec *codec)
+void BigDiffWindow::setTextCodec(std::shared_ptr<MyTextCodec> codec)
 {
 	m->text_editor_engine = std::make_shared<TextEditorEngine>();
 	ui->widget_diff->setTextCodec(codec);

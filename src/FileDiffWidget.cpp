@@ -16,7 +16,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QStyle>
-#include <QTextCodec>
+// #include <QTextCodec>
 #include <memory>
 
 enum {
@@ -36,7 +36,7 @@ struct FileDiffWidget::Private {
 	int term_cursor_row = 0;
 	int term_cursor_col = 0;
 
-	QTextCodec *text_codec = nullptr;
+	std::shared_ptr<MyTextCodec> text_codec;
 
 	std::vector<std::pair<LineFragment, LineFragment>> linefragmentpair;
 };
@@ -901,7 +901,7 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	onUpdateSliderBar();
 }
 
-void FileDiffWidget::setTextCodec(QTextCodec *codec)
+void FileDiffWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
 {
 	m->text_codec = codec;
 	ui->widget_diff_left->setTextCodec(codec);
@@ -911,7 +911,8 @@ void FileDiffWidget::setTextCodec(QTextCodec *codec)
 
 void FileDiffWidget::setTextCodec(char const *name)
 {
-	QTextCodec *codec = name ? QTextCodec::codecForName(name) : nullptr;
+	std::shared_ptr<MyTextCodec> codec = std::make_shared<MyTextCodec>(name);
+	// MyTextCodec *codec = name ? MyTextCodec::codecForName(name) : nullptr;
 	setTextCodec(codec);
 }
 

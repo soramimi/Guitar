@@ -3,7 +3,7 @@
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 #include <QFile>
-#include <QStringRef>
+// #include <QStringRef>
 
 bool RepositoryBookmark::save(QString const &path, QList<RepositoryInfo> const *items)
 {

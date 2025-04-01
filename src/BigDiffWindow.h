@@ -19,7 +19,7 @@ public:
 	~BigDiffWindow() override;
 
 	void init(const FileDiffWidget::InitParam_ &param);
-	void setTextCodec(QTextCodec *codec);
+	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 private:
 	Ui::BigDiffWindow *ui;
 	void updateDiffView();

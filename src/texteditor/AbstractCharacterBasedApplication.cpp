@@ -6,7 +6,7 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QFile>
-#include <QTextCodec>
+// #include <QTextCodec>
 #include <memory>
 #include "common/misc.h"
 
@@ -101,7 +101,7 @@ struct AbstractCharacterBasedApplication::Private {
 	int valid_line_index = -1;
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
-	QTextCodec *text_codec = nullptr;
+	std::shared_ptr<MyTextCodec> text_codec;
 	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier;
 	bool ctrl_modifier = false;
 	bool shift_modifier = false;
@@ -142,7 +142,7 @@ bool AbstractCharacterBasedApplication::isShiftModifierPressed() const
 	return m->shift_modifier;
 }
 
-void AbstractCharacterBasedApplication::setTextCodec(QTextCodec *codec)
+void AbstractCharacterBasedApplication::setTextCodec(std::shared_ptr<MyTextCodec> codec)
 {
 	m->text_codec = codec;
 	clearParsedLine();

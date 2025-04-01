@@ -42,7 +42,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
 }
 
-void FileViewWidget::setTextCodec(QTextCodec *codec)
+void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
 {
 	texteditor()->setTextCodec(codec);
 }
