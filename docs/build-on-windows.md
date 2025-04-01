@@ -14,6 +14,8 @@ Before you begin, you'll need to install the following software:
   - Required for the preparation script
 - **Git for Windows**
   - For cloning the repository
+- **7-Zip**
+  - For extracting Windows tools archive
 
 ## Building Process
 
