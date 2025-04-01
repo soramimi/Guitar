@@ -13,11 +13,11 @@
 // #include <QTextCodec>
 
 class MyTextCodec {
+private:
 public:
 	MyTextCodec() = default;
-	MyTextCodec(char const *name)
+	MyTextCodec(char const *name) //@ TODO:
 	{
-
 	}
 	QString toUnicode(QByteArray const &ba) const
 	{

@@ -918,6 +918,7 @@ void FileDiffWidget::setTextCodec(char const *name)
 
 void FileDiffWidget::on_toolButton_menu_clicked()
 {
+#if 0
 	QMenu menu;
 	QAction *a_utf8 = menu.addAction("UTF-8");
 	QAction *a_sjis = menu.addAction("SJIS (CP932)");
@@ -942,4 +943,5 @@ void FileDiffWidget::on_toolButton_menu_clicked()
 			return;
 		}
 	}
+#endif
 }
