@@ -15,10 +15,10 @@ Git GUI Client
 
 ## How to build yourself
 
-* https://soramimi.github.io/Guitar/build-on-ubuntu22.md
+* https://soramimi.github.io/Guitar/build-on-ubuntu.md
 
 ### Doxygen
-* http://files.soramimi.jp/guitar/doxy/html/
+* https://files.soramimi.jp/guitar/doxy/html/
 
 ## Screenshots
 
