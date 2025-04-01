@@ -1,0 +1,1 @@
+# Guitar - Git GUI Client
