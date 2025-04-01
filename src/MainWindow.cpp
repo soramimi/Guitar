@@ -943,33 +943,10 @@ void MainWindow::setStatusInfo(StatusInfo const &info)
 	emit signalShowStatusInfo(info);
 }
 
-//
-
-QString MainWindow::treeItemName(QTreeWidgetItem *item)
-{
-	return item->text(0);
-}
-
-QString MainWindow::treeItemGroup(QTreeWidgetItem *item)
-{
-	QString group;
-	QTreeWidgetItem *p = item;
-	while (1) {
-		p = p->parent();
-		if (!p) break;
-		group = treeItemName(p) / group;
-	}
-	if (group.endsWith('/')) {
-		group.chop(1);
-	}
-	group = '/' + group;
-	return group;
-}
-
 void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryInfo> *repos)
 {
-	QString name = treeItemName(item);
-	if (isGroupItem(item)) {
+	QString name = RepositoryTreeWidget::treeItemName(item);
+	if (RepositoryTreeWidget::isGroupItem(item)) {
 		int n = item->childCount();
 		for (int i = 0; i < n; i++) {
 			QTreeWidgetItem *child = item->child(i);
@@ -983,7 +960,7 @@ void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QLis
 			RepositoryInfo newrepo = *repo;
 			newrepo.name = name;
 			newrepo.group = group;
-			item->setData(0, IndexRole, repos->size());
+			item->setData(0, RepositoryTreeWidgetItem::IndexRole, repos->size());
 			repos->push_back(newrepo);
 		}
 	}
@@ -1485,7 +1462,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 
 		ui->tableWidget_log->blockSignals(b);
 	}
-	onLogCurrentItemChanged(); // force update tableWidget_log
+	onLogCurrentItemChanged(false); // force update tableWidget_log
 
 	updateUI();
 
@@ -1510,7 +1487,9 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 
 	if (clear_log) { // ログをクリア
 		m->current_repository_data = {};
-		showFileList(FileListType::MessagePanel);
+		{
+			// showFileList(FileListType::MessagePanel); //@
+		}
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1577,7 +1556,7 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 	if (do_fetch) {
 		fetch(g, false);
 	} else {
-		onLogCurrentItemChanged(); // ファイルリストを更新
+		onLogCurrentItemChanged(true); // ファイルリストを更新
 	}
 
 	m->commit_detail_getter.stop();
@@ -2074,9 +2053,9 @@ void MainWindow::openRepository(OpenRepositoyOption const &opt)
 	struct DeferClearAllFilters {
 		~DeferClearAllFilters()
 		{
-			global->mainwindow->clearAllFilters();
+			global->mainwindow->clearFilterText();
 		}
-	} defer_clear_all_filters;
+	} defer_clear_all_filters; // 関数終了時にフィルタをクリアする
 
 	if (opt.validate) {
 		QString dir = currentWorkingCopyDir();
@@ -3127,7 +3106,7 @@ MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem 
 {
 	if (item) {
 		bool ok = false;
-		int i = item->data(0, IndexRole).toInt(&ok);
+		int i = item->data(0, RepositoryTreeWidgetItem::IndexRole).toInt(&ok);
 		if (ok && i >= 0 && i < repositoryList().size()) {
 			RepositoryTreeIndex index;
 			index.row = i;
@@ -3914,27 +3893,7 @@ QString MainWindow::getSubmoduleCommitId(QListWidgetItem *item)
 	return item->data(SubmoduleCommitIdRole).toString();
 }
 
-bool MainWindow::isGroupItem(QTreeWidgetItem *item)
-{
-	if (item) {
-		int index = item->data(0, IndexRole).toInt();
-		if (index == GroupItem) {
-			return true;
-		}
-	}
-	return false;
-}
 
-void MainWindow::setRepoIndex(QTreeWidgetItem *item, int index)
-{
-	item->setData(0, IndexRole, index);
-}
-
-int MainWindow::repoIndex(QTreeWidgetItem *item)
-{
-	if (!item) return -1;
-	return item->data(0, IndexRole).toInt();
-}
 
 int MainWindow::indexOfLog(QListWidgetItem *item)
 {
@@ -4783,14 +4742,14 @@ void MainWindow::chooseRepository(QTreeWidgetItem *item)
 void MainWindow::chooseRepository()
 {
 	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
-	int index = repoIndex(item);
+	int index = RepositoryTreeWidget::repoIndex(item);
 	clearAllFilters(index);
 }
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int /*column*/)
 {
 	if (ui->treeWidget_repos->isFiltered()) {
-		auto index = repoIndex(item);
+		auto index = RepositoryTreeWidget::repoIndex(item);
 		clearAllFilters(index);
 	} else {
 		openSelectedRepository();
@@ -4833,7 +4792,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 	RepositoryTreeIndex repoindex = repositoryTreeIndex(treeitem);
 	std::optional<RepositoryInfo> repo = repositoryItem(repoindex);
 
-	if (isGroupItem(treeitem)) { // group item
+	if (RepositoryTreeWidget::isGroupItem(treeitem)) { // group item
 		QMenu menu;
 		QAction *a_add_new_group = menu.addAction(tr("&Add new group"));
 		QAction *a_delete_group = menu.addAction(tr("&Delete group"));
@@ -4868,12 +4827,12 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				return;
 			}
 			if (a == a_add_repository) {
-				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
+				QString group = RepositoryTreeWidget::treeItemPath(treeitem);
 				addRepository({}, group);
 				return;
 			}
 			if (a == a_scan_folder_and_add) {
-				QString group = treeItemGroup(treeitem) / treeItemName(treeitem);
+				QString group = RepositoryTreeWidget::treeItemPath(treeitem);
 				scanFolderAndRegister(group);
 				return;
 			}
@@ -5831,7 +5790,7 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 /**
  * @brief コミットログの選択が変化した
  */
-void MainWindow::onLogCurrentItemChanged()
+void MainWindow::onLogCurrentItemChanged(bool update_file_list)
 {
 	PROFILE;
 	// showFileList(FileListType::SingleList); //@
@@ -5840,8 +5799,10 @@ void MainWindow::onLogCurrentItemChanged()
 	// ステータスバー更新
 	// updateStatusBarText(); //@
 
-	// 少し待ってファイルリストを更新する
-	updateFileListLater(300);
+	if (update_file_list) {
+		// 少し待ってファイルリストを更新する
+		updateFileListLater(300);
+	}
 
 	updateAncestorCommitMap();
 	ui->tableWidget_log->viewport()->update();
@@ -6257,7 +6218,7 @@ void MainWindow::clearFilterText(int select_row)
 }
 
 /**
- * @brief すべてのフィルタの文字列をクリアする
+ * @brief すべてのフィルタの文字列をクリアし、ステータスバーを更新する
  */
 void MainWindow::clearAllFilters(int select_row)
 {
@@ -7302,7 +7263,7 @@ void MainWindow::selectLogTableRow(int row)
 
 void MainWindow::onCommitLogCurrentRowChanged(int row)
 {
-	onLogCurrentItemChanged();
+	onLogCurrentItemChanged(true);
 	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;
 }

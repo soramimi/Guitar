@@ -140,10 +140,6 @@ public:
 		std::vector<int> indexes;
 	};
 
-	enum {
-		GroupItem = -1,
-	};
-
 private:
 	struct ObjectData {
 		QString id;
@@ -246,7 +242,7 @@ private:
 	void deleteRemoteBranch(const Git::CommitItem &commit);
 	QStringList remoteBranches(const Git::Hash &id, QStringList *all);
 	bool isUninitialized();
-	void onLogCurrentItemChanged();
+	void onLogCurrentItemChanged(bool update_file_list);
 	void findNext();
 	void findText(const QString &text);
 	bool locateCommitID(QString const &commit_id);
@@ -582,9 +578,9 @@ public:
 	
 	const TagList &queryCurrentCommitTagList() const;
 	
-	static bool isGroupItem(QTreeWidgetItem *item);
-	static void setRepoIndex(QTreeWidgetItem *item, int index);
-	static int repoIndex(QTreeWidgetItem *item);
+	// static bool isGroupItem(QTreeWidgetItem *item);
+	// static void setRepoIndex(QTreeWidgetItem *item, int index);
+	// static int repoIndex(QTreeWidgetItem *item);
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
 	static void updateSubmodules(GitRunner g, const Git::Hash &id, QList<Git::SubmoduleItem> *out);
@@ -599,8 +595,8 @@ public:
 	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
 	static QListWidgetItem *newListWidgetFileItem(const MainWindow::ObjectData &data);
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
-	static QString treeItemName(QTreeWidgetItem *item);
-	static QString treeItemGroup(QTreeWidgetItem *item);
+	// static QString treeItemName(QTreeWidgetItem *item);
+	// static QString treeItemGroup(QTreeWidgetItem *item);
 	static bool isValidWorkingCopy(GitRunner g);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 

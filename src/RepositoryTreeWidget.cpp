@@ -105,9 +105,11 @@ bool RepositoryTreeWidget::isFiltered() const
 	return !m->filter.isEmpty();
 }
 
-QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, Type type, int index)
+
+
+RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, Type type, int index)
 {
-	auto *item = new QTreeWidgetItem;
+	auto *item = new RepositoryTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
 	item->setText(0, name);
 	switch (type) {
@@ -120,16 +122,16 @@ QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, T
 		item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
 		break;
 	}
-	item->setData(0, MainWindow::IndexRole, index);
+	item->setData(0, RepositoryTreeWidgetItem::IndexRole, index);
 	return item;
 }
 
-QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetGroupItem(const QString &name)
+RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetGroupItem(const QString &name)
 {
-	return newQTreeWidgetItem(name, Group, MainWindow::GroupItem);
+	return newQTreeWidgetItem(name, Group, GroupItem);
 }
 
-QTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(const QString &name, int index)
+RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(const QString &name, int index)
 {
 	return newQTreeWidgetItem(name, Repository, index);
 }
@@ -179,17 +181,16 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		enableDragAndDrop(filtertext.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilter(filter);
 
-		QTreeWidgetItem *select_item = nullptr;
+		RepositoryTreeWidgetItem *select_item = nullptr;
 
-
-		std::map<QString, QTreeWidgetItem *> parentmap;
+		std::map<QString, RepositoryTreeWidgetItem *> parentmap;
 
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
 			if (!filter.match(repo.name)) continue;
 
-			QTreeWidgetItem *parent = nullptr;
+			RepositoryTreeWidgetItem *parent = nullptr;
 			{
 				QString groupname = repo.group;
 				if (groupname.startsWith('/')) { // 先頭のスラッシュを削除
@@ -214,7 +215,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 						if (it != parentmap.end()) {
 							parent = it->second;
 						} else {
-							QTreeWidgetItem *newitem = newQTreeWidgetGroupItem(name);
+							RepositoryTreeWidgetItem *newitem = newQTreeWidgetGroupItem(name);
 							if (!parent) {
 								tree->addTopLevelItem(newitem); // トップレベルに追加
 							} else {
@@ -229,7 +230,6 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 					Q_ASSERT(parent);
 				}
 			}
-			parent->setData(0, MainWindow::FilePathRole, "");
 
 			auto *child = newQTreeWidgetRepositoryItem(repo.name, i);
 			parent->addChild(child);
@@ -298,6 +298,59 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		Q_ASSERT(false);
 		break;
 	}
+}
+
+RepositoryTreeWidgetItem *RepositoryTreeWidget::item_cast(QTreeWidgetItem *item)
+{
+	return static_cast<RepositoryTreeWidgetItem *>(item);
+}
+
+int RepositoryTreeWidget::repoIndex(QTreeWidgetItem *item)
+{
+	if (!item) return -1;
+	return item->data(0, RepositoryTreeWidgetItem::IndexRole).toInt();
+}
+
+void RepositoryTreeWidget::setRepoIndex(QTreeWidgetItem *item, int index)
+{
+	item->setData(0, RepositoryTreeWidgetItem::IndexRole, index);
+}
+
+bool RepositoryTreeWidget::isGroupItem(QTreeWidgetItem *item)
+{
+	if (item) {
+		int index = item->data(0, RepositoryTreeWidgetItem::IndexRole).toInt();
+		if (index == GroupItem) {
+			return true;
+		}
+	}
+	return false;
+}
+
+QString RepositoryTreeWidget::treeItemName(QTreeWidgetItem *item)
+{
+	return item->text(0);
+}
+
+QString RepositoryTreeWidget::treeItemGroup(QTreeWidgetItem *item)
+{
+	QString group;
+	QTreeWidgetItem *p = item;
+	while (1) {
+		p = p->parent();
+		if (!p) break;
+		group = treeItemName(p) / group;
+	}
+	if (group.endsWith('/')) {
+		group.chop(1);
+	}
+	group = '/' + group;
+	return group;
+}
+
+QString RepositoryTreeWidget::treeItemPath(QTreeWidgetItem *item)
+{
+	return RepositoryTreeWidget::treeItemGroup(item) / RepositoryTreeWidget::treeItemName(item);
 }
 
 RepositoryTreeWidget::RepositoryListStyle RepositoryTreeWidget::currentRepositoryListStyle() const

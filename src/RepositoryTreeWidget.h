@@ -8,6 +8,15 @@
 class MainWindow;
 struct RepositoryInfo;
 
+class RepositoryTreeWidgetItem : public QTreeWidgetItem {
+public:
+	enum {
+		IndexRole = Qt::UserRole,
+
+	};
+
+};
+
 class RepositoryTreeWidget : public QTreeWidget {
 	Q_OBJECT
 	friend class RepositoryTreeWidgetItemDelegate;
@@ -16,6 +25,9 @@ public:
 		_Keep,
 		Standard,
 		SortRecent,
+	};
+	enum {
+		GroupItem = -1,
 	};
 private:
 	struct Private;
@@ -33,10 +45,10 @@ private:
 		Group,
 		Repository,
 	};
-	static QTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
+	static RepositoryTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
 public:
-	static QTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
-	static QTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
+	static RepositoryTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
+	static RepositoryTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
 public:
 	explicit RepositoryTreeWidget(QWidget *parent = nullptr);
 	~RepositoryTreeWidget();
@@ -46,6 +58,13 @@ public:
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
 	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryInfo> &repos, const QString &filtertext, int select_row);
+	static RepositoryTreeWidgetItem *item_cast(QTreeWidgetItem *item);
+	static int repoIndex(QTreeWidgetItem *item);
+	static void setRepoIndex(QTreeWidgetItem *item, int index);
+	static bool isGroupItem(QTreeWidgetItem *item);
+	static QString treeItemName(QTreeWidgetItem *item);
+	static QString treeItemGroup(QTreeWidgetItem *item);
+	static QString treeItemPath(QTreeWidgetItem *item);
 signals:
 	void dropped();
 };
