@@ -9,6 +9,6 @@ StatusLabel::StatusLabel(QWidget *parent)
 QSize StatusLabel::minimumSizeHint() const
 {
 	QSize sz = QLabel::minimumSizeHint();
-	sz.rwidth() = 0;
+	sz.rwidth() = 0; // テキストが長くなっても横幅を広げない
 	return sz;
 }

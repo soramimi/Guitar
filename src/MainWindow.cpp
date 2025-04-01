@@ -77,6 +77,7 @@
 #include "RepositoryModel.h"
 #include "Util.h"
 #include "Profile.h"
+#include "StatusLabel.h"
 
 #ifdef Q_OS_MAC
 namespace {
@@ -157,7 +158,7 @@ struct MainWindow::Private {
 	bool is_online_mode = true;
 	QTimer interval_10ms_timer;
 	QImage graph_color;
-	QLabel *status_bar_label;
+	StatusLabel *status_bar_label;
 
 	QObject *last_focused_file_list = nullptr;
 
@@ -236,7 +237,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->splitter_v->setSizes({100, 400});
 	ui->splitter_h->setSizes({200, 100, 200});
 
-	m->status_bar_label = new QLabel(this);
+	m->status_bar_label = new StatusLabel(this);
+	m->status_bar_label->setAlignment((Qt::Alignment)Qt::TextSingleLine);
 	ui->statusBar->addWidget(m->status_bar_label);
 
 	progress_widget()->setVisible(false);
