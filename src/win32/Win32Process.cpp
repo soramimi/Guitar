@@ -35,7 +35,7 @@ protected:
 			if (!ReadFile(hRead, buf, sizeof(buf), &len, nullptr)) break;
 			if (len < 1) break;
 			if (buffer) {
-				QMutexLocker lock(mutex);
+				std::lock_guard lock(*mutex);
 				buffer->insert(buffer->end(), buf, buf + len);
 			}
 		}
@@ -204,7 +204,7 @@ protected:
 				if (r == WAIT_OBJECT_0) break;
 				if (r == WAIT_FAILED) break;
 				{
-					QMutexLocker lock(mutex);
+					std::lock_guard lock(*mutex);
 					int n = inq.size();
 					if (n > 0) {
 						while (n > 0) {
@@ -257,7 +257,7 @@ public:
 	}
 	void writeInput(char const *ptr, int len)
 	{
-		QMutexLocker lock(mutex);
+		std::lock_guard lock(*mutex);
 		inq.insert(inq.end(), ptr, ptr + len);
 	}
 	void start()
