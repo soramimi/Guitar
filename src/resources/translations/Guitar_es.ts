@@ -24,17 +24,17 @@
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="14"/>
         <source>Add Repositories</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir Repositorios</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="38"/>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Aceptar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="48"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cancelar</translation>
     </message>
 </context>
 <context>
@@ -42,118 +42,118 @@
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="14"/>
         <source>Add Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir Repositorio</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="33"/>
         <source>Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Operación</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="39"/>
         <source>Clone</source>
-        <translation type="unfinished">Clonar</translation>
+        <translation>Clonar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="46"/>
         <source>Add e&amp;xisting</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir e&amp;xistente</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="53"/>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>Inicializar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="82"/>
         <source>Remote</source>
-        <translation type="unfinished"></translation>
+        <translation>Remoto</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="93"/>
         <source>Name</source>
-        <translation type="unfinished">Nombre</translation>
+        <translation>Nombre</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="103"/>
         <source>URL</source>
-        <translation type="unfinished">URL</translation>
+        <translation>URL</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="117"/>
         <source>Test</source>
-        <translation type="unfinished">Prueba</translation>
+        <translation>Prueba</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="151"/>
         <source>Local</source>
-        <translation type="unfinished">Local</translation>
+        <translation>Local</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="160"/>
         <source>Path</source>
-        <translation type="unfinished">Ruta</translation>
+        <translation>Ruta</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="174"/>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Carpeta</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="181"/>
         <source>Browse...</source>
-        <translation type="unfinished">Examinar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="233"/>
         <source>Prev</source>
-        <translation type="unfinished"></translation>
+        <translation>Anterior</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="240"/>
         <location filename="../../AddRepositoryDialog.cpp" line="247"/>
         <source>OK</source>
-        <translation type="unfinished">De acuerdo</translation>
+        <translation>Aceptar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="250"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="33"/>
         <source>Search</source>
-        <translation type="unfinished">Buscar</translation>
+        <translation>Buscar</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="34"/>
         <source>GitHub</source>
-        <translation type="unfinished">GitHub</translation>
+        <translation>GitHub</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="188"/>
         <source>Manage...</source>
-        <translation type="unfinished"></translation>
+        <translation>Administrar...</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="151"/>
         <source>Local Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruta Local</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="191"/>
         <source>A valid git repository already exists.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ya existe un repositorio git válido.</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="196"/>
         <source>A valid git repository.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un repositorio git válido.</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="249"/>
         <source>Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Siguiente</translation>
     </message>
 </context>
 <context>
@@ -484,32 +484,32 @@
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="14"/>
         <source>Clean Sub Module</source>
-        <translation type="unfinished"></translation>
+        <translation>Limpiar Submódulo</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="22"/>
         <source>Sub Module</source>
-        <translation type="unfinished"></translation>
+        <translation>Submódulo</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="34"/>
         <source>git reset --hard</source>
-        <translation type="unfinished"></translation>
+        <translation>git reset --hard</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="41"/>
         <source>git clean -df</source>
-        <translation type="unfinished"></translation>
+        <translation>git clean -df</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="76"/>
         <source>OK</source>
-        <translation type="unfinished">De acuerdo</translation>
+        <translation>Aceptar</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="83"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
 </context>
 <context>
@@ -1017,7 +1017,7 @@
     <message>
         <location filename="../../ConfigUserDialog.ui" line="14"/>
         <source>Configure User</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurar Usuario</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="51"/>
@@ -1035,22 +1035,22 @@
         <location filename="../../ConfigUserDialog.ui" line="76"/>
         <location filename="../../ConfigUserDialog.cpp" line="38"/>
         <source>Local</source>
-        <translation type="unfinished">Local</translation>
+        <translation>Local</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="84"/>
         <source>Unset (use global user)</source>
-        <translation type="unfinished"></translation>
+        <translation>No establecido (usar usuario global)</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="104"/>
         <source>Profiles...</source>
-        <translation type="unfinished"></translation>
+        <translation>Perfiles...</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="189"/>
         <source>Get icon from network</source>
-        <translation type="unfinished"></translation>
+        <translation>Obtener icono de la red</translation>
     </message>
     <message>
         <source>Get icon from Gravatar</source>
@@ -2023,12 +2023,12 @@
     <message>
         <location filename="../../MainWindow.ui" line="1395"/>
         <source>Push...</source>
-        <translation type="unfinished"></translation>
+        <translation>Empujar...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1398"/>
         <source>Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+S</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1406"/>
@@ -2053,7 +2053,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1432"/>
         <source>Ed&amp;it global .gitconfig</source>
-        <translation type="unfinished"></translation>
+        <translation>Ed&amp;itar .gitconfig global</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1435"/>
@@ -2063,37 +2063,37 @@
     <message>
         <location filename="../../MainWindow.ui" line="1512"/>
         <source>&amp;Delete branch...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eliminar rama...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1517"/>
         <source>&amp;Reset HEAD~1</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Restablecer HEAD~1</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1529"/>
         <source>&amp;Stop process</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Detener proceso</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1542"/>
         <source>&amp;Reflog...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reflog...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1547"/>
         <source>&amp;Property...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Propiedades...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1552"/>
         <source>Set &amp;GPG signing</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurar firma &amp;GPG</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1560"/>
         <source>Delete remote &amp;branch...</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminar &amp;rama remota...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1565"/>

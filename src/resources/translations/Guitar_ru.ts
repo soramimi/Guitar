@@ -11,7 +11,7 @@
     <message>
         <location filename="../../AboutDialog.ui" line="64"/>
         <source>&lt;a href=&quot;https://github.com/soramimi/Guitar&quot;&gt;https://github.com/soramimi/Guitar&lt;/a&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;a href=&quot;https://github.com/soramimi/Guitar&quot;&gt;https://github.com/soramimi/Guitar&lt;/a&gt;</translation>
     </message>
     <message>
         <location filename="../../AboutDialog.cpp" line="26"/>
@@ -24,17 +24,17 @@
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="14"/>
         <source>Add Repositories</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить репозитории</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="38"/>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;OK</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="48"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Отмена</translation>
     </message>
 </context>
 <context>
@@ -42,42 +42,42 @@
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="14"/>
         <source>Add Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить репозиторий</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="33"/>
         <source>Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Операция</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="39"/>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонировать</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="46"/>
         <source>Add e&amp;xisting</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить су&amp;ществующий</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="53"/>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>Инициализировать</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="82"/>
         <source>Remote</source>
-        <translation type="unfinished">Источник</translation>
+        <translation>Удаленный</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="93"/>
         <source>Name</source>
-        <translation type="unfinished">Имя</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="103"/>
         <source>URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="117"/>
@@ -97,12 +97,12 @@
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="174"/>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Папка</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="181"/>
         <source>Browse...</source>
-        <translation type="unfinished">Обзор...</translation>
+        <translation>Обзор...</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="233"/>
@@ -1001,7 +1001,7 @@
     <message>
         <location filename="../../ConfigUserDialog.ui" line="14"/>
         <source>Configure User</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройка пользователя</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="51"/>
@@ -1024,17 +1024,17 @@
     <message>
         <location filename="../../ConfigUserDialog.ui" line="84"/>
         <source>Unset (use global user)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не установлено (использовать глобального пользователя)</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="104"/>
         <source>Profiles...</source>
-        <translation type="unfinished"></translation>
+        <translation>Профили...</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="189"/>
         <source>Get icon from network</source>
-        <translation type="unfinished"></translation>
+        <translation>Получить иконку из сети</translation>
     </message>
     <message>
         <source>Get icon from Gravatar</source>
@@ -1265,7 +1265,7 @@
     <message>
         <location filename="../../EditProfilesDialog.ui" line="14"/>
         <source>Profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Профили</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="31"/>
@@ -1296,22 +1296,22 @@
     <message>
         <location filename="../../EditProfilesDialog.ui" line="94"/>
         <source>Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Вверх</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="101"/>
         <source>Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Вниз</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="121"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="131"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.cpp" line="79"/>
@@ -2005,7 +2005,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1432"/>
         <source>Ed&amp;it global .gitconfig</source>
-        <translation type="unfinished"></translation>
+        <translation>Редакт&amp;ировать .gitconfig</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1435"/>
@@ -2015,37 +2015,37 @@
     <message>
         <location filename="../../MainWindow.ui" line="1512"/>
         <source>&amp;Delete branch...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить ветку...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1517"/>
         <source>&amp;Reset HEAD~1</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сбросить HEAD~1</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1529"/>
         <source>&amp;Stop process</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Остановить процесс</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1542"/>
         <source>&amp;Reflog...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reflog...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1547"/>
         <source>&amp;Property...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Свойства...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1552"/>
         <source>Set &amp;GPG signing</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить подпись &amp;GPG</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1560"/>
         <source>Delete remote &amp;branch...</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить удаленную &amp;ветку...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1565"/>
@@ -2055,12 +2055,12 @@
     <message>
         <location filename="../../MainWindow.ui" line="1574"/>
         <source>&amp;Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Терминал</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1583"/>
         <source>E&amp;xplorer</source>
-        <translation type="unfinished"></translation>
+        <translation>Проводни&amp;к</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1588"/>
@@ -2075,7 +2075,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1598"/>
         <source>&amp;Stash</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Схронить (Stash)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1603"/>
@@ -2105,7 +2105,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1667"/>
         <source>&amp;Merge...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Слияние...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1672"/>
@@ -2125,7 +2125,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1699"/>
         <source>&amp;Sidebar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Боковая панель</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1718"/>
@@ -2165,7 +2165,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1761"/>
         <source>Show &amp;graph</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать &amp;граф</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1779"/>
@@ -2195,7 +2195,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1774"/>
         <source>&amp;Configure user</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить пользователя</translation>
     </message>
     <message>
         <source>Edit .git/config</source>

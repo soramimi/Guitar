@@ -11,7 +11,7 @@
     <message>
         <location filename="../../AboutDialog.ui" line="64"/>
         <source>&lt;a href=&quot;https://github.com/soramimi/Guitar&quot;&gt;https://github.com/soramimi/Guitar&lt;/a&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;a href=&quot;https://github.com/soramimi/Guitar&quot;&gt;https://github.com/soramimi/Guitar&lt;/a&gt;</translation>
     </message>
     <message>
         <location filename="../../AboutDialog.cpp" line="26"/>
@@ -24,17 +24,17 @@
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="14"/>
         <source>Add Repositories</source>
-        <translation type="unfinished"></translation>
+        <translation>新增儲存庫</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="38"/>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation>確定(&amp;O)</translation>
     </message>
     <message>
         <location filename="../../AddRepositoriesCollectivelyDialog.ui" line="48"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>取消(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -42,67 +42,67 @@
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="14"/>
         <source>Add Repository</source>
-        <translation type="unfinished"></translation>
+        <translation>新增儲存庫</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="33"/>
         <source>Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>操作</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="39"/>
         <source>Clone</source>
-        <translation type="unfinished">複製</translation>
+        <translation>複製</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="46"/>
         <source>Add e&amp;xisting</source>
-        <translation type="unfinished"></translation>
+        <translation>新增現有儲存庫(&amp;x)</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="53"/>
         <source>Initialize</source>
-        <translation type="unfinished"></translation>
+        <translation>初始化</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="82"/>
         <source>Remote</source>
-        <translation type="unfinished">遠端</translation>
+        <translation>遠端</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="93"/>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="103"/>
         <source>URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="117"/>
         <source>Test</source>
-        <translation type="unfinished">測試</translation>
+        <translation>測試</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="151"/>
         <source>Local</source>
-        <translation type="unfinished">本地</translation>
+        <translation>本地</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="160"/>
         <source>Path</source>
-        <translation type="unfinished">路徑</translation>
+        <translation>路徑</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="174"/>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>資料夾</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="181"/>
         <source>Browse...</source>
-        <translation type="unfinished">瀏覽...</translation>
+        <translation>瀏覽...</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="233"/>
@@ -113,17 +113,17 @@
         <location filename="../../AddRepositoryDialog.ui" line="240"/>
         <location filename="../../AddRepositoryDialog.cpp" line="247"/>
         <source>OK</source>
-        <translation type="unfinished">確定</translation>
+        <translation>確定</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="250"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="33"/>
         <source>Search</source>
-        <translation type="unfinished">搜尋</translation>
+        <translation>搜尋</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.cpp" line="34"/>
@@ -414,12 +414,12 @@
     <message>
         <location filename="../../CherryPickDialog.ui" line="14"/>
         <source>Cherry-pick</source>
-        <translation type="unfinished">擇優挑選</translation>
+        <translation>擇優挑選</translation>
     </message>
     <message>
         <location filename="../../CherryPickDialog.ui" line="20"/>
         <source>HEAD</source>
-        <translation type="unfinished"></translation>
+        <translation>HEAD</translation>
     </message>
     <message>
         <location filename="../../CherryPickDialog.ui" line="49"/>
@@ -472,7 +472,7 @@
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="14"/>
         <source>Clean Sub Module</source>
-        <translation type="unfinished"></translation>
+        <translation>清理子模組</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="22"/>
@@ -1001,7 +1001,7 @@
     <message>
         <location filename="../../ConfigUserDialog.ui" line="14"/>
         <source>Configure User</source>
-        <translation type="unfinished"></translation>
+        <translation>設定使用者</translation>
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="51"/>
@@ -1265,7 +1265,7 @@
     <message>
         <location filename="../../EditProfilesDialog.ui" line="14"/>
         <source>Profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>個人設定檔</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="31"/>
@@ -1721,27 +1721,27 @@
     <message>
         <location filename="../../MainWindow.ui" line="1112"/>
         <source>Wi&amp;ndow</source>
-        <translation type="unfinished"></translation>
+        <translation>視窗(&amp;n)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1182"/>
         <source>E&amp;xperimental</source>
-        <translation type="unfinished"></translation>
+        <translation>實驗性(&amp;x)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1440"/>
         <source>E&amp;dit .git/config</source>
-        <translation type="unfinished"></translation>
+        <translation>編輯 .git/config(&amp;d)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1445"/>
         <source>&amp;Edit .gitignore</source>
-        <translation type="unfinished"></translation>
+        <translation>編輯 .gitignore(&amp;E)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1462"/>
         <source>&amp;Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>複製(&amp;C)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1465"/>
@@ -2021,7 +2021,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1432"/>
         <source>Ed&amp;it global .gitconfig</source>
-        <translation type="unfinished"></translation>
+        <translation>編輯全局 .gitconfig(&amp;i)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1435"/>
@@ -2031,7 +2031,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1512"/>
         <source>&amp;Delete branch...</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除分支(&amp;D)...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1517"/>
@@ -2046,7 +2046,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1542"/>
         <source>&amp;Reflog...</source>
-        <translation type="unfinished"></translation>
+        <translation>參考日誌(&amp;R)...</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1547"/>
@@ -2071,12 +2071,12 @@
     <message>
         <location filename="../../MainWindow.ui" line="1574"/>
         <source>&amp;Terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>終端機(&amp;T)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1583"/>
         <source>E&amp;xplorer</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案瀏覽器(&amp;x)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1588"/>
@@ -2141,7 +2141,7 @@
     <message>
         <location filename="../../MainWindow.ui" line="1699"/>
         <source>&amp;Sidebar</source>
-        <translation type="unfinished"></translation>
+        <translation>側邊欄(&amp;S)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1718"/>
