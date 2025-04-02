@@ -9,11 +9,10 @@
 #define WORDBUF_H
 
 typedef struct _wordbuf_t wordbuf_t, *wordbuf_p;
-struct _wordbuf_t
-{
-    int len; /* bufに割り当てられているメモリ量 */
-    unsigned char* buf;
-    int last; /* bufに実際に格納している文字列の長さ */
+struct _wordbuf_t {
+	int len; /* Amount of memory allocated to buf */
+	unsigned char *buf;
+	int last; /* Actual length of string stored in buf */
 };
 
 extern int n_wordbuf_open;
@@ -32,8 +31,8 @@ void wordbuf_close(wordbuf_p p);
 void wordbuf_reset(wordbuf_p p);
 int wordbuf_last(wordbuf_p p);
 int wordbuf_add(wordbuf_p p, unsigned char ch);
-int wordbuf_cat(wordbuf_p p, const unsigned char* sz);
-unsigned char* wordbuf_get(wordbuf_p p);
+int wordbuf_cat(wordbuf_p p, const unsigned char *sz);
+unsigned char *wordbuf_get(wordbuf_p p);
 
 #ifdef __cplusplus
 }
