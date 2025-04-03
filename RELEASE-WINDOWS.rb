@@ -30,7 +30,7 @@ FileUtils.rmdir("#{$dstdir}\\win32tools")
 
 `#{$windeployqt} #{$dstdir}/#{$product_name}.exe`
 
-pkgfilename = "#{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
+pkgfilename = "#{$product_name}-#{$version_a}.#{$version_b}.#{$version_c}-windows-x64.zip"
 
 Dir.chdir($workdir) {
 	`7z a #{pkgfilename} soramimi.jp`
