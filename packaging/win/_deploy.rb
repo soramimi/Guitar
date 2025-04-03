@@ -48,7 +48,7 @@ run "ruby RELEASE-WINDOWS.rb"
 
 load 'version.rb'
 
-srcname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}-win32.zip"
+srcname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}-windows-x64.zip"
 dstname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}-windows-x64.zip"
 
 run "curl -T _release/#{srcname} ftp://192.168.0.5:/Public/pub/nightlybuild/#{dstname}"
