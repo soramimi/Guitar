@@ -19,8 +19,6 @@ public:
 };
 
 class WebClientHandler {
-protected:
-	void abort(std::string const &message = {});
 public:
 	virtual ~WebClientHandler() = default;
 	virtual void checkHeader(WebClient *wc)
@@ -126,7 +124,7 @@ public:
 		{
 		}
 		virtual ~Error() = default;
-		std::string message() const
+		std::string what() const
 		{
 			return msg_;
 		}

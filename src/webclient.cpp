@@ -173,11 +173,6 @@ bool WebClient::URL::isssl() const
 	return false;
 }
 
-void WebClientHandler::abort(std::string const &message)
-{
-	throw WebClient::Error(message);
-}
-
 struct WebClient::Private {
 	std::vector<std::string> request_header;
 	WebClient::Error error;
@@ -726,137 +721,143 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 		if (sock == INVALID_SOCKET) {
 			throw Error("connect failed.");
 		}
+		try {
+			if (proxy) { // testing
+				char port[10];
+				sprintf(port, ":%u", get_port(&request_req.url, "https", "tcp"));
 
-		if (proxy) { // testing
-			char port[10];
-			sprintf(port, ":%u", get_port(&request_req.url, "https", "tcp"));
-
-			std::string str = "CONNECT ";
-			str += request_req.url.data.host;
-			str += port;
-			str += " HTTP/1.0\r\n\r\n";
-			send_(sock, str.c_str(), str.size());
-			char tmp[1000];
-			int n = recv(sock, tmp, sizeof(tmp), 0);
-			int i;
-			for (i = 0; i < n; i++) {
-				char c = tmp[i];
-				if (c < 0x20) break;
-			}
-			if (i > 0) {
-				std::string s(tmp, i);
-				s = "proxy: " + s + '\n';
-#ifdef _WIN32
-				OutputDebugStringA(s.c_str());
-#else
-				fprintf(stderr, "%s", tmp);
-#endif
-			}
-		}
-
-		ssl = SSL_new(sslctx);
-		if (!ssl) {
-			throw Error(get_ssl_error());
-		}
-
-		SSL_set_options(ssl, SSL_OP_NO_SSLv2);
-		SSL_set_options(ssl, SSL_OP_NO_SSLv3);
-		SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-		if (!SSL_set1_host(ssl, hostname.c_str())) {
-			throw Error(get_ssl_error());
-		}
-		SSL_set_tlsext_host_name(ssl, hostname.c_str());
-
-		int ret;
-		ret = SSL_set_fd(ssl, sock);
-		if (ret == 0) {
-			throw Error(get_ssl_error());
-		}
-
-		RAND_poll();
-		while (RAND_status() == 0) {
-			unsigned short rand_ret = rand() % 65536;
-			RAND_seed(&rand_ret, sizeof(rand_ret));
-		}
-
-		ret = SSL_connect(ssl);
-		if (ret != 1) {
-			throw Error(get_ssl_error());
-		}
-
-		std::string cipher = SSL_get_cipher(ssl);
-		cipher += '\n';
-		output_debug_string(cipher.c_str());
-
-		std::string version = SSL_get_cipher_version(ssl);
-		version += '\n';
-		output_debug_string(version.c_str());
-
-		X509 *x509 = SSL_get_peer_certificate(ssl);
-		if (x509) {
-#ifndef OPENSSL_NO_SHA1
-			std::string fingerprint;
-			for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-				if (i > 0) {
-					fingerprint += ':';
+				std::string str = "CONNECT ";
+				str += request_req.url.data.host;
+				str += port;
+				str += " HTTP/1.0\r\n\r\n";
+				send_(sock, str.c_str(), str.size());
+				char tmp[1000];
+				int n = recv(sock, tmp, sizeof(tmp), 0);
+				int i;
+				for (i = 0; i < n; i++) {
+					char c = tmp[i];
+					if (c < 0x20) break;
 				}
-				char tmp[10];
-				sprintf(tmp, "%02X", x509->sha1_hash[i]);
-				fingerprint += tmp;
-			}
-			fingerprint += '\n';
-			output_debug_string(fingerprint.c_str());
+				if (i > 0) {
+					std::string s(tmp, i);
+					s = "proxy: " + s + '\n';
+#ifdef _WIN32
+					OutputDebugStringA(s.c_str());
+#else
+					fprintf(stderr, "%s", tmp);
 #endif
-			long l = SSL_get_verify_result(ssl);
-			if (l == X509_V_OK) {
-				// ok
+				}
+			}
+
+			ssl = SSL_new(sslctx);
+			if (!ssl) {
+				throw Error(get_ssl_error());
+			}
+
+			SSL_set_options(ssl, SSL_OP_NO_SSLv2);
+			SSL_set_options(ssl, SSL_OP_NO_SSLv3);
+			SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+			if (!SSL_set1_host(ssl, hostname.c_str())) {
+				throw Error(get_ssl_error());
+			}
+			SSL_set_tlsext_host_name(ssl, hostname.c_str());
+
+			int ret;
+			ret = SSL_set_fd(ssl, sock);
+			if (ret == 0) {
+				throw Error(get_ssl_error());
+			}
+
+			RAND_poll();
+			while (RAND_status() == 0) {
+				unsigned short rand_ret = rand() % 65536;
+				RAND_seed(&rand_ret, sizeof(rand_ret));
+			}
+
+			ret = SSL_connect(ssl);
+			if (ret != 1) {
+				throw Error(get_ssl_error());
+			}
+
+			std::string cipher = SSL_get_cipher(ssl);
+			cipher += '\n';
+			output_debug_string(cipher.c_str());
+
+			std::string version = SSL_get_cipher_version(ssl);
+			version += '\n';
+			output_debug_string(version.c_str());
+
+			X509 *x509 = SSL_get_peer_certificate(ssl);
+			if (x509) {
+#ifndef OPENSSL_NO_SHA1
+				std::string fingerprint;
+				for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
+					if (i > 0) {
+						fingerprint += ':';
+					}
+					char tmp[10];
+					sprintf(tmp, "%02X", x509->sha1_hash[i]);
+					fingerprint += tmp;
+				}
+				fingerprint += '\n';
+				output_debug_string(fingerprint.c_str());
+#endif
+				long l = SSL_get_verify_result(ssl);
+				if (l == X509_V_OK) {
+					// ok
+				} else {
+					// wrong
+					std::string err = X509_verify_cert_error_string(l);
+					err += '\n';
+					output_debug_string(err.c_str());
+				}
+
+				std::vector<std::string> vec;
+
+				auto GETSTRINGS = [](X509_NAME *x509name, std::vector<std::string> *out){
+					out->clear();
+					if (x509name) {
+						int n = X509_NAME_entry_count(x509name);
+						for (int i = 0; i < n; i++) {
+							X509_NAME_ENTRY *entry = X509_NAME_get_entry(x509name, i);
+							ASN1_STRING *asn1str = X509_NAME_ENTRY_get_data(entry);
+							int asn1len = ASN1_STRING_length(asn1str);
+#if 0
+							unsigned char *p = ASN1_STRING_data(asn1str);
+#else
+							unsigned char const *p = ASN1_STRING_get0_data(asn1str);
+#endif
+							std::string str((char const *)p, asn1len);
+							out->push_back(str);
+						}
+					}
+				};
+
+				X509_NAME *subject = X509_get_subject_name(x509);
+				GETSTRINGS(subject, &vec);
+				output_debug_string("--- subject ---\n");
+				output_debug_strings(vec);
+
+				X509_NAME *issuer = X509_get_issuer_name(x509);
+				GETSTRINGS(issuer, &vec);
+				output_debug_string("--- issuer ---\n");
+				output_debug_strings(vec);
+
+				ASN1_TIME *not_before = X509_get_notBefore(x509);
+				ASN1_TIME *not_after  = X509_get_notAfter(x509);
+				(void)not_before;
+				(void)not_after;
+
+				X509_free(x509);
 			} else {
 				// wrong
-				std::string err = X509_verify_cert_error_string(l);
-				err += '\n';
-				output_debug_string(err.c_str());
 			}
-
-			std::vector<std::string> vec;
-
-			auto GETSTRINGS = [](X509_NAME *x509name, std::vector<std::string> *out){
-				out->clear();
-				if (x509name) {
-					int n = X509_NAME_entry_count(x509name);
-					for (int i = 0; i < n; i++) {
-						X509_NAME_ENTRY *entry = X509_NAME_get_entry(x509name, i);
-						ASN1_STRING *asn1str = X509_NAME_ENTRY_get_data(entry);
-						int asn1len = ASN1_STRING_length(asn1str);
-#if 0
-						unsigned char *p = ASN1_STRING_data(asn1str);
-#else
-						unsigned char const *p = ASN1_STRING_get0_data(asn1str);
-
-#endif
-						std::string str((char const *)p, asn1len);
-						out->push_back(str);
-					}
-				}
-			};
-
-			X509_NAME *subject = X509_get_subject_name(x509);
-			GETSTRINGS(subject, &vec);
-			output_debug_string("--- subject ---\n");
-			output_debug_strings(vec);
-
-			X509_NAME *issuer = X509_get_issuer_name(x509);
-			GETSTRINGS(issuer, &vec);
-			output_debug_string("--- issuer ---\n");
-			output_debug_strings(vec);
-
-			ASN1_TIME *not_before = X509_get_notBefore(x509);
-			ASN1_TIME *not_after  = X509_get_notAfter(x509);
-			(void)not_before;
-			(void)not_after;
-
-			X509_free(x509);
-		} else {
-			// wrong
+		} catch (...) {
+			if (ssl) {
+				SSL_free(ssl);
+			}
+			closesocket(sock);
+			throw;
 		}
 	}
 	m->last_host_name = hostname;
@@ -1204,7 +1205,6 @@ WebContext::WebContext(WebClient::HttpVersion httpver)
 #if USE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
-//	m->ctx = SSL_CTX_new(SSLv23_client_method());
 	m->ctx = SSL_CTX_new(TLS_client_method());
 	SSL_CTX_set_default_verify_paths(m->ctx);
 #endif
