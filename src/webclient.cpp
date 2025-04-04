@@ -1419,7 +1419,7 @@ void WebContext::notify_broken_pipe()
 	m->broken_pipe = true;
 }
 
-std::string WebClient::get(std::string const &url)
+std::string WebClient::quick_get(std::string const &url)
 {
 	WebContext wc(WebClient::HTTP_1_1);
 	wc.set_keep_alive_enabled(false);
@@ -1432,7 +1432,7 @@ std::string WebClient::get(std::string const &url)
 
 std::string WebClient::checkip()
 {
-	auto s = get("http://checkip.amazonaws.com/");
+	auto s = quick_get("http://checkip.amazonaws.com/");
 	return (std::string)trimmed(s);
 }
 

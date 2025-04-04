@@ -215,7 +215,7 @@ public:
 	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, std::string const &boundary);
 	static void make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary);
 
-	static std::string get(const std::string &url);
+	static std::string quick_get(const std::string &url);
 	static std::string checkip();
 };
 

@@ -105,6 +105,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "ShowAvatars")                         >> as.show_avatars;
 	s.endGroup();
 
+#if 0
 	s.beginGroup("Network");
 	GetValue<QString>(s, "ProxyType")                        >> as.proxy_type;
 	GetValue<QString>(s, "ProxyServer")                      >> as.proxy_server;
@@ -113,6 +114,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "AvatarProvider_libravatar")           >> as.avatar_provider.libravatar;
 	s.endGroup();
 	as.proxy_server = misc::makeProxyServerURL(as.proxy_server);
+#endif
 
 	s.beginGroup("Behavior");
 	GetValue<bool>(s, "AutomaticFetch")                      >> as.automatically_fetch_when_opening_the_repository;
@@ -185,6 +187,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "ShowAvatars")                         << this->show_avatars;
 	s.endGroup();
 
+#if 0
 	s.beginGroup("Network");
 	SetValue<QString>(s, "ProxyType")                        << this->proxy_type;
 	SetValue<QString>(s, "ProxyServer")                      << misc::makeProxyServerURL(this->proxy_server);
@@ -192,6 +195,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "AvatarProvider_gravatar")             << this->avatar_provider.gravatar;
 	SetValue<bool>(s, "AvatarProvider_libravatar")           << this->avatar_provider.libravatar;
 	s.endGroup();
+#endif
 
 	s.beginGroup("Behavior");
 	SetValue<bool>(s, "AutomaticFetch")                      << this->automatically_fetch_when_opening_the_repository;

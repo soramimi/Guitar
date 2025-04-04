@@ -26,7 +26,7 @@ struct AvatarLoader::Private {
 	std::deque<AvatarLoader::RequestItem> requests;
 	MainWindow *mainwindow = nullptr;
 
-	WebContext webcx = {WebClient::HTTP_1_1};
+	// WebContext webcx = {WebClient::HTTP_1_1};
 	WebClientPtr web;
 };
 
@@ -54,7 +54,7 @@ void AvatarLoader::requestInterruption()
 
 void AvatarLoader::run()
 {
-	m->web = std::make_shared<WebClient>(&m->webcx);
+	m->web = std::make_shared<WebClient>(&global->webcx);
 
 	while (1) {
 		RequestItem request;

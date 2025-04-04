@@ -17,23 +17,25 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 
 	mainwindow_ = parent;
 
-	auto AddPage = [&](AbstractSettingForm *page){
+	auto AddPage = [&](AbstractSettingForm *page, bool enabled = true){
 		auto *l = page->layout();
 		if (l) {
 			l->setContentsMargins(0, 0, 0, 0);
 		}
 		page->reset(mainwindow_, &settings_);
-		QString name = page->windowTitle();
-		QTreeWidgetItem *item = new QTreeWidgetItem();
-		item->setText(0, name);
-		item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
-		ui->treeWidget->addTopLevelItem(item);
+		if (enabled) {
+			QString name = page->windowTitle();
+			QTreeWidgetItem *item = new QTreeWidgetItem();
+			item->setText(0, name);
+			item->setData(0, Qt::UserRole, QVariant::fromValue((uintptr_t)(QWidget *)page));
+			ui->treeWidget->addTopLevelItem(item);
+		}
 	};
 	AddPage(ui->page_general);
 	AddPage(ui->page_behavior);
-	AddPage(ui->page_workingfolder);
+	AddPage(ui->page_workingfolder, false); //@ experimental feature (2025-04-04)
 	AddPage(ui->page_visual);
-	AddPage(ui->page_network);
+	AddPage(ui->page_network, false); //@ networking option is no longer supported (2025-04-04)
 	AddPage(ui->page_programs);
 	AddPage(ui->page_programs2);
 	AddPage(ui->page_ai);
