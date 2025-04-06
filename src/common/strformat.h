@@ -855,10 +855,6 @@ private:
 			}
 
 			head_ = next_;
-		} else {
-			reset_format_params();
-			Part *p = callback('s');
-			add_part(&list_, p);
 		}
 	}
 	int length()
