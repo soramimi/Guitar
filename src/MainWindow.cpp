@@ -6261,7 +6261,7 @@ void MainWindow::_appendCharToFilterText(ushort c)
 		if (i > 0) {
 			text.remove(i - 1, 1);
 		}
-	} else if (QChar(c).isLetter()) {
+	} else if (QChar(c).isLetterOrNumber()) {
 		text.append(QChar(c).toLower());
 	}
 	setFilterText(text);

@@ -192,26 +192,10 @@ void MigemoFilter::makeFilter(const QString &filtertext)
 {
 	text = filtertext;
 	if (IncrementalSearch::instance()->migemoEnabled()) {
-		if (filtertext.size() >= 2) {
-			bool re = true;
-			int vowel = 0; // 母音の数
-			for (QChar c : filtertext) {
-				if (c.isLetter()) {
-					if (c == 'a' || c == 'i' || c == 'u' || c == 'e' || c == 'o') {
-						vowel++;
-					}
-				} else if (c.isDigit()) {
-					// thru
-				} else {
-					re = false;
-					break;
-				}
-			};
-			if (re && vowel >= 1) { // 全体が2文字以上の英数字で、母音が1文字以上含まれる場合
-				auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
-				if (s) {
-					re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
-				}
+		if (filtertext.size() > 0) {
+			auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
+			if (s) {
+				re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
 			}
 		}
 	}
