@@ -320,6 +320,14 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 #endif
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
+
+		{
+			QString cwd = workingDir();
+			if (!cwd.isEmpty()) {
+				cmd += QString("-C \"%1\" ").arg(cwd);
+			}
+		}
+
 		cmd += arg;
 
 		if (opt.log) {
@@ -367,7 +375,8 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 	bool ok = false;
 
-	if (opt.chdir) {
+	//if (opt.chdir) { // don't use change dir, use -C option instead
+	if (0) {
 		if (opt.pty) {
 			opt.pty->setChangeDir(workingDir());
 			ok = DoIt();
@@ -931,55 +940,10 @@ Git::CommitItemList Git::log(int maxcount)
 QDateTime Git::repositoryLastModifiedTime()
 {
 	if (isValidWorkingCopy()) {
-#if 0
-		git("rev-parse HEAD");
-		QString id = resultQString().trimmed();
-		auto file = cat_file(Hash(id));
-		if (file) {
-			time_t time = 0;
-			QByteArray ba = file.value();
-			std::vector<std::string_view> lines = misc::splitLinesV(ba, false);
-			for (int i = 0; i < lines.size(); i++) {
-				if (lines[i].empty()) break;
-				std::vector<std::string_view> words = misc::splitWords(lines[i]);
-				if (words.size() >= 4) {
-					if (words[0] == "author" || words[0] == "committer") {
-						time_t t = misc::toi<unsigned int>(words[3]);
-						time = std::max(time, t);
-					}
-				}
-			}
-			if (time != 0) {
-				return QDateTime::fromSecsSinceEpoch(time);
-			}
-		}
-#elif 1
-		git("log --format=%ci --all -1");
+		git("log --format=%at --all -1");
 		std::string s = resultStdString();
-		QDateTime dt = parseDateTime(s.c_str());
+		QDateTime dt = QDateTime::fromSecsSinceEpoch(misc::toi<uint64_t>(s));
 		return dt;
-#elif 0
-		git("reflog show --date=iso --all -1");
-		std::string s = resultStdString();
-		auto left = s.find("@{");
-		auto right = s.find("}", left);
-		if (left != std::string::npos && right != std::string::npos) {
-			std::string s2 = s.substr(left + 2, right - left - 2);
-			QDateTime dt = ParseDateTime(s2.c_str());
-			qDebug() << QString::fromStdString(s2);
-			return dt;
-		}
-#else
-		git("rev-list --all -1");
-		QString id = resultQString().trimmed();
-		if (!id.isEmpty()) {
-			git("show -s --format=%ci " + id);
-			std::string s = resultStdString();
-			QDateTime dt = ParseDateTime(s.c_str());
-			return dt;
-		}
-
-#endif
 	}
 	return {};
 }

@@ -158,13 +158,8 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 
 static QDateTime repositoryLastModifiedTime(QString const &path)
 {
-#if 0
-	QFileInfo info(path);
-	return info.lastModified();
-#else
 	GitRunner g = global->mainwindow->git(path, {}, {}, false);
 	return g.repositoryLastModifiedTime();
-#endif
 }
 
 void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
@@ -258,6 +253,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		std::vector<Item> items;
 		{
 			GlobalSetOverrideWaitCursor();
+#if 0
 			for (int i = 0; i < repos.size(); i++) {
 				{
 					mainwindow()->showProgress(tr("Querying last modified time of %1/%2").arg(i + 1).arg(repos.size()));
@@ -268,6 +264,30 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 				QDateTime lastmodified = repositoryLastModifiedTime(item.local_dir);
 				items.push_back({i, &item, lastmodified});
 			}
+#else
+			{
+				// 最終コミット日時を取得
+				constexpr int THREADS_COUNT = 8;
+				for (int i = 0; i < repos.size(); i++) {
+					items.push_back({i, &repos.at(i), {}});
+				}
+				std::atomic<size_t> index(0);
+				std::vector<std::thread> threads(THREADS_COUNT);
+				for (int i = 0; i < threads.size(); i++) {
+					threads[i] = std::thread([&](){
+						while (1) {
+							size_t j = index++;
+							if (j >= items.size()) return;
+							QDateTime lastmodified = repositoryLastModifiedTime(items[j].data->local_dir);
+							items[j].lastModified = lastmodified;
+						}
+					});
+				}
+				for (int i = 0; i < threads.size(); i++) {
+					threads[i].join();
+				}
+			}
+#endif
 			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
 				return a.lastModified > b.lastModified;
 			});
