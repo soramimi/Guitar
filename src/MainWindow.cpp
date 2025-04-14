@@ -6272,13 +6272,20 @@ bool MainWindow::appendCharToFilterText(int k, MainWindow::FilterTarget ft)
 	m->filter_target = ft;
 
 	if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
-		_appendCharToFilterText(k);
+		// thru
 	} else if (k == Qt::Key_Backspace) {
-		_appendCharToFilterText(ASCII_BACKSPACE);
+		k = ASCII_BACKSPACE;
 	} else {
 		return false;
 	}
-	updateStatusBarText();
+
+	if (isPtyProcessRunning()) {
+		// ignore but return true
+	} else {
+		_appendCharToFilterText(k);
+		updateStatusBarText();
+	}
+
 	return true;
 }
 
