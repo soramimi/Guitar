@@ -50,7 +50,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	{
 		auto vec =GenerativeAI::available_models();
 		for (auto &m : vec) {
-			list.push_back(QString::fromStdString(m.name));
+			list.push_back(QString::fromStdString(m.long_name()));
 		}
 	}
 	bool b = ui->groupBox_generate_commit_message_by_ai->blockSignals(true);
@@ -273,12 +273,12 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 {
 	int index = model.provider.index();
 	if (index < 1) {
-		configureModelByString(model.name);
+		configureModelByString(model.long_name());
 		return;
 	}
 
 	bool b = ui->comboBox_ai_model->blockSignals(true);
-	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.name));
+	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.long_name()));
 	ui->comboBox_ai_model->blockSignals(b);
 
 	ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));

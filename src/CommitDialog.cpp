@@ -165,7 +165,7 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
 	diff_ = CommitMessageGenerator::diff_head();
 	
-	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.name);
+	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.model_name());
 	dlg.show();
 	dlg.generate(diff_);
 	if (dlg.exec() == QDialog::Accepted) {

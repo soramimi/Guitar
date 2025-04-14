@@ -1,5 +1,6 @@
 #include "GenerativeAI.h"
 #include "common/misc.h"
+#include "common/strformat.h"
 #include "urlencode.h"
 #include "ApplicationGlobal.h"
 
@@ -13,21 +14,46 @@ std::vector<Model> available_models()
 	models.emplace_back(Google{}, "gemini-2.0-flash");
 	models.emplace_back(DeepSeek{}, "deepseek-chat");
 	models.emplace_back(OpenRouter{}, "anthropic/claude-3.7-sonnet");
-	// models.emplace_back(Ollama{}, "gemma2"); // experimental
+	models.emplace_back(Ollama{}, "ollama:///gemma3:27b"); // experimental
 	return models;
 }
 
-Model::Model(const Provider &provider, const std::string &name)
+Model::Model(const Provider &provider, const std::string &model_uri)
 	: provider(provider)
-	, name(name)
 {
+	parse_model(model_uri);
+}
+
+void Model::parse_model(const std::string &name)
+{
+	long_name_ = name;
+	model_name_ = name;
+
+	if (misc::starts_with(model_name_, "ollama://")) {
+		model_name_ = model_name_.substr(9);
+		auto i = model_name_.find('/');
+		if (i != std::string::npos) {
+			host_ = model_name_.substr(0, i);
+			port_;
+			model_name_ = model_name_.substr(i + 1);
+			if (host_.empty()) {
+				host_ = "localhost";
+			} else {
+				auto j = model_name_.find(':');
+				if (j != std::string::npos) {
+					host_ = model_name_.substr(0, j);
+					port_ = model_name_.substr(j + 1);
+				}
+			}
+			if (port_.empty()) {
+				port_ = "11434";
+			}
+		}
+	}
 }
 
 Model Model::from_name(std::string const &name)
 {
-	if (name.find('/') != std::string::npos) {
-		return Model{OpenRouter{}, name};
-	}
 	if (misc::starts_with(name, "gpt-")) {
 		return Model{OpenAI{}, name};
 	}
@@ -40,8 +66,11 @@ Model Model::from_name(std::string const &name)
 	if (misc::starts_with(name, "deepseek-")) {
 		return Model{DeepSeek{}, name};
 	}
-	if (misc::starts_with(name, "ollama-")) {
-		return Model{Ollama{}, name.substr(7)};
+	if (misc::starts_with(name, "ollama://")) {
+		return Model{Ollama{}, name.substr(9)};
+	}
+	if (name.find('/') != std::string::npos) {
+		return Model{OpenRouter{}, name};
 	}
 	return {};
 }
@@ -64,7 +93,7 @@ struct Models {
 	{
 		Request r;
 		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
-		r.model = model_.name;
+		r.model = model_.model_name();
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -73,7 +102,7 @@ struct Models {
 	{
 		Request r;
 		r.endpoint_url = "https://api.anthropic.com/v1/messages";
-		r.model = model_.name;
+		r.model = model_.model_name();
 		r.header.push_back("x-api-key: " + cred_.api_key);
 		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
 		return r;
@@ -82,8 +111,8 @@ struct Models {
 	Request operator () (Google const &provider) const
 	{
 		Request r;
-		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.name) + ":generateContent?key=" + cred_.api_key;;
-		r.model = model_.name;
+		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
+		r.model = model_.model_name();
 		return r;
 	}
 
@@ -91,7 +120,7 @@ struct Models {
 	{
 		Request r;
 		r.endpoint_url = "https://api.deepseek.com/chat/completions";
-		r.model = model_.name;
+		r.model = model_.model_name();
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -100,7 +129,7 @@ struct Models {
 	{
 		Request r;
 		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";
-		r.model = model_.name;
+		r.model = model_.model_name();
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -108,8 +137,8 @@ struct Models {
 	Request operator () (Ollama const &provider) const
 	{
 		Request r;
-		r.endpoint_url = "http://127.0.0.1:11434/api/generate"; // experimental
-		r.model = model_.name;
+		r.model = model_.model_name();
+		r.endpoint_url = strformat("http://%s:%s/api/generate")(model_.host())(model_.port()); // experimental
 		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
 		return r;
 	}

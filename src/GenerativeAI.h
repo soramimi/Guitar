@@ -78,10 +78,35 @@ struct Credential {
 
 struct Model {
 	Provider provider;
-	std::string name;
+	std::string long_name_;
+	std::string model_name_;
+	std::string host_;
+	std::string port_;
 	Model() = default;
-	explicit Model(Provider const &provider, std::string const &name);
-	void operator = (std::string const &name) = delete;
+	explicit Model(Provider const &provider, std::string const &model_uri);
+	void operator = (std::string const &) = delete;
+
+	void parse_model(std::string const &name);
+
+	std::string long_name() const
+	{
+		return long_name_;
+	}
+
+	std::string model_name() const
+	{
+		return model_name_;
+	}
+
+	std::string host() const
+	{
+		return host_;
+	}
+
+	std::string port() const
+	{
+		return port_;
+	}
 
 	static Model from_name(std::string const &name);
 };

@@ -222,7 +222,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
 	SetValue<QString>(s, "OPENROUTER_API_KEY")                << this->openrouter_api_key;
 	SetValue<std::string>(s, "AiProvider")                    << GenerativeAI::provider_id(this->ai_model.provider);
-	SetValue<std::string>(s, "AiModel")                       << this->ai_model.name;
+	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 

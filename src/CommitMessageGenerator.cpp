@@ -385,7 +385,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 
 		static std::string generate(std::string const &prompt, GenerativeAI::Provider const &provider, GenerativeAI::Model const &model, Kind kind)
 		{
-			return std::visit(PromptJsonGenerator{prompt, model.name, kind}, provider);
+			return std::visit(PromptJsonGenerator{prompt, model.model_name(), kind}, provider);
 		}
 	};
 
@@ -412,7 +412,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
-	if (model.name.empty()) {
+	if (model.model_name().empty()) {
 		return GeneratedCommitMessage::Error("error", "AI model is not set.");
 	}
 	
