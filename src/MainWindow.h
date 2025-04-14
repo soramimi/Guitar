@@ -552,6 +552,8 @@ private slots:
 	void onShowFileList(FileListType panel_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 
+	void on_action_view_sort_by_time_changed();
+
 signals:
 	void signalUpdateCommitLog();
 	void signalSetProgress(float progress);
@@ -679,7 +681,7 @@ public:
 	void showProgress(const QString &text, float progress = -1.0f);
 	void hideProgress();
 	void internalAfterFetch();
-	void onRepositoryTreeSortRecent();
+	void onRepositoryTreeSortRecent(bool f);
 	const Git::CommitItemList &commitlog() const;
 	const Git::CommitItem *currentCommitItem();
 	void clearLogContents();

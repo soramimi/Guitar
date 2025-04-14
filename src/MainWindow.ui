@@ -1065,7 +1065,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>25</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1081,6 +1081,7 @@
      <string>&amp;View</string>
     </property>
     <addaction name="action_view_refresh"/>
+    <addaction name="action_view_sort_by_time"/>
     <addaction name="action_show_graph"/>
     <addaction name="action_show_labels"/>
     <addaction name="action_show_avatars"/>
@@ -1788,6 +1789,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="action_view_sort_by_time">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Sort by commit time</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>

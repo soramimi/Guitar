@@ -691,7 +691,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 				if (ctrl) {
 					if (k == Qt::Key_R) {
-						onRepositoryTreeSortRecent();
+						onRepositoryTreeSortRecent(true);
 						return true;
 					}
 				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::RepositorySearch)) {
@@ -3147,6 +3147,12 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 	if (style == RepositoryTreeWidget::RepositoryListStyle::_Keep) {
 		style = ui->treeWidget_repos->currentRepositoryListStyle();
 	} else {
+		{
+			bool checked = (style == RepositoryTreeWidget::RepositoryListStyle::SortRecent);
+			bool b = ui->action_view_sort_by_time->blockSignals(true);
+			ui->action_view_sort_by_time->setChecked(checked);
+			ui->action_view_sort_by_time->blockSignals(b);
+		}
 		ui->treeWidget_repos->setRepositoryListStyle(style); // リポジトリリストスタイルを設定
 	}
 
@@ -3160,9 +3166,13 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 	tree->updateList(style, repos, filter, select_row);
 }
 
-void MainWindow::onRepositoryTreeSortRecent()
+void MainWindow::onRepositoryTreeSortRecent(bool f)
 {
-	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::SortRecent);
+	if (f) {
+		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::SortRecent);
+	} else {
+		clearAllFilters();
+	}
 }
 
 /**
@@ -5918,6 +5928,7 @@ void MainWindow::updateAncestorCommitMap()
 
 void MainWindow::refresh()
 {
+	if (!isValidWorkingCopy(git())) return;
 	reopenRepository(true);
 }
 
@@ -7277,7 +7288,14 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 	m->searching = false;
 }
 
+void MainWindow::on_action_view_sort_by_time_changed()
+{
+	bool f = ui->action_view_sort_by_time->isChecked();
+	onRepositoryTreeSortRecent(f);
+}
+
 void MainWindow::test()
 {
 }
+
 
