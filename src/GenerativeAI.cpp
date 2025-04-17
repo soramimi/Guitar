@@ -4,12 +4,17 @@
 #include "urlencode.h"
 #include "ApplicationGlobal.h"
 
+#include <QRegularExpression>
+
 namespace GenerativeAI {
 
 std::vector<Model> available_models()
 {
 	std::vector<Model> models;
+	models.emplace_back(OpenAI{}, "o4-mini");
+	models.emplace_back(OpenAI{}, "gpt-4.1");
 	models.emplace_back(OpenAI{}, "gpt-4o");
+	models.emplace_back(OpenAI{}, "gpt-4.1-nano");
 	models.emplace_back(Anthropic{}, "claude-3-7-sonnet-latest");
 	models.emplace_back(Google{}, "gemini-2.0-flash");
 	models.emplace_back(DeepSeek{}, "deepseek-chat");
@@ -52,6 +57,11 @@ void Model::parse_model(const std::string &name)
 	}
 }
 
+std::string Model::default_model()
+{
+	return "gpt-4.1";
+}
+
 Model Model::from_name(std::string const &name)
 {
 	if (misc::starts_with(name, "gpt-")) {
@@ -71,6 +81,10 @@ Model Model::from_name(std::string const &name)
 	}
 	if (name.find('/') != std::string::npos) {
 		return Model{OpenRouter{}, name};
+	}
+	QRegularExpression re("^o[0-9]+");
+	if (re.match(QString::fromStdString(name)).hasMatch()) {
+		return Model{OpenAI{}, name};
 	}
 	return {};
 }

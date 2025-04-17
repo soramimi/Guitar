@@ -153,7 +153,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		as.ai_model = GenerativeAI::Model(*it, ai_model_name);
 	} else {
 		if (ai_provider_name.empty() && ai_model_name.empty()) {
-			ai_model_name = "gpt-4o";
+			ai_model_name = GenerativeAI::Model::default_model();
 		}
 		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
 	}

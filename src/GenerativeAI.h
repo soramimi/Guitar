@@ -109,6 +109,7 @@ struct Model {
 	}
 
 	static Model from_name(std::string const &name);
+	static std::string default_model();
 };
 
 struct Request {
