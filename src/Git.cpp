@@ -321,7 +321,7 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 #endif
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 
-		{
+		if (opt.chdir) {
 			QString cwd = workingDir();
 			if (!cwd.isEmpty()) {
 				cmd += QString("-C \"%1\" ").arg(cwd);
@@ -384,7 +384,14 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 			ok = chdirexec(DoIt);
 		}
 	} else {
-		ok = DoIt();
+		if (opt.pty) {
+			if (opt.chdir) {
+				opt.pty->setChangeDir(workingDir());
+			}
+			ok = DoIt();
+		} else {
+			ok = DoIt();
+		}
 	}
 
 	return ok;
