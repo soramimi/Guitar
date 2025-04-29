@@ -218,8 +218,8 @@ private:
 	void setRepositoryInfo(QString const &reponame, QString const &brname);
 
 	QString getFilterText() const;
-	void setFilterText(const QString &text, int select_row = -1);
-	void clearFilterText(int select_row = -1);
+	void setFilterText(const QString &text, int repo_list_select_row = -1);
+	void clearFilterText(int repo_list_select_row = -1);
 	void clearAllFilters(int select_row = -1);
 	bool applyFilter();
 	void _appendCharToFilterText(ushort c);

@@ -6185,7 +6185,7 @@ QString MainWindow::getFilterText() const
  * @brief フィルタ文字列を設定する
  * @param text
  */
-void MainWindow::setFilterText(QString const &text, int select_row)
+void MainWindow::setFilterText(QString const &text, int repo_list_select_row)
 {
 	FilterTarget ft = filtertarget();
 
@@ -6198,11 +6198,11 @@ void MainWindow::setFilterText(QString const &text, int select_row)
 
 	m->incremental_search_text = text;
 
-	if (ft == FilterTarget::RepositorySearch) {
-		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, select_row);
-	} else if (ft == FilterTarget::CommitLogSearch) {
+	// if (ft == FilterTarget::RepositorySearch) {
+		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row);
+	// } else if (ft == FilterTarget::CommitLogSearch) {
 		ui->tableWidget_log->setFilter(m->incremental_search_text);
-	}
+	// }
 }
 
 MainWindow::FilterTarget MainWindow::filtertarget() const
@@ -6213,21 +6213,21 @@ MainWindow::FilterTarget MainWindow::filtertarget() const
 /**
  * @brief フィルタの文字列をクリアする
  */
-void MainWindow::clearFilterText(int select_row)
+void MainWindow::clearFilterText(int repo_list_select_row)
 {
-	int i = 0;
+	int commit_log_select_row = 0;
 
-	auto ft = filtertarget();
-	if (ft == FilterTarget::CommitLogSearch) {
-		i = m->before_search_row;
-	}
+	// auto ft = filtertarget();
+	// if (ft == FilterTarget::CommitLogSearch) {
+		commit_log_select_row = m->before_search_row;
+	// }
 
-	setFilterText({}, select_row);
+	setFilterText({}, repo_list_select_row);
 
-	if (ft == FilterTarget::CommitLogSearch) {
-		ui->tableWidget_log->setCurrentRow(i);
+	// if (ft == FilterTarget::CommitLogSearch) {
+		ui->tableWidget_log->setCurrentRow(commit_log_select_row);
 		ui->tableWidget_log->setFocus();
-	}
+	// }
 }
 
 /**
