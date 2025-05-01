@@ -2,13 +2,13 @@
 #include "ApplicationGlobal.h"
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
-#include "CommitMessageGenerator.h"
-#include "RepositoryModel.h"
+#include "CommitLogTableWidget.h"
+#include "GeneratedCommitMessage.h"
 #include "MainWindow.h"
 #include "MySettings.h"
+#include "RepositoryModel.h"
 #include "SettingGeneralForm.h"
 #include "common/joinpath.h"
-#include "CommitLogTableWidget.h"
 #include "webclient.h"
 #include <QApplication>
 #include <QDebug>

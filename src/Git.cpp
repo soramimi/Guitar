@@ -517,13 +517,13 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultQString();
 }
 
-QString Git::diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept)
+std::string Git::diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept)
 {
 	QString cmd = "diff --name-only HEAD";
 	git(cmd);
 	QStringList files = misc::splitLines(resultQString());
 	
-	QString diff;
+	std::string diff;
 	for (auto file : files) {
 		if (file.isEmpty()) continue;
 		QString mimetype = global->mainwindow->determinFileType(file);
@@ -535,7 +535,7 @@ QString Git::diff_head(std::function<bool (QString const &name, QString const &m
 		}
 		cmd = "diff --full-index HEAD -- " + file;
 		git(cmd);
-		diff += resultQString();
+		diff += resultStdString();
 	}
 	return diff;
 }

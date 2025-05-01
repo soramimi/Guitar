@@ -1,9 +1,9 @@
 #ifndef GENERATIVEAI_H
 #define GENERATIVEAI_H
 
-#include <QString>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace GenerativeAI {
 

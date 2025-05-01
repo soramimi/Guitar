@@ -5,14 +5,74 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <variant>
+#include <assert.h>
 
 // #include <charconv> // C++17
 
 namespace jstream {
+
+static inline std::vector<char> encode_json_string(std::string_view const &in)
+{
+	std::vector<char> ret;
+	char const *ptr = in.data();
+	char const *end = ptr + in.size();
+	ret.reserve(end - ptr + 10);
+	while (ptr < end) {
+		int c = (unsigned char)*ptr;
+		ptr++;
+		switch (c) {
+		case '\"': ret.push_back('\\'); ret.push_back('\"'); break;
+		case '\\': ret.push_back('\\'); ret.push_back('\\'); break;
+		case '\b': ret.push_back('\\'); ret.push_back('b'); break;
+		case '\f': ret.push_back('\\'); ret.push_back('f'); break;
+		case '\n': ret.push_back('\\'); ret.push_back('n'); break;
+		case '\r': ret.push_back('\\'); ret.push_back('r'); break;
+		case '\t': ret.push_back('\\'); ret.push_back('t'); break;
+		default:
+			if (c >= 0x20 && c < 0x7f) {
+				ret.push_back(c);
+			} else {
+				uint32_t u = 0;
+				if ((c & 0xe0) == 0xc0 && ptr < end) {
+					if ((ptr[0] & 0xc0) == 0x80) {
+						int d = (unsigned char)ptr[0];
+						u = ((c & 0x1f) << 6) | (d & 0x3f);
+					}
+				} else if ((c & 0xf0) == 0xe0 && ptr + 1 < end) {
+					if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80) {
+						int d = (unsigned char)ptr[0];
+						int e = (unsigned char)ptr[1];
+						u = ((c & 0x0f) << 12) | ((d & 0x3f) << 6) | (e & 0x3f);
+					}
+				} else if ((c & 0xf8) == 0xf0 && ptr + 2 < end) {
+					if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
+						int d = (unsigned char)ptr[0];
+						int e = (unsigned char)ptr[1];
+						int f = (unsigned char)ptr[2];
+						u = ((c & 0x0f) << 18) | ((d & 0x3f) << 12) | ((e & 0x3f) << 6) | (f & 0x3f);
+					}
+				}
+				if (u != 0) {
+					char tmp[20];
+					if (u >= 0x10000 && u < 0x110000) {
+						uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
+						uint16_t l = (u - 0x10000) % 0x400 + 0xdc00;
+						sprintf(tmp, "\\u%04X\\u%04X", h, l);
+						ret.insert(ret.end(), tmp, tmp + 12);
+					} else {
+						sprintf(tmp, "\\u%04X", u);
+						ret.insert(ret.end(), tmp, tmp + 6);
+					}
+				}
+			}
+		}
+	}
+	return ret;
+}
 
 class misc {
 private:
@@ -55,9 +115,7 @@ public:
 	 * @param nptr   Pointer to NUL‑terminated text to parse.
 	 * @param endptr If non‑NULL, receives a pointer to the first character
 	 *               following the parsed number (or `nptr` on failure).
-	 * @return The parsed value.  On overflow/underflow `errno` is set to
-	 *         `ERANGE` and the function returns ±`HUGE_VAL` or ±0.0,
-	 *         mirroring the behaviour of the C standard `strtod`.
+	 * @return The parsed value.
 	 */
 	static double my_strtod(const char *nptr, char **endptr)
 	{
@@ -147,6 +205,143 @@ public:
 		if (endptr) *endptr = const_cast<char *>(s);
 		return value;
 	}
+
+	static std::string format_double(double val, bool allow_nan)
+	{
+		int precision = 15;
+		bool trim_zeros = true;
+		bool plus = false;
+
+		if (std::isnan(val)) {
+			if (allow_nan) {
+				return "NaN";
+			}
+			return {};
+		}
+		if (std::isinf(val)) {
+			if (allow_nan) {
+				bool sign = std::signbit(val);
+				if (sign) {
+					return "-Infinity";
+				} else {
+					return "Infinity";
+				}
+			}
+			return {};
+		}
+
+		char *ptr, *end;
+
+		char *dot = nullptr;
+
+		bool sign = val < 0;
+		if (sign) {
+			val = -val;
+		}
+
+		double intval = floor(val);
+		val -= intval;
+
+		int intlen = 0;
+		if (intval == 0) {
+			ptr = end = (char *)alloca(precision + 10) + 5;
+		} else {
+			double t = intval;
+			do {
+				t = floor(t / 10);
+				intlen++;
+			} while (t != 0);
+			ptr = end = (char *)alloca(intlen + precision + 10) + intlen + 5;
+		}
+
+		if (precision > 0) {
+			dot = end;
+			*end++ = '.';
+			double v = val;
+			int e = 0;
+			while (v > 0 && v < 1) {
+				v *= 10;
+				e++;
+			}
+			while (v >= 1) {
+				v /= 10;
+				e--;
+			}
+			double add = 0.5;
+			for (int i = 0; i < precision - e; i++) {
+				add /= 10;
+			}
+			v += add;
+			double t = floor(v);
+			intval += t;
+			v -= t;
+			int i = 0;
+			int n = intlen;
+			int r = std::min(e, precision);
+			while (i < r) {
+				*end++ = '0';
+				if (n != 0) {
+					n++;
+				}
+				i++;
+			}
+			while (i < precision) {
+				if (n < 16) {
+					v *= 10;
+					double m = floor(v);
+					v -= m;
+					*end++ = (char)m + '0';
+				} else {
+					*end++ = '0';
+				}
+				n++;
+				i++;
+			}
+		} else {
+			intval += floor(val + 0.5);
+		}
+
+		intlen = 0;
+		double t = intval;
+		do {
+			t = floor(t / 10);
+			intlen++;
+		} while (t != 0);
+
+		if (intval == 0) {
+			*--ptr = '0';
+		} else {
+			double t = intval;
+			for (int i = 0; i < intlen; i++) {
+				t /= 10;
+				double u = floor(t);
+				*--ptr = (char)((t - u) * 10 + 0.49) + '0';
+				t = u;
+			}
+		}
+
+		if (sign) {
+			*--ptr = '-';
+		} else if (plus) {
+			*--ptr = '+';
+		}
+
+		if (trim_zeros && dot) {
+			while (dot < end) {
+				char c = end[-1];
+				if (c == '.') {
+					end--;
+					break;
+				}
+				if (c != '0') {
+					break;
+				}
+				end--;
+			}
+		}
+
+		return std::string(ptr, end - ptr);
+	}
 };
 
 enum StateType {
@@ -164,10 +359,14 @@ enum StateType {
 	EndArray,
 	String,
 	Number,
-	Error,
 };
 
 class Reader {
+public:
+	struct Error {
+		std::string what_;
+		std::string what() const { return what_; }
+	};
 private:
 	static std::string to_stdstr(std::vector<char> const &vec)
 	{
@@ -187,7 +386,7 @@ private:
 				ptr++;
 				continue;
 			}
-			if (d.allow_comments && *ptr == '/' && ptr + 1 < end) {
+			if (d.allow_comment && *ptr == '/' && ptr + 1 < end) {
 				if (ptr[1] == '/') {
 					ptr += 2;
 					while (ptr < end && *ptr != '\r' && *ptr != '\n') {
@@ -235,7 +434,53 @@ private:
 		*out = 0;
 		char const *ptr = begin;
 		ptr += scan_space(ptr, end);
+
 		std::vector<char> vec;
+
+		if (d.allow_hexadicimal) {
+			char const *p = ptr;
+			bool sign = false;
+			if (p + 1 < end && *p == '-') {
+				p++;
+				sign = true;
+			}
+			if (p + 1 < end && *p == '0' && (p[1] == 'x' || p[1] == 'X')) {
+				p += 2;
+				while (p < end && isxdigit((unsigned char)*p)) {
+					vec.push_back(*p);
+					p++;
+				}
+				vec.push_back(0);
+				long long v = strtoll(vec.data(), nullptr, 16);
+				*out = sign ? -v : v;
+				return p - begin;
+			}
+		}
+
+		if (d.allow_special_constant) {
+			char const *p = ptr;
+			bool sign = false;
+			if (p < end && *p == '-') {
+				p++;
+				sign = true;
+			}
+			while (p < end && isalpha((unsigned char)*p)) {
+				vec.push_back(*p);
+				p++;
+			}
+			vec.push_back(0);
+			if (strcmp(vec.data(), "Infinity") == 0) {
+				ptr = p;
+				*out = sign ? -INFINITY : INFINITY;
+			} else if (strcmp(vec.data(), "NaN") == 0) {
+				ptr = p;
+				*out = NAN;
+			}
+			if (ptr > begin) {
+				return ptr - begin;
+			}
+		}
+
 		while (ptr < end) {
 			char c = *ptr;
 			if (isdigit((unsigned char)c) || c == '.' || c == '+' || c == '-' || c == 'e' || c == 'E') {
@@ -278,6 +523,7 @@ private:
 						case 'r': push('\r'); break;
 						case 'f': push('\f'); break;
 						case 't': push('\t'); break;
+						case 'v': push('\v'); break;
 						case '\\':
 						case '\"':
 							push(*ptr);
@@ -353,17 +599,31 @@ private:
 		char const *end = nullptr;
 		char const *ptr = nullptr;
 		std::vector<StateItem> states;
+		bool hold = false;
 		std::string key;
 		std::string string;
 		double number = 0;
 		bool is_array = false;
-		bool allow_comments = false;
+		bool allow_comment = false;
 		bool allow_ambiguous_comma = false;
 		bool allow_unquoted_key = false;
+		bool allow_hexadicimal = false;
+		bool allow_special_constant = false;
 		std::vector<std::string> depth;
+		std::vector<int> depth_stack;
 		StateItem last_state;
+		std::vector<Error> errors;
 	};
 	ParserData d;
+
+	void push_error(std::string const &what)
+	{
+		d.states.clear();
+
+		Error err;
+		err.what_ = what;
+		d.errors.push_back(err);
+	}
 
 	void push_state(StateItem s)
 	{
@@ -415,17 +675,18 @@ private:
 		return f;
 	}
 
-	void parse(std::string_view const &sv)
-	{
-		parse(sv.data(), sv.data() + sv.size());
-	}
-
 	void parse(char const *begin, char const *end)
 	{
+		reset();
 		d = {};
 		d.begin = begin;
 		d.end = end;
 		d.ptr = d.begin;
+	}
+
+	void parse(std::string_view const &sv)
+	{
+		parse(sv.data(), sv.data() + sv.size());
 	}
 
 	void parse(char const *ptr, int len = -1)
@@ -435,32 +696,8 @@ private:
 		}
 		parse(ptr, ptr + len);
 	}
-public:
-	Reader(std::string_view const &sv)
-	{
-		parse(sv);
-	}
-	Reader(char const *begin, char const *end)
-	{
-		parse(begin, end);
-	}
-	Reader(char const *ptr, int len = -1)
-	{
-		parse(ptr, len);
-	}
-	void allow_comments(bool allow)
-	{
-		d.allow_comments = allow;
-	}
-	void allow_ambiguous_comma(bool allow)
-	{
-		d.allow_ambiguous_comma = allow;
-	}
-	void allow_unquoted_key(bool allow)
-	{
-		d.allow_unquoted_key = allow;
-	}
-	bool next()
+
+	bool _internal_next()
 	{
 		while (d.ptr < d.end) {
 			{
@@ -568,9 +805,7 @@ public:
 					if (d.allow_ambiguous_comma) {
 						break; // consider as a virtual comma is exists
 					}
-					d.states.clear();
-					push_state(Error);
-					d.string = "syntax error";
+					push_error("unexpected double quote");
 					return false;
 				}
 
@@ -596,14 +831,12 @@ public:
 				}
 			}
 			if (state() == Key || isarray()) {
-				if (isdigit((unsigned char)*d.ptr) || *d.ptr == '-') {
-					auto n = parse_number(d.ptr, d.end, &d.number);
-					if (n > 0) {
-						d.string.assign(d.ptr, n);
-						d.ptr += n;
-						push_state(Number);
-						return true;
-					}
+				auto n = parse_number(d.ptr, d.end, &d.number);
+				if (n > 0) {
+					d.string.assign(d.ptr, n);
+					d.ptr += n;
+					push_state(Number);
+					return true;
 				}
 				if (isalpha((unsigned char)*d.ptr)) {
 					auto n = parse_symbol(d.ptr, d.end, &d.string);
@@ -637,10 +870,69 @@ public:
 					}
 				}
 			}
-			d.states.clear();
-			push_state(Error);
-			d.string = "syntax error";
+			push_error("syntax error");
 			break;
+		}
+		return false;
+	}
+public:
+	Reader(std::string_view const &sv)
+	{
+		parse(sv);
+	}
+	Reader(char const *begin, char const *end)
+	{
+		parse(begin, end);
+	}
+	Reader(char const *ptr, int len = -1)
+	{
+		parse(ptr, len);
+	}
+	void allow_comment(bool allow)
+	{
+		d.allow_comment = allow;
+	}
+	void allow_ambiguous_comma(bool allow)
+	{
+		d.allow_ambiguous_comma = allow;
+	}
+	void allow_unquoted_key(bool allow)
+	{
+		d.allow_unquoted_key = allow;
+	}
+	void allow_hexadicimal(bool allow)
+	{
+		d.allow_hexadicimal = allow;
+	}
+	void allow_special_constant(bool allow)
+	{
+		d.allow_special_constant = allow;
+	}
+	void reset()
+	{
+		d.errors.clear();
+	}
+	void hold()
+	{
+		d.hold = true;
+	}
+	void nest()
+	{
+		d.depth_stack.push_back(depth());
+	}
+	bool next()
+	{
+		if (d.hold) {
+			d.hold = false;
+			return true;
+		}
+		if (_internal_next()) {
+			if (d.depth_stack.empty()) return true;
+			if (this->depth() >= d.depth_stack.back()) {
+				return true;
+			}
+			d.depth_stack.pop_back();
+			hold();
 		}
 		return false;
 	}
@@ -650,9 +942,14 @@ public:
 		return d.states.empty() ? None : d.states.back().type;
 	}
 
-	bool iserror() const
+	bool has_error() const
 	{
-		return state() == Error;
+		return !d.errors.empty();
+	}
+
+	std::vector<Error> const &errors() const
+	{
+		return d.errors;
 	}
 
 	bool is_start_object() const
@@ -663,6 +960,16 @@ public:
 	bool is_end_object() const
 	{
 		return state() == EndObject;
+	}
+
+	bool is_start_array() const
+	{
+		return state() == StartArray;
+	}
+
+	bool is_end_array() const
+	{
+		return state() == EndArray;
 	}
 
 	bool isobject() const
@@ -737,6 +1044,16 @@ public:
 		return symbol() == True;
 	}
 
+	bool isnumber() const
+	{
+		return state() == Number;
+	}
+
+	bool isstring() const
+	{
+		return state() == String;
+	}
+
 	double number() const
 	{
 		return d.number;
@@ -758,7 +1075,7 @@ public:
 		for (std::string const &s : d.depth) {
 			path += s;
 		}
-		if (state() == jstream::StartObject) { // 2025-04-06
+		if (state() == jstream::StartObject || state() == jstream::StartArray) {
 			return path;
 		}
 		return path + d.key;
@@ -778,7 +1095,7 @@ public:
 		if (vals && clear) {
 			vals->clear();
 		}
-		if (!isobject() && !isvalue()) return false;
+		if (!isobject() && !isarray() && !isvalue()) return false;
 		size_t i;
 		for (i = 0; i < d.depth.size(); i++) {
 			std::string const &s = d.depth[i];
@@ -838,38 +1155,19 @@ public:
 		return false;
 	}
 
-	typedef std::map<std::string_view, std::string *> rule_for_string_t;
-	typedef std::map<std::string_view, std::vector<std::string> *> rule_for_strings_t;
-
-	void parse(rule_for_string_t const &rule, char sep = ',')
+	bool match_start_object(char const *path) const
 	{
-		while (next()) {
-			for (auto &t : rule) {
-				std::vector<std::string> vals;
-				if (match(t.first.data(), &vals, true)) {
-					for (auto const &s : vals) {
-						if (!t.second->empty()) {
-							*t.second += sep;
-						}
-						*t.second += s;
-					}
-				}
-			}
-		}
-	}
-
-	void parse(rule_for_strings_t const &rule)
-	{
-		while (next()) {
-			for (auto &t : rule) {
-				match(t.first.data(), t.second, false);
-			}
-		}
+		return state() == StartObject && match(path);
 	}
 
 	bool match_end_object(char const *path) const
 	{
 		return state() == EndObject && match(path);
+	}
+
+	bool match_start_array(char const *path) const
+	{
+		return state() == StartArray && match(path);
 	}
 
 	bool match_end_array(char const *path) const
@@ -911,6 +1209,7 @@ private:
 
 	bool enable_indent_ = true;
 	bool enable_newline_ = true;
+	bool allow_nan_ = false;
 
 	void print_newline()
 	{
@@ -930,80 +1229,21 @@ private:
 		}
 	}
 
-	void print_number(double v)
+	bool print_number(double v)
 	{
-		char tmp[100];
-		sprintf(tmp, "%f", v);
-		char *ptr = strchr(tmp, '.');
-		if (ptr) {
-			char *end = ptr + strlen(ptr);
-			while (ptr < end && end[-1] == '0') {
-				end--;
-			}
-			if (ptr + 1 == end) {
-				end--;
-			}
-			*end = 0;
+		std::string s = misc::format_double(v, allow_nan_);
+		if (s.empty()) {
+			print("null");
+			return false;
 		}
-		print(tmp);
+		print(s);
+		return true;
 	}
 
 	void print_string(std::string const &s)
 	{
-		char const *ptr = s.c_str();
-		char const *end = ptr + s.size();
-		std::vector<char> buf;
-		buf.reserve(end - ptr + 10);
-		while (ptr < end) {
-			int c = (unsigned char)*ptr;
-			ptr++;
-			switch (c) {
-			case '\"': buf.push_back('\\'); buf.push_back('\"'); break;
-			case '\\': buf.push_back('\\'); buf.push_back('\\'); break;
-			case '\b': buf.push_back('\\'); buf.push_back('b'); break;
-			case '\f': buf.push_back('\\'); buf.push_back('f'); break;
-			case '\n': buf.push_back('\\'); buf.push_back('n'); break;
-			case '\r': buf.push_back('\\'); buf.push_back('r'); break;
-			case '\t': buf.push_back('\\'); buf.push_back('t'); break;
-			default:
-				if (c >= 0x20 && c < 0x7f) {
-					buf.push_back(c);
-				} else {
-					uint32_t u = 0;
-					if ((c & 0xe0) == 0xc0 && ptr < end) {
-						if ((ptr[0] & 0xc0) == 0x80) {
-							int d = (unsigned char)ptr[0];
-							u = ((c & 0x1f) << 6) | (d & 0x3f);
-						}
-					} else if ((c & 0xf0) == 0xe0 && ptr + 1 < end) {
-						if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80) {
-							int d = (unsigned char)ptr[0];
-							int e = (unsigned char)ptr[1];
-							u = ((c & 0x0f) << 12) | ((d & 0x3f) << 6) | (e & 0x3f);
-						}
-					} else if ((c & 0xf8) == 0xf0 && ptr + 2 < end) {
-						if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
-							int d = (unsigned char)ptr[0];
-							int e = (unsigned char)ptr[1];
-							int f = (unsigned char)ptr[2];
-							u = ((c & 0x0f) << 18) | ((d & 0x3f) << 12) | ((e & 0x3f) << 6) | (f & 0x3f);
-						}
-					}
-					if (u != 0) {
-						char tmp[20];
-						if (u >= 0x10000 && u < 0x110000) {
-							uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
-							uint16_t l = (u - 0x10000) % 0x400 + 0xdc00;
-							sprintf(tmp, "\\u%04X\\u%04X", h, l);
-							buf.insert(buf.end(), tmp, tmp + 12);
-						} else {
-							sprintf(tmp, "\\u%04X", u);
-							buf.insert(buf.end(), tmp, tmp + 6);
-						}
-					}
-				}
-			}
-		}
+		std::vector<char> buf = encode_json_string(s);
+
 		print('\"');
 		if (!buf.empty()) {
 			print(buf.data(), buf.size());
@@ -1011,13 +1251,15 @@ private:
 		print('\"');
 	}
 
-	void print_value(std::string const &name, std::function<void ()> const &fn)
+	bool print_value(std::string const &name, std::function<bool ()> const &fn)
 	{
 		print_name(name);
 
-		fn();
+		bool ok = fn();
 
 		if (!stack.empty()) stack.back()++;
+
+		return ok;
 	}
 
 	void print_object(std::string const &name = {}, std::function<void ()> const &fn = {})
@@ -1075,6 +1317,11 @@ public:
 		enable_newline_ = enabled;
 	}
 
+	void allow_nan(bool allow)
+	{
+		allow_nan_ = allow;
+	}
+
 	void print_name(std::string const &name)
 	{
 		if (!stack.empty()) {
@@ -1127,10 +1374,10 @@ public:
 		print_array(name, fn);
 	}
 
-	void number(std::string const &name, double v)
+	bool number(std::string const &name, double v)
 	{
-		print_value(name, [&](){
-			print_number(v);
+		return print_value(name, [&](){
+			return print_number(v);
 		});
 	}
 
@@ -1143,6 +1390,7 @@ public:
 	{
 		print_value(name, [&](){
 			print_string(s);
+			return true;
 		});
 	}
 
@@ -1155,7 +1403,6 @@ public:
 	{
 		print_value(name, [&](){
 			switch (v) {
-				break;
 			case False:
 				print("false");
 				break;
@@ -1165,6 +1412,7 @@ public:
 			default:
 				print("null");
 			}
+			return true;
 		});
 	}
 
@@ -1178,6 +1426,206 @@ public:
 		symbol({}, Null);
 	}
 };
+
+typedef std::nullptr_t null_t;
+constexpr std::nullptr_t null = nullptr;
+
+struct Array;
+struct KeyValue;
+typedef std::vector<KeyValue> _Object;
+typedef std::variant<null_t, bool, double, std::string, _Object, Array> Variant;
+struct Array {
+	std::vector<Variant> a;
+	size_t size() const
+	{
+		return a.size();
+	}
+	bool empty() const
+	{
+		return a.empty();
+	}
+	Variant &operator[](size_t i)
+	{
+		return a[i];
+	}
+	Variant const &operator[](size_t i) const
+	{
+		return a[i];
+	}
+	template <typename T> T &get(size_t i)
+	{
+		assert(i < a.size());
+		return std::get<T>(a[i]);
+	}
+	template <typename T> T const &get(size_t i) const
+	{
+		assert(i < a.size());
+		return std::get<T>(a[i]);
+	}
+	void push_back(Variant const &v)
+	{
+		a.push_back(v);
+	}
+	Array &operator += (Variant const &v)
+	{
+		push_back(v);
+		return *this;
+	}
+};
+struct KeyValue {
+	std::string key;
+	Variant value;
+	KeyValue() = default;
+	KeyValue(std::string const &k, Variant const &v)
+		: key(k), value(v)
+	{
+	}
+};
+struct VariantRef {
+	Variant *var;
+	VariantRef(Variant &v)
+		: var(&v)
+	{
+	}
+	void operator = (Variant const &v)
+	{
+		*var = v;
+	}
+	operator Variant &()
+	{
+		return *var;
+	}
+};
+struct Object {
+	_Object *p;
+	Object() : p(nullptr)
+	{
+	}
+	Object(_Object &o)
+		: p(&o)
+	{
+	}
+	Object(Variant &v)
+	{
+		if (!std::holds_alternative<_Object>(v)) {
+			v = _Object();
+		}
+		p = &std::get<_Object>(v);
+	}
+	size_t size() const
+	{
+		return p ? p->size() : 0;
+	}
+	bool empty() const
+	{
+		return size() == 0;
+	}
+	Variant *find(std::string const &key)
+	{
+		if (p) {
+			for (auto &kv : *p) {
+				if (kv.key == key) {
+					return &kv.value;
+				}
+			}
+		}
+		return nullptr;
+	}
+	Variant const *find(std::string const &key) const
+	{
+		return const_cast<Object *>(this)->find(key);
+	}
+	Variant &value(std::string const &key)
+	{
+		Variant *v = find(key);
+		assert(v);
+		return *v;
+	}
+	Variant const &value(std::string const &key) const
+	{
+		return const_cast<Object *>(this)->value(key);
+	}
+	template <typename T> T const &get(std::string const &key) const
+	{
+		Variant const *v = find(key);
+		assert(v);
+		return std::get<T>(*v);
+	}
+	VariantRef operator [] (std::string const &key)
+	{
+		p->emplace_back(key, Variant());
+		return p->back().value;
+	}
+};
+
+static inline bool is_null(Variant const &v)
+{
+	return std::holds_alternative<nullptr_t>(v);
+}
+static inline bool is_boolean(Variant const &v)
+{
+	return std::holds_alternative<bool>(v);
+}
+static inline bool is_number(Variant const &v)
+{
+	return std::holds_alternative<double>(v);
+}
+static inline bool is_string(Variant const &v)
+{
+	return std::holds_alternative<std::string>(v);
+}
+static inline bool is_object(Variant const &v)
+{
+	return std::holds_alternative<_Object>(v);
+}
+static inline bool is_array(Variant const &v)
+{
+	return std::holds_alternative<Array>(v);
+}
+static inline bool is_nan(Variant const &v)
+{
+	return std::holds_alternative<double>(v) && std::isnan(std::get<double>(v));
+}
+static inline bool is_infinite(Variant const &v)
+{
+	return std::holds_alternative<double>(v) && std::isinf(std::get<double>(v));
+}
+static inline Array &arr(Array &a)
+{
+	return a;
+}
+static inline Array &arr(Variant &v)
+{
+	if (!std::holds_alternative<Array>(v)) {
+		v = Array();
+	}
+	return std::get<Array>(v);
+}
+static inline Object obj(Variant &v)
+{
+	if (!std::holds_alternative<_Object>(v)) {
+		v = _Object();
+	}
+	return Object(std::get<_Object>(v));
+}
+
+static inline Variant var(jstream::Reader const &reader)
+{
+	if (reader.isnull()) {
+		return null;
+	} else if (reader.isfalse()) {
+		return false;
+	} else if (reader.istrue()) {
+		return true;
+	} else if (reader.isnumber()) {
+		return reader.number();
+	} else if (reader.isstring()) {
+		return reader.string();
+	}
+	return null;
+}
+
+using std::get;
 
 } // namespace jstream
 

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "CommitMessageGenerator.h"
+#include "GeneratedCommitMessage.h"
 #include <condition_variable>
 #include <mutex>
 #include <thread>

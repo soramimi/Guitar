@@ -144,6 +144,10 @@ private:
 	{
 		return alloc_part(str.data(), (int)str.size());
 	}
+	static Part *alloc_part(std::vector<char> const &vec)
+	{
+		return alloc_part(vec.data(), (int)vec.size());
+	}
 	static void free_part(Part **p)
 	{
 		if (p && *p) {
@@ -746,7 +750,14 @@ private:
 		if (hint == 's') {
 			return alloc_part(value);
 		}
-		return format(value.data(), hint);
+		return format((std::string)value.data(), hint);
+	}
+	Part *format(std::vector<char> const &value, int hint)
+	{
+		if (hint == 's') {
+			return alloc_part(value);
+		}
+		return format(std::string(value.data(), value.size()), hint);
 	}
 	Part *format_p(void *val)
 	{

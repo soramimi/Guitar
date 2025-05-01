@@ -109,6 +109,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/CommitLogTableWidget.cpp \
+	$$PWD/src/GeneratedCommitMessage.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
 	$$PWD/src/RepositoryInfo.cpp \
@@ -116,6 +117,7 @@ SOURCES += \
     $$PWD/src/RepositoryTreeWidget.cpp \
     $$PWD/src/StatusInfo.cpp \
 	$$PWD/src/Util.cpp \
+	$$PWD/src/common/rwfile.cpp \
 	$$PWD/src/platform.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
@@ -270,6 +272,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/CommitLogTableWidget.h \
+	$$PWD/src/GeneratedCommitMessage.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
 	$$PWD/src/RepositoryInfo.h \
@@ -277,6 +280,7 @@ HEADERS += \
     $$PWD/src/RepositoryTreeWidget.h \
     $$PWD/src/StatusInfo.h \
 	$$PWD/src/Util.h \
+	$$PWD/src/common/rwfile.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \
     src/AboutDialog.h \

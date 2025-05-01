@@ -2,34 +2,8 @@
 #define COMMITMESSAGEGENERATOR_H
 
 #include "GenerativeAI.h"
-#include <QObject>
+#include "Git.h"
 #include <string>
-
-class GeneratedCommitMessage {
-public:
-	bool error = false;
-	QString error_status;
-	QString error_message;
-	QStringList messages;
-	GeneratedCommitMessage() = default;
-	GeneratedCommitMessage(const QStringList &messages)
-		: messages(messages)
-	{
-	}
-	operator bool () const
-	{
-		return !error;
-	}
-	static GeneratedCommitMessage Error(QString status, QString message)
-	{
-		GeneratedCommitMessage ret;
-		ret.error = true;
-		ret.error_status = status;
-		ret.error_message = message;
-		return ret;
-	}
-};
-Q_DECLARE_METATYPE(GeneratedCommitMessage)
 
 class CommitMessageGenerator {
 public:
@@ -37,9 +11,21 @@ public:
 		CommitMessage,
 		DetailedComment,
 	};
+	class Result {
+	public:
+		bool error = false;
+		QString error_status;
+		QString error_message;
+		QStringList messages;
+		Result() = default;
+		Result(const QStringList &messages)
+			: messages(messages)
+		{
+		}
+	};
 private:
 	Kind kind;
-	GeneratedCommitMessage parse_response(const std::string &in, const GenerativeAI::Provider &provider);
+	CommitMessageGenerator::Result parse_response(const std::string &in, const GenerativeAI::Provider &provider);
 	std::string generatePrompt(const QString &diff, int max);
 	std::string generateDetailedPrompt(QString const &diff, const QString &commit_message);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
@@ -49,8 +35,16 @@ public:
 		: kind(kind)
 	{
 	}
-	GeneratedCommitMessage generate(const QString &diff, QString const &hint = {});
-	static QString diff_head();
+	Result generate(const QString &diff, QString const &hint = {});
+	static std::string diff_head(GitRunner g);
+	static Result Error(QString status, QString message)
+	{
+		Result ret;
+		ret.error = true;
+		ret.error_status = status;
+		ret.error_message = message;
+		return ret;
+	}
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

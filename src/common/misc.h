@@ -81,9 +81,6 @@ public:
 	static int compare(uint8_t const *a, size_t n, uint8_t const *b, size_t m);
 	static int compare(std::vector<uint8_t> const &a, std::vector<uint8_t> const &b);
 
-	static std::string encode_json_string(const std::string &in);
-	static std::string decode_json_string(const std::string &in);
-
 	static std::vector<std::string> vector_string(std::vector<std::string_view> const &v)
 	{
 		std::vector<std::string> out;

@@ -1,14 +1,9 @@
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
-#include "ApplicationSettings.h"
-#include "MainWindow.h"
 #include "common/jstream.h"
-#include "common/misc.h"
+#include "common/rwfile.h"
 #include "common/strformat.h"
 #include "webclient.h"
-#include <QFile>
-#include <QMessageBox>
-#include <QString>
 
 struct CommitMessageResponseParser {
 	struct Result {
@@ -142,7 +137,7 @@ struct CommitMessageResponseParser {
  * @param ai_type The AI model type.
  * @return The generated commit message.
  */
-GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Provider const &provider)
+CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Provider const &provider)
 {
 	auto r = CommitMessageResponseParser::parse(provider, in);
 
@@ -248,7 +243,7 @@ GeneratedCommitMessage CommitMessageGenerator::parse_response(std::string const 
 			return {}; // invalid kind
 		}
 	} else {
-		GeneratedCommitMessage ret;
+		CommitMessageGenerator::Result ret;
 		ret.error = true;
 		ret.error_status = QString::fromStdString(r.error_status);
 		ret.error_message = QString::fromStdString(r.error_message);
@@ -317,7 +312,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		{"role": "system", "content": "You are an experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-			return strformat(json)(modelname)(misc::encode_json_string(prompt));
+			return strformat(json)(modelname)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::Unknown const &provider)
@@ -340,7 +335,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-			return strformat(json)(modelname)(misc::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+			return strformat(json)(modelname)(jstream::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
 		}
 
 		std::string operator () (GenerativeAI::Google const &provider)
@@ -352,7 +347,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		}]
 	}]
 })---";
-			return strformat(json)(misc::encode_json_string(prompt));
+			return strformat(json)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::DeepSeek const &provider)
@@ -365,7 +360,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	],
 	"stream": false
 })---";
-			return strformat(json)(modelname)(misc::encode_json_string(prompt));
+			return strformat(json)(modelname)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::Ollama const &provider)
@@ -375,7 +370,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"prompt": "%s",
 	"stream": false
 })---";
-			return strformat(json)(misc::encode_json_string(modelname))(misc::encode_json_string(prompt));
+			return strformat(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::OpenRouter const &provider)
@@ -399,7 +394,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
  * @param g The Git object.
  * @return The generated commit message.
  */
-GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QString const &hint)
+CommitMessageGenerator::Result CommitMessageGenerator::generate(QString const &diff, QString const &hint)
 {
 	constexpr int max_message_count = 5;
 	
@@ -408,12 +403,12 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	if (diff.isEmpty()) return {};
 
 	if (diff.size() > 100000) {
-		return GeneratedCommitMessage::Error("error", "diff too large");
+		return Error("error", "diff too large");
 	}
 
 	GenerativeAI::Model model = global->appsettings.ai_model;
 	if (model.model_name().empty()) {
-		return GeneratedCommitMessage::Error("error", "AI model is not set.");
+		return Error("error", "AI model is not set.");
 	}
 	
 	std::string prompt;
@@ -431,10 +426,7 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 	std::string json = generatePromptJSON(prompt, model);
 	
 	if (save_log) {
-		QFile file("/tmp/request.txt");
-		if (file.open(QIODevice::WriteOnly)) {
-			file.write(json.c_str(), json.size());
-		}
+		writefile("c:\\a\\request.txt", json.c_str(), json.size());
 	}
 
 	GenerativeAI::Credential cred = global->get_ai_credential(model.provider);
@@ -455,25 +447,26 @@ GeneratedCommitMessage CommitMessageGenerator::generate(QString const &diff, QSt
 		char const *data = http.content_data();
 		size_t size = http.content_length();
 		if (save_log) {
-			QFile file("/tmp/response.txt");
-			if (file.open(QIODevice::WriteOnly)) {
-				file.write(data, size);
-			}
+			writefile("c:\\a\\response.txt", data, size);
 		}
 		std::string text(data, size);
-		GeneratedCommitMessage ret = parse_response(text, model.provider);
+		CommitMessageGenerator::Result ret = parse_response(text, model.provider);
 		return ret;
 	}
 
 	return {};
 }
 
-QString CommitMessageGenerator::diff_head()
+std::string CommitMessageGenerator::diff_head(GitRunner g)
 {
-	QString diff = global->mainwindow->git().diff_head([&](QString const &name, QString const &mime) {
+	std::string diff = g.diff_head([&](QString const &name, QString const &mime) {
 		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		return true;
 	});
 	return diff;
 }
+
+
+
+
 

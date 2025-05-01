@@ -106,11 +106,11 @@ void CommitDialog::onReady(GeneratedCommitMessage const &msg)
 	GlobalRestoreOverrideCursor();
 	updateUI(true);
 	
-	if (msg && !msg.messages.empty()) {
+	if (msg && !msg.messages().empty()) {
 		QStringList lines;
 		lines.append(commit_message_);
 		lines.append(QString());
-		for (QString const &line : msg.messages) {
+		for (QString const &line : msg.messages()) {
 			lines.append(line);
 		}
 		QString text = lines.join('\n');
@@ -163,7 +163,7 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	diff_ = CommitMessageGenerator::diff_head();
+	diff_ = QString::fromStdString(CommitMessageGenerator::diff_head(global->mainwindow->git()));
 	
 	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.model_name());
 	dlg.show();

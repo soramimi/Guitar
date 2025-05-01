@@ -1,6 +1,7 @@
 #include "GenerateCommitMessageThread.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
+#include "GeneratedCommitMessage.h"
 
 GenerateCommitMessageThread::GenerateCommitMessageThread()
 {
@@ -26,7 +27,7 @@ void GenerateCommitMessageThread::start()
 			}
 			if (requested) {
 				CommitMessageGenerator gen(kind_);
-				auto result = gen.generate(diff_);
+				auto result = GeneratedCommitMessage(new CommitMessageGenerator::Result(gen.generate(diff_)));
 				emit ready(result);
 			}
 		}

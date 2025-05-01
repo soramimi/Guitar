@@ -1,7 +1,6 @@
 #ifndef GENERATECOMMITMESSAGEDIALOG_H
 #define GENERATECOMMITMESSAGEDIALOG_H
 
-#include "CommitMessageGenerator.h"
 #include <QDialog>
 #include <QObject>
 
@@ -10,6 +9,7 @@ class GenerateCommitMessageDialog;
 }
 
 class QListWidgetItem;
+class GeneratedCommitMessage;
 
 class GenerateCommitMessageDialog : public QDialog {
 	Q_OBJECT

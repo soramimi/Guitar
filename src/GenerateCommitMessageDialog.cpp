@@ -76,8 +76,8 @@ QStringList GenerateCommitMessageDialog::message() const
 
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 {
-	QString diff = CommitMessageGenerator::diff_head();
-	generate(diff);
+	std::string diff = CommitMessageGenerator::diff_head(global->mainwindow->git());
+	generate(QString::fromStdString(diff));
 }
 
 void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
@@ -86,7 +86,7 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 
 	if (result) {
 		int i = ui->listWidget->count();
-		ui->listWidget->addItems(result.messages);
+		ui->listWidget->addItems(result.messages());
 		int n = ui->listWidget->count();;
 		while (i < n) {
 			ui->listWidget->item(i)->setCheckState(Qt::Unchecked);
@@ -94,7 +94,7 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 		}
 		ui->listWidget->setCurrentRow(0);
 	} else {
-		QString text = result.error_status + "\n\n" + result.error_message;
+		QString text = result.error_status() + "\n\n" + result.error_message();
 		QMessageBox::warning(this, tr("Failed to generate commit message."), text);
 	}
 	
