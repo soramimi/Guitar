@@ -35,13 +35,11 @@ private:
 
 	MainWindow *mainwindow();
 	void updateSigningInfo();
-	void generateDetailedComment();
 	void updateUI(bool enable);
 private slots:
 	void on_pushButton_config_signing_clicked();
 	void on_checkbox_amend_stateChanged(int state);
 	void on_pushButton_generate_with_ai_clicked();
-	void on_pushButton_generate_detailed_comment_clicked();
 	void onReady(GeneratedCommitMessage const &message);
 	void on_plainTextEdit_textChanged();
 };

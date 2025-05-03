@@ -49,7 +49,6 @@ void CommitDialog::updateUI(bool enable)
 	bool is_detailed_enabled = is_ai_enabled && !ui->plainTextEdit->toPlainText().isEmpty();
 	
 	ui->pushButton_generate_with_ai->setEnabled(is_ai_enabled);
-	ui->pushButton_generate_detailed_comment->setEnabled(is_detailed_enabled);
 }
 
 MainWindow *CommitDialog::mainwindow()
@@ -118,24 +117,6 @@ void CommitDialog::onReady(GeneratedCommitMessage const &msg)
 	}
 }
 
-void CommitDialog::generateDetailedComment()
-{
-	GlobalSetOverrideWaitCursor();
-	updateUI(false);
-	
-	commit_message_ = ui->plainTextEdit->toPlainText();
-	QStringList lines = commit_message_.split('\n');
-	if (lines.empty()) {
-		commit_message_ = QString();
-	} else {
-		commit_message_ = lines.first().trimmed();
-	}
-	if (commit_message_.isEmpty()) return;
-	if (diff_.isEmpty()) return;
-	
-	generator_.request(CommitMessageGenerator::DetailedComment, diff_, commit_message_);
-}
-
 void CommitDialog::keyPressEvent(QKeyEvent *event)
 {
 	if (event->modifiers() & Qt::ControlModifier) {
@@ -187,11 +168,6 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 		}
 	}
 	ui->plainTextEdit->setFocus();
-}
-
-void CommitDialog::on_pushButton_generate_detailed_comment_clicked()
-{
-	generateDetailedComment();
 }
 
 void CommitDialog::on_plainTextEdit_textChanged()

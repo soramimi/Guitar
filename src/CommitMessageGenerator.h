@@ -9,7 +9,6 @@ class CommitMessageGenerator {
 public:
 	enum Kind {
 		CommitMessage,
-		DetailedComment,
 	};
 	class Result {
 	public:
@@ -27,7 +26,6 @@ private:
 	Kind kind;
 	CommitMessageGenerator::Result parse_response(const std::string &in, const GenerativeAI::Provider &provider);
 	std::string generatePrompt(const QString &diff, int max);
-	std::string generateDetailedPrompt(QString const &diff, const QString &commit_message);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
 public:
 	CommitMessageGenerator() = default;

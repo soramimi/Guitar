@@ -200,47 +200,6 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 				ret.push_back(QString::fromUtf8(line.data(), line.size()));
 			}
 			return ret;
-		} else if (kind == DetailedComment) {
-			QStringList ret;
-			char const *begin = r.text.c_str();
-			char const *end = begin + r.text.size();
-			char const *ptr = begin;
-			while (ptr < end) {
-				while (ptr < end && isspace((unsigned char)*ptr)) ptr++;
-				char const *left = ptr;
-				if (ptr < end && isdigit((unsigned char)*ptr)) {
-					do {
-						ptr++;
-					} while (ptr < end && isdigit((unsigned char)*ptr));
-					if (ptr < end && *ptr == '.') ptr++;
-				}
-				char quote = 0;
-				while (1) {
-					int c = 0;
-					if (ptr < end) {
-						c = *ptr;
-					}
-					if (quote) {
-						if (*ptr == quote) {
-							quote = 0;
-						}
-					} else {
-						if (*ptr == '"' || *ptr == '\'' || *ptr == '`') {
-							quote = *ptr;
-						} else if (*ptr == '.' || *ptr == '\n' || c == 0) {
-							if (*ptr == '.') ptr++;
-							if (ptr > left) {
-								ret.push_back(QString::fromStdString(std::string(left, ptr)));
-							}
-							break;
-						}
-					}
-					ptr++;
-				}
-			}
-			return ret;
-		} else {
-			return {}; // invalid kind
 		}
 	} else {
 		CommitMessageGenerator::Result ret;
@@ -269,21 +228,6 @@ std::string CommitMessageGenerator::generatePrompt(QString const &diff, int max)
 		)(max);
 	prompt = prompt + "\n\n" + diff.toStdString();
 	return prompt;
-}
-
-std::string CommitMessageGenerator::generateDetailedPrompt(QString const &diff, const QString &commit_message)
-{
-	std::string prompt = strformat(
-		"Generate a supplemental comment explaining a bit more about the following commit message to `git diff` below. "
-		"Please keep it concise, about 5 lines or less of comment. "
-		"Output should be body text only; do not generate headers, footers, and greetings. "
-		"Omit anything like \"The commit\", \"This commit\" or \"This changes\" at the beginning."
-		"The commit message: %s \n"
-		"The git diff:\n"
-		)(commit_message.toStdString());
-	prompt = prompt + "\n\n" + diff.toStdString();
-	return prompt;
-	
 }
 
 /**
@@ -415,9 +359,6 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(QString const &d
 	switch (kind) {
 	case CommitMessage:
 		prompt = generatePrompt(diff, max_message_count);
-		break;
-	case DetailedComment:
-		prompt = generateDetailedPrompt(diff, hint);
 		break;
 	default:
 		return {};

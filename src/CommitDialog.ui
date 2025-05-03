@@ -231,13 +231,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_generate_detailed_comment">
-       <property name="text">
-        <string>Add detailed comment</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Orientation::Horizontal</enum>
@@ -302,7 +295,6 @@
   <tabstop>groupBox_gpg_sign</tabstop>
   <tabstop>pushButton_config_signing</tabstop>
   <tabstop>pushButton_generate_with_ai</tabstop>
-  <tabstop>pushButton_generate_detailed_comment</tabstop>
   <tabstop>checkbox_amend</tabstop>
   <tabstop>plainTextEdit</tabstop>
   <tabstop>pushButton</tabstop>
