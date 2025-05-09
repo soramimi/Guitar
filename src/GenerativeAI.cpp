@@ -11,16 +11,21 @@ namespace GenerativeAI {
 std::vector<Model> available_models()
 {
 	std::vector<Model> models;
-	models.emplace_back(OpenAI{}, "o4-mini");
 	models.emplace_back(OpenAI{}, "gpt-4.1");
-	models.emplace_back(OpenAI{}, "gpt-4o");
-	models.emplace_back(OpenAI{}, "gpt-4.1-nano");
+	models.emplace_back(OpenAI{}, "o4-mini");
 	models.emplace_back(Anthropic{}, "claude-3-7-sonnet-latest");
-	models.emplace_back(Google{}, "gemini-2.0-flash");
+	models.emplace_back(Anthropic{}, "claude-3-5-haiku-20241022");
+	models.emplace_back(Google{}, "gemini-2.5-pro-exp-03-25");
+	models.emplace_back(Google{}, "gemini-2.5-flash-preview-04-17");
 	models.emplace_back(DeepSeek{}, "deepseek-chat");
 	models.emplace_back(OpenRouter{}, "anthropic/claude-3.7-sonnet");
 	models.emplace_back(Ollama{}, "ollama:///gemma3:27b"); // experimental
 	return models;
+}
+
+std::string Model::default_model()
+{
+	return "gpt-4.1";
 }
 
 Model::Model(const Provider &provider, const std::string &model_uri)
@@ -55,11 +60,6 @@ void Model::parse_model(const std::string &name)
 			}
 		}
 	}
-}
-
-std::string Model::default_model()
-{
-	return "gpt-4.1";
 }
 
 Model Model::from_name(std::string const &name)
