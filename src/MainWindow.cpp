@@ -208,6 +208,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	global->mainwindow = this;
 	connect(this, &MainWindow::sigWriteLog, this, &MainWindow::internalWriteLog);
+	global->gitopt.log = true;
 
 	setupShowFileListHandler();
 	setupStatusInfoHandler();
@@ -7296,6 +7297,27 @@ void MainWindow::on_action_view_sort_by_time_changed()
 
 void MainWindow::test()
 {
+}
+
+
+int genmsg()
+{
+	global->appsettings = ApplicationSettings::loadSettings();
+	Git::Context gcx;
+	gcx.git_command = global->appsettings.git_command;
+
+	QString dir = QDir::currentPath();
+	std::shared_ptr<Git> g = std::make_shared<Git>(gcx, dir, QString{}, QString{});
+	std::string diff = CommitMessageGenerator::diff_head(g);
+
+	CommitMessageGenerator gen(CommitMessageGenerator::CommitMessage);
+	CommitMessageGenerator::Result result = gen.generate(QString::fromStdString(diff));
+
+	for (QString const &line : result.messages) {
+		printf("--- %s\n", line.toStdString().c_str());
+	}
+
+	return 0;
 }
 
 

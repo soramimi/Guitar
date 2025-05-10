@@ -472,7 +472,7 @@ public:
 	bool chdirexec(std::function<bool ()> const &fn);
 	struct Option {
 		bool chdir = true;
-		bool log = true;
+		bool log = false;
 		bool errout = false;
 		AbstractPtyProcess *pty = nullptr;
 		QString prefix;

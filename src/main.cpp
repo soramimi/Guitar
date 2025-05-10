@@ -65,6 +65,8 @@ void onSigPipe(int)
 	global->webcx.notify_broken_pipe();
 }
 
+int genmsg();
+
 int main(int argc, char *argv[])
 {
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
@@ -158,6 +160,8 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
+				} else if (arg == "--genmsg") { // experimental
+					return genmsg();
 				}
 			} else {
 				args.push_back(QString::fromStdString(arg));
