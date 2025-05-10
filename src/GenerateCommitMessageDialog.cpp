@@ -7,7 +7,7 @@
 #include <QMessageBox>
 
 struct GenerateCommitMessageDialog::Private {
-	QString diff;
+	std::string diff;
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
 };
@@ -33,7 +33,7 @@ GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
 	delete m;
 }
 
-void GenerateCommitMessageDialog::generate(QString const &diff)
+void GenerateCommitMessageDialog::generate(std::string const &diff)
 {
 	m->diff = diff;
 	
@@ -56,7 +56,7 @@ void GenerateCommitMessageDialog::generate(QString const &diff)
 	m->generator.request(CommitMessageGenerator::CommitMessage, diff);
 }
 
-QString GenerateCommitMessageDialog::diffText() const
+std::string GenerateCommitMessageDialog::diffText() const
 {
 	return m->diff;
 }
@@ -77,7 +77,7 @@ QStringList GenerateCommitMessageDialog::message() const
 void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 {
 	std::string diff = CommitMessageGenerator::diff_head(global->mainwindow->git());
-	generate(QString::fromStdString(diff));
+	generate(diff);
 }
 
 void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)

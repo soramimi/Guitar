@@ -11,7 +11,7 @@
 
 FileType::FileType()
 {
-	//		open(); // このインスタンスを作成した側でopen()を呼ぶこと
+	//open(); // このインスタンスを作成した側でopen()を呼ぶこと
 }
 
 FileType::~FileType()
@@ -59,7 +59,7 @@ std::string FileType::mime_by_data(const char *bin, int len) const
 	if (i != std::string::npos) {
 		s = s.substr(0, i);
 	}
-	return (std::string)misc::trimmed(s);
+	return std::string{misc::trimmed(s)};
 }
 
 std::string FileType::mime_by_file(QString const &path)
@@ -76,26 +76,25 @@ std::string FileType::determin(const QByteArray &in) const
 {
 	if (in.isEmpty()) return {};
 
-	QByteArray in2 = in;
-
-	if (in2.size() > 10) {
-		if (memcmp(in2.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+	if (in.size() > 10) {
+		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
 			QBuffer buf;
-			MemoryReader reader(in2.data(), in2.size());
+			MemoryReader reader(in.data(), in.size());
+
 			reader.open(MemoryReader::ReadOnly);
 			buf.open(QBuffer::WriteOnly);
 			gunzip z;
 			z.set_maximul_size(100000);
 			z.decode(&reader, &buf);
-			in2 = buf.buffer();
+
+			QByteArray uz = buf.buffer();
+			if (!uz.isEmpty()) {
+				return mime_by_data(uz.data(), uz.size());
+			}
 		}
 	}
 
-	std::string mimetype;
-	if (!in2.isEmpty()) {
-		mimetype = mime_by_data(in2.data(), in2.size());
-	}
-	return mimetype;
+	return mime_by_data(in.data(), in.size());
 }
 
 std::string FileType::determin(const QString &path) const

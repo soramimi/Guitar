@@ -44,7 +44,7 @@ void GenerateCommitMessageThread::stop()
 	}
 }
 
-void GenerateCommitMessageThread::request(CommitMessageGenerator::Kind kind, QString const &diff, QString const &hint)
+void GenerateCommitMessageThread::request(CommitMessageGenerator::Kind kind, const std::string &diff, QString const &hint)
 {
 	std::lock_guard lock(mutex_);
 	kind_ = kind;

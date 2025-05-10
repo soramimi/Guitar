@@ -219,14 +219,14 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
  * @param max The maximum number of messages to generate.
  * @return The prompt.
  */
-std::string CommitMessageGenerator::generatePrompt(QString const &diff, int max)
+std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
 {
 	std::string prompt = strformat(
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
 		"No headers and footers other than bulleted messages. "
 		)(max);
-	prompt = prompt + "\n\n" + diff.toStdString();
+	prompt = prompt + "\n\n" + diff;
 	return prompt;
 }
 
@@ -338,13 +338,13 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
  * @param g The Git object.
  * @return The generated commit message.
  */
-CommitMessageGenerator::Result CommitMessageGenerator::generate(QString const &diff, QString const &hint)
+CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff, QString const &hint)
 {
 	constexpr int max_message_count = 5;
 	
 	constexpr bool save_log = false;
 	
-	if (diff.isEmpty()) return {};
+	if (diff.empty()) return {};
 
 	if (diff.size() > 100000) {
 		return Error("error", "diff too large");

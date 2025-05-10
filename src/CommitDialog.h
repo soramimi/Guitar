@@ -29,7 +29,7 @@ private:
 	Ui::CommitDialog *ui;
 	gpg::Data key_;
 	QString previousMessage_;
-	QString diff_;
+	std::string diff_;
 	GenerateCommitMessageThread generator_;
 	QString commit_message_;
 

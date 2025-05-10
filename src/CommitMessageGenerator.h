@@ -25,7 +25,7 @@ public:
 private:
 	Kind kind;
 	CommitMessageGenerator::Result parse_response(const std::string &in, const GenerativeAI::Provider &provider);
-	std::string generatePrompt(const QString &diff, int max);
+        std::string generatePrompt(const std::string &diff, int max);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
 public:
 	CommitMessageGenerator() = default;
@@ -33,7 +33,7 @@ public:
 		: kind(kind)
 	{
 	}
-	Result generate(const QString &diff, QString const &hint = {});
+	Result generate(std::string const &diff, QString const &hint = {});
 	static std::string diff_head(GitRunner g);
 	static Result Error(QString status, QString message)
 	{

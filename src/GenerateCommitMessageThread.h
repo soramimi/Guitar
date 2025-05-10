@@ -18,14 +18,14 @@ public:
 	bool requested_ = false;
 	bool interrupted_ = false;
 	CommitMessageGenerator::Kind kind_;
-	QString diff_;
+	std::string diff_;
 	QString hint_;
 	
 	GenerateCommitMessageThread();
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(CommitMessageGenerator::Kind kind, const QString &diff, QString const &hint = {});
+	void request(CommitMessageGenerator::Kind kind, std::string const &diff, QString const &hint = {});
 signals:
 	void ready(GeneratedCommitMessage const &message);
 	

@@ -7280,10 +7280,26 @@ int genmsg()
 
 	QString dir = QDir::currentPath();
 	std::shared_ptr<Git> g = std::make_shared<Git>(gcx, dir, QString{}, QString{});
-	std::string diff = CommitMessageGenerator::diff_head(g);
+	// std::string diff = CommitMessageGenerator::diff_head(g);
+	std::string cmd = "diff --name-only HEAD";
+	g->git(QString::fromStdString(cmd));
+	std::vector<std::string> files = misc::splitLines(g->resultStdString(), false);
+
+	std::string diff;
+	for (std::string const &file : files) {
+		if (file.empty()) continue;
+		std::string mimetype = global->mainwindow->determinFileType(QString::fromStdString(file));
+		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
+		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
+		if (mimetype == "application/pdf") continue; // PDFはdiffしない
+		if (mimetype == "text/xml" && misc::ends_with(file, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
+		cmd = "diff --full-index HEAD -- " + file;
+		g->git(QString::fromStdString(cmd));
+		diff += g->resultStdString();
+	}
 
 	CommitMessageGenerator gen(CommitMessageGenerator::CommitMessage);
-	CommitMessageGenerator::Result result = gen.generate(QString::fromStdString(diff));
+	CommitMessageGenerator::Result result = gen.generate(diff);
 
 	for (QString const &line : result.messages) {
 		printf("--- %s\n", line.toStdString().c_str());

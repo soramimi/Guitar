@@ -306,6 +306,23 @@ bool misc::starts_with(std::string const &str, std::string const &with)
 }
 
 /**
+ * @brief 文字列が指定の文字列で終わるか判定する
+ *
+ * 与えられた文字列が、指定された文字列で終わるかどうかを判定します。
+ *
+ * @param str チェックする対象の文字列
+ * @param with 終端に存在するか確認する文字列
+ * @return 終端がwithで終わる場合はtrue、そうでない場合はfalse
+ */
+bool misc::ends_with(std::string const &str, std::string const &with)
+{
+	int n = (int)str.size();
+	int m = (int)with.size();
+	if (n < m) return false;
+	return strncmp(str.c_str() + n - m, with.c_str(), m) == 0;
+}
+
+/**
  * @brief 文字列の一部分を取得する
  * 
  * 与えられた文字列の指定位置から、指定された長さの部分文字列を抽出します。

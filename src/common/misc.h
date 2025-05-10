@@ -49,6 +49,7 @@ public:
 	static QString getFileName(QString const &path);
 	static QString makeDateTimeString(const QDateTime &dt);
 	static bool starts_with(std::string const &str, std::string const &with);
+	static bool ends_with(std::string const &str, std::string const &with);
 	static std::string mid(std::string const &str, int start, int length = -1);
 	static QString normalizePathSeparator(QString const &str);
 	static QString joinWithSlash(QString const &left, QString const &right);

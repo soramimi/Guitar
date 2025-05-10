@@ -144,7 +144,7 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	diff_ = QString::fromStdString(CommitMessageGenerator::diff_head(global->mainwindow->git()));
+	diff_ = CommitMessageGenerator::diff_head(global->mainwindow->git());
 	
 	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.model_name());
 	dlg.show();

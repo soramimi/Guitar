@@ -20,8 +20,8 @@ private:
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent, std::string const &model_name);
 	~GenerateCommitMessageDialog();
-	void generate(QString const &diff);
-	QString diffText() const;
+	void generate(const std::string &diff);
+	std::string diffText() const;
 	QStringList message() const;
 private slots:
 	void on_pushButton_regenerate_clicked();
