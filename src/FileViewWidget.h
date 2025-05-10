@@ -55,7 +55,7 @@ public:
 
 	void setViewType(FileViewType type);
 
-	void setImage(const QString &mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
+	void setImage(const std::string &mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
 	void setText(const QList<Document::Line> *source, QString const &object_id, const QString &object_path);
 	void setText(const QByteArray &ba, const QString &object_id, const QString &object_path);
 

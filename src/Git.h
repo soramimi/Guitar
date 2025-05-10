@@ -550,7 +550,7 @@ public:
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
 
-	std::string diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept = nullptr);
+	std::string diff_head(std::function<bool (const QString &, const std::string &)> fn_accept = nullptr);
 
 	struct DiffRaw {
 		struct AB {
@@ -1009,7 +1009,7 @@ public:
 	{
 		return git->diff_raw(old_id, new_id);
 	}
-	std::string diff_head(std::function<bool (QString const &name, QString const &mime)> fn_accept = nullptr)
+	std::string diff_head(std::function<bool (QString const &name, std::string const &mime)> fn_accept = nullptr)
 	{
 		return git->diff_head(fn_accept);
 	}

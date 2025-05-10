@@ -257,9 +257,9 @@ void ImageViewWidget::resizeEvent(QResizeEvent *)
 	updateScrollBarRange();
 }
 
-void ImageViewWidget::setImage(QString mimetype, QByteArray const &ba)
+void ImageViewWidget::setImage(std::string mimetype, QByteArray const &ba)
 {
-	if (mimetype.isEmpty()) {
+	if (mimetype.empty()) {
 		mimetype = "image/x-unknown";
 	}
 

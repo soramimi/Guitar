@@ -652,8 +652,8 @@ public:
 
 	Git::Object catFile(GitRunner g, const QString &id);
 	bool saveAs(const QString &id, const QString &dstpath);
-	QString determinFileType(QByteArray const &in) const;
-	QString determinFileType(const QString &path) const;
+	static std::string determinFileType(QByteArray const &in);
+	static std::string determinFileType(const QString &path);
 
 	TextEditorThemePtr themeForTextEditor();
 	void emitWriteLog(LogData const &logdata);

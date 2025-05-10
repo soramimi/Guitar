@@ -5667,42 +5667,14 @@ bool MainWindow::saveAs(const QString &id, const QString &dstpath)
 	}
 }
 
-QString MainWindow::determinFileType(QByteArray const &in) const
+std::string MainWindow::determinFileType(QByteArray const &in)
 {
-	if (in.isEmpty()) return QString();
-
-	QByteArray in2 = in;
-
-	if (in2.size() > 10) {
-		if (memcmp(in2.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
-			QBuffer buf;
-			MemoryReader reader(in2.data(), in2.size());
-			reader.open(MemoryReader::ReadOnly);
-			buf.open(QBuffer::WriteOnly);
-			gunzip z;
-			z.set_maximul_size(100000);
-			z.decode(&reader, &buf);
-			in2 = buf.buffer();
-		}
-	}
-
-	QString mimetype;
-	if (!in2.isEmpty()) {
-		mimetype = global->filetype.mime_by_data(in2.data(), in2.size());
-	}
-	return mimetype;
+	return global->filetype.determin(in);
 }
 
-QString MainWindow::determinFileType(QString const &path) const
+std::string MainWindow::determinFileType(QString const &path)
 {
-	QFile file(path);
-	if (file.open(QIODevice::ReadOnly)) {
-		QByteArray ba;
-		ba = file.read(65536);
-		file.close();
-		return determinFileType(ba);
-	}
-	return QString();
+	return global->filetype.determin(path);
 }
 
 TextEditorThemePtr MainWindow::themeForTextEditor()

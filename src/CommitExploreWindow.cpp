@@ -243,7 +243,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 		m->content_object = m->objcache->catFile(g, Git::Hash(commit_id));
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
-		QString mimetype = mainwindow()->determinFileType(m->content_object.content);
+		std::string mimetype = mainwindow()->determinFileType(m->content_object.content);
 		if (misc::isImage(mimetype)) {
 			ui->widget_fileview->setImage(mimetype, m->content_object.content, commit_id, path);
 		} else {

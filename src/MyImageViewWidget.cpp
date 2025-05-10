@@ -11,7 +11,7 @@ MyImageViewWidget::MyImageViewWidget(QWidget *parent)
 
 }
 
-void MyImageViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void MyImageViewWidget::setImage(std::string const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	this->object_id_ = object_id;
 	this->path_ = path;

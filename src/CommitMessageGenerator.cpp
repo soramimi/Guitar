@@ -400,7 +400,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(QString const &d
 
 std::string CommitMessageGenerator::diff_head(GitRunner g)
 {
-	std::string diff = g.diff_head([&](QString const &name, QString const &mime) {
+	std::string diff = g.diff_head([&](QString const &name, std::string const &mime) {
 		if (mime == "text/xml" && name.endsWith(".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		return true;
 	});

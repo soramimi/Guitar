@@ -118,7 +118,7 @@ void FileViewWidget::clear()
 #endif
 }
 
-void FileViewWidget::setImage(QString const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
 {
 	setViewType(FileViewType::Image);
 	this->source_id = object_id;

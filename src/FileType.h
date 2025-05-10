@@ -9,18 +9,15 @@ private:
 	QByteArray mgcdata_;
 	magic_t magic_cookie = nullptr;
 public:
-	FileType()
-	{
-//		open(); // このインスタンスを作成した側でopen()を呼ぶこと
-	}
-	~FileType()
-	{
-		close();
-	}
+	FileType();
+	~FileType();
 	bool open();
 	void close();
-	QString mime_by_data(char const *bin, int len);
-	QString mime_by_file(const QString &path);
+	std::string mime_by_data(char const *bin, int len) const;
+	std::string mime_by_file(const QString &path);
+
+	std::string determin(const QByteArray &in) const;
+	std::string determin(const QString &path) const;
 };
 
 #endif // FILETYPE_H

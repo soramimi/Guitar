@@ -506,9 +506,9 @@ void misc::dump(QByteArray const *in)
  * @param mimetype 判定するMIMEタイプ文字列
  * @return テキストファイルを表す場合はtrue、そうでない場合はfalse
  */
-bool misc::isText(QString const &mimetype)
+bool misc::isText(std::string const &mimetype)
 {
-	return mimetype.startsWith("text/");
+	return misc::starts_with(mimetype, "text/");
 }
 
 /**
@@ -519,7 +519,7 @@ bool misc::isText(QString const &mimetype)
  * @param mimetype 判定するMIMEタイプ文字列
  * @return SVG画像を表す場合はtrue、そうでない場合はfalse
  */
-bool misc::isSVG(QString const &mimetype)
+bool misc::isSVG(std::string const &mimetype)
 {
 	if (mimetype == "image/svg") return true;
 	if (mimetype == "image/svg+xml") return true;
@@ -534,7 +534,7 @@ bool misc::isSVG(QString const &mimetype)
  * @param mimetype 判定するMIMEタイプ文字列
  * @return Photoshopファイルを表す場合はtrue、そうでない場合はfalse
  */
-bool misc::isPSD(QString const &mimetype)
+bool misc::isPSD(std::string const &mimetype)
 {
 	if (mimetype == "image/vnd.adobe.photoshop") return true;
 	return false;
@@ -548,7 +548,7 @@ bool misc::isPSD(QString const &mimetype)
  * @param mimetype 判定するMIMEタイプ文字列
  * @return PDFファイルを表す場合はtrue、そうでない場合はfalse
  */
-bool misc::isPDF(QString const &mimetype)
+bool misc::isPDF(std::string const &mimetype)
 {
 	if (mimetype == "application/pdf") return true;
 	return false;
@@ -563,7 +563,7 @@ bool misc::isPDF(QString const &mimetype)
  * @param mimetype 判定するMIMEタイプ文字列
  * @return 画像ファイルを表す場合はtrue、そうでない場合はfalse
  */
-bool misc::isImage(QString const &mimetype)
+bool misc::isImage(std::string const &mimetype)
 {
 #if 0
 	if (mimetype == "image/jpeg") return true;
@@ -579,7 +579,7 @@ bool misc::isImage(QString const &mimetype)
 	return false;
 #else
 	if (isPDF(mimetype)) return true;
-	return mimetype.startsWith("image/");
+	return misc::starts_with(mimetype, "image/");
 #endif
 }
 

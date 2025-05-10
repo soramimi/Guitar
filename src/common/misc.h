@@ -56,11 +56,11 @@ public:
 	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright = QColor());
 	static void dump(const uint8_t *ptr, size_t len);
 	static void dump(QByteArray const *in);
-	static bool isText(QString const &mimetype);
-	static bool isImage(QString const &mimetype);
-	static bool isSVG(QString const &mimetype);
-	static bool isPSD(QString const &mimetype);
-	static bool isPDF(QString const &mimetype);
+	static bool isText(std::string const &mimetype);
+	static bool isImage(std::string const &mimetype);
+	static bool isSVG(std::string const &mimetype);
+	static bool isPSD(std::string const &mimetype);
+	static bool isPDF(std::string const &mimetype);
 	static QString abbrevBranchName(QString const &name);
 	static std::string makeProxyServerURL(std::string text);
 	static QString makeProxyServerURL(QString text);
@@ -69,7 +69,7 @@ public:
 
 	static QString collapseWhitespace(QString const &source);
 	static bool isValidMailAddress(const QString &email);
-	static bool isValidMailAddress(const std::string &email);
+	static bool isValidMailAddress(std::string const &email);
 
 	static std::string_view trimmed(std::string_view const &s);
 	static std::string_view trimQuotes(std::string_view s);

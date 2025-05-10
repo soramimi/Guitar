@@ -1,8 +1,23 @@
 
 #include "FileType.h"
+#include "MemoryReader.h"
+#include "gunzip.h"
 #include <magic.h>
 #include <QDebug>
 #include <QFile>
+#include <QBuffer>
+#include <string>
+#include "common/misc.h"
+
+FileType::FileType()
+{
+	//		open(); // このインスタンスを作成した側でopen()を呼ぶこと
+}
+
+FileType::~FileType()
+{
+	close();
+}
 
 bool FileType::open()
 {
@@ -32,27 +47,65 @@ void FileType::close()
 	}
 }
 
-QString FileType::mime_by_data(const char *bin, int len)
+std::string FileType::mime_by_data(const char *bin, int len) const
 {
 	Q_ASSERT(magic_cookie); // not called open() yet or failed to load magic file
 
 	if (!bin || len < 1) return {};
 	auto *p = magic_buffer(magic_cookie, bin, len);
 	if (!p) return {};
-	QString s = p;
-	auto i = s.indexOf(';');
-	if (i >= 0) {
-		s = s.left(i);
+	std::string s = p;
+	auto i = s.find(';');
+	if (i != std::string::npos) {
+		s = s.substr(0, i);
 	}
-	return s.trimmed();
+	return (std::string)misc::trimmed(s);
 }
 
-QString FileType::mime_by_file(QString const &path)
+std::string FileType::mime_by_file(QString const &path)
 {
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		QByteArray ba = file.readAll();
 		return mime_by_data(ba.data(), ba.size());
+	}
+	return {};
+}
+
+std::string FileType::determin(const QByteArray &in) const
+{
+	if (in.isEmpty()) return {};
+
+	QByteArray in2 = in;
+
+	if (in2.size() > 10) {
+		if (memcmp(in2.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+			QBuffer buf;
+			MemoryReader reader(in2.data(), in2.size());
+			reader.open(MemoryReader::ReadOnly);
+			buf.open(QBuffer::WriteOnly);
+			gunzip z;
+			z.set_maximul_size(100000);
+			z.decode(&reader, &buf);
+			in2 = buf.buffer();
+		}
+	}
+
+	std::string mimetype;
+	if (!in2.isEmpty()) {
+		mimetype = mime_by_data(in2.data(), in2.size());
+	}
+	return mimetype;
+}
+
+std::string FileType::determin(const QString &path) const
+{
+	QFile file(path);
+	if (file.open(QIODevice::ReadOnly)) {
+		QByteArray ba;
+		ba = file.read(65536);
+		file.close();
+		return determin(ba);
 	}
 	return {};
 }
