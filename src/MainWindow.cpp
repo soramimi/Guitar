@@ -2238,6 +2238,8 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 {
 	ASSERT_MAIN_THREAD();
 
+	clearStatusInfo();
+
 	if (ok) {
 		if (data.callback) {
 			data.callback(data.status, data.userdata);
@@ -2573,7 +2575,10 @@ void MainWindow::fetch(GitRunner g, bool prune)
 
 void MainWindow::stage(GitRunner g, QStringList const &paths)
 {
-	runPtyGit(tr("Stageing..."), g, Git_stage{paths}, nullptr, {});
+	runPtyGit(tr("Stageing..."), g, Git_stage{paths}, RUN_PTY_CALLBACK{
+		// updateFileListLater(0);
+		updateCurrentFileList();
+	}, {});
 }
 
 void MainWindow::fetch_tags_f(GitRunner g)
@@ -4156,7 +4161,11 @@ void MainWindow::updateCurrentFileList()
 
 void MainWindow::updateFileListLater(int delay_ms)
 {
-	m->update_file_list_timer.start(delay_ms);
+	if (delay_ms == 0) {
+		updateCurrentFileList();
+	} else {
+		m->update_file_list_timer.start(delay_ms);
+	}
 }
 
 void MainWindow::cancelUpdateFileList()
@@ -5930,7 +5939,8 @@ void MainWindow::on_toolButton_stage_clicked()
 				QString path = getFilePath(item);
 				list.push_back(path);
 			}
-			stage(g, list);
+			// stage(g, list);
+			g.stage(list, nullptr);
 		}
 		updateCurrentFileList();
 	}
