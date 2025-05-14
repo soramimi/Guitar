@@ -1,9 +1,9 @@
 #!/usr/bin/ruby
 
-$qtver = "6.7.2"
+$qtver = "6.9.0"
 
-$qt = "C:/Qt/#{$qtver}/msvc2019_64"
-$windeployqt = "C:/Qt/#{$qtver}/msvc2019_64/bin/windeployqt.exe"
+$qt = "C:/Qt/#{$qtver}/msvc2022_64"
+$windeployqt = "C:/Qt/#{$qtver}/msvc2022_64/bin/windeployqt.exe"
 #$qt = "" # スタティックリンクのとき
 
 $openssl = "C:/Program Files/OpenSSL"
