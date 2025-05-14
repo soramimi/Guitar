@@ -201,6 +201,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 			}
 			return ret;
 		}
+		return {};
 	} else {
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
