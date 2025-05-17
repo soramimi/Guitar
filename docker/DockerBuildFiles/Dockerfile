@@ -5,12 +5,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y apt-utils sudo locales vim git
 RUN apt update
 RUN apt install -y software-properties-common
 RUN apt install -y build-essential clang libc++-dev cmake
-#RUN apt install -y libncurses5
 RUN apt install -y libncurses6
 RUN apt install -y python3 python3-pip ruby zstd wget curl
 RUN apt update
-#RUN DEBIAN_FRONTEND=noninteractive apt install -y qtcreator qtbase5-dev
-#RUN apt install -y geany
 
 ARG UID
 ARG GID
@@ -31,7 +28,8 @@ RUN locale-gen
 COPY ./default_locale /etc/default/locale
 COPY ./environment /etc/
 
-RUN apt install -y file qtbase5-dev libqt5svg5-dev libssl-dev fuse
+RUN apt install -y file libssl-dev fuse
+RUN apt install -y file qt6-base-dev qt6-svg-dev
 RUN apt install -y automake autoconf shtool libtool
 RUN apt install -y doxygen graphviz
 RUN apt install -y nkf universal-ctags

@@ -44,7 +44,7 @@ Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt5widgets5 (>= 5.11.0), libqt5xml5 (>= 5.11.0), libqt5svg5 (>= 5.11.0), zlib1g, git, libmagic1, libmagic-mgc
+Depends: libqt6widgets6 (>= 6.4.2), libqt6xml6t64 (>= 6.4.2), libqt6svg6 (>= 6.4.2), zlib1g, git, libmagic1, libmagic-mgc, desktop-file-utils
 Description: Git GUI Client
 ___
 }
