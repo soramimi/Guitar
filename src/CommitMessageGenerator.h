@@ -25,7 +25,7 @@ public:
 private:
 	Kind kind;
 	CommitMessageGenerator::Result parse_response(const std::string &in, const GenerativeAI::Provider &provider);
-        std::string generatePrompt(const std::string &diff, int max);
+	std::string generatePrompt(const std::string &diff, int max);
 	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
 public:
 	CommitMessageGenerator() = default;

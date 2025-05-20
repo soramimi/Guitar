@@ -237,11 +237,11 @@ QByteArray Git::toQByteArray() const
 	return QByteArray(&m->var.result[0], m->var.result.size());
 }
 
-std::string Git::resultStdString() const
+std::string_view Git::resultStdString() const
 {
 	auto const &v = m->var.result;
 	if (v.empty()) return {};
-	return std::string(v.begin(), v.end());
+	return std::string_view(v.data(), v.size());
 }
 
 QString Git::resultQString() const
@@ -517,23 +517,25 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultQString();
 }
 
-std::string Git::diff_head(std::function<bool (QString const &name, std::string const &mime)> fn_accept)
+std::string Git::diff_head(std::function<bool (std::string const &name, std::string const &mime)> fn_accept)
 {
 	QString cmd = "diff --name-only HEAD";
 	git(cmd);
-	QStringList files = misc::splitLines(resultQString());
+
+	std::vector<std::string_view> files = misc::splitLinesV(resultStdString(), false);
 	
 	std::string diff;
-	for (auto file : files) {
-		if (file.isEmpty()) continue;
-		std::string mimetype = global->mainwindow->determinFileType(file);
+	for (auto const &sv : files) {
+		if (sv.empty()) continue;
+		std::string file(sv);
+		std::string mimetype = global->mainwindow->determinFileType(std::string(file));
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
 		if (fn_accept) {
 			if (!fn_accept(file, mimetype)) continue; // ファイルの種類によるフィルタリング
 		}
-		cmd = "diff --full-index HEAD -- " + file;
+		cmd = "diff --full-index HEAD -- " + QString::fromStdString(file);
 		git(cmd);
 		diff += resultStdString();
 	}
@@ -948,7 +950,7 @@ QDateTime Git::repositoryLastModifiedTime()
 {
 	if (isValidWorkingCopy()) {
 		git("log --format=%at --all -1");
-		std::string s = resultStdString();
+		std::string s(resultStdString());
 		QDateTime dt = QDateTime::fromSecsSinceEpoch(misc::toi<uint64_t>(s));
 		return dt;
 	}

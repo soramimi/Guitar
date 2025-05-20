@@ -5681,9 +5681,9 @@ std::string MainWindow::determinFileType(QByteArray const &in)
 	return global->filetype.determin(in);
 }
 
-std::string MainWindow::determinFileType(QString const &path)
+std::string MainWindow::determinFileType(std::string const &path)
 {
-	return global->filetype.determin(path);
+	return global->filetype.determin(QString::fromStdString(path));
 }
 
 TextEditorThemePtr MainWindow::themeForTextEditor()
@@ -7298,7 +7298,7 @@ int genmsg()
 	std::string diff;
 	for (std::string const &file : files) {
 		if (file.empty()) continue;
-		std::string mimetype = global->mainwindow->determinFileType(QString::fromStdString(file));
+		std::string mimetype = global->mainwindow->determinFileType(std::string(file));
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
