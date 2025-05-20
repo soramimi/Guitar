@@ -106,14 +106,24 @@ void CommitDialog::onReady(GeneratedCommitMessage const &msg)
 	updateUI(true);
 	
 	if (msg && !msg.messages().empty()) {
-		QStringList lines;
-		lines.append(commit_message_);
-		lines.append(QString());
-		for (QString const &line : msg.messages()) {
-			lines.append(line);
+		std::vector<std::string> lines;
+		lines.push_back(commit_message_);
+		lines.push_back({});
+		for (std::string const &line : msg.messages()) {
+			lines.push_back(line);
 		}
-		QString text = lines.join('\n');
-		setText(text);
+		auto Join = [](std::vector<std::string> lines, char c){
+			std::string ret;
+			for (auto const &line : lines) {
+				if (!ret.empty()) {
+					ret.push_back(c);
+				}
+				ret.append(line);
+			}
+			return ret;
+		};
+		std::string text = Join(lines, '\n');
+		setText(QString::fromStdString(text));
 	}
 }
 

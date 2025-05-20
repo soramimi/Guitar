@@ -13,11 +13,11 @@ public:
 	class Result {
 	public:
 		bool error = false;
-		QString error_status;
-		QString error_message;
-		QStringList messages;
+		std::string error_status;
+		std::string error_message;
+		std::vector<std::string> messages;
 		Result() = default;
-		Result(const QStringList &messages)
+		Result(std::vector<std::string> const &messages)
 			: messages(messages)
 		{
 		}
@@ -35,7 +35,7 @@ public:
 	}
 	Result generate(std::string const &diff, QString const &hint = {});
 	static std::string diff_head(GitRunner g);
-	static Result Error(QString status, QString message)
+	static Result Error(std::string const &status, std::string const &message)
 	{
 		Result ret;
 		ret.error = true;

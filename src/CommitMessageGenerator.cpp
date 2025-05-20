@@ -195,9 +195,9 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 					lines.erase(lines.begin() + i);
 				}
 			}
-			QStringList ret;
+			std::vector<std::string> ret;
 			for (auto const &line : lines) {
-				ret.push_back(QString::fromUtf8(line.data(), line.size()));
+				ret.emplace_back(line);
 			}
 			return ret;
 		}
@@ -205,10 +205,10 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 	} else {
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
-		ret.error_status = QString::fromStdString(r.error_status);
-		ret.error_message = QString::fromStdString(r.error_message);
-		if (ret.error_message.isEmpty()) {
-			ret.error_message = QString::fromStdString(in);
+		ret.error_status = r.error_status;
+		ret.error_message = r.error_message;
+		if (ret.error_message.empty()) {
+			ret.error_message = in;
 		}
 		return ret;
 	}

@@ -7311,8 +7311,8 @@ int genmsg()
 	CommitMessageGenerator gen(CommitMessageGenerator::CommitMessage);
 	CommitMessageGenerator::Result result = gen.generate(diff);
 
-	for (QString const &line : result.messages) {
-		printf("--- %s\n", line.toStdString().c_str());
+	for (std::string const &line : result.messages) {
+		printf("--- %s\n", line.c_str());
 	}
 
 	return 0;

@@ -21,15 +21,15 @@ public:
 	{
 		return !result_->error;
 	}
-	QStringList messages() const
+	std::vector<std::string> const &messages() const
 	{
 		return result_->messages;
 	}
-	QString error_status() const
+	std::string const &error_status() const
 	{
 		return result_->error_status;
 	}
-	QString error_message() const
+	std::string const &error_message() const
 	{
 		return result_->error_message;
 	}

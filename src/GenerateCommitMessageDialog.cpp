@@ -85,8 +85,15 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 	GlobalRestoreOverrideCursor();
 
 	if (result) {
+		auto MakeStringList = [](std::vector<std::string> const &list) {
+			QStringList ret;
+			for (auto const &s : list) {
+				ret.append(QString::fromStdString(s));
+			}
+			return ret;
+		};
 		int i = ui->listWidget->count();
-		ui->listWidget->addItems(result.messages());
+		ui->listWidget->addItems(MakeStringList(result.messages()));
 		int n = ui->listWidget->count();;
 		while (i < n) {
 			ui->listWidget->item(i)->setCheckState(Qt::Unchecked);
@@ -94,8 +101,8 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 		}
 		ui->listWidget->setCurrentRow(0);
 	} else {
-		QString text = result.error_status() + "\n\n" + result.error_message();
-		QMessageBox::warning(this, tr("Failed to generate commit message."), text);
+		std::string text = result.error_status() + "\n\n" + result.error_message();
+		QMessageBox::warning(this, tr("Failed to generate commit message."), QString::fromStdString(text));
 	}
 	
 	ui->pushButton_regenerate->setEnabled(true);	

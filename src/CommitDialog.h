@@ -31,7 +31,7 @@ private:
 	QString previousMessage_;
 	std::string diff_;
 	GenerateCommitMessageThread generator_;
-	QString commit_message_;
+	std::string commit_message_;
 
 	MainWindow *mainwindow();
 	void updateSigningInfo();
