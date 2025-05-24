@@ -13,6 +13,7 @@ std::vector<Model> available_models()
 	std::vector<Model> models;
 	models.emplace_back(OpenAI{}, "gpt-4.1");
 	models.emplace_back(OpenAI{}, "o4-mini");
+	models.emplace_back(Anthropic{}, "claude-sonnet-4-20250514");
 	models.emplace_back(Anthropic{}, "claude-3-7-sonnet-latest");
 	models.emplace_back(Anthropic{}, "claude-3-5-haiku-20241022");
 	models.emplace_back(Google{}, "gemini-2.5-pro-exp-03-25");
