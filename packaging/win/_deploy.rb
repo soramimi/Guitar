@@ -1,5 +1,6 @@
 require 'fileutils'
 $script_dir = __dir__
+$project_root = Dir.pwd
 
 $qtver = "6.9.0"
 
@@ -52,8 +53,8 @@ dstname = "Guitar-#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}-windows-x6
 run "curl -T _release/#{srcname} ftp://192.168.0.5:/Public/pub/nightlybuild/#{dstname}"
 
 innosetup = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
-destdir = "_release"
+destdir = "#{$project_root}/_release"
 filename = "Setup-Guitar-#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}-windows-x64"
 filename_exe = "#{filename}.exe"
-system("\"#{innosetup}\" packaging/win/InnoSetup/Guitar.iss /O\"#{destdir}\" /F\"#{filename}\"")
+system("\"#{innosetup}\" packaging/win/InnoSetup/Guitar.iss /DProjectRoot=\"#{$project_root}\" /O\"#{destdir}\" /F\"#{filename}\"")
 run "curl -T #{destdir}/#{filename_exe} ftp://192.168.0.5:/Public/pub/nightlybuild/#{filename_exe}"
