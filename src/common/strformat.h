@@ -24,6 +24,139 @@
 
 namespace strformat_ns {
 
+class misc {
+private:
+	/**
+	 * @brief Return 10 raised to an integer power.
+	 *
+	 * A small lookup table is used for the most common range to avoid
+	 * calling the comparatively expensive `pow()` routine.  Values outside
+	 * the table range fall back to `pow(10.0, exp)`.
+	 *
+	 * @param exp Decimal exponent (positive or negative).
+	 * @return The value 10^exp as a double.
+	 */
+	static double pow10_int(int exp)
+	{
+		// Pre‑computed powers for |exp| ≤ 16
+		static const double tbl[] = {
+			1e+00, 1e+01, 1e+02, 1e+03, 1e+04, 1e+05, 1e+06,
+			1e+07, 1e+08, 1e+09, 1e+10, 1e+11, 1e+12, 1e+13,
+			1e+14, 1e+15, 1e+16
+		};
+		if (exp >= 0 && exp < static_cast<int>(sizeof tbl / sizeof *tbl))
+			return tbl[exp];
+		if (exp <= 0 && exp > -static_cast<int>(sizeof tbl / sizeof *tbl))
+			return 1.0 / tbl[-exp];
+		// Rare case: delegate to libm
+		return std::pow(10.0, exp);
+	}
+public:
+	/**
+	 * @brief Locale‑independent `strtod` clone.
+	 *
+	 * Parses a floating‑point literal from a C‑string.  Leading white‑space,
+	 * an optional sign, fractional part (with a mandatory '.' as the decimal
+	 * separator), and an optional exponent (`e`/`E`) are recognised.
+	 *
+	 * The implementation **ignores the current locale**; the decimal point
+	 * must be `'.'` and no thousands separators are accepted.
+	 *
+	 * @param nptr   Pointer to NUL‑terminated text to parse.
+	 * @param endptr If non‑NULL, receives a pointer to the first character
+	 *               following the parsed number (or `nptr` on failure).
+	 * @return The parsed value.
+	 */
+	static double my_strtod(const char *nptr, char **endptr)
+	{
+		const char *s = nptr;
+		bool sign = false;
+		bool saw_digit = false;
+		int frac_digits = 0;
+		long exp_val = 0;
+		bool exp_sign = false;
+		double value = 0.0;
+
+		// Skip leading white‑space
+		while (std::isspace((unsigned char)*s)) ++s;
+
+		// Parse optional sign
+		if (*s == '+' || *s == '-') {
+			if (*s == '-') sign = true;
+			s++;
+		}
+
+		// Integer part
+		while (std::isdigit((unsigned char)*s)) {
+			saw_digit = true;
+			value = value * 10.0 + (*s - '0');
+			s++;
+		}
+
+		// Fractional part
+		if (*s == '.') {
+			s++;
+			while (std::isdigit((unsigned char)*s)) {
+				saw_digit = true;
+				value = value * 10.0 + (*s - '0');
+				s++;
+				frac_digits++;
+			}
+		}
+
+		// No digits at all -> conversion failure
+		if (!saw_digit) {
+			if (endptr) *endptr = const_cast<char *>(nptr);
+			return 0.0;
+		}
+
+		// Exponent part
+		if (*s == 'e' || *s == 'E') {
+			s++;
+			const char *exp_start = s;
+			if (*s == '+' || *s == '-') {
+				if (*s == '-') exp_sign = true;
+				s++;
+			}
+			if (std::isdigit((unsigned char)*s)) {
+				while (std::isdigit((unsigned char)*s)) {
+					exp_val = exp_val * 10 + (*s - '0');
+					s++;
+				}
+				if (exp_sign) {
+					exp_val = -exp_val;
+				}
+			} else {
+				// Roll back if 'e' is not followed by a valid exponent
+				s = exp_start - 1;
+			}
+		}
+
+		// Scale by 10^(exponent − #fractional‑digits)
+		int total_exp = exp_val - frac_digits;
+		if (total_exp != 0) {
+			value *= pow10_int(total_exp);
+		}
+
+		// Apply sign
+		if (sign) {
+			value = -value;
+		}
+
+		// Set errno on overflow/underflow
+		if (!std::isfinite(value)) {
+			// errno = ERANGE;
+			value = sign ? -HUGE_VAL : HUGE_VAL;
+		} else if (value == 0.0 && saw_digit && total_exp != 0) {
+			// errno = ERANGE;  // underflow
+		}
+
+		// Report where parsing stopped
+		if (endptr) *endptr = const_cast<char *>(s);
+		return value;
+	}
+};
+
 struct NumberParser {
 	char const *p;
 	bool sign = false;
@@ -64,55 +197,70 @@ template <typename T> static inline T parse_number(char const *ptr, std::functio
 	if (t.sign) v = -v;
 	return v;
 }
-template <typename T> static inline T num(char const *value);
-template <> inline char num<char>(char const *value)
+
+struct Option_ {
+	struct lconv *lc = nullptr;
+};
+
+template <typename T> static inline T num(char const *value, Option_ const &opt);
+template <> inline char num<char>(char const *value, Option_ const &opt)
 {
 	return parse_number<char>(value, [](char const *p, int radix){
 		return (char)strtol(p, nullptr, radix);
 	});
 }
-template <> inline int32_t num<int32_t>(char const *value)
+template <> inline int32_t num<int32_t>(char const *value, Option_ const &opt)
 {
 	return parse_number<int32_t>(value, [](char const *p, int radix){
 		return strtol(p, nullptr, radix);
 	});
 }
-template <> inline uint32_t num<uint32_t>(char const *value)
+template <> inline uint32_t num<uint32_t>(char const *value, Option_ const &opt)
 {
 	return parse_number<uint32_t>(value, [](char const *p, int radix){
 		return strtoul(p, nullptr, radix);
 	});
 }
-template <> inline int64_t num<int64_t>(char const *value)
+template <> inline int64_t num<int64_t>(char const *value, Option_ const &opt)
 {
 	return parse_number<int64_t>(value, [](char const *p, int radix){
 		return strtoll(p, nullptr, radix);
 	});
 }
-template <> inline uint64_t num<uint64_t>(char const *value)
+template <> inline uint64_t num<uint64_t>(char const *value, Option_ const &opt)
 {
 	return parse_number<uint64_t>(value, [](char const *p, int radix){
 		return strtoull(p, nullptr, radix);
 	});
 }
 #ifndef STRFORMAT_NO_FP
-template <> inline double num<double>(char const *value)
+template <> inline double num<double>(char const *value, Option_ const &opt)
 {
-	return parse_number<double>(value, [](char const *p, int radix){
+	return parse_number<double>(value, [&opt](char const *p, int radix){
 		if (radix == 10) {
-			return strtod(p, nullptr);
+			if (opt.lc) {
+				// locale-dependent
+				return strtod(p, nullptr);
+			} else {
+				// locale-independent
+				return misc::my_strtod(p, nullptr);
+			}
 		} else {
 			return (double)strtoll(p, nullptr, radix);
 		}
 	});
 }
 #endif
-template <typename T> static inline T num(std::string const &value)
+template <typename T> static inline T num(std::string const &value, Option_ const &opt)
 {
-	return num<T>(value.data());
+	return num<T>(value.data(), opt);
 }
 
 class string_formatter {
+public:
+	enum Flags {
+		Locale = 0x0001,
+	};
 private:
 	struct Part {
 		Part *next;
@@ -143,10 +291,6 @@ private:
 	static Part *alloc_part(const std::string_view &str)
 	{
 		return alloc_part(str.data(), (int)str.size());
-	}
-	static Part *alloc_part(std::vector<char> const &vec)
-	{
-		return alloc_part(vec.data(), (int)vec.size());
 	}
 	static void free_part(Part **p)
 	{
@@ -198,7 +342,7 @@ private:
 	}
 	//
 #ifndef STRFORMAT_NO_FP
-	static Part *format_double(double val, int precision, bool trim_zeros, bool plus)
+	Part *format_double(double val, int precision, bool trim_zeros, bool plus)
 	{
 		if (std::isnan(val)) return alloc_part("#NAN");
 		if (std::isinf(val)) return alloc_part("#INF");
@@ -229,7 +373,7 @@ private:
 
 		if (precision > 0) {
 			dot = end;
-			*end++ = '.';
+			*end++ = decimal_point();
 			double v = val;
 			int e = 0;
 			while (v > 0 && v < 1) {
@@ -519,47 +663,55 @@ private:
 		return alloc_part(ptr, end);
 	}
 private:
-	std::string text_;
-	char const *head_;
-	char const *next_;
-	PartList list_;
-	bool upper_ : 1;
-	bool zero_padding_ : 1;
-	bool align_left_ : 1;
-	bool plus_ : 1;
-	int width_;
-	int precision_;
-	int lflag_;
+	struct Private {
+		std::string text;
+		char const *head;
+		char const *next;
+		PartList list;
+		bool upper : 1;
+		bool zero_padding : 1;
+		bool align_left : 1;
+		bool plus : 1;
+		int width;
+		int precision;
+		int lflag;
+		Option_ opt;
+	} q;
+
+	void _init()
+	{
+		q.list = {};
+	}
 
 	void clear()
 	{
-		free_list(&list_);
+		free_list(&q.list);
 	}
 	bool advance(bool complete)
 	{
 		bool r = false;
 		auto Flush = [&](){
-			if (head_ < next_) {
-				Part *p = alloc_part(head_, next_);
-				add_part(&list_, p);
-				head_ = next_;
+			if (q.head < q.next) {
+				Part *p = alloc_part(q.head, q.next);
+				add_part(&q.list, p);
+				q.head = q.next;
 			}
 		};
-		while (*next_) {
-			if (*next_ == '%') {
-				if (next_[1] == '%') {
-					next_++;
+		while (*q.next) {
+			if (*q.next == '%') {
+				if (q.next[1] == '%') {
+					q.next++;
 					Flush();
-					next_++;
-					head_ = next_;
+					q.next++;
+					q.head = q.next;
 				} else if (complete) {
-					next_++;
+					q.next++;
 				} else {
 					r = true;
 					break;
 				}
 			} else {
-				next_++;
+				q.next++;
 			}
 		}
 		Flush();
@@ -568,8 +720,8 @@ private:
 #ifndef STRFORMAT_NO_FP
 	Part *format_f(double value, bool trim_zeros)
 	{
-		int pr = precision_ < 0 ? 6 : precision_;
-		return format_double(value, pr, trim_zeros, plus_);
+		int pr = q.precision < 0 ? 6 : q.precision;
+		return format_double(value, pr, trim_zeros, q.plus);
 	}
 #endif
 	Part *format_c(char c)
@@ -619,7 +771,7 @@ private:
 #endif
 			}
 		}
-		return format_hex32(value, upper_);
+		return format_hex32(value, q.upper);
 	}
 	Part *format_x64(uint64_t value, int hint)
 	{
@@ -634,7 +786,7 @@ private:
 #endif
 			}
 		}
-		return format_hex64(value, upper_);
+		return format_hex64(value, q.upper);
 	}
 	Part *format(char c, int hint)
 	{
@@ -669,7 +821,7 @@ private:
 #endif
 			}
 		}
-		return format_int32(value, plus_);
+		return format_int32(value, q.plus);
 	}
 	Part *format(uint32_t value, int hint)
 	{
@@ -699,7 +851,7 @@ private:
 #endif
 			}
 		}
-		return format_int64(value, plus_);
+		return format_int64(value, q.plus);
 	}
 	Part *format(uint64_t value, int hint)
 	{
@@ -724,22 +876,22 @@ private:
 		if (hint) {
 			switch (hint) {
 			case 'c':
-				return format_c(num<char>(value));
+				return format_c(num<char>(value, q.opt));
 			case 'd':
-				if (lflag_ == 0) {
-					return format(num<int32_t>(value), 0);
+				if (q.lflag == 0) {
+					return format(num<int32_t>(value, q.opt), 0);
 				} else {
-					return format(num<int64_t>(value), 0);
+					return format(num<int64_t>(value, q.opt), 0);
 				}
 			case 'u': case 'o': case 'x':
-				if (lflag_ == 0) {
-					return format(num<uint32_t>(value), hint);
+				if (q.lflag == 0) {
+					return format(num<uint32_t>(value, q.opt), hint);
 				} else {
-					return format(num<uint64_t>(value), hint);
+					return format(num<uint64_t>(value, q.opt), hint);
 				}
 #ifndef STRFORMAT_NO_FP
 			case 'f':
-				return format(num<double>(value), hint);
+				return format(num<double>(value, q.opt), hint);
 #endif
 			}
 		}
@@ -750,14 +902,7 @@ private:
 		if (hint == 's') {
 			return alloc_part(value);
 		}
-		return format((std::string)value.data(), hint);
-	}
-	Part *format(std::vector<char> const &value, int hint)
-	{
-		if (hint == 's') {
-			return alloc_part(value);
-		}
-		return format(std::string(value.data(), value.size()), hint);
+		return format(value.data(), hint);
 	}
 	Part *format_p(void *val)
 	{
@@ -765,44 +910,44 @@ private:
 	}
 	void reset_format_params()
 	{
-		upper_ = false;
-		zero_padding_ = false;
-		align_left_ = false;
-		plus_ = false;
-		width_ = -1;
-		precision_ = -1;
-		lflag_ = 0;
+		q.upper = false;
+		q.zero_padding = false;
+		q.align_left = false;
+		q.plus = false;
+		q.width = -1;
+		q.precision = -1;
+		q.lflag = 0;
 	}
 	void format(std::function<Part *(int)> const &callback, int width, int precision)
 	{
 		if (advance(false)) {
-			if (*next_ == '%') {
-				next_++;
+			if (*q.next == '%') {
+				q.next++;
 			}
 
 			reset_format_params();
 
 			while (1) {
-				int c = (unsigned char)*next_;
+				int c = (unsigned char)*q.next;
 				if (c == '0') {
-					zero_padding_ = true;
+					q.zero_padding = true;
 				} else if (c == '+') {
-					plus_ = true;
+					q.plus = true;
 				} else if (c == '-') {
-					align_left_ = true;
+					q.align_left = true;
 				} else {
 					break;
 				}
-				next_++;
+				q.next++;
 			}
 
 			auto GetNumber = [&](int alternate_value){
 				int value = -1;
-				if (*next_ == '*') {
-					next_++;
+				if (*q.next == '*') {
+					q.next++;
 				} else {
 					while (1) {
-						int c = (unsigned char)*next_;
+						int c = (unsigned char)*q.next;
 						if (!isdigit(c)) break;
 						if (value < 0) {
 							value = 0;
@@ -810,7 +955,7 @@ private:
 							value *= 10;
 						}
 						value += c - '0';
-						next_++;
+						q.next++;
 					}
 				}
 				if (value < 0) {
@@ -819,101 +964,134 @@ private:
 				return value;
 			};
 
-			width_ = GetNumber(width);
+			q.width = GetNumber(width);
 
-			if (*next_ == '.') {
-				next_++;
+			if (*q.next == '.') {
+				q.next++;
 			}
 
-			precision_ = GetNumber(precision);
+			q.precision = GetNumber(precision);
 
-			while (*next_ == 'l') {
-				lflag_++;
-				next_++;
+			while (*q.next == 'l') {
+				q.lflag++;
+				q.next++;
 			}
 
 			Part *p = nullptr;
 
-			int c = (unsigned char)*next_;
+			int c = (unsigned char)*q.next;
 			if (isupper(c)) {
-				upper_ = true;
+				q.upper = true;
 				c = tolower(c);
 			}
 			if (isalpha(c)) {
 				p = callback(c);
-				next_++;
+				q.next++;
 			}
 			if (p) {
-				int padlen = width_ - p->size;
-				if (padlen > 0 && !align_left_) {
-					if (zero_padding_) {
+				int padlen = q.width - p->size;
+				if (padlen > 0 && !q.align_left) {
+					if (q.zero_padding) {
 						char c = p->data[0];
-						add_chars(&list_, '0', padlen);
+						add_chars(&q.list, '0', padlen);
 						if (c == '+' || c == '-') {
-							list_.last->data[0] = c;
+							q.list.last->data[0] = c;
 							p->data[0] = '0';
 						}
 					} else {
-						add_chars(&list_, ' ', padlen);
+						add_chars(&q.list, ' ', padlen);
 					}
 				}
 
-				add_part(&list_, p);
+				add_part(&q.list, p);
 
-				if (padlen > 0 && align_left_) {
-					add_chars(&list_, ' ', padlen);
+				if (padlen > 0 && q.align_left) {
+					add_chars(&q.list, ' ', padlen);
 				}
 			}
 
-			head_ = next_;
+			q.head = q.next;
 		}
 	}
 	int length()
 	{
 		advance(true);
 		int len = 0;
-		for (Part *p = list_.head; p; p = p->next) {
+		for (Part *p = q.list.head; p; p = p->next) {
 			len += p->size;
 		}
 		return len;
 	}
+	void use_locale(bool use)
+	{
+		if (use) {
+			q.opt.lc = localeconv();
+		} else {
+			q.opt.lc = nullptr;
+		}
+	}
+	void set_flags(int flags)
+	{
+		use_locale(flags & Locale);
+	}
 public:
-	string_formatter(string_formatter &&) = delete;
 	string_formatter(string_formatter const &) = delete;
-	void operator = (string_formatter &&) = delete;
 	void operator = (string_formatter const &) = delete;
 
-	string_formatter()
+	string_formatter(string_formatter &&r)
 	{
-		reset();
+		q = r.q;
+		r._init();
+	}
+	void operator = (string_formatter &&r)
+	{
+		clear();
+		q = r.q;
+		r._init();
+	}
+
+	string_formatter(int flags = 0, std::string const &text = {})
+	{
+		reset(flags, text);
 	}
 
 	string_formatter(std::string const &text)
-		: text_(text)
 	{
-		reset();
+		reset(0, text);
 	}
 	~string_formatter()
 	{
 		clear();
 	}
 
-	string_formatter &reset()
+	char decimal_point() const
+	{
+		if (q.opt.lc && q.opt.lc->decimal_point) {
+			return *q.opt.lc->decimal_point;
+		}
+		return '.';
+	}
+
+	string_formatter &reset(int flags, std::string const &text)
 	{
 		clear();
-		head_ = text_.data();
-		next_ = head_;
+		q.text = text;
+		q.head = q.text.data();
+		q.next = q.head;
+
+		use_locale(flags & Locale);
+
 		return *this;
 	}
 
 	string_formatter &append(std::string const &s)
 	{
-		text_ += s;
+		q.text += s;
 		return *this;
 	}
 	string_formatter &append(char const *s)
 	{
-		text_ += s;
+		q.text += s;
 		return *this;
 	}
 
@@ -989,7 +1167,7 @@ public:
 	void render(std::function<void (char const *ptr, int len)> const &to)
 	{
 		advance(true);
-		for (Part *p = list_.head; p; p = p->next) {
+		for (Part *p = q.list.head; p; p = p->next) {
 			to(p->data, p->size);
 		}
 	}
