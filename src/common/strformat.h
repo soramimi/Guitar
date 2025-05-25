@@ -904,6 +904,14 @@ private:
 		}
 		return format(value.data(), hint);
 	}
+	Part *format(std::vector<char> const &value, int hint)
+	{
+		std::string_view sv(value.data(), value.size());
+		if (hint == 's') {
+			return alloc_part(sv);
+		}
+		return format(sv, hint);
+	}
 	Part *format_p(void *val)
 	{
 		return format_pointer(val);
