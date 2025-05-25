@@ -1046,6 +1046,7 @@ public:
 
 } // namespace strformat_ns
 
-using strformat = strformat_ns::string_formatter;
+// using strformat = strformat_ns::string_formatter;
+using strf = strformat_ns::string_formatter;
 
 #endif // STRFORMAT_H

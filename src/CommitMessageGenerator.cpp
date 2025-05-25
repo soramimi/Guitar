@@ -222,7 +222,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
  */
 std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
 {
-	std::string prompt = strformat(
+	std::string prompt = strf(
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
 		"No headers and footers other than bulleted messages. "
@@ -257,7 +257,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		{"role": "system", "content": "You are an experienced engineer."},
 		{"role": "user", "content": "%s"}]
 })---";
-			return strformat(json)(modelname)(jstream::encode_json_string(prompt));
+			return strf(json)(modelname)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::Unknown const &provider)
@@ -280,7 +280,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"max_tokens": %d,
 	"temperature": 0.7
 })---";
-			return strformat(json)(modelname)(jstream::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
+			return strf(json)(modelname)(jstream::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
 		}
 
 		std::string operator () (GenerativeAI::Google const &provider)
@@ -292,7 +292,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		}]
 	}]
 })---";
-			return strformat(json)(jstream::encode_json_string(prompt));
+			return strf(json)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::DeepSeek const &provider)
@@ -305,7 +305,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	],
 	"stream": false
 })---";
-			return strformat(json)(modelname)(jstream::encode_json_string(prompt));
+			return strf(json)(modelname)(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::Ollama const &provider)
@@ -315,7 +315,7 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 	"prompt": "%s",
 	"stream": false
 })---";
-			return strformat(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+			return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 		}
 
 		std::string operator () (GenerativeAI::OpenRouter const &provider)

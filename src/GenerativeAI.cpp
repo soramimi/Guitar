@@ -153,7 +153,7 @@ struct Models {
 	{
 		Request r;
 		r.model = model_.model_name();
-		r.endpoint_url = strformat("http://%s:%s/api/generate")(model_.host())(model_.port()); // experimental
+		r.endpoint_url = strf("http://%s:%s/api/generate")(model_.host())(model_.port()); // experimental
 		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
 		return r;
 	}
