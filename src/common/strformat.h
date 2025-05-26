@@ -1,9 +1,12 @@
 // String Formatter
-// Copyright (C) 2024 S.Fuchita (soramimi_jp)
+// Copyright (C) 2025 S.Fuchita (soramimi_jp)
 // This software is distributed under the MIT license.
 
 #ifndef STRFORMAT_H
 #define STRFORMAT_H
+
+// #define STRFORMAT_NO_LOCALE
+// #define STRFORMAT_NO_FP
 
 #include <algorithm>
 #include <cmath>
@@ -15,6 +18,10 @@
 #include <string>
 #include <vector>
 #include <string_view>
+
+#ifndef STRFORMAT_NO_LOCALE
+#include <locale.h>
+#endif
 
 #ifdef _MSC_VER
 #include <io.h>
@@ -199,7 +206,11 @@ template <typename T> static inline T parse_number(char const *ptr, std::functio
 }
 
 struct Option_ {
+#ifdef STRFORMAT_NO_LOCALE
+	void *lc = nullptr;
+#else
 	struct lconv *lc = nullptr;
+#endif
 };
 
 template <typename T> static inline T num(char const *value, Option_ const &opt);
@@ -1030,6 +1041,7 @@ private:
 		}
 		return len;
 	}
+#ifndef STRFORMAT_NO_LOCALE
 	void use_locale(bool use)
 	{
 		if (use) {
@@ -1038,9 +1050,12 @@ private:
 			q.opt.lc = nullptr;
 		}
 	}
+#endif
 	void set_flags(int flags)
 	{
+#ifndef STRFORMAT_NO_LOCALE
 		use_locale(flags & Locale);
+#endif
 	}
 public:
 	string_formatter(string_formatter const &) = delete;
@@ -1074,9 +1089,11 @@ public:
 
 	char decimal_point() const
 	{
+#ifndef STRFORMAT_NO_LOCALE
 		if (q.opt.lc && q.opt.lc->decimal_point) {
 			return *q.opt.lc->decimal_point;
 		}
+#endif
 		return '.';
 	}
 
@@ -1087,7 +1104,9 @@ public:
 		q.head = q.text.data();
 		q.next = q.head;
 
+#ifndef STRFORMAT_NO_LOCALE
 		use_locale(flags & Locale);
+#endif
 
 		return *this;
 	}
