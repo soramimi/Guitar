@@ -5676,14 +5676,39 @@ bool MainWindow::saveAs(const QString &id, const QString &dstpath)
 	}
 }
 
-std::string MainWindow::determinFileType(QByteArray const &in)
+std::string MainWindow::determineFileType(QByteArray const &in)
 {
-	return global->filetype.determin(in);
+	if (in.isEmpty()) return {};
+
+	if (in.size() > 10) {
+		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+			QBuffer buf;
+			MemoryReader reader(in.data(), in.size());
+
+			reader.open(MemoryReader::ReadOnly);
+			buf.open(QBuffer::WriteOnly);
+			gunzip z;
+			z.set_maximul_size(100000);
+			z.decode(&reader, &buf);
+
+			QByteArray uz = buf.buffer();
+			if (!uz.isEmpty()) {
+				return global->filetype.file(uz.data(), uz.size()).mimetype;
+			}
+		}
+	}
+
+	return global->filetype.file(in.data(), in.size()).mimetype;
 }
 
-std::string MainWindow::determinFileType(std::string const &path)
+std::string MainWindow::determineFileType(std::string const &path)
 {
-	return global->filetype.determin(QString::fromStdString(path));
+	QFile file(QString::fromStdString(path));
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		return determineFileType(ba);
+	}
+	return {};
 }
 
 TextEditorThemePtr MainWindow::themeForTextEditor()
@@ -7298,7 +7323,7 @@ int genmsg()
 	std::string diff;
 	for (std::string const &file : files) {
 		if (file.empty()) continue;
-		std::string mimetype = global->mainwindow->determinFileType(std::string(file));
+		std::string mimetype = global->mainwindow->determineFileType(std::string(file));
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない

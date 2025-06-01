@@ -528,7 +528,7 @@ std::string Git::diff_head(std::function<bool (std::string const &name, std::str
 	for (auto const &sv : files) {
 		if (sv.empty()) continue;
 		std::string file(sv);
-		std::string mimetype = global->mainwindow->determinFileType(std::string(file));
+		std::string mimetype = global->mainwindow->determineFileType(std::string(file));
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない

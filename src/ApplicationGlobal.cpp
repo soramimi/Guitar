@@ -29,7 +29,12 @@ Git::Context ApplicationGlobal::gcx()
 void ApplicationGlobal::init(QApplication *a)
 {
 	(void)a;
-	filetype.open();
+	{
+		QFile file(":/filemagic/magic.mgc"); // load magic from resource
+		file.open(QFile::ReadOnly);
+		QByteArray ba = file.readAll();
+		filetype.open(ba.data(), ba.size());
+	}
 
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources

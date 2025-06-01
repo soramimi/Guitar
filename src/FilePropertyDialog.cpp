@@ -34,7 +34,7 @@ void FilePropertyDialog::exec(QString const &path, Git::Hash const &id)
 	if (file.open(QFile::ReadOnly)) {
 		ba = file.read(1024 * 1024);
 	}
-	std::string mimetype = global->filetype.mime_by_data(ba.data(), ba.size());
+	std::string mimetype = global->filetype.file(ba.data(), ba.size()).mimetype;
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
 	ui->lineEdit_path->setText(path);
 	ui->lineEdit_type->setText(QString::fromStdString(mimetype));

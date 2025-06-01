@@ -6,6 +6,7 @@
 #include <memory>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #define NOMINMAX
