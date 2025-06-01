@@ -1,6 +1,6 @@
 TARGET = filetype
 TEMPLATE = lib
-CONFIG += staticlib console c++11
+CONFIG += staticlib console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 
@@ -51,8 +51,6 @@ SOURCES += \
 	file/src/seccomp.c \
 	file/src/softmagic.c \
 	file/src/strcasestr.c \
-	file/src/strlcat.c \
-	file/src/strlcpy.c \
 	file/src/vasprintf.c \
 	pcre2/src/pcre2_auto_possess.c \
 	pcre2/src/pcre2_chartables.c \
@@ -103,5 +101,7 @@ HEADERS += \
 	pcre2/src/pcre2_ucp.h \
 	pcre2/src/pcre2posix.h \
 	pcre2/src/regex.h
+
+!macx:SOURCES += file/src/strlcat.c file/src/strlcpy.c
 
 

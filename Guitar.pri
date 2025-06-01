@@ -94,6 +94,11 @@ win32:gcc {
 
 #
 
+win32:LIBS += $$PWD/filetype/_bin/filetype.lib
+!win32:LIBS += $$PWD/filetype/_bin/libfiletype.a
+
+#
+
 win32 {
 	LIBS += -ladvapi32 -lshell32 -luser32 -lws2_32
 	RC_FILE = win.rc
@@ -550,5 +555,4 @@ win32 {
     LIBS += -lole32
 }
 
-include(filetype.pri)
 include(migemo.pri)

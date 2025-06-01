@@ -1,16 +1,28 @@
-mkdir _bin
 QT=~/Qt/6.7.2/macos
-cd packaging/mac
+
+mkdir _bin
+
+pushd filetype
+mkdir -fr build
+mkdir build
+${QT}/bin/qmake "CONFIG+=release" ../libfiletype.pro
+make -j4
+popd
+
+pushd packaging/mac
+rm -fr Guitar.app
 rm -fr build
 mkdir build
-cd build
+
+pushd build
 ${QT}/bin/qmake "CONFIG+=release" ../../../Guitar.pri
-make -j10
-cd ..
-rm -fr Guitar.app
-mv build/Guitar.app .
+make -j16
 ${QT}/bin/macdeployqt Guitar.app
+popd
+
+mv build/Guitar.app .
 rm -f Guitar-macos.zip
 zip -r Guitar-macos.zip Guitar.app
 curl -T Guitar-macos.zip ftp://192.168.0.5/Public/pub/nightlybuild/
+popd
 

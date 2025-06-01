@@ -1,5 +1,5 @@
 #include "FileType.h"
-#include "magic.h"
+#include "../lib/magic.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>

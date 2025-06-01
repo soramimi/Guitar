@@ -13,6 +13,7 @@ _build/
 *.autosave
 version.c
 *.deb
+.qmake.stash
 packaging/win/packages/jp.soramimi.guitar/data/
 packaging/win/GuitarSetup.exe
 packaging/mac/Guitar.app
