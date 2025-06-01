@@ -33,6 +33,7 @@ macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
+INCLUDEPATH += $$PWD/filetype/src
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
@@ -108,7 +109,9 @@ macx {
 }
 
 SOURCES += \
+    $$PWD/filetype/src/FileType.cpp \
 	$$PWD/src/CommitLogTableWidget.cpp \
+    $$PWD/src/FileType2.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
@@ -166,7 +169,6 @@ SOURCES += \
 	src/FileHistoryWindow.cpp \
 	src/FileListWidget.cpp \
 	src/FilePropertyDialog.cpp \
-	src/FileType.cpp \
 	src/FileUtil.cpp \
 	src/FileViewWidget.cpp \
 	src/FindCommitDialog.cpp \
@@ -271,7 +273,9 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+    $$PWD/filetype/src/FileType.h \
 	$$PWD/src/CommitLogTableWidget.h \
+    $$PWD/src/FileType2.h \
 	$$PWD/src/GeneratedCommitMessage.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
@@ -328,7 +332,6 @@ HEADERS += \
 	src/FileHistoryWindow.h \
 	src/FileListWidget.h \
 	src/FilePropertyDialog.h \
-	src/FileType.h \
 	src/FileUtil.h \
 	src/FindCommitDialog.h \
 	src/GenerateCommitMessageDialog.h \
