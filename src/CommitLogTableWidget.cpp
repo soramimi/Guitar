@@ -565,7 +565,11 @@ int CommitLogTableWidget::currentRow() const
 
 int CommitLogTableWidget::actualLogIndex() const
 {
-	return currentIndex().row();
+	int row = currentIndex().row();
+	if (row >= 0 && row < model_->rowcount()) {
+		return model_->unfilteredIndex(row);
+	}
+	return -1;
 }
 
 void CommitLogTableWidget::setCurrentCell(int row, int col)
@@ -590,5 +594,6 @@ void CommitLogTableWidget::setFilter(QString const &filter)
 {
 	if (model_->setFilter(filter)) {
 		updateViewport();
+		setCurrentRow(0);
 	}
 }

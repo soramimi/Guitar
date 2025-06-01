@@ -23,6 +23,7 @@ Q_DECLARE_METATYPE(CommitRecord)
 
 class CommitLogTableModel : public QAbstractItemModel {
 	friend class CommitLogTableWidgetDelegate;
+	friend class CommitLogTableWidget;
 public:
 	static QString escapeTooltipText(QString tooltip);
 private:
