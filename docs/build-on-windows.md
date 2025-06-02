@@ -52,14 +52,28 @@ Guitar requires zlib to be built first:
 rmdir /s /q build
 mkdir build
 cd build
-c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ../zlib.pro
+c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ..\zlib.pro
 C:\Qt\Tools\QtCreator\bin\jom\jom.exe
 cd ..
 ```
 
 Note: Adjust the Qt path according to your installation.
 
-### 5. Build Guitar
+### 5. Build the libfiletype Dependency
+
+Guitar requires libfiletype to be built second:
+
+```cmd
+cd filetype
+rmdir /s /q build
+mkdir build
+cd build
+c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ..\libfiletype.pro
+C:\Qt\Tools\QtCreator\bin\jom\jom.exe
+cd ..\..
+```
+
+### 6. Build Guitar
 
 Now build the main application:
 
@@ -72,7 +86,7 @@ C:\Qt\Tools\QtCreator\bin\jom\jom.exe
 cd ..
 ```
 
-### 6. Prepare the Executable
+### 7. Prepare the Executable
 
 Finally, set up the executable with required dependencies:
 
@@ -85,7 +99,7 @@ C:\Qt\6.9.0\msvc2022_64\bin\windeployqt.exe Guitar.exe
 
 This uses the Qt deployment tool to copy all required Qt libraries to the application folder.
 
-### 7. Running Guitar
+### 8. Running Guitar
 
 After successful completion, you can run Guitar from the `_bin` directory:
 

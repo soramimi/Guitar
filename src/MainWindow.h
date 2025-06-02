@@ -217,7 +217,7 @@ private:
 	void updateStatusBarText();
 	void setRepositoryInfo(QString const &reponame, QString const &brname);
 
-	QString getFilterText() const;
+	QString getIncrementalSearchText() const;
 	void setFilterText(const QString &text, int repo_list_select_row = -1);
 	void clearFilterText(int repo_list_select_row = -1);
 	void clearAllFilters(int select_row = -1);
@@ -436,7 +436,7 @@ private:
 	void setupStatusInfoHandler();
 	void connectSetCommitLog();
 
-	void chooseRepository(QTreeWidgetItem *item);
+	void _chooseRepository(QTreeWidgetItem *item);
 	void chooseRepository();
 protected:
 	void closeEvent(QCloseEvent *event) override;
@@ -576,7 +576,7 @@ public:
 	bool isOnlineMode() const;
 	void updateCurrentFileList();
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
-	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1);
+	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1, QString const &search_text = {});
 	
 	const TagList &queryCurrentCommitTagList() const;
 	
@@ -691,7 +691,6 @@ public:
 	RepositoryData *currentRepositoryData();
 	const RepositoryData *currentRepositoryData() const;
 	void setCommitLog(const CommitLogExchangeData &exdata);
-
 public slots:
 	void internalWriteLog(const LogData &logdata);
 };

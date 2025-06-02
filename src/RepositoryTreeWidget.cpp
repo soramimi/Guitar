@@ -230,8 +230,14 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 			parent->addChild(child);
 			parent->setExpanded(true);
 
-			if (i == select_row) {
-				select_item = child;
+			if (filtertext.isEmpty()) {
+				if (i == select_row) {
+					select_item = child;
+				}
+			} else {
+				if (!select_item) {
+					select_item = child;
+				}
 			}
 		}
 		if (select_item) {

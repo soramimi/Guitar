@@ -10,9 +10,7 @@ INCLUDEPATH += misc
 win32:INCLUDEPATH += misc/win32
 INCLUDEPATH += file/src
 INCLUDEPATH += pcre2/src
-win32:INCLUDEPATH += dirent/include
-# win32:QMAKE_CFLAGS += /FI unistd.h
-# win32:LIBS += -lshlwapi
+win32:INCLUDEPATH += misc/win32/dirent/include
 
 DEFINES += "HAVE_CONFIG_H=1" "_SSIZE_T_DEFINED=1" "PCRE2_CODE_UNIT_WIDTH=8"
 !win32:DEFINES += "HAVE_MKSTEMP=1"

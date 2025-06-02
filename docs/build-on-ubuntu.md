@@ -37,7 +37,21 @@ ruby prepare.rb
 
 This script performs necessary setup tasks for the build process.
 
-### 3. Configure and Build
+### 3. Build the libfiletype Dependency
+
+Guitar requires libfiletype to be built second:
+
+```cmd
+cd filetype
+rm -fr build
+mkdir build
+cd build
+qmake6 ../libfiletype.pro
+make -j8
+cd ../../
+```
+
+### 4. Configure and Build
 
 Create a build directory and compile the project:
 
@@ -50,7 +64,7 @@ make -j8
 
 The `-j8` flag enables parallel compilation using 8 threads. You can adjust this number based on your CPU cores.
 
-### 4. Running Guitar
+### 5. Running Guitar
 
 After successful compilation, you can run Guitar from the build directory:
 
