@@ -1,10 +1,13 @@
 main:
 
+clean:
+	cd /Guitar && rm -fr _bin _build
+	cd /Guitar/filetype && rm -fr _bin _build
+
 build:
 	cd /Guitar ; ruby prepare.rb
-	rm -fr _build
-	mkdir _build
-	cd _build ; qmake6 "CONFIG+=release" /Guitar/Guitar.pri ; make -j8
+	mkdir /Guitar/_build && cd /Guitar/_build && qmake6 "CONFIG+=release" /Guitar/filetype/libfiletype.pro && make -j8
+	mkdir /Guitar/filetype/_build && cd /Guitar/filetype/_build && qmake6 "CONFIG+=release" /Guitar/Guitar.pro && make -j8
 
 deb: build
 	ruby make-deb.rb

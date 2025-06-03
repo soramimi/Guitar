@@ -6230,7 +6230,7 @@ void MainWindow::clearFilterText(int repo_list_select_row)
 {
 	int commit_log_select_row = m->before_search_row;
 
-	m->incremental_search_text = {};
+	m->incremental_search_text = QString();
 	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row, {});
 	ui->tableWidget_log->setFilter({});
 

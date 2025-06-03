@@ -13,7 +13,6 @@ $package = "guitar" + $suffix
 $maintainer = "nobody <nobody@example.com>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "_build"
-$bindir = "_build"
 $dstdir = $workdir + "/#{$package}"
 
 $arch = `/Guitar/packaging/deb/arch.rb`.strip
@@ -23,7 +22,7 @@ FileUtils.mkpath($dstdir + "/usr/bin")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
 system "strip Guitar"
-FileUtils.cp("./_build/Guitar", $dstdir + "/usr/bin/")
+FileUtils.cp("/Guitar/_bin/Guitar", $dstdir + "/usr/bin/")
 FileUtils.cp("/Guitar/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
 File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|
 	f.puts <<___

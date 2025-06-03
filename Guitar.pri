@@ -114,7 +114,6 @@ macx {
 }
 
 SOURCES += \
-    $$PWD/filetype/src/FileType.cpp \
 	$$PWD/src/CommitLogTableWidget.cpp \
     $$PWD/src/FileType2.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
@@ -278,7 +277,6 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
-    $$PWD/filetype/src/FileType.h \
 	$$PWD/src/CommitLogTableWidget.h \
     $$PWD/src/FileType2.h \
 	$$PWD/src/GeneratedCommitMessage.h \
