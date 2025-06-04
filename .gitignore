@@ -9,7 +9,7 @@ extra/_build_*
 misc/win32tools
 build/
 _bin/
-_build/
+_build*/
 *.autosave
 version.c
 *.deb
