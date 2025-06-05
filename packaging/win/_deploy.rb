@@ -12,6 +12,7 @@ FileUtils.rm_rf $script_dir + "/build"
 FileUtils.rm_rf $script_dir + "/packages/jp.soramimi.guitar/data"
 
 def mkcd(dir)
+	FileUtils.rm_rf dir
 	FileUtils.mkpath dir
 	FileUtils.chdir dir
 end
@@ -39,7 +40,13 @@ run "ruby prepare.rb"
 
 FileUtils.cp $script_dir + "/zlib/_bin/libz.lib", "_bin/"
 
-mkcd $script_dir + "/build"
+Dir.chdir("filetype") {
+	mkcd $script_dir + "/_build_filetype"
+	run "C:/Qt/#{$qtver}/msvc2022_64/bin/qmake.exe CONFIG+=release ../../../filetype/libfiletype.pro"
+	run "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
+}
+
+mkcd $script_dir + "/_build_guitar"
 run "C:/Qt/#{$qtver}/msvc2022_64/bin/qmake.exe CONFIG+=release ../../../Guitar.pro"
 run "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
 
