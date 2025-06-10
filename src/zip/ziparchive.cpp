@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "zipinternal.h"
-#include "zlib.h"
+#include <zlib.h>
 
 #ifdef _WIN32
 #include <io.h>

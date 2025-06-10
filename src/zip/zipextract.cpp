@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include "zipinternal.h"
-#include "zlib.h"
+#include <zlib.h>
 
 #ifdef Q_OS_WIN
 #include <io.h>
