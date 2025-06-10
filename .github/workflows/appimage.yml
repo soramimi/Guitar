@@ -1,0 +1,128 @@
+name: AppImage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-20.04  # Use older Ubuntu for better compatibility
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          ruby \
+          qmake6 \
+          libqt6core6 \
+          libqt6gui6 \
+          libqt6svg6-dev \
+          libqt6core5compat6-dev \
+          zlib1g-dev \
+          libgl1-mesa-dev \
+          libssl-dev \
+          qt6-base-dev \
+          qt6-svg-dev \
+          wget \
+          fuse \
+          desktop-file-utils
+          
+    - name: Prepare environment
+      run: ruby prepare.rb
+      
+    - name: Build libfiletype
+      run: |
+        rm -fr _build_libfiletype
+        mkdir _build_libfiletype
+        cd _build_libfiletype
+        qmake6 "CONFIG+=release" ../filetype/libfiletype.pro
+        make -j$(nproc)
+        cd ..
+        
+    - name: Build Guitar
+      run: |
+        rm -fr _build_guitar
+        mkdir _build_guitar
+        cd _build_guitar
+        qmake6 "CONFIG+=release" ../Guitar.pro
+        make -j$(nproc)
+        cd ..
+        
+    - name: Download linuxdeploy
+      run: |
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
+        
+    - name: Create AppDir structure
+      run: |
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        
+        # Copy binary
+        cp _bin/Guitar AppDir/usr/bin/
+        
+        # Create desktop file
+        cat > AppDir/usr/share/applications/guitar.desktop << 'EOF'
+        [Desktop Entry]
+        Type=Application
+        Name=Guitar
+        Comment=Git GUI Client
+        Exec=Guitar
+        Icon=guitar
+        Categories=Development;RevisionControl;
+        StartupNotify=true
+        EOF
+        
+        # Create icon (using a placeholder if no icon exists)
+        if [ -f "image/guitar.png" ]; then
+          cp image/guitar.png AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png
+        else
+          # Create a simple placeholder icon
+          convert -size 256x256 xc:blue -fill white -gravity center -pointsize 72 -annotate +0+0 "Guitar" AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png || echo "No convert available, using text file as icon"
+          echo "Guitar" > AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png
+        fi
+        
+    - name: Create AppImage
+      run: |
+        export QML_SOURCES_PATHS=""
+        ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+        
+    - name: Rename AppImage
+      run: |
+        if [ -f "Guitar-x86_64.AppImage" ]; then
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            mv Guitar-x86_64.AppImage Guitar-${{ github.ref_name }}-x86_64.AppImage
+          else
+            mv Guitar-x86_64.AppImage Guitar-nightly-x86_64.AppImage
+          fi
+        fi
+        
+    - name: Test AppImage
+      run: |
+        ls -la *.AppImage
+        file *.AppImage
+        
+    - name: Upload AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: guitar-appimage
+        path: Guitar-*.AppImage
+        
+    - name: Release AppImage
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: Guitar-*.AppImage
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
