@@ -1,11 +1,12 @@
 name: CI
 
 on:
+  schedule:
+    - cron: "0 20 * * *"
   workflow_dispatch:
 
 jobs:
   build-linux:
-    if: false  # Temporarily disabled
     runs-on: ubuntu-latest
     
     steps:
@@ -60,7 +61,6 @@ jobs:
         path: _bin/Guitar
 
   build-macos:
-    if: false  # Temporarily disabled
     runs-on: macos-latest
     
     steps:
@@ -94,16 +94,17 @@ jobs:
     - name: Test build
       run: |
         ls -la _bin/
-        file _bin/Guitar
+        cd _bin
+        zip -r Guitar.zip Guitar.app
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: guitar-macos
-        path: _bin/Guitar
+        path: _bin/Guitar.zip
 
   build-windows-mingw:
-    if: false  # Temporarily disabled
+    if: false # Temporarily disabled due to issues with MinGW builds
     runs-on: windows-latest
     
     steps:
@@ -194,14 +195,45 @@ jobs:
         arch: x64
         vsversion: 2022
         
+    - name: Remove Git tools from PATH (to avoid conflicts)
+      run: |
+        echo Current PATH:
+        echo %PATH%
+        echo.
+        echo Removing Git bin directories from PATH to avoid tool conflicts...
+        set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%"
+        set "PATH=%PATH:C:\Program Files\Git\bin;=%"
+        echo Updated PATH:
+        echo %PATH%
+        echo PATH > path_update.bat
+        echo set "PATH=%PATH%" >> path_update.bat
+      shell: cmd
+        
+    - name: Install OpenSSL
+      run: |
+        echo Installing OpenSSL...
+        choco install openssl --install-arguments="'/DIR=C:\ProgramData\OpenSSL'" -y
+        refreshenv
+      shell: cmd
+      
     - name: Verify environment
       run: |
-        echo Checking environment variables...
+        call path_update.bat
+        echo Checking environment variables after PATH cleanup...
         echo VCINSTALLDIR: %VCINSTALLDIR%
         echo VisualStudioVersion: %VisualStudioVersion%
         echo QMAKESPEC: %QMAKESPEC%
+        echo.
+        echo Checking tool locations:
         where nmake
         where qmake
+        where cl
+        echo.
+        echo Checking link.exe (should be MSVC linker, not Git ln):
+        where link
+        link 2>nul || echo link.exe found
+        echo.
+        echo Qt and qmake information:
         qmake -query QT_VERSION
         qmake -query QMAKE_SPEC
       shell: cmd
@@ -217,33 +249,35 @@ jobs:
       
     - name: Build zlib
       run: |
-        git clone https://github.com/madler/zlib.git
+        call path_update.bat
+        git clone https://github.com/madler/zlib.git ../zlib
         if exist "_build_zlib" rmdir /s /q "_build_zlib"
         mkdir "_build_zlib"
         cd "_build_zlib"
         qmake -spec win32-msvc "CONFIG+=release" ../zlib.pro
-        dir
-        nmake /f Makefile.Release
+        ..\misc\jom.exe
         cd ..
       shell: cmd
       
     - name: Build libfiletype
       run: |
+        call path_update.bat
         if exist "_build_libfiletype" rmdir /s /q "_build_libfiletype"
         mkdir "_build_libfiletype"
         cd "_build_libfiletype"
         qmake -spec win32-msvc "CONFIG+=release" ../filetype/libfiletype.pro
-        nmake /f Makefile.Release
+        ..\misc\jom.exe
         cd ..
       shell: cmd
       
     - name: Build Guitar
       run: |
+        call path_update.bat
         if exist "_build_guitar" rmdir /s /q "_build_guitar"
         mkdir "_build_guitar"
         cd "_build_guitar"
         qmake -spec win32-msvc "CONFIG+=release" ../Guitar.pro
-        nmake /f Makefile.Release
+        ..\misc\jom.exe
         cd ..
       shell: cmd
       

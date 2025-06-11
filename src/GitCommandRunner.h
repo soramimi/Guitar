@@ -4,6 +4,8 @@
 #include "Git.h"
 #include "MyProcess.h"
 
+#include <QElapsedTimer>
+
 class Git_clone {
 public:
 	Git::CloneData clonedata_;

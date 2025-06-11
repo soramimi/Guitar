@@ -1560,7 +1560,7 @@ struct Object {
 
 static inline bool is_null(Variant const &v)
 {
-	return std::holds_alternative<nullptr_t>(v);
+	return std::holds_alternative<null_t>(v);
 }
 static inline bool is_boolean(Variant const &v)
 {

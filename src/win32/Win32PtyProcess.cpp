@@ -4,6 +4,7 @@
 #include <QMutex>
 #include <deque>
 #include <winpty.h>
+#include <thread>
 
 namespace {
 

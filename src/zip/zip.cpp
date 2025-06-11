@@ -1,14 +1,14 @@
 
+#include "common/joinpath.h"
 #include "zip.h"
 #include "zipinternal.h"
-#include "common/joinpath.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDirIterator>
 #include <fcntl.h>
-#include "ApplicationGlobal.h"
 
-#ifdef Q_OS_WIN
+
+#ifdef _MSC_VER
 #include <io.h>
 #include <sys/utime.h>
 #else
