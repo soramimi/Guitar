@@ -115,7 +115,6 @@ macx {
 
 SOURCES += \
 	$$PWD/src/CommitLogTableWidget.cpp \
-    $$PWD/src/FileType2.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
@@ -278,7 +277,6 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/CommitLogTableWidget.h \
-    $$PWD/src/FileType2.h \
 	$$PWD/src/GeneratedCommitMessage.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
