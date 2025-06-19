@@ -39,6 +39,5 @@ Makefile.in
 /magic/magic.mgc
 
 /src/file
-/src/magic.h
 
 /tests/test

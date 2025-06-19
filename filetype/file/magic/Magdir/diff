@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: diff,v 1.20 2024/02/09 00:50:24 christos Exp $
+# $File: diff,v 1.21 2024/07/13 14:47:09 christos Exp $
 # diff:  file(1) magic for diff(1) output
 #
 # Update:	Joerg Jenderek
@@ -75,6 +75,29 @@
 #>>24	lequad		x		\b, data length %lld
 # look for bzip data by ./compress after message with 1 space at end
 >>0x20	indirect	x		\b, at 0x20 
+
+# From:		Joerg Jenderek
+# URL:		https://www.chromium.org/developers/design-documents/software-updates-courgette/
+# Reference:	https://github.com/adobe/chromium/blob/master/courgette/third_party/bsdiff.h
+#		http://mark0.net/download/triddefs_xml.7z/defs/b/bsdiff-chrome.trid.xml
+# Note:		called "Courgette Binary Diff output" by TrID
+#		the Courgette bsdiff tool use a total different file format compared with BSD variant from Colin Percival
+0	string/b	GBSDIF42	Courgette binary diff output
+#!:mime	application/octet-stream
+!:mime	application/x-patch
+!:ext	patch/bsdiff
+# slen; length of the file to be patched
+#>8	ubelong		x		\b, source length %u
+# scrc32; CRC32 of the file to be patched
+>12	ubelong		x		\b, crc %#8.8x
+# dlen; length of the result file
+#>16	ubelong		x		\b, result length %u
+# cblen; length of the control block
+#>20	ubelong		x		\b, control length %u
+# difflen; length of the diff block
+#>24	ubelong		x		\b, patch length %u
+# extralen; length of the extra block
+#>28	ubelong		x		\b, extra length %u
 
 # unified diff
 # URL:		http://fileformats.archiveteam.org/wiki/Unified_diff

@@ -33,7 +33,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: magic.c,v 1.123 2023/12/29 18:04:48 christos Exp $")
+FILE_RCSID("@(#)$File: magic.c,v 1.124 2024/12/08 19:00:59 christos Exp $")
 #endif	/* lint */
 
 #include "magic.h"
@@ -205,7 +205,7 @@ get_default_magic(void)
 		}
 	}
 
-	if (asprintf(&default_magic, "%s:%s", hmagicpath, MAGIC) < 0)
+	if (asprintf(&default_magic, "%s%c%s", hmagicpath, PATHSEP, MAGIC) < 0)
 		goto out;
 	free(hmagicpath);
 	return default_magic;

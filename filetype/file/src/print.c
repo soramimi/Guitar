@@ -32,7 +32,7 @@
 #include "file.h"
 
 #ifndef lint
-FILE_RCSID("@(#)$File: print.c,v 1.105 2024/04/07 19:19:21 christos Exp $")
+FILE_RCSID("@(#)$File: print.c,v 1.110 2025/03/20 17:46:50 christos Exp $")
 #endif  /* lint */
 
 #include <string.h>
@@ -52,7 +52,8 @@ file_mdump(struct magic *m)
 	static const char optyp[] = { FILE_OPS };
 	char tbuf[256];
 
-	(void) fprintf(stderr, "%u: %.*s %d", m->lineno,
+	(void) fprintf(stderr, "%s, %u: %.*s %d", 
+	     m->desc[0] == '\0' ? m->desc + 1 : "*unknown*", m->lineno,
 	    (m->cont_level & 7) + 1, ">>>>>>>>", m->offset);
 
 	if (m->flag & INDIR) {
@@ -351,9 +352,13 @@ file_fmtdate(char *buf, size_t bsize, uint16_t v)
 	memset(&tm, 0, sizeof(tm));
 	tm.tm_mday = v & 0x1f;
 	tm.tm_mon = ((v >> 5) & 0xf) - 1;
+	// Sanity check because some OS's coredump with invalid values.
+	// Yes, Cygwin I am looking at you!
+	if (tm.tm_mon < 0 || tm.tm_mon > 11)
+		tm.tm_mon = 0;
 	tm.tm_year = (v >> 9) + 80;
 
-	if (strftime(buf, bsize, "%a, %b %d %Y", &tm) == 0)
+	if (strftime(buf, bsize, "%b %d %Y", &tm) == 0)
 		goto out;
 
 	return buf;

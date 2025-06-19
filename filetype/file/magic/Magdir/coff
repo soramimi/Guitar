@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: coff,v 1.12 2024/03/31 15:06:56 christos Exp $
+# $File: coff,v 1.15 2024/11/10 18:54:33 christos Exp $
 # coff: file(1) magic for Common Object Files not specific to known cpu types or manufactures
 #
 # COFF
@@ -10,6 +10,7 @@
 # https://de.wikipedia.org/wiki/Common_Object_File_Format
 # http://www.delorie.com/djgpp/doc/coff/filhdr.html
 # https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image
+# https://formats.kaitai.io/uefi_te/index.html
 
 # Display COFF processor type, including MS COFF and PE/COFF
 0	name				display-coff-processor
@@ -135,25 +136,25 @@
 >>>>16	uleshort	=0
 # most section names start with point character except samples created by "exotic" compilers
 # first section name s_name[8] like: .text .data .debug$S .drectve .testseg .rsrc .rsrc$01 .pad
->>>>(16.s+20)	string		x		\b, 1st section name "%.8s"
+>>>>>(16.s+20)	string		x		\b, 1st section name "%.8s"
 # physical address s_paddr like: 0
-#>>>>(16.s+28)	lelong		!0		\b, s_paddr %#8.8x
+#>>>>>(16.s+28)	lelong		!0		\b, s_paddr %#8.8x
 # virtual address s_vaddr like: 0
-#>>>>(16.s+32)	lelong		!0		\b, s_vaddr %#8.8x
+#>>>>>(16.s+32)	lelong		!0		\b, s_vaddr %#8.8x
 # section size s_size
-#>>>>(16.s+36)	lelong		x		\b, s_size %#8.8x
+#>>>>>(16.s+36)	lelong		x		\b, s_size %#8.8x
 # file ptr to raw data for section s_scnpt
-#>>>>(16.s+40)	lelong		x		\b, s_scnpt %#8.8x
+#>>>>>(16.s+40)	lelong		x		\b, s_scnpt %#8.8x
 # file ptr to relocation s_relptr like: 0
-#>>>>(16.s+44)	lelong		!0		\b, s_relptr %#8.8x
+#>>>>>(16.s+44)	lelong		!0		\b, s_relptr %#8.8x
 # file ptr to gp histogram s_lnnoptr like: 0
-#>>>>(16.s+48)	lelong		!0		\b, s_lnnoptr %#8.8x
+#>>>>>(16.s+48)	lelong		!0		\b, s_lnnoptr %#8.8x
 # number of relocation entries s_nreloc like: 0 1 2 5 6 8 19h 26h 27h 38h 50h 5Fh 89h Dh 1Ch 69h A9h 1DCh 651h
-#>>>>(16.s+52)	uleshort	x		\b, s_nreloc %#4.4x
+#>>>>>(16.s+52)	uleshort	x		\b, s_nreloc %#4.4x
 # number of gp histogram entries s_nlnno like: 0
-#>>>>(16.s+54)	uleshort	!0		\b, s_nlnno %#4.4x
+#>>>>>(16.s+54)	uleshort	!0		\b, s_nlnno %#4.4x
 # flags s_flags
-#>>>>(16.s+56)	lelong		x		\b, s_flags %#8.8x
+#>>>>>(16.s+56)	lelong		x		\b, s_flags %#8.8x
 # second section name s_name[8] like: .bss .data .debug$S .rsrc$01
 >>>>2	uleshort	>1
 >>>>>(16.s+60)	string		x		\b, 2nd section name "%.8s"
@@ -164,10 +165,15 @@
 # >22	leshort		>0		- version %d
 # >168	string		.lowmem		Apple toolbox
 
-# PowerPC COFF object file
+# PowerPC COFF object file or executable
 0	leshort		0x01f0
 >16	leshort		0
 >>0	use		display-coff
+# can be created by: LINK.EXE /MACHINE:powerpc /ROM
+>16	leshort		!0
+>>18	leshort		&0x0002
+>>>20	leshort		0x010b
+>>>>0	use		display-coff
 0	leshort		0x01f1
 >16	leshort		0
 >>0	use		display-coff
@@ -177,17 +183,35 @@
 0	leshort		0x0601
 >16	leshort		0
 >>0	use		display-coff
-
-# PowerPC COFF executable
-# can be created by: LINK.EXE /MACHINE:powerpc /ROM
-0	leshort		0x01f0
->16	leshort		!0
->>18	leshort		&0x0002
->>>20	leshort		0x010b
->>>>0	use		display-coff
 # can be created by: LINK.EXE /MACHINE:MPPC /ROM
-0	leshort		0x0601
 >16	leshort		!0
 >>18	leshort		&0x0002
 >>>20	leshort		0x010b
 >>>>0	use		display-coff
+
+0	name		display-subsystem
+>0	ubyte		0	unknown
+>0	ubyte		1	native
+>0	ubyte		2	windows_gui
+>0	ubyte		3	windows_cui
+>0	ubyte		7	posix_cui
+>0	ubyte		9	windows_ce_gui
+>0	ubyte		10	efi_application
+>0	ubyte		11	efi_boot_service_driver
+>0	ubyte		12	efi_runtime_driver
+>0	ubyte		13	efi_rom
+>0	ubyte		14	xbox
+>0	ubyte		16	windows_boot-application
+>0	default		x	Unknown subsystem
+>>0	ubyte		x	%#x
+
+
+# https://formats.kaitai.io/uefi_te/index.html
+0	string		VZ	TE (Terse Executable) file
+>2	use		display-coff-processor
+>4	byte		x	\b, sections %d
+>5	use		display-subsystem
+>6	uleshort	x	\b, stripped-size %u
+>8	ulelong		x	\b, entry %#x
+>12	ulelong		x	\b, base_of_code %#x
+>16	ulequad		x	\b, image_base %#llx

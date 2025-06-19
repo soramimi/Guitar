@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 #include "file_config.h"
-#include "pcre2_config.h"
 
 #ifdef _WIN32
 typedef signed __int64 ssize_t;

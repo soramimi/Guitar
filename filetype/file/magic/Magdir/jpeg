@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: jpeg,v 1.39 2023/10/09 15:51:50 christos Exp $
+# $File: jpeg,v 1.40 2024/11/10 00:26:35 christos Exp $
 # JPEG images
 # SunOS 5.5.1 had
 #
@@ -34,12 +34,12 @@
 >>13	byte		0		\b, aspect ratio
 >>13	byte		1		\b, resolution (DPI)
 >>13	byte		2		\b, resolution (DPCM)
->>14	beshort		x		\b, density %dx
->>16	beshort		x		\b%d
->>4	beshort		x		\b, segment length %d
+>>14	ubeshort	x		\b, density %ux
+>>16	ubeshort	x		\b%u
+>>4	ubeshort	x		\b, segment length %u
 # Next, show thumbnail info, if it exists:
->>18	byte		!0		\b, thumbnail %dx
->>>19	byte		x		\b%d
+>>18	byte		!0		\b, thumbnail %ux
+>>>19	byte		x		\b%u
 >6	string		Exif		\b, Exif standard: [
 >>12	indirect/r	x
 >>12	string		x		\b]
@@ -57,22 +57,22 @@
 >0	beshort		0xFFC0
 >>(2.S+2)	use			jpeg_segment
 >>4	byte		x		\b, baseline, precision %d
->>7	beshort		x		\b, %dx
->>5	beshort		x		\b%d
+>>7	ubeshort	x		\b, %ux
+>>5	ubeshort	x		\b%u
 >>9	byte		x		\b, components %d
 
 >0	beshort		0xFFC1
 >>(2.S+2)	use			jpeg_segment
 >>4	byte		x		\b, extended sequential, precision %d
->>7	beshort		x		\b, %dx
->>5	beshort		x		\b%d
+>>7	ubeshort	x		\b, %ux
+>>5	ubeshort	x		\b%u
 >>9	byte		x		\b, components %d
 
 >0	beshort		0xFFC2
 >>(2.S+2)	use			jpeg_segment
 >>4	byte		x		\b, progressive, precision %d
->>7	beshort		x		\b, %dx
->>5	beshort		x		\b%d
+>>7	ubeshort	x		\b, %ux
+>>5	ubeshort	x		\b%u
 >>9	byte		x		\b, components %d
 
 # Define Huffman Tables
@@ -213,8 +213,8 @@
 >>99	byte&0x38	0x30			\bLT
 >>99	byte&0x38	0x38			\bLB
 >>100	byte&0x80	=0x80			\b, short header
->>>102	beshort+1	x			\b, %d
->>>104	beshort+1	x			\bx%d
+>>>102	beshort+1	x			\b, %u
+>>>104	beshort+1	x			\bx%u
 >>100	byte&0x80	=0x00			\b, long header
 >>>102	belong+1	x			\b, %x
 >>>106	belong+1	x			\bx%x

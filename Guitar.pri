@@ -33,11 +33,11 @@ macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
-INCLUDEPATH += $$PWD/filetype/src
+# INCLUDEPATH += $$PWD/filetype/src
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
-win32:QMAKE_CFLAGS += /FI $$PWD/filetype/misc/win32/unistd.h
+# win32:QMAKE_CFLAGS += /FI $$PWD/filetype/misc/win32/unistd.h
 
 # OpenSSL
 
@@ -94,8 +94,8 @@ win32:gcc {
 
 #
 
-win32:LIBS += $$PWD/filetype/_bin/filetype.lib
-!win32:LIBS += $$PWD/filetype/_bin/libfiletype.a
+win32:LIBS += $$PWD/filetype/lib/filetype.lib
+!win32:LIBS += $$PWD/filetype/lib/libfiletype.a
 
 #
 

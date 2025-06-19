@@ -13,6 +13,29 @@ bcachefs.result \
 bcachefs.testfile \
 bcachefs2.result \
 bcachefs2.testfile \
+bgcode.result \
+bgcode.testfile \
+cl8m8ocofedso.result \
+cl8m8ocofedso.testfile \
+cmd1.result \
+cmd1.testfile \
+cmd2.result \
+cmd2.testfile \
+cmd3.result \
+cmd3.testfile \
+cmd4.result \
+cmd4.testfile \
+CVE-2014-1943.result \
+CVE-2014-1943.testfile \
+dsd64-dff.result \
+dsd64-dff.testfile \
+dsd64-dsf.result \
+dsd64-dsf.testfile \
+escapevel.result \
+escapevel.testfile \
+ext4.result \
+ext4.testfile \
+fit-map-data.result \
 cl8m8ocofedso.result \
 cl8m8ocofedso.testfile \
 cmd1.result \
@@ -127,9 +150,12 @@ rpm-v3.0-bin-x86_64.result \
 rpm-v3.0-bin-x86_64.testfile \
 rpm-v3.0-src.result \
 rpm-v3.0-src.testfile \
+searchbug.magic \
+searchbug.result \
+searchbug.testfile \
 uf2.result \
 uf2.testfile \
-utf16xmlsvg.textfile \
+utf16xmlsvg.testfile \
 utf16xmlsvg.result \
 xclbin.result \
 xclbin.testfile \
@@ -190,7 +216,7 @@ check-local:
 				if [ -z "$$m" ]; then \
 					m=$$j; \
 				else \
-					m=$$m:$$j; \
+					m=$$m${PATH_SEPARATOR}$$j; \
 				fi \
 			fi \
 		done; \

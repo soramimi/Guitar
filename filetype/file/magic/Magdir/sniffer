@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: sniffer,v 1.36 2024/06/16 15:09:26 christos Exp $
+# $File: sniffer,v 1.37 2025/03/10 20:16:38 christos Exp $
 # sniffer:  file(1) magic for packet capture files
 #
 # From: guy@alum.mit.edu (Guy Harris)
@@ -312,12 +312,15 @@
 #
 0	ubelong		0x0a0d0d0a
 >8	ubelong		0x1a2b3c4d	pcapng capture file
+!:mime	application/x-pcapng
 >>12	beshort		x		- version %d
 >>14	beshort		x		\b.%d
 0	ulelong		0x0a0d0d0a
 >8	ulelong		0x1a2b3c4d	pcapng capture file
+!:mime	application/x-pcapng
 >>12	leshort		x		- version %d
 >>14	leshort		x		\b.%d
+
 
 #
 # AIX "iptrace" capture files.

@@ -36,6 +36,11 @@
 #!:mime		text/plain
 !:mime		text/x-ssh-public-key
 !:ext		pub
+# https://cvsweb.openbsd.org/src/usr.bin/ssh/PROTOCOL.u2f?annotate=HEAD
+0	string	sk-ecdsa-sha2-nistp256@openssh.com	OpenSSH U2F ECDSA public key
+#!:mime		text/plain
+!:mime		text/x-ssh-public-key
+!:ext		pub
 0	string	ecdsa-sha2-nistp384	OpenSSH ECDSA public key
 #!:mime		text/plain
 !:mime		text/x-ssh-public-key
@@ -48,6 +53,12 @@
 #!:mime		text/plain
 !:mime		text/x-ssh-public-key
 !:ext		pub
+0	string	sk-ssh-ed25519@openssh.com	OpenSSH U2F ED25519 public key
+#!:mime		text/plain
+!:mime		text/x-ssh-public-key
+!:ext		pub
+
+
 
 0	string	SSHKRL\n\0
 >8	ubelong	1		OpenSSH key/certificate revocation list, format %u

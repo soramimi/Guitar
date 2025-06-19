@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: mail.news,v 1.31 2023/10/09 15:56:58 christos Exp $
+# $File: mail.news,v 1.33 2025/02/28 19:28:01 christos Exp $
 # mail.news:  file(1) magic for mail and news
 #
 # Unfortunately, saved netnews also has From line added in some news software.
@@ -26,7 +26,13 @@
 !:mime	message/rfc822
 0	string/t		Date:		news or mail text
 !:mime	message/rfc822
-0	string/t		Article 	saved news text
+0	string/t		Subject:	news or mail text
+!:mime	message/rfc822
+0	string/t		Cc:		news or mail text
+!:mime	message/rfc822
+0	string/t		To:		news or mail text
+!:mime	message/rfc822
+0	regex/t			Article:[[:space:]]+[0-9]+  	saved news text
 !:mime	message/news
 # Reference:	http://quimby.gnus.org/notes/BABYL
 # Update:	Joerg Jenderek

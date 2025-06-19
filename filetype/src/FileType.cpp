@@ -1,12 +1,11 @@
 #include "FileType.h"
-#include "../lib/magic.h"
+#include "magic.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <stdint.h>
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -18,7 +17,7 @@
 #endif
 
 extern "C" {
-#include "file.h"
+#include "file/src/file.h"
 }
 
 namespace {
@@ -241,32 +240,17 @@ simple:
 
 const char *_fd_or_buf(magic_t ms, int fd, unsigned char *buf, ssize_t nbytes, struct stat *st, bool pad_slop)
 {
-	if (fd != -1) {
-		if (buf) {
-			fprintf(stderr, "Only one of fd or buf must be valid\n");
-			return nullptr;
-		}
-
-		struct stat st2;
-		if (fstat(fd, &st2) != 0) return nullptr;
-
-		nbytes = std::min((size_t)st2.st_size, ms->bytes_max);
-		std::vector<unsigned char> data(nbytes + SLOP);
-		nbytes = read(fd, data.data(), nbytes);
-		return _fd_or_buf(ms, -1, data.data(), nbytes, &st2, false);
-	}
+	file_reset(ms, 0);
 
 	if (pad_slop) {
 		std::vector<unsigned char> data(nbytes + SLOP);
 		memcpy(data.data(), buf, nbytes);
-		return _fd_or_buf(ms, -1, data.data(), nbytes, st, false);
-
+		return _fd_or_buf(ms, fd, data.data(), nbytes, st, false);
 	}
 
 	if (_file_buffer(ms, fd, st, NULL, buf, CAST(size_t, nbytes)) == -1) return nullptr;
 
 	return file_getbuffer(ms);
-
 }
 
 FileType::Result parse_mime(std::string const &mime)
@@ -334,7 +318,7 @@ bool FileType::open(const char *mgcfile)
 
 	bool ok = false;
 
-	if (1) {
+	if (0) {
 		magic_set = magic_open(MAGIC_MIME);
 		if (magic_set) {
 			if (magic_load((magic_t)magic_set, mgcfile) != 0) {
@@ -409,7 +393,14 @@ FileType::Result FileType::file(int fd) const
 	if (fd != -1) {
 		struct stat st;
 		if (fstat(fd, &st) == 0) {
-			mime = _fd_or_buf((magic_t )magic_set, fd, nullptr, 0, nullptr, false);
+			ssize_t nbytes = std::min(4096, (int)st.st_size);
+			std::vector<unsigned char> buf(nbytes);
+			nbytes = read(fd, buf.data(), buf.size());
+			lseek(fd, 0, SEEK_SET);
+			char const *p = _fd_or_buf((magic_t )magic_set, fd, buf.data(), nbytes, &st, false);
+			if (p) {
+				mime = p;
+			}
 		}
 	}
 
@@ -447,7 +438,7 @@ FileType::Result FileType::file(const char *filepath) const
  * @param pad_slop Whether to pad the buffer with slop
  * @return The result
  */
-FileType::Result FileType::file(const char *data, size_t size, int st_mode, bool pad_slop) const
+FileType::Result FileType::file(const char *data, size_t size, int st_mode) const
 {
 	if (!magic_set) {
 		fprintf(stderr, "magic_set is null\n");
@@ -458,7 +449,6 @@ FileType::Result FileType::file(const char *data, size_t size, int st_mode, bool
 	st = {};
 	st.st_size = size;
 	st.st_mode = st_mode;
-	std::string mime = _fd_or_buf((magic_t )magic_set, -1, (unsigned char *)data, size, &st, pad_slop);
-
-	return parse_mime(mime.c_str());
+	char const *p = _fd_or_buf((magic_t )magic_set, -1, (unsigned char *)data, size, &st, false);
+	return p ? parse_mime(p) : Result();
 }

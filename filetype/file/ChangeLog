@@ -1,3 +1,50 @@
+
+2025-05-28  15:20  Christos Zoulas <christos@zoulas.com>
+
+	PR/622: Odd_Bloke: Handle negative offsets in file_buffer(),
+	when fd is not available.
+
+2025-05-28  12:50  Christos Zoulas <christos@zoulas.com>
+
+	* PR/655: jsummers: Obey str_flags in strings like we do for search
+	  and regex
+	* PR/659: Pitzl: Apply MAGIC_CONTINUE to annotations; i.e. print
+	  only the first, unless -k is specified.
+	
+2024-12-19  14:44  Christos Zoulas <christos@zoulas.com>
+
+	* PR/592: allow + in format strings
+	* PR/592: signed operations should be done in signed context
+
+2024-12-05  13:50 Christos Zoulas <christos@zoulas.com>
+
+	* PR/578: jsummers: Don't crash on cygwin when tm_mon == -1
+	* PR/579: net147: Fix stack overrun.
+
+2024-11-27  14:44  Christos Zoulas <christos@zoulas.com>
+
+	* release 5.46
+	* Add OFFPOSITIVE
+
+2024-11-25  13:56  Christos Zoulas <christos@zoulas.com>
+	
+	* avoid leaking symbols in libmagic
+
+2024-11-10  13:56  Christos Zoulas <christos@zoulas.com>
+	
+	* PR/562: jsummers: Search/regex offsets are absolute to the
+	  beginning of the file, so adjust them by subtracting the
+	  offset that the "use" starts so that we don't double-count it.
+
+
+2024-11-09  19:30  Christos Zoulas <christos@zoulas.com>
+ 	* PR/543: matshch: bump nbuf so we can get the flags into the buffer.
+
+
+2024-11-02  14:34  Christos Zoulas <christos@zoulas.com>
+
+ 	* Add Android elf notes (enh)
+
 2023-12-29  12:55  Christos Zoulas <christos@zoulas.com>
 
 	* Add limit for number of magic warnings allowed

@@ -5,7 +5,7 @@
 #include "AvatarLoader.h"
 #include "Theme.h"
 #include "common/misc.h"
-#include "FileType.h"
+#include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
 #include <QColor>

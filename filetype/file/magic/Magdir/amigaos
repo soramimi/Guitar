@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: amigaos,v 1.20 2021/09/20 00:42:19 christos Exp $
+# $File: amigaos,v 1.21 2025/05/28 15:29:19 christos Exp $
 # amigaos:  file(1) magic for AmigaOS binary formats:
 
 #
@@ -216,3 +216,7 @@
 >12	regex		.{8}			\b, type %s
 0	string		AmBs			AMOS Basic memory banks
 >4	beshort		x			\b, %d banks
+
+
+# https://github.com/alb42/Leu/blob/master/TCDReaderUnit.pas
+3	string		TURBOCALC		TurboCalc spreadsheet

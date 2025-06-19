@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: images,v 1.253 2024/05/12 18:37:21 christos Exp $
+# $File: images,v 1.264 2025/03/10 20:09:30 christos Exp $
 # images:  file(1) magic for image formats (see also "iff", and "c-lang" for
 # XPM bitmaps)
 #
@@ -337,17 +337,21 @@
 # NewSubFileType
 >0	uleshort	0xfe
 >>12	use		tiff_entry
+# Width
 >0	uleshort	0x100
 >>4	ulelong		1
->>>12	use		tiff_entry
 >>>8	uleshort	x		\b, width=%d
+>>>12	use		tiff_entry
+# Height
 >0	uleshort	0x101
 >>4	ulelong		1
 >>>8	uleshort	x		\b, height=%d
 >>>12	use		tiff_entry
+# BPS
 >0	uleshort	0x102
 >>8	uleshort	x		\b, bps=%d
 >>12	use		tiff_entry
+# Compression
 >0	uleshort	0x103
 >>4	ulelong		1		\b, compression=
 >>>8	uleshort	1		\bnone
@@ -375,6 +379,7 @@
 >>>8	default		x
 >>>>8	uleshort	x		\b(unknown %#x)
 >>>12	use		tiff_entry
+# Photometric Interpretation
 >0	uleshort	0x106		\b, PhotometricInterpretation=
 >>8	clear		x
 >>8	uleshort	0		\bWhiteIsZero
@@ -470,10 +475,8 @@
 # GPS IFD
 >0	uleshort	0x8825		\b, GPS-Data
 >>12	use		tiff_entry
-
 #>0	uleshort	x		\b, unknown=%#x
 #>>12	use		tiff_entry
-
 0	string		MM\x00\x2b	Big TIFF image data, big-endian
 !:mime	image/tiff
 0	string		II\x2b\x00	Big TIFF image data, little-endian
@@ -641,7 +644,8 @@
 # GRR: with --keep-going option the line above gives duplicate messages
 0	search/1/ts	#FIG
 >&0	use		image-xfig
-# binary data variant with non ASCII text characters like Control-A or °C in thermostat.fig
+#                                                                     o
+# binary data variant with non ASCII text characters like Control-A or C in thermostat.fig
 0	search/1/bs	#FIG
 >&0	use		image-xfig
 #	display XFIG image describing text, mime type, file name extension and version
@@ -1204,6 +1208,22 @@
 #>>(10.l) ubequad	!0	\b, bits %#16.16llx
 # dib header size: 12~Ch~OS/2 1.x 64~40h~OS/2 2.x
 #>>14	ulelong		x		\b, dib header size %u
+# Type: Vision Research Phantom CINE Format
+# URL: https://www.phantomhighspeed.com/
+# URL2: http://phantomhighspeed.force.com/vriknowledge/servlet/fileField?id=0BEU0000000Cfyk
+# From: Harry Mallon <hjmallon at gmail.com>
+#
+# This has a short "CI" code but the 44 is the size of the struct which is
+# stable
+>2	uleshort 44		Vision Research CINE Video,
+>>4	uleshort	0		Grayscale,
+>>4	uleshort 1		JPEG Compressed,
+>>4	uleshort 2		RAW,
+>>6	uleshort x		version %d,
+>>20	ulelong	x		%d frames,
+>>48	ulelong	x		%dx
+>>52	ulelong	x		\b%d
+
 # Conflicts with other entries [BABYL]
 # URL:	http://fileformats.archiveteam.org/wiki/BMP#OS.2F2_Bitmap_Array
 # Note:	container for OS/2 icon "IC", color icon "CI", color pointer "CP" or bitmap "BM"
@@ -1739,6 +1759,35 @@
 >>-0		offset	=32066
 # (2/41) like: medres.pi2
 >>>0		use		degas-bitmap
+# GEM Image: Version 1, Headerlen 8 (Wolfram Kleff)
+# Format variations from: Bernd Nuernberger <bernd.nuernberger@web.de>
+# Update: Joerg Jenderek
+# See http://fileformats.archiveteam.org/wiki/GEM_Raster
+# For variations, also see:
+#    https://www.seasip.info/Gem/ff_img.html (Ventura)
+#    http://www.atari-wiki.com/?title=IMG_file (XIMG, STTT)
+#    http://www.fileformat.info/format/gemraster/spec/index.htm (XIMG, STTT)
+#    http://sylvana.net/1stguide/1STGUIDE.ENG (TIMG)
+# header_size
+>2      beshort     0x0008
+>>0     use gem_info
+>2      beshort     0x0009
+>>0     use gem_info
+# no example for NOSIG
+>2      beshort     24
+>>0     use gem_info
+# no example for HYPERPAINT
+>2      beshort     25
+>>0     use gem_info
+16      string      XIMG\0
+>0      use gem_info
+# no example
+16      string      STTT\0\x10
+>0      use gem_info
+# no example or description
+16      string      TIMG\0
+>0      use gem_info
+
 # DEGAS high-res uncompressed bitmap *.pi3
 0	beshort		0x0002
 # skip Intel ia64 COFF msvcrt.lib by test for unused bits of 1st atari color palette entry
@@ -2147,35 +2196,6 @@
 0	string	NITF	National Imagery Transmission Format
 >25	string	>\0	dated %.14s
 
-# GEM Image: Version 1, Headerlen 8 (Wolfram Kleff)
-# Format variations from: Bernd Nuernberger <bernd.nuernberger@web.de>
-# Update: Joerg Jenderek
-# See http://fileformats.archiveteam.org/wiki/GEM_Raster
-# For variations, also see:
-#    https://www.seasip.info/Gem/ff_img.html (Ventura)
-#    http://www.atari-wiki.com/?title=IMG_file (XIMG, STTT)
-#    http://www.fileformat.info/format/gemraster/spec/index.htm (XIMG, STTT)
-#    http://sylvana.net/1stguide/1STGUIDE.ENG (TIMG)
-0       beshort     0x0001
-# header_size
->2      beshort     0x0008
->>0     use gem_info
->2      beshort     0x0009
->>0     use gem_info
-# no example for NOSIG
->2      beshort     24
->>0     use gem_info
-# no example for HYPERPAINT
->2      beshort     25
->>0     use gem_info
-16      string      XIMG\0
->0      use gem_info
-# no example
-16      string      STTT\0\x10
->0      use gem_info
-# no example or description
-16      string      TIMG\0
->0      use gem_info
 
 0   name        gem_info
 # version is 2 for some XIMG and 1 for all others
@@ -2660,7 +2680,6 @@
 >>0	use	ulead-imaginfo
 # From:		Joerg Jenderek
 # Reference:	http://mark0.net/download/triddefs_xml.7z/defs/p/pe4-imaginfo.trid.xml
-11	string	\001\0\0\0\0
 # check for version 4 part
 >19	string	\0\0\0\004\0
 >>0	use	ulead-imaginfo
@@ -3133,7 +3152,8 @@
 # FIXME: Handle DX10 and XBOX formats.
 >>0x54	string	DX10
 >>>0x80	use	ms-directdraw-dx10
->>0x54	string	!DX10			\b, compressed using %.4s
+>>0x54	string	!DX10
+>>>0x54	string	x			\b, compressed using %.4s
 >0x50	ulelong&0x2	0x2		\b, alpha only
 >0x50	ulelong&0x200	0x200		\b, YUV
 >0x50	ulelong&0x20000	0x20000		\b, luminance
@@ -3280,6 +3300,10 @@
 >>0x10	ubelong	!0x44445320		Sega PVR image:
 >>>0x10	use	sega-pvr-image-header
 >>0x08	ulelong	x	\b, global index = %u
+# Sega GVR image with GBIX.
+>0x10	string	GVRT	Sega GVR image:
+>>0x10	use	sega-gvr-image-header
+>>0x08	ubelong	x	\b, global index = %u
 
 # Sega GVR header.
 0	name	sega-gvr-image-header
@@ -3301,12 +3325,6 @@
 0	string	GVRT	Sega GVR image:
 >0x10	use	sega-gvr-image-header
 
-# Sega GVR image with GBIX.
-0	string	GBIX
->0x10	string	GVRT	Sega GVR image:
->>0x10	use	sega-gvr-image-header
->>0x08	ubelong	x	\b, global index = %u
-
 # Sega GVR image with GCIX. (Wii)
 0	string	GCIX
 >0x10	string	GVRT	Sega GVR image:
@@ -3316,28 +3334,9 @@
 # Light Field Picture
 # Documentation: http://optics.miloush.net/lytro/TheFileFormat.aspx
 # Typical file extensions: .lfp .lfr .lfx
-
 0	ubelong	0x894C4650
->4	ubelong	0x0D0A1A0A
->12	ubelong	0x00000000	Lytro Light Field Picture
->8	ubelong	x		\b, version %d
-
-# Type: Vision Research Phantom CINE Format
-# URL: https://www.phantomhighspeed.com/
-# URL2: http://phantomhighspeed.force.com/vriknowledge/servlet/fileField?id=0BEU0000000Cfyk
-# From: Harry Mallon <hjmallon at gmail.com>
-#
-# This has a short "CI" code but the 44 is the size of the struct which is
-# stable
-0	string	CI
->2	uleshort 44		Vision Research CINE Video,
->>4	uleshort	0		Grayscale,
->>4	uleshort 1		JPEG Compressed,
->>4	uleshort 2		RAW,
->>6	uleshort x		version %d,
->>20	ulelong	x		%d frames,
->>48	ulelong	x		%dx
->>52	ulelong	x		\b%d
+>4	ubelong	0x0D0A1A0A	Lytro Light Field Picture
+>>8	ubelong	x		\b, version %u
 
 # Type: ARRI Raw Image
 # Info: SMPTE RDD30:2014
@@ -3814,9 +3813,7 @@
 >>>>33		string	and
 >>>>>37		string	layers
 >>>>>>43	ulelong	x	reMarkable tablet notebook lines, 1404 x 1872, %x page(s)
-
 # newer per-page files for the reMarkable
-0		string	reMarkable
 >11		string	.lines
 >>18		string	file,
 >>>24		string	version=
@@ -4211,9 +4208,9 @@
 >>>13	ubyte		x	*bad colorspace %u*
 
 
-# Type: Godot 3, 4 texture (pixel format)
+# Type: Godot 3 texture (pixel format)
 # From: David Korth <gerbilsoft@gerbilsoft.com>
-0	name	godot-pixel-format
+0	name	godot-pixel-format-v3
 >0	ulelong&0xFFFFF	0	L8
 >0	ulelong&0xFFFFF	1	LA8
 >0	ulelong&0xFFFFF	2	R8
@@ -4251,7 +4248,54 @@
 >0	ulelong&0xFFFFF	34	ETC2_RGB8
 >0	ulelong&0xFFFFF	35	ETC2_RGBA8
 >0	ulelong&0xFFFFF	36	ETC2_RGB8A1
+# NOTE: This is a custom pixel format used by Sonic Colors Ultimate.
+# Godot 4 later added its own ASTC format values.
 >0	ulelong&0xFFFFF	37	ASTC_8x8
+
+# Type: Godot 4 texture (pixel format)
+# From: David Korth <gerbilsoft@gerbilsoft.com>
+# NOTE: This is a custom pixel format used by Sonic Colors Ultimate.
+# Godot 4 later added its own ASTC format values.
+0	name	godot-pixel-format-v4
+>0	ulelong&0xFFFFF	0	L8
+>0	ulelong&0xFFFFF	1	LA8
+>0	ulelong&0xFFFFF	2	R8
+>0	ulelong&0xFFFFF	3	RG8
+>0	ulelong&0xFFFFF	4	RGB8
+>0	ulelong&0xFFFFF	5	RGBA8
+>0	ulelong&0xFFFFF	6	RGBA4444
+>0	ulelong&0xFFFFF	7	RGB565
+>0	ulelong&0xFFFFF	8	RF
+>0	ulelong&0xFFFFF	9	RGF
+>0	ulelong&0xFFFFF	10	RGBF
+>0	ulelong&0xFFFFF	11	RGBAF
+>0	ulelong&0xFFFFF	12	RH
+>0	ulelong&0xFFFFF	13	RGH
+>0	ulelong&0xFFFFF	14	RGBH
+>0	ulelong&0xFFFFF	15	RGBAH
+>0	ulelong&0xFFFFF	16	RGBE9995
+>0	ulelong&0xFFFFF	17	DXT1
+>0	ulelong&0xFFFFF	18	DXT3
+>0	ulelong&0xFFFFF	19	DXT5
+>0	ulelong&0xFFFFF	20	RGTC_R
+>0	ulelong&0xFFFFF	21	RGTC_RG
+>0	ulelong&0xFFFFF	22	BPTC_RGBA
+>0	ulelong&0xFFFFF	23	BPTC_RGBF
+>0	ulelong&0xFFFFF	24	BPTC_RGBFU
+>0	ulelong&0xFFFFF	25	ETC
+>0	ulelong&0xFFFFF	36	ETC2_R11
+>0	ulelong&0xFFFFF	27	ETC2_R11S
+>0	ulelong&0xFFFFF	28	ETC2_RG11
+>0	ulelong&0xFFFFF	29	ETC2_RG11S
+>0	ulelong&0xFFFFF	30	ETC2_RGB8
+>0	ulelong&0xFFFFF	31	ETC2_RGBA8
+>0	ulelong&0xFFFFF	32	ETC2_RGB8A1
+>0	ulelong&0xFFFFF	33	ETC2_RA_AS_RG
+>0	ulelong&0xFFFFF	34	DXT5_RA_AS_RG
+>0	ulelong&0xFFFFF	35	ASTC_4x4
+>0	ulelong&0xFFFFF	36	ASTC_4x4_HDR
+>0	ulelong&0xFFFFF	37	ASTC_8x8
+>0	ulelong&0xFFFFF	38	ASTC_8x8_HDR
 
 # Type: Godot 3, 4 texture (rescale display, width)
 # From: David Korth <gerbilsoft@gerbilsoft.com>
@@ -4323,7 +4367,7 @@
 >16	ulelong&0x100000	0x100000	lossless encoding
 >16	ulelong&0x200000	0x200000	lossy encoding
 >16	ulelong&0x300000	0
->>16	use	godot-pixel-format
+>>16	use	godot-pixel-format-v3
 
 # Type: Godot 4 texture
 # From: David Korth <gerbilsoft@gerbilsoft.com>
@@ -4342,7 +4386,7 @@
 >12	use	godot-rescale-display-h
 >12	uleshort	x	\b,
 >0x2C	ulelong		>1	%u mipmaps,
->0x30	use	godot-pixel-format
+>0x30	use	godot-pixel-format-v4
 >0x24	ulelong		1	\b, embedded PNG image
 >0x24	ulelong		2	\b, embedded WebP image
 >0x24	ulelong		3	\b, Basis Universal
@@ -4418,3 +4462,124 @@
 >>&1	string	x				\b, sizes: %s
 >0	search	encoding: 
 >>&1	string	x				\b, encoding: %s
+
+# From:		Joerg Jenderek
+# URL:		http://justsolve.archiveteam.org/wiki/PICT
+#		https://en.wikipedia.org/wiki/PICT
+# Reference:	https://www.fileformat.info/format/macpict/egff.htm
+#		http://mark0.net/download/triddefs_xml.7z/defs/p/pict-v2.trid.xml
+# Note: 	called "Macintosh Quickdraw/PICT drawing" by shared MIME-info database from freedesktop.org,
+#		"QuickDraw/PICT bitmap (v2)" by TrID and "Macintosh PICT Image" version 2.0 by DROID via PUID via fmt/341
+# 		verified by command like `deark -m pict -l -d2 flag_b24.pct` as PICT v2,
+#		partly by NetPBM `picttoppm venus.pct | file` as "Macintosh PICT",
+#		partly by ImageMagick `identify -verbose flag_b24.pct` as (Apple Macintosh QuickDraw/PICT) and
+#		partly by XnView `nconvert -fullinfo *.pict *.pic *.pct` as "Macintosh PICT 2"
+# look for version operator (0011h) and version number (02FFh)
+522 ubelong				0x001102ff
+# few Macintosh QuickDraw with one corner at -1/-1 coordinates like PICT_129.pict PICT_2012.pict (strength=81=70+11) before Claris clip art (strength=80 ./claris)
+!:strength +11
+# look for Version operator (0C00h)
+>526	ubeshort			0x0c00
+# skip DROID fmt-341-signature-id-468.pct with invalid dimension x=0
+>>520		ubeshort		!0
+# skip DROID variant fmt-341-signature-id-468.pct using 0xAB instead 0x0 
+>>>0		long			!0xABABABAB		Macintosh QuickDraw PICT, version 2
+#!:mime		application/octet-stream
+!:mime		image/x-pict
+!:apple		????PICT
+!:ext		pict/pic/pct
+# maybe also suffix pict2	https://www.xnview.com/de/image_formats/
+#!:ext		pict2/pict/pic/pct
+# Reference:	http://mark0.net/download/triddefs_xml.7z/defs/p/pict.trid.xml
+# Note: 	called "Macintosh Quickdraw/PICT Drawing" by TrID
+#		"real" content stored by opcode 0x8200 (CompressedQuickTime *.qtif) with none, cvid or JPEG compression
+# look for LongText QuickTime followed by trademark character
+>>>>554		search/691976/b		QuickTime\252		\b, QuickTime
+# look for LongText afterwards like "and a/None|Cinepak|Photo - JPEG decompressor/are needed to see this picture"
+>>>>>&0		search/28/bs	\040decompressor	with decompressor
+>>>>>>&-4	string			None			None
+# Cinepak and "Compact Video decompressor" seems to be cvid
+>>>>>>&-7	string			Cinepak			Cinepak
+>>>>>>&-12	string			Photo\040-\040JPEG	JPEG
+>>>>>>&-13	string			Compact\040Video	cvid
+# case where decompression is not like: Cinepak None "Photo - JPEG" "Compact Video decompressor"
+>>>>>>&-6		default			x
+>>>>>>>&0	string			x			"%0.6s"
+# file size in bytes; not reliable sometimes 0 or little smaller than real size
+#>>>>512	ubeshort		x			\b, size %u
+# 8 bytes picFrame (rectangle); for most examples one corner is located at coordinates 0/0; except deark other tools fail when negative values
+# GRR: samples with coordinates -1/-1 and Y=0x01??|0x00?? are interpreted as "Claris clip art" (strength=80 ./claris)
+#>>>>518		ubeshort		x			Y=%#4.4x
+>>>>520		ubeshort		x			\b, %u
+>>>>>516	beshort			!0			\b-%d
+>>>>518		ubeshort		x			x %u
+>>>>>514	beshort			!0			\b-%d
+# Note:		at the beginning all zeros or information about the particular software like: PICT
+>>>>0		long			!0			\b, at 0
+>>>>>0		string			x			%.4s
+# version 2.0 files also have a 26-byte header following the version information
+# like: 0 FFFEh (freedesktop egff~Encyclopedia of Graphics File Formats) FFFFh (egff)
+>>>>528		ubeshort		x			\b, at 528 %#4.4x
+# 2nd opcode like: 0x0000~NOP 0x0001~Clip 0x00a0~ShortComment 0x00a1~LongComment 0x001e~DefHilite 0x001f~OpColor
+>>>>552		ubeshort		x			\b, at 552 second opcode %#4.4x
+# last opcode if not opEndPic (00FFh)
+>>>>-2		ubeshort		!0x00FF			\b, at the end %#4.4x opcode
+# Reference:	http://web.archive.org/web/20010703041301/http://developer.apple.com/technotes/qd/qd_14.html
+#		http://mark0.net/download/triddefs_xml.7z/defs/p/pict-v1.trid.xml
+# Note: 	called "QuickDraw/PICT bitmap (v1)" by TrID and "Macintosh PICT Image" version 1.0 by DROID via PUID via x-fmt/80
+# 		verified by command like `deark -m pict -l -d2 FC9.PCT` as PICT v1,
+#		by ImageMagick `identify -verbose *.pict` as PICT (Apple Macintosh QuickDraw/PICT) and
+#		by XnView `nconvert -fullinfo *.pict *.pct` as "Macintosh PICT"
+# 1 byte opcode for picversion (11h); next byte version number (1)
+522		ubeshort	0x1101
+# skip DROID x-fmt-80-signature-id-859.pct x-fmt-80-signature-id-860.pct without next opcode usually clipRgn (1h)
+>524		ubyte		=0x01
+>>0		use		mac-pict1
+#	display Macintosh PICT drawing version 1 information
+0		name		mac-pict1
+>520		ubeshort	x		Macintosh QuickDraw PICT, version 1
+#!:mime		application/octet-stream
+!:mime		image/x-pict
+!:apple		????PICT
+!:ext		pict/pct
+# maybe also suffix pict1 and pic
+#!:ext		pict1/pict/pic/pct
+# file size in bytes; not reliable sometimes 0 or smaller than real size
+#>512		ubeshort	x		\b, size %u
+# 8 bytes picFrame (rectangle)
+>520		ubeshort	x		\b, %u
+>516		ubeshort	!0		\b-%u
+>518		ubeshort	x		x %u
+>514		ubeshort	!0		\b-%u
+# Note:		According to DROID at the beginning all zeros or information about the particular software like DRWG(MD|D2)
+>0		long		!0		\b, at 0
+>>0		string		x		%.6s
+>>0		ubelong		x		%#8.8x
+>>4		ubeshort	x		\b%4.4x
+# 2nd opcode if not clipRgn (1h)
+>524		ubyte		!0x01		\b, at 524 %#2.2x opcode 
+# last opcode if not opEndPic (FFh)
+>-1		ubyte		!0xFF		\b, at the end %#2.2x opcode 
+
+# https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md
+20		ulelong		0
+>24		ulelong		0
+>>4		uleshort	0xA5E0	Aseprite asset file
+!:ext	aseprite
+>>>0		ulelong		x	\b, size %u
+>>>6		uleshort	x	\b, frames %u
+>>>8		uleshort	x	\b, size %ux
+>>>10		uleshort	x	\b%u
+>>>12		uleshort	32	\b, RGBA
+>>>12		uleshort	16	\b, Grayscale
+>>>12		uleshort	8	\b, Indexed
+>>>14		ulelong		x	\b, flags %#x
+#>>>18		uleshort	x	\b, speed %u
+>>>28		ubyte		x	\b, transparency index %u
+>>>32		uleshort	x	\b, number of colors %u
+>>>34		ubyte		>0	\b, pixel ratio %u:
+>>>>35		ubyte		x	\b%u
+>>>36		leshort		x	\b, grid position (%d, 
+>>>38		leshort		x	\b%d)
+>>>40		uleshort	x	\b, grid size %dx
+>>>42		uleshort	x	\b%d

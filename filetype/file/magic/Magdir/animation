@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: animation,v 1.97 2024/02/11 15:33:43 christos Exp $
+# $File: animation,v 1.101 2025/05/28 19:54:08 christos Exp $
 # animation:  file(1) magic for animation/movie formats
 #
 # animation formats
@@ -542,36 +542,39 @@
 >>2	byte&0xF0	!0xF0		MPEG ADTS, layer III, v1
 !:strength +20
 !:mime	audio/mpeg
->2	byte&0xF0	0x10		\b, 32 kbps
->2	byte&0xF0	0x20		\b, 40 kbps
->2	byte&0xF0	0x30		\b, 48 kbps
->2	byte&0xF0	0x40		\b, 56 kbps
->2	byte&0xF0	0x50		\b, 64 kbps
->2	byte&0xF0	0x60		\b, 80 kbps
->2	byte&0xF0	0x70		\b, 96 kbps
->2	byte&0xF0	0x80		\b, 112 kbps
->2	byte&0xF0	0x90		\b, 128 kbps
->2	byte&0xF0	0xA0		\b, 160 kbps
->2	byte&0xF0	0xB0		\b, 192 kbps
->2	byte&0xF0	0xC0		\b, 224 kbps
->2	byte&0xF0	0xD0		\b, 256 kbps
->2	byte&0xF0	0xE0		\b, 320 kbps
+>>>2	search/100	Xing		\b, variable bitrate
+>>>2	search/100	VBRI		\b, variable bitrate
+>>>2	default		x
+>>>>2	byte&0xF0	0x10		\b, 32 kbps
+>>>>2	byte&0xF0	0x20		\b, 40 kbps
+>>>>2	byte&0xF0	0x30		\b, 48 kbps
+>>>>2	byte&0xF0	0x40		\b, 56 kbps
+>>>>2	byte&0xF0	0x50		\b, 64 kbps
+>>>>2	byte&0xF0	0x60		\b, 80 kbps
+>>>>2	byte&0xF0	0x70		\b, 96 kbps
+>>>>2	byte&0xF0	0x80		\b, 112 kbps
+>>>>2	byte&0xF0	0x90		\b, 128 kbps
+>>>>2	byte&0xF0	0xA0		\b, 160 kbps
+>>>>2	byte&0xF0	0xB0		\b, 192 kbps
+>>>>2	byte&0xF0	0xC0		\b, 224 kbps
+>>>>2	byte&0xF0	0xD0		\b, 256 kbps
+>>>>2	byte&0xF0	0xE0		\b, 320 kbps
 # timing
->2	byte&0x0C	0x00		\b, 44.1 kHz
->2	byte&0x0C	0x04		\b, 48 kHz
->2	byte&0x0C	0x08		\b, 32 kHz
+>>>2	byte&0x0C	0x00		\b, 44.1 kHz
+>>>2	byte&0x0C	0x04		\b, 48 kHz
+>>>2	byte&0x0C	0x08		\b, 32 kHz
 # channels/options
->3	byte&0xC0	0x00		\b, Stereo
->3	byte&0xC0	0x40		\b, JntStereo
->3	byte&0xC0	0x80		\b, 2x Monaural
->3	byte&0xC0	0xC0		\b, Monaural
-#>1	byte		^0x01		\b, Data Verify
-#>2	byte		&0x02		\b, Packet Pad
-#>2	byte		&0x01		\b, Custom Flag
-#>3	byte		&0x08		\b, Copyrighted
-#>3	byte		&0x04		\b, Original Source
-#>3	byte&0x03	1		\b, NR: 50/15 ms
-#>3	byte&0x03	3		\b, NR: CCIT J.17
+>>>3	byte&0xC0	0x00		\b, Stereo
+>>>3	byte&0xC0	0x40		\b, JntStereo
+>>>3	byte&0xC0	0x80		\b, 2x Monaural
+>>>3	byte&0xC0	0xC0		\b, Monaural
+#>>>1	byte		^0x01		\b, Data Verify
+#>>>2	byte		&0x02		\b, Packet Pad
+#>>>2	byte		&0x01		\b, Custom Flag
+#>>>3	byte		&0x08		\b, Copyrighted
+#>>>3	byte		&0x04		\b, Original Source
+#>>>3	byte&0x03	1		\b, NR: 50/15 ms
+#>>>3	byte&0x03	3		\b, NR: CCIT J.17
 
 # MP2, M1A
 0       beshort&0xFFFE  0xFFFC         MPEG ADTS, layer II, v1
@@ -855,7 +858,7 @@
 # Live MPEG-4 audio streams (instead of RTP FlexMux)
 0       beshort&0xFFE0  0x56E0         MPEG-4 LOAS
 !:mime	audio/x-mp4a-latm
-#>1     beshort&0x1FFF  x              \b, %hu byte packet
+#>1     beshort&0x1FFF  x              \b, %u byte packet
 >3      byte&0xE0       0x40
 >>4     byte&0x3C       0x04           \b, single stream
 >>4     byte&0x3C       0x08           \b, 2 streams

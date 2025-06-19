@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: hp,v 1.26 2024/02/11 21:25:17 christos Exp $
+# $File: hp,v 1.27 2024/08/27 18:50:57 christos Exp $
 # hp:  file(1) magic for Hewlett Packard machines (see also "printer")
 #
 # XXX - somebody should figure out whether any byte order needs to be
@@ -241,25 +241,6 @@
 >14	string		F(.)		F(.);
 >14	string		F(,)		F(,);
 
-
-# Summary: HP-38/39 calculator
-# Created by: Samuel Thibault <samuel.thibault@ens-lyon.org>
-0	string		HP3
->3	string		8		HP 38
->3	string		9		HP 39
->4	string		Bin		binary
->4	string		Asc		ASCII
->7	string		A		(Directory List)
->7	string		B		(Zaplet)
->7	string		C		(Note)
->7	string		D		(Program)
->7	string		E		(Variable)
->7	string		F		(List)
->7	string		G		(Matrix)
->7	string		H		(Library)
->7	string		I		(Target List)
->7	string		J		(ASCII Vector specification)
->7	string		K		(wildcard)
 
 # Summary: HP-38/39 calculator
 # Created by: Samuel Thibault <samuel.thibault@ens-lyon.org>

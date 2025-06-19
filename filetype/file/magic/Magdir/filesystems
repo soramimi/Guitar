@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: filesystems,v 1.162 2024/06/19 16:31:14 christos Exp $
+# $File: filesystems,v 1.168 2025/06/08 15:40:37 christos Exp $
 # filesystems:  file(1) magic for different filesystems
 #
 0	name	partid
@@ -1282,7 +1282,7 @@
 #>>>(0x1BC.s+11)		ubyte		x			\b,cfg_def %#x
 # for older versions
 >>>(0x1BC.s+9)		ubyte		<2
-#>>>>(0x1BC.s+12)	ubyte		18			\b,%hhu/18 seconds
+#>>>>(0x1BC.s+12)	ubyte		18			\b,%u/18 seconds
 >>>>(0x1BC.s+12)	ubyte		!18			\b,%u/18 seconds
 # floppy A: or B:
 >>>>(0x1BC.s+13)	ubyte		<2			\b,floppy %#x
@@ -1401,14 +1401,14 @@
 >>>>>16		ubyte		=1		\b, FAT  %u
 >>>>>16		ubyte		>0
 >>>>>17		uleshort	>0		\b, root entries %u
-#>>>>>17	uleshort	=0		\b, root entries %hu=0 (usual Fat32)
+#>>>>>17	uleshort	=0		\b, root entries %u=0 (usual Fat32)
 >>>>>19		uleshort	>0		\b, sectors %u (volumes <=32 MB)
-#>>>>>19	uleshort	=0		\b, sectors %hu=0 (usual Fat32)
+#>>>>>19	uleshort	=0		\b, sectors %u=0 (usual Fat32)
 >>>>>21		ubyte		>0xF0		\b, Media descriptor %#x
 #>>>>>21	ubyte		=0xF0		\b, Media descriptor %#x (usual floppy)
 >>>>>21		ubyte		<0xF0		\b, Media descriptor %#x
 >>>>>22		uleshort	>0		\b, sectors/FAT %u
-#>>>>>22	uleshort	=0		\b, sectors/FAT %hu=0 (usual Fat32)
+#>>>>>22	uleshort	=0		\b, sectors/FAT %u=0 (usual Fat32)
 >>>>>24		uleshort	x		\b, sectors/track %u
 >>>>>26		ubyte		>2		\b, heads %u
 #>>>>>26	ubyte		=2		\b, heads %u (usual floppy)
@@ -1479,7 +1479,7 @@
 >>>>>>36	ulelong		x		\b, sectors/FAT %u
 # https://technet.microsoft.com/en-us/library/cc977221.aspx
 >>>>>>40	uleshort	>0		\b, extension flags %#x
-#>>>>>>40	uleshort	=0		\b, extension flags %hu
+#>>>>>>40	uleshort	=0		\b, extension flags %u
 >>>>>>42	uleshort	>0		\b, fsVersion %u
 #>>>>>>42	uleshort	=0		\b, fsVersion %u (usual)
 >>>>>>44	ulelong		>2		\b, rootdir cluster %u
@@ -2035,24 +2035,6 @@
 !:ext	nrg
 >307200	use cdrom
 
-# .cso files
-# Reference: https://pismotec.com/ciso/ciso.h
-# NOTE: There are two other formats with the same magic but
-# completely incompatible specifications:
-# - GameCube/Wii CISO: https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CISOBlob.h
-# - PSP CISO: https://github.com/jamie/ciso/blob/master/ciso.h
-0    string    CISO
-# Other fields are used to determine what type of CISO this is:
-# - 0x04 == 0x00200000: GameCube/Wii CISO (block_size)
-# - 0x10 == 0x00000800: PSP CISO (ISO-9660 sector size)
-# - 0x10 == 0x00004000: For >2GB files using maxcso...
-# 			https://github.com/unknownbrackets/maxcso/issues/26
-# - None of the above: Compact ISO.
->4	lelong	!0
->>4	lelong	!0x200000
->>>16	lelong	!0x800
->>>>16	lelong	!0x4000		Compressed ISO CD image
-
 # cramfs filesystem - russell@coker.com.au
 0       lelong    0x28cd3d45      Linux Compressed ROM File System data, little endian
 >4      lelong  x size %u
@@ -2251,20 +2233,6 @@
 >560	string		x		label: %.64s,
 >136	string		x		mountpoint: %.128s
 
-# Summary: Oracle ASM tagged volume
-# Created by: Aaron Botsis <redhat@digitalmafia.org>
-32	string		ORCLDISK	Oracle ASM Volume,
->40	string		x		Disk Name: %0.12s
-32	string		ORCLCLRD	Oracle ASM Volume (cleared),
->40	string		x		Disk Name: %0.12s
-
-# Oracle Clustered Filesystem - Aaron Botsis <redhat@digitalmafia.org>
-8	string		OracleCFS	Oracle Clustered Filesystem,
->4	long		x		rev %d
->0	long		x		\b.%d,
->560	string		x		label: %.64s,
->136	string		x		mountpoint: %.128s
-
 # Oracle ASM tagged volume - Aaron Botsis <redhat@digitalmafia.org>
 32	string		ORCLDISK	Oracle ASM Volume,
 >40	string		x		Disk Name: %0.12s
@@ -2329,12 +2297,6 @@
 # dvdisaster's .ecc
 # From: "Nelson A. de Oliveira" <naoliv@gmail.com>
 0	string	*dvdisaster*	dvdisaster error correction file
-
-# xfs metadump image
-# mb_magic XFSM at 0; superblock magic XFSB at 1 << mb_blocklog
-# but can we do the << ?  For now it's always 512 (0x200) anyway.
-0	string XFSM
->0x200	string XFSB	XFS filesystem metadump image
 
 # Type:	CROM filesystem
 # From:	Werner Fink <werner@suse.de>
@@ -2645,7 +2607,7 @@
 >12	use next
 
 # bcachefs
-# From: Thomas Weiﬂschuh <thomas@t-8ch.de>
+# From: Thomas Weissschuh <thomas@t-8ch.de>
 
 0	name	bcachefs-uuid
 >0	ubelong		x	\b%08x
@@ -2692,7 +2654,8 @@
 #>1060		lelong		x		\b, blocks=%d
 #>1064		lelong		x		\b, metadata@%#x
 #>1068		lelong		x		\b, xattr@%#x
->1072		guid		x		\b, uuid=%s
+>1072		guid		x		\b, uuid=
+>1072		use		bcachefs-uuid
 >1088		string		>0		\b, name=%s
 >1104		lelong		>0		\b, incompat:
 >>1104		lelong		&1		LZ4_0PADDING
@@ -2801,3 +2764,8 @@
 0x0		string	\x10\x00\x4e\x57\x20
 >0x10000	string	\x4e\x57\x00\x00\x01
 >0x100A2	string	\x4C\x00\x40 EldOS Corporation SolidFS, 64KiB page size
+
+# YBLOB mini object storage
+# PIN-protected storage format based on the PIV application
+# https://github.com/douzebis/yb
+0    lelong    0xF2ED5F0B    yblob object store image data

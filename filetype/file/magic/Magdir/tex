@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: tex,v 1.22 2022/12/21 16:50:04 christos Exp $
+# $File: tex,v 1.23 2025/01/30 18:42:46 christos Exp $
 # tex:  file(1) magic for TeX files
 #
 # XXX - needs byte-endian stuff (big-endian and little-endian DVI?)
@@ -37,6 +37,10 @@
 !:mime	text/x-texinfo
 0	search/1	This\ is\ Info\ file	GNU Info text
 !:mime	text/x-info
+
+0	string		%!TEX\040root	TeX Document text
+!:mime	text/x-tex
+!:strength + 15
 
 # TeX documents, from Daniel Quinlan (quinlan@yggdrasil.com)
 0	search/4096	\\input		TeX document text

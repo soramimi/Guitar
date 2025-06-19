@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: elf,v 1.90 2024/02/29 03:42:40 christos Exp $
+# $File: elf,v 1.91 2024/11/09 23:52:23 christos Exp $
 # elf:  file(1) magic for ELF executables
 #
 # We have to check the byte order flag to see what byte order all the
@@ -375,6 +375,7 @@
 >7	byte		16		(FenixOS)
 >7	byte		17		(Nuxi CloudABI)
 >7	byte		97		(ARM)
+>7	byte		102		(Cell LV2)
 >7	byte		202		(Cafe OS)
 >7	byte		255		(embedded)
 

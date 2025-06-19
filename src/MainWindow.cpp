@@ -5703,7 +5703,9 @@ std::string MainWindow::determineFileType(QByteArray const &in)
 		}
 	}
 
-	return global->filetype.file(in.data(), in.size()).mimetype;
+	std::string mime = global->filetype.file(in.data(), in.size()).mimetype;
+	qDebug() << QString::fromStdString(mime);
+	return mime;
 }
 
 std::string MainWindow::determineFileType(std::string const &path)
@@ -7310,6 +7312,12 @@ void MainWindow::on_action_view_sort_by_time_changed()
 
 void MainWindow::test()
 {
+	QFile file("/home/soramimi/develop/Guitar/_bin/Guitar");
+	file.open(QFile::ReadOnly);
+	QByteArray ba = file.readAll();
+	std::string mime = determineFileType(ba);
+	// auto r = global->filetype.file(ba.data(), ba.size());
+	qDebug() << QString::fromStdString(mime);
 }
 
 

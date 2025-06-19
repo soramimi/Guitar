@@ -20,7 +20,7 @@ public:
 	static size_t slop_size();
 	Result file(int fd) const;
 	Result file(char const *filepath) const;
-	Result file(const char *data, size_t size, int filemode = 0644, bool pad_slop = true) const;
+	Result file(const char *data, size_t size, int filemode = 0644) const;
 };
 
 #endif // FILETYPE_H
