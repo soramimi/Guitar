@@ -13,8 +13,8 @@ struct CheckoutDialog::Private {
 
 CheckoutDialog::CheckoutDialog(QWidget *parent, QStringList const &tags, QStringList const &all_local_branches, QStringList const &local_branches, QStringList const &remote_branches)
 	: QDialog(parent)
-	, ui(new Ui::CheckoutDialog)
 	, m(new Private)
+	, ui(new Ui::CheckoutDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

@@ -28,8 +28,8 @@ struct BlameWindow::Private {
 
 BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QList<BlameItem> &list)
 	: QDialog(parent)
-	, ui(new Ui::BlameWindow)
 	, m(new Private)
+	, ui(new Ui::BlameWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
