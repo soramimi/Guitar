@@ -3,6 +3,10 @@
 # Guitar
 Git GUI Client
 
+### Notice: 2025-06-21
+There are no plans to release a Mac version in the future, I will continue CI and nightly-build, but I will not test it working and code sign it, so it will probably not work properly as it is now.
+（今後mac版をリリースする予定はありません。CIとnightly-buildは続けますが、私は動作確認もコード署名も行わないので、現状のままでは正常に動作しない可能性が高いです。）
+
 ## Summary
 
 * Open Source, Free Software (GPL v2)
