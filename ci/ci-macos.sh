@@ -1,4 +1,4 @@
-QT=~/Qt/6.10.0/macos
+QT=~/Qt/6.7.2/macos
 
 mkdir _bin
 
