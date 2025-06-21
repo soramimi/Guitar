@@ -245,8 +245,8 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		std::string prompt;
 		std::string modelname;
 		PromptJsonGenerator(std::string const &prompt, std::string const &modelname, Kind kind)
-			: prompt(prompt), modelname(modelname)
-			, kind(kind)
+			: kind(kind), prompt(prompt)
+			, modelname(modelname)
 		{}
 
 		std::string generate_openai_format(std::string modelname)

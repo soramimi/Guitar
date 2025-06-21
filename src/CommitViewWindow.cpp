@@ -15,8 +15,8 @@ MainWindow *CommitViewWindow::mainwindow()
 
 CommitViewWindow::CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit)
 	: QDialog(parent)
-	, ui(new Ui::CommitViewWindow)
 	, m(new Private)
+	, ui(new Ui::CommitViewWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

@@ -9,8 +9,8 @@ struct DeleteBranchDialog::Private {
 
 DeleteBranchDialog::DeleteBranchDialog(QWidget *parent, bool remote, QStringList const &all_local_branch_names, QStringList const &current_local_branch_names)
 	: QDialog(parent)
-	, ui(new Ui::DeleteBranchDialog)
 	, m(new Private)
+	, ui(new Ui::DeleteBranchDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

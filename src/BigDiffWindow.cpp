@@ -10,8 +10,8 @@ struct BigDiffWindow::Private {
 
 BigDiffWindow::BigDiffWindow(QWidget *parent)
 	: QDialog(parent)
-	, ui(new Ui::BigDiffWindow)
 	, m(new Private)
+	, ui(new Ui::BigDiffWindow)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
