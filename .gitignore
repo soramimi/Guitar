@@ -47,3 +47,4 @@ cmigemo/libmigemo.so.1.1.0
 cmigemo/tags
 misc/migemo.zip
 *.o
+*.pdb

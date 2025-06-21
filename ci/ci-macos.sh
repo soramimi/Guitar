@@ -1,13 +1,9 @@
-QT=~/Qt/6.7.2/macos
+QT=~/Qt/6.10.0/macos
 
 mkdir _bin
 
 pushd filetype
-rm -fr build
-mkdir build
-cd build
-${QT}/bin/qmake "CONFIG+=release" ../libfiletype.pro
-make -j4
+bash build-gcc.sh
 popd
 
 pushd packaging/mac

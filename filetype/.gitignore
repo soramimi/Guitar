@@ -6,3 +6,14 @@ build/
 .vs/
 _build/
 .qmake.stash
+configure.lineno
+
+lib/__.SYMDEF SORTED
+oniguruma/INSTALL
+oniguruma/compile
+oniguruma/config.guess
+oniguruma/config.sub
+oniguruma/depcomp
+oniguruma/install-sh
+oniguruma/missing
+oniguruma/test-driver

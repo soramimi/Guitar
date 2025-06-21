@@ -94,8 +94,8 @@ win32:gcc {
 
 #
 
-win32:LIBS += $$PWD/filetype/lib/filetype.lib
-!win32:LIBS += $$PWD/filetype/lib/libfiletype.a
+msvc:LIBS += $$PWD/filetype/lib/filetype.lib $$PWD/filetype/lib/oniguruma.lib $$PWD/filetype/lib/file.lib
+!msvc:LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/liboniguruma.a $$PWD/filetype/lib/libfile.a
 
 #
 

@@ -10,7 +10,7 @@ if $suffix.nil?
 end
 
 $package = "guitar" + $suffix
-$maintainer = "nobody <nobody@example.com>"
+$maintainer = "soramimi <fi7s-fct@asahi-net.or.jp>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "_build"
 $dstdir = $workdir + "/#{$package}"
@@ -21,8 +21,8 @@ FileUtils.mkpath($dstdir + "/DEBIAN")
 FileUtils.mkpath($dstdir + "/usr/bin")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
-system "strip Guitar"
 FileUtils.cp("/Guitar/_bin/Guitar", $dstdir + "/usr/bin/")
+system "strip #{$dstdir}/usr/bin/"
 FileUtils.cp("/Guitar/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
 File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|
 	f.puts <<___
@@ -43,7 +43,7 @@ Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt6widgets6 (>= 6.4.2), libqt6xml6t64 (>= 6.4.2), libqt6svg6 (>= 6.4.2), zlib1g, git, libmagic1, libmagic-mgc, desktop-file-utils
+Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), libqt6svg6 (>= 6.2.4), zlib1g, git, desktop-file-utils
 Description: Git GUI Client
 ___
 }

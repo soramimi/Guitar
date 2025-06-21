@@ -4,6 +4,7 @@ ltmain.sh
 stamp-h1
 configure
 config.status
+config.h
 config.h.in
 onig-config
 libtool
@@ -82,3 +83,16 @@ m4/*.m4
 /harnesses/timeout-*
 /harnesses/crash-*
 /harnesses/oom-*
+
+
+filetype/libfile.pro
+filetype/libfiletype.pro
+filetype/oniguruma/INSTALL
+filetype/oniguruma/compile
+filetype/oniguruma/config.guess
+filetype/oniguruma/config.sub
+filetype/oniguruma/depcomp
+filetype/oniguruma/install-sh
+filetype/oniguruma/missing
+filetype/oniguruma/test-driver
+

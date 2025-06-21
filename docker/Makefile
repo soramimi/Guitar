@@ -40,18 +40,19 @@ build:
 	cd DockerBuildFiles && docker buildx build . --build-arg UNAME=${UNAME} --build-arg GNAME=${GNAME} --build-arg UID=${UID} --build-arg GID=${GID} --build-arg HOMEDIR=${HOMEDIR} -t ${NAME}
 
 up: home home/.bashrc home/.profile 
+	cp -a scripts/* home/
 	echo ${UNAME}:${PASSWORD} >./home/.password
 	echo CONTAINER_NAME=${NAME} >./home/.container.sh
 	docker run --device /dev/fuse --privileged --name ${NAME} -d -p ${SSHPORT}:${SSHPORT} -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e SSHPORT=${SSHPORT} -e COMMAND=up ${NAME}
 
 run: down home home/.bashrc home/.profile 
+	cp -a scripts/* home/
 	echo ${RUN} >home/run.sh
 	echo CONTAINER_NAME=${NAME} >./home/.container.sh
 	docker run --device /dev/fuse --privileged --name ${NAME} --rm -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e COMMAND=run ${NAME}
 	
 home:
 	-mkdir home
-	cp -a scripts/* home/
 
 home/.bashrc:
 	cp DockerBuildFiles/_bashrc ./home/.bashrc

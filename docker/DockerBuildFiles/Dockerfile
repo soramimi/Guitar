@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y apt-utils sudo locales vim git iputils-ping net-tools rename openssh-server
@@ -28,11 +28,12 @@ RUN locale-gen
 COPY ./default_locale /etc/default/locale
 COPY ./environment /etc/
 
-RUN apt install -y file libssl-dev fuse
-RUN apt install -y file qt6-base-dev qt6-svg-dev
+RUN apt install -y fuse
 RUN apt install -y automake autoconf shtool libtool
 RUN apt install -y doxygen graphviz
 RUN apt install -y nkf universal-ctags
+
+RUN apt install -y qt6-base-dev libqt6svg6-dev libglu1-mesa-dev libbsd-dev libssl-dev
 
 COPY ./cmd /tmp/
 CMD ["/bin/sh", "/tmp/cmd"]

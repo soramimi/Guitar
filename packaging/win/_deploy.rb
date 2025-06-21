@@ -2,7 +2,7 @@ require 'fileutils'
 $script_dir = __dir__
 $project_root = Dir.pwd
 
-$qtver = "6.9.0"
+$qtver = "6.10.0"
 
 if $suffix == nil then
 	$suffix = ""
@@ -41,9 +41,7 @@ run "ruby prepare.rb"
 FileUtils.cp $script_dir + "/zlib/_bin/libz.lib", "_bin/"
 
 Dir.chdir("filetype") {
-	mkcd $script_dir + "/_build_filetype"
-	run "C:/Qt/#{$qtver}/msvc2022_64/bin/qmake.exe CONFIG+=release ../../../filetype/libfiletype.pro"
-	run "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
+	run "build-msvc.bat"
 }
 
 mkcd $script_dir + "/_build_guitar"

@@ -6,7 +6,7 @@ clean:
 
 build: clean
 	cd /Guitar ; ruby prepare.rb
-	mkdir /Guitar/filetype/_build && cd /Guitar/filetype/_build && qmake6 "CONFIG+=release" /Guitar/filetype/libfiletype.pro && make -j8
+	cd /Guitar/filetype/ && bash build-gcc.sh
 	mkdir /Guitar/_build && cd /Guitar/_build && qmake6 "CONFIG+=release" /Guitar/Guitar.pro && make -j8
 
 deb: build

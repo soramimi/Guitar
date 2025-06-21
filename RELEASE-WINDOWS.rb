@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-$qtver = "6.9.0"
+$qtver = "6.10.0"
 
 $qt = "C:/Qt/#{$qtver}/msvc2022_64"
 $windeployqt = "C:/Qt/#{$qtver}/msvc2022_64/bin/windeployqt.exe"

@@ -36,14 +36,14 @@ jobs:
     - name: Build libfiletype
       run: |
         cd filetype
-        bash build.sh
+        bash build-gcc.sh
         cd ..
         
     - name: Build Guitar
       run: |
-        rm -fr _build_guitar
-        mkdir _build_guitar
-        cd _build_guitar
+        rm -fr _build
+        mkdir _build
+        cd _build
         qmake6 "CONFIG+=release" ../Guitar.pro
         make -j$(nproc)
         
@@ -75,15 +75,16 @@ jobs:
       
     - name: Build libfiletype
       run: |
+        brew install autoconf automake libtool
         cd filetype
-        bash build.sh
+        bash build-gcc.sh
         cd ..
         
     - name: Build Guitar
       run: |
-        rm -fr _build_guitar
-        mkdir _build_guitar
-        cd _build_guitar
+        rm -fr _build
+        mkdir _build
+        cd _build
         qmake "CONFIG+=release" ../Guitar.pro
         make -j$(sysctl -n hw.ncpu)
         
@@ -99,7 +100,7 @@ jobs:
         name: guitar-macos
         path: _bin/Guitar.zip
 
-  build-windows-msvc2022:
+  build-windows:
     runs-on: windows-latest
     
     steps:
@@ -179,9 +180,9 @@ jobs:
       run: |
         call path_update.bat
         git clone https://github.com/madler/zlib.git ../zlib
-        if exist "_build_zlib" rmdir /s /q "_build_zlib"
-        mkdir "_build_zlib"
-        cd "_build_zlib"
+        if exist "_build" rmdir /s /q "_build"
+        mkdir "_build"
+        cd "_build"
         qmake -spec win32-msvc "CONFIG+=release" ../zlib.pro
         ..\misc\jom.exe
         cd ..
@@ -190,10 +191,22 @@ jobs:
     - name: Build libfiletype
       run: |
         call path_update.bat
-        if exist "_build_libfiletype" rmdir /s /q "_build_libfiletype"
-        mkdir "_build_libfiletype"
-        cd "_build_libfiletype"
+        if exist "_build" rmdir /s /q "_build"
+        mkdir "_build"
+        cd "_build"
         qmake -spec win32-msvc "CONFIG+=release" ../filetype/libfiletype.pro
+        ..\misc\jom.exe
+        cd ..
+        if exist "_build" rmdir /s /q "_build"
+        mkdir "_build"
+        cd "_build"
+        qmake -spec win32-msvc "CONFIG+=release" ../filetype/liboniguruma.pro
+        ..\misc\jom.exe
+        cd ..
+        if exist "_build" rmdir /s /q "_build"
+        mkdir "_build"
+        cd "_build"
+        qmake -spec win32-msvc "CONFIG+=release" ../filetype/libfile.pro
         ..\misc\jom.exe
         cd ..
       shell: cmd
@@ -201,9 +214,9 @@ jobs:
     - name: Build Guitar
       run: |
         call path_update.bat
-        if exist "_build_guitar" rmdir /s /q "_build_guitar"
-        mkdir "_build_guitar"
-        cd "_build_guitar"
+        if exist "_build" rmdir /s /q "_build"
+        mkdir "_build"
+        cd "_build"
         qmake -spec win32-msvc "CONFIG+=release" ../Guitar.pro
         ..\misc\jom.exe
         cd ..

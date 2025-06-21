@@ -2,11 +2,8 @@
 
 ruby prepare.rb
 
-rm -fr _build_libfiletype
-mkdir _build_libfiletype
-pushd _build_libfiletype
-qmake "CONFIG+=release" ../filetype/libfiletype.pro
-make -j8
+pushd filetype
+bash build-gcc.sh
 popd
 
 rm -fr _build_guitar

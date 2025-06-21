@@ -1,17 +1,19 @@
 #include "FileType.h"
-#include "magic.h"
+#include "lib/magic.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #define NOMINMAX
 #include <io.h>
 #include <fcntl.h>
 #else
+#include <sys/types.h>
 #include <unistd.h>
 #define O_BINARY 0
 #endif

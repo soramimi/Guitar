@@ -10,7 +10,7 @@ if $suffix.nil?
 end
 
 $package = "guitar" + $suffix
-$maintainer = "nobody <nobody@example.com>"
+$maintainer = "S.Fuchita <fi7s-fct@asahi-net.or.jp>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "build"
 $bindir = "build"
@@ -44,7 +44,7 @@ Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt5widgets5 (>= 5.11.0), libqt5xml5 (>= 5.11.0), libqt5svg5 (>= 5.11.0), zlib1g, git, libmagic1, libmagic-mgc
+Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), ilibqt6svg6 (>= 6.2.4), zlib1g
 Description: Git GUI Client
 ___
 }

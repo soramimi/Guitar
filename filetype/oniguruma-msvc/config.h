@@ -8,7 +8,7 @@
 #define HAVE_ALLOCA 1
 
 /* Define to 1 if <alloca.h> works. */
-#define HAVE_ALLOCA_H 1
+// #define HAVE_ALLOCA_H 1
 
 /* Define to 1 if you have the 'clock_gettime' function */
 #define HAVE_CLOCK_GETTIME 1
