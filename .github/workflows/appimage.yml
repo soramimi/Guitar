@@ -40,11 +40,8 @@ jobs:
       
     - name: Build libfiletype
       run: |
-        rm -fr _build_libfiletype
-        mkdir _build_libfiletype
-        cd _build_libfiletype
-        qmake6 "CONFIG+=release" ../filetype/libfiletype.pro
-        make -j$(nproc)
+        cd filetype
+        bash build-gcc.sh
         cd ..
         
     - name: Build Guitar
