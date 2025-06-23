@@ -66,5 +66,5 @@ HEADERS += \
 	file/src/readelf.h \
 	file/src/tar.h
 
-msvc:SOURCES += file/src/pread.c file/src/strlcat.c file/src/strlcpy.c
+!bsd:SOURCES += file/src/pread.c file/src/strlcat.c file/src/strlcpy.c
 
