@@ -33,6 +33,7 @@ RUN apt install -y automake autoconf shtool libtool
 RUN apt install -y doxygen graphviz
 RUN apt install -y nkf universal-ctags
 
+RUN apt install -y qtbase5-dev libqt5svg5-dev
 RUN apt install -y qt6-base-dev libqt6svg6-dev libglu1-mesa-dev libbsd-dev libssl-dev
 
 COPY ./cmd /tmp/

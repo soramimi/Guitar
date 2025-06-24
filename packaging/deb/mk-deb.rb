@@ -44,7 +44,7 @@ Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), ilibqt6svg6 (>= 6.2.4), zlib1g
+Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), ilibqt6svg6 (>= 6.2.4), qt6-qpa-plugins (>= 6.2.4), zlib1g
 Description: Git GUI Client
 ___
 }

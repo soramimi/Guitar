@@ -1,5 +1,7 @@
 #!/bin/bash
 
+: "${QMAKE:=qmake6}"
+
 pushd file
 autoreconf -if
 ./configure
@@ -15,21 +17,21 @@ popd
 rm -fr _build
 mkdir _build
 pushd _build
-qmake6 "CONFIG+=release" ../libfile.pro
+${QMAKE} "CONFIG+=release" ../libfile.pro
 make -j10
 popd
 
 rm -fr _build
 mkdir _build
 pushd _build
-qmake6 "CONFIG+=release" ../liboniguruma.pro
+${QMAKE} "CONFIG+=release" ../liboniguruma.pro
 make -j10
 popd
 
 rm -fr _build
 mkdir _build
 pushd _build
-qmake6 "CONFIG+=release" ../libfiletype.pro
+${QMAKE} "CONFIG+=release" ../libfiletype.pro
 make -j10
 popd
 
