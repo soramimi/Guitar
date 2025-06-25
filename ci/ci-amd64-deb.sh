@@ -14,9 +14,9 @@ make -j8
 popd
 
 pushd packaging/deb
-cp ../../_bin/Guitar .
 ruby mk-deb.rb
 file=`./debname.rb`
+ls -la $file
 curl -T $file ftp://192.168.0.5/Public/pub/nightlybuild/
 popd
 

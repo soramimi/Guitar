@@ -2,29 +2,30 @@
 
 require 'fileutils'
 
-load '../../version.rb'
+$project_root = '../..'
+
+load "#{$project_root}/version.rb"
 
 $suffix = ENV['SUFFIX']
 if $suffix.nil?
-	$suffix = ''
+  $suffix = ''
 end
 
 $package = "guitar" + $suffix
 $maintainer = "S.Fuchita <fi7s-fct@asahi-net.or.jp>"
 $version = "#{$version_a}.#{$version_b}.#{$version_c}"
 $workdir = "build"
-$bindir = "build"
 $dstdir = $workdir + "/#{$package}"
 
-$arch = `./arch.rb`.strip
+$arch = `#{$project_root}/packaging/deb/arch.rb`.strip
 
 FileUtils.mkpath($dstdir + "/DEBIAN")
 FileUtils.mkpath($dstdir + "/usr/bin")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
-system "strip Guitar"
-FileUtils.cp("Guitar", $dstdir + "/usr/bin/")
-FileUtils.cp("../../LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
+FileUtils.cp("#{$project_root}/_bin/Guitar", $dstdir + "/usr/bin/")
+system "strip #{$dstdir}/usr/bin/Guitar"
+FileUtils.cp("#{$project_root}/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
 File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|
 	f.puts <<___
 [Desktop Entry]
@@ -44,11 +45,11 @@ Section: vcs
 Maintainer: #{$maintainer}
 Architecture: #{$arch}
 Version: #{$version}
-Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), ilibqt6svg6 (>= 6.2.4), qt6-qpa-plugins (>= 6.2.4), zlib1g
+Depends: libqt6widgets6 (>= 6.2.4), libqt6xml6 (>= 6.2.4), libqt6svg6 (>= 6.2.4), qt6-qpa-plugins (>= 6.2.4), zlib1g, git, desktop-file-utils
 Description: Git GUI Client
 ___
 }
 
-FileUtils.cp("postinst", $dstdir + "/DEBIAN/")
+FileUtils.cp("#{$project_root}/packaging/deb/postinst", $dstdir + "/DEBIAN/")
 
 system "fakeroot dpkg-deb --build #{$workdir}/#{$package} ."

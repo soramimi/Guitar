@@ -14,7 +14,6 @@ make -j8
 popd
 
 pushd packaging/deb
-cp ../../_bin/Guitar .
 export SUFFIX=-dev
 ruby mk-deb.rb
 file=`./debname.rb`
