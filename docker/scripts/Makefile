@@ -14,9 +14,8 @@ build5: clean
 	cd /Guitar/filetype/ && QMAKE=qmake bash build-gcc.sh
 	mkdir /Guitar/_build && cd /Guitar/_build && qmake6 "CONFIG+=release" /Guitar/Guitar.pro && make -j8
 
-deb:
+deb: build
 	cd /Guitar/packaging/deb && ruby mk-deb.rb
-	#ruby make-deb.rb
 
 appimage: build5
 	bash make-appimage.sh
