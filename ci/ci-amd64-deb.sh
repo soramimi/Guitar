@@ -1,22 +1,16 @@
 #!/bin/bash
 
-ruby prepare.rb
+pushd `dirname $0`/..
 
-pushd filetype
-bash build-gcc.sh
-popd
-
-rm -fr _build_guitar
-mkdir _build_guitar
-pushd _build_guitar
-qmake6 "CONFIG+=release" ../Guitar.pro
-make -j8
+pushd docker
+make guitar-deb
 popd
 
 pushd packaging/deb
-ruby mk-deb.rb
-file=`./debname.rb`
-ls -la $file
-curl -T $file ftp://192.168.0.5/Public/pub/nightlybuild/
+FILE=`./debname.rb`
+ls -la $FILE
+curl -T $FILE ftp://192.168.0.5/Public/pub/nightlybuild/
+popd
+
 popd
 

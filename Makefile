@@ -14,10 +14,10 @@ EQ            = =
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DHAVE_CONFIG_H=1 -D_SSIZE_T_DEFINED=1 -DPCRE2_CODE_UNIT_WIDTH=8 -DHAVE_MKSTEMP=1
-CFLAGS        = -pipe -O2 -fPIC -flto -fno-fat-lto-objects -Wall -Wextra $(DEFINES)
-CXXFLAGS      = -pipe -O2 -fPIC -std=gnu++11 -flto -fno-fat-lto-objects -Wall -Wextra $(DEFINES)
-INCPATH       = -I../filetype -I. -I../filetype/misc -I../filetype/file/src -I../filetype/pcre2/src -I/usr/lib/qt/mkspecs/linux-g++
+DEFINES       = 
+CFLAGS        = -pipe -include src/fileconfig.h -include stdint.h -O2 -fPIC -flto -fno-fat-lto-objects -Wall -Wextra $(DEFINES)
+CXXFLAGS      = -pipe -include src/fileconfig.h -include stdint.h -O2 -fPIC -std=gnu++11 -flto -fno-fat-lto-objects -Wall -Wextra $(DEFINES)
+INCPATH       = -I../filetype -I. -I../filetype/misc -I../filetype/file/src -I/usr/lib/qt/mkspecs/linux-g++
 QMAKE         = /usr/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -80,35 +80,59 @@ SOURCES       = ../filetype/file/src/apprentice.c \
 		../filetype/file/src/seccomp.c \
 		../filetype/file/src/softmagic.c \
 		../filetype/file/src/strcasestr.c \
-		../filetype/file/src/strlcat.c \
-		../filetype/file/src/strlcpy.c \
 		../filetype/file/src/vasprintf.c \
-		../filetype/pcre2/src/pcre2_auto_possess.c \
-		../filetype/pcre2/src/pcre2_compile.c \
-		../filetype/pcre2/src/pcre2_config.c \
-		../filetype/pcre2/src/pcre2_context.c \
-		../filetype/pcre2/src/pcre2_convert.c \
-		../filetype/pcre2/src/pcre2_dfa_match.c \
-		../filetype/pcre2/src/pcre2_error.c \
-		../filetype/pcre2/src/pcre2_find_bracket.c \
-		../filetype/pcre2/src/pcre2_fuzzsupport.c \
-		../filetype/pcre2/src/pcre2_jit_compile.c \
-		../filetype/pcre2/src/pcre2_maketables.c \
-		../filetype/pcre2/src/pcre2_match.c \
-		../filetype/pcre2/src/pcre2_match_data.c \
-		../filetype/pcre2/src/pcre2_newline.c \
-		../filetype/pcre2/src/pcre2_ord2utf.c \
-		../filetype/pcre2/src/pcre2_pattern_info.c \
-		../filetype/pcre2/src/pcre2_serialize.c \
-		../filetype/pcre2/src/pcre2_string_utils.c \
-		../filetype/pcre2/src/pcre2_study.c \
-		../filetype/pcre2/src/pcre2_substitute.c \
-		../filetype/pcre2/src/pcre2_substring.c \
-		../filetype/pcre2/src/pcre2_tables.c \
-		../filetype/pcre2/src/pcre2_ucd.c \
-		../filetype/pcre2/src/pcre2_valid_utf.c \
-		../filetype/pcre2/src/pcre2_xclass.c \
-		../filetype/pcre2/src/pcre2posix.c 
+		../filetype/oniguruma/src/ascii.c \
+		../filetype/oniguruma/src/big5.c \
+		../filetype/oniguruma/src/cp1251.c \
+		../filetype/oniguruma/src/euc_jp.c \
+		../filetype/oniguruma/src/euc_jp_prop.c \
+		../filetype/oniguruma/src/euc_kr.c \
+		../filetype/oniguruma/src/euc_tw.c \
+		../filetype/oniguruma/src/gb18030.c \
+		../filetype/oniguruma/src/iso8859_1.c \
+		../filetype/oniguruma/src/iso8859_10.c \
+		../filetype/oniguruma/src/iso8859_11.c \
+		../filetype/oniguruma/src/iso8859_13.c \
+		../filetype/oniguruma/src/iso8859_14.c \
+		../filetype/oniguruma/src/iso8859_15.c \
+		../filetype/oniguruma/src/iso8859_16.c \
+		../filetype/oniguruma/src/iso8859_2.c \
+		../filetype/oniguruma/src/iso8859_3.c \
+		../filetype/oniguruma/src/iso8859_4.c \
+		../filetype/oniguruma/src/iso8859_5.c \
+		../filetype/oniguruma/src/iso8859_6.c \
+		../filetype/oniguruma/src/iso8859_7.c \
+		../filetype/oniguruma/src/iso8859_8.c \
+		../filetype/oniguruma/src/iso8859_9.c \
+		../filetype/oniguruma/src/koi8.c \
+		../filetype/oniguruma/src/koi8_r.c \
+		../filetype/oniguruma/src/onig_init.c \
+		../filetype/oniguruma/src/regcomp.c \
+		../filetype/oniguruma/src/regenc.c \
+		../filetype/oniguruma/src/regerror.c \
+		../filetype/oniguruma/src/regexec.c \
+		../filetype/oniguruma/src/regext.c \
+		../filetype/oniguruma/src/reggnu.c \
+		../filetype/oniguruma/src/regparse.c \
+		../filetype/oniguruma/src/regposerr.c \
+		../filetype/oniguruma/src/regposix.c \
+		../filetype/oniguruma/src/regsyntax.c \
+		../filetype/oniguruma/src/regtrav.c \
+		../filetype/oniguruma/src/regversion.c \
+		../filetype/oniguruma/src/sjis.c \
+		../filetype/oniguruma/src/sjis_prop.c \
+		../filetype/oniguruma/src/st.c \
+		../filetype/oniguruma/src/unicode.c \
+		../filetype/oniguruma/src/unicode_fold1_key.c \
+		../filetype/oniguruma/src/unicode_fold2_key.c \
+		../filetype/oniguruma/src/unicode_fold3_key.c \
+		../filetype/oniguruma/src/unicode_unfold_key.c \
+		../filetype/oniguruma/src/utf16_be.c \
+		../filetype/oniguruma/src/utf16_le.c \
+		../filetype/oniguruma/src/utf32_be.c \
+		../filetype/oniguruma/src/utf32_le.c \
+		../filetype/oniguruma/src/utf8.c \
+		../filetype/src/FileType.cpp 
 OBJECTS       = apprentice.o \
 		apptype.o \
 		ascmagic.o \
@@ -140,35 +164,59 @@ OBJECTS       = apprentice.o \
 		seccomp.o \
 		softmagic.o \
 		strcasestr.o \
-		strlcat.o \
-		strlcpy.o \
 		vasprintf.o \
-		pcre2_auto_possess.o \
-		pcre2_compile.o \
-		pcre2_config.o \
-		pcre2_context.o \
-		pcre2_convert.o \
-		pcre2_dfa_match.o \
-		pcre2_error.o \
-		pcre2_find_bracket.o \
-		pcre2_fuzzsupport.o \
-		pcre2_jit_compile.o \
-		pcre2_maketables.o \
-		pcre2_match.o \
-		pcre2_match_data.o \
-		pcre2_newline.o \
-		pcre2_ord2utf.o \
-		pcre2_pattern_info.o \
-		pcre2_serialize.o \
-		pcre2_string_utils.o \
-		pcre2_study.o \
-		pcre2_substitute.o \
-		pcre2_substring.o \
-		pcre2_tables.o \
-		pcre2_ucd.o \
-		pcre2_valid_utf.o \
-		pcre2_xclass.o \
-		pcre2posix.o
+		ascii.o \
+		big5.o \
+		cp1251.o \
+		euc_jp.o \
+		euc_jp_prop.o \
+		euc_kr.o \
+		euc_tw.o \
+		gb18030.o \
+		iso8859_1.o \
+		iso8859_10.o \
+		iso8859_11.o \
+		iso8859_13.o \
+		iso8859_14.o \
+		iso8859_15.o \
+		iso8859_16.o \
+		iso8859_2.o \
+		iso8859_3.o \
+		iso8859_4.o \
+		iso8859_5.o \
+		iso8859_6.o \
+		iso8859_7.o \
+		iso8859_8.o \
+		iso8859_9.o \
+		koi8.o \
+		koi8_r.o \
+		onig_init.o \
+		regcomp.o \
+		regenc.o \
+		regerror.o \
+		regexec.o \
+		regext.o \
+		reggnu.o \
+		regparse.o \
+		regposerr.o \
+		regposix.o \
+		regsyntax.o \
+		regtrav.o \
+		regversion.o \
+		sjis.o \
+		sjis_prop.o \
+		st.o \
+		unicode.o \
+		unicode_fold1_key.o \
+		unicode_fold2_key.o \
+		unicode_fold3_key.o \
+		unicode_unfold_key.o \
+		utf16_be.o \
+		utf16_le.o \
+		utf32_be.o \
+		utf32_le.o \
+		utf8.o \
+		FileType.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
 		/usr/lib/qt/mkspecs/common/linux.conf \
@@ -359,6 +407,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		../filetype/.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -381,15 +430,18 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		file/src/patchlevel.h \
 		file/src/readelf.h \
 		file/src/tar.h \
+		src/fileconfig.h \
+		oniguruma/src/config.h \
+		oniguruma/src/oniggnu.h \
+		oniguruma/src/onigposix.h \
+		oniguruma/src/oniguruma.h \
+		oniguruma/src/regenc.h \
+		oniguruma/src/regint.h \
+		oniguruma/src/regparse.h \
+		oniguruma/src/st.h \
 		misc/config.h \
 		misc/file_config.h \
-		misc/pcre2.h \
-		misc/pcre2_config.h \
-		pcre2/src/pcre2_internal.h \
-		pcre2/src/pcre2_intmodedep.h \
-		pcre2/src/pcre2_ucp.h \
-		pcre2/src/pcre2posix.h \
-		pcre2/src/regex.h ../filetype/file/src/apprentice.c \
+		src/FileType.h ../filetype/file/src/apprentice.c \
 		../filetype/file/src/apptype.c \
 		../filetype/file/src/ascmagic.c \
 		../filetype/file/src/asctime_r.c \
@@ -420,35 +472,59 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		../filetype/file/src/seccomp.c \
 		../filetype/file/src/softmagic.c \
 		../filetype/file/src/strcasestr.c \
-		../filetype/file/src/strlcat.c \
-		../filetype/file/src/strlcpy.c \
 		../filetype/file/src/vasprintf.c \
-		../filetype/pcre2/src/pcre2_auto_possess.c \
-		../filetype/pcre2/src/pcre2_compile.c \
-		../filetype/pcre2/src/pcre2_config.c \
-		../filetype/pcre2/src/pcre2_context.c \
-		../filetype/pcre2/src/pcre2_convert.c \
-		../filetype/pcre2/src/pcre2_dfa_match.c \
-		../filetype/pcre2/src/pcre2_error.c \
-		../filetype/pcre2/src/pcre2_find_bracket.c \
-		../filetype/pcre2/src/pcre2_fuzzsupport.c \
-		../filetype/pcre2/src/pcre2_jit_compile.c \
-		../filetype/pcre2/src/pcre2_maketables.c \
-		../filetype/pcre2/src/pcre2_match.c \
-		../filetype/pcre2/src/pcre2_match_data.c \
-		../filetype/pcre2/src/pcre2_newline.c \
-		../filetype/pcre2/src/pcre2_ord2utf.c \
-		../filetype/pcre2/src/pcre2_pattern_info.c \
-		../filetype/pcre2/src/pcre2_serialize.c \
-		../filetype/pcre2/src/pcre2_string_utils.c \
-		../filetype/pcre2/src/pcre2_study.c \
-		../filetype/pcre2/src/pcre2_substitute.c \
-		../filetype/pcre2/src/pcre2_substring.c \
-		../filetype/pcre2/src/pcre2_tables.c \
-		../filetype/pcre2/src/pcre2_ucd.c \
-		../filetype/pcre2/src/pcre2_valid_utf.c \
-		../filetype/pcre2/src/pcre2_xclass.c \
-		../filetype/pcre2/src/pcre2posix.c
+		../filetype/oniguruma/src/ascii.c \
+		../filetype/oniguruma/src/big5.c \
+		../filetype/oniguruma/src/cp1251.c \
+		../filetype/oniguruma/src/euc_jp.c \
+		../filetype/oniguruma/src/euc_jp_prop.c \
+		../filetype/oniguruma/src/euc_kr.c \
+		../filetype/oniguruma/src/euc_tw.c \
+		../filetype/oniguruma/src/gb18030.c \
+		../filetype/oniguruma/src/iso8859_1.c \
+		../filetype/oniguruma/src/iso8859_10.c \
+		../filetype/oniguruma/src/iso8859_11.c \
+		../filetype/oniguruma/src/iso8859_13.c \
+		../filetype/oniguruma/src/iso8859_14.c \
+		../filetype/oniguruma/src/iso8859_15.c \
+		../filetype/oniguruma/src/iso8859_16.c \
+		../filetype/oniguruma/src/iso8859_2.c \
+		../filetype/oniguruma/src/iso8859_3.c \
+		../filetype/oniguruma/src/iso8859_4.c \
+		../filetype/oniguruma/src/iso8859_5.c \
+		../filetype/oniguruma/src/iso8859_6.c \
+		../filetype/oniguruma/src/iso8859_7.c \
+		../filetype/oniguruma/src/iso8859_8.c \
+		../filetype/oniguruma/src/iso8859_9.c \
+		../filetype/oniguruma/src/koi8.c \
+		../filetype/oniguruma/src/koi8_r.c \
+		../filetype/oniguruma/src/onig_init.c \
+		../filetype/oniguruma/src/regcomp.c \
+		../filetype/oniguruma/src/regenc.c \
+		../filetype/oniguruma/src/regerror.c \
+		../filetype/oniguruma/src/regexec.c \
+		../filetype/oniguruma/src/regext.c \
+		../filetype/oniguruma/src/reggnu.c \
+		../filetype/oniguruma/src/regparse.c \
+		../filetype/oniguruma/src/regposerr.c \
+		../filetype/oniguruma/src/regposix.c \
+		../filetype/oniguruma/src/regsyntax.c \
+		../filetype/oniguruma/src/regtrav.c \
+		../filetype/oniguruma/src/regversion.c \
+		../filetype/oniguruma/src/sjis.c \
+		../filetype/oniguruma/src/sjis_prop.c \
+		../filetype/oniguruma/src/st.c \
+		../filetype/oniguruma/src/unicode.c \
+		../filetype/oniguruma/src/unicode_fold1_key.c \
+		../filetype/oniguruma/src/unicode_fold2_key.c \
+		../filetype/oniguruma/src/unicode_fold3_key.c \
+		../filetype/oniguruma/src/unicode_unfold_key.c \
+		../filetype/oniguruma/src/utf16_be.c \
+		../filetype/oniguruma/src/utf16_le.c \
+		../filetype/oniguruma/src/utf32_be.c \
+		../filetype/oniguruma/src/utf32_le.c \
+		../filetype/oniguruma/src/utf8.c \
+		../filetype/src/FileType.cpp
 QMAKE_TARGET  = filetype
 DESTDIR       = ../filetype/_bin/
 TARGET        = libfiletype.a
@@ -655,6 +731,7 @@ Makefile: ../filetype/libfiletype.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /
 		/usr/lib/qt/mkspecs/features/qt_config.prf \
 		/usr/lib/qt/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/qt/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/usr/lib/qt/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/qt/mkspecs/features/toolchain.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
@@ -861,6 +938,7 @@ Makefile: ../filetype/libfiletype.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /
 /usr/lib/qt/mkspecs/features/qt_config.prf:
 /usr/lib/qt/mkspecs/linux-g++/qmake.conf:
 /usr/lib/qt/mkspecs/features/spec_post.prf:
+.qmake.stash:
 /usr/lib/qt/mkspecs/features/exclusive_builds.prf:
 /usr/lib/qt/mkspecs/features/toolchain.prf:
 /usr/lib/qt/mkspecs/features/default_pre.prf:
@@ -922,445 +1000,552 @@ compiler_clean:
 apprentice.o: ../filetype/file/src/apprentice.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o apprentice.o ../filetype/file/src/apprentice.c
 
 apptype.o: ../filetype/file/src/apptype.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o apptype.o ../filetype/file/src/apptype.c
 
 ascmagic.o: ../filetype/file/src/ascmagic.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o ascmagic.o ../filetype/file/src/ascmagic.c
 
 asctime_r.o: ../filetype/file/src/asctime_r.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o asctime_r.o ../filetype/file/src/asctime_r.c
 
 asprintf.o: ../filetype/file/src/asprintf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o asprintf.o ../filetype/file/src/asprintf.c
 
 buffer.o: ../filetype/file/src/buffer.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o buffer.o ../filetype/file/src/buffer.c
 
 cdf.o: ../filetype/file/src/cdf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
 		../filetype/file/src/cdf.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o cdf.o ../filetype/file/src/cdf.c
 
 cdf_time.o: ../filetype/file/src/cdf_time.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
 		../filetype/file/src/cdf.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o cdf_time.o ../filetype/file/src/cdf_time.c
 
 compress.o: ../filetype/file/src/compress.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o compress.o ../filetype/file/src/compress.c
 
 ctime_r.o: ../filetype/file/src/ctime_r.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o ctime_r.o ../filetype/file/src/ctime_r.c
 
 der.o: ../filetype/file/src/der.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h \
 		../filetype/file/src/der.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o der.o ../filetype/file/src/der.c
 
 dprintf.o: ../filetype/file/src/dprintf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o dprintf.o ../filetype/file/src/dprintf.c
 
 encoding.o: ../filetype/file/src/encoding.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o encoding.o ../filetype/file/src/encoding.c
 
 fmtcheck.o: ../filetype/file/src/fmtcheck.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o fmtcheck.o ../filetype/file/src/fmtcheck.c
 
 fsmagic.o: ../filetype/file/src/fsmagic.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o fsmagic.o ../filetype/file/src/fsmagic.c
 
 funcs.o: ../filetype/file/src/funcs.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o funcs.o ../filetype/file/src/funcs.c
 
 getline.o: ../filetype/file/src/getline.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o getline.o ../filetype/file/src/getline.c
 
 gmtime_r.o: ../filetype/file/src/gmtime_r.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o gmtime_r.o ../filetype/file/src/gmtime_r.c
 
 is_csv.o: ../filetype/file/src/is_csv.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o is_csv.o ../filetype/file/src/is_csv.c
 
 is_json.o: ../filetype/file/src/is_json.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o is_json.o ../filetype/file/src/is_json.c
 
 is_simh.o: ../filetype/file/src/is_simh.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o is_simh.o ../filetype/file/src/is_simh.c
 
 is_tar.o: ../filetype/file/src/is_tar.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h \
 		../filetype/file/src/tar.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o is_tar.o ../filetype/file/src/is_tar.c
 
 localtime_r.o: ../filetype/file/src/localtime_r.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o localtime_r.o ../filetype/file/src/localtime_r.c
 
 magic.o: ../filetype/file/src/magic.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o magic.o ../filetype/file/src/magic.c
 
 pread.o: ../filetype/file/src/pread.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o pread.o ../filetype/file/src/pread.c
 
 print.o: ../filetype/file/src/print.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
 		../filetype/file/src/cdf.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o print.o ../filetype/file/src/print.c
 
 readcdf.o: ../filetype/file/src/readcdf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
 		../filetype/file/src/cdf.h \
-		../filetype/misc/magic.h
+		../filetype/file/src/magic.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o readcdf.o ../filetype/file/src/readcdf.c
 
 readelf.o: ../filetype/file/src/readelf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
 		../filetype/file/src/readelf.h \
-		../filetype/misc/magic.h \
+		../filetype/file/src/magic.h \
 		../filetype/file/src/elfclass.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o readelf.o ../filetype/file/src/readelf.c
 
 seccomp.o: ../filetype/file/src/seccomp.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o seccomp.o ../filetype/file/src/seccomp.c
 
 softmagic.o: ../filetype/file/src/softmagic.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h \
-		../filetype/misc/magic.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h \
+		../filetype/file/src/magic.h \
 		../filetype/file/src/der.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o softmagic.o ../filetype/file/src/softmagic.c
 
 strcasestr.o: ../filetype/file/src/strcasestr.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o strcasestr.o ../filetype/file/src/strcasestr.c
-
-strlcat.o: ../filetype/file/src/strlcat.c ../filetype/file/src/file.h \
-		../filetype/misc/config.h \
-		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o strlcat.o ../filetype/file/src/strlcat.c
-
-strlcpy.o: ../filetype/file/src/strlcpy.c ../filetype/file/src/file.h \
-		../filetype/misc/config.h \
-		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o strlcpy.o ../filetype/file/src/strlcpy.c
 
 vasprintf.o: ../filetype/file/src/vasprintf.c ../filetype/file/src/file.h \
 		../filetype/misc/config.h \
 		../filetype/misc/file_config.h \
-		../filetype/misc/pcre2_config.h
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o vasprintf.o ../filetype/file/src/vasprintf.c
 
-pcre2_auto_possess.o: ../filetype/pcre2/src/pcre2_auto_possess.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_auto_possess.o ../filetype/pcre2/src/pcre2_auto_possess.c
+ascii.o: ../filetype/oniguruma/src/ascii.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o ascii.o ../filetype/oniguruma/src/ascii.c
 
-pcre2_compile.o: ../filetype/pcre2/src/pcre2_compile.c ../filetype/pcre2/src/pcre2_compile.h \
-		../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h \
-		../filetype/pcre2/src/pcre2_printint_inc.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_compile.o ../filetype/pcre2/src/pcre2_compile.c
+big5.o: ../filetype/oniguruma/src/big5.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o big5.o ../filetype/oniguruma/src/big5.c
 
-pcre2_config.o: ../filetype/pcre2/src/pcre2_config.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_config.o ../filetype/pcre2/src/pcre2_config.c
+cp1251.o: ../filetype/oniguruma/src/cp1251.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o cp1251.o ../filetype/oniguruma/src/cp1251.c
 
-pcre2_context.o: ../filetype/pcre2/src/pcre2_context.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_context.o ../filetype/pcre2/src/pcre2_context.c
+euc_jp.o: ../filetype/oniguruma/src/euc_jp.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o euc_jp.o ../filetype/oniguruma/src/euc_jp.c
 
-pcre2_convert.o: ../filetype/pcre2/src/pcre2_convert.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_convert.o ../filetype/pcre2/src/pcre2_convert.c
+euc_jp_prop.o: ../filetype/oniguruma/src/euc_jp_prop.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o euc_jp_prop.o ../filetype/oniguruma/src/euc_jp_prop.c
 
-pcre2_dfa_match.o: ../filetype/pcre2/src/pcre2_dfa_match.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_dfa_match.o ../filetype/pcre2/src/pcre2_dfa_match.c
+euc_kr.o: ../filetype/oniguruma/src/euc_kr.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o euc_kr.o ../filetype/oniguruma/src/euc_kr.c
 
-pcre2_error.o: ../filetype/pcre2/src/pcre2_error.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_error.o ../filetype/pcre2/src/pcre2_error.c
+euc_tw.o: ../filetype/oniguruma/src/euc_tw.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o euc_tw.o ../filetype/oniguruma/src/euc_tw.c
 
-pcre2_find_bracket.o: ../filetype/pcre2/src/pcre2_find_bracket.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_find_bracket.o ../filetype/pcre2/src/pcre2_find_bracket.c
+gb18030.o: ../filetype/oniguruma/src/gb18030.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/regint.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o gb18030.o ../filetype/oniguruma/src/gb18030.c
 
-pcre2_fuzzsupport.o: ../filetype/pcre2/src/pcre2_fuzzsupport.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_fuzzsupport.o ../filetype/pcre2/src/pcre2_fuzzsupport.c
+iso8859_1.o: ../filetype/oniguruma/src/iso8859_1.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_1.o ../filetype/oniguruma/src/iso8859_1.c
 
-pcre2_jit_compile.o: ../filetype/pcre2/src/pcre2_jit_compile.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h \
-		../filetype/pcre2/src/pcre2_jit_simd_inc.h \
-		../filetype/pcre2/src/pcre2_jit_neon_inc.h \
-		../filetype/pcre2/src/pcre2_jit_char_inc.h \
-		../filetype/pcre2/src/pcre2_jit_match_inc.h \
-		../filetype/pcre2/src/pcre2_jit_misc_inc.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_jit_compile.o ../filetype/pcre2/src/pcre2_jit_compile.c
+iso8859_10.o: ../filetype/oniguruma/src/iso8859_10.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_10.o ../filetype/oniguruma/src/iso8859_10.c
 
-pcre2_maketables.o: ../filetype/pcre2/src/pcre2_maketables.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_maketables.o ../filetype/pcre2/src/pcre2_maketables.c
+iso8859_11.o: ../filetype/oniguruma/src/iso8859_11.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_11.o ../filetype/oniguruma/src/iso8859_11.c
 
-pcre2_match.o: ../filetype/pcre2/src/pcre2_match.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_match.o ../filetype/pcre2/src/pcre2_match.c
+iso8859_13.o: ../filetype/oniguruma/src/iso8859_13.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_13.o ../filetype/oniguruma/src/iso8859_13.c
 
-pcre2_match_data.o: ../filetype/pcre2/src/pcre2_match_data.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_match_data.o ../filetype/pcre2/src/pcre2_match_data.c
+iso8859_14.o: ../filetype/oniguruma/src/iso8859_14.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_14.o ../filetype/oniguruma/src/iso8859_14.c
 
-pcre2_newline.o: ../filetype/pcre2/src/pcre2_newline.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_newline.o ../filetype/pcre2/src/pcre2_newline.c
+iso8859_15.o: ../filetype/oniguruma/src/iso8859_15.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_15.o ../filetype/oniguruma/src/iso8859_15.c
 
-pcre2_ord2utf.o: ../filetype/pcre2/src/pcre2_ord2utf.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_ord2utf.o ../filetype/pcre2/src/pcre2_ord2utf.c
+iso8859_16.o: ../filetype/oniguruma/src/iso8859_16.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_16.o ../filetype/oniguruma/src/iso8859_16.c
 
-pcre2_pattern_info.o: ../filetype/pcre2/src/pcre2_pattern_info.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_pattern_info.o ../filetype/pcre2/src/pcre2_pattern_info.c
+iso8859_2.o: ../filetype/oniguruma/src/iso8859_2.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_2.o ../filetype/oniguruma/src/iso8859_2.c
 
-pcre2_serialize.o: ../filetype/pcre2/src/pcre2_serialize.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_serialize.o ../filetype/pcre2/src/pcre2_serialize.c
+iso8859_3.o: ../filetype/oniguruma/src/iso8859_3.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_3.o ../filetype/oniguruma/src/iso8859_3.c
 
-pcre2_string_utils.o: ../filetype/pcre2/src/pcre2_string_utils.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_string_utils.o ../filetype/pcre2/src/pcre2_string_utils.c
+iso8859_4.o: ../filetype/oniguruma/src/iso8859_4.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_4.o ../filetype/oniguruma/src/iso8859_4.c
 
-pcre2_study.o: ../filetype/pcre2/src/pcre2_study.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_study.o ../filetype/pcre2/src/pcre2_study.c
+iso8859_5.o: ../filetype/oniguruma/src/iso8859_5.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_5.o ../filetype/oniguruma/src/iso8859_5.c
 
-pcre2_substitute.o: ../filetype/pcre2/src/pcre2_substitute.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_substitute.o ../filetype/pcre2/src/pcre2_substitute.c
+iso8859_6.o: ../filetype/oniguruma/src/iso8859_6.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_6.o ../filetype/oniguruma/src/iso8859_6.c
 
-pcre2_substring.o: ../filetype/pcre2/src/pcre2_substring.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_substring.o ../filetype/pcre2/src/pcre2_substring.c
+iso8859_7.o: ../filetype/oniguruma/src/iso8859_7.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_7.o ../filetype/oniguruma/src/iso8859_7.c
 
-pcre2_tables.o: ../filetype/pcre2/src/pcre2_tables.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h \
-		../filetype/pcre2/src/pcre2_ucptables_inc.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_tables.o ../filetype/pcre2/src/pcre2_tables.c
+iso8859_8.o: ../filetype/oniguruma/src/iso8859_8.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_8.o ../filetype/oniguruma/src/iso8859_8.c
 
-pcre2_ucd.o: ../filetype/pcre2/src/pcre2_ucd.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_ucd.o ../filetype/pcre2/src/pcre2_ucd.c
+iso8859_9.o: ../filetype/oniguruma/src/iso8859_9.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o iso8859_9.o ../filetype/oniguruma/src/iso8859_9.c
 
-pcre2_valid_utf.o: ../filetype/pcre2/src/pcre2_valid_utf.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_valid_utf.o ../filetype/pcre2/src/pcre2_valid_utf.c
+koi8.o: ../filetype/oniguruma/src/koi8.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o koi8.o ../filetype/oniguruma/src/koi8.c
 
-pcre2_xclass.o: ../filetype/pcre2/src/pcre2_xclass.c ../filetype/pcre2/src/pcre2_internal.h \
-		../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2_ucp.h \
-		../filetype/pcre2/src/pcre2_intmodedep.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2_xclass.o ../filetype/pcre2/src/pcre2_xclass.c
+koi8_r.o: ../filetype/oniguruma/src/koi8_r.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o koi8_r.o ../filetype/oniguruma/src/koi8_r.c
 
-pcre2posix.o: ../filetype/pcre2/src/pcre2posix.c ../filetype/pcre2/src/config.h \
-		../filetype/pcre2/src/pcre2.h \
-		../filetype/pcre2/src/pcre2posix.h \
-		../filetype/pcre2/src/pcre2_util.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o pcre2posix.o ../filetype/pcre2/src/pcre2posix.c
+onig_init.o: ../filetype/oniguruma/src/onig_init.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o onig_init.o ../filetype/oniguruma/src/onig_init.c
+
+regcomp.o: ../filetype/oniguruma/src/regcomp.c ../filetype/oniguruma/src/regparse.h \
+		../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regcomp.o ../filetype/oniguruma/src/regcomp.c
+
+regenc.o: ../filetype/oniguruma/src/regenc.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regenc.o ../filetype/oniguruma/src/regenc.c
+
+regerror.o: ../filetype/oniguruma/src/regerror.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regerror.o ../filetype/oniguruma/src/regerror.c
+
+regexec.o: ../filetype/oniguruma/src/regexec.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regexec.o ../filetype/oniguruma/src/regexec.c
+
+regext.o: ../filetype/oniguruma/src/regext.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regext.o ../filetype/oniguruma/src/regext.c
+
+reggnu.o: ../filetype/oniguruma/src/reggnu.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/oniggnu.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o reggnu.o ../filetype/oniguruma/src/reggnu.c
+
+regparse.o: ../filetype/oniguruma/src/regparse.c ../filetype/oniguruma/src/regparse.h \
+		../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/st.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regparse.o ../filetype/oniguruma/src/regparse.c
+
+regposerr.o: ../filetype/oniguruma/src/regposerr.c ../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/onigposix.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regposerr.o ../filetype/oniguruma/src/regposerr.c
+
+regposix.o: ../filetype/oniguruma/src/regposix.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/onigposix.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regposix.o ../filetype/oniguruma/src/regposix.c
+
+regsyntax.o: ../filetype/oniguruma/src/regsyntax.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regsyntax.o ../filetype/oniguruma/src/regsyntax.c
+
+regtrav.o: ../filetype/oniguruma/src/regtrav.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regtrav.o ../filetype/oniguruma/src/regtrav.c
+
+regversion.o: ../filetype/oniguruma/src/regversion.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o regversion.o ../filetype/oniguruma/src/regversion.c
+
+sjis.o: ../filetype/oniguruma/src/sjis.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o sjis.o ../filetype/oniguruma/src/sjis.c
+
+sjis_prop.o: ../filetype/oniguruma/src/sjis_prop.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o sjis_prop.o ../filetype/oniguruma/src/sjis_prop.c
+
+st.o: ../filetype/oniguruma/src/st.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/st.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o st.o ../filetype/oniguruma/src/st.c
+
+unicode.o: ../filetype/oniguruma/src/unicode.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h \
+		../filetype/oniguruma/src/st.h \
+		../filetype/oniguruma/src/unicode_fold_data.c \
+		../filetype/oniguruma/src/unicode_property_data.c \
+		../filetype/oniguruma/src/unicode_property_data_posix.c \
+		../filetype/oniguruma/src/unicode_wb_data.c \
+		../filetype/oniguruma/src/unicode_egcb_data.c
+	$(CC) -c $(CFLAGS) $(INCPATH) -o unicode.o ../filetype/oniguruma/src/unicode.c
+
+unicode_fold1_key.o: ../filetype/oniguruma/src/unicode_fold1_key.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o unicode_fold1_key.o ../filetype/oniguruma/src/unicode_fold1_key.c
+
+unicode_fold2_key.o: ../filetype/oniguruma/src/unicode_fold2_key.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o unicode_fold2_key.o ../filetype/oniguruma/src/unicode_fold2_key.c
+
+unicode_fold3_key.o: ../filetype/oniguruma/src/unicode_fold3_key.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o unicode_fold3_key.o ../filetype/oniguruma/src/unicode_fold3_key.c
+
+unicode_unfold_key.o: ../filetype/oniguruma/src/unicode_unfold_key.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o unicode_unfold_key.o ../filetype/oniguruma/src/unicode_unfold_key.c
+
+utf16_be.o: ../filetype/oniguruma/src/utf16_be.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o utf16_be.o ../filetype/oniguruma/src/utf16_be.c
+
+utf16_le.o: ../filetype/oniguruma/src/utf16_le.c ../filetype/oniguruma/src/regint.h \
+		../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o utf16_le.o ../filetype/oniguruma/src/utf16_le.c
+
+utf32_be.o: ../filetype/oniguruma/src/utf32_be.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o utf32_be.o ../filetype/oniguruma/src/utf32_be.c
+
+utf32_le.o: ../filetype/oniguruma/src/utf32_le.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o utf32_le.o ../filetype/oniguruma/src/utf32_le.c
+
+utf8.o: ../filetype/oniguruma/src/utf8.c ../filetype/oniguruma/src/regenc.h \
+		../filetype/oniguruma/src/config.h \
+		../filetype/oniguruma/src/oniguruma.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o utf8.o ../filetype/oniguruma/src/utf8.c
+
+FileType.o: ../filetype/src/FileType.cpp ../filetype/src/FileType.h \
+		../filetype/misc/magic.h \
+		../filetype/file/src/file.h \
+		../filetype/misc/config.h \
+		../filetype/misc/file_config.h \
+		../filetype/misc/regex.h \
+		../filetype/oniguruma/src/onigposix.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o FileType.o ../filetype/src/FileType.cpp
 
 ####### Install
 
