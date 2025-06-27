@@ -2,7 +2,10 @@
 #include "MainWindow.h"
 #include <memory>
 #include <QFileIconProvider>
+#include <QBuffer>
 #include "IncrementalSearch.h"
+#include "MemoryReader.h"
+#include "gunzip.h"
 
 struct ApplicationGlobal::Private {
 	IncrementalSearch incremental_search;
@@ -156,5 +159,42 @@ struct AiCredentials {
 GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Provider const &provider)
 {
 	return std::visit(AiCredentials{}, provider);
+}
+
+std::string ApplicationGlobal::determineFileType(QByteArray const &in)
+{
+	if (in.isEmpty()) return {};
+
+	if (in.size() > 10) {
+		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+			QBuffer buf;
+			MemoryReader reader(in.data(), in.size());
+
+			reader.open(MemoryReader::ReadOnly);
+			buf.open(QBuffer::WriteOnly);
+			gunzip z;
+			z.set_maximul_size(100000);
+			z.decode(&reader, &buf);
+
+			QByteArray uz = buf.buffer();
+			if (!uz.isEmpty()) {
+				return filetype.file(uz.data(), uz.size()).mimetype;
+			}
+		}
+	}
+
+	std::string mime = filetype.file(in.data(), in.size()).mimetype;
+	qDebug() << QString::fromStdString(mime);
+	return mime;
+}
+
+std::string ApplicationGlobal::determineFileType(std::string const &path)
+{
+	QFile file(QString::fromStdString(path));
+	if (file.open(QFile::ReadOnly)) {
+		QByteArray ba = file.readAll();
+		return determineFileType(ba);
+	}
+	return {};
 }
 

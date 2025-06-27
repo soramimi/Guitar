@@ -1,6 +1,7 @@
 DESTDIR = $$PWD/lib
+CONFIG(debug,debug|release):TARGET = filed
+CONFIG(release,debug|release):TARGET = file
 
-TARGET = file
 TEMPLATE = lib
 CONFIG += staticlib console c++11
 CONFIG -= app_bundle

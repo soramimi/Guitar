@@ -1,6 +1,7 @@
 DESTDIR = $$PWD/lib
+CONFIG(debug,debug|release):TARGET = onigurumad
+CONFIG(release,debug|release):TARGET = oniguruma
 
-TARGET = oniguruma
 TEMPLATE = lib
 CONFIG += staticlib console c++11
 CONFIG -= app_bundle
