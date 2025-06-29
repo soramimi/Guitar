@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+Dir.chdir __dir__
 load '../../version.rb'
 
 $suffix = ENV['SUFFIX']
