@@ -51,6 +51,10 @@ public:
 	QColor panel_bg_color;
 	ThemePtr theme;
 
+#ifdef UNSAFE_ENABLED
+	bool unsafe_enabled = false;
+#endif
+
 	struct Graphics {
 		QIcon repository_icon;
 		QIcon folder_icon;
@@ -86,6 +90,15 @@ public:
 	std::string determineFileType(const std::string &path);
 
 	static bool isMainThread();
+
+	bool isUnsafeEnabled() const
+	{
+#ifdef UNSAFE_ENABLED
+		return unsafe_enabled;
+#else
+		return false;
+#endif
+	}
 };
 
 void GlobalSetOverrideWaitCursor();

@@ -14,6 +14,8 @@ CPP_STD = c++17
 
 CONFIG += $$CPP_STD nostrip debug_info static
 
+DEFINES += UNSAFE_ENABLED
+
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
