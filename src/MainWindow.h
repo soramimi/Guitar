@@ -554,6 +554,8 @@ private slots:
 
 	void on_action_view_sort_by_time_changed();
 
+	void on_action_ssh_triggered();
+
 signals:
 	void signalUpdateCommitLog();
 	void signalSetProgress(float progress);

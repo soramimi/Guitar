@@ -1065,7 +1065,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>30</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1186,6 +1186,8 @@
     <addaction name="action_submodule_add"/>
     <addaction name="action_submodule_update"/>
     <addaction name="action_rebase_abort"/>
+    <addaction name="separator"/>
+    <addaction name="action_ssh"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -1800,6 +1802,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="action_ssh">
+   <property name="text">
+    <string>SSH</string>
    </property>
   </action>
  </widget>

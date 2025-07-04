@@ -74,6 +74,7 @@
 #include <sys/stat.h>
 #include <variant>
 #include <cctype>
+#include "sshsupport/SshDialog.h"
 #include "RepositoryModel.h"
 #include "Util.h"
 #include "Profile.h"
@@ -7313,4 +7314,39 @@ int genmsg()
 	return 0;
 }
 
+
+
+void MainWindow::on_action_ssh_triggered()
+{
+#ifdef UNSAFE_ENABLED
+	if (global->isUnsafeEnabled()) {
+		std::shared_ptr<SshConnection> ssh = std::make_shared<SshConnection>();
+		SshDialog dlg(this, ssh);
+		if (dlg.exec() == QDialog::Accepted) {
+#if 0
+			QString path = dlg.selectedPath();
+			auto list = ssh->listFiles(path.toStdString().c_str());
+			if (list) {
+				for (SftpConnection::Item &a : *list) {
+					qDebug() << a.name.c_str();
+				}
+			}
+#else
+			{
+				auto ret = ssh->exec("which git");
+				if (ret) {
+					qDebug() << QString::fromStdString(*ret);
+				}
+			}
+			{
+				auto ret = ssh->exec("git --version");
+				if (ret) {
+					qDebug() << QString::fromStdString(*ret);
+				}
+			}
+#endif
+		}
+	}
+#endif
+}
 

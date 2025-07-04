@@ -16,6 +16,11 @@ CONFIG += $$CPP_STD nostrip debug_info static
 
 DEFINES += UNSAFE_ENABLED
 
+msvc:DEFINES += NOMINMAX
+
+INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+LIBS += -LC:/vcpkg/installed/x64-windows/lib -lssh
+
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
@@ -128,6 +133,8 @@ SOURCES += \
 	$$PWD/src/Util.cpp \
 	$$PWD/src/common/rwfile.cpp \
 	$$PWD/src/platform.cpp \
+    $$PWD/src/sshsupport/Quissh.cpp \
+    $$PWD/src/sshsupport/SshDialog.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
 	$$PWD/src/zip/zipextract.cpp \
@@ -289,6 +296,8 @@ HEADERS += \
     $$PWD/src/StatusInfo.h \
 	$$PWD/src/Util.h \
 	$$PWD/src/common/rwfile.h \
+    $$PWD/src/sshsupport/Quissh.h \
+    $$PWD/src/sshsupport/SshDialog.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \
     src/AboutDialog.h \
@@ -456,6 +465,7 @@ FORMS    += \
 	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.ui \
 	$$PWD/src/SettingAiForm.ui \
 	$$PWD/src/SettingOptionsForm.ui \
+	$$PWD/src/sshsupport/SshDialog.ui \
 	src/AboutDialog.ui \
 	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \
