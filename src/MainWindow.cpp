@@ -7274,10 +7274,6 @@ void MainWindow::on_action_view_sort_by_time_changed()
 	onRepositoryTreeSortRecent(f);
 }
 
-void MainWindow::test()
-{
-}
-
 int genmsg()
 {
 	global->appsettings = ApplicationSettings::loadSettings();
@@ -7320,33 +7316,52 @@ void MainWindow::on_action_ssh_triggered()
 {
 #ifdef UNSAFE_ENABLED
 	if (global->isUnsafeEnabled()) {
-		std::shared_ptr<SshConnection> ssh = std::make_shared<SshConnection>();
-		SshDialog dlg(this, ssh);
+		SshConnection ssh;
+		SshDialog dlg(this, &ssh);
+		dlg.setHostName("192.168.0.80");
 		if (dlg.exec() == QDialog::Accepted) {
 #if 0
 			QString path = dlg.selectedPath();
-			auto list = ssh->listFiles(path.toStdString().c_str());
+			auto list = ssh.list(path.toStdString().c_str());
 			if (list) {
-				for (SftpConnection::Item &a : *list) {
+				for (SshConnection::FileItem &a : *list) {
 					qDebug() << a.name.c_str();
 				}
 			}
 #else
-			{
-				auto ret = ssh->exec("which git");
+			if (0) {
+				auto ret = ssh.exec("which git");
 				if (ret) {
 					qDebug() << QString::fromStdString(*ret);
 				}
 			}
+			ssh.add_allowed_command("/usr/bin/git");
 			{
-				auto ret = ssh->exec("git --version");
+				auto ret = ssh.exec("/usr/bin/git --version");
 				if (ret) {
 					qDebug() << QString::fromStdString(*ret);
 				}
 			}
 #endif
 		}
+		return;
 	}
 #endif
+	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Warning, QMessageBox::Ok);
 }
 
+
+std::string normalize_path(char const *path);
+
+void MainWindow::test()
+{
+	std::string path = normalize_path("/home/../username/.config/gitg");
+	if (path.empty()) {
+		qDebug() << "normalize_path failed";
+	} else {
+		qDebug() << "normalize_path: " << QString::fromStdString(path);
+	}
+
+	// genmsg();
+
+}

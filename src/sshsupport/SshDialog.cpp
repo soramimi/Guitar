@@ -7,16 +7,34 @@
 #include <QKeyEvent>
 #include <QDir>
 
+static inline int x_stricmp(char const *s1, char const *s2)
+{
+#ifdef _WIN32
+	return ::stricmp(s1, s2);
+#else
+	return ::strcasecmp(s1, s2);
+#endif
+}
+
+static inline int x_strnicmp(char const *s1, char const *s2, size_t n)
+{
+#ifdef _WIN32
+	return ::strnicmp(s1, s2, n);
+#else
+	return ::strncasecmp(s1, s2, n);
+#endif
+}
+
 struct SshDialog::Private {
 	Quissh::AuthVar auth;
-	std::shared_ptr<SshConnection> ssh;
+	SshConnection *ssh = nullptr;
 	std::string dir;
 	std::vector<SshConnection::FileItem> files;
 	QIcon icon_file;
 	QIcon icon_folder;
 };
 
-SshDialog::SshDialog(QWidget *parent, std::shared_ptr<SshConnection> ssh)
+SshDialog::SshDialog(QWidget *parent, SshConnection *ssh)
 	: QDialog(parent)
 	, ui(new Ui::Dialog)
 	, m(new Private)
@@ -170,7 +188,7 @@ void SshDialog::updateFiles()
 		newdir = ".";
 	}
 
-	auto list = m->ssh->ls(newdir.c_str());
+	auto list = m->ssh->list(newdir.c_str());
 	if (list) {
 		m->files.clear();
 		for (SshConnection::FileItem const &a : *list) {
@@ -242,13 +260,12 @@ void SshDialog::doConnect()
 {
 	std::string uid;
 	std::string pwd;
-	bool pubkey = std::holds_alternative<Quissh::PubkeyAuth>(m->auth);
 	bool passwd = std::holds_alternative<Quissh::PasswdAuth>(m->auth);
 	if (passwd) {
 		uid = std::get<Quissh::PasswdAuth>(m->auth).uid;
 		pwd = std::get<Quissh::PasswdAuth>(m->auth).pwd;
 	}
-	if (m->ssh->connect(hostName().toStdString().c_str(), port(), pubkey, passwd, uid, pwd)) {
+	if (m->ssh->connect(hostName().toStdString().c_str(), port(), passwd, uid, pwd)) {
 		if (m->ssh->open_sftp()) {
 			updateFiles();
 		}
@@ -361,16 +378,13 @@ std::optional<std::string> SshConnection::exec(const char *command)
 	return std::nullopt;
 }
 
-bool SshConnection::connect(char const *host, int port, bool pubkey, bool passwd, const std::string &uid, const std::string &pwd)
+bool SshConnection::connect(char const *host, int port, bool passwd, const std::string &uid, const std::string &pwd)
 {
 	Quissh::AuthVar auth;
-	if (pubkey && !passwd) {
-		auth = Quissh::PubkeyAuth();
-	} else if (passwd && !pubkey) {
+	if (passwd) {
 		auth = Quissh::PasswdAuth({ uid, pwd });
 	} else {
-		qWarning() << "Invalid authentication method selected.";
-		return false;
+		auth = Quissh::PubkeyAuth();
 	}
 	if (m->quissh.open(host, port, auth)) {
 		return true;
@@ -419,7 +433,12 @@ bool SshConnection::is_sftp_connected() const
 	return m->quissh.is_connected() && m->quissh.is_sftp_connected();
 }
 
-std::optional<std::vector<SshConnection::FileItem> > SshConnection::ls(char const *path)
+void SshConnection::add_allowed_command(const std::string &command)
+{
+	m->quissh.add_allowed_command(command);
+}
+
+std::optional<std::vector<SshConnection::FileItem> > SshConnection::list(char const *path)
 {
 	if (!is_sftp_connected()) {
 		qWarning() << "Not connected to SFTP server.";
@@ -467,7 +486,7 @@ void SshConnection::sort(std::vector<FileItem> *files)
 				if (b.name[0] != '.') return -1;
 				if (a.name[0] != '.') return 1;
 			}
-			return stricmp(a.name.c_str(), b.name.c_str());
+			return x_stricmp(a.name.c_str(), b.name.c_str());
 		};
 		return Compare(a, b) < 0;
 	});

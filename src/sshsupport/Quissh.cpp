@@ -15,185 +15,112 @@
 
 // パスの安全性をチェックする関数群
 namespace {
-// パスを正規化する（../, ./, 重複する/を処理）
-std::string normalize_path(char const *path)
-{
-	std::vector<std::string> components;
-	std::string current;
-
-	std::string path2 = path;
-	for (char c : path2) {
-		if (c == '/') {
-			if (!current.empty()) {
-				if (current == "..") {
-					if (!components.empty() && components.back() != "..") {
-						components.pop_back();
-					} else if (path2[0] != '/') {
-						// 相対パスの場合のみ .. を許可
-						components.push_back(current);
-					}
-				} else if (current != ".") {
-					components.push_back(current);
-				}
-				current.clear();
-			}
-		} else {
-			current += c;
-		}
-	}
-
-	// 最後のコンポーネントを処理
-	if (!current.empty()) {
-		if (current == "..") {
-			if (!components.empty() && components.back() != "..") {
-				components.pop_back();
-			} else if (path2[0] != '/') {
-				components.push_back(current);
-			}
-		} else if (current != ".") {
-			components.push_back(current);
-		}
-	}
-
-	std::string result;
-	if (path2[0] == '/') {
-		result = "/";
-	}
-
-	for (size_t i = 0; i < components.size(); ++i) {
-		if (i > 0 || result.empty()) {
-			result += "/";
-		}
-		result += components[i];
-	}
-
-	return result.empty() ? "." : result;
-}
-
-// 危険な文字をチェック
-bool has_dangerous_chars(std::string const &path)
-{
-	// NULL文字、制御文字、危険な文字をチェック
-	for (char c : path) {
-		if (c == '\0' || c < 32 || c == 127) {
-			return true;
-		}
-		// Windows系の危険な文字も念のためチェック
-		if (c == '<' || c == '>' || c == '|' || c == '"' || c == '*' || c == '?') {
-			return true;
-		}
-	}
-	return false;
-}
 
 // 危険なパスパターンをチェック
-bool has_dangerous_patterns(std::string const &path)
+bool is_dangerous_patterns(std::string_view const &part)
 {
-	// 明示的な危険パターン
-	const std::vector<std::string> dangerous_patterns = {
-		"../",     // パストラバーサル
-		// "./",      // カレントディレクトリ（相対パス）
-		"//",      // 重複スラッシュ
-		"\\",      // バックスラッシュ
-		// "~",       // ホームディレクトリ
-	};
-
-	for (const auto& pattern : dangerous_patterns) {
-		if (path.find(pattern) != std::string::npos) {
-			return true;
-		}
-	}
-
-	// 特殊なファイル名パターン
-	const std::vector<std::string> special_names = {
-		// ".",       // カレントディレクトリ
-		"..",      // 親ディレクトリ
+	static char const *special_names[] = {
 		"CON", "PRN", "AUX", "NUL",  // Windows予約名
 		"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-		"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+		"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+		nullptr
 	};
 
-	// パスの各コンポーネントをチェック
-	std::string current;
-	for (char c : path) {
-		if (c == '/') {
-			if (!current.empty()) {
-				for (const auto& name : special_names) {
-					if (current == name) {
-						return true;
-					}
-				}
-				current.clear();
-			}
-		} else {
-			current += c;
+	size_t n = part.size();
+	if (n > 0) {
+		if (std::isspace((unsigned char)part[0]) || std::isspace((unsigned char)part[n - 1])) {
+			return true; // 前後に空白がある場合は危険
 		}
-	}
 
-	// 最後のコンポーネントもチェック
-	if (!current.empty()) {
-		for (const auto& name : special_names) {
-			if (current == name) {
+		// NULL文字、制御文字、危険な文字をチェック
+		for (size_t i = 0; i < n; i++) {
+			int c = (unsigned char)part[i];
+			if (c == '\0' || c < 32 || c == 127) {
+				return true;
+			}
+			if (c == '<' || c == '>' || c == '|' || c == '"' || c == '*' || c == '?') {
 				return true;
 			}
 		}
+
+		// 特別な名前をチェック
+		for (char const **p = special_names; *p; p++) {
+			if (part == *p) return true;
+		}
 	}
 
 	return false;
 }
+
 }
 
 // パスの安全性を検証する関数
+std::string normalize_path(char const *path)
+{
+	if (!path || !*path) return {}; // 空のパスは無効;
+
+	bool absolute_path = false;
+
+	std::vector<std::string_view> parts;
+	{
+		char const *begin = path;
+		char const *end = begin + strlen(path);
+		char const *left = begin;
+		char const *right = begin;
+		while (1) {
+			int c = 0;
+			if (right < end) {
+				c = (unsigned char)*right;
+			}
+			if (c == '/' || c == '\\' || c == 0) {
+				std::string_view v(left, right - left);
+				if (v == "..") {
+					if (parts.empty()) return {}; // 親ディレクトリへの移動は許可しない
+					parts.pop_back();
+				} else if (v.empty()) {
+					if (parts.empty()) {
+						absolute_path = true;
+					}
+				} else {
+					if (is_dangerous_patterns(v)) return {}; // 危険なパターンを含む
+					parts.push_back(v);
+				}
+				if (c == 0) break;
+				right++;
+				left = right;
+			} else {
+				right++;
+			}
+		}
+	}
+
+	std::string newpath;
+	for (size_t i = 0; i < parts.size(); ++i) {
+		if (i > 0 || absolute_path) {
+			newpath += '/';
+		}
+		newpath.append(parts[i]);
+	}
+	
+	// 長すぎるパスは拒否
+	if (newpath.size() > 4096) {
+		return {};
+	}
+	
+	return newpath;
+}
+
 bool is_safe_path(char const *path)
 {
-	if (!path) return false;
-
-	// 空のパスは危険
-	if (!*path) return false;
-
-	std::string path2 = path;
-	
-	// 長すぎるパスは拒否（一般的な制限）
-	if (path2.length() > 4096) {
-		return false;
-	}
-	
-	// 危険な文字をチェック
-	if (has_dangerous_chars(path2)) {
-		return false;
-	}
-	
-	// 危険なパターンをチェック
-	if (has_dangerous_patterns(path2)) {
-		return false;
-	}
-	
-	// 絶対パスの場合、ルートディレクトリより上に行けないかチェック
-	if (path2[0] == '/') {
-		std::string normalized = normalize_path(path2.c_str());
-		// 正規化後にルートより上に行こうとしている場合
-		if (normalized.find("../") != std::string::npos) {
-			return false;
-		}
-	}
-	
-	// 相対パスの場合、現在のディレクトリより上に行けないかチェック
-	else {
-		std::string normalized = normalize_path(path2.c_str());
-		// 正規化後に .. が残っている場合（上位ディレクトリへの移動）
-		if (normalized.find("..") != std::string::npos) {
-			return false;
-		}
-	}
-	
-	return true;
+	std::string path2 = normalize_path(path);
+	return !path2.empty(); // 正規化されたパスが空でない場合は安全
 }
 
 // パスを安全に正規化する関数
 std::string safe_normalize_path(char const *path)
 {
 	if (!is_safe_path(path)) {
-		return "";  // 危険なパスは空文字列を返す
+		return {};  // 危険なパスは空文字列を返す
 	}
 	return normalize_path(path);
 }
@@ -201,39 +128,24 @@ std::string safe_normalize_path(char const *path)
 // コマンドの安全性をチェックする関数群
 namespace {
 // 危険なコマンド文字をチェック
-bool has_dangerous_command_chars(const std::string& command) {
+bool has_dangerous_command_chars(char const *command)
+{
 	// コマンドインジェクションで使用される危険な文字
-	const std::vector<char> dangerous_chars = {
-		';',  // コマンド区切り
-		'&',  // バックグラウンド実行、AND演算子
-		'|',  // パイプ
-		'`',  // バッククォート（コマンド置換）
-		'$',  // 変数展開、コマンド置換
-		'>',  // リダイレクト
-		'<',  // リダイレクト
-		'\n', // 改行
-		'\r', // キャリッジリターン
-		'\\', // エスケープ文字
-	};
+	static char const dangerous_chars[] = ";&|`$><\\";
 
-	for (char c : command) {
-		// NULL文字や制御文字をチェック
-		if (c == '\0' || (c > 0 && c < 32 && c != '\t' && c != ' ')) {
-			return true;
-		}
-		// 危険な文字をチェック
-		for (char dangerous : dangerous_chars) {
-			if (c == dangerous) {
-				return true;
-			}
-		}
+	for (size_t i = 0; command[i]; i++) {
+		int c = (unsigned char)command[i];
+		if (c == ' ' || c == '\t') continue; // 空白文字は無視
+		if (c >= 0 && c < 0x20) return true; // 制御文字は危険
+		if (strchr(dangerous_chars, c)) return true; // 危険な文字が含まれている
 	}
 	return false;
 }
 
 // 危険なコマンドパターンをチェック
-bool has_dangerous_command_patterns(const std::string& command) {
-	const std::vector<std::string> dangerous_patterns = {
+bool has_dangerous_command_patterns(char const *command)
+{
+	static const char *dangerous_patterns[] = {
 		"&&",     // AND演算子
 		"||",     // OR演算子
 		">>",     // 追記リダイレクト
@@ -244,120 +156,61 @@ bool has_dangerous_command_patterns(const std::string& command) {
 		"2>",     // エラーリダイレクト
 		"&>",     // 全リダイレクト
 		"|&",     // パイプとエラー
+		nullptr
 	};
 
-	for (const auto& pattern : dangerous_patterns) {
-		if (command.find(pattern) != std::string::npos) {
+	for (size_t i = 0; dangerous_patterns[i]; i++) {
+		if (strstr(command, dangerous_patterns[i])) {
 			return true;
 		}
 	}
 	return false;
 }
 
-// 許可されたコマンドのホワイトリスト
-bool is_allowed_command(const std::string& command) {
-	// 先頭の空白を除去
-	size_t start = 0;
-	while (start < command.length() && std::isspace(command[start])) {
-		start++;
-	}
-
-	if (start >= command.length()) {
-		return false; // 空のコマンド
-	}
-
-	// コマンド名を抽出（最初の空白またはタブまで）
-	size_t end = start;
-	while (end < command.length() && !std::isspace(command[end])) {
-		end++;
-	}
-
-	std::string cmd_name = command.substr(start, end - start);
-
-	// 許可されたコマンドのホワイトリスト
-	const std::vector<std::string> allowed_commands = {
-		"ls",     // ファイル一覧
-		"pwd",    // 現在のディレクトリ
-		"whoami", // 現在のユーザー
-		"id",     // ユーザーID情報
-		"date",   // 日付
-		"uname",  // システム情報
-		"df",     // ディスク使用量
-		"free",   // メモリ使用量
-		"uptime", // システム稼働時間
-		"cat",    // ファイル内容表示（引数チェック必要）
-		"head",   // ファイルの先頭表示
-		"tail",   // ファイルの末尾表示
-		"wc",     // 文字数・行数カウント
-		"echo",   // 文字列出力
-		"which",  // コマンドパス表示
-		"type",   // コマンドタイプ表示
-
-		"git"
-	};
-
-	for (const auto& allowed : allowed_commands) {
-		if (cmd_name == allowed) {
-			return true;
-		}
-	}
-
-	return true;
-}
-
 } // namespace
 
-// コマンドの安全性を検証する関数
-bool is_safe_command(const std::string& command) {
-	// 空のコマンドは危険
-	if (command.empty()) {
-		return false;
-	}
-	
-	// 長すぎるコマンドは拒否
-	if (command.length() > 1000) {
-		return false;
-	}
-	
-	// 危険な文字をチェック
-	if (has_dangerous_command_chars(command)) {
-		return false;
-	}
-	
-	// 危険なパターンをチェック
-	if (has_dangerous_command_patterns(command)) {
-		return false;
-	}
-	
-	// ホワイトリストによるチェック
-	if (!is_allowed_command(command)) {
-		return false;
-	}
-	
-	return true;
-}
 
 // コマンドを安全にサニタイズする関数
-std::string sanitize_command(const std::string& command) {
-	if (!is_safe_command(command)) {
-		return "";  // 危険なコマンドは空文字列を返す
+std::string sanitize_command(char const *command, std::set<std::string> const &allowed_commands)
+{
+	if (!command || !*command) return {}; // 空のコマンドは無効
+
+	size_t len = strlen(command);
+
+	// 長すぎるコマンドは拒否
+	if (len > 1000) {
+		return {};
 	}
-	
-	// 追加のサニタイズ処理
-	std::string sanitized = command;
-	
-	// 前後の空白を除去
-	size_t start = 0;
-	while (start < sanitized.length() && std::isspace(sanitized[start])) {
-		start++;
+
+	// 危険な文字をチェック
+	if (has_dangerous_command_chars(command)) {
+		return {};
 	}
-	
-	size_t end = sanitized.length();
-	while (end > start && std::isspace(sanitized[end - 1])) {
-		end--;
+
+	// 危険なパターンをチェック
+	if (has_dangerous_command_patterns(command)) {
+		return {};
 	}
-	
-	return sanitized.substr(start, end - start);
+
+	// コマンドと引数を分割
+	size_t i = 0;
+	while (i < len && std::isspace((unsigned char)command[i])) {
+		i++;
+	}
+	size_t j = i;
+	while (j < len && !std::isspace((unsigned char)command[j])) {
+		j++;
+	}
+	std::string cmd(command + i, j - i);
+	std::string arg(command + j, len - j);
+	if (cmd.empty()) return {};  // 無効なコマンド
+
+	// ホワイトリストに基づいてコマンドをチェック
+	if (allowed_commands.find(cmd) == allowed_commands.end()) {
+		return {};
+	}
+
+	return cmd + arg;
 }
 
 std::string to_string(ssh_string s)
@@ -408,6 +261,7 @@ struct Quissh::Private {
 	ssh_channel channel = nullptr;
 	ssh_scp scp = nullptr;
 	sftp_session sftp = nullptr;
+	std::set<std::string> allowed_commands;
 };
 
 Quissh::Quissh()
@@ -647,6 +501,11 @@ bool Quissh::sftp_close()
 bool Quissh::is_sftp_connected() const
 {
 	return is_connected() && m->sftp && m->sftp_connected;
+}
+
+void Quissh::add_allowed_command(const std::string &command)
+{
+	m->allowed_commands.insert(command);
 }
 
 static Quissh::FileAttribute make_file_attribute(sftp_attributes const &st)
@@ -1131,7 +990,7 @@ bool Quissh::CHANNEL::exec(const char *command, std::function<bool (const char *
 {
 	int rc;
 
-	std::string safe_cmd = sanitize_command(command);
+	std::string safe_cmd = sanitize_command(command, ssh_.m->allowed_commands);
 	if (safe_cmd.empty()) {
 		fprintf(stderr, "Unsafe command detected.\n");
 		return false;

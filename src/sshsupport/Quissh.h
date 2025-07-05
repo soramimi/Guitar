@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <stdint.h>
+#include <set>
 
 class Quissh {
 	friend class DIR;
@@ -78,6 +79,8 @@ public:
 
 	bool is_connected() const;
 	bool is_sftp_connected() const;
+
+	void add_allowed_command(const std::string &command);
 
 	bool exec(char const *cmd, std::function<bool (const char *, int)> writer);
 

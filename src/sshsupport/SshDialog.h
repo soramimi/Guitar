@@ -33,11 +33,12 @@ private:
 public:
 	SshConnection();
 	~SshConnection();
-	std::optional<std::string> exec(char const *command);
-	bool connect(const char *host, int port, bool pubkey, bool passwd, const std::string &uid, const std::string &pwd);
+	bool connect(const char *host, int port, bool passwd, const std::string &uid = {}, const std::string &pwd = {});
 	void disconnect();
 	bool is_sftp_connected() const;
-	std::optional<std::vector<FileItem>> ls(const char *path);
+	void add_allowed_command(const std::string &command);
+	std::optional<std::string> exec(char const *command);
+	std::optional<std::vector<FileItem>> list(const char *path);
 	std::optional<std::string> pull(char const *path);
 	static void sort(std::vector<FileItem> *files);
 	bool open_sftp();
@@ -58,7 +59,7 @@ private:
 	void updateFiles();
 	void updateFileList();
 public:
-	explicit SshDialog(QWidget *parent, std::shared_ptr<SshConnection> ssh);
+	explicit SshDialog(QWidget *parent, SshConnection *ssh);
 	~SshDialog();
 
 	enum AuthMethod {
