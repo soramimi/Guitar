@@ -53,11 +53,8 @@ public:
 	virtual ~AbstractGitSession();
 
 	Var &var();
-
-	const Var &var() const;
-
+	Var const &var() const;
 	Info &gitinfo();
-
 	Info const &gitinfo() const;
 
 	GitCache &cache();
@@ -65,6 +62,7 @@ public:
 	QString workingDir() const;
 	virtual bool exec_git(QString const &arg, Option const &opt, bool debug_ = false) = 0;
 	virtual bool pushd(std::function<bool ()> const fn) = 0;
+	virtual bool remove(QString const &path) = 0;
 
 	virtual bool is_valid_git_command() const = 0;
 	void set_command_cache(GitCommandCache const &cc);

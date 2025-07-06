@@ -1,19 +1,9 @@
 #ifndef GIT_H
 #define GIT_H
 
-#include "AbstractProcess.h"
-#include "GitBasicSession.h""
+#include "GitBasicSession.h"
 #include "common/misc.h"
 #include <QDateTime>
-#include <QDebug>
-#include <QMutex>
-#include <QObject>
-#include <functional>
-#include <functional>
-#include <memory>
-#include <optional>
-
-#define SINGLE_THREAD 0
 
 #define GIT_ID_LENGTH (40)
 
@@ -480,6 +470,10 @@ public:
 		opt.chdir = false;
 		return exec_git(arg, opt);
 	}
+	bool remove(QString const &path)
+	{
+		return session_->remove(path);
+	}
 
 	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);
 	QString workingDir() const
@@ -779,6 +773,11 @@ public:
 	bool pushd(std::function<bool ()> const fn)
 	{
 		return git->pushd(fn);
+	}
+
+	bool remove(QString const &path)
+	{
+		return git->remove(path);
 	}
 
 	Git::Hash rev_parse(QString const &name)

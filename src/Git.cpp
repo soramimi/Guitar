@@ -1,21 +1,12 @@
 
 #include "Git.h"
 #include "ApplicationGlobal.h"
-#include "GitObjectManager.h"
-#include "MainWindow.h"
-#include "MyProcess.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include <QDateTime>
-#include <QDebug>
-#include <QDir>
-#include <QDirIterator>
-#include <QProcess>
-#include <QThread>
-#include <QTimer>
-#include <optional>
-#include <thread>
 #include "Profile.h"
+#include "RepositoryModel.h"
+#include "common/joinpath.h"
+#include <QDir>
+#include <QFileInfo>
+#include <QString>
 
 Git::Hash::Hash(std::string_view const &id)
 {

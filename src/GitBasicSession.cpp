@@ -133,3 +133,11 @@ bool GitBasicSession::pushd(const std::function<bool ()> fn)
 	}
 	return ok;
 }
+
+bool GitBasicSession::remove(const QString &path)
+{
+	return pushd([&](){
+		QFile(path).remove();
+		return true;
+	});
+}

@@ -11,10 +11,9 @@ private:
 public:
 	bool is_valid_git_command() const;
 
-
 	bool exec_git(QString const &arg, Option const &opt, bool debug_ = false);
 	bool pushd(std::function<bool ()> const fn);
+	bool remove(const QString &path);
 };
-
 
 #endif // GITBASICSESSION_H
