@@ -57,22 +57,26 @@ public:
 		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 		QString ssh_key_override;// = "C:/a/id_rsa";
 	};
-	Info info;
 	struct Var {
 		std::vector<char> result;
 		ProcessStatus exit_status;
-	} var;
+	};
+
+	struct GitCache;
 
 	struct Private;
 	Private *m;
 
 	GitSession();
 	virtual ~GitSession();
+	Info &gitinfo();
+	Info const &gitinfo() const;
+	GitCache &cache();
 	void clearResult();
 	QString workingDir() const;
 	QString gitCommand() const;
 	bool exec_git(QString const &arg, Option const &opt, bool debug_ = false);
-	bool chdirexec(std::function<bool ()> const fn);
+	bool pushd(std::function<bool ()> const fn);
 };
 
 class Git {
@@ -499,17 +503,25 @@ public:
 	Git(Git &&r) = delete;
 	~Git();
 
+	GitSession::Info &gitinfo()
+	{
+		return session_->gitinfo();
+	}
+	GitSession::Info const &gitinfo() const
+	{
+		return session_->gitinfo();
+	}
+
 	void setCommandCache(CommandCache const &cc);
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
 	bool isValidGitCommand() const;
-	// void clearResult();
 	std::string_view resultStdString() const;
 	QString resultQString() const;
-	bool chdirexec(std::function<bool ()> const fn)
+	bool pushd(std::function<bool ()> const fn)
 	{
-		return session_->chdirexec(fn);
+		return session_->pushd(fn);
 	}
 	bool exec_git(QString const &arg, GitSession::Option const &opt, bool debug_ = false)
 	{
@@ -540,7 +552,7 @@ public:
 		return session_->workingDir();
 	}
 	QString const &sshKey() const;
-	void setSshKey(const QString &sshkey) const;
+	void setSshKey(const QString &sshkey);
 
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy() const;
@@ -829,9 +841,9 @@ public:
 		return git->errorMessage();
 	}
 
-	bool chdirexec(std::function<bool ()> const &fn)
+	bool pushd(std::function<bool ()> const fn)
 	{
-		return git->chdirexec(fn);
+		return git->pushd(fn);
 	}
 
 	Git::Hash rev_parse(QString const &name)

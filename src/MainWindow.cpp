@@ -5134,7 +5134,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
 				for_each_selected_files([&](QString const &path){
 					g.removeFile(path);
-					g.chdirexec([&](){
+					g.pushd([&](){
 						QFile(path).remove();
 						return true;
 					});
@@ -5253,7 +5253,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
 					for_each_selected_files([&](QString const &path){
 						g.removeFile(path);
-						g.chdirexec([&](){
+						g.pushd([&](){
 							QFile(path).remove();
 							return true;
 						});
@@ -5343,6 +5343,7 @@ QStringList MainWindow::selectedFiles() const
 void MainWindow::for_each_selected_files(std::function<void(QString const&)> const &fn)
 {
 	for (QString const &path : selectedFiles()) {
+		qDebug() << path;
 		fn(path);
 	}
 }
