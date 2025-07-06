@@ -1,12 +1,12 @@
 #ifndef GITOBJECTMANAGER_H
 #define GITOBJECTMANAGER_H
 
-#include <QMutex>
-#include <QString>
 #include "GitPack.h"
 #include "GitPackIdxV2.h"
-#include <map>
 #include "common/joinpath.h"
+#include <QMutex>
+#include <QString>
+#include <map>
 #include <mutex>
 
 class GitPackIdxV2;

@@ -2,11 +2,8 @@
 #define REPOSITORYMODEL_H
 
 #include "BranchLabel.h"
+#include "GitCommandCache.h"
 #include "GitObjectManager.h"
-#include "RepositoryInfo.h"
-#include <optional>
-#include <map>
-#include <memory>
 
 typedef QList<Git::Tag> TagList;
 typedef QList<Git::Branch> BranchList;

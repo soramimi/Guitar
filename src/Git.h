@@ -6,10 +6,7 @@
 #include <QDateTime>
 
 #define GIT_ID_LENGTH (40)
-
 #define PATH_PREFIX "*"
-
-class Win32PtyProcess;
 
 enum class LineSide {
 	Left,
@@ -27,9 +24,6 @@ struct TreeLine {
 	{
 	}
 };
-
-class Git;
-using GitPtr = std::shared_ptr<Git>;
 
 class Git {
 	friend class GitRunner;
@@ -715,10 +709,11 @@ static inline bool operator < (Git::Hash const &l, Git::Hash const &r)
 	return l.compare(r) < 0;
 }
 
+using GitPtr = std::shared_ptr<Git>;
+
 // GitRunner
 
 class GitRunner {
-private:
 public:
 	GitPtr git;
 	GitRunner() = default;

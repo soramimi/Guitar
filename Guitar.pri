@@ -126,6 +126,7 @@ SOURCES += \
 	$$PWD/src/CommitLogTableWidget.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
 	$$PWD/src/GitBasicSession.cpp \
+	$$PWD/src/GitCommandCache.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
 	$$PWD/src/RepositoryInfo.cpp \
@@ -292,6 +293,7 @@ HEADERS += \
 	$$PWD/src/CommitLogTableWidget.h \
 	$$PWD/src/GeneratedCommitMessage.h \
 	$$PWD/src/GitBasicSession.h \
+	$$PWD/src/GitCommandCache.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
 	$$PWD/src/RepositoryInfo.h \
