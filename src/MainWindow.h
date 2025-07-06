@@ -395,7 +395,7 @@ private:
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
 	void updateAvatar(const Git::User &user, bool request);
-	void cleanSubModule(QListWidgetItem *item);
+	void cleanSubModule(GitRunner g, QListWidgetItem *item);
 
 	void updateUncommitedChanges();
 	void enableDragAndDropOnRepositoryTree(bool enabled);
@@ -643,7 +643,7 @@ public:
 	QString currentBranchName() const;
 	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
 	GitRunner git();
-	GitRunner git_with_submodule(Git::SubmoduleItem const &submod);
+	GitRunner git_for_submodule(GitRunner g, Git::SubmoduleItem const &submod);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const Git::Hash &id);
 	bool checkoutLocalBranch(QString const &name);
@@ -668,7 +668,7 @@ public:
 	QIcon signatureVerificationIcon(const Git::Hash &id) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
-	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
+
 	void refresh();
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryInfo &repodata);
 	Git::User currentGitUser() const;

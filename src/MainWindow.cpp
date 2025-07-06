@@ -1127,28 +1127,6 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 }
 
 /**
- * @brief サブモジュール情報を取得する
- * @param path
- * @param commit コミット情報を取得（nullptr可）
- * @return
- */
-Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, Git::CommitItem *commit)
-{
-	if (commit) *commit = {};
-	for (auto const &submod : m->submodules) {
-		if (submod.path == path) {
-			if (commit) {
-				GitRunner g = git_with_submodule(submod);
-				auto c = g.queryCommitItem(submod.id);
-				if (c) *commit = *c;
-			}
-			return &submod;
-		}
-	}
-	return nullptr;
-}
-
-/**
  * @brief MainWindow::color
  * @param depth 階層の深さ
  * @return 色
@@ -4119,8 +4097,8 @@ void MainWindow::updateFileList(Git::Hash const &id)
 				if (diff) {
 					obj.submod = diff->b_submodule.item; // TODO:
 					if (obj.submod) {
-						GitRunner g = git_with_submodule(obj.submod);
-						auto sc = g.queryCommitItem(obj.submod.id);
+						GitRunner g2 = git_for_submodule(g, obj.submod);
+						auto sc = g2.queryCommitItem(obj.submod.id);
 						if (sc) {
 							obj.submod_commit = *sc;
 						}
@@ -5150,7 +5128,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		} else if (a == a_blame) {
 			blame(item);
 		} else if (a == a_clean) {
-			cleanSubModule(item);
+			cleanSubModule(g, item);
 		} else if (a == a_properties) {
 			showObjectProperty(item);
 		}
@@ -5379,7 +5357,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::cleanSubModule(QListWidgetItem *item)
+void MainWindow::cleanSubModule(GitRunner g, QListWidgetItem *item)
 {
 	QString submodpath = getSubmodulePath(item);
 	if (submodpath.isEmpty()) return;
@@ -5391,12 +5369,12 @@ void MainWindow::cleanSubModule(QListWidgetItem *item)
 	CleanSubModuleDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		auto opt = dlg.options();
-		GitRunner g = git_with_submodule(submod);
+		GitRunner g2 = git_for_submodule(g, submod);
 		if (opt.reset_hard) {
-			g.reset_hard();
+			g2.reset_hard();
 		}
 		if (opt.clean_df) {
-			g.clean_df();
+			g2.clean_df();
 		}
 	}
 }
@@ -5519,10 +5497,9 @@ GitRunner MainWindow::git()
 	return git(item.local_dir, {}, item.ssh_key);
 }
 
-GitRunner MainWindow::git_with_submodule(const Git::SubmoduleItem &submod)
+GitRunner MainWindow::git_for_submodule(GitRunner g, const Git::SubmoduleItem &submod)
 {
-	RepositoryInfo const &item = currentRepository();
-	return git(item.local_dir, submod.path, item.ssh_key);
+	return git(g.workingDir(), submod.path, g.sshKey());
 }
 
 Git::User MainWindow::currentGitUser() const
