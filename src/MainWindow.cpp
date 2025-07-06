@@ -1138,7 +1138,7 @@ Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, 
 	for (auto const &submod : m->submodules) {
 		if (submod.path == path) {
 			if (commit) {
-				GitRunner g = _git(submod);
+				GitRunner g = git_with_submodule(submod);
 				auto c = g.queryCommitItem(submod.id);
 				if (c) *commit = *c;
 			}
@@ -1493,13 +1493,10 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 
 	cancelUpdateFileList();
 
-	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
+	currentRepositoryData()->git_command_cache = GitCommandCache(true);
 
 	if (clear_log) { // ログをクリア
 		m->current_repository_data = {};
-		{
-			// showFileList(FileListType::MessagePanel); //@
-		}
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -4122,7 +4119,7 @@ void MainWindow::updateFileList(Git::Hash const &id)
 				if (diff) {
 					obj.submod = diff->b_submodule.item; // TODO:
 					if (obj.submod) {
-						GitRunner g = _git(obj.submod);
+						GitRunner g = git_with_submodule(obj.submod);
 						auto sc = g.queryCommitItem(obj.submod.id);
 						if (sc) {
 							obj.submod_commit = *sc;
@@ -5394,7 +5391,7 @@ void MainWindow::cleanSubModule(QListWidgetItem *item)
 	CleanSubModuleDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		auto opt = dlg.options();
-		GitRunner g = _git(submod);
+		GitRunner g = git_with_submodule(submod);
 		if (opt.reset_hard) {
 			g.reset_hard();
 		}
@@ -5522,10 +5519,8 @@ GitRunner MainWindow::git()
 	return git(item.local_dir, {}, item.ssh_key);
 }
 
-GitRunner MainWindow::_git(const Git::SubmoduleItem &submod)
+GitRunner MainWindow::git_with_submodule(const Git::SubmoduleItem &submod)
 {
-	//// if (!submod) return {};
-	// ↑submodが無効でもnullではないオブジェクトを返す
 	RepositoryInfo const &item = currentRepository();
 	return git(item.local_dir, submod.path, item.ssh_key);
 }
@@ -6393,7 +6388,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	GitRunner g = git({}, {}, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
-	GitSession::Option opt;
+	AbstractGitSession::Option opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
 	bool f = g.git->exec_git(cmd, opt);

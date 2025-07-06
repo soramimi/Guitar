@@ -643,7 +643,7 @@ public:
 	QString currentBranchName() const;
 	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
 	GitRunner git();
-	GitRunner _git(Git::SubmoduleItem const &submod);
+	GitRunner git_with_submodule(Git::SubmoduleItem const &submod);
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const Git::Hash &id);
 	bool checkoutLocalBranch(QString const &name);

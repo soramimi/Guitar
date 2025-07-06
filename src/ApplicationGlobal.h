@@ -43,7 +43,7 @@ public:
 	~ApplicationGlobal();
 
 
-	GitSession::Option gitopt;
+	AbstractGitSession::Option gitopt;
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
 	QString language_id;

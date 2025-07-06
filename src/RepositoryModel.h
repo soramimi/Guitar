@@ -21,7 +21,7 @@ struct RepositoryData {
 	std::map<QString, Git::Diff> diff_cache;
 	GitObjectCache object_cache;
 
-	Git::CommandCache git_command_cache;
+	GitCommandCache git_command_cache;
 };
 
 struct CommitLogExchangeData {

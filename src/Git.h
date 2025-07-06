@@ -41,7 +41,45 @@ struct TreeLine {
 class Git;
 using GitPtr = std::shared_ptr<Git>;
 
-class GitSession {
+class GitCommandCache {
+public:
+	struct Data {
+		std::map<QString, std::vector<char>> map;
+	};
+	std::shared_ptr<Data> d;
+	GitCommandCache(bool make = false)
+	{
+		if (make) {
+			d = std::make_shared<Data>();
+		}
+	}
+	operator bool () const
+	{
+		return (bool)d;
+	}
+	void clear()
+	{
+		if (d) {
+			d->map.clear();
+		}
+	}
+	std::vector<char> *find(QString const &key)
+	{
+		if (!d) return nullptr;
+		auto it = d->map.find(key);
+		if (it != d->map.end()) {
+			return &it->second;
+		}
+		return nullptr;
+	}
+	void insert(QString const &key, std::vector<char> const &value)
+	{
+		if (!d) return;
+		d->map[key] = value;
+	}
+};
+
+class AbstractGitSession {
 public:
 	struct Option {
 		bool chdir = true;
@@ -63,18 +101,35 @@ public:
 	};
 
 	struct GitCache;
-
+private:
 	struct Private;
 	Private *m;
-
-	GitSession();
-	virtual ~GitSession();
+protected:
+	void insertIntoCommandCache(QString const &key, std::vector<char> const &value);
+	std::vector<char> *findFromCommandCache(QString const &key);
+public:
+	AbstractGitSession();
+	virtual ~AbstractGitSession();
 	Info &gitinfo();
 	Info const &gitinfo() const;
+	Var &var();
+	Var const &var() const;
 	GitCache &cache();
 	void clearResult();
 	QString workingDir() const;
+	virtual bool exec_git(QString const &arg, Option const &opt, bool debug_ = false) = 0;
+	virtual bool pushd(std::function<bool ()> const fn) = 0;
+
+	virtual bool is_valid_git_command() const = 0;
+	void set_command_cache(GitCommandCache const &cc);
+};
+
+class GitBasicSession : public AbstractGitSession {
+private:
 	QString gitCommand() const;
+	QString sshCommand() const;
+public:
+	bool is_valid_git_command() const;
 	bool exec_git(QString const &arg, Option const &opt, bool debug_ = false);
 	bool pushd(std::function<bool ()> const fn);
 };
@@ -82,7 +137,7 @@ public:
 class Git {
 	friend class GitRunner;
 private:
-	std::shared_ptr<GitSession> session_;
+	std::shared_ptr<AbstractGitSession> session_;
 public:
 	class Hash {
 	private:
@@ -90,7 +145,7 @@ public:
 		uint8_t id_[GIT_ID_LENGTH / 2];
 		template <typename VIEW> void _assign(VIEW const &id);
 	public:
-		Hash();
+		Hash() {}
 		explicit Hash(std::string_view const &id);
 		explicit Hash(QString const &id);
 		explicit Hash(char const *id);
@@ -446,44 +501,6 @@ public:
 	};
 	using FileStatusList = std::vector<FileStatus>;
 
-	class CommandCache {
-	public:
-		struct Data {
-			std::map<QString, std::vector<char>> map;
-		};
-		std::shared_ptr<Data> d;
-		CommandCache(bool make = false)
-		{
-			if (make) {
-				d = std::make_shared<Data>();
-			}
-		}
-		operator bool () const
-		{
-			return (bool)d;
-		}
-		void clear()
-		{
-			if (d) {
-				d->map.clear();
-			}
-		}
-		std::vector<char> *find(QString const &key)
-		{
-			if (!d) return nullptr;
-			auto it = d->map.find(key);
-			if (it != d->map.end()) {
-				return &it->second;
-			}
-			return nullptr;
-		}
-		void insert(QString const &key, std::vector<char> const &value)
-		{
-			if (!d) return;
-			d->map[key] = value;
-		}
-	};
-
 	static QString trimPath(QString const &s);
 
 private:
@@ -503,27 +520,38 @@ public:
 	Git(Git &&r) = delete;
 	~Git();
 
-	GitSession::Info &gitinfo()
+	AbstractGitSession::Info &gitinfo()
 	{
 		return session_->gitinfo();
 	}
-	GitSession::Info const &gitinfo() const
+	AbstractGitSession::Info const &gitinfo() const
 	{
 		return session_->gitinfo();
 	}
 
-	void setCommandCache(CommandCache const &cc);
+	AbstractGitSession::Var const &var() const
+	{
+		return session_->var();
+	}
+
+	void setCommandCache(GitCommandCache const &cc)
+	{
+		session_->set_command_cache(cc);
+	}
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
-	bool isValidGitCommand() const;
+	bool isValidGitCommand() const
+	{
+		return session_->is_valid_git_command();
+	}
 	std::string_view resultStdString() const;
 	QString resultQString() const;
 	bool pushd(std::function<bool ()> const fn)
 	{
 		return session_->pushd(fn);
 	}
-	bool exec_git(QString const &arg, GitSession::Option const &opt, bool debug_ = false)
+	bool exec_git(QString const &arg, AbstractGitSession::Option const &opt, bool debug_ = false)
 	{
 		return session_->exec_git(arg, opt, debug_);
 	}
@@ -533,14 +561,14 @@ public:
 	}
 	bool git_nolog(QString const &arg, AbstractPtyProcess *pty)
 	{
-		GitSession::Option opt;
+		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.log = false;
 		return exec_git(arg, opt);
 	}
 	bool git_nochdir(QString const &arg, AbstractPtyProcess *pty)
 	{
-		GitSession::Option opt;
+		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.chdir = false;
 		return exec_git(arg, opt);
