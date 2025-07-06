@@ -1138,7 +1138,7 @@ Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, 
 	for (auto const &submod : m->submodules) {
 		if (submod.path == path) {
 			if (commit) {
-				GitRunner g = git(submod);
+				GitRunner g = _git(submod);
 				auto c = g.queryCommitItem(submod.id);
 				if (c) *commit = *c;
 			}
@@ -4122,7 +4122,7 @@ void MainWindow::updateFileList(Git::Hash const &id)
 				if (diff) {
 					obj.submod = diff->b_submodule.item; // TODO:
 					if (obj.submod) {
-						GitRunner g = git(obj.submod);
+						GitRunner g = _git(obj.submod);
 						auto sc = g.queryCommitItem(obj.submod.id);
 						if (sc) {
 							obj.submod_commit = *sc;
@@ -5393,7 +5393,7 @@ void MainWindow::cleanSubModule(QListWidgetItem *item)
 	CleanSubModuleDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		auto opt = dlg.options();
-		GitRunner g = git(submod);
+		GitRunner g = _git(submod);
 		if (opt.reset_hard) {
 			g.reset_hard();
 		}
@@ -5503,7 +5503,7 @@ QString MainWindow::selectSshCommand(bool save)
 GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
 {
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
-	if (QFileInfo(g->gitCommand()).isExecutable()) {
+	if (g->isValidGitCommand()) {
 		if (use_cache) {
 			g->setCommandCache(currentRepositoryData()->git_command_cache);
 		}
@@ -5521,7 +5521,7 @@ GitRunner MainWindow::git()
 	return git(item.local_dir, {}, item.ssh_key);
 }
 
-GitRunner MainWindow::git(const Git::SubmoduleItem &submod)
+GitRunner MainWindow::_git(const Git::SubmoduleItem &submod)
 {
 	//// if (!submod) return {};
 	// ↑submodが無効でもnullではないオブジェクトを返す
@@ -6392,10 +6392,10 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	GitRunner g = git({}, {}, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
-	Git::Option opt;
+	GitSession::Option opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
-	bool f = g.git->git(cmd, opt);
+	bool f = g.git->exec_git(cmd, opt);
 	{
 		QElapsedTimer time;
 		time.start();

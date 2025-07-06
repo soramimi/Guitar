@@ -132,35 +132,43 @@ struct GitCache {
 	Git::CommandCache command_cache;
 };
 
-struct Git::Private {
-	struct Info {
-		QString git_command;
-		QString working_repo_dir;
-		QString submodule_path;
-		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
-		QString ssh_key_override;// = "C:/a/id_rsa";
-	};
-	Info info;
-	struct Var {
-		std::vector<char> result;
-		ProcessStatus exit_status;
-	} var;
+
+struct GitSession::Private {
 	std::shared_ptr<GitCache> cache;
 
+};
+
+GitSession::GitSession()
+	: m(new Private)
+{
+	m->cache = std::make_shared<GitCache>();
+}
+
+GitSession::~GitSession()
+{
+	delete m;
+}
+
+
+struct Git::Private {
+
 	Private()
-		: cache(std::make_shared<GitCache>())
 	{
 	}
 };
 
+
+
 Git::Git()
 	: m(new Private)
 {
+	_init();
 }
 
 Git::Git(const Context &cx, QString const &repodir, const QString &submodpath, const QString &sshkey)
 	: m(new Private)
 {
+	_init();
 	setGitCommand(cx.git_command, cx.ssh_command);
 	setWorkingRepositoryDir(repodir, submodpath, sshkey);
 }
@@ -170,35 +178,40 @@ Git::~Git()
 	delete m;
 }
 
+void Git::_init()
+{
+	session_ = std::make_shared<GitSession>();
+}
+
 void Git::setCommandCache(CommandCache const &cc)
 {
-	m->cache->command_cache = cc;
+	session_->m->cache->command_cache = cc;
 }
 
 void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
 {
-	m->info.working_repo_dir = repo;
-	m->info.submodule_path = submodpath;
-	m->info.ssh_key_override = sshkey;
+	session_->info.working_repo_dir = repo;
+	session_->info.submodule_path = submodpath;
+	session_->info.ssh_key_override = sshkey;
 }
 
-QString Git::workingDir() const
+QString GitSession::workingDir() const
 {
-	QString dir = m->info.working_repo_dir;
-	if (!m->info.submodule_path.isEmpty()) {
-		dir = dir / m->info.submodule_path;
+	QString dir = info.working_repo_dir;
+	if (!info.submodule_path.isEmpty()) {
+		dir = dir / info.submodule_path;
 	}
 	return dir;
 }
 
 QString const &Git::sshKey() const
 {
-	return m->info.ssh_key_override;
+	return session_->info.ssh_key_override;
 }
 
 void Git::setSshKey(QString const &sshkey) const
 {
-	m->info.ssh_key_override = sshkey;
+	session_->info.ssh_key_override = sshkey;
 }
 
 bool Git::isValidID(QString const &id)
@@ -233,13 +246,13 @@ QString Git::status()
 
 QByteArray Git::toQByteArray() const
 {
-	if (m->var.result.empty()) return QByteArray();
-	return QByteArray(&m->var.result[0], m->var.result.size());
+	if (session_->var.result.empty()) return QByteArray();
+	return QByteArray(&session_->var.result[0], session_->var.result.size());
 }
 
 std::string_view Git::resultStdString() const
 {
-	auto const &v = m->var.result;
+	auto const &v = session_->var.result;
 	if (v.empty()) return {};
 	return std::string_view(v.data(), v.size());
 }
@@ -251,32 +264,37 @@ QString Git::resultQString() const
 
 void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 {
-	m->info.git_command = gitcmd;
-	m->info.ssh_command = sshcmd;
+	session_->info.git_command = gitcmd;
+	session_->info.ssh_command = sshcmd;
 }
 
-QString Git::gitCommand() const
+bool Git::isValidGitCommand() const
 {
-	Q_ASSERT(m);
-	return m->info.git_command;
+	return QFileInfo(session_->gitCommand()).isExecutable();
 }
 
-void Git::clearResult()
+QString GitSession::gitCommand() const
 {
-	m->var = {};
+	// Q_ASSERT(m);
+	return info.git_command;
+}
+
+void GitSession::clearResult()
+{
+	var = {};
 }
 
 QString Git::errorMessage() const
 {
-	return QString::fromStdString(m->var.exit_status.error_message);
+	return QString::fromStdString(session_->var.exit_status.error_message);
 }
 
 int Git::getProcessExitCode() const
 {
-	return m->var.exit_status.exit_code;
+	return session_->var.exit_status.exit_code;
 }
 
-bool Git::chdirexec(std::function<bool()> const &fn)
+bool GitSession::chdirexec(std::function<bool()> const fn)
 {
 	bool ok = false;
 	QString cwd = QDir::currentPath();
@@ -290,12 +308,12 @@ bool Git::chdirexec(std::function<bool()> const &fn)
 	return ok;
 }
 
-bool Git::git(QString const &arg, Option const &opt, bool debug_)
+bool GitSession::exec_git(QString const &arg, GitSession::Option const &opt, bool debug_)
 {
 	if (debug_) return false;
 
-	QFileInfo info(gitCommand());
-	if (!info.isExecutable()) {
+	QFileInfo info2(gitCommand());
+	if (!info2.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
 		return false;
 	}
@@ -303,13 +321,13 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 	clearResult();
 
 	QString env;
-	if (m->info.ssh_command.isEmpty() || m->info.ssh_key_override.isEmpty()) {
+	if (info.ssh_command.isEmpty() || info.ssh_key_override.isEmpty()) {
 		// nop
 	} else {
-		if (m->info.ssh_command.indexOf('\"') >= 0) return false;
-		if (m->info.ssh_key_override.indexOf('\"') >= 0) return false;
-		if (!QFileInfo(m->info.ssh_command).isExecutable()) return false;
-		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(m->info.ssh_command).arg(m->info.ssh_key_override);
+		if (info.ssh_command.indexOf('\"') >= 0) return false;
+		if (info.ssh_key_override.indexOf('\"') >= 0) return false;
+		if (!QFileInfo(info.ssh_command).isExecutable()) return false;
+		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(info.ssh_command).arg(info.ssh_key_override);
 	}
 
 	auto DoIt = [&](){
@@ -337,40 +355,40 @@ bool Git::git(QString const &arg, Option const &opt, bool debug_)
 
 		if (opt.pty) {
 			opt.pty->start(cmd, env);
-			m->var.exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
+			var.exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			if (m->cache && m->cache->command_cache) {
 				auto const *a = m->cache->command_cache.find(cmd);
 				if (a) {
 					// qDebug() << "--- found:" << cmd;
-					m->var.result = *a;
+					var.result = *a;
 					return true;
 				}
 			}
 
 			Process proc;
 			proc.start(cmd.toStdString(), false);
-			m->var.exit_status.exit_code = proc.wait();
+			var.exit_status.exit_code = proc.wait();
 
 			if (opt.errout) {
-				m->var.result = proc.errbytes;
+				var.result = proc.errbytes;
 			} else {
 				if (!proc.errbytes.empty()) {
 					qDebug() << QString::fromStdString(proc.errstring());
 				}
-				m->var.result = proc.outbytes;
+				var.result = proc.outbytes;
 			}
-			m->var.exit_status.error_message = proc.errstring();
+			var.exit_status.error_message = proc.errstring();
 
-			if (m->var.exit_status.exit_code == 0) {
+			if (var.exit_status.exit_code == 0) {
 				if (m->cache && m->cache->command_cache) {
-					m->cache->command_cache.insert(cmd, m->var.result);
+					m->cache->command_cache.insert(cmd, var.result);
 					// qDebug() << "--- insert:" << cmd;
 				}
 			}
 		}
 
-		return m->var.exit_status.exit_code == 0;
+		return var.exit_status.exit_code == 0;
 	};
 
 	bool ok = false;
@@ -586,24 +604,24 @@ QString Git::diff_to_file(QString const &old_id, QString const &path)
 
 QString Git::getDefaultBranch()
 {
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = false;
-	git("config --global init.defaultBranch", opt);
+	exec_git("config --global init.defaultBranch", opt);
 	return resultQString().trimmed();
 }
 
 void Git::setDefaultBranch(const QString &branchname)
 {
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = false;
-	git(QString("config --global init.defaultBranch \"%1\"").arg(branchname), opt);
+	exec_git(QString("config --global init.defaultBranch \"%1\"").arg(branchname), opt);
 }
 
 void Git::unsetDefaultBranch()
 {
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = false;
-	git(QString("config --global --unset init.defaultBranch"), opt);
+	exec_git(QString("config --global --unset init.defaultBranch"), opt);
 }
 
 QString Git::getCurrentBranchName()
@@ -1171,7 +1189,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
-	m->info.working_repo_dir = misc::normalizePathSeparator(clone_to);
+	session_->info.working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	bool ok = false;
 	QDir cwd = QDir::current();
@@ -1234,10 +1252,10 @@ bool Git::submodule_add(const CloneData &data, bool force, AbstractPtyProcess *p
 	}
 	cmd += " \"%1\" \"%2\"";
 	cmd = cmd.arg(data.url).arg(data.subdir);
-	Option opt;
+	GitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
-	ok = git(cmd, opt);
+	ok = exec_git(cmd, opt);
 
 	return ok;
 }
@@ -1251,10 +1269,10 @@ bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *
 	if (data.recursive) {
 		cmd += " --recursive";
 	}
-	Option opt;
+	GitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 QString Git::encodeQuotedText(QString const &str)
@@ -1296,9 +1314,9 @@ bool Git::commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess 
 	text = encodeQuotedText(text);
 	cmd += QString(" -m %1").arg(text);
 
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 bool Git::commit(QString const &text, bool sign, AbstractPtyProcess *pty)
@@ -1331,17 +1349,17 @@ bool Git::push_u(bool set_upstream, QString const &remote, QString const &branch
 		cmd += " -u \"%1\" \"%2\"";
 		cmd = cmd.arg(remote).arg(branch);
 	}
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 bool Git::push_tags(AbstractPtyProcess *pty)
 {
 	QString cmd = "push --tags";
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 Git::FileStatusList Git::status_s_()
@@ -1456,9 +1474,9 @@ bool Git::stage(QStringList const &paths, AbstractPtyProcess *pty)
 		cmd += '\"';
 	}
 
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 void Git::unstage(QString const &path)
@@ -1486,9 +1504,9 @@ bool Git::unstage_all()
 
 bool Git::pull(AbstractPtyProcess *pty)
 {
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git("pull", opt);
+	return exec_git("pull", opt);
 }
 
 bool Git::fetch(AbstractPtyProcess *pty, bool prune)
@@ -1498,18 +1516,18 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	if (prune) {
 		cmd += " --prune";
 	}
-	Option opt;
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 bool Git::fetch_tags_f(AbstractPtyProcess *pty)
 {
 	QString cmd = "fetch --tags -f -j%1";
-    cmd = cmd.arg(std::thread::hardware_concurrency());
-	Option opt;
+	cmd = cmd.arg(std::thread::hardware_concurrency());
+	GitSession::Option opt;
 	opt.pty = pty;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 QStringList Git::make_branch_list_()
@@ -1631,12 +1649,12 @@ Git::User Git::getUser(Source purpose)
 	QString arg1;
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = !global;
-	if (git(QString("config %1 user.name").arg(arg1), opt)) {
+	if (exec_git(QString("config %1 user.name").arg(arg1), opt)) {
 		user.name = resultQString().trimmed();
 	}
-	if (git(QString("config %1 user.email").arg(arg1), opt)) {
+	if (exec_git(QString("config %1 user.email").arg(arg1), opt)) {
 		user.email = resultQString().trimmed();
 	}
 	return user;
@@ -1649,10 +1667,10 @@ void Git::setUser(const User &user, bool global)
 	if (unset) {
 		config += " --unset";
 	}
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = !global;
-	git(QString("config %1 user.name %2").arg(config).arg(encodeQuotedText(user.name)), opt);
-	git(QString("config %1 user.email %2").arg(config).arg(encodeQuotedText(user.email)), opt);
+	exec_git(QString("config %1 user.name %2").arg(config).arg(encodeQuotedText(user.name)), opt);
+	exec_git(QString("config %1 user.email %2").arg(config).arg(encodeQuotedText(user.email)), opt);
 }
 
 bool Git::reset_head1()
@@ -1702,7 +1720,7 @@ void Git::remote_v(std::vector<Remote> *out)
 		if (i > 0 && i < j) {
 			Remote r;
 			r.name = line.mid(0, i);
-			r.ssh_key = m->info.ssh_key_override;
+			r.ssh_key = session_->info.ssh_key_override;
 			QString url = line.mid(i + 1, j - i - 1);
 			QString type = line.mid(j + 1);
 			if (type.startsWith('(') && type.endsWith(')')) {
@@ -1748,7 +1766,7 @@ void Git::addRemoteURL(Git::Remote const &remote)
 {
 	QString cmd = "remote add \"%1\" \"%2\"";
 	cmd = cmd.arg(encodeQuotedText(remote.name)).arg(encodeQuotedText(remote.url_fetch));
-	m->info.ssh_key_override = remote.ssh_key;
+	session_->info.ssh_key_override = remote.ssh_key;
 	git(cmd);
 }
 
@@ -1954,9 +1972,9 @@ QString Git::signingKey(Source purpose)
 	if (purpose == Source::Local) arg1 = "--local";
 	QString cmd = "config %1 user.signingkey";
 	cmd = cmd.arg(arg1);
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = purpose != Source::Global;
-	if (git(cmd, opt)) {
+	if (exec_git(cmd, opt)) {
 		return resultQString().trimmed();
 	}
 	return QString();
@@ -1970,9 +1988,9 @@ bool Git::setSigningKey(QString const &id, bool global)
 
 	QString cmd = "config %1 %2 user.signingkey %3";
 	cmd = cmd.arg(global ? "--global" : "--local").arg(id.isEmpty() ? "--unset" : "").arg(id);
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = !global;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 Git::SignPolicy Git::signPolicy(Source source)
@@ -1982,9 +2000,9 @@ Git::SignPolicy Git::signPolicy(Source source)
 	if (source == Source::Local)  arg1 = "--local";
 	QString cmd = "config %1 commit.gpgsign";
 	cmd = cmd.arg(arg1);
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = source != Source::Global;
-	if (git(cmd, opt)) {
+	if (exec_git(cmd, opt)) {
 		QString t = resultQString().trimmed();
 		if (t == "false") return SignPolicy::False;
 		if (t == "true")  return SignPolicy::True;
@@ -2008,9 +2026,9 @@ bool Git::setSignPolicy(Source source, SignPolicy policy)
 		arg2 = "--unset";
 	}
 	cmd = cmd.arg(arg1).arg(arg2).arg(arg3);
-	Option opt;
+	GitSession::Option opt;
 	opt.chdir = source != Source::Global;
-	return git(cmd, opt);
+	return exec_git(cmd, opt);
 }
 
 bool Git::configGpgProgram(QString const &path, bool global)
@@ -2131,9 +2149,9 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 
 GitRunner GitRunner::dup() const
 {
-	Git *p = new Git();
-	p->m->info = git->m->info;
-	return GitPtr(p);
+	Git *newgit = new Git();
+	newgit->session_ = git->session_;
+	return GitPtr(newgit);
 }
 
 

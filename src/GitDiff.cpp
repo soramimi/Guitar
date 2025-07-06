@@ -44,7 +44,7 @@ public:
 
 GitRunner GitDiff::git(Git::SubmoduleItem const &submod)
 {
-	return global->mainwindow->git(submod);
+	return global->mainwindow->_git(submod);
 }
 
 QString GitDiff::makeKey(QString const &a_id, QString const &b_id)

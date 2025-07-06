@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <functional>
+#include "MyProcess.h"
 
 #define SINGLE_THREAD 0
 
@@ -40,8 +41,44 @@ struct TreeLine {
 class Git;
 using GitPtr = std::shared_ptr<Git>;
 
+class GitSession {
+public:
+	struct Option {
+		bool chdir = true;
+		bool log = false;
+		bool errout = false;
+		AbstractPtyProcess *pty = nullptr;
+		QString prefix;
+	};
+	struct Info {
+		QString git_command;
+		QString working_repo_dir;
+		QString submodule_path;
+		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
+		QString ssh_key_override;// = "C:/a/id_rsa";
+	};
+	Info info;
+	struct Var {
+		std::vector<char> result;
+		ProcessStatus exit_status;
+	} var;
+
+	struct Private;
+	Private *m;
+
+	GitSession();
+	virtual ~GitSession();
+	void clearResult();
+	QString workingDir() const;
+	QString gitCommand() const;
+	bool exec_git(QString const &arg, Option const &opt, bool debug_ = false);
+	bool chdirexec(std::function<bool ()> const fn);
+};
+
 class Git {
 	friend class GitRunner;
+private:
+	std::shared_ptr<GitSession> session_;
 public:
 	class Hash {
 	private:
@@ -454,6 +491,7 @@ private:
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
 	Git();
+	void _init();
 	QString encodeQuotedText(QString const &str);
 	static std::optional<CommitItem> parseCommitItem(const QString &line);
 public:
@@ -465,40 +503,42 @@ public:
 
 	QByteArray toQByteArray() const;
 	void setGitCommand(QString const &gitcmd, const QString &sshcmd = {});
-	QString gitCommand() const;
-	void clearResult();
+	bool isValidGitCommand() const;
+	// void clearResult();
 	std::string_view resultStdString() const;
 	QString resultQString() const;
-	bool chdirexec(std::function<bool ()> const &fn);
-	struct Option {
-		bool chdir = true;
-		bool log = false;
-		bool errout = false;
-		AbstractPtyProcess *pty = nullptr;
-		QString prefix;
-	};
-	bool git(QString const &arg, Option const &opt, bool debug_ = false);
+	bool chdirexec(std::function<bool ()> const fn)
+	{
+		return session_->chdirexec(fn);
+	}
+	bool exec_git(QString const &arg, GitSession::Option const &opt, bool debug_ = false)
+	{
+		return session_->exec_git(arg, opt, debug_);
+	}
 	bool git(QString const &arg)
 	{
-		return git(arg, {});
+		return exec_git(arg, {});
 	}
 	bool git_nolog(QString const &arg, AbstractPtyProcess *pty)
 	{
-		Option opt;
+		GitSession::Option opt;
 		opt.pty = pty;
 		opt.log = false;
-		return git(arg, opt);
+		return exec_git(arg, opt);
 	}
 	bool git_nochdir(QString const &arg, AbstractPtyProcess *pty)
 	{
-		Option opt;
+		GitSession::Option opt;
 		opt.pty = pty;
 		opt.chdir = false;
-		return git(arg, opt);
+		return exec_git(arg, opt);
 	}
 
 	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);
-	QString workingDir() const;
+	QString workingDir() const
+	{
+		return session_->workingDir();
+	}
 	QString const &sshKey() const;
 	void setSshKey(const QString &sshkey) const;
 
