@@ -23,11 +23,11 @@ Git::Hash::Hash(const char *id)
 	assign(std::string_view(id, strlen(id)));
 }
 
-class Latil1View {
+class Latin1View {
 private:
-	QString text_;
+	QString const &text_;
 public:
-	Latil1View(QString const &s)
+	Latin1View(QString const &s)
 		: text_(s)
 	{
 	}
@@ -77,7 +77,7 @@ void Git::Hash::assign(std::string_view const &s)
 
 void Git::Hash::assign(const QString &id)
 {
-	_assign(Latil1View(id));
+	_assign(Latin1View(id));
 }
 
 QString Git::Hash::toQString(int maxlen) const
