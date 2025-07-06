@@ -122,8 +122,10 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/AbstractGitSession.cpp \
 	$$PWD/src/CommitLogTableWidget.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
+	$$PWD/src/GitBasicSession.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
 	$$PWD/src/RepositoryInfo.cpp \
@@ -286,8 +288,10 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+	$$PWD/src/AbstractGitSession.h \
 	$$PWD/src/CommitLogTableWidget.h \
 	$$PWD/src/GeneratedCommitMessage.h \
+	$$PWD/src/GitBasicSession.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
 	$$PWD/src/RepositoryInfo.h \

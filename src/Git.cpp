@@ -17,8 +17,6 @@
 #include <thread>
 #include "Profile.h"
 
-
-
 Git::Hash::Hash(std::string_view const &id)
 {
 	assign(id);
@@ -125,50 +123,6 @@ void Git::CommitItem::setParents(const QStringList &list)
 	}
 }
 
-struct AbstractGitSession::GitCache {
-	GitCommandCache command_cache;
-};
-
-struct AbstractGitSession::Private {
-	std::shared_ptr<AbstractGitSession::GitCache> cache;
-	AbstractGitSession::Info info;
-	AbstractGitSession::Var var;
-};
-
-AbstractGitSession::AbstractGitSession()
-	: m(new Private)
-{
-	m->cache = std::make_shared<GitCache>();
-}
-
-AbstractGitSession::~AbstractGitSession()
-{
-	delete m;
-}
-
-AbstractGitSession::Var &AbstractGitSession::var()
-{
-	return m->var;
-}
-
-const AbstractGitSession::Var &AbstractGitSession::var() const
-{
-	return m->var;
-}
-
-AbstractGitSession::Info &AbstractGitSession::gitinfo()
-{
-	return m->info;
-}
-
-AbstractGitSession::Info const &AbstractGitSession::gitinfo() const
-{
-	return m->info;
-}
-
-
-
-
 Git::Git()
 {
 	_init();
@@ -197,14 +151,7 @@ void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath
 	gitinfo().ssh_key_override = sshkey;
 }
 
-QString AbstractGitSession::workingDir() const
-{
-	QString dir = gitinfo().working_repo_dir;
-	if (!gitinfo().submodule_path.isEmpty()) {
-		dir = dir / gitinfo().submodule_path;
-	}
-	return dir;
-}
+
 
 QString const &Git::sshKey() const
 {
@@ -270,33 +217,6 @@ void Git::setGitCommand(QString const &gitcmd, QString const &sshcmd)
 	gitinfo().ssh_command = sshcmd;
 }
 
-
-
-QString GitBasicSession::gitCommand() const
-{
-	return gitinfo().git_command;
-}
-
-QString GitBasicSession::sshCommand() const
-{
-	return gitinfo().ssh_command;
-}
-
-bool GitBasicSession::is_valid_git_command() const
-{
-	return QFileInfo(gitCommand()).isExecutable();
-}
-
-AbstractGitSession::GitCache &AbstractGitSession::cache()
-{
-	return *m->cache;
-}
-
-void AbstractGitSession::clearResult()
-{
-	m->var = {};
-}
-
 QString Git::errorMessage() const
 {
 	return QString::fromStdString(var().exit_status.error_message);
@@ -305,142 +225,6 @@ QString Git::errorMessage() const
 int Git::getProcessExitCode() const
 {
 	return var().exit_status.exit_code;
-}
-
-bool GitBasicSession::pushd(std::function<bool()> const fn)
-{
-	bool ok = false;
-	QString cwd = QDir::currentPath();
-	QString dir = workingDir();
-	if (QDir::setCurrent(dir)) {
-
-		ok = fn();
-
-		QDir::setCurrent(cwd);
-	}
-	return ok;
-}
-
-void AbstractGitSession::set_command_cache(const GitCommandCache &cc)
-{
-	m->cache->command_cache = cc;
-}
-
-void AbstractGitSession::insertIntoCommandCache(const QString &key, const std::vector<char> &value)
-{
-	if (m->cache->command_cache) {
-		m->cache->command_cache.insert(key, m->var.result);
-	}
-}
-
-std::vector<char> *AbstractGitSession::findFromCommandCache(const QString &key)
-{
-	if (m->cache->command_cache) {
-		return m->cache->command_cache.find(key);
-	}
-	return nullptr;
-}
-
-bool GitBasicSession::exec_git(QString const &arg, AbstractGitSession::Option const &opt, bool debug_)
-{
-	if (debug_) return false;
-
-	QFileInfo info2(gitCommand());
-	if (!info2.isExecutable()) {
-		qDebug() << "Invalid git command: " << gitCommand();
-		return false;
-	}
-
-	clearResult();
-
-	QString env;
-	QString ssh = sshCommand();
-	if (ssh.isEmpty() || gitinfo().ssh_key_override.isEmpty()) {
-		// nop
-	} else {
-		if (ssh.indexOf('\"') >= 0) return false;
-		if (gitinfo().ssh_key_override.indexOf('\"') >= 0) return false;
-		if (!QFileInfo(ssh).isExecutable()) return false;
-		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(ssh).arg(gitinfo().ssh_key_override);
-	}
-
-	auto DoIt = [&](){
-		QString cmd;
-#ifdef _WIN32
-		cmd = opt.prefix;
-#else
-
-#endif
-		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
-
-		if (opt.chdir) {
-			QString cwd = workingDir();
-			if (!cwd.isEmpty()) {
-				cmd += QString("-C \"%1\" ").arg(cwd);
-			}
-		}
-
-		cmd += arg;
-
-		if (opt.log) {
-			QString s = QString("> git %1\n").arg(arg);
-			global->writeLog(s);
-		}
-
-		if (opt.pty) {
-			opt.pty->start(cmd, env);
-			var().exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
-		} else {
-			auto const *a = findFromCommandCache(cmd);
-			if (a) {
-				var().result = *a;
-				return true;
-			}
-
-			Process proc;
-			proc.start(cmd.toStdString(), false);
-			var().exit_status.exit_code = proc.wait();
-
-			if (opt.errout) {
-				var().result = proc.errbytes;
-			} else {
-				if (!proc.errbytes.empty()) {
-					qDebug() << QString::fromStdString(proc.errstring());
-				}
-				var().result = proc.outbytes;
-			}
-			var().exit_status.error_message = proc.errstring();
-
-			if (var().exit_status.exit_code == 0) {
-				insertIntoCommandCache(cmd, var().result);
-			}
-		}
-
-		return var().exit_status.exit_code == 0;
-	};
-
-	bool ok = false;
-
-	//if (opt.chdir) { // don't use change dir, use -C option instead
-	if (0) {
-		if (opt.pty) {
-			opt.pty->setChangeDir(workingDir());
-			ok = DoIt();
-		} else {
-			ok = pushd(DoIt);
-		}
-	} else {
-		if (opt.pty) {
-			if (opt.chdir) {
-				opt.pty->setChangeDir(workingDir());
-			}
-			ok = DoIt();
-		} else {
-			ok = DoIt();
-		}
-	}
-
-	return ok;
 }
 
 bool Git::isValidWorkingCopy(QString const &dir)

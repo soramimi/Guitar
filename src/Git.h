@@ -2,16 +2,16 @@
 #define GIT_H
 
 #include "AbstractProcess.h"
+#include "GitBasicSession.h""
 #include "common/misc.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QMutex>
 #include <QObject>
 #include <functional>
+#include <functional>
 #include <memory>
 #include <optional>
-#include <functional>
-#include "MyProcess.h"
 
 #define SINGLE_THREAD 0
 
@@ -40,99 +40,6 @@ struct TreeLine {
 
 class Git;
 using GitPtr = std::shared_ptr<Git>;
-
-class GitCommandCache {
-public:
-	struct Data {
-		std::map<QString, std::vector<char>> map;
-	};
-	std::shared_ptr<Data> d;
-	GitCommandCache(bool make = false)
-	{
-		if (make) {
-			d = std::make_shared<Data>();
-		}
-	}
-	operator bool () const
-	{
-		return (bool)d;
-	}
-	void clear()
-	{
-		if (d) {
-			d->map.clear();
-		}
-	}
-	std::vector<char> *find(QString const &key)
-	{
-		if (!d) return nullptr;
-		auto it = d->map.find(key);
-		if (it != d->map.end()) {
-			return &it->second;
-		}
-		return nullptr;
-	}
-	void insert(QString const &key, std::vector<char> const &value)
-	{
-		if (!d) return;
-		d->map[key] = value;
-	}
-};
-
-class AbstractGitSession {
-public:
-	struct Option {
-		bool chdir = true;
-		bool log = false;
-		bool errout = false;
-		AbstractPtyProcess *pty = nullptr;
-		QString prefix;
-	};
-	struct Info {
-		QString git_command;
-		QString working_repo_dir;
-		QString submodule_path;
-		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
-		QString ssh_key_override;// = "C:/a/id_rsa";
-	};
-	struct Var {
-		std::vector<char> result;
-		ProcessStatus exit_status;
-	};
-
-	struct GitCache;
-private:
-	struct Private;
-	Private *m;
-protected:
-	void insertIntoCommandCache(QString const &key, std::vector<char> const &value);
-	std::vector<char> *findFromCommandCache(QString const &key);
-public:
-	AbstractGitSession();
-	virtual ~AbstractGitSession();
-	Info &gitinfo();
-	Info const &gitinfo() const;
-	Var &var();
-	Var const &var() const;
-	GitCache &cache();
-	void clearResult();
-	QString workingDir() const;
-	virtual bool exec_git(QString const &arg, Option const &opt, bool debug_ = false) = 0;
-	virtual bool pushd(std::function<bool ()> const fn) = 0;
-
-	virtual bool is_valid_git_command() const = 0;
-	void set_command_cache(GitCommandCache const &cc);
-};
-
-class GitBasicSession : public AbstractGitSession {
-private:
-	QString gitCommand() const;
-	QString sshCommand() const;
-public:
-	bool is_valid_git_command() const;
-	bool exec_git(QString const &arg, Option const &opt, bool debug_ = false);
-	bool pushd(std::function<bool ()> const fn);
-};
 
 class Git {
 	friend class GitRunner;
