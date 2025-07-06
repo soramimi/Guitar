@@ -469,7 +469,9 @@ public:
 		return session_->remove(path);
 	}
 
-	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey);
+	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey);
+	void setSubmodulePath(const QString &submodpath);
+
 	QString workingDir() const
 	{
 		return session_->workingDir();
@@ -739,9 +741,13 @@ public:
 	}
 	GitRunner dup() const;
 
-	void setWorkingRepositoryDir(QString const &repo, const QString &submodpath, const QString &sshkey)
+	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey)
 	{
-		git->setWorkingRepositoryDir(repo, submodpath, sshkey);
+		git->setWorkingRepositoryDir(repo, sshkey);
+	}
+	void setSubmodulePath(const QString &submodpath)
+	{
+		git->setSubmodulePath(submodpath);
 	}
 	QString workingDir() const
 	{

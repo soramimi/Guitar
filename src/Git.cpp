@@ -123,7 +123,8 @@ Git::Git(const Context &cx, QString const &repodir, const QString &submodpath, c
 {
 	_init();
 	setGitCommand(cx.git_command, cx.ssh_command);
-	setWorkingRepositoryDir(repodir, submodpath, sshkey);
+	setWorkingRepositoryDir(repodir, sshkey);
+	setSubmodulePath(submodpath);
 }
 
 Git::~Git()
@@ -135,13 +136,16 @@ void Git::_init()
 	session_ = std::make_shared<GitBasicSession>();
 }
 
-void Git::setWorkingRepositoryDir(QString const &repo, const QString &submodpath, QString const &sshkey)
+void Git::setWorkingRepositoryDir(QString const &repo, QString const &sshkey)
 {
 	gitinfo().working_repo_dir = repo;
-	gitinfo().submodule_path = submodpath;
 	gitinfo().ssh_key_override = sshkey;
 }
 
+void Git::setSubmodulePath(const QString &submodpath)
+{
+	gitinfo().submodule_path = submodpath;
+}
 
 
 QString const &Git::sshKey() const
