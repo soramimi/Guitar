@@ -21,6 +21,7 @@ std::vector<Model> available_models()
 	models.emplace_back(DeepSeek{}, "deepseek-chat");
 	models.emplace_back(OpenRouter{}, "anthropic/claude-3.7-sonnet");
 	models.emplace_back(Ollama{}, "ollama:///gemma3:27b"); // experimental
+	models.emplace_back(LMStudio{}, "lmstudio:///meta-llama-3-8b-instruct"); // experimental
 	return models;
 }
 
@@ -60,6 +61,26 @@ void Model::parse_model(const std::string &name)
 				port_ = "11434";
 			}
 		}
+	} else if (misc::starts_with(model_name_, "lmstudio://")) {
+		model_name_ = model_name_.substr(11);
+		auto i = model_name_.find('/');
+		if (i != std::string::npos) {
+			host_ = model_name_.substr(0, i);
+			port_;
+			model_name_ = model_name_.substr(i + 1);
+			if (host_.empty()) {
+				host_ = "localhost";
+			} else {
+				auto j = model_name_.find(':');
+				if (j != std::string::npos) {
+					host_ = model_name_.substr(0, j);
+					port_ = model_name_.substr(j + 1);
+				}
+			}
+			if (port_.empty()) {
+				port_ = "1234";
+			}
+		}
 	}
 }
 
@@ -79,6 +100,9 @@ Model Model::from_name(std::string const &name)
 	}
 	if (misc::starts_with(name, "ollama://")) {
 		return Model{Ollama{}, name.substr(9)};
+	}
+	if (misc::starts_with(name, "lmstudio://")) {
+		return Model{LMStudio{}, name.substr(11)};
 	}
 	if (name.find('/') != std::string::npos) {
 		return Model{OpenRouter{}, name};
@@ -155,6 +179,15 @@ struct Models {
 		r.model = model_.model_name();
 		r.endpoint_url = strf("http://%s:%s/api/generate")(model_.host())(model_.port()); // experimental
 		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
+		return r;
+	}
+
+	Request operator () (LMStudio const &provider) const
+	{
+		Request r;
+		r.model = model_.model_name();
+		r.endpoint_url = strf("http://%s:%s/v1/completions")(model_.host())(model_.port()); // experimental
+		// r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
 		return r;
 	}
 

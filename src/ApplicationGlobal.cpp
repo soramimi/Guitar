@@ -149,6 +149,13 @@ struct AiCredentials {
 		return cred;
 	}
 
+	GenerativeAI::Credential operator () (GenerativeAI::LMStudio const &provider) const
+	{
+		GenerativeAI::Credential cred;
+		cred.api_key = "aonymous";
+		return cred;
+	}
+
 	static GenerativeAI::Credential credential(GenerativeAI::Provider const &provider)
 	{
 		return std::visit(AiCredentials{}, provider);

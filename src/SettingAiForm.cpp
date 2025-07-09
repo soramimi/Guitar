@@ -25,6 +25,7 @@ struct SettingAiForm::Private {
 	AI ai_deepseek = { GenerativeAI::DeepSeek() };
 	AI ai_openrouter = { GenerativeAI::OpenRouter() };
 	AI ai_ollama = { GenerativeAI::Ollama() };
+	AI ai_lmstudio = { GenerativeAI::LMStudio() };
 
 	std::vector<SettingAiForm::AI *> ais;
 	AI *current_ai = nullptr;
@@ -37,7 +38,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	m->ais = { &m->ai_unknown, &m->ai_openai, &m->ai_anthropic, &m->ai_google, &m->ai_deepseek, &m->ai_openrouter, &m->ai_ollama };
+	m->ais = { &m->ai_unknown, &m->ai_openai, &m->ai_anthropic, &m->ai_google, &m->ai_deepseek, &m->ai_openrouter, &m->ai_ollama, &m->ai_lmstudio };
 
 	m->current_ai = &m->ai_unknown;
 

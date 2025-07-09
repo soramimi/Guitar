@@ -49,6 +49,12 @@ struct Ollama {
 	std::string envname() const { return {}; }
 };
 
+struct LMStudio {
+	std::string id() const { return "lmstudio"; }
+	std::string description() const { return "LM Studio (experimental)"; }
+	std::string envname() const { return {}; }
+};
+
 typedef std::variant<
 	Unknown,
 	OpenAI,
@@ -56,7 +62,8 @@ typedef std::variant<
 	Google,
 	DeepSeek,
 	OpenRouter,
-	Ollama // experimental
+	Ollama, // experimental
+	LMStudio // experimental
 	> Provider;
 
 static inline std::vector<Provider> all_providers()
@@ -68,7 +75,8 @@ static inline std::vector<Provider> all_providers()
 		Google{},
 		DeepSeek{},
 		OpenRouter{},
-		Ollama{} // experimental
+		Ollama{}, // experimental
+		LMStudio{} // experimental
 	};
 }
 

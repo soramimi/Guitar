@@ -23,7 +23,7 @@ struct CommitMessageResponseParser {
 		Result ret;
 		while (reader.next()) {
 			if (reader.match("{object")) {
-				if (reader.string() == "chat.completion") {
+				if (reader.string() == "chat.completion" || reader.string() == "text_completion") {
 					ret.completion = true;
 				}
 			} else if (reader.match("{choices[{message{content")) {
@@ -123,6 +123,11 @@ struct CommitMessageResponseParser {
 			}
 		}
 		return ret;
+	}
+
+	Result operator () (GenerativeAI::LMStudio const &provider)
+	{
+		return parse_openai_format();
 	}
 
 	static Result parse(GenerativeAI::Provider const &provider, std::string_view const &in)
@@ -321,6 +326,16 @@ std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt
 		std::string operator () (GenerativeAI::OpenRouter const &provider)
 		{
 			return generate_openai_format(modelname);
+		}
+
+		std::string operator () (GenerativeAI::LMStudio const &provider)
+		{
+			std::string json = R"---({
+	"model": "%s",
+	"prompt": "%s",
+	"stream": false
+})---";
+			return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 		}
 
 		static std::string generate(std::string const &prompt, GenerativeAI::Provider const &provider, GenerativeAI::Model const &model, Kind kind)
