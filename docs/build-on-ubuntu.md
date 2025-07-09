@@ -37,19 +37,17 @@ ruby prepare.rb
 
 This script performs necessary setup tasks for the build process.
 
-### 3. Build the libfiletype Dependency
+### 3. Build the libmagic Dependency
 
-Guitar requires libfiletype to be built second:
+Guitar uses libmagic for file type detection and requires it to be statically linked for consistent cross-platform behavior. Run the provided build script:
 
-```cmd
+```bash
 cd filetype
-rm -fr build
-mkdir build
-cd build
-qmake6 ../libfiletype.pro
-make -j8
-cd ../../
+./build-gcc.sh
+cd ..
 ```
+
+This script will automatically build all required libmagic components including libfile, liboniguruma, and libfiletype.
 
 ### 4. Configure and Build
 

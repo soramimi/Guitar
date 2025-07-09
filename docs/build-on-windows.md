@@ -59,19 +59,17 @@ cd ..
 
 Note: Adjust the Qt path according to your installation.
 
-### 5. Build the libfiletype Dependency
+### 5. Build the libmagic Dependency
 
-Guitar requires libfiletype to be built second:
+Guitar uses libmagic for file type detection and requires it to be statically linked for consistent cross-platform behavior. Run the provided build script:
 
 ```cmd
 cd filetype
-rmdir /s /q build
-mkdir build
-cd build
-c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ..\libfiletype.pro
-C:\Qt\Tools\QtCreator\bin\jom\jom.exe
-cd ..\..
+build-msvc.bat
+cd ..
 ```
+
+This script will automatically build all required libmagic components including libfile, liboniguruma, and libfiletype.
 
 ### 6. Build Guitar
 
