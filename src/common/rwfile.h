@@ -2,6 +2,7 @@
 #define RWFILE_H
 
 #include <vector>
+#include <cstddef>  // for size_t
 #include <stdlib.h>
 
 bool readfile(char const *path, std::vector<char> *out, int maxsize);
