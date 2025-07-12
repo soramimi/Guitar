@@ -122,6 +122,7 @@ macx {
 }
 
 SOURCES += \
+    src/sshsupport/ConfirmRemoteSessionDialog.cpp \
 	$$PWD/src/AbstractGitSession.cpp \
 	$$PWD/src/CommitLogTableWidget.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
@@ -131,17 +132,17 @@ SOURCES += \
 	$$PWD/src/Profile.cpp \
 	$$PWD/src/RepositoryInfo.cpp \
 	$$PWD/src/RepositoryModel.cpp \
-    $$PWD/src/RepositoryTreeWidget.cpp \
-    $$PWD/src/StatusInfo.cpp \
+	$$PWD/src/RepositoryTreeWidget.cpp \
+	$$PWD/src/StatusInfo.cpp \
 	$$PWD/src/Util.cpp \
 	$$PWD/src/common/rwfile.cpp \
 	$$PWD/src/platform.cpp \
-    $$PWD/src/sshsupport/Quissh.cpp \
-    $$PWD/src/sshsupport/SshDialog.cpp \
+	$$PWD/src/sshsupport/Quissh.cpp \
+	$$PWD/src/sshsupport/SshDialog.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
 	$$PWD/src/zip/zipextract.cpp \
-    src/AboutDialog.cpp \
+	src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -289,6 +290,7 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+    src/sshsupport/ConfirmRemoteSessionDialog.h \
 	$$PWD/src/AbstractGitSession.h \
 	$$PWD/src/CommitLogTableWidget.h \
 	$$PWD/src/GeneratedCommitMessage.h \
@@ -298,15 +300,15 @@ HEADERS += \
 	$$PWD/src/Profile.h \
 	$$PWD/src/RepositoryInfo.h \
 	$$PWD/src/RepositoryModel.h \
-    $$PWD/src/RepositoryTreeWidget.h \
-    $$PWD/src/StatusInfo.h \
+	$$PWD/src/RepositoryTreeWidget.h \
+	$$PWD/src/StatusInfo.h \
 	$$PWD/src/Util.h \
 	$$PWD/src/common/rwfile.h \
-    $$PWD/src/sshsupport/Quissh.h \
-    $$PWD/src/sshsupport/SshDialog.h \
+	$$PWD/src/sshsupport/Quissh.h \
+	$$PWD/src/sshsupport/SshDialog.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \
-    src/AboutDialog.h \
+	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
 	src/AddRepositoriesCollectivelyDialog.h \
@@ -468,6 +470,7 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS    += \
+    src/sshsupport/ConfirmRemoteSessionDialog.ui \
 	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.ui \
 	$$PWD/src/SettingAiForm.ui \
 	$$PWD/src/SettingOptionsForm.ui \

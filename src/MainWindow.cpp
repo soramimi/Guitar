@@ -74,6 +74,7 @@
 #include <sys/stat.h>
 #include <variant>
 #include <cctype>
+#include "sshsupport/ConfirmRemoteSessionDialog.h"
 #include "sshsupport/SshDialog.h"
 #include "RepositoryModel.h"
 #include "Util.h"
@@ -7287,10 +7288,11 @@ void MainWindow::on_action_ssh_triggered()
 	if (global->isUnsafeEnabled()) {
 		SshConnection ssh;
 		SshDialog dlg(this, &ssh);
-		dlg.setHostName("192.168.0.80");
+		QString host = "192.168.0.80";
+		dlg.setHostName(host);
 		if (dlg.exec() == QDialog::Accepted) {
-#if 0
 			QString path = dlg.selectedPath();
+#if 0
 			auto list = ssh.list(path.toStdString().c_str());
 			if (list) {
 				for (SshConnection::FileItem &a : *list) {
@@ -7298,17 +7300,30 @@ void MainWindow::on_action_ssh_triggered()
 				}
 			}
 #else
-			if (0) {
+			bool yes = false;
+			std::string gitcmd;
+			{
+				ssh.add_allowed_command("which");
 				auto ret = ssh.exec("which git");
 				if (ret) {
-					qDebug() << QString::fromStdString(*ret);
+					gitcmd = misc::trimmed(*ret);
+					// auto r = QMessageBox::question(this, tr("Confirmation"), tr("Do you agree to run %1 on %2 ?").arg(QString::fromStdString(gitcmd)).arg(host), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+					ConfirmRemoteSessionDialog dlg(this);
+					QString remote_path = host + ':' + path;
+					QString remote_command = host + ':' + QString::fromStdString(gitcmd);
+					if (dlg.exec(remote_path, remote_command) == QMessageBox::Accepted) {
+						yes = true;
+					}
 				}
 			}
-			ssh.add_allowed_command("/usr/bin/git");
-			{
-				auto ret = ssh.exec("/usr/bin/git --version");
-				if (ret) {
-					qDebug() << QString::fromStdString(*ret);
+			if (yes) {
+				ssh.add_allowed_command(gitcmd);
+				{
+					std::string cmd = gitcmd + ' ' + "--version";
+					auto ret = ssh.exec(cmd.c_str());
+					if (ret) {
+						qDebug() << QString::fromStdString(*ret);
+					}
 				}
 			}
 #endif
