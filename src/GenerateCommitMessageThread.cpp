@@ -26,7 +26,7 @@ void GenerateCommitMessageThread::start()
 				std::swap(requested, requested_);
 			}
 			if (requested) {
-				CommitMessageGenerator gen(kind_);
+				CommitMessageGenerator gen;
 				auto result = GeneratedCommitMessage(new CommitMessageGenerator::Result(gen.generate(diff_)));
 				emit ready(result);
 			}
@@ -44,10 +44,9 @@ void GenerateCommitMessageThread::stop()
 	}
 }
 
-void GenerateCommitMessageThread::request(CommitMessageGenerator::Kind kind, const std::string &diff, QString const &hint)
+void GenerateCommitMessageThread::request(const std::string &diff, QString const &hint)
 {
 	std::lock_guard lock(mutex_);
-	kind_ = kind;
 	diff_ = diff;
 	hint_ = hint;
 	requested_ = true;

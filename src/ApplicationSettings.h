@@ -32,16 +32,16 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_by_ai = false;
-	bool use_openai_api_key_environment_value = false;
-	bool use_anthropic_api_key_environment_value = false;
-	bool use_google_api_key_environment_value = false;
-	bool use_deepseek_api_key_environment_value = false;
-	bool use_openrouter_api_key_environment_value = false;
-	QString openai_api_key;
-	QString anthropic_api_key;
-	QString google_api_key;
-	QString deepseek_api_key;
-	QString openrouter_api_key;
+	bool use_env_api_key_OpenAI = false;
+	bool use_env_api_key_Anthropic = false;
+	bool use_env_api_key_Google = false;
+	bool use_env_api_key_DeepSeek = false;
+	bool use_env_api_key_OpenRouter = false;
+	QString api_key_OpenAI;
+	QString api_key_Anthropic;
+	QString api_key_Google;
+	QString api_key_DeepSeek;
+	QString api_key_OpenRouter;
 	GenerativeAI::Model ai_model;
 
 	bool get_avatar_icon_from_network_enabled = true;
