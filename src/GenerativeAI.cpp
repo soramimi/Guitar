@@ -11,11 +11,11 @@ const std::vector<ProviderInfo> &provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		{AI::Unknown, "-", "-", ""},
-		{AI::OpenAI, "openai", "OpenAI; GPT", "OpenAI_api_key"},
-		{AI::Anthropic, "anthropic", "Anthropic; Claude", "Anthropic_api_key"},
-		{AI::Google, "google", "Google; Gemini", "Google_api_key"},
+		{AI::OpenAI, "openai", "OpenAI; GPT", "OPENAI_API_KEY"},
+		{AI::Anthropic, "anthropic", "Anthropic; Claude", "ANTHROPIC_API_KEY"},
+		{AI::Google, "google", "Google; Gemini", "GOOGLE_API_KEY"},
 		{AI::DeepSeek, "deepseek", "DeepSeek", "DEEPSEEK_API_KEY"},
-		{AI::OpenRouter, "openrouter", "OpenRouter", "OpenRouter_api_key"},
+		{AI::OpenRouter, "openrouter", "OpenRouter", "OPENROUTER_API_KEY"},
 		{AI::Ollama, "ollama", "Ollama (experimental)", ""},
 		{AI::LMStudio, "lmstudio", "LM Studio (experimental)", ""}
 	};

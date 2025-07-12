@@ -91,6 +91,13 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 	{
 	}
 
+	std::string getenv(char const *name)
+	{
+		char const *value = std::getenv(name);
+		return value ? std::string(value) : std::string();
+	}
+
+
 	GenerativeAI::Credential case_Unknown()
 	{
 		return {};
