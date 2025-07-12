@@ -84,88 +84,90 @@ void GlobalRestoreOverrideCursor()
 	QApplication::restoreOverrideCursor();
 }
 
-struct AiCredentials {
-	GenerativeAI::Credential operator () (GenerativeAI::Unknown const &provider) const
+struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Credential> {
+	char const *envname;
+	_AiCredentials(char const *envname)
+		: envname(envname)
+	{
+	}
+
+	GenerativeAI::Credential case_Unknown()
 	{
 		return {};
 	}
 
-	GenerativeAI::Credential operator () (GenerativeAI::OpenAI const &provider) const
+	GenerativeAI::Credential case_OpenAI()
 	{
 		GenerativeAI::Credential cred;
-		if (global->appsettings.use_openai_api_key_environment_value) {
-			cred.api_key = getenv(provider.envname().c_str());
+		if (global->appsettings.use_env_api_key_OpenAI) {
+			cred.api_key = getenv(envname);
 		} else {
-			cred.api_key = global->appsettings.openai_api_key.toStdString();
+			cred.api_key = global->appsettings.api_key_OpenAI.toStdString();
 		}
 		return cred;
 	}
 
-	GenerativeAI::Credential operator () (GenerativeAI::Anthropic const &provider) const
+	GenerativeAI::Credential case_Anthropic()
 	{
 		GenerativeAI::Credential cred;
-		if (global->appsettings.use_anthropic_api_key_environment_value) {
-			cred.api_key = getenv(provider.envname().c_str());
+		if (global->appsettings.use_env_api_key_Anthropic) {
+			cred.api_key = getenv(envname);
 		} else {
-			cred.api_key = global->appsettings.anthropic_api_key.toStdString();
+			cred.api_key = global->appsettings.api_key_Anthropic.toStdString();
 		}
 		return cred;
 	}
-	GenerativeAI::Credential operator () (GenerativeAI::Google const &provider) const
+	GenerativeAI::Credential case_Google()
 	{
 		GenerativeAI::Credential cred;
-		if (global->appsettings.use_google_api_key_environment_value) {
-			cred.api_key = getenv(provider.envname().c_str());
+		if (global->appsettings.use_env_api_key_Google) {
+			cred.api_key = getenv(envname);
 		} else {
-			cred.api_key = global->appsettings.google_api_key.toStdString();
+			cred.api_key = global->appsettings.api_key_Google.toStdString();
 		}
 		return cred;
 	}
-	GenerativeAI::Credential operator () (GenerativeAI::DeepSeek const &provider) const
+	GenerativeAI::Credential case_DeepSeek()
 	{
 		GenerativeAI::Credential cred;
-		if (global->appsettings.use_deepseek_api_key_environment_value) {
-			cred.api_key = getenv(provider.envname().c_str());
+		if (global->appsettings.use_env_api_key_DeepSeek) {
+			cred.api_key = getenv(envname);
 		} else {
-			cred.api_key = global->appsettings.deepseek_api_key.toStdString();
+			cred.api_key = global->appsettings.api_key_DeepSeek.toStdString();
 		}
 		return cred;
 	}
-	GenerativeAI::Credential operator () (GenerativeAI::OpenRouter const &provider) const
+	GenerativeAI::Credential case_OpenRouter()
 	{
 		GenerativeAI::Credential cred;
-		if (global->appsettings.use_openrouter_api_key_environment_value) {
-			cred.api_key = getenv(provider.envname().c_str());
+		if (global->appsettings.use_env_api_key_OpenRouter) {
+			cred.api_key = getenv(envname);
 		} else {
-			cred.api_key = global->appsettings.openrouter_api_key.toStdString();
+			cred.api_key = global->appsettings.api_key_OpenRouter.toStdString();
 		}
 		return cred;
 	}
 
-	GenerativeAI::Credential operator () (GenerativeAI::Ollama const &provider) const
+	GenerativeAI::Credential case_Ollama()
 	{
 		GenerativeAI::Credential cred;
 		cred.api_key = "aonymous";
 		return cred;
 	}
 
-	GenerativeAI::Credential operator () (GenerativeAI::LMStudio const &provider) const
+	GenerativeAI::Credential case_LMStudio()
 	{
 		GenerativeAI::Credential cred;
 		cred.api_key = "aonymous";
 		return cred;
 	}
-
-	static GenerativeAI::Credential credential(GenerativeAI::Provider const &provider)
-	{
-		return std::visit(AiCredentials{}, provider);
-	}
-
 };
 
-GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Provider const &provider)
+GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI provider)
 {
-	return std::visit(AiCredentials{}, provider);
+	GenerativeAI::ProviderInfo const *info = provider_info(provider);
+	char const *envname = info->env_name.c_str();
+	return _AiCredentials(envname).visit(provider);
 }
 
 std::string ApplicationGlobal::determineFileType(QByteArray const &in)

@@ -7,9 +7,6 @@
 
 class CommitMessageGenerator {
 public:
-	enum Kind {
-		CommitMessage,
-	};
 	class Result {
 	public:
 		bool error = false;
@@ -23,16 +20,11 @@ public:
 		}
 	};
 private:
-	Kind kind;
-	CommitMessageGenerator::Result parse_response(const std::string &in, const GenerativeAI::Provider &provider);
+	CommitMessageGenerator::Result parse_response(const std::string &in, GenerativeAI::AI provider);
 	std::string generatePrompt(const std::string &diff, int max);
-	std::string generatePromptJSON(const std::string &prompt, const GenerativeAI::Model &model);
+	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt);
 public:
 	CommitMessageGenerator() = default;
-	CommitMessageGenerator(Kind kind)
-		: kind(kind)
-	{
-	}
 	Result generate(std::string const &diff, QString const &hint = {});
 	static std::string diff_head(GitRunner g);
 	static Result Error(std::string const &status, std::string const &message)

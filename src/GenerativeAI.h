@@ -2,60 +2,11 @@
 #define GENERATIVEAI_H
 
 #include <string>
-#include <variant>
 #include <vector>
 
 namespace GenerativeAI {
 
-struct Unknown {
-	std::string id() const { return "-"; }
-	std::string description() const { return "-"; }
-	std::string envname() const { return {}; }
-};
-
-struct OpenAI {
-	std::string id() const { return "openai"; }
-	std::string description() const { return "OpenAI; GPT"; }
-	std::string envname() const { return "OPENAI_API_KEY"; }
-};
-
-struct Anthropic {
-	std::string id() const { return "anthropic"; }
-	std::string description() const { return "Anthropic; Claude"; }
-	std::string envname() const { return "ANTHROPIC_API_KEY"; }
-};
-
-struct Google {
-	std::string id() const { return "google"; }
-	std::string description() const { return "Google; Gemini"; }
-	std::string envname() const { return "GOOGLE_API_KEY"; }
-};
-
-struct DeepSeek {
-	std::string id() const { return "deepseek"; }
-	std::string description() const { return "DeepSeek"; }
-	std::string envname() const { return "DEEPSEEK_API_KEY"; }
-};
-
-struct OpenRouter {
-	std::string id() const { return "openrouter"; }
-	std::string description() const { return "OpenRouter"; }
-	std::string envname() const { return "OPENROUTER_API_KEY"; }
-};
-
-struct Ollama {
-	std::string id() const { return "ollama"; }
-	std::string description() const { return "Ollama (experimental)"; }
-	std::string envname() const { return {}; }
-};
-
-struct LMStudio {
-	std::string id() const { return "lmstudio"; }
-	std::string description() const { return "LM Studio (experimental)"; }
-	std::string envname() const { return {}; }
-};
-
-typedef std::variant<
+enum class AI {
 	Unknown,
 	OpenAI,
 	Anthropic,
@@ -64,37 +15,69 @@ typedef std::variant<
 	OpenRouter,
 	Ollama, // experimental
 	LMStudio // experimental
-	> Provider;
+};
 
-static inline std::vector<Provider> all_providers()
-{
-	return {
-		Unknown{},
-		OpenAI{},
-		Anthropic{},
-		Google{},
-		DeepSeek{},
-		OpenRouter{},
-		Ollama{}, // experimental
-		LMStudio{} // experimental
-	};
-}
+template <typename T> class AbstractVisitor {
+public:
+	virtual ~AbstractVisitor() = default;
+
+	virtual T case_Unknown() = 0;
+	virtual T case_OpenAI() = 0;
+	virtual T case_Anthropic() = 0;
+	virtual T case_Google() = 0;
+	virtual T case_DeepSeek() = 0;
+	virtual T case_OpenRouter() = 0;
+	virtual T case_Ollama() = 0;
+	virtual T case_LMStudio() = 0;
+
+	T visit(AI provider)
+	{
+		switch (provider) {
+		case AI::Unknown:     return case_Unknown();
+		case AI::OpenAI:      return case_OpenAI();
+		case AI::Anthropic:   return case_Anthropic();
+		case AI::Google:      return case_Google();
+		case AI::DeepSeek:    return case_DeepSeek();
+		case AI::OpenRouter:  return case_OpenRouter();
+		case AI::Ollama:      return case_Ollama();
+		case AI::LMStudio:    return case_LMStudio();
+		}
+		return case_Unknown();
+	}
+};
+
+struct ProviderInfo {
+	AI provider;
+	std::string tag;
+	std::string description;
+	std::string env_name;
+};
+
+std::vector<ProviderInfo> const &provider_table();
+ProviderInfo const *provider_info(AI ai);
 
 struct Credential {
 	std::string api_key;
 };
 
 struct Model {
-	Provider provider;
+	ProviderInfo const *provider_info_ = nullptr;
 	std::string long_name_;
 	std::string model_name_;
 	std::string host_;
 	std::string port_;
-	Model() = default;
-	explicit Model(Provider const &provider, std::string const &model_uri);
+	Model()
+		: provider_info_(provider_info(AI::Unknown))
+	{}
+	Model(AI provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
 	void parse_model(std::string const &name);
+
+	AI provider_id() const
+	{
+		return provider_info_ ? provider_info_->provider : AI::Unknown;
+	}
 
 	std::string long_name() const
 	{
@@ -122,28 +105,13 @@ struct Model {
 
 struct Request {
 	std::string endpoint_url;
-	std::string model;
+	std::string model_name;
 	std::vector<std::string> header;
 };
 
-static inline std::string provider_id(Provider const &provider)
-{
-	return std::visit([](auto const &p) { return p.id(); }, provider);
-}
+Request make_request(AI provider, Model const &model, Credential const &auth);
 
-static inline std::string provider_description(Provider const &provider)
-{
-	return std::visit([](auto const &p) { return p.description(); }, provider);
-}
-
-static inline std::string env_name(Provider const &provider)
-{
-	return std::visit([](auto const &p) { return p.envname(); }, provider);
-}
-
-Request make_request(Provider const &provider, Model const &model, Credential const &auth);
-
-std::vector<Model> available_models();
+std::vector<Model> const &ai_model_presets();
 
 } // namespace GenerativeAI
 

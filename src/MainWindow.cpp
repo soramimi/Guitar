@@ -7303,7 +7303,7 @@ int genmsg()
 		diff += g->resultStdString();
 	}
 
-	CommitMessageGenerator gen(CommitMessageGenerator::CommitMessage);
+	CommitMessageGenerator gen;
 	CommitMessageGenerator::Result result = gen.generate(diff);
 
 	for (std::string const &line : result.messages) {

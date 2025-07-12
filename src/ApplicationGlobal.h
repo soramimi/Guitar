@@ -80,7 +80,7 @@ public:
 
 	IncrementalSearch *incremental_search();
 
-	GenerativeAI::Credential get_ai_credential(GenerativeAI::Provider const &provider);
+        GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);
 
 	std::string determineFileType(const QByteArray &in);
 	std::string determineFileType(const std::string &path);

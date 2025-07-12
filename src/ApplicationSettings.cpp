@@ -133,22 +133,34 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
-	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_openai_api_key_environment_value;
-	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_anthropic_api_key_environment_value;
-	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_google_api_key_environment_value;
-	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_openrouter_api_key_environment_value;
-	GetValue<QString>(s, "OPENAI_API_KEY")                    >> as.openai_api_key;
-	GetValue<QString>(s, "ANTHROPIC_API_KEY")                 >> as.anthropic_api_key;
-	GetValue<QString>(s, "GOOGLE_API_KEY")                    >> as.google_api_key;
-	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.deepseek_api_key;
-	GetValue<QString>(s, "OPENROUTER_API_KEY")                >> as.openrouter_api_key;
+	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_env_api_key_OpenAI;
+	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_env_api_key_Anthropic;
+	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_env_api_key_Google;
+	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_env_api_key_OpenRouter;
+	GetValue<QString>(s, "OpenAI_api_key")                    >> as.api_key_OpenAI;
+	GetValue<QString>(s, "Anthropic_api_key")                 >> as.api_key_Anthropic;
+	GetValue<QString>(s, "Google_api_key")                    >> as.api_key_Google;
+	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.api_key_DeepSeek;
+	GetValue<QString>(s, "OpenRouter_api_key")                >> as.api_key_OpenRouter;
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
 	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
 
-	auto providers = GenerativeAI::all_providers();
-	auto it = std::find_if(providers.begin(), providers.end(), [&](auto const &p) { return GenerativeAI::provider_id(p) == ai_provider_name; });
+	// auto providers = GenerativeAI::all_providers();
+	// auto it = std::find_if(providers.begin(), providers.end(), [&](auto const &p) { return GenerativeAI::provider_id(p) == ai_provider_name; });
+	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
+		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
+		for (auto const &info : infos) {
+			if (info.tag == name) {
+				return &info;
+			}
+		}
+		return nullptr;
+	};
+	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
+
+#if 0
 	if (it != providers.end()) {
 		as.ai_model = GenerativeAI::Model(*it, ai_model_name);
 	} else {
@@ -157,11 +169,21 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		}
 		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
 	}
+#else
+	if (info) {
+		as.ai_model = GenerativeAI::Model(info->provider, ai_model_name);
+	} else {
+		if (ai_provider_name.empty() && ai_model_name.empty()) {
+			ai_model_name = GenerativeAI::Model::default_model();
+		}
+		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
+	}
+#endif
 
 
 
 #if 0
-	as.openai_api_key = loadOpenAiApiKey();
+	as.OpenAI_api_key = loadOpenAiApiKey();
 #endif
 
 	return as;
@@ -211,24 +233,24 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_openai_api_key_environment_value;
-	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_anthropic_api_key_environment_value;
-	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_google_api_key_environment_value;
-	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_deepseek_api_key_environment_value;
-	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_openrouter_api_key_environment_value;
-	SetValue<QString>(s, "OPENAI_API_KEY")                    << this->openai_api_key;
-	SetValue<QString>(s, "ANTHROPIC_API_KEY")                 << this->anthropic_api_key;
-	SetValue<QString>(s, "GOOGLE_API_KEY")                    << this->google_api_key;
-	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->deepseek_api_key;
-	SetValue<QString>(s, "OPENROUTER_API_KEY")                << this->openrouter_api_key;
-	SetValue<std::string>(s, "AiProvider")                    << GenerativeAI::provider_id(this->ai_model.provider);
+	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_env_api_key_OpenAI;
+	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_env_api_key_Anthropic;
+	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_env_api_key_Google;
+	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_env_api_key_DeepSeek;
+	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_env_api_key_OpenRouter;
+	SetValue<QString>(s, "OpenAI_api_key")                    << this->api_key_OpenAI;
+	SetValue<QString>(s, "Anthropic_api_key")                 << this->api_key_Anthropic;
+	SetValue<QString>(s, "Google_api_key")                    << this->api_key_Google;
+	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->api_key_DeepSeek;
+	SetValue<QString>(s, "OpenRouter_api_key")                << this->api_key_OpenRouter;
+	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 
 	if (0) { // ここでは保存しない
 #if 0
-		saveOpenAiApiKey(this->openai_api_key);
+		saveOpenAiApiKey(this->OpenAI_api_key);
 #endif
 	}
 }

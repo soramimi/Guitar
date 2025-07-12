@@ -17,7 +17,6 @@ public:
 	std::condition_variable cv_;
 	bool requested_ = false;
 	bool interrupted_ = false;
-	CommitMessageGenerator::Kind kind_;
 	std::string diff_;
 	QString hint_;
 	
@@ -25,7 +24,7 @@ public:
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(CommitMessageGenerator::Kind kind, std::string const &diff, QString const &hint = {});
+	void request(std::string const &diff, QString const &hint = {});
 signals:
 	void ready(GeneratedCommitMessage const &message);
 	

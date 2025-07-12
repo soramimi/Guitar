@@ -53,7 +53,7 @@ void GenerateCommitMessageDialog::generate(std::string const &diff)
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	m->generator.request(CommitMessageGenerator::CommitMessage, diff);
+	m->generator.request(diff);
 }
 
 std::string GenerateCommitMessageDialog::diffText() const

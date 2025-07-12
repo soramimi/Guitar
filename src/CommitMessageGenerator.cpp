@@ -5,22 +5,22 @@
 #include "common/strformat.h"
 #include "webclient.h"
 
-struct CommitMessageResponseParser {
-	struct Result {
-		bool completion = false;
-		std::string text;
-		std::string error_status;
-		std::string error_message;
-	};
+struct CommitMessageResult {
+	bool completion = false;
+	std::string text;
+	std::string error_status;
+	std::string error_message;
+};
 
+struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<CommitMessageResult> {
 	jstream::Reader reader;
-	CommitMessageResponseParser(std::string_view const &in)
+	_CommitMessageResponseParser(std::string_view const &in)
 		: reader(in.data(), in.data() + in.size())
 	{}
 
-	Result parse_openai_format()
+	CommitMessageResult parse_openai_format()
 	{
-		Result ret;
+		CommitMessageResult ret;
 		while (reader.next()) {
 			if (reader.match("{object")) {
 				if (reader.string() == "chat.completion" || reader.string() == "text_completion") {
@@ -39,19 +39,19 @@ struct CommitMessageResponseParser {
 		return ret;
 	}
 
-	Result operator () (GenerativeAI::Unknown const &provider)
+	CommitMessageResult case_Unknown()
 	{
 		return {};
 	}
 
-	Result operator () (GenerativeAI::OpenAI const &provider)
+	CommitMessageResult case_OpenAI()
 	{
 		return parse_openai_format();
 	}
 
-	Result operator () (GenerativeAI::Anthropic const &provider)
+	CommitMessageResult case_Anthropic()
 	{
-		Result ret;
+		CommitMessageResult ret;
 		while (reader.next()) {
 			if (reader.match("{stop_reason")) {
 				if (reader.string() == "end_turn") {
@@ -77,9 +77,9 @@ struct CommitMessageResponseParser {
 		return ret;
 	}
 
-	Result operator () (GenerativeAI::Google const &provider)
+	CommitMessageResult case_Google()
 	{
-		Result ret;
+		CommitMessageResult ret;
 		while (reader.next()) {
 			if (reader.match("{candidates[{content{parts[{text")) {
 				ret.text = reader.string();
@@ -95,19 +95,19 @@ struct CommitMessageResponseParser {
 		return ret;
 	}
 
-	Result operator () (GenerativeAI::DeepSeek const &provider)
+	CommitMessageResult case_DeepSeek()
 	{
 		return parse_openai_format();
 	}
 
-	Result operator () (GenerativeAI::OpenRouter const &provider)
+	CommitMessageResult case_OpenRouter()
 	{
 		return parse_openai_format();
 	}
 
-	Result operator () (GenerativeAI::Ollama const &provider)
+	CommitMessageResult case_Ollama()
 	{
-		Result ret;
+		CommitMessageResult ret;
 		while (reader.next()) {
 			if (reader.match("{model")) {
 				reader.string();
@@ -125,14 +125,104 @@ struct CommitMessageResponseParser {
 		return ret;
 	}
 
-	Result operator () (GenerativeAI::LMStudio const &provider)
+	CommitMessageResult case_LMStudio()
 	{
 		return parse_openai_format();
 	}
+};
 
-	static Result parse(GenerativeAI::Provider const &provider, std::string_view const &in)
+/**
+ * @brief Generate a JSON string for the given AI model.
+ * @param model The AI model.
+ * @param diff The diff to generate the commit message for.
+ * @param max_message_count The maximum number of messages to generate.
+ * @return The JSON string.
+ */
+struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> {
+	std::string modelname;
+	std::string prompt;
+	_PromptJsonGenerator(std::string const &modelname, std::string const &prompt)
+		: modelname(modelname)
+		, prompt(prompt)
+	{}
+
+	std::string case_Unknown()
 	{
-		return std::visit(CommitMessageResponseParser{in}, provider);
+		return {};
+	}
+
+	std::string case_OpenAI()
+	{
+		std::string json = R"---({
+"model": "%s",
+"messages": [
+	{"role": "system", "content": "You are an experienced engineer."},
+	{"role": "user", "content": "%s"}]
+})---";
+		return strf(json)(modelname)(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_Anthropic()
+	{
+		std::string json = R"---({
+"model": "%s",
+"messages": [
+	{"role": "user", "content": "%s"}
+],
+"max_tokens": %d,
+"temperature": 0.7
+})---";
+		return strf(json)(modelname)(jstream::encode_json_string(prompt))(200);
+	}
+
+	std::string case_Google()
+	{
+		std::string json = R"---({
+"contents": [{
+	"parts": [{
+		"text": "%s"
+	}]
+}]
+})---";
+		return strf(json)(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_DeepSeek()
+	{
+		std::string json = R"---({
+"model": "%s",
+"messages": [
+	{"role": "system", "content": "You are an experienced engineer."},
+	{"role": "user", "content": "%s"}
+],
+"stream": false
+})---";
+		return strf(json)(modelname)(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_Ollama()
+	{
+		std::string json = R"---({
+"model": "%s",
+"prompt": "%s",
+"stream": false
+})---";
+		return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_OpenRouter()
+	{
+		return case_OpenAI();
+	}
+
+	std::string case_LMStudio()
+	{
+		std::string json = R"---({
+"model": "%s",
+"prompt": "%s",
+"stream": false
+})---";
+		return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 	}
 };
 
@@ -142,71 +232,68 @@ struct CommitMessageResponseParser {
  * @param ai_type The AI model type.
  * @return The generated commit message.
  */
-CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::Provider const &provider)
+CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::AI provider)
 {
-	auto r = CommitMessageResponseParser::parse(provider, in);
+	CommitMessageResult r = _CommitMessageResponseParser(in).visit(provider);
 
 	if (r.completion) {
-		if (kind == CommitMessage) {
-			std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
-			size_t i = lines.size();
-			while (i > 0) {
-				i--;
-				std::string_view sv = lines[i];
-				char const *ptr = sv.data();
-				char const *end = ptr + sv.size();
-				while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
+		std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
+		size_t i = lines.size();
+		while (i > 0) {
+			i--;
+			std::string_view sv = lines[i];
+			char const *ptr = sv.data();
+			char const *end = ptr + sv.size();
+			while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
+				ptr++;
+				end--;
+			}
+			bool accept = false;
+
+			if (ptr < end && *ptr == '-') {
+				accept = true;
+				ptr++;
+				while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
+					ptr++;
+				}
+			} else if (isdigit((unsigned char)*ptr)) {
+				while (ptr < end && isdigit((unsigned char)*ptr)) {
+					accept = true;
+					ptr++;
+				}
+				if (ptr < end && *ptr == '.') {
+					ptr++;
+				}
+			}
+			if (accept) {
+				while (ptr < end && isspace((unsigned char)*ptr)) {
+					ptr++;
+				}
+				if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
 					ptr++;
 					end--;
 				}
-				bool accept = false;
-
-				if (ptr < end && *ptr == '-') {
-					accept = true;
+				while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
 					ptr++;
-					while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
-						ptr++;
-					}
-				} else if (isdigit((unsigned char)*ptr)) {
-					while (ptr < end && isdigit((unsigned char)*ptr)) {
-						accept = true;
-						ptr++;
-					}
-					if (ptr < end && *ptr == '.') {
-						ptr++;
-					}
+					end--;
 				}
-				if (accept) {
-					while (ptr < end && isspace((unsigned char)*ptr)) {
-						ptr++;
-					}
-					if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
-						ptr++;
-						end--;
-					}
-					while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
-						ptr++;
-						end--;
-					}
-					if (ptr < end) {
-						// ok
-					} else {
-						accept = false;
-					}
-				}
-				if (accept) {
-					lines[i] = std::string_view(ptr, end - ptr);
+				if (ptr < end) {
+					// ok
 				} else {
-					lines.erase(lines.begin() + i);
+					accept = false;
 				}
 			}
-			std::vector<std::string> ret;
-			for (auto const &line : lines) {
-				ret.emplace_back(line);
+			if (accept) {
+				lines[i] = std::string_view(ptr, end - ptr);
+			} else {
+				lines.erase(lines.begin() + i);
 			}
-			return ret;
 		}
-		return {};
+		std::vector<std::string> ret;
+		for (auto const &line : lines) {
+			ret.emplace_back(line);
+		}
+		return ret;
 	} else {
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
@@ -236,118 +323,10 @@ std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int 
 	return prompt;
 }
 
-/**
- * @brief Generate a JSON string for the given AI model.
- * @param model The AI model.
- * @param diff The diff to generate the commit message for.
- * @param max_message_count The maximum number of messages to generate.
- * @return The JSON string.
- */
-std::string CommitMessageGenerator::generatePromptJSON(std::string const &prompt, GenerativeAI::Model const &model)
+std::string CommitMessageGenerator::generate_prompt_json(GenerativeAI::Model const &model, std::string const &prompt)
 {
-	struct PromptJsonGenerator {
-		Kind kind;
-		std::string prompt;
-		std::string modelname;
-		PromptJsonGenerator(std::string const &prompt, std::string const &modelname, Kind kind)
-			: kind(kind), prompt(prompt)
-			, modelname(modelname)
-		{}
-
-		std::string generate_openai_format(std::string modelname)
-		{
-			std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}]
-})---";
-			return strf(json)(modelname)(jstream::encode_json_string(prompt));
-		}
-
-		std::string operator () (GenerativeAI::Unknown const &provider)
-		{
-			return {};
-		}
-
-		std::string operator () (GenerativeAI::OpenAI const &provider)
-		{
-			return generate_openai_format(modelname);
-		}
-
-		std::string operator () (GenerativeAI::Anthropic const &provider)
-		{
-			std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "user", "content": "%s"}
-	],
-	"max_tokens": %d,
-	"temperature": 0.7
-})---";
-			return strf(json)(modelname)(jstream::encode_json_string(prompt))(kind == CommitMessage ? 200 : 1000);
-		}
-
-		std::string operator () (GenerativeAI::Google const &provider)
-		{
-			std::string json = R"---({
-	"contents": [{
-		"parts": [{
-			"text": "%s"
-		}]
-	}]
-})---";
-			return strf(json)(jstream::encode_json_string(prompt));
-		}
-
-		std::string operator () (GenerativeAI::DeepSeek const &provider)
-		{
-			std::string json = R"---({
-	"model": "%s",
-	"messages": [
-		{"role": "system", "content": "You are an experienced engineer."},
-		{"role": "user", "content": "%s"}
-	],
-	"stream": false
-})---";
-			return strf(json)(modelname)(jstream::encode_json_string(prompt));
-		}
-
-		std::string operator () (GenerativeAI::Ollama const &provider)
-		{
-			std::string json = R"---({
-	"model": "%s",
-	"prompt": "%s",
-	"stream": false
-})---";
-			return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
-		}
-
-		std::string operator () (GenerativeAI::OpenRouter const &provider)
-		{
-			return generate_openai_format(modelname);
-		}
-
-		std::string operator () (GenerativeAI::LMStudio const &provider)
-		{
-			std::string json = R"---({
-	"model": "%s",
-	"prompt": "%s",
-	"stream": false
-})---";
-			return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
-		}
-
-		static std::string generate(std::string const &prompt, GenerativeAI::Provider const &provider, GenerativeAI::Model const &model, Kind kind)
-		{
-			return std::visit(PromptJsonGenerator{prompt, model.model_name(), kind}, provider);
-		}
-	};
-
-	return PromptJsonGenerator::generate(prompt, model.provider, model, kind);
+	return _PromptJsonGenerator(model.model_name(), prompt).visit(model.provider_id());
 }
-
-
 
 /**
  * @brief Generate a commit message using the given diff.
@@ -371,23 +350,15 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		return Error("error", "AI model is not set.");
 	}
 	
-	std::string prompt;
-	switch (kind) {
-	case CommitMessage:
-		prompt = generatePrompt(diff, max_message_count);
-		break;
-	default:
-		return {};
-	}
-	
-	std::string json = generatePromptJSON(prompt, model);
+	std::string prompt = generatePrompt(diff, max_message_count);
+	std::string json = generate_prompt_json(model, prompt);
 	
 	if (save_log) {
 		writefile("c:\\a\\request.txt", json.c_str(), json.size());
 	}
 
-	GenerativeAI::Credential cred = global->get_ai_credential(model.provider);
-	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider, model, cred);
+	GenerativeAI::Credential cred = global->get_ai_credential(model.provider_id());
+	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
 
 	WebClient::Request web_req;
 	web_req.set_location(ai_req.endpoint_url);
@@ -407,7 +378,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 			writefile("c:\\a\\response.txt", data, size);
 		}
 		std::string text(data, size);
-		CommitMessageGenerator::Result ret = parse_response(text, model.provider);
+		CommitMessageGenerator::Result ret = parse_response(text, model.provider_id());
 		return ret;
 	}
 
@@ -422,8 +393,3 @@ std::string CommitMessageGenerator::diff_head(GitRunner g)
 	});
 	return diff;
 }
-
-
-
-
-
