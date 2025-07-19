@@ -1,5 +1,6 @@
 #ifndef GITREMOTESSHSESSION_H
 #define GITREMOTESSHSESSION_H
+#ifdef UNSAFE_ENABLED
 
 #include "AbstractGitSession.h"
 #include "SshDialog.h"
@@ -24,4 +25,5 @@ public:
 	bool readfile(char const *path, std::vector<char> *data);
 };
 
+#endif
 #endif // GITREMOTESSHSESSION_H

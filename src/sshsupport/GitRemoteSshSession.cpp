@@ -1,3 +1,4 @@
+#ifdef UNSAFE_ENABLED
 #include "GitRemoteSshSession.h"
 #include "ApplicationGlobal.h"
 
@@ -104,3 +105,5 @@ bool GitRemoteSshSession::readfile(const char *path, std::vector<char> *data)
 	}
 	return false;
 }
+
+#endif

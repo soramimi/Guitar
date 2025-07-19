@@ -24,33 +24,37 @@
 #include "FilePropertyDialog.h"
 #include "FileUtil.h"
 #include "FindCommitDialog.h"
+#include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitDiff.h"
 #include "GitHubAPI.h"
 #include "GitObjectManager.h"
+#include "GitProcessThread.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MemoryReader.h"
 #include "MergeDialog.h"
 #include "MySettings.h"
 #include "OverrideWaitCursor.h"
+#include "Profile.h"
+#include "ProgressWidget.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
+#include "RepositoryModel.h"
 #include "RepositoryPropertyDialog.h"
 #include "SelectCommandDialog.h"
 #include "SetGlobalUserDialog.h"
 #include "SetGpgSigningDialog.h"
 #include "SettingsDialog.h"
+#include "StatusLabel.h"
 #include "SubmoduleAddDialog.h"
 #include "SubmoduleUpdateDialog.h"
 #include "SubmodulesDialog.h"
 #include "Terminal.h"
 #include "TextEditDialog.h"
 #include "UserEvent.h"
+#include "Util.h"
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
-#include "GitConfigGlobalAddSafeDirectoryDialog.h"
-#include "GitProcessThread.h"
-#include "ProgressWidget.h"
 #include "gunzip.h"
 #include "platform.h"
 #include <QBuffer>
@@ -66,21 +70,19 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QProcess>
-// #include <QRegExp>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <cctype>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <variant>
-#include <cctype>
-#include "sshsupport/GitRemoteSshSession.h"
+
+#ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"
+#include "sshsupport/GitRemoteSshSession.h"
 #include "sshsupport/SshDialog.h"
-#include "RepositoryModel.h"
-#include "Util.h"
-#include "Profile.h"
-#include "StatusLabel.h"
+#endif
 
 #ifdef Q_OS_MAC
 namespace {
@@ -7391,13 +7393,4 @@ std::string normalize_path(char const *path);
 
 void MainWindow::test()
 {
-	std::string path = normalize_path("/home/../username/.config/gitg");
-	if (path.empty()) {
-		qDebug() << "normalize_path failed";
-	} else {
-		qDebug() << "normalize_path: " << QString::fromStdString(path);
-	}
-
-	// genmsg();
-
 }

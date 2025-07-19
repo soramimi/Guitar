@@ -125,28 +125,8 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/sshsupport/GitRemoteSshSession.cpp \
-    src/sshsupport/ConfirmRemoteSessionDialog.cpp \
-	$$PWD/src/AbstractGitSession.cpp \
-	$$PWD/src/CommitLogTableWidget.cpp \
-	$$PWD/src/GeneratedCommitMessage.cpp \
-	$$PWD/src/GitBasicSession.cpp \
-	$$PWD/src/GitCommandCache.cpp \
-	$$PWD/src/IncrementalSearch.cpp \
-	$$PWD/src/Profile.cpp \
-	$$PWD/src/RepositoryInfo.cpp \
-	$$PWD/src/RepositoryModel.cpp \
-	$$PWD/src/RepositoryTreeWidget.cpp \
-	$$PWD/src/StatusInfo.cpp \
-	$$PWD/src/Util.cpp \
-	$$PWD/src/common/rwfile.cpp \
-	$$PWD/src/platform.cpp \
-	$$PWD/src/sshsupport/Quissh.cpp \
-	$$PWD/src/sshsupport/SshDialog.cpp \
-	$$PWD/src/zip/zip.cpp \
-	$$PWD/src/zip/ziparchive.cpp \
-	$$PWD/src/zip/zipextract.cpp \
-	src/AboutDialog.cpp \
+    src/AboutDialog.cpp \
+	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -168,6 +148,7 @@ SOURCES += \
 	src/CommitDetailGetter.cpp \
 	src/CommitDialog.cpp \
 	src/CommitExploreWindow.cpp \
+	src/CommitLogTableWidget.cpp \
 	src/CommitMessageGenerator.cpp \
 	src/CommitPropertyDialog.cpp \
 	src/CommitViewWindow.cpp \
@@ -195,8 +176,11 @@ SOURCES += \
 	src/FindCommitDialog.cpp \
 	src/GenerateCommitMessageDialog.cpp \
 	src/GenerateCommitMessageThread.cpp \
+	src/GeneratedCommitMessage.cpp \
 	src/GenerativeAI.cpp \
 	src/Git.cpp \
+	src/GitBasicSession.cpp \
+	src/GitCommandCache.cpp \
 	src/GitCommandRunner.cpp \
 	src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
 	src/GitDiff.cpp \
@@ -207,6 +191,7 @@ SOURCES += \
 	src/GitProcessThread.cpp \
 	src/HyperLinkLabel.cpp \
 	src/ImageViewWidget.cpp \
+	src/IncrementalSearch.cpp \
 	src/InputNewTagDialog.cpp \
 	src/JumpDialog.cpp \
 	src/Languages.cpp \
@@ -226,6 +211,7 @@ SOURCES += \
 	src/MyToolButton.cpp \
 	src/OverrideWaitCursor.cpp \
 	src/Photoshop.cpp \
+	src/Profile.cpp \
 	src/ProgressTextLabel.cpp \
 	src/ProgressWidget.cpp \
 	src/PushDialog.cpp \
@@ -234,8 +220,11 @@ SOURCES += \
 	src/ReflogWindow.cpp \
 	src/RemoteAdvancedOptionWidget.cpp \
 	src/RemoteRepositoriesTableWidget.cpp \
+	src/RepositoryInfo.cpp \
 	src/RepositoryInfoFrame.cpp \
+	src/RepositoryModel.cpp \
 	src/RepositoryPropertyDialog.cpp \
+	src/RepositoryTreeWidget.cpp \
 	src/RepositoryUrlLineEdit.cpp \
 	src/SearchFromGitHubDialog.cpp \
 	src/SelectCommandDialog.cpp \
@@ -255,6 +244,7 @@ SOURCES += \
 	src/SettingWorkingFolderForm.cpp \
 	src/SettingsDialog.cpp \
 	src/SimpleImageWidget.cpp \
+	src/StatusInfo.cpp \
 	src/StatusLabel.cpp \
 	src/SubmoduleAddDialog.cpp \
 	src/SubmoduleUpdateDialog.cpp \
@@ -263,10 +253,10 @@ SOURCES += \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
 	src/UserEvent.cpp \
+	src/Util.cpp \
 	src/WelcomeWizardDialog.cpp \
 	src/WorkingDirLineEdit.cpp \
 	src/XmlTagState.cpp \
-	src/common/charvec.cpp \
 	src/coloredit/ColorDialog.cpp \
 	src/coloredit/ColorEditWidget.cpp \
 	src/coloredit/ColorPreviewWidget.cpp \
@@ -274,8 +264,10 @@ SOURCES += \
 	src/coloredit/ColorSquareWidget.cpp \
 	src/coloredit/RingSlider.cpp \
 	src/common/base64.cpp \
+	src/common/charvec.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
+	src/common/rwfile.cpp \
 	src/darktheme/DarkStyle.cpp \
 	src/darktheme/LightStyle.cpp \
 	src/darktheme/NinePatch.cpp \
@@ -283,6 +275,7 @@ SOURCES += \
 	src/gpg.cpp \
 	src/gunzip.cpp \
 	src/main.cpp\
+	src/platform.cpp \
 	src/texteditor/AbstractCharacterBasedApplication.cpp \
 	src/texteditor/InputMethodPopup.cpp \
 	src/texteditor/TextEditorTheme.cpp \
@@ -291,30 +284,14 @@ SOURCES += \
 	src/texteditor/UnicodeWidth.cpp \
 	src/texteditor/unicode.cpp \
 	src/urlencode.cpp \
-	src/webclient.cpp
+	src/webclient.cpp \
+	src/zip/zip.cpp \
+	src/zip/ziparchive.cpp \
+	src/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/src/GitTypes.h \
-	$$PWD/src/sshsupport/GitRemoteSshSession.h \
-    src/sshsupport/ConfirmRemoteSessionDialog.h \
-	$$PWD/src/AbstractGitSession.h \
-	$$PWD/src/CommitLogTableWidget.h \
-	$$PWD/src/GeneratedCommitMessage.h \
-	$$PWD/src/GitBasicSession.h \
-	$$PWD/src/GitCommandCache.h \
-	$$PWD/src/IncrementalSearch.h \
-	$$PWD/src/Profile.h \
-	$$PWD/src/RepositoryInfo.h \
-	$$PWD/src/RepositoryModel.h \
-	$$PWD/src/RepositoryTreeWidget.h \
-	$$PWD/src/StatusInfo.h \
-	$$PWD/src/Util.h \
-	$$PWD/src/common/rwfile.h \
-	$$PWD/src/sshsupport/Quissh.h \
-	$$PWD/src/sshsupport/SshDialog.h \
-	$$PWD/src/zip/zip.h \
-	$$PWD/src/zip/zipinternal.h \
-	src/AboutDialog.h \
+    src/AboutDialog.h \
+	src/AbstractGitSession.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
 	src/AddRepositoriesCollectivelyDialog.h \
@@ -336,6 +313,7 @@ HEADERS += \
 	src/CommitDetailGetter.h \
 	src/CommitDialog.h \
 	src/CommitExploreWindow.h \
+	src/CommitLogTableWidget.h \
 	src/CommitMessageGenerator.h \
 	src/CommitPropertyDialog.h \
 	src/CommitViewWindow.h \
@@ -363,9 +341,12 @@ HEADERS += \
 	src/FindCommitDialog.h \
 	src/GenerateCommitMessageDialog.h \
 	src/GenerateCommitMessageThread.h \
+	src/GeneratedCommitMessage.h \
 	src/GenerativeAI.h \
 	src/GenerativeAI.h \
 	src/Git.h \
+	src/GitBasicSession.h \
+	src/GitCommandCache.h \
 	src/GitCommandRunner.h \
 	src/GitConfigGlobalAddSafeDirectoryDialog.h \
 	src/GitDiff.h \
@@ -374,8 +355,10 @@ HEADERS += \
 	src/GitPack.h \
 	src/GitPackIdxV2.h \
 	src/GitProcessThread.h \
+	src/GitTypes.h \
 	src/HyperLinkLabel.h \
 	src/ImageViewWidget.h \
+	src/IncrementalSearch.h \
 	src/InputNewTagDialog.h \
 	src/JumpDialog.h \
 	src/Languages.h \
@@ -395,6 +378,7 @@ HEADERS += \
 	src/MyToolButton.h \
 	src/OverrideWaitCursor.h \
 	src/Photoshop.h \
+	src/Profile.h \
 	src/ProgressTextLabel.h \
 	src/ProgressWidget.h \
 	src/PushDialog.h \
@@ -403,9 +387,12 @@ HEADERS += \
 	src/ReflogWindow.h \
 	src/RemoteAdvancedOptionWidget.h \
 	src/RemoteRepositoriesTableWidget.h \
+	src/RepositoryInfo.h \
 	src/RepositoryInfoFrame.h \
+	src/RepositoryModel.h \
 	src/RepositoryPropertyDialog.h \
 	src/RepositorySearchResultItem.h \
+	src/RepositoryTreeWidget.h \
 	src/RepositoryUrlLineEdit.h \
 	src/SearchFromGitHubDialog.h \
 	src/SelectCommandDialog.h \
@@ -425,6 +412,7 @@ HEADERS += \
 	src/SettingWorkingFolderForm.h \
 	src/SettingsDialog.h \
 	src/SimpleImageWidget.h \
+	src/StatusInfo.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
 	src/SubmoduleUpdateDialog.h \
@@ -433,10 +421,10 @@ HEADERS += \
 	src/TextEditDialog.h \
 	src/Theme.h \
 	src/UserEvent.h \
+	src/Util.h \
 	src/WelcomeWizardDialog.h \
 	src/WorkingDirLineEdit.h \
 	src/XmlTagState.h \
-	src/common/charvec.h \
 	src/coloredit/ColorDialog.h \
 	src/coloredit/ColorEditWidget.h \
 	src/coloredit/ColorPreviewWidget.h \
@@ -444,9 +432,11 @@ HEADERS += \
 	src/coloredit/ColorSquareWidget.h \
 	src/coloredit/RingSlider.h \
 	src/common/base64.h \
+	src/common/charvec.h \
 	src/common/joinpath.h \
 	src/common/jstream.h \
 	src/common/misc.h \
+	src/common/rwfile.h \
 	src/common/strformat.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/LightStyle.h \
@@ -471,17 +461,14 @@ HEADERS += \
 	src/texteditor/UnicodeWidth.h \
 	src/texteditor/unicode.h \
 	src/urlencode.h \
-	src/webclient.h
+	src/webclient.h \
+	src/zip/zip.h \
+	src/zip/zipinternal.h
 
 HEADERS += version.h
 
-FORMS    += \
-    src/sshsupport/ConfirmRemoteSessionDialog.ui \
-	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.ui \
-	$$PWD/src/SettingAiForm.ui \
-	$$PWD/src/SettingOptionsForm.ui \
-	$$PWD/src/sshsupport/SshDialog.ui \
-	src/AboutDialog.ui \
+FORMS += \
+    src/AboutDialog.ui \
 	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \
 	src/AreYouSureYouWantToContinueConnectingDialog.ui \
@@ -512,11 +499,14 @@ FORMS    += \
 	src/FilePropertyDialog.ui \
 	src/FindCommitDialog.ui \
 	src/GenerateCommitMessageDialog.ui \
+	src/GitConfigGlobalAddSafeDirectoryDialog.ui \
 	src/InputNewTagDialog.ui \
 	src/JumpDialog.ui \
 	src/LineEditDialog.ui \
 	src/MainWindow.ui \
+	src/ManageWorkingFolderDialog.ui \
 	src/MergeDialog.ui \
+	src/ProgressWidget.ui \
 	src/PushDialog.ui \
 	src/ReflogWindow.ui \
 	src/RemoteAdvancedOptionWidget.ui \
@@ -527,10 +517,12 @@ FORMS    += \
 	src/SelectItemDialog.ui \
 	src/SetGlobalUserDialog.ui \
 	src/SetGpgSigningDialog.ui \
+	src/SettingAiForm.ui \
 	src/SettingBehaviorForm.ui \
 	src/SettingExampleForm.ui \
 	src/SettingGeneralForm.ui \
 	src/SettingNetworkForm.ui \
+	src/SettingOptionsForm.ui \
 	src/SettingPrograms2Form.ui \
 	src/SettingProgramsForm.ui \
 	src/SettingVisualForm.ui \
@@ -542,9 +534,7 @@ FORMS    += \
 	src/TextEditDialog.ui \
 	src/WelcomeWizardDialog.ui \
 	src/coloredit/ColorDialog.ui \
-	src/coloredit/ColorEditWidget.ui \
-	src/ManageWorkingFolderDialog.ui \
-	src/ProgressWidget.ui
+	src/coloredit/ColorEditWidget.ui
 
 RESOURCES += \
 	src/resources/resources.qrc
@@ -562,14 +552,14 @@ unix {
 
 win32 {
 	SOURCES += \
-	$$PWD/src/win32/Win32Util.cpp \
+	src/win32/Win32Util.cpp \
 		src/win32/Win32Process.cpp \
         src/win32/Win32PtyProcess.cpp \
         src/win32/event.cpp \
         src/win32/thread.cpp
 
 	HEADERS += \
-	$$PWD/src/win32/Win32Util.h \
+	src/win32/Win32Util.h \
 		src/win32/Win32Process.h \
         src/win32/Win32PtyProcess.h \
         src/win32/event.h \
@@ -577,6 +567,22 @@ win32 {
         src/win32/thread.h
 
     LIBS += -lole32
+}
+
+unsafe {
+    SOURCES += \
+	    src/sshsupport/ConfirmRemoteSessionDialog.cpp \
+		src/sshsupport/GitRemoteSshSession.cpp \
+		src/sshsupport/Quissh.cpp \
+		src/sshsupport/SshDialog.cpp
+	HEADERS += \
+	    src/sshsupport/ConfirmRemoteSessionDialog.h \
+		src/sshsupport/GitRemoteSshSession.h \
+		src/sshsupport/Quissh.h \
+		src/sshsupport/SshDialog.h
+	FORMS += \
+	    src/sshsupport/ConfirmRemoteSessionDialog.ui \
+		src/sshsupport/SshDialog.ui
 }
 
 include(migemo.pri)

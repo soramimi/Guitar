@@ -1,15 +1,15 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "RepositoryModel.h"
 #include "Git.h"
 #include "GitCommandRunner.h"
 #include "MyProcess.h"
 #include "RepositoryInfo.h"
+#include "RepositoryModel.h"
 #include "RepositoryTreeWidget.h"
+#include "StatusInfo.h"
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
-#include "StatusInfo.h"
 #include <QMainWindow>
 
 class AddRepositoryDialog;

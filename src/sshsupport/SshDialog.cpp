@@ -1,3 +1,4 @@
+#ifdef UNSAFE_ENABLED
 #include "SshDialog.h"
 #include "ui_SshDialog.h"
 #include "../common/joinpath.h"
@@ -505,3 +506,5 @@ void SshConnection::sort(std::vector<FileItem> *files)
 		return Compare(a, b) < 0;
 	});
 }
+
+#endif
