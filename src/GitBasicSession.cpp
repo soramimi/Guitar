@@ -121,58 +121,32 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 	return ok;
 }
 
-// bool GitBasicSession::pushd(const std::function<bool ()> fn)
-// {
-// 	bool ok = false;
-// 	QString cwd = QDir::currentPath();
-// 	QString dir = workingDir();
-// 	if (QDir::setCurrent(dir)) {
-
-// 		ok = fn();
-
-// 		QDir::setCurrent(cwd);
-// 	}
-// 	return ok;
-// }
-
 bool GitBasicSession::remove(const QString &path)
 {
-#if 0
-	return pushd([&](){
-		QFile(path).remove();
-		return true;
-	});
-#else
 	if (path.indexOf("..") >= 0) {
 		qDebug() << "Invalid path for remove: " << path;
 		return false;
 	}
 	QString rm_path = workingDir() / path;
 	return QFile(rm_path).remove();
-#endif
 }
 
-bool GitBasicSession::ls(const char *path, std::vector<GitFileItem> *files)
+std::optional<std::vector<GitFileItem>> GitBasicSession::ls(const char *path)
 {
-	files->clear();
+	std::vector<GitFileItem> ret;
 	QDirIterator it(path, QDir::Files);
 	while (it.hasNext()) {
 		it.next();
 		GitFileItem item;
 		item.name = it.fileName();
 		item.isdir = it.fileInfo().isDir();
-		files->push_back(item);
+		ret.push_back(item);
 	}
-	return true;
+	return ret;
 }
 
-bool GitBasicSession::readfile(const char *path, std::vector<char> *data)
+std::optional<std::vector<char>> GitBasicSession::readfile(const char *path)
 {
-	auto o = ::readfile(path, -1);
-	if (o) {
-		*data = std::move(*o);
-		return true;
-	}
-	return false;
+	return ::readfile(path, -1);
 }
 

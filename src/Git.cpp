@@ -127,8 +127,6 @@ Git::Git(const GitContext &cx, QString const &repodir, const QString &submodpath
 	setSubmodulePath(submodpath);
 }
 
-
-
 void Git::_init(GitContext const &cx)
 {
 	session_ = cx.connect();
@@ -186,15 +184,21 @@ QString Git::status()
 	return resultQString();
 }
 
+std::vector<char> const &Git::toCharVector() const
+{
+	return var().result;
+}
+
 QByteArray Git::toQByteArray() const
 {
-	if (var().result.empty()) return QByteArray();
-	return QByteArray(&var().result[0], var().result.size());
+	auto const &v = toCharVector();
+	if (v.empty()) return QByteArray();
+	return QByteArray(v.data(), v.size());
 }
 
 std::string_view Git::resultStdString() const
 {
-	auto const &v = var().result;
+	auto const &v = toCharVector();
 	if (v.empty()) return {};
 	return std::string_view(v.data(), v.size());
 }
@@ -781,20 +785,12 @@ QDateTime Git::repositoryLastModifiedTime()
 
 std::optional<std::vector<GitFileItem>> Git::ls(const QString &path)
 {
-	std::vector<GitFileItem> files;
-	if (session_->ls(path.toStdString().c_str(), &files)) {
-		return files;
-	}
-	return std::nullopt;
+	return session_->ls(path.toStdString().c_str());
 }
 
 std::optional<std::vector<char>> Git::readfile(const QString &path)
 {
-	std::vector<char> data;
-	if (session_->readfile(path.toStdString().c_str(), &data)) {
-		return data;
-	}
-	return std::nullopt;
+	return session_->readfile(path.toStdString().c_str());
 }
 
 /**
@@ -1216,20 +1212,11 @@ QString Git::objectType(Hash const &id)
 	return {};
 }
 
-QByteArray Git::cat_file_(Hash const &id)
+std::optional<QByteArray> Git::cat_file(Hash const &id)
 {
 	if (isValidID(id)) {
 		git("cat-file -p " + id.toQString());
 		return toQByteArray();
-	}
-	return {};
-}
-
-std::optional<QByteArray> Git::cat_file(Hash const &id)
-{
-	QByteArray out;
-	if (isValidID(id)) {
-		return cat_file_(id);
 	}
 	return std::nullopt;
 }
@@ -1980,10 +1967,6 @@ GitRunner GitRunner::dup() const
 	return GitPtr(newgit);
 }
 
-
-
-
-
 std::shared_ptr<AbstractGitSession> GitContext::connect() const
 {
 #if 1
@@ -1992,6 +1975,7 @@ std::shared_ptr<AbstractGitSession> GitContext::connect() const
 	cmds.ssh_command = ssh_command;
 	return std::make_shared<GitBasicSession>(cmds);
 #else
+#ifdef UNSAFE_ENABLED
 	auto ret = std::make_shared<GitRemoteSshSession>();
 	std::shared_ptr<SshConnection> ssh = std::make_shared<SshConnection>();
 	std::string host = "192.168.0.80";
@@ -2002,5 +1986,6 @@ std::shared_ptr<AbstractGitSession> GitContext::connect() const
 	ssh->connect(host, port, passwd, uid, pwd);
 	ret->connect(ssh, "/usr/bin/git");
 	return ret;
+#endif
 #endif
 }

@@ -17,12 +17,13 @@ CONFIG += $$CPP_STD nostrip debug_info static
 # CONFIG += unsafe
 unsafe {
     DEFINES += UNSAFE_ENABLED
+	msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib -lssh
+	LIBS += -lssh
 }
 
 msvc:DEFINES += NOMINMAX
 
 INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
-LIBS += -LC:/vcpkg/installed/x64-windows/lib -lssh
 
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts

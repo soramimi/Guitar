@@ -401,7 +401,6 @@ private:
 	// struct Private;
 	// Private *m;
 	QStringList make_branch_list_();
-	QByteArray cat_file_(Hash const &id);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
@@ -433,6 +432,7 @@ public:
 		session_->set_command_cache(cc);
 	}
 
+	std::vector<char> const &toCharVector() const;
 	QByteArray toQByteArray() const;
 	bool isValidGitCommand() const
 	{
@@ -440,10 +440,6 @@ public:
 	}
 	std::string_view resultStdString() const;
 	QString resultQString() const;
-	// bool pushd(std::function<bool ()> const fn)
-	// {
-	// 	return session_->pushd(fn);
-	// }
 	bool exec_git(QString const &arg, AbstractGitSession::Option const &opt)
 	{
 		return session_->exec_git(arg, opt);

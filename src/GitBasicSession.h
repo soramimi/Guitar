@@ -19,11 +19,10 @@ public:
 	bool is_connected() const;
 	bool isValidWorkingCopy(QString const &dir) const;
 	bool exec_git(QString const &arg, Option const &opt);
-	// bool pushd(std::function<bool ()> const fn);
 	bool remove(const QString &path);
 
-	virtual bool ls(char const *path, std::vector<GitFileItem> *files);
-	virtual bool readfile(char const *path, std::vector<char> *data);
+	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);
+	virtual std::optional<std::vector<char>> readfile(char const *path);
 };
 
 #endif // GITBASICSESSION_H

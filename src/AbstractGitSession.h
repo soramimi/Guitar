@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <optional>
 #include <QString>
 #include "MyProcess.h"
 #include "GitTypes.h"
@@ -52,14 +53,13 @@ public:
 	void clearResult();
 	QString workingDir() const;
 	virtual bool exec_git(QString const &arg, Option const &opt) = 0;
-	// virtual bool pushd(std::function<bool ()> const fn) = 0;
 	virtual bool remove(QString const &path) = 0;
 
 	virtual bool is_connected() const = 0;
 	virtual bool isValidWorkingCopy(QString const &dir) const = 0;
 
-	virtual bool ls(char const *path, std::vector<GitFileItem> *files) { return false; }
-	virtual bool readfile(char const *path, std::vector<char> *data) { return false; }
+	virtual std::optional<std::vector<GitFileItem>> ls(char const *path) { return std::nullopt; }
+	virtual std::optional<std::vector<char>> readfile(char const *path) { return std::nullopt; }
 
 	void set_command_cache(GitCommandCache const &cc);
 };

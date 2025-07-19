@@ -21,8 +21,8 @@ public:
 	bool exec_git(const QString &arg, const Option &opt);
 	bool remove(const QString &path);
 
-	bool ls(const char *path, std::vector<GitFileItem> *files);
-	bool readfile(char const *path, std::vector<char> *data);
+	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);
+	virtual std::optional<std::vector<char>> readfile(char const *path);
 };
 
 #endif
