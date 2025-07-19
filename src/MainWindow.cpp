@@ -2138,7 +2138,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 	}
 
 	QList<Git::SubmoduleItem> mods;
-	updateSubmodules(g, id, &mods);
+	updateSubmodules(g, id, &mods); // TODO: slow
 	setSubmodules(mods);
 
 	bool uncommited = (!id && isThereUncommitedChanges());
@@ -5803,15 +5803,10 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
 void MainWindow::onLogCurrentItemChanged(bool update_file_list)
 {
 	PROFILE;
-	// showFileList(FileListType::SingleList); //@
 	clearFileList();
 
-	// ステータスバー更新
-	// updateStatusBarText(); //@
-
 	if (update_file_list) {
-		// 少し待ってファイルリストを更新する
-		updateFileListLater(300);
+		updateFileListLater(300); // 少し待ってファイルリストを更新する
 	}
 
 	updateAncestorCommitMap();

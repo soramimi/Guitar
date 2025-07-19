@@ -2,6 +2,7 @@
 #include "ApplicationGlobal.h"
 #include <QDir>
 #include <QDirIterator>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include "common/joinpath.h"
 #include "common/rwfile.h"
@@ -52,8 +53,6 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 		QString cmd;
 #ifdef _WIN32
 		cmd = opt.prefix;
-#else
-
 #endif
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 
@@ -83,9 +82,14 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 				}
 			}
 
+			QElapsedTimer timer;
+			timer.start();
+
 			Process proc;
 			proc.start(cmd.toStdString(), false);
 			var().exit_status.exit_code = proc.wait();
+
+			qDebug() << "--- Process\t" << cmd << "\t" << timer.elapsed() << "\t---";
 
 			if (opt.errout) {
 				var().result = proc.errbytes;
@@ -107,18 +111,7 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 		return var().exit_status.exit_code == 0;
 	};
 
-	bool ok = false;
-
-	if (opt.pty) {
-		if (opt.chdir) {
-			opt.pty->setChangeDir(workingDir());
-		}
-		ok = DoIt();
-	} else {
-		ok = DoIt();
-	}
-
-	return ok;
+	return DoIt();
 }
 
 bool GitBasicSession::remove(const QString &path)

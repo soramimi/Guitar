@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <QElapsedTimer>
 #include <termios.h>
 #include <unistd.h>
 
@@ -119,6 +120,9 @@ void UnixPtyProcess::run()
 	struct termios orig_termios;
 	struct winsize orig_winsize;
 
+	QElapsedTimer timer;
+	timer.start();
+
 	tcgetattr(STDIN_FILENO, &orig_termios);
 	ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&orig_winsize);
 
@@ -207,6 +211,8 @@ void UnixPtyProcess::run()
 		kill(pid, SIGTERM);
 		close(m->pty_master);
 		m->pty_master = -1;
+
+		qDebug() << "--- UnixPtyProcess\t" << m->command << "\t" << timer.elapsed() << "\t---";
 
 		notifyCompleted();
 	}

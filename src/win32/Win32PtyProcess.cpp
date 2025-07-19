@@ -5,6 +5,7 @@
 #include <deque>
 #include <winpty.h>
 #include <thread>
+#include <QElapsedTimer>
 
 namespace {
 
@@ -116,6 +117,9 @@ void Win32PtyProcess::run()
 	QString program;
 	program = getProgram(m->command);
 
+	QElapsedTimer timer;
+	timer.start();
+
 	QString cwd = QDir::currentPath();
 	QDir::setCurrent(change_dir_);
 
@@ -164,6 +168,8 @@ void Win32PtyProcess::run()
 	m->hProcess = INVALID_HANDLE_VALUE;
 
 	QDir::setCurrent(cwd);
+
+	qDebug() << "--- Win32PtyProcess\t" << m->command << "\t" << timer.elapsed() << "\t---";
 
 	notifyCompleted();
 }
