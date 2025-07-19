@@ -42,7 +42,8 @@ public:
 	ApplicationGlobal();
 	~ApplicationGlobal();
 
-	Git::Option gitopt;
+
+	AbstractGitSession::Option gitopt;
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
 	QString language_id;
@@ -50,6 +51,10 @@ public:
 	QString profiles_xml_path;
 	QColor panel_bg_color;
 	ThemePtr theme;
+
+#ifdef UNSAFE_ENABLED
+	bool unsafe_enabled = false;
+#endif
 
 	struct Graphics {
 		QIcon repository_icon;
@@ -62,7 +67,7 @@ public:
 	};
 	std::unique_ptr<Graphics> graphics;
 
-	Git::Context gcx();
+	GitContext gcx();
 
 	FileType filetype;
 
@@ -86,6 +91,15 @@ public:
 	std::string determineFileType(const std::string &path);
 
 	static bool isMainThread();
+
+	bool isUnsafeEnabled() const
+	{
+#ifdef UNSAFE_ENABLED
+		return unsafe_enabled;
+#else
+		return false;
+#endif
+	}
 };
 
 void GlobalSetOverrideWaitCursor();

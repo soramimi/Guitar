@@ -185,7 +185,7 @@ void AddRepositoryDialog::validate()
 {
 	QString path = localPath(false);
 	QString text;
-	if (Git::isValidWorkingCopy(path)) {
+	if (mainwindow()->isValidWorkingCopy(path)) {
 		switch (mode()) {
 		case AddRepositoryDialog::Clone:
 			text = tr("A valid git repository already exists.");

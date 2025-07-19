@@ -113,7 +113,7 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 	dir = QFileDialog::getExistingDirectory(this, tr("Open existing directory"), dir);
 	if (QFileInfo(dir).isDir()) {
 		QString url;
-		GitRunner g = mainwindow()->git(dir, {}, {});
+		GitRunner g = mainwindow()->new_git_runner(dir, {});
 		std::vector<Git::Remote> vec;
 		if (g.isValidWorkingCopy()) {
 			g.remote_v(&vec);

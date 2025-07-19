@@ -14,6 +14,16 @@ CPP_STD = c++17
 
 CONFIG += $$CPP_STD nostrip debug_info static
 
+# CONFIG += unsafe
+unsafe {
+    DEFINES += UNSAFE_ENABLED
+}
+
+msvc:DEFINES += NOMINMAX
+
+INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+LIBS += -LC:/vcpkg/installed/x64-windows/lib -lssh
+
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
@@ -115,21 +125,28 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/sshsupport/GitRemoteSshSession.cpp \
+    src/sshsupport/ConfirmRemoteSessionDialog.cpp \
+	$$PWD/src/AbstractGitSession.cpp \
 	$$PWD/src/CommitLogTableWidget.cpp \
 	$$PWD/src/GeneratedCommitMessage.cpp \
+	$$PWD/src/GitBasicSession.cpp \
+	$$PWD/src/GitCommandCache.cpp \
 	$$PWD/src/IncrementalSearch.cpp \
 	$$PWD/src/Profile.cpp \
 	$$PWD/src/RepositoryInfo.cpp \
 	$$PWD/src/RepositoryModel.cpp \
-    $$PWD/src/RepositoryTreeWidget.cpp \
-    $$PWD/src/StatusInfo.cpp \
+	$$PWD/src/RepositoryTreeWidget.cpp \
+	$$PWD/src/StatusInfo.cpp \
 	$$PWD/src/Util.cpp \
 	$$PWD/src/common/rwfile.cpp \
 	$$PWD/src/platform.cpp \
+	$$PWD/src/sshsupport/Quissh.cpp \
+	$$PWD/src/sshsupport/SshDialog.cpp \
 	$$PWD/src/zip/zip.cpp \
 	$$PWD/src/zip/ziparchive.cpp \
 	$$PWD/src/zip/zipextract.cpp \
-    src/AboutDialog.cpp \
+	src/AboutDialog.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
 	src/AddRepositoriesCollectivelyDialog.cpp \
@@ -277,19 +294,27 @@ SOURCES += \
 	src/webclient.cpp
 
 HEADERS += \
+	$$PWD/src/GitTypes.h \
+	$$PWD/src/sshsupport/GitRemoteSshSession.h \
+    src/sshsupport/ConfirmRemoteSessionDialog.h \
+	$$PWD/src/AbstractGitSession.h \
 	$$PWD/src/CommitLogTableWidget.h \
 	$$PWD/src/GeneratedCommitMessage.h \
+	$$PWD/src/GitBasicSession.h \
+	$$PWD/src/GitCommandCache.h \
 	$$PWD/src/IncrementalSearch.h \
 	$$PWD/src/Profile.h \
 	$$PWD/src/RepositoryInfo.h \
 	$$PWD/src/RepositoryModel.h \
-    $$PWD/src/RepositoryTreeWidget.h \
-    $$PWD/src/StatusInfo.h \
+	$$PWD/src/RepositoryTreeWidget.h \
+	$$PWD/src/StatusInfo.h \
 	$$PWD/src/Util.h \
 	$$PWD/src/common/rwfile.h \
+	$$PWD/src/sshsupport/Quissh.h \
+	$$PWD/src/sshsupport/SshDialog.h \
 	$$PWD/src/zip/zip.h \
 	$$PWD/src/zip/zipinternal.h \
-    src/AboutDialog.h \
+	src/AboutDialog.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
 	src/AddRepositoriesCollectivelyDialog.h \
@@ -451,9 +476,11 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS    += \
+    src/sshsupport/ConfirmRemoteSessionDialog.ui \
 	$$PWD/src/GitConfigGlobalAddSafeDirectoryDialog.ui \
 	$$PWD/src/SettingAiForm.ui \
 	$$PWD/src/SettingOptionsForm.ui \
+	$$PWD/src/sshsupport/SshDialog.ui \
 	src/AboutDialog.ui \
 	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \

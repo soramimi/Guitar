@@ -156,12 +156,6 @@ private:
 	struct Private;
 	Private *m;
 
-	struct OpenRepositoyOption {
-		bool validate = false;
-		bool waitcursor = true;
-		bool keep_selection = false;
-	};
-
 	struct RepositoryTreeIndex {
 		int row = -1;
 	};
@@ -195,7 +189,21 @@ private:
 	void cancelUpdateFileList();
 	void initUpdateFileListTimer();
 
-	void openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, bool keep_selection);
+	struct OpenRepositoryOption {
+		bool new_session = true;
+
+		bool validate = false;
+		bool wait_cursor = true;
+		bool keep_selection = false;
+
+		bool clear_log = true;
+		bool do_fetch = true;
+	};
+	void openRepositoryMain(OpenRepositoryOption const &opt);
+	void openRepository(OpenRepositoryOption const &opt);
+	void reopenRepository(bool validate);
+	void openSelectedRepository();
+
 	void doReopenRepository(const ProcessStatus &status, const RepositoryInfo &repodata);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
@@ -273,14 +281,11 @@ private:
 	void internalClearRepositoryInfo();
 	void checkUser();
 
-	void openRepository(OpenRepositoyOption const &opt);
-	void reopenRepository(bool validate);
-
 	void setCurrentRepository(const RepositoryInfo &repo, bool clear_authentication);
-	void openSelectedRepository();
 	std::optional<QList<Git::Diff> > makeDiffs(GitRunner g, Git::Hash id);
-	void updateRemoteInfo(GitRunner g);
-	void queryRemotes(GitRunner g);
+
+	void updateRemoteInfo();
+
 	void submodule_add(QString url = {}, const QString &local_dir = {});
 	const Git::CommitItem &selectedCommitItem() const;
 	void commit(bool amend = false);
@@ -395,13 +400,13 @@ private:
 	std::vector<std::string> getLogHistoryLines();
 	void clearLogHistory();
 	void updateAvatar(const Git::User &user, bool request);
-	void cleanSubModule(QListWidgetItem *item);
+	void cleanSubModule(GitRunner g, QListWidgetItem *item);
 
 	void updateUncommitedChanges();
 	void enableDragAndDropOnRepositoryTree(bool enabled);
 	QString preferredRepositoryGroup() const;
 	void setPreferredRepositoryGroup(const QString &group);
-	bool addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save = true, bool msgbox_if_err = true);
+	bool _addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save = true, bool msgbox_if_err = true);
 	void addExistingLocalRepositoryWithGroup(const QString &dir, const QString &group);
 	bool addExistingLocalRepository(const QString &dir, bool open);
 	QString currentFileMimeFileType() const;
@@ -438,6 +443,8 @@ private:
 
 	void _chooseRepository(QTreeWidgetItem *item);
 	void chooseRepository();
+	void setCurrentGitRunner(GitRunner g);
+	void endSession();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -554,6 +561,8 @@ private slots:
 
 	void on_action_view_sort_by_time_changed();
 
+	void on_action_ssh_triggered();
+
 signals:
 	void signalUpdateCommitLog();
 	void signalSetProgress(float progress);
@@ -600,6 +609,7 @@ public:
 	// static QString treeItemName(QTreeWidgetItem *item);
 	// static QString treeItemGroup(QTreeWidgetItem *item);
 	static bool isValidWorkingCopy(GitRunner g);
+	bool isValidWorkingCopy(QString const &local_dir);
 	static QString abbrevCommitID(const Git::CommitItem &commit);
 
 	void drawDigit(QPainter *pr, int x, int y, int n) const;
@@ -639,9 +649,13 @@ public:
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
-	GitRunner git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
+	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
+	GitRunner unassosiated_git_runner() const;
+	GitRunner new_git_runner(const QString &dir, const QString &sshkey);
+	GitRunner new_git_runner();
 	GitRunner git();
-	GitRunner git(Git::SubmoduleItem const &submod);
+	static GitRunner git_for_submodule(GitRunner g, Git::SubmoduleItem const &submod);
+	bool isValidWorkingCopy(QString const &dir) const;
 	void autoOpenRepository(QString dir, const QString &commit_id = {});
 	std::optional<Git::CommitItem> queryCommit(const Git::Hash &id);
 	bool checkoutLocalBranch(QString const &name);
@@ -666,7 +680,7 @@ public:
 	QIcon signatureVerificationIcon(const Git::Hash &id) const;
 	QAction *addMenuActionProperty(QMenu *menu);
 	QString currentWorkingCopyDir() const;
-	Git::SubmoduleItem const *querySubmoduleByPath(const QString &path, Git::CommitItem *commit);
+
 	void refresh();
 	bool cloneRepository(const Git::CloneData &clonedata, const RepositoryInfo &repodata);
 	Git::User currentGitUser() const;

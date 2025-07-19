@@ -42,9 +42,9 @@ public:
 
 // GitDiff
 
-GitRunner GitDiff::git(Git::SubmoduleItem const &submod)
+GitRunner GitDiff::git_for_submodule(GitRunner g, Git::SubmoduleItem const &submod)
 {
-	return global->mainwindow->git(submod);
+	return global->mainwindow->git_for_submodule(g, submod);
 }
 
 QString GitDiff::makeKey(QString const &a_id, QString const &b_id)
@@ -266,20 +266,20 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 		if (diff->isSubmodule()) {
 			for (int j = 0; j < (int)submodules.size(); j++) {
 				if (submodules[j].path == diff->path) {
-					GitRunner g = git(submodules[j]);
+					GitRunner g2 = git_for_submodule(g, submodules[j]);
 					auto Do = [&](QString const &id, Git::Diff::SubmoduleDetail *out){
 						Git::SubmoduleItem const &mods = submodules[j];
 						if (id.startsWith('*')) {
 							out->item = mods;
-							out->item.id = g.rev_parse("HEAD");
-							auto commit = g.queryCommitItem(out->item.id);
+							out->item.id = g2.rev_parse("HEAD");
+							auto commit = g2.queryCommitItem(out->item.id);
 							if (commit) {
 								out->commit = *commit;
 							}
 						} else if (Git::isValidID(id)) {
 							out->item = mods;
 							out->item.id = Git::Hash(id);
-							auto commit = g.queryCommitItem(out->item.id);
+							auto commit = g2.queryCommitItem(out->item.id);
 							if (commit) {
 								out->commit = *commit;
 							}

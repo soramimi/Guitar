@@ -11,9 +11,9 @@ if $suffix.nil?
   $suffix = ''
 end
 
-$package = "guitar" + $suffix
+$package = "guitar"
 $maintainer = "S.Fuchita <fi7s-fct@asahi-net.or.jp>"
-$version = "#{$version_a}.#{$version_b}.#{$version_c}"
+$version = "#{$version_a}.#{$version_b}.#{$version_c}" + $suffix
 $workdir = "build"
 $dstdir = $workdir + "/#{$package}"
 

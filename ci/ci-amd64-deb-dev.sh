@@ -14,7 +14,7 @@ make -j8
 popd
 
 pushd packaging/deb
-export SUFFIX=-dev
+export SUFFIX=dev
 ruby mk-deb.rb
 file=`./debname.rb`
 curl -T $file ftp://192.168.0.5/Public/pub/nightlybuild/

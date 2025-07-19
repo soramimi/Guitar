@@ -158,7 +158,7 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 
 static QDateTime repositoryLastModifiedTime(QString const &path)
 {
-	GitRunner g = global->mainwindow->git(path, {}, {}, false);
+	GitRunner g = global->mainwindow->new_git_runner(path, {});
 	return g.repositoryLastModifiedTime();
 }
 

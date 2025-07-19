@@ -125,7 +125,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		prev_text = tr("Cancel");
 		ui->lineEdit_git->setFocus();
 	} else if (w == ui->page_default_branch_name) {
-		Git::Context gcx;
+		GitContext gcx;
 		gcx.git_command = git_command_path();
 		Git g(gcx, {}, {}, {});
 		default_branch_name_ = g.getDefaultBranch();
@@ -143,7 +143,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		}
 	} else if (w == ui->page_global_user_information) {
 		if (user_name().isEmpty() && user_email().isEmpty()) {
-			Git::Context gcx;
+			GitContext gcx;
 			gcx.git_command = git_command_path();
 			Git g(gcx, {}, {}, {});
 			Git::User user = g.getUser(Git::Source::Global);

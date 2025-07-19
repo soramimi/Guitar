@@ -8,9 +8,9 @@ if $suffix.nil?
 	$suffix = ''
 end
 
-$package = "guitar" + $suffix
+$package = "guitar"
 $arch = `./arch.rb`.strip
-$debname = "#{$package}_#{$version_a}.#{$version_b}.#{$version_c}_#{$arch}.deb"
+$debname = "#{$package}_#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}_#{$arch}.deb"
 
 puts $debname
 

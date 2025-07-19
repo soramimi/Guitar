@@ -51,8 +51,7 @@ void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)
 
 void CommitViewWindow::on_listWidget_files_customContextMenuRequested(const QPoint &pos)
 {
-	GitRunner g = mainwindow()->git();
-	if (!g.isValidWorkingCopy()) return;
+	if (!mainwindow()->git().isValidWorkingCopy()) return;
 
 	QMenu menu;
 	QAction *a_history = menu.addAction(tr("History"));

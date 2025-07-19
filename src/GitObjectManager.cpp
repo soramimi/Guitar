@@ -9,6 +9,7 @@
 #include <QFile>
 #include <memory>
 #include <set>
+#include "MemoryReader.h"
 #include "Profile.h"
 
 GitObjectManager::GitObjectManager()
@@ -185,6 +186,7 @@ QString GitObjectManager::findObjectPath(GitRunner g, Git::Hash const &id)
 		QString xx = name.mid(0, 2); // leading two xdigits
 		QString name2 = name.mid(2);  // remaining xdigits
 		QString dir = g.workingDir() / subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
+#if 0
 		QDirIterator it(dir, QDir::Files);
 		while (it.hasNext()) {
 			it.next();
@@ -196,6 +198,23 @@ QString GitObjectManager::findObjectPath(GitRunner g, Git::Hash const &id)
 				}
 			}
 		}
+#else
+		std::optional<std::vector<GitFileItem>> ret = g.ls(dir);
+		if (ret) {
+			for (GitFileItem const &item : *ret) {
+				if (item.name.startsWith(name2)) {
+					QString id = xx + item.name; // complete id
+					if (id.size() == GIT_ID_LENGTH && Git::isValidID(id)) {
+						absolute_path = dir / item.name;
+						count++;
+					}
+				}
+			}
+		} else {
+			qDebug() << Q_FUNC_INFO << "failed to list objects in" << dir;
+		}
+
+#endif
 		if (count == 1) return absolute_path;
 		if (count > 1) qDebug() << Q_FUNC_INFO << "ambiguous id" << id.toQString();
 	}
@@ -206,6 +225,7 @@ bool GitObjectManager::loadObject(GitRunner g, Git::Hash const &id, QByteArray *
 {
 	QString path = findObjectPath(g, id);
 	if (!path.isEmpty()) {
+#if 0
 		QFile file(path);
 		if (file.open(QFile::ReadOnly)) {
 			if (GitPack::decompress(&file, 1000000000, out)) {
@@ -216,6 +236,20 @@ bool GitObjectManager::loadObject(GitRunner g, Git::Hash const &id, QByteArray *
 				return true;
 			}
 		}
+#else
+		auto ret = g.readfile(path);
+		if (ret) {
+			MemoryReader reader(ret->data(), ret->size());
+			reader.open(MemoryReader::ReadOnly);
+			if (GitPack::decompress(&reader, 1000000000, out)) {
+				*type = GitPack::stripHeader(out);
+				if (*type == Git::Object::Type::TREE) {
+					GitPack::decodeTree(out);
+				}
+				return true;
+			}
+		}
+#endif
 	}
 	return false;
 }

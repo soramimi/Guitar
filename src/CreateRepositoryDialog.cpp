@@ -44,7 +44,7 @@ void CreateRepositoryDialog::accept()
 		QMessageBox::warning(this, tr("Create Repository"), tr("The specified path is not a directory."));
 		return;
 	}
-	if (Git::isValidWorkingCopy(path)) {
+	if (mainwindow()->isValidWorkingCopy(path)) {
 		QMessageBox::warning(this, tr("Create Repository"), already_exists_);
 		return;
 	}
@@ -97,7 +97,7 @@ void CreateRepositoryDialog::validate(bool change_name)
 	QString path = this->path();
 	{
 		QString text;
-		if (Git::isValidWorkingCopy(path)) {
+		if (mainwindow()->isValidWorkingCopy(path)) {
 			text = already_exists_;
 		}
 		ui->label_warning->setText(text);

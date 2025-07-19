@@ -74,6 +74,9 @@
 #include <sys/stat.h>
 #include <variant>
 #include <cctype>
+#include "sshsupport/GitRemoteSshSession.h"
+#include "sshsupport/ConfirmRemoteSessionDialog.h"
+#include "sshsupport/SshDialog.h"
 #include "RepositoryModel.h"
 #include "Util.h"
 #include "Profile.h"
@@ -113,6 +116,8 @@ struct MainWindow::Private {
 
 	RepositoryInfo current_repository;
 	RepositoryData current_repository_data;
+
+	GitRunner current_git_runner;
 
 	Git::User current_git_user;
 
@@ -1126,28 +1131,6 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
 }
 
 /**
- * @brief サブモジュール情報を取得する
- * @param path
- * @param commit コミット情報を取得（nullptr可）
- * @return
- */
-Git::SubmoduleItem const *MainWindow::querySubmoduleByPath(const QString &path, Git::CommitItem *commit)
-{
-	if (commit) *commit = {};
-	for (auto const &submod : m->submodules) {
-		if (submod.path == path) {
-			if (commit) {
-				GitRunner g = git(submod);
-				auto c = g.queryCommitItem(submod.id);
-				if (c) *commit = *c;
-			}
-			return &submod;
-		}
-	}
-	return nullptr;
-}
-
-/**
  * @brief MainWindow::color
  * @param depth 階層の深さ
  * @return 色
@@ -1177,7 +1160,7 @@ RepositoryInfo const *MainWindow::findRegisteredRepository(QString *workdir) con
 	*workdir = QDir(*workdir).absolutePath();
 	workdir->replace('\\', '/');
 
-	if (Git::isValidWorkingCopy(*workdir)) {
+	if (const_cast<MainWindow *>(this)->git().isValidWorkingCopy(*workdir)) {
 		for (RepositoryInfo const &item : repositoryList()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
@@ -1321,6 +1304,14 @@ void MainWindow::setCurrentRepository(const RepositoryInfo &repo, bool clear_aut
 		clearAuthentication();
 	}
 	m->current_repository = repo;
+	clearGitCommandCache();
+	getObjCache()->clear();
+}
+
+void MainWindow::endSession()
+{
+	// qDebug() << Q_FUNC_INFO;
+	setCurrentGitRunner({});
 	clearGitCommandCache();
 	getObjCache()->clear();
 }
@@ -1479,10 +1470,21 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 	setCommitLog(exdata);
 }
 
-void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, bool keep_selection)
+void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 {
 	ASSERT_MAIN_THREAD();
 
+	GitRunner g;
+	if (opt.new_session) {
+		endSession();
+
+		RepositoryInfo const &item = currentRepository();
+		g = new_git_runner(item.local_dir, item.ssh_key);
+
+		setCurrentGitRunner(g);
+	} else {
+		g = git();
+	}
 	if (!isValidWorkingCopy(g)) return;
 
 	PtyProcess *pty = getPtyProcess();
@@ -1492,13 +1494,10 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 
 	cancelUpdateFileList();
 
-	currentRepositoryData()->git_command_cache = Git::CommandCache(true);
+	currentRepositoryData()->git_command_cache = GitCommandCache(true);
 
-	if (clear_log) { // ログをクリア
+	if (opt.clear_log) { // ログをクリア
 		m->current_repository_data = {};
-		{
-			// showFileList(FileListType::MessagePanel); //@
-		}
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1530,7 +1529,7 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 
 		int scroll_pos = -1;
 		int select_row = -1;
-		if (keep_selection) {
+		if (opt.keep_selection) {
 			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
 			select_row = ui->tableWidget_log->currentRow();
 		}
@@ -1558,10 +1557,10 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 	// ウィンドウタイトルを更新
 	updateWindowTitle(user);
 
+	bool do_fetch = opt.do_fetch;
 	if (do_fetch) {
 		do_fetch = isOnlineMode() && appsettings()->automatically_fetch_when_opening_the_repository;
 	}
-
 	if (do_fetch) {
 		fetch(g, false);
 	} else {
@@ -1573,6 +1572,75 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
 }
 
 /**
+ * @brief MainWindow::openRepository
+ * @param validate バリデート
+ * @param wait_cursor ウェイトカーソル
+ * @param keep_selection 選択を保持する
+ *
+ * リポジトリを開く
+ */
+void MainWindow::openRepository(OpenRepositoryOption const &opt)
+{
+	struct DeferClearAllFilters {
+		~DeferClearAllFilters()
+		{
+			global->mainwindow->clearFilterText();
+		}
+	} defer_clear_all_filters; // 関数終了時にフィルタをクリアする
+
+	if (opt.validate) {
+		QString dir = currentWorkingCopyDir();
+		if (!QFileInfo(dir).isDir()) {
+			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark?"), QMessageBox::Ok, QMessageBox::Cancel);
+			if (r == QMessageBox::Ok) {
+				removeSelectedRepositoryFromBookmark(false);
+			}
+			return;
+		}
+		if (!unassosiated_git_runner().isValidWorkingCopy(dir)) {
+			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
+			return;
+		}
+	}
+
+	if (opt.wait_cursor) {
+		OpenRepositoryOption opt2 = opt;
+		opt2.validate = false;
+		opt2.wait_cursor = false;
+		openRepository(opt2);
+		return;
+	}
+
+	openRepositoryMain(opt);
+}
+
+void MainWindow::reopenRepository(bool validate)
+{
+	OpenRepositoryOption opt;
+	opt.new_session = false;
+	opt.validate = validate;
+	openRepository(opt);
+}
+
+/**
+ * @brief MainWindow::openSelectedRepository
+ *
+ * 選択されたリポジトリを開く
+ */
+void MainWindow::openSelectedRepository()
+{
+	std::optional<RepositoryInfo> repo = selectedRepositoryItem();
+
+	if (repo) {
+		setCurrentRepository(*repo, true);
+		// reopenRepository(true);
+		OpenRepositoryOption opt;
+		opt.validate = true;
+		openRepository(opt);
+	}
+}
+
+/**
  * @brief MainWindow::addExistingLocalRepository
  * @param dir ディレクトリ
  * @param name 名前
@@ -1581,7 +1649,7 @@ void MainWindow::openRepositoryMain(GitRunner g, bool clear_log, bool do_fetch, 
  *
  * 既存のリポジトリを追加する
  */
-bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save, bool msgbox_if_err)
+bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString sshkey, bool open, bool save, bool msgbox_if_err)
 {
 #ifdef Q_OS_WIN
 	dir = dir.replace('\\', '/');
@@ -1599,7 +1667,7 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 
 	dir = misc::normalizePathSeparator(dir);
 
-	if (!Git::isValidWorkingCopy(dir)) {
+	if (!git().isValidWorkingCopy(dir)) {
 		auto isBareRepository = [](QString const &dir){
 			if (QFileInfo(dir).isDir()) {
 				if (QFileInfo(dir / "config").isFile()) {
@@ -1648,8 +1716,11 @@ bool MainWindow::addExistingLocalRepository(QString dir, QString name, QString s
 
 	if (open) {
 		setCurrentRepository(item, true);
-		GitRunner g = git(item.local_dir, {}, sshkey);
-		openRepositoryMain(g, true, false, false);
+		OpenRepositoryOption opt;
+		opt.clear_log = true;
+		opt.do_fetch = false;
+		opt.keep_selection = false;
+		openRepositoryMain(opt);
 	}
 
 	return true;
@@ -1679,7 +1750,7 @@ void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const Q
 
 bool MainWindow::addExistingLocalRepository(const QString &dir, bool open)
 {
-	return addExistingLocalRepository(dir, {}, {}, open);
+	return _addExistingLocalRepository(dir, {}, {}, open);
 }
 
 /**
@@ -1749,7 +1820,7 @@ void MainWindow::execRepositoryPropertyDialog(const RepositoryInfo &repo, bool o
 	if (name.isEmpty()) {
 		name = makeRepositoryName(workdir);
 	}
-	GitRunner g = git(workdir, {}, repo.ssh_key);
+	GitRunner g = new_git_runner(workdir, repo.ssh_key);
 	RepositoryPropertyDialog dlg(this, g, repo, open_repository_menu);
 	dlg.exec();
 	if (dlg.isRemoteChanged()) {
@@ -1827,7 +1898,7 @@ void MainWindow::setGpgCommand(QString const &path, bool save)
 
 	internalSaveCommandPath(appsettings()->gpg_command, save, "GpgCommand");
 	if (!global->appsettings.gpg_command.isEmpty()) {
-		GitRunner g = git();
+		GitRunner g = unassosiated_git_runner();
 		g.configGpgProgram(global->appsettings.gpg_command, true);
 	}
 }
@@ -2011,7 +2082,8 @@ void MainWindow::internalSaveCommandPath(const QString &path, bool save, const Q
  */
 void MainWindow::logGitVersion()
 {
-	GitRunner g = git();
+	// GitRunner g = git();
+	GitRunner g = unassosiated_git_runner();
 	QString s = g.version();
 	if (!s.isEmpty()) {
 		s += '\n';
@@ -2050,81 +2122,6 @@ void MainWindow::checkUser()
 }
 
 /**
- * @brief MainWindow::openRepository
- * @param validate バリデート
- * @param waitcursor ウェイトカーソル
- * @param keep_selection 選択を保持する
- *
- * リポジトリを開く
- */
-void MainWindow::openRepository(OpenRepositoyOption const &opt)
-{
-	struct DeferClearAllFilters {
-		~DeferClearAllFilters()
-		{
-			global->mainwindow->clearFilterText();
-		}
-	} defer_clear_all_filters; // 関数終了時にフィルタをクリアする
-
-	if (opt.validate) {
-		QString dir = currentWorkingCopyDir();
-		if (!QFileInfo(dir).isDir()) {
-			int r = QMessageBox::warning(this, tr("Open Repository"), dir + "\n\n" + tr("No such folder") + "\n\n" + tr("Remove from bookmark?"), QMessageBox::Ok, QMessageBox::Cancel);
-			if (r == QMessageBox::Ok) {
-				removeSelectedRepositoryFromBookmark(false);
-			}
-			return;
-		}
-		if (!Git::isValidWorkingCopy(dir)) {
-			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
-			return;
-		}
-	}
-
-	if (opt.waitcursor) {
-		OpenRepositoyOption opt2 = opt;
-		opt2.validate = false;
-		opt2.waitcursor = false;
-		openRepository(opt2);
-		return;
-	}
-
-	{
-		GitRunner g = git();
-		if (!g) {
-			qDebug() << "Guitar: git pointer is null";
-			return;
-		}
-
-		openRepositoryMain(g, true, true, opt.keep_selection);
-	}
-}
-
-void MainWindow::reopenRepository(bool validate)
-{
-	OpenRepositoyOption opt;
-	opt.validate = validate;
-	opt.waitcursor = true;
-	opt.keep_selection = false;
-	openRepository(opt);
-}
-
-/**
- * @brief MainWindow::openSelectedRepository
- *
- * 選択されたリポジトリを開く
- */
-void MainWindow::openSelectedRepository()
-{
-	std::optional<RepositoryInfo> repo = selectedRepositoryItem();
-
-	if (repo) {
-		setCurrentRepository(*repo, true);
-		reopenRepository(true);
-	}
-}
-
-/**
  * @brief MainWindow::makeDiffs
  * @param id ID
  *
@@ -2132,9 +2129,7 @@ void MainWindow::openSelectedRepository()
  */
 std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 {
-	if (!isValidWorkingCopy(g)) {
-		return std::nullopt;
-	}
+	if (!isValidWorkingCopy(g)) return std::nullopt;
 
 	if (!id && !isThereUncommitedChanges()) {
 		id = Git::Hash(getObjCache()->revParse(g, "HEAD"));
@@ -2159,9 +2154,15 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
  *
  * リモート情報を更新する
  */
-void MainWindow::updateRemoteInfo(GitRunner g)
+void MainWindow::updateRemoteInfo()
 {
-	queryRemotes(g);
+	ASSERT_MAIN_THREAD();
+
+	{
+		GitRunner g = git();
+		m->remotes = g.getRemotes();
+		std::sort(m->remotes.begin(), m->remotes.end());
+	}
 
 	m->current_remote_name = QString();
 	{
@@ -2177,27 +2178,19 @@ void MainWindow::updateRemoteInfo(GitRunner g)
 	emit remoteInfoChanged();
 }
 
-/**
- * @brief MainWindow::queryRemotes
- * @param g git
- *
- * リモートを取得する
- */
-void MainWindow::queryRemotes(GitRunner g)
-{
-	if (!g) return;
-	m->remotes = g.getRemotes();
-	std::sort(m->remotes.begin(), m->remotes.end());
-}
-
 void MainWindow::internalAfterFetch()
 {
 	PROFILE;
 	ASSERT_MAIN_THREAD();
 
-	GitRunner g = git();
-	updateRemoteInfo(g);
-	openRepositoryMain(git(), false, false, true);
+	updateRemoteInfo();
+
+	OpenRepositoryOption opt;
+	opt.new_session = false;
+	opt.clear_log = false;
+	opt.do_fetch = false;
+	opt.keep_selection = true;
+	openRepositoryMain(opt);
 }
 
 #define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
@@ -2252,7 +2245,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 		}
 	}
 
-	currentRepositoryData()->git_command_cache.clear();
+	currentRepositoryData()->git_command_cache = {};
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -2316,7 +2309,7 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
  */
 void MainWindow::clone(CloneParams const &a)
 {
-	GitRunner g = git({}, {}, a.repodata.ssh_key);
+	GitRunner g = new_git_runner({}, a.repodata.ssh_key);
 	runPtyGit(tr("Cloning..."), g, Git_clone{a.clonedata}, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
 		std::vector<std::string> log = misc::splitLines(status.log_message, false);
@@ -2437,7 +2430,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	Git::CloneData data = Git::preclone(url, dir);
 	bool force = dlg.isForce();
 
-	GitRunner g = git(local_dir, {}, repos_item_data.ssh_key);
+	GitRunner g = new_git_runner(local_dir, repos_item_data.ssh_key);
 
 	std::shared_ptr<Git_submodule_add> params = std::make_shared<Git_submodule_add>(data, force);
 	runPtyGit(tr("Submodule..."), g, *params, nullptr, {});
@@ -2567,7 +2560,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 				return;
 			}
 		}
-		updateRemoteInfo(git());
+		updateRemoteInfo();
 		reopenRepository(true);
 	}, {});
 }
@@ -2701,9 +2694,9 @@ void MainWindow::deleteBranch(Git::CommitItem const &commit)
 			}
 		}
 		if (count > 0) {
-			OpenRepositoyOption opt;
+			OpenRepositoryOption opt;
 			opt.validate = true;
-			opt.waitcursor = true;
+			opt.wait_cursor = true;
 			opt.keep_selection = true;
 			openRepository(opt);
 		}
@@ -2793,14 +2786,14 @@ void MainWindow::createRepository(const QString &dir)
 	if (dlg.exec() == QDialog::Accepted) {
 		QString path = dlg.path();
 		if (QFileInfo(path).isDir()) {
-			if (Git::isValidWorkingCopy(path)) {
+			if (git().isValidWorkingCopy(path)) {
 				// A valid git repository already exists there.
 			} else {
-				GitRunner g = git(path, {}, {});
+				GitRunner g = new_git_runner(path, {});
 				if (g.init()) {
 					QString name = dlg.name();
 					if (!name.isEmpty()) {
-						addExistingLocalRepository(path, name, {}, true);
+						_addExistingLocalRepository(path, name, {}, true);
 					}
 					QString remote_name = dlg.remoteName();
 					QString remote_url = dlg.remoteURL();
@@ -2832,16 +2825,16 @@ void MainWindow::createRepository(const QString &dir)
 void MainWindow::initRepository(QString const &path, QString const &reponame, Git::Remote const &remote)
 {
 	if (QFileInfo(path).isDir()) {
-		if (Git::isValidWorkingCopy(path)) {
+		if (git().isValidWorkingCopy(path)) {
 			// A valid git repository already exists there.
 		} else {
-			GitRunner g = git(path, {}, remote.ssh_key);
+			GitRunner g = new_git_runner(path, remote.ssh_key);
 			if (g.init()) {
 				if (!remote.name.isEmpty() && !remote.url_fetch.isEmpty()) {
 					g.addRemoteURL(remote);
 					changeSshKey(path, remote.ssh_key, false);
 				}
-				addExistingLocalRepository(path, reponame, remote.ssh_key, true);
+				_addExistingLocalRepository(path, reponame, remote.ssh_key, true);
 			}
 		}
 	}
@@ -2897,7 +2890,7 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 			QFileInfo info = it.fileInfo();
 			QString local_dir = info.absoluteFilePath();
 			if (existing.find(local_dir) == existing.end()) {
-				if (Git::isValidWorkingCopy(local_dir)) {
+				if (git().isValidWorkingCopy(local_dir)) {
 					dirs.push_back(local_dir);
 				}
 			}
@@ -2929,9 +2922,9 @@ void MainWindow::doGitCommand(const std::function<void (GitRunner)> &callback)
 	GitRunner g = git();
 	if (g.isValidWorkingCopy()) {
 		callback(g);
-		OpenRepositoyOption opt;
+		OpenRepositoryOption opt;
 		opt.validate = false;
-		opt.waitcursor = false;
+		opt.wait_cursor = false;
 		opt.keep_selection = false;
 		openRepository(opt);
 	}
@@ -3434,7 +3427,7 @@ void MainWindow::msgNoRepositorySelected()
 
 bool MainWindow::isRepositoryOpened() const
 {
-	return Git::isValidWorkingCopy(currentWorkingCopyDir());
+	return const_cast<MainWindow *>(this)->isValidWorkingCopy(currentWorkingCopyDir());
 }
 
 /**
@@ -4121,8 +4114,8 @@ void MainWindow::updateFileList(Git::Hash const &id)
 				if (diff) {
 					obj.submod = diff->b_submodule.item; // TODO:
 					if (obj.submod) {
-						GitRunner g = git(obj.submod);
-						auto sc = g.queryCommitItem(obj.submod.id);
+						GitRunner g2 = git_for_submodule(g, obj.submod);
+						auto sc = g2.queryCommitItem(obj.submod.id);
 						if (sc) {
 							obj.submod_commit = *sc;
 						}
@@ -4468,7 +4461,7 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 {
 	ui->action_clone->setEnabled(enabled); // クローンコマンドの有効性を設定
 
-	if (!Git::isValidWorkingCopy(currentWorkingCopyDir())) { // 現在のディレクトリが有効なgitリポジトリなら
+	if (!git().isValidWorkingCopy(currentWorkingCopyDir())) { // 現在のディレクトリが有効なgitリポジトリなら
 		enabled = false; // その他のコマンドは無効
 	}
 
@@ -4872,7 +4865,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 			std::vector<QString> urls;
 			{
 				std::vector<Git::Remote> remotes;
-				git(repo->local_dir, {}, {}).remote_v(&remotes);
+				new_git_runner(repo->local_dir, {}).remote_v(&remotes);
 				for (Git::Remote const &r : remotes) {
 					urls.push_back(r.url_fetch);
 					urls.push_back(r.url_push);
@@ -5132,11 +5125,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		if (a == a_delete) {
 			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
 				for_each_selected_files([&](QString const &path){
-					g.removeFile(path);
-					g.chdirexec([&](){
-						QFile(path).remove();
-						return true;
-					});
+					g.removeFile(path, true);
 				});
 				reopenRepository(false);
 			}
@@ -5152,7 +5141,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		} else if (a == a_blame) {
 			blame(item);
 		} else if (a == a_clean) {
-			cleanSubModule(item);
+			cleanSubModule(g, item);
 		} else if (a == a_properties) {
 			showObjectProperty(item);
 		}
@@ -5251,11 +5240,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 			if (a == a_delete) {
 				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
 					for_each_selected_files([&](QString const &path){
-						g.removeFile(path);
-						g.chdirexec([&](){
-							QFile(path).remove();
-							return true;
-						});
+						g.removeFile(path, true);
 					});
 					reopenRepository(false);
 				}
@@ -5342,6 +5327,7 @@ QStringList MainWindow::selectedFiles() const
 void MainWindow::for_each_selected_files(std::function<void(QString const&)> const &fn)
 {
 	for (QString const &path : selectedFiles()) {
+		qDebug() << path;
 		fn(path);
 	}
 }
@@ -5380,7 +5366,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 	}
 }
 
-void MainWindow::cleanSubModule(QListWidgetItem *item)
+void MainWindow::cleanSubModule(GitRunner g, QListWidgetItem *item)
 {
 	QString submodpath = getSubmodulePath(item);
 	if (submodpath.isEmpty()) return;
@@ -5392,12 +5378,12 @@ void MainWindow::cleanSubModule(QListWidgetItem *item)
 	CleanSubModuleDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		auto opt = dlg.options();
-		GitRunner g = git(submod);
+		GitRunner g2 = git_for_submodule(g, submod);
 		if (opt.reset_hard) {
-			g.reset_hard();
+			g2.reset_hard();
 		}
 		if (opt.clean_df) {
-			g.clean_df();
+			g2.clean_df();
 		}
 	}
 }
@@ -5499,10 +5485,18 @@ QString MainWindow::selectSshCommand(bool save)
 	return selectCommand_("ssh", cmdlist, list, path, fn);
 }
 
-GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
+void MainWindow::setCurrentGitRunner(GitRunner g)
 {
+	m->current_git_runner = g;
+}
+
+GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
+{
+	if (!dir.isEmpty()) {
+		qDebug() << "_git" << dir;
+	}
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
-	if (QFileInfo(g->gitCommand()).isExecutable()) {
+	if (g->isValidGitCommand()) {
 		if (use_cache) {
 			g->setCommandCache(currentRepositoryData()->git_command_cache);
 		}
@@ -5514,18 +5508,38 @@ GitRunner MainWindow::git(const QString &dir, const QString &submodpath, const Q
 	return {};
 }
 
-GitRunner MainWindow::git()
+GitRunner MainWindow::unassosiated_git_runner() const
 {
-	RepositoryInfo const &item = currentRepository();
-	return git(item.local_dir, {}, item.ssh_key);
+	return _git({}, {}, {}, false);
 }
 
-GitRunner MainWindow::git(const Git::SubmoduleItem &submod)
+GitRunner MainWindow::new_git_runner(const QString &dir, const QString &sshkey)
 {
-	//// if (!submod) return {};
-	// ↑submodが無効でもnullではないオブジェクトを返す
+	return _git(dir, {}, sshkey);
+}
+
+GitRunner MainWindow::new_git_runner()
+{
 	RepositoryInfo const &item = currentRepository();
-	return git(item.local_dir, submod.path, item.ssh_key);
+	return new_git_runner(item.local_dir, item.ssh_key);
+}
+
+GitRunner MainWindow::git()
+{
+	return m->current_git_runner;
+ }
+
+GitRunner MainWindow::git_for_submodule(GitRunner g, const Git::SubmoduleItem &submod)
+{
+	GitRunner g2 = g.dup();
+	g2.setSubmodulePath(submod.path);
+	return g2;
+}
+
+bool MainWindow::isValidWorkingCopy(QString const &dir) const
+{
+	auto g = unassosiated_git_runner();
+	return g.isValidWorkingCopy(dir);
 }
 
 Git::User MainWindow::currentGitUser() const
@@ -5552,8 +5566,7 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 	}
 
 	RepositoryInfo newitem;
-	GitRunner g = git(dir, {}, {});
-	if (isValidWorkingCopy(g)) {
+	if (isValidWorkingCopy(dir)) {
 		ushort const *left = dir.utf16();
 		ushort const *right = left + dir.size();
 		if (right[-1] == '/' || right[-1] == '\\') {
@@ -5689,6 +5702,12 @@ TextEditorThemePtr MainWindow::themeForTextEditor()
 bool MainWindow::isValidWorkingCopy(GitRunner g)
 {
 	return g && g.isValidWorkingCopy();
+}
+
+bool MainWindow::isValidWorkingCopy(QString const &local_dir)
+{
+	GitRunner g = new_git_runner(local_dir, {});
+	return isValidWorkingCopy(g);
 }
 
 void MainWindow::emitWriteLog(const LogData &logdata)
@@ -5916,7 +5935,7 @@ void MainWindow::on_action_view_refresh_triggered()
 
 void MainWindow::clearGitCommandCache()
 {
-	m->current_repository_data.git_command_cache.clear();
+	m->current_repository_data.git_command_cache = {};
 }
 
 void MainWindow::on_toolButton_stage_clicked()
@@ -6388,13 +6407,13 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 		return false;
 	}
 	stopPtyProcess();
-	GitRunner g = git({}, {}, sshkey);
+	GitRunner g = new_git_runner({}, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
-	Git::Option opt;
+	AbstractGitSession::Option opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
-	bool f = g.git->git(cmd, opt);
+	bool f = g.git->exec_git(cmd, opt);
 	{
 		QElapsedTimer time;
 		time.start();
@@ -7201,7 +7220,7 @@ void MainWindow::on_action_submodules_triggered()
 		const Git::SubmoduleItem mod = mods[(int)i];
 		mods2[i].submodule = mod;
 
-		GitRunner g2 = git(g.workingDir(), mod.path, g.sshKey());
+		GitRunner g2 = git_for_submodule(g, mod);
 		auto commit = g2.queryCommitItem(mod.id);
 		if (commit) {
 			mods2[i].head = *commit;
@@ -7273,14 +7292,10 @@ void MainWindow::on_action_view_sort_by_time_changed()
 	onRepositoryTreeSortRecent(f);
 }
 
-void MainWindow::test()
-{
-}
-
 int genmsg()
 {
 	global->appsettings = ApplicationSettings::loadSettings();
-	Git::Context gcx;
+	GitContext gcx;
 	gcx.git_command = global->appsettings.git_command;
 
 	QString dir = QDir::currentPath();
@@ -7314,3 +7329,75 @@ int genmsg()
 }
 
 
+
+void MainWindow::on_action_ssh_triggered()
+{
+#ifdef UNSAFE_ENABLED
+	if (global->isUnsafeEnabled()) {
+#if 1
+		RepositoryInfo item;
+		item.local_dir = "/home/soramimi/develop/Guitar";
+		item.name = "Guitar";
+		setCurrentRepository(item, true);
+		OpenRepositoryOption opt;
+		opt.clear_log = true;
+		opt.do_fetch = false;
+		opt.keep_selection = false;
+		openRepositoryMain(opt);
+		return;
+#else
+		GitRemoteSshSession session;
+		SshDialog dlg(this, session.ssh_.get());
+		QString host = "192.168.0.80";
+		dlg.setHostName(host);
+		if (dlg.exec() == QDialog::Accepted) {
+			QString path = dlg.selectedPath();
+			bool yes = false;
+			std::string gitcmd;
+			{
+				session.ssh_->add_allowed_command("which");
+				auto ret = session.ssh_->exec("which git");
+				if (ret) {
+					gitcmd = misc::trimmed(*ret);
+					// auto r = QMessageBox::question(this, tr("Confirmation"), tr("Do you agree to run %1 on %2 ?").arg(QString::fromStdString(gitcmd)).arg(host), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+					ConfirmRemoteSessionDialog dlg(this);
+					QString remote_path = host + ':' + path;
+					QString remote_command = host + ':' + QString::fromStdString(gitcmd);
+					if (dlg.exec(remote_path, remote_command) == QMessageBox::Accepted) {
+						yes = true;
+					}
+				}
+			}
+			if (yes) {
+				session.ssh_->add_allowed_command(gitcmd);
+				{
+					std::string cmd = gitcmd + ' ' + "--version";
+					auto ret = session.ssh_->exec(cmd.c_str());
+					if (ret) {
+						qDebug() << QString::fromStdString(*ret);
+					}
+				}
+			}
+		}
+		return;
+#endif
+	}
+#endif
+	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Warning, QMessageBox::Ok);
+}
+
+
+std::string normalize_path(char const *path);
+
+void MainWindow::test()
+{
+	std::string path = normalize_path("/home/../username/.config/gitg");
+	if (path.empty()) {
+		qDebug() << "normalize_path failed";
+	} else {
+		qDebug() << "normalize_path: " << QString::fromStdString(path);
+	}
+
+	// genmsg();
+
+}

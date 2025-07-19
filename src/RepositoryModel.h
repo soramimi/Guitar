@@ -2,11 +2,8 @@
 #define REPOSITORYMODEL_H
 
 #include "BranchLabel.h"
+#include "GitCommandCache.h"
 #include "GitObjectManager.h"
-#include "RepositoryInfo.h"
-#include <optional>
-#include <map>
-#include <memory>
 
 typedef QList<Git::Tag> TagList;
 typedef QList<Git::Branch> BranchList;
@@ -21,7 +18,7 @@ struct RepositoryData {
 	std::map<QString, Git::Diff> diff_cache;
 	GitObjectCache object_cache;
 
-	Git::CommandCache git_command_cache;
+	GitCommandCache git_command_cache;
 };
 
 struct CommitLogExchangeData {

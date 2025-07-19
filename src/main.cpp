@@ -162,6 +162,11 @@ int main(int argc, char *argv[])
 					}
 				} else if (arg == "--genmsg") { // experimental
 					return genmsg();
+				} else if (arg == "--unsafe") { // experimental
+#ifdef UNSAFE_ENABLED
+					global->unsafe_enabled = true;
+					qDebug() << "Unsafe mode enabled.";
+#endif
 				}
 			} else {
 				args.push_back(QString::fromStdString(arg));

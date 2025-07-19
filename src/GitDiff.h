@@ -16,7 +16,7 @@ private:
 
 	using MapList = std::list<LookupTable>;
 
-	GitRunner git(const Git::SubmoduleItem &submod);
+	GitRunner git_for_submodule(GitRunner g, const Git::SubmoduleItem &submod);
 
 	static void AddItem(Git::Diff *item, QList<Git::Diff> *diffs);
 

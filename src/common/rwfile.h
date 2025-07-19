@@ -4,8 +4,9 @@
 #include <vector>
 #include <cstddef>  // for size_t
 #include <stdlib.h>
+#include <optional>
 
-bool readfile(char const *path, std::vector<char> *out, int maxsize);
+std::optional<std::vector<char>> readfile(char const *path, int maxsize);
 bool writefile(char const *path, char const *ptr, size_t len);
 
 #endif // RWFILE_H

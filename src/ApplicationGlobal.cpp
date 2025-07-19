@@ -21,9 +21,9 @@ ApplicationGlobal::~ApplicationGlobal()
 	delete m;
 }
 
-Git::Context ApplicationGlobal::gcx()
+GitContext ApplicationGlobal::gcx()
 {
-	Git::Context gcx;
+	GitContext gcx;
 	gcx.git_command = appsettings.git_command;
 	gcx.ssh_command = appsettings.ssh_command;
 	return gcx;
@@ -200,7 +200,7 @@ std::string ApplicationGlobal::determineFileType(QByteArray const &in)
 	}
 
 	std::string mime = filetype.file(in.data(), in.size()).mimetype;
-	qDebug() << QString::fromStdString(mime);
+	// qDebug() << QString::fromStdString(mime);
 	return mime;
 }
 
