@@ -107,7 +107,8 @@ win32:gcc {
 
 msvc:CONFIG(release, debug|release):LIBS += $$PWD/filetype/lib/filetype.lib $$PWD/filetype/lib/oniguruma.lib $$PWD/filetype/lib/file.lib
 msvc:CONFIG(debug, debug|release):LIBS += $$PWD/filetype/lib/filetyped.lib $$PWD/filetype/lib/onigurumad.lib $$PWD/filetype/lib/filed.lib
-!msvc:LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/liboniguruma.a $$PWD/filetype/lib/libfile.a
+# !msvc:LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/liboniguruma.a $$PWD/filetype/lib/libfile.a
+!msvc:LIBS += $$PWD/filetype/lib/libfiletyped.a $$PWD/filetype/lib/libonigurumad.a $$PWD/filetype/lib/libfiled.a
 
 #
 
@@ -126,6 +127,9 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/SimpleQtIO.cpp \
+	$$PWD/src/common/AbstractSimpleIO.cpp \
+	$$PWD/src/gzip.cpp \
     src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \
@@ -274,7 +278,6 @@ SOURCES += \
 	src/darktheme/NinePatch.cpp \
 	src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
 	src/gpg.cpp \
-	src/gunzip.cpp \
 	src/main.cpp\
 	src/platform.cpp \
 	src/texteditor/AbstractCharacterBasedApplication.cpp \
@@ -291,6 +294,9 @@ SOURCES += \
 	src/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/SimpleQtIO.h \
+	$$PWD/src/common/AbstractSimpleIO.h \
+	$$PWD/src/gzip.h \
     src/AboutDialog.h \
 	src/AbstractGitSession.h \
 	src/AbstractProcess.h \
@@ -452,7 +458,6 @@ HEADERS += \
 	src/dtl/functors.hpp \
 	src/dtl/variables.hpp \
 	src/gpg.h \
-	src/gunzip.h \
 	src/platform.h \
 	src/texteditor/AbstractCharacterBasedApplication.h \
 	src/texteditor/InputMethodPopup.h \

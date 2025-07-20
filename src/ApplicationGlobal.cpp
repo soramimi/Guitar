@@ -5,7 +5,8 @@
 #include <QBuffer>
 #include "IncrementalSearch.h"
 #include "MemoryReader.h"
-#include "gunzip.h"
+#include "SimpleQtIO.h"
+#include "gzip.h"
 
 struct ApplicationGlobal::Private {
 	IncrementalSearch incremental_search;
@@ -32,12 +33,9 @@ GitContext ApplicationGlobal::gcx()
 void ApplicationGlobal::init(QApplication *a)
 {
 	(void)a;
-	{
-		QFile file(":/filemagic/magic.mgc"); // load magic from resource
-		file.open(QFile::ReadOnly);
-		QByteArray ba = file.readAll();
-		filetype.open(ba.data(), ba.size());
-	}
+
+	bool ok = filetype.open();
+	Q_ASSERT(ok);
 
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources
@@ -184,13 +182,15 @@ std::string ApplicationGlobal::determineFileType(QByteArray const &in)
 	if (in.size() > 10) {
 		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
 			QBuffer buf;
-			MemoryReader reader(in.data(), in.size());
+			MemoryReader mem(in.data(), in.size());
 
-			reader.open(MemoryReader::ReadOnly);
+			mem.open(MemoryReader::ReadOnly);
 			buf.open(QBuffer::WriteOnly);
-			gunzip z;
+			gzip z;
 			z.set_maximul_size(100000);
-			z.decode(&reader, &buf);
+			SimpleQtReader reader(&mem);
+			SimpleQtWriter writer(&buf);
+			z.decompress(&reader, &writer);
 
 			QByteArray uz = buf.buffer();
 			if (!uz.isEmpty()) {

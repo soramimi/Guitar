@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include "gzip.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -284,6 +285,78 @@ FileType::Result parse_mime(std::string const &mime)
 
 // FileType implementation
 
+class MagicReader : public AbstractSimpleReader {
+private:
+	char const *data_ = nullptr;
+	size_t size_ = 0;
+	size_t offset_ = 0;
+public:
+	MagicReader(char const *data, size_t size)
+		: data_(data)
+		, size_(size)
+	{
+	}
+	int read(void *ptr, size_t len)
+	{
+		if (offset_ >= size_) return 0;
+		size_t to_read = std::min(len, size_ - offset_);
+		memcpy(ptr, data_ + offset_, to_read);
+		offset_ += to_read;
+		return static_cast<int>(to_read);
+	}
+	int64_t pos() const
+	{
+		return static_cast<int64_t>(offset_);
+	}
+	void seek(int64_t pos)
+	{
+		offset_ = static_cast<size_t>(pos);
+	}
+};
+
+class MagicWriter : public AbstractSimpleWriter {
+private:
+	std::vector<char> *buffer_;
+public:
+	MagicWriter(std::vector<char> *buffer)
+		: buffer_(buffer)
+	{
+	}
+	int write(const void *ptr, size_t len)
+	{
+		size_t old_size = buffer_->size();
+		buffer_->resize(old_size + len);
+		memcpy(buffer_->data() + old_size, ptr, len);
+		return static_cast<int>(len);
+	}
+};
+
+extern unsigned char magic_mgc_gz[];
+extern unsigned int magic_mgc_gz_len;
+
+bool FileType::open()
+{
+	if (magic_set_) return true;
+	magic_set_ = magic_open(MAGIC_MIME);
+	if (!magic_set_) {
+		fprintf(stderr, "unable to initialize magic library\n");
+		return false;
+	}
+
+	// decompress the magic file
+	MagicReader reader((char const *)magic_mgc_gz, magic_mgc_gz_len);
+	MagicWriter writer(&mgcdata_);
+	gzip gz;
+	gz.decompress(&reader, &writer);
+
+	void *bufs[1];
+	size_t sizes[1];
+	bufs[0] = mgcdata_.data();
+	sizes[0] = mgcdata_.size();
+	return 0 == magic_load_buffers((magic_t)magic_set_, bufs, sizes, 1);
+}
+
+#if 0
 bool FileType::open(const char *mgcptr, size_t mgclen)
 {
 	if (magic_set) return true;
@@ -300,7 +373,7 @@ bool FileType::open(const char *mgcptr, size_t mgclen)
 		void *bufs[1];
 		size_t sizes[1];
 		bufs[0] = mgcdata.data();
-		sizes[0] = mgclen;
+		sizes[0] = mgcdata.size();
 		if (magic_load_buffers((magic_t)magic_set, bufs, sizes, 1) == 0) {
 			ok = true;
 		}
@@ -355,15 +428,16 @@ bool FileType::open(const char *mgcfile)
 	}
 	return ok;
 }
+#endif
 
 /**
  * @brief Close the file type object
  */
 void FileType::close()
 {
-	if (magic_set) {
-		magic_close((magic_t)magic_set);
-		magic_set = nullptr;
+	if (magic_set_) {
+		magic_close((magic_t)magic_set_);
+		magic_set_ = nullptr;
 	}
 }
 
@@ -385,7 +459,7 @@ size_t FileType::slop_size()
  */
 FileType::Result FileType::file(int fd) const
 {
-	if (!magic_set) {
+	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
 		return {};
 	}
@@ -399,7 +473,7 @@ FileType::Result FileType::file(int fd) const
 			std::vector<unsigned char> buf(nbytes);
 			nbytes = read(fd, buf.data(), buf.size());
 			lseek(fd, 0, SEEK_SET);
-			char const *p = _fd_or_buf((magic_t )magic_set, fd, buf.data(), nbytes, &st, false);
+			char const *p = _fd_or_buf((magic_t )magic_set_, fd, buf.data(), nbytes, &st, false);
 			if (p) {
 				mime = p;
 			}
@@ -416,7 +490,7 @@ FileType::Result FileType::file(int fd) const
  */
 FileType::Result FileType::file(const char *filepath) const
 {
-	if (!magic_set) {
+	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
 		return {};
 	}
@@ -442,7 +516,7 @@ FileType::Result FileType::file(const char *filepath) const
  */
 FileType::Result FileType::file(const char *data, size_t size, int st_mode) const
 {
-	if (!magic_set) {
+	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
 		return {};
 	}
@@ -451,6 +525,6 @@ FileType::Result FileType::file(const char *data, size_t size, int st_mode) cons
 	st = {};
 	st.st_size = size;
 	st.st_mode = st_mode;
-	char const *p = _fd_or_buf((magic_t )magic_set, -1, (unsigned char *)data, size, &st, false);
+	char const *p = _fd_or_buf((magic_t )magic_set_, -1, (unsigned char *)data, size, &st, false);
 	return p ? parse_mime(p) : Result();
 }

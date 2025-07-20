@@ -9,6 +9,8 @@ _build/
 configure.lineno
 
 lib/__.SYMDEF SORTED
+lib/*.gz
+
 oniguruma/INSTALL
 oniguruma/compile
 oniguruma/config.guess

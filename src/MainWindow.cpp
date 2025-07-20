@@ -55,7 +55,7 @@
 #include "Util.h"
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
-#include "gunzip.h"
+#include "gzip.h"
 #include "platform.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -7385,6 +7385,9 @@ void MainWindow::on_action_ssh_triggered()
 
 
 std::string normalize_path(char const *path);
+
+#include "SimpleQtIO.h"
+#include <QBuffer>
 
 void MainWindow::test()
 {

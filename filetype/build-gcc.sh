@@ -8,6 +8,13 @@ autoreconf -if
 make -j10
 popd
 
+cp file/src/magic.h lib/
+cp file/magic/magic.mgc lib/
+pushd lib
+gzip -k -f magic.mgc
+xxd -i magic.mgc.gz >magic_mgc_gz.c
+popd
+
 pushd oniguruma
 autoreconf -if
 ./configure
@@ -41,9 +48,6 @@ popd
 #ar rs libfiletype.a *.o
 #rm *.o libfile.a liboniguruma.a
 #popd
-
-cp file/src/magic.h lib/
-
 
 #./scripts/dumpc.pl file/magic/magic.mgc magic_mgc >lib/magic_mgc.c
 
