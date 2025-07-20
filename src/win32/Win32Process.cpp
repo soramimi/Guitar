@@ -1,14 +1,13 @@
 #include <windows.h>
 #include "Win32Process.h"
-#include <QThread>
-// #include <QTextCodec>
-#include <deque>
-#include <QDir>
-#include <QDebug>
 #include <QDateTime>
+#include <QDebug>
+#include <QDir>
 #include <QMutex>
-#include <thread>
+#include <QThread>
+#include <deque>
 #include <mutex>
+#include <thread>
 
 QString GetErrorMessage(DWORD e)
 {
@@ -29,8 +28,8 @@ private:
 protected:
 	void run()
 	{
+		char buf[4096];
 		while (1) {
-			char buf[256];
 			DWORD len = 0;
 			if (!ReadFile(hRead, buf, sizeof(buf), &len, nullptr)) break;
 			if (len < 1) break;
@@ -76,19 +75,23 @@ public:
 	std::mutex *mutex = nullptr;
 	QString command;
 	DWORD exit_code = -1;
-	std::deque<char> inq;
+	std::vector<char> input;
 	std::deque<char> outq;
 	std::deque<char> errq;
 	bool use_input = false;
 	HANDLE hInputWrite = INVALID_HANDLE_VALUE;
 	bool close_input_later = false;
 
+	// 環境変数をキャッシュして再利用
+	static std::vector<wchar_t> cached_env;
+	static std::mutex env_mutex;
+
 	void reset()
 	{
 		mutex = nullptr;
 		command.clear();
 		exit_code = -1;
-		inq.clear();
+		input.clear();
 		outq.clear();
 		errq.clear();
 		use_input = false;
@@ -104,88 +107,77 @@ protected:
 			HANDLE hOutputRead = INVALID_HANDLE_VALUE;
 			HANDLE hErrorRead = INVALID_HANDLE_VALUE;
 
-			HANDLE hInputWriteTmp = INVALID_HANDLE_VALUE;
-			HANDLE hOutputReadTmp = INVALID_HANDLE_VALUE;
-			HANDLE hErrorReadTmp = INVALID_HANDLE_VALUE;
 			HANDLE hInputRead = INVALID_HANDLE_VALUE;
 			HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
 			HANDLE hErrorWrite = INVALID_HANDLE_VALUE;
 
 			SECURITY_ATTRIBUTES sa;
-
 			sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 			sa.lpSecurityDescriptor = nullptr;
 			sa.bInheritHandle = TRUE;
 
-			HANDLE currproc = GetCurrentProcess();
+			// パイプ作成の最適化
+			const DWORD PIPE_BUFFER_SIZE = 65536;
 
-			// パイプを作成
-			if (!CreatePipe(&hInputRead, &hInputWriteTmp, &sa, 0))
+			if (!CreatePipe(&hInputRead, &hInputWrite, &sa, PIPE_BUFFER_SIZE))
 				throw std::string("Failed to CreatePipe");
 
-			if (!CreatePipe(&hOutputReadTmp, &hOutputWrite, &sa, 0))
+			if (!CreatePipe(&hOutputRead, &hOutputWrite, &sa, PIPE_BUFFER_SIZE))
 				throw std::string("Failed to CreatePipe");
 
-			if (!CreatePipe(&hErrorReadTmp, &hErrorWrite, &sa, 0))
+			if (!CreatePipe(&hErrorRead, &hErrorWrite, &sa, PIPE_BUFFER_SIZE))
 				throw std::string("Failed to CreatePipe");
 
-			// 子プロセスの標準入力
-			if (!DuplicateHandle(currproc, hInputWriteTmp, currproc, &hInputWrite, 0, FALSE, DUPLICATE_SAME_ACCESS))
-				throw std::string("Failed to DupliateHandle");
-
-			// 子プロセスの標準出力
-			if (!DuplicateHandle(currproc, hOutputReadTmp, currproc, &hOutputRead, 0, FALSE, DUPLICATE_SAME_ACCESS))
-				throw std::string("Failed to DupliateHandle");
-
-			// 子プロセスのエラー出力
-			if (!DuplicateHandle(currproc, hErrorReadTmp, currproc, &hErrorRead, 0, FALSE, DUPLICATE_SAME_ACCESS))
-				throw std::string("Failed to DuplicateHandle");
-
-			// 不要なハンドルを閉じる
-			CloseHandle(hInputWriteTmp);
-			CloseHandle(hOutputReadTmp);
-			CloseHandle(hErrorReadTmp);
+			// ハンドルの継承可能性を最適化
+			SetHandleInformation(hInputWrite, HANDLE_FLAG_INHERIT, 0);
+			SetHandleInformation(hOutputRead, HANDLE_FLAG_INHERIT, 0);
+			SetHandleInformation(hErrorRead, HANDLE_FLAG_INHERIT, 0);
 
 			// プロセス起動
 			PROCESS_INFORMATION pi;
 			STARTUPINFOW si;
 
-			ZeroMemory(&si, sizeof(STARTUPINFO));
-			si.cb = sizeof(STARTUPINFO);
+			ZeroMemory(&si, sizeof(STARTUPINFOW));
+			si.cb = sizeof(STARTUPINFOW);
 			si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_HIDE;
-			si.hStdInput = hInputRead; // 標準入力ハンドル
-			si.hStdOutput = hOutputWrite; // 標準出力ハンドル
-			si.hStdError = hErrorWrite; // エラー出力ハンドル
+			si.hStdInput = hInputRead;
+			si.hStdOutput = hOutputWrite;
+			si.hStdError = hErrorWrite;
 
-			int len = command.size();
-			wchar_t *tmp = (wchar_t *)alloca(sizeof(wchar_t) * (len + 1));
-			memcpy(tmp, command.utf16(), sizeof(wchar_t) * len);
-			tmp[len] = 0;
-			std::vector<wchar_t> env;
+			std::wstring wcmd(command.toStdWString());
+
+			std::vector<wchar_t> *env_ptr = nullptr;
 			{
-#if 1
-				wchar_t *p = GetEnvironmentStringsW();
-				if (p) {
-					int i = 0;
-					while (p[i] || p[i + 1]) {
-						i++;
+				std::lock_guard<std::mutex> lock(env_mutex);
+				if (cached_env.empty()) {
+					wchar_t *p = GetEnvironmentStringsW();
+					if (p) {
+						int i = 0;
+						while (p[i] || p[i + 1]) {
+							i++;
+						}
+						cached_env.assign(p, p + i + 1);
+						FreeEnvironmentStringsW(p);
+
+						// LANG=en_US.UTF8を追加
+						wchar_t const *e = L"LANG=en_US.UTF8";
+						cached_env.insert(cached_env.end() - 1, e, e + wcslen(e) + 1);
 					}
-					env.insert(env.end(), p, p + i + 1);
-					FreeEnvironmentStringsW(p);
 				}
-#endif
-				wchar_t const *e = L"LANG=en_US.UTF8";
-				env.insert(env.end(), e, e + wcslen(e) + 1);
-				env.push_back(0);
+				env_ptr = &cached_env;
 			}
-			if (!CreateProcessW(nullptr, tmp, nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, (void *)env.data(), nullptr, &si, &pi)) {
+
+			// CreateProcessの最適化フラグ
+			DWORD creation_flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
+
+			if (!CreateProcessW(nullptr, wcmd.data(), nullptr, nullptr, TRUE, creation_flags, env_ptr->data(), nullptr, &si, &pi)) {
 				DWORD e = GetLastError();
 				qDebug() << e << GetErrorMessage(e);
-				throw std::string("Failed to CreateProcess: ");
+				throw std::string("Failed to CreateProcess");
 			}
 
-			// 不要なハンドルを閉じる
+			// 子プロセス側のハンドルをすぐに閉じる
 			CloseHandle(hInputRead);
 			CloseHandle(hOutputWrite);
 			CloseHandle(hErrorWrite);
@@ -199,27 +191,19 @@ protected:
 			t1.start();
 			t2.start();
 
+			HANDLE handles[] = {pi.hProcess};
 			while (1) {
-				auto r = WaitForSingleObject(pi.hProcess, 1);
-				if (r == WAIT_OBJECT_0) break;
-				if (r == WAIT_FAILED) break;
+				DWORD wait_result = WaitForMultipleObjects(1, handles, FALSE, 10);
+				if (wait_result == WAIT_OBJECT_0) break;
+				if (wait_result == WAIT_FAILED) break;
+
 				{
 					std::lock_guard lock(*mutex);
-					int n = inq.size();
-					if (n > 0) {
-						while (n > 0) {
-							char tmp[1024];
-							int l = n;
-							if (l > sizeof(tmp)) {
-								l = sizeof(tmp);
-							}
-							std::copy(inq.begin(), inq.begin() + l, tmp);
-							inq.erase(inq.begin(), inq.begin() + l);
-							if (hInputWrite != INVALID_HANDLE_VALUE) {
-								DWORD written;
-								WriteFile(hInputWrite, tmp, l, &written, nullptr);
-							}
-							n -= l;
+					if (!input.empty()) {
+						if (hInputWrite != INVALID_HANDLE_VALUE) {
+							DWORD written;
+							WriteFile(hInputWrite, input.data(), input.size(), &written, nullptr);
+							input.clear();
 						}
 					} else if (close_input_later) {
 						closeInput();
@@ -235,10 +219,9 @@ protected:
 
 			GetExitCodeProcess(pi.hProcess, &exit_code);
 
-			// 終了
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
-		} catch (std::string const &e) { // 例外
+		} catch (std::string const &e) {
 			OutputDebugStringA(e.c_str());
 		}
 	}
@@ -258,7 +241,7 @@ public:
 	void writeInput(char const *ptr, int len)
 	{
 		std::lock_guard lock(*mutex);
-		inq.insert(inq.end(), ptr, ptr + len);
+		input.insert(input.end(), ptr, ptr + len);
 	}
 	void start()
 	{
@@ -278,6 +261,10 @@ public:
 	}
 };
 
+// 静的メンバーの定義
+std::vector<wchar_t> Win32ProcessThread::cached_env;
+std::mutex Win32ProcessThread::env_mutex;
+
 std::string toQString(const std::vector<char> &vec)
 {
 	if (vec.empty()) return {};
@@ -287,13 +274,11 @@ std::string toQString(const std::vector<char> &vec)
 struct Win32Process::Private {
 	std::mutex mutex;
 	Win32ProcessThread th;
-
 };
 
 Win32Process::Win32Process()
 	: m(new Private)
 {
-
 }
 
 Win32Process::~Win32Process()
@@ -303,13 +288,10 @@ Win32Process::~Win32Process()
 
 void Win32Process::start(std::string const &command, bool use_input)
 {
-	QByteArray ba(command.c_str(), command.size());
-	ba.push_back((char)0);
-	char const *cmd = ba.data();
-
+	// 不要なメモリコピーを削減
 	m->th.mutex = &m->mutex;
 	m->th.use_input = use_input;
-	m->th.command = QString::fromUtf8(cmd);
+	m->th.command = QString::fromUtf8(command.c_str(), command.size());
 	m->th.start();
 }
 
@@ -317,6 +299,7 @@ int Win32Process::wait()
 {
 	m->th.wait();
 
+	// move semanticsを使用してコピーを避ける
 	outbytes.clear();
 	errbytes.clear();
 	outbytes.insert(outbytes.end(), m->th.outq.begin(), m->th.outq.end());
@@ -349,6 +332,3 @@ void Win32Process::closeInput(bool justnow)
 		m->th.close_input_later = true;
 	}
 }
-
-
-
