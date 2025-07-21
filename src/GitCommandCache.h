@@ -1,9 +1,10 @@
 #ifndef GITCOMMANDCACHE_H
 #define GITCOMMANDCACHE_H
 
-#include <map>
-#include <vector>
 #include <QString>
+#include <map>
+#include <memory>
+#include <vector>
 
 class GitCommandCache {
 public:

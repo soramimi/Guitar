@@ -1,11 +1,12 @@
 #include "GitBasicSession.h"
 #include "ApplicationGlobal.h"
+#include "common/joinpath.h"
+#include "common/rwfile.h"
+#include <QDebug>
 #include <QDir>
 #include <QDirIterator>
 #include <QElapsedTimer>
 #include <QFileInfo>
-#include "common/joinpath.h"
-#include "common/rwfile.h"
 
 GitBasicSession::GitBasicSession(const Commands &cmds)
 {

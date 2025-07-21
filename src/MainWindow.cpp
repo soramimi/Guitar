@@ -59,6 +59,7 @@
 #include "platform.h"
 #include <QBuffer>
 #include <QClipboard>
+#include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDirIterator>
