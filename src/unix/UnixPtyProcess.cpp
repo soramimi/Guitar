@@ -212,7 +212,7 @@ void UnixPtyProcess::run()
 		close(m->pty_master);
 		m->pty_master = -1;
 
-		qDebug() << "--- UnixPtyProcess\t" << m->command << "\t" << timer.elapsed() << "\t---";
+		qDebug() << "--- UnixPtyProcess\t" << QString::fromStdString(m->command) << "\t" << timer.elapsed() << "\t---";
 
 		notifyCompleted();
 	}
