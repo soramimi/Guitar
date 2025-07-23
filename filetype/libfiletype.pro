@@ -16,6 +16,9 @@ INCLUDEPATH += file
 macx:QMAKE_CFLAGS += -include xlocale.h
 macx:QMAKE_CXXFLAGS += -include xlocale.h
 
+# zlib
+win32:msvc:INCLUDEPATH += $$PWD/../../zlib
+
 SOURCES += \
 	lib/magic_mgc_gz.c \
 	src/AbstractSimpleIO.cpp \

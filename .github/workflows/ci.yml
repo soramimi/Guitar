@@ -37,6 +37,7 @@ jobs:
       run: |
         cd filetype
         bash build-gcc.sh
+        ls -la lib
         cd ..
         
     - name: Build Guitar
@@ -78,6 +79,7 @@ jobs:
         brew install autoconf automake libtool
         cd filetype
         bash build-gcc.sh
+        ls -la lib
         cd ..
         
     - name: Build Guitar

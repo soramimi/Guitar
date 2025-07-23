@@ -331,8 +331,8 @@ public:
 	}
 };
 
-extern unsigned char magic_mgc_gz[];
-extern unsigned int magic_mgc_gz_len;
+extern "C" unsigned char magic_mgc_gz[];
+extern "C" unsigned int magic_mgc_gz_len;
 
 bool FileType::open()
 {

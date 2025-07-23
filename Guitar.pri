@@ -107,8 +107,8 @@ win32:gcc {
 
 msvc:CONFIG(release, debug|release):LIBS += $$PWD/filetype/lib/filetype.lib $$PWD/filetype/lib/oniguruma.lib $$PWD/filetype/lib/file.lib
 msvc:CONFIG(debug, debug|release):LIBS += $$PWD/filetype/lib/filetyped.lib $$PWD/filetype/lib/onigurumad.lib $$PWD/filetype/lib/filed.lib
-# !msvc:LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/liboniguruma.a $$PWD/filetype/lib/libfile.a
-!msvc:LIBS += $$PWD/filetype/lib/libfiletyped.a $$PWD/filetype/lib/libonigurumad.a $$PWD/filetype/lib/libfiled.a
+!msvc:LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/liboniguruma.a $$PWD/filetype/lib/libfile.a
+# !msvc:LIBS += $$PWD/filetype/lib/libfiletyped.a $$PWD/filetype/lib/libonigurumad.a $$PWD/filetype/lib/libfiled.a
 
 #
 
