@@ -16,11 +16,6 @@ void GitCommandRunner::operator ()(Git_fetch const &item)
 	d.result = git().fetch(pty(), item.prune);
 }
 
-void GitCommandRunner::operator ()(Git_fetch_tags_f const &item)
-{
-	d.result = git().fetch_tags_f(pty());
-}
-
 void GitCommandRunner::operator ()(Git_stage const &item)
 {
 	d.result = git().stage(item.paths, pty());

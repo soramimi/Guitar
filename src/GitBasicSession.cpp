@@ -79,6 +79,7 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 				auto const *a = findFromCommandCache(cmd);
 				if (a) {
 					var().result = *a;
+					qDebug() << "--- Process\t" << cmd << "\t" << "cache hit" << "\t---";
 					return true;
 				}
 			}

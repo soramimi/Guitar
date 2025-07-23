@@ -38,6 +38,11 @@ AbstractGitSession::~AbstractGitSession()
 	delete m;
 }
 
+void AbstractGitSession::clearCommandCache()
+{
+	m->cache->command_cache.clear();
+}
+
 AbstractGitSession::Var &AbstractGitSession::var()
 {
 	return m->var;

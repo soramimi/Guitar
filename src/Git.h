@@ -398,8 +398,6 @@ public:
 	static QString trimPath(QString const &s);
 
 private:
-	// struct Private;
-	// Private *m;
 	QStringList make_branch_list_();
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
@@ -412,6 +410,8 @@ public:
 	Git(GitContext const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;
 	~Git() = default;
+
+	void clearCommandCache();
 
 	AbstractGitSession::Info &gitinfo()
 	{
@@ -516,7 +516,6 @@ public:
 	bool pull(AbstractPtyProcess *pty = nullptr);
 
 	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
-	bool fetch_tags_f(AbstractPtyProcess *pty);
 
 	QList<Branch> branches();
 
@@ -741,6 +740,11 @@ public:
 		return (bool)git;
 	}
 	GitRunner dup() const;
+
+	void clearCommandCache()
+	{
+		if (git) git->clearCommandCache();
+	}
 
 	static std::optional<Git::CommitItem> parseCommit(QByteArray const &ba)
 	{
@@ -1131,11 +1135,6 @@ public:
 	{
 		Q_ASSERT(git);
 		return git->fetch(pty, prune);
-	}
-	bool fetch_tags_f(AbstractPtyProcess *pty)
-	{
-		Q_ASSERT(git);
-		return git->fetch_tags_f(pty);
 	}
 	bool reset_head1()
 	{

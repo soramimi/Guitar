@@ -296,7 +296,7 @@ private:
 	void push(bool set_upstream, const QString &remote, const QString &branch, bool force);
 	void fetch(GitRunner g, bool prune);
 	void stage(GitRunner g, const QStringList &paths);
-	void fetch_tags_f(GitRunner g);
+	void fetch(GitRunner g);
 	void pull(GitRunner g);
 	void push_tags(GitRunner g);
 	void delete_tags(GitRunner g, const QStringList &tagnames);
@@ -649,7 +649,7 @@ public:
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
-	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache = true) const;
+	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const;
 	GitRunner unassosiated_git_runner() const;
 	GitRunner new_git_runner(const QString &dir, const QString &sshkey);
 	GitRunner new_git_runner();

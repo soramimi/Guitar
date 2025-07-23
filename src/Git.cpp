@@ -127,6 +127,11 @@ Git::Git(const GitContext &cx, QString const &repodir, const QString &submodpath
 	setSubmodulePath(submodpath);
 }
 
+void Git::clearCommandCache()
+{
+	session_->clearCommandCache();
+}
+
 void Git::_init(GitContext const &cx)
 {
 	session_ = cx.connect();
@@ -1183,7 +1188,9 @@ bool Git::push_tags(AbstractPtyProcess *pty)
 Git::FileStatusList Git::status_s_()
 {
 	FileStatusList files;
-	if (git("status -s -u --porcelain")) {
+	AbstractGitSession::Option opt;
+	opt.use_cache = true;
+	if (exec_git("status -s -u --porcelain", opt)) {
 		QString text = resultQString();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
@@ -1334,15 +1341,6 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	return exec_git(cmd, opt);
 }
 
-bool Git::fetch_tags_f(AbstractPtyProcess *pty)
-{
-	QString cmd = "fetch --tags -f -j%1";
-	cmd = cmd.arg(std::thread::hardware_concurrency());
-	AbstractGitSession::Option opt;
-	opt.pty = pty;
-	return exec_git(cmd, opt);
-}
-
 QStringList Git::make_branch_list_()
 {
 	QStringList list;
@@ -1463,6 +1461,7 @@ Git::User Git::getUser(Source purpose)
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
 	AbstractGitSession::Option opt;
+	opt.use_cache = true;
 	opt.chdir = !global;
 	if (exec_git(QString("config %1 user.name").arg(arg1), opt)) {
 		user.name = resultQString().trimmed();

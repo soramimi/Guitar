@@ -17,6 +17,8 @@ public:
 
 	std::vector<char> *find(QString const &key);
 	void insert(QString const &key, std::vector<char> const &value);
+
+	void clear();
 };
 
 

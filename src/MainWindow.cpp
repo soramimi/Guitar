@@ -1477,9 +1477,13 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 {
 	ASSERT_MAIN_THREAD();
 
+	cancelUpdateFileList();
+
+
 	GitRunner g;
 	if (opt.new_session) {
 		endSession();
+		currentRepositoryData()->git_command_cache = GitCommandCache(true);
 
 		RepositoryInfo const &item = currentRepository();
 		g = new_git_runner(item.local_dir, item.ssh_key);
@@ -1494,10 +1498,6 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	if (pty) {
 		if (!pty->wait(5000)) /*return*/; //@ something wrong
 	}
-
-	cancelUpdateFileList();
-
-	currentRepositoryData()->git_command_cache = GitCommandCache(true);
 
 	if (opt.clear_log) { // ログをクリア
 		m->current_repository_data = {};
@@ -2186,6 +2186,8 @@ void MainWindow::internalAfterFetch()
 	PROFILE;
 	ASSERT_MAIN_THREAD();
 
+	clearGitCommandCache();
+
 	updateRemoteInfo();
 
 	OpenRepositoryOption opt;
@@ -2583,9 +2585,9 @@ void MainWindow::stage(GitRunner g, QStringList const &paths)
 	}, {});
 }
 
-void MainWindow::fetch_tags_f(GitRunner g)
+void MainWindow::fetch(GitRunner g)
 {
-	runPtyGit(tr("Fetching tags..."), g, Git_fetch_tags_f{}, nullptr, {});
+	runPtyGit(tr("Fetching tags..."), g, Git_fetch{false}, nullptr, {});
 }
 
 void MainWindow::pull(GitRunner g)
@@ -5493,6 +5495,12 @@ void MainWindow::setCurrentGitRunner(GitRunner g)
 	m->current_git_runner = g;
 }
 
+void MainWindow::clearGitCommandCache()
+{
+	m->current_repository_data.git_command_cache = {};
+	m->current_git_runner.clearCommandCache();
+}
+
 GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
 {
 	if (!dir.isEmpty()) {
@@ -5518,7 +5526,7 @@ GitRunner MainWindow::unassosiated_git_runner() const
 
 GitRunner MainWindow::new_git_runner(const QString &dir, const QString &sshkey)
 {
-	return _git(dir, {}, sshkey);
+	return _git(dir, {}, sshkey, true);
 }
 
 GitRunner MainWindow::new_git_runner()
@@ -5929,11 +5937,6 @@ void MainWindow::refresh()
 void MainWindow::on_action_view_refresh_triggered()
 {
 	refresh();
-}
-
-void MainWindow::clearGitCommandCache()
-{
-	m->current_repository_data.git_command_cache = {};
 }
 
 void MainWindow::on_toolButton_stage_clicked()

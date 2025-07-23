@@ -44,6 +44,8 @@ public:
 	AbstractGitSession();
 	virtual ~AbstractGitSession();
 
+	void clearCommandCache();
+
 	Var &var();
 	Var const &var() const;
 	Info &gitinfo();

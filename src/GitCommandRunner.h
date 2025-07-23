@@ -24,13 +24,6 @@ public:
 	}
 };
 
-class Git_fetch_tags_f {
-public:
-	Git_fetch_tags_f()
-	{
-	}
-};
-
 class Git_stage {
 public:
 	QStringList paths;
@@ -117,7 +110,6 @@ class GitCommandRunner {
 public:
 	void operator () (Git_clone const &item);
 	void operator () (Git_fetch const &item);
-	void operator () (Git_fetch_tags_f const &item);
 	void operator () (Git_stage const &item);
 	void operator () (Git_push const &item);
 	void operator () (Git_pull const &item);
@@ -130,7 +122,6 @@ public:
 	typedef std::variant<
 		Git_clone,
 		Git_fetch,
-		Git_fetch_tags_f,
 		Git_stage,
 		Git_push,
 		Git_pull,
