@@ -623,7 +623,7 @@ public:
 	void addTag(QString const &name);
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();
-	bool isAncestorCommit(const QString &id);
+	bool isAncestorCommit(Git::Hash const &id) const;
 	void postStartEvent(int ms_later);
 	void setShowLabels(bool show, bool save);
 	void setShowGraph(bool show, bool save);

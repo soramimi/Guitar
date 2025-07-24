@@ -177,7 +177,7 @@ struct MainWindow::Private {
 
 	int repos_panel_width = 0;
 
-	std::set<QString> ancestors;
+	std::set<Git::Hash> ancestors;
 
 	QWidget *focused_widget = nullptr;
 	QList<int> splitter_h_sizes;
@@ -1465,6 +1465,7 @@ void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int
 
 		ui->tableWidget_log->blockSignals(b);
 	}
+	qDebug() << __FILE__ << __LINE__;
 	onLogCurrentItemChanged(false); // force update tableWidget_log
 
 	updateUI();
@@ -1567,6 +1568,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	if (do_fetch) {
 		fetch(g, false);
 	} else {
+		qDebug() << __FILE__ << __LINE__;
 		onLogCurrentItemChanged(true); // ファイルリストを更新
 	}
 
@@ -5883,46 +5885,60 @@ void MainWindow::findText(QString const &text)
 	m->search_text = text;
 }
 
-bool MainWindow::isAncestorCommit(QString const &id)
+bool MainWindow::isAncestorCommit(Git::Hash const &id) const
 {
 	auto it = m->ancestors.find(id);
 	return it != m->ancestors.end();
 }
 
+/**
+ * @brief 選択されたコミットを起点として、視認可能な範囲にあるすべての先祖コミットを探索し、
+ *        太線描画用の先祖コミット集合を更新する。
+ *
+ * この関数は樹形図の描画において、現在選択されているコミットとその先祖に該当するコミットを
+ * 太線で表示するための補助情報を更新する処理を行う。
+ *
+ * 前提として、UIスレッド上で実行される必要がある。
+ */
 void MainWindow::updateAncestorCommitMap()
 {
-	ASSERT_MAIN_THREAD();
+	ASSERT_MAIN_THREAD(); // UIスレッド上での実行を保証
 
-	m->ancestors.clear();
+	m->ancestors.clear(); // 先祖集合を初期化
 
-	Git::CommitItemList const &logs = commitlog();
+	Git::CommitItemList const &logs = commitlog(); // コミットログ一覧の取得
 
-	const int index = selectedLogIndex();
-	if (index < 0 && index >= logs.size()) return;
+	const int index = selectedLogIndex(); // 現在選択されている行のインデックス
+	if (index < 0 || index >= logs.size()) return; // 無効なインデックスなら早期リターン
 
-	std::map<QString, size_t> commit_to_index_map;
+	size_t end = logs.size(); // 探索の終端をログの末尾と仮定
 
-	size_t end = logs.size();
-
+	// 選択行以降で、可視範囲に含まれる行のみを対象とする
 	if (index < end) {
 		for (size_t i = index; i < end; i++) {
-			Git::CommitItem const &commit = logs.at(i);
-			commit_to_index_map[commit.commit_id.toQString()] = (size_t)i;
+			// 対象行の矩形領域を取得（列0で十分）
 			QRect r = ui->tableWidget_log->visualItemRect((int)i, 0);
+
+			// 表示領域を超えていたらそれ以降は無視
 			if (r.y() >= ui->tableWidget_log->height()) {
-				end = i + 1;
+				end = i + 1; // 表示されている範囲の最終行までに制限
 				break;
 			}
 		}
 	}
 
-	m->ancestors.insert(m->ancestors.end(), logs.at(index).commit_id.toQString());
+	// 現在選択されているコミットを先祖集合に追加
+	m->ancestors.insert(m->ancestors.end(), logs.at(index).commit_id);
 
+	// 選択行から可視範囲の末尾まで探索
 	for (size_t i = index; i < end; i++) {
 		Git::CommitItem const *item = &logs.at(i);
-		if (isAncestorCommit(item->commit_id.toQString())) {
+
+		// このコミットがすでに先祖集合に含まれていれば、その親もすべて先祖と見なす
+		if (isAncestorCommit(item->commit_id)) {
 			for (Git::Hash const &parent : item->parent_ids) {
-				m->ancestors.insert(m->ancestors.end(), parent.toQString());
+				// 親コミットを先祖集合に追加
+				m->ancestors.insert(m->ancestors.end(), parent);
 			}
 		}
 	}
@@ -7282,6 +7298,7 @@ void MainWindow::selectLogTableRow(int row)
 
 void MainWindow::onCommitLogCurrentRowChanged(int row)
 {
+	qDebug() << __FILE__ << __LINE__;
 	onLogCurrentItemChanged(true);
 	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;

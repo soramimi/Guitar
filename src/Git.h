@@ -2,6 +2,8 @@
 #define GIT_H
 
 #include "GitBasicSession.h"
+// #include "common/crc32.h"
+#include <zlib.h>
 #include "common/misc.h"
 #include <QDateTime>
 #include "GitTypes.h"
@@ -63,6 +65,10 @@ public:
 		operator bool () const
 		{
 			return isValid();
+		}
+		size_t _std_hash() const
+		{
+			return crc32(0, id_, sizeof(id_));
 		}
 	};
 
@@ -711,6 +717,16 @@ static inline bool operator < (Git::Hash const &l, Git::Hash const &r)
 	return l.compare(r) < 0;
 }
 
+namespace std {
+template <> class hash<Git::Hash> {
+public:
+	size_t operator () (Git::Hash const &h) const
+	{
+		return h._std_hash();
+	}
+};
+}
+
 using GitPtr = std::shared_ptr<Git>;
 
 // GitRunner
@@ -797,12 +813,6 @@ public:
 		Q_ASSERT(git);
 		return git->errorMessage();
 	}
-
-	// bool pushd(std::function<bool ()> const fn)
-	// {
-	// 	Q_ASSERT(git);
-	// 	return git->pushd(fn);
-	// }
 
 	bool remove(QString const &path)
 	{
