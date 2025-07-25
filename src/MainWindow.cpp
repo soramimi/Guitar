@@ -3601,15 +3601,15 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 		for (size_t i = 0; i < threads.size(); i++) {
 			threads[i] = std::thread([&](){
 				while (1) {
-					size_t i = in++;
-					if (i >= revlist.size()) break;
-					QString hash = revlist[i];
+					size_t j = in++;
+					if (j >= revlist.size()) break;
+					QString hash = revlist[j];
 					auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
 					if (obj.type == Git::Object::Type::COMMIT) {
 						std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
 						if (item) {
 							item->commit_id = Git::Hash(hash);
-							vec.at(to++) = {i, *item};
+							vec.at(to++) = {j, *item};
 						}
 					}
 				}

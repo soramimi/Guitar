@@ -303,26 +303,29 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 
 	Git::Hash ret;
 
+#if 1
 	auto A = [&](){
 		auto it = rev_parse_map_.find(name);
 		if (it != rev_parse_map_.end()) {
 			ret = it->second;
-			return true;
 		}
-		return false;
 	};
 	if (mutex_) {
 		std::lock_guard lock(*mutex_);
-		if (A()) return ret;
+		A();
 	} else {
-		if (A()) return ret;
+		A();
 	}
+	if (ret.isValid()) {
+		qDebug() << name << ret.toQString();
+		return ret;
+	}
+#endif
 
-	auto id = g.rev_parse(name);
+	ret = g.rev_parse(name);
 
 	auto B = [&](){
-		rev_parse_map_[name] = id;
-		ret = id;
+		rev_parse_map_[name] = ret;
 	};
 	if (mutex_) {
 		std::lock_guard lock(*mutex_);
@@ -330,6 +333,7 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 	} else {
 		B();
 	}
+	return ret;
 }
 
 Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)

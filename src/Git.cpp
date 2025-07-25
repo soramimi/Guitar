@@ -285,7 +285,9 @@ Git::Hash Git::rev_parse(QString const &name)
 {
 	QString cmd = "rev-parse %1";
 	cmd = cmd.arg(name);
-	if (git(cmd)) {
+	AbstractGitSession::Option opt;
+	opt.use_cache = true;
+	if (exec_git(cmd, opt)) {
 		return Git::Hash(resultQString().trimmed());
 	}
 	return {};
