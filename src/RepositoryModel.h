@@ -10,6 +10,8 @@ typedef QList<Git::Branch> BranchList;
 typedef QList<BranchLabel> BranchLabelList;
 
 struct RepositoryData {
+	std::mutex *mutex_ = nullptr;
+
 	Git::CommitItemList commit_log;
 	std::map<Git::Hash, BranchList> branch_map;
 	std::map<Git::Hash, TagList> tag_map;
@@ -19,6 +21,11 @@ struct RepositoryData {
 	GitObjectCache object_cache;
 
 	GitCommandCache git_command_cache;
+
+	RepositoryData(std::mutex *mutex)
+		: mutex_(mutex)
+		, object_cache(mutex)
+	{}
 };
 
 struct CommitLogExchangeData {

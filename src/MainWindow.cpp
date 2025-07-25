@@ -118,7 +118,13 @@ struct MainWindow::Private {
 	QString starting_dir;
 
 	RepositoryInfo current_repository;
-	RepositoryData current_repository_data;
+
+	std::mutex repository_mutex;
+	RepositoryData current_repository_data{&repository_mutex};
+	void clearCurrentRepositoryData()
+	{
+		current_repository_data = {&repository_mutex};
+	}
 
 	GitRunner current_git_runner;
 
@@ -1501,7 +1507,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	}
 
 	if (opt.clear_log) { // ログをクリア
-		m->current_repository_data = {};
+		m->clearCurrentRepositoryData();
 		{ // コミットログをクリア
 			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -3575,15 +3581,50 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 
 	QStringList revlist = g.rev_list_all(id, maxcount);
 
-	for (size_t i = 0; i < revlist.size(); i++) {
-		QString hash = revlist[i];
-		auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
-		if (obj.type == Git::Object::Type::COMMIT) {
-			std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
-			if (item) {
-				item->commit_id = Git::Hash(hash);
-				items.list.push_back(*item);
+	if (0) { // シングルスレッド版
+		for (size_t i = 0; i < revlist.size(); i++) {
+			QString hash = revlist[i];
+			auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+			if (obj.type == Git::Object::Type::COMMIT) {
+				std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
+				if (item) {
+					item->commit_id = Git::Hash(hash);
+					items.list.push_back(*item);
+				}
 			}
+		}
+	} else { // マルチスレッド版
+		std::vector<std::pair<size_t, Git::CommitItem>> vec(revlist.size());
+		std::atomic_size_t in;
+		std::atomic_size_t to;
+		std::vector<std::thread> threads(4);
+		for (size_t i = 0; i < threads.size(); i++) {
+			threads[i] = std::thread([&](){
+				while (1) {
+					size_t i = in++;
+					if (i >= revlist.size()) break;
+					QString hash = revlist[i];
+					auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+					if (obj.type == Git::Object::Type::COMMIT) {
+						std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
+						if (item) {
+							item->commit_id = Git::Hash(hash);
+							vec.at(to++) = {i, *item};
+						}
+					}
+				}
+			});
+		}
+		for (size_t i = 0; i < threads.size(); i++) {
+			threads[i].join();
+		}
+		vec.resize(to);
+		std::sort(vec.begin(), vec.end(), [](auto const &a, auto const &b){
+			return a.first < b.first;
+		});
+		items.list.reserve(vec.size());
+		for (auto const &pair : vec) {
+			items.list.push_back(pair.second);
 		}
 	}
 
@@ -3593,8 +3634,6 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 {
 	PROFILE;
-	// Git::CommitItemList list = g.log(limitLogCount());
-	// Git::CommitItemList list = g.log_all({}, limitLogCount());
 	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
 	fixCommitLogOrder(&list);
 	list.updateIndex();

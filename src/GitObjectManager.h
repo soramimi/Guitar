@@ -16,6 +16,7 @@ class Git;
 class GitObjectManager {
 	friend class GitObjectCache;
 private:
+	std::mutex *mutex_ = nullptr;
 	QString subdir_git_objects;
 	QString subdir_git_objects_pack;
 	std::vector<GitPackIdxPtr> git_idx_list;
@@ -23,13 +24,13 @@ private:
 	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
 	static bool loadPackedObject(GitPackIdxPtr const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPack::Object *out);
 	bool extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPackIdxItem const *item, GitPack::Object *out);
-	bool extractObjectFromPackFile(GitRunner g, const Git::Hash &id, QByteArray *out, Git::Object::Type *type);
-	void loadIndexes(GitRunner g);
+	bool extractObjectFromPackFile(GitRunner g, const Git::Hash &id, QByteArray *out, Git::Object::Type *type, std::mutex *mutex);
+	void loadIndexes(GitRunner g, std::mutex *mutex);
 	QString findObjectPath(GitRunner g, const Git::Hash &id);
 	bool loadObject(GitRunner g, const Git::Hash &id, QByteArray *out, Git::Object::Type *type);
 	void init();
 public:
-	GitObjectManager();
+	GitObjectManager(std::mutex *mutex);
 	void setup();
 	bool catFile(GitRunner g, const Git::Hash &id, QByteArray *out, Git::Object::Type *type);
 	void clearIndexes();
@@ -45,12 +46,17 @@ public:
 		Git::Object::Type type;
 	};
 private:
+	std::mutex *mutex_ = nullptr;
 	GitObjectManager object_manager_;
 	using ItemPtr = std::shared_ptr<Item>;
 	std::vector<ItemPtr> items_;
 	std::map<QString, Git::Hash> rev_parse_map_;
 	size_t size() const;
 public:
+	GitObjectCache(std::mutex *mutex = nullptr)
+		: mutex_(mutex)
+		, object_manager_(mutex)
+	{}
 	void clear();
 	Git::Hash revParse(GitRunner g, QString const &name);
 	Git::Object catFile(GitRunner g, const Git::Hash &id);

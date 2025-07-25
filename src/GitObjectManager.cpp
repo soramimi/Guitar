@@ -12,7 +12,8 @@
 #include "MemoryReader.h"
 #include "Profile.h"
 
-GitObjectManager::GitObjectManager()
+GitObjectManager::GitObjectManager(std::mutex *mutex)
+	: mutex_(mutex)
 {
 	init();
 	setup();
@@ -29,19 +30,27 @@ void GitObjectManager::setup()
 	clearIndexes();
 }
 
-void GitObjectManager::loadIndexes(GitRunner g)
+void GitObjectManager::loadIndexes(GitRunner g, std::mutex *mutex)
 {
-	// QMutexLocker lock(&mutex);
-	if (git_idx_list.empty()) {
-		QString path = g.workingDir() / subdir_git_objects_pack;
-		QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
-		while (it.hasNext()) {
-			it.next();
-			GitPackIdxPtr idx = std::make_shared<GitPackIdxV2>();
-			idx->pack_idx_path = it.filePath();
-			idx->parse(idx->pack_idx_path, true);
-			git_idx_list.push_back(idx);
+	auto Do = [&](){
+		if (git_idx_list.empty()) {
+			QString path = g.workingDir() / subdir_git_objects_pack;
+			QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
+			while (it.hasNext()) {
+				it.next();
+				GitPackIdxPtr idx = std::make_shared<GitPackIdxV2>();
+				idx->pack_idx_path = it.filePath();
+				idx->parse(idx->pack_idx_path, true);
+				git_idx_list.push_back(idx);
+			}
 		}
+	};
+
+	if (mutex) {
+		std::lock_guard lock(*mutex_);
+		Do();
+	} else {
+		Do();
 	}
 }
 
@@ -157,24 +166,32 @@ bool GitObjectManager::extractObjectFromPackFile(GitPackIdxPtr const &idx, GitPa
 	return false;
 }
 
-bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::Hash const &id, QByteArray *out, Git::Object::Type *type)
+bool GitObjectManager::extractObjectFromPackFile(GitRunner g, Git::Hash const &id, QByteArray *out, Git::Object::Type *type, std::mutex *mutex)
 {
-	loadIndexes(g);
+	auto Do = [&](){
+		loadIndexes(g, nullptr);
 
-	for (GitPackIdxPtr const &idx : git_idx_list) {
-		GitPackIdxItem const *item = idx->item(id);
-		if (item) {
-			GitPack::Object obj;
-			if (extractObjectFromPackFile(idx, item, &obj)) {
-				*out = std::move(obj.content);
-				*type = obj.type;
-				return true;
+		for (GitPackIdxPtr const &idx : git_idx_list) {
+			GitPackIdxItem const *item = idx->item(id);
+			if (item) {
+				GitPack::Object obj;
+				if (extractObjectFromPackFile(idx, item, &obj)) {
+					*out = std::move(obj.content);
+					*type = obj.type;
+					return true;
+				}
+				qDebug() << Q_FUNC_INFO << "failed";
+				return false;
 			}
-			qDebug() << Q_FUNC_INFO << "failed";
-			return false;
 		}
+		return false;
+	};
+	if (mutex) {
+		std::lock_guard lock(*mutex);
+		return Do();
+	} else {
+		return Do();
 	}
-	return false;
 }
 
 QString GitObjectManager::findObjectPath(GitRunner g, Git::Hash const &id)
@@ -258,7 +275,7 @@ bool GitObjectManager::catFile(GitRunner g, Git::Hash const &id, QByteArray *out
 {
 	*type = Git::Object::Type::UNKNOWN;
 	if (loadObject(g, id, out, type)) return true;
-	if (extractObjectFromPackFile(g, id, out, type)) return true;
+	if (extractObjectFromPackFile(g, id, out, type, mutex_)) return true;
 	return false;
 }
 
@@ -284,28 +301,40 @@ Git::Hash GitObjectCache::revParse(GitRunner g, QString const &name)
 {
 	if (!g.isValidWorkingCopy()) return {};
 
-	{
-		// QMutexLocker lock(&object_manager.mutex);
+	Git::Hash ret;
+
+	auto A = [&](){
 		auto it = rev_parse_map_.find(name);
 		if (it != rev_parse_map_.end()) {
-			return it->second;
+			ret = it->second;
+			return true;
 		}
+		return false;
+	};
+	if (mutex_) {
+		std::lock_guard lock(*mutex_);
+		if (A()) return ret;
+	} else {
+		if (A()) return ret;
 	}
 
 	auto id = g.rev_parse(name);
 
-	{
-		// QMutexLocker lock(&object_manager.mutex);
+	auto B = [&](){
 		rev_parse_map_[name] = id;
-		return id;
+		ret = id;
+	};
+	if (mutex_) {
+		std::lock_guard lock(*mutex_);
+		B();
+	} else {
+		B();
 	}
 }
 
 Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 {
-	// PROFILE;
-
-	{
+	auto Do = [&]()-> Git::Object {
 		size_t n = items_.size();
 		size_t i = n;
 		while (i > 0) {
@@ -327,7 +356,17 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 		while (size() > 100000000) { // 100MB
 			items_.erase(items_.begin());
 		}
+
+		return {};
+	};
+	Git::Object obj;
+	if (mutex_) {
+		std::lock_guard lock(*mutex_);
+		obj = Do();
+	} else {
+		obj = Do();
 	}
+	if (obj) return obj;
 
 	QByteArray ba;
 	Git::Object::Type type = Git::Object::Type::UNKNOWN;
@@ -347,7 +386,12 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 	};
 
 	if (object_manager_.catFile(g, id, &ba, &type)) { // 独自実装のファイル取得
-		return Store();
+		if (mutex_) {
+			std::lock_guard lock(*mutex_);
+			return Store();
+		} else {
+			return Store();
+		}
 	}
 
 	if (true) {
@@ -356,7 +400,12 @@ Git::Object GitObjectCache::catFile(GitRunner g, Git::Hash const &id)
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
 			ba = *ret;
-			return Store();
+			if (mutex_) {
+				std::lock_guard lock(*mutex_);
+				return Store();
+			} else {
+				return Store();
+			}
 		}
 	}
 

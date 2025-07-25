@@ -86,6 +86,10 @@ public:
 		};
 		Type type = Type::NONE;
 		QByteArray content;
+		operator bool () const
+		{
+			return type != Type::NONE;
+		}
 	};
 
 	struct SubmoduleItem {
@@ -144,6 +148,10 @@ public:
 		size_t size() const
 		{
 			return list.size();
+		}
+		void resize(size_t n)
+		{
+			list.resize(n);
 		}
 		CommitItem &at(size_t i)
 		{
