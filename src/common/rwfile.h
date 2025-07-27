@@ -1,6 +1,7 @@
 #ifndef RWFILE_H
 #define RWFILE_H
 
+#include <cstddef>
 #include <vector>
 #include <cstddef>  // for size_t
 #include <stdlib.h>
