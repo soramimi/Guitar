@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "zipinternal.h"
 #include <zlib.h>
@@ -12,6 +11,7 @@
 #include <share.h>
 #pragma warning(disable:4996)
 #else
+#include <unistd.h>
 #define O_BINARY 0
 #endif
 

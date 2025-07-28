@@ -17,7 +17,20 @@ macx:QMAKE_CFLAGS += -include xlocale.h
 macx:QMAKE_CXXFLAGS += -include xlocale.h
 
 # zlib
+
 win32:msvc:INCLUDEPATH += $$PWD/../../zlib
+
+msvc:INCLUDEPATH += C:/vcpkg/packages/zlib_x64-windows/include
+
+msvc {
+	LIBS += C:\vcpkg\packages\zlib_x64-windows\lib\zlib.lib
+}
+
+!msvc {
+	LIBS += -lz
+}
+
+#
 
 SOURCES += \
 	lib/magic_mgc_gz.c \

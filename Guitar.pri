@@ -17,7 +17,7 @@ CONFIG += $$CPP_STD nostrip debug_info static
 # CONFIG += unsafe
 unsafe {
     DEFINES += UNSAFE_ENABLED
-	msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib -lssh
+	msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 	LIBS += -lssh
 }
 
@@ -75,10 +75,6 @@ win32:gcc {
 	LIBS += -lcrypto -lssl
 }
 
-# zlib
-
-win32:msvc:INCLUDEPATH += $$PWD/../zlib
-
 # execute 'ruby prepare.rb' automatically
 
 prepare.target = prepare
@@ -89,17 +85,13 @@ PRE_TARGETDEPS += prepare
 
 # zlib
 
-win32:msvc {
-	CONFIG(debug, debug|release):LIBS += $$PWD/_bin/libz.lib
-	CONFIG(release, debug|release):LIBS += $$PWD/_bin/libz.lib
+msvc:INCLUDEPATH += C:/vcpkg/packages/zlib_x64-windows/include
+
+msvc {
+	LIBS += C:\vcpkg\packages\zlib_x64-windows\lib\zlib.lib
 }
 
-win32:gcc {
-	CONFIG(debug, debug|release):LIBS += $$PWD/_bin/liblibz.a
-	CONFIG(release, debug|release):LIBS += $$PWD/_bin/liblibz.a
-}
-
-!win32 {
+!msvc {
 	LIBS += -lz
 }
 
