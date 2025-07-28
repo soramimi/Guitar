@@ -1,6 +1,10 @@
 #include "platform.h"
 #include "ApplicationGlobal.h"
 
+#ifndef Q_OS_WIN
+extern char** environ;
+#endif
+
 namespace platform {
 
 void initNetworking()

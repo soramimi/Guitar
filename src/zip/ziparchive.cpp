@@ -11,6 +11,7 @@
 #include <share.h>
 #pragma warning(disable:4996)
 #else
+#include <unistd.h>
 #define O_BINARY 0
 #endif
 

@@ -1,5 +1,6 @@
 /*	$File: gmtime_r.c,v 1.4 2022/09/24 20:30:13 christos Exp $	*/
 
+#ifndef __NetBSD__
 #include "file.h"
 #ifndef	lint
 FILE_RCSID("@(#)$File: gmtime_r.c,v 1.4 2022/09/24 20:30:13 christos Exp $")
@@ -17,3 +18,4 @@ gmtime_r(const time_t *t, struct tm *tm)
 	memcpy(tm, tmp, sizeof(*tm));
 	return tmp;
 }
+#endif

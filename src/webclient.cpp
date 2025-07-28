@@ -103,7 +103,7 @@ bool HostNameResolver::resolve(const char *name, _in_addr *out)
 	if (!name || !out) return false;
 
 	struct hostent *he = nullptr;
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || defined(__NetBSD__)
 	he = ::gethostbyname(name);
 #else
 	int err = 0;
