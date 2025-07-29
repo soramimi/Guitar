@@ -144,7 +144,33 @@ jobs:
       run: |
         echo Installing OpenSSL...
         choco install openssl --install-arguments="'/DIR=C:\ProgramData\OpenSSL'" -y
-        refreshenv
+      shell: cmd
+        
+    - name: Install vcpkg and zlib
+      run: |
+        echo Installing vcpkg...
+        if exist "C:\vcpkg" (
+          echo vcpkg directory already exists, removing it...
+          rmdir /s /q "C:\vcpkg"
+        )
+        git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+        if errorlevel 1 (
+          echo Failed to clone vcpkg
+          exit /b 1
+        )
+        echo Running vcpkg bootstrap...
+        call C:\vcpkg\bootstrap-vcpkg.bat
+        if errorlevel 1 (
+          echo Failed to bootstrap vcpkg
+          exit /b 1
+        )
+        echo Installing zlib via vcpkg...
+        C:\vcpkg\vcpkg.exe install zlib:x64-windows
+        if errorlevel 1 (
+          echo Failed to install zlib
+          exit /b 1
+        )
+        echo zlib installation completed successfully
       shell: cmd
       
     - name: Verify environment
@@ -154,6 +180,10 @@ jobs:
         echo VCINSTALLDIR: %VCINSTALLDIR%
         echo VisualStudioVersion: %VisualStudioVersion%
         echo QMAKESPEC: %QMAKESPEC%
+        echo.
+        echo Setting vcpkg environment...
+        set "VCPKG_ROOT=C:\vcpkg"
+        echo VCPKG_ROOT: %VCPKG_ROOT%
         echo.
         echo Checking tool locations:
         where nmake
@@ -167,6 +197,10 @@ jobs:
         echo Qt and qmake information:
         qmake -query QT_VERSION
         qmake -query QMAKE_SPEC
+        echo.
+        echo Checking vcpkg zlib installation:
+        dir "C:\vcpkg\installed\x64-windows\include" | findstr zlib || echo zlib headers not found
+        dir "C:\vcpkg\installed\x64-windows\lib" | findstr zlib || echo zlib libraries not found
       shell: cmd
         
     - name: Setup Ruby
@@ -178,21 +212,10 @@ jobs:
       run: ruby prepare.rb
       shell: bash
       
-    - name: Build zlib
-      run: |
-        call path_update.bat
-        git clone https://github.com/madler/zlib.git ../zlib
-        if exist "_build" rmdir /s /q "_build"
-        mkdir "_build"
-        cd "_build"
-        qmake -spec win32-msvc "CONFIG+=release" ../zlib.pro
-        ..\misc\jom.exe
-        cd ..
-      shell: cmd
-      
     - name: Build libfiletype
       run: |
         call path_update.bat
+        set "VCPKG_ROOT=C:\vcpkg"
         if exist "_build" rmdir /s /q "_build"
         mkdir "_build"
         cd "_build"
@@ -216,6 +239,7 @@ jobs:
     - name: Build Guitar
       run: |
         call path_update.bat
+        set "VCPKG_ROOT=C:\vcpkg"
         if exist "_build" rmdir /s /q "_build"
         mkdir "_build"
         cd "_build"

@@ -13,17 +13,16 @@ msvc:INCLUDEPATH += file-msvc
 gcc:INCLUDEPATH += file-gcc
 INCLUDEPATH += file
 
+msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
+
 macx:QMAKE_CFLAGS += -include xlocale.h
 macx:QMAKE_CXXFLAGS += -include xlocale.h
 
 # zlib
 
-win32:msvc:INCLUDEPATH += $$PWD/../../zlib
-
-msvc:INCLUDEPATH += C:/vcpkg/packages/zlib_x64-windows/include
-
 msvc {
-	LIBS += C:\vcpkg\packages\zlib_x64-windows\lib\zlib.lib
+	LIBS += -lzlib
 }
 
 !msvc {

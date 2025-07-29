@@ -3,7 +3,7 @@ QMAKE_PROJECT_DEPTH = 0
 
 QT += core gui widgets svg network
 
-win32:lessThan(QT_MAJOR_VERSION, 6) {
+msvc:lessThan(QT_MAJOR_VERSION, 6) {
     QT += winextras
 }
 
@@ -46,9 +46,12 @@ INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
 # INCLUDEPATH += $$PWD/filetype/src
 
-win32:INCLUDEPATH += $$PWD/misc/winpty/include
-win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
-# win32:QMAKE_CFLAGS += /FI $$PWD/filetype/misc/win32/unistd.h
+msvc:INCLUDEPATH += $$PWD/misc/winpty/include
+msvc:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
+# msvc:QMAKE_CFLAGS += /FI $$PWD/filetype/misc/win32/unistd.h
+
+msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
 # OpenSSL
 
@@ -63,13 +66,13 @@ haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 
-win32:msvc {
+msvc {
 	INCLUDEPATH += "C:\ProgramData\OpenSSL\include"
 	LIBS += "-LC:\ProgramData\OpenSSL\lib\VC\x64\MD"
 	LIBS += -llibcrypto -llibssl
 }
 
-win32:gcc {
+msvc:gcc {
 	INCLUDEPATH += C:\Qt\Tools\mingw1310_64\opt\include
 	LIBS += -LC:\Qt\Tools\mingw1310_64\opt\lib
 	LIBS += -lcrypto -lssl
@@ -85,10 +88,8 @@ PRE_TARGETDEPS += prepare
 
 # zlib
 
-msvc:INCLUDEPATH += C:/vcpkg/packages/zlib_x64-windows/include
-
 msvc {
-	LIBS += C:\vcpkg\packages\zlib_x64-windows\lib\zlib.lib
+	LIBS += -lzlib
 }
 
 !msvc {

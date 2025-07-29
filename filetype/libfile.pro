@@ -11,9 +11,10 @@ DEFINES += ONIG_STATIC=1 HAVE_CONFIG_H=1
 
 msvc:INCLUDEPATH += file-msvc
 msvc:INCLUDEPATH += file-msvc/dirent/include
-msvc:INCLUDEPATH += $$PWD/../../zlib
 msvc:INCLUDEPATH += file-msvc
 msvc:QMAKE_CFLAGS += /FI file-msvc/config.h /FI inttypes.h
+
+msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
 gcc:INCLUDEPATH += file-gcc
 gcc:QMAKE_CFLAGS += -include config.h -include stdint.h
