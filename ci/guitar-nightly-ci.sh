@@ -11,6 +11,6 @@ make build
 make guitar-doxy
 popd
 
-curl -T _guitar-nightly-ci/Guitar/docker/home/guitar_*.deb ftp://192.168.0.5/Public/pub/nightlybuild/test/
-curl -T _guitar-nightly-ci/Guitar/docker/home/Guitar-*.AppImage ftp://192.168.0.5/Public/pub/nightlybuild/test/
-curl -T _guitar-nightly-ci/Guitar/doxy/guitar-doxy-html.tar.zst ftp://192.168.0.5/Public/pub/nightlybuild/
+curl -T _guitar-nightly-ci/Guitar/docker/home/guitar_*.deb ftp://10.168.0.5/Public/pub/nightlybuild/test/
+curl -T _guitar-nightly-ci/Guitar/docker/home/Guitar-*.AppImage ftp://10.168.0.5/Public/pub/nightlybuild/test/
+curl -T _guitar-nightly-ci/Guitar/doxy/guitar-doxy-html.tar.zst ftp://10.168.0.5/Public/pub/nightlybuild/

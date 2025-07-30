@@ -17,6 +17,6 @@ pushd packaging/deb
 export SUFFIX=dev
 ruby mk-deb.rb
 file=`./debname.rb`
-curl -T $file ftp://192.168.0.5/Public/pub/nightlybuild/
+curl -T $file ftp://10.168.0.5/Public/pub/nightlybuild/
 popd
 
