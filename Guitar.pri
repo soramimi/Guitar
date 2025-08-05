@@ -266,7 +266,6 @@ SOURCES += \
 	src/common/charvec.cpp \
 	src/common/joinpath.cpp \
 	src/common/misc.cpp \
-	src/common/rwfile.cpp \
 	src/darktheme/DarkStyle.cpp \
 	src/darktheme/LightStyle.cpp \
 	src/darktheme/NinePatch.cpp \
@@ -438,7 +437,6 @@ HEADERS += \
 	src/common/joinpath.h \
 	src/common/jstream.h \
 	src/common/misc.h \
-	src/common/rwfile.h \
 	src/common/strformat.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/LightStyle.h \

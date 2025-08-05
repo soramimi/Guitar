@@ -1,9 +1,10 @@
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
 #include "common/jstream.h"
-#include "common/rwfile.h"
 #include "common/strformat.h"
 #include "webclient.h"
+
+#include <QFile>
 
 struct CommitMessageResult {
 	bool completion = false;
@@ -354,7 +355,13 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	std::string json = generate_prompt_json(model, prompt);
 	
 	if (save_log) {
-		writefile("c:\\a\\request.txt", json.c_str(), json.size());
+		QFile file("c:\\a\\request.json");
+		if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			file.write(json.c_str(), json.size());
+			file.close();
+		} else {
+			qDebug() << "Failed to write request JSON to file:" << file.errorString();
+		}
 	}
 
 	GenerativeAI::Credential cred = global->get_ai_credential(model.provider_id());
@@ -375,7 +382,13 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		char const *data = http.content_data();
 		size_t size = http.content_length();
 		if (save_log) {
-			writefile("c:\\a\\response.txt", data, size);
+			QFile file("c:\\a\\response.txt");
+			if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+				file.write(data, size);
+				file.close();
+			} else {
+				qDebug() << "Failed to write response to file:" << file.errorString();
+			}
 		}
 		std::string text(data, size);
 		CommitMessageGenerator::Result ret = parse_response(text, model.provider_id());

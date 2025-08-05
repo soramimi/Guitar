@@ -1,7 +1,6 @@
 #include "GitBasicSession.h"
 #include "ApplicationGlobal.h"
 #include "common/joinpath.h"
-#include "common/rwfile.h"
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
@@ -142,6 +141,16 @@ std::optional<std::vector<GitFileItem>> GitBasicSession::ls(const char *path)
 
 std::optional<std::vector<char>> GitBasicSession::readfile(const char *path)
 {
-	return ::readfile(path, -1);
+	QFile file(misc::normalizePathSeparator(QString::fromUtf8(path)));
+	if (!file.open(QIODevice::ReadOnly)) {
+		qDebug() << "Failed to open file for reading: " << path;
+		return std::nullopt;
+	}
+	std::vector<char> data(file.size());
+	if (file.read(data.data(), data.size()) != data.size()) {
+		qDebug() << "Failed to read file: " << path;
+		return std::nullopt;
+	}
+	return data;
 }
 
