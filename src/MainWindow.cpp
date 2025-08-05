@@ -1169,7 +1169,7 @@ RepositoryInfo const *MainWindow::findRegisteredRepository(QString *workdir) con
 	*workdir = QDir(*workdir).absolutePath();
 	workdir->replace('\\', '/');
 
-	if (const_cast<MainWindow *>(this)->git().isValidWorkingCopy(*workdir)) {
+	if (const_cast<MainWindow *>(this)->isValidWorkingCopy(*workdir)) {
 		for (RepositoryInfo const &item : repositoryList()) {
 			Qt::CaseSensitivity cs = Qt::CaseSensitive;
 #ifdef Q_OS_WIN
@@ -1678,7 +1678,7 @@ bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString 
 
 	dir = misc::normalizePathSeparator(dir);
 
-	if (!git().isValidWorkingCopy(dir)) {
+	if (!unassosiated_git_runner().isValidWorkingCopy(dir)) {
 		auto isBareRepository = [](QString const &dir){
 			if (QFileInfo(dir).isDir()) {
 				if (QFileInfo(dir / "config").isFile()) {
@@ -5578,8 +5578,11 @@ GitRunner MainWindow::new_git_runner()
 
 GitRunner MainWindow::git()
 {
-	return m->current_git_runner;
- }
+	if (m->current_git_runner) {
+		return m->current_git_runner;
+	}
+	return unassosiated_git_runner();
+}
 
 GitRunner MainWindow::git_for_submodule(GitRunner g, const Git::SubmoduleItem &submod)
 {
