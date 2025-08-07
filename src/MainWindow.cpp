@@ -1486,7 +1486,6 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	cancelUpdateFileList();
 
-
 	GitRunner g;
 	if (opt.new_session) {
 		endSession();
@@ -3391,8 +3390,6 @@ void MainWindow::setInteractionMode(const MainWindow::InteractionMode &im)
 	m->interaction_mode = im;
 }
 
-
-
 void MainWindow::setUncommitedChanges(bool uncommited_changes)
 {
 	m->uncommited_changes = uncommited_changes;
@@ -3633,7 +3630,6 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 
 Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 {
-	PROFILE;
 	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
 	fixCommitLogOrder(&list);
 	list.updateIndex();

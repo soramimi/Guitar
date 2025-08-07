@@ -140,13 +140,7 @@ jobs:
         echo set "PATH=%PATH%" >> path_update.bat
       shell: cmd
         
-    - name: Install OpenSSL
-      run: |
-        echo Installing OpenSSL...
-        choco install openssl --install-arguments="'/DIR=C:\ProgramData\OpenSSL'" -y
-      shell: cmd
-        
-    - name: Install vcpkg and zlib
+    - name: Install vcpkg, zlib and openssl
       run: |
         echo Installing vcpkg...
         if exist "C:\vcpkg" (
@@ -171,6 +165,13 @@ jobs:
           exit /b 1
         )
         echo zlib installation completed successfully
+        echo Installing openssl via vcpkg...
+        C:\vcpkg\vcpkg.exe install openssl:x64-windows
+        if errorlevel 1 (
+          echo Failed to install openssl
+          exit /b 1
+        )
+        echo openssl installation completed successfully
       shell: cmd
       
     - name: Verify environment

@@ -65,18 +65,7 @@ linux {
 haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
-
-msvc {
-	INCLUDEPATH += "C:\ProgramData\OpenSSL\include"
-	LIBS += "-LC:\ProgramData\OpenSSL\lib\VC\x64\MD"
-	LIBS += -llibcrypto -llibssl
-}
-
-msvc:gcc {
-	INCLUDEPATH += C:\Qt\Tools\mingw1310_64\opt\include
-	LIBS += -LC:\Qt\Tools\mingw1310_64\opt\lib
-	LIBS += -lcrypto -lssl
-}
+msvc:LIBS += -llibcrypto -llibssl
 
 # execute 'ruby prepare.rb' automatically
 
@@ -84,7 +73,6 @@ prepare.target = prepare
 prepare.commands = cd $$PWD && ruby -W0 prepare.rb
 QMAKE_EXTRA_TARGETS += prepare
 PRE_TARGETDEPS += prepare
-
 
 # zlib
 

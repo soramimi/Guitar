@@ -1456,6 +1456,7 @@ QStringList Git::getRemotes()
 
 Git::User Git::getUser(Source purpose)
 {
+	PROFILE;
 	User user;
 	bool global = purpose == Git::Source::Global;
 	bool local = purpose == Git::Source::Local;
@@ -1465,11 +1466,19 @@ Git::User Git::getUser(Source purpose)
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
 	opt.chdir = !global;
-	if (exec_git(QString("config %1 user.name").arg(arg1), opt)) {
-		user.name = resultQString().trimmed();
-	}
-	if (exec_git(QString("config %1 user.email").arg(arg1), opt)) {
-		user.email = resultQString().trimmed();
+	{
+		auto user_name = std::async(std::launch::async, [&](){
+			return exec_git(QString("config %1 user.name").arg(arg1), opt);
+		});
+		auto user_email = std::async(std::launch::async, [&](){
+			return exec_git(QString("config %1 user.email").arg(arg1), opt);
+		});
+		if (user_name.get()) {
+			user.name = resultQString().trimmed();
+		}
+		if (user_email.get()) {
+			user.email = resultQString().trimmed();
+		}
 	}
 	return user;
 }
