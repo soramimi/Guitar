@@ -14,7 +14,7 @@ class MainWindow;
 class FilePropertyDialog : public QDialog {
 	Q_OBJECT
 private:
-	MainWindow *mainwindow;
+	// MainWindow *mainwindow;
 public:
 	explicit FilePropertyDialog(QWidget *parent = nullptr);
 	~FilePropertyDialog() override;

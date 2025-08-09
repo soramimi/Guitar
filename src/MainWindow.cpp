@@ -5418,7 +5418,7 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 			QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
 		} else {
 			// ファイルプロパティダイアログを表示する
-			QString path = getFilePath(item);
+			QString path = currentWorkingCopyDir() / getFilePath(item);
 			Git::Hash id = getObjectID(item);
 			FilePropertyDialog dlg(this);
 			dlg.exec(path, id);

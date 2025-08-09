@@ -30,9 +30,16 @@ void FilePropertyDialog::exec(QString const &path, Git::Hash const &id)
 		return;
 	}
 	QByteArray ba;
-	QFile file(path);
-	if (file.open(QFile::ReadOnly)) {
-		ba = file.read(1024 * 1024);
+	if (id) {
+		Git::Object obj = global->mainwindow->catFile(global->mainwindow->git(), id.toQString());
+		if (obj.type == Git::Object::Type::BLOB) {
+			ba = obj.content;
+		}
+	} else {
+		QFile file(path);
+		if (file.open(QFile::ReadOnly)) {
+			ba = file.read(1024 * 1024);
+		}
 	}
 	std::string mimetype = global->filetype.file(ba.data(), ba.size()).mimetype;
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
