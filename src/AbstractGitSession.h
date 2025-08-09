@@ -54,7 +54,7 @@ public:
 	GitCache &cache();
 	void clearResult();
 	QString workingDir() const;
-	virtual bool exec_git(QString const &arg, Option const &opt) = 0;
+	virtual std::optional<Var> exec_git(QString const &arg, Option const &opt) = 0;
 	virtual bool remove(QString const &path) = 0;
 
 	virtual bool is_connected() const = 0;

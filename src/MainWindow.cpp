@@ -6468,7 +6468,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	AbstractGitSession::Option opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
-	bool f = g.git->exec_git(cmd, opt);
+	bool f = (bool)g.git->exec_git(cmd, opt);
 	{
 		QElapsedTimer time;
 		time.start();

@@ -412,7 +412,7 @@ public:
 	static QString trimPath(QString const &s);
 
 private:
-	QStringList make_branch_list_();
+	QStringList make_branch_list_(const std::optional<AbstractGitSession::Var> &result);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
@@ -447,29 +447,29 @@ public:
 	}
 
 	std::vector<char> const &toCharVector() const;
-	QByteArray toQByteArray() const;
+	QByteArray toQByteArray(const std::optional<AbstractGitSession::Var> &var) const;
 	bool isValidGitCommand() const
 	{
 		return session_->is_connected();
 	}
 	std::string_view resultStdString() const;
-	QString resultQString() const;
-	bool exec_git(QString const &arg, AbstractGitSession::Option const &opt)
+	QString resultQString(const std::optional<AbstractGitSession::Var> &var) const;
+	std::optional<AbstractGitSession::Var> exec_git(QString const &arg, AbstractGitSession::Option const &opt)
 	{
 		return session_->exec_git(arg, opt);
 	}
-	bool git(QString const &arg)
+	std::optional<AbstractGitSession::Var> git(QString const &arg)
 	{
 		return exec_git(arg, {});
 	}
-	bool git_nolog(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<AbstractGitSession::Var> git_nolog(QString const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.log = false;
 		return exec_git(arg, opt);
 	}
-	bool git_nochdir(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<AbstractGitSession::Var> git_nochdir(QString const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;

@@ -185,8 +185,8 @@ bool Git::isValidID(QString const &id)
 
 QString Git::status()
 {
-	git("status");
-	return resultQString();
+	auto result = git("status");
+	return resultQString(result);
 }
 
 std::vector<char> const &Git::toCharVector() const
@@ -194,9 +194,9 @@ std::vector<char> const &Git::toCharVector() const
 	return var().result;
 }
 
-QByteArray Git::toQByteArray() const
+QByteArray Git::toQByteArray(std::optional<AbstractGitSession::Var> const &var) const
 {
-	auto const &v = toCharVector();
+	auto const &v = var->result;
 	if (v.empty()) return QByteArray();
 	return QByteArray(v.data(), v.size());
 }
@@ -208,9 +208,13 @@ std::string_view Git::resultStdString() const
 	return std::string_view(v.data(), v.size());
 }
 
-QString Git::resultQString() const
+QString Git::resultQString(std::optional<AbstractGitSession::Var> const &var) const
 {
-	return QString::fromUtf8(toQByteArray());
+	if (var) {
+		return QString::fromUtf8(toQByteArray(var));
+	} else {
+		return {};
+	}
 }
 
 QString Git::errorMessage() const
@@ -259,8 +263,8 @@ bool GitBasicSession::isValidWorkingCopy(QString const &dir) const
 
 QString Git::version()
 {
-	git_nochdir("--version", nullptr);
-	return resultQString().trimmed();
+	auto result = git_nochdir("--version", nullptr);
+	return resultQString(result).trimmed();
 }
 
 bool Git::init()
@@ -287,8 +291,9 @@ Git::Hash Git::rev_parse(QString const &name)
 	cmd = cmd.arg(name);
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
-	if (exec_git(cmd, opt)) {
-		return Git::Hash(resultQString().trimmed());
+	auto result = exec_git(cmd, opt);
+	if (result) {
+		return Git::Hash(resultQString(result).trimmed());
 	}
 	return {};
 }
@@ -296,8 +301,8 @@ Git::Hash Git::rev_parse(QString const &name)
 QList<Git::Tag> Git::tags()
 {
 	QList<Tag> list;
-	git("show-ref");
-	QStringList lines = misc::splitLines(resultQString());
+	auto result = git("show-ref");
+	QStringList lines = misc::splitLines(resultQString(result));
 	for (QString const &line : lines) {
 		QStringList l = misc::splitWords(line);
 		if (l.size() >= 2) {
@@ -316,7 +321,7 @@ bool Git::tag(QString const &name, Hash const &id)
 {
 	QString cmd = "tag \"%1\" %2";
 	cmd = cmd.arg(name).arg(id.toQString());
-	return git(cmd);
+	return (bool)git(cmd);
 }
 
 bool Git::delete_tag(QString const &name, bool remote)
@@ -338,16 +343,16 @@ QString Git::diff(QString const &old_id, QString const &new_id)
 {
 	QString cmd = "diff --full-index -a %1 %2";
 	cmd = cmd.arg(old_id).arg(new_id);
-	git(cmd);
-	return resultQString();
+	auto result = git(cmd);
+	return resultQString(result);
 }
 
 QString Git::diff_file(QString const &old_path, QString const &new_path)
 {
 	QString cmd = "diff --full-index -a -- %1 %2";
 	cmd = cmd.arg(old_path).arg(new_path);
-	git(cmd);
-	return resultQString();
+	auto result = git(cmd);
+	return resultQString(result);
 }
 
 std::string Git::diff_head(std::function<bool (std::string const &name, std::string const &mime)> fn_accept)
@@ -380,8 +385,8 @@ QList<Git::DiffRaw> Git::diff_raw(Hash const &old_id, Hash const &new_id)
 	QList<DiffRaw> list;
 	QString cmd = "diff --raw --abbrev=%1 %2 %3";
 	cmd = cmd.arg(GIT_ID_LENGTH).arg(old_id.toQString()).arg(new_id.toQString());
-	git(cmd);
-	QString text = resultQString();
+	auto result = git(cmd);
+	QString text = resultQString(result);
 	QStringList lines = text.split('\n', _SkipEmptyParts);
 	for (QString const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		DiffRaw item;
@@ -413,16 +418,16 @@ QString Git::diff_to_file(QString const &old_id, QString const &path)
 {
 	QString cmd = "diff --full-index -a %1 -- \"%2\"";
 	cmd = cmd.arg(old_id).arg(path);
-	git(cmd);
-	return resultQString();
+	auto result = git(cmd);
+	return resultQString(result);
 }
 
 QString Git::getDefaultBranch()
 {
 	AbstractGitSession::Option opt;
 	opt.chdir = false;
-	exec_git("config --global init.defaultBranch", opt);
-	return resultQString().trimmed();
+	auto result = exec_git("config --global init.defaultBranch", opt);
+	return resultQString(result).trimmed();
 }
 
 void Git::setDefaultBranch(const QString &branchname)
@@ -442,8 +447,8 @@ void Git::unsetDefaultBranch()
 QString Git::getCurrentBranchName()
 {
 	if (isValidWorkingCopy()) {
-		git("rev-parse --abbrev-ref HEAD");
-		QString s = resultQString().trimmed();
+		auto result = git("rev-parse --abbrev-ref HEAD");
+		QString s = resultQString(result).trimmed();
 		if (!s.isEmpty() && !s.startsWith("fatal:") && s.indexOf(' ') < 0) {
 			return s;
 		}
@@ -536,8 +541,8 @@ BranchList Git::branches()
 		QString alternate_name;
 	};
 	QList<BranchItem> branches;
-	git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
-	QString s = resultQString();
+	auto result = git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH));
+	QString s = resultQString(result);
 
 	QStringList lines = misc::splitLines(s);
 	for (QString const &line : lines) {
@@ -714,10 +719,10 @@ Git::CommitItemList Git::log_all(Hash const &id, int maxcount)
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
-	git_nolog(cmd, nullptr);
+	auto result = git_nolog(cmd, nullptr);
 
 	if (getProcessExitCode() == 0) {
-		QString text = resultQString().trimmed();
+		QString text = resultQString(result).trimmed();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
 			auto item = parseCommitItem(line);
@@ -738,10 +743,10 @@ Git::CommitItemList Git::log_file(QString const &path, int maxcount)
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 -- %2";
 	cmd = cmd.arg(maxcount).arg(path);
-	git_nolog(cmd, nullptr);
+	auto result = git_nolog(cmd, nullptr);
 
 	if (getProcessExitCode() == 0) {
-		QString text = resultQString().trimmed();
+		QString text = resultQString(result).trimmed();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
 			auto item = parseCommitItem(line);
@@ -815,7 +820,7 @@ std::optional<Git::CommitItem> Git::log_signature(Hash const &id)
 
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
-	git_nolog(cmd, nullptr);
+	auto result = git_nolog(cmd, nullptr);
 	if (getProcessExitCode() == 0) {
 		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
 			QStringList list;
@@ -845,7 +850,7 @@ std::optional<Git::CommitItem> Git::log_signature(Hash const &id)
 		};
 
 		QString gpgtext;
-		QString text = resultQString().trimmed();
+		QString text = resultQString(result).trimmed();
 		QStringList lines = splitLines(text);
 		for (QString const &line : lines) {
 			if (line.startsWith("gpg:")) {
@@ -1016,13 +1021,13 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	QString clone_to = data.basedir / data.subdir;
 	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to);
 
-	bool ok = false;
+	std::optional<AbstractGitSession::Var> var;
 	QDir cwd = QDir::current();
 
 	auto DoIt = [&](){
 		QString cmd = "clone --recurse-submodules --progress -j%1 \"%2\" \"%3\"";
 		cmd = cmd.arg(std::thread::hardware_concurrency()).arg(data.url).arg(data.subdir);
-		ok = git_nochdir(cmd, pty);
+		var = git_nochdir(cmd, pty);
 	};
 
 	if (pty) {
@@ -1035,15 +1040,15 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 		}
 	}
 
-	return ok;
+	return (bool)var;
 }
 
 QList<Git::SubmoduleItem> Git::submodules()
 {
 	QList<Git::SubmoduleItem> mods;
 
-	git("submodule");
-	QString text = resultQString();
+	auto result = git("submodule");
+	QString text = resultQString(result);
 	ushort c = text.utf16()[0];
 	if (c == ' ' || c == '+' || c == '-') {
 		text = text.mid(1);
@@ -1080,7 +1085,7 @@ bool Git::submodule_add(const CloneData &data, bool force, AbstractPtyProcess *p
 	AbstractGitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
-	ok = exec_git(cmd, opt);
+	ok = (bool)exec_git(cmd, opt);
 
 	return ok;
 }
@@ -1097,7 +1102,7 @@ bool Git::submodule_update(SubmoduleUpdateData const &data, AbstractPtyProcess *
 	AbstractGitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 QString Git::encodeQuotedText(QString const &str)
@@ -1141,7 +1146,7 @@ bool Git::commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess 
 
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 bool Git::commit(QString const &text, bool sign, AbstractPtyProcess *pty)
@@ -1158,7 +1163,7 @@ bool Git::revert(Hash const &id)
 {
 	QString cmd = "revert %1";
 	cmd = cmd.arg(id.toQString());
-	return git(cmd);
+	return (bool)git(cmd);
 }
 
 bool Git::push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
@@ -1176,7 +1181,7 @@ bool Git::push_u(bool set_upstream, QString const &remote, QString const &branch
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 bool Git::push_tags(AbstractPtyProcess *pty)
@@ -1184,7 +1189,7 @@ bool Git::push_tags(AbstractPtyProcess *pty)
 	QString cmd = "push --tags";
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 Git::FileStatusList Git::status_s_()
@@ -1192,8 +1197,9 @@ Git::FileStatusList Git::status_s_()
 	FileStatusList files;
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
-	if (exec_git("status -s -u --porcelain", opt)) {
-		QString text = resultQString();
+	auto result = exec_git("status -s -u --porcelain", opt);
+	if (result) {
+		QString text = resultQString(result);
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
 			if (line.size() > 3) {
@@ -1215,8 +1221,8 @@ Git::FileStatusList Git::status_s()
 QString Git::objectType(Hash const &id)
 {
 	if (isValidID(id)) {
-		git("cat-file -t " + id.toQString());
-		return resultQString().trimmed();
+		auto result = git("cat-file -t " + id.toQString());
+		return resultQString(result).trimmed();
 	}
 	return {};
 }
@@ -1224,8 +1230,8 @@ QString Git::objectType(Hash const &id)
 std::optional<QByteArray> Git::cat_file(Hash const &id)
 {
 	if (isValidID(id)) {
-		git("cat-file -p " + id.toQString());
-		return toQByteArray();
+		auto result = git("cat-file -p " + id.toQString());
+		return toQByteArray(result);
 	}
 	return std::nullopt;
 }
@@ -1298,7 +1304,7 @@ bool Git::stage(QStringList const &paths, AbstractPtyProcess *pty)
 
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 void Git::unstage(QString const &path)
@@ -1321,14 +1327,14 @@ void Git::unstage(QStringList const &paths)
 
 bool Git::unstage_all()
 {
-	return git("reset HEAD");
+	return (bool)git("reset HEAD");
 }
 
 bool Git::pull(AbstractPtyProcess *pty)
 {
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git("pull", opt);
+	return (bool)exec_git("pull", opt);
 }
 
 bool Git::fetch(AbstractPtyProcess *pty, bool prune)
@@ -1340,13 +1346,13 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
-QStringList Git::make_branch_list_()
+QStringList Git::make_branch_list_(std::optional<AbstractGitSession::Var> const &result)
 {
 	QStringList list;
-	QStringList l = misc::splitLines(resultQString());
+	QStringList l = misc::splitLines(resultQString(result));
 	for (QString const &s : l) {
 		if (s.startsWith("* ")) list.push_back(s.mid(2));
 		if (s.startsWith("  ")) list.push_back(s.mid(2));
@@ -1385,8 +1391,8 @@ QString Git::getCherryPicking() const
 
 QString Git::getMessage(QString const &id)
 {
-	git("show --no-patch --pretty=%s " + id);
-	return resultQString().trimmed();
+	auto result = git("show --no-patch --pretty=%s " + id);
+	return resultQString(result).trimmed();
 }
 
 void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
@@ -1411,7 +1417,7 @@ void Git::mergeBranch(QString const &name, MergeFastForward ff, bool squash)
 
 bool Git::deleteBranch(QString const &name)
 {
-	return git(QString("branch -D \"%1\"").arg(name));
+	return (bool)git(QString("branch -D \"%1\"").arg(name));
 }
 
 bool Git::checkout(QString const &branch_name, QString const &id) // oops! `switch` is C's keyword
@@ -1423,12 +1429,12 @@ bool Git::checkout(QString const &branch_name, QString const &id) // oops! `swit
 	} else {
 		cmd = QString("switch -c %1 %2").arg(branch_name).arg(id);
 	}
-	return git(cmd);
+	return (bool)git(cmd);
 }
 
 bool Git::checkout_detach(QString const &id)
 {
-	return git("checkout --detach " + id);
+	return (bool)git("checkout --detach " + id);
 }
 
 void Git::rebaseBranch(QString const &name)
@@ -1444,8 +1450,8 @@ void Git::rebase_abort()
 QStringList Git::getRemotes()
 {
 	QStringList ret;
-	git("remote");
-	QStringList lines = misc::splitLines(resultQString());
+	auto result = git("remote");
+	QStringList lines = misc::splitLines(resultQString(result));
 	for (QString const &line: lines) {
 		if (!line.isEmpty()) {
 			ret.push_back(line);
@@ -1473,12 +1479,8 @@ Git::User Git::getUser(Source purpose)
 		auto user_email = std::async(std::launch::async, [&](){
 			return exec_git(QString("config %1 user.email").arg(arg1), opt);
 		});
-		if (user_name.get()) {
-			user.name = resultQString().trimmed();
-		}
-		if (user_email.get()) {
-			user.email = resultQString().trimmed();
-		}
+		user.name = resultQString(user_name.get()).trimmed();
+		user.email = resultQString(user_email.get()).trimmed();
 	}
 	return user;
 }
@@ -1498,45 +1500,45 @@ void Git::setUser(const User &user, bool global)
 
 bool Git::reset_head1()
 {
-	return git("reset HEAD~1");
+	return (bool)git("reset HEAD~1");
 }
 
 bool Git::reset_hard()
 {
-	return git("reset --hard");
+	return (bool)git("reset --hard");
 }
 
 bool Git::clean_df()
 {
-	return git("clean -df");
+	return (bool)git("clean -df");
 }
 
 bool Git::stash()
 {
-	return git("stash");
+	return (bool)git("stash");
 }
 
 bool Git::stash_apply()
 {
-	return git("stash apply");
+	return (bool)git("stash apply");
 }
 
 bool Git::stash_drop()
 {
-	return git("stash drop");
+	return (bool)git("stash drop");
 }
 
 bool Git::rm_cached(QString const &file)
 {
 	QString cmd = "rm --cached \"%1\"";
-	return git(cmd.arg(file));
+	return (bool)git(cmd.arg(file));
 }
 
 void Git::remote_v(std::vector<Remote> *out)
 {
 	out->clear();
-	git("remote -v");
-	QStringList lines = misc::splitLines(resultQString());
+	auto result = git("remote -v");
+	QStringList lines = misc::splitLines(resultQString(result));
 	for (QString const &line : lines) {
 		int i = line.indexOf('\t');
 		int j = line.indexOf(" (");
@@ -1605,8 +1607,9 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 	out->clear();
 	QString cmd = "reflog --no-abbrev --raw -n %1";
 	cmd = cmd.arg(maxcount);
-	if (!git(cmd)) return false;
-	QByteArray ba = toQByteArray();
+	auto result = git(cmd);
+	if (!result) return false;
+	QByteArray ba = toQByteArray(result);
 	if (!ba.isEmpty()) {
 		ReflogItem item;
 		char const *begin = ba.data();
@@ -1763,8 +1766,9 @@ QByteArray Git::blame(QString const &path)
 {
 	QString cmd = "blame --porcelain --abbrev=40 \"%1\"";
 	cmd = cmd.arg(path);
-	if (git(cmd)) {
-		return toQByteArray();
+	auto result = git(cmd);
+	if (result) {
+		return toQByteArray(result);
 	}
 	return QByteArray();
 }
@@ -1773,8 +1777,9 @@ QList<Git::RemoteInfo> Git::ls_remote()
 {
 	QList<RemoteInfo> list;
 	QString cmd = "ls-remote";
-	if (git(cmd)) {
-		QStringList lines = misc::splitLines(resultQString());
+	auto result = git(cmd);
+	if (result) {
+		QStringList lines = misc::splitLines(resultQString(result));
 		for (QString const &line : lines) {
 			QStringList words = misc::splitWords(line);
 			if (words.size() == 2 && isValidID(words[0])) {
@@ -1797,8 +1802,9 @@ QString Git::signingKey(Source purpose)
 	cmd = cmd.arg(arg1);
 	AbstractGitSession::Option opt;
 	opt.chdir = purpose != Source::Global;
-	if (exec_git(cmd, opt)) {
-		return resultQString().trimmed();
+	auto result = exec_git(cmd, opt);
+	if (result) {
+		return resultQString(result).trimmed();
 	}
 	return QString();
 }
@@ -1813,7 +1819,7 @@ bool Git::setSigningKey(QString const &id, bool global)
 	cmd = cmd.arg(global ? "--global" : "--local").arg(id.isEmpty() ? "--unset" : "").arg(id);
 	AbstractGitSession::Option opt;
 	opt.chdir = !global;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 Git::SignPolicy Git::signPolicy(Source source)
@@ -1825,8 +1831,9 @@ Git::SignPolicy Git::signPolicy(Source source)
 	cmd = cmd.arg(arg1);
 	AbstractGitSession::Option opt;
 	opt.chdir = source != Source::Global;
-	if (exec_git(cmd, opt)) {
-		QString t = resultQString().trimmed();
+	auto result = exec_git(cmd, opt);
+	if (result) {
+		QString t = resultQString(result).trimmed();
 		if (t == "false") return SignPolicy::False;
 		if (t == "true")  return SignPolicy::True;
 	}
@@ -1851,7 +1858,7 @@ bool Git::setSignPolicy(Source source, SignPolicy policy)
 	cmd = cmd.arg(arg1).arg(arg2).arg(arg3);
 	AbstractGitSession::Option opt;
 	opt.chdir = source != Source::Global;
-	return exec_git(cmd, opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 bool Git::configGpgProgram(QString const &path, bool global)
@@ -1867,7 +1874,7 @@ bool Git::configGpgProgram(QString const &path, bool global)
 	if (!path.isEmpty()) {
 		cmd += QString("\"%1\"").arg(path);
 	}
-	return git_nochdir(cmd, nullptr);
+	return (bool)git_nochdir(cmd, nullptr);
 }
 
 // Diff

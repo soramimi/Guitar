@@ -28,12 +28,12 @@ bool GitBasicSession::is_connected() const
 	return QFileInfo(gitCommand()).isExecutable();
 }
 
-bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
+std::optional<AbstractGitSession::Var> GitBasicSession::exec_git(const QString &arg, const Option &opt)
 {
 	QFileInfo info2(gitCommand());
 	if (!info2.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
-		return false;
+		return std::nullopt;
 	}
 
 	clearResult();
@@ -43,9 +43,9 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 	if (ssh.isEmpty() || gitinfo().ssh_key_override.isEmpty()) {
 		// nop
 	} else {
-		if (ssh.indexOf('\"') >= 0) return false;
-		if (gitinfo().ssh_key_override.indexOf('\"') >= 0) return false;
-		if (!QFileInfo(ssh).isExecutable()) return false;
+		if (ssh.indexOf('\"') >= 0) return std::nullopt;
+		if (gitinfo().ssh_key_override.indexOf('\"') >= 0) return std::nullopt;
+		if (!QFileInfo(ssh).isExecutable()) return std::nullopt;
 		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(ssh).arg(gitinfo().ssh_key_override);
 	}
 
@@ -79,7 +79,7 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 				if (a) {
 					var().result = *a;
 					qDebug() << "--- Process\t" << cmd << "\t" << "cache hit" << "\t---";
-					return true;
+					return var();
 				}
 			}
 
@@ -109,10 +109,16 @@ bool GitBasicSession::exec_git(const QString &arg, const Option &opt)
 			}
 		}
 
-		return var().exit_status.exit_code == 0;
+		return var();
+		// return var().exit_status.exit_code == 0;
 	};
 
-	return DoIt();
+	DoIt();
+	if (var().exit_status.exit_code == 0) {
+		return var();
+	} else {
+		return std::nullopt;
+	}
 }
 
 bool GitBasicSession::remove(const QString &path)
