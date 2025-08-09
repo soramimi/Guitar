@@ -18,7 +18,7 @@ public:
 
 	bool is_connected() const;
 	bool isValidWorkingCopy(QString const &dir) const;
-	std::optional<AbstractGitSession::Var> exec_git(QString const &arg, Option const &opt);
+	std::optional<AbstractGitSession::GitResult> exec_git(QString const &arg, Option const &opt);
 	bool remove(const QString &path);
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);

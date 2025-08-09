@@ -402,7 +402,7 @@ private:
 	void updateAvatar(const Git::User &user, bool request);
 	void cleanSubModule(GitRunner g, QListWidgetItem *item);
 
-	void updateUncommitedChanges();
+	void updateUncommitedChanges(GitRunner g);
 	void enableDragAndDropOnRepositoryTree(bool enabled);
 	QString preferredRepositoryGroup() const;
 	void setPreferredRepositoryGroup(const QString &group);
@@ -414,7 +414,7 @@ private:
 	int rowFromCommitId(const Git::Hash &id);
 
 	void _updateCommitLogTableView(int delay_ms);
-	void makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row);
+	void makeCommitLog(Git::Hash const &head, CommitLogExchangeData exdata, int scroll_pos, int select_row);
 
 	void updateButton();
 	void runPtyGit(const QString &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);

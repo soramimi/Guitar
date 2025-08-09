@@ -21,6 +21,7 @@ class ProcessStatus {
 public:
 	bool ok = false;
 	int exit_code = 0;
+	std::vector<char> output;
 	std::string error_message;
 	std::string log_message;
 };

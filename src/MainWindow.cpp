@@ -1014,18 +1014,6 @@ TagList const &MainWindow::queryCurrentCommitTagList() const
 	return findTag(commit.commit_id);
 }
 
-std::map<Git::Hash, TagList> MainWindow::queryTags(GitRunner g)
-{
-	std::map<Git::Hash, TagList> tag_map;
-
-	TagList tags = g.tags();
-	for (Git::Tag const &tag : tags) {
-		tag_map[tag.id].push_back(tag);
-	}
-
-	return tag_map;
-}
-
 QList<RepositoryInfo> const &MainWindow::repositoryList() const
 {
 	return m->repos;
@@ -1397,12 +1385,206 @@ void MainWindow::connectSetCommitLog()
 	connect(this, &MainWindow::sigSetCommitLog, this, &MainWindow::onSetCommitLog);
 }
 
+void MainWindow::updateUncommitedChanges(GitRunner g)
+{
+	m->uncommited_changes_file_list = g.status_s();
+	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
+}
+
+std::map<Git::Hash, TagList> MainWindow::queryTags(GitRunner g)
+{
+	std::map<Git::Hash, TagList> tag_map;
+
+	TagList tags = g.tags();
+	for (Git::Tag const &tag : tags) {
+		tag_map[tag.id].push_back(tag);
+	}
+
+	return tag_map;
+}
+
+Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int maxcount) const
+{
+	Git::CommitItemList items;
+
+	QStringList revlist = g.rev_list_all(id, maxcount);
+
+	if (0) { // シングルスレッド版
+		for (size_t i = 0; i < revlist.size(); i++) {
+			QString hash = revlist[i];
+			auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+			if (obj.type == Git::Object::Type::COMMIT) {
+				std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
+				if (item) {
+					item->commit_id = Git::Hash(hash);
+					items.list.push_back(*item);
+				}
+			}
+		}
+	} else { // マルチスレッド版
+		std::vector<std::pair<size_t, Git::CommitItem>> vec(revlist.size());
+		std::atomic_size_t in;
+		std::atomic_size_t to;
+		std::vector<std::thread> threads(4);
+		for (size_t i = 0; i < threads.size(); i++) {
+			threads[i] = std::thread([&](){
+				while (1) {
+					size_t j = in++;
+					if (j >= revlist.size()) break;
+					QString hash = revlist[j];
+					auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+					if (obj.type == Git::Object::Type::COMMIT) {
+						std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
+						if (item) {
+							item->commit_id = Git::Hash(hash);
+							vec.at(to++) = {j, *item};
+						}
+					}
+				}
+			});
+		}
+		for (size_t i = 0; i < threads.size(); i++) {
+			threads[i].join();
+		}
+		vec.resize(to);
+		std::sort(vec.begin(), vec.end(), [](auto const &a, auto const &b){
+			return a.first < b.first;
+		});
+		items.list.reserve(vec.size());
+		for (auto const &pair : vec) {
+			items.list.push_back(pair.second);
+		}
+	}
+
+	return items;
+}
+
+static void fixCommitLogOrder(Git::CommitItemList *list)
+{
+	Git::CommitItemList list2;
+	std::swap(list2.list, list->list);
+
+	const size_t count = list2.size();
+
+	std::vector<size_t> index(count);
+	std::iota(index.begin(), index.end(), 0);
+
+	auto LISTITEM = [&](size_t i)->Git::CommitItem &{
+		return list2[index[i]];
+	};
+
+	auto MOVEITEM = [&](size_t from, size_t to){
+		Q_ASSERT(from > to);
+		// 親子関係が整合しないコミットをリストの上の方へ移動する
+		LISTITEM(from).order_fixed = true;
+		auto a = index[from];
+		index.erase(index.begin() + from);
+		index.insert(index.begin() + to, a);
+	};
+
+	// 親子関係を調べて、順番が狂っていたら、修正する。
+
+	std::set<Git::Hash> set;
+	size_t limit = count;
+	size_t i = 0;
+	while (i < count) {
+		size_t newpos = (size_t)-1;
+		for (Git::Hash const &parent : LISTITEM(i).parent_ids) {
+			if (set.find(parent) != set.end()) {
+				for (size_t j = 0; j < i; j++) {
+					if (parent == LISTITEM(j).commit_id) {
+						if (newpos == (size_t)-1 || j < newpos) {
+							newpos = j;
+						}
+						// qDebug() << "fix commit order" << list[i].commit_id.toQString();
+						break;
+					}
+				}
+			}
+		}
+		set.insert(set.end(), LISTITEM(i).commit_id);
+		if (newpos != (size_t)-1) {
+			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
+			MOVEITEM(i, newpos);
+			i = newpos;
+			limit--;
+		}
+		i++;
+	}
+
+	//
+
+	list->list.reserve(count);
+	for (size_t i : index) {
+		list->list.push_back(LISTITEM(i));
+	}
+}
+
+Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
+{
+	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
+	fixCommitLogOrder(&list);
+	list.updateIndex();
+	return list;
+}
+
+/**
+ * @brief MainWindow::queryCommitLog
+ * @param p
+ * @param g
+ *
+ * コミットログとブランチ情報を取得
+ */
+CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
+{
+	auto async_branches = std::async(std::launch::async, [&](){
+		return g.branches(); // ブランチを取得;
+	});
+	auto async_update_uncommited = std::async(std::launch::async, [&](){
+		updateUncommitedChanges(g);
+	});
+	auto async_tags = std::async(std::launch::async, [&](){
+		return queryTags(g);
+	});
+
+	Git::CommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
+
+	std::map<Git::Hash, BranchList> branch_map;
+
+	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
+	auto branches = async_branches.get();
+	for (Git::Branch const &b : branches) {
+		if (b.isCurrent()) {
+			setCurrentBranch(b);
+		}
+		branch_map[b.id].append(b);
+	}
+
+	// Uncommited changes の処理
+	async_update_uncommited.wait();
+	if (isThereUncommitedChanges()) {
+		Git::CommitItem item;
+		item.parent_ids.push_back(currentBranch().id);
+		item.message = tr("Uncommited changes");
+		commit_log.list.insert(commit_log.list.begin(), item);
+		commit_log.updateIndex();
+	}
+
+	CommitLogExchangeData exdata;
+	exdata.p->commit_log = commit_log;
+	exdata.p->branch_map = branch_map;
+	exdata.p->tag_map = async_tags.get();
+	return exdata;
+}
+
 /**
  * @brief コミットログテーブルウィジェットを構築
  */
-void MainWindow::makeCommitLog(CommitLogExchangeData exdata, int scroll_pos, int select_row)
+void MainWindow::makeCommitLog(Git::Hash const &head, CommitLogExchangeData exdata, int scroll_pos, int select_row)
 {
 	ASSERT_MAIN_THREAD();
+
+	setHeadId(head);
 
 	Git::CommitItemList *commit_log = &exdata.p->commit_log.value();
 	Q_ASSERT(commit_log);
@@ -1527,15 +1709,20 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	}
 
 	// HEAD を取得
-	updateHEAD(g);
-
+	auto async_head = std::async(std::launch::async, [&](){
+		return g.rev_parse("HEAD");
+	});
 	// ユーザー情報を取得
-	Git::User user = g.getUser(Git::Source::Default);
+	auto async_user = std::async(std::launch::async, [&](){
+		return g.getUser(Git::Source::Default);
+	});
+	// コミットログを取得
+	auto async_exdata = std::async(std::launch::async, [&](){
+		return queryCommitLog(g);
+	});
 
 	// コミットログを作成
 	{
-		CommitLogExchangeData exdata = queryCommitLog(g); // コミットログとブランチ情報を取得
-
 		int scroll_pos = -1;
 		int select_row = -1;
 		if (opt.keep_selection) {
@@ -1543,7 +1730,9 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 			select_row = ui->tableWidget_log->currentRow();
 		}
 
-		makeCommitLog(exdata, scroll_pos, select_row);
+		auto head = async_head.get();
+		auto exdata = async_exdata.get();
+		makeCommitLog(head, exdata, scroll_pos, select_row);
 	}
 
 	// ポジトリの情報を設定
@@ -1564,7 +1753,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	}
 
 	// ウィンドウタイトルを更新
-	updateWindowTitle(user);
+	updateWindowTitle(async_user.get());
 
 	bool do_fetch = opt.do_fetch;
 	if (do_fetch) {
@@ -2527,7 +2716,7 @@ void MainWindow::commit(bool amend)
 				updateStatusBarText();
 				reopenRepository(true);
 			} else {
-				QString err = g.errorMessage().trimmed();
+				QString err = QString::fromStdString(pty->getMessage()).trimmed();
 				err += "\n*** ";
 				err += tr("Failed to commit");
 				err += " ***\n";
@@ -3279,49 +3468,6 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryInfo item, QString new_n
 	saveRepositoryBookmark(item);
 }
 
-/**
- * @brief MainWindow::queryCommitLog
- * @param p
- * @param g
- *
- * コミットログとブランチ情報を取得
- */
-CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
-{
-	ASSERT_MAIN_THREAD();
-
-	Git::CommitItemList commit_log;
-	std::map<Git::Hash, BranchList> branch_map;
-
-	commit_log = retrieveCommitLog(g); // コミットログを取得
-
-	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
-	BranchList branches = g.branches(); // ブランチを取得
-	for (Git::Branch const &b : branches) {
-		if (b.isCurrent()) {
-			setCurrentBranch(b);
-		}
-		branch_map[b.id].append(b);
-	}
-
-	// Uncommited changes の処理
-	updateUncommitedChanges();
-	if (isThereUncommitedChanges()) {
-		Git::CommitItem item;
-		item.parent_ids.push_back(currentBranch().id);
-		item.message = tr("Uncommited changes");
-		commit_log.list.insert(commit_log.list.begin(), item);
-		commit_log.updateIndex();
-	}
-
-	CommitLogExchangeData exdata;
-	exdata.p->commit_log = commit_log;
-	exdata.p->branch_map = branch_map;
-	exdata.p->tag_map = queryTags(g);
-
-	return exdata;
-}
-
 QString MainWindow::getBookmarksFilePath() const
 {
 	return global->app_config_dir / "bookmarks.xml";
@@ -3509,131 +3655,6 @@ void MainWindow::addDiffItems(const QList<Git::Diff> *diff_list, const std::func
 		data.idiff = idiff;
 		fn_add_item(data);
 	}
-}
-
-static void fixCommitLogOrder(Git::CommitItemList *list)
-{
-	Git::CommitItemList list2;
-	std::swap(list2.list, list->list);
-
-	const size_t count = list2.size();
-
-	std::vector<size_t> index(count);
-	std::iota(index.begin(), index.end(), 0);
-
-	auto LISTITEM = [&](size_t i)->Git::CommitItem &{
-		return list2[index[i]];
-	};
-
-	auto MOVEITEM = [&](size_t from, size_t to){
-		Q_ASSERT(from > to);
-		// 親子関係が整合しないコミットをリストの上の方へ移動する
-		LISTITEM(from).order_fixed = true;
-		auto a = index[from];
-		index.erase(index.begin() + from);
-		index.insert(index.begin() + to, a);
-	};
-
-	// 親子関係を調べて、順番が狂っていたら、修正する。
-
-	std::set<Git::Hash> set;
-	size_t limit = count;
-	size_t i = 0;
-	while (i < count) {
-		size_t newpos = (size_t)-1;
-		for (Git::Hash const &parent : LISTITEM(i).parent_ids) {
-			if (set.find(parent) != set.end()) {
-				for (size_t j = 0; j < i; j++) {
-					if (parent == LISTITEM(j).commit_id) {
-						if (newpos == (size_t)-1 || j < newpos) {
-							newpos = j;
-						}
-						// qDebug() << "fix commit order" << list[i].commit_id.toQString();
-						break;
-					}
-				}
-			}
-		}
-		set.insert(set.end(), LISTITEM(i).commit_id);
-		if (newpos != (size_t)-1) {
-			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
-			MOVEITEM(i, newpos);
-			i = newpos;
-			limit--;
-		}
-		i++;
-	}
-
-	//
-
-	list->list.reserve(count);
-	for (size_t i : index) {
-		list->list.push_back(LISTITEM(i));
-	}
-}
-
-Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int maxcount) const
-{
-	Git::CommitItemList items;
-
-	QStringList revlist = g.rev_list_all(id, maxcount);
-
-	if (0) { // シングルスレッド版
-		for (size_t i = 0; i < revlist.size(); i++) {
-			QString hash = revlist[i];
-			auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
-			if (obj.type == Git::Object::Type::COMMIT) {
-				std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
-				if (item) {
-					item->commit_id = Git::Hash(hash);
-					items.list.push_back(*item);
-				}
-			}
-		}
-	} else { // マルチスレッド版
-		std::vector<std::pair<size_t, Git::CommitItem>> vec(revlist.size());
-		std::atomic_size_t in;
-		std::atomic_size_t to;
-		std::vector<std::thread> threads(4);
-		for (size_t i = 0; i < threads.size(); i++) {
-			threads[i] = std::thread([&](){
-				while (1) {
-					size_t j = in++;
-					if (j >= revlist.size()) break;
-					QString hash = revlist[j];
-					auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
-					if (obj.type == Git::Object::Type::COMMIT) {
-						std::optional<Git::CommitItem> item = Git::parseCommit(obj.content);
-						if (item) {
-							item->commit_id = Git::Hash(hash);
-							vec.at(to++) = {j, *item};
-						}
-					}
-				}
-			});
-		}
-		for (size_t i = 0; i < threads.size(); i++) {
-			threads[i].join();
-		}
-		vec.resize(to);
-		std::sort(vec.begin(), vec.end(), [](auto const &a, auto const &b){
-			return a.first < b.first;
-		});
-		items.list.reserve(vec.size());
-		for (auto const &pair : vec) {
-			items.list.push_back(pair.second);
-		}
-	}
-
-	return items;
-}
-
-Git::CommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
-{
-	Git::CommitItemList list = log_all2(g, {}, limitLogCount());
-	fixCommitLogOrder(&list);
-	list.updateIndex();
-	return list;
 }
 
 std::map<Git::Hash, BranchList> const &MainWindow::branchmap() const
@@ -3964,12 +3985,6 @@ int MainWindow::indexOfDiff(QListWidgetItem *item)
 	return item->data(DiffIndexRole).toInt();
 }
 
-void MainWindow::updateUncommitedChanges()
-{
-	m->uncommited_changes_file_list = git().status_s();
-	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
-}
-
 /**
  * @brief ファイルリストを更新
  * @param id コミットID
@@ -4070,7 +4085,7 @@ void MainWindow::updateFileList(Git::Hash const &id)
 	} else {
 		files_list_type = FileListType::SingleList;
 		if (!id) {
-			updateUncommitedChanges();
+			updateUncommitedChanges(g);
 			if (isThereUncommitedChanges()) {
 				files_list_type = FileListType::SideBySide;
 			}
@@ -7358,8 +7373,8 @@ int genmsg()
 	std::shared_ptr<Git> g = std::make_shared<Git>(gcx, dir, QString{}, QString{});
 	// std::string diff = CommitMessageGenerator::diff_head(g);
 	std::string cmd = "diff --name-only HEAD";
-	g->git(QString::fromStdString(cmd));
-	std::vector<std::string> files = misc::splitLines(g->resultStdString(), false);
+	auto result = g->git(QString::fromStdString(cmd));
+	std::vector<std::string> files = misc::splitLines(g->resultStdString(result), false);
 
 	std::string diff;
 	for (std::string const &file : files) {
@@ -7370,14 +7385,14 @@ int genmsg()
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
 		if (mimetype == "text/xml" && misc::ends_with(file, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		cmd = "diff --full-index HEAD -- " + file;
-		g->git(QString::fromStdString(cmd));
-		diff += g->resultStdString();
+		auto result = g->git(QString::fromStdString(cmd));
+		diff.append(g->resultStdString(result));
 	}
 
 	CommitMessageGenerator gen;
-	CommitMessageGenerator::Result result = gen.generate(diff);
+	CommitMessageGenerator::Result msg = gen.generate(diff);
 
-	for (std::string const &line : result.messages) {
+	for (std::string const &line : msg.messages) {
 		printf("--- %s\n", line.c_str());
 	}
 

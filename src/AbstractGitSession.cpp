@@ -9,13 +9,12 @@ struct AbstractGitSession::GitCache {
 struct AbstractGitSession::Private {
 	std::shared_ptr<AbstractGitSession::GitCache> cache;
 	AbstractGitSession::Info info;
-	AbstractGitSession::Var var;
 };
 
 void AbstractGitSession::insertIntoCommandCache(const QString &key, const std::vector<char> &value)
 {
 	if (m->cache->command_cache) {
-		m->cache->command_cache.insert(key, m->var.result);
+		m->cache->command_cache.insert(key, value);
 	}
 }
 
@@ -43,16 +42,6 @@ void AbstractGitSession::clearCommandCache()
 	m->cache->command_cache.clear();
 }
 
-AbstractGitSession::Var &AbstractGitSession::var()
-{
-	return m->var;
-}
-
-const AbstractGitSession::Var &AbstractGitSession::var() const
-{
-	return m->var;
-}
-
 AbstractGitSession::Info &AbstractGitSession::gitinfo()
 {
 	return m->info;
@@ -66,11 +55,6 @@ const AbstractGitSession::Info &AbstractGitSession::gitinfo() const
 AbstractGitSession::GitCache &AbstractGitSession::cache()
 {
 	return *m->cache;
-}
-
-void AbstractGitSession::clearResult()
-{
-	m->var = {};
 }
 
 QString AbstractGitSession::workingDir() const

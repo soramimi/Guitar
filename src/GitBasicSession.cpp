@@ -28,15 +28,13 @@ bool GitBasicSession::is_connected() const
 	return QFileInfo(gitCommand()).isExecutable();
 }
 
-std::optional<AbstractGitSession::Var> GitBasicSession::exec_git(const QString &arg, const Option &opt)
+std::optional<AbstractGitSession::GitResult> GitBasicSession::exec_git(const QString &arg, const Option &opt)
 {
 	QFileInfo info2(gitCommand());
 	if (!info2.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
 		return std::nullopt;
 	}
-
-	clearResult();
 
 	QString env;
 	QString ssh = sshCommand();
@@ -70,16 +68,17 @@ std::optional<AbstractGitSession::Var> GitBasicSession::exec_git(const QString &
 			global->writeLog(s);
 		}
 
+		AbstractGitSession::GitResult result;
 		if (opt.pty) {
 			opt.pty->start(cmd, env);
-			var().exit_status.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
+			result.exit_code = 0; // バックグラウンドで実行を継続するけど、とりあえず成功したことにしておく
 		} else {
 			if (opt.use_cache) {
 				auto const *a = findFromCommandCache(cmd);
 				if (a) {
-					var().result = *a;
+					result.output = *a;
 					qDebug() << "--- Process\t" << cmd << "\t" << "cache hit" << "\t---";
-					return var();
+					return result;
 				}
 			}
 
@@ -88,34 +87,34 @@ std::optional<AbstractGitSession::Var> GitBasicSession::exec_git(const QString &
 
 			Process proc;
 			proc.start(cmd.toStdString(), false);
-			var().exit_status.exit_code = proc.wait();
+			result.exit_code = proc.wait();
 
 			qDebug() << "--- Process\t" << cmd << "\t" << timer.elapsed() << "\t---";
 
 			if (opt.errout) {
-				var().result = proc.errbytes;
+				result.output = proc.errbytes;
 			} else {
 				if (!proc.errbytes.empty()) {
 					qDebug() << QString::fromStdString(proc.errstring());
 				}
-				var().result = proc.outbytes;
+				result.output = proc.outbytes;
 			}
-			var().exit_status.error_message = proc.errstring();
+			result.error_message = proc.errstring();
 
-			if (var().exit_status.exit_code == 0) {
+			if (result.exit_code == 0) {
 				if (opt.use_cache) {
-					insertIntoCommandCache(cmd, var().result);
+					insertIntoCommandCache(cmd, result.output);
 				}
 			}
 		}
 
-		return var();
+		return result;
 		// return var().exit_status.exit_code == 0;
 	};
 
-	DoIt();
-	if (var().exit_status.exit_code == 0) {
-		return var();
+	auto var = DoIt();
+	if (var.exit_code == 0) {
+		return var;
 	} else {
 		return std::nullopt;
 	}

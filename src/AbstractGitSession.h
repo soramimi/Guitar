@@ -10,6 +10,7 @@
 #include "GitTypes.h"
 
 class GitCommandCache;
+class AbstractPtyProcess;
 
 class AbstractGitSession {
 public:
@@ -28,10 +29,8 @@ public:
 		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 		QString ssh_key_override;// = "C:/a/id_rsa";
 	};
-	struct Var {
-		std::vector<char> result;
-		ProcessStatus exit_status;
-	};
+
+	typedef ProcessStatus GitResult;
 
 	struct GitCache;
 private:
@@ -46,15 +45,12 @@ public:
 
 	void clearCommandCache();
 
-	Var &var();
-	Var const &var() const;
 	Info &gitinfo();
 	Info const &gitinfo() const;
 
 	GitCache &cache();
-	void clearResult();
 	QString workingDir() const;
-	virtual std::optional<Var> exec_git(QString const &arg, Option const &opt) = 0;
+	virtual std::optional<GitResult> exec_git(QString const &arg, Option const &opt) = 0;
 	virtual bool remove(QString const &path) = 0;
 
 	virtual bool is_connected() const = 0;
