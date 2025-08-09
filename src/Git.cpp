@@ -191,23 +191,23 @@ QString Git::status()
 
 
 
-QByteArray Git::toQByteArray(std::optional<AbstractGitSession::GitResult> const &var) const
+QByteArray Git::toQByteArray(std::optional<GitResult> const &var) const
 {
 	if (!var) return {};
-	auto const &v = var->output;
+	auto const &v = var->output();
 	if (v.empty()) return QByteArray();
 	return QByteArray(v.data(), v.size());
 }
 
-std::string_view Git::resultStdString(std::optional<AbstractGitSession::GitResult> const &var) const
+std::string Git::resultStdString(std::optional<GitResult> const &var) const
 {
 	if (!var) return {};
-	auto const &v = var->output;
+	auto const &v = var->output();
 	if (v.empty()) return {};
-	return std::string_view(v.data(), v.size());
+	return std::string(v.data(), v.size());
 }
 
-QString Git::resultQString(std::optional<AbstractGitSession::GitResult> const &var) const
+QString Git::resultQString(std::optional<GitResult> const &var) const
 {
 	if (var) {
 		return QString::fromUtf8(toQByteArray(var));
@@ -216,17 +216,17 @@ QString Git::resultQString(std::optional<AbstractGitSession::GitResult> const &v
 	}
 }
 
-QString Git::errorMessage(std::optional<AbstractGitSession::GitResult> const &var) const
+QString Git::errorMessage(std::optional<GitResult> const &var) const
 {
 	if (!var) return {};
-	return QString::fromStdString(var->error_message);
+	return QString::fromStdString(var->error_message());
 }
 
-int Git::getProcessExitCode(std::optional<AbstractGitSession::GitResult> const &var) const
-{
-	if (!var) return {};
-	return var->exit_code;
-}
+// int Git::getProcessExitCode(std::optional<GitResult> const &var) const
+// {
+// 	if (!var) return {};
+// 	return var->exit_code();
+// }
 
 bool Git::isValidWorkingCopy(QString const &dir) const
 {
@@ -361,20 +361,21 @@ std::string Git::diff_head(std::function<bool (std::string const &name, std::str
 	QString cmd = "diff --name-only HEAD";
 	auto result = git(cmd);
 
-	std::vector<std::string_view> files = misc::splitLinesV(resultStdString(result), false);
+	std::string str = resultStdString(result);
+	std::vector<std::string_view> files = misc::splitLinesV(str, false);
 	
 	std::string diff;
 	for (auto const &sv : files) {
 		if (sv.empty()) continue;
-		std::string file(sv);
-		std::string mimetype = global->determineFileType(std::string(file));
+		QString file(workingDir() / QString::fromUtf8(sv.data(), sv.size()));
+		std::string mimetype = global->determineFileType(file);
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
 		if (fn_accept) {
-			if (!fn_accept(file, mimetype)) continue; // ファイルの種類によるフィルタリング
+			if (!fn_accept(file.toStdString(), mimetype)) continue; // ファイルの種類によるフィルタリング
 		}
-		cmd = "diff --full-index HEAD -- " + QString::fromStdString(file);
+		cmd = "diff --full-index HEAD -- " + file;
 		auto result = git(cmd);
 		diff += resultStdString(result);
 	}
@@ -722,7 +723,7 @@ Git::CommitItemList Git::log_all(Hash const &id, int maxcount)
 	cmd = cmd.arg(maxcount).arg(id.toQString());
 	auto result = git_nolog(cmd, nullptr);
 
-	if (getProcessExitCode(result) == 0) {
+	if (result && result->exit_code() == 0) {
 		QString text = resultQString(result).trimmed();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
@@ -746,7 +747,7 @@ Git::CommitItemList Git::log_file(QString const &path, int maxcount)
 	cmd = cmd.arg(maxcount).arg(path);
 	auto result = git_nolog(cmd, nullptr);
 
-	if (getProcessExitCode(result) == 0) {
+	if (result && result->exit_code() == 0) {
 		QString text = resultQString(result).trimmed();
 		QStringList lines = misc::splitLines(text);
 		for (QString const &line : lines) {
@@ -768,7 +769,7 @@ QStringList Git::rev_list_all(Hash const &id, int maxcount)
 	cmd = cmd.arg(maxcount).arg(id.toQString());
 	auto result = git_nolog(cmd, nullptr);
 
-	if (getProcessExitCode(result) == 0) {
+	if (result && result->exit_code() == 0) {
 		std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
 		for (std::string const &line : lines) {
 			QString id = QString::fromStdString(line);
@@ -822,7 +823,7 @@ std::optional<Git::CommitItem> Git::log_signature(Hash const &id)
 	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
 	cmd = cmd.arg(id.toQString());
 	auto result = git_nolog(cmd, nullptr);
-	if (getProcessExitCode(result) == 0) {
+	if (result && result->exit_code() == 0) {
 		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
 			QStringList list;
 			ushort const *begin = text.utf16();
@@ -1022,7 +1023,7 @@ bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 	QString clone_to = data.basedir / data.subdir;
 	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to);
 
-	std::optional<AbstractGitSession::GitResult> var;
+	std::optional<GitResult> var;
 	QDir cwd = QDir::current();
 
 	auto DoIt = [&](){
@@ -1350,7 +1351,7 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	return (bool)exec_git(cmd, opt);
 }
 
-QStringList Git::make_branch_list_(std::optional<AbstractGitSession::GitResult> const &result)
+QStringList Git::make_branch_list_(std::optional<GitResult> const &result)
 {
 	QStringList list;
 	QStringList l = misc::splitLines(resultQString(result));

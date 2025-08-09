@@ -37,6 +37,17 @@ void ApplicationGlobal::init(QApplication *a)
 	bool ok = filetype.open();
 	Q_ASSERT(ok);
 
+	{ // test digits.png filetype registration
+		QFile file(":/image/digits.png");
+		file.open(QFile::ReadOnly);
+		QByteArray ba = file.readAll();
+		auto result = filetype.file(ba.data(), ba.size());
+		if (result.mimetype != "image/png") {
+			qDebug() << "Failed to register digits.png filetype: "
+					 << result.mimetype << " expected image/png";
+		}
+	}
+
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources
 		QFileIconProvider icons;
@@ -204,13 +215,23 @@ std::string ApplicationGlobal::determineFileType(QByteArray const &in)
 	return mime;
 }
 
-std::string ApplicationGlobal::determineFileType(std::string const &path)
+std::string ApplicationGlobal::determineFileType(QString const &path)
 {
-	QFile file(QString::fromStdString(path));
+	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		QByteArray ba = file.readAll();
 		return determineFileType(ba);
 	}
 	return {};
 }
+
+// std::string ApplicationGlobal::determineFileType(std::string const &path)
+// {
+// 	QFile file(QString::fromStdString(path));
+// 	if (file.open(QFile::ReadOnly)) {
+// 		QByteArray ba = file.readAll();
+// 		return determineFileType(ba);
+// 	}
+// 	return {};
+// }
 

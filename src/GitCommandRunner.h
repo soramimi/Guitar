@@ -137,7 +137,7 @@ public:
 	struct D {
 		GitRunner g;
 		PtyProcess *pty = nullptr;
-		request_id_t request_id;
+		request_id_t request_id = 0;
 		bool override_wait_cursor = true;
 		std::function<void (GitCommandRunner &req)> run;
 		QVariant userdata;
@@ -160,7 +160,7 @@ public:
 	{
 		return d.pty;
 	}
-	std::function<void (ProcessStatus const &status, QVariant const &)> callback;
+	std::function<void (ProcessStatus *status, QVariant const &)> callback;
 };
 Q_DECLARE_METATYPE(GitCommandRunner)
 

@@ -4,6 +4,7 @@
 // Process.h というファイルはWindows環境に既存なので MyProcess.h にした
 
 #include <QtGlobal>
+#include <future>
 
 #ifdef Q_OS_WIN
 #include "win32/Win32Process.h"
@@ -20,11 +21,10 @@ using PtyProcess = UnixPtyProcess;
 class ProcessStatus {
 public:
 	bool ok = false;
-	int exit_code = 0;
+	int exit_code = std::numeric_limits<int>::min();
 	std::vector<char> output;
 	std::string error_message;
 	std::string log_message;
 };
-Q_DECLARE_METATYPE(ProcessStatus)
 
 #endif // MYPROCESS_H

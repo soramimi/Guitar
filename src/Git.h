@@ -2,11 +2,10 @@
 #define GIT_H
 
 #include "GitBasicSession.h"
-// #include "common/crc32.h"
-#include <zlib.h>
+#include "GitTypes.h"
 #include "common/misc.h"
 #include <QDateTime>
-#include "GitTypes.h"
+#include <zlib.h>
 
 #define GIT_ID_LENGTH (40)
 #define PATH_PREFIX "*"
@@ -412,7 +411,7 @@ public:
 	static QString trimPath(QString const &s);
 
 private:
-	QStringList make_branch_list_(const std::optional<AbstractGitSession::GitResult> &result);
+	QStringList make_branch_list_(const std::optional<GitResult> &result);
 	FileStatusList status_s_();
 	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, Branch *b);
@@ -446,29 +445,29 @@ public:
 		session_->set_command_cache(cc);
 	}
 
-	QByteArray toQByteArray(const std::optional<AbstractGitSession::GitResult> &var) const;
+	QByteArray toQByteArray(const std::optional<GitResult> &var) const;
 	bool isValidGitCommand() const
 	{
 		return session_->is_connected();
 	}
-	std::string_view resultStdString(const std::optional<AbstractGitSession::GitResult> &var) const;
-	QString resultQString(const std::optional<AbstractGitSession::GitResult> &var) const;
-	std::optional<AbstractGitSession::GitResult> exec_git(QString const &arg, AbstractGitSession::Option const &opt)
+	std::string resultStdString(const std::optional<GitResult> &var) const;
+	QString resultQString(const std::optional<GitResult> &var) const;
+	std::optional<GitResult> exec_git(QString const &arg, AbstractGitSession::Option const &opt)
 	{
 		return session_->exec_git(arg, opt);
 	}
-	std::optional<AbstractGitSession::GitResult> git(QString const &arg)
+	std::optional<GitResult> git(QString const &arg)
 	{
 		return exec_git(arg, {});
 	}
-	std::optional<AbstractGitSession::GitResult> git_nolog(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<GitResult> git_nolog(QString const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.log = false;
 		return exec_git(arg, opt);
 	}
-	std::optional<AbstractGitSession::GitResult> git_nochdir(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<GitResult> git_nochdir(QString const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;
@@ -532,7 +531,7 @@ public:
 
 	QList<Branch> branches();
 
-	int getProcessExitCode(const std::optional<AbstractGitSession::GitResult> &var) const;
+	// int getProcessExitCode(const std::optional<GitResult> &var) const;
 
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
@@ -595,7 +594,7 @@ public:
 
 	bool isValidWorkingCopy(QString const &dir) const;
 	QString diff_to_file(QString const &old_id, QString const &path);
-	QString errorMessage(const std::optional<AbstractGitSession::GitResult> &var) const;
+	QString errorMessage(const std::optional<GitResult> &var) const;
 
 	Hash rev_parse(QString const &name);
 	QList<Tag> tags();
@@ -815,7 +814,7 @@ public:
 		Q_ASSERT(git);
 		return git->getMessage(id);
 	}
-	QString errorMessage(std::optional<AbstractGitSession::GitResult> const &var) const
+	QString errorMessage(std::optional<GitResult> const &var) const
 	{
 		Q_ASSERT(git);
 		return git->errorMessage(var);

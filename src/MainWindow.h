@@ -11,6 +11,7 @@
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
 #include <QMainWindow>
+#include <memory>
 
 class AddRepositoryDialog;
 class ApplicationSettings;
@@ -74,11 +75,15 @@ class MainWindowExchangeData;
 
 class PtyProcessCompleted {
 public:
-	std::function<void (ProcessStatus const &, QVariant const &)> callback;
-	ProcessStatus status;
+	std::function<void (ProcessStatus *, QVariant const &)> callback;
+	std::shared_ptr<ProcessStatus> status;
 	QVariant userdata;
 	QString process_name;
 	QElapsedTimer elapsed;
+	PtyProcessCompleted()
+		: status(std::make_shared<ProcessStatus>())
+	{
+	}
 };
 Q_DECLARE_METATYPE(PtyProcessCompleted)
 
@@ -204,7 +209,7 @@ private:
 	void reopenRepository(bool validate);
 	void openSelectedRepository();
 
-	void doReopenRepository(const ProcessStatus &status, const RepositoryInfo &repodata);
+	void doReopenRepository(ProcessStatus *status, const RepositoryInfo &repodata);
 
 	QStringList selectedFiles_(QListWidget *listwidget) const;
 	QStringList selectedFiles() const;
@@ -417,7 +422,7 @@ private:
 	void makeCommitLog(Git::Hash const &head, CommitLogExchangeData exdata, int scroll_pos, int select_row);
 
 	void updateButton();
-	void runPtyGit(const QString &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (const ProcessStatus &, QVariant const &userdata)> callback, QVariant const &userdata);
+	void runPtyGit(const QString &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus *, QVariant const &userdata)> callback, QVariant const &userdata);
 	CommitLogExchangeData queryCommitLog(GitRunner g);
 	void updateHEAD(GitRunner g);
 	bool jump(GitRunner g, const Git::Hash &id);

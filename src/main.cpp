@@ -111,7 +111,6 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<MainWindowExchangeData>("MainWindowExchangeData");
 	qRegisterMetaType<GitCommandRunner>("GitCommandRunner");
 	qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
-	qRegisterMetaType<ProcessStatus>("ProcessStatus");
 	qRegisterMetaType<CloneParams>("CloneParams");
 	qRegisterMetaType<LogData>("LogData");
 	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");

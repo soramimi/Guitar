@@ -340,7 +340,9 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	
 	constexpr bool save_log = false;
 	
-	if (diff.empty()) return {};
+	if (diff.empty()) {
+		return Error("error", "diff is empty");
+	}
 
 	if (diff.size() > 100000) {
 		return Error("error", "diff too large");

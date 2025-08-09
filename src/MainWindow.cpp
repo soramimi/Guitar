@@ -1423,8 +1423,8 @@ Git::CommitItemList MainWindow::log_all2(GitRunner g, Git::Hash const &id, int m
 		}
 	} else { // マルチスレッド版
 		std::vector<std::pair<size_t, Git::CommitItem>> vec(revlist.size());
-		std::atomic_size_t in;
-		std::atomic_size_t to;
+		std::atomic_size_t in = 0;
+		std::atomic_size_t to = 0;
 		std::vector<std::thread> threads(4);
 		for (size_t i = 0; i < threads.size(); i++) {
 			threads[i] = std::thread([&](){
@@ -2394,8 +2394,8 @@ void MainWindow::internalAfterFetch()
 	openRepositoryMain(opt);
 }
 
-#define RUN_PTY_CALLBACK [this](ProcessStatus const &status, QVariant const &userdata)
-void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus const &status, QVariant const &userdata)> callback, QVariant const &userdata)
+#define RUN_PTY_CALLBACK [this](ProcessStatus *status, QVariant const &userdata)
+void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus *status, QVariant const &userdata)> callback, QVariant const &userdata)
 {
 	showProgress(progress_message, -1.0f);
 
@@ -2409,9 +2409,12 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 			PtyProcessCompleted data;
 			data.process_name = req.d.process_name;
 			data.callback = req.callback;
-			data.status.ok = ok;
+			data.status->ok = ok;
+			data.status->exit_code = req.pty()->getExitCode();
+			{
+			}
+			data.status->log_message = req.pty_message();
 			data.userdata = req.d.userdata;
-			data.status.log_message = req.pty_message();
 			data.elapsed.start();
 			emit sigPtyProcessCompleted(true, data);
 		}, QVariant::fromValue(runner));
@@ -2442,7 +2445,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 
 	if (ok) {
 		if (data.callback) {
-			data.callback(data.status, data.userdata);
+			data.callback(data.status.get(), data.userdata);
 		}
 	}
 
@@ -2461,11 +2464,11 @@ void MainWindow::connectPtyProcessCompleted()
  *
  * リポジトリを再オープンする
  */
-void MainWindow::doReopenRepository(ProcessStatus const &status, RepositoryInfo const &repodata)
+void MainWindow::doReopenRepository(ProcessStatus *status, RepositoryInfo const &repodata)
 {
 	ASSERT_MAIN_THREAD();
 
-	if (status.ok) {
+	if (status->ok) {
 		saveRepositoryBookmark(repodata);
 		setCurrentRepository(repodata, false);
 		reopenRepository(true);
@@ -2513,7 +2516,7 @@ void MainWindow::clone(CloneParams const &a)
 	GitRunner g = new_git_runner({}, a.repodata.ssh_key);
 	runPtyGit(tr("Cloning..."), g, Git_clone{a.clonedata}, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
-		std::vector<std::string> log = misc::splitLines(status.log_message, false);
+		std::vector<std::string> log = misc::splitLines(status->log_message, false);
 		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
 		if (dir.empty()) {
 			doReopenRepository(status, a.repodata);
@@ -2755,8 +2758,8 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 
 	runPtyGit(tr("Pushing..."), git(), Git_push{set_upstream, remote, branch, force}, RUN_PTY_CALLBACK{
 		ASSERT_MAIN_THREAD();
-		if (status.exit_code == 128) {
-			if (status.error_message.find("Connection refused") != std::string::npos) {
+		if (status->exit_code == 128) {
+			if (status->error_message.find("Connection refused") != std::string::npos) {
 				QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
 				return;
 			}
@@ -7379,7 +7382,7 @@ int genmsg()
 	std::string diff;
 	for (std::string const &file : files) {
 		if (file.empty()) continue;
-		std::string mimetype = global->determineFileType(std::string(file));
+		std::string mimetype = global->determineFileType(QString::fromStdString(file));
 		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 		if (mimetype == "application/pdf") continue; // PDFはdiffしない
