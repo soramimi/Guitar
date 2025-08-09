@@ -44,7 +44,7 @@ void ApplicationGlobal::init(QApplication *a)
 		auto result = filetype.file(ba.data(), ba.size());
 		if (result.mimetype != "image/png") {
 			qDebug() << "Failed to register digits.png filetype: "
-					 << result.mimetype << " expected image/png";
+					 << QString::fromStdString(result.mimetype) << " expected image/png";
 		}
 	}
 
