@@ -42,6 +42,7 @@ public:
 	ApplicationGlobal();
 	~ApplicationGlobal();
 
+	void start_trace_logger();
 
 	AbstractGitSession::Option gitopt;
 	MainWindow *mainwindow = nullptr;

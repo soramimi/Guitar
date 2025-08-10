@@ -16,6 +16,7 @@ public:
 	QString this_executive_program;
 	QString generic_config_dir;
 	QString app_config_dir;
+	QString log_dir;
 	QString config_file_path;
 };
 

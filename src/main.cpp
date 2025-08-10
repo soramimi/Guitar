@@ -83,11 +83,21 @@ int main(int argc, char *argv[])
 	global->this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
 	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
 	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
+	global->log_dir = global->app_config_dir / "log";
 	global->config_file_path = joinpath(global->app_config_dir, global->application_name + ".ini");
 
-	if (!QFileInfo(global->app_config_dir).isDir()) {
-		QDir().mkpath(global->app_config_dir);
-	}
+	auto MKPATH = [&](const QString &path) {
+		if (!QFileInfo(path).isDir()) {
+			if (!QDir().mkpath(path)) {
+				qDebug() << "Failed to create directory:" << path;
+			}
+		}
+	};
+
+	MKPATH(global->app_config_dir);
+	MKPATH(global->log_dir);
+
+	global->start_trace_logger();
 
 	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
 

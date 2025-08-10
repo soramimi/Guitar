@@ -109,6 +109,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/SimpleQtIO.cpp \
+	$$PWD/src/TraceLogger.cpp \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
     $$PWD/src/common/crc32.cpp \
 	$$PWD/src/gzip.cpp \
@@ -276,6 +277,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/SimpleQtIO.h \
+	$$PWD/src/TraceLogger.h \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/gzip.h \

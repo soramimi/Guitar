@@ -1,14 +1,16 @@
 #include "ApplicationGlobal.h"
-#include "MainWindow.h"
-#include <memory>
-#include <QFileIconProvider>
-#include <QBuffer>
 #include "IncrementalSearch.h"
+#include "MainWindow.h"
 #include "MemoryReader.h"
 #include "SimpleQtIO.h"
+#include "TraceLogger.h"
 #include "gzip.h"
+#include <QBuffer>
+#include <QFileIconProvider>
+#include <memory>
 
 struct ApplicationGlobal::Private {
+	TraceLogger trace_logger;
 	IncrementalSearch incremental_search;
 };
 
@@ -20,6 +22,11 @@ ApplicationGlobal::ApplicationGlobal()
 ApplicationGlobal::~ApplicationGlobal()
 {
 	delete m;
+}
+
+void ApplicationGlobal::start_trace_logger()
+{
+	m->trace_logger.open();
 }
 
 GitContext ApplicationGlobal::gcx()
