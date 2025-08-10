@@ -1,3 +1,5 @@
+QMAKE_PROJECT_DEPTH = 0
+
 DESTDIR = $$PWD/lib
 CONFIG(debug,debug|release):TARGET = onigurumad
 CONFIG(release,debug|release):TARGET = oniguruma

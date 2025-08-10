@@ -1,3 +1,5 @@
+QMAKE_PROJECT_DEPTH = 0
+
 DESTDIR = $$PWD/lib
 CONFIG(debug,debug|release):TARGET = filetyped
 CONFIG(release,debug|release):TARGET = filetype
