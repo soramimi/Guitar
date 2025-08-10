@@ -3,12 +3,12 @@ CONFIG(debug,debug|release):TARGET = onigurumad
 CONFIG(release,debug|release):TARGET = oniguruma
 
 TEMPLATE = lib
-CONFIG += staticlib console c++11
+CONFIG += staticlib console
 CONFIG -= app_bundle
 CONFIG -= qt
 
 DEFINES += ONIG_STATIC=1 USE_POSIX_API=1
-msvc:DEFINES += HAVE_CONFIG_H=1
+DEFINES += HAVE_CONFIG_H=1
 msvc:INCLUDEPATH += oniguruma-msvc
 
 HEADERS += \

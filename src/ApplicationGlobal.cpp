@@ -44,7 +44,7 @@ void ApplicationGlobal::init(QApplication *a)
 	bool ok = filetype.open();
 	Q_ASSERT(ok);
 
-	{ //
+	{ // test "Hello, world" filetype registration
 		QByteArray ba("Hello, world", 12);
 		auto result = filetype.file(ba.data(), ba.size());
 		if (result.mimetype != "text/plain") {
