@@ -7,7 +7,7 @@ CONFIG += staticlib console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-DEFINES += ONIG_STATIC=1
+DEFINES += ONIG_STATIC=1 USE_POSIX_API=1
 msvc:DEFINES += HAVE_CONFIG_H=1
 msvc:INCLUDEPATH += oniguruma-msvc
 

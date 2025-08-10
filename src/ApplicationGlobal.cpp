@@ -44,6 +44,14 @@ void ApplicationGlobal::init(QApplication *a)
 	bool ok = filetype.open();
 	Q_ASSERT(ok);
 
+	{ //
+		QByteArray ba("Hello, world", 12);
+		auto result = filetype.file(ba.data(), ba.size());
+		if (result.mimetype != "text/plain") {
+			qDebug() << "Failed to register \"Hello, world\" filetype: "
+					 << QString::fromStdString(result.mimetype) << " expected text/plain";
+		}
+	}
 	{ // test digits.png filetype registration
 		QFile file(":/image/digits.png");
 		file.open(QFile::ReadOnly);

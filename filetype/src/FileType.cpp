@@ -353,7 +353,7 @@ bool FileType::open()
 	size_t sizes[1];
 	bufs[0] = mgcdata_.data();
 	sizes[0] = mgcdata_.size();
-	return 0 == magic_load_buffers((magic_t)magic_set_, bufs, sizes, 1);
+	return 0 == magic_load_buffers((magic_set *)magic_set_, bufs, sizes, 1);
 }
 
 #if 0
