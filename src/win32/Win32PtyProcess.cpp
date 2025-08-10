@@ -1,11 +1,12 @@
 #include <windows.h>
 #include "Win32PtyProcess.h"
+#include <TraceLogger.h>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QMutex>
 #include <deque>
-#include <winpty.h>
 #include <thread>
-#include <QElapsedTimer>
+#include <winpty.h>
 
 namespace {
 
@@ -114,8 +115,9 @@ QString Win32PtyProcess::getProgram(QString const &cmdline)
 
 void Win32PtyProcess::run()
 {
+	QString cmd = m->command;
 	QString program;
-	program = getProgram(m->command);
+	program = getProgram(cmd);
 
 	QElapsedTimer timer;
 	timer.start();
@@ -131,11 +133,15 @@ void Win32PtyProcess::run()
 	m->hOutput = CreateFileW(winpty_conout_name(pty), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	m->th_output_reader.start(m->hOutput, &output_queue_, &output_vector_);
 
+	TraceLogger trace;
+	trace.begin("process", cmd);
+
 	std::vector<wchar_t> envbuf;
 	if (!m->env.isEmpty()) {
 		envbuf.resize(m->env.size() + 2);
 		memcpy(envbuf.data(), m->env.utf16(), sizeof(wchar_t) * m->env.size());
 	}
+
 	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command.utf16(), nullptr, envbuf.empty() ? nullptr : envbuf.data(), nullptr);
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
@@ -159,6 +165,8 @@ void Win32PtyProcess::run()
 	m->th_output_reader.wait();
 
 	winpty_free(pty);
+
+	trace.end();
 
 	CloseHandle(m->hInput);
 	CloseHandle(m->hOutput);

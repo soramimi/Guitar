@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "Win32Process.h"
+#include "TraceLogger.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -145,6 +146,9 @@ protected:
 			si.hStdOutput = hOutputWrite;
 			si.hStdError = hErrorWrite;
 
+			TraceLogger trace;
+			trace.begin("process", command);
+
 			std::wstring wcmd(command.toStdWString());
 
 			std::vector<wchar_t> *env_ptr = nullptr;
@@ -213,6 +217,8 @@ protected:
 
 			t1.wait();
 			t2.wait();
+
+			trace.end();
 
 			CloseHandle(hOutputRead);
 			CloseHandle(hErrorRead);

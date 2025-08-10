@@ -8,13 +8,13 @@
 #include <unistd.h>
 #include <mutex>
 #include <thread>
+#include "TraceLogger.h"
 
 class OutputReaderThread {
 private:
 	int fd;
 	std::thread thread_;
 	std::mutex *mutex_;
-	// QMutex *mutex;
 	std::deque<char> *buffer_;
 protected:
 	void run()
@@ -25,7 +25,6 @@ protected:
 			if (n < 1) break;
 			if (buffer_) {
 				std::lock_guard<std::mutex> lock(*mutex_);
-				// QMutexLocker lock(mutex);
 				buffer_->insert(buffer_->end(), buf, buf + n);
 			}
 		}
@@ -62,6 +61,7 @@ public:
 
 class UnixProcessThread {
 public:
+	QString command;
 	std::thread thread;
 	std::mutex *mutex = nullptr;
 	std::vector<std::string> argvec;
@@ -122,6 +122,9 @@ protected:
 			if (pipe(stderr_pipe) < 0) {
 				throw std::string("failed: pipe");
 			}
+
+			TraceLogger trace;
+			trace.begin("process", command);
 
 			pid = fork();
 			if (pid < 0) {
@@ -205,6 +208,8 @@ protected:
 
 			t1.wait();
 			t2.wait();
+
+			trace.end();
 
 			close(fd_out_write);
 			close(fd_err_write);
@@ -316,6 +321,7 @@ void UnixProcess::parseArgs(std::string const &cmd, std::vector<std::string> *ou
 
 void UnixProcess::start(std::string const &command, bool use_input)
 {
+	m->th.command = QString::fromStdString(command);
 	parseArgs(command, &m->th.argvec);
 	if (!m->th.argvec.empty()) {
 		for (std::string const &s : m->th.argvec) {

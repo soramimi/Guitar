@@ -11,6 +11,7 @@
 #include <QColor>
 #include <QString>
 #include "GenerativeAI.h"
+#include "TraceEventWriter.h"
 
 class MainWindow;
 class IncrementalSearch;
@@ -43,6 +44,7 @@ public:
 	~ApplicationGlobal();
 
 	void start_trace_logger();
+	void put_trace_event(const TraceEventWriter::Event &event);
 
 	AbstractGitSession::Option gitopt;
 	MainWindow *mainwindow = nullptr;

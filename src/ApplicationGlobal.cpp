@@ -3,14 +3,14 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "SimpleQtIO.h"
-#include "TraceLogger.h"
+#include "TraceEventWriter.h"
 #include "gzip.h"
 #include <QBuffer>
 #include <QFileIconProvider>
 #include <memory>
 
 struct ApplicationGlobal::Private {
-	TraceLogger trace_logger;
+	TraceEventWriter trace_event_logger;
 	IncrementalSearch incremental_search;
 };
 
@@ -26,7 +26,12 @@ ApplicationGlobal::~ApplicationGlobal()
 
 void ApplicationGlobal::start_trace_logger()
 {
-	m->trace_logger.open();
+	m->trace_event_logger.open();
+}
+
+void ApplicationGlobal::put_trace_event(TraceEventWriter::Event const &event)
+{
+	m->trace_event_logger.put(event);
 }
 
 GitContext ApplicationGlobal::gcx()

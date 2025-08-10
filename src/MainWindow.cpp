@@ -1653,7 +1653,7 @@ void MainWindow::makeCommitLog(Git::Hash const &head, CommitLogExchangeData exda
 
 		ui->tableWidget_log->blockSignals(b);
 	}
-	qDebug() << __FILE__ << __LINE__;
+	// qDebug() << __FILE__ << __LINE__;
 	onLogCurrentItemChanged(false); // force update tableWidget_log
 
 	updateUI();
@@ -1762,7 +1762,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	if (do_fetch) {
 		fetch(g, false);
 	} else {
-		qDebug() << __FILE__ << __LINE__;
+		// qDebug() << __FILE__ << __LINE__;
 		onLogCurrentItemChanged(true); // ファイルリストを更新
 	}
 
@@ -5558,9 +5558,6 @@ void MainWindow::clearGitCommandCache()
 
 GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const QString &sshkey, bool use_cache) const
 {
-	if (!dir.isEmpty()) {
-		qDebug() << "_git" << dir;
-	}
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
 	if (g->isValidGitCommand()) {
 		if (use_cache) {
@@ -5869,7 +5866,7 @@ QString MainWindow::abbrevCommitID(const Git::CommitItem &commit)
  */
 void MainWindow::onLogCurrentItemChanged(bool update_file_list)
 {
-	PROFILE;
+	// PROFILE;
 	clearFileList();
 
 	if (update_file_list) {
@@ -7354,7 +7351,7 @@ void MainWindow::selectLogTableRow(int row)
 
 void MainWindow::onCommitLogCurrentRowChanged(int row)
 {
-	qDebug() << __FILE__ << __LINE__;
+	// qDebug() << __FILE__ << __LINE__;
 	onLogCurrentItemChanged(true);
 	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;

@@ -1,5 +1,6 @@
 #include "GitBasicSession.h"
 #include "ApplicationGlobal.h"
+#include "TraceEventWriter.h"
 #include "common/joinpath.h"
 #include <QDebug>
 #include <QDir>
@@ -83,14 +84,9 @@ std::optional<GitResult> GitBasicSession::exec_git(const QString &arg, const Opt
 				}
 			}
 
-			QElapsedTimer timer;
-			timer.start();
-
 			Process proc;
 			proc.start(cmd.toStdString(), false);
 			exit_code = proc.wait();
-
-			qDebug() << "--- Process\t" << cmd << "\t" << timer.elapsed() << "\t---";
 
 			if (opt.errout) {
 				result.set_output(proc.errbytes);
