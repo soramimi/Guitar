@@ -43,6 +43,8 @@ public:
 	ApplicationGlobal();
 	~ApplicationGlobal();
 
+	void send_remote_logger(std::string const &msg, const char *file = nullptr, int line = 0);
+
 	void start_trace_logger();
 	void put_trace_event(const TraceEventWriter::Event &event);
 

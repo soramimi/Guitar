@@ -114,7 +114,9 @@ SOURCES += \
     $$PWD/src/TraceLogger.cpp \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
     $$PWD/src/common/crc32.cpp \
+	$$PWD/src/common/htmlencode.cpp \
 	$$PWD/src/gzip.cpp \
+	$$PWD/udplogger/RemoteLogger.cpp \
     src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \
@@ -283,7 +285,9 @@ HEADERS += \
     $$PWD/src/TraceLogger.h \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
+	$$PWD/src/common/htmlencode.h \
 	$$PWD/src/gzip.h \
+	$$PWD/udplogger/RemoteLogger.h \
     src/AboutDialog.h \
 	src/AbstractGitSession.h \
 	src/AbstractProcess.h \

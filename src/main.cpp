@@ -19,6 +19,7 @@
 #include <QTranslator>
 #include <csignal>
 #include <string>
+#include "udplogger/RemoteLogger.h"
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
@@ -49,6 +50,15 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	return s;
 }
 
+void logHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+	QString message = qFormatLogMessage(type, context, msg);
+	std::string s = message.toStdString();
+	fprintf(stderr, "%s\n", s.c_str());
+
+	global->send_remote_logger(s, context.file, context.line);
+}
+
 void setEnvironmentVariable(QString const &name, QString const &value);
 
 void onSigTerm(int)
@@ -77,6 +87,8 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	signal(SIGPIPE, onSigPipe);
 #endif
+
+	qInstallMessageHandler(logHandler);
 
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;

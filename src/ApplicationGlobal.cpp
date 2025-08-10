@@ -8,20 +8,29 @@
 #include <QBuffer>
 #include <QFileIconProvider>
 #include <memory>
+#include <udplogger/RemoteLogger.h>
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
+	RemoteLogger udp_logger;
 	IncrementalSearch incremental_search;
 };
 
 ApplicationGlobal::ApplicationGlobal()
 	: m(new Private)
 {
+	m->udp_logger.open();
 }
 
 ApplicationGlobal::~ApplicationGlobal()
 {
+	m->udp_logger.close();
 	delete m;
+}
+
+void ApplicationGlobal::send_remote_logger(const std::string &msg, char const *file, int line)
+{
+	m->udp_logger.send(msg, file, line);
 }
 
 void ApplicationGlobal::start_trace_logger()
