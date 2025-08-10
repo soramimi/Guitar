@@ -56,7 +56,7 @@ public:
 	struct Option {
 		bool use_cache = false;
 		bool chdir = true;
-		bool log = false;
+		bool log = true;
 		bool errout = false;
 		AbstractPtyProcess *pty = nullptr;
 		QString prefix;

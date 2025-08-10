@@ -96,7 +96,11 @@ std::optional<GitResult> GitBasicSession::exec_git(const QString &arg, const Opt
 				result.set_output(proc.errbytes);
 			} else {
 				if (!proc.errbytes.empty()) {
-					qDebug() << QString::fromStdString(proc.errstring());
+					QString s = QString::fromStdString(proc.errstring());
+					if (!s.endsWith('\n')) {
+						s += '\n';
+					}
+					global->writeLog(s);
 				}
 				result.set_output(proc.outbytes);
 			}
