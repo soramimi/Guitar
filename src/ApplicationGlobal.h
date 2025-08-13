@@ -85,6 +85,9 @@ public:
 
 	void init(QApplication *a);
 
+	bool remote_log_enabled = false;
+	bool trace_event_log_enabled = false;
+
 	void writeLog(const std::string_view &str);
 	void writeLog(const QString &str);
 

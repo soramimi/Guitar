@@ -81,6 +81,8 @@ int main(int argc, char *argv[])
 {
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
 
+	WebClient::initialize();
+
 	ApplicationGlobal g;
 	global = &g;
 	signal(SIGTERM, onSigTerm);
@@ -162,8 +164,6 @@ int main(int argc, char *argv[])
 		global->start_with_shift_key = true;
 	}
 
-	WebClient::initialize();
-
 	bool a_open_here = false;
 	QString a_commit_id;
 
@@ -181,6 +181,10 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
+				} else if (arg == "--remote-log") {
+					global->remote_log_enabled = true;
+				} else if (arg == "--trace-event-log") {
+					global->trace_event_log_enabled = true;
 				} else if (arg == "--genmsg") { // experimental
 					return genmsg();
 				} else if (arg == "--unsafe") { // experimental
