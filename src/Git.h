@@ -435,11 +435,6 @@ public:
 		return session_->gitinfo();
 	}
 
-	// AbstractGitSession::Var const &var() const
-	// {
-	// 	return session_->var();
-	// }
-
 	void setCommandCache(GitCommandCache const &cc)
 	{
 		session_->set_command_cache(cc);

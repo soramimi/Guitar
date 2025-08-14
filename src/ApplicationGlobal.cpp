@@ -19,13 +19,25 @@ struct ApplicationGlobal::Private {
 ApplicationGlobal::ApplicationGlobal()
 	: m(new Private)
 {
-	m->remote_logger.open();
 }
 
 ApplicationGlobal::~ApplicationGlobal()
 {
-	m->remote_logger.close();
+	close_remote_logger();
+	close_trace_logger();
 	delete m;
+}
+
+void ApplicationGlobal::open_remote_logger()
+{
+	if (remote_log_enabled) {
+		m->remote_logger.open();
+	}
+}
+
+void ApplicationGlobal::close_remote_logger()
+{
+	m->remote_logger.close();
 }
 
 void ApplicationGlobal::send_remote_logger(const std::string &msg, char const *file, int line)
@@ -33,9 +45,22 @@ void ApplicationGlobal::send_remote_logger(const std::string &msg, char const *f
 	m->remote_logger.send(msg, file, line);
 }
 
-void ApplicationGlobal::start_trace_logger()
+void ApplicationGlobal::open_trace_logger()
 {
-	m->trace_event_logger.open();
+	if (trace_log_enabled) {
+		m->trace_event_logger.open();
+	}
+}
+
+void ApplicationGlobal::close_trace_logger()
+{
+	m->trace_event_logger.close();
+}
+
+void ApplicationGlobal::restart_trace_logger()
+{
+	close_trace_logger();
+	open_trace_logger();
 }
 
 void ApplicationGlobal::put_trace_event(TraceEventWriter::Event const &event)

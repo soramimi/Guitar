@@ -2,8 +2,6 @@
 #define TRACELOGGER_H
 
 #include "TraceEventWriter.h"
-
-#include <string>
 #include <QString>
 
 class TraceLogger {

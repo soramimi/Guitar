@@ -56,7 +56,9 @@ void logHandler(QtMsgType type, const QMessageLogContext &context, const QString
 	std::string s = message.toStdString();
 	fprintf(stderr, "%s\n", s.c_str());
 
-	global->send_remote_logger(s, context.file, context.line);
+	if (global->remote_log_enabled) {
+		global->send_remote_logger(s, context.file, context.line);
+	}
 }
 
 void setEnvironmentVariable(QString const &name, QString const &value);
@@ -92,6 +94,42 @@ int main(int argc, char *argv[])
 
 	qInstallMessageHandler(logHandler);
 
+	bool a_open_here = false;
+	QString a_commit_id;
+
+	QStringList args;
+
+	{
+		int i = 1;
+		while (i < argc) {
+			std::string arg = argv[i];
+			if (arg[0] == '-') {
+				if (arg == "--open-here") {
+					a_open_here = true;
+				} else if (arg == "--commit-id") {
+					if (i + 1 < argc) {
+						i++;
+						a_commit_id = argv[i];
+					}
+				} else if (arg == "--remote-log") {
+					global->remote_log_enabled = true;
+				} else if (arg == "--trace-log") {
+					global->trace_log_enabled = true;
+				} else if (arg == "--genmsg") { // experimental
+					return genmsg();
+				} else if (arg == "--unsafe") { // experimental
+#ifdef UNSAFE_ENABLED
+					global->unsafe_enabled = true;
+					qDebug() << "Unsafe mode enabled.";
+#endif
+				}
+			} else {
+				args.push_back(QString::fromStdString(arg));
+			}
+			i++;
+		}
+	}
+
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
 	global->this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
@@ -111,7 +149,12 @@ int main(int argc, char *argv[])
 	MKPATH(global->app_config_dir);
 	MKPATH(global->log_dir);
 
-	global->start_trace_logger();
+	if (global->remote_log_enabled) {
+		global->open_remote_logger();
+	}
+	if (global->trace_log_enabled) {
+		global->open_trace_logger();
+	}
 
 	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
 
@@ -123,6 +166,7 @@ int main(int argc, char *argv[])
 
 
 	QApplication a(argc, argv);
+
 
 	global->init(&a);
 
@@ -162,42 +206,6 @@ int main(int argc, char *argv[])
 
 	if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
 		global->start_with_shift_key = true;
-	}
-
-	bool a_open_here = false;
-	QString a_commit_id;
-
-	QStringList args;
-
-	{
-		int i = 1;
-		while (i < argc) {
-			std::string arg = argv[i];
-			if (arg[0] == '-') {
-				if (arg == "--open-here") {
-					a_open_here = true;
-				} else if (arg == "--commit-id") {
-					if (i + 1 < argc) {
-						i++;
-						a_commit_id = argv[i];
-					}
-				} else if (arg == "--remote-log") {
-					global->remote_log_enabled = true;
-				} else if (arg == "--trace-event-log") {
-					global->trace_event_log_enabled = true;
-				} else if (arg == "--genmsg") { // experimental
-					return genmsg();
-				} else if (arg == "--unsafe") { // experimental
-#ifdef UNSAFE_ENABLED
-					global->unsafe_enabled = true;
-					qDebug() << "Unsafe mode enabled.";
-#endif
-				}
-			} else {
-				args.push_back(QString::fromStdString(arg));
-			}
-			i++;
-		}
 	}
 
 	if (global->app_config_dir.isEmpty()) {

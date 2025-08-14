@@ -1188,6 +1188,7 @@
     <addaction name="action_rebase_abort"/>
     <addaction name="separator"/>
     <addaction name="action_ssh"/>
+    <addaction name="action_restart_trace_logger"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -1807,6 +1808,14 @@
   <action name="action_ssh">
    <property name="text">
     <string>SSH</string>
+   </property>
+  </action>
+  <action name="action_restart_trace_logger">
+   <property name="text">
+    <string>Restart trace logger</string>
+   </property>
+   <property name="toolTip">
+    <string>Restart trace logger</string>
    </property>
   </action>
  </widget>

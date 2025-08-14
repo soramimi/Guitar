@@ -106,8 +106,8 @@ void TraceEventWriter::close()
 }
 )";
 		file_.write(str.c_str(), str.size());
+		file_.close();
 	}
-	file_.close();
 }
 
 void TraceEventWriter::put(Event event)

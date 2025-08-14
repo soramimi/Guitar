@@ -126,6 +126,8 @@ struct MainWindow::Private {
 		current_repository_data = {&repository_mutex};
 	}
 
+	// GitCommandCache git_command_cache;
+	GitRunner unassosiated_git_runner;
 	GitRunner current_git_runner;
 
 	Git::User current_git_user;
@@ -336,6 +338,8 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->action_sidebar->setChecked(true);
 
 	showFileList(FileListType::MessagePanel);
+
+	ui->action_restart_trace_logger->setVisible(global->trace_log_enabled);
 
 	startTimers();
 }
@@ -1963,7 +1967,8 @@ bool MainWindow::execWelcomeWizardDialog()
 	dlg.set_git_command_path(appsettings()->git_command);
 	dlg.set_default_working_folder(appsettings()->default_working_dir);
 	if (misc::isExecutable(appsettings()->git_command)) {
-		Git g(global->gcx(), {}, {}, {});
+		GitRunner g = unassosiated_git_runner();
+		// Git g(global->gcx(), {}, {}, {});
 		Git::User user = g.getUser(Git::Source::Global);
 		dlg.set_user_name(user.name);
 		dlg.set_user_email(user.email);
@@ -2308,7 +2313,8 @@ void MainWindow::internalClearRepositoryInfo()
  */
 void MainWindow::checkUser()
 {
-	Git g(global->gcx(), {}, {}, {});
+	GitRunner g = unassosiated_git_runner();
+	// Git g(global->gcx(), {}, {}, {});
 	while (1) {
 		Git::User user = g.getUser(Git::Source::Global);
 		if (!user.name.isEmpty() && !user.email.isEmpty()) {
@@ -3223,7 +3229,8 @@ void MainWindow::setUnknownRepositoryInfo()
 {
 	setRepositoryInfo("---", "");
 
-	Git g(global->gcx(), {}, {}, {});
+	GitRunner g = unassosiated_git_runner();
+	// Git g(global->gcx(), {}, {}, {});
 	Git::User user = g.getUser(Git::Source::Global);
 	setWindowTitle_(user);
 }
@@ -4100,13 +4107,20 @@ void MainWindow::updateFileList(Git::Hash const &id)
 		xdata.files_list_type = FileListType::SingleList;
 
 		if (id) {
-			auto diffs = makeDiffs(g, Git::Hash(id));
-			if (diffs) {
-				setDiffResult(*diffs);
-			} else {
-				setDiffResult({});
-				return;
-			}
+			// nop
+		} else if (isThereUncommitedChanges()) {
+			xdata.files_list_type = FileListType::SideBySide;
+		}
+
+		auto diffs = makeDiffs(g, id);
+		if (diffs) {
+			setDiffResult(*diffs);
+		} else {
+			setDiffResult({});
+			return;
+		}
+
+		if (id) {
 
 			xdata.files_list_type = files_list_type;
 
@@ -4115,19 +4129,7 @@ void MainWindow::updateFileList(Git::Hash const &id)
 			};
 			addDiffItems(diffResult(), AddItem);
 
-		} else { // Uncommited changes が選択されているとき
-
-			bool uncommited = isThereUncommitedChanges();
-			if (uncommited) {
-				xdata.files_list_type = FileListType::SideBySide;
-			}
-			auto diffs = makeDiffs(g, uncommited ? Git::Hash() : id);
-			if (diffs) {
-				setDiffResult(*diffs);
-			} else {
-				setDiffResult({});
-				return;
-			}
+		} else {
 
 			std::map<QString, int> diffmap;
 
@@ -4210,7 +4212,6 @@ void MainWindow::updateFileList(Git::CommitItem const *commit)
 
 void MainWindow::updateCurrentFileList()
 {
-	PROFILE;
 	ASSERT_MAIN_THREAD();
 
 	updateFileList(currentCommitItem());
@@ -5552,6 +5553,7 @@ void MainWindow::setCurrentGitRunner(GitRunner g)
 
 void MainWindow::clearGitCommandCache()
 {
+	m->unassosiated_git_runner = {};
 	m->current_repository_data.git_command_cache = {};
 	m->current_git_runner.clearCommandCache();
 }
@@ -5573,7 +5575,11 @@ GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const 
 
 GitRunner MainWindow::unassosiated_git_runner() const
 {
-	return _git({}, {}, {}, false);
+	if (!m->unassosiated_git_runner) {
+		m->unassosiated_git_runner = _git({}, {}, {}, false);
+		m->unassosiated_git_runner.git->setCommandCache(GitCommandCache(true));
+	}
+	return m->unassosiated_git_runner;
 }
 
 GitRunner MainWindow::new_git_runner(const QString &dir, const QString &sshkey)
@@ -7466,3 +7472,9 @@ std::string normalize_path(char const *path);
 void MainWindow::test()
 {
 }
+
+void MainWindow::on_action_restart_trace_logger_triggered()
+{
+	global->close_trace_logger();
+}
+
