@@ -123,7 +123,9 @@ void Win32PtyProcess::run()
 	timer.start();
 
 	QString cwd = QDir::currentPath();
-	QDir::setCurrent(change_dir_);
+	if (!change_dir_.isEmpty()) {
+		QDir::setCurrent(change_dir_);
+	}
 
 	winpty_config_t *agent_cfg = winpty_config_new(WINPTY_FLAG_PLAIN_OUTPUT, nullptr);
 	winpty_t *pty = winpty_open(agent_cfg, nullptr);

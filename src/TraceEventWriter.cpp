@@ -40,6 +40,7 @@ void TraceEventWriter::write(const Event &item, bool comma)
 	{
 		jstream::Writer w([&](char const *p, int n){ str.append(p, n); });
 		w.enable_newline(false);
+		w.enable_indent(false);
 		w.object({}, [&](){
 			w.string("name", item.name);
 			w.string("cat", item.category);
@@ -60,6 +61,7 @@ void TraceEventWriter::write(const Event &item, bool comma)
 	if (comma) {
 		str += ',';
 	}
+	str += '\n';
 
 	{
 		std::lock_guard lock(mutex_);

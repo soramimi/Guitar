@@ -4,6 +4,7 @@
 #include <QThread>
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
+#include "TraceLogger.h"
 
 // PathToIdMap
 
@@ -261,38 +262,55 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 		}
 	}
 
-	for (int i = 0; i < diffs.size(); i++) {
-		Git::Diff *diff = &diffs[i];
-		if (diff->isSubmodule()) {
-			for (int j = 0; j < (int)submodules.size(); j++) {
-				if (submodules[j].path == diff->path) {
-					GitRunner g2 = git_for_submodule(g, submodules[j]);
-					auto Do = [&](QString const &id, Git::Diff::SubmoduleDetail *out){
-						Git::SubmoduleItem const &mods = submodules[j];
-						if (id.startsWith('*')) {
-							out->item = mods;
-							out->item.id = g2.rev_parse("HEAD");
-							auto commit = g2.queryCommitItem(out->item.id);
-							if (commit) {
-								out->commit = *commit;
+	// get submodule details
+	constexpr int num_threads = 8;
+	std::atomic_size_t diffs_index(0);
+	std::vector<std::thread> threads(num_threads);
+	for (size_t thread_index = 0; thread_index < threads.size(); thread_index++) {
+		threads[thread_index] = std::thread([&](){
+			while (1) {
+				size_t i = diffs_index++;
+				if (i >= diffs.size()) break; // 終了
+				Git::Diff *diff = &diffs[i];
+				if (!diff->isSubmodule()) continue;
+
+				auto Do = [this, &g, &submodules](Git::Diff *diff){
+					for (size_t j = 0; j < submodules.size(); j++) {
+						Git::SubmoduleItem const &submod = submodules[j];
+						if (submod.path != diff->path) continue;
+						GitRunner g2 = git_for_submodule(g, submod);
+						auto GetSubmoduleDetail = [&](QString const &id){
+							Git::Diff::SubmoduleDetail out;
+							if (id.startsWith('*')) {
+								out.item = submod;
+								out.item.id = g2.rev_parse("HEAD");
+								auto commit = g2.queryCommitItem(out.item.id);
+								if (commit) {
+									out.commit = *commit;
+								}
+							} else if (Git::isValidID(id)) {
+								out.item = submod;
+								out.item.id = Git::Hash(id);
+								auto commit = g2.queryCommitItem(out.item.id);
+								if (commit) {
+									out.commit = *commit;
+								}
 							}
-						} else if (Git::isValidID(id)) {
-							out->item = mods;
-							out->item.id = Git::Hash(id);
-							auto commit = g2.queryCommitItem(out->item.id);
-							if (commit) {
-								out->commit = *commit;
-							}
-						} else {
-							*out = {};
-						}
-					};
-					Do(diff->blob.a_id_or_path, &diff->a_submodule);
-					Do(diff->blob.b_id_or_path, &diff->b_submodule);
-					break;
-				}
+							return out;
+						};
+						diff->a_submodule = GetSubmoduleDetail(diff->blob.a_id_or_path);
+						diff->b_submodule = GetSubmoduleDetail(diff->blob.b_id_or_path);
+						break;
+					}
+
+				};
+
+				Do(diff);
 			}
-		}
+		});
+	}
+	for (size_t thread_index = 0; thread_index < threads.size(); thread_index++) {
+		threads[thread_index].join();
 	}
 
 	std::sort(diffs.begin(), diffs.end(), [](Git::Diff const &left, Git::Diff const &right){
