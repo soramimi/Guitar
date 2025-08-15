@@ -2332,7 +2332,7 @@ void MainWindow::checkUser()
  *
  * 差分を作成する
  */
-std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
+std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id, std::future<QList<Git::SubmoduleItem>> &&async_modules)
 {
 	if (!isValidWorkingCopy(g)) return std::nullopt;
 
@@ -2340,8 +2340,7 @@ std::optional<QList<Git::Diff>> MainWindow::makeDiffs(GitRunner g, Git::Hash id)
 		id = Git::Hash(getObjCache()->revParse(g, "HEAD"));
 	}
 
-	QList<Git::SubmoduleItem> mods;
-	updateSubmodules(g, id, &mods); // TODO: slow
+	QList<Git::SubmoduleItem> mods = async_modules.get();
 	setSubmodules(mods);
 
 	bool uncommited = (!id && isThereUncommitedChanges());
@@ -3420,13 +3419,12 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
 
 /**
  * @brief 指定のコミットにおけるサブモジュールリストを取得
- * @param g
- * @param id
- * @param out
+ * @param g GitRunner
+ * @param id コミットID
+ * @return サブモジュールリスト
  */
-void MainWindow::updateSubmodules(GitRunner g, Git::Hash const &id, QList<Git::SubmoduleItem> *out)
+QList<Git::SubmoduleItem> MainWindow::updateSubmodules(GitRunner g, Git::Hash const &id)
 {
-	*out = {};
 	QList<Git::SubmoduleItem> submodules;
 	if (!id) {
 		submodules = g.submodules();
@@ -3469,7 +3467,7 @@ void MainWindow::updateSubmodules(GitRunner g, Git::Hash const &id, QList<Git::S
 done:;
 		}
 	}
-	*out = submodules;
+	return submodules;
 }
 
 void MainWindow::changeRepositoryBookmarkName(RepositoryInfo item, QString new_name)
@@ -4089,6 +4087,10 @@ void MainWindow::updateFileList(Git::Hash const &id)
 
 	clearFileList();
 
+	std::future<QList<Git::SubmoduleItem>> async_modules = std::async(std::launch::async, [&](){
+		return updateSubmodules(g, id); // TODO: slow
+	});
+
 	FileListType files_list_type;
 	if (m->background_process_work_in_progress) {
 		files_list_type = FileListType::MessagePanel;
@@ -4112,7 +4114,7 @@ void MainWindow::updateFileList(Git::Hash const &id)
 			xdata.files_list_type = FileListType::SideBySide;
 		}
 
-		auto diffs = makeDiffs(g, id);
+		auto diffs = makeDiffs(g, id, std::move(async_modules));
 		if (diffs) {
 			setDiffResult(*diffs);
 		} else {

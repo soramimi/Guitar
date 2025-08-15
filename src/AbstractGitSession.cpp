@@ -9,6 +9,7 @@ struct AbstractGitSession::GitCache {
 struct AbstractGitSession::Private {
 	std::shared_ptr<AbstractGitSession::GitCache> cache;
 	AbstractGitSession::Info info;
+	AbstractGitSession::Info2 info2;
 };
 
 void AbstractGitSession::insertIntoCommandCache(const QString &key, const std::vector<char> &value)
@@ -37,6 +38,11 @@ AbstractGitSession::~AbstractGitSession()
 	delete m;
 }
 
+AbstractGitSession::AbstractGitSession(const AbstractGitSession &other)
+	: m(new Private(*other.m))
+{
+}
+
 void AbstractGitSession::clearCommandCache()
 {
 	m->cache->command_cache.clear();
@@ -52,6 +58,16 @@ const AbstractGitSession::Info &AbstractGitSession::gitinfo() const
 	return m->info;
 }
 
+AbstractGitSession::Info2 &AbstractGitSession::gitinfo2()
+{
+	return m->info2;
+}
+
+const AbstractGitSession::Info2 &AbstractGitSession::gitinfo2() const
+{
+	return m->info2;
+}
+
 AbstractGitSession::GitCache &AbstractGitSession::cache()
 {
 	return *m->cache;
@@ -59,9 +75,9 @@ AbstractGitSession::GitCache &AbstractGitSession::cache()
 
 QString AbstractGitSession::workingDir() const
 {
-	QString dir = gitinfo().working_repo_dir;
-	if (!gitinfo().submodule_path.isEmpty()) {
-		dir = dir / gitinfo().submodule_path;
+	QString dir = gitinfo2().working_repo_dir;
+	if (!gitinfo2().submodule_path.isEmpty()) {
+		dir = dir / gitinfo2().submodule_path;
 	}
 	return dir;
 }

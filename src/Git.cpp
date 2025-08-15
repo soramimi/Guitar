@@ -139,13 +139,13 @@ void Git::_init(GitContext const &cx)
 
 void Git::setWorkingRepositoryDir(QString const &repo, QString const &sshkey)
 {
-	gitinfo().working_repo_dir = repo;
+	gitinfo2().working_repo_dir = repo;
 	gitinfo().ssh_key_override = sshkey;
 }
 
 void Git::setSubmodulePath(const QString &submodpath)
 {
-	gitinfo().submodule_path = submodpath;
+	gitinfo2().submodule_path = submodpath;
 }
 
 
@@ -1021,7 +1021,7 @@ Git::CloneData Git::preclone(QString const &url, QString const &path)
 bool Git::clone(CloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
-	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to);
+	gitinfo2().working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	std::optional<GitResult> var;
 	QDir cwd = QDir::current();
@@ -1051,24 +1051,28 @@ QList<Git::SubmoduleItem> Git::submodules()
 
 	auto result = git("submodule");
 	QString text = resultQString(result);
-	ushort c = text.utf16()[0];
-	if (c == ' ' || c == '+' || c == '-') {
-		text = text.mid(1);
-	}
-	QStringList words = misc::splitWords(text);
-	if (words.size() >= 2) {
-		SubmoduleItem sm;
-		sm.id = Git::Hash(words[0]);
-		sm.path = words[1];
-		if (isValidID(sm.id)) {
-			if (words.size() >= 3) {
-				sm.refs = words[2];
-				if (sm.refs.startsWith('(') && sm.refs.endsWith(')')) {
-					sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
+	QStringList lines = misc::splitLines(text);
+	for (QString const &line : lines) {
+		QString text = line;
+		ushort c = text.utf16()[0];
+		if (c == ' ' || c == '+' || c == '-') {
+			text = text.mid(1);
+		}
+		QStringList words = misc::splitWords(text);
+		if (words.size() >= 2) {
+			SubmoduleItem sm;
+			sm.id = Git::Hash(words[0]);
+			sm.path = words[1];
+			if (isValidID(sm.id)) {
+				if (words.size() >= 3) {
+					sm.refs = words[2];
+					if (sm.refs.startsWith('(') && sm.refs.endsWith(')')) {
+						sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
+					}
 				}
-			}
 
-			mods.push_back(sm);
+				mods.push_back(sm);
+			}
 		}
 	}
 	return mods;
@@ -1982,7 +1986,7 @@ void parseGitSubModules(const QByteArray &ba, QList<Git::SubmoduleItem> *out)
 GitRunner GitRunner::dup() const
 {
 	Git *newgit = new Git();
-	newgit->session_ = git->session_;
+	newgit->session_ = git->session_->dup();
 	return GitPtr(newgit);
 }
 

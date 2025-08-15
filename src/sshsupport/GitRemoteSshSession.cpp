@@ -7,6 +7,14 @@ GitRemoteSshSession::GitRemoteSshSession()
 	ssh_ = std::make_shared<SshConnection>();
 }
 
+std::shared_ptr<AbstractGitSession> GitRemoteSshSession::dup()
+{
+	std::shared_ptr<GitRemoteSshSession> ptr(new GitRemoteSshSession(*this));
+	ptr->ssh_ = ssh_;
+	ptr->git_command_ = git_command_;
+	return ptr;
+}
+
 bool GitRemoteSshSession::connect(std::shared_ptr<SshConnection> ssh, std::string const &gitcmd)
 {
 	ready_ = false;
@@ -33,9 +41,9 @@ bool GitRemoteSshSession::isValidWorkingCopy(const QString &dir) const
 	return true; // TODO
 }
 
-bool GitRemoteSshSession::exec_git(const QString &arg, const Option &opt)
+std::optional<GitResult> GitRemoteSshSession::exec_git(const QString &arg, const Option &opt)
 {
-	if (!is_connected()) return false;
+	if (!is_connected()) return std::nullopt;
 
 	QString cmd = QString("\"%1\" --no-pager ").arg(git_command_);
 
@@ -53,14 +61,17 @@ bool GitRemoteSshSession::exec_git(const QString &arg, const Option &opt)
 		global->writeLog(s);
 	}
 
+	GitResult result;
+
 	auto ret = ssh_->exec(cmd.toStdString().c_str());
 	if (ret) {
-		std::string_view result(*ret);
-		var().result.clear();
-		var().result.insert(var().result.end(), result.begin(), result.end());
-		return true;
+		// std::string_view result(*ret);
+		std::vector<char> vec;
+		vec.insert(vec.end(), ret->begin(), ret->end());
+		result.set_output(vec);
+		return result;
 	}
-	return false;
+	return std::nullopt;
 }
 
 bool GitRemoteSshSession::remove(const QString &path)

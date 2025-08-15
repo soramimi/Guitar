@@ -435,6 +435,15 @@ public:
 		return session_->gitinfo();
 	}
 
+	AbstractGitSession::Info2 &gitinfo2()
+	{
+		return session_->gitinfo2();
+	}
+	AbstractGitSession::Info2 const &gitinfo2() const
+	{
+		return session_->gitinfo2();
+	}
+
 	void setCommandCache(GitCommandCache const &cc)
 	{
 		session_->set_command_cache(cc);

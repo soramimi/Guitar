@@ -24,6 +24,14 @@ QString GitBasicSession::sshCommand() const
 	return gitinfo().ssh_command;
 }
 
+std::shared_ptr<AbstractGitSession> GitBasicSession::dup()
+{
+	std::shared_ptr<AbstractGitSession> ptr(new GitBasicSession(*this));
+	// ptr->gitinfo() = gitinfo();
+	// ptr->gitinfo2() = gitinfo2();
+	return ptr;
+}
+
 bool GitBasicSession::is_connected() const
 {
 	return QFileInfo(gitCommand()).isExecutable();

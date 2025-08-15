@@ -12,6 +12,7 @@ public:
 		std::string category;
 		char phase;
 		uint64_t timestamp;
+		int64_t duration = 0; // only for complete events
 		int32_t pid;
 		int32_t tid;
 		std::string args_comment;

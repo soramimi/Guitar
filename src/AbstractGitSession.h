@@ -52,6 +52,7 @@ public:
 };
 
 class AbstractGitSession {
+	friend class GitRunner;
 public:
 	struct Option {
 		bool use_cache = false;
@@ -63,10 +64,12 @@ public:
 	};
 	struct Info {
 		QString git_command;
-		QString working_repo_dir;
-		QString submodule_path;
 		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 		QString ssh_key_override;// = "C:/a/id_rsa";
+	};
+	struct Info2 {
+		QString working_repo_dir;
+		QString submodule_path;
 	};
 
 	struct GitCache;
@@ -76,14 +79,18 @@ private:
 protected:
 	void insertIntoCommandCache(QString const &key, std::vector<char> const &value);
 	std::vector<char> *findFromCommandCache(QString const &key);
+	virtual std::shared_ptr<AbstractGitSession> dup() = 0;
 public:
 	AbstractGitSession();
 	virtual ~AbstractGitSession();
+	AbstractGitSession(AbstractGitSession const &other);
 
 	void clearCommandCache();
 
 	Info &gitinfo();
 	Info const &gitinfo() const;
+	Info2 &gitinfo2();
+	Info2 const &gitinfo2() const;
 
 	GitCache &cache();
 	QString workingDir() const;

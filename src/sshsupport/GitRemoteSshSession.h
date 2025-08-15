@@ -14,11 +14,13 @@ public:
 
 	GitRemoteSshSession();
 
+	std::shared_ptr<AbstractGitSession> dup();
+
 	bool connect(std::shared_ptr<SshConnection> ssh, std::string const &gitcmd);
 
 	bool is_connected() const;
 	bool isValidWorkingCopy(QString const &dir) const;
-	bool exec_git(const QString &arg, const Option &opt);
+	std::optional<GitResult> exec_git(const QString &arg, const Option &opt);
 	bool remove(const QString &path);
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);

@@ -36,24 +36,31 @@ void TraceEventWriter::write(const Event &item, bool comma)
 {
 	if (!file_.isOpen()) return;
 
-	std::string str = R"({"name":")" + escape(item.name) + R"(","cat":")" + escape(item.category) +
-					  R"(","ph":")" + item.phase + R"(","ts":)" + std::to_string(item.timestamp) +
-					  R"(,"pid":)" + std::to_string(item.pid) +
-					  R"(,"tid":)" + std::to_string(item.tid);
-	if (!item.args_comment.empty()) {
-		str += R"(,"args":{"comment":")" + escape(item.args_comment) + R"("})";
+	std::string str;
+	{
+		jstream::Writer w([&](char const *p, int n){ str.append(p, n); });
+		w.enable_newline(false);
+		w.object({}, [&](){
+			w.string("name", item.name);
+			w.string("cat", item.category);
+			w.string("ph", std::string(1, item.phase));
+			w.number("ts", item.timestamp);
+			if (item.phase == PHASE_COMPLETE) {
+				w.number("dur", item.duration);
+			}
+			w.number("pid", item.pid);
+			w.number("tid", item.tid);
+			if (!item.args_comment.empty()) {
+				w.object("args", [&](){
+					w.string("comment", item.args_comment);
+				});
+			}
+		});
 	}
-	str += '}';
 	if (comma) {
 		str += ',';
 	}
-	str += '\n';
-	for (size_t i = 0; i < str.size(); i++) {
-		if (str[i] == 0) {
-			qDebug() << "---" << Q_FUNC_INFO;
-		}
 
-	}
 	{
 		std::lock_guard lock(mutex_);
 		file_.write(str.c_str(), str.size());

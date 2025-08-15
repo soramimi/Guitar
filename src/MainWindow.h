@@ -287,7 +287,7 @@ private:
 	void checkUser();
 
 	void setCurrentRepository(const RepositoryInfo &repo, bool clear_authentication);
-	std::optional<QList<Git::Diff> > makeDiffs(GitRunner g, Git::Hash id);
+	std::optional<QList<Git::Diff>> makeDiffs(GitRunner g, Git::Hash id, std::future<QList<Git::SubmoduleItem>> &&async_modules);
 
 	void updateRemoteInfo();
 
@@ -596,12 +596,9 @@ public:
 	
 	const TagList &queryCurrentCommitTagList() const;
 	
-	// static bool isGroupItem(QTreeWidgetItem *item);
-	// static void setRepoIndex(QTreeWidgetItem *item, int index);
-	// static int repoIndex(QTreeWidgetItem *item);
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
-	static void updateSubmodules(GitRunner g, const Git::Hash &id, QList<Git::SubmoduleItem> *out);
+	static QList<Git::SubmoduleItem> updateSubmodules(GitRunner g, const Git::Hash &id);
 	static void updateCommitGraph(Git::CommitItemList *logs);
 	static TagList findTag(std::map<Git::Hash, TagList> const &tagmap, Git::Hash const &id);
 	static QString makeRepositoryName(const QString &loc);

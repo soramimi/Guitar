@@ -13,6 +13,8 @@ public:
 private:
 	QString gitCommand() const;
 	QString sshCommand() const;
+protected:
+	virtual std::shared_ptr<AbstractGitSession> dup();
 public:
 	GitBasicSession(Commands const &cmds);
 
