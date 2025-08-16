@@ -3,6 +3,8 @@
 #include "../src/common/strformat.h"
 #include <cstring>
 
+#include "../src/webclient.h"
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <Windows.h>
@@ -68,7 +70,10 @@ bool RemoteLogger::open(char const *remote, int port)
 	memset(&m->server_addr, 0, sizeof(m->server_addr));
 	m->server_addr.sin_family = AF_INET;
 	m->server_addr.sin_port = htons(port);
-	inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
+
+	HostNameResolver resolver;
+	resolver.resolve(remote, &m->server_addr.sin_addr);
+	// inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
 	return true;
 }
 

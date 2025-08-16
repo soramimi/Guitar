@@ -1,7 +1,18 @@
 #include "SettingsDialog.h"
 #include "ui_SettingsDialog.h"
 #include "MySettings.h"
+
 #include "SettingLoggingForm.h"
+#include "SettingGeneralForm.h"
+#include "SettingBehaviorForm.h"
+#include "SettingWorkingFolderForm.h"
+#include "SettingVisualForm.h"
+#include "SettingNetworkForm.h"
+#include "SettingProgramsForm.h"
+#include "SettingPrograms2Form.h"
+#include "SettingOptionsForm.h"
+#include "SettingAiForm.h"
+
 #include "common/misc.h"
 #include <QFileDialog>
 
@@ -18,10 +29,8 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 
 	mainwindow_ = parent;
 
-	AbstractSettingForm *page = new SettingLoggingForm(this);
-	ui->stackedWidget->addWidget(page);
-
 	auto AddPage = [&](AbstractSettingForm *page, bool enabled = true){
+		ui->stackedWidget->addWidget(page);
 		auto *l = page->layout();
 		if (l) {
 			l->setContentsMargins(0, 0, 0, 0);
@@ -35,18 +44,17 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 			ui->treeWidget->addTopLevelItem(item);
 		}
 	};
-	AddPage(ui->page_general);
-	AddPage(ui->page_behavior);
-	AddPage(ui->page_workingfolder, false); //@ experimental feature (2025-04-04)
-	AddPage(ui->page_visual);
-	AddPage(ui->page_network, false); //@ networking option is no longer supported (2025-04-04)
-	AddPage(ui->page_programs);
-	AddPage(ui->page_programs2);
-	AddPage(ui->page_ai);
-	AddPage(ui->page_options);
-//	AddPage(ui->page_example);
 
-	AddPage(page);
+	AddPage(new SettingGeneralForm(this));
+	AddPage(new SettingBehaviorForm(this));
+	AddPage(new SettingWorkingFolderForm(this), false); // @ experimental feature (2025-04-04)
+	AddPage(new SettingVisualForm(this));
+	AddPage(new SettingNetworkForm(this), false); // @ networking option is no longer supported (2025-04-04)
+	AddPage(new SettingProgramsForm(this));
+	AddPage(new SettingPrograms2Form(this));
+	AddPage(new SettingAiForm(this));
+	AddPage(new SettingOptionsForm(this));
+	AddPage(new SettingLoggingForm(this));
 
 	loadSettings();
 

@@ -44,8 +44,6 @@ public:
 		return settings_;
 	}
 
-	// static void loadSettings(ApplicationSettings *as);
-	// static void saveSettings(const ApplicationSettings *as);
 private slots:
 	void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 public slots:

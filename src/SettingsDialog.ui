@@ -49,78 +49,8 @@
      <item>
       <widget class="QStackedWidget" name="stackedWidget">
        <property name="currentIndex">
-        <number>3</number>
+        <number>-1</number>
        </property>
-       <widget class="SettingGeneralForm" name="page_general"/>
-       <widget class="SettingBehaviorForm" name="page_behavior">
-        <layout class="QVBoxLayout" name="verticalLayout_5">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
-       </widget>
-       <widget class="SettingWorkingFolderForm" name="page_workingfolder"/>
-       <widget class="SettingOptionsForm" name="page_options"/>
-       <widget class="SettingProgramsForm" name="page_programs">
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
-       </widget>
-       <widget class="SettingPrograms2Form" name="page_programs2"/>
-       <widget class="SettingNetworkForm" name="page_network">
-        <layout class="QVBoxLayout" name="verticalLayout_4">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
-       </widget>
-       <widget class="SettingAiForm" name="page_ai"/>
-       <widget class="SettingVisualForm" name="page_visual"/>
-       <widget class="SettingExampleForm" name="page_example">
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
-       </widget>
       </widget>
      </item>
     </layout>
@@ -158,68 +88,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>SettingExampleForm</class>
-   <extends>QWidget</extends>
-   <header>SettingExampleForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingNetworkForm</class>
-   <extends>QWidget</extends>
-   <header>SettingNetworkForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingBehaviorForm</class>
-   <extends>QWidget</extends>
-   <header>SettingBehaviorForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingGeneralForm</class>
-   <extends>QWidget</extends>
-   <header>SettingGeneralForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingProgramsForm</class>
-   <extends>QWidget</extends>
-   <header>SettingProgramsForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingVisualForm</class>
-   <extends>QWidget</extends>
-   <header>SettingVisualForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingPrograms2Form</class>
-   <extends>QWidget</extends>
-   <header>SettingPrograms2Form.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingWorkingFolderForm</class>
-   <extends>QWidget</extends>
-   <header>SettingWorkingFolderForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingAiForm</class>
-   <extends>QWidget</extends>
-   <header>SettingAiForm.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>SettingOptionsForm</class>
-   <extends>QWidget</extends>
-   <header>SettingOptionsForm.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>
