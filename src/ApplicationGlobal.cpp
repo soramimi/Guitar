@@ -30,8 +30,10 @@ ApplicationGlobal::~ApplicationGlobal()
 
 void ApplicationGlobal::open_remote_logger()
 {
-	if (remote_log_enabled) {
-		m->remote_logger.open();
+	if (appsettings.enable_remote_log) {
+		std::string host = appsettings.remote_log_host.toStdString();
+		int port = appsettings.remote_log_port;
+		m->remote_logger.open(host.c_str(), port);
 	}
 }
 
@@ -47,8 +49,14 @@ void ApplicationGlobal::send_remote_logger(const std::string &msg, char const *f
 
 void ApplicationGlobal::open_trace_logger()
 {
-	if (trace_log_enabled) {
-		m->trace_event_logger.open();
+	if (global->appsettings.enable_trace_log) {
+		QString dir;
+		if (global->appsettings.use_custom_log_dir) {
+			dir = global->appsettings.custom_log_dir;
+		} else {
+			dir = global->log_dir;
+		}
+		m->trace_event_logger.open(dir);
 	}
 }
 

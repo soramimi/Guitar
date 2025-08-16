@@ -59,7 +59,7 @@ void logHandler(QtMsgType type, const QMessageLogContext &context, const QString
 	std::string s = message.toStdString();
 	fprintf(stderr, "%s\n", s.c_str());
 
-	if (global->remote_log_enabled) {
+	if (global->appsettings.enable_remote_log) {
 		global->send_remote_logger(s, context.file, context.line);
 	}
 }
@@ -114,10 +114,10 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
-				} else if (arg == "--remote-log") {
-					global->remote_log_enabled = true;
-				} else if (arg == "--trace-log") {
-					global->trace_log_enabled = true;
+				// } else if (arg == "--remote-log") {
+				// 	global->remote_log_enabled = true;
+				// } else if (arg == "--trace-log") {
+				// 	global->trace_log_enabled = true;
 				} else if (arg == "--genmsg") { // experimental
 					return genmsg();
 				} else if (arg == "--unsafe") { // experimental
@@ -152,10 +152,12 @@ int main(int argc, char *argv[])
 	MKPATH(global->app_config_dir);
 	MKPATH(global->log_dir);
 
-	if (global->remote_log_enabled) {
+	global->appsettings = ApplicationSettings::loadSettings();
+
+	if (global->appsettings.enable_remote_log) {
 		global->open_remote_logger();
 	}
-	if (global->trace_log_enabled) {
+	if (global->appsettings.enable_trace_log) {
 		global->open_trace_logger();
 	}
 
@@ -167,9 +169,7 @@ int main(int argc, char *argv[])
 #endif
 	// qputenv("QT_SCALE_FACTOR", "1.5");
 
-
 	QApplication a(argc, argv);
-
 
 	global->init(&a);
 

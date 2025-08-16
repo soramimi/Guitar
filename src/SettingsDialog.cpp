@@ -1,6 +1,7 @@
 #include "SettingsDialog.h"
 #include "ui_SettingsDialog.h"
 #include "MySettings.h"
+#include "SettingLoggingForm.h"
 #include "common/misc.h"
 #include <QFileDialog>
 
@@ -16,6 +17,9 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 	setWindowFlags(flags);
 
 	mainwindow_ = parent;
+
+	AbstractSettingForm *page = new SettingLoggingForm(this);
+	ui->stackedWidget->addWidget(page);
 
 	auto AddPage = [&](AbstractSettingForm *page, bool enabled = true){
 		auto *l = page->layout();
@@ -41,6 +45,8 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 	AddPage(ui->page_ai);
 	AddPage(ui->page_options);
 //	AddPage(ui->page_example);
+
+	AddPage(page);
 
 	loadSettings();
 

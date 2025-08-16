@@ -3,6 +3,7 @@
 #include "common/joinpath.h"
 #include "common/jstream.h"
 #include <QDebug>
+#include <QFileInfo>
 #include <thread>
 
 std::vector<std::thread::id> thread_ids;
@@ -80,9 +81,14 @@ TraceEventWriter::~TraceEventWriter()
 	close();
 }
 
-void TraceEventWriter::open()
+void TraceEventWriter::open(QString const &dir)
 {
-	file_.setFileName(global->log_dir / "trace.log");
+	QFileInfo info(dir);
+	if (!info.isDir()) {
+		qWarning() << "Trace log directory does not exist:" << dir;
+		return;
+	}
+	file_.setFileName(dir / "trace.log");
 	if (!file_.open(QFile::WriteOnly)) {
 		qWarning() << "Failed to open trace log file:" << file_.fileName();
 		return;

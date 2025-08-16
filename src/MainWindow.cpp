@@ -232,7 +232,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->tableWidget_log->setup(this);
 
-	loadApplicationSettings();
 	setupExternalPrograms();
 
 	setUnknownRepositoryInfo();
@@ -339,7 +338,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	showFileList(FileListType::MessagePanel);
 
-	ui->action_restart_trace_logger->setVisible(global->trace_log_enabled);
+	ui->action_restart_trace_logger->setVisible(global->appsettings.enable_trace_log);
 
 	startTimers();
 }
@@ -3872,10 +3871,7 @@ void MainWindow::saveApplicationSettings()
 	appsettings()->saveSettings();
 }
 
-void MainWindow::loadApplicationSettings()
-{
-	*appsettings() = ApplicationSettings::loadSettings();
-}
+
 
 void MainWindow::setDiffResult(const QList<Git::Diff> &diffs)
 {

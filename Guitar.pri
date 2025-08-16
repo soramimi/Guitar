@@ -109,6 +109,7 @@ macx {
 }
 
 SOURCES += \
+    $$PWD/src/SettingLoggingForm.cpp \
 	$$PWD/src/SimpleQtIO.cpp \
     $$PWD/src/TraceEventWriter.cpp \
     $$PWD/src/TraceLogger.cpp \
@@ -280,6 +281,7 @@ SOURCES += \
 	src/zip/zipextract.cpp
 
 HEADERS += \
+    $$PWD/src/SettingLoggingForm.h \
 	$$PWD/src/SimpleQtIO.h \
     $$PWD/src/TraceEventWriter.h \
     $$PWD/src/TraceLogger.h \
@@ -464,6 +466,7 @@ HEADERS += \
 HEADERS += version.h
 
 FORMS += \
+    $$PWD/src/SettingLoggingForm.ui \
     src/AboutDialog.ui \
 	src/AddRepositoriesCollectivelyDialog.ui \
 	src/AddRepositoryDialog.ui \

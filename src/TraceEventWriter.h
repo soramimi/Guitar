@@ -33,7 +33,7 @@ private:
 public:
 	TraceEventWriter();
 	~TraceEventWriter();
-	void open();
+        void open(const QString &dir);
 	void close();
 	void put(Event event);
 };

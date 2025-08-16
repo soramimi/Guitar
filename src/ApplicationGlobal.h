@@ -80,12 +80,12 @@ public:
 
 	void init(QApplication *a);
 
-	bool remote_log_enabled = false;
+	// bool remote_log_enabled = false;
 	void open_remote_logger();
 	void close_remote_logger();
 	void send_remote_logger(std::string const &msg, const char *file = nullptr, int line = 0);
 
-	bool trace_log_enabled = false;
+	// bool trace_log_enabled = false;
 	void open_trace_logger();
 	void close_trace_logger();
 	void restart_trace_logger();

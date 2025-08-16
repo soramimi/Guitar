@@ -90,6 +90,13 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	MySettings s;
 
 	s.beginGroup("Global");
+	GetValue<bool>(s, "EnableTraceLog")                      >> as.enable_trace_log;
+	GetValue<bool>(s, "EnableRemoteLog")                     >> as.enable_remote_log;
+	GetValue<QString>(s, "RemoteLogHost")                    >> as.remote_log_host;
+	GetValue<int>(s, "RemoteLogPort")                        >> as.remote_log_port;
+	GetValue<bool>(s, "UseCustomLogDir")                     >> as.use_custom_log_dir;
+	GetValue<QString>(s, "CustomLogDir")                     >> as.custom_log_dir;
+
 	GetValue<bool>(s, "SaveWindowPosition")                  >> as.remember_and_restore_window_position;
 	GetValue<QString>(s, "DefaultWorkingDirectory")          >> as.default_working_dir;
 	GetValue<QString>(s, "GitCommand")                       >> as.git_command;
@@ -194,6 +201,13 @@ void ApplicationSettings::saveSettings() const
 	MySettings s;
 
 	s.beginGroup("Global");
+	SetValue<bool>(s, "EnableTraceLog")                      << this->enable_trace_log;
+	SetValue<bool>(s, "EnableRemoteLog")                     << this->enable_remote_log;
+	SetValue<QString>(s, "RemoteLogHost")                    << this->remote_log_host;
+	SetValue<int>(s, "RemoteLogPort")                        << this->remote_log_port;
+	SetValue<bool>(s, "UseCustomLogDir")                     << this->use_custom_log_dir;
+	SetValue<QString>(s, "CustomLogDir")                     << this->custom_log_dir;
+
 	SetValue<bool>(s, "SaveWindowPosition")                  << this->remember_and_restore_window_position;
 	SetValue<QString>(s, "DefaultWorkingDirectory")          << this->default_working_dir;
 	SetValue<QString>(s, "GitCommand")                       << this->git_command;

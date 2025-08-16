@@ -348,8 +348,9 @@ private:
 	bool editFile(const QString &path, const QString &title);
 	void setAppSettings(const ApplicationSettings &appsettings);
 	QStringList findGitObject(const QString &id) const;
+
 	void saveApplicationSettings();
-	void loadApplicationSettings();
+
 	void setDiffResult(const QList<Git::Diff> &diffs);
 	const QList<Git::SubmoduleItem> &submodules() const;
 	void setSubmodules(const QList<Git::SubmoduleItem> &submodules);

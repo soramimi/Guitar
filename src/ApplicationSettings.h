@@ -22,6 +22,13 @@ public:
 
 class ApplicationSettings {
 public:
+	bool enable_trace_log = false;
+	bool enable_remote_log = false;
+	QString remote_log_host = "localhost";
+	int remote_log_port = 1024;
+	bool use_custom_log_dir = false;
+	QString custom_log_dir;
+
 	QString git_command;
 	QString gpg_command;
 	QString ssh_command;
