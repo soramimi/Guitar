@@ -12,6 +12,25 @@ ProgressTextLabel::ProgressTextLabel(QWidget *parent)
 		update();
 	});
 
+	// generate stripe pattern brush
+	{
+		QImage image(16, 16, QImage::Format_RGB888);
+		for (int y = 0; y < 16; y++) {
+			uint32_t pattern = 0x00ff00ff;
+			uint8_t *p = image.scanLine(y);
+			for (int x = 0; x < 16; x++) {
+				uint8_t r, g, b;
+				r = g = b = 0;
+				if ((pattern << (y + x)) & 0x80000000) {
+					g = b = 0xff;
+				}
+				p[3 * x + 0] = r;
+				p[3 * x + 1] = g;
+				p[3 * x + 2] = b;
+			}
+		}
+		pattern_brush_ = QBrush(image);
+	}
 }
 
 void ProgressTextLabel::setElementVisible(bool bar, bool msg)
@@ -38,29 +57,8 @@ void ProgressTextLabel::paintEvent(QPaintEvent *event)
 			rect.setRight(rect.left() + rect.width() * progress);
 			pr.fillRect(rect, Qt::green);
 		} else if (progress_ < 0) { // 実行中（縞模様）
-			QBrush br0(Qt::cyan);
-			QBrush br1(Qt::black);
-			int x = animation_ - 16;
-			bool color = false;
-			while (x < width()) {
-				QPainterPath path;
-				int px = x;
-				int py = rect.bottom();
-				path.moveTo(px, py);
-				px += 8;
-				py -= 8;
-				path.lineTo(px, py);
-				px += 8;
-				path.lineTo(px, py);
-				px -= 8;
-				py += 8;
-				path.lineTo(px, py);
-				px -= 8;
-				path.lineTo(px, py);
-				pr.fillPath(path, color ? br1 : br0);
-				color = !color;
-				x += 8;
-			}
+			pr.setBrushOrigin(QPoint(animation_ % 16, 0));
+			pr.fillRect(rect, pattern_brush_);
 		}
 	}
 

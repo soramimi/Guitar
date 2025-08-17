@@ -9,6 +9,7 @@ class ProgressTextLabel : public QLabel {
 private:
 	float progress_ = 0;
 	QTimer timer_;
+	QBrush pattern_brush_;
 	int animation_ = 0;
 	bool bar_visible = true;
 	bool msg_visible = true;
