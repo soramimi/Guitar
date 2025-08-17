@@ -6,7 +6,7 @@
 #include "GenerateCommitMessageDialog.h"
 #include <QDir>
 
-CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, Git::User const &user, gpg::Data const &key, QString const &previousMessage)
+CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser const &user, gpg::Data const &key, QString const &previousMessage)
 	: QDialog(parent)
 	, ui(new Ui::CommitDialog)
 {
@@ -60,9 +60,9 @@ void CommitDialog::updateSigningInfo()
 {
 	GitRunner g = mainwindow()->git();
 
-	Git::SignPolicy pol = g.signPolicy(Git::Source::Default);
+	GitSignPolicy pol = g.signPolicy(GitSource::Default);
 	if (!key_.id.isEmpty()) {
-		if (pol == Git::SignPolicy::True) {
+		if (pol == GitSignPolicy::True) {
 			ui->groupBox_gpg_sign->setCheckable(false);
 		} else {
 			ui->groupBox_gpg_sign->setCheckable(true);

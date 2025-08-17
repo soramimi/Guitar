@@ -57,7 +57,7 @@ public:
 	QString repositoryName() const;
 	QString overridedSshKey() const;
 	AddRepositoryDialog::Mode mode() const;
-	Git::CloneData makeCloneData() const;
+	GitCloneData makeCloneData() const;
 	RepositoryInfo repositoryInfo() const;
 private slots:
 	void on_comboBox_local_working_folder_currentTextChanged(const QString &arg1);

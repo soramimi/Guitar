@@ -22,9 +22,9 @@ SetGlobalUserDialog::~SetGlobalUserDialog()
 	delete ui;
 }
 
-Git::User SetGlobalUserDialog::user() const
+GitUser SetGlobalUserDialog::user() const
 {
-	Git::User user;
+	GitUser user;
 	user.name = ui->lineEdit_name->text();
 	user.email = ui->lineEdit_mail->text();
 	return user;

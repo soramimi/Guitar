@@ -48,15 +48,15 @@ void MergeDialog::setFastForwardPolicy(QString const &ff)
 	ui->radioButton_ff_default->click();
 }
 
-Git::MergeFastForward MergeDialog::ff(QString const &ff)
+GitMergeFastForward MergeDialog::ff(QString const &ff)
 {
 	if (ff.compare("only", Qt::CaseInsensitive) == 0) {
-		return Git::MergeFastForward::Only;
+		return GitMergeFastForward::Only;
 	}
 	if (ff.compare("no", Qt::CaseInsensitive) == 0) {
-		return Git::MergeFastForward::No;
+		return GitMergeFastForward::No;
 	}
-	return Git::MergeFastForward::Default;
+	return GitMergeFastForward::Default;
 }
 
 QString MergeDialog::mergeFrom() const

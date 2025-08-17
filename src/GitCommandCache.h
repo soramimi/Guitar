@@ -8,12 +8,13 @@
 
 class GitCommandCache {
 public:
+private:
 	struct Data {
 		std::map<QString, std::vector<char>> map;
 	};
 	std::shared_ptr<Data> d;
-	GitCommandCache(bool make = false);
-	operator bool() const;
+public:
+	GitCommandCache();
 
 	std::vector<char> *find(QString const &key);
 	void insert(QString const &key, std::vector<char> const &value);

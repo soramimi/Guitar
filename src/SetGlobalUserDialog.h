@@ -16,7 +16,7 @@ public:
 	explicit SetGlobalUserDialog(QWidget *parent = nullptr);
 	~SetGlobalUserDialog() override;
 
-	Git::User user() const;
+	GitUser user() const;
 };
 
 #endif // SETGLOBALUSERDIALOG_H

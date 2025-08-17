@@ -172,7 +172,7 @@ private:
 		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
 	}
 
-	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, Git::CommitItem const &commit) const
+	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, GitCommitItem const &commit) const
 	{
 		if (!opt.widget->isEnabled()) return;
 
@@ -284,7 +284,7 @@ public:
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
 
-		Git::CommitItem const &commit = tablewidget->commitItem(index.row());
+		GitCommitItem const &commit = tablewidget->commitItem(index.row());
 		CommitRecord const &record = tablewidget->model_->record(index);
 
 		if (tablewidget->model_->isFiltered()) {
@@ -334,7 +334,7 @@ public:
 	}
 };
 
-Git::CommitItem const &CommitLogTableWidget::commitItem(int row) const
+GitCommitItem const &CommitLogTableWidget::commitItem(int row) const
 {
 	return mainwindow()->commitItem(row);
 }
@@ -409,7 +409,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	Git::CommitItemList const &list = mainwindow()->commitlog();
+	GitCommitItemList const &list = mainwindow()->commitlog();
 
 	int indent_span = 16;
 
@@ -420,7 +420,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		return visualItemRect(row, 0);
 	};
 
-	auto IsAncestor = [&](Git::CommitItem const &item){
+	auto IsAncestor = [&](GitCommitItem const &item){
 		return mainwindow()->isAncestorCommit(item.commit_id);
 	};
 
@@ -441,14 +441,14 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	auto DrawLine = [&](size_t index, int itemrow){
 		QRect rc1;
 		if (index < list.size()) {
-			Git::CommitItem const &item1 = list.at(index);
+			GitCommitItem const &item1 = list.at(index);
 			rc1 = ItemRect(itemrow);
 			QPointF pt1 = ItemPoint(item1.marker_depth, rc1);
 			double halfheight = rc1.height() / 2.0;
-			for (TreeLine const &line : item1.parent_lines) {
+			for (GitTreeLine const &line : item1.parent_lines) {
 				if (line.depth >= 0) {
 					QPainterPath *path = nullptr;
-					Git::CommitItem const &item2 = list.at(line.index);
+					GitCommitItem const &item2 = list.at(line.index);
 					QRect rc2 = ItemRect(line.index);
 					if (index + 1 == (size_t)line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);
@@ -481,7 +481,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		double x, y;
 		y = 0;
 		if (index < list.size()) {
-			Git::CommitItem const &item = list.at(index);
+			GitCommitItem const &item = list.at(index);
 			QRect rc = ItemRect(row);
 			QPointF pt = ItemPoint(item.marker_depth, rc);
 			double r = 4;

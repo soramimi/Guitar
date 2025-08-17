@@ -1,55 +1,15 @@
 #ifndef ABSTRACTGITSESSION_H
 #define ABSTRACTGITSESSION_H
 
-#include <map>
 #include <vector>
 #include <memory>
 #include <optional>
 #include <QString>
-#include "MyProcess.h"
+#include "GitObjectManager.h"
 #include "GitTypes.h"
 
 class GitCommandCache;
 class AbstractPtyProcess;
-
-class GitResult {
-private:
-	ProcessStatus status_;
-public:
-	void set_exit_code(int code)
-	{
-		status_.exit_code = code;
-	}
-	void set_output(std::vector<char> const &out)
-	{
-		status_.output = out;
-	}
-	void set_error_message(std::string const &msg)
-	{
-		status_.error_message = msg;
-	}
-
-	bool ok() const
-	{
-		return status_.ok;
-	}
-	int exit_code()
-	{
-		return status_.exit_code;
-	}
-	std::vector<char> const &output() const
-	{
-		return status_.output;
-	}
-	std::string error_message() const
-	{
-		return status_.error_message;
-	}
-	std::string log_message() const
-	{
-		return status_.log_message;
-	}
-};
 
 class AbstractGitSession {
 	friend class GitRunner;
@@ -70,6 +30,7 @@ public:
 	struct Info2 {
 		QString working_repo_dir;
 		QString submodule_path;
+		GitObjectCache object_cache;
 	};
 
 	struct GitCache;
@@ -102,8 +63,6 @@ public:
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path) { return std::nullopt; }
 	virtual std::optional<std::vector<char>> readfile(char const *path) { return std::nullopt; }
-
-	void set_command_cache(GitCommandCache const &cc);
 };
 
 

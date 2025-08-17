@@ -90,7 +90,7 @@ private:
 		ViewStyle view_style = ViewStyle::None;
 		QByteArray bytes_a;
 		QByteArray bytes_b;
-		Git::Diff diff;
+		GitDiff diff;
 		bool uncommited = false;
 		QString workingdir;
 	};
@@ -100,7 +100,7 @@ private:
 	ViewStyle viewstyle() const;
 
 	GitRunner git();
-	Git::Object catFile(GitRunner g, QString const &id);
+	GitObject catFile(GitRunner g, QString const &id);
 
 	int totalTextLines() const;
 
@@ -109,26 +109,26 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const Git::Diff &diff, TextDiffLineList const &left, TextDiffLineList const &right);
+	void setDiffText(const GitDiff &diff, TextDiffLineList const &left, TextDiffLineList const &right);
 
 
-	void setLeftOnly(const Git::Diff &diff, QByteArray const &ba);
-	void setRightOnly(const Git::Diff &diff, QByteArray const &ba);
-	void setSideBySide(const Git::Diff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
-	void setSideBySide_(const Git::Diff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
+	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
+	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
+	void setSideBySide(const GitDiff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
+	void setSideBySide_(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
 	bool isValidID_(QString const &id);
 
 	FileViewType setupPreviewWidget();
 
-	void makeSideBySideDiffData(const Git::Diff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
+	void makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
 	void refrectScrollBar();
 	void refrectScrollBarV();
 	void refrectScrollBarH();
-	void setOriginalLines_(QByteArray const &ba, const Git::SubmoduleItem *submodule, const Git::CommitItem *submodule_commit);
+	void setOriginalLines_(QByteArray const &ba, const GitSubmoduleItem *submodule, const GitCommitItem *submodule_commit);
 	QString diffObjects(QString const &a_id, QString const &b_id);
-	bool setSubmodule(const Git::Diff &diff);
+	bool setSubmodule(const GitDiff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;
 	void keyPressEvent(QKeyEvent *event) override;
@@ -145,7 +145,7 @@ public:
 	void updateControls();
 	void scrollToBottom();
 
-	void updateDiffView(const Git::Diff &info, bool uncommited);
+	void updateDiffView(const GitDiff &info, bool uncommited);
 	void updateDiffView_(const QString &id_left, const QString &id_right, QString const &path = QString());
 
 	void setMaximizeButtonEnabled(bool f);

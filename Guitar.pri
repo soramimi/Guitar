@@ -109,6 +109,9 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/GitDiffManager.cpp \
+	$$PWD/src/GitRunner.cpp \
+	$$PWD/src/GitTypes.cpp \
     $$PWD/src/SettingLoggingForm.cpp \
 	$$PWD/src/SimpleQtIO.cpp \
     $$PWD/src/TraceEventWriter.cpp \
@@ -176,7 +179,6 @@ SOURCES += \
 	src/GitCommandCache.cpp \
 	src/GitCommandRunner.cpp \
 	src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
-	src/GitDiff.cpp \
 	src/GitHubAPI.cpp \
 	src/GitObjectManager.cpp \
 	src/GitPack.cpp \
@@ -281,6 +283,8 @@ SOURCES += \
 	src/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/GitDiffManager.h \
+	$$PWD/src/GitRunner.h \
     $$PWD/src/SettingLoggingForm.h \
 	$$PWD/src/SimpleQtIO.h \
     $$PWD/src/TraceEventWriter.h \
@@ -349,7 +353,6 @@ HEADERS += \
 	src/GitCommandCache.h \
 	src/GitCommandRunner.h \
 	src/GitConfigGlobalAddSafeDirectoryDialog.h \
-	src/GitDiff.h \
 	src/GitHubAPI.h \
 	src/GitObjectManager.h \
 	src/GitPack.h \

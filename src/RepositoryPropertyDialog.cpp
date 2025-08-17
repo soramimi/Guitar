@@ -10,7 +10,7 @@
 
 struct RepositoryPropertyDialog::Private {
 	GitRunner git;
-	std::vector<Git::Remote> remotes;
+	std::vector<GitRemote> remotes;
 	RepositoryInfo repository;
 	bool remote_changed = false;
 	bool name_changed = false;
@@ -93,7 +93,7 @@ void RepositoryPropertyDialog::updateRemotesTable()
 	SetHeaderItem(0, tr("Name"));
 	SetHeaderItem(1, tr("URL"));
 	for (int row = 0; row < rows; row++) {
-		Git::Remote const &r = m->remotes[row];
+		GitRemote const &r = m->remotes[row];
 		url = r.url_fetch;
 		auto SetItem = [&](int col, QString const &text, bool editable){
 			auto item = newQTableWidgetItem(text);
@@ -112,7 +112,7 @@ void RepositoryPropertyDialog::reflectRemotesTable()
 {
 	int rows = m->remotes.size();
 	for (int row = 0; row < rows; row++) {
-		Git::Remote *r = &m->remotes[row];
+		GitRemote *r = &m->remotes[row];
 		QString url = ui->tableWidget->item(row, 1)->text();
 		if (r->url() != url) {
 			r->set_url(url);
@@ -121,7 +121,7 @@ void RepositoryPropertyDialog::reflectRemotesTable()
 	}
 }
 
-const std::vector<Git::Remote> *RepositoryPropertyDialog::remotes() const
+const std::vector<GitRemote> *RepositoryPropertyDialog::remotes() const
 {
 	return &m->remotes;
 }
@@ -137,7 +137,7 @@ void RepositoryPropertyDialog::setSshKey_(const QString &sshkey)
  * @param op
  * @return
  */
-bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op)
+bool RepositoryPropertyDialog::execEditRemoteDialog(GitRemote *remote, EditRemoteDialog::Operation op)
 {
 	auto const *list = remotes();
 	if (op == EditRemoteDialog::RemoteSet) {
@@ -146,7 +146,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 			*remote = list->at(row);
 		}
 	} else {
-		*remote = Git::Remote();
+		*remote = GitRemote();
 	}
 
 	if (remote->name.isEmpty() && list->empty()) {
@@ -165,7 +165,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 		GitRunner g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
 			bool ok = true;
-			for (Git::Remote const &r : *list) {
+			for (GitRemote const &r : *list) {
 				if (r.name == remote->name) {
 					qDebug() << "remote add: Already exists" << remote->name;
 					ok = false;
@@ -191,9 +191,9 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(Git::Remote *remote, EditRem
 	return false;
 }
 
-Git::Remote RepositoryPropertyDialog::selectedRemote() const
+GitRemote RepositoryPropertyDialog::selectedRemote() const
 {
-	Git::Remote remote;
+	GitRemote remote;
 	auto const *list = remotes();
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < list->size()) {
@@ -219,7 +219,7 @@ QString RepositoryPropertyDialog::getName()
 
 void RepositoryPropertyDialog::on_pushButton_remote_add_clicked()
 {
-	Git::Remote r;
+	GitRemote r;
 	if (execEditRemoteDialog(&r, EditRemoteDialog::RemoteAdd)) {
 		m->remote_changed = true;
 	}
@@ -231,7 +231,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 	if (row < 0) {
 		ui->tableWidget->setCurrentCell(0, 0);
 	}
-	Git::Remote remote = selectedRemote();
+	GitRemote remote = selectedRemote();
 	if (execEditRemoteDialog(&remote, EditRemoteDialog::RemoteSet)) {
 		m->remote_changed = true;
 	}
@@ -239,7 +239,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 
 void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
-	Git::Remote remote = selectedRemote();
+	GitRemote remote = selectedRemote();
 	if (!remote.name.isEmpty()) {
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r == QMessageBox::Ok) {

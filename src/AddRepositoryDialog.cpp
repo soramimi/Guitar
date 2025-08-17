@@ -199,11 +199,11 @@ void AddRepositoryDialog::validate()
 	}
 }
 
-Git::CloneData AddRepositoryDialog::makeCloneData() const
+GitCloneData AddRepositoryDialog::makeCloneData() const
 {
 	QString url = remoteURL();
 	QString dir = localPath(false);
-	Git::CloneData clonedata = Git::preclone(url, dir);
+	GitCloneData clonedata = Git::preclone(url, dir);
 	return clonedata;
 }
 

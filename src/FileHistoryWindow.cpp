@@ -14,7 +14,7 @@
 struct FileHistoryWindow::Private {
 	GitRunner g;
 	QString path;
-	Git::CommitItemList commit_item_list;
+	GitCommitItemList commit_item_list;
 	FileDiffWidget::DiffData diff_data;
 };
 
@@ -106,7 +106,7 @@ void FileHistoryWindow::collectFileHistory()
 	ui->tableWidget_log->setRowCount(count);
 
 	for (int row = 0; row < count; row++) {
-		Git::CommitItem const &commit = m->commit_item_list[row];
+		GitCommitItem const &commit = m->commit_item_list[row];
 		int col = 0;
 		auto AddColumn = [&](QString const &text, QString const &tooltip){
 			auto *item = new QTableWidgetItem(text);
@@ -140,10 +140,10 @@ void FileHistoryWindow::updateDiffView()
 
 	int row = ui->tableWidget_log->currentRow();
 	if (row >= 0 && row + 1 < (int)m->commit_item_list.size()) {
-		Git::CommitItem const &commit_left = m->commit_item_list[row + 1]; // older
-		Git::CommitItem const &commit_right = m->commit_item_list[row];    // newer
+		GitCommitItem const &commit_left = m->commit_item_list[row + 1]; // older
+		GitCommitItem const &commit_right = m->commit_item_list[row];    // newer
 
-		auto FindFileID = [&](Git::CommitItem const &commit){
+		auto FindFileID = [&](GitCommitItem const &commit){
 			return mainwindow()->findFileID(commit.commit_id, m->path);
 		};
 		QString id_left = FindFileID(commit_left);
@@ -151,10 +151,10 @@ void FileHistoryWindow::updateDiffView()
 
 		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path);
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
-		Git::CommitItem const &commit = m->commit_item_list[row];    // newer
+		GitCommitItem const &commit = m->commit_item_list[row];    // newer
 		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
 
-		Git::Diff diff(id, m->path, {});
+		GitDiff diff(id, m->path, {});
 		ui->widget_diff_view->updateDiffView(diff, false);
 	}
 }
@@ -167,7 +167,7 @@ void FileHistoryWindow::on_tableWidget_log_currentItemChanged(QTableWidgetItem *
 void FileHistoryWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos)
 {
 	(void)pos;
-	Git::CommitItem commit;
+	GitCommitItem commit;
 	int row = ui->tableWidget_log->currentRow();
 	if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		commit = m->commit_item_list[row];

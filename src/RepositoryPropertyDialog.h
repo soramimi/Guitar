@@ -24,13 +24,13 @@ private:
 	MainWindow *mainwindow();
 	GitRunner git();
 	
-	const std::vector<Git::Remote> *remotes() const;
+	const std::vector<GitRemote> *remotes() const;
 	void getRemotes_();
 	void setSshKey_(const QString &sshkey);
 	
 	void updateRemotesTable();
-	bool execEditRemoteDialog(Git::Remote *remote, EditRemoteDialog::Operation op);
-	Git::Remote selectedRemote() const;
+	bool execEditRemoteDialog(GitRemote *remote, EditRemoteDialog::Operation op);
+	GitRemote selectedRemote() const;
 	bool isNameEditMode() const;
 	void setNameEditMode(bool f);
 	void reflectRemotesTable();

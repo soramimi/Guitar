@@ -39,7 +39,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 	QString id = object_id;
 	if (id.startsWith(PATH_PREFIX)) {
 		// pass
-	} else if (Git::isValidID(id)) {
+	} else if (GitHash::isValidID(id)) {
 		// pass
 	} else {
 		return; // invalid id

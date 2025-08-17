@@ -1,10 +1,9 @@
 #ifndef COMMITDETAILGETTER_H
 #define COMMITDETAILGETTER_H
 
-#include "Git.h"
+#include "GitRunner.h"
 #include <QObject>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
 #include <thread>
 #include <map>
@@ -28,7 +27,7 @@ private:
 	struct Request {
 		bool done = false;
 		bool busy = false;
-		Git::Hash id;
+		GitHash id;
 		Data data;
 
 		operator bool () const
@@ -37,16 +36,16 @@ private:
 		}
 	};
 	std::vector<Request> requests_;
-	std::map<Git::Hash, Data> cache_;
+	std::map<GitHash, Data> cache_;
 public:
 	CommitDetailGetter() = default;
 	virtual ~CommitDetailGetter();
 	void start(GitRunner git);
 	void stop();
 private:
-	Data _query(const Git::Hash &id, bool request_if_not_found, bool lock);
+	Data _query(const GitHash &id, bool request_if_not_found, bool lock);
 public:
-	Data query(const Git::Hash &id, bool request_if_not_found);
+	Data query(const GitHash &id, bool request_if_not_found);
 signals:
 	void ready();
 };

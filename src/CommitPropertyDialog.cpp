@@ -7,10 +7,10 @@
 #include "gpg.h"
 
 struct CommitPropertyDialog::Private {
-	Git::CommitItem commit;
+	GitCommitItem commit;
 };
 
-CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, Git::CommitItem const &commit)
+CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, GitCommitItem const &commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitPropertyDialog)
 	, m(new Private)
@@ -57,7 +57,7 @@ void CommitPropertyDialog::init()
 	ui->lineEdit_mail->setText(m->commit.email);
 
 	QString text;
-	for (Git::Hash const &id : m->commit.parent_ids) {
+	for (GitHash const &id : m->commit.parent_ids) {
 		text += id.toQString() + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);

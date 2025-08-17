@@ -71,7 +71,7 @@ BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QLis
 	int row = 0;
 	for (BlameItem const &blame: m->list) {
 		QString id;
-		if (Git::isValidID(blame.commit_id)) {
+		if (GitHash::isValidID(blame.commit_id)) {
 			id = blame.commit_id.mid(0, 8);
 		}
 
@@ -158,14 +158,14 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 	return list;
 }
 
-Git::Hash BlameWindow::getCommitId(QTableWidgetItem *item) const
+GitHash BlameWindow::getCommitId(QTableWidgetItem *item) const
 {
-	return item ? Git::Hash(item->data(CommidIdRole).toString()) : Git::Hash();
+	return item ? GitHash(item->data(CommidIdRole).toString()) : GitHash();
 }
 
-Git::Hash BlameWindow::currentCommitId() const
+GitHash BlameWindow::currentCommitId() const
 {
-	Git::Hash id;
+	GitHash id;
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < m->list.size()) {
 		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
@@ -176,9 +176,9 @@ Git::Hash BlameWindow::currentCommitId() const
 
 void BlameWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *)
 {
-	Git::Hash commit_id = currentCommitId();
-	if (Git::isValidID(commit_id)) {
-		Git::CommitItem const &commit_item = mainwindow()->commitItem(commit_id);
+	GitHash commit_id = currentCommitId();
+	if (GitHash::isValidID(commit_id)) {
+		GitCommitItem const &commit_item = mainwindow()->commitItem(commit_id);
 		CommitPropertyDialog dlg(this, commit_item);
 		dlg.showCheckoutButton(false);
 		dlg.showJumpButton(true);
@@ -201,7 +201,7 @@ void BlameWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 
 	BlameItem blame = m->list[row];
 	GitRunner g = mainwindow()->git();
-	std::optional<Git::CommitItem> commit = g.queryCommitItem(Git::Hash(blame.commit_id));
+	std::optional<GitCommitItem> commit = g.queryCommitItem(GitHash(blame.commit_id));
 	if (!commit) return;
 
 	QMenu menu;
@@ -219,9 +219,9 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 {
 	(void)current;
 	(void)previous;
-	Git::Hash commit_id = currentCommitId();
+	GitHash commit_id = currentCommitId();
 	CommitInfo info;
-	if (Git::isValidID(commit_id)) {
+	if (GitHash::isValidID(commit_id)) {
 		auto it = m->commit_cache.find(commit_id.toQString());
 		if (it != m->commit_cache.end()) {
 			info = it->second;

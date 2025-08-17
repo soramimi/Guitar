@@ -16,7 +16,7 @@ class CherryPickDialog : public QDialog {
 private:
 	Ui::CherryPickDialog *ui;
 public:
-	explicit CherryPickDialog(QWidget *parent, const Git::CommitItem &head, const Git::CommitItem &pick, QList<Git::CommitItem> parents);
+	explicit CherryPickDialog(QWidget *parent, const GitCommitItem &head, const GitCommitItem &pick, QList<GitCommitItem> parents);
 	~CherryPickDialog();
 	int number() const;
 	bool allowEmpty() const;

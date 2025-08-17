@@ -182,7 +182,7 @@ void GitPackIdxV2::fetch() const
 	}
 }
 
-GitPackIdxItem const *GitPackIdxV2::item(const Git::Hash &id) const
+GitPackIdxItem const *GitPackIdxV2::item(const GitHash &id) const
 {
 	fetch();
 #if 0

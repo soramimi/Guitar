@@ -23,11 +23,11 @@ private:
 	void updateAvatar(const QString &email, bool request);
 	void updateAvatar();
 public:
-	explicit ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo);
+	explicit ConfigUserDialog(MainWindow *parent, GitUser const &global_user, GitUser const &local_user, bool enable_local_user, QString const &repo);
 	~ConfigUserDialog() override;
 
 	bool isLocalUnset() const;
-	Git::User user(bool global) const;
+	GitUser user(bool global) const;
 private slots:
 	void on_pushButton_get_icon_clicked();
 	void on_lineEdit_global_name_textChanged(const QString &text);

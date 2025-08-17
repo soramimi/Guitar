@@ -19,7 +19,7 @@ public:
 	explicit FilePropertyDialog(QWidget *parent = nullptr);
 	~FilePropertyDialog() override;
 
-	void exec(QString const &path, const Git::Hash &id);
+	void exec(QString const &path, const GitHash &id);
 private:
 	Ui::FilePropertyDialog *ui;
 };

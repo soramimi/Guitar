@@ -23,8 +23,8 @@ private:
 	Ui::ConfigSigningDialog *ui;
 	MainWindow *mainwindow_;
 	MainWindow *mainwindow();
-	Git::SignPolicy gpol_;
-	Git::SignPolicy lpol_;
+	GitSignPolicy gpol_;
+	GitSignPolicy lpol_;
 
 	void updateSigningInfo();
 

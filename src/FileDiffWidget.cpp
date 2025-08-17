@@ -2,7 +2,7 @@
 #include "FileDiffWidget.h"
 #include "ApplicationGlobal.h"
 #include "BigDiffWindow.h"
-#include "GitDiff.h"
+#include "GitDiffManager.h"
 #include "MainWindow.h"
 #include "Theme.h"
 #include "common/joinpath.h"
@@ -25,7 +25,7 @@ enum {
 
 struct FileDiffWidget::Private {
 	FileDiffWidget::InitParam_ init_param_;
-	Git::CommitItemList commit_item_list;
+	GitCommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
 	TextEditorEnginePtr engine_left;
 	TextEditorEnginePtr engine_right;
@@ -131,7 +131,7 @@ GitRunner FileDiffWidget::git()
 	return mainwindow()->git();
 }
 
-Git::Object FileDiffWidget::catFile(GitRunner g, QString const &id)
+GitObject FileDiffWidget::catFile(GitRunner g, QString const &id)
 {
 	return mainwindow()->catFile(g, id);
 }
@@ -179,7 +179,7 @@ void FileDiffWidget::updateControls()
 	updateSliderCursor();
 }
 
-void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<std::string> const &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines)
+void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std::string> const &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines)
 {
 	left_lines->clear();
 	right_lines->clear();
@@ -320,7 +320,7 @@ void FileDiffWidget::makeSideBySideDiffData(Git::Diff const &diff, std::vector<s
 	std::reverse(right_lines->begin(), right_lines->end());
 }
 
-void FileDiffWidget::setDiffText(Git::Diff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
+void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &left, TextDiffLineList const &right)
 {
 	ASSERT_MAIN_THREAD();
 	m->max_line_length = 0;
@@ -447,7 +447,7 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 	m->init_param_.diff.blob.a_id_or_path = id;
 }
 
-void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit)
+void FileDiffWidget::setOriginalLines_(QByteArray const &ba, GitSubmoduleItem const *submodule, GitCommitItem const *submodule_commit)
 {
 	(void)submodule;
 	(void)submodule_commit;
@@ -463,7 +463,7 @@ void FileDiffWidget::setOriginalLines_(QByteArray const &ba, Git::SubmoduleItem 
 	}
 }
 
-void FileDiffWidget::setLeftOnly(Git::Diff const &diff, QByteArray const &ba)
+void FileDiffWidget::setLeftOnly(GitDiff const &diff, QByteArray const &ba)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::LeftOnly;
@@ -486,14 +486,14 @@ void FileDiffWidget::setLeftOnly(Git::Diff const &diff, QByteArray const &ba)
 	}
 }
 
-bool FileDiffWidget::setSubmodule(Git::Diff const &diff)
+bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 {
-	Git::SubmoduleItem const &submod_a = diff.a_submodule.item;
-	Git::SubmoduleItem const &submod_b = diff.b_submodule.item;
-	Git::CommitItem const &submod_commit_a = diff.a_submodule.commit;
-	Git::CommitItem const &submod_commit_b = diff.b_submodule.commit;
+	GitSubmoduleItem const &submod_a = diff.a_submodule.item;
+	GitSubmoduleItem const &submod_b = diff.b_submodule.item;
+	GitCommitItem const &submod_commit_a = diff.a_submodule.commit;
+	GitCommitItem const &submod_commit_b = diff.b_submodule.commit;
 	if (submod_a || submod_b) {
-		auto Text = [](Git::SubmoduleItem const *submodule, Git::CommitItem const *submodule_commit, TextDiffLineList *out){
+		auto Text = [](GitSubmoduleItem const *submodule, GitCommitItem const *submodule_commit, TextDiffLineList *out){
 			*out = {};
 			if (submodule && *submodule) {
 				QString text;
@@ -525,7 +525,7 @@ bool FileDiffWidget::setSubmodule(Git::Diff const &diff)
 	return false;
 }
 
-void FileDiffWidget::setRightOnly(Git::Diff const &diff, QByteArray const &ba)
+void FileDiffWidget::setRightOnly(GitDiff const &diff, QByteArray const &ba)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::RightOnly;
@@ -550,7 +550,7 @@ void FileDiffWidget::setRightOnly(Git::Diff const &diff, QByteArray const &ba)
 	}
 }
 
-void FileDiffWidget::setSideBySide(Git::Diff const &diff, QByteArray const &ba, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setSideBySide(GitDiff const &diff, QByteArray const &ba, bool uncommited, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideText;
@@ -576,7 +576,7 @@ void FileDiffWidget::setSideBySide(Git::Diff const &diff, QByteArray const &ba, 
 	}
 }
 
-void FileDiffWidget::setSideBySide_(Git::Diff const &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
+void FileDiffWidget::setSideBySide_(GitDiff const &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImage;
@@ -602,12 +602,12 @@ QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
 		GitRunner g = git();
-		Git::Object obj_a = mainwindow()->catFile(g, a_id);
-		Git::Object obj_b = mainwindow()->catFile(g, b_id);
-		if (obj_b.type == Git::Object::Type::UNKNOWN) {
-			obj_b.type = Git::Object::Type::BLOB;
+		GitObject obj_a = mainwindow()->catFile(g, a_id);
+		GitObject obj_b = mainwindow()->catFile(g, b_id);
+		if (obj_b.type == GitObject::Type::UNKNOWN) {
+			obj_b.type = GitObject::Type::BLOB;
 		}
-		if (obj_a.type == Git::Object::Type::BLOB && obj_b.type == Git::Object::Type::BLOB) {
+		if (obj_a.type == GitObject::Type::BLOB && obj_b.type == GitObject::Type::BLOB) {
 			QString path_a = mainwindow()->newTempFilePath();
 			QString path_b = mainwindow()->newTempFilePath();
 			QFile file_a(path_a);
@@ -624,7 +624,7 @@ QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 			}
 		}
 	}
-	return GitDiff::diffObjects(git(), a_id, b_id);
+	return GitDiffManager::diffObjects(git(), a_id, b_id);
 }
 
 /**
@@ -637,7 +637,7 @@ bool FileDiffWidget::isValidID_(QString const &id)
 	if (id.startsWith(PATH_PREFIX)) {
 		return true;
 	}
-	return Git::isValidID(id);
+	return GitHash::isValidID(id);
 }
 
 /**
@@ -645,7 +645,7 @@ bool FileDiffWidget::isValidID_(QString const &id)
  * @param info
  * @param uncommited
  */
-void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
+void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 {
 	ASSERT_MAIN_THREAD();
 	
@@ -653,8 +653,8 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	if (!g.isValidWorkingCopy()) return;
 
 	if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
-		Git::Object obj_a = catFile(g, info.blob.a_id_or_path);
-		Git::Object obj_b = catFile(g, info.blob.b_id_or_path);
+		GitObject obj_a = catFile(g, info.blob.a_id_or_path);
+		GitObject obj_b = catFile(g, info.blob.b_id_or_path);
 		std::string mime_a = global->determineFileType(obj_a.content);
 		std::string mime_b = global->determineFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
@@ -664,15 +664,15 @@ void FileDiffWidget::updateDiffView(Git::Diff const &info, bool uncommited)
 	}
 
 	{
-		Git::Diff diff;
+		GitDiff diff;
 		if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
 			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path).toStdString();
-			diff = GitDiff::parseDiff(text, &info);
+			diff = GitDiffManager::parseDiff(text, &info);
 		} else {
 			diff = info;
 		}
 
-		Git::Object obj;
+		GitObject obj;
 		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
 			obj = catFile(g, diff.blob.a_id_or_path);
 			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
@@ -699,9 +699,9 @@ void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_r
 	if (!g.isValidWorkingCopy()) return;
 
 	std::string text = diffObjects(id_left, id_right).toStdString();
-	Git::Diff diff = GitDiff::parseDiff(text, &diff);
+	GitDiff diff = GitDiffManager::parseDiff(text, &diff);
 
-	Git::Object obj = catFile(g, diff.blob.a_id_or_path);
+	GitObject obj = catFile(g, diff.blob.a_id_or_path);
 	setSideBySide(diff, obj.content, false, g.workingDir());
 
 	ui->widget_diff_slider->clear(false);

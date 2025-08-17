@@ -8,11 +8,11 @@
 #include "common/misc.h"
 
 struct ConfigUserDialog::Private  {
-	Git::User global_user;
-	Git::User local_user;
+	GitUser global_user;
+	GitUser local_user;
 };
 
-ConfigUserDialog::ConfigUserDialog(MainWindow *parent, Git::User const &global_user, Git::User const &local_user, bool enable_local_user, QString const &repo)
+ConfigUserDialog::ConfigUserDialog(MainWindow *parent, GitUser const &global_user, GitUser const &local_user, bool enable_local_user, QString const &repo)
 	: QDialog(parent)
 	, ui(new Ui::ConfigUserDialog)
 	, m(new Private)
@@ -63,11 +63,11 @@ MainWindow *ConfigUserDialog::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-Git::User ConfigUserDialog::user(bool global) const
+GitUser ConfigUserDialog::user(bool global) const
 {
 	if (!global && ui->checkBox_unset_local->isChecked()) return {};
 
-	Git::User user;
+	GitUser user;
 	if (global) { // グローバル
 		user.name = ui->lineEdit_global_name->text();
 		user.email = ui->lineEdit_global_email->text();

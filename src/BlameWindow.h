@@ -41,8 +41,8 @@ private:
 	MainWindow *mainwindow();
 
 	// QObject interface
-	Git::Hash getCommitId(QTableWidgetItem *item) const;
-	Git::Hash currentCommitId() const;
+	GitHash getCommitId(QTableWidgetItem *item) const;
+	GitHash currentCommitId() const;
 };
 
 #endif // BLAMEWINDOW_H

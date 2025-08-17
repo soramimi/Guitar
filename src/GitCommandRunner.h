@@ -1,15 +1,15 @@
 #ifndef GITCOMMANDRUNNER_H
 #define GITCOMMANDRUNNER_H
 
-#include "Git.h"
+#include "GitRunner.h"
 #include "MyProcess.h"
 
 #include <QElapsedTimer>
 
 class Git_clone {
 public:
-	Git::CloneData clonedata_;
-	Git_clone(const Git::CloneData &clonedata)
+	GitCloneData clonedata_;
+	Git_clone(const GitCloneData &clonedata)
 		: clonedata_(clonedata)
 	{
 	}
@@ -87,8 +87,8 @@ public:
 class Git_add_tag {
 public:
 	QString name_;
-	Git::Hash commit_id_;
-	Git_add_tag(const QString &name, const Git::Hash &commit_id)
+	GitHash commit_id_;
+	Git_add_tag(const QString &name, const GitHash &commit_id)
 		: name_(name)
 		, commit_id_(commit_id)
 	{
@@ -97,9 +97,9 @@ public:
 
 class Git_submodule_add {
 public:
-	Git::CloneData data_;
+	GitCloneData data_;
 	bool force_ = false;
-	Git_submodule_add(Git::CloneData data, bool force)
+	Git_submodule_add(GitCloneData data, bool force)
 		: data_(data)
 		, force_(force)
 	{

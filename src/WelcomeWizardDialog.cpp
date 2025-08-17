@@ -146,7 +146,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 			GitContext gcx;
 			gcx.git_command = git_command_path();
 			Git g(gcx, {}, {}, {});
-			Git::User user = g.getUser(Git::Source::Global);
+			GitUser user = g.getUser(GitSource::Global);
 			set_user_name(user.name);
 			set_user_email(user.email);
 		}

@@ -1,18 +1,8 @@
 #include "GitCommandCache.h"
 
-
-
-
-GitCommandCache::GitCommandCache(bool make)
+GitCommandCache::GitCommandCache()
 {
-	if (make) {
-		d = std::make_shared<Data>();
-	}
-}
-
-GitCommandCache::operator bool() const
-{
-	return (bool)d;
+	d = std::make_shared<Data>();
 }
 
 std::vector<char> *GitCommandCache::find(const QString &key)

@@ -1,5 +1,5 @@
 
-#include "GitDiff.h"
+#include "GitDiffManager.h"
 #include <QDebug>
 #include <QThread>
 #include "ApplicationGlobal.h"
@@ -8,7 +8,7 @@
 
 // PathToIdMap
 
-class GitDiff::LookupTable {
+class GitDiffManager::LookupTable {
 private:
 public:
 	std::map<QString, QString> path_to_id_map;
@@ -43,27 +43,27 @@ public:
 
 // GitDiff
 
-GitRunner GitDiff::git_for_submodule(GitRunner g, Git::SubmoduleItem const &submod)
+GitRunner GitDiffManager::git_for_submodule(GitRunner g, GitSubmoduleItem const &submod)
 {
 	return global->mainwindow->git_for_submodule(g, submod);
 }
 
-QString GitDiff::makeKey(QString const &a_id, QString const &b_id)
+QString GitDiffManager::makeKey(QString const &a_id, QString const &b_id)
 {
 	return  a_id + ".." + b_id;
 }
 
-QString GitDiff::makeKey(Git::Diff const &diff)
+QString GitDiffManager::makeKey(GitDiff const &diff)
 {
 	return makeKey(diff.blob.a_id_or_path, diff.blob.b_id_or_path);
 }
 
-QString GitDiff::prependPathPrefix(QString const &path)
+QString GitDiffManager::prependPathPrefix(QString const &path)
 {
 	return PATH_PREFIX + path;
 }
 
-QString GitDiff::diffObjects(GitRunner g, QString const &a_id, QString const &b_id)
+QString GitDiffManager::diffObjects(GitRunner g, QString const &a_id, QString const &b_id)
 {
 	QString path_prefix = PATH_PREFIX;
 	if (b_id.startsWith(path_prefix)) {
@@ -74,14 +74,14 @@ QString GitDiff::diffObjects(GitRunner g, QString const &a_id, QString const &b_
 	}
 }
 
-QString GitDiff::diffFiles(GitRunner g, QString const &a_path, QString const &b_path)
+QString GitDiffManager::diffFiles(GitRunner g, QString const &a_path, QString const &b_path)
 {
 	return g.diff_file(a_path, b_path);
 }
 
-Git::Diff GitDiff::parseDiff(std::string const &s, Git::Diff const *info)
+GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 {
-	Git::Diff out;
+	GitDiff out;
 
 	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
 
@@ -101,7 +101,7 @@ Git::Diff GitDiff::parseDiff(std::string const &s, Git::Diff const *info)
 		int c = line[0] & 0xff;
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
-				out.hunks.push_back(Git::Hunk());
+				out.hunks.push_back(GitHunk());
 				out.hunks.back().at = line;
 				atat = true;
 			}
@@ -128,12 +128,12 @@ Git::Diff GitDiff::parseDiff(std::string const &s, Git::Diff const *info)
 	return out;
 }
 
-void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<Git::Diff> *diffs)
+void GitDiffManager::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<GitDiff> *diffs)
 {
 	for (GitTreeItem const &d : *files) {
 		QString path = misc::joinWithSlash(dir, d.name);
 		if (d.type == GitTreeItem::BLOB) {
-			Git::Diff diff(d.id, path, d.mode);
+			GitDiff diff(d.id, path, d.mode);
 			diffs->push_back(diff);
 		} else if (d.type == GitTreeItem::TREE) {
 			GitTreeItemList files2;
@@ -149,11 +149,11 @@ void GitDiff::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemL
  * @param out
  * @return
  */
-QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git::SubmoduleItem> &submodules)
+QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<GitSubmoduleItem> &submodules)
 {
-	QList<Git::Diff> diffs;
+	QList<GitDiff> diffs;
 
-	if (Git::isValidID(id)) { // 有効なID
+	if (id.isValid()) {
 
 		{ // diff_raw
 			GitTreeItemList files;
@@ -164,22 +164,22 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 			if (newer_commit.parents.isEmpty()) { // 親がないなら最古のコミット
 				retrieveCompleteTree(g, QString(), &files, &diffs); // ツリー全体を取得
 			} else {
-				std::map<QString, Git::Diff> diffmap;
+				std::map<QString, GitDiff> diffmap;
 
 				std::set<QString> deleted_set;
 				std::set<QString> renamed_set;
 
-				QList<Git::DiffRaw> list;
+				QList<GitDiffRaw> list;
 				for (QString const &parent : newer_commit.parents) {
-					QList<Git::DiffRaw> l = g.diff_raw(Git::Hash(parent), id);
-					for (Git::DiffRaw const &item : l) {
+					QList<GitDiffRaw> l = g.diff_raw(GitHash(parent), id);
+					for (GitDiffRaw const &item : l) {
 						if (item.state.startsWith('D')) {
 							deleted_set.insert(item.a.id);
 						}
 						list.push_back(item);
 					}
 				}
-				for (Git::DiffRaw const &item : list) {
+				for (GitDiffRaw const &item : list) {
 					if (item.state.startsWith('A') || item.state.startsWith('C')) { // 追加されたファイル
 						auto it = deleted_set.find(item.b.id); // 同じオブジェクトIDが削除リストに載っているなら
 						if (it != deleted_set.end()) {
@@ -189,32 +189,32 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 						renamed_set.insert(item.b.id);
 					}
 				}
-				for (Git::DiffRaw const &item : list) {
+				for (GitDiffRaw const &item : list) {
 					QString file;
 					if (!item.files.isEmpty()) {
 						file = item.files.back(); // 名前変更された場合はリストの最後が新しい名前
 					}
-					Git::Diff diff;
+					GitDiff diff;
 					diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
 					diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
 					diff.path = file;
 					diff.mode = item.b.mode;
-					if (Git::isValidID(item.a.id)) diff.blob.a_id_or_path = item.a.id;
-					if (Git::isValidID(item.b.id)) diff.blob.b_id_or_path = item.b.id;
+					if (GitHash::isValidID(item.a.id)) diff.blob.a_id_or_path = item.a.id;
+					if (GitHash::isValidID(item.b.id)) diff.blob.b_id_or_path = item.b.id;
 
-					diff.type = Git::Diff::Type::Unknown;
+					diff.type = GitDiff::Type::Unknown;
 					int state = item.state.utf16()[0];
 					switch (state) {
-					case 'A': diff.type = Git::Diff::Type::Create;   break;
-					case 'C': diff.type = Git::Diff::Type::Copy;     break;
-					case 'D': diff.type = Git::Diff::Type::Delete;   break;
-					case 'M': diff.type = Git::Diff::Type::Modify;   break;
-					case 'R': diff.type = Git::Diff::Type::Rename;   break;
-					case 'T': diff.type = Git::Diff::Type::ChType;   break;
-					case 'U': diff.type = Git::Diff::Type::Unmerged; break;
+					case 'A': diff.type = GitDiff::Type::Create;   break;
+					case 'C': diff.type = GitDiff::Type::Copy;     break;
+					case 'D': diff.type = GitDiff::Type::Delete;   break;
+					case 'M': diff.type = GitDiff::Type::Modify;   break;
+					case 'R': diff.type = GitDiff::Type::Rename;   break;
+					case 'T': diff.type = GitDiff::Type::ChType;   break;
+					case 'U': diff.type = GitDiff::Type::Unmerged; break;
 					}
 
-					if (diff.type != Git::Diff::Type::Unknown) {
+					if (diff.type != GitDiff::Type::Unknown) {
 						if (diffmap.find(diff.path) == diffmap.end()) {
 							diffmap[diff.path] = diff;
 						}
@@ -228,17 +228,17 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 		}
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-		Git::Hash head_id = objcache_->revParse(g, "HEAD");
-		Git::FileStatusList stats = g.status_s(); // git status
+		GitHash head_id = objcache_->revParse(g, "HEAD");
+		std::vector<GitFileStatus> stats = g.status_s(); // git status
 
 		GitCommitTree head_tree(objcache_);
 		head_tree.parseCommit(g, head_id); // HEADが親
 
 		QString zeros(GIT_ID_LENGTH, '0');
 
-		for (Git::FileStatus const &fs : stats) {
+		for (GitFileStatus const &fs : stats) {
 			QString path = fs.path1();
-			Git::Diff item;
+			GitDiff item;
 
 			GitTreeItem treeitem;
 			if (head_tree.lookup(g, path, &treeitem)) {
@@ -271,16 +271,16 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 			while (1) {
 				size_t i = diffs_index++;
 				if (i >= diffs.size()) break; // 終了
-				Git::Diff *diff = &diffs[i];
+				GitDiff *diff = &diffs[i];
 				if (!diff->isSubmodule()) continue;
 
-				auto Do = [this, &g, &submodules](Git::Diff *diff){
+				auto Do = [this, &g, &submodules](GitDiff *diff){
 					for (size_t j = 0; j < submodules.size(); j++) {
-						Git::SubmoduleItem const &submod = submodules[j];
+						GitSubmoduleItem const &submod = submodules[j];
 						if (submod.path != diff->path) continue;
 						GitRunner g2 = git_for_submodule(g, submod);
 						auto GetSubmoduleDetail = [&](QString const &id){
-							Git::Diff::SubmoduleDetail out;
+							GitDiff::SubmoduleDetail out;
 							if (id.startsWith('*')) {
 								out.item = submod;
 								out.item.id = g2.rev_parse("HEAD");
@@ -288,9 +288,9 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 								if (commit) {
 									out.commit = *commit;
 								}
-							} else if (Git::isValidID(id)) {
+							} else if (GitHash::isValidID(id)) {
 								out.item = submod;
-								out.item.id = Git::Hash(id);
+								out.item.id = GitHash(id);
 								auto commit = g2.queryCommitItem(out.item.id);
 								if (commit) {
 									out.commit = *commit;
@@ -313,14 +313,14 @@ QList<Git::Diff> GitDiff::diff(GitRunner g, Git::Hash const &id, const QList<Git
 		threads[thread_index].join();
 	}
 
-	std::sort(diffs.begin(), diffs.end(), [](Git::Diff const &left, Git::Diff const &right){
+	std::sort(diffs.begin(), diffs.end(), [](GitDiff const &left, GitDiff const &right){
 		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
 	});
 
 	return diffs;
 }
 
-QList<Git::Diff> GitDiff::diff_uncommited(GitRunner g, const QList<Git::SubmoduleItem> &submodules)
+QList<GitDiff> GitDiffManager::diff_uncommited(GitRunner g, const QList<GitSubmoduleItem> &submodules)
 {
 	return diff(g, {}, submodules);
 }
@@ -411,7 +411,7 @@ void GitCommitTree::parseTree(GitRunner g, QString const &tree_id)
 	parseGitTreeObject(g, objcache, tree_id, QString(), &root_item_list);
 }
 
-QString GitCommitTree::parseCommit(GitRunner g, Git::Hash const &commit_id)
+QString GitCommitTree::parseCommit(GitRunner g, GitHash const &commit_id)
 {
 	GitCommit commit;
 	GitCommit::parseCommit(g, objcache, commit_id, &commit);
@@ -428,7 +428,7 @@ QString GitCommitTree::parseCommit(GitRunner g, Git::Hash const &commit_id)
  * @param file
  * @return
  */
-QString lookupFileID(GitRunner g, GitObjectCache *objcache, Git::Hash const &commit_id, QString const &file)
+QString lookupFileID(GitRunner g, GitObjectCache *objcache, GitHash const &commit_id, QString const &file)
 {
 	GitCommitTree commit_tree(objcache);
 	commit_tree.parseCommit(g, commit_id);

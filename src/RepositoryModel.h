@@ -1,23 +1,24 @@
 #ifndef REPOSITORYMODEL_H
 #define REPOSITORYMODEL_H
 
+#include "Git.h"
 #include "BranchLabel.h"
 #include "GitCommandCache.h"
 #include "GitObjectManager.h"
 
-typedef QList<Git::Tag> TagList;
-typedef QList<Git::Branch> BranchList;
+typedef QList<GitTag> TagList;
+typedef QList<GitBranch> BranchList;
 typedef QList<BranchLabel> BranchLabelList;
 
 struct RepositoryData {
 	std::mutex *mutex_ = nullptr;
 
-	Git::CommitItemList commit_log;
-	std::map<Git::Hash, BranchList> branch_map;
-	std::map<Git::Hash, TagList> tag_map;
+	GitCommitItemList commit_log;
+	std::map<GitHash, BranchList> branch_map;
+	std::map<GitHash, TagList> tag_map;
 	std::map<int, BranchLabelList> label_map;
 
-	std::map<QString, Git::Diff> diff_cache;
+	std::map<QString, GitDiff> diff_cache;
 	GitObjectCache object_cache;
 
 	GitCommandCache git_command_cache;
@@ -30,9 +31,9 @@ struct RepositoryData {
 
 struct CommitLogExchangeData {
 	struct D {
-		std::optional<Git::CommitItemList> commit_log;
-		std::optional<std::map<Git::Hash, BranchList>> branch_map;
-		std::optional<std::map<Git::Hash, TagList>> tag_map;
+		std::optional<GitCommitItemList> commit_log;
+		std::optional<std::map<GitHash, BranchList>> branch_map;
+		std::optional<std::map<GitHash, TagList>> tag_map;
 		std::optional<std::map<int, BranchLabelList>> label_map;
 	};
 	std::shared_ptr<D> p;

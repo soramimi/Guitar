@@ -25,7 +25,7 @@ private:
 	}
 
 	void updateTable(const Git::ReflogItemList &reflog);
-	std::optional<Git::CommitItem> currentCommitItem();
+	std::optional<GitCommitItem> currentCommitItem();
 
 public:
 	explicit ReflogWindow(QWidget *parent, MainWindow *mainwin, const Git::ReflogItemList &reflog);

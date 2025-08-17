@@ -14,17 +14,12 @@ struct AbstractGitSession::Private {
 
 void AbstractGitSession::insertIntoCommandCache(const QString &key, const std::vector<char> &value)
 {
-	if (m->cache->command_cache) {
-		m->cache->command_cache.insert(key, value);
-	}
+	m->cache->command_cache.insert(key, value);
 }
 
 std::vector<char> *AbstractGitSession::findFromCommandCache(const QString &key)
 {
-	if (m->cache->command_cache) {
-		return m->cache->command_cache.find(key);
-	}
-	return nullptr;
+	return m->cache->command_cache.find(key);
 }
 
 AbstractGitSession::AbstractGitSession()
@@ -82,7 +77,4 @@ QString AbstractGitSession::workingDir() const
 	return dir;
 }
 
-void AbstractGitSession::set_command_cache(const GitCommandCache &cc)
-{
-	m->cache->command_cache = cc;
-}
+

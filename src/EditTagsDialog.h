@@ -16,14 +16,14 @@ class EditTagsDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::EditTagsDialog *ui;
-	Git::CommitItem const *commit_;
+	GitCommitItem const *commit_;
 private:
 	QStringList selectedTags();
 	MainWindow *mainwindow();
 	TagList queryTagList();
 	void updateTagList();
 public:
-	explicit EditTagsDialog(MainWindow *parent, Git::CommitItem const *commit);
+	explicit EditTagsDialog(MainWindow *parent, GitCommitItem const *commit);
 	~EditTagsDialog() override;
 
 private slots:

@@ -30,7 +30,7 @@ void SettingOptionsForm::exchange(bool save)
 
 void SettingOptionsForm::on_pushButton_edit_profiles_clicked()
 {
-	Git::User user = mainwindow()->currentGitUser();
+	GitUser user = mainwindow()->currentGitUser();
 	EditProfilesDialog dlg;
 	dlg.loadXML(global->profiles_xml_path);
 	dlg.enableDoubleClock(false);

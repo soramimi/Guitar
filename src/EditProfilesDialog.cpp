@@ -7,7 +7,7 @@
 #include <QFile>
 #include <QXmlStreamWriter>
 
-EditProfilesDialog::Item::Item(const Git::User &user)
+EditProfilesDialog::Item::Item(const GitUser &user)
 	: name(user.name)
 	, email(user.email)
 {

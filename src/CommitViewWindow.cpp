@@ -4,8 +4,8 @@
 #include <QMenu>
 
 struct CommitViewWindow::Private {
-	Git::CommitItem const *commit = nullptr;
-	QList<Git::Diff> diff_list;
+	GitCommitItem const *commit = nullptr;
+	QList<GitDiff> diff_list;
 };
 
 MainWindow *CommitViewWindow::mainwindow()
@@ -13,7 +13,7 @@ MainWindow *CommitViewWindow::mainwindow()
 	return global->mainwindow;
 }
 
-CommitViewWindow::CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit)
+CommitViewWindow::CommitViewWindow(MainWindow *parent, GitCommitItem const *commit)
 	: QDialog(parent)
 	, m(new Private)
 	, ui(new Ui::CommitViewWindow)
@@ -44,7 +44,7 @@ CommitViewWindow::~CommitViewWindow()
 void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)
 {
 	if (currentRow >= 0 && currentRow < m->diff_list.size()) {
-		Git::Diff const &diff = m->diff_list[currentRow];
+		GitDiff const &diff = m->diff_list[currentRow];
 		ui->widget_diff->updateDiffView(diff, false);
 	}
 }

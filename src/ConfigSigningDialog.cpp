@@ -35,22 +35,22 @@ void ConfigSigningDialog::updateSigningInfo()
 {
 	GitRunner g = mainwindow()->git();
 
-	auto InitComboBox = [](QComboBox *cb, Git::SignPolicy pol){
+	auto InitComboBox = [](QComboBox *cb, GitSignPolicy pol){
 		cb->addItem("unset");
 		cb->addItem("false");
 		cb->addItem("true");
 		QString t;
-		if (pol == Git::SignPolicy::Unset) {
+		if (pol == GitSignPolicy::Unset) {
 			t = "unset";
-		} else if (pol == Git::SignPolicy::False) {
+		} else if (pol == GitSignPolicy::False) {
 			t = "false";
-		} else if (pol == Git::SignPolicy::True) {
+		} else if (pol == GitSignPolicy::True) {
 			t = "true";
 		}
 		cb->setCurrentText(t);
 	};
-	gpol_ = g.signPolicy(Git::Source::Global);
-	lpol_ = g.signPolicy(Git::Source::Local);
+	gpol_ = g.signPolicy(GitSource::Global);
+	lpol_ = g.signPolicy(GitSource::Local);
 	InitComboBox(ui->comboBox_sign_global, gpol_);
 	InitComboBox(ui->comboBox_sign_local, lpol_);
 
@@ -59,18 +59,18 @@ void ConfigSigningDialog::updateSigningInfo()
 void ConfigSigningDialog::accept()
 {
 	GitRunner g = mainwindow()->git();
-	auto SetSignPolicy = [&](QComboBox *cb, Git::Source src, Git::SignPolicy oldpol){
-		Git::SignPolicy pol = Git::SignPolicy::Unset;
+	auto SetSignPolicy = [&](QComboBox *cb, GitSource src, GitSignPolicy oldpol){
+		GitSignPolicy pol = GitSignPolicy::Unset;
 		QString s = cb->currentText();
 		if (s == "false") {
-			pol = Git::SignPolicy::False;
+			pol = GitSignPolicy::False;
 		} else if (s == "true") {
-			pol = Git::SignPolicy::True;
+			pol = GitSignPolicy::True;
 		}
 		if (pol != oldpol) g.setSignPolicy(src, pol);
 	};
-	SetSignPolicy(ui->comboBox_sign_global, Git::Source::Global, gpol_);
-	SetSignPolicy(ui->comboBox_sign_local, Git::Source::Local, lpol_);
+	SetSignPolicy(ui->comboBox_sign_global, GitSource::Global, gpol_);
+	SetSignPolicy(ui->comboBox_sign_local, GitSource::Local, lpol_);
 
 	QDialog::accept();
 }

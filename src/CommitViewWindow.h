@@ -18,7 +18,7 @@ private:
 	Private *m;
 	MainWindow *mainwindow();
 public:
-	explicit CommitViewWindow(MainWindow *parent, Git::CommitItem const *commit);
+	explicit CommitViewWindow(MainWindow *parent, GitCommitItem const *commit);
 	~CommitViewWindow() override;
 
 private slots:

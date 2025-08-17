@@ -50,7 +50,7 @@ void CommitDetailGetter::start(GitRunner git)
 				if (item.id) {
 					auto c = git_.log_signature(item.id);
 					if (c) {
-						Git::CommitItem const &commit = *c;
+						GitCommitItem const &commit = *c;
 						item.data.sign_verify = commit.sign.verify;
 					}
 					item.done = true;
@@ -110,7 +110,7 @@ void CommitDetailGetter::stop()
  * コミットの詳細情報を取得する
  * 情報が存在しない場合はリクエスト予約を行う
  */
-CommitDetailGetter::Data CommitDetailGetter::_query(Git::Hash const &id, bool request_if_not_found, bool lock)
+CommitDetailGetter::Data CommitDetailGetter::_query(GitHash const &id, bool request_if_not_found, bool lock)
 {
 	if (lock) {
 		std::lock_guard l(mutex_);
@@ -163,7 +163,7 @@ CommitDetailGetter::Data CommitDetailGetter::_query(Git::Hash const &id, bool re
 	return {};
 }
 
-CommitDetailGetter::Data CommitDetailGetter::query(Git::Hash const &id, bool request_if_not_found)
+CommitDetailGetter::Data CommitDetailGetter::query(GitHash const &id, bool request_if_not_found)
 {
 	return _query(id, request_if_not_found, true);
 }

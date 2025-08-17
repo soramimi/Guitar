@@ -52,7 +52,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	}
 
 	int row = 0;
-	for (Git::ReflogItem const &t : reflog) {
+	for (GitReflogItem const &t : reflog) {
 		QString text = t.id.mid(0, 7);
 		item = newQTableWidgetItem(text);
 		ui->tableWidget->setItem(row, 0, item);
@@ -75,19 +75,19 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
-std::optional<Git::CommitItem> ReflogWindow::currentCommitItem()
+std::optional<GitCommitItem> ReflogWindow::currentCommitItem()
 {
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < reflog_.size()) {
-		Git::ReflogItem const &logitem = reflog_[row];
-		return mainwindow()->queryCommit(Git::Hash(logitem.id));
+		GitReflogItem const &logitem = reflog_[row];
+		return mainwindow()->queryCommit(GitHash(logitem.id));
 	}
 	return std::nullopt;
 }
 
 void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 {
-	std::optional<Git::CommitItem> commit = currentCommitItem();
+	std::optional<GitCommitItem> commit = currentCommitItem();
 	if (!commit) return;
 
 	QMenu menu;
@@ -115,7 +115,7 @@ void ReflogWindow::on_tableWidget_customContextMenuRequested(const QPoint &pos)
 void ReflogWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	(void)item;
-	std::optional<Git::CommitItem> commit = currentCommitItem();
+	std::optional<GitCommitItem> commit = currentCommitItem();
 	if (commit) {
 		mainwindow()->execCommitPropertyDialog(this, *commit);
 	}

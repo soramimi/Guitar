@@ -3,7 +3,7 @@
 #include "EditTagsDialog.h"
 #include "ui_EditTagsDialog.h"
 
-EditTagsDialog::EditTagsDialog(MainWindow *parent, Git::CommitItem const *commit) :
+EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) :
 	QDialog(parent),
 	ui(new Ui::EditTagsDialog)
 {
@@ -39,7 +39,7 @@ void EditTagsDialog::updateTagList()
 {
 	ui->listWidget->clear();
 	TagList list = queryTagList();
-	for (Git::Tag const &t : list) {
+	for (GitTag const &t : list) {
 		auto item = new QListWidgetItem(t.name);
 		ui->listWidget->addItem(item);
 	}

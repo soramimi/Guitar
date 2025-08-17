@@ -10,7 +10,7 @@ DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	for (Git::Tag const &t : list) {
+	for (GitTag const &t : list) {
 		auto item = new QListWidgetItem(t.name);
 		item->setCheckState(Qt::Unchecked);
 		ui->listWidget_tags->addItem(item);

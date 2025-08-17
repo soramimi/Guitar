@@ -23,7 +23,7 @@ void MyImageViewWidget::contextMenuEvent(QContextMenuEvent *e)
 	QString id = object_id_;
 	if (id.startsWith(PATH_PREFIX)) {
 		// pass
-	} else if (Git::isValidID(id)) {
+	} else if (GitHash::isValidID(id)) {
 		// pass
 	} else {
 		return; // invalid id

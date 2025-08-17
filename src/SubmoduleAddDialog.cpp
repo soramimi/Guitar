@@ -114,11 +114,11 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 	if (QFileInfo(dir).isDir()) {
 		QString url;
 		GitRunner g = mainwindow()->new_git_runner(dir, {});
-		std::vector<Git::Remote> vec;
+		std::vector<GitRemote> vec;
 		if (g.isValidWorkingCopy()) {
 			g.remote_v(&vec);
 		}
-		for (Git::Remote const &r : vec) {
+		for (GitRemote const &r : vec) {
 			url = r.url_fetch;
 			if (!url.isEmpty()) break;
 			url = r.url_push;

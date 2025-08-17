@@ -3,7 +3,7 @@
 
 #include <common/misc.h>
 
-CherryPickDialog::CherryPickDialog(QWidget *parent, Git::CommitItem const &head, Git::CommitItem const &pick, QList<Git::CommitItem> parents)
+CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, GitCommitItem const &pick, QList<GitCommitItem> parents)
 	: QDialog(parent)
 	, ui(new Ui::CherryPickDialog)
 {

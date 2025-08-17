@@ -68,7 +68,7 @@ private:
 	MainWindow const *mainwindow() const { return mainwindow_; }
 	CommitLogTableModel *model_ = nullptr; // TODO:
 	// MigemoFilter filter_;
-	const Git::CommitItem &commitItem(int row) const;
+	const GitCommitItem &commitItem(int row) const;
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);

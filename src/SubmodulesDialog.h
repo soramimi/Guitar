@@ -13,8 +13,8 @@ class SubmodulesDialog : public QDialog {
 	Q_OBJECT
 public:
 	struct Submodule {
-		Git::SubmoduleItem submodule;
-		Git::CommitItem head;
+		GitSubmoduleItem submodule;
+		GitCommitItem head;
 	};
 public:
 	explicit SubmodulesDialog(QWidget *parent, std::vector<Submodule> mods);

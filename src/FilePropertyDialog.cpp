@@ -22,7 +22,7 @@ FilePropertyDialog::~FilePropertyDialog()
 	delete ui;
 }
 
-void FilePropertyDialog::exec(QString const &path, Git::Hash const &id)
+void FilePropertyDialog::exec(QString const &path, GitHash const &id)
 {
 	QFileInfo info(path);
 	if (!info.exists()) {
@@ -31,8 +31,8 @@ void FilePropertyDialog::exec(QString const &path, Git::Hash const &id)
 	}
 	QByteArray ba;
 	if (id) {
-		Git::Object obj = global->mainwindow->catFile(global->mainwindow->git(), id.toQString());
-		if (obj.type == Git::Object::Type::BLOB) {
+		GitObject obj = global->mainwindow->catFile(global->mainwindow->git(), id.toQString());
+		if (obj.type == GitObject::Type::BLOB) {
 			ba = obj.content;
 		}
 	} else {

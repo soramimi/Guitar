@@ -1,15 +1,15 @@
 #ifndef GITPACKIDXV2_H
 #define GITPACKIDXV2_H
 
+#include "GitPack.h"
 #include <QIODevice>
 #include <cstdint>
-#include <vector>
-#include "GitPack.h"
 #include <memory>
+#include <vector>
 
 struct GitPackIdxItem {
 	uint8_t id[GIT_ID_LENGTH / 2];
-	Git::Object::Type type = Git::Object::Type::UNKNOWN;
+	GitObject::Type type = GitObject::Type::UNKNOWN;
 	size_t offset = 0;
 	size_t packed_size = 0;
 	size_t expanded_size = 0;
@@ -60,11 +60,9 @@ public:
 	GitPackIdxV2() = default;
 	~GitPackIdxV2();
 	QString pack_file_path() const;
-	GitPackIdxItem const *item(Git::Hash const &id) const;
+	GitPackIdxItem const *item(GitHash const &id) const;
 	GitPackIdxItem const *item(size_t offset) const;
 	void each(std::function<bool(GitPackIdxItem const *)> const &fn) const;
 };
-
-using GitPackIdxPtr = std::shared_ptr<GitPackIdxV2>;
 
 #endif // GITPACKIDXV2_H

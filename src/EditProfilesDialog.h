@@ -18,7 +18,7 @@ public:
 		QString name;
 		QString email;
 		Item() = default;
-		Item(Git::User const &user);
+		Item(GitUser const &user);
 		operator bool () const
 		{
 			return misc::isValidMailAddress(email);

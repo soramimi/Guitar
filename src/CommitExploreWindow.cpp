@@ -26,15 +26,15 @@ enum {
 
 struct CommitExploreWindow::Private {
 	GitObjectCache *objcache;
-	Git::CommitItem const *commit;
+	GitCommitItem const *commit;
 	QString root_tree_id;
 	GitTreeItemList tree_item_list;
-	Git::Object content_object;
+	GitObject content_object;
 	ObjectContent content;
 	TextEditorEnginePtr text_editor_engine;
 };
 
-CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, Git::CommitItem const *commit)
+CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, GitCommitItem const *commit)
 	: QDialog(parent)
 	, ui(new Ui::CommitExploreWindow)
 	, m(new Private)
@@ -240,7 +240,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 	if (type == GitTreeItem::BLOB) {
 		QString commit_id = current->data(ObjectIdRole).toString();
 		GitRunner g = git();
-		m->content_object = m->objcache->catFile(g, Git::Hash(commit_id));
+		m->content_object = m->objcache->catFile(g, GitHash(commit_id));
 		QString path = current->data(FilePathRole).toString();
 		clearContent();
 		std::string mimetype = global->determineFileType(m->content_object.content);

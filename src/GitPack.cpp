@@ -49,7 +49,7 @@ void GitPack::decodeTree(QByteArray *out)
 	}
 }
 
-Git::Object::Type GitPack::stripHeader(QByteArray *out)
+GitObject::Type GitPack::stripHeader(QByteArray *out)
 {
 	if (out) {
 		int n = out->size();
@@ -58,17 +58,17 @@ Git::Object::Type GitPack::stripHeader(QByteArray *out)
 			if (n > 16) n = 16;
 			for (int i = 0; i < n; i++) {
 				if (p[i] == 0) {
-					Git::Object::Type type = Git::Object::Type::UNKNOWN;
+					GitObject::Type type = GitObject::Type::UNKNOWN;
 					if (strncmp(p, "blob ", 5) == 0) {
-						type = Git::Object::Type::BLOB;
+						type = GitObject::Type::BLOB;
 					} else if (strncmp(p, "tree ", 5) == 0) {
-						type = Git::Object::Type::TREE;
+						type = GitObject::Type::TREE;
 					} else if (strncmp(p, "commit ", 7) == 0) {
-						type = Git::Object::Type::COMMIT;
+						type = GitObject::Type::COMMIT;
 					} else if (strncmp(p, "tag ", 4) == 0) {
-						type = Git::Object::Type::TAG;
+						type = GitObject::Type::TAG;
 					}
-					if (type != Git::Object::Type::UNKNOWN) {
+					if (type != GitObject::Type::UNKNOWN) {
 						*out = out->mid(i + 1);
 					}
 					return type;
@@ -76,7 +76,7 @@ Git::Object::Type GitPack::stripHeader(QByteArray *out)
 			}
 		}
 	}
-	return Git::Object::Type::UNKNOWN;
+	return GitObject::Type::UNKNOWN;
 }
 
 bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed, uint32_t *crc)
@@ -149,10 +149,10 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 	return false;
 }
 
-bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info *out)
+bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, GitPackInfo *out)
 {
 	try {
-		Info info;
+		GitPackInfo info;
 
 		auto Read = [&](void *ptr, size_t len){
 			const auto l = file->read((char *)ptr, len);
@@ -180,7 +180,7 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info
 			size_t size = 0;
 			char c;
 			Read(&c, 1);
-			info.type = (Git::Object::Type)((c >> 4) & 7);
+			info.type = (GitObject::Type)((c >> 4) & 7);
 			size = c & 0x0f;
 			int shift = 4;
 			while (c & 0x80) {
@@ -190,7 +190,7 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info
 			}
 			info.expanded_size = size;
 		}
-		if (info.type == Git::Object::Type::OFS_DELTA) {
+		if (info.type == GitObject::Type::OFS_DELTA) {
 			uint64_t offset = 0;
 			char c;
 			Read(&c, 1);
@@ -200,7 +200,7 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info
 				offset = ((offset + 1) << 7) | (c & 0x7f);
 			}
 			info.offset = offset;
-		} else if (info.type == Git::Object::Type::REF_DELTA) {
+		} else if (info.type == GitObject::Type::REF_DELTA) {
 			char bin[20];
 			Read(bin, 20);
 			char tmp[41];
@@ -218,9 +218,9 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, Info
 	return false;
 }
 
-bool GitPack::load(QIODevice *file, GitPackIdxItem const *item, Object *out)
+bool GitPack::load(QIODevice *file, GitPackIdxItem const *item, GitPackObject *out)
 {
-	*out = Object();
+	*out = GitPackObject();
 	try {
 		seekPackedObject(file, item, out);
 
@@ -234,7 +234,7 @@ bool GitPack::load(QIODevice *file, GitPackIdxItem const *item, Object *out)
 	return false;
 }
 
-bool GitPack::load(QString const &packfile, GitPackIdxItem const *item, GitPack::Object *out)
+bool GitPack::load(QString const &packfile, GitPackIdxItem const *item, GitPackObject *out)
 {
 	QFile file(packfile);
 	if (file.open(QFile::ReadOnly)) {

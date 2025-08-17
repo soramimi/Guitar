@@ -3,7 +3,7 @@
 #include "common/jstream.h"
 #include "common/strformat.h"
 #include "webclient.h"
-
+#include "GitRunner.h"
 #include <QFile>
 
 struct CommitMessageResult {
