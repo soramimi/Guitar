@@ -59,7 +59,12 @@ void SettingLoggingForm::on_pushButton_browse_output_dir_clicked()
 	if (dir.isEmpty()) {
 		dir = global->log_dir;
 	}
-	dir = QFileDialog::getExistingDirectory(this, tr("Log Output Location"), dir);
+	QString title = tr("Select Log Output Directory");
+#ifdef Q_OS_WIN
+	dir = QFileDialog::getExistingDirectory(this, title, dir);
+#else
+	dir = QFileDialog::getExistingDirectory(this, title, dir, QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
+#endif
 	if (!dir.isEmpty()) {
 		ui->lineEdit_custom_log_dir->setText(dir);
 	}
