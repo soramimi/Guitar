@@ -383,12 +383,6 @@ QList<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash &new_
 	return git->diff_raw(old_id, new_id);
 }
 
-std::string GitRunner::diff_head(std::function<bool (const std::string &, const std::string &)> fn_accept)
-{
-	Q_ASSERT(git);
-	return git->diff_head(fn_accept);
-}
-
 QString GitRunner::diff(const QString &old_id, const QString &new_id)
 {
 	Q_ASSERT(git);
@@ -405,6 +399,18 @@ QString GitRunner::diff_to_file(const QString &old_id, const QString &path)
 {
 	Q_ASSERT(git);
 	return git->diff_to_file(old_id, path);
+}
+
+std::vector<std::string> GitRunner::diff_name_only_head()
+{
+	Q_ASSERT(git);
+	return git->diff_name_only_head();
+}
+
+std::string GitRunner::diff_full_index_head_file(const QString &file)
+{
+	Q_ASSERT(git);
+	return git->diff_full_index_head_file(file);
 }
 
 std::vector<GitFileStatus> GitRunner::status_s()

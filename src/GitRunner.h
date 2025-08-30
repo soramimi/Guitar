@@ -98,10 +98,11 @@ public:
 	QString queryEntireCommitMessage(const GitHash &id);
 
 	QList<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
-	std::string diff_head(std::function<bool (std::string const &name, std::string const &mime)> fn_accept = nullptr);
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
 	QString diff_to_file(QString const &old_id, QString const &path);
+	std::vector<std::string> diff_name_only_head();
+	std::string diff_full_index_head_file(QString const &file);
 
 	std::vector<GitFileStatus> status_s();
 	std::optional<QByteArray> cat_file(const GitHash &id);

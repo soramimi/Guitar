@@ -1,9 +1,11 @@
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
 #include "common/jstream.h"
+#include "common/joinpath.h"
 #include "common/strformat.h"
 #include "webclient.h"
 #include "GitRunner.h"
+#include "PROFILE.h"
 #include <QFile>
 
 struct CommitMessageResult {
@@ -400,9 +402,54 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	return {};
 }
 
+static std::string diff_head(GitRunner g, std::function<bool (std::string const &name, std::string const &mime)> fn_accept)
+{
+	PROFILE;
+
+	std::vector<std::string> names = g.diff_name_only_head();
+
+	std::vector<std::string> diffs(names.size());
+	std::vector<std::thread> threads(8);
+	std::atomic_size_t index(0);
+	for (size_t t = 0; t < threads.size(); t++) {
+		threads[t]= std::thread([&](GitRunner g){
+			while (1) {
+				size_t i = index++;
+				if (i >= names.size()) break;
+				std::string name = names[i];
+				if (!name.empty()) {
+					QString file(g.workingDir() / QString::fromStdString(name));
+					std::string mimetype = global->determineFileType(file);
+					if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
+					if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
+					if (mimetype == "application/pdf") continue; // PDFはdiffしない
+					if (fn_accept) {
+						if (!fn_accept(file.toStdString(), mimetype)) continue; // ファイルの種類によるフィルタリング
+					}
+					diffs[i] = g.diff_full_index_head_file(file);
+				}
+			}
+		}, g.dup());
+	}
+
+	std::string diff;
+
+	for (size_t t = 0; t < threads.size(); t++) {
+		threads[t].join();
+	}
+
+	for (size_t i = 0; i < names.size(); i++) {
+		if (!diffs[i].empty()) {
+			diff += diffs[i];
+		}
+	}
+
+	return diff;
+}
+
 std::string CommitMessageGenerator::diff_head(GitRunner g)
 {
-	std::string diff = g.diff_head([&](std::string const &name, std::string const &mime) {
+	std::string diff = ::diff_head(g, [&](std::string const &name, std::string const &mime) {
 		if (mime == "text/xml" && misc::ends_with(name, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
 		return true;
 	});

@@ -234,30 +234,19 @@ QString Git::diff_file(QString const &old_path, QString const &new_path)
 	return resultQString(result);
 }
 
-std::string Git::diff_head(std::function<bool (std::string const &name, std::string const &mime)> fn_accept)
+std::vector<std::string> Git::diff_name_only_head()
 {
 	QString cmd = "diff --name-only HEAD";
 	auto result = git(cmd);
-
 	std::string str = resultStdString(result);
-	std::vector<std::string_view> files = misc::splitLinesV(str, false);
-	
-	std::string diff;
-	for (auto const &sv : files) {
-		if (sv.empty()) continue;
-		QString file(workingDir() / QString::fromUtf8(sv.data(), sv.size()));
-		std::string mimetype = global->determineFileType(file);
-		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
-		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
-		if (mimetype == "application/pdf") continue; // PDFはdiffしない
-		if (fn_accept) {
-			if (!fn_accept(file.toStdString(), mimetype)) continue; // ファイルの種類によるフィルタリング
-		}
-		cmd = "diff --full-index HEAD -- " + file;
-		auto result = git(cmd);
-		diff += resultStdString(result);
-	}
-	return diff;
+	return misc::splitLines(str, false);
+}
+
+std::string Git::diff_full_index_head_file(QString const &file)
+{
+	QString cmd = "diff --full-index HEAD -- " + file;
+	auto result = git(cmd);
+	return resultStdString(result);
 }
 
 QList<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_id)

@@ -166,7 +166,8 @@ public:
 	QString diff(QString const &old_id, QString const &new_id);
 	QString diff_file(QString const &old_path, QString const &new_path);
 
-	std::string diff_head(std::function<bool (std::string const &, std::string const &)> fn_accept = nullptr);
+	std::vector<std::string> diff_name_only_head();
+	std::string diff_full_index_head_file(const QString &file);
 
 	QList<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
 
