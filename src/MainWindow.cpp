@@ -2414,8 +2414,6 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 			data.callback = req.callback;
 			data.status->ok = ok;
 			data.status->exit_code = req.pty()->getExitCode();
-			{
-			}
 			data.status->log_message = req.pty_message();
 			data.userdata = req.d.userdata;
 			data.elapsed.start();
@@ -4569,6 +4567,12 @@ void MainWindow::updateUI()
 void MainWindow::updateStatusBarText()
 {
 	ASSERT_MAIN_THREAD();
+
+	bool running = getPtyProcess()->isRunning();
+	if (running) {
+		setProgress(-1);
+		return;
+	}
 
 	hideProgress();
 
