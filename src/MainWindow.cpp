@@ -3421,6 +3421,7 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
  */
 QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const &id)
 {
+	PROFILE;
 	QList<GitSubmoduleItem> submodules;
 	if (!id) {
 		submodules = g.submodules();
@@ -3429,6 +3430,8 @@ QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const 
 		GitObjectCache objcache;
 		// サブモジュールリストを取得する
 		{
+			TraceLogger trace_retrieve_submodules;
+			trace_retrieve_submodules.begin("retrieve submodules", {});
 			GitCommit tree;
 			GitCommit::parseCommit(g, &objcache, id, &tree);
 			parseGitTreeObject(g, &objcache, tree.tree_id, {}, &list);
@@ -3440,8 +3443,11 @@ QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const 
 					}
 				}
 			}
+			trace_retrieve_submodules.end();
 		}
 		// サブモジュールに対応するIDを求める
+		TraceLogger trace_retrieve_submodules;
+		trace_retrieve_submodules.begin("retrieve submodules parse objects", {});
 		for (int i = 0; i < submodules.size(); i++) {
 			QStringList vars = submodules[i].path.split('/');
 			for (int j = 0; j < vars.size(); j++) {
@@ -3462,6 +3468,7 @@ QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const 
 			}
 done:;
 		}
+		trace_retrieve_submodules.end();
 	}
 	return submodules;
 }

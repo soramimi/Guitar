@@ -112,7 +112,7 @@ void CommitLogTableModel::privateSetFilter(QString const &text)
 		std::iota(index_.begin(), index_.end(), 0);
 	} else {
 		filter_.makeFilter(text);
-		int n = records_.size();
+		size_t n = records_.size();
 		index_.clear();
 		index_.reserve(n);
 		for (size_t i = 0; i < n; i++) {
@@ -285,7 +285,7 @@ public:
 		initStyleOption(&opt, index);
 
 		GitCommitItem const &commit = tablewidget->commitItem(index.row());
-		CommitRecord const &record = tablewidget->model_->record(index);
+		// CommitRecord const &record = tablewidget->model_->record(index);
 
 		if (tablewidget->model_->isFiltered()) {
 			MigemoFilter::fillFilteredBG(painter, opt.rect);

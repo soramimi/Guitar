@@ -5,7 +5,7 @@
 #include "common/strformat.h"
 #include "webclient.h"
 #include "GitRunner.h"
-#include "PROFILE.h"
+#include "Profile.h"
 #include <QFile>
 
 struct CommitMessageResult {
