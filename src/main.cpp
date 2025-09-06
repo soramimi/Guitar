@@ -53,9 +53,9 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 void logHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
 	QString message = qFormatLogMessage(type, context, msg);
-	// if (message == "Empty filename passed to function") {
-	// 	qDebug() << message;
-	// }
+	if (message.indexOf("Painter not active") >= 0) {
+		qDebug() << message;
+	}
 	std::string s = message.toStdString();
 	fprintf(stderr, "%s\n", s.c_str());
 

@@ -4091,15 +4091,15 @@ void MainWindow::updateFileList(GitHash const &id)
 		return updateSubmodules(g, id); // TODO: slow
 	});
 
-	FileListType files_list_type;
+	FileListType file_list_type;
 	if (m->background_process_work_in_progress) {
-		files_list_type = FileListType::MessagePanel;
+		file_list_type = FileListType::MessagePanel;
 	} else {
-		files_list_type = FileListType::SingleList;
+		file_list_type = FileListType::SingleList;
 		if (!id) {
 			updateUncommitedChanges(g);
 			if (isThereUncommitedChanges()) {
-				files_list_type = FileListType::SideBySide;
+				file_list_type = FileListType::SideBySide;
 			}
 		}
 	}
@@ -4122,9 +4122,9 @@ void MainWindow::updateFileList(GitHash const &id)
 			return;
 		}
 
-		if (id) {
+		xdata.files_list_type = file_list_type;
 
-			xdata.files_list_type = files_list_type;
+		if (id) {
 
 			auto AddItem = [&](ObjectData const &obj){
 				xdata.object_data.push_back(obj);
@@ -4143,59 +4143,76 @@ void MainWindow::updateFileList(GitHash const &id)
 				}
 			}
 
-			for (GitFileStatus const &s : m->uncommited_changes_file_list) {
-				bool staged = (s.isStaged() && s.code_y() == ' ');
-				int idiff = -1;
-				QString header;
-				auto it = diffmap.find(s.path1());
-				GitDiff const *diff = nullptr;
-				if (it != diffmap.end()) {
-					idiff = it->second;
-					diff = &diffResult()->at(idiff);
-				}
-				QString path = s.path1();
-				if (s.code() == GitFileStatus::Code::Unknown) {
-					qDebug() << "something wrong...";
-				} else if (s.code() == GitFileStatus::Code::Untracked) {
-					// nop
-				} else if (s.isUnmerged()) {
-					header += "(unmerged) ";
-				} else if (s.code() == GitFileStatus::Code::AddedToIndex) {
-					header = "(add) ";
-				} else if (s.code_x() == 'D' || s.code_y() == 'D' || s.code() == GitFileStatus::Code::DeletedFromIndex) {
-					header = "(del) ";
-				} else if (s.code_x() == 'R' || s.code() == GitFileStatus::Code::RenamedInIndex) {
-					header = "(ren) ";
-					path = s.path2(); // renamed newer path
-				} else if (s.code_x() == 'M' || s.code_y() == 'M') {
-					header = "(chg) ";
-				}
-				ObjectData obj;
-				obj.path = path;
-				obj.header = header;
-				obj.idiff = idiff;
-				obj.staged = staged;
-				if (diff) {
-					obj.submod = diff->b_submodule.item; // TODO:
-					if (obj.submod) {
-						GitRunner g2 = git_for_submodule(g, obj.submod);
-						auto sc = g2.queryCommitItem(obj.submod.id);
-						if (sc) {
-							obj.submod_commit = *sc;
+			std::atomic_size_t index {0};
+			std::vector<std::thread> threads(8);
+			const size_t ncount = m->uncommited_changes_file_list.size();
+			std::vector<MainWindow::ObjectData> object_data(ncount);
+			for (size_t j = 0; j < threads.size(); j++) {
+				threads[j] = std::thread([&](GitRunner g){
+					while (1) {
+						size_t i = index++;
+						if (i >= ncount) break;
+						GitFileStatus const &s = m->uncommited_changes_file_list[i];
+						{
+							bool staged = (s.isStaged() && s.code_y() == ' ');
+							int idiff = -1;
+							QString header;
+							auto it = diffmap.find(s.path1());
+							GitDiff const *diff = nullptr;
+							if (it != diffmap.end()) {
+								idiff = it->second;
+								diff = &diffResult()->at(idiff);
+							}
+							QString path = s.path1();
+							if (s.code() == GitFileStatus::Code::Unknown) {
+								qDebug() << "something wrong...";
+							} else if (s.code() == GitFileStatus::Code::Untracked) {
+								// nop
+							} else if (s.isUnmerged()) {
+								header += "(unmerged) ";
+							} else if (s.code() == GitFileStatus::Code::AddedToIndex) {
+								header = "(add) ";
+							} else if (s.code_x() == 'D' || s.code_y() == 'D' || s.code() == GitFileStatus::Code::DeletedFromIndex) {
+								header = "(del) ";
+							} else if (s.code_x() == 'R' || s.code() == GitFileStatus::Code::RenamedInIndex) {
+								header = "(ren) ";
+								path = s.path2(); // renamed newer path
+							} else if (s.code_x() == 'M' || s.code_y() == 'M') {
+								header = "(chg) ";
+							}
+							ObjectData obj;
+							obj.path = path;
+							obj.header = header;
+							obj.idiff = idiff;
+							obj.staged = staged;
+							if (diff) {
+								obj.submod = diff->b_submodule.item; // TODO:
+								if (obj.submod) {
+									GitRunner g2 = git_for_submodule(g, obj.submod);
+									auto sc = g2.queryCommitItem(obj.submod.id);
+									if (sc) {
+										obj.submod_commit = *sc;
+									}
+								}
+							}
+							object_data[i] = obj;
 						}
 					}
-				}
-				xdata.files_list_type = files_list_type;
-				xdata.object_data.push_back(obj);
+				}, g.dup());
 			}
-		}
+			for (size_t j = 0; j < threads.size(); j++) {
+				threads[j].join();
+			}
 
-		addFileObjectData(xdata);
+			xdata.object_data = std::move(object_data);
+		}
 
 		for (GitDiff const &diff : *diffResult()) {
 			QString key = GitDiffManager::makeKey(diff);
 			currentRepositoryData()->diff_cache[key] = diff;
 		}
+
+		addFileObjectData(xdata);
 	}
 }
 
