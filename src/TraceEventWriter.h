@@ -10,7 +10,7 @@ public:
 	struct Event {
 		std::string name;
 		std::string category;
-		char phase;
+		char phase = 0;
 		uint64_t timestamp;
 		int64_t duration = 0; // only for complete events
 		int32_t pid;

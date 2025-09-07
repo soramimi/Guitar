@@ -229,7 +229,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
 		GitHash head_id = objcache_->revParse(g, "HEAD");
-		std::vector<GitFileStatus> stats = g.status_s(); // git status
+		std::vector<GitFileStatus> stats = g.status_s(); // git status // TODO: 巨大リポジトリで遅い
 
 		GitCommitTree head_tree(objcache_);
 		head_tree.parseCommit(g, head_id); // HEADが親
@@ -263,6 +263,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 	}
 
 	// get submodule details
+	// TraceLogger trace("debug", "get submodule details");
 	constexpr int num_threads = 8;
 	std::atomic_size_t diffs_index(0);
 	std::vector<std::thread> threads(num_threads);
@@ -298,8 +299,15 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 							}
 							return out;
 						};
+#if 0
 						diff->a_submodule = GetSubmoduleDetail(diff->blob.a_id_or_path);
 						diff->b_submodule = GetSubmoduleDetail(diff->blob.b_id_or_path);
+#else
+						auto a = std::async(std::launch::async, GetSubmoduleDetail, diff->blob.a_id_or_path);
+						auto b = std::async(std::launch::async, GetSubmoduleDetail, diff->blob.b_id_or_path);
+						diff->a_submodule = a.get();
+						diff->b_submodule = b.get();
+#endif
 						break;
 					}
 
@@ -316,6 +324,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 	std::sort(diffs.begin(), diffs.end(), [](GitDiff const &left, GitDiff const &right){
 		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
 	});
+	// trace.end();
 
 	return diffs;
 }

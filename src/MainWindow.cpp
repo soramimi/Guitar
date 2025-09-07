@@ -127,7 +127,7 @@ struct MainWindow::Private {
 
 	// GitCommandCache git_command_cache;
 	GitRunner unassosiated_git_runner;
-	GitRunner current_git_runner;
+	// GitRunner current_git_runner;
 
 	GitUser current_git_user;
 
@@ -1670,24 +1670,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	cancelUpdateFileList();
 
-	GitRunner g;
-	if (opt.new_session) {
-		endSession();
-		currentRepositoryData()->git_command_cache = {};
-
-		RepositoryInfo const &item = currentRepository();
-		g = new_git_runner(item.local_dir, item.ssh_key);
-
-		setCurrentGitRunner(g);
-	} else {
-		g = git();
-	}
-	if (!isValidWorkingCopy(g)) return;
-
-	PtyProcess *pty = getPtyProcess();
-	if (pty) {
-		if (!pty->wait(5000)) /*return*/; //@ something wrong
-	}
+	GitRunner g = git();
 
 	if (opt.clear_log) { // ログをクリア
 		m->clearCurrentRepositoryData();
@@ -1697,6 +1680,21 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 		}
 	} else {
 		getObjCache()->clear();
+	}
+
+	if (opt.new_session) {
+		endSession();
+		currentRepositoryData()->git_command_cache = {};
+
+		RepositoryInfo const &item = currentRepository();
+		g = new_git_runner(item.local_dir, item.ssh_key);
+	}
+	setCurrentGitRunner(g);
+	if (!isValidWorkingCopy(g)) return;
+
+	PtyProcess *pty = getPtyProcess();
+	if (pty) {
+		if (!pty->wait(5000)) /*return*/; //@ something wrong
 	}
 
 	// リポジトリ情報をクリア
@@ -5573,14 +5571,16 @@ QString MainWindow::selectSshCommand(bool save)
 
 void MainWindow::setCurrentGitRunner(GitRunner g)
 {
-	m->current_git_runner = g;
+	// m->current_git_runner = g;
+	m->current_repository_data.git_runner = g;
 }
 
 void MainWindow::clearGitCommandCache()
 {
 	m->unassosiated_git_runner = {};
 	m->current_repository_data.git_command_cache = {};
-	m->current_git_runner.clearCommandCache();
+	// m->current_git_runner.clearCommandCache();
+	m->current_repository_data.git_runner.clearCommandCache();
 }
 
 GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const QString &sshkey) const
@@ -5616,8 +5616,11 @@ GitRunner MainWindow::new_git_runner()
 
 GitRunner MainWindow::git()
 {
-	if (m->current_git_runner) {
-		return m->current_git_runner;
+	// if (m->current_git_runner) {
+	// 	return m->current_git_runner;
+	// }
+	if (m->current_repository_data.git_runner) {
+		return m->current_repository_data.git_runner;
 	}
 	return unassosiated_git_runner();
 }

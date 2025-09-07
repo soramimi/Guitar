@@ -1,7 +1,6 @@
 #ifndef REPOSITORYMODEL_H
 #define REPOSITORYMODEL_H
 
-#include "Git.h"
 #include "BranchLabel.h"
 #include "GitCommandCache.h"
 #include "GitObjectManager.h"
@@ -22,6 +21,8 @@ struct RepositoryData {
 	GitObjectCache object_cache;
 
 	GitCommandCache git_command_cache;
+
+	GitRunner git_runner;
 
 	RepositoryData(std::mutex *mutex)
 		: mutex_(mutex)
