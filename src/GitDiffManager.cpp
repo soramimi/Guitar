@@ -279,20 +279,20 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 					for (auto j = 0; j < submodules.size(); j++) {
 						GitSubmoduleItem const &submod = submodules[j];
 						if (submod.path != diff->path) continue;
-						GitRunner g2 = git_for_submodule(g, submod);
-						auto GetSubmoduleDetail = [&](QString const &id){
+						// GitRunner g2 = git_for_submodule(g, submod);
+						auto GetSubmoduleDetail = [&](GitRunner g, QString const &id){
 							GitDiff::SubmoduleDetail out;
 							if (id.startsWith('*')) {
 								out.item = submod;
-								out.item.id = g2.rev_parse("HEAD");
-								auto commit = g2.queryCommitItem(out.item.id);
+								out.item.id = g.rev_parse("HEAD");
+								auto commit = g.queryCommitItem(out.item.id);
 								if (commit) {
 									out.commit = *commit;
 								}
 							} else if (GitHash::isValidID(id)) {
 								out.item = submod;
 								out.item.id = GitHash(id);
-								auto commit = g2.queryCommitItem(out.item.id);
+								auto commit = g.queryCommitItem(out.item.id);
 								if (commit) {
 									out.commit = *commit;
 								}
@@ -303,8 +303,8 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 						diff->a_submodule = GetSubmoduleDetail(diff->blob.a_id_or_path);
 						diff->b_submodule = GetSubmoduleDetail(diff->blob.b_id_or_path);
 #else
-						auto a = std::async(std::launch::async, GetSubmoduleDetail, diff->blob.a_id_or_path);
-						auto b = std::async(std::launch::async, GetSubmoduleDetail, diff->blob.b_id_or_path);
+						auto a = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.a_id_or_path);
+						auto b = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.b_id_or_path);
 						diff->a_submodule = a.get();
 						diff->b_submodule = b.get();
 #endif
