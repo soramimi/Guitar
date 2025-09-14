@@ -26,11 +26,8 @@ public:
 		QString git_command;
 		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
 		QString ssh_key_override;// = "C:/a/id_rsa";
-	};
-	struct Info2 {
 		QString working_repo_dir;
 		QString submodule_path;
-		GitObjectCache object_cache;
 	};
 
 	struct GitCache;
@@ -46,14 +43,16 @@ public:
 	virtual ~AbstractGitSession();
 	AbstractGitSession(AbstractGitSession const &other);
 
+	GitObjectCache *getObjectCache();
 	void clearCommandCache();
+	void clearObjectCache();
 
 	Info &gitinfo();
 	Info const &gitinfo() const;
-	Info2 &gitinfo2();
-	Info2 const &gitinfo2() const;
+	// Info2 &gitinfo2();
+	// Info2 const &gitinfo2() const;
 
-	GitCache &cache();
+	// GitCache &cache();
 	QString workingDir() const;
 	virtual std::optional<GitResult> exec_git(QString const &arg, Option const &opt) = 0;
 	virtual bool remove(QString const &path) = 0;

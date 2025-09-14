@@ -146,9 +146,6 @@ protected:
 			si.hStdOutput = hOutputWrite;
 			si.hStdError = hErrorWrite;
 
-			TraceLogger trace;
-			trace.begin("process", command);
-
 			std::wstring wcmd(command.toStdWString());
 
 			std::vector<wchar_t> *env_ptr = nullptr;
@@ -171,6 +168,9 @@ protected:
 				}
 				env_ptr = &cached_env;
 			}
+
+			TraceLogger trace;
+			trace.begin("process", command);
 
 			// CreateProcessの最適化フラグ
 			DWORD creation_flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
@@ -215,10 +215,10 @@ protected:
 				}
 			}
 
+			trace.end();
+
 			t1.wait();
 			t2.wait();
-
-			trace.end();
 
 			CloseHandle(hOutputRead);
 			CloseHandle(hErrorRead);

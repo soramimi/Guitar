@@ -133,7 +133,22 @@ GitRunner FileDiffWidget::git()
 
 GitObject FileDiffWidget::catFile(GitRunner g, QString const &id)
 {
-	return mainwindow()->catFile(g, id);
+	if (g.isValidWorkingCopy()) {
+		QString path_prefix = PATH_PREFIX;
+		if (id.startsWith(path_prefix)) {
+			QString path = g.workingDir();
+			path = path / id.mid(path_prefix.size());
+			QFile file(path);
+			if (file.open(QFile::ReadOnly)) {
+				GitObject obj;
+				obj.content = file.readAll();
+				return obj;
+			}
+		} else if (GitHash::isValidID(id)) {
+			return g.catFile(GitHash(id));
+		}
+	}
+	return {};
 }
 
 int FileDiffWidget::totalTextLines() const
@@ -602,8 +617,8 @@ QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
 		GitRunner g = git();
-		GitObject obj_a = mainwindow()->catFile(g, a_id);
-		GitObject obj_b = mainwindow()->catFile(g, b_id);
+		GitObject obj_a = catFile(g, a_id);
+		GitObject obj_b = catFile(g, b_id);
 		if (obj_b.type == GitObject::Type::UNKNOWN) {
 			obj_b.type = GitObject::Type::BLOB;
 		}

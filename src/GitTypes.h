@@ -7,7 +7,6 @@
 #include <QString>
 
 #define GIT_ID_LENGTH (40)
-#define PATH_PREFIX "*"
 
 struct GitRemote {
 	QString name;

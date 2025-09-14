@@ -21,45 +21,37 @@ TextEditorView *MyTextEditorWidget::view()
 
 void MyTextEditorWidget::clear()
 {
-	this->object_id.clear();
-	this->object_path.clear();
+	this->object_id_.clear();
+	this->object_path_.clear();
 	view()->clear();
 	update();
 }
 
 void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, QString const &object_id, QString const &object_path)
 {
-	this->object_id = object_id;
-	this->object_path = object_path;
+	this->object_id_ = object_id;
+	this->object_path_ = object_path;
 	view()->setDocument(source);
 }
 
 void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 {
-	QString id = object_id;
-	if (id.startsWith(PATH_PREFIX)) {
-		// pass
-	} else if (GitHash::isValidID(id)) {
-		// pass
-	} else {
-		return; // invalid id
-	}
+	if (!isValidObject()) return;
+
+	QString id = object_id_;
 
 	QMenu menu;
 
-	QAction *a_save_as = id.isEmpty() ? nullptr : menu.addAction(tr("Save as..."));
+	QAction *a_save_as = menu.addAction(tr("Save as..."));
 	QAction *a_copy = menu.addAction(tr("Copy"));
 	if (!menu.actions().isEmpty()) {
 		update();
 		QAction *a = menu.exec(misc::contextMenuPos(this, event));
 		if (a) {
 			if (a == a_save_as) {
-				QString path = global->mainwindow->currentWorkingCopyDir() / object_path;
-				QString dstpath = QFileDialog::getSaveFileName(window(), tr("Save as"), path);
-				if (!dstpath.isEmpty()) {
-					global->mainwindow->saveAs(id, dstpath);
+				if (saveAs(window())) {
+					update();
 				}
-				update();
 				return;
 			}
 			if (a == a_copy) {

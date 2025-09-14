@@ -2,8 +2,7 @@
 #define REPOSITORYMODEL_H
 
 #include "BranchLabel.h"
-#include "GitCommandCache.h"
-#include "GitObjectManager.h"
+#include "GitRunner.h"
 
 typedef QList<GitTag> TagList;
 typedef QList<GitBranch> BranchList;
@@ -18,15 +17,11 @@ struct RepositoryData {
 	std::map<int, BranchLabelList> label_map;
 
 	std::map<QString, GitDiff> diff_cache;
-	GitObjectCache object_cache;
-
-	GitCommandCache git_command_cache;
 
 	GitRunner git_runner;
 
 	RepositoryData(std::mutex *mutex)
 		: mutex_(mutex)
-		, object_cache(mutex)
 	{}
 };
 

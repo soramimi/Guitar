@@ -4,7 +4,6 @@
 #include <QThread>
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include "TraceLogger.h"
 
 // PathToIdMap
 
@@ -128,21 +127,6 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 	return out;
 }
 
-void GitDiffManager::retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<GitDiff> *diffs)
-{
-	for (GitTreeItem const &d : *files) {
-		QString path = misc::joinWithSlash(dir, d.name);
-		if (d.type == GitTreeItem::BLOB) {
-			GitDiff diff(d.id, path, d.mode);
-			diffs->push_back(diff);
-		} else if (d.type == GitTreeItem::TREE) {
-			GitTreeItemList files2;
-			parseGitTreeObject(g, objcache_, d.id, QString(), &files2);
-			retrieveCompleteTree(g, path, &files2, diffs); // recursive
-		}
-	}
-}
-
 /**
  * @brief コミットの差分を取得する
  * @param id コミットID
@@ -162,7 +146,20 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 			parseGitTreeObject(g, objcache_, newer_commit.tree_id, QString(), &files);
 
 			if (newer_commit.parents.isEmpty()) { // 親がないなら最古のコミット
-				retrieveCompleteTree(g, QString(), &files, &diffs); // ツリー全体を取得
+				auto F = [&](auto self, GitRunner g, QString const &dir, GitTreeItemList const *files, QList<GitDiff> *diffs)-> void {
+					for (GitTreeItem const &d : *files) {
+						QString path = misc::joinWithSlash(dir, d.name);
+						if (d.type == GitTreeItem::BLOB) {
+							GitDiff diff(d.id, path, d.mode);
+							diffs->push_back(diff);
+						} else if (d.type == GitTreeItem::TREE) {
+							GitTreeItemList files2;
+							parseGitTreeObject(g, objcache_, d.id, QString(), &files2);
+							self(self, g, path, &files2, diffs); // 再帰
+						}
+					}
+				};
+				F(F, g, QString(), &files, &diffs); // ツリー全体を取得
 			} else {
 				std::map<QString, GitDiff> diffmap;
 
@@ -228,7 +225,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 		}
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
-		GitHash head_id = objcache_->revParse(g, "HEAD");
+		GitHash head_id = g.revParse("HEAD");
 		std::vector<GitFileStatus> stats = g.status_s(); // git status // TODO: 巨大リポジトリで遅い
 
 		GitCommitTree head_tree(objcache_);
@@ -279,12 +276,11 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 					for (auto j = 0; j < submodules.size(); j++) {
 						GitSubmoduleItem const &submod = submodules[j];
 						if (submod.path != diff->path) continue;
-						// GitRunner g2 = git_for_submodule(g, submod);
 						auto GetSubmoduleDetail = [&](GitRunner g, QString const &id){
 							GitDiff::SubmoduleDetail out;
 							if (id.startsWith('*')) {
 								out.item = submod;
-								out.item.id = g.rev_parse("HEAD");
+								out.item.id = g.revParse("HEAD");
 								auto commit = g.queryCommitItem(out.item.id);
 								if (commit) {
 									out.commit = *commit;
@@ -299,15 +295,10 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 							}
 							return out;
 						};
-#if 0
-						diff->a_submodule = GetSubmoduleDetail(diff->blob.a_id_or_path);
-						diff->b_submodule = GetSubmoduleDetail(diff->blob.b_id_or_path);
-#else
 						auto a = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.a_id_or_path);
 						auto b = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.b_id_or_path);
 						diff->a_submodule = a.get();
 						diff->b_submodule = b.get();
-#endif
 						break;
 					}
 

@@ -5,6 +5,7 @@
 #include "MemoryReader.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "PROFILE.h"
 #include <QBuffer>
 #include <QDebug>
 #include <QDirIterator>
@@ -300,6 +301,7 @@ void GitObjectCache::clear()
 
 GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
 {
+	PROFILE;
 	if (!g.isValidWorkingCopy()) return {};
 
 	GitHash ret;
@@ -321,7 +323,7 @@ GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
 		return ret;
 	}
 
-	ret = g.rev_parse(name);
+	ret = g.revParse(name, false);
 
 	auto B = [&](){
 		rev_parse_map_[name] = ret;
@@ -398,7 +400,7 @@ GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 	}
 
 	if (true) {
-		auto ret = g.cat_file(id);
+		auto ret = g.cat_file_(id);
 		if (ret) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
@@ -423,7 +425,7 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 	if (id.isValid()) {
 		QStringList parents;
 		{
-			GitObject obj = objcache->catFile(g, id);
+			GitObject obj = g.catFile(id);
 			if (!obj.content.isEmpty()) {
 				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
 				for (QString const &line : lines) {
@@ -484,7 +486,7 @@ bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &co
 {
 	out->clear();
 	if (!commit_id.isEmpty()) {
-		GitObject obj = objcache->catFile(g, GitHash(commit_id));
+		GitObject obj = g.catFile(GitHash(commit_id));
 		if (!obj.content.isEmpty()) { // 内容を取得
 			parseGitTreeObject(obj.content, path_prefix, out);
 			return true;

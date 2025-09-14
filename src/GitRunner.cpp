@@ -33,9 +33,20 @@ GitRunner GitRunner::dup() const
 	return std::shared_ptr<Git>(newgit);
 }
 
+GitObjectCache *GitRunner::getObjCache()
+{
+	Q_ASSERT(git);
+	return git->session_->getObjectCache();
+}
+
 void GitRunner::clearCommandCache()
 {
 	if (git) git->clearCommandCache();
+}
+
+void GitRunner::clearObjectCache()
+{
+	if (git) git->clearObjectCache();
 }
 
 std::optional<GitCommitItem> GitRunner::parseCommit(const QByteArray &ba)
@@ -101,10 +112,16 @@ bool GitRunner::remove(const QString &path)
 	return git->remove(path);
 }
 
-GitHash GitRunner::rev_parse(const QString &name)
+GitHash GitRunner::revParse(const QString &name, bool use_cache)
 {
 	Q_ASSERT(git);
-	return git->rev_parse(name);
+	if (use_cache) {
+		GitObjectCache *cache = getObjCache();
+		Q_ASSERT(cache);
+		return cache->revParse(*this, name);
+	} else {
+		return git->rev_parse(name);
+	}
 }
 
 void GitRunner::setRemoteURL(const GitRemote &remote)
@@ -311,7 +328,7 @@ GitCommitItemList GitRunner::log_file(const QString &path, int maxcount)
 	return git->log_file(path, maxcount);
 }
 
-QStringList GitRunner::rev_list_all(const GitHash &id, int maxcount)
+std::vector<GitHash> GitRunner::rev_list_all(const GitHash &id, int maxcount)
 {
 	Q_ASSERT(git);
 	return git->rev_list_all(id, maxcount);
@@ -419,10 +436,27 @@ std::vector<GitFileStatus> GitRunner::status_s()
 	return git->status_s();
 }
 
-std::optional<QByteArray> GitRunner::cat_file(const GitHash &id)
+std::optional<QByteArray> GitRunner::cat_file_(const GitHash &id)
+{
+	return git->cat_file(id);
+}
+
+GitObject GitRunner::catFile(const GitHash &id, bool use_cache)
 {
 	Q_ASSERT(git);
-	return git->cat_file(id);
+	if (use_cache) {
+		GitObjectCache *cache = getObjCache();
+		Q_ASSERT(cache);
+		return cache->catFile(*this, id);
+	} else {
+		GitObject obj;
+		auto data = git->cat_file(id);
+		if (data) {
+			obj.content = *data;
+			obj.type = GitObject::Type::UNKNOWN;
+		}
+		return obj;
+	}
 }
 
 bool GitRunner::clone(const GitCloneData &data, AbstractPtyProcess *pty)

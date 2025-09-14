@@ -112,6 +112,7 @@ SOURCES += \
 	$$PWD/src/GitDiffManager.cpp \
 	$$PWD/src/GitRunner.cpp \
 	$$PWD/src/GitTypes.cpp \
+	$$PWD/src/MyObjectViewBase.cpp \
     $$PWD/src/SettingLoggingForm.cpp \
 	$$PWD/src/SimpleQtIO.cpp \
     $$PWD/src/TraceEventWriter.cpp \
@@ -285,6 +286,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/GitDiffManager.h \
 	$$PWD/src/GitRunner.h \
+	$$PWD/src/MyObjectViewBase.h \
     $$PWD/src/SettingLoggingForm.h \
 	$$PWD/src/SimpleQtIO.h \
     $$PWD/src/TraceEventWriter.h \

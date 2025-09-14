@@ -27,8 +27,6 @@ QString GitBasicSession::sshCommand() const
 std::shared_ptr<AbstractGitSession> GitBasicSession::dup()
 {
 	std::shared_ptr<AbstractGitSession> ptr(new GitBasicSession(*this));
-	// ptr->gitinfo() = gitinfo();
-	// ptr->gitinfo2() = gitinfo2();
 	return ptr;
 }
 

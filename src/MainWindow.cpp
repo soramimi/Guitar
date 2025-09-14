@@ -27,7 +27,6 @@
 #include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitDiffManager.h"
 #include "GitHubAPI.h"
-#include "GitObjectManager.h"
 #include "GitProcessThread.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
@@ -643,7 +642,7 @@ bool MainWindow::jumpToCommit(GitHash const &id)
 
 bool MainWindow::jumpToCommit(QString const &id)
 {
-	int row = rowFromCommitId(git().rev_parse(id));
+	int row = rowFromCommitId(git().revParse(id));
 	return setCurrentLogRow(row);
 }
 
@@ -1304,7 +1303,8 @@ void MainWindow::setCurrentRepository(const RepositoryInfo &repo, bool clear_aut
 	}
 	m->current_repository = repo;
 	clearGitCommandCache();
-	getObjCache()->clear();
+	// getObjCache()->clear();
+	clearGitObjectCache();
 }
 
 void MainWindow::endSession()
@@ -1312,7 +1312,8 @@ void MainWindow::endSession()
 	// qDebug() << Q_FUNC_INFO;
 	setCurrentGitRunner({});
 	clearGitCommandCache();
-	getObjCache()->clear();
+	// getObjCache()->clear();
+	clearGitObjectCache();
 }
 
 void MainWindow::sshSetPassphrase(const std::string &user, const std::string &pass)
@@ -1409,16 +1410,15 @@ GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxco
 {
 	GitCommitItemList items;
 
-	QStringList revlist = g.rev_list_all(id, maxcount);
+	std::vector<GitHash> revlist = g.rev_list_all(id, maxcount);
 
 	if (0) { // シングルスレッド版
-		for (size_t i = 0; i < revlist.size(); i++) {
-			QString hash = revlist[i];
-			auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+		for (GitHash const &hash : revlist) {
+			auto obj = g.catFile(hash);
 			if (obj.type == GitObject::Type::COMMIT) {
 				std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
 				if (item) {
-					item->commit_id = GitHash(hash);
+					item->commit_id = hash;
 					items.list.push_back(*item);
 				}
 			}
@@ -1433,8 +1433,8 @@ GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxco
 				while (1) {
 					size_t j = in++;
 					if (j >= revlist.size()) break;
-					QString hash = revlist[j];
-					auto obj = const_cast<MainWindow *>(this)->catFile(g, hash);
+					GitHash const &hash = revlist[j];
+					auto obj = g.catFile(hash);
 					if (obj.type == GitObject::Type::COMMIT) {
 						std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
 						if (item) {
@@ -1679,12 +1679,13 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
 	} else {
-		getObjCache()->clear();
+		// getObjCache()->clear();
+		clearGitObjectCache();
 	}
 
 	if (opt.new_session) {
 		endSession();
-		currentRepositoryData()->git_command_cache = {};
+		// currentRepositoryData()->git_command_cache = {};
 
 		RepositoryInfo const &item = currentRepository();
 		g = new_git_runner(item.local_dir, item.ssh_key);
@@ -1710,7 +1711,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	// HEAD を取得
 	auto async_head = std::async(std::launch::async, [&](){
-		return g.rev_parse("HEAD");
+		return g.revParse("HEAD");
 	});
 	// ユーザー情報を取得
 	auto async_user = std::async(std::launch::async, [&](){
@@ -2136,28 +2137,6 @@ bool MainWindow::checkGitCommand()
 }
 
 /**
- * @brief MainWindow::saveBlobAs
- * @param id ID
- * @param dstpath 保存先
- *
- * ファイルを保存する
- */
-bool MainWindow::saveBlobAs(const QString &id, const QString &dstpath)
-{
-	GitObject obj = catFile(git(), id);
-	if (!obj.content.isEmpty()) {
-		if (saveByteArrayAs(obj.content, dstpath)) {
-			return true;
-		}
-	} else {
-		QString msg = "Failed to get the content of the object '%1'";
-		msg = msg.arg(id);
-		qDebug() << msg;
-	}
-	return false;
-}
-
-/**
  * @brief MainWindow::saveByteArrayAs
  * @param ba バイト配列
  * @param dstpath 保存先
@@ -2223,6 +2202,29 @@ bool MainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
 	}
 	return false;
 }
+
+/**
+ * @brief MainWindow::saveBlobAs
+ * @param id ID
+ * @param dstpath 保存先
+ *
+ * ファイルを保存する
+ */
+bool MainWindow::saveBlobAs(const QString &id, const QString &dstpath)
+{
+	GitObject obj = git().catFile(GitHash(id));
+	if (!obj.content.isEmpty()) {
+		if (saveByteArrayAs(obj.content, dstpath)) {
+			return true;
+		}
+	} else {
+		QString msg = "Failed to get the content of the object '%1'";
+		msg = msg.arg(id);
+		qDebug() << msg;
+	}
+	return false;
+}
+
 
 /**
  * @brief MainWindow::checkExecutable
@@ -2448,7 +2450,7 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 		}
 	}
 
-	currentRepositoryData()->git_command_cache = {};
+	// currentRepositoryData()->git_command_cache = {};
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -3560,11 +3562,6 @@ void MainWindow::clearLabelMap()
 	currentRepositoryData()->label_map.clear();
 }
 
-GitObjectCache *MainWindow::getObjCache()
-{
-	return &currentRepositoryData()->object_cache;
-}
-
 GitHash MainWindow::getHeadId() const
 {
 	return m->head_id;
@@ -3861,11 +3858,6 @@ bool MainWindow::editFile(const QString &path, const QString &title)
 void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
 	global->appsettings = appsettings;
-}
-
-QStringList MainWindow::findGitObject(const QString &id) const
-{
-	return GitObjectManager::findObject(id, currentWorkingCopyDir());
 }
 
 void MainWindow::saveApplicationSettings()
@@ -4277,26 +4269,6 @@ void MainWindow::execCommitViewWindow(const GitCommitItem *commit)
 	win.exec();
 }
 
-GitObject MainWindow::catFile(GitRunner g, const QString &id)
-{
-	if (g.isValidWorkingCopy()) {
-		QString path_prefix = PATH_PREFIX;
-		if (id.startsWith(path_prefix)) {
-			QString path = g.workingDir();
-			path = path / id.mid(path_prefix.size());
-			QFile file(path);
-			if (file.open(QFile::ReadOnly)) {
-				GitObject obj;
-				obj.content = file.readAll();
-				return obj;
-			}
-		} else if (GitHash::isValidID(id)) {
-			return getObjCache()->catFile(g, GitHash(id));
-		}
-	}
-	return {};
-}
-
 /**
  * @brief MainWindow::updateCommitGraph
  *
@@ -4687,12 +4659,12 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 	if (n == 1) {
 		g.cherrypick(commit->commit_id.toQString());
 	} else if (n > 1) {
-		auto head = g.queryCommitItem(g.rev_parse("HEAD"));
+		auto head = g.queryCommitItem(g.revParse("HEAD"));
 		auto pick = g.queryCommitItem(commit->commit_id);
 		QList<GitCommitItem> parents;
 		for (int i = 0; i < n; i++) {
 			QString id = commit->commit_id.toQString() + QString("^%1").arg(i + 1);
-			GitHash id2 = g.rev_parse(id);
+			GitHash id2 = g.revParse(id);
 			auto item = g.queryCommitItem(id2);
 			parents.push_back(*item);
 		}
@@ -5571,15 +5543,22 @@ QString MainWindow::selectSshCommand(bool save)
 
 void MainWindow::setCurrentGitRunner(GitRunner g)
 {
-	// m->current_git_runner = g;
 	m->current_repository_data.git_runner = g;
+}
+
+GitObjectCache *MainWindow::getObjCache() // TODO:
+{
+	return currentRepositoryData()->git_runner.getObjCache();
 }
 
 void MainWindow::clearGitCommandCache()
 {
 	m->unassosiated_git_runner = {};
-	m->current_repository_data.git_command_cache = {};
-	// m->current_git_runner.clearCommandCache();
+	m->current_repository_data.git_runner.clearCommandCache();
+}
+
+void MainWindow::clearGitObjectCache()
+{
 	m->current_repository_data.git_runner.clearCommandCache();
 }
 
@@ -5616,9 +5595,6 @@ GitRunner MainWindow::new_git_runner()
 
 GitRunner MainWindow::git()
 {
-	// if (m->current_git_runner) {
-	// 	return m->current_git_runner;
-	// }
 	if (m->current_repository_data.git_runner) {
 		return m->current_repository_data.git_runner;
 	}
@@ -5760,7 +5736,7 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 				if (ok) {
 					reopenRepository(true);
 				} else {
-					GitHash id = g.rev_parse(name);
+					GitHash id = g.revParse(name);
 					if (id.isValid()) {
 						if (QMessageBox::question(parent, tr("Create Local Branch"),
 												  tr("Failed to create a local branch.") + "\n" + tr("Do you want to jump to the existing commit?"),
@@ -5779,15 +5755,6 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 void MainWindow::checkout()
 {
 	checkout(this, selectedCommitItem());
-}
-
-bool MainWindow::saveAs(const QString &id, const QString &dstpath)
-{
-	if (id.startsWith(PATH_PREFIX)) {
-		return saveFileAs(id.mid(1), dstpath);
-	} else {
-		return saveBlobAs(id, dstpath);
-	}
 }
 
 TextEditorThemePtr MainWindow::themeForTextEditor()
@@ -6627,7 +6594,7 @@ void MainWindow::jump(GitRunner g, QString const &text)
 {
 	if (text.isEmpty()) return;
 
-	GitHash id = g.rev_parse(text);
+	GitHash id = g.revParse(text);
 	if (!jumpToCommit(id)) {
 		QMessageBox::warning(this, tr("Jump"), QString("%1\n(%2)\n\n").arg(text).arg(text) + tr("No such commit"));
 	}

@@ -13,10 +13,7 @@ private:
 	using MapList = std::list<LookupTable>;
 
 	GitRunner git_for_submodule(GitRunner g, const GitSubmoduleItem &submod);
-
 	static void AddItem(GitDiff *item, QList<GitDiff> *diffs);
-
-	void retrieveCompleteTree(GitRunner g, QString const &dir, GitTreeItemList const *files, QList<GitDiff> *diffs);
 public:
 	GitDiffManager(GitObjectCache *objcache)
 	{

@@ -1,12 +1,10 @@
 #ifndef GIT_H
 #define GIT_H
 
-#include "GitBasicSession.h"
+#include "AbstractGitSession.h"
 #include "GitTypes.h"
-#include "common/misc.h"
 #include <QDateTime>
 #include <zlib.h>
-
 
 class GitContext {
 public:
@@ -63,6 +61,7 @@ public:
 	~Git() = default;
 
 	void clearCommandCache();
+	void clearObjectCache();
 
 	AbstractGitSession::Info &gitinfo()
 	{
@@ -71,15 +70,6 @@ public:
 	AbstractGitSession::Info const &gitinfo() const
 	{
 		return session_->gitinfo();
-	}
-
-	AbstractGitSession::Info2 &gitinfo2()
-	{
-		return session_->gitinfo2();
-	}
-	AbstractGitSession::Info2 const &gitinfo2() const
-	{
-		return session_->gitinfo2();
 	}
 
 	QByteArray toQByteArray(const std::optional<GitResult> &var) const;
@@ -134,7 +124,7 @@ public:
 
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
 	GitCommitItemList log_file(QString const &path, int maxcount);
-	QStringList rev_list_all(GitHash const &id, int maxcount);
+	std::vector<GitHash> rev_list_all(GitHash const &id, int maxcount);
 
 	std::optional<GitCommitItem> log_signature(GitHash const &id);
 	GitCommitItemList log(int maxcount);

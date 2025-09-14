@@ -276,9 +276,7 @@ private:
 	void setGpgCommand(const QString &path, bool save);
 	void setSshCommand(const QString &path, bool save);
 	bool checkGitCommand();
-	bool saveBlobAs(const QString &id, const QString &dstpath);
 	bool saveByteArrayAs(const QByteArray &ba, const QString &dstpath);
-	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	QString executableOrEmpty(const QString &path);
 	bool checkExecutable(const QString &path);
 	void internalSaveCommandPath(const QString &path, bool save, const QString &name);
@@ -347,7 +345,6 @@ private:
 	bool askAreYouSureYouWantToRun(const QString &title, const QString &command);
 	bool editFile(const QString &path, const QString &title);
 	void setAppSettings(const ApplicationSettings &appsettings);
-	QStringList findGitObject(const QString &id) const;
 
 	void saveApplicationSettings();
 
@@ -435,7 +432,10 @@ private:
 	void clearRetry();
 	void retry();
 	bool isRetryQueued() const;
+
 	void clearGitCommandCache();
+	void clearGitObjectCache();
+
 	GitCommitItemList log_all2(GitRunner g, const GitHash &id, int maxcount) const;
 	ProgressWidget *progress_widget() const;
 	void internalShowPanel(FileListType file_list_type);
@@ -669,9 +669,6 @@ public:
 	bool jumpToCommit(const GitHash &id);
 	bool jumpToCommit(const QString &id);
 
-	GitObject catFile(GitRunner g, const QString &id);
-	bool saveAs(const QString &id, const QString &dstpath);
-
 	TextEditorThemePtr themeForTextEditor();
 	void emitWriteLog(LogData const &logdata);
 	QString findFileID(const GitHash &commit_id, const QString &file);
@@ -708,6 +705,8 @@ public:
 	RepositoryData *currentRepositoryData();
 	const RepositoryData *currentRepositoryData() const;
 	void setCommitLog(const CommitLogExchangeData &exdata);
+	bool saveFileAs(const QString &srcpath, const QString &dstpath);
+	bool saveBlobAs(const QString &id, const QString &dstpath);
 public slots:
 	void internalWriteLog(const LogData &logdata);
 };

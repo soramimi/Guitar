@@ -31,7 +31,7 @@ void FilePropertyDialog::exec(QString const &path, GitHash const &id)
 	}
 	QByteArray ba;
 	if (id) {
-		GitObject obj = global->mainwindow->catFile(global->mainwindow->git(), id.toQString());
+		GitObject obj = global->mainwindow->git().catFile(id);
 		if (obj.type == GitObject::Type::BLOB) {
 			ba = obj.content;
 		}

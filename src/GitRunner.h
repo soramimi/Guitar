@@ -6,7 +6,10 @@
 #include <QString>
 #include "GitTypes.h"
 
+#define PATH_PREFIX "*"
+
 class Git;
+class GitObjectCache;
 
 class GitRunner {
 public:
@@ -19,7 +22,9 @@ public:
 	operator bool () const;
 	GitRunner dup() const;
 
+	GitObjectCache *getObjCache();
 	void clearCommandCache();
+	void clearObjectCache();
 
 	static std::optional<GitCommitItem> parseCommit(QByteArray const &ba);
 
@@ -38,7 +43,7 @@ public:
 
 	bool remove(QString const &path);
 
-	GitHash rev_parse(QString const &name);
+	GitHash revParse(QString const &name, bool use_cache = true);
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(QString const &name);
@@ -82,7 +87,7 @@ public:
 
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
 	GitCommitItemList log_file(QString const &path, int maxcount);
-	QStringList rev_list_all(GitHash const &id, int maxcount);
+	std::vector<GitHash> rev_list_all(GitHash const &id, int maxcount);
 
 	std::optional<GitCommitItem> log_signature(GitHash const &id);
 	GitCommitItemList log(int maxcount);
@@ -105,7 +110,8 @@ public:
 	std::string diff_full_index_head_file(QString const &file);
 
 	std::vector<GitFileStatus> status_s();
-	std::optional<QByteArray> cat_file(const GitHash &id);
+	std::optional<QByteArray> cat_file_(const GitHash &id);
+	GitObject catFile(const GitHash &id, bool use_cache = true);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 	void add_A();
 	bool unstage_all();

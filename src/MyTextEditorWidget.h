@@ -2,13 +2,11 @@
 #define MYTEXTEDITORWIDGET_H
 
 #include "texteditor/TextEditorWidget.h"
+#include "MyObjectViewBase.h"
 
 class MainWindow;
 
-class MyTextEditorWidget : public TextEditorView {
-private:
-	QString object_id;
-	QString object_path;
+class MyTextEditorWidget : public MyObjectViewBase, public TextEditorView {
 protected:
 	void contextMenuEvent(QContextMenuEvent *event) override;
 public:

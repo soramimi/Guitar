@@ -1,8 +1,7 @@
 
 #include "Git.h"
-#include "ApplicationGlobal.h"
+#include "GitBasicSession.h"
 #include "Profile.h"
-#include "RepositoryModel.h"
 #include "common/joinpath.h"
 #include <QDir>
 #include <QFileInfo>
@@ -32,6 +31,11 @@ void Git::clearCommandCache()
 	session_->clearCommandCache();
 }
 
+void Git::clearObjectCache()
+{
+	session_->clearObjectCache();
+}
+
 void Git::_init(GitContext const &cx)
 {
 	session_ = cx.connect();
@@ -39,13 +43,13 @@ void Git::_init(GitContext const &cx)
 
 void Git::setWorkingRepositoryDir(QString const &repo, QString const &sshkey)
 {
-	gitinfo2().working_repo_dir = repo;
+	gitinfo().working_repo_dir = repo;
 	gitinfo().ssh_key_override = sshkey;
 }
 
 void Git::setSubmodulePath(const QString &submodpath)
 {
-	gitinfo2().submodule_path = submodpath;
+	gitinfo().submodule_path = submodpath;
 }
 
 
@@ -99,12 +103,6 @@ QString Git::errorMessage(std::optional<GitResult> const &var) const
 	if (!var) return {};
 	return QString::fromStdString(var->error_message());
 }
-
-// int Git::getProcessExitCode(std::optional<GitResult> const &var) const
-// {
-// 	if (!var) return {};
-// 	return var->exit_code();
-// }
 
 bool Git::isValidWorkingCopy(QString const &dir) const
 {
@@ -628,20 +626,22 @@ GitCommitItemList Git::log_file(QString const &path, int maxcount)
 	return items;
 }
 
-QStringList Git::rev_list_all(GitHash const &id, int maxcount)
+std::vector<GitHash> Git::rev_list_all(GitHash const &id, int maxcount)
 {
-	QStringList items;
+	std::vector<GitHash> items;
 
 	QString cmd = "rev-list --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
 	auto result = git_nolog(cmd, nullptr);
 
 	if (result && result->exit_code() == 0) {
-		std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
-		for (std::string const &line : lines) {
-			QString id = QString::fromStdString(line);
-			if (!id.isEmpty()) {
-				items.push_back(id);
+		auto &out = result->output();
+		std::string_view v(out.data(), out.size());
+		std::vector<std::string_view> lines = misc::splitLinesV(v, false);
+		for (std::string_view const &line : lines) {
+			GitHash hash(line);
+			if (hash) {
+				items.push_back(hash);
 			}
 		}
 	}
@@ -888,7 +888,7 @@ GitCloneData Git::preclone(QString const &url, QString const &path)
 bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 {
 	QString clone_to = data.basedir / data.subdir;
-	gitinfo2().working_repo_dir = misc::normalizePathSeparator(clone_to);
+	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	std::optional<GitResult> var;
 	QDir cwd = QDir::current();
