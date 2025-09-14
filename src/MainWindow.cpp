@@ -5410,7 +5410,6 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 			// サブモジュールのときは新しいプロセスを起動する
 			QString commit_id = getSubmoduleCommitId(item);
 			QString path = currentWorkingCopyDir() / submodpath;
-			qDebug() << path << commit_id;
 			QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
 		} else {
 			// ファイルプロパティダイアログを表示する

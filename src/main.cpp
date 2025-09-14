@@ -53,7 +53,7 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 void logHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
 	QString message = qFormatLogMessage(type, context, msg);
-	if (message.indexOf("Painter not active") >= 0) {
+	if (message.startsWith("\"HEAD")) {
 		qDebug() << message;
 	}
 	std::string s = message.toStdString();

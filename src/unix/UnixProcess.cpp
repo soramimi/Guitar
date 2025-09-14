@@ -206,10 +206,10 @@ protected:
 				}
 			}
 
+			trace.end();
+
 			t1.wait();
 			t2.wait();
-
-			trace.end();
 
 			close(fd_out_write);
 			close(fd_err_write);

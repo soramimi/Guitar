@@ -5,7 +5,7 @@
 #include "MemoryReader.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "PROFILE.h"
+#include "Profile.h"
 #include <QBuffer>
 #include <QDebug>
 #include <QDirIterator>
@@ -319,7 +319,6 @@ GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
 		A();
 	}
 	if (ret.isValid()) {
-		qDebug() << name << ret.toQString();
 		return ret;
 	}
 
