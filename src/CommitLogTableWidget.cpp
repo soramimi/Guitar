@@ -311,10 +311,12 @@ public:
 
 		// コミット日時
 		if (index.column() == Date) {
-			if (commit.order_fixed) {
-				QColor color(255, 0, 0, 128);
-				QRect r = opt.rect.adjusted(1, 1, -1, -2);
-				misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
+			if (0) { // 無効
+				if (commit.order_fixed) {
+					QColor color(255, 0, 0, 128); // 薄い赤枠
+					QRect r = opt.rect.adjusted(1, 1, -1, -2);
+					misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
+				}
 			}
 		}
 

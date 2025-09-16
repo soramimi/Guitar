@@ -115,6 +115,9 @@ bool GitRunner::remove(const QString &path)
 GitHash GitRunner::revParse(const QString &name, bool use_cache)
 {
 	Q_ASSERT(git);
+	if (name == "HEAD") {
+		use_cache = false;
+	}
 	if (use_cache) {
 		GitObjectCache *cache = getObjCache();
 		Q_ASSERT(cache);
