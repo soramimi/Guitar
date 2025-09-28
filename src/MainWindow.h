@@ -451,6 +451,7 @@ private:
 	void chooseRepository();
 	void setCurrentGitRunner(GitRunner g);
 	void endSession();
+	std::optional<GitCommitItem> getCommitItem(GitRunner g, const GitHash &hash) const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;

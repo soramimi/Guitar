@@ -338,6 +338,7 @@ GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
 
 GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 {
+	TraceLogger trace("GitObjectCache::catFile", {});
 	auto Do = [&]()-> GitObject {
 		size_t n = items_.size();
 		size_t i = n;

@@ -1390,12 +1390,14 @@ void MainWindow::connectSetCommitLog()
 
 void MainWindow::updateUncommitedChanges(GitRunner g)
 {
+	TraceLogger trace("updateUncommitedChanges", {});
 	m->uncommited_changes_file_list = g.status_s();
 	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
 }
 
 std::map<GitHash, TagList> MainWindow::queryTags(GitRunner g)
 {
+	TraceLogger trace("queryTags", {});
 	std::map<GitHash, TagList> tag_map;
 
 	TagList tags = g.tags();
@@ -1406,42 +1408,57 @@ std::map<GitHash, TagList> MainWindow::queryTags(GitRunner g)
 	return tag_map;
 }
 
+std::optional<GitCommitItem> MainWindow::getCommitItem(GitRunner g, GitHash const &commit_id) const
+{
+	auto obj = g.catFile(commit_id);
+	if (obj.type == GitObject::Type::COMMIT) {
+		std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
+		if (item) {
+			item->commit_id = GitHash(commit_id);
+			return item;
+		}
+	}
+	return std::nullopt;
+}
+
 GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxcount) const
 {
+	TraceLogger trace("log_all2", {});
+#if 1
+	return g.log_all(id, maxcount);
+#else
 	GitCommitItemList items;
 
 	std::vector<GitHash> revlist = g.rev_list_all(id, maxcount);
 
 	if (0) { // シングルスレッド版
 		for (GitHash const &hash : revlist) {
-			auto obj = g.catFile(hash);
-			if (obj.type == GitObject::Type::COMMIT) {
-				std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
-				if (item) {
-					item->commit_id = hash;
-					items.list.push_back(*item);
-				}
+			auto item = getCommitItem(g, hash);
+			if (item) {
+				items.list.push_back(*item);
 			}
 		}
 	} else { // マルチスレッド版
 		std::vector<std::pair<size_t, GitCommitItem>> vec(revlist.size());
 		std::atomic_size_t in = 0;
 		std::atomic_size_t to = 0;
-		std::vector<std::thread> threads(4);
+		std::vector<std::thread> threads(8);
 		for (size_t i = 0; i < threads.size(); i++) {
 			threads[i] = std::thread([&](){
 				while (1) {
 					size_t j = in++;
 					if (j >= revlist.size()) break;
 					GitHash const &hash = revlist[j];
-					auto obj = g.catFile(hash);
-					if (obj.type == GitObject::Type::COMMIT) {
-						std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
-						if (item) {
-							item->commit_id = GitHash(hash);
-							vec.at(to++) = {j, *item};
-						}
+#if 1
+					auto item = getCommitItem(g, hash);
+					if (item) {
+						vec.at(to++) = {j, *item};
 					}
+#else
+					GitCommitItem item;
+					item.commit_id = GitHash(hash);
+					vec.at(to++) = {j, item};
+#endif
 				}
 			});
 		}
@@ -1459,6 +1476,7 @@ GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxco
 	}
 
 	return items;
+#endif
 }
 
 static void fixCommitLogOrder(GitCommitItemList *list)
@@ -1524,6 +1542,7 @@ static void fixCommitLogOrder(GitCommitItemList *list)
 
 GitCommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
 {
+	TraceLogger trace("retrieveCommitLog", {});
 	GitCommitItemList list = log_all2(g, {}, limitLogCount());
 	fixCommitLogOrder(&list);
 	list.updateIndex();
@@ -1539,6 +1558,7 @@ GitCommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
  */
 CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
 {
+	TraceLogger trace("quercyCommitLog", {});
 	auto async_branches = std::async(std::launch::async, [&](){
 		return g.branches(); // ブランチを取得;
 	});
@@ -1549,7 +1569,7 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
 		return queryTags(g);
 	});
 
-	GitCommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得
+	GitCommitItemList commit_log = retrieveCommitLog(g); // コミットログを取得 (TODO: slow)
 
 	std::map<GitHash, BranchList> branch_map;
 
@@ -1667,6 +1687,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 {
 	ASSERT_MAIN_THREAD();
+	TraceLogger trace("openRepositoryMain", {});
 
 	cancelUpdateFileList();
 
@@ -1736,25 +1757,27 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 		makeCommitLog(head, exdata, scroll_pos, select_row);
 	}
 
-	// ポジトリの情報を設定
-	{
-		QString branch_name;
-		if (currentBranch().flags & GitBranch::HeadDetachedAt) {
-			branch_name += QString("(HEAD detached at %1)").arg(currentBranchName());
-		}
-		if (currentBranch().flags & GitBranch::HeadDetachedFrom) {
-			branch_name += QString("(HEAD detached from %1)").arg(currentBranchName());
-		}
-		if (branch_name.isEmpty()) {
-			branch_name = currentBranchName();
-		}
-
-		QString repo_name = currentRepositoryName();
-		setRepositoryInfo(repo_name, branch_name);
-	}
-
 	// ウィンドウタイトルを更新
 	updateWindowTitle(async_user.get());
+
+	// ポジトリの情報を設定
+	{
+		const QString br_name = currentBranchName();
+		const QString repo_name = currentRepositoryName();
+
+		QString info;
+		if (currentBranch().flags & GitBranch::HeadDetachedAt) {
+			info += QString("(HEAD detached at %1)").arg(br_name);
+		}
+		if (currentBranch().flags & GitBranch::HeadDetachedFrom) {
+			info += QString("(HEAD detached from %1)").arg(br_name);
+		}
+		if (info.isEmpty()) {
+			info = br_name;
+		}
+
+		setRepositoryInfo(repo_name, info);
+	}
 
 	bool do_fetch = opt.do_fetch;
 	if (do_fetch) {

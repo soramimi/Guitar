@@ -578,6 +578,7 @@ std::optional<GitCommitItem> Git::parseCommitItem(QString const &line)
  * @param maxcount 最大アイテム数
  * @return
  */
+
 GitCommitItemList Git::log_all(GitHash const &id, int maxcount)
 {
 	PROFILE;

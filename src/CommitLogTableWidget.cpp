@@ -4,6 +4,7 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
+#include "TraceLogger.h"
 #include <QHeaderView>
 #include <QPainter>
 #include <QPainterPath>
@@ -363,7 +364,7 @@ void CommitLogTableWidget::adjustAppearance()
 	}
 
 	int t = columnWidth(0);
-	resizeColumnsToContents();
+	// resizeColumnsToContents(); // TODO: slow
 	setColumnWidth(0, t);
 	horizontalHeader()->setStretchLastSection(false);
 	horizontalHeader()->setStretchLastSection(true);
