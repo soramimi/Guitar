@@ -140,60 +140,28 @@ struct GitCommitItem {
 };
 
 class GitCommitItemList {
+private:
+	std::vector<GitCommitItem> list_;
+	std::map<GitHash, size_t> index_;
 public:
-	std::vector<GitCommitItem> list;
-	std::map<GitHash, size_t> index;
-	size_t size() const
-	{
-		return list.size();
-	}
-	void resize(size_t n)
-	{
-		list.resize(n);
-	}
-	GitCommitItem &at(size_t i)
-	{
-		return list[i];
-	}
-	GitCommitItem const &at(size_t i) const
-	{
-		return list.at(i);
-	}
-	GitCommitItem &operator [] (size_t i)
-	{
-		return at(i);
-	}
-	GitCommitItem const &operator [] (size_t i) const
-	{
-		return at(i);
-	}
-	void clear()
-	{
-		list.clear();
-	}
-	bool empty() const
-	{
-		return list.empty();
-	}
-	void updateIndex()
-	{
-		index.clear();
-		for (size_t i = 0; i < list.size(); i++) {
-			index[list[i].commit_id] = i;
-		}
-	}
-	GitCommitItem *find(GitHash const &id)
-	{
-		auto it = index.find(id);
-		if (it != index.end()) {
-			return &list[it->second];
-		}
-		return nullptr;
-	}
-	GitCommitItem const *find(GitHash const &id) const
-	{
-		return const_cast<GitCommitItemList *>(this)->find(id);
-	}
+	void setList(std::vector<GitCommitItem> &&list);
+	size_t size() const;
+	void resize(size_t n);
+	GitCommitItem &at(size_t i);
+	GitCommitItem const &at(size_t i) const;
+	GitCommitItem &operator [] (size_t i);
+	GitCommitItem const &operator [] (size_t i) const;
+	void clear();
+	bool empty() const;
+	void push_front(GitCommitItem const &item);
+	QString previousMessage() const;
+	void updateIndex();
+	int find_index(GitHash const &id) const;
+	GitCommitItem *find(GitHash const &id);
+	GitCommitItem const *find(GitHash const &id) const;
+
+	void fixCommitLogOrder();
+	void updateCommitGraph();
 };
 
 class GitResult {

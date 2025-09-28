@@ -584,6 +584,7 @@ GitCommitItemList Git::log_all(GitHash const &id, int maxcount)
 	PROFILE;
 
 	GitCommitItemList items;
+	std::vector<GitCommitItem> list;
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 %2";
 	cmd = cmd.arg(maxcount).arg(id.toQString());
@@ -595,11 +596,12 @@ GitCommitItemList Git::log_all(GitHash const &id, int maxcount)
 		for (QString const &line : lines) {
 			auto item = parseCommitItem(line);
 			if (item) {
-				items.list.push_back(*item);
+				list.push_back(*item);
 			}
 		}
 	}
 
+	items.setList(std::move(list));
 	return items;
 }
 
@@ -608,6 +610,7 @@ GitCommitItemList Git::log_file(QString const &path, int maxcount)
 	PROFILE;
 
 	GitCommitItemList items;
+	std::vector<GitCommitItem> list;
 
 	QString cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\" --all -%1 -- %2";
 	cmd = cmd.arg(maxcount).arg(path);
@@ -619,11 +622,12 @@ GitCommitItemList Git::log_file(QString const &path, int maxcount)
 		for (QString const &line : lines) {
 			auto item = parseCommitItem(line);
 			if (item) {
-				items.list.push_back(*item);
+				list.push_back(*item);
 			}
 		}
 	}
 
+	items.setList(std::move(list));
 	return items;
 }
 

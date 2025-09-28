@@ -129,22 +129,6 @@ public:
 		SideBySide,
 	};
 
-	struct Task {
-		int index = 0;
-		int parent = 0;
-		Task() = default;
-		Task(int index, int parent)
-			: index(index)
-			, parent(parent)
-		{
-		}
-	};
-
-	struct Element {
-		int depth = 0;
-		std::vector<int> indexes;
-	};
-
 private:
 	struct ObjectData {
 		QString id;
