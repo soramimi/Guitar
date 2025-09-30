@@ -268,7 +268,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 		threads[thread_index] = std::thread([&](){
 			while (1) {
 				size_t i = diffs_index++;
-				if (i >= diffs.size()) break; // 終了
+				if ((int)i >= diffs.size()) break; // 終了
 				GitDiff *diff = &diffs[i];
 				if (!diff->isSubmodule()) continue;
 

@@ -1,5 +1,6 @@
 #include "GitTypes.h"
 #include "common/crc32.h"
+#include <set>
 
 class Latin1View {
 private:
