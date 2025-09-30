@@ -28,13 +28,11 @@ std::vector<Model> const &ai_model_presets()
 		{AI::OpenAI, "gpt-4.1"},
 		{AI::OpenAI, "gpt-5"},
 		{AI::OpenAI, "gpt-5-mini"},
-		{AI::Anthropic, "claude-sonnet-4-20250514"},
-		{AI::Anthropic, "claude-3-7-sonnet-latest"},
-		{AI::Anthropic, "claude-3-5-haiku-20241022"},
+		{AI::Anthropic, "claude-sonnet-4-5-20250929"},
 		{AI::Google, "gemini-2.5-pro"},
 		{AI::Google, "gemini-2.5-flash"},
 		{AI::DeepSeek, "deepseek-chat"},
-		{AI::OpenRouter, "openrouter:///anthropic/claude-3.7-sonnet"},
+		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
 		{AI::Ollama, "ollama:///gemma3:27b"},
 		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
 	};
@@ -96,6 +94,7 @@ void Model::parse_model(const std::string &name)
 
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
+	if (Parse("openrouter://", 80)) return;
 }
 
 Model Model::from_name(std::string const &name)
