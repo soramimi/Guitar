@@ -202,7 +202,8 @@ void GitRunner::removeFile(const QString &path, bool rm_real_file)
 
 GitUser GitRunner::getUser(GitSource purpose)
 {
-	Q_ASSERT(git);
+	if (!git) return {}; // gitコマンドが存在しない場合は空のオブジェクトを返し、ASSERTでは落とさない。
+	// Q_ASSERT(git);
 	return git->getUser(purpose);
 }
 
