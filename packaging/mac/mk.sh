@@ -10,4 +10,4 @@ mv ../../_bin/Guitar.app .
 /opt/Qt/6.7.2/macos/bin/macdeployqt Guitar.app
 rm Guitar-macos.zip
 zip -r Guitar-macos.zip Guitar.app
-curl -T Guitar-macos.zip ftp://192.168.0.5/Public/pub/nightlybuild/
+curl -T Guitar-macos.zip ftp://10.168.0.5/Public/pub/nightlybuild/

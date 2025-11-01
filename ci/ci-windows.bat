@@ -1,2 +1,3 @@
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-ruby packaging\win\deploy.rb
+@cd %~dp0\..
+@mk.bat ci-win
