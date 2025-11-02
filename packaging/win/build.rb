@@ -15,13 +15,6 @@ def run(cmd)
 	end
 end
 
-$current_branch = `git symbolic-ref --short HEAD`.strip
-
-$suffix = $current_branch
-if $suffix == "main" or $suffix == "master" then
-	$suffix = ""
-end
-
 FileUtils.rm_rf $script_dir + "/build"
 FileUtils.rm_rf $script_dir + "/packages/jp.soramimi.guitar/data"
 
