@@ -187,10 +187,12 @@ private:
 
 		bool clear_log = true;
 		bool do_fetch = true;
+
+		bool suppress_uncommit_changes = false;
 	};
 	void openRepositoryMain(OpenRepositoryOption const &opt);
 	void openRepository(OpenRepositoryOption const &opt);
-	void reopenRepository(bool validate);
+	void reopenRepository(bool validate, OpenRepositoryOption opt);
 	void openSelectedRepository();
 
 	void doReopenRepository(ProcessStatus *status, const RepositoryInfo &repodata);
@@ -405,7 +407,7 @@ private:
 
 	void updateButton();
 	void runPtyGit(const QString &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus *, QVariant const &userdata)> callback, QVariant const &userdata);
-	CommitLogExchangeData queryCommitLog(GitRunner g);
+	CommitLogExchangeData queryCommitLog(GitRunner g, bool suppress_uncommit_changes);
 	void updateHEAD(GitRunner g);
 	bool jump(GitRunner g, const GitHash &id);
 	void jump(GitRunner g, const QString &text);

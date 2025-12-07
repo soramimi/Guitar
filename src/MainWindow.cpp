@@ -1179,7 +1179,7 @@ void MainWindow::revertAllFiles()
 	QString cmd = "git reset --hard HEAD";
 	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
 		g.resetAllFiles();
-		reopenRepository(true);
+		reopenRepository(true, {});
 	}
 }
 
@@ -1491,14 +1491,16 @@ GitCommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
  *
  * コミットログとブランチ情報を取得
  */
-CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
+CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_uncommit_changes)
 {
 	TraceLogger trace("quercyCommitLog", {});
 	auto async_branches = std::async(std::launch::async, [&](){
 		return g.branches(); // ブランチを取得;
 	});
 	auto async_update_uncommited = std::async(std::launch::async, [&](){
-		updateUncommitedChanges(g);
+		if (!suppress_uncommit_changes) {
+			updateUncommitedChanges(g);
+		}
 	});
 	auto async_tags = std::async(std::launch::async, [&](){
 		return queryTags(g);
@@ -1519,12 +1521,14 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g)
 
 	// Uncommited changes の処理
 	async_update_uncommited.wait();
-	if (isThereUncommitedChanges()) {
-		GitCommitItem item;
-		item.parent_ids.push_back(currentBranch().id);
-		item.message = tr("Uncommited changes");
-		commit_log.push_front(item);
-		commit_log.updateIndex();
+	if (!suppress_uncommit_changes) {
+		if (isThereUncommitedChanges()) {
+			GitCommitItem item;
+			item.parent_ids.push_back(currentBranch().id);
+			item.message = tr("Uncommited changes");
+			commit_log.push_front(item);
+			commit_log.updateIndex();
+		}
 	}
 
 	CommitLogExchangeData exdata;
@@ -1675,7 +1679,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	});
 	// コミットログを取得
 	auto async_exdata = std::async(std::launch::async, [&](){
-		return queryCommitLog(g);
+		return queryCommitLog(g, opt.suppress_uncommit_changes);
 	});
 
 	// コミットログを作成
@@ -1772,9 +1776,8 @@ void MainWindow::openRepository(OpenRepositoryOption const &opt)
 	openRepositoryMain(opt);
 }
 
-void MainWindow::reopenRepository(bool validate)
+void MainWindow::reopenRepository(bool validate, OpenRepositoryOption opt)
 {
-	OpenRepositoryOption opt;
 	opt.new_session = false;
 	opt.validate = validate;
 	openRepository(opt);
@@ -2430,7 +2433,7 @@ void MainWindow::doReopenRepository(ProcessStatus *status, RepositoryInfo const 
 	if (status->ok) {
 		saveRepositoryBookmark(repodata);
 		setCurrentRepository(repodata, false);
-		reopenRepository(true);
+		reopenRepository(true, {});
 	}
 }
 
@@ -2671,7 +2674,9 @@ void MainWindow::commit(bool amend)
 
 			if (ok) {
 				updateStatusBarText();
-				reopenRepository(true);
+				OpenRepositoryOption opt;
+				opt.suppress_uncommit_changes = true;
+				reopenRepository(true, opt);
 			} else {
 				QString err = QString::fromStdString(pty->getMessage()).trimmed();
 				err += "\n*** ";
@@ -2719,7 +2724,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 			}
 		}
 		updateRemoteInfo();
-		reopenRepository(true);
+		reopenRepository(true, {});
 	}, {});
 }
 
@@ -2891,7 +2896,7 @@ void MainWindow::resetFile(const QStringList &paths)
 			for (QString const &path : paths) {
 				g.resetFile(path);
 			}
-			reopenRepository(true);
+			reopenRepository(true, {});
 		}
 	}
 }
@@ -4345,7 +4350,7 @@ void MainWindow::mergeBranch(QString const &commit, GitMergeFastForward ff, bool
 	if (!isValidWorkingCopy(g)) return;
 
 	g.mergeBranch(commit, ff, squash);
-	reopenRepository(true);
+	reopenRepository(true, {});
 }
 
 void MainWindow::mergeBranch(GitCommitItem const *commit, GitMergeFastForward ff, bool squash)
@@ -4367,7 +4372,7 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
 	if (r == QMessageBox::Ok) {
 		g.rebaseBranch(commit->commit_id.toQString());
-		reopenRepository(true);
+		reopenRepository(true, {});
 	}
 }
 
@@ -4412,7 +4417,7 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 		}
 	}
 
-	reopenRepository(true);
+	reopenRepository(true, {});
 }
 
 void MainWindow::merge(GitCommitItem commit)
@@ -4490,7 +4495,7 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	reopenRepository(false);
+	reopenRepository(false, {});
 }
 
 void MainWindow::on_action_fetch_prune_triggered()
@@ -4913,14 +4918,14 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 				for_each_selected_files([&](QString const &path){
 					g.removeFile(path, true);
 				});
-				reopenRepository(false);
+				reopenRepository(false, {});
 			}
 		} else if (a == a_untrack) {
 			if (askAreYouSureYouWantToRun("Untrack", tr("rm --cached files"))) {
 				for_each_selected_files([&](QString const &path){
 					g.rm_cached(path);
 				});
-				reopenRepository(false);
+				reopenRepository(false, {});
 			}
 		} else if (a == a_history) {
 			execFileHistory(item);
@@ -5028,7 +5033,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					for_each_selected_files([&](QString const &path){
 						g.removeFile(path, true);
 					});
-					reopenRepository(false);
+					reopenRepository(false, {});
 				}
 				return;
 			}
@@ -5037,7 +5042,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					for_each_selected_files([&](QString const &path){
 						g.rm_cached(path);
 					});
-					reopenRepository(false);
+					reopenRepository(false, {});
 				}
 				return;
 			}
@@ -5078,7 +5083,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				if (a == a_unstage) {
 					g.unstage(path);
-					reopenRepository(false);
+					reopenRepository(false, {});
 				} else if (a == a_history) {
 					execFileHistory(item);
 				} else if (a == a_blame) {
@@ -5352,7 +5357,7 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 {
 	auto Open = [&](RepositoryInfo const &item, QString const &commit_id){
 		setCurrentRepository(item, true);
-		reopenRepository(false);
+		reopenRepository(false, {});
 		if (!commit_id.isEmpty()) {
 			if (!locateCommitID(commit_id)) {
 				QMessageBox::information(this, tr("Open Repository"), tr("The specified commit ID was not found."));
@@ -5401,7 +5406,7 @@ bool MainWindow::checkoutLocalBranch(QString const &name)
 		GitRunner g = git();
 		bool ok = g.checkout(name);
 		if (ok) {
-			reopenRepository(true);
+			reopenRepository(true, {});
 			return true;
 		}
 	}
@@ -5456,14 +5461,14 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 			if (id.isValid()) {
 				bool ok = g.checkout_detach(id.toQString());
 				if (ok) {
-					reopenRepository(true);
+					reopenRepository(true, {});
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
 				bool ok = g.checkout(name, id.toQString());
 				if (ok) {
-					reopenRepository(true);
+					reopenRepository(true, {});
 				} else {
 					GitHash id = g.revParse(name);
 					if (id.isValid()) {
@@ -5726,7 +5731,7 @@ void MainWindow::updateAncestorCommitMap()
 void MainWindow::refresh()
 {
 	if (!isValidWorkingCopy(git())) return;
-	reopenRepository(true);
+	reopenRepository(true, {});
 }
 
 void MainWindow::on_action_view_refresh_triggered()
@@ -6105,7 +6110,7 @@ void MainWindow::revertCommit()
 	GitCommitItem const &commit = selectedCommitItem();
 	if (commit) {
 		g.revert(commit.commit_id);
-		reopenRepository(false);
+		reopenRepository(false, {});
 	}
 }
 
@@ -6374,7 +6379,7 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	if (!isValidWorkingCopy(g)) return;
 
 	g.reset_head1();
-	reopenRepository(false);
+	reopenRepository(false, {});
 }
 
 bool MainWindow::isOnlineMode() const
