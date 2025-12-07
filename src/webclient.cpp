@@ -16,6 +16,7 @@ typedef SOCKET socket_t;
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <QDebug>
 #include <netdb.h>
 #define closesocket(S) ::close(S)
 using socket_t = int;
@@ -42,6 +43,9 @@ typedef void SSL_CTX;
 #include <set>
 #include <cassert>
 #include "common/base64.h"
+
+// #define _OPEN_SYS_SOCK_IPV6
+#include <arpa/inet.h>
 
 #define USER_AGENT "Generic Web Client"
 
@@ -98,10 +102,11 @@ int x_strnicmp(char const *s1, char const *s2, size_t n)
 
 } // namespace
 
-bool HostNameResolver::resolve(const char *name, _in_addr *out)
+bool HostNameResolver::resolve(const char *name, Addr *out)
 {
 	if (!name || !out) return false;
 
+#if 0
 	struct hostent *he = nullptr;
 #if defined(_WIN32) || defined(__APPLE__) || defined(__NetBSD__)
 	he = ::gethostbyname(name);
@@ -109,21 +114,62 @@ bool HostNameResolver::resolve(const char *name, _in_addr *out)
 	int err = 0;
 	// Use dynamic allocation to ensure sufficient buffer space
 	size_t buflen = 8192; // Large enough for most hostent data
-	char *buf = new char[buflen];
+	std::vector<char> buf(buflen);
 	struct hostent tmp;
-	int ret = gethostbyname_r(name, &tmp, buf, buflen, &he, &err);
+	int ret = gethostbyname_r(name, &tmp, buf.data(), buflen, &he, &err);
 	bool success = (ret == 0 && he != nullptr);
 	if (success && he->h_length > 0 && he->h_addr) {
 		memcpy(out, he->h_addr, he->h_length);
 	} else {
 		success = false;
 	}
-	delete[] buf;
 	return success;
 #endif
-
 	if (!he || !he->h_addr || he->h_length <= 0) return false;
 	memcpy(out, he->h_addr, he->h_length);
+#elif 0
+	{
+		struct addrinfo hints, *res;
+		struct in_addr addr;
+		int err;
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = AF_INET;
+		if ((err = getaddrinfo(name, NULL, &hints, &res)) != 0) {
+			printf("error %d\n", err);
+			return 1;
+		}
+
+		out->addr.resize(sizeof(in_addr));
+		memcpy(out->addr.data(), &((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr, sizeof(struct in_addr));
+		freeaddrinfo(res);
+	}
+#else
+	{
+		struct addrinfo hints;
+		struct addrinfo *res, *p;
+		int err;
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = AF_INET6;
+		if ((err = getaddrinfo(name, NULL, &hints, &res)) != 0) {
+			printf("error %d\n", err);
+			return 1;
+		}
+		for (p = res; p; p = p->ai_next) {
+			char addrstr[INET6_ADDRSTRLEN];
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p->ai_addr;
+
+			out->addr.resize(sizeof(in6_addr));
+			memcpy(out->addr.data(), addr->sin6_addr.s6_addr, sizeof(struct in6_addr));
+			break;
+		}
+		// memcpy(out, &((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr, sizeof(struct in_addr));
+		freeaddrinfo(res);
+	}
+#endif
+
+
 	return true;
 }
 
@@ -682,19 +728,43 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 
 static int inet_connect(std::string const &hostname, int port)
 {
-	struct sockaddr_in server;
-	memset((char *)&server, 0, sizeof(server));
-	server.sin_family = AF_INET;
+	HostNameResolver::Addr addr;
+	addr.type = HostNameResolver::IN6;
+	if (addr.type == HostNameResolver::IN4) {
+		addr.addr.resize(sizeof(in_addr));
+		struct sockaddr_in server;
+		memset((char *)&server, 0, sizeof(server));
+		server.sin_family = AF_INET;
 
-	if (HostNameResolver().resolve(hostname.data(), &server.sin_addr)) {
-		server.sin_port = htons(port);
-		socket_t sock = socket(AF_INET, SOCK_STREAM, 0);
-		if (sock != INVALID_SOCKET) {
-			if (connect(sock, (struct sockaddr*) &server, sizeof(server)) != SOCKET_ERROR) {
-				return sock;
+		if (HostNameResolver().resolve(hostname.data(), &addr)) {
+			server.sin_addr = *(in_addr const *)addr.to_in4();
+			server.sin_port = htons(port);
+			socket_t sock = socket(AF_INET, SOCK_STREAM, 0);
+			if (sock != INVALID_SOCKET) {
+				if (connect(sock, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
+					return sock;
+				}
+				closesocket(sock);
+				return INVALID_SOCKET;
 			}
-			closesocket(sock);
-			return INVALID_SOCKET;
+		}
+	} else if (addr.type == HostNameResolver::IN6) {
+		addr.addr.resize(sizeof(in6_addr));
+		struct sockaddr_in6 server;
+		memset((char *)&server, 0, sizeof(server));
+		server.sin6_family = AF_INET6;
+
+		if (HostNameResolver().resolve(hostname.data(), &addr)) {
+			server.sin6_addr = *(in6_addr const *)addr.to_in6();
+			server.sin6_port = htons(port);
+			socket_t sock = socket(AF_INET6, SOCK_STREAM, 0);
+			if (sock != INVALID_SOCKET) {
+				if (connect(sock, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
+					return sock;
+				}
+				closesocket(sock);
+				return INVALID_SOCKET;
+			}
 		}
 	}
 	return INVALID_SOCKET;

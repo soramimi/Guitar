@@ -20,7 +20,9 @@ typedef uint32_t pid_t;
 
 struct RemoteLogger::Private {
 	int sockfd = -1;
-	struct sockaddr_in server_addr;
+	// struct sockaddr_in server_addr;
+	int port = 0;
+	HostNameResolver::Addr server_addr;
 };
 
 RemoteLogger::RemoteLogger()
@@ -68,11 +70,11 @@ bool RemoteLogger::open(char const *remote, int port)
 
 	// サーバーアドレスの設定
 	memset(&m->server_addr, 0, sizeof(m->server_addr));
-	m->server_addr.sin_family = AF_INET;
-	m->server_addr.sin_port = htons(port);
+	// m->server_addr.sin_family = AF_INET;
+	// m->server_addr.sin_port = htons(port);
 
 	HostNameResolver resolver;
-	resolver.resolve(remote, &m->server_addr.sin_addr);
+	resolver.resolve(remote, &m->server_addr);
 	// inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
 	return true;
 }

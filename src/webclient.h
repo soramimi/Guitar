@@ -15,7 +15,25 @@ class WebClient;
 typedef void _in_addr;
 class HostNameResolver {
 public:
-	bool resolve(char const *name, _in_addr *out);
+	enum Type {
+		IN4,
+		IN6,
+	};
+	typedef void _in_addr;
+	typedef void _in6_addr;
+	struct Addr {
+		Type type;
+		std::vector<char> addr;
+		_in_addr const *to_in4() const
+		{
+			return reinterpret_cast<_in_addr const *>(addr.data());
+		}
+		_in6_addr const *to_in6() const
+		{
+			return reinterpret_cast<_in6_addr const *>(addr.data());
+		}
+	};
+	bool resolve(char const *name, Addr *out);
 };
 
 class WebClientHandler {
