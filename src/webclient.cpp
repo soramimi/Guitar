@@ -20,7 +20,6 @@ typedef SOCKET socket_t;
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
-#include <QDebug>
 #include <netdb.h>
 #define closesocket(S) ::close(S)
 using socket_t = int;
@@ -143,9 +142,7 @@ bool HostNameResolver::resolve(const char *name, HostNameResolver::Type type, Ad
 		}
 		for (p = res; p; p = p->ai_next) {
 			struct sockaddr_in *addr = (struct sockaddr_in *)p->ai_addr;
-
-			std::vector<char> a;
-			a.resize(sizeof(in_addr));
+			std::vector<char> a(sizeof(in_addr));
 			memcpy(a.data(), &addr->sin_addr.s_addr, sizeof(struct in_addr));
 			out->addr.push_back(a);
 			break;
@@ -165,16 +162,13 @@ bool HostNameResolver::resolve(const char *name, HostNameResolver::Type type, Ad
 		}
 		for (p = res; p; p = p->ai_next) {
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p->ai_addr;
-
-			std::vector<char> a;
-			a.resize(sizeof(in6_addr));
+			std::vector<char> a(sizeof(in6_addr));
 			memcpy(a.data(), addr->sin6_addr.s6_addr, sizeof(struct in6_addr));
 			out->addr.push_back(a);
 			break;
 		}
 		freeaddrinfo(res);
 	}
-
 #endif
 
 
@@ -738,35 +732,41 @@ static int inet_connect(std::string const &hostname, int port)
 {
 	socket_t sock = INVALID_SOCKET;
 	HostNameResolver::Addr addr;
+
 	std::mutex mutex;
 	std::condition_variable cv;
 
-	auto Connect4 = [&](){
+	auto Connect4 = [&](int delay){
 		bool ret = false;
-		HostNameResolver::Addr addr4;
-		struct sockaddr_in server;
-		memset((char *)&server, 0, sizeof(server));
-		server.sin_family = AF_INET;
-
 		if (!addr) {
+			HostNameResolver::Addr addr4;
 			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN4, &addr4)) {
 				if (addr4) {
-					server.sin_addr = *(in_addr const *)addr4.to_in4(0);
-					server.sin_port = htons(port);
-					socket_t sock4 = socket(AF_INET, SOCK_STREAM, 0);
-					if (sock4 != INVALID_SOCKET) {
-						if (!addr) {
-							if (connect(sock4, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
-								std::lock_guard lock(mutex);
-								if (!addr) {
-									addr = addr4;
-									sock = sock4;
-									ret = true;
+					{
+						std::unique_lock lock(mutex);
+						cv.wait_for(lock, std::chrono::milliseconds(delay));
+					}
+					if (!addr) {
+						struct sockaddr_in host;
+						memset((char *)&host, 0, sizeof(host));
+						host.sin_family = AF_INET;
+						host.sin_addr = *(in_addr const *)addr4.to_in4(0);
+						host.sin_port = htons(port);
+						socket_t sock4 = socket(AF_INET, SOCK_STREAM, 0);
+						if (sock4 != INVALID_SOCKET) {
+							if (!addr) {
+								if (connect(sock4, (struct sockaddr *)&host, sizeof(host)) != SOCKET_ERROR) {
+									std::lock_guard lock(mutex);
+									if (!addr) {
+										addr = addr4;
+										sock = sock4;
+										ret = true;
+									}
 								}
 							}
-						}
-						if (!ret) {
-							closesocket(sock4);
+							if (!ret) {
+								closesocket(sock4);
+							}
 						}
 					}
 				}
@@ -776,32 +776,37 @@ static int inet_connect(std::string const &hostname, int port)
 		return ret;
 	};
 
-	auto Connect6 = [&](){
+	auto Connect6 = [&](int delay){
 		bool ret = false;
-		HostNameResolver::Addr addr6;
-		struct sockaddr_in6 server;
-		memset((char *)&server, 0, sizeof(server));
-		server.sin6_family = AF_INET6;
-
 		if (!addr) {
+			HostNameResolver::Addr addr6;
 			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN6, &addr6)) {
 				if (addr6) {
-					server.sin6_addr = *(in6_addr const *)addr6.to_in6(0);
-					server.sin6_port = htons(port);
-					socket_t sock6 = socket(AF_INET6, SOCK_STREAM, 0);
-					if (sock6 != INVALID_SOCKET) {
-						if (!addr) {
-							if (connect(sock6, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
-								std::lock_guard lock(mutex);
-								if (!addr) {
-									addr = addr6;
-									sock = sock6;
-									ret = true;
+					{
+						std::unique_lock lock(mutex);
+						cv.wait_for(lock, std::chrono::milliseconds(delay));
+					}
+					if (!addr) {
+						struct sockaddr_in6 host;
+						memset((char *)&host, 0, sizeof(host));
+						host.sin6_family = AF_INET6;
+						host.sin6_addr = *(in6_addr const *)addr6.to_in6(0);
+						host.sin6_port = htons(port);
+						socket_t sock6 = socket(AF_INET6, SOCK_STREAM, 0);
+						if (sock6 != INVALID_SOCKET) {
+							if (!addr) {
+								if (connect(sock6, (struct sockaddr *)&host, sizeof(host)) != SOCKET_ERROR) {
+									std::lock_guard lock(mutex);
+									if (!addr) {
+										addr = addr6;
+										sock = sock6;
+										ret = true;
+									}
 								}
 							}
-						}
-						if (!ret) {
-							closesocket(sock6);
+							if (!ret) {
+								closesocket(sock6);
+							}
 						}
 					}
 				}
@@ -811,12 +816,11 @@ static int inet_connect(std::string const &hostname, int port)
 		return ret;
 	};
 
-	std::thread thread4([&](){
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		Connect4();
-	});
 	std::thread thread6([&](){
-		Connect6();
+		Connect6(0);
+	});
+	std::thread thread4([&](){
+		Connect4(50);
 	});
 	{
 		std::unique_lock lock(mutex);
