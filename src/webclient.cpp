@@ -9,6 +9,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
+#include <WS2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
@@ -46,9 +47,6 @@ typedef void SSL_CTX;
 #include <set>
 #include <cassert>
 #include "common/base64.h"
-
-// #define _OPEN_SYS_SOCK_IPV6
-#include <arpa/inet.h>
 
 #define USER_AGENT "Generic Web Client"
 
