@@ -1,7 +1,10 @@
 
 #include "webclient.h"
-#include <cstring>
 #include <algorithm>
+#include <condition_variable>
+#include <cstring>
+#include <mutex>
+#include <thread>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -102,7 +105,7 @@ int x_strnicmp(char const *s1, char const *s2, size_t n)
 
 } // namespace
 
-bool HostNameResolver::resolve(const char *name, Addr *out)
+bool HostNameResolver::resolve(const char *name, HostNameResolver::Type type, Addr *out)
 {
 	if (!name || !out) return false;
 
@@ -127,10 +130,11 @@ bool HostNameResolver::resolve(const char *name, Addr *out)
 #endif
 	if (!he || !he->h_addr || he->h_length <= 0) return false;
 	memcpy(out, he->h_addr, he->h_length);
-#elif 0
-	{
-		struct addrinfo hints, *res;
-		struct in_addr addr;
+#elif 1
+	if (type == HostNameResolver::IN4) {
+		out->type = type;
+		struct addrinfo hints;
+		struct addrinfo *res, *p;
 		int err;
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_socktype = SOCK_STREAM;
@@ -139,13 +143,18 @@ bool HostNameResolver::resolve(const char *name, Addr *out)
 			printf("error %d\n", err);
 			return 1;
 		}
+		for (p = res; p; p = p->ai_next) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)p->ai_addr;
 
-		out->addr.resize(sizeof(in_addr));
-		memcpy(out->addr.data(), &((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr, sizeof(struct in_addr));
+			std::vector<char> a;
+			a.resize(sizeof(in_addr));
+			memcpy(a.data(), &addr->sin_addr.s_addr, sizeof(struct in_addr));
+			out->addr.push_back(a);
+			break;
+		}
 		freeaddrinfo(res);
-	}
-#else
-	{
+	} else if (type == HostNameResolver::IN6) {
+		out->type = type;
 		struct addrinfo hints;
 		struct addrinfo *res, *p;
 		int err;
@@ -157,16 +166,17 @@ bool HostNameResolver::resolve(const char *name, Addr *out)
 			return 1;
 		}
 		for (p = res; p; p = p->ai_next) {
-			char addrstr[INET6_ADDRSTRLEN];
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p->ai_addr;
 
-			out->addr.resize(sizeof(in6_addr));
-			memcpy(out->addr.data(), addr->sin6_addr.s6_addr, sizeof(struct in6_addr));
+			std::vector<char> a;
+			a.resize(sizeof(in6_addr));
+			memcpy(a.data(), addr->sin6_addr.s6_addr, sizeof(struct in6_addr));
+			out->addr.push_back(a);
 			break;
 		}
-		// memcpy(out, &((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr, sizeof(struct in_addr));
 		freeaddrinfo(res);
 	}
+
 #endif
 
 
@@ -728,46 +738,96 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 
 static int inet_connect(std::string const &hostname, int port)
 {
+	socket_t sock = INVALID_SOCKET;
 	HostNameResolver::Addr addr;
-	addr.type = HostNameResolver::IN6;
-	if (addr.type == HostNameResolver::IN4) {
-		addr.addr.resize(sizeof(in_addr));
+	std::mutex mutex;
+	std::condition_variable cv;
+
+	auto Connect4 = [&](){
+		bool ret = false;
+		HostNameResolver::Addr addr4;
 		struct sockaddr_in server;
 		memset((char *)&server, 0, sizeof(server));
 		server.sin_family = AF_INET;
 
-		if (HostNameResolver().resolve(hostname.data(), &addr)) {
-			server.sin_addr = *(in_addr const *)addr.to_in4();
-			server.sin_port = htons(port);
-			socket_t sock = socket(AF_INET, SOCK_STREAM, 0);
-			if (sock != INVALID_SOCKET) {
-				if (connect(sock, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
-					return sock;
+		if (!addr) {
+			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN4, &addr4)) {
+				if (addr4) {
+					server.sin_addr = *(in_addr const *)addr4.to_in4(0);
+					server.sin_port = htons(port);
+					socket_t sock4 = socket(AF_INET, SOCK_STREAM, 0);
+					if (sock4 != INVALID_SOCKET) {
+						if (!addr) {
+							if (connect(sock4, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
+								std::lock_guard lock(mutex);
+								if (!addr) {
+									addr = addr4;
+									sock = sock4;
+									ret = true;
+								}
+							}
+						}
+						if (!ret) {
+							closesocket(sock4);
+						}
+					}
 				}
-				closesocket(sock);
-				return INVALID_SOCKET;
 			}
 		}
-	} else if (addr.type == HostNameResolver::IN6) {
-		addr.addr.resize(sizeof(in6_addr));
+		cv.notify_all();
+		return ret;
+	};
+
+	auto Connect6 = [&](){
+		bool ret = false;
+		HostNameResolver::Addr addr6;
 		struct sockaddr_in6 server;
 		memset((char *)&server, 0, sizeof(server));
 		server.sin6_family = AF_INET6;
 
-		if (HostNameResolver().resolve(hostname.data(), &addr)) {
-			server.sin6_addr = *(in6_addr const *)addr.to_in6();
-			server.sin6_port = htons(port);
-			socket_t sock = socket(AF_INET6, SOCK_STREAM, 0);
-			if (sock != INVALID_SOCKET) {
-				if (connect(sock, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
-					return sock;
+		if (!addr) {
+			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN6, &addr6)) {
+				if (addr6) {
+					server.sin6_addr = *(in6_addr const *)addr6.to_in6(0);
+					server.sin6_port = htons(port);
+					socket_t sock6 = socket(AF_INET6, SOCK_STREAM, 0);
+					if (sock6 != INVALID_SOCKET) {
+						if (!addr) {
+							if (connect(sock6, (struct sockaddr *)&server, sizeof(server)) != SOCKET_ERROR) {
+								std::lock_guard lock(mutex);
+								if (!addr) {
+									addr = addr6;
+									sock = sock6;
+									ret = true;
+								}
+							}
+						}
+						if (!ret) {
+							closesocket(sock6);
+						}
+					}
 				}
-				closesocket(sock);
-				return INVALID_SOCKET;
 			}
 		}
+		cv.notify_all();
+		return ret;
+	};
+
+	std::thread thread4([&](){
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		Connect4();
+	});
+	std::thread thread6([&](){
+		Connect6();
+	});
+	{
+		std::unique_lock lock(mutex);
+		cv.wait(lock);
 	}
-	return INVALID_SOCKET;
+	thread4.join();
+	thread6.join();
+
+	return sock;
 }
 
 bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)

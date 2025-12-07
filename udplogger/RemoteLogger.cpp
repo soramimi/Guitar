@@ -74,7 +74,7 @@ bool RemoteLogger::open(char const *remote, int port)
 	// m->server_addr.sin_port = htons(port);
 
 	HostNameResolver resolver;
-	resolver.resolve(remote, &m->server_addr);
+	resolver.resolve(remote, HostNameResolver::IN4, &m->server_addr);
 	// inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
 	return true;
 }

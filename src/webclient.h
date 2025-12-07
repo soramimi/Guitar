@@ -23,17 +23,29 @@ public:
 	typedef void _in6_addr;
 	struct Addr {
 		Type type;
-		std::vector<char> addr;
-		_in_addr const *to_in4() const
+		std::vector<std::vector<char>> addr;
+		size_t size() const
 		{
-			return reinterpret_cast<_in_addr const *>(addr.data());
+			return addr.size();
 		}
-		_in6_addr const *to_in6() const
+		bool empty() const
 		{
-			return reinterpret_cast<_in6_addr const *>(addr.data());
+			return size() == 0;
+		}
+		operator bool () const
+		{
+			return !empty();
+		}
+		_in_addr const *to_in4(size_t i) const
+		{
+			return reinterpret_cast<_in_addr const *>(addr[i].data());
+		}
+		_in6_addr const *to_in6(size_t i) const
+		{
+			return reinterpret_cast<_in6_addr const *>(addr[i].data());
 		}
 	};
-	bool resolve(char const *name, Addr *out);
+	bool resolve(char const *name, Type type, Addr *out);
 };
 
 class WebClientHandler {
