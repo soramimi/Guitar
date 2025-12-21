@@ -5357,7 +5357,9 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 {
 	auto Open = [&](RepositoryInfo const &item, QString const &commit_id){
 		setCurrentRepository(item, true);
-		reopenRepository(false, {});
+		OpenRepositoryOption opt;
+		opt.new_session = true;
+		openRepository(opt);
 		if (!commit_id.isEmpty()) {
 			if (!locateCommitID(commit_id)) {
 				QMessageBox::information(this, tr("Open Repository"), tr("The specified commit ID was not found."));
