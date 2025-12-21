@@ -16,12 +16,23 @@ public:
 		GitSubmoduleItem submodule;
 		GitCommitItem head;
 	};
+private:
+	QString working_dir_;
+	std::vector<Submodule> mods_;
 public:
-	explicit SubmodulesDialog(QWidget *parent, std::vector<Submodule> mods);
+	explicit SubmodulesDialog(QWidget *parent, QString workingdir, std::vector<Submodule> const &mods);
 	~SubmodulesDialog();
+
+private slots:
+	void on_tableWidget_itemSelectionChanged();
+
+	void on_pushButton_open_terminal_clicked();
+
+	void on_pushButton_open_file_manager_clicked();
 
 private:
 	Ui::SubmodulesDialog *ui;
+	QString absoluteDir(int row) const;
 };
 
 #endif // SUBMODULESDIALOG_H

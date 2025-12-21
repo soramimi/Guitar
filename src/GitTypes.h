@@ -193,6 +193,10 @@ public:
 	{
 		return status_.output;
 	}
+	std::string output_string() const
+	{
+		return std::string(status_.output.data(), status_.output.size());
+	}
 	std::string error_message() const
 	{
 		return status_.error_message;

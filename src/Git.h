@@ -55,6 +55,7 @@ private:
 	void _init(const GitContext &cx);
 	QString encodeQuotedText(QString const &str);
 	static std::optional<GitCommitItem> parseCommitItem(const QString &line);
+	QString submoduleURL(const QString &path);
 public:
 	Git(GitContext const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
 	Git(Git &&r) = delete;

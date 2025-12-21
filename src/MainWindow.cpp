@@ -3739,11 +3739,11 @@ void MainWindow::removeSelectedRepositoryFromBookmark(bool ask)
 
 /**
  * @brief コマンドプロンプトを開く
- * @param repo
+ * @param dir ディレクトリ
+ * @param ssh_key SSHキー
  */
-void MainWindow::openTerminal(const RepositoryInfo *repo)
+void MainWindow::openTerminal(QString const &dir, QString const &ssh_key)
 {
-	runOnRepositoryDir([](QString dir, QString ssh_key){
 #ifdef Q_OS_MAC
 		if (!isValidDir(dir)) return;
 		QString app = "/Applications/Utilities/Terminal.app";
@@ -3759,6 +3759,39 @@ void MainWindow::openTerminal(const RepositoryInfo *repo)
 #else
 		Terminal::open(dir, ssh_key);
 #endif
+}
+/**
+ * @brief ファイルマネージャを開く
+ * @param dir ディレクトリ
+ * @param ssh_key SSHキー
+ */
+void MainWindow::openExplorer(QString const &dir, QString const &ssh_key)
+{
+	(void)ssh_key;
+#ifdef Q_OS_MAC
+	if (!isValidDir(dir)) return;
+	QString cmd = "open \"%1\"";
+	cmd = cmd.arg(dir);
+	system(cmd.toStdString().c_str());
+#else
+	QString url = QString::fromLatin1(QUrl::toPercentEncoding(dir));
+#ifdef Q_OS_WIN
+	QString scheme = "file:///";
+#else
+	QString scheme = "file://";
+#endif
+	url = scheme + url.replace("%2F", "/");
+	QDesktopServices::openUrl(url);
+#endif
+}
+/**
+ * @brief コマンドプロンプトを開く
+ * @param repo
+ */
+void MainWindow::openTerminal(const RepositoryInfo *repo)
+{
+	runOnRepositoryDir([](QString dir, QString ssh_key){
+		openTerminal(dir, ssh_key);
 	}, repo);
 }
 
@@ -3769,22 +3802,7 @@ void MainWindow::openTerminal(const RepositoryInfo *repo)
 void MainWindow::openExplorer(const RepositoryInfo *repo)
 {
 	runOnRepositoryDir([](QString dir, QString ssh_key){
-		(void)ssh_key;
-#ifdef Q_OS_MAC
-		if (!isValidDir(dir)) return;
-		QString cmd = "open \"%1\"";
-		cmd = cmd.arg(dir);
-		system(cmd.toStdString().c_str());
-#else
-		QString url = QString::fromLatin1(QUrl::toPercentEncoding(dir));
-#ifdef Q_OS_WIN
-		QString scheme = "file:///";
-#else
-		QString scheme = "file://";
-#endif
-		url = scheme + url.replace("%2F", "/");
-		QDesktopServices::openUrl(url);
-#endif
+		openExplorer(dir, ssh_key);
 	}, repo);
 }
 
@@ -7030,7 +7048,8 @@ void MainWindow::on_action_submodules_triggered()
 		}
 	}
 
-	SubmodulesDialog dlg(this, mods2);
+	QString workingdir = g.workingDir();
+	SubmodulesDialog dlg(this, workingdir, mods2);
 	dlg.exec();
 }
 

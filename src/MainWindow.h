@@ -694,6 +694,9 @@ public:
 	void setCommitLog(const CommitLogExchangeData &exdata);
 	bool saveFileAs(const QString &srcpath, const QString &dstpath);
 	bool saveBlobAs(const QString &id, const QString &dstpath);
+
+	static void openTerminal(QString const &dir, const QString &ssh_key);
+	static void openExplorer(QString const &dir, const QString &ssh_key);
 public slots:
 	void internalWriteLog(const LogData &logdata);
 };

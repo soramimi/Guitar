@@ -917,6 +917,18 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 	return (bool)var;
 }
 
+QString Git::submoduleURL(QString const &path)
+{
+	QString cmd = "config --file .gitmodules submodule.%1.url";
+	cmd = cmd.arg(encodeQuotedText(path));
+	auto result = git(cmd);
+	if (result) {
+		GitResult r = *result;
+		return resultQString(result).trimmed();
+	}
+	return {};
+}
+
 QList<GitSubmoduleItem> Git::submodules()
 {
 	QList<GitSubmoduleItem> mods;
@@ -932,18 +944,18 @@ QList<GitSubmoduleItem> Git::submodules()
 		}
 		QStringList words = misc::splitWords(text);
 		if (words.size() >= 2) {
-			GitSubmoduleItem sm;
-			sm.id = GitHash(words[0]);
-			sm.path = words[1];
-			if (GitHash::isValidID(sm.id)) {
+			GitSubmoduleItem submod;
+			submod.id = GitHash(words[0]);
+			submod.path = words[1];
+			if (GitHash::isValidID(submod.id)) {
 				if (words.size() >= 3) {
-					sm.refs = words[2];
-					if (sm.refs.startsWith('(') && sm.refs.endsWith(')')) {
-						sm.refs = sm.refs.mid(1, sm.refs.size() - 2);
+					submod.refs = words[2];
+					if (submod.refs.startsWith('(') && submod.refs.endsWith(')')) {
+						submod.refs = submod.refs.mid(1, submod.refs.size() - 2);
 					}
 				}
-
-				mods.push_back(sm);
+				submod.url = submoduleURL(submod.path);
+				mods.push_back(submod);
 			}
 		}
 	}
