@@ -96,3 +96,15 @@ void SubmodulesDialog::on_pushButton_open_file_manager_clicked()
 	MainWindow::openExplorer(dir, {});
 }
 
+
+void SubmodulesDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+	int row = ui->tableWidget->currentRow();
+	if (row >= 0 && row < mods_.size()) {
+		QDir d(working_dir_);
+		QString dir = d.absoluteFilePath(mods_[row].submodule.path);
+		if (dir.isEmpty()) return;
+		MainWindow::openNewGuitar(dir, mods_[row].submodule.id.toQString());
+	}
+}
+

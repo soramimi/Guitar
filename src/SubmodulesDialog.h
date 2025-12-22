@@ -9,6 +9,8 @@ namespace Ui {
 class SubmodulesDialog;
 }
 
+class QTableWidgetItem;
+
 class SubmodulesDialog : public QDialog {
 	Q_OBJECT
 public:
@@ -29,6 +31,8 @@ private slots:
 	void on_pushButton_open_terminal_clicked();
 
 	void on_pushButton_open_file_manager_clicked();
+
+	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 
 private:
 	Ui::SubmodulesDialog *ui;

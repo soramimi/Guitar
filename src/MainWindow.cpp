@@ -3784,6 +3784,12 @@ void MainWindow::openExplorer(QString const &dir, QString const &ssh_key)
 	QDesktopServices::openUrl(url);
 #endif
 }
+
+void MainWindow::openNewGuitar(QString const &path, QString const &commit_id)
+{
+	QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
+}
+
 /**
  * @brief コマンドプロンプトを開く
  * @param repo
@@ -5161,9 +5167,9 @@ void MainWindow::showObjectProperty(QListWidgetItem *item)
 		QString submodpath = getSubmodulePath(item);
 		if (!submodpath.isEmpty()) {
 			// サブモジュールのときは新しいプロセスを起動する
-			QString commit_id = getSubmoduleCommitId(item);
 			QString path = currentWorkingCopyDir() / submodpath;
-			QProcess::execute(global->this_executive_program, {path, "--commit-id", commit_id});
+			QString commit_id = getSubmoduleCommitId(item);
+			openNewGuitar(path, commit_id);
 		} else {
 			// ファイルプロパティダイアログを表示する
 			QString path = currentWorkingCopyDir() / getFilePath(item);
