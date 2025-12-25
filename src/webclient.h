@@ -12,42 +12,6 @@
 class WebContext;
 class WebClient;
 
-typedef void _in_addr;
-class HostNameResolver {
-public:
-	enum Type {
-		IN4,
-		IN6,
-	};
-	typedef void _in_addr;
-	typedef void _in6_addr;
-	struct Addr {
-		Type type;
-		std::vector<std::vector<char>> addr;
-		size_t size() const
-		{
-			return addr.size();
-		}
-		bool empty() const
-		{
-			return size() == 0;
-		}
-		operator bool () const
-		{
-			return !empty();
-		}
-		_in_addr const *to_in4(size_t i) const
-		{
-			return reinterpret_cast<_in_addr const *>(addr[i].data());
-		}
-		_in6_addr const *to_in6(size_t i) const
-		{
-			return reinterpret_cast<_in6_addr const *>(addr[i].data());
-		}
-	};
-	bool resolve(char const *name, Type type, Addr *out);
-};
-
 class WebClientHandler {
 public:
 	virtual ~WebClientHandler() = default;

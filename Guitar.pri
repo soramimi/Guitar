@@ -121,6 +121,7 @@ SOURCES += \
     $$PWD/src/common/crc32.cpp \
 	$$PWD/src/common/htmlencode.cpp \
 	$$PWD/src/gzip.cpp \
+    $$PWD/src/inetresolver.cpp \
 	$$PWD/udplogger/RemoteLogger.cpp \
     src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
@@ -295,6 +296,7 @@ HEADERS += \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/common/htmlencode.h \
 	$$PWD/src/gzip.h \
+    $$PWD/src/inetresolver.h \
 	$$PWD/udplogger/RemoteLogger.h \
     src/AboutDialog.h \
 	src/AbstractGitSession.h \

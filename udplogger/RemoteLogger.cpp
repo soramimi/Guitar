@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "../src/webclient.h"
+#include "inetresolver.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -22,7 +23,7 @@ struct RemoteLogger::Private {
 	int sockfd = -1;
 	// struct sockaddr_in server_addr;
 	int port = 0;
-	HostNameResolver::Addr server_addr;
+	InetResolver::Addr server_addr;
 };
 
 RemoteLogger::RemoteLogger()
@@ -73,8 +74,8 @@ bool RemoteLogger::open(char const *remote, int port)
 	// m->server_addr.sin_family = AF_INET;
 	// m->server_addr.sin_port = htons(port);
 
-	HostNameResolver resolver;
-	resolver.resolve(remote, HostNameResolver::IN4, &m->server_addr);
+	InetResolver resolver;
+	resolver.resolve(remote, InetResolver::IN4, &m->server_addr);
 	// inet_pton(AF_INET, remote, &m->server_addr.sin_addr);
 	return true;
 }

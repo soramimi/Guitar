@@ -1,4 +1,5 @@
 
+#include "inetresolver.h"
 #include "webclient.h"
 #include <algorithm>
 #include <condition_variable>
@@ -101,79 +102,6 @@ int x_strnicmp(char const *s1, char const *s2, size_t n)
 }
 
 } // namespace
-
-bool HostNameResolver::resolve(const char *name, HostNameResolver::Type type, Addr *out)
-{
-	if (!name || !out) return false;
-
-#if 0
-	struct hostent *he = nullptr;
-#if defined(_WIN32) || defined(__APPLE__) || defined(__NetBSD__)
-	he = ::gethostbyname(name);
-#else
-	int err = 0;
-	// Use dynamic allocation to ensure sufficient buffer space
-	size_t buflen = 8192; // Large enough for most hostent data
-	std::vector<char> buf(buflen);
-	struct hostent tmp;
-	int ret = gethostbyname_r(name, &tmp, buf.data(), buflen, &he, &err);
-	bool success = (ret == 0 && he != nullptr);
-	if (success && he->h_length > 0 && he->h_addr) {
-		memcpy(out, he->h_addr, he->h_length);
-	} else {
-		success = false;
-	}
-	return success;
-#endif
-	if (!he || !he->h_addr || he->h_length <= 0) return false;
-	memcpy(out, he->h_addr, he->h_length);
-#elif 1
-	if (type == HostNameResolver::IN4) {
-		out->type = type;
-		struct addrinfo hints;
-		struct addrinfo *res, *p;
-		int err;
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_family = AF_INET;
-		if ((err = getaddrinfo(name, NULL, &hints, &res)) != 0) {
-			printf("error %d\n", err);
-			return 1;
-		}
-		for (p = res; p; p = p->ai_next) {
-			struct sockaddr_in *addr = (struct sockaddr_in *)p->ai_addr;
-			std::vector<char> a(sizeof(in_addr));
-			memcpy(a.data(), &addr->sin_addr.s_addr, sizeof(struct in_addr));
-			out->addr.push_back(a);
-			break;
-		}
-		freeaddrinfo(res);
-	} else if (type == HostNameResolver::IN6) {
-		out->type = type;
-		struct addrinfo hints;
-		struct addrinfo *res, *p;
-		int err;
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_family = AF_INET6;
-		if ((err = getaddrinfo(name, NULL, &hints, &res)) != 0) {
-			printf("error %d\n", err);
-			return 1;
-		}
-		for (p = res; p; p = p->ai_next) {
-			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p->ai_addr;
-			std::vector<char> a(sizeof(in6_addr));
-			memcpy(a.data(), addr->sin6_addr.s6_addr, sizeof(struct in6_addr));
-			out->addr.push_back(a);
-			break;
-		}
-		freeaddrinfo(res);
-	}
-#endif
-
-
-	return true;
-}
 
 struct WebContext::Private {
 	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
@@ -731,7 +659,7 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 static int inet_connect(std::string const &hostname, int port)
 {
 	socket_t sock = INVALID_SOCKET;
-	HostNameResolver::Addr addr;
+	InetResolver::Addr addr;
 
 	std::mutex mutex;
 	std::condition_variable cv;
@@ -744,8 +672,8 @@ static int inet_connect(std::string const &hostname, int port)
 	auto Connect4 = [&](int delay){
 		bool ret = false;
 		if (Check()) {
-			HostNameResolver::Addr addr4;
-			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN4, &addr4) && addr4) {
+			InetResolver::Addr addr4;
+			if (InetResolver().resolve(hostname.data(), InetResolver::IN4, &addr4) && addr4) {
 				if (delay > 0) {
 					std::unique_lock lock(mutex);
 					cv.wait_for(lock, std::chrono::milliseconds(delay));
@@ -782,8 +710,8 @@ static int inet_connect(std::string const &hostname, int port)
 	auto Connect6 = [&](int delay){
 		bool ret = false;
 		if (Check()) {
-			HostNameResolver::Addr addr6;
-			if (HostNameResolver().resolve(hostname.data(), HostNameResolver::IN6, &addr6) && addr6) {
+			InetResolver::Addr addr6;
+			if (InetResolver().resolve(hostname.data(), InetResolver::IN6, &addr6) && addr6) {
 				if (delay > 0) {
 					std::unique_lock lock(mutex);
 					cv.wait_for(lock, std::chrono::milliseconds(delay));
