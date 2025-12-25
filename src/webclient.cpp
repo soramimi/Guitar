@@ -46,7 +46,7 @@ typedef void SSL_CTX;
 
 #include <set>
 #include <cassert>
-#include "common/base64.h"
+#include "base64.h"
 
 #define USER_AGENT "Generic Web Client"
 

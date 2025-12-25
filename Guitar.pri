@@ -42,6 +42,7 @@ linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
 
 INCLUDEPATH += $$PWD/src
+INCLUDEPATH += $$PWD/src/common
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
 # INCLUDEPATH += $$PWD/filetype/src
