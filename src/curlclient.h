@@ -1,7 +1,9 @@
 #ifndef CURLCLIENT_H
 #define CURLCLIENT_H
 
+#include "inetclient.h"
 #include <string>
+#include <vector>
 
 class CurlContext {
 private:
@@ -15,19 +17,6 @@ public:
 
 class CurlClient {
 public:
-	class Request {
-	private:
-		std::string url_;
-	public:
-		Request(std::string const &url)
-			: url_(url)
-		{
-		}
-		std::string const &url() const
-		{
-			return url_;
-		}
-	};
 	class Error {
 	private:
 		std::string msg_;
@@ -47,7 +36,6 @@ private:
 	struct Private *m;
 
 	bool open();
-	void close();
 	void clear_error();
 
 	static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp);
@@ -57,9 +45,12 @@ public:
 	CurlClient(CurlClient const &) = delete;
 	void operator = (CurlClient const &) = delete;
 
-	bool get(Request const &req);
-
+	void close();
 	Error const &error() const;
+
+	int get(InetClient::Request const &req);
+
+	InetClient::Response const &response() const;
 
 	size_t content_length() const;
 

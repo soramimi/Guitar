@@ -3,6 +3,7 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "webclient.h"
+#include "curlclient.h"
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>
@@ -17,6 +18,7 @@ const int ICON_SIZE = 256;
 }
 
 using WebClientPtr = std::shared_ptr<WebClient>;
+// using WebClientPtr = std::shared_ptr<CurlClient>;
 
 struct AvatarLoader::Private {
 	volatile bool interrupted = false;
@@ -26,7 +28,6 @@ struct AvatarLoader::Private {
 	std::deque<AvatarLoader::RequestItem> requests;
 	MainWindow *mainwindow = nullptr;
 
-	// WebContext webcx = {WebClient::HTTP_1_1};
 	WebClientPtr web;
 };
 
@@ -55,6 +56,7 @@ void AvatarLoader::requestInterruption()
 void AvatarLoader::run()
 {
 	m->web = std::make_shared<WebClient>(&global->webcx);
+	// m->web = std::make_shared<CurlClient>(&global->curlcx);
 
 	while (1) {
 		RequestItem request;
@@ -97,8 +99,8 @@ void AvatarLoader::run()
 				if (provider.libravatar) urls.append(QString("https://www.libravatar.org/avatar/%1?s=%2&d=404").arg(id).arg(ICON_SIZE));
 
 				auto getAvatar = [&](QString const &url)->std::optional<QImage>{
-					if (m->web->get(WebClient::Request(url.toStdString())) == 200) {
-						if (!m->web->response().content.empty()) {
+					if (m->web->get(InetClient::Request(url.toStdString())) == 200) {
+						if (!m->web->response().empty()) {
 							MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
 							reader.open(MemoryReader::ReadOnly);
 							QImage image;

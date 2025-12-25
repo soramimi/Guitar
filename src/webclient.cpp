@@ -112,99 +112,10 @@ struct WebContext::Private {
 	bool broken_pipe = false;
 };
 
-WebClient::URL::URL(std::string const &addr)
-{
-	data.full_request = addr;
-
-	// Initialize with defaults
-	data.scheme = "http";
-	data.host = "";
-	data.port = 0;
-	data.path = "/";
-	
-	if (addr.empty()) {
-		return;
-	}
-
-	char const *str = addr.c_str();
-	char const *left = str;
-	char const *right = strstr(left, "://");
-	
-	// Parse scheme (http, https, etc.)
-	if (right) {
-		if (right > left) { // Ensure scheme isn't empty
-			data.scheme.assign(str, right - str);
-			left = right + 3;
-		} else {
-			left = right + 3; // Skip "://" but use default scheme
-		}
-	}
-	
-	// Find start of path, or end of string if no path
-	right = strchr(left, '/');
-	if (!right) {
-		right = left + strlen(left);
-	}
-	
-	// Handle host:port format
-	if (left < right) {
-		// Look for port separator
-		char const *p = strchr(left, ':');
-		if (p && left < p && p < right) {
-			// Extract hostname
-			data.host.assign(left, p - left);
-			
-			// Parse port number
-			int n = 0;
-			char const *q = p + 1;
-			bool port_valid = true;
-			size_t digits = 0;
-			
-			while (q < right) {
-				if (isdigit(*q & 0xff)) {
-					int old_n = n;
-					n = n * 10 + (*q - '0');
-					
-					// Check for integer overflow
-					if (n < old_n || digits > 5) {
-						port_valid = false;
-						break;
-					}
-					digits++;
-				} else {
-					port_valid = false;
-					break;
-				}
-				q++;
-			}
-			
-			if (port_valid && n > 0 && n < 65536) {
-				data.port = n;
-			}
-		} else {
-			// No port specified, just hostname
-			data.host.assign(left, right - left);
-		}
-	}
-	
-	// Extract path
-	if (*right) {
-		data.path = right;
-	}
-}
-
-bool WebClient::URL::isssl() const
-{
-	if (scheme() == "https") return true;
-	if (scheme() == "http") return false;
-	if (port() == 443) return true;
-	return false;
-}
-
 struct WebClient::Private {
 	std::vector<std::string> request_header;
 	WebClient::Error error;
-	WebClient::Response response;
+	InetClient::Response response;
 	WebContext *webcx;
 	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
 	int crlf_state = 0;
@@ -274,9 +185,8 @@ void WebClient::cleanup()
 
 void WebClient::reset()
 {
-//	m->request_header.clear();
-	m->error = Error();
-	m->response = Response();
+	m->error = {};
+	m->response = {};
 	m->crlf_state = 0;
 	m->content_offset = 0;
 }
@@ -309,7 +219,7 @@ void WebClient::clear_error()
 	m->error = Error();
 }
 
-int WebClient::get_port(URL const *url, char const *scheme, char const *protocol)
+int WebClient::get_port(InetClient::URL const *url, char const *scheme, char const *protocol)
 {
 	int port = url->port();
 	if (port < 1 || port > 65535) {
@@ -337,7 +247,7 @@ static inline std::string to_s(size_t n)
 	return tmp;
 }
 
-void WebClient::set_default_header(Request const &url, Post const *post, RequestOption const &opt)
+void WebClient::set_default_header(InetClient::Request const &url, Post const *post, RequestOption const &opt)
 {
 	std::vector<std::string> header;
 	std::set<std::string> names;
@@ -351,7 +261,7 @@ void WebClient::set_default_header(Request const &url, Post const *post, Request
 			}
 		}
 	};
-	AddHeader("Host: " + url.url.host());
+	AddHeader("Host: " + url.url().host());
 	AddHeader("User-Agent: " USER_AGENT);
 	AddHeader("Accept: */*");
 	if (opt.keep_alive) {
@@ -375,17 +285,17 @@ void WebClient::set_default_header(Request const &url, Post const *post, Request
 		}
 		AddHeader(ct);
 	}
-	if (url.auth.type == Authorization::Basic) {
-		std::string s = url.auth.uid + ':' + url.auth.pwd;
+	if (url.auth().type == InetClient::Authorization::Basic) {
+		std::string s = url.auth().uid + ':' + url.auth().pwd;
 		AddHeader("Authorization: Basic " + base64_encode(s));
 	}
-	for (std::string const &h : url.headers) {
+	for (std::string const &h : url.headers()) {
 		AddHeader(h);
 	}
 	m->request_header = std::move(header);
 }
 
-std::string WebClient::make_http_request(Request const &url, Post const *post, WebProxy const *proxy, bool https)
+std::string WebClient::make_http_request(InetClient::Request const &url, Post const *post, WebProxy const *proxy, bool https)
 {
 	std::string str;
 
@@ -399,12 +309,12 @@ std::string WebClient::make_http_request(Request const &url, Post const *post, W
 	}
 
 	if (proxy && !https) {
-		str += url.url.data.full_request;
+		str += url.url().full_request();
 		str += " HTTP/";
 		str += httpver;
 		str += "\r\n";
 	} else {
-		str += url.url.path();
+		str += url.url().path();
 		str += " HTTP/";
 		str += httpver;
 		str += "\r\n";
@@ -451,9 +361,9 @@ void WebClient::parse_http_header(char const *begin, char const *end, std::vecto
 	}
 }
 
-void WebClient::parse_http_header(char const *begin, char const *end, WebClient::Response *out)
+void WebClient::parse_http_header(char const *begin, char const *end, InetClient::Response *out)
 {
-	*out = Response();
+	*out = {};
 	parse_http_header(begin, end, &out->header);
 	parse_header(&out->header, out);
 }
@@ -761,22 +671,22 @@ static int inet_connect(std::string const &hostname, int port)
 	return sock;
 }
 
-bool WebClient::http_get(Request const &request, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::http_get(InetClient::Request const &request, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 	clear_error();
 	out->clear();
 
-	Request server_req;
+	InetClient::Request server_req;
 
 	WebProxy const *proxy = m->webcx->http_proxy();
 	if (proxy) {
-		server_req = Request(proxy->server);
+		server_req = InetClient::Request(proxy->server);
 	} else {
 		server_req = request;
 	}
 
-	std::string hostname = server_req.url.host();
-	int port = get_port(&server_req.url, "http", "tcp");
+	std::string hostname = server_req.url().host();
+	int port = get_port(&server_req.url(), "http", "tcp");
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -811,7 +721,7 @@ bool WebClient::http_get(Request const &request, Post const *post, RequestOption
 	return true;
 }
 
-bool WebClient::https_get(Request const &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::https_get(InetClient::Request const &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 #if USE_OPENSSL
 
@@ -831,17 +741,17 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 		return tmp;
 	};
 
-	Request server_req;
+	InetClient::Request server_req;
 
 	WebProxy const *proxy = m->webcx->https_proxy();
 	if (proxy) {
-		server_req = Request(proxy->server);
+		server_req = InetClient::Request(proxy->server);
 	} else {
 		server_req = request_req;
 	}
 
-	std::string hostname = server_req.url.host();
-	int port = get_port(&server_req.url, "https", "tcp");
+	std::string hostname = server_req.url().host();
+	int port = get_port(&server_req.url(), "https", "tcp");
 
 	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
@@ -861,10 +771,10 @@ bool WebClient::https_get(Request const &request_req, Post const *post, RequestO
 		try {
 			if (proxy) { // Connect through proxy
 				char port_str[16];
-				snprintf(port_str, sizeof(port_str), ":%u", get_port(&request_req.url, "https", "tcp"));
+				snprintf(port_str, sizeof(port_str), ":%u", get_port(&request_req.url(), "https", "tcp"));
 
 				std::string str = "CONNECT ";
-				str += request_req.url.data.host;
+				str += request_req.url().host();
 				str += port_str;
 				str += " HTTP/1.0\r\n\r\n";
 				send_(sock, str.c_str(), str.size());
@@ -1133,7 +1043,7 @@ bool decode_chunked(char const *ptr, char const *end, std::vector<char> *out)
 	return false; // Unexpected end of data
 }
 
-bool WebClient::get(Request const &req, Post const *post, Response *out, WebClientHandler *handler)
+bool WebClient::get(InetClient::Request const &req, Post const *post, InetClient::Response *out, WebClientHandler *handler)
 {
 	reset();
 	bool ok = false;
@@ -1147,7 +1057,7 @@ bool WebClient::get(Request const &req, Post const *post, Response *out, WebClie
 		opt.handler = handler;
 		ResponseHeader rh;
 		std::vector<char> res;
-		if (req.url.isssl()) {
+		if (req.url().is_ssl()) {
 #if USE_OPENSSL
 			https_get(req, post, opt, &rh, &res);
 #endif
@@ -1179,12 +1089,12 @@ bool WebClient::get(Request const &req, Post const *post, Response *out, WebClie
 		ok = false;
 	}
 	if (!ok) {
-		*out = Response();
+		*out = {};
 	}
 	return ok;
 }
 
-void WebClient::parse_header(std::vector<std::string> const *header, WebClient::Response *res)
+void WebClient::parse_header(std::vector<std::string> const *header, InetClient::Response *res)
 {
 	if (0) { // for debug
 		for (std::string const &s : *header) {
@@ -1296,13 +1206,13 @@ char const *WebClient::content_data() const
 	return &m->response.content[0];
 }
 
-int WebClient::get(Request const &req, WebClientHandler *handler)
+int WebClient::get(InetClient::Request const &req, WebClientHandler *handler)
 {
 	get(req, nullptr, &m->response, handler);
 	return m->response.code;
 }
 
-int WebClient::post(Request const &req, Post const *post, WebClientHandler *handler)
+int WebClient::post(InetClient::Request const &req, Post const *post, WebClientHandler *handler)
 {
 	get(req, post, &m->response, handler);
 	return m->response.code;
@@ -1337,7 +1247,7 @@ void WebClient::add_header(std::string const &text)
 	m->request_header.push_back(text);
 }
 
-WebClient::Response const &WebClient::response() const
+InetClient::Response const &WebClient::response() const
 {
 	return m->response;
 }
@@ -1486,7 +1396,7 @@ std::string WebClient::quick_get(std::string const &url)
 	WebContext wc(WebClient::HTTP_1_1);
 	wc.set_keep_alive_enabled(false);
 	WebClient http(&wc);
-	if (http.get(WebClient::Request(url))) {
+	if (http.get(InetClient::Request(url))) {
 		return {http.content_data(), http.content_length()};
 	}
 	return {};

@@ -26,7 +26,7 @@ CurlContext::~CurlContext()
 
 struct CurlClient::Private {
 	CURL *curl_ = nullptr;
-	std::vector<char> response_data_;
+	InetClient::Response response;
 	Error error_;
 };
 
@@ -54,9 +54,9 @@ void CurlClient::clear_error()
 size_t CurlClient::write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
 	size_t total_size = size * nmemb;
-	std::vector<char> *vec = static_cast<std::vector<char>*>(userp);
-	char *data = static_cast<char*>(contents);
-	vec->insert(vec->end(), data, data + total_size);
+	InetClient::Response *res = static_cast<InetClient::Response *>(userp);
+	char *data = static_cast<char *>(contents);
+	res->content.insert(res->content.end(), data, data + total_size);
 	return total_size;
 }
 
@@ -72,23 +72,24 @@ CurlClient::~CurlClient()
 	delete m;
 }
 
-bool CurlClient::get(const Request &req)
+int CurlClient::get(InetClient::Request const &req)
 {
 	clear_error();
-	m->response_data_.clear();  // 前回のデータをクリア
+	m->response.clear();  // 前回のデータをクリア
 
 	if (!open()) {
 		m->error_ = Error("Failed to initialize CURL");
-		return false;
+		m->response.code = 501;
+		return m->response.code;
 	}
 
 	// Set URL
-	char const *url = req.url().c_str();
+	char const *url = req.url().full_request().c_str();
 	curl_easy_setopt(m->curl_, CURLOPT_URL, url);
 
 	// Set callback function to receive data
 	curl_easy_setopt(m->curl_, CURLOPT_WRITEFUNCTION, write_callback);
-	curl_easy_setopt(m->curl_, CURLOPT_WRITEDATA, &m->response_data_);
+	curl_easy_setopt(m->curl_, CURLOPT_WRITEDATA, &m->response);
 
 	// Follow redirects
 	curl_easy_setopt(m->curl_, CURLOPT_FOLLOWLOCATION, 1L);
@@ -101,24 +102,37 @@ bool CurlClient::get(const Request &req)
 
 	if (res != CURLE_OK) {
 		m->error_ = Error(curl_easy_strerror(res));
-		return false;
+		m->response.code = 501;
+		return m->response.code;
 	}
 
-	return true;
+	long http_code = 0;
+	curl_easy_getinfo(m->curl_, CURLINFO_RESPONSE_CODE, &http_code);
+	m->response.code = http_code;
+	return m->response.code;
 }
 
-const CurlClient::Error &CurlClient::error() const
+InetClient::Response const &CurlClient::response() const
+{
+	return m->response;
+}
+
+CurlClient::Error const &CurlClient::error() const
 {
 	return m->error_;
 }
 
 size_t CurlClient::content_length() const
 {
-	return m->response_data_.size();
+	return m->response.content.size();
 }
 
 const char *CurlClient::content_data() const
 {
-	if (m->response_data_.empty()) return "";
-	return m->response_data_.data();
+	if (m->response.content.empty()) return "";
+	return m->response.content.data();
 }
+
+
+
+

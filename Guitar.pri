@@ -126,6 +126,7 @@ SOURCES += \
 	$$PWD/src/common/htmlencode.cpp \
 	$$PWD/src/curlclient.cpp \
 	$$PWD/src/gzip.cpp \
+    $$PWD/src/inetclient.cpp \
     $$PWD/src/inetresolver.cpp \
 	$$PWD/udplogger/RemoteLogger.cpp \
     src/AboutDialog.cpp \
@@ -302,6 +303,7 @@ HEADERS += \
 	$$PWD/src/common/htmlencode.h \
 	$$PWD/src/curlclient.h \
 	$$PWD/src/gzip.h \
+    $$PWD/src/inetclient.h \
     $$PWD/src/inetresolver.h \
 	$$PWD/udplogger/RemoteLogger.h \
     src/AboutDialog.h \

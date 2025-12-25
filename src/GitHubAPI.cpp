@@ -42,8 +42,8 @@ void GitHubRequestThread::start()
 void GitHubRequestThread::run()
 {
 	ok = false;
-	if (web()->get(WebClient::Request(url)) == 200) {
-		WebClient::Response const &r = web()->response();
+	if (web()->get(InetClient::Request(url)) == 200) {
+		InetClient::Response const &r = web()->response();
 		if (!r.content.empty()) {
 			text = to_stdstr(r.content);
 			ok = true;

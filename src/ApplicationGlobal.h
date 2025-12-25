@@ -12,6 +12,7 @@
 #include <QString>
 #include "GenerativeAI.h"
 #include "TraceEventWriter.h"
+#include "curlclient.h"
 
 class MainWindow;
 class IncrementalSearch;
@@ -74,6 +75,7 @@ public:
 	ApplicationSettings appsettings;
 
 	WebContext webcx = {WebClient::HTTP_1_0};
+	CurlContext curlcx;
 	AvatarLoader avatar_loader;
 
 	std::vector<AccountProfile> account_profiles;

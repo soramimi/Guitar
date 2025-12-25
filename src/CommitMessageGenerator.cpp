@@ -371,7 +371,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	GenerativeAI::Credential cred = global->get_ai_credential(model.provider_id());
 	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
 
-	WebClient::Request web_req;
+	InetClient::Request web_req;
 	web_req.set_location(ai_req.endpoint_url);
 	for (std::string const &h : ai_req.header) {
 		web_req.add_header(h);
