@@ -68,6 +68,9 @@ macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 msvc:LIBS += -llibcrypto -llibssl
 
+!msvc:LIBS += -lcurl
+msvc:LIBS += -llibcurl
+
 # execute 'ruby prepare.rb' automatically
 
 prepare.target = prepare
@@ -121,6 +124,7 @@ SOURCES += \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
     $$PWD/src/common/crc32.cpp \
 	$$PWD/src/common/htmlencode.cpp \
+	$$PWD/src/curlclient.cpp \
 	$$PWD/src/gzip.cpp \
     $$PWD/src/inetresolver.cpp \
 	$$PWD/udplogger/RemoteLogger.cpp \
@@ -296,6 +300,7 @@ HEADERS += \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/common/htmlencode.h \
+	$$PWD/src/curlclient.h \
 	$$PWD/src/gzip.h \
     $$PWD/src/inetresolver.h \
 	$$PWD/udplogger/RemoteLogger.h \

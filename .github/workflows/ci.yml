@@ -172,6 +172,13 @@ jobs:
           exit /b 1
         )
         echo openssl installation completed successfully
+        echo Installing curl via vcpkg...
+        C:\vcpkg\vcpkg.exe install curl:x64-windows
+        if errorlevel 1 (
+          echo Failed to install curl
+          exit /b 1
+        )
+        echo curl installation completed successfully
       shell: cmd
       
     - name: Verify environment
