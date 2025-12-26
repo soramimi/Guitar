@@ -8,17 +8,15 @@
 #include "common/misc.h"
 #include "urlencode.h"
 #include "webclient.h"
+#include "curlclient.h"
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <memory>
 
-using WebClientPtr = GitHubAPI::WebClientPtr;
-
 struct GitHubRequestThread::Private {
-	WebContext webcx = {WebClient::HTTP_1_0};
-	WebClientPtr web;
+	std::shared_ptr<AbstractInetClient> web;
 };
 
 GitHubRequestThread::GitHubRequestThread()
@@ -31,11 +29,18 @@ GitHubRequestThread::~GitHubRequestThread()
 	delete m;
 }
 
+AbstractInetClient *GitHubRequestThread::web()
+{
+	return m->web.get();
+}
+
 void GitHubRequestThread::start()
 {
-	// m->mainwindow = mainwindow;
-	m->webcx.set_keep_alive_enabled(false);
-	m->web = std::make_shared<WebClient>(&m->webcx);
+	if (1) {
+		m->web = std::make_shared<WebClient>(&global->webcx);
+	} else {
+		m->web = std::make_shared<CurlClient>(&global->curlcx);
+	}
 	QThread::start();
 }
 
@@ -58,11 +63,6 @@ void GitHubRequestThread::run()
 			global->mainwindow->emitWriteLog(QString("%1\n").arg(QString::fromStdString(msg)));
 		}
 	}
-}
-
-GitHubAPI::WebClientPtr GitHubRequestThread::web()
-{
-	return m->web;
 }
 
 QList<RepositorySearchResultItem> GitHubAPI::searchRepository(std::string q)

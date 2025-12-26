@@ -12,11 +12,10 @@
 class MainWindow;
 class WebContext;
 class WebClient;
+class AbstractInetClient;
 
 class GitHubAPI {
 public:
-	using WebClientPtr = std::shared_ptr<WebClient>;
-
 	struct User {
 		std::string login;
 		std::string avatar_url;
@@ -39,10 +38,9 @@ class GitHubRequestThread : public QThread {
 private:
 	struct Private;
 	Private *m;
+	AbstractInetClient *web();
 protected:
 	void run() override;
-public:
-	GitHubAPI::WebClientPtr web();
 public:
 	GitHubRequestThread();
 	~GitHubRequestThread() override;
