@@ -265,6 +265,8 @@ int main(int argc, char *argv[])
 	global->avatar_loader.stop();
 
 	global->mainwindow = nullptr;
+
+	WebClient::cleanup();
 	return r;
 }
 

@@ -97,11 +97,12 @@ private:
 	void receive_(const RequestOption &opt, std::function<int (char *, int)> const &, ResponseHeader *rh, std::vector<char> *out);
 	void output_debug_string(char const *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
-	static void cleanup();
 protected:
 	void reset() override;
 public:
 	static void initialize();
+	static void cleanup();
+
 	WebClient(WebContext *webcx);
 	~WebClient();
 	WebClient(WebClient const &) = delete;
