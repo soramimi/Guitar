@@ -247,7 +247,7 @@ static inline std::string to_s(size_t n)
 	return tmp;
 }
 
-void WebClient::set_default_header(InetClient::Request const &url, Post const *post, RequestOption const &opt)
+void WebClient::set_default_header(InetClient::Request const &url, InetClient::Post const *postdata, RequestOption const &opt)
 {
 	std::vector<std::string> header;
 	std::set<std::string> names;
@@ -269,19 +269,19 @@ void WebClient::set_default_header(InetClient::Request const &url, Post const *p
 	} else {
 		AddHeader("Connection: close");
 	}
-	if (post) {
-		AddHeader("Content-Length: " + to_s(post->data.size()));
+	if (postdata) {
+		AddHeader("Content-Length: " + to_s(postdata->data.size()));
 		std::string ct = "Content-Type: ";
-		if (post->content_type.empty()) {
+		if (postdata->content_type.empty()) {
 			ct += ContentType::APPLICATION_OCTET_STREAM;
-		} else if (post->content_type == ContentType::MULTIPART_FORM_DATA) {
-			ct += post->content_type;
-			if (!post->boundary.empty()) {
+		} else if (postdata->content_type == ContentType::MULTIPART_FORM_DATA) {
+			ct += postdata->content_type;
+			if (!postdata->boundary.empty()) {
 				ct += "; boundary=";
-				ct += post->boundary;
+				ct += postdata->boundary;
 			}
 		} else {
-			ct += post->content_type;
+			ct += postdata->content_type;
 		}
 		AddHeader(ct);
 	}
@@ -295,11 +295,11 @@ void WebClient::set_default_header(InetClient::Request const &url, Post const *p
 	m->request_header = std::move(header);
 }
 
-std::string WebClient::make_http_request(InetClient::Request const &url, Post const *post, WebProxy const *proxy, bool https)
+std::string WebClient::make_http_request(InetClient::Request const &url, InetClient::Post const *postdata, WebProxy const *proxy, bool https)
 {
 	std::string str;
 
-	str = post ? "POST " : "GET ";
+	str = postdata ? "POST " : "GET ";
 
 	char const *httpver = "1.0";
 	switch (m->http_version) {
@@ -671,7 +671,7 @@ static int inet_connect(std::string const &hostname, int port)
 	return sock;
 }
 
-bool WebClient::http_get(InetClient::Request const &request, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::http_get(InetClient::Request const &request, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 	clear_error();
 	out->clear();
@@ -700,13 +700,13 @@ bool WebClient::http_get(InetClient::Request const &request, Post const *post, R
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(request, post, opt);
+	set_default_header(request, postdata, opt);
 
-	std::string req = make_http_request(request, post, proxy, false);
+	std::string req = make_http_request(request, postdata, proxy, false);
 
 	send_(m->sock, req.c_str(), (int)req.size());
-	if (post && !post->data.empty()) {
-		send_(m->sock, (char const *)&post->data[0], (int)post->data.size());
+	if (postdata && !postdata->data.empty()) {
+		send_(m->sock, (char const *)&postdata->data[0], (int)postdata->data.size());
 	}
 
 	m->crlf_state = 0;
@@ -721,7 +721,7 @@ bool WebClient::http_get(InetClient::Request const &request, Post const *post, R
 	return true;
 }
 
-bool WebClient::https_get(InetClient::Request const &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 #if USE_OPENSSL
 
@@ -894,8 +894,8 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 	m->last_port = port;
 
 	// Prepare request
-	set_default_header(request_req, post, opt);
-	std::string request = make_http_request(request_req, post, proxy, true);
+	set_default_header(request_req, postdata, opt);
+	std::string request = make_http_request(request_req, postdata, proxy, true);
 
 	// Send request
 	auto SEND = [&](char const *ptr, int len){
@@ -924,8 +924,8 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 
 	try {
 		SEND(request.c_str(), (int)request.size());
-		if (post && !post->data.empty()) {
-			SEND((char const *)&post->data[0], (int)post->data.size());
+		if (postdata && !postdata->data.empty()) {
+			SEND((char const *)&postdata->data[0], (int)postdata->data.size());
 		}
 
 		m->crlf_state = 0;
@@ -1043,7 +1043,7 @@ bool decode_chunked(char const *ptr, char const *end, std::vector<char> *out)
 	return false; // Unexpected end of data
 }
 
-bool WebClient::get(InetClient::Request const &req, Post const *post, InetClient::Response *out, WebClientHandler *handler)
+bool WebClient::get(InetClient::Request const &req, InetClient::Post const *postdata, InetClient::Response *out, WebClientHandler *handler)
 {
 	reset();
 	bool ok = false;
@@ -1059,10 +1059,10 @@ bool WebClient::get(InetClient::Request const &req, Post const *post, InetClient
 		std::vector<char> res;
 		if (req.url().is_ssl()) {
 #if USE_OPENSSL
-			https_get(req, post, opt, &rh, &res);
+			https_get(req, postdata, opt, &rh, &res);
 #endif
 		} else {
-			http_get(req, post, opt, &rh, &res);
+			http_get(req, postdata, opt, &rh, &res);
 		}
 		if (!res.empty()) {
 			char const *begin = &res[0];
@@ -1212,9 +1212,9 @@ int WebClient::get(InetClient::Request const &req, WebClientHandler *handler)
 	return m->response.code;
 }
 
-int WebClient::post(InetClient::Request const &req, Post const *post, WebClientHandler *handler)
+int WebClient::post(InetClient::Request const &req, InetClient::Post const *postdata, WebClientHandler *handler)
 {
-	get(req, post, &m->response, handler);
+	get(req, postdata, &m->response, handler);
 	return m->response.code;
 }
 
@@ -1252,16 +1252,16 @@ InetClient::Response const &WebClient::response() const
 	return m->response;
 }
 
-void WebClient::make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out)
+void WebClient::make_application_www_form_urlencoded(char const *begin, char const *end, InetClient::Post *out)
 {
-	*out = WebClient::Post();
+	*out = InetClient::Post();
 	out->content_type = ContentType::APPLICATION_X_WWW_FORM_URLENCODED;
 	vappend(&out->data, begin, end - begin);
 }
 
-void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClient::Post *out, std::string const &boundary)
+void WebClient::make_multipart_form_data(std::vector<Part> const &parts, InetClient::Post *out, std::string const &boundary)
 {
-	*out = WebClient::Post();
+	*out = InetClient::Post();
 	out->content_type = ContentType::MULTIPART_FORM_DATA;
 	out->boundary = boundary;
 
@@ -1302,7 +1302,7 @@ void WebClient::make_multipart_form_data(std::vector<Part> const &parts, WebClie
 	vappend(&out->data, "--\r\n");
 }
 
-void WebClient::make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary)
+void WebClient::make_multipart_form_data(char const *data, size_t size, InetClient::Post *out, std::string const &boundary)
 {
 	Part part;
 	part.data = data;

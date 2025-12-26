@@ -36,6 +36,7 @@ public:
 	InetClient::Error const &error() const override;
 
 	int get(InetClient::Request const &req) override;
+	int post(InetClient::Request const &req, InetClient::Post const *postdata) override;
 
 	InetClient::Response const &response() const override;
 

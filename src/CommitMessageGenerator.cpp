@@ -4,6 +4,7 @@
 #include "common/joinpath.h"
 #include "common/strformat.h"
 #include "webclient.h"
+#include "curlclient.h"
 #include "GitRunner.h"
 #include "Profile.h"
 #include <QFile>
@@ -377,14 +378,15 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		web_req.add_header(h);
 	}
 
-	WebClient::Post post;
+	InetClient::Post post;
 	post.content_type = "application/json";
 	post.data.insert(post.data.end(), json.begin(), json.end());
 
-	WebClient http(&global->webcx);
-	if (http.post(web_req, &post)) {
-		char const *data = http.content_data();
-		size_t size = http.content_length();
+	std::shared_ptr<AbstractInetClient> http = std::make_shared<WebClient>(&global->webcx);
+	// std::shared_ptr<AbstractInetClient> http = std::make_shared<CurlClient>(&global->curlcx);
+	if (http->post(web_req, &post)) {
+		char const *data = http->content_data();
+		size_t size = http->content_length();
 		if (save_log) {
 			QFile file("c:\\a\\response.txt");
 			if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {

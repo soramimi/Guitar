@@ -51,11 +51,6 @@ public:
 		HTTP_1_0,
 		HTTP_1_1,
 	};
-	struct Post {
-		std::string content_type;
-		std::string boundary;
-		std::vector<char> data;
-	};
 	struct ContentDisposition {
 		std::string type;
 		std::string name;
@@ -88,13 +83,13 @@ private:
 	Private *m;
 	void clear_error();
 	static int get_port(InetClient::URL const *url, char const *scheme, char const *protocol);
-	void set_default_header(InetClient::Request const &url, Post const *post, const RequestOption &opt);
-	std::string make_http_request(InetClient::Request const &url, Post const *post, const WebProxy *proxy, bool https);
+	void set_default_header(InetClient::Request const &url, InetClient::Post const *postdata, const RequestOption &opt);
+	std::string make_http_request(InetClient::Request const &url, InetClient::Post const *postdata, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, InetClient::Response *out);
-	bool http_get(InetClient::Request const &request_req, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
-	bool https_get(InetClient::Request const &request_url, Post const *post, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
-	bool get(InetClient::Request const &req, Post const *post, InetClient::Response *out, WebClientHandler *handler);
+	bool http_get(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
+	bool https_get(InetClient::Request const &request_url, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
+	bool get(InetClient::Request const &req, InetClient::Post const *post, InetClient::Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, InetClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);
@@ -120,7 +115,11 @@ public:
 	{
 		return get(req, nullptr);
 	}
-	int post(InetClient::Request const &req, Post const *post, WebClientHandler *handler = nullptr);
+	int post(InetClient::Request const &req, InetClient::Post const *postdata, WebClientHandler *handler);
+	int post(InetClient::Request const &req, InetClient::Post const *postdata) override
+	{
+		return post(req, postdata, nullptr);
+	}
 	void close() override;
 	void add_header(std::string const &text);
 	InetClient::Response const &response() const override;
@@ -129,9 +128,9 @@ public:
 	size_t content_length() const override;
 	char const *content_data() const override;
 
-	static void make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out);
-	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, std::string const &boundary);
-	static void make_multipart_form_data(char const *data, size_t size, WebClient::Post *out, std::string const &boundary);
+	static void make_application_www_form_urlencoded(char const *begin, char const *end, InetClient::Post *out);
+	static void make_multipart_form_data(const std::vector<Part> &parts, InetClient::Post *out, std::string const &boundary);
+	static void make_multipart_form_data(char const *data, size_t size, InetClient::Post *out, std::string const &boundary);
 
 	static std::string quick_get(const std::string &url);
 	static std::string checkip();

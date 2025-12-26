@@ -49,6 +49,11 @@ public:
 		std::string uid;
 		std::string pwd;
 	};
+	struct Post {
+		std::string content_type;
+		std::string boundary;
+		std::vector<char> data;
+	};
 	class Request {
 	private:
 		InetClient::URL url_;
@@ -132,6 +137,7 @@ public:
 	virtual void close() = 0;
 	virtual InetClient::Error const &error() const = 0;
 	virtual int get(InetClient::Request const &req) = 0;
+	virtual int post(InetClient::Request const &req, InetClient::Post const *post) = 0;
 	virtual InetClient::Response const &response() const = 0;
 	virtual size_t content_length() const = 0;
 	virtual char const *content_data() const = 0;

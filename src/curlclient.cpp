@@ -118,6 +118,54 @@ int CurlClient::get(InetClient::Request const &req)
 	return m->response.code;
 }
 
+int CurlClient::post(const InetClient::Request &req, const InetClient::Post *postdata)
+{
+	clear_error();
+	m->response.clear();  // 前回のデータをクリア
+
+	if (!open()) {
+		m->error_ = InetClient::Error("Failed to initialize CURL");
+		m->response.code = 501;
+		return m->response.code;
+	}
+	// Set URL
+	char const *url = req.url().full_request().c_str();
+	curl_easy_setopt(m->curl_, CURLOPT_URL, url);
+
+	// Set POST data
+	curl_easy_setopt(m->curl_, CURLOPT_POST, 1L);
+	if (postdata && !postdata->data.empty()) {
+		curl_easy_setopt(m->curl_, CURLOPT_POSTFIELDS, postdata->data.data());
+		curl_easy_setopt(m->curl_, CURLOPT_POSTFIELDSIZE, postdata->data.size());
+	} else {
+		curl_easy_setopt(m->curl_, CURLOPT_POSTFIELDS, "");
+		curl_easy_setopt(m->curl_, CURLOPT_POSTFIELDSIZE, 0L);
+	}
+
+	// Set callback function to receive data
+	curl_easy_setopt(m->curl_, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(m->curl_, CURLOPT_WRITEDATA, &m->response);
+	// Follow redirects
+
+	curl_easy_setopt(m->curl_, CURLOPT_FOLLOWLOCATION, 1L);
+	// Set timeout
+	curl_easy_setopt(m->curl_, CURLOPT_TIMEOUT, 30L);
+
+	// Perform the request
+	CURLcode res = curl_easy_perform(m->curl_);
+
+	if (res != CURLE_OK) {
+		m->error_ = InetClient::Error(curl_easy_strerror(res));
+		m->response.code = 501;
+		return m->response.code;
+	}
+
+	long http_code = 0;
+	curl_easy_getinfo(m->curl_, CURLINFO_RESPONSE_CODE, &http_code);
+	m->response.code = http_code;
+	return m->response.code;
+}
+
 InetClient::Response const &CurlClient::response() const
 {
 	return m->response;
