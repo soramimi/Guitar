@@ -97,7 +97,7 @@ int CurlClient::get(InetClient::Request const &req)
 
 	// Set custom headers
 	struct curl_slist *headers = nullptr;
-	headers = curl_slist_append(headers, "User-Agent: "USER_AGENT);
+	headers = curl_slist_append(headers, "User-Agent: " USER_AGENT);
 	for (auto const &header : req.headers()) {
 		headers = curl_slist_append(headers, header.c_str());
 	}
@@ -161,7 +161,7 @@ int CurlClient::post(const InetClient::Request &req, const InetClient::Post *pos
 
 	// Set custom headers
 	struct curl_slist *headers = nullptr;
-	headers = curl_slist_append(headers, "User-Agent: "USER_AGENT);
+	headers = curl_slist_append(headers, "User-Agent: " USER_AGENT);
 	for (auto const &header : req.headers()) {
 		headers = curl_slist_append(headers, header.c_str());
 	}
