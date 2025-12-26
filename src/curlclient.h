@@ -15,22 +15,8 @@ public:
 	void operator = (CurlContext const &) = delete;
 };
 
-class CurlClient {
+class CurlClient : public AbstractInetClient {
 public:
-	class Error {
-	private:
-		std::string msg_;
-	public:
-		Error() = default;
-		Error(std::string const &message)
-			: msg_(message)
-		{
-		}
-		std::string what() const
-		{
-			return msg_;
-		}
-	};
 private:
 	struct Private;
 	struct Private *m;
@@ -45,16 +31,17 @@ public:
 	CurlClient(CurlClient const &) = delete;
 	void operator = (CurlClient const &) = delete;
 
-	void close();
-	Error const &error() const;
+	void reset() override;
+	void close() override;
+	InetClient::Error const &error() const override;
 
-	int get(InetClient::Request const &req);
+	int get(InetClient::Request const &req) override;
 
-	InetClient::Response const &response() const;
+	InetClient::Response const &response() const override;
 
-	size_t content_length() const;
+	size_t content_length() const override;
 
-	char const *content_data() const;
+	char const *content_data() const override;
 };
 
 #endif // CURLCLIENT_H

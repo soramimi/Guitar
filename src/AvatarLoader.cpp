@@ -17,9 +17,6 @@ const int MAX_CACHE_COUNT = 1000;
 const int ICON_SIZE = 256;
 }
 
-using WebClientPtr = std::shared_ptr<WebClient>;
-// using WebClientPtr = std::shared_ptr<CurlClient>;
-
 struct AvatarLoader::Private {
 	volatile bool interrupted = false;
 	std::mutex mutex;
@@ -28,7 +25,8 @@ struct AvatarLoader::Private {
 	std::deque<AvatarLoader::RequestItem> requests;
 	MainWindow *mainwindow = nullptr;
 
-	WebClientPtr web;
+	std::shared_ptr<AbstractInetClient> web;
+
 };
 
 AvatarLoader::AvatarLoader(QObject *parent)
@@ -40,6 +38,18 @@ AvatarLoader::AvatarLoader(QObject *parent)
 AvatarLoader::~AvatarLoader()
 {
 	delete m;
+}
+
+AbstractInetClient *AvatarLoader::web()
+{
+	if (!m->web) {
+		if (1) {
+			m->web = std::make_shared<WebClient>(&global->webcx);
+		} else {
+			m->web = std::make_shared<CurlClient>(&global->curlcx);
+		}
+	}
+	return m->web.get();
 }
 
 bool AvatarLoader::isInterruptionRequested() const
@@ -55,9 +65,6 @@ void AvatarLoader::requestInterruption()
 
 void AvatarLoader::run()
 {
-	m->web = std::make_shared<WebClient>(&global->webcx);
-	// m->web = std::make_shared<CurlClient>(&global->curlcx);
-
 	while (1) {
 		RequestItem request;
 		{
@@ -99,9 +106,9 @@ void AvatarLoader::run()
 				if (provider.libravatar) urls.append(QString("https://www.libravatar.org/avatar/%1?s=%2&d=404").arg(id).arg(ICON_SIZE));
 
 				auto getAvatar = [&](QString const &url)->std::optional<QImage>{
-					if (m->web->get(InetClient::Request(url.toStdString())) == 200) {
-						if (!m->web->response().empty()) {
-							MemoryReader reader(m->web->response().content.data(), m->web->response().content.size());
+					if (web()->get(InetClient::Request(url.toStdString())) == 200) {
+						if (!web()->response().empty()) {
+							MemoryReader reader(web()->response().content.data(), web()->response().content.size());
 							reader.open(MemoryReader::ReadOnly);
 							QImage image;
 							image.load(&reader, nullptr);
@@ -178,9 +185,10 @@ void AvatarLoader::stop()
 		m->thread.join();
 	}
 	m->requests.clear();
+
 	if (m->web) {
 		m->web->close();
-		m->web.reset();
+		m->web->reset();
 	}
 }
 

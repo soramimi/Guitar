@@ -1,11 +1,27 @@
 #ifndef INETCLIENT_H
 #define INETCLIENT_H
 
+#include <cassert>
+#include <memory>
 #include <string>
 #include <vector>
 
 class InetClient {
 public:
+	class Error {
+	private:
+		std::string msg_;
+	public:
+		Error() = default;
+		Error(std::string const &message)
+			: msg_(message)
+		{
+		}
+		std::string what() const
+		{
+			return msg_;
+		}
+	};
 	class URL {
 	private:
 		struct Data {
@@ -94,6 +110,31 @@ public:
 			content.clear();
 		}
 	};
+};
+
+class AbstractInetClient {
+protected:
+	virtual AbstractInetClient *clientptr()
+	{
+		return this;
+	}
+public:
+	virtual ~AbstractInetClient() = default;
+	AbstractInetClient *client()
+	{
+		return clientptr();
+	}
+	AbstractInetClient const *client() const
+	{
+		return const_cast<AbstractInetClient *>(this)->clientptr();
+	}
+	virtual void reset() = 0;
+	virtual void close() = 0;
+	virtual InetClient::Error const &error() const = 0;
+	virtual int get(InetClient::Request const &req) = 0;
+	virtual InetClient::Response const &response() const = 0;
+	virtual size_t content_length() const = 0;
+	virtual char const *content_data() const = 0;
 };
 
 #endif // INETCLIENT_H

@@ -27,7 +27,7 @@ CurlContext::~CurlContext()
 struct CurlClient::Private {
 	CURL *curl_ = nullptr;
 	InetClient::Response response;
-	Error error_;
+	InetClient::Error error_;
 };
 
 bool CurlClient::open()
@@ -48,7 +48,7 @@ void CurlClient::close()
 
 void CurlClient::clear_error()
 {
-	m->error_ = Error();
+	m->error_ = {};
 }
 
 size_t CurlClient::write_callback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -66,6 +66,12 @@ CurlClient::CurlClient(CurlContext *cx)
 	(void)cx;
 }
 
+void CurlClient::reset()
+{
+	m->response = {};
+	m->error_ = {};
+}
+
 CurlClient::~CurlClient()
 {
 	close();
@@ -78,7 +84,7 @@ int CurlClient::get(InetClient::Request const &req)
 	m->response.clear();  // 前回のデータをクリア
 
 	if (!open()) {
-		m->error_ = Error("Failed to initialize CURL");
+		m->error_ = InetClient::Error("Failed to initialize CURL");
 		m->response.code = 501;
 		return m->response.code;
 	}
@@ -101,7 +107,7 @@ int CurlClient::get(InetClient::Request const &req)
 	CURLcode res = curl_easy_perform(m->curl_);
 
 	if (res != CURLE_OK) {
-		m->error_ = Error(curl_easy_strerror(res));
+		m->error_ = InetClient::Error(curl_easy_strerror(res));
 		m->response.code = 501;
 		return m->response.code;
 	}
@@ -117,7 +123,7 @@ InetClient::Response const &CurlClient::response() const
 	return m->response;
 }
 
-CurlClient::Error const &CurlClient::error() const
+InetClient::Error const &CurlClient::error() const
 {
 	return m->error_;
 }

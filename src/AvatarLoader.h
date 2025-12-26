@@ -9,6 +9,7 @@
 
 class MainWindow;
 class WebContext;
+class AbstractInetClient;
 
 struct AvatarLoaderItem {
 	std::string email;
@@ -35,6 +36,7 @@ private:
 	Private *m;
 
 	bool isInterruptionRequested() const;
+	AbstractInetClient *web();
 protected:
 	void run();
 public:

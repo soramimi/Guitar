@@ -114,7 +114,7 @@ struct WebContext::Private {
 
 struct WebClient::Private {
 	std::vector<std::string> request_header;
-	WebClient::Error error;
+	InetClient::Error error;
 	InetClient::Response response;
 	WebContext *webcx;
 	WebClient::HttpVersion http_version = WebClient::HTTP_1_0;
@@ -209,14 +209,14 @@ void WebClient::output_debug_strings(std::vector<std::string> const &vec)
 	}
 }
 
-WebClient::Error const &WebClient::error() const
+InetClient::Error const &WebClient::error() const
 {
 	return m->error;
 }
 
 void WebClient::clear_error()
 {
-	m->error = Error();
+	m->error = {};
 }
 
 int WebClient::get_port(InetClient::URL const *url, char const *scheme, char const *protocol)
@@ -374,7 +374,7 @@ static void send_(socket_t s, char const *ptr, int len)
 		int n = std::min(len, 65536);
 		n = send(s, ptr, n, 0);
 		if (n < 1 || n > len) {
-			throw WebClient::Error("send request failed.");
+			throw InetClient::Error("send request failed.");
 		}
 		ptr += n;
 		len -= n;
@@ -694,7 +694,7 @@ bool WebClient::http_get(InetClient::Request const &request, Post const *post, R
 	if (m->sock == INVALID_SOCKET) {
 		m->sock = inet_connect(hostname, port);
 		if (m->sock == INVALID_SOCKET) {
-			throw Error("connect failed.");
+			throw InetClient::Error("connect failed.");
 		}
 	}
 	m->last_host_name = hostname;
@@ -764,7 +764,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 		new_connection = true;
 		sock = inet_connect(hostname, port);
 		if (sock == INVALID_SOCKET) {
-			throw Error("connect failed.");
+			throw InetClient::Error("connect failed.");
 		}
 		ssl = nullptr; // Ensure ssl is nullptr before we try to create it
 		
@@ -783,7 +783,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 				char tmp[1000];
 				int n = recv(sock, tmp, sizeof(tmp), 0);
 				if (n <= 0) {
-					throw Error("Proxy connection failed");
+					throw InetClient::Error("Proxy connection failed");
 				}
 				
 				// Parse response to check if connection succeeded
@@ -806,14 +806,14 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 							break;
 						}
 					}
-					throw Error(std::string("Proxy error: ") + std::string(tmp, end));
+					throw InetClient::Error(std::string("Proxy error: ") + std::string(tmp, end));
 				}
 			}
 
 			// Set up SSL
 			ssl = SSL_new(sslctx);
 			if (!ssl) {
-				throw Error(get_ssl_error());
+				throw InetClient::Error(get_ssl_error());
 			}
 
 			// Disable insecure protocols
@@ -823,13 +823,13 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 			// Set hostname for SNI and certificate verification
 			SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
 			if (!SSL_set1_host(ssl, hostname.c_str())) {
-				throw Error(get_ssl_error());
+				throw InetClient::Error(get_ssl_error());
 			}
 			SSL_set_tlsext_host_name(ssl, hostname.c_str());
 
 			int ret = SSL_set_fd(ssl, sock);
 			if (ret != 1) {
-				throw Error(get_ssl_error());
+				throw InetClient::Error(get_ssl_error());
 			}
 
 			// Ensure PRNG is properly seeded
@@ -848,12 +848,12 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 			if (ret != 1) {
 				int err = SSL_get_error(ssl, ret);
 				std::string error_msg = get_ssl_error();
-				throw Error("SSL connection failed: " + error_msg + " (code: " + std::to_string(err) + ")");
+				throw InetClient::Error("SSL connection failed: " + error_msg + " (code: " + std::to_string(err) + ")");
 			}
 
 			X509 *x509 = SSL_get_peer_certificate(ssl);
 			if (!x509) {
-				throw Error("Server did not present a certificate");
+				throw InetClient::Error("Server did not present a certificate");
 			}
 			
 			// Verify certificate
@@ -915,7 +915,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 						sock = INVALID_SOCKET;
 					}
 				}
-				throw WebClient::Error(error_msg);
+				throw InetClient::Error(error_msg);
 			}
 			ptr += n;
 			len -= n;
@@ -948,7 +948,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, Post const *po
 						sock = INVALID_SOCKET;
 					}
 				}
-				throw WebClient::Error(error_msg);
+				throw InetClient::Error(error_msg);
 			}
 			return n;
 		}, rh, out);
@@ -1049,7 +1049,7 @@ bool WebClient::get(InetClient::Request const &req, Post const *post, InetClient
 	bool ok = false;
 	try {
 		if (!m->webcx->m) {
-			throw Error("WebContext is null.");
+			throw InetClient::Error("WebContext is null.");
 		}
 		m->webcx->m->broken_pipe = false;
 		RequestOption opt;
@@ -1080,7 +1080,7 @@ bool WebClient::get(InetClient::Request const &req, Post const *post, InetClient
 			}
 		}
 		ok = true;
-	} catch (Error const &e) {
+	} catch (InetClient::Error const &e) {
 		m->error = e;
 		close();
 	}

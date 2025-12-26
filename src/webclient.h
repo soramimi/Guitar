@@ -39,7 +39,7 @@ public:
 
 struct ResponseHeader;
 
-class WebClient {
+class WebClient : public AbstractInetClient {
 public:
 	class ContentType {
 	public:
@@ -50,21 +50,6 @@ public:
 	enum HttpVersion {
 		HTTP_1_0,
 		HTTP_1_1,
-	};
-	class Error {
-	private:
-		std::string msg_;
-	public:
-		Error() = default;
-		Error(std::string const &message)
-			: msg_(message)
-		{
-		}
-		virtual ~Error() = default;
-		std::string what() const
-		{
-			return msg_;
-		}
 	};
 	struct Post {
 		std::string content_type;
@@ -118,7 +103,8 @@ private:
 	void output_debug_string(char const *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
 	static void cleanup();
-	void reset();
+protected:
+	void reset() override;
 public:
 	static void initialize();
 	WebClient(WebContext *webcx);
@@ -128,16 +114,20 @@ public:
 
 	void set_http_version(HttpVersion httpver);
 
-	Error const &error() const;
-	int get(InetClient::Request const &req, WebClientHandler *handler = nullptr);
+	InetClient::Error const &error() const override;
+	int get(InetClient::Request const &req, WebClientHandler *handler);
+	int get(InetClient::Request const &req) override
+	{
+		return get(req, nullptr);
+	}
 	int post(InetClient::Request const &req, Post const *post, WebClientHandler *handler = nullptr);
-	void close();
+	void close() override;
 	void add_header(std::string const &text);
-	InetClient::Response const &response() const;
+	InetClient::Response const &response() const override;
 	std::string header_value(std::string const &name) const;
 	std::string content_type() const;
-	size_t content_length() const;
-	char const *content_data() const;
+	size_t content_length() const override;
+	char const *content_data() const override;
 
 	static void make_application_www_form_urlencoded(char const *begin, char const *end, WebClient::Post *out);
 	static void make_multipart_form_data(const std::vector<Part> &parts, WebClient::Post *out, std::string const &boundary);
