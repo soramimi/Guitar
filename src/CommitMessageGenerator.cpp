@@ -382,8 +382,12 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	post.content_type = "application/json";
 	post.data.insert(post.data.end(), json.begin(), json.end());
 
-	std::shared_ptr<AbstractInetClient> http = std::make_shared<WebClient>(&global->webcx);
-	// std::shared_ptr<AbstractInetClient> http = std::make_shared<CurlClient>(&global->curlcx);
+	std::shared_ptr<AbstractInetClient> http;
+	if (1) {
+		http = std::make_shared<WebClient>(&global->webcx);
+	} else {
+		http = std::make_shared<CurlClient>(&global->curlcx);
+	}
 	if (http->post(web_req, &post)) {
 		char const *data = http->content_data();
 		size_t size = http->content_length();

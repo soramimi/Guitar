@@ -93,6 +93,15 @@ int CurlClient::get(InetClient::Request const &req)
 	char const *url = req.url().full_request().c_str();
 	curl_easy_setopt(m->curl_, CURLOPT_URL, url);
 
+	// Set custom headers
+	struct curl_slist *headers = nullptr;
+	for (auto const &header : req.headers()) {
+		headers = curl_slist_append(headers, header.c_str());
+	}
+	if (headers) {
+		curl_easy_setopt(m->curl_, CURLOPT_HTTPHEADER, headers);
+	}
+
 	// Set callback function to receive data
 	curl_easy_setopt(m->curl_, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(m->curl_, CURLOPT_WRITEDATA, &m->response);
@@ -105,6 +114,11 @@ int CurlClient::get(InetClient::Request const &req)
 
 	// Perform the request
 	CURLcode res = curl_easy_perform(m->curl_);
+
+	// Free headers
+	if (headers) {
+		curl_slist_free_all(headers);
+	}
 
 	if (res != CURLE_OK) {
 		m->error_ = InetClient::Error(curl_easy_strerror(res));
@@ -142,6 +156,22 @@ int CurlClient::post(const InetClient::Request &req, const InetClient::Post *pos
 		curl_easy_setopt(m->curl_, CURLOPT_POSTFIELDSIZE, 0L);
 	}
 
+	// Set custom headers
+	struct curl_slist *headers = nullptr;
+	for (auto const &header : req.headers()) {
+		headers = curl_slist_append(headers, header.c_str());
+	}
+	
+	// Set Content-Type header from postdata
+	if (postdata && !postdata->content_type.empty()) {
+		std::string content_type_header = "Content-Type: " + postdata->content_type;
+		headers = curl_slist_append(headers, content_type_header.c_str());
+	}
+	
+	if (headers) {
+		curl_easy_setopt(m->curl_, CURLOPT_HTTPHEADER, headers);
+	}
+
 	// Set callback function to receive data
 	curl_easy_setopt(m->curl_, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(m->curl_, CURLOPT_WRITEDATA, &m->response);
@@ -153,6 +183,11 @@ int CurlClient::post(const InetClient::Request &req, const InetClient::Post *pos
 
 	// Perform the request
 	CURLcode res = curl_easy_perform(m->curl_);
+
+	// Free headers
+	if (headers) {
+		curl_slist_free_all(headers);
+	}
 
 	if (res != CURLE_OK) {
 		m->error_ = InetClient::Error(curl_easy_strerror(res));
