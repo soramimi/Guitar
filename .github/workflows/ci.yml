@@ -28,7 +28,8 @@ jobs:
           libgl1-mesa-dev \
           libssl-dev \
           qt6-base-dev \
-          qt6-svg-dev
+          qt6-svg-dev \
+          curl
           
     - name: Prepare environment
       run: ruby prepare.rb
