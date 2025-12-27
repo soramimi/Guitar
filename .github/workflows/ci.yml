@@ -29,7 +29,7 @@ jobs:
           libssl-dev \
           qt6-base-dev \
           qt6-svg-dev \
-          curl
+          libcurl4-openssl-dev
           
     - name: Prepare environment
       run: ruby prepare.rb
