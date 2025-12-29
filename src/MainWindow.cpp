@@ -1783,6 +1783,13 @@ void MainWindow::reopenRepository(bool validate, OpenRepositoryOption opt)
 	openRepository(opt);
 }
 
+void MainWindow::reopenRepositoryAsNewSession()
+{
+	OpenRepositoryOption opt;
+	opt.new_session = true;
+	openRepository(opt);
+}
+
 /**
  * @brief MainWindow::openSelectedRepository
  *
@@ -2433,7 +2440,7 @@ void MainWindow::doReopenRepository(ProcessStatus *status, RepositoryInfo const 
 	if (status->ok) {
 		saveRepositoryBookmark(repodata);
 		setCurrentRepository(repodata, false);
-		reopenRepository(true, {});
+		reopenRepositoryAsNewSession();
 	}
 }
 
@@ -5381,9 +5388,7 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 {
 	auto Open = [&](RepositoryInfo const &item, QString const &commit_id){
 		setCurrentRepository(item, true);
-		OpenRepositoryOption opt;
-		opt.new_session = true;
-		openRepository(opt);
+		reopenRepositoryAsNewSession();
 		if (!commit_id.isEmpty()) {
 			if (!locateCommitID(commit_id)) {
 				QMessageBox::information(this, tr("Open Repository"), tr("The specified commit ID was not found."));

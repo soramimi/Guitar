@@ -193,6 +193,7 @@ private:
 	void openRepositoryMain(OpenRepositoryOption const &opt);
 	void openRepository(OpenRepositoryOption const &opt);
 	void reopenRepository(bool validate, OpenRepositoryOption opt);
+	void reopenRepositoryAsNewSession();
 	void openSelectedRepository();
 
 	void doReopenRepository(ProcessStatus *status, const RepositoryInfo &repodata);
