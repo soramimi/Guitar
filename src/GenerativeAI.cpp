@@ -26,8 +26,8 @@ std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
 		{AI::OpenAI, "gpt-5.2-2025-12-11"},
-		{AI::Anthropic, "claude-sonnet-4-5-20250929"},
-		{AI::Google, "gemini-2.5-flash"},
+		{AI::Anthropic, "claude-sonnet-4-6"},
+		{AI::Google, "gemini-3-flash-preview"},
 		{AI::DeepSeek, "deepseek-chat"},
 		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
 		{AI::Ollama, "ollama:///gemma3:27b"},
@@ -50,7 +50,7 @@ const ProviderInfo *provider_info(AI ai)
 
 std::string Model::default_model()
 {
-	return "gpt-4.1";
+	return "claude-sonnet-4-6";
 }
 
 Model::Model(AI provider, std::string const &model_uri)
