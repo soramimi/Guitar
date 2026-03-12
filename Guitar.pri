@@ -28,6 +28,7 @@ INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 TRANSLATIONS = $$PWD/src/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ru.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_es.ts
+TRANSLATIONS += $$PWD/src/resources/translations/Guitar_ta.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-CN.ts
 TRANSLATIONS += $$PWD/src/resources/translations/Guitar_zh-TW.ts
 

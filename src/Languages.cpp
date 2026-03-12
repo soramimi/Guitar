@@ -3,12 +3,21 @@
 Languages::Languages(QObject *parent)
 	: QObject(parent)
 {
-	addLanguage("en"   , tr("English"));
-	addLanguage("ja"   , tr("Japanese"));
-	addLanguage("ru"   , tr("Russian"));
-	addLanguage("es"   , tr("Spanish"));
-	addLanguage("zh-CN", tr("Chinese (Simplified)"));
-	addLanguage("zh-TW", tr("Chinese (Traditional/Taiwan)"));
+	struct Lang {
+		QString description;
+		QString code;
+	} langs[] = {
+		tr("English"), "en",
+		tr("Spanish"), "es",
+		tr("Japanese"), "ja",
+		tr("Russian"), "ru",
+		tr("Tamil"), "ta",
+		tr("Chinese (Simplified)"), "zh-CN",
+		tr("Chinese (Traditional/Taiwan)"), "zh-TW",
+	};
+	for (const auto &lang : langs) {
+		addLanguage(lang.code, lang.description); // code first
+	}
 }
 
 

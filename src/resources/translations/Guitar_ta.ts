@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS>
+<TS version="2.1" language="ta">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -149,172 +149,172 @@
     <name>BasicMainWindow</name>
     <message>
         <source>git command not specified</source>
-        <translation>git கட்டளை குறிப்பிடப்படவில்லை</translation>
+        <translation type="vanished">git கட்டளை குறிப்பிடப்படவில்லை</translation>
     </message>
     <message>
         <source>The URL is a valid repository</source>
-        <translation>முகவரி சரியான களஞ்சியமாகும்</translation>
+        <translation type="vanished">முகவரி சரியான களஞ்சியமாகும்</translation>
     </message>
     <message>
         <source>Failed to access the URL</source>
-        <translation>முகவரி ஐ அணுக முடியவில்லை</translation>
+        <translation type="vanished">முகவரி ஐ அணுக முடியவில்லை</translation>
     </message>
     <message>
         <source>Remote Repository</source>
-        <translation>தொலை களஞ்சியம்</translation>
+        <translation type="vanished">தொலை களஞ்சியம்</translation>
     </message>
     <message>
         <source>&amp;Property</source>
-        <translation>&amp;சொத்து</translation>
+        <translation type="vanished">&amp;சொத்து</translation>
     </message>
     <message>
         <source>Select %1 command</source>
-        <translation>% 1 கட்டளையைத் தேர்ந்தெடுக்கவும்</translation>
+        <translation type="vanished">% 1 கட்டளையைத் தேர்ந்தெடுக்கவும்</translation>
     </message>
     <message>
         <source>Revert all files</source>
-        <translation>எல்லா கோப்புகளையும் மாற்றவும்</translation>
+        <translation type="vanished">எல்லா கோப்புகளையும் மாற்றவும்</translation>
     </message>
     <message>
         <source>The folder is not a valid git repository.</source>
-        <translation>கோப்புறை சரியான சிட் களஞ்சியமாக இல்லை.</translation>
+        <translation type="vanished">கோப்புறை சரியான சிட் களஞ்சியமாக இல்லை.</translation>
     </message>
     <message>
         <source>Do you want to initialize it as a git repository?</source>
-        <translation>நீங்கள் அதை ஒரு git களஞ்சியமாக துவக்க விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">நீங்கள் அதை ஒரு git களஞ்சியமாக துவக்க விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Initialize Repository</source>
-        <translation>களஞ்சியத்தை துவக்கவும்</translation>
+        <translation type="vanished">களஞ்சியத்தை துவக்கவும்</translation>
     </message>
     <message>
         <source>No repository selected</source>
-        <translation>களஞ்சியம் எதுவும் தேர்ந்தெடுக்கப்படவில்லை</translation>
+        <translation type="vanished">களஞ்சியம் எதுவும் தேர்ந்தெடுக்கப்படவில்லை</translation>
     </message>
     <message>
         <source>Repository Property</source>
-        <translation>களஞ்சிய சொத்து</translation>
+        <translation type="vanished">களஞ்சிய சொத்து</translation>
     </message>
     <message>
         <source>Not a valid git repository</source>
-        <translation>சரியான சிட் களஞ்சியம் அல்ல</translation>
+        <translation type="vanished">சரியான சிட் களஞ்சியம் அல்ல</translation>
     </message>
     <message>
         <source>Open Repository</source>
-        <translation>களஞ்சியத்தைத் திற</translation>
+        <translation type="vanished">களஞ்சியத்தைத் திற</translation>
     </message>
     <message>
         <source>No such folder</source>
-        <translation>அத்தகைய கோப்புறை இல்லை</translation>
+        <translation type="vanished">அத்தகைய கோப்புறை இல்லை</translation>
     </message>
     <message>
         <source>Remove from bookmark?</source>
-        <translation>புக்மார்க்கிலிருந்து அகற்றவா?</translation>
+        <translation type="vanished">புக்மார்க்கிலிருந்து அகற்றவா?</translation>
     </message>
     <message>
         <source>, %1 ahead</source>
-        <translation>,% 1 முன்னால்</translation>
+        <translation type="vanished">,% 1 முன்னால்</translation>
     </message>
     <message>
         <source>, %1 behind</source>
-        <translation>,% 1 பின்னால்</translation>
+        <translation type="vanished">,% 1 பின்னால்</translation>
     </message>
     <message>
         <source>Confirm Remove</source>
-        <translation>அகற்றுவதை உறுதிப்படுத்தவும்</translation>
+        <translation type="vanished">அகற்றுவதை உறுதிப்படுத்தவும்</translation>
     </message>
     <message>
         <source>Are you sure you want to remove the repository from bookmarks?</source>
-        <translation>புக்மார்க்குகளில் இருந்து களஞ்சியத்தை நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">புக்மார்க்குகளில் இருந்து களஞ்சியத்தை நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>(Files will NOT be deleted)</source>
-        <translation>(கோப்புகள் நீக்கப்படாது)</translation>
+        <translation type="vanished">(கோப்புகள் நீக்கப்படாது)</translation>
     </message>
     <message>
         <source>A file with same name already exists</source>
-        <translation>அதே பெயரில் ஒரு கோப்பு ஏற்கனவே உள்ளது</translation>
+        <translation type="vanished">அதே பெயரில் ஒரு கோப்பு ஏற்கனவே உள்ளது</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>நகலி</translation>
+        <translation type="vanished">நகலி</translation>
     </message>
     <message>
         <source>A folder with same name already exists</source>
-        <translation>அதே பெயரில் ஒரு கோப்புறை ஏற்கனவே உள்ளது</translation>
+        <translation type="vanished">அதே பெயரில் ஒரு கோப்புறை ஏற்கனவே உள்ளது</translation>
     </message>
     <message>
         <source>Invalid folder</source>
-        <translation>தவறான கோப்புறை</translation>
+        <translation type="vanished">தவறான கோப்புறை</translation>
     </message>
     <message>
         <source>No such folder. Create it now?</source>
-        <translation>அத்தகைய கோப்புறை இல்லை. இப்போது உருவாக்கவா?</translation>
+        <translation type="vanished">அத்தகைய கோப்புறை இல்லை. இப்போது உருவாக்கவா?</translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation>உறுதி</translation>
+        <translation type="vanished">உறுதி</translation>
     </message>
     <message>
         <source>Commit message can not be omitted.</source>
-        <translation>உறுதி செய்தியை தவிர்க்க முடியாது.</translation>
+        <translation type="vanished">உறுதி செய்தியை தவிர்க்க முடியாது.</translation>
     </message>
     <message>
         <source>Failed to commit</source>
-        <translation>செய்யத் தவறிவிட்டது</translation>
+        <translation type="vanished">செய்யத் தவறிவிட்டது</translation>
     </message>
     <message>
         <source>Connection refused.</source>
-        <translation>இணைப்பு மறுக்கப்பட்டது.</translation>
+        <translation type="vanished">இணைப்பு மறுக்கப்பட்டது.</translation>
     </message>
     <message>
         <source>No remote repository is registered.</source>
-        <translation>ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
+        <translation type="vanished">ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>The current branch %1 has no upstream branch.</source>
-        <translation>தற்போதைய கிளை% 1 க்கு மேலோடை கிளை இல்லை.</translation>
+        <translation type="vanished">தற்போதைய கிளை% 1 க்கு மேலோடை கிளை இல்லை.</translation>
     </message>
     <message>
         <source>You try push --set-upstream</source>
-        <translation>நீங்கள் push --set-upstream ஐ முயற்சிக்கவும்</translation>
+        <translation type="vanished">நீங்கள் push --set-upstream ஐ முயற்சிக்கவும்</translation>
     </message>
     <message>
         <source>Failed to delete the branch &apos;%1&apos;</source>
-        <translation>&apos;% 1&apos; கிளையை நீக்க முடியவில்லை</translation>
+        <translation type="vanished">&apos;% 1&apos; கிளையை நீக்க முடியவில்லை</translation>
     </message>
     <message>
         <source>Failed to delete the branch &apos;%1&apos;
 </source>
-        <translation>&apos;% 1&apos; கிளையை நீக்க முடியவில்லை
+        <translation type="vanished">&apos;% 1&apos; கிளையை நீக்க முடியவில்லை
 </translation>
     </message>
     <message>
         <source>Are you sure you want to run the following command?</source>
-        <translation>பின்வரும் கட்டளையை நிச்சயமாக இயக்க விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">பின்வரும் கட்டளையை நிச்சயமாக இயக்க விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Reset a file</source>
-        <translation>கோப்பை மீட்டமைக்கவும்</translation>
+        <translation type="vanished">கோப்பை மீட்டமைக்கவும்</translation>
     </message>
     <message>
         <source>Unnamed</source>
-        <translation>பெயரில்லாதது</translation>
+        <translation type="vanished">பெயரில்லாதது</translation>
     </message>
 </context>
 <context>
     <name>BasicRepositoryDialog</name>
     <message>
         <source>Name</source>
-        <translation>பெயர்</translation>
+        <translation type="vanished">பெயர்</translation>
     </message>
     <message>
         <source>Purpose</source>
-        <translation>நோக்கம்</translation>
+        <translation type="vanished">நோக்கம்</translation>
     </message>
     <message>
         <source>URL</source>
-        <translation>முகவரி</translation>
+        <translation type="vanished">முகவரி</translation>
     </message>
 </context>
 <context>
@@ -452,47 +452,47 @@
     <name>CloneDialog</name>
     <message>
         <source>Clone</source>
-        <translation>நகலி</translation>
+        <translation type="vanished">நகலி</translation>
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation type="vanished">ரிமோட்</translation>
     </message>
     <message>
         <source>&amp;Test</source>
-        <translation>&amp;சோதனை</translation>
+        <translation type="vanished">&amp;சோதனை</translation>
     </message>
     <message>
         <source>Local</source>
-        <translation>உள்ளக</translation>
+        <translation type="vanished">உள்ளக</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation>உலாவவும்</translation>
+        <translation type="vanished">உலாவவும்</translation>
     </message>
     <message>
         <source>Open existing local directory...</source>
-        <translation>ஏற்கனவே உள்ள உள்ளக கோப்பகத்தைத் திற...</translation>
+        <translation type="vanished">ஏற்கனவே உள்ள உள்ளக கோப்பகத்தைத் திற...</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ரத்துசெய்</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>தேடல்</translation>
+        <translation type="vanished">தேடல்</translation>
     </message>
     <message>
         <source>GitHub</source>
-        <translation>அறிவிலிமையம்</translation>
+        <translation type="vanished">அறிவிலிமையம்</translation>
     </message>
     <message>
         <source>Checkout into</source>
-        <translation>வெளியேறவும்</translation>
+        <translation type="vanished">வெளியேறவும்</translation>
     </message>
     <message>
         <source>Open existing directory</source>
-        <translation>ஏற்கனவே உள்ள கோப்பகத்தைத் திறக்கவும்</translation>
+        <translation type="vanished">ஏற்கனவே உள்ள கோப்பகத்தைத் திறக்கவும்</translation>
     </message>
 </context>
 <context>
@@ -620,7 +620,7 @@
     </message>
     <message>
         <source>Add detailed comment</source>
-        <translation>விரிவான கருத்தைச் சேர்க்கவும்</translation>
+        <translation type="vanished">விரிவான கருத்தைச் சேர்க்கவும்</translation>
     </message>
     <message>
         <source>Amend</source>
@@ -701,11 +701,11 @@
     </message>
     <message>
         <source>GPG Sign</source>
-        <translation>GPG அடையாளம்</translation>
+        <translation type="vanished">GPG அடையாளம்</translation>
     </message>
     <message>
         <source>ID</source>
-        <translation>ஐடி</translation>
+        <translation type="vanished">ஐடி</translation>
     </message>
     <message>
         <source>GPG Signature</source>
@@ -749,7 +749,7 @@
     </message>
     <message>
         <source>&lt;Unknown&gt;</source>
-        <translation>&lt;தெரியாது&gt;</translation>
+        <translation type="vanished">&lt;தெரியாது&gt;</translation>
     </message>
     <message>
         <source>Good</source>
@@ -853,7 +853,7 @@
     <name>ConfigUserDialog</name>
     <message>
         <source>Set User</source>
-        <translation>பயனரை அமைக்கவும்</translation>
+        <translation type="vanished">பயனரை அமைக்கவும்</translation>
     </message>
     <message>
         <source>Global</source>
@@ -861,7 +861,7 @@
     </message>
     <message>
         <source>Repository</source>
-        <translation>களஞ்சியம்</translation>
+        <translation type="vanished">களஞ்சியம்</translation>
     </message>
     <message>
         <source>Configure User</source>
@@ -893,7 +893,7 @@
     </message>
     <message>
         <source>Get icon from Gravatar</source>
-        <translation>கிராவதார் இலிருந்து ஐகானைப் பெறுங்கள்</translation>
+        <translation type="vanished">கிராவதார் இலிருந்து ஐகானைப் பெறுங்கள்</translation>
     </message>
     <message>
         <source>OK</source>
@@ -902,6 +902,37 @@
     <message>
         <source>Cancel</source>
         <translation>ரத்துசெய்</translation>
+    </message>
+</context>
+<context>
+    <name>ConfirmRemoteSessionDialog</name>
+    <message>
+        <source>Confirm Remote Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CAUTION</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Executing malicious commands on remote hosts can cause serious security damage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you approve work in the following directory?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you approve of executing the following command?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">சரி</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1003,6 +1034,53 @@
     <message>
         <source>Cancel</source>
         <translation>ரத்துசெய்</translation>
+    </message>
+</context>
+<context>
+    <name>Dialog</name>
+    <message>
+        <source>Dialog</source>
+        <translation type="unfinished">உரையாடல்</translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Authentication</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OK</source>
+        <translation type="unfinished">சரி</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1142,11 +1220,11 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>பெயர்</translation>
+        <translation type="vanished">பெயர்</translation>
     </message>
     <message>
         <source>URL</source>
-        <translation>முகவரி</translation>
+        <translation type="vanished">முகவரி</translation>
     </message>
     <message>
         <source>&amp;Test</source>
@@ -1154,11 +1232,11 @@
     </message>
     <message>
         <source>OK</source>
-        <translation>சரி</translation>
+        <translation type="vanished">சரி</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>மூடு</translation>
+        <translation type="vanished">மூடு</translation>
     </message>
 </context>
 <context>
@@ -1222,7 +1300,7 @@
     </message>
     <message>
         <source>Description</source>
-        <translation>விவரம்</translation>
+        <translation type="vanished">விவரம்</translation>
     </message>
 </context>
 <context>
@@ -1367,19 +1445,19 @@
     </message>
     <message>
         <source>Branches and Tags</source>
-        <translation>கிளைகள் மற்றும் குறிச்சொற்கள்</translation>
+        <translation type="vanished">கிளைகள் மற்றும் குறிச்சொற்கள்</translation>
     </message>
     <message>
         <source>&amp;Filter</source>
-        <translation>&amp;வடிகட்டி</translation>
+        <translation type="vanished">&amp;வடிகட்டி</translation>
     </message>
     <message>
         <source>Find</source>
-        <translation>கண்டுபிடி</translation>
+        <translation type="vanished">கண்டுபிடி</translation>
     </message>
     <message>
         <source>&amp;Checkout</source>
-        <translation>&amp;செக்அவுட்</translation>
+        <translation type="vanished">&amp;செக்அவுட்</translation>
     </message>
     <message>
         <source>Branch, Tag or Commit-ID :</source>
@@ -1423,6 +1501,10 @@
     <message>
         <source>Chinese (Traditional/Taiwan)</source>
         <translation>சீனம் (பாரம்பரியம்/தைவான்)</translation>
+    </message>
+    <message>
+        <source>Tamil</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1488,11 +1570,11 @@
     </message>
     <message>
         <source>Terminal</source>
-        <translation>முனையத்தில்</translation>
+        <translation type="vanished">முனையத்தில்</translation>
     </message>
     <message>
         <source>Explorer</source>
-        <translation>எக்ச்ப்ளோரர்</translation>
+        <translation type="vanished">எக்ச்ப்ளோரர்</translation>
     </message>
     <message>
         <source>Repository</source>
@@ -1556,7 +1638,7 @@
     </message>
     <message>
         <source>Destructive</source>
-        <translation>அழிவுகரமான</translation>
+        <translation type="vanished">அழிவுகரமான</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -1572,23 +1654,23 @@
     </message>
     <message>
         <source>Clean -df</source>
-        <translation>தூய்மையான -df</translation>
+        <translation type="vanished">தூய்மையான -df</translation>
     </message>
     <message>
         <source>Reset --hard</source>
-        <translation>மீட்டமை - கடினமானது</translation>
+        <translation type="vanished">மீட்டமை - கடினமானது</translation>
     </message>
     <message>
         <source>Create a repository</source>
-        <translation>ஒரு களஞ்சியத்தை உருவாக்கவும்</translation>
+        <translation type="vanished">ஒரு களஞ்சியத்தை உருவாக்கவும்</translation>
     </message>
     <message>
         <source>Push upstream</source>
-        <translation>மேலே தள்ளு</translation>
+        <translation type="vanished">மேலே தள்ளு</translation>
     </message>
     <message>
         <source>Stop process</source>
-        <translation>செயல்முறையை நிறுத்து</translation>
+        <translation type="vanished">செயல்முறையை நிறுத்து</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -1600,11 +1682,11 @@
     </message>
     <message>
         <source>Reflog...</source>
-        <translation>மறுபரிசீலனை...</translation>
+        <translation type="vanished">மறுபரிசீலனை...</translation>
     </message>
     <message>
         <source>Property...</source>
-        <translation>சொத்து...</translation>
+        <translation type="vanished">சொத்து...</translation>
     </message>
     <message>
         <source>Set GPG signing</source>
@@ -1612,7 +1694,7 @@
     </message>
     <message>
         <source>Fetch --prune</source>
-        <translation>எடு --கத்தரிக்காய்</translation>
+        <translation type="vanished">எடு --கத்தரிக்காய்</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -1628,7 +1710,7 @@
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation>சாளரம் (&amp;w)</translation>
+        <translation type="vanished">சாளரம் (&amp;w)</translation>
     </message>
     <message>
         <source>&amp;Repository</source>
@@ -1648,7 +1730,7 @@
     </message>
     <message>
         <source>Experimental</source>
-        <translation>ஆய்வு</translation>
+        <translation type="vanished">ஆய்வு</translation>
     </message>
     <message>
         <source>Log</source>
@@ -1864,11 +1946,11 @@
     </message>
     <message>
         <source>Edit .git/config</source>
-        <translation>திருத்து .git/config</translation>
+        <translation type="vanished">திருத்து .git/config</translation>
     </message>
     <message>
         <source>Edit .gitignore</source>
-        <translation>திருத்து .gitignore</translation>
+        <translation type="vanished">திருத்து .gitignore</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -1904,11 +1986,11 @@
     </message>
     <message>
         <source>Apply</source>
-        <translation>இடு</translation>
+        <translation type="vanished">இடு</translation>
     </message>
     <message>
         <source>Drop</source>
-        <translation>கைவிடு</translation>
+        <translation type="vanished">கைவிடு</translation>
     </message>
     <message>
         <source>Repositories panel</source>
@@ -1928,7 +2010,7 @@
     </message>
     <message>
         <source>Find next</source>
-        <translation>அடுத்ததை தேடு</translation>
+        <translation type="vanished">அடுத்ததை தேடு</translation>
     </message>
     <message>
         <source>F3</source>
@@ -1948,11 +2030,11 @@
     </message>
     <message>
         <source>Merge...</source>
-        <translation>ஒன்றிணை...</translation>
+        <translation type="vanished">ஒன்றிணை...</translation>
     </message>
     <message>
         <source>Expand commit log</source>
-        <translation>உறுதிப் பதிவை விரிவாக்கு</translation>
+        <translation type="vanished">உறுதிப் பதிவை விரிவாக்கு</translation>
     </message>
     <message>
         <source>Ctrl+2</source>
@@ -1960,7 +2042,7 @@
     </message>
     <message>
         <source>Expand file list</source>
-        <translation>கோப்பு பட்டியலை விரிவாக்கு</translation>
+        <translation type="vanished">கோப்பு பட்டியலை விரிவாக்கு</translation>
     </message>
     <message>
         <source>Ctrl+3</source>
@@ -1968,7 +2050,7 @@
     </message>
     <message>
         <source>Expand diff view</source>
-        <translation>வேறுபாடு காட்சியை விரிவாக்கு</translation>
+        <translation type="vanished">வேறுபாடு காட்சியை விரிவாக்கு</translation>
     </message>
     <message>
         <source>Ctrl+4</source>
@@ -1976,7 +2058,7 @@
     </message>
     <message>
         <source>Sidebar</source>
-        <translation>பக்கப்பட்டி</translation>
+        <translation type="vanished">பக்கப்பட்டி</translation>
     </message>
     <message>
         <source>Ctrl+1</source>
@@ -1984,7 +2066,7 @@
     </message>
     <message>
         <source>Show labels</source>
-        <translation>லேபிள்களைக் காட்டு</translation>
+        <translation type="vanished">லேபிள்களைக் காட்டு</translation>
     </message>
     <message>
         <source>Ctrl+L</source>
@@ -1992,15 +2074,15 @@
     </message>
     <message>
         <source>Submodule add...</source>
-        <translation>துணைத் தொகுதி சேர்...</translation>
+        <translation type="vanished">துணைத் தொகுதி சேர்...</translation>
     </message>
     <message>
         <source>Submodules</source>
-        <translation>துணை தொகுதிகள்</translation>
+        <translation type="vanished">துணை தொகுதிகள்</translation>
     </message>
     <message>
         <source>Submodule update...</source>
-        <translation>துணைத் தொகுதி புதுப்பிப்பு...</translation>
+        <translation type="vanished">துணைத் தொகுதி புதுப்பிப்பு...</translation>
     </message>
     <message>
         <source>Wide</source>
@@ -2024,11 +2106,11 @@
     </message>
     <message>
         <source>Push all tags</source>
-        <translation>அனைத்து குறிச்சொற்களையும் அழுத்தவும்</translation>
+        <translation type="vanished">அனைத்து குறிச்சொற்களையும் அழுத்தவும்</translation>
     </message>
     <message>
         <source>Set config user</source>
-        <translation>கட்டமைப்பு பயனரை அமைக்கவும்</translation>
+        <translation type="vanished">கட்டமைப்பு பயனரை அமைக்கவும்</translation>
     </message>
     <message>
         <source>&amp;Log</source>
@@ -2040,23 +2122,23 @@
     </message>
     <message>
         <source>Default</source>
-        <translation>இயல்புநிலை</translation>
+        <translation type="vanished">இயல்புநிலை</translation>
     </message>
     <message>
         <source>Graph</source>
-        <translation>வரைபடம்</translation>
+        <translation type="vanished">வரைபடம்</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation>திகதி</translation>
+        <translation type="vanished">திகதி</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation>நூலாசிரியர்</translation>
+        <translation type="vanished">நூலாசிரியர்</translation>
     </message>
     <message>
         <source>Description</source>
-        <translation>விவரம்</translation>
+        <translation type="vanished">விவரம்</translation>
     </message>
     <message>
         <source>Uncommited changes</source>
@@ -2088,7 +2170,7 @@
     </message>
     <message>
         <source>Repository Property</source>
-        <translation>களஞ்சிய சொத்து</translation>
+        <translation type="vanished">களஞ்சிய சொத்து</translation>
     </message>
     <message>
         <source>&amp;Add new group</source>
@@ -2136,7 +2218,7 @@
     </message>
     <message>
         <source>Edit comment...</source>
-        <translation>எப்படி திருத்து...</translation>
+        <translation type="vanished">எப்படி திருத்து...</translation>
     </message>
     <message>
         <source>Rebase</source>
@@ -2148,11 +2230,11 @@
     </message>
     <message>
         <source>Reset HEAD</source>
-        <translation>தலையை மீட்டமைக்கவும்</translation>
+        <translation type="vanished">தலையை மீட்டமைக்கவும்</translation>
     </message>
     <message>
         <source>Message</source>
-        <translation>செய்தி</translation>
+        <translation type="vanished">செய்தி</translation>
     </message>
     <message>
         <source>History</source>
@@ -2180,15 +2262,15 @@
     </message>
     <message>
         <source>No remote repository is registered.</source>
-        <translation>ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
+        <translation type="vanished">ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>The current branch %1 has no upstream branch.</source>
-        <translation>தற்போதைய கிளை% 1 க்கு மேலோடை கிளை இல்லை.</translation>
+        <translation type="vanished">தற்போதைய கிளை% 1 க்கு மேலோடை கிளை இல்லை.</translation>
     </message>
     <message>
         <source>You try push --set-upstream</source>
-        <translation>நீங்கள் push --set-upstream ஐ முயற்சிக்கவும்</translation>
+        <translation type="vanished">நீங்கள் push --set-upstream ஐ முயற்சிக்கவும்</translation>
     </message>
     <message>
         <source>Connection refused.</source>
@@ -2424,13 +2506,33 @@
     </message>
     <message>
         <source>That commmit has not foud or not read yet</source>
-        <translation>அந்த உறுதி இன்னும் கிடைக்கவில்லை அல்லது படிக்கவில்லை</translation>
+        <translation type="vanished">அந்த உறுதி இன்னும் கிடைக்கவில்லை அல்லது படிக்கவில்லை</translation>
     </message>
     <message>
         <source>Failed to delete the branch &apos;%1&apos;
 </source>
-        <translation>&apos;% 1&apos; கிளையை நீக்க முடியவில்லை
+        <translation type="vanished">&apos;% 1&apos; கிளையை நீக்க முடியவில்லை
 </translation>
+    </message>
+    <message>
+        <source>Sort by commit time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSH</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart trace logger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSH Connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSH connection is disabled</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2452,15 +2554,15 @@
     <name>MergeBranchDialog</name>
     <message>
         <source>Merge</source>
-        <translation>ஒன்றிணைக்கவும்</translation>
+        <translation type="vanished">ஒன்றிணைக்கவும்</translation>
     </message>
     <message>
         <source>Current branch :</source>
-        <translation>தற்போதைய கிளை:</translation>
+        <translation type="vanished">தற்போதைய கிளை:</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ரத்துசெய்</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2510,7 +2612,7 @@
     </message>
     <message>
         <source>Save as</source>
-        <translation>என சேமி</translation>
+        <translation type="vanished">என சேமி</translation>
     </message>
 </context>
 <context>
@@ -2525,38 +2627,38 @@
     </message>
     <message>
         <source>Save as</source>
-        <translation>என சேமி</translation>
+        <translation type="vanished">என சேமி</translation>
     </message>
 </context>
 <context>
     <name>ObjectBrowserDialog</name>
     <message>
         <source>Object Browser</source>
-        <translation>பொருள் உலாவி</translation>
+        <translation type="vanished">பொருள் உலாவி</translation>
     </message>
     <message>
         <source>Inspect</source>
-        <translation>ஆய்வு</translation>
+        <translation type="vanished">ஆய்வு</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation>சரி</translation>
+        <translation type="vanished">சரி</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ரத்துசெய்</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>ID</source>
-        <translation>ஐடி</translation>
+        <translation type="vanished">ஐடி</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation>வகை</translation>
+        <translation type="vanished">வகை</translation>
     </message>
     <message>
         <source>Object Inspection</source>
-        <translation>பொருள் ஆய்வு</translation>
+        <translation type="vanished">பொருள் ஆய்வு</translation>
     </message>
 </context>
 <context>
@@ -2578,7 +2680,7 @@
     </message>
     <message>
         <source>push --set-upstream</source>
-        <translation>push --set-upstream</translation>
+        <translation type="vanished">push --set-upstream</translation>
     </message>
     <message>
         <source>Push to</source>
@@ -2619,16 +2721,20 @@
         <source>Save Launcher File</source>
         <translation>துவக்கி கோப்பை சேமிக்கவும்</translation>
     </message>
+    <message>
+        <source>Save as</source>
+        <translation type="unfinished">என சேமி</translation>
+    </message>
 </context>
 <context>
     <name>RebaseOntoDialog</name>
     <message>
         <source>Branch</source>
-        <translation>கிளை</translation>
+        <translation type="vanished">கிளை</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ரத்துசெய்</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2659,7 +2765,7 @@
     </message>
     <message>
         <source>Comment</source>
-        <translation>கருத்து</translation>
+        <translation type="vanished">கருத்து</translation>
     </message>
     <message>
         <source>Checkout</source>
@@ -2710,7 +2816,7 @@
     </message>
     <message>
         <source>SSH key override</source>
-        <translation>பாஓடு விசை மேலெழுதுதல்</translation>
+        <translation type="vanished">பாஓடு விசை மேலெழுதுதல்</translation>
     </message>
 </context>
 <context>
@@ -2728,7 +2834,7 @@
     </message>
     <message>
         <source>Name: </source>
-        <translation>பெயர்:</translation>
+        <translation type="vanished">பெயர்:</translation>
     </message>
     <message>
         <source>TextLabel</source>
@@ -2764,23 +2870,23 @@
     </message>
     <message>
         <source>Local dir :</source>
-        <translation>உள்ளக இயக்குனர்:</translation>
+        <translation type="vanished">உள்ளக இயக்குனர்:</translation>
     </message>
     <message>
         <source>Remote URLs</source>
-        <translation>தொலைநிலை URLகள்</translation>
+        <translation type="vanished">தொலைநிலை URLகள்</translation>
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation type="vanished">ரிமோட்</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>கூட்டு</translation>
+        <translation type="vanished">கூட்டு</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>தொகு</translation>
+        <translation type="vanished">தொகு</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -2788,11 +2894,11 @@
     </message>
     <message>
         <source>&amp;Remote menu</source>
-        <translation>&amp;தொலை பட்டியல்</translation>
+        <translation type="vanished">&amp;தொலை பட்டியல்</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>மூடு</translation>
+        <translation type="vanished">மூடு</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2812,7 +2918,7 @@
     </message>
     <message>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos; ?</source>
-        <translation>&apos;%2&apos; களஞ்சியத்திலிருந்து ரிமோட் &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">&apos;%2&apos; களஞ்சியத்திலிருந்து ரிமோட் &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Save</source>
@@ -2830,23 +2936,23 @@
     <name>RepositoryWrapperFrame</name>
     <message>
         <source>Graph</source>
-        <translation>வரைபடம்</translation>
+        <translation type="vanished">வரைபடம்</translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation>உறுதி</translation>
+        <translation type="vanished">உறுதி</translation>
     </message>
     <message>
         <source>Date</source>
-        <translation>திகதி</translation>
+        <translation type="vanished">திகதி</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation>நூலாசிரியர்</translation>
+        <translation type="vanished">நூலாசிரியர்</translation>
     </message>
     <message>
         <source>Message</source>
-        <translation>செய்தி</translation>
+        <translation type="vanished">செய்தி</translation>
     </message>
 </context>
 <context>
@@ -3047,35 +3153,35 @@
     <name>SetRemoteUrlDialog</name>
     <message>
         <source>Set Remote URL</source>
-        <translation>தொலைநிலை முகவரி ஐ அமைக்கவும்</translation>
+        <translation type="vanished">தொலைநிலை முகவரி ஐ அமைக்கவும்</translation>
     </message>
     <message>
         <source>Current URLs</source>
-        <translation>தற்போதைய URLகள்</translation>
+        <translation type="vanished">தற்போதைய URLகள்</translation>
     </message>
     <message>
         <source>New URL</source>
-        <translation>புதிய முகவரி</translation>
+        <translation type="vanished">புதிய முகவரி</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>பெயர்</translation>
+        <translation type="vanished">பெயர்</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation>சரி</translation>
+        <translation type="vanished">சரி</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>ரத்துசெய்</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>URL</source>
-        <translation>முகவரி</translation>
+        <translation type="vanished">முகவரி</translation>
     </message>
     <message>
         <source>&amp;Test</source>
-        <translation>&amp;சோதனை</translation>
+        <translation type="vanished">&amp;சோதனை</translation>
     </message>
 </context>
 <context>
@@ -3137,11 +3243,11 @@
     </message>
     <message>
         <source>Default working folder</source>
-        <translation>இயல்புநிலை வேலை கோப்புறை</translation>
+        <translation type="vanished">இயல்புநிலை வேலை கோப்புறை</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation>உலாவுக...</translation>
+        <translation type="vanished">உலாவுக...</translation>
     </message>
     <message>
         <source>Automatically fetch when opening the repository</source>
@@ -3149,7 +3255,7 @@
     </message>
     <message>
         <source>Get committer&apos;s icon from gravatar.com</source>
-        <translation>gravatar.com இலிருந்து கமிட்டர் ஐகானைப் பெறுங்கள்</translation>
+        <translation type="vanished">gravatar.com இலிருந்து கமிட்டர் ஐகானைப் பெறுங்கள்</translation>
     </message>
     <message>
         <source>Maximum number of commit item acquisitions</source>
@@ -3157,11 +3263,11 @@
     </message>
     <message>
         <source>Watch remote changes periodically</source>
-        <translation>தொலைநிலை மாற்றங்களை அவ்வப்போது பார்க்கவும்</translation>
+        <translation type="vanished">தொலைநிலை மாற்றங்களை அவ்வப்போது பார்க்கவும்</translation>
     </message>
     <message>
         <source>interval</source>
-        <translation>இடைவேளை</translation>
+        <translation type="vanished">இடைவேளை</translation>
     </message>
     <message>
         <source>Use avatar icon provider</source>
@@ -3185,15 +3291,15 @@
     </message>
     <message>
         <source>Disable</source>
-        <translation>முடக்கு</translation>
+        <translation type="vanished">முடக்கு</translation>
     </message>
     <message>
         <source>1 min</source>
-        <translation>1 மணித்துளி</translation>
+        <translation type="vanished">1 மணித்துளி</translation>
     </message>
     <message>
         <source>%1 mins</source>
-        <translation>% 1 நிமிடங்கள்</translation>
+        <translation type="vanished">% 1 நிமிடங்கள்</translation>
     </message>
 </context>
 <context>
@@ -3231,7 +3337,7 @@
     </message>
     <message>
         <source>Enable high DPI scaling</source>
-        <translation>உயர் DPI அளவிடுதலை இயக்கு</translation>
+        <translation type="vanished">உயர் DPI அளவிடுதலை இயக்கு</translation>
     </message>
     <message>
         <source>Theme</source>
@@ -3239,11 +3345,11 @@
     </message>
     <message>
         <source>Japanese</source>
-        <translation>சப்பானியர்கள்</translation>
+        <translation type="vanished">சப்பானியர்கள்</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation>தரநிலை</translation>
+        <translation type="vanished">தரநிலை</translation>
     </message>
     <message>
         <source>Light</source>
@@ -3264,6 +3370,53 @@
     <message>
         <source>(Changes are applied at next run)</source>
         <translation>(மாற்றங்கள் அடுத்த ஓட்டத்தில் பயன்படுத்தப்படும்)</translation>
+    </message>
+</context>
+<context>
+    <name>SettingLoggingForm</name>
+    <message>
+        <source>Logging</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Trace log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation type="unfinished">இயல்புநிலை</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation type="unfinished">உலாவுக...</translation>
+    </message>
+    <message>
+        <source>(Changes are applied at next run)</source>
+        <translation type="unfinished">(மாற்றங்கள் அடுத்த ஓட்டத்தில் பயன்படுத்தப்படும்)</translation>
+    </message>
+    <message>
+        <source>Select Log Output Directory</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3363,7 +3516,7 @@
     <name>SettingProgramsForm</name>
     <message>
         <source>Programs</source>
-        <translation>திட்டங்கள்</translation>
+        <translation type="vanished">திட்டங்கள்</translation>
     </message>
     <message>
         <source>Programs 1</source>
@@ -3379,7 +3532,7 @@
     </message>
     <message>
         <source>File command</source>
-        <translation>கோப்பு கட்டளை</translation>
+        <translation type="vanished">கோப்பு கட்டளை</translation>
     </message>
     <message>
         <source>GPG command (option)</source>
@@ -3391,15 +3544,15 @@
     </message>
     <message>
         <source>Terminal command (option)</source>
-        <translation>டெர்மினல் கட்டளை (விருப்பம்)</translation>
+        <translation type="vanished">டெர்மினல் கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>மீட்டமை</translation>
+        <translation type="vanished">மீட்டமை</translation>
     </message>
     <message>
         <source>Terminal Command</source>
-        <translation>டெர்மினல் கட்டளை</translation>
+        <translation type="vanished">டெர்மினல் கட்டளை</translation>
     </message>
 </context>
 <context>
@@ -3538,23 +3691,23 @@
     <name>SubmoduleMainWindow</name>
     <message>
         <source>Guitar</source>
-        <translation>கிட்டார்</translation>
+        <translation type="vanished">கிட்டார்</translation>
     </message>
     <message>
         <source>Unstage</source>
-        <translation>மேடையற்றது</translation>
+        <translation type="vanished">மேடையற்றது</translation>
     </message>
     <message>
         <source>Select all</source>
-        <translation>அனைத்தையும் தெரிவுசெய்</translation>
+        <translation type="vanished">அனைத்தையும் தெரிவுசெய்</translation>
     </message>
     <message>
         <source>Stage</source>
-        <translation>மேடை</translation>
+        <translation type="vanished">மேடை</translation>
     </message>
     <message>
         <source>Commit</source>
-        <translation>உறுதி</translation>
+        <translation type="vanished">உறுதி</translation>
     </message>
 </context>
 <context>
@@ -3584,11 +3737,27 @@
     <name>SubmodulesDialog</name>
     <message>
         <source>Dialog</source>
-        <translation>உரையாடல்</translation>
+        <translation type="vanished">உரையாடல்</translation>
     </message>
     <message>
         <source>Close</source>
         <translation>மூடு</translation>
+    </message>
+    <message>
+        <source>Submodules</source>
+        <translation type="unfinished">துணை தொகுதிகள்</translation>
+    </message>
+    <message>
+        <source>GroupBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished">முனையத்தில்</translation>
+    </message>
+    <message>
+        <source>File Manager</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3630,7 +3799,7 @@
     </message>
     <message>
         <source>file</source>
-        <translation>கோப்பு</translation>
+        <translation type="vanished">கோப்பு</translation>
     </message>
     <message>
         <source>Global User Information</source>
@@ -3646,7 +3815,7 @@
     </message>
     <message>
         <source>Get icon from Gravatar</source>
-        <translation>கிராவதார் இலிருந்து ஐகானைப் பெறுங்கள்</translation>
+        <translation type="vanished">கிராவதார் இலிருந்து ஐகானைப் பெறுங்கள்</translation>
     </message>
     <message>
         <source>Default Working Folder</source>

@@ -113,7 +113,7 @@
         <location filename="../../AddRepositoryDialog.ui" line="240"/>
         <location filename="../../AddRepositoryDialog.cpp" line="247"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../AddRepositoryDialog.ui" line="250"/>
@@ -443,7 +443,7 @@
     <message>
         <location filename="../../CherryPickDialog.ui" line="131"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../CherryPickDialog.ui" line="138"/>
@@ -496,7 +496,7 @@
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="76"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../CleanSubModuleDialog.ui" line="83"/>
@@ -585,7 +585,7 @@
     <message>
         <location filename="../../coloredit/ColorDialog.ui" line="68"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../coloredit/ColorDialog.ui" line="75"/>
@@ -704,22 +704,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="236"/>
-        <source>Add detailed comment</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../CommitDialog.ui" line="256"/>
+        <location filename="../../CommitDialog.ui" line="249"/>
         <source>Amend</source>
         <translation>изменить</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="283"/>
+        <location filename="../../CommitDialog.ui" line="276"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="293"/>
+        <location filename="../../CommitDialog.ui" line="286"/>
         <source>Cancel</source>
         <translation>Отмена</translation>
     </message>
@@ -755,27 +750,27 @@
 <context>
     <name>CommitLogTableModel</name>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="66"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="67"/>
         <source>Graph</source>
         <translation type="unfinished">Граф</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="67"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="68"/>
         <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="68"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="69"/>
         <source>Date</source>
         <translation type="unfinished">Дата</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="69"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="70"/>
         <source>Author</source>
         <translation type="unfinished">Автор</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="70"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="71"/>
         <source>Message</source>
         <translation type="unfinished">Комментарий</translation>
     </message>
@@ -907,7 +902,7 @@
         <translation>Просмотр фиксации (Commit)</translation>
     </message>
     <message>
-        <location filename="../../CommitViewWindow.cpp" line="58"/>
+        <location filename="../../CommitViewWindow.cpp" line="57"/>
         <source>History</source>
         <translation>История</translation>
     </message>
@@ -1052,6 +1047,44 @@
     </message>
 </context>
 <context>
+    <name>ConfirmRemoteSessionDialog</name>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="14"/>
+        <source>Confirm Remote Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="20"/>
+        <source>CAUTION</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="27"/>
+        <source>Executing malicious commands on remote hosts can cause serious security damage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="44"/>
+        <source>Do you approve work in the following directory?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="54"/>
+        <source>Do you approve of executing the following command?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="92"/>
+        <source>OK</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/ConfirmRemoteSessionDialog.ui" line="99"/>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CreateRepositoryDialog</name>
     <message>
         <location filename="../../CreateRepositoryDialog.ui" line="14"/>
@@ -1182,6 +1215,65 @@
     </message>
 </context>
 <context>
+    <name>Dialog</name>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="22"/>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="32"/>
+        <source>Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="60"/>
+        <source>Authentication</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="68"/>
+        <source>Public key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="75"/>
+        <location filename="../../sshsupport/SshDialog.ui" line="110"/>
+        <source>Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="100"/>
+        <source>User</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="145"/>
+        <source>Connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="152"/>
+        <source>Disconnect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="179"/>
+        <source>OK</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <location filename="../../sshsupport/SshDialog.ui" line="186"/>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DoYouWantToInitDialog</name>
     <message>
         <location filename="../../DoYouWantToInitDialog.ui" line="14"/>
@@ -1281,7 +1373,7 @@
     <message>
         <location filename="../../EditProfilesDialog.ui" line="53"/>
         <source>Get icon from network</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Получить иконку из сети</translation>
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="67"/>
@@ -1344,7 +1436,7 @@
     <message>
         <location filename="../../EditRemoteDialog.ui" line="120"/>
         <source>&amp;OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;OK</translation>
     </message>
     <message>
         <location filename="../../EditRemoteDialog.ui" line="130"/>
@@ -1506,7 +1598,7 @@
     <message>
         <location filename="../../FindCommitDialog.ui" line="54"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../FindCommitDialog.ui" line="61"/>
@@ -1534,7 +1626,7 @@
     <message>
         <location filename="../../GenerateCommitMessageDialog.ui" line="55"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../GenerateCommitMessageDialog.ui" line="65"/>
@@ -1542,7 +1634,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../GenerateCommitMessageDialog.cpp" line="98"/>
+        <location filename="../../GenerateCommitMessageDialog.cpp" line="105"/>
         <source>Failed to generate commit message.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1572,7 +1664,7 @@
     <message>
         <location filename="../../GitConfigGlobalAddSafeDirectoryDialog.ui" line="73"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../GitConfigGlobalAddSafeDirectoryDialog.ui" line="80"/>
@@ -1650,32 +1742,37 @@
 <context>
     <name>Languages</name>
     <message>
-        <location filename="../../Languages.cpp" line="6"/>
+        <location filename="../../Languages.cpp" line="10"/>
         <source>English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="7"/>
+        <location filename="../../Languages.cpp" line="12"/>
         <source>Japanese</source>
         <translation type="unfinished">Японский</translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="8"/>
+        <location filename="../../Languages.cpp" line="13"/>
         <source>Russian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="9"/>
+        <location filename="../../Languages.cpp" line="11"/>
         <source>Spanish</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="10"/>
+        <location filename="../../Languages.cpp" line="14"/>
+        <source>Tamil</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Languages.cpp" line="15"/>
         <source>Chinese (Simplified)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Languages.cpp" line="11"/>
+        <location filename="../../Languages.cpp" line="16"/>
         <source>Chinese (Traditional/Taiwan)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1711,43 +1808,43 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1112"/>
+        <location filename="../../MainWindow.ui" line="1113"/>
         <source>Wi&amp;ndow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1182"/>
+        <location filename="../../MainWindow.ui" line="1183"/>
         <source>E&amp;xperimental</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1440"/>
+        <location filename="../../MainWindow.ui" line="1444"/>
         <source>E&amp;dit .git/config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1445"/>
+        <location filename="../../MainWindow.ui" line="1449"/>
         <source>&amp;Edit .gitignore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1462"/>
+        <location filename="../../MainWindow.ui" line="1466"/>
         <source>&amp;Clone</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1465"/>
-        <location filename="../../MainWindow.cpp" line="2353"/>
-        <location filename="../../MainWindow.cpp" line="2358"/>
-        <location filename="../../MainWindow.cpp" line="2371"/>
-        <location filename="../../MainWindow.cpp" line="2376"/>
+        <location filename="../../MainWindow.ui" line="1469"/>
+        <location filename="../../MainWindow.cpp" line="2528"/>
+        <location filename="../../MainWindow.cpp" line="2533"/>
+        <location filename="../../MainWindow.cpp" line="2546"/>
+        <location filename="../../MainWindow.cpp" line="2551"/>
         <source>Clone</source>
         <translation>Клонировать</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="131"/>
-        <location filename="../../MainWindow.cpp" line="4456"/>
-        <location filename="../../MainWindow.cpp" line="4457"/>
+        <location filename="../../MainWindow.cpp" line="4289"/>
+        <location filename="../../MainWindow.cpp" line="4290"/>
         <source>Fetch</source>
         <translation>Загрузить</translation>
     </message>
@@ -1806,7 +1903,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="835"/>
-        <location filename="../../MainWindow.cpp" line="5275"/>
+        <location filename="../../MainWindow.cpp" line="5107"/>
         <source>Unstage</source>
         <translation>Не отслеживать</translation>
     </message>
@@ -1817,13 +1914,13 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="800"/>
-        <location filename="../../MainWindow.cpp" line="5145"/>
+        <location filename="../../MainWindow.cpp" line="4981"/>
         <source>Stage</source>
         <translation>Отслеживать</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="871"/>
-        <location filename="../../MainWindow.cpp" line="2498"/>
+        <location filename="../../MainWindow.cpp" line="2668"/>
         <source>Commit</source>
         <translation>Фиксация</translation>
     </message>
@@ -1838,7 +1935,7 @@
         <translation>Вид(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1090"/>
+        <location filename="../../MainWindow.ui" line="1091"/>
         <source>&amp;Edit</source>
         <translation>Редактировать(&amp;E)</translation>
     </message>
@@ -1847,17 +1944,17 @@
         <translation type="vanished">注意を要するコマンド</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1453"/>
+        <location filename="../../MainWindow.ui" line="1457"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5001"/>
+        <location filename="../../MainWindow.cpp" line="4841"/>
         <source>Edit tags...</source>
         <translation>Правка тэгов...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1478"/>
+        <location filename="../../MainWindow.ui" line="1482"/>
         <source>Edit tags</source>
         <translation>Правка тэгов</translation>
     </message>
@@ -1874,12 +1971,12 @@
         <translation type="vanished">Остановить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1534"/>
+        <location filename="../../MainWindow.ui" line="1538"/>
         <source>E&amp;xit</source>
         <translation>В&amp;ыход</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1537"/>
+        <location filename="../../MainWindow.ui" line="1541"/>
         <source>Ctrl+Q</source>
         <translation></translation>
     </message>
@@ -1888,18 +1985,18 @@
         <translation type="vanished">Свойства...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1555"/>
+        <location filename="../../MainWindow.ui" line="1559"/>
         <source>Set GPG signing</source>
         <translation>Настройка подписей GPG</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1105"/>
+        <location filename="../../MainWindow.ui" line="1106"/>
         <source>&amp;Help</source>
         <translation>Помощь (&amp;H)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="252"/>
-        <location filename="../../MainWindow.cpp" line="4677"/>
+        <location filename="../../MainWindow.cpp" line="4517"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1913,287 +2010,303 @@
         <translation type="vanished">Окно(&amp;W)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1123"/>
+        <location filename="../../MainWindow.ui" line="1124"/>
         <source>&amp;Repository</source>
         <translation>Репозиторий(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1127"/>
+        <location filename="../../MainWindow.ui" line="1128"/>
         <source>Stash</source>
         <translation>Спрятать</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1156"/>
+        <location filename="../../MainWindow.ui" line="1157"/>
         <source>Re&amp;mote</source>
         <translation>Источник (&amp;M)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1170"/>
+        <location filename="../../MainWindow.ui" line="1171"/>
         <source>&amp;Destructive</source>
         <translation>Разрушительные (&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1211"/>
+        <location filename="../../MainWindow.ui" line="1215"/>
         <source>Log</source>
         <translation>Журнал</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1360"/>
+        <location filename="../../MainWindow.ui" line="1364"/>
         <source>&amp;Open existing working copy...</source>
         <translation>Открыть существующий репозиторий (&amp;O)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1363"/>
+        <location filename="../../MainWindow.ui" line="1367"/>
         <source>Add existing working copy</source>
         <translation>Добавить существующий репозиторий</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1368"/>
+        <location filename="../../MainWindow.ui" line="1372"/>
         <source>&amp;Refresh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1371"/>
+        <location filename="../../MainWindow.ui" line="1375"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1374"/>
+        <location filename="../../MainWindow.ui" line="1378"/>
         <source>F5</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1383"/>
+        <location filename="../../MainWindow.ui" line="1387"/>
         <source>&amp;Commit</source>
         <translation>Фиксация (&amp;Commit)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1392"/>
+        <location filename="../../MainWindow.ui" line="1396"/>
         <source>&amp;Push</source>
         <translation>Выгрузить (&amp;Push)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1395"/>
+        <location filename="../../MainWindow.ui" line="1399"/>
         <source>Push...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1398"/>
+        <location filename="../../MainWindow.ui" line="1402"/>
         <source>Ctrl+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1406"/>
+        <location filename="../../MainWindow.ui" line="1410"/>
         <source>test</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1409"/>
+        <location filename="../../MainWindow.ui" line="1413"/>
         <source>Ctrl+T</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1418"/>
+        <location filename="../../MainWindow.ui" line="1422"/>
         <source>Pu&amp;ll</source>
         <translation>Обновить (Pu&amp;ll)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1427"/>
+        <location filename="../../MainWindow.ui" line="1431"/>
         <source>&amp;Fetch</source>
         <translation>Загрузить (&amp;Fetch)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1432"/>
+        <location filename="../../MainWindow.ui" line="1436"/>
         <source>Ed&amp;it global .gitconfig</source>
         <translation>Редакт&amp;ировать .gitconfig</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1435"/>
+        <location filename="../../MainWindow.ui" line="1439"/>
         <source>Edit global .gitconfig</source>
         <translation>Прака глобального .gitconfig</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1512"/>
+        <location filename="../../MainWindow.ui" line="1516"/>
         <source>&amp;Delete branch...</source>
         <translation>&amp;Удалить ветку...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1517"/>
+        <location filename="../../MainWindow.ui" line="1521"/>
         <source>&amp;Reset HEAD~1</source>
         <translation>&amp;Сбросить HEAD~1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1529"/>
+        <location filename="../../MainWindow.ui" line="1533"/>
         <source>&amp;Stop process</source>
         <translation>&amp;Остановить процесс</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1542"/>
+        <location filename="../../MainWindow.ui" line="1546"/>
         <source>&amp;Reflog...</source>
         <translation>&amp;Reflog...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1547"/>
+        <location filename="../../MainWindow.ui" line="1551"/>
         <source>&amp;Property...</source>
         <translation>&amp;Свойства...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1552"/>
+        <location filename="../../MainWindow.ui" line="1556"/>
         <source>Set &amp;GPG signing</source>
         <translation>Настроить подпись &amp;GPG</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1560"/>
+        <location filename="../../MainWindow.ui" line="1564"/>
         <source>Delete remote &amp;branch...</source>
         <translation>Удалить удаленную &amp;ветку...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1565"/>
+        <location filename="../../MainWindow.ui" line="1569"/>
         <source>&amp;Fetch --prune</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1574"/>
+        <location filename="../../MainWindow.ui" line="1578"/>
         <source>&amp;Terminal</source>
         <translation>&amp;Терминал</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1583"/>
+        <location filename="../../MainWindow.ui" line="1587"/>
         <source>E&amp;xplorer</source>
         <translation>Проводни&amp;к</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1588"/>
+        <location filename="../../MainWindow.ui" line="1592"/>
         <source>&amp;Clean -df</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1593"/>
+        <location filename="../../MainWindow.ui" line="1597"/>
         <source>Reset --&amp;hard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1598"/>
+        <location filename="../../MainWindow.ui" line="1602"/>
         <source>&amp;Stash</source>
         <translation>&amp;Схронить (Stash)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1603"/>
+        <location filename="../../MainWindow.ui" line="1607"/>
         <source>&amp;Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1608"/>
+        <location filename="../../MainWindow.ui" line="1612"/>
         <source>&amp;Drop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1613"/>
+        <location filename="../../MainWindow.ui" line="1617"/>
         <source>&amp;Online</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1618"/>
+        <location filename="../../MainWindow.ui" line="1622"/>
         <source>Offl&amp;ine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1642"/>
+        <location filename="../../MainWindow.ui" line="1646"/>
         <source>Find &amp;next</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1667"/>
+        <location filename="../../MainWindow.ui" line="1671"/>
         <source>&amp;Merge...</source>
         <translation>&amp;Слияние...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1672"/>
+        <location filename="../../MainWindow.ui" line="1676"/>
         <source>&amp;Expand commit log</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1680"/>
+        <location filename="../../MainWindow.ui" line="1684"/>
         <source>Expand &amp;file list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1688"/>
+        <location filename="../../MainWindow.ui" line="1692"/>
         <source>Expand &amp;diff view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1699"/>
+        <location filename="../../MainWindow.ui" line="1703"/>
         <source>&amp;Sidebar</source>
         <translation>&amp;Боковая панель</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1718"/>
+        <location filename="../../MainWindow.ui" line="1722"/>
         <source>Show &amp;labels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1726"/>
+        <location filename="../../MainWindow.ui" line="1730"/>
         <source>Submodule &amp;add...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1731"/>
+        <location filename="../../MainWindow.ui" line="1735"/>
         <source>&amp;Submodules</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1736"/>
+        <location filename="../../MainWindow.ui" line="1740"/>
         <source>Submodule &amp;update...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1741"/>
+        <location filename="../../MainWindow.ui" line="1745"/>
         <source>&amp;Create desktop launcher file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1750"/>
+        <location filename="../../MainWindow.ui" line="1754"/>
         <source>&amp;Add repository...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1753"/>
+        <location filename="../../MainWindow.ui" line="1757"/>
         <source>Ctrl+D</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1761"/>
+        <location filename="../../MainWindow.ui" line="1765"/>
         <source>Show &amp;graph</source>
         <translation>Показать &amp;граф</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1779"/>
+        <location filename="../../MainWindow.ui" line="1783"/>
         <source>&amp;Rebase --abort</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1787"/>
+        <location filename="../../MainWindow.ui" line="1791"/>
         <source>Show a&amp;vatars</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1790"/>
+        <location filename="../../MainWindow.ui" line="1794"/>
         <source>Ctrl+V</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1764"/>
+        <location filename="../../MainWindow.ui" line="1802"/>
+        <source>Sort by commit time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.ui" line="1810"/>
+        <source>SSH</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.ui" line="1815"/>
+        <location filename="../../MainWindow.ui" line="1818"/>
+        <source>Restart trace logger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.ui" line="1768"/>
         <source>Ctrl+G</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1769"/>
+        <location filename="../../MainWindow.ui" line="1773"/>
         <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1774"/>
+        <location filename="../../MainWindow.ui" line="1778"/>
         <source>&amp;Configure user</source>
         <translation>&amp;Настроить пользователя</translation>
     </message>
@@ -2206,42 +2319,42 @@
         <translation type="vanished">Правка .gitignore</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1450"/>
+        <location filename="../../MainWindow.ui" line="1454"/>
         <source>&amp;Settings...</source>
         <translation>Настройки (&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1475"/>
+        <location filename="../../MainWindow.ui" line="1479"/>
         <source>&amp;Edit tags...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1483"/>
+        <location filename="../../MainWindow.ui" line="1487"/>
         <source>Push &amp;all tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1494"/>
+        <location filename="../../MainWindow.ui" line="1498"/>
         <source>F4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1499"/>
+        <location filename="../../MainWindow.ui" line="1503"/>
         <source>&amp;Jump...</source>
         <translation>Переход (&amp;Jump)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1502"/>
+        <location filename="../../MainWindow.ui" line="1506"/>
         <source>Ctrl+J</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1507"/>
+        <location filename="../../MainWindow.ui" line="1511"/>
         <source>Check&amp;out...</source>
         <translation>Проверка (C&amp;heckout)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5006"/>
+        <location filename="../../MainWindow.cpp" line="4846"/>
         <source>Delete branch...</source>
         <translation>Удалить ветвь...</translation>
     </message>
@@ -2254,92 +2367,93 @@
         <translation type="vanished">Отменить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1626"/>
+        <location filename="../../MainWindow.ui" line="1630"/>
         <source>Repositories panel</source>
         <translation>Панель репозиториев</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1629"/>
+        <location filename="../../MainWindow.ui" line="1633"/>
+        <location filename="../../MainWindow.ui" line="1805"/>
         <source>Ctrl+R</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1634"/>
+        <location filename="../../MainWindow.ui" line="1638"/>
         <source>&amp;Find...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1637"/>
+        <location filename="../../MainWindow.ui" line="1641"/>
         <source>Ctrl+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1645"/>
+        <location filename="../../MainWindow.ui" line="1649"/>
         <source>F3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1654"/>
+        <location filename="../../MainWindow.ui" line="1658"/>
         <source>&amp;Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1659"/>
+        <location filename="../../MainWindow.ui" line="1663"/>
         <source>Jump to &amp;HEAD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1662"/>
+        <location filename="../../MainWindow.ui" line="1666"/>
         <source>Ctrl+H</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1675"/>
+        <location filename="../../MainWindow.ui" line="1679"/>
         <source>Ctrl+2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1683"/>
+        <location filename="../../MainWindow.ui" line="1687"/>
         <source>Ctrl+3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1691"/>
+        <location filename="../../MainWindow.ui" line="1695"/>
         <source>Ctrl+4</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1702"/>
+        <location filename="../../MainWindow.ui" line="1706"/>
         <source>Ctrl+1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1721"/>
+        <location filename="../../MainWindow.ui" line="1725"/>
         <source>Ctrl+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1707"/>
+        <location filename="../../MainWindow.ui" line="1711"/>
         <source>Wide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1710"/>
+        <location filename="../../MainWindow.ui" line="1714"/>
         <source>F2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1520"/>
+        <location filename="../../MainWindow.ui" line="1524"/>
         <source>Reset HEAD~1</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5007"/>
+        <location filename="../../MainWindow.cpp" line="4847"/>
         <source>Delete remote branch...</source>
         <translation>Удалить ветвь источника...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1470"/>
+        <location filename="../../MainWindow.ui" line="1474"/>
         <source>&amp;About</source>
         <translation>&amp;О программе</translation>
     </message>
@@ -2352,12 +2466,12 @@
         <translation type="vanished">Выбрать пользователя</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.ui" line="1491"/>
+        <location filename="../../MainWindow.ui" line="1495"/>
         <source>&amp;Log</source>
         <translation>Журнал (&amp;Log)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1249"/>
+        <location filename="../../MainWindow.cpp" line="1231"/>
         <source>Unnamed</source>
         <translation>無名</translation>
     </message>
@@ -2382,40 +2496,40 @@
         <translation type="vanished">概要</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3287"/>
-        <location filename="../../MainWindow.cpp" line="4519"/>
+        <location filename="../../MainWindow.cpp" line="1528"/>
+        <location filename="../../MainWindow.cpp" line="4359"/>
         <source>Uncommited changes</source>
         <translation>Незафиксированные изменения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3678"/>
+        <location filename="../../MainWindow.cpp" line="3725"/>
         <source>Are you sure you want to remove the repository from bookmarks?</source>
         <translation>リポジトリをブックマークから削除してよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3678"/>
+        <location filename="../../MainWindow.cpp" line="3725"/>
         <source>(Files will NOT be deleted)</source>
         <translation>（ファルは削除されません）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2065"/>
-        <location filename="../../MainWindow.cpp" line="2072"/>
-        <location filename="../../MainWindow.cpp" line="5518"/>
+        <location filename="../../MainWindow.cpp" line="1756"/>
+        <location filename="../../MainWindow.cpp" line="1763"/>
+        <location filename="../../MainWindow.cpp" line="5394"/>
         <source>Open Repository</source>
         <translation>リポジトリを開く</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2065"/>
+        <location filename="../../MainWindow.cpp" line="1756"/>
         <source>No such folder</source>
         <translation>そのようなフォルダはありません</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2072"/>
+        <location filename="../../MainWindow.cpp" line="1763"/>
         <source>Not a valid git repository</source>
         <translation>有効なリポジトリではありません</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2498"/>
+        <location filename="../../MainWindow.cpp" line="2668"/>
         <source>Commit message can not be omitted.</source>
         <translation>コミットメッセージを空にすることはできません。</translation>
     </message>
@@ -2424,57 +2538,57 @@
         <translation type="vanished">リポジトリのプロパティ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4799"/>
+        <location filename="../../MainWindow.cpp" line="4639"/>
         <source>&amp;Add new group</source>
         <translation>Новая &amp;группа</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4800"/>
+        <location filename="../../MainWindow.cpp" line="4640"/>
         <source>&amp;Delete group</source>
         <translation>Удалить &amp;группу</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4801"/>
+        <location filename="../../MainWindow.cpp" line="4641"/>
         <source>&amp;Rename group</source>
         <translation>Переименовать группу(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4809"/>
+        <location filename="../../MainWindow.cpp" line="4649"/>
         <source>New group</source>
         <translation>Новая группа</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4866"/>
+        <location filename="../../MainWindow.cpp" line="4706"/>
         <source>Open &amp;terminal</source>
         <translation>Открыть терминал (&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4867"/>
+        <location filename="../../MainWindow.cpp" line="4707"/>
         <source>Open command promp&amp;t</source>
         <translation>Открыть терминал (&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4869"/>
+        <location filename="../../MainWindow.cpp" line="4709"/>
         <source>&amp;Open</source>
         <translation>Открыть (&amp;Open)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4890"/>
+        <location filename="../../MainWindow.cpp" line="4730"/>
         <source>Open &amp;folder</source>
         <translation>Открыть каталог (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4895"/>
+        <location filename="../../MainWindow.cpp" line="4735"/>
         <source>&amp;Remove</source>
         <translation>Удалить (&amp;Remove)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4952"/>
+        <location filename="../../MainWindow.cpp" line="4792"/>
         <source>Copy commit id (7 letters)</source>
         <translation>Скопируйте ID фиксации（7 символов）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4953"/>
+        <location filename="../../MainWindow.cpp" line="4793"/>
         <source>Copy commit id (completely)</source>
         <translation>Скопируйте ID фиксации（полностью）</translation>
     </message>
@@ -2483,13 +2597,13 @@
         <translation type="vanished">コメントを編集...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4563"/>
-        <location filename="../../MainWindow.cpp" line="4999"/>
+        <location filename="../../MainWindow.cpp" line="4403"/>
+        <location filename="../../MainWindow.cpp" line="4839"/>
         <source>Rebase</source>
         <translation>Перебазирование</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5011"/>
+        <location filename="../../MainWindow.cpp" line="4851"/>
         <source>Explore</source>
         <translation>Обзор</translation>
     </message>
@@ -2502,35 +2616,35 @@
         <translation type="vanished">Комментарий</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5092"/>
-        <location filename="../../MainWindow.cpp" line="5150"/>
-        <location filename="../../MainWindow.cpp" line="5276"/>
+        <location filename="../../MainWindow.cpp" line="4932"/>
+        <location filename="../../MainWindow.cpp" line="4986"/>
+        <location filename="../../MainWindow.cpp" line="5108"/>
         <source>History</source>
         <translation>История</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6516"/>
+        <location filename="../../MainWindow.cpp" line="6364"/>
         <source>No such commit</source>
         <translation>Фиксация не существует</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4459"/>
-        <location filename="../../MainWindow.cpp" line="4460"/>
+        <location filename="../../MainWindow.cpp" line="4292"/>
+        <location filename="../../MainWindow.cpp" line="4293"/>
         <source>Update</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6964"/>
+        <location filename="../../MainWindow.cpp" line="6812"/>
         <source>Authentication Failed</source>
         <translation>Авторизация не удалась</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5002"/>
+        <location filename="../../MainWindow.cpp" line="4842"/>
         <source>Revert</source>
         <translation>Отмена (Revert)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2518"/>
+        <location filename="../../MainWindow.cpp" line="2690"/>
         <source>Failed to commit</source>
         <translation>コミット失敗</translation>
     </message>
@@ -2547,296 +2661,306 @@
         <translation type="vanished">--set-upstream を試してください</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2557"/>
+        <location filename="../../MainWindow.cpp" line="2729"/>
         <source>Connection refused.</source>
         <translation>接続が拒否されました。</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1118"/>
+        <location filename="../../MainWindow.cpp" line="1122"/>
         <source>&amp;Property</source>
         <translation>プロパティ(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="226"/>
+        <location filename="../../MainWindow.cpp" line="240"/>
         <source>Create shortcut file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2875"/>
+        <location filename="../../MainWindow.cpp" line="3050"/>
         <source>Select a folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2894"/>
+        <location filename="../../MainWindow.cpp" line="3069"/>
         <source>No repositories found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2894"/>
+        <location filename="../../MainWindow.cpp" line="3069"/>
         <source>No repositories found in the folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2568"/>
+        <location filename="../../MainWindow.cpp" line="2740"/>
         <source>Fetching...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2311"/>
+        <location filename="../../MainWindow.cpp" line="2486"/>
         <source>Cloning...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2434"/>
+        <location filename="../../MainWindow.cpp" line="2609"/>
         <source>Submodule...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2553"/>
+        <location filename="../../MainWindow.cpp" line="2725"/>
         <source>Pushing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2575"/>
+        <location filename="../../MainWindow.cpp" line="2747"/>
         <source>Stageing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2580"/>
+        <location filename="../../MainWindow.cpp" line="2755"/>
         <source>Fetching tags...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2585"/>
+        <location filename="../../MainWindow.cpp" line="2760"/>
         <source>Pulling...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2593"/>
+        <location filename="../../MainWindow.cpp" line="2768"/>
         <source>Pushing tags...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4503"/>
+        <location filename="../../MainWindow.cpp" line="4343"/>
         <source>&lt;div style=&apos;background: #80ffff;&apos;&gt;Search: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&lt;/div&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4803"/>
+        <location filename="../../MainWindow.cpp" line="4643"/>
         <source>&amp;Add repository</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4804"/>
+        <location filename="../../MainWindow.cpp" line="4644"/>
         <source>&amp;Scan folder and add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4873"/>
+        <location filename="../../MainWindow.cpp" line="4713"/>
         <source>&amp;Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4968"/>
+        <location filename="../../MainWindow.cpp" line="4808"/>
         <source>Checkout/Branch...</source>
         <translation>Проверка/ветвь...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4972"/>
+        <location filename="../../MainWindow.cpp" line="4812"/>
         <source>Checkout branch {%1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4995"/>
+        <location filename="../../MainWindow.cpp" line="4835"/>
         <source>Edit message...</source>
         <translation>Правка комментария...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4998"/>
+        <location filename="../../MainWindow.cpp" line="4838"/>
         <source>Merge</source>
         <translation>Слияние</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5000"/>
+        <location filename="../../MainWindow.cpp" line="4840"/>
         <source>Cherry-pick</source>
         <translation>Выборочное применение (Cherry-pick)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5091"/>
-        <location filename="../../MainWindow.cpp" line="5149"/>
+        <location filename="../../MainWindow.cpp" line="4931"/>
+        <location filename="../../MainWindow.cpp" line="4985"/>
         <source>Untrack</source>
         <translation>Не отслеживать</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5097"/>
-        <location filename="../../MainWindow.cpp" line="5151"/>
-        <location filename="../../MainWindow.cpp" line="5277"/>
+        <location filename="../../MainWindow.cpp" line="4937"/>
+        <location filename="../../MainWindow.cpp" line="4987"/>
+        <location filename="../../MainWindow.cpp" line="5109"/>
         <source>Blame</source>
         <translation>Обращение</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5099"/>
+        <location filename="../../MainWindow.cpp" line="4939"/>
         <source>Clean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5108"/>
+        <location filename="../../MainWindow.cpp" line="4948"/>
         <source>Delete selected files.</source>
         <translation>Удалить выбранные файлы.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5119"/>
+        <location filename="../../MainWindow.cpp" line="4955"/>
         <source>rm --cached files</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5146"/>
+        <location filename="../../MainWindow.cpp" line="4982"/>
         <source>Reset</source>
         <translation>Откат (Reset)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5147"/>
+        <location filename="../../MainWindow.cpp" line="4983"/>
         <source>Ignore</source>
         <translation>Игнорировать</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5631"/>
+        <location filename="../../MainWindow.cpp" line="5506"/>
         <source>Create Local Branch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2727"/>
+        <location filename="../../MainWindow.cpp" line="7220"/>
+        <source>SSH Connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="7220"/>
+        <source>SSH connection is disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2902"/>
         <source>Reset a file</source>
         <translation>ファイルをリセットします</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4560"/>
+        <location filename="../../MainWindow.cpp" line="4400"/>
         <source>Are you sure you want to rebase the commit?</source>
         <translation>Вы уверены, что хотите переместить фиксацию?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3412"/>
+        <location filename="../../MainWindow.cpp" line="3552"/>
         <source>No repository selected</source>
         <translation>リポジトリが選択されていません</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5090"/>
-        <location filename="../../MainWindow.cpp" line="5148"/>
+        <location filename="../../MainWindow.cpp" line="4930"/>
+        <location filename="../../MainWindow.cpp" line="4984"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3759"/>
+        <location filename="../../MainWindow.cpp" line="3830"/>
         <source>Are you sure you want to run the following command?</source>
         <translation>次のコマンドを実行してよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1198"/>
+        <location filename="../../MainWindow.cpp" line="1180"/>
         <source>Revert all files</source>
         <translation>すべてのファイルの変更を破棄</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5487"/>
+        <location filename="../../MainWindow.cpp" line="5337"/>
         <source>git command not specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6476"/>
+        <location filename="../../MainWindow.cpp" line="6324"/>
         <source>Select %1 command</source>
         <translation>%1 コマンドの選択</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1616"/>
+        <location filename="../../MainWindow.cpp" line="1859"/>
         <source>The folder is not a valid git repository.</source>
         <translation type="unfinished">Папка не является репозиторием Git.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1620"/>
+        <location filename="../../MainWindow.cpp" line="1863"/>
         <source>Do you want to initialize it as a git repository?</source>
         <translation type="unfinished">Инициализировать репозиторий Git?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1621"/>
+        <location filename="../../MainWindow.cpp" line="1864"/>
         <source>Initialize Repository</source>
         <translation type="unfinished">Инициализировать репозиторий</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2065"/>
+        <location filename="../../MainWindow.cpp" line="1756"/>
         <source>Remove from bookmark?</source>
         <translation type="unfinished">Удалить из закладок?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3631"/>
+        <location filename="../../MainWindow.cpp" line="3678"/>
         <source>, %1 ahead</source>
         <translation type="unfinished">, %1 впереди</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3634"/>
+        <location filename="../../MainWindow.cpp" line="3681"/>
         <source>, %1 behind</source>
         <translation type="unfinished">, %1 позади</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3678"/>
+        <location filename="../../MainWindow.cpp" line="3725"/>
         <source>Confirm Remove</source>
         <translation type="unfinished">Подтвердите удаление</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2352"/>
+        <location filename="../../MainWindow.cpp" line="2527"/>
         <source>A file with same name already exists</source>
         <translation>同じ名前のファイルが既に存在しています</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2357"/>
+        <location filename="../../MainWindow.cpp" line="2532"/>
         <source>A folder with same name already exists</source>
         <translation>同じ名前のフォルダが既に存在しています</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2370"/>
+        <location filename="../../MainWindow.cpp" line="2545"/>
         <source>Invalid folder</source>
         <translation>無効なフォルダ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2375"/>
+        <location filename="../../MainWindow.cpp" line="2550"/>
         <source>No such folder. Create it now?</source>
         <translation>このフォルダはありません。作成しますか？</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2688"/>
+        <location filename="../../MainWindow.cpp" line="2863"/>
         <source>Failed to delete the branch &apos;%1&apos;</source>
         <translation type="unfinished">Не удалось удалить ветвь &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5388"/>
+        <location filename="../../MainWindow.cpp" line="5220"/>
         <source>The URL is a valid repository</source>
         <translation>このURLは有効なリポジトリです</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5389"/>
+        <location filename="../../MainWindow.cpp" line="5221"/>
         <source>Failed to access the URL</source>
         <translation>このURLへのアクセスに失敗しました</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5394"/>
+        <location filename="../../MainWindow.cpp" line="5226"/>
         <source>Remote Repository</source>
         <translation>リモートリポジトリ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5518"/>
+        <location filename="../../MainWindow.cpp" line="5394"/>
         <source>The specified commit ID was not found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5632"/>
+        <location filename="../../MainWindow.cpp" line="5507"/>
         <source>Failed to create a local branch.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5632"/>
+        <location filename="../../MainWindow.cpp" line="5507"/>
         <source>Do you want to jump to the existing commit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6516"/>
+        <location filename="../../MainWindow.cpp" line="6364"/>
         <source>Jump</source>
         <translation>Перейти</translation>
     </message>
@@ -2860,7 +2984,7 @@
     <message>
         <location filename="../../ManageWorkingFolderDialog.ui" line="45"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../ManageWorkingFolderDialog.ui" line="52"/>
@@ -2923,7 +3047,7 @@
     <message>
         <location filename="../../MergeDialog.ui" line="91"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../MergeDialog.ui" line="98"/>
@@ -2934,32 +3058,30 @@
 <context>
     <name>MyImageViewWidget</name>
     <message>
-        <location filename="../../MyImageViewWidget.cpp" line="34"/>
+        <location filename="../../MyImageViewWidget.cpp" line="26"/>
         <source>Save as...</source>
         <translation>Сохранить как...</translation>
     </message>
     <message>
-        <location filename="../../MyImageViewWidget.cpp" line="42"/>
         <source>Save as</source>
-        <translation>Сохранить как</translation>
+        <translation type="vanished">Сохранить как</translation>
     </message>
 </context>
 <context>
     <name>MyTextEditorWidget</name>
     <message>
-        <location filename="../../MyTextEditorWidget.cpp" line="50"/>
+        <location filename="../../MyTextEditorWidget.cpp" line="45"/>
         <source>Save as...</source>
         <translation>Сохранить как...</translation>
     </message>
     <message>
-        <location filename="../../MyTextEditorWidget.cpp" line="51"/>
+        <location filename="../../MyTextEditorWidget.cpp" line="46"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
     <message>
-        <location filename="../../MyTextEditorWidget.cpp" line="58"/>
         <source>Save as</source>
-        <translation>Сохранить как</translation>
+        <translation type="vanished">Сохранить как</translation>
     </message>
 </context>
 <context>
@@ -3057,6 +3179,11 @@
         <location filename="../../win32/Win32Util.cpp" line="438"/>
         <source>Save Launcher File</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MyObjectViewBase.cpp" line="20"/>
+        <source>Save as</source>
+        <translation type="unfinished">Сохранить как</translation>
     </message>
 </context>
 <context>
@@ -3262,7 +3389,7 @@
     <message>
         <location filename="../../RepositoryPropertyDialog.cpp" line="94"/>
         <source>URL</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">URL</translation>
     </message>
     <message>
         <location filename="../../RepositoryPropertyDialog.cpp" line="244"/>
@@ -3287,7 +3414,7 @@
 <context>
     <name>RepositoryTreeWidget</name>
     <message>
-        <location filename="../../RepositoryTreeWidget.cpp" line="263"/>
+        <location filename="../../RepositoryTreeWidget.cpp" line="265"/>
         <source>Querying last modified time of %1/%2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3616,27 +3743,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="170"/>
+        <location filename="../../SettingAiForm.cpp" line="200"/>
         <source>Use %1 environment value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="199"/>
+        <location filename="../../SettingAiForm.cpp" line="229"/>
         <source>ATTENTION</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="202"/>
+        <location filename="../../SettingAiForm.cpp" line="232"/>
         <source>By enabling the commit message generation feature using AI, you are deemed to agree that part of your local content will be sent to the cloud service.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="205"/>
+        <location filename="../../SettingAiForm.cpp" line="235"/>
         <source>You should be aware of AI model selection, API usage fees, and information security.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="206"/>
+        <location filename="../../SettingAiForm.cpp" line="236"/>
         <source>Commit Message Generation with AI</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3787,12 +3914,12 @@
         <translation>Тёмная</translation>
     </message>
     <message>
-        <location filename="../../SettingGeneralForm.cpp" line="80"/>
+        <location filename="../../SettingGeneralForm.cpp" line="78"/>
         <source>Select Language</source>
         <translation>Выбор языка</translation>
     </message>
     <message>
-        <location filename="../../SettingGeneralForm.cpp" line="104"/>
+        <location filename="../../SettingGeneralForm.cpp" line="102"/>
         <source>Select Theme</source>
         <translation>Выбор темы</translation>
     </message>
@@ -3800,6 +3927,64 @@
         <location filename="../../SettingGeneralForm.ui" line="86"/>
         <source>(Changes are applied at next run)</source>
         <translation>(Изменения применятся при следующем запуске)</translation>
+    </message>
+</context>
+<context>
+    <name>SettingLoggingForm</name>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="14"/>
+        <source>Logging</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="20"/>
+        <source>Trace log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="27"/>
+        <source>Remote log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="36"/>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="46"/>
+        <source>Port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="86"/>
+        <source>Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="92"/>
+        <source>Default</source>
+        <translation type="unfinished">По-умолчанию</translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="99"/>
+        <source>Custom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="130"/>
+        <source>Browse...</source>
+        <translation type="unfinished">Обзор...</translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.ui" line="156"/>
+        <source>(Changes are applied at next run)</source>
+        <translation type="unfinished">(Изменения применятся при следующем запуске)</translation>
+    </message>
+    <message>
+        <location filename="../../SettingLoggingForm.cpp" line="62"/>
+        <source>Select Log Output Directory</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4037,12 +4222,12 @@
     <message>
         <location filename="../../SettingWorkingFolderForm.ui" line="70"/>
         <source>Up</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Вверх</translation>
     </message>
     <message>
         <location filename="../../SettingWorkingFolderForm.ui" line="77"/>
         <source>Down</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Вниз</translation>
     </message>
     <message>
         <location filename="../../SettingWorkingFolderForm.cpp" line="91"/>
@@ -4058,12 +4243,12 @@
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../../SettingsDialog.ui" line="146"/>
+        <location filename="../../SettingsDialog.ui" line="76"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../SettingsDialog.ui" line="153"/>
+        <location filename="../../SettingsDialog.ui" line="83"/>
         <source>Cancel</source>
         <translation>Отмена</translation>
     </message>
@@ -4108,7 +4293,7 @@
     <message>
         <location filename="../../SubmoduleAddDialog.ui" line="117"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../SubmoduleAddDialog.ui" line="127"/>
@@ -4161,7 +4346,7 @@
     <message>
         <location filename="../../SubmoduleUpdateDialog.ui" line="52"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../SubmoduleUpdateDialog.ui" line="62"/>
@@ -4172,12 +4357,27 @@
 <context>
     <name>SubmodulesDialog</name>
     <message>
-        <location filename="../../SubmodulesDialog.ui" line="14"/>
-        <source>Dialog</source>
+        <location filename="../../SubmodulesDialog.ui" line="20"/>
+        <source>Submodules</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SubmodulesDialog.ui" line="42"/>
+        <location filename="../../SubmodulesDialog.ui" line="39"/>
+        <source>GroupBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SubmodulesDialog.ui" line="66"/>
+        <source>Terminal</source>
+        <translation type="unfinished">Терминал</translation>
+    </message>
+    <message>
+        <location filename="../../SubmodulesDialog.ui" line="77"/>
+        <source>File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../SubmodulesDialog.ui" line="108"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4304,7 +4504,7 @@
     <message>
         <location filename="../../WelcomeWizardDialog.ui" line="233"/>
         <source>Get icon from network</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Получить иконку из сети</translation>
     </message>
     <message>
         <location filename="../../WelcomeWizardDialog.ui" line="432"/>
