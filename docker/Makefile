@@ -39,6 +39,9 @@ guitar-doxy:
 build:
 	cd DockerBuildFiles && docker buildx build . --build-arg UNAME=${UNAME} --build-arg GNAME=${GNAME} --build-arg UID=${UID} --build-arg GID=${GID} --build-arg HOMEDIR=${HOMEDIR} -t ${NAME}
 
+build-force:
+	cd DockerBuildFiles && docker buildx build . --build-arg UNAME=${UNAME} --build-arg GNAME=${GNAME} --build-arg UID=${UID} --build-arg GID=${GID} --build-arg HOMEDIR=${HOMEDIR} -t ${NAME} --no-cache
+
 up: home home/.bashrc home/.profile 
 	cp -a scripts/* home/
 	echo ${UNAME}:${PASSWORD} >./home/.password

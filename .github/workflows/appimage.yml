@@ -29,6 +29,7 @@ jobs:
           zlib1g-dev \
           libgl1-mesa-dev \
           libssl-dev \
+          libcurl4-openssl-dev \
           qt6-base-dev \
           qt6-svg-dev \
           wget \
