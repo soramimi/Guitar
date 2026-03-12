@@ -1480,7 +1480,7 @@
     <name>Languages</name>
     <message>
         <source>English</source>
-        <translation>ஆங்கிலம்</translation>
+        <translation>English</translation>
     </message>
     <message>
         <source>Japanese</source>
