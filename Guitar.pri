@@ -123,7 +123,6 @@ SOURCES += \
     $$PWD/src/TraceEventWriter.cpp \
     $$PWD/src/TraceLogger.cpp \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
-	$$PWD/src/common/htmlencode.cpp \
 	$$PWD/src/curlclient.cpp \
 	$$PWD/src/gzip.cpp \
     $$PWD/src/inetclient.cpp \
@@ -266,8 +265,6 @@ SOURCES += \
 	src/coloredit/ColorSlider.cpp \
 	src/coloredit/ColorSquareWidget.cpp \
 	src/coloredit/RingSlider.cpp \
-	src/common/charvec.cpp \
-	src/common/joinpath.cpp \
 	src/common/misc.cpp \
 	src/darktheme/DarkStyle.cpp \
 	src/darktheme/LightStyle.cpp \
