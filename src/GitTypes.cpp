@@ -120,7 +120,7 @@ GitHash::operator bool() const
 
 size_t GitHash::_std_hash() const
 {
-	return crc::crc32(0, id_, sizeof(id_));
+	return crc32(0, id_, sizeof(id_));
 }
 
 bool GitHash::isValidID(const QString &id)
