@@ -7,23 +7,24 @@
 #include <QMessageBox>
 
 struct GenerateCommitMessageDialog::Private {
+	std::vector<GenerativeAI::Model> ai_models;
 	std::string diff;
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
 };
 
-GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, const std::string &model_name)
+GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index)
 	: QDialog(parent)
 	, ui(new Ui::GenerateCommitMessageDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
-	ui->label->setText(QString::fromStdString(model_name));
 	
+	init_ai_models(models, default_index);
+
 	m->generator.start();
 	
 	connect(&m->generator, &GenerateCommitMessageThread::ready, this, &GenerateCommitMessageDialog::onReady);
-	
 }
 
 GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
@@ -31,6 +32,26 @@ GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
 	m->generator.stop();
 	delete ui;
 	delete m;
+}
+
+void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model> const &models, int default_index)
+{
+	m->ai_models = models;
+	ui->comboBox_ai_models->clear();
+	for (int i = 0; i < m->ai_models.size(); i++) {
+		GenerativeAI::Model const &model = m->ai_models[i];
+		ui->comboBox_ai_models->addItem(QString::fromStdString(model.long_name()));
+	}
+	ui->comboBox_ai_models->setCurrentIndex(default_index);
+}
+
+GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
+{
+	int index = ui->comboBox_ai_models->currentIndex();
+	if (index >= 0 && index < m->ai_models.size()) {
+		return m->ai_models[index];
+	}
+	return global->appsettings.ai_model;
 }
 
 void GenerateCommitMessageDialog::generate(std::string const &diff)
@@ -53,7 +74,7 @@ void GenerateCommitMessageDialog::generate(std::string const &diff)
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	m->generator.request(diff);
+	m->generator.request(diff, ai_model());
 }
 
 std::string GenerateCommitMessageDialog::diffText() const

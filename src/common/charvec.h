@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <cstring>
 
 class VectorPrint {
 public:

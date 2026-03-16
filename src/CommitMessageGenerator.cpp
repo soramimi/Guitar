@@ -230,6 +230,11 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}
 };
 
+CommitMessageGenerator::CommitMessageGenerator()
+{
+	set_ai_model(global->appsettings.ai_model);
+}
+
 /**
  * @brief Parse the response from the AI model.
  * @param in The response.
@@ -332,6 +337,16 @@ std::string CommitMessageGenerator::generate_prompt_json(GenerativeAI::Model con
 	return _PromptJsonGenerator(model.model_name(), prompt).visit(model.provider_id());
 }
 
+GenerativeAI::Model CommitMessageGenerator::ai_model()
+{
+	return ai_model_;
+}
+
+void CommitMessageGenerator::set_ai_model(GenerativeAI::Model model)
+{
+	ai_model_ = model;
+}
+
 /**
  * @brief Generate a commit message using the given diff.
  * @param g The Git object.
@@ -351,7 +366,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		return Error("error", "diff too large");
 	}
 
-	GenerativeAI::Model model = global->appsettings.ai_model;
+	GenerativeAI::Model model = ai_model();
 	if (model.model_name().empty()) {
 		return Error("error", "AI model is not set.");
 	}

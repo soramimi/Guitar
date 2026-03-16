@@ -20,11 +20,13 @@ public:
 		}
 	};
 private:
+	GenerativeAI::Model ai_model_;
 	CommitMessageGenerator::Result parse_response(const std::string &in, GenerativeAI::AI provider);
 	std::string generatePrompt(const std::string &diff, int max);
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt);
+	GenerativeAI::Model ai_model();
 public:
-	CommitMessageGenerator() = default;
+	CommitMessageGenerator();
 	Result generate(std::string const &diff, QString const &hint = {});
 	static std::string diff_head(GitRunner g);
 	static Result Error(std::string const &status, std::string const &message)
@@ -35,6 +37,7 @@ public:
 		ret.error_message = message;
 		return ret;
 	}
+	void set_ai_model(GenerativeAI::Model model);
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

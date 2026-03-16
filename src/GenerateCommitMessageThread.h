@@ -11,12 +11,12 @@
 class GenerateCommitMessageThread : public QObject {
 	Q_OBJECT
 public:
-	CommitMessageGenerator gen_;
 	std::mutex mutex_;
 	std::thread thread_;
 	std::condition_variable cv_;
 	bool requested_ = false;
 	bool interrupted_ = false;
+	GenerativeAI::Model ai_model_;
 	std::string diff_;
 	QString hint_;
 	
@@ -24,7 +24,7 @@ public:
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(std::string const &diff, QString const &hint = {});
+	void request(std::string const &diff, GenerativeAI::Model ai_model, QString const &hint = {});
 signals:
 	void ready(GeneratedCommitMessage const &message);
 	

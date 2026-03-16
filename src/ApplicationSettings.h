@@ -51,6 +51,7 @@ public:
 	QString api_key_DeepSeek;
 	QString api_key_OpenRouter;
 	GenerativeAI::Model ai_model;
+	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {

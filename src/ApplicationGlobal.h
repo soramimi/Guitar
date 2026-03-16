@@ -114,6 +114,11 @@ public:
 		return false;
 #endif
 	}
+
+	bool isAiEnabled() const
+	{
+		return appsettings.generate_commit_message_by_ai;
+	}
 };
 
 void GlobalSetOverrideWaitCursor();

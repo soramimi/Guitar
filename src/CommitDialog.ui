@@ -218,16 +218,40 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_generate_with_ai">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <widget class="QFrame" name="frame_ai">
+       <property name="frameShape">
+        <enum>QFrame::Shape::NoFrame</enum>
        </property>
-       <property name="text">
-        <string>Generate with &amp;AI</string>
+       <property name="frameShadow">
+        <enum>QFrame::Shadow::Raised</enum>
        </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="pushButton_generate_with_ai">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Generate with &amp;AI</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>
@@ -294,7 +318,6 @@
  <tabstops>
   <tabstop>groupBox_gpg_sign</tabstop>
   <tabstop>pushButton_config_signing</tabstop>
-  <tabstop>pushButton_generate_with_ai</tabstop>
   <tabstop>checkbox_amend</tabstop>
   <tabstop>plainTextEdit</tabstop>
   <tabstop>pushButton</tabstop>

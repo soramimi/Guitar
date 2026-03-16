@@ -5,6 +5,7 @@
 
 GenerateCommitMessageThread::GenerateCommitMessageThread()
 {
+	ai_model_ = global->appsettings.ai_model;
 }
 
 GenerateCommitMessageThread::~GenerateCommitMessageThread()
@@ -27,12 +28,12 @@ void GenerateCommitMessageThread::start()
 			}
 			if (requested) {
 				CommitMessageGenerator gen;
+				gen.set_ai_model(ai_model_);
 				auto result = GeneratedCommitMessage(new CommitMessageGenerator::Result(gen.generate(diff_)));
 				emit ready(result);
 			}
 		}
 	});	
-	
 }
 
 void GenerateCommitMessageThread::stop()
@@ -44,10 +45,11 @@ void GenerateCommitMessageThread::stop()
 	}
 }
 
-void GenerateCommitMessageThread::request(const std::string &diff, QString const &hint)
+void GenerateCommitMessageThread::request(const std::string &diff, GenerativeAI::Model ai_model, QString const &hint)
 {
 	std::lock_guard lock(mutex_);
 	diff_ = diff;
+	ai_model_ = ai_model;
 	hint_ = hint;
 	requested_ = true;
 	cv_.notify_all();

@@ -45,10 +45,9 @@ CommitDialog::~CommitDialog()
 
 void CommitDialog::updateUI(bool enable)
 {
-	bool is_ai_enabled = enable && global->appsettings.generate_commit_message_by_ai;
-	bool is_detailed_enabled = is_ai_enabled && !ui->plainTextEdit->toPlainText().isEmpty();
+	bool is_ai_enabled = enable && global->isAiEnabled();
 	
-	ui->pushButton_generate_with_ai->setEnabled(is_ai_enabled);
+	ui->frame_ai->setEnabled(is_ai_enabled);
 }
 
 MainWindow *CommitDialog::mainwindow()
@@ -156,7 +155,10 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
 	diff_ = CommitMessageGenerator::diff_head(global->mainwindow->git());
 	
-	GenerateCommitMessageDialog dlg(this, global->appsettings.ai_model.model_name());
+	auto [models, index] = global->appsettings.ai_models();
+	assert(index >= 0 && index < models.size());
+
+	GenerateCommitMessageDialog dlg(this, models, index);
 	dlg.show();
 	dlg.generate(diff_);
 	if (dlg.exec() == QDialog::Accepted) {

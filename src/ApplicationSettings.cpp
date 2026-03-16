@@ -66,22 +66,18 @@ template <> void operator << (SetValue<std::string> &&l, std::string const &r)
 
 } // namespace
 
-#if 0
-QString ApplicationSettings::loadOpenAiApiKey()
+std::tuple<std::vector<GenerativeAI::Model>, int> ApplicationSettings::ai_models() const
 {
-	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-	QSettings s(home / ".aicommits", QSettings::IniFormat);
-	QString key = s.value("OPENAI_KEY").toString().trimmed();
-	return key;
+	std::vector<GenerativeAI::Model> list = GenerativeAI::ai_model_presets();
+	int index;
+	for (index = 0; index < (int)list.size(); index++) {
+		if (list[index].long_name() == ai_model.long_name()) {
+			return {list, index};
+		}
+	}
+	list.push_back(ai_model);
+	return {list, index};
 }
-
-void ApplicationSettings::saveOpenAiApiKey(QString const &key)
-{
-	QString home = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-	QSettings s(home / ".aicommits", QSettings::IniFormat);
-	s.setValue("OPENAI_KEY", key.trimmed());
-}
-#endif
 
 ApplicationSettings ApplicationSettings::loadSettings()
 {
