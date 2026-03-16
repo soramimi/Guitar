@@ -47,7 +47,7 @@ void CommitDialog::updateUI(bool enable)
 {
 	bool is_ai_enabled = enable && global->isAiEnabled();
 	
-	ui->frame_ai->setEnabled(is_ai_enabled);
+	ui->frame_ai->setVisible(is_ai_enabled);
 }
 
 MainWindow *CommitDialog::mainwindow()
