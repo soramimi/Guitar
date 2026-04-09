@@ -30,7 +30,7 @@ std::vector<Model> const &ai_model_presets()
 		{AI::Google, "gemini-3-flash-preview"},
 		{AI::DeepSeek, "deepseek-chat"},
 		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
-		{AI::Ollama, "ollama:///gemma3:27b"},
+		{AI::Ollama, "ollama:///gemma4"},
 		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
 	};
 	return preset_models;

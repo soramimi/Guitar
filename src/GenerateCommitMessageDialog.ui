@@ -27,13 +27,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="pushButton_regenerate">
-       <property name="text">
-        <string>Regenerate</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QFrame" name="frame">
        <property name="minimumSize">
         <size>
@@ -62,6 +55,13 @@
         </property>
         <item>
          <widget class="QComboBox" name="comboBox_ai_models"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_regenerate">
+          <property name="text">
+           <string>Regenerate</string>
+          </property>
+         </widget>
         </item>
         <item>
          <spacer name="horizontalSpacer">
@@ -102,6 +102,7 @@
  </widget>
  <tabstops>
   <tabstop>listWidget</tabstop>
+  <tabstop>comboBox_ai_models</tabstop>
   <tabstop>pushButton_regenerate</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
