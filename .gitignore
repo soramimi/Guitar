@@ -48,3 +48,4 @@ cmigemo/tags
 misc/migemo.zip
 *.o
 *.pdb
+*.a
