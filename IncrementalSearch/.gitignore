@@ -1,0 +1,8 @@
+mecab-test
+build/
+*.a
+*.o
+*.d
+.qtcreator/
+mecasearch.lib
+libmecasearch.a

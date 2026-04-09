@@ -29,7 +29,8 @@ jobs:
           libssl-dev \
           qt6-base-dev \
           qt6-svg-dev \
-          libcurl4-openssl-dev
+          libcurl4-openssl-dev \
+          mecab-utils
           
     - name: Prepare environment
       run: ruby prepare.rb
@@ -39,6 +40,19 @@ jobs:
         cd filetype
         bash build-gcc.sh
         ls -la lib
+        cd ..
+
+    - name: Build libmecasearch
+      run: |
+        ./ci/mecab.sh
+        cd IncrementalSearch
+        rm -fr build
+        mkdir build
+        cd build
+        qmake6 ../libmecasearch.pro
+        make
+        cd ..
+        ls libmecasearch.a
         cd ..
         
     - name: Build Guitar
@@ -59,49 +73,6 @@ jobs:
       with:
         name: guitar-linux-amd64
         path: _bin/Guitar
-
-  build-macos:
-    runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Install Qt6
-      run: |
-        brew install qt@6 ruby
-        echo "/opt/homebrew/opt/qt@6/bin" >> $GITHUB_PATH
-        
-    - name: Prepare environment
-      run: ruby prepare.rb
-      
-    - name: Build libfiletype
-      run: |
-        brew install autoconf automake libtool
-        cd filetype
-        bash build-gcc.sh
-        ls -la lib
-        cd ..
-        
-    - name: Build Guitar
-      run: |
-        rm -fr _build
-        mkdir _build
-        cd _build
-        qmake "CONFIG+=release" ../Guitar.pro
-        make -j$(sysctl -n hw.ncpu)
-        
-    - name: Test build
-      run: |
-        ls -la _bin/
-        cd _bin
-        zip -r Guitar.zip Guitar.app
-        
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: guitar-macos
-        path: _bin/Guitar.zip
 
   build-windows:
     runs-on: windows-latest
@@ -245,6 +216,19 @@ jobs:
         cd ..
       shell: cmd
       
+    - name: Build libmecasearch
+      run: |
+        cd IncrementalSearch
+        if exist "_build" rmdir /s /q "_build"
+        mkdir _build
+        cd _build
+        qmake -spec win32-msvc "CONFIG+=release" ../libmecasearch.pro
+        ..\..\misc\jom.exe
+        cd ..
+        dir
+        cd ..
+      shell: cmd
+        
     - name: Build Guitar
       run: |
         call path_update.bat

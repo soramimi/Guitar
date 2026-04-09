@@ -28,15 +28,15 @@ private:
 			painter->setFont(smallfont);
 			painter->save();
 			painter->setOpacity(0.75);
-			MigemoFilter::drawText(painter, opt, r, s);
+			IncrementalSearch::drawText(painter, opt, r, s);
 			painter->restore();
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
 			r.translate(w, 0);
 			painter->setFont(font);
 			painter->setPen(opt.palette.color(QPalette::Text));
-			MigemoFilter::drawText(painter, opt, r, text.mid(i + 1));
+			IncrementalSearch::drawText(painter, opt, r, text.mid(i + 1));
 		} else {
-			MigemoFilter::drawText(painter, opt, r, text);
+			IncrementalSearch::drawText(painter, opt, r, text);
 		}
 	}
 public:
@@ -47,14 +47,14 @@ public:
 
 		RepositoryTreeWidget const *treewidget = qobject_cast<RepositoryTreeWidget const *>(opt.widget);
 		Q_ASSERT(treewidget);
-		MigemoFilter filter = treewidget->filter();
+		std::shared_ptr<AbstractIncrementalFilter> filter = treewidget->makeFilter();
 
 		QRect iconrect = opt.widget->style()->subElementRect(QStyle::SE_ItemViewItemDecoration, &opt, opt.widget);
 		QRect textrect = opt.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget);
 
 		// 背景を描画
-		if (!filter.isEmpty()) {
-			MigemoFilter::fillFilteredBG(painter, opt.rect);
+		if (!filter->isEmpty()) {
+			IncrementalSearch::fillFilteredBG(painter, opt.rect);
 		}
 		opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
 
@@ -62,17 +62,18 @@ public:
 		opt.icon.paint(painter, iconrect);
 
 		// テキストを描画
-		if (filter.isEmpty()) { // フィルターがない場合
+		if (filter->isEmpty()) { // フィルターがない場合
 			drawText_default(painter, opt, textrect, opt.text);
 		} else {
-			MigemoFilter::drawText_filted(painter, opt, textrect, filter);
+			IncrementalSearch::drawText_filted(painter, opt, textrect, filter.get());
 		}
 	}
 };
 
 struct RepositoryTreeWidget::Private {
 	RepositoryTreeWidgetItemDelegate delegate;
-	MigemoFilter filter;
+	// MigemoFilter filter;
+	std::shared_ptr<AbstractIncrementalFilter> filter;
 };
 
 RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
@@ -80,6 +81,8 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	, m(new Private)
 {
 	IncrementalSearch::instance()->open();
+
+	m->filter = std::make_shared<MeCaFilter>();
 
 	setItemDelegate(&m->delegate);
 	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
@@ -102,10 +105,8 @@ void RepositoryTreeWidget::enableDragAndDrop(bool enabled)
 
 bool RepositoryTreeWidget::isFiltered() const
 {
-	return !m->filter.isEmpty();
+	return !m->filter->isEmpty();
 }
-
-
 
 RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetItem(QString const &name, Type type, int index)
 {
@@ -136,12 +137,12 @@ RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(con
 	return newQTreeWidgetItem(name, Repository, index);
 }
 
-void RepositoryTreeWidget::setFilter(MigemoFilter const &filter)
+void RepositoryTreeWidget::setFilter(std::shared_ptr<AbstractIncrementalFilter> filter)
 {
 	m->filter = filter;
 }
 
-MigemoFilter const &RepositoryTreeWidget::filter() const
+std::shared_ptr<AbstractIncrementalFilter> RepositoryTreeWidget::makeFilter() const
 {
 	return m->filter;
 }
@@ -162,16 +163,22 @@ static QDateTime repositoryLastModifiedTime(QString const &path)
 	return g.repositoryLastModifiedTime();
 }
 
+std::shared_ptr<AbstractIncrementalFilter> RepositoryTreeWidget::makeFilter(QString const &filtertext)
+{
+	return std::make_shared<MeCaFilter>(filtertext);
+	// return std::make_shared<MigemoFilter>(filtertext);
+}
+
 void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
 {
 	RepositoryTreeWidget *tree = this;
 	tree->clear();
 
-	// リポジトリリストを更新（標準）
-	auto UpdateRepositoryListStandard = [&](QString const &filtertext){
+	std::shared_ptr<AbstractIncrementalFilter> filter = makeFilter(filtertext);
 
-		MigemoFilter filter;
-		filter.makeFilter(filtertext);
+	// リポジトリリストを更新（標準）
+	auto UpdateRepositoryListStandard = [&](){
+
 
 		enableDragAndDrop(filtertext.isEmpty()); // フィルタが空の場合はドラッグ＆ドロップを有効にする
 		tree->setFilter(filter);
@@ -183,7 +190,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
-			if (!filter.match(repo.name)) continue;
+			if (!filter->match(repo.name)) continue;
 
 			RepositoryTreeWidgetItem *parent = nullptr;
 			{
@@ -315,7 +322,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		// nop
 		break;
 	case RepositoryTreeWidget::RepositoryListStyle::Standard:
-		UpdateRepositoryListStandard(filtertext);
+		UpdateRepositoryListStandard();
 		break;
 	case RepositoryTreeWidget::RepositoryListStyle::SortRecent:
 		UpdateRepositoryListSortRecent();

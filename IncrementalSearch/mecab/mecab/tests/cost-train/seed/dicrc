@@ -1,0 +1,5 @@
+cost-factor = 800
+bos-feature = BOS/EOS,*,*,*,*,*,*,*,*
+eval-size = 6
+unk-eval-size = 4
+config-charset = EUC-JP

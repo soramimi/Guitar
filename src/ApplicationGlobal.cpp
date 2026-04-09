@@ -9,6 +9,8 @@
 #include <QFileIconProvider>
 #include <memory>
 #include <udplogger/RemoteLogger.h>
+#include <QDebug>
+#include "MeCaSearch.h"
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
@@ -110,6 +112,28 @@ void ApplicationGlobal::init(QApplication *a)
 		}
 	}
 
+	{
+		// MeCaSearch meca;
+		std::string s = meca.convert_roman_to_katakana("wagahaihanekodearu");
+		if (s != "ワガハイハネコデアル") {
+			qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
+		}
+		if (!meca.open("/dummy")) {
+			qDebug() << "Failed to load dictionary for MeCaSearch. This may cause some features to not work properly.";
+		}
+		auto parts = meca.parse("吾輩は猫である");
+		if (parts.size() != 5) {
+			qDebug() << "Failed to parse sentence with MeCaSearch. Expected 5 parts, got " << parts.size();
+		} else {
+			std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
+			for (size_t i = 0; i < parts.size(); i++) {
+				if (parts[i].text != expected[i]) {
+					qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+				}
+			}
+		}
+	}
+
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources
 		QFileIconProvider icons;
@@ -123,6 +147,12 @@ void ApplicationGlobal::init(QApplication *a)
 	}
 
 	m->incremental_search.init();
+
+	{
+		if (!meca.open("/home/soramimi/develop/MeCaSearch/mecab/mecab-ipadic")) {
+			qDebug() << "MeCaSearch::open() failed";
+		}
+	}
 }
 
 void ApplicationGlobal::writeLog(const std::string_view &str)

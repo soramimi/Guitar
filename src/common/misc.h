@@ -37,6 +37,17 @@ public:
 #endif
 	}
 
+	static char const *stristr(const char *haystack, const char *needle)
+	{
+		size_t needle_len = strlen(needle);
+		for (const char *p = haystack; *p; p++) {
+			if (strnicmp(p, needle, needle_len) == 0) {
+				return p;
+			}
+		}
+		return nullptr;
+	}
+
 	static QString getApplicationDir();
 	// static std::vector<std::string_view> splitLines(const QByteArray &ba);
 	static QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);

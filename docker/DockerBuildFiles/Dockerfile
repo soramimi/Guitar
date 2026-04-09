@@ -36,6 +36,7 @@ RUN apt install -y nkf universal-ctags
 RUN apt install -y qtbase5-dev libqt5svg5-dev
 RUN apt install -y qt6-base-dev libqt6svg6-dev libglu1-mesa-dev libbsd-dev libssl-dev
 RUN apt install -y libcurl4-openssl-dev
+RUN apt install -y mecab-utils
 
 COPY ./cmd /tmp/
 CMD ["/bin/sh", "/tmp/cmd"]

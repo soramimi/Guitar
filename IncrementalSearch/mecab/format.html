@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>MeCab: Yet Another Japanese Dependency Structure
+Analyzer</title>
+<link type="text/css" rel="stylesheet" href="mecab.css">
+</head>
+<body>
+<h1>出力フォーマット</h1>
+
+<h2>概要</h2>
+<p>MeCab は, ChaSen と同様,
+出力のフォーマットを比較的自由に再定義することができます.
+また, 設定ファイルにフォーマットを複数記述しておき,
+実行時にそれらを 切り変えることが可能です.
+これは, MeCab 独自の機能です.</p>
+
+<h2>出力フォーマットの指定</h2>
+
+<p>以下の
+3つ出力フォーマットを変更することができます.</p>
+
+<ul>
+<li>node: 1つの形態素を出力, デフォルトは空文字</li>
+<li>unk:  1つの未知語形態素を出力, デフォルトは node と同一フォーマット</li>
+<li>bos: 形態素解析の結果に先だって出力 (header 的役割), デフォルトは空文字</li>
+<li>eos: 形態素解析の結果の後に出力 (footer 的役割), デフォルトは "EOS\n"</li>
+<li>eon: N-best出力で, N-Bestの出力が終了したときに出力, デフォルトは空文字列</li>
+</ul>
+
+<p>明示的に指定されない場合,
+それぞれのデフォルト文字列が使用されます.</p>
+
+<p>これらは, 以下の 2つの方法で指定します.</p>
+
+<ul>
+<li>コマンドラインから
+
+<pre>
+% mecab --node-format=STR --bos-format=STR --eos-format=STR --unk-format=STR --eon-format=STR
+</pre>
+</li>
+
+<li>mecabrc に記述する場合
+
+<p>任意の文字列 KEY を使い, mecabrc
+に以下のように定義.</p>
+
+<pre>
+node-format-KEY = STR
+unk-format-KEY = STR
+eos-format-KEY = STR
+bos-format-KEY = STR
+eon-format-KEY = STR
+</pre>
+
+<p>この KEY をコマンドラインから呼び出す.</p>
+
+<pre>
+% mecab -Okey 
+</pre>
+</li>
+</ul>
+
+<h2>出力フォーマット</h2>
+
+<table>
+<tr class="odd">
+<td>%s</td>
+<td>形態素種類 (0: 通常, 1: 未知語, 2:文頭, 3:文末)
+</td>
+</tr>
+
+<tr class="even">
+<td>%S</td>
+<td>入力文</td>
+</tr>
+
+<tr class="odd">
+<td>%L</td>
+<td>入力文の長さ</td>
+</tr>
+
+<tr class="even">
+<td>%m</td>
+<td>形態素の表層文字列</td>
+</tr>
+
+<tr class="odd">
+<td>%M</td>
+<td>形態素の表層文字列, ただし空白文字も含めて出力 (%pS を参照のこと)</td>
+</tr>
+
+<tr class="even">
+<td>%h</td>
+<td>素性の内部 ID</td>
+</tr>
+
+<tr class="odd">
+<td>%%</td>
+<td>% そのもの</td>
+</tr>
+
+<tr class="even">
+<td>%c</td>
+<td>単語生起コスト</td>
+</tr>
+
+<tr class="odd">
+<td>%H</td>
+<td>素性 (品詞, 活用, 読み) 等を CSV
+で表現したもの</td>
+</tr>
+
+<tr class="even">
+<td>%t</td>
+<td>文字種 id </td>
+</tr>
+
+<tr class="odd">
+<td>%P</td>
+<td>周辺確率 (-l2 オプションを指定したときのみ有効)</td>
+</tr>
+
+<tr class="even">
+<td>%pi</td>
+<td>形態素に付与されるユニークなID</td>
+</tr>
+
+<tr class="odd">
+<td>%pS</td>
+<td>もし形態素が空白文字列で始まる場合は, その空白文字列を表示 %pS%m と %M は同一</td>
+</tr>
+
+<tr class="even">
+<td>%ps</td>
+<td>開始位置</td>
+</tr>
+
+<tr class="odd">
+<td>%pe</td>
+<td>終了位置</td>
+</tr>
+
+<tr class="even">
+<td>%pC</td>
+<td>1つ前の形態素との連接コスト</td>
+</tr>
+
+<tr class="odd">
+<td>%pw</td>
+<td>%c と同じ</td>
+</tr>
+
+<tr class="even">
+<td>%pc</td>
+<td>連接コスト + 単語生起コスト (文頭から累積)</td>
+</tr>
+
+<tr class="odd">
+<td>%pn</td>
+<td>連接コスト + 単語生起コスト (その形態素単独, %pw + %pC)</td>
+</tr>
+
+<tr class="even">
+<td>%pb</td>
+<td>最適パスの場合 *, それ以外は ' '</td>
+</tr>
+
+<tr class="odd">
+<td>%pP</td>
+<td>周辺確率 (-l2 オプションを指定したときのみ有効)</td>
+</tr>
+
+<tr class="even">
+<td>%pA</td>
+<td>blpha, forward log 確率 (-l2 オプションを指定したときのみ有効)</td>
+</tr>
+
+<tr class="odd">
+<td>%pB</td>
+<td>beta, backward log 確率 (-l2 オプションを指定したときのみ有効)</td>
+</tr>
+
+<tr class="even">
+<td>%pl</td>
+<td>形態素の表層文字列としての長さ, strlen (%m) と同一</td>
+</tr>
+
+<tr class="odd">
+<td>%pL</td>
+<td>形態素の表層文字列としての長さ, ただし空白文字列も含む, strlen(%M) と同一</td>
+</tr>
+
+<tr class="even">
+<td>%phl</td>
+<td>左文脈 id</td>
+</tr>
+
+<tr class="odd">
+<td>%phr</td>
+<td>右文脈 id</td>
+</tr>
+
+<tr class="even">
+<td>%f[N]</td>
+<td>csv で表記された素性の N番目の要素</td>
+</tr>
+
+<tr class="odd">
+<td>%f[N1,N2,N3...]</td>
+<td>N1,N2,N3番目の素性を, "," を
+デリミタとして表示</td>
+</tr>
+
+<tr class="even">
+<td>%FC[N1,N2,N3...]</td>
+<td>N1,N2,N3番目の素性を, C を
+デリミタとして表示.<br>
+ただし, 要素が 空の場合は以降表示が省略される.
+(例)F-[0,1,2]</td>
+</tr>
+
+<tr class="odd">
+<td>\0 \a \b \t \n \v \f \r \\</td>
+<td>通常の エスケープ文字列</td>
+</tr>
+
+<tr class="even">
+<td>\s</td>
+<td>' ' (半角スペース)<br>
+ 設定ファイルに記述するときに使用</td>
+</tr>
+</table>
+
+<h2>例</h2>
+<p>
+dicrc より抜粋した例 
+</p>
+<pre>
+; yomi
+node-format-yomi = %pS%f[7]
+unk-format-yomi = %M
+eos-format-yomi  = \n
+
+; simple
+node-format-simple = %m\t%F-[0,1,2,3]\n
+eos-format-simple  = EOS\n
+
+; csv
+node-format-csv = %m,%f[7],%f[8],%f[6],%F-[0,1,2,3],%f[4],%f[5]\n
+unk-format-csv  = %m,%m,%m,%f[6],%F-[0,1,2,3],,\n
+eos-format-csv  = EOS,,,,,,\n
+
+; ChaSen
+node-format-chasen = %m\t%f[7]\t%f[6]\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n
+unk-format-chasen  = %m\t%m\t%m\t%F-[0,1,2,3]\t\t\n
+eos-format-chasen  = EOS\n
+</pre>
+
+<h2>注意事項</h2>
+
+<p>わかち書き出力 (-Owakati), 
+デフォルトの出力, 出力ダンプ (-Odump) は
+高速性を犠牲にしたく ないために, ハードコーディングされています.</p>
+</body>
+</html>
+

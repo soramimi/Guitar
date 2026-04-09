@@ -2,6 +2,7 @@
 #define GITOBJECTMANAGER_H
 
 #include "GitRunner.h"
+#include <QIODevice>
 
 class GitPackIdxV2;
 struct GitPackIdxItem;

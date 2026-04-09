@@ -7,6 +7,7 @@
 #include <QItemDelegate>
 #include <QMenu>
 #include <QMessageBox>
+#include <QDebug>
 
 struct RepositoryPropertyDialog::Private {
 	GitRunner git;

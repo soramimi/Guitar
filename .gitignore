@@ -48,3 +48,6 @@ cmigemo/tags
 misc/migemo.zip
 *.o
 *.pdb
+IncrementalSearch/mecab/mecab/src/.libs/
+*.lo
+*.la

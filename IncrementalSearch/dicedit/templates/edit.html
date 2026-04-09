@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeCab辞書エディタ</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="header">
+  <a id="btn-back" href="/">← 辞書選択</a>
+  <h1 id="title">MeCab辞書エディタ</h1>
+  <div class="sp"></div>
+  <button class="btn-add" onclick="addRow()">+ 行追加</button>
+  <button class="btn-save" onclick="saveFile()">保存</button>
+  <span id="status"></span>
+</div>
+<div id="toolbar">
+  <input id="search" type="text" placeholder="検索..." oninput="onSearchInput()">
+  <span id="info"></span>
+</div>
+<div id="wrap">
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+<div id="pager">
+  <button class="btn-nav" id="btn-first" onclick="goFirst()">«</button>
+  <button class="btn-nav" id="btn-prev" onclick="goPrev()">‹</button>
+  <input id="page-input" type="number" min="1" value="1" onchange="goPageInput()">
+  <span id="page-of"></span>
+  <button class="btn-nav" id="btn-next" onclick="goNext()">›</button>
+  <button class="btn-nav" id="btn-last" onclick="goLast()">»</button>
+</div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

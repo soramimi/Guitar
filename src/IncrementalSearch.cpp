@@ -177,20 +177,19 @@ void IncrementalSearch::deleteMigemoDict()
 //
 
 
-MigemoFilter::MigemoFilter(const QString &text)
-	: text(text)
-	, re_(std::make_shared<QRegularExpression>(text, QRegularExpression::CaseInsensitiveOption))
+MigemoFilter::MigemoFilter(const QString &filtertext)
 {
+	makeFilter(filtertext);
 }
 
 bool MigemoFilter::isEmpty() const
 {
-	return text.isEmpty();
+	return text_.isEmpty();
 }
 
 void MigemoFilter::makeFilter(const QString &filtertext)
 {
-	text = filtertext;
+	text_ = filtertext;
 	if (IncrementalSearch::instance()->migemoEnabled()) {
 		if (filtertext.size() > 0) {
 			auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
@@ -201,19 +200,22 @@ void MigemoFilter::makeFilter(const QString &filtertext)
 	}
 }
 
-bool MigemoFilter::match(QString text)
+AbstractIncrementalFilter::Result MigemoFilter::match(QString const &text) const
 {
-	if (isEmpty()) return true; // フィルターが空の場合は常にtrue
+	QString text2 = text;
+	if (isEmpty()) return {}; // フィルターが空の場合は常にtrue
 	if (re_.get()) { // 正規表現が有効な場合
-		text = normalizeText(text);
-		if (text.contains(*re_)) return true;
-		return false;
+		text2 = normalizeText(text2);
+		if (text2.contains(*re_)) return {};
+		return {};
 	}
 	// 正規表現が無効な場合
-	return text.indexOf(text, 0, Qt::CaseInsensitive) >= 0;
+	Result ret;
+	ret.match = text2.indexOf(text2, 0, Qt::CaseInsensitive) >= 0;
+	return ret;
 }
 
-int MigemoFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
+int AbstractIncrementalFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
 {
 	for (int i = 0; i < n; i++) {
 		ushort c1 = s1[i];
@@ -227,12 +229,12 @@ int MigemoFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
 	return 0;
 }
 
-void MigemoFilter::fillFilteredBG(QPainter *painter, const QRect &rect)
+void IncrementalSearch::fillFilteredBG(QPainter *painter, const QRect &rect)
 {
 	painter->fillRect(rect, QColor(128, 128, 128, 64));
 }
 
-void MigemoFilter::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
+void IncrementalSearch::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
 {
 #ifndef Q_OS_WIN
 	if (opt.state & QStyle::State_Selected) { // 選択されている場合
@@ -244,7 +246,7 @@ void MigemoFilter::drawText(QPainter *painter, const QStyleOptionViewItem &opt, 
 	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
 }
 
-QString MigemoFilter::normalizeText(QString s)
+QString AbstractIncrementalFilter::normalizeText(QString s)
 {
 	for (QChar &c : s) {
 		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
@@ -262,53 +264,16 @@ QString MigemoFilter::normalizeText(QString s)
 	return s;
 }
 
-
-
-
-
-void MigemoFilter::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, const MigemoFilter &filter)
+void IncrementalSearch::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, AbstractIncrementalFilter const *filter)
 {
 	QString text = opt.text;
 
 	// フィルターに一致する部分をハイライトして描画
 	std::vector<std::tuple<QString, bool>> list;
 
-	if (filter.re_.get()) { // 正規表現が有効な場合
-		text = MigemoFilter::normalizeText(text);
-		QRegularExpressionMatch match = filter.re_->match(text);
-		int left = 0;
-		while (match.hasMatch()) {
-			int right = match.capturedStart();
-			if (left < right) {
-				list.push_back(std::make_tuple(opt.text.mid(left, right - left), false));
-			}
-			auto start = match.capturedStart();
-			left = match.capturedEnd();
-			list.push_back(std::make_tuple(opt.text.mid(start, left - start), true));
-			match = filter.re_->match(text, left);
-		}
-		if (left < opt.text.size()) {
-			list.push_back(std::make_tuple(opt.text.mid(left), false));
-		}
-	} else {
-		// 通常テキストフィルターの場合
-		const int filtersize = filter.text.size();
-		int left = 0;
-		int right = 0;
-		while (right < text.size()) { // テキストをフィルターで分割
-			if (MigemoFilter::u16ncmp((ushort const *)text.utf16() + right, (ushort const *)filter.text.utf16(), filtersize) == 0) {
-				if (left < right) {
-					list.push_back(std::make_tuple(text.mid(left, right - left), false));
-				}
-				list.push_back(std::make_tuple(text.mid(right, filtersize), true));
-				left = right = right + filtersize;
-			} else {
-				right++;
-			}
-		}
-		if (left < right) { // フィルターで分割できなかった残り
-			list.push_back(std::make_tuple(text.mid(left, right - left), false));
-		}
+	AbstractIncrementalFilter::Result r = filter->match(text);
+	for (AbstractIncrementalFilter::Part2 const &part2 : r.part2) {
+		list.push_back(std::make_tuple(QString::fromStdString(part2.source.text), part2.match));
 	}
 
 	int x = rect.x();
@@ -327,3 +292,101 @@ void MigemoFilter::drawText_filted(QPainter *painter, const QStyleOptionViewItem
 	}
 }
 
+
+std::string MeCaFilter::to_kana(const std::string &text, std::vector<Part2> *out)
+{
+	std::string kana;
+	std::vector<MeCaSearch::Part> parts = global->meca.parse(text);
+	size_t pos = 0;
+	for (MeCaSearch::Part const &part : parts) {
+		Part2 part2;
+		part2.source.text = text.substr(part.offset, part.length);
+		part2.source.pos = kana.size();
+		part2.source.end = part.offset + part.length;
+		auto end = pos + part.text.size();
+		part2.kana.text = part.text;
+		part2.kana.pos = pos;
+		part2.kana.end = end;
+		pos = end;
+		out->push_back(part2);
+		kana.append(part.text);
+	}
+	return kana;
+}
+
+void MeCaFilter::makeFilter(const QString &filtertext)
+{
+	original_text_ = filtertext.toStdString();
+	katakana_text_ = global->meca.convert_roman_to_katakana(original_text_);
+}
+
+MeCaFilter::MeCaFilter(const QString &filtertext)
+{
+	makeFilter(filtertext);
+}
+
+bool MeCaFilter::isEmpty() const
+{
+	return katakana_text_.empty();
+}
+
+AbstractIncrementalFilter::Result MeCaFilter::match(QString const &text) const
+{
+	Result ret;
+	{
+		std::string text2 = text.toStdString();
+		char const *p = misc::stristr(text2.c_str(), original_text_.c_str());
+		if (p) {
+			size_t pos = p - text2.c_str();
+			ret.match = true;
+			ret.pos = pos;
+			ret.end = pos + original_text_.size();
+			if (ret.pos < ret.end) {
+				{
+					Part2 part;
+					part.source.pos = 0;
+					part.source.end = ret.pos;
+					part.source.text = text2.substr(0, ret.pos);
+					part.match = false;
+					ret.part2.push_back(part);
+				}
+				{
+					Part2 part;
+					part.source.pos = ret.pos;
+					part.source.end = ret.end;
+					part.source.text = text2.substr(ret.pos, ret.end - ret.pos);
+					part.match = true;
+					ret.part2.push_back(part);
+				}
+				{
+					Part2 part;
+					part.source.pos = ret.end;
+					part.source.end = text2.size();
+					part.source.text = text2.substr(ret.end);
+					part.match = false;
+					ret.part2.push_back(part);
+				}
+				return ret;
+			}
+		}
+	}
+	{
+		std::vector<Part2> part2;
+		std::string kana = to_kana(text.toStdString(), &part2);
+		char const *p = strstr(kana.c_str(), katakana_text_.c_str());
+		if (p) {
+			size_t pos = p - kana.c_str();
+			size_t end = pos + katakana_text_.size();
+			ret.match = true;
+			ret.pos = pos;
+			for (size_t i = 0; i < part2.size(); i++) {
+				if (pos <= part2[i].kana.pos && part2[i].kana.pos < end) {
+					ret.end = part2[i].kana.end;
+					part2[i].match = true;
+				}
+			}
+		}
+		ret.part2 = part2;
+	}
+	return ret;
+}

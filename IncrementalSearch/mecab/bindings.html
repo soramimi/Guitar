@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+         "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>スクリプト言語のバインディング</title>
+<link rel=stylesheet href="mecab.css">
+</head>
+<body>
+
+<h1>スクリプト言語のバインディング</h1>
+
+<h2>概要</h2>
+<p>
+各種スクリプト言語
+(<a href="http://www.perl.com">perl</a>, 
+<a href="http://www.ruby-lang.org">ruby</a>, 
+<a href="http://www.python.org">python</a>, 
+<a href="http://java.sun.com">Java</a>)
+から, MeCab が提供する形態素解析の機能を利用可能です.
+各バインディングは <a href="http://www.swig.org">SWIG</a> というプログラ
+ムを用いて, 自動生成されています. <a href="http://www.swig.org">SWIG</a> がサポートする他の言語も
+生成可能だと思われますが, 現在は, 作者の管理できる範囲内ということで, 
+上記の4つの言語のみを提供しております.
+</p>
+
+<h2>インストール</h2>
+<p>
+各言語バイディングのインストール方法は, perl/README, ruby/README, python/README,
+java/README を御覧下さい.
+</p>
+
+<h2>とりあえず解析する</h2>
+<p>
+MeCab::Tagger というクラスのインスタンスを生成し, parse (もしくは
+parseToString) というメソッドを呼ぶことで, 解析結果が文字列として取得できます.
+MeCab::Tagger のコンストラクタの引数は, 基本的に mecab の実行形式に与え
+るパラメータと同一で, それらを文字列として与えます.
+</p>
+
+<h3>perl</h3>
+<pre>
+use MeCab;
+$m = new MeCab::Tagger ("-Ochasen");
+print $m-&gt;parse ("今日もしないとね");
+</pre>
+
+<h3>ruby</h3>
+<pre>
+require 'MeCab'
+m = MeCab::Tagger.new ("-Ochasen")
+print m.parse ("今日もしないとね")
+</pre>
+
+<h3>python</h3>
+<pre>
+import sys
+import MeCab
+m = MeCab.Tagger ("-Ochasen")
+print m.parse ("今日もしないとね")
+</pre>
+
+<h3>Java</h3>
+<pre>
+import org.chasen.mecab.Tagger;
+import org.chasen.mecab.Node
+ public static void main(String[] argv) {
+ Tagger tagger = new Tagger ("-Ochasen");
+ System.out.println (tagger.parse ("太郎は二郎にこの本を渡した.")); 
+}
+</pre>
+
+<h2>各形態素の詳細情報を取得する</h2>
+<p>
+MeCab::Tagger クラスの, parseToNode という
+メソッドを呼ぶことで, 「文頭」という特別な形態素が MeCab::Node クラスのインスタンスとして
+取得できます.
+</p>
+
+<p>
+MeCab::Node は, 双方向リストとして表現されており, next, prev というメン
+バ変数があります. それぞれ, 次の形態素, 前の形態素を MeCab::Node クラスのインスタンスとして
+返します. 全形態素には, next を順次呼ぶことでアクセスできます.
+</p>
+
+<p>MeCab::Node は C 言語のインタフェイスで提供している mecab_node_t をラッ
+プしたクラスです. mecab_node_t が持つほぼすべてのメンバ変数にアクセスす
+ることができます. ただし, surface のみ, 単語そのものが返るように変更して
+います.</p>
+
+<p>
+以下に <a href="http://www.perl.com">perl</a> の例を示します. この例では, 
+各形態素を順次にアクセスし,形態素の表層文字列, 品詞, その形態素までのコストを表示します.
+</p>
+
+<pre>
+use MeCab;
+my $m = new MeCab::Tagger ("");
+
+for (my $n = $m->parseToNode ("今日もしないとね"); $n ; $n = $n-&gt;{next}) {
+   printf ("%s\t%s\t%d\n",
+            $n-&gt;{surface},          # 表層
+	    $n-&gt;{feature},          # 現在の品詞
+	    $n-&gt;{cost}              # その形態素までのコスト
+	    );
+}
+</pre>
+
+<h2>エラー処理</h2>
+<p>
+もし, コンストラクタや, 解析途中でエラーが起きた場合は, 
+RuntimeError 例外が発生します. 
+例外のハンドリングの方法は, 各言語のリファレンスマニュアルを
+ごらんください. 以下は, <a href="http://www.python.org">python</a> の例です
+</p>
+
+<pre>
+try:
+    m = MeCab.Tagger ("-d .")
+    print m.parse ("今日もしないとね")
+except RuntimeError, e:
+    print "RuntimeError:", e;
+</pre>
+
+
+<h2>注意事項</h2>
+<h3>文頭,文末形態素</h3>
+<p>
+    parseToNode の返り値は, 「文頭」という特別な形態素を示す MeCab::Node
+    インタンスです. さらに, 「文末」という特別な形態素も存在いたしますので,
+    注意してください. もし, これらを無視したい場合は, 以下のように
+    next でそれぞれを読み飛ばしてください.
+<pre>
+my $n = $m-&gt;parseToNode ("今日もしないとね"); 
+$n = $n-&gt;{next}; # 「文頭」を無視
+
+while ($n-&gt;{next}) { # next を調べる
+  printf ("%s\n", $n-&gt;{surface});
+  $n = $n-&gt;{next}; # 次に移動
+}
+</pre>
+   
+</p>
+
+<h3>MeCab::Node の振舞い</h3>
+<p>
+MeCab::Node の実体(メモリ上にある形態素情報)は, 
+MeCab::Tagger インスタンスが管理しています. MeCab::Node は,
+Node の実体を指している<b>参照</b>にすぎせん. そのために, parseToNode が
+呼ばれる度に, 実体そのものが, 上書きされていきます. 以下のような例はソースの意図する通りには動きません.
+</p>
+ 
+<pre>
+m = MeCab.Tagger ("")
+n1 = m.parseToNode ("今日もしないとね") 
+n2 = m.parseToNode ("さくさくさくら")
+
+# n1 の内容は無効になっている
+while (n1.hasNode () != 0):
+   print n1.getSurface ()
+   n1 = n1.next ()
+</pre>
+
+<p>
+上記の例では, n1 の指す中身が, 「さくさくさくら」を解析した時点で
+上書きされており, 使用できなくなっています. 
+</p>
+
+<p>
+複数の Node を同時にアクセスしたい場合は, 複数の MeCab::Tagger インスタンスを生成してください.
+</p>
+
+<h2>全メソッド</h2>
+<p>
+以下に, <a href="http://www.swig.org">SWIG</a>用のインタフェースファイル
+の一部を示します. バイディングの実装言語の都合上, C++ のシンタックスで
+表記されていますが, 適宜読みかえてください. また, 各メソッドの動作も添え
+ていますので参考にしてください.
+</p>
+
+<pre>
+namespace MeCab {
+
+  class Tagger {
+
+     // str を解析して文字列として結果を得ます. len は str の長さ(省略可能)
+     string parse(string str, int len);
+  
+     // parse と同じ
+     string parseToString(string str, int len);
+  
+     // str を解析して MeCab::Node 型の形態素を返します. 
+     // この形態素は文頭を示すもので, next を順に辿ることで全形態素にアクセスできます
+     Node parseToNode(string str, int len);
+  
+     // parse の Nbest 版です. N に nbest の個数を指定します.
+     // この機能を使う場合は, 起動時オプションとして -l 1 を指定する必要があります
+     string parseNBest(int N, string str, int len);
+  
+     // 解析結果を, 確からしいものから順番に取得する場合にこの関数で初期化を行います.
+     bool  parseNBestInit(string str, int len);
+  
+     // parseNbestInit() の後, この関数を順次呼ぶことで, 確からしい解析結果を, 順番に取得できます.
+     string next();
+  
+     // next() と同じですが, MeCab::Node を返します.
+     Node  nextNode();
+  };
+  
+  #define MECAB_NOR_NODE  0
+  #define MECAB_UNK_NODE  1
+  #define MECAB_BOS_NODE  2
+  #define MECAB_EOS_NODE  3
+  
+  struct Node {
+
+    struct Node  prev;  // 一つ前の形態素へのポインタ
+    struct Node  next;  // 一つ先の形態素へのポインタ
+    
+    struct Node  enext; // 同じ位置で終わる形態素へのポインタ
+    struct Node  bnext; // 同じ開始位置で始まる形態素へのポインタ
+  
+    string surface;             // 形態素の文字列情報 
+  			      
+    string feature;             // CSV で表記された素性情報
+    unsigned int   length;      // 形態素の長さ
+    unsigned int   rlength;     // 形態素の長さ(先頭のスペースを含む)
+    unsigned int   id;          // 形態素に付与される ユニークID
+    unsigned short rcAttr;      // 右文脈 id 
+    unsigned short lcAttr;      // 左文脈 id
+    unsigned short posid;       // 形態素 ID (未使用)
+    unsigned char  char_type;   // 文字種情報
+    unsigned char  stat;        // 形態素の種類: 以下のマクロの値
+                                // #define MECAB_NOR_NODE  0
+                                // #define MECAB_UNK_NODE  1
+                                // #define MECAB_BOS_NODE  2
+                                // #define MECAB_EOS_NODE  3
+    unsigned char  isbest;      // ベスト解の場合 1, それ以外 0
+  
+    float          alpha;       // forward backward の foward log 確率
+    float          beta;        // forward backward の backward log 確率 
+    float          prob;        // 周辺確率
+                                // alpha, beta, prob は -l 2 オプションを指定した時に定義されます
+  
+    short          wcost;       // 単語生起コスト
+    long           cost;        // 累積コスト
+  };
+}
+</pre>
+<h2>サンプルプログラム</h2>
+<p>
+perl/test.pl, ruby/test.rb, python/test.py, java/test.java
+にそれぞれの言語のサンプルがありますので, 参考にしてください.
+</p>
+</body>
+</html>
