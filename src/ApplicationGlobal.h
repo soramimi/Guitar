@@ -75,8 +75,11 @@ public:
 
 	ApplicationSettings appsettings;
 
-	WebContext webcx = {WebClient::HTTP_1_0};
+#ifdef USE_LIBCURL
 	CurlContext curlcx;
+#else
+	WebContext webcx = {WebClient::HTTP_1_0};
+#endif
 	AvatarLoader avatar_loader;
 
 	std::vector<AccountProfile> account_profiles;
@@ -96,6 +99,8 @@ public:
 
 	void writeLog(const std::string_view &str);
 	void writeLog(const QString &str);
+
+	std::shared_ptr<AbstractInetClient> inet_client();
 
 	IncrementalSearch *incremental_search();
 	MeCaSearch meca;

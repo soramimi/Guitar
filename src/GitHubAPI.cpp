@@ -36,11 +36,12 @@ AbstractInetClient *GitHubRequestThread::web()
 
 void GitHubRequestThread::start()
 {
-	if (1) {
-		m->web = std::make_shared<WebClient>(&global->webcx);
-	} else {
-		m->web = std::make_shared<CurlClient>(&global->curlcx);
-	}
+	m->web = global->inet_client();
+	// if (1) {
+	// 	m->web = std::make_shared<WebClient>(&global->webcx);
+	// } else {
+	// 	m->web = std::make_shared<CurlClient>(&global->curlcx);
+	// }
 	QThread::start();
 }
 

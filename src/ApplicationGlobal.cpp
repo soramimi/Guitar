@@ -165,6 +165,17 @@ void ApplicationGlobal::writeLog(const QString &str)
 	mainwindow->emitWriteLog(str);
 }
 
+std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
+{
+	std::shared_ptr<AbstractInetClient> http;
+#ifdef USE_LIBCURL
+	http = std::make_shared<CurlClient>(&global->curlcx);
+#else
+	http = std::make_shared<WebClient>(&global->webcx);
+#endif
+	return http;
+}
+
 IncrementalSearch *ApplicationGlobal::incremental_search()
 {
 	return &m->incremental_search;

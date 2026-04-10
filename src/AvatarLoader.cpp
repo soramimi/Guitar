@@ -43,11 +43,12 @@ AvatarLoader::~AvatarLoader()
 AbstractInetClient *AvatarLoader::web()
 {
 	if (!m->web) {
-		if (1) {
-			m->web = std::make_shared<WebClient>(&global->webcx);
-		} else {
-			m->web = std::make_shared<CurlClient>(&global->curlcx);
-		}
+		m->web = global->inet_client();
+		// if (1) {
+		// 	m->web = std::make_shared<WebClient>(&global->webcx);
+		// } else {
+		// 	m->web = std::make_shared<CurlClient>(&global->curlcx);
+		// }
 	}
 	return m->web.get();
 }

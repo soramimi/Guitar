@@ -70,8 +70,14 @@ macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 msvc:LIBS += -llibcrypto -llibssl
 
-!msvc:LIBS += -lcurl
-msvc:LIBS += -llibcurl
+# network library
+
+# CONFIG += use_libcurl
+use_libcurl {
+    DEFINES += USE_LIBCURL
+	!msvc:LIBS += -lcurl
+	msvc:LIBS += -llibcurl
+}
 
 # execute 'ruby prepare.rb' automatically
 
@@ -132,7 +138,6 @@ SOURCES += \
     $$PWD/src/TraceEventWriter.cpp \
     $$PWD/src/TraceLogger.cpp \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
-	$$PWD/src/curlclient.cpp \
 	$$PWD/src/gzip.cpp \
     $$PWD/src/inetclient.cpp \
     $$PWD/src/inetresolver.cpp \
@@ -306,7 +311,6 @@ HEADERS += \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/common/htmlencode.h \
-	$$PWD/src/curlclient.h \
 	$$PWD/src/gzip.h \
     $$PWD/src/inetclient.h \
     $$PWD/src/inetresolver.h \
@@ -602,6 +606,11 @@ unsafe {
 	FORMS += \
 	    src/sshsupport/ConfirmRemoteSessionDialog.ui \
 		src/sshsupport/SshDialog.ui
+}
+
+use_libcurl {
+    SOURCES += $$PWD/src/curlclient.cpp
+	HEADERS += $$PWD/src/curlclient.h
 }
 
 include(migemo.pri)
