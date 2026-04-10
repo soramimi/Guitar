@@ -1,0 +1,73 @@
+# POS Unigram
+UNIGRAM U1:%F[0]
+UNIGRAM U2:%F[0],%F?[1]
+
+# Word-POS
+UNIGRAM W0:%F[4]
+UNIGRAM W1:%F[0]/%F[4]
+UNIGRAM W2:%F[0],%F?[1]/%F[4]
+
+# Word-Read-POS
+UNIGRAM R0:%F[5]
+UNIGRAM R1:%F[4],%F[5]
+UNIGRAM R2:%F[0]/%F[4],%F[5]
+UNIGRAM R3:%F[0],%F?[1]/%F[4],%F[5]
+
+# char type
+UNIGRAM T0:%t
+UNIGRAM T1:%F[0]/%t
+UNIGRAM T2:%F[0],%F?[1]/%t
+
+# 品詞
+BIGRAM B00:%L[0]/%R[0]
+BIGRAM B01:%L[0],%L?[1]/%R[0]
+BIGRAM B02:%L[0]/%R[0],%R?[1]
+BIGRAM B03:%L[0]/%R[0],%R[1],%R?[2]
+BIGRAM B04:%L[0],%L?[1]/%R[0],%R[1],%R?[2]
+
+# 活用
+BIGRAM B20:%L[0],%L?[2]/%R[0]
+BIGRAM B21:%L[0],%L?[3]/%R[0]
+BIGRAM B22:%L[0],%L?[2],%L?[3]/%R[0]
+BIGRAM B23:%L[0]/%R[0],%R?[2]
+BIGRAM B24:%L[0]/%R[0],%R?[3]
+BIGRAM B25:%L[0]/%R[0],%R?[2],%R?[3]
+BIGRAM B26:%L[0],%L?[2]/%R[0],%R?[2]
+BIGRAM B27:%L[0],%L?[2]/%R[0],%R?[3]
+BIGRAM B28:%L[0],%L?[3]/%R[0],%R?[2]
+BIGRAM B29:%L[0],%L?[3]/%R[0],%R?[3]
+BIGRAM B30:%L[0],%L?[2],%L?[3]/%R[0],%R?[2]
+BIGRAM B31:%L[0],%L?[2],%L?[3]/%R[0],%R?[3]
+BIGRAM B32:%L[0],%L?[2]/%R[0],%R?[2],%R?[3]
+BIGRAM B33:%L[0],%L?[3]/%R[0],%R?[2],%R?[3]
+BIGRAM B34:%L[0],%L?[2],%L?[3]/%R[0],%R?[2],%R?[3]
+
+# leaf
+BIGRAM B40:%L[0],%L?[1],%L?[2]/%R[0],%R?[1]
+BIGRAM B41:%L[0],%L?[1],%L?[3]/%R[0],%R?[1]
+BIGRAM B42:%L[0],%L?[1],%L?[2],%L?[3]/%R[0],%R?[1]
+BIGRAM B43:%L[0],%L?[1]/%R[0],%R?[1],%R?[2]
+BIGRAM B44:%L[0],%L?[1]/%R[0],%R?[1],%R?[3]
+BIGRAM B45:%L[0],%L?[1]/%R[0],%R?[1],%R?[2],%R?[3]
+BIGRAM B46:%L[0],%L?[1],%L?[2]/%R[0],%R?[1],%R?[2]
+BIGRAM B47:%L[0],%L?[1],%L?[2]/%R[0],%R?[1],%R?[3]
+BIGRAM B48:%L[0],%L?[1],%L?[3]/%R[0],%R?[1],%R?[2]
+BIGRAM B49:%L[0],%L?[1],%L?[3]/%R[0],%R?[1],%R?[3]
+BIGRAM B50:%L[0],%L?[1],%L?[2],%L?[3]/%R[0],%R?[1],%R?[2]
+BIGRAM B51:%L[0],%L?[1],%L?[2],%L?[3]/%R[0],%R?[1],%R?[3]
+BIGRAM B52:%L[0],%L?[1],%L?[2]/%R[0],%R?[1],%R?[2],%R?[3]
+BIGRAM B53:%L[0],%L?[1],%L?[3]/%R[0],%R?[1],%R?[2],%R?[3]
+BIGRAM B54:%L[0],%L?[1],%L?[2],%L?[3]/%R[0],%R?[1],%R?[2],%R?[3]
+
+# 語彙化
+BIGRAM B61:%L[0],%L[1],%L[2],%L[3],%L?[4]/%R[0],%R[1]
+BIGRAM B61:%L[0],%L[1],%L[2],%L[3],%L?[4]/%R[0],%R[1],%R[2]
+BIGRAM B62:%L[0],%L[1],%L[2],%L[3],%L?[4]/%R[0],%R[1],%R[3]
+BIGRAM B63:%L[0],%L[1],%L[2],%L[3],%L?[4]/%R[0],%R[1],%R[2],%R[3]
+
+BIGRAM B64:%L[0],%L[1]/%R[0],%R[1],%R[2],%R[3],%R?[4]
+BIGRAM B65:%L[0],%L[1],%L[2]/%R[0],%R[1],%R[2],%R[3],%R?[4]
+BIGRAM B66:%L[0],%L[1],%L[3]/%R[0],%R[1],%R[2],%R[3],%R?[4]
+BIGRAM B67:%L[0],%L[1],%L[2],%L[3]/%R[0],%R[1],%R[2],%R[3],%R?[4]
+
+BIGRAM B70:%L?[4]/%R?[4]

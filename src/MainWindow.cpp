@@ -155,7 +155,7 @@ struct MainWindow::Private {
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
 
 	MainWindow::FilterTarget filter_target = MainWindow::FilterTarget::RepositorySearch;
-	QString incremental_search_text;
+	// QString incremental_search_text;
 	int before_search_row = -1;
 	bool uncommited_changes = false;
 	std::vector<GitFileStatus> uncommited_changes_file_list;
@@ -715,7 +715,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 			} else if (watched == ui->tableWidget_log) {
 				if (enter) {
-					if (!m->incremental_search_text.isEmpty()) {
+					if (!global->incremental_search_text.isEmpty()) {
 						applyFilter();
 						return true;
 					}
@@ -6007,30 +6007,31 @@ void MainWindow::on_toolButton_fetch_clicked()
  */
 QString MainWindow::getIncrementalSearchText() const
 {
-	return m->incremental_search_text;
+	return global->incremental_search_text;
 }
 
 /**
  * @brief フィルタ文字列を設定する
  * @param text
  */
-void MainWindow::setFilterText(QString const &text, int repo_list_select_row)
+void MainWindow::setIncrementalSearchText(QString const &text, int repo_list_select_row)
 {
+	// qDebug() << text;
 	FilterTarget ft = filtertarget();
 
-	if (m->incremental_search_text.isEmpty() && !text.isEmpty()) {
+	if (global->incremental_search_text.isEmpty() && !text.isEmpty()) {
 		if (ft == FilterTarget::RepositorySearch) {
 		} else if (ft == FilterTarget::CommitLogSearch) {
 			m->before_search_row = ui->tableWidget_log->currentRow();
 		}
 	}
 
-	m->incremental_search_text = text;
+	global->incremental_search_text = text;
 
 	if (ft == FilterTarget::RepositorySearch) {
-		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row, m->incremental_search_text);
+		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row, global->incremental_search_text);
 	} else if (ft == FilterTarget::CommitLogSearch) {
-		ui->tableWidget_log->setFilter(m->incremental_search_text);
+		ui->tableWidget_log->setFilter(global->incremental_search_text);
 	}
 }
 
@@ -6046,7 +6047,7 @@ void MainWindow::clearFilterText(int repo_list_select_row)
 {
 	int commit_log_select_row = m->before_search_row;
 
-	m->incremental_search_text = QString();
+	global->incremental_search_text = QString();
 	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row, {});
 	ui->tableWidget_log->setFilter({});
 
@@ -6058,7 +6059,7 @@ void MainWindow::clearFilterText(int repo_list_select_row)
  */
 void MainWindow::clearAllFilters(int select_row)
 {
-	if (m->incremental_search_text.isEmpty()) return;
+	if (global->incremental_search_text.isEmpty()) return;
 
 	clearFilterText(select_row);
 	updateStatusBarText();
@@ -6099,7 +6100,7 @@ void MainWindow::_appendCharToFilterText(ushort c)
 	} else if (QChar(c).isLetterOrNumber()) {
 		text.append(QChar(c).toLower());
 	}
-	setFilterText(text);
+	setIncrementalSearchText(text);
 }
 
 bool MainWindow::appendCharToFilterText(int k, MainWindow::FilterTarget ft)

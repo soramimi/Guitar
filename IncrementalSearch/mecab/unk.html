@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>MeCab: 未知語処理</title>
+<link type="text/css" rel="stylesheet" href="mecab.css">
+</head>
+<body>
+<h1>未知語処理の定義</h1>
+
+<h2>概要</h2>
+<p>未知語処理(辞書に載っていない単語の形態素解析の処理)についてユーザが再定義できます。</p>
+
+<h2>設定ファイル</h2>
+
+<p>配布辞書のディレクトリにある char.def と unk.def という2つのファイル
+を変更します.</p>
+
+<h3>char.def</h3>
+<p>未知語処理のルールです. <a href="learn.html">こちら</a>を御覧ください.
+</p>
+
+<h3>unk.def</h3>
+<p>未知語に対する品詞列のテーブルです. <a href="learn.html">こちら</a>を
+御覧ください. </p>
+
+<h2>ケーススタディ</h2>
+<h3>数字の連続を1つの形態素とする</h2>
+<ul>
+<li>辞書 (*.csv ファイル)から数字のエントリを削除します。
+    ipadic の場合は、Noun.number.csv の中から、アラビア数字のエントリを消去します。
+<li>char.def を修正し、数字の連続が未知語になるようにします。
+<pre>
+..
+NUMERIC        1 1 0
+..
+</pre>
+
+<li>unk.def を修正し、数字のコストを小さくします。
+
+4カラム目のコスト値を 0以下の小さい値に設定します。
+<pre>
+NUMERIC,1204,1204,0,名詞,数,*,*,*,*,*
+</pre>
+
+<li>辞書をコンパイルします。
+<pre>
+% /usr/local/libexec/mecab/mecab-dict-index 
+</pre>
+</ul>
+
+<h3>ASCII 文字列は、スペース/タブのみで分割する (kakasiと同一動作)</h3>
+<ul>
+<li>辞書 (*.csv ファイル)からアスキー文字列を含むのエントリを削除します。
+<li>char.def を修正し、スペース、記号を除く文字を同一字種(ASCII)にマッピ
+    ングします。他のエントリも同時にチェックし、0x0021..0x007E の領域を
+    他の字種にマッピングしないようにしてください。
+<pre>
+ASCII       1 1 0
+
+0x0021..0x007E ASCII
+</pre>
+
+<li>unk.def を修正し、ASCIIのコストを小さくします。
+4カラム目のコスト値を 0以下の小さい値に設定します。
+<pre>
+ASCII,1192,1192,0,名詞,サ変接続,*,*,*,*,*
+</pre>
+
+<li>辞書をコンパイルします。
+<pre>
+% /usr/local/libexec/mecab/mecab-dict-index 
+</pre>
+</ul>
+</body>
+</html>

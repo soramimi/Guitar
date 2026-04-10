@@ -1,0 +1,16 @@
+;
+; Configuration file of MeCab
+;
+; $Id: mecabrc.in,v 1.3 2006/05/29 15:36:08 taku-ku Exp $;
+;
+dicdir =  /usr/local/lib/mecab/dic/ipadic
+
+; userdic = /home/foo/bar/user.dic
+
+; output-format-type = wakati
+; input-buffer-size = 8192
+
+; node-format = %m\n
+; bos-format = %S\n
+; eos-format = EOS\n
+

@@ -3,9 +3,9 @@
 
 #include "Git.h"
 
-
+#include <memory>
 #include "RepositoryTreeWidget.h"
-
+#include "IncrementalSearch.h"
 #include <QTableWidget>
 
 class MainWindow;
@@ -30,7 +30,12 @@ private:
 	std::vector<CommitRecord> records_;
 	std::vector<size_t> index_;
 	QString filter_text_;
-	MigemoFilter filter_;
+	std::shared_ptr<MeCaFilter> meca_filter_;
+	std::shared_ptr<MigemoFilter> migemo_filter_;
+	AbstractIncrementalFilter *filter()
+	{
+		return meca_filter_.get();
+	}
 	CommitLogTableWidget *tablewidget();
 	CommitRecord const &record(int row) const;
 	CommitRecord const &record(QModelIndex const &index) const;
@@ -40,6 +45,8 @@ public:
 	CommitLogTableModel(QObject *parent = nullptr)
 		: QAbstractItemModel(parent)
 	{
+		meca_filter_ = std::make_shared<MeCaFilter>();
+		migemo_filter_ = std::make_shared<MigemoFilter>();
 	}
 	QModelIndex index(int row, int column, const QModelIndex &parent) const;
 	QModelIndex parent(const QModelIndex &child) const;

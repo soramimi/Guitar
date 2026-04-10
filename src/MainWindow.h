@@ -218,7 +218,7 @@ private:
 	void setRepositoryInfo(QString const &reponame, QString const &brname);
 
 	QString getIncrementalSearchText() const;
-	void setFilterText(QString const &text, int repo_list_select_row = -1);
+	void setIncrementalSearchText(QString const &text, int repo_list_select_row = -1);
 	void clearFilterText(int repo_list_select_row = -1);
 	void clearAllFilters(int select_row = -1);
 	bool applyFilter();

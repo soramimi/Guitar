@@ -108,16 +108,17 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 void CommitLogTableModel::privateSetFilter(QString const &text)
 {
 	if (text.isEmpty()) {
-		filter_ = {};
+		migemo_filter_ = {};
 		index_.resize(records_.size());
 		std::iota(index_.begin(), index_.end(), 0);
 	} else {
-		filter_.makeFilter(text);
+		filter()->makeFilter(text);
 		size_t n = records_.size();
 		index_.clear();
 		index_.reserve(n);
 		for (size_t i = 0; i < n; i++) {
-			if (filter_.match(records_[i].message)) {
+			// if (migemo_filter_.match(records_[i].message)) {
+			if (filter()->match(records_[i].message)) {
 				index_.push_back(i);
 			}
 		}
@@ -289,8 +290,8 @@ public:
 		// CommitRecord const &record = tablewidget->model_->record(index);
 
 		if (tablewidget->model_->isFiltered()) {
-			MigemoFilter::fillFilteredBG(painter, opt.rect);
-			MigemoFilter::drawText_filted(painter, opt, opt.rect, tablewidget->model_->filter_);
+			IncrementalSearch::fillFilteredBG(painter, opt.rect);
+			IncrementalSearch::drawText_filted(painter, opt, opt.rect, tablewidget->model_->filter());
 		} else {
 			MyTableWidgetDelegate::paint(painter, opt, index);
 		}

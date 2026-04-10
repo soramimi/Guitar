@@ -49,3 +49,6 @@ misc/migemo.zip
 *.o
 *.pdb
 *.a
+IncrementalSearch/mecab/mecab/src/.libs/
+*.lo
+*.la

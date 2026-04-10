@@ -38,6 +38,10 @@ Dir.chdir("filetype") {
 	run "build-msvc.bat"
 }
 
+Dir.chdir("IncrementalSearch") {
+	run "build-msvc.bat"
+}
+
 mkcd $script_dir + "/_build_guitar"
 run "C:/Qt/#{$qt}/bin/qmake.exe CONFIG+=release ../../../Guitar.pro"
 run "C:/Qt/Tools/QtCreator/bin/jom/jom.exe /j 8"

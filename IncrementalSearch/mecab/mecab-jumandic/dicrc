@@ -1,0 +1,13 @@
+bos-feature = BOS/EOS,*,*,*,*,*,*
+cost-factor = 800
+eval-size = 4
+unk-eval-size = 2
+
+; yomi
+node-format-yomi = %pS%f[5]
+unk-format-yomi = %M
+eos-format-yomi  = \n
+
+; simple
+node-format-simple = %m\t%F-[0,1,2,3]\n
+eos-format-simple  = EOS\n

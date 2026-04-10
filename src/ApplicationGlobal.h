@@ -8,6 +8,7 @@
 #include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
+#include "MeCaSearch.h"
 #include <QColor>
 #include <QString>
 #include "GenerativeAI.h"
@@ -97,6 +98,8 @@ public:
 	void writeLog(const QString &str);
 
 	IncrementalSearch *incremental_search();
+	MeCaSearch meca;
+	QString incremental_search_text;
 
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);
 

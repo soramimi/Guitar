@@ -1,0 +1,53 @@
+CC = cl.exe
+CXXC = cl.exe
+LINK=link.exe
+
+CFLAGS = /EHsc /O2 /GL /GA /Ob2 /nologo /W3 /MT /Zi /wd4800 /wd4305 /wd4244
+LDFLAGS = /nologo /OPT:REF /OPT:ICF /LTCG /NXCOMPAT /DYNAMICBASE /MACHINE:X86 ADVAPI32.LIB
+DEFS =  -D_CRT_SECURE_NO_DEPRECATE -DMECAB_USE_THREAD \
+        -DDLL_EXPORT -DHAVE_GETENV -DHAVE_WINDOWS_H -DDIC_VERSION=@DIC_VERSION@ \
+        -DVERSION="\"@VERSION@\"" -DPACKAGE="\"mecab\"" \
+        -DUNICODE -D_UNICODE \
+        -DMECAB_DEFAULT_RC="\"c:\\Program Files\\mecab\\etc\\mecabrc\""
+INC = -I. -I..
+DEL = del
+
+OBJ =   feature_index.obj param.obj  learner.obj string_buffer.obj \
+	char_property.obj         learner_tagger.obj    tagger.obj \
+	connector.obj             tokenizer.obj \
+	context_id.obj            dictionary.obj  utils.obj \
+	dictionary_compiler.obj   viterbi.obj \
+	dictionary_generator.obj  writer.obj iconv_utils.obj \
+	dictionary_rewriter.obj   lbfgs.obj eval.obj nbest_generator.obj
+
+.c.obj:
+	$(CC) $(CFLAGS) $(INC) $(DEFS) -c  $<
+
+.cpp.obj:
+	$(CC) $(CFLAGS) $(INC) $(DEFS) -c  $<
+
+all: libmecab mecab mecab-dict-index mecab-dict-gen mecab-cost-train mecab-system-eval mecab-test-gen
+
+mecab: $(OBJ) mecab.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab.obj libmecab.lib
+
+mecab-dict-index: $(OBJ) mecab-dict-index.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab-dict-index.obj libmecab.lib
+
+mecab-dict-gen: $(OBJ) mecab-dict-gen.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab-dict-gen.obj libmecab.lib
+
+mecab-cost-train: $(OBJ) mecab-cost-train.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab-cost-train.obj libmecab.lib
+
+mecab-system-eval: $(OBJ) mecab-system-eval.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab-system-eval.obj libmecab.lib
+
+mecab-test-gen: mecab-test-gen.obj
+	$(LINK) $(LDFLAGS) /out:$@.exe mecab-test-gen.obj libmecab.lib
+
+libmecab: $(OBJ) libmecab.obj
+	$(LINK) $(LDFLAGS) /out:$@.dll $(OBJ) libmecab.obj /dll
+
+clean:
+	$(DEL) *.exe *.obj *.dll *.a *.lib *.o *.exp *.def

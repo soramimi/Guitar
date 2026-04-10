@@ -8,6 +8,7 @@
 #include "GitRunner.h"
 #include "Profile.h"
 #include <QFile>
+#include <QDebug>
 
 struct CommitMessageResult {
 	bool completion = false;

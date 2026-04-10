@@ -46,6 +46,7 @@ INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/common
 INCLUDEPATH += $$PWD/src/coloredit
 INCLUDEPATH += $$PWD/src/texteditor
+INCLUDEPATH += $$PWD/IncrementalSearch/mecab/mecab/src/
 # INCLUDEPATH += $$PWD/filetype/src
 
 msvc:INCLUDEPATH += $$PWD/misc/winpty/include
@@ -96,6 +97,14 @@ msvc:CONFIG(debug, debug|release):LIBS += $$PWD/filetype/lib/filetyped.lib $$PWD
 !msvc:CONFIG(release, debug|release):LIBS += $$PWD/filetype/lib/libfiletype.a $$PWD/filetype/lib/libfile.a $$PWD/filetype/lib/liboniguruma.a
 !msvc:CONFIG(debug, debug|release):LIBS += $$PWD/filetype/lib/libfiletyped.a $$PWD/filetype/lib/libfiled.a $$PWD/filetype/lib/libonigurumad.a
 # !msvc:LIBS += $$PWD/filetype/lib/libfiletyped.a $$PWD/filetype/lib/libonigurumad.a $$PWD/filetype/lib/libfiled.a
+
+# experimental: MeCaSearch
+
+INCLUDEPATH += IncrementalSearch/
+
+!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearch.a
+msvc:CONFIG(release, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearch.lib
+msvc:CONFIG(debug, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearchd.lib
 
 #
 
