@@ -52,3 +52,7 @@ misc/migemo.zip
 IncrementalSearch/mecab/mecab/src/.libs/
 *.lo
 *.la
+IncrementalSearch/mecab/mecab-ipadic/autom4te.cache/
+IncrementalSearch/mecab/mecab/autom4te.cache/
+IncrementalSearch/mecab/mecab-ipadic/configure~
+*~
