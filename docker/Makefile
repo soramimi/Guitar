@@ -10,6 +10,19 @@ PASSWORD :=
 PROJNAME := Guitar
 PROJHOME := `realpath ../../${PROJNAME}`
 
+#---
+
+SSHD =
+COMMAND =
+ifeq (${PASSWORD},)
+	COMMAND = sleep
+else
+	COMMAND = sshd
+	SSHD = -p ${SSHPORT}:${SSHPORT} -e SSHPORT=${SSHPORT}
+endif
+
+#---
+
 main:
 	@echo "  $ make build             build container"
 	@echo
@@ -46,7 +59,7 @@ up: home home/.bashrc home/.profile
 	cp -a scripts/* home/
 	echo ${UNAME}:${PASSWORD} >./home/.password
 	echo CONTAINER_NAME=${NAME} >./home/.container.sh
-	docker run --device /dev/fuse --privileged --name ${NAME} -d -p ${SSHPORT}:${SSHPORT} -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e SSHPORT=${SSHPORT} -e COMMAND=up ${NAME}
+	docker run --device /dev/fuse --privileged --name ${NAME} -d -p ${SSHPORT}:${SSHPORT} -v ${PROJHOME}:/${PROJNAME} -v ./home:${HOMEDIR} -e UNAME=${UNAME} -e GNAME=${GNAME} -e UID=${UID} -e GID=${GID} -e HOMEDIR=${HOMEDIR} -e CONTAINER_NAME=${NAME} -e COMMAND=${COMMAND} ${SSHD} ${NAME}
 
 run: down home home/.bashrc home/.profile 
 	cp -a scripts/* home/
