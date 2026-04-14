@@ -44,6 +44,12 @@ jobs:
         cd filetype
         bash build-gcc.sh
         cd ..
+
+    - name: Build libmecasearch
+      run: |
+        cd IncrementalSearch
+        bash build-gcc.sh
+        cd ..
         
     - name: Build Guitar
       run: |
