@@ -84,7 +84,8 @@ public:
 
 	std::vector<AccountProfile> account_profiles;
 
-	void init(QApplication *a);
+	void init1();
+	void init2();
 
 	// bool remote_log_enabled = false;
 	void open_remote_logger();

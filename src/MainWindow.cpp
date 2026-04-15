@@ -7127,44 +7127,6 @@ void MainWindow::on_action_view_sort_by_time_changed()
 	onRepositoryTreeSortRecent(f);
 }
 
-int genmsg()
-{
-	global->appsettings = ApplicationSettings::loadSettings();
-	GitContext gcx;
-	gcx.git_command = global->appsettings.git_command;
-
-	QString dir = QDir::currentPath();
-	std::shared_ptr<Git> g = std::make_shared<Git>(gcx, dir, QString{}, QString{});
-	// std::string diff = CommitMessageGenerator::diff_head(g);
-	std::string cmd = "diff --name-only HEAD";
-	auto result = g->git(QString::fromStdString(cmd));
-	std::vector<std::string> files = misc::splitLines(g->resultStdString(result), false);
-
-	std::string diff;
-	for (std::string const &file : files) {
-		if (file.empty()) continue;
-		std::string mimetype = global->determineFileType(QString::fromStdString(file));
-		if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
-		if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
-		if (mimetype == "application/pdf") continue; // PDFはdiffしない
-		if (mimetype == "text/xml" && misc::ends_with(file, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
-		cmd = "diff --full-index HEAD -- " + file;
-		auto result = g->git(QString::fromStdString(cmd));
-		diff.append(g->resultStdString(result));
-	}
-
-	CommitMessageGenerator gen;
-	CommitMessageGenerator::Result msg = gen.generate(diff);
-
-	for (std::string const &line : msg.messages) {
-		printf("--- %s\n", line.c_str());
-	}
-
-	return 0;
-}
-
-
-
 void MainWindow::on_action_ssh_triggered()
 {
 #ifdef UNSAFE_ENABLED

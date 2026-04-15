@@ -86,9 +86,10 @@ GitContext ApplicationGlobal::gcx()
 	return gcx;
 }
 
-void ApplicationGlobal::init(QApplication *a)
+// QApplicationが構築される前に実行する
+void ApplicationGlobal::init1()
 {
-	(void)a;
+	// filetypeライブラリを初期化し、基本的な動作をテスト
 
 	bool ok = filetype.open();
 	Q_ASSERT(ok);
@@ -101,6 +102,7 @@ void ApplicationGlobal::init(QApplication *a)
 					 << QString::fromStdString(result.mimetype) << " expected text/plain";
 		}
 	}
+
 	{ // test digits.png filetype registration
 		QFile file(":/image/digits.png");
 		file.open(QFile::ReadOnly);
@@ -111,9 +113,13 @@ void ApplicationGlobal::init(QApplication *a)
 					 << QString::fromStdString(result.mimetype) << " expected image/png";
 		}
 	}
+}
 
+// QApplicationが構築された後に実行する
+void ApplicationGlobal::init2()
+{
+	// インクリメンタル検索ライブラリを初期化
 	{
-		// MeCaSearch meca;
 		std::string s = meca.convert_roman_to_katakana("wagahaihanekodearu");
 		if (s != "ワガハイハネコデアル") {
 			qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
@@ -133,6 +139,9 @@ void ApplicationGlobal::init(QApplication *a)
 			}
 		}
 	}
+	m->incremental_search.init();
+
+	// グローバル画像リソースの読み込み
 
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources
@@ -145,23 +154,17 @@ void ApplicationGlobal::init(QApplication *a)
 		graphics->transparent_pixmap = QPixmap(":/image/transparent.png");
 		graphics->small_digits.load(":/image/digits.png");
 	}
-
-	m->incremental_search.init();
-
-	{
-		if (!meca.open("/home/soramimi/develop/MeCaSearch/mecab/mecab-ipadic")) {
-			qDebug() << "MeCaSearch::open() failed";
-		}
-	}
 }
 
 void ApplicationGlobal::writeLog(const std::string_view &str)
 {
+	if (!mainwindow) return;
 	mainwindow->emitWriteLog(str);
 }
 
 void ApplicationGlobal::writeLog(const QString &str)
 {
+	if (!mainwindow) return;
 	mainwindow->emitWriteLog(str);
 }
 

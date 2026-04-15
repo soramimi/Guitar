@@ -21,6 +21,8 @@
 #include <string>
 #include "udplogger/RemoteLogger.h"
 
+#include "genmsg.h"
+
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
 #endif
@@ -80,7 +82,6 @@ void onSigPipe(int)
 	global->webcx.notify_broken_pipe();
 }
 
-int genmsg();
 
 int main(int argc, char *argv[])
 {
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
 	qInstallMessageHandler(logHandler);
 
 	bool a_open_here = false;
+	bool a_genmsg = false;
 	QString a_commit_id;
 
 	QStringList args;
@@ -119,7 +121,7 @@ int main(int argc, char *argv[])
 				// } else if (arg == "--trace-log") {
 				// 	global->trace_log_enabled = true;
 				} else if (arg == "--genmsg") { // experimental
-					return genmsg();
+					a_genmsg = true;
 				} else if (arg == "--unsafe") { // experimental
 #ifdef UNSAFE_ENABLED
 					global->unsafe_enabled = true;
@@ -163,6 +165,12 @@ int main(int argc, char *argv[])
 
 	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
 
+	global->init1();
+
+	if (a_genmsg) {
+		return genmsg();
+	}
+
 #ifdef Q_OS_WIN
 	putenv("QT_ENABLE_HIGHDPI_SCALING=1");
 	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -170,8 +178,7 @@ int main(int argc, char *argv[])
 	// qputenv("QT_SCALE_FACTOR", "1.5");
 
 	QApplication a(argc, argv);
-
-	global->init(&a);
+	global->init2();
 
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);

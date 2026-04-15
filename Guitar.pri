@@ -138,6 +138,7 @@ SOURCES += \
     $$PWD/src/TraceEventWriter.cpp \
     $$PWD/src/TraceLogger.cpp \
 	$$PWD/src/common/AbstractSimpleIO.cpp \
+	$$PWD/src/genmsg.cpp \
 	$$PWD/src/gzip.cpp \
     $$PWD/src/inetclient.cpp \
     $$PWD/src/inetresolver.cpp \
@@ -311,6 +312,7 @@ HEADERS += \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/common/htmlencode.h \
+	$$PWD/src/genmsg.h \
 	$$PWD/src/gzip.h \
     $$PWD/src/inetclient.h \
     $$PWD/src/inetresolver.h \
