@@ -136,7 +136,7 @@ GitObject FileDiffWidget::catFile(GitRunner g, QString const &id)
 	if (g.isValidWorkingCopy()) {
 		QString path_prefix = PATH_PREFIX;
 		if (id.startsWith(path_prefix)) {
-			QString path = g.workingDir();
+			QString path = QString::fromStdString(g.workingDir());
 			path = path / id.mid(path_prefix.size());
 			QFile file(path);
 			if (file.open(QFile::ReadOnly)) {
@@ -515,7 +515,7 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 				text += "name: " + submodule->name + '\n';
 				text += "path: " + submodule->path + '\n';
 				text += "url: " + submodule->url + '\n';
-				text += "commit: " + submodule->id.toQString() + '\n';
+				text += "commit: " + QString::fromStdString(submodule->id.toString()) + '\n';
 				text += "date: " + misc::makeDateTimeString(submodule_commit->commit_date) + '\n';
 				text += "author: " + submodule_commit->author + '\n';
 				text += "email: " + submodule_commit->email + '\n';
@@ -673,7 +673,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 		std::string mime_a = global->determineFileType(obj_a.content);
 		std::string mime_b = global->determineFileType(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide_(info, obj_a.content, obj_b.content, g.workingDir());
+			setSideBySide_(info, obj_a.content, obj_b.content, QString::fromStdString(g.workingDir()));
 			return;
 		}
 	}
@@ -691,7 +691,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
 			obj = catFile(g, diff.blob.a_id_or_path);
 			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
-				setSideBySide(diff, obj.content, uncommited, g.workingDir()); // 通常のdiff表示
+				setSideBySide(diff, obj.content, uncommited, QString::fromStdString(g.workingDir())); // 通常のdiff表示
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
@@ -717,7 +717,7 @@ void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_r
 	GitDiff diff = GitDiffManager::parseDiff(text, &diff);
 
 	GitObject obj = catFile(g, diff.blob.a_id_or_path);
-	setSideBySide(diff, obj.content, false, g.workingDir());
+	setSideBySide(diff, obj.content, false, QString::fromStdString(g.workingDir()));
 
 	ui->widget_diff_slider->clear(false);
 

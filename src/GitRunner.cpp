@@ -55,7 +55,7 @@ std::optional<GitCommitItem> GitRunner::parseCommit(const QByteArray &ba)
 	return Git::parseCommit(ba);
 }
 
-bool GitRunner::isValidWorkingCopy(const QString &dir) const
+bool GitRunner::isValidWorkingCopy(std::string const &dir) const
 {
 	return git && git->isValidWorkingCopy(dir);
 }
@@ -65,25 +65,25 @@ bool GitRunner::isValidWorkingCopy() const
 	return git && git->isValidWorkingCopy();
 }
 
-void GitRunner::setWorkingRepositoryDir(const QString &repo, const QString &sshkey)
+void GitRunner::setWorkingRepositoryDir(std::string const &repo, std::string const &sshkey)
 {
 	Q_ASSERT(git);
 	git->setWorkingRepositoryDir(repo, sshkey);
 }
 
-void GitRunner::setSubmodulePath(const QString &submodpath)
+void GitRunner::setSubmodulePath(std::string const &submodpath)
 {
 	Q_ASSERT(git);
 	git->setSubmodulePath(submodpath);
 }
 
-QString GitRunner::workingDir() const
+std::string GitRunner::workingDir() const
 {
 	Q_ASSERT(git);
 	return git->workingDir();
 }
 
-const QString &GitRunner::sshKey() const
+const std::string &GitRunner::sshKey() const
 {
 	Q_ASSERT(git);
 	return git->sshKey();
@@ -107,7 +107,7 @@ QString GitRunner::errorMessage(const std::optional<GitResult> &var) const
 	return git->errorMessage(var);
 }
 
-bool GitRunner::remove(const QString &path)
+bool GitRunner::remove(std::string const &path)
 {
 	Q_ASSERT(git);
 	return git->remove(path);
@@ -140,7 +140,7 @@ void GitRunner::addRemoteURL(const GitRemote &remote)
 	git->addRemoteURL(remote);
 }
 
-void GitRunner::removeRemote(const QString &name)
+void GitRunner::removeRemote(std::string const &name)
 {
 	Q_ASSERT(git);
 	git->removeRemote(name);
@@ -194,7 +194,7 @@ void GitRunner::resetAllFiles()
 	git->resetAllFiles();
 }
 
-void GitRunner::removeFile(const QString &path, bool rm_real_file)
+void GitRunner::removeFile(std::string const &path, bool rm_real_file)
 {
 	Q_ASSERT(git);
 	git->rm(path, rm_real_file);
@@ -276,13 +276,13 @@ void GitRunner::remote_v(std::vector<GitRemote> *out)
 void GitRunner::createBranch(const QString &name)
 {
 	Q_ASSERT(git);
-	git->createBranch(name);
+	git->createBranch(name.toStdString());
 }
 
 void GitRunner::checkoutBranch(const QString &name)
 {
 	Q_ASSERT(git);
-	git->checkoutBranch(name);
+	git->checkoutBranch(name.toStdString());
 }
 
 void GitRunner::mergeBranch(const QString &name, GitMergeFastForward ff, bool squash)
@@ -557,7 +557,7 @@ bool GitRunner::rm_cached(const QString &file)
 void GitRunner::cherrypick(const QString &name)
 {
 	Q_ASSERT(git);
-	git->cherrypick(name);
+	git->cherrypick(name.toStdString());
 }
 
 QString GitRunner::getCherryPicking() const

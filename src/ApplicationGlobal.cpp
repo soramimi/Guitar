@@ -81,8 +81,8 @@ void ApplicationGlobal::put_trace_event(TraceEventWriter::Event const &event)
 GitContext ApplicationGlobal::gcx()
 {
 	GitContext gcx;
-	gcx.git_command = appsettings.git_command;
-	gcx.ssh_command = appsettings.ssh_command;
+	gcx.git_command = appsettings.git_command.toStdString();
+	gcx.ssh_command = appsettings.ssh_command.toStdString();
 	return gcx;
 }
 

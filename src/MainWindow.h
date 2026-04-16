@@ -642,9 +642,9 @@ public:
 	QString currentRepositoryName() const;
 	QString currentRemoteName() const;
 	QString currentBranchName() const;
-	GitRunner _git(QString const &dir, QString const &submodpath, QString const &sshkey) const;
+	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
 	GitRunner unassosiated_git_runner() const;
-	GitRunner new_git_runner(QString const &dir, QString const &sshkey);
+	GitRunner new_git_runner(const QString &dir, const QString &sshkey);
 	GitRunner new_git_runner();
 	GitRunner git();
 	static GitRunner git_for_submodule(GitRunner g, GitSubmoduleItem const &submod);

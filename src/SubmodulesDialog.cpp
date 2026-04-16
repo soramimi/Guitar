@@ -36,7 +36,7 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, QString workingdir, std::vec
 
 	for (int row = 0; row < rows; row++) {
 		std::vector<QString> values = {
-			mods_[row].submodule.path,
+			QString::fromStdString(mods_[row].submodule.path),
 			MainWindow::abbrevCommitID(mods_[row].head),
 			misc::makeDateTimeString(mods_[row].head.commit_date),
 			mods_[row].head.author,
@@ -67,8 +67,8 @@ void SubmodulesDialog::on_tableWidget_itemSelectionChanged()
 {
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < mods_.size()) {
-		ui->lineEdit_path->setText(mods_[row].submodule.path / QString());
-		ui->lineEdit_remote_url->setText(mods_[row].submodule.url);
+		ui->lineEdit_path->setText(QString::fromStdString(mods_[row].submodule.path) / QString());
+		ui->lineEdit_remote_url->setText(QString::fromStdString(mods_[row].submodule.url));
 	}
 }
 
@@ -76,7 +76,7 @@ QString SubmodulesDialog::absoluteDir(int row) const
 {
 	if (row >= 0 && row < mods_.size()) {
 		QDir dir(working_dir_);
-		return dir.absoluteFilePath(mods_[row].submodule.path);
+		return dir.absoluteFilePath(QString::fromStdString(mods_[row].submodule.path));
 	}
 	return {};
 }
@@ -102,9 +102,9 @@ void SubmodulesDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < mods_.size()) {
 		QDir d(working_dir_);
-		QString dir = d.absoluteFilePath(mods_[row].submodule.path);
+		QString dir = d.absoluteFilePath(QString::fromStdString(mods_[row].submodule.path));
 		if (dir.isEmpty()) return;
-		MainWindow::openNewGuitar(dir, mods_[row].submodule.id.toQString());
+		MainWindow::openNewGuitar(dir, QString::fromStdString(mods_[row].submodule.id.toString()));
 	}
 }
 

@@ -45,7 +45,7 @@ void FilePropertyDialog::exec(QString const &path, GitHash const &id)
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
 	ui->lineEdit_path->setText(path);
 	ui->lineEdit_type->setText(QString::fromStdString(mimetype));
-	ui->lineEdit_id->setText(id.toQString());
+	ui->lineEdit_id->setText(QString::fromStdString(id.toString()));
 
 	QDialog::exec();
 }

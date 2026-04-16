@@ -51,14 +51,14 @@ void CommitPropertyDialog::init()
 	}
 	
 	ui->lineEdit_message->setText(message);
-	ui->lineEdit_commit_id->setText(m->commit.commit_id.toQString());
+	ui->lineEdit_commit_id->setText(QString::fromStdString(m->commit.commit_id.toString()));
 	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
 	ui->lineEdit_author->setText(m->commit.author);
 	ui->lineEdit_mail->setText(m->commit.email);
 
 	QString text;
 	for (GitHash const &id : m->commit.parent_ids) {
-		text += id.toQString() + '\n';
+		text += QString::fromStdString(id.toString()) + '\n';
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
@@ -172,7 +172,7 @@ void CommitPropertyDialog::on_pushButton_checkout_clicked()
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(m->commit.commit_id.toQString());
+	mainwindow()->jumpToCommit(QString::fromStdString(m->commit.commit_id.toString()));
 	done(QDialog::Accepted);
 }
 

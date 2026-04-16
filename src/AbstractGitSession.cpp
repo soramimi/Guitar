@@ -68,25 +68,10 @@ const AbstractGitSession::Info &AbstractGitSession::gitinfo() const
 	return m->info;
 }
 
-// AbstractGitSession::Info2 &AbstractGitSession::gitinfo2()
-// {
-// 	return m->info2;
-// }
-
-// const AbstractGitSession::Info2 &AbstractGitSession::gitinfo2() const
-// {
-// 	return m->info2;
-// }
-
-// AbstractGitSession::GitCache &AbstractGitSession::cache()
-// {
-// 	return *m->cache;
-// }
-
-QString AbstractGitSession::workingDir() const
+std::string AbstractGitSession::workingDir() const
 {
-	QString dir = gitinfo().working_repo_dir;
-	if (!gitinfo().submodule_path.isEmpty()) {
+	std::string dir = gitinfo().working_repo_dir;
+	if (!gitinfo().submodule_path.empty()) {
 		dir = dir / gitinfo().submodule_path;
 	}
 	return dir;

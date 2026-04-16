@@ -62,7 +62,7 @@ void GitObjectManager::loadIndexes(GitRunner g, std::mutex *mutex)
 {
 	auto Do = [&](){
 		if (m->git_idx_list.empty()) {
-			QString path = g.workingDir() / m->subdir_git_objects_pack;
+			QString path = QString::fromStdString(g.workingDir()) / m->subdir_git_objects_pack;
 			QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
 			while (it.hasNext()) {
 				it.next();
@@ -227,10 +227,10 @@ QString GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 	if (id.isValid()) {
 		int count = 0;
 		QString absolute_path;
-		QString name = id.toQString();
+		QString name = QString::fromStdString(id.toString());
 		QString xx = name.mid(0, 2); // leading two xdigits
 		QString name2 = name.mid(2);  // remaining xdigits
-		QString dir = g.workingDir() / m->subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
+		QString dir = QString::fromStdString(g.workingDir()) / m->subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
 
 		std::optional<std::vector<GitFileItem>> ret = g.ls(dir);
 		if (ret) {
@@ -248,7 +248,7 @@ QString GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 		}
 
 		if (count == 1) return absolute_path;
-		if (count > 1) qDebug() << Q_FUNC_INFO << "ambiguous id" << id.toQString();
+		if (count > 1) qDebug() << Q_FUNC_INFO << "ambiguous id" << QString::fromStdString(id.toString());
 	}
 	return {};
 }
@@ -403,7 +403,7 @@ GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 		auto ret = g.cat_file_(id);
 		if (ret) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
-			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << id.toQString();
+			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << QString::fromStdString(id.toString());
 			ba = *ret;
 			if (mutex_) {
 				std::lock_guard lock(*mutex_);
@@ -414,7 +414,7 @@ GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 		}
 	}
 
-	qDebug() << "failed to cat file: " << id.toQString();
+	qDebug() << "failed to cat file: " << QString::fromStdString(id.toString());
 
 	return GitObject();
 }

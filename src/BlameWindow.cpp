@@ -222,7 +222,7 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 	GitHash commit_id = currentCommitId();
 	CommitInfo info;
 	if (GitHash::isValidID(commit_id)) {
-		auto it = m->commit_cache.find(commit_id.toQString());
+		auto it = m->commit_cache.find(QString::fromStdString(commit_id.toString()));
 		if (it != m->commit_cache.end()) {
 			info = it->second;
 		} else {
@@ -233,7 +233,7 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 				info.author = commit->author;
 				info.email = commit->email;
 				info.message = commit->message;
-				m->commit_cache[commit_id.toQString()] = info;
+				m->commit_cache[QString::fromStdString(commit_id.toString())] = info;
 			}
 		}
 	} else {
@@ -243,7 +243,7 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 	if (!info.email.isEmpty()) {
 		author = author + " <" + info.email + '>';
 	}
-	ui->lineEdit_commit_id->setText(commit_id.toQString());
+	ui->lineEdit_commit_id->setText(QString::fromStdString(commit_id.toString()));
 	ui->lineEdit_date->setText(info.datetime);
 	ui->lineEdit_author->setText(author);
 	ui->lineEdit_message->setText(info.message);

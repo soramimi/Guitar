@@ -8,8 +8,8 @@
 
 class GitContext {
 public:
-	QString git_command;
-	QString ssh_command;
+	std::string git_command;
+	std::string ssh_command;
 
 	std::shared_ptr<AbstractGitSession> connect() const;
 };
@@ -54,10 +54,11 @@ private:
 	Git();
 	void _init(const GitContext &cx);
 	QString encodeQuotedText(QString const &str);
+	std::string encodeQuotedText(std::string const &str);
 	static std::optional<GitCommitItem> parseCommitItem(const QString &line);
-	QString submoduleURL(const QString &path);
+	std::string submoduleURL(std::string const &path);
 public:
-	Git(GitContext const &cx, QString const &repodir, QString const &submodpath, QString const &sshkey);
+	Git(GitContext const &cx, std::string const &repodir, std::string const &submodpath, std::string const &sshkey);
 	Git(Git &&r) = delete;
 	~Git() = default;
 
@@ -80,41 +81,41 @@ public:
 	}
 	std::string resultStdString(const std::optional<GitResult> &var) const;
 	QString resultQString(const std::optional<GitResult> &var) const;
-	std::optional<GitResult> exec_git(QString const &arg, AbstractGitSession::Option const &opt)
+	std::optional<GitResult> exec_git(std::string const &arg, AbstractGitSession::Option const &opt)
 	{
 		return session_->exec_git(arg, opt);
 	}
-	std::optional<GitResult> git(QString const &arg)
+	std::optional<GitResult> git(std::string const &arg)
 	{
 		return exec_git(arg, {});
 	}
-	std::optional<GitResult> git_nolog(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<GitResult> git_nolog(std::string const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.log = false;
 		return exec_git(arg, opt);
 	}
-	std::optional<GitResult> git_nochdir(QString const &arg, AbstractPtyProcess *pty)
+	std::optional<GitResult> git_nochdir(std::string const &arg, AbstractPtyProcess *pty)
 	{
 		AbstractGitSession::Option opt;
 		opt.pty = pty;
 		opt.chdir = false;
 		return exec_git(arg, opt);
 	}
-	bool remove(QString const &path)
+	bool remove(std::string const &path)
 	{
 		return session_->remove(path);
 	}
 
-	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey);
-	void setSubmodulePath(const QString &submodpath);
+	void setWorkingRepositoryDir(std::string const &repo, std::string const &sshkey);
+	void setSubmodulePath(std::string const &submodpath);
 
-	QString workingDir() const
+	std::string workingDir() const
 	{
 		return session_->workingDir();
 	}
-	QString const &sshKey() const;
+	const std::string &sshKey() const;
 	void setSshKey(const QString &sshkey);
 
 	QString getCurrentBranchName();
@@ -139,7 +140,7 @@ public:
 	void resetFile(QString const &path);
 	void resetAllFiles();
 	
-	void rm(QString const &path, bool rm_real_file);
+	void rm(const std::string &path, bool rm_real_file);
 
 	void add_A();
 	bool unstage_all();
@@ -168,8 +169,8 @@ public:
 	bool revert(const GitHash &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
 	void remote_v(std::vector<GitRemote> *out);
-	void createBranch(QString const &name);
-	void checkoutBranch(QString const &name);
+	void createBranch(const std::string &name);
+	void checkoutBranch(std::string const &name);
 	void mergeBranch(QString const &name, GitMergeFastForward ff, bool squash);
 	bool deleteBranch(QString const &name);
 
@@ -179,7 +180,7 @@ public:
 	void rebaseBranch(QString const &name);
 	void rebase_abort();
 
-	bool isValidWorkingCopy(QString const &dir) const;
+	bool isValidWorkingCopy(const std::string &dir) const;
 	QString diff_to_file(QString const &old_id, QString const &path);
 	QString errorMessage(const std::optional<GitResult> &var) const;
 
@@ -189,7 +190,7 @@ public:
 	bool delete_tag(QString const &name, bool remote);
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
-	void removeRemote(QString const &name);
+	void removeRemote(const std::string &name);
 	QStringList getRemotes();
 
 	GitUser getUser(GitSource purpose);
@@ -200,8 +201,8 @@ public:
 	bool clean_df();
 	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
 	QString objectType(const GitHash &id);
-	bool rm_cached(QString const &file);
-	void cherrypick(QString const &name);
+	bool rm_cached(const QString &file);
+	void cherrypick(std::string const &name);
 	QString getCherryPicking() const;
 
 	QString getMessage(const QString &id);
@@ -250,8 +251,8 @@ struct NamedCommitItem {
 		Tag,
 	};
 	Type type = Type::None;
-	QString remote;
-	QString name;
+	std::string remote;
+	std::string name;
 	GitHash id;
 };
 using NamedCommitList = QList<NamedCommitItem>;

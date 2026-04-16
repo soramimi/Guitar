@@ -192,7 +192,7 @@ GitPackIdxItem const *GitPackIdxV2::item(const GitHash &id) const
 		}
 	}
 #else
-	QString id1 = id.toQString();
+	QString id1 = QString::fromStdString(id.toString());
 	if (id1.size() == GIT_ID_LENGTH) {
 		uint8_t id2[GIT_ID_LENGTH / 2];
 		char tmp[3];

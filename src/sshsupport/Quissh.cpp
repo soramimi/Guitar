@@ -3,6 +3,7 @@
 #include "../common/joinpath.h"
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <cstring>
 
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>

@@ -305,6 +305,11 @@ bool misc::starts_with(std::string const &str, std::string const &with)
 	return strncmp(str.c_str(), with.c_str(), with.size()) == 0;
 }
 
+bool misc::starts_with(std::string const &str, char with)
+{
+	return !str.empty() && str[0] == with;
+}
+
 /**
  * @brief 文字列が指定の文字列で終わるか判定する
  *
@@ -321,6 +326,14 @@ bool misc::ends_with(std::string const &str, std::string const &with)
 	if (n < m) return false;
 	return strncmp(str.c_str() + n - m, with.c_str(), m) == 0;
 }
+
+bool misc::ends_with(std::string const &str, char with)
+{
+	int n = (int)str.size();
+	if (n < 1) return false;
+	return str[n - 1] == with;
+}
+
 
 /**
  * @brief 文字列の一部分を取得する

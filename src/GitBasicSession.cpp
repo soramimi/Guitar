@@ -14,12 +14,12 @@ GitBasicSession::GitBasicSession(const Commands &cmds)
 	gitinfo().ssh_command = cmds.ssh_command;
 }
 
-QString GitBasicSession::gitCommand() const
+std::string GitBasicSession::gitCommand() const
 {
 	return gitinfo().git_command;
 }
 
-QString GitBasicSession::sshCommand() const
+std::string GitBasicSession::sshCommand() const
 {
 	return gitinfo().ssh_command;
 }
@@ -32,25 +32,25 @@ std::shared_ptr<AbstractGitSession> GitBasicSession::dup()
 
 bool GitBasicSession::is_connected() const
 {
-	return QFileInfo(gitCommand()).isExecutable();
+	return QFileInfo(QString::fromStdString(gitCommand())).isExecutable();
 }
 
-std::optional<GitResult> GitBasicSession::exec_git(const QString &arg, const Option &opt)
+std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const Option &opt)
 {
-	QFileInfo info2(gitCommand());
+	QFileInfo info2(QString::fromStdString(gitCommand()));
 	if (!info2.isExecutable()) {
 		qDebug() << "Invalid git command: " << gitCommand();
 		return std::nullopt;
 	}
 
 	QString env;
-	QString ssh = sshCommand();
-	if (ssh.isEmpty() || gitinfo().ssh_key_override.isEmpty()) {
+	std::string ssh = sshCommand();
+	if (ssh.empty() || gitinfo().ssh_key_override.empty()) {
 		// nop
 	} else {
-		if (ssh.indexOf('\"') >= 0) return std::nullopt;
-		if (gitinfo().ssh_key_override.indexOf('\"') >= 0) return std::nullopt;
-		if (!QFileInfo(ssh).isExecutable()) return std::nullopt;
+		if (ssh.find('\"') != std::string::npos) return std::nullopt;
+		if (gitinfo().ssh_key_override.find('\"') != std::string::npos) return std::nullopt;
+		if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
 		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(ssh).arg(gitinfo().ssh_key_override);
 	}
 
@@ -65,7 +65,7 @@ std::optional<GitResult> GitBasicSession::exec_git(const QString &arg, const Opt
 		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
 
 		if (opt.chdir) {
-			QString cwd = workingDir();
+			QString cwd = QString::fromStdString(workingDir());
 			if (!cwd.isEmpty()) {
 				cmd += QString("-C \"%1\" ").arg(cwd);
 			}
@@ -129,13 +129,13 @@ std::optional<GitResult> GitBasicSession::exec_git(const QString &arg, const Opt
 	}
 }
 
-bool GitBasicSession::remove(const QString &path)
+bool GitBasicSession::remove(const std::string &path)
 {
-	if (path.indexOf("..") >= 0) {
+	if (path.find("..") != std::string::npos) {
 		qDebug() << "Invalid path for remove: " << path;
 		return false;
 	}
-	QString rm_path = workingDir() / path;
+	QString rm_path = QString::fromStdString(workingDir() / path);
 	return QFile(rm_path).remove();
 }
 

@@ -36,19 +36,20 @@ bool GitRemoteSshSession::is_connected() const
 	return ready_;
 }
 
-bool GitRemoteSshSession::isValidWorkingCopy(const QString &dir) const
+bool GitRemoteSshSession::isValidWorkingCopy(std::string const &dir) const
 {
+	(void)dir;
 	return true; // TODO
 }
 
-std::optional<GitResult> GitRemoteSshSession::exec_git(const QString &arg, const Option &opt)
+std::optional<GitResult> GitRemoteSshSession::exec_git(std::string const &arg, const Option &opt)
 {
 	if (!is_connected()) return std::nullopt;
 
 	QString cmd = QString("\"%1\" --no-pager ").arg(git_command_);
 
 	if (opt.chdir) {
-		QString cwd = workingDir();
+		QString cwd = QString::fromStdString(workingDir());
 		if (!cwd.isEmpty()) {
 			cmd += QString("-C \"%1\" ").arg(cwd);
 		}
@@ -74,11 +75,11 @@ std::optional<GitResult> GitRemoteSshSession::exec_git(const QString &arg, const
 	return std::nullopt;
 }
 
-bool GitRemoteSshSession::remove(const QString &path)
+bool GitRemoteSshSession::remove(std::string const &path)
 {
 	bool ret = false;
 	if (ssh_->open_sftp()) {
-		ret = ssh_->unlink(path.toStdString().c_str());
+		ret = ssh_->unlink(path.c_str());
 		ssh_->close_sftp();
 	}
 	return ret;

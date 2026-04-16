@@ -7,21 +7,21 @@
 class GitBasicSession : public AbstractGitSession {
 public:
 	struct Commands {
-		QString git_command;
-		QString ssh_command;
+		std::string git_command;
+		std::string ssh_command;
 	};
 private:
-	QString gitCommand() const;
-	QString sshCommand() const;
+	std::string gitCommand() const;
+	std::string sshCommand() const;
 protected:
 	virtual std::shared_ptr<AbstractGitSession> dup();
 public:
 	GitBasicSession(Commands const &cmds);
 
 	bool is_connected() const;
-	bool isValidWorkingCopy(QString const &dir) const;
-	std::optional<GitResult> exec_git(QString const &arg, Option const &opt);
-	bool remove(const QString &path);
+	bool isValidWorkingCopy(std::string const &dir) const;
+	std::optional<GitResult> exec_git(std::string const &arg, Option const &opt);
+	bool remove(const std::string &path);
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);
 	virtual std::optional<std::vector<char>> readfile(char const *path);

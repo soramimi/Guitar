@@ -19,9 +19,9 @@ public:
 	bool connect(std::shared_ptr<SshConnection> ssh, std::string const &gitcmd);
 
 	bool is_connected() const;
-	bool isValidWorkingCopy(QString const &dir) const;
-	std::optional<GitResult> exec_git(const QString &arg, const Option &opt);
-	bool remove(const QString &path);
+	bool isValidWorkingCopy(std::string const &dir) const;
+	std::optional<GitResult> exec_git(std::string const &arg, const Option &opt);
+	bool remove(std::string const &path);
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);
 	virtual std::optional<std::vector<char>> readfile(char const *path);

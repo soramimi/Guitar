@@ -95,7 +95,7 @@ void RepositoryPropertyDialog::updateRemotesTable()
 	SetHeaderItem(1, tr("URL"));
 	for (int row = 0; row < rows; row++) {
 		GitRemote const &r = m->remotes[row];
-		url = r.url_fetch;
+		url = QString::fromStdString(r.url_fetch);
 		auto SetItem = [&](int col, QString const &text, bool editable){
 			auto item = newQTableWidgetItem(text);
 			auto flags = item->flags();
@@ -103,8 +103,8 @@ void RepositoryPropertyDialog::updateRemotesTable()
 			item->setFlags(flags);
 			ui->tableWidget->setItem(row, col, item);
 		};
-		SetItem(0, r.name, false);
-		SetItem(1, r.url(), true);
+		SetItem(0, QString::fromStdString(r.name), false);
+		SetItem(1, QString::fromStdString(r.url()), true);
 	}
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
@@ -116,7 +116,7 @@ void RepositoryPropertyDialog::reflectRemotesTable()
 		GitRemote *r = &m->remotes[row];
 		QString url = ui->tableWidget->item(row, 1)->text();
 		if (r->url() != url) {
-			r->set_url(url);
+			r->set_url(url.toStdString());
 			git().setRemoteURL(*r);
 		}
 	}
@@ -150,19 +150,19 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(GitRemote *remote, EditRemot
 		*remote = GitRemote();
 	}
 
-	if (remote->name.isEmpty() && list->empty()) {
+	if (remote->name.empty() && list->empty()) {
 		op = EditRemoteDialog::RemoteAdd;
 		remote->name = "origin";
 	}
 
 	EditRemoteDialog dlg(mainwindow(), op);
-	dlg.setName(remote->name);
-	dlg.setUrl(remote->url_fetch);
-	dlg.setSshKey(remote->ssh_key);
+	dlg.setName(QString::fromStdString(remote->name));
+	dlg.setUrl(QString::fromStdString(remote->url_fetch));
+	dlg.setSshKey(QString::fromStdString(remote->ssh_key));
 	if (dlg.exec() == QDialog::Accepted) {
-		remote->name = dlg.name();
-		remote->set_url(dlg.url());
-		remote->ssh_key = dlg.sshKey();
+		remote->name = dlg.name().toStdString();
+		remote->set_url(dlg.url().toStdString());
+		remote->ssh_key = dlg.sshKey().toStdString();
 		GitRunner g = git();
 		if (op == EditRemoteDialog::RemoteAdd) {
 			bool ok = true;
@@ -181,8 +181,8 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(GitRemote *remote, EditRemot
 		}
 
 		QString localdir = ui->lineEdit_local_dir->text();
-		mainwindow()->changeSshKey(localdir, remote->ssh_key, true);
-		setSshKey_(remote->ssh_key);
+		mainwindow()->changeSshKey(localdir, QString::fromStdString(remote->ssh_key), true);
+		setSshKey_(QString::fromStdString(remote->ssh_key));
 		getRemotes_();
 
 		updateRemotesTable();
@@ -241,7 +241,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_edit_clicked()
 void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
 	GitRemote remote = selectedRemote();
-	if (!remote.name.isEmpty()) {
+	if (!remote.name.empty()) {
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r == QMessageBox::Ok) {
 			GitRunner g = git();

@@ -13,9 +13,9 @@ static std::string determineFileType(std::string const &path)
 int genmsg()
 {
 	QString dir = QDir::currentPath();
-	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, QString{}, QString{});
+	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir.toStdString(), std::string{}, std::string{});
 	std::string cmd = "diff --name-only HEAD";
-	auto result = g->git(QString::fromStdString(cmd));
+	auto result = g->git(cmd);
 	std::vector<std::string> files = misc::splitLines(g->resultStdString(result), false);
 
 	std::string diff;
@@ -31,7 +31,7 @@ int genmsg()
 		};
 		if (Accept()) {
 			cmd = "diff --full-index HEAD -- " + file;
-			auto result = g->git(QString::fromStdString(cmd));
+			auto result = g->git(cmd);
 			diff.append(g->resultStdString(result));
 		}
 	}

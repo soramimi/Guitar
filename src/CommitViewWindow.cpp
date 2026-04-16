@@ -28,7 +28,7 @@ CommitViewWindow::CommitViewWindow(MainWindow *parent, GitCommitItem const *comm
 	ui->widget_diff->init();
 
 	ui->lineEdit_message->setText(m->commit->message);
-	ui->lineEdit_id->setText(m->commit->commit_id.toQString());
+	ui->lineEdit_id->setText(QString::fromStdString(m->commit->commit_id.toString()));
 
 	mainwindow()->makeDiffList(m->commit->commit_id, &m->diff_list, ui->listWidget_files);
 

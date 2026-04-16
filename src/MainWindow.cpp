@@ -1384,6 +1384,8 @@ void MainWindow::connectSetCommitLog()
 
 void MainWindow::updateUncommitedChanges(GitRunner g)
 {
+	PROFILE;
+
 	TraceLogger trace("updateUncommitedChanges", {});
 	m->uncommited_changes_file_list = g.status_s();
 	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
@@ -1391,6 +1393,8 @@ void MainWindow::updateUncommitedChanges(GitRunner g)
 
 std::map<GitHash, TagList> MainWindow::queryTags(GitRunner g)
 {
+	PROFILE;
+
 	TraceLogger trace("queryTags", {});
 	std::map<GitHash, TagList> tag_map;
 
@@ -1759,7 +1763,7 @@ void MainWindow::openRepository(OpenRepositoryOption const &opt)
 			}
 			return;
 		}
-		if (!unassosiated_git_runner().isValidWorkingCopy(dir)) {
+		if (!unassosiated_git_runner().isValidWorkingCopy(dir.toStdString())) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
 			return;
 		}
@@ -1835,7 +1839,7 @@ bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString 
 
 	dir = misc::normalizePathSeparator(dir);
 
-	if (!unassosiated_git_runner().isValidWorkingCopy(dir)) {
+	if (!unassosiated_git_runner().isValidWorkingCopy(dir.toStdString())) {
 		auto isBareRepository = [](QString const &dir){
 			if (QFileInfo(dir).isDir()) {
 				if (QFileInfo(dir / "config").isFile()) {
@@ -2807,8 +2811,8 @@ bool MainWindow::push()
 		std::vector<GitRemote> remotes;
 		g.remote_v(&remotes);
 		for (GitRemote const &r : remotes) {
-			if (!r.url_push.isEmpty()) {
-				url = r.url_push;
+			if (!r.url_push.empty()) {
+				url = QString::fromStdString(r.url_push);
 				break;
 			}
 		}
@@ -2845,9 +2849,9 @@ void MainWindow::deleteBranch(GitCommitItem const &commit)
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.name == "HEAD") continue;
 			if (item.id == commit.commit_id) {
-				current_local_branch_names.push_back(item.name);
+				current_local_branch_names.push_back(QString::fromStdString(item.name));
 			}
-			all_branch_names.push_back(item.name);
+			all_branch_names.push_back(QString::fromStdString(item.name));
 		}
 	}
 
@@ -2956,7 +2960,7 @@ void MainWindow::createRepository(const QString &dir)
 	if (dlg.exec() == QDialog::Accepted) {
 		QString path = dlg.path();
 		if (QFileInfo(path).isDir()) {
-			if (git().isValidWorkingCopy(path)) {
+			if (git().isValidWorkingCopy(path.toStdString())) {
 				// A valid git repository already exists there.
 			} else {
 				GitRunner g = new_git_runner(path, {});
@@ -2970,9 +2974,9 @@ void MainWindow::createRepository(const QString &dir)
 					QString ssh_key = dlg.overridedSshKey();
 					if (!remote_name.isEmpty() && !remote_url.isEmpty()) {
 						GitRemote r;
-						r.name = remote_name;
-						r.set_url(remote_url);
-						r.ssh_key = ssh_key;
+						r.name = remote_name.toStdString();
+						r.set_url(remote_url.toStdString());
+						r.ssh_key = ssh_key.toStdString();
 						g.addRemoteURL(r);
 						changeSshKey(path, ssh_key, true);
 					}
@@ -2995,16 +2999,17 @@ void MainWindow::createRepository(const QString &dir)
 void MainWindow::initRepository(QString const &path, QString const &reponame, GitRemote const &remote)
 {
 	if (QFileInfo(path).isDir()) {
-		if (git().isValidWorkingCopy(path)) {
+		if (git().isValidWorkingCopy(path.toStdString())) {
 			// A valid git repository already exists there.
 		} else {
-			GitRunner g = new_git_runner(path, remote.ssh_key);
+			QString sshkey = QString::fromStdString(remote.ssh_key);
+			GitRunner g = new_git_runner(path, sshkey);
 			if (g.init()) {
-				if (!remote.name.isEmpty() && !remote.url_fetch.isEmpty()) {
+				if (!remote.name.empty() && !remote.url_fetch.empty()) {
 					g.addRemoteURL(remote);
-					changeSshKey(path, remote.ssh_key, false);
+					changeSshKey(path, sshkey, false);
 				}
-				_addExistingLocalRepository(path, reponame, remote.ssh_key, true);
+				_addExistingLocalRepository(path, reponame, sshkey, true);
 			}
 		}
 	}
@@ -3038,9 +3043,9 @@ void MainWindow::addRepositoryAccepted(AddRepositoryDialog const &dlg)
 	} else if (dlg.mode() == AddRepositoryDialog::Initialize) {
 		RepositoryInfo repodata = dlg.repositoryInfo();
 		GitRemote r;
-		r.name = dlg.remoteName();
-		r.set_url(dlg.remoteURL());
-		r.ssh_key = repodata.ssh_key;
+		r.name = dlg.remoteName().toStdString();
+		r.set_url(dlg.remoteURL().toStdString());
+		r.ssh_key = repodata.ssh_key.toStdString();
 		initRepository(repodata.local_dir, repodata.name, r);
 	}
 }
@@ -3060,7 +3065,7 @@ void MainWindow::scanFolderAndRegister(QString const &group)
 			QFileInfo info = it.fileInfo();
 			QString local_dir = info.absoluteFilePath();
 			if (existing.find(local_dir) == existing.end()) {
-				if (git().isValidWorkingCopy(local_dir)) {
+				if (git().isValidWorkingCopy(local_dir.toStdString())) {
 					dirs.push_back(local_dir);
 				}
 			}
@@ -3414,7 +3419,7 @@ QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const 
 		TraceLogger trace_retrieve_submodules;
 		trace_retrieve_submodules.begin("retrieve submodules parse objects", {});
 		for (int i = 0; i < submodules.size(); i++) {
-			QStringList vars = submodules[i].path.split('/');
+			QStringList vars = QString::fromStdString(submodules[i].path).split('/');
 			for (int j = 0; j < vars.size(); j++) {
 				for (int k = 0; k < list.size(); k++) {
 					if (list[k].name == vars[j]) {
@@ -3575,7 +3580,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 	if (issubmodule) {
 		QString msg = misc::collapseWhitespace(data.submod_commit.message);
 		text += QString(" <%0> [%1] %2")
-				.arg(data.submod.id.toQString(7))
+					.arg(QString::fromStdString(data.submod.id.toString(7)))
 				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
 				.arg(msg)
 				;
@@ -3587,8 +3592,8 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 	item->setData(DiffIndexRole, data.idiff);
 	item->setData(ObjectIdRole, data.id);
 	item->setData(HeaderRole, header);
-	item->setData(SubmodulePathRole, data.submod.path);
-	item->setData(SubmoduleCommitIdRole, data.submod.id.toQString());
+	item->setData(SubmodulePathRole, QString::fromStdString(data.submod.path));
+	item->setData(SubmoduleCommitIdRole, QString::fromStdString(data.submod.id.toString()));
 	if (issubmodule) {
 		item->setToolTip(text); // ツールチップ
 	}
@@ -3908,9 +3913,9 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 					}
 				} else {
 					item.type = NamedCommitItem::Type::BranchRemote;
-					item.remote = b.remote;
+					item.remote = b.remote.toStdString();
 				}
-				item.name = b.name;
+				item.name = b.name.toStdString();
 				item.id = b.id;
 				items.push_back(item);
 			}
@@ -3922,10 +3927,10 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 			for (GitTag const &t : list) {
 				NamedCommitItem item;
 				item.type = NamedCommitItem::Type::Tag;
-				item.name = t.name;
+				item.name = t.name.toStdString();
 				item.id = t.id;
-				if (item.name.startsWith("refs/tags/")) {
-					item.name = item.name.mid(10);
+				if (misc::starts_with(item.name, "refs/tags/")) {
+					item.name = item.name.substr(10);
 				}
 				items.push_back(item);
 			}
@@ -4277,7 +4282,7 @@ void MainWindow::setNetworkingCommandsEnabled(bool enabled)
 {
 	ui->action_clone->setEnabled(enabled); // クローンコマンドの有効性を設定
 
-	if (!git().isValidWorkingCopy(currentWorkingCopyDir())) { // 現在のディレクトリが有効なgitリポジトリなら
+	if (!git().isValidWorkingCopy(currentWorkingCopyDir().toStdString())) { // 現在のディレクトリが有効なgitリポジトリなら
 		enabled = false; // その他のコマンドは無効
 	}
 
@@ -4358,7 +4363,7 @@ void MainWindow::updateStatusBarText()
 				if (Git::isUncommited(*commit)) {
 					msg.text = tr("Uncommited changes");
 				} else {
-					QString id = commit->commit_id.toQString();
+					QString id = QString::fromStdString(commit->commit_id.toString());
 					QString labels = labelsInfoText(*commit);
 					msg.text = QString("%1 : %2%3")
 							   .arg(id.mid(0, 7))
@@ -4387,7 +4392,7 @@ void MainWindow::mergeBranch(QString const &commit, GitMergeFastForward ff, bool
 void MainWindow::mergeBranch(GitCommitItem const *commit, GitMergeFastForward ff, bool squash)
 {
 	if (!commit) return;
-	mergeBranch(commit->commit_id.toQString(), ff, squash);
+	mergeBranch(QString::fromStdString(commit->commit_id.toString()), ff, squash);
 }
 
 void MainWindow::rebaseBranch(GitCommitItem const *commit)
@@ -4399,10 +4404,10 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 
 	QString text = tr("Are you sure you want to rebase the commit?");
 	text += "\n\n";
-	text += "> git rebase " + commit->commit_id.toQString();
+	text += "> git rebase " + QString::fromStdString(commit->commit_id.toString());
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
 	if (r == QMessageBox::Ok) {
-		g.rebaseBranch(commit->commit_id.toQString());
+		g.rebaseBranch(QString::fromStdString(commit->commit_id.toString()));
 		reopenRepository(true, {});
 	}
 }
@@ -4423,13 +4428,13 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 
 	int n = commit->parent_ids.size();
 	if (n == 1) {
-		g.cherrypick(commit->commit_id.toQString());
+		g.cherrypick(QString::fromStdString(commit->commit_id.toString()));
 	} else if (n > 1) {
 		auto head = g.queryCommitItem(g.revParse("HEAD"));
 		auto pick = g.queryCommitItem(commit->commit_id);
 		QList<GitCommitItem> parents;
 		for (int i = 0; i < n; i++) {
-			QString id = commit->commit_id.toQString() + QString("^%1").arg(i + 1);
+			QString id = QString::fromStdString(commit->commit_id.toString()) + QString("^%1").arg(i + 1);
 			GitHash id2 = g.revParse(id);
 			auto item = g.queryCommitItem(id2);
 			parents.push_back(*item);
@@ -4441,7 +4446,7 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 			if (dlg.allowEmpty()) {
 				cmd += "--allow-empty ";
 			}
-			cmd += commit->commit_id.toQString();
+			cmd += QString::fromStdString(commit->commit_id.toString());
 			g.cherrypick(cmd);
 		} else {
 			return;
@@ -4461,7 +4466,7 @@ void MainWindow::merge(GitCommitItem commit)
 		if (!commit) return;
 	}
 
-	if (!GitHash::isValidID(commit.commit_id.toQString())) return;
+	if (!GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()))) return;
 
 	static const char MergeFastForward[] = "MergeFastForward";
 
@@ -4486,7 +4491,7 @@ void MainWindow::merge(GitCommitItem commit)
 		newlabels.erase(std::unique(newlabels.begin(), newlabels.end()), newlabels.end());
 	}
 
-	newlabels.push_back(commit.commit_id.toQString());
+	newlabels.push_back(QString::fromStdString(commit.commit_id.toString()));
 
 	QString branch_name = currentBranchName();
 
@@ -4689,8 +4694,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 				std::vector<GitRemote> remotes;
 				new_git_runner(repo->local_dir, {}).remote_v(&remotes);
 				for (GitRemote const &r : remotes) {
-					urls.push_back(r.url_fetch);
-					urls.push_back(r.url_push);
+					urls.push_back(QString::fromStdString(r.url_fetch));
+					urls.push_back(QString::fromStdString(r.url_push));
 				}
 			}
 			std::sort(urls.begin(), urls.end());
@@ -4784,7 +4789,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	}
 
 	GitCommitItem const &commit = commitItem(row);
-	bool is_valid_commit_id = GitHash::isValidID(commit.commit_id.toQString());
+	bool is_valid_commit_id = GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()));
 	// if is_valid_commit_id == false, commit is uncommited changes.
 
 	QMenu menu;
@@ -4854,11 +4859,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_copy_id_7letters) {
-			qApp->clipboard()->setText(commit.commit_id.toQString(7));
+			qApp->clipboard()->setText(QString::fromStdString(commit.commit_id.toString(7)));
 			return;
 		}
 		if (a == a_copy_id_complete) {
-			qApp->clipboard()->setText(commit.commit_id.toQString());
+			qApp->clipboard()->setText(QString::fromStdString(commit.commit_id.toString()));
 			return;
 		}
 		if (a == a_properties) {
@@ -4947,7 +4952,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		if (a == a_delete) {
 			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
 				for_each_selected_files([&](QString const &path){
-					g.removeFile(path, true);
+					g.removeFile(path.toStdString(), true);
 				});
 				reopenRepository(false, {});
 			}
@@ -5062,7 +5067,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 			if (a == a_delete) {
 				if (askAreYouSureYouWantToRun("Delete", "Delete selected files.")) {
 					for_each_selected_files([&](QString const &path){
-						g.removeFile(path, true);
+						g.removeFile(path.toStdString(), true);
 					});
 					reopenRepository(false, {});
 				}
@@ -5193,7 +5198,7 @@ void MainWindow::cleanSubModule(GitRunner g, QListWidgetItem *item)
 	if (submodpath.isEmpty()) return;
 
 	GitSubmoduleItem submod;
-	submod.path = submodpath;
+	submod.path = submodpath.toStdString();
 	submod.id = getObjectID(item);
 
 	CleanSubModuleDialog dlg(this);
@@ -5327,9 +5332,9 @@ void MainWindow::clearGitObjectCache()
 	m->current_repository_data.git_runner.clearCommandCache();
 }
 
-GitRunner MainWindow::_git(const QString &dir, const QString &submodpath, const QString &sshkey) const
+GitRunner MainWindow::_git(QString const &dir, QString const &submodpath, QString const &sshkey) const
 {
-	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, submodpath, sshkey);
+	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir.toStdString(), submodpath.toStdString(), sshkey.toStdString());
 	if (g->isValidGitCommand()) {
 		return g;
 	}
@@ -5347,7 +5352,7 @@ GitRunner MainWindow::unassosiated_git_runner() const
 	return m->unassosiated_git_runner;
 }
 
-GitRunner MainWindow::new_git_runner(const QString &dir, const QString &sshkey)
+GitRunner MainWindow::new_git_runner(QString const &dir, QString const &sshkey)
 {
 	return _git(dir, {}, sshkey);
 }
@@ -5376,7 +5381,7 @@ GitRunner MainWindow::git_for_submodule(GitRunner g, const GitSubmoduleItem &sub
 bool MainWindow::isValidWorkingCopy(QString const &dir) const
 {
 	auto g = unassosiated_git_runner();
-	return g.isValidWorkingCopy(dir);
+	return g.isValidWorkingCopy(dir.toStdString());
 }
 
 GitUser MainWindow::currentGitUser() const
@@ -5456,7 +5461,7 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 	{
 		NamedCommitList named_commits = namedCommitItems(Branches | Tags | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
-			QString name = item.name;
+			QString name = QString::fromStdString(item.name);
 			if (item.id == commit.commit_id) {
 				if (item.type == NamedCommitItem::Type::Tag) {
 					tags.push_back(name);
@@ -5490,14 +5495,14 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 		}
 		if (op == CheckoutDialog::Operation::HeadDetached) {
 			if (id.isValid()) {
-				bool ok = g.checkout_detach(id.toQString());
+				bool ok = g.checkout_detach(QString::fromStdString(id.toString()));
 				if (ok) {
 					reopenRepository(true, {});
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
-				bool ok = g.checkout(name, id.toQString());
+				bool ok = g.checkout(name, QString::fromStdString(id.toString()));
 				if (ok) {
 					reopenRepository(true, {});
 				} else {
@@ -5620,7 +5625,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 
 QString MainWindow::abbrevCommitID(const GitCommitItem &commit)
 {
-	return commit.commit_id.toQString(7);
+	return QString::fromStdString(commit.commit_id.toString(7));
 }
 
 /**
@@ -5683,7 +5688,7 @@ bool MainWindow::locateCommitID(QString const &commit_id)
 	while (row < (int)logs.size()) {
 		GitCommitItem const &commit = logs[row];
 		if (!Git::isUncommited(commit)) {
-			if (commit.commit_id.toQString().startsWith(commit_id)) {
+			if (QString::fromStdString(commit.commit_id.toString()).startsWith(commit_id)) {
 				bool b = ui->tableWidget_log->blockSignals(true);
 				setCurrentLogRow(row);
 				ui->tableWidget_log->blockSignals(b);
@@ -6246,7 +6251,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	AbstractGitSession::Option opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
-	bool f = (bool)g.git->exec_git(cmd, opt);
+	bool f = (bool)g.git->exec_git(cmd.toStdString(), opt);
 	{
 		QElapsedTimer time;
 		time.start();
@@ -6587,11 +6592,11 @@ QStringList MainWindow::remoteBranches(GitHash const &id, QStringList *all)
 	if (isValidWorkingCopy(g)) {
 		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
-			if (item.id == id && !item.remote.isEmpty()) {
-				list.push_back(item.remote / item.name);
+			if (item.id == id && !item.remote.empty()) {
+				list.push_back(QString::fromStdString(item.remote / item.name));
 			}
-			if (all && !item.remote.isEmpty() && item.name != "HEAD") {
-				all->push_back(item.remote / item.name);
+			if (all && !item.remote.empty() && item.name != "HEAD") {
+				all->push_back(QString::fromStdString(item.remote / item.name));
 			}
 		}
 	}
@@ -6821,7 +6826,7 @@ void MainWindow::onLogIdle()
 void MainWindow::on_action_edit_tags_triggered()
 {
 	GitCommitItem const &commit = selectedCommitItem();
-	if (commit && GitHash::isValidID(commit.commit_id.toQString())) {
+	if (commit && GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()))) {
 		EditTagsDialog dlg(this, &commit);
 		dlg.exec();
 	}
@@ -7060,7 +7065,7 @@ void MainWindow::on_action_submodules_triggered()
 		}
 	}
 
-	QString workingdir = g.workingDir();
+	QString workingdir = QString::fromStdString(g.workingDir());
 	SubmodulesDialog dlg(this, workingdir, mods2);
 	dlg.exec();
 }
@@ -7127,22 +7132,10 @@ void MainWindow::on_action_view_sort_by_time_changed()
 	onRepositoryTreeSortRecent(f);
 }
 
-void MainWindow::on_action_ssh_triggered()
+void MainWindow::on_action_ssh_triggered() // experimental
 {
 #ifdef UNSAFE_ENABLED
 	if (global->isUnsafeEnabled()) {
-#if 1
-		RepositoryInfo item;
-		item.local_dir = "/home/soramimi/develop/Guitar";
-		item.name = "Guitar";
-		setCurrentRepository(item, true);
-		OpenRepositoryOption opt;
-		opt.clear_log = true;
-		opt.do_fetch = false;
-		opt.keep_selection = false;
-		openRepositoryMain(opt);
-		return;
-#else
 		GitRemoteSshSession session;
 		SshDialog dlg(this, session.ssh_.get());
 		QString host = "192.168.0.80";
@@ -7177,7 +7170,6 @@ void MainWindow::on_action_ssh_triggered()
 			}
 		}
 		return;
-#endif
 	}
 #endif
 	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Warning, QMessageBox::Ok);

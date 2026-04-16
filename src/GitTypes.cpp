@@ -79,7 +79,7 @@ void GitHash::assign(const QString &id)
 	_assign(Latin1View(id));
 }
 
-QString GitHash::toQString(int maxlen) const
+std::string GitHash::toString(int maxlen) const
 {
 	if (valid_) {
 		char tmp[GIT_ID_LENGTH + 1];
@@ -90,7 +90,7 @@ QString GitHash::toQString(int maxlen) const
 			maxlen = GIT_ID_LENGTH;
 		}
 		tmp[maxlen] = 0;
-		return QString::fromLatin1(tmp, maxlen);
+		return std::string(tmp, maxlen);
 	}
 	return {};
 }

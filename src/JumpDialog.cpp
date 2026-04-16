@@ -26,7 +26,7 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 	for (NamedCommitItem const &item : items) {
 		NamedCommitItem newitem = item;
 		if (newitem.type == NamedCommitItem::Type::BranchRemote) {
-			if (!newitem.remote.isEmpty()) {
+			if (!newitem.remote.empty()) {
 				newitem.name = "remotes" / newitem.remote / newitem.name;
 			}
 		} else if (newitem.type == NamedCommitItem::Type::Tag) {
@@ -80,10 +80,10 @@ void JumpDialog::sort(NamedCommitList *items)
 			if (l.type < r.type) return -1;
 			if (l.type > r.type) return 1;
 			if (l.type == NamedCommitItem::Type::BranchRemote) {
-				int i = l.remote.compare(r.remote, Qt::CaseInsensitive);
+				int i = QString::fromStdString(l.remote).compare(QString::fromStdString(r.remote), Qt::CaseInsensitive);
 				if (i != 0) return i;
 			}
-			return l.name.compare(r.name, Qt::CaseInsensitive);
+			return QString::fromStdString(l.name).compare(QString::fromStdString(r.name), Qt::CaseInsensitive);
 		};
 		return Compare(l, r) < 0;
 	});
@@ -95,7 +95,7 @@ void JumpDialog::internalUpdateTable(NamedCommitList const &list)
 	ui->tableWidget->setRowCount(list.size());
 	for (int i = 0; i < list.size(); i++) {
 		auto *p = new QTableWidgetItem();
-		p->setText(list[i].name);
+		p->setText(QString::fromStdString(list[i].name));
 		ui->tableWidget->setItem(i, 0, p);
 		ui->tableWidget->setRowHeight(i, 24);
 	}
@@ -119,7 +119,7 @@ void JumpDialog::updateTable()
 				}
 				return true;
 			};
-			if (!Match(item.name)) continue;
+			if (!Match(QString::fromStdString(item.name))) continue;
 			list.push_back(item);
 		}
 		internalUpdateTable(list);

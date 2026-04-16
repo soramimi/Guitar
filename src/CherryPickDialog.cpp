@@ -9,10 +9,10 @@ CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, G
 {
 	ui->setupUi(this);
 
-	ui->lineEdit_head_id->setText(head.commit_id.toQString(7));
+	ui->lineEdit_head_id->setText(QString::fromStdString(head.commit_id.toString(7)));
 	ui->lineEdit_head_message->setText(head.message);
 
-	ui->lineEdit_pick_id->setText(pick.commit_id.toQString(7));
+	ui->lineEdit_pick_id->setText(QString::fromStdString(pick.commit_id.toString(7)));
 	ui->lineEdit_pick_message->setText(pick.message);
 
 	QStringList cols = {
@@ -40,7 +40,7 @@ CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, G
 		auto SetItem = [&](QTableWidgetItem *item){
 			ui->tableWidget_mainline->setItem(row, col++, item);
 		};
-		item = NewQTableWidgetItem(parents[row].commit_id.toQString(7));
+		item = NewQTableWidgetItem(QString::fromStdString(parents[row].commit_id.toString(7)));
 		item->setData(Qt::UserRole, row + 1);
 		SetItem(item);
 		SetItem(NewQTableWidgetItem(misc::makeDateTimeString(parents[row].commit_date)));

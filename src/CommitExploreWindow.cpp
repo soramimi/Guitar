@@ -55,7 +55,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	ui->splitter->setSizes({100, 100, 200});
 
 	// set text
-	ui->lineEdit_commit_id->setText(commit->commit_id.toQString());
+	ui->lineEdit_commit_id->setText(QString::fromStdString(commit->commit_id.toString()));
 	ui->lineEdit_date->setText(misc::makeDateTimeString(commit->commit_date));
 	ui->lineEdit_author->setText(commit->author);
 

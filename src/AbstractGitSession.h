@@ -23,11 +23,11 @@ public:
 		QString prefix;
 	};
 	struct Info {
-		QString git_command;
-		QString ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
-		QString ssh_key_override;// = "C:/a/id_rsa";
-		QString working_repo_dir;
-		QString submodule_path;
+		std::string git_command;
+		std::string ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
+		std::string ssh_key_override;// = "C:/a/id_rsa";
+		std::string working_repo_dir;
+		std::string submodule_path;
 	};
 
 	struct GitCache;
@@ -53,12 +53,12 @@ public:
 	// Info2 const &gitinfo2() const;
 
 	// GitCache &cache();
-	QString workingDir() const;
-	virtual std::optional<GitResult> exec_git(QString const &arg, Option const &opt) = 0;
-	virtual bool remove(QString const &path) = 0;
+	std::string workingDir() const;
+	virtual std::optional<GitResult> exec_git(std::string const &arg, Option const &opt) = 0;
+	virtual bool remove(std::string const &path) = 0;
 
 	virtual bool is_connected() const = 0;
-	virtual bool isValidWorkingCopy(QString const &dir) const = 0;
+	virtual bool isValidWorkingCopy(std::string const &dir) const = 0;
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path) { return std::nullopt; }
 	virtual std::optional<std::vector<char>> readfile(char const *path) { return std::nullopt; }

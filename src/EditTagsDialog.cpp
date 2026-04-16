@@ -14,7 +14,7 @@ EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) 
 
 	commit_ = commit;
 
-	ui->lineEdit_commit_id->setText(commit_->commit_id.toQString());
+	ui->lineEdit_commit_id->setText(QString::fromStdString(commit_->commit_id.toString()));
 	ui->lineEdit_message->setText(commit_->message);
 
 	updateTagList();

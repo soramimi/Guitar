@@ -28,25 +28,25 @@ public:
 
 	static std::optional<GitCommitItem> parseCommit(QByteArray const &ba);
 
-	bool isValidWorkingCopy(QString const &dir) const;
+	bool isValidWorkingCopy(const std::string &dir) const;
 
 	bool isValidWorkingCopy() const;
 
-	void setWorkingRepositoryDir(QString const &repo, const QString &sshkey);
-	void setSubmodulePath(const QString &submodpath);
-	QString workingDir() const;
-	QString const &sshKey() const;
+	void setWorkingRepositoryDir(const std::string &repo, const std::string &sshkey);
+	void setSubmodulePath(const std::string &submodpath);
+	std::string workingDir() const;
+	const std::string &sshKey() const;
 	void setSshKey(const QString &sshkey) const;
 
 	QString getMessage(const QString &id);
 	QString errorMessage(std::optional<GitResult> const &var) const;
-
-	bool remove(QString const &path);
+	
+	bool remove(const std::string &path);
 
 	GitHash revParse(QString const &name, bool use_cache = true);
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
-	void removeRemote(QString const &name);
+	void removeRemote(const std::string &name);
 	QStringList getRemotes();
 
 	QString version();
@@ -60,7 +60,7 @@ public:
 	void resetFile(QString const &path);
 	void resetAllFiles();
 
-	void removeFile(QString const &path, bool rm_real_file);
+	void removeFile(const std::string &path, bool rm_real_file);
 
 	GitUser getUser(GitSource purpose);
 	void setUser(GitUser const&user, bool global);

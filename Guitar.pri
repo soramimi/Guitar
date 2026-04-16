@@ -14,7 +14,7 @@ CPP_STD = c++17
 
 CONFIG += $$CPP_STD nostrip debug_info static
 
-# CONFIG += unsafe
+# CONFIG += unsafe ### don't enable
 unsafe {
     DEFINES += UNSAFE_ENABLED
 	msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib

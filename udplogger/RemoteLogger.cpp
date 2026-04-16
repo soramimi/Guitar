@@ -164,13 +164,13 @@ void RemoteLogger::send(std::string message, char const *file, int line)
 #endif
 	Timestamp ts = getLocalTimeWithMicroseconds();
 
-	message = strf("<pid>%d<d>%d-%02d-%02d<t>%02d:%02d:%02d<us>%06d<m>%s")
+	message = fmt("<pid>%d<d>%d-%02d-%02d<t>%02d:%02d:%02d<us>%06d<m>%s")
 			(pid)
 			(ts.year)(ts.month)(ts.day)
 			(ts.hour)(ts.minute)(ts.second)
 			(ts.usec)(html_encode(message));
 	if (file && line > 0) {
-		message += strf("<f>%s<l>%d")(html_encode(file))(line);
+		message += fmt("<f>%s<l>%d")(html_encode(file))(line);
 	}
 
 	sendto(m->sockfd, message.c_str(), message.size(), 0, (const struct sockaddr *)&m->server_addr, sizeof(m->server_addr));

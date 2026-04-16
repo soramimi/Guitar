@@ -126,7 +126,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		ui->lineEdit_git->setFocus();
 	} else if (w == ui->page_default_branch_name) {
 		GitContext gcx;
-		gcx.git_command = git_command_path();
+		gcx.git_command = git_command_path().toStdString();
 		Git g(gcx, {}, {}, {});
 		default_branch_name_ = g.getDefaultBranch();
 		ui->lineEdit_default_branch_name->setEnabled(false);
@@ -144,7 +144,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 	} else if (w == ui->page_global_user_information) {
 		if (user_name().isEmpty() && user_email().isEmpty()) {
 			GitContext gcx;
-			gcx.git_command = git_command_path();
+			gcx.git_command = git_command_path().toStdString();
 			Git g(gcx, {}, {}, {});
 			GitUser user = g.getUser(GitSource::Global);
 			set_user_name(user.name);

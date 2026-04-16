@@ -9,19 +9,19 @@
 #define GIT_ID_LENGTH (40)
 
 struct GitRemote {
-	QString name;
-	QString url_fetch;
-	QString url_push;
-	QString ssh_key;
+	std::string name;
+	std::string url_fetch;
+	std::string url_push;
+	std::string ssh_key;
 	bool operator < (GitRemote const &r) const
 	{
 		return name < r.name;
 	}
-	QString const &url() const
+	std::string const &url() const
 	{
 		return url_fetch;
 	}
-	void set_url(QString const &url)
+	void set_url(std::string const &url)
 	{
 		url_fetch = url;
 		url_push = url;
@@ -40,7 +40,7 @@ public:
 	explicit GitHash(char const *id);
 	void assign(std::string_view const &id);
 	void assign(const QString &id);
-	QString toQString(int maxlen = -1) const;
+	std::string toString(int maxlen = -1) const;
 	bool isValid() const;
 	int compare(GitHash const &other) const;
 	operator bool () const;
@@ -368,14 +368,14 @@ enum class GitMergeFastForward {
 };
 
 struct GitSubmoduleItem {
-	QString name;
+	std::string name;
 	GitHash id;
-	QString path;
-	QString refs;
-	QString url;
+	std::string path;
+	std::string refs;
+	std::string url;
 	operator bool () const
 	{
-		return id.isValid() && !path.isEmpty();
+		return id.isValid() && !path.empty();
 	}
 };
 

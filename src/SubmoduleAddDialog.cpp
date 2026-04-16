@@ -119,9 +119,9 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 			g.remote_v(&vec);
 		}
 		for (GitRemote const &r : vec) {
-			url = r.url_fetch;
+			url = QString::fromStdString(r.url_fetch);
 			if (!url.isEmpty()) break;
-			url = r.url_push;
+			url = QString::fromStdString(r.url_push);
 			if (!url.isEmpty()) break;
 		}
 		ui->lineEdit_remote->setText(url);

@@ -164,7 +164,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{"role": "system", "content": "You are an experienced engineer."},
 	{"role": "user", "content": "%s"}]
 })---";
-		return strf(json)(modelname)(jstream::encode_json_string(prompt));
+		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_Anthropic()
@@ -177,7 +177,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 "max_tokens": %d,
 "temperature": 0.7
 })---";
-		return strf(json)(modelname)(jstream::encode_json_string(prompt))(200);
+		return fmt(json)(modelname)(jstream::encode_json_string(prompt))(200);
 	}
 
 	std::string case_Google()
@@ -189,7 +189,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}]
 }]
 })---";
-		return strf(json)(jstream::encode_json_string(prompt));
+		return fmt(json)(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_DeepSeek()
@@ -202,7 +202,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 ],
 "stream": false
 })---";
-		return strf(json)(modelname)(jstream::encode_json_string(prompt));
+		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_Ollama()
@@ -212,7 +212,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 "prompt": "%s",
 "stream": false
 })---";
-		return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+		return fmt(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_OpenRouter()
@@ -227,7 +227,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 "prompt": "%s",
 "stream": false
 })---";
-		return strf(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+		return fmt(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
 	}
 };
 
@@ -324,7 +324,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
  */
 std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
 {
-	std::string prompt = strf(
+	std::string prompt = fmt(
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
 		"No headers and footers other than bulleted messages. "
@@ -443,7 +443,7 @@ static std::string diff_head(GitRunner g, std::function<bool (std::string const 
 				if (i >= names.size()) break;
 				std::string name = names[i];
 				if (!name.empty()) {
-					QString file(g.workingDir() / QString::fromStdString(name));
+					QString file(QString::fromStdString(g.workingDir() / name));
 					std::string mimetype = global->determineFileType(file);
 					if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 					if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
