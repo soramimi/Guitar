@@ -6,7 +6,7 @@ pushd $BASEDIR
 
 pushd mecab/mecab
 ./configure
-make
+make -j8
 popd
 
 ./makedic.sh
@@ -18,7 +18,7 @@ rm -fr build
 mkdir build
 pushd build
 ${QMAKE} "CONFIG+=release" ../libmecasearch.pro
-make
+make -j8
 popd
 
 popd

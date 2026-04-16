@@ -14,7 +14,7 @@ build5: clean
 	cd /Guitar ; ruby prepare.rb
 	cd /Guitar/filetype/ && QMAKE=qmake bash build-gcc.sh
 	cd /Guitar/IncrementalSearch/ && QMAKE=qmake  bash build-gcc.sh
-	mkdir /Guitar/_build && cd /Guitar/_build && qmake6 "CONFIG+=release" /Guitar/Guitar.pro && make -j8
+	mkdir /Guitar/_build && cd /Guitar/_build && qmake "CONFIG+=release" /Guitar/Guitar.pro && make -j8
 
 deb: build
 	cd /Guitar/packaging/deb && ruby mk-deb.rb
