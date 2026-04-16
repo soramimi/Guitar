@@ -64,11 +64,7 @@ void TraceEventWriter::write(const Event &item, bool comma)
 	}
 	str += '\n';
 
-	{
-		std::lock_guard lock(mutex_);
-		file_.write(str.c_str(), str.size());
-		file_.flush();
-	}
+	file_.write(str.c_str(), str.size());
 }
 
 TraceEventWriter::TraceEventWriter()
@@ -83,6 +79,8 @@ TraceEventWriter::~TraceEventWriter()
 
 void TraceEventWriter::open(QString const &dir)
 {
+	close();
+
 	QFileInfo info(dir);
 	if (!info.isDir()) {
 		qWarning() << "Trace log directory does not exist:" << dir;
@@ -97,6 +95,25 @@ void TraceEventWriter::open(QString const &dir)
 )";
 	file_.write(str.c_str(), str.size());
 
+	thread_ = std::thread([this](){
+		while (1) {
+			std::shared_ptr<Event> e;
+			{
+				std::unique_lock lock(mutex_);
+				cv_.wait(lock, [&](){ return interrupted_ || !queue_.empty(); });
+				if (queue_.empty()) {
+					if (interrupted_) break;
+				} else {
+					e = queue_.front();
+					queue_.pop_front();
+				}
+			}
+			if (e) {
+				write(*e, true);
+			}
+		}
+	});
+
 	Event event;
 	event.name = "Application";
 	event.phase = PHASE_BEGIN;
@@ -106,6 +123,16 @@ void TraceEventWriter::open(QString const &dir)
 
 void TraceEventWriter::close()
 {
+	{
+		std::lock_guard lock(mutex_);
+		interrupted_ = true;
+		cv_.notify_one();
+	}
+	if (thread_.joinable()) {
+		thread_.join();
+	}
+	interrupted_ = false;
+
 	if (file_.isOpen()) {
 		Event event;
 		event.name = "Application";
@@ -130,6 +157,12 @@ void TraceEventWriter::put(Event event)
 	event.timestamp = ts();
 	event.pid = 1;
 	event.tid = tid();
-	write(event, true);
+	std::shared_ptr<Event> event_ptr = std::make_shared<Event>(std::move(event));
+	{
+		std::lock_guard lock(mutex_);
+		queue_.push_back(event_ptr);
+	}
+	cv_.notify_one();
+	// write(event, true);
 }
 

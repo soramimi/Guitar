@@ -4,6 +4,10 @@
 #include <chrono>
 #include <QFile>
 #include <mutex>
+#include <thread>
+#include <condition_variable>
+#include <deque>
+#include <memory>
 
 class TraceEventWriter {
 public:
@@ -25,6 +29,10 @@ public:
 	};
 private:
 	std::mutex mutex_;
+	std::thread thread_;
+	std::condition_variable cv_;
+	bool interrupted_ = false;
+	std::deque<std::shared_ptr<Event>> queue_;
 	QFile file_;
 	std::chrono::steady_clock::time_point start_time_;
 	uint64_t ts();
