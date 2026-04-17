@@ -13,6 +13,7 @@ public:
 	virtual ~FileInfo();
 	bool isFile() const;
 	bool isDir() const;
+	bool isExecutable() const;
 	Dir dir() const;
 	std::string fileName() const;
 };

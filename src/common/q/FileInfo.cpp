@@ -37,6 +37,15 @@ bool FileInfo::isDir() const
 #endif
 }
 
+bool FileInfo::isExecutable() const
+{
+#ifdef _WIN32
+	return m->valid && (m->stat.st_mode & S_IEXEC);
+#else
+	return m->valid && (m->stat.st_mode & S_IXUSR);
+#endif
+}
+
 Dir FileInfo::dir() const
 {
 	std::string path = m->file;

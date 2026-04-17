@@ -129,7 +129,6 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/common/printf.c \
 	src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \

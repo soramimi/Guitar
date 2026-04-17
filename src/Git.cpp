@@ -1380,6 +1380,7 @@ GitUser Git::getUser(GitSource purpose)
 	opt.use_cache = true;
 	opt.chdir = !global;
 	{
+#if 0
 		auto user_name = std::async(std::launch::async, [&](){
 			return exec_git(QString("config %1 user.name").arg(arg1).toStdString(), opt);
 		});
@@ -1388,6 +1389,12 @@ GitUser Git::getUser(GitSource purpose)
 		});
 		user.name = resultQString(user_name.get()).trimmed();
 		user.email = resultQString(user_email.get()).trimmed();
+#else
+		auto user_name = exec_git(QString("config %1 user.name").arg(arg1).toStdString(), opt);
+		auto user_email = exec_git(QString("config %1 user.email").arg(arg1).toStdString(), opt);
+		user.name = resultQString(user_name).trimmed();
+		user.email = resultQString(user_email).trimmed();
+#endif
 	}
 	return user;
 }

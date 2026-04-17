@@ -285,6 +285,7 @@ int main(int argc, char *argv[])
 	global->mainwindow = nullptr;
 
 	WebClient::cleanup();
+	Logger::stop();
 	return r;
 }
 

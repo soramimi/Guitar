@@ -2,6 +2,7 @@
 #include "ApplicationGlobal.h"
 #include "TraceEventWriter.h"
 #include "common/joinpath.h"
+#include "common/q/FileInfo.h"
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
@@ -37,7 +38,8 @@ bool GitBasicSession::is_connected() const
 
 std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const Option &opt)
 {
-	QFileInfo info2(QString::fromStdString(gitCommand()));
+	std::string cmd = gitCommand();
+	FileInfo info2(cmd);
 	if (!info2.isExecutable()) {
 		qDebug() << "Invalid git command: " << QString::fromStdString(gitCommand());
 		return std::nullopt;

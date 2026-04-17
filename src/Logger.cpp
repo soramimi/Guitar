@@ -1,6 +1,5 @@
 
 #include "Logger.h"
-#include "printf.h"
 #include <cctype>
 #include <condition_variable>
 #include <cstdarg>
@@ -41,7 +40,7 @@ struct Logger::Private {
 	std::thread thread;
 	std::mutex mutex;
 	std::condition_variable cv;
-	bool interrupted = false;
+	volatile bool interrupted = false;
 };
 
 Logger::Logger()
@@ -72,7 +71,6 @@ void Logger::write(char const *ptr, size_t len)
 void Logger::write(LogItem const &item)
 {
 	const bool FILELINE = false; // set to true to enable file/line logging
-
 	if (item.level == LOG_RAW) {
 		write(item.message.c_str(), item.message.size());
 	} else {
@@ -80,7 +78,7 @@ void Logger::write(LogItem const &item)
 		auto msec = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
 		time_t t = msec / 1000;
 		struct tm *tm = localtime(&t);
-		char *text = nullptr;
+
 		std::string msg = item.message;
 		if (FILELINE) {
 			char buf[100];
@@ -90,23 +88,27 @@ void Logger::write(LogItem const &item)
 			msg += buf;
 		}
 
-		int len = x_asprintf(&text, "[%d-%02d-%02d,%02d:%02d:%02d.%03d] %s\n"
-				, tm->tm_year + 1900
-				, tm->tm_mon + 1
-				, tm->tm_mday
-				, tm->tm_hour
-				, tm->tm_min
-				, tm->tm_sec
-				, int(msec % 1000)
-				, msg.c_str());
-		if (text) {
-			if (item.level & LOG_DEFAULT) {
-				write(text, len);
-			}
-			if (item.level & LOG_STDERR) {
-				fwrite(text, 1, len, stderr);
-			}
-			free(text);
+		std::string header;
+		{
+			char text[100];
+			int len = sprintf(text, "[%d-%02d-%02d,%02d:%02d:%02d.%03d] "
+							  , tm->tm_year + 1900
+							  , tm->tm_mon + 1
+							  , tm->tm_mday
+							  , tm->tm_hour
+							  , tm->tm_min
+							  , tm->tm_sec
+							  , int(msec % 1000)
+							  );
+			header.assign(text, len);
+		}
+
+		msg = header + msg + '\n';
+		if (item.level & LOG_DEFAULT) {
+			write(msg.c_str(), msg.size());
+		}
+		if (item.level & LOG_STDERR) {
+			fwrite(msg.c_str(), 1, msg.size(), stderr);
 		}
 	}
 }
@@ -229,6 +231,7 @@ void Logger::push(Logger::LogItem const &item)
 {
 	std::lock_guard lock(m->mutex);
 	m->items.push_back(item);
+	m->cv.notify_all();
 }
 
 void Logger::x_logprint(const char *file, int line, int level, std::string_view str)
@@ -245,8 +248,24 @@ void Logger::x_logprint(const char *file, int line, int level, std::string_view 
 	}
 	item.message = std::string(str);
 	push(item);
-	m->cv.notify_all();
 }
+
+#ifdef _WIN32
+int vasprintf(char **out, char const *fmt, va_list ap)
+{
+	int len = _vscprintf(fmt, ap);
+	if (len < 0) return -1;
+	char *buf = (char*)malloc(len + 1);
+	if (!buf) return -1;
+	int n = vsprintf(buf, fmt, ap);
+	if (n < 0) {
+		free(buf);
+		return -1;
+	}
+	*out = buf;
+	return n;
+}
+#endif
 
 void Logger::x_logprintf(char const *file, int line, int level, char const *fmt, ...)
 {
@@ -255,7 +274,7 @@ void Logger::x_logprintf(char const *file, int line, int level, char const *fmt,
 	va_list ap;
 	va_start(ap, fmt);
 	char *msg = nullptr;
-	int len = x_vasprintf(&msg, fmt, ap);
+	int len = vasprintf(&msg, fmt, ap);
 	if (msg) {
 		text.assign(msg, len);
 		free(msg);

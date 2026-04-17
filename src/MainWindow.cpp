@@ -5546,7 +5546,7 @@ bool MainWindow::isValidWorkingCopy(QString const &local_dir)
 
 void MainWindow::emitWriteLog(const LogData &logdata)
 {
-	emit sigWriteLog(logdata);
+	//@TODO: emit sigWriteLog(logdata);
 }
 
 QString MainWindow::findFileID(GitHash const &commit_id, const QString &file)
