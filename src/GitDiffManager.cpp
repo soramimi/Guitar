@@ -275,7 +275,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 				auto Do = [this, &g, &submodules](GitDiff *diff){
 					for (auto j = 0; j < submodules.size(); j++) {
 						GitSubmoduleItem const &submod = submodules[j];
-						if (submod.path != diff->path) continue;
+						if (submod.path != diff->path.toStdString()) continue;
 						auto GetSubmoduleDetail = [&](GitRunner g, QString const &id){
 							GitDiff::SubmoduleDetail out;
 							if (id.startsWith('*')) {

@@ -115,7 +115,7 @@ void RepositoryPropertyDialog::reflectRemotesTable()
 	for (int row = 0; row < rows; row++) {
 		GitRemote *r = &m->remotes[row];
 		QString url = ui->tableWidget->item(row, 1)->text();
-		if (r->url() != url) {
+		if (r->url() != url.toStdString()) {
 			r->set_url(url.toStdString());
 			git().setRemoteURL(*r);
 		}
@@ -168,7 +168,7 @@ bool RepositoryPropertyDialog::execEditRemoteDialog(GitRemote *remote, EditRemot
 			bool ok = true;
 			for (GitRemote const &r : *list) {
 				if (r.name == remote->name) {
-					qDebug() << "remote add: Already exists" << remote->name;
+					qDebug() << "remote add: Already exists" << QString::fromStdString(remote->name);
 					ok = false;
 					break;
 				}
@@ -242,7 +242,7 @@ void RepositoryPropertyDialog::on_pushButton_remote_remove_clicked()
 {
 	GitRemote remote = selectedRemote();
 	if (!remote.name.empty()) {
-		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(remote.name).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
+		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the remote '%1' from the repository '%2'?").arg(QString::fromStdString(remote.name)).arg(m->repository.name), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r == QMessageBox::Ok) {
 			GitRunner g = git();
 			g.removeRemote(remote.name);

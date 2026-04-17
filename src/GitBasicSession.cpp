@@ -39,7 +39,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 {
 	QFileInfo info2(QString::fromStdString(gitCommand()));
 	if (!info2.isExecutable()) {
-		qDebug() << "Invalid git command: " << gitCommand();
+		qDebug() << "Invalid git command: " << QString::fromStdString(gitCommand());
 		return std::nullopt;
 	}
 
@@ -51,7 +51,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 		if (ssh.find('\"') != std::string::npos) return std::nullopt;
 		if (gitinfo().ssh_key_override.find('\"') != std::string::npos) return std::nullopt;
 		if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
-		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(ssh).arg(gitinfo().ssh_key_override);
+		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(QString::fromStdString(ssh)).arg(QString::fromStdString(gitinfo().ssh_key_override));
 	}
 
 	int exit_code = 0;
@@ -62,7 +62,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 #ifdef _WIN32
 		cmd = opt.prefix;
 #endif
-		cmd += QString("\"%1\" --no-pager ").arg(gitCommand());
+		cmd += QString("\"%1\" --no-pager ").arg(QString::fromStdString(gitCommand()));
 
 		if (opt.chdir) {
 			QString cwd = QString::fromStdString(workingDir());
@@ -71,10 +71,10 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 			}
 		}
 
-		cmd += arg;
+		cmd += QString::fromStdString(arg);
 
 		if (opt.log) {
-			QString s = QString("> git %1\n").arg(arg);
+			QString s = QString("> git %1\n").arg(QString::fromStdString(arg));
 			global->writeLog(s);
 		}
 
@@ -132,7 +132,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 bool GitBasicSession::remove(const std::string &path)
 {
 	if (path.find("..") != std::string::npos) {
-		qDebug() << "Invalid path for remove: " << path;
+		qDebug() << "Invalid path for remove: " << QString::fromStdString(path);
 		return false;
 	}
 	QString rm_path = QString::fromStdString(workingDir() / path);

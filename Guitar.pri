@@ -312,6 +312,7 @@ HEADERS += \
 	$$PWD/src/common/AbstractSimpleIO.h \
     $$PWD/src/common/crc32.h \
 	$$PWD/src/common/htmlencode.h \
+	$$PWD/src/common/qhelper.h \
 	$$PWD/src/genmsg.h \
 	$$PWD/src/gzip.h \
     $$PWD/src/inetclient.h \

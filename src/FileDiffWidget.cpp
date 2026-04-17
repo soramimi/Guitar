@@ -512,9 +512,9 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 			*out = {};
 			if (submodule && *submodule) {
 				QString text;
-				text += "name: " + submodule->name + '\n';
-				text += "path: " + submodule->path + '\n';
-				text += "url: " + submodule->url + '\n';
+				text += "name: " + QString::fromStdString(submodule->name) + '\n';
+				text += "path: " + QString::fromStdString(submodule->path) + '\n';
+				text += "url: " + QString::fromStdString(submodule->url) + '\n';
 				text += "commit: " + QString::fromStdString(submodule->id.toString()) + '\n';
 				text += "date: " + misc::makeDateTimeString(submodule_commit->commit_date) + '\n';
 				text += "author: " + submodule_commit->author + '\n';
