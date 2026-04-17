@@ -21,6 +21,7 @@
 #include <string>
 #include "udplogger/RemoteLogger.h"
 
+#include "Logger.h"
 #include "genmsg.h"
 
 #ifndef APP_GUITAR
@@ -59,7 +60,12 @@ void logHandler(QtMsgType type, const QMessageLogContext &context, const QString
 		qDebug() << message;
 	}
 	std::string s = message.toStdString();
-	fprintf(stderr, "%s\n", s.c_str());
+	if (0) {
+		fprintf(stderr, "%s\n", s.c_str());
+	}
+	if (1) {
+		logprint(LOG_DEFAULT, s);
+	}
 
 	if (global->appsettings.enable_remote_log) {
 		global->send_remote_logger(s, context.file, context.line);
@@ -155,6 +161,11 @@ int main(int argc, char *argv[])
 	MKPATH(global->log_dir);
 
 	global->appsettings = ApplicationSettings::loadSettings();
+
+	Logger::start();
+	Logger::pause(true);
+	Logger::open(global->log_dir.toStdString() / "Guitar.log");
+	Logger::pause(false);
 
 	if (global->appsettings.enable_remote_log) {
 		global->open_remote_logger();

@@ -10,6 +10,7 @@
 #include <memory>
 #include <udplogger/RemoteLogger.h>
 #include <QDebug>
+#include "Logger.h"
 #include "MeCaSearch.h"
 
 struct ApplicationGlobal::Private {
@@ -27,6 +28,7 @@ ApplicationGlobal::~ApplicationGlobal()
 {
 	close_remote_logger();
 	close_trace_logger();
+	Logger::stop();
 	delete m;
 }
 
