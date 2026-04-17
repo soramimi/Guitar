@@ -1,19 +1,27 @@
 
 #include "Logger.h"
-#include <cstdio>
+#include "printf.h"
 #include <cctype>
-#include <cstdlib>
+#include <condition_variable>
 #include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <vector>
-#include <string>
-#include <unistd.h>
 #include <fcntl.h>
+#include <mutex>
+#include <string>
 #include <sys/stat.h>
+#include <thread>
+#include <vector>
+
+#ifdef _WIN32
+#include <io.h>
+#define ftruncate(fd, size) _chsize(fd, size)
+#else
+#include <unistd.h>
+#endif
+
 
 Logger x_logger;
 
@@ -81,7 +89,8 @@ void Logger::write(LogItem const &item)
 			msg += item.file;
 			msg += buf;
 		}
-		int len = asprintf(&text, "[%d-%02d-%02d,%02d:%02d:%02d.%03d] %s\n"
+
+		int len = x_asprintf(&text, "[%d-%02d-%02d,%02d:%02d:%02d.%03d] %s\n"
 				, tm->tm_year + 1900
 				, tm->tm_mon + 1
 				, tm->tm_mday
@@ -246,7 +255,7 @@ void Logger::x_logprintf(char const *file, int line, int level, char const *fmt,
 	va_list ap;
 	va_start(ap, fmt);
 	char *msg = nullptr;
-	int len = vasprintf(&msg, fmt, ap);
+	int len = x_vasprintf(&msg, fmt, ap);
 	if (msg) {
 		text.assign(msg, len);
 		free(msg);

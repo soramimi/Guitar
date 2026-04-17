@@ -1,7 +1,6 @@
 #ifndef FILEINFO_H
 #define FILEINFO_H
 
-#include <sys/stat.h>
 #include <string>
 #include "Dir.h"
 

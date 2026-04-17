@@ -1,4 +1,5 @@
 #include "FileInfo.h"
+#include <sys/stat.h>
 
 struct FileInfo::Private {
 	std::string file;
@@ -20,12 +21,20 @@ FileInfo::~FileInfo()
 
 bool FileInfo::isFile() const
 {
+#ifdef _WIN32
+	return m->valid && (m->stat.st_mode & S_IFREG);
+#else
 	return m->valid && S_ISREG(m->stat.st_mode);
+#endif
 }
 
 bool FileInfo::isDir() const
 {
+#ifdef _WIN32
+	return m->valid && (m->stat.st_mode & S_IFDIR);
+#else
 	return m->valid && S_ISDIR(m->stat.st_mode);
+#endif
 }
 
 Dir FileInfo::dir() const
