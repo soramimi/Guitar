@@ -148,6 +148,11 @@ std::vector<std::string_view> misc::splitLinesV(QByteArray const &ba, bool keep_
 	return splitLinesV(std::string_view(ba.data(), ba.size()), keep_newline);
 }
 
+std::vector<std::string_view> misc::splitLinesV(std::vector<char> const &ba, bool keep_newline)
+{
+	return splitLinesV(std::string_view(ba.data(), ba.size()), keep_newline);
+}
+
 /**
  * @brief 文字列を行に分割する
  * 

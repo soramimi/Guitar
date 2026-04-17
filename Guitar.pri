@@ -129,22 +129,7 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/GitDiffManager.cpp \
-	$$PWD/src/GitRunner.cpp \
-	$$PWD/src/GitTypes.cpp \
-	$$PWD/src/Logger.cpp \
-	$$PWD/src/MyObjectViewBase.cpp \
-    $$PWD/src/SettingLoggingForm.cpp \
-	$$PWD/src/SimpleQtIO.cpp \
-    $$PWD/src/TraceEventWriter.cpp \
-    $$PWD/src/TraceLogger.cpp \
-	$$PWD/src/common/AbstractSimpleIO.cpp \
-	$$PWD/src/genmsg.cpp \
-	$$PWD/src/gzip.cpp \
-    $$PWD/src/inetclient.cpp \
-    $$PWD/src/inetresolver.cpp \
-	$$PWD/udplogger/RemoteLogger.cpp \
-    src/AboutDialog.cpp \
+	src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \
 	src/AbstractSettingForm.cpp \
@@ -202,11 +187,14 @@ SOURCES += \
 	src/GitCommandCache.cpp \
 	src/GitCommandRunner.cpp \
 	src/GitConfigGlobalAddSafeDirectoryDialog.cpp \
+	src/GitDiffManager.cpp \
 	src/GitHubAPI.cpp \
 	src/GitObjectManager.cpp \
 	src/GitPack.cpp \
 	src/GitPackIdxV2.cpp \
 	src/GitProcessThread.cpp \
+	src/GitRunner.cpp \
+	src/GitTypes.cpp \
 	src/HyperLinkLabel.cpp \
 	src/ImageViewWidget.cpp \
 	src/IncrementalSearch.cpp \
@@ -215,6 +203,7 @@ SOURCES += \
 	src/Languages.cpp \
 	src/LineEditDialog.cpp \
 	src/LocalSocketReader.cpp \
+	src/Logger.cpp \
 	src/MainWindow.cpp \
 	src/ManageWorkingFolderDialog.cpp \
 	src/MaximizeButton.cpp \
@@ -222,6 +211,7 @@ SOURCES += \
 	src/MenuButton.cpp \
 	src/MergeDialog.cpp \
 	src/MyImageViewWidget.cpp \
+	src/MyObjectViewBase.cpp \
 	src/MyProcess.cpp \
 	src/MySettings.cpp \
 	src/MyTableWidgetDelegate.cpp \
@@ -254,6 +244,7 @@ SOURCES += \
 	src/SettingBehaviorForm.cpp \
 	src/SettingExampleForm.cpp \
 	src/SettingGeneralForm.cpp \
+	src/SettingLoggingForm.cpp \
 	src/SettingNetworkForm.cpp \
 	src/SettingOptionsForm.cpp \
 	src/SettingPrograms2Form.cpp \
@@ -262,6 +253,7 @@ SOURCES += \
 	src/SettingWorkingFolderForm.cpp \
 	src/SettingsDialog.cpp \
 	src/SimpleImageWidget.cpp \
+	src/SimpleQtIO.cpp \
 	src/StatusInfo.cpp \
 	src/StatusLabel.cpp \
 	src/SubmoduleAddDialog.cpp \
@@ -270,6 +262,8 @@ SOURCES += \
 	src/Terminal.cpp \
 	src/TextEditDialog.cpp \
 	src/Theme.cpp \
+	src/TraceEventWriter.cpp \
+	src/TraceLogger.cpp \
 	src/UserEvent.cpp \
 	src/Util.cpp \
 	src/WelcomeWizardDialog.cpp \
@@ -281,12 +275,19 @@ SOURCES += \
 	src/coloredit/ColorSlider.cpp \
 	src/coloredit/ColorSquareWidget.cpp \
 	src/coloredit/RingSlider.cpp \
+	src/common/AbstractSimpleIO.cpp \
 	src/common/misc.cpp \
+	src/common/q/Dir.cpp \
+	src/common/q/FileInfo.cpp \
 	src/darktheme/DarkStyle.cpp \
 	src/darktheme/LightStyle.cpp \
 	src/darktheme/NinePatch.cpp \
 	src/darktheme/TraditionalWindowsStyleTreeControl.cpp \
+	src/genmsg.cpp \
 	src/gpg.cpp \
+	src/gzip.cpp \
+	src/inetclient.cpp \
+	src/inetresolver.cpp \
 	src/main.cpp\
 	src/platform.cpp \
 	src/texteditor/AbstractCharacterBasedApplication.cpp \
@@ -300,27 +301,11 @@ SOURCES += \
 	src/webclient.cpp \
 	src/zip/zip.cpp \
 	src/zip/ziparchive.cpp \
-	src/zip/zipextract.cpp
+	src/zip/zipextract.cpp \
+	udplogger/RemoteLogger.cpp
 
 HEADERS += \
-	$$PWD/src/GitDiffManager.h \
-	$$PWD/src/GitRunner.h \
-	$$PWD/src/Logger.h \
-	$$PWD/src/MyObjectViewBase.h \
-    $$PWD/src/SettingLoggingForm.h \
-	$$PWD/src/SimpleQtIO.h \
-    $$PWD/src/TraceEventWriter.h \
-    $$PWD/src/TraceLogger.h \
-	$$PWD/src/common/AbstractSimpleIO.h \
-    $$PWD/src/common/crc32.h \
-	$$PWD/src/common/htmlencode.h \
-	$$PWD/src/common/qhelper.h \
-	$$PWD/src/genmsg.h \
-	$$PWD/src/gzip.h \
-    $$PWD/src/inetclient.h \
-    $$PWD/src/inetresolver.h \
-	$$PWD/udplogger/RemoteLogger.h \
-    src/AboutDialog.h \
+	src/AboutDialog.h \
 	src/AbstractGitSession.h \
 	src/AbstractProcess.h \
 	src/AbstractSettingForm.h \
@@ -379,11 +364,13 @@ HEADERS += \
 	src/GitCommandCache.h \
 	src/GitCommandRunner.h \
 	src/GitConfigGlobalAddSafeDirectoryDialog.h \
+	src/GitDiffManager.h \
 	src/GitHubAPI.h \
 	src/GitObjectManager.h \
 	src/GitPack.h \
 	src/GitPackIdxV2.h \
 	src/GitProcessThread.h \
+	src/GitRunner.h \
 	src/GitTypes.h \
 	src/HyperLinkLabel.h \
 	src/ImageViewWidget.h \
@@ -393,6 +380,7 @@ HEADERS += \
 	src/Languages.h \
 	src/LineEditDialog.h \
 	src/LocalSocketReader.h \
+	src/Logger.h \
 	src/MainWindow.h \
 	src/ManageWorkingFolderDialog.h \
 	src/MaximizeButton.h \
@@ -400,6 +388,7 @@ HEADERS += \
 	src/MenuButton.h \
 	src/MergeDialog.h \
 	src/MyImageViewWidget.h \
+	src/MyObjectViewBase.h \
 	src/MyProcess.h \
 	src/MySettings.h \
 	src/MyTableWidgetDelegate.h \
@@ -433,6 +422,7 @@ HEADERS += \
 	src/SettingBehaviorForm.h \
 	src/SettingExampleForm.h \
 	src/SettingGeneralForm.h \
+	src/SettingLoggingForm.h \
 	src/SettingNetworkForm.h \
 	src/SettingOptionsForm.h \
 	src/SettingPrograms2Form.h \
@@ -441,6 +431,7 @@ HEADERS += \
 	src/SettingWorkingFolderForm.h \
 	src/SettingsDialog.h \
 	src/SimpleImageWidget.h \
+	src/SimpleQtIO.h \
 	src/StatusInfo.h \
 	src/StatusLabel.h \
 	src/SubmoduleAddDialog.h \
@@ -449,6 +440,8 @@ HEADERS += \
 	src/Terminal.h \
 	src/TextEditDialog.h \
 	src/Theme.h \
+	src/TraceEventWriter.h \
+	src/TraceLogger.h \
 	src/UserEvent.h \
 	src/Util.h \
 	src/WelcomeWizardDialog.h \
@@ -460,11 +453,17 @@ HEADERS += \
 	src/coloredit/ColorSlider.h \
 	src/coloredit/ColorSquareWidget.h \
 	src/coloredit/RingSlider.h \
+	src/common/AbstractSimpleIO.h \
 	src/common/base64.h \
 	src/common/charvec.h \
+	src/common/crc32.h \
+	src/common/htmlencode.h \
 	src/common/joinpath.h \
 	src/common/jstream.h \
 	src/common/misc.h \
+	src/common/q/Dir.h \
+	src/common/q/FileInfo.h \
+	src/common/q/helper.h \
 	src/common/strformat.h \
 	src/darktheme/DarkStyle.h \
 	src/darktheme/LightStyle.h \
@@ -478,7 +477,11 @@ HEADERS += \
 	src/dtl/dtl.hpp \
 	src/dtl/functors.hpp \
 	src/dtl/variables.hpp \
+	src/genmsg.h \
 	src/gpg.h \
+	src/gzip.h \
+	src/inetclient.h \
+	src/inetresolver.h \
 	src/platform.h \
 	src/texteditor/AbstractCharacterBasedApplication.h \
 	src/texteditor/InputMethodPopup.h \
@@ -490,7 +493,8 @@ HEADERS += \
 	src/urlencode.h \
 	src/webclient.h \
 	src/zip/zip.h \
-	src/zip/zipinternal.h
+	src/zip/zipinternal.h \
+	udplogger/RemoteLogger.h
 
 HEADERS += version.h
 

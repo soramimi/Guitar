@@ -6,6 +6,7 @@
 #include "ImageViewWidget.h"
 #include "MainWindow.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>

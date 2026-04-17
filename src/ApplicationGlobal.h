@@ -109,8 +109,15 @@ public:
 
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);
 
-	std::string determineFileType(const QByteArray &in);
-	// std::string determineFileType(const std::string &path);
+	std::string determineFileType(const char *data, size_t size);
+	std::string determineFileType(QByteArray const &in)
+	{
+		return determineFileType(in.data(), in.size());
+	}
+	std::string determineFileType(std::vector<char> const &in)
+	{
+		return determineFileType(in.data(), in.size());
+	}
 	std::string determineFileType(QString const &path);
 
 	static bool isMainThread();

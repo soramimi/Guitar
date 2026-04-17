@@ -26,7 +26,7 @@ public:
 	void clearCommandCache();
 	void clearObjectCache();
 
-	static std::optional<GitCommitItem> parseCommit(QByteArray const &ba);
+        static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
 
 	bool isValidWorkingCopy(const std::string &dir) const;
 
@@ -110,7 +110,7 @@ public:
 	std::string diff_full_index_head_file(QString const &file);
 
 	std::vector<GitFileStatus> status_s();
-	std::optional<QByteArray> cat_file_(const GitHash &id);
+        std::optional<std::vector<char> > cat_file_(const GitHash &id);
 	GitObject catFile(const GitHash &id, bool use_cache = true);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 	void add_A();
@@ -140,7 +140,7 @@ public:
 	bool configGpgProgram(QString const &path, bool global);
 
 	bool reflog(QList<GitReflogItem> *out, int maxcount = 100);
-	QByteArray blame(QString const &path);
+        std::vector<char> blame(QString const &path);
 
 	std::optional<std::vector<GitFileItem>> ls(const QString &path);
 	std::optional<std::vector<char>> readfile(const QString &path);

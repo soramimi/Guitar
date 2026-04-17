@@ -54,6 +54,7 @@
 #include "WelcomeWizardDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include "platform.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -1410,7 +1411,7 @@ std::optional<GitCommitItem> MainWindow::getCommitItem(GitRunner g, GitHash cons
 {
 	auto obj = g.catFile(commit_id);
 	if (obj.type == GitObject::Type::COMMIT) {
-		std::optional<GitCommitItem> item = Git::parseCommit(obj.content);
+		std::optional<GitCommitItem> item = Git::parseCommit(QBA(obj.content).vc());
 		if (item) {
 			item->commit_id = GitHash(commit_id);
 			return item;
@@ -6492,8 +6493,8 @@ void MainWindow::blame(QListWidgetItem *item)
 	QString path = getFilePath(item);
 	{
 		GitRunner g = git();
-		QByteArray ba = g.blame(path);
-		if (!ba.isEmpty()) {
+		std::vector<char> ba = g.blame(path);
+		if (!ba.empty()) {
 			list = BlameWindow::parseBlame(std::string_view{ba.data(), (size_t)ba.size()});
 		}
 	}

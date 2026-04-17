@@ -5,6 +5,7 @@
 #include "MemoryReader.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include "Profile.h"
 #include <QBuffer>
 #include <QDebug>
@@ -404,7 +405,7 @@ GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 		if (ret) { // 外部コマンド起動の git cat-file -p を試してみる
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << QString::fromStdString(id.toString());
-			ba = *ret;
+			ba = (QBA)*ret;
 			if (mutex_) {
 				std::lock_guard lock(*mutex_);
 				return Store();

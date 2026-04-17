@@ -20,7 +20,6 @@
 #include <csignal>
 #include <string>
 #include "udplogger/RemoteLogger.h"
-
 #include "Logger.h"
 #include "genmsg.h"
 
@@ -60,14 +59,16 @@ void logHandler(QtMsgType type, const QMessageLogContext &context, const QString
 		qDebug() << message;
 	}
 	std::string s = message.toStdString();
+
 	if (0) {
 		fprintf(stderr, "%s\n", s.c_str());
 	}
+
 	if (1) {
 		logprint(LOG_DEFAULT, s);
 	}
 
-	if (global->appsettings.enable_remote_log) {
+	if (global && global->appsettings.enable_remote_log) {
 		global->send_remote_logger(s, context.file, context.line);
 	}
 }
@@ -92,6 +93,7 @@ void onSigPipe(int)
 int main(int argc, char *argv[])
 {
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
+	qInstallMessageHandler(logHandler);
 
 	WebClient::initialize();
 
@@ -101,8 +103,6 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	signal(SIGPIPE, onSigPipe);
 #endif
-
-	qInstallMessageHandler(logHandler);
 
 	bool a_open_here = false;
 	bool a_genmsg = false;

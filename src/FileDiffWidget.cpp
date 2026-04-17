@@ -7,6 +7,7 @@
 #include "Theme.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include "dtl/dtl.hpp"
 #include "ui_FileDiffWidget.h"
 #include <QBuffer>

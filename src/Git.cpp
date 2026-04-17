@@ -4,8 +4,9 @@
 #include "Profile.h"
 #include "common/joinpath.h"
 #include "common/strformat.h"
-#include <QDir>
-#include <QFileInfo>
+#include "common/q/helper.h"
+#include "common/q/FileInfo.h"
+#include "common/q/Dir.h"
 #include <QString>
 
 void GitCommitItem::setParents(const QStringList &list)
@@ -74,12 +75,10 @@ QString Git::status()
 
 
 
-QByteArray Git::toQByteArray(std::optional<GitResult> const &var) const
+std::vector<char> Git::toQByteArray(std::optional<GitResult> const &var) const
 {
-	if (!var) return {};
-	auto const &v = var->output();
-	if (v.empty()) return QByteArray();
-	return QByteArray(v.data(), v.size());
+	if (var) return var->output();
+	return {};
 }
 
 std::string Git::resultStdString(std::optional<GitResult> const &var) const
@@ -117,26 +116,28 @@ bool Git::isValidWorkingCopy() const
 
 bool GitBasicSession::isValidWorkingCopy(const std::string &dir) const
 {
-	QString repodir = QString::fromStdString(dir);
-	if (QFileInfo(repodir).isDir()) {
-		QString gitdir = repodir / ".git";
-		QFileInfo info(gitdir);
-		if (info.isFile()) { // submodule?
-			QFile file(gitdir);
-			if (file.open(QFile::ReadOnly)) {
-				QString line = QString::fromUtf8(file.readLine());
-				if (line.startsWith("gitdir:")) {
-					return true;
+	if (!dir.empty()) {
+		if (FileInfo(dir).isDir()) {
+			std::string gitdir = dir / ".git";
+			FileInfo info(gitdir);
+			if (info.isFile()) { // submodule?
+				QFile file((QS)gitdir);
+				if (file.open(QFile::ReadOnly)) {
+					QString line = QString::fromUtf8(file.readLine());
+					if (line.startsWith("gitdir:")) {
+						return true;
+					}
 				}
-			}
-		} else if (info.isDir()) { // regular dir
-			if (QFileInfo(gitdir).isDir()) {
-				if (QFileInfo(gitdir / "config").isFile()) { // git repository
-					return true;
+			} else if (info.isDir()) { // regular dir
+				if (FileInfo(gitdir).isDir()) {
+					if (FileInfo(gitdir / "config").isFile()) { // git repository
+						return true;
+					}
 				}
 			}
 		}
 	}
+
 	return false;
 }
 
@@ -149,17 +150,17 @@ QString Git::version()
 bool Git::init()
 {
 	bool ok = false;
-	QDir cwd = QDir::current();
-	QString dir = QString::fromStdString(workingDir());
-	if (QDir::setCurrent(dir)) {
-		QString gitdir = dir / ".git";
-		if (!QFileInfo(gitdir).isDir()) {
+	Dir cwd = Dir::current();
+	std::string dir = workingDir();
+	if (Dir::setCurrent((QS)dir)) {
+		std::string gitdir = dir / ".git";
+		if (!FileInfo(gitdir).isDir()) {
 			git_nochdir("init", nullptr);
-			if (QFileInfo(gitdir).isDir()) {
+			if (FileInfo(gitdir).isDir()) {
 				ok = true;
 			}
 		}
-		QDir::setCurrent(cwd.path());
+		Dir::setCurrent(cwd.path());
 	}
 	return ok;
 }
@@ -751,7 +752,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 	return ret;
 }
 
-std::optional<GitCommitItem> Git::parseCommit(QByteArray const &ba)
+std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 {
 	std::vector<std::string_view> lines = misc::splitLinesV(ba, false);
 
@@ -887,9 +888,9 @@ GitCloneData Git::preclone(QString const &url, QString const &path)
 		d.basedir = path;
 		d.subdir = GitBaseName(url);
 	} else {
-		QFileInfo info(path);
-		d.basedir = info.dir().path();
-		d.subdir = info.fileName();
+		FileInfo info((QS)path);
+		d.basedir = (QS)info.dir().path();
+		d.subdir = (QS)info.fileName();
 	}
 	return d;
 }
@@ -900,7 +901,7 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to).toStdString();
 
 	std::optional<GitResult> var;
-	QDir cwd = QDir::current();
+	Dir cwd = Dir::current();
 
 	auto DoIt = [&](){
 		QString cmd = "clone --recurse-submodules --progress -j%1 \"%2\" \"%3\"";
@@ -912,9 +913,9 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 		pty->setChangeDir(data.basedir);
 		DoIt();
 	} else {
-		if (QDir::setCurrent(data.basedir)) {
+		if (Dir::setCurrent(data.basedir.toStdString())) {
 			DoIt();
-			QDir::setCurrent(cwd.path());
+			Dir::setCurrent(cwd.path());
 		}
 	}
 
@@ -1133,7 +1134,7 @@ QString Git::objectType(GitHash const &id)
 	return {};
 }
 
-std::optional<QByteArray> Git::cat_file(GitHash const &id)
+std::optional<std::vector<char>> Git::cat_file(GitHash const &id)
 {
 	if (GitHash::isValidID(id)) {
 		auto result = git(("cat-file -p " + id.toString()));
@@ -1147,7 +1148,7 @@ QString Git::queryEntireCommitMessage(GitHash const &id)
 	QString ret;
 	auto file = cat_file(id);
 	if (file) {
-		QString message = QString::fromUtf8(file->constData(), file->size());
+		QString message = QString::fromUtf8((QBA)*file);
 		QStringList lines = message.split('\n');
 		bool header = true;
 		for (int i = 0; i < lines.size(); i++) {
@@ -1515,8 +1516,8 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 	cmd = cmd.arg(maxcount);
 	auto result = git(cmd.toStdString());
 	if (!result) return false;
-	QByteArray ba = toQByteArray(result);
-	if (!ba.isEmpty()) {
+	std::vector<char> ba = toQByteArray(result);
+	if (!ba.empty()) {
 		GitReflogItem item;
 		char const *begin = ba.data();
 		char const *end = begin + ba.size();
@@ -1639,7 +1640,7 @@ void GitFileStatus::parse(QString const &text)
 	}
 }
 
-QByteArray Git::blame(QString const &path)
+std::vector<char> Git::blame(QString const &path)
 {
 	QString cmd = "blame --porcelain --abbrev=40 \"%1\"";
 	cmd = cmd.arg(path);
@@ -1647,7 +1648,7 @@ QByteArray Git::blame(QString const &path)
 	if (result) {
 		return toQByteArray(result);
 	}
-	return QByteArray();
+	return {};
 }
 
 QList<Git::RemoteInfo> Git::ls_remote()

@@ -54,6 +54,7 @@ public:
 	static QStringList splitLines(QString const &text);
 	static std::vector<std::string_view> splitLinesV(const std::string_view &str, bool keep_newline);
 	static std::vector<std::string_view> splitLinesV(QByteArray const &ba, bool keep_newline);
+	static std::vector<std::string_view> splitLinesV(std::vector<char> const &ba, bool keep_newline);
 	static std::vector<std::string> splitLines(std::string_view const &str, bool keep_newline);
 	static std::vector<std::string_view> splitWords(std::string_view const &text);
 	static QStringList splitWords(QString const &text);

@@ -1,6 +1,7 @@
 #include "GitRunner.h"
 #include "Git.h"
 #include "TraceLogger.h"
+#include "common/q/helper.h"
 
 GitRunner::GitRunner(const std::shared_ptr<Git> &git)
 	: git(git)
@@ -50,7 +51,7 @@ void GitRunner::clearObjectCache()
 	if (git) git->clearObjectCache();
 }
 
-std::optional<GitCommitItem> GitRunner::parseCommit(const QByteArray &ba)
+std::optional<GitCommitItem> GitRunner::parseCommit(std::vector<char> const &ba)
 {
 	return Git::parseCommit(ba);
 }
@@ -441,7 +442,7 @@ std::vector<GitFileStatus> GitRunner::status_s()
 	return git->status_s();
 }
 
-std::optional<QByteArray> GitRunner::cat_file_(const GitHash &id)
+std::optional<std::vector<char>> GitRunner::cat_file_(const GitHash &id)
 {
 	return git->cat_file(id);
 }
@@ -457,7 +458,7 @@ GitObject GitRunner::catFile(const GitHash &id, bool use_cache)
 		GitObject obj;
 		auto data = git->cat_file(id);
 		if (data) {
-			obj.content = *data;
+			obj.content = (QBA)*data;
 			obj.type = GitObject::Type::UNKNOWN;
 		}
 		return obj;
@@ -608,19 +609,19 @@ bool GitRunner::reflog(QList<GitReflogItem> *out, int maxcount)
 	return git->reflog(out, maxcount);
 }
 
-QByteArray GitRunner::blame(const QString &path)
+std::vector<char> GitRunner::blame(const QString &path)
 {
 	Q_ASSERT(git);
 	return git->blame(path);
 }
 
-std::optional<std::vector<GitFileItem> > GitRunner::ls(const QString &path)
+std::optional<std::vector<GitFileItem>> GitRunner::ls(const QString &path)
 {
 	Q_ASSERT(git);
 	return git->ls(path);
 }
 
-std::optional<std::vector<char> > GitRunner::readfile(const QString &path)
+std::optional<std::vector<char>> GitRunner::readfile(const QString &path)
 {
 	Q_ASSERT(git);
 	return git->readfile(path);

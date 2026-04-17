@@ -74,7 +74,7 @@ public:
 		return session_->gitinfo();
 	}
 
-	QByteArray toQByteArray(const std::optional<GitResult> &var) const;
+        std::vector<char> toQByteArray(const std::optional<GitResult> &var) const;
 	bool isValidGitCommand() const
 	{
 		return session_->is_connected();
@@ -136,7 +136,7 @@ public:
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 
 	std::vector<GitFileStatus> status_s();
-	std::optional<QByteArray> cat_file(GitHash const &id);
+        std::optional<std::vector<char> > cat_file(GitHash const &id);
 	void resetFile(QString const &path);
 	void resetAllFiles();
 	
@@ -210,7 +210,7 @@ public:
 	using ReflogItemList = QList<GitReflogItem>;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
-	QByteArray blame(QString const &path);
+        std::vector<char> blame(QString const &path);
 
 	QString signingKey(GitSource purpose);
 	bool setSigningKey(QString const &id, bool global);
@@ -231,7 +231,7 @@ public:
 	QList<GitSubmoduleItem> submodules();
 	bool submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
-	static std::optional<GitCommitItem> parseCommit(QByteArray const &ba);
+        static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
 	QString queryEntireCommitMessage(const GitHash &id);
 
 	QString getDefaultBranch();

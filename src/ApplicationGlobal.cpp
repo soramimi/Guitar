@@ -294,14 +294,14 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI p
 	return _AiCredentials(envname).visit(provider);
 }
 
-std::string ApplicationGlobal::determineFileType(QByteArray const &in)
+std::string ApplicationGlobal::determineFileType(char const *data, size_t size)
 {
-	if (in.isEmpty()) return {};
+	if (!data || size == 0) return {};
 
-	if (in.size() > 10) {
-		if (memcmp(in.data(), "\x1f\x8b\x08", 3) == 0) { // gzip
+	if (size > 10) {
+		if (memcmp(data, "\x1f\x8b\x08", 3) == 0) { // gzip
 			QBuffer buf;
-			MemoryReader mem(in.data(), in.size());
+			MemoryReader mem(data, size);
 
 			mem.open(MemoryReader::ReadOnly);
 			buf.open(QBuffer::WriteOnly);
@@ -318,7 +318,7 @@ std::string ApplicationGlobal::determineFileType(QByteArray const &in)
 		}
 	}
 
-	std::string mime = filetype.file(in.data(), in.size()).mimetype;
+	std::string mime = filetype.file(data, size).mimetype;
 	// qDebug() << QString::fromStdString(mime);
 	return mime;
 }

@@ -3,7 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QMessageBox>
-
+#include "common/q/helper.h"
 #include <QFile>
 #include <QFileInfo>
 
