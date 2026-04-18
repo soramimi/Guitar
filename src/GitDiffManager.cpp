@@ -4,6 +4,7 @@
 #include <QThread>
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
+#include "common/q/helper.h"
 
 // PathToIdMap
 
@@ -62,18 +63,18 @@ QString GitDiffManager::prependPathPrefix(QString const &path)
 	return PATH_PREFIX + path;
 }
 
-QString GitDiffManager::diffObjects(GitRunner g, QString const &a_id, QString const &b_id)
+std::string GitDiffManager::diffObjects(GitRunner g, std::string const &a_id, std::string const &b_id)
 {
-	QString path_prefix = PATH_PREFIX;
-	if (b_id.startsWith(path_prefix)) {
-		QString path = b_id.mid(path_prefix.size());
+	std::string path_prefix = PATH_PREFIX;
+	if (misc::starts_with(b_id, path_prefix)) {
+		std::string path = b_id.substr(path_prefix.size());
 		return g.diff_to_file(a_id, path);
 	} else {
 		return g.diff(a_id, b_id);
 	}
 }
 
-QString GitDiffManager::diffFiles(GitRunner g, QString const &a_path, QString const &b_path)
+std::string GitDiffManager::diffFiles(GitRunner g, std::string const &a_path, std::string const &b_path)
 {
 	return g.diff_file(a_path, b_path);
 }

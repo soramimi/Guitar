@@ -233,7 +233,7 @@ QString GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 		QString name2 = name.mid(2);  // remaining xdigits
 		QString dir = QString::fromStdString(g.workingDir()) / m->subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
 
-		std::optional<std::vector<GitFileItem>> ret = g.ls(dir);
+		std::optional<std::vector<GitFileItem>> ret = g.ls(dir.toStdString());
 		if (ret) {
 			for (GitFileItem const &item : *ret) {
 				if (item.name.startsWith(name2)) {
@@ -258,7 +258,7 @@ bool GitObjectManager::loadObject(GitRunner g, GitHash const &id, QByteArray *ou
 {
 	QString path = findObjectPath(g, id);
 	if (!path.isEmpty()) {
-		auto ret = g.readfile(path);
+		auto ret = g.readfile(path.toStdString());
 		if (ret) {
 			MemoryReader reader(ret->data(), ret->size());
 			reader.open(MemoryReader::ReadOnly);

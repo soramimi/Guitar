@@ -243,6 +243,32 @@ QStringList misc::splitWords(QString const &text)
 }
 
 /**
+ *
+ */
+std::vector<std::string_view> misc::split(std::string_view const &sv, char sep)
+{
+	std::vector<std::string_view> ret;
+	char const *begin = sv.data();
+	char const *end = begin + sv.size();
+	char const *ptr = begin;
+	char const *left = ptr;
+	while (1) {
+		char const *right = ptr;
+		char c = 0;
+		if (ptr < end) {
+			c = *ptr;
+			ptr++;
+		}
+		if (c == 0 || c == sep) {
+			ret.emplace_back(left, right - left);
+			if (c == 0) break;
+			left = ptr;
+		}
+	}
+	return ret;
+}
+
+/**
  * @brief パスからファイル名部分を取得する
  * 
  * 与えられたパスからファイル名部分のみを抽出します。

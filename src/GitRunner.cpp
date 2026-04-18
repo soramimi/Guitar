@@ -91,12 +91,12 @@ void GitRunner::setSshKey(std::string const &sshkey)
 	gitptr()->setSshKey(sshkey);
 }
 
-QString GitRunner::getMessage(const QString &id)
+std::string GitRunner::getMessage(std::string const &id)
 {
 	return gitptr()->getMessage(id);
 }
 
-QString GitRunner::errorMessage(const std::optional<GitResult> &var) const
+std::string GitRunner::errorMessage(const std::optional<GitResult> &var) const
 {
 	return gitptr()->errorMessage(var);
 }
@@ -140,7 +140,7 @@ QStringList GitRunner::getRemotes()
 	return gitptr()->getRemotes();
 }
 
-QString GitRunner::version()
+std::string GitRunner::version()
 {
 	return gitptr()->version();
 }
@@ -155,17 +155,17 @@ QList<GitTag> GitRunner::tags()
 	return gitptr()->tags();
 }
 
-bool GitRunner::tag(const QString &name, const GitHash &id)
+bool GitRunner::tag(std::string const &name, const GitHash &id)
 {
 	return gitptr()->tag(name, id);
 }
 
-bool GitRunner::delete_tag(const QString &name, bool remote)
+bool GitRunner::delete_tag(std::string const &name, bool remote)
 {
 	return gitptr()->delete_tag(name, remote);
 }
 
-void GitRunner::resetFile(const QString &path)
+void GitRunner::resetFile(std::string const &path)
 {
 	gitptr()->resetFile(path);
 }
@@ -191,12 +191,12 @@ void GitRunner::setUser(const GitUser &user, bool global)
 	gitptr()->setUser(user, global);
 }
 
-QString GitRunner::getDefaultBranch()
+std::string GitRunner::getDefaultBranch()
 {
 	return gitptr()->getDefaultBranch();
 }
 
-void GitRunner::setDefaultBranch(const QString &branchname)
+void GitRunner::setDefaultBranch(std::string const &branchname)
 {
 	gitptr()->setDefaultBranch(branchname);
 }
@@ -211,17 +211,17 @@ QDateTime GitRunner::repositoryLastModifiedTime()
 	return gitptr()->repositoryLastModifiedTime();
 }
 
-QString GitRunner::status()
+std::string GitRunner::status()
 {
 	return gitptr()->status();
 }
 
-bool GitRunner::commit(const QString &text, bool sign, AbstractPtyProcess *pty)
+bool GitRunner::commit(std::string const &text, bool sign, AbstractPtyProcess *pty)
 {
 	return gitptr()->commit(text, sign, pty);
 }
 
-bool GitRunner::commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty)
+bool GitRunner::commit_amend_m(std::string const &text, bool sign, AbstractPtyProcess *pty)
 {
 	return gitptr()->commit_amend_m(text, sign, pty);
 }
@@ -241,17 +241,17 @@ void GitRunner::remote_v(std::vector<GitRemote> *out)
 	gitptr()->remote_v(out);
 }
 
-void GitRunner::createBranch(const QString &name)
+void GitRunner::createBranch(std::string const &name)
 {
-	gitptr()->createBranch(name.toStdString());
+	gitptr()->createBranch(name);
 }
 
-void GitRunner::checkoutBranch(const QString &name)
+void GitRunner::checkoutBranch(std::string const &name)
 {
-	gitptr()->checkoutBranch(name.toStdString());
+	gitptr()->checkoutBranch(name);
 }
 
-void GitRunner::mergeBranch(const QString &name, GitMergeFastForward ff, bool squash)
+void GitRunner::mergeBranch(std::string const &name, GitMergeFastForward ff, bool squash)
 {
 	gitptr()->mergeBranch(name, ff, squash);
 }
@@ -261,17 +261,17 @@ bool GitRunner::deleteBranch(const QString &name)
 	return gitptr()->deleteBranch(name);
 }
 
-bool GitRunner::checkout(const QString &branch_name, const QString &id)
+bool GitRunner::checkout(const std::string &branch_name, const std::string &id)
 {
 	return gitptr()->checkout(branch_name, id);
 }
 
-bool GitRunner::checkout_detach(const QString &id)
+bool GitRunner::checkout_detach(const std::string &id)
 {
 	return gitptr()->checkout_detach(id);
 }
 
-void GitRunner::rebaseBranch(const QString &name)
+void GitRunner::rebaseBranch(std::string const &name)
 {
 	gitptr()->rebaseBranch(name);
 }
@@ -286,7 +286,7 @@ GitCommitItemList GitRunner::log_all(const GitHash &id, int maxcount)
 	return gitptr()->log_all(id, maxcount);
 }
 
-GitCommitItemList GitRunner::log_file(const QString &path, int maxcount)
+GitCommitItemList GitRunner::log_file(std::string const &path, int maxcount)
 {
 	return gitptr()->log_file(path, maxcount);
 }
@@ -341,7 +341,7 @@ bool GitRunner::submodule_update(const GitSubmoduleUpdateData &data, AbstractPty
 	return gitptr()->submodule_update(data, pty);
 }
 
-QString GitRunner::queryEntireCommitMessage(const GitHash &id)
+std::string GitRunner::queryEntireCommitMessage(const GitHash &id)
 {
 	return gitptr()->queryEntireCommitMessage(id);
 }
@@ -351,17 +351,17 @@ QList<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash &new_
 	return gitptr()->diff_raw(old_id, new_id);
 }
 
-QString GitRunner::diff(const QString &old_id, const QString &new_id)
+std::string GitRunner::diff(std::string const &old_id, std::string const &new_id)
 {
 	return gitptr()->diff(old_id, new_id);
 }
 
-QString GitRunner::diff_file(const QString &old_path, const QString &new_path)
+std::string GitRunner::diff_file(std::string const &old_path, std::string const &new_path)
 {
 	return gitptr()->diff_file(old_path, new_path);
 }
 
-QString GitRunner::diff_to_file(const QString &old_id, const QString &path)
+std::string GitRunner::diff_to_file(std::string const &old_id, std::string const &path)
 {
 	return gitptr()->diff_to_file(old_id, path);
 }
@@ -371,7 +371,7 @@ std::vector<std::string> GitRunner::diff_name_only_head()
 	return gitptr()->diff_name_only_head();
 }
 
-std::string GitRunner::diff_full_index_head_file(const QString &file)
+std::string GitRunner::diff_full_index_head_file(std::string const &file)
 {
 	return gitptr()->diff_full_index_head_file(file);
 }
@@ -419,7 +419,7 @@ bool GitRunner::unstage_all()
 	return gitptr()->unstage_all();
 }
 
-void GitRunner::stage(const QString &path)
+void GitRunner::stage(std::string const &path)
 {
 	gitptr()->stage(path);
 }
@@ -429,7 +429,7 @@ bool GitRunner::stage(const QStringList &paths, AbstractPtyProcess *pty)
 	return gitptr()->stage(paths, pty);
 }
 
-void GitRunner::unstage(const QString &path)
+void GitRunner::unstage(std::string const &path)
 {
 	gitptr()->unstage(path);
 }
@@ -469,7 +469,7 @@ bool GitRunner::push_u(bool set_upstream, const QString &remote, const QString &
 	return gitptr()->push_u(set_upstream, remote, branch, force, pty);
 }
 
-QString GitRunner::objectType(const GitHash &id)
+std::string GitRunner::objectType(const GitHash &id)
 {
 	return gitptr()->objectType(id);
 }
@@ -484,7 +484,7 @@ void GitRunner::cherrypick(const QString &name)
 	gitptr()->cherrypick(name.toStdString());
 }
 
-QString GitRunner::getCherryPicking() const
+std::string GitRunner::getCherryPicking() const
 {
 	return gitptr()->getCherryPicking();
 }
@@ -529,12 +529,12 @@ std::vector<char> GitRunner::blame(const QString &path)
 	return gitptr()->blame(path);
 }
 
-std::optional<std::vector<GitFileItem>> GitRunner::ls(const QString &path)
+std::optional<std::vector<GitFileItem>> GitRunner::ls(std::string const &path)
 {
 	return gitptr()->ls(path);
 }
 
-std::optional<std::vector<char>> GitRunner::readfile(const QString &path)
+std::optional<std::vector<char>> GitRunner::readfile(std::string const &path)
 {
 	return gitptr()->readfile(path);
 }

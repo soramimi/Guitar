@@ -332,6 +332,11 @@ std::string ApplicationGlobal::determineFileType(QString const &path)
 	return {};
 }
 
+std::string ApplicationGlobal::determineFileType(std::string const &path)
+{
+	return determineFileType(QString::fromStdString(path));
+}
+
 // std::string ApplicationGlobal::determineFileType(std::string const &path)
 // {
 // 	QFile file(QString::fromStdString(path));

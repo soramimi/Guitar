@@ -614,7 +614,7 @@ void FileDiffWidget::setSideBySide_(GitDiff const &diff, QByteArray const &ba_a,
 	}
 }
 
-QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
+std::string FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 {
 	if (m->text_codec) {
 		GitRunner g = git();
@@ -633,14 +633,14 @@ QString FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
 				file_b.write(m->text_codec->toUnicode(obj_b.content).toUtf8());
 				file_a.close();
 				file_b.close();
-				QString s = git().diff_file(path_a, path_b);
+				std::string s = git().diff_file(path_a.toStdString(), path_b.toStdString());
 				file_a.remove();
 				file_b.remove();
 				return s;
 			}
 		}
 	}
-	return GitDiffManager::diffObjects(git(), a_id, b_id);
+	return GitDiffManager::diffObjects(git(), a_id.toStdString(), b_id.toStdString());
 }
 
 /**
@@ -682,7 +682,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 	{
 		GitDiff diff;
 		if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
-			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path).toStdString();
+			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path);
 			diff = GitDiffManager::parseDiff(text, &info);
 		} else {
 			diff = info;
@@ -714,7 +714,7 @@ void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_r
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
 
-	std::string text = diffObjects(id_left, id_right).toStdString();
+	std::string text = diffObjects(id_left, id_right);
 	GitDiff diff = GitDiffManager::parseDiff(text, &diff);
 
 	GitObject obj = catFile(g, diff.blob.a_id_or_path);

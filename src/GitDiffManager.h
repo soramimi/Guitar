@@ -24,8 +24,8 @@ public:
 	QList<GitDiff> diff_uncommited(GitRunner g, const QList<GitSubmoduleItem> &submodules);
 
 public:
-	static QString diffObjects(GitRunner g, QString const &a_id, QString const &b_id);
-	static QString diffFiles(GitRunner g, QString const &a_path, QString const &b_path);
+	static std::string diffObjects(GitRunner g, const std::string &a_id, const std::string &b_id);
+	static std::string diffFiles(GitRunner g, const std::string &a_path, const std::string &b_path);
 	static GitDiff parseDiff(std::string const &s, const GitDiff *info);
 	static QString makeKey(const QString &a_id, const QString &b_id);
 	static QString makeKey(const GitDiff &diff);

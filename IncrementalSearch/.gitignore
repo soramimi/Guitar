@@ -7,3 +7,4 @@ build/
 mecasearch.lib
 libmecasearch.a
 *.log
+*.lib

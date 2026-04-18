@@ -46,7 +46,11 @@ public:
 	operator bool () const;
 	size_t _std_hash() const;
 
-	static bool isValidID(QString const &id);
+	static bool isValidID(std::string const &id);
+	static bool isValidID(QString const &id)
+	{
+		return isValidID(id.toStdString());
+	}
 
 	static bool isValidID(GitHash const &id)
 	{

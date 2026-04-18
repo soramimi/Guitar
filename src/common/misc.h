@@ -58,6 +58,7 @@ public:
 	static std::vector<std::string> splitLines(std::string_view const &str, bool keep_newline);
 	static std::vector<std::string_view> splitWords(std::string_view const &text);
 	static QStringList splitWords(QString const &text);
+	static std::vector<std::string_view> split(std::string_view const &sv, char sep);
 	static QString getFileName(QString const &path);
 	static QString makeDateTimeString(const QDateTime &dt);
 	static bool starts_with(std::string const &str, std::string const &with);

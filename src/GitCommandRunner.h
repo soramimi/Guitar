@@ -66,9 +66,9 @@ public:
 
 class Git_delete_tag {
 public:
-	QString name_;
+	std::string name_;
 	bool remote_;
-	Git_delete_tag(const QString &name, bool remote)
+	Git_delete_tag(std::string const &name, bool remote)
 		: name_(name)
 		, remote_(remote)
 	{
@@ -86,9 +86,9 @@ public:
 
 class Git_add_tag {
 public:
-	QString name_;
+	std::string name_;
 	GitHash commit_id_;
-	Git_add_tag(const QString &name, const GitHash &commit_id)
+	Git_add_tag(std::string const &name, const GitHash &commit_id)
 		: name_(name)
 		, commit_id_(commit_id)
 	{

@@ -127,7 +127,7 @@ private:
 	void refrectScrollBarV();
 	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const GitSubmoduleItem *submodule, const GitCommitItem *submodule_commit);
-	QString diffObjects(QString const &a_id, QString const &b_id);
+	std::string diffObjects(QString const &a_id, QString const &b_id);
 	bool setSubmodule(const GitDiff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;

@@ -45,7 +45,7 @@ void GitCommandRunner::operator ()(Git_delete_tags const &item)
 {
 	d.result = false;
 	for (QString const &name : item.tagnames) {
-		if (git().delete_tag(name, true)) {
+		if (git().delete_tag(name.toStdString(), true)) {
 			d.result = true;
 		}
 	}

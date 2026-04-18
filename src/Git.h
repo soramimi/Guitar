@@ -49,13 +49,13 @@ public:
 private:
 	QStringList make_branch_list_(const std::optional<GitResult> &result);
 	std::vector<GitFileStatus> status_s_();
-	bool commit_(QString const &msg, bool amend, bool sign, AbstractPtyProcess *pty);
+	bool commit_(const std::string &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, GitBranch *b);
 	Git();
 	void _init(const GitContext &cx);
 	QString encodeQuotedText(QString const &str);
 	std::string encodeQuotedText(std::string const &str);
-	static std::optional<GitCommitItem> parseCommitItem(const QString &line);
+	static std::optional<GitCommitItem> parseCommitItem(const std::string &line);
 	std::string submoduleURL(std::string const &path);
 public:
 	Git(GitContext const &cx, std::string const &repodir, std::string const &submodpath, std::string const &sshkey);
@@ -118,14 +118,14 @@ public:
 	const std::string &sshKey() const;
 	void setSshKey(std::string const &sshkey);
 
-	QString getCurrentBranchName();
+	std::string getCurrentBranchName();
 	bool isValidWorkingCopy() const;
-	QString version();
+	std::string version();
 	bool init();
 	QStringList getUntrackedFiles();
 
+	GitCommitItemList log_file(const std::string &path, int maxcount);
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
-	GitCommitItemList log_file(QString const &path, int maxcount);
 	std::vector<GitHash> rev_list_all(GitHash const &id, int maxcount);
 
 	std::optional<GitCommitItem> log_signature(GitHash const &id);
@@ -136,8 +136,8 @@ public:
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 
 	std::vector<GitFileStatus> status_s();
-        std::optional<std::vector<char> > cat_file(GitHash const &id);
-	void resetFile(QString const &path);
+	std::optional<std::vector<char> > cat_file(GitHash const &id);
+	void resetFile(const std::string &path);
 	void resetAllFiles();
 	
 	void rm(const std::string &path, bool rm_real_file);
@@ -145,9 +145,9 @@ public:
 	void add_A();
 	bool unstage_all();
 
-	void stage(QString const &path);
+	void stage(const std::string &path);
 	bool stage(QStringList const &paths, AbstractPtyProcess *pty);
-	void unstage(QString const &path);
+	void unstage(const std::string &path);
 	void unstage(QStringList const &paths);
 	bool pull(AbstractPtyProcess *pty = nullptr);
 
@@ -155,39 +155,39 @@ public:
 
 	QList<GitBranch> branches();
 
-	QString diff(QString const &old_id, QString const &new_id);
-	QString diff_file(QString const &old_path, QString const &new_path);
+	std::string diff(const std::string &old_id, const std::string &new_id);
+	std::string diff_file(const std::string &old_path, const std::string &new_path);
 
 	std::vector<std::string> diff_name_only_head();
-	std::string diff_full_index_head_file(const QString &file);
+	std::string diff_full_index_head_file(const std::string &file);
 
 	QList<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
 
-	QString status();
-	bool commit(QString const &text, bool sign, AbstractPtyProcess *pty);
-	bool commit_amend_m(QString const &text, bool sign, AbstractPtyProcess *pty);
+	std::string status();
+	bool commit(const std::string &text, bool sign, AbstractPtyProcess *pty);
+	bool commit_amend_m(const std::string &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const GitHash &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
 	void remote_v(std::vector<GitRemote> *out);
 	void createBranch(const std::string &name);
 	void checkoutBranch(std::string const &name);
-	void mergeBranch(QString const &name, GitMergeFastForward ff, bool squash);
+	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);
 	bool deleteBranch(QString const &name);
 
-	bool checkout(QString const &branch_name, QString const &id = {});
-	bool checkout_detach(QString const &id);
+	bool checkout(const std::string &branch_name, const std::string &id = {});
+	bool checkout_detach(std::string const &id);
 
-	void rebaseBranch(QString const &name);
+	void rebaseBranch(const std::string &name);
 	void rebase_abort();
 
 	bool isValidWorkingCopy(const std::string &dir) const;
-	QString diff_to_file(QString const &old_id, QString const &path);
-	QString errorMessage(const std::optional<GitResult> &var) const;
+	std::string diff_to_file(const std::string &old_id, const std::string &path);
+	std::string errorMessage(const std::optional<GitResult> &var) const;
 
 	GitHash rev_parse(QString const &name);
 	QList<GitTag> tags();
-	bool tag(QString const &name, GitHash const &id = {});
-	bool delete_tag(QString const &name, bool remote);
+	bool tag(const std::string &name, GitHash const &id = {});
+	bool delete_tag(const std::string &name, bool remote);
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(const std::string &name);
@@ -200,17 +200,17 @@ public:
 	bool reset_hard();
 	bool clean_df();
 	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
-	QString objectType(const GitHash &id);
+	std::string objectType(const GitHash &id);
 	bool rm_cached(const QString &file);
 	void cherrypick(std::string const &name);
-	QString getCherryPicking() const;
+	std::string getCherryPicking() const;
 
-	QString getMessage(const QString &id);
+	std::string getMessage(const std::string &id);
 
 	using ReflogItemList = QList<GitReflogItem>;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
-        std::vector<char> blame(QString const &path);
+	std::vector<char> blame(QString const &path);
 
 	QString signingKey(GitSource purpose);
 	bool setSigningKey(QString const &id, bool global);
@@ -231,16 +231,16 @@ public:
 	QList<GitSubmoduleItem> submodules();
 	bool submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
-        static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
-	QString queryEntireCommitMessage(const GitHash &id);
+	static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
+	std::string queryEntireCommitMessage(const GitHash &id);
 
-	QString getDefaultBranch();
-	void setDefaultBranch(QString const &branchname);
+	std::string getDefaultBranch();
+	void setDefaultBranch(const std::string &branchname);
 	void unsetDefaultBranch();
 	QDateTime repositoryLastModifiedTime();
 
-	std::optional<std::vector<GitFileItem>> ls(const QString &path);
-	std::optional<std::vector<char>> readfile(const QString &path);
+	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
+	std::optional<std::vector<char>> readfile(std::string const &path);
 };
 
 struct NamedCommitItem {

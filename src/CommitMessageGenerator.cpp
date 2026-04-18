@@ -443,13 +443,13 @@ static std::string diff_head(GitRunner g, std::function<bool (std::string const 
 				if (i >= names.size()) break;
 				std::string name = names[i];
 				if (!name.empty()) {
-					QString file(QString::fromStdString(g.workingDir() / name));
+					std::string file(g.workingDir() / name);
 					std::string mimetype = global->determineFileType(file);
 					if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
 					if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
 					if (mimetype == "application/pdf") continue; // PDFはdiffしない
 					if (fn_accept) {
-						if (!fn_accept(file.toStdString(), mimetype)) continue; // ファイルの種類によるフィルタリング
+						if (!fn_accept(file, mimetype)) continue; // ファイルの種類によるフィルタリング
 					}
 					diffs[i] = g.diff_full_index_head_file(file);
 				}

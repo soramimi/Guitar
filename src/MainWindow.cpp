@@ -1955,10 +1955,10 @@ bool MainWindow::execWelcomeWizardDialog()
 			user.email = dlg.user_email();
 			g.setUser(user, true);
 
-			QString old_default_branch_name = g.getDefaultBranch();
-			QString new_default_branch_name = dlg.default_branch_name();
+			std::string old_default_branch_name = g.getDefaultBranch();
+			std::string new_default_branch_name = dlg.default_branch_name().toStdString();
 			if (old_default_branch_name != new_default_branch_name) {
-				if (new_default_branch_name.isEmpty()) {
+				if (new_default_branch_name.empty()) {
 					g.unsetDefaultBranch();
 				} else {
 					g.setDefaultBranch(new_default_branch_name);
@@ -2259,8 +2259,8 @@ void MainWindow::logGitVersion()
 {
 	// GitRunner g = git();
 	GitRunner g = unassosiated_git_runner();
-	QString s = g.version();
-	if (!s.isEmpty()) {
+	std::string s = g.version();
+	if (!s.empty()) {
 		s += '\n';
 		global->writeLog(s);
 	}
@@ -2648,9 +2648,9 @@ void MainWindow::commit(bool amend)
 	if (amend) {
 		message = commitlog()[0].message;
 	} else {
-		QString id = g.getCherryPicking();
+		std::string id = g.getCherryPicking();
 		if (GitHash::isValidID(id)) {
-			message = g.getMessage(id);
+			message = (QS)g.getMessage(id);
 		} else {
 			previousMessage = commitlog().previousMessage();
 		}
@@ -2668,8 +2668,8 @@ void MainWindow::commit(bool amend)
 		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
 		dlg.setText(message);
 		if (dlg.exec() == QDialog::Accepted) {
-			QString text = dlg.text();
-			if (text.isEmpty()) {
+			std::string text = dlg.text().toStdString();
+			if (text.empty()) {
 				QMessageBox::warning(this, tr("Commit"), tr("Commit message can not be omitted."));
 				continue;
 			}
@@ -2780,7 +2780,7 @@ void MainWindow::delete_tags(GitRunner g, const QStringList &tagnames)
 
 void MainWindow::add_tag(GitRunner g, const QString &name, GitHash const &commit_id)
 {
-	runPtyGit(QString{}, g, Git_add_tag{name, commit_id}, nullptr, {});
+	runPtyGit(QString{}, g, Git_add_tag{name.toStdString(), commit_id}, nullptr, {});
 }
 
 /**
@@ -2906,7 +2906,7 @@ void MainWindow::resetFile(const QStringList &paths)
 		cmd = cmd.arg(paths[0]);
 		if (askAreYouSureYouWantToRun(tr("Reset a file"), "> " + cmd)) {
 			for (QString const &path : paths) {
-				g.resetFile(path);
+				g.resetFile(path.toStdString());
 			}
 			reopenRepository(true, {});
 		}
@@ -4386,7 +4386,7 @@ void MainWindow::mergeBranch(QString const &commit, GitMergeFastForward ff, bool
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	g.mergeBranch(commit, ff, squash);
+	g.mergeBranch(commit.toStdString(), ff, squash);
 	reopenRepository(true, {});
 }
 
@@ -4408,7 +4408,7 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 	text += "> git rebase " + QString::fromStdString(commit->commit_id.toString());
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
 	if (r == QMessageBox::Ok) {
-		g.rebaseBranch(QString::fromStdString(commit->commit_id.toString()));
+		g.rebaseBranch(commit->commit_id.toString());
 		reopenRepository(true, {});
 	}
 }
@@ -4518,7 +4518,7 @@ void MainWindow::showStatus()
 		msgNoRepositorySelected();
 		return;
 	}
-	QString s = g.status();
+	QString s = (QS)g.status();
 	TextEditDialog dlg(this);
 	dlg.setWindowTitle(tr("Status"));
 	dlg.setText(s, true);
@@ -4880,7 +4880,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			return;
 		}
 		if (a == a_checkout_this) {
-			checkoutLocalBranch(local_branches[0].text);
+			checkoutLocalBranch(local_branches[0].text.toStdString());
 			return;
 		}
 		if (a == a_delbranch) {
@@ -4998,7 +4998,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 			QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 			if (a == a_stage) {
 				for_each_selected_files([&](QString const &path){
-					g.stage(path);
+					g.stage(path.toStdString());
 				});
 				updateCurrentFileList();
 				return;
@@ -5119,7 +5119,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 			if (a) {
 				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				if (a == a_unstage) {
-					g.unstage(path);
+					g.unstage(path.toStdString());
 					reopenRepository(false, {});
 				} else if (a == a_history) {
 					execFileHistory(item);
@@ -5437,9 +5437,9 @@ std::optional<GitCommitItem> MainWindow::queryCommit(GitHash const &id)
 	return git().queryCommitItem(id);
 }
 
-bool MainWindow::checkoutLocalBranch(QString const &name)
+bool MainWindow::checkoutLocalBranch(std::string const &name)
 {
-	if (!name.isEmpty()) {
+	if (!name.empty()) {
 		GitRunner g = git();
 		bool ok = g.checkout(name);
 		if (ok) {
@@ -5496,14 +5496,14 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 		}
 		if (op == CheckoutDialog::Operation::HeadDetached) {
 			if (id.isValid()) {
-				bool ok = g.checkout_detach(QString::fromStdString(id.toString()));
+				bool ok = g.checkout_detach(id.toString());
 				if (ok) {
 					reopenRepository(true, {});
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
-				bool ok = g.checkout(name, QString::fromStdString(id.toString()));
+				bool ok = g.checkout(name.toStdString(), id.toString());
 				if (ok) {
 					reopenRepository(true, {});
 				} else {
@@ -5518,7 +5518,7 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::ExistingLocalBranch) {
-			checkoutLocalBranch(name);
+			checkoutLocalBranch(name.toStdString());
 		}
 	}
 }
@@ -5546,7 +5546,7 @@ bool MainWindow::isValidWorkingCopy(QString const &local_dir)
 
 void MainWindow::emitWriteLog(const LogData &logdata)
 {
-	//@TODO: emit sigWriteLog(logdata);
+	emit sigWriteLog(logdata);
 }
 
 QString MainWindow::findFileID(GitHash const &commit_id, const QString &file)

@@ -4,6 +4,7 @@
 #include "AvatarLoader.h"
 #include "MainWindow.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include "gpg.h"
 
 struct CommitPropertyDialog::Private {
@@ -38,7 +39,7 @@ void CommitPropertyDialog::init()
 	QString message = m->commit.message;
 	QString detail;
 	{
-		QString s = mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
+		QString s = (QS)mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
 		if (s.startsWith(message)) {
 			s = s.mid(message.length());
 		}

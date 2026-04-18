@@ -123,14 +123,14 @@ size_t GitHash::_std_hash() const
 	return crc32(0, id_, sizeof(id_));
 }
 
-bool GitHash::isValidID(const QString &id)
+bool GitHash::isValidID(std::string const &id)
 {
 	int zero = 0;
 	int n = id.size();
 	if (n >= 4 && n <= GIT_ID_LENGTH) {
-		ushort const *p = id.utf16();
+		char const *p = id.c_str();
 		for (int i = 0; i < n; i++) {
-			uchar c = p[i];
+			char c = p[i];
 			if (c == '0') {
 				zero++;
 			} else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {

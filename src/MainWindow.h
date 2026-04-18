@@ -651,7 +651,7 @@ public:
 	bool isValidWorkingCopy(QString const &dir) const;
 	void autoOpenRepository(QString dir, QString const &commit_id = {});
 	std::optional<GitCommitItem> queryCommit(const GitHash &id);
-	bool checkoutLocalBranch(QString const &name);
+	bool checkoutLocalBranch(const std::string &name);
 	void checkout(QWidget *parent, const GitCommitItem &commit, std::function<void ()> accepted_callback = {});
 	void checkout();
 	bool jumpToCommit(const GitHash &id);

@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include "UserEvent.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include <QFileDialog>
 
 WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
@@ -128,7 +129,7 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 		GitContext gcx;
 		gcx.git_command = git_command_path().toStdString();
 		Git g(gcx, {}, {}, {});
-		default_branch_name_ = g.getDefaultBranch();
+		default_branch_name_ = (QS)g.getDefaultBranch();
 		ui->lineEdit_default_branch_name->setEnabled(false);
 		if (default_branch_name_ == "main") {
 			ui->radioButton_branch_main->setChecked(true);

@@ -119,6 +119,7 @@ public:
 		return determineFileType(in.data(), in.size());
 	}
 	std::string determineFileType(QString const &path);
+	std::string determineFileType(std::string const &path);
 
 	static bool isMainThread();
 
