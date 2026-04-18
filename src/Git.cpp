@@ -1272,7 +1272,8 @@ std::string Git::getCherryPicking() const
 	QString path = dir / ".git/CHERRY_PICK_HEAD";
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
-		std::string line{misc::trimmed(file.readLine())};
+		QByteArray ba = file.readLine();
+		std::string line{misc::trimmed(QBA(ba).sv())};
 		if (GitHash::isValidID(line)) {
 			return line;
 		}
