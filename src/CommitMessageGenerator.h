@@ -27,7 +27,7 @@ private:
 	GenerativeAI::Model ai_model();
 public:
 	CommitMessageGenerator();
-	Result generate(std::string const &diff, QString const &hint = {});
+	Result generate(std::string const &diff);
 	static std::string diff_head(GitRunner g);
 	static Result Error(std::string const &status, std::string const &message)
 	{

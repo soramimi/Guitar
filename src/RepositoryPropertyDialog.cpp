@@ -129,7 +129,7 @@ const std::vector<GitRemote> *RepositoryPropertyDialog::remotes() const
 
 void RepositoryPropertyDialog::setSshKey_(const QString &sshkey)
 {
-	git().setSshKey(sshkey);
+	git().setSshKey(sshkey.toStdString());
 }
 
 /**

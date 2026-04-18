@@ -3,7 +3,7 @@
 #include "ApplicationSettings.h"
 #include "CommitMessageGenerator.h"
 #include "Git.h"
-#include <QDir>
+#include "common/q/Dir.h"
 
 static std::string determineFileType(std::string const &path)
 {
@@ -12,7 +12,7 @@ static std::string determineFileType(std::string const &path)
 
 int genmsg()
 {
-	std::string dir = QDir::currentPath().toStdString();
+	std::string dir = Dir::currentPath();
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir, std::string{}, std::string{});
 	std::string cmd = "diff --name-only HEAD";
 	auto result = g->git(cmd);

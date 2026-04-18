@@ -12,6 +12,7 @@ public:
 	std::string path() const;
 	static Dir current();
 	static bool setCurrent(std::string const &path);
+	static std::string currentPath();
 };
 
 #endif // DIR_H

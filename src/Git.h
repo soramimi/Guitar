@@ -116,7 +116,7 @@ public:
 		return session_->workingDir();
 	}
 	const std::string &sshKey() const;
-	void setSshKey(const QString &sshkey);
+	void setSshKey(std::string const &sshkey);
 
 	QString getCurrentBranchName();
 	bool isValidWorkingCopy() const;

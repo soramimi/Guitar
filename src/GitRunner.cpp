@@ -31,24 +31,24 @@ GitRunner::operator bool() const
 GitRunner GitRunner::dup() const
 {
 	Git *newgit = new Git();
-	newgit->session_ = git->session_->dup();
+	newgit->session_ = gitptr()->session_->dup();
 	return std::shared_ptr<Git>(newgit);
 }
 
 GitObjectCache *GitRunner::getObjCache()
 {
 	Q_ASSERT(git);
-	return git->session_->getObjectCache();
+	return gitptr()->session_->getObjectCache();
 }
 
 void GitRunner::clearCommandCache()
 {
-	if (git) git->clearCommandCache();
+	if (git) gitptr()->clearCommandCache();
 }
 
 void GitRunner::clearObjectCache()
 {
-	if (git) git->clearObjectCache();
+	if (git) gitptr()->clearObjectCache();
 }
 
 std::optional<GitCommitItem> GitRunner::parseCommit(std::vector<char> const &ba)
@@ -58,65 +58,56 @@ std::optional<GitCommitItem> GitRunner::parseCommit(std::vector<char> const &ba)
 
 bool GitRunner::isValidWorkingCopy(std::string const &dir) const
 {
-	return git && git->isValidWorkingCopy(dir);
+	return git && gitptr()->isValidWorkingCopy(dir);
 }
 
 bool GitRunner::isValidWorkingCopy() const
 {
-	return git && git->isValidWorkingCopy();
+	return git && gitptr()->isValidWorkingCopy();
 }
 
 void GitRunner::setWorkingRepositoryDir(std::string const &repo, std::string const &sshkey)
 {
-	Q_ASSERT(git);
-	git->setWorkingRepositoryDir(repo, sshkey);
+	gitptr()->setWorkingRepositoryDir(repo, sshkey);
 }
 
 void GitRunner::setSubmodulePath(std::string const &submodpath)
 {
-	Q_ASSERT(git);
-	git->setSubmodulePath(submodpath);
+	gitptr()->setSubmodulePath(submodpath);
 }
 
 std::string GitRunner::workingDir() const
 {
-	Q_ASSERT(git);
-	return git->workingDir();
+	return gitptr()->workingDir();
 }
 
 const std::string &GitRunner::sshKey() const
 {
-	Q_ASSERT(git);
-	return git->sshKey();
+	return gitptr()->sshKey();
 }
 
-void GitRunner::setSshKey(const QString &sshkey) const
+void GitRunner::setSshKey(std::string const &sshkey)
 {
-	Q_ASSERT(git);
-	git->setSshKey(sshkey);
+	gitptr()->setSshKey(sshkey);
 }
 
 QString GitRunner::getMessage(const QString &id)
 {
-	Q_ASSERT(git);
-	return git->getMessage(id);
+	return gitptr()->getMessage(id);
 }
 
 QString GitRunner::errorMessage(const std::optional<GitResult> &var) const
 {
-	Q_ASSERT(git);
-	return git->errorMessage(var);
+	return gitptr()->errorMessage(var);
 }
 
 bool GitRunner::remove(std::string const &path)
 {
-	Q_ASSERT(git);
-	return git->remove(path);
+	return gitptr()->remove(path);
 }
 
 GitHash GitRunner::revParse(const QString &name, bool use_cache)
 {
-	Q_ASSERT(git);
 	if (name == "HEAD") {
 		use_cache = false;
 	}
@@ -125,326 +116,274 @@ GitHash GitRunner::revParse(const QString &name, bool use_cache)
 		Q_ASSERT(cache);
 		return cache->revParse(*this, name);
 	} else {
-		return git->rev_parse(name);
+		return gitptr()->rev_parse(name);
 	}
 }
 
 void GitRunner::setRemoteURL(const GitRemote &remote)
 {
-	Q_ASSERT(git);
-	git->setRemoteURL(remote);
+	gitptr()->setRemoteURL(remote);
 }
 
 void GitRunner::addRemoteURL(const GitRemote &remote)
 {
-	Q_ASSERT(git);
-	git->addRemoteURL(remote);
+	gitptr()->addRemoteURL(remote);
 }
 
 void GitRunner::removeRemote(std::string const &name)
 {
-	Q_ASSERT(git);
-	git->removeRemote(name);
+	gitptr()->removeRemote(name);
 }
 
 QStringList GitRunner::getRemotes()
 {
-	Q_ASSERT(git);
-	return git->getRemotes();
+	return gitptr()->getRemotes();
 }
 
 QString GitRunner::version()
 {
-	Q_ASSERT(git);
-	return git->version();
+	return gitptr()->version();
 }
 
 bool GitRunner::init()
 {
-	Q_ASSERT(git);
-	return git->init();
+	return gitptr()->init();
 }
 
 QList<GitTag> GitRunner::tags()
 {
-	Q_ASSERT(git);
-	return git->tags();
+	return gitptr()->tags();
 }
 
 bool GitRunner::tag(const QString &name, const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->tag(name, id);
+	return gitptr()->tag(name, id);
 }
 
 bool GitRunner::delete_tag(const QString &name, bool remote)
 {
-	Q_ASSERT(git);
-	return git->delete_tag(name, remote);
+	return gitptr()->delete_tag(name, remote);
 }
 
 void GitRunner::resetFile(const QString &path)
 {
-	Q_ASSERT(git);
-	git->resetFile(path);
+	gitptr()->resetFile(path);
 }
 
 void GitRunner::resetAllFiles()
 {
-	Q_ASSERT(git);
-	git->resetAllFiles();
+	gitptr()->resetAllFiles();
 }
 
 void GitRunner::removeFile(std::string const &path, bool rm_real_file)
 {
-	Q_ASSERT(git);
-	git->rm(path, rm_real_file);
+	gitptr()->rm(path, rm_real_file);
 }
 
 GitUser GitRunner::getUser(GitSource purpose)
 {
 	if (!git) return {}; // gitコマンドが存在しない場合は空のオブジェクトを返し、ASSERTでは落とさない。
-	// Q_ASSERT(git);
-	return git->getUser(purpose);
+	return gitptr()->getUser(purpose);
 }
 
 void GitRunner::setUser(const GitUser &user, bool global)
 {
-	Q_ASSERT(git);
-	git->setUser(user, global);
+	gitptr()->setUser(user, global);
 }
 
 QString GitRunner::getDefaultBranch()
 {
-	Q_ASSERT(git);
-	return git->getDefaultBranch();
+	return gitptr()->getDefaultBranch();
 }
 
 void GitRunner::setDefaultBranch(const QString &branchname)
 {
-	Q_ASSERT(git);
-	git->setDefaultBranch(branchname);
+	gitptr()->setDefaultBranch(branchname);
 }
 
 void GitRunner::unsetDefaultBranch()
 {
-	Q_ASSERT(git);
-	git->unsetDefaultBranch();
+	gitptr()->unsetDefaultBranch();
 }
 
 QDateTime GitRunner::repositoryLastModifiedTime()
 {
-	Q_ASSERT(git);
-	return git->repositoryLastModifiedTime();
+	return gitptr()->repositoryLastModifiedTime();
 }
 
 QString GitRunner::status()
 {
-	Q_ASSERT(git);
-	return git->status();
+	return gitptr()->status();
 }
 
 bool GitRunner::commit(const QString &text, bool sign, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->commit(text, sign, pty);
+	return gitptr()->commit(text, sign, pty);
 }
 
 bool GitRunner::commit_amend_m(const QString &text, bool sign, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->commit_amend_m(text, sign, pty);
+	return gitptr()->commit_amend_m(text, sign, pty);
 }
 
 bool GitRunner::revert(const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->revert(id);
+	return gitptr()->revert(id);
 }
 
 bool GitRunner::push_tags(AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->push_tags(pty);
+	return gitptr()->push_tags(pty);
 }
 
 void GitRunner::remote_v(std::vector<GitRemote> *out)
 {
-	Q_ASSERT(git);
-	git->remote_v(out);
+	gitptr()->remote_v(out);
 }
 
 void GitRunner::createBranch(const QString &name)
 {
-	Q_ASSERT(git);
-	git->createBranch(name.toStdString());
+	gitptr()->createBranch(name.toStdString());
 }
 
 void GitRunner::checkoutBranch(const QString &name)
 {
-	Q_ASSERT(git);
-	git->checkoutBranch(name.toStdString());
+	gitptr()->checkoutBranch(name.toStdString());
 }
 
 void GitRunner::mergeBranch(const QString &name, GitMergeFastForward ff, bool squash)
 {
-	Q_ASSERT(git);
-	git->mergeBranch(name, ff, squash);
+	gitptr()->mergeBranch(name, ff, squash);
 }
 
 bool GitRunner::deleteBranch(const QString &name)
 {
-	Q_ASSERT(git);
-	return git->deleteBranch(name);
+	return gitptr()->deleteBranch(name);
 }
 
 bool GitRunner::checkout(const QString &branch_name, const QString &id)
 {
-	Q_ASSERT(git);
-	return git->checkout(branch_name, id);
+	return gitptr()->checkout(branch_name, id);
 }
 
 bool GitRunner::checkout_detach(const QString &id)
 {
-	Q_ASSERT(git);
-	return git->checkout_detach(id);
+	return gitptr()->checkout_detach(id);
 }
 
 void GitRunner::rebaseBranch(const QString &name)
 {
-	Q_ASSERT(git);
-	git->rebaseBranch(name);
+	gitptr()->rebaseBranch(name);
 }
 
 void GitRunner::rebase_abort()
 {
-	Q_ASSERT(git);
-	git->rebase_abort();
+	gitptr()->rebase_abort();
 }
 
 GitCommitItemList GitRunner::log_all(const GitHash &id, int maxcount)
 {
-	Q_ASSERT(git);
-	return git->log_all(id, maxcount);
+	return gitptr()->log_all(id, maxcount);
 }
 
 GitCommitItemList GitRunner::log_file(const QString &path, int maxcount)
 {
-	Q_ASSERT(git);
-	return git->log_file(path, maxcount);
+	return gitptr()->log_file(path, maxcount);
 }
 
 std::vector<GitHash> GitRunner::rev_list_all(const GitHash &id, int maxcount)
 {
-	Q_ASSERT(git);
-	return git->rev_list_all(id, maxcount);
+	return gitptr()->rev_list_all(id, maxcount);
 }
 
 std::optional<GitCommitItem> GitRunner::log_signature(const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->log_signature(id);
+	return gitptr()->log_signature(id);
 }
 
 GitCommitItemList GitRunner::log(int maxcount)
 {
-	Q_ASSERT(git);
-	return git->log(maxcount);
+	return gitptr()->log(maxcount);
 }
 
 std::optional<GitCommitItem> GitRunner::queryCommitItem(const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->queryCommitItem(id);
+	return gitptr()->queryCommitItem(id);
 }
 
 bool GitRunner::stash()
 {
-	Q_ASSERT(git);
-	return git->stash();
+	return gitptr()->stash();
 }
 
 bool GitRunner::stash_apply()
 {
-	Q_ASSERT(git);
-	return git->stash_apply();
+	return gitptr()->stash_apply();
 }
 
 bool GitRunner::stash_drop()
 {
-	Q_ASSERT(git);
-	return git->stash_drop();
+	return gitptr()->stash_drop();
 }
 
 QList<GitSubmoduleItem> GitRunner::submodules()
 {
-	Q_ASSERT(git);
-	return git->submodules();
+	return gitptr()->submodules();
 }
 
 bool GitRunner::submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->submodule_add(data, force, pty);
+	return gitptr()->submodule_add(data, force, pty);
 }
 
 bool GitRunner::submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->submodule_update(data, pty);
+	return gitptr()->submodule_update(data, pty);
 }
 
 QString GitRunner::queryEntireCommitMessage(const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->queryEntireCommitMessage(id);
+	return gitptr()->queryEntireCommitMessage(id);
 }
 
 QList<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash &new_id)
 {
-	Q_ASSERT(git);
-	return git->diff_raw(old_id, new_id);
+	return gitptr()->diff_raw(old_id, new_id);
 }
 
 QString GitRunner::diff(const QString &old_id, const QString &new_id)
 {
-	Q_ASSERT(git);
-	return git->diff(old_id, new_id);
+	return gitptr()->diff(old_id, new_id);
 }
 
 QString GitRunner::diff_file(const QString &old_path, const QString &new_path)
 {
-	Q_ASSERT(git);
-	return git->diff_file(old_path, new_path);
+	return gitptr()->diff_file(old_path, new_path);
 }
 
 QString GitRunner::diff_to_file(const QString &old_id, const QString &path)
 {
-	Q_ASSERT(git);
-	return git->diff_to_file(old_id, path);
+	return gitptr()->diff_to_file(old_id, path);
 }
 
 std::vector<std::string> GitRunner::diff_name_only_head()
 {
-	Q_ASSERT(git);
-	return git->diff_name_only_head();
+	return gitptr()->diff_name_only_head();
 }
 
 std::string GitRunner::diff_full_index_head_file(const QString &file)
 {
-	Q_ASSERT(git);
-	return git->diff_full_index_head_file(file);
+	return gitptr()->diff_full_index_head_file(file);
 }
 
 std::vector<GitFileStatus> GitRunner::status_s()
 {
-	Q_ASSERT(git);
-	return git->status_s();
+	return gitptr()->status_s();
 }
 
 std::optional<std::vector<char>> GitRunner::cat_file_(const GitHash &id)
 {
-	return git->cat_file(id);
+	return gitptr()->cat_file(id);
 }
 
 GitObject GitRunner::catFile(const GitHash &id, bool use_cache)
@@ -456,7 +395,7 @@ GitObject GitRunner::catFile(const GitHash &id, bool use_cache)
 		return cache->catFile(*this, id);
 	} else {
 		GitObject obj;
-		auto data = git->cat_file(id);
+		auto data = gitptr()->cat_file(id);
 		if (data) {
 			obj.content = (QBA)*data;
 			obj.type = GitObject::Type::UNKNOWN;
@@ -467,162 +406,135 @@ GitObject GitRunner::catFile(const GitHash &id, bool use_cache)
 
 bool GitRunner::clone(const GitCloneData &data, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->clone(data, pty);
+	return gitptr()->clone(data, pty);
 }
 
 void GitRunner::add_A()
 {
-	Q_ASSERT(git);
-	git->add_A();
+	gitptr()->add_A();
 }
 
 bool GitRunner::unstage_all()
 {
-	Q_ASSERT(git);
-	return git->unstage_all();
+	return gitptr()->unstage_all();
 }
 
 void GitRunner::stage(const QString &path)
 {
-	Q_ASSERT(git);
-	git->stage(path);
+	gitptr()->stage(path);
 }
 
 bool GitRunner::stage(const QStringList &paths, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->stage(paths, pty);
+	return gitptr()->stage(paths, pty);
 }
 
 void GitRunner::unstage(const QString &path)
 {
-	Q_ASSERT(git);
-	git->unstage(path);
+	gitptr()->unstage(path);
 }
 
 void GitRunner::unstage(const QStringList &paths)
 {
-	Q_ASSERT(git);
-	git->unstage(paths);
+	gitptr()->unstage(paths);
 }
 
 bool GitRunner::pull(AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->pull(pty);
+	return gitptr()->pull(pty);
 }
 
 bool GitRunner::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	Q_ASSERT(git);
-	return git->fetch(pty, prune);
+	return gitptr()->fetch(pty, prune);
 }
 
 bool GitRunner::reset_head1()
 {
-	Q_ASSERT(git);
-	return git->reset_head1();
+	return gitptr()->reset_head1();
 }
 
 bool GitRunner::reset_hard()
 {
-	Q_ASSERT(git);
-	return git->reset_hard();
+	return gitptr()->reset_hard();
 }
 
 bool GitRunner::clean_df()
 {
-	Q_ASSERT(git);
-	return git->clean_df();
+	return gitptr()->clean_df();
 }
 
 bool GitRunner::push_u(bool set_upstream, const QString &remote, const QString &branch, bool force, AbstractPtyProcess *pty)
 {
-	Q_ASSERT(git);
-	return git->push_u(set_upstream, remote, branch, force, pty);
+	return gitptr()->push_u(set_upstream, remote, branch, force, pty);
 }
 
 QString GitRunner::objectType(const GitHash &id)
 {
-	Q_ASSERT(git);
-	return git->objectType(id);
+	return gitptr()->objectType(id);
 }
 
 bool GitRunner::rm_cached(const QString &file)
 {
-	Q_ASSERT(git);
-	return git->rm_cached(file);
+	return gitptr()->rm_cached(file);
 }
 
 void GitRunner::cherrypick(const QString &name)
 {
-	Q_ASSERT(git);
-	git->cherrypick(name.toStdString());
+	gitptr()->cherrypick(name.toStdString());
 }
 
 QString GitRunner::getCherryPicking() const
 {
-	Q_ASSERT(git);
-	return git->getCherryPicking();
+	return gitptr()->getCherryPicking();
 }
 
 QList<GitBranch> GitRunner::branches()
 {
-	Q_ASSERT(git);
-	return git->branches();
+	return gitptr()->branches();
 }
 
 QString GitRunner::signingKey(GitSource purpose)
 {
-	Q_ASSERT(git);
-	return git->signingKey(purpose);
+	return gitptr()->signingKey(purpose);
 }
 
 bool GitRunner::setSigningKey(const QString &id, bool global)
 {
-	Q_ASSERT(git);
-	return git->setSigningKey(id, global);
+	return gitptr()->setSigningKey(id, global);
 }
 
 GitSignPolicy GitRunner::signPolicy(GitSource source)
 {
-	Q_ASSERT(git);
-	return git->signPolicy(source);
+	return gitptr()->signPolicy(source);
 }
 
 bool GitRunner::setSignPolicy(GitSource source, GitSignPolicy policy)
 {
-	Q_ASSERT(git);
-	return git->setSignPolicy(source, policy);
+	return gitptr()->setSignPolicy(source, policy);
 }
 
 bool GitRunner::configGpgProgram(const QString &path, bool global)
 {
-	Q_ASSERT(git);
-	return git->configGpgProgram(path, global);
+	return gitptr()->configGpgProgram(path, global);
 }
 
 bool GitRunner::reflog(QList<GitReflogItem> *out, int maxcount)
 {
-	Q_ASSERT(git);
-	return git->reflog(out, maxcount);
+	return gitptr()->reflog(out, maxcount);
 }
 
 std::vector<char> GitRunner::blame(const QString &path)
 {
-	Q_ASSERT(git);
-	return git->blame(path);
+	return gitptr()->blame(path);
 }
 
 std::optional<std::vector<GitFileItem>> GitRunner::ls(const QString &path)
 {
-	Q_ASSERT(git);
-	return git->ls(path);
+	return gitptr()->ls(path);
 }
 
 std::optional<std::vector<char>> GitRunner::readfile(const QString &path)
 {
-	Q_ASSERT(git);
-	return git->readfile(path);
+	return gitptr()->readfile(path);
 }

@@ -12,6 +12,17 @@ class Git;
 class GitObjectCache;
 
 class GitRunner {
+private:
+	Git *gitptr()
+	{
+		Git *p = git.get();
+		Q_ASSERT(p);
+		return p;
+	}
+	Git const *gitptr() const
+	{
+		return const_cast<Git *>(git.get());
+	}
 public:
 	std::shared_ptr<Git> git;
 	GitRunner() = default;
@@ -26,7 +37,7 @@ public:
 	void clearCommandCache();
 	void clearObjectCache();
 
-        static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
+	static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
 
 	bool isValidWorkingCopy(const std::string &dir) const;
 
@@ -36,7 +47,7 @@ public:
 	void setSubmodulePath(const std::string &submodpath);
 	std::string workingDir() const;
 	const std::string &sshKey() const;
-	void setSshKey(const QString &sshkey) const;
+	void setSshKey(const std::string &sshkey);
 
 	QString getMessage(const QString &id);
 	QString errorMessage(std::optional<GitResult> const &var) const;
@@ -110,7 +121,7 @@ public:
 	std::string diff_full_index_head_file(QString const &file);
 
 	std::vector<GitFileStatus> status_s();
-        std::optional<std::vector<char> > cat_file_(const GitHash &id);
+	std::optional<std::vector<char> > cat_file_(const GitHash &id);
 	GitObject catFile(const GitHash &id, bool use_cache = true);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 	void add_A();
@@ -140,7 +151,7 @@ public:
 	bool configGpgProgram(QString const &path, bool global);
 
 	bool reflog(QList<GitReflogItem> *out, int maxcount = 100);
-        std::vector<char> blame(QString const &path);
+	std::vector<char> blame(QString const &path);
 
 	std::optional<std::vector<GitFileItem>> ls(const QString &path);
 	std::optional<std::vector<char>> readfile(const QString &path);

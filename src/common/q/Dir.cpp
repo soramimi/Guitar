@@ -41,3 +41,8 @@ bool Dir::setCurrent(const std::string &path)
 	return chdir(path.c_str()) == 0;
 #endif
 }
+
+std::string Dir::currentPath()
+{
+	return current().path();
+}

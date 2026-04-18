@@ -353,7 +353,7 @@ void CommitMessageGenerator::set_ai_model(GenerativeAI::Model model)
  * @param g The Git object.
  * @return The generated commit message.
  */
-CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff, QString const &hint)
+CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff)
 {
 	constexpr int max_message_count = 5;
 	

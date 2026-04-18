@@ -54,26 +54,21 @@ void Git::setSubmodulePath(std::string const &submodpath)
 	gitinfo().submodule_path = submodpath;
 }
 
-
 std::string const &Git::sshKey() const
 {
 	return gitinfo().ssh_key_override;
 }
 
-void Git::setSshKey(QString const &sshkey)
+void Git::setSshKey(const std::string &sshkey)
 {
-	gitinfo().ssh_key_override = sshkey.toStdString();
+	gitinfo().ssh_key_override = sshkey;
 }
-
-
 
 QString Git::status()
 {
 	auto result = git("status");
 	return resultQString(result);
 }
-
-
 
 std::vector<char> Git::toQByteArray(std::optional<GitResult> const &var) const
 {
