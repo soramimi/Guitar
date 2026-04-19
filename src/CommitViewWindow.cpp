@@ -5,7 +5,7 @@
 
 struct CommitViewWindow::Private {
 	GitCommitItem const *commit = nullptr;
-	QList<GitDiff> diff_list;
+	std::vector<GitDiff> diff_list;
 };
 
 MainWindow *CommitViewWindow::mainwindow()

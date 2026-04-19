@@ -33,6 +33,7 @@ public:
 	QBA(std::vector<char> const &s) : QBA(s.data(), s.size()) {}
 	std::vector<char> vc() const { return std::vector<char>(begin(), end()); }
 	std::string_view sv() const { return std::string_view(data(), size()); }
+	operator std::string_view () const { return sv(); }
 };
 
 class QSL : public QStringList {

@@ -331,12 +331,13 @@ QString misc::makeDateTimeString(QDateTime const &dt)
  * @param with 先頭に存在するか確認する文字列
  * @return 先頭がwithで始まる場合はtrue、そうでない場合はfalse
  */
-bool misc::starts_with(std::string const &str, std::string const &with)
+bool misc::starts_with(std::string_view const &str, std::string_view const &with)
 {
-	return strncmp(str.c_str(), with.c_str(), with.size()) == 0;
+	if (str.size() < with.size()) return false;
+	return strncmp(str.data(), with.data(), with.size()) == 0;
 }
 
-bool misc::starts_with(std::string const &str, char with)
+bool misc::starts_with(std::string_view const &str, char with)
 {
 	return !str.empty() && str[0] == with;
 }
@@ -350,21 +351,16 @@ bool misc::starts_with(std::string const &str, char with)
  * @param with 終端に存在するか確認する文字列
  * @return 終端がwithで終わる場合はtrue、そうでない場合はfalse
  */
-bool misc::ends_with(std::string const &str, std::string const &with)
+bool misc::ends_with(std::string_view const &str, std::string_view const &with)
 {
-	int n = (int)str.size();
-	int m = (int)with.size();
-	if (n < m) return false;
-	return strncmp(str.c_str() + n - m, with.c_str(), m) == 0;
+	if (str.size() < with.size()) return false;
+	return memcmp(str.data() + str.size() - with.size(), with.data(), with.size()) == 0;
 }
 
-bool misc::ends_with(std::string const &str, char with)
+bool misc::ends_with(std::string_view const &str, char with)
 {
-	int n = (int)str.size();
-	if (n < 1) return false;
-	return str[n - 1] == with;
+	return !str.empty() && str[str.size() - 1] == with;
 }
-
 
 /**
  * @brief 文字列の一部分を取得する

@@ -5,6 +5,7 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "common/q/helper.h"
+#include "common/strformat.h"
 
 // PathToIdMap
 
@@ -48,17 +49,17 @@ GitRunner GitDiffManager::git_for_submodule(GitRunner g, GitSubmoduleItem const 
 	return global->mainwindow->git_for_submodule(g, submod);
 }
 
-QString GitDiffManager::makeKey(QString const &a_id, QString const &b_id)
+std::string GitDiffManager::makeKey(std::string const &a_id, std::string const &b_id)
 {
 	return  a_id + ".." + b_id;
 }
 
-QString GitDiffManager::makeKey(GitDiff const &diff)
+std::string GitDiffManager::makeKey(GitDiff const &diff)
 {
 	return makeKey(diff.blob.a_id_or_path, diff.blob.b_id_or_path);
 }
 
-QString GitDiffManager::prependPathPrefix(QString const &path)
+std::string GitDiffManager::prependPathPrefix(std::string const &path)
 {
 	return PATH_PREFIX + path;
 }
@@ -85,8 +86,8 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 
 	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
 
-	out.diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out.index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
+	out.diff = "diff --git " + ("a/" + info->path) + ' ' + ("b/" + info->path);
+	out.index = "index " + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
 	out.path = info->path;
 	out.blob = info->blob;
 	out.a_submodule.item = info->a_submodule.item;
@@ -134,9 +135,9 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
  * @param out
  * @return
  */
-QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<GitSubmoduleItem> &submodules)
+std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const std::vector<GitSubmoduleItem> &submodules)
 {
-	QList<GitDiff> diffs;
+	std::vector<GitDiff> diffs;
 
 	if (id.isValid()) {
 
@@ -147,11 +148,11 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 			parseGitTreeObject(g, objcache_, newer_commit.tree_id, {}, &files);
 
 			if (newer_commit.parents.empty()) { // 親がないなら最古のコミット
-				auto F = [&](auto self, GitRunner g, QString const &dir, GitTreeItemList const *files, QList<GitDiff> *diffs)-> void {
+				auto F = [&](auto self, GitRunner g, std::string const &dir, GitTreeItemList const *files, std::vector<GitDiff> *diffs)-> void {
 					for (GitTreeItem const &d : *files) {
-						QString path = misc::joinWithSlash(dir, (QS)d.name);
+						std::string path = misc::joinWithSlash(dir, d.name);
 						if (d.type == GitTreeItem::BLOB) {
-							GitDiff diff((QS)d.id, path, (QS)d.mode);
+							GitDiff diff(d.id, path, d.mode);
 							diffs->push_back(diff);
 						} else if (d.type == GitTreeItem::TREE) {
 							GitTreeItemList files2;
@@ -160,9 +161,9 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 						}
 					}
 				};
-				F(F, g, QString(), &files, &diffs); // ツリー全体を取得
+				F(F, g, {}, &files, &diffs); // ツリー全体を取得
 			} else {
-				std::map<QString, GitDiff> diffmap;
+				std::map<std::string, GitDiff> diffmap;
 
 				std::set<std::string> deleted_set;
 				std::set<std::string> renamed_set;
@@ -193,8 +194,8 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 						file = item.files.back(); // 名前変更された場合はリストの最後が新しい名前
 					}
 					GitDiff diff;
-					diff.diff = QString("diff --git a/%1 b/%2").arg(file).arg(file);
-					diff.index = QString("index %1..%2 %3").arg(item.a.id).arg(item.b.id).arg(item.b.mode);
+					diff.diff = (QS)fmt("diff --git a/%s b/%s")(file)(file);
+					diff.index = (QS)fmt("index %s..%s %s")(item.a.id)(item.b.id)(item.b.mode);
 					diff.path = (QS)file;
 					diff.mode = (QS)item.b.mode;
 					if (GitHash::isValidID(item.a.id)) diff.blob.a_id_or_path = (QS)item.a.id;
@@ -232,7 +233,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 		GitCommitTree head_tree(objcache_);
 		head_tree.parseCommit(g, head_id); // HEADが親
 
-		QString zeros(GIT_ID_LENGTH, '0');
+		std::string zeros(GIT_ID_LENGTH, '0');
 
 		for (GitFileStatus const &fs : stats) {
 			std::string path = fs.path1();
@@ -252,8 +253,8 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 				item.blob.b_id_or_path = prependPathPrefix((QS)path); // 実在するファイルパス
 			}
 
-			item.diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-			item.index = QString("index %1..%2 %3").arg(item.blob.a_id_or_path).arg(zeros).arg(item.mode);
+			item.diff = (QS)fmt("diff --git a/%s b/%s")(path)(path);
+			item.index = (QS)fmt("index %s..%s %s")(item.blob.a_id_or_path)(zeros)(item.mode);
 			item.path = (QS)path;
 
 			diffs.push_back(item);
@@ -276,7 +277,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 				auto Do = [this, &g, &submodules](GitDiff *diff){
 					for (auto j = 0; j < submodules.size(); j++) {
 						GitSubmoduleItem const &submod = submodules[j];
-						if (submod.path != diff->path.toStdString()) continue;
+						if (submod.path != diff->path) continue;
 						auto GetSubmoduleDetail = [&](GitRunner g, QString const &id){
 							GitDiff::SubmoduleDetail out;
 							if (id.startsWith('*')) {
@@ -296,8 +297,8 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 							}
 							return out;
 						};
-						auto a = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.a_id_or_path);
-						auto b = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), diff->blob.b_id_or_path);
+						auto a = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), (QS)diff->blob.a_id_or_path);
+						auto b = std::async(std::launch::async, GetSubmoduleDetail, git_for_submodule(g, submod), (QS)diff->blob.b_id_or_path);
 						diff->a_submodule = a.get();
 						diff->b_submodule = b.get();
 						break;
@@ -314,14 +315,14 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 	}
 
 	std::sort(diffs.begin(), diffs.end(), [](GitDiff const &left, GitDiff const &right){
-		return left.path.compare(right.path, Qt::CaseInsensitive) < 0;
+		return misc::stricmp(left.path, right.path) < 0;
 	});
 	// trace.end();
 
 	return diffs;
 }
 
-QList<GitDiff> GitDiffManager::diff_uncommited(GitRunner g, const QList<GitSubmoduleItem> &submodules)
+std::vector<GitDiff> GitDiffManager::diff_uncommited(GitRunner g, const std::vector<GitSubmoduleItem> &submodules)
 {
 	return diff(g, {}, submodules);
 }

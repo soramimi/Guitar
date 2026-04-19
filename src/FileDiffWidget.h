@@ -100,7 +100,7 @@ private:
 	ViewStyle viewstyle() const;
 
 	GitRunner git();
-	GitObject catFile(GitRunner g, QString const &id);
+	GitObject catFile(GitRunner g, const std::string &id);
 
 	int totalTextLines() const;
 
@@ -117,7 +117,7 @@ private:
 	void setSideBySide(const GitDiff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
 	void setSideBySide_(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
-	bool isValidID_(QString const &id);
+	bool isValidID(std::string const &id);
 
 	FileViewType setupPreviewWidget();
 
@@ -127,7 +127,7 @@ private:
 	void refrectScrollBarV();
 	void refrectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const GitSubmoduleItem *submodule, const GitCommitItem *submodule_commit);
-	std::string diffObjects(QString const &a_id, QString const &b_id);
+	std::string diffObjects(const std::string &a_id, const std::string &b_id);
 	bool setSubmodule(const GitDiff &diff);
 protected:
 	void resizeEvent(QResizeEvent *) override;
@@ -146,7 +146,7 @@ public:
 	void scrollToBottom();
 
 	void updateDiffView(const GitDiff &info, bool uncommited);
-	void updateDiffView_(const QString &id_left, const QString &id_right, QString const &path = QString());
+	void updateDiffView_(const std::string &id_left, const std::string &id_right, const std::string &path = {});
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);

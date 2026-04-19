@@ -13,6 +13,7 @@
 #include <QFile>
 #include <memory>
 #include <set>
+#include "common/strformat.h"
 
 struct GitObjectManager::Private {
 	std::mutex *mutex_ = nullptr;
@@ -453,7 +454,7 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, GitTreeItemList *out)
 {
 	*out = {};
-	std::string_view s{ba.data(), ba.size()};
+	std::string_view s{ba.data(), (size_t)ba.size()};
 	std::vector<std::string> lines = misc::splitLines(s, false);
 	for (std::string const &line : lines) {
 		auto tab = line.find('\t'); // タブより後ろにパスがある
@@ -546,4 +547,14 @@ QStringList GitObjectManager::findObject(const QString &id, QString const &repo_
 		}
 	}
 	return list;
+}
+
+std::string GitTreeItem::to_string_() const
+{
+	std::string t;
+	switch (type) {
+	case TREE: t = "TREE"; break;
+	case BLOB: t = "BLOB"; break;
+	}
+	return fmt("GitTreeItem:{ %s %s %s %s }")(t)(id)(mode)(name);
 }

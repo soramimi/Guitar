@@ -207,7 +207,7 @@ public:
 
 	std::string getMessage(const std::string &id);
 
-	using ReflogItemList = QList<GitReflogItem>;
+	using ReflogItemList = std::vector<GitReflogItem>;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
@@ -222,13 +222,13 @@ public:
 		std::string commit_id;
 		std::string name;
 	};
-	QList<RemoteInfo> ls_remote();
+	std::vector<RemoteInfo> ls_remote();
 
 	bool stash();
 	bool stash_apply();
 	bool stash_drop();
 
-	QList<GitSubmoduleItem> submodules();
+	std::vector<GitSubmoduleItem> submodules();
 	bool submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
@@ -255,10 +255,10 @@ struct NamedCommitItem {
 	std::string name;
 	GitHash id;
 };
-using NamedCommitList = QList<NamedCommitItem>;
+using NamedCommitList = std::vector<NamedCommitItem>;
 
 void parseDiff(const std::string_view &s, GitDiff const *info, GitDiff *out);
 
-void parseGitSubModules(QByteArray const &ba, QList<GitSubmoduleItem> *out);
+void parseGitSubModules(QByteArray const &ba, std::vector<GitSubmoduleItem> *out);
 
 #endif // GIT_H

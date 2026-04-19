@@ -326,7 +326,7 @@ bool GitRunner::stash_drop()
 	return gitptr()->stash_drop();
 }
 
-QList<GitSubmoduleItem> GitRunner::submodules()
+std::vector<GitSubmoduleItem> GitRunner::submodules()
 {
 	return gitptr()->submodules();
 }
@@ -519,7 +519,7 @@ bool GitRunner::configGpgProgram(std::string const &path, bool global)
 	return gitptr()->configGpgProgram(path, global);
 }
 
-bool GitRunner::reflog(QList<GitReflogItem> *out, int maxcount)
+bool GitRunner::reflog(std::vector<GitReflogItem> *out, int maxcount)
 {
 	return gitptr()->reflog(out, maxcount);
 }

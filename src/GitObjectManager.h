@@ -84,15 +84,7 @@ struct GitTreeItem {
 	std::string id;
 	std::string mode;
 
-	QString to_string_() const
-	{
-		QString t;
-		switch (type) {
-		case TREE: t = "TREE"; break;
-		case BLOB: t = "BLOB"; break;
-		}
-		return QString("GitTreeItem:{ %1 %2 %3 %4 }").arg(t).arg(id).arg(mode).arg(name);
-	}
+	std::string to_string_() const;
 };
 
 using GitTreeItemList = QList<GitTreeItem>;

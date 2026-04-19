@@ -9,10 +9,10 @@
 #include "common/q/Dir.h"
 #include <QString>
 
-void GitCommitItem::setParents(const QStringList &list)
+void GitCommitItem::setParents(std::vector<std::string> const &list)
 {
 	parent_ids.clear();
-	for (QString const &id : list) {
+	for (std::string const &id : list) {
 		parent_ids.append(GitHash(id));
 	}
 }
@@ -566,11 +566,11 @@ std::optional<GitCommitItem> Git::parseCommitItem(std::string const &line)
 				} else if (key == "trust") {
 					item.sign.trust = (QS)val;
 				} else if (key == "parent") {
-					QStringList list;
+					std::vector<std::string> list;
 					auto vec = misc::splitWords(val);
 					for (std::string_view const &v : vec) {
 						if (!v.empty()) {
-							list.push_back((QS)v);
+							list.push_back((std::string)v);
 						}
 					}
 					item.setParents(list);
@@ -924,9 +924,9 @@ std::string Git::submoduleURL(std::string const &path)
 	return {};
 }
 
-QList<GitSubmoduleItem> Git::submodules()
+std::vector<GitSubmoduleItem> Git::submodules()
 {
-	QList<GitSubmoduleItem> mods;
+	std::vector<GitSubmoduleItem> mods;
 
 	auto result = git("submodule");
 	QString text = resultQString(result);
@@ -1650,9 +1650,9 @@ std::vector<char> Git::blame(std::string const &path)
 	return {};
 }
 
-QList<Git::RemoteInfo> Git::ls_remote()
+std::vector<Git::RemoteInfo> Git::ls_remote()
 {
-	QList<RemoteInfo> list;
+	std::vector<RemoteInfo> list;
 	std::string cmd = "ls-remote";
 	auto result = git(cmd);
 	if (result) {
@@ -1754,10 +1754,10 @@ bool Git::configGpgProgram(std::string const &path, bool global)
 
 // GitDiff
 
-void GitDiff::makeForSingleFile(GitDiff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode)
+void GitDiff::makeForSingleFile(GitDiff *diff, std::string const &id_a, std::string const &id_b, std::string const &path, std::string const &mode)
 {
-	diff->diff = QString("diff --git a/%1 b/%2").arg(path).arg(path);
-	diff->index = QString("index %1..%2 %3").arg(id_a).arg(id_b).arg(0);
+	diff->diff = fmt("diff --git a/%s b/%s").arg(path)(path);
+	diff->index = fmt("index %s..%s %d")(id_a)(id_b)(0);
 	diff->blob.a_id_or_path = id_a;
 	diff->blob.b_id_or_path = id_b;
 	diff->path = path;
@@ -1771,8 +1771,8 @@ void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 {
 	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
 
-	out->diff = QString("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out->index = QString("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
+	out->diff = std::string("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
+	out->index = std::string("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
 	out->path = info->path;
 	out->blob = info->blob;
 
@@ -1808,10 +1808,10 @@ void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 }
 
 
-void parseGitSubModules(const QByteArray &ba, QList<GitSubmoduleItem> *out)
+void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out)
 {
 	*out = {};
-	QStringList lines = misc::splitLines(QString::fromUtf8(ba));
+	std::vector<std::string> lines = misc::splitLines((QBA)ba, false);
 	GitSubmoduleItem submod;
 	auto Push = [&](){
 		if (!submod.name.empty()) {
@@ -1820,10 +1820,10 @@ void parseGitSubModules(const QByteArray &ba, QList<GitSubmoduleItem> *out)
 		submod = {};
 	};
 	for (int i = 0; i < lines.size(); i++) {
-		QString line = lines[i].trimmed();
-		if (line.startsWith('[')) {
+		std::string_view line = misc::trimmed(lines[i]);
+		if (misc::starts_with(line, '[')) {
 			Push();
-			if (line.startsWith("[submodule ") && line.endsWith(']')) {
+			if (misc::starts_with(line, "[submodule ") && misc::ends_with(line, ']')) {
 				int i = 11;
 				int j = line.size() - 1;
 				if (i + 1 < j && line[i] == '\"') {
@@ -1832,17 +1832,17 @@ void parseGitSubModules(const QByteArray &ba, QList<GitSubmoduleItem> *out)
 						j--;
 					}
 				}
-				submod.name = line.mid(i, j - i).toStdString();
+				submod.name = line.substr(i, j - i);
 			}
 		} else {
-			int i = line.indexOf('=');
-			if (i > 0) {
-				QString key = line.mid(0, i).trimmed();
-				QString val = line.mid(i + 1).trimmed();
+			auto i = line.find('=');
+			if (i != std::string::npos && i > 0) {
+				std::string key{misc::trimmed(line.substr(0, i))};
+				std::string val{misc::trimmed(line.substr(i + 1))};
 				if (key == "path") {
-					submod.path = val.toStdString();
+					submod.path = val;
 				} else if (key == "url") {
-					submod.url = val.toStdString();
+					submod.url = val;
 				}
 			}
 		}

@@ -145,17 +145,17 @@ void FileHistoryWindow::updateDiffView()
 		GitCommitItem const &commit_right = m->commit_item_list[row];    // newer
 
 		auto FindFileID = [&](GitCommitItem const &commit){
-			return mainwindow()->findFileID(commit.commit_id, m->path);
+			return mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
 		};
-		QString id_left = FindFileID(commit_left);
-		QString id_right = FindFileID(commit_right);
+		std::string id_left = FindFileID(commit_left);
+		std::string id_right = FindFileID(commit_right);
 
-		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path);
+		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path.toStdString());
 	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
 		GitCommitItem const &commit = m->commit_item_list[row];    // newer
-		QString id = mainwindow()->findFileID(commit.commit_id, m->path);
+		std::string id = mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
 
-		GitDiff diff(id, m->path, {});
+		GitDiff diff(id, m->path.toStdString(), {});
 		ui->widget_diff_view->updateDiffView(diff, false);
 	}
 }

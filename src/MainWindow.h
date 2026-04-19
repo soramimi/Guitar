@@ -131,8 +131,8 @@ public:
 
 private:
 	struct ObjectData {
-		QString id;
-		QString path;
+		std::string id;
+		std::string path;
 		GitSubmoduleItem submod;
 		GitCommitItem submod_commit;
 		QString header;
@@ -272,7 +272,7 @@ private:
 	void checkUser();
 
 	void setCurrentRepository(const RepositoryInfo &repo, bool clear_authentication);
-	std::optional<QList<GitDiff>> makeDiffs(GitRunner g, GitHash id, std::future<QList<GitSubmoduleItem>> &&async_modules);
+	std::optional<std::vector<GitDiff> > makeDiffs(GitRunner g, GitHash id, std::future<std::vector<GitSubmoduleItem>> &&async_modules);
 
 	void updateRemoteInfo();
 
@@ -335,9 +335,9 @@ private:
 
 	void saveApplicationSettings();
 
-	void setDiffResult(const QList<GitDiff> &diffs);
-	const QList<GitSubmoduleItem> &submodules() const;
-	void setSubmodules(const QList<GitSubmoduleItem> &submodules);
+	void setDiffResult(const std::vector<GitDiff> &diffs);
+	const std::vector<GitSubmoduleItem> &submodules() const;
+	void setSubmodules(const std::vector<GitSubmoduleItem> &submodules);
 	bool runOnRepositoryDir(const std::function<void (QString, QString)> &callback, const RepositoryInfo *repo);
 	NamedCommitList namedCommitItems(int flags);
 	
@@ -372,7 +372,7 @@ private:
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
 	void setUncommitedChanges(bool uncommited_changes);
-	QList<GitDiff> const *diffResult() const;
+	std::vector<GitDiff> const *diffResult() const;
 
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
@@ -587,11 +587,11 @@ public:
 	
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
-	static QList<GitSubmoduleItem> updateSubmodules(GitRunner g, const GitHash &id);
+	static std::vector<GitSubmoduleItem> updateSubmodules(GitRunner g, const GitHash &id);
 	static void updateCommitGraph(GitCommitItemList *logs);
 	static TagList findTag(std::map<GitHash, TagList> const &tagmap, GitHash const &id);
 	static QString makeRepositoryName(QString const &loc);
-	static void addDiffItems(const QList<GitDiff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
+	static void addDiffItems(const std::vector<GitDiff> *diff_list, const std::function<void (const ObjectData &)> &add_item);
 	static GitHash getObjectID(QListWidgetItem *item);
 	static QString getFilePath(QListWidgetItem *item);
 	static QString getSubmodulePath(QListWidgetItem *item);
@@ -625,7 +625,7 @@ public:
 	bool isGraphVisible() const;
 	bool isAvatarsVisible() const;
 	bool isAvatarEnabled() const;
-	void makeDiffList(const GitHash &id, QList<GitDiff> *diff_list, QListWidget *listwidget);
+	void makeDiffList(const GitHash &id, std::vector<GitDiff> *diff_list, QListWidget *listwidget);
 	void execCommitViewWindow(const GitCommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const GitCommitItem &commit);
 	void execCommitExploreWindow(QWidget *parent, const GitCommitItem *commit);

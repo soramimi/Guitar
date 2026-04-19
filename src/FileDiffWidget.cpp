@@ -132,14 +132,13 @@ GitRunner FileDiffWidget::git()
 	return mainwindow()->git();
 }
 
-GitObject FileDiffWidget::catFile(GitRunner g, QString const &id)
+GitObject FileDiffWidget::catFile(GitRunner g, std::string const &id)
 {
 	if (g.isValidWorkingCopy()) {
-		QString path_prefix = PATH_PREFIX;
-		if (id.startsWith(path_prefix)) {
-			QString path = QString::fromStdString(g.workingDir());
-			path = path / id.mid(path_prefix.size());
-			QFile file(path);
+		std::string path_prefix = PATH_PREFIX;
+		if (misc::starts_with(id, path_prefix)) {
+			std::string path = g.workingDir() / id.substr(path_prefix.size());
+			QFile file((QS)path);
 			if (file.open(QFile::ReadOnly)) {
 				GitObject obj;
 				obj.content = file.readAll();
@@ -414,8 +413,8 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 		}
 	}
 
-	ui->widget_diff_left->setText(&m->left_lines, diff.blob.a_id_or_path, diff.path);
-	ui->widget_diff_right->setText(&m->right_lines, diff.blob.b_id_or_path, diff.path);
+	ui->widget_diff_left->setText(&m->left_lines, (QS)diff.blob.a_id_or_path, (QS)diff.path);
+	ui->widget_diff_right->setText(&m->right_lines, (QS)diff.blob.b_id_or_path, (QS)diff.path);
 	refrectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
@@ -438,8 +437,8 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 		ui->widget_diff_slider->setVisible(false);
 
 //		qDebug() << mimetype_l << m->init_param_.diff.blob.a_id_or_path << mimetype_r << m->init_param_.diff.blob.b_id_or_path;
-		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, m->init_param_.diff.blob.a_id_or_path, m->init_param_.diff.path);
-		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, m->init_param_.diff.blob.b_id_or_path, m->init_param_.diff.path);
+		ui->widget_diff_left->setImage(mimetype_l, m->init_param_.bytes_a, (QS)m->init_param_.diff.blob.a_id_or_path, (QS)m->init_param_.diff.path);
+		ui->widget_diff_right->setImage(mimetype_r, m->init_param_.bytes_b, (QS)m->init_param_.diff.blob.b_id_or_path, (QS)m->init_param_.diff.path);
 
 		return FileViewType::Image;
 
@@ -459,8 +458,8 @@ void FileDiffWidget::setSingleFile(QByteArray const &ba, QString const &id, QStr
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SingleFile;
 	m->init_param_.bytes_a = ba;
-	m->init_param_.diff.path = path;
-	m->init_param_.diff.blob.a_id_or_path = id;
+	m->init_param_.diff.path = path.toStdString();
+	m->init_param_.diff.blob.a_id_or_path = id.toStdString();
 }
 
 void FileDiffWidget::setOriginalLines_(QByteArray const &ba, GitSubmoduleItem const *submodule, GitCommitItem const *submodule_commit)
@@ -614,7 +613,7 @@ void FileDiffWidget::setSideBySide_(GitDiff const &diff, QByteArray const &ba_a,
 	}
 }
 
-std::string FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id)
+std::string FileDiffWidget::diffObjects(std::string const &a_id, std::string const &b_id)
 {
 	if (m->text_codec) {
 		GitRunner g = git();
@@ -640,7 +639,7 @@ std::string FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id
 			}
 		}
 	}
-	return GitDiffManager::diffObjects(git(), a_id.toStdString(), b_id.toStdString());
+	return GitDiffManager::diffObjects(git(), a_id, b_id);
 }
 
 /**
@@ -648,9 +647,12 @@ std::string FileDiffWidget::diffObjects(QString const &a_id, QString const &b_id
  * @param id
  * @return
  */
-bool FileDiffWidget::isValidID_(QString const &id)
+bool FileDiffWidget::isValidID(std::string const &id)
 {
-	if (id.startsWith(PATH_PREFIX)) {
+	if (id.size() == 0) {
+		return false;
+	}
+	if (id[0] == PATH_PREFIX[0]) {
 		return true;
 	}
 	return GitHash::isValidID(id);
@@ -668,7 +670,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
 
-	if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
+	if (isValidID(info.blob.a_id_or_path) && isValidID(info.blob.b_id_or_path)) {
 		GitObject obj_a = catFile(g, info.blob.a_id_or_path);
 		GitObject obj_b = catFile(g, info.blob.b_id_or_path);
 		std::string mime_a = global->determineFileType(obj_a.content);
@@ -681,7 +683,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 
 	{
 		GitDiff diff;
-		if (isValidID_(info.blob.a_id_or_path) && isValidID_(info.blob.b_id_or_path)) {
+		if (isValidID(info.blob.a_id_or_path) && isValidID(info.blob.b_id_or_path)) {
 			std::string text = diffObjects(info.blob.a_id_or_path, info.blob.b_id_or_path);
 			diff = GitDiffManager::parseDiff(text, &info);
 		} else {
@@ -689,14 +691,14 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 		}
 
 		GitObject obj;
-		if (isValidID_(diff.blob.a_id_or_path)) { // 左が有効
+		if (isValidID(diff.blob.a_id_or_path)) { // 左が有効
 			obj = catFile(g, diff.blob.a_id_or_path);
-			if (isValidID_(diff.blob.b_id_or_path)) { // 右が有効
+			if (isValidID(diff.blob.b_id_or_path)) { // 右が有効
 				setSideBySide(diff, obj.content, uncommited, QString::fromStdString(g.workingDir())); // 通常のdiff表示
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
-		} else if (isValidID_(diff.blob.b_id_or_path)) { // 左が無効で右が有効の時は、追加されたファイル
+		} else if (isValidID(diff.blob.b_id_or_path)) { // 左が無効で右が有効の時は、追加されたファイル
 			obj = catFile(g, diff.blob.b_id_or_path);
 			setRightOnly(diff, obj.content);
 		}
@@ -709,7 +711,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
  * @param id_right
  * @param path
  */
-void FileDiffWidget::updateDiffView_(QString const &id_left, QString const &id_right, QString const &path)
+void FileDiffWidget::updateDiffView_(std::string const &id_left, std::string const &id_right, std::string const &path)
 {
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
@@ -792,7 +794,7 @@ void FileDiffWidget::onDiffWidgetResized()
 
 void FileDiffWidget::on_toolButton_fullscreen_clicked()
 {
-	if (m->init_param_.diff.blob.a_id_or_path.isEmpty() && m->init_param_.diff.blob.b_id_or_path.isEmpty()) {
+	if (m->init_param_.diff.blob.a_id_or_path.empty() && m->init_param_.diff.blob.b_id_or_path.empty()) {
 		return;
 	}
 

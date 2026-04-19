@@ -179,10 +179,10 @@ void CommitExploreWindow::doTreeItemChanged_(GitRunner g, QTreeWidgetItem *curre
 		} else {
 #ifdef Q_OS_WIN
 			{
-				int i = ti.name.lastIndexOf('.');
-				if (i > 0) {
-					QString ext = ti.name.mid(i + 1);
-					icon = winIconFromExtensionLarge(ext);
+				auto i = ti.name.rfind('.');
+				if (i != std::string::npos && i > 0) {
+					std::string ext = ti.name.substr(i + 1);
+					icon = winIconFromExtensionLarge((QS)ext);
 				}
 			}
 #endif

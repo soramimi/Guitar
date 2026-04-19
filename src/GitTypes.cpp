@@ -177,14 +177,14 @@ std::string gitTrimPath(std::string const &s)
 		return ba;
 	}
 	if (left == begin && right == end) return s;
-	return {left, right - left};
+	return {left, size_t(right - left)};
 }
 
 //
 
-GitDiff::GitDiff(const QString &id, const QString &path, const QString &mode)
+GitDiff::GitDiff(std::string const &id, std::string const &path, std::string const &mode)
 {
-	makeForSingleFile(this, QString(GIT_ID_LENGTH, '0'), id, path, mode);
+	makeForSingleFile(this, std::string(GIT_ID_LENGTH, '0'), id, path, mode);
 }
 
 bool GitDiff::isSubmodule() const

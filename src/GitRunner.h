@@ -108,7 +108,7 @@ public:
 	bool stash_apply();
 	bool stash_drop();
 
-	QList<GitSubmoduleItem> submodules();
+        std::vector<GitSubmoduleItem> submodules();
 	bool submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	std::string queryEntireCommitMessage(const GitHash &id);
@@ -150,7 +150,7 @@ public:
 	bool setSignPolicy(GitSource source, GitSignPolicy policy);
 	bool configGpgProgram(const std::string &path, bool global);
 
-	bool reflog(QList<GitReflogItem> *out, int maxcount = 100);
+        bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
 
 	std::optional<std::vector<GitFileItem>> ls(const std::string &path);

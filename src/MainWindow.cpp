@@ -133,8 +133,8 @@ struct MainWindow::Private {
 	GitUser current_git_user;
 
 	QList<RepositoryInfo> repos;
-	QList<GitDiff> diff_result;
-	QList<GitSubmoduleItem> submodules;
+	std::vector<GitDiff> diff_result;
+	std::vector<GitSubmoduleItem> submodules;
 
 	QStringList added;
 	std::vector<std::string> remotes;
@@ -2304,7 +2304,7 @@ void MainWindow::checkUser()
  *
  * 差分を作成する
  */
-std::optional<QList<GitDiff>> MainWindow::makeDiffs(GitRunner g, GitHash id, std::future<QList<GitSubmoduleItem>> &&async_modules)
+std::optional<std::vector<GitDiff>> MainWindow::makeDiffs(GitRunner g, GitHash id, std::future<std::vector<GitSubmoduleItem>> &&async_modules)
 {
 	if (!isValidWorkingCopy(g)) return std::nullopt;
 
@@ -2312,7 +2312,7 @@ std::optional<QList<GitDiff>> MainWindow::makeDiffs(GitRunner g, GitHash id, std
 		id = GitHash(getObjCache()->rev_parse(g, "HEAD"));
 	}
 
-	QList<GitSubmoduleItem> mods = async_modules.get();
+	std::vector<GitSubmoduleItem> mods = async_modules.get();
 	setSubmodules(mods);
 
 	bool uncommited = (!id && isThereUncommitedChanges());
@@ -3183,10 +3183,10 @@ void MainWindow::setWindowTitle_(const GitUser &user)
 	if (user.name.empty() && user.email.empty()) {
 		setWindowTitle(qApp->applicationName());
 	} else {
-		setWindowTitle(QString("%1 : %2 <%3>")
+		setWindowTitle(QString("%s : %s <%s>")
 					   .arg(qApp->applicationName())
-					   .arg(user.name)
-					   .arg(user.email)
+					   .arg((QS)user.name)
+					   .arg((QS)user.email)
 					   );
 	}
 }
@@ -3390,10 +3390,10 @@ void MainWindow::setRepositoryInfo(QString const &reponame, QString const &brnam
  * @param id コミットID
  * @return サブモジュールリスト
  */
-QList<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const &id)
+std::vector<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash const &id)
 {
 	PROFILE;
-	QList<GitSubmoduleItem> submodules;
+	std::vector<GitSubmoduleItem> submodules;
 	if (!id) {
 		submodules = g.submodules();
 	} else {
@@ -3523,7 +3523,7 @@ void MainWindow::setUncommitedChanges(bool uncommited_changes)
 	m->uncommited_changes = uncommited_changes;
 }
 
-QList<GitDiff> const *MainWindow::diffResult() const
+std::vector<GitDiff> const *MainWindow::diffResult() const
 {
 	return &m->diff_result;
 }
@@ -3577,26 +3577,26 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 		header = "(??\?) "; // damn trigraph
 	}
 
-	QString text = data.path; // テキスト
+	std::string text = data.path; // テキスト
 	if (issubmodule) {
 		QString msg = misc::collapseWhitespace(data.submod_commit.message);
-		text += QString(" <%0> [%1] %2")
-					.arg(QString::fromStdString(data.submod.id.toString(7)))
-				.arg(misc::makeDateTimeString(data.submod_commit.commit_date))
-				.arg(msg)
-				;
+		QString dt = misc::makeDateTimeString(data.submod_commit.commit_date);
+		text += fmt(" <%s> [%s] %s")
+				(data.submod.id.toString(7))
+				(dt.toStdString())
+				(msg.toStdString());
 	}
 
-	QListWidgetItem *item = new QListWidgetItem(text);
+	QListWidgetItem *item = new QListWidgetItem((QS)text);
 	item->setSizeHint(QSize(item->sizeHint().width(), 18));
-	item->setData(FilePathRole, data.path);
+	item->setData(FilePathRole, (QS)data.path);
 	item->setData(DiffIndexRole, data.idiff);
-	item->setData(ObjectIdRole, data.id);
+	item->setData(ObjectIdRole, (QS)data.id);
 	item->setData(HeaderRole, header);
 	item->setData(SubmodulePathRole, QString::fromStdString(data.submod.path));
 	item->setData(SubmoduleCommitIdRole, QString::fromStdString(data.submod.id.toString()));
 	if (issubmodule) {
-		item->setToolTip(text); // ツールチップ
+		item->setToolTip((QS)text); // ツールチップ
 	}
 	return item;
 }
@@ -3606,7 +3606,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
  * @param diff_list
  * @param fn_add_item
  */
-void MainWindow::addDiffItems(const QList<GitDiff> *diff_list, const std::function<void (ObjectData const &data)> &fn_add_item)
+void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::function<void (ObjectData const &data)> &fn_add_item)
 {
 	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
 		GitDiff const &diff = diff_list->at(idiff);
@@ -3860,17 +3860,17 @@ void MainWindow::saveApplicationSettings()
 	appsettings()->saveSettings();
 }
 
-void MainWindow::setDiffResult(const QList<GitDiff> &diffs)
+void MainWindow::setDiffResult(const std::vector<GitDiff> &diffs)
 {
 	m->diff_result = diffs;
 }
 
-const QList<GitSubmoduleItem> &MainWindow::submodules() const
+const std::vector<GitSubmoduleItem> &MainWindow::submodules() const
 {
 	return m->submodules;
 }
 
-void MainWindow::setSubmodules(const QList<GitSubmoduleItem> &submodules)
+void MainWindow::setSubmodules(const std::vector<GitSubmoduleItem> &submodules)
 {
 	m->submodules = submodules;
 }
@@ -4070,7 +4070,7 @@ void MainWindow::updateFileList(GitHash const &id)
 
 	clearFileList();
 
-	std::future<QList<GitSubmoduleItem>> async_modules = std::async(std::launch::async, [&](){
+	std::future<std::vector<GitSubmoduleItem>> async_modules = std::async(std::launch::async, [&](){
 		return updateSubmodules(g, id); // TODO: slow
 	});
 
@@ -4116,12 +4116,12 @@ void MainWindow::updateFileList(GitHash const &id)
 
 		} else {
 
-			std::map<QString, int> diffmap;
+			std::map<std::string, int> diffmap;
 
 			for (int idiff = 0; idiff < diffResult()->size(); idiff++) {
 				GitDiff const &diff = diffResult()->at(idiff);
-				QString filename = diff.path;
-				if (!filename.isEmpty()) {
+				std::string filename = diff.path;
+				if (!filename.empty()) {
 					diffmap[filename] = idiff;
 				}
 			}
@@ -4191,7 +4191,7 @@ void MainWindow::updateFileList(GitHash const &id)
 		}
 
 		for (GitDiff const &diff : *diffResult()) {
-			QString key = GitDiffManager::makeKey(diff);
+			std::string key = GitDiffManager::makeKey(diff);
 			currentRepositoryData()->diff_cache[key] = diff;
 		}
 
@@ -4239,7 +4239,7 @@ void MainWindow::initUpdateFileListTimer()
 	connect(&m->update_file_list_timer, &QTimer::timeout, this, &MainWindow::updateCurrentFileList);
 }
 
-void MainWindow::makeDiffList(GitHash const &id, QList<GitDiff> *diff_list, QListWidget *listwidget)
+void MainWindow::makeDiffList(GitHash const &id, std::vector<GitDiff> *diff_list, QListWidget *listwidget)
 {
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -5876,7 +5876,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 	if (!item) return;
 
 	int idiff = indexOfDiff(item);
-	QList<GitDiff> const *diffs = diffResult();
+	std::vector<GitDiff> const *diffs = diffResult();
 	if (idiff >= 0 && idiff < diffs->size()) {
 		GitDiff const &diff = diffs->at(idiff);
 		bool updatediffview = false;
@@ -6378,7 +6378,7 @@ void MainWindow::on_action_repo_jump_triggered()
 		NamedCommitItem head;
 		head.name = "HEAD";
 		head.id = getHeadId();
-		items.push_front(head);
+		items.insert(items.begin(), head);
 	}
 	JumpDialog dlg(this, items);
 	if (dlg.exec() == QDialog::Accepted) {
@@ -7046,7 +7046,7 @@ void MainWindow::on_action_show_avatars_triggered()
 void MainWindow::on_action_submodules_triggered()
 {
 	GitRunner g = git();
-	QList<GitSubmoduleItem> mods = g.submodules();
+	std::vector<GitSubmoduleItem> mods = g.submodules();
 
 	std::vector<SubmodulesDialog::Submodule> mods2;
 	mods2.resize((size_t)mods.size());

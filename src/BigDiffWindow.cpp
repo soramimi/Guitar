@@ -2,6 +2,7 @@
 
 #include "BigDiffWindow.h"
 #include "ui_BigDiffWindow.h"
+#include "common/q/helper.h"
 
 struct BigDiffWindow::Private {
 	TextEditorEnginePtr text_editor_engine;
@@ -47,12 +48,12 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 	m->param = param;
 
 	{
-		QString name = m->param.diff.path;
-		int i = name.lastIndexOf('/');
-		if (i >= 0) {
-			name = name.mid(i + 1);
+		std::string name = m->param.diff.path;
+		int i = name.rfind('/');
+		if (i != std::string::npos) {
+			name = name.substr(i + 1);
 		}
-		ui->lineEdit_center->setText(name);
+		ui->lineEdit_center->setText((QS)name);
 	}
 	auto Text = [](QString id){
 		if (id.startsWith(PATH_PREFIX)) {
@@ -60,8 +61,8 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 		}
 		return id;
 	};
-	ui->lineEdit_left->setText(Text(m->param.diff.blob.a_id_or_path));
-	ui->lineEdit_right->setText(Text(m->param.diff.blob.b_id_or_path));
+	ui->lineEdit_left->setText(Text((QS)m->param.diff.blob.a_id_or_path));
+	ui->lineEdit_right->setText(Text((QS)m->param.diff.blob.b_id_or_path));
 
 	switch (m->param.view_style) {
 	case FileDiffWidget::ViewStyle::LeftOnly:

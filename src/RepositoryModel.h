@@ -16,7 +16,7 @@ struct RepositoryData {
 	std::map<GitHash, TagList> tag_map;
 	std::map<int, BranchLabelList> label_map;
 
-	std::map<QString, GitDiff> diff_cache;
+	std::map<std::string, GitDiff> diff_cache;
 
 	GitRunner git_runner;
 

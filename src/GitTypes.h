@@ -136,7 +136,7 @@ struct GitCommitItem {
 	int marker_depth = -1;
 	bool resolved =  false;
 	bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
-	void setParents(QStringList const &list);
+        void setParents(const std::vector<std::string> &list);
 	operator bool () const
 	{
 		return commit_id;
@@ -447,13 +447,13 @@ public:
 		Unmerged,
 	};
 	Type type = Type::Unknown;
-	QString diff;
-	QString index;
-	QString path;
-	QString mode;
+	std::string diff;
+	std::string index;
+	std::string path;
+	std::string mode;
 	struct BLOB_AB_ {
-		QString a_id_or_path; // コミットIDまたはファイルパス。パスのときは PATH_PREFIX（'*'）で始まる
-		QString b_id_or_path;
+		std::string a_id_or_path; // コミットIDまたはファイルパス。パスのときは PATH_PREFIX（'*'）で始まる
+		std::string b_id_or_path;
 	} blob;
 	QList<GitHunk> hunks;
 	struct SubmoduleDetail {
@@ -461,10 +461,10 @@ public:
 		GitCommitItem commit;
 	} a_submodule, b_submodule;
 	GitDiff() = default;
-	GitDiff(QString const &id, QString const &path, QString const &mode);
+	GitDiff(std::string const &id, std::string const &path, std::string const &mode);
 	bool isSubmodule() const;
 private:
-	void makeForSingleFile(GitDiff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
+	void makeForSingleFile(GitDiff *diff, const std::string &id_a, const std::string &id_b, const std::string &path, const std::string &mode);
 };
 
 std::string gitTrimPath(std::string const &s);
