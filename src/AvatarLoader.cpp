@@ -90,7 +90,7 @@ void AvatarLoader::run()
 			if (misc::isValidMailAddress(request.email)) {
 				QString id;
 				{
-					std::string email = request.email.trimmed().toLower().toStdString();
+					std::string email = misc::toLower(misc::trimmed(request.email));
 					QCryptographicHash hash(QCryptographicHash::Md5);
 					hash.addData(email.c_str(), (int)email.size());
 					QByteArray ba = hash.result();
@@ -193,7 +193,7 @@ void AvatarLoader::stop()
 	}
 }
 
-QImage AvatarLoader::fetch(QString const &email, bool request) const
+QImage AvatarLoader::fetch(std::string const &email, bool request) const
 {
 	if (misc::isValidMailAddress(email)) {
 		std::lock_guard<std::mutex> lock(m->mutex);

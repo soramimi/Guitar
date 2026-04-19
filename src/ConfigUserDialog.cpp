@@ -6,6 +6,7 @@
 #include "MainWindow.h"
 #include "UserEvent.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 
 struct ConfigUserDialog::Private  {
 	GitUser global_user;
@@ -26,10 +27,10 @@ ConfigUserDialog::ConfigUserDialog(MainWindow *parent, GitUser const &global_use
 
 	m->global_user = global_user;
 	m->local_user = local_user;
-	ui->lineEdit_global_name->setText(m->global_user.name);
-	ui->lineEdit_global_email->setText(m->global_user.email);
-	ui->lineEdit_local_name->setText(m->local_user.name);
-	ui->lineEdit_local_email->setText(m->local_user.email);
+	ui->lineEdit_global_name->setText((QS)m->global_user.name);
+	ui->lineEdit_global_email->setText((QS)m->global_user.email);
+	ui->lineEdit_local_name->setText((QS)m->local_user.name);
+	ui->lineEdit_local_email->setText((QS)m->local_user.email);
 
 	ui->groupBox_local->setEnabled(enable_local_user);
 
@@ -69,12 +70,12 @@ GitUser ConfigUserDialog::user(bool global) const
 
 	GitUser user;
 	if (global) { // グローバル
-		user.name = ui->lineEdit_global_name->text();
-		user.email = ui->lineEdit_global_email->text();
+		user.name = ui->lineEdit_global_name->text().toStdString();
+		user.email = ui->lineEdit_global_email->text().toStdString();
 	} else { // ローカル
 		if (!ui->checkBox_unset_local->isChecked()) { // 未設定でないなら
-			user.name = ui->lineEdit_local_name->text();
-			user.email = ui->lineEdit_local_email->text();
+			user.name = ui->lineEdit_local_name->text().toStdString();
+			user.email = ui->lineEdit_local_email->text().toStdString();
 		}
 	}
 	return user;
@@ -82,7 +83,7 @@ GitUser ConfigUserDialog::user(bool global) const
 
 void ConfigUserDialog::updateAvatar(QString const &email, bool request)
 {
-	QImage image = global->avatar_loader.fetch(email, request);
+	QImage image = global->avatar_loader.fetch(email.toStdString(), request);
 	ui->widget_avatar->setImage(image);
 }
 
@@ -122,22 +123,22 @@ void ConfigUserDialog::on_pushButton_get_icon_clicked()
 
 void ConfigUserDialog::on_lineEdit_global_name_textChanged(const QString &text)
 {
-	m->global_user.name = text;
+	m->global_user.name = text.toStdString();
 }
 
 void ConfigUserDialog::on_lineEdit_global_email_textEdited(const QString &text)
 {
-	m->global_user.email = text;
+	m->global_user.email = text.toStdString();
 }
 
 void ConfigUserDialog::on_lineEdit_local_name_textEdited(const QString &text)
 {
-	m->local_user.name = text;
+	m->local_user.name = text.toStdString();
 }
 
 void ConfigUserDialog::on_lineEdit_local_email_textEdited(const QString &text)
 {
-	m->local_user.email = text;
+	m->local_user.email = text.toStdString();
 
 	bool f = misc::isValidMailAddress(m->local_user.email);
 	bool b = ui->checkBox_unset_local->blockSignals(true);

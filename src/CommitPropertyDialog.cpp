@@ -130,7 +130,7 @@ void CommitPropertyDialog::updateAvatar(bool request)
 	auto SetAvatar = [&](QString const &email, SimpleImageWidget *widget){
 		if (mainwindow()->appsettings()->get_avatar_icon_from_network_enabled) {
 			widget->setFixedSize(QSize(64, 64));
-			QImage icon = global->avatar_loader.fetch(email, request);
+			QImage icon = global->avatar_loader.fetch(email.toStdString(), request);
 			setAvatar(icon, widget);
 		} else {
 			widget->setVisible(false);

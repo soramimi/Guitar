@@ -289,7 +289,7 @@ private:
 	void fetch(GitRunner g);
 	void pull(GitRunner g);
 	void push_tags(GitRunner g);
-	void delete_tags(GitRunner g, const QStringList &tagnames);
+        void delete_tags(GitRunner g, const std::vector<std::string> &tagnames);
 	void add_tag(GitRunner g, QString const &name, GitHash const &commit_id);
 
 	bool push();
@@ -299,7 +299,7 @@ private:
 	void resetFile(const QStringList &paths);
 	void clearAuthentication();
 	void clearSshAuthentication();
-	void internalDeleteTags(const QStringList &tagnames);
+        void internalDeleteTags(const std::vector<std::string> &tagnames);
 	void internalAddTag(QString const &name);
 	void createRepository(QString const &dir);
 	void addRepository(QString const &local_dir, QString const &group = {});
@@ -612,7 +612,7 @@ public:
 	void clearStatusInfo();
 	bool setCurrentLogRow(int row);
 	bool shown();
-	void deleteTags(QStringList const &tagnames);
+        void deleteTags(const std::vector<std::string> &tagnames);
 	void addTag(QString const &name);
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();

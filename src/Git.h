@@ -74,7 +74,7 @@ public:
 		return session_->gitinfo();
 	}
 
-        std::vector<char> toQByteArray(const std::optional<GitResult> &var) const;
+		std::vector<char> toByteArray(const std::optional<GitResult> &var) const;
 	bool isValidGitCommand() const
 	{
 		return session_->is_connected();
@@ -172,7 +172,7 @@ public:
 	void createBranch(const std::string &name);
 	void checkoutBranch(std::string const &name);
 	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);
-	bool deleteBranch(QString const &name);
+	bool deleteBranch(std::string const &name);
 
 	bool checkout(const std::string &branch_name, const std::string &id = {});
 	bool checkout_detach(std::string const &id);
@@ -184,7 +184,7 @@ public:
 	std::string diff_to_file(const std::string &old_id, const std::string &path);
 	std::string errorMessage(const std::optional<GitResult> &var) const;
 
-	GitHash rev_parse(QString const &name);
+	GitHash rev_parse(std::string const &name);
 	QList<GitTag> tags();
 	bool tag(const std::string &name, GitHash const &id = {});
 	bool delete_tag(const std::string &name, bool remote);
@@ -199,9 +199,9 @@ public:
 	bool reset_head1();
 	bool reset_hard();
 	bool clean_df();
-	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
+	bool push_u(bool set_upstream, std::string const &remote, std::string const &branch, bool force, AbstractPtyProcess *pty);
 	std::string objectType(const GitHash &id);
-	bool rm_cached(const QString &file);
+	bool rm_cached(const std::string &file);
 	void cherrypick(std::string const &name);
 	std::string getCherryPicking() const;
 
@@ -210,17 +210,17 @@ public:
 	using ReflogItemList = QList<GitReflogItem>;
 
 	bool reflog(ReflogItemList *out, int maxcount = 100);
-	std::vector<char> blame(QString const &path);
+	std::vector<char> blame(const std::string &path);
 
-	QString signingKey(GitSource purpose);
-	bool setSigningKey(QString const &id, bool global);
+	std::string signingKey(GitSource purpose);
+	bool setSigningKey(const std::string &id, bool global);
 	GitSignPolicy signPolicy(GitSource source);
 	bool setSignPolicy(GitSource source, GitSignPolicy policy);
-	bool configGpgProgram(QString const &path, bool global);
+	bool configGpgProgram(const std::string &path, bool global);
 
 	struct RemoteInfo {
-		QString commit_id;
-		QString name;
+		std::string commit_id;
+		std::string name;
 	};
 	QList<RemoteInfo> ls_remote();
 

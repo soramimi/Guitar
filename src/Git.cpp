@@ -70,7 +70,7 @@ std::string Git::status()
 	return resultStdString(result);
 }
 
-std::vector<char> Git::toQByteArray(std::optional<GitResult> const &var) const
+std::vector<char> Git::toByteArray(std::optional<GitResult> const &var) const
 {
 	if (var) return var->output();
 	return {};
@@ -87,7 +87,7 @@ std::string Git::resultStdString(std::optional<GitResult> const &var) const
 QString Git::resultQString(std::optional<GitResult> const &var) const
 {
 	if (var) {
-		return QString::fromUtf8(toQByteArray(var));
+		return QString::fromUtf8(toByteArray(var));
 	} else {
 		return {};
 	}
@@ -160,15 +160,14 @@ bool Git::init()
 	return ok;
 }
 
-GitHash Git::rev_parse(QString const &name)
+GitHash Git::rev_parse(const std::string &name)
 {
-	QString cmd = "rev-parse %1";
-	cmd = cmd.arg(name);
+	std::string cmd = fmt("rev-parse %s")(name);
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
-	auto result = exec_git(cmd.toStdString(), opt);
+	auto result = exec_git(cmd, opt);
 	if (result) {
-		return GitHash(resultQString(result).trimmed());
+		return GitHash(misc::trimmed(resultStdString(result)));
 	}
 	return {};
 }
@@ -183,7 +182,7 @@ QList<GitTag> Git::tags()
 		if (l.size() >= 2) {
 			if (GitHash::isValidID(l[0]) && l[1].startsWith("refs/tags/")) {
 				GitTag t;
-				t.name = l[1].mid(10);
+				t.name = (QS)l[1].mid(10);
 				t.id = GitHash(l[0]);
 				list.push_back(t);
 			}
@@ -245,32 +244,44 @@ std::string Git::diff_full_index_head_file(std::string const &file)
 	return resultStdString(result);
 }
 
+template <typename T> void remove_empty(std::vector<T> *v)
+{
+	auto end = std::remove_if(v->begin(), v->end(), [](T const &x){
+		return x.empty();
+	});
+	v->erase(end, v->end());
+}
+
 QList<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_id)
 {
 	QList<GitDiffRaw> list;
-	QString cmd = "diff --raw --abbrev=%1 %2 %3";
-	cmd = cmd.arg(GIT_ID_LENGTH).arg(QString::fromStdString(old_id.toString())).arg(QString::fromStdString(new_id.toString()));
-	auto result = git(cmd.toStdString());
-	QString text = resultQString(result);
-	QStringList lines = text.split('\n', _SkipEmptyParts);
-	for (QString const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
+	std::string cmd = fmt("diff --raw --abbrev=%s %s %s")
+			(GIT_ID_LENGTH)
+			(old_id.toString())
+			(new_id.toString());
+	auto result = git(cmd);
+	std::string text = resultStdString(result);
+	std::vector<std::string_view> lines = misc::splitLinesV(text, false);
+	remove_empty(&lines);
+	for (std::string_view const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		GitDiffRaw item;
-		int colon = line.indexOf(':');
-		int tab = line.indexOf('\t');
-		if (colon >= 0 && colon < tab) {
-			QStringList header = line.mid(colon + 1, tab - colon - 1).split(' ', _SkipEmptyParts); // コロンとタブの間の文字列を空白で分割
+		auto colon = line.find(':');
+		int tab = line.find('\t');
+		if (colon != std::string_view::npos && tab != std::string_view::npos && colon < tab) {
+			std::vector<std::string_view> header = misc::splitWords(line.substr(colon + 1, tab - colon - 1)); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
-				QStringList files = line.mid(tab + 1).split('\t', _SkipEmptyParts); // タブより後ろはファイルパス
+				std::vector<std::string_view> files = misc::split(line.substr(tab + 1), '\t'); // タブより後ろはファイルパス
+				remove_empty(&files);
 				if (!files.empty()) {
-					for (QString &file : files) {
-						file = gitTrimPath(file);
+					item.a.id = (std::string)header[2];
+					item.b.id = (std::string)header[3];
+					item.a.mode = (std::string)header[0];
+					item.b.mode = (std::string)header[1];
+					item.state = (std::string)header[4];
+					// item.files = files;
+					for (std::string_view const &file : files) {
+						item.files.push_back(gitTrimPath((std::string)file));
 					}
-					item.a.id = header[2];
-					item.b.id = header[3];
-					item.a.mode = header[0];
-					item.b.mode = header[1];
-					item.state = header[4];
-					item.files = files;
 					list.push_back(item);
 				}
 			}
@@ -329,7 +340,7 @@ std::vector<std::string> Git::getUntrackedFiles()
 	std::vector<GitFileStatus> stats = status_s();
 	for (GitFileStatus const &s : stats) {
 		if (s.code() == GitFileStatus::Code::Untracked) {
-			files.push_back(s.path1().toStdString());
+			files.push_back(s.path1());
 		}
 	}
 	return files;
@@ -1057,22 +1068,21 @@ bool Git::revert(GitHash const &id)
 	return (bool)git(cmd.toStdString());
 }
 
-bool Git::push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty)
+bool Git::push_u(bool set_upstream, const std::string &remote, const std::string &branch, bool force, AbstractPtyProcess *pty)
 {
-	if (remote.indexOf('\"') >= 0 || branch.indexOf('\"') >= 0) {
+	if (remote.find('\"') != std::string::npos || branch.find('\"') != std::string::npos) {
 		return false;
 	}
-	QString cmd = "push";
+	std::string cmd = "push";
 	if (force) {
 		cmd += " --force";
 	}
-	if (set_upstream && !remote.isEmpty() && !branch.isEmpty()) {
-		cmd += " -u \"%1\" \"%2\"";
-		cmd = cmd.arg(remote).arg(branch);
+	if (set_upstream && !remote.empty() && !branch.empty()) {
+		cmd += fmt(" -u \"%1\" \"%2\"")(remote)(branch);
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return (bool)exec_git(cmd.toStdString(), opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 bool Git::push_tags(AbstractPtyProcess *pty)
@@ -1122,7 +1132,7 @@ std::optional<std::vector<char>> Git::cat_file(GitHash const &id)
 {
 	if (GitHash::isValidID(id)) {
 		auto result = git(("cat-file -p " + id.toString()));
-		return toQByteArray(result);
+		return toByteArray(result);
 	}
 	return std::nullopt;
 }
@@ -1307,9 +1317,9 @@ void Git::mergeBranch(std::string const &name, GitMergeFastForward ff, bool squa
 	git(cmd + name);
 }
 
-bool Git::deleteBranch(QString const &name)
+bool Git::deleteBranch(const std::string &name)
 {
-	return (bool)git(QString("branch -D \"%1\"").arg(name).toStdString());
+	return (bool)git(fmt("branch -D \"%s\"")(name));
 }
 
 bool Git::checkout(std::string const &branch_name, std::string const &id) // oops! `switch` is C's keyword
@@ -1358,27 +1368,27 @@ GitUser Git::getUser(GitSource purpose)
 	GitUser user;
 	bool global = purpose == GitSource::Global;
 	bool local = purpose == GitSource::Local;
-	QString arg1;
+	std::string arg1;
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
 	opt.chdir = !global;
 	{
-#if 0
+#if 1
 		auto user_name = std::async(std::launch::async, [&](){
-			return exec_git(QString("config %1 user.name").arg(arg1).toStdString(), opt);
+			return exec_git(fmt("config %s user.name")(arg1), opt);
 		});
 		auto user_email = std::async(std::launch::async, [&](){
-			return exec_git(QString("config %1 user.email").arg(arg1).toStdString(), opt);
+			return exec_git(fmt("config %s user.email")(arg1), opt);
 		});
-		user.name = resultQString(user_name.get()).trimmed();
-		user.email = resultQString(user_email.get()).trimmed();
+		user.name = misc::trimmed(resultStdString(user_name.get()));
+		user.email = misc::trimmed(resultStdString(user_email.get()));
 #else
-		auto user_name = exec_git(QString("config %1 user.name").arg(arg1).toStdString(), opt);
-		auto user_email = exec_git(QString("config %1 user.email").arg(arg1).toStdString(), opt);
-		user.name = resultQString(user_name).trimmed();
-		user.email = resultQString(user_email).trimmed();
+		auto user_name = exec_git(fmt("config %s user.name")(arg1), opt);
+		auto user_email = exec_git(fmt("config %s user.email")(arg1), opt);
+		user.name = misc::trimmed(resultStdString(user_name));
+		user.email = misc::trimmed(resultStdString(user_email));
 #endif
 	}
 	return user;
@@ -1387,14 +1397,14 @@ GitUser Git::getUser(GitSource purpose)
 void Git::setUser(const GitUser &user, bool global)
 {
 	bool unset = !user;
-	QString config = global ? "--global" : "--local";
+	std::string config = global ? "--global" : "--local";
 	if (unset) {
 		config += " --unset";
 	}
 	AbstractGitSession::Option opt;
 	opt.chdir = !global;
-	exec_git(QString("config %1 user.name %2").arg(config).arg(encodeQuotedText(user.name)).toStdString(), opt);
-	exec_git(QString("config %1 user.email %2").arg(config).arg(encodeQuotedText(user.email)).toStdString(), opt);
+	exec_git(fmt("config %s user.name %s")(config)(encodeQuotedText(user.name)), opt);
+	exec_git(fmt("config %s user.email %s")(config)(encodeQuotedText(user.email)), opt);
 }
 
 bool Git::reset_head1()
@@ -1427,10 +1437,10 @@ bool Git::stash_drop()
 	return (bool)git("stash drop");
 }
 
-bool Git::rm_cached(const QString &file)
+bool Git::rm_cached(std::string const &file)
 {
-	QString cmd = "rm --cached \"%1\"";
-	return (bool)git(cmd.arg(file).toStdString());
+	std::string cmd = fmt("rm --cached \"%s\"")(file);
+	return (bool)git(cmd);
 }
 
 void Git::remote_v(std::vector<GitRemote> *out)
@@ -1508,7 +1518,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 	cmd = cmd.arg(maxcount);
 	auto result = git(cmd.toStdString());
 	if (!result) return false;
-	std::vector<char> ba = toQByteArray(result);
+	std::vector<char> ba = toByteArray(result);
 	if (!ba.empty()) {
 		GitReflogItem item;
 		char const *begin = ba.data();
@@ -1617,14 +1627,14 @@ void GitFileStatus::parse(QString const &text)
 
 			int i = text.indexOf(" -> ", 3);
 			if (i > 3) {
-				data.rawpath1 = text.mid(3, i - 3);
-				data.rawpath2 = text.mid(i + 4);
+				data.rawpath1 = text.mid(3, i - 3).toStdString();
+				data.rawpath2 = text.mid(i + 4).toStdString();
 				data.path1 = gitTrimPath(data.rawpath1);
 				data.path2 = gitTrimPath(data.rawpath2);
 			} else {
-				data.rawpath1 = text.mid(3);
+				data.rawpath1 = text.mid(3).toStdString();
 				data.path1 = gitTrimPath(data.rawpath1);
-				data.path2 = QString();
+				data.path2 = {};
 			}
 
 			data.code = parseFileStatusCode(data.code_x, data.code_y);
@@ -1632,13 +1642,13 @@ void GitFileStatus::parse(QString const &text)
 	}
 }
 
-std::vector<char> Git::blame(QString const &path)
+std::vector<char> Git::blame(std::string const &path)
 {
-	QString cmd = "blame --porcelain --abbrev=40 \"%1\"";
-	cmd = cmd.arg(path);
-	auto result = git(cmd.toStdString());
+	std::string cmd = "blame --porcelain --abbrev=40 \"%s\"";
+	cmd = fmt(cmd)(path);
+	auto result = git(cmd);
 	if (result) {
-		return toQByteArray(result);
+		return toByteArray(result);
 	}
 	return {};
 }
@@ -1646,16 +1656,16 @@ std::vector<char> Git::blame(QString const &path)
 QList<Git::RemoteInfo> Git::ls_remote()
 {
 	QList<RemoteInfo> list;
-	QString cmd = "ls-remote";
-	auto result = git(cmd.toStdString());
+	std::string cmd = "ls-remote";
+	auto result = git(cmd);
 	if (result) {
-		QStringList lines = misc::splitLines(resultQString(result));
-		for (QString const &line : lines) {
-			QStringList words = misc::splitWords(line);
-			if (words.size() == 2 && GitHash::isValidID(words[0])) {
-				RemoteInfo info;
-				info.commit_id = words[0];
-				info.name = words[1];
+		std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+		for (std::string const &line : lines) {
+			std::vector<std::string_view> words = misc::splitWords(line);
+			RemoteInfo info;
+			info.commit_id = std::string{words[0]};
+			if (words.size() == 2 && GitHash::isValidID(info.commit_id)) {
+				info.name = std::string{words[1]};
 				list.push_back(info);
 			}
 		}
@@ -1663,47 +1673,46 @@ QList<Git::RemoteInfo> Git::ls_remote()
 	return list;
 }
 
-QString Git::signingKey(GitSource purpose)
+std::string Git::signingKey(GitSource purpose)
 {
-	QString arg1;
+	std::string arg1;
 	if (purpose == GitSource::Global) arg1 = "--global";
 	if (purpose == GitSource::Local) arg1 = "--local";
-	QString cmd = "config %1 user.signingkey";
-	cmd = cmd.arg(arg1);
+	std::string cmd = "config %s user.signingkey";
+	cmd = fmt(cmd)(arg1);
 	AbstractGitSession::Option opt;
 	opt.chdir = purpose != GitSource::Global;
-	auto result = exec_git(cmd.toStdString(), opt);
+	auto result = exec_git(cmd, opt);
 	if (result) {
-		return resultQString(result).trimmed();
+		return (std::string)misc::trimmed(resultStdString(result));
 	}
-	return QString();
+	return {};
 }
 
-bool Git::setSigningKey(QString const &id, bool global)
+bool Git::setSigningKey(std::string const &id, bool global)
 {
 	for (auto i : id) {
 		if (!QChar(i).isLetterOrNumber()) return false;
 	}
 
-	QString cmd = "config %1 %2 user.signingkey %3";
-	cmd = cmd.arg(global ? "--global" : "--local").arg(id.isEmpty() ? "--unset" : "").arg(id);
+	std::string cmd = "config %s %s user.signingkey %s";
+	cmd = fmt(cmd)(global ? "--global" : "--local")(id.empty() ? "--unset" : "")(id);
 	AbstractGitSession::Option opt;
 	opt.chdir = !global;
-	return (bool)exec_git(cmd.toStdString(), opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 GitSignPolicy Git::signPolicy(GitSource source)
 {
-	QString arg1;
+	std::string arg1;
 	if (source == GitSource::Global) arg1 = "--global";
 	if (source == GitSource::Local)  arg1 = "--local";
-	QString cmd = "config %1 commit.gpgsign";
-	cmd = cmd.arg(arg1);
+	std::string cmd = fmt("config %s commit.gpgsign")(arg1);
 	AbstractGitSession::Option opt;
 	opt.chdir = source != GitSource::Global;
-	auto result = exec_git(cmd.toStdString(), opt);
+	auto result = exec_git(cmd, opt);
 	if (result) {
-		QString t = resultQString(result).trimmed();
+		std::string t{misc::trimmed(resultStdString(result))};
 		if (t == "false") return GitSignPolicy::False;
 		if (t == "true")  return GitSignPolicy::True;
 	}
@@ -1712,12 +1721,11 @@ GitSignPolicy Git::signPolicy(GitSource source)
 
 bool Git::setSignPolicy(GitSource source, GitSignPolicy policy)
 {
-	QString arg1;
+	std::string arg1;
 	if (source == GitSource::Global) arg1 = "--global";
 	if (source == GitSource::Local)  arg1 = "--local";
-	QString cmd = "config %1 %2 commit.gpgsign %3";
-	QString arg2;
-	QString arg3;
+	std::string arg2;
+	std::string arg3;
 	if (policy == GitSignPolicy::False) {
 		arg3 = "false";
 	} else if (policy == GitSignPolicy::True) {
@@ -1725,26 +1733,26 @@ bool Git::setSignPolicy(GitSource source, GitSignPolicy policy)
 	} else {
 		arg2 = "--unset";
 	}
-	cmd = cmd.arg(arg1).arg(arg2).arg(arg3);
+	std::string cmd = fmt("config %s %s commit.gpgsign %s")(arg1)(arg2)(arg3);
 	AbstractGitSession::Option opt;
 	opt.chdir = source != GitSource::Global;
-	return (bool)exec_git(cmd.toStdString(), opt);
+	return (bool)exec_git(cmd, opt);
 }
 
-bool Git::configGpgProgram(QString const &path, bool global)
+bool Git::configGpgProgram(std::string const &path, bool global)
 {
-	QString cmd = "config ";
+	std::string cmd = "config ";
 	if (global) {
 		cmd += "--global ";
 	}
-	if (path.isEmpty()) {
+	if (path.empty()) {
 		cmd += "--unset ";
 	}
 	cmd += "gpg.program ";
-	if (!path.isEmpty()) {
-		cmd += QString("\"%1\"").arg(path);
+	if (!path.empty()) {
+		cmd += fmt("\"%s\"")(path);
 	}
-	return (bool)git_nochdir(cmd.toStdString(), nullptr);
+	return (bool)git_nochdir(cmd, nullptr);
 }
 
 // GitDiff

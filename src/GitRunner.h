@@ -54,7 +54,7 @@ public:
 	
 	bool remove(const std::string &path);
 
-	GitHash revParse(QString const &name, bool use_cache = true);
+	GitHash rev_parse(const std::string &name, bool use_cache = true);
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(const std::string &name);
@@ -88,7 +88,7 @@ public:
 	void createBranch(const std::string &name);
 	void checkoutBranch(const std::string &name);
 	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);
-	bool deleteBranch(QString const &name);
+	bool deleteBranch(const std::string &name);
 
 	bool checkout(std::string const &branch_name, std::string const &id = {});
 	bool checkout_detach(std::string const &id);
@@ -137,21 +137,21 @@ public:
 	bool reset_head1();
 	bool reset_hard();
 	bool clean_df();
-	bool push_u(bool set_upstream, QString const &remote, QString const &branch, bool force, AbstractPtyProcess *pty);
+	bool push_u(bool set_upstream, std::string const &remote, std::string const &branch, bool force, AbstractPtyProcess *pty);
 	std::string objectType(const GitHash &id);
-	bool rm_cached(QString const &file);
-	void cherrypick(QString const &name);
+	bool rm_cached(const std::string &file);
+	void cherrypick(const std::string &name);
 	std::string getCherryPicking() const;
 	QList<GitBranch> branches();
 
-	QString signingKey(GitSource purpose);
-	bool setSigningKey(QString const &id, bool global);
+	std::string signingKey(GitSource purpose);
+	bool setSigningKey(std::string const &id, bool global);
 	GitSignPolicy signPolicy(GitSource source);
 	bool setSignPolicy(GitSource source, GitSignPolicy policy);
-	bool configGpgProgram(QString const &path, bool global);
+	bool configGpgProgram(const std::string &path, bool global);
 
 	bool reflog(QList<GitReflogItem> *out, int maxcount = 100);
-	std::vector<char> blame(QString const &path);
+	std::vector<char> blame(const std::string &path);
 
 	std::optional<std::vector<GitFileItem>> ls(const std::string &path);
 	std::optional<std::vector<char>> readfile(const std::string &path);

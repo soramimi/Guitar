@@ -148,8 +148,8 @@ void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
 			gcx.git_command = git_command_path().toStdString();
 			Git g(gcx, {}, {}, {});
 			GitUser user = g.getUser(GitSource::Global);
-			set_user_name(user.name);
-			set_user_email(user.email);
+			set_user_name((QS)user.name);
+			set_user_email((QS)user.email);
 		}
 		if (user_name().isEmpty()) {
 			ui->lineEdit_user_name->setFocus();
@@ -197,7 +197,7 @@ void WelcomeWizardDialog::setAvatar(QImage const &icon)
 void WelcomeWizardDialog::avatarReady()
 {
 	QString email = ui->lineEdit_user_email->text();
-	auto icon = global->avatar_loader.fetch(email, true);
+	auto icon = global->avatar_loader.fetch(email.toStdString(), true);
 	setAvatar(icon);
 }
 
@@ -206,7 +206,7 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	ui->widget->setImage({});
 	QString email = ui->lineEdit_user_email->text();
 	if (misc::isValidMailAddress(email)) {
-		auto icon = global->avatar_loader.fetch(email, true);
+		auto icon = global->avatar_loader.fetch(email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

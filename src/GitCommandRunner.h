@@ -36,12 +36,12 @@ public:
 class Git_push {
 public:
 	bool set_upstream_ = false;
-	QString remote_;
-	QString branch_;
+	std::string remote_;
+	std::string branch_;
 	bool force_ = false;
 	int exitcode_ = 0;
-	QString errormsg_;
-	Git_push(bool set_upstream, QString const &remote, QString const &branch, bool force)
+	std::string errormsg_;
+	Git_push(bool set_upstream, std::string const &remote, std::string const &branch, bool force)
 		: set_upstream_(set_upstream)
 		, remote_(remote)
 		, branch_(branch)
@@ -77,8 +77,8 @@ public:
 
 class Git_delete_tags {
 public:
-	QStringList tagnames;
-	Git_delete_tags(const QStringList &tagnames)
+	std::vector<std::string> tagnames;
+	Git_delete_tags(std::vector<std::string> const &tagnames)
 		: tagnames(tagnames)
 	{
 	}

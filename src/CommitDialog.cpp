@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include "GenerateCommitMessageDialog.h"
 #include <QDir>
+#include "common/q/helper.h"
 
 CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser const &user, gpg::Data const &key, QString const &previousMessage)
 	: QDialog(parent)
@@ -24,8 +25,8 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser 
 	previousMessage_ = previousMessage;
 
 	ui->label_reponame->setText(reponame);
-	ui->label_commit_author->setText(user.name);
-	ui->label_commit_mail->setText(user.email);
+	ui->label_commit_author->setText((QS)user.name);
+	ui->label_commit_mail->setText((QS)user.email);
 
 	ui->checkbox_amend->setChecked(false);
 	if (previousMessage_.isEmpty()) {

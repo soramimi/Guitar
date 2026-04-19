@@ -29,7 +29,7 @@ private:
 	};
 	struct RequestItem {
 		State state = Idle;
-		QString email;
+		std::string email;
 		QImage image;
 	};
 	struct Private;
@@ -43,7 +43,7 @@ public:
 	AvatarLoader(QObject *parent = nullptr);
 	~AvatarLoader() override;
 	void requestInterruption();
-	QImage fetch(const QString &email, bool request) const;
+        QImage fetch(const std::string &email, bool request) const;
 	void stop();
 	void start(MainWindow *mainwindow);
 	template <typename Func2> void connectAvatarReady(const typename QtPrivate::FunctionPointer<Func2>::Object *receiver, Func2 slot)

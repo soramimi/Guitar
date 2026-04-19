@@ -25,8 +25,8 @@ SetGlobalUserDialog::~SetGlobalUserDialog()
 GitUser SetGlobalUserDialog::user() const
 {
 	GitUser user;
-	user.name = ui->lineEdit_name->text();
-	user.email = ui->lineEdit_mail->text();
+	user.name = ui->lineEdit_name->text().toStdString();
+	user.email = ui->lineEdit_mail->text().toStdString();
 	return user;
 }
 

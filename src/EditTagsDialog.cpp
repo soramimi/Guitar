@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "EditTagsDialog.h"
 #include "ui_EditTagsDialog.h"
+#include "common/q/helper.h"
 
 EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) :
 	QDialog(parent),
@@ -40,7 +41,7 @@ void EditTagsDialog::updateTagList()
 	ui->listWidget->clear();
 	TagList list = queryTagList();
 	for (GitTag const &t : list) {
-		auto item = new QListWidgetItem(t.name);
+		auto item = new QListWidgetItem((QS)t.name);
 		ui->listWidget->addItem(item);
 	}
 	ui->listWidget->sortItems();
@@ -72,7 +73,7 @@ void EditTagsDialog::on_pushButton_add_clicked()
 void EditTagsDialog::on_pushButton_delete_clicked()
 {
 	QStringList list = selectedTags();
-	mainwindow()->deleteTags(list);
+	mainwindow()->deleteTags((QSL)list);
 	updateTagList();
 }
 

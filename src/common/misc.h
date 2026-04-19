@@ -37,6 +37,16 @@ public:
 #endif
 	}
 
+	static int stricmp(std::string_view const &s1, std::string_view const &s2)
+	{
+		size_t n1 = s1.size();
+		size_t n2 = s2.size();
+		if (n1 == n2) {
+			return strnicmp(s1.data(), s2.data(), n1);
+		}
+		return n1 < n2 ? -1 : 1;
+	}
+
 	static char const *stristr(const char *haystack, const char *needle)
 	{
 		size_t needle_len = strlen(needle);
@@ -68,6 +78,7 @@ public:
 	static std::string mid(std::string const &str, int start, int length = -1);
 	static QString normalizePathSeparator(QString const &str);
 	static QString joinWithSlash(QString const &left, QString const &right);
+	static std::string joinWithSlash(std::string const &left, std::string const &right);
 	static void setFixedSize(QWidget *w);
 	static void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright = QColor());
 	static void dump(const uint8_t *ptr, size_t len);
@@ -96,6 +107,9 @@ public:
 
 	static int compare(uint8_t const *a, size_t n, uint8_t const *b, size_t m);
 	static int compare(std::vector<uint8_t> const &a, std::vector<uint8_t> const &b);
+
+	static std::string toLower(std::string_view const &s);
+	static std::string toUpper(std::string_view const &s);
 
 	static std::vector<std::string> vector_string(std::vector<std::string_view> const &v)
 	{

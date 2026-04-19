@@ -106,7 +106,7 @@ bool GitRunner::remove(std::string const &path)
 	return gitptr()->remove(path);
 }
 
-GitHash GitRunner::revParse(const QString &name, bool use_cache)
+GitHash GitRunner::rev_parse(std::string const &name, bool use_cache)
 {
 	if (name == "HEAD") {
 		use_cache = false;
@@ -114,7 +114,7 @@ GitHash GitRunner::revParse(const QString &name, bool use_cache)
 	if (use_cache) {
 		GitObjectCache *cache = getObjCache();
 		Q_ASSERT(cache);
-		return cache->revParse(*this, name);
+		return cache->rev_parse(*this, name);
 	} else {
 		return gitptr()->rev_parse(name);
 	}
@@ -256,7 +256,7 @@ void GitRunner::mergeBranch(std::string const &name, GitMergeFastForward ff, boo
 	gitptr()->mergeBranch(name, ff, squash);
 }
 
-bool GitRunner::deleteBranch(const QString &name)
+bool GitRunner::deleteBranch(std::string const &name)
 {
 	return gitptr()->deleteBranch(name);
 }
@@ -464,7 +464,7 @@ bool GitRunner::clean_df()
 	return gitptr()->clean_df();
 }
 
-bool GitRunner::push_u(bool set_upstream, const QString &remote, const QString &branch, bool force, AbstractPtyProcess *pty)
+bool GitRunner::push_u(bool set_upstream, std::string const &remote, std::string const &branch, bool force, AbstractPtyProcess *pty)
 {
 	return gitptr()->push_u(set_upstream, remote, branch, force, pty);
 }
@@ -474,14 +474,14 @@ std::string GitRunner::objectType(const GitHash &id)
 	return gitptr()->objectType(id);
 }
 
-bool GitRunner::rm_cached(const QString &file)
+bool GitRunner::rm_cached(std::string const &file)
 {
 	return gitptr()->rm_cached(file);
 }
 
-void GitRunner::cherrypick(const QString &name)
+void GitRunner::cherrypick(std::string const &name)
 {
-	gitptr()->cherrypick(name.toStdString());
+	gitptr()->cherrypick(name);
 }
 
 std::string GitRunner::getCherryPicking() const
@@ -494,12 +494,12 @@ QList<GitBranch> GitRunner::branches()
 	return gitptr()->branches();
 }
 
-QString GitRunner::signingKey(GitSource purpose)
+std::string GitRunner::signingKey(GitSource purpose)
 {
 	return gitptr()->signingKey(purpose);
 }
 
-bool GitRunner::setSigningKey(const QString &id, bool global)
+bool GitRunner::setSigningKey(std::string const &id, bool global)
 {
 	return gitptr()->setSigningKey(id, global);
 }
@@ -514,7 +514,7 @@ bool GitRunner::setSignPolicy(GitSource source, GitSignPolicy policy)
 	return gitptr()->setSignPolicy(source, policy);
 }
 
-bool GitRunner::configGpgProgram(const QString &path, bool global)
+bool GitRunner::configGpgProgram(std::string const &path, bool global)
 {
 	return gitptr()->configGpgProgram(path, global);
 }
@@ -524,7 +524,7 @@ bool GitRunner::reflog(QList<GitReflogItem> *out, int maxcount)
 	return gitptr()->reflog(out, maxcount);
 }
 
-std::vector<char> GitRunner::blame(const QString &path)
+std::vector<char> GitRunner::blame(std::string const &path)
 {
 	return gitptr()->blame(path);
 }

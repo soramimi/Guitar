@@ -446,6 +446,14 @@ QString misc::joinWithSlash(QString const &left, QString const &right)
 	return !left.isEmpty() ? left : right;
 }
 
+std::string misc::joinWithSlash(std::string const &left, std::string const &right)
+{
+	if (!left.empty() && !right.empty()) {
+		return joinpath(left, right);
+	}
+	return !left.empty() ? left : right;
+}
+
 /**
  * @brief ウィジェットのサイズを固定する
  * 
@@ -995,5 +1003,25 @@ int misc::compare(uint8_t const *a, size_t n, uint8_t const *b, size_t m)
 int misc::compare(const std::vector<uint8_t> &a, const std::vector<uint8_t> &b)
 {
 	return compare(a.data(), a.size(), b.data(), b.size());
+}
+
+std::string misc::toLower(const std::string_view &s)
+{
+	std::string ret;
+	ret.reserve(s.size());
+	for (char c : s) {
+		ret.push_back(std::tolower((unsigned char)c));
+	}
+	return ret;
+}
+
+std::string misc::toUpper(const std::string_view &s)
+{
+	std::string ret;
+	ret.reserve(s.size());
+	for (char c : s) {
+		ret.push_back(std::toupper((unsigned char)c));
+	}
+	return ret;
 }
 

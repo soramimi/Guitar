@@ -28,7 +28,7 @@ enum {
 struct CommitExploreWindow::Private {
 	GitObjectCache *objcache;
 	GitCommitItem const *commit;
-	QString root_tree_id;
+	std::string root_tree_id;
 	GitTreeItemList tree_item_list;
 	GitObject content_object;
 	ObjectContent content;
@@ -69,17 +69,17 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 
 	{
 		GitCommitTree tree(objcache);
-		tree.parseTree(g, m->root_tree_id);
+		tree.parseTree(g, (QS)m->root_tree_id);
 	}
 
 	{
 		QTreeWidgetItem *rootitem = newQTreeWidgetItem();
 		rootitem->setText(0, tr("Commit"));
 		rootitem->setData(0, ItemTypeRole, (int)GitTreeItem::TREE);
-		rootitem->setData(0, ObjectIdRole, m->root_tree_id);
+		rootitem->setData(0, ObjectIdRole, (QS)m->root_tree_id);
 		ui->treeWidget->addTopLevelItem(rootitem);
 
-		loadTree(g, m->root_tree_id);
+		loadTree(g, (QS)m->root_tree_id);
 
 		rootitem->setExpanded(true);
 	}
@@ -125,12 +125,13 @@ void CommitExploreWindow::expandTreeItem_(GitRunner g, QTreeWidgetItem *item)
 
 		for (GitTreeItem const &ti : m->tree_item_list) {
 			if (ti.type == GitTreeItem::TREE) {
+				QString name = (QS)ti.name;
 				QTreeWidgetItem *child = newQTreeWidgetItem();
 				child->setIcon(0, icons.icon(QFileIconProvider::Folder));
-				child->setText(0, ti.name);
+				child->setText(0, name);
 				child->setData(0, ItemTypeRole, (int)ti.type);
-				child->setData(0, ObjectIdRole, ti.id);
-				child->setData(0, FilePathRole, misc::joinWithSlash(path, ti.name));
+				child->setData(0, ObjectIdRole, (QS)ti.id);
+				child->setData(0, FilePathRole, misc::joinWithSlash(path, name));
 				QTreeWidgetItem *placeholder = newQTreeWidgetItem();
 				child->addChild(placeholder);
 				item->addChild(child);
@@ -155,7 +156,7 @@ void CommitExploreWindow::loadTree(GitRunner g, QString const &tree_id)
 		int l = (left.type == GitTreeItem::TREE)  ? 0 : 1;
 		int r = (right.type == GitTreeItem::TREE) ? 0 : 1;
 		if (l != r) return l < r;
-		return left.name.compare(right.name, Qt::CaseInsensitive) < 0;
+		return misc::stricmp(left.name, right.name) < 0;
 	});
 }
 
@@ -191,10 +192,10 @@ void CommitExploreWindow::doTreeItemChanged_(GitRunner g, QTreeWidgetItem *curre
 		}
 		auto *p = new QListWidgetItem;
 		p->setIcon(icon);
-		p->setText(ti.name);
+		p->setText((QS)ti.name);
 		p->setData(ItemTypeRole, (int)ti.type);
-		p->setData(ObjectIdRole, ti.id);
-		p->setData(FilePathRole, misc::joinWithSlash(path, ti.name));
+		p->setData(ObjectIdRole, (QS)ti.id);
+		p->setData(FilePathRole, misc::joinWithSlash(path, (QS)ti.name));
 		ui->listWidget->addItem(p);
 	}
 }

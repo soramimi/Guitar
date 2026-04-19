@@ -6,10 +6,11 @@
 #include "UserEvent.h"
 #include <QFile>
 #include <QXmlStreamWriter>
+#include "common/q/helper.h"
 
 EditProfilesDialog::Item::Item(const GitUser &user)
-	: name(user.name)
-	, email(user.email)
+	: name((QS)user.name)
+	, email((QS)user.email)
 {
 }
 
@@ -54,7 +55,7 @@ void EditProfilesDialog::updateAvatar(QString const &email, bool request)
 	if (current_email_.isEmpty()) {
 		ui->widget_avatar_icon->setImage({});
 	} else {
-		auto icon = global->avatar_loader.fetch(current_email_, request);
+		auto icon = global->avatar_loader.fetch(current_email_.toStdString(), request);
 		if (!icon.isNull()) {
 			ui->widget_avatar_icon->setImage(icon);
 		}

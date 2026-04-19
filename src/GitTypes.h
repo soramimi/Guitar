@@ -212,13 +212,13 @@ public:
 };
 
 struct GitTag {
-	QString name;
+	std::string name;
 	GitHash id;
 };
 
 struct GitUser {
-	QString name;
-	QString email;
+	std::string name;
+	std::string email;
 	operator bool () const
 	{
 		return misc::isValidMailAddress(email);
@@ -292,10 +292,10 @@ public:
 		char code_x = 0;
 		char code_y = 0;
 		Code code = Code::Unknown;
-		QString rawpath1;
-		QString rawpath2;
-		QString path1;
-		QString path2;
+		std::string rawpath1;
+		std::string rawpath2;
+		std::string path1;
+		std::string path2;
 	} data;
 
 	static Code parseFileStatusCode(char x, char y);
@@ -344,22 +344,22 @@ public:
 		return code_x() == 'D' || code_y() == 'D';
 	}
 
-	QString path1() const
+	std::string path1() const
 	{
 		return data.path1;
 	}
 
-	QString path2() const
+	std::string path2() const
 	{
 		return data.path2;
 	}
 
-	QString rawpath1() const
+	std::string rawpath1() const
 	{
 		return data.rawpath1;
 	}
 
-	QString rawpath2() const
+	std::string rawpath2() const
 	{
 		return data.rawpath2;
 	}
@@ -390,11 +390,11 @@ struct GitSubmoduleUpdateData {
 
 struct GitDiffRaw {
 	struct AB {
-		QString id;
-		QString mode;
+		std::string id;
+		std::string mode;
 	} a, b;
-	QString state;
-	QStringList files;
+	std::string state;
+	std::vector<std::string> files;
 };
 
 struct GitReflogItem {
@@ -467,6 +467,6 @@ private:
 	void makeForSingleFile(GitDiff *diff, QString const &id_a, QString const &id_b, QString const &path, QString const &mode);
 };
 
-QString gitTrimPath(QString const &s);
+std::string gitTrimPath(std::string const &s);
 
 #endif // GITTYPES_H

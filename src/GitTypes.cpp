@@ -149,35 +149,35 @@ bool GitHash::isValidID(std::string const &id)
 
 //
 
-QString gitTrimPath(QString const &s)
+std::string gitTrimPath(std::string const &s)
 {
-	ushort const *begin = s.utf16();
-	ushort const *end = begin + s.size();
-	ushort const *left = begin;
-	ushort const *right = end;
-	while (left < right && QChar(*left).isSpace()) left++;
-	while (left < right && QChar(right[-1]).isSpace()) right--;
+	char const *begin = s.data();
+	char const *end = begin + s.size();
+	char const *left = begin;
+	char const *right = end;
+	while (left < right && isspace((unsigned char)*left)) left++;
+	while (left < right && isspace((unsigned char)right[-1])) right--;
 	if (left + 1 < right && *left == '\"' && right[-1] == '\"') { // if quoted ?
 		left++;
 		right--;
-		QByteArray ba;
-		ushort const *ptr = left;
+		std::string ba;
+		char const *ptr = left;
 		while (ptr < right) {
-			ushort c = *ptr;
+			char c = *ptr;
 			ptr++;
 			if (c == '\\') {
 				c = 0;
-				for (int i = 0; i < 3 && ptr < right && QChar(*ptr).isDigit(); i++) { // decode \oct
+				for (int i = 0; i < 3 && ptr < right && isdigit((unsigned char)*ptr); i++) { // decode \oct
 					c = c * 8 + (*ptr - '0');
 					ptr++;
 				}
 			}
-			ba.push_back(c);
+			ba += c;
 		}
-		return QString::fromUtf8(ba);
+		return ba;
 	}
 	if (left == begin && right == end) return s;
-	return QString::fromUtf16((char16_t const *)left, int(right - left));
+	return {left, right - left};
 }
 
 //

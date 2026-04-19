@@ -47,7 +47,7 @@ private:
 	GitObjectManager object_manager_;
 	using ItemPtr = std::shared_ptr<Item>;
 	std::vector<ItemPtr> items_;
-	std::map<QString, GitHash> rev_parse_map_;
+	std::map<std::string, GitHash> rev_parse_map_;
 	size_t size() const;
 public:
 	GitObjectCache(std::mutex *mutex = nullptr)
@@ -55,7 +55,7 @@ public:
 		, object_manager_(mutex)
 	{}
 	void clear();
-	GitHash revParse(GitRunner g, QString const &name);
+        GitHash rev_parse(GitRunner g, const std::string &name);
 	GitObject catFile(GitRunner g, const GitHash &id);
 
 	GitHash const &item_id(int i) const
@@ -66,8 +66,8 @@ public:
 
 class GitCommit {
 public:
-	QString tree_id;
-	QStringList parents;
+	std::string tree_id;
+	std::vector<std::string> parents;
 
 	static bool parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const &id, GitCommit *out);
 };
@@ -80,9 +80,9 @@ struct GitTreeItem {
 		COMMIT,
 	};
 	Type type = UNKNOWN;
-	QString name;
-	QString id;
-	QString mode;
+	std::string name;
+	std::string id;
+	std::string mode;
 
 	QString to_string_() const
 	{
@@ -121,7 +121,7 @@ public:
 	}
 };
 
-void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTreeItemList *out);
-bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, QString const &commit_id, QString const &path_prefix, GitTreeItemList *out);
+void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, GitTreeItemList *out);
+bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, std::string const &commit_id, std::string const &path_prefix, GitTreeItemList *out);
 
 #endif // GITOBJECTMANAGER_H

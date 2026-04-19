@@ -300,7 +300,7 @@ void GitObjectCache::clear()
 	object_manager_.setup();
 }
 
-GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
+GitHash GitObjectCache::rev_parse(GitRunner g, std::string const &name)
 {
 	PROFILE;
 	if (!g.isValidWorkingCopy()) return {};
@@ -323,7 +323,7 @@ GitHash GitObjectCache::revParse(GitRunner g, QString const &name)
 		return ret;
 	}
 
-	ret = g.revParse(name, false);
+	ret = g.rev_parse(name, false);
 
 	auto B = [&](){
 		rev_parse_map_[name] = ret;
@@ -424,16 +424,16 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 {
 	*out = {};
 	if (id.isValid()) {
-		QStringList parents;
+		std::vector<std::string> parents;
 		{
 			GitObject obj = g.catFile(id);
 			if (!obj.content.isEmpty()) {
-				QStringList lines = misc::splitLines(QString::fromUtf8(obj.content));
-				for (QString const &line : lines) {
-					int i = line.indexOf(' ');
-					if (i < 1) break;
-					QString key = line.mid(0, i);
-					QString val = line.mid(i + 1).trimmed();
+				std::vector<std::string> lines = misc::splitLines((QBA)obj.content, false);
+				for (std::string const &line : lines) {
+					auto i = line.find(' ');
+					if (i == std::string::npos) break;
+					std::string key{line.substr(0, i)};
+					std::string val{misc::trimmed(line.substr(i + 1))};
 					if (key == "tree") {
 						out->tree_id = val;
 					} else if (key == "parent") {
@@ -442,32 +442,32 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 				}
 			}
 		}
-		if (!out->tree_id.isEmpty()) { // サブディレクトリ
-			out->parents.append(parents);
+		if (!out->tree_id.empty()) { // サブディレクトリ
+			out->parents.insert(out->parents.end(), parents.begin(), parents.end());
 			return true;
 		}
 	}
 	return false;
 }
 
-void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTreeItemList *out)
+void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, GitTreeItemList *out)
 {
 	*out = {};
-	QString s = QString::fromUtf8(ba);
-	QStringList lines = misc::splitLines(s);
-	for (QString const &line : lines) {
-		int tab = line.indexOf('\t'); // タブより後ろにパスがある
-		if (tab > 0) {
-			QString stat = line.mid(0, tab); // タブの手前まで
-			QStringList vals = misc::splitWords(stat); // 空白で分割
+	std::string_view s{ba.data(), ba.size()};
+	std::vector<std::string> lines = misc::splitLines(s, false);
+	for (std::string const &line : lines) {
+		auto tab = line.find('\t'); // タブより後ろにパスがある
+		if (tab != std::string::npos && tab > 0) {
+			std::string stat = line.substr(0, tab); // タブの手前まで
+			std::vector<std::string_view> vals = misc::splitWords(stat); // 空白で分割
 			if (vals.size() >= 3) {
 				GitTreeItem data;
-				data.mode = vals[0]; // ファイルモード
-				data.id = vals[2]; // id（ハッシュ値）
-				QString type = vals[1]; // 種類（tree/blob）
-				QString path = line.mid(tab + 1); // パス
+				data.mode = std::string{vals[0]}; // ファイルモード
+				data.id = std::string{vals[2]}; // id（ハッシュ値）
+				std::string type{vals[1]}; // 種類（tree/blob）
+				std::string path{line.substr(tab + 1)}; // パス
 				path = gitTrimPath(path);
-				data.name = path_prefix.isEmpty() ? path : misc::joinWithSlash(path_prefix, path);
+				data.name = path_prefix.empty() ? path : misc::joinWithSlash(path_prefix, path);
 				if (type == "tree") {
 					data.type = GitTreeItem::TREE;
 				} else if (type == "blob") {
@@ -483,10 +483,10 @@ void parseGitTreeObject(QByteArray const &ba, const QString &path_prefix, GitTre
 	}
 }
 
-bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const QString &commit_id, const QString &path_prefix, GitTreeItemList *out) // TODO: change commit_id as GitHash
+bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const std::string &commit_id, const std::string &path_prefix, GitTreeItemList *out) // TODO: change commit_id as GitHash
 {
 	out->clear();
-	if (!commit_id.isEmpty()) {
+	if (!commit_id.empty()) {
 		GitObject obj = g.catFile(GitHash(commit_id));
 		if (!obj.content.isEmpty()) { // 内容を取得
 			parseGitTreeObject(obj.content, path_prefix, out);
