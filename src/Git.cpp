@@ -323,13 +323,13 @@ std::string Git::getCurrentBranchName()
 	return {};
 }
 
-QStringList Git::getUntrackedFiles()
+std::vector<std::string> Git::getUntrackedFiles()
 {
-	QStringList files;
+	std::vector<std::string> files;
 	std::vector<GitFileStatus> stats = status_s();
 	for (GitFileStatus const &s : stats) {
 		if (s.code() == GitFileStatus::Code::Untracked) {
-			files.push_back(s.path1());
+			files.push_back(s.path1().toStdString());
 		}
 	}
 	return files;
@@ -407,21 +407,21 @@ QList<GitBranch> Git::branches()
 
 	struct BranchItem {
 		GitBranch branch;
-		QString alternate_name;
+		std::string alternate_name;
 	};
 	QList<BranchItem> branches;
-	auto result = git(QString("branch -vv -a --abbrev=%1").arg(GIT_ID_LENGTH).toStdString());
-	QString s = resultQString(result);
+	auto result = git(fmt("branch -vv -a --abbrev=%s")(GIT_ID_LENGTH));
+	std::string s = resultStdString(result);
 
-	QStringList lines = misc::splitLines(s);
-	for (QString const &line : lines) {
+	std::vector<std::string> lines = misc::splitLines(s, false);
+	for (std::string const &line : lines) {
 		if (line.size() > 2) {
-			QString name;
-			QString text = line.mid(2);
+			std::string name;
+			std::string text = line.substr(2);
 			int pos = 0;
-			if (text.startsWith('(')) {
-				int i, paren = 1;
-				for (i = 1; i < text.size(); i++) {
+			if (misc::starts_with(text, '(')) {
+				int paren = 1;
+				for (int i = 1; i < text.size(); i++) {
 					if (text[i] == '(') {
 						paren++;
 					} else if (text[i] == ')') {
@@ -435,59 +435,59 @@ QList<GitBranch> Git::branches()
 					}
 				}
 				if (pos > 1) {
-					name = text.mid(1, pos - 1);
+					name = text.substr(1, pos - 1);
 					pos++;
 				}
 			} else {
-				while (pos < text.size() && !QChar::isSpace(text.utf16()[pos])) {
+				while (pos < text.size() && !isspace((unsigned char)text[pos])) {
 					pos++;
 				}
-				name = text.mid(0, pos);
+				name = text.substr(0, pos);
 			}
-			if (!name.isEmpty()) {
-				while (pos < text.size() && QChar::isSpace(text.utf16()[pos])) {
+			if (!name.empty()) {
+				while (pos < text.size() && isspace((unsigned char)text[pos])) {
 					pos++;
 				}
-				text = text.mid(pos);
+				text = text.substr(pos);
 
 				BranchItem item;
 
-				if (name.startsWith("HEAD detached at ")) {
+				if (misc::starts_with(name, "HEAD detached at ")) {
 					item.branch.flags |= GitBranch::HeadDetachedAt;
-					name = name.mid(17);
+					name = name.substr(17);
 				}
 
-				if (name.startsWith("HEAD detached from ")) {
+				if (misc::starts_with(name, "HEAD detached from ")) {
 					item.branch.flags |= GitBranch::HeadDetachedFrom;
-					name = name.mid(19);
+					name = name.substr(19);
 				}
 
-				if (name.startsWith("remotes/")) {
-					name = name.mid(8);
-					int i = name.indexOf('/');
-					if (i > 0) {
-						item.branch.remote = name.mid(0, i);
-						name = name.mid(i + 1);
+				if (misc::starts_with(name, "remotes/")) {
+					name = name.substr(8);
+					auto i = name.find('/');
+					if (i != std::string::npos && i > 0) {
+						item.branch.remote = name.substr(0, i);
+						name = name.substr(i + 1);
 					}
 				}
 
 				item.branch.name = name;
 
-				if (text.startsWith("-> ")) {
-					item.alternate_name = text.mid(3);
+				if (misc::starts_with(text, "-> ")) {
+					item.alternate_name = text.substr(3);
 				} else {
-					int i = text.indexOf(' ');
+					auto i = text.find(' ');
 					if (i == GIT_ID_LENGTH) {
-						item.branch.id = GitHash(text.mid(0, GIT_ID_LENGTH));
+						item.branch.id = GitHash(text.substr(0, GIT_ID_LENGTH));
 					}
-					while (i < text.size() && QChar::isSpace(text.utf16()[i])) {
+					while (i < text.size() && isspace((unsigned char)text[i])) {
 						i++;
 					}
-					text = text.mid(i);
-					parseAheadBehind(text, &item.branch);
+					text = text.substr(i);
+					parseAheadBehind((QS)text, &item.branch);
 				}
 
-				if (line.startsWith('*')) {
+				if (misc::starts_with(line, '*')) {
 					item.branch.flags |= GitBranch::Current;
 				}
 
@@ -500,7 +500,7 @@ QList<GitBranch> Git::branches()
 
 	for (int i = 0; i < branches.size(); i++) {
 		BranchItem *b = &branches[i];
-		if (b->alternate_name.isEmpty()) {
+		if (b->alternate_name.empty()) {
 			ret.append(b->branch);
 		} else {
 			for (int j = 0; j < branches.size(); j++) {
@@ -1180,12 +1180,12 @@ void Git::stage(std::string const &path)
 	git("add " + path);
 }
 
-bool Git::stage(QStringList const &paths, AbstractPtyProcess *pty)
+bool Git::stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty)
 {
-	if (paths.isEmpty()) return false;
+	if (paths.empty()) return false;
 
-	QString cmd = "add";
-	for (QString const &path : paths) {
+	std::string cmd = "add";
+	for (std::string const &path : paths) {
 		cmd += ' ';
 		cmd += '\"';
 		cmd += path;
@@ -1194,7 +1194,7 @@ bool Git::stage(QStringList const &paths, AbstractPtyProcess *pty)
 
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return (bool)exec_git(cmd.toStdString(), opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 void Git::unstage(std::string const &path)
@@ -1204,13 +1204,13 @@ void Git::unstage(std::string const &path)
 	git(cmd);
 }
 
-void Git::unstage(QStringList const &paths)
+void Git::unstage(const std::vector<std::string> &paths)
 {
-	if (paths.isEmpty()) return;
+	if (paths.empty()) return;
 	std::string cmd = "reset HEAD";
-	for (QString const &path : paths) {
+	for (std::string const &path : paths) {
 		cmd += " \"";
-		cmd += path.toStdString();
+		cmd += path;
 		cmd += '\"';
 	}
 	git(cmd);
@@ -1240,13 +1240,13 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	return (bool)exec_git(cmd.toStdString(), opt);
 }
 
-QStringList Git::make_branch_list_(std::optional<GitResult> const &result)
+std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &result)
 {
-	QStringList list;
-	QStringList l = misc::splitLines(resultQString(result));
-	for (QString const &s : l) {
-		if (s.startsWith("* ")) list.push_back(s.mid(2));
-		if (s.startsWith("  ")) list.push_back(s.mid(2));
+	std::vector<std::string> list;
+	std::vector<std::string> l = misc::splitLines(resultStdString(result), false);
+	for (std::string const &s : l) {
+		if (misc::starts_with(s, "* ")) list.push_back(s.substr(2));
+		if (misc::starts_with(s, "  ")) list.push_back(s.substr(2));
 	}
 	return list;
 }
@@ -1339,13 +1339,13 @@ void Git::rebase_abort()
 	git("rebase --abort");
 }
 
-QStringList Git::getRemotes()
+std::vector<std::string> Git::getRemotes()
 {
-	QStringList ret;
+	std::vector<std::string> ret;
 	auto result = git("remote");
-	QStringList lines = misc::splitLines(resultQString(result));
-	for (QString const &line: lines) {
-		if (!line.isEmpty()) {
+	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	for (std::string const &line: lines) {
+		if (!line.empty()) {
 			ret.push_back(line);
 		}
 	}

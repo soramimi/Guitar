@@ -136,8 +136,8 @@ struct MainWindow::Private {
 	QList<GitSubmoduleItem> submodules;
 
 	QStringList added;
-	QStringList remotes;
-	QString current_remote_name;
+	std::vector<std::string> remotes;
+	std::string current_remote_name;
 	GitBranch current_branch;
 	unsigned int temp_file_counter = 0;
 
@@ -393,12 +393,12 @@ QString MainWindow::currentRepositoryName() const
 	return currentRepository().name;
 }
 
-QString MainWindow::currentRemoteName() const
+std::string MainWindow::currentRemoteName() const
 {
 	return m->current_remote_name;
 }
 
-QString MainWindow::currentBranchName() const
+std::string MainWindow::currentBranchName() const
 {
 	return currentBranch().name;
 }
@@ -1706,8 +1706,8 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	// ポジトリの情報を設定
 	{
-		const QString br_name = currentBranchName();
-		const QString repo_name = currentRepositoryName();
+		const QString br_name = (QS)currentBranchName();
+		const QString repo_name = (QS)currentRepositoryName();
 
 		QString info;
 		if (currentBranch().flags & GitBranch::HeadDetachedAt) {
@@ -1973,7 +1973,7 @@ bool MainWindow::execWelcomeWizardDialog()
 
 void MainWindow::onRemoteInfoChanged()
 {
-	ui->lineEdit_remote->setText(currentRemoteName());
+	ui->lineEdit_remote->setText((QS)currentRemoteName());
 }
 
 /**
@@ -2339,12 +2339,12 @@ void MainWindow::updateRemoteInfo()
 		std::sort(m->remotes.begin(), m->remotes.end());
 	}
 
-	m->current_remote_name = QString();
+	m->current_remote_name = {};
 	{
 		GitBranch const &r = currentBranch();
 		m->current_remote_name = r.remote;
 	}
-	if (m->current_remote_name.isEmpty()) {
+	if (m->current_remote_name.empty()) {
 		if (m->remotes.size() == 1) {
 			m->current_remote_name = m->remotes[0];
 		}
@@ -2747,10 +2747,9 @@ void MainWindow::fetch(GitRunner g, bool prune)
 	}, {});
 }
 
-void MainWindow::stage(GitRunner g, QStringList const &paths)
+void MainWindow::stage(GitRunner g, std::vector<std::string> const &paths)
 {
 	runPtyGit(tr("Stageing..."), g, Git_stage{paths}, RUN_PTY_CALLBACK{
-		// updateFileListLater(0);
 		updateCurrentFileList();
 	}, {});
 }
@@ -2794,16 +2793,16 @@ bool MainWindow::push()
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return false;
 
-	QStringList remotes = g.getRemotes();
+	std::vector<std::string> remotes = g.getRemotes();
 
-	QString current_branch = currentBranchName();
+	std::string current_branch = currentBranchName();
 
 	QStringList branches;
 	for (GitBranch const &b : g.branches()) {
-		branches.push_back(b.name);
+		branches.push_back((QS)b.name);
 	}
 
-	if (remotes.isEmpty() || branches.isEmpty()) {
+	if (remotes.empty() || branches.empty()) {
 		return false;
 	}
 
@@ -2819,7 +2818,7 @@ bool MainWindow::push()
 		}
 	}
 
-	PushDialog dlg(this, url, remotes, branches, PushDialog::RemoteBranch(QString(), current_branch));
+	PushDialog dlg(this, url, (QSL)remotes, branches, PushDialog::RemoteBranch(QString(), (QS)current_branch));
 	if (dlg.exec() == QDialog::Accepted) {
 		bool set_upstream = dlg.isSetUpStream();
 		QString remote = dlg.remote();
@@ -3201,7 +3200,7 @@ void MainWindow::setUnknownRepositoryInfo()
 	setWindowTitle_(user);
 }
 
-void MainWindow::setCurrentRemoteName(const QString &name)
+void MainWindow::setCurrentRemoteName(std::string const &name)
 {
 	m->current_remote_name = name;
 }
@@ -3225,7 +3224,7 @@ bool MainWindow::isAvatarEnabled() const
 	return appsettings()->get_avatar_icon_from_network_enabled;
 }
 
-QStringList MainWindow::remotes() const
+std::vector<std::string> MainWindow::remotes() const
 {
 	return m->remotes;
 }
@@ -3675,10 +3674,10 @@ std::tuple<QString, BranchLabelList> MainWindow::makeCommitLabels(GitCommitItem 
 				if (b.flags & GitBranch::HeadDetachedAt) continue;
 				if (b.flags & GitBranch::HeadDetachedFrom) continue;
 				BranchLabel label(BranchLabel::LocalBranch);
-				label.text = b.name;
-				if (!b.remote.isEmpty()) {
+				label.text = (QS)b.name;
+				if (!b.remote.empty()) {
 					label.kind = BranchLabel::RemoteBranch;
-					label.text = "remotes" / b.remote / label.text;
+					label.text = "remotes" / (QS)b.remote / label.text;
 				}
 				if (b.ahead > 0) {
 					label.info += tr(", %1 ahead").arg(b.ahead);
@@ -3903,10 +3902,10 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 				if (flags & NamedCommitFlag::Remotes) {
 					// nop
 				} else {
-					if (!b.remote.isEmpty()) continue;
+					if (!b.remote.empty()) continue;
 				}
 				NamedCommitItem item;
-				if (b.remote.isEmpty()) {
+				if (b.remote.empty()) {
 					if (b.name == "HEAD") {
 						item.type = NamedCommitItem::Type::None;
 					} else {
@@ -3914,9 +3913,9 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 					}
 				} else {
 					item.type = NamedCommitItem::Type::BranchRemote;
-					item.remote = b.remote.toStdString();
+					item.remote = b.remote;
 				}
-				item.name = b.name.toStdString();
+				item.name = b.name;
 				item.id = b.id;
 				items.push_back(item);
 			}
@@ -4494,9 +4493,9 @@ void MainWindow::merge(GitCommitItem commit)
 
 	newlabels.push_back(QString::fromStdString(commit.commit_id.toString()));
 
-	QString branch_name = currentBranchName();
+	std::string branch_name = currentBranchName();
 
-	MergeDialog dlg(fastforward, newlabels, branch_name, this);
+	MergeDialog dlg(fastforward, newlabels, (QS)branch_name, this);
 	if (dlg.exec() == QDialog::Accepted) {
 		fastforward = dlg.getFastForwardPolicy();
 		bool squash = dlg.isSquashEnabled();
@@ -5786,12 +5785,11 @@ void MainWindow::on_toolButton_stage_clicked()
 		if (items.size() == ui->listWidget_unstaged->count()) {
 			g.add_A();
 		} else {
-			QStringList list;
+			std::vector<std::string> list;
 			for (QListWidgetItem *item : items) {
-				QString path = getFilePath(item);
+				std::string path = getFilePath(item).toStdString();
 				list.push_back(path);
 			}
-			// stage(g, list);
 			g.stage(list, nullptr);
 		}
 		updateCurrentFileList();
@@ -5808,7 +5806,7 @@ void MainWindow::on_toolButton_unstage_clicked()
 		if (items.size() == ui->listWidget_staged->count()) {
 			g.unstage_all();
 		} else {
-			g.unstage(selectedFiles());
+			g.unstage((QSL)selectedFiles());
 		}
 		updateCurrentFileList();
 	}

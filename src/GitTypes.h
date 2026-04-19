@@ -226,9 +226,9 @@ struct GitUser {
 };
 
 struct GitBranch {
-	QString name;
+	std::string name;
 	GitHash id;
-	QString remote;
+	std::string remote;
 	int ahead = 0;
 	int behind = 0;
 	enum {
@@ -240,7 +240,7 @@ struct GitBranch {
 	int flags = 0;
 	operator bool () const
 	{
-		return id.isValid() && !name.isEmpty();
+		return id.isValid() && !name.empty();
 	}
 	bool isCurrent() const
 	{

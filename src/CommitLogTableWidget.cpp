@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <cmath>
+#include "common/q/helper.h"
 
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
 {
@@ -332,8 +333,8 @@ public:
 		// ラベルの描画
 		if (index.column() == Message) {
 			BranchLabelList const &labels = mainwindow()->rowLabels(actual_row);
-			QString current_branch = mainwindow()->currentBranchName();
-			drawLabels(painter, opt, index, labels, current_branch);
+			std::string current_branch = mainwindow()->currentBranchName();
+			drawLabels(painter, opt, index, labels, (QS)current_branch);
 		}
 	}
 };

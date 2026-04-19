@@ -26,8 +26,8 @@ public:
 
 class Git_stage {
 public:
-	QStringList paths;
-	Git_stage(QStringList const &paths)
+	std::vector<std::string> paths;
+	Git_stage(std::vector<std::string> const &paths)
 		: paths(paths)
 	{
 	}

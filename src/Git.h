@@ -47,7 +47,7 @@ public:
 	}
 
 private:
-	QStringList make_branch_list_(const std::optional<GitResult> &result);
+	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);
 	std::vector<GitFileStatus> status_s_();
 	bool commit_(const std::string &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(QString const &s, GitBranch *b);
@@ -122,7 +122,7 @@ public:
 	bool isValidWorkingCopy() const;
 	std::string version();
 	bool init();
-	QStringList getUntrackedFiles();
+	std::vector<std::string> getUntrackedFiles();
 
 	GitCommitItemList log_file(const std::string &path, int maxcount);
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
@@ -146,9 +146,9 @@ public:
 	bool unstage_all();
 
 	void stage(const std::string &path);
-	bool stage(QStringList const &paths, AbstractPtyProcess *pty);
+	bool stage(std::vector<std::string> const &paths, AbstractPtyProcess *pty);
 	void unstage(const std::string &path);
-	void unstage(QStringList const &paths);
+	void unstage(std::vector<std::string> const &paths);
 	bool pull(AbstractPtyProcess *pty = nullptr);
 
 	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
@@ -191,7 +191,7 @@ public:
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(const std::string &name);
-	QStringList getRemotes();
+	std::vector<std::string> getRemotes();
 
 	GitUser getUser(GitSource purpose);
 	void setUser(GitUser const&user, bool global);

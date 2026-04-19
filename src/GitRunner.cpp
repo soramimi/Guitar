@@ -135,7 +135,7 @@ void GitRunner::removeRemote(std::string const &name)
 	gitptr()->removeRemote(name);
 }
 
-QStringList GitRunner::getRemotes()
+std::vector<std::string> GitRunner::getRemotes()
 {
 	return gitptr()->getRemotes();
 }
@@ -424,7 +424,7 @@ void GitRunner::stage(std::string const &path)
 	gitptr()->stage(path);
 }
 
-bool GitRunner::stage(const QStringList &paths, AbstractPtyProcess *pty)
+bool GitRunner::stage(std::vector<std::string> const &paths, AbstractPtyProcess *pty)
 {
 	return gitptr()->stage(paths, pty);
 }
@@ -434,7 +434,7 @@ void GitRunner::unstage(std::string const &path)
 	gitptr()->unstage(path);
 }
 
-void GitRunner::unstage(const QStringList &paths)
+void GitRunner::unstage(std::vector<std::string> const &paths)
 {
 	gitptr()->unstage(paths);
 }

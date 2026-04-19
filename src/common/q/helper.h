@@ -35,5 +35,28 @@ public:
 	std::string_view sv() const { return std::string_view(data(), size()); }
 };
 
+class QSL : public QStringList {
+public:
+	QSL() = default;
+	QSL(QStringList const &sl) : QStringList(sl) {}
+	QSL(std::vector<std::string> const &v)
+	{
+		for (std::string const &s : v) {
+			push_back(QString::fromStdString(s));
+		}
+	}
+	std::vector<std::string> vs() const
+	{
+		std::vector<std::string> v;
+		for (const QString &s : *this) {
+			v.push_back(s.toStdString());
+		}
+		return v;
+	}
+	operator std::vector<std::string> () const
+	{
+		return vs();
+	}
+};
 
 #endif // QHELPER_H

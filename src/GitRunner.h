@@ -58,7 +58,7 @@ public:
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(const std::string &name);
-	QStringList getRemotes();
+        std::vector<std::string> getRemotes();
 
 	std::string version();
 
@@ -128,9 +128,9 @@ public:
 	bool unstage_all();
 
 	void stage(const std::string &path);
-	bool stage(QStringList const &paths, AbstractPtyProcess *pty);
+	bool stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty);
 	void unstage(const std::string &path);
-	void unstage(QStringList const &paths);
+	void unstage(const std::vector<std::string> &paths);
 	bool pull(AbstractPtyProcess *pty = nullptr);
 
 	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);

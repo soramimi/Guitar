@@ -6,6 +6,7 @@
 #include "MyTableWidgetDelegate.h"
 #include "OverrideWaitCursor.h"
 #include "common/misc.h"
+#include "common/q/helper.h"
 #include <QMenu>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -68,7 +69,7 @@ void FileHistoryWindow::prepare(GitRunner g, QString const &path)
 	this->m->path = path;
 
 	QString reponame = mainwindow()->currentRepositoryName();
-	QString brname = mainwindow()->currentBranch().name;
+	QString brname = (QS)mainwindow()->currentBranch().name;
 
 	QString text = "%1 (%2)";
 	text = text.arg(reponame).arg(brname);

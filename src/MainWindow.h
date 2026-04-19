@@ -285,7 +285,7 @@ private:
 
 	void push(bool set_upstream, QString const &remote, QString const &branch, bool force);
 	void fetch(GitRunner g, bool prune);
-	void stage(GitRunner g, const QStringList &paths);
+	void stage(GitRunner g, const std::vector<std::string> &paths);
 	void fetch(GitRunner g);
 	void pull(GitRunner g);
 	void push_tags(GitRunner g);
@@ -308,9 +308,9 @@ private:
 	void doGitCommand(const std::function<void (GitRunner)> &callback);
 	void setWindowTitle_(const GitUser &user);
 	void setUnknownRepositoryInfo();
-	void setCurrentRemoteName(QString const &name);
+	void setCurrentRemoteName(const std::string &name);
 	void deleteTags(const GitCommitItem &commit);
-	QStringList remotes() const;
+	std::vector<std::string> remotes() const;
 	BranchList findBranch(const GitHash &id);
 	QString tempfileHeader() const;
 	void deleteTempFiles();
@@ -640,8 +640,8 @@ public:
 	void setCurrentBranch(const GitBranch &b);
 	const RepositoryInfo &currentRepository() const;
 	QString currentRepositoryName() const;
-	QString currentRemoteName() const;
-	QString currentBranchName() const;
+	std::string currentRemoteName() const;
+	std::string currentBranchName() const;
 	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
 	GitRunner unassosiated_git_runner() const;
 	GitRunner new_git_runner(const QString &dir, const QString &sshkey);
