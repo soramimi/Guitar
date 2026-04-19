@@ -169,7 +169,7 @@ QList<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const QList<
 
 				QList<GitDiffRaw> list;
 				for (std::string const &parent : newer_commit.parents) {
-					QList<GitDiffRaw> l = g.diff_raw(GitHash(parent), id);
+					std::vector<GitDiffRaw> l = g.diff_raw(GitHash(parent), id);
 					for (GitDiffRaw const &item : l) {
 						if (misc::starts_with(item.state, 'D')) {
 							deleted_set.insert(item.a.id);

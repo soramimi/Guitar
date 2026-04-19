@@ -172,18 +172,20 @@ GitHash Git::rev_parse(const std::string &name)
 	return {};
 }
 
-QList<GitTag> Git::tags()
+std::vector<GitTag> Git::tags()
 {
-	QList<GitTag> list;
+	std::vector<GitTag> list;
 	auto result = git("show-ref");
-	QStringList lines = misc::splitLines(resultQString(result));
-	for (QString const &line : lines) {
-		QStringList l = misc::splitWords(line);
+	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	for (std::string const &line : lines) {
+		std::vector<std::string_view> l = misc::splitWords(line);
 		if (l.size() >= 2) {
-			if (GitHash::isValidID(l[0]) && l[1].startsWith("refs/tags/")) {
+			std::string id{l[0]};
+			std::string ref{l[1]};
+			if (GitHash::isValidID(id) && misc::starts_with(ref, "refs/tags/")) {
 				GitTag t;
-				t.name = (QS)l[1].mid(10);
-				t.id = GitHash(l[0]);
+				t.name = ref.substr(10);
+				t.id = GitHash(id);
 				list.push_back(t);
 			}
 		}
@@ -231,8 +233,8 @@ std::string Git::diff_file(std::string const &old_path, std::string const &new_p
 
 std::vector<std::string> Git::diff_name_only_head()
 {
-	QString cmd = "diff --name-only HEAD";
-	auto result = git(cmd.toStdString());
+	std::string cmd = "diff --name-only HEAD";
+	auto result = git(cmd);
 	std::string str = resultStdString(result);
 	return misc::splitLines(str, false);
 }
@@ -252,13 +254,10 @@ template <typename T> void remove_empty(std::vector<T> *v)
 	v->erase(end, v->end());
 }
 
-QList<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_id)
+std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_id)
 {
-	QList<GitDiffRaw> list;
-	std::string cmd = fmt("diff --raw --abbrev=%s %s %s")
-			(GIT_ID_LENGTH)
-			(old_id.toString())
-			(new_id.toString());
+	std::vector<GitDiffRaw> list;
+	std::string cmd = fmt("diff --raw --abbrev=%s %s %s")(GIT_ID_LENGTH)(old_id.toString())(new_id.toString());
 	auto result = git(cmd);
 	std::string text = resultStdString(result);
 	std::vector<std::string_view> lines = misc::splitLinesV(text, false);
@@ -278,7 +277,6 @@ QList<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_id)
 					item.a.mode = (std::string)header[0];
 					item.b.mode = (std::string)header[1];
 					item.state = (std::string)header[4];
-					// item.files = files;
 					for (std::string_view const &file : files) {
 						item.files.push_back(gitTrimPath((std::string)file));
 					}
@@ -319,7 +317,7 @@ void Git::unsetDefaultBranch()
 {
 	AbstractGitSession::Option opt;
 	opt.chdir = false;
-	exec_git(QString("config --global --unset init.defaultBranch").toStdString(), opt);
+	exec_git("config --global --unset init.defaultBranch", opt);
 }
 
 std::string Git::getCurrentBranchName()
@@ -412,7 +410,7 @@ void Git::parseAheadBehind(QString const &s, GitBranch *b)
 	}
 }
 
-QList<GitBranch> Git::branches()
+std::vector<GitBranch> Git::branches()
 {
 	PROFILE;
 
@@ -420,7 +418,7 @@ QList<GitBranch> Git::branches()
 		GitBranch branch;
 		std::string alternate_name;
 	};
-	QList<BranchItem> branches;
+	std::vector<BranchItem> branches;
 	auto result = git(fmt("branch -vv -a --abbrev=%s")(GIT_ID_LENGTH));
 	std::string s = resultStdString(result);
 
@@ -507,18 +505,18 @@ QList<GitBranch> Git::branches()
 		}
 	}
 
-	QList<GitBranch> ret;
+	std::vector<GitBranch> ret;
 
 	for (int i = 0; i < branches.size(); i++) {
 		BranchItem *b = &branches[i];
 		if (b->alternate_name.empty()) {
-			ret.append(b->branch);
+			ret.push_back(b->branch);
 		} else {
 			for (int j = 0; j < branches.size(); j++) {
 				if (j != i) {
 					if (branches[j].branch.name == b->alternate_name) {
 						b->branch.id = branches[j].branch.id;
-						ret.append(b->branch);
+						ret.push_back(b->branch);
 						break;
 					}
 				}
@@ -635,9 +633,8 @@ std::vector<GitHash> Git::rev_list_all(GitHash const &id, int maxcount)
 {
 	std::vector<GitHash> items;
 
-	QString cmd = "rev-list --all -%1 %2";
-	cmd = cmd.arg(maxcount).arg(QString::fromStdString(id.toString()));
-	auto result = git_nolog(cmd.toStdString(), nullptr);
+	std::string cmd = fmt("rev-list --all -%d %s")(maxcount)(id.toString());
+	auto result = git_nolog(cmd, nullptr);
 
 	if (result && result->exit_code() == 0) {
 		auto &out = result->output();

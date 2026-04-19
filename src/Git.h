@@ -153,7 +153,7 @@ public:
 
 	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
 
-	QList<GitBranch> branches();
+	std::vector<GitBranch> branches();
 
 	std::string diff(const std::string &old_id, const std::string &new_id);
 	std::string diff_file(const std::string &old_path, const std::string &new_path);
@@ -161,7 +161,7 @@ public:
 	std::vector<std::string> diff_name_only_head();
 	std::string diff_full_index_head_file(const std::string &file);
 
-	QList<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
+	std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
 
 	std::string status();
 	bool commit(const std::string &text, bool sign, AbstractPtyProcess *pty);
@@ -185,7 +185,7 @@ public:
 	std::string errorMessage(const std::optional<GitResult> &var) const;
 
 	GitHash rev_parse(std::string const &name);
-	QList<GitTag> tags();
+	std::vector<GitTag> tags();
 	bool tag(const std::string &name, GitHash const &id = {});
 	bool delete_tag(const std::string &name, bool remote);
 	void setRemoteURL(const GitRemote &remote);

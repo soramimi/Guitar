@@ -4,7 +4,7 @@
 #include "BranchLabel.h"
 #include "GitRunner.h"
 
-typedef QList<GitTag> TagList;
+typedef std::vector<GitTag> TagList;
 typedef QList<GitBranch> BranchList;
 typedef QList<BranchLabel> BranchLabelList;
 

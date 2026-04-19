@@ -299,7 +299,7 @@ private:
 	void resetFile(const QStringList &paths);
 	void clearAuthentication();
 	void clearSshAuthentication();
-        void internalDeleteTags(const std::vector<std::string> &tagnames);
+	void internalDeleteTags(const std::vector<std::string> &tagnames);
 	void internalAddTag(QString const &name);
 	void createRepository(QString const &dir);
 	void addRepository(QString const &local_dir, QString const &group = {});

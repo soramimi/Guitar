@@ -150,7 +150,7 @@ bool GitRunner::init()
 	return gitptr()->init();
 }
 
-QList<GitTag> GitRunner::tags()
+std::vector<GitTag> GitRunner::tags()
 {
 	return gitptr()->tags();
 }
@@ -346,7 +346,7 @@ std::string GitRunner::queryEntireCommitMessage(const GitHash &id)
 	return gitptr()->queryEntireCommitMessage(id);
 }
 
-QList<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash &new_id)
+std::vector<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash &new_id)
 {
 	return gitptr()->diff_raw(old_id, new_id);
 }
@@ -489,7 +489,7 @@ std::string GitRunner::getCherryPicking() const
 	return gitptr()->getCherryPicking();
 }
 
-QList<GitBranch> GitRunner::branches()
+std::vector<GitBranch> GitRunner::branches()
 {
 	return gitptr()->branches();
 }

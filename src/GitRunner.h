@@ -64,7 +64,7 @@ public:
 
 	bool init();
 
-	QList<GitTag> tags();
+        std::vector<GitTag> tags();
 	bool tag(const std::string &name, GitHash const &id = {});
 	bool delete_tag(const std::string &name, bool remote);
 
@@ -113,7 +113,7 @@ public:
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	std::string queryEntireCommitMessage(const GitHash &id);
 
-	QList<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
+        std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
 	std::string diff(const std::string &old_id, const std::string &new_id);
 	std::string diff_file(const std::string &old_path, const std::string &new_path);
 	std::string diff_to_file(const std::string &old_id, const std::string &path);
@@ -142,7 +142,7 @@ public:
 	bool rm_cached(const std::string &file);
 	void cherrypick(const std::string &name);
 	std::string getCherryPicking() const;
-	QList<GitBranch> branches();
+        std::vector<GitBranch> branches();
 
 	std::string signingKey(GitSource purpose);
 	bool setSigningKey(std::string const &id, bool global);

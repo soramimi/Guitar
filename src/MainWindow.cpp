@@ -3860,8 +3860,6 @@ void MainWindow::saveApplicationSettings()
 	appsettings()->saveSettings();
 }
 
-
-
 void MainWindow::setDiffResult(const QList<GitDiff> &diffs)
 {
 	m->diff_result = diffs;
