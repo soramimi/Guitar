@@ -21,7 +21,7 @@ public:
 	bool isRunning() const override;
 	int readOutput(char *dstptr, int maxlen) override;
 	void writeInput(char const *ptr, int len) override;
-	void start(QString const &cmdline, const QString &env) override;
+	void start(std::string const &cmdline, std::string const &env) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
 	int getExitCode() const override;

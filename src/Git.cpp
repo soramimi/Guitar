@@ -1075,7 +1075,7 @@ bool Git::push_u(bool set_upstream, const std::string &remote, const std::string
 		cmd += " --force";
 	}
 	if (set_upstream && !remote.empty() && !branch.empty()) {
-		cmd += fmt(" -u \"%1\" \"%2\"")(remote)(branch);
+		cmd += fmt(" -u \"%s\" \"%s\"")(remote)(branch);
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
@@ -1237,14 +1237,14 @@ bool Git::pull(AbstractPtyProcess *pty)
 
 bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 {
-	QString cmd = "fetch --tags -f -j%1";
-	cmd = cmd.arg(std::thread::hardware_concurrency());
+	std::string cmd = "fetch --tags -f -j%d";
+	cmd = fmt(cmd)(std::thread::hardware_concurrency());
 	if (prune) {
 		cmd += " --prune";
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
-	return (bool)exec_git(cmd.toStdString(), opt);
+	return (bool)exec_git(cmd, opt);
 }
 
 std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &result)
@@ -1444,22 +1444,22 @@ void Git::remote_v(std::vector<GitRemote> *out)
 {
 	out->clear();
 	auto result = git("remote -v");
-	QStringList lines = misc::splitLines(resultQString(result));
-	for (QString const &line : lines) {
-		int i = line.indexOf('\t');
-		int j = line.indexOf(" (");
-		if (i > 0 && i < j) {
+	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	for (std::string const &line : lines) {
+		auto i = line.find('\t');
+		auto j = line.find(" (");
+		if (i != std::string::npos && j != std::string::npos && i > 0 && i < j) {
 			GitRemote r;
-			r.name = line.mid(0, i).toStdString();
+			r.name = line.substr(0, i);
 			r.ssh_key = gitinfo().ssh_key_override;
-			QString url = line.mid(i + 1, j - i - 1);
-			QString type = line.mid(j + 1);
-			if (type.startsWith('(') && type.endsWith(')')) {
-				type = type.mid(1, type.size() - 2);
+			std::string url = line.substr(i + 1, j - i - 1);
+			std::string type = line.substr(j + 1);
+			if (misc::starts_with(type, '(') && misc::ends_with(type, ')')) {
+				type = type.substr(1, type.size() - 2);
 				if (type == "fetch") {
-					r.url_fetch = url.toStdString();
+					r.url_fetch = url;
 				} else if (type == "push") {
-					r.url_push = url.toStdString();
+					r.url_push = url;
 				}
 			}
 			out->push_back(r);
@@ -1488,17 +1488,19 @@ void Git::remote_v(std::vector<GitRemote> *out)
 
 void Git::setRemoteURL(GitRemote const &remote)
 {
-	QString cmd = "remote set-url %1 %2";
-	cmd = cmd.arg(encodeQuotedText(QString::fromStdString(remote.name))).arg(encodeQuotedText(QString::fromStdString(remote.url_fetch)));
-	git(cmd.toStdString());
+	std::string cmd = fmt("remote set-url %s %s")
+			(encodeQuotedText(remote.name))
+			(encodeQuotedText(remote.url_fetch));
+	git(cmd);
 }
 
 void Git::addRemoteURL(GitRemote const &remote)
 {
-	QString cmd = "remote add \"%1\" \"%2\"";
-	cmd = cmd.arg(encodeQuotedText(QString::fromStdString(remote.name))).arg(encodeQuotedText(QString::fromStdString(remote.url_fetch)));
+	std::string cmd = fmt("remote add \"%s\" \"%s\"")
+			(encodeQuotedText(remote.name))
+			(encodeQuotedText(remote.url_fetch));
 	gitinfo().ssh_key_override = remote.ssh_key;
-	git(cmd.toStdString());
+	git(cmd);
 }
 
 void Git::removeRemote(std::string const &name)

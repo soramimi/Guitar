@@ -7,7 +7,7 @@
 
 static std::string determineFileType(std::string const &path)
 {
-	return global->determineFileType(QString::fromStdString(path));
+	return global->determineFileType(path);
 }
 
 int genmsg()

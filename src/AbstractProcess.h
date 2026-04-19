@@ -37,7 +37,7 @@ public:
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual int readOutput(char *ptr, int len) = 0;
-	virtual void start(QString const &cmd, QString const &env) = 0;
+	virtual void start(std::string const &cmd, std::string const &env) = 0;
 	virtual bool wait(unsigned long time = ULONG_MAX) = 0;
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
@@ -46,7 +46,7 @@ public:
 
 class DryRunPtyProcess : public AbstractPtyProcess {
 private:
-	QString command_;
+	std::string command_;
 public:
 	bool isRunning() const
 	{
@@ -63,7 +63,7 @@ public:
 		(void)len;
 		return 0;
 	}
-	void start(const QString &cmd, const QString &env)
+	void start(std::string const &cmd, std::string const &env)
 	{
 		(void)env;
 		command_ = cmd;
@@ -88,7 +88,7 @@ public:
 	{
 		out->clear();
 	}
-	QString command() const
+	std::string command() const
 	{
 		return command_;
 	}

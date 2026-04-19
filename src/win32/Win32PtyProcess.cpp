@@ -52,8 +52,8 @@ void OutputReaderThread::start(HANDLE hOutput, std::deque<char> *outq, std::vect
 
 struct Win32PtyProcess::Private {
 	QMutex mutex;
-	QString command;
-	QString env;
+	std::string command;
+	std::string env;
 	OutputReaderThread th_output_reader;
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hOutput = INVALID_HANDLE_VALUE;
@@ -115,7 +115,8 @@ QString Win32PtyProcess::getProgram(QString const &cmdline)
 
 void Win32PtyProcess::run()
 {
-	QString cmd = m->command;
+	QString cmd = QString::fromStdString(m->command);
+	QString env = QString::fromStdString(m->env);
 	QString program;
 	program = getProgram(cmd);
 
@@ -139,12 +140,12 @@ void Win32PtyProcess::run()
 	trace.begin("process", cmd);
 
 	std::vector<wchar_t> envbuf;
-	if (!m->env.isEmpty()) {
-		envbuf.resize(m->env.size() + 2);
-		memcpy(envbuf.data(), m->env.utf16(), sizeof(wchar_t) * m->env.size());
+	if (!env.isEmpty()) {
+		envbuf.resize(env.size() + 2);
+		memcpy(envbuf.data(), env.utf16(), sizeof(wchar_t) * env.size());
 	}
 
-	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)m->command.utf16(), nullptr, envbuf.empty() ? nullptr : envbuf.data(), nullptr);
+	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)cmd.utf16(), nullptr, envbuf.empty() ? nullptr : envbuf.data(), nullptr);
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
 	bool ok = false;
@@ -237,7 +238,7 @@ void Win32PtyProcess::writeInput(char const *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::start(QString const &cmdline, QString const &env)
+void Win32PtyProcess::start(std::string const &cmdline, std::string const &env)
 {
 	if (isRunning()) return;
 	m->command = cmdline;

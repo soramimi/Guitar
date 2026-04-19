@@ -97,11 +97,11 @@ int UnixPtyProcess::readOutput(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(QString const &cmd, QString const &env)
+void UnixPtyProcess::start(std::string const &cmd, std::string const &env)
 {
 	if (isRunning()) return;
-	m->command = cmd.toStdString();
-	m->env = env.toStdString();
+	m->command = cmd;
+	m->env = env;
 	QThread::start();
 }
 

@@ -3183,7 +3183,7 @@ void MainWindow::setWindowTitle_(const GitUser &user)
 	if (user.name.empty() && user.email.empty()) {
 		setWindowTitle(qApp->applicationName());
 	} else {
-		setWindowTitle(QString("%s : %s <%s>")
+		setWindowTitle(QString("%1 : %2 <%3>")
 					   .arg(qApp->applicationName())
 					   .arg((QS)user.name)
 					   .arg((QS)user.email)
