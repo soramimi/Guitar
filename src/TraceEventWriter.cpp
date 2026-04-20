@@ -154,15 +154,14 @@ void TraceEventWriter::close()
 
 void TraceEventWriter::put(Event event)
 {
-	event.timestamp = ts();
-	event.pid = 1;
-	event.tid = tid();
 	std::shared_ptr<Event> event_ptr = std::make_shared<Event>(std::move(event));
 	{
 		std::lock_guard lock(mutex_);
+		event.timestamp = ts();
+		event.pid = 1;
+		event.tid = tid();
 		queue_.push_back(event_ptr);
 	}
 	cv_.notify_one();
-	// write(event, true);
 }
 
