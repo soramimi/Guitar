@@ -353,12 +353,13 @@ QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *ou
 		if (parseGitTreeObject(g, objcache, tree_id.toStdString(), {}, &list)) {
 			QString return_id;
 			for (GitTreeItem const &d : list) {
-				if (d.name == name) {
+				QString itemname = (QS)d.name;
+				if (itemname == name) {
 					return_id = (QS)d.id;
 				}
-				QString path = misc::joinWithSlash(subdir, (QS)d.name);
+				QString path = misc::joinWithSlash(subdir, itemname);
 				if (d.type == GitTreeItem::BLOB) {
-					if (out && d.name == name) {
+					if (out && itemname == name) {
 						*out = d;
 					}
 					blob_map[path] = d;
