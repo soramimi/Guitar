@@ -10,7 +10,6 @@
 #include <functional>
 #include <QKeyEvent>
 #include <QColor>
-// #include <QTextCodec>
 
 class MyTextCodec {
 private:
@@ -251,13 +250,11 @@ public:
 		Char(uint32_t unicode)
 			: unicode(unicode)
 		{
-
 		}
 		operator uint32_t () const
 		{
 			return unicode;
 		}
-//		operator unsigned int () const = delete;
 	};
 
 	enum LineFlag {

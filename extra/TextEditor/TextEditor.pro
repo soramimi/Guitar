@@ -20,7 +20,6 @@ linux:LIBS += -lncursesw
 macx:LIBS += -lncurses
 
 SOURCES += \
-	../../src/common/joinpath.cpp \
 	../../src/common/misc.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \

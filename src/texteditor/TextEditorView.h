@@ -134,8 +134,6 @@ public:
 	void inputMethodEvent(QInputMethodEvent *e) override;
 	void refrectScrollBar();
 
-//	void setRenderingMode(RenderingMode mode);
-
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);

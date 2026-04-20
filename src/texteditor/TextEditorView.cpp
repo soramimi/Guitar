@@ -11,7 +11,6 @@
 #include <QMenu>
 #include <QPainter>
 #include <QScrollBar>
-// #include <QTextCodec>
 #include <QTimer>
 #include <functional>
 
@@ -63,7 +62,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 #else
 
-//	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+	// QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 	QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
 	font.setPointSize(20);
 	setTextFont(font);
@@ -84,7 +83,6 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
 
-//	setRenderingMode(GraphicMode);
 	showLineNumber(false);
 
 	updateCursorRect(true);
@@ -173,17 +171,6 @@ void TextEditorView::updateLayout()
 
 	fetchLines();
 }
-
-//void TextEditorView::setRenderingMode(RenderingMode mode)
-//{
-//	rendering_mode_ = mode;
-//	if (renderingMode() == GraphicMode) {
-//		showLineNumber(false);
-//	} else {
-//		showLineNumber(true);
-//	}
-//	update();
-//}
 
 void AbstractCharacterBasedApplication::loadExampleFile()
 {
@@ -511,17 +498,11 @@ void TextEditorView::drawText(QPainter *painter, int px, int py, QString const &
 QColor TextEditorView::defaultForegroundColor()
 {
 	return theme()->fgDefault();
-//	if (renderingMode() == GraphicMode) {
-//	}
-//	return Qt::white;
 }
 
 QColor TextEditorView::defaultBackgroundColor()
 {
 	return theme()->bgDefault();
-//	if (renderingMode() == GraphicMode) {
-//	}
-//	return Qt::black;
 }
 
 QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
@@ -750,7 +731,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		return color;
 	};
 
-//	if (renderingMode() == GraphicMode)
 	{
 		const int line_height = lineHeight();
 		pr.save();
@@ -945,8 +925,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 
 		pr.restore();
-//	} else {
-//		paintScreen(&pr);
 	}
 
 	// カーソル描画
@@ -955,7 +933,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 
 	// 行番号描画
-//	if (renderingMode() == GraphicMode)
 	{
 		auto FillLineNumberBG = [&](int y, int h, QColor const &color){
 			pr.fillRect(0, y, linenum_width - 2, h, color);

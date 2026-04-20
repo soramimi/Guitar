@@ -27,15 +27,9 @@ MainWindow::MainWindow(QWidget *parent)
 	, m(new Private)
 {
 	ui->setupUi(this);
-//	auto flags = windowFlags();
-//	flags &= ~Qt::WindowMaximizeButtonHint;
-//	flags |= Qt::MSWindowsFixedSizeDialogHint;
-//	setWindowFlags(flags);
 	m->need_to_layout = true;
 
 	texteditor()->setTheme(TextEditorTheme::Dark());
-
-//	setFont(texteditor()->font());
 
 	m->engine = std::make_shared<TextEditorEngine>();
 	texteditor()->setTextEditorEngine(m->engine);
@@ -45,10 +39,6 @@ MainWindow::MainWindow(QWidget *parent)
 	} else {
 		texteditor()->setTerminalMode(true);
 	}
-
-//	texteditor()->setReadOnly(true);
-
-//	texteditor()->setRenderingMode(TextEditorView::CharacterMode);
 
 	texteditor()->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
@@ -89,7 +79,6 @@ bool MainWindow::event(QEvent *e)
 			w += sb;
 			h += sb;
 			h += ui->menuBar->height();
-//			setFixedSize(w, h);
 		}
 	}
 	return r;
@@ -173,7 +162,4 @@ void MainWindow::moveEvent(QMoveEvent *)
 
 void MainWindow::on_action_test_triggered()
 {
-	std::string cmd = "\x1b[36mHello, \x1b[34mworld\n";
-	texteditor()->write(cmd);
-
 }
