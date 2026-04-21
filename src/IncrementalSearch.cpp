@@ -370,7 +370,7 @@ AbstractIncrementalFilter::Result MeCaFilter::match(QString const &text) const
 			}
 		}
 	}
-	{
+	if (!katakana_text_.empty()) {
 		std::vector<Part2> part2;
 		std::string kana = to_kana(text.toStdString(), &part2);
 		char const *p = strstr(kana.c_str(), katakana_text_.c_str());
