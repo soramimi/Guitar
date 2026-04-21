@@ -390,7 +390,6 @@ private:
 	};
 	Part *alloc_part(const char *data, int size)
 	{
-		// Part *p = (Part *)new char[sizeof(Part) + size];
 		Part *p = (Part *)x_alloc(sizeof(Part) + size);
 		p->next = nullptr;
 		p->size = size;
@@ -413,7 +412,6 @@ private:
 	void free_part(Part **p)
 	{
 		if (p && *p) {
-			// delete[] *p;
 			x_free(*p);
 			*p = nullptr;
 		}
@@ -441,9 +439,9 @@ private:
 		list->head = nullptr;
 		list->last = nullptr;
 	}
-	static void add_chars(PartList *list, char c, int n)
+	void add_chars(PartList *list, char c, int n)
 	{
-		Part *p = (Part *)new char[sizeof(Part) + n];
+		Part *p = (Part *)x_alloc(sizeof(Part) + n);
 		p->next = nullptr;
 		p->size = n;
 		memset(p->data, c, n);
