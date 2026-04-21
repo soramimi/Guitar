@@ -3420,10 +3420,10 @@ std::vector<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash 
 		TraceLogger trace_retrieve_submodules;
 		trace_retrieve_submodules.begin("retrieve submodules parse objects", {});
 		for (int i = 0; i < submodules.size(); i++) {
-			QStringList vars = QString::fromStdString(submodules[i].path).split('/');
+			QStringList vars = QString::fromStdString(submodules[i].path).split('/'); //@TODO:
 			for (int j = 0; j < vars.size(); j++) {
 				for (int k = 0; k < list.size(); k++) {
-					if (list[k].name == vars[j]) {
+					if (list[k].name == vars[j].toStdString()) {
 						if (list[k].type == GitTreeItem::Type::BLOB) {
 							if (j + 1 == vars.size()) {
 								submodules[i].id = GitHash(list[k].id);

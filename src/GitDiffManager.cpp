@@ -372,16 +372,17 @@ QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *ou
 	} else {
 		QString return_id;
 		for (GitTreeItem const &d : root_item_list) {
-			if (d.name == file) {
+			QString itemname = (QS)d.name;
+			if (itemname == file) {
 				return_id = (QS)d.id;
 			}
 			if (d.type == GitTreeItem::BLOB) {
-				if (out && d.name == file) {
+				if (out && itemname == file) {
 					*out = d;
 				}
-				blob_map[(QS)d.name] = d;
+				blob_map[itemname] = d;
 			} else if (d.type == GitTreeItem::TREE) {
-				tree_id_map[(QS)d.name] = (QS)d.id;
+				tree_id_map[itemname] = (QS)d.id;
 			}
 		}
 		return return_id;
