@@ -91,28 +91,30 @@ public:
 		if (size == 0) size = 1;
 		size = align_up(size);
 		Header *h = (Header *)default_buffer;
-		const int N = 3;
-		for (int i = 0; i < N; i++) {
+		auto Alloc = [&]()-> void * {
 			if (h->allocated + size <= h->capacity) {
 				void *p = (char *)h + sizeof(Header) + h->allocated;
 				h->allocated += size;
 				return p;
 			}
-			if (h->next && i + 2 < N) {
-				h = h->next;
-				continue;
-			}
-			h = (Header *)default_buffer;
-			size_t bufsize = std::max(sizeof(Header) + size, default_buffer_size);
-			Header *next = (Header *)x_alloc(bufsize);
-			*next = {};
-			next->capacity = bufsize - sizeof(Header);
-			next->next = h->next;
-			h->next = next;
-			h = next;
+			return nullptr;
+		};
+		void *p = Alloc();
+		if (p) return p;
+		if (h->next) {
+			h = h->next;
+			p = Alloc();
+			if (p) return p;
 		}
-		// assert(0);
-		return nullptr;
+		h = (Header *)default_buffer;
+		size_t bufsize = std::max(sizeof(Header) + size, default_buffer_size);
+		Header *next = (Header *)x_alloc(bufsize);
+		*next = {};
+		next->capacity = bufsize - sizeof(Header);
+		next->next = h->next;
+		h->next = next;
+		h = next;
+		return Alloc();
 	}
 	void free(void *p)
 	{
