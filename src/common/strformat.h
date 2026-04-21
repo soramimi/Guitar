@@ -1,5 +1,5 @@
 // String Formatter
-// Copyright (C) 2025 S.Fuchita (soramimi_jp)
+// Copyright (C) 2026 S.Fuchita (soramimi_jp)
 // This software is distributed under the MIT license.
 
 #ifndef STRFORMAT_H
@@ -30,6 +30,96 @@
 #endif
 
 namespace strformat_ns {
+
+class StdAlloc {
+public:
+	void *alloc(size_t size)
+	{
+		return ::malloc(size);
+	}
+	void free(void *ptr)
+	{
+		::free(ptr);
+	}
+};
+
+class QuickAlloc {
+private:
+	constexpr static size_t default_buffer_size = 256;
+	constexpr static size_t alignment = alignof(std::max_align_t);
+	struct Header {
+		Header *next = nullptr;
+		size_t capacity = 0;
+		size_t allocated = 0;
+	};
+	alignas(std::max_align_t) char default_buffer[default_buffer_size];
+	void *x_alloc(size_t size)
+	{
+		return ::malloc(size);
+	}
+	void x_free(void *p)
+	{
+		::free(p);
+	}
+	static size_t align_up(size_t n)
+	{
+		return (n + alignment - 1) & ~(alignment - 1);
+	}
+public:
+	QuickAlloc(const QuickAlloc &) = delete;
+	QuickAlloc &operator=(const QuickAlloc &) = delete;
+	QuickAlloc(QuickAlloc &&) = delete;
+	QuickAlloc &operator=(QuickAlloc &&) = delete;
+	QuickAlloc()
+	{
+		Header *h = (Header *)default_buffer;
+		*h = {};
+		h->capacity = sizeof(default_buffer) - sizeof(Header);
+	}
+	~QuickAlloc()
+	{
+		Header *h = (Header *)default_buffer;
+		Header *next = h->next;
+		while (next) {
+			void *p = next;
+			next = next->next;
+			x_free(p);
+		}
+	}
+	void *alloc(size_t size)
+	{
+		if (size == 0) size = 1;
+		size = align_up(size);
+		Header *h = (Header *)default_buffer;
+		const int N = 3;
+		for (int i = 0; i < N; i++) {
+			if (h->allocated + size <= h->capacity) {
+				void *p = (char *)h + sizeof(Header) + h->allocated;
+				h->allocated += size;
+				return p;
+			}
+			if (h->next && i + 2 < N) {
+				h = h->next;
+				continue;
+			}
+			h = (Header *)default_buffer;
+			size_t bufsize = std::max(sizeof(Header) + size, default_buffer_size);
+			Header *next = (Header *)x_alloc(bufsize);
+			*next = {};
+			next->capacity = bufsize - sizeof(Header);
+			next->next = h->next;
+			h->next = next;
+			h = next;
+		}
+		// assert(0);
+		return nullptr;
+	}
+	void free(void *p)
+	{
+		(void)p;
+		// nop: free all at destructor
+	}
+};
 
 class misc {
 private:
@@ -273,6 +363,20 @@ public:
 		Locale = 0x0001,
 	};
 private:
+#if 0
+	StdAlloc allocator;
+#else
+	QuickAlloc allocator;
+#endif
+	void *x_alloc(size_t size)
+	{
+		return allocator.alloc(size);
+	}
+	void x_free(void *ptr)
+	{
+		allocator.free(ptr);
+	}
+private:
 	struct Part {
 		Part *next;
 		int size;
@@ -282,31 +386,33 @@ private:
 		Part *head = nullptr;
 		Part *last = nullptr;
 	};
-	static Part *alloc_part(const char *data, int size)
+	Part *alloc_part(const char *data, int size)
 	{
-		Part *p = (Part *)new char[sizeof(Part) + size];
+		// Part *p = (Part *)new char[sizeof(Part) + size];
+		Part *p = (Part *)x_alloc(sizeof(Part) + size);
 		p->next = nullptr;
 		p->size = size;
 		memcpy(p->data, data, size);
 		p->data[size] = 0;
 		return p;
 	}
-	static Part *alloc_part(const char *begin, const char *end)
+	Part *alloc_part(const char *begin, const char *end)
 	{
 		return alloc_part(begin, end - begin);
 	}
-	static Part *alloc_part(const char *str)
+	Part *alloc_part(const char *str)
 	{
 		return alloc_part(str, strlen(str));
 	}
-	static Part *alloc_part(const std::string_view &str)
+	Part *alloc_part(const std::string_view &str)
 	{
 		return alloc_part(str.data(), (int)str.size());
 	}
-	static void free_part(Part **p)
+	void free_part(Part **p)
 	{
 		if (p && *p) {
-			delete[] *p;
+			// delete[] *p;
+			x_free(*p);
 			*p = nullptr;
 		}
 	}
@@ -322,7 +428,7 @@ private:
 			list->last = part;
 		}
 	}
-	static void free_list(PartList *list)
+	void free_list(PartList *list)
 	{
 		Part *p = list->head;
 		while (p) {
@@ -471,7 +577,7 @@ private:
 		return alloc_part(ptr, end);
 	}
 #endif
-	static Part *format_int32(int32_t val, bool force_sign)
+	Part *format_int32(int32_t val, bool force_sign)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -502,7 +608,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_uint32(uint32_t val)
+	Part *format_uint32(uint32_t val)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -521,7 +627,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_int64(int64_t val, bool force_sign)
+	Part *format_int64(int64_t val, bool force_sign)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -552,7 +658,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_uint64(uint64_t val)
+	Part *format_uint64(uint64_t val)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -571,7 +677,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_oct32(uint32_t val)
+	Part *format_oct32(uint32_t val)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -592,7 +698,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_oct64(uint64_t val)
+	Part *format_oct64(uint64_t val)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -613,7 +719,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_hex32(uint32_t val, bool upper)
+	Part *format_hex32(uint32_t val, bool upper)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -634,7 +740,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_hex64(uint64_t val, bool upper)
+	Part *format_hex64(uint64_t val, bool upper)
 	{
 		int n = 30;
 		char *end = (char *)alloca(n) + n - 1;
@@ -655,7 +761,7 @@ private:
 
 		return alloc_part(ptr, end);
 	}
-	static Part *format_pointer(void *val)
+	Part *format_pointer(void *val)
 	{
 		int n = sizeof(uintptr_t) * 2 + 1;
 		char *end = (char *)alloca(n) + n - 1;
