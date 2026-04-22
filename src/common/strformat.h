@@ -9,6 +9,7 @@
 // #define STRFORMAT_NO_FP
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -107,7 +108,12 @@ public:
 			if (p) return p;
 		}
 		h = (Header *)default_buffer;
-		size_t bufsize = std::max(sizeof(Header) + size, default_buffer_size);
+		size_t bufsize = sizeof(Header) + size;
+		if (bufsize < default_buffer_size) {
+			bufsize = default_buffer_size;
+		} else if (h->next) {
+			h = h->next;
+		}
 		Header *next = (Header *)x_alloc(bufsize);
 		*next = {};
 		next->capacity = bufsize - sizeof(Header);
@@ -308,30 +314,35 @@ struct Option_ {
 template <typename T> static inline T num(char const *value, Option_ const &opt);
 template <> inline char num<char>(char const *value, Option_ const &opt)
 {
+	(void)opt;
 	return parse_number<char>(value, [](char const *p, int radix){
 		return (char)strtol(p, nullptr, radix);
 	});
 }
 template <> inline int32_t num<int32_t>(char const *value, Option_ const &opt)
 {
+	(void)opt;
 	return parse_number<int32_t>(value, [](char const *p, int radix){
 		return strtol(p, nullptr, radix);
 	});
 }
 template <> inline uint32_t num<uint32_t>(char const *value, Option_ const &opt)
 {
+	(void)opt;
 	return parse_number<uint32_t>(value, [](char const *p, int radix){
 		return strtoul(p, nullptr, radix);
 	});
 }
 template <> inline int64_t num<int64_t>(char const *value, Option_ const &opt)
 {
+	(void)opt;
 	return parse_number<int64_t>(value, [](char const *p, int radix){
 		return strtoll(p, nullptr, radix);
 	});
 }
 template <> inline uint64_t num<uint64_t>(char const *value, Option_ const &opt)
 {
+	(void)opt;
 	return parse_number<uint64_t>(value, [](char const *p, int radix){
 		return strtoull(p, nullptr, radix);
 	});
@@ -459,6 +470,7 @@ private:
 	}
 	//
 #ifndef STRFORMAT_NO_FP
+#if 0
 	Part *format_double(double val, int precision, bool trim_zeros, bool plus)
 	{
 		if (std::isnan(val)) return alloc_part("#NAN");
@@ -577,6 +589,38 @@ private:
 		return alloc_part(ptr, end);
 	}
 #endif
+	Part *format_double(double val, int precision, bool trim_zeros, bool plus)
+	{
+		if (std::isnan(val)) return alloc_part("#NAN");
+		if (std::isinf(val)) return alloc_part("#INF");
+
+		bool sign = val < 0;
+		if (sign) val = -val;
+
+		int bufsize = precision + 400;
+		char *buf = (char *)alloca(bufsize);
+		char *ptr = buf + 1; // reserve buf[0] for sign
+
+		auto result = std::to_chars(ptr, buf + bufsize, val, std::chars_format::fixed, precision);
+		char *end = result.ptr;
+
+		if (trim_zeros) {
+			char *dot = std::find(ptr, end, '.');
+			if (dot != end) {
+				while (end > dot + 1 && end[-1] == '0') end--;
+				if (end[-1] == '.') end--;
+			}
+		}
+
+		if (sign) {
+			*--ptr = '-';
+		} else if (plus) {
+			*--ptr = '+';
+		}
+
+		return alloc_part(ptr, end);
+	}
+#endif
 	Part *format_int32(int32_t val, bool force_sign)
 	{
 		int n = 30;
@@ -637,7 +681,7 @@ private:
 		if (val == 0) {
 			*--ptr = '0';
 		} else {
-			if (val == (int64_t)1 << 63) {
+			if (val == INT64_MIN) {
 				*--ptr = '8';
 				val /= 10;
 			}
@@ -1179,12 +1223,12 @@ public:
 		r._init();
 	}
 
-	string_formatter(int flags = 0, std::string const &text = {})
+	string_formatter(int flags = 0, std::string_view text = {})
 	{
 		reset(flags, text);
 	}
 
-	string_formatter(std::string const &text)
+	string_formatter(std::string_view text)
 	{
 		reset(0, text);
 	}
@@ -1203,7 +1247,7 @@ public:
 		return '.';
 	}
 
-	string_formatter &reset(int flags, std::string const &text)
+	string_formatter &reset(int flags, std::string_view text)
 	{
 		clear();
 		q.text = text;
@@ -1217,7 +1261,7 @@ public:
 		return *this;
 	}
 
-	string_formatter &append(std::string const &s)
+	string_formatter &append(std::string_view s)
 	{
 		q.text += s;
 		return *this;
@@ -1331,23 +1375,21 @@ public:
 	{
 		write_to(stderr);
 	}
+	void append_to(std::string *str)
+	{
+		str->reserve(str->size() + length());
+		render([&](char const *ptr, int len){
+			str->append(ptr, len);
+		});
+	}
 	std::string str()
 	{
-		int n = length();
-		char *p;
-		std::vector<char> tmp;
-		if (n < 4096) { // if smaller, use stack
-			p = (char *)alloca(n);
-		} else {
-			tmp.reserve(n); // if larger, use heap
-			p = tmp.data();
-		}
-		char *d = p;
+		std::string result;
+		result.reserve(length());
 		render([&](char const *ptr, int len){
-			memcpy(d, ptr, len);
-			d += len;
+			result.append(ptr, len);
 		});
-		return std::string(p, n);
+		return result;
 	}
 	operator std::string ()
 	{
