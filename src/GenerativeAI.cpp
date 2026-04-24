@@ -25,7 +25,9 @@ const std::vector<ProviderInfo> &provider_table()
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{AI::OpenAI, "gpt-5.2-2025-12-11"},
+		{AI::OpenAI, "gpt-5.4"},
+		{AI::OpenAI, "gpt-5.4-mini"},
+		{AI::OpenAI, "gpt-5.4-nano"},
 		{AI::Anthropic, "claude-sonnet-4-6"},
 		{AI::Google, "gemini-3-flash-preview"},
 		{AI::DeepSeek, "deepseek-chat"},
