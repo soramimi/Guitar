@@ -9,6 +9,7 @@
 #include "Profile.h"
 #include <QFile>
 #include <QDebug>
+#include "Logger.h"
 
 struct CommitMessageResult {
 	bool completion = false;
@@ -23,7 +24,7 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 		: reader(in.data(), in.data() + in.size())
 	{}
 
-	CommitMessageResult parse_openai_format()
+	CommitMessageResult parse_openai_chat_completions_format()
 	{
 		CommitMessageResult ret;
 		while (reader.next()) {
@@ -49,9 +50,29 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 		return {};
 	}
 
-	CommitMessageResult case_OpenAI()
+	CommitMessageResult case_OpenAI_responses()
 	{
-		return parse_openai_format();
+		CommitMessageResult ret;
+		while (reader.next()) {
+			if (reader.match("{status")) {
+				if (reader.string() == "completed") {
+					ret.completion = true;
+				}
+			} else if (reader.match("{output[{content[{text")) {
+				ret.text = reader.string();
+			} else if (reader.match("{error")) {
+				if (!reader.isnull()) {
+					ret.error_status = reader.string();
+					ret.completion = false;
+				}
+			}
+		}
+		return ret;
+	}
+
+	CommitMessageResult case_OpenAI_chat_completions()
+	{
+		return parse_openai_chat_completions_format();
 	}
 
 	CommitMessageResult case_Anthropic()
@@ -102,12 +123,12 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 
 	CommitMessageResult case_DeepSeek()
 	{
-		return parse_openai_format();
+		return parse_openai_chat_completions_format();
 	}
 
 	CommitMessageResult case_OpenRouter()
 	{
-		return parse_openai_format();
+		return parse_openai_chat_completions_format();
 	}
 
 	CommitMessageResult case_Ollama()
@@ -132,7 +153,7 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 
 	CommitMessageResult case_LMStudio()
 	{
-		return parse_openai_format();
+		return parse_openai_chat_completions_format();
 	}
 };
 
@@ -156,7 +177,16 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return {};
 	}
 
-	std::string case_OpenAI()
+	std::string case_OpenAI_responses()
+	{
+		std::string json = R"---({
+"model": "%s",
+"input": "%s"
+})---";
+		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_OpenAI_chat_completions()
 	{
 		std::string json = R"---({
 "model": "%s",
@@ -217,7 +247,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 
 	std::string case_OpenRouter()
 	{
-		return case_OpenAI();
+		return case_OpenAI_chat_completions();
 	}
 
 	std::string case_LMStudio()

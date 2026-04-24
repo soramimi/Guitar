@@ -9,6 +9,8 @@ namespace GenerativeAI {
 enum class AI {
 	Unknown,
 	OpenAI,
+	OpenAI_responses, // for OpenAI responses API
+	OpenAI_chat_completions, // legacy for OpenAI chat completions API
 	Anthropic,
 	Google,
 	DeepSeek,
@@ -22,7 +24,8 @@ public:
 	virtual ~AbstractVisitor() = default;
 
 	virtual T case_Unknown() = 0;
-	virtual T case_OpenAI() = 0;
+	virtual T case_OpenAI_responses() = 0;
+	virtual T case_OpenAI_chat_completions() = 0;
 	virtual T case_Anthropic() = 0;
 	virtual T case_Google() = 0;
 	virtual T case_DeepSeek() = 0;
@@ -33,14 +36,15 @@ public:
 	T visit(AI provider)
 	{
 		switch (provider) {
-		case AI::Unknown:     return case_Unknown();
-		case AI::OpenAI:      return case_OpenAI();
-		case AI::Anthropic:   return case_Anthropic();
-		case AI::Google:      return case_Google();
-		case AI::DeepSeek:    return case_DeepSeek();
-		case AI::OpenRouter:  return case_OpenRouter();
-		case AI::Ollama:      return case_Ollama();
-		case AI::LMStudio:    return case_LMStudio();
+		case AI::Unknown:                 return case_Unknown();
+		case AI::OpenAI_responses:        return case_OpenAI_responses();
+		case AI::OpenAI_chat_completions: return case_OpenAI_chat_completions();
+		case AI::Anthropic:               return case_Anthropic();
+		case AI::Google:                  return case_Google();
+		case AI::DeepSeek:                return case_DeepSeek();
+		case AI::OpenRouter:              return case_OpenRouter();
+		case AI::Ollama:                  return case_Ollama();
+		case AI::LMStudio:                return case_LMStudio();
 		}
 		return case_Unknown();
 	}

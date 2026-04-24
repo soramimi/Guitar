@@ -11,7 +11,8 @@ const std::vector<ProviderInfo> &provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		{AI::Unknown, "-", "-", ""},
-		{AI::OpenAI, "openai", "OpenAI; GPT", "OPENAI_API_KEY"},
+		{AI::OpenAI_responses, "openai-responses", "OpenAI", "OPENAI_API_KEY"},
+		{AI::OpenAI_chat_completions, "openai-chat-completions", "OpenAI (legacy)", "OPENAI_API_KEY"},
 		{AI::Anthropic, "anthropic", "Anthropic; Claude", "ANTHROPIC_API_KEY"},
 		{AI::Google, "google", "Google; Gemini", "GOOGLE_API_KEY"},
 		{AI::DeepSeek, "deepseek", "DeepSeek", "DEEPSEEK_API_KEY"},
@@ -25,9 +26,10 @@ const std::vector<ProviderInfo> &provider_table()
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{AI::OpenAI, "gpt-5.4"},
-		{AI::OpenAI, "gpt-5.4-mini"},
-		{AI::OpenAI, "gpt-5.4-nano"},
+		{AI::OpenAI_responses, "gpt-5.4"},
+		{AI::OpenAI_responses, "gpt-5.4-mini"},
+		{AI::OpenAI_responses, "gpt-5.4-nano"},
+		{AI::OpenAI_responses, "gpt-5.3-codex"},
 		{AI::Anthropic, "claude-sonnet-4-6"},
 		{AI::Google, "gemini-3-flash-preview"},
 		{AI::DeepSeek, "deepseek-chat"},
@@ -52,7 +54,8 @@ const ProviderInfo *provider_info(AI ai)
 
 std::string Model::default_model()
 {
-	return "claude-sonnet-4-6";
+	return "gpt-5.4-nano";
+	// return "claude-sonnet-4-6";
 }
 
 Model::Model(AI provider, std::string const &model_uri)
@@ -106,14 +109,13 @@ Model Model::from_name(std::string const &name)
 		{}
 	};
 	static const std::vector<Item> items = {
-		{AI::OpenAI, "^gpt-"},
+		{AI::OpenAI_responses, "^gpt-"},
 		{AI::Anthropic, "^claude-"},
 		{AI::Google, "^gemini-"},
 		{AI::DeepSeek, "^deepseek-"},
 		{AI::Ollama, "^ollama://"},
 		{AI::LMStudio, "^lmstudio://"},
 		{AI::OpenRouter, "^openrouter://"},
-		{AI::OpenAI, "^o[0-9]+"}
 	};
 	for (auto const &item : items) {
 		QRegularExpression re(item.regex);
@@ -139,7 +141,16 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 		return {};
 	}
 
-	Request case_OpenAI()
+	Request case_OpenAI_responses()
+	{
+		Request r;
+		r.endpoint_url = "https://api.openai.com/v1/responses"; // ref. https://platform.openai.com/docs/api-reference/chat/create-response
+		r.model_name = model_.model_name();
+		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		return r;
+	}
+
+	Request case_OpenAI_chat_completions()
 	{
 		Request r;
 		r.endpoint_url = "https://api.openai.com/v1/chat/completions";

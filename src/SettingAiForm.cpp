@@ -37,7 +37,8 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 
 	m->providers.insert(m->providers.end(), {
 		{GenerativeAI::AI::Unknown},
-		{GenerativeAI::AI::OpenAI},
+		{GenerativeAI::AI::OpenAI_responses},
+		{GenerativeAI::AI::OpenAI_chat_completions},
 		{GenerativeAI::AI::Anthropic},
 		{GenerativeAI::AI::Google},
 		{GenerativeAI::AI::DeepSeek},
@@ -107,13 +108,13 @@ void SettingAiForm::exchange(bool save)
 	ApplicationSettings *s = settings();
 
 	std::vector<Item> items;
-#define ADD_ITEM(ID) { Provider *p = provider(GenerativeAI::AI::ID); \
-	items.emplace_back(&s->use_env_api_key_##ID, &s->api_key_##ID, &p->use_env_value, &p->custom_api_key); }
-	ADD_ITEM(OpenAI);
-	ADD_ITEM(Anthropic);
-	ADD_ITEM(Google);
-	ADD_ITEM(DeepSeek);
-	ADD_ITEM(OpenRouter);
+#define ADD_ITEM(SHORT, LONG) { Provider *p = provider(GenerativeAI::AI::LONG); \
+	items.emplace_back(&s->use_env_api_key_##SHORT, &s->api_key_##SHORT, &p->use_env_value, &p->custom_api_key); }
+	ADD_ITEM(OpenAI, OpenAI_responses);
+	ADD_ITEM(Anthropic, Anthropic);
+	ADD_ITEM(Google, Google);
+	ADD_ITEM(DeepSeek, DeepSeek);
+	ADD_ITEM(OpenRouter, OpenRouter);
 	// the following has no API key
 	// ADD_ITEM(Ollama);
 	// ADD_ITEM(LMStudio);

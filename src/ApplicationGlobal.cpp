@@ -219,7 +219,7 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		return {};
 	}
 
-	GenerativeAI::Credential case_OpenAI()
+	GenerativeAI::Credential case_OpenAI_chat_completions()
 	{
 		GenerativeAI::Credential cred;
 		if (global->appsettings.use_env_api_key_OpenAI) {
@@ -228,6 +228,11 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 			cred.api_key = global->appsettings.api_key_OpenAI.toStdString();
 		}
 		return cred;
+	}
+
+	GenerativeAI::Credential case_OpenAI_responses()
+	{
+		return case_OpenAI_chat_completions();
 	}
 
 	GenerativeAI::Credential case_Anthropic()
