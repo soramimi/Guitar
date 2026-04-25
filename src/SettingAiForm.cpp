@@ -44,8 +44,9 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 		{GenerativeAI::AI::DeepSeek},
 		{GenerativeAI::AI::OpenRouter},
 		{GenerativeAI::AI::Ollama},
-		{GenerativeAI::AI::LMStudio}
-						});
+		{GenerativeAI::AI::LMStudio},
+		{GenerativeAI::AI::LLAMACPP},
+	});
 
 	m->current_provider = unknown_provider();
 
@@ -118,6 +119,7 @@ void SettingAiForm::exchange(bool save)
 	// the following has no API key
 	// ADD_ITEM(Ollama);
 	// ADD_ITEM(LMStudio);
+	// ADD_ITEM(LLAMACPP);
 #undef ADD_ITEM
 
 	if (save) {

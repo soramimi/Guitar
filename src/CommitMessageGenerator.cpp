@@ -155,6 +155,12 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 	{
 		return parse_openai_chat_completions_format();
 	}
+
+	CommitMessageResult case_LLAMACPP()
+	{
+		return parse_openai_chat_completions_format();
+	}
+
 };
 
 /**
@@ -258,6 +264,15 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 "stream": false
 })---";
 		return fmt(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+	}
+
+	std::string case_LLAMACPP()
+	{
+		std::string json = R"---({
+"messages": [
+	{"role": "user", "content": "%s"}]
+})---";
+		return fmt(json)(jstream::encode_json_string(prompt));
 	}
 };
 

@@ -16,7 +16,8 @@ enum class AI {
 	DeepSeek,
 	OpenRouter,
 	Ollama, // experimental
-	LMStudio // experimental
+	LMStudio, // experimental
+	LLAMACPP, // experimental
 };
 
 template <typename T> class AbstractVisitor {
@@ -32,6 +33,7 @@ public:
 	virtual T case_OpenRouter() = 0;
 	virtual T case_Ollama() = 0;
 	virtual T case_LMStudio() = 0;
+	virtual T case_LLAMACPP() = 0;
 
 	T visit(AI provider)
 	{
@@ -45,6 +47,7 @@ public:
 		case AI::OpenRouter:              return case_OpenRouter();
 		case AI::Ollama:                  return case_Ollama();
 		case AI::LMStudio:                return case_LMStudio();
+		case AI::LLAMACPP:                return case_LLAMACPP();
 		}
 		return case_Unknown();
 	}

@@ -18,7 +18,8 @@ const std::vector<ProviderInfo> &provider_table()
 		{AI::DeepSeek, "deepseek", "DeepSeek", "DEEPSEEK_API_KEY"},
 		{AI::OpenRouter, "openrouter", "OpenRouter", "OPENROUTER_API_KEY"},
 		{AI::Ollama, "ollama", "Ollama (experimental)", ""},
-		{AI::LMStudio, "lmstudio", "LM Studio (experimental)", ""}
+		{AI::LMStudio, "lmstudio", "LM Studio (experimental)", ""},
+		{AI::LLAMACPP, "llamacpp", "llama.cpp (experimental)", ""},
 	};
 	return provider_info;
 }
@@ -36,6 +37,7 @@ std::vector<Model> const &ai_model_presets()
 		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
 		{AI::Ollama, "ollama:///gemma4"},
 		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
+		{AI::LLAMACPP, "llamacpp:///unknown"},
 	};
 	return preset_models;
 }
@@ -97,6 +99,7 @@ void Model::parse_model(const std::string &name)
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
 	if (Parse("openrouter://", 80)) return;
+	if (Parse("llamacpp://", 8080)) return;
 }
 
 Model Model::from_name(std::string const &name)
@@ -116,6 +119,7 @@ Model Model::from_name(std::string const &name)
 		{AI::Ollama, "^ollama://"},
 		{AI::LMStudio, "^lmstudio://"},
 		{AI::OpenRouter, "^openrouter://"},
+		{AI::LLAMACPP, "^llamacpp://"},
 	};
 	for (auto const &item : items) {
 		QRegularExpression re(item.regex);
@@ -144,8 +148,8 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	Request case_OpenAI_responses()
 	{
 		Request r;
-		r.endpoint_url = "https://api.openai.com/v1/responses"; // ref. https://platform.openai.com/docs/api-reference/chat/create-response
 		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.openai.com/v1/responses"; // ref. https://platform.openai.com/docs/api-reference/chat/create-response
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -153,8 +157,8 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	Request case_OpenAI_chat_completions()
 	{
 		Request r;
-		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
 		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -162,8 +166,8 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	Request case_Anthropic()
 	{
 		Request r;
-		r.endpoint_url = "https://api.anthropic.com/v1/messages";
 		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.anthropic.com/v1/messages";
 		r.header.push_back("x-api-key: " + cred_.api_key);
 		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
 		return r;
@@ -172,16 +176,16 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	Request case_Google()
 	{
 		Request r;
-		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
 		r.model_name = model_.model_name();
+		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
 		return r;
 	}
 
 	Request case_DeepSeek()
 	{
 		Request r;
-		r.endpoint_url = "https://api.deepseek.com/chat/completions";
 		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.deepseek.com/chat/completions";
 		r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		return r;
 	}
@@ -209,6 +213,14 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = fmt("http://%s:%s/v1/completions")(model_.host())(model_.port()); // experimental
+		return r;
+	}
+
+	Request case_LLAMACPP()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint_url = fmt("http://%s:%s/v1/chat/completions")(model_.host())(model_.port()); // experimental
 		return r;
 	}
 };

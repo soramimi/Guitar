@@ -289,6 +289,13 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		cred.api_key = "aonymous";
 		return cred;
 	}
+
+	GenerativeAI::Credential case_LLAMACPP()
+	{
+		GenerativeAI::Credential cred;
+		cred.api_key = "aonymous";
+		return cred;
+	}
 };
 
 GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI provider)
