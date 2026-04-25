@@ -268,11 +268,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 
 	std::string case_LLAMACPP()
 	{
-		std::string json = R"---({
-"messages": [
-	{"role": "user", "content": "%s"}]
-})---";
-		return fmt(json)(jstream::encode_json_string(prompt));
+		return case_OpenAI_chat_completions();
 	}
 };
 

@@ -56,7 +56,7 @@ const ProviderInfo *provider_info(AI ai)
 
 std::string Model::default_model()
 {
-	return "gpt-5.4-nano";
+	return "gpt-5.4-mini";
 	// return "claude-sonnet-4-6";
 }
 
