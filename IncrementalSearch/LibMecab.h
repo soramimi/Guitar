@@ -1,12 +1,12 @@
-#ifndef MECASEARCH_H
-#define MECASEARCH_H
+#ifndef LIBMECAB_H
+#define LIBMECAB_H
 
 #include <stdlib.h>
 #include <vector>
 #include <string>
 #include <string_view>
 
-class MeCaSearch {
+class LibMecab {
 private:
 	struct Private;
 	Private *m;
@@ -17,12 +17,12 @@ public:
 		std::string text;
 	};
 public:
-	MeCaSearch();
-	~MeCaSearch();
+	LibMecab();
+	~LibMecab();
 	bool open(char const *dicpath);
 	void close();
 	std::vector<Part> parse(std::string_view const &line);
 	std::string convert_roman_to_katakana(std::string_view const &romaji);
 };
 
-#endif // MECASEARCH_H
+#endif // LIBMECAB_H

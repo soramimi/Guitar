@@ -4,6 +4,7 @@
 #include "EditProfilesDialog.h"
 #include "GenerativeAI.h"
 #include "IncrementalSearch.h"
+#include "LibMigemo.h"
 
 #include <QMessageBox>
 
@@ -44,7 +45,7 @@ void SettingOptionsForm::on_pushButton_setup_migemo_dict_clicked()
 {
 	auto r = QMessageBox::question(this, tr("Setup Migemo dictionary"), tr("Are you sure to setup Migemo dictionary?"), QMessageBox::Yes | QMessageBox::No);
 	if (r == QMessageBox::Yes) {
-		IncrementalSearch::setupMigemoDict();
+		LibMigemo::setupMigemoDict();
 		if (ui->checkBox_incremental_search_with_migemo->isChecked()) {
 			global->incremental_search()->open();
 		}
@@ -55,7 +56,7 @@ void SettingOptionsForm::on_pushButton_delete_migemo_dict_clicked()
 {
 	auto r = QMessageBox::question(this, tr("Delete Migemo dictionary"), tr("Are you sure to delete Migemo dictionary?"), QMessageBox::Yes | QMessageBox::No);
 	if (r == QMessageBox::Yes) {
-		IncrementalSearch::deleteMigemoDict();
+		LibMigemo::deleteMigemoDict();
 		global->incremental_search()->close();
 	}
 }

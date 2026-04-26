@@ -1,4 +1,4 @@
-#include "MeCaSearch.h"
+#include "LibMecab.h"
 #include "cstring"
 #include <mecab.h>
 #include <string>
@@ -394,7 +394,7 @@ static std::vector<KanaRoma> kana_roma_table = {
 	{"ㇿ", "xro"},
 };
 
-std::string MeCaSearch::convert_roman_to_katakana(std::string_view const &romaji)
+std::string LibMecab::convert_roman_to_katakana(std::string_view const &romaji)
 {
 	std::string result;
 	auto Write = [&](char const *p){
@@ -466,23 +466,23 @@ static std::vector<std::string_view> split(const char *feature)
 	return result;
 }
 
-struct MeCaSearch::Private {
+struct LibMecab::Private {
 	MeCab::Tagger *tagger = nullptr;
 };
 
-MeCaSearch::MeCaSearch()
+LibMecab::LibMecab()
 	: m(new Private)
 {
 }
 
-MeCaSearch::~MeCaSearch()
+LibMecab::~LibMecab()
 {
 	close();
 	delete m;
 }
 
 
-bool MeCaSearch::open(const char *dicpath)
+bool LibMecab::open(const char *dicpath)
 {
 	if (m->tagger) {
 		fprintf(stderr, "Already opened\n");
@@ -494,7 +494,7 @@ bool MeCaSearch::open(const char *dicpath)
 	return m->tagger != nullptr;
 }
 
-void MeCaSearch::close()
+void LibMecab::close()
 {
 	if (m->tagger) {
 		delete m->tagger;
@@ -502,7 +502,7 @@ void MeCaSearch::close()
 	}
 }
 
-std::vector<MeCaSearch::Part> MeCaSearch::parse(const std::string_view &line)
+std::vector<LibMecab::Part> LibMecab::parse(const std::string_view &line)
 {
 	if (!m->tagger) return {};
 	std::vector<Part> parts;

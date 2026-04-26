@@ -5,7 +5,7 @@
 #include <optional>
 #include <QString>
 #include <memory>
-#include "MeCaSearch.h"
+#include "LibMecab.h"
 
 class QRect;
 class QPainter;
@@ -14,30 +14,15 @@ class QStyleOptionViewItem;
 class AbstractIncrementalSearchFilter;
 class IncrementalSearchFilter;
 
-class IncrementalSearch {
-private:
-	struct M;
-	M *m;
-public:
-	IncrementalSearch();
-	~IncrementalSearch();
-	void init();
-	bool open();
-	void close();
-	std::optional<std::string> queryMigemo(const char *word);
 
-	static bool migemoEnabled();
-	static std::string migemoDictDir();
-	static std::string migemoDictPath();
-	static bool setupMigemoDict();
-	static void deleteMigemoDict();
+namespace IncrementalSearch {
 
-	static IncrementalSearch *instance();
+QString normalizeText(QString s);
+void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text);
+void drawText_filtered(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const IncrementalSearchFilter &filter);
+void fillFilteredBG(QPainter *painter, const QRect &rect);
 
-	static void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text);
-	static void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const IncrementalSearchFilter &filter);
-	static void fillFilteredBG(QPainter *painter, const QRect &rect);
-};
+}
 
 class AbstractIncrementalSearchFilter {
 public:
@@ -65,9 +50,6 @@ public:
 			return match;
 		}
 	};
-
-	static QString normalizeText(QString s);
-	static int u16ncmp(const ushort *s1, const ushort *s2, int n);
 
 	virtual ~AbstractIncrementalSearchFilter() = default;
 	virtual bool isEmpty() const = 0;

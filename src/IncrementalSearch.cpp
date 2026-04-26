@@ -1,180 +1,20 @@
 #include "IncrementalSearch.h"
 #include "ApplicationGlobal.h"
+#include "LibMigemo.h"
 #include "common/joinpath.h"
 #include "zip/zip.h"
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
+#include <QPainter>
 #include <QRegularExpression>
+#include <QStyleOptionViewItem>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <time.h>
-#include <QDirIterator>
-#include <QPainter>
-#include <QStyleOptionViewItem>
-
-#include "migemo.h"
-
-#define MIGEMO_ABOUT "cmigemo - C/Migemo Library " MIGEMO_VERSION " Driver"
-#define MIGEMODICT_NAME "migemo-dict"
-#define MIGEMO_SUBDICT_MAX 8
-
-struct IncrementalSearch::M {
-	migemo *pmigemo = nullptr;
-	std::string dict_path;
-};
-
-IncrementalSearch::IncrementalSearch()
-	: m(new M)
-{
-}
-
-IncrementalSearch::~IncrementalSearch()
-{
-	close();
-	delete m;
-}
-
-void IncrementalSearch::init()
-{
-	m->dict_path = migemoDictPath();
-}
-
-bool IncrementalSearch::open()
-{
-	close();
-
-	m->pmigemo = migemo_open(m->dict_path.c_str());
-	if (!m->pmigemo) return false;
-
-	char *subdict[MIGEMO_SUBDICT_MAX];
-	int subdict_count = 0;
-
-	memset(subdict, 0, sizeof(subdict));
-
-	/* サブ辞書を読み込む */
-	if (subdict_count > 0) {
-		for (int i = 0; i < subdict_count; ++i) {
-			if (subdict[i] == NULL || subdict[i][0] == '\0') continue;
-			migemo_load(m->pmigemo, MIGEMO_DICTID_MIGEMO, subdict[i]);
-		}
-	}
-
-	return true;
-}
-
-void IncrementalSearch::close()
-{
-	if (m->pmigemo) {
-		migemo_close(m->pmigemo);
-		m->pmigemo = nullptr;
-	}
-}
-
-std::optional<std::string> IncrementalSearch::queryMigemo(char const *word)
-{
-	std::optional<std::string> ret;
-	if (m->pmigemo) {
-		unsigned char *ans = (unsigned char *)migemo_query(m->pmigemo, (unsigned char const *)word);
-		if (ans) {
-			ret = (char const *)ans;
-		}
-		migemo_release(m->pmigemo, ans);
-	}
-	return ret;
-}
-
-IncrementalSearch *IncrementalSearch::instance()
-{
-	return global->incremental_search();
-}
-
-bool IncrementalSearch::migemoEnabled()
-{
-	return global->appsettings.incremental_search_with_miegemo;
-}
-
-std::string IncrementalSearch::migemoDictDir()
-{
-	QString path = global->app_config_dir / "migemo";
-	return path.toStdString();
-}
-
-std::string IncrementalSearch::migemoDictPath()
-{
-	return migemoDictDir() / MIGEMODICT_NAME;
-}
-
-bool IncrementalSearch::setupMigemoDict()
-{
-	QFile file(":/misc/migemo.zip"); // load from resource
-	if (!file.open(QFile::ReadOnly)) return false;
-
-	QByteArray data = file.readAll();
-	if (data.size() == 0) {
-		qDebug() << "Failed to load the zip file.";
-		return false;
-	}
-
-	// extract dict files
-	if (!zip::Zip::extract_from_data(data.data(), data.size(), global->app_config_dir.toStdString())) return false;
-
-	// remove CR from migemo dict files
-	QDirIterator it(global->app_config_dir / "migemo");
-	while (it.hasNext()) {
-		it.next();
-		QFileInfo info = it.fileInfo();
-		if (info.isFile()) {
-			QFile file(info.absoluteFilePath());
-			if (file.open(QFile::ReadWrite)) {
-				file.seek(0);
-				QByteArray data = file.readAll();
-				if (data.isEmpty()) continue;
-				char *src = data.data();
-				char *end = src + data.size();
-				char *dst = src;
-				while (src < end) {
-					if (*src == '\r') {
-						src++;
-						continue;
-					}
-					*dst++ = *src++;
-				}
-				file.seek(0);
-				file.resize(0);
-				file.write(data.data(), dst - data.data());
-				file.close();
-			}
-		}
-	}
-
-	return true;
-}
-
-static void deleteTree(QString const &dir)
-{
-	QDir d(dir);
-	if (!d.exists()) return;
-	for (QFileInfo const &fi : d.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot)) {
-		if (fi.isDir()) {
-			deleteTree(fi.filePath());
-		} else {
-			d.remove(fi.fileName());
-		}
-	}
-	d.rmdir(".");
-}
-
-void IncrementalSearch::deleteMigemoDict()
-{
-	QString dir = global->app_config_dir / "migemo";
-	deleteTree(dir);
-}
-
-
-//
 
 
 MigemoFilter::MigemoFilter(const QString &filtertext)
@@ -190,9 +30,9 @@ bool MigemoFilter::isEmpty() const
 void MigemoFilter::makeFilter(const QString &filtertext)
 {
 	text_ = filtertext;
-	if (IncrementalSearch::instance()->migemoEnabled()) {
+	if (LibMigemo::instance()->migemoEnabled()) {
 		if (filtertext.size() > 0) {
-			auto s = IncrementalSearch::instance()->queryMigemo(filtertext.toStdString().c_str());
+			auto s = LibMigemo::instance()->queryMigemo(filtertext.toStdString().c_str());
 			if (s) {
 				re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
 			}
@@ -209,7 +49,7 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 	}
 	QString text2 = text;
 	if (re_.get()) { // 正規表現が有効な場合
-		text2 = normalizeText(text2);
+		text2 = IncrementalSearch::normalizeText(text2);
 		QRegularExpressionMatch m;
 		if (text2.contains(*re_, &m)) {
 			Result ret;
@@ -251,38 +91,11 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 	return ret;
 }
 
-int AbstractIncrementalSearchFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
-{
-	for (int i = 0; i < n; i++) {
-		ushort c1 = s1[i];
-		ushort c2 = s2[i];
-		if (c1 < 128) c1 = toupper(c1);
-		if (c2 < 128) c2 = toupper(c2);
-		if (c1 != c2) {
-			return c1 - c2;
-		}
-	}
-	return 0;
-}
+// IncrementalSearch
 
-void IncrementalSearch::fillFilteredBG(QPainter *painter, const QRect &rect)
-{
-	painter->fillRect(rect, QColor(128, 128, 128, 64));
-}
+namespace IncrementalSearch {
 
-void IncrementalSearch::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
-{
-#ifndef Q_OS_WIN
-	if (opt.state & QStyle::State_Selected) { // 選択されている場合
-		painter->setPen(opt.palette.color(QPalette::HighlightedText));
-	} else {
-		painter->setPen(opt.palette.color(QPalette::Text));
-	}
-#endif
-	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
-}
-
-QString AbstractIncrementalSearchFilter::normalizeText(QString s)
+QString normalizeText(QString s)
 {
 	for (QChar &c : s) {
 		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
@@ -300,40 +113,69 @@ QString AbstractIncrementalSearchFilter::normalizeText(QString s)
 	return s;
 }
 
-void IncrementalSearch::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
+void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
 {
+#ifndef Q_OS_WIN
+	if (opt.state & QStyle::State_Selected) { // 選択されている場合
+		painter->setPen(opt.palette.color(QPalette::HighlightedText));
+	} else {
+		painter->setPen(opt.palette.color(QPalette::Text));
+	}
+#endif
+	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
+}
+
+void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
+{
+	if (!filter) {
+		drawText(painter, opt, rect, opt.text);
+		return;
+	}
+
 	QString text = opt.text;
 
 	std::vector<std::tuple<QString, bool>> list;
 
-	AbstractIncrementalSearchFilter::Result r = filter.match(text);
-	for (AbstractIncrementalSearchFilter::Part2 const &part2 : r.part2) {
-		list.push_back(std::make_tuple(QString::fromStdString(part2.source.text), part2.match));
-	}
-
-	int x = rect.x();
-	for (auto [s, f] : list) {
-		int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
-		QRect r = rect;
-		r.setLeft(x);
-		r.setWidth(w);
-		if (f) { // フィルターの部分をハイライト
-			QColor color = opt.palette.color(QPalette::Highlight);
-			color.setAlpha(128);
-			painter->fillRect(r, color);
+	AbstractIncrementalSearchFilter::Result match = filter.match(text);
+	if (match) {
+		for (AbstractIncrementalSearchFilter::Part2 const &part2 : match.part2) {
+			list.push_back(std::make_tuple(QString::fromStdString(part2.source.text), part2.match));
 		}
-		drawText(painter, opt, r, s);
-		x += w;
+
+		int x = rect.x();
+		for (auto [s, f] : list) {
+			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+			QRect rect2 = rect;
+			rect2.setLeft(x);
+			rect2.setWidth(w);
+			if (f) { // フィルターの部分をハイライト
+				QColor color = opt.palette.color(QPalette::Highlight);
+				color.setAlpha(128);
+				painter->fillRect(rect2, color);
+			}
+			drawText(painter, opt, rect2, s);
+			x += w;
+		}
+	} else {
+		drawText(painter, opt, rect, text);
 	}
 }
 
+void fillFilteredBG(QPainter *painter, const QRect &rect)
+{
+	painter->fillRect(rect, QColor(128, 128, 128, 64));
+}
+
+} // namespace IncrementalSearch
+
+// MecabFilter
 
 std::string MecabFilter::to_kana(const std::string &text, std::vector<Part2> *out)
 {
 	std::string kana;
-	std::vector<MeCaSearch::Part> parts = global->meca.parse(text);
+	std::vector<LibMecab::Part> parts = global->mecab.parse(text);
 	size_t pos = 0;
-	for (MeCaSearch::Part const &part : parts) {
+	for (LibMecab::Part const &part : parts) {
 		Part2 part2;
 		part2.source.text = text.substr(part.offset, part.length);
 		part2.source.pos = kana.size();
@@ -352,7 +194,7 @@ std::string MecabFilter::to_kana(const std::string &text, std::vector<Part2> *ou
 void MecabFilter::makeFilter(const QString &filtertext)
 {
 	original_text_ = filtertext.toStdString();
-	katakana_text_ = global->meca.convert_roman_to_katakana(original_text_);
+	katakana_text_ = global->mecab.convert_roman_to_katakana(original_text_);
 }
 
 MecabFilter::MecabFilter(const QString &filtertext)

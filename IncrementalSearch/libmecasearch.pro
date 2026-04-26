@@ -21,7 +21,7 @@ DEFINES += HAVE_CONFIG_H
 HEADERS += \
 	# MeCaSearch.h \
 	AbstractSimpleIO.h \
-	MeCaSearch.h \
+	LibMecab.h \
 	config.h \
 	mecab/mecab/src/char_property.h \
 	mecab/mecab/src/common.h \
@@ -55,7 +55,7 @@ HEADERS += \
 SOURCES += \
 	# MeCaSearch.cpp \
 	AbstractSimpleIO.cpp \
-	MeCaSearch.cpp \
+	LibMecab.cpp \
 	gzip.cpp \
 	libmain.cpp \
 	mecab/mecab/src/char_property.cpp \

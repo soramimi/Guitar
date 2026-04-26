@@ -121,9 +121,9 @@ void CommitLogTableModel::private_SetFilter(QString const &text)
 					return getIncrementalSearchFilter().match(s);
 				};
 				CommitRecord const &r = records_[i];
-				// if (Match(r.commit_id)) return true;
-				// if (Match(r.datetime)) return true;
-				// if (Match(r.author)) return true;
+				if (Match(r.commit_id)) return true;
+				if (Match(r.datetime)) return true;
+				if (Match(r.author)) return true;
 				if (Match(r.message)) return true;
 				return false;
 			}();
@@ -285,6 +285,18 @@ private:
 		}
 	}
 
+	// コミットメッセージを描画
+	void paintCommitMessage(QPainter *painter, QStyleOptionViewItem const &opt, QModelIndex const &index) const
+	{
+		CommitLogTableWidget const *tablewidget = qobject_cast<CommitLogTableWidget const *>(opt.widget);
+		if (tablewidget->model_->isFiltered()) {
+			IncrementalSearch::fillFilteredBG(painter, opt.rect);
+			IncrementalSearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
+		} else {
+			MyTableWidgetDelegate::paint(painter, opt, index);
+		}
+	}
+
 public:
 	explicit CommitLogTableWidgetDelegate(CommitLogTableWidget *parent)
 		: MyTableWidgetDelegate(parent)
@@ -301,12 +313,7 @@ public:
 		GitCommitItem const &commit = tablewidget->commitItem(index.row());
 		// CommitRecord const &record = tablewidget->model_->record(index);
 
-		if (tablewidget->model_->isFiltered()) {
-			IncrementalSearch::fillFilteredBG(painter, opt.rect);
-			IncrementalSearch::drawText_filted(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
-		} else {
-			MyTableWidgetDelegate::paint(painter, opt, index);
-		}
+		paintCommitMessage(painter, opt, index);
 
 		enum {
 			Graph,

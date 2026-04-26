@@ -11,12 +11,13 @@
 #include <udplogger/RemoteLogger.h>
 #include <QDebug>
 #include "Logger.h"
-#include "MeCaSearch.h"
+#include "LibMecab.h"
+#include "LibMigemo.h"
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
 	RemoteLogger remote_logger;
-	IncrementalSearch incremental_search;
+	LibMigemo migemo; // obsolete
 };
 
 ApplicationGlobal::ApplicationGlobal()
@@ -120,15 +121,16 @@ void ApplicationGlobal::init1()
 void ApplicationGlobal::init2()
 {
 	// インクリメンタル検索ライブラリを初期化
-	{
-		std::string s = meca.convert_roman_to_katakana("wagahaihanekodearu");
+
+	{ // mecab
+		std::string s = mecab.convert_roman_to_katakana("wagahaihanekodearu");
 		if (s != "ワガハイハネコデアル") {
 			qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
 		}
-		if (!meca.open("/dummy")) {
+		if (!mecab.open("/dummy")) {
 			qDebug() << "Failed to load dictionary for MeCaSearch. This may cause some features to not work properly.";
 		}
-		auto parts = meca.parse("吾輩は猫である");
+		auto parts = mecab.parse("吾輩は猫である");
 		if (parts.size() != 5) {
 			qDebug() << "Failed to parse sentence with MeCaSearch. Expected 5 parts, got " << parts.size();
 		} else {
@@ -140,7 +142,11 @@ void ApplicationGlobal::init2()
 			}
 		}
 	}
-	m->incremental_search.init();
+
+	{ // migemo // obsolete
+		m->migemo.init();
+		m->migemo.open();
+	}
 
 	// グローバル画像リソースの読み込み
 
@@ -180,16 +186,16 @@ std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
 	return http;
 }
 
-IncrementalSearch *ApplicationGlobal::incremental_search()
+LibMigemo *ApplicationGlobal::incremental_search()
 {
-	return &m->incremental_search;
+	return &m->migemo;
 }
 
 std::shared_ptr<AbstractIncrementalSearchFilter> ApplicationGlobal::makeIncrementalSearchFilter(QString const &filtertext)
 {
 	if (1) {
 		return std::make_shared<MecabFilter>(filtertext);
-	} else {
+	} else { // obsolete
 		return std::make_shared<MigemoFilter>(filtertext);
 	}
 }
@@ -357,14 +363,4 @@ std::string ApplicationGlobal::determineFileType(std::string const &path)
 {
 	return determineFileType(QString::fromStdString(path));
 }
-
-// std::string ApplicationGlobal::determineFileType(std::string const &path)
-// {
-// 	QFile file(QString::fromStdString(path));
-// 	if (file.open(QFile::ReadOnly)) {
-// 		QByteArray ba = file.readAll();
-// 		return determineFileType(ba);
-// 	}
-// 	return {};
-// }
 

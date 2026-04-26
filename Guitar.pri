@@ -129,6 +129,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/LibMigemo.cpp \
 	src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
 	src/AbstractProcess.cpp \
@@ -305,6 +306,7 @@ SOURCES += \
 	udplogger/RemoteLogger.cpp
 
 HEADERS += \
+	$$PWD/src/LibMigemo.h \
 	$$PWD/src/common/printf.h \
 	src/AboutDialog.h \
 	src/AbstractGitSession.h \

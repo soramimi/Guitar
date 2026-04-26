@@ -1,42 +1,49 @@
 #include "RepositoryTreeWidget.h"
-#include <QDropEvent>
-#include <QDebug>
-#include <QMimeData>
-#include <QApplication>
-#include <QStyledItemDelegate>
-#include <QPainter>
-#include <QFileInfo>
+#include "ApplicationGlobal.h"
 #include "IncrementalSearch.h"
 #include "MainWindow.h"
-#include "ApplicationGlobal.h"
+#include "LibMigemo.h"
 #include "common/joinpath.h"
+#include <QApplication>
+#include <QDebug>
+#include <QDropEvent>
+#include <QFileInfo>
+#include <QMimeData>
+#include <QPainter>
+#include <QStyledItemDelegate>
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 private:
-	static void drawText_default(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text)
+	static void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text, IncrementalSearchFilter filter)
 	{
-		int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
-		QRect r = rect;
-		r.setWidth(w);
-		if (text.startsWith('[')) {
-			int i = text.indexOf(']');
-			Q_ASSERT(i >= 0);
-			QString s = text.mid(1, i - 1);
-			QFont font = painter->font();
-			QFont smallfont = font;
-			smallfont.setPointSize(font.pointSize() * 4 / 5);
-			painter->setFont(smallfont);
-			painter->save();
-			painter->setOpacity(0.75);
-			IncrementalSearch::drawText(painter, opt, r, s);
-			painter->restore();
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
-			r.translate(w, 0);
-			painter->setFont(font);
-			painter->setPen(opt.palette.color(QPalette::Text));
-			IncrementalSearch::drawText(painter, opt, r, text.mid(i + 1));
+		if (filter) {
+			IncrementalSearch::drawText_filtered(painter, opt, rect, filter);
 		} else {
-			IncrementalSearch::drawText(painter, opt, r, text);
+			int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
+			QRect r = rect;
+			r.setWidth(w);
+			if (text.startsWith('[')) {
+				// タイムスタンプ付き表示モード
+				// [...]で囲まれた部分を小さく半透明で描画する
+				int i = text.indexOf(']');
+				Q_ASSERT(i >= 0);
+				QString s = text.mid(1, i - 1);
+				QFont font = painter->font();
+				QFont smallfont = font;
+				smallfont.setPointSize(font.pointSize() * 4 / 5);
+				painter->setFont(smallfont);
+				painter->save();
+				painter->setOpacity(0.75);
+				IncrementalSearch::drawText(painter, opt, r, s);
+				painter->restore();
+				int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+				r.translate(w, 0);
+				painter->setFont(font);
+				painter->setPen(opt.palette.color(QPalette::Text));
+				IncrementalSearch::drawText(painter, opt, r, text.mid(i + 1));
+			} else {
+				IncrementalSearch::drawText(painter, opt, r, text);
+			}
 		}
 	}
 public:
@@ -62,18 +69,12 @@ public:
 		opt.icon.paint(painter, iconrect);
 
 		// テキストを描画
-		if (filter.isEmpty()) { // フィルターがない場合
-			drawText_default(painter, opt, textrect, opt.text);
-		} else {
-			IncrementalSearch::drawText_filted(painter, opt, textrect, filter);
-		}
+		drawText(painter, opt, textrect, opt.text, filter);
 	}
 };
 
 struct RepositoryTreeWidget::Private {
 	RepositoryTreeWidgetItemDelegate delegate;
-	// MigemoFilter filter;
-	// std::shared_ptr<AbstractIncrementalSearchFilter> filter;
 	IncrementalSearchFilter filter;
 };
 
@@ -81,9 +82,7 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 	, m(new Private)
 {
-	IncrementalSearch::instance()->open();
-
-	m->filter = {std::make_shared<MecabFilter>()};
+	// LibMigemo::instance()->open();
 
 	setItemDelegate(&m->delegate);
 	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){

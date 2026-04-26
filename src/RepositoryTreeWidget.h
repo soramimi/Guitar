@@ -1,9 +1,9 @@
 #ifndef REPOSITORYTREEWIDGET_H
 #define REPOSITORYTREEWIDGET_H
 
-#include <QTreeWidget>
 #include "IncrementalSearch.h"
 #include "RepositoryInfo.h"
+#include <QTreeWidget>
 
 class MainWindow;
 struct RepositoryInfo;

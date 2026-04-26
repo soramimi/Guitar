@@ -8,7 +8,7 @@
 #include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
-#include "MeCaSearch.h"
+#include "LibMecab.h"
 #include <QColor>
 #include <QString>
 #include "GenerativeAI.h"
@@ -16,7 +16,7 @@
 #include "curlclient.h"
 
 class MainWindow;
-class IncrementalSearch;
+class LibMigemo;
 class AbstractIncrementalSearchFilter;
 
 struct AccountProfile {
@@ -104,9 +104,9 @@ public:
 
 	std::shared_ptr<AbstractInetClient> inet_client();
 
-	IncrementalSearch *incremental_search();
+	LibMigemo *incremental_search();
+	LibMecab mecab;
 	std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(QString const &filtertext);
-	MeCaSearch meca;
 	QString incremental_search_text;
 
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);
