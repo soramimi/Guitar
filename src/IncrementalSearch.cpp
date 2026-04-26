@@ -17,22 +17,22 @@
 #include <time.h>
 
 
-MigemoFilter::MigemoFilter(const QString &filtertext)
+MigemoFilter::MigemoFilter(std::string const &filtertext)
 {
 	makeFilter(filtertext);
 }
 
 bool MigemoFilter::isEmpty() const
 {
-	return text_.isEmpty();
+	return text_.empty();
 }
 
-void MigemoFilter::makeFilter(const QString &filtertext)
+void MigemoFilter::makeFilter(std::string const &filtertext)
 {
 	text_ = filtertext;
 	if (LibMigemo::instance()->migemoEnabled()) {
 		if (filtertext.size() > 0) {
-			auto s = LibMigemo::instance()->queryMigemo(filtertext.toStdString().c_str());
+			auto s = LibMigemo::instance()->queryMigemo(filtertext.c_str());
 			if (s) {
 				re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
 			}
@@ -56,30 +56,29 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 			ret.match = true;
 			ret.pos = m.capturedStart();
 			ret.end = m.capturedEnd();
-			// ret.part2;
 			{
-				Part2 part;
+				Part part;
 				part.source.pos = 0;
 				part.source.end = ret.pos;
 				part.source.text = text.mid(0, ret.pos).toStdString();
 				part.match = false;
-				ret.part2.push_back(part);
+				ret.part.push_back(part);
 			}
 			{
-				Part2 part;
+				Part part;
 				part.source.pos = ret.pos;
 				part.source.end = ret.end;
 				part.source.text = text.mid(ret.pos, ret.end - ret.pos).toStdString();
 				part.match = true;
-				ret.part2.push_back(part);
+				ret.part.push_back(part);
 			}
 			{
-				Part2 part;
+				Part part;
 				part.source.pos = ret.end;
 				part.source.end = text.size();
 				part.source.text = text.mid(ret.end).toStdString();
 				part.match = false;
-				ret.part2.push_back(part);
+				ret.part.push_back(part);
 			}
 			return ret;
 		}
@@ -138,8 +137,8 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 
 	AbstractIncrementalSearchFilter::Result match = filter.match(text);
 	if (match) {
-		for (AbstractIncrementalSearchFilter::Part2 const &part2 : match.part2) {
-			list.push_back(std::make_tuple(QString::fromStdString(part2.source.text), part2.match));
+		for (AbstractIncrementalSearchFilter::Part const &Part : match.part) {
+			list.push_back(std::make_tuple(QString::fromStdString(Part.source.text), Part.match));
 		}
 
 		int x = rect.x();
@@ -170,41 +169,40 @@ void fillFilteredBG(QPainter *painter, const QRect &rect)
 
 // MecabFilter
 
-std::string MecabFilter::to_kana(const std::string &text, std::vector<Part2> *out)
+std::string MecabFilter::to_kana(const std::string &text, std::vector<Part> *out)
 {
 	std::string kana;
 	std::vector<LibMecab::Part> parts = global->mecab.parse(text);
 	size_t pos = 0;
 	for (LibMecab::Part const &part : parts) {
-		Part2 part2;
-		part2.source.text = text.substr(part.offset, part.length);
-		part2.source.pos = kana.size();
-		part2.source.end = part.offset + part.length;
+		Part Part;
+		Part.source.text = text.substr(part.offset, part.length);
+		Part.source.pos = kana.size();
+		Part.source.end = part.offset + part.length;
 		auto end = pos + part.text.size();
-		part2.kana.text = part.text;
-		part2.kana.pos = pos;
-		part2.kana.end = end;
+		Part.kana.text = part.text;
+		Part.kana.pos = pos;
+		Part.kana.end = end;
 		pos = end;
-		out->push_back(part2);
+		out->push_back(Part);
 		kana.append(part.text);
 	}
 	return kana;
 }
 
-void MecabFilter::makeFilter(const QString &filtertext)
+void MecabFilter::makeFilter(std::string const &filtertext)
 {
-	original_text_ = filtertext.toStdString();
+	original_text_ = filtertext;
 	katakana_text_ = global->mecab.convert_roman_to_katakana(original_text_);
 }
 
-MecabFilter::MecabFilter(const QString &filtertext)
+MecabFilter::MecabFilter(std::string const &filtertext)
 {
 	makeFilter(filtertext);
 }
 
 bool MecabFilter::isEmpty() const
 {
-	// return katakana_text_.empty();
 	return original_text_.empty();
 }
 
@@ -221,50 +219,50 @@ AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) 
 			ret.end = pos + original_text_.size();
 			if (ret.pos < ret.end) {
 				{
-					Part2 part;
+					Part part;
 					part.source.pos = 0;
 					part.source.end = ret.pos;
 					part.source.text = text2.substr(0, ret.pos);
 					part.match = false;
-					ret.part2.push_back(part);
+					ret.part.push_back(part);
 				}
 				{
-					Part2 part;
+					Part part;
 					part.source.pos = ret.pos;
 					part.source.end = ret.end;
 					part.source.text = text2.substr(ret.pos, ret.end - ret.pos);
 					part.match = true;
-					ret.part2.push_back(part);
+					ret.part.push_back(part);
 				}
 				{
-					Part2 part;
+					Part part;
 					part.source.pos = ret.end;
 					part.source.end = text2.size();
 					part.source.text = text2.substr(ret.end);
 					part.match = false;
-					ret.part2.push_back(part);
+					ret.part.push_back(part);
 				}
 				return ret;
 			}
 		}
 	}
 	if (!katakana_text_.empty()) {
-		std::vector<Part2> part2;
-		std::string kana = to_kana(text.toStdString(), &part2);
+		std::vector<Part> Part;
+		std::string kana = to_kana(text.toStdString(), &Part);
 		char const *p = strstr(kana.c_str(), katakana_text_.c_str());
 		if (p) {
 			size_t pos = p - kana.c_str();
 			size_t end = pos + katakana_text_.size();
 			ret.match = true;
 			ret.pos = pos;
-			for (size_t i = 0; i < part2.size(); i++) {
-				if (pos <= part2[i].kana.pos && part2[i].kana.pos < end) {
-					ret.end = part2[i].kana.end;
-					part2[i].match = true;
+			for (size_t i = 0; i < Part.size(); i++) {
+				if (pos <= Part[i].kana.pos && Part[i].kana.pos < end) {
+					ret.end = Part[i].kana.end;
+					Part[i].match = true;
 				}
 			}
 		}
-		ret.part2 = part2;
+		ret.part = Part;
 	}
 	return ret;
 }

@@ -191,7 +191,7 @@ LibMigemo *ApplicationGlobal::incremental_search()
 	return &m->migemo;
 }
 
-std::shared_ptr<AbstractIncrementalSearchFilter> ApplicationGlobal::makeIncrementalSearchFilter(QString const &filtertext)
+std::shared_ptr<AbstractIncrementalSearchFilter> ApplicationGlobal::makeIncrementalSearchFilter(std::string const &filtertext)
 {
 	if (1) {
 		return std::make_shared<MecabFilter>(filtertext);

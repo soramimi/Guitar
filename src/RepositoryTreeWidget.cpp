@@ -137,7 +137,7 @@ RepositoryTreeWidgetItem *RepositoryTreeWidget::newQTreeWidgetRepositoryItem(con
 	return newQTreeWidgetItem(name, Repository, index);
 }
 
-void RepositoryTreeWidget::setFilter(std::shared_ptr<AbstractIncrementalSearchFilter> filter)
+void RepositoryTreeWidget::setFilter(IncrementalSearchFilter filter)
 {
 	m->filter = filter;
 }
@@ -163,9 +163,9 @@ static QDateTime repositoryLastModifiedTime(QString const &path)
 	return g.repositoryLastModifiedTime();
 }
 
-std::shared_ptr<AbstractIncrementalSearchFilter> RepositoryTreeWidget::makeIncrementalSearchFilter(QString const &filtertext)
+IncrementalSearchFilter RepositoryTreeWidget::makeIncrementalSearchFilter(std::string const &filtertext)
 {
-	return global->makeIncrementalSearchFilter(filtertext);
+	return {global->makeIncrementalSearchFilter(filtertext)};
 }
 
 void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
@@ -173,7 +173,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 	RepositoryTreeWidget *tree = this;
 	tree->clear();
 
-	std::shared_ptr<AbstractIncrementalSearchFilter> filter = makeIncrementalSearchFilter(filtertext);
+	IncrementalSearchFilter filter = makeIncrementalSearchFilter(filtertext.toStdString());
 
 	// リポジトリリストを更新（標準）
 	auto UpdateRepositoryListStandard = [&](){
@@ -188,7 +188,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
-			if (!filter->match(repo.name)) continue;
+			if (!filter.match(repo.name)) continue;
 
 			RepositoryTreeWidgetItem *parent = nullptr;
 			{

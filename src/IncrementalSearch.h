@@ -26,7 +26,7 @@ void fillFilteredBG(QPainter *painter, const QRect &rect);
 
 class AbstractIncrementalSearchFilter {
 public:
-	struct Part2 {
+	struct Part {
 		bool match = false;
 		struct {
 			std::string text;
@@ -44,7 +44,7 @@ public:
 		bool match = false;
 		size_t pos = 0;
 		size_t end = 0;
-		std::vector<Part2> part2;
+		std::vector<Part> part;
 		operator bool () const
 		{
 			return match;
@@ -53,7 +53,7 @@ public:
 
 	virtual ~AbstractIncrementalSearchFilter() = default;
 	virtual bool isEmpty() const = 0;
-	virtual void makeFilter(const QString &filtertext) = 0;
+	virtual void makeFilter(std::string const &filtertext) = 0;
 	virtual Result match(QString const &text) const = 0;
 
 };
@@ -71,7 +71,7 @@ public:
 	{
 		return !filter_ptr_ || filter_ptr_->isEmpty();
 	}
-	void makeFilter(const QString &filtertext)
+	void makeFilter(std::string const &filtertext)
 	{
 		if (!filter_ptr_) return;
 		filter_ptr_->makeFilter(filtertext);
@@ -89,14 +89,14 @@ public:
 
 class MigemoFilter : public AbstractIncrementalSearchFilter {
 private:
-	QString text_;
+	std::string text_;
 	std::shared_ptr<QRegularExpression> re_;
 public:
 public:
 	MigemoFilter() = default;
-	MigemoFilter(const QString &filtertext);
+	MigemoFilter(std::string const &filtertext);
 	bool isEmpty() const override;
-	void makeFilter(const QString &filtertext) override;
+	void makeFilter(std::string const &filtertext) override;
 	Result match(QString const &text) const override;
 };
 
@@ -105,12 +105,12 @@ public:
 private:
 	std::string original_text_;
 	std::string katakana_text_;
-	static std::string to_kana(std::string const &text, std::vector<Part2> *out);
+	static std::string to_kana(std::string const &text, std::vector<Part> *out);
 public:
 	MecabFilter() = default;
-	MecabFilter(QString const &filtertext);
+	MecabFilter(const std::string &filtertext);
 	bool isEmpty() const override;
-	void makeFilter(QString const &filtertext) override;
+	void makeFilter(std::string const &filtertext) override;
 	Result match(QString const &text) const override;
 };
 

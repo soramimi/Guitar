@@ -106,7 +106,7 @@ public:
 
 	LibMigemo *incremental_search();
 	LibMecab mecab;
-	std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(QString const &filtertext);
+        std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
 
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);

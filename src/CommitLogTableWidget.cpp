@@ -108,7 +108,7 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 
 void CommitLogTableModel::private_SetFilter(QString const &text)
 {
-	filter_text_ = text;
+	filter_text_ = text.toStdString();
 	incremental_search_filter_ = global->makeIncrementalSearchFilter(filter_text_);
 	if (incremental_search_filter_) {
 		size_t n = records_.size();

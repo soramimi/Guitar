@@ -29,7 +29,7 @@ public:
 private:
 	std::vector<CommitRecord> records_;
 	std::vector<size_t> index_;
-	QString filter_text_;
+	std::string filter_text_;
 	IncrementalSearchFilter incremental_search_filter_;
 	IncrementalSearchFilter const &getIncrementalSearchFilter() const
 	{
@@ -55,7 +55,7 @@ public:
 	bool setFilter(const QString &text);
 	bool isFiltered() const
 	{
-		return !filter_text_.isEmpty();
+		return !filter_text_.empty();
 	}
 	int unfilteredIndex(int i) const;
 };
