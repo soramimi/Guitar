@@ -185,6 +185,15 @@ IncrementalSearch *ApplicationGlobal::incremental_search()
 	return &m->incremental_search;
 }
 
+std::shared_ptr<AbstractIncrementalSearchFilter> ApplicationGlobal::makeIncrementalSearchFilter(QString const &filtertext)
+{
+	if (1) {
+		return std::make_shared<MecabFilter>(filtertext);
+	} else {
+		return std::make_shared<MigemoFilter>(filtertext);
+	}
+}
+
 bool ApplicationGlobal::isMainThread()
 {
 	return QThread::currentThread() == QCoreApplication::instance()->thread();

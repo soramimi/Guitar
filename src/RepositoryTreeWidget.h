@@ -34,7 +34,7 @@ private:
 	Private *m;
 	MainWindow *mainwindow();
 	QTreeWidgetItem *current_item = nullptr;
-	std::shared_ptr<AbstractIncrementalFilter> makeFilter() const;
+	IncrementalSearchFilter makeIncrementalSearchFilter() const;
 	RepositoryListStyle current_repository_list_style_ = RepositoryListStyle::Standard;
 protected:
 	void paintEvent(QPaintEvent *event) override;
@@ -46,7 +46,7 @@ private:
 		Repository,
 	};
 	static RepositoryTreeWidgetItem *newQTreeWidgetItem(const QString &name, Type kind, int index);
-	std::shared_ptr<AbstractIncrementalFilter> makeFilter(const QString &filtertext);
+	std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(const QString &filtertext);
 public:
 	static RepositoryTreeWidgetItem *newQTreeWidgetGroupItem(QString const &name);
 	static RepositoryTreeWidgetItem *newQTreeWidgetRepositoryItem(const QString &name, int index);
@@ -55,7 +55,7 @@ public:
 	~RepositoryTreeWidget();
 	void enableDragAndDrop(bool enabled);
 	bool isFiltered() const;
-	void setFilter(std::shared_ptr<AbstractIncrementalFilter> filter);
+	void setFilter(std::shared_ptr<AbstractIncrementalSearchFilter> filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
 	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryInfo> &repos, const QString &filtertext, int select_row);

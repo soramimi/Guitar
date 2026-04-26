@@ -17,6 +17,7 @@
 
 class MainWindow;
 class IncrementalSearch;
+class AbstractIncrementalSearchFilter;
 
 struct AccountProfile {
 	QString email;
@@ -104,6 +105,7 @@ public:
 	std::shared_ptr<AbstractInetClient> inet_client();
 
 	IncrementalSearch *incremental_search();
+	std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(QString const &filtertext);
 	MeCaSearch meca;
 	QString incremental_search_text;
 

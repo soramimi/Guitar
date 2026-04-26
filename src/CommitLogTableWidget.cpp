@@ -106,32 +106,43 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
-void CommitLogTableModel::privateSetFilter(QString const &text)
+void CommitLogTableModel::private_SetFilter(QString const &text)
 {
-	if (text.isEmpty()) {
-		migemo_filter_ = {};
-		index_.resize(records_.size());
-		std::iota(index_.begin(), index_.end(), 0);
-	} else {
-		filter()->makeFilter(text);
+	filter_text_ = text;
+	incremental_search_filter_ = global->makeIncrementalSearchFilter(filter_text_);
+	if (incremental_search_filter_) {
 		size_t n = records_.size();
 		index_.clear();
 		index_.reserve(n);
+		auto cols = columnCount(QModelIndex());
 		for (size_t i = 0; i < n; i++) {
-			// if (migemo_filter_.match(records_[i].message)) {
-			if (filter()->match(records_[i].message)) {
+			bool match = [&](){
+				auto Match = [&](QString const &s){
+					return getIncrementalSearchFilter().match(s);
+				};
+				CommitRecord const &r = records_[i];
+				// if (Match(r.commit_id)) return true;
+				// if (Match(r.datetime)) return true;
+				// if (Match(r.author)) return true;
+				if (Match(r.message)) return true;
+				return false;
+			}();
+			if (match) {
 				index_.push_back(i);
 			}
 		}
+	} else {
+		incremental_search_filter_ = {};
+		index_.resize(records_.size());
+		std::iota(index_.begin(), index_.end(), 0);
 	}
-	filter_text_ = text;
 }
 
 bool CommitLogTableModel::setFilter(QString const &text)
 {
 	if (text == filter_text_) return false;
 	beginResetModel();
-	privateSetFilter(text);
+	private_SetFilter(text);
 	endResetModel();
 	return true;
 }
@@ -145,7 +156,7 @@ void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
 {
 	beginResetModel();
 	records_ = std::move(records);
-	privateSetFilter({});
+	private_SetFilter({});
 	endResetModel();
 }
 
@@ -292,7 +303,7 @@ public:
 
 		if (tablewidget->model_->isFiltered()) {
 			IncrementalSearch::fillFilteredBG(painter, opt.rect);
-			IncrementalSearch::drawText_filted(painter, opt, opt.rect, tablewidget->model_->filter());
+			IncrementalSearch::drawText_filted(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
 		} else {
 			MyTableWidgetDelegate::paint(painter, opt, index);
 		}

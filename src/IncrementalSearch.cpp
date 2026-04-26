@@ -200,13 +200,49 @@ void MigemoFilter::makeFilter(const QString &filtertext)
 	}
 }
 
-AbstractIncrementalFilter::Result MigemoFilter::match(QString const &text) const
+AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text) const
 {
+	if (isEmpty()) {
+		Result ret;
+		ret.match = true; // フィルターが空の場合は常にtrue
+		return ret;
+	}
 	QString text2 = text;
-	if (isEmpty()) return {}; // フィルターが空の場合は常にtrue
 	if (re_.get()) { // 正規表現が有効な場合
 		text2 = normalizeText(text2);
-		if (text2.contains(*re_)) return {};
+		QRegularExpressionMatch m;
+		if (text2.contains(*re_, &m)) {
+			Result ret;
+			ret.match = true;
+			ret.pos = m.capturedStart();
+			ret.end = m.capturedEnd();
+			// ret.part2;
+			{
+				Part2 part;
+				part.source.pos = 0;
+				part.source.end = ret.pos;
+				part.source.text = text.mid(0, ret.pos).toStdString();
+				part.match = false;
+				ret.part2.push_back(part);
+			}
+			{
+				Part2 part;
+				part.source.pos = ret.pos;
+				part.source.end = ret.end;
+				part.source.text = text.mid(ret.pos, ret.end - ret.pos).toStdString();
+				part.match = true;
+				ret.part2.push_back(part);
+			}
+			{
+				Part2 part;
+				part.source.pos = ret.end;
+				part.source.end = text.size();
+				part.source.text = text.mid(ret.end).toStdString();
+				part.match = false;
+				ret.part2.push_back(part);
+			}
+			return ret;
+		}
 		return {};
 	}
 	// 正規表現が無効な場合
@@ -215,7 +251,7 @@ AbstractIncrementalFilter::Result MigemoFilter::match(QString const &text) const
 	return ret;
 }
 
-int AbstractIncrementalFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
+int AbstractIncrementalSearchFilter::u16ncmp(ushort const *s1, ushort const *s2, int n)
 {
 	for (int i = 0; i < n; i++) {
 		ushort c1 = s1[i];
@@ -246,7 +282,7 @@ void IncrementalSearch::drawText(QPainter *painter, const QStyleOptionViewItem &
 	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
 }
 
-QString AbstractIncrementalFilter::normalizeText(QString s)
+QString AbstractIncrementalSearchFilter::normalizeText(QString s)
 {
 	for (QChar &c : s) {
 		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
@@ -264,15 +300,14 @@ QString AbstractIncrementalFilter::normalizeText(QString s)
 	return s;
 }
 
-void IncrementalSearch::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, AbstractIncrementalFilter const *filter)
+void IncrementalSearch::drawText_filted(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
 {
 	QString text = opt.text;
 
-	// フィルターに一致する部分をハイライトして描画
 	std::vector<std::tuple<QString, bool>> list;
 
-	AbstractIncrementalFilter::Result r = filter->match(text);
-	for (AbstractIncrementalFilter::Part2 const &part2 : r.part2) {
+	AbstractIncrementalSearchFilter::Result r = filter.match(text);
+	for (AbstractIncrementalSearchFilter::Part2 const &part2 : r.part2) {
 		list.push_back(std::make_tuple(QString::fromStdString(part2.source.text), part2.match));
 	}
 
@@ -293,7 +328,7 @@ void IncrementalSearch::drawText_filted(QPainter *painter, const QStyleOptionVie
 }
 
 
-std::string MeCaFilter::to_kana(const std::string &text, std::vector<Part2> *out)
+std::string MecabFilter::to_kana(const std::string &text, std::vector<Part2> *out)
 {
 	std::string kana;
 	std::vector<MeCaSearch::Part> parts = global->meca.parse(text);
@@ -314,23 +349,24 @@ std::string MeCaFilter::to_kana(const std::string &text, std::vector<Part2> *out
 	return kana;
 }
 
-void MeCaFilter::makeFilter(const QString &filtertext)
+void MecabFilter::makeFilter(const QString &filtertext)
 {
 	original_text_ = filtertext.toStdString();
 	katakana_text_ = global->meca.convert_roman_to_katakana(original_text_);
 }
 
-MeCaFilter::MeCaFilter(const QString &filtertext)
+MecabFilter::MecabFilter(const QString &filtertext)
 {
 	makeFilter(filtertext);
 }
 
-bool MeCaFilter::isEmpty() const
+bool MecabFilter::isEmpty() const
 {
-	return katakana_text_.empty();
+	// return katakana_text_.empty();
+	return original_text_.empty();
 }
 
-AbstractIncrementalFilter::Result MeCaFilter::match(QString const &text) const
+AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) const
 {
 	Result ret;
 	{

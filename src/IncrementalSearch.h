@@ -11,7 +11,8 @@ class QRect;
 class QPainter;
 class QStyleOptionViewItem;
 
-class AbstractIncrementalFilter;
+class AbstractIncrementalSearchFilter;
+class IncrementalSearchFilter;
 
 class IncrementalSearch {
 private:
@@ -34,11 +35,11 @@ public:
 	static IncrementalSearch *instance();
 
 	static void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text);
-	static void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const AbstractIncrementalFilter *filter);
+	static void drawText_filted(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const IncrementalSearchFilter &filter);
 	static void fillFilteredBG(QPainter *painter, const QRect &rect);
 };
 
-class AbstractIncrementalFilter {
+class AbstractIncrementalSearchFilter {
 public:
 	struct Part2 {
 		bool match = false;
@@ -68,14 +69,43 @@ public:
 	static QString normalizeText(QString s);
 	static int u16ncmp(const ushort *s1, const ushort *s2, int n);
 
-	virtual ~AbstractIncrementalFilter() = default;
+	virtual ~AbstractIncrementalSearchFilter() = default;
 	virtual bool isEmpty() const = 0;
 	virtual void makeFilter(const QString &filtertext) = 0;
 	virtual Result match(QString const &text) const = 0;
 
 };
 
-class MigemoFilter : public AbstractIncrementalFilter {
+class IncrementalSearchFilter : public AbstractIncrementalSearchFilter {
+private:
+	std::shared_ptr<AbstractIncrementalSearchFilter> filter_ptr_;
+public:
+	IncrementalSearchFilter() = default;
+	IncrementalSearchFilter(std::shared_ptr<AbstractIncrementalSearchFilter> const &p)
+		: filter_ptr_(p)
+	{
+	}
+	bool isEmpty() const
+	{
+		return !filter_ptr_ || filter_ptr_->isEmpty();
+	}
+	void makeFilter(const QString &filtertext)
+	{
+		if (!filter_ptr_) return;
+		filter_ptr_->makeFilter(filtertext);
+	}
+	Result match(const QString &text) const
+	{
+		if (!filter_ptr_) return {};
+		return filter_ptr_->match(text);
+	}
+	operator bool () const
+	{
+		return !isEmpty();
+	}
+};
+
+class MigemoFilter : public AbstractIncrementalSearchFilter {
 private:
 	QString text_;
 	std::shared_ptr<QRegularExpression> re_;
@@ -88,15 +118,15 @@ public:
 	Result match(QString const &text) const override;
 };
 
-class MeCaFilter : public AbstractIncrementalFilter {
+class MecabFilter : public AbstractIncrementalSearchFilter {
 public:
 private:
 	std::string original_text_;
 	std::string katakana_text_;
 	static std::string to_kana(std::string const &text, std::vector<Part2> *out);
 public:
-	MeCaFilter() = default;
-	MeCaFilter(QString const &filtertext);
+	MecabFilter() = default;
+	MecabFilter(QString const &filtertext);
 	bool isEmpty() const override;
 	void makeFilter(QString const &filtertext) override;
 	Result match(QString const &text) const override;
