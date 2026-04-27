@@ -149,6 +149,9 @@ public:
 		}
 		return sign ? -n : n;
 	}
+
+	static std::u16string convert_utf8_to_utf16(std::string_view const &s);
+	static std::string convert_utf16_to_utf8(std::u16string_view const &s);
 };
 
 #endif // MISC_H

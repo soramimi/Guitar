@@ -12,12 +12,12 @@
 #include <QColor>
 #include <QString>
 #include "GenerativeAI.h"
+#include "IncrementalSearch.h"
 #include "TraceEventWriter.h"
 #include "curlclient.h"
 
 class MainWindow;
 class LibMigemo;
-class AbstractIncrementalSearchFilter;
 
 struct AccountProfile {
 	QString email;
@@ -106,7 +106,7 @@ public:
 
 	LibMigemo *incremental_search();
 	LibMecab mecab;
-        std::shared_ptr<AbstractIncrementalSearchFilter> makeIncrementalSearchFilter(const std::string &filtertext);
+	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
 
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);

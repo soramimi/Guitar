@@ -40,16 +40,18 @@ void MigemoFilter::makeFilter(std::string const &filtertext)
 	}
 }
 
-AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text) const
+IncrementalSearch::Result MigemoFilter::match(std::string const &text) const
 {
+	using namespace IncrementalSearch;
+
 	if (isEmpty()) {
 		Result ret;
 		ret.match = true; // フィルターが空の場合は常にtrue
 		return ret;
 	}
-	QString text2 = text;
 	if (re_.get()) { // 正規表現が有効な場合
-		text2 = IncrementalSearch::normalizeText(text2);
+		QString text1 = QString::fromStdString(text);
+		QString text2 = IncrementalSearch::normalizeText(text1);
 		QRegularExpressionMatch m;
 		if (text2.contains(*re_, &m)) {
 			Result ret;
@@ -60,7 +62,7 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 				Part part;
 				part.source.pos = 0;
 				part.source.end = ret.pos;
-				part.source.text = text.mid(0, ret.pos).toStdString();
+				part.source.text = text1.mid(0, ret.pos).toStdString();
 				part.match = false;
 				ret.part.push_back(part);
 			}
@@ -68,7 +70,7 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 				Part part;
 				part.source.pos = ret.pos;
 				part.source.end = ret.end;
-				part.source.text = text.mid(ret.pos, ret.end - ret.pos).toStdString();
+				part.source.text = text1.mid(ret.pos, ret.end - ret.pos).toStdString();
 				part.match = true;
 				ret.part.push_back(part);
 			}
@@ -76,25 +78,19 @@ AbstractIncrementalSearchFilter::Result MigemoFilter::match(QString const &text)
 				Part part;
 				part.source.pos = ret.end;
 				part.source.end = text.size();
-				part.source.text = text.mid(ret.end).toStdString();
+				part.source.text = text1.mid(ret.end).toStdString();
 				part.match = false;
 				ret.part.push_back(part);
 			}
 			return ret;
 		}
-		return {};
 	}
-	// 正規表現が無効な場合
-	Result ret;
-	ret.match = text2.indexOf(text2, 0, Qt::CaseInsensitive) >= 0;
-	return ret;
+	return {};
 }
 
 // IncrementalSearch
 
-namespace IncrementalSearch {
-
-QString normalizeText(QString s)
+QString IncrementalSearch::normalizeText(QString s)
 {
 	for (QChar &c : s) {
 		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
@@ -112,7 +108,7 @@ QString normalizeText(QString s)
 	return s;
 }
 
-void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
+void IncrementalSearch::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
 {
 #ifndef Q_OS_WIN
 	if (opt.state & QStyle::State_Selected) { // 選択されている場合
@@ -124,7 +120,7 @@ void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const
 	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
 }
 
-void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
+void IncrementalSearch::drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
 {
 	if (!filter) {
 		drawText(painter, opt, rect, opt.text);
@@ -135,14 +131,14 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 
 	std::vector<std::tuple<QString, bool>> list;
 
-	AbstractIncrementalSearchFilter::Result match = filter.match(text);
+	IncrementalSearch::Result match = IncrementalSearch::match(text.toStdString(), filter);
 	if (match) {
-		for (AbstractIncrementalSearchFilter::Part const &Part : match.part) {
+		for (IncrementalSearch::Part const &Part : match.part) {
 			list.push_back(std::make_tuple(QString::fromStdString(Part.source.text), Part.match));
 		}
 
 		int x = rect.x();
-		for (auto [s, f] : list) {
+		for (const auto &[s, f] : list) {
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
 			QRect rect2 = rect;
 			rect2.setLeft(x);
@@ -160,22 +156,20 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 	}
 }
 
-void fillFilteredBG(QPainter *painter, const QRect &rect)
+void IncrementalSearch::fillFilteredBG(QPainter *painter, const QRect &rect)
 {
 	painter->fillRect(rect, QColor(128, 128, 128, 64));
 }
 
-} // namespace IncrementalSearch
-
 // MecabFilter
 
-std::string MecabFilter::to_kana(const std::string &text, std::vector<Part> *out)
+std::string MecabFilter::to_kana(const std::string &text, std::vector<IncrementalSearch::Part> *out)
 {
 	std::string kana;
 	std::vector<LibMecab::Part> parts = global->mecab.parse(text);
 	size_t pos = 0;
 	for (LibMecab::Part const &part : parts) {
-		Part Part;
+		IncrementalSearch::Part Part;
 		Part.source.text = text.substr(part.offset, part.length);
 		Part.source.pos = kana.size();
 		Part.source.end = part.offset + part.length;
@@ -190,15 +184,15 @@ std::string MecabFilter::to_kana(const std::string &text, std::vector<Part> *out
 	return kana;
 }
 
+MecabFilter::MecabFilter(std::string const &filtertext)
+{
+	makeFilter(filtertext);
+}
+
 void MecabFilter::makeFilter(std::string const &filtertext)
 {
 	original_text_ = filtertext;
 	katakana_text_ = global->mecab.convert_roman_to_katakana(original_text_);
-}
-
-MecabFilter::MecabFilter(std::string const &filtertext)
-{
-	makeFilter(filtertext);
 }
 
 bool MecabFilter::isEmpty() const
@@ -206,14 +200,15 @@ bool MecabFilter::isEmpty() const
 	return original_text_.empty();
 }
 
-AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) const
+IncrementalSearch::Result MecabFilter::match(std::string const &text) const
 {
+	using namespace IncrementalSearch;
+
 	Result ret;
 	{
-		std::string text2 = text.toStdString();
-		char const *p = misc::stristr(text2.c_str(), original_text_.c_str());
+		char const *p = misc::stristr(text.c_str(), original_text_.c_str());
 		if (p) {
-			size_t pos = p - text2.c_str();
+			size_t pos = p - text.c_str();
 			ret.match = true;
 			ret.pos = pos;
 			ret.end = pos + original_text_.size();
@@ -222,7 +217,7 @@ AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) 
 					Part part;
 					part.source.pos = 0;
 					part.source.end = ret.pos;
-					part.source.text = text2.substr(0, ret.pos);
+					part.source.text = text.substr(0, ret.pos);
 					part.match = false;
 					ret.part.push_back(part);
 				}
@@ -230,15 +225,15 @@ AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) 
 					Part part;
 					part.source.pos = ret.pos;
 					part.source.end = ret.end;
-					part.source.text = text2.substr(ret.pos, ret.end - ret.pos);
+					part.source.text = text.substr(ret.pos, ret.end - ret.pos);
 					part.match = true;
 					ret.part.push_back(part);
 				}
 				{
 					Part part;
 					part.source.pos = ret.end;
-					part.source.end = text2.size();
-					part.source.text = text2.substr(ret.end);
+					part.source.end = text.size();
+					part.source.text = text.substr(ret.end);
 					part.match = false;
 					ret.part.push_back(part);
 				}
@@ -248,7 +243,7 @@ AbstractIncrementalSearchFilter::Result MecabFilter::match(QString const &text) 
 	}
 	if (!katakana_text_.empty()) {
 		std::vector<Part> Part;
-		std::string kana = to_kana(text.toStdString(), &Part);
+		std::string kana = to_kana(text, &Part);
 		char const *p = strstr(kana.c_str(), katakana_text_.c_str());
 		if (p) {
 			size_t pos = p - kana.c_str();

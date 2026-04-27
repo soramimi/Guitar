@@ -118,7 +118,7 @@ void CommitLogTableModel::private_SetFilter(QString const &text)
 		for (size_t i = 0; i < n; i++) {
 			bool match = [&](){
 				auto Match = [&](QString const &s){
-					return getIncrementalSearchFilter().match(s);
+					return IncrementalSearch::match(s.toStdString(), getIncrementalSearchFilter());
 				};
 				CommitRecord const &r = records_[i];
 				if (Match(r.commit_id)) return true;

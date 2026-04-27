@@ -1021,3 +1021,81 @@ std::string misc::toUpper(const std::string_view &s)
 	return ret;
 }
 
+std::u16string misc::convert_utf8_to_utf16(const std::string_view &s)
+{
+	std::u16string out;
+	const char *ptr = s.data();
+	const char *end = ptr + s.size();
+	while (ptr < end) {
+		char32_t c = 0;
+		unsigned char b = (unsigned char)*ptr;
+		if (b < 0x80) {
+			c = b;
+			ptr++;
+		} else if ((b & 0xe0) == 0xc0) {
+			if (ptr + 1 >= end) break;
+			c = ((b & 0x1f) << 6) | ((unsigned char)ptr[1] & 0x3f);
+			ptr += 2;
+		} else if ((b & 0xf0) == 0xe0) {
+			if (ptr + 2 >= end) break;
+			c = ((b & 0x0f) << 12) | (((unsigned char)ptr[1] & 0x3f) << 6) | ((unsigned char)ptr[2] & 0x3f);
+			ptr += 3;
+		} else if ((b & 0xf8) == 0xf0) {
+			if (ptr + 3 >= end) break;
+			c = ((b & 0x07) << 18) | (((unsigned char)ptr[1] & 0x3f) << 12) | (((unsigned char)ptr[2] & 0x3f) << 6) | ((unsigned char)ptr[3] & 0x3f);
+			ptr += 4;
+		} else {
+			// invalid
+			ptr++;
+			continue;
+		}
+		if (c <= 0xffff) {
+			out.push_back((char16_t)c);
+		} else {
+			c -= 0x10000;
+			out.push_back((char16_t)(0xd800 + (c >> 10)));
+			out.push_back((char16_t)(0xdc00 + (c & 0x3ff)));
+		}
+	}
+	return out;
+}
+
+std::string misc::convert_utf16_to_utf8(const std::u16string_view &s)
+{
+	std::string out;
+	const char16_t *ptr = s.data();
+	const char16_t *end = ptr + s.size();
+	while (ptr < end) {
+		char32_t c = 0;
+		char16_t b = *ptr;
+		if (b < 0xd800 || b >= 0xe000) {
+			c = b;
+			ptr++;
+		} else if (b < 0xdc00) {
+			if (ptr + 1 >= end) break;
+			c = ((b - 0xd800) << 10) | (ptr[1] - 0xdc00);
+			ptr += 2;
+		} else {
+			// invalid
+			ptr++;
+			continue;
+		}
+		if (c < 0x80) {
+			out.push_back((char)c);
+		} else if (c < 0x800) {
+			out.push_back((char)(0xc0 | (c >> 6)));
+			out.push_back((char)(0x80 | (c & 0x3f)));
+		} else if (c < 0x10000) {
+			out.push_back((char)(0xe0 | (c >> 12)));
+			out.push_back((char)(0x80 | ((c >> 6) & 0x3f)));
+			out.push_back((char)(0x80 | (c & 0x3f)));
+		} else {
+			out.push_back((char)(0xf0 | (c >> 18)));
+			out.push_back((char)(0x80 | ((c >> 12) & 0x3f)));
+			out.push_back((char)(0x80 | ((c >> 6) & 0x3f)));
+			out.push_back((char)(0x80 | (c & 0x3f)));
+		}
+	}
+	return out;
+}
+
