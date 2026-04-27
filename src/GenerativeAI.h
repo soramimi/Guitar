@@ -8,7 +8,6 @@ namespace GenerativeAI {
 
 enum class AI {
 	Unknown,
-	OpenAI,
 	OpenAI_responses, // for OpenAI responses API
 	OpenAI_chat_completions, // legacy for OpenAI chat completions API
 	Anthropic,

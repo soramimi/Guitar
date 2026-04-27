@@ -171,6 +171,7 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
  * @return The JSON string.
  */
 struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> {
+	constexpr static float temperature_ = 0.2f;
 	std::string modelname;
 	std::string prompt;
 	_PromptJsonGenerator(std::string const &modelname, std::string const &prompt)
@@ -187,33 +188,35 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		std::string json = R"---({
 "model": "%s",
+"temperature": %f,
 "input": "%s"
 })---";
-		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
+		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_OpenAI_chat_completions()
 	{
 		std::string json = R"---({
 "model": "%s",
+"temperature": %f,
 "messages": [
 	{"role": "system", "content": "You are an experienced engineer."},
 	{"role": "user", "content": "%s"}]
 })---";
-		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
+		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt));
 	}
 
 	std::string case_Anthropic()
 	{
 		std::string json = R"---({
 "model": "%s",
+"temperature": %f,
 "messages": [
 	{"role": "user", "content": "%s"}
 ],
-"max_tokens": %d,
-"temperature": 0.7
+"max_tokens": %d
 })---";
-		return fmt(json)(modelname)(jstream::encode_json_string(prompt))(200);
+		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt))(200);
 	}
 
 	std::string case_Google()
@@ -288,63 +291,85 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 	CommitMessageResult r = _CommitMessageResponseParser(in).visit(provider);
 
 	if (r.completion) {
-		std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
-		size_t i = lines.size();
-		while (i > 0) {
-			i--;
-			std::string_view sv = lines[i];
-			char const *ptr = sv.data();
-			char const *end = ptr + sv.size();
-			while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
-				ptr++;
-				end--;
-			}
-			bool accept = false;
-
-			if (ptr < end && *ptr == '-') {
-				accept = true;
-				ptr++;
-				while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
+		if (0) {
+			std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
+			size_t i = lines.size();
+			while (i > 0) {
+				i--;
+				std::string_view sv = lines[i];
+				char const *ptr = sv.data();
+				char const *end = ptr + sv.size();
+				while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
 					ptr++;
+					end--;
 				}
-			} else if (isdigit((unsigned char)*ptr)) {
-				while (ptr < end && isdigit((unsigned char)*ptr)) {
+				bool accept = false;
+
+				if (ptr < end && *ptr == '-') {
 					accept = true;
 					ptr++;
+					while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
+						ptr++;
+					}
+				} else if (isdigit((unsigned char)*ptr)) {
+					while (ptr < end && isdigit((unsigned char)*ptr)) {
+						accept = true;
+						ptr++;
+					}
+					if (ptr < end && *ptr == '.') {
+						ptr++;
+					}
 				}
-				if (ptr < end && *ptr == '.') {
-					ptr++;
+				if (accept) {
+					while (ptr < end && isspace((unsigned char)*ptr)) {
+						ptr++;
+					}
+					if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
+						ptr++;
+						end--;
+					}
+					while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
+						ptr++;
+						end--;
+					}
+					if (ptr < end) {
+						// ok
+					} else {
+						accept = false;
+					}
 				}
-			}
-			if (accept) {
-				while (ptr < end && isspace((unsigned char)*ptr)) {
-					ptr++;
-				}
-				if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
-					ptr++;
-					end--;
-				}
-				while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
-					ptr++;
-					end--;
-				}
-				if (ptr < end) {
-					// ok
+				if (accept) {
+					lines[i] = std::string_view(ptr, end - ptr);
 				} else {
-					accept = false;
+					lines.erase(lines.begin() + i);
 				}
 			}
-			if (accept) {
-				lines[i] = std::string_view(ptr, end - ptr);
-			} else {
-				lines.erase(lines.begin() + i);
+			std::vector<std::string> ret;
+			for (auto const &line : lines) {
+				ret.emplace_back(line);
 			}
+			return ret;
+		} else {
+			std::vector<std::string> messages;
+			std::string text = r.text;
+			auto i = text.rfind('}');
+			if (i != std::string::npos) {
+				text = text.substr(0, i + 1);
+			}
+			auto j = text.find('{');
+			if (j != std::string::npos) {
+				text = text.substr(j);
+			}
+			jstream::Reader reader(text);
+			while (reader.next()) {
+				if (reader.match("{messages[")) {
+					if (reader.isstring()) {
+						messages.push_back(reader.string());
+					}
+				}
+			}
+			return messages;
 		}
-		std::vector<std::string> ret;
-		for (auto const &line : lines) {
-			ret.emplace_back(line);
-		}
-		return ret;
 	} else {
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
@@ -366,11 +391,29 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
 {
 	std::string prompt = fmt(
+#if 0
 		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
 		"Please generate %d messages, bulleted, and start writing with '-'. "
 		"No headers and footers other than bulleted messages. "
+#else
+R"---(
+Generate exactly %d concise commit message candidates written in present tense for the following code diff.
+Return ONLY valid and strict JSON. No explanations, no extra text.
+Do NOT wrap the output in code fences (e.g., ``` or ```json).
+Schema:
+{
+  "messages": [
+	"message1",
+	"message2",
+	"message3",
+	...
+  ]
+}
+--- git diff ---
+)---"
+#endif
 		)(max);
-	prompt = prompt + "\n\n" + diff;
+	prompt = prompt + diff;
 	return prompt;
 }
 
@@ -398,7 +441,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 {
 	constexpr int max_message_count = 5;
 	
-	constexpr bool save_log = false;
+	constexpr bool save_log = true;
 	
 	if (diff.empty()) {
 		return Error("error", "diff is empty");
@@ -417,6 +460,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	std::string json = generate_prompt_json(model, prompt);
 	
 	if (save_log) {
+#if 0
 		QFile file("c:\\a\\request.json");
 		if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 			file.write(json.c_str(), json.size());
@@ -424,6 +468,9 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		} else {
 			qDebug() << "Failed to write request JSON to file:" << file.errorString();
 		}
+#else
+		logprintf(LOG_RAW, "%s\n", json.c_str());
+#endif
 	}
 
 	GenerativeAI::Credential cred = global->get_ai_credential(model.provider_id());
@@ -449,6 +496,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		char const *data = http->content_data();
 		size_t size = http->content_length();
 		if (save_log) {
+#if 0
 			QFile file("c:\\a\\response.txt");
 			if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 				file.write(data, size);
@@ -456,6 +504,10 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 			} else {
 				qDebug() << "Failed to write response to file:" << file.errorString();
 			}
+#else
+			std::string text(data, size);
+			logprintf(LOG_RAW, "%s\n", text.c_str());
+#endif
 		}
 		std::string text(data, size);
 		CommitMessageGenerator::Result ret = parse_response(text, model.provider_id());

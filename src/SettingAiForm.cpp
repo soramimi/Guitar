@@ -63,9 +63,11 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 			list.push_back(QString::fromStdString(m.long_name()));
 		}
 	}
-	bool b = ui->groupBox_generate_commit_message_by_ai->blockSignals(true);
+	bool b1 = ui->comboBox_ai_model->blockSignals(true);
+	bool b2 = ui->comboBox_provider->blockSignals(true);
 	ui->comboBox_ai_model->addItems(list);
-	ui->groupBox_generate_commit_message_by_ai->blockSignals(b);
+	ui->comboBox_ai_model->blockSignals(b1);
+	ui->comboBox_provider->blockSignals(b2);
 }
 
 SettingAiForm::~SettingAiForm()
@@ -244,10 +246,8 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 
 void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
-	(void)index;
-	int i = ui->comboBox_provider->currentData().toInt();
-	if (i >= 0 && i < (int)m->providers.size()) {
-		Provider *ai = &m->providers[i];
+	if (index >= 0 && index < (int)m->providers.size()) {
+		Provider *ai = &m->providers[index];
 		setRadioButtons(true, ai->use_env_value);
 		changeProvider(ai);
 	}
@@ -294,7 +294,8 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.long_name()));
 	ui->comboBox_ai_model->blockSignals(b);
 
-	ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
+	int i = ui->comboBox_provider->findData(index);
+	ui->comboBox_provider->setCurrentIndex(i);
 }
 
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
