@@ -210,13 +210,17 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		std::string json = R"---({
 "model": "%s",
-"temperature": %f,
 "messages": [
 	{"role": "user", "content": "%s"}
 ],
 "max_tokens": %d
 })---";
-		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt))(200);
+		// "temperature": %f,
+		return fmt(json)(modelname)/*(temperature_)*/(jstream::encode_json_string(prompt))(200);
+		// As of Claude Opus 4.7 (released 2026-04-16), temperature / top_p / top_k are deprecated.
+		// Sending non-default values returns HTTP 400; omit these parameters entirely.
+		// Control output via prompting or the effort parameter (low/medium/high/xhigh/max).
+		// Ref: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7
 	}
 
 	std::string case_Google()
