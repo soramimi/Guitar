@@ -401,7 +401,8 @@ std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int 
 		"No headers and footers other than bulleted messages. "
 #else
 R"---(
-Generate exactly %d concise commit message candidates written in present tense for the following code diff.
+You are an experienced engineer.
+Generate exactly %d concise git commit message candidates written in present tense for the following code diff.
 Return ONLY valid and strict JSON. No explanations, no extra text.
 Do NOT wrap the output in code fences (e.g., ``` or ```json).
 Schema:
@@ -413,7 +414,7 @@ Schema:
 	...
   ]
 }
---- git diff ---
+--- code diff ---
 )---"
 #endif
 		)(max);
