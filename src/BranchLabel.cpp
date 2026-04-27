@@ -1,7 +1,7 @@
 #include "BranchLabel.h"
 #include "ApplicationGlobal.h"
 
-QColor BranchLabel::color(Type type)
+QColor BranchLabel::color(Kind type)
 {
 
 	switch (type) {

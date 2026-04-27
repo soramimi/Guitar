@@ -1348,13 +1348,6 @@ public:
 			to(p->data, p->size);
 		}
 	}
-	void vec(std::vector<char> *vec)
-	{
-		vec->reserve(vec->size() + length());
-		render([&](char const *ptr, int len){
-			vec->insert(vec->end(), ptr, ptr + len);
-		});
-	}
 	void write_to(FILE *fp)
 	{
 		render([&](char const *ptr, int len){
@@ -1375,12 +1368,25 @@ public:
 	{
 		write_to(stderr);
 	}
+	void append_to(std::vector<char> *vec)
+	{
+		vec->reserve(vec->size() + length());
+		render([&](char const *ptr, int len){
+			vec->insert(vec->end(), ptr, ptr + len);
+		});
+	}
 	void append_to(std::string *str)
 	{
 		str->reserve(str->size() + length());
 		render([&](char const *ptr, int len){
 			str->append(ptr, len);
 		});
+	}
+	std::vector<char> vec()
+	{
+		std::vector<char> ret;
+		append_to(&ret);
+		return ret;
 	}
 	std::string str()
 	{

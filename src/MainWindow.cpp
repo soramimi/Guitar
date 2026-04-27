@@ -657,6 +657,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
+			const bool mods = (e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
@@ -728,7 +729,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				} else if (shift && k == Qt::Key_Escape) {
 					ui->treeWidget_repos->setFocus();
 					return true;
-				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::CommitLogSearch)) {
+				} else if (!mods && appendCharToFilterText(k, MainWindow::FilterTarget::CommitLogSearch)) {
 					return true;
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
@@ -7172,17 +7173,76 @@ void MainWindow::on_action_ssh_triggered() // experimental
 	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Warning, QMessageBox::Ok);
 }
 
+void MainWindow::on_action_restart_trace_logger_triggered()
+{
+	global->close_trace_logger();
+}
 
-std::string normalize_path(char const *path);
+// wip: SwitchBranchDialog
+void MainWindow::on_action_branch_triggered()
+{
+	ASSERT_MAIN_THREAD();
+	m->searching = false;
+	if (commitlog().empty()) return;
 
-#include <QBuffer>
+	// currentRepositoryData()->commit_log
+	// currentRepositoryData()->branch_map
+	// currentRepositoryData()->tag_map
+	// currentRepositoryData()->label_map
+
+	struct Item {
+		GitCommitItem *commit = nullptr;
+		BranchLabel label;
+	};
+	std::vector<Item> items;
+
+	for (std::pair<int, BranchLabelList> const &p : currentRepositoryData()->label_map) {
+		for (BranchLabel const &l : p.second) {
+			Item item;
+			item.label = l;
+			if (p.first >= 0 && p.first < (int)currentRepositoryData()->commit_log.size()) {
+				item.commit = &currentRepositoryData()->commit_log[p.first];
+				items.push_back(item);
+			}
+		}
+	}
+
+	{ //debug
+		for (Item const &item : items) {
+			assert(item.commit);
+			QString kind;
+			switch (item.label.kind) {
+			case BranchLabel::Kind::LocalBranch:
+				kind = "Local";
+				break;
+			case BranchLabel::Kind::RemoteBranch:
+				kind = "Remote";
+				break;
+			case BranchLabel::Kind::Tag:
+				kind = "Tag";
+				break;
+			default:
+				kind = "Unknown";
+				break;
+			}
+			qDebug() << QString::fromStdString(item.commit->commit_id.toString()) << kind << item.label.text;
+		}
+	}
+
+#if 0
+	SwitchBranchDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		// QString branch = dlg.selectedBranch();
+		// qDebug() << "Selected branch:" << branch;
+	}
+#endif
+
+}
+
+
 
 void MainWindow::test()
 {
 }
 
-void MainWindow::on_action_restart_trace_logger_triggered()
-{
-	global->close_trace_logger();
-}
 

@@ -559,6 +559,8 @@ private slots:
 
 	void on_action_restart_trace_logger_triggered();
 
+	void on_action_branch_triggered();
+
 signals:
 	void signalUpdateCommitLog();
 	void signalSetProgress(float progress);

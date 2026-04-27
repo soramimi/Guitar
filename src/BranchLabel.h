@@ -10,21 +10,21 @@
  */
 class BranchLabel {
 public:
-	enum Type {
+	enum Kind {
 		Head,
 		LocalBranch,
 		RemoteBranch,
 		Tag,
 	};
-	Type kind;
+	Kind kind;
 	QString text;
 	QString info;
-	BranchLabel(Type kind = LocalBranch)
+	BranchLabel(Kind kind = LocalBranch)
 		: kind(kind)
 	{
 	}
 
-	static QColor color(Type type);
+	static QColor color(Kind type);
 };
 
 #endif // BRANCHLABEL_H
