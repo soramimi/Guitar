@@ -79,6 +79,11 @@ std::tuple<std::vector<GenerativeAI::Model>, int> ApplicationSettings::ai_models
 	return {list, index};
 }
 
+static inline QString UPPER(QString const &s)
+{
+	return s.toUpper();
+}
+
 ApplicationSettings ApplicationSettings::loadSettings()
 {
 	ApplicationSettings as(defaultSettings());
@@ -140,11 +145,11 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_env_api_key_Anthropic;
 	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_env_api_key_Google;
 	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_env_api_key_OpenRouter;
-	GetValue<QString>(s, "OpenAI_api_key")                    >> as.api_key_OpenAI;
-	GetValue<QString>(s, "Anthropic_api_key")                 >> as.api_key_Anthropic;
-	GetValue<QString>(s, "Google_api_key")                    >> as.api_key_Google;
-	GetValue<QString>(s, "DEEPSEEK_API_KEY")                  >> as.api_key_DeepSeek;
-	GetValue<QString>(s, "OpenRouter_api_key")                >> as.api_key_OpenRouter;
+	GetValue<QString>(s, UPPER("OPENAI_API_KEY"))             >> as.api_key_OpenAI;
+	GetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          >> as.api_key_Anthropic;
+	GetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             >> as.api_key_Google;
+	GetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           >> as.api_key_DeepSeek;
+	GetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         >> as.api_key_OpenRouter;
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
 	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
@@ -248,11 +253,11 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_env_api_key_Google;
 	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_env_api_key_DeepSeek;
 	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_env_api_key_OpenRouter;
-	SetValue<QString>(s, "OpenAI_api_key")                    << this->api_key_OpenAI;
-	SetValue<QString>(s, "Anthropic_api_key")                 << this->api_key_Anthropic;
-	SetValue<QString>(s, "Google_api_key")                    << this->api_key_Google;
-	SetValue<QString>(s, "DEEPSEEK_API_KEY")                  << this->api_key_DeepSeek;
-	SetValue<QString>(s, "OpenRouter_api_key")                << this->api_key_OpenRouter;
+	SetValue<QString>(s, UPPER("OPENAI_API_KEY"))             << this->api_key_OpenAI;
+	SetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          << this->api_key_Anthropic;
+	SetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             << this->api_key_Google;
+	SetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           << this->api_key_DeepSeek;
+	SetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         << this->api_key_OpenRouter;
 	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
