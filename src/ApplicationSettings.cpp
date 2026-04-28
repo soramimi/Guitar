@@ -2,6 +2,8 @@
 #include "MySettings.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/strformat.h"
+#include "common/q/helper.h"
 #include <QStandardPaths>
 
 namespace {
@@ -33,7 +35,7 @@ template <> void operator >> (GetValue<QColor> const &l, QColor &r)
 
 template <> void operator >> (GetValue<std::string> const &l, std::string &r)
 {
-	r = l.settings.value(l.name, QString::fromStdString(r)).toString().toStdString();
+	r = l.settings.value(l.name, QString::fromStdString(r)).toString().trimmed().toStdString();
 }
 
 template <typename T> class SetValue {
@@ -61,7 +63,7 @@ template <> void operator << (SetValue<QColor> &&l, QColor const &r)
 
 template <> void operator << (SetValue<std::string> &&l, std::string const &r)
 {
-	l.settings.setValue(l.name, QString::fromStdString(r));
+	l.settings.setValue(l.name, QString::fromStdString(r).trimmed());
 }
 
 } // namespace
@@ -138,17 +140,48 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
+#if 0
 	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_env_api_key_OpenAI;
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_env_api_key_Anthropic;
 	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_env_api_key_Google;
 	GetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         >> as.use_env_api_key_XAI;
 	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_env_api_key_OpenRouter;
-	GetValue<QString>(s, UPPER("OPENAI_API_KEY"))             >> as.api_key_OpenAI;
-	GetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          >> as.api_key_Anthropic;
-	GetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             >> as.api_key_Google;
-	GetValue<QString>(s, UPPER("XAI_API_KEY"))                >> as.api_key_XAI;
-	GetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           >> as.api_key_DeepSeek;
-	GetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         >> as.api_key_OpenRouter;
+	GetValue<std::string>(s, UPPER("OPENAI_API_KEY"))             >> as.api_key_OpenAI;
+	GetValue<std::string>(s, UPPER("ANTHROPIC_API_KEY"))          >> as.api_key_Anthropic;
+	GetValue<std::string>(s, UPPER("GOOGLE_API_KEY"))             >> as.api_key_Google;
+	GetValue<std::string>(s, UPPER("XAI_API_KEY"))                >> as.api_key_XAI;
+	GetValue<std::string>(s, UPPER("DEEPSEEK_API_KEY"))           >> as.api_key_DeepSeek;
+	GetValue<std::string>(s, UPPER("OPENROUTER_API_KEY"))         >> as.api_key_OpenRouter;
+#endif
+	{
+#if 0
+		for (auto &pair : as.ai_api_keys) {
+			GenerativeAI::AI aiid = pair.first;
+			ApplicationSettings::AiApiKey &aikey = pair.second;
+			GenerativeAI::ProviderInfo const *info = GenerativeAI::provider_info(aiid);
+			GetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info->symbol)) >> aikey.use_key_flag;
+			GetValue<std::string>(s, (QS)info->env_name) >> aikey.api_key;
+		}
+#endif
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		for (GenerativeAI::ProviderInfo const &info : table) {
+			if (info.env_name.empty()) {
+				Q_ASSERT(info.symbol.empty()); // env_nameが空のときはsymbolも空であるべき
+				continue; // 環境変数名が空でないプロバイダーのみ対象とする
+			}
+			// Q_ASSERT(!info.symbol.empty()); // env_nameが空でないときはsymbolも空であってはならない
+			// ↑空であってもよい
+			as.ai_api_keys[info.aiid] = {};
+			ApplicationSettings::AiApiKey &aikey = as.ai_api_keys[info.aiid];
+			bool from = false;
+			GetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) >> from;
+			aikey.from = ApplicationSettings::ApiKeyFrom::EnvValue;
+			if (from) {
+				aikey.from = ApplicationSettings::ApiKeyFrom::UserInput;
+			}
+			GetValue<std::string>(s, UPPER((QS)info.env_name)) >> aikey.api_key;
+		}
+	}
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
 	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
@@ -244,18 +277,38 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
+#if 0
 	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_env_api_key_OpenAI;
 	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_env_api_key_Anthropic;
 	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_env_api_key_Google;
 	SetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         << this->use_env_api_key_XAI;
 	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_env_api_key_DeepSeek;
 	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_env_api_key_OpenRouter;
-	SetValue<QString>(s, UPPER("OPENAI_API_KEY"))             << this->api_key_OpenAI;
-	SetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          << this->api_key_Anthropic;
-	SetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             << this->api_key_Google;
-	SetValue<QString>(s, UPPER("XAI_API_KEY"))                << this->api_key_XAI;
-	SetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           << this->api_key_DeepSeek;
-	SetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         << this->api_key_OpenRouter;
+	SetValue<std::string>(s, UPPER("OPENAI_API_KEY"))             << this->api_key_OpenAI;
+	SetValue<std::string>(s, UPPER("ANTHROPIC_API_KEY"))          << this->api_key_Anthropic;
+	SetValue<std::string>(s, UPPER("GOOGLE_API_KEY"))             << this->api_key_Google;
+	SetValue<std::string>(s, UPPER("XAI_API_KEY"))                << this->api_key_XAI;
+	SetValue<std::string>(s, UPPER("DEEPSEEK_API_KEY"))           << this->api_key_DeepSeek;
+	SetValue<std::string>(s, UPPER("OPENROUTER_API_KEY"))         << this->api_key_OpenRouter;
+#endif
+	{
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		for (GenerativeAI::ProviderInfo const &info : table) {
+			if (info.env_name.empty()) {
+				Q_ASSERT(info.symbol.empty()); // env_nameが空のときはsymbolも空であるべき
+				continue; // 環境変数名が空でないプロバイダーのみ対象とする
+			}
+			// Q_ASSERT(!info.symbol.empty()); // env_nameが空でないときはsymbolも空であってはならない
+			// ↑空であってもよい
+			auto it = this->ai_api_keys.find(info.aiid);
+			if (it == this->ai_api_keys.end()) continue;
+			ApplicationSettings::AiApiKey const &aikey = it->second;
+			bool from = (aikey.from == ApplicationSettings::ApiKeyFrom::UserInput);
+			SetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) << from;
+			SetValue<std::string>(s, UPPER((QS)info.env_name)) << aikey.api_key;
+		}
+
+	}
 	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;

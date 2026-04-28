@@ -20,14 +20,14 @@ private:
 
 	void refrectSettingsToUI();
 	void changeProvider(Provider *ai);
-	void setRadioButtons(bool enabled, bool use_env_value);
+	void setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFrom from);
 	void configureModelByString(const std::string &s);
 	void configureModel(const GenerativeAI::Model &model);
 	void updateProviderComboBox(Provider *newai);
 	void guessProviderFromModelName(const std::string &s);
-        SettingAiForm::Provider *provider(GenerativeAI::AI aiid);
+	SettingAiForm::Provider *provider(GenerativeAI::AI aiid);
 	SettingAiForm::Provider *unknown_provider();
-public:
+	public:
 	explicit SettingAiForm(QWidget *parent = nullptr);
 	~SettingAiForm();
 	void exchange(bool save) override;

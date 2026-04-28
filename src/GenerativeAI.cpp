@@ -10,17 +10,18 @@ namespace GenerativeAI {
 const std::vector<ProviderInfo> &provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
-		{AI::Unknown, "-", "-", ""},
-		{AI::OpenAI_responses, "openai-responses", "OpenAI", "OPENAI_API_KEY"},
-		{AI::OpenAI_chat_completions, "openai-chat-completions", "OpenAI (legacy)", "OPENAI_API_KEY"},
-		{AI::Anthropic, "anthropic", "Anthropic; Claude", "ANTHROPIC_API_KEY"},
-		{AI::Google, "google", "Google; Gemini", "GOOGLE_API_KEY"},
-		{AI::XAI, "xai", "xAI; Grok", "XAI_API_KEY"},
-		{AI::DeepSeek, "deepseek", "DeepSeek", "DEEPSEEK_API_KEY"},
-		{AI::OpenRouter, "openrouter", "OpenRouter", "OPENROUTER_API_KEY"},
-		{AI::Ollama, "ollama", "Ollama (experimental)", ""},
-		{AI::LMStudio, "lmstudio", "LM Studio (experimental)", ""},
-		{AI::LLAMACPP, "llamacpp", "llama.cpp (experimental)", ""},
+		{AI::Unknown,                      "",                                "-",                              "",                            ""},
+		{AI::OpenAI,                       "",                                "OpenAI",                         "OpenAi",                      "OPENAI_API_KEY"}, // placeholder
+		{AI::OpenAI_responses,             "openai-responses",                "OpenAI",                         "",                            "OPENAI_API_KEY"},
+		{AI::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI (legacy)",                "",                            "OPENAI_API_KEY"},
+		{AI::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "Anthropic",                   "ANTHROPIC_API_KEY"},
+		{AI::Google,                       "google",                          "Google; Gemini",                 "Google",                      "GOOGLE_API_KEY"},
+		{AI::XAI,                          "xai",                             "xAI; Grok",                      "XAI",                         "XAI_API_KEY"},
+		{AI::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DeepSeek",                    "DEEPSEEK_API_KEY"},
+		{AI::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OpenRouter",                  "OPENROUTER_API_KEY"},
+		{AI::Ollama,                       "ollama",                          "Ollama (experimental)",          "",                            ""},
+		{AI::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       "",                            ""},
+		{AI::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "",                            ""},
 	};
 	return provider_info;
 }
@@ -218,7 +219,7 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = fmt("http://%s:%s/api/generate")(model_.host())(model_.port()); // experimental
-		r.header.push_back("Authorization: Bearer anonymous"/* + cred_.api_key*/);
+		r.header.push_back("Authorization: Bearer anonymous");
 		return r;
 	}
 

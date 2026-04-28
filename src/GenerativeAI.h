@@ -8,6 +8,7 @@ namespace GenerativeAI {
 
 enum class AI {
 	Unknown,
+	OpenAI, // placeholder
 	OpenAI_responses, // for OpenAI responses API
 	OpenAI_chat_completions, // legacy for OpenAI chat completions API
 	Anthropic,
@@ -44,7 +45,7 @@ public:
 		case AI::OpenAI_chat_completions: return case_OpenAI_chat_completions();
 		case AI::Anthropic:               return case_Anthropic();
 		case AI::Google:                  return case_Google();
-		case AI::XAI:                    return case_XAI();
+		case AI::XAI:                     return case_XAI();
 		case AI::DeepSeek:                return case_DeepSeek();
 		case AI::OpenRouter:              return case_OpenRouter();
 		case AI::Ollama:                  return case_Ollama();
@@ -56,10 +57,11 @@ public:
 };
 
 struct ProviderInfo {
-	AI aiid;
-	std::string tag;
-	std::string description;
-	std::string env_name;
+	AI aiid; // 識別ID (整数)
+	std::string tag; // 識別用タグ (小文字、ハイフン区切り)
+	std::string description; // UI表示用説明文
+	std::string symbol; // 設定ファイル用シンボル (PascalCase)
+	std::string env_name; // 環境変数名 (UPPER_SNAKE_CASE_API_KEY)
 };
 
 std::vector<ProviderInfo> const &provider_table();

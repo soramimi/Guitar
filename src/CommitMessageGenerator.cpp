@@ -255,8 +255,8 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 "temperature": %f,
 "messages": [
 	{"role": "system", "content": "You are an experienced engineer."},
-	{"role": "user", "content": "%s"}]
-})---";
+	{"role": "user", "content": "%s"}
+]})---";
 		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt));
 	}
 
@@ -570,7 +570,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 {
 	constexpr int max_message_count = 5; // 生成するコミットメッセージ候補の数
 
-	constexpr bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	constexpr bool save_log = true; // リクエスト/レスポンスをログに記録するか
 
 	if (diff.empty()) {
 		return Error("error", "diff is empty");

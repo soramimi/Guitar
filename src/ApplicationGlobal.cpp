@@ -215,12 +215,37 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 	GenerativeAI::Credential case_OpenAI_chat_completions()
 	{
 		GenerativeAI::Credential cred;
+		switch (keyfrom(GenerativeAI::AI::OpenAI)) {
+		case ApplicationSettings::ApiKeyFrom::EnvValue:
+			cred.api_key = getenv(envname);
+			return cred;
+		case ApplicationSettings::ApiKeyFrom::UserInput:
+			{
+
+				auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenAI);
+				if (it != global->appsettings.ai_api_keys.end()) {
+					cred.api_key = it->second.api_key;
+				}
+			}
+			return cred;
+		}
+		return cred;
+#if 0
+		GenerativeAI::Credential cred;
 		if (global->appsettings.use_env_api_key_OpenAI) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_OpenAI.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenAI);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
 		return cred;
+#endif
 	}
 
 	GenerativeAI::Credential case_OpenAI_responses()
@@ -234,7 +259,14 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		if (global->appsettings.use_env_api_key_Anthropic) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_Anthropic.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::Anthropic);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
 		return cred;
 	}
@@ -245,19 +277,59 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		if (global->appsettings.use_env_api_key_Google) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_Google.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::Google);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
 		return cred;
 	}
 
+	ApplicationSettings::ApiKeyFrom keyfrom(GenerativeAI::AI aiid)
+	{
+		auto it = global->appsettings.ai_api_keys.find(aiid);
+		if (it != global->appsettings.ai_api_keys.end()) {
+			return it->second.from;
+		}
+		return ApplicationSettings::ApiKeyFrom::Default;
+	}
+
 	GenerativeAI::Credential case_XAI()
 	{
+		GenerativeAI::AI aiid = GenerativeAI::AI::XAI;
 		GenerativeAI::Credential cred;
+		switch (keyfrom(aiid)) {
+		case ApplicationSettings::ApiKeyFrom::EnvValue:
+			cred.api_key = getenv(envname);
+			return cred;
+		case ApplicationSettings::ApiKeyFrom::UserInput:
+			{
+
+				auto it = global->appsettings.ai_api_keys.find(aiid);
+				if (it != global->appsettings.ai_api_keys.end()) {
+					cred.api_key = misc::trimmed(it->second.api_key);
+				}
+			}
+			return cred;
+		}
+#if 0
 		if (global->appsettings.use_env_api_key_XAI) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_XAI.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::XAI);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
+#endif
 		return cred;
 	}
 
@@ -267,7 +339,14 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		if (global->appsettings.use_env_api_key_DeepSeek) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_DeepSeek.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::DeepSeek);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
 		return cred;
 	}
@@ -277,7 +356,14 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		if (global->appsettings.use_env_api_key_OpenRouter) {
 			cred.api_key = getenv(envname);
 		} else {
+#if 0
 			cred.api_key = global->appsettings.api_key_OpenRouter.toStdString();
+#else
+			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenRouter);
+			if (it != global->appsettings.ai_api_keys.end()) {
+				cred.api_key = it->second.api_key;
+			}
+#endif
 		}
 		return cred;
 	}

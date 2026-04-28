@@ -43,15 +43,20 @@ public:
 	bool use_env_api_key_XAI = false;
 	bool use_env_api_key_DeepSeek = false;
 	bool use_env_api_key_OpenRouter = false;
-	QString api_key_OpenAI;
-	QString api_key_Anthropic;
-	QString api_key_Google;
-	QString api_key_XAI;
-	QString api_key_DeepSeek;
-	QString api_key_OpenRouter;
+	std::string api_key_OpenAI;
+	std::string api_key_Anthropic;
+	std::string api_key_Google;
+	std::string api_key_XAI;
+	std::string api_key_DeepSeek;
+	std::string api_key_OpenRouter;
+	enum class ApiKeyFrom {
+		EnvValue, // 環境変数から取得
+		UserInput, // ユーザーが設定画面で入力
+		Default = EnvValue
+	};
 	struct AiApiKey {
-		bool use_key = false;
-		QString api_key;
+		ApiKeyFrom from = ApiKeyFrom::EnvValue;
+		std::string api_key;
 	};
 	std::map<GenerativeAI::AI, AiApiKey> ai_api_keys;
 	GenerativeAI::Model ai_model;
