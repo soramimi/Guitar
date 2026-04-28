@@ -193,208 +193,31 @@ void GlobalRestoreOverrideCursor()
 	QApplication::restoreOverrideCursor();
 }
 
-struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Credential> {
-	char const *envname;
-	_AiCredentials(char const *envname)
-		: envname(envname)
-	{
-	}
-
-	std::string getenv(char const *name)
-	{
-		char const *value = std::getenv(name);
-		return value ? std::string(value) : std::string();
-	}
-
-
-	GenerativeAI::Credential case_Unknown()
-	{
-		return {};
-	}
-
-	GenerativeAI::Credential case_OpenAI_chat_completions()
-	{
-		GenerativeAI::Credential cred;
-		switch (keyfrom(GenerativeAI::AI::OpenAI)) {
-		case ApplicationSettings::ApiKeyFrom::EnvValue:
-			cred.api_key = getenv(envname);
-			return cred;
-		case ApplicationSettings::ApiKeyFrom::UserInput:
-			{
-
-				auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenAI);
-				if (it != global->appsettings.ai_api_keys.end()) {
-					cred.api_key = it->second.api_key;
-				}
-			}
-			return cred;
-		}
-		return cred;
-#if 0
-		GenerativeAI::Credential cred;
-		if (global->appsettings.use_env_api_key_OpenAI) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_OpenAI.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenAI);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-		return cred;
-#endif
-	}
-
-	GenerativeAI::Credential case_OpenAI_responses()
-	{
-		return case_OpenAI_chat_completions();
-	}
-
-	GenerativeAI::Credential case_Anthropic()
-	{
-		GenerativeAI::Credential cred;
-		if (global->appsettings.use_env_api_key_Anthropic) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_Anthropic.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::Anthropic);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-		return cred;
-	}
-
-	GenerativeAI::Credential case_Google()
-	{
-		GenerativeAI::Credential cred;
-		if (global->appsettings.use_env_api_key_Google) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_Google.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::Google);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-		return cred;
-	}
-
-	ApplicationSettings::ApiKeyFrom keyfrom(GenerativeAI::AI aiid)
-	{
-		auto it = global->appsettings.ai_api_keys.find(aiid);
-		if (it != global->appsettings.ai_api_keys.end()) {
-			return it->second.from;
-		}
-		return ApplicationSettings::ApiKeyFrom::Default;
-	}
-
-	GenerativeAI::Credential case_XAI()
-	{
-		GenerativeAI::AI aiid = GenerativeAI::AI::XAI;
-		GenerativeAI::Credential cred;
-		switch (keyfrom(aiid)) {
-		case ApplicationSettings::ApiKeyFrom::EnvValue:
-			cred.api_key = getenv(envname);
-			return cred;
-		case ApplicationSettings::ApiKeyFrom::UserInput:
-			{
-
-				auto it = global->appsettings.ai_api_keys.find(aiid);
-				if (it != global->appsettings.ai_api_keys.end()) {
-					cred.api_key = misc::trimmed(it->second.api_key);
-				}
-			}
-			return cred;
-		}
-#if 0
-		if (global->appsettings.use_env_api_key_XAI) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_XAI.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::XAI);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-#endif
-		return cred;
-	}
-
-	GenerativeAI::Credential case_DeepSeek()
-	{
-		GenerativeAI::Credential cred;
-		if (global->appsettings.use_env_api_key_DeepSeek) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_DeepSeek.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::DeepSeek);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-		return cred;
-	}
-	GenerativeAI::Credential case_OpenRouter()
-	{
-		GenerativeAI::Credential cred;
-		if (global->appsettings.use_env_api_key_OpenRouter) {
-			cred.api_key = getenv(envname);
-		} else {
-#if 0
-			cred.api_key = global->appsettings.api_key_OpenRouter.toStdString();
-#else
-			auto it = global->appsettings.ai_api_keys.find(GenerativeAI::AI::OpenRouter);
-			if (it != global->appsettings.ai_api_keys.end()) {
-				cred.api_key = it->second.api_key;
-			}
-#endif
-		}
-		return cred;
-	}
-
-	GenerativeAI::Credential case_Ollama()
-	{
-		GenerativeAI::Credential cred;
-		cred.api_key = "aonymous";
-		return cred;
-	}
-
-	GenerativeAI::Credential case_LMStudio()
-	{
-		GenerativeAI::Credential cred;
-		cred.api_key = "aonymous";
-		return cred;
-	}
-
-	GenerativeAI::Credential case_LLAMACPP()
-	{
-		GenerativeAI::Credential cred;
-		cred.api_key = "aonymous";
-		return cred;
-	}
-};
-
-GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI provider)
+GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI aiid)
 {
-	GenerativeAI::ProviderInfo const *info = provider_info(provider);
-	char const *envname = info->env_name.c_str();
-	return _AiCredentials(envname).visit(provider);
+	GenerativeAI::Credential cred;
+	auto it = global->appsettings.ai_api_keys.find(aiid);
+	if (it != global->appsettings.ai_api_keys.end()) {
+		ApplicationSettings::AiApiKey *apikey = &it->second;
+		GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(aiid); // 絶対に非nullptrを返す
+		char const *env = nullptr;
+		Q_ASSERT(provider);
+		switch (apikey->from) {
+		case ApplicationSettings::ApiKeyFrom::EnvValue:
+			env = std::getenv(provider->env_name.c_str());
+			if (env) {
+				cred.api_key = env;
+			}
+			return cred;
+		case ApplicationSettings::ApiKeyFrom::UserInput:
+			if (apikey) {
+				cred.api_key = misc::trimmed(it->second.api_key);
+			}
+			return cred;
+		}
+	}
+	// cred.api_key = "aonymous";
+	return cred;
 }
 
 std::string ApplicationGlobal::determineFileType(char const *data, size_t size)

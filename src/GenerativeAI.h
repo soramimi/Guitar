@@ -65,14 +65,14 @@ struct ProviderInfo {
 };
 
 std::vector<ProviderInfo> const &provider_table();
-ProviderInfo const *provider_info(AI aiid);
+const ProviderInfo *provider_info(AI aiid);
 
 struct Credential {
 	std::string api_key;
 };
 
 struct Model {
-	ProviderInfo const *provider_info_ = nullptr;
+	ProviderInfo const *provider_info_;
 	std::string long_name_;
 	std::string model_name_;
 	std::string host_;

@@ -47,7 +47,7 @@ std::vector<Model> const &ai_model_presets()
 	return preset_models;
 }
 
-const ProviderInfo *provider_info(AI aiid)
+ProviderInfo const *provider_info(AI aiid)
 {
 	std::vector<ProviderInfo> const &vec = provider_table();
 	for (auto const &p : vec) {

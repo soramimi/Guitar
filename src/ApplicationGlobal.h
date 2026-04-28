@@ -103,8 +103,8 @@ public:
 	LibMecab mecab;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
-
-	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI provider);
+	
+	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI aiid);
 
 	std::string determineFileType(const char *data, size_t size);
 	std::string determineFileType(QByteArray const &in)
