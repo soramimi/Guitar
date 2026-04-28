@@ -6034,7 +6034,7 @@ void MainWindow::setIncrementalSearchText(QString const &text, int repo_list_sel
 	if (ft == FilterTarget::RepositorySearch) {
 		updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard, repo_list_select_row, global->incremental_search_text);
 	} else if (ft == FilterTarget::CommitLogSearch) {
-		ui->tableWidget_log->setFilter(global->incremental_search_text);
+		ui->tableWidget_log->setFilter(global->incremental_search_text.toStdString());
 	}
 }
 

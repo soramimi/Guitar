@@ -15,6 +15,7 @@ const std::vector<ProviderInfo> &provider_table()
 		{AI::OpenAI_chat_completions, "openai-chat-completions", "OpenAI (legacy)", "OPENAI_API_KEY"},
 		{AI::Anthropic, "anthropic", "Anthropic; Claude", "ANTHROPIC_API_KEY"},
 		{AI::Google, "google", "Google; Gemini", "GOOGLE_API_KEY"},
+		{AI::XAI, "xai", "xAI; Grok", "XAI_API_KEY"},
 		{AI::DeepSeek, "deepseek", "DeepSeek", "DEEPSEEK_API_KEY"},
 		{AI::OpenRouter, "openrouter", "OpenRouter", "OPENROUTER_API_KEY"},
 		{AI::Ollama, "ollama", "Ollama (experimental)", ""},
@@ -35,20 +36,21 @@ std::vector<Model> const &ai_model_presets()
 		{AI::Anthropic, "claude-sonnet-4-6"},
 		{AI::Anthropic, "claude-haiku-4-5"},
 		{AI::Google, "gemini-3-flash-preview"},
+		{AI::XAI, "grok-4.20"},
 		{AI::DeepSeek, "deepseek-chat"},
 		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
 		{AI::Ollama, "ollama:///gemma4"},
 		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
-		{AI::LLAMACPP, "llamacpp:///unknown"},
+		{AI::LLAMACPP, "llamacpp:///"},
 	};
 	return preset_models;
 }
 
-const ProviderInfo *provider_info(AI ai)
+const ProviderInfo *provider_info(AI aiid)
 {
 	std::vector<ProviderInfo> const &vec = provider_table();
 	for (auto const &p : vec) {
-		if (p.provider == ai) {
+		if (p.aiid == aiid) {
 			return &p;
 		}
 	}
@@ -73,20 +75,20 @@ void Model::parse_model(const std::string &name)
 	long_name_ = name;
 	model_name_ = name;
 
-	auto Parse = [&](std::string const &header, int port){
-		if (misc::starts_with(model_name_, header)) {
-			model_name_ = model_name_.substr(header.size());
+	auto Parse = [&](std::string const &prefix, int port){
+		if (misc::starts_with(model_name_, prefix)) {
+			model_name_ = model_name_.substr(prefix.size());
 			auto i = model_name_.find('/');
 			if (i != std::string::npos) {
-				host_ = model_name_.substr(0, i);
+				std::string addr = model_name_.substr(0, i);
 				model_name_ = model_name_.substr(i + 1);
-				if (host_.empty()) {
+				if (addr.empty()) {
 					host_ = "localhost";
 				} else {
-					auto j = model_name_.find(':');
+					auto j = addr.find(':');
 					if (j != std::string::npos) {
-						host_ = model_name_.substr(0, j);
-						port_ = model_name_.substr(j + 1);
+						host_ = addr.substr(0, j);
+						port_ = addr.substr(j + 1);
 					}
 				}
 				if (port_.empty()) {
@@ -117,6 +119,7 @@ Model Model::from_name(std::string const &name)
 		{AI::OpenAI_responses, "^gpt-"},
 		{AI::Anthropic, "^claude-"},
 		{AI::Google, "^gemini-"},
+		{AI::XAI, "^grok-"},
 		{AI::DeepSeek, "^deepseek-"},
 		{AI::Ollama, "^ollama://"},
 		{AI::LMStudio, "^lmstudio://"},
@@ -183,6 +186,15 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 		return r;
 	}
 
+	Request case_XAI()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.x.ai/v1/chat/completions";
+		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		return r;
+	}
+
 	Request case_DeepSeek()
 	{
 		Request r;
@@ -222,6 +234,9 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
+		if (r.model_name.empty())  {
+			r.model_name = "default";
+		}
 		r.endpoint_url = fmt("http://%s:%s/v1/chat/completions")(model_.host())(model_.port()); // experimental
 		return r;
 	}

@@ -152,6 +152,12 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 		return ret;
 	}
 
+	/// xAISeek：OpenAI Chat Completions 互換形式
+	CommitMessageResult case_XAI()
+	{
+		return parse_openai_chat_completions_format();
+	}
+
 	/// DeepSeek：OpenAI Chat Completions 互換形式
 	CommitMessageResult case_DeepSeek()
 	{
@@ -294,6 +300,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 }]
 })---";
 		return fmt(json)(jstream::encode_json_string(prompt));
+	}
+
+	/// xAI：OpenAI Chat Completions 互換形式
+	std::string case_XAI()
+	{
+		return case_OpenAI_chat_completions();
 	}
 
 	/**
@@ -570,8 +582,8 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	}
 
 	GenerativeAI::Model model = ai_model();
-	if (model.model_name().empty()) {
-		return Error("error", "AI model is not set.");
+	if (model.provider_id() == GenerativeAI::AI::Unknown) {
+		return Error("error", "AI model is not defined.");
 	}
 
 	std::string prompt = generatePrompt(diff, max_message_count);

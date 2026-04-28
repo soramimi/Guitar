@@ -302,8 +302,7 @@ SOURCES += \
 	src/webclient.cpp \
 	src/zip/zip.cpp \
 	src/zip/ziparchive.cpp \
-	src/zip/zipextract.cpp \
-	udplogger/RemoteLogger.cpp
+	src/zip/zipextract.cpp
 
 HEADERS += \
 	$$PWD/src/LibMigemo.h \
@@ -496,8 +495,7 @@ HEADERS += \
 	src/urlencode.h \
 	src/webclient.h \
 	src/zip/zip.h \
-	src/zip/zipinternal.h \
-	udplogger/RemoteLogger.h
+	src/zip/zipinternal.h
 
 HEADERS += version.h
 

@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <string_view>
+#include <cstddef>
 
 #ifndef STRFORMAT_NO_LOCALE
 #include <locale.h>

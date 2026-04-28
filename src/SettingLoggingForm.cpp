@@ -20,16 +20,10 @@ void SettingLoggingForm::exchange(bool save)
 {
 	if (save) {
 		settings()->enable_trace_log = ui->checkBox_trace_log->isChecked();
-		settings()->enable_remote_log = ui->checkBox_remote_log->isChecked();
-		settings()->remote_log_host = ui->lineEdit_remote_log_host->text();
-		settings()->remote_log_port = ui->spinBox_remote_log_port->value();
 		settings()->use_custom_log_dir = ui->radioButton_dir_custom->isChecked();
 		settings()->custom_log_dir = ui->lineEdit_custom_log_dir->text();
 	} else {
 		ui->checkBox_trace_log->setChecked(settings()->enable_trace_log);
-		ui->checkBox_remote_log->setChecked(settings()->enable_remote_log);
-		ui->lineEdit_remote_log_host->setText(settings()->remote_log_host);
-		ui->spinBox_remote_log_port->setValue(settings()->remote_log_port);
 		ui->radioButton_dir_default->setChecked(!settings()->use_custom_log_dir);
 		ui->radioButton_dir_custom->setChecked(settings()->use_custom_log_dir);
 		ui->lineEdit_custom_log_dir->setText(settings()->custom_log_dir);

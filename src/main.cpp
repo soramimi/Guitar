@@ -19,7 +19,6 @@
 #include <QTranslator>
 #include <csignal>
 #include <string>
-#include "udplogger/RemoteLogger.h"
 #include "Logger.h"
 #include "genmsg.h"
 
@@ -66,10 +65,6 @@ void logHandler(QtMsgType type, const QMessageLogContext &context, const QString
 
 	if (1) {
 		logprint(LOG_DEFAULT, s);
-	}
-
-	if (global && global->appsettings.enable_remote_log) {
-		global->send_remote_logger(s, context.file, context.line);
 	}
 }
 
@@ -167,9 +162,6 @@ int main(int argc, char *argv[])
 	Logger::open(global->log_dir.toStdString() / "Guitar.log");
 	Logger::pause(false);
 
-	if (global->appsettings.enable_remote_log) {
-		global->open_remote_logger();
-	}
 	if (global->appsettings.enable_trace_log) {
 		global->open_trace_logger();
 	}

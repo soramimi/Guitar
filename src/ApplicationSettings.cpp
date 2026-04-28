@@ -92,9 +92,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Global");
 	GetValue<bool>(s, "EnableTraceLog")                      >> as.enable_trace_log;
-	GetValue<bool>(s, "EnableRemoteLog")                     >> as.enable_remote_log;
-	GetValue<QString>(s, "RemoteLogHost")                    >> as.remote_log_host;
-	GetValue<int>(s, "RemoteLogPort")                        >> as.remote_log_port;
 	GetValue<bool>(s, "UseCustomLogDir")                     >> as.use_custom_log_dir;
 	GetValue<QString>(s, "CustomLogDir")                     >> as.custom_log_dir;
 
@@ -144,10 +141,12 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_env_api_key_OpenAI;
 	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_env_api_key_Anthropic;
 	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_env_api_key_Google;
+	GetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         >> as.use_env_api_key_XAI;
 	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_env_api_key_OpenRouter;
 	GetValue<QString>(s, UPPER("OPENAI_API_KEY"))             >> as.api_key_OpenAI;
 	GetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          >> as.api_key_Anthropic;
 	GetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             >> as.api_key_Google;
+	GetValue<QString>(s, UPPER("XAI_API_KEY"))                >> as.api_key_XAI;
 	GetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           >> as.api_key_DeepSeek;
 	GetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         >> as.api_key_OpenRouter;
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
@@ -179,7 +178,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	}
 #else
 	if (info) {
-		as.ai_model = GenerativeAI::Model(info->provider, ai_model_name);
+		as.ai_model = GenerativeAI::Model(info->aiid, ai_model_name);
 	} else {
 		if (ai_provider_name.empty() && ai_model_name.empty()) {
 			ai_model_name = GenerativeAI::Model::default_model();
@@ -203,9 +202,6 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Global");
 	SetValue<bool>(s, "EnableTraceLog")                      << this->enable_trace_log;
-	SetValue<bool>(s, "EnableRemoteLog")                     << this->enable_remote_log;
-	SetValue<QString>(s, "RemoteLogHost")                    << this->remote_log_host;
-	SetValue<int>(s, "RemoteLogPort")                        << this->remote_log_port;
 	SetValue<bool>(s, "UseCustomLogDir")                     << this->use_custom_log_dir;
 	SetValue<QString>(s, "CustomLogDir")                     << this->custom_log_dir;
 
@@ -251,11 +247,13 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_env_api_key_OpenAI;
 	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_env_api_key_Anthropic;
 	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_env_api_key_Google;
+	SetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         << this->use_env_api_key_XAI;
 	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_env_api_key_DeepSeek;
 	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_env_api_key_OpenRouter;
 	SetValue<QString>(s, UPPER("OPENAI_API_KEY"))             << this->api_key_OpenAI;
 	SetValue<QString>(s, UPPER("ANTHROPIC_API_KEY"))          << this->api_key_Anthropic;
 	SetValue<QString>(s, UPPER("GOOGLE_API_KEY"))             << this->api_key_Google;
+	SetValue<QString>(s, UPPER("XAI_API_KEY"))                << this->api_key_XAI;
 	SetValue<QString>(s, UPPER("DEEPSEEK_API_KEY"))           << this->api_key_DeepSeek;
 	SetValue<QString>(s, UPPER("OPENROUTER_API_KEY"))         << this->api_key_OpenRouter;
 	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;

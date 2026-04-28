@@ -2,9 +2,9 @@
 #define APPLICATIONSETTINGS_H
 
 #include "GenerativeAI.h"
-
 #include <QColor>
 #include <QString>
+#include <map>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
@@ -23,9 +23,6 @@ public:
 class ApplicationSettings {
 public:
 	bool enable_trace_log = false;
-	bool enable_remote_log = false;
-	QString remote_log_host = "localhost";
-	int remote_log_port = 1024;
 	bool use_custom_log_dir = false;
 	QString custom_log_dir;
 
@@ -43,13 +40,20 @@ public:
 	bool use_env_api_key_OpenAI = false;
 	bool use_env_api_key_Anthropic = false;
 	bool use_env_api_key_Google = false;
+	bool use_env_api_key_XAI = false;
 	bool use_env_api_key_DeepSeek = false;
 	bool use_env_api_key_OpenRouter = false;
 	QString api_key_OpenAI;
 	QString api_key_Anthropic;
 	QString api_key_Google;
+	QString api_key_XAI;
 	QString api_key_DeepSeek;
 	QString api_key_OpenRouter;
+	struct AiApiKey {
+		bool use_key = false;
+		QString api_key;
+	};
+	std::map<GenerativeAI::AI, AiApiKey> ai_api_keys;
 	GenerativeAI::Model ai_model;
 	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;
 

@@ -25,7 +25,7 @@ private:
 	void configureModel(const GenerativeAI::Model &model);
 	void updateProviderComboBox(Provider *newai);
 	void guessProviderFromModelName(const std::string &s);
-	SettingAiForm::Provider *provider(GenerativeAI::AI id);
+        SettingAiForm::Provider *provider(GenerativeAI::AI aiid);
 	SettingAiForm::Provider *unknown_provider();
 public:
 	explicit SettingAiForm(QWidget *parent = nullptr);

@@ -1,6 +1,0 @@
-build/
-bin/
-lib/
-*.user
-*.d
-*.o

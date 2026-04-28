@@ -4,22 +4,22 @@
 #include <QMessageBox>
 
 struct SettingAiForm::Provider {
-	GenerativeAI::AI provider = GenerativeAI::AI::Unknown;
+	GenerativeAI::AI aiid = GenerativeAI::AI::Unknown;
 	GenerativeAI::ProviderInfo const *info = nullptr;
 	QString custom_api_key;
 	bool use_env_value = false;
 	Provider(GenerativeAI::AI provider)
-		: provider(provider)
+		: aiid(provider)
 	{
 		info = GenerativeAI::provider_info(provider);
 	}
 	std::string env_name() const
 	{
-		return GenerativeAI::provider_info(provider)->env_name;
+		return GenerativeAI::provider_info(aiid)->env_name;
 	}
 	bool operator == (const Provider &other) const
 	{
-		return provider == other.provider;
+		return aiid == other.aiid;
 	}
 };
 
@@ -41,6 +41,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 		{GenerativeAI::AI::OpenAI_chat_completions},
 		{GenerativeAI::AI::Anthropic},
 		{GenerativeAI::AI::Google},
+		{GenerativeAI::AI::XAI},
 		{GenerativeAI::AI::DeepSeek},
 		{GenerativeAI::AI::OpenRouter},
 		{GenerativeAI::AI::Ollama},
@@ -51,7 +52,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	m->current_provider = unknown_provider();
 
 	for (size_t i = 0; i < m->providers.size(); i++) {
-		int index = static_cast<int>(m->providers[i].info->provider);
+		int index = static_cast<int>(m->providers[i].info->aiid);
 		QString text = QString::fromStdString(m->providers[i].info->description);
 		ui->comboBox_provider->addItem(text, QVariant(index));
 	}
@@ -76,10 +77,10 @@ SettingAiForm::~SettingAiForm()
 	delete ui;
 }
 
-SettingAiForm::Provider *SettingAiForm::provider(GenerativeAI::AI id)
+SettingAiForm::Provider *SettingAiForm::provider(GenerativeAI::AI aiid)
 {
 	for (auto &ai : m->providers) {
-		if (ai.provider == id) {
+		if (ai.aiid == aiid) {
 			return &ai;
 		}
 	}
@@ -111,11 +112,14 @@ void SettingAiForm::exchange(bool save)
 	ApplicationSettings *s = settings();
 
 	std::vector<Item> items;
+#if 01
 #define ADD_ITEM(SHORT, LONG) { Provider *p = provider(GenerativeAI::AI::LONG); \
 	items.emplace_back(&s->use_env_api_key_##SHORT, &s->api_key_##SHORT, &p->use_env_value, &p->custom_api_key); }
 	ADD_ITEM(OpenAI, OpenAI_responses);
+	ADD_ITEM(OpenAI, OpenAI_chat_completions);
 	ADD_ITEM(Anthropic, Anthropic);
 	ADD_ITEM(Google, Google);
+	ADD_ITEM(XAI, XAI);
 	ADD_ITEM(DeepSeek, DeepSeek);
 	ADD_ITEM(OpenRouter, OpenRouter);
 	// the following has no API key
@@ -123,6 +127,19 @@ void SettingAiForm::exchange(bool save)
 	// ADD_ITEM(LMStudio);
 	// ADD_ITEM(LLAMACPP);
 #undef ADD_ITEM
+// #else
+	{ // wip:
+		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
+		for (GenerativeAI::ProviderInfo const &info : infos) {
+			if (info.env_name.empty()) continue; // 環境変数名が空でないプロバイダーのみ対象とする
+			auto it = s->ai_api_keys.find(info.aiid);
+			if (it == s->ai_api_keys.end()) continue; // 設定に存在するプロバイダーのみ対象とする
+			ApplicationSettings::AiApiKey *api_key_info = &it->second;
+			Provider *p = provider(info.aiid);
+			items.emplace_back(&api_key_info->use_key, &api_key_info->api_key, &p->use_env_value, &p->custom_api_key);
+		}
+	}
+#endif
 
 	if (save) {
 		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
@@ -137,7 +154,7 @@ void SettingAiForm::exchange(bool save)
 			}
 		}
 
-		s->ai_model = GenerativeAI::Model(m->current_provider->provider, ui->comboBox_ai_model->currentText().toStdString());
+		s->ai_model = GenerativeAI::Model(m->current_provider->aiid, ui->comboBox_ai_model->currentText().toStdString());
 	} else {
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
@@ -257,7 +274,7 @@ void SettingAiForm::updateProviderComboBox(Provider *newai)
 {
 	for (auto &ai : m->providers) {
 		if (&ai == newai) {
-			int index = static_cast<int>(ai.info->provider);
+			int index = static_cast<int>(ai.info->aiid);
 			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
 			break;
 		}

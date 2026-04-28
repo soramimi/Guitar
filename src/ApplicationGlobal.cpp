@@ -8,7 +8,6 @@
 #include <QBuffer>
 #include <QFileIconProvider>
 #include <memory>
-#include <udplogger/RemoteLogger.h>
 #include <QDebug>
 #include "Logger.h"
 #include "LibMecab.h"
@@ -16,7 +15,6 @@
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
-	RemoteLogger remote_logger;
 	LibMigemo migemo; // obsolete
 };
 
@@ -27,28 +25,8 @@ ApplicationGlobal::ApplicationGlobal()
 
 ApplicationGlobal::~ApplicationGlobal()
 {
-	close_remote_logger();
 	close_trace_logger();
 	delete m;
-}
-
-void ApplicationGlobal::open_remote_logger()
-{
-	if (appsettings.enable_remote_log) {
-		std::string host = appsettings.remote_log_host.toStdString();
-		int port = appsettings.remote_log_port;
-		m->remote_logger.open(host.c_str(), port);
-	}
-}
-
-void ApplicationGlobal::close_remote_logger()
-{
-	m->remote_logger.close();
-}
-
-void ApplicationGlobal::send_remote_logger(const std::string &msg, char const *file, int line)
-{
-	m->remote_logger.send(msg, file, line);
 }
 
 void ApplicationGlobal::open_trace_logger()
@@ -260,6 +238,7 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		}
 		return cred;
 	}
+
 	GenerativeAI::Credential case_Google()
 	{
 		GenerativeAI::Credential cred;
@@ -270,6 +249,18 @@ struct _AiCredentials : public GenerativeAI::AbstractVisitor<GenerativeAI::Crede
 		}
 		return cred;
 	}
+
+	GenerativeAI::Credential case_XAI()
+	{
+		GenerativeAI::Credential cred;
+		if (global->appsettings.use_env_api_key_XAI) {
+			cred.api_key = getenv(envname);
+		} else {
+			cred.api_key = global->appsettings.api_key_XAI.toStdString();
+		}
+		return cred;
+	}
+
 	GenerativeAI::Credential case_DeepSeek()
 	{
 		GenerativeAI::Credential cred;

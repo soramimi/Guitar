@@ -12,6 +12,7 @@ enum class AI {
 	OpenAI_chat_completions, // legacy for OpenAI chat completions API
 	Anthropic,
 	Google,
+	XAI,
 	DeepSeek,
 	OpenRouter,
 	Ollama, // experimental
@@ -28,6 +29,7 @@ public:
 	virtual T case_OpenAI_chat_completions() = 0;
 	virtual T case_Anthropic() = 0;
 	virtual T case_Google() = 0;
+	virtual T case_XAI() = 0;
 	virtual T case_DeepSeek() = 0;
 	virtual T case_OpenRouter() = 0;
 	virtual T case_Ollama() = 0;
@@ -42,6 +44,7 @@ public:
 		case AI::OpenAI_chat_completions: return case_OpenAI_chat_completions();
 		case AI::Anthropic:               return case_Anthropic();
 		case AI::Google:                  return case_Google();
+		case AI::XAI:                    return case_XAI();
 		case AI::DeepSeek:                return case_DeepSeek();
 		case AI::OpenRouter:              return case_OpenRouter();
 		case AI::Ollama:                  return case_Ollama();
@@ -53,14 +56,14 @@ public:
 };
 
 struct ProviderInfo {
-	AI provider;
+	AI aiid;
 	std::string tag;
 	std::string description;
 	std::string env_name;
 };
 
 std::vector<ProviderInfo> const &provider_table();
-ProviderInfo const *provider_info(AI ai);
+ProviderInfo const *provider_info(AI aiid);
 
 struct Credential {
 	std::string api_key;
@@ -82,7 +85,7 @@ struct Model {
 
 	AI provider_id() const
 	{
-		return provider_info_ ? provider_info_->provider : AI::Unknown;
+		return provider_info_ ? provider_info_->aiid : AI::Unknown;
 	}
 
 	std::string long_name() const

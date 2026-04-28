@@ -106,9 +106,9 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
-void CommitLogTableModel::private_SetFilter(QString const &text)
+void CommitLogTableModel::private_SetFilter(std::string const &text)
 {
-	filter_text_ = text.toStdString();
+	filter_text_ = text;
 	incremental_search_filter_ = global->makeIncrementalSearchFilter(filter_text_);
 	if (incremental_search_filter_) {
 		size_t n = records_.size();
@@ -138,7 +138,7 @@ void CommitLogTableModel::private_SetFilter(QString const &text)
 	}
 }
 
-bool CommitLogTableModel::setFilter(QString const &text)
+bool CommitLogTableModel::setFilter(std::string const &text)
 {
 	if (text == filter_text_) return false;
 	beginResetModel();
@@ -613,7 +613,7 @@ void CommitLogTableWidget::setCurrentRow(int row)
 	setCurrentIndex(index);
 }
 
-void CommitLogTableWidget::setFilter(QString const &filter)
+void CommitLogTableWidget::setFilter(std::string const &filter)
 {
 	if (model_->setFilter(filter)) {
 		updateViewport();
