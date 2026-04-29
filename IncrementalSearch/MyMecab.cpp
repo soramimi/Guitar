@@ -1,16 +1,12 @@
-#include "LibMecab.h"
+// mecabのソースにlibmecab.cppがあり、LibMecab.cppとすると、
+// Windowsでファイル名が競合するため、MyMecab.cppとしています。
+
+#include "MyMecab.h"
 #include "cstring"
 #include <mecab.h>
 #include <string>
 #include <vector>
 #include "gzip.h"
-
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
 
 struct Resource {
 	unsigned char *data;

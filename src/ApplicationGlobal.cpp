@@ -10,7 +10,7 @@
 #include <memory>
 #include <QDebug>
 #include "Logger.h"
-#include "LibMecab.h"
+#include "MyMecab.h"
 #include "LibMigemo.h"
 
 struct ApplicationGlobal::Private {

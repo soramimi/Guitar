@@ -306,7 +306,6 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/LibMigemo.h \
-	$$PWD/src/common/printf.h \
 	src/AboutDialog.h \
 	src/AbstractGitSession.h \
 	src/AbstractProcess.h \

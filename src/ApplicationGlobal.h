@@ -8,7 +8,7 @@
 #include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
-#include "LibMecab.h"
+#include "MyMecab.h"
 #include <QColor>
 #include <QString>
 #include "GenerativeAI.h"

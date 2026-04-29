@@ -5,7 +5,7 @@
 #include <optional>
 #include <QString>
 #include <memory>
-#include "LibMecab.h"
+#include "MyMecab.h"
 #include <regex>
 
 class QRect;

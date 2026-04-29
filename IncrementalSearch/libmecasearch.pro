@@ -15,6 +15,8 @@ INCLUDEPATH += $$PWD/mecab/mecab/src
 INCLUDEPATH += $$PWD
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
+DEFINES += NOMINMAX
+
 DEFINES += HAVE_STDINT_H
 DEFINES += HAVE_CONFIG_H
 
@@ -22,6 +24,7 @@ HEADERS += \
 	# MeCaSearch.h \
 	AbstractSimpleIO.h \
 	LibMecab.h \
+	MyMecab.h \
 	config.h \
 	mecab/mecab/src/char_property.h \
 	mecab/mecab/src/common.h \
@@ -55,7 +58,7 @@ HEADERS += \
 SOURCES += \
 	# MeCaSearch.cpp \
 	AbstractSimpleIO.cpp \
-	LibMecab.cpp \
+	MyMecab.cpp \
 	gzip.cpp \
 	libmain.cpp \
 	mecab/mecab/src/char_property.cpp \
