@@ -219,6 +219,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	constexpr static float temperature_ = 0.2f; ///< 応答のランダム性（Anthropic以外で使用）
 	std::string modelname;
 	std::string prompt;
+	bool add_stream_false = false;
 	_PromptJsonGenerator(std::string const &modelname, std::string const &prompt)
 		: modelname(modelname)
 		, prompt(prompt)
@@ -236,12 +237,13 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_OpenAI_responses()
 	{
-		std::string json = R"---({
-"model": "%s",
-"temperature": %f,
-"input": "%s"
-})---";
-		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt));
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("model", modelname);
+			w.number("temperature", temperature_);
+			w.string("input", prompt);
+		});
+		return w;
 	}
 
 	/**
@@ -250,14 +252,25 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_OpenAI_chat_completions()
 	{
-		std::string json = R"---({
-"model": "%s",
-"temperature": %f,
-"messages": [
-	{"role": "system", "content": "You are an experienced engineer."},
-	{"role": "user", "content": "%s"}
-]})---";
-		return fmt(json)(modelname)(temperature_)(jstream::encode_json_string(prompt));
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("model", modelname);
+			w.number("temperature", temperature_);
+			w.array("messages", [&](){
+				w.object({}, [&](){
+					w.string("role", "system");
+					w.string("content", "You are an experienced engineer.");
+				});
+				w.object({}, [&](){
+					w.string("role", "user");
+					w.string("content", prompt);
+				});
+			});
+			if (add_stream_false) {
+				w.boolean("stream", false);
+			}
+		});
+		return w;
 	}
 
 	/**
@@ -269,19 +282,25 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_Anthropic()
 	{
-		std::string json = R"---({
-"model": "%s",
-"messages": [
-	{"role": "user", "content": "%s"}
-],
-"max_tokens": %d
-})---";
-		// "temperature": %f,
-		return fmt(json)(modelname)/*(temperature_)*/(jstream::encode_json_string(prompt))(200);
-		// As of Claude Opus 4.7 (released 2026-04-16), temperature / top_p / top_k are deprecated.
-		// Sending non-default values returns HTTP 400; omit these parameters entirely.
-		// Control output via prompting or the effort parameter (low/medium/high/xhigh/max).
-		// Ref: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("model", modelname);
+			w.array("messages", [&](){
+				w.object({}, [&](){
+					w.string("role", "user");
+					w.string("content", prompt);
+				});
+			});
+			w.number("max_tokens", 200);
+			if (0) {
+				// As of Claude Opus 4.7 (released 2026-04-16), temperature / top_p / top_k are deprecated.
+				// Sending non-default values returns HTTP 400; omit these parameters entirely.
+				// Control output via prompting or the effort parameter (low/medium/high/xhigh/max).
+				// Ref: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7
+				w.number("temperature", temperature_);
+			}
+		});
+		return w;
 	}
 
 	/**
@@ -292,14 +311,19 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_Google()
 	{
-		std::string json = R"---({
-"contents": [{
-	"parts": [{
-		"text": "%s"
-	}]
-}]
-})---";
-		return fmt(json)(jstream::encode_json_string(prompt));
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.array("contents", [&](){
+				w.object({}, [&](){
+					w.array("parts", [&](){
+						w.object({}, [&](){
+							w.string("text", prompt);
+						});
+					});
+				});
+			});
+		});
+		return w;
 	}
 
 	/// xAI：OpenAI Chat Completions 互換形式
@@ -316,15 +340,8 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_DeepSeek()
 	{
-		std::string json = R"---({
-"model": "%s",
-"messages": [
-	{"role": "system", "content": "You are an experienced engineer."},
-	{"role": "user", "content": "%s"}
-],
-"stream": false
-})---";
-		return fmt(json)(modelname)(jstream::encode_json_string(prompt));
+		add_stream_false = true; // OpenAI Chat Completions 形式のJSONに "stream": false を追加する
+		return case_OpenAI_chat_completions();
 	}
 
 	/**
@@ -335,12 +352,13 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	 */
 	std::string case_Ollama()
 	{
-		std::string json = R"---({
-"model": "%s",
-"prompt": "%s",
-"stream": false
-})---";
-		return fmt(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("model", modelname);
+			w.string("prompt", prompt);
+			w.boolean("stream", false);
+		});
+		return w;
 	}
 
 	/// OpenRouter：OpenAI Chat Completions 互換形式
@@ -349,20 +367,10 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return case_OpenAI_chat_completions();
 	}
 
-	/**
-	 * @brief LM Studio 向けのリクエストJSONを生成する。
-	 *
-	 * Ollama と同じフォーマットで prompt キーにプロンプトを渡す。
-	 * @return リクエストJSON文字列
-	 */
+	/// LM Studio：Ollama 互換形式
 	std::string case_LMStudio()
 	{
-		std::string json = R"---({
-"model": "%s",
-"prompt": "%s",
-"stream": false
-})---";
-		return fmt(json)(jstream::encode_json_string(modelname))(jstream::encode_json_string(prompt));
+		return case_Ollama();
 	}
 
 	/// llama.cpp：OpenAI Chat Completions 互換形式
@@ -504,18 +512,12 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
  */
 std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
 {
-	std::string prompt = fmt(
-#if 0
-		"Generate a concise git commit message written in present tense for the following code diff with the given specifications below. "
-		"Please generate %d messages, bulleted, and start writing with '-'. "
-		"No headers and footers other than bulleted messages. "
-#else
-R"---(
-You are an experienced engineer.
+	return fmt(R"---(You are an experienced engineer.
 Generate exactly %d concise git commit message candidates written in present tense for the following code diff.
 Return ONLY valid and strict JSON. No explanations, no extra text.
 Do NOT wrap the output in code fences (e.g., ``` or ```json).
-Schema:
+
+/// Schema ///
 {
   "messages": [
 	"message1",
@@ -524,12 +526,10 @@ Schema:
 	...
   ]
 }
---- code diff ---
-)---"
-#endif
-		)(max);
-	prompt = prompt + diff;
-	return prompt;
+
+/// git diff HEAD ///
+%s
+)---")(max)(diff);
 }
 
 /**
@@ -570,7 +570,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 {
 	constexpr int max_message_count = 5; // 生成するコミットメッセージ候補の数
 
-	constexpr bool save_log = true; // リクエスト/レスポンスをログに記録するか
+	constexpr bool save_log = false; // リクエスト/レスポンスをログに記録するか
 
 	if (diff.empty()) {
 		return Error("error", "diff is empty");

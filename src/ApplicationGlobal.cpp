@@ -200,20 +200,16 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI a
 	if (it != global->appsettings.ai_api_keys.end()) {
 		ApplicationSettings::AiApiKey *apikey = &it->second;
 		GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(aiid); // 絶対に非nullptrを返す
-		char const *env = nullptr;
 		Q_ASSERT(provider);
-		switch (apikey->from) {
-		case ApplicationSettings::ApiKeyFrom::EnvValue:
-			env = std::getenv(provider->env_name.c_str());
+		if (apikey->from == ApplicationSettings::ApiKeyFrom::EnvValue) {
+			char const *env = std::getenv(provider->env_name.c_str());
 			if (env) {
 				cred.api_key = env;
 			}
-			return cred;
-		case ApplicationSettings::ApiKeyFrom::UserInput:
+		} else if (apikey->from == ApplicationSettings::ApiKeyFrom::UserInput) {
 			if (apikey) {
 				cred.api_key = misc::trimmed(it->second.api_key);
 			}
-			return cred;
 		}
 	}
 	// cred.api_key = "aonymous";

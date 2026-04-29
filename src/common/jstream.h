@@ -1180,12 +1180,13 @@ class Writer {
 protected:
 	void print(char const *p, int n)
 	{
-		if (output_fn) {
-			output_fn(p, n);
+		if (output_fn_) {
+			output_fn_(p, n);
 		} else {
-			for (size_t i = 0; i < n; i++) {
-				putchar(p[i]);
-			}
+			// for (size_t i = 0; i < n; i++) {
+			// 	putchar(p[i]);
+			// }
+			output_str_.append(p, n);
 		}
 	}
 
@@ -1205,7 +1206,9 @@ protected:
 	}
 private:
 	std::vector<int> stack;
-	std::function<void (char const *p, int n)> output_fn;
+
+	std::function<void (char const *p, int n)> output_fn_;
+	std::string output_str_;
 
 	bool enable_indent_ = true;
 	bool enable_newline_ = true;
@@ -1296,7 +1299,7 @@ private:
 public:
 	Writer(std::function<void (char const *p, int n)> fn = {})
 	{
-		output_fn = fn;
+		output_fn_ = fn;
 		stack.push_back(0);
 	}
 
@@ -1424,6 +1427,11 @@ public:
 	void null()
 	{
 		symbol({}, Null);
+	}
+
+	operator std::string () const
+	{
+		return output_str_;
 	}
 };
 
