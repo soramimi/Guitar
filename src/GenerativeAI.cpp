@@ -29,7 +29,7 @@ const std::vector<ProviderInfo> &provider_table()
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{AI::OpenAI_responses, "gpt-5.4"},
+		{AI::OpenAI_responses, "gpt-5.5"},
 		{AI::OpenAI_responses, "gpt-5.4-mini"},
 		{AI::OpenAI_responses, "gpt-5.4-nano"},
 		{AI::OpenAI_responses, "gpt-5.3-codex"},
@@ -39,7 +39,7 @@ std::vector<Model> const &ai_model_presets()
 		{AI::Google, "gemini-3-flash-preview"},
 		{AI::XAI, "grok-4.20"},
 		{AI::DeepSeek, "deepseek-chat"},
-		{AI::OpenRouter, "openrouter:///anthropic/claude-4.5-sonnet"},
+		{AI::OpenRouter, "openrouter:///anthropic/claude-4.6-sonnet"},
 		{AI::Ollama, "ollama:///gemma4"},
 		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
 		{AI::LLAMACPP, "llamacpp:///"},

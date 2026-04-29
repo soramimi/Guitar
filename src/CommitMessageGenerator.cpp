@@ -240,7 +240,9 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		jstream::Writer w;
 		w.object({}, [&](){
 			w.string("model", modelname);
-			w.number("temperature", temperature_);
+			if (0) {
+				w.number("temperature", temperature_); // deprecated
+			}
 			w.string("input", prompt);
 		});
 		return w;
@@ -467,9 +469,18 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 			}
 			return ret;
 		} else {
+			auto TrimPrefix = [](std::string_view const &sv, std::string_view prefix) {
+				std::string_view ret = sv;
+				if (sv.size() >= prefix.size() && sv.substr(0, prefix.size()) == prefix) {
+					ret.remove_prefix(prefix.size());
+				}
+				return ret;
+			};
 			// 現行実装：{"messages": ["msg1", "msg2", ...]} 形式のJSONを解析する
 			std::vector<std::string> messages;
-			std::string text = r.text;
+			std::string_view text = r.text;
+			text = TrimPrefix(text, "```json");
+			text = TrimPrefix(text, "```");
 			// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
 			auto i = text.rfind('}');
 			if (i != std::string::npos) {
