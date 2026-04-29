@@ -5,12 +5,14 @@
 #include "common/q/helper.h"
 #include <QMessageBox>
 
-struct SettingAiForm::Provider {
+using ApiKeyFrom = ApplicationSettings::ApiKeyFrom;
+
+struct SettingAiForm::ProviderFormData {
 	GenerativeAI::AI aiid = GenerativeAI::AI::Unknown;
 	GenerativeAI::ProviderInfo const *info = nullptr;
-	std::string custom_api_key;
-	ApplicationSettings::ApiKeyFrom api_key_from = ApplicationSettings::ApiKeyFrom::EnvValue;
-	Provider(GenerativeAI::AI provider)
+	std::string api_key;
+	ApiKeyFrom from = ApiKeyFrom::EnvValue;
+	ProviderFormData(GenerativeAI::AI provider)
 		: aiid(provider)
 	{
 		info = GenerativeAI::provider_info(provider);
@@ -19,15 +21,15 @@ struct SettingAiForm::Provider {
 	{
 		return GenerativeAI::provider_info(aiid)->env_name;
 	}
-	bool operator == (const Provider &other) const
+	bool operator == (const ProviderFormData &other) const
 	{
 		return aiid == other.aiid;
 	}
 };
 
 struct SettingAiForm::Private {
-	std::vector<SettingAiForm::Provider> providers;
-	SettingAiForm::Provider *current_provider = nullptr;
+	std::vector<SettingAiForm::ProviderFormData> provider_formdata;
+	SettingAiForm::ProviderFormData *current_provider = nullptr;
 };
 
 SettingAiForm::SettingAiForm(QWidget *parent)
@@ -37,7 +39,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	m->providers.insert(m->providers.end(), {
+	m->provider_formdata.insert(m->provider_formdata.end(), {
 		{GenerativeAI::AI::Unknown},
 		{GenerativeAI::AI::OpenAI_responses},
 		{GenerativeAI::AI::OpenAI_chat_completions},
@@ -53,9 +55,9 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 
 	m->current_provider = unknown_provider();
 
-	for (size_t i = 0; i < m->providers.size(); i++) {
-		int index = static_cast<int>(m->providers[i].info->aiid);
-		QString text = QString::fromStdString(m->providers[i].info->description);
+	for (size_t i = 0; i < m->provider_formdata.size(); i++) {
+		int index = static_cast<int>(m->provider_formdata[i].info->aiid);
+		QString text = QString::fromStdString(m->provider_formdata[i].info->description);
 		ui->comboBox_provider->addItem(text, QVariant(index));
 	}
 
@@ -79,9 +81,9 @@ SettingAiForm::~SettingAiForm()
 	delete ui;
 }
 
-SettingAiForm::Provider *SettingAiForm::provider(GenerativeAI::AI aiid)
+SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
 {
-	for (auto &ai : m->providers) {
+	for (auto &ai : m->provider_formdata) {
 		if (ai.aiid == aiid) {
 			return &ai;
 		}
@@ -89,82 +91,100 @@ SettingAiForm::Provider *SettingAiForm::provider(GenerativeAI::AI aiid)
 	return nullptr;
 }
 
-SettingAiForm::Provider *SettingAiForm::unknown_provider()
+SettingAiForm::ProviderFormData *SettingAiForm::formdata_by_env_name(std::string const &env_name)
 {
-	return &m->providers.front();
+	for (auto &ai : m->provider_formdata) {
+		if (ai.env_name() == env_name) {
+			return &ai;
+		}
+	}
+	return nullptr;
 }
 
-struct Item {
-	ApplicationSettings::ApiKeyFrom *settings_use_api_key_env_value;
-	std::string *settings_api_key;
-	ApplicationSettings::ApiKeyFrom *private_use_env_value;
-	std::string *private_custom_api_key;
-	Item() = default;
-	Item(ApplicationSettings::ApiKeyFrom *settings_api_key_from, std::string *settings_custom_api_key, ApplicationSettings::ApiKeyFrom *private_use_env_value, std::string *private_custom_api_key)
-		: settings_use_api_key_env_value(settings_api_key_from)
-		, settings_api_key(settings_custom_api_key)
-		, private_use_env_value(private_use_env_value)
-		, private_custom_api_key(private_custom_api_key)
-	{
-	}
+SettingAiForm::ProviderFormData *SettingAiForm::unknown_provider()
+{
+	return &m->provider_formdata.front();
+}
+
+struct ExchangePointers {
+	struct Pointers {
+		ApiKeyFrom *from = nullptr;
+		std::string *api_key = nullptr;
+
+		Pointers() = default;
+		Pointers(ApiKeyFrom *from, std::string *api_key)
+			: from(from)
+			, api_key(api_key)
+		{}
+	};
+
+	GenerativeAI::AI aiid = GenerativeAI::AI::Unknown; // for debug
+	Pointers conf; // 設定ファイルの値を保存するためのポインタ
+	Pointers form; // 設定フォームの値を保存するためのポインタ
+
+	ExchangePointers() = default;
+	ExchangePointers(GenerativeAI::AI aiid, Pointers conf_pts, Pointers form_pts)
+		: aiid(aiid)
+		, conf(conf_pts)
+		, form(form_pts)
+	{}
 };
 
 void SettingAiForm::exchange(bool save)
 {
 	ApplicationSettings *s = settings();
 
-	std::vector<Item> items;
+	std::vector<ExchangePointers> pointers; // AIプロバイダごとに、設定ファイルと設定フォームの値を交換するためのポインタのリスト
 	{
-		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
+		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::complete_provider_table();
 		for (GenerativeAI::ProviderInfo const &info : infos) {
-			if (info.env_name.empty()) continue; // 環境変数名が空でないプロバイダーのみ対象とする
-			Provider *p = provider(info.aiid);
-			if (!p) continue;
-			auto it = s->ai_api_keys.find(info.aiid);
-			ApplicationSettings::AiApiKey *api_key_info = &it->second;
-			items.emplace_back(&api_key_info->from, &api_key_info->api_key, &p->api_key_from, &p->custom_api_key);
+			if (info.symbol.empty()) continue;
+			Q_ASSERT(!info.env_name.empty());
+			ProviderFormData *formdata = formdata_by_env_name(info.env_name);
+			if (!formdata) continue;
+			auto it = s->ai_api_keys.find(info.env_name);
+			if (it == s->ai_api_keys.end()) continue;
+			ApplicationSettings::AiApiKey *confdata = &it->second;
+			ExchangePointers::Pointers conf_pts{&confdata->from, &confdata->api_key}; // 設定ファイルの値を保存するためのポインタ
+			ExchangePointers::Pointers form_pts{&formdata->from, &formdata->api_key}; // 設定フォームの値を保存するためのポインタ
+			pointers.emplace_back(info.aiid, conf_pts, form_pts);
 		}
 	}
 
-	if (save) {
+	if (save) { // UI -> 設定ファイル
 		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
 
-		for (size_t i = 0; i < items.size(); i++) {
-			Item *item = &items[i];
-			if (item->settings_use_api_key_env_value) {
-				*item->settings_use_api_key_env_value = *item->private_use_env_value;
-			}
-			if (item->settings_api_key) {
-				*item->settings_api_key = *item->private_custom_api_key;
-			}
+		// 設定フォームの値を設定ファイルの値に反映
+		for (ExchangePointers &item : pointers) {
+			ExchangePointers::Pointers *dst = &item.conf;
+			ExchangePointers::Pointers const *src = &item.form;
+			*dst->from = *src->from;
+			*dst->api_key = misc::trimmed(*src->api_key);
 		}
 
 		s->ai_model = GenerativeAI::Model(m->current_provider->aiid, ui->comboBox_ai_model->currentText().toStdString());
-	} else {
+	} else { // 設定ファイル -> UI
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
 		configureModel(s->ai_model);
 
-		for (size_t i = 0; i < items.size(); i++) {
-			Item *item = &items[i];
-			if (item->settings_use_api_key_env_value) {
-				*item->private_use_env_value = *item->settings_use_api_key_env_value;
-			}
-			if (item->settings_api_key) {
-				*item->private_custom_api_key = *item->settings_api_key;
-			}
+		// 設定ファイルの値を設定フォームの値に反映
+		for (ExchangePointers &item : pointers) {
+
+			*item.form.from = *item.conf.from;
+			*item.form.api_key = misc::trimmed(*item.conf.api_key);
 		}
 
 		if (m->current_provider) {
-			setRadioButtons(true, m->current_provider->api_key_from);
+			setRadioButtons(true, m->current_provider->from);
 		} else {
-			setRadioButtons(false, ApplicationSettings::ApiKeyFrom::Default);
+			setRadioButtons(false, ApiKeyFrom::Default);
 		}
 		refrectSettingsToUI();
 	}
 }
 
-void SettingAiForm::setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFrom from)
+void SettingAiForm::setRadioButtons(bool enabled, ApiKeyFrom from)
 {
 	bool b1 = ui->radioButton_use_environment_value->blockSignals(true);
 	bool b2 = ui->radioButton_use_custom_api_key->blockSignals(true);
@@ -174,10 +194,10 @@ void SettingAiForm::setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFro
 		ui->radioButton_use_custom_api_key->setEnabled(true);
 
 		switch (from) {
-		case ApplicationSettings::ApiKeyFrom::EnvValue:
+		case ApiKeyFrom::EnvValue:
 			ui->radioButton_use_environment_value->setChecked(true);
 			break;
-		case ApplicationSettings::ApiKeyFrom::UserInput:
+		case ApiKeyFrom::UserInput:
 			ui->radioButton_use_custom_api_key->setChecked(true);
 			break;
 		}
@@ -194,22 +214,22 @@ void SettingAiForm::refrectSettingsToUI()
 {
 	std::string apikey;
 
-	SettingAiForm::Provider *p = m->current_provider;
+	SettingAiForm::ProviderFormData *p = m->current_provider;
 	Q_ASSERT(p);
 	if (p->env_name().empty()) {
 		ui->lineEdit_api_key->setEnabled(false);
 	} else {
 		char const *env = nullptr;
-		switch (p->api_key_from) {
-		case ApplicationSettings::ApiKeyFrom::EnvValue:
+		switch (p->from) {
+		case ApiKeyFrom::EnvValue:
 			env = std::getenv(p->env_name().c_str());
 			if (env) {
 				apikey = env;
 			}
 			ui->lineEdit_api_key->setEnabled(false);
 			break;
-		case ApplicationSettings::ApiKeyFrom::UserInput:
-			apikey = p->custom_api_key;
+		case ApiKeyFrom::UserInput:
+			apikey = p->api_key;
 			ui->lineEdit_api_key->setEnabled(true);
 			break;
 		}
@@ -220,7 +240,7 @@ void SettingAiForm::refrectSettingsToUI()
 	ui->lineEdit_api_key->blockSignals(b);
 }
 
-void SettingAiForm::changeProvider(Provider *ai)
+void SettingAiForm::changeProvider(ProviderFormData *ai)
 {
 	m->current_provider = ai;
 	std::string envname = m->current_provider->env_name();
@@ -233,20 +253,20 @@ void SettingAiForm::changeProvider(Provider *ai)
 void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
 {
 	if (!ui->radioButton_use_environment_value->isChecked()) {
-		m->current_provider->custom_api_key = arg1.toStdString();
+		m->current_provider->api_key = arg1.toStdString();
 	}
 }
 
 void SettingAiForm::on_radioButton_use_environment_value_clicked()
 {
-	m->current_provider->api_key_from = ApplicationSettings::ApiKeyFrom::EnvValue;
+	m->current_provider->from = ApiKeyFrom::EnvValue;
 	refrectSettingsToUI();
 }
 
 
 void SettingAiForm::on_radioButton_use_custom_api_key_clicked()
 {
-	m->current_provider->api_key_from = ApplicationSettings::ApiKeyFrom::UserInput;
+	m->current_provider->from = ApiKeyFrom::UserInput;
 	refrectSettingsToUI();
 }
 
@@ -268,16 +288,16 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 
 void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
-	if (index >= 0 && index < (int)m->providers.size()) {
-		Provider *ai = &m->providers[index];
-		setRadioButtons(true, ai->api_key_from);
+	if (index >= 0 && index < (int)m->provider_formdata.size()) {
+		ProviderFormData *ai = &m->provider_formdata[index];
+		setRadioButtons(true, ai->from);
 		changeProvider(ai);
 	}
 }
 
-void SettingAiForm::updateProviderComboBox(Provider *newai)
+void SettingAiForm::updateProviderComboBox(ProviderFormData *newai)
 {
-	for (auto &ai : m->providers) {
+	for (auto &ai : m->provider_formdata) {
 		if (&ai == newai) {
 			int index = static_cast<int>(ai.info->aiid);
 			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));

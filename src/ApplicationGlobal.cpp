@@ -196,20 +196,21 @@ void GlobalRestoreOverrideCursor()
 GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI aiid)
 {
 	GenerativeAI::Credential cred;
-	auto it = global->appsettings.ai_api_keys.find(aiid);
+	ApplicationSettings::AiApiKey *apikey = nullptr;
+	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(aiid); // 絶対に非nullptrを返す
+	Q_ASSERT(provider);
+	auto it = global->appsettings.ai_api_keys.find(provider->env_name);
 	if (it != global->appsettings.ai_api_keys.end()) {
-		ApplicationSettings::AiApiKey *apikey = &it->second;
-		GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(aiid); // 絶対に非nullptrを返す
-		Q_ASSERT(provider);
-		if (apikey->from == ApplicationSettings::ApiKeyFrom::EnvValue) {
-			char const *env = std::getenv(provider->env_name.c_str());
-			if (env) {
-				cred.api_key = env;
-			}
-		} else if (apikey->from == ApplicationSettings::ApiKeyFrom::UserInput) {
-			if (apikey) {
-				cred.api_key = misc::trimmed(it->second.api_key);
-			}
+		apikey = &it->second;
+	}
+	if (apikey && apikey->from == ApplicationSettings::ApiKeyFrom::UserInput) {
+		if (apikey) {
+			cred.api_key = misc::trimmed(apikey->api_key);
+		}
+	} else if (!provider->env_name.empty()) {
+		char const *env = std::getenv(provider->env_name.c_str());
+		if (env) {
+			cred.api_key = env;
 		}
 	}
 	// cred.api_key = "aonymous";

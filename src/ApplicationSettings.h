@@ -46,7 +46,7 @@ public:
 		ApiKeyFrom from = ApiKeyFrom::EnvValue;
 		std::string api_key;
 	};
-	std::map<GenerativeAI::AI, AiApiKey> ai_api_keys;
+	std::map<std::string, AiApiKey> ai_api_keys; // key is env_name
 	GenerativeAI::Model ai_model;
 	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;
 

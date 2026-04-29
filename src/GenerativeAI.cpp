@@ -7,9 +7,10 @@
 
 namespace GenerativeAI {
 
-const std::vector<ProviderInfo> &provider_table()
+const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
+		// aiid                            tag                                description                       symbol                         env_name
 		{AI::Unknown,                      "",                                "-",                              "",                            ""},
 		{AI::OpenAI,                       "",                                "OpenAI",                         "OpenAi",                      "OPENAI_API_KEY"}, // placeholder
 		{AI::OpenAI_responses,             "openai-responses",                "OpenAI",                         "",                            "OPENAI_API_KEY"},
@@ -49,7 +50,7 @@ std::vector<Model> const &ai_model_presets()
 
 ProviderInfo const *provider_info(AI aiid)
 {
-	std::vector<ProviderInfo> const &vec = provider_table();
+	std::vector<ProviderInfo> const &vec = complete_provider_table();
 	for (auto const &p : vec) {
 		if (p.aiid == aiid) {
 			return &p;

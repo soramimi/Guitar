@@ -133,26 +133,17 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	std::string ai_provider_name;
 	std::string ai_model_name;
 
-	s.beginGroup("Options");
+	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
 	{
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
 		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.env_name.empty()) {
-				Q_ASSERT(info.symbol.empty()); // env_nameが空のときはsymbolも空であるべき
-				continue; // 環境変数名が空でないプロバイダーのみ対象とする
-			}
-			// Q_ASSERT(!info.symbol.empty()); // env_nameが空でないときはsymbolも空であってはならない
-			// ↑空であってもよい
-			as.ai_api_keys[info.aiid] = {};
-			ApplicationSettings::AiApiKey *aikey = &as.ai_api_keys[info.aiid];
+			if (info.env_name.empty()) continue;
 			bool from = false;
-			GetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) >> from;
-			aikey->from = ApplicationSettings::ApiKeyFrom::EnvValue;
-			if (from) {
-				aikey->from = ApplicationSettings::ApiKeyFrom::UserInput;
-			}
-			// GetValue<std::string>(s, UPPER((QS)info.env_name)) >> aikey->api_key;
+			GetValue<bool>(s, (QS)fmt("Use_%s")(info.env_name)) >> from;
+			AiApiKey aikey;
+			aikey.from = from ? ApplicationSettings::ApiKeyFrom::UserInput : ApplicationSettings::ApiKeyFrom::EnvValue;
+			as.ai_api_keys[info.env_name] = aikey;
 		}
 	}
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
@@ -164,7 +155,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	QString secret_dir = global->app_config_dir / secret_sub_dir;
 	if (QFileInfo(secret_dir).isDir()) {
-		std::map<std::string, std::string> keys;
+		std::map<std::string, std::string> keys; // <env_name, api_key>
 
 		QString ini_file = secret_dir / api_keys_ini;
 		QFile file(ini_file);
@@ -173,29 +164,27 @@ ApplicationSettings ApplicationSettings::loadSettings()
 				QByteArray line = file.readLine().trimmed();
 				int eq = line.indexOf('=');
 				if (eq > 0) {
-					std::string name = line.left(eq).toStdString();
-					std::string value = line.mid(eq + 1).toStdString();
-					keys[name] = value;
+					std::string env_name = line.left(eq).toStdString();
+					std::string api_key = line.mid(eq + 1).toStdString();
+					keys[env_name] = api_key;
 				}
 			}
 		}
 
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
 		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.env_name.empty()) {
-				continue;
-			}
+			if (info.env_name.empty()) continue;
 			auto it = keys.find(UPPER((QS)info.env_name).toStdString());
 			if (it != keys.end()) {
-				as.ai_api_keys[info.aiid].api_key = misc::trimmed(it->second);
+				as.ai_api_keys[info.env_name].api_key = misc::trimmed(it->second);
 			}
 		}
 	}
 
-	//
+	// 選択されたモデルを取得
 
 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
-		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
+		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::complete_provider_table();
 		for (auto const &info : infos) {
 			if (info.tag == name) {
 				return &info;
@@ -253,31 +242,25 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QColor>(s, "LabelColorTag")                     << this->branch_label_color.tag;
 	s.endGroup();
 
-	s.beginGroup("Options");
+	s.beginGroup("AI");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-
 	{
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
 		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.env_name.empty()) {
-				Q_ASSERT(info.symbol.empty()); // env_nameが空のときはsymbolも空であるべき
-				continue; // 環境変数名が空でないプロバイダーのみ対象とする
-			}
-			// Q_ASSERT(!info.symbol.empty()); // env_nameが空でないときはsymbolも空であってはならない
-			// ↑空であってもよい
-			auto it = this->ai_api_keys.find(info.aiid);
+			if (info.symbol.empty()) continue;
+			auto it = this->ai_api_keys.find(info.env_name);
 			if (it == this->ai_api_keys.end()) continue;
 			ApplicationSettings::AiApiKey const *aikey = &it->second;
 			bool from = (aikey->from == ApplicationSettings::ApiKeyFrom::UserInput);
-			SetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) << from;
-			SetValue<std::string>(s, UPPER((QS)info.env_name)) << aikey->api_key;
+			SetValue<bool>(s, (QS)fmt("Use_%s")(info.env_name)) << from;
 		}
-
 	}
 	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
+
+	// save api keys
 
 	auto MKPATH = [&](const QString &path) {
 		if (!QFileInfo(path).isDir()) {
@@ -288,27 +271,18 @@ void ApplicationSettings::saveSettings() const
 		return QFileInfo(path).isDir();
 	};
 
-	// save api keys
-
 	QString secret_dir = global->app_config_dir / secret_sub_dir;
 	if (MKPATH(secret_dir)) {
-		std::map<std::string, std::string> keys;
-		{
-			for (auto const &pair : this->ai_api_keys) {
-				GenerativeAI::AI aiid = pair.first;
-				ApplicationSettings::AiApiKey const &aikey = pair.second;
-				GenerativeAI::ProviderInfo const *info = GenerativeAI::provider_info(aiid);
-				if (!info) continue;
-				if (info->symbol.empty()) continue;
-				keys[info->env_name] = aikey.api_key;
-			}
-		}
 		QString ini_file = secret_dir / api_keys_ini;
 		QFile file(ini_file);
-		if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-			// std::map<GenerativeAI::AI, AiApiKey> ai_api_keys;
-			for (auto const &pair : keys) {
-				std::string line = fmt("%s=%s\n")(pair.first)(pair.second);
+		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+			std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
+			for (GenerativeAI::ProviderInfo const &info : table) {
+				if (info.symbol.empty()) continue;
+				Q_ASSERT(!info.env_name.empty());
+				auto it = this->ai_api_keys.find(info.env_name);
+				if (it == this->ai_api_keys.end()) continue;
+				std::string line = fmt("%s=%s\n")(info.env_name)(misc::trimmed(it->second.api_key));
 				file.write(line.c_str(), line.size());
 			}
 			file.close();

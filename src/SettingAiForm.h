@@ -16,18 +16,19 @@ private:
 	struct Private;
 	Private *m;
 
-	struct Provider;
+	struct ProviderFormData;
 
 	void refrectSettingsToUI();
-	void changeProvider(Provider *ai);
+	void changeProvider(ProviderFormData *ai);
 	void setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFrom from);
 	void configureModelByString(const std::string &s);
 	void configureModel(const GenerativeAI::Model &model);
-	void updateProviderComboBox(Provider *newai);
+	void updateProviderComboBox(ProviderFormData *newai);
 	void guessProviderFromModelName(const std::string &s);
-	SettingAiForm::Provider *provider(GenerativeAI::AI aiid);
-	SettingAiForm::Provider *unknown_provider();
-	public:
+	SettingAiForm::ProviderFormData *formdata(GenerativeAI::AI aiid);
+	SettingAiForm::ProviderFormData *unknown_provider();
+	SettingAiForm::ProviderFormData *formdata_by_env_name(const std::string &env_name);
+public:
 	explicit SettingAiForm(QWidget *parent = nullptr);
 	~SettingAiForm();
 	void exchange(bool save) override;

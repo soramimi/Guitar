@@ -64,7 +64,7 @@ struct ProviderInfo {
 	std::string env_name; // 環境変数名 (UPPER_SNAKE_CASE_API_KEY)
 };
 
-std::vector<ProviderInfo> const &provider_table();
+std::vector<ProviderInfo> const &complete_provider_table();
 const ProviderInfo *provider_info(AI aiid);
 
 struct Credential {
