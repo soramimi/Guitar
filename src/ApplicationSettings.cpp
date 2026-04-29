@@ -1,12 +1,18 @@
 #include "ApplicationSettings.h"
+#include "ApplicationGlobal.h"
 #include "MySettings.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "common/strformat.h"
 #include "common/q/helper.h"
+#include <QDir>
+#include <QFileInfo>
 #include <QStandardPaths>
 
 namespace {
+
+constexpr static char const secret_sub_dir[] = ".secret";
+constexpr static char const api_keys_ini[] = "apikeys.ini";
 
 template <typename T> class GetValue {
 private:
@@ -112,17 +118,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "ShowAvatars")                         >> as.show_avatars;
 	s.endGroup();
 
-#if 0
-	s.beginGroup("Network");
-	GetValue<QString>(s, "ProxyType")                        >> as.proxy_type;
-	GetValue<QString>(s, "ProxyServer")                      >> as.proxy_server;
-	GetValue<bool>(s, "GetCommitterIcon")                    >> as.get_avatar_icon_from_network_enabled;
-	GetValue<bool>(s, "AvatarProvider_gravatar")             >> as.avatar_provider.gravatar;
-	GetValue<bool>(s, "AvatarProvider_libravatar")           >> as.avatar_provider.libravatar;
-	s.endGroup();
-	as.proxy_server = misc::makeProxyServerURL(as.proxy_server);
-#endif
-
 	s.beginGroup("Behavior");
 	GetValue<bool>(s, "AutomaticFetch")                      >> as.automatically_fetch_when_opening_the_repository;
 	GetValue<int>(s, "MaxCommitItemAcquisitions")            >> as.maximum_number_of_commit_item_acquisitions;
@@ -140,29 +135,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("Options");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
-#if 0
-	GetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      >> as.use_env_api_key_OpenAI;
-	GetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   >> as.use_env_api_key_Anthropic;
-	GetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      >> as.use_env_api_key_Google;
-	GetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         >> as.use_env_api_key_XAI;
-	GetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  >> as.use_env_api_key_OpenRouter;
-	GetValue<std::string>(s, UPPER("OPENAI_API_KEY"))             >> as.api_key_OpenAI;
-	GetValue<std::string>(s, UPPER("ANTHROPIC_API_KEY"))          >> as.api_key_Anthropic;
-	GetValue<std::string>(s, UPPER("GOOGLE_API_KEY"))             >> as.api_key_Google;
-	GetValue<std::string>(s, UPPER("XAI_API_KEY"))                >> as.api_key_XAI;
-	GetValue<std::string>(s, UPPER("DEEPSEEK_API_KEY"))           >> as.api_key_DeepSeek;
-	GetValue<std::string>(s, UPPER("OPENROUTER_API_KEY"))         >> as.api_key_OpenRouter;
-#endif
 	{
-#if 0
-		for (auto &pair : as.ai_api_keys) {
-			GenerativeAI::AI aiid = pair.first;
-			ApplicationSettings::AiApiKey &aikey = pair.second;
-			GenerativeAI::ProviderInfo const *info = GenerativeAI::provider_info(aiid);
-			GetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info->symbol)) >> aikey.use_key_flag;
-			GetValue<std::string>(s, (QS)info->env_name) >> aikey.api_key;
-		}
-#endif
 		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
 		for (GenerativeAI::ProviderInfo const &info : table) {
 			if (info.env_name.empty()) {
@@ -172,14 +145,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 			// Q_ASSERT(!info.symbol.empty()); // env_nameが空でないときはsymbolも空であってはならない
 			// ↑空であってもよい
 			as.ai_api_keys[info.aiid] = {};
-			ApplicationSettings::AiApiKey &aikey = as.ai_api_keys[info.aiid];
+			ApplicationSettings::AiApiKey *aikey = &as.ai_api_keys[info.aiid];
 			bool from = false;
 			GetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) >> from;
-			aikey.from = ApplicationSettings::ApiKeyFrom::EnvValue;
+			aikey->from = ApplicationSettings::ApiKeyFrom::EnvValue;
 			if (from) {
-				aikey.from = ApplicationSettings::ApiKeyFrom::UserInput;
+				aikey->from = ApplicationSettings::ApiKeyFrom::UserInput;
 			}
-			GetValue<std::string>(s, UPPER((QS)info.env_name)) >> aikey.api_key;
+			// GetValue<std::string>(s, UPPER((QS)info.env_name)) >> aikey->api_key;
 		}
 	}
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
@@ -187,8 +160,40 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
 
-	// auto providers = GenerativeAI::all_providers();
-	// auto it = std::find_if(providers.begin(), providers.end(), [&](auto const &p) { return GenerativeAI::provider_id(p) == ai_provider_name; });
+	// load api keys
+
+	QString secret_dir = global->app_config_dir / secret_sub_dir;
+	if (QFileInfo(secret_dir).isDir()) {
+		std::map<std::string, std::string> keys;
+
+		QString ini_file = secret_dir / api_keys_ini;
+		QFile file(ini_file);
+		if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			while (!file.atEnd()) {
+				QByteArray line = file.readLine().trimmed();
+				int eq = line.indexOf('=');
+				if (eq > 0) {
+					std::string name = line.left(eq).toStdString();
+					std::string value = line.mid(eq + 1).toStdString();
+					keys[name] = value;
+				}
+			}
+		}
+
+		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
+		for (GenerativeAI::ProviderInfo const &info : table) {
+			if (info.env_name.empty()) {
+				continue;
+			}
+			auto it = keys.find(UPPER((QS)info.env_name).toStdString());
+			if (it != keys.end()) {
+				as.ai_api_keys[info.aiid].api_key = misc::trimmed(it->second);
+			}
+		}
+	}
+
+	//
+
 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
 		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
 		for (auto const &info : infos) {
@@ -200,16 +205,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	};
 	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
 
-#if 0
-	if (it != providers.end()) {
-		as.ai_model = GenerativeAI::Model(*it, ai_model_name);
-	} else {
-		if (ai_provider_name.empty() && ai_model_name.empty()) {
-			ai_model_name = GenerativeAI::Model::default_model();
-		}
-		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
-	}
-#else
 	if (info) {
 		as.ai_model = GenerativeAI::Model(info->aiid, ai_model_name);
 	} else {
@@ -218,13 +213,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		}
 		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
 	}
-#endif
-
-
-
-#if 0
-	as.OpenAI_api_key = loadOpenAiApiKey();
-#endif
 
 	return as;
 }
@@ -253,16 +241,6 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "ShowAvatars")                         << this->show_avatars;
 	s.endGroup();
 
-#if 0
-	s.beginGroup("Network");
-	SetValue<QString>(s, "ProxyType")                        << this->proxy_type;
-	SetValue<QString>(s, "ProxyServer")                      << misc::makeProxyServerURL(this->proxy_server);
-	SetValue<bool>(s, "GetCommitterIcon")                    << this->get_avatar_icon_from_network_enabled;
-	SetValue<bool>(s, "AvatarProvider_gravatar")             << this->avatar_provider.gravatar;
-	SetValue<bool>(s, "AvatarProvider_libravatar")           << this->avatar_provider.libravatar;
-	s.endGroup();
-#endif
-
 	s.beginGroup("Behavior");
 	SetValue<bool>(s, "AutomaticFetch")                      << this->automatically_fetch_when_opening_the_repository;
 	SetValue<int>(s, "MaxCommitItemAcquisitions")            << this->maximum_number_of_commit_item_acquisitions;
@@ -277,20 +255,7 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("Options");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-#if 0
-	SetValue<bool>(s, "UseOpenAiApiKeyEnvironmentValue")      << this->use_env_api_key_OpenAI;
-	SetValue<bool>(s, "UseAnthropicApiKeyEnvironmentValue")   << this->use_env_api_key_Anthropic;
-	SetValue<bool>(s, "UseGoogleApiKeyEnvironmentValue")      << this->use_env_api_key_Google;
-	SetValue<bool>(s, "UseXaiApiKeyEnvironmentValue")         << this->use_env_api_key_XAI;
-	SetValue<bool>(s, "UseDeepSeekApiKeyEnvironmentValue")    << this->use_env_api_key_DeepSeek;
-	SetValue<bool>(s, "UseOpenRouterApiKeyEnvironmentValue")  << this->use_env_api_key_OpenRouter;
-	SetValue<std::string>(s, UPPER("OPENAI_API_KEY"))             << this->api_key_OpenAI;
-	SetValue<std::string>(s, UPPER("ANTHROPIC_API_KEY"))          << this->api_key_Anthropic;
-	SetValue<std::string>(s, UPPER("GOOGLE_API_KEY"))             << this->api_key_Google;
-	SetValue<std::string>(s, UPPER("XAI_API_KEY"))                << this->api_key_XAI;
-	SetValue<std::string>(s, UPPER("DEEPSEEK_API_KEY"))           << this->api_key_DeepSeek;
-	SetValue<std::string>(s, UPPER("OPENROUTER_API_KEY"))         << this->api_key_OpenRouter;
-#endif
+
 	{
 		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::provider_table();
 		for (GenerativeAI::ProviderInfo const &info : table) {
@@ -302,10 +267,10 @@ void ApplicationSettings::saveSettings() const
 			// ↑空であってもよい
 			auto it = this->ai_api_keys.find(info.aiid);
 			if (it == this->ai_api_keys.end()) continue;
-			ApplicationSettings::AiApiKey const &aikey = it->second;
-			bool from = (aikey.from == ApplicationSettings::ApiKeyFrom::UserInput);
+			ApplicationSettings::AiApiKey const *aikey = &it->second;
+			bool from = (aikey->from == ApplicationSettings::ApiKeyFrom::UserInput);
 			SetValue<bool>(s, (QS)fmt("Use%sApiKeyEnvironmentValue")(info.symbol)) << from;
-			SetValue<std::string>(s, UPPER((QS)info.env_name)) << aikey.api_key;
+			SetValue<std::string>(s, UPPER((QS)info.env_name)) << aikey->api_key;
 		}
 
 	}
@@ -314,9 +279,41 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 
-	if (0) { // ここでは保存しない
-#if 0
-		saveOpenAiApiKey(this->OpenAI_api_key);
-#endif
+	auto MKPATH = [&](const QString &path) {
+		if (!QFileInfo(path).isDir()) {
+			if (!QDir().mkpath(path)) {
+				qDebug() << "Failed to create directory:" << path;
+			}
+		}
+		return QFileInfo(path).isDir();
+	};
+
+	// save api keys
+
+	QString secret_dir = global->app_config_dir / secret_sub_dir;
+	if (MKPATH(secret_dir)) {
+		std::map<std::string, std::string> keys;
+		{
+			for (auto const &pair : this->ai_api_keys) {
+				GenerativeAI::AI aiid = pair.first;
+				ApplicationSettings::AiApiKey const &aikey = pair.second;
+				GenerativeAI::ProviderInfo const *info = GenerativeAI::provider_info(aiid);
+				if (!info) continue;
+				if (info->symbol.empty()) continue;
+				keys[info->env_name] = aikey.api_key;
+			}
+		}
+		QString ini_file = secret_dir / api_keys_ini;
+		QFile file(ini_file);
+		if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			// std::map<GenerativeAI::AI, AiApiKey> ai_api_keys;
+			for (auto const &pair : keys) {
+				std::string line = fmt("%s=%s\n")(pair.first)(pair.second);
+				file.write(line.c_str(), line.size());
+			}
+			file.close();
+		}
+		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
+		QFile(ini_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
 	}
 }

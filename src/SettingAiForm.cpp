@@ -114,35 +114,17 @@ void SettingAiForm::exchange(bool save)
 	ApplicationSettings *s = settings();
 
 	std::vector<Item> items;
-#if 0
-#define ADD_ITEM(SHORT, LONG) { Provider *p = provider(GenerativeAI::AI::LONG); \
-	items.emplace_back(&s->use_env_api_key_##SHORT, &s->api_key_##SHORT, &p->use_env_value, &p->custom_api_key); }
-	ADD_ITEM(OpenAI, OpenAI_responses);
-	ADD_ITEM(OpenAI, OpenAI_chat_completions);
-	ADD_ITEM(Anthropic, Anthropic);
-	ADD_ITEM(Google, Google);
-	ADD_ITEM(XAI, XAI);
-	ADD_ITEM(DeepSeek, DeepSeek);
-	ADD_ITEM(OpenRouter, OpenRouter);
-	// the following has no API key
-	// ADD_ITEM(Ollama);
-	// ADD_ITEM(LMStudio);
-	// ADD_ITEM(LLAMACPP);
-#undef ADD_ITEM
-#else
-	{ // wip:
+	{
 		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::provider_table();
 		for (GenerativeAI::ProviderInfo const &info : infos) {
 			if (info.env_name.empty()) continue; // 環境変数名が空でないプロバイダーのみ対象とする
 			Provider *p = provider(info.aiid);
 			if (!p) continue;
 			auto it = s->ai_api_keys.find(info.aiid);
-			logprintf(LOG_DEFAULT, "--- provider: %d; tag: %s; desc: %s\n", static_cast<int>(info.aiid), info.tag.c_str(), info.description.c_str());
 			ApplicationSettings::AiApiKey *api_key_info = &it->second;
 			items.emplace_back(&api_key_info->from, &api_key_info->api_key, &p->api_key_from, &p->custom_api_key);
 		}
 	}
-#endif
 
 	if (save) {
 		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
@@ -190,11 +172,7 @@ void SettingAiForm::setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFro
 	if (enabled) {
 		ui->radioButton_use_environment_value->setEnabled(true);
 		ui->radioButton_use_custom_api_key->setEnabled(true);
-#if 0
-		(from ? ui->radioButton_use_environment_value
-						   : ui->radioButton_use_custom_api_key
-		 )->setChecked(true);
-#endif
+
 		switch (from) {
 		case ApplicationSettings::ApiKeyFrom::EnvValue:
 			ui->radioButton_use_environment_value->setChecked(true);
@@ -215,15 +193,7 @@ void SettingAiForm::setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFro
 void SettingAiForm::refrectSettingsToUI()
 {
 	std::string apikey;
-#if 0
-	if (m->current_provider->api_key_from) {
-		apikey = getenv(m->current_provider->env_name().c_str());
-		ui->lineEdit_api_key->setEnabled(false);
-	} else {
-		apikey = m->current_provider->custom_api_key;
-		ui->lineEdit_api_key->setEnabled(true);
-	}
-#endif
+
 	SettingAiForm::Provider *p = m->current_provider;
 	Q_ASSERT(p);
 	if (p->env_name().empty()) {

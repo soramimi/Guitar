@@ -8,7 +8,7 @@ namespace GenerativeAI {
 
 enum class AI {
 	Unknown,
-	OpenAI, // placeholder
+	OpenAI, // generic OpenAI placeholder
 	OpenAI_responses, // for OpenAI responses API
 	OpenAI_chat_completions, // legacy for OpenAI chat completions API
 	Anthropic,
@@ -76,7 +76,7 @@ struct Model {
 	std::string long_name_;
 	std::string model_name_;
 	std::string host_;
-	std::string port_;
+	int port_ = 80;
 	Model()
 		: provider_info_(provider_info(AI::Unknown))
 	{}
@@ -105,7 +105,7 @@ struct Model {
 		return host_;
 	}
 
-	std::string port() const
+	int port() const
 	{
 		return port_;
 	}

@@ -37,18 +37,6 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_by_ai = false;
-	bool use_env_api_key_OpenAI = false;
-	bool use_env_api_key_Anthropic = false;
-	bool use_env_api_key_Google = false;
-	bool use_env_api_key_XAI = false;
-	bool use_env_api_key_DeepSeek = false;
-	bool use_env_api_key_OpenRouter = false;
-	std::string api_key_OpenAI;
-	std::string api_key_Anthropic;
-	std::string api_key_Google;
-	std::string api_key_XAI;
-	std::string api_key_DeepSeek;
-	std::string api_key_OpenRouter;
 	enum class ApiKeyFrom {
 		EnvValue, // 環境変数から取得
 		UserInput, // ユーザーが設定画面で入力
