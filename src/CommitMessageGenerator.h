@@ -38,6 +38,7 @@ public:
 		return ret;
 	}
 	void set_ai_model(GenerativeAI::Model model);
+	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

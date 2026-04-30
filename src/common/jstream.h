@@ -1,17 +1,20 @@
+// Jstream - Header-only Streaming pull-based JSON Parser and Generator
+// Copyright (C) 2026 S.Fuchita (soramimi)
+// This software is distributed under the MIT license.
+
 #ifndef JSTREAM_H_
 #define JSTREAM_H_
 
+#include <assert.h>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <string>
 #include <string_view>
-#include <vector>
 #include <variant>
-#include <assert.h>
-
-// #include <charconv> // C++17
+#include <vector>
 
 namespace jstream {
 
@@ -206,6 +209,7 @@ public:
 		return value;
 	}
 
+#if 0
 	static std::string format_double(double val, bool allow_nan)
 	{
 		int precision = 15;
@@ -341,6 +345,30 @@ public:
 		}
 
 		return std::string(ptr, end - ptr);
+	}
+#endif
+	static std::string format_double(double val, bool allow_nan)
+	{
+		if (std::isnan(val)) {
+			if (allow_nan) {
+				return "NaN";
+			}
+			return {};
+		}
+		if (std::isinf(val)) {
+			if (allow_nan) {
+				return std::signbit(val) ? "-Infinity" : "Infinity";
+			}
+			return {};
+		}
+
+		// std::to_chars produces the shortest round-trip representation without locale dependency
+		char buf[32];
+		auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), val);
+		if (ec != std::errc{}) {
+			return {};
+		}
+		return std::string(buf, ptr);
 	}
 };
 
@@ -875,6 +903,12 @@ private:
 		}
 		return false;
 	}
+	static void _init(ParserData *d)
+	{
+		d->begin = nullptr;
+		d->end = nullptr;
+		d->ptr = nullptr;
+	}
 public:
 	Reader(std::string_view const &sv)
 	{
@@ -888,6 +922,22 @@ public:
 	{
 		parse(ptr, len);
 	}
+	Reader(Reader &&r)
+		: d(std::move(r.d))
+	{
+		_init(&r.d);
+	}
+	Reader &operator=(Reader &&r)
+	{
+		if (this != &r) {
+			d = std::move(r.d);
+			_init(&r.d);
+		}
+		return *this;
+	}
+	Reader(Reader const &r) = delete;
+	Reader &operator=(Reader const &r) = delete;
+
 	void allow_comment(bool allow)
 	{
 		d.allow_comment = allow;
@@ -1090,69 +1140,34 @@ public:
 		return {};
 	}
 
-	bool match(char const *path, std::vector<std::string> *vals = nullptr, bool clear = true) const
+	bool match(char const *path) const
 	{
-		if (vals && clear) {
-			vals->clear();
-		}
 		if (!isobject() && !isarray() && !isvalue()) return false;
 		size_t i;
 		for (i = 0; i < d.depth.size(); i++) {
 			std::string const &s = d.depth[i];
 			if (s.empty()) break;
-			if (path[0] == '*' && path[1] == '*' && path[2] == 0) {
-				return true;
-			}
-			if (path[0] == '*' && s.c_str()[s.size() - 1] == '{') {
-				if (path[1] == 0) {
-					if (state() == StartObject) {
-						if (i + 1 == d.depth.size()) {
-							if (vals) {
-								std::string t;
-								while (i < d.depth.size()) {
-									t += d.depth[i];
-									i++;
-								}
-								if (isvalue()) {
-									t += d.key;
-								}
-								vals->push_back(t);
-							}
-							return true;
-						}
+			if (path[0] == '*') {
+				if (path[2] == 0) return true;
+				if (s.c_str()[s.size() - 1] == '{') {
+					if (path[1] == 0) {
+						return (state() == StartObject && i + 1 == d.depth.size());
+					} else if (path[1] == '{') {
+						path += 2;
+						continue;
 					}
-					return false;
-				} else if (path[1] == '{') {
-					path += 2;
-					continue;
 				}
 			}
 			if (strncmp(path, s.c_str(), s.size()) != 0) return false;
 			path += s.size();
 		}
-		if (path[0] == '*' && path[1] == '*' && path[2] == 0) {
-			return true;
-		}
 		if (path[0] == '*') {
-			if (path[1] == 0 && i == d.depth.size() && (isvalue() || state() == EndObject || state() == EndArray)) {
-				if (vals) {
-					std::string t;
-					if (isvalue()) {
-						t = d.key;
-					}
-					vals->push_back(t);
-				}
-				return true;
-			}
-			return false;
+			if (path[1] == '*' && path[2] == 0) return true;
+			return (path[1] == 0 && i == d.depth.size()
+					&& (isvalue() || state() == EndObject || state() == EndArray)
+					);
 		}
-		if (path == d.key) {
-			if (vals && isvalue()) {
-				vals->push_back(string());
-			}
-			return true;
-		}
-		return false;
+		return path == d.key;
 	}
 
 	bool match_start_object(char const *path) const
@@ -1180,13 +1195,13 @@ class Writer {
 protected:
 	void print(char const *p, int n)
 	{
-		if (output_fn_) {
-			output_fn_(p, n);
+		if (output_fn) {
+			output_fn(p, n);
 		} else {
 			// for (size_t i = 0; i < n; i++) {
 			// 	putchar(p[i]);
 			// }
-			output_str_.append(p, n);
+			string_out.append(p, n);
 		}
 	}
 
@@ -1206,9 +1221,8 @@ protected:
 	}
 private:
 	std::vector<int> stack;
-
-	std::function<void (char const *p, int n)> output_fn_;
-	std::string output_str_;
+	std::function<void (char const *p, int n)> output_fn;
+	std::string string_out;
 
 	bool enable_indent_ = true;
 	bool enable_newline_ = true;
@@ -1260,8 +1274,12 @@ private:
 
 		bool ok = fn();
 
-		if (!stack.empty()) stack.back()++;
-
+		if (!stack.empty()) {
+			stack.back()++;
+		}
+		if (stack.size() == 1) {
+			flush();
+		}
 		return ok;
 	}
 
@@ -1296,18 +1314,30 @@ private:
 		}
 		print_indent();
 	}
-public:
-	Writer(std::function<void (char const *p, int n)> fn = {})
+
+	void reset()
 	{
-		output_fn_ = fn;
+		stack.clear();
 		stack.push_back(0);
 	}
 
-	~Writer()
+	void flush()
 	{
 		if (!stack.empty() && stack.front() > 0) {
 			print_newline();
 		}
+		reset();
+	}
+public:
+	Writer(std::function<void (char const *p, int n)> fn = {})
+	{
+		output_fn = fn;
+		reset();
+	}
+
+	~Writer()
+	{
+		flush();
 	}
 
 	void enable_indent(bool enabled)
@@ -1354,6 +1384,10 @@ public:
 	{
 		end_block();
 		print('}');
+
+		if (stack.size() == 1) {
+			flush();
+		}
 	}
 
 	void object(std::string const &name, std::function<void ()> const &fn)
@@ -1370,6 +1404,10 @@ public:
 	{
 		end_block();
 		print(']');
+
+		if (stack.size() == 1) {
+			flush();
+		}
 	}
 
 	void array(std::string const &name, std::function<void ()> const &fn)
@@ -1431,7 +1469,7 @@ public:
 
 	operator std::string () const
 	{
-		return output_str_;
+		return string_out;
 	}
 };
 
@@ -1568,7 +1606,7 @@ struct Object {
 
 static inline bool is_null(Variant const &v)
 {
-	return std::holds_alternative<null_t>(v);
+	return std::holds_alternative<nullptr_t>(v);
 }
 static inline bool is_boolean(Variant const &v)
 {

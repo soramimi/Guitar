@@ -129,6 +129,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/FileTypeDetector.cpp \
 	$$PWD/src/LibMigemo.cpp \
 	src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
@@ -305,6 +306,7 @@ SOURCES += \
 	src/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/FileTypeDetector.h \
 	$$PWD/src/LibMigemo.h \
 	src/AboutDialog.h \
 	src/AbstractGitSession.h \

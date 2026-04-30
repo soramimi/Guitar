@@ -11,6 +11,7 @@
 #include "MyMecab.h"
 #include <QColor>
 #include <QString>
+#include "FileTypeDetector.h"
 #include "GenerativeAI.h"
 #include "IncrementalSearch.h"
 #include "TraceEventWriter.h"
@@ -72,7 +73,12 @@ public:
 
 	GitContext gcx();
 
-	FileType filetype;
+	FileTypeDetector file_type_detector;
+	std::string mimetype_by_data(const char *data, size_t size);
+	std::string mimetype_by_data(const QByteArray &ba);
+	std::string mimetype_by_data(std::vector<char> const &ba);
+	std::string mimetype_by_file(const char *path);
+	std::string mimetype_by_file(std::string const &path);
 
 	ApplicationSettings appsettings;
 
@@ -88,7 +94,6 @@ public:
 	void init1();
 	void init2();
 
-	// bool trace_log_enabled = false;
 	void open_trace_logger();
 	void close_trace_logger();
 	void restart_trace_logger();
@@ -105,18 +110,6 @@ public:
 	QString incremental_search_text;
 	
 	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI aiid);
-
-	std::string determineFileType(const char *data, size_t size);
-	std::string determineFileType(QByteArray const &in)
-	{
-		return determineFileType(in.data(), in.size());
-	}
-	std::string determineFileType(std::vector<char> const &in)
-	{
-		return determineFileType(in.data(), in.size());
-	}
-	std::string determineFileType(QString const &path);
-	std::string determineFileType(std::string const &path);
 
 	static bool isMainThread();
 
@@ -137,7 +130,6 @@ public:
 
 void GlobalSetOverrideWaitCursor();
 void GlobalRestoreOverrideCursor();
-
 
 #define ASSERT_MAIN_THREAD() Q_ASSERT(ApplicationGlobal::isMainThread())
 

@@ -117,10 +117,6 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
-				// } else if (arg == "--remote-log") {
-				// 	global->remote_log_enabled = true;
-				// } else if (arg == "--trace-log") {
-				// 	global->trace_log_enabled = true;
 				} else if (arg == "--genmsg") { // experimental
 					a_genmsg = true;
 				} else if (arg == "--unsafe") { // experimental

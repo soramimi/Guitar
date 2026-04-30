@@ -635,6 +635,24 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 }
 
 /**
+ * @brief ファイルのdiffをAIに送るべきか判定する。
+ *
+ * 画像やバイナリ、PDFなどは行単位のdiffが意味をなさないため除外する。
+ * Qtの翻訳ファイル（*.ts）も行番号変化が多く差分がノイズになるため除外する。
+ * @param filename ファイル名
+ * @param mimetype ファイルのMIMEタイプ
+ * @return diff対象に含めるべきならtrue、そうでなければfalse
+ */
+bool CommitMessageGenerator::accept_file_diff(std::string const &filename, std::string const &mimetype)
+{
+	if (misc::starts_with(mimetype, "image/")) return false; // 画像ファイルはdiffしない
+	if (mimetype == "application/octetstream") return false; // バイナリファイルはdiffしない
+	if (mimetype == "application/pdf") return false; // PDFはdiffしない
+	if (mimetype == "text/xml" && misc::ends_with(filename, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
+	return true;
+}
+
+/**
  * @brief HEADとの差分を取得する内部実装。
  *
  * 各ファイルのdiffをスレッドで並列取得する。ただし libfile 内部の realloc が
@@ -643,14 +661,15 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
  * @param fn_accept ファイルをdiff対象に含めるか判定するコールバック
  * @return 連結されたdiff文字列
  */
-static std::string diff_head(GitRunner g, std::function<bool (std::string const &name, std::string const &mime)> fn_accept)
+static std::string _diff_head(GitRunner g)
 {
 	PROFILE;
 
 	std::vector<std::string> names = g.diff_name_only_head();
 
 	std::vector<std::string> diffs(names.size());
-	const int NUM_THREADS = 1; // 8;
+	// const int NUM_THREADS = 8;
+	const int NUM_THREADS = 1;
 	// fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
 	// 安全のためシングルスレッドで動かす。(2025-12-25)
 	std::vector<std::thread> threads(NUM_THREADS);
@@ -661,15 +680,10 @@ static std::string diff_head(GitRunner g, std::function<bool (std::string const 
 				size_t i = index++;
 				if (i >= names.size()) break;
 				std::string name = names[i];
-				if (!name.empty()) {
-					std::string file(g.workingDir() / name);
-					std::string mimetype = global->determineFileType(file);
-					if (misc::starts_with(mimetype, "image/")) continue; // 画像ファイルはdiffしない
-					if (mimetype == "application/octetstream") continue; // バイナリファイルはdiffしない
-					if (mimetype == "application/pdf") continue; // PDFはdiffしない
-					if (fn_accept) {
-						if (!fn_accept(file, mimetype)) continue; // ファイルの種類によるフィルタリング
-					}
+				if (name.empty()) continue;
+				std::string file(g.workingDir() / name);
+				std::string mimetype = global->mimetype_by_file(file);
+				if (CommitMessageGenerator::accept_file_diff(name, mimetype)) {
 					diffs[i] = g.diff_full_index_head_file(file);
 				}
 			}
@@ -701,9 +715,6 @@ static std::string diff_head(GitRunner g, std::function<bool (std::string const 
  */
 std::string CommitMessageGenerator::diff_head(GitRunner g)
 {
-	std::string diff = ::diff_head(g, [&](std::string const &name, std::string const &mime) {
-		if (mime == "text/xml" && misc::ends_with(name, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
-		return true;
-	});
+	std::string diff = ::_diff_head(g);
 	return diff;
 }

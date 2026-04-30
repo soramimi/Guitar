@@ -453,11 +453,11 @@ size_t FileType::slop_size()
 }
 
 /**
- * @brief Determine the file type of a file descriptor
- * @param fd The file descriptor
+ * @brief Determine the detect type of a detect descriptor
+ * @param fd The detect descriptor
  * @return The result
  */
-FileType::Result FileType::file(int fd) const
+FileType::Result FileType::detect(int fd) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -484,11 +484,11 @@ FileType::Result FileType::file(int fd) const
 }
 
 /**
- * @brief Determine the file type of a file
- * @param filepath The path to the file
+ * @brief Determine the detect type of a detect
+ * @param filepath The path to the detect
  * @return The result
  */
-FileType::Result FileType::file(const char *filepath) const
+FileType::Result FileType::detect(const char *filepath) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -499,7 +499,7 @@ FileType::Result FileType::file(const char *filepath) const
 
 	int fd = ::open(filepath, O_RDONLY | O_BINARY | O_NONBLOCK | O_CLOEXEC);
 	if (fd != -1) {
-		ret = file(fd);
+		ret = detect(fd);
 		::close(fd);
 	}
 
@@ -507,14 +507,14 @@ FileType::Result FileType::file(const char *filepath) const
 }
 
 /**
- * @brief Determine the file type of a buffer
+ * @brief Determine the detect type of a buffer
  * @param data The buffer
  * @param size The size of the buffer
- * @param st_mode The mode of the file
+ * @param st_mode The mode of the detect
  * @param pad_slop Whether to pad the buffer with slop
  * @return The result
  */
-FileType::Result FileType::file(const char *data, size_t size, int st_mode) const
+FileType::Result FileType::detect(const char *data, size_t size, int st_mode) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");

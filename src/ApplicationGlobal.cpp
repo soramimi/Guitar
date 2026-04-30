@@ -66,20 +66,19 @@ GitContext ApplicationGlobal::gcx()
 	return gcx;
 }
 
+
+
 // QApplicationが構築される前に実行する
 void ApplicationGlobal::init1()
 {
-	// filetypeライブラリを初期化し、基本的な動作をテスト
-
-	bool ok = filetype.open();
-	Q_ASSERT(ok);
+	// filetypeライブラリの基本的な動作をテスト
 
 	{ // test "Hello, world" filetype registration
 		QByteArray ba("Hello, world", 12);
-		auto result = filetype.file(ba.data(), ba.size());
-		if (result.mimetype != "text/plain") {
+		auto mime = mimetype_by_data(ba.data(), ba.size());
+		if (mime != "text/plain") {
 			qDebug() << "Failed to register \"Hello, world\" filetype: "
-					 << QString::fromStdString(result.mimetype) << " expected text/plain";
+					 << QString::fromStdString(mime) << " expected text/plain";
 		}
 	}
 
@@ -87,10 +86,10 @@ void ApplicationGlobal::init1()
 		QFile file(":/image/digits.png");
 		file.open(QFile::ReadOnly);
 		QByteArray ba = file.readAll();
-		auto result = filetype.file(ba.data(), ba.size());
-		if (result.mimetype != "image/png") {
+		auto mime = mimetype_by_data(ba.data(), ba.size());
+		if (mime != "image/png") {
 			qDebug() << "Failed to register digits.png filetype: "
-					 << QString::fromStdString(result.mimetype) << " expected image/png";
+					 << QString::fromStdString(mime) << " expected image/png";
 		}
 	}
 }
@@ -217,47 +216,28 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI a
 	return cred;
 }
 
-std::string ApplicationGlobal::determineFileType(char const *data, size_t size)
+std::string ApplicationGlobal::mimetype_by_data(char const *data, size_t size)
 {
-	if (!data || size == 0) return {};
-
-	if (size > 10) {
-		if (memcmp(data, "\x1f\x8b\x08", 3) == 0) { // gzip
-			QBuffer buf;
-			MemoryReader mem(data, size);
-
-			mem.open(MemoryReader::ReadOnly);
-			buf.open(QBuffer::WriteOnly);
-			gzip z;
-			z.set_maximul_size(100000);
-			SimpleQtReader reader(&mem);
-			SimpleQtWriter writer(&buf);
-			z.decompress(&reader, &writer);
-
-			QByteArray uz = buf.buffer();
-			if (!uz.isEmpty()) {
-				return filetype.file(uz.data(), uz.size()).mimetype;
-			}
-		}
-	}
-
-	std::string mime = filetype.file(data, size).mimetype;
-	// qDebug() << QString::fromStdString(mime);
-	return mime;
+	return file_type_detector.mimetype_by_data(data, size);
 }
 
-std::string ApplicationGlobal::determineFileType(QString const &path)
+std::string ApplicationGlobal::mimetype_by_data(QByteArray const &ba)
 {
-	QFile file(path);
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray ba = file.readAll();
-		return determineFileType(ba);
-	}
-	return {};
+	return file_type_detector.mimetype_by_data(ba.data(), ba.size());
 }
 
-std::string ApplicationGlobal::determineFileType(std::string const &path)
+std::string ApplicationGlobal::mimetype_by_data(std::vector<char> const &ba)
 {
-	return determineFileType(QString::fromStdString(path));
+	return file_type_detector.mimetype_by_data(ba.data(), ba.size());
+}
+
+std::string ApplicationGlobal::mimetype_by_file(char const *path)
+{
+	return file_type_detector.mimetype_by_file(path);
+}
+
+std::string ApplicationGlobal::mimetype_by_file(const std::string &path)
+{
+	return file_type_detector.mimetype_by_file(path);
 }
 

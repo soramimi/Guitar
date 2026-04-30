@@ -4817,7 +4817,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	if (is_valid_commit_id && selected_commit.commit_id != getHeadId()) {
 		auto *quick_merge = menu.addMenu(tr("Merge"));
 		a_merge_branch = quick_merge->addAction(tr("[%1] %2")
-													.arg(QString::fromStdString(selected_commit.commit_id.toString()).mid(0, 7))
+													.arg((QS)selected_commit.commit_id.toString().substr(0, 7))
 													.arg(selected_commit.message));
 		menu.addSeparator();
 	}

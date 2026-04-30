@@ -427,8 +427,8 @@ FileViewType FileDiffWidget::setupPreviewWidget()
 {
 	clearDiffView();
 
-	std::string mimetype_l = global->determineFileType(m->init_param_.bytes_a);
-	std::string mimetype_r = global->determineFileType(m->init_param_.bytes_b);
+	std::string mimetype_l = global->mimetype_by_data(m->init_param_.bytes_a);
+	std::string mimetype_r = global->mimetype_by_data(m->init_param_.bytes_b);
 
 	if (misc::isImage(mimetype_l) || misc::isImage(mimetype_r)) { // image
 
@@ -673,8 +673,8 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 	if (isValidID(info.blob.a_id_or_path) && isValidID(info.blob.b_id_or_path)) {
 		GitObject obj_a = catFile(g, info.blob.a_id_or_path);
 		GitObject obj_b = catFile(g, info.blob.b_id_or_path);
-		std::string mime_a = global->determineFileType(obj_a.content);
-		std::string mime_b = global->determineFileType(obj_b.content);
+		std::string mime_a = global->mimetype_by_data(obj_a.content);
+		std::string mime_b = global->mimetype_by_data(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
 			setSideBySide_(info, obj_a.content, obj_b.content, QString::fromStdString(g.workingDir()));
 			return;

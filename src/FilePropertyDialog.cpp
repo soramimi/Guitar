@@ -41,7 +41,7 @@ void FilePropertyDialog::exec(QString const &path, GitHash const &id)
 			ba = file.read(1024 * 1024);
 		}
 	}
-	std::string mimetype = global->filetype.file(ba.data(), ba.size()).mimetype;
+	std::string mimetype = global->mimetype_by_data(ba.data(), ba.size());
 	ui->lineEdit_repo->setText(global->mainwindow->currentRepositoryName());
 	ui->lineEdit_path->setText(path);
 	ui->lineEdit_type->setText(QString::fromStdString(mimetype));

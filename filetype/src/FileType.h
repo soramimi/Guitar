@@ -21,9 +21,9 @@ public:
 #endif
 	void close();
 	static size_t slop_size();
-	Result file(int fd) const;
-	Result file(char const *filepath) const;
-	Result file(const char *data, size_t size, int filemode = 0644) const;
+	Result detect(int fd) const;
+	Result detect(char const *filepath) const;
+	Result detect(const char *data, size_t size, int filemode = 0644) const;
 };
 
 #endif // FILETYPE_H

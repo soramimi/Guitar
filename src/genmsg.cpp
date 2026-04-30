@@ -5,9 +5,9 @@
 #include "Git.h"
 #include "common/q/Dir.h"
 
-static std::string determineFileType(std::string const &path)
+static std::string mimetype_by_file(std::string const &path)
 {
-	return global->determineFileType(path);
+	return global->file_type_detector.mimetype_by_file(path);
 }
 
 int genmsg()
@@ -19,18 +19,11 @@ int genmsg()
 	std::vector<std::string> files = misc::splitLines(g->resultStdString(result), false);
 
 	std::string diff;
-	for (std::string const &file : files) {
-		auto Accept = [&](){
-			if (file.empty()) return false;
-			std::string mimetype = determineFileType(file);
-			if (misc::starts_with(mimetype, "image/")) return false; // 画像ファイルはdiffしない
-			if (mimetype == "application/octet-stream") return false; // バイナリファイルはdiffしない
-			if (mimetype == "application/pdf") return false; // PDFはdiffしない
-			if (mimetype == "text/xml" && misc::ends_with(file, ".ts")) return false; // Do not diff Qt translation TS files (line numbers and other changes are too numerous)
-			return true;
-		};
-		if (Accept()) {
-			cmd = "diff --full-index HEAD -- " + file;
+	for (std::string const &name : files) {
+		if (name.empty()) return false;
+		std::string mimetype = mimetype_by_file(name);
+		if (CommitMessageGenerator::accept_file_diff(name, mimetype)) {
+			cmd = "diff --full-index HEAD -- " + name;
 			auto result = g->git(cmd);
 			diff.append(g->resultStdString(result));
 		}
