@@ -208,7 +208,7 @@ private:
 	std::optional<RepositoryInfo> repositoryItem(const RepositoryTreeIndex &index) const;
 
 	void buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryInfo> *repos);
-	void refrectRepositories();
+	void reflectRepositories();
 
 	void updateDiffView(QListWidgetItem *item);
 	void updateDiffView();

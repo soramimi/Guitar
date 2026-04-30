@@ -1034,12 +1034,12 @@ bool MainWindow::saveRepositoryBookmarks()
 }
 
 /**
- * @brief MainWindow::refrectRepositories()
+ * @brief MainWindow::reflectRepositories()
  * @param repos
  *
  * リポジトリツリーの状態をリポジトリリストに反映する
  */
-void MainWindow::refrectRepositories()
+void MainWindow::reflectRepositories()
 {
 	QList<RepositoryInfo> newrepos;
 	int n = ui->treeWidget_repos->topLevelItemCount();
@@ -1053,7 +1053,7 @@ void MainWindow::refrectRepositories()
 
 void MainWindow::onRepositoriesTreeDropped()
 {
-	refrectRepositories();
+	reflectRepositories();
 	QTreeWidgetItem *item = ui->treeWidget_repos->currentItem();
 	if (item) item->setExpanded(true);
 }
@@ -4665,7 +4665,7 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 					int i = ui->treeWidget_repos->indexOfTopLevelItem(treeitem);
 					delete ui->treeWidget_repos->takeTopLevelItem(i);
 				}
-				refrectRepositories();
+				reflectRepositories();
 				return;
 			}
 			if (a == a_rename_group) {

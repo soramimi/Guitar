@@ -114,7 +114,7 @@ void ImageViewWidget::scrollImage(double x, double y)
 	}
 }
 
-void ImageViewWidget::refrectScrollBar()
+void ImageViewWidget::reflectScrollBar()
 {
 	double e = 0.75;
 	double x = m->h_scroll_bar->value();
@@ -301,7 +301,7 @@ void ImageViewWidget::setImage(std::string mimetype, QByteArray const &ba)
 	m->v_scroll_bar->setValue(m->v_scroll_bar->maximum() / 2);
 	m->h_scroll_bar->blockSignals(false);
 	m->v_scroll_bar->blockSignals(false);
-	refrectScrollBar();
+	reflectScrollBar();
 }
 
 void ImageViewWidget::mousePressEvent(QMouseEvent *e)

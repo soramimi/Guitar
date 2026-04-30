@@ -132,7 +132,7 @@ public:
 
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;
-	void refrectScrollBar();
+	void reflectScrollBar();
 
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor() override;

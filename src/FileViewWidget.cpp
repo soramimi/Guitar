@@ -86,15 +86,15 @@ void FileViewWidget::setDiffMode(TextEditorEnginePtr const &editor_engine, QScro
 	return texteditor()->bindScrollBar(vsb, hsb);
 }
 
-void FileViewWidget::refrectScrollBar()
+void FileViewWidget::reflectScrollBar()
 {
 	switch (view_type) {
 	case FileViewType::Text:
-		texteditor()->refrectScrollBar();
+		texteditor()->reflectScrollBar();
 		texteditor()->fetchLines(); // スクロールバーの値に合わせて、テキスト領域をスクロールする
 		return;
 	case FileViewType::Image:
-		ui_page_image->refrectScrollBar();
+		ui_page_image->reflectScrollBar();
 		return;
 	}
 }

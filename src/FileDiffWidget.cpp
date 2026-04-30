@@ -415,7 +415,7 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 
 	ui->widget_diff_left->setText(&m->left_lines, (QS)diff.blob.a_id_or_path, (QS)diff.path);
 	ui->widget_diff_right->setText(&m->right_lines, (QS)diff.blob.b_id_or_path, (QS)diff.path);
-	refrectScrollBar();
+	reflectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
 
@@ -732,7 +732,7 @@ void FileDiffWidget::updateDiffView_(std::string const &id_left, std::string con
 
 void FileDiffWidget::resizeEvent(QResizeEvent *)
 {
-	refrectScrollBar();
+	reflectScrollBar();
 }
 
 void FileDiffWidget::keyPressEvent(QKeyEvent *event)
@@ -759,7 +759,7 @@ void FileDiffWidget::scrollTo(int value)
  */
 void FileDiffWidget::onVerticalScrollValueChanged(int)
 {
-	refrectScrollBarV();
+	reflectScrollBarV();
 }
 
 /**
@@ -767,7 +767,7 @@ void FileDiffWidget::onVerticalScrollValueChanged(int)
  */
 void FileDiffWidget::onHorizontalScrollValueChanged(int)
 {
-	refrectScrollBarH();
+	reflectScrollBarH();
 }
 
 void FileDiffWidget::onDiffWidgetWheelScroll(int lines)
@@ -822,10 +822,10 @@ void FileDiffWidget::onUpdateSliderBar()
  * @brief スクロールバーの状態を反映
  * @param updateformat
  */
-void FileDiffWidget::refrectScrollBar(/*bool updateformat*/)
+void FileDiffWidget::reflectScrollBar(/*bool updateformat*/)
 {
-	ui->widget_diff_left->refrectScrollBar();
-	ui->widget_diff_right->refrectScrollBar();
+	ui->widget_diff_left->reflectScrollBar();
+	ui->widget_diff_right->reflectScrollBar();
 
 	const bool updateformat = true;
 	if (updateformat) {
@@ -879,17 +879,17 @@ void FileDiffWidget::refrectScrollBar(/*bool updateformat*/)
 /**
  * @brief 縦スクロールバーの状態を反映
  */
-void FileDiffWidget::refrectScrollBarV()
+void FileDiffWidget::reflectScrollBarV()
 {
-	refrectScrollBar();
+	reflectScrollBar();
 }
 
 /**
  * @brief 横スクロールバーの状態を反映
  */
-void FileDiffWidget::refrectScrollBarH()
+void FileDiffWidget::reflectScrollBarH()
 {
-	refrectScrollBar();
+	reflectScrollBar();
 }
 
 QPixmap FileDiffWidget::makeDiffPixmap(DiffPane pane, int width, int height)
@@ -915,7 +915,7 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	(void)cur_row;
 	ui->widget_diff_left->move(-1, -1, scr_row, scr_col, false);
 	ui->widget_diff_right->move(-1, -1, scr_row, scr_col, false);
-	refrectScrollBar();
+	reflectScrollBar();
 	onUpdateSliderBar();
 }
 

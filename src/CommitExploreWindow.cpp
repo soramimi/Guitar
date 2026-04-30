@@ -258,12 +258,12 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 
 void CommitExploreWindow::on_verticalScrollBar_valueChanged(int)
 {
-	ui->widget_fileview->refrectScrollBar();
+	ui->widget_fileview->reflectScrollBar();
 }
 
 void CommitExploreWindow::on_horizontalScrollBar_valueChanged(int)
 {
-	ui->widget_fileview->refrectScrollBar();
+	ui->widget_fileview->reflectScrollBar();
 }
 
 void CommitExploreWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)

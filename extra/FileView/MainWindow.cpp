@@ -40,10 +40,10 @@ void MainWindow::on_action_open_image_triggered()
 
 void MainWindow::on_horizontalScrollBar_valueChanged(int value)
 {
-	ui->widget->refrectScrollBar();
+	ui->widget->reflectScrollBar();
 }
 
 void MainWindow::on_verticalScrollBar_valueChanged(int value)
 {
-	ui->widget->refrectScrollBar();
+	ui->widget->reflectScrollBar();
 }

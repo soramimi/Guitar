@@ -18,7 +18,7 @@ private:
 
 	struct ProviderFormData;
 
-	void refrectSettingsToUI();
+	void reflectSettingsToUI();
 	void changeProvider(ProviderFormData *ai);
 	void setRadioButtons(bool enabled, ApplicationSettings::ApiKeyFrom from);
 	void configureModelByString(const std::string &s);

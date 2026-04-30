@@ -123,9 +123,9 @@ private:
 
 	void makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
 	void onUpdateSliderBar();
-	void refrectScrollBar();
-	void refrectScrollBarV();
-	void refrectScrollBarH();
+	void reflectScrollBar();
+	void reflectScrollBarV();
+	void reflectScrollBarH();
 	void setOriginalLines_(QByteArray const &ba, const GitSubmoduleItem *submodule, const GitCommitItem *submodule_commit);
 	std::string diffObjects(const std::string &a_id, const std::string &b_id);
 	bool setSubmodule(const GitDiff &diff);

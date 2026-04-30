@@ -1106,7 +1106,7 @@ void TextEditorView::inputMethodEvent(QInputMethodEvent *e)
 	}
 }
 
-void TextEditorView::refrectScrollBar()
+void TextEditorView::reflectScrollBar()
 {
 	int v = m->scroll_bar_v ? m->scroll_bar_v->value() : -1;
 	int h = m->scroll_bar_h ? m->scroll_bar_h->value() : -1;

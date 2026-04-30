@@ -47,7 +47,7 @@ public:
 
 	void setLeftBorderVisible(bool f);
 
-	void refrectScrollBar();
+	void reflectScrollBar();
 
 	static QString formatText(const Document::Line &line2);
 signals:

@@ -66,7 +66,7 @@ public:
 	TextEditorTheme const *theme() const;
 	void scrollToTop();
 	void write(QKeyEvent *e);
-	void refrectScrollBar();
+	void reflectScrollBar();
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 
 	TextEditorView *texteditor();

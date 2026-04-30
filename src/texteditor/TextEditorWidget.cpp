@@ -18,8 +18,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	vsb_->setOrientation(Qt::Vertical);
 	view_->bindScrollBar(vsb_, hsb_);
 
-	connect(vsb_, &QScrollBar::valueChanged, [&](){ view_->refrectScrollBar(); });
-	connect(hsb_, &QScrollBar::valueChanged, [&](){ view_->refrectScrollBar(); });
+	connect(vsb_, &QScrollBar::valueChanged, [&](){ view_->reflectScrollBar(); });
+	connect(hsb_, &QScrollBar::valueChanged, [&](){ view_->reflectScrollBar(); });
 
 	view_->setFocusPolicy(Qt::StrongFocus);
 }

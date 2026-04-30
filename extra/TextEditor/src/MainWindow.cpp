@@ -116,12 +116,12 @@ void MainWindow::rightArrow()
 
 void MainWindow::on_verticalScrollBar_valueChanged(int /*value*/)
 {
-	texteditor()->refrectScrollBar();
+	texteditor()->reflectScrollBar();
 }
 
 void MainWindow::on_horizontalScrollBar_valueChanged(int /*value*/)
 {
-	texteditor()->refrectScrollBar();
+	texteditor()->reflectScrollBar();
 }
 
 void MainWindow::on_action_file_open_triggered()

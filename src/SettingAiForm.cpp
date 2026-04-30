@@ -7,6 +7,9 @@
 
 using ApiKeyFrom = ApplicationSettings::ApiKeyFrom;
 
+// ProviderFormData は設定画面が開いている間のみ存在する、プロバイダごとの編集バッファ。
+// ApplicationSettings には exchange() が呼ばれたときにのみ読み書きするため、
+// 直接設定を書き換えず、このバッファ経由で操作する。
 struct SettingAiForm::ProviderFormData {
 	GenerativeAI::AI aiid = GenerativeAI::AI::Unknown;
 	GenerativeAI::ProviderInfo const *info = nullptr;
@@ -29,9 +32,16 @@ struct SettingAiForm::ProviderFormData {
 
 struct SettingAiForm::Private {
 	std::vector<SettingAiForm::ProviderFormData> provider_formdata;
+	// [copilot] current_provider は常に provider_formdata 内のいずれかの要素を指すポインタ。
+	// [copilot] provider_formdata が再確保されると無効になるため、コンストラクタ以降は
+	// [copilot] push_back 等で vector を拡張してはならない。
 	SettingAiForm::ProviderFormData *current_provider = nullptr;
 };
 
+/**
+ * @brief コンストラクタ。UIを初期化し、プロバイダ一覧とAIモデルプリセット一覧をコンボボックスに追加する。
+ * @param parent 親ウィジェット
+ */
 SettingAiForm::SettingAiForm(QWidget *parent)
 	: AbstractSettingForm(parent)
 	, ui(new Ui::SettingAiForm)
@@ -68,6 +78,11 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 			list.push_back(QString::fromStdString(m.long_name()));
 		}
 	}
+	// モデル一覧を追加する際にシグナルをブロックする。
+	// comboBox_ai_model への addItems で on_comboBox_ai_model_currentTextChanged が
+	// 発火すると guessProviderFromModelName が呼ばれてしまうのを防ぐ。
+	// comboBox_provider のブロックは addItems より後で開始するため実質無効であり、
+	// 現状は comboBox_ai_model のみが保護対象となっている。
 	bool b1 = ui->comboBox_ai_model->blockSignals(true);
 	bool b2 = ui->comboBox_provider->blockSignals(true);
 	ui->comboBox_ai_model->addItems(list);
@@ -75,12 +90,20 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	ui->comboBox_provider->blockSignals(b2);
 }
 
+/**
+ * @brief デストラクタ。
+ */
 SettingAiForm::~SettingAiForm()
 {
 	delete m;
 	delete ui;
 }
 
+/**
+ * @brief AIプロバイダIDに対応するフォームデータを返す。
+ * @param aiid 検索するプロバイダID
+ * @return 対応する ProviderFormData のポインタ。見つからない場合は nullptr。
+ */
 SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
 {
 	for (auto &ai : m->provider_formdata) {
@@ -91,6 +114,11 @@ SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
 	return nullptr;
 }
 
+/**
+ * @brief 環境変数名に対応するフォームデータを返す。
+ * @param env_name 検索する環境変数名（例: "OPENAI_API_KEY"）
+ * @return 対応する ProviderFormData のポインタ。見つからない場合は nullptr。
+ */
 SettingAiForm::ProviderFormData *SettingAiForm::formdata_by_env_name(std::string const &env_name)
 {
 	for (auto &ai : m->provider_formdata) {
@@ -101,11 +129,22 @@ SettingAiForm::ProviderFormData *SettingAiForm::formdata_by_env_name(std::string
 	return nullptr;
 }
 
+/**
+ * @brief Unknown プロバイダのフォームデータを返す。
+ * @return provider_formdata の先頭要素（Unknown プロバイダ）へのポインタ。
+ * @note provider_formdata の先頭要素が必ず Unknown プロバイダであることを前提とする。
+ *       コンストラクタの初期化リストの順序に依存しているため、変更時は注意。
+ */
 SettingAiForm::ProviderFormData *SettingAiForm::unknown_provider()
 {
 	return &m->provider_formdata.front();
 }
 
+// ExchangePointers は、設定ファイル側(conf)とフォームバッファ側(form)の
+// 対応するメンバへのポインタをペアで保持する構造体。
+// exchange() でコピー方向(save/load)を切り替えるだけで双方向の同期を実現するために使う。
+// ProviderFormData と ApplicationSettings::AiApiKey を env_name でマッチングして
+// 事前にポインタペアを構築し、その後ループで一括コピーする設計になっている。
 struct ExchangePointers {
 	struct Pointers {
 		ApiKeyFrom *from = nullptr;
@@ -130,6 +169,11 @@ struct ExchangePointers {
 	{}
 };
 
+/**
+ * @brief 設定ファイルとフォームバッファの間でデータを同期する。
+ * @param save true のとき: フォームバッファ → 設定ファイル (OK ボタン押下時)
+ *             false のとき: 設定ファイル → フォームバッファ (設定画面を開いたとき)
+ */
 void SettingAiForm::exchange(bool save)
 {
 	ApplicationSettings *s = settings();
@@ -166,6 +210,9 @@ void SettingAiForm::exchange(bool save)
 	} else { // 設定ファイル -> UI
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
+		// [copilot] configureModel は内部で changeProvider → reflectSettingsToUI を呼ぶことがあるが、
+		// [copilot] pointers は formdata へのポインタを保持しているため、configureModel の呼び出しで
+		// [copilot] formdata の内容が変わっても、後続のループで正しく上書きされる。
 		configureModel(s->ai_model);
 
 		// 設定ファイルの値を設定フォームの値に反映
@@ -180,10 +227,19 @@ void SettingAiForm::exchange(bool save)
 		} else {
 			setRadioButtons(false, ApiKeyFrom::Default);
 		}
-		refrectSettingsToUI();
+		// [copilot] configureModel 内でも reflectSettingsToUI が呼ばれる場合があるが、
+		// [copilot] 上のループで formdata の api_key / from を上書きした後に改めて
+		// [copilot] 呼ぶことで、設定ファイルの値を確実にウィジェットへ反映させている。
+		reflectSettingsToUI();
 	}
 }
 
+/**
+ * @brief APIキーの取得元を選択するラジオボタンの状態を設定する。
+ * @param enabled true のとき両方のラジオボタンを有効化し、from に応じて選択状態を設定する。
+ *                false のとき両方を無効化する（Unknown プロバイダ選択時など）。
+ * @param from どちらのラジオボタンを選択するかを示す値。enabled が false のときは無視される。
+ */
 void SettingAiForm::setRadioButtons(bool enabled, ApiKeyFrom from)
 {
 	bool b1 = ui->radioButton_use_environment_value->blockSignals(true);
@@ -210,13 +266,21 @@ void SettingAiForm::setRadioButtons(bool enabled, ApiKeyFrom from)
 	ui->radioButton_use_custom_api_key->blockSignals(b2);
 }
 
-void SettingAiForm::refrectSettingsToUI()
+/**
+ * @brief 現在選択中のプロバイダの状態をウィジェットに反映する。
+ *
+ * ApiKeyFrom::EnvValue の場合は実際に環境変数を読んでテキストフィールドに表示するが、
+ * 編集不可(setEnabled(false))にして読み取り専用として扱う。
+ * ApiKeyFrom::UserInput の場合はフォームバッファの値を表示し、編集可能にする。
+ */
+void SettingAiForm::reflectSettingsToUI()
 {
 	std::string apikey;
 
 	SettingAiForm::ProviderFormData *p = m->current_provider;
 	Q_ASSERT(p);
 	if (p->env_name().empty()) {
+		// env_name が空 = Unknown プロバイダ。API キー入力欄自体を無効化する。
 		ui->lineEdit_api_key->setEnabled(false);
 	} else {
 		char const *env = nullptr;
@@ -235,11 +299,18 @@ void SettingAiForm::refrectSettingsToUI()
 		}
 	}
 
+	// テキスト変更シグナルをブロックして setText する。
+	// ブロックしないと on_lineEdit_api_key_textChanged が呼ばれ、
+	// フォームバッファを上書きしてしまう。
 	bool b = ui->lineEdit_api_key->blockSignals(true);
 	ui->lineEdit_api_key->setText((QS)apikey);
 	ui->lineEdit_api_key->blockSignals(b);
 }
 
+/**
+ * @brief 選択中プロバイダを切り替え、UIを更新する。
+ * @param ai 切り替え先のプロバイダのフォームデータ
+ */
 void SettingAiForm::changeProvider(ProviderFormData *ai)
 {
 	m->current_provider = ai;
@@ -247,29 +318,48 @@ void SettingAiForm::changeProvider(ProviderFormData *ai)
 	QString text = tr("Use %1 environment value").arg(QString::fromStdString(envname));
 	ui->radioButton_use_environment_value->setText(text);
 	ui->radioButton_use_environment_value->setEnabled(!envname.empty());
-	refrectSettingsToUI();
+	reflectSettingsToUI();
 }
 
+/**
+ * @brief APIキー入力欄のテキスト変更時に呼ばれる。
+ *        環境変数モードのときは何もしない。ユーザー入力モードのときのみフォームバッファに書き込む。
+ */
 void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
 {
+	// [copilot] radioButton_use_custom_api_key->isChecked() の肯定ではなく
+	// [copilot] radioButton_use_environment_value->isChecked() の否定で判定している。
+	// [copilot] 将来 EnvValue でも UserInput でもない第3の選択肢が追加された場合、
+	// [copilot] この条件では意図せずバッファを書き換えてしまう点に注意。
 	if (!ui->radioButton_use_environment_value->isChecked()) {
 		m->current_provider->api_key = arg1.toStdString();
 	}
 }
 
+/**
+ * @brief 「環境変数を使用する」ラジオボタンが押されたとき、APIキー取得元を EnvValue に切り替える。
+ */
 void SettingAiForm::on_radioButton_use_environment_value_clicked()
 {
 	m->current_provider->from = ApiKeyFrom::EnvValue;
-	refrectSettingsToUI();
+	reflectSettingsToUI();
 }
 
 
+/**
+ * @brief 「カスタムAPIキーを使用する」ラジオボタンが押されたとき、APIキー取得元を UserInput に切り替える。
+ */
 void SettingAiForm::on_radioButton_use_custom_api_key_clicked()
 {
 	m->current_provider->from = ApiKeyFrom::UserInput;
-	refrectSettingsToUI();
+	reflectSettingsToUI();
 }
 
+/**
+ * @brief AIによるコミットメッセージ生成のグループボックスがクリックされたとき。
+ *        有効化しようとした場合、クラウドへのデータ送信を警告するダイアログを表示する。
+ *        ユーザーがキャンセルすると有効化を取り消す。
+ */
 void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool checked)
 {
 	if (checked) {
@@ -286,8 +376,13 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 	}
 }
 
+/**
+ * @brief プロバイダのコンボボックスの選択が変更されたとき。
+ */
 void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
+	// comboBox_provider の表示インデックスと provider_formdata の配列インデックスは
+	// コンストラクタで同一順序で追加されているため一致する。
 	if (index >= 0 && index < (int)m->provider_formdata.size()) {
 		ProviderFormData *ai = &m->provider_formdata[index];
 		setRadioButtons(true, ai->from);
@@ -295,6 +390,10 @@ void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 	}
 }
 
+/**
+ * @brief 指定したプロバイダに対応するコンボボックスの選択肢を選択状態にする。
+ * @param newai 選択したいプロバイダのフォームデータ
+ */
 void SettingAiForm::updateProviderComboBox(ProviderFormData *newai)
 {
 	for (auto &ai : m->provider_formdata) {
@@ -306,6 +405,11 @@ void SettingAiForm::updateProviderComboBox(ProviderFormData *newai)
 	}
 }
 
+/**
+ * @brief モデル名文字列からプロバイダを推定し、プロバイダのコンボボックスを更新する。
+ *        推定できない場合（index < 1）はインデックス0（Unknown）にフォールバックする。
+ * @param s モデル名文字列
+ */
 void SettingAiForm::guessProviderFromModelName(std::string const &s)
 {
 	GenerativeAI::Model model = GenerativeAI::Model::from_name(s);
@@ -317,6 +421,11 @@ void SettingAiForm::guessProviderFromModelName(std::string const &s)
 	ui->comboBox_provider->setCurrentIndex(index);
 }
 
+/**
+ * @brief モデル名文字列でUIを設定し、プロバイダを自動推定する。
+ *        シグナルをブロックしないため、guessProviderFromModelName が連鎖的に呼ばれる。
+ * @param s モデル名文字列
+ */
 void SettingAiForm::configureModelByString(std::string const &s)
 {
 	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(s));
@@ -324,14 +433,27 @@ void SettingAiForm::configureModelByString(std::string const &s)
 	guessProviderFromModelName(s);
 }
 
+/**
+ * @brief AIモデル情報をUIに反映する。
+ *        プロバイダが既知の場合はシグナルをブロックして直接設定し、
+ *        不明な場合はシグナル経由でプロバイダを自動推定させる。
+ * @param model 設定するAIモデル
+ */
 void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 {
 	int index = static_cast<int>(model.provider_id());
 	if (index < 1) { // 0 is unknown
+		// プロバイダが不明な場合はモデル名文字列からプロバイダを自動推定させるため、
+		// シグナルをブロックせずに configureModelByString() へ委譲する。
+		// これにより on_comboBox_ai_model_currentTextChanged → guessProviderFromModelName
+		// が発火し、プロバイダのコンボボックスが自動的に更新される。
 		configureModelByString(model.long_name());
 		return;
 	}
 
+	// プロバイダが既知の場合はシグナルをブロックしてモデル名を設定した後、
+	// プロバイダのコンボボックスを明示的に設定する。
+	// シグナルをブロックしないと guessProviderFromModelName が二重に呼ばれてしまう。
 	bool b = ui->comboBox_ai_model->blockSignals(true);
 	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.long_name()));
 	ui->comboBox_ai_model->blockSignals(b);
@@ -340,6 +462,9 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 	ui->comboBox_provider->setCurrentIndex(i);
 }
 
+/**
+ * @brief AIモデルのコンボボックスのテキストが変更されたとき、プロバイダを自動推定する。
+ */
 void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
 	guessProviderFromModelName(arg1.toStdString());
