@@ -7,6 +7,7 @@
 #include <QPainter>
 #include <QStyle>
 #include <QStyleOption>
+#include <QApplication>
 
 namespace {
 

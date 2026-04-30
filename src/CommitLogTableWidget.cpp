@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
 #include "TraceLogger.h"
+#include <QApplication>
 #include <QHeaderView>
 #include <QPainter>
 #include <QPainterPath>

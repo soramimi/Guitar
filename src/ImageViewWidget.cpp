@@ -9,6 +9,7 @@
 #include "common/charvec.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include <QApplication>
 #include <QBuffer>
 #include <QDebug>
 #include <QFileDialog>

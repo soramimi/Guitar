@@ -3,7 +3,6 @@
 
 #include "AbstractGitSession.h"
 #include "GitTypes.h"
-// #include <QDateTime>
 #include <zlib.h>
 
 class GitContext {

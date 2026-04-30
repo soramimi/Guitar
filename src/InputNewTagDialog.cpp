@@ -1,10 +1,10 @@
 #include "InputNewTagDialog.h"
 #include "ui_InputNewTagDialog.h"
-#include "common/misc.h"
+#include "common/qmisc.h"
 
-InputNewTagDialog::InputNewTagDialog(QWidget *parent) :
-	QDialog(parent),
-	ui(new Ui::InputNewTagDialog)
+InputNewTagDialog::InputNewTagDialog(QWidget *parent)
+	: QDialog(parent)
+	, ui(new Ui::InputNewTagDialog)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();

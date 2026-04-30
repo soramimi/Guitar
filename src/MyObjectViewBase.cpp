@@ -4,6 +4,7 @@
 #include "MyObjectViewBase.h"
 #include "common/joinpath.h"
 #include "common/q/helper.h"
+#include <QApplication>
 #include <QFileDialog>
 
 bool MyObjectViewBase::isValidObject() const

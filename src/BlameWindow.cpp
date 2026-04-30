@@ -231,9 +231,9 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 			auto commit = g.queryCommitItem(commit_id);
 			if (commit) {
 				info.datetime = misc::makeDateTimeString(commit->commit_date);
-				info.author = commit->author;
-				info.email = commit->email;
-				info.message = commit->message;
+				info.author = (QS)commit->author;
+				info.email = (QS)commit->email;
+				info.message = (QS)commit->message;
 				m->commit_cache[QString::fromStdString(commit_id.toString())] = info;
 			}
 		}

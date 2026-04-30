@@ -1,8 +1,9 @@
 #include "SubmodulesDialog.h"
 #include "ui_SubmodulesDialog.h"
 #include "MainWindow.h"
-#include "common/misc.h"
 #include "common/joinpath.h""
+#include "common/misc.h"
+#include "common/q/helper.h"
 
 #include <QDir>
 
@@ -39,8 +40,8 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, QString workingdir, std::vec
 			QString::fromStdString(mods_[row].submodule.path),
 			MainWindow::abbrevCommitID(mods_[row].head),
 			misc::makeDateTimeString(mods_[row].head.commit_date),
-			mods_[row].head.author,
-			mods_[row].head.message,
+			(QS)mods_[row].head.author,
+			(QS)mods_[row].head.message,
 		};
 		for (int col = 0; col < (int)values.size(); col++) {
 			QTableWidgetItem *item = new QTableWidgetItem();

@@ -120,8 +120,8 @@ void FileHistoryWindow::collectFileHistory()
 		QString datetime = misc::makeDateTimeString(commit.commit_date);
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
-		AddColumn(commit.author, QString());
-		AddColumn(commit.message, commit.message);
+		AddColumn((QS)commit.author, QString());
+		AddColumn((QS)commit.message, (QS)commit.message);
 		ui->tableWidget_log->setRowHeight(row, 24);
 	}
 

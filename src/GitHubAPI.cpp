@@ -9,6 +9,7 @@
 #include "urlencode.h"
 #include "webclient.h"
 #include "curlclient.h"
+#include <QApplication>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>

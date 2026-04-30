@@ -1,7 +1,7 @@
 
 #include "TextEditorView.h"
 #include "InputMethodPopup.h"
-#include "common/misc.h"
+#include "common/qmisc.h"
 #include "unicode.h"
 #include <QApplication>
 #include <QDebug>

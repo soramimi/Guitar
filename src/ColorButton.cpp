@@ -4,7 +4,7 @@
 #include <QProxyStyle>
 #include <QStyleOption>
 #include "coloredit/ColorDialog.h"
-#include "common/misc.h"
+#include "common/qmisc.h"
 
 ColorButton::ColorButton(QWidget *parent)
 	: QToolButton(parent)

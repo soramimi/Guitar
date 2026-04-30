@@ -1532,7 +1532,7 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_unco
 		if (isThereUncommitedChanges()) {
 			GitCommitItem item;
 			item.parent_ids.push_back(currentBranch().id);
-			item.message = tr("Uncommited changes");
+			item.message = (QS)tr("Uncommited changes");
 			commit_log.push_front(item);
 			commit_log.updateIndex();
 		}
@@ -1596,8 +1596,8 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 		}
 
 		rec.datetime = misc::makeDateTimeString(commit.commit_date);
-		rec.author = commit.author;
-		rec.message = commit.message;
+		rec.author = (QS)commit.author;
+		rec.message = (QS)commit.message;
 		rec.tooltip = rec.message + message_ex;
 
 		records.push_back(rec);
@@ -2648,7 +2648,7 @@ void MainWindow::commit(bool amend)
 	QString previousMessage;
 
 	if (amend) {
-		message = commitlog()[0].message;
+		message = (QS)commitlog()[0].message;
 	} else {
 		std::string id = g.getCherryPicking();
 		if (GitHash::isValidID(id)) {
@@ -3580,7 +3580,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 
 	std::string text = data.path; // テキスト
 	if (issubmodule) {
-		QString msg = misc::collapseWhitespace(data.submod_commit.message);
+		QString msg = misc::collapseWhitespace((QS)data.submod_commit.message);
 		QString dt = misc::makeDateTimeString(data.submod_commit.commit_date);
 		text += fmt(" <%s> [%s] %s")
 				(data.submod.id.toString(7))
@@ -5611,7 +5611,7 @@ QImage MainWindow::committerIcon(int row, QSize size) const
 			commit = logs[row];
 		}
 		if (commit) {
-			icon = global->avatar_loader.fetch(commit.email.toStdString(), true); // from gavatar
+			icon = global->avatar_loader.fetch(commit.email, true); // from gavatar
 			if (!size.isValid()) {
 				icon = icon.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 			}
@@ -5695,7 +5695,8 @@ void MainWindow::findNext()
 		while (row < (int)logs.size()) {
 			GitCommitItem const &commit = logs[row];
 			if (!Git::isUncommited(commit)) {
-				if (commit.message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {
+				QString message = (QS)commit.message;
+				if (message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {
 					bool b = ui->tableWidget_log->blockSignals(true);
 					setCurrentLogRow(row);
 					ui->tableWidget_log->blockSignals(b);

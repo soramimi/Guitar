@@ -1,7 +1,7 @@
 #include "CherryPickDialog.h"
 #include "ui_CherryPickDialog.h"
-
 #include <common/misc.h>
+#include <common/q/helper.h>
 
 CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, GitCommitItem const &pick, QList<GitCommitItem> parents)
 	: QDialog(parent)
@@ -10,10 +10,10 @@ CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, G
 	ui->setupUi(this);
 
 	ui->lineEdit_head_id->setText(QString::fromStdString(head.commit_id.toString(7)));
-	ui->lineEdit_head_message->setText(head.message);
+	ui->lineEdit_head_message->setText((QS)head.message);
 
 	ui->lineEdit_pick_id->setText(QString::fromStdString(pick.commit_id.toString(7)));
-	ui->lineEdit_pick_message->setText(pick.message);
+	ui->lineEdit_pick_message->setText((QS)pick.message);
 
 	QStringList cols = {
 		tr("Commit"),
@@ -44,8 +44,8 @@ CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, G
 		item->setData(Qt::UserRole, row + 1);
 		SetItem(item);
 		SetItem(NewQTableWidgetItem(misc::makeDateTimeString(parents[row].commit_date)));
-		SetItem(NewQTableWidgetItem(parents[row].author));
-		SetItem(NewQTableWidgetItem(parents[row].message));
+		SetItem(NewQTableWidgetItem((QS)parents[row].author));
+		SetItem(NewQTableWidgetItem((QS)parents[row].message));
 	}
 	ui->tableWidget_mainline->resizeColumnsToContents();
 	ui->tableWidget_mainline->horizontalHeader()->setStretchLastSection(true);

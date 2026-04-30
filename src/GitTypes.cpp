@@ -1,5 +1,6 @@
 #include "GitTypes.h"
 #include "common/crc32.h"
+#include "common/q/helper.h"
 #include <set>
 
 class Latin1View {
@@ -236,14 +237,12 @@ void GitCommitItemList::push_front(const GitCommitItem &item)
 
 QString GitCommitItemList::previousMessage() const
 {
-	QString msg;
 	for (GitCommitItem const &item : list_) {
 		if (item.commit_id.isValid()) {
-			msg = item.message;
-			break;
+			return (QS)item.message;
 		}
 	}
-	return msg;
+	return {};
 }
 
 void GitCommitItemList::updateIndex()

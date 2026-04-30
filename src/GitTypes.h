@@ -3,7 +3,9 @@
 
 #include "MyProcess.h"
 #include "common/misc.h"
-// #include <QDateTime>
+#include "common/qmisc.h"
+
+#include <QDateTime>
 // #include <QString>
 
 #define GIT_ID_LENGTH (40)
@@ -124,18 +126,18 @@ struct GitCommitItem {
 	GitHash commit_id;
 	GitHash tree;
 	QList<GitHash> parent_ids;
-	QString author;
-	QString email;
-	QString message;
+	std::string author;
+	std::string email;
+	std::string message;
 	QDateTime commit_date;
 	std::vector<GitTreeLine> parent_lines;
 	bool has_gpgsig = false;
-	QString gpgsig;
+	std::string gpgsig;
 	struct {
-		QString text;
+		std::string text;
 		char verify = 0; // git log format:%G?
 		std::vector<uint8_t> key_fingerprint;
-		QString trust;
+		std::string trust;
 	} sign;
 	bool has_child = false;
 	int marker_depth = -1;

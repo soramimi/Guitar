@@ -36,14 +36,14 @@ void CommitPropertyDialog::init()
 
 	ui->pushButton_jump->setVisible(false);
 
-	QString message = m->commit.message;
+	std::string message = m->commit.message;
 	QString detail;
 	{
-		QString s = (QS)mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
-		if (s.startsWith(message)) {
-			s = s.mid(message.length());
+		std::string s = mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
+		if (misc::starts_with(s, message)) {
+			s = s.substr(message.length());
 		}
-		detail = s.trimmed();
+		detail = QS(s).trimmed();
 	}
 	if (detail.isEmpty()) {
 		ui->plainTextEdit_message_detail->setVisible(false);
@@ -51,11 +51,11 @@ void CommitPropertyDialog::init()
 		ui->plainTextEdit_message_detail->setPlainText(detail);
 	}
 	
-	ui->lineEdit_message->setText(message);
-	ui->lineEdit_commit_id->setText(QString::fromStdString(m->commit.commit_id.toString()));
+	ui->lineEdit_message->setText((QS)message);
+	ui->lineEdit_commit_id->setText((QS)m->commit.commit_id.toString());
 	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
-	ui->lineEdit_author->setText(m->commit.author);
-	ui->lineEdit_mail->setText(m->commit.email);
+	ui->lineEdit_author->setText((QS)m->commit.author);
+	ui->lineEdit_mail->setText((QS)m->commit.email);
 
 	QString text;
 	for (GitHash const &id : m->commit.parent_ids) {
@@ -63,7 +63,7 @@ void CommitPropertyDialog::init()
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	auto sig = mainwindow()->git().log_signature(m->commit.commit_id);
+	std::optional<GitCommitItem> sig = mainwindow()->git().log_signature(m->commit.commit_id);
 	if (sig) {
 		QString status;
 		QString sig_name;
@@ -113,7 +113,7 @@ void CommitPropertyDialog::init()
 		ui->lineEdit_sign_status->setText(status);
 		ui->lineEdit_sign_name->setText(sig_name);
 		ui->lineEdit_sign_mail->setText(sig_mail);
-		ui->textEdit_sign_text->setPlainText(sig->sign.text);
+		ui->textEdit_sign_text->setPlainText((QS)sig->sign.text);
 		ui->frame_sign->setVisible(true);
 	} else {
 		ui->frame_sign->setVisible(false);

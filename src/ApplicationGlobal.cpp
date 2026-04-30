@@ -9,6 +9,7 @@
 #include <QFileIconProvider>
 #include <memory>
 #include <QDebug>
+#include <QApplication>
 #include "Logger.h"
 #include "MyMecab.h"
 #include "LibMigemo.h"

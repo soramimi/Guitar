@@ -689,24 +689,23 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 
 	std::optional<GitCommitItem> ret;
 
-	QString cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %1";
-	cmd = cmd.arg(QString::fromStdString(id.toString()));
-	auto result = git_nolog(cmd.toStdString(), nullptr);
+	std::string cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %s";
+	cmd = fmt(cmd)(id.toString());
+	auto result = git_nolog(cmd, nullptr);
 	if (result && result->exit_code() == 0) {
-		auto splitLines = [&](QString const &text){ // modified from misc::splitLines
-			QStringList list;
-			ushort const *begin = text.utf16();
-			ushort const *end = begin + text.size();
-			ushort const *ptr = begin;
-			ushort const *left = ptr;
+		auto splitLines = [&](std::string const &text){ // modified from misc::splitLines
+			std::vector<std::string> list;
+			char const *begin = text.c_str();
+			char const *end = begin + text.size();
+			char const *ptr = begin;
+			char const *left = ptr;
 			while (1) {
-				ushort c = 0;
+				int c = 0;
 				if (ptr < end) {
-					c = *ptr;
+					c = (unsigned char)*ptr;
 				}
 				if (c == '\n' /*|| c == '\r'*/ || c == 0) { // '\r'では分割しない（Windowsで git log の結果に単独の'\r'が現れることがある）
-					QString s = QString::fromUtf16((char16_t const *)left, int(ptr - left));
-					s = s.trimmed(); // '\r'などの空行を除去
+					std::string s = (std::string)misc::trimmed({left, ptr - left}); // 行頭・行末の空白を除去
 					list.push_back(s);
 					if (c == 0) break;
 					if (c == '\n') {
@@ -720,19 +719,19 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 			return list;
 		};
 
-		QString gpgtext;
-		QString text = resultQString(result).trimmed();
-		QStringList lines = splitLines(text);
-		for (QString const &line : lines) {
-			if (line.startsWith("gpg:")) {
-				if (!gpgtext.isEmpty()) {
+		std::string gpgtext;
+		std::string_view text = misc::trimmed(resultStdString(result));
+		std::vector<std::string_view> lines = misc::splitLinesV(text, false);
+		for (std::string_view const &line : lines) {
+			if (misc::starts_with(line, "gpg:")) {
+				if (!gpgtext.empty()) {
 					gpgtext += '\n';
 				}
 				gpgtext += line;
-			} else if (line.startsWith("Primary key fingerprint:")) {
+			} else if (misc::starts_with(line, "Primary key fingerprint:")) {
 				// nop
-			} else if (line.startsWith("id:")) {
-				auto item = parseCommitItem(line.toStdString());
+			} else if (misc::starts_with(line, "id:")) {
+				std::optional<GitCommitItem> item = parseCommitItem(std::string(line));
 				if (item) {
 					item->sign.text = gpgtext;
 					ret = item;
@@ -766,17 +765,17 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			i++;
 			for (; i < lines.size(); i++) {
 				std::string_view const &line = lines[i];
-				if (!out.message.isEmpty()) {
-					out.message.append('\n');
+				if (!out.message.empty()) {
+					out.message += '\n';
 				}
-				out.message.append(QSTR(line));
+				out.message += line;
 			}
 			break;
 		}
 		if (gpgsig) {
 			if (line[0] == ' ') {
 				std::string_view s = line.substr(1);
-				out.gpgsig += QSTR(s) + '\n';
+				out.gpgsig += std::string(s) + '\n';
 				if (s == "-----END PGP SIGNATURE-----") {
 					gpgsig = false;
 				}
@@ -788,10 +787,10 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			continue;
 		}
 		if (message) {
-			if (!out.message.isEmpty()) {
+			if (!out.message.empty()) {
 				out.message += '\n';
 			}
-			out.message += QSTR(line);
+			out.message += std::string(line);
 		}
 
 		auto Starts = [&](char const *key, std::string_view *out){
@@ -815,16 +814,16 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			int n = arr.size();
 			if (n >= 4) {
 				out.commit_date = QDateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
-				out.email = QSTR(arr[n - 3]);
-				if (out.email.startsWith('<') && out.email.endsWith('>')) {
+				out.email = std::string(arr[n - 3]);
+				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
 					int m = out.email.size();
-					out.email = out.email.mid(1, m - 2);
+					out.email = out.email.substr(1, m - 2);
 				}
 				for (int i = 0; i < n - 3; i++) {
-					if (!out.author.isEmpty()) {
+					if (!out.author.empty()) {
 						out.author += ' ';
 					}
-					out.author += QSTR(arr[i]);
+					out.author += std::string(arr[i]);
 				}
 			}
 		} else if (Starts("commiter", &val)) {
@@ -832,7 +831,7 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 		} else if (Starts("gpgsig", &val)) {
 			if (val == "-----BEGIN PGP SIGNATURE-----") {
 				out.has_gpgsig = true;
-				out.gpgsig.append(QSTR(val));
+				out.gpgsig.append(std::string(val));
 				gpgsig = true;
 			}
 		}
@@ -1513,9 +1512,8 @@ void Git::removeRemote(std::string const &name)
 bool Git::reflog(ReflogItemList *out, int maxcount)
 {
 	out->clear();
-	QString cmd = "reflog --no-abbrev --raw -n %1";
-	cmd = cmd.arg(maxcount);
-	auto result = git(cmd.toStdString());
+	std::string cmd = fmt("reflog --no-abbrev --raw -n %d")(maxcount);
+	auto result = git(cmd);
 	if (!result) return false;
 	std::vector<char> ba = toByteArray(result);
 	if (!ba.empty()) {

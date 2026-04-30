@@ -668,12 +668,12 @@ static std::string _diff_head(GitRunner g)
 	std::vector<std::string> diffs(names.size());
 	// const int NUM_THREADS = 8;
 	const int NUM_THREADS = 1;
-	// fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
-	// 安全のためシングルスレッドで動かす。(2025-12-25)
+	// // fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
+	// y// 安全のためシングルスレッドで動かす。(2025-12-25)
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
-		threads[t]= std::thread([&](GitRunner g){
+		threads[t] = std::thread([&](GitRunner g){
 			while (1) {
 				size_t i = index++;
 				if (i >= names.size()) break;
