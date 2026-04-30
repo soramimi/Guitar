@@ -82,7 +82,6 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 		{GenerativeAI::AI::LLAMACPP},
 	});
 
-	// m->current_provider_ = unknown_provider();
 	m->set_current_provider(GenerativeAI::AI::Unknown);
 
 	for (size_t i = 0; i < m->provider_formdata_.size(); i++) {
@@ -128,16 +127,7 @@ SettingAiForm::~SettingAiForm()
  */
 SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
 {
-#if 0
-	for (auto &ai : m->provider_formdata_) {
-		if (ai.aiid == aiid) {
-			return &ai;
-		}
-	}
-	return nullptr;
-#else
 	return m->provider_formdata(aiid);
-#endif
 }
 
 /**
@@ -368,7 +358,6 @@ void SettingAiForm::on_radioButton_use_environment_value_clicked()
 	reflectSettingsToUI();
 }
 
-
 /**
  * @brief 「カスタムAPIキーを使用する」ラジオボタンが押されたとき、APIキー取得元を UserInput に切り替える。
  */
@@ -473,12 +462,9 @@ void SettingAiForm::configureModelByString(std::string const &s)
  */
 void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 {
-	int index = static_cast<int>(model.provider_id());
-	if (index < 1) { // 0 is unknown
-		// プロバイダが不明な場合はモデル名文字列からプロバイダを自動推定させるため、
-		// シグナルをブロックせずに configureModelByString() へ委譲する。
-		// これにより on_comboBox_ai_model_currentTextChanged → guessProviderFromModelName
-		// が発火し、プロバイダのコンボボックスが自動的に更新される。
+	GenerativeAI::AI aiid = model.provider_id();
+	if (aiid == GenerativeAI::AI::Unknown) {
+		// モデルからプロバイダを推定できない場合は、モデル名文字列から推定させる。
 		configureModelByString(model.long_name());
 		return;
 	}
@@ -487,10 +473,12 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 	// プロバイダのコンボボックスを明示的に設定する。
 	// シグナルをブロックしないと guessProviderFromModelName が二重に呼ばれてしまう。
 	bool b = ui->comboBox_ai_model->blockSignals(true);
-	ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.long_name()));
+	{
+		ui->comboBox_ai_model->setCurrentText(QString::fromStdString(model.long_name()));
+	}
 	ui->comboBox_ai_model->blockSignals(b);
 
-	int i = ui->comboBox_provider->findData(index);
+	int i = ui->comboBox_provider->findData(QVariant(static_cast<int>(aiid)));
 	ui->comboBox_provider->setCurrentIndex(i);
 }
 
