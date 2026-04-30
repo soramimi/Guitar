@@ -1,15 +1,13 @@
 #include "CommitMessageGenerator.h"
 #include "ApplicationGlobal.h"
-#include "common/jstream.h"
-#include "common/joinpath.h"
-#include "common/strformat.h"
-#include "webclient.h"
-#include "curlclient.h"
 #include "GitRunner.h"
-#include "Profile.h"
-#include <QFile>
-#include <QDebug>
 #include "Logger.h"
+#include "Profile.h"
+#include "common/joinpath.h"
+#include "common/jstream.h"
+#include "common/strformat.h"
+#include "curlclient.h"
+#include "webclient.h"
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct CommitMessageResult {
@@ -482,18 +480,14 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 			// text = TrimPrefix(text, "```json");
 			// text = TrimPrefix(text, "```");
 			// JSONオブジェクトの開始位置を前から探してテキストを切り詰める（前に余分なテキストが混入しても対応できるように）
-			auto i0 = text.find_first_of("{[");
-			if (i0 != std::string_view::npos) {
-				text.remove_prefix(i0);
+			auto i = text.find_first_of("{[");
+			if (i != std::string_view::npos) {
+				text.remove_prefix(i);
 			}
 			// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
-			auto i1 = text.rfind('}');
-			if (i1 != std::string::npos) {
-				text = text.substr(0, i1 + 1);
-			}
-			auto i2 = text.find('{');
-			if (i2 != std::string::npos) {
-				text = text.substr(i2);
+			auto j = text.rfind('}');
+			if (j != std::string::npos) {
+				text = text.substr(0, j + 1);
 			}
 			jstream::Reader reader(text);
 			while (reader.next()) {
@@ -533,7 +527,7 @@ Generate exactly %d concise git commit message candidates written in present ten
 Return ONLY valid and strict JSON. No explanations, no extra text.
 Do NOT wrap the output in code fences (e.g., ``` or ```json).
 
-/// Schema ///
+# Schema:
 {
   "messages": [
 	"message1",
@@ -543,7 +537,7 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
   ]
 }
 
-/// git diff HEAD ///
+# git diff HEAD
 %s
 )---")(max)(diff);
 }

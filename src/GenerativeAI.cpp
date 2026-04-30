@@ -2,9 +2,18 @@
 #include "common/misc.h"
 #include "common/strformat.h"
 #include "urlencode.h"
-#include <QRegularExpression>
+#include <regex>
 
 namespace GenerativeAI {
+
+/**
+ * @brief 既定のAIモデル名を返す。
+ * @return デフォルトモデル名の文字列。
+ */
+std::string Model::default_model()
+{
+	return "gpt-5.4-mini";
+}
 
 /**
  * @brief AIプロバイダの完全なマスターテーブルを返す。
@@ -62,32 +71,22 @@ std::vector<Model> const &ai_model_presets()
  * @note Unknown は含むが、placeholder エントリは含まない。
  * @return AIプロバイダIDのベクタへの参照。
  */
-std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users()
+std::vector<AI> const &aiid_list_for_present_to_users()
 {
-	using GenerativeAI::AI;
-	static std::vector<GenerativeAI::AI> providers = { // Unknownは必要。placeholderを含まない。
+	static std::vector<AI> providers = { // Unknownは必要。placeholderを含まない。
 		AI::Unknown,
-		GenerativeAI::AI::OpenAI_responses,
-		GenerativeAI::AI::OpenAI_chat_completions,
-		GenerativeAI::AI::Anthropic,
-		GenerativeAI::AI::Google,
-		GenerativeAI::AI::XAI,
-		GenerativeAI::AI::DeepSeek,
-		GenerativeAI::AI::OpenRouter,
-		GenerativeAI::AI::Ollama,
-		GenerativeAI::AI::LMStudio,
-		GenerativeAI::AI::LLAMACPP,
+		AI::OpenAI_responses,
+		AI::OpenAI_chat_completions,
+		AI::Anthropic,
+		AI::Google,
+		AI::XAI,
+		AI::DeepSeek,
+		AI::OpenRouter,
+		AI::Ollama,
+		AI::LMStudio,
+		AI::LLAMACPP,
 	};
 	return providers;
-}
-
-/**
- * @brief 既定のAIモデル名を返す。
- * @return デフォルトモデル名の文字列。
- */
-std::string Model::default_model()
-{
-	return "gpt-5.4-mini";
 }
 
 /**
@@ -181,15 +180,15 @@ Model Model::from_name(std::string const &name)
 		{AI::LLAMACPP, "^llamacpp://"},
 	};
 	for (auto const &item : items) {
-		QRegularExpression re(item.regex);
-		if (re.match(QString::fromStdString(name)).hasMatch()) {
+		std::regex re(item.regex);
+		if (std::regex_search(name, re)) {
 			return Model{item.provider, name};
 		}
 	}
 	return {};
 }
 
-struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
+struct _MakeRequest : public AbstractVisitor<Request> {
 
 	Model model_;
 	Credential cred_;
