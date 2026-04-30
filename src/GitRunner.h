@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <optional>
-#include <QString>
 #include "GitTypes.h"
 
 #define PATH_PREFIX "*"

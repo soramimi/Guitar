@@ -1531,18 +1531,18 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 			}
 			if (c == '\r' || c == '\n' || c == 0) {
 				int d = 0;
-				QString line = QString::fromUtf8(left, int(ptr - left));
+				std::string line{left, int(ptr - left)};
 				if (left < ptr) {
 					d = *left & 0xff;
 				}
 				if (d == ':') {
 					// ex. ":100644 100644 bb603836fb597cca994309a1f0a52251d6b20314 d6b9798854debee375bb419f0f2ed9c8437f1932 M\tsrc/MainWindow.cpp"
-					int tab = line.indexOf('\t');
-					if (tab > 1) {
-						QString tmp = line.mid(1, tab - 1);
-						QString path = line.mid(tab + 1);
-						QStringList cols = misc::splitWords(tmp);
-						if (!path.isEmpty() && cols.size() == 5) {
+					auto tab = line.find('\t');
+					if (tab != std::string::npos && tab > 1) {
+						std::string tmp = line.substr(1, tab - 1);
+						std::string path = line.substr(tab + 1);
+						std::vector<std::string_view> cols = misc::splitWords(tmp);
+						if (!path.empty() && cols.size() == 5) {
 							GitReflogItem::File file;
 							file.atts_a = cols[0];
 							file.atts_b = cols[1];
@@ -1563,13 +1563,13 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 					if (start) {
 						// ex. "0a2a8b6b66f48bcbf985d8a2afcd14ff41676c16 HEAD@{188}: commit: message"
 						item = GitReflogItem();
-						int i = line.indexOf(": ");
-						if (i > 0) {
-							int j = line.indexOf(": ", i + 2);
-							if (j > 2) {
-								item.head = line.mid(0, i).toStdString();
-								item.command = line.mid(i + 2, j - i - 2);
-								item.message = line.mid(j + 2);
+						auto i = line.find(": ");
+						if (i != std::string::npos && i > 0) {
+							int j = line.find(": ", i + 2);
+							if (j != std::string::npos && j > 2) {
+								item.head = line.substr(0, i);
+								item.command = line.substr(i + 2, j - i - 2);
+								item.message = line.substr(j + 2);
 								if (item.head.size() > GIT_ID_LENGTH) {
 									item.id = item.head.substr(0, GIT_ID_LENGTH);
 									item.head = item.head.substr(GIT_ID_LENGTH + 1);

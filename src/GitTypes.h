@@ -413,15 +413,15 @@ struct GitDiffRaw {
 struct GitReflogItem {
 	std::string id;
 	std::string head;
-	QString command;
-	QString message;
+	std::string command;
+	std::string message;
 	struct File {
-		QString atts_a;
-		QString atts_b;
-		QString id_a;
-		QString id_b;
-		QString type;
-		QString path;
+		std::string atts_a;
+		std::string atts_b;
+		std::string id_a;
+		std::string id_b;
+		std::string type;
+		std::string path;
 	};
 	QList<File> files;
 };

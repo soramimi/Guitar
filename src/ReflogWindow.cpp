@@ -59,14 +59,17 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 		ui->tableWidget->setItem(row, 0, item);
 		item = newQTableWidgetItem((QS)t.head);
 		ui->tableWidget->setItem(row, 1, item);
-		QString cmd = t.command;
-		int i = cmd.indexOf(' ');
-		if (i < 0) i = cmd.size();
-		if (i > 10) i = 10;
-		cmd = cmd.mid(0, i);
-		item = newQTableWidgetItem(cmd);
+		std::string cmd = t.command;
+		int i = cmd.find(' ');
+		if (i == std::string::npos) {
+			i = cmd.size();
+		} else if (i > 10) {
+			i = 10;
+		}
+		cmd = cmd.substr(0, i);
+		item = newQTableWidgetItem((QS)cmd);
 		ui->tableWidget->setItem(row, 2, item);
-		item = newQTableWidgetItem(t.message);
+		item = newQTableWidgetItem((QS)t.message);
 		ui->tableWidget->setItem(row, 3, item);
 		ui->tableWidget->setRowHeight(row, 24);
 		row++;
