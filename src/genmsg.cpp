@@ -1,6 +1,5 @@
 #include "genmsg.h"
 #include "ApplicationGlobal.h"
-#include "ApplicationSettings.h"
 #include "CommitMessageGenerator.h"
 #include "Git.h"
 #include "common/q/Dir.h"

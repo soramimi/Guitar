@@ -857,27 +857,21 @@ std::optional<GitCommitItem> Git::queryCommitItem(GitHash const &id)
 	return std::nullopt;
 }
 
-GitCloneData Git::preclone(QString const &url, QString const &path)
+GitCloneData Git::preclone(std::string const &url, std::string const &path)
 {
 	GitCloneData d;
 	d.url = url;
-	if (path.endsWith('/') || path.endsWith('\\')) {
-		auto GitBaseName = [](QString location){
-			int i = location.lastIndexOf('/');
-			int j = location.lastIndexOf('\\');
-			if (i < j) i = j;
-			i = i < 0 ? 0 : (i + 1);
-			j = location.size();
-			if (location.endsWith(".git")) {
-				j -= 4;
-			}
-			if (i < j) {
-				location = location.mid(i, j - i);
-			}
-			return location;
-		};
+	if (misc::ends_with(path, '/') || misc::ends_with(path, '\\')) {
+		std::string name = misc::replace_backslash_to_slash(url);
+		auto i = name.rfind('/');
+		if (i != std::string::npos) {
+			name = name.substr(i + 1);
+		}
+		if (misc::ends_with(name, ".git")) {
+			name = name.substr(0, name.size() - 4);
+		}
 		d.basedir = path;
-		d.subdir = GitBaseName(url);
+		d.subdir = name;
 	} else {
 		FileInfo info((QS)path);
 		d.basedir = (QS)info.dir().path();
@@ -888,23 +882,25 @@ GitCloneData Git::preclone(QString const &url, QString const &path)
 
 bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 {
-	QString clone_to = data.basedir / data.subdir;
-	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to).toStdString();
+	std::string clone_to = data.basedir / data.subdir;
+	gitinfo().working_repo_dir = misc::normalizePathSeparator(clone_to);
 
 	std::optional<GitResult> var;
 	Dir cwd = Dir::current();
 
 	auto DoIt = [&](){
-		QString cmd = "clone --recurse-submodules --progress -j%1 \"%2\" \"%3\"";
-		cmd = cmd.arg(std::thread::hardware_concurrency()).arg(data.url).arg(data.subdir);
-		var = git_nochdir(cmd.toStdString(), pty);
+		std::string cmd = fmt("clone --recurse-submodules --progress -j%u \"%s\" \"%s\"")
+						  (std::thread::hardware_concurrency())
+						  (data.url)
+						  (data.subdir);
+		var = git_nochdir(cmd, pty);
 	};
 
 	if (pty) {
-		pty->setChangeDir(data.basedir);
+		pty->setChangeDir((QS)data.basedir);
 		DoIt();
 	} else {
-		if (Dir::setCurrent(data.basedir.toStdString())) {
+		if (Dir::setCurrent(data.basedir)) {
 			DoIt();
 			Dir::setCurrent(cwd.path());
 		}
@@ -1811,7 +1807,7 @@ void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out)
 {
 	*out = {};
-	std::vector<std::string> lines = misc::splitLines((QBA)ba, false);
+	std::vector<std::string> lines = misc::splitLines({ba.data(), (size_t)ba.size()}, false);
 	GitSubmoduleItem submod;
 	auto Push = [&](){
 		if (!submod.name.empty()) {

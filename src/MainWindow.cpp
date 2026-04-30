@@ -2543,7 +2543,7 @@ bool MainWindow::cloneRepository(GitCloneData const &clonedata, RepositoryInfo c
 
 	// クローン先ディレクトリの存在チェック
 
-	QString basedir = misc::normalizePathSeparator(clonedata.basedir);
+	QString basedir = (QS)misc::normalizePathSeparator(clonedata.basedir);
 	if (!QFileInfo(basedir).isDir()) {
 		int i = basedir.indexOf('/');
 		int j = basedir.indexOf('\\');
@@ -2607,7 +2607,7 @@ void MainWindow::submodule_add(QString url, QString const &local_dir)
 	repos_item_data.name = makeRepositoryName(dir);
 	repos_item_data.ssh_key = ssh_key;
 
-	GitCloneData data = Git::preclone(url, dir);
+	GitCloneData data = Git::preclone(url.toStdString(), dir.toStdString());
 	bool force = dlg.isForce();
 
 	GitRunner g = new_git_runner(local_dir, repos_item_data.ssh_key);

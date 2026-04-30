@@ -97,7 +97,7 @@ void CommitPropertyDialog::init()
 		if (status.isEmpty()) {
 			status = "?";
 		} else {
-			status += " [" + sig->sign.trust + ']';
+			status += QS(" [" + sig->sign.trust + ']');
 		}
 		{
 			QList<gpg::Data> keys;

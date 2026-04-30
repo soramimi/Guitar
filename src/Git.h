@@ -131,7 +131,7 @@ public:
 	GitCommitItemList log(int maxcount);
 	std::optional<GitCommitItem> queryCommitItem(const GitHash &id);
 
-	static GitCloneData preclone(QString const &url, QString const &path);
+        static GitCloneData preclone(const std::string &url, const std::string &path);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 
 	std::vector<GitFileStatus> status_s();

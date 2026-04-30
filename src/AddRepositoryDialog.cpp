@@ -201,8 +201,8 @@ void AddRepositoryDialog::validate()
 
 GitCloneData AddRepositoryDialog::makeCloneData() const
 {
-	QString url = remoteURL();
-	QString dir = localPath(false);
+	std::string url = remoteURL().toStdString();
+	std::string dir = localPath(false).toStdString();
 	GitCloneData clonedata = Git::preclone(url, dir);
 	return clonedata;
 }

@@ -334,6 +334,28 @@ std::string misc::mid(std::string const &str, int start, int length)
 }
 
 /**
+ * @brief バックスラッシュをスラッシュに置換する
+ *
+ * 与えられた文字列内の全てのバックスラッシュ ('\\') をスラッシュ ('/') に置換します。
+ * 置換された新しい文字列が返されます。
+ *
+ * @param in 置換する対象の文字列
+ * @return バックスラッシュがスラッシュに置換された新しい文字列
+ */
+std::string misc::replace_backslash_to_slash(std::string_view const &in)
+{
+	std::string out;
+	for (size_t i = 0; i < in.size(); i++) {
+		char c = in[i];
+		if (c == '\\') {
+			c = '/';
+		}
+		out += c;
+	}
+	return out;
+}
+
+/**
  * @brief パスの区切り文字を正規化する
  * 
  * パスの区切り文字をプラットフォームに合わせて正規化します。
@@ -362,6 +384,18 @@ QString misc::normalizePathSeparator(QString const &str)
 		return QString::fromUtf16(p, n);
 	}
 	return QString();
+}
+std::string misc::normalizePathSeparator(std::string const &str)
+{
+	std::string out;
+	for (size_t i = 0; i < str.size(); i++) {
+		char c = str[i];
+		if (c == '/') {
+			c = '\\';
+		}
+		out += c;
+	}
+	return out;
 }
 #else
 QString misc::normalizePathSeparator(QString const &s)

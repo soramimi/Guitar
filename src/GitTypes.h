@@ -268,9 +268,9 @@ struct GitBranch {
 };
 
 struct GitCloneData {
-	QString url;
-	QString basedir;
-	QString subdir;
+	std::string url;
+	std::string basedir;
+	std::string subdir;
 };
 
 enum class GitSource {
