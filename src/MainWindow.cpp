@@ -4815,10 +4815,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	QAction *a_merge_branch = nullptr;
 	if (is_valid_commit_id && selected_commit.commit_id != getHeadId()) {
+		QString msg = selected_commit.message;
+		constexpr static int maxlen = 20;
+		if (msg.size() > maxlen) {
+			msg = msg.mid(0, maxlen) + "...";
+		}
 		auto *quick_merge = menu.addMenu(tr("Merge"));
 		a_merge_branch = quick_merge->addAction(tr("[%1] %2")
 													.arg((QS)selected_commit.commit_id.toString().substr(0, 7))
-													.arg(selected_commit.message));
+													.arg(msg));
 		menu.addSeparator();
 	}
 
