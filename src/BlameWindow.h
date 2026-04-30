@@ -15,7 +15,7 @@ class BlameWindow;
 }
 
 struct BlameItem {
-	QString commit_id;
+	std::string commit_id;
 	QString author;
 	QDateTime time;
 	int line_number = 0;

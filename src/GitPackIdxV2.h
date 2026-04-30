@@ -14,7 +14,7 @@ struct GitPackIdxItem {
 	size_t packed_size = 0;
 	size_t expanded_size = 0;
 	uint32_t checksum;
-	static QString qid(GitPackIdxItem const &item);
+	static std::string string(GitPackIdxItem const &item);
 };
 
 class GitPackIdxV2 {

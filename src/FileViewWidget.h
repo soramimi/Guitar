@@ -45,7 +45,7 @@ using X_ImageViewWidget = ImageViewWidget;
 	X_TextEditorWidget *ui_page_text;
 	X_ImageViewWidget *ui_page_image;
 
-	QString source_id;
+	std::string source_id;
 	FileViewType view_type = FileViewType::None;
 
 public:
@@ -54,10 +54,10 @@ public:
 	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 
 	void setViewType(FileViewType type);
-
-	void setImage(const std::string &mimetype, const QByteArray &ba, QString const &object_id, const QString &path);
-	void setText(const QList<Document::Line> *source, QString const &object_id, const QString &object_path);
-	void setText(const QByteArray &ba, const QString &object_id, const QString &object_path);
+	
+	void setImage(const std::string &mimetype, const QByteArray &ba, const std::string &object_id, const QString &path);
+	void setText(const QList<Document::Line> *source, std::string const &object_id, const QString &object_path);
+	void setText(const QByteArray &ba, const std::string &object_id, const QString &object_path);
 
 	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 

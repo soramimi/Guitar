@@ -2185,16 +2185,16 @@ bool MainWindow::saveFileAs(const QString &srcpath, const QString &dstpath)
  *
  * ファイルを保存する
  */
-bool MainWindow::saveBlobAs(const QString &id, const QString &dstpath)
+bool MainWindow::saveBlobAs(GitHash const &id, const QString &dstpath)
 {
-	GitObject obj = git().catFile(GitHash(id));
+	GitObject obj = git().catFile(id);
 	if (!obj.content.isEmpty()) {
 		if (saveByteArrayAs(obj.content, dstpath)) {
 			return true;
 		}
 	} else {
 		QString msg = "Failed to get the content of the object '%1'";
-		msg = msg.arg(id);
+		msg = msg.arg(id.toString());
 		qDebug() << msg;
 	}
 	return false;
@@ -3942,7 +3942,7 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 GitHash MainWindow::getObjectID(QListWidgetItem *item)
 {
 	if (!item) return {};
-	return GitHash(item->data(ObjectIdRole).toString());
+	return GitHash(item->data(ObjectIdRole).toString().toStdString());
 }
 
 QString MainWindow::getFilePath(QListWidgetItem *item)
@@ -4465,7 +4465,7 @@ void MainWindow::merge(GitCommitItem commit)
 		if (!commit) return;
 	}
 
-	if (!GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()))) return;
+	if (!GitHash::isValidID(commit.commit_id.toString())) return;
 
 	static const char MergeFastForward[] = "MergeFastForward";
 
@@ -4789,7 +4789,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	GitCommitItem const &selected_commit = commitItem(row); // 右クリックされたコミット
 
-	bool is_valid_commit_id = GitHash::isValidID(QString::fromStdString(selected_commit.commit_id.toString()));
+	bool is_valid_commit_id = GitHash::isValidID(selected_commit.commit_id.toString());
 	// if is_valid_commit_id == false, commit is uncommited changes.
 
 	QMenu menu;
@@ -6313,16 +6313,16 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 				break;
 			}
 		}
-		QString head;
+		std::string head;
 		if (i == GIT_ID_LENGTH) {
-			QString id = line.mid(0, i);
+			std::string id = line.mid(0, i).toStdString();
 			QString name = line.mid(i + 1).trimmed();
 			qDebug() << id << name;
 			if (name == "HEAD" && GitHash::isValidID(id)) {
 				head = id;
 			}
 		}
-		if (head.isEmpty()) {
+		if (head.empty()) {
 			qDebug() << "But HEAD not found";
 		}
 		return true;
@@ -6854,7 +6854,7 @@ void MainWindow::onLogIdle()
 void MainWindow::on_action_edit_tags_triggered()
 {
 	GitCommitItem const &commit = selectedCommitItem();
-	if (commit && GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()))) {
+	if (commit && GitHash::isValidID(commit.commit_id.toString())) {
 		EditTagsDialog dlg(this, &commit);
 		dlg.exec();
 	}

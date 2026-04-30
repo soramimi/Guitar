@@ -696,7 +696,7 @@ public:
 	const RepositoryData *currentRepositoryData() const;
 	void setCommitLog(const CommitLogExchangeData &exdata);
 	bool saveFileAs(QString const &srcpath, QString const &dstpath);
-	bool saveBlobAs(QString const &id, QString const &dstpath);
+	bool saveBlobAs(const GitHash &id, QString const &dstpath);
 
 	static void openTerminal(QString const &dir, QString const &ssh_key);
 	static void openExplorer(QString const &dir, QString const &ssh_key);

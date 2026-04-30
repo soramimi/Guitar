@@ -1,10 +1,11 @@
 #include "BlameWindow.h"
 #include "ui_BlameWindow.h"
-#include "common/misc.h"
+#include "ApplicationGlobal.h"
 #include "CommitPropertyDialog.h"
 #include "Git.h"
 #include "MainWindow.h"
-#include "ApplicationGlobal.h"
+#include "common/misc.h"
+#include "common/q/helper.h"
 #include <QMenu>
 #include <QToolTip>
 
@@ -70,9 +71,9 @@ BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QLis
 
 	int row = 0;
 	for (BlameItem const &blame: m->list) {
-		QString id;
+		std::string id;
 		if (GitHash::isValidID(blame.commit_id)) {
-			id = blame.commit_id.mid(0, 8);
+			id = blame.commit_id.substr(0, 8);
 		}
 
 		int col = 0;
@@ -88,8 +89,8 @@ BlameWindow::BlameWindow(MainWindow *parent, QString const &filename, const QLis
 
 		QTableWidgetItem *item;
 
-		item = NewItem(id);
-		item->setData(CommidIdRole, blame.commit_id);
+		item = NewItem((QS)id);
+		item->setData(CommidIdRole, (QS)blame.commit_id);
 		SetItem(item);
 
 		item = NewItem(misc::makeDateTimeString(blame.time));
@@ -128,14 +129,14 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 		if (line[0] == '\t') {
 			item.text = QString::fromUtf8(line.c_str() + 1);
 			list.push_back(item);
-			item.commit_id = QString();
-			item.text = QString();
+			item.commit_id = {};
+			item.text = {};
 		} else {
 			char const *p = line.c_str();
 			char const *q = strchr(p, ' ');
 			if (q) {
-				QString label = QString::fromLatin1(p, int(q - p));
-				if (item.commit_id.isEmpty()) {
+				std::string label{p, int(q - p)};
+				if (item.commit_id.empty()) {
 					item.commit_id = label;
 					int a, b, c;
 					if (sscanf(q + 1, "%d %d %d", &a, &b, &c) >= 2) {
@@ -160,7 +161,7 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 
 GitHash BlameWindow::getCommitId(QTableWidgetItem *item) const
 {
-	return item ? GitHash(item->data(CommidIdRole).toString()) : GitHash();
+	return item ? GitHash(item->data(CommidIdRole).toString().toStdString()) : GitHash();
 }
 
 GitHash BlameWindow::currentCommitId() const

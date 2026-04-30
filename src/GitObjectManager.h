@@ -19,7 +19,7 @@ private:
 	bool extractObjectFromPackFile(std::shared_ptr<GitPackIdxV2> const &idx, GitPackIdxItem const *item, GitPackObject *out);
 	bool extractObjectFromPackFile(GitRunner g, const GitHash &id, QByteArray *out, GitObject::Type *type, std::mutex *mutex);
 	void loadIndexes(GitRunner g, std::mutex *mutex);
-	QString findObjectPath(GitRunner g, const GitHash &id);
+	std::string findObjectPath(GitRunner g, const GitHash &id);
 	bool loadObject(GitRunner g, const GitHash &id, QByteArray *out, GitObject::Type *type);
 	void init();
 public:
@@ -31,8 +31,8 @@ public:
 	void setup();
 	bool catFile(GitRunner g, const GitHash &id, QByteArray *out, GitObject::Type *type);
 	void clearIndexes();
-
-	static QStringList findObject(const QString &id, const QString &repo_local_dir);
+	
+	static std::vector<std::string> findObject(const std::string &id, const QString &repo_local_dir);
 };
 
 class GitObjectCache {

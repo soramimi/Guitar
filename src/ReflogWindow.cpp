@@ -1,8 +1,9 @@
-#include "CommitExploreWindow.h"
 #include "ReflogWindow.h"
 #include "ui_ReflogWindow.h"
-#include "MainWindow.h"
+#include "CommitExploreWindow.h"
 #include "Git.h"
+#include "MainWindow.h"
+#include "common/q/helper.h"
 #include <QMenu>
 
 ReflogWindow::ReflogWindow(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)
@@ -53,10 +54,10 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 
 	int row = 0;
 	for (GitReflogItem const &t : reflog) {
-		QString text = t.id.mid(0, 7);
-		item = newQTableWidgetItem(text);
+		std::string text = t.id.substr(0, 7);
+		item = newQTableWidgetItem((QS)text);
 		ui->tableWidget->setItem(row, 0, item);
-		item = newQTableWidgetItem(t.head);
+		item = newQTableWidgetItem((QS)t.head);
 		ui->tableWidget->setItem(row, 1, item);
 		QString cmd = t.command;
 		int i = cmd.indexOf(' ');

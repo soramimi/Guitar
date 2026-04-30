@@ -11,7 +11,7 @@ struct GitPackInfo {
 	GitObject::Type type = GitObject::Type::UNKNOWN;
 	size_t expanded_size = 0;
 	uint64_t offset = 0;
-	QString ref_id;
+	std::string ref_id;
 	uint32_t checksum = 0;
 };
 

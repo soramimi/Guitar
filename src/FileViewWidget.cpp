@@ -118,7 +118,7 @@ void FileViewWidget::clear()
 #endif
 }
 
-void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba, QString const &object_id, QString const &path)
+void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba, std::string const &object_id, QString const &path)
 {
 	setViewType(FileViewType::Image);
 	this->source_id = object_id;
@@ -129,7 +129,7 @@ void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba,
 #endif
 }
 
-void FileViewWidget::setText(const QList<Document::Line> *source, QString const &object_id, QString const &object_path)
+void FileViewWidget::setText(const QList<Document::Line> *source, std::string const &object_id, QString const &object_path)
 {
 	setViewType(FileViewType::Text);
 	this->source_id = object_id;
@@ -143,7 +143,7 @@ void FileViewWidget::setText(const QList<Document::Line> *source, QString const 
 #endif
 }
 
-void FileViewWidget::setText(QByteArray const &ba, QString const &object_id, QString const &object_path)
+void FileViewWidget::setText(QByteArray const &ba, std::string const &object_id, QString const &object_path)
 {
 	std::vector<std::string_view> lines = misc::splitLinesV(std::string_view{ba.data(), (size_t)ba.size()}, true);
 	QList<Document::Line> source;

@@ -940,7 +940,7 @@ std::vector<GitSubmoduleItem> Git::submodules()
 		QStringList words = misc::splitWords(text);
 		if (words.size() >= 2) {
 			GitSubmoduleItem submod;
-			submod.id = GitHash(words[0]);
+			submod.id = GitHash(words[0].toStdString());
 			submod.path = words[1].toStdString();
 			if (GitHash::isValidID(submod.id)) {
 				if (words.size() >= 3) {
@@ -1556,7 +1556,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 				} else {
 					bool start = isxdigit(d);
 					if (start || c == 0) {
-						if (!item.id.isEmpty()) {
+						if (!item.id.empty()) {
 							out->push_back(item);
 						}
 					}
@@ -1567,12 +1567,12 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 						if (i > 0) {
 							int j = line.indexOf(": ", i + 2);
 							if (j > 2) {
-								item.head = line.mid(0, i);
+								item.head = line.mid(0, i).toStdString();
 								item.command = line.mid(i + 2, j - i - 2);
 								item.message = line.mid(j + 2);
 								if (item.head.size() > GIT_ID_LENGTH) {
-									item.id = item.head.mid(0, GIT_ID_LENGTH);
-									item.head = item.head.mid(GIT_ID_LENGTH + 1);
+									item.id = item.head.substr(0, GIT_ID_LENGTH);
+									item.head = item.head.substr(GIT_ID_LENGTH + 1);
 								}
 							}
 						}

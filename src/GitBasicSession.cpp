@@ -148,7 +148,7 @@ std::optional<std::vector<GitFileItem>> GitBasicSession::ls(const char *path)
 	while (it.hasNext()) {
 		it.next();
 		GitFileItem item;
-		item.name = it.fileName();
+		item.name = it.fileName().toStdString();
 		item.isdir = it.fileInfo().isDir();
 		ret.push_back(item);
 	}

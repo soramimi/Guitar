@@ -3,8 +3,8 @@
 
 #include "MyProcess.h"
 #include "common/misc.h"
-#include <QDateTime>
-#include <QString>
+// #include <QDateTime>
+// #include <QString>
 
 #define GIT_ID_LENGTH (40)
 
@@ -36,10 +36,10 @@ private:
 public:
 	GitHash();
 	explicit GitHash(std::string_view const &id);
-	explicit GitHash(QString const &id);
+	// explicit GitHash(QString const &id);
 	explicit GitHash(char const *id);
 	void assign(std::string_view const &id);
-	void assign(const QString &id);
+	// void assign(const QString &id);
 	std::string toString(int maxlen = -1) const;
 	bool isValid() const;
 	int compare(GitHash const &other) const;
@@ -47,10 +47,10 @@ public:
 	size_t _std_hash() const;
 
 	static bool isValidID(std::string const &id);
-	static bool isValidID(QString const &id)
-	{
-		return isValidID(id.toStdString());
-	}
+	// static bool isValidID(QString const &id)
+	// {
+	// 	return isValidID(id.toStdString());
+	// }
 
 	static bool isValidID(GitHash const &id)
 	{
@@ -104,7 +104,7 @@ struct GitObject {
 };
 
 struct GitFileItem {
-	QString name;
+	std::string name;
 	bool isdir = false;
 };
 
@@ -411,8 +411,8 @@ struct GitDiffRaw {
 };
 
 struct GitReflogItem {
-	QString id;
-	QString head;
+	std::string id;
+	std::string head;
 	QString command;
 	QString message;
 	struct File {

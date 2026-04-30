@@ -207,7 +207,7 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, GitP
 			for (int i = 0; i < 20; i++) {
 				sprintf(tmp + i * 2, "%02x", bin[i] & 0xff);
 			}
-			info.ref_id = QString::fromLatin1(tmp, GIT_ID_LENGTH);
+			info.ref_id = std::string(tmp, GIT_ID_LENGTH);
 		}
 
 		*out = info;

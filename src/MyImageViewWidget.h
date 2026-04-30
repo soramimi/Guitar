@@ -14,8 +14,8 @@ protected:
 	void contextMenuEvent(QContextMenuEvent *e) override;
 public:
 	MyImageViewWidget(QWidget *parent = nullptr);
-
-	void setImage(const std::string &mimetype, QByteArray const &ba, QString const &object_id_, QString const &path_);
+	
+	void setImage(const std::string &mimetype, QByteArray const &ba, const std::string &object_id_, QString const &path_);
 };
 
 #endif // MYIMAGEVIEWWIDGET_H

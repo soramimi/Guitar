@@ -6,7 +6,7 @@
 
 class MyObjectViewBase {
 protected:
-	QString object_id_;
+	std::string object_id_;
 	QString object_path_;
 	bool isValidObject() const;
 	bool saveAs(QWidget *parent);

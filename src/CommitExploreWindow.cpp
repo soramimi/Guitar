@@ -240,7 +240,7 @@ void CommitExploreWindow::on_listWidget_currentItemChanged(QListWidgetItem *curr
 
 	GitTreeItem::Type type = (GitTreeItem::Type)current->data(ItemTypeRole).toInt();
 	if (type == GitTreeItem::BLOB) {
-		QString commit_id = current->data(ObjectIdRole).toString();
+		std::string commit_id = current->data(ObjectIdRole).toString().toStdString();
 		GitRunner g = git();
 		m->content_object = m->objcache->catFile(g, GitHash(commit_id));
 		QString path = current->data(FilePathRole).toString();

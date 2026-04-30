@@ -27,7 +27,7 @@ void MyTextEditorWidget::clear()
 	update();
 }
 
-void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, QString const &object_id, QString const &object_path)
+void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, std::string const &object_id, QString const &object_path)
 {
 	this->object_id_ = object_id;
 	this->object_path_ = object_path;
@@ -37,8 +37,6 @@ void MyTextEditorWidget::setDocument(const QList<Document::Line> *source, QStrin
 void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 {
 	if (!isValidObject()) return;
-
-	QString id = object_id_;
 
 	QMenu menu;
 

@@ -34,11 +34,6 @@ GitHash::GitHash(const std::string_view &id)
 	assign(id);
 }
 
-GitHash::GitHash(const QString &id)
-{
-	assign(id);
-}
-
 GitHash::GitHash(const char *id)
 {
 	assign(std::string_view(id, strlen(id)));
@@ -72,11 +67,6 @@ template <typename VIEW> void GitHash::_assign(VIEW const &id)
 void GitHash::assign(const std::string_view &id)
 {
 	_assign(id);
-}
-
-void GitHash::assign(const QString &id)
-{
-	_assign(Latin1View(id));
 }
 
 std::string GitHash::toString(int maxlen) const

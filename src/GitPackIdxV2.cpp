@@ -4,13 +4,13 @@
 #include <QFile>
 
 
-QString GitPackIdxItem::qid(const GitPackIdxItem &item)
+std::string GitPackIdxItem::string(const GitPackIdxItem &item)
 {
 	char tmp[GIT_ID_LENGTH + 1];
 	for (int i = 0; i < GIT_ID_LENGTH / 2; i++) {
 		sprintf(tmp + i * 2, "%02x", item.id[i]);
 	}
-	return QString::fromLatin1(tmp, GIT_ID_LENGTH);
+	return std::string(tmp, GIT_ID_LENGTH);
 }
 
 GitPackIdxV2::~GitPackIdxV2()

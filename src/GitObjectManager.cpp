@@ -224,21 +224,21 @@ bool GitObjectManager::extractObjectFromPackFile(GitRunner g, GitHash const &id,
 	}
 }
 
-QString GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
+std::string GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 {
 	if (id.isValid()) {
 		int count = 0;
-		QString absolute_path;
-		QString name = QString::fromStdString(id.toString());
-		QString xx = name.mid(0, 2); // leading two xdigits
-		QString name2 = name.mid(2);  // remaining xdigits
-		QString dir = QString::fromStdString(g.workingDir()) / m->subdir_git_objects / xx; // e.g. /home/user/myproject/.git/objects/5a
+		std::string absolute_path;
+		std::string name = id.toString();
+		std::string xx = name.substr(0, 2); // leading two xdigits
+		std::string name2 = name.substr(2);  // remaining xdigits
+		std::string dir = g.workingDir() / m->subdir_git_objects.toStdString() / xx; // e.g. /home/user/myproject/.git/objects/5a
 
-		std::optional<std::vector<GitFileItem>> ret = g.ls(dir.toStdString());
+		std::optional<std::vector<GitFileItem>> ret = g.ls(dir);
 		if (ret) {
 			for (GitFileItem const &item : *ret) {
-				if (item.name.startsWith(name2)) {
-					QString id = xx + item.name; // complete id
+				if (misc::starts_with(item.name, name2)) {
+					std::string id = xx + item.name; // complete id
 					if (id.size() == GIT_ID_LENGTH && GitHash::isValidID(id)) {
 						absolute_path = dir / item.name;
 						count++;
@@ -257,9 +257,9 @@ QString GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 
 bool GitObjectManager::loadObject(GitRunner g, GitHash const &id, QByteArray *out, GitObject::Type *type)
 {
-	QString path = findObjectPath(g, id);
-	if (!path.isEmpty()) {
-		auto ret = g.readfile(path.toStdString());
+	std::string path = findObjectPath(g, id);
+	if (!path.empty()) {
+		auto ret = g.readfile(path);
 		if (ret) {
 			MemoryReader reader(ret->data(), ret->size());
 			reader.open(MemoryReader::ReadOnly);
@@ -502,22 +502,22 @@ bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const std::string
  * @param id
  * @param repo_local_dir
  */
-QStringList GitObjectManager::findObject(const QString &id, QString const &repo_local_dir)
+std::vector<std::string> GitObjectManager::findObject(std::string const &id, QString const &repo_local_dir)
 {
-	QStringList list;
-	std::set<QString> set;
+	std::vector<std::string> list;
+	std::set<std::string> set;
 	if (GitHash::isValidID(id)) {
 		{
-			QString a = id.mid(0, 2);
-			QString b = id.mid(2);
-			QString dir = repo_local_dir / ".git/objects" / a;
+			std::string a = id.substr(0, 2);
+			std::string b = id.substr(2);
+			QString dir = repo_local_dir / ".git/objects" / (QS)a;
 			QDirIterator it(dir);
 			while (it.hasNext()) {
 				it.next();
 				QFileInfo info = it.fileInfo();
 				if (info.isFile()) {
-					QString c = info.fileName();
-					if (c.startsWith(b)) {
+					std::string c = info.fileName().toStdString();
+					if (misc::starts_with(c, b)) {
 						set.insert(set.end(), a + c);
 					}
 				}
@@ -533,8 +533,8 @@ QStringList GitObjectManager::findObject(const QString &id, QString const &repo_
 					GitPackIdxV2 idx;
 					idx.parse(info.absoluteFilePath(), false);
 					idx.each([&](GitPackIdxItem const *item){
-						QString item_id = GitPackIdxItem::qid(*item);
-						if (item_id.startsWith(id)) {
+						std::string item_id = GitPackIdxItem::string(*item);
+						if (misc::starts_with(item_id, id)) {
 							set.insert(item_id);
 						}
 						return true;
@@ -542,7 +542,7 @@ QStringList GitObjectManager::findObject(const QString &id, QString const &repo_
 				}
 			}
 		}
-		for (QString const &s : set) {
+		for (std::string const &s : set) {
 			list.push_back(s);
 		}
 	}
