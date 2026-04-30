@@ -152,7 +152,35 @@ jobs:
         )
         echo curl installation completed successfully
       shell: cmd
-      
+
+    - name: Ensure zlib.lib exists (copy from z.lib if needed)
+      shell: pwsh
+      run: |
+        set "VCPKG_ROOT=C:\vcpkg"
+        # vcpkg の installed 配下（triplet は環境に合わせて調整）
+        $triplet = "x64-windows"
+        $installed = "$env:VCPKG_ROOT\installed\$triplet"
+
+        $candidates = @(
+          Join-Path $installed "lib\zlib.lib"
+          Join-Path $installed "lib\z.lib"
+          Join-Path $installed "debug\lib\zlib.lib"
+          Join-Path $installed "debug\lib\z.lib"
+        )
+
+        $zlib = $candidates | Where-Object { $_ -like "*\zlib.lib" } | Where-Object { Test-Path $_ }
+        $z    = $candidates | Where-Object { $_ -like "*\z.lib"    } | Where-Object { Test-Path $_ }
+
+        if (-not $zlib -and $z) {
+          # z.lib がある場所と同じフォルダに zlib.lib を作る
+          $src = $z[0]
+          $dst = Join-Path (Split-Path $src -Parent) "zlib.lib"
+          Copy-Item $src $dst -Force
+          Write-Host "Copied $src -> $dst"
+        } else {
+          Write-Host "No copy needed. zlib.lib exists or z.lib not found."
+        }
+
     - name: Verify environment
       run: |
         call path_update.bat
