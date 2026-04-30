@@ -31,11 +31,30 @@ struct SettingAiForm::ProviderFormData {
 };
 
 struct SettingAiForm::Private {
-	std::vector<SettingAiForm::ProviderFormData> provider_formdata;
-	// [copilot] current_provider は常に provider_formdata 内のいずれかの要素を指すポインタ。
-	// [copilot] provider_formdata が再確保されると無効になるため、コンストラクタ以降は
-	// [copilot] push_back 等で vector を拡張してはならない。
-	SettingAiForm::ProviderFormData *current_provider = nullptr;
+	GenerativeAI::AI current_aiid_ = GenerativeAI::AI::Unknown;
+	std::vector<SettingAiForm::ProviderFormData> provider_formdata_;
+
+	SettingAiForm::ProviderFormData *provider_formdata(GenerativeAI::AI aiid)
+	{
+		for (auto &p : provider_formdata_) {
+			if (p.aiid == aiid) {
+				return &p;
+			}
+		}
+		return nullptr;
+	}
+	GenerativeAI::AI current_aiid() const
+	{
+		return current_aiid_;
+	}
+	void set_current_provider(GenerativeAI::AI aiid)
+	{
+		current_aiid_ = aiid;
+	}
+	SettingAiForm::ProviderFormData *current_provider()
+	{
+		return provider_formdata(current_aiid_);
+	}
 };
 
 /**
@@ -49,7 +68,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	m->provider_formdata.insert(m->provider_formdata.end(), {
+	m->provider_formdata_.insert(m->provider_formdata_.end(), {
 		{GenerativeAI::AI::Unknown},
 		{GenerativeAI::AI::OpenAI_responses},
 		{GenerativeAI::AI::OpenAI_chat_completions},
@@ -63,12 +82,13 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 		{GenerativeAI::AI::LLAMACPP},
 	});
 
-	m->current_provider = unknown_provider();
+	// m->current_provider_ = unknown_provider();
+	m->set_current_provider(GenerativeAI::AI::Unknown);
 
-	for (size_t i = 0; i < m->provider_formdata.size(); i++) {
-		int index = static_cast<int>(m->provider_formdata[i].info->aiid);
-		QString text = QString::fromStdString(m->provider_formdata[i].info->description);
-		ui->comboBox_provider->addItem(text, QVariant(index));
+	for (size_t i = 0; i < m->provider_formdata_.size(); i++) {
+		int aiid = static_cast<int>(m->provider_formdata_[i].info->aiid);
+		QString text = QString::fromStdString(m->provider_formdata_[i].info->description);
+		ui->comboBox_provider->addItem(text, QVariant(aiid));
 	}
 
 	QStringList list;
@@ -85,7 +105,9 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	// 現状は comboBox_ai_model のみが保護対象となっている。
 	bool b1 = ui->comboBox_ai_model->blockSignals(true);
 	bool b2 = ui->comboBox_provider->blockSignals(true);
-	ui->comboBox_ai_model->addItems(list);
+	{
+		ui->comboBox_ai_model->addItems(list);
+	}
 	ui->comboBox_ai_model->blockSignals(b1);
 	ui->comboBox_provider->blockSignals(b2);
 }
@@ -106,12 +128,16 @@ SettingAiForm::~SettingAiForm()
  */
 SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
 {
-	for (auto &ai : m->provider_formdata) {
+#if 0
+	for (auto &ai : m->provider_formdata_) {
 		if (ai.aiid == aiid) {
 			return &ai;
 		}
 	}
 	return nullptr;
+#else
+	return m->provider_formdata(aiid);
+#endif
 }
 
 /**
@@ -121,7 +147,7 @@ SettingAiForm::ProviderFormData *SettingAiForm::formdata(GenerativeAI::AI aiid)
  */
 SettingAiForm::ProviderFormData *SettingAiForm::formdata_by_env_name(std::string const &env_name)
 {
-	for (auto &ai : m->provider_formdata) {
+	for (auto &ai : m->provider_formdata_) {
 		if (ai.env_name() == env_name) {
 			return &ai;
 		}
@@ -137,7 +163,7 @@ SettingAiForm::ProviderFormData *SettingAiForm::formdata_by_env_name(std::string
  */
 SettingAiForm::ProviderFormData *SettingAiForm::unknown_provider()
 {
-	return &m->provider_formdata.front();
+	return &m->provider_formdata_.front();
 }
 
 // ExchangePointers は、設定ファイル側(conf)とフォームバッファ側(form)の
@@ -206,13 +232,13 @@ void SettingAiForm::exchange(bool save)
 			*dst->api_key = misc::trimmed(*src->api_key);
 		}
 
-		s->ai_model = GenerativeAI::Model(m->current_provider->aiid, ui->comboBox_ai_model->currentText().toStdString());
+		s->ai_model = GenerativeAI::Model(m->current_aiid(), ui->comboBox_ai_model->currentText().toStdString());
 	} else { // 設定ファイル -> UI
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
 
-		// [copilot] configureModel は内部で changeProvider → reflectSettingsToUI を呼ぶことがあるが、
-		// [copilot] pointers は formdata へのポインタを保持しているため、configureModel の呼び出しで
-		// [copilot] formdata の内容が変わっても、後続のループで正しく上書きされる。
+		// configureModel は内部で changeProvider → reflectSettingsToUI を呼ぶことがあるが、
+		// pointers は formdata へのポインタを保持しているため、configureModel の呼び出しで
+		// formdata の内容が変わっても、後続のループで正しく上書きされる。
 		configureModel(s->ai_model);
 
 		// 設定ファイルの値を設定フォームの値に反映
@@ -222,14 +248,15 @@ void SettingAiForm::exchange(bool save)
 			*item.form.api_key = misc::trimmed(*item.conf.api_key);
 		}
 
-		if (m->current_provider) {
-			setRadioButtons(true, m->current_provider->from);
+		auto *provider = m->current_provider();
+		if (provider) {
+			setRadioButtons(true, provider->from);
 		} else {
 			setRadioButtons(false, ApiKeyFrom::Default);
 		}
-		// [copilot] configureModel 内でも reflectSettingsToUI が呼ばれる場合があるが、
-		// [copilot] 上のループで formdata の api_key / from を上書きした後に改めて
-		// [copilot] 呼ぶことで、設定ファイルの値を確実にウィジェットへ反映させている。
+		// configureModel 内でも reflectSettingsToUI が呼ばれる場合があるが、
+		// 上のループで formdata の api_key / from を上書きした後に改めて
+		// 呼ぶことで、設定ファイルの値を確実にウィジェットへ反映させている。
 		reflectSettingsToUI();
 	}
 }
@@ -277,7 +304,7 @@ void SettingAiForm::reflectSettingsToUI()
 {
 	std::string apikey;
 
-	SettingAiForm::ProviderFormData *p = m->current_provider;
+	SettingAiForm::ProviderFormData *p = m->current_provider();
 	Q_ASSERT(p);
 	if (p->env_name().empty()) {
 		// env_name が空 = Unknown プロバイダ。API キー入力欄自体を無効化する。
@@ -309,12 +336,12 @@ void SettingAiForm::reflectSettingsToUI()
 
 /**
  * @brief 選択中プロバイダを切り替え、UIを更新する。
- * @param ai 切り替え先のプロバイダのフォームデータ
+ * @param aiid 切り替え先のプロバイダのフォームデータ
  */
-void SettingAiForm::changeProvider(ProviderFormData *ai)
+void SettingAiForm::changeProvider(GenerativeAI::AI aiid)
 {
-	m->current_provider = ai;
-	std::string envname = m->current_provider->env_name();
+	m->set_current_provider(aiid);
+	std::string envname = m->current_provider()->env_name();
 	QString text = tr("Use %1 environment value").arg(QString::fromStdString(envname));
 	ui->radioButton_use_environment_value->setText(text);
 	ui->radioButton_use_environment_value->setEnabled(!envname.empty());
@@ -327,12 +354,8 @@ void SettingAiForm::changeProvider(ProviderFormData *ai)
  */
 void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
 {
-	// [copilot] radioButton_use_custom_api_key->isChecked() の肯定ではなく
-	// [copilot] radioButton_use_environment_value->isChecked() の否定で判定している。
-	// [copilot] 将来 EnvValue でも UserInput でもない第3の選択肢が追加された場合、
-	// [copilot] この条件では意図せずバッファを書き換えてしまう点に注意。
-	if (!ui->radioButton_use_environment_value->isChecked()) {
-		m->current_provider->api_key = arg1.toStdString();
+	if (ui->radioButton_use_custom_api_key->isChecked()) {
+		m->current_provider()->api_key = arg1.toStdString();
 	}
 }
 
@@ -341,7 +364,7 @@ void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
  */
 void SettingAiForm::on_radioButton_use_environment_value_clicked()
 {
-	m->current_provider->from = ApiKeyFrom::EnvValue;
+	m->current_provider()->from = ApiKeyFrom::EnvValue;
 	reflectSettingsToUI();
 }
 
@@ -351,7 +374,7 @@ void SettingAiForm::on_radioButton_use_environment_value_clicked()
  */
 void SettingAiForm::on_radioButton_use_custom_api_key_clicked()
 {
-	m->current_provider->from = ApiKeyFrom::UserInput;
+	m->current_provider()->from = ApiKeyFrom::UserInput;
 	reflectSettingsToUI();
 }
 
@@ -377,31 +400,40 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
 }
 
 /**
+ * @brief コンボボックスのインデックスから AI プロバイダ ID を取得する。
+ *
+ * 配列インデックスとの一致に依存せず、itemData に格納した整数値を
+ * GenerativeAI::AI にキャストして返す。インデックスが範囲外・データ不正・
+ * 変換失敗のいずれの場合も GenerativeAI::AI::Unknown を返す。
+ *
+ * @param index comboBox_provider のインデックス
+ * @return 対応する GenerativeAI::AI 値。取得できない場合は GenerativeAI::AI::Unknown。
+ */
+GenerativeAI::AI SettingAiForm::aiid_from_combobox_index(int index)
+{
+	if (index >= 0 && index < ui->comboBox_provider->count()) {
+		QVariant v = ui->comboBox_provider->itemData(index);
+		if (v.isValid()) {
+			bool ok = false;
+			int val = v.toInt(&ok);
+			if (ok) {
+				return static_cast<GenerativeAI::AI>(val);
+			}
+		}
+	}
+	return GenerativeAI::AI::Unknown;
+}
+
+/**
  * @brief プロバイダのコンボボックスの選択が変更されたとき。
  */
 void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
-	// comboBox_provider の表示インデックスと provider_formdata の配列インデックスは
-	// コンストラクタで同一順序で追加されているため一致する。
-	if (index >= 0 && index < (int)m->provider_formdata.size()) {
-		ProviderFormData *ai = &m->provider_formdata[index];
+	GenerativeAI::AI aiid = aiid_from_combobox_index(index);
+	ProviderFormData *ai = m->provider_formdata(aiid);
+	if (ai) {
 		setRadioButtons(true, ai->from);
-		changeProvider(ai);
-	}
-}
-
-/**
- * @brief 指定したプロバイダに対応するコンボボックスの選択肢を選択状態にする。
- * @param newai 選択したいプロバイダのフォームデータ
- */
-void SettingAiForm::updateProviderComboBox(ProviderFormData *newai)
-{
-	for (auto &ai : m->provider_formdata) {
-		if (&ai == newai) {
-			int index = static_cast<int>(ai.info->aiid);
-			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(index));
-			break;
-		}
+		changeProvider(ai->aiid);
 	}
 }
 
