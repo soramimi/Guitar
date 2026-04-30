@@ -68,19 +68,10 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	m->provider_formdata_.insert(m->provider_formdata_.end(), {
-		{GenerativeAI::AI::Unknown},
-		{GenerativeAI::AI::OpenAI_responses},
-		{GenerativeAI::AI::OpenAI_chat_completions},
-		{GenerativeAI::AI::Anthropic},
-		{GenerativeAI::AI::Google},
-		{GenerativeAI::AI::XAI},
-		{GenerativeAI::AI::DeepSeek},
-		{GenerativeAI::AI::OpenRouter},
-		{GenerativeAI::AI::Ollama},
-		{GenerativeAI::AI::LMStudio},
-		{GenerativeAI::AI::LLAMACPP},
-	});
+	// GenerativeAI::AI の定義に基づいて、利用可能なプロバイダのフォームデータを初期化する。
+	for (GenerativeAI::AI aiid : GenerativeAI::aiid_list_for_present_to_users()) {
+		m->provider_formdata_.emplace_back(aiid);
+	}
 
 	m->set_current_provider(GenerativeAI::AI::Unknown);
 
@@ -233,9 +224,10 @@ void SettingAiForm::exchange(bool save)
 
 		// 設定ファイルの値を設定フォームの値に反映
 		for (ExchangePointers &item : pointers) {
-
-			*item.form.from = *item.conf.from;
-			*item.form.api_key = misc::trimmed(*item.conf.api_key);
+			ExchangePointers::Pointers *dst = &item.form;
+			ExchangePointers::Pointers const *src = &item.conf;
+			*dst->from = *src->from;
+			*dst->api_key = misc::trimmed(*src->api_key);
 		}
 
 		auto *provider = m->current_provider();

@@ -123,6 +123,7 @@ struct Request {
 Request make_request(AI provider, Model const &model, Credential const &auth);
 
 std::vector<Model> const &ai_model_presets();
+std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users();
 
 } // namespace GenerativeAI
 

@@ -48,6 +48,25 @@ std::vector<Model> const &ai_model_presets()
 	return preset_models;
 }
 
+// AIプロバイダのリスト（ユーザーのための選択肢）
+std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users()
+{
+	static std::vector<GenerativeAI::AI> providers = { // Unknownは必要。placeholderを含まない。
+		GenerativeAI::AI::Unknown,
+		GenerativeAI::AI::OpenAI_responses,
+		GenerativeAI::AI::OpenAI_chat_completions,
+		GenerativeAI::AI::Anthropic,
+		GenerativeAI::AI::Google,
+		GenerativeAI::AI::XAI,
+		GenerativeAI::AI::DeepSeek,
+		GenerativeAI::AI::OpenRouter,
+		GenerativeAI::AI::Ollama,
+		GenerativeAI::AI::LMStudio,
+		GenerativeAI::AI::LLAMACPP,
+	};
+	return providers;
+}
+
 ProviderInfo const *provider_info(AI aiid)
 {
 	std::vector<ProviderInfo> const &vec = complete_provider_table();
