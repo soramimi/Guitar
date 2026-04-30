@@ -479,20 +479,25 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::strin
 			// 現行実装：{"messages": ["msg1", "msg2", ...]} 形式のJSONを解析する
 			std::vector<std::string> messages;
 			std::string_view text = r.text;
-			text = TrimPrefix(text, "```json");
-			text = TrimPrefix(text, "```");
-			// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
-			auto i = text.rfind('}');
-			if (i != std::string::npos) {
-				text = text.substr(0, i + 1);
+			// text = TrimPrefix(text, "```json");
+			// text = TrimPrefix(text, "```");
+			// JSONオブジェクトの開始位置を前から探してテキストを切り詰める（前に余分なテキストが混入しても対応できるように）
+			auto i0 = text.find_first_of("{[");
+			if (i0 != std::string_view::npos) {
+				text.remove_prefix(i0);
 			}
-			auto j = text.find('{');
-			if (j != std::string::npos) {
-				text = text.substr(j);
+			// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
+			auto i1 = text.rfind('}');
+			if (i1 != std::string::npos) {
+				text = text.substr(0, i1 + 1);
+			}
+			auto i2 = text.find('{');
+			if (i2 != std::string::npos) {
+				text = text.substr(i2);
 			}
 			jstream::Reader reader(text);
 			while (reader.next()) {
-				if (reader.match("{messages[") || reader.match("[")) {
+				if (reader.match("{*[") || reader.match("[")) { // 期待するパターンは "{messages[" だが、指示を守らない奴がいるので、柔軟に受ける。
 					if (reader.isstring()) {
 						messages.push_back(reader.string());
 					}
@@ -622,11 +627,10 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	if (http->post(web_req, &post)) {
 		char const *data = http->content_data();
 		size_t size = http->content_length();
+		std::string text(data, size);
 		if (save_log) {
-			std::string text(data, size);
 			logprintf(LOG_RAW, "%s\n", text.c_str());
 		}
-		std::string text(data, size);
 		CommitMessageGenerator::Result ret = parse_response(text, model.provider_id());
 		return ret;
 	}

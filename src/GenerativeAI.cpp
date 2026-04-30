@@ -2,12 +2,16 @@
 #include "common/misc.h"
 #include "common/strformat.h"
 #include "urlencode.h"
-
 #include <QRegularExpression>
 
 namespace GenerativeAI {
 
-// AIプロバイダの完全なマスターテーブル
+/**
+ * @brief AIプロバイダの完全なマスターテーブルを返す。
+ * @return 全プロバイダの情報を保持するベクタへの参照。
+ * @note placeholder エントリは API_KEY を管理する都合上設けられた代理アイテムであり、
+ *       実際のAPIエンドポイントには対応しない。
+ */
 const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
@@ -28,7 +32,10 @@ const std::vector<ProviderInfo> &complete_provider_table()
 	return provider_info;
 }
 
-// AIモデルのプリセットリスト（ユーザーのための選択肢）
+/**
+ * @brief ユーザー向けに提示するAIモデルのプリセットリストを返す。
+ * @return プリセットモデルのベクタへの参照。
+ */
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
@@ -36,25 +43,30 @@ std::vector<Model> const &ai_model_presets()
 		{AI::OpenAI_responses, "gpt-5.4-mini"},
 		{AI::OpenAI_responses, "gpt-5.4-nano"},
 		{AI::OpenAI_responses, "gpt-5.3-codex"},
-		{AI::Anthropic, "claude-opus-4-7"},
-		{AI::Anthropic, "claude-sonnet-4-6"},
-		{AI::Anthropic, "claude-haiku-4-5"},
-		{AI::Google, "gemini-3-flash-preview"},
-		{AI::XAI, "grok-4.20"},
-		{AI::DeepSeek, "deepseek-chat"},
-		{AI::OpenRouter, "openrouter:///anthropic/claude-4.6-sonnet"},
-		{AI::Ollama, "ollama:///gemma4"},
-		{AI::LMStudio, "lmstudio:///meta-llama-3-8b-instruct"},
-		{AI::LLAMACPP, "llamacpp:///"},
+		{AI::Anthropic,        "claude-opus-4-7"},
+		{AI::Anthropic,        "claude-sonnet-4-6"},
+		{AI::Anthropic,        "claude-haiku-4-5"},
+		{AI::Google,           "gemini-3-flash-preview"},
+		{AI::XAI,              "grok-4.20"},
+		{AI::DeepSeek,         "deepseek-chat"},
+		{AI::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
+		{AI::Ollama,           "ollama:///gemma4"},
+		{AI::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
+		{AI::LLAMACPP,         "llamacpp://localhost:8080/"},
 	};
 	return preset_models;
 }
 
-// AIプロバイダのリスト（ユーザーのための選択肢）
+/**
+ * @brief ユーザー向けに提示するAIプロバイダIDのリストを返す。
+ * @note Unknown は含むが、placeholder エントリは含まない。
+ * @return AIプロバイダIDのベクタへの参照。
+ */
 std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users()
 {
+	using GenerativeAI::AI;
 	static std::vector<GenerativeAI::AI> providers = { // Unknownは必要。placeholderを含まない。
-		GenerativeAI::AI::Unknown,
+		AI::Unknown,
 		GenerativeAI::AI::OpenAI_responses,
 		GenerativeAI::AI::OpenAI_chat_completions,
 		GenerativeAI::AI::Anthropic,
@@ -69,13 +81,20 @@ std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users()
 	return providers;
 }
 
-// 既定のAIモデル名
+/**
+ * @brief 既定のAIモデル名を返す。
+ * @return デフォルトモデル名の文字列。
+ */
 std::string Model::default_model()
 {
 	return "gpt-5.4-mini";
 }
 
-// AIプロバイダIDに対応するプロバイダ情報を返す。見つからない場合はUnknownの情報を返す。
+/**
+ * @brief AIプロバイダIDに対応するプロバイダ情報を返す。
+ * @param aiid 検索対象のAIプロバイダID。
+ * @return 対応する ProviderInfo へのポインタ。見つからない場合は Unknown エントリを返す。
+ */
 ProviderInfo const *provider_info(AI aiid)
 {
 	std::vector<ProviderInfo> const &vec = complete_provider_table();
@@ -87,12 +106,21 @@ ProviderInfo const *provider_info(AI aiid)
 	return &vec[0]; // Unknown
 }
 
+/**
+ * @brief AIプロバイダとモデルURIからModelオブジェクトを構築する。
+ * @param provider AIプロバイダID。
+ * @param model_uri モデルのURI文字列。
+ */
 Model::Model(AI provider, std::string const &model_uri)
 {
 	provider_info_ = provider_info(provider);
 	parse_model(model_uri);
 }
 
+/**
+ * @brief モデル名またはURIを解析し、ホスト・ポート・モデル名を設定する。
+ * @param name 解析対象のモデル名またはURI文字列。
+ */
 void Model::parse_model(const std::string &name)
 {
 	long_name_ = name;
@@ -127,6 +155,11 @@ void Model::parse_model(const std::string &name)
 	if (Parse("llamacpp://", 8080)) return;
 }
 
+/**
+ * @brief モデル名の文字列パターンからModelオブジェクトを生成する。
+ * @param name モデル名またはURIを表す文字列。
+ * @return 対応するAIプロバイダに紐付いたModelオブジェクト。パターン不一致の場合は空のModelを返す。
+ */
 Model Model::from_name(std::string const &name)
 {
 	struct Item {
@@ -263,6 +296,13 @@ struct _MakeRequest : public GenerativeAI::AbstractVisitor<Request> {
 	}
 };
 
+/**
+ * @brief 指定されたAIプロバイダ・モデル・認証情報からAPIリクエスト情報を生成する。
+ * @param provider AIプロバイダID。
+ * @param model 使用するAIモデル。
+ * @param cred APIキー等の認証情報。
+ * @return 生成されたRequestオブジェクト。
+ */
 Request make_request(AI provider, const Model &model, Credential const &cred)
 {
 	return _MakeRequest(model, cred).visit(provider);
