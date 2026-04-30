@@ -5,6 +5,7 @@
 #include "common/joinpath.h"
 #include "event.h"
 #include "thread.h"
+#include <QApplication>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>

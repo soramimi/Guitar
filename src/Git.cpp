@@ -705,7 +705,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 					c = (unsigned char)*ptr;
 				}
 				if (c == '\n' /*|| c == '\r'*/ || c == 0) { // '\r'では分割しない（Windowsで git log の結果に単独の'\r'が現れることがある）
-					std::string s = (std::string)misc::trimmed({left, ptr - left}); // 行頭・行末の空白を除去
+					std::string s = (std::string)misc::trimmed({left, size_t(ptr - left)}); // 行頭・行末の空白を除去
 					list.push_back(s);
 					if (c == 0) break;
 					if (c == '\n') {
@@ -1529,7 +1529,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 			}
 			if (c == '\r' || c == '\n' || c == 0) {
 				int d = 0;
-				std::string line{left, int(ptr - left)};
+				std::string line{left, size_t(ptr - left)};
 				if (left < ptr) {
 					d = *left & 0xff;
 				}

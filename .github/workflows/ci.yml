@@ -178,9 +178,11 @@ jobs:
         qmake -query QT_VERSION
         qmake -query QMAKE_SPEC
         echo.
-        echo Checking vcpkg zlib installation:
-        dir "C:\vcpkg\installed\x64-windows\include" | findstr zlib || echo zlib headers not found
-        dir "C:\vcpkg\installed\x64-windows\lib" | findstr zlib || echo zlib libraries not found
+        echo --- vcpkg includes
+        dir "C:\vcpkg\installed\x64-windows\include"
+        echo --- vcpkg libraries
+        dir "C:\vcpkg\installed\x64-windows\lib"
+        echo ---
       shell: cmd
         
     - name: Setup Ruby

@@ -4815,7 +4815,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	QAction *a_merge_branch = nullptr;
 	if (is_valid_commit_id && selected_commit.commit_id != getHeadId()) {
-		QString msg = selected_commit.message;
+		QString msg = (QS)selected_commit.message;
 		constexpr static int maxlen = 20;
 		if (msg.size() > maxlen) {
 			msg = msg.mid(0, maxlen) + "...";

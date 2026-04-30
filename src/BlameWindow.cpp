@@ -135,7 +135,7 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 			char const *p = line.c_str();
 			char const *q = strchr(p, ' ');
 			if (q) {
-				std::string label{p, int(q - p)};
+				std::string label{p, size_t(q - p)};
 				if (item.commit_id.empty()) {
 					item.commit_id = label;
 					int a, b, c;
