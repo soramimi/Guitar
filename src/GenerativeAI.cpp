@@ -7,6 +7,7 @@
 
 namespace GenerativeAI {
 
+// AIプロバイダの完全なマスターテーブル
 const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
@@ -27,6 +28,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 	return provider_info;
 }
 
+// AIモデルのプリセットリスト（ユーザーのための選択肢）
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
@@ -67,6 +69,13 @@ std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users()
 	return providers;
 }
 
+// 既定のAIモデル名
+std::string Model::default_model()
+{
+	return "gpt-5.4-mini";
+}
+
+// AIプロバイダIDに対応するプロバイダ情報を返す。見つからない場合はUnknownの情報を返す。
 ProviderInfo const *provider_info(AI aiid)
 {
 	std::vector<ProviderInfo> const &vec = complete_provider_table();
@@ -75,13 +84,7 @@ ProviderInfo const *provider_info(AI aiid)
 			return &p;
 		}
 	}
-	return &vec[0];
-}
-
-
-std::string Model::default_model()
-{
-	return "gpt-5.4-mini";
+	return &vec[0]; // Unknown
 }
 
 Model::Model(AI provider, std::string const &model_uri)

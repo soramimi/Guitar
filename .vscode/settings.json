@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/home/soramimi/develop/Guitar/filetype/oniguruma"
+    "cmake.sourceDirectory": "/home/soramimi/develop/Guitar/filetype/oniguruma",
+    "makefile.configureOnOpen": false
 }
