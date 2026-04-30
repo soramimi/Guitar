@@ -63,6 +63,11 @@ static inline bool operator == (GitHash const &l, GitHash const &r)
 	return l.compare(r) == 0;
 }
 
+static inline bool operator != (GitHash const &l, GitHash const &r)
+{
+	return l.compare(r) != 0;
+}
+
 static inline bool operator < (GitHash const &l, GitHash const &r)
 {
 	return l.compare(r) < 0;
@@ -136,10 +141,18 @@ struct GitCommitItem {
 	int marker_depth = -1;
 	bool resolved =  false;
 	bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
-        void setParents(const std::vector<std::string> &list);
+	void setParents(const std::vector<std::string> &list);
 	operator bool () const
 	{
 		return commit_id;
+	}
+	bool operator == (GitCommitItem const &other) const
+	{
+		return commit_id == other.commit_id;
+	}
+	bool operator != (GitCommitItem const &other) const
+	{
+		return commit_id != other.commit_id;
 	}
 };
 

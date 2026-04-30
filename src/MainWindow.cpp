@@ -4787,8 +4787,9 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 	}
 
-	GitCommitItem const &commit = commitItem(row);
-	bool is_valid_commit_id = GitHash::isValidID(QString::fromStdString(commit.commit_id.toString()));
+	GitCommitItem const &selected_commit = commitItem(row); // 右クリックされたコミット
+
+	bool is_valid_commit_id = GitHash::isValidID(QString::fromStdString(selected_commit.commit_id.toString()));
 	// if is_valid_commit_id == false, commit is uncommited changes.
 
 	QMenu menu;
@@ -4812,6 +4813,15 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 	}
 
+	QAction *a_merge_branch = nullptr;
+	if (is_valid_commit_id && selected_commit.commit_id != getHeadId()) {
+		auto *quick_merge = menu.addMenu(tr("Merge"));
+		a_merge_branch = quick_merge->addAction(tr("[%1] %2")
+													.arg(QString::fromStdString(selected_commit.commit_id.toString()).mid(0, 7))
+													.arg(selected_commit.message));
+		menu.addSeparator();
+	}
+
 	QAction *a_copy_id_7letters = is_valid_commit_id ? menu.addAction(tr("Copy commit id (7 letters)")) : nullptr;
 	QAction *a_copy_id_complete = is_valid_commit_id ? menu.addAction(tr("Copy commit id (completely)")) : nullptr;
 
@@ -4829,19 +4839,14 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	menu.addSeparator();
 
 	QAction *a_checkout = menu.addAction(tr("Checkout/Branch..."));
-	QAction *a_checkout_this = nullptr;
-
-	if (local_branches.size() == 1) { // このコミットのブランチが一つだけの場合
-		a_checkout_this = menu.addAction(tr("Checkout branch {%1}").arg(local_branches[0].text));
-	}
 
 	menu.addSeparator();
 
 	QAction *a_edit_message = nullptr;
 
 	auto canEditMessage = [&](){
-		if (commit.has_child) return false; // 子がないこと
-		if (Git::isUncommited(commit)) return false; // 未コミットがないこと
+		if (selected_commit.has_child) return false; // 子がないこと
+		if (Git::isUncommited(selected_commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
 		for (const BranchLabel &label : labels) {
@@ -4857,7 +4862,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		a_edit_message = menu.addAction(tr("Edit message..."));
 	}
 
-	QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge")) : nullptr;
+	QAction *a_merge = is_valid_commit_id ? menu.addAction(tr("Merge...")) : nullptr;
 	QAction *a_rebase = is_valid_commit_id ? menu.addAction(tr("Rebase")) : nullptr;
 	QAction *a_cherrypick = is_valid_commit_id ? menu.addAction(tr("Cherry-pick")) : nullptr;
 	QAction *a_edit_tags = is_valid_commit_id ? menu.addAction(tr("Edit tags...")) : nullptr;
@@ -4866,7 +4871,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	menu.addSeparator();
 
 	QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
-	QAction *a_delrembranch = remoteBranches(commit.commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
+	QAction *a_delrembranch = remoteBranches(selected_commit.commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 
 	menu.addSeparator();
 
@@ -4876,47 +4881,47 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	QAction *a = menu.exec(ui->tableWidget_log->viewport()->mapToGlobal(pos) + QPoint(8, -8));
 	if (a) {
 		if (a == a_copy_id_7letters) {
-			qApp->clipboard()->setText(QString::fromStdString(commit.commit_id.toString(7)));
+			qApp->clipboard()->setText(QString::fromStdString(selected_commit.commit_id.toString(7)));
 			return;
 		}
 		if (a == a_copy_id_complete) {
-			qApp->clipboard()->setText(QString::fromStdString(commit.commit_id.toString()));
+			qApp->clipboard()->setText(QString::fromStdString(selected_commit.commit_id.toString()));
 			return;
 		}
 		if (a == a_properties) {
-			execCommitPropertyDialog(this, commit);
+			execCommitPropertyDialog(this, selected_commit);
 			return;
 		}
 		if (a == a_edit_message) {
 			commitAmend();
 			return;
 		}
-		if (a == a_checkout) {
-			checkout(this, commit);
+		if (a == a_merge_branch) {
+			mergeBranch(&selected_commit, GitMergeFastForward::Default, false);
 			return;
 		}
-		if (a == a_checkout_this) {
-			checkoutLocalBranch(local_branches[0].text.toStdString());
+		if (a == a_checkout) {
+			checkout(this, selected_commit);
 			return;
 		}
 		if (a == a_delbranch) {
-			deleteBranch(commit);
+			deleteBranch(selected_commit);
 			return;
 		}
 		if (a == a_delrembranch) {
-			deleteRemoteBranch(commit);
+			deleteRemoteBranch(selected_commit);
 			return;
 		}
 		if (a == a_merge) {
-			merge(commit);
+			merge(selected_commit);
 			return;
 		}
 		if (a == a_rebase) {
-			rebaseBranch(&commit);
+			rebaseBranch(&selected_commit);
 			return;
 		}
 		if (a == a_cherrypick) {
-			cherrypick(&commit);
+			cherrypick(&selected_commit);
 			return;
 		}
 		if (a == a_edit_tags) {
@@ -4928,7 +4933,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			return;
 		}
 		if (a == a_explore) {
-			execCommitExploreWindow(this, &commit);
+			execCommitExploreWindow(this, &selected_commit);
 			return;
 		}
 		// switch to
