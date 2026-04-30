@@ -4793,6 +4793,25 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	QMenu menu;
 
+	std::set<QAction *> switch_to_actions;
+	{
+		std::vector<QString> local_branches;
+		for (BranchLabel const &label : labels) {
+			if (label.kind == BranchLabel::LocalBranch) {
+				local_branches.push_back(label.text);
+			}
+		}
+		if (!local_branches.empty()) {
+			auto *switch_to = menu.addMenu(tr("Switch to"));
+			for (QString const &label : local_branches) {
+				QAction *a = switch_to->addAction(label);
+				a->setData(label);
+				switch_to_actions.insert(switch_to_actions.end(), a);
+			}
+			menu.addSeparator();
+		}
+	}
+
 	QAction *a_copy_id_7letters = is_valid_commit_id ? menu.addAction(tr("Copy commit id (7 letters)")) : nullptr;
 	QAction *a_copy_id_complete = is_valid_commit_id ? menu.addAction(tr("Copy commit id (completely)")) : nullptr;
 
@@ -4815,7 +4834,6 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	if (local_branches.size() == 1) { // このコミットのブランチが一つだけの場合
 		a_checkout_this = menu.addAction(tr("Checkout branch {%1}").arg(local_branches[0].text));
 	}
-
 
 	menu.addSeparator();
 
@@ -4913,6 +4931,13 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			execCommitExploreWindow(this, &commit);
 			return;
 		}
+		// switch to
+		if (switch_to_actions.find(a) != switch_to_actions.end()) {
+			QString branch = a->data().toString();
+			checkoutLocalBranch(branch.toStdString());
+			return;
+		}
+		// copy label
 		if (copy_label_actions.find(a) != copy_label_actions.end()) {
 			QString text = a->text();
 			QApplication::clipboard()->setText(text);
