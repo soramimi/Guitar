@@ -1,6 +1,6 @@
 #include "GenerativeAI.h"
 #include "common/misc.h"
-#include "common/strformat.h"
+#include "common/fmt.h"
 #include "urlencode.h"
 #include <regex>
 

@@ -13,7 +13,7 @@
 #include <QFile>
 #include <memory>
 #include <set>
-#include "common/strformat.h"
+#include "common/fmt.h"
 
 struct GitObjectManager::Private {
 	std::mutex *mutex_ = nullptr;

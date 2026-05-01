@@ -77,7 +77,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <variant>
-#include "common/strformat.h"
+#include "common/fmt.h"
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"

@@ -311,6 +311,7 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/FileTypeDetector.h \
 	$$PWD/src/LibMigemo.h \
+	$$PWD/src/common/fmt.h \
 	$$PWD/src/common/q/DateTime.h \
 	$$PWD/src/common/q/DirIterator.h \
 	$$PWD/src/common/qmisc.h \

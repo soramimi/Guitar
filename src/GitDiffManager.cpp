@@ -5,7 +5,7 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "common/q/helper.h"
-#include "common/strformat.h"
+#include "common/fmt.h"
 
 // PathToIdMap
 

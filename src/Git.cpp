@@ -3,7 +3,7 @@
 #include "GitBasicSession.h"
 #include "Profile.h"
 #include "common/joinpath.h"
-#include "common/strformat.h"
+#include "common/fmt.h"
 #include "common/q/helper.h"
 #include "common/q/FileInfo.h"
 #include "common/q/Dir.h"

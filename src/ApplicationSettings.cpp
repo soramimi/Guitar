@@ -3,7 +3,7 @@
 #include "MySettings.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "common/strformat.h"
+#include "common/fmt.h"
 #include "common/q/helper.h"
 #include <QDir>
 #include <QFileInfo>

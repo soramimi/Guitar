@@ -5,7 +5,7 @@
 #include "Profile.h"
 #include "common/joinpath.h"
 #include "common/jstream.h"
-#include "common/strformat.h"
+#include "common/fmt.h"
 #include "curlclient.h"
 #include "webclient.h"
 
