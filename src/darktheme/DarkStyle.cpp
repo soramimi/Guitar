@@ -623,8 +623,8 @@ void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 {
 	p->save();
 
-	bool hover = (option->state & State_MouseOver);
-	bool pressed = (option->state & State_Sunken);
+	bool hover = (option->state & QStyle::State_MouseOver);
+	bool pressed = (option->state & QStyle::State_Sunken);
 #ifdef Q_OS_MAC
 	hover = false;
 #endif
@@ -1284,6 +1284,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
+	qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
 #ifdef Q_OS_MAC
 	if (ce == CE_ToolBar) {
@@ -1606,10 +1607,10 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			int x, y, w, h;
 			o->rect.getRect(&x, &y, &w, &h);
 			int tab = 0;//o->tabWidth;
-			bool dis = !(o->state & State_Enabled);
+			bool disabled = !(o->state & State_Enabled);
 			bool checkable = (o->checkType != QStyleOptionMenuItem::NotCheckable);
 			bool checked = checkable && o->checked;
-			bool act = o->state & State_Selected;
+			bool selected = o->state & State_Selected;
 
 			if (o->menuItemType == QStyleOptionMenuItem::Separator) {
 				QRect r = option->rect.adjusted(2, 0, -2, 0);
@@ -1624,7 +1625,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QRect vCheckRect = visualRect(option->direction, o->rect, QRect(o->rect.x(), o->rect.y(), checkcol - (gutterWidth + o->rect.x()), o->rect.height()));
 #endif
 
-			if (act) {
+			if (selected) {
 				drawSelectedItemFrame(p, option->rect, true);
 			}
 
@@ -1659,8 +1660,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 
 			if (!ignoreCheckMark) {
 				if (!o->icon.isNull()) {
-					QIcon::Mode mode = dis ? QIcon::Disabled : QIcon::Normal;
-					if (act && !dis) {
+					QIcon::Mode mode = disabled ? QIcon::Disabled : QIcon::Normal;
+					if (selected && !disabled) {
 						mode = QIcon::Active;
 					}
 					QPixmap pixmap;
@@ -1691,7 +1692,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			p->setPen(o->palette.buttonText().color());
 
 			const QColor textColor = o->palette.text().color();
-			if (dis) {
+			if (disabled) {
 				p->setPen(textColor);
 			}
 
@@ -1705,10 +1706,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				if (!styleHint(SH_UnderlineShortcut, o, widget)) {
 					text_flags |= Qt::TextHideMnemonic;
 				}
-				text_flags |= Qt::AlignLeft;
 				if (t >= 0) {
-					QRect vShortcutRect = visualRect(option->direction, o->rect, QRect(textRect.topRight(), QPoint(o->rect.right(), textRect.bottom())));
-					p->drawText(vShortcutRect, text_flags, s.mid(t + 1));
+					p->drawText(vTextRect, text_flags | Qt::AlignRight, s.mid(t + 1));
 					s = s.left(t);
 				}
 				QFont font = o->font;
@@ -1717,7 +1716,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				}
 				p->setFont(font);
 				p->setPen(textColor);
-				p->drawText(vTextRect, text_flags, s.left(t)); //@
+				p->drawText(vTextRect, text_flags | Qt::AlignLeft, s.left(t)); //@
 				p->restore();
 			}
 			if (o->menuItemType == QStyleOptionMenuItem::SubMenu) {// draw sub menu arrow
@@ -1728,7 +1727,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				QRect  vSubMenuRect = visualRect(option->direction, o->rect, QRect(xpos, y + h / 2 - dim / 2, dim, dim));
 				QStyleOptionMenuItem newMI = *o;
 				newMI.rect = vSubMenuRect;
-				newMI.state = dis ? State_None : State_Enabled;
+				newMI.state = disabled ? State_None : State_Enabled;
 				drawPrimitive(arrow, &newMI, p, widget);
 			}
 		}
