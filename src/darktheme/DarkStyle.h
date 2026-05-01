@@ -32,7 +32,6 @@ private:
 	void loadImages();
 
 	QColor selectionColor() const;
-	QColor colorForItemView(QStyleOption const *opt) const;
 
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;

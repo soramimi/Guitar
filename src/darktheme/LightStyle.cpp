@@ -8,12 +8,12 @@
 
 QColor selectionColor()
 {
-	return QColor(80, 160, 255);
+	return QColor(192, 224, 255);
 }
 
 void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 {
-	QColor color = focus ? selectionColor() : QColor(128, 128, 128);
+	QColor color = selectionColor();
 
 	int x, y, w, h;
 	x = rect.x();
@@ -21,43 +21,9 @@ void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 	w = rect.width();
 	h = rect.height();
 
-	QString key = QString::asprintf("selection_frame:%02x%02x%02x:%dx%d", color.red(), color.green(), color.blue(), w, h);
-
-	QPixmap pixmap;
-	if (!QPixmapCache::find(key, &pixmap)) {
-		pixmap = QPixmap(w, h);
-		pixmap.fill(Qt::transparent);
-		QPainter pr(&pixmap);
-		pr.setRenderHint(QPainter::Antialiasing);
-
-		QColor pencolor = color;
-		pencolor.setAlpha(128);
-		pr.setPen(pencolor);
-		pr.setBrush(Qt::NoBrush);
-
-		QPainterPath path;
-		path.addRoundedRect(1.5, 1.5, w - 1.5, h - 1.5, 3, 3);
-
-		pr.drawPath(path);
-
-		pr.setClipPath(path);
-
-		int a = color.alpha();
-		QColor color0 = color;
-		QColor color1 = color;
-		color0.setAlpha(128 * a / 255);
-		color1.setAlpha(64 * a / 255);
-		QLinearGradient gr(QPointF(0, 0), QPointF(0, h));
-		gr.setColorAt(0, color0);
-		gr.setColorAt(1, color1);
-		QBrush br(gr);
-		pr.fillRect(0, 0, w, h, br);
-
-		pr.end();
-		QPixmapCache::insert(key, pixmap);
-	}
-
-	p->drawPixmap(x, y, w, h, pixmap);
+	p->setBrush(color);
+	p->setPen(QPen(Qt::black, 1));
+	p->drawRect(x, y, w - 1, h - 1);
 }
 
 void LightStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget) const
@@ -68,7 +34,6 @@ void LightStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *opt
 		}
 	}
 	if (element == PE_PanelItemViewItem) {
-		//		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
 		auto DrawSelectionFrame = [&](QRect const &r){
 			bool focus = widget && widget->hasFocus();
 			drawSelectedItemFrame(painter, r, focus);
@@ -114,7 +79,8 @@ void drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget const *widge
 
 void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *w) const
 {
-	bool disabled = !(opt->state & State_Enabled);
+	bool enabled = (opt->state & State_Enabled);
+	bool disabled = !enabled;
 	if (element == CE_MenuBarItem) {
 		drawMenuBarBG(p, opt, w);
 		if (opt->state & State_Selected) {
@@ -135,5 +101,71 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 		}
 		return;
 	}
+	if (element == CE_ItemViewItem) {
+		if (auto const *o = qstyleoption_cast<QStyleOptionViewItem const *>(opt)) {
+			p->save();
+			p->setClipRect(o->rect);
+
+			QRect checkRect = subElementRect(SE_ItemViewItemCheckIndicator, o, w);
+			QRect iconRect = subElementRect(SE_ItemViewItemDecoration, o, w);
+			QRect textRect = subElementRect(SE_ItemViewItemText, o, w);
+			textRect.adjust(2, 0, 0, 0);
+
+			// draw the background
+			drawPrimitive(PE_PanelItemViewItem, o, p, w);
+
+			// draw the check mark
+			if (o->features & QStyleOptionViewItem::HasCheckIndicator) {
+				QStyleOptionViewItem o2(*o);
+				o2.rect = checkRect;
+				o2.state = o2.state & ~QStyle::State_HasFocus;
+
+				switch (o->checkState) {
+				case Qt::Unchecked:
+					o2.state |= QStyle::State_Off;
+					break;
+				case Qt::PartiallyChecked:
+					o2.state |= QStyle::State_NoChange;
+					break;
+				case Qt::Checked:
+					o2.state |= QStyle::State_On;
+					break;
+				}
+				drawPrimitive(QStyle::PE_IndicatorItemViewItemCheck, &o2, p, w);
+			}
+
+			// draw the icon
+			QIcon::Mode mode = QIcon::Normal;
+			if (!(o->state & QStyle::State_Enabled)) {
+				mode = QIcon::Disabled;
+			} else if (o->state & QStyle::State_Selected) {
+				mode = QIcon::Selected;
+			}
+			QIcon::State state = o->state & QStyle::State_Open ? QIcon::On : QIcon::Off;
+			o->icon.paint(p, iconRect, o->decorationAlignment, mode, state);
+
+			// draw the text
+			if (!o->text.isEmpty()) {
+				QPalette::ColorGroup cg = o->state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
+				if (cg == QPalette::Normal && !(o->state & QStyle::State_Active)) {
+					cg = QPalette::Inactive;
+				}
+				if (o->state & QStyle::State_Selected) {
+					p->setPen(o->palette.color(cg, QPalette::HighlightedText));
+				} else {
+					p->setPen(o->palette.color(cg, QPalette::Text));
+				}
+				if (o->state & QStyle::State_Editing) {
+					p->setPen(o->palette.color(cg, QPalette::Text));
+					p->drawRect(textRect.adjusted(0, 0, -1, -1));
+				}
+				drawItemText(p, textRect, o->displayAlignment, o->palette, enabled, o->text, QPalette::Text);
+			}
+
+			p->restore();
+		}
+		return;
+	}
 	QProxyStyle::drawControl(element, opt, p, w);
 }
+

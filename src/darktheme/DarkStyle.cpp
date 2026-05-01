@@ -1032,7 +1032,7 @@ void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option
 			}
 		}
 	}
-	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, text, QPalette::NoRole);
+	drawItemText(p, rect, option->displayAlignment, option->palette, enabled, text, QPalette::Text);
 	p->restore();
 }
 
@@ -1175,7 +1175,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		return;
 	}
 	if (pe == PE_PanelItemViewItem) {
-		//		p->fillRect(option->rect, colorForItemView(option)); // 選択枠を透過描画させるので背景は描かない
 		auto DrawSelectionFrame = [&](QRect const &r){
 			bool focus = widget && widget->hasFocus();
 			drawSelectedItemFrame(p, r, focus);
