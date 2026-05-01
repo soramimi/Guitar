@@ -439,6 +439,7 @@ private:
 	void setCurrentGitRunner(GitRunner g);
 	void endSession();
 	std::optional<GitCommitItem> getCommitItem(GitRunner g, const GitHash &hash) const;
+	GitHash blobID(QListWidgetItem *item) const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -585,7 +586,7 @@ public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1, QString const &search_text = {});
 	
-	const TagList &queryCurrentCommitTagList() const;
+        TagList queryCurrentCommitTagList() const;
 	
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
@@ -614,7 +615,7 @@ public:
 	void clearStatusInfo();
 	bool setCurrentLogRow(int row);
 	bool shown();
-        void deleteTags(const std::vector<std::string> &tagnames);
+	void deleteTags(const std::vector<std::string> &tagnames);
 	void addTag(QString const &name);
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();

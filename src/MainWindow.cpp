@@ -1006,7 +1006,7 @@ TagList MainWindow::findTag(GitHash const &id) const
 	return findTag(tagmap(), id);
 }
 
-TagList const &MainWindow::queryCurrentCommitTagList() const
+TagList MainWindow::queryCurrentCommitTagList() const
 {
 	GitCommitItem const &commit = selectedCommitItem();
 	return findTag(commit.commit_id);
@@ -4966,6 +4966,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QString submodpath = getSubmodulePath(item);
 
 	QMenu menu;
+	QAction *a_save_as = menu.addAction(tr("Save as..."));
 	QAction *a_delete = menu.addAction(tr("Delete"));
 	QAction *a_untrack = menu.addAction(tr("Untrack"));
 	QAction *a_history = menu.addAction(tr("History"));
@@ -4983,6 +4984,20 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 	QPoint pt = ui->listWidget_files->mapToGlobal(pos) + QPoint(8, -8);
 	QAction *a = menu.exec(pt);
 	if (a) {
+		if (a == a_save_as) {
+			GitHash id = blobID(item);
+			QString path = getFilePath(item);
+			std::string workingdir = g.workingDir();
+			if (id && !path.isEmpty() && !workingdir.empty()) {
+				QString fullpath = QString::fromStdString(workingdir) / path;
+				if (QMessageBox::question(this, tr("Save as"), tr("Do you want to save the file to \"%1\"?").arg(fullpath)) == QMessageBox::Yes) {
+					saveBlobAs(id, fullpath);
+				}
+			} else {
+				QMessageBox::warning(this, tr("Error"), tr("Cannot get file information."));
+			}
+			return;
+		}
 		if (a == a_delete) {
 			if (askAreYouSureYouWantToRun("Delete", tr("Delete selected files."))) {
 				for_each_selected_files([&](QString const &path){
@@ -5896,6 +5911,17 @@ int MainWindow::selectedLogIndex() const
 		return i;
 	}
 	return -1;
+}
+
+GitHash MainWindow::blobID(QListWidgetItem *item) const
+{
+	int idiff = indexOfDiff(item);
+	std::vector<GitDiff> const *diffs = diffResult();
+	if (idiff >= 0 && idiff < diffs->size()) {
+		GitDiff const &diff = diffs->at(idiff);
+		return GitHash(diff.blob.b_id_or_path);
+	}
+	return {};
 }
 
 /**
