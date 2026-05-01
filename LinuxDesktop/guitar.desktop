@@ -2,6 +2,7 @@
 Type=Application
 Name=Guitar
 Comment=Graphical git client
+Comment[ru]=Графический клиент Git
 Categories=Development;
 Exec=guitar
 Icon=guitar
