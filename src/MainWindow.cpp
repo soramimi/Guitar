@@ -1006,7 +1006,7 @@ TagList MainWindow::findTag(GitHash const &id) const
 	return findTag(tagmap(), id);
 }
 
-TagList const &MainWindow::queryCurrentCommitTagList() const
+TagList MainWindow::queryCurrentCommitTagList() const
 {
 	GitCommitItem const &commit = selectedCommitItem();
 	return findTag(commit.commit_id);

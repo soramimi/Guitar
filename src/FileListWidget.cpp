@@ -100,6 +100,8 @@ public:
 		}
 #endif
 
+		{
+		}
 		// アイテムテキスト描画
 		option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &o, painter, option.widget);
 	}

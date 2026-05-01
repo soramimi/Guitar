@@ -585,7 +585,7 @@ public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1, QString const &search_text = {});
 	
-	const TagList &queryCurrentCommitTagList() const;
+        TagList queryCurrentCommitTagList() const;
 	
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);

@@ -13,6 +13,10 @@ public:
 	{
 	}
 	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const override;
+
+	// QStyle interface
+public:
+	void drawControl(ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *w) const;
 };
 
 #endif // LIGHTSTYLE_H

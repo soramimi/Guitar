@@ -31,7 +31,12 @@ MainWindow *EditTagsDialog::mainwindow()
 	return qobject_cast<MainWindow *>(parent());
 }
 
-TagList EditTagsDialog::queryTagList()
+MainWindow const *EditTagsDialog::mainwindow() const
+{
+	return qobject_cast<MainWindow const *>(parent());
+}
+
+TagList EditTagsDialog::queryTagList() const
 {
 	return mainwindow()->queryCurrentCommitTagList();
 }

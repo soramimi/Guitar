@@ -20,7 +20,8 @@ private:
 private:
 	QStringList selectedTags();
 	MainWindow *mainwindow();
-	TagList queryTagList();
+	MainWindow const *mainwindow() const;
+	TagList queryTagList() const;
 	void updateTagList();
 public:
 	explicit EditTagsDialog(MainWindow *parent, GitCommitItem const *commit);
