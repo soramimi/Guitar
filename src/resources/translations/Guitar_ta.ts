@@ -1376,7 +1376,7 @@
     </message>
     <message>
         <source>TextLabel</source>
-        <translation>உரை சிட்டை</translation>
+        <translation type="vanished">உரை சிட்டை</translation>
     </message>
     <message>
         <source>OK</source>
@@ -2030,7 +2030,7 @@
     </message>
     <message>
         <source>Merge...</source>
-        <translation type="vanished">ஒன்றிணை...</translation>
+        <translation>ஒன்றிணை...</translation>
     </message>
     <message>
         <source>Expand commit log</source>
@@ -2330,7 +2330,7 @@
     </message>
     <message>
         <source>&lt;div style=&apos;background: #80ffff;&apos;&gt;Search: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&lt;/div&gt;</source>
-        <translation>&lt;div style=&apos;background: #80ffff;&apos;&gt;தேடல்: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&lt;/div&gt;</translation>
+        <translation type="vanished">&lt;div style=&apos;background: #80ffff;&apos;&gt;தேடல்: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&lt;/div&gt;</translation>
     </message>
     <message>
         <source>&amp;Add repository</source>
@@ -2350,7 +2350,7 @@
     </message>
     <message>
         <source>Checkout branch {%1}</source>
-        <translation>செக்அவுட் கிளை {%1}</translation>
+        <translation type="vanished">செக்அவுட் கிளை {%1}</translation>
     </message>
     <message>
         <source>Edit message...</source>
@@ -2532,6 +2532,38 @@
     </message>
     <message>
         <source>SSH connection is disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="unfinished">தேடல்</translation>
+    </message>
+    <message>
+        <source>Switch to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>[%1] %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save as...</source>
+        <translation type="unfinished">இவ்வாறு சேமி...</translation>
+    </message>
+    <message>
+        <source>Save as</source>
+        <translation type="unfinished">என சேமி</translation>
+    </message>
+    <message>
+        <source>Do you want to save the file to &quot;%1&quot;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">பிழை</translation>
+    </message>
+    <message>
+        <source>Cannot get file information.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

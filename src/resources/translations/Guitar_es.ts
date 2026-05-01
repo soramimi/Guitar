@@ -711,22 +711,22 @@
         <translation>Mensaje</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="229"/>
+        <location filename="../../CommitDialog.ui" line="250"/>
         <source>Generate with &amp;AI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="249"/>
+        <location filename="../../CommitDialog.ui" line="273"/>
         <source>Amend</source>
         <translation>Enmendar</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="276"/>
+        <location filename="../../CommitDialog.ui" line="300"/>
         <source>OK</source>
         <translation>De acuerdo</translation>
     </message>
     <message>
-        <location filename="../../CommitDialog.ui" line="286"/>
+        <location filename="../../CommitDialog.ui" line="310"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
@@ -754,7 +754,7 @@
         <translation>Autor</translation>
     </message>
     <message>
-        <location filename="../../CommitExploreWindow.cpp" line="76"/>
+        <location filename="../../CommitExploreWindow.cpp" line="77"/>
         <source>Commit</source>
         <translation>Cometida (Commit)</translation>
     </message>
@@ -762,27 +762,27 @@
 <context>
     <name>CommitLogTableModel</name>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="67"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="69"/>
         <source>Graph</source>
         <translation type="unfinished">Gráfico</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="68"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="70"/>
         <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="69"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="71"/>
         <source>Date</source>
         <translation type="unfinished">Fecha</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="70"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="72"/>
         <source>Author</source>
         <translation type="unfinished">Autor</translation>
     </message>
     <message>
-        <location filename="../../CommitLogTableWidget.cpp" line="71"/>
+        <location filename="../../CommitLogTableWidget.cpp" line="73"/>
         <source>Message</source>
         <translation type="unfinished">Mensaje</translation>
     </message>
@@ -874,38 +874,38 @@
         <translation type="vanished">&lt;Desconocido&gt;</translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="72"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="73"/>
         <source>Good</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="75"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="76"/>
         <source>BAD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="78"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="79"/>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="81"/>
-        <location filename="../../CommitPropertyDialog.cpp" line="84"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="82"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="85"/>
         <source>Expired</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="87"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="88"/>
         <source>Revoked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="90"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="91"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CommitPropertyDialog.cpp" line="93"/>
+        <location filename="../../CommitPropertyDialog.cpp" line="94"/>
         <source>None</source>
         <translation type="unfinished">Ninguno</translation>
     </message>
@@ -918,7 +918,7 @@
         <translation>Vista de Cometida</translation>
     </message>
     <message>
-        <location filename="../../CommitViewWindow.cpp" line="57"/>
+        <location filename="../../CommitViewWindow.cpp" line="58"/>
         <source>History</source>
         <translation>Historia</translation>
     </message>
@@ -1028,7 +1028,7 @@
     </message>
     <message>
         <location filename="../../ConfigUserDialog.ui" line="76"/>
-        <location filename="../../ConfigUserDialog.cpp" line="38"/>
+        <location filename="../../ConfigUserDialog.cpp" line="39"/>
         <source>Local</source>
         <translation>Local</translation>
     </message>
@@ -1202,7 +1202,7 @@
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../DeleteBranchDialog.cpp" line="23"/>
+        <location filename="../../DeleteBranchDialog.cpp" line="24"/>
         <source>Delete Remote Branch</source>
         <translation>Eliminar Rama Remota</translation>
     </message>
@@ -1377,7 +1377,7 @@
     </message>
     <message>
         <location filename="../../EditProfilesDialog.ui" line="31"/>
-        <location filename="../../EditProfilesDialog.cpp" line="78"/>
+        <location filename="../../EditProfilesDialog.cpp" line="79"/>
         <source>Name</source>
         <translation type="unfinished">Nombre</translation>
     </message>
@@ -1422,7 +1422,7 @@
         <translation type="unfinished">Cancelar</translation>
     </message>
     <message>
-        <location filename="../../EditProfilesDialog.cpp" line="79"/>
+        <location filename="../../EditProfilesDialog.cpp" line="80"/>
         <source>Mail Address</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1534,22 +1534,22 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../../FileHistoryWindow.cpp" line="91"/>
+        <location filename="../../FileHistoryWindow.cpp" line="92"/>
         <source>Commit</source>
         <translation>Cometida (Commit)</translation>
     </message>
     <message>
-        <location filename="../../FileHistoryWindow.cpp" line="92"/>
+        <location filename="../../FileHistoryWindow.cpp" line="93"/>
         <source>Date</source>
         <translation>Fecha</translation>
     </message>
     <message>
-        <location filename="../../FileHistoryWindow.cpp" line="93"/>
+        <location filename="../../FileHistoryWindow.cpp" line="94"/>
         <source>Author</source>
         <translation>Autor</translation>
     </message>
     <message>
-        <location filename="../../FileHistoryWindow.cpp" line="94"/>
+        <location filename="../../FileHistoryWindow.cpp" line="95"/>
         <source>Message</source>
         <translation>Mensaje</translation>
     </message>
@@ -1607,7 +1607,7 @@
 <context>
     <name>FileViewWidget</name>
     <message>
-        <location filename="../../FileViewWidget.cpp" line="30"/>
+        <location filename="../../FileViewWidget.cpp" line="31"/>
         <source>Form</source>
         <translation>Formulario</translation>
     </message>
@@ -1638,27 +1638,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../GenerateCommitMessageDialog.ui" line="32"/>
+        <location filename="../../GenerateCommitMessageDialog.ui" line="62"/>
         <source>Regenerate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../GenerateCommitMessageDialog.ui" line="45"/>
-        <source>TextLabel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../GenerateCommitMessageDialog.ui" line="55"/>
+        <location filename="../../GenerateCommitMessageDialog.ui" line="85"/>
         <source>OK</source>
         <translation type="unfinished">De acuerdo</translation>
     </message>
     <message>
-        <location filename="../../GenerateCommitMessageDialog.ui" line="65"/>
+        <location filename="../../GenerateCommitMessageDialog.ui" line="95"/>
         <source>Cancel</source>
         <translation type="unfinished">Cancelar</translation>
     </message>
     <message>
-        <location filename="../../GenerateCommitMessageDialog.cpp" line="105"/>
+        <location filename="../../GenerateCommitMessageDialog.cpp" line="116"/>
         <source>Failed to generate commit message.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1858,17 +1853,17 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="1469"/>
-        <location filename="../../MainWindow.cpp" line="2528"/>
-        <location filename="../../MainWindow.cpp" line="2533"/>
-        <location filename="../../MainWindow.cpp" line="2546"/>
-        <location filename="../../MainWindow.cpp" line="2551"/>
+        <location filename="../../MainWindow.cpp" line="2534"/>
+        <location filename="../../MainWindow.cpp" line="2539"/>
+        <location filename="../../MainWindow.cpp" line="2552"/>
+        <location filename="../../MainWindow.cpp" line="2557"/>
         <source>Clone</source>
         <translation>Clonar</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="131"/>
-        <location filename="../../MainWindow.cpp" line="4289"/>
-        <location filename="../../MainWindow.cpp" line="4290"/>
+        <location filename="../../MainWindow.cpp" line="4293"/>
+        <location filename="../../MainWindow.cpp" line="4294"/>
         <source>Fetch</source>
         <translation>Recuperar</translation>
     </message>
@@ -1931,7 +1926,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="835"/>
-        <location filename="../../MainWindow.cpp" line="5107"/>
+        <location filename="../../MainWindow.cpp" line="5165"/>
         <source>Unstage</source>
         <translation>Sin etapa</translation>
     </message>
@@ -1942,13 +1937,13 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="800"/>
-        <location filename="../../MainWindow.cpp" line="4981"/>
+        <location filename="../../MainWindow.cpp" line="5039"/>
         <source>Stage</source>
         <translation>Etapa</translation>
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="871"/>
-        <location filename="../../MainWindow.cpp" line="2668"/>
+        <location filename="../../MainWindow.cpp" line="2674"/>
         <source>Commit</source>
         <translation>Cometida</translation>
     </message>
@@ -1977,7 +1972,7 @@
         <translation>Configuración</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4841"/>
+        <location filename="../../MainWindow.cpp" line="4877"/>
         <source>Edit tags...</source>
         <translation>Editar etiquetas...</translation>
     </message>
@@ -2040,7 +2035,7 @@
     </message>
     <message>
         <location filename="../../MainWindow.ui" line="252"/>
-        <location filename="../../MainWindow.cpp" line="4517"/>
+        <location filename="../../MainWindow.cpp" line="4525"/>
         <source>Status</source>
         <translation>Estado</translation>
     </message>
@@ -2402,7 +2397,7 @@
         <translation>Finalizar (C&amp;heckout)...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4846"/>
+        <location filename="../../MainWindow.cpp" line="4882"/>
         <source>Delete branch...</source>
         <translation>Eliminar rama...</translation>
     </message>
@@ -2460,8 +2455,9 @@
         <translation>Ctrl+H</translation>
     </message>
     <message>
+        <location filename="../../MainWindow.cpp" line="4874"/>
         <source>Merge...</source>
-        <translation type="vanished">Fusionar...</translation>
+        <translation>Fusionar...</translation>
     </message>
     <message>
         <source>Expand commit log</source>
@@ -2536,7 +2532,7 @@
         <translation>reset HEAD~1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4847"/>
+        <location filename="../../MainWindow.cpp" line="4883"/>
         <source>Delete remote branch...</source>
         <translation>Eliminar rama remota...</translation>
     </message>
@@ -2559,7 +2555,7 @@
         <translation>Registro (&amp;L)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1231"/>
+        <location filename="../../MainWindow.cpp" line="1233"/>
         <source>Unnamed</source>
         <translation>Sin nombre</translation>
     </message>
@@ -2584,40 +2580,40 @@
         <translation type="vanished">Descripción</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1528"/>
-        <location filename="../../MainWindow.cpp" line="4359"/>
+        <location filename="../../MainWindow.cpp" line="1534"/>
+        <location filename="../../MainWindow.cpp" line="4368"/>
         <source>Uncommited changes</source>
         <translation>Cambios sin cometidas</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3725"/>
+        <location filename="../../MainWindow.cpp" line="3731"/>
         <source>Are you sure you want to remove the repository from bookmarks?</source>
         <translation>¿Está seguro de que desea eliminar el repositorio de los marcadores？</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3725"/>
+        <location filename="../../MainWindow.cpp" line="3731"/>
         <source>(Files will NOT be deleted)</source>
         <translation>（Archivos No serán eliminados）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1756"/>
-        <location filename="../../MainWindow.cpp" line="1763"/>
-        <location filename="../../MainWindow.cpp" line="5394"/>
+        <location filename="../../MainWindow.cpp" line="1762"/>
+        <location filename="../../MainWindow.cpp" line="1769"/>
+        <location filename="../../MainWindow.cpp" line="5452"/>
         <source>Open Repository</source>
         <translation>Abrir Repositorioく</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1756"/>
+        <location filename="../../MainWindow.cpp" line="1762"/>
         <source>No such folder</source>
         <translation>Carpeta inexistente</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1763"/>
+        <location filename="../../MainWindow.cpp" line="1769"/>
         <source>Not a valid git repository</source>
         <translation>Repositorio git inválido</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2668"/>
+        <location filename="../../MainWindow.cpp" line="2674"/>
         <source>Commit message can not be omitted.</source>
         <translation>Obligatorio incluir mensaje de cometida.</translation>
     </message>
@@ -2626,57 +2622,57 @@
         <translation type="vanished">Propiedades de Repositorio</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4639"/>
+        <location filename="../../MainWindow.cpp" line="4647"/>
         <source>&amp;Add new group</source>
         <translation>&amp;Añadir nuevo grupo</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4640"/>
+        <location filename="../../MainWindow.cpp" line="4648"/>
         <source>&amp;Delete group</source>
         <translation>Eliminar grupo (&amp;D)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4641"/>
+        <location filename="../../MainWindow.cpp" line="4649"/>
         <source>&amp;Rename group</source>
         <translation>&amp;Renombrar grupo</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4649"/>
+        <location filename="../../MainWindow.cpp" line="4657"/>
         <source>New group</source>
         <translation>Nuevo grupo</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4706"/>
+        <location filename="../../MainWindow.cpp" line="4714"/>
         <source>Open &amp;terminal</source>
         <translation>Abrie en &amp;terminal</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4707"/>
+        <location filename="../../MainWindow.cpp" line="4715"/>
         <source>Open command promp&amp;t</source>
         <translation>Abrir intérprete de manda&amp;tos</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4709"/>
+        <location filename="../../MainWindow.cpp" line="4717"/>
         <source>&amp;Open</source>
         <translation>Abrir (&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4730"/>
+        <location filename="../../MainWindow.cpp" line="4738"/>
         <source>Open &amp;folder</source>
         <translation>Abrir carpeta (&amp;f)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4735"/>
+        <location filename="../../MainWindow.cpp" line="4743"/>
         <source>&amp;Remove</source>
         <translation>Eliminar (&amp;R)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4792"/>
+        <location filename="../../MainWindow.cpp" line="4834"/>
         <source>Copy commit id (7 letters)</source>
         <translation>Copiar ID de cometida（7 letras)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4793"/>
+        <location filename="../../MainWindow.cpp" line="4835"/>
         <source>Copy commit id (completely)</source>
         <translation>Copiar ID de cometida（completo）</translation>
     </message>
@@ -2685,13 +2681,13 @@
         <translation type="vanished">Editar comentario...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4403"/>
-        <location filename="../../MainWindow.cpp" line="4839"/>
+        <location filename="../../MainWindow.cpp" line="4412"/>
+        <location filename="../../MainWindow.cpp" line="4875"/>
         <source>Rebase</source>
         <translation>Rebasar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4851"/>
+        <location filename="../../MainWindow.cpp" line="4887"/>
         <source>Explore</source>
         <translation>Examinar</translation>
     </message>
@@ -2704,35 +2700,35 @@
         <translation type="vanished">Mensaje</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4932"/>
-        <location filename="../../MainWindow.cpp" line="4986"/>
-        <location filename="../../MainWindow.cpp" line="5108"/>
+        <location filename="../../MainWindow.cpp" line="4976"/>
+        <location filename="../../MainWindow.cpp" line="5044"/>
+        <location filename="../../MainWindow.cpp" line="5166"/>
         <source>History</source>
         <translation>Historia</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6364"/>
+        <location filename="../../MainWindow.cpp" line="6434"/>
         <source>No such commit</source>
         <translation>Cometida inexistente</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4292"/>
-        <location filename="../../MainWindow.cpp" line="4293"/>
+        <location filename="../../MainWindow.cpp" line="4296"/>
+        <location filename="../../MainWindow.cpp" line="4297"/>
         <source>Update</source>
         <translation>Actualizar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6812"/>
+        <location filename="../../MainWindow.cpp" line="6882"/>
         <source>Authentication Failed</source>
         <translation>Falló Autenticación</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4842"/>
+        <location filename="../../MainWindow.cpp" line="4878"/>
         <source>Revert</source>
         <translation>Revertir</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2690"/>
+        <location filename="../../MainWindow.cpp" line="2696"/>
         <source>Failed to commit</source>
         <translation>Falló cometida</translation>
     </message>
@@ -2749,306 +2745,336 @@
         <translation type="vanished">Intente push --set-upstream</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2729"/>
+        <location filename="../../MainWindow.cpp" line="2735"/>
         <source>Connection refused.</source>
         <translation>Conexión rechazada.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1122"/>
+        <location filename="../../MainWindow.cpp" line="1124"/>
         <source>&amp;Property</source>
         <translation>&amp;Propiedades</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="240"/>
+        <location filename="../../MainWindow.cpp" line="241"/>
         <source>Create shortcut file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3050"/>
+        <location filename="../../MainWindow.cpp" line="3056"/>
         <source>Select a folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3069"/>
+        <location filename="../../MainWindow.cpp" line="3075"/>
         <source>No repositories found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3069"/>
+        <location filename="../../MainWindow.cpp" line="3075"/>
         <source>No repositories found in the folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2740"/>
+        <location filename="../../MainWindow.cpp" line="2746"/>
         <source>Fetching...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2486"/>
+        <location filename="../../MainWindow.cpp" line="2492"/>
         <source>Cloning...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2609"/>
+        <location filename="../../MainWindow.cpp" line="2615"/>
         <source>Submodule...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2725"/>
+        <location filename="../../MainWindow.cpp" line="2731"/>
         <source>Pushing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2747"/>
+        <location filename="../../MainWindow.cpp" line="2753"/>
         <source>Stageing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2755"/>
+        <location filename="../../MainWindow.cpp" line="2760"/>
         <source>Fetching tags...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2760"/>
+        <location filename="../../MainWindow.cpp" line="2765"/>
         <source>Pulling...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2768"/>
+        <location filename="../../MainWindow.cpp" line="2773"/>
         <source>Pushing tags...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4343"/>
-        <source>&lt;div style=&apos;background: #80ffff;&apos;&gt;Search: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&lt;/div&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="4643"/>
+        <location filename="../../MainWindow.cpp" line="4651"/>
         <source>&amp;Add repository</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4644"/>
+        <location filename="../../MainWindow.cpp" line="4652"/>
         <source>&amp;Scan folder and add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4713"/>
+        <location filename="../../MainWindow.cpp" line="4721"/>
         <source>&amp;Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4808"/>
+        <location filename="../../MainWindow.cpp" line="4850"/>
         <source>Checkout/Branch...</source>
         <translation>Veriifcar/Rama...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4812"/>
-        <source>Checkout branch {%1}</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="4835"/>
+        <location filename="../../MainWindow.cpp" line="4871"/>
         <source>Edit message...</source>
         <translation>Editar mensaje...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4838"/>
+        <location filename="../../MainWindow.cpp" line="4827"/>
         <source>Merge</source>
         <translation>Fusionar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4840"/>
+        <location filename="../../MainWindow.cpp" line="4350"/>
+        <source>Search</source>
+        <translation type="unfinished">Buscar</translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="4810"/>
+        <source>Switch to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="4828"/>
+        <source>[%1] %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="4876"/>
         <source>Cherry-pick</source>
         <translation>Selección meticulosa</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4931"/>
-        <location filename="../../MainWindow.cpp" line="4985"/>
+        <location filename="../../MainWindow.cpp" line="4973"/>
+        <source>Save as...</source>
+        <translation type="unfinished">Guardar como...</translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="4975"/>
+        <location filename="../../MainWindow.cpp" line="5043"/>
         <source>Untrack</source>
         <translation>Dejar de dar seguimiento</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4937"/>
-        <location filename="../../MainWindow.cpp" line="4987"/>
-        <location filename="../../MainWindow.cpp" line="5109"/>
+        <location filename="../../MainWindow.cpp" line="4981"/>
+        <location filename="../../MainWindow.cpp" line="5045"/>
+        <location filename="../../MainWindow.cpp" line="5167"/>
         <source>Blame</source>
         <translation>Blame</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4939"/>
+        <location filename="../../MainWindow.cpp" line="4983"/>
         <source>Clean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4948"/>
+        <location filename="../../MainWindow.cpp" line="4997"/>
+        <source>Save as</source>
+        <translation type="unfinished">Guardar como</translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="4997"/>
+        <source>Do you want to save the file to &quot;%1&quot;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="5001"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="5001"/>
+        <source>Cannot get file information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="5006"/>
         <source>Delete selected files.</source>
         <translation>Eliminar archivos seleccionados.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4955"/>
+        <location filename="../../MainWindow.cpp" line="5013"/>
         <source>rm --cached files</source>
         <translation>rm --cached files</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4982"/>
+        <location filename="../../MainWindow.cpp" line="5040"/>
         <source>Reset</source>
         <translation>Restablecer (reset)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4983"/>
+        <location filename="../../MainWindow.cpp" line="5041"/>
         <source>Ignore</source>
         <translation>Ignorar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5506"/>
+        <location filename="../../MainWindow.cpp" line="5564"/>
         <source>Create Local Branch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="7220"/>
+        <location filename="../../MainWindow.cpp" line="7239"/>
         <source>SSH Connection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="7220"/>
+        <location filename="../../MainWindow.cpp" line="7239"/>
         <source>SSH connection is disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2902"/>
+        <location filename="../../MainWindow.cpp" line="2907"/>
         <source>Reset a file</source>
         <translation>Reestablecer un archivo</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4400"/>
+        <location filename="../../MainWindow.cpp" line="4409"/>
         <source>Are you sure you want to rebase the commit?</source>
         <translation>¿Está seguro que quiere rebasar la cometida?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3552"/>
+        <location filename="../../MainWindow.cpp" line="3558"/>
         <source>No repository selected</source>
         <translation>Sin repositorio seleccionado</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4930"/>
-        <location filename="../../MainWindow.cpp" line="4984"/>
+        <location filename="../../MainWindow.cpp" line="4974"/>
+        <location filename="../../MainWindow.cpp" line="5042"/>
         <source>Delete</source>
         <translation>Eliminar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3830"/>
+        <location filename="../../MainWindow.cpp" line="3836"/>
         <source>Are you sure you want to run the following command?</source>
         <translation>¿Está seguro que quiere ejecutar el siguiente programa?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1180"/>
+        <location filename="../../MainWindow.cpp" line="1182"/>
         <source>Revert all files</source>
         <translation>Revertir todos los archivos</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5337"/>
+        <location filename="../../MainWindow.cpp" line="5395"/>
         <source>git command not specified</source>
         <translation>Programa git sin especificar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6324"/>
+        <location filename="../../MainWindow.cpp" line="6394"/>
         <source>Select %1 command</source>
         <translation>Seleccione el programa %1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1859"/>
+        <location filename="../../MainWindow.cpp" line="1865"/>
         <source>The folder is not a valid git repository.</source>
         <translation>La carpeta no es un repositorio Git válido.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1863"/>
+        <location filename="../../MainWindow.cpp" line="1869"/>
         <source>Do you want to initialize it as a git repository?</source>
         <translation>¿Quiere inicializarlo como un repositorio git?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1864"/>
+        <location filename="../../MainWindow.cpp" line="1870"/>
         <source>Initialize Repository</source>
         <translation>Inicializar repositorio</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1756"/>
+        <location filename="../../MainWindow.cpp" line="1762"/>
         <source>Remove from bookmark?</source>
         <translation>¿Eliminar de marcadores?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3678"/>
+        <location filename="../../MainWindow.cpp" line="3684"/>
         <source>, %1 ahead</source>
         <translation>, %1 adelante</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3681"/>
+        <location filename="../../MainWindow.cpp" line="3687"/>
         <source>, %1 behind</source>
         <translation>, %1 atras</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3725"/>
+        <location filename="../../MainWindow.cpp" line="3731"/>
         <source>Confirm Remove</source>
         <translation>Confirmar Eliminar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2527"/>
+        <location filename="../../MainWindow.cpp" line="2533"/>
         <source>A file with same name already exists</source>
         <translation>Ya existe un archivois con el mismo nombre</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2532"/>
+        <location filename="../../MainWindow.cpp" line="2538"/>
         <source>A folder with same name already exists</source>
         <translation>Ya existe una carepta con el mismo nombre</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2545"/>
+        <location filename="../../MainWindow.cpp" line="2551"/>
         <source>Invalid folder</source>
         <translation>Carpeta inválida</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2550"/>
+        <location filename="../../MainWindow.cpp" line="2556"/>
         <source>No such folder. Create it now?</source>
         <translation>Carpeta inexistente. ¿Crearla ahora?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2863"/>
+        <location filename="../../MainWindow.cpp" line="2868"/>
         <source>Failed to delete the branch &apos;%1&apos;</source>
         <translation>Falló al eliminar la rama &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5220"/>
+        <location filename="../../MainWindow.cpp" line="5278"/>
         <source>The URL is a valid repository</source>
         <translation>El URL del repositorio es inválido</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5221"/>
+        <location filename="../../MainWindow.cpp" line="5279"/>
         <source>Failed to access the URL</source>
         <translation>Falló al acceder al URL</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5226"/>
+        <location filename="../../MainWindow.cpp" line="5284"/>
         <source>Remote Repository</source>
         <translation>Repositorio Remoto</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5394"/>
+        <location filename="../../MainWindow.cpp" line="5452"/>
         <source>The specified commit ID was not found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5507"/>
+        <location filename="../../MainWindow.cpp" line="5565"/>
         <source>Failed to create a local branch.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="5507"/>
+        <location filename="../../MainWindow.cpp" line="5565"/>
         <source>Do you want to jump to the existing commit?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="6364"/>
+        <location filename="../../MainWindow.cpp" line="6434"/>
         <source>Jump</source>
         <translation>Saltar</translation>
     </message>
@@ -3158,12 +3184,12 @@
 <context>
     <name>MyTextEditorWidget</name>
     <message>
-        <location filename="../../MyTextEditorWidget.cpp" line="45"/>
+        <location filename="../../MyTextEditorWidget.cpp" line="43"/>
         <source>Save as...</source>
         <translation>Guardar como...</translation>
     </message>
     <message>
-        <location filename="../../MyTextEditorWidget.cpp" line="46"/>
+        <location filename="../../MyTextEditorWidget.cpp" line="44"/>
         <source>Copy</source>
         <translation>Copiar</translation>
     </message>
@@ -3272,12 +3298,12 @@
     <name>QApplication</name>
     <message>
         <location filename="../../unix/UnixUtil.cpp" line="24"/>
-        <location filename="../../win32/Win32Util.cpp" line="438"/>
+        <location filename="../../win32/Win32Util.cpp" line="439"/>
         <source>Save Launcher File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MyObjectViewBase.cpp" line="20"/>
+        <location filename="../../MyObjectViewBase.cpp" line="22"/>
         <source>Save as</source>
         <translation type="unfinished">Guardar como</translation>
     </message>
@@ -3306,22 +3332,22 @@
         <translation>Cerrar</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="35"/>
+        <location filename="../../ReflogWindow.cpp" line="36"/>
         <source>Commit</source>
         <translation>Cometida (Commit)</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="36"/>
+        <location filename="../../ReflogWindow.cpp" line="37"/>
         <source>Head</source>
         <translation>Cabecera</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="37"/>
+        <location filename="../../ReflogWindow.cpp" line="38"/>
         <source>Command</source>
         <translation>Programa</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="38"/>
+        <location filename="../../ReflogWindow.cpp" line="39"/>
         <source>Message</source>
         <translation>Mensaje</translation>
     </message>
@@ -3330,12 +3356,12 @@
         <translation type="vanished">Comentario</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="94"/>
+        <location filename="../../ReflogWindow.cpp" line="98"/>
         <source>Checkout</source>
         <translation>Finalizar (Checkout)</translation>
     </message>
     <message>
-        <location filename="../../ReflogWindow.cpp" line="95"/>
+        <location filename="../../ReflogWindow.cpp" line="99"/>
         <source>Explorer</source>
         <translation>Explorador</translation>
     </message>
@@ -3448,7 +3474,7 @@
         <translation type="unfinished">&amp;Cerrar</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="258"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="259"/>
         <source>Edit Name</source>
         <translation>Editar Nombre</translation>
     </message>
@@ -3486,22 +3512,22 @@
         <translation type="vanished">Cerrar</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="93"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="94"/>
         <source>Name</source>
         <translation type="unfinished">Nombre</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="94"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="95"/>
         <source>URL</source>
         <translation type="unfinished">URL</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="244"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="245"/>
         <source>Confirm Remove</source>
         <translation>Confirmar Eliminar</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="244"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="245"/>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos;?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3510,7 +3536,7 @@
         <translation type="vanished">¿Está seguro que quiere eliminar &apos;%1&apos; remoto desde el repositorio &apos;%2&apos; ?</translation>
     </message>
     <message>
-        <location filename="../../RepositoryPropertyDialog.cpp" line="258"/>
+        <location filename="../../RepositoryPropertyDialog.cpp" line="259"/>
         <source>Save</source>
         <translation>Guardar</translation>
     </message>
@@ -3518,7 +3544,7 @@
 <context>
     <name>RepositoryTreeWidget</name>
     <message>
-        <location filename="../../RepositoryTreeWidget.cpp" line="265"/>
+        <location filename="../../RepositoryTreeWidget.cpp" line="270"/>
         <source>Querying last modified time of %1/%2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3859,27 +3885,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="200"/>
+        <location filename="../../SettingAiForm.cpp" line="327"/>
         <source>Use %1 environment value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="229"/>
+        <location filename="../../SettingAiForm.cpp" line="370"/>
         <source>ATTENTION</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="232"/>
+        <location filename="../../SettingAiForm.cpp" line="373"/>
         <source>By enabling the commit message generation feature using AI, you are deemed to agree that part of your local content will be sent to the cloud service.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="235"/>
+        <location filename="../../SettingAiForm.cpp" line="376"/>
         <source>You should be aware of AI model selection, API usage fees, and information security.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingAiForm.cpp" line="236"/>
+        <location filename="../../SettingAiForm.cpp" line="377"/>
         <source>Commit Message Generation with AI</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4098,7 +4124,7 @@
         <translation type="unfinished">(Cambios aplicarán en la siguiente ejecución)</translation>
     </message>
     <message>
-        <location filename="../../SettingLoggingForm.cpp" line="62"/>
+        <location filename="../../SettingLoggingForm.cpp" line="56"/>
         <source>Select Log Output Directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4163,23 +4189,23 @@
     </message>
     <message>
         <location filename="../../SettingOptionsForm.ui" line="69"/>
-        <location filename="../../SettingOptionsForm.cpp" line="45"/>
+        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Setup Migemo dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../SettingOptionsForm.ui" line="89"/>
-        <location filename="../../SettingOptionsForm.cpp" line="56"/>
+        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Delete Migemo dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="45"/>
+        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Are you sure to setup Migemo dictionary?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="56"/>
+        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Are you sure to delete Migemo dictionary?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4354,7 +4380,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../SettingWorkingFolderForm.cpp" line="91"/>
+        <location filename="../../SettingWorkingFolderForm.cpp" line="92"/>
         <source>Select Working Folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4591,7 +4617,7 @@
     </message>
     <message>
         <location filename="../../WelcomeWizardDialog.ui" line="289"/>
-        <location filename="../../WelcomeWizardDialog.cpp" line="180"/>
+        <location filename="../../WelcomeWizardDialog.cpp" line="181"/>
         <source>Default Working Folder</source>
         <translation>Carpeta de Trabajo Predeterminada</translation>
     </message>
@@ -4653,23 +4679,23 @@
     </message>
     <message>
         <location filename="../../WelcomeWizardDialog.ui" line="492"/>
-        <location filename="../../WelcomeWizardDialog.cpp" line="171"/>
+        <location filename="../../WelcomeWizardDialog.cpp" line="172"/>
         <source>&lt;&lt; Prev</source>
         <translation>&lt;&lt; Previo</translation>
     </message>
     <message>
         <location filename="../../WelcomeWizardDialog.ui" line="499"/>
-        <location filename="../../WelcomeWizardDialog.cpp" line="172"/>
+        <location filename="../../WelcomeWizardDialog.cpp" line="173"/>
         <source>Next &gt;&gt;</source>
         <translation>Siguiente &gt;&gt;</translation>
     </message>
     <message>
-        <location filename="../../WelcomeWizardDialog.cpp" line="125"/>
+        <location filename="../../WelcomeWizardDialog.cpp" line="126"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../WelcomeWizardDialog.cpp" line="168"/>
+        <location filename="../../WelcomeWizardDialog.cpp" line="169"/>
         <source>Finish</source>
         <translation>Finalizar</translation>
     </message>

@@ -38,6 +38,9 @@ ApplicationSettings ApplicationSettings::defaultSettings()
 	s.branch_label_color.remote = QColor(192, 240, 224); // green
 	s.branch_label_color.tag = QColor(255, 224, 192); // orange
 
+	s.incremental_search_color.filtered_bg = QColor(128, 128, 128, 64);
+	s.incremental_search_color.highlight_bg = QColor(240, 64, 255, 128);
+
 #ifdef _WIN32
 	s.terminal_command = "cmd"; // or wsl
 #else

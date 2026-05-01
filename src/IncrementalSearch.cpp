@@ -16,6 +16,15 @@
 #include <string>
 #include <time.h>
 
+static inline QColor incremental_search_filtered_bg_color()
+{
+	return global->appsettings.incremental_search_color.filtered_bg;
+}
+
+static inline QColor incremental_search_highlight_bg_color()
+{
+	return global->appsettings.incremental_search_color.highlight_bg;
+}
 
 MigemoFilter::MigemoFilter(std::string const &filtertext)
 {
@@ -110,13 +119,7 @@ QString IncrementalSearch::normalizeText(QString s)
 
 void IncrementalSearch::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
 {
-#ifndef Q_OS_WIN
-	if (opt.state & QStyle::State_Selected) { // 選択されている場合
-		painter->setPen(opt.palette.color(QPalette::HighlightedText));
-	} else {
-		painter->setPen(opt.palette.color(QPalette::Text));
-	}
-#endif
+	painter->setPen(opt.palette.color(QPalette::Text));
 	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
 }
 
@@ -143,10 +146,8 @@ void IncrementalSearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 			QRect rect2 = rect;
 			rect2.setLeft(x);
 			rect2.setWidth(w);
-			if (f) { // フィルターの部分をハイライト
-				QColor color = opt.palette.color(QPalette::Highlight);
-				color.setAlpha(128);
-				painter->fillRect(rect2, color);
+			if (f) { // フィルターの部分の背景をハイライト
+				painter->fillRect(rect2, incremental_search_highlight_bg_color());
 			}
 			drawText(painter, opt, rect2, s);
 			x += w;
@@ -158,7 +159,7 @@ void IncrementalSearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 
 void IncrementalSearch::fillFilteredBG(QPainter *painter, const QRect &rect)
 {
-	painter->fillRect(rect, QColor(128, 128, 128, 64));
+	painter->fillRect(rect, incremental_search_filtered_bg_color());
 }
 
 // MecabFilter
@@ -261,3 +262,4 @@ IncrementalSearch::Result MecabFilter::match(std::string const &text) const
 	}
 	return ret;
 }
+

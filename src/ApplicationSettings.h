@@ -72,6 +72,11 @@ public:
 		QColor tag;
 	} branch_label_color;
 
+	struct {
+		QColor filtered_bg;
+		QColor highlight_bg;
+	} incremental_search_color;
+
 	static ApplicationSettings loadSettings();
 	void saveSettings() const;
 

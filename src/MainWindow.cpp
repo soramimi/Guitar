@@ -157,7 +157,6 @@ struct MainWindow::Private {
 	MainWindow::InteractionMode interaction_mode = MainWindow::InteractionMode::None;
 
 	MainWindow::FilterTarget filter_target = MainWindow::FilterTarget::RepositorySearch;
-	// QString incremental_search_text;
 	int before_search_row = -1;
 	bool uncommited_changes = false;
 	std::vector<GitFileStatus> uncommited_changes_file_list;
@@ -4345,7 +4344,12 @@ void MainWindow::updateStatusBarText()
 
 	auto search_text = getIncrementalSearchText();
 	if (!search_text.isEmpty()) {
-		msg.text = tr("<div style='background: #80ffff;'>Search: <b>%1</b>&nbsp;</div>").arg(search_text.toHtmlEscaped());
+		QColor color = global->appsettings.incremental_search_color.highlight_bg;
+		QString s = color.name(QColor::HexRgb);
+		msg.text = QString("<div style='background: %1;'>%2: <b>%3</b>&nbsp;</div>")
+					   .arg(s)
+					   .arg(tr("Search"))
+					   .arg(search_text.toHtmlEscaped());
 		msg.format = Qt::TextFormat::RichText;
 	} else {
 		QWidget *w = qApp->focusWidget();
@@ -4353,7 +4357,7 @@ void MainWindow::updateStatusBarText()
 			std::optional<RepositoryInfo> repo = selectedRepositoryItem();
 			if (repo) {
 				msg.text = QString("%1 : %2")
-				.arg(repo->name)
+					.arg(repo->name)
 					.arg(misc::normalizePathSeparator(repo->local_dir))
 					;
 			}
