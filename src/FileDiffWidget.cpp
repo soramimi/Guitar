@@ -517,10 +517,10 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 				text += "url: " + QString::fromStdString(submodule->url) + '\n';
 				text += "commit: " + QString::fromStdString(submodule->id.toString()) + '\n';
 				text += "date: " + misc::makeDateTimeString(submodule_commit->commit_date) + '\n';
-				text += "author: " + submodule_commit->author + '\n';
-				text += "email: " + submodule_commit->email + '\n';
+				text += "author: " + (QS)submodule_commit->author + '\n';
+				text += "email: " + (QS)submodule_commit->email + '\n';
 				text += '\n';
-				text += submodule_commit->message;
+				text += (QS)submodule_commit->message;
 				for (QString const &line : misc::splitLines(text)) {
 					out->push_back(Document::Line(line.toStdString()));
 				}

@@ -246,7 +246,7 @@ std::string GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 				}
 			}
 		} else {
-			qDebug() << Q_FUNC_INFO << "failed to list objects in" << dir;
+			qDebug() << Q_FUNC_INFO << "failed to list objects in" << (QS)dir;
 		}
 
 		if (count == 1) return absolute_path;

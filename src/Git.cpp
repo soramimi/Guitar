@@ -956,16 +956,15 @@ bool Git::submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess
 {
 	bool ok = false;
 
-	QString cmd = "submodule add";
+	std::string cmd = "submodule add";
 	if (force) {
 		cmd += " -f";
 	}
-	cmd += " \"%1\" \"%2\"";
-	cmd = cmd.arg(data.url).arg(data.subdir);
+	cmd += fmt(" \"%s\" \"%s\"")(data.url)(data.subdir);
 	AbstractGitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
-	ok = (bool)exec_git(cmd.toStdString(), opt);
+	ok = (bool)exec_git(cmd, opt);
 
 	return ok;
 }

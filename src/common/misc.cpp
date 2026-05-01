@@ -398,9 +398,13 @@ std::string misc::normalizePathSeparator(std::string const &str)
 	return out;
 }
 #else
-QString misc::normalizePathSeparator(QString const &s)
+QString misc::normalizePathSeparator(QString const &str)
 {
-	return s;
+	return str;
+}
+std::string misc::normalizePathSeparator(std::string const &str)
+{
+	return str;
 }
 #endif
 

@@ -2194,7 +2194,7 @@ bool MainWindow::saveBlobAs(GitHash const &id, const QString &dstpath)
 		}
 	} else {
 		QString msg = "Failed to get the content of the object '%1'";
-		msg = msg.arg(id.toString());
+		msg = msg.arg((QS)id.toString());
 		qDebug() << msg;
 	}
 	return false;
@@ -4366,9 +4366,9 @@ void MainWindow::updateStatusBarText()
 					QString id = QString::fromStdString(commit->commit_id.toString());
 					QString labels = labelsInfoText(*commit);
 					msg.text = QString("%1 : %2%3")
-							   .arg(id.mid(0, 7))
-							   .arg(commit->message)
-							   .arg(labels)
+								   .arg(id.mid(0, 7))
+								   .arg((QS)commit->message)
+								   .arg(labels)
 						;
 				}
 			}
@@ -6323,7 +6323,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 		if (i == GIT_ID_LENGTH) {
 			std::string id = line.mid(0, i).toStdString();
 			QString name = line.mid(i + 1).trimmed();
-			qDebug() << id << name;
+			qDebug() << (QS)id << name;
 			if (name == "HEAD" && GitHash::isValidID(id)) {
 				head = id;
 			}
