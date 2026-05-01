@@ -1,6 +1,7 @@
 #include "DeleteTagsDialog.h"
 #include "ui_DeleteTagsDialog.h"
 #include "common/q/helper.h"
+#include "ApplicationGlobal.h"
 
 DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)
 	: QDialog(parent)
@@ -12,7 +13,7 @@ DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)
 	setWindowFlags(flags);
 
 	for (GitTag const &t : list) {
-		auto item = new QListWidgetItem((QS)t.name);
+		auto item = new_QListWidgetItem((QS)t.name);
 		item->setCheckState(Qt::Unchecked);
 		ui->listWidget_tags->addItem(item);
 	}

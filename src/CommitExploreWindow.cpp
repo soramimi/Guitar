@@ -190,7 +190,8 @@ void CommitExploreWindow::doTreeItemChanged_(GitRunner g, QTreeWidgetItem *curre
 				icon = icons.icon(QFileIconProvider::File);
 			}
 		}
-		auto *p = new QListWidgetItem;
+		auto *p = new_QListWidgetItem();
+		p->setSizeHint({20, 20});
 		p->setIcon(icon);
 		p->setText((QS)ti.name);
 		p->setData(ItemTypeRole, (int)ti.type);

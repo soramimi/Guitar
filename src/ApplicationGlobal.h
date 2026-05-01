@@ -19,6 +19,7 @@
 
 class MainWindow;
 class LibMigemo;
+class QListWidgetItem;
 
 struct AccountProfile {
 	QString email;
@@ -130,6 +131,8 @@ public:
 
 void GlobalSetOverrideWaitCursor();
 void GlobalRestoreOverrideCursor();
+
+QListWidgetItem *new_QListWidgetItem(QString const &text = {});
 
 #define ASSERT_MAIN_THREAD() Q_ASSERT(ApplicationGlobal::isMainThread())
 

@@ -3588,8 +3588,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 				(msg.toStdString());
 	}
 
-	QListWidgetItem *item = new QListWidgetItem((QS)text);
-	item->setSizeHint(QSize(item->sizeHint().width(), 18));
+	QListWidgetItem *item = new_QListWidgetItem((QS)text);
 	item->setData(FilePathRole, (QS)data.path);
 	item->setData(DiffIndexRole, data.idiff);
 	item->setData(ObjectIdRole, (QS)data.id);
@@ -3599,6 +3598,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 	if (issubmodule) {
 		item->setToolTip((QS)text); // ツールチップ
 	}
+	item->setSizeHint({20, 20});
 	return item;
 }
 

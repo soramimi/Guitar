@@ -1,5 +1,6 @@
 #include "AddRepositoriesCollectivelyDialog.h"
 #include "ui_AddRepositoriesCollectivelyDialog.h"
+#include "ApplicationGlobal.h"
 
 AddRepositoriesCollectivelyDialog::AddRepositoriesCollectivelyDialog(QWidget *parent, QStringList const &dirs)
 	: QDialog(parent)
@@ -11,7 +12,7 @@ AddRepositoriesCollectivelyDialog::AddRepositoriesCollectivelyDialog(QWidget *pa
 	std::sort(list.begin(), list.end());
 
 	for (QString const &dir : list) {
-		QListWidgetItem *item = new QListWidgetItem(dir);
+		QListWidgetItem *item = new_QListWidgetItem(dir);
 		item->setCheckState(Qt::Checked);
 		ui->listWidget->addItem(item);
 	}

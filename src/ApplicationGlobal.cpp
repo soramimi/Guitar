@@ -10,6 +10,7 @@
 #include <memory>
 #include <QDebug>
 #include <QApplication>
+#include <QListWidgetItem>
 #include "Logger.h"
 #include "MyMecab.h"
 #include "LibMigemo.h"
@@ -181,6 +182,13 @@ IncrementalSearchFilter ApplicationGlobal::makeIncrementalSearchFilter(std::stri
 bool ApplicationGlobal::isMainThread()
 {
 	return QThread::currentThread() == QCoreApplication::instance()->thread();
+}
+
+QListWidgetItem *new_QListWidgetItem(QString const &text)
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
 }
 
 void GlobalSetOverrideWaitCursor()

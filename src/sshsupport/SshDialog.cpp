@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QDir>
+#include "ApplicationGlobal.h"
 
 static inline int x_stricmp(char const *s1, char const *s2)
 {
@@ -131,7 +132,7 @@ void SshDialog::updateFileList()
 	if (!isSftpConnected()) return;
 
 	for (auto const &a : m->files) {
-		QListWidgetItem *item = new QListWidgetItem();
+		QListWidgetItem *item = new_QListWidgetItem();
 		QString text = QString::fromStdString(a.name);
 		if (a.isdir) {
 			text += '/';

@@ -2,8 +2,9 @@
 #include "ui_GenerateCommitMessageDialog.h"
 #include "ApplicationGlobal.h"
 #include "CommitMessageGenerator.h"
-#include "MainWindow.h"
 #include "GenerateCommitMessageThread.h"
+#include "MainWindow.h"
+#include "common/q/helper.h"
 #include <QMessageBox>
 
 struct GenerateCommitMessageDialog::Private {
@@ -64,12 +65,10 @@ void GenerateCommitMessageDialog::generate(std::string const &diff)
 
 	ui->listWidget->clear();
 
-	ui->listWidget->addItems(m->checked_items);
-	for (int i = 0; i < ui->listWidget->count(); i++) {
-		auto *item = ui->listWidget->item(i);
-		if (m->checked_items.contains(item->text())) {
-			item->setCheckState(Qt::Checked);
-		}
+	for (QString const &s : m->checked_items) {
+		auto *item = new_QListWidgetItem(s);
+		item->setCheckState(Qt::Checked);
+		ui->listWidget->addItem(item);
 	}
 
 	ui->pushButton_regenerate->setEnabled(false);
@@ -106,19 +105,10 @@ void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 	GlobalRestoreOverrideCursor();
 
 	if (result) {
-		auto MakeStringList = [](std::vector<std::string> const &list) {
-			QStringList ret;
-			for (auto const &s : list) {
-				ret.append(QString::fromStdString(s));
-			}
-			return ret;
-		};
-		int i = ui->listWidget->count();
-		ui->listWidget->addItems(MakeStringList(result.messages()));
-		int n = ui->listWidget->count();;
-		while (i < n) {
-			ui->listWidget->item(i)->setCheckState(Qt::Unchecked);
-			i++;
+		for (std::string const &s : result.messages()) {
+			QListWidgetItem *item = new_QListWidgetItem((QS)s);
+			item->setCheckState(Qt::Unchecked);
+			ui->listWidget->addItem(item);
 		}
 		ui->listWidget->setCurrentRow(0);
 	} else {

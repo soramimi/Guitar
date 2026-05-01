@@ -1,5 +1,6 @@
 #include "SelectItemDialog.h"
 #include "ui_SelectItemDialog.h"
+#include "ApplicationGlobal.h"
 
 SelectItemDialog::SelectItemDialog(QWidget *parent) :
 	QDialog(parent),
@@ -18,7 +19,7 @@ SelectItemDialog::~SelectItemDialog()
 
 void SelectItemDialog::addItem(QString const &id, QString const &text)
 {
-	auto *item = new QListWidgetItem;
+	auto *item = new_QListWidgetItem();
 	item->setText(text);
 	item->setData(Qt::UserRole, id);
 	ui->listWidget->addItem(item);

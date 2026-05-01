@@ -1,5 +1,6 @@
 #include "DeleteBranchDialog.h"
 #include "ui_DeleteBranchDialog.h"
+#include "ApplicationGlobal.h"
 
 struct DeleteBranchDialog::Private {
 	QStringList all_local_branch_names;
@@ -48,7 +49,7 @@ void DeleteBranchDialog::updateList()
 	ui->listWidget->clear();
 
 	for (QString const &name : (all ? m->all_local_branch_names : m->current_local_branch_names)) {
-		auto *item = new QListWidgetItem;
+		auto *item = new_QListWidgetItem();
 		item->setText(name);
 		item->setCheckState(Qt::Unchecked);
 		ui->listWidget->addItem(item);
