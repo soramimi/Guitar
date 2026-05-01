@@ -4,6 +4,11 @@
 #include <string>
 
 class Dir {
+public:
+	enum Filter {
+		Dirs        = 0x001,
+		Files       = 0x002,
+	};
 private:
 	std::string path_;
 public:

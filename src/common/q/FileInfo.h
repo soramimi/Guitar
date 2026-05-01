@@ -9,6 +9,7 @@ private:
 	struct Private;
 	Private *m;
 public:
+	FileInfo();
 	FileInfo(std::string const &file);
 	virtual ~FileInfo();
 	bool isFile() const;

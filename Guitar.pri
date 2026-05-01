@@ -131,6 +131,8 @@ macx {
 SOURCES += \
 	$$PWD/src/FileTypeDetector.cpp \
 	$$PWD/src/LibMigemo.cpp \
+	$$PWD/src/common/q/DateTime.cpp \
+	$$PWD/src/common/q/DirIterator.cpp \
 	$$PWD/src/common/qmisc.cpp \
 	src/AboutDialog.cpp \
 	src/AbstractGitSession.cpp \
@@ -309,6 +311,8 @@ SOURCES += \
 HEADERS += \
 	$$PWD/src/FileTypeDetector.h \
 	$$PWD/src/LibMigemo.h \
+	$$PWD/src/common/q/DateTime.h \
+	$$PWD/src/common/q/DirIterator.h \
 	$$PWD/src/common/qmisc.h \
 	src/AboutDialog.h \
 	src/AbstractGitSession.h \

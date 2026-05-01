@@ -3,9 +3,14 @@
 
 struct FileInfo::Private {
 	std::string file;
-	bool valid;
-	struct stat stat;
+	bool valid = false;
+	struct stat stat = {};
 };
+
+FileInfo::FileInfo()
+	: m(new Private)
+{
+}
 
 FileInfo::FileInfo(const std::string &file)
 	: m(new Private)
