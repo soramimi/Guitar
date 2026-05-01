@@ -439,6 +439,7 @@ private:
 	void setCurrentGitRunner(GitRunner g);
 	void endSession();
 	std::optional<GitCommitItem> getCommitItem(GitRunner g, const GitHash &hash) const;
+	GitHash blobID(QListWidgetItem *item) const;
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
@@ -614,7 +615,7 @@ public:
 	void clearStatusInfo();
 	bool setCurrentLogRow(int row);
 	bool shown();
-        void deleteTags(const std::vector<std::string> &tagnames);
+	void deleteTags(const std::vector<std::string> &tagnames);
 	void addTag(QString const &name);
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();
