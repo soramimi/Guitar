@@ -90,6 +90,7 @@ public:
 	}
 };
 
+#if 0
 class MigemoFilter : public IncrementalSearch::AbstractFilter {
 private:
 	std::string text_;
@@ -102,6 +103,7 @@ public:
 	void makeFilter(std::string const &filtertext) override;
 	IncrementalSearch::Result match(const std::string &text) const override;
 };
+#endif
 
 class MecabFilter : public IncrementalSearch::AbstractFilter {
 public:

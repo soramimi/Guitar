@@ -39,7 +39,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBox_migemo">
      <property name="title">
       <string>Incremental Search</string>
      </property>

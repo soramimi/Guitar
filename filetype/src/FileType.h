@@ -13,13 +13,21 @@ public:
 private:
 	void *magic_set_ = nullptr;
 	std::vector<char> mgcdata_;
-public:
 	bool open();
 #if 0
 	bool open(const char *mgcptr, size_t mgclen);
 	bool open(char const *mgcfile);
 #endif
 	void close();
+public:
+	FileType()
+	{
+		open();
+	}
+	~FileType()
+	{
+		close();
+	}
 	static size_t slop_size();
 	Result detect(int fd) const;
 	Result detect(char const *filepath) const;

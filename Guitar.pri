@@ -79,6 +79,13 @@ use_libcurl {
 	msvc:LIBS += -llibcurl
 }
 
+# incremental search
+
+# CONFIG += use_migemo
+use_migemo {
+    DEFINES += USE_MIGEMO
+}
+
 # execute 'ruby prepare.rb' automatically
 
 prepare.target = prepare
@@ -130,7 +137,6 @@ macx {
 
 SOURCES += \
 	$$PWD/src/FileTypeDetector.cpp \
-	$$PWD/src/LibMigemo.cpp \
 	$$PWD/src/common/q/DateTime.cpp \
 	$$PWD/src/common/q/DirIterator.cpp \
 	$$PWD/src/common/qmisc.cpp \
@@ -310,7 +316,6 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/FileTypeDetector.h \
-	$$PWD/src/LibMigemo.h \
 	$$PWD/src/common/fmt.h \
 	$$PWD/src/common/q/DateTime.h \
 	$$PWD/src/common/q/DirIterator.h \
@@ -346,7 +351,6 @@ HEADERS += \
 	src/ConfigSigningDialog.h \
 	src/ConfigUserDialog.h \
 	src/CreateRepositoryDialog.h \
-	src/Debug.h \
 	src/DeleteBranchDialog.h \
 	src/DeleteTagsDialog.h \
 	src/DialogHeaderFrame.h \
@@ -631,4 +635,9 @@ use_libcurl {
 	HEADERS += $$PWD/src/curlclient.h
 }
 
-include(migemo.pri)
+use_migemo {
+    SOURCES += $$PWD/src/LibMigemo.cpp
+	HEADERS += $$PWD/src/LibMigemo.h
+	include(migemo.pri)
+}
+

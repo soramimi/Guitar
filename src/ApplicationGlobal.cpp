@@ -13,11 +13,16 @@
 #include <QListWidgetItem>
 #include "Logger.h"
 #include "MyMecab.h"
+
+#ifdef USE_MIGEMO
 #include "LibMigemo.h"
+#endif
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
+#ifdef USE_MIGEMO
 	LibMigemo migemo; // obsolete
+#endif
 };
 
 ApplicationGlobal::ApplicationGlobal()
@@ -122,10 +127,12 @@ void ApplicationGlobal::init2()
 		}
 	}
 
+#ifdef USE_MIGEMO
 	{ // migemo // obsolete
 		m->migemo.init();
 		m->migemo.open();
 	}
+#endif
 
 	// グローバル画像リソースの読み込み
 
@@ -165,18 +172,23 @@ std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
 	return http;
 }
 
+#ifdef USE_MIGEMO
 LibMigemo *ApplicationGlobal::incremental_search()
 {
 	return &m->migemo;
 }
+#endif
 
 IncrementalSearchFilter ApplicationGlobal::makeIncrementalSearchFilter(std::string const &filtertext)
 {
 	if (1) {
 		return {std::make_shared<MecabFilter>(filtertext)};
 	} else { // obsolete
+#ifdef USE_MIGEMO
 		return {std::make_shared<MigemoFilter>(filtertext)};
+#endif
 	}
+	return {};
 }
 
 bool ApplicationGlobal::isMainThread()

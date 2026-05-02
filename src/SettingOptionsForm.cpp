@@ -13,6 +13,10 @@ SettingOptionsForm::SettingOptionsForm(QWidget *parent)
 	, ui(new Ui::SettingOptionsForm)
 {
 	ui->setupUi(this);
+#ifdef USE_MIGEMO
+#else
+	ui->groupBox_migemo->hide();
+#endif
 }
 
 SettingOptionsForm::~SettingOptionsForm()
@@ -41,6 +45,7 @@ void SettingOptionsForm::on_pushButton_edit_profiles_clicked()
 }
 
 
+#ifdef USE_MIGEMO
 void SettingOptionsForm::on_pushButton_setup_migemo_dict_clicked()
 {
 	auto r = QMessageBox::question(this, tr("Setup Migemo dictionary"), tr("Are you sure to setup Migemo dictionary?"), QMessageBox::Yes | QMessageBox::No);
@@ -70,4 +75,5 @@ void SettingOptionsForm::on_checkBox_incremental_search_with_migemo_checkStateCh
 		global->incremental_search()->close();
 	}
 }
+#endif
 

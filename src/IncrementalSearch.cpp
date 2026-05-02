@@ -1,6 +1,5 @@
 #include "IncrementalSearch.h"
 #include "ApplicationGlobal.h"
-#include "LibMigemo.h"
 #include "common/joinpath.h"
 #include "zip/zip.h"
 #include <QDebug>
@@ -16,6 +15,10 @@
 #include <string>
 #include <time.h>
 
+#ifdef USE_MIGEMO
+#include "LibMigemo.h"
+#endif
+
 static inline QColor incremental_search_filtered_bg_color()
 {
 	return global->appsettings.incremental_search_color.filtered_bg;
@@ -26,6 +29,7 @@ static inline QColor incremental_search_highlight_bg_color()
 	return global->appsettings.incremental_search_color.highlight_bg;
 }
 
+#ifdef USE_MIGEMO
 MigemoFilter::MigemoFilter(std::string const &filtertext)
 {
 	makeFilter(filtertext);
@@ -39,6 +43,7 @@ bool MigemoFilter::isEmpty() const
 void MigemoFilter::makeFilter(std::string const &filtertext)
 {
 	text_ = filtertext;
+#ifdef USE_MIGEMO
 	if (LibMigemo::instance()->migemoEnabled()) {
 		if (filtertext.size() > 0) {
 			auto s = LibMigemo::instance()->queryMigemo(filtertext.c_str());
@@ -47,6 +52,7 @@ void MigemoFilter::makeFilter(std::string const &filtertext)
 			}
 		}
 	}
+#endif
 }
 
 IncrementalSearch::Result MigemoFilter::match(std::string const &text) const
@@ -96,6 +102,7 @@ IncrementalSearch::Result MigemoFilter::match(std::string const &text) const
 	}
 	return {};
 }
+#endif
 
 // IncrementalSearch
 

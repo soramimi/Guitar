@@ -18,8 +18,11 @@
 #include "curlclient.h"
 
 class MainWindow;
-class LibMigemo;
 class QListWidgetItem;
+
+#ifdef USE_MIGEMO
+class LibMigemo;
+#endif
 
 struct AccountProfile {
 	QString email;
@@ -105,7 +108,10 @@ public:
 
 	std::shared_ptr<AbstractInetClient> inet_client();
 
+#ifdef USE_MIGEMO
 	LibMigemo *incremental_search();
+#endif
+
 	LibMecab mecab;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
