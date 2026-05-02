@@ -28,7 +28,7 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>ரத்துசெய் (&amp;c)</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -55,7 +55,7 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation>தொலை</translation>
     </message>
     <message>
         <source>Name</source>
@@ -269,7 +269,7 @@
     </message>
     <message>
         <source>No remote repository is registered.</source>
-        <translation type="vanished">ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
+        <translation type="vanished">தொலை களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>The current branch %1 has no upstream branch.</source>
@@ -456,7 +456,7 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation type="vanished">ரிமோட்</translation>
+        <translation type="vanished">தொலை</translation>
     </message>
     <message>
         <source>&amp;Test</source>
@@ -503,7 +503,7 @@
     </message>
     <message>
         <source>ssh</source>
-        <translation>பாஓடு</translation>
+        <translation>ssh</translation>
     </message>
     <message>
         <source>http</source>
@@ -908,31 +908,31 @@
     <name>ConfirmRemoteSessionDialog</name>
     <message>
         <source>Confirm Remote Session</source>
-        <translation type="unfinished"></translation>
+        <translation>தொலை அமர்வு உறுதி</translation>
     </message>
     <message>
         <source>CAUTION</source>
-        <translation type="unfinished"></translation>
+        <translation>முன்ன்றிவிப்பு</translation>
     </message>
     <message>
         <source>Executing malicious commands on remote hosts can cause serious security damage.</source>
-        <translation type="unfinished"></translation>
+        <translation>தொலைநிலை கணினிகளில் தீங்கிழைக்கும் கட்டளைகளைச் செயல்படுத்துவது கடுமையான பாதுகாப்புச் சேதத்தை ஏற்படுத்தக்கூடும்.</translation>
     </message>
     <message>
         <source>Do you approve work in the following directory?</source>
-        <translation type="unfinished"></translation>
+        <translation>பின்வரும் கோப்பகத்தில் உள்ள பணிகளுக்கு நீங்கள் ஒப்புதல் அளிக்கிறீர்களா?</translation>
     </message>
     <message>
         <source>Do you approve of executing the following command?</source>
-        <translation type="unfinished"></translation>
+        <translation>பின்வரும் கட்டளையைச் செயல்படுத்துவதற்கு நீங்கள் ஒப்புதல் அளிக்கிறீர்களா?</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">சரி</translation>
+        <translation>சரி</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">ரத்துசெய்</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -959,7 +959,7 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation>தொலை</translation>
     </message>
     <message>
         <source>URL</source>
@@ -1014,7 +1014,7 @@
     </message>
     <message>
         <source>Delete Remote Branch</source>
-        <translation>ரிமோட் கிளையை நீக்கு</translation>
+        <translation>தொலை கிளையை நீக்கு</translation>
     </message>
 </context>
 <context>
@@ -1040,47 +1040,47 @@
     <name>Dialog</name>
     <message>
         <source>Dialog</source>
-        <translation type="unfinished">உரையாடல்</translation>
+        <translation>உரையாடல்</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
+        <translation>புரவலன்</translation>
     </message>
     <message>
         <source>Port</source>
-        <translation type="unfinished"></translation>
+        <translation>துறைமுகம்</translation>
     </message>
     <message>
         <source>Authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>சரிபார்ப்பு</translation>
     </message>
     <message>
         <source>Public key</source>
-        <translation type="unfinished"></translation>
+        <translation>பொது திறவுக்கோல்</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished"></translation>
+        <translation>கடவுச்சொல்</translation>
     </message>
     <message>
         <source>User</source>
-        <translation type="unfinished"></translation>
+        <translation>பயனர்</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>இணை</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>துண்டி</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished">சரி</translation>
+        <translation>சரி</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">ரத்துசெய்</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1095,7 +1095,7 @@
     </message>
     <message>
         <source>is not a valid git working copy.</source>
-        <translation>செல்லுபடியாகும் git வேலை செய்யும் நகல் அல்ல.</translation>
+        <translation>செல்லுபடியாகும் git பணி நகல் அல்ல.</translation>
     </message>
     <message>
         <source>Do you want to init it as a git repository ?</source>
@@ -1196,11 +1196,11 @@
     <name>EditRemoteDialog</name>
     <message>
         <source>Edit Remote</source>
-        <translation>ரிமோட்டைத் திருத்து</translation>
+        <translation>தொலையைத் திருத்து</translation>
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation>தொலை</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -1504,7 +1504,7 @@
     </message>
     <message>
         <source>Tamil</source>
-        <translation type="unfinished"></translation>
+        <translation>தமிழ்</translation>
     </message>
 </context>
 <context>
@@ -1742,7 +1742,7 @@
     </message>
     <message>
         <source>Add existing working copy</source>
-        <translation>ஏற்கனவே வேலை செய்யும் நகலைச் சேர்க்கவும்</translation>
+        <translation>ஏற்கனவே பணி நகலைச் சேர்</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -1822,7 +1822,7 @@
     </message>
     <message>
         <source>Delete remote &amp;branch...</source>
-        <translation>ரிமோட் கிளையை நீக்கு...</translation>
+        <translation>தொலை கிளையை நீக்கு...</translation>
     </message>
     <message>
         <source>&amp;Fetch --prune</source>
@@ -1990,7 +1990,7 @@
     </message>
     <message>
         <source>Drop</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>Repositories panel</source>
@@ -2098,7 +2098,7 @@
     </message>
     <message>
         <source>Delete remote branch...</source>
-        <translation>ரிமோட் கிளையை நீக்கு...</translation>
+        <translation>தொலை கிளையை நீக்கு...</translation>
     </message>
     <message>
         <source>&amp;About</source>
@@ -2262,7 +2262,7 @@
     </message>
     <message>
         <source>No remote repository is registered.</source>
-        <translation type="vanished">ரிமோட் களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
+        <translation type="vanished">தொலை களஞ்சியமும் பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>The current branch %1 has no upstream branch.</source>
@@ -2516,62 +2516,62 @@
     </message>
     <message>
         <source>Sort by commit time</source>
-        <translation type="unfinished"></translation>
+        <translation>பதிவு நேரத்தின்படி வரிசைப்படுத்து</translation>
     </message>
     <message>
         <source>SSH</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH</translation>
     </message>
     <message>
         <source>Restart trace logger</source>
-        <translation type="unfinished"></translation>
+        <translation>தடபதிப்பை மறுதொடக்கம் செய்</translation>
     </message>
     <message>
         <source>SSH Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH இணைப்பு</translation>
     </message>
     <message>
         <source>SSH connection is disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH இணைப்பு முடக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished">தேடல்</translation>
+        <translation>தேடல்</translation>
     </message>
     <message>
         <source>Switch to</source>
-        <translation type="unfinished"></translation>
+        <translation>இதற்கு மாறு</translation>
     </message>
     <message>
         <source>[%1] %2</source>
-        <translation type="unfinished"></translation>
+        <translation>[%1] %2</translation>
     </message>
     <message>
         <source>Save as...</source>
-        <translation type="unfinished">இவ்வாறு சேமி...</translation>
+        <translation>என சேமி...</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished">என சேமி</translation>
+        <translation>என சேமி</translation>
     </message>
     <message>
         <source>Do you want to save the file to &quot;%1&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>நீங்கள் கோப்பை &quot;%1&quot; இல் சேமிக்க விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">பிழை</translation>
+        <translation>பிழை</translation>
     </message>
     <message>
         <source>Cannot get file information.</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்புத் தகவலைப் பெற முடியவில்லை</translation>
     </message>
 </context>
 <context>
     <name>ManageWorkingFolderDialog</name>
     <message>
         <source>Working Folders</source>
-        <translation>வேலை செய்யும் கோப்புறைகள்</translation>
+        <translation>பணி கோப்புறைகள்</translation>
     </message>
     <message>
         <source>OK</source>
@@ -2724,7 +2724,7 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation>தொலை</translation>
     </message>
     <message>
         <source>Branch</source>
@@ -2755,7 +2755,7 @@
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished">என சேமி</translation>
+        <translation>என சேமி</translation>
     </message>
 </context>
 <context>
@@ -2820,7 +2820,7 @@
     </message>
     <message>
         <source>SSH key override...</source>
-        <translation>பாஓடு விசை மேலெழுத...</translation>
+        <translation>SSH விசை மேலெழுத...</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -2828,11 +2828,11 @@
     </message>
     <message>
         <source>SSH command is not registered.</source>
-        <translation>பாஓடு கட்டளை பதிவு செய்யப்படவில்லை.</translation>
+        <translation>SSH கட்டளை பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>SSH private key</source>
-        <translation>பாஓடு தனிப்பட்ட விசை</translation>
+        <translation>SSH தனிப்பட்ட விசை</translation>
     </message>
     <message>
         <source>This file is a %1</source>
@@ -2848,7 +2848,7 @@
     </message>
     <message>
         <source>SSH key override</source>
-        <translation type="vanished">பாஓடு விசை மேலெழுதுதல்</translation>
+        <translation type="vanished">SSH விசை மேலெழுதுதல்</translation>
     </message>
 </context>
 <context>
@@ -2910,7 +2910,7 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation type="vanished">ரிமோட்</translation>
+        <translation type="vanished">தொலை</translation>
     </message>
     <message>
         <source>Add</source>
@@ -2946,11 +2946,11 @@
     </message>
     <message>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos;?</source>
-        <translation>&apos;%2&apos; களஞ்சியத்திலிருந்து ரிமோட் &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
+        <translation>&apos;%2&apos; களஞ்சியத்திலிருந்து தொலை &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Are you sure you want to remove the remote &apos;%1&apos; from the repository &apos;%2&apos; ?</source>
-        <translation type="vanished">&apos;%2&apos; களஞ்சியத்திலிருந்து ரிமோட் &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">&apos;%2&apos; களஞ்சியத்திலிருந்து தொலை &apos;%1&apos; ஐ நிச்சயமாக அகற்ற விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Save</source>
@@ -2999,7 +2999,7 @@
     </message>
     <message>
         <source>ssh</source>
-        <translation>பாஓடு</translation>
+        <translation>ssh</translation>
     </message>
     <message>
         <source>http</source>
@@ -3408,47 +3408,47 @@
     <name>SettingLoggingForm</name>
     <message>
         <source>Logging</source>
-        <translation type="unfinished"></translation>
+        <translation>பதிவிடல்</translation>
     </message>
     <message>
         <source>Trace log</source>
-        <translation type="unfinished"></translation>
+        <translation>தட பதிவு</translation>
     </message>
     <message>
         <source>Remote log</source>
-        <translation type="unfinished"></translation>
+        <translation>தொலை பதிவு</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
+        <translation>புரவலன்</translation>
     </message>
     <message>
         <source>Port</source>
-        <translation type="unfinished"></translation>
+        <translation>துறைமுகம்</translation>
     </message>
     <message>
         <source>Output</source>
-        <translation type="unfinished"></translation>
+        <translation>வெளியீடு</translation>
     </message>
     <message>
         <source>Default</source>
-        <translation type="unfinished">இயல்புநிலை</translation>
+        <translation>இயல்புநிலை</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>தனிப்பயன்</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation type="unfinished">உலாவுக...</translation>
+        <translation>உலாவுக...</translation>
     </message>
     <message>
         <source>(Changes are applied at next run)</source>
-        <translation type="unfinished">(மாற்றங்கள் அடுத்த ஓட்டத்தில் பயன்படுத்தப்படும்)</translation>
+        <translation>(மாற்றங்கள் அடுத்த ஓட்டத்தில் பயன்படுத்தப்படும்)</translation>
     </message>
     <message>
         <source>Select Log Output Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>பதிவு வெளியிடம் கோப்புறை தேர்வு</translation>
     </message>
 </context>
 <context>
@@ -3459,7 +3459,7 @@
     </message>
     <message>
         <source>Proxy server</source>
-        <translation>பதிலாள் சர்வர்</translation>
+        <translation>பதிலாள் சேவையகம்</translation>
     </message>
     <message>
         <source>No proxy</source>
@@ -3494,23 +3494,23 @@
     </message>
     <message>
         <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation type="vanished">Migemo ரோமாசி உள்ளீட்டைப் பயன்படுத்தி சப்பானியர்களுக்கான அதிகரிக்கும் தேடல் செயல்பாட்டை வழங்குகிறது. இது காஞ்சி, இரகனா மற்றும் கட்டகானாவை ஆதரிக்கிறது, சப்பானிய உரை கையாளுதலை வேகமாகவும் திறமையாகவும் செய்கிறது.</translation>
+        <translation type="vanished">மிகிமோ ரோமாசி உள்ளீட்டைப் பயன்படுத்தி சப்பானியர்களுக்கான அதிகரிக்கும் தேடல் செயல்பாட்டை வழங்குகிறது. இது காஞ்சி, இரகனா மற்றும் கட்டகானாவை ஆதரிக்கிறது, சப்பானிய உரை கையாளுதலை வேகமாகவும் திறமையாகவும் செய்கிறது.</translation>
     </message>
     <message>
         <source>Setup Migemo dictionary</source>
-        <translation type="vanished">Migemo அகராதியை அமைக்கவும்</translation>
+        <translation type="vanished">மிகிமோ அகராதியை அமைக்கவும்</translation>
     </message>
     <message>
         <source>Delete Migemo dictionary</source>
-        <translation type="vanished">Migemo அகராதியை நீக்கவும்</translation>
+        <translation type="vanished">மிகிமோ அகராதியை நீக்கவும்</translation>
     </message>
     <message>
         <source>Are you sure to setup Migemo dictionary?</source>
-        <translation type="vanished">Migemo அகராதியை அமைப்பதில் உறுதியாக உள்ளீர்களா?</translation>
+        <translation type="vanished">மிகிமோ அகராதியை அமைப்பதில் உறுதியாக உள்ளீர்களா?</translation>
     </message>
     <message>
         <source>Are you sure to delete Migemo dictionary?</source>
-        <translation type="vanished">Migemo அகராதியை நிச்சயமாக நீக்கவா?</translation>
+        <translation type="vanished">மிகிமோ அகராதியை நிச்சயமாக நீக்கவா?</translation>
     </message>
 </context>
 <context>
@@ -3521,7 +3521,7 @@
     </message>
     <message>
         <source>Terminal command (option)</source>
-        <translation>டெர்மினல் கட்டளை (விருப்பம்)</translation>
+        <translation>முனைய கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3537,11 +3537,11 @@
     </message>
     <message>
         <source>Terminal Command</source>
-        <translation>டெர்மினல் கட்டளை</translation>
+        <translation>முனைய கட்டளை</translation>
     </message>
     <message>
         <source>Explorer Command</source>
-        <translation>எக்ச்ப்ளோரர் கட்டளை</translation>
+        <translation>உலாவி கட்டளை</translation>
     </message>
 </context>
 <context>
@@ -3556,7 +3556,7 @@
     </message>
     <message>
         <source>Git command</source>
-        <translation>Git கட்டளை</translation>
+        <translation>git கட்டளை</translation>
     </message>
     <message>
         <source>Browse...</source>
@@ -3568,15 +3568,15 @@
     </message>
     <message>
         <source>GPG command (option)</source>
-        <translation>GPG கட்டளை (விருப்பம்)</translation>
+        <translation>சீபிசீ கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>SSH command (option)</source>
-        <translation>பாஓடு கட்டளை (விருப்பம்)</translation>
+        <translation>SSH கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>Terminal command (option)</source>
-        <translation type="vanished">டெர்மினல் கட்டளை (விருப்பம்)</translation>
+        <translation type="vanished">முனைய கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3584,7 +3584,7 @@
     </message>
     <message>
         <source>Terminal Command</source>
-        <translation type="vanished">டெர்மினல் கட்டளை</translation>
+        <translation type="vanished">முனைய கட்டளை</translation>
     </message>
 </context>
 <context>
@@ -3611,7 +3611,7 @@
     </message>
     <message>
         <source>Tag</source>
-        <translation>குறியிடவும்</translation>
+        <translation>குறியிடு</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -3622,7 +3622,7 @@
     <name>SettingWorkingFolderForm</name>
     <message>
         <source>Working folder</source>
-        <translation>வேலை செய்யும் கோப்புறை</translation>
+        <translation>பணி கோப்புறை</translation>
     </message>
     <message>
         <source>Recently used folder</source>
@@ -3654,7 +3654,7 @@
     </message>
     <message>
         <source>Select Working Folder</source>
-        <translation>வேலை செய்யும் கோப்புறையைத் தேர்ந்தெடுக்கவும்</translation>
+        <translation>பணி கோப்புறையைத் தேர்ந்தெடு</translation>
     </message>
 </context>
 <context>
@@ -3680,11 +3680,11 @@
     </message>
     <message>
         <source>Remote</source>
-        <translation>ரிமோட்</translation>
+        <translation>தொலை</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation>உலாவவும்</translation>
+        <translation>உலாவு</translation>
     </message>
     <message>
         <source>&amp;Test</source>
@@ -3700,7 +3700,7 @@
     </message>
     <message>
         <source>--force</source>
-        <translation>--படை</translation>
+        <translation>--கட்டாயம்</translation>
     </message>
     <message>
         <source>OK</source>
@@ -3712,11 +3712,11 @@
     </message>
     <message>
         <source>Checkout into</source>
-        <translation>வெளியேறவும்</translation>
+        <translation>இதில் சரிபார்</translation>
     </message>
     <message>
         <source>Open existing directory</source>
-        <translation>ஏற்கனவே உள்ள கோப்பகத்தைத் திறக்கவும்</translation>
+        <translation>ஏற்கனவே உள்ள கோப்பகத்தைத் திற</translation>
     </message>
 </context>
 <context>
@@ -3777,19 +3777,19 @@
     </message>
     <message>
         <source>Submodules</source>
-        <translation type="unfinished">துணை தொகுதிகள்</translation>
+        <translation>துணை தொகுதிகள்</translation>
     </message>
     <message>
         <source>GroupBox</source>
-        <translation type="unfinished"></translation>
+        <translation>குழுப்பெட்டி</translation>
     </message>
     <message>
         <source>Terminal</source>
-        <translation type="unfinished">முனையத்தில்</translation>
+        <translation>முனையம்</translation>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்பு மேலாளர்</translation>
     </message>
 </context>
 <context>
@@ -3808,7 +3808,7 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation>மூடு (&amp;c)</translation>
+        <translation>மூடு</translation>
     </message>
 </context>
 <context>
@@ -3827,7 +3827,7 @@
     </message>
     <message>
         <source>Browse</source>
-        <translation>உலாவவும்</translation>
+        <translation>உலாவு</translation>
     </message>
     <message>
         <source>file</source>
@@ -3839,19 +3839,19 @@
     </message>
     <message>
         <source>git config --global user.name</source>
-        <translation>git கட்டமைப்பு --global user.name</translation>
+        <translation>git config --global user.name</translation>
     </message>
     <message>
         <source>git config --global user.email</source>
-        <translation>git கட்டமைப்பு --global user.email</translation>
+        <translation>git config --global user.email</translation>
     </message>
     <message>
         <source>Get icon from Gravatar</source>
-        <translation type="vanished">கிராவதார் இலிருந்து ஐகானைப் பெறுங்கள்</translation>
+        <translation type="vanished">கிராவதார் இலிருந்து சின்னத்தைப் பெறுங்கள்</translation>
     </message>
     <message>
         <source>Default Working Folder</source>
-        <translation>இயல்புநிலை வேலை செய்யும் கோப்புறை</translation>
+        <translation>இயல்புநிலை பணி கோப்புறை</translation>
     </message>
     <message>
         <source>folder</source>
@@ -3871,7 +3871,7 @@
     </message>
     <message>
         <source>Get icon from network</source>
-        <translation>நெட்வொர்க்கில் இருந்து ஐகானைப் பெறுங்கள்</translation>
+        <translation>பிணையத்திலிருந்து சின்னத்தைப் பெறுங்கள்</translation>
     </message>
     <message>
         <source>Default Branch Name</source>
@@ -3879,11 +3879,11 @@
     </message>
     <message>
         <source>&quot;main&quot;</source>
-        <translation>&quot;முக்கிய&quot;</translation>
+        <translation>&quot;முதன்மை&quot;</translation>
     </message>
     <message>
         <source>&quot;master&quot;</source>
-        <translation>&quot;மாச்டர்&quot;</translation>
+        <translation>&quot;தலைமை&quot;</translation>
     </message>
     <message>
         <source>unset (default)</source>
@@ -3911,7 +3911,7 @@
     </message>
     <message>
         <source>Finish</source>
-        <translation>முடிக்கவும்</translation>
+        <translation>முடி</translation>
     </message>
 </context>
 </TS>

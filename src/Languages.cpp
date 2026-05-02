@@ -3,11 +3,15 @@
 Languages::Languages(QObject *parent)
 	: QObject(parent)
 {
+	QString english = tr("English");
+	if (english != "English") {
+		english += " (English)";
+	}
 	struct Lang {
 		QString description;
 		QString code;
 	} langs[] = {
-		tr("English"), "en",
+		english, "en",
 		tr("Spanish"), "es",
 		tr("Japanese"), "ja",
 		tr("Russian"), "ru",
