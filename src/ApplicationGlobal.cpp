@@ -118,7 +118,29 @@ void ApplicationGlobal::init2()
 				}
 			}
 		}
+
+		MecabFilter f("atarasii");
+		IncrementalSearch::Result r = f.match("新しいフォルダ新しいフォルダ");
+		Q_ASSERT(r.match);
+		Q_ASSERT(r.parts.size() == 4);
+		Q_ASSERT(r.parts[0].match);
+		Q_ASSERT(r.parts[0].pos == 0);
+		Q_ASSERT(r.parts[0].end == 9);
+		Q_ASSERT(r.parts[0].text == "新しい");
+		Q_ASSERT(!r.parts[1].match);
+		Q_ASSERT(r.parts[1].pos == 9);
+		Q_ASSERT(r.parts[1].end == 21);
+		Q_ASSERT(r.parts[1].text == "フォルダ");
+		Q_ASSERT(r.parts[2].match);
+		Q_ASSERT(r.parts[2].pos == 21);
+		Q_ASSERT(r.parts[2].end == 30);
+		Q_ASSERT(r.parts[2].text == "新しい");
+		Q_ASSERT(!r.parts[3].match);
+		Q_ASSERT(r.parts[3].pos == 30);
+		Q_ASSERT(r.parts[3].end == 42);
+		Q_ASSERT(r.parts[3].text == "フォルダ");
 	}
+
 
 	// グローバル画像リソースの読み込み
 

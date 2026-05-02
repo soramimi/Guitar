@@ -1,19 +1,8 @@
 #include "IncrementalSearch.h"
-#include "ApplicationGlobal.h"
-#include "common/joinpath.h"
-#include "zip/zip.h"
-#include <QDebug>
-#include <QDir>
-#include <QDirIterator>
-#include <QFile>
+#include <QColor>
 #include <QPainter>
-#include <QRegularExpression>
 #include <QStyleOptionViewItem>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <string>
-#include <time.h>
+#include "ApplicationGlobal.h"
 
 static inline QColor incremental_search_filtered_bg_color()
 {
@@ -60,24 +49,19 @@ void IncrementalSearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 
 	QString text = opt.text;
 
-	std::vector<std::tuple<QString, bool>> list;
-
 	IncrementalSearch::Result match = IncrementalSearch::match(text.toStdString(), filter);
 	if (match) {
-		for (IncrementalSearch::Part const &Part : match.part) {
-			list.push_back(std::make_tuple(QString::fromStdString(Part.source.text), Part.match));
-		}
-
 		int x = rect.x();
-		for (const auto &[s, f] : list) {
+		for (IncrementalSearch::ResultPart const &part : match.parts) {
+			QString s = QString::fromStdString(part.text);
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
-			QRect rect2 = rect;
-			rect2.setLeft(x);
-			rect2.setWidth(w);
-			if (f) { // フィルターの部分の背景をハイライト
-				painter->fillRect(rect2, incremental_search_highlight_bg_color());
+			QRect r = rect;
+			r.setLeft(x);
+			r.setWidth(w);
+			if (part.match) { // フィルターの部分の背景をハイライト
+				painter->fillRect(r, incremental_search_highlight_bg_color());
 			}
-			drawText(painter, opt, rect2, s);
+			drawText(painter, opt, r, s);
 			x += w;
 		}
 	} else {
@@ -92,101 +76,144 @@ void IncrementalSearch::fillFilteredBG(QPainter *painter, const QRect &rect)
 
 // MecabFilter
 
+struct MecabFilter::Private {
+	std::string original_text;
+	std::string katakana_text;
+};
+
 std::string MecabFilter::to_kana(const std::string &text, std::vector<IncrementalSearch::Part> *out)
 {
 	std::string kana;
 	std::vector<LibMecab::Part> parts = global->mecab.parse(text);
 	size_t pos = 0;
 	for (LibMecab::Part const &part : parts) {
-		IncrementalSearch::Part Part;
-		Part.source.text = text.substr(part.offset, part.length);
-		Part.source.pos = kana.size();
-		Part.source.end = part.offset + part.length;
+		IncrementalSearch::Part item;
+		item.source.text = text.substr(part.offset, part.length);
+		item.source.pos = part.offset;
+		item.source.end = part.offset + part.length;
 		auto end = pos + part.text.size();
-		Part.kana.text = part.text;
-		Part.kana.pos = pos;
-		Part.kana.end = end;
+		item.kana.text = part.text;
+		item.kana.pos = pos;
+		item.kana.end = end;
 		pos = end;
-		out->push_back(Part);
+		if (out) {
+			out->push_back(item);
+		}
 		kana.append(part.text);
 	}
 	return kana;
 }
 
+MecabFilter::MecabFilter()
+	: m(new Private())
+{
+}
+
 MecabFilter::MecabFilter(std::string const &filtertext)
+	: m(new Private())
 {
 	makeFilter(filtertext);
 }
 
+MecabFilter::~MecabFilter()
+{
+	delete m;
+}
+
 void MecabFilter::makeFilter(std::string const &filtertext)
 {
-	original_text_ = filtertext;
-	katakana_text_ = global->mecab.convert_roman_to_katakana(original_text_);
+	m->original_text = filtertext;
+	m->katakana_text = global->mecab.convert_roman_to_katakana(m->original_text);
 }
 
 bool MecabFilter::isEmpty() const
 {
-	return original_text_.empty();
+	return m->original_text.empty();
 }
 
 IncrementalSearch::Result MecabFilter::match(std::string const &text) const
 {
 	using namespace IncrementalSearch;
-
 	Result ret;
-	{
-		char const *p = misc::stristr(text.c_str(), original_text_.c_str());
-		if (p) {
-			size_t pos = p - text.c_str();
-			ret.match = true;
-			ret.pos = pos;
-			ret.end = pos + original_text_.size();
-			if (ret.pos < ret.end) {
-				{
-					Part part;
-					part.source.pos = 0;
-					part.source.end = ret.pos;
-					part.source.text = text.substr(0, ret.pos);
-					part.match = false;
-					ret.part.push_back(part);
-				}
-				{
-					Part part;
-					part.source.pos = ret.pos;
-					part.source.end = ret.end;
-					part.source.text = text.substr(ret.pos, ret.end - ret.pos);
-					part.match = true;
-					ret.part.push_back(part);
-				}
-				{
-					Part part;
-					part.source.pos = ret.end;
-					part.source.end = text.size();
-					part.source.text = text.substr(ret.end);
-					part.match = false;
-					ret.part.push_back(part);
-				}
-				return ret;
+	if (m->original_text.empty()) {
+		// フィルタ文字列なしは全体一致とみなす
+		ResultPart part;
+		part.match = false;
+		part.pos = 0;
+		part.end = text.size();
+		part.text = text;
+		ret.parts.push_back(part);
+		ret.match = true;
+	} else {
+		std::vector<ResultPart> matched_list;
+		// フィルタ文字列をそのままマッチさせる
+		char const *ptr = text.c_str();
+		while (ptr) {
+			char const *match = misc::stristr(ptr, m->original_text.c_str());
+			if (!match) break;
+			// マッチした部分を追加
+			Part part;
+			part.match = true;
+			part.source.pos = match - text.c_str();
+			part.source.end = part.source.pos + m->original_text.size();
+			part.source.text = text.substr(part.source.pos, m->original_text.size());
+			matched_list.push_back(part);
+			ptr = match + m->original_text.size();
+		}
+		// フィルタ文字列をカタカナに変換してマッチさせる
+		if (!m->katakana_text.empty()) {
+			std::vector<Part> parts;
+			to_kana(text, &parts);
+			for (size_t i = 0; i < parts.size(); i++) {
+				bool match = parts[i].kana.text.find(m->katakana_text) != std::string::npos;
+				if (!match) continue;
+				// マッチした部分を追加
+				size_t pos = parts[i].source.pos;
+				size_t end = parts[i].source.end;
+				Part part;
+				part.match = true;
+				part.source.pos = pos;
+				part.source.end = end;
+				part.source.text = text.substr(pos, end - pos);
+				matched_list.push_back(part);
 			}
 		}
-	}
-	if (!katakana_text_.empty()) {
-		std::vector<Part> Part;
-		std::string kana = to_kana(text, &Part);
-		char const *p = strstr(kana.c_str(), katakana_text_.c_str());
-		if (p) {
-			size_t pos = p - kana.c_str();
-			size_t end = pos + katakana_text_.size();
-			ret.match = true;
-			ret.pos = pos;
-			for (size_t i = 0; i < Part.size(); i++) {
-				if (pos <= Part[i].kana.pos && Part[i].kana.pos < end) {
-					ret.end = Part[i].kana.end;
-					Part[i].match = true;
-				}
+		// マッチした部分を位置順にソート
+		std::sort(matched_list.begin(), matched_list.end(), [](ResultPart const &a, ResultPart const &b) {
+			return a.pos < b.pos;
+		});
+		// マッチしていない部分を追加する関数
+		auto AddNoMatch = [&ret, &text](size_t pos, size_t end){
+			ResultPart part;
+			part.match = false;
+			part.pos = pos;
+			part.end = end;
+			part.text = text.substr(part.pos, part.end - part.pos);
+			ret.parts.push_back(part);
+		};
+		// マッチした部分を順番に処理
+		size_t pos = 0;
+		for (const ResultPart &part : matched_list) {
+			if (pos < part.pos) { // マッチした部分の前の部分
+				AddNoMatch(pos, part.pos);
 			}
+			auto *back = ret.parts.empty() ? nullptr : &ret.parts.back();
+			if (back && back->match && back->end >= part.pos) { // 前の部分と連続してマッチしているときは結合する
+				size_t pos = back->pos; // 前の部分の開始位置
+				size_t end = std::max(back->end, part.end); // 前の部分と今回の部分の終了位置のうち大きい方
+				back->end = end; // 前の部分の終了位置を更新
+				back->text = text.substr(pos, end - pos); // 前の部分のテキストを更新
+			} else { // マッチした部分を追加
+				ret.parts.push_back(part);
+			}
+			pos = part.end;
 		}
-		ret.part = Part;
+		// 最後のフィルタ以降の部分
+		if (pos < text.size()) {
+			AddNoMatch(pos, text.size());
+		}
+		// マッチした部分が1つでもあれば、全体がマッチとみなす
+		ret.match = !matched_list.empty();
 	}
 	return ret;
 }

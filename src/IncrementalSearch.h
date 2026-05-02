@@ -22,23 +22,28 @@ namespace IncrementalSearch {
 
 struct Part {
 	bool match = false;
-	struct {
+	struct Fragment {
 		std::string text;
-		int pos;
-		int end;
-	} source;
-	struct {
-		std::string text;
-		int pos;
-		int end;
-	} kana;
+		size_t pos = 0;
+		size_t end = 0;
+	};
+	Fragment source;
+	Fragment kana;
+};
+
+struct ResultPart : public Part::Fragment {
+	bool match = false;
+	ResultPart() = default;
+	ResultPart(Part const &t)
+		: Part::Fragment(t.source)
+		, match(t.match)
+	{
+	}
 };
 
 struct Result {
 	bool match = false;
-	size_t pos = 0;
-	size_t end = 0;
-	std::vector<Part> part;
+	std::vector<ResultPart> parts;
 	operator bool () const
 	{
 		return match;
@@ -59,7 +64,6 @@ public:
 };
 
 } // namespace IncrementalSearch
-
 
 class IncrementalSearchFilter : public IncrementalSearch::AbstractFilter {
 private:
@@ -93,12 +97,13 @@ public:
 class MecabFilter : public IncrementalSearch::AbstractFilter {
 public:
 private:
-	std::string original_text_;
-	std::string katakana_text_;
+	struct Private;
+	Private *m;
 	static std::string to_kana(std::string const &text, std::vector<IncrementalSearch::Part> *out);
 public:
-	MecabFilter() = default;
+	MecabFilter();
 	MecabFilter(const std::string &filtertext);
+	~MecabFilter();
 	bool isEmpty() const override;
 	void makeFilter(std::string const &filtertext) override;
 	IncrementalSearch::Result match(const std::string &text) const override;

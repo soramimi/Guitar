@@ -97,6 +97,12 @@ int main(int argc, char *argv[])
 
 	ApplicationGlobal g;
 	global = &g;
+
+	if (0) { // for debug
+
+		// return 0;
+	}
+
 	signal(SIGTERM, onSigTerm);
 #ifndef _WIN32
 	signal(SIGPIPE, onSigPipe);
