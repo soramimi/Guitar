@@ -3486,31 +3486,31 @@
     </message>
     <message>
         <source>Incremental Search</source>
-        <translation>அதிகரிக்கும் தேடல்</translation>
+        <translation type="vanished">அதிகரிக்கும் தேடல்</translation>
     </message>
     <message>
         <source>Migemo</source>
-        <translation>மிகேமோ</translation>
+        <translation type="vanished">மிகேமோ</translation>
     </message>
     <message>
         <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation>Migemo ரோமாசி உள்ளீட்டைப் பயன்படுத்தி சப்பானியர்களுக்கான அதிகரிக்கும் தேடல் செயல்பாட்டை வழங்குகிறது. இது காஞ்சி, இரகனா மற்றும் கட்டகானாவை ஆதரிக்கிறது, சப்பானிய உரை கையாளுதலை வேகமாகவும் திறமையாகவும் செய்கிறது.</translation>
+        <translation type="vanished">Migemo ரோமாசி உள்ளீட்டைப் பயன்படுத்தி சப்பானியர்களுக்கான அதிகரிக்கும் தேடல் செயல்பாட்டை வழங்குகிறது. இது காஞ்சி, இரகனா மற்றும் கட்டகானாவை ஆதரிக்கிறது, சப்பானிய உரை கையாளுதலை வேகமாகவும் திறமையாகவும் செய்கிறது.</translation>
     </message>
     <message>
         <source>Setup Migemo dictionary</source>
-        <translation>Migemo அகராதியை அமைக்கவும்</translation>
+        <translation type="vanished">Migemo அகராதியை அமைக்கவும்</translation>
     </message>
     <message>
         <source>Delete Migemo dictionary</source>
-        <translation>Migemo அகராதியை நீக்கவும்</translation>
+        <translation type="vanished">Migemo அகராதியை நீக்கவும்</translation>
     </message>
     <message>
         <source>Are you sure to setup Migemo dictionary?</source>
-        <translation>Migemo அகராதியை அமைப்பதில் உறுதியாக உள்ளீர்களா?</translation>
+        <translation type="vanished">Migemo அகராதியை அமைப்பதில் உறுதியாக உள்ளீர்களா?</translation>
     </message>
     <message>
         <source>Are you sure to delete Migemo dictionary?</source>
-        <translation>Migemo அகராதியை நிச்சயமாக நீக்கவா?</translation>
+        <translation type="vanished">Migemo அகராதியை நிச்சயமாக நீக்கவா?</translation>
     </message>
 </context>
 <context>

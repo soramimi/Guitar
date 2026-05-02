@@ -2,7 +2,6 @@
 #include "ApplicationGlobal.h"
 #include "IncrementalSearch.h"
 #include "MainWindow.h"
-#include "LibMigemo.h"
 #include "common/joinpath.h"
 #include <QApplication>
 #include <QDebug>
@@ -82,8 +81,6 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	: QTreeWidget(parent)
 	, m(new Private)
 {
-	// LibMigemo::instance()->open();
-
 	setItemDelegate(&m->delegate);
 	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
 		current_item = current;

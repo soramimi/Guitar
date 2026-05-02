@@ -81,11 +81,6 @@ use_libcurl {
 
 # incremental search
 
-# CONFIG += use_migemo
-use_migemo {
-    DEFINES += USE_MIGEMO
-}
-
 # execute 'ruby prepare.rb' automatically
 
 prepare.target = prepare
@@ -633,11 +628,5 @@ unsafe {
 use_libcurl {
     SOURCES += $$PWD/src/curlclient.cpp
 	HEADERS += $$PWD/src/curlclient.h
-}
-
-use_migemo {
-    SOURCES += $$PWD/src/LibMigemo.cpp
-	HEADERS += $$PWD/src/LibMigemo.h
-	include(migemo.pri)
 }
 

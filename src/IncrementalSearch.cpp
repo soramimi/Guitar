@@ -15,10 +15,6 @@
 #include <string>
 #include <time.h>
 
-#ifdef USE_MIGEMO
-#include "LibMigemo.h"
-#endif
-
 static inline QColor incremental_search_filtered_bg_color()
 {
 	return global->appsettings.incremental_search_color.filtered_bg;
@@ -28,81 +24,6 @@ static inline QColor incremental_search_highlight_bg_color()
 {
 	return global->appsettings.incremental_search_color.highlight_bg;
 }
-
-#ifdef USE_MIGEMO
-MigemoFilter::MigemoFilter(std::string const &filtertext)
-{
-	makeFilter(filtertext);
-}
-
-bool MigemoFilter::isEmpty() const
-{
-	return text_.empty();
-}
-
-void MigemoFilter::makeFilter(std::string const &filtertext)
-{
-	text_ = filtertext;
-#ifdef USE_MIGEMO
-	if (LibMigemo::instance()->migemoEnabled()) {
-		if (filtertext.size() > 0) {
-			auto s = LibMigemo::instance()->queryMigemo(filtertext.c_str());
-			if (s) {
-				re_ = std::make_shared<QRegularExpression>(QString::fromStdString(*s), QRegularExpression::CaseInsensitiveOption);
-			}
-		}
-	}
-#endif
-}
-
-IncrementalSearch::Result MigemoFilter::match(std::string const &text) const
-{
-	using namespace IncrementalSearch;
-
-	if (isEmpty()) {
-		Result ret;
-		ret.match = true; // フィルターが空の場合は常にtrue
-		return ret;
-	}
-	if (re_.get()) { // 正規表現が有効な場合
-		QString text1 = QString::fromStdString(text);
-		QString text2 = IncrementalSearch::normalizeText(text1);
-		QRegularExpressionMatch m;
-		if (text2.contains(*re_, &m)) {
-			Result ret;
-			ret.match = true;
-			ret.pos = m.capturedStart();
-			ret.end = m.capturedEnd();
-			{
-				Part part;
-				part.source.pos = 0;
-				part.source.end = ret.pos;
-				part.source.text = text1.mid(0, ret.pos).toStdString();
-				part.match = false;
-				ret.part.push_back(part);
-			}
-			{
-				Part part;
-				part.source.pos = ret.pos;
-				part.source.end = ret.end;
-				part.source.text = text1.mid(ret.pos, ret.end - ret.pos).toStdString();
-				part.match = true;
-				ret.part.push_back(part);
-			}
-			{
-				Part part;
-				part.source.pos = ret.end;
-				part.source.end = text.size();
-				part.source.text = text1.mid(ret.end).toStdString();
-				part.match = false;
-				ret.part.push_back(part);
-			}
-			return ret;
-		}
-	}
-	return {};
-}
-#endif
 
 // IncrementalSearch
 

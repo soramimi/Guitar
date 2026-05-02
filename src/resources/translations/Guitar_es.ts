@@ -2845,7 +2845,7 @@
         <translation>Fusionar</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4350"/>
+        <location filename="../../MainWindow.cpp" line="4351"/>
         <source>Search</source>
         <translation type="unfinished">Buscar</translation>
     </message>
@@ -3544,7 +3544,7 @@
 <context>
     <name>RepositoryTreeWidget</name>
     <message>
-        <location filename="../../RepositoryTreeWidget.cpp" line="270"/>
+        <location filename="../../RepositoryTreeWidget.cpp" line="267"/>
         <source>Querying last modified time of %1/%2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4170,43 +4170,6 @@
     <message>
         <location filename="../../SettingOptionsForm.ui" line="22"/>
         <source>Edit profiles...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="44"/>
-        <source>Incremental Search</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="50"/>
-        <source>Migemo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="57"/>
-        <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="69"/>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
-        <source>Setup Migemo dictionary</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="89"/>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
-        <source>Delete Migemo dictionary</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
-        <source>Are you sure to setup Migemo dictionary?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
-        <source>Are you sure to delete Migemo dictionary?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

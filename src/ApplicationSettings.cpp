@@ -148,7 +148,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	}
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
 	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
-	GetValue<bool>(s, "IncrementalSearchWithMigemo")          >> as.incremental_search_with_miegemo;
 	s.endGroup();
 
 	// load api keys
@@ -257,7 +256,6 @@ void ApplicationSettings::saveSettings() const
 	}
 	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
-	SetValue<bool>(s, "IncrementalSearchWithMigemo")          << this->incremental_search_with_miegemo;
 	s.endGroup();
 
 	// save api keys

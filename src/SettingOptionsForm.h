@@ -18,11 +18,6 @@ public:
 	void exchange(bool save) override;
 private slots:
 	void on_pushButton_edit_profiles_clicked();
-#ifdef USE_MIGEMO
-	void on_pushButton_setup_migemo_dict_clicked();
-	void on_pushButton_delete_migemo_dict_clicked();
-	void on_checkBox_incremental_search_with_migemo_checkStateChanged(const Qt::CheckState &arg1);
-#endif
 };
 
 #endif // SETTINGOPTIONSFORM_H

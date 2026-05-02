@@ -20,10 +20,6 @@
 class MainWindow;
 class QListWidgetItem;
 
-#ifdef USE_MIGEMO
-class LibMigemo;
-#endif
-
 struct AccountProfile {
 	QString email;
 	QString name;
@@ -107,10 +103,6 @@ public:
 	void writeLog(const QString &str);
 
 	std::shared_ptr<AbstractInetClient> inet_client();
-
-#ifdef USE_MIGEMO
-	LibMigemo *incremental_search();
-#endif
 
 	LibMecab mecab;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);

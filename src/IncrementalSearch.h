@@ -90,21 +90,6 @@ public:
 	}
 };
 
-#if 0
-class MigemoFilter : public IncrementalSearch::AbstractFilter {
-private:
-	std::string text_;
-	std::shared_ptr<QRegularExpression> re_;
-public:
-public:
-	MigemoFilter() = default;
-	MigemoFilter(std::string const &filtertext);
-	bool isEmpty() const override;
-	void makeFilter(std::string const &filtertext) override;
-	IncrementalSearch::Result match(const std::string &text) const override;
-};
-#endif
-
 class MecabFilter : public IncrementalSearch::AbstractFilter {
 public:
 private:

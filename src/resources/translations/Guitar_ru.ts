@@ -2772,7 +2772,7 @@
         <translation>Слить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4350"/>
+        <location filename="../../MainWindow.cpp" line="4351"/>
         <source>Search</source>
         <translation type="unfinished">Поиск</translation>
     </message>
@@ -3462,7 +3462,7 @@
 <context>
     <name>RepositoryTreeWidget</name>
     <message>
-        <location filename="../../RepositoryTreeWidget.cpp" line="270"/>
+        <location filename="../../RepositoryTreeWidget.cpp" line="267"/>
         <source>Querying last modified time of %1/%2</source>
         <translation>Запрос времени последнего изменения %1/%2</translation>
     </message>
@@ -4079,41 +4079,32 @@
         <translation>Изменить профили...</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="44"/>
         <source>Incremental Search</source>
-        <translation>Инкрементальный поиск</translation>
+        <translation type="vanished">Инкрементальный поиск</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="50"/>
         <source>Migemo</source>
-        <translation>Migemo</translation>
+        <translation type="vanished">Migemo</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="57"/>
         <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation>Migemo предоставляет функцию инкрементального поиска для японского языка с использованием ввода ромадзи. Поддерживает кандзи, хирагану и катакану, делая работу с японским текстом быстрее и эффективнее.</translation>
+        <translation type="vanished">Migemo предоставляет функцию инкрементального поиска для японского языка с использованием ввода ромадзи. Поддерживает кандзи, хирагану и катакану, делая работу с японским текстом быстрее и эффективнее.</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="69"/>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Setup Migemo dictionary</source>
-        <translation>Настроить словарь Migemo</translation>
+        <translation type="vanished">Настроить словарь Migemo</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="89"/>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Delete Migemo dictionary</source>
-        <translation>Удалить словарь Migemo</translation>
+        <translation type="vanished">Удалить словарь Migemo</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Are you sure to setup Migemo dictionary?</source>
-        <translation>Уверены, что хотите настроить словарь Migemo?</translation>
+        <translation type="vanished">Уверены, что хотите настроить словарь Migemo?</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Are you sure to delete Migemo dictionary?</source>
-        <translation>Уверены, что хотите удалить словарь Migemo?</translation>
+        <translation type="vanished">Уверены, что хотите удалить словарь Migemo?</translation>
     </message>
 </context>
 <context>

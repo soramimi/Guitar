@@ -101,12 +101,7 @@ bool Zip::extract(std::string const &zipfile, std::string const &destdir)
 	return true;
 }
 
-int Zip::ziptest()
-{
-	// archive_main();
-	// extract_main("C:/develop/Guitar/misc/migemo.zip", "C:/a");
-	return 0;
-}
+
 
 } // namespace zip
 

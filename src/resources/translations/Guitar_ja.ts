@@ -2815,7 +2815,7 @@
         <translation>マージ</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4350"/>
+        <location filename="../../MainWindow.cpp" line="4351"/>
         <source>Search</source>
         <translation type="unfinished">検索</translation>
     </message>
@@ -3512,7 +3512,7 @@ Do you want to jump to the existing commit?</source>
 <context>
     <name>RepositoryTreeWidget</name>
     <message>
-        <location filename="../../RepositoryTreeWidget.cpp" line="270"/>
+        <location filename="../../RepositoryTreeWidget.cpp" line="267"/>
         <source>Querying last modified time of %1/%2</source>
         <translation>最終更新時間を取得 %1/%2</translation>
     </message>
@@ -4149,41 +4149,28 @@ Do you want to jump to the existing commit?</source>
         <translation>プロファイルの編集...</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="44"/>
         <source>Incremental Search</source>
-        <translation>インクリメンタル検索</translation>
+        <translation type="vanished">インクリメンタル検索</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="50"/>
-        <source>Migemo</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../../SettingOptionsForm.ui" line="57"/>
         <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation>Migemoはローマ字入力による日本語のインクリメンタルサーチ機能を提供します。漢字、ひらがな、カタカナをサポートし、日本語テキストの処理をより迅速かつ効率的にします。</translation>
+        <translation type="vanished">Migemoはローマ字入力による日本語のインクリメンタルサーチ機能を提供します。漢字、ひらがな、カタカナをサポートし、日本語テキストの処理をより迅速かつ効率的にします。</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="69"/>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Setup Migemo dictionary</source>
-        <translation>Migemo辞書をセットアップ</translation>
+        <translation type="vanished">Migemo辞書をセットアップ</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.ui" line="89"/>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Delete Migemo dictionary</source>
-        <translation>Migemo辞書を削除</translation>
+        <translation type="vanished">Migemo辞書を削除</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="46"/>
         <source>Are you sure to setup Migemo dictionary?</source>
-        <translation>本当にMigemo辞書をセットアップしていいですか？</translation>
+        <translation type="vanished">本当にMigemo辞書をセットアップしていいですか？</translation>
     </message>
     <message>
-        <location filename="../../SettingOptionsForm.cpp" line="57"/>
         <source>Are you sure to delete Migemo dictionary?</source>
-        <translation>本当にMigemo辞書を削除していいですか？</translation>
+        <translation type="vanished">本当にMigemo辞書を削除していいですか？</translation>
     </message>
 </context>
 <context>

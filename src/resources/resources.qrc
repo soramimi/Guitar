@@ -52,7 +52,6 @@
         <file>translations/Guitar_es.qm</file>
         <file>Guitar.ico</file>
         <file>image/clear.svg</file>
-        <file>misc/migemo.zip</file>
         <file>translations/Guitar_ta.qm</file>
     </qresource>
 </RCC>
