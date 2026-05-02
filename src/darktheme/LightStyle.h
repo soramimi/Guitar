@@ -29,6 +29,10 @@ public:
 	// QStyle interface
 public:
 	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const;
+
+	// QStyle interface
+public:
+	QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const;
 };
 
 #endif // LIGHTSTYLE_H

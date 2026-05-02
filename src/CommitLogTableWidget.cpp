@@ -291,6 +291,9 @@ private:
 	{
 		CommitLogTableWidget const *tablewidget = qobject_cast<CommitLogTableWidget const *>(opt.widget);
 		if (tablewidget->model_->isFiltered()) {
+			QStyleOptionViewItem o = opt;
+			o.text = {};
+			MyTableWidgetDelegate::paint_bg(painter, o, index);
 			IncrementalSearch::fillFilteredBG(painter, opt.rect);
 			IncrementalSearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
 		} else {

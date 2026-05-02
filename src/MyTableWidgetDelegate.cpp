@@ -24,10 +24,8 @@ void drawFocusFrame(QPainter *p, QRect const &rect, int margin)
 }
 }
 
-void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const
+void MyTableWidgetDelegate::paint_bg(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const
 {
-	QStyleOptionViewItem opt = option;
-
 #ifdef Q_OS_WIN
 	// 選択枠を描画
 	if (option.showDecorationSelected) {
@@ -62,7 +60,16 @@ void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
 		}
 #endif
 	}
+#endif
+}
 
+void MyTableWidgetDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const
+{
+	QStyleOptionViewItem opt = option;
+
+	paint_bg(painter, opt, index);
+
+#ifdef Q_OS_WIN
 	opt.state &= ~QStyle::State_Selected; // 行の選択枠は描画しない
 #endif
 	opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない

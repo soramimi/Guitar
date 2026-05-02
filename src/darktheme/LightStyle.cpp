@@ -472,3 +472,14 @@ int LightStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, cons
 	return QProxyStyle::pixelMetric(metric, option, widget);
 }
 
+QSize LightStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const
+{
+	QSize newSize = QProxyStyle::sizeFromContents(ct, opt, contentsSize, w);
+	switch (ct) {
+	case CT_MenuItem:
+		newSize.rwidth() += 8;
+		break;
+	}
+	return newSize;
+}
+
