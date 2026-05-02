@@ -15,6 +15,7 @@
 #include <winpty.h>
 #else
 #include <unistd.h>
+#include <sys/select.h>
 #include <sys/wait.h>
 #include <pty.h>
 #endif
@@ -32,10 +33,102 @@ struct ProcessResult {
 	}
 };
 
-std::optional<ProcessResult> exec_posix(std::string const &cmd, std::function<void (const char *, int)> const &on_output = nullptr)
+class ProcessPosix : public AbstractPtyProcess {
+private:
+	std::thread thread_;
+	std::mutex mutex_;
+	std::condition_variable cond_;
+	int input_fd_ = -1;
+	std::optional<ProcessResult> run(const std::string &cmd, const std::function<void (const char *, int)> &on_output = nullptr);
+public:
+	~ProcessPosix()
+	{
+		closeInput();
+		if (thread_.joinable()) {
+			thread_.join();
+		}
+	}
+	bool isRunning() const override
+	{
+		return thread_.joinable();
+	}
+	void writeInput(const char *ptr, int len) override
+	{
+		::write(input_fd_, ptr, len);
+	}
+	void closeInput()
+	{
+		if (input_fd_ != -1) {
+			close(input_fd_);
+			input_fd_ = -1;
+		}
+	}
+	int readOutput(char *ptr, int len) override
+	{
+		int n = output_queue_.size();
+		if (n > len) n = len;
+		for (int i = 0; i < n; i++) {
+			ptr[i] = output_queue_.front();
+			output_queue_.pop_front();
+		}
+		return n;
+	}
+	void start(const std::string &cmd, const std::string &env) override
+	{
+		thread_ = std::thread([&](){
+			auto ret = run(cmd, [&](const char *ptr, int len){
+				std::lock_guard<std::mutex> lock(mutex_);
+				writeOutput(ptr, len);
+			});
+		});
+		{
+			std::unique_lock <std::mutex> lock(mutex_);
+			cond_.wait(lock);
+		}
+	}
+	bool wait(unsigned long time) override
+	{
+		closeInput();
+		if (thread_.joinable()) {
+			thread_.join();
+			return true;
+		}
+		return false;
+	}
+	void stop() override
+	{
+	}
+	int getExitCode() const override
+	{
+		return 0;
+	}
+	void readResult(std::vector<char> *out) override
+	{
+		*out = output_vector_;
+		output_vector_.clear();
+	}
+};
+
+std::optional<ProcessResult> ProcessPosix::run(std::string const &cmd, std::function<void (const char *, int)> const &on_output)
 {
 	int pipe_stdout_fd[2];
 	if (pipe(pipe_stdout_fd) == -1) {
+		return std::nullopt;
+	}
+
+	int pipe_stderr_fd[2];
+	if (pipe(pipe_stderr_fd) == -1) {
+		close(pipe_stdout_fd[0]);
+		close(pipe_stdout_fd[1]);
+		return std::nullopt;
+	}
+
+	int pipe_stdin_fd[2];
+	if (pipe(pipe_stdin_fd) == -1) {
+		close(pipe_stdout_fd[0]);
+		close(pipe_stdout_fd[1]);
+		close(pipe_stderr_fd[0]);
+		close(pipe_stderr_fd[1]);
 		return std::nullopt;
 	}
 
@@ -43,6 +136,10 @@ std::optional<ProcessResult> exec_posix(std::string const &cmd, std::function<vo
 	if (pid == -1) {
 		close(pipe_stdout_fd[0]);
 		close(pipe_stdout_fd[1]);
+		close(pipe_stderr_fd[0]);
+		close(pipe_stderr_fd[1]);
+		close(pipe_stdin_fd[0]);
+		close(pipe_stdin_fd[1]);
 		return std::nullopt;
 	}
 
@@ -51,6 +148,14 @@ std::optional<ProcessResult> exec_posix(std::string const &cmd, std::function<vo
 		close(pipe_stdout_fd[0]);
 		dup2(pipe_stdout_fd[1], STDOUT_FILENO);
 		close(pipe_stdout_fd[1]);
+
+		close(pipe_stderr_fd[0]);
+		dup2(pipe_stderr_fd[1], STDERR_FILENO);
+		close(pipe_stderr_fd[1]);
+
+		close(pipe_stdin_fd[1]);
+		dup2(pipe_stdin_fd[0], STDIN_FILENO);
+		close(pipe_stdin_fd[0]);
 
 		std::vector<char *> argv;
 		std::vector<std::string> args;
@@ -68,18 +173,54 @@ std::optional<ProcessResult> exec_posix(std::string const &cmd, std::function<vo
 
 	// parent
 	close(pipe_stdout_fd[1]);
+	close(pipe_stderr_fd[1]);
+	close(pipe_stdin_fd[0]);
+
+	input_fd_ = pipe_stdin_fd[1];
+	cond_.notify_all();
 
 	ProcessResult ret;
 
-	char buf[256];
-	ssize_t n;
-	while ((n = read(pipe_stdout_fd[0], buf, sizeof(buf))) > 0) {
-		if (on_output) {
-			on_output(buf, (int)n);
+	// closeInput();
+
+	int stdout_rd = pipe_stdout_fd[0];
+	int stderr_rd = pipe_stderr_fd[0];
+
+	while (stdout_rd != -1 || stderr_rd != -1) {
+		fd_set fds;
+		FD_ZERO(&fds);
+		int nfds = 0;
+		if (stdout_rd != -1) {
+			FD_SET(stdout_rd, &fds);
+			if (stdout_rd >= nfds) nfds = stdout_rd + 1;
+		}
+		if (stderr_rd != -1) {
+			FD_SET(stderr_rd, &fds);
+			if (stderr_rd >= nfds) nfds = stderr_rd + 1;
+		}
+
+		if (select(nfds, &fds, nullptr, nullptr, nullptr) <= 0) break;
+
+		char buf[256];
+		if (stdout_rd != -1 && FD_ISSET(stdout_rd, &fds)) {
+			ssize_t n = read(stdout_rd, buf, sizeof(buf));
+			if (n > 0) {
+				if (on_output) on_output(buf, (int)n);
+			} else {
+				close(stdout_rd);
+				stdout_rd = -1;
+			}
+		}
+		if (stderr_rd != -1 && FD_ISSET(stderr_rd, &fds)) {
+			ssize_t n = read(stderr_rd, buf, sizeof(buf));
+			if (n > 0) {
+				if (on_output) on_output(buf, (int)n);
+			} else {
+				close(stderr_rd);
+				stderr_rd = -1;
+			}
 		}
 	}
-
-	close(pipe_stdout_fd[0]);
 
 	int status = 0;
 	waitpid(pid, &status, 0);
@@ -133,67 +274,6 @@ std::string exec_posixpty(std::string const &cmd)
 
 	return ret;
 }
-
-class ProcessPosix : public AbstractPtyProcess {
-private:
-	std::thread thread_;
-	std::mutex mutex_;
-	std::condition_variable cond_;
-public:
-	~ProcessPosix()
-	{
-		if (thread_.joinable()) {
-			thread_.join();
-		}
-	}
-	bool isRunning() const override
-	{
-		return thread_.joinable();
-	}
-	void writeInput(const char *ptr, int len) override
-	{
-
-	}
-	int readOutput(char *ptr, int len) override
-	{
-		int n = output_queue_.size();
-		if (n > len) n = len;
-		for (int i = 0; i < n; i++) {
-			ptr[i] = output_queue_.front();
-			output_queue_.pop_front();
-		}
-		return n;
-	}
-	void start(const std::string &cmd, const std::string &env) override
-	{
-		thread_ = std::thread([this, cmd](){
-			auto ret = exec_posix(cmd, [&](const char *ptr, int len){
-				std::lock_guard<std::mutex> lock(mutex_);
-				writeOutput(ptr, len);
-			});
-		});
-	}
-	bool wait(unsigned long time) override
-	{
-		if (thread_.joinable()) {
-			thread_.join();
-			return true;
-		}
-		return false;
-	}
-	void stop() override
-	{
-	}
-	int getExitCode() const override
-	{
-		return 0;
-	}
-	void readResult(std::vector<char> *out) override
-	{
-		*out = output_vector_;
-		output_vector_.clear();
-	}
-};
 
 #else
 
@@ -576,10 +656,23 @@ void process_test2()
 	// fprintf(stderr, "%d ms\n", (int)t.elapsed());
 }
 
+void msleep(unsigned int ms)
+{
+#ifdef _WIN32
+	Sleep(ms);
+#else
+	usleep(ms * 1000);
+#endif
+}
+
 void process_test()
 {
 	ProcessPosix proc;
-	proc.start("uname -a", "");
+	proc.start("base64", "");
+	{
+		const char *input = "Hello, world\n";
+		proc.writeInput(input, strlen(input));
+	}
 	proc.wait(10000);
 	std::vector<char> out;
 	proc.readResult(&out);
