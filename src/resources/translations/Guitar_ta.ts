@@ -28,7 +28,7 @@
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -95,7 +95,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Search</source>
@@ -371,7 +371,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -402,7 +402,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Commit</source>
@@ -445,7 +445,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -476,7 +476,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>Search</source>
@@ -503,7 +503,7 @@
     </message>
     <message>
         <source>ssh</source>
-        <translation>பாஓடு</translation>
+        <translation>ssh</translation>
     </message>
     <message>
         <source>http</source>
@@ -515,7 +515,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -530,7 +530,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -632,7 +632,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -815,7 +815,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Other</source>
@@ -846,7 +846,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -901,7 +901,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -932,7 +932,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -975,7 +975,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>A valid git repository already exists there.</source>
@@ -1010,7 +1010,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Delete Remote Branch</source>
@@ -1033,7 +1033,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1080,7 +1080,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1095,7 +1095,7 @@
     </message>
     <message>
         <source>is not a valid git working copy.</source>
-        <translation>செல்லுபடியாகும் அறிவிலி பணி நகல் அல்ல.</translation>
+        <translation>செல்லுபடியாகும் git பணி நகல் அல்ல.</translation>
     </message>
     <message>
         <source>Do you want to init it as a git repository ?</source>
@@ -1119,7 +1119,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1142,7 +1142,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1185,7 +1185,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Mail Address</source>
@@ -1361,7 +1361,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1384,7 +1384,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Failed to generate commit message.</source>
@@ -1415,7 +1415,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1434,7 +1434,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1469,7 +1469,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Name</source>
@@ -1523,7 +1523,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -1606,7 +1606,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="obsolete">கைவிடு</translation>
+        <translation type="obsolete">ரத்துசெய்</translation>
     </message>
     <message>
         <source>Unstage</source>
@@ -1990,7 +1990,7 @@
     </message>
     <message>
         <source>Drop</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>Repositories panel</source>
@@ -2520,7 +2520,7 @@
     </message>
     <message>
         <source>SSH</source>
-        <translation>பாஓடு</translation>
+        <translation>SSH</translation>
     </message>
     <message>
         <source>Restart trace logger</source>
@@ -2528,11 +2528,11 @@
     </message>
     <message>
         <source>SSH Connection</source>
-        <translation>பாஓடு இணைப்பு</translation>
+        <translation>SSH இணைப்பு</translation>
     </message>
     <message>
         <source>SSH connection is disabled</source>
-        <translation>பாஓடு இணைப்பு முடக்கப்பட்டது</translation>
+        <translation>SSH இணைப்பு முடக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Search</source>
@@ -2579,7 +2579,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2594,7 +2594,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2633,7 +2633,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2678,7 +2678,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>ID</source>
@@ -2744,7 +2744,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2766,7 +2766,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -2820,7 +2820,7 @@
     </message>
     <message>
         <source>SSH key override...</source>
-        <translation>பாஓடு விசை மேலெழுத...</translation>
+        <translation>SSH விசை மேலெழுத...</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -2828,11 +2828,11 @@
     </message>
     <message>
         <source>SSH command is not registered.</source>
-        <translation>பாஓடு கட்டளை பதிவு செய்யப்படவில்லை.</translation>
+        <translation>SSH கட்டளை பதிவு செய்யப்படவில்லை.</translation>
     </message>
     <message>
         <source>SSH private key</source>
-        <translation>பாஓடு தனிப்பட்ட விசை</translation>
+        <translation>SSH தனிப்பட்ட விசை</translation>
     </message>
     <message>
         <source>This file is a %1</source>
@@ -2848,7 +2848,7 @@
     </message>
     <message>
         <source>SSH key override</source>
-        <translation type="vanished">பாஓடு விசை மேலெழுதுதல்</translation>
+        <translation type="vanished">SSH விசை மேலெழுதுதல்</translation>
     </message>
 </context>
 <context>
@@ -2999,7 +2999,7 @@
     </message>
     <message>
         <source>ssh</source>
-        <translation>பாஓடு</translation>
+        <translation>ssh</translation>
     </message>
     <message>
         <source>http</source>
@@ -3011,7 +3011,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Name</source>
@@ -3050,7 +3050,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Please select the &apos;%1&apos; command you want to use.</source>
@@ -3081,7 +3081,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>ID</source>
@@ -3108,7 +3108,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -3178,7 +3178,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -3205,7 +3205,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">கைவிடு</translation>
+        <translation type="vanished">ரத்துசெய்</translation>
     </message>
     <message>
         <source>URL</source>
@@ -3556,7 +3556,7 @@
     </message>
     <message>
         <source>Git command</source>
-        <translation>அறிவிலி கட்டளை</translation>
+        <translation>git கட்டளை</translation>
     </message>
     <message>
         <source>Browse...</source>
@@ -3572,7 +3572,7 @@
     </message>
     <message>
         <source>SSH command (option)</source>
-        <translation>பாஓடு கட்டளை (விருப்பம்)</translation>
+        <translation>SSH கட்டளை (விருப்பம்)</translation>
     </message>
     <message>
         <source>Terminal command (option)</source>
@@ -3669,7 +3669,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -3708,7 +3708,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Checkout into</source>
@@ -3762,7 +3762,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
 </context>
 <context>
@@ -3804,7 +3804,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -3823,7 +3823,7 @@
     </message>
     <message>
         <source>git</source>
-        <translation>அறிவிலி</translation>
+        <translation>git</translation>
     </message>
     <message>
         <source>Browse</source>
@@ -3839,11 +3839,11 @@
     </message>
     <message>
         <source>git config --global user.name</source>
-        <translation>அறிவிலி கட்டமைப்பு --உலகளாவிய பயனர்.பெயர்</translation>
+        <translation>git config --global user.name</translation>
     </message>
     <message>
         <source>git config --global user.email</source>
-        <translation>அறிவிலி கட்டமைப்பு --உலகளாவிய பயனர்.மின்னஞ்சல்</translation>
+        <translation>git config --global user.email</translation>
     </message>
     <message>
         <source>Get icon from Gravatar</source>
@@ -3907,7 +3907,7 @@
     </message>
     <message>
         <source>Cancel</source>
-        <translation>கைவிடு</translation>
+        <translation>ரத்துசெய்</translation>
     </message>
     <message>
         <source>Finish</source>
