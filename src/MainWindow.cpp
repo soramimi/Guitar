@@ -7305,10 +7305,12 @@ void MainWindow::on_action_branch_triggered()
 
 }
 
+void process_test();
 
 
 void MainWindow::test()
 {
+	process_test();
 }
 
 

@@ -132,6 +132,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/FileTypeDetector.cpp \
+	$$PWD/src/ProcessExample.cpp \
 	$$PWD/src/common/q/DateTime.cpp \
 	$$PWD/src/common/q/DirIterator.cpp \
 	$$PWD/src/common/qmisc.cpp \

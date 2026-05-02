@@ -8,8 +8,21 @@
 
 class QString;
 
-class AbstractPtyProcess : public QObject {
-	Q_OBJECT
+class AbstractProcess {
+public:
+	virtual ~AbstractProcess() {};
+
+	virtual std::string outstring() const = 0;
+	virtual std::string errstring() const = 0;
+
+	virtual void start(const std::string &command, bool use_input) = 0;
+	virtual int wait() = 0;
+	virtual void writeInput(char const *ptr, int len) = 0;
+	virtual void closeInput(bool justnow) = 0;
+};
+
+
+class AbstractPtyProcess {
 protected:
 	QString change_dir_;
 	QVariant user_data_;
@@ -17,6 +30,8 @@ protected:
 	std::vector<char> output_vector_; // for result
 	std::function<void (bool, const QVariant &)> completed_fn_;
 public:
+	virtual ~AbstractPtyProcess() {}
+
 	void setChangeDir(QString const &dir);
 	void setCompletedHandler(std::function<void (bool, const QVariant &)> fn, QVariant const &userdata)
 	{
@@ -42,56 +57,6 @@ public:
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
 	virtual void readResult(std::vector<char> *out) = 0;
-};
-
-class DryRunPtyProcess : public AbstractPtyProcess {
-private:
-	std::string command_;
-public:
-	bool isRunning() const
-	{
-		return false;
-	}
-	void writeInput(const char *ptr, int len)
-	{
-		(void)ptr;
-		(void)len;
-	}
-	int readOutput(char *ptr, int len)
-	{
-		(void)ptr;
-		(void)len;
-		return 0;
-	}
-	void start(std::string const &cmd, std::string const &env)
-	{
-		(void)env;
-		command_ = cmd;
-	}
-	bool wait(unsigned long time)
-	{
-		(void)time;
-		return true;
-	}
-	void stop()
-	{
-	}
-	int getExitCode() const
-	{
-		return 0;
-	}
-	QString getMessage() const
-	{
-		return QString();
-	}
-	void readResult(std::vector<char> *out)
-	{
-		out->clear();
-	}
-	std::string command() const
-	{
-		return command_;
-	}
 };
 
 #endif // ABSTRACTPROCESS_H

@@ -6,8 +6,9 @@
 #include <QByteArray>
 #include <vector>
 #include <QThread>
+#include "../AbstractProcess.h"
 
-class Win32Process {
+class Win32Process : public AbstractProcess {
 private:
 	struct Private;
 	Private *m;
