@@ -22,27 +22,35 @@
 #ifndef _WIN32
 #include "unix/UnixProcess.h"
 
-std::string exec_posix(std::string const &cmd)
-{
-	std::string ret;
+struct ProcessResult {
+	bool ok = false;
+	int exit_code = 0;
 
-	int pipefd[2];
-	if (pipe(pipefd) == -1) {
-		return ret;
+	operator bool () const
+	{
+		return ok;
+	}
+};
+
+std::optional<ProcessResult> exec_posix(std::string const &cmd, std::function<void (const char *, int)> const &on_output = nullptr)
+{
+	int pipe_stdout_fd[2];
+	if (pipe(pipe_stdout_fd) == -1) {
+		return std::nullopt;
 	}
 
 	pid_t pid = fork();
 	if (pid == -1) {
-		close(pipefd[0]);
-		close(pipefd[1]);
-		return ret;
+		close(pipe_stdout_fd[0]);
+		close(pipe_stdout_fd[1]);
+		return std::nullopt;
 	}
 
 	if (pid == 0) {
 		// child
-		close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
+		close(pipe_stdout_fd[0]);
+		dup2(pipe_stdout_fd[1], STDOUT_FILENO);
+		close(pipe_stdout_fd[1]);
 
 		std::vector<char *> argv;
 		std::vector<std::string> args;
@@ -59,19 +67,24 @@ std::string exec_posix(std::string const &cmd)
 	}
 
 	// parent
-	close(pipefd[1]);
+	close(pipe_stdout_fd[1]);
+
+	ProcessResult ret;
 
 	char buf[256];
 	ssize_t n;
-	while ((n = read(pipefd[0], buf, sizeof(buf))) > 0) {
-		ret.append(buf, n);
+	while ((n = read(pipe_stdout_fd[0], buf, sizeof(buf))) > 0) {
+		if (on_output) {
+			on_output(buf, (int)n);
+		}
 	}
-	close(pipefd[0]);
 
-	waitpid(pid, nullptr, 0);
+	close(pipe_stdout_fd[0]);
 
-	while (!ret.empty() && (ret.back() == '\n' || ret.back() == '\r')) {
-		ret.pop_back();
+	int status = 0;
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status)) {
+		ret.exit_code = WEXITSTATUS(status);
 	}
 
 	return ret;
@@ -98,7 +111,6 @@ std::string exec_posixpty(std::string const &cmd)
 		}
 		argv.push_back(nullptr);
 
-		// char *args[] = { (char *)"git", (char *)"--version", nullptr };
 		if (!argv.empty()) {
 			execvp(argv[0], argv.data());
 		}
@@ -121,6 +133,67 @@ std::string exec_posixpty(std::string const &cmd)
 
 	return ret;
 }
+
+class ProcessPosix : public AbstractPtyProcess {
+private:
+	std::thread thread_;
+	std::mutex mutex_;
+	std::condition_variable cond_;
+public:
+	~ProcessPosix()
+	{
+		if (thread_.joinable()) {
+			thread_.join();
+		}
+	}
+	bool isRunning() const override
+	{
+		return thread_.joinable();
+	}
+	void writeInput(const char *ptr, int len) override
+	{
+
+	}
+	int readOutput(char *ptr, int len) override
+	{
+		int n = output_queue_.size();
+		if (n > len) n = len;
+		for (int i = 0; i < n; i++) {
+			ptr[i] = output_queue_.front();
+			output_queue_.pop_front();
+		}
+		return n;
+	}
+	void start(const std::string &cmd, const std::string &env) override
+	{
+		thread_ = std::thread([this, cmd](){
+			auto ret = exec_posix(cmd, [&](const char *ptr, int len){
+				std::lock_guard<std::mutex> lock(mutex_);
+				writeOutput(ptr, len);
+			});
+		});
+	}
+	bool wait(unsigned long time) override
+	{
+		if (thread_.joinable()) {
+			thread_.join();
+			return true;
+		}
+		return false;
+	}
+	void stop() override
+	{
+	}
+	int getExitCode() const override
+	{
+		return 0;
+	}
+	void readResult(std::vector<char> *out) override
+	{
+		*out = output_vector_;
+		output_vector_.clear();
+	}
+};
 
 #else
 
@@ -463,7 +536,7 @@ bool conpty_agent()
 #endif
 
 // experiment for process execution
-void process_test()
+void process_test2()
 {
 	QElapsedTimer t;
 	t.start();
@@ -492,15 +565,26 @@ void process_test()
 	}
 #endif
 #else
-#if 0
-	std::string s = exec_posix("git --version");
+#if 1
+	// auto ret = exec_posix("git --version");
 #elif 1
 	std::string s = exec_posixpty("git --version");
 #endif
 
 #endif
+	// fprintf(stderr, "[%s]\n", s.c_str());
+	// fprintf(stderr, "%d ms\n", (int)t.elapsed());
+}
+
+void process_test()
+{
+	ProcessPosix proc;
+	proc.start("uname -a", "");
+	proc.wait(10000);
+	std::vector<char> out;
+	proc.readResult(&out);
+	std::string s(out.begin(), out.end());
 	fprintf(stderr, "[%s]\n", s.c_str());
-	fprintf(stderr, "%d ms\n", (int)t.elapsed());
 }
 
 /*
