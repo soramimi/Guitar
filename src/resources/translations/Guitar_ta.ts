@@ -2516,55 +2516,55 @@
     </message>
     <message>
         <source>Sort by commit time</source>
-        <translation type="unfinished"></translation>
+        <translation>பதிவு நேரத்தின்படி வரிசைப்படுத்து</translation>
     </message>
     <message>
         <source>SSH</source>
-        <translation type="unfinished"></translation>
+        <translation>பாஓடு</translation>
     </message>
     <message>
         <source>Restart trace logger</source>
-        <translation type="unfinished"></translation>
+        <translation>தடபதிப்பை மறுதொடக்கம் செய்</translation>
     </message>
     <message>
         <source>SSH Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>பாஓடு இணைப்பு</translation>
     </message>
     <message>
         <source>SSH connection is disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>பாஓடு இணைப்பு முடக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished">தேடல்</translation>
+        <translation>தேடல்</translation>
     </message>
     <message>
         <source>Switch to</source>
-        <translation type="unfinished"></translation>
+        <translation>இதற்கு மாறு</translation>
     </message>
     <message>
         <source>[%1] %2</source>
-        <translation type="unfinished"></translation>
+        <translation>[%1] %2</translation>
     </message>
     <message>
         <source>Save as...</source>
-        <translation type="unfinished">இவ்வாறு சேமி...</translation>
+        <translation>என சேமி...</translation>
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished">என சேமி</translation>
+        <translation>என சேமி</translation>
     </message>
     <message>
         <source>Do you want to save the file to &quot;%1&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>நீங்கள் கோப்பை &quot;%1&quot; இல் சேமிக்க விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">பிழை</translation>
+        <translation>பிழை</translation>
     </message>
     <message>
         <source>Cannot get file information.</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்புத் தகவலைப் பெற முடியவில்லை</translation>
     </message>
 </context>
 <context>
@@ -2755,7 +2755,7 @@
     </message>
     <message>
         <source>Save as</source>
-        <translation type="unfinished">என சேமி</translation>
+        <translation>என சேமி</translation>
     </message>
 </context>
 <context>
@@ -3408,39 +3408,39 @@
     <name>SettingLoggingForm</name>
     <message>
         <source>Logging</source>
-        <translation type="unfinished"></translation>
+        <translation>பதிவிடல்</translation>
     </message>
     <message>
         <source>Trace log</source>
-        <translation type="unfinished"></translation>
+        <translation>தட பதிவு</translation>
     </message>
     <message>
         <source>Remote log</source>
-        <translation type="unfinished"></translation>
+        <translation>தொலை பதிவு</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
+        <translation>புரவலன்</translation>
     </message>
     <message>
         <source>Port</source>
-        <translation type="unfinished"></translation>
+        <translation>துறைமுகம்</translation>
     </message>
     <message>
         <source>Output</source>
-        <translation type="unfinished"></translation>
+        <translation>வெளியீடு</translation>
     </message>
     <message>
         <source>Default</source>
-        <translation type="unfinished">இயல்புநிலை</translation>
+        <translation>இயல்புநிலை</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>தனிப்பயன்</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation type="unfinished">உலாவுக...</translation>
+        <translation>உலாவுக...</translation>
     </message>
     <message>
         <source>(Changes are applied at next run)</source>
@@ -3448,7 +3448,7 @@
     </message>
     <message>
         <source>Select Log Output Directory</source>
-        <translation type="unfinished">பதிவு வெளியிடம் கோப்புறை தேர்வு</translation>
+        <translation>பதிவு வெளியிடம் கோப்புறை தேர்வு</translation>
     </message>
 </context>
 <context>
