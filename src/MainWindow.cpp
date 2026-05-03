@@ -113,6 +113,32 @@ struct EventItem {
 
 constexpr int ASCII_BACKSPACE = 0x08;
 
+namespace {
+enum LogInspectionIndex {
+	ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
+	ENTER_PASSPHRASE,
+	ENTER_PASSPHRASE_FOR_KEY,
+	FATAL_AUTHENTICATION_FAILED_FOR,
+	REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
+};
+struct LogInspectionItem {
+	const char *pattern; // regex
+	int index;
+};
+static const LogInspectionItem log_inspection_table[] = {
+	{"Are you sure you want to continue connecting.*\\?"
+	 , ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING},
+	{"Enter passphrase: "
+	 , ENTER_PASSPHRASE},
+	{"Enter passphrase for key '"
+	 , ENTER_PASSPHRASE_FOR_KEY},
+	{"fatal: Authentication failed for '"
+	 , FATAL_AUTHENTICATION_FAILED_FOR},
+	{"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
+	 , REMOTE_HOST_IDENTIFICATION_HAS_CHANGED},
+};
+}
+
 struct MainWindow::Private {
 
 	QString starting_dir;
@@ -6684,26 +6710,11 @@ void MainWindow::onLogIdle()
 	if (!interactionEnabled()) return;
 	if (interactionMode() != InteractionMode::None) return;
 
-	enum PatternIndex {
-		ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
-		ENTER_PASSPHRASE,
-		ENTER_PASSPHRASE_FOR_KEY,
-		FATAL_AUTHENTICATION_FAILED_FOR,
-		REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
-	};
-
 	static std::map<int, QRegularExpression> patterns;
 	if (patterns.empty()) {
-		patterns[ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING] = QRegularExpression(
-				"Are you sure you want to continue connecting.*\\?");
-		patterns[ENTER_PASSPHRASE] = QRegularExpression(
-				"Enter passphrase: ");
-		patterns[ENTER_PASSPHRASE_FOR_KEY] = QRegularExpression(
-				"Enter passphrase for key '");
-		patterns[FATAL_AUTHENTICATION_FAILED_FOR] = QRegularExpression(
-				"fatal: Authentication failed for '");
-		patterns[REMOTE_HOST_IDENTIFICATION_HAS_CHANGED] = QRegularExpression(
-				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
+		for (const auto &t : log_inspection_table) {
+			patterns[t.index] = QRegularExpression(t.pattern);
+		}
 	}
 
 	std::vector<std::string> lines = getLogHistoryLines(true);
@@ -6712,17 +6723,17 @@ void MainWindow::onLogIdle()
 	if (lines.empty()) return;
 
 
-	auto RegExp = [&](PatternIndex i){
+	auto RegExp = [&](LogInspectionIndex i){
 		auto it = patterns.find(i);
 		return it == patterns.end() ? QRegularExpression() : it->second;
 	};
 
-	auto Equals = [&](std::string const &line, PatternIndex i){
+	auto Equals = [&](std::string const &line, LogInspectionIndex i){
 		std::string const &str = RegExp(i).pattern().toStdString();
 		return line == str;
 	};
 
-	auto Contains = [&](PatternIndex i){
+	auto Contains = [&](LogInspectionIndex i){
 		std::string const &str = RegExp(i).pattern().toStdString();
 		for (std::string const &line : lines) {
 			if (strstr(line.c_str(), str.c_str())) {
@@ -6732,11 +6743,11 @@ void MainWindow::onLogIdle()
 		return false;
 	};
 
-	auto Match = [&](std::string const &line, PatternIndex i){
+	auto Match = [&](std::string const &line, LogInspectionIndex i){
 		return RegExp(i).match(QString::fromStdString(line)).hasMatch();
 	};
 
-	auto StartsWith = [&](std::string const &line, PatternIndex i){
+	auto StartsWith = [&](std::string const &line, LogInspectionIndex i){
 		std::string const &str = RegExp(i).pattern().toStdString();
 		char const *p = str.c_str();
 		char const *s = line.c_str();
