@@ -42,6 +42,7 @@ private:
 	std::thread thread_;
 	mutable std::mutex mutex_;
 	std::condition_variable cond_;
+	bool input_ready_ = false;
 	int input_fd_ = -1;
 	int exit_code_ = 128;
 
@@ -123,7 +124,11 @@ private:
 		close(pipe_stderr_fd[1]);
 		close(pipe_stdin_fd[0]);
 
-		input_fd_ = pipe_stdin_fd[1];
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			input_fd_ = pipe_stdin_fd[1];
+			input_ready_ = true;
+		}
 		cond_.notify_all();
 
 		ProcessResult ret;
@@ -218,8 +223,8 @@ public:
 			}
 		});
 		{
-			std::unique_lock <std::mutex> lock(mutex_);
-			cond_.wait(lock);
+			std::unique_lock<std::mutex> lock(mutex_);
+			cond_.wait(lock, [this]{ return input_ready_; });
 		}
 	}
 	int wait() override
@@ -284,6 +289,7 @@ private:
 	std::thread thread_;
 	mutable std::mutex mutex_;
 	std::condition_variable cond_;
+	bool input_ready_ = false;
 	int input_fd_ = -1;
 	int exit_code_ = 128;
 
@@ -326,13 +332,24 @@ private:
 		}
 
 		// parent
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			input_fd_ = master_fd;
+			input_ready_ = true;
+		}
+		cond_.notify_all();
+
 		char buf[256];
 		ssize_t n;
 		while ((n = read(master_fd, buf, sizeof(buf))) > 0) {
-			// ret.append(buf, n);
+			std::lock_guard<std::mutex> lock(mutex_);
 			writeStdOut(buf, (size_t)n);
 		}
 		close(master_fd);
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			input_fd_ = -1;
+		}
 
 		waitpid(pid, nullptr, 0);
 
@@ -344,12 +361,30 @@ private:
 public:
 	bool isRunning() const
 	{
-		return false;
+		return thread_.joinable();
 	}
-	void writeInput(const char *ptr, int len)
+	void writeInput(const char *ptr, int len) override
 	{
-		// todo: write to master_fd
-		(void)ptr; (void)len;
+		int fd;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			fd = input_fd_;
+		}
+		if (fd != -1) {
+			::write(fd, ptr, len);
+		}
+	}
+	void closeInput()
+	{
+		int fd;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			fd = input_fd_;
+		}
+		if (fd != -1) {
+			char eof_char = 0x04; // Ctrl+D: PTY canonical mode EOF
+			::write(fd, &eof_char, 1);
+		}
 	}
 	int readOutput(char *ptr, int len)
 	{
@@ -362,24 +397,29 @@ public:
 		}
 		return n;
 	}
-	void start(const std::string &cmd, const std::string &env)
+	void start(const std::string &cmd, const std::string &env) override
 	{
-		thread_ = std::thread([&](){
+		thread_ = std::thread([this, cmd](){
 			if (exec_posixpty(cmd)) {
 
 			}
 		});
+		{
+			std::unique_lock<std::mutex> lock(mutex_);
+			cond_.wait(lock, [this]{ return input_ready_; });
+		}
 	}
-	bool wait(unsigned long time = ULONG_MAX)
+	bool wait(unsigned long time = ULONG_MAX) override
 	{
 		(void)time;
+		closeInput();
 		if (thread_.joinable()) {
 			thread_.join();
 			return true;
 		}
 		return true;
 	}
-	void stop()
+	void stop() override
 	{
 		wait();
 	}
@@ -827,7 +867,7 @@ void process_test()
 		const char *input = "Hello, world\n";
 		proc.writeInput(input, strlen(input));
 	}
-	proc.wait(10000);
+	proc.wait();
 	std::vector<char> out;
 	proc.readResult(&out);
 	std::string s(out.begin(), out.end());
