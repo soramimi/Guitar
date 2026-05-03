@@ -122,7 +122,7 @@ enum LogInspectionIndex {
 	REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
 };
 struct LogInspectionItem {
-	const char *pattern; // regex
+	const char *pattern;
 	int index;
 };
 static const LogInspectionItem log_inspection_table[] = {
@@ -519,7 +519,7 @@ void MainWindow::updatePtyPocessLog(bool processevents)
 		char tmp[1024];
 		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		emitWriteLog({tmp, len}, true);
+		emitWriteLog({tmp, len}, LogChannel::PTY);
 		if (processevents) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -849,15 +849,15 @@ void MainWindow::onLogVisibilityChanged()
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
-void MainWindow::appendLogHistory(QByteArray const &str, bool pty)
+void MainWindow::appendLogHistory(QByteArray const &str, LogChannel channel)
 {
-	std::vector<char> *vec = pty ? &m->log_history_bytes_pty : &m->log_history_bytes;
+	std::vector<char> *vec = (channel == LogChannel::PTY) ? &m->log_history_bytes_pty : &m->log_history_bytes;
 	vec->insert(vec->end(), str.begin(), str.end());
 }
 
-std::vector<std::string> MainWindow::getLogHistoryLines(bool pty)
+std::vector<std::string> MainWindow::getLogHistoryLines(LogChannel channel)
 {
-	std::vector<char> *vec = pty ? &m->log_history_bytes_pty : &m->log_history_bytes;
+	std::vector<char> *vec = (channel == LogChannel::PTY) ? &m->log_history_bytes_pty : &m->log_history_bytes;
 
 	std::vector<std::string> lines;
 	if (vec->empty()) return {};
@@ -895,11 +895,11 @@ void MainWindow::clearLogHistory()
 	m->log_history_bytes.clear();
 }
 
-void MainWindow::internalWriteLog(LogData const &logdata, bool pty)
+void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 {
 	QByteArray ba = logdata.data;
 
-	appendLogHistory(ba, pty);
+	appendLogHistory(ba, channel);
 
 	if (ba.size() > 0) {
 		int i = ba.size() - 1;
@@ -5626,9 +5626,9 @@ bool MainWindow::isValidWorkingCopy(QString const &local_dir)
 	return isValidWorkingCopy(g);
 }
 
-void MainWindow::emitWriteLog(const LogData &logdata, bool pty)
+void MainWindow::emitWriteLog(const LogData &logdata, LogChannel channel)
 {
-	emit sigWriteLog(logdata, pty);
+	emit sigWriteLog(logdata, channel);
 }
 
 QString MainWindow::findFileID(GitHash const &commit_id, const QString &file)
@@ -6725,7 +6725,7 @@ void MainWindow::onLogIdle()
 		}
 	}
 
-	std::vector<std::string> lines = getLogHistoryLines(true);
+	std::vector<std::string> lines = getLogHistoryLines(LogChannel::PTY);
 	clearLogHistory();
 
 	if (lines.empty()) return;
@@ -6738,8 +6738,6 @@ void MainWindow::onLogIdle()
 
 	auto Pattern = [&](LogInspectionIndex i){
 		auto it = patterns.find(i);
-		// if (it == patterns.end()) return std::string();
-		// return it->second.pattern;
 		return it == patterns.end() ? std::string() : it->second.pattern;
 	};
 
@@ -6782,7 +6780,7 @@ void MainWindow::onLogIdle()
 			}
 		}
 		TextEditDialog dlg(this);
-		dlg.setWindowTitle((QS)Pattern(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED));
+		dlg.setWindowTitle(tr("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"));
 		dlg.setText(text, true);
 		dlg.exec();
 		return;

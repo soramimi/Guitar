@@ -160,13 +160,13 @@ void ApplicationGlobal::init2()
 void ApplicationGlobal::writeLog(const std::string_view &str)
 {
 	if (!mainwindow) return;
-	mainwindow->emitWriteLog(str, false);
+	mainwindow->emitWriteLog(str, LogChannel::Default);
 }
 
 void ApplicationGlobal::writeLog(const QString &str)
 {
 	if (!mainwindow) return;
-	mainwindow->emitWriteLog(str, false);
+	mainwindow->emitWriteLog(str, LogChannel::Default);
 }
 
 std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()

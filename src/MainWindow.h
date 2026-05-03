@@ -35,6 +35,11 @@ struct CloneParams {
 };
 Q_DECLARE_METATYPE(CloneParams)
 
+enum class LogChannel {
+	Default,
+	PTY,
+};
+
 struct LogData {
 	QByteArray data;
 	LogData() = default;
@@ -386,8 +391,8 @@ private:
 	bool isRepositoryOpened() const;
 	void initRepository(QString const &path, QString const &reponame, const GitRemote &remote);
 	void updatePtyPocessLog(bool processevents);
-	void appendLogHistory(const QByteArray &str, bool pty);
-	std::vector<std::string> getLogHistoryLines(bool pty);
+	void appendLogHistory(const QByteArray &str, LogChannel channel);
+	std::vector<std::string> getLogHistoryLines(LogChannel channel);
 	void clearLogHistory();
 	void updateAvatar(const GitUser &user, bool request);
 	void cleanSubModule(GitRunner g, QListWidgetItem *item);
@@ -567,7 +572,7 @@ signals:
 	void signalSetProgress(float progress);
 	void signalShowStatusInfo(StatusInfo const &info);
 	void signalHideProgress();
-	void sigWriteLog(LogData const &logdata, bool pty);
+	void sigWriteLog(LogData const &logdata, LogChannel channel);
 	void sigShowFileList(FileListType files_list_type);
 	void signalAddFileObjectData(const MainWindowExchangeData &data);
 	void remoteInfoChanged();
@@ -586,7 +591,7 @@ public:
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;
 	void updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle style = RepositoryTreeWidget::RepositoryListStyle::_Keep, int select_row = -1, QString const &search_text = {});
 	
-        TagList queryCurrentCommitTagList() const;
+	TagList queryCurrentCommitTagList() const;
 	
 	static int indexOfLog(QListWidgetItem *item);
 	static int indexOfDiff(QListWidgetItem *item);
@@ -661,7 +666,7 @@ public:
 	bool jumpToCommit(QString const &id);
 
 	TextEditorThemePtr themeForTextEditor();
-	void emitWriteLog(LogData const &logdata, bool pty);
+	void emitWriteLog(LogData const &logdata, LogChannel channel);
 	QString findFileID(const GitHash &commit_id, QString const &file);
 	const GitCommitItem &commitItem(int row) const;
 	const GitCommitItem &commitItem(GitHash const &id) const;
@@ -703,7 +708,7 @@ public:
 	static void openExplorer(QString const &dir, QString const &ssh_key);
 	static void openNewGuitar(QString const &path, QString const &commit_id);
 public slots:
-	void internalWriteLog(const LogData &logdata, bool pty);
+	void internalWriteLog(const LogData &logdata, LogChannel channel);
 };
 
 class MainWindowExchangeData {
