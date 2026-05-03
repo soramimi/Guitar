@@ -33,22 +33,163 @@ struct ProcessResult {
 	}
 };
 
-class ProcessPosix : public AbstractPtyProcess {
+class PosixProcess : public AbstractProcess {
 private:
+	std::deque<char> stdout_queue_;
+	std::deque<char> stderr_queue_;
+	std::vector<char> stdout_vector_;
+	std::vector<char> stderr_vector_;
 	std::thread thread_;
-	std::mutex mutex_;
+	mutable std::mutex mutex_;
 	std::condition_variable cond_;
 	int input_fd_ = -1;
-	std::optional<ProcessResult> run(const std::string &cmd, const std::function<void (const char *, int)> &on_output = nullptr);
-public:
-	~ProcessPosix()
+	int exit_code_ = 128;
+
+	void writeStdOut(char const *buf, size_t len)
 	{
-		closeInput();
+		stdout_queue_.insert(stdout_queue_.end(), buf, buf + len);
+		stdout_vector_.insert(stdout_vector_.end(), buf, buf + len);
+	}
+	void writeStdErr(char const *buf, size_t len)
+	{
+		stderr_queue_.insert(stderr_queue_.end(), buf, buf + len);
+		stderr_vector_.insert(stderr_vector_.end(), buf, buf + len);
+	}
+
+	std::optional<ProcessResult> run(const std::string &cmd, bool use_input)
+	{
+		int pipe_stdout_fd[2];
+		if (pipe(pipe_stdout_fd) == -1) {
+			return std::nullopt;
+		}
+
+		int pipe_stderr_fd[2];
+		if (pipe(pipe_stderr_fd) == -1) {
+			close(pipe_stdout_fd[0]);
+			close(pipe_stdout_fd[1]);
+			return std::nullopt;
+		}
+
+		int pipe_stdin_fd[2];
+		if (pipe(pipe_stdin_fd) == -1) {
+			close(pipe_stdout_fd[0]);
+			close(pipe_stdout_fd[1]);
+			close(pipe_stderr_fd[0]);
+			close(pipe_stderr_fd[1]);
+			return std::nullopt;
+		}
+
+		pid_t pid = fork();
+		if (pid == -1) {
+			close(pipe_stdout_fd[0]);
+			close(pipe_stdout_fd[1]);
+			close(pipe_stderr_fd[0]);
+			close(pipe_stderr_fd[1]);
+			close(pipe_stdin_fd[0]);
+			close(pipe_stdin_fd[1]);
+			return std::nullopt;
+		}
+
+		if (pid == 0) {
+			// child
+			close(pipe_stdout_fd[0]);
+			dup2(pipe_stdout_fd[1], STDOUT_FILENO);
+			close(pipe_stdout_fd[1]);
+
+			close(pipe_stderr_fd[0]);
+			dup2(pipe_stderr_fd[1], STDERR_FILENO);
+			close(pipe_stderr_fd[1]);
+
+			close(pipe_stdin_fd[1]);
+			dup2(pipe_stdin_fd[0], STDIN_FILENO);
+			close(pipe_stdin_fd[0]);
+
+			std::vector<char *> argv;
+			std::vector<std::string> args;
+			UnixProcess::parseArgs(cmd, &args);
+			for (std::string &s : args) {
+				argv.push_back(s.data());
+			}
+			argv.push_back(nullptr);
+
+			if (!argv.empty()) {
+				execvp(argv[0], argv.data());
+			}
+			_exit(1);
+		}
+
+		// parent
+		close(pipe_stdout_fd[1]);
+		close(pipe_stderr_fd[1]);
+		close(pipe_stdin_fd[0]);
+
+		input_fd_ = pipe_stdin_fd[1];
+		cond_.notify_all();
+
+		ProcessResult ret;
+
+		if (!use_input) {
+			closeInput(true);
+		}
+
+		int stdout_rd = pipe_stdout_fd[0];
+		int stderr_rd = pipe_stderr_fd[0];
+
+		while (stdout_rd != -1 || stderr_rd != -1) {
+			fd_set fds;
+			FD_ZERO(&fds);
+			int nfds = 0;
+			if (stdout_rd != -1) {
+				FD_SET(stdout_rd, &fds);
+				if (stdout_rd >= nfds) nfds = stdout_rd + 1;
+			}
+			if (stderr_rd != -1) {
+				FD_SET(stderr_rd, &fds);
+				if (stderr_rd >= nfds) nfds = stderr_rd + 1;
+			}
+
+			if (select(nfds, &fds, nullptr, nullptr, nullptr) <= 0) break;
+
+			char buf[256];
+			if (stdout_rd != -1 && FD_ISSET(stdout_rd, &fds)) {
+				ssize_t n = read(stdout_rd, buf, sizeof(buf));
+				if (n > 0) {
+					std::lock_guard<std::mutex> lock(mutex_);
+					writeStdOut(buf, (size_t)n);
+				} else {
+					close(stdout_rd);
+					stdout_rd = -1;
+				}
+			}
+			if (stderr_rd != -1 && FD_ISSET(stderr_rd, &fds)) {
+				ssize_t n = read(stderr_rd, buf, sizeof(buf));
+				if (n > 0) {
+					std::lock_guard<std::mutex> lock(mutex_);
+					writeStdErr(buf, (size_t)n);
+				} else {
+					close(stderr_rd);
+					stderr_rd = -1;
+				}
+			}
+		}
+
+		int status = 0;
+		waitpid(pid, &status, 0);
+		if (WIFEXITED(status)) {
+			ret.exit_code = WEXITSTATUS(status);
+		}
+
+		return ret;
+	}
+public:
+	~PosixProcess()
+	{
+		closeInput(true);
 		if (thread_.joinable()) {
 			thread_.join();
 		}
 	}
-	bool isRunning() const override
+	bool isRunning() const
 	{
 		return thread_.joinable();
 	}
@@ -56,224 +197,224 @@ public:
 	{
 		::write(input_fd_, ptr, len);
 	}
-	void closeInput()
+	int readOutput(char *ptr, int len)
 	{
-		if (input_fd_ != -1) {
-			close(input_fd_);
-			input_fd_ = -1;
-		}
-	}
-	int readOutput(char *ptr, int len) override
-	{
-		int n = output_queue_.size();
+		int n = stdout_queue_.size();
 		if (n > len) n = len;
 		for (int i = 0; i < n; i++) {
-			ptr[i] = output_queue_.front();
-			output_queue_.pop_front();
+			ptr[i] = stdout_queue_.front();
+			stdout_queue_.pop_front();
 		}
 		return n;
 	}
-	void start(const std::string &cmd, const std::string &env) override
+	void start(const std::string &command, bool use_input) override
 	{
 		thread_ = std::thread([&](){
-			auto ret = run(cmd, [&](const char *ptr, int len){
-				std::lock_guard<std::mutex> lock(mutex_);
-				writeOutput(ptr, len);
-			});
+			auto ret = run(command, use_input);
+			if (ret) {
+				exit_code_ = ret->exit_code;
+			} else {
+				exit_code_ = 128;
+			}
 		});
 		{
 			std::unique_lock <std::mutex> lock(mutex_);
 			cond_.wait(lock);
 		}
 	}
-	bool wait(unsigned long time) override
+	int wait() override
 	{
-		closeInput();
+		(void)time;
+		closeInput(true);
+		if (thread_.joinable()) {
+			thread_.join();
+			return exit_code_;
+		}
+		return 128;
+	}
+	void stop() override
+	{
+		wait();
+	}
+	int getExitCode() const override
+	{
+		return exit_code_;
+	}
+	void readResult(std::vector<char> *out)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		out->insert(out->end(), stdout_queue_.begin(), stdout_queue_.end());
+		stdout_queue_.clear();
+	}
+
+	std::string outstring() const
+	{
+		std::string ret;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			ret.insert(ret.end(), stdout_vector_.begin(), stdout_vector_.end());
+		}
+		return ret;
+	}
+	std::string errstring() const
+	{
+		std::string ret;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			ret.insert(ret.end(), stderr_vector_.begin(), stderr_vector_.end());
+		}
+		return ret;
+	}
+
+	void closeInput(bool justnow)
+	{
+		if (input_fd_ != -1) {
+			close(input_fd_);
+			input_fd_ = -1;
+		}
+	}
+};
+
+class PosixPtyProcess : public AbstractPtyProcess {
+private:
+	std::deque<char> stdout_queue_;
+	std::deque<char> stderr_queue_;
+	std::vector<char> stdout_vector_;
+	std::vector<char> stderr_vector_;
+	std::thread thread_;
+	mutable std::mutex mutex_;
+	std::condition_variable cond_;
+	int input_fd_ = -1;
+	int exit_code_ = 128;
+
+	void writeStdOut(char const *buf, size_t len)
+	{
+		stdout_queue_.insert(stdout_queue_.end(), buf, buf + len);
+		stdout_vector_.insert(stdout_vector_.end(), buf, buf + len);
+	}
+	void writeStdErr(char const *buf, size_t len)
+	{
+		stderr_queue_.insert(stderr_queue_.end(), buf, buf + len);
+		stderr_vector_.insert(stderr_vector_.end(), buf, buf + len);
+	}
+
+	bool exec_posixpty(std::string const &cmd)
+	{
+		std::string ret;
+
+		int master_fd;
+		pid_t pid = forkpty(&master_fd, nullptr, nullptr, nullptr);
+		if (pid == -1) {
+			return false;
+		}
+
+		if (pid == 0) {
+			// child
+
+			std::vector<char *> argv;
+			std::vector<std::string> args;
+			UnixProcess::parseArgs(cmd, &args);
+			for (std::string &s : args) {
+				argv.push_back(s.data());
+			}
+			argv.push_back(nullptr);
+
+			if (!argv.empty()) {
+				execvp(argv[0], argv.data());
+			}
+			_exit(1);
+		}
+
+		// parent
+		char buf[256];
+		ssize_t n;
+		while ((n = read(master_fd, buf, sizeof(buf))) > 0) {
+			// ret.append(buf, n);
+			writeStdOut(buf, (size_t)n);
+		}
+		close(master_fd);
+
+		waitpid(pid, nullptr, 0);
+
+		if (!stderr_vector_.empty() && stderr_vector_.back() == '\n') stderr_vector_.pop_back();
+		if (!stderr_vector_.empty() && stderr_vector_.back() == '\r') stderr_vector_.pop_back();
+
+		return true;
+	}
+public:
+	bool isRunning() const
+	{
+		return false;
+	}
+	void writeInput(const char *ptr, int len)
+	{
+		// todo: write to master_fd
+		(void)ptr; (void)len;
+	}
+	int readOutput(char *ptr, int len)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		int n = stdout_queue_.size();
+		if (n > len) n = len;
+		for (int i = 0; i < n; i++) {
+			ptr[i] = stdout_queue_.front();
+			stdout_queue_.pop_front();
+		}
+		return n;
+	}
+	void start(const std::string &cmd, const std::string &env)
+	{
+		thread_ = std::thread([&](){
+			if (exec_posixpty(cmd)) {
+
+			}
+		});
+	}
+	bool wait(unsigned long time = ULONG_MAX)
+	{
+		(void)time;
 		if (thread_.joinable()) {
 			thread_.join();
 			return true;
 		}
-		return false;
+		return true;
 	}
-	void stop() override
+	void stop()
 	{
+		wait();
 	}
-	int getExitCode() const override
+	int getExitCode() const
 	{
 		return 0;
 	}
-	void readResult(std::vector<char> *out) override
+	void readResult(std::vector<char> *out)
 	{
-		*out = output_vector_;
-		output_vector_.clear();
+		std::lock_guard<std::mutex> lock(mutex_);
+		out->insert(out->end(), stdout_queue_.begin(), stdout_queue_.end());
+		stdout_queue_.clear();
+	}
+
+	std::string outstring() const
+	{
+		std::string ret;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			ret.insert(ret.end(), stdout_vector_.begin(), stdout_vector_.end());
+		}
+		return ret;
+	}
+	std::string errstring() const
+	{
+		std::string ret;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			ret.insert(ret.end(), stderr_vector_.begin(), stderr_vector_.end());
+		}
+		return ret;
 	}
 };
 
-std::optional<ProcessResult> ProcessPosix::run(std::string const &cmd, std::function<void (const char *, int)> const &on_output)
-{
-	int pipe_stdout_fd[2];
-	if (pipe(pipe_stdout_fd) == -1) {
-		return std::nullopt;
-	}
 
-	int pipe_stderr_fd[2];
-	if (pipe(pipe_stderr_fd) == -1) {
-		close(pipe_stdout_fd[0]);
-		close(pipe_stdout_fd[1]);
-		return std::nullopt;
-	}
-
-	int pipe_stdin_fd[2];
-	if (pipe(pipe_stdin_fd) == -1) {
-		close(pipe_stdout_fd[0]);
-		close(pipe_stdout_fd[1]);
-		close(pipe_stderr_fd[0]);
-		close(pipe_stderr_fd[1]);
-		return std::nullopt;
-	}
-
-	pid_t pid = fork();
-	if (pid == -1) {
-		close(pipe_stdout_fd[0]);
-		close(pipe_stdout_fd[1]);
-		close(pipe_stderr_fd[0]);
-		close(pipe_stderr_fd[1]);
-		close(pipe_stdin_fd[0]);
-		close(pipe_stdin_fd[1]);
-		return std::nullopt;
-	}
-
-	if (pid == 0) {
-		// child
-		close(pipe_stdout_fd[0]);
-		dup2(pipe_stdout_fd[1], STDOUT_FILENO);
-		close(pipe_stdout_fd[1]);
-
-		close(pipe_stderr_fd[0]);
-		dup2(pipe_stderr_fd[1], STDERR_FILENO);
-		close(pipe_stderr_fd[1]);
-
-		close(pipe_stdin_fd[1]);
-		dup2(pipe_stdin_fd[0], STDIN_FILENO);
-		close(pipe_stdin_fd[0]);
-
-		std::vector<char *> argv;
-		std::vector<std::string> args;
-		UnixProcess::parseArgs(cmd, &args);
-		for (std::string &s : args) {
-			argv.push_back(s.data());
-		}
-		argv.push_back(nullptr);
-
-		if (!argv.empty()) {
-			execvp(argv[0], argv.data());
-		}
-		_exit(1);
-	}
-
-	// parent
-	close(pipe_stdout_fd[1]);
-	close(pipe_stderr_fd[1]);
-	close(pipe_stdin_fd[0]);
-
-	input_fd_ = pipe_stdin_fd[1];
-	cond_.notify_all();
-
-	ProcessResult ret;
-
-	// closeInput();
-
-	int stdout_rd = pipe_stdout_fd[0];
-	int stderr_rd = pipe_stderr_fd[0];
-
-	while (stdout_rd != -1 || stderr_rd != -1) {
-		fd_set fds;
-		FD_ZERO(&fds);
-		int nfds = 0;
-		if (stdout_rd != -1) {
-			FD_SET(stdout_rd, &fds);
-			if (stdout_rd >= nfds) nfds = stdout_rd + 1;
-		}
-		if (stderr_rd != -1) {
-			FD_SET(stderr_rd, &fds);
-			if (stderr_rd >= nfds) nfds = stderr_rd + 1;
-		}
-
-		if (select(nfds, &fds, nullptr, nullptr, nullptr) <= 0) break;
-
-		char buf[256];
-		if (stdout_rd != -1 && FD_ISSET(stdout_rd, &fds)) {
-			ssize_t n = read(stdout_rd, buf, sizeof(buf));
-			if (n > 0) {
-				if (on_output) on_output(buf, (int)n);
-			} else {
-				close(stdout_rd);
-				stdout_rd = -1;
-			}
-		}
-		if (stderr_rd != -1 && FD_ISSET(stderr_rd, &fds)) {
-			ssize_t n = read(stderr_rd, buf, sizeof(buf));
-			if (n > 0) {
-				if (on_output) on_output(buf, (int)n);
-			} else {
-				close(stderr_rd);
-				stderr_rd = -1;
-			}
-		}
-	}
-
-	int status = 0;
-	waitpid(pid, &status, 0);
-	if (WIFEXITED(status)) {
-		ret.exit_code = WEXITSTATUS(status);
-	}
-
-	return ret;
-}
-
-std::string exec_posixpty(std::string const &cmd)
-{
-	std::string ret;
-
-	int master_fd;
-	pid_t pid = forkpty(&master_fd, nullptr, nullptr, nullptr);
-	if (pid == -1) {
-		return ret;
-	}
-
-	if (pid == 0) {
-		// child
-
-		std::vector<char *> argv;
-		std::vector<std::string> args;
-		UnixProcess::parseArgs(cmd, &args);
-		for (std::string &s : args) {
-			argv.push_back(s.data());
-		}
-		argv.push_back(nullptr);
-
-		if (!argv.empty()) {
-			execvp(argv[0], argv.data());
-		}
-		_exit(1);
-	}
-
-	// parent
-	char buf[256];
-	ssize_t n;
-	while ((n = read(master_fd, buf, sizeof(buf))) > 0) {
-		ret.append(buf, n);
-	}
-	close(master_fd);
-
-	waitpid(pid, nullptr, 0);
-
-	while (!ret.empty() && (ret.back() == '\n' || ret.back() == '\r')) {
-		ret.pop_back();
-	}
-
-	return ret;
-}
 
 #else
 
@@ -667,8 +808,21 @@ void msleep(unsigned int ms)
 
 void process_test()
 {
-	ProcessPosix proc;
+#if 0
+	PosixProcess proc;
 	proc.start("base64", "");
+	{
+		const char *input = "Hello, world\n";
+		proc.writeInput(input, strlen(input));
+	}
+	proc.wait();
+	std::vector<char> out;
+	proc.readResult(&out);
+	std::string s(out.begin(), out.end());
+	fprintf(stderr, "[%s]\n", s.c_str());
+#else
+	PosixPtyProcess proc;
+	proc.start("base64", {});
 	{
 		const char *input = "Hello, world\n";
 		proc.writeInput(input, strlen(input));
@@ -678,6 +832,8 @@ void process_test()
 	proc.readResult(&out);
 	std::string s(out.begin(), out.end());
 	fprintf(stderr, "[%s]\n", s.c_str());
+
+#endif
 }
 
 /*

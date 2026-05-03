@@ -10,13 +10,15 @@ class QString;
 
 class AbstractProcess {
 public:
-	virtual ~AbstractProcess() {};
+	virtual ~AbstractProcess() {}
 
 	virtual std::string outstring() const = 0;
 	virtual std::string errstring() const = 0;
 
 	virtual void start(const std::string &command, bool use_input) = 0;
 	virtual int wait() = 0;
+	virtual void stop() = 0;
+	virtual int getExitCode() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual void closeInput(bool justnow) = 0;
 };
@@ -62,6 +64,9 @@ public:
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
 	virtual void readResult(std::vector<char> *out) = 0; // 終了後にまとめて読む用
+
+	// virtual std::string outstring() const = 0;
+	// virtual std::string errstring() const = 0;
 };
 
 #endif // ABSTRACTPROCESS_H
