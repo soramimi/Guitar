@@ -967,23 +967,6 @@ void msleep(unsigned int ms)
 #endif
 }
 
-void process_test2()
-{
-#if 0
-	PosixProcess proc;
-	proc.start("base64", "");
-	{
-		const char *input = "Hello, world\n";
-		proc.writeInput(input, strlen(input));
-	}
-	proc.wait();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
-#endif
-}
-
 void process_test()
 {
 #if 0
