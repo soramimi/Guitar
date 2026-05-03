@@ -478,6 +478,8 @@ private:
 	std::condition_variable cond_;
 	std::deque<char> output_queue_; // for log
 	std::vector<char> output_vector_; // for result
+	PROCESS_INFORMATION pi_ = {};
+	DWORD exit_code_ = 128;
 	void writeOutput(char const *buf, size_t len)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -506,13 +508,13 @@ private:
 
 		std::wstring wcmd = convert_str_to_wstr(cmd);
 
-		PROCESS_INFORMATION pi = {};
+		pi_ = {};
 		BOOL ok = CreateProcessW(
 					  nullptr, wcmd.data(),
 					  nullptr, nullptr,
 					  TRUE, CREATE_NO_WINDOW,
 					  nullptr, nullptr,
-					  &si, &pi
+					  &si, &pi_
 					  );
 
 		if (!use_input) {
@@ -527,14 +529,13 @@ private:
 		char buf[256];
 		DWORD n;
 		while (ReadFile(hReadPipe, buf, sizeof(buf), &n, nullptr) && n > 0) {
-			// ret.append(buf, n);
 			writeOutput(buf, n);
 		}
 		CloseHandle(hReadPipe);
 
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
+		WaitForSingleObject(pi_.hProcess, INFINITE);
+		CloseHandle(pi_.hProcess);
+		CloseHandle(pi_.hThread);
 
 		if (!ret.empty() && ret.back() == '\n') ret.pop_back();
 		if (!ret.empty() && ret.back() == '\r') ret.pop_back();
@@ -568,6 +569,7 @@ public:
 	{
 		if (thread_.joinable()) {
 			thread_.join();
+			GetExitCodeProcess(pi_.hProcess, (DWORD *)&exit_code_);
 		}
 		return 0;
 	}
@@ -581,6 +583,14 @@ public:
 	{
 		*out = output_vector_;
 		output_vector_.clear();
+	}
+	void stop()
+	{
+		wait();
+	}
+	int getExitCode() const
+	{
+		return (int)exit_code_;
 	}
 };
 
@@ -978,22 +988,32 @@ bool is_conpty_available()
 #ifdef _WIN32
 #include "common/misc.h"
 #include "common/base64.h"
-// #include "win32/Win32PtyProcess.h"
+
 constexpr static char const *conpty_agent_tag = "--conpty-agent---";
-bool conpty_agent()
+
+bool exec_conpty_agent()
 {
-#if 0
-	std::string cmd = GetCommandLineA();
-	auto it = cmd.find(conpty_agent_tag);
+	std::string cmd = "git --version";
+	std::string tag = conpty_agent_tag;
+	std::string cmd2 = GetCommandLineA();
+	auto it = cmd2.rfind('\\');
 	if (it != std::string::npos) {
-		std::string tag = conpty_agent_tag;
-		cmd = misc::trimmed(cmd.substr(it + tag.size()));
-		cmd = base64_decode(cmd);
-		exec_win_conpty(cmd, {});
-		return true;
+		cmd2 = cmd2.substr(0, it + 1);
+	} else {
+		cmd2 = {};
 	}
-#endif
-	return false;
+	cmd2 += "\\conpty-agent.exe ";
+	cmd2 += tag;
+	cmd2 += ' ';
+	cmd2 += base64_encode(cmd);
+	ProcessWin proc;
+	proc.start(cmd2, false);
+	proc.wait();
+	std::vector<char> out;
+	proc.readResult(&out);
+	std::string s(out.begin(), out.end());
+	fprintf(stderr, "conpty agent output: [%s]\n", s.c_str());
+	return true;
 }
 #endif
 
@@ -1015,6 +1035,7 @@ void msleep(unsigned int ms)
 void process_test()
 {
 #if 0
+	QDir::setCurrent("C:\\develop\\Guitar");
 	ProcessWinPty proc;
 	proc.start("git fetch", "");
 
@@ -1036,6 +1057,7 @@ void process_test()
 			QApplication::processEvents();
 		}
 	}
+	text = {};
 	while (proc.isRunning()) {
 		char tmp[1024];
 		int n = proc.readOutput(tmp, sizeof(tmp));
@@ -1044,6 +1066,9 @@ void process_test()
 			fprintf(stderr, "%s", s.c_str());
 			text += s;
 		} else {
+			if (!text.empty()) {
+				break;
+			}
 			QApplication::processEvents();
 		}
 	}
@@ -1054,18 +1079,8 @@ void process_test()
 	proc.readResult(&out);
 	std::string s(out.begin(), out.end());
 	fprintf(stderr, "[%s]\n", s.c_str());
-#elif 0
-	ProcessPosix proc;
-	proc.start("sort", "");
-	{
-		const char *input = "abc\ndef\n";
-		proc.writeInput(input, strlen(input));
-	}
-	proc.wait();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
+#elif 1
+	exec_conpty_agent();
 #endif
 }
 
