@@ -385,6 +385,26 @@ std::optional<std::string> UnixProcess::run_and_wait(const std::string &command)
 	return proc.outstring();
 }
 
+std::string UnixProcess::outstring() const
+{
+	return std::string(outbytes.data(), outbytes.size());
+}
+
+std::string UnixProcess::errstring() const
+{
+	return std::string(errbytes.data(), errbytes.size());
+}
+
+void UnixProcess::stop()
+{
+	wait();
+}
+
+int UnixProcess::getExitCode() const
+{
+	return m->th.exit_code;
+}
+
 
 
 

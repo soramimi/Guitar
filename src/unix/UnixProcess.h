@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include "../AbstractProcess.h"
 
-class UnixProcess {
+class UnixProcess : public AbstractProcess {
 private:
 	struct Private;
 	Private *m;
@@ -28,6 +29,13 @@ public:
 	void closeInput(bool justnow);
 
 	static std::optional<std::string> run_and_wait(std::string const &command);
+
+	// AbstractProcess interface
+public:
+	std::string outstring() const;
+	std::string errstring() const;
+	void stop();
+	int getExitCode() const;
 };
 
 #endif // UNIXPROCESS_H

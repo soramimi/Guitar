@@ -26,6 +26,9 @@ public:
 	int wait();
 	void writeInput(char const *ptr, int len);
 	void closeInput(bool justnow);
+
+	void stop();
+	int getExitCode() const;
 };
 
 #endif // WIN32PROCESS_H

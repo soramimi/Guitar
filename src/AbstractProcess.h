@@ -10,13 +10,15 @@ class QString;
 
 class AbstractProcess {
 public:
-	virtual ~AbstractProcess() {};
+	virtual ~AbstractProcess() {}
 
 	virtual std::string outstring() const = 0;
 	virtual std::string errstring() const = 0;
 
 	virtual void start(const std::string &command, bool use_input) = 0;
 	virtual int wait() = 0;
+	virtual void stop() = 0;
+	virtual int getExitCode() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 	virtual void closeInput(bool justnow) = 0;
 };
@@ -29,6 +31,11 @@ protected:
 	std::deque<char> output_queue_; // for log
 	std::vector<char> output_vector_; // for result
 	std::function<void (bool, const QVariant &)> completed_fn_;
+	void writeOutput(char const *buf, size_t len)
+	{
+		output_queue_.insert(output_queue_.end(), buf, buf + len);
+		output_vector_.insert(output_vector_.end(), buf, buf + len);
+	}
 public:
 	virtual ~AbstractPtyProcess() {}
 
@@ -51,12 +58,15 @@ public:
 
 	virtual bool isRunning() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
-	virtual int readOutput(char *ptr, int len) = 0;
+	virtual int readOutput(char *ptr, int len) = 0; // リアルタイムに読む用
 	virtual void start(std::string const &cmd, std::string const &env) = 0;
 	virtual bool wait(unsigned long time = ULONG_MAX) = 0;
 	virtual void stop() = 0;
 	virtual int getExitCode() const = 0;
-	virtual void readResult(std::vector<char> *out) = 0;
+	virtual void readResult(std::vector<char> *out) = 0; // 終了後にまとめて読む用
+
+	// virtual std::string outstring() const = 0;
+	// virtual std::string errstring() const = 0;
 };
 
 #endif // ABSTRACTPROCESS_H

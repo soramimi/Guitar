@@ -338,3 +338,13 @@ void Win32Process::closeInput(bool justnow)
 		m->th.close_input_later = true;
 	}
 }
+
+void Win32Process::stop()
+{
+	wait();
+}
+
+int Win32Process::getExitCode() const
+{
+	return (int)m->th.exit_code;
+}

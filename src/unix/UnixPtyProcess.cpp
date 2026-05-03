@@ -201,8 +201,9 @@ void UnixPtyProcess::run()
 					int len = read(m->pty_master, buf, sizeof(buf));
 					if (len > 0) {
 						QMutexLocker lock(&m->mutex);
-						output_queue_.insert(output_queue_.end(), buf, buf + len);
-						output_vector_.insert(output_vector_.end(), buf, buf + len);
+						// output_queue_.insert(output_queue_.end(), buf, buf + len);
+						// output_vector_.insert(output_vector_.end(), buf, buf + len);
+						writeOutput(buf, len);
 					}
 				}
 			}

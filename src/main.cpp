@@ -87,8 +87,15 @@ void onSigPipe(int)
 	global->webcx.notify_broken_pipe();
 }
 
+extern void process_test();
+
 int main(int argc, char *argv[])
 {
+	if (0) {
+		process_test();
+		return 0;
+	}
+
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
 	qInstallMessageHandler(logHandler);
 
@@ -98,6 +105,8 @@ int main(int argc, char *argv[])
 	global = &g;
 
 	if (0) { // for debug
+
+		process_test();
 
 		// return 0;
 	}
