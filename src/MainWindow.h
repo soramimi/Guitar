@@ -385,9 +385,9 @@ private:
 	void msgNoRepositorySelected();
 	bool isRepositoryOpened() const;
 	void initRepository(QString const &path, QString const &reponame, const GitRemote &remote);
-	void updatePocessLog(bool processevents);
-	void appendLogHistory(const QByteArray &str);
-	std::vector<std::string> getLogHistoryLines();
+	void updatePtyPocessLog(bool processevents);
+	void appendLogHistory(const QByteArray &str, bool pty);
+	std::vector<std::string> getLogHistoryLines(bool pty);
 	void clearLogHistory();
 	void updateAvatar(const GitUser &user, bool request);
 	void cleanSubModule(GitRunner g, QListWidgetItem *item);
@@ -567,7 +567,7 @@ signals:
 	void signalSetProgress(float progress);
 	void signalShowStatusInfo(StatusInfo const &info);
 	void signalHideProgress();
-	void sigWriteLog(LogData const &logdata);
+	void sigWriteLog(LogData const &logdata, bool pty);
 	void sigShowFileList(FileListType files_list_type);
 	void signalAddFileObjectData(const MainWindowExchangeData &data);
 	void remoteInfoChanged();
@@ -661,7 +661,7 @@ public:
 	bool jumpToCommit(QString const &id);
 
 	TextEditorThemePtr themeForTextEditor();
-	void emitWriteLog(LogData const &logdata);
+	void emitWriteLog(LogData const &logdata, bool pty);
 	QString findFileID(const GitHash &commit_id, QString const &file);
 	const GitCommitItem &commitItem(int row) const;
 	const GitCommitItem &commitItem(GitHash const &id) const;
@@ -703,7 +703,7 @@ public:
 	static void openExplorer(QString const &dir, QString const &ssh_key);
 	static void openNewGuitar(QString const &path, QString const &commit_id);
 public slots:
-	void internalWriteLog(const LogData &logdata);
+	void internalWriteLog(const LogData &logdata, bool pty);
 };
 
 class MainWindowExchangeData {

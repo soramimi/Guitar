@@ -190,6 +190,7 @@ struct MainWindow::Private {
 	QList<int> splitter_h_sizes;
 
 	std::vector<char> log_history_bytes;
+	std::vector<char> log_history_bytes_pty;
 
 	QAction *action_edit_profile = nullptr;
 	QAction *action_detect_profile = nullptr;
@@ -486,13 +487,13 @@ void MainWindow::startTimers()
 /**
  * @brief PTYプロセスの出力をログに書き込む
  */
-void MainWindow::updatePocessLog(bool processevents)
+void MainWindow::updatePtyPocessLog(bool processevents)
 {
 	while (1) {
 		char tmp[1024];
 		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
 		if (len < 1) break;
-		emitWriteLog({tmp, len});
+		emitWriteLog({tmp, len}, true);
 		if (processevents) {
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -539,7 +540,7 @@ void MainWindow::onInterval10ms()
 		}
 
 		// PTYプロセスの出力をログに書き込む
-		updatePocessLog(true);
+		updatePtyPocessLog(true);
 	}
 }
 
@@ -822,17 +823,20 @@ void MainWindow::onLogVisibilityChanged()
 	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
-void MainWindow::appendLogHistory(QByteArray const &str)
+void MainWindow::appendLogHistory(QByteArray const &str, bool pty)
 {
-	m->log_history_bytes.insert(m->log_history_bytes.begin(), str.begin(), str.end());
+	std::vector<char> *vec = pty ? &m->log_history_bytes_pty : &m->log_history_bytes;
+	vec->insert(vec->end(), str.begin(), str.end());
 }
 
-std::vector<std::string> MainWindow::getLogHistoryLines()
+std::vector<std::string> MainWindow::getLogHistoryLines(bool pty)
 {
+	std::vector<char> *vec = pty ? &m->log_history_bytes_pty : &m->log_history_bytes;
+
 	std::vector<std::string> lines;
-	if (m->log_history_bytes.empty()) return {};
-	char const *begin = m->log_history_bytes.data();
-	char const *end = begin + m->log_history_bytes.size();
+	if (vec->empty()) return {};
+	char const *begin = vec->data();
+	char const *end = begin + vec->size();
 	char const *top = begin;
 	char const *ptr = begin;
 	bool cr = false;
@@ -856,7 +860,7 @@ std::vector<std::string> MainWindow::getLogHistoryLines()
 			ptr++;
 		}
 	}
-	m->log_history_bytes.erase(m->log_history_bytes.begin(), m->log_history_bytes.begin() + (ptr - begin));
+	vec->erase(vec->begin(), vec->begin() + (ptr - begin));
 	return lines;
 }
 
@@ -865,11 +869,11 @@ void MainWindow::clearLogHistory()
 	m->log_history_bytes.clear();
 }
 
-void MainWindow::internalWriteLog(LogData const &logdata)
+void MainWindow::internalWriteLog(LogData const &logdata, bool pty)
 {
 	QByteArray ba = logdata.data;
 
-	appendLogHistory(ba);
+	appendLogHistory(ba, pty);
 
 	if (ba.size() > 0) {
 		int i = ba.size() - 1;
@@ -5596,9 +5600,9 @@ bool MainWindow::isValidWorkingCopy(QString const &local_dir)
 	return isValidWorkingCopy(g);
 }
 
-void MainWindow::emitWriteLog(const LogData &logdata)
+void MainWindow::emitWriteLog(const LogData &logdata, bool pty)
 {
-	emit sigWriteLog(logdata);
+	emit sigWriteLog(logdata, pty);
 }
 
 QString MainWindow::findFileID(GitHash const &commit_id, const QString &file)
@@ -6702,7 +6706,7 @@ void MainWindow::onLogIdle()
 				"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!");
 	}
 
-	std::vector<std::string> lines = getLogHistoryLines();
+	std::vector<std::string> lines = getLogHistoryLines(true);
 	clearLogHistory();
 
 	if (lines.empty()) return;

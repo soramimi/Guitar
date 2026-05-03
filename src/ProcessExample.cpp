@@ -11,6 +11,7 @@
 #include <QElapsedTimer>
 
 #ifdef _WIN32
+#include <QApplication>
 #include <windows.h>
 #include <winpty.h>
 #else
@@ -479,6 +480,7 @@ private:
 	std::vector<char> output_vector_; // for result
 	void writeOutput(char const *buf, size_t len)
 	{
+		std::lock_guard<std::mutex> lock(mutex_);
 		output_queue_.insert(output_queue_.end(), buf, buf + len);
 		output_vector_.insert(output_vector_.end(), buf, buf + len);
 	}
@@ -589,6 +591,7 @@ private:
 	std::mutex mutex_;
 	std::condition_variable cond_;
 	int input_fd_ = -1;
+	HANDLE hConout_ = INVALID_HANDLE_VALUE;
 	HANDLE hInput_ = INVALID_HANDLE_VALUE;
 	int exit_code_ = 128;
 
@@ -626,7 +629,7 @@ private:
 			return ret;
 		}
 
-		HANDLE hConout = CreateFileW(
+		hConout_ = CreateFileW(
 							 winpty_conout_name(wp),
 							 GENERIC_READ, 0, nullptr,
 							 OPEN_EXISTING, 0, nullptr
@@ -652,14 +655,14 @@ private:
 
 
 
-		if (hConout != INVALID_HANDLE_VALUE) {
+		if (hConout_ != INVALID_HANDLE_VALUE) {
 			char buf[256];
 			DWORD n;
-			while (ReadFile(hConout, buf, sizeof(buf), &n, nullptr) && n > 0) {
-				// ret.append(buf, n);
+			while (ReadFile(hConout_, buf, sizeof(buf), &n, nullptr) && n > 0) {
+				std::lock_guard<std::mutex> lock(mutex_);
 				writeOutput(buf, n);
 			}
-			CloseHandle(hConout);
+			CloseHandle(hConout_);
 		}
 
 		WaitForSingleObject(hProcess, INFINITE);
@@ -679,12 +682,46 @@ public:
 	void writeInput(const char *ptr, int len)
 	{
 		if (hInput_ != INVALID_HANDLE_VALUE) {
-			DWORD n;
-			WriteFile(hInput_, ptr, (DWORD)len, &n, nullptr);
+			char const *begin = ptr;
+			char const *end = begin + len;
+			char const *left = begin;
+			char const *right = begin;
+			while (1) {
+				int c = -1;
+				if (right < end) {
+					c = *right & 0xff;
+				}
+				if (c == '\r' || c == '\n' || c < 0) {
+					if (left < right) {
+						DWORD written;
+						WriteFile(hInput_, left, right - left, &written, nullptr);
+					}
+					if (c < 0) break;
+					right++;
+					if (c == '\r') {
+						if (*right == '\n') {
+							right++;
+						}
+						c = '\r';
+					} else if (c == '\n') {
+						c = '\r';
+					} else {
+						c = -1;
+					}
+					if (c >= 0) {
+						DWORD written;
+						WriteFile(hInput_, &c, 1, &written, nullptr);
+					}
+					left = right;
+				} else {
+					right++;
+				}
+			}
 		}
 	}
 	int readOutput(char *ptr, int len)
 	{
+		std::lock_guard<std::mutex> lock(mutex_);
 		int n = output_queue_.size();
 		if (n > len) n = len;
 		for (int i = 0; i < n; i++) {
@@ -710,6 +747,10 @@ public:
 	}
 	void stop()
 	{
+		if (hConout_ != INVALID_HANDLE_VALUE) {
+			CloseHandle(hConout_);
+			hConout_ = INVALID_HANDLE_VALUE;
+		}
 		wait();
 	}
 	int getExitCode() const
@@ -967,37 +1008,48 @@ void msleep(unsigned int ms)
 #endif
 }
 
+#include "ApplicationGlobal.h"
+#include "MainWindow.h"
+#include <QDir>
+
 void process_test()
 {
 #if 0
-	ProcessWinConPTY proc;
-	proc.start("git --version", "");
-	proc.wait();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
-#elif 0
-	ProcessWinConPTY proc;
-	proc.start("sort", "");
-	{
-		// Windowsのsortコマンドは\r\n（CRLF）を行区切りとして期待する
-		const char *input = "abc\r\ndef\r\n";
-		proc.writeInput(input, strlen(input));
+	ProcessWinPty proc;
+	proc.start("git fetch", "");
+
+	std::string text;
+	while (proc.isRunning()) {
+		char tmp[1024];
+		int n = proc.readOutput(tmp, sizeof(tmp));
+		if (n > 0) {
+			std::string s(tmp, n);
+			fprintf(stderr, "%s", s.c_str());
+			text += s;
+		} else {
+			if (text.find("Are you sure you want to continue connecting (yes/no/[fingerprint])?") != std::string::npos) {
+				std::string s = "yes\n";
+				proc.writeInput(s.c_str(), (int)s.size());
+				proc.closeInput();
+				break;
+			}
+			QApplication::processEvents();
+		}
 	}
-	proc.wait();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
-#elif 0
-	ProcessPosixPty proc;
-	proc.start("sort", "");
-	{
-		const char *input = "abc\ndef\n";
-		proc.writeInput(input, strlen(input));
+	while (proc.isRunning()) {
+		char tmp[1024];
+		int n = proc.readOutput(tmp, sizeof(tmp));
+		if (n > 0) {
+			std::string s(tmp, n);
+			fprintf(stderr, "%s", s.c_str());
+			text += s;
+		} else {
+			QApplication::processEvents();
+		}
 	}
-	proc.wait();
+
+
+	proc.stop();
 	std::vector<char> out;
 	proc.readResult(&out);
 	std::string s(out.begin(), out.end());
