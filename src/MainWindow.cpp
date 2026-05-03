@@ -6710,10 +6710,18 @@ void MainWindow::onLogIdle()
 	if (!interactionEnabled()) return;
 	if (interactionMode() != InteractionMode::None) return;
 
-	static std::map<int, QRegularExpression> patterns;
+	struct Item {
+		std::string pattern;
+		std::regex regex;
+	};
+
+	static std::map<int, Item> patterns;
 	if (patterns.empty()) {
 		for (const auto &t : log_inspection_table) {
-			patterns[t.index] = QRegularExpression(t.pattern);
+			Item item;
+			item.pattern = t.pattern;
+			item.regex = std::regex(t.pattern);
+			patterns[t.index] = item;
 		}
 	}
 
@@ -6723,18 +6731,24 @@ void MainWindow::onLogIdle()
 	if (lines.empty()) return;
 
 
-	auto RegExp = [&](LogInspectionIndex i){
+	auto RegExp = [&](LogInspectionIndex i)-> std::regex {
 		auto it = patterns.find(i);
-		return it == patterns.end() ? QRegularExpression() : it->second;
+		return it == patterns.end() ? std::regex() : it->second.regex;
+	};
+
+	auto Pattern = [&](LogInspectionIndex i){
+		auto it = patterns.find(i);
+		// if (it == patterns.end()) return std::string();
+		// return it->second.pattern;
+		return it == patterns.end() ? std::string() : it->second.pattern;
 	};
 
 	auto Equals = [&](std::string const &line, LogInspectionIndex i){
-		std::string const &str = RegExp(i).pattern().toStdString();
-		return line == str;
+		return line == Pattern(i);
 	};
 
 	auto Contains = [&](LogInspectionIndex i){
-		std::string const &str = RegExp(i).pattern().toStdString();
+		std::string str = Pattern(i);
 		for (std::string const &line : lines) {
 			if (strstr(line.c_str(), str.c_str())) {
 				return true;
@@ -6744,11 +6758,11 @@ void MainWindow::onLogIdle()
 	};
 
 	auto Match = [&](std::string const &line, LogInspectionIndex i){
-		return RegExp(i).match(QString::fromStdString(line)).hasMatch();
+		return std::regex_match(line, RegExp(i));
 	};
 
 	auto StartsWith = [&](std::string const &line, LogInspectionIndex i){
-		std::string const &str = RegExp(i).pattern().toStdString();
+		std::string str = Pattern(i);
 		char const *p = str.c_str();
 		char const *s = line.c_str();
 		while (*p) {
@@ -6768,7 +6782,7 @@ void MainWindow::onLogIdle()
 			}
 		}
 		TextEditDialog dlg(this);
-		dlg.setWindowTitle(RegExp(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED).pattern());
+		dlg.setWindowTitle((QS)Pattern(REMOTE_HOST_IDENTIFICATION_HAS_CHANGED));
 		dlg.setText(text, true);
 		dlg.exec();
 		return;
@@ -6844,7 +6858,7 @@ void MainWindow::onLogIdle()
 			if (StartsWith(line, ENTER_PASSPHRASE_FOR_KEY)) {
 				std::string keyfile;
 				{
-					std::string pattern = RegExp(ENTER_PASSPHRASE_FOR_KEY).pattern().toStdString();
+					std::string pattern = Pattern(ENTER_PASSPHRASE_FOR_KEY);
 					char const *p = line.c_str() + pattern.size();
 					char const *q = strrchr(p, ':');
 					if (q && p + 2 < q && q[-1] == '\'') {
