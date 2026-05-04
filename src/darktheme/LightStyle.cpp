@@ -216,7 +216,10 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 			if (!pix.isNull()) {
 				drawItemPixmap(p, o->rect, alignment, pix);
 			} else {
+				p->save();
+				p->setFont(o->font);
 				drawItemText(p, o->rect, alignment, o->palette, o->state & State_Enabled, o->text, textRole);
+				p->restore();
 			}
 		}
 		return;
@@ -279,7 +282,10 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 					p->setPen(o->palette.color(cg, QPalette::Text));
 					p->drawRect(textRect.adjusted(0, 0, -1, -1));
 				}
+				p->save();
+				p->setFont(o->font);
 				drawItemText(p, textRect, o->displayAlignment, o->palette, enabled, o->text, QPalette::Text);
+				p->restore();
 			}
 
 			p->restore();
