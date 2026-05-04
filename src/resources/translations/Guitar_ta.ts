@@ -2566,6 +2566,18 @@
         <source>Cannot get file information.</source>
         <translation>கோப்புத் தகவலைப் பெற முடியவில்லை</translation>
     </message>
+    <message>
+        <source>Select directory for git worktree add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Consider git rebase --quit or git worktree add</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ManageWorkingFolderDialog</name>
@@ -3487,30 +3499,6 @@
     <message>
         <source>Incremental Search</source>
         <translation type="vanished">அதிகரிக்கும் தேடல்</translation>
-    </message>
-    <message>
-        <source>Migemo</source>
-        <translation type="vanished">மிகேமோ</translation>
-    </message>
-    <message>
-        <source>Migemo provides an incremental search function for Japanese using romaji input. It supports kanji, hiragana, and katakana, making Japanese text handling faster and more efficient.</source>
-        <translation type="vanished">மிகிமோ ரோமாசி உள்ளீட்டைப் பயன்படுத்தி சப்பானியர்களுக்கான அதிகரிக்கும் தேடல் செயல்பாட்டை வழங்குகிறது. இது காஞ்சி, இரகனா மற்றும் கட்டகானாவை ஆதரிக்கிறது, சப்பானிய உரை கையாளுதலை வேகமாகவும் திறமையாகவும் செய்கிறது.</translation>
-    </message>
-    <message>
-        <source>Setup Migemo dictionary</source>
-        <translation type="vanished">மிகிமோ அகராதியை அமைக்கவும்</translation>
-    </message>
-    <message>
-        <source>Delete Migemo dictionary</source>
-        <translation type="vanished">மிகிமோ அகராதியை நீக்கவும்</translation>
-    </message>
-    <message>
-        <source>Are you sure to setup Migemo dictionary?</source>
-        <translation type="vanished">மிகிமோ அகராதியை அமைப்பதில் உறுதியாக உள்ளீர்களா?</translation>
-    </message>
-    <message>
-        <source>Are you sure to delete Migemo dictionary?</source>
-        <translation type="vanished">மிகிமோ அகராதியை நிச்சயமாக நீக்கவா?</translation>
     </message>
 </context>
 <context>
