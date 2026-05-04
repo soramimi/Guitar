@@ -73,6 +73,7 @@ struct Credential {
 
 struct Model {
 	ProviderInfo const *provider_info_;
+	AI api_compatibility_ = AI::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
 	std::string long_name_;
 	std::string model_name_;
 	std::string host_;
@@ -108,6 +109,11 @@ struct Model {
 	int port() const
 	{
 		return port_;
+	}
+
+	AI api_compatibility() const
+	{
+		return api_compatibility_;
 	}
 
 	static Model from_name(std::string const &name);

@@ -21,7 +21,7 @@ public:
 	};
 private:
 	GenerativeAI::Model ai_model_;
-	CommitMessageGenerator::Result parse_response(const std::string &in, GenerativeAI::AI provider);
+	CommitMessageGenerator::Result parse_response(GenerativeAI::Model model, const std::string &in);
 	std::string generatePrompt(const std::string &diff, int max);
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt);
 	GenerativeAI::Model ai_model();

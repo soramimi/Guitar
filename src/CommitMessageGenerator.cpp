@@ -3,13 +3,12 @@
 #include "GitRunner.h"
 #include "Logger.h"
 #include "Profile.h"
+#include "common/fmt.h"
 #include "common/joinpath.h"
 #include "common/jstream.h"
 #include "common/q/helper.h"
-#include "common/fmt.h"
 #include "curlclient.h"
 #include "webclient.h"
-
 #include <QFileInfo>
 
 /// AIレスポンスの解析結果を保持する内部構造体
@@ -27,9 +26,11 @@ struct CommitMessageResult {
  * JSONパス走査ロジックを各 case_* メソッドで実装する。
  */
 struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<CommitMessageResult> {
+	GenerativeAI::Model model;
 	jstream::Reader reader;
-	_CommitMessageResponseParser(std::string_view const &in)
-		: reader(in.data(), in.data() + in.size())
+	_CommitMessageResponseParser(GenerativeAI::Model model, std::string_view const &in)
+		: model(model)
+		, reader(in.data(), in.data() + in.size())
 	{}
 
 	/**
@@ -206,9 +207,13 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 	/// llama.cpp：OpenAI Chat Completions 互換形式
 	CommitMessageResult case_LLAMACPP()
 	{
-		return parse_openai_chat_completions_format();
+		switch (model.api_compatibility()) {
+		case GenerativeAI::AI::Anthropic:
+			return case_Anthropic();
+		default:
+			return parse_openai_chat_completions_format();
+		}
 	}
-
 };
 
 /**
@@ -218,13 +223,18 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
  */
 struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> {
 	constexpr static float temperature_ = 0.2f; ///< 応答のランダム性（Anthropic以外で使用）
-	std::string modelname;
+	GenerativeAI::Model const &model;
 	std::string prompt;
 	bool add_stream_false = false;
-	_PromptJsonGenerator(std::string const &modelname, std::string const &prompt)
-		: modelname(modelname)
+	_PromptJsonGenerator(GenerativeAI::Model const &model, std::string const &prompt)
+		: model(model)
 		, prompt(prompt)
 	{}
+
+	std::string modelname() const
+	{
+		return model.model_name();
+	}
 
 	/// 未知プロバイダー：空文字列を返す
 	std::string case_Unknown()
@@ -240,11 +250,56 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		jstream::Writer w;
 		w.object({}, [&](){
-			w.string("model", modelname);
+			w.string("model", modelname());
 			if (0) {
 				w.number("temperature", temperature_); // deprecated
 			}
-			w.string("input", prompt);
+			enum class ReasoningEffort {
+				None,
+				Low,
+				Medium,
+				High,
+				XHigh,
+				Undefined = -1
+			};
+			constexpr ReasoningEffort reasoning_effort_level = ReasoningEffort::Undefined;
+			char const *reasoning_effort_symbol = nullptr;
+			switch (reasoning_effort_level) {
+			case ReasoningEffort::None:
+				reasoning_effort_symbol = "none";
+				break;
+			case ReasoningEffort::Low:
+				reasoning_effort_symbol = "low";
+				break;
+			case ReasoningEffort::Medium:
+				reasoning_effort_symbol = "medium";
+				break;
+			case ReasoningEffort::High:
+				reasoning_effort_symbol = "high";
+				break;
+			case ReasoningEffort::XHigh:
+				reasoning_effort_symbol = "xhigh";
+				break;
+			}
+			if (reasoning_effort_symbol) {
+				w.object("reasoning", [&](){
+					w.string("effort", reasoning_effort_symbol);
+				});
+			}
+			constexpr int format = 0;
+			switch (format) {
+			case 0:
+				w.string("input", prompt);
+				break;
+			case 1:
+				w.array("input", [&](){
+					w.object({}, [&](){
+						w.string("role", "user");
+						w.string("content", prompt);
+					});
+				});
+				break;
+			}
 		});
 		return w;
 	}
@@ -257,7 +312,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		jstream::Writer w;
 		w.object({}, [&](){
-			w.string("model", modelname);
+			w.string("model", modelname());
 			w.number("temperature", temperature_);
 			w.array("messages", [&](){
 				w.object({}, [&](){
@@ -287,14 +342,14 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		jstream::Writer w;
 		w.object({}, [&](){
-			w.string("model", modelname);
+			w.string("model", modelname());
 			w.array("messages", [&](){
 				w.object({}, [&](){
 					w.string("role", "user");
 					w.string("content", prompt);
 				});
 			});
-			w.number("max_tokens", 200);
+			w.number("max_tokens", 1000);
 			if (0) {
 				// As of Claude Opus 4.7 (released 2026-04-16), temperature / top_p / top_k are deprecated.
 				// Sending non-default values returns HTTP 400; omit these parameters entirely.
@@ -357,7 +412,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		jstream::Writer w;
 		w.object({}, [&](){
-			w.string("model", modelname);
+			w.string("model", modelname());
 			w.string("prompt", prompt);
 			w.boolean("stream", false);
 		});
@@ -379,7 +434,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	/// llama.cpp：OpenAI Chat Completions 互換形式
 	std::string case_LLAMACPP()
 	{
-		return case_OpenAI_chat_completions();
+		switch (model.api_compatibility()) {
+		case GenerativeAI::AI::Anthropic:
+			return case_Anthropic();
+		default:
+			return case_OpenAI_chat_completions();
+		}
 	}
 };
 
@@ -397,10 +457,10 @@ CommitMessageGenerator::CommitMessageGenerator()
  * @param provider 使用したAIプロバイダー
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-CommitMessageGenerator::Result CommitMessageGenerator::parse_response(std::string const &in, GenerativeAI::AI provider)
+CommitMessageGenerator::Result CommitMessageGenerator::parse_response(GenerativeAI::Model model, std::string const &in)
 {
 	// プロバイダーに応じたパーサーでレスポンスを解析する
-	CommitMessageResult r = _CommitMessageResponseParser(in).visit(provider);
+	CommitMessageResult r = _CommitMessageResponseParser(model, in).visit(model.provider_id());
 
 	if (r.completion) {
 		if (0) {
@@ -553,7 +613,7 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
  */
 std::string CommitMessageGenerator::generate_prompt_json(GenerativeAI::Model const &model, std::string const &prompt)
 {
-	return _PromptJsonGenerator(model.model_name(), prompt).visit(model.provider_id());
+	return _PromptJsonGenerator(model, prompt).visit(model.provider_id());
 }
 
 /**
@@ -628,7 +688,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		if (save_log) {
 			logprintf(LOG_RAW, "%s\n", text.c_str());
 		}
-		CommitMessageGenerator::Result ret = parse_response(text, model.provider_id());
+		CommitMessageGenerator::Result ret = parse_response(model, text);
 		return ret;
 	}
 

@@ -290,7 +290,14 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		if (r.model_name.empty())  {
 			r.model_name = "default";
 		}
-		r.endpoint_url = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
+		switch (model_.api_compatibility()) {
+		case AI::Anthropic:
+			r.endpoint_url = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
+			break;
+		default:
+			r.endpoint_url = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
+			break;
+		}
 		return r;
 	}
 };
