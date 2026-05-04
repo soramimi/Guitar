@@ -316,6 +316,7 @@ HEADERS += \
 	$$PWD/src/common/q/DateTime.h \
 	$$PWD/src/common/q/DirIterator.h \
 	$$PWD/src/common/qmisc.h \
+	$$PWD/src/common/str.h \
 	$$PWD/src/process/MyProcess2.h \
 	$$PWD/src/process/ProcessPosix.h \
 	src/AboutDialog.h \
