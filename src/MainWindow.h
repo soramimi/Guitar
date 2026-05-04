@@ -417,9 +417,10 @@ private:
 	void updateButton();
 	void runPtyGit(QString const &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void (ProcessStatus *, QVariant const &userdata)> callback, QVariant const &userdata);
 	CommitLogExchangeData queryCommitLog(GitRunner g, bool suppress_uncommit_changes);
-	void updateHEAD(GitRunner g);
+
 	bool jump(GitRunner g, const GitHash &id);
 	void jump(GitRunner g, QString const &text);
+
 	void connectPtyProcessCompleted();
 	void setupShowFileListHandler();
 	

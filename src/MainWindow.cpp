@@ -78,6 +78,7 @@
 #include <sys/stat.h>
 #include <variant>
 #include "common/fmt.h"
+#include "common/str.h"
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"
@@ -155,9 +156,7 @@ struct MainWindow::Private {
 		current_repository_data = {&repository_mutex};
 	}
 
-	// GitCommandCache git_command_cache;
 	GitRunner unassosiated_git_runner;
-	// GitRunner current_git_runner;
 
 	GitUser current_git_user;
 
@@ -189,8 +188,6 @@ struct MainWindow::Private {
 	int before_search_row = -1;
 	bool uncommited_changes = false;
 	std::vector<GitFileStatus> uncommited_changes_file_list;
-
-	// QString commit_log_filter_text;
 
 	GitHash head_id;
 
@@ -1639,8 +1636,8 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 		}
 
 		rec.datetime = misc::makeDateTimeString(commit.commit_date);
-		rec.author = (QS)commit.author;
-		rec.message = (QS)commit.message;
+		rec.author = (misc::str)commit.author;
+		rec.message = (misc::str)commit.message;
 		rec.tooltip = rec.message + message_ex;
 
 		records.push_back(rec);
@@ -1751,8 +1748,8 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	// ポジトリの情報を設定
 	{
-		const QString br_name = (QS)currentBranchName();
-		const QString repo_name = (QS)currentRepositoryName();
+		const QString br_name = (misc::str)currentBranchName();
+		const QString repo_name = (misc::str)currentRepositoryName();
 
 		QString info;
 		if (currentBranch().flags & GitBranch::HeadDetachedAt) {
@@ -1809,7 +1806,7 @@ void MainWindow::openRepository(OpenRepositoryOption const &opt)
 			}
 			return;
 		}
-		if (!unassosiated_git_runner().isValidWorkingCopy(dir.toStdString())) {
+		if (!unassosiated_git_runner().isValidWorkingCopy((misc::str)dir)) {
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
 			return;
 		}
@@ -1885,7 +1882,7 @@ bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString 
 
 	dir = misc::normalizePathSeparator(dir);
 
-	if (!unassosiated_git_runner().isValidWorkingCopy(dir.toStdString())) {
+	if (!unassosiated_git_runner().isValidWorkingCopy((misc::str)dir)) {
 		auto isBareRepository = [](QString const &dir){
 			if (QFileInfo(dir).isDir()) {
 				if (QFileInfo(dir / "config").isFile()) {
@@ -1985,8 +1982,8 @@ bool MainWindow::execWelcomeWizardDialog()
 		GitRunner g = unassosiated_git_runner();
 		// Git g(global->gcx(), {}, {}, {});
 		GitUser user = g.getUser(GitSource::Global);
-		dlg.set_user_name((QS)user.name);
-		dlg.set_user_email((QS)user.email);
+		dlg.set_user_name((misc::str)user.name);
+		dlg.set_user_email((misc::str)user.email);
 	}
 	if (dlg.exec() == QDialog::Accepted) {
 		setGitCommand(dlg.git_command_path(), false);
@@ -1996,12 +1993,12 @@ bool MainWindow::execWelcomeWizardDialog()
 		if (misc::isExecutable(appsettings()->git_command)) {
 			GitRunner g = git();
 			GitUser user;
-			user.name = dlg.user_name().toStdString();
-			user.email = dlg.user_email().toStdString();
+			user.name = (misc::str)dlg.user_name();
+			user.email = (misc::str)dlg.user_email();
 			g.setUser(user, true);
 
 			std::string old_default_branch_name = g.getDefaultBranch();
-			std::string new_default_branch_name = dlg.default_branch_name().toStdString();
+			std::string new_default_branch_name = (misc::str)dlg.default_branch_name();
 			if (old_default_branch_name != new_default_branch_name) {
 				if (new_default_branch_name.empty()) {
 					g.unsetDefaultBranch();
@@ -3587,6 +3584,8 @@ void MainWindow::setHeadId(GitHash const &head_id)
 	m->head_id = head_id;
 }
 
+
+
 void MainWindow::setPtyProcessCompletionData(const QVariant &value)
 {
 	m->pty_process_completion_data = value;
@@ -4311,12 +4310,6 @@ void MainWindow::updateCommitGraph(GitCommitItemList *logs)
 	logs->updateCommitGraph();
 }
 
-void MainWindow::updateHEAD(GitRunner g)
-{
-	auto head = GitHash(getObjCache()->rev_parse(g, "HEAD"));
-	setHeadId(head);
-}
-
 /**
  * @brief ネットワークを使用するコマンドの可否をUIに反映する
  * @param enabled
@@ -5000,7 +4993,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		// switch to
 		if (switch_to_actions.find(a) != switch_to_actions.end()) {
 			QString branch = a->data().toString();
-			checkoutLocalBranch(branch.toStdString());
+			checkoutLocalBranch((misc::str)branch);
 			return;
 		}
 		// copy label
@@ -6383,13 +6376,9 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	if (f) {
 		f = (getPtyProcess()->getExitCode() == 0);
 	}
-	QString line;
-	{
-		std::vector<char> const &v = getPtyProcess()->stdout_bytes();
-		if (!v.empty()) {
-			line = QString::fromUtf8(&v[0], (int)v.size()).trimmed();
-		}
-	}
+
+	QString line((misc::str)getPtyProcess()->stdout_bytes());
+
 	if (f) {
 		qDebug() << "This is a valid repository.";
 		int i = -1;
@@ -6607,9 +6596,9 @@ void MainWindow::blame(QListWidgetItem *item)
 	QString path = getFilePath(item);
 	{
 		GitRunner g = git();
-		std::vector<char> ba = g.blame(path.toStdString());
-		if (!ba.empty()) {
-			list = BlameWindow::parseBlame(std::string_view{ba.data(), (size_t)ba.size()});
+		std::string s = (misc::str)g.blame(path.toStdString());
+		if (!s.empty()) {
+			list = BlameWindow::parseBlame(s);
 		}
 	}
 	if (!list.isEmpty()) {
@@ -7424,12 +7413,10 @@ void MainWindow::on_action_branch_triggered()
 
 }
 
-void process_test();
 
 
 void MainWindow::test()
 {
-	process_test();
 }
 
 
