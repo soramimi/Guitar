@@ -322,16 +322,6 @@ bool Win32Process::isRunning() const
 	return m->th.thread.joinable();
 }
 
-// std::string Win32Process::stdout_bytes() const
-// {
-// 	return toQString(outbytes);
-// }
-
-// std::string Win32Process::stderr_bytes() const
-// {
-// 	return toQString(errbytes);
-// }
-
 void Win32Process::writeInput(char const *ptr, int len)
 {
 	m->th.writeInput(ptr, len);

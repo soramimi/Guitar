@@ -1,6 +1,4 @@
 #include "AbstractProcess.h"
-#include "ApplicationGlobal.h"
-#include "TraceEventWriter.h"
 
 void AbstractPtyProcess::setChangeDir(QString const &dir)
 {

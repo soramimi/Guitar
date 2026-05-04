@@ -265,12 +265,8 @@ bool Win32PtyProcess::wait(unsigned long time)
 
 void Win32PtyProcess::stop()
 {
-#if 0 // どちらが良いのか分からない
 	// 標準出力読み出しスレッドを強制終了しないとwinptyプロセスが終了してくれない
 	m->th_output_reader.terminate();
-#else
-	m->th_output_reader.closeHandle();
-#endif
 	// プロセススレッド停止
 	requestInterruption();
 	wait();

@@ -13,14 +13,9 @@ private:
 	struct Private;
 	Private *m;
 public:
-	// std::vector<char> outbytes;
-	// std::vector<char> errbytes;
 
 	Win32Process();
 	~Win32Process();
-
-	// std::string stdout_bytes() const;
-	// std::string stderr_bytes() const;
 
 	void start(const std::string &command, bool use_input);
 	int wait();
