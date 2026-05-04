@@ -659,17 +659,27 @@ int MainWindow::rowFromCommitId(GitHash const &id)
 	return commitlog().find_index(id);
 }
 
+// jumpTo
+
 bool MainWindow::jumpToCommit(GitHash const &id)
 {
 	int row = rowFromCommitId(id);
 	return setCurrentLogRow(row);
 }
 
-bool MainWindow::jumpToCommit(QString const &id)
+bool MainWindow::jumpToCommitWithRevParse(std::string const &id) // rev_parseあり版
 {
-	int row = rowFromCommitId(git().rev_parse(id.toStdString()));
+	auto parsed = git().rev_parse(id);
+	int row = rowFromCommitId(parsed);
 	return setCurrentLogRow(row);
 }
+
+bool MainWindow::jumpToHEAD()
+{
+	return jumpToCommitWithRevParse("HEAD");
+}
+
+//
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
@@ -7110,7 +7120,7 @@ void MainWindow::on_action_find_next_triggered()
 
 void MainWindow::on_action_repo_jump_to_head_triggered()
 {
-	jumpToCommit("HEAD");
+	jumpToHEAD();
 }
 
 void MainWindow::on_action_repo_merge_triggered()

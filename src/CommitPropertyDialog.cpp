@@ -173,7 +173,7 @@ void CommitPropertyDialog::on_pushButton_checkout_clicked()
 
 void CommitPropertyDialog::on_pushButton_jump_clicked()
 {
-	mainwindow()->jumpToCommit(QString::fromStdString(m->commit.commit_id.toString()));
+	mainwindow()->jumpToCommitWithRevParse(m->commit.commit_id.toString());
 	done(QDialog::Accepted);
 }
 

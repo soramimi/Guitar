@@ -669,8 +669,10 @@ public:
 	bool checkoutLocalBranch(const std::string &name);
 	void checkout(QWidget *parent, const GitCommitItem &commit, std::function<void ()> accepted_callback = {});
 	void checkout();
+
 	bool jumpToCommit(const GitHash &id);
-	bool jumpToCommit(QString const &id);
+	bool jumpToCommitWithRevParse(const std::string &id);
+	bool jumpToHEAD();
 
 	TextEditorThemePtr themeForTextEditor();
 	void emitWriteLog(LogData const &logdata, LogChannel channel);
