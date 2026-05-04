@@ -240,6 +240,7 @@ public:
 
 	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
 	std::optional<std::vector<char>> readfile(std::string const &path);
+	bool rebase_quit();
 };
 
 struct NamedCommitItem {

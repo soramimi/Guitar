@@ -490,16 +490,11 @@ private:
 	std::condition_variable cond_;
 	std::deque<char> output_queue_; // for log
 	std::vector<char> output_vector_; // for result
-<<<<<<< HEAD
 	PROCESS_INFORMATION pi_ = {};
 	DWORD exit_code_ = 128;
 	void writeOutput(char const *buf, size_t len)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
-=======
-	void writeOutput(char const *buf, size_t len)
-	{
->>>>>>> a
 		output_queue_.insert(output_queue_.end(), buf, buf + len);
 		output_vector_.insert(output_vector_.end(), buf, buf + len);
 	}
@@ -525,21 +520,13 @@ private:
 
 		std::wstring wcmd = convert_str_to_wstr(cmd);
 
-<<<<<<< HEAD
 		pi_ = {};
-=======
-		PROCESS_INFORMATION pi = {};
->>>>>>> a
 		BOOL ok = CreateProcessW(
 					  nullptr, wcmd.data(),
 					  nullptr, nullptr,
 					  TRUE, CREATE_NO_WINDOW,
 					  nullptr, nullptr,
-<<<<<<< HEAD
 					  &si, &pi_
-=======
-					  &si, &pi
->>>>>>> a
 					  );
 
 		if (!use_input) {
@@ -554,23 +541,13 @@ private:
 		char buf[256];
 		DWORD n;
 		while (ReadFile(hReadPipe, buf, sizeof(buf), &n, nullptr) && n > 0) {
-<<<<<<< HEAD
-=======
-			// ret.append(buf, n);
->>>>>>> a
 			writeOutput(buf, n);
 		}
 		CloseHandle(hReadPipe);
 
-<<<<<<< HEAD
 		WaitForSingleObject(pi_.hProcess, INFINITE);
 		CloseHandle(pi_.hProcess);
 		CloseHandle(pi_.hThread);
-=======
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
->>>>>>> a
 
 		if (!ret.empty() && ret.back() == '\n') ret.pop_back();
 		if (!ret.empty() && ret.back() == '\r') ret.pop_back();
@@ -604,10 +581,7 @@ public:
 	{
 		if (thread_.joinable()) {
 			thread_.join();
-<<<<<<< HEAD
 			GetExitCodeProcess(pi_.hProcess, (DWORD *)&exit_code_);
-=======
->>>>>>> a
 		}
 		return 0;
 	}
@@ -622,7 +596,6 @@ public:
 		*out = output_vector_;
 		output_vector_.clear();
 	}
-<<<<<<< HEAD
 	void stop()
 	{
 		wait();
@@ -631,8 +604,6 @@ public:
 	{
 		return (int)exit_code_;
 	}
-=======
->>>>>>> a
 };
 
 
@@ -642,10 +613,7 @@ private:
 	std::mutex mutex_;
 	std::condition_variable cond_;
 	int input_fd_ = -1;
-<<<<<<< HEAD
 	HANDLE hConout_ = INVALID_HANDLE_VALUE;
-=======
->>>>>>> a
 	HANDLE hInput_ = INVALID_HANDLE_VALUE;
 	int exit_code_ = 128;
 
@@ -683,11 +651,7 @@ private:
 			return ret;
 		}
 
-<<<<<<< HEAD
 		hConout_ = CreateFileW(
-=======
-		HANDLE hConout = CreateFileW(
->>>>>>> a
 							 winpty_conout_name(wp),
 							 GENERIC_READ, 0, nullptr,
 							 OPEN_EXISTING, 0, nullptr
@@ -713,7 +677,6 @@ private:
 
 
 
-<<<<<<< HEAD
 		if (hConout_ != INVALID_HANDLE_VALUE) {
 			char buf[256];
 			DWORD n;
@@ -722,16 +685,6 @@ private:
 				writeOutput(buf, n);
 			}
 			CloseHandle(hConout_);
-=======
-		if (hConout != INVALID_HANDLE_VALUE) {
-			char buf[256];
-			DWORD n;
-			while (ReadFile(hConout, buf, sizeof(buf), &n, nullptr) && n > 0) {
-				// ret.append(buf, n);
-				writeOutput(buf, n);
-			}
-			CloseHandle(hConout);
->>>>>>> a
 		}
 
 		WaitForSingleObject(hProcess, INFINITE);
@@ -751,7 +704,6 @@ public:
 	void writeInput(const char *ptr, int len)
 	{
 		if (hInput_ != INVALID_HANDLE_VALUE) {
-<<<<<<< HEAD
 			char const *begin = ptr;
 			char const *end = begin + len;
 			char const *left = begin;
@@ -787,18 +739,11 @@ public:
 					right++;
 				}
 			}
-=======
-			DWORD n;
-			WriteFile(hInput_, ptr, (DWORD)len, &n, nullptr);
->>>>>>> a
 		}
 	}
 	int readOutput(char *ptr, int len)
 	{
-<<<<<<< HEAD
 		std::lock_guard<std::mutex> lock(mutex_);
-=======
->>>>>>> a
 		int n = output_queue_.size();
 		if (n > len) n = len;
 		for (int i = 0; i < n; i++) {
@@ -824,13 +769,10 @@ public:
 	}
 	void stop()
 	{
-<<<<<<< HEAD
 		if (hConout_ != INVALID_HANDLE_VALUE) {
 			CloseHandle(hConout_);
 			hConout_ = INVALID_HANDLE_VALUE;
 		}
-=======
->>>>>>> a
 		wait();
 	}
 	int getExitCode() const
@@ -1058,11 +1000,7 @@ bool is_conpty_available()
 #ifdef _WIN32
 #include "common/misc.h"
 #include "common/base64.h"
-<<<<<<< HEAD
 
-=======
-// #include "win32/Win32PtyProcess.h"
->>>>>>> a
 constexpr static char const *conpty_agent_tag = "--conpty-agent---";
 
 bool exec_conpty_agent()
@@ -1102,14 +1040,13 @@ void msleep(unsigned int ms)
 #endif
 }
 
-<<<<<<< HEAD
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QDir>
 
 void process_test()
 {
-#if 0
+#if 1
 	QDir::setCurrent("C:\\develop\\Guitar");
 	ProcessWinPty proc;
 	proc.start("git fetch", "");
@@ -1150,36 +1087,11 @@ void process_test()
 
 
 	proc.stop();
-=======
-void process_test()
-{
-#if 0
-	ProcessWinConPTY proc;
-	proc.start("git --version", "");
-	proc.wait();
->>>>>>> a
 	std::vector<char> out;
 	proc.readResult(&out);
 	std::string s(out.begin(), out.end());
 	fprintf(stderr, "[%s]\n", s.c_str());
-<<<<<<< HEAD
-#elif 1
 	exec_conpty_agent();
-=======
-#else
-	ProcessWinConPTY proc;
-	proc.start("sort", "");
-	{
-		// Windowsのsortコマンドは\r\n（CRLF）を行区切りとして期待する
-		const char *input = "abc\r\ndef\r\n";
-		proc.writeInput(input, strlen(input));
-	}
-	proc.wait();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
->>>>>>> a
 #endif
 }
 

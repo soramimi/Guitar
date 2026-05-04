@@ -243,7 +243,7 @@ void Logger::x_logprint(const char *file, int line, int level, std::string_view 
 	item.line = line;
 	size_t len = str.size();
 	if (level != LOG_RAW) {
-		while (isspace((unsigned char)str[len - 1])) len--;
+		while (len > 0 && isspace((unsigned char)str[len - 1])) len--;
 		str = str.substr(0, len);
 	}
 	item.message = std::string(str);

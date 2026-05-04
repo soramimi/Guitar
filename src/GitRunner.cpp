@@ -529,6 +529,11 @@ std::vector<char> GitRunner::blame(std::string const &path)
 	return gitptr()->blame(path);
 }
 
+bool GitRunner::rebase_quit()
+{
+	return gitptr()->rebase_quit();
+}
+
 std::optional<std::vector<GitFileItem>> GitRunner::ls(std::string const &path)
 {
 	return gitptr()->ls(path);

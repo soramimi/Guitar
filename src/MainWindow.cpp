@@ -120,6 +120,7 @@ enum LogInspectionIndex {
 	ENTER_PASSPHRASE_FOR_KEY,
 	FATAL_AUTHENTICATION_FAILED_FOR,
 	REMOTE_HOST_IDENTIFICATION_HAS_CHANGED,
+	CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD,
 };
 struct LogInspectionItem {
 	const char *pattern;
@@ -136,6 +137,8 @@ static const LogInspectionItem log_inspection_table[] = {
 	 , FATAL_AUTHENTICATION_FAILED_FOR},
 	{"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
 	 , REMOTE_HOST_IDENTIFICATION_HAS_CHANGED},
+	{"Consider \"git rebase --quit\" or \"git worktree add\"."
+	 , CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD},
 };
 }
 
@@ -855,7 +858,7 @@ void MainWindow::appendLogHistory(QByteArray const &str, LogChannel channel)
 	vec->insert(vec->end(), str.begin(), str.end());
 }
 
-std::vector<std::string> MainWindow::getLogHistoryLines(LogChannel channel)
+std::vector<std::string> MainWindow::readLogHistoryLines(LogChannel channel)
 {
 	std::vector<char> *vec = (channel == LogChannel::PTY) ? &m->log_history_bytes_pty : &m->log_history_bytes;
 
@@ -890,9 +893,10 @@ std::vector<std::string> MainWindow::getLogHistoryLines(LogChannel channel)
 	return lines;
 }
 
-void MainWindow::clearLogHistory()
+void MainWindow::clearLogHistory(LogChannel channel)
 {
-	m->log_history_bytes.clear();
+	std::vector<char> *vec = (channel == LogChannel::PTY) ? &m->log_history_bytes_pty : &m->log_history_bytes;
+	vec->clear();
 }
 
 void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
@@ -6650,6 +6654,45 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog(QString const &
 	setInteractionMode(InteractionMode::Busy);
 }
 
+// wip: CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD
+void MainWindow::execConsiderGitRebaseQuitOrWorktreeAddDialog(QString const &windowtitle)
+{
+	// using TheDlg = ConsiderGitRebaseQuitOrWorktreeAddDialog;
+	using TheDlg = AreYouSureYouWantToContinueConnectingDialog;
+
+	setInteractionMode(InteractionMode::Busy);
+
+	GlobalRestoreOverrideCursor();
+
+	TheDlg dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		TheDlg::Result r = dlg.result();
+#if 0
+		if (r == TheDlg::Result::GitRebaseQuit) {
+			runCommand("git rebase --quit");
+		} else if (r == TheDlg::Result::GitWorktreeAdd) {
+			QString dir = QFileDialog::getExistingDirectory(this, tr("Select directory for git worktree add"));
+			if (!dir.isEmpty()) {
+				QString cmd = "git worktree add \"%1\"";
+				cmd = cmd.arg(dir);
+				runCommand(cmd);
+			}
+		}
+#else
+		if (r == TheDlg::Result::Yes) {
+			// runCommand("git rebase --quit");
+			git().rebase_quit();
+		} else {
+			// todo:
+		}
+#endif
+	} else {
+		ui->widget_log->setFocus();
+		setInteractionEnabled(false);
+	}
+	setInteractionMode(InteractionMode::Busy);
+}
+
 void MainWindow::deleteRemoteBranch(GitCommitItem const &commit)
 {
 	if (!commit) return;
@@ -6725,10 +6768,12 @@ void MainWindow::onLogIdle()
 		}
 	}
 
-	std::vector<std::string> lines = getLogHistoryLines(LogChannel::PTY);
-	clearLogHistory();
-
-	if (lines.empty()) return;
+	std::vector<std::string> lines = readLogHistoryLines(LogChannel::PTY);
+	if (lines.empty()) {
+		lines = readLogHistoryLines(LogChannel::Default);
+		if (lines.empty()) return;
+		qDebug();
+	}
 
 
 	auto RegExp = [&](LogInspectionIndex i)-> std::regex {
@@ -6785,6 +6830,27 @@ void MainWindow::onLogIdle()
 		dlg.exec();
 		return;
 	}
+
+	while (!lines.empty() && lines.back().empty()) {
+		lines.pop_back();
+	}
+
+#if 0
+	if (Contains(CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD)) {
+		QString text;
+		{
+			for (std::string const &line : lines) {
+				QString qline = QString::fromStdString(line);
+				text += qline + '\n';
+			}
+		}
+		TextEditDialog dlg(this);
+		dlg.setWindowTitle(tr("Consider git rebase --quit or git worktree add"));
+		dlg.setText(text, true);
+		dlg.exec();
+		return;
+	}
+#endif
 
 	{
 		QString dir = QString::fromStdString(parseDetectedDubiousOwnershipInRepositoryAt(lines));
@@ -6845,6 +6911,15 @@ void MainWindow::onLogIdle()
 
 			if (Match(line, ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
 				execAreYouSureYouWantToContinueConnectingDialog(QString::fromStdString(line).trimmed());
+				return;
+			}
+
+			if (Match(line, CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD)) {
+				// execConsiderGitRebaseQuitOrWorktreeAddDialog(QString::fromStdString(line).trimmed());
+				auto button = QMessageBox::question(this, tr("Consider git rebase --quit or git worktree add"), QString::fromStdString(line).trimmed());
+				if (button == QMessageBox::Yes) {
+					git().rebase_quit();
+				}
 				return;
 			}
 

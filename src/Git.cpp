@@ -1645,6 +1645,11 @@ std::vector<char> Git::blame(std::string const &path)
 	return {};
 }
 
+bool Git::rebase_quit()
+{
+	return (bool)git("rebase --quit");
+}
+
 std::vector<Git::RemoteInfo> Git::ls_remote()
 {
 	std::vector<RemoteInfo> list;

@@ -243,7 +243,10 @@ private:
 	void blame(QListWidgetItem *item);
 	void blame();
 	QListWidgetItem *currentFileItem() const;
+
 	void execAreYouSureYouWantToContinueConnectingDialog(QString const &windowtitle);
+	void execConsiderGitRebaseQuitOrWorktreeAddDialog(QString const &windowtitle);
+
 	void deleteRemoteBranch(const GitCommitItem &commit);
 	QStringList remoteBranches(const GitHash &id, QStringList *all);
 	bool isUninitialized();
@@ -392,8 +395,8 @@ private:
 	void initRepository(QString const &path, QString const &reponame, const GitRemote &remote);
 	void updatePtyPocessLog(bool processevents);
 	void appendLogHistory(const QByteArray &str, LogChannel channel);
-	std::vector<std::string> getLogHistoryLines(LogChannel channel);
-	void clearLogHistory();
+	std::vector<std::string> readLogHistoryLines(LogChannel channel);
+	void clearLogHistory(LogChannel channel);
 	void updateAvatar(const GitUser &user, bool request);
 	void cleanSubModule(GitRunner g, QListWidgetItem *item);
 

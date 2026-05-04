@@ -141,7 +141,7 @@ public:
 	bool rm_cached(const std::string &file);
 	void cherrypick(const std::string &name);
 	std::string getCherryPicking() const;
-        std::vector<GitBranch> branches();
+	std::vector<GitBranch> branches();
 
 	std::string signingKey(GitSource purpose);
 	bool setSigningKey(std::string const &id, bool global);
@@ -149,8 +149,10 @@ public:
 	bool setSignPolicy(GitSource source, GitSignPolicy policy);
 	bool configGpgProgram(const std::string &path, bool global);
 
-        bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
+	bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
+
+	bool rebase_quit();
 
 	std::optional<std::vector<GitFileItem>> ls(const std::string &path);
 	std::optional<std::vector<char>> readfile(const std::string &path);
