@@ -35,11 +35,7 @@ struct ProcessResult {
 	}
 };
 
-<<<<<<< HEAD
 class ProcessPosix : public AbstractProcess {
-=======
-class PosixProcess : public AbstractProcess {
->>>>>>> a
 private:
 	std::deque<char> stdout_queue_;
 	std::deque<char> stderr_queue_;
@@ -193,11 +189,7 @@ private:
 		return ret;
 	}
 public:
-<<<<<<< HEAD
 	~ProcessPosix()
-=======
-	~PosixProcess()
->>>>>>> a
 	{
 		closeInput(true);
 		if (thread_.joinable()) {
@@ -290,11 +282,7 @@ public:
 	}
 };
 
-<<<<<<< HEAD
 class ProcessPosixPty : public AbstractPtyProcess {
-=======
-class PosixPtyProcess : public AbstractPtyProcess {
->>>>>>> a
 private:
 	std::deque<char> stdout_queue_;
 	std::deque<char> stderr_queue_;
