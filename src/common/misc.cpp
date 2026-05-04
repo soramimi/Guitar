@@ -1017,3 +1017,39 @@ std::string misc::convert_utf16_to_utf8(const std::u16string_view &s)
 	return out;
 }
 
+
+std::string misc::strip_vt(const std::string_view &s)
+{
+	std::vector<char> out;
+	char const *begin = s.data();
+	char const *end = begin + s.size();
+	char const *ptr = begin;
+	while (ptr < end) {
+		if (*ptr == 0x1b) {
+			ptr++;
+			if (ptr < end && *ptr == '[') {
+				ptr++;
+				while (ptr < end && (unsigned char)*ptr >= 0x20 && (unsigned char)*ptr <= 0x3f) ptr++;
+				if (ptr < end && (unsigned char)*ptr >= 0x40 && (unsigned char)*ptr <= 0x7e) ptr++;
+			} else if (ptr < end && *ptr == ']') {
+				ptr++;
+				while (ptr < end) {
+					if (*ptr == 0x07) { // BEL
+						ptr++;
+						break;
+					}
+					if (*ptr == 0x1b && ptr + 1 < end && ptr[1] == '\\') { // ST
+						ptr += 2;
+						break;
+					}
+					ptr++;
+				}
+			} else if (ptr < end) {
+				ptr++; // 2-char ESC sequence
+			}
+		} else {
+			out.push_back(*ptr++);
+		}
+	}
+	return std::string(out.data(), out.size());
+}

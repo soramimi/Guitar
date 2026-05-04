@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <optional>
 #include <QElapsedTimer>
+#include "common/misc.h"
 
 #ifdef _WIN32
 #include <QApplication>
@@ -840,104 +841,88 @@ private:
 	HANDLE hPipeInWrite_ = nullptr;
 	bool exec_win_conpty(const std::string &cmd, const std::string &env, bool use_input)
 	{
+		const bool interactive = true; // TODO: use_input should not be the same as interactive, but for testing we can keep it simple for now
 
-		HANDLE hPipeInRead = nullptr;
-		HANDLE hPipeOutRead = nullptr;
-		HANDLE hPipeOutWrite = nullptr;
+		std::string ret;
 
-		if (!CreatePipe(&hPipeInRead, &hPipeInWrite_, nullptr, 0)) {
-			return {};
+		HANDLE hStdinRead = nullptr;
+		HANDLE hStdinWrite = nullptr;
+		HANDLE hReadPipe = nullptr;
+		HANDLE hWritePipe = nullptr;
+		SECURITY_ATTRIBUTES sa = {};
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
+		if (!CreatePipe(&hReadPipe, &hWritePipe, &sa, 0)) {
+			return false;
 		}
-		if (!CreatePipe(&hPipeOutRead, &hPipeOutWrite, nullptr, 0)) {
-			CloseHandle(hPipeInRead);
-			CloseHandle(hPipeInWrite_);
-			return {};
-		}
-
-		HPCON hPC = nullptr;
-		COORD size = {80, 25};
-		HRESULT hr = CreatePseudoConsole(size, hPipeInRead, hPipeOutWrite, 0, &hPC);
-		// ConPTY が両端を引き継ぐので呼び出し側のコピーを閉じる
-		CloseHandle(hPipeInRead);
-		CloseHandle(hPipeOutWrite);
-		if (FAILED(hr)) {
-			CloseHandle(hPipeInWrite_);
-			CloseHandle(hPipeOutRead);
-			return {};
+		SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
+		if (!interactive) {
+			if (!CreatePipe(&hStdinRead, &hStdinWrite, &sa, 0)) {
+				CloseHandle(hReadPipe);
+				CloseHandle(hWritePipe);
+				return false;
+			}
+			SetHandleInformation(hStdinWrite, HANDLE_FLAG_INHERIT, 0);
 		}
 
-		SIZE_T attrSize = 0;
-		InitializeProcThreadAttributeList(nullptr, 1, 0, &attrSize);
-
-		STARTUPINFOEXW siEx = {};
-		siEx.StartupInfo.cb = sizeof(siEx);
-		siEx.lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, attrSize);
-		if (!siEx.lpAttributeList
-			|| !InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &attrSize)
-			|| !UpdateProcThreadAttribute(siEx.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, hPC, sizeof(hPC), nullptr, nullptr)) {
-			if (siEx.lpAttributeList) HeapFree(GetProcessHeap(), 0, siEx.lpAttributeList);
-			CloseHandle(hPipeInWrite_);
-			CloseHandle(hPipeOutRead);
-			ClosePseudoConsole(hPC);
-			return {};
-		}
-
-		// std::wstring wcmd = L"git --version";
-		std::wstring wcmd = convert_str_to_wstr(cmd);
-
-		std::vector<wchar_t> envbuf;
-		if (!env.empty()) {
-			envbuf.resize(env.size() + 2);
-			std::wstring wenv = convert_str_to_wstr(env);
-			memcpy(envbuf.data(), wenv.c_str(), sizeof(wchar_t) * wenv.size());
-		}
+		STARTUPINFOW si = {};
+		si.cb = sizeof(si);
+		si.dwFlags = STARTF_USESTDHANDLES;
+		si.hStdInput = interactive ? GetStdHandle(STD_INPUT_HANDLE) : hStdinRead;
+		si.hStdOutput = hWritePipe;
+		si.hStdError = hWritePipe;
 
 		PROCESS_INFORMATION pi = {};
-		BOOL ok = CreateProcessW(nullptr,
-								 wcmd.data(),
-								 nullptr,
-								 nullptr,
-								 FALSE,
-								 CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT,
-								 envbuf.empty() ? nullptr : envbuf.data(),
-								 nullptr,
-								 &siEx.StartupInfo,
-								 &pi);
 
-		DeleteProcThreadAttributeList(siEx.lpAttributeList);
-		HeapFree(GetProcessHeap(), 0, siEx.lpAttributeList);
-
-		if (!use_input) {
-			CloseHandle(hPipeInWrite_);
+		std::wstring wcmd = convert_str_to_wstr(cmd);
+		BOOL ok = CreateProcessW(
+			nullptr, wcmd.data(),
+			nullptr, nullptr,
+			TRUE, 0,
+			nullptr, nullptr,
+			&si, &pi
+		);
+		if (hStdinRead) {
+			CloseHandle(hStdinRead);
 		}
+		CloseHandle(hWritePipe);
 
 		if (!ok) {
-			CloseHandle(hPipeOutRead);
-			ClosePseudoConsole(hPC);
-			return {};
+			if (hStdinWrite) {
+				CloseHandle(hStdinWrite);
+			}
+			CloseHandle(hReadPipe);
+			return false;
 		}
 
-		ResumeThread(pi.hThread);
-
-		// プロセス終了後に ClosePseudoConsole することで hPipeOutRead が EOF になる
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		GetExitCodeProcess(pi.hProcess, (DWORD *)&exit_code_);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		ClosePseudoConsole(hPC);
+		std::thread writer;
+		if (!interactive) {
+			CloseHandle(hStdinWrite);
+		}
 
 		char buf[256];
 		DWORD n;
-		while (ReadFile(hPipeOutRead, buf, sizeof(buf), &n, nullptr) && n > 0) {
+		while (ReadFile(hReadPipe, buf, sizeof(buf), &n, nullptr) && n > 0) {
+			// ::write(1, buf, n);
 			// ret.append(buf, n);
 			writeOutput(buf, n);
 		}
-		CloseHandle(hPipeOutRead);
+		CloseHandle(hReadPipe);
 
-		output_vector_ = strip_vt(output_vector_);
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		if (writer.joinable()) {
+			CancelSynchronousIo(writer.native_handle());
+			writer.join();
+		}
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
 
-		if (!output_vector_.empty() && output_vector_.back() == '\n') output_vector_.pop_back();
-		if (!output_vector_.empty() && output_vector_.back() == '\r') output_vector_.pop_back();
+		while (!ret.empty() && (ret.back() == '\n' || ret.back() == '\r')) {
+			ret.pop_back();
+		}
+
+		ret = misc::strip_vt(ret);
+		printf("%s", ret.c_str());
 
 		return true;
 	}
@@ -1031,68 +1016,8 @@ bool exec_conpty_agent()
 
 // experiment for process execution
 
-void msleep(unsigned int ms)
-{
-#ifdef _WIN32
-	Sleep(ms);
-#else
-	usleep(ms * 1000);
-#endif
-}
-
-#include "ApplicationGlobal.h"
-#include "MainWindow.h"
-#include <QDir>
-
 void process_test()
 {
-#if 1
-	QDir::setCurrent("C:\\develop\\Guitar");
-	ProcessWinPty proc;
-	proc.start("git fetch", "");
-
-	std::string text;
-	while (proc.isRunning()) {
-		char tmp[1024];
-		int n = proc.readOutput(tmp, sizeof(tmp));
-		if (n > 0) {
-			std::string s(tmp, n);
-			fprintf(stderr, "%s", s.c_str());
-			text += s;
-		} else {
-			if (text.find("Are you sure you want to continue connecting (yes/no/[fingerprint])?") != std::string::npos) {
-				std::string s = "yes\n";
-				proc.writeInput(s.c_str(), (int)s.size());
-				proc.closeInput();
-				break;
-			}
-			QApplication::processEvents();
-		}
-	}
-	text = {};
-	while (proc.isRunning()) {
-		char tmp[1024];
-		int n = proc.readOutput(tmp, sizeof(tmp));
-		if (n > 0) {
-			std::string s(tmp, n);
-			fprintf(stderr, "%s", s.c_str());
-			text += s;
-		} else {
-			if (!text.empty()) {
-				break;
-			}
-			QApplication::processEvents();
-		}
-	}
-
-
-	proc.stop();
-	std::vector<char> out;
-	proc.readResult(&out);
-	std::string s(out.begin(), out.end());
-	fprintf(stderr, "[%s]\n", s.c_str());
-	exec_conpty_agent();
-#endif
 }
 
 /*

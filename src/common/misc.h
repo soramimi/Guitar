@@ -165,6 +165,8 @@ static inline void append(std::vector<char> *out, std::string_view const &v)
 	append(out, v.data(), v.size());
 }
 
+std::string strip_vt(std::string_view const &s);
+
 } // namespace misc
 
 #endif // MISC_H
