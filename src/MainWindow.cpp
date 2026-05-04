@@ -4845,6 +4845,8 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	std::set<QAction *> switch_to_actions;
 	{
+		QString current_branch = (misc::str)currentBranchName();
+
 		std::vector<QString> local_branches;
 		for (BranchLabel const &label : labels) {
 			if (label.kind == BranchLabel::LocalBranch) {
@@ -4853,8 +4855,14 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 		}
 		if (!local_branches.empty()) {
 			auto *switch_to = menu.addMenu(tr("Switch to"));
-			for (QString const &label : local_branches) {
+			for (QString label : local_branches) {
+				bool enabled = true;
+				if (label == current_branch) { // 現在のブランチは選択できないようにする
+					label = QString("%1 (%2)").arg(label).arg(tr("current"));
+					enabled = false;
+				}
 				QAction *a = switch_to->addAction(label);
+				a->setEnabled(enabled);
 				a->setData(label);
 				switch_to_actions.insert(switch_to_actions.end(), a);
 			}
