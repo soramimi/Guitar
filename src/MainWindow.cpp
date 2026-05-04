@@ -5036,10 +5036,11 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 		if (a == a_save_as) {
 			GitHash id = blobID(item);
 			QString path = getFilePath(item);
-			std::string workingdir = g.workingDir();
-			if (id && !path.isEmpty() && !workingdir.empty()) {
-				QString fullpath = QString::fromStdString(workingdir) / path;
-				if (QMessageBox::question(this, tr("Save as"), tr("Do you want to save the file to \"%1\"?").arg(fullpath)) == QMessageBox::Yes) {
+			QString workingdir = (misc::str)g.workingDir();
+			if (id && !path.isEmpty() && !workingdir.isEmpty()) {
+				QString fullpath = workingdir / path;
+				fullpath = QFileDialog::getSaveFileName(this, tr("Save as"), fullpath);
+				if (fullpath.isEmpty()) {
 					saveBlobAs(id, fullpath);
 				}
 			} else {
