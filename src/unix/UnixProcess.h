@@ -11,31 +11,29 @@ class UnixProcess : public AbstractProcess {
 private:
 	struct Private;
 	Private *m;
+	mutable std::vector<char> stdout_bytes_;
+	mutable std::vector<char> stderr_bytes_;
+	static void parseArgs(std::string const &cmd, std::vector<std::string> *out);
 public:
-	std::vector<char> outbytes;
-	std::vector<char> errbytes;
 
 	UnixProcess();
 	~UnixProcess();
 
-	std::string outstring();
-	std::string errstring();
-
-	static void parseArgs(std::string const &cmd, std::vector<std::string> *out);
-
 	void start(std::string const &command, bool use_input);
 	int wait();
+	void stop();
+	bool isRunning() const;
 	void writeInput(char const *ptr, int len);
 	void closeInput(bool justnow);
+	int getExitCode() const;
+	std::vector<char> const &stdout_bytes() const;
+	std::vector<char> const &stderr_bytes() const;
 
 	static std::optional<std::string> run_and_wait(std::string const &command);
 
+
 	// AbstractProcess interface
 public:
-	std::string outstring() const;
-	std::string errstring() const;
-	void stop();
-	int getExitCode() const;
 };
 
 #endif // UNIXPROCESS_H

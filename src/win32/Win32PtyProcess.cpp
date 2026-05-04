@@ -14,13 +14,20 @@ class OutputReaderThread : public QThread {
 	friend class ::Win32PtyProcess;
 private:
 public:
-	HANDLE handle;
-	std::deque<char> *output_queue = nullptr;
-	std::vector<char> *output_vector = nullptr;
+	HANDLE handle_ = INVALID_HANDLE_VALUE;
+	std::deque<char> *output_queue_ = nullptr;
+	std::vector<char> *output_vector_ = nullptr;
 protected:
 	void run() override;
 public:
 	void start(HANDLE hOutput, std::deque<char> *outq, std::vector<char> *outv);
+	void closeHandle()
+	{
+		if (handle_ != INVALID_HANDLE_VALUE) {
+			CloseHandle(handle_);
+			handle_ = INVALID_HANDLE_VALUE;
+		}
+	}
 };
 
 void OutputReaderThread::run()
@@ -29,20 +36,20 @@ void OutputReaderThread::run()
 	while (1) {
 		if (isInterruptionRequested()) break;
 		DWORD amount = 0;
-		BOOL ret = ReadFile(handle, buf, sizeof(buf), &amount, nullptr);
+		BOOL ret = ReadFile(handle_, buf, sizeof(buf), &amount, nullptr);
 		if (!ret || amount == 0) {
 			break;
 		}
-		output_queue->insert(output_queue->end(), buf, buf + amount);
-		output_vector->insert(output_vector->end(), buf, buf + amount);
+		output_queue_->insert(output_queue_->end(), buf, buf + amount);
+		output_vector_->insert(output_vector_->end(), buf, buf + amount);
 	}
 }
 
 void OutputReaderThread::start(HANDLE hOutput, std::deque<char> *outq, std::vector<char> *outv)
 {
-	handle = hOutput;
-	output_queue = outq;
-	output_vector = outv;
+	handle_ = hOutput;
+	output_queue_ = outq;
+	output_vector_ = outv;
 	QThread::start();
 }
 
@@ -185,7 +192,7 @@ void Win32PtyProcess::run()
 	notifyCompleted();
 }
 
-int Win32PtyProcess::readOutput(char *dstptr, int maxlen)
+int Win32PtyProcess::readOutputStreaming(char *dstptr, int maxlen)
 {
 	int len = output_queue_.size();
 	if (len > maxlen) {
@@ -258,8 +265,12 @@ bool Win32PtyProcess::wait(unsigned long time)
 
 void Win32PtyProcess::stop()
 {
+#if 0 // どちらが良いのか分からない
 	// 標準出力読み出しスレッドを強制終了しないとwinptyプロセスが終了してくれない
 	m->th_output_reader.terminate();
+#else
+	m->th_output_reader.closeHandle();
+#endif
 	// プロセススレッド停止
 	requestInterruption();
 	wait();
@@ -270,11 +281,6 @@ int Win32PtyProcess::getExitCode() const
 	return m->exit_code;
 }
 
-void Win32PtyProcess::readResult(std::vector<char> *out)
-{
-	*out = output_vector_;
-	output_vector_.clear();
-}
 
 
 

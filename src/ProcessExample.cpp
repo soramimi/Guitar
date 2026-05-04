@@ -1,6 +1,6 @@
 
 #include "AbstractProcess.h"
-
+#include "process/MyProcess2.h"
 #include <stdio.h>
 #include "main.h"
 #include <string>
@@ -25,438 +25,6 @@
 #ifndef _WIN32
 #include "unix/UnixProcess.h"
 
-struct ProcessResult {
-	bool ok = false;
-	int exit_code = 0;
-
-	operator bool () const
-	{
-		return ok;
-	}
-};
-
-class ProcessPosix : public AbstractProcess {
-private:
-	std::deque<char> stdout_queue_;
-	std::deque<char> stderr_queue_;
-	std::vector<char> stdout_vector_;
-	std::vector<char> stderr_vector_;
-	std::thread thread_;
-	mutable std::mutex mutex_;
-	std::condition_variable cond_;
-	bool input_ready_ = false;
-	int input_fd_ = -1;
-	int exit_code_ = 128;
-
-	void writeStdOut(char const *buf, size_t len)
-	{
-		stdout_queue_.insert(stdout_queue_.end(), buf, buf + len);
-		stdout_vector_.insert(stdout_vector_.end(), buf, buf + len);
-	}
-	void writeStdErr(char const *buf, size_t len)
-	{
-		stderr_queue_.insert(stderr_queue_.end(), buf, buf + len);
-		stderr_vector_.insert(stderr_vector_.end(), buf, buf + len);
-	}
-
-	std::optional<ProcessResult> run(const std::string &cmd, bool use_input)
-	{
-		int pipe_stdout_fd[2];
-		if (pipe(pipe_stdout_fd) == -1) {
-			return std::nullopt;
-		}
-
-		int pipe_stderr_fd[2];
-		if (pipe(pipe_stderr_fd) == -1) {
-			close(pipe_stdout_fd[0]);
-			close(pipe_stdout_fd[1]);
-			return std::nullopt;
-		}
-
-		int pipe_stdin_fd[2];
-		if (pipe(pipe_stdin_fd) == -1) {
-			close(pipe_stdout_fd[0]);
-			close(pipe_stdout_fd[1]);
-			close(pipe_stderr_fd[0]);
-			close(pipe_stderr_fd[1]);
-			return std::nullopt;
-		}
-
-		pid_t pid = fork();
-		if (pid == -1) {
-			close(pipe_stdout_fd[0]);
-			close(pipe_stdout_fd[1]);
-			close(pipe_stderr_fd[0]);
-			close(pipe_stderr_fd[1]);
-			close(pipe_stdin_fd[0]);
-			close(pipe_stdin_fd[1]);
-			return std::nullopt;
-		}
-
-		if (pid == 0) {
-			// child
-			close(pipe_stdout_fd[0]);
-			dup2(pipe_stdout_fd[1], STDOUT_FILENO);
-			close(pipe_stdout_fd[1]);
-
-			close(pipe_stderr_fd[0]);
-			dup2(pipe_stderr_fd[1], STDERR_FILENO);
-			close(pipe_stderr_fd[1]);
-
-			close(pipe_stdin_fd[1]);
-			dup2(pipe_stdin_fd[0], STDIN_FILENO);
-			close(pipe_stdin_fd[0]);
-
-			std::vector<char *> argv;
-			std::vector<std::string> args;
-			UnixProcess::parseArgs(cmd, &args);
-			for (std::string &s : args) {
-				argv.push_back(s.data());
-			}
-			argv.push_back(nullptr);
-
-			if (!argv.empty()) {
-				execvp(argv[0], argv.data());
-			}
-			_exit(1);
-		}
-
-		// parent
-		close(pipe_stdout_fd[1]);
-		close(pipe_stderr_fd[1]);
-		close(pipe_stdin_fd[0]);
-
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			input_fd_ = pipe_stdin_fd[1];
-			input_ready_ = true;
-		}
-		cond_.notify_all();
-
-		ProcessResult ret;
-
-		if (!use_input) {
-			closeInput(true);
-		}
-
-		int stdout_rd = pipe_stdout_fd[0];
-		int stderr_rd = pipe_stderr_fd[0];
-
-		while (stdout_rd != -1 || stderr_rd != -1) {
-			fd_set fds;
-			FD_ZERO(&fds);
-			int nfds = 0;
-			if (stdout_rd != -1) {
-				FD_SET(stdout_rd, &fds);
-				if (stdout_rd >= nfds) nfds = stdout_rd + 1;
-			}
-			if (stderr_rd != -1) {
-				FD_SET(stderr_rd, &fds);
-				if (stderr_rd >= nfds) nfds = stderr_rd + 1;
-			}
-
-			if (select(nfds, &fds, nullptr, nullptr, nullptr) <= 0) break;
-
-			char buf[256];
-			if (stdout_rd != -1 && FD_ISSET(stdout_rd, &fds)) {
-				ssize_t n = read(stdout_rd, buf, sizeof(buf));
-				if (n > 0) {
-					std::lock_guard<std::mutex> lock(mutex_);
-					writeStdOut(buf, (size_t)n);
-				} else {
-					close(stdout_rd);
-					stdout_rd = -1;
-				}
-			}
-			if (stderr_rd != -1 && FD_ISSET(stderr_rd, &fds)) {
-				ssize_t n = read(stderr_rd, buf, sizeof(buf));
-				if (n > 0) {
-					std::lock_guard<std::mutex> lock(mutex_);
-					writeStdErr(buf, (size_t)n);
-				} else {
-					close(stderr_rd);
-					stderr_rd = -1;
-				}
-			}
-		}
-
-		int status = 0;
-		waitpid(pid, &status, 0);
-		if (WIFEXITED(status)) {
-			ret.exit_code = WEXITSTATUS(status);
-		}
-
-		return ret;
-	}
-public:
-	~ProcessPosix()
-	{
-		closeInput(true);
-		if (thread_.joinable()) {
-			thread_.join();
-		}
-	}
-	bool isRunning() const
-	{
-		return thread_.joinable();
-	}
-	void writeInput(const char *ptr, int len) override
-	{
-		::write(input_fd_, ptr, len);
-	}
-	int readOutput(char *ptr, int len)
-	{
-		int n = stdout_queue_.size();
-		if (n > len) n = len;
-		for (int i = 0; i < n; i++) {
-			ptr[i] = stdout_queue_.front();
-			stdout_queue_.pop_front();
-		}
-		return n;
-	}
-	void start(const std::string &command, bool use_input) override
-	{
-		thread_ = std::thread([&](){
-			auto ret = run(command, use_input);
-			if (ret) {
-				exit_code_ = ret->exit_code;
-			} else {
-				exit_code_ = 128;
-			}
-		});
-		{
-			std::unique_lock<std::mutex> lock(mutex_);
-			cond_.wait(lock, [this]{ return input_ready_; });
-		}
-	}
-	int wait() override
-	{
-		(void)time;
-		closeInput(true);
-		if (thread_.joinable()) {
-			thread_.join();
-			return exit_code_;
-		}
-		return 128;
-	}
-	void stop() override
-	{
-		wait();
-	}
-	int getExitCode() const override
-	{
-		return exit_code_;
-	}
-	void readResult(std::vector<char> *out)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		out->insert(out->end(), stdout_queue_.begin(), stdout_queue_.end());
-		stdout_queue_.clear();
-	}
-
-	std::string outstring() const
-	{
-		std::string ret;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			ret.insert(ret.end(), stdout_vector_.begin(), stdout_vector_.end());
-		}
-		return ret;
-	}
-	std::string errstring() const
-	{
-		std::string ret;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			ret.insert(ret.end(), stderr_vector_.begin(), stderr_vector_.end());
-		}
-		return ret;
-	}
-
-	void closeInput(bool justnow)
-	{
-		if (input_fd_ != -1) {
-			close(input_fd_);
-			input_fd_ = -1;
-		}
-	}
-};
-
-class ProcessPosixPty : public AbstractPtyProcess {
-private:
-	std::deque<char> stdout_queue_;
-	std::deque<char> stderr_queue_;
-	std::vector<char> stdout_vector_;
-	std::vector<char> stderr_vector_;
-	std::thread thread_;
-	mutable std::mutex mutex_;
-	std::condition_variable cond_;
-	bool input_ready_ = false;
-	int input_fd_ = -1;
-	int exit_code_ = 128;
-
-	void writeStdOut(char const *buf, size_t len)
-	{
-		stdout_queue_.insert(stdout_queue_.end(), buf, buf + len);
-		stdout_vector_.insert(stdout_vector_.end(), buf, buf + len);
-	}
-	void writeStdErr(char const *buf, size_t len)
-	{
-		stderr_queue_.insert(stderr_queue_.end(), buf, buf + len);
-		stderr_vector_.insert(stderr_vector_.end(), buf, buf + len);
-	}
-
-	bool exec_posixpty(std::string const &cmd)
-	{
-		std::string ret;
-
-		int master_fd;
-		pid_t pid = forkpty(&master_fd, nullptr, nullptr, nullptr);
-		if (pid == -1) {
-			return false;
-		}
-
-		if (pid == 0) {
-			// child
-
-			std::vector<char *> argv;
-			std::vector<std::string> args;
-			UnixProcess::parseArgs(cmd, &args);
-			for (std::string &s : args) {
-				argv.push_back(s.data());
-			}
-			argv.push_back(nullptr);
-
-			if (!argv.empty()) {
-				execvp(argv[0], argv.data());
-			}
-			_exit(1);
-		}
-
-		// parent
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			input_fd_ = master_fd;
-			input_ready_ = true;
-		}
-		cond_.notify_all();
-
-		char buf[256];
-		ssize_t n;
-		while ((n = read(master_fd, buf, sizeof(buf))) > 0) {
-			std::lock_guard<std::mutex> lock(mutex_);
-			writeStdOut(buf, (size_t)n);
-		}
-		close(master_fd);
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			input_fd_ = -1;
-		}
-
-		waitpid(pid, nullptr, 0);
-
-		if (!stderr_vector_.empty() && stderr_vector_.back() == '\n') stderr_vector_.pop_back();
-		if (!stderr_vector_.empty() && stderr_vector_.back() == '\r') stderr_vector_.pop_back();
-
-		return true;
-	}
-public:
-	bool isRunning() const
-	{
-		return thread_.joinable();
-	}
-	void writeInput(const char *ptr, int len) override
-	{
-		int fd;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			fd = input_fd_;
-		}
-		if (fd != -1) {
-			::write(fd, ptr, len);
-		}
-	}
-	void closeInput()
-	{
-		int fd;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			fd = input_fd_;
-		}
-		if (fd != -1) {
-			char eof_char = 0x04; // Ctrl+D: PTY canonical mode EOF
-			::write(fd, &eof_char, 1);
-		}
-	}
-	int readOutput(char *ptr, int len)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		int n = stdout_queue_.size();
-		if (n > len) n = len;
-		for (int i = 0; i < n; i++) {
-			ptr[i] = stdout_queue_.front();
-			stdout_queue_.pop_front();
-		}
-		return n;
-	}
-	void start(const std::string &cmd, const std::string &env) override
-	{
-		thread_ = std::thread([this, cmd](){
-			if (exec_posixpty(cmd)) {
-
-			}
-		});
-		{
-			std::unique_lock<std::mutex> lock(mutex_);
-			cond_.wait(lock, [this]{ return input_ready_; });
-		}
-	}
-	bool wait(unsigned long time = ULONG_MAX) override
-	{
-		(void)time;
-		closeInput();
-		if (thread_.joinable()) {
-			thread_.join();
-			return true;
-		}
-		return true;
-	}
-	void stop() override
-	{
-		wait();
-	}
-	int getExitCode() const
-	{
-		return 0;
-	}
-	void readResult(std::vector<char> *out)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		out->insert(out->end(), stdout_queue_.begin(), stdout_queue_.end());
-		stdout_queue_.clear();
-	}
-
-	std::string outstring() const
-	{
-		std::string ret;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			ret.insert(ret.end(), stdout_vector_.begin(), stdout_vector_.end());
-		}
-		return ret;
-	}
-	std::string errstring() const
-	{
-		std::string ret;
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			ret.insert(ret.end(), stderr_vector_.begin(), stderr_vector_.end());
-		}
-		return ret;
-	}
-};
-
-
 
 #else
 
@@ -479,6 +47,7 @@ private:
 	std::condition_variable cond_;
 	std::deque<char> output_queue_; // for log
 	std::vector<char> output_vector_; // for result
+	std::vector<char> stdout_bytes_;
 	PROCESS_INFORMATION pi_ = {};
 	DWORD exit_code_ = 128;
 	void writeOutput(char const *buf, size_t len)
@@ -572,6 +141,7 @@ public:
 			thread_.join();
 			GetExitCodeProcess(pi_.hProcess, (DWORD *)&exit_code_);
 		}
+		stdout_bytes_ = output_vector_;
 		return 0;
 	}
 	void writeInput(const char *ptr, int len)
@@ -592,6 +162,19 @@ public:
 	int getExitCode() const
 	{
 		return (int)exit_code_;
+	}
+
+	bool isRunning() const
+	{
+		return thread_.joinable();
+	}
+	const std::vector<char> &stdout_bytes() const
+	{
+		return stdout_bytes_;
+	}
+	const std::vector<char> &stderr_bytes() const
+	{
+		return {};
 	}
 };
 
@@ -923,7 +506,7 @@ public:
 			WriteFile(hPipeInWrite_, ptr, (DWORD)len, &n, nullptr);
 		}
 	}
-	int readOutput(char *ptr, int len) override { return 0; }
+	// int readOutput(char *ptr, int len) override { return 0; }
 	void start(const std::string &cmd, const std::string &env) override
 	{
 		thread_ = std::thread([&](std::string const &cmd){
@@ -946,10 +529,10 @@ public:
 	{
 		return (int)exit_code_;
 	}
-	void readResult(std::vector<char> *out) override
-	{
-		*out = std::move(output_vector_);
-	}
+	// void readResult(std::vector<char> *out) override
+	// {
+	// 	*out = std::move(output_vector_);
+	// }
 	void closeInput()
 	{
 		if (hPipeInWrite_ != INVALID_HANDLE_VALUE) {

@@ -520,7 +520,7 @@ void MainWindow::updatePtyPocessLog(bool processevents)
 {
 	while (1) {
 		char tmp[1024];
-		int len = getPtyProcess()->readOutput(tmp, sizeof(tmp));
+		int len = getPtyProcess()->readOutputStreaming(tmp, sizeof(tmp));
 		if (len < 1) break;
 		emitWriteLog({tmp, len}, LogChannel::PTY);
 		if (processevents) {
@@ -6367,8 +6367,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	}
 	QString line;
 	{
-		std::vector<char> v;
-		getPtyProcess()->readResult(&v);
+		std::vector<char> const &v = getPtyProcess()->stdout_bytes();
 		if (!v.empty()) {
 			line = QString::fromUtf8(&v[0], (int)v.size()).trimmed();
 		}

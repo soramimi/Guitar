@@ -280,6 +280,8 @@ std::string toQString(const std::vector<char> &vec)
 struct Win32Process::Private {
 	std::mutex mutex;
 	Win32ProcessThread th;
+	std::vector<char> stdout_bytes;
+	std::vector<char> stderr_bytes;
 };
 
 Win32Process::Win32Process()
@@ -306,24 +308,29 @@ int Win32Process::wait()
 	m->th.wait();
 
 	// move semanticsを使用してコピーを避ける
-	outbytes.clear();
-	errbytes.clear();
-	outbytes.insert(outbytes.end(), m->th.outq.begin(), m->th.outq.end());
-	errbytes.insert(errbytes.end(), m->th.errq.begin(), m->th.errq.end());
+	m->stdout_bytes.clear();
+	m->stderr_bytes.clear();
+	m->stdout_bytes.insert(m->stdout_bytes.end(), m->th.outq.begin(), m->th.outq.end());
+	m->stderr_bytes.insert(m->stderr_bytes.end(), m->th.errq.begin(), m->th.errq.end());
 	int exit_code = m->th.exit_code;
 	m->th.reset();
 	return exit_code;
 }
 
-std::string Win32Process::outstring() const
+bool Win32Process::isRunning() const
 {
-	return toQString(outbytes);
+	return m->th.thread.joinable();
 }
 
-std::string Win32Process::errstring() const
-{
-	return toQString(errbytes);
-}
+// std::string Win32Process::stdout_bytes() const
+// {
+// 	return toQString(outbytes);
+// }
+
+// std::string Win32Process::stderr_bytes() const
+// {
+// 	return toQString(errbytes);
+// }
 
 void Win32Process::writeInput(char const *ptr, int len)
 {
@@ -347,4 +354,14 @@ void Win32Process::stop()
 int Win32Process::getExitCode() const
 {
 	return (int)m->th.exit_code;
+}
+
+const std::vector<char> &Win32Process::stdout_bytes() const
+{
+	return m->stdout_bytes;
+}
+
+const std::vector<char> &Win32Process::stderr_bytes() const
+{
+	return m->stderr_bytes;
 }

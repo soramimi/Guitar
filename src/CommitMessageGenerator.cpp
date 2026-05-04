@@ -5,9 +5,12 @@
 #include "Profile.h"
 #include "common/joinpath.h"
 #include "common/jstream.h"
+#include "common/q/helper.h"
 #include "common/fmt.h"
 #include "curlclient.h"
 #include "webclient.h"
+
+#include <QFileInfo>
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct CommitMessageResult {
@@ -677,12 +680,20 @@ static std::string _diff_head(GitRunner g)
 			while (1) {
 				size_t i = index++;
 				if (i >= names.size()) break;
-				std::string name = names[i];
-				if (name.empty()) continue;
-				std::string file(g.workingDir() / name);
-				std::string mimetype = global->mimetype_by_file(file);
-				if (CommitMessageGenerator::accept_file_diff(name, mimetype)) {
-					diffs[i] = g.diff_full_index_head_file(file);
+				std::string path = names[i];
+				if (path.empty()) continue;
+				std::string working_dir_path(g.workingDir() / path);
+				std::string mimetype = global->mimetype_by_file(working_dir_path);
+				std::string name = misc::filename(path);
+				if (name == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
+				if (CommitMessageGenerator::accept_file_diff(path, mimetype)) {
+					std::string diff = g.diff_full_index_head_file(working_dir_path);
+					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diffs[i].size());
+					if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
+						logprintf(LOG_DEFAULT, "warning: diff for %s is too large, skipping\n", path.c_str());
+						continue;
+					}
+					diffs[i] = diff;
 				}
 			}
 		}, g.dup());

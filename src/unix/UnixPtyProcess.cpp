@@ -82,7 +82,7 @@ void UnixPtyProcess::writeInput(char const *ptr, int len)
 	(void)r;
 }
 
-int UnixPtyProcess::readOutput(char *ptr, int len)
+int UnixPtyProcess::readOutputStreaming(char *ptr, int len)
 {
 	QMutexLocker lock(&m->mutex);
 	int n = output_queue_.size();
@@ -107,7 +107,13 @@ void UnixPtyProcess::start(std::string const &cmd, std::string const &env)
 
 bool UnixPtyProcess::wait_(unsigned long time)
 {
-	return QThread::wait(time);
+	if (QThread::wait(time)) {
+		QMutexLocker lock(&m->mutex);
+		stdout_bytes_ = output_vector_;
+		// stderr_bytes_ =
+		return true;
+	}
+	return false;
 }
 
 bool UnixPtyProcess::wait(unsigned long time)
@@ -235,9 +241,5 @@ int UnixPtyProcess::getExitCode() const
 	return m->exit_code;
 }
 
-void UnixPtyProcess::readResult(std::vector<char> *out)
-{
-	*out = output_vector_;
-	output_vector_.clear();
-}
+
 

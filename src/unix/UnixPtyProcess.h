@@ -17,12 +17,15 @@ public:
 	~UnixPtyProcess() override;
 	bool isRunning() const override;
 	void writeInput(char const *ptr, int len) override;
-	int readOutput(char *ptr, int len) override;
+	int readOutputStreaming(char *ptr, int len) override;
 	void start(const std::string &cmd, const std::string &env) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
 	int getExitCode() const override;
-	void readResult(std::vector<char> *out) override;
+	// std::vector<char> const &readResult() override
+	// {
+	// 	return stdout_bytes_;
+	// }
 };
 
 #endif // UNIXPTYPROCESS_H

@@ -271,7 +271,6 @@ struct UnixProcess::Private {
 UnixProcess::UnixProcess()
 	: m(new Private)
 {
-
 }
 
 UnixProcess::~UnixProcess()
@@ -338,10 +337,10 @@ int UnixProcess::wait()
 {
 	m->th.wait();
 
-	outbytes.clear();
-	errbytes.clear();
-	if (!m->th.outq.empty()) outbytes.insert(outbytes.end(), m->th.outq.begin(), m->th.outq.end());
-	if (!m->th.errq.empty()) errbytes.insert(errbytes.end(), m->th.errq.begin(), m->th.errq.end());
+	stdout_bytes_.clear();
+	stderr_bytes_.clear();
+	if (!m->th.outq.empty()) stdout_bytes_.insert(stdout_bytes_.end(), m->th.outq.begin(), m->th.outq.end());
+	if (!m->th.errq.empty()) stderr_bytes_.insert(stderr_bytes_.end(), m->th.errq.begin(), m->th.errq.end());
 	int exit_code = m->th.exit_code;
 	m->th.reset();
 	return exit_code;
@@ -361,20 +360,14 @@ void UnixProcess::closeInput(bool justnow)
 	}
 }
 
-std::string UnixProcess::outstring()
+std::vector<char> const &UnixProcess::stdout_bytes() const
 {
-	if (outbytes.empty()) return std::string();
-	std::vector<char> v;
-	v.insert(v.end(), outbytes.begin(), outbytes.end());
-	return std::string(&v[0], v.size());
+	return stdout_bytes_;
 }
 
-std::string UnixProcess::errstring()
+std::vector<char> const &UnixProcess::stderr_bytes() const
 {
-	if (errbytes.empty()) return std::string();
-	std::vector<char> v;
-	v.insert(v.end(), errbytes.begin(), errbytes.end());
-	return std::string(&v[0], v.size());
+	return stderr_bytes_;
 }
 
 std::optional<std::string> UnixProcess::run_and_wait(const std::string &command)
@@ -382,22 +375,19 @@ std::optional<std::string> UnixProcess::run_and_wait(const std::string &command)
 	UnixProcess proc;
 	proc.start(command, false);
 	proc.wait();
-	return proc.outstring();
-}
-
-std::string UnixProcess::outstring() const
-{
-	return std::string(outbytes.data(), outbytes.size());
-}
-
-std::string UnixProcess::errstring() const
-{
-	return std::string(errbytes.data(), errbytes.size());
+	std::vector<char> v = proc.stdout_bytes();
+	if (v.empty()) return std::nullopt;
+	return std::string(v.data(), v.size());
 }
 
 void UnixProcess::stop()
 {
 	wait();
+}
+
+bool UnixProcess::isRunning() const
+{
+	return m->th.thread.joinable();
 }
 
 int UnixProcess::getExitCode() const

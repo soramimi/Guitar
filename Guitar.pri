@@ -316,6 +316,8 @@ HEADERS += \
 	$$PWD/src/common/q/DateTime.h \
 	$$PWD/src/common/q/DirIterator.h \
 	$$PWD/src/common/qmisc.h \
+	$$PWD/src/process/MyProcess2.h \
+	$$PWD/src/process/ProcessPosix.h \
 	src/AboutDialog.h \
 	src/AbstractGitSession.h \
 	src/AbstractProcess.h \
@@ -582,10 +584,12 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
+		$$PWD/src/process/MyProcess2.cpp \
 		src/unix/UnixUtil.cpp \
 		src/unix/UnixProcess.cpp \
 		src/unix/UnixPtyProcess.cpp
 	HEADERS += \
+		$$PWD/src/process/ProcessPosix.cpp \
 		src/unix/UnixUtil.h \
 		src/unix/UnixProcess.h \
 		src/unix/UnixPtyProcess.h

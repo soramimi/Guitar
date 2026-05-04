@@ -64,7 +64,8 @@ std::vector<std::string> splitLines(std::string_view const &str, bool keep_newli
 std::vector<std::string_view> splitWords(std::string_view const &text);
 QStringList splitWords(QString const &text);
 std::vector<std::string_view> split(std::string_view const &sv, char sep);
-QString getFileName(QString const &path);
+QString filename(QString const &path);
+std::string filename(std::string const &path);
 bool starts_with(const std::string_view &str, const std::string_view &with);
 bool starts_with(const std::string_view &str, char with);
 bool ends_with(const std::string_view &str, const std::string_view &with);

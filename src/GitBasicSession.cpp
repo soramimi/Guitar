@@ -97,18 +97,21 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 			exit_code = proc.wait();
 
 			if (opt.errout) {
-				result.set_output(proc.errbytes);
+				result.set_output(proc.stderr_bytes());
 			} else {
-				if (!proc.errbytes.empty()) {
-					QString s = QString::fromStdString(proc.errstring());
+				if (!proc.stderr_bytes().empty()) {
+					std::vector<char> v = proc.stderr_bytes();
+					QString s = QString::fromUtf8(v.data(), int(v.size()));
 					if (!s.endsWith('\n')) {
 						s += '\n';
 					}
 					global->writeLog(s);
 				}
-				result.set_output(proc.outbytes);
+				result.set_output(proc.stdout_bytes());
 			}
-			result.set_error_message(proc.errstring());
+			std::vector<char> v = proc.stderr_bytes();
+			std::string s(v.data(), v.size());
+			result.set_error_message(s);
 
 			if (exit_code == 0) {
 				if (opt.use_cache) {

@@ -257,7 +257,7 @@ std::vector<std::string_view> misc::split(std::string_view const &sv, char sep)
  * @param path ファイル名を抽出する対象のパス
  * @return 抽出されたファイル名
  */
-QString misc::getFileName(QString const &path)
+QString misc::filename(QString const &path)
 {
 	int i = path.lastIndexOf('/');
 	int j = path.lastIndexOf('\\');
@@ -266,6 +266,12 @@ QString misc::getFileName(QString const &path)
 		return path.mid(i + 1);
 	}
 	return path;
+}
+
+std::string misc::filename(std::string const &path)
+{
+	auto it = path.find_last_of("/\\");
+	return (it == std::string::npos) ? path : path.substr(it + 1);
 }
 
 /**
