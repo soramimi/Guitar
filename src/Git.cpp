@@ -1335,9 +1335,19 @@ void Git::rebaseBranch(std::string const &name)
 	git("rebase " + name);
 }
 
-void Git::rebase_abort()
+bool Git::rebase_continue()
 {
-	git("rebase --abort");
+	return (bool)git("rebase --continue");
+}
+
+bool Git::rebase_quit()
+{
+	return (bool)git("rebase --quit");
+}
+
+bool Git::rebase_abort()
+{
+	return (bool)git("rebase --abort");
 }
 
 std::vector<std::string> Git::getRemotes()
@@ -1643,11 +1653,6 @@ std::vector<char> Git::blame(std::string const &path)
 		return toByteArray(result);
 	}
 	return {};
-}
-
-bool Git::rebase_quit()
-{
-	return (bool)git("rebase --quit");
 }
 
 std::vector<Git::RemoteInfo> Git::ls_remote()

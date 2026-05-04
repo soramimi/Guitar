@@ -276,9 +276,19 @@ void GitRunner::rebaseBranch(std::string const &name)
 	gitptr()->rebaseBranch(name);
 }
 
-void GitRunner::rebase_abort()
+bool GitRunner::rebase_continue()
 {
-	gitptr()->rebase_abort();
+	return gitptr()->rebase_continue();
+}
+
+bool GitRunner::rebase_quit()
+{
+	return gitptr()->rebase_quit();
+}
+
+bool GitRunner::rebase_abort()
+{
+	return gitptr()->rebase_abort();
 }
 
 GitCommitItemList GitRunner::log_all(const GitHash &id, int maxcount)
@@ -527,11 +537,6 @@ bool GitRunner::reflog(std::vector<GitReflogItem> *out, int maxcount)
 std::vector<char> GitRunner::blame(std::string const &path)
 {
 	return gitptr()->blame(path);
-}
-
-bool GitRunner::rebase_quit()
-{
-	return gitptr()->rebase_quit();
 }
 
 std::optional<std::vector<GitFileItem>> GitRunner::ls(std::string const &path)

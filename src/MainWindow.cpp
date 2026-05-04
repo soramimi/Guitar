@@ -4450,11 +4450,19 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 	}
 }
 
+void MainWindow::on_action_rebase_continue_triggered()
+{
+	git().rebase_continue();
+}
+
+void MainWindow::on_action_rebase_quit_triggered()
+{
+	git().rebase_quit();
+}
+
 void MainWindow::on_action_rebase_abort_triggered()
 {
-	doGitCommand([&](GitRunner g){
-		g.rebase_abort();
-	});
+	git().rebase_abort();
 }
 
 void MainWindow::cherrypick(GitCommitItem const *commit)
@@ -7413,5 +7421,7 @@ void MainWindow::test()
 {
 	process_test();
 }
+
+
 
 

@@ -1065,7 +1065,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>21</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1132,6 +1132,14 @@
      <addaction name="separator"/>
      <addaction name="action_stash_drop"/>
     </widget>
+    <widget class="QMenu" name="menuRebase">
+     <property name="title">
+      <string>Rebase</string>
+     </property>
+     <addaction name="action_rebase_continue"/>
+     <addaction name="action_rebase_quit"/>
+     <addaction name="action_rebase_abort"/>
+    </widget>
     <addaction name="action_add_repository"/>
     <addaction name="separator"/>
     <addaction name="action_repository_status"/>
@@ -1141,6 +1149,7 @@
     <addaction name="action_repo_jump"/>
     <addaction name="action_repo_jump_to_head"/>
     <addaction name="action_repo_checkout"/>
+    <addaction name="menuRebase"/>
     <addaction name="menuStash"/>
     <addaction name="action_delete_branch"/>
     <addaction name="action_delete_remote_branch"/>
@@ -1780,7 +1789,10 @@
   </action>
   <action name="action_rebase_abort">
    <property name="text">
-    <string>&amp;Rebase --abort</string>
+    <string>Rebase abort</string>
+   </property>
+   <property name="toolTip">
+    <string>rebase --abort</string>
    </property>
   </action>
   <action name="action_show_avatars">
@@ -1816,6 +1828,22 @@
    </property>
    <property name="toolTip">
     <string>Restart trace logger</string>
+   </property>
+  </action>
+  <action name="action_rebase_continue">
+   <property name="text">
+    <string>Rebase continue</string>
+   </property>
+   <property name="toolTip">
+    <string>rebase --continue</string>
+   </property>
+  </action>
+  <action name="action_rebase_quit">
+   <property name="text">
+    <string>Rebase quit</string>
+   </property>
+   <property name="toolTip">
+    <string>rebase --quit</string>
    </property>
   </action>
  </widget>

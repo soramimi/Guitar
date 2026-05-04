@@ -177,7 +177,9 @@ public:
 	bool checkout_detach(std::string const &id);
 
 	void rebaseBranch(const std::string &name);
-	void rebase_abort();
+	bool rebase_continue();
+	bool rebase_abort();
+	bool rebase_quit();
 
 	bool isValidWorkingCopy(const std::string &dir) const;
 	std::string diff_to_file(const std::string &old_id, const std::string &path);
@@ -240,7 +242,7 @@ public:
 
 	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
 	std::optional<std::vector<char>> readfile(std::string const &path);
-	bool rebase_quit();
+
 };
 
 struct NamedCommitItem {

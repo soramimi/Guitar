@@ -93,7 +93,9 @@ public:
 	bool checkout_detach(std::string const &id);
 
 	void rebaseBranch(const std::string &name);
-	void rebase_abort();
+	bool rebase_continue();
+	bool rebase_quit();
+	bool rebase_abort();
 
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
 	GitCommitItemList log_file(const std::string &path, int maxcount);
@@ -151,8 +153,6 @@ public:
 
 	bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
-
-	bool rebase_quit();
 
 	std::optional<std::vector<GitFileItem>> ls(const std::string &path);
 	std::optional<std::vector<char>> readfile(const std::string &path);

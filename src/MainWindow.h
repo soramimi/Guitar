@@ -557,7 +557,6 @@ private slots:
 
 	void onRemoteInfoChanged();
 	void onShowStatusInfo(StatusInfo const &info);
-	void on_action_rebase_abort_triggered();
 
 	void onShowFileList(FileListType panel_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
@@ -569,6 +568,11 @@ private slots:
 	void on_action_restart_trace_logger_triggered();
 
 	void on_action_branch_triggered();
+
+	void on_action_rebase_continue_triggered();
+	void on_action_rebase_quit_triggered();
+	void on_action_rebase_abort_triggered();
+
 
 signals:
 	void signalUpdateCommitLog();
