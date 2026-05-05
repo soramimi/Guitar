@@ -254,36 +254,10 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 			if (0) {
 				w.number("temperature", temperature_); // deprecated
 			}
-			enum class ReasoningEffort {
-				None,
-				Low,
-				Medium,
-				High,
-				XHigh,
-				Undefined = -1
-			};
-			constexpr ReasoningEffort reasoning_effort_level = ReasoningEffort::Undefined;
-			char const *reasoning_effort_symbol = nullptr;
-			switch (reasoning_effort_level) {
-			case ReasoningEffort::None:
-				reasoning_effort_symbol = "none";
-				break;
-			case ReasoningEffort::Low:
-				reasoning_effort_symbol = "low";
-				break;
-			case ReasoningEffort::Medium:
-				reasoning_effort_symbol = "medium";
-				break;
-			case ReasoningEffort::High:
-				reasoning_effort_symbol = "high";
-				break;
-			case ReasoningEffort::XHigh:
-				reasoning_effort_symbol = "xhigh";
-				break;
-			}
-			if (reasoning_effort_symbol) {
+			char const *reasoning_effort = model.reasoning_effort();
+			if (reasoning_effort) {
 				w.object("reasoning", [&](){
-					w.string("effort", reasoning_effort_symbol);
+					w.string("effort", reasoning_effort);
 				});
 			}
 			constexpr int format = 0;

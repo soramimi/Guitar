@@ -85,6 +85,18 @@ struct Model {
 	void operator = (std::string const &) = delete;
 
 	void parse_model(std::string const &name);
+	char const *reasoning_effort() const
+	{
+#if 0
+		return "none";
+		return "low";
+		return "medium";
+		return "high";
+		return "xhigh";
+		return "medium";
+#endif
+		return nullptr; // default
+	}
 
 	AI provider_id() const
 	{
