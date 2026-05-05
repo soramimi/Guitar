@@ -20,7 +20,7 @@ public:
 	bool isRunning() const override;
 	int readOutputStreaming(char *dstptr, int maxlen) override;
 	void writeInput(char const *ptr, int len) override;
-	void start(std::string const &cmdline, std::string const &env) override;
+	void start(std::string const &cmdline, std::string const &env, bool use_input) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
 	int getExitCode() const override;

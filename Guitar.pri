@@ -312,6 +312,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/FileTypeDetector.h \
+	$$PWD/src/ProcessExample.h \
 	$$PWD/src/common/fmt.h \
 	$$PWD/src/common/q/DateTime.h \
 	$$PWD/src/common/q/DirIterator.h \

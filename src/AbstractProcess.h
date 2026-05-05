@@ -5,6 +5,8 @@
 #include <QVariant>
 #include <deque>
 #include <functional>
+#include <mutex>
+#include <condition_variable>
 
 class QString;
 
@@ -28,6 +30,8 @@ public:
 
 class AbstractPtyProcess {
 protected:
+	std::mutex mutex_;
+	std::condition_variable cond_;
 	QString change_dir_;
 	QVariant user_data_;
 	std::deque<char> output_queue_; // for log
@@ -69,14 +73,14 @@ public:
 		return stderr_bytes_;
 	}
 
-	virtual void start(std::string const &cmd, std::string const &env) = 0;
+	virtual void start(std::string const &cmd, std::string const &env, bool use_input) = 0;
 	virtual bool wait(unsigned long time = ULONG_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool isRunning() const = 0;
 	virtual int getExitCode() const = 0;
 	virtual void writeInput(char const *ptr, int len) = 0;
 
-	virtual int readOutputStreaming(char *ptr, int len) = 0; // リアルタイムに読む用
+	virtual int readOutputStreaming(char *ptr, int len) = 0;
 };
 
 #endif // ABSTRACTPROCESS_H

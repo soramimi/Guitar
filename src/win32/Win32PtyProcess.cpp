@@ -152,7 +152,12 @@ void Win32PtyProcess::run()
 		memcpy(envbuf.data(), env.utf16(), sizeof(wchar_t) * env.size());
 	}
 
-	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, (wchar_t const *)program.utf16(), (wchar_t const *)cmd.utf16(), nullptr, envbuf.empty() ? nullptr : envbuf.data(), nullptr);
+	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN,
+															   (wchar_t const *)program.utf16(),
+															   (wchar_t const *)cmd.utf16(),
+															   nullptr,
+															   envbuf.empty() ? nullptr : envbuf.data(),
+															   nullptr);
 	BOOL spawnSuccess = winpty_spawn(pty, spawn_cfg, &m->hProcess, nullptr, nullptr, nullptr);
 
 	bool ok = false;
@@ -245,8 +250,9 @@ void Win32PtyProcess::writeInput(char const *ptr, int len)
 	}
 }
 
-void Win32PtyProcess::start(std::string const &cmdline, std::string const &env)
+void Win32PtyProcess::start(std::string const &cmdline, std::string const &env, bool use_input)
 {
+	(void)use_input;
 	if (isRunning()) return;
 	m->command = cmdline;
 	m->env = env;

@@ -7435,10 +7435,20 @@ void MainWindow::on_action_branch_triggered()
 
 }
 
+void process_test();
 
 
 void MainWindow::test()
 {
+#if 0
+	Win32Process proc;
+	proc.start("git --version", false);
+	proc.wait();
+	std::string s = (misc::str)proc.stdout_bytes();
+	fprintf(stderr, "%s\n", s.c_str());
+#else
+	process_test();
+#endif
 }
 
 

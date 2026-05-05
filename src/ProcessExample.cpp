@@ -5,8 +5,6 @@
 #include "main.h"
 #include <string>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <optional>
 #include <QElapsedTimer>
 #include "common/misc.h"
@@ -131,9 +129,9 @@ public:
 	}
 	void start(const std::string &command, bool use_input)
 	{
-		thread_ = std::thread([&](){
+		thread_ = std::thread([&](const std::string &command, bool use_input){
 			exec_win(command, use_input);
-		});
+		}, command, use_input);
 	}
 	int wait()
 	{
@@ -182,14 +180,12 @@ public:
 class ProcessWinPty : public AbstractPtyProcess {
 private:
 	std::thread thread_;
-	std::mutex mutex_;
-	std::condition_variable cond_;
 	int input_fd_ = -1;
 	HANDLE hConout_ = INVALID_HANDLE_VALUE;
 	HANDLE hInput_ = INVALID_HANDLE_VALUE;
 	int exit_code_ = 128;
 
-	std::string exec_winpty(const std::string &cmd, bool use_input)
+	std::string exec_winpty(const std::string &cmd, const std::string &env, bool use_input)
 	{
 		std::string ret;
 		winpty_error_ptr_t err = nullptr;
@@ -209,14 +205,19 @@ private:
 
 		std::wstring wcmd = convert_str_to_wstr(cmd);
 
-		winpty_spawn_config_t *scfg = winpty_spawn_config_new(
-										  WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN,
-										  nullptr,
-										  wcmd.data(),
-										  nullptr,
-										  nullptr,
-										  &err
-										  );
+		std::wstring wenv = convert_str_to_wstr(env);
+		std::vector<wchar_t> envbuf;
+		if (!env.empty()) {
+			envbuf.resize(wenv.size() + 1);
+			memcpy(envbuf.data(), env.c_str(), sizeof(wchar_t) * env.size());
+		}
+
+		winpty_spawn_config_t *scfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN,
+															  nullptr,
+															  wcmd.data(),
+															  nullptr,
+															  envbuf.empty() ? nullptr : envbuf.data(),
+															  &err);
 		if (!scfg) {
 			winpty_error_free(err);
 			winpty_free(wp);
@@ -246,8 +247,6 @@ private:
 			winpty_free(wp);
 			return ret;
 		}
-
-
 
 		if (hConout_ != INVALID_HANDLE_VALUE) {
 			char buf[256];
@@ -313,28 +312,19 @@ public:
 			}
 		}
 	}
-	int readOutput(char *ptr, int len)
+	void start(const std::string &cmd, std::string const &env, bool use_input)
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		int n = output_queue_.size();
-		if (n > len) n = len;
-		for (int i = 0; i < n; i++) {
-			ptr[i] = output_queue_.front();
-			output_queue_.pop_front();
-		}
-		return n;
-	}
-	void start(const std::string &cmd, const std::string &env)
-	{
-		thread_ = std::thread([&](std::string const &cmd){
-			exec_winpty(cmd, true);
-		}, cmd);
+		thread_ = std::thread([&](std::string const &cmd, std::string const &env, bool use_input){
+			exec_winpty(cmd, env, use_input);
+		}, cmd, env, use_input);
 	}
 	bool wait(unsigned long time = ULONG_MAX)
 	{
 		closeInput();
 		if (thread_.joinable()) {
 			thread_.join();
+			stdout_bytes_ = output_vector_;
+			stderr_bytes_ = stderr_bytes_;
 			return true;
 		}
 		return false;
@@ -362,6 +352,18 @@ public:
 			CloseHandle(hInput_);
 			hInput_ = INVALID_HANDLE_VALUE;
 		}
+	}
+
+	int readOutputStreaming(char *ptr, int len) override
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		int n = output_queue_.size();
+		if (n > len) n = len;
+		for (int i = 0; i < n; i++) {
+			ptr[i] = output_queue_.front();
+			output_queue_.pop_front();
+		}
+		return n;
 	}
 };
 
@@ -446,13 +448,16 @@ private:
 		PROCESS_INFORMATION pi = {};
 
 		std::wstring wcmd = convert_str_to_wstr(cmd);
-		BOOL ok = CreateProcessW(
-			nullptr, wcmd.data(),
-			nullptr, nullptr,
-			TRUE, 0,
-			nullptr, nullptr,
-			&si, &pi
-		);
+		BOOL ok = CreateProcessW(nullptr, wcmd.data(),
+								 nullptr,
+								 nullptr,
+								 TRUE,
+								 CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+								 nullptr,
+								 nullptr,
+								 &si,
+								 &pi);
+
 		if (hStdinRead) {
 			CloseHandle(hStdinRead);
 		}
@@ -474,8 +479,6 @@ private:
 		char buf[256];
 		DWORD n;
 		while (ReadFile(hReadPipe, buf, sizeof(buf), &n, nullptr) && n > 0) {
-			// ::write(1, buf, n);
-			// ret.append(buf, n);
 			writeOutput(buf, n);
 		}
 		CloseHandle(hReadPipe);
@@ -498,6 +501,13 @@ private:
 		return true;
 	}
 public:
+	void closeInput()
+	{
+		if (hPipeInWrite_ != INVALID_HANDLE_VALUE) {
+			CloseHandle(hPipeInWrite_);
+			hPipeInWrite_ = INVALID_HANDLE_VALUE;
+		}
+	}
 	bool isRunning() const override { return false; }
 	void writeInput(const char *ptr, int len) override
 	{
@@ -506,39 +516,41 @@ public:
 			WriteFile(hPipeInWrite_, ptr, (DWORD)len, &n, nullptr);
 		}
 	}
-	// int readOutput(char *ptr, int len) override { return 0; }
-	void start(const std::string &cmd, const std::string &env) override
+	void start(const std::string &cmd, std::string const &env, bool use_input) override
 	{
-		thread_ = std::thread([&](std::string const &cmd){
-			exec_win_conpty(cmd, env, true);
-		}, cmd);
+		thread_ = std::thread([&](std::string const &cmd, std::string const &env, bool use_input){
+			exec_win_conpty(cmd, env, use_input);
+		}, cmd, env, use_input);
 	}
 	bool wait(unsigned long time = ULONG_MAX) override
 	{
 		closeInput();
 		if (thread_.joinable()) {
 			thread_.join();
+			stdout_bytes_ = output_vector_;
+			stderr_bytes_ = {};
 			return true;
 		}
 		return false;
 	}
 	void stop() override
 	{
+		wait();
 	}
 	int getExitCode() const override
 	{
 		return (int)exit_code_;
 	}
-	// void readResult(std::vector<char> *out) override
-	// {
-	// 	*out = std::move(output_vector_);
-	// }
-	void closeInput()
+	virtual int readOutputStreaming(char *ptr, int len)
 	{
-		if (hPipeInWrite_ != INVALID_HANDLE_VALUE) {
-			CloseHandle(hPipeInWrite_);
-			hPipeInWrite_ = INVALID_HANDLE_VALUE;
+		std::lock_guard<std::mutex> lock(mutex_);
+		int n = output_queue_.size();
+		if (n > len) n = len;
+		for (int i = 0; i < n; i++) {
+			ptr[i] = output_queue_.front();
+			output_queue_.pop_front();
 		}
+		return n;
 	}
 };
 
@@ -587,8 +599,19 @@ bool exec_conpty_agent()
 
 // experiment for process execution
 
+#include "common/str.h"
+#include "win32/Win32PtyProcess.h"
+
 void process_test()
 {
+	// ProcessWinPty proc;
+	Win32PtyProcess proc;
+	// ProcessWinConPTY proc;
+	proc.start("git --version", {}, false);
+	// proc.stop();
+	proc.wait();
+	std::string s = (misc::str)proc.stdout_bytes();
+	fprintf(stderr, "%s\n", s.c_str());
 }
 
 /*

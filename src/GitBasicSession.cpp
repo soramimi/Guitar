@@ -81,7 +81,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 		}
 
 		if (opt.pty) {
-			opt.pty->start(cmd.toStdString(), env.toStdString());
+			opt.pty->start(cmd.toStdString(), env.toStdString(), true);
 		} else {
 			if (opt.use_cache) {
 				auto const *a = findFromCommandCache(cmd);
