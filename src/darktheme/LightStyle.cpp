@@ -58,7 +58,18 @@ void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor
 
 void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 {
+	QPen pen;
 	QColor color = selectionColor();
+	if (focus) {
+		pen = {Qt::black, 1};
+	} else {
+		QColor gray(224, 224, 224);
+		int r = (color.red() + gray.red()) / 2;
+		int g = (color.green() + gray.green()) / 2;
+		int b = (color.blue() + gray.blue()) / 2;
+		color = QColor(r, g, b);
+		pen = Qt::NoPen;
+	}
 
 	int x, y, w, h;
 	x = rect.x();
@@ -67,7 +78,7 @@ void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 	h = rect.height();
 
 	p->setBrush(color);
-	p->setPen(QPen(Qt::black, 1));
+	p->setPen(pen);
 	p->drawRect(x, y, w - 1, h - 1);
 }
 

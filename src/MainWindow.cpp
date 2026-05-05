@@ -697,7 +697,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
+				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
 				if (shift && centralWidget()->isAncestorOf(qApp->focusWidget())) {
+					qApp->focusWidget()->clearFocus();
 					ui->treeWidget_repos->setFocus();
 					return true;
 				}
@@ -6195,7 +6197,6 @@ void MainWindow::clearAllFilters(int select_row)
 {
 	if (global->incremental_search_text.isEmpty()) return;
 
-	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
 	clearFilterText(select_row);
 	updateStatusBarText();
 }
