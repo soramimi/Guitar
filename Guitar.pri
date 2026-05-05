@@ -50,6 +50,7 @@ INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
 INCLUDEPATH += $$PWD/IncrementalSearch/mecab/mecab/src/
+INCLUDEPATH += $$PWD/filetype/src/
 
 msvc:INCLUDEPATH += $$PWD/misc/winpty/include
 msvc:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi

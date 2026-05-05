@@ -1,7 +1,7 @@
 #ifndef WIN32PTYPROCESS_H
 #define WIN32PTYPROCESS_H
 
-#include <AbstractProcess.h>
+#include "../AbstractProcess.h"
 #include <QString>
 #include <QThread>
 

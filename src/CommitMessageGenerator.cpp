@@ -1,5 +1,4 @@
 #include "CommitMessageGenerator.h"
-#include "ApplicationGlobal.h"
 #include "GitRunner.h"
 #include "Logger.h"
 #include "Profile.h"
@@ -10,6 +9,18 @@
 #include "curlclient.h"
 #include "webclient.h"
 #include <QFileInfo>
+
+#ifdef APP_GUITAR
+#include "ApplicationGlobal.h"
+static inline std::string global_mimetype_by_file(std::string const &path)
+{
+	return global->mimetype_by_file(path);
+
+}
+#else
+std::string global_mimetype_by_file(std::string const &path);
+#endif
+
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct CommitMessageResult {
@@ -420,10 +431,28 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 /**
  * @brief コンストラクタ。アプリ設定からAIモデルを初期化する。
  */
+#ifdef APP_GUITAR
 CommitMessageGenerator::CommitMessageGenerator()
 {
 	set_ai_model(global->appsettings.ai_model);
 }
+GenerativeAI::Credential global_get_ai_credential(GenerativeAI::AI aiid)
+{
+	return global->get_ai_credential(aiid);
+}
+std::shared_ptr<AbstractInetClient> global_inet_client()
+{
+	return global->inet_client();
+}
+#else
+GenerativeAI::Model global_appsettings_ai_model();
+GenerativeAI::Credential global_get_ai_credential(GenerativeAI::AI aiid);
+std::shared_ptr<AbstractInetClient> global_inet_client();
+CommitMessageGenerator::CommitMessageGenerator()
+{
+	set_ai_model(global_appsettings_ai_model());
+}
+#endif
 
 /**
  * @brief AIレスポンスのJSON文字列を解析してコミットメッセージ候補を取り出す。
@@ -641,7 +670,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	}
 
 	// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-	GenerativeAI::Credential cred = global->get_ai_credential(model.provider_id());
+	GenerativeAI::Credential cred = global_get_ai_credential(model.provider_id());
 	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
 
 	InetClient::Request web_req;
@@ -654,7 +683,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	post.content_type = "application/json";
 	post.data.insert(post.data.end(), json.begin(), json.end());
 
-	std::shared_ptr<AbstractInetClient> http = global->inet_client();
+	std::shared_ptr<AbstractInetClient> http = global_inet_client();
 	if (http->post(web_req, &post)) {
 		char const *data = http->content_data();
 		size_t size = http->content_length();
@@ -705,8 +734,8 @@ static std::string _diff_head(GitRunner g)
 	std::vector<std::string> diffs(names.size());
 	// const int NUM_THREADS = 8;
 	const int NUM_THREADS = 1;
-	// // fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
-	// y// 安全のためシングルスレッドで動かす。(2025-12-25)
+	// fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
+	// 安全のためシングルスレッドで動かす。(2025-12-25)
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
@@ -717,12 +746,13 @@ static std::string _diff_head(GitRunner g)
 				std::string path = names[i];
 				if (path.empty()) continue;
 				std::string working_dir_path(g.workingDir() / path);
-				std::string mimetype = global->mimetype_by_file(working_dir_path);
+				std::string mimetype = global_mimetype_by_file(working_dir_path);
 				std::string name = misc::filename(path);
 				if (name == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
 				if (CommitMessageGenerator::accept_file_diff(path, mimetype)) {
 					std::string diff = g.diff_full_index_head_file(working_dir_path);
-					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diffs[i].size());
+					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
+					if (diff.empty()) continue;
 					if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
 						logprintf(LOG_DEFAULT, "warning: diff for %s is too large, skipping\n", path.c_str());
 						continue;
@@ -741,9 +771,8 @@ static std::string _diff_head(GitRunner g)
 
 	// スレッドごとの結果を元のファイル順に連結する
 	for (size_t i = 0; i < names.size(); i++) {
-		if (!diffs[i].empty()) {
-			diff += diffs[i];
-		}
+		if (diffs[i].empty()) continue;
+		diff += diffs[i];
 	}
 
 	return diff;

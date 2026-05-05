@@ -1,4 +1,6 @@
 #include "TraceLogger.h"
+
+#ifdef APP_GUITAR
 #include "ApplicationGlobal.h"
 
 void TraceLogger::begin(const QString &name, const QString &cmd)
@@ -15,5 +17,13 @@ void TraceLogger::end()
 	event_.phase = TraceEventWriter::PHASE_END;
 	global->put_trace_event(event_);
 }
+#else
+void TraceLogger::begin(const QString &name, const QString &cmd)
+{
+}
 
+void TraceLogger::end()
+{
+}
+#endif
 

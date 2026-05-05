@@ -1,5 +1,4 @@
 #include "GitBasicSession.h"
-#include "ApplicationGlobal.h"
 #include "TraceEventWriter.h"
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
@@ -8,6 +7,16 @@
 #include <QDirIterator>
 #include <QElapsedTimer>
 #include <QFileInfo>
+
+#ifdef APP_GUITAR
+#include "ApplicationGlobal.h"
+static inline void global_write_log(QString const &s)
+{
+	global->writeLog(s);
+}
+#else
+void global_write_log(QString const &s);
+#endif
 
 GitBasicSession::GitBasicSession(const Commands &cmds)
 {
@@ -77,7 +86,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 
 		if (opt.log) {
 			QString s = QString("> git %1\n").arg(QString::fromStdString(arg));
-			global->writeLog(s);
+			global_write_log(s);
 		}
 
 		if (opt.pty) {
@@ -105,7 +114,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 					if (!s.endsWith('\n')) {
 						s += '\n';
 					}
-					global->writeLog(s);
+					global_write_log(s);
 				}
 				result.set_output(proc.stdout_bytes());
 			}

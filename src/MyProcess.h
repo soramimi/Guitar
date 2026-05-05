@@ -3,10 +3,10 @@
 
 // Process.h というファイルはWindows環境に既存なので MyProcess.h にした
 
-#include <QtGlobal>
+// #include <QtGlobal>
 #include <future>
 
-#ifdef Q_OS_WIN
+#ifdef _WIN32
 #include "win32/Win32Process.h"
 #include "win32/Win32PtyProcess.h"
 using Process = Win32Process;

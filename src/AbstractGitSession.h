@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <optional>
-#include <QString>
+// #include <QString>
 #include "GitObjectManager.h"
 #include "GitTypes.h"
 
@@ -63,6 +63,5 @@ public:
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path) { return std::nullopt; }
 	virtual std::optional<std::vector<char>> readfile(char const *path) { return std::nullopt; }
 };
-
 
 #endif // ABSTRACTGITSESSION_H

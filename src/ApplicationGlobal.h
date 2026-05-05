@@ -8,7 +8,6 @@
 #include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
-#include "MyMecab.h"
 #include <QColor>
 #include <QString>
 #include "FileTypeDetector.h"
