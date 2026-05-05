@@ -7,6 +7,7 @@
 #include <deque>
 #include <thread>
 #include <winpty.h>
+#include "common/misc.h"
 
 namespace {
 
@@ -83,49 +84,23 @@ bool Win32PtyProcess::isRunning() const
 	return QThread::isRunning();
 }
 
-QString Win32PtyProcess::getProgram(QString const &cmdline)
-{
-	ushort const *begin = cmdline.utf16();
-	ushort const *end = begin + cmdline.size();
-	ushort const *ptr = begin;
-	bool quote = 0;
-	while (1) {
-		ushort c = 0;
-		if (ptr < end) {
-			c = *ptr;
-		}
-		if (c == '\"') {
-			if (quote) {
-				quote = false;
-			} else {
-				quote = true;
-			}
-			ptr++;
-		} else if (quote && c != 0) {
-			ptr++;
-		} else if (QChar(c).isSpace() || c == 0) {
-			break;
-		} else {
-			ptr++;
-		}
-	}
-	ushort const *left = begin;
-	ushort const *right = ptr;
-	if (left + 1 < right) {
-		if (left[0] == '\"' && right[-1] == '\"') {
-			left++;
-			right--;
-		}
-	}
-	return QString::fromUtf16(left, right - left);
-}
-
 void Win32PtyProcess::run()
 {
 	QString cmd = QString::fromStdString(m->command);
 	QString env = QString::fromStdString(m->env);
-	QString program;
-	program = getProgram(cmd);
+
+	std::wstring program;
+	wchar_t const *program_p = nullptr;
+	if (1) {
+		// コマンドから実行ファイル名を抜き取る。実際に実行されるプログラムのパス。
+		program = QString::fromStdString(misc::getProgram(m->command)).toStdWString();
+		if (!program.empty()) {
+			program_p = program.c_str();
+		}
+	} else {
+		// nop:
+		// program_p が nullptr 空の時、PATHが通っているコマンドなら実行できる。
+	}
 
 	QElapsedTimer timer;
 	timer.start();
@@ -148,12 +123,12 @@ void Win32PtyProcess::run()
 
 	std::vector<wchar_t> envbuf;
 	if (!env.isEmpty()) {
-		envbuf.resize(env.size() + 2);
-		memcpy(envbuf.data(), env.utf16(), sizeof(wchar_t) * env.size());
+		envbuf.resize(env.size() + 1);
+		memcpy(envbuf.data(), env.utf16(), sizeof(wchar_t) * (env.size() + 1));
 	}
 
 	winpty_spawn_config_t *spawn_cfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN,
-															   (wchar_t const *)program.utf16(),
+															   program_p,
 															   (wchar_t const *)cmd.utf16(),
 															   nullptr,
 															   envbuf.empty() ? nullptr : envbuf.data(),
@@ -261,12 +236,12 @@ void Win32PtyProcess::start(std::string const &cmdline, std::string const &env, 
 
 bool Win32PtyProcess::wait(unsigned long time)
 {
-	if (0) { // こっちダメ
-		std::this_thread::sleep_for(std::chrono::milliseconds(time));
-		return m->th_output_reader.wait(time);
-	} else {
-		return QThread::wait(time) && m->th_output_reader.wait(time);
+	if (QThread::wait(time) && m->th_output_reader.wait(time)) {
+		stdout_bytes_ = output_vector_;
+		stderr_bytes_ = {};
+		return true;
 	}
+	return false;
 }
 
 void Win32PtyProcess::stop()
@@ -282,7 +257,4 @@ int Win32PtyProcess::getExitCode() const
 {
 	return m->exit_code;
 }
-
-
-
 

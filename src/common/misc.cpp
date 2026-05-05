@@ -1023,7 +1023,16 @@ std::string misc::convert_utf16_to_utf8(const std::u16string_view &s)
 	return out;
 }
 
-
+/**
+ * @brief VTシーケンスを取り除く
+ *
+ * 文字列からVT（バーチャルターミナル）シーケンスを取り除き、通常のテキストのみを抽出します。
+ * VTシーケンスはエスケープ文字（0x1b）で始まり、特定のパターンに従います。
+ * この関数は、エスケープシーケンスを正しく認識し、それらをスキップしてテキスト部分だけを返します。
+ *
+ * @param s VTシーケンスを含む可能性のある入力文字列
+ * @return VTシーケンスが取り除かれた通常のテキスト文字列
+ */
 std::string misc::strip_vt(const std::string_view &s)
 {
 	std::vector<char> out;
@@ -1059,3 +1068,45 @@ std::string misc::strip_vt(const std::string_view &s)
 	}
 	return std::string(out.data(), out.size());
 }
+
+/**
+ * コマンドラインから実行ファイル名を抜き取る。
+ * 例: "C:\Program Files\MyApp\app.exe" --option -> C:\Program Files\MyApp\app.exe
+ */
+std::string misc::getProgram(std::string const &cmdline)
+{
+	char const *begin = cmdline.c_str();
+	char const *end = begin + cmdline.size();
+	char const *ptr = begin;
+	bool quote = 0;
+	while (1) {
+		char c = 0;
+		if (ptr < end) {
+			c = *ptr;
+		}
+		if (c == '\"') {
+			if (quote) {
+				quote = false;
+			} else {
+				quote = true;
+			}
+			ptr++;
+		} else if (quote && c != 0) {
+			ptr++;
+		} else if (QChar(c).isSpace() || c == 0) {
+			break;
+		} else {
+			ptr++;
+		}
+	}
+	char const *left = begin;
+	char const *right = ptr;
+	if (left + 1 < right) {
+		if (left[0] == '\"' && right[-1] == '\"') {
+			left++;
+			right--;
+		}
+	}
+	return std::string(left, right);
+}
+

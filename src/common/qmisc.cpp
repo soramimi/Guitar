@@ -125,3 +125,4 @@ QPoint misc::contextMenuPos(QWidget *w, QContextMenuEvent *e)
 	}
 	return w->mapToGlobal(QPoint(4, 4));
 }
+

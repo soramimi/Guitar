@@ -408,8 +408,9 @@ int ProcessPosixPty::readOutputStreaming(char *ptr, int len)
 	return n;
 }
 
-void ProcessPosixPty::start(const std::string &cmd, const std::string &env)
+void ProcessPosixPty::start(const std::string &cmd, const std::string &env, bool use_input)
 {
+	(void)use_input;
 	m->thread = std::thread([this, cmd](){
 		if (exec_posixpty(cmd)) {
 

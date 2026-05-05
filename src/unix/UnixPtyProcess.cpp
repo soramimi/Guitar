@@ -97,8 +97,9 @@ int UnixPtyProcess::readOutputStreaming(char *ptr, int len)
 	return n;
 }
 
-void UnixPtyProcess::start(std::string const &cmd, std::string const &env)
+void UnixPtyProcess::start(std::string const &cmd, std::string const &env, bool use_input)
 {
+	(void)use_input;
 	if (isRunning()) return;
 	m->command = cmd;
 	m->env = env;

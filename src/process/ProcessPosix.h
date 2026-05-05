@@ -58,7 +58,7 @@ public:
 	void writeInput(const char *ptr, int len) override;
 	void closeInput();
 	int readOutputStreaming(char *ptr, int len);
-	void start(const std::string &cmd, const std::string &env) override;
+	void start(const std::string &cmd, const std::string &env, bool use_input) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
 	int getExitCode() const;

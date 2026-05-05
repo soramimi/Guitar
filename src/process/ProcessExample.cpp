@@ -1,4 +1,6 @@
 
+// experimental code for process execution, not used in production yet, may be removed without notice
+
 #include "AbstractProcess.h"
 #include "process/MyProcess2.h"
 #include <stdio.h>
@@ -8,6 +10,7 @@
 #include <optional>
 #include <QElapsedTimer>
 #include "common/misc.h"
+#include "Logger.h"
 
 #ifdef _WIN32
 #include <QApplication>
@@ -205,6 +208,18 @@ private:
 
 		std::wstring wcmd = convert_str_to_wstr(cmd);
 
+		std::wstring program = convert_str_to_wstr(misc::getProgram(cmd));
+		wchar_t const *program_p = nullptr;
+		if (1) {
+			// コマンドから実行ファイル名を抜き取る。実際に実行されるプログラムのパス。
+			if (!program.empty()) {
+				program_p = program.c_str();
+			}
+		} else {
+			// nop:
+			// program_p が nullptr 空の時、PATHが通っているコマンドなら実行できる。
+		}
+
 		std::wstring wenv = convert_str_to_wstr(env);
 		std::vector<wchar_t> envbuf;
 		if (!env.empty()) {
@@ -213,7 +228,7 @@ private:
 		}
 
 		winpty_spawn_config_t *scfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN,
-															  nullptr,
+															  program_p,
 															  wcmd.data(),
 															  nullptr,
 															  envbuf.empty() ? nullptr : envbuf.data(),
@@ -601,17 +616,33 @@ bool exec_conpty_agent()
 
 #include "common/str.h"
 #include "win32/Win32PtyProcess.h"
+#include "ApplicationGlobal.h"
 
 void process_test()
 {
-	// ProcessWinPty proc;
-	Win32PtyProcess proc;
+#ifdef _WIN32
+#if 1
+	std::string cmd = global->appsettings.git_command.toStdString();
+	cmd = '"' + cmd + "\" --version";
+#else
+	std::string cmd = "git --version";
+#endif
+	ProcessWinPty proc;
+	// Win32PtyProcess proc;
 	// ProcessWinConPTY proc;
-	proc.start("git --version", {}, false);
+	proc.start(cmd, {}, false);
 	// proc.stop();
+#if 0
+	while (!proc.wait(1)) {
+		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+	}
+	proc.stop();
+#else
 	proc.wait();
+#endif
 	std::string s = (misc::str)proc.stdout_bytes();
 	fprintf(stderr, "%s\n", s.c_str());
+#endif
 }
 
 /*

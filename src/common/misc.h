@@ -168,6 +168,8 @@ static inline void append(std::vector<char> *out, std::string_view const &v)
 
 std::string strip_vt(std::string_view const &s);
 
+std::string getProgram(std::string const &cmdline);
+
 } // namespace misc
 
 #endif // MISC_H

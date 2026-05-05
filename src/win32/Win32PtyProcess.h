@@ -9,9 +9,6 @@ class Win32PtyProcess : public AbstractPtyProcess, public QThread {
 private:
 	struct Private;
 	Private *m;
-
-	static QString getProgram(QString const &cmdline);
-
 protected:
 	void run();
 public:
@@ -25,6 +22,5 @@ public:
 	void stop() override;
 	int getExitCode() const override;
 };
-
 
 #endif // WIN32PTYPROCESS_H
