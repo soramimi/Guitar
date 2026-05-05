@@ -1,6 +1,16 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#define LOG_RAW 0
+#define LOG_DEFAULT 0x0001
+#define LOG_STDERR 0x0002
+#define LOG_BOTH (LOG_DEFAULT | LOG_STDERR)
+
+#ifdef NO_LOGGER
+#define logprint(LEVEL, STR)
+#define logprintf(LEVEL, FMT, ...)
+#else
+
 #include <chrono>
 #include <string>
 
@@ -47,11 +57,9 @@ public:
 
 extern Logger x_logger;
 
-#define LOG_RAW 0
-#define LOG_DEFAULT 0x0001
-#define LOG_STDERR 0x0002
-#define LOG_BOTH (LOG_DEFAULT | LOG_STDERR)
 #define logprint(LEVEL, STR) x_logger.x_logprint(__FILE__, __LINE__, LEVEL, STR)
 #define logprintf(LEVEL, FMT, ...) x_logger.x_logprintf(__FILE__, __LINE__, LEVEL, FMT, ##__VA_ARGS__)
+
+#endif
 
 #endif // LOGGER_H

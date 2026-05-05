@@ -725,6 +725,7 @@ bool CommitMessageGenerator::accept_file_diff(std::string const &filename, std::
  * @param fn_accept ファイルをdiff対象に含めるか判定するコールバック
  * @return 連結されたdiff文字列
  */
+#ifdef APP_GUITAR
 static std::string _diff_head(GitRunner g)
 {
 	PROFILE;
@@ -790,3 +791,4 @@ std::string CommitMessageGenerator::diff_head(GitRunner g)
 	std::string diff = ::_diff_head(g);
 	return diff;
 }
+#endif

@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <cstring>
 
-
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -13,7 +12,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
-
 
 bool InetResolver::resolve(const char *name, Type type, Addr *out)
 {

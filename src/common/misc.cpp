@@ -5,7 +5,6 @@
 #include <QFileInfo>
 #include <QPainter>
 #include <QProcess>
-#include <QWidget>
 #include <vector>
 
 /**

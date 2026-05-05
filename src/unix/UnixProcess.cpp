@@ -8,7 +8,10 @@
 #include <unistd.h>
 #include <mutex>
 #include <thread>
+
+#ifndef NO_TRACELOG
 #include "TraceLogger.h"
+#endif
 
 class OutputReaderThread {
 private:
@@ -123,8 +126,10 @@ protected:
 				throw std::string("failed: pipe");
 			}
 
+#ifndef NO_TRACELOG
 			TraceLogger trace;
 			trace.begin("process", command);
+#endif
 
 			pid = fork();
 			if (pid < 0) {
@@ -206,7 +211,9 @@ protected:
 				}
 			}
 
+#ifndef NO_TRACELOG
 			trace.end();
+#endif
 
 			t1.wait();
 			t2.wait();

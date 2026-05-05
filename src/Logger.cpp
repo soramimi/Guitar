@@ -1,4 +1,6 @@
 
+#ifndef NO_LOGGER
+
 #include "Logger.h"
 #include <cctype>
 #include <condition_variable>
@@ -289,4 +291,4 @@ void Logger::pause(bool f)
 	x_logger.x_pause(f);
 }
 
-
+#endif
