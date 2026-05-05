@@ -36,7 +36,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{AI::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OpenRouter",                  "OPENROUTER_API_KEY"},
 		{AI::Ollama,                       "ollama",                          "Ollama (experimental)",          "",                            ""},
 		{AI::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       "",                            ""},
-		{AI::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "",                            ""},
+		{AI::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "LlamaCpp",                    "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
 }
@@ -239,12 +239,20 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 
+	void set_authorization_bearer_cred(Request *r, Credential const &cred)
+	{
+		if (!cred.api_key.empty()) {
+			r->header.push_back("Authorization: Bearer " + cred.api_key);
+		}
+	}
+
 	Request case_XAI()
 	{
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.x.ai/v1/chat/completions";
-		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -253,7 +261,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.deepseek.com/chat/completions";
-		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -262,7 +271,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";
 		r.model_name = model_.model_name();
-		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -271,7 +281,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
-		r.header.push_back("Authorization: Bearer anonymous");
+		// r.header.push_back("Authorization: Bearer anonymous");
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -298,6 +309,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 			r.endpoint_url = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
 			break;
 		}
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 };
