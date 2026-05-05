@@ -198,6 +198,13 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		, cred_(cred)
 	{}
 
+	void set_authorization_bearer_cred(Request *r, Credential const &cred)
+	{
+		if (!cred.api_key.empty()) {
+			r->header.push_back("Authorization: Bearer " + cred.api_key);
+		}
+	}
+
 	Request case_Unknown()
 	{
 		return {};
@@ -237,13 +244,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
 		return r;
-	}
-
-	void set_authorization_bearer_cred(Request *r, Credential const &cred)
-	{
-		if (!cred.api_key.empty()) {
-			r->header.push_back("Authorization: Bearer " + cred.api_key);
-		}
 	}
 
 	Request case_XAI()

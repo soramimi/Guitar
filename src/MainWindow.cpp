@@ -746,7 +746,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 				if (ctrl) {
 					if (k == Qt::Key_R) {
-						onRepositoryTreeSortRecent(true);
+						onRepositoryTreeSortRecent(true); // 最近使用した順ソート
 						return true;
 					}
 				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::RepositorySearch)) {
@@ -2491,6 +2491,12 @@ void MainWindow::doReopenRepository(ProcessStatus *status, RepositoryInfo const 
 	}
 }
 
+/** * @brief MainWindow::parseDetectedDubiousOwnershipInRepositoryAt
+ * @param lines ログの行
+ * @return
+ *
+ * "fatal: detected dubious ownership in repository at " というログから、"git config --global --add safe.directory" の後に続くディレクトリを抽出する
+ */
 std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<std::string> const &lines)
 {
 	static std::string git_config_global_add_safe_directory = "git config --global --add safe.directory";
@@ -2500,12 +2506,17 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 	for (i = 0; i < lines.size(); i++) {
 		std::string const &line = lines[i];
 		if (misc::starts_with(line, "fatal: detected dubious ownership in repository at ")) {
+			// Q. "fatal: detected dubious ownership in repository at"とはなんですか？
+			// A. Git 2.35.2 以降で、リポジトリの所有者が現在のユーザーと異なる場合に表示されるエラーメッセージです。
+			//    セキュリティ上の理由から、Gitは所有者が異なるリポジトリへのアクセスを拒否します。このエラーを解決するには、
+			//    'git config --global --add safe.directory <path>' コマンドを使用して、
+			//    そのリポジトリを安全なディレクトリとして追加する必要があります。
 			detected_dubious_ownership_in_repository_at = true;
 		} else if (detected_dubious_ownership_in_repository_at) {
 			auto pos = line.find(git_config_global_add_safe_directory);
 			if (pos != std::string::npos) {
 				dir = line.substr(pos + git_config_global_add_safe_directory.size());
-				if (i < lines.size()) {
+				if (i + 1 < lines.size()) {
 					std::string next = lines[i + 1];
 					if (next[0] != 0 && !isspace((unsigned char)next[0]) && !misc::starts_with(next, "fatal:")) {
 						dir += next;
@@ -6184,6 +6195,7 @@ void MainWindow::clearAllFilters(int select_row)
 {
 	if (global->incremental_search_text.isEmpty()) return;
 
+	updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
 	clearFilterText(select_row);
 	updateStatusBarText();
 }
