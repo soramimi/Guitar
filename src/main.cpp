@@ -20,7 +20,6 @@
 #include <csignal>
 #include <string>
 #include "Logger.h"
-#include "genmsg.h"
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.

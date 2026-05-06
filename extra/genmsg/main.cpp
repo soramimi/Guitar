@@ -239,43 +239,13 @@ int main2(int argc, char **argv)
 	return 0;
 }
 
-void cleanup()
-{
-#if USE_OPENSSL
-	ERR_free_strings();
-#endif
-#ifdef _WIN32
-	WSACleanup();
-#endif
-}
-
-void startup()
-{
-#ifdef _WIN32
-	{
-		WSADATA wsaData;
-		WORD wVersionRequested;
-		wVersionRequested = MAKEWORD(2, 2); // Request version 2.2 for better compatibility
-		if (WSAStartup(wVersionRequested, &wsaData) == 0) {
-			atexit(cleanup);
-		}
-	}
-#endif
-}
-
 int main(int argc, char **argv)
 {
-	startup();
-
 	if (0) {
 		std::string s = git("--version");
 		puts(s.c_str());
 		return {};
 	}
 
-	int ret = main2(argc, argv);
-
-	cleanup();
-	return ret;
+	return main2(argc, argv);
 }
-

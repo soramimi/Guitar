@@ -729,7 +729,11 @@ bool CommitMessageGenerator::accept_file_diff(std::string const &filename, std::
 static std::string git(std::string const &gitcommand, std::string const &dir, std::string const &cmd)
 {
 	Process proc;
-	proc.start(fmt("\"%s\" -C \"%s\" %s")(gitcommand)(dir)(cmd), false);
+	char const *cd = ".";
+	if (!dir.empty()) {
+		cd = dir.c_str();
+	}
+	proc.start(fmt("\"%s\" -C \"%s\" %s")(gitcommand)(cd)(cmd), false);
 	proc.wait();
 	std::string s = (misc::str)proc.stdout_bytes();
 	return s;
@@ -744,7 +748,7 @@ std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::strin
 	std::string diff;
 	std::vector<std::string> names = misc::splitLines(git(gitcommand, dir, "diff --name-only HEAD"), false);
 	std::vector<std::string> diffs(names.size());
-	const int NUM_THREADS = 8;
+	const int NUM_THREADS = 1;
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
