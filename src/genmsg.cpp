@@ -183,12 +183,6 @@ bool commit(std::string const &message)
 
 std::vector<std::string> genmsg(Option const &opt)
 {
-	if (0) {
-		std::string s = git("--version");
-		puts(s.c_str());
-		return {};
-	}
-
 	std::string diff = CommitMessageGenerator::diff_head(gitcommand, opt.dir);
 
 	CommitMessageGenerator gen;
@@ -272,6 +266,12 @@ void startup()
 int main(int argc, char **argv)
 {
 	startup();
+
+	if (0) {
+		std::string s = git("--version");
+		puts(s.c_str());
+		return {};
+	}
 
 	int ret = main2(argc, argv);
 
