@@ -748,7 +748,7 @@ std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::strin
 	std::string diff;
 	std::vector<std::string> names = misc::splitLines(git(gitcommand, dir, "diff --name-only HEAD"), false);
 	std::vector<std::string> diffs(names.size());
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = 8;
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
