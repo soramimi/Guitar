@@ -1091,11 +1091,11 @@ std::vector<GitFileStatus> Git::status_s_()
 	opt.use_cache = true;
 	auto result = exec_git("status -s -u --porcelain", opt);
 	if (result) {
-		QString text = resultQString(result);
-		QStringList lines = misc::splitLines(text);
-		for (QString const &line : lines) {
+		std::string text = resultStdString(result);
+		std::vector<std::string> lines = misc::splitLines(text, false);
+		for (std::string_view const &line : lines) {
 			if (line.size() > 3) {
-				GitFileStatus s(line);
+				GitFileStatus s((std::string)line);
 				if (s.code() != GitFileStatus::Code::Unknown) {
 					files.push_back(s);
 				}
@@ -1618,23 +1618,23 @@ GitFileStatus::Code GitFileStatus::parseFileStatusCode(char x, char y)
 	return GitFileStatus::Code::Unknown;
 }
 
-void GitFileStatus::parse(QString const &text)
+void GitFileStatus::parse(std::string const &text)
 {
 	data = Data();
 	if (text.size() > 3) {
-		ushort const *p = text.utf16();
+		char const *p = text.c_str();
 		if (p[2] == ' ') {
 			data.code_x = p[0];
 			data.code_y = p[1];
 
-			int i = text.indexOf(" -> ", 3);
-			if (i > 3) {
-				data.rawpath1 = text.mid(3, i - 3).toStdString();
-				data.rawpath2 = text.mid(i + 4).toStdString();
+			int i = text.find(" -> ", 3);
+			if (i != std::string::npos && i > 3) {
+				data.rawpath1 = text.substr(3, i - 3);
+				data.rawpath2 = text.substr(i + 4);
 				data.path1 = gitTrimPath(data.rawpath1);
 				data.path2 = gitTrimPath(data.rawpath2);
 			} else {
-				data.rawpath1 = text.mid(3).toStdString();
+				data.rawpath1 = text.substr(3);
 				data.path1 = gitTrimPath(data.rawpath1);
 				data.path2 = {};
 			}

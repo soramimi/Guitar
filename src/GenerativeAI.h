@@ -123,6 +123,11 @@ struct Model {
 		return port_;
 	}
 
+	std::string env_name() const
+	{
+		return provider_info_ ? provider_info_->env_name : "";
+	}
+
 	AI api_compatibility() const
 	{
 		return api_compatibility_;

@@ -40,7 +40,8 @@ SOURCES += \
 	../../src/common/urlencode.cpp \
 	../../src/curlclient.cpp \
 	../../src/genmsg.cpp \
-	../../src/inetclient.cpp
+	../../src/inetclient.cpp \
+    selectitem.cpp
 HEADERS +=  \
     ../../src/AbstractProcess.h \
 	../../src/CommitMessageGenerator.h \
@@ -57,7 +58,8 @@ HEADERS +=  \
 	../../src/common/urlencode.h \
 	../../src/curlclient.h \
 	../../src/genmsg.h \
-	../../src/inetclient.h
+	../../src/inetclient.h \
+    selectitem.h
 
 msvc {
 SOURCES += \

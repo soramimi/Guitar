@@ -330,11 +330,11 @@ public:
 		return (int)data.code & (int)Code::Tracked_;
 	}
 
-	void parse(QString const &text);
+	void parse(std::string const &text);
 
 	GitFileStatus() = default;
 
-	GitFileStatus(QString const &text)
+	GitFileStatus(std::string const &text)
 	{
 		parse(text);
 	}
