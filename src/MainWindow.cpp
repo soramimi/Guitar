@@ -4057,14 +4057,7 @@ void MainWindow::internalShowPanel(FileListType file_list_type)
 	}
 }
 
-void MainWindow::onShowFileList(FileListType panel_type)
-{
-	ASSERT_MAIN_THREAD();
 
-	clearDiffView();
-
-	internalShowPanel(panel_type);
-}
 
 void MainWindow::showFileList(FileListType files_list_type)
 {

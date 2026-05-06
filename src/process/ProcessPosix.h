@@ -22,7 +22,7 @@ private:
 public:
 	ProcessPosix();
 	~ProcessPosix();
-	bool isRunning() const;
+	bool isRunning() const override;
 	void writeInput(const char *ptr, int len) override;
 	int readOutput(char *ptr, int len);
 	void start(const std::string &command, bool use_input) override;
@@ -31,10 +31,10 @@ public:
 	int getExitCode() const override;
 	void readResult(std::vector<char> *out);
 
-	std::vector<char> const &stdout_bytes() const;
-	std::vector<char> const &stderr_bytes() const;
+	std::vector<char> const &stdout_bytes() const override;
+	std::vector<char> const &stderr_bytes() const override;
 
-	void closeInput(bool justnow);
+	void closeInput(bool justnow) override;
 };
 
 class ProcessPosixPty : public AbstractPtyProcess {
@@ -54,14 +54,14 @@ private:
 public:
 	ProcessPosixPty();
 	~ProcessPosixPty();
-	bool isRunning() const;
+	bool isRunning() const override;
 	void writeInput(const char *ptr, int len) override;
 	void closeInput();
-	int readOutputStreaming(char *ptr, int len);
+	int readOutputStreaming(char *ptr, int len) override;
 	void start(const std::string &cmd, const std::string &env, bool use_input) override;
 	bool wait(unsigned long time = ULONG_MAX) override;
 	void stop() override;
-	int getExitCode() const;
+	int getExitCode() const override;
 	void readResult(std::vector<char> *out);
 
 	std::string outstring() const;

@@ -20,7 +20,6 @@ DropDownListFrame::DropDownListFrame(QWidget *parent)
 	layout->addWidget(listw_);
 	
 	connect(listw_, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
-		QString s = item->text();
 		emit itemClicked(item->text());
 		emit done();
 	});

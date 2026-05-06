@@ -59,7 +59,7 @@ private slots:
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 
 public slots:
-	int exec(Item const &select);
+	int exec(EditProfilesDialog::Item const &select);
 };
 
 #endif // EDITPROFILESDIALOG_H

@@ -13,11 +13,11 @@ public:
 	{
 	}
 	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const override;
-	void drawControl(ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *widget) const;
-	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *widget) const;
-	int styleHint(StyleHint stylehint, const QStyleOption *opt, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const;
-	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const;
-	QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const;
+	void drawControl(ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *widget) const override;
+	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *widget) const override;
+	int styleHint(StyleHint stylehint, const QStyleOption *opt, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override;
+	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const override;
+	QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const override;
 };
 
 #endif // LIGHTSTYLE_H

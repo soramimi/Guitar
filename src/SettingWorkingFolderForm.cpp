@@ -23,14 +23,14 @@ SettingWorkingFolderForm::~SettingWorkingFolderForm()
 	delete ui;
 }
 
-static QString favoliteDirsIni()
+static QString favoriteDirsIni()
 {
 	return global->app_config_dir / "favoritedirs.ini";
 }
 
 bool SettingWorkingFolderForm::saveFavoliteDirs(QStringList const &favdirs)
 {
-	QFile file(favoliteDirsIni());
+	QFile file(favoriteDirsIni());
 	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		QTextStream out(&file);
 		for (QString const &dir : favdirs) {
@@ -44,7 +44,7 @@ bool SettingWorkingFolderForm::saveFavoliteDirs(QStringList const &favdirs)
 bool SettingWorkingFolderForm::loadFavoliteDirs(QStringList *favdirs)
 {
 	QStringList list;
-	QFile file(favoliteDirsIni());
+	QFile file(favoriteDirsIni());
 	if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		QTextStream in(&file);
 		while (!in.atEnd()) {
@@ -61,7 +61,6 @@ bool SettingWorkingFolderForm::loadFavoliteDirs(QStringList *favdirs)
 
 void SettingWorkingFolderForm::exchange(bool save)
 {
-	QString favoritedirs_ini = favoliteDirsIni();
 	if (save) {
 		settings()->default_working_dir = ui->lineEdit_recentry_used->text();
 		{

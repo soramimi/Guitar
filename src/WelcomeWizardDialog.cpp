@@ -117,8 +117,9 @@ void WelcomeWizardDialog::on_pushButton_next_clicked()
 	}
 }
 
-void WelcomeWizardDialog::on_stackedWidget_currentChanged(int /*arg1*/)
+void WelcomeWizardDialog::on_stackedWidget_currentChanged(int arg1)
 {
+	(void)arg1;
 	QString prev_text;
 	QString next_text;
 	QWidget *w = ui->stackedWidget->currentWidget();

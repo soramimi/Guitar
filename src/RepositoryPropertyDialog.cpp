@@ -78,7 +78,6 @@ void RepositoryPropertyDialog::updateRemotesTable()
 	m->remotes.clear();
 	getRemotes_();
 	QString url;
-	QString alturl;
 	int rows = m->remotes.size();
 	ui->tableWidget->setColumnCount(2);
 	ui->tableWidget->setRowCount(rows);

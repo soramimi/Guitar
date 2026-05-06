@@ -10,7 +10,7 @@ private:
 	struct Private;
 	Private *m;
 protected:
-	void run();
+	void run() override;
 public:
 	Win32PtyProcess();
 	~Win32PtyProcess() override;

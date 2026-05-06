@@ -34,7 +34,7 @@ void EditProfilesDialog::enableDoubleClock(bool f)
 	enable_double_click_ = f;
 }
 
-int EditProfilesDialog::exec(const Item &select)
+int EditProfilesDialog::exec(Item const &select)
 {
 	resetTableWidget();
 	updateTableWidget(select);

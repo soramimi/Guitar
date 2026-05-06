@@ -81,7 +81,7 @@ protected:
 	void resizeEvent(QResizeEvent *e) override;
 protected slots:
 	void verticalScrollbarValueChanged(int value) override;
-	void currentChanged(const QModelIndex &current, const QModelIndex &previous);
+	void currentChanged(const QModelIndex &current, const QModelIndex &previous) override;
 public:
 	int rowCount() const;
 	int currentRow() const;

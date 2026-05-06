@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "ApplicationGlobal.h"
 #include "Git.h"
 #include "GitCommandRunner.h"
 #include "MyProcess.h"
@@ -559,7 +560,14 @@ private slots:
 	void onRemoteInfoChanged();
 	void onShowStatusInfo(StatusInfo const &info);
 
-	void onShowFileList(FileListType panel_type);
+	void onShowFileList(FileListType panel_type)
+	{
+		ASSERT_MAIN_THREAD();
+
+		clearDiffView();
+
+		internalShowPanel(panel_type);
+	}
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 
 	void on_action_view_sort_by_time_changed();
@@ -581,7 +589,7 @@ signals:
 	void signalShowStatusInfo(StatusInfo const &info);
 	void signalHideProgress();
 	void sigWriteLog(LogData const &logdata, LogChannel channel);
-	void sigShowFileList(FileListType files_list_type);
+	void sigShowFileList(MainWindow::FileListType files_list_type);
 	void signalAddFileObjectData(const MainWindowExchangeData &data);
 	void remoteInfoChanged();
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);

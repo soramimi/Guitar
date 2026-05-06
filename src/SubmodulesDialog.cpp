@@ -1,7 +1,7 @@
 #include "SubmodulesDialog.h"
 #include "ui_SubmodulesDialog.h"
 #include "MainWindow.h"
-#include "common/joinpath.h""
+#include "common/joinpath.h"
 #include "common/misc.h"
 #include "common/q/helper.h"
 
@@ -100,6 +100,7 @@ void SubmodulesDialog::on_pushButton_open_file_manager_clicked()
 
 void SubmodulesDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
+	(void)item;
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < mods_.size()) {
 		QDir d(working_dir_);

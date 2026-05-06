@@ -48,7 +48,7 @@ private slots:
 	void on_pushButton_remote_remove_clicked();
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 public slots:
-	void reject();
+	void reject() override;
 };
 
 #endif // REPOSITORYPROPERTYDIALOG_H
