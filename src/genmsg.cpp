@@ -193,6 +193,10 @@ std::vector<std::string> genmsg(Option const &opt)
 
 	CommitMessageGenerator gen;
 	CommitMessageGenerator::Result msg = gen.generate(diff);
+	if (msg.error) {
+		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status.c_str(), msg.error_message.c_str());
+		return {};
+	}
 
 	return msg.messages;
 }
