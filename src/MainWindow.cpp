@@ -5061,7 +5061,7 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 			if (id && !path.isEmpty() && !workingdir.isEmpty()) {
 				QString fullpath = workingdir / path;
 				fullpath = QFileDialog::getSaveFileName(this, tr("Save as"), fullpath);
-				if (fullpath.isEmpty()) {
+				if (!fullpath.isEmpty()) {
 					saveBlobAs(id, fullpath);
 				}
 			} else {
