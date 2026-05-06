@@ -94,7 +94,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 				auto const *a = findFromCommandCache(cmd);
 				if (a) {
 					result.set_output(*a);
-					qDebug() << "--- Process\t" << cmd << "\t" << "cache hit" << "\t---";
+					qDebug() << "--- Process\t" << QString::fromStdString(cmd) << "\t" << "cache hit" << "\t---";
 					return;
 				}
 			}
