@@ -1,7 +1,5 @@
 #include "CommitMessageGenerator.h"
-#include "GitRunner.h"
 #include "Logger.h"
-#include "Profile.h"
 #include "common/fmt.h"
 #include "common/str.h"
 #include "common/joinpath.h"
@@ -12,6 +10,8 @@
 #include <QFileInfo>
 
 #ifdef APP_GUITAR
+#include "Profile.h"
+#include "GitRunner.h"
 #include "ApplicationGlobal.h"
 static inline std::string global_mimetype_by_file(std::string const &path)
 {
