@@ -11,8 +11,11 @@
 #include <selectitem.h>
 
 #ifdef _WIN32
-#error "git command path is hardcoded in this code. Please set the correct path for Windows."
-char const *gitcommand = "/usr/bin/git";
+#include <WinSock2.h>
+#endif
+
+#ifdef _WIN32
+char const *gitcommand = "C:\\Program Files\\Git\\cmd\\git.exe";
 #else
 char const *gitcommand = "/usr/bin/git";
 #endif
@@ -238,7 +241,17 @@ int main2(int argc, char **argv)
 	return 0;
 }
 
-int main(int argc, char **argv)
+void cleanup()
+{
+#if USE_OPENSSL
+	ERR_free_strings();
+#endif
+#ifdef _WIN32
+	WSACleanup();
+#endif
+}
+
+void startup()
 {
 #ifdef _WIN32
 	{
@@ -250,13 +263,15 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
+}
+
+int main(int argc, char **argv)
+{
+	startup();
 
 	int ret = main2(argc, argv);
 
-#ifdef _WIN32
-	WSACleanup();
-#endif
-
+	cleanup();
 	return ret;
 }
 

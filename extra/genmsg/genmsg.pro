@@ -13,6 +13,8 @@ DEFINES += NO_TRACELOG
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
+msvc:LIBS += -lws2_32
+
 msvc {
 	LIBS += -lzlib
 }

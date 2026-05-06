@@ -1,6 +1,5 @@
 #include <windows.h>
 #include "Win32Process.h"
-#include "TraceLogger.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -9,6 +8,10 @@
 #include <deque>
 #include <mutex>
 #include <thread>
+
+#ifndef NO_TRACELOG
+#include "TraceLogger.h"
+#endif
 
 QString GetErrorMessage(DWORD e)
 {
@@ -169,8 +172,10 @@ protected:
 				env_ptr = &cached_env;
 			}
 
+#ifndef NO_TRACELOG
 			TraceLogger trace;
 			trace.begin("process", command);
+#endif
 
 			// CreateProcessの最適化フラグ
 			DWORD creation_flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
@@ -215,7 +220,9 @@ protected:
 				}
 			}
 
+#ifndef NO_TRACELOG
 			trace.end();
+#endif
 
 			t1.wait();
 			t2.wait();
