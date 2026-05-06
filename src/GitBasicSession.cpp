@@ -71,11 +71,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 	GitResult result;
 
 	auto DoIt = [&](){
-		std::string cmd;
-#ifdef _WIN32
-		cmd = opt.prefix;
-#endif
-		cmd += fmt("\"%s\" --no-pager ")(gitCommand());
+		std::string cmd = fmt("\"%s\" --no-pager ")(gitCommand());
 
 		if (opt.chdir) {
 			std::string cwd = workingDir();

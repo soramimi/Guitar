@@ -20,7 +20,6 @@ public:
 		bool log = true;
 		bool errout = false;
 		AbstractPtyProcess *pty = nullptr;
-		QString prefix;
 	};
 	struct Info {
 		std::string git_command;

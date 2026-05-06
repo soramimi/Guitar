@@ -498,6 +498,8 @@ FileType::Result FileType::detect(const char *filepath) const
 		return {};
 	}
 
+	if (!filepath) return {};
+
 	Result ret;
 
 	int fd = ::open(filepath, O_RDONLY | O_BINARY | O_NONBLOCK | O_CLOEXEC);
