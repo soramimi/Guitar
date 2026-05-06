@@ -473,9 +473,12 @@ FileType::Result FileType::detect(int fd) const
 			std::vector<unsigned char> buf(nbytes);
 			nbytes = read(fd, buf.data(), buf.size());
 			lseek(fd, 0, SEEK_SET);
-			char const *p = _fd_or_buf((magic_t )magic_set_, fd, buf.data(), nbytes, &st, false);
-			if (p) {
-				mime = p;
+			{
+				std::lock_guard<std::mutex> lock(mutex_);
+				char const *p = _fd_or_buf((magic_t )magic_set_, fd, buf.data(), nbytes, &st, false);
+				if (p) {
+					mime = p;
+				}
 			}
 		}
 	}
@@ -525,6 +528,9 @@ FileType::Result FileType::detect(const char *data, size_t size, int st_mode) co
 	st = {};
 	st.st_size = size;
 	st.st_mode = st_mode;
-	char const *p = _fd_or_buf((magic_t )magic_set_, -1, (unsigned char *)data, size, &st, false);
-	return p ? parse_mime(p) : Result();
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		char const *p = _fd_or_buf((magic_t )magic_set_, -1, (unsigned char *)data, size, &st, false);
+		return p ? parse_mime(p) : Result();
+	}
 }

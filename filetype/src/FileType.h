@@ -1,6 +1,7 @@
 #ifndef FILETYPE_H
 #define FILETYPE_H
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,7 @@ public:
 		std::string charset;
 	};
 private:
+	mutable std::mutex mutex_; // libfileはマルチスレッドに脆弱なようだ。
 	void *magic_set_ = nullptr;
 	std::vector<char> mgcdata_;
 	bool open();

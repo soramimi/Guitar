@@ -725,18 +725,16 @@ bool CommitMessageGenerator::accept_file_diff(std::string const &filename, std::
  * @param fn_accept ファイルをdiff対象に含めるか判定するコールバック
  * @return 連結されたdiff文字列
  */
-#ifdef APP_GUITAR
 static std::string _diff_head(GitRunner g)
 {
 	PROFILE;
 
 	std::vector<std::string> names = g.diff_name_only_head();
 
+	std::string diff;
+
 	std::vector<std::string> diffs(names.size());
-	// const int NUM_THREADS = 8;
-	const int NUM_THREADS = 1;
-	// fileライブラリ内部のrealloc呼び出しがクラッシュすることがあったため
-	// 安全のためシングルスレッドで動かす。(2025-12-25)
+	const int NUM_THREADS = 8;
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
@@ -746,25 +744,22 @@ static std::string _diff_head(GitRunner g)
 				if (i >= names.size()) break;
 				std::string path = names[i];
 				if (path.empty()) continue;
-				std::string working_dir_path(g.workingDir() / path);
-				std::string mimetype = global_mimetype_by_file(working_dir_path);
-				std::string name = misc::filename(path);
-				if (name == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
-				if (CommitMessageGenerator::accept_file_diff(path, mimetype)) {
-					std::string diff = g.diff_full_index_head_file(working_dir_path);
-					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
-					if (diff.empty()) continue;
-					if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
-						logprintf(LOG_DEFAULT, "warning: diff for %s is too large, skipping\n", path.c_str());
-						continue;
-					}
-					diffs[i] = diff;
+				std::string filename = misc::filename(path);
+				std::string fullpath(g.workingDir() / path);
+				std::string mimetype = global_mimetype_by_file(fullpath);
+				if (filename == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
+				if (!CommitMessageGenerator::accept_file_diff(path, mimetype)) continue;
+				std::string diff = g.diff_full_index_head_file(fullpath);
+				logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
+				if (diff.empty()) continue;
+				if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
+					logprintf(LOG_DEFAULT, "warning: diff for %s is too large, skipping\n", path.c_str());
+					continue;
 				}
+				diffs[i] = diff;
 			}
 		}, g.dup());
 	}
-
-	std::string diff;
 
 	for (size_t t = 0; t < threads.size(); t++) {
 		threads[t].join();
@@ -775,6 +770,8 @@ static std::string _diff_head(GitRunner g)
 		if (diffs[i].empty()) continue;
 		diff += diffs[i];
 	}
+
+	logprintf(LOG_DEFAULT, "total diffs size: %d\n", (int)diff.size());
 
 	return diff;
 }
@@ -791,4 +788,3 @@ std::string CommitMessageGenerator::diff_head(GitRunner g)
 	std::string diff = ::_diff_head(g);
 	return diff;
 }
-#endif
