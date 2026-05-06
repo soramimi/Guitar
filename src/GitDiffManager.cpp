@@ -98,8 +98,8 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 
 	bool atat = false;
 	for (std::string_view const &s : lines) {
-		std::string line = std::string{s};
-		int c = line[0] & 0xff;
+		std::string line(s);
+		int c = (unsigned char)line.c_str()[0];
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
 				out.hunks.push_back(GitHunk());

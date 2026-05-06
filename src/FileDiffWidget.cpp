@@ -263,8 +263,9 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 				}
 				minus = plus = 0;
 			};
-			for (auto line : hi.lines) {
-				int c = line[0] & 0xff;
+			for (std::string line : hi.lines) {
+				if (line.size() < 1) continue;
+				int c = (unsigned char)line.c_str()[0];
 				line = line.substr(1);
 				if (c == '-') {
 					minus++;
@@ -565,13 +566,13 @@ void FileDiffWidget::setRightOnly(GitDiff const &diff, QByteArray const &ba)
 	}
 }
 
-void FileDiffWidget::setSideBySide(GitDiff const &diff, QByteArray const &ba, bool uncommited, QString const &workingdir)
+void FileDiffWidget::setSideBySide(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
 	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideText;
 	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
-	m->init_param_.uncommited = uncommited;
+	m->init_param_.uncommitted = uncommitted;
 	m->init_param_.workingdir = workingdir;
 
 	setOriginalLines_(ba, {}, {});

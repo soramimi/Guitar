@@ -187,7 +187,7 @@ struct MainWindow::Private {
 	MainWindow::FilterTarget filter_target = MainWindow::FilterTarget::RepositorySearch;
 	int before_search_row = -1;
 	bool uncommited_changes = false;
-	std::vector<GitFileStatus> uncommited_changes_file_list;
+	std::vector<GitFileStatus> uncommitted_changes_file_list;
 
 	GitHash head_id;
 
@@ -1427,13 +1427,13 @@ void MainWindow::connectSetCommitLog()
 	connect(this, &MainWindow::sigSetCommitLog, this, &MainWindow::onSetCommitLog);
 }
 
-void MainWindow::updateUncommitedChanges(GitRunner g)
+void MainWindow::updateUncommittedChanges(GitRunner g)
 {
 	PROFILE;
 
-	TraceLogger trace("updateUncommitedChanges", {});
-	m->uncommited_changes_file_list = g.status_s();
-	setUncommitedChanges(!m->uncommited_changes_file_list.empty());
+	TraceLogger trace("updateUncommittedChanges", {});
+	m->uncommitted_changes_file_list = g.status_s();
+	setUncommittedChanges(!m->uncommitted_changes_file_list.empty());
 }
 
 std::map<GitHash, TagList> MainWindow::queryTags(GitRunner g)
@@ -1548,7 +1548,7 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_unco
 	});
 	auto async_update_uncommited = std::async(std::launch::async, [&](){
 		if (!suppress_uncommit_changes) {
-			updateUncommitedChanges(g);
+			updateUncommittedChanges(g);
 		}
 	});
 	auto async_tags = std::async(std::launch::async, [&](){
@@ -1559,7 +1559,7 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_unco
 
 	std::map<GitHash, BranchList> branch_map;
 
-	// Uncommited changes がある場合、その親を取得するためにブランチ情報が必要
+	// Uncommitted changes がある場合、その親を取得するためにブランチ情報が必要
 	auto branches = async_branches.get();
 	for (GitBranch const &b : branches) {
 		if (b.isCurrent()) {
@@ -1568,13 +1568,13 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_unco
 		branch_map[b.id].append(b);
 	}
 
-	// Uncommited changes の処理
+	// Uncommitted changes の処理
 	async_update_uncommited.wait();
 	if (!suppress_uncommit_changes) {
-		if (isThereUncommitedChanges()) {
+		if (isThereUncommittedChanges()) {
 			GitCommitItem item;
 			item.parent_ids.push_back(currentBranch().id);
-			item.message = (QS)tr("Uncommited changes");
+			item.message = (QS)tr("Uncommitted changes");
 			commit_log.push_front(item);
 			commit_log.updateIndex();
 		}
@@ -1625,11 +1625,11 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 		CommitRecord rec;
 
 		bool isHEAD = (commit.commit_id == getHeadId());
-		if (Git::isUncommited(commit)) { // 未コミットの時
+		if (Git::isUncommitted(commit)) { // 未コミットの時
 			rec.bold = true; // 太字
 			selrow = row;
 		} else {
-			bool uncommited_changes = isThereUncommitedChanges();
+			bool uncommited_changes = isThereUncommittedChanges();
 			if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
 				rec.bold = true; // 太字
 				selrow = row;
@@ -1710,7 +1710,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	// リポジトリ情報をクリア
 	{
 		clearLabelMap();
-		setUncommitedChanges(false);
+		setUncommittedChanges(false);
 		clearLogContents();
 
 		internalClearRepositoryInfo();
@@ -2351,14 +2351,14 @@ std::optional<std::vector<GitDiff>> MainWindow::makeDiffs(GitRunner g, GitHash i
 {
 	if (!isValidWorkingCopy(g)) return std::nullopt;
 
-	if (!id && !isThereUncommitedChanges()) {
+	if (!id && !isThereUncommittedChanges()) {
 		id = GitHash(getObjCache()->rev_parse(g, "HEAD"));
 	}
 
 	std::vector<GitSubmoduleItem> mods = async_modules.get();
 	setSubmodules(mods);
 
-	bool uncommited = (!id && isThereUncommitedChanges());
+	bool uncommited = (!id && isThereUncommittedChanges());
 
 	GitDiffManager dm(getObjCache());
 	if (uncommited) {
@@ -3335,7 +3335,7 @@ int MainWindow::limitLogCount() const
 	return (n >= 1 && n <= 100000) ? n : 10000;
 }
 
-bool MainWindow::isThereUncommitedChanges() const
+bool MainWindow::isThereUncommittedChanges() const
 {
 	return m->uncommited_changes;
 }
@@ -3572,7 +3572,7 @@ void MainWindow::setInteractionMode(const MainWindow::InteractionMode &im)
 	m->interaction_mode = im;
 }
 
-void MainWindow::setUncommitedChanges(bool uncommited_changes)
+void MainWindow::setUncommittedChanges(bool uncommited_changes)
 {
 	m->uncommited_changes = uncommited_changes;
 }
@@ -4129,8 +4129,8 @@ void MainWindow::updateFileList(GitHash const &id)
 	} else {
 		file_list_type = FileListType::SingleList;
 		if (!id) {
-			updateUncommitedChanges(g);
-			if (isThereUncommitedChanges()) {
+			updateUncommittedChanges(g);
+			if (isThereUncommittedChanges()) {
 				file_list_type = FileListType::SideBySide;
 			}
 		}
@@ -4142,7 +4142,7 @@ void MainWindow::updateFileList(GitHash const &id)
 
 		if (id) {
 			// nop
-		} else if (isThereUncommitedChanges()) {
+		} else if (isThereUncommittedChanges()) {
 			xdata.files_list_type = FileListType::SideBySide;
 		}
 
@@ -4177,14 +4177,14 @@ void MainWindow::updateFileList(GitHash const &id)
 
 			std::atomic_size_t index {0};
 			std::vector<std::thread> threads(8);
-			const size_t ncount = m->uncommited_changes_file_list.size();
+			const size_t ncount = m->uncommitted_changes_file_list.size();
 			std::vector<MainWindow::ObjectData> object_data(ncount);
 			for (size_t j = 0; j < threads.size(); j++) {
 				threads[j] = std::thread([&](GitRunner g){
 					while (1) {
 						size_t i = index++;
 						if (i >= ncount) break;
-						GitFileStatus const &s = m->uncommited_changes_file_list[i];
+						GitFileStatus const &s = m->uncommitted_changes_file_list[i];
 						{
 							bool staged = (s.isStaged() && s.code_y() == ' ');
 							int idiff = -1;
@@ -4253,7 +4253,7 @@ void MainWindow::updateFileList(GitCommitItem const *commit)
 	GitHash id;
 	if (!commit) {
 		// nullptr for uncommited changes
-	} else if (Git::isUncommited(*commit)) {
+	} else if (Git::isUncommitted(*commit)) {
 		// empty id for uncommited changes
 	} else {
 		id = commit->commit_id;
@@ -4407,8 +4407,8 @@ void MainWindow::updateStatusBarText()
 		} else if (w == ui->tableWidget_log) {
 			GitCommitItem const *commit = currentCommitItem();
 			if (commit) {
-				if (Git::isUncommited(*commit)) {
-					msg.text = tr("Uncommited changes");
+				if (Git::isUncommitted(*commit)) {
+					msg.text = tr("Uncommitted changes");
 				} else {
 					QString id = QString::fromStdString(commit->commit_id.toString());
 					QString labels = labelsInfoText(*commit);
@@ -4512,7 +4512,7 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 
 void MainWindow::merge(GitCommitItem commit)
 {
-	if (isThereUncommitedChanges()) return;
+	if (isThereUncommittedChanges()) return;
 
 	if (!commit) {
 		int row = selectedLogIndex();
@@ -4914,7 +4914,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	auto canEditMessage = [&](){
 		if (selected_commit.has_child) return false; // 子がないこと
-		if (Git::isUncommited(selected_commit)) return false; // 未コミットがないこと
+		if (Git::isUncommitted(selected_commit)) return false; // 未コミットがないこと
 		bool is_head = false;
 		bool has_remote_branch = false;
 		for (const BranchLabel &label : labels) {
@@ -5778,7 +5778,7 @@ void MainWindow::findNext()
 		}
 		while (row < (int)logs.size()) {
 			GitCommitItem const &commit = logs[row];
-			if (!Git::isUncommited(commit)) {
+			if (!Git::isUncommitted(commit)) {
 				QString message = (QS)commit.message;
 				if (message.indexOf(m->search_text, 0, Qt::CaseInsensitive) >= 0) {
 					bool b = ui->tableWidget_log->blockSignals(true);
@@ -5801,7 +5801,7 @@ bool MainWindow::locateCommitID(QString const &commit_id)
 	int row = 0;
 	while (row < (int)logs.size()) {
 		GitCommitItem const &commit = logs[row];
-		if (!Git::isUncommited(commit)) {
+		if (!Git::isUncommitted(commit)) {
 			if (QString::fromStdString(commit.commit_id.toString()).startsWith(commit_id)) {
 				bool b = ui->tableWidget_log->blockSignals(true);
 				setCurrentLogRow(row);
@@ -6011,7 +6011,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 		{
 			auto const &logs = commitlog();
 			int row = ui->tableWidget_log->actualLogIndex();
-			uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommited(logs[row]));
+			uncommited = (row >= 0 && row < (int)logs.size() && Git::isUncommitted(logs[row]));
 			updatediffview = true;
 		}
 		if (updatediffview) {

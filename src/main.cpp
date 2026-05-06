@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 		int i = 1;
 		while (i < argc) {
 			std::string arg = argv[i];
-			if (arg[0] == '-') {
+			if (arg.c_str()[0] == '-') {
 				if (arg == "--open-here") {
 					a_open_here = true;
 				} else if (arg == "--commit-id") {

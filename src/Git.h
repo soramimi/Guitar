@@ -40,7 +40,7 @@ public:
 		return GitSignatureGrade::Unknown;
 	}
 
-	static bool isUncommited(GitCommitItem const &item)
+	static bool isUncommitted(GitCommitItem const &item)
 	{
 		return !item.commit_id.isValid();
 	}

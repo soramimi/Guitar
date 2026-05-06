@@ -1922,7 +1922,7 @@
     </message>
     <message>
         <source>&amp;Rebase --abort</source>
-        <translation>&amp;ரீபேச் --அபார்ட்</translation>
+        <translation type="vanished">&amp;ரீபேச் --அபார்ட்</translation>
     </message>
     <message>
         <source>Show a&amp;vatars</source>
@@ -2141,7 +2141,7 @@
         <translation type="vanished">விவரம்</translation>
     </message>
     <message>
-        <source>Uncommited changes</source>
+        <source>Uncommitted changes</source>
         <translation>உறுதியற்ற மாற்றங்கள்</translation>
     </message>
     <message>
@@ -2556,7 +2556,7 @@
     </message>
     <message>
         <source>Do you want to save the file to &quot;%1&quot;?</source>
-        <translation>நீங்கள் கோப்பை &quot;%1&quot; இல் சேமிக்க விரும்புகிறீர்களா?</translation>
+        <translation type="vanished">நீங்கள் கோப்பை &quot;%1&quot; இல் சேமிக்க விரும்புகிறீர்களா?</translation>
     </message>
     <message>
         <source>Error</source>
@@ -2576,6 +2576,34 @@
     </message>
     <message>
         <source>Consider git rebase --quit or git worktree add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rebase abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>rebase --abort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rebase continue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>rebase --continue</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rebase quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>rebase --quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>current</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

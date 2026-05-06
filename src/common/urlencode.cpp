@@ -88,7 +88,7 @@ static void url_decode_(char const *ptr, char const *end, std::vector<char> *out
 		ptr++;
 		if (c == '+') {
 			c = ' ';
-		} else if (c == '%' && isxdigit((unsigned char)ptr[0]) && isxdigit((unsigned char)ptr[1])) {
+		} else if (c == '%' && ptr + 1 < end && isxdigit((unsigned char)ptr[0]) && isxdigit((unsigned char)ptr[1])) {
 			char tmp[3]; // '%XX'
 			tmp[0] = ptr[0];
 			tmp[1] = ptr[1];

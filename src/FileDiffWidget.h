@@ -91,7 +91,7 @@ private:
 		QByteArray bytes_a;
 		QByteArray bytes_b;
 		GitDiff diff;
-		bool uncommited = false;
+		bool uncommitted = false;
 		QString workingdir;
 	};
 
@@ -114,7 +114,7 @@ private:
 
 	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
 	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
-	void setSideBySide(const GitDiff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
+	void setSideBySide(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
 	void setSideBySide_(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
 	bool isValidID(std::string const &id);

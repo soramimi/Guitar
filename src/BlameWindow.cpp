@@ -125,7 +125,8 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 	std::vector<std::string> lines = misc::splitLines(str, false);
 	BlameItem item;
 	for (std::string_view const &v : lines) {
-		std::string line = std::string{v};
+		if (v.empty()) continue;
+		std::string line(v);
 		if (line[0] == '\t') {
 			item.text = QString::fromUtf8(line.c_str() + 1);
 			list.push_back(item);

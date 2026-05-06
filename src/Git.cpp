@@ -1784,7 +1784,7 @@ void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 	bool atat = false;
 	for (std::string_view const &v : lines) {
 		std::string line = std::string{v};
-		int c = line[0] & 0xff;
+		int c = (unsigned char)line.c_str()[0];
 		if (c == '@') {
 			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
 				out->hunks.push_back(GitHunk());

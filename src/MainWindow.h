@@ -325,7 +325,7 @@ private:
 	void deleteTempFiles();
 	QString newTempFilePath();
 	int limitLogCount() const;
-	bool isThereUncommitedChanges() const;
+	bool isThereUncommittedChanges() const;
 	GitCommitItemList retrieveCommitLog(GitRunner g) const;
 	const std::map<GitHash, BranchList> &branchmap() const;
 
@@ -380,7 +380,7 @@ private:
 	void setInteractionEnabled(bool enabled);
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
-	void setUncommitedChanges(bool uncommited_changes);
+	void setUncommittedChanges(bool uncommited_changes);
 	std::vector<GitDiff> const *diffResult() const;
 
 	void clearLabelMap();
@@ -401,7 +401,7 @@ private:
 	void updateAvatar(const GitUser &user, bool request);
 	void cleanSubModule(GitRunner g, QListWidgetItem *item);
 
-	void updateUncommitedChanges(GitRunner g);
+	void updateUncommittedChanges(GitRunner g);
 	void enableDragAndDropOnRepositoryTree(bool enabled);
 	QString preferredRepositoryGroup() const;
 	void setPreferredRepositoryGroup(QString const &group);

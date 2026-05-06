@@ -39,7 +39,7 @@ void BigDiffWindow::setTextCodec(std::shared_ptr<MyTextCodec> codec)
 
 void BigDiffWindow::updateDiffView()
 {
-	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommited);
+	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommitted);
 }
 
 void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
@@ -72,7 +72,7 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 		ui->widget_diff->setRightOnly(m->param.diff, m->param.bytes_b);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideText:
-		ui->widget_diff->setSideBySide(m->param.diff, m->param.bytes_a, m->param.uncommited, m->param.workingdir);
+		ui->widget_diff->setSideBySide(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideImage:
 		ui->widget_diff->setSideBySide_(m->param.diff, m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
