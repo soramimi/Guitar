@@ -134,8 +134,8 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
-				} else if (arg == "--genmsg") { // experimental
-					a_genmsg = true;
+				// } else if (arg == "--genmsg") { // experimental
+				// 	a_genmsg = true;
 				} else if (arg == "--unsafe") { // experimental
 #ifdef UNSAFE_ENABLED
 					global->unsafe_enabled = true;
@@ -183,9 +183,11 @@ int main(int argc, char *argv[])
 
 	global->init1();
 
+#if 0
 	if (a_genmsg) {
 		return genmsg();
 	}
+#endif
 
 #ifdef Q_OS_WIN
 	putenv("QT_ENABLE_HIGHDPI_SCALING=1");

@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "Profile.h"
 #include "common/fmt.h"
+#include "common/str.h"
 #include "common/joinpath.h"
 #include "common/jstream.h"
 #include "common/q/helper.h"
@@ -725,31 +726,41 @@ bool CommitMessageGenerator::accept_file_diff(std::string const &filename, std::
  * @param fn_accept ファイルをdiff対象に含めるか判定するコールバック
  * @return 連結されたdiff文字列
  */
-static std::string _diff_head(GitRunner g)
+static std::string git(std::string const &gitcommand, std::string const &dir, std::string const &cmd)
 {
-	PROFILE;
+	Process proc;
+	proc.start(fmt("\"%s\" -C \"%s\" %s")(gitcommand)(dir)(cmd), false);
+	proc.wait();
+	std::string s = (misc::str)proc.stdout_bytes();
+	return s;
+}
 
-	std::vector<std::string> names = g.diff_name_only_head();
+std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::string dir)
+{
+#ifdef APP_GUITAR
+	PROFILE;
+#endif
 
 	std::string diff;
-
+	std::vector<std::string> names = misc::splitLines(git(gitcommand, dir, "diff --name-only HEAD"), false);
 	std::vector<std::string> diffs(names.size());
 	const int NUM_THREADS = 8;
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
-		threads[t] = std::thread([&](GitRunner g){
+		threads[t] = std::thread([&](){
 			while (1) {
 				size_t i = index++;
 				if (i >= names.size()) break;
 				std::string path = names[i];
 				if (path.empty()) continue;
 				std::string filename = misc::filename(path);
-				std::string fullpath(g.workingDir() / path);
+				std::string fullpath = dir / path;
 				std::string mimetype = global_mimetype_by_file(fullpath);
 				if (filename == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
 				if (!CommitMessageGenerator::accept_file_diff(path, mimetype)) continue;
-				std::string diff = g.diff_full_index_head_file(fullpath);
+				// std::string diff = g.diff_full_index_head_file(fullpath);
+				std::string diff = git(gitcommand, dir, "diff --full-index HEAD -- " + fullpath);
 				logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
 				if (diff.empty()) continue;
 				if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
@@ -758,7 +769,7 @@ static std::string _diff_head(GitRunner g)
 				}
 				diffs[i] = diff;
 			}
-		}, g.dup());
+		});
 	}
 
 	for (size_t t = 0; t < threads.size(); t++) {
@@ -783,8 +794,12 @@ static std::string _diff_head(GitRunner g)
  * @param g GitRunner インスタンス
  * @return フィルタ済みのdiff文字列
  */
+#ifdef APP_GUITAR
 std::string CommitMessageGenerator::diff_head(GitRunner g)
 {
-	std::string diff = ::_diff_head(g);
+	std::string gitcommand = global->appsettings.git_command.toStdString();
+	std::string dir = g.workingDir();
+	std::string diff = CommitMessageGenerator::diff_head(gitcommand, dir);
 	return diff;
 }
+#endif

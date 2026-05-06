@@ -28,7 +28,6 @@ private:
 public:
 	CommitMessageGenerator();
 	Result generate(std::string const &diff);
-	static std::string diff_head(GitRunner g);
 	static Result Error(std::string const &status, std::string const &message)
 	{
 		Result ret;
@@ -39,6 +38,10 @@ public:
 	}
 	void set_ai_model(GenerativeAI::Model model);
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
+	static std::string diff_head(std::string gitcommand, std::string dir);
+#ifdef APP_GUITAR
+	static std::string diff_head(GitRunner g);
+#endif
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

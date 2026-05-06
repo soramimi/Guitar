@@ -287,11 +287,11 @@ SOURCES += \
 	$$SRC/common/misc.cpp \
 	$$SRC/common/q/Dir.cpp \
 	$$SRC/common/q/FileInfo.cpp \
+	$$SRC/common/urlencode.cpp \
 	$$SRC/darktheme/DarkStyle.cpp \
 	$$SRC/darktheme/LightStyle.cpp \
 	$$SRC/darktheme/NinePatch.cpp \
 	$$SRC/darktheme/TraditionalWindowsStyleTreeControl.cpp \
-	$$SRC/genmsg.cpp \
 	$$SRC/gpg.cpp \
 	$$SRC/gzip.cpp \
 	$$SRC/inetclient.cpp \
@@ -305,7 +305,6 @@ SOURCES += \
 	$$SRC/texteditor/TextEditorWidget.cpp \
 	$$SRC/texteditor/UnicodeWidth.cpp \
 	$$SRC/texteditor/unicode.cpp \
-	$$SRC/urlencode.cpp \
 	$$SRC/webclient.cpp \
 	$$SRC/zip/zip.cpp \
 	$$SRC/zip/ziparchive.cpp \
@@ -480,6 +479,7 @@ HEADERS += \
 	$$SRC/common/q/FileInfo.h \
 	$$SRC/common/q/helper.h \
 	$$SRC/common/strformat.h \
+	$$SRC/common/urlencode.h \
 	$$SRC/darktheme/DarkStyle.h \
 	$$SRC/darktheme/LightStyle.h \
 	$$SRC/darktheme/NinePatch.h \
@@ -492,7 +492,6 @@ HEADERS += \
 	$$SRC/dtl/dtl.hpp \
 	$$SRC/dtl/functors.hpp \
 	$$SRC/dtl/variables.hpp \
-	$$SRC/genmsg.h \
 	$$SRC/gpg.h \
 	$$SRC/gzip.h \
 	$$SRC/inetclient.h \
@@ -505,7 +504,6 @@ HEADERS += \
 	$$SRC/texteditor/TextEditorWidget.h \
 	$$SRC/texteditor/UnicodeWidth.h \
 	$$SRC/texteditor/unicode.h \
-	$$SRC/urlencode.h \
 	$$SRC/webclient.h \
 	$$SRC/zip/zip.h \
 	$$SRC/zip/zipinternal.h

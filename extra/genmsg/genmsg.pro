@@ -9,7 +9,6 @@ INCLUDEPATH += $$PWD/../../src/common
 
 DEFINES += NO_LOGGER
 DEFINES += NO_TRACELOG
-DEFINES += USE_LIBCURL
 
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
@@ -34,7 +33,7 @@ msvc:CONFIG(debug, debug|release):LIBS += $$PWD/../../filetype/lib/filetyped.lib
 !msvc:CONFIG(debug, debug|release):LIBS += $$PWD/../../filetype/lib/libfiletyped.a $$PWD/../../filetype/lib/libfiled.a $$PWD/../../filetype/lib/libonigurumad.a
 
 SOURCES += \
-	../../src/AbstractProcess.cpp \
+    ../../src/AbstractProcess.cpp \
 	../../src/CommitMessageGenerator.cpp \
 	../../src/FileTypeDetector.cpp \
 	../../src/GenerativeAI.cpp \
@@ -44,12 +43,12 @@ SOURCES += \
 	../../src/common/misc.cpp \
 	../../src/common/q/Dir.cpp \
 	../../src/common/q/FileInfo.cpp \
+	../../src/common/urlencode.cpp \
 	../../src/curlclient.cpp \
 	../../src/genmsg.cpp \
-	../../src/inetclient.cpp \
-	../../src/urlencode.cpp
+	../../src/inetclient.cpp
 HEADERS +=  \
-	../../src/AbstractProcess.h \
+    ../../src/AbstractProcess.h \
 	../../src/CommitMessageGenerator.h \
 	../../src/FileTypeDetector.h \
 	../../src/GenerativeAI.h \
@@ -61,10 +60,10 @@ HEADERS +=  \
 	../../src/common/misc.h \
 	../../src/common/q/Dir.h \
 	../../src/common/q/FileInfo.h \
+	../../src/common/urlencode.h \
 	../../src/curlclient.h \
 	../../src/genmsg.h \
-	../../src/inetclient.h \
-	../../src/urlencode.h
+	../../src/inetclient.h
 
 msvc {
 SOURCES += \
