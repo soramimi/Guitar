@@ -35,8 +35,8 @@ private:
 	struct Private;
 	Private *m;
 protected:
-	void insertIntoCommandCache(QString const &key, std::vector<char> const &value);
-	std::vector<char> *findFromCommandCache(QString const &key);
+	void insertIntoCommandCache(const std::string &key, std::vector<char> const &value);
+	std::vector<char> *findFromCommandCache(std::string const &key);
 	virtual std::shared_ptr<AbstractGitSession> dup() = 0;
 public:
 	AbstractGitSession();

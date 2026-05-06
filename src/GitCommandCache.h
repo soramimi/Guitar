@@ -10,14 +10,14 @@ class GitCommandCache {
 public:
 private:
 	struct Data {
-		std::map<QString, std::vector<char>> map;
+		std::map<std::string, std::vector<char>> map;
 	};
 	std::shared_ptr<Data> d;
 public:
 	GitCommandCache();
 
-	std::vector<char> *find(QString const &key);
-	void insert(QString const &key, std::vector<char> const &value);
+	std::vector<char> *find(std::string const &key);
+	void insert(const std::string &key, std::vector<char> const &value);
 
 	void clear();
 };

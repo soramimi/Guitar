@@ -1,5 +1,7 @@
 #include "GitBasicSession.h"
 #include "TraceEventWriter.h"
+#include "common/fmt.h"
+#include "common/str.h"
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
 #include <QDebug>
@@ -10,12 +12,12 @@
 
 #ifdef APP_GUITAR
 #include "ApplicationGlobal.h"
-static inline void global_write_log(QString const &s)
+static inline void global_write_log(std::string_view const &s)
 {
 	global->writeLog(s);
 }
 #else
-void global_write_log(QString const &s);
+void global_write_log(std::string_view const &s);
 #endif
 
 GitBasicSession::GitBasicSession(const Commands &cmds)
@@ -69,28 +71,28 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 	GitResult result;
 
 	auto DoIt = [&](){
-		QString cmd;
+		std::string cmd;
 #ifdef _WIN32
 		cmd = opt.prefix;
 #endif
-		cmd += QString("\"%1\" --no-pager ").arg(QString::fromStdString(gitCommand()));
+		cmd += fmt("\"%s\" --no-pager ")(gitCommand());
 
 		if (opt.chdir) {
-			QString cwd = QString::fromStdString(workingDir());
-			if (!cwd.isEmpty()) {
-				cmd += QString("-C \"%1\" ").arg(cwd);
+			std::string cwd = workingDir();
+			if (!cwd.empty()) {
+				cmd += fmt("-C \"%s\" ")(cwd);
 			}
 		}
 
-		cmd += QString::fromStdString(arg);
+		cmd += arg;
 
 		if (opt.log) {
-			QString s = QString("> git %1\n").arg(QString::fromStdString(arg));
+			std::string s = fmt("> git %s\n")(arg);
 			global_write_log(s);
 		}
 
 		if (opt.pty) {
-			opt.pty->start(cmd.toStdString(), env.toStdString(), true);
+			opt.pty->start(cmd, env.toStdString(), true);
 		} else {
 			if (opt.use_cache) {
 				auto const *a = findFromCommandCache(cmd);
@@ -102,7 +104,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 			}
 
 			Process proc;
-			proc.start(cmd.toStdString(), false);
+			proc.start(cmd, false);
 			exit_code = proc.wait();
 
 			if (opt.errout) {
@@ -110,8 +112,8 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 			} else {
 				if (!proc.stderr_bytes().empty()) {
 					std::vector<char> v = proc.stderr_bytes();
-					QString s = QString::fromUtf8(v.data(), int(v.size()));
-					if (!s.endsWith('\n')) {
+					std::string s = (misc::str)v;
+					if (!misc::ends_with(s, '\n')) {
 						s += '\n';
 					}
 					global_write_log(s);

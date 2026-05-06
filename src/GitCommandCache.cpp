@@ -5,7 +5,7 @@ GitCommandCache::GitCommandCache()
 	d = std::make_shared<Data>();
 }
 
-std::vector<char> *GitCommandCache::find(const QString &key)
+std::vector<char> *GitCommandCache::find(std::string const &key)
 {
 	if (!d) return nullptr;
 	auto it = d->map.find(key);
@@ -15,7 +15,7 @@ std::vector<char> *GitCommandCache::find(const QString &key)
 	return nullptr;
 }
 
-void GitCommandCache::insert(const QString &key, const std::vector<char> &value)
+void GitCommandCache::insert(std::string const &key, const std::vector<char> &value)
 {
 	if (!d) return;
 	d->map[key] = value;

@@ -17,12 +17,12 @@ struct AbstractGitSession::Private {
 	AbstractGitSession::Info info;
 };
 
-void AbstractGitSession::insertIntoCommandCache(const QString &key, const std::vector<char> &value)
+void AbstractGitSession::insertIntoCommandCache(std::string const &key, const std::vector<char> &value)
 {
 	m->cache->command_cache.insert(key, value);
 }
 
-std::vector<char> *AbstractGitSession::findFromCommandCache(const QString &key)
+std::vector<char> *AbstractGitSession::findFromCommandCache(std::string const &key)
 {
 	return m->cache->command_cache.find(key);
 }
