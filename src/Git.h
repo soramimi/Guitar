@@ -52,8 +52,7 @@ private:
 	static void parseAheadBehind(QString const &s, GitBranch *b);
 	Git();
 	void _init(const GitContext &cx);
-	QString encodeQuotedText(QString const &str);
-	std::string encodeQuotedText(std::string const &str);
+	static std::string quoted_text(std::string const &str);
 	static std::optional<GitCommitItem> parseCommitItem(const std::string &line);
 	std::string submoduleURL(std::string const &path);
 public:

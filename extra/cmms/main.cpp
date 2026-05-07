@@ -90,6 +90,20 @@ struct GitReturn {
 	}
 };
 
+static std::string quoted_text(std::string const &str)
+{
+	std::string out = "\"";
+	for (char c : str) {
+		if (c == '\"') { // triple quotes
+			out += "\"\"\"";
+		} else {
+			out += c;
+		}
+	}
+	out += "\"";
+	return out;
+}
+
 GitReturn git(std::string const &cmd)
 {
 	GitReturn ret;
@@ -98,7 +112,7 @@ GitReturn git(std::string const &cmd)
 	if (!opt.dir.empty()) {
 		cd = opt.dir.c_str();
 	}
-	proc.start(fmt("\"%s\" -C \"%s\" %s")(opt.gitcommand)(cd)(cmd), false);
+	proc.start(fmt("%s -C %s %s")(quoted_text(opt.gitcommand))(quoted_text(cd))(cmd), false);
 	ret.exit_code = proc.wait();
 	ret.out_text = (misc::str)proc.stdout_bytes();
 	return ret;
@@ -183,7 +197,7 @@ bool has_staged()
 
 bool commit(std::string const &message)
 {
-	return git(fmt("commit -m \"%s\"")(message));
+	return git(fmt("commit -m %s")(quoted_text(message)));
 }
 
 std::vector<std::string> generate_commit_message(Option const &opt)

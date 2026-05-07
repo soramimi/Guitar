@@ -911,7 +911,7 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 
 std::string Git::submoduleURL(std::string const &path)
 {
-	std::string cmd = fmt("config --file .gitmodules submodule.%s.url")(encodeQuotedText(path));
+	std::string cmd = fmt("config --file .gitmodules submodule.%s.url")(quoted_text(path));
 	auto result = git(cmd);
 	if (result) {
 		return std::string{misc::trimmed(resultStdString(result))};
@@ -984,29 +984,7 @@ bool Git::submodule_update(GitSubmoduleUpdateData const &data, AbstractPtyProces
 	return (bool)exec_git(cmd.toStdString(), opt);
 }
 
-QString Git::encodeQuotedText(QString const &str)
-{
-	std::vector<ushort> vec;
-	ushort const *begin = str.utf16();
-	ushort const *end = begin + str.size();
-	ushort const *ptr = begin;
-	vec.push_back('\"');
-	while (ptr < end) {
-		ushort c = *ptr;
-		ptr++;
-		if (c == '\"') { // triple quotes
-			vec.push_back(c);
-			vec.push_back(c);
-			vec.push_back(c);
-		} else {
-			vec.push_back(c);
-		}
-	}
-	vec.push_back('\"');
-	return QString::fromUtf16((char16_t const *)&vec[0], vec.size());
-}
-
-std::string Git::encodeQuotedText(std::string const &str)
+std::string Git::quoted_text(std::string const &str)
 {
 	std::string out = "\"";
 	for (char c : str) {
@@ -1034,7 +1012,7 @@ bool Git::commit_(std::string const &msg, bool amend, bool sign, AbstractPtyProc
 	if (text.empty()) {
 		text = "no message";
 	}
-	text = encodeQuotedText(text);
+	text = quoted_text(text);
 	cmd += fmt(" -m %s")(text);
 
 	AbstractGitSession::Option opt;
@@ -1404,8 +1382,8 @@ void Git::setUser(const GitUser &user, bool global)
 	}
 	AbstractGitSession::Option opt;
 	opt.chdir = !global;
-	exec_git(fmt("config %s user.name %s")(config)(encodeQuotedText(user.name)), opt);
-	exec_git(fmt("config %s user.email %s")(config)(encodeQuotedText(user.email)), opt);
+	exec_git(fmt("config %s user.name %s")(config)(quoted_text(user.name)), opt);
+	exec_git(fmt("config %s user.email %s")(config)(quoted_text(user.email)), opt);
 }
 
 bool Git::reset_head1()
@@ -1493,16 +1471,16 @@ void Git::remote_v(std::vector<GitRemote> *out)
 void Git::setRemoteURL(GitRemote const &remote)
 {
 	std::string cmd = fmt("remote set-url %s %s")
-			(encodeQuotedText(remote.name))
-			(encodeQuotedText(remote.url_fetch));
+			(quoted_text(remote.name))
+			(quoted_text(remote.url_fetch));
 	git(cmd);
 }
 
 void Git::addRemoteURL(GitRemote const &remote)
 {
 	std::string cmd = fmt("remote add \"%s\" \"%s\"")
-			(encodeQuotedText(remote.name))
-			(encodeQuotedText(remote.url_fetch));
+			(quoted_text(remote.name))
+			(quoted_text(remote.url_fetch));
 	gitinfo().ssh_key_override = remote.ssh_key;
 	git(cmd);
 }
@@ -1510,7 +1488,7 @@ void Git::addRemoteURL(GitRemote const &remote)
 void Git::removeRemote(std::string const &name)
 {
 	std::string cmd = "remote remove ";
-	cmd += encodeQuotedText(name);
+	cmd += quoted_text(name);
 	git(cmd);
 }
 
