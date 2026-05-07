@@ -1,4 +1,6 @@
 
+// cmms: Commit Message
+//
 // experimental code for generating commit messages using AI
 
 #include "CommitMessageGenerator.h"
@@ -6,26 +8,29 @@
 #include "common/fmt.h"
 #include "common/q/Dir.h"
 #include "common/str.h"
+#include "common/joinpath.h"
 #include "curlclient.h"
 #include <string_view>
 #include <selectitem.h>
+#include <QFileInfo>
+#include <QStandardPaths>
 
-#ifdef _WIN32
-#include <WinSock2.h>
-#endif
+// #ifdef _WIN32
+// #include <WinSock2.h>
+// #endif
 
-#ifdef _WIN32
-char const *gitcommand = "C:\\Program Files\\Git\\cmd\\git.exe";
-#else
-char const *gitcommand = "/usr/bin/git";
-#endif
 
 static CurlContext curlcx;
 static GenerativeAI::Model ai_model;
 
 struct Option {
 	std::string dir;
-
+	QString config_file_path;
+#ifdef _WIN32
+	std::string gitcommand = "C:\\Program Files\\Git\\cmd\\git.exe";
+#else
+	std::string gitcommand = "/usr/bin/git";
+#endif
 };
 
 Option opt;
@@ -93,7 +98,7 @@ GitReturn git(std::string const &cmd)
 	if (!opt.dir.empty()) {
 		cd = opt.dir.c_str();
 	}
-	proc.start(fmt("\"%s\" -C \"%s\" %s")(gitcommand)(cd)(cmd), false);
+	proc.start(fmt("\"%s\" -C \"%s\" %s")(opt.gitcommand)(cd)(cmd), false);
 	ret.exit_code = proc.wait();
 	ret.out_text = (misc::str)proc.stdout_bytes();
 	return ret;
@@ -181,9 +186,9 @@ bool commit(std::string const &message)
 	return git(fmt("commit -m \"%s\"")(message));
 }
 
-std::vector<std::string> genmsg(Option const &opt)
+std::vector<std::string> generate_commit_message(Option const &opt)
 {
-	std::string diff = CommitMessageGenerator::diff_head(gitcommand, opt.dir);
+	std::string diff = CommitMessageGenerator::diff_head(opt.gitcommand, opt.dir);
 
 	CommitMessageGenerator gen;
 	CommitMessageGenerator::Result msg = gen.generate(diff);
@@ -227,7 +232,7 @@ int main2(int argc, char **argv)
 
 	ai_model = GenerativeAI::Model::from_name("gpt-5.4-mini");
 
-	auto list = genmsg(opt);
+	auto list = generate_commit_message(opt);
 	if (!list.empty()) {
 		int index = selectitem(list);
 		if (index >= 0 && index < list.size()) {
@@ -246,6 +251,14 @@ int main(int argc, char **argv)
 		puts(s.c_str());
 		return {};
 	}
+
+	QString organization_name = "soramimi.jp";
+	QString application_name = "cmms";
+	QString this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
+	QString generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+	QString app_config_dir = generic_config_dir / organization_name / application_name;
+	QString log_dir = app_config_dir / "log";
+	opt.config_file_path = app_config_dir / application_name + ".ini";
 
 	return main2(argc, argv);
 }
