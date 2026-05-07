@@ -10,7 +10,7 @@ struct ProcessResult {
 	bool ok = false;
 	int exit_code = 0;
 
-	operator bool () const
+	explicit operator bool () const
 	{
 		return ok;
 	}

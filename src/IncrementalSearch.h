@@ -44,7 +44,7 @@ struct ResultPart : public Part::Fragment {
 struct Result {
 	bool match = false;
 	std::vector<ResultPart> parts;
-	operator bool () const
+	explicit operator bool () const
 	{
 		return match;
 	}
@@ -88,7 +88,7 @@ public:
 		if (!filter_p_) return {};
 		return filter_p_->match(text);
 	}
-	operator bool () const
+	explicit operator bool () const
 	{
 		return !isEmpty();
 	}

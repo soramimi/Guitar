@@ -24,7 +24,7 @@ public:
 		{
 			return size() == 0;
 		}
-		operator bool () const
+		explicit operator bool () const
 		{
 			return !empty();
 		}

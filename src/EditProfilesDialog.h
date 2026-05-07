@@ -19,7 +19,7 @@ public:
 		QString email;
 		Item() = default;
 		Item(GitUser const &user);
-		operator bool () const
+		explicit operator bool () const
 		{
 			return misc::isValidMailAddress(email);
 		}

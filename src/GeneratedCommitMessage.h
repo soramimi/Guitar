@@ -17,7 +17,7 @@ public:
 		: result_(p)
 	{
 	}
-	operator bool () const
+	explicit operator bool () const
 	{
 		return !result_->error;
 	}

@@ -32,7 +32,7 @@ struct AccountProfile {
 	{
 		return QString("%1 <%2>").arg(name).arg(email);
 	}
-	operator bool () const
+	explicit operator bool () const
 	{
 		return misc::isValidMailAddress(email);
 	}

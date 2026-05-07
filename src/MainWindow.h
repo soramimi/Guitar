@@ -164,7 +164,7 @@ private:
 	public:
 		GitObject::Type type = GitObject::Type::NONE;
 		QByteArray content;
-		operator bool () const
+		explicit operator bool () const
 		{
 			return type != GitObject::Type::NONE;
 		}

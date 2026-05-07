@@ -103,7 +103,7 @@ struct GitObject {
 	};
 	Type type = Type::NONE;
 	QByteArray content;
-	operator bool () const
+	explicit operator bool () const
 	{
 		return type != Type::NONE;
 	}
@@ -238,7 +238,7 @@ struct GitTag {
 struct GitUser {
 	std::string name;
 	std::string email;
-	operator bool () const
+	explicit operator bool () const
 	{
 		return misc::isValidMailAddress(email);
 	}
@@ -257,7 +257,7 @@ struct GitBranch {
 		HeadDetachedFrom = 0x0004,
 	};
 	int flags = 0;
-	operator bool () const
+	explicit operator bool () const
 	{
 		return id.isValid() && !name.empty();
 	}
@@ -396,7 +396,7 @@ struct GitSubmoduleItem {
 	std::string path;
 	std::string refs;
 	std::string url;
-	operator bool () const
+	explicit operator bool () const
 	{
 		return id.isValid() && !path.empty();
 	}

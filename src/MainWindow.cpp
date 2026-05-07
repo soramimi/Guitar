@@ -3644,7 +3644,7 @@ bool MainWindow::isRepositoryOpened() const
  */
 QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const &data)
 {
-	const bool issubmodule = data.submod; // サブモジュール
+	const bool issubmodule{data.submod}; // サブモジュール
 
 	QString header = data.header; // ヘッダ（バッジ識別子）
 	if (header.isEmpty()) {

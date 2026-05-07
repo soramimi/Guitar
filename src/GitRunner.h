@@ -29,7 +29,7 @@ public:
 	GitRunner(GitRunner const &that);
 	GitRunner(GitRunner &&that);
 	void operator = (GitRunner const &that);
-	operator bool () const;
+	explicit operator bool () const;
 	GitRunner dup() const;
 
 	GitObjectCache *getObjCache();
