@@ -202,7 +202,7 @@ bool commit(std::string const &message)
 
 std::vector<std::string> generate_commit_message(Option const &opt)
 {
-	std::string diff = CommitMessageGenerator::diff_head(opt.gitcommand, opt.dir);
+	std::string diff = CommitMessageGenerator::make_diff(opt.gitcommand, opt.dir, {});
 
 	CommitMessageGenerator gen;
 	CommitMessageGenerator::Result msg = gen.generate(diff);

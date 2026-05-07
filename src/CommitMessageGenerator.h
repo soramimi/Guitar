@@ -7,6 +7,20 @@
 
 class CommitMessageGenerator {
 public:
+	constexpr static int max_diff_size = 200000;
+
+	struct CommitPair {
+		std::string a = "HEAD";
+		std::string b;
+		CommitPair() = default;
+		CommitPair(std::string const &a, std::string const &b)
+			: a(a)
+			, b(b)
+		{
+		}
+	};
+
+
 	class Result {
 	public:
 		bool error = false;
@@ -38,9 +52,9 @@ public:
 	}
 	void set_ai_model(GenerativeAI::Model model);
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
-	static std::string diff_head(std::string gitcommand, std::string dir);
+	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits);
 #ifdef APP_GUITAR
-	static std::string diff_head(GitRunner g);
+	static std::string make_diff(GitRunner g, CommitPair const &commits);
 #endif
 };
 

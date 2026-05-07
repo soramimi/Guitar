@@ -23,9 +23,11 @@ public:
 	QString text() const;
 	bool isSigningEnabled() const;
 	bool isAmend() const;
+	void setCommitIDs(const CommitMessageGenerator::CommitPair &commits);
 protected:
 	void keyPressEvent(QKeyEvent *event) override;
 private:
+	CommitMessageGenerator::CommitPair commits_;
 	Ui::CommitDialog *ui;
 	gpg::Data key_;
 	QString previousMessage_;

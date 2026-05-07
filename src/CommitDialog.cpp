@@ -15,7 +15,7 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser 
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
-	
+
 	connect(&generator_, &GenerateCommitMessageThread::ready, this, &CommitDialog::onReady);
 	generator_.start();
 	
@@ -152,16 +152,22 @@ void CommitDialog::on_checkbox_amend_stateChanged(int state)
 	setText(state == Qt::Checked ? previousMessage_ : QString(""));
 }
 
+void CommitDialog::setCommitIDs(CommitMessageGenerator::CommitPair const &commits)
+{
+	commits_ = commits;
+}
+
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	diff_ = CommitMessageGenerator::diff_head(global->mainwindow->git());
+	diff_ = CommitMessageGenerator::make_diff(global->mainwindow->git(), commits_);
 	
 	auto [models, index] = global->appsettings.ai_models();
 	assert(index >= 0 && index < models.size());
 
 	GenerateCommitMessageDialog dlg(this, models, index);
+	dlg.setCommitIDs(commits_);
 	dlg.show();
-	dlg.generate(diff_);
+	dlg.generate();
 	if (dlg.exec() == QDialog::Accepted) {
 		QStringList list = dlg.message();
 		if (!list.isEmpty()) {

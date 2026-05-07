@@ -654,7 +654,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	}
 
 	// 巨大なdiffはトークン超過やコスト増加を招くため上限を設ける
-	if (diff.size() > 100000) {
+	if (diff.size() > max_diff_size) {
 		return Error("error", "diff too large");
 	}
 
@@ -739,16 +739,41 @@ static std::string git(std::string const &gitcommand, std::string const &dir, st
 	return s;
 }
 
-std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::string dir)
+/**
+ * @brief コミット差分を取得する。
+ *
+ * コマンドラインの git を呼び出して diff を取得する内部実装。GitRunner を引数に取らないオーバーロード。
+ * @param gitcommand gitコマンドのパス（例: "/usr/bin/git" または "C:\\Program Files\\Git\\bin\\git.exe"）
+ * @param dir gitコマンドを実行するディレクトリ（例: リポジトリのルートディレクトリ）
+ * @param id_a 比較対象のコミットID（例: "HEAD"）
+ * @param id_b 比較対象のコミットID（例: "" なら作業ツリーとの差分）
+ * @return 連結されたdiff文字列
+ */
+std::string CommitMessageGenerator::make_diff(std::string const &gitcommand, std::string const &dir, CommitPair const &commits)
 {
 #ifdef APP_GUITAR
 	PROFILE;
 #endif
 
+	Q_ASSERT(!commits.a.empty());
+	bool amend = !commits.b.empty();
+
+	// std::string id_a = "HEAD";
+	// std::string id_b = {};
+
 	std::string diff;
-	std::vector<std::string> names = misc::splitLines(git(gitcommand, dir, "diff --name-only HEAD"), false);
+	std::vector<std::string> names;
+	{
+		std::string s;
+		if (amend) {
+			s = git(gitcommand, dir, fmt("diff --name-only %s %s")(commits.a)(commits.b));
+		} else {
+			s = git(gitcommand, dir, fmt("diff --name-only %s")(commits.a));
+		}
+		names = misc::splitLines(s, false);
+	}
 	std::vector<std::string> diffs(names.size());
-	const int NUM_THREADS = 8;
+	const int NUM_THREADS = 1;
 	std::vector<std::thread> threads(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
@@ -764,13 +789,14 @@ std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::strin
 				if (filename == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
 				if (!CommitMessageGenerator::accept_file_diff(path, mimetype)) continue;
 				// std::string diff = g.diff_full_index_head_file(fullpath);
-				std::string diff = git(gitcommand, dir, "diff --full-index HEAD -- " + fullpath);
+				std::string diff;
+				if (amend) {
+					diff = git(gitcommand, dir, fmt("diff --full-index %s %s")(commits.a)(commits.b));
+				} else {
+					diff = git(gitcommand, dir, fmt("diff --full-index %s -- %s")(commits.a)(fullpath));
+				}
 				logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
 				if (diff.empty()) continue;
-				if (diff.size() > 100000) { // 巨大なdiffはAIへの入力として不適切なので無視する
-					logprintf(LOG_DEFAULT, "warning: diff for %s is too large, skipping\n", path.c_str());
-					continue;
-				}
 				diffs[i] = diff;
 			}
 		});
@@ -792,18 +818,20 @@ std::string CommitMessageGenerator::diff_head(std::string gitcommand, std::strin
 }
 
 /**
- * @brief HEADとのdiffを取得する（Guitar固有のフィルタを適用）。
+ * @brief コミット差分を取得する。
  *
- * Qtの翻訳ファイル（*.ts）は行番号変化が多く差分がノイズになるため除外する。
+ * GitRunner を引数に取るオーバーロード。内部で git コマンドを呼び出している。
  * @param g GitRunner インスタンス
- * @return フィルタ済みのdiff文字列
+ * @param id_a 比較対象のコミットID（例: "HEAD"）
+ * @param id_b 比較対象のコミットID（例: "" なら作業ツリーとの差分）
+ * @return 連結されたdiff文字列
  */
 #ifdef APP_GUITAR
-std::string CommitMessageGenerator::diff_head(GitRunner g)
+std::string CommitMessageGenerator::make_diff(GitRunner g, const CommitPair &commits)
 {
 	std::string gitcommand = global->appsettings.git_command.toStdString();
 	std::string dir = g.workingDir();
-	std::string diff = CommitMessageGenerator::diff_head(gitcommand, dir);
+	std::string diff = CommitMessageGenerator::make_diff(gitcommand, dir, commits);
 	return diff;
 }
 #endif

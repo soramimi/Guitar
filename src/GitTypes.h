@@ -45,7 +45,11 @@ public:
 	std::string toString(int maxlen = -1) const;
 	bool isValid() const;
 	int compare(GitHash const &other) const;
-	operator bool () const;
+	explicit operator bool () const;
+	operator std::string() const
+	{
+		return toString();
+	}
 	size_t _std_hash() const;
 
 	static bool isValidID(std::string const &id);
@@ -144,9 +148,9 @@ struct GitCommitItem {
 	bool resolved =  false;
 	bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
 	void setParents(const std::vector<std::string> &list);
-	operator bool () const
+	explicit operator bool () const
 	{
-		return commit_id;
+		return (bool)commit_id;
 	}
 	bool operator == (GitCommitItem const &other) const
 	{

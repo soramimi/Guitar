@@ -1,6 +1,7 @@
 #ifndef GENERATECOMMITMESSAGEDIALOG_H
 #define GENERATECOMMITMESSAGEDIALOG_H
 
+#include "CommitMessageGenerator.h"
 #include "GenerativeAI.h"
 #include <QDialog>
 #include <QObject>
@@ -20,12 +21,15 @@ private:
 	Private *m;
 	const GenerativeAI::Model &ai_model() const;
 	void init_ai_models(const std::vector<GenerativeAI::Model> &models, int default_index);
+	void generate(const std::string &diff);
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index);
 	~GenerateCommitMessageDialog();
-	void generate(const std::string &diff);
+	void generate(std::string const &id_a, std::string const &id_b);
+	void generate();
 	std::string diffText() const;
 	QStringList message() const;
+	void setCommitIDs(CommitMessageGenerator::CommitPair const &commits);
 private slots:
 	void on_pushButton_regenerate_clicked();
 	void onReady(GeneratedCommitMessage const &list);

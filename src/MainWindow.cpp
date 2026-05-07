@@ -2700,8 +2700,20 @@ void MainWindow::commit(bool amend)
 	QString message;
 	QString previousMessage;
 
+	CommitMessageGenerator::CommitPair commits;
+
 	if (amend) {
-		message = (QS)commitlog()[0].message;
+		auto const &commit = commitlog();
+		if (commit.empty()) {
+			QMessageBox::warning(this, tr("Commit"), tr("No commit to amend."));
+			return;
+		}
+		message = (QS)commit[0].message;
+		if (commit[0].parent_ids.size() == 1) { // 親が複数あるときは面倒なのでやらない
+			commits.a = commit[0].parent_ids[0]; // コミットの親
+			commits.b = commit[0].commit_id;     // 対象のコミット
+			// コミットメッセージを生成するとき、git diff <id_a> <id_b> が実行される
+		}
 	} else {
 		std::string id = g.getCherryPicking();
 		if (GitHash::isValidID(id)) {
@@ -2721,6 +2733,12 @@ void MainWindow::commit(bool amend)
 			}
 		}
 		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
+		if (amend) {
+			if (!commits.a.empty() && !commits.b.empty()) {
+				// メッセージ生成用コミットIDを設定
+				dlg.setCommitIDs(commits);
+			}
+		}
 		dlg.setText(message);
 		if (dlg.exec() == QDialog::Accepted) {
 			std::string text = dlg.text().toStdString();
