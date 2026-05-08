@@ -321,6 +321,11 @@ std::optional<GitCommitItem> GitRunner::queryCommitItem(const GitHash &id)
 	return gitptr()->queryCommitItem(id);
 }
 
+std::string GitRunner::rev_parse_show_toplevel()
+{
+	return gitptr()->rev_parse_show_toplevel();
+}
+
 bool GitRunner::stash()
 {
 	return gitptr()->stash();

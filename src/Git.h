@@ -224,6 +224,8 @@ public:
 	};
 	std::vector<RemoteInfo> ls_remote();
 
+	std::string rev_parse_show_toplevel();
+
 	bool stash();
 	bool stash_apply();
 	bool stash_drop();
@@ -241,7 +243,6 @@ public:
 
 	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
 	std::optional<std::vector<char>> readfile(std::string const &path);
-
 };
 
 struct NamedCommitItem {

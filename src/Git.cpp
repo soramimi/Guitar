@@ -1149,6 +1149,12 @@ void Git::rm(std::string const &path, bool rm_real_file)
 	}
 }
 
+std::string Git::rev_parse_show_toplevel()
+{
+	auto ret = git("rev-parse --show-toplevel");
+	return (std::string)misc::trimmed(resultStdString(ret));
+}
+
 void Git::add_A()
 {
 	git("add -A");

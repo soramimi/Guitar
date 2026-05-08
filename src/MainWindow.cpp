@@ -1882,9 +1882,47 @@ bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString 
 		}
 	}
 
+	auto IsValidWorkingCopy = [&](std::string const &dir){
+		return unassosiated_git_runner().isValidWorkingCopy(dir);
+	};
+
 	dir = misc::normalizePathSeparator(dir);
 
-	if (!unassosiated_git_runner().isValidWorkingCopy((misc::str)dir)) {
+	// 要求されたパスとリポジトリのルートディレクトリが異なる場合は、ユーザーに確認する
+	std::string requested_dir = (misc::str)dir; // 要求されたパス
+	if (!IsValidWorkingCopy(requested_dir)) {
+		QFileInfo info(dir);
+		if (info.isFile()) {
+			dir = info.absoluteDir().absolutePath(); // ファイルが指定された場合は、その親ディレクトリをリポジトリのパスとする
+		} else if (info.isDir()) {
+			dir = info.absoluteFilePath();
+		}
+		GitRunner g = new_git_runner(dir, {});
+		const std::string toplevel_dir = g.rev_parse_show_toplevel(); // リポジトリのルートディレクトリ
+		if (requested_dir != toplevel_dir) { // 要求されたパスとリポジトリのルートディレクトリが異なる場合はエラー
+			auto r = QMessageBox::question(this,
+										   tr("Add Repository"),
+										   tr("The specified folder is not the root of the git repository.")
+											   + "\n\n"
+											   + tr("Specified folder:")
+											   + "\n"
+											   + QString::fromStdString(requested_dir)
+											   + "\n\n"
+											   + tr("Repository root:")
+											   + "\n" + QString::fromStdString(toplevel_dir)
+											   + "\n\n"
+											   + tr("Do you want to use the repository root folder?"),
+										   QMessageBox::Yes,
+										   QMessageBox::No);
+			if (r == QMessageBox::Yes) {
+				dir = QString::fromStdString(toplevel_dir); // リポジトリのルートディレクトリを使用する
+			} else {
+				return false;
+			}
+		}
+	}
+
+	if (!IsValidWorkingCopy((misc::str)dir)) {
 		auto isBareRepository = [](QString const &dir){
 			if (QFileInfo(dir).isDir()) {
 				if (QFileInfo(dir / "config").isFile()) {

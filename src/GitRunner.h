@@ -57,13 +57,13 @@ public:
 	void setRemoteURL(const GitRemote &remote);
 	void addRemoteURL(const GitRemote &remote);
 	void removeRemote(const std::string &name);
-        std::vector<std::string> getRemotes();
+	std::vector<std::string> getRemotes();
 
 	std::string version();
 
 	bool init();
 
-        std::vector<GitTag> tags();
+	std::vector<GitTag> tags();
 	bool tag(const std::string &name, GitHash const &id = {});
 	bool delete_tag(const std::string &name, bool remote);
 
@@ -105,16 +105,18 @@ public:
 	GitCommitItemList log(int maxcount);
 	std::optional<GitCommitItem> queryCommitItem(const GitHash &id);
 
+	std::string rev_parse_show_toplevel();
+
 	bool stash();
 	bool stash_apply();
 	bool stash_drop();
 
-        std::vector<GitSubmoduleItem> submodules();
+	std::vector<GitSubmoduleItem> submodules();
 	bool submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess *pty);
 	bool submodule_update(const GitSubmoduleUpdateData &data, AbstractPtyProcess *pty);
 	std::string queryEntireCommitMessage(const GitHash &id);
 
-        std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
+	std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
 	std::string diff(const std::string &old_id, const std::string &new_id);
 	std::string diff_file(const std::string &old_path, const std::string &new_path);
 	std::string diff_to_file(const std::string &old_id, const std::string &path);
@@ -153,6 +155,7 @@ public:
 
 	bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
+
 
 	std::optional<std::vector<GitFileItem>> ls(const std::string &path);
 	std::optional<std::vector<char>> readfile(const std::string &path);

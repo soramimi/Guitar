@@ -40,6 +40,7 @@ public:
 
 void global_write_log(QString const &s)
 {
+	// nop:
 }
 
 GenerativeAI::Model global_appsettings_ai_model()
