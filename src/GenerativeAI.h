@@ -86,6 +86,11 @@ struct Model {
 	Model(AI provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
+	explicit operator bool () const
+	{
+		return provider_info_ && provider_info_->aiid != AI::Unknown;
+	}
+
 	void parse_model(std::string const &name);
 	char const *reasoning_effort() const
 	{
@@ -95,7 +100,6 @@ struct Model {
 		return "medium";
 		return "high";
 		return "xhigh";
-		return "medium";
 #endif
 		return nullptr; // default
 	}

@@ -12,7 +12,7 @@ namespace GenerativeAI {
  */
 std::string Model::default_model()
 {
-	return "gpt-5.4-mini";
+	return "claude-sonnet-4-6";
 }
 
 /**

@@ -6,7 +6,6 @@
 #include "CommitMessageGenerator.h"
 #include "FileTypeDetector.h"
 #include "common/fmt.h"
-#include "common/q/Dir.h"
 #include "common/str.h"
 #include "common/joinpath.h"
 #include "curlclient.h"
@@ -14,26 +13,28 @@
 #include <selectitem.h>
 #include <QFileInfo>
 #include <QStandardPaths>
-
-// #ifdef _WIN32
-// #include <WinSock2.h>
-// #endif
-
+#include <QSettings>
 
 static CurlContext curlcx;
 static GenerativeAI::Model ai_model;
 
 struct Option {
+	std::string model_name;
 	std::string dir;
 	QString config_file_path;
-#ifdef _WIN32
-	std::string gitcommand = "C:\\Program Files\\Git\\cmd\\git.exe";
-#else
-	std::string gitcommand = "/usr/bin/git";
-#endif
+	std::string git_command;
+	bool git_add_A = false;
 };
 
 Option opt;
+
+class MySettings : public QSettings {
+public:
+	MySettings()
+		: QSettings(opt.config_file_path, QSettings::IniFormat)
+	{
+	}
+};
 
 // CommitMessageGeneratorからコールバックされる関数
 
@@ -112,7 +113,7 @@ GitReturn git(std::string const &cmd)
 	if (!opt.dir.empty()) {
 		cd = opt.dir.c_str();
 	}
-	proc.start(fmt("%s -C %s %s")(quoted_text(opt.gitcommand))(quoted_text(cd))(cmd), false);
+	proc.start(fmt("%s -C %s %s")(quoted_text(opt.git_command))(quoted_text(cd))(cmd), false);
 	ret.exit_code = proc.wait();
 	ret.out_text = (misc::str)proc.stdout_bytes();
 	return ret;
@@ -195,14 +196,19 @@ bool has_staged()
 	return staged;
 }
 
-bool commit(std::string const &message)
+bool git_add_A()
+{
+	return git("add -A");
+}
+
+bool git_commit(std::string const &message)
 {
 	return git(fmt("commit -m %s")(quoted_text(message)));
 }
 
 std::vector<std::string> generate_commit_message(Option const &opt)
 {
-	std::string diff = CommitMessageGenerator::make_diff(opt.gitcommand, opt.dir, {});
+	std::string diff = CommitMessageGenerator::make_diff(opt.git_command, opt.dir, {});
 
 	CommitMessageGenerator gen;
 	CommitMessageGenerator::Result msg = gen.generate(diff);
@@ -214,12 +220,25 @@ std::vector<std::string> generate_commit_message(Option const &opt)
 	return msg.messages;
 }
 
+static std::string default_git_command_path()
+{
+#if _WIN32
+	return "C:\\Program Files\\Git\\cmd\\git.exe";
+#else
+	return "/usr/bin/git";
+#endif
+}
+
 int main2(int argc, char **argv)
 {
 	int argi = 1;
 	while (argi < argc) {
 		if (*argv[argi] == '-') {
 			std::string_view arg = argv[argi++];
+			if (arg == "-A") {
+				opt.git_add_A = true;
+				continue;
+			}
 			if (arg == "-C") {
 				if (argi < argc) {
 					opt.dir = argv[argi];
@@ -235,8 +254,40 @@ int main2(int argc, char **argv)
 		}
 	}
 
+	if (opt.git_command.empty()) {
+		fmt(R"---(error: git command is not specified. Please set the git command in the configuration file.
+example of : %s
+---
+[Programs]
+git = %s
+---
+)---")
+			(opt.config_file_path.toStdString())
+			(default_git_command_path())
+			.err();
+		return 1;
+	} else {
+		QFileInfo info(QString::fromStdString(opt.git_command));
+		if (!info.isExecutable()) {
+			fprintf(stderr, "error: git command not found or not executable: %s\n", opt.git_command.c_str());
+			return 1;
+		}
+	}
+
 	if (opt.dir.empty()) {
-		opt.dir = Dir::currentPath();
+		// opt.dir = Dir::currentPath();
+		auto ret = git("rev-parse --show-toplevel");
+		if (ret) {
+			opt.dir = misc::trimmed(ret.out_text);
+		}
+		if (opt.dir.empty()) {
+			fprintf(stderr, "error: Not a git repository (or any of the parent directories). Please run this program inside a git repository.\n");
+			return 1;
+		}
+	}
+
+	if (opt.git_add_A) {
+		git_add_A();
 	}
 
 	if (!has_staged()) {
@@ -244,14 +295,22 @@ int main2(int argc, char **argv)
 		return 1;
 	}
 
-	ai_model = GenerativeAI::Model::from_name("gpt-5.4-mini");
+	std::string model_name = opt.model_name;
+	if (model_name.empty()) {
+		model_name = GenerativeAI::Model::default_model();
+	}
+	ai_model = GenerativeAI::Model::from_name(model_name);
+	if (!ai_model) {
+		fprintf(stderr, "error: Invalid model name: %s\n", model_name.c_str());
+		return 1;
+	}
 
 	auto list = generate_commit_message(opt);
 	if (!list.empty()) {
 		int index = selectitem(list);
 		if (index >= 0 && index < list.size()) {
 			std::string message = list[index];
-			commit(message);
+			git_commit(message);
 		}
 	}
 
@@ -273,6 +332,33 @@ int main(int argc, char **argv)
 	QString app_config_dir = generic_config_dir / organization_name / application_name;
 	QString log_dir = app_config_dir / "log";
 	opt.config_file_path = app_config_dir / application_name + ".ini";
+
+	{
+		MySettings s;
+
+		s.beginGroup("AI");
+		opt.model_name = s.value("model").toString().toStdString();
+		s.endGroup();
+
+		s.beginGroup("Programs");
+		QString gitcmd = s.value("git").toString().trimmed();
+		s.endGroup();
+#ifdef _WIN32
+		gitcmd.replace('/', '\\');
+#endif
+		opt.git_command = gitcmd.toStdString();
+	}
+
+	if (0) {
+		QString gitcmd = QString::fromStdString(opt.git_command);
+#ifdef _WIN32
+		gitcmd.replace('\\', '/');
+#endif
+		MySettings s;
+		s.beginGroup("Programs");
+		s.setValue("git", gitcmd);
+		s.endGroup();
+	}
 
 	return main2(argc, argv);
 }
