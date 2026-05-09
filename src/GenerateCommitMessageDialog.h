@@ -34,6 +34,8 @@ private slots:
 	void on_pushButton_regenerate_clicked();
 	void onReady(GeneratedCommitMessage const &list);
 	void on_listWidget_itemDoubleClicked(QListWidgetItem *item);
+	void on_checkBox_hint_checkStateChanged(const Qt::CheckState &arg1);
+
 public slots:
 	void done(int stat);
 };

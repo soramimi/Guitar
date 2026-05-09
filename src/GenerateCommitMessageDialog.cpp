@@ -27,6 +27,12 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, std::v
 	m->generator.start();
 	
 	connect(&m->generator, &GenerateCommitMessageThread::ready, this, &GenerateCommitMessageDialog::onReady);
+
+	ui->checkBox_hint->setCheckState(Qt::Unchecked);
+	ui->lineEdit_hint->setEnabled(false);
+
+	// 実験的機能: 追加のヒント入力欄はとりあえず隠しておく
+	ui->frame_additional_hint->setVisible(false);
 }
 
 GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
@@ -64,6 +70,12 @@ GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
 void GenerateCommitMessageDialog::generate(std::string const &diff)
 {
 	m->diff = diff;
+
+	// experimental: additional hint for AI generation
+	std::string hint;
+	if (ui->checkBox_hint->isChecked()) {
+		hint = ui->lineEdit_hint->text().toStdString();
+	}
 	
 	GlobalSetOverrideWaitCursor();
 
@@ -79,9 +91,8 @@ void GenerateCommitMessageDialog::generate(std::string const &diff)
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	m->generator.request(diff, ai_model());
+	m->generator.request(diff, ai_model(), hint);
 }
-
 
 void GenerateCommitMessageDialog::generate()
 {
@@ -149,5 +160,11 @@ void GenerateCommitMessageDialog::done(int stat)
 		}
 	}
 	QDialog::done(stat);
+}
+
+
+void GenerateCommitMessageDialog::on_checkBox_hint_checkStateChanged(const Qt::CheckState &arg1)
+{
+	ui->lineEdit_hint->setEnabled(arg1 == Qt::Checked);
 }
 

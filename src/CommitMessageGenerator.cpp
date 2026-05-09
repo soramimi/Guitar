@@ -600,14 +600,18 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(Generative
  * @param max 生成するコミットメッセージ候補の最大数
  * @return AIに送るプロンプト文字列
  */
-std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max)
+std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max, std::string const &hint)
 {
-	return fmt(R"---(You are an experienced engineer.
+	// main prompt
+	std::string prompt = fmt(R"---(You are an experienced engineer.
 Generate exactly %d concise git commit message candidates written in present tense for the following code diff.
 Return ONLY valid and strict JSON. No explanations, no extra text.
 Do NOT wrap the output in code fences (e.g., ``` or ```json).
 
-# Schema:
+)---")(max);
+
+	// JSON schema instruction
+	std::string schema = R"---(# Schema:
 {
   "messages": [
 	"message1",
@@ -617,9 +621,19 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
   ]
 }
 
-# git diff HEAD
-%s
-)---")(max)(diff);
+# git diff
+)---";
+
+	// optional hint
+	if (!hint.empty()) {
+		prompt += "Additional hint: " + hint + "\n\n";
+	}
+
+	// build final prompt
+	prompt += schema;
+	prompt += diff;
+
+	return prompt;
 }
 
 /**
@@ -656,7 +670,7 @@ void CommitMessageGenerator::set_ai_model(GenerativeAI::Model model)
  * @param diff コミット対象のdiff文字列
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff)
+CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff, std::string const &hint)
 {
 	constexpr int max_message_count = 5; // 生成するコミットメッセージ候補の数
 
@@ -676,7 +690,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 		return Error("error", "AI model is not defined.");
 	}
 
-	std::string prompt = generatePrompt(diff, max_message_count);
+	std::string prompt = generatePrompt(diff, max_message_count, hint);
 	std::string json = generate_prompt_json(model, prompt);
 
 	if (save_log) {

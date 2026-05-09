@@ -7,7 +7,7 @@
 
 class CommitMessageGenerator {
 public:
-	constexpr static int max_diff_size = 200000;
+	constexpr static int max_diff_size = 200000; // 適当
 
 	struct CommitPair {
 		std::string a = "HEAD";
@@ -19,7 +19,6 @@ public:
 		{
 		}
 	};
-
 
 	class Result {
 	public:
@@ -36,12 +35,12 @@ public:
 private:
 	GenerativeAI::Model ai_model_;
 	CommitMessageGenerator::Result parse_response(GenerativeAI::Model model, const std::string &in);
-	std::string generatePrompt(const std::string &diff, int max);
+	std::string generatePrompt(const std::string &diff, int max, const std::string &hint);
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt);
 	GenerativeAI::Model ai_model();
 public:
 	CommitMessageGenerator();
-	Result generate(std::string const &diff);
+	Result generate(std::string const &diff, std::string const &hint = {});
 	static Result Error(std::string const &status, std::string const &message)
 	{
 		Result ret;
