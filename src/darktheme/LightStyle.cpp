@@ -478,6 +478,8 @@ void LightStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex
 int LightStyle::styleHint(StyleHint stylehint, const QStyleOption *opt, const QWidget *widget, QStyleHintReturn *returnData) const
 {
 	switch (stylehint) {
+	case SH_UnderlineShortcut:
+		return 1;   // 常にアクセラレータ下線を表示
 	case SH_ComboBox_ListMouseTracking:
 		return 1;
 	}
@@ -486,17 +488,38 @@ int LightStyle::styleHint(StyleHint stylehint, const QStyleOption *opt, const QW
 
 int LightStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
 {
+	switch (metric) {
+	case PM_MenuBarPanelWidth:
+		return 0;
+	case PM_MenuBarItemSpacing:
+		return 0;
+	case PM_MenuBarVMargin:
+		return 0;
+	case PM_MenuBarHMargin:
+		return 0;
+	}
 	return QProxyStyle::pixelMetric(metric, option, widget);
 }
 
 QSize LightStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const
 {
 	QSize newSize = QProxyStyle::sizeFromContents(ct, opt, contentsSize, w);
-	switch (ct) {
-	case CT_MenuItem:
-		newSize.rwidth() += 8;
-		break;
+	if (QStyleOptionMenuItem const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(opt)) {
+		switch (ct) {
+		case CT_MenuItem:
+			// newSize.rwidth() = 0;
+			// newSize.rheight() = 0;
+			break;
+		case CT_MenuBarItem:
+			if (QStyleOptionMenuItem const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(opt)) {
+				newSize.rwidth() = o->fontMetrics.size(0, o->text).width() + 4;
+			}
+			newSize.rheight() = 24;
+			break;
+		}
 	}
 	return newSize;
 }
+
+
 
