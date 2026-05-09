@@ -1,9 +1,10 @@
 #include "ApplicationSettings.h"
 #include "ApplicationGlobal.h"
+#include "Logger.h"
 #include "MySettings.h"
+#include "common/fmt.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "common/fmt.h"
 #include "common/q/helper.h"
 #include <QDir>
 #include <QFileInfo>
@@ -79,7 +80,7 @@ std::tuple<std::vector<GenerativeAI::Model>, int> ApplicationSettings::ai_models
 	std::vector<GenerativeAI::Model> list = GenerativeAI::ai_model_presets();
 	int index;
 	for (index = 0; index < (int)list.size(); index++) {
-		if (list[index].long_name() == ai_model.long_name()) {
+		if (list[index].model_uri() == ai_model.model_uri()) {
 			return {list, index};
 		}
 	}
@@ -97,6 +98,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	ApplicationSettings as(defaultSettings());
 
 	MySettings s;
+
+	// load api keys
+
+	if (!as.ai_api_keys.load(&s)) {
+		logprintf(LOG_DEFAULT, "Failed to load AI API keys\n");
+	}
+
+	//
 
 	s.beginGroup("Global");
 	GetValue<bool>(s, "EnableTraceLog")                      >> as.enable_trace_log;
@@ -131,54 +140,13 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	s.endGroup();
 
 	std::string ai_provider_name;
-	std::string ai_model_name;
+	std::string ai_model_uri;
 
 	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
-	{
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
-		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.env_name.empty()) continue;
-			bool from = false;
-			GetValue<bool>(s, (QS)fmt("Use_%s")(info.env_name)) >> from;
-			AiApiKey aikey;
-			aikey.from = from ? ApplicationSettings::ApiKeyFrom::UserInput : ApplicationSettings::ApiKeyFrom::EnvValue;
-			as.ai_api_keys[info.env_name] = aikey;
-		}
-	}
 	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
-	GetValue<std::string>(s, "AiModel")                       >> ai_model_name;
+	GetValue<std::string>(s, "AiModel")                       >> ai_model_uri;
 	s.endGroup();
-
-	// load api keys
-
-	QString secret_dir = global->app_config_dir / secret_sub_dir;
-	if (QFileInfo(secret_dir).isDir()) {
-		std::map<std::string, std::string> keys; // <env_name, api_key>
-
-		QString ini_file = secret_dir / api_keys_ini;
-		QFile file(ini_file);
-		if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-			while (!file.atEnd()) {
-				QByteArray line = file.readLine().trimmed();
-				int eq = line.indexOf('=');
-				if (eq > 0) {
-					std::string env_name = line.left(eq).toStdString();
-					std::string api_key = line.mid(eq + 1).toStdString();
-					keys[env_name] = api_key;
-				}
-			}
-		}
-
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
-		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.env_name.empty()) continue;
-			auto it = keys.find(UPPER((QS)info.env_name).toStdString());
-			if (it != keys.end()) {
-				as.ai_api_keys[info.env_name].api_key = misc::trimmed(it->second);
-			}
-		}
-	}
 
 	// 選択されたモデルを取得
 
@@ -194,12 +162,12 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
 
 	if (info) {
-		as.ai_model = GenerativeAI::Model(info->aiid, ai_model_name);
+		as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
 	} else {
-		if (ai_provider_name.empty() && ai_model_name.empty()) {
-			ai_model_name = GenerativeAI::Model::default_model();
+		if (ai_provider_name.empty() && ai_model_uri.empty()) {
+			ai_model_uri = GenerativeAI::Model::default_model();
 		}
-		as.ai_model = GenerativeAI::Model::from_name(ai_model_name);
+		as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
 	}
 
 	return as;
@@ -208,6 +176,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 void ApplicationSettings::saveSettings() const
 {
 	MySettings s;
+
+	// save api keys
+
+	if (!ai_api_keys.save(&s)) {
+		logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
+	}
+
+	//
 
 	s.beginGroup("Global");
 	SetValue<bool>(s, "EnableTraceLog")                      << this->enable_trace_log;
@@ -243,23 +219,50 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("AI");
 	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-	{
-		std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
-		for (GenerativeAI::ProviderInfo const &info : table) {
-			if (info.symbol.empty()) continue;
-			auto it = this->ai_api_keys.find(info.env_name);
-			if (it == this->ai_api_keys.end()) continue;
-			ApplicationSettings::AiApiKey const *aikey = &it->second;
-			bool from = (aikey->from == ApplicationSettings::ApiKeyFrom::UserInput);
-			SetValue<bool>(s, (QS)fmt("Use_%s")(info.env_name)) << from;
+	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
+	SetValue<std::string>(s, "AiModel")                       << this->ai_model.model_uri().name;
+	s.endGroup();
+}
+
+bool AiApiKeys::load(MySettings *s)
+{
+	map.clear();
+
+	QString secret_dir = global->app_config_dir / secret_sub_dir;
+	if (QFileInfo(secret_dir).isDir()) {
+		QString ini_file = secret_dir / api_keys_ini;
+		QFile file(ini_file);
+		if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			while (!file.atEnd()) {
+				QByteArray line = file.readLine().trimmed();
+				int eq = line.indexOf('=');
+				if (eq > 0) {
+					std::string envname = line.left(eq).trimmed().toStdString();
+					std::string api_key = line.mid(eq + 1).trimmed().toStdString();
+					map[envname].api_key = api_key;
+				}
+			}
+
+			{
+				s->beginGroup("AI");
+				for (auto &pair : map) {
+					std::string const &env_name = pair.first;
+					AiApiKeys::Item *aikey = &pair.second;
+					bool from = s->value((QS)fmt("Use_%s")(env_name)).toBool();
+					aikey->from = from ? AiApiKeys::KeyFrom::UserInput : AiApiKeys::KeyFrom::EnvValue;
+				}
+				s->endGroup();
+			}
+
+			return true;
 		}
 	}
-	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
-	SetValue<std::string>(s, "AiModel")                       << this->ai_model.long_name();
-	s.endGroup();
+	return false;
+}
 
-	// save api keys
 
+bool AiApiKeys::save(MySettings *s) const
+{
 	auto MKPATH = [&](const QString &path) {
 		if (!QFileInfo(path).isDir()) {
 			if (!QDir().mkpath(path)) {
@@ -269,23 +272,61 @@ void ApplicationSettings::saveSettings() const
 		return QFileInfo(path).isDir();
 	};
 
+	bool ret = false;
+
 	QString secret_dir = global->app_config_dir / secret_sub_dir;
 	if (MKPATH(secret_dir)) {
 		QString ini_file = secret_dir / api_keys_ini;
 		QFile file(ini_file);
 		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-			std::vector<GenerativeAI::ProviderInfo> const &table = GenerativeAI::complete_provider_table();
-			for (GenerativeAI::ProviderInfo const &info : table) {
-				if (info.symbol.empty()) continue;
-				Q_ASSERT(!info.env_name.empty());
-				auto it = this->ai_api_keys.find(info.env_name);
-				if (it == this->ai_api_keys.end()) continue;
-				std::string line = fmt("%s=%s\n")(info.env_name)(misc::trimmed(it->second.api_key));
+			for (auto const &pair : map) {
+				std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
 				file.write(line.c_str(), line.size());
 			}
 			file.close();
+			ret = true;
 		}
 		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
 		QFile(ini_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
+
+		{
+			s->beginGroup("AI");
+			for (auto const &pair : map) {
+				std::string const &envname = pair.first;
+				AiApiKeys::Item const &aikey = pair.second;
+				bool from = (aikey.from == AiApiKeys::KeyFrom::UserInput);
+				s->setValue((QS)fmt("Use_%s")(envname), from);
+			}
+			s->endGroup();
+		}
 	}
+
+	return ret;
 }
+
+/**
+ * @brief モデルURLから環境変数名を生成する。
+ *
+ * 生成ルールは以下の通り：
+ * - 英数字は大文字に変換する。
+ * - その他の文字はアンダースコアに置換する。
+ *
+ * 例：
+ * - "sakura:gpt-oss-120b" -> "SAKURA_GPT_OSS_120B"
+ *
+ * @param model_uri モデルURI
+ * @return 環境変数名
+ */
+std::string AiApiKeys::makeEnvName(GenerativeAI::ModelURI const &model_uri)
+{
+	std::string s = model_uri.name;
+	for (char &c : s) {
+		if (std::isalnum(c)) {
+			c = std::toupper(c);
+		} else {
+			c = '_';
+		}
+	}
+	return s;
+}
+

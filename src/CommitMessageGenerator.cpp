@@ -166,11 +166,18 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 		return ret;
 	}
 
-	/// xAISeek：OpenAI Chat Completions 互換形式
+	/// xAI：OpenAI Chat Completions 互換形式
 	CommitMessageResult case_XAI()
 	{
 		return parse_openai_chat_completions_format();
 	}
+
+	/// Sakura：OpenAI Chat Completions 互換形式
+	CommitMessageResult case_Sakura()
+	{
+		return parse_openai_chat_completions_format();
+	}
+
 
 	/// DeepSeek：OpenAI Chat Completions 互換形式
 	CommitMessageResult case_DeepSeek()
@@ -220,7 +227,7 @@ struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<Commi
 	CommitMessageResult case_LLAMACPP()
 	{
 		switch (model.api_compatibility()) {
-		case GenerativeAI::AI::Anthropic:
+		case GenerativeAI::ProviderID::Anthropic:
 			return case_Anthropic();
 		default:
 			return parse_openai_chat_completions_format();
@@ -376,6 +383,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return case_OpenAI_chat_completions();
 	}
 
+	/// Sakura：OpenAI Chat Completions 互換形式
+	std::string case_Sakura()
+	{
+		return case_OpenAI_chat_completions();
+	}
+
 	/**
 	 * @brief DeepSeek 向けのリクエストJSONを生成する。
 	 *
@@ -421,7 +434,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	std::string case_LLAMACPP()
 	{
 		switch (model.api_compatibility()) {
-		case GenerativeAI::AI::Anthropic:
+		case GenerativeAI::ProviderID::Anthropic:
 			return case_Anthropic();
 		default:
 			return case_OpenAI_chat_completions();
@@ -437,9 +450,9 @@ CommitMessageGenerator::CommitMessageGenerator()
 {
 	set_ai_model(global->appsettings.ai_model);
 }
-GenerativeAI::Credential global_get_ai_credential(GenerativeAI::AI aiid)
+GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model)
 {
-	return global->get_ai_credential(aiid);
+	return global->get_ai_credential(model);
 }
 std::shared_ptr<AbstractInetClient> global_inet_client()
 {
@@ -447,7 +460,7 @@ std::shared_ptr<AbstractInetClient> global_inet_client()
 }
 #else
 GenerativeAI::Model global_appsettings_ai_model();
-GenerativeAI::Credential global_get_ai_credential(GenerativeAI::AI aiid);
+GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model);
 std::shared_ptr<AbstractInetClient> global_inet_client();
 CommitMessageGenerator::CommitMessageGenerator()
 {
@@ -659,7 +672,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	}
 
 	GenerativeAI::Model model = ai_model();
-	if (model.provider_id() == GenerativeAI::AI::Unknown) {
+	if (model.provider_id() == GenerativeAI::ProviderID::Unknown) {
 		return Error("error", "AI model is not defined.");
 	}
 
@@ -671,7 +684,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string cons
 	}
 
 	// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-	GenerativeAI::Credential cred = global_get_ai_credential(model.provider_id());
+	GenerativeAI::Credential cred = global_get_ai_credential(model);
 	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
 
 	InetClient::Request web_req;

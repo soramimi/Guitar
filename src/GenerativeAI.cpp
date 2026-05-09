@@ -24,19 +24,20 @@ std::string Model::default_model()
 const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
-		// aiid                            tag                                description                       symbol                         env_name
-		{AI::Unknown,                      "",                                "-",                              "",                            ""},
-		{AI::OpenAI,                       "",                                "OpenAI",                         "OpenAi",                      "OPENAI_API_KEY"}, // placeholder
-		{AI::OpenAI_responses,             "openai-responses",                "OpenAI",                         "",                            "OPENAI_API_KEY"},
-		{AI::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI (legacy)",                "",                            "OPENAI_API_KEY"},
-		{AI::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "Anthropic",                   "ANTHROPIC_API_KEY"},
-		{AI::Google,                       "google",                          "Google; Gemini",                 "Google",                      "GOOGLE_API_KEY"},
-		{AI::XAI,                          "xai",                             "xAI; Grok",                      "Xai",                         "XAI_API_KEY"},
-		{AI::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DeepSeek",                    "DEEPSEEK_API_KEY"},
-		{AI::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OpenRouter",                  "OPENROUTER_API_KEY"},
-		{AI::Ollama,                       "ollama",                          "Ollama (experimental)",          "",                            ""},
-		{AI::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       "",                            ""},
-		{AI::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "LlamaCpp",                    "LLAMACPP_API_KEY"},
+		// id                                      tag                                description                       env_name
+		{ProviderID::Unknown,                      "",                                "-",                              ""},
+		{ProviderID::OpenAI,                       "",                                "OpenAI",                         "OPENAI_API_KEY"}, // placeholder
+		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI",                         "OPENAI_API_KEY"},
+		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI (legacy)",                "OPENAI_API_KEY"},
+		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
+		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
+		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               ""},
+		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
+		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
+		{ProviderID::Ollama,                       "ollama",                          "Ollama (experimental)",          ""},
+		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       ""},
+		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
 }
@@ -48,20 +49,21 @@ const std::vector<ProviderInfo> &complete_provider_table()
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{AI::OpenAI_responses, "gpt-5.5"},
-		{AI::OpenAI_responses, "gpt-5.4-mini"},
-		{AI::OpenAI_responses, "gpt-5.4-nano"},
-		{AI::OpenAI_responses, "gpt-5.3-codex"},
-		{AI::Anthropic,        "claude-opus-4-7"},
-		{AI::Anthropic,        "claude-sonnet-4-6"},
-		{AI::Anthropic,        "claude-haiku-4-5"},
-		{AI::Google,           "gemini-3-flash-preview"},
-		{AI::XAI,              "grok-4.20"},
-		{AI::DeepSeek,         "deepseek-chat"},
-		{AI::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
-		{AI::Ollama,           "ollama:///gemma4"},
-		{AI::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
-		{AI::LLAMACPP,         "llamacpp://localhost:8080/"},
+		{ProviderID::OpenAI_responses, "gpt-5.5"},
+		{ProviderID::OpenAI_responses, "gpt-5.4-mini"},
+		{ProviderID::OpenAI_responses, "gpt-5.4-nano"},
+		{ProviderID::OpenAI_responses, "gpt-5.3-codex"},
+		{ProviderID::Anthropic,        "claude-opus-4-7"},
+		{ProviderID::Anthropic,        "claude-sonnet-4-6"},
+		{ProviderID::Anthropic,        "claude-haiku-4-5"},
+		{ProviderID::Google,           "gemini-3-flash-preview"},
+		{ProviderID::XAI,              "grok-4.20"},
+		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
+		{ProviderID::DeepSeek,         "deepseek-chat"},
+		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
+		{ProviderID::Ollama,           "ollama:///gemma4"},
+		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
+		{ProviderID::LLAMACPP,         "llamacpp://localhost:8080/"},
 	};
 	return preset_models;
 }
@@ -71,59 +73,76 @@ std::vector<Model> const &ai_model_presets()
  * @note Unknown は含むが、placeholder エントリは含まない。
  * @return AIプロバイダIDのベクタへの参照。
  */
-std::vector<AI> const &aiid_list_for_present_to_users()
+std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 {
-	static std::vector<AI> providers = { // Unknownは必要。placeholderを含まない。
-		AI::Unknown,
-		AI::OpenAI_responses,
-		AI::OpenAI_chat_completions,
-		AI::Anthropic,
-		AI::Google,
-		AI::XAI,
-		AI::DeepSeek,
-		AI::OpenRouter,
-		AI::Ollama,
-		AI::LMStudio,
-		AI::LLAMACPP,
+	static std::vector<ProviderID> providers = { // Unknownは必要。placeholderを含まない。
+		ProviderID::Unknown,
+		ProviderID::OpenAI_responses,
+		ProviderID::OpenAI_chat_completions,
+		ProviderID::Anthropic,
+		ProviderID::Google,
+		ProviderID::XAI,
+		ProviderID::Sakura,
+		ProviderID::DeepSeek,
+		ProviderID::OpenRouter,
+		ProviderID::Ollama,
+		ProviderID::LMStudio,
+		ProviderID::LLAMACPP,
 	};
 	return providers;
 }
 
 /**
- * @brief AIプロバイダIDに対応するプロバイダ情報を返す。
- * @param aiid 検索対象のAIプロバイダID。
- * @return 対応する ProviderInfo へのポインタ。見つからない場合は Unknown エントリを返す。
+ * @brief モデル名の文字列パターンからModelオブジェクトを生成する。
+ * @param name モデル名またはURIを表す文字列。
+ * @return 対応するAIプロバイダに紐付いたModelオブジェクト。パターン不一致の場合は空のModelを返す。
  */
-ProviderInfo const *provider_info(AI aiid)
+Model Model::from_name(std::string const &name)
 {
-	std::vector<ProviderInfo> const &vec = complete_provider_table();
-	for (auto const &p : vec) {
-		if (p.aiid == aiid) {
-			return &p;
+	struct Item {
+		ProviderID provider;
+		char const *regex;
+		Item(ProviderID ai, char const *re)
+			: provider(ai), regex(re)
+		{}
+	};
+	static const std::vector<Item> items = {
+		{ProviderID::OpenAI_responses, "^gpt-"},
+		{ProviderID::Anthropic, "^claude-"},
+		{ProviderID::Google, "^gemini-"},
+		{ProviderID::XAI, "^grok-"},
+		{ProviderID::Sakura, "^sakura:"},
+		{ProviderID::DeepSeek, "^deepseek-"},
+		{ProviderID::Ollama, "^ollama://"},
+		{ProviderID::LMStudio, "^lmstudio://"},
+		{ProviderID::OpenRouter, "^openrouter://"},
+		{ProviderID::LLAMACPP, "^llamacpp://"},
+	};
+	for (auto const &item : items) {
+		std::regex re(item.regex);
+		if (std::regex_search(name, re)) {
+			return Model{item.provider, name};
 		}
 	}
-	return &vec[0]; // Unknown
-}
-
-/**
- * @brief AIプロバイダとモデルURIからModelオブジェクトを構築する。
- * @param provider AIプロバイダID。
- * @param model_uri モデルのURI文字列。
- */
-Model::Model(AI provider, std::string const &model_uri)
-{
-	provider_info_ = provider_info(provider);
-	parse_model(model_uri);
+	return {};
 }
 
 /**
  * @brief モデル名またはURIを解析し、ホスト・ポート・モデル名を設定する。
- * @param name 解析対象のモデル名またはURI文字列。
+ * @param model_uri 解析対象のモデル名またはURI文字列。
  */
-void Model::parse_model(const std::string &name)
+void Model::parse_model(const std::string &model_uri)
 {
-	long_name_ = name;
-	model_name_ = name;
+	model_uri_.name = model_uri;
+	model_name_ = model_uri;
+
+	{
+		static constexpr std::string_view prefix = "sakura:";
+		if (misc::starts_with(model_name_, prefix)) {
+			model_name_ = model_name_.substr(prefix.size());
+			return;
+		}
+	}
 
 	auto Parse = [&](std::string const &prefix, int port){
 		if (misc::starts_with(model_name_, prefix)) {
@@ -155,37 +174,30 @@ void Model::parse_model(const std::string &name)
 }
 
 /**
- * @brief モデル名の文字列パターンからModelオブジェクトを生成する。
- * @param name モデル名またはURIを表す文字列。
- * @return 対応するAIプロバイダに紐付いたModelオブジェクト。パターン不一致の場合は空のModelを返す。
+ * @brief AIプロバイダIDに対応するプロバイダ情報を返す。
+ * @param id 検索対象のAIプロバイダID。
+ * @return 対応する ProviderInfo へのポインタ。見つからない場合は Unknown エントリを返す。
  */
-Model Model::from_name(std::string const &name)
+ProviderInfo const *provider_info(ProviderID id)
 {
-	struct Item {
-		AI provider;
-		char const *regex;
-		Item(AI ai, char const *re)
-			: provider(ai), regex(re)
-		{}
-	};
-	static const std::vector<Item> items = {
-		{AI::OpenAI_responses, "^gpt-"},
-		{AI::Anthropic, "^claude-"},
-		{AI::Google, "^gemini-"},
-		{AI::XAI, "^grok-"},
-		{AI::DeepSeek, "^deepseek-"},
-		{AI::Ollama, "^ollama://"},
-		{AI::LMStudio, "^lmstudio://"},
-		{AI::OpenRouter, "^openrouter://"},
-		{AI::LLAMACPP, "^llamacpp://"},
-	};
-	for (auto const &item : items) {
-		std::regex re(item.regex);
-		if (std::regex_search(name, re)) {
-			return Model{item.provider, name};
+	std::vector<ProviderInfo> const &vec = complete_provider_table();
+	for (auto const &p : vec) {
+		if (p.id == id) {
+			return &p;
 		}
 	}
-	return {};
+	return &vec[0]; // Unknown
+}
+
+/**
+ * @brief AIプロバイダとモデルURIからModelオブジェクトを構築する。
+ * @param provider AIプロバイダID。
+ * @param model_uri モデルのURI文字列。
+ */
+Model::Model(ProviderID provider, std::string const &model_uri)
+{
+	provider_info_ = provider_info(provider);
+	parse_model(model_uri);
 }
 
 struct _MakeRequest : public AbstractVisitor<Request> {
@@ -215,7 +227,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.openai.com/v1/responses";
-		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -224,7 +236,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
-		r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
 
@@ -251,7 +263,15 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.x.ai/v1/chat/completions";
-		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+
+	Request case_Sakura()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint_url = "https://api.ai.sakura.ad.jp/v1/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -261,7 +281,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = "https://api.deepseek.com/chat/completions";
-		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -271,7 +290,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";
 		r.model_name = model_.model_name();
-		// r.header.push_back("Authorization: Bearer " + cred_.api_key);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -281,7 +299,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint_url = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
-		// r.header.push_back("Authorization: Bearer anonymous");
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -302,7 +319,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 			r.model_name = "default";
 		}
 		switch (model_.api_compatibility()) {
-		case AI::Anthropic:
+		case ProviderID::Anthropic:
 			r.endpoint_url = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
 			break;
 		default:
@@ -321,7 +338,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
  * @param cred APIキー等の認証情報。
  * @return 生成されたRequestオブジェクト。
  */
-Request make_request(AI provider, const Model &model, Credential const &cred)
+Request make_request(ProviderID provider, const Model &model, Credential const &cred)
 {
 	return _MakeRequest(model, cred).visit(provider);
 }

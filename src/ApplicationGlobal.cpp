@@ -207,22 +207,26 @@ void GlobalRestoreOverrideCursor()
 	QApplication::restoreOverrideCursor();
 }
 
-GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::AI aiid)
+GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Model const &model)
 {
 	GenerativeAI::Credential cred;
-	ApplicationSettings::AiApiKey *apikey = nullptr;
-	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(aiid); // 絶対に非nullptrを返す
+	AiApiKeys::Item *apikey = nullptr;
+	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(model.provider_id()); // 絶対に非nullptrを返す
 	Q_ASSERT(provider);
-	auto it = global->appsettings.ai_api_keys.find(provider->env_name);
-	if (it != global->appsettings.ai_api_keys.end()) {
+	std::string envname = provider->env_name;
+	if (envname.empty()) {
+		envname = AiApiKeys::makeEnvName(model.model_uri());
+	}
+	auto it = global->appsettings.ai_api_keys.map.find(envname);
+	if (it != global->appsettings.ai_api_keys.map.end()) {
 		apikey = &it->second;
 	}
-	if (apikey && apikey->from == ApplicationSettings::ApiKeyFrom::UserInput) {
+	if (apikey && apikey->from == AiApiKeys::KeyFrom::UserInput) {
 		if (apikey) {
 			cred.api_key = misc::trimmed(apikey->api_key);
 		}
-	} else if (!provider->env_name.empty()) {
-		char const *env = std::getenv(provider->env_name.c_str());
+	} else if (!envname.empty()) {
+		char const *env = std::getenv(envname.c_str());
 		if (env) {
 			cred.api_key = env;
 		}

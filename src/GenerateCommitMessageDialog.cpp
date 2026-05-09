@@ -47,7 +47,7 @@ void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model
 	ui->comboBox_ai_models->clear();
 	for (int i = 0; i < m->ai_models.size(); i++) {
 		GenerativeAI::Model const &model = m->ai_models[i];
-		ui->comboBox_ai_models->addItem(QString::fromStdString(model.long_name()));
+		ui->comboBox_ai_models->addItem((QS)model.model_uri().name);
 	}
 	ui->comboBox_ai_models->setCurrentIndex(default_index);
 }

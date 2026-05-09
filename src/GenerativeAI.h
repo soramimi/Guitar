@@ -6,7 +6,7 @@
 
 namespace GenerativeAI {
 
-enum class AI {
+enum class ProviderID {
 	Unknown,
 	OpenAI, // generic OpenAI placeholder
 	OpenAI_responses, // for OpenAI responses API
@@ -14,6 +14,7 @@ enum class AI {
 	Anthropic,
 	Google,
 	XAI,
+	Sakura, // さくらの AI Engine（OpenAI chat completions 互換）
 	DeepSeek,
 	OpenRouter,
 	Ollama, // experimental
@@ -32,66 +33,77 @@ public:
 	virtual T case_Anthropic() = 0;
 	virtual T case_Google() = 0;
 	virtual T case_XAI() = 0;
+	virtual T case_Sakura() = 0;
 	virtual T case_DeepSeek() = 0;
 	virtual T case_OpenRouter() = 0;
 	virtual T case_Ollama() = 0;
 	virtual T case_LMStudio() = 0;
 	virtual T case_LLAMACPP() = 0;
 
-	T visit(AI provider)
+	T visit(ProviderID provider)
 	{
 		switch (provider) {
-		case AI::Unknown:                 return case_Unknown();
-		case AI::OpenAI:                  return case_OpenAI();
-		case AI::OpenAI_responses:        return case_OpenAI_responses();
-		case AI::OpenAI_chat_completions: return case_OpenAI_chat_completions();
-		case AI::Anthropic:               return case_Anthropic();
-		case AI::Google:                  return case_Google();
-		case AI::XAI:                     return case_XAI();
-		case AI::DeepSeek:                return case_DeepSeek();
-		case AI::OpenRouter:              return case_OpenRouter();
-		case AI::Ollama:                  return case_Ollama();
-		case AI::LMStudio:                return case_LMStudio();
-		case AI::LLAMACPP:                return case_LLAMACPP();
+		case ProviderID::Unknown:                 return case_Unknown();
+		case ProviderID::OpenAI:                  return case_OpenAI();
+		case ProviderID::OpenAI_responses:        return case_OpenAI_responses();
+		case ProviderID::OpenAI_chat_completions: return case_OpenAI_chat_completions();
+		case ProviderID::Anthropic:               return case_Anthropic();
+		case ProviderID::Google:                  return case_Google();
+		case ProviderID::XAI:                     return case_XAI();
+		case ProviderID::Sakura:                  return case_Sakura();
+		case ProviderID::DeepSeek:                return case_DeepSeek();
+		case ProviderID::OpenRouter:              return case_OpenRouter();
+		case ProviderID::Ollama:                  return case_Ollama();
+		case ProviderID::LMStudio:                return case_LMStudio();
+		case ProviderID::LLAMACPP:                return case_LLAMACPP();
 		}
 		return case_Unknown();
 	}
 };
 
 struct ProviderInfo {
-	AI aiid; // 識別ID (整数)
+	ProviderID id; // 識別ID (整数)
 	std::string tag; // 識別用タグ (小文字、ハイフン区切り)
 	std::string description; // UI表示用説明文
-	std::string symbol; // 設定ファイル用シンボル (PascalCase)
 	std::string env_name; // 環境変数名 (UPPER_SNAKE_CASE_API_KEY)
 };
 
 std::vector<ProviderInfo> const &complete_provider_table();
-const ProviderInfo *provider_info(AI aiid);
+const ProviderInfo *provider_info(ProviderID id);
 
 struct Credential {
 	std::string api_key;
 };
 
+class ModelURI {
+public:
+	std::string name;
+	ModelURI() = default;
+	explicit ModelURI(std::string const &s)
+		: name(s)
+	{
+	}
+};
+
 struct Model {
+	ModelURI model_uri_;
 	ProviderInfo const *provider_info_;
-	AI api_compatibility_ = AI::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
-	std::string long_name_;
+	ProviderID api_compatibility_ = ProviderID::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
 	std::string model_name_;
 	std::string host_;
 	int port_ = 80;
 	Model()
-		: provider_info_(provider_info(AI::Unknown))
+		: provider_info_(provider_info(ProviderID::Unknown))
 	{}
-	Model(AI provider, const std::string &model_uri);
+	Model(ProviderID provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
 	explicit operator bool () const
 	{
-		return provider_info_ && provider_info_->aiid != AI::Unknown;
+		return provider_info_ && provider_info_->id != ProviderID::Unknown;
 	}
 
-	void parse_model(std::string const &name);
+	void parse_model(std::string const &model_uri);
 	char const *reasoning_effort() const
 	{
 #if 0
@@ -104,14 +116,14 @@ struct Model {
 		return nullptr; // default
 	}
 
-	AI provider_id() const
+	ProviderID provider_id() const
 	{
-		return provider_info_ ? provider_info_->aiid : AI::Unknown;
+		return provider_info_ ? provider_info_->id : ProviderID::Unknown;
 	}
 
-	std::string long_name() const
+	ModelURI model_uri() const
 	{
-		return long_name_;
+		return model_uri_;
 	}
 
 	std::string model_name() const
@@ -134,7 +146,7 @@ struct Model {
 		return provider_info_ ? provider_info_->env_name : "";
 	}
 
-	AI api_compatibility() const
+	ProviderID api_compatibility() const
 	{
 		return api_compatibility_;
 	}
@@ -143,16 +155,21 @@ struct Model {
 	static std::string default_model();
 };
 
+static inline bool operator == (ModelURI const &a, ModelURI const &b)
+{
+	return a.name == b.name;
+}
+
 struct Request {
 	std::string endpoint_url;
 	std::string model_name;
 	std::vector<std::string> header;
 };
 
-Request make_request(AI provider, Model const &model, Credential const &auth);
+Request make_request(ProviderID provider, Model const &model, Credential const &auth);
 
 std::vector<Model> const &ai_model_presets();
-std::vector<GenerativeAI::AI> const &aiid_list_for_present_to_users();
+std::vector<GenerativeAI::ProviderID> const &ai_provider_id_list_for_present_to_users();
 
 } // namespace GenerativeAI
 

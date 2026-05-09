@@ -9,6 +9,8 @@
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
 
+class MySettings;
+
 class ApplicationBasicData {
 public:
 	QString organization_name = ORGANIZATION_NAME;
@@ -18,6 +20,26 @@ public:
 	QString app_config_dir;
 	QString log_dir;
 	QString config_file_path;
+};
+
+class AiApiKeys {
+public:
+	enum class KeyFrom {
+		EnvValue, // 環境変数から取得
+		UserInput, // ユーザーが設定画面で入力
+		Default = EnvValue
+	};
+	struct Item {
+		KeyFrom from = KeyFrom::EnvValue;
+		std::string api_key;
+	};
+
+	std::map<std::string, AiApiKeys::Item> map; // key is env_name
+
+	bool load(MySettings *s);
+	bool save(MySettings *s) const;
+
+	static std::string makeEnvName(GenerativeAI::ModelURI const &model_uri);
 };
 
 class ApplicationSettings {
@@ -37,16 +59,7 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_by_ai = false;
-	enum class ApiKeyFrom {
-		EnvValue, // 環境変数から取得
-		UserInput, // ユーザーが設定画面で入力
-		Default = EnvValue
-	};
-	struct AiApiKey {
-		ApiKeyFrom from = ApiKeyFrom::EnvValue;
-		std::string api_key;
-	};
-	std::map<std::string, AiApiKey> ai_api_keys; // key is env_name
+	AiApiKeys ai_api_keys;
 	GenerativeAI::Model ai_model;
 	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;
 

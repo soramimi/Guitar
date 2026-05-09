@@ -107,7 +107,7 @@ public:
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
 	
-	GenerativeAI::Credential get_ai_credential(GenerativeAI::AI aiid);
+	GenerativeAI::Credential get_ai_credential(const GenerativeAI::Model &model);
 
 	static bool isMainThread();
 
