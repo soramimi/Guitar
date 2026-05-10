@@ -310,6 +310,7 @@ bool AiApiKeys::save(MySettings *s) const
  * 生成ルールは以下の通り：
  * - 英数字は大文字に変換する。
  * - その他の文字はアンダースコアに置換する。
+ * - 連続する非英数字は単一のアンダースコアにまとめる。
  *
  * 例：
  * - "sakura:gpt-oss-120b" -> "SAKURA_GPT_OSS_120B"
@@ -319,14 +320,20 @@ bool AiApiKeys::save(MySettings *s) const
  */
 std::string AiApiKeys::makeEnvName(GenerativeAI::ModelURI const &model_uri)
 {
-	std::string s = model_uri.name;
-	for (char &c : s) {
+	std::string ret;
+	std::string const &s = model_uri.name;
+	char last = 0;
+	for (char c : s) {
 		if (std::isalnum(c)) {
-			c = std::toupper(c);
+			ret += std::toupper(c);
 		} else {
 			c = '_';
+			if (c != last) {
+				ret += c;
+			}
 		}
+		last = c;
 	}
-	return s;
+	return ret;
 }
 
