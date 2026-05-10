@@ -26,51 +26,6 @@ const int windowsItemVMargin      =  4; // menu item ver text margin
 const int windowsArrowHMargin     =  6; // arrow horizontal margin
 const int windowsRightBorder      = 15; // right border on windows
 
-void drawFrame(QPainter *pr, int x, int y, int w, int h, QColor color_topleft, QColor color_bottomright)
-{
-	if (w < 3 || h < 3) {
-		if (w > 0 && h > 0) {
-			pr->fillRect(x, y, w, h, color_topleft);
-		}
-	} else {
-		if (color_topleft.isValid()) {
-			pr->fillRect(x, y, w - 1, 1, color_topleft);
-			pr->fillRect(x, y + 1, 1, h -1, color_topleft);
-		}
-		if (color_bottomright.isValid()) {
-			pr->fillRect(x + w - 1, y, 1, h -1, color_bottomright);
-			pr->fillRect(x + 1, y + h - 1, w - 1, 1, color_bottomright);
-		}
-
-	}
-}
-
-void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor const &color_bottomright)
-{
-	return drawFrame(pr, r.x(), r.y(), r.width(), r.height(), color_topleft, color_bottomright);
-}
-
-/**
- * @brief RaisedやSunkenのある枠を描く
- * @param p
- * @param rect
- * @param palette
- * @param state
- */
-void drawShadeFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
-{
-	QColor topleft;
-	QColor bottomright;
-	if (state & QStyle::State_Raised) {
-		topleft = palette.color(QPalette::Light);
-		bottomright = palette.color(QPalette::Shadow);
-	} else if (state & QStyle::State_Sunken) {
-		topleft = palette.color(QPalette::Shadow);
-		bottomright = palette.color(QPalette::Light);
-	}
-	drawFrame(p, rect, topleft, bottomright);
-}
-
 /**
  * @brief タブの外枠を描く
  * @param p
@@ -86,7 +41,7 @@ void drawTabFrame(QPainter *p, const QRect &rect, const QPalette &palette)
 	int h = rect.height();
 	p->setClipRect(x, y, w, h);
 	p->fillRect(x, y, w, h, palette.color(QPalette::Window));
-	drawShadeFrame(p, rect, palette, QStyle::State_Raised);
+	MyCommonStyleBase::drawShadedFrame(p, rect, palette, QStyle::State_Raised);
 	p->restore();
 }
 
@@ -99,7 +54,7 @@ void drawTabFrame(QPainter *p, const QRect &rect, const QPalette &palette)
  */
 inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
 {
-	drawShadeFrame(p, rect, palette, state);
+	MyCommonStyleBase::drawShadedFrame(p, rect, palette, state);
 }
 
 /**
@@ -810,7 +765,7 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	case PM_DefaultFrameWidth:
 		return 1; // Do not dpi-scale because the drawn frame is always exactly 1 pixel thick
 	default:
-		return QCommonStyle::pixelMetric(metric, option, widget);
+		return Base::pixelMetric(metric, option, widget);
 	}
 	if (isDpiScalingEnabled()) {
 		return dpiScaled(val, option);
@@ -941,7 +896,7 @@ QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *op
 			return ret;
 		}
 	}
-	return QCommonStyle::subControlRect(cc, option, sc, widget);
+	return Base::subControlRect(cc, option, sc, widget);
 }
 
 int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, const QWidget *widget, QStyleHintReturn *returnData) const
@@ -951,7 +906,6 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 	case SH_PrintDialog_RightAlignButtons:
 	case SH_FontDialog_SelectAssociatedText:
 	case SH_MenuBar_AltKeyNavigation:
-	case SH_ComboBox_ListMouseTracking:
 	case SH_Slider_StopMouseOverSlider:
 	case SH_ScrollBar_MiddleClickAbsolutePosition:
 	case SH_EtchDisabledText:
@@ -1010,7 +964,7 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 	default:
 		break;
 	}
-	return QCommonStyle::styleHint(hint, option, widget, returnData);
+	return Base::styleHint(hint, option, widget, returnData);
 }
 
 void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const
@@ -1279,7 +1233,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		}
 		return;
 	}
-	QCommonStyle::drawPrimitive(pe, option, p, widget);
+	Base::drawPrimitive(pe, option, p, widget);
 }
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
@@ -1773,7 +1727,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			QPen penShadow(shadow, 1);
 			switch (o->shape) {
 			default:
-				QCommonStyle::drawControl(ce, o, p, widget);
+				Base::drawControl(ce, o, p, widget);
 				break;
 			case QTabBar::RoundedNorth:
 				{
@@ -2079,7 +2033,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			auto const *dockWidget = qobject_cast<QDockWidget const *>(widget);
 			QRect rect = option->rect;
 			if (dockWidget && dockWidget->isFloating()) {
-				QCommonStyle::drawControl(ce, option, p, widget);
+				Base::drawControl(ce, option, p, widget);
 				return;
 			}
 
@@ -2235,7 +2189,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		return;
 	}
 	//	qDebug() << ce;
-	QCommonStyle::drawControl(ce, option, p, widget);
+	Base::drawControl(ce, option, p, widget);
 }
 
 void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex *option, QPainter *p, const QWidget *widget) const
@@ -2274,7 +2228,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		return;
 	}
 	if (cc == QStyle::CC_ToolButton) {
-		QCommonStyle::State flags = option->state;
+		Base::State flags = option->state;
 		if (auto const *o = qstyleoption_cast<QStyleOptionToolButton const *>(option)) {
 			QRect button, menuarea;
 			button = subControlRect(cc, o, SC_ToolButton, widget);
@@ -2659,7 +2613,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 		return;
 	}
 	//	qDebug() << cc;
-	QCommonStyle::drawComplexControl(cc, option, p, widget);
+	Base::drawComplexControl(cc, option, p, widget);
 }
 
 enum {
@@ -2675,7 +2629,7 @@ QSize DarkStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 
 	static const int groupBoxTopMargin       =  3;
 
-	QSize newSize = QCommonStyle::sizeFromContents(type, option, size, widget);
+	QSize newSize = Base::sizeFromContents(type, option, size, widget);
 	switch (type) {
 	case CT_PushButton:
 		if (const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(option)) {
@@ -2685,6 +2639,7 @@ QSize DarkStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 				newSize -= QSize(0, 2);
 		}
 		break;
+#if 0
 	case CT_GroupBox:
 		if (option) {
 			int topMargin = qMax(pixelMetric(PM_ExclusiveIndicatorHeight), option->fontMetrics.height()) + groupBoxTopMargin;
@@ -2710,6 +2665,7 @@ QSize DarkStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 	case CT_MenuBarItem:
 		newSize += QSize(8, 5);
 		break;
+#endif
 	case CT_MenuItem:
 		if (const QStyleOptionMenuItem *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
 			int w = newSize.width();
@@ -2745,12 +2701,14 @@ QSize DarkStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 			newSize.setWidth(qMax<int>(newSize.width(), int(dpiScaled(120, dpi))));
 		}
 		break;
+#if 0
 	case CT_SizeGrip:
 		newSize += QSize(4, 4);
 		break;
 	case CT_MdiControls:
 		newSize -= QSize(1, 0);
 		break;
+#endif
 	}
 	return newSize;
 }

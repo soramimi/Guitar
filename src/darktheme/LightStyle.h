@@ -1,23 +1,18 @@
 #ifndef LIGHTSTYLE_H
 #define LIGHTSTYLE_H
 
+#include "MyCommonStyle.h"
 #include "TraditionalWindowsStyleTreeControl.h"
 #include <QProxyStyle>
 
-class LightStyle : public QProxyStyle {
+class LightStyle : public MyCommonStyle<QProxyStyle> {
 private:
+	using Base = MyCommonStyle<QProxyStyle>;
 	TraditionalWindowsStyleTreeControl legacy_windows_;
 public:
-	LightStyle()
-		: QProxyStyle(nullptr)
-	{
-	}
 	void drawPrimitive(PrimitiveElement element, QStyleOption const *option, QPainter *painter, QWidget const *widget = nullptr) const override;
 	void drawControl(ControlElement element, const QStyleOption *opt, QPainter *p, const QWidget *widget) const override;
-	void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *widget) const override;
-	int styleHint(StyleHint stylehint, const QStyleOption *opt, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override;
-	int pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const override;
-	QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const override;
+	void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const override;
 };
 
 #endif // LIGHTSTYLE_H

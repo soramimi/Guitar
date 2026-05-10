@@ -1,12 +1,14 @@
 #ifndef DARKSTYLE_H
 #define DARKSTYLE_H
 
+#include "MyCommonStyle.h"
+
 #include <QCommonStyle>
 
 class QStyleOptionViewItem;
 
-class DarkStyle : public QCommonStyle {
-public:
+class DarkStyle : public MyCommonStyle<QCommonStyle> {
+	using Base = MyCommonStyle<QCommonStyle>;
 private:
 	struct Private;
 	Private *m;

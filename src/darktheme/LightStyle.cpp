@@ -167,7 +167,7 @@ void LightStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *opt
 		}
 		return;
 	}
-	QProxyStyle::drawPrimitive(element, option, painter, widget);
+	Base::drawPrimitive(element, option, painter, widget);
 }
 
 static void drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget const *widget)
@@ -308,7 +308,7 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 		if (opt->state & QStyle::State_Selected) {
 			drawSelectedItemFrame(p, opt->rect, true);
 		}
-		QProxyStyle::drawControl(element, opt, p, widget);
+		Base::drawControl(element, opt, p, widget);
 		return;
 #endif
 		if (auto const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(opt)) {
@@ -467,59 +467,11 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 		}
 		return;
 	}
-	QProxyStyle::drawControl(element, opt, p, widget);
+	Base::drawControl(element, opt, p, widget);
 }
 
-void LightStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *widget) const
+void LightStyle::drawComplexControl(ComplexControl control, const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const
 {
-	QProxyStyle::drawComplexControl(cc, opt, p, widget);
+	Base::drawComplexControl(control, option, painter, widget);
 }
-
-int LightStyle::styleHint(StyleHint stylehint, const QStyleOption *opt, const QWidget *widget, QStyleHintReturn *returnData) const
-{
-	switch (stylehint) {
-	case SH_UnderlineShortcut:
-		return 1;   // 常にアクセラレータ下線を表示
-	case SH_ComboBox_ListMouseTracking:
-		return 1;
-	}
-	return QProxyStyle::styleHint(stylehint, opt, widget, returnData);
-}
-
-int LightStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
-{
-	switch (metric) {
-	case PM_MenuBarPanelWidth:
-		return 0;
-	case PM_MenuBarItemSpacing:
-		return 0;
-	case PM_MenuBarVMargin:
-		return 0;
-	case PM_MenuBarHMargin:
-		return 0;
-	}
-	return QProxyStyle::pixelMetric(metric, option, widget);
-}
-
-QSize LightStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &contentsSize, const QWidget *w) const
-{
-	QSize newSize = QProxyStyle::sizeFromContents(ct, opt, contentsSize, w);
-	if (QStyleOptionMenuItem const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(opt)) {
-		switch (ct) {
-		case CT_MenuItem:
-			// newSize.rwidth() = 0;
-			// newSize.rheight() = 0;
-			break;
-		case CT_MenuBarItem:
-			if (QStyleOptionMenuItem const *o = qstyleoption_cast<QStyleOptionMenuItem const *>(opt)) {
-				newSize.rwidth() = o->fontMetrics.size(0, o->text).width() + 4;
-			}
-			newSize.rheight() = 24;
-			break;
-		}
-	}
-	return newSize;
-}
-
-
 

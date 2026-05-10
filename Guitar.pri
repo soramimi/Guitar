@@ -285,6 +285,7 @@ SOURCES += \
 	$$SRC/common/q/Dir.cpp \
 	$$SRC/common/q/FileInfo.cpp \
 	$$SRC/common/urlencode.cpp \
+	$$SRC/darktheme/MyCommonStyle.cpp \
 	$$SRC/darktheme/DarkStyle.cpp \
 	$$SRC/darktheme/LightStyle.cpp \
 	$$SRC/darktheme/NinePatch.cpp \
@@ -477,6 +478,7 @@ HEADERS += \
 	$$SRC/common/q/helper.h \
 	$$SRC/common/strformat.h \
 	$$SRC/common/urlencode.h \
+	$$SRC/darktheme/MyCommonStyle.h \
 	$$SRC/darktheme/DarkStyle.h \
 	$$SRC/darktheme/LightStyle.h \
 	$$SRC/darktheme/NinePatch.h \
