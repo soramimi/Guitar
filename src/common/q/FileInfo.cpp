@@ -1,6 +1,11 @@
 #include "FileInfo.h"
 #include <sys/stat.h>
 
+namespace misc {
+std::string realpath(const char *path);
+std::string realpath(std::string const &path);
+}
+
 struct FileInfo::Private {
 	std::string file;
 	bool valid = false;
@@ -73,3 +78,9 @@ std::string FileInfo::fileName() const
 		return path;
 	}
 }
+
+std::string FileInfo::absoluteFilePath() const
+{
+	return misc::realpath(m->file);
+}
+

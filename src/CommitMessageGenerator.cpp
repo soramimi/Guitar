@@ -7,7 +7,6 @@
 #include "common/q/helper.h"
 #include "curlclient.h"
 #include "webclient.h"
-#include <QFileInfo>
 
 #ifdef APP_GUITAR
 #include "Profile.h"

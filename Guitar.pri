@@ -129,8 +129,8 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/common/realpath.cpp \
 	$$SRC/FileTypeDetector.cpp \
-	$$SRC/process/ProcessExample.cpp \
 	$$SRC/common/q/DateTime.cpp \
 	$$SRC/common/q/DirIterator.cpp \
 	$$SRC/common/qmisc.cpp \
@@ -309,15 +309,14 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/common/realpath.h \
 	$$SRC/FileTypeDetector.h \
-	$$SRC/process/ProcessExample.h \
 	$$SRC/common/fmt.h \
 	$$SRC/common/q/DateTime.h \
 	$$SRC/common/q/DirIterator.h \
 	$$SRC/common/qmisc.h \
 	$$SRC/common/str.h \
 	$$SRC/process/MyProcess2.h \
-	$$SRC/process/ProcessPosix.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \
@@ -584,12 +583,14 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
+	    $$SRC/process/ProcessPosix.cpp \
 		$$SRC/process/MyProcess2.cpp \
 		$$SRC/unix/UnixUtil.cpp \
 		$$SRC/unix/UnixProcess.cpp \
 		$$SRC/unix/UnixPtyProcess.cpp
 	HEADERS += \
-		$$SRC/process/ProcessPosix.cpp \
+		$$PWD/src/common/wstring.h \
+		$$SRC/process/ProcessPosix.h \
 		$$SRC/unix/UnixUtil.h \
 		$$SRC/unix/UnixProcess.h \
 		$$SRC/unix/UnixPtyProcess.h
@@ -597,14 +598,17 @@ unix {
 
 win32 {
 	SOURCES += \
-	$$SRC/win32/Win32Util.cpp \
+		$$SRC/process/ProcessWin.cpp \
+		$$SRC/common/wstring.cpp \
+		$$SRC/win32/Win32Util.cpp \
 		$$SRC/win32/Win32Process.cpp \
 		$$SRC/win32/Win32PtyProcess.cpp \
 		$$SRC/win32/event.cpp \
 		$$SRC/win32/thread.cpp
 
 	HEADERS += \
-	$$SRC/win32/Win32Util.h \
+		$$SRC/process/ProcessWin.h \
+		$$SRC/win32/Win32Util.h \
 		$$SRC/win32/Win32Process.h \
 		$$SRC/win32/Win32PtyProcess.h \
 		$$SRC/win32/event.h \

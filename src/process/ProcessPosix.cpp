@@ -227,6 +227,11 @@ int ProcessPosix::wait()
 	closeInput(true);
 	if (m->thread.joinable()) {
 		m->thread.join();
+		{
+			std::lock_guard<std::mutex> lock(m->mutex);
+			m->stdout_bytes = m->stdout_vector;
+			m->stderr_bytes = m->stderr_vector;
+		}
 		return m->exit_code;
 	}
 	return 128;
@@ -251,16 +256,12 @@ void ProcessPosix::readResult(std::vector<char> *out)
 
 std::vector<char> const &ProcessPosix::stdout_bytes() const
 {
-	std::lock_guard<std::mutex> lock(m->mutex);
-	m->stderr_bytes = m->stderr_vector;
-	return m->stderr_bytes;
+	return m->stdout_bytes;
 }
 
 std::vector<char> const &ProcessPosix::stderr_bytes() const
 {
-	std::lock_guard<std::mutex> lock(m->mutex);
-	m->stdout_bytes = m->stdout_vector;
-	return m->stdout_bytes;
+	return m->stderr_bytes;
 }
 
 void ProcessPosix::closeInput(bool justnow)

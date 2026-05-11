@@ -51,6 +51,7 @@ public:
 			return {};
 		}, str_);
 	}
+
 	std::string_view std_string_view() const
 	{
 		return std::visit([](auto &&arg) -> std::string_view {
@@ -72,6 +73,7 @@ public:
 			return {};
 		}, str_);
 	}
+
 	std::vector<char> std_vector_char() const
 	{
 		return std::visit([](auto &&arg) -> std::vector<char> {

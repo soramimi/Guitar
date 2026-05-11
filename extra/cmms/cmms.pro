@@ -1,6 +1,7 @@
 DESTDIR = $$PWD/_bin
 TARGET = cmms
 CONFIG += console c++17
+# CONFIG -= qt
 QT += core
 
 INCLUDEPATH += $$PWD/../
@@ -17,7 +18,7 @@ msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 # msvc:LIBS += -lws2_32
 
 msvc {
-    LIBS += -lzlib
+    LIBS += -lzlib -lole32 -lshell32
 }
 
 !msvc {
@@ -35,15 +36,19 @@ SOURCES += \
     ../../src/FileTypeDetector.cpp \
     ../../src/GenerativeAI.cpp \
     ../../src/Logger.cpp \
-    ../../src/MemoryReader.cpp \
     ../../src/MyProcess.cpp \
     ../../src/common/misc.cpp \
     ../../src/common/q/Dir.cpp \
     ../../src/common/q/FileInfo.cpp \
+    ../../src/common/realpath.cpp \
     ../../src/common/urlencode.cpp \
     ../../src/curlclient.cpp \
     ../../src/inetclient.cpp \
+    ../../src/process/MyProcess2.cpp \
+    ConfigParser.cpp \
+    LineReader.cpp \
     main.cpp \
+    rwfile.cpp \
     selectitem.cpp
 HEADERS +=  \
     ../../src/AbstractProcess.h \
@@ -51,32 +56,41 @@ HEADERS +=  \
     ../../src/FileTypeDetector.h \
     ../../src/GenerativeAI.h \
     ../../src/Logger.h \
-    ../../src/MemoryReader.h \
     ../../src/MyProcess.h \
     ../../src/common/base64.h \
     ../../src/common/joinpath.h \
     ../../src/common/misc.h \
     ../../src/common/q/Dir.h \
     ../../src/common/q/FileInfo.h \
+    ../../src/common/realpath.h \
     ../../src/common/urlencode.h \
     ../../src/curlclient.h \
     ../../src/inetclient.h \
+    ../../src/process/MyProcess2.h \
+    ConfigParser.h \
+    LineReader.h \
     main.h \
+    rwfile.h \
     selectitem.h
 
 msvc {
 SOURCES += \
+../../src/common/wstring.cpp \
+	../../src/process/ProcessWin.cpp \
 ../../src/win32/Win32Process.cpp
 HEADERS +=  \
+../../src/common/wstring.h \
+	../../src/process/ProcessWin.h \
 ../../src/win32/Win32Process.h
 
 }
 
 !msvc {
 SOURCES += \
+../../src/process/ProcessPosix.cpp \
 ../../src/unix/UnixProcess.cpp
 HEADERS +=  \
+../../src/process/ProcessPosix.h \
 ../../src/unix/UnixProcess.h
-
 }
 

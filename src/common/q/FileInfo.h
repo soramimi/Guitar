@@ -17,6 +17,7 @@ public:
 	bool isExecutable() const;
 	Dir dir() const;
 	std::string fileName() const;
+	std::string absoluteFilePath() const;
 };
 
 #endif // FILEINFO_H

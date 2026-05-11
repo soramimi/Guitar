@@ -4,16 +4,32 @@
 // experimental code for generating commit messages using AI
 
 #include "CommitMessageGenerator.h"
+#include "ConfigParser.h"
 #include "FileTypeDetector.h"
 #include "common/fmt.h"
-#include "common/str.h"
 #include "common/joinpath.h"
+#include "common/q/FileInfo.h"
+#include "common/str.h"
 #include "curlclient.h"
+#include "selectitem.h"
 #include <string_view>
-#include <selectitem.h>
-#include <QFileInfo>
-#include <QStandardPaths>
-#include <QSettings>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>
+#include <string>
+#include "common/wstring.h"
+#include "process/ProcessWin.h"
+#else
+#include "process/ProcessPosix.h"
+#endif
+
+namespace misc {
+
+std::string realpath(const char *path);
+std::string realpath(std::string const &path);
+
+}
 
 static CurlContext curlcx;
 static GenerativeAI::Model ai_model;
@@ -21,20 +37,12 @@ static GenerativeAI::Model ai_model;
 struct Option {
 	std::string model_name;
 	std::string dir;
-	QString config_file_path;
+	std::string config_file_path;
 	std::string git_command;
 	bool git_add_A = false;
 };
 
 Option opt;
-
-class MySettings : public QSettings {
-public:
-	MySettings()
-		: QSettings(opt.config_file_path, QSettings::IniFormat)
-	{
-	}
-};
 
 // CommitMessageGeneratorからコールバックされる関数
 
@@ -109,7 +117,11 @@ static std::string quoted_text(std::string const &str)
 GitReturn git(std::string const &cmd)
 {
 	GitReturn ret;
-	Process proc;
+#if _WIN32
+	ProcessWin proc;
+#else
+	ProcessPosix proc;
+#endif
 	char const *cd = ".";
 	if (!opt.dir.empty()) {
 		cd = opt.dir.c_str();
@@ -263,12 +275,12 @@ example of : %s
 git = %s
 ---
 )---")
-			(opt.config_file_path.toStdString())
+			(opt.config_file_path)
 			(default_git_command_path())
 			.err();
 		return 1;
 	} else {
-		QFileInfo info(QString::fromStdString(opt.git_command));
+		FileInfo info(opt.git_command);
 		if (!info.isExecutable()) {
 			fprintf(stderr, "error: git command not found or not executable: %s\n", opt.git_command.c_str());
 			return 1;
@@ -318,6 +330,35 @@ git = %s
 	return 0;
 }
 
+#ifdef _WIN32
+static std::string writable_generic_config_location()
+{
+	PWSTR path = nullptr;
+
+	HRESULT hr = SHGetKnownFolderPath(
+		FOLDERID_LocalAppData, // %LOCALAPPDATA%
+		KF_FLAG_DEFAULT,
+		nullptr,
+		&path
+		);
+
+	if (FAILED(hr)) {
+		return {};
+	}
+
+	std::string result = misc::convert_wstr_to_str(path);
+	CoTaskMemFree(path);
+
+	return result;
+}
+#else
+static std::string writable_generic_config_location()
+{
+	return misc::realpath("~/.config");
+}
+#endif
+
+
 int main(int argc, char **argv)
 {
 	if (0) {
@@ -326,39 +367,37 @@ int main(int argc, char **argv)
 		return {};
 	}
 
-	QString organization_name = "soramimi.jp";
-	QString application_name = "cmms";
-	QString this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
-	QString generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-	QString app_config_dir = generic_config_dir / organization_name / application_name;
-	QString log_dir = app_config_dir / "log";
+	std::string organization_name = "soramimi.jp";
+	std::string application_name = "cmms";
+	std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
+	std::string generic_config_dir = writable_generic_config_location();
+	std::string app_config_dir = generic_config_dir / organization_name / application_name;
+	std::string log_dir = app_config_dir / "log";
 	opt.config_file_path = app_config_dir / application_name + ".ini";
+	opt.config_file_path = misc::realpath(opt.config_file_path);
 
 	{
-		MySettings s;
-
-		s.beginGroup("AI");
-		opt.model_name = s.value("model").toString().toStdString();
-		s.endGroup();
-
-		s.beginGroup("Programs");
-		QString gitcmd = s.value("git").toString().trimmed();
-		s.endGroup();
+		ConfigParser parser;
+		parser.parse(opt.config_file_path.c_str(), [](std::string const &section, std::string const &key, std::string const &value, void *cookie){
+			Option *opt = static_cast<Option *>(cookie);
+			if (section == "AI") {
+				if (key == "model") {
+					opt->model_name = value;
+				}
+			} else if (section == "Programs") {
+				if (key == "git") {
+					std::string s = value;
 #ifdef _WIN32
-		gitcmd.replace('/', '\\');
+					for (char &c : s) {
+						if (c == '/') {
+							c = '\\';
+						}
+					}
 #endif
-		opt.git_command = gitcmd.toStdString();
-	}
-
-	if (0) {
-		QString gitcmd = QString::fromStdString(opt.git_command);
-#ifdef _WIN32
-		gitcmd.replace('\\', '/');
-#endif
-		MySettings s;
-		s.beginGroup("Programs");
-		s.setValue("git", gitcmd);
-		s.endGroup();
+					opt->git_command = s;
+				}
+			}
+		}, &opt);
 	}
 
 	return main2(argc, argv);
