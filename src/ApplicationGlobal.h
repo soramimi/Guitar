@@ -122,7 +122,7 @@ public:
 
 	bool isAiEnabled() const
 	{
-		return appsettings.generate_commit_message_by_ai;
+		return appsettings.generate_commit_message_with_ai;
 	}
 };
 

@@ -215,13 +215,13 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 	Q_ASSERT(provider);
 	std::string envname = provider->env_name;
 	if (envname.empty()) {
-		envname = AiApiKeys::makeEnvName(model.model_uri());
+		envname = GenerativeAI::makeEnvName(model.model_uri());
 	}
 	auto it = global->appsettings.ai_api_keys.map.find(envname);
 	if (it != global->appsettings.ai_api_keys.map.end()) {
 		apikey = &it->second;
 	}
-	if (apikey && apikey->from == AiApiKeys::KeyFrom::UserInput) {
+	if (apikey && apikey->from == AiApiKeys::KeyFrom::LocalSecret) {
 		if (apikey) {
 			cred.api_key = misc::trimmed(apikey->api_key);
 		}

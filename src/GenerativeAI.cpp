@@ -32,7 +32,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
 		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
-		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               ""},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
 		{ProviderID::Ollama,                       "ollama",                          "Ollama (experimental)",          ""},
@@ -133,7 +133,7 @@ Model Model::from_name(std::string const &name)
  */
 void Model::parse_model(const std::string &model_uri)
 {
-	model_uri_.name = model_uri;
+	model_uri_.string = model_uri;
 	model_name_ = model_uri;
 
 	{
@@ -341,6 +341,39 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 Request make_request(ProviderID provider, const Model &model, Credential const &cred)
 {
 	return _MakeRequest(model, cred).visit(provider);
+}
+
+/**
+ * @brief モデルURLから環境変数名を生成する。
+ *
+ * 生成ルールは以下の通り：
+ * - 英数字は大文字に変換する。
+ * - その他の文字はアンダースコアに置換する。
+ * - 連続する非英数字は単一のアンダースコアにまとめる。
+ *
+ * 例：
+ * - "sakura:gpt-oss-120b" -> "SAKURA_GPT_OSS_120B"
+ *
+ * @param model_uri モデルURI
+ * @return 環境変数名
+ */
+std::string makeEnvName(const ModelURI &model_uri)
+{
+	std::string ret;
+	std::string const &s = model_uri.string;
+	char last = 0;
+	for (char c : s) {
+		if (std::isalnum(c)) {
+			ret += std::toupper(c);
+		} else {
+			c = '_';
+			if (c != last) {
+				ret += c;
+			}
+		}
+		last = c;
+	}
+	return ret;
 }
 
 } // namespace GenerativeAI

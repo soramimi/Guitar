@@ -77,10 +77,10 @@ struct Credential {
 
 class ModelURI {
 public:
-	std::string name;
+	std::string string;
 	ModelURI() = default;
 	explicit ModelURI(std::string const &s)
-		: name(s)
+		: string(s)
 	{
 	}
 };
@@ -157,7 +157,7 @@ struct Model {
 
 static inline bool operator == (ModelURI const &a, ModelURI const &b)
 {
-	return a.name == b.name;
+	return a.string == b.string;
 }
 
 struct Request {
@@ -170,6 +170,8 @@ Request make_request(ProviderID provider, Model const &model, Credential const &
 
 std::vector<Model> const &ai_model_presets();
 std::vector<GenerativeAI::ProviderID> const &ai_provider_id_list_for_present_to_users();
+
+std::string makeEnvName(GenerativeAI::ModelURI const &model_uri);
 
 } // namespace GenerativeAI
 

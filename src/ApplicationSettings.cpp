@@ -143,9 +143,9 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	std::string ai_model_uri;
 
 	s.beginGroup("AI");
-	GetValue<bool>(s, "GenerateCommitMessageByAI")            >> as.generate_commit_message_by_ai;
-	GetValue<std::string>(s, "AiProvider")                    >> ai_provider_name;
-	GetValue<std::string>(s, "AiModel")                       >> ai_model_uri;
+	GetValue<bool>(s, "GenerateCommitMessageWithAI")         >> as.generate_commit_message_with_ai;
+	GetValue<std::string>(s, "Provider")                     >> ai_provider_name;
+	GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
 	s.endGroup();
 
 	// 選択されたモデルを取得
@@ -218,10 +218,29 @@ void ApplicationSettings::saveSettings() const
 	s.endGroup();
 
 	s.beginGroup("AI");
-	SetValue<bool>(s, "GenerateCommitMessageByAI")            << this->generate_commit_message_by_ai;
-	SetValue<std::string>(s, "AiProvider")                    << this->ai_model.provider_info_->tag;
-	SetValue<std::string>(s, "AiModel")                       << this->ai_model.model_uri().name;
+	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
+	SetValue<std::string>(s, "Provider")                     << this->ai_model.provider_info_->tag;
+	SetValue<std::string>(s, "ModelURI")                     << this->ai_model.model_uri().string;
 	s.endGroup();
+}
+
+QString AiApiKeys::symbolKeyFrom(KeyFrom keyfrom)
+{
+	switch (keyfrom) {
+	case KeyFrom::Environment: return "environment";
+	case KeyFrom::LocalSecret: return "localsecret";
+	}
+	return {};
+}
+
+AiApiKeys::KeyFrom AiApiKeys::parseKeyFrom(QString const &symbol)
+{
+	if (symbol == "environment") {
+		return KeyFrom::Environment;
+	} else if (symbol == "localsecret") {
+		return KeyFrom::LocalSecret;
+	}
+	return KeyFrom::Default;
 }
 
 bool AiApiKeys::load(MySettings *s)
@@ -248,8 +267,8 @@ bool AiApiKeys::load(MySettings *s)
 				for (auto &pair : map) {
 					std::string const &env_name = pair.first;
 					AiApiKeys::Item *aikey = &pair.second;
-					bool from = s->value((QS)fmt("Use_%s")(env_name)).toBool();
-					aikey->from = from ? AiApiKeys::KeyFrom::UserInput : AiApiKeys::KeyFrom::EnvValue;
+					auto keyfrom = s->value((QS)fmt("Use_%s")(env_name)).toString();
+					aikey->from = parseKeyFrom(keyfrom);
 				}
 				s->endGroup();
 			}
@@ -294,46 +313,13 @@ bool AiApiKeys::save(MySettings *s) const
 			for (auto const &pair : map) {
 				std::string const &envname = pair.first;
 				AiApiKeys::Item const &aikey = pair.second;
-				bool from = (aikey.from == AiApiKeys::KeyFrom::UserInput);
-				s->setValue((QS)fmt("Use_%s")(envname), from);
+				QString keyfrom = symbolKeyFrom(aikey.from);
+				s->setValue((QS)fmt("Use_%s")(envname), keyfrom);
 			}
 			s->endGroup();
 		}
 	}
 
-	return ret;
-}
-
-/**
- * @brief モデルURLから環境変数名を生成する。
- *
- * 生成ルールは以下の通り：
- * - 英数字は大文字に変換する。
- * - その他の文字はアンダースコアに置換する。
- * - 連続する非英数字は単一のアンダースコアにまとめる。
- *
- * 例：
- * - "sakura:gpt-oss-120b" -> "SAKURA_GPT_OSS_120B"
- *
- * @param model_uri モデルURI
- * @return 環境変数名
- */
-std::string AiApiKeys::makeEnvName(GenerativeAI::ModelURI const &model_uri)
-{
-	std::string ret;
-	std::string const &s = model_uri.name;
-	char last = 0;
-	for (char c : s) {
-		if (std::isalnum(c)) {
-			ret += std::toupper(c);
-		} else {
-			c = '_';
-			if (c != last) {
-				ret += c;
-			}
-		}
-		last = c;
-	}
 	return ret;
 }
 

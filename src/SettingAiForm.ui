@@ -89,7 +89,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEdit_api_key"/>
+       <widget class="QLineEdit" name="lineEdit_api_key">
+        <property name="echoMode">
+         <enum>QLineEdit::EchoMode::Password</enum>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

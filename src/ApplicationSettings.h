@@ -25,12 +25,15 @@ public:
 class AiApiKeys {
 public:
 	enum class KeyFrom {
-		EnvValue, // 環境変数から取得
-		UserInput, // ユーザーが設定画面で入力
-		Default = EnvValue
+		Environment, // 環境変数から取得
+		LocalSecret, // ユーザーが設定画面で入力
+		Default = Environment
 	};
+	static QString symbolKeyFrom(KeyFrom keyfrom);
+	static KeyFrom parseKeyFrom(QString const &symbol);
+
 	struct Item {
-		KeyFrom from = KeyFrom::EnvValue;
+		KeyFrom from = KeyFrom::Default;
 		std::string api_key;
 	};
 
@@ -38,8 +41,6 @@ public:
 
 	bool load(MySettings *s);
 	bool save(MySettings *s) const;
-
-	static std::string makeEnvName(GenerativeAI::ModelURI const &model_uri);
 };
 
 class ApplicationSettings {
@@ -58,7 +59,7 @@ public:
 	QString proxy_type;
 	QString proxy_server;
 
-	bool generate_commit_message_by_ai = false;
+	bool generate_commit_message_with_ai = false;
 	AiApiKeys ai_api_keys;
 	GenerativeAI::Model ai_model;
 	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;

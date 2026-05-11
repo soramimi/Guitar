@@ -85,7 +85,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 	{
 		auto vec = GenerativeAI::ai_model_presets();
 		for (auto &m : vec) {
-			list.push_back((QS)m.model_uri().name);
+			list.push_back((QS)m.model_uri().string);
 		}
 	}
 	// モデル一覧を追加する際にシグナルをブロックする。
@@ -203,7 +203,7 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 		envname = p->env_name();
 		if (envname.empty()) {
 			auto uri = currentModelURI();
-			envname = AiApiKeys::makeEnvName(uri);
+			envname = GenerativeAI::makeEnvName(uri);
 		}
 	}
 	if (!envname.empty()) {
@@ -214,7 +214,7 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 
 			if (!isKeyEnvDefined(envname)) {
 				// プロバイダテーブルに定義されていないenv_nameの場合はユーザー入力モードとする。
-				it->second.from = AiApiKeys::KeyFrom::UserInput;
+				it->second.from = AiApiKeys::KeyFrom::LocalSecret;
 			}
 		}
 		return &it->second;
@@ -248,13 +248,13 @@ void SettingAiForm::exchange(bool save)
 	if (save) { // UI -> 設定ファイル
 		auto uri = currentModelURI();
 
-		s->generate_commit_message_by_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
+		s->generate_commit_message_with_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
 
 		s->ai_api_keys.map.clear();
 		for (SettingAiForm::ProviderFormData &formdata : m->provider_formdata_) {
 			std::string envname = formdata.info->env_name;
 			if (envname.empty()) {
-				envname = AiApiKeys::makeEnvName(uri);
+				envname = GenerativeAI::makeEnvName(uri);
 			}
 			AiApiKeys::Item form_item;
 			auto it = m->api_keys_.map.find(envname); // ensure the key exists
@@ -265,9 +265,9 @@ void SettingAiForm::exchange(bool save)
 			*conf_item = form_item;
 		}
 
-		s->ai_model = GenerativeAI::Model(m->current_provider_id(), uri.name);
+		s->ai_model = GenerativeAI::Model(m->current_provider_id(), uri.string);
 	} else { // 設定ファイル -> UI
-		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_by_ai);
+		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_with_ai);
 
 		GenerativeAI::Model const &model = s->ai_model;
 
@@ -277,7 +277,7 @@ void SettingAiForm::exchange(bool save)
 		for (auto &pair : m->api_keys_.map) {
 			if (!isKeyEnvDefined(pair.first)) {
 				// 設定ファイルに存在するが、プロバイダテーブルに定義されていないenv_nameの場合はユーザー入力モードとする。
-				pair.second.from = AiApiKeys::KeyFrom::UserInput;
+				pair.second.from = AiApiKeys::KeyFrom::LocalSecret;
 			}
 		}
 
@@ -307,16 +307,16 @@ void SettingAiForm::setRadioButtons(bool enabled, AiApiKeys::KeyFrom from)
 		std::string envname = m->current_provider()->env_name();
 		ui->radioButton_use_environment_value->setEnabled(!envname.empty()); // env_name が空のときは環境変数モードを選択できないようにする。
 		if (envname.empty()) {
-			from = ApiKeyFrom::UserInput;
+			from = ApiKeyFrom::LocalSecret;
 		}
 
 		ui->radioButton_use_custom_api_key->setEnabled(true);
 
 		switch (from) {
-		case ApiKeyFrom::EnvValue:
+		case ApiKeyFrom::Environment:
 			ui->radioButton_use_environment_value->setChecked(true);
 			break;
-		case ApiKeyFrom::UserInput:
+		case ApiKeyFrom::LocalSecret:
 			ui->radioButton_use_custom_api_key->setChecked(true);
 			ui->lineEdit_api_key->setEnabled(true);
 			break;
@@ -333,9 +333,9 @@ void SettingAiForm::setRadioButtons(bool enabled, AiApiKeys::KeyFrom from)
 /**
  * @brief 現在選択中のプロバイダの状態をウィジェットに反映する。
  *
- * ApiKeyFrom::EnvValue の場合は実際に環境変数を読んでテキストフィールドに表示するが、
+ * ApiKeyFrom::Environment の場合は実際に環境変数を読んでテキストフィールドに表示するが、
  * 編集不可(setEnabled(false))にして読み取り専用として扱う。
- * ApiKeyFrom::UserInput の場合はフォームバッファの値を表示し、編集可能にする。
+ * ApiKeyFrom::LocalSecret の場合はフォームバッファの値を表示し、編集可能にする。
  */
 void SettingAiForm::reflectSettingsToUI()
 {
@@ -344,24 +344,24 @@ void SettingAiForm::reflectSettingsToUI()
 	SettingAiForm::ProviderFormData *p = m->current_provider();
 	Q_ASSERT(p);
 	std::string envname = p->env_name();
-	if (envname.empty() && keyFrom(p->id) == ApiKeyFrom::EnvValue) {
+	if (envname.empty() && keyFrom(p->id) == ApiKeyFrom::Environment) {
 		// env_name が空のときは環境変数モードを選択できないようにする。
 		ui->lineEdit_api_key->setEnabled(false);
 	} else {
 		char const *env = nullptr;
 		switch (keyFrom(p->id)) {
-		case ApiKeyFrom::EnvValue:
+		case ApiKeyFrom::Environment:
 			env = std::getenv(envname.c_str());
 			if (env) {
 				apikey = env;
 			}
 			ui->lineEdit_api_key->setEnabled(false);
 			break;
-		case ApiKeyFrom::UserInput:
+		case ApiKeyFrom::LocalSecret:
 			{
 				if (envname.empty()) {
 					auto uri = currentModelURI();
-					envname = AiApiKeys::makeEnvName(uri);
+					envname = GenerativeAI::makeEnvName(uri);
 				}
 				auto it = m->api_keys_.map.find(envname);
 				if (it != m->api_keys_.map.end()) {
@@ -411,25 +411,25 @@ void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
 }
 
 /**
- * @brief 「環境変数を使用する」ラジオボタンが押されたとき、APIキー取得元を EnvValue に切り替える。
+ * @brief 「環境変数を使用する」ラジオボタンが押されたとき、APIキー取得元を Environment に切り替える。
  */
 void SettingAiForm::on_radioButton_use_environment_value_clicked()
 {
 	auto *keyitem = currentKeyItem();
 	if (keyitem) {
-		keyitem->from = ApiKeyFrom::EnvValue;
+		keyitem->from = ApiKeyFrom::Environment;
 	}
 	reflectSettingsToUI();
 }
 
 /**
- * @brief 「カスタムAPIキーを使用する」ラジオボタンが押されたとき、APIキー取得元を UserInput に切り替える。
+ * @brief 「カスタムAPIキーを使用する」ラジオボタンが押されたとき、APIキー取得元を LocalSecret に切り替える。
  */
 void SettingAiForm::on_radioButton_use_custom_api_key_clicked()
 {
 	auto *keyitem = currentKeyItem();
 	if (keyitem) {
-		keyitem->from = ApiKeyFrom::UserInput;
+		keyitem->from = ApiKeyFrom::LocalSecret;
 	}
 	reflectSettingsToUI();
 }
@@ -520,7 +520,7 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 	GenerativeAI::ProviderID id = model.provider_id();
 	if (id == GenerativeAI::ProviderID::Unknown) {
 		// モデルからプロバイダを推定できない場合は、モデル名文字列から推定させる。
-		configureModelByString(model.model_uri().name);
+		configureModelByString(model.model_uri().string);
 		return;
 	}
 
@@ -531,7 +531,7 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 	// シグナルをブロックしないと guessProviderFromModelName が二重に呼ばれてしまう。
 	bool b = ui->comboBox_ai_model->blockSignals(true);
 	{
-		ui->comboBox_ai_model->setCurrentText((QS)model.model_uri().name);
+		ui->comboBox_ai_model->setCurrentText((QS)model.model_uri().string);
 	}
 	ui->comboBox_ai_model->blockSignals(b);
 
