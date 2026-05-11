@@ -68,7 +68,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	// GenerativeAI::AI の定義に基づいて、利用可能なプロバイダのフォームデータを初期化する。
+	// GenerativeAI::ProviderID の定義に基づいて、利用可能なプロバイダのフォームデータを初期化する。
 	for (GenerativeAI::ProviderID id : GenerativeAI::ai_provider_id_list_for_present_to_users()) {
 		m->provider_formdata_.emplace_back(id);
 	}

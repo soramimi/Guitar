@@ -48,16 +48,16 @@ GenerativeAI::Model global_appsettings_ai_model()
 	return ai_model;
 }
 
-GenerativeAI::Credential global_get_ai_credential(GenerativeAI::AI aiid)
+GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model)
 {
 	GenerativeAI::Credential cred;
-	std::string env_name = ai_model.env_name();
+	std::string env_name = model.env_name();
 	if (!env_name.empty()) {
 		char const *env = std::getenv(env_name.c_str());
 		if (env) {
 			cred.api_key = env;
 		} else {
-			fprintf(stderr, "Warning: Environment variable %s is not set. API key for %s will be empty.\n", env_name.c_str(), ai_model.long_name().c_str());
+			fprintf(stderr, "Warning: Environment variable %s is not set. API key for %s will be empty.\n", env_name.c_str(), model.model_name().c_str());
 		}
 	}
 	return cred;
