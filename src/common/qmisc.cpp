@@ -7,6 +7,41 @@
 #include <QContextMenuEvent>
 
 /**
+ * @brief 文字列を単語に分割する。
+ *
+ * 与えられた文字列を単語に分割し、QStringListとして返します。分割は、空白文字を
+ * 区切りとして行われます。
+ *
+ * @param text 分割する対象の文字列。
+ * @return 分割された単語のリスト。
+ */
+QStringList misc::splitWords(const QString &text)
+{
+	QStringList list;
+	ushort const *begin = text.utf16();
+	ushort const *end = begin + text.size();
+	ushort const *ptr = begin;
+	ushort const *left = ptr;
+	while (1) {
+		ushort c = 0;
+		if (ptr < end) {
+			c = *ptr;
+		}
+		if (QChar::isSpace(c) || c == 0) {
+			if (left < ptr) {
+				list.push_back(QString::fromUtf16((char16_t const *)left, int(ptr - left)));
+			}
+			if (c == 0) break;
+			ptr++;
+			left = ptr;
+		} else {
+			ptr++;
+		}
+	}
+	return list;
+}
+
+/**
  * @brief アプリケーションのディレクトリパスを取得する
  *
  * 実行可能ファイルが格納されているディレクトリのパスを返します。
@@ -124,5 +159,87 @@ QPoint misc::contextMenuPos(QWidget *w, QContextMenuEvent *e)
 		return QCursor::pos() + QPoint(8, -8);
 	}
 	return w->mapToGlobal(QPoint(4, 4));
+}
+
+/**
+ * @brief ブランチ名を短縮形に変換する。
+ *
+ * 入力されたブランチ名を短縮形に変換します。ブランチ名の各パス要素の先頭文字を抽出し、
+ * 最後のパス要素を除いて短縮形にします。
+ *
+ * @param name 短縮形に変換する対象のブランチ名。
+ * @return 短縮されたブランチ名。
+ */
+QString misc::abbrevBranchName(QString const &name)
+{
+	QStringList sl = name.split('/');
+	if (sl.size() == 1) return sl[0];
+	QString newname;
+	for (int i = 0; i < sl.size(); i++) {
+		QString s = sl[i];
+		if (i + 1 < sl.size()) {
+			s = s.mid(0, 1);
+		}
+		if (i > 0) {
+			newname += '/';
+		}
+		newname += s;
+	}
+	return newname;
+}
+
+/**
+ * @brief プロキシサーバーURLを正規化する
+ *
+ * 入力されたプロキシサーバーのURLを正規化します。
+ * プロトコルが指定されていない場合は "http://" を付加し、
+ * 末尾にスラッシュがない場合は付加します。
+ *
+ * @param text 正規化するプロキシサーバーURL文字列
+ * @return 正規化されたプロキシサーバーURL
+ */
+QString misc::makeProxyServerURL(QString text)
+{
+	if (!text.isEmpty() && text.indexOf("://") < 0) {
+		text = "http://" + text;
+		if (text[text.size() - 1] != '/') {
+			text += '/';
+		}
+	}
+	return text;
+}
+
+/**
+ * @brief 文字列内の連続する空白文字を1つのスペースにまとめる。
+ *
+ * 入力された文字列内の連続する空白文字を1つのスペースにまとめ、結果の文字列を返します。
+ *
+ * @param source 連続する空白文字をまとめる対象のQStringオブジェクト。
+ * @return 連続する空白文字が1つのスペースにまとめられたQStringオブジェクト。
+ */
+QString misc::collapseWhitespace(const QString &source)
+{
+	QChar *p = (QChar *)alloca(sizeof(QChar) * (source.size() + 1));
+	QChar const *r = source.unicode();
+	QChar *w = p;
+	bool spc = false;
+	while (1) {
+		QChar c = *r;
+		if (c > ' ') {
+			if (spc) {
+				*w++ = ' ';
+				spc = false;
+			}
+			*w++ = c;
+		} else {
+			if (c == 0) {
+				*w = QChar::Null;
+				break;
+			}
+			spc = true;
+		}
+		r++;
+	}
+	return QString(p);
 }
 

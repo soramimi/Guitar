@@ -471,7 +471,7 @@ void FileDiffWidget::setOriginalLines_(QByteArray const &ba, GitSubmoduleItem co
 	m->original_lines.clear();
 
 	if (!ba.isEmpty()) {
-		std::vector<std::string_view> lines = misc::splitLinesV(std::string_view{ba.data(), (size_t)ba.size()}, true);
+		std::vector<std::string_view> lines = misc::splitLinesKeepNewLineV(std::string_view{ba.data(), (size_t)ba.size()});
 		m->original_lines.clear();
 		for (std::string_view const &line : lines) {
 			m->original_lines.push_back(std::string(line));

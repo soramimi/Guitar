@@ -200,7 +200,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 				if (it != parentmap.end()) {
 					parent = it->second;
 				} else { // 親アイテムが見つからない場合は新規作成
-					QStringList list = groupname.split('/', _SkipEmptyParts);
+					QStringList list = groupname.split('/', Qt::SkipEmptyParts);
 					if (list.isEmpty()) {
 						list.push_back("Default");
 					}

@@ -2,11 +2,12 @@
 #include "Git.h"
 #include "GitBasicSession.h"
 #include "Profile.h"
-#include "common/joinpath.h"
 #include "common/fmt.h"
-#include "common/q/helper.h"
-#include "common/q/FileInfo.h"
+#include "common/joinpath.h"
 #include "common/q/Dir.h"
+#include "common/q/FileInfo.h"
+#include "common/q/helper.h"
+#include "common/str.h"
 #include <QString>
 
 void GitCommitItem::setParents(std::vector<std::string> const &list)
@@ -176,7 +177,7 @@ std::vector<GitTag> Git::tags()
 {
 	std::vector<GitTag> list;
 	auto result = git("show-ref");
-	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(resultStdString(result));
 	for (std::string const &line : lines) {
 		std::vector<std::string_view> l = misc::splitWords(line);
 		if (l.size() >= 2) {
@@ -236,7 +237,7 @@ std::vector<std::string> Git::diff_name_only_head()
 	std::string cmd = "diff --name-only HEAD";
 	auto result = git(cmd);
 	std::string str = resultStdString(result);
-	return misc::splitLines(str, false);
+	return (misc::strlist)misc::splitLinesV(str);
 }
 
 std::string Git::diff_full_index_head_file(std::string const &file)
@@ -260,7 +261,7 @@ std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_
 	std::string cmd = fmt("diff --raw --abbrev=%s %s %s")(GIT_ID_LENGTH)(old_id.toString())(new_id.toString());
 	auto result = git(cmd);
 	std::string text = resultStdString(result);
-	std::vector<std::string_view> lines = misc::splitLinesV(text, false);
+	std::vector<std::string_view> lines = misc::splitLinesV(text);
 	remove_empty(&lines);
 	for (std::string_view const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		GitDiffRaw item;
@@ -422,7 +423,7 @@ std::vector<GitBranch> Git::branches()
 	auto result = git(fmt("branch -vv -a --abbrev=%s")(GIT_ID_LENGTH));
 	std::string s = resultStdString(result);
 
-	std::vector<std::string> lines = misc::splitLines(s, false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(s);
 	for (std::string const &line : lines) {
 		if (line.size() > 2) {
 			std::string name;
@@ -611,7 +612,7 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 
 	if (result && result->exit_code() == 0) {
 		std::string text{misc::trimmed(resultStdString(result))};
-		std::vector<std::string> lines = misc::splitLines(text, false);
+		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(text);
 		for (std::string const &line : lines) {
 			auto item = parseCommitItem(line);
 			if (item) {
@@ -639,7 +640,7 @@ std::vector<GitHash> Git::rev_list_all(GitHash const &id, int maxcount)
 	if (result && result->exit_code() == 0) {
 		auto &out = result->output();
 		std::string_view v(out.data(), out.size());
-		std::vector<std::string_view> lines = misc::splitLinesV(v, false);
+		std::vector<std::string_view> lines = misc::splitLinesV(v);
 		for (std::string_view const &line : lines) {
 			GitHash hash(line);
 			if (hash) {
@@ -721,7 +722,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 
 		std::string gpgtext;
 		std::string_view text = misc::trimmed(resultStdString(result));
-		std::vector<std::string_view> lines = misc::splitLinesV(text, false);
+		std::vector<std::string_view> lines = misc::splitLinesV(text);
 		for (std::string_view const &line : lines) {
 			if (misc::starts_with(line, "gpg:")) {
 				if (!gpgtext.empty()) {
@@ -745,7 +746,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 
 std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 {
-	std::vector<std::string_view> lines = misc::splitLinesV(ba, false);
+	std::vector<std::string_view> lines = misc::splitLinesV(ba);
 
 	while (!lines.empty() && lines[lines.size() - 1].empty()) {
 		lines.pop_back();
@@ -925,8 +926,7 @@ std::vector<GitSubmoduleItem> Git::submodules()
 
 	auto result = git("submodule");
 	QString text = resultQString(result);
-	QStringList lines = misc::splitLines(text);
-	for (QString const &line : lines) {
+	for (QString const &line : misc::splitLines(text)) {
 		QString text = line;
 		ushort c = text.utf16()[0];
 		if (c == ' ' || c == '+' || c == '-') {
@@ -1070,7 +1070,7 @@ std::vector<GitFileStatus> Git::status_s_()
 	auto result = exec_git("status -s -u --porcelain", opt);
 	if (result) {
 		std::string text = resultStdString(result);
-		std::vector<std::string> lines = misc::splitLines(text, false);
+		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(text);
 		for (std::string_view const &line : lines) {
 			if (line.size() > 3) {
 				GitFileStatus s((std::string)line);
@@ -1112,7 +1112,7 @@ std::string Git::queryEntireCommitMessage(GitHash const &id)
 	auto file = cat_file(id);
 	if (file) {
 		std::string message{file->data(), file->size()};
-		std::vector<std::string_view> lines = misc::splitLinesV(message, false);
+		std::vector<std::string_view> lines = misc::splitLinesV(message);
 		bool header = true;
 		for (std::string_view const &line : lines) {
 			if (header) {
@@ -1228,7 +1228,7 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &result)
 {
 	std::vector<std::string> list;
-	std::vector<std::string> l = misc::splitLines(resultStdString(result), false);
+	std::vector<std::string> l = (misc::strlist)misc::splitLinesV(resultStdString(result));
 	for (std::string const &s : l) {
 		if (misc::starts_with(s, "* ")) list.push_back(s.substr(2));
 		if (misc::starts_with(s, "  ")) list.push_back(s.substr(2));
@@ -1338,7 +1338,7 @@ std::vector<std::string> Git::getRemotes()
 {
 	std::vector<std::string> ret;
 	auto result = git("remote");
-	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(resultStdString(result));
 	for (std::string const &line: lines) {
 		if (!line.empty()) {
 			ret.push_back(line);
@@ -1432,7 +1432,7 @@ void Git::remote_v(std::vector<GitRemote> *out)
 {
 	out->clear();
 	auto result = git("remote -v");
-	std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(resultStdString(result));
 	for (std::string const &line : lines) {
 		auto i = line.find('\t');
 		auto j = line.find(" (");
@@ -1645,7 +1645,7 @@ std::vector<Git::RemoteInfo> Git::ls_remote()
 	std::string cmd = "ls-remote";
 	auto result = git(cmd);
 	if (result) {
-		std::vector<std::string> lines = misc::splitLines(resultStdString(result), false);
+		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(resultStdString(result));
 		for (std::string const &line : lines) {
 			std::vector<std::string_view> words = misc::splitWords(line);
 			RemoteInfo info;
@@ -1758,7 +1758,7 @@ void GitDiff::makeForSingleFile(GitDiff *diff, std::string const &id_a, std::str
 
 void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 {
-	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
+	std::vector<std::string_view> lines = misc::splitLinesV(s);
 
 	out->diff = std::string("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out->index = std::string("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
@@ -1800,7 +1800,7 @@ void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
 void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out)
 {
 	*out = {};
-	std::vector<std::string> lines = misc::splitLines({ba.data(), (size_t)ba.size()}, false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV({ba.data(), (size_t)ba.size()});
 	GitSubmoduleItem submod;
 	auto Push = [&](){
 		if (!submod.name.empty()) {

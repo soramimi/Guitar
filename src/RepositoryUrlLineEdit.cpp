@@ -1,6 +1,6 @@
 #include "DropDownListFrame.h"
 #include "RepositoryUrlLineEdit.h"
-#include "common/misc.h"
+#include "common/qmisc.h"
 #include <QKeyEvent>
 #include <QDebug>
 #include <QLineEdit>

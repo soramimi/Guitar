@@ -482,7 +482,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(Generative
 		if (0) {
 			// 旧実装：箇条書き形式（"- message" や "1. message"）をパースしていた。
 			// 現在はJSON形式に移行したため使用しない。
-			std::vector<std::string_view> lines = misc::splitLinesV(r.text, false);
+			std::vector<std::string_view> lines = misc::splitLinesV(r.text);
 			size_t i = lines.size();
 			while (i > 0) {
 				i--;
@@ -796,7 +796,7 @@ std::string CommitMessageGenerator::make_diff(std::string const &gitcommand, std
 		} else {
 			s = git(gitcommand, dir, fmt("diff --name-only %s")(commits.a));
 		}
-		names = misc::splitLines(s, false);
+		names = (misc::strlist)misc::splitLinesV(s);
 	}
 	std::vector<std::string> diffs(names.size());
 	const int NUM_THREADS = 1;

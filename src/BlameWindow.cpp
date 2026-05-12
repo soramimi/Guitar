@@ -5,6 +5,7 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "common/misc.h"
+#include "common/str.h"
 #include "common/q/helper.h"
 #include <QMenu>
 #include <QToolTip>
@@ -122,7 +123,7 @@ BlameWindow::~BlameWindow()
 QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
-	std::vector<std::string> lines = misc::splitLines(str, false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(str);
 	BlameItem item;
 	for (std::string_view const &v : lines) {
 		if (v.empty()) continue;

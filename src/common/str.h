@@ -15,9 +15,11 @@ private:
 public:
 	explicit str(char const *s) : str_(std::string_view(s)) {}
 	explicit str(char const *s, size_t n) : str_(std::string_view(s, n)) {}
+	explicit str(char const *begin, char const *end) : str_(std::string_view(begin, end - begin)) {}
 	explicit str(std::string_view sv) : str_(sv) {}
 	explicit str(std::vector<char> const &v) : str_(std::string_view(v.data(), v.size())) {}
 	explicit str(QString const &s) : str_(s) {}
+	explicit str(ushort const *begin, ushort const *end) : str_(QString::fromUtf16(begin, end - begin)) {}
 	explicit str(QByteArray const &ba) : str_(std::string_view(ba.data(), ba.size())) {}
 	bool empty() const
 	{
@@ -136,6 +138,31 @@ public:
 		return qbytearray();
 	}
 #endif
+};
+
+class strlist {
+private:
+	std::vector<std::string_view> vec_;
+public:
+	strlist(std::vector<std::string_view> const &vec)
+		: vec_(vec)
+	{
+	}
+	strlist(std::vector<std::string> const &vec)
+	{
+		vec_.reserve(vec.size());
+		for (auto const &s : vec) {
+			vec_.emplace_back(s);
+		}
+	}
+	operator std::vector<std::string> () const
+	{
+		std::vector<std::string> out;
+		for (auto const &s : vec_) {
+			out.emplace_back(s);
+		}
+		return out;
+	}
 };
 
 }

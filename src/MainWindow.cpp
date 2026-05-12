@@ -599,9 +599,16 @@ bool MainWindow::shown()
 	return true;
 }
 
-bool MainWindow::isUninitialized()
+/**
+ * @brief 初期化されていないか
+ * @return 初期化されていない場合はtrue、そうでない場合はfalse
+ *
+ * gitコマンドが有効なファイルでない場合、初期化されていないとみなします。
+ */
+bool MainWindow::isGitInitialized() const
 {
-	return !misc::isExecutable(appsettings()->git_command);
+	QFileInfo info(appsettings()->git_command);
+	return info.isExecutable();
 }
 
 void MainWindow::setupExternalPrograms()
@@ -613,12 +620,12 @@ void MainWindow::setupExternalPrograms()
 
 void MainWindow::onStartEvent()
 {
-	if (isUninitialized()) { // gitコマンドの有効性チェック
+	if (!isGitInitialized()) { // gitコマンドの有効性チェック
 		if (!execWelcomeWizardDialog()) { // ようこそダイアログを表示
 			close(); // キャンセルされたらプログラム終了
 		}
 	}
-	if (isUninitialized()) { // 正しく初期設定されたか
+	if (!isGitInitialized()) { // 正しく初期設定されたか
 		postStartEvent(100); // 初期設定されなかったら、もういちどようこそダイアログを出す（100ms後）
 	} else {
 		// 外部コマンド登録
@@ -924,7 +931,7 @@ void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 	std::string str;
 	{
 		std::string_view v(ba.data(), ba.size());
-		std::vector<std::string> lines = misc::splitLines(v, false);
+		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(v);
 		for (std::string const &line : lines) {
 			auto percent = line.find_last_of('%');
 			auto colon = line.find_last_of(':', percent);
@@ -2018,7 +2025,7 @@ bool MainWindow::execWelcomeWizardDialog()
 	WelcomeWizardDialog dlg(this);
 	dlg.set_git_command_path(appsettings()->git_command);
 	dlg.set_default_working_folder(appsettings()->default_working_dir);
-	if (misc::isExecutable(appsettings()->git_command)) {
+	if (isGitInitialized()) {
 		GitRunner g = unassosiated_git_runner();
 		// Git g(global->gcx(), {}, {}, {});
 		GitUser user = g.getUser(GitSource::Global);
@@ -2030,7 +2037,7 @@ bool MainWindow::execWelcomeWizardDialog()
 		appsettings()->default_working_dir = dlg.default_working_folder();
 		saveApplicationSettings();
 
-		if (misc::isExecutable(appsettings()->git_command)) {
+		if (isGitInitialized()) { // gitコマンドが使用可能なら
 			GitRunner g = git();
 			GitUser user;
 			user.name = (misc::str)dlg.user_name();
@@ -2181,7 +2188,7 @@ void MainWindow::setSshCommand(QString const &path, bool save)
 bool MainWindow::checkGitCommand()
 {
 	while (1) {
-		if (misc::isExecutable(global->appsettings.git_command)) {
+		if (isGitInitialized()) {
 			return true;
 		}
 		if (selectGitCommand(true).isEmpty()) {
@@ -2583,7 +2590,7 @@ void MainWindow::clone(CloneParams const &a)
 	GitRunner g = new_git_runner({}, a.repodata.ssh_key);
 	runPtyGit(tr("Cloning..."), g, Git_clone{a.clonedata}, RUN_PTY_CALLBACK{
 		CloneParams a = userdata.value<CloneParams>();
-		std::vector<std::string> log = misc::splitLines(status->log_message, false);
+		std::vector<std::string> log = (misc::strlist)misc::splitLinesV(status->log_message);
 		std::string dir = parseDetectedDubiousOwnershipInRepositoryAt(log);
 		if (dir.empty()) {
 			doReopenRepository(status, a.repodata);

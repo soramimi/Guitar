@@ -1,98 +1,41 @@
 #include "misc.h"
 #include "joinpath.h"
-#include <QContextMenuEvent>
-#include <QDebug>
-#include <QFileInfo>
-#include <QPainter>
-#include <QProcess>
+#include "q/FileInfo.h"
+#include "str.h"
+#include <Git.h>
 #include <vector>
 
-/**
- * @brief QByteArrayの文字列を行に分割する。
- *
- * 与えられたQByteArrayの文字列を行に分割し、QStringListとして返します。
- * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
- * また、与えられた変換関数を使用して、charの配列をQStringに変換します。
- *
- * @param ba 分割する対象のQByteArray。
- * @param tos 文字列を変換する関数。charの配列とその長さを引数に取り、QStringを返す関数。
- * @return 分割された行のリスト。
- */
-QStringList misc::splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos)
-{
-	QStringList ret;
-	std::vector<std::string_view> lines = misc::splitLinesV(std::string_view(ba.data(), ba.size()), false);
-	for (size_t i = 0; i < lines.size(); i++) {
-		QString s = tos(lines[i].data(), lines[i].size());
-		ret.push_back(s);
-	}
-	return ret;
-}
+#ifdef QT_VERSION
+#include <QFileInfo>
+#endif
 
 /**
- * @brief 文字列を行に分割する。
+ * @brief 文字列を行に分割するためのテンプレート関数
  *
- * 与えられた文字列を行に分割し、QStringListとして返します。
- * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
+ * この関数は、与えられた文字列を行に分割し、指定された型のベクターとして返します。
+ * 分割は、改行文字（\n、\r）または文字列の終端で行われます。
  *
- * @param text 分割する対象の文字列。
- * @return 分割された行のリスト。
+ * @tparam S 戻り値のベクターの要素の型（例: std::string, QString, std::string_view）
+ * @tparam C 入力文字列の文字型（例: char, ushort）
+ * @tparam U 文字コードの型（例: unsigned char, ushort）
+ * @param begin 分割する対象の文字列の開始位置
+ * @param size 分割する対象の文字列のサイズ
+ * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse
+ * @return 分割された行のリスト
  */
-QStringList misc::splitLines(QString const &text)
+template <typename S, typename C, typename U> std::vector<S> t_splitLines(C const *begin, size_t size, bool keep_newline)
 {
-	QStringList list;
-	ushort const *begin = text.utf16();
-	ushort const *end = begin + text.size();
-	ushort const *ptr = begin;
-	ushort const *left = ptr;
-	while (1) {
-		ushort c = 0;
-		if (ptr < end) {
-			c = *ptr;
-		}
-		if (c == '\n' || c == '\r' || c == 0) {
-			list.push_back(QString::fromUtf16((char16_t const *)left, int(ptr - left)));
-			if (c == 0) break;
-			if (c == '\n') {
-				ptr++;
-			} else if (c == '\r') {
-				ptr++;
-				if (ptr < end && *ptr == '\n') {
-					ptr++;
-				}
-			}
-			left = ptr;
-		} else {
-			ptr++;
-		}
-	}
-	return list;
-}
-
-/**
- * @brief 文字列を行に分割する。
- *
- * 与えられた文字列を行に分割し、std::vector<std::string>として返します。
- * 分割は、改行文字 ('\n' または '\r\n') を区切りとして行われます。
- *
- * @param str 分割する対象の文字列。
- * @param[out] out 分割された行を格納するstd::vectorへのポインタ。
- * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse。
- */
-std::vector<std::string_view> misc::splitLinesV(std::string_view const &str, bool keep_newline)
-{
-	std::vector<std::string_view> ret;
-	char const *begin = str.data();
-	char const *end = begin + str.size();
-	char const *ptr = begin;
-	char const *left = ptr;
+	std::vector<S> ret;
+	C const *end = begin + size;
+	C const *ptr = begin;
+	C const *left = ptr;
 	while (1) {
 		int c = 0;
 		if (ptr < end) {
-			c = (unsigned char)*ptr;
+			c = (U)*ptr;
 		}
 		if (c == '\n' || c == '\r' || c == 0) {
-			char const *right = ptr;
+			C const *right = ptr;
 			if (c == '\n') {
 				ptr++;
 			} else if (c == '\r') {
@@ -104,7 +47,7 @@ std::vector<std::string_view> misc::splitLinesV(std::string_view const &str, boo
 			if (keep_newline) {
 				right = ptr;
 			}
-			ret.emplace_back(left, right - left);
+			ret.push_back(misc::str(left, right));
 			if (c == 0) break;
 			left = ptr;
 		} else {
@@ -114,43 +57,32 @@ std::vector<std::string_view> misc::splitLinesV(std::string_view const &str, boo
 	return ret;
 }
 
-/**
- * @brief QByteArrayを行に分割する
- * 
- * QByteArrayの内容を文字列として行に分割し、std::string_viewのベクターとして返します。
- * 
- * @param ba 分割する対象のQByteArray
- * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse
- * @return 分割された行のリスト
- */
-std::vector<std::string_view> misc::splitLinesV(QByteArray const &ba, bool keep_newline)
+std::vector<std::string_view> misc::splitLinesV(std::string_view const &str)
 {
-	return splitLinesV(std::string_view(ba.data(), ba.size()), keep_newline);
+	return t_splitLines<std::string_view, char, unsigned char>(str.data(), str.size(), false);
 }
 
-std::vector<std::string_view> misc::splitLinesV(std::vector<char> const &ba, bool keep_newline)
+std::vector<std::string_view> misc::splitLinesV(std::vector<char> const &ba)
 {
-	return splitLinesV(std::string_view(ba.data(), ba.size()), keep_newline);
+	return t_splitLines<std::string_view, char, unsigned char>(ba.data(), ba.size(), false);
 }
 
-/**
- * @brief 文字列を行に分割する
- * 
- * 与えられた文字列を行に分割し、std::stringのベクターとして返します。
- * 
- * @param str 分割する対象の文字列
- * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse
- * @return 分割された行のリスト
- */
-std::vector<std::string> misc::splitLines(std::string_view const &str, bool keep_newline)
+std::vector<std::string_view> misc::splitLinesKeepNewLineV(std::string_view const &str)
 {
-	std::vector<std::string> out;
-	std::vector<std::string_view> v = splitLinesV(str, keep_newline);
-	for (auto const &s : v) {
-		out.emplace_back(s);
-	}
-	return out;
+	return t_splitLines<std::string_view, char, unsigned char>(str.data(), str.size(), true);
 }
+
+std::vector<std::string> misc::splitLines(std::string_view const &str)
+{
+	return t_splitLines<std::string, char, unsigned char>(str.data(), str.size(), false);
+}
+
+#ifdef QT_VERSION
+std::vector<QString> misc::splitLines(QString const &text)
+{
+	return t_splitLines<QString, ushort, ushort>(text.utf16(), text.size(), false);
+}
+#endif
 
 /**
  * @brief 文字列を単語に分割する
@@ -187,40 +119,6 @@ std::vector<std::string_view> misc::splitWords(std::string_view const &text)
 	return list;
 }
 
-/**
- * @brief 文字列を単語に分割する。
- *
- * 与えられた文字列を単語に分割し、QStringListとして返します。分割は、空白文字を
- * 区切りとして行われます。
- *
- * @param text 分割する対象の文字列。
- * @return 分割された単語のリスト。
- */
-QStringList misc::splitWords(QString const &text)
-{
-	QStringList list;
-	ushort const *begin = text.utf16();
-	ushort const *end = begin + text.size();
-	ushort const *ptr = begin;
-	ushort const *left = ptr;
-	while (1) {
-		ushort c = 0;
-		if (ptr < end) {
-			c = *ptr;
-		}
-		if (QChar::isSpace(c) || c == 0) {
-			if (left < ptr) {
-				list.push_back(QString::fromUtf16((char16_t const *)left, int(ptr - left)));
-			}
-			if (c == 0) break;
-			ptr++;
-			left = ptr;
-		} else {
-			ptr++;
-		}
-	}
-	return list;
-}
 
 /**
  *
@@ -256,6 +154,7 @@ std::vector<std::string_view> misc::split(std::string_view const &sv, char sep)
  * @param path ファイル名を抽出する対象のパス
  * @return 抽出されたファイル名
  */
+#if 0
 QString misc::filename(QString const &path)
 {
 	int i = path.lastIndexOf('/');
@@ -266,6 +165,7 @@ QString misc::filename(QString const &path)
 	}
 	return path;
 }
+#endif
 
 std::string misc::filename(std::string const &path)
 {
@@ -371,6 +271,7 @@ std::string misc::replace_backslash_to_slash(std::string_view const &in)
  * @return 正規化されたパス文字列
  */
 #ifdef _WIN32
+#ifdef QT_VERSION
 QString misc::normalizePathSeparator(QString const &str)
 {
 	if (!str.isEmpty()) {
@@ -390,6 +291,7 @@ QString misc::normalizePathSeparator(QString const &str)
 	}
 	return QString();
 }
+#endif
 std::string misc::normalizePathSeparator(std::string const &str)
 {
 	std::string out;
@@ -403,41 +305,17 @@ std::string misc::normalizePathSeparator(std::string const &str)
 	return out;
 }
 #else
+#ifdef QT_VERSION
 QString misc::normalizePathSeparator(QString const &str)
 {
 	return str;
 }
+#endif
 std::string misc::normalizePathSeparator(std::string const &str)
 {
 	return str;
 }
 #endif
-
-/**
- * @brief 2つのパスをスラッシュで結合する
- * 
- * 2つのパス文字列を適切な区切り文字を使用して結合します。
- * 空の文字列が渡された場合は空でない方を返します。
- * 
- * @param left 左側のパス文字列
- * @param right 右側のパス文字列
- * @return 結合されたパス文字列
- */
-QString misc::joinWithSlash(QString const &left, QString const &right)
-{
-	if (!left.isEmpty() && !right.isEmpty()) {
-		return joinpath(left, right);
-	}
-	return !left.isEmpty() ? left : right;
-}
-
-std::string misc::joinWithSlash(std::string const &left, std::string const &right)
-{
-	if (!left.empty() && !right.empty()) {
-		return joinpath(left, right);
-	}
-	return !left.empty() ? left : right;
-}
 
 /**
  * @brief メモリダンプを16進数で表示する
@@ -492,18 +370,14 @@ void misc::dump(uint8_t const *ptr, size_t len)
  * 
  * @param in ダンプするQByteArrayへのポインタ、nullptrの場合は何も表示しません
  */
+#ifdef QT_VERSION
 void misc::dump(QByteArray const *in)
 {
-	size_t len = 0;
-	uint8_t const *ptr = nullptr;
 	if (in) {
-		len = in->size();
-		if (len > 0) {
-			ptr = (uint8_t const *)in->data();
-		}
+		dump((const uint8_t *)in->data(), in->size());
 	}
-	dump(ptr, len);
 }
+#endif
 
 /**
  * @brief MIMEタイプがテキストファイルを表すか判定する
@@ -591,33 +465,6 @@ bool misc::isImage(std::string const &mimetype)
 }
 
 /**
- * @brief ブランチ名を短縮形に変換する。
- *
- * 入力されたブランチ名を短縮形に変換します。ブランチ名の各パス要素の先頭文字を抽出し、
- * 最後のパス要素を除いて短縮形にします。
- *
- * @param name 短縮形に変換する対象のブランチ名。
- * @return 短縮されたブランチ名。
- */
-QString misc::abbrevBranchName(QString const &name)
-{
-	QStringList sl = name.split('/');
-	if (sl.size() == 1) return sl[0];
-	QString newname;
-	for (int i = 0; i < sl.size(); i++) {
-		QString s = sl[i];
-		if (i + 1 < sl.size()) {
-			s = s.mid(0, 1);
-		}
-		if (i > 0) {
-			newname += '/';
-		}
-		newname += s;
-	}
-	return newname;
-}
-
-/**
  * @brief プロキシサーバーURLを正規化する
  * 
  * 入力されたプロキシサーバーのURLを正規化します。
@@ -639,27 +486,6 @@ std::string misc::makeProxyServerURL(std::string text)
 }
 
 /**
- * @brief プロキシサーバーURLを正規化する
- * 
- * 入力されたプロキシサーバーのURLを正規化します。
- * プロトコルが指定されていない場合は "http://" を付加し、
- * 末尾にスラッシュがない場合は付加します。
- * 
- * @param text 正規化するプロキシサーバーURL文字列
- * @return 正規化されたプロキシサーバーURL
- */
-QString misc::makeProxyServerURL(QString text)
-{
-	if (!text.isEmpty() && text.indexOf("://") < 0) {
-		text = "http://" + text;
-		if (text[text.size() - 1] != '/') {
-			text += '/';
-		}
-	}
-	return text;
-}
-
-/**
  * @brief ファイルが実行可能か判定する
  * 
  * 指定されたファイルパスが実行可能なファイルを指しているか判定します。
@@ -667,45 +493,18 @@ QString misc::makeProxyServerURL(QString text)
  * @param cmd 判定するファイルパス
  * @return 実行可能な場合はtrue、そうでない場合はfalse
  */
+bool misc::isExecutable(std::string const &cmd)
+{
+	FileInfo info(cmd);
+	return info.isExecutable();
+}
+#ifdef QT_VERSION
 bool misc::isExecutable(QString const &cmd)
 {
 	QFileInfo info(cmd);
 	return info.isExecutable();
 }
-
-/**
- * @brief 文字列内の連続する空白文字を1つのスペースにまとめる。
- *
- * 入力された文字列内の連続する空白文字を1つのスペースにまとめ、結果の文字列を返します。
- *
- * @param source 連続する空白文字をまとめる対象のQStringオブジェクト。
- * @return 連続する空白文字が1つのスペースにまとめられたQStringオブジェクト。
- */
-QString misc::collapseWhitespace(const QString &source)
-{
-	QChar *p = (QChar *)alloca(sizeof(QChar) * (source.size() + 1));
-	QChar const *r = source.unicode();
-	QChar *w = p;
-	bool spc = false;
-	while (1) {
-		QChar c = *r;
-		if (c > ' ') {
-			if (spc) {
-				*w++ = ' ';
-				spc = false;
-			}
-			*w++ = c;
-		} else {
-			if (c == 0) {
-				*w = QChar::Null;
-				break;
-			}
-			spc = true;
-		}
-		r++;
-	}
-	return QString(p);
-}
+#endif
 
 /**
  * @brief 文字列が有効なメールアドレスか判定する
@@ -716,25 +515,27 @@ QString misc::collapseWhitespace(const QString &source)
  * @param email 検証するメールアドレス文字列
  * @return 有効なメールアドレス形式の場合はtrue、そうでない場合はfalse
  */
-bool misc::isValidMailAddress(const QString &email)
+template <typename T> bool t_isValidMailAddress(T const *ptr)
 {
-	int i = email.indexOf('@');
-	return i > 0 && i < email.size() - 1;
+	int i = 0;
+	while (ptr[i]) {
+		if (ptr[i] == '@') {
+			return i > 0 && ptr[i + 1];
+		}
+		i++;
+	}
+	return false;
 }
-
-/**
- * @brief 文字列が有効なメールアドレスか判定する
- * 
- * std::string形式の文字列が有効なメールアドレス形式かどうかを判定します。
- * 内部的にはQString版のisValidMailAddressに変換して処理します。
- * 
- * @param email 検証するメールアドレス文字列
- * @return 有効なメールアドレス形式の場合はtrue、そうでない場合はfalse
- */
 bool misc::isValidMailAddress(const std::string &email)
 {
-	return isValidMailAddress(QString::fromStdString(email));
+	return t_isValidMailAddress(email.c_str());
 }
+#ifdef QT_VERSION
+bool misc::isValidMailAddress(const QString &email)
+{
+	return t_isValidMailAddress(email.utf16());
+}
+#endif
 
 /**
  * @brief 文字列の両端から空白文字を取り除く
@@ -1108,4 +909,5 @@ std::string misc::getProgram(std::string const &cmdline)
 	}
 	return std::string(left, right);
 }
+
 

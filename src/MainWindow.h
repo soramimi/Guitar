@@ -250,7 +250,7 @@ private:
 
 	void deleteRemoteBranch(const GitCommitItem &commit);
 	QStringList remoteBranches(const GitHash &id, QStringList *all);
-	bool isUninitialized();
+	bool isGitInitialized() const;
 	void onLogCurrentItemChanged(bool update_file_list);
 	void findNext();
 	void findText(QString const &text);

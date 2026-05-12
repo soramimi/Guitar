@@ -1,11 +1,12 @@
 
 #include "GitDiffManager.h"
-#include <QDebug>
-#include <QThread>
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include "common/q/helper.h"
 #include "common/fmt.h"
+#include "common/joinpath.h"
+#include "common/q/helper.h"
+#include <QDebug>
+#include <QThread>
 
 // PathToIdMap
 
@@ -84,7 +85,7 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 {
 	GitDiff out;
 
-	std::vector<std::string_view> lines = misc::splitLinesV(s, false);
+	std::vector<std::string_view> lines = misc::splitLinesV(s);
 
 	out.diff = "diff --git " + ("a/" + info->path) + ' ' + ("b/" + info->path);
 	out.index = "index " + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
@@ -150,7 +151,7 @@ std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const 
 			if (newer_commit.parents.empty()) { // 親がないなら最古のコミット
 				auto F = [&](auto self, GitRunner g, std::string const &dir, GitTreeItemList const *files, std::vector<GitDiff> *diffs)-> void {
 					for (GitTreeItem const &d : *files) {
-						std::string path = misc::joinWithSlash(dir, d.name);
+						std::string path = dir / d.name;
 						if (d.type == GitTreeItem::BLOB) {
 							GitDiff diff(d.id, path, d.mode);
 							diffs->push_back(diff);
@@ -357,7 +358,7 @@ QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *ou
 				if (itemname == name) {
 					return_id = (QS)d.id;
 				}
-				QString path = misc::joinWithSlash(subdir, itemname);
+				QString path = subdir / itemname;
 				if (d.type == GitTreeItem::BLOB) {
 					if (out && itemname == name) {
 						*out = d;

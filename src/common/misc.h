@@ -1,18 +1,21 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include <functional>
-#include <vector>
 #include <cstdint>
-#include <QColor>
+#include <cstring>
+#include <functional>
+#include <string>
+#include <string_view>
+#include <vector>
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-#define _SkipEmptyParts QString::SkipEmptyParts
+#ifdef _WIN32
 #else
-#define _SkipEmptyParts Qt::SkipEmptyParts
+#include <strings.h>
 #endif
 
-class QContextMenuEvent;
+#ifdef APP_GUITAR
+#include <QString>
+#endif
 
 namespace misc {
 
@@ -55,16 +58,20 @@ static inline char const *stristr(const char *haystack, const char *needle)
 	return nullptr;
 }
 
-QStringList splitLines(QByteArray const &ba, std::function<QString(char const *ptr, size_t len)> const &tos);
-QStringList splitLines(QString const &text);
-std::vector<std::string_view> splitLinesV(const std::string_view &str, bool keep_newline);
-std::vector<std::string_view> splitLinesV(QByteArray const &ba, bool keep_newline);
-std::vector<std::string_view> splitLinesV(std::vector<char> const &ba, bool keep_newline);
-std::vector<std::string> splitLines(std::string_view const &str, bool keep_newline);
+#ifdef QT_VERSION
+QString normalizePathSeparator(QString const &str);
+#endif
+
+std::vector<std::string_view> splitLinesV(std::string_view const &str);
+std::vector<std::string_view> splitLinesV(std::vector<char> const &ba);
+std::vector<std::string_view> splitLinesKeepNewLineV(std::string_view const &str);
+std::vector<std::string> splitLines(std::string_view const &str);
+#ifdef QT_VERSION
+std::vector<QString> splitLines(QString const &text);
+#endif
+
 std::vector<std::string_view> splitWords(std::string_view const &text);
-QStringList splitWords(QString const &text);
 std::vector<std::string_view> split(std::string_view const &sv, char sep);
-QString filename(QString const &path);
 std::string filename(std::string const &path);
 bool starts_with(const std::string_view &str, const std::string_view &with);
 bool starts_with(const std::string_view &str, char with);
@@ -72,25 +79,28 @@ bool ends_with(const std::string_view &str, const std::string_view &with);
 bool ends_with(const std::string_view &str, char with);
 std::string mid(std::string const &str, int start, int length = -1);
 std::string replace_backslash_to_slash(std::string_view const &in);
-QString normalizePathSeparator(QString const &str);
 std::string normalizePathSeparator(std::string const &str);
-QString joinWithSlash(QString const &left, QString const &right);
-std::string joinWithSlash(std::string const &left, std::string const &right);
+
 void dump(const uint8_t *ptr, size_t len);
+#ifdef QT_VERSION
 void dump(QByteArray const *in);
+#endif
 bool isText(std::string const &mimetype);
 bool isImage(std::string const &mimetype);
 bool isSVG(std::string const &mimetype);
 bool isPSD(std::string const &mimetype);
 bool isPDF(std::string const &mimetype);
-QString abbrevBranchName(QString const &name);
-std::string makeProxyServerURL(std::string text);
-QString makeProxyServerURL(QString text);
-bool isExecutable(QString const &cmd);
 
-QString collapseWhitespace(QString const &source);
-bool isValidMailAddress(const QString &email);
+std::string makeProxyServerURL(std::string text);
+bool isExecutable(const std::string &cmd);
+#ifdef QT_VERSION
+bool isExecutable(QString const &cmd);
+#endif
+
 bool isValidMailAddress(std::string const &email);
+#ifdef QT_VERSION
+bool isValidMailAddress(const QString &email);
+#endif
 
 std::string_view trimmed(std::string_view const &s);
 std::string_view trimQuotes(std::string_view s);

@@ -5,6 +5,7 @@
 #include "MemoryReader.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/str.h"
 #include "common/q/helper.h"
 #include "Profile.h"
 #include <QBuffer>
@@ -429,7 +430,7 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 		{
 			GitObject obj = g.catFile(id);
 			if (!obj.content.isEmpty()) {
-				std::vector<std::string> lines = misc::splitLines((QBA)obj.content, false);
+				std::vector<std::string> lines = (misc::strlist)misc::splitLinesV((QBA)obj.content);
 				for (std::string const &line : lines) {
 					auto i = line.find(' ');
 					if (i == std::string::npos) break;
@@ -455,7 +456,7 @@ void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, Gi
 {
 	*out = {};
 	std::string_view s{ba.data(), (size_t)ba.size()};
-	std::vector<std::string> lines = misc::splitLines(s, false);
+	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(s);
 	for (std::string const &line : lines) {
 		auto tab = line.find('\t'); // タブより後ろにパスがある
 		if (tab != std::string::npos && tab > 0) {
@@ -468,7 +469,7 @@ void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, Gi
 				std::string type{vals[1]}; // 種類（tree/blob）
 				std::string path{line.substr(tab + 1)}; // パス
 				path = gitTrimPath(path);
-				data.name = path_prefix.empty() ? path : misc::joinWithSlash(path_prefix, path);
+				data.name = path_prefix.empty() ? path : (path_prefix / path);
 				if (type == "tree") {
 					data.type = GitTreeItem::TREE;
 				} else if (type == "blob") {

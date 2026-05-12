@@ -6,6 +6,7 @@
 #include "ImageViewWidget.h"
 #include "MainWindow.h"
 #include "common/misc.h"
+#include "common/joinpath.h"
 #include "common/q/helper.h"
 #include "platform.h"
 #include <QFileIconProvider>
@@ -131,7 +132,7 @@ void CommitExploreWindow::expandTreeItem_(GitRunner g, QTreeWidgetItem *item)
 				child->setText(0, name);
 				child->setData(0, ItemTypeRole, (int)ti.type);
 				child->setData(0, ObjectIdRole, (QS)ti.id);
-				child->setData(0, FilePathRole, misc::joinWithSlash(path, name));
+				child->setData(0, FilePathRole, path / name);
 				QTreeWidgetItem *placeholder = newQTreeWidgetItem();
 				child->addChild(placeholder);
 				item->addChild(child);
@@ -196,7 +197,7 @@ void CommitExploreWindow::doTreeItemChanged_(GitRunner g, QTreeWidgetItem *curre
 		p->setText((QS)ti.name);
 		p->setData(ItemTypeRole, (int)ti.type);
 		p->setData(ObjectIdRole, (QS)ti.id);
-		p->setData(FilePathRole, misc::joinWithSlash(path, (QS)ti.name));
+		p->setData(FilePathRole, path / (QS)ti.name);
 		ui->listWidget->addItem(p);
 	}
 }
