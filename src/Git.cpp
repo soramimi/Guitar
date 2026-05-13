@@ -14,7 +14,7 @@ void GitCommitItem::setParents(std::vector<std::string> const &list)
 {
 	parent_ids.clear();
 	for (std::string const &id : list) {
-		parent_ids.append(GitHash(id));
+		parent_ids.push_back(GitHash(id));
 	}
 }
 
@@ -85,6 +85,7 @@ std::string Git::resultStdString(std::optional<GitResult> const &var) const
 	return std::string(v.data(), v.size());
 }
 
+#ifdef USE_QT
 QString Git::resultQString(std::optional<GitResult> const &var) const
 {
 	if (var) {
@@ -93,6 +94,7 @@ QString Git::resultQString(std::optional<GitResult> const &var) const
 		return {};
 	}
 }
+#endif
 
 std::string Git::errorMessage(std::optional<GitResult> const &var) const
 {
@@ -345,13 +347,13 @@ std::vector<std::string> Git::getUntrackedFiles()
 	return files;
 }
 
-void Git::parseAheadBehind(QString const &s, GitBranch *b)
+void Git::parseAheadBehind(std::string const &s, GitBranch *b)
 {
-	ushort const *begin = s.utf16();
-	ushort const *end = begin + s.size();
-	ushort const *ptr = begin;
+	char const *begin = s.c_str();
+	char const *end = begin + s.size();
+	char const *ptr = begin;
 
-	auto NCompare = [](ushort const *a, char const *b, size_t n){
+	auto NCompare = [](char const *a, char const *b, size_t n){
 		for (size_t i = 0; i < n; i++) {
 			if (*a < (unsigned char)*b) return false;
 			if (*a > (unsigned char)*b) return false;
@@ -363,14 +365,14 @@ void Git::parseAheadBehind(QString const &s, GitBranch *b)
 	};
 
 	auto SkipSpace = [&](){
-		while (ptr < end && QChar(*ptr).isSpace()) {
+		while (ptr < end && std::isspace((unsigned char)*ptr)) {
 			ptr++;
 		}
 	};
 
 	auto GetNumber = [&](){
 		int n = 0;
-		while (ptr < end && QChar(*ptr).isDigit()) {
+		while (ptr < end && std::isdigit((unsigned char)*ptr)) {
 			n = n * 10 + (*ptr - '0');
 			ptr++;
 		}
@@ -379,7 +381,7 @@ void Git::parseAheadBehind(QString const &s, GitBranch *b)
 
 	if (*ptr == '[') {
 		ptr++;
-		ushort const *e = nullptr;
+		char const *e = nullptr;
 		int n;
 		for (n = 0; ptr + n < end; n++) {
 			if (ptr[n] == ']') {
@@ -399,7 +401,7 @@ void Git::parseAheadBehind(QString const &s, GitBranch *b)
 					SkipSpace();
 					b->behind = GetNumber();
 				} else {
-					ushort c = 0;
+					char c = 0;
 					if (ptr < end) {
 						c = *ptr;
 					}
@@ -494,7 +496,7 @@ std::vector<GitBranch> Git::branches()
 						i++;
 					}
 					text = text.substr(i);
-					parseAheadBehind((QS)text, &item.branch);
+					parseAheadBehind(text, &item.branch);
 				}
 
 				if (misc::starts_with(line, '*')) {
@@ -528,20 +530,21 @@ std::vector<GitBranch> Git::branches()
 	return ret;
 }
 
-static QDateTime parseDateTime(char const *s)
+static DateTime parseDateTime(char const *s)
 {
-	int year, month, day, hour, minute, second;
-	if (sscanf(s, "%d-%d-%d %d:%d:%d"
-			   , &year
-			   , &month
-			   , &day
-			   , &hour
-			   , &minute
-			   , &second
-			   ) == 6) {
-		return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
-	}
-	return {};
+	// int year, month, day, hour, minute, second;
+	// if (sscanf(s, "%d-%d-%d %d:%d:%d"
+	// 		   , &year
+	// 		   , &month
+	// 		   , &day
+	// 		   , &hour
+	// 		   , &minute
+	// 		   , &second
+	// 		   ) == 6) {
+	// 	return QDateTime(QDate(year, month, day), QTime(hour, minute, second));
+	// }
+	// return {};
+	return DateTime::parseDateTime(s);
 }
 
 std::optional<GitCommitItem> Git::parseCommitItem(std::string const &line)
@@ -656,12 +659,12 @@ GitCommitItemList Git::log(int maxcount)
 	return log_all({}, maxcount);
 }
 
-QDateTime Git::repositoryLastModifiedTime()
+DateTime Git::repositoryLastModifiedTime()
 {
 	if (isValidWorkingCopy()) {
 		auto result = git("log --format=%at --all -1");
 		std::string s(resultStdString(result));
-		QDateTime dt = QDateTime::fromSecsSinceEpoch(misc::toi<uint64_t>(s));
+		DateTime dt = DateTime::fromSecsSinceEpoch(misc::toi<uint64_t>(s));
 		return dt;
 	}
 	return {};
@@ -814,7 +817,7 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			std::vector<std::string_view> arr = misc::splitWords(val);
 			int n = arr.size();
 			if (n >= 4) {
-				out.commit_date = QDateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
+				out.commit_date = DateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
 				out.email = std::string(arr[n - 3]);
 				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
 					int m = out.email.size();

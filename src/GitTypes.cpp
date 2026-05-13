@@ -235,11 +235,11 @@ void GitCommitItemList::push_front(const GitCommitItem &item)
 	list_.insert(list_.begin(), item);
 }
 
-QString GitCommitItemList::previousMessage() const
+std::string GitCommitItemList::previousMessage() const
 {
 	for (GitCommitItem const &item : list_) {
 		if (item.commit_id.isValid()) {
-			return (QS)item.message;
+			return item.message;
 		}
 	}
 	return {};

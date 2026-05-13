@@ -117,7 +117,7 @@ void FileHistoryWindow::collectFileHistory()
 		};
 
 		QString commit_id = MainWindow::abbrevCommitID(commit);
-		QString datetime = misc::makeDateTimeString(commit.commit_date);
+		QString datetime = (QS)commit.commit_date.toString();
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
 		AddColumn((QS)commit.author, QString());

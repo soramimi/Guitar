@@ -13,9 +13,9 @@
 #include <strings.h>
 #endif
 
-#ifdef APP_GUITAR
+// #ifdef APP_GUITAR
 #include <QString>
-#endif
+// #endif
 
 namespace misc {
 
@@ -58,7 +58,7 @@ static inline char const *stristr(const char *haystack, const char *needle)
 	return nullptr;
 }
 
-#ifdef QT_VERSION
+#ifdef USE_QT
 QString normalizePathSeparator(QString const &str);
 #endif
 
@@ -66,7 +66,7 @@ std::vector<std::string_view> splitLinesV(std::string_view const &str);
 std::vector<std::string_view> splitLinesV(std::vector<char> const &ba);
 std::vector<std::string_view> splitLinesKeepNewLineV(std::string_view const &str);
 std::vector<std::string> splitLines(std::string_view const &str);
-#ifdef QT_VERSION
+#ifdef USE_QT
 std::vector<QString> splitLines(QString const &text);
 #endif
 
@@ -80,9 +80,12 @@ bool ends_with(const std::string_view &str, char with);
 std::string mid(std::string const &str, int start, int length = -1);
 std::string replace_backslash_to_slash(std::string_view const &in);
 std::string normalizePathSeparator(std::string const &str);
+#ifdef USE_QT
+QString misc::normalizePathSeparator(QString const &str);
+#endif
 
 void dump(const uint8_t *ptr, size_t len);
-#ifdef QT_VERSION
+#ifdef USE_QT
 void dump(QByteArray const *in);
 #endif
 bool isText(std::string const &mimetype);
@@ -93,12 +96,12 @@ bool isPDF(std::string const &mimetype);
 
 std::string makeProxyServerURL(std::string text);
 bool isExecutable(const std::string &cmd);
-#ifdef QT_VERSION
+#ifdef USE_QT
 bool isExecutable(QString const &cmd);
 #endif
 
 bool isValidMailAddress(std::string const &email);
-#ifdef QT_VERSION
+#ifdef USE_QT
 bool isValidMailAddress(const QString &email);
 #endif
 

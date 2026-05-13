@@ -158,7 +158,8 @@ void RepositoryTreeWidget::setRepositoryListStyle(RepositoryListStyle style)
 static QDateTime repositoryLastModifiedTime(QString const &path)
 {
 	GitRunner g = global->mainwindow->new_git_runner(path, {});
-	return g.repositoryLastModifiedTime();
+	DateTime dt = g.repositoryLastModifiedTime();
+	return QDateTime(QDate(dt.date().year(), dt.date().month(), dt.date().day()), QTime(dt.time().hour(), dt.time().minute(), dt.time().second()));
 }
 
 IncrementalSearchFilter RepositoryTreeWidget::makeIncrementalSearchFilter(std::string const &filtertext)

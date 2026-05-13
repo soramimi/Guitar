@@ -77,7 +77,7 @@ public:
 	std::string getDefaultBranch();
 	void setDefaultBranch(const std::string &branchname);
 	void unsetDefaultBranch();
-	QDateTime repositoryLastModifiedTime();
+	DateTime repositoryLastModifiedTime();
 	std::string status();
 	bool commit(std::string const &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(const std::string &text, bool sign, AbstractPtyProcess *pty);

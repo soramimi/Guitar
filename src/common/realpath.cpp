@@ -1,5 +1,5 @@
 #include "realpath.h"
-
+#include "misc.h"
 #include "joinpath.h"
 
 #ifdef _WIN32
@@ -23,31 +23,28 @@
 std::string misc::realpath(const char *path)
 {
 #ifdef _WIN32
-	std::string s;
+	std::string s = path;
+	for (char &c : s) {
+		if (c == '/') {
+			c = '\\';
+		}
+	}
 	if (*path == '~') {
-		// char const *home = getenv("HOME");
-		// if (home) {
-		// 	s = home;
-		// 	s = s / (path + 1);
-		// 	path = s.c_str();
-		// }
 		PWSTR path2 = NULL;
-		// FOLDERID_Profile refers to C:\Users\<username>
 		HRESULT hr = SHGetKnownFolderPath(FOLDERID_Profile, 0, NULL, &path2);
 
 		if (SUCCEEDED(hr)) {
-			// std::wcout << L"Home Directory: " << path2 << std::endl;
+			s = misc::convert_wstr_to_str(path2);
+			// fprintf(stderr, "Home Directory: %s\n", s.c_str());
 			// Must free the memory allocated by the API
-			fprintf(stderr, "Home Directory: %ls\n", path2);
 			CoTaskMemFree(path2);
 		}
 
-		s = misc::convert_wstr_to_str(path2);
 		s = s / (path + 1);
 	}
 	char tmp[MAX_PATH];
-	if (_fullpath(tmp, path, MAX_PATH)) {
-		return tmp;
+	if (_fullpath(tmp, s.c_str(), MAX_PATH)) {
+		return misc::normalizePathSeparator(s);
 	}
 #else
 	std::string s;

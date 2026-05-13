@@ -206,7 +206,7 @@ void GitRunner::unsetDefaultBranch()
 	gitptr()->unsetDefaultBranch();
 }
 
-QDateTime GitRunner::repositoryLastModifiedTime()
+DateTime GitRunner::repositoryLastModifiedTime()
 {
 	return gitptr()->repositoryLastModifiedTime();
 }

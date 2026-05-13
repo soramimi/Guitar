@@ -43,7 +43,7 @@ CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, G
 		item = NewQTableWidgetItem(QString::fromStdString(parents[row].commit_id.toString(7)));
 		item->setData(Qt::UserRole, row + 1);
 		SetItem(item);
-		SetItem(NewQTableWidgetItem(misc::makeDateTimeString(parents[row].commit_date)));
+		SetItem(NewQTableWidgetItem((QS)parents[row].commit_date.toString()));
 		SetItem(NewQTableWidgetItem((QS)parents[row].author));
 		SetItem(NewQTableWidgetItem((QS)parents[row].message));
 	}

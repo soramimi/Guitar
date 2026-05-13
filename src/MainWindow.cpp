@@ -1644,7 +1644,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 			rec.commit_id = abbrevCommitID(commit);
 		}
 
-		rec.datetime = misc::makeDateTimeString(commit.commit_date);
+		rec.datetime = (misc::str)commit.commit_date.toString();
 		rec.author = (misc::str)commit.author;
 		rec.message = (misc::str)commit.message;
 		rec.tooltip = rec.message + message_ex;
@@ -2743,7 +2743,7 @@ void MainWindow::commit(bool amend)
 	gpg::listKeys(global->appsettings.gpg_command, &gpg_keys);
 
 	QString message;
-	QString previousMessage;
+	std::string previousMessage;
 
 	CommitMessageGenerator::CommitPair commits;
 
@@ -2777,7 +2777,7 @@ void MainWindow::commit(bool amend)
 				key = k;
 			}
 		}
-		CommitDialog dlg(this, currentRepositoryName(), user, key, previousMessage);
+		CommitDialog dlg(this, currentRepositoryName(), user, key, (QS)previousMessage);
 		if (amend) {
 			if (!commits.a.empty() && !commits.b.empty()) {
 				// メッセージ生成用コミットIDを設定
@@ -3699,7 +3699,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 	std::string text = data.path; // テキスト
 	if (issubmodule) {
 		QString msg = misc::collapseWhitespace((QS)data.submod_commit.message);
-		QString dt = misc::makeDateTimeString(data.submod_commit.commit_date);
+		QString dt = (QS)data.submod_commit.commit_date.toString();
 		text += fmt(" <%s> [%s] %s")
 				(data.submod.id.toString(7))
 				(dt.toStdString())
@@ -5666,7 +5666,7 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 		CheckoutDialog::Operation op = dlg.operation();
 		QString name = dlg.branchName();
 		GitHash id = commit.commit_id;
-		if (!id.isValid() && !commit.parent_ids.isEmpty()) {
+		if (!id.isValid() && !commit.parent_ids.empty()) {
 			id = commit.parent_ids.front();
 		}
 		if (op == CheckoutDialog::Operation::HeadDetached) {

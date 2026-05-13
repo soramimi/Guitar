@@ -34,6 +34,7 @@ TRANSLATIONS += $$SRC/resources/translations/Guitar_ta.ts
 TRANSLATIONS += $$SRC/resources/translations/Guitar_zh-CN.ts
 TRANSLATIONS += $$SRC/resources/translations/Guitar_zh-TW.ts
 
+DEFINES += USE_QT
 DEFINES += APP_GUITAR
 
 DEFINES += HAVE_POSIX_OPENPT

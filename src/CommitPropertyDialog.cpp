@@ -53,7 +53,7 @@ void CommitPropertyDialog::init()
 	
 	ui->lineEdit_message->setText((QS)message);
 	ui->lineEdit_commit_id->setText((QS)m->commit.commit_id.toString());
-	ui->lineEdit_date->setText(misc::makeDateTimeString(m->commit.commit_date));
+	ui->lineEdit_date->setText((QS)m->commit.commit_date.toString());
 	ui->lineEdit_author->setText((QS)m->commit.author);
 	ui->lineEdit_mail->setText((QS)m->commit.email);
 

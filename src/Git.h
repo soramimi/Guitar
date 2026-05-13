@@ -49,7 +49,7 @@ private:
 	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);
 	std::vector<GitFileStatus> status_s_();
 	bool commit_(const std::string &msg, bool amend, bool sign, AbstractPtyProcess *pty);
-	static void parseAheadBehind(QString const &s, GitBranch *b);
+	static void parseAheadBehind(const std::string &s, GitBranch *b);
 	Git();
 	void _init(const GitContext &cx);
 	static std::string quoted_text(std::string const &str);
@@ -78,7 +78,9 @@ public:
 		return session_->is_connected();
 	}
 	std::string resultStdString(const std::optional<GitResult> &var) const;
+#ifdef QT_VERSION
 	QString resultQString(const std::optional<GitResult> &var) const;
+#endif
 	std::optional<GitResult> exec_git(std::string const &arg, AbstractGitSession::Option const &opt)
 	{
 		return session_->exec_git(arg, opt);
@@ -239,7 +241,7 @@ public:
 	std::string getDefaultBranch();
 	void setDefaultBranch(const std::string &branchname);
 	void unsetDefaultBranch();
-	QDateTime repositoryLastModifiedTime();
+	DateTime repositoryLastModifiedTime();
 
 	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
 	std::optional<std::vector<char>> readfile(std::string const &path);

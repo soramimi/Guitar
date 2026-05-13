@@ -232,7 +232,7 @@ void BlameWindow::on_tableWidget_currentItemChanged(QTableWidgetItem *current, Q
 			GitRunner g = mainwindow()->git();
 			auto commit = g.queryCommitItem(commit_id);
 			if (commit) {
-				info.datetime = misc::makeDateTimeString(commit->commit_date);
+				info.datetime = (QS)commit->commit_date.toString();
 				info.author = (QS)commit->author;
 				info.email = (QS)commit->email;
 				info.message = (QS)commit->message;

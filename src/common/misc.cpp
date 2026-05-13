@@ -2,10 +2,10 @@
 #include "joinpath.h"
 #include "q/FileInfo.h"
 #include "str.h"
-#include <Git.h>
+#include "Git.h"
 #include <vector>
 
-#ifdef QT_VERSION
+#ifdef USE_QT
 #include <QFileInfo>
 #endif
 
@@ -77,7 +77,7 @@ std::vector<std::string> misc::splitLines(std::string_view const &str)
 	return t_splitLines<std::string, char, unsigned char>(str.data(), str.size(), false);
 }
 
-#ifdef QT_VERSION
+#ifdef USE_QT
 std::vector<QString> misc::splitLines(QString const &text)
 {
 	return t_splitLines<QString, ushort, ushort>(text.utf16(), text.size(), false);
@@ -145,27 +145,6 @@ std::vector<std::string_view> misc::split(std::string_view const &sv, char sep)
 	}
 	return ret;
 }
-
-/**
- * @brief パスからファイル名部分を取得する
- * 
- * 与えられたパスからファイル名部分のみを抽出します。
- * 
- * @param path ファイル名を抽出する対象のパス
- * @return 抽出されたファイル名
- */
-#if 0
-QString misc::filename(QString const &path)
-{
-	int i = path.lastIndexOf('/');
-	int j = path.lastIndexOf('\\');
-	if (i < j) i = j;
-	if (i >= 0) {
-		return path.mid(i + 1);
-	}
-	return path;
-}
-#endif
 
 std::string misc::filename(std::string const &path)
 {
@@ -271,7 +250,7 @@ std::string misc::replace_backslash_to_slash(std::string_view const &in)
  * @return 正規化されたパス文字列
  */
 #ifdef _WIN32
-#ifdef QT_VERSION
+#ifdef USE_QT
 QString misc::normalizePathSeparator(QString const &str)
 {
 	if (!str.isEmpty()) {
@@ -305,7 +284,7 @@ std::string misc::normalizePathSeparator(std::string const &str)
 	return out;
 }
 #else
-#ifdef QT_VERSION
+#ifdef USE_QT
 QString misc::normalizePathSeparator(QString const &str)
 {
 	return str;
@@ -370,7 +349,7 @@ void misc::dump(uint8_t const *ptr, size_t len)
  * 
  * @param in ダンプするQByteArrayへのポインタ、nullptrの場合は何も表示しません
  */
-#ifdef QT_VERSION
+#ifdef USE_QT
 void misc::dump(QByteArray const *in)
 {
 	if (in) {
@@ -498,7 +477,7 @@ bool misc::isExecutable(std::string const &cmd)
 	FileInfo info(cmd);
 	return info.isExecutable();
 }
-#ifdef QT_VERSION
+#ifdef USE_QT
 bool misc::isExecutable(QString const &cmd)
 {
 	QFileInfo info(cmd);
@@ -530,7 +509,7 @@ bool misc::isValidMailAddress(const std::string &email)
 {
 	return t_isValidMailAddress(email.c_str());
 }
-#ifdef QT_VERSION
+#ifdef USE_QT
 bool misc::isValidMailAddress(const QString &email)
 {
 	return t_isValidMailAddress(email.utf16());

@@ -39,7 +39,7 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, QString workingdir, std::vec
 		std::vector<QString> values = {
 			QString::fromStdString(mods_[row].submodule.path),
 			MainWindow::abbrevCommitID(mods_[row].head),
-			misc::makeDateTimeString(mods_[row].head.commit_date),
+			(QS)mods_[row].head.commit_date.toString(),
 			(QS)mods_[row].head.author,
 			(QS)mods_[row].head.message,
 		};

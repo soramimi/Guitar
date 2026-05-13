@@ -3,10 +3,8 @@
 
 #include "MyProcess.h"
 #include "common/misc.h"
+#include "common/q/DateTime.h"
 #include "common/qmisc.h"
-
-#include <QDateTime>
-// #include <QString>
 
 #define GIT_ID_LENGTH (40)
 
@@ -38,10 +36,8 @@ private:
 public:
 	GitHash();
 	explicit GitHash(std::string_view const &id);
-	// explicit GitHash(QString const &id);
 	explicit GitHash(char const *id);
 	void assign(std::string_view const &id);
-	// void assign(const QString &id);
 	std::string toString(int maxlen = -1) const;
 	bool isValid() const;
 	int compare(GitHash const &other) const;
@@ -129,11 +125,11 @@ struct GitTreeLine {
 struct GitCommitItem {
 	GitHash commit_id;
 	GitHash tree;
-	QList<GitHash> parent_ids;
+	std::vector<GitHash> parent_ids;
 	std::string author;
 	std::string email;
 	std::string message;
-	QDateTime commit_date;
+	DateTime commit_date;
 	std::vector<GitTreeLine> parent_lines;
 	bool has_gpgsig = false;
 	std::string gpgsig;
@@ -177,7 +173,7 @@ public:
 	void clear();
 	bool empty() const;
 	void push_front(GitCommitItem const &item);
-	QString previousMessage() const;
+	std::string previousMessage() const;
 	void updateIndex();
 	int find_index(GitHash const &id) const;
 	GitCommitItem *find(GitHash const &id);
