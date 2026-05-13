@@ -1505,13 +1505,18 @@ coalesce_entries(struct magic_set *ms, struct magic_entry *me, uint32_t nme,
 		return -1;
 	}
 
+	*nma = mentrycount;
 	mentrycount = 0;
 	for (i = 0; i < nme; i++) {
+		if (mentrycount + me[i].cont_count > *nma) {
+			free(*ma);
+			*ma = NULL;
+			return -1;
+		}
 		(void)memcpy(*ma + mentrycount, me[i].mp,
 		    me[i].cont_count * sizeof(**ma));
 		mentrycount += me[i].cont_count;
 	}
-	*nma = mentrycount;
 	return 0;
 }
 
@@ -3388,6 +3393,7 @@ apprentice_map(struct magic_set *ms, const char *fn)
 #endif
 
 	free(dbname);
+	dbname = NULL;
 	return map;
 
 error:
