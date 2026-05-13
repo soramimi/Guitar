@@ -27,7 +27,7 @@
 #include "file.h"
 
 #ifndef lint
-FILE_RCSID("@(#)$File: readelf.c,v 1.203 2025/05/29 16:47:35 christos Exp $")
+FILE_RCSID("@(#)$File: readelf.c,v 1.206 2026/04/24 19:14:02 christos Exp $")
 #endif
 
 #ifdef BUILTIN_ELF
@@ -66,6 +66,7 @@ file_private uint64_t getu64(int, uint64_t);
 #define NAMEEQUALS(n, v) \
     (namesz == sizeof(v) && memcmp(n, v, namesz) == 0)
 
+__attribute__((__format__(__printf__, 2, 3)))
 file_private int
 elf_printf(struct magic_set *ms, const char *fmt, ...)
 {
@@ -881,9 +882,11 @@ do_core_note(struct magic_set *ms, unsigned char *nbuf, uint32_t type,
 				argoff = 4 + 4 + 17;
 			else
 				argoff = 4 + 4 + 8 + 17;
-			if (elf_printf(ms, ", from '%.80s'", nbuf + doff +
-			    argoff) == -1)
-				return -1;
+			if (doff + argoff + 81 <= size) {
+				if (elf_printf(ms, ", from '%.80s'",
+				    nbuf + doff + argoff) == -1)
+					return -1;
+			}
 			pidoff = argoff + 81 + 2;
 			if (doff + pidoff + 4 <= size) {
 				if (elf_printf(ms, ", pid=%u",
@@ -1838,7 +1841,7 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
 				continue;
 			if (bufsize && nbuf[0]) {
 				nbuf[bufsize - 1] = '\0';
-				str = CAST(const char *, nbuf);
+				str = RCAST(const char *, nbuf);
 			} else
 				str = "*empty*";
 			strlcpy(interp, str, sizeof(interp));

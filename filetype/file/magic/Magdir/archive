@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: archive,v 1.214 2025/05/31 14:57:43 christos Exp $
+# $File: archive,v 1.223 2026/05/10 01:23:57 christos Exp $
 # archive:  file(1) magic for archive formats (see also "msdos" for self-
 #           extracting compressed archives)
 #
@@ -739,21 +739,21 @@
 # see https://mark0.net/forum/index.php?topic=848
 0	name	ttcomp
 >-2	string	\x01\xff
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\x80\x7f
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xc0\x3f
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xe0\x1f
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xf0\x0f
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xf8\x07
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xfc\x03
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 >-2	string	\xfe\x01
->>0	use	ttcomp-display
+>>+0	use	ttcomp-display
 # display information of TTComp archive
 0	name	ttcomp-display
 # (version 5.25) labeled the entry as "TTComp archive data"
@@ -1499,22 +1499,18 @@
 >>9	ubyte		!2		\b, security version %u
 # file type; 2 in main header; 0~binary 1~7-bitText 2~comment 3~directory 4~VolumeLabel 5=ChapterLabel
 >0xA	ubyte		!2		\b, file type %u
-# date+time when original archive was created in MS-DOS format via ./msdos
->0xC	ulelong		x		\b, created
->0xC	use		dos-date
-# or date and time by new internal function
-#>0xE	lemsdosdate	x		%s
-#>0xC	lemsdostime	x		%s
+# date+time when original archive was created in MS-DOS format
+>0xE	lemsdosdate	x		\b, created %s
+>0xC	lemsdostime	x		%s
+# Archive mod time, added in format v6 (ARJ 2.39c)
+>5	ubyte		>5
+>>0x10	ulelong		>0		\b, modified
+>>>0x12	lemsdosdate	x		%s
+>>>0x10	lemsdostime	x		%s
+
 # FOR DEBUGGING
 #>0x12	uleshort	x		RAW DATE %#4.4x
 #>0x10	uleshort	x		RAW TIME %#4.4x
-# date+time when archive was last modified; sometimes nil or
-# maybe wrong like in HP4DRVR.ARJ
-#>0x10	ulelong		>0		\b, modified
-#>>0x10	use		dos-date
-# or date and time by new internal function
-#>>0x12	lemsdosdate	x		%s
-#>>0x10	lemsdostime	x		%s
 # archive size (currently used only for secured archives); MAYBE?
 #>0x14	ulelong		!0		\b, file size %u
 # security envelope file position; MAYBE?
@@ -1885,11 +1881,11 @@
 # Starts with META-INF/MANIFEST.MF (file name length = 20)
 >26	uleshort	20
 >>30	string	META-INF/MANIFEST.MF
->>0	use		apk_or_jar
+>>>0	use		apk_or_jar
 # Starts with META-INF/ folder (file name length = 9)
 >26	uleshort	9
 >>30	string	META-INF/
->>0	use		apk_or_jar
+>>>0	use		apk_or_jar
 
 # Starts with zipflinger virtual entry (28 + 104 = 132 bytes)
 # See https://github.com/obfusk/apksigcopier/blob/666f5b7/apksigcopier/__init__.py#L230
@@ -2574,6 +2570,30 @@
 12	string	BB02		Bacula volume
 >20	bedate	x		\b, started %s
 
+# Bareos volume format.
+# URL:
+# https://docs.bareos.org/DeveloperGuide/mediaformat.html#volume-label-format
+# From: Bruno Fiedmann <bruno.friedmann@bareos.com>
+# Note: label_btime (local time) is stored as 8-byte big-endian microseconds;
+# must divide by 1000000 for Unix seconds
+# Note: MediaType detected using search; ProgVersion start at 142
+# (typically after LabelProg field)
+# Note: ProgVersion start at 142, but we want to remove 'Ver. ' anyways
+12	string			BB02		Bareos Volume
+>36	string			Bareos		2.0 immortal
+>93	string  		x		\b, Volume Name: %s
+>100	search/100		File\0		\b, Media Type: File
+>100	search/100		Tape\0		\b, Media Type: Tape
+>100	search/100		VTape\0		\b, Media Type: VTape
+>100	search/100		Fifo\0		\b, Media Type: Fifo
+>61	beqldate/1000000	x		\b, Label Date: %s
+>147	string			x		\b, Version: %s
+
+# Bareos Disaster Recovery Image
+# URL: https://doc.bareos.org/
+# From: Bruno Friedmann <bruno.friedmann@bareos.com>
+0	string			barrifil	Bareos Disaster Recovery Image
+
 # ePub is XHTML + XML inside a ZIP archive.  The first member of the
 #   archive must be an uncompressed file called 'mimetype' with contents
 #   'application/epub+zip'
@@ -2863,3 +2883,45 @@
 
 # https://www.vm.ibm.com/devpages/bkw/vmarc.html magic in EBCDIC
 0	string	\x7a\xc3\xc6\xc6\x40\x40\x40\x40	VM Archive
+
+# https://pbs.proxmox.com/docs/file-formats.html
+0	string	\x42\xab\x38\x07\xbe\x83\x70\xa1 Proxmox Backup Server unencrypted uncompressed blob
+
+0	string	\x31\xb9\x58\x42\x6f\xb6\xa3\x7f Proxmox Backup Server unencrypted compressed blob
+
+0	string	\x7b\x67\x85\xbe\x22\x2d\x4c\xf0 Proxmox Backup Server encrypted uncompressed blob
+
+0	string	\xe6\x59\x1b\xbf\x0b\xbf\xd8\x0b Proxmox Backup Server encrypted compressed blob
+
+0	string	\x2f\x7f\x41\xed\x91\xfd\x0f\xcd Proxmox Backup Server fixed index
+
+0	string	\x1c\x91\x4e\xa5\x19\xba\xb3\xcd Proxmox Backup Server dynamic index
+
+0	string	\xef\xac\x88\xe5\x74\x64\x95\xd5 Proxmox File Archive Format v1 / pxar
+
+0	string	\x0d\xa4\x16\xdf\x75\x6c\x0f\x73\x18\x00\x00\x00\x00\x00\x00\x00\x02 Proxmox File Archive Format v2+ / mpxar
+
+0	string	\xd2\x4e\x4a\x19\xc2\x68\x4c\x83\x10 Proxmox File Archive Format payload stream / ppxar
+
+
+# ZIM (Zeno IMproved) file - Archive format used by Kiwix for offline browsing
+# Reference: https://wiki.openzim.org/wiki/ZIM_file_format
+0	ulelong		0x044D495A	ZIM archive data
+!:mime	application/x-zim
+!:ext	zim
+>4	uleshort	x		\b, version %u
+>6	uleshort	x		\b.%u
+>8	beguid		x		\b, UUID %s
+>24	ulelong		x		\b, %u entries
+>28	ulelong		x		\b, %u clusters
+
+# FAR Archive magic
+#
+# The Fuchsia archive format (FAR) is a specific container format used by the 
+# Fuchsia operating system to store directory trees, typically for software packages.
+#
+# https://fuchsia.dev/fuchsia-src/development/source_code/archive_format
+#
+# From <ysaxenax@gmail.com> "Yuvraj Saxena"
+#
+0	ubequad	0xc8bf0b48adabc511	 Fuchsia OS FAR Archive

@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: riff,v 1.51 2025/05/28 19:39:34 christos Exp $
+# $File: riff,v 1.53 2026/04/16 17:09:52 christos Exp $
 # riff:  file(1) magic for RIFF format
 # See
 #
@@ -242,6 +242,7 @@
 # AVI section extended by Patrik Radman <patrik+file-magic@iki.fi>
 #
 0	string		RIFF		RIFF (little-endian) data
+!:strength +50
 # RIFF Palette format
 # Update: Joerg Jenderek
 # URL: https://en.wikipedia.org/wiki/Resource_Interchange_File_Format
@@ -694,7 +695,7 @@
 !:ext	amv
 #!:ext	amv/mtv
 # URL:	http://fileformats.archiveteam.org/wiki/WebP
->8      string          WEBP            \b, Web/P image
+>8      string          WEBP            \b, WebP image
 !:mime	image/webp
 !:ext	webp
 >>12	use		riff-walk

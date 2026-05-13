@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# $File: filesystems,v 1.168 2025/06/08 15:40:37 christos Exp $
+# $File: filesystems,v 1.170 2026/03/23 14:48:06 christos Exp $
 # filesystems:  file(1) magic for different filesystems
 #
 0	name	partid
@@ -1640,6 +1640,11 @@
 >1112	lelong		x		pending inodes to free %d,
 >712	lequad		x		system-wide uuid %0llx,
 >60	lelong		x		minimum percentage of free blocks %d,
+>1312	lelong&0xa	0x2		soft updates,
+>1312	lelong&0xa	0xa		soft updates journaling,
+>1312	lelong&0x40	0x40		GEOM journaling,
+>1312	lelong&0x10	0x10		POSIX.1e ACLs,
+>1312	lelong&0x100	0x100		NFSv4 ACLs,
 >128	lelong		0		TIME optimization
 >128	lelong		1		SPACE optimization
 
@@ -1950,8 +1955,23 @@
 >36865	string    BEA01     +
 >>36864	use       extendedarea
 
-37633	string    CD001     ISO 9660 CD-ROM filesystem data (raw 2352 byte sectors)
-!:mime	application/x-iso9660-image
+# ISO 9660 as part of various raw CD-ROM image formats.
+# Usually the BIN file of a CUE/BIN pair or the IMG of a CCD/IMG/SUB triplet.
+
+# MODE1/2352 (2352*16 + 16 + 1)
+37649	string    CD001     ISO 9660 CD-ROM filesystem data
+>0	default	x	(CD-ROM Mode 1 image, 2352 byte sectors)
+!:ext	bin/img
+
+# MODE2/2352 (2352*16 + 24 + 1)
+37657	string    CD001     ISO 9660 CD-ROM filesystem data
+>0	default	x	(CD-ROM XA Mode 2 image, 2352 byte sectors)
+!:ext	bin/img
+
+# MODE2/2336 (2336*16 + 8 + 1)
+37385	string    CD001     ISO 9660 CD-ROM filesystem data
+>0	default	x	(CD-ROM XA Mode 2 image, 2336 byte sectors)
+!:ext	bin
 
 # URL:		http://fileformats.archiveteam.org/wiki/High_Sierra
 # Update:	Joerg Jenderek

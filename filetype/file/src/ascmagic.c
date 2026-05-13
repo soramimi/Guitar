@@ -35,7 +35,7 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: ascmagic.c,v 1.116 2023/05/21 16:08:50 christos Exp $")
+FILE_RCSID("@(#)$File: ascmagic.c,v 1.117 2026/04/17 14:47:03 christos Exp $")
 #endif	/* lint */
 
 #include "magic.h"
@@ -142,6 +142,9 @@ file_ascmagic_with_encoding(struct magic_set *ms, const struct buffer *b,
 		/* Convert ubuf to UTF-8 and try text soft magic */
 		/* malloc size is a conservative overestimate; could be
 		   improved, or at least realloced after conversion. */
+		if (ulen > SIZE_MAX / 6) {
+			goto done;
+		}
 		mlen = ulen * 6;
 		if ((utf8_buf = CAST(unsigned char *, malloc(mlen))) == NULL) {
 			file_oomem(ms, mlen);

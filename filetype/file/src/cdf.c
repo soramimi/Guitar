@@ -35,7 +35,7 @@
 #include "file.h"
 
 #ifndef lint
-FILE_RCSID("@(#)$File: cdf.c,v 1.124 2024/11/25 21:24:59 christos Exp $")
+FILE_RCSID("@(#)$File: cdf.c,v 1.127 2026/05/09 22:06:12 christos Exp $")
 #endif
 
 #include <assert.h>
@@ -830,7 +830,7 @@ out:
 	return 0;
 }
 
-file_private int
+file_protected int
 cdf_namecmp(const char *d, const uint16_t *s, size_t l)
 {
 	for (; l--; d++, s++)
@@ -880,12 +880,12 @@ cdf_find_stream(const cdf_dir_t *dir, const char *name, int type)
 {
 	size_t i, name_len = strlen(name) + 1;
 
-	for (i = dir->dir_len; i > 0; i--)
-		if (dir->dir_tab[i - 1].d_type == type &&
-		    cdf_namecmp(name, dir->dir_tab[i - 1].d_name, name_len)
+	for (i = 1; i <= dir->dir_len; i++)
+		if (dir->dir_tab[i-1].d_type == type &&
+		    cdf_namecmp(name, dir->dir_tab[i-1].d_name, name_len)
 		    == 0)
 			break;
-	if (i > 0)
+	if (i <= dir->dir_len)
 		return CAST(int, i);
 
 	DPRINTF(("Cannot find type %d `%s'\n", type, name));
@@ -1196,6 +1196,8 @@ cdf_unpack_catalog(const cdf_header_t *h, const cdf_stream_t *sst,
 	const uint16_t *np;
 
 	for (nr = 0;; nr++) {
+		if (b + sizeof(reclen) > eb)
+			break;
 		memcpy(&reclen, b, sizeof(reclen));
 		reclen = CDF_TOLE2(reclen);
 		if (reclen == 0)

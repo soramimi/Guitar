@@ -31,6 +31,8 @@ dsd64-dff.result \
 dsd64-dff.testfile \
 dsd64-dsf.result \
 dsd64-dsf.testfile \
+efi-signature-list-sha256.result \
+efi-signature-list-sha256.testfile \
 escapevel.result \
 escapevel.testfile \
 ext4.result \

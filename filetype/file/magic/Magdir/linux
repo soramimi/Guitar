@@ -1,6 +1,6 @@
 
 #------------------------------------------------------------------------------
-# $File: linux,v 1.94 2025/05/27 18:44:53 christos Exp $
+# $File: linux,v 1.95 2025/07/12 14:30:14 christos Exp $
 # linux:  file(1) magic for Linux files
 #
 # Values for Linux/i386 binaries, from Daniel Quinlan <quinlan@yggdrasil.com>
@@ -528,6 +528,17 @@
 >0x18   lelong  &2          \b, 4K pages
 >0x18   lelong  &4          \b, 16K pages
 >0x18   lelong  &6          \b, 32K pages
+
+############################################################################
+# Linux kernel (arm64/riscv/loongarch) EFI executable (zstd/gzip) compressed zboot Image
+# from: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/firmware/efi/libstub/zboot-header.S
+0	string	MZ\0\0zimg
+>0x40   string	PE\0\0		Linux kernel
+>>&0	leshort	0xAA64		ARM64 EFI executable
+>>&0	leshort	0x5032          RISC-V32 EFI executable
+>>&0	leshort	0x5064          RISC-V64 EFI executable
+>>&0	leshort	0x6264          LoongArch64 EFI executable
+>>0x18 string	>0		%s compressed zboot Image
 
 ############################################################################
 # Linux RISC-V kernel image

@@ -35,7 +35,7 @@
 #include "file.h"
 
 #ifndef lint
-FILE_RCSID("@(#)$File: compress.c,v 1.158 2024/11/10 16:52:27 christos Exp $")
+FILE_RCSID("@(#)$File: compress.c,v 1.161 2026/05/09 22:11:41 christos Exp $")
 #endif
 
 #include "magic.h"
@@ -859,7 +859,7 @@ uncompresslrzip(const unsigned char *old, unsigned char **newch,
 		goto out0;
 	}
 	lrzip_config_env(lr);
-	in = fmemopen(RCAST(void *, old), bytes_max, "r");
+	in = fmemopen(RCAST(void *, old), *n, "r");
 	if (in == NULL) {
 		res = makeerror(newch, n, "unable to construct input file");
 		goto out1;
@@ -868,6 +868,7 @@ uncompresslrzip(const unsigned char *old, unsigned char **newch,
 		res = makeerror(newch, n, "unable to add input file");
 		goto out2;
 	}
+	free(*newch);
 	*newch = calloc(*n = 2 * bytes_max, 1);
 	if (*newch == NULL) {
 		res = makeerror(newch, n, "unable to allocate output buffer");
@@ -1190,9 +1191,9 @@ uncompressbuf(int fd, size_t bytes_max, size_t method, int nofork,
 
 	posix_spawn_file_actions_destroy(&fa);
 
-	if (status == -1) {
+	if (status != 0) {
 		return makeerror(newch, n, "Cannot posix_spawn `%s', %s",
-		    compr[method].argv[0], strerror(errno));
+		    compr[method].argv[0], strerror(status));
 	}
 #else
 	/* For processes with large mapped virtual sizes, vfork

@@ -1,6 +1,6 @@
 ## README for file(1) Command and the libmagic(3) library ##
 
-    @(#) $File: README.md,v 1.5 2023/05/28 13:59:47 christos Exp $
+    @(#) $File: README.md,v 1.6 2026/04/19 19:57:14 christos Exp $
 
 - Bug Tracker: <https://bugs.astron.com/>
 - Build Status: <https://travis-ci.org/file/file>
@@ -103,6 +103,8 @@ COPYING - read this first.
 * `src/readcdf.c` - CDF wrapper.
 * `src/readelf.[ch]` - Stand-alone elf parsing code.
 * `src/softmagic.c` - 2nd set of tests, based on /etc/magic
+* `src/swap.h` - byte swapping
+* `src/swap.c` - byte swapping
 * `src/mygetopt.h` - replacement for OS's that don't have it.
 * `src/strcasestr.c` - replacement for OS's that don't have it.
 * `src/strlcat.c` - replacement for OS's that don't have it.

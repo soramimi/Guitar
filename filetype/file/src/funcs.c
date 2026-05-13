@@ -27,10 +27,11 @@
 #include "file.h"
 
 #ifndef	lint
-FILE_RCSID("@(#)$File: funcs.c,v 1.146 2025/06/17 21:24:37 christos Exp $")
+FILE_RCSID("@(#)$File: funcs.c,v 1.150 2026/04/19 19:56:49 christos Exp $")
 #endif	/* lint */
 
 #include "magic.h"
+#include "swap.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -99,8 +100,13 @@ file_checkfmt(char *msg, size_t mlen, const char *fmt)
 			continue;
 		if (*++p == '%')
 			continue;
+		if (*p == '\0') {
+			if (msg)
+				snprintf(msg, mlen, "incomplete %% format");
+			return -1;
+		}
 		// Skip uninteresting.
-		while (strchr("#0.'+- ", *p) != NULL)
+		while (*p != '\0' && strchr("#0.'+- ", *p) != NULL)
 			p++;
 		if (*p == '*') {
 			if (msg)
@@ -929,12 +935,9 @@ file_parse_guid(const char *s, uint64_t *guid)
 	return 0;
 }
 
-file_protected int
-file_print_guid(char *str, size_t len, const uint64_t *guid)
+file_private int
+file_print_guid(char *str, size_t len, const struct guid *g)
 {
-	const struct guid *g = CAST(const struct guid *,
-	    CAST(const void *, guid));
-
 #ifndef WIN32
 	return snprintf(str, len, "%.8X-%.4hX-%.4hX-%.2hhX%.2hhX-"
 	    "%.2hhX%.2hhX%.2hhX%.2hhX%.2hhX%.2hhX",
@@ -948,6 +951,26 @@ file_print_guid(char *str, size_t len, const uint64_t *guid)
 	    g->data4[2], g->data4[3], g->data4[4], g->data4[5],
 	    g->data4[6], g->data4[7]);
 #endif
+}
+
+file_protected int
+file_print_leguid(char *str, size_t len, const uint64_t *guid)
+{
+	const struct guid *g = CAST(const struct guid *,
+	    CAST(const void *, guid));
+	return file_print_guid(str, len, g);
+}
+
+file_protected int
+file_print_beguid(char *str, size_t len, const uint64_t *guid)
+{
+	const struct guid *g = CAST(const struct guid *,
+	    CAST(const void *, guid));
+	struct guid gg = *g;
+	gg.data1 = file_swap4(gg.data1);
+	gg.data2 = file_swap2(gg.data2);
+	gg.data3 = file_swap2(gg.data3);
+	return file_print_guid(str, len, &gg);
 }
 
 file_protected int
@@ -987,6 +1010,8 @@ file_strtrim(char *str)
 	last = str;
 	while (*last)
 		last++;
+	if (last == str)
+		return str;
 	--last;
 	while (isspace(CAST(unsigned char, *last)))
 		last--;

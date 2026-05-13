@@ -78,7 +78,8 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	}
 
 	if ((ms->flags & MAGIC_NO_CHECK_ENCODING) == 0) {
-		looks_text = file_encoding(ms, &b, NULL, 0, &code, &code_mime, &ftype);
+		looks_text = file_encoding(ms, &b, NULL, 0,
+								   &code, &code_mime, &ftype);
 	}
 
 #if 0
@@ -86,7 +87,7 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_APPTYPE) == 0 && inname) {
 		m = file_os2_apptype(ms, inname, &b);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try os2_apptype %d]\n", m);
+			(void)fprintf(stderr, "[try os2_apptype %d]\n", m);
 		switch (m) {
 		case -1:
 			return -1;
@@ -101,21 +102,22 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	/* try compression stuff */
 	if ((ms->flags & MAGIC_NO_CHECK_COMPRESS) == 0) {
 		m = file_zmagic(ms, &b, inname);
-		if ((ms->flags & MAGIC_DEBUG) != 0) {
-			fprintf(stderr, "[try zmagic %d]\n", m);
+		if ((ms->flags & MAGIC_DEBUG) != 0)
+			(void)fprintf(stderr, "[try zmagic %d]\n", m);
+		if (m) {
+			goto done_encoding;
 		}
-		if (m) goto done_encoding;
 	}
 #endif
 #endif
-
 	/* Check if we have a tar file */
 	if ((ms->flags & MAGIC_NO_CHECK_TAR) == 0) {
 		m = file_is_tar(ms, &b);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try tar %d]\n", m);
+			(void)fprintf(stderr, "[try tar %d]\n", m);
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 
@@ -123,9 +125,10 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_JSON) == 0) {
 		m = file_is_json(ms, &b);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try json %d]\n", m);
+			(void)fprintf(stderr, "[try json %d]\n", m);
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 
@@ -133,9 +136,10 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_CSV) == 0) {
 		m = file_is_csv(ms, &b, looks_text, code);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try csv %d]\n", m);
+			(void)fprintf(stderr, "[try csv %d]\n", m);
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 
@@ -143,9 +147,10 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_SIMH) == 0) {
 		m = file_is_simh(ms, &b);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try simh %d]\n", m);
+			(void)fprintf(stderr, "[try simh %d]\n", m);
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 
@@ -153,9 +158,10 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_CDF) == 0) {
 		m = file_trycdf(ms, &b);
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try cdf %d]\n", m);
+			(void)fprintf(stderr, "[try cdf %d]\n", m);
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 #if 1//def BUILTIN_ELF
@@ -171,8 +177,8 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 		 * with rules in the magic file. We we don't
 		 * print the information yet.
 		 */
-		pb = file_push_buffer(ms);
-		if (pb == NULL) return -1;
+		if ((pb = file_push_buffer(ms)) == NULL)
+			return -1;
 
 		rv = file_tryelf(ms, &b);
 		rbuf = file_pop_buffer(ms, pb);
@@ -181,21 +187,22 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 			rbuf = NULL;
 		}
 		if ((ms->flags & MAGIC_DEBUG) != 0)
-			fprintf(stderr, "[try elf %d]\n", m);
+			(void)fprintf(stderr, "[try elf %d]\n", m);
 	}
 #endif
 
 	/* try soft magic tests */
 	if ((ms->flags & MAGIC_NO_CHECK_SOFT) == 0) {
 		m = file_softmagic(ms, &b, NULL, NULL, BINTEST, looks_text);
-		if ((ms->flags & MAGIC_DEBUG) != 0) {
-			fprintf(stderr, "[try softmagic %d]\n", m);
-		}
+		if ((ms->flags & MAGIC_DEBUG) != 0)
+			(void)fprintf(stderr, "[try softmagic %d]\n", m);
 		if (m == 1 && rbuf) {
-			if (file_printf(ms, "%s", rbuf) == -1) goto done;
+			if (file_printf(ms, "%s", rbuf) == -1)
+				goto done;
 		}
 		if (m) {
-			if (checkdone(ms, &rv)) goto done;
+			if (checkdone(ms, &rv))
+				goto done;
 		}
 	}
 
@@ -203,10 +210,11 @@ int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attri
 	if ((ms->flags & MAGIC_NO_CHECK_TEXT) == 0) {
 
 		m = file_ascmagic(ms, &b, looks_text);
-		if ((ms->flags & MAGIC_DEBUG) != 0) {
-			fprintf(stderr, "[try ascmagic %d]\n", m);
+		if ((ms->flags & MAGIC_DEBUG) != 0)
+			(void)fprintf(stderr, "[try ascmagic %d]\n", m);
+		if (m) {
+			goto done;
 		}
-		if (m) goto done;
 	}
 
 simple:
@@ -218,20 +226,17 @@ simple:
 			if (file_printf(ms, "%s", def) == -1)
 				rv = -1;
 	}
- done:
+done:
 	trim_separator(ms);
 	if ((ms->flags & MAGIC_MIME_ENCODING) != 0) {
-		if (ms->flags & MAGIC_MIME_TYPE) {
-			if (file_printf(ms, "; charset=") == -1) {
+		if (ms->flags & MAGIC_MIME_TYPE)
+			if (file_printf(ms, "; charset=") == -1)
 				rv = -1;
-			}
-		}
-		if (file_printf(ms, "%s", code_mime) == -1) {
+		if (file_printf(ms, "%s", code_mime) == -1)
 			rv = -1;
-		}
 	}
 #if 0//HAVE_FORK
- done_encoding:
+done_encoding:
 #endif
 	free(rbuf);
 	buffer_fini(&b);

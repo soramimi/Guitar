@@ -56,6 +56,7 @@ SOURCES += \
 	file/src/seccomp.c \
 	file/src/softmagic.c \
 	file/src/strcasestr.c \
+	file/src/swap.c \
 	file/src/vasprintf.c
 
 HEADERS += \
@@ -68,6 +69,7 @@ HEADERS += \
 	file/src/file_opts.h \
 	file/src/patchlevel.h \
 	file/src/readelf.h \
+	file/src/swap.h \
 	file/src/tar.h
 
 msvc:SOURCES += file/src/pread.c file/src/strlcat.c file/src/strlcpy.c
