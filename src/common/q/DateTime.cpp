@@ -39,7 +39,11 @@ DateTime DateTime::parseDateTime(const char *s)
 DateTime DateTime::fromSecsSinceEpoch(uint64_t t)
 {
 	struct tm tm;
+#ifdef _WIN32
 	_gmtime64_s(&tm, (time_t *)&t);
+#else
+	gmtime_r((time_t *)&t, &tm);
+#endif
 	Date date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 	Time time(tm.tm_hour, tm.tm_min, tm.tm_sec);
 	return DateTime(date, time);

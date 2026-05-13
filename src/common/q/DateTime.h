@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <string>
+#include <cstdint>
 
 class DateTime;
 

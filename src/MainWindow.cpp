@@ -5001,7 +5001,7 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 
 	menu.addSeparator();
 
-	QAction *a_delbranch = is_valid_commit_id ? menu.addAction(tr("Delete branch...")) : nullptr;
+	QAction *a_delbranch = (is_valid_commit_id && !local_branches.empty()) ? menu.addAction(tr("Delete branch...")) : nullptr;
 	QAction *a_delrembranch = remoteBranches(selected_commit.commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
 
 	menu.addSeparator();

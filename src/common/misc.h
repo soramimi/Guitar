@@ -81,7 +81,7 @@ std::string mid(std::string const &str, int start, int length = -1);
 std::string replace_backslash_to_slash(std::string_view const &in);
 std::string normalizePathSeparator(std::string const &str);
 #ifdef USE_QT
-QString misc::normalizePathSeparator(QString const &str);
+QString normalizePathSeparator(QString const &str);
 #endif
 
 void dump(const uint8_t *ptr, size_t len);
