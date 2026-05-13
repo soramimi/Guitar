@@ -82,6 +82,7 @@ RepositoryTreeWidget::RepositoryTreeWidget(QWidget *parent)
 	, m(new Private)
 {
 	setItemDelegate(&m->delegate);
+	setMouseTracking(true);
 	connect(this, &RepositoryTreeWidget::currentItemChanged, [&](QTreeWidgetItem *current, QTreeWidgetItem *){
 		current_item = current;
 	});

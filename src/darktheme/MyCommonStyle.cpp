@@ -8,6 +8,8 @@ bool MyCommonStyleBase::x_styleHint(int *value, QStyle::StyleHint hint, const QS
 	case QStyle::SH_UnderlineShortcut:
 		*value = 1; // 常にアクセラレータ下線を表示
 		return true;
+	case QStyle::SH_Menu_MouseTracking:
+	case QStyle::SH_MenuBar_MouseTracking:
 	case QStyle::SH_ComboBox_ListMouseTracking:
 		*value = 1;
 		return true;

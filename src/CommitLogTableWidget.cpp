@@ -369,6 +369,9 @@ CommitLogTableWidget::CommitLogTableWidget(QWidget *parent)
 	setItemDelegate(new CommitLogTableWidgetDelegate(this));
 	model_ = new CommitLogTableModel(this);
 	setModel(model_);
+
+	setMouseTracking(true);
+	setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
 void CommitLogTableWidget::setup(MainWindow *mw)

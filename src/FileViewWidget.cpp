@@ -41,6 +41,8 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	texteditor()->setFocusFrameVisible(true);
 
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
+
+	setMouseTracking(true);
 }
 
 void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)

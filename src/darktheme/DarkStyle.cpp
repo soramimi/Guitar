@@ -914,8 +914,6 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 	case SH_ItemView_ShowDecorationSelected:
 	case SH_ItemView_ArrowKeysNavigateIntoChildren:
 	case SH_ItemView_ChangeHighlightOnFocus:
-	case SH_MenuBar_MouseTracking:
-	case SH_Menu_MouseTracking:
 	case SH_Menu_SupportsSections:
 		return 1;
 
@@ -990,16 +988,16 @@ void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option
 	p->restore();
 }
 
-void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, QPainter *p, const QWidget *widget) const
+void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const
 {
 #ifndef Q_OS_MAC
-	if (pe == PE_FrameFocusRect) {
-		drawFocusFrame(p, option->rect, 0);
+	if (element == PE_FrameFocusRect) {
+		drawFocusFrame(painter, option->rect, 0);
 		return;
 	}
 #endif
-	if (pe == PE_IndicatorArrowDown) {
-		switch (pe) {
+	if (element == PE_IndicatorArrowDown) {
+		switch (element) {
 		case PE_IndicatorArrowUp:
 		case PE_IndicatorArrowDown:
 		case PE_IndicatorArrowRight:
@@ -1019,7 +1017,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					QPainter imagePainter(&image);
 
 					QPolygon a;
-					switch (pe) {
+					switch (element) {
 					case PE_IndicatorArrowUp:
 						a.setPoints(3, border, sqsize / 2,  sqsize / 2, border,  sqsize - border, sqsize / 2);
 						break;
@@ -1067,77 +1065,83 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 				}
 				int xOffset = r.x() + (r.width() - size)/2;
 				int yOffset = r.y() + (r.height() - size)/2;
-				p->drawPixmap(xOffset, yOffset, pixmap);
+				painter->drawPixmap(xOffset, yOffset, pixmap);
 			}
 		}
 		return;
 	}
-	if (pe == PE_PanelMenu) {
+	if (element == PE_PanelMenu) {
 		QRect r = option->rect;
-		drawFrame(p, r, Qt::black, Qt::black);
+		drawFrame(painter, r, Qt::black, Qt::black);
 		r = r.adjusted(1, 1, -1, -1);
-		drawFrame(p, r, color(128), color(64));
+		drawFrame(painter, r, color(128), color(64));
 		r = r.adjusted(1, 1, -1, -1);
-		p->fillRect(r, color(80));
+		painter->fillRect(r, color(80));
 		return;
 	}
-	if (pe == PE_FrameMenu) {
+	if (element == PE_FrameMenu) {
 		return;
 	}
-	if (pe == PE_PanelButtonBevel) {
-		drawButton(p, option);
+	if (element == PE_PanelButtonBevel) {
+		drawButton(painter, option);
 		return;
 	}
-	if (pe == PE_PanelStatusBar) {
-		p->fillRect(option->rect, option->palette.color(QPalette::Window));
+	if (element == PE_PanelStatusBar) {
+		painter->fillRect(option->rect, option->palette.color(QPalette::Window));
 		return;
 	}
-	if (pe == PE_FrameTabWidget) {
+	if (element == PE_FrameTabWidget) {
 		if (auto const *o = qstyleoption_cast<QStyleOptionTabWidgetFrame const *>(option)) {
 			int x = o->rect.x();
 			int y = o->rect.y();
 			int w = o->rect.width();
 			int h = o->rect.height();
-			drawTabFrame(p, QRect(x, y, w, h), o->palette);
+			drawTabFrame(painter, QRect(x, y, w, h), o->palette);
 			return;
 		}
 	}
-	if (pe == PE_PanelLineEdit) {
+	if (element == PE_PanelLineEdit) {
 		if (auto const *panel = qstyleoption_cast<QStyleOptionFrame const *>(option)) {
 			QColor color = option->palette.color(QPalette::Dark);
-			p->fillRect(option->rect, color);
+			painter->fillRect(option->rect, color);
 			if (panel->lineWidth > 0) {
-				drawFrame(p, option->rect, option->palette.color(QPalette::Shadow), option->palette.color(QPalette::Light));
+				drawFrame(painter, option->rect, option->palette.color(QPalette::Shadow), option->palette.color(QPalette::Light));
 			}
 		}
 		return;
 	}
-	if (pe == PE_FrameGroupBox) {
-		p->save();
-		p->setRenderHint(QPainter::Antialiasing);
+	if (element == PE_FrameGroupBox) {
+		painter->save();
+		painter->setRenderHint(QPainter::Antialiasing);
 		QRectF r = option->rect;
 		r = r.adjusted(1.5, 1.5, -0.5, -0.5);
-		p->setPen(option->palette.color(QPalette::Light));
-		p->drawRoundedRect(r, 5, 5);
+		painter->setPen(option->palette.color(QPalette::Light));
+		painter->drawRoundedRect(r, 5, 5);
 		r = r.adjusted(-1, -1, -1, -1);
-		p->setPen(option->palette.color(QPalette::Dark));
-		p->drawRoundedRect(r, 5, 5);
-		p->restore();
+		painter->setPen(option->palette.color(QPalette::Dark));
+		painter->drawRoundedRect(r, 5, 5);
+		painter->restore();
 		return;
 	}
-	if (pe == PE_PanelItemViewRow) {
+	if (element == PE_PanelItemViewRow) {
+		if (option->state & State_MouseOver) {
+			painter->fillRect(option->rect, option->palette.color(QPalette::Window).lighter(95));
+		}
 		return;
 	}
-	if (pe == PE_PanelItemViewItem) {
+	if (element == PE_PanelItemViewItem) {
+		{
+			drawPrimitive(PE_PanelItemViewRow, option, painter, widget);
+		}
 		auto DrawSelectionFrame = [&](QRect const &r){
 			bool focus = widget && widget->hasFocus();
-			drawSelectedItemFrame(p, r, focus);
+			drawSelectedItemFrame(painter, r, focus);
 		};
 		if (auto const *tableview = qobject_cast<QTableView const *>(widget)) {
 			QAbstractItemView::SelectionBehavior selection_behavior = tableview->selectionBehavior();
 			if (option->state & State_Selected) {
-				p->save();
-				p->setClipRect(option->rect);
+				painter->save();
+				painter->setClipRect(option->rect);
 				QRect r = widget->rect();
 				if (selection_behavior == QAbstractItemView::SelectionBehavior::SelectRows) {
 					r = QRect(r.x(), option->rect.y(), r.width(), option->rect.height());
@@ -1145,7 +1149,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 					r = QRect(option->rect.x(), r.y(), option->rect.y(), r.height());
 				}
 				DrawSelectionFrame(r);
-				p->restore();
+				painter->restore();
 			}
 		} else {
 			if (option->state & State_Selected) {
@@ -1154,15 +1158,15 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		}
 		return;
 	}
-	if (pe == QStyle::PE_IndicatorBranch) {
+	if (element == QStyle::PE_IndicatorBranch) {
 		QColor bg = option->palette.color(QPalette::Base);
-		p->fillRect(option->rect, bg);
+		painter->fillRect(option->rect, bg);
 
-		if (m->legacy_windows.drawPrimitive(pe, option, p, widget)) {
+		if (m->legacy_windows.drawPrimitive(element, option, painter, widget)) {
 			return;
 		}
 	}
-	if (pe == QStyle::PE_Widget) { // bg for messagebox
+	if (element == QStyle::PE_Widget) { // bg for messagebox
 		const QDialogButtonBox *buttonBox = nullptr;
 
 		if (qobject_cast<const QMessageBox *> (widget))
@@ -1175,65 +1179,65 @@ void DarkStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *option, Q
 		if (buttonBox) {
 			int y = buttonBox->geometry().top();
 			QRect r(option->rect.x(), y, option->rect.width(), 1);
-			p->fillRect(r, option->palette.color(QPalette::Light));
+			painter->fillRect(r, option->palette.color(QPalette::Light));
 			r.translate(0, -1);
-			p->fillRect(r, option->palette.color(QPalette::Dark));
+			painter->fillRect(r, option->palette.color(QPalette::Dark));
 		}
 		return;
 	}
 #ifndef Q_OS_WIN
-	if (pe == QStyle::PE_PanelTipLabel) {
+	if (element == QStyle::PE_PanelTipLabel) {
 		// ツールチップの背景パネル
-		p->fillRect(option->rect, QColor(255, 255, 192));
-		drawFrame(p, option->rect, Qt::black, Qt::black);
+		painter->fillRect(option->rect, QColor(255, 255, 192));
+		drawFrame(painter, option->rect, Qt::black, Qt::black);
 		return;
 	}
 #endif
-	if (pe == PE_IndicatorCheckBox) {
+	if (element == PE_IndicatorCheckBox) {
 		{
 			QRect rect = indicatorRect(option, widget, option->rect);
 			qDebug() << "PE_IndicatorCheckBox" << rect;
 			int x = rect.x();
 			int y = rect.y();
 			int extent = rect.height();
-			drawCheckBoxFrame(p, rect, option->palette, State_Sunken);
+			drawCheckBoxFrame(painter, rect, option->palette, State_Sunken);
 			if (option->state & (State_Sunken | State_On)) {
-				p->save();
-				p->translate(x + 2, y + 2);
-				p->setRenderHint(QPainter::Antialiasing);
-				p->setPen(QPen(option->palette.windowText(), 2));
+				painter->save();
+				painter->translate(x + 2, y + 2);
+				painter->setRenderHint(QPainter::Antialiasing);
+				painter->setPen(QPen(option->palette.windowText(), 2));
 				int w = extent - 4;
 				int h = extent - 4;
-				p->setClipRect(1, 1, w - 2, h - 2);
+				painter->setClipRect(1, 1, w - 2, h - 2);
 				int x0 = w - 1;
 				int y0 = 1;
 				int n = w * 0.55;
 				auto LiveTo = [&](int x1, int y1){
-					p->drawLine(x0, y0, x1, y1);
+					painter->drawLine(x0, y0, x1, y1);
 					x0 = x1;
 					y0 = y1;
 				};
 				LiveTo(x0 - n, h - 1);
 				LiveTo(x0 - n, 1);
-				p->restore();
+				painter->restore();
 			}
 		}
 		return;
 	}
-	if (pe == PE_IndicatorRadioButton) {
+	if (element == PE_IndicatorRadioButton) {
 		QRect rect = indicatorRect(option, widget, option->rect);
-		p->setPen(option->palette.dark().color());
-		drawRadioButtonFrame(p, rect, option->palette, QStyle::State_Sunken);
+		painter->setPen(option->palette.dark().color());
+		drawRadioButtonFrame(painter, rect, option->palette, QStyle::State_Sunken);
 		if (option->state & (State_Sunken | State_On)) {
 			const int N = 3;
 			rect.adjust(N, N, -N, -N);
-			p->setRenderHint(QPainter::Antialiasing);
-			p->setBrush(option->palette.windowText());
-			p->drawEllipse(rect);
+			painter->setRenderHint(QPainter::Antialiasing);
+			painter->setBrush(option->palette.windowText());
+			painter->drawEllipse(rect);
 		}
 		return;
 	}
-	Base::drawPrimitive(pe, option, p, widget);
+	Base::drawPrimitive(element, option, painter, widget);
 }
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const

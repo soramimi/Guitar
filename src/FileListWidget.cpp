@@ -1,5 +1,6 @@
 #include "FileListWidget.h"
 #include "MainWindow.h"
+#include <QApplication>
 #include <QDebug>
 #include <QPainter>
 #include <QStyledItemDelegate>
@@ -41,6 +42,8 @@ public:
 	{
 		QStyleOptionViewItem o = option;
 		QStyledItemDelegate::initStyleOption(&o, index);
+
+		QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewRow, &option, painter, option.widget);
 
 		QString header = index.data(MainWindow::HeaderRole).toString();
 
@@ -113,4 +116,5 @@ FileListWidget::FileListWidget(QWidget *parent)
 {
 	item_delegate = new ItemDelegate(this);
 	setItemDelegate(item_delegate);
+	setMouseTracking(true);
 }

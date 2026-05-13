@@ -86,15 +86,8 @@ void onSigPipe(int)
 	global->webcx.notify_broken_pipe();
 }
 
-extern void process_test();
-
 int main(int argc, char *argv[])
 {
-	if (0) {
-		process_test();
-		return 0;
-	}
-
 	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
 	qInstallMessageHandler(logHandler);
 
@@ -103,20 +96,12 @@ int main(int argc, char *argv[])
 	ApplicationGlobal g;
 	global = &g;
 
-	if (0) { // for debug
-
-		process_test();
-
-		// return 0;
-	}
-
 	signal(SIGTERM, onSigTerm);
 #ifndef _WIN32
 	signal(SIGPIPE, onSigPipe);
 #endif
 
 	bool a_open_here = false;
-	bool a_genmsg = false;
 	QString a_commit_id;
 
 	QStringList args;
@@ -133,8 +118,6 @@ int main(int argc, char *argv[])
 						i++;
 						a_commit_id = argv[i];
 					}
-				// } else if (arg == "--genmsg") { // experimental
-				// 	a_genmsg = true;
 				} else if (arg == "--unsafe") { // experimental
 #ifdef UNSAFE_ENABLED
 					global->unsafe_enabled = true;

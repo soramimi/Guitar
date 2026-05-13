@@ -141,6 +141,26 @@ void LightStyle::drawPrimitive(PrimitiveElement element, QStyleOption const *opt
 			return;
 		}
 	}
+	if (element == PE_PanelItemViewRow) {
+#if 1
+		if (option->state & State_MouseOver) {
+			painter->fillRect(option->rect, option->palette.color(QPalette::Window).lighter(95));
+		}
+#else
+		if (const QStyleOptionViewItem *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(option)) {
+			QPalette::ColorGroup cg = (widget ? widget->isEnabled() : (vopt->state & QStyle::State_Enabled)) ? QPalette::Normal : QPalette::Disabled;
+			if (cg == QPalette::Normal && !(vopt->state & QStyle::State_Active)) {
+				cg = QPalette::Inactive;
+			}
+			if ((vopt->state & QStyle::State_Selected) && vopt->showDecorationSelected) {
+				painter->fillRect(vopt->rect, vopt->palette.brush(cg, QPalette::Highlight));
+			} else if (vopt->features & QStyleOptionViewItem::Alternate) {
+				painter->fillRect(vopt->rect, vopt->palette.brush(cg, QPalette::AlternateBase));
+			}
+		}
+#endif
+		return;
+	}
 	if (element == PE_PanelItemViewItem) {
 		auto DrawSelectionFrame = [&](QRect const &r){
 			bool focus = widget && widget->hasFocus();
