@@ -1,6 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-int submit();
+int request();
 
 #endif // MAIN_H

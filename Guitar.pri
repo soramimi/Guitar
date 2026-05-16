@@ -130,17 +130,13 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/common/realpath.cpp \
-	$$SRC/FileTypeDetector.cpp \
-	$$SRC/common/q/DateTime.cpp \
-	$$SRC/common/q/DirIterator.cpp \
-	$$SRC/common/qmisc.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
 	$$SRC/AbstractSettingForm.cpp \
 	$$SRC/AddRepositoriesCollectivelyDialog.cpp \
 	$$SRC/AddRepositoryDialog.cpp \
+	$$SRC/AiApiBridge.cpp \
 	$$SRC/ApplicationGlobal.cpp \
 	$$SRC/ApplicationSettings.cpp \
 	$$SRC/AreYouSureYouWantToContinueConnectingDialog.cpp \
@@ -181,6 +177,7 @@ SOURCES += \
 	$$SRC/FileHistoryWindow.cpp \
 	$$SRC/FileListWidget.cpp \
 	$$SRC/FilePropertyDialog.cpp \
+	$$SRC/FileTypeDetector.cpp \
 	$$SRC/FileUtil.cpp \
 	$$SRC/FileViewWidget.cpp \
 	$$SRC/FindCommitDialog.cpp \
@@ -283,12 +280,16 @@ SOURCES += \
 	$$SRC/coloredit/RingSlider.cpp \
 	$$SRC/common/AbstractSimpleIO.cpp \
 	$$SRC/common/misc.cpp \
+	$$SRC/common/q/DateTime.cpp \
 	$$SRC/common/q/Dir.cpp \
+	$$SRC/common/q/DirIterator.cpp \
 	$$SRC/common/q/FileInfo.cpp \
+	$$SRC/common/qmisc.cpp \
+	$$SRC/common/realpath.cpp \
 	$$SRC/common/urlencode.cpp \
-	$$SRC/darktheme/MyCommonStyle.cpp \
 	$$SRC/darktheme/DarkStyle.cpp \
 	$$SRC/darktheme/LightStyle.cpp \
+	$$SRC/darktheme/MyCommonStyle.cpp \
 	$$SRC/darktheme/NinePatch.cpp \
 	$$SRC/darktheme/TraditionalWindowsStyleTreeControl.cpp \
 	$$SRC/gpg.cpp \
@@ -310,20 +311,13 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/src/common/realpath.h \
-	$$SRC/FileTypeDetector.h \
-	$$SRC/common/fmt.h \
-	$$SRC/common/q/DateTime.h \
-	$$SRC/common/q/DirIterator.h \
-	$$SRC/common/qmisc.h \
-	$$SRC/common/str.h \
-	$$SRC/process/MyProcess2.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \
 	$$SRC/AbstractSettingForm.h \
 	$$SRC/AddRepositoriesCollectivelyDialog.h \
 	$$SRC/AddRepositoryDialog.h \
+	$$SRC/AiApiBridge.h \
 	$$SRC/ApplicationGlobal.h \
 	$$SRC/ApplicationSettings.h \
 	$$SRC/AreYouSureYouWantToContinueConnectingDialog.h \
@@ -364,6 +358,7 @@ HEADERS += \
 	$$SRC/FileHistoryWindow.h \
 	$$SRC/FileListWidget.h \
 	$$SRC/FilePropertyDialog.h \
+	$$SRC/FileTypeDetector.h \
 	$$SRC/FileUtil.h \
 	$$SRC/FindCommitDialog.h \
 	$$SRC/GenerateCommitMessageDialog.h \
@@ -469,18 +464,24 @@ HEADERS += \
 	$$SRC/common/base64.h \
 	$$SRC/common/charvec.h \
 	$$SRC/common/crc32.h \
+	$$SRC/common/fmt.h \
 	$$SRC/common/htmlencode.h \
 	$$SRC/common/joinpath.h \
 	$$SRC/common/jstream.h \
 	$$SRC/common/misc.h \
+	$$SRC/common/q/DateTime.h \
 	$$SRC/common/q/Dir.h \
+	$$SRC/common/q/DirIterator.h \
 	$$SRC/common/q/FileInfo.h \
 	$$SRC/common/q/helper.h \
+	$$SRC/common/qmisc.h \
+	$$SRC/common/realpath.h \
+	$$SRC/common/str.h \
 	$$SRC/common/strformat.h \
 	$$SRC/common/urlencode.h \
-	$$SRC/darktheme/MyCommonStyle.h \
 	$$SRC/darktheme/DarkStyle.h \
 	$$SRC/darktheme/LightStyle.h \
+	$$SRC/darktheme/MyCommonStyle.h \
 	$$SRC/darktheme/NinePatch.h \
 	$$SRC/darktheme/TraditionalWindowsStyleTreeControl.h \
 	$$SRC/dtl/Diff.hpp \
@@ -496,6 +497,7 @@ HEADERS += \
 	$$SRC/inetclient.h \
 	$$SRC/inetresolver.h \
 	$$SRC/platform.h \
+	$$SRC/process/MyProcess2.h \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.h \
 	$$SRC/texteditor/InputMethodPopup.h \
 	$$SRC/texteditor/TextEditorTheme.h \

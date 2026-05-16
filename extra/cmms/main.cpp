@@ -4,14 +4,14 @@
 // experimental code for generating commit messages using AI
 
 #include "CommitMessageGenerator.h"
-#include "ConfigParser.h"
+#include "../common/ConfigParser.h"
+#include "../common/selectitem.h"
 #include "FileTypeDetector.h"
 #include "common/fmt.h"
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
 #include "common/str.h"
 #include "curlclient.h"
-#include "selectitem.h"
 #include <string_view>
 
 #ifdef _WIN32
@@ -44,7 +44,7 @@ struct Option {
 
 Option opt;
 
-// CommitMessageGeneratorからコールバックされる関数
+// AiApiBridgeからコールバックされる関数
 
 void global_write_log(QString const &s)
 {
@@ -219,12 +219,25 @@ bool git_commit(std::string const &message)
 	return git(fmt("commit -m %s")(quoted_text(message)));
 }
 
-std::vector<std::string> generate_commit_message(Option const &opt)
+std::vector<std::string> request(Option const &opt)
 {
 	std::string diff = CommitMessageGenerator::make_diff(opt.git_command, opt.dir, {});
 
-	CommitMessageGenerator gen;
-	CommitMessageGenerator::Result msg = gen.generate(diff);
+	CommitMessageGenerator::Request request(diff, {});
+
+	CommitMessageGenerator gen(ai_model, request);
+	CommitMessageGenerator::CommitMessageGenerator::Result msg;
+	if (request.diff.empty()) {
+		msg.error = true;
+		msg.error_message = "diff is empty";
+	} else if (request.diff.size() > CommitMessageGenerator::max_diff_size) {
+		// 巨大なdiffはトークン超過やコスト増加を招くため上限を設ける
+		msg.error = true;
+		msg.error_message = fmt("diff is too large (%d bytes)")(request.diff.size());
+	} else {
+		auto r = gen.generate();
+		msg = CommitMessageGenerator::parse_response(ai_model, r);
+	}
 	if (msg.error) {
 		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status.c_str(), msg.error_message.c_str());
 		return {};
@@ -318,7 +331,7 @@ git = %s
 		return 1;
 	}
 
-	auto list = generate_commit_message(opt);
+	auto list = request(opt);
 	if (!list.empty()) {
 		int index = selectitem(list);
 		if (index >= 0 && index < list.size()) {

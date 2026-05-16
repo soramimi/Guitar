@@ -7,6 +7,7 @@
 #include "common/q/helper.h"
 #include "curlclient.h"
 #include "webclient.h"
+#include "AiApiBridge.h"
 
 #ifdef APP_GUITAR
 #include "Profile.h"
@@ -22,450 +23,6 @@ std::string global_mimetype_by_file(std::string const &path);
 #endif
 
 
-/// AIレスポンスの解析結果を保持する内部構造体
-struct CommitMessageResult {
-	bool completion = false;   ///< 正常に完了したか
-	std::string text;          ///< AIが返したテキスト本文
-	std::string error_status;  ///< エラー種別
-	std::string error_message; ///< エラーメッセージ
-};
-
-/**
- * @brief AIプロバイダーごとのJSONレスポンスを解析するビジタークラス。
- *
- * GenerativeAI::AbstractVisitor を継承し、プロバイダーの種類に応じた
- * JSONパス走査ロジックを各 case_* メソッドで実装する。
- */
-struct _CommitMessageResponseParser : public GenerativeAI::AbstractVisitor<CommitMessageResult> {
-	GenerativeAI::Model model;
-	jstream::Reader reader;
-	_CommitMessageResponseParser(GenerativeAI::Model model, std::string_view const &in)
-		: model(model)
-		, reader(in.data(), in.data() + in.size())
-	{}
-
-	/**
-	 * @brief OpenAI Chat Completions 形式のレスポンスを解析する。
-	 *
-	 * DeepSeek / OpenRouter / LM Studio / llama.cpp など、
-	 * OpenAI 互換 API を使うプロバイダーで共通利用する。
-	 * @return 解析結果
-	 */
-	CommitMessageResult parse_openai_chat_completions_format()
-	{
-		CommitMessageResult ret;
-		while (reader.next()) {
-			if (reader.match("{object")) {
-				// "chat.completion" または "text_completion" なら正常完了
-				if (reader.string() == "chat.completion" || reader.string() == "text_completion") {
-					ret.completion = true;
-				}
-			} else if (reader.match("{choices[{message{content")) {
-				ret.text = reader.string();
-			} else if (reader.match("{error{type")) {
-				ret.error_status = reader.string();
-				ret.completion = false;
-			} else if (reader.match("{error{message")) {
-				ret.error_message = reader.string();
-				ret.completion = false;
-			}
-		}
-		return ret;
-	}
-
-	/// 未知プロバイダー：空の結果を返す
-	CommitMessageResult case_Unknown()
-	{
-		return {};
-	}
-
-	/**
-	 * @brief OpenAI Responses API 形式のレスポンスを解析する。
-	 * @return 解析結果
-	 */
-	CommitMessageResult case_OpenAI_responses()
-	{
-		CommitMessageResult ret;
-		while (reader.next()) {
-			if (reader.match("{status")) {
-				// status が "completed" であれば正常終了
-				if (reader.string() == "completed") {
-					ret.completion = true;
-				}
-			} else if (reader.match("{output[{content[{text")) {
-				ret.text = reader.string();
-			} else if (reader.match("{error")) {
-				if (!reader.isnull()) {
-					ret.error_status = reader.string();
-					ret.completion = false;
-				}
-			}
-		}
-		return ret;
-	}
-
-	/// OpenAI Chat Completions 形式（共通実装に委譲）
-	CommitMessageResult case_OpenAI_chat_completions()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-	/**
-	 * @brief Anthropic Claude のレスポンスを解析する。
-	 * @return 解析結果
-	 */
-	CommitMessageResult case_Anthropic()
-	{
-		CommitMessageResult ret;
-		while (reader.next()) {
-			if (reader.match("{stop_reason")) {
-				// "end_turn" が正常終了を示す
-				if (reader.string() == "end_turn") {
-					ret.completion = true;
-				} else {
-					ret.completion = false;
-					ret.error_status = reader.string();
-				}
-			} else if (reader.match("{content[{text")) {
-				ret.text = reader.string();
-			} else if (reader.match("{type")) {
-				if (reader.string() == "error") {
-					ret.completion = false;
-				}
-			} else if (reader.match("{error{type")) {
-				ret.error_status = reader.string();
-				ret.completion = false;
-			} else if (reader.match("{error{message")) {
-				ret.error_message = reader.string();
-				ret.completion = false;
-			}
-		}
-		return ret;
-	}
-
-	/**
-	 * @brief Google Gemini のレスポンスを解析する。
-	 * @return 解析結果
-	 */
-	CommitMessageResult case_Google()
-	{
-		CommitMessageResult ret;
-		while (reader.next()) {
-			if (reader.match("{candidates[{content{parts[{text")) {
-				ret.text = reader.string();
-				ret.completion = true;
-			} else if (reader.match("{error{message")) {
-				ret.error_message = reader.string();
-				ret.completion = false;
-			} else if (reader.match("{error{status")) {
-				ret.error_status = reader.string();
-				ret.completion = false;
-			}
-		}
-		return ret;
-	}
-
-	/// xAI：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_XAI()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-	/// Sakura：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_Sakura()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-
-	/// DeepSeek：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_DeepSeek()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-	/// OpenRouter：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_OpenRouter()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-	/**
-	 * @brief Ollama のレスポンスを解析する。
-	 *
-	 * Ollama は独自フォーマットで、生成テキストが "response" キーに入る。
-	 * @return 解析結果
-	 */
-	CommitMessageResult case_Ollama()
-	{
-		CommitMessageResult ret;
-		while (reader.next()) {
-			if (reader.match("{model")) {
-				reader.string(); // モデル名は使用しないが読み捨てる
-			} else if (reader.match("{response")) {
-				ret.text = reader.string();
-				ret.completion = true;
-			} else if (reader.match("{error{type")) {
-				ret.error_status = reader.string();
-				ret.completion = false;
-			} else if (reader.match("{error{message")) {
-				ret.error_message = reader.string();
-				ret.completion = false;
-			}
-		}
-		return ret;
-	}
-
-	/// LM Studio：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_LMStudio()
-	{
-		return parse_openai_chat_completions_format();
-	}
-
-	/// llama.cpp：OpenAI Chat Completions 互換形式
-	CommitMessageResult case_LLAMACPP()
-	{
-		switch (model.api_compatibility()) {
-		case GenerativeAI::ProviderID::Anthropic:
-			return case_Anthropic();
-		default:
-			return parse_openai_chat_completions_format();
-		}
-	}
-};
-
-/**
- * @brief AIプロバイダーごとのリクエストJSONを生成するビジタークラス。
- *
- * プロバイダー名とプロンプトを受け取り、各APIが要求するJSON形式に組み立てる。
- */
-struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> {
-	constexpr static float temperature_ = 0.2f; ///< 応答のランダム性（Anthropic以外で使用）
-	GenerativeAI::Model const &model;
-	std::string prompt;
-	bool add_stream_false = false;
-	_PromptJsonGenerator(GenerativeAI::Model const &model, std::string const &prompt)
-		: model(model)
-		, prompt(prompt)
-	{}
-
-	std::string modelname() const
-	{
-		return model.model_name();
-	}
-
-	/// 未知プロバイダー：空文字列を返す
-	std::string case_Unknown()
-	{
-		return {};
-	}
-
-	/**
-	 * @brief OpenAI Responses API 向けのリクエストJSONを生成する。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_OpenAI_responses()
-	{
-		jstream::Writer w;
-		w.object({}, [&](){
-			w.string("model", modelname());
-			if (0) {
-				w.number("temperature", temperature_); // deprecated
-			}
-			char const *reasoning_effort = model.reasoning_effort();
-			if (reasoning_effort) {
-				w.object("reasoning", [&](){
-					w.string("effort", reasoning_effort);
-				});
-			}
-			constexpr int format = 0;
-			switch (format) {
-			case 0:
-				w.string("input", prompt);
-				break;
-			case 1:
-				w.array("input", [&](){
-					w.object({}, [&](){
-						w.string("role", "user");
-						w.string("content", prompt);
-					});
-				});
-				break;
-			}
-		});
-		return w;
-	}
-
-	/**
-	 * @brief OpenAI Chat Completions API 向けのリクエストJSONを生成する。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_OpenAI_chat_completions()
-	{
-		jstream::Writer w;
-		w.object({}, [&](){
-			w.string("model", modelname());
-			w.number("temperature", temperature_);
-			w.array("messages", [&](){
-				w.object({}, [&](){
-					w.string("role", "system");
-					w.string("content", "You are an experienced engineer.");
-				});
-				w.object({}, [&](){
-					w.string("role", "user");
-					w.string("content", prompt);
-				});
-			});
-			if (add_stream_false) {
-				w.boolean("stream", false);
-			}
-		});
-		return w;
-	}
-
-	/**
-	 * @brief Anthropic Claude 向けのリクエストJSONを生成する。
-	 *
-	 * Claude Opus 4.7（2026-04-16リリース）以降、temperature / top_p / top_k は
-	 * 非推奨となりデフォルト以外の値を送ると HTTP 400 が返るため省略する。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_Anthropic()
-	{
-		jstream::Writer w;
-		w.object({}, [&](){
-			w.string("model", modelname());
-			w.array("messages", [&](){
-				w.object({}, [&](){
-					w.string("role", "user");
-					w.string("content", prompt);
-				});
-			});
-			w.number("max_tokens", 1000);
-			if (0) {
-				// As of Claude Opus 4.7 (released 2026-04-16), temperature / top_p / top_k are deprecated.
-				// Sending non-default values returns HTTP 400; omit these parameters entirely.
-				// Control output via prompting or the effort parameter (low/medium/high/xhigh/max).
-				// Ref: https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7
-				w.number("temperature", temperature_);
-			}
-		});
-		return w;
-	}
-
-	/**
-	 * @brief Google Gemini 向けのリクエストJSONを生成する。
-	 *
-	 * Gemini API はモデル名をURLパラメータで指定するため、JSONに含まない。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_Google()
-	{
-		jstream::Writer w;
-		w.object({}, [&](){
-			w.array("contents", [&](){
-				w.object({}, [&](){
-					w.array("parts", [&](){
-						w.object({}, [&](){
-							w.string("text", prompt);
-						});
-					});
-				});
-			});
-		});
-		return w;
-	}
-
-	/// xAI：OpenAI Chat Completions 互換形式
-	std::string case_XAI()
-	{
-		return case_OpenAI_chat_completions();
-	}
-
-	/// Sakura：OpenAI Chat Completions 互換形式
-	std::string case_Sakura()
-	{
-		return case_OpenAI_chat_completions();
-	}
-
-	/**
-	 * @brief DeepSeek 向けのリクエストJSONを生成する。
-	 *
-	 * streamingを無効化している点がOpenAI互換形式と異なる。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_DeepSeek()
-	{
-		add_stream_false = true; // OpenAI Chat Completions 形式のJSONに "stream": false を追加する
-		return case_OpenAI_chat_completions();
-	}
-
-	/**
-	 * @brief Ollama 向けのリクエストJSONを生成する。
-	 *
-	 * Ollama は独自フォーマットで prompt キーにプロンプトを渡す。
-	 * @return リクエストJSON文字列
-	 */
-	std::string case_Ollama()
-	{
-		jstream::Writer w;
-		w.object({}, [&](){
-			w.string("model", modelname());
-			w.string("prompt", prompt);
-			w.boolean("stream", false);
-		});
-		return w;
-	}
-
-	/// OpenRouter：OpenAI Chat Completions 互換形式
-	std::string case_OpenRouter()
-	{
-		return case_OpenAI_chat_completions();
-	}
-
-	/// LM Studio：Ollama 互換形式
-	std::string case_LMStudio()
-	{
-		return case_Ollama();
-	}
-
-	/// llama.cpp：OpenAI Chat Completions 互換形式
-	std::string case_LLAMACPP()
-	{
-		switch (model.api_compatibility()) {
-		case GenerativeAI::ProviderID::Anthropic:
-			return case_Anthropic();
-		default:
-			return case_OpenAI_chat_completions();
-		}
-	}
-};
-
-/**
- * @brief コンストラクタ。アプリ設定からAIモデルを初期化する。
- */
-#ifdef APP_GUITAR
-CommitMessageGenerator::CommitMessageGenerator()
-{
-	set_ai_model(global->appsettings.ai_model);
-}
-GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model)
-{
-	return global->get_ai_credential(model);
-}
-std::shared_ptr<AbstractInetClient> global_inet_client()
-{
-	return global->inet_client();
-}
-#else
-GenerativeAI::Model global_appsettings_ai_model();
-GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model);
-std::shared_ptr<AbstractInetClient> global_inet_client();
-CommitMessageGenerator::CommitMessageGenerator()
-{
-	set_ai_model(global_appsettings_ai_model());
-}
-#endif
 
 /**
  * @brief AIレスポンスのJSON文字列を解析してコミットメッセージ候補を取り出す。
@@ -473,16 +30,13 @@ CommitMessageGenerator::CommitMessageGenerator()
  * @param provider 使用したAIプロバイダー
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-CommitMessageGenerator::Result CommitMessageGenerator::parse_response(GenerativeAI::Model model, std::string const &in)
+CommitMessageGenerator::CommitMessageGenerator::Result CommitMessageGenerator::parse_response(GenerativeAI::Model model, AiResult const &result)
 {
-	// プロバイダーに応じたパーサーでレスポンスを解析する
-	CommitMessageResult r = _CommitMessageResponseParser(model, in).visit(model.provider_id());
-
-	if (r.completion) {
+	if (result.completion) {
 		if (0) {
 			// 旧実装：箇条書き形式（"- message" や "1. message"）をパースしていた。
 			// 現在はJSON形式に移行したため使用しない。
-			std::vector<std::string_view> lines = misc::splitLinesV(r.text);
+			std::vector<std::string_view> lines = misc::splitLinesV(result.content);
 			size_t i = lines.size();
 			while (i > 0) {
 				i--;
@@ -555,7 +109,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(Generative
 			};
 			// 現行実装：{"messages": ["msg1", "msg2", ...]} 形式のJSONを解析する
 			std::vector<std::string> messages;
-			std::string_view text = r.text;
+			std::string_view text = result.content;
 			// text = TrimPrefix(text, "```json");
 			// text = TrimPrefix(text, "```");
 			// JSONオブジェクトの開始位置を前から探してテキストを切り詰める（前に余分なテキストが混入しても対応できるように）
@@ -582,10 +136,10 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(Generative
 		// AIがエラーを返した場合
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
-		ret.error_status = r.error_status;
-		ret.error_message = r.error_message;
+		ret.error_status = result.error_status;
+		ret.error_message = result.error_message;
 		if (ret.error_message.empty()) {
-			ret.error_message = in; // エラー詳細が取れない場合はレスポンス全体を返す
+			ret.error_message = result.content; // エラー詳細が取れない場合はレスポンス全体を返す
 		}
 		return ret;
 	}
@@ -599,7 +153,7 @@ CommitMessageGenerator::Result CommitMessageGenerator::parse_response(Generative
  * @param max 生成するコミットメッセージ候補の最大数
  * @return AIに送るプロンプト文字列
  */
-std::string CommitMessageGenerator::generatePrompt(std::string const &diff, int max, std::string const &hint)
+std::string CommitMessageGenerator::generatePrompt() const
 {
 	// main prompt
 	std::string prompt = fmt(R"---(You are an experienced engineer.
@@ -607,7 +161,7 @@ Generate exactly %d concise git commit message candidates written in present ten
 Return ONLY valid and strict JSON. No explanations, no extra text.
 Do NOT wrap the output in code fences (e.g., ``` or ```json).
 
-)---")(max);
+)---")(request_.max_message_count);
 
 	// JSON schema instruction
 	std::string schema = R"---(# Schema:
@@ -624,106 +178,17 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
 )---";
 
 	// optional hint
-	if (!hint.empty()) {
-		prompt += "Additional hint: " + hint + "\n\n";
+	if (!request_.hint.empty()) {
+		prompt += "Additional hint: " + request_.hint + "\n\n";
 	}
 
 	// build final prompt
 	prompt += schema;
-	prompt += diff;
+	prompt += request_.diff;
 
 	return prompt;
 }
 
-/**
- * @brief プロンプトをプロバイダー固有のAPIリクエストJSON形式に変換する。
- * @param model 使用するAIモデル情報
- * @param prompt 送信するプロンプト文字列
- * @return APIリクエスト用JSON文字列
- */
-std::string CommitMessageGenerator::generate_prompt_json(GenerativeAI::Model const &model, std::string const &prompt)
-{
-	return _PromptJsonGenerator(model, prompt).visit(model.provider_id());
-}
-
-/**
- * @brief 現在設定されているAIモデルを返す。
- * @return AIモデル情報
- */
-GenerativeAI::Model CommitMessageGenerator::ai_model()
-{
-	return ai_model_;
-}
-
-/**
- * @brief 使用するAIモデルを設定する。
- * @param model AIモデル情報
- */
-void CommitMessageGenerator::set_ai_model(GenerativeAI::Model model)
-{
-	ai_model_ = model;
-}
-
-/**
- * @brief diff文字列を元にAIへリクエストを送り、コミットメッセージ候補を生成する。
- * @param diff コミット対象のdiff文字列
- * @return コミットメッセージ候補のリスト、またはエラー情報
- */
-CommitMessageGenerator::Result CommitMessageGenerator::generate(std::string const &diff, std::string const &hint)
-{
-	constexpr int max_message_count = 5; // 生成するコミットメッセージ候補の数
-
-	constexpr bool save_log = false; // リクエスト/レスポンスをログに記録するか
-
-	if (diff.empty()) {
-		return Error("error", "diff is empty");
-	}
-
-	// 巨大なdiffはトークン超過やコスト増加を招くため上限を設ける
-	if (diff.size() > max_diff_size) {
-		return Error("error", "diff too large");
-	}
-
-	GenerativeAI::Model model = ai_model();
-	if (model.provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
-
-	std::string prompt = generatePrompt(diff, max_message_count, hint);
-	std::string json = generate_prompt_json(model, prompt);
-
-	if (save_log) {
-		logprintf(LOG_RAW, "%s\n", json.c_str());
-	}
-
-	// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-	GenerativeAI::Credential cred = global_get_ai_credential(model);
-	GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
-
-	InetClient::Request web_req;
-	web_req.set_location(ai_req.endpoint_url);
-	for (std::string const &h : ai_req.header) {
-		web_req.add_header(h);
-	}
-
-	InetClient::Post post;
-	post.content_type = "application/json";
-	post.data.insert(post.data.end(), json.begin(), json.end());
-
-	std::shared_ptr<AbstractInetClient> http = global_inet_client();
-	if (http->post(web_req, &post)) {
-		char const *data = http->content_data();
-		size_t size = http->content_length();
-		std::string text(data, size);
-		if (save_log) {
-			logprintf(LOG_RAW, "%s\n", text.c_str());
-		}
-		CommitMessageGenerator::Result ret = parse_response(model, text);
-		return ret;
-	}
-
-	return {};
-}
 
 /**
  * @brief ファイルのdiffをAIに送るべきか判定する。

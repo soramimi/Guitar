@@ -1,5 +1,5 @@
 DESTDIR = $$PWD/_bin
-TARGET = cmms
+TARGET = chat
 CONFIG += console c++17
 QT += core
 
@@ -33,8 +33,6 @@ include($$PWD/../../libfiletype.pri)
 
 SOURCES += \
     ../../src/AbstractProcess.cpp \
-    ../../src/AiApiBridge.cpp \
-    ../../src/CommitMessageGenerator.cpp \
     ../../src/FileTypeDetector.cpp \
     ../../src/GenerativeAI.cpp \
     ../../src/Logger.cpp \
@@ -47,15 +45,14 @@ SOURCES += \
     ../../src/curlclient.cpp \
     ../../src/inetclient.cpp \
     ../../src/process/MyProcess2.cpp \
+    ../../src/AiApiBridge.cpp \
     ../common/ConfigParser.cpp \
     ../common/LineReader.cpp \
     ../common/rwfile.cpp \
-    ../common/selectitem.cpp \
     main.cpp
+
 HEADERS +=  \
     ../../src/AbstractProcess.h \
-    ../../src/AiApiBridge.h \
-    ../../src/CommitMessageGenerator.h \
     ../../src/FileTypeDetector.h \
     ../../src/GenerativeAI.h \
     ../../src/Logger.h \
@@ -70,10 +67,10 @@ HEADERS +=  \
     ../../src/curlclient.h \
     ../../src/inetclient.h \
     ../../src/process/MyProcess2.h \
+    ../../src/AiApiBridge.h \
     ../common/ConfigParser.h \
     ../common/LineReader.h \
     ../common/rwfile.h \
-    ../common/selectitem.h \
     main.h
 
 msvc {

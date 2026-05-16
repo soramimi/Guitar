@@ -1,11 +1,12 @@
 #ifndef COMMITMESSAGEGENERATOR_H
 #define COMMITMESSAGEGENERATOR_H
 
+#include "AiApiBridge.h"
 #include "GenerativeAI.h"
 #include "Git.h"
 #include <string>
 
-class CommitMessageGenerator {
+class CommitMessageGenerator : public AiApiBridge {
 public:
 	constexpr static int max_diff_size = 200000; // 適当
 
@@ -16,6 +17,17 @@ public:
 		CommitPair(std::string const &a, std::string const &b)
 			: a(a)
 			, b(b)
+		{
+		}
+	};
+
+	struct Request {
+		std::string diff;
+		std::string hint;
+		int max_message_count = 5; // 生成するコミットメッセージ候補の数
+		Request(std::string const &diff, const std::string &hint)
+			: diff(diff)
+			, hint(hint)
 		{
 		}
 	};
@@ -32,24 +44,15 @@ public:
 		{
 		}
 	};
-private:
-	GenerativeAI::Model ai_model_;
-	CommitMessageGenerator::Result parse_response(GenerativeAI::Model model, const std::string &in);
-	std::string generatePrompt(const std::string &diff, int max, const std::string &hint);
-	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt);
-	GenerativeAI::Model ai_model();
-public:
-	CommitMessageGenerator();
-	Result generate(std::string const &diff, std::string const &hint = {});
-	static Result Error(std::string const &status, std::string const &message)
+
+	CommitMessageGenerator::Request request_;
+	CommitMessageGenerator(GenerativeAI::Model const &model, CommitMessageGenerator::Request const &request)
+		: request_(request)
 	{
-		Result ret;
-		ret.error = true;
-		ret.error_status = status;
-		ret.error_message = message;
-		return ret;
+		set_ai_model(model);
 	}
-	void set_ai_model(GenerativeAI::Model model);
+	static Result parse_response(GenerativeAI::Model model, const AiResult &result);
+	std::string generatePrompt() const override;
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
 	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits);
 #ifdef APP_GUITAR

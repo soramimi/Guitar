@@ -27,9 +27,12 @@ void GenerateCommitMessageThread::start()
 				std::swap(requested, requested_);
 			}
 			if (requested) {
-				CommitMessageGenerator gen;
+				CommitMessageGenerator::Request request(diff_, hint_);
+				CommitMessageGenerator gen(ai_model_, request);
 				gen.set_ai_model(ai_model_);
-				auto result = GeneratedCommitMessage(new CommitMessageGenerator::Result(gen.generate(diff_, hint_)));
+				auto r = gen.generate();
+				auto r2 = CommitMessageGenerator::parse_response(ai_model_, r);
+				auto result = GeneratedCommitMessage(new CommitMessageGenerator::CommitMessageGenerator::Result(r2));
 				emit ready(result);
 			}
 		}

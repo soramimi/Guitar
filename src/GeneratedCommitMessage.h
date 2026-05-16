@@ -7,13 +7,13 @@
 class GeneratedCommitMessage {
 	friend class CommitMessageGenerator;
 private:
-	std::shared_ptr<CommitMessageGenerator::Result> result_;
+	std::shared_ptr<CommitMessageGenerator::CommitMessageGenerator::Result> result_;
 public:
 	GeneratedCommitMessage()
 	{
-		result_ = std::make_shared<CommitMessageGenerator::Result>();
+		result_ = std::make_shared<CommitMessageGenerator::CommitMessageGenerator::Result>();
 	}
-	GeneratedCommitMessage(CommitMessageGenerator::Result *p)
+	GeneratedCommitMessage(CommitMessageGenerator::CommitMessageGenerator::Result *p)
 		: result_(p)
 	{
 	}
