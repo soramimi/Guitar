@@ -3,6 +3,7 @@
 
 #include "AbstractProcess.h"
 #include "MyProcess2.h"
+#include <optional>
 
 class ProcessPosix : public AbstractProcess {
 	using ProcessResult = process::ProcessResult;
