@@ -1,5 +1,5 @@
 DESTDIR = $$PWD/_bin
-TARGET = cmms
+TARGET = commes
 CONFIG += console c++17
 QT += core
 

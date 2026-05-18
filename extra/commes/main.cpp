@@ -1,5 +1,5 @@
 
-// cmms: Commit Message
+// commes: Commit Message
 //
 // experimental code for generating commit messages using AI
 
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 	}
 
 	std::string organization_name = "soramimi.jp";
-	std::string application_name = "cmms";
+	std::string application_name = "commes";
 	std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
 	std::string generic_config_dir = writable_generic_config_location();
 	std::string app_config_dir = generic_config_dir / organization_name / application_name;
