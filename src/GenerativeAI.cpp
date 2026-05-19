@@ -1,6 +1,7 @@
 #include "GenerativeAI.h"
-#include "common/misc.h"
 #include "common/fmt.h"
+#include "common/joinpath.h"
+#include "common/misc.h"
 #include "urlencode.h"
 #include <regex>
 
@@ -226,7 +227,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.openai.com/v1/responses";
+		r.endpoint = "https://api.openai.com/v1/responses";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -235,7 +236,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.openai.com/v1/chat/completions";
+		r.endpoint = "https://api.openai.com/v1/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -244,7 +245,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.anthropic.com/v1/messages";
+		r.endpoint = "https://api.anthropic.com/v1/messages";
 		r.header.push_back("x-api-key: " + cred_.api_key);
 		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
 		return r;
@@ -254,7 +255,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
+		r.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
 		return r;
 	}
 
@@ -262,7 +263,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.x.ai/v1/chat/completions";
+		r.endpoint = "https://api.x.ai/v1/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -271,7 +272,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.ai.sakura.ad.jp/v1/chat/completions";
+		r.endpoint = "https://api.ai.sakura.ad.jp/v1/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -280,7 +281,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = "https://api.deepseek.com/chat/completions";
+		r.endpoint = "https://api.deepseek.com/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -288,7 +289,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	Request case_OpenRouter()
 	{
 		Request r;
-		r.endpoint_url = "https://openrouter.ai/api/v1/chat/completions";
+		r.endpoint = "https://openrouter.ai/api/v1/chat/completions";
 		r.model_name = model_.model_name();
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
@@ -298,7 +299,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
+		r.endpoint = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -307,7 +308,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint_url = fmt("http://%s:%d/v1/completions")(model_.host())(model_.port()); // experimental
+		r.endpoint = fmt("http://%s:%d/v1/completions")(model_.host())(model_.port()); // experimental
 		return r;
 	}
 
@@ -320,10 +321,10 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		}
 		switch (model_.api_compatibility()) {
 		case ProviderID::Anthropic:
-			r.endpoint_url = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
+			r.endpoint = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
 			break;
 		default:
-			r.endpoint_url = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
+			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
 			break;
 		}
 		set_authorization_bearer_cred(&r, cred_);
@@ -374,6 +375,33 @@ std::string makeEnvName(const ModelURI &model_uri)
 		last = c;
 	}
 	return ret;
+}
+
+void EndPoint::operator = (const std::string &url)
+{
+	url_ = url;
+	static constexpr std::string_view suffix_chat_completions = "/chat/completions";
+	static constexpr std::string_view suffix_responses = "/responses";
+	auto Split = [&](std::string_view suffix){
+		if (misc::ends_with(url_, suffix)) {
+			url_ = url_.substr(0, url_.size() - suffix.size());
+			suffix_ = suffix;
+			return true;
+		}
+		return false;
+	};
+	if (Split(suffix_chat_completions)) return;
+	if (Split(suffix_responses)) return;
+}
+
+std::string EndPoint::url_chat() const
+{
+	return suffix_.empty() ? url_ : (url_ / suffix_);
+}
+
+std::string EndPoint::url_models() const
+{
+	return url_ / "models";
 }
 
 } // namespace GenerativeAI

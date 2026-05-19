@@ -32,114 +32,38 @@ std::string global_mimetype_by_file(std::string const &path);
  */
 CommitMessageGenerator::CommitMessageGenerator::Result CommitMessageGenerator::parse_response(GenerativeAI::Model model, AiResult const &result)
 {
-	if (result.completion) {
-		if (0) {
-			// 旧実装：箇条書き形式（"- message" や "1. message"）をパースしていた。
-			// 現在はJSON形式に移行したため使用しない。
-			std::vector<std::string_view> lines = misc::splitLinesV(result.content);
-			size_t i = lines.size();
-			while (i > 0) {
-				i--;
-				std::string_view sv = lines[i];
-				char const *ptr = sv.data();
-				char const *end = ptr + sv.size();
-				// 行頭・行末のバッククォートを除去
-				while (ptr + 1 < end && *ptr == '`' && end[-1] == '`') {
-					ptr++;
-					end--;
-				}
-				bool accept = false;
-
-				if (ptr < end && *ptr == '-') {
-					// "- message" 形式
-					accept = true;
-					ptr++;
-					while (ptr < end && (*ptr == '-' || isspace((unsigned char)*ptr))) { // e.g. "- - message"
-						ptr++;
-					}
-				} else if (isdigit((unsigned char)*ptr)) {
-					// "1. message" 形式
-					while (ptr < end && isdigit((unsigned char)*ptr)) {
-						accept = true;
-						ptr++;
-					}
-					if (ptr < end && *ptr == '.') {
-						ptr++;
-					}
-				}
-				if (accept) {
-					// 先頭の空白を除去
-					while (ptr < end && isspace((unsigned char)*ptr)) {
-						ptr++;
-					}
-					// 前後のダブルクォートを除去
-					if (ptr + 1 < end && *ptr == '\"' && end[-1] == '\"') {
-						ptr++;
-						end--;
-					}
-					// 前後のアスタリスク（**bold**）を除去
-					while (ptr + 1 < end && *ptr == '*' && end[-1] == '*') {
-						ptr++;
-						end--;
-					}
-					if (ptr < end) {
-						// ok
-					} else {
-						accept = false;
-					}
-				}
-				if (accept) {
-					lines[i] = std::string_view(ptr, end - ptr);
-				} else {
-					lines.erase(lines.begin() + i);
-				}
-			}
-			std::vector<std::string> ret;
-			for (auto const &line : lines) {
-				ret.emplace_back(line);
-			}
-			return ret;
-		} else {
-			auto TrimPrefix = [](std::string_view const &sv, std::string_view prefix) {
-				std::string_view ret = sv;
-				if (sv.size() >= prefix.size() && sv.substr(0, prefix.size()) == prefix) {
-					ret.remove_prefix(prefix.size());
-				}
-				return ret;
-			};
-			// 現行実装：{"messages": ["msg1", "msg2", ...]} 形式のJSONを解析する
-			std::vector<std::string> messages;
-			std::string_view text = result.content;
-			// text = TrimPrefix(text, "```json");
-			// text = TrimPrefix(text, "```");
-			// JSONオブジェクトの開始位置を前から探してテキストを切り詰める（前に余分なテキストが混入しても対応できるように）
-			auto i = text.find_first_of("{[");
-			if (i != std::string_view::npos) {
-				text.remove_prefix(i);
-			}
-			// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
-			auto j = text.rfind('}');
-			if (j != std::string::npos) {
-				text = text.substr(0, j + 1);
-			}
-			jstream::Reader reader(text);
-			while (reader.next()) {
-				if (reader.match("{*[") || reader.match("[")) { // 期待するパターンは "{messages[" だが、指示を守らない奴がいるので、柔軟に受ける。
-					if (reader.isstring()) {
-						messages.push_back(reader.string());
-					}
-				}
-			}
-			return messages;
+	if (result) {
+		// {"messages": ["msg1", "msg2", ...]} 形式のJSONを解析する
+		std::vector<std::string> messages;
+		std::string content = result.content();
+		std::string_view text = content;
+		// JSONオブジェクトの開始位置を前から探してテキストを切り詰める（前に余分なテキストが混入しても対応できるように）
+		auto i = text.find_first_of("{[");
+		if (i != std::string_view::npos) {
+			text.remove_prefix(i);
 		}
+		// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
+		auto j = text.rfind('}');
+		if (j != std::string::npos) {
+			text = text.substr(0, j + 1);
+		}
+		jstream::Reader reader(text);
+		while (reader.next()) {
+			if (reader.match("{*[") || reader.match("[")) { // 期待するパターンは "{messages[" だが、指示を守らない奴がいるので、柔軟に受ける。
+				if (reader.isstring()) {
+					messages.push_back(reader.string());
+				}
+			}
+		}
+		return messages;
 	} else {
 		// AIがエラーを返した場合
 		CommitMessageGenerator::Result ret;
 		ret.error = true;
-		ret.error_status = result.error_status;
-		ret.error_message = result.error_message;
+		ret.error_status = result.error_status();
+		ret.error_message = result.error_message();
 		if (ret.error_message.empty()) {
-			ret.error_message = result.content; // エラー詳細が取れない場合はレスポンス全体を返す
+			ret.error_message = result.content(); // エラー詳細が取れない場合はレスポンス全体を返す
 		}
 		return ret;
 	}

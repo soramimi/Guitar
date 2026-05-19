@@ -50,14 +50,21 @@ public:
 		: request_(request)
 	{
 		set_ai_model(model);
+		set_system_role("You are an experienced engineer."); ///< システムロールの内容（OpenAI Chat Completions 形式で使用）
 	}
 	static Result parse_response(GenerativeAI::Model model, const AiResult &result);
-	std::string generatePrompt() const override;
+	std::string generatePrompt() const;
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
 	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits);
 #ifdef APP_GUITAR
 	static std::string make_diff(GitRunner g, CommitPair const &commits);
 #endif
+
+	AiResult generate()
+	{
+		std::string prompt = generatePrompt();
+		return AiApiBridge::generate(prompt);
+	}
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

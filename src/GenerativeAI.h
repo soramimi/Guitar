@@ -160,8 +160,32 @@ static inline bool operator == (ModelURI const &a, ModelURI const &b)
 	return a.string == b.string;
 }
 
+struct EndPoint {
+	enum class Type {
+		None,
+		Chat,
+		Models,
+	};
+	std::string url_;
+	std::string suffix_;
+	EndPoint() = default;
+	void operator = (std::string const &url);
+	std::string url_chat() const;
+	std::string url_models() const;
+	std::string url(Type type)
+	{
+		switch (type) {
+		case Type::Chat:
+			return url_chat();
+		case Type::Models:
+			return url_models();
+		}
+		return url_;
+	}
+};
+
 struct Request {
-	std::string endpoint_url;
+	EndPoint endpoint;
 	std::string model_name;
 	std::vector<std::string> header;
 };

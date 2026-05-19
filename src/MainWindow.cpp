@@ -55,6 +55,7 @@
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "common/q/helper.h"
+#include "AiApiBridge.h"
 #include "platform.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -7491,9 +7492,13 @@ void MainWindow::on_action_branch_triggered()
 
 }
 
-
 void MainWindow::test()
 {
+	AiApiBridge chat;
+	AiResult result = chat.generate(GenerativeAI::EndPoint::Type::Models, {});
+	if (result) {
+		fprintf(stderr, "%s\n", result.content().c_str());
+	}
 }
 
 

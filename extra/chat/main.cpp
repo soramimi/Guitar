@@ -143,25 +143,17 @@ static std::vector<std::string_view> split_lines(std::string_view const &str)
 	return ret;
 }
 
-class MyAI : public AiApiBridge {
-protected:
-	std::string generatePrompt() const
-	{
-		return opt.prompt;
-	}
-};
-
 std::string request(Option const &opt)
 {
-	MyAI gen;
+	AiApiBridge gen;
 	gen.set_ai_model(ai_model);
-	AiResult msg = gen.generate();
-	if (!msg.completion) {
-		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status.c_str(), msg.error_message.c_str());
+	AiResult msg = gen.generate(opt.prompt);
+	if (!msg) {
+		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
 		return {};
 	}
 
-	return msg.content;
+	return msg.content();
 }
 
 static std::string default_git_command_path()
