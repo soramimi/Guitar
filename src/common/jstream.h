@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
@@ -637,6 +638,7 @@ private:
 		bool allow_unquoted_key = false;
 		bool allow_hexadicimal = false;
 		bool allow_special_constant = false;
+		bool allow_key_in_array = false;
 		std::vector<std::string> depth;
 		std::vector<int> depth_stack;
 		StateItem last_state;
@@ -790,7 +792,7 @@ private:
 					return true;
 				}
 				d.ptr += scan_space(d.ptr, d.end);
-				if (isobject() || isvalue()) {
+				if (is_value()) {
 					pop_state();
 				}
 				push_state(Comma);
@@ -839,23 +841,26 @@ private:
 
 				auto n = parse_string(d.ptr, d.end, &d.string);
 				if (n > 0) {
-					if (isarray()) {
-						d.ptr += n;
-						push_state(String);
-						return true;
-					}
+					d.ptr += n;
+					d.ptr += scan_space(d.ptr, d.end);
 					if (state() == Key) {
-						d.ptr += n;
-						push_state(String);
-						return true;
-					}
-					n += scan_space(d.ptr + n, d.end);
-					if (d.ptr[n] == ':') {
-						d.ptr += n + 1;
+						//
+					} else if (d.ptr < d.end && *d.ptr == ':') {
+						if (isarray()) {
+							// unusual syntax; "key":"value" in array
+							// e.g. [ "key": "value" ]
+							if (!d.allow_key_in_array) {
+								push_error("unexpected key in array");
+								return false;
+							}
+						}
+						d.ptr++;
 						d.key = d.string;
 						push_state(Key);
 						return true;
 					}
+					push_state(String);
+					return true;
 				}
 			}
 			if (state() == Key || isarray()) {
@@ -958,6 +963,10 @@ public:
 	{
 		d.allow_special_constant = allow;
 	}
+	void allow_key_in_array(bool allow)
+	{
+		d.allow_key_in_array = allow;
+	}
 	void reset()
 	{
 		d.errors.clear();
@@ -966,8 +975,16 @@ public:
 	{
 		d.hold = true;
 	}
-	void nest()
+	void nest(std::function<void ()> callback_fn = {})
 	{
+		if (callback_fn) {
+			nest({});
+			do {
+				callback_fn();
+			} while (next());
+			return;
+		}
+
 		d.depth_stack.push_back(depth());
 	}
 	bool next()
@@ -1022,7 +1039,20 @@ public:
 		return state() == EndArray;
 	}
 
-	bool isobject() const
+	bool is_constant() const
+	{
+		switch (state()) {
+		case String:
+		case Number:
+		case Null:
+		case False:
+		case True:
+			return true;
+		}
+		return false;
+	}
+
+	bool is_structure() const
 	{
 		switch (state()) {
 		case StartObject:
@@ -1043,17 +1073,9 @@ public:
 		return false;
 	}
 
-	bool isvalue() const
+	bool is_value() const
 	{
-		switch (state()) {
-		case String:
-		case Number:
-		case Null:
-		case False:
-		case True:
-			return true;
-		}
-		return false;
+		return is_constant() || is_structure();
 	}
 
 	std::string key() const
@@ -1140,32 +1162,51 @@ public:
 		return {};
 	}
 
-	bool match(char const *path) const
+	bool match(std::string_view path, bool match_end_structure = false) const
 	{
-		if (!isobject() && !isarray() && !isvalue()) return false;
+		if (!is_value()) return false;
+
+		auto Path = [&](size_t i){ return i < path.size() ? path[i] : 0; };
+
+		const auto stat = state();
+
 		size_t i;
 		for (i = 0; i < d.depth.size(); i++) {
-			std::string const &s = d.depth[i];
-			if (s.empty()) break;
-			if (path[0] == '*') {
-				if (path[2] == 0) return true;
-				if (s.c_str()[s.size() - 1] == '{') {
-					if (path[1] == 0) {
-						return (state() == StartObject && i + 1 == d.depth.size());
-					} else if (path[1] == '{') {
-						path += 2;
+			std::string const &element = d.depth[i];
+			if (element.empty()) return false; // something wrong
+			if (Path(0) == '*') {
+				if (Path(1) == '*') {
+					if (Path(2) == 0) return true; // "**" matches any path
+					return false; // path syntax error: "**" must be at the end of path
+				}
+				char c = element.c_str()[element.size() - 1]; // last character of element
+				if (c == '{' || c == '[') { // object or array
+					if (Path(1) == c) {
+						path = path.substr(2); // remove "*{" or "*["
 						continue;
+					}
+					if (Path(1) == 0) {
+						if (i + 1 == d.depth.size()) {
+							if (c == '{' && stat == StartObject) return true;
+							if (c == '[' && stat == StartArray) return true;
+						}
+						return false; // path syntax error: "*{" or "*[" must be at the end of path if no index specified
 					}
 				}
 			}
-			if (strncmp(path, s.c_str(), s.size()) != 0) return false;
-			path += s.size();
+			if (path.size() < element.size()) return false;
+			if (strncmp(path.data(), element.c_str(), element.size()) != 0) return false;
+			path = path.substr(element.size());
 		}
-		if (path[0] == '*') {
-			if (path[1] == '*' && path[2] == 0) return true;
-			return (path[1] == 0 && i == d.depth.size()
-					&& (isvalue() || state() == EndObject || state() == EndArray)
-					);
+		if (Path(0) == '*') {
+			if (Path(1) == '*' && Path(2) == 0) return true;
+			if (Path(1) == 0 && i == d.depth.size()) {
+				if (is_constant()) return true;
+				if (match_end_structure) {
+					if (stat == EndObject || stat == EndArray) return true;
+				}
+				return false;
+			}
 		}
 		return path == d.key;
 	}
@@ -1177,7 +1218,7 @@ public:
 
 	bool match_end_object(char const *path) const
 	{
-		return state() == EndObject && match(path);
+		return state() == EndObject && match(path, true);
 	}
 
 	bool match_start_array(char const *path) const
@@ -1187,7 +1228,7 @@ public:
 
 	bool match_end_array(char const *path) const
 	{
-		return state() == EndArray && match(path);
+		return state() == EndArray && match(path, true);
 	}
 };
 
@@ -1198,9 +1239,6 @@ protected:
 		if (output_fn) {
 			output_fn(p, n);
 		} else {
-			// for (size_t i = 0; i < n; i++) {
-			// 	putchar(p[i]);
-			// }
 			string_out.append(p, n);
 		}
 	}
@@ -1474,7 +1512,7 @@ public:
 };
 
 typedef std::nullptr_t null_t;
-constexpr std::nullptr_t null = nullptr;
+static constexpr std::nullptr_t null = nullptr;
 
 struct Array;
 struct KeyValue;
@@ -1606,7 +1644,7 @@ struct Object {
 
 static inline bool is_null(Variant const &v)
 {
-	return std::holds_alternative<nullptr_t>(v);
+	return std::holds_alternative<null_t>(v);
 }
 static inline bool is_boolean(Variant const &v)
 {
