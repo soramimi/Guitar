@@ -1,6 +1,4 @@
 
-QMAKE_PROJECT_DEPTH = 0
-
 QT += core gui widgets svg network
 
 msvc:lessThan(QT_MAJOR_VERSION, 6) {
@@ -10,14 +8,9 @@ msvc:lessThan(QT_MAJOR_VERSION, 6) {
 TARGET = Guitar
 TEMPLATE = app
 
-CPP_STD = c++17
-
-CONFIG += $$CPP_STD nostrip debug_info static
-
 # CONFIG += unsafe ### don't enable
 unsafe {
 	DEFINES += UNSAFE_ENABLED
-	msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 	LIBS += -lssh
 }
 
@@ -41,10 +34,8 @@ DEFINES += HAVE_POSIX_OPENPT
 macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
 
-gcc:QMAKE_CXXFLAGS += -std=$$CPP_STD -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder -Wno-unused-parameter -Wno-unused-parameter
 linux:QMAKE_RPATHDIR += $ORIGIN
 macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
-
 
 INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
@@ -55,9 +46,6 @@ INCLUDEPATH += $$PWD/filetype/src/
 
 msvc:INCLUDEPATH += $$PWD/misc/winpty/include
 msvc:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
-
-msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
-msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
 # OpenSSL
 
