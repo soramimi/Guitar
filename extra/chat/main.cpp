@@ -147,7 +147,7 @@ std::string request(Option const &opt)
 {
 	AiApiBridge gen;
 	gen.set_ai_model(ai_model);
-	AiResult msg = gen.generate(opt.prompt);
+	AiResult msg = gen.query(opt.prompt);
 	if (!msg) {
 		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
 		return {};

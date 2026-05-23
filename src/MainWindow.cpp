@@ -80,6 +80,7 @@
 #include <variant>
 #include "common/fmt.h"
 #include "common/str.h"
+#include "common/jstream.h"
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"
@@ -7494,13 +7495,15 @@ void MainWindow::on_action_branch_triggered()
 
 void MainWindow::test()
 {
-	AiApiBridge chat;
-	AiResult result = chat.generate(GenerativeAI::EndPoint::Type::Models, {});
-	if (result) {
-		fprintf(stderr, "%s\n", result.content().c_str());
+	AiApiBridge api;
+	auto opt = api.queryModels();
+	if (opt) {
+		AiResult::Models const &models = *opt;
+		for (AiResult::Model const &model : models.list) {
+			fprintf(stderr, "Model: %s\n", model.id.c_str());
+		}
 	}
 }
-
 
 
 

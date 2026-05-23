@@ -5,9 +5,22 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct AiResult {
+
+	struct Model {
+		std::string id;
+		std::string object;
+		std::string created;
+		std::string owned_by;
+	};
+
+	struct Models {
+		std::vector<Model> list;
+	};
+
 	struct Data {
 		bool completion = false;   ///< 正常に完了したか
 		std::string content;          ///< AIが返したテキスト本文
@@ -19,15 +32,15 @@ struct AiResult {
 	{
 		return d.completion || !d.error_status.empty() || !d.error_message.empty();
 	}
-	std::string content() const
+	std::string const &content() const
 	{
 		return d.content;
 	}
-	std::string error_status() const
+	std::string const &error_status() const
 	{
 		return d.error_status;
 	}
-	std::string error_message() const
+	std::string const &error_message() const
 	{
 		return d.error_message;
 	}
@@ -51,8 +64,9 @@ public:
 	GenerativeAI::Model ai_model();
 	void set_ai_model(GenerativeAI::Model model);
 	void set_system_role(std::string const &role);
-	AiResult generate(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
-	AiResult generate(const std::string &prompt);
+	AiResult query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
+	AiResult query(const std::string &prompt);
+	std::optional<AiResult::Models> queryModels();
 };
 
 #endif // AIAPIBRIDGE_H

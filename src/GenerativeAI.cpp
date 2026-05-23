@@ -382,6 +382,7 @@ void EndPoint::operator = (const std::string &url)
 	url_ = url;
 	static constexpr std::string_view suffix_chat_completions = "/chat/completions";
 	static constexpr std::string_view suffix_responses = "/responses";
+	static constexpr std::string_view suffix_messages = "/messages";
 	auto Split = [&](std::string_view suffix){
 		if (misc::ends_with(url_, suffix)) {
 			url_ = url_.substr(0, url_.size() - suffix.size());
@@ -392,6 +393,7 @@ void EndPoint::operator = (const std::string &url)
 	};
 	if (Split(suffix_chat_completions)) return;
 	if (Split(suffix_responses)) return;
+	if (Split(suffix_messages)) return;
 }
 
 std::string EndPoint::url_chat() const

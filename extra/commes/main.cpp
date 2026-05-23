@@ -235,7 +235,7 @@ std::vector<std::string> request(Option const &opt)
 		msg.error = true;
 		msg.error_message = fmt("diff is too large (%d bytes)")(request.diff.size());
 	} else {
-		auto r = gen.generate();
+		auto r = gen.query();
 		msg = CommitMessageGenerator::parse_response(ai_model, r);
 	}
 	if (msg.error) {

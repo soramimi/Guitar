@@ -490,7 +490,7 @@ void AiApiBridge::set_system_role(const std::string &role)
  * @param diff コミット対象のdiff文字列
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-AiResult AiApiBridge::generate(GenerativeAI::EndPoint::Type eptype, std::string const &prompt)
+AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt)
 {
 	constexpr bool save_log = false; // リクエスト/レスポンスをログに記録するか
 
@@ -551,9 +551,39 @@ AiResult AiApiBridge::generate(GenerativeAI::EndPoint::Type eptype, std::string 
 	return {};
 }
 
-AiResult AiApiBridge::generate(std::string const &prompt)
+AiResult AiApiBridge::query(std::string const &prompt)
 {
-	return generate(GenerativeAI::EndPoint::Type::Chat, prompt);
+	return query(GenerativeAI::EndPoint::Type::Chat, prompt);
+}
+
+std::optional<AiResult::Models> AiApiBridge::queryModels()
+{
+	AiResult result = query(GenerativeAI::EndPoint::Type::Models, {});
+	if (!result) return std::nullopt;
+
+	AiResult::Models models;
+	{
+		jstream::Reader reader(result.content());
+		while (reader.next()) {
+			if (reader.match("{data[{**")) {
+				reader.nest();
+				AiResult::Model model;
+				do {
+					if (reader.match("{data[{id")) {
+						model.id = reader.string();
+					} else if (reader.match("{data[{object")) {
+						model.object = reader.string();
+					} else if (reader.match("{data[{created")) {
+						model.created = reader.string();
+					} else if (reader.match("{data[{owned_by")) {
+						model.owned_by = reader.string();
+					}
+				} while (reader.next());
+				models.list.push_back(model);
+			}
+		}
+	}
+	return models;
 }
 
 

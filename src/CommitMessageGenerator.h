@@ -60,10 +60,10 @@ public:
 	static std::string make_diff(GitRunner g, CommitPair const &commits);
 #endif
 
-	AiResult generate()
+	AiResult query()
 	{
 		std::string prompt = generatePrompt();
-		return AiApiBridge::generate(prompt);
+		return AiApiBridge::query(prompt);
 	}
 };
 

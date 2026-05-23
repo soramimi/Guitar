@@ -30,7 +30,7 @@ void GenerateCommitMessageThread::start()
 				CommitMessageGenerator::Request request(diff_, hint_);
 				CommitMessageGenerator gen(ai_model_, request);
 				gen.set_ai_model(ai_model_);
-				auto r = gen.generate();
+				auto r = gen.query();
 				auto r2 = CommitMessageGenerator::parse_response(ai_model_, r);
 				auto result = GeneratedCommitMessage(new CommitMessageGenerator::CommitMessageGenerator::Result(r2));
 				emit ready(result);
