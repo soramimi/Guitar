@@ -216,6 +216,15 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 		if (event->type() == QEvent::KeyPress) {
 			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
+			if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) {
+				bool ctrl = e->modifiers() & Qt::ControlModifier;
+				if (ctrl) {
+					on_pushButton_checkout_clicked();
+				} else {
+					done(QDialog::Accepted);
+				}
+				return true;
+			}
 			if (appendCharToFilterText(e->key())) {
 				return true;
 			}
