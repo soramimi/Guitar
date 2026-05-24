@@ -9,9 +9,11 @@ struct JumpDialog::Private {
 	QString filter_text;
 	QString selected_name;
 	NamedCommitList items;
+	CommitRecords commit_records;
+	QStringList header;
 };
 
-JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitRecords commit_records)
 	: QDialog(parent)
 	, ui(new Ui::JumpDialog)
 	, m(new Private)
@@ -20,6 +22,8 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
+
+	m->commit_records = commit_records;
 
 	ui->tableWidget->setItemDelegate(&m->delegate);
 
@@ -36,15 +40,17 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items)
 	}
 	sort(&m->items);
 
-	QStringList header = {
+	m->header = QStringList{
 		tr("Name"),
+		tr("Date"),
+		tr("Message"),
 	};
 
-	ui->tableWidget->setColumnCount(1);
+	ui->tableWidget->setColumnCount(m->header.size());
 	{
-		for (int i = 0; i < header.size(); i++) {
+		for (int i = 0; i < m->header.size(); i++) {
 			auto *p = new QTableWidgetItem();
-			p->setText(header[i]);
+			p->setText(m->header[i]);
 			ui->tableWidget->setHorizontalHeaderItem(i, p);
 		}
 	}
@@ -89,24 +95,41 @@ void JumpDialog::sort(NamedCommitList *items)
 	});
 }
 
-void JumpDialog::internalUpdateTable(NamedCommitList const &list)
-{
-	ui->tableWidget->clearContents();
-	ui->tableWidget->setRowCount(list.size());
-	for (int i = 0; i < list.size(); i++) {
-		auto *p = new QTableWidgetItem();
-		p->setText(QString::fromStdString(list[i].name));
-		ui->tableWidget->setItem(i, 0, p);
-		ui->tableWidget->setRowHeight(i, 24);
-	}
-	ui->tableWidget->resizeColumnsToContents();
-	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
-}
-
 void JumpDialog::updateTable()
 {
+	auto InternalUpdateTable = [&](NamedCommitList const &list) {
+		ui->tableWidget->clearContents();
+		ui->tableWidget->setRowCount(list.size());
+		for (int i = 0; i < list.size(); i++) {
+			CommitRecord const *r = m->commit_records.find(list[i].id.toString());
+			for (int col = 0; col < m->header.size(); col++) {
+				auto *item = new QTableWidgetItem();
+				QString text;
+				switch (col)    {
+				case 0: // Name
+					text = QString::fromStdString(list[i].name);
+					break;
+				case 1: // Date
+					if (r) {
+						text = r->datetime;
+					}
+					break;
+				case 2: // Message
+					if (r) {
+						text = r->message;
+					}
+					break;
+				}
+				item->setText(text);
+				ui->tableWidget->setItem(i, col, item);
+			}
+		}
+		ui->tableWidget->resizeColumnsToContents();
+		ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+	};
+
 	if (m->filter_text.isEmpty()) {
-		internalUpdateTable(m->items);
+		InternalUpdateTable(m->items);
 	} else {
 		QStringList filter = misc::splitWords(m->filter_text);
 		NamedCommitList list;
@@ -122,7 +145,7 @@ void JumpDialog::updateTable()
 			if (!Match(QString::fromStdString(item.name))) continue;
 			list.push_back(item);
 		}
-		internalUpdateTable(list);
+		InternalUpdateTable(list);
 	}
 }
 
@@ -137,5 +160,10 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 	int row = ui->tableWidget->currentRow();
 	QTableWidgetItem *p = ui->tableWidget->item(row, 0);
 	m->selected_name = p ? p->text() : QString();
+}
+
+void JumpDialog::on_pushButton_checkout_clicked()
+{
+
 }
 

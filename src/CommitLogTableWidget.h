@@ -21,13 +21,50 @@ struct CommitRecord {
 };
 Q_DECLARE_METATYPE(CommitRecord)
 
+class CommitRecords {
+public:
+	std::shared_ptr<std::vector<CommitRecord>> records;
+	CommitRecords()
+		: records(std::make_shared<std::vector<CommitRecord>>())
+	{
+	}
+	void clear()
+	{
+		records->clear();
+	}
+	size_t size() const
+	{
+		return records->size();
+	}
+	CommitRecord *record(size_t i)
+	{
+		if (i < size()) {
+			return &records->at(i);
+		}
+		return nullptr;
+	}
+	CommitRecord const *record(size_t i) const
+	{
+		return const_cast<CommitRecords *>(this)->record(i);
+	}
+	CommitRecord const *find(std::string const &id) const
+	{
+		for (size_t i = 0; i < size(); i++) {
+			if (record(i)->commit_id.toStdString() == id) {
+				return record(i);
+			}
+		}
+		return nullptr;
+	}
+};
+
 class CommitLogTableModel : public QAbstractItemModel {
 	friend class CommitLogTableWidgetDelegate;
 	friend class CommitLogTableWidget;
 public:
 	static QString escapeTooltipText(QString tooltip);
 private:
-	std::vector<CommitRecord> records_;
+	CommitRecords records_;
 	std::vector<size_t> index_;
 	std::string filter_text_;
 	IncrementalSearchFilter incremental_search_filter_;
@@ -36,8 +73,8 @@ private:
 		return incremental_search_filter_;
 	}
 	CommitLogTableWidget *tablewidget();
-	CommitRecord const &record(int row) const;
-	CommitRecord const &record(QModelIndex const &index) const;
+	const CommitRecord *record(int row) const;
+	const CommitRecord *record(QModelIndex const &index) const;
 	int rowcount() const;
 	void private_SetFilter(const std::string &text);
 public:
@@ -51,8 +88,8 @@ public:
 	int columnCount(const QModelIndex &parent) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	QVariant data(const QModelIndex &index, int role) const;
-	void setRecords(std::vector<CommitRecord> &&records);
-        bool setFilter(const std::string &text);
+	void setRecords(CommitRecords records);
+	bool setFilter(const std::string &text);
 	bool isFiltered() const
 	{
 		return !filter_text_.empty();
@@ -75,7 +112,7 @@ private:
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);
-	void setRecords(std::vector<CommitRecord> &&records);
+	void setRecords(CommitRecords records);
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *e) override;

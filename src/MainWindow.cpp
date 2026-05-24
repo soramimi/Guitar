@@ -166,6 +166,8 @@ struct MainWindow::Private {
 	std::vector<GitDiff> diff_result;
 	std::vector<GitSubmoduleItem> submodules;
 
+	CommitRecords commit_records;
+
 	QStringList added;
 	std::vector<std::string> remotes;
 	std::string current_remote_name;
@@ -1620,8 +1622,8 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 
 	const int count = (int)commit_log->size(); // ログの数
 
-	std::vector<CommitRecord> records;
-	records.reserve(count);
+	m->commit_records.clear();
+	m->commit_records.records->reserve(count);
 
 	int selrow = 0;
 
@@ -1643,7 +1645,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 				rec.bold = true; // 太字
 				selrow = row;
 			}
-			rec.commit_id = abbrevCommitID(commit);
+			rec.commit_id = (QS)commit.commit_id.toString();//abbrevCommitID(commit);
 		}
 
 		rec.datetime = (misc::str)commit.commit_date.toString();
@@ -1651,14 +1653,14 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 		rec.message = (misc::str)commit.message;
 		rec.tooltip = rec.message + message_ex;
 
-		records.push_back(rec);
+		m->commit_records.records->push_back(rec);
 	}
 
 	m->last_focused_file_list = nullptr;
 
 	{
 		bool b = ui->tableWidget_log->blockSignals(true); // surpress tableWidget_log's signals
-		ui->tableWidget_log->setRecords(std::move(records));
+		ui->tableWidget_log->setRecords(m->commit_records);
 		ui->tableWidget_log->setFocus();
 
 		{
@@ -1693,7 +1695,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	if (opt.clear_log) { // ログをクリア
 		m->clearCurrentRepositoryData();
 		{ // コミットログをクリア
-			ui->tableWidget_log->setRecords(std::vector<CommitRecord>());
+			ui->tableWidget_log->setRecords({});
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
 	} else {
@@ -6567,7 +6569,7 @@ void MainWindow::on_action_repo_jump_triggered()
 		head.id = getHeadId();
 		items.insert(items.begin(), head);
 	}
-	JumpDialog dlg(this, items);
+	JumpDialog dlg(this, items, m->commit_records);
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
 		jump(g, text);

@@ -24,12 +24,12 @@ CommitLogTableWidget *CommitLogTableModel::tablewidget()
 	return qobject_cast<CommitLogTableWidget *>(QObject::parent());
 }
 
-const CommitRecord &CommitLogTableModel::record(int row) const
+const CommitRecord *CommitLogTableModel::record(int row) const
 {
-	return records_[index_[row]];
+	return records_.record(index_[row]);
 }
 
-const CommitRecord &CommitLogTableModel::record(QModelIndex const &index) const
+const CommitRecord *CommitLogTableModel::record(QModelIndex const &index) const
 {
 	return record(index.row());
 }
@@ -78,22 +78,23 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 	auto row = index.row();
 	auto col = index.column();
 	if (row >= 0 && row < rowcount()) {
-		CommitRecord const &rec = record(row);
+		CommitRecord const *rec = record(row);
+		Q_ASSERT(rec);
 		if (role == Qt::DisplayRole) {
 			switch (col) {
 			case 0: return QVariant();
-			case 1: return QVariant(rec.commit_id);
-			case 2: return QVariant(rec.datetime);
-			case 3: return QVariant(rec.author);
-			case 4: return QVariant(rec.message);
+			case 1: return QVariant(rec->commit_id.mid(0, 7));
+			case 2: return QVariant(rec->datetime);
+			case 3: return QVariant(rec->author);
+			case 4: return QVariant(rec->message);
 			}
 		} else if (role == Qt::ToolTipRole) {
 			if (col == 4) {
-				return QVariant(escapeTooltipText(rec.tooltip));
+				return QVariant(escapeTooltipText(rec->tooltip));
 			}
 		} else if (role == Qt::FontRole) {
 			if (col == 4) {
-				if (rec.bold) {
+				if (rec->bold) {
 					QFont font;
 					font.setBold(true);
 					return QVariant(font);
@@ -118,11 +119,12 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 				auto Match = [&](QString const &s){
 					return IncrementalSearch::match(s.toStdString(), getIncrementalSearchFilter());
 				};
-				CommitRecord const &r = records_[i];
-				if (Match(r.commit_id)) return true;
-				if (Match(r.datetime)) return true;
-				if (Match(r.author)) return true;
-				if (Match(r.message)) return true;
+				CommitRecord const *r = records_.record(i);
+				Q_ASSERT(r);
+				if (Match(r->commit_id)) return true;
+				if (Match(r->datetime)) return true;
+				if (Match(r->author)) return true;
+				if (Match(r->message)) return true;
 				return false;
 			}();
 			if (match) {
@@ -150,10 +152,10 @@ int CommitLogTableModel::unfilteredIndex(int i) const
 	return index_[i];
 }
 
-void CommitLogTableModel::setRecords(std::vector<CommitRecord> &&records)
+void CommitLogTableModel::setRecords(CommitRecords records)
 {
 	beginResetModel();
-	records_ = std::move(records);
+	records_ = records;
 	private_SetFilter({});
 	endResetModel();
 }
@@ -394,9 +396,9 @@ void CommitLogTableWidget::adjustAppearance()
 	horizontalHeader()->setStretchLastSection(true);
 }
 
-void CommitLogTableWidget::setRecords(std::vector<CommitRecord> &&records)
+void CommitLogTableWidget::setRecords(CommitRecords records)
 {
-	model_->setRecords(std::move(records));
+	model_->setRecords(records);
 
 	adjustAppearance();
 }
