@@ -20,10 +20,13 @@ private:
 	Private *m;
 	void updateTable();
 	MainWindow *mainwindow();
-	const CommitRecord *currentCommit() const;
 	const NamedCommitItem *currentItem() const;
+	const CommitRecord *findCommit(const std::string &id) const;
+	bool appendCharToFilterText(int k);
+protected:
+	bool eventFilter(QObject *watched, QEvent *event);
 public:
-	explicit JumpDialog(QWidget *parent, NamedCommitList const &items, CommitRecords commit_records);
+	explicit JumpDialog(QWidget *parent, NamedCommitList const &items, const CommitRecords::Vector *commit_records);
 	~JumpDialog() override;
 	QString text() const;
 	static void sort(NamedCommitList *items);
@@ -31,10 +34,6 @@ private slots:
 	void on_lineEdit_filter_textChanged(QString const &text);
 	void on_tableWidget_currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous);
 	void on_pushButton_checkout_clicked();
-
-	// QObject interface
-public:
-	bool eventFilter(QObject *watched, QEvent *event);
 };
 
 #endif // JUMPDIALOG_H

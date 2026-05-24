@@ -1,31 +1,115 @@
 #include "JumpDialog.h"
 #include "ui_JumpDialog.h"
 #include "MyTableWidgetDelegate.h"
+#include "ApplicationGlobal.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
-#include "ApplicationGlobal.h"
 #include <MainWindow.h>
 #include <QKeyEvent>
+#include <QPainter>
 #include <optional>
 
+namespace {
+
+class ItemDelegate : public MyTableWidgetDelegate {
+private:
+	QString filter_text_;
+public:
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+	{
+		QStyleOptionViewItem opt = option;
+		initStyleOption(&opt, index);
+		opt.state &= ~QStyle::State_HasFocus; // セルのフォーカス枠は描画しない
+
+		QString text;
+		std::swap(text, opt.text);
+
+		paint_bg(painter, opt, index);
+
+		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
+		qApp->style()->drawPrimitive(QStyle::PE_PanelItemViewRow, &opt, painter, opt.widget);
+
+		struct Element {
+			QString text;
+			bool decorated = false;
+		};
+		std::vector<Element> elements;
+		{
+			if (filter_text_.isEmpty()) {
+				Element e;
+				e.text = text;
+				elements.push_back(e);
+			} else {
+				int i = text.indexOf(filter_text_, 0, Qt::CaseInsensitive);
+				if (i >= 0) {
+					if (i > 0) {
+						Element e;
+						e.text = text.left(i);
+						elements.push_back(e);
+					}
+					Element e;
+					e.text = text.mid(i, filter_text_.size());
+					e.decorated = true;
+					elements.push_back(e);
+					int j = i + filter_text_.size();
+					if (j < text.size()) {
+						Element e;
+						e.text = text.mid(j);
+						elements.push_back(e);
+					}
+				} else {
+					Element e;
+					e.text = text;
+					elements.push_back(e);
+				}
+			}
+		}
+
+		int x = opt.rect.x() + 2;
+
+		painter->setFont(opt.font);
+		painter->setPen(opt.palette.color(QPalette::Text));
+
+		for (Element const &e : elements) {
+			QString text = e.text;
+			int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
+			QRect rect(x, opt.rect.y(), w, opt.rect.height());
+			if (e.decorated) {
+				painter->fillRect(rect, global->appsettings.incremental_search_color.highlight_bg);
+			}
+			painter->drawText(rect, opt.displayAlignment, text); // テキストを描画
+			x += w;
+		}
+	}
+
+	void setFilterText(QString const &filter_text)
+	{
+		filter_text_ = filter_text;
+	}
+};
+
+} // namespace
+
 struct JumpDialog::Private {
-	MyTableWidgetDelegate delegate;
+	ItemDelegate delegate;
 	QString filter_text;
 	QString selected_name;
 
 	NamedCommitList all_items;
 	std::optional<NamedCommitList> filtered_items;
 
-	CommitRecords commit_records;
+	std::unordered_map<std::string, CommitRecord const *> commit_record_map;
+
 	QStringList header;
 };
 
-JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitRecords commit_records)
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitRecords::Vector const *commit_records)
 	: QDialog(parent)
 	, ui(new Ui::JumpDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
+
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
@@ -33,7 +117,10 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 	qApp->installEventFilter(this);
 	installEventFilter(this);
 
-	m->commit_records = commit_records;
+	// make commit record map
+	for (CommitRecord const &r : *commit_records) {
+		m->commit_record_map[r.commit_id()] = &r;
+	}
 
 	ui->tableWidget->setItemDelegate(&m->delegate);
 
@@ -66,7 +153,7 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 	}
 	updateTable();
 
-	ui->lineEdit_filter->setFocus();
+	ui->tableWidget->setFocus();
 }
 
 JumpDialog::~JumpDialog()
@@ -80,6 +167,40 @@ MainWindow *JumpDialog::mainwindow()
 	return global->mainwindow;
 }
 
+static constexpr int ASCII_BACKSPACE = 0x08;
+static constexpr int ASCII_DELETE = 0xff;
+
+bool JumpDialog::appendCharToFilterText(int k)
+{
+	if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
+		// thru
+	} else if (k == Qt::Key_Backspace) {
+		k = ASCII_BACKSPACE;
+	} else if (k == Qt::Key_Delete) {
+		k = ASCII_DELETE;
+	} else {
+		return false;
+	}
+
+	QString text = ui->lineEdit_filter->text();
+	if (k == ASCII_BACKSPACE) {
+		int i = text.size();
+		if (i > 0) {
+			text.remove(i - 1, 1);
+		}
+	} else if (k == ASCII_DELETE) {
+		text.clear();
+	} else if (QChar(k).isLetterOrNumber()) {
+		text.append(QChar(k).toLower());
+	}
+	ui->lineEdit_filter->setText(text);
+	m->delegate.setFilterText(text);
+
+	ui->tableWidget->setCurrentCell(0, 0);
+	return true;
+}
+
+
 bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 {
 	if (watched == ui->tableWidget) {
@@ -91,6 +212,13 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 			ui->tableWidget->setCurrentCell(row, 0);
 			ui->tableWidget->selectRow(row);
 			return true;
+		}
+		if (event->type() == QEvent::KeyPress) {
+			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
+			Q_ASSERT(e);
+			if (appendCharToFilterText(e->key())) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -126,16 +254,18 @@ void JumpDialog::sort(NamedCommitList *items)
 	});
 }
 
-CommitRecord const *JumpDialog::currentCommit() const
+CommitRecord const *JumpDialog::findCommit(std::string const &id) const
 {
-	int i = ui->tableWidget->currentRow();
-	return m->commit_records.find(m->all_items[i].id.toString());
+	auto it = m->commit_record_map.find(id);
+	if (it != m->commit_record_map.end()) {
+		return it->second;
+	}
+	return nullptr;
 }
 
 NamedCommitItem const *JumpDialog::currentItem() const
 {
 	NamedCommitList const *list = m->filtered_items ? &*m->filtered_items : &m->all_items;
-
 	int i = ui->tableWidget->currentRow();
 	if (i < 0) {
 		i = 0;
@@ -152,7 +282,7 @@ void JumpDialog::updateTable()
 		ui->tableWidget->clearContents();
 		ui->tableWidget->setRowCount(list.size());
 		for (int i = 0; i < list.size(); i++) {
-			CommitRecord const *r = m->commit_records.find(list[i].id.toString());
+			CommitRecord const *r = findCommit(list[i].id.toString());
 			for (int col = 0; col < m->header.size(); col++) {
 				auto *item = new QTableWidgetItem();
 				QString text;
@@ -238,4 +368,5 @@ void JumpDialog::on_pushButton_checkout_clicked()
 		}
 	}
 }
+
 

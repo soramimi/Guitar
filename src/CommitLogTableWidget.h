@@ -13,19 +13,24 @@ class CommitLogTableWidget;
 
 struct CommitRecord {
 	bool bold = false;
-	QString commit_id;
+	GitHash commit_hash;
 	QString datetime;
 	QString author;
 	QString message;
 	QString tooltip;
+	std::string commit_id() const
+	{
+		return commit_hash.toString();
+	}
 };
 Q_DECLARE_METATYPE(CommitRecord)
 
 class CommitRecords {
 public:
-	std::shared_ptr<std::vector<CommitRecord>> records;
+	typedef std::vector<CommitRecord> Vector;
+	std::shared_ptr<Vector> records;
 	CommitRecords()
-		: records(std::make_shared<std::vector<CommitRecord>>())
+		: records(std::make_shared<Vector>())
 	{
 	}
 	void clear()
@@ -46,15 +51,6 @@ public:
 	CommitRecord const *record(size_t i) const
 	{
 		return const_cast<CommitRecords *>(this)->record(i);
-	}
-	CommitRecord const *find(std::string const &id) const
-	{
-		for (size_t i = 0; i < size(); i++) {
-			if (record(i)->commit_id.toStdString() == id) {
-				return record(i);
-			}
-		}
-		return nullptr;
 	}
 };
 

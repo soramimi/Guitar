@@ -83,7 +83,7 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 		if (role == Qt::DisplayRole) {
 			switch (col) {
 			case 0: return QVariant();
-			case 1: return QVariant(rec->commit_id.mid(0, 7));
+			case 1: return QVariant((QS)rec->commit_id().substr(0, 7));
 			case 2: return QVariant(rec->datetime);
 			case 3: return QVariant(rec->author);
 			case 4: return QVariant(rec->message);
@@ -121,7 +121,7 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 				};
 				CommitRecord const *r = records_.record(i);
 				Q_ASSERT(r);
-				if (Match(r->commit_id)) return true;
+				if (Match((QS)r->commit_id())) return true;
 				if (Match(r->datetime)) return true;
 				if (Match(r->author)) return true;
 				if (Match(r->message)) return true;
@@ -314,7 +314,6 @@ public:
 		initStyleOption(&opt, index);
 
 		GitCommitItem const &commit = tablewidget->commitItem(index.row());
-		// CommitRecord const &record = tablewidget->model_->record(index);
 
 		paintCommitMessage(painter, opt, index);
 

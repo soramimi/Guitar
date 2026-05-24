@@ -114,7 +114,8 @@ struct EventItem {
 	}
 };
 
-constexpr int ASCII_BACKSPACE = 0x08;
+static constexpr int ASCII_BACKSPACE = 0x08;
+static constexpr int ASCII_DELETE = 0xff;
 
 namespace {
 enum LogInspectionIndex {
@@ -1645,7 +1646,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 				rec.bold = true; // 太字
 				selrow = row;
 			}
-			rec.commit_id = (QS)commit.commit_id.toString();//abbrevCommitID(commit);
+			rec.commit_hash = commit.commit_id;
 		}
 
 		rec.datetime = (misc::str)commit.commit_date.toString();
@@ -6293,6 +6294,8 @@ void MainWindow::_appendCharToFilterText(ushort c)
 		if (i > 0) {
 			text.remove(i - 1, 1);
 		}
+	} else if (c == ASCII_DELETE) {
+		text.clear();
 	} else if (QChar(c).isLetterOrNumber()) {
 		text.append(QChar(c).toLower());
 	}
@@ -6307,6 +6310,8 @@ bool MainWindow::appendCharToFilterText(int k, MainWindow::FilterTarget ft)
 		// thru
 	} else if (k == Qt::Key_Backspace) {
 		k = ASCII_BACKSPACE;
+	} else if (k == Qt::Key_Delete) {
+		k = ASCII_DELETE;
 	} else {
 		return false;
 	}
@@ -6569,7 +6574,7 @@ void MainWindow::on_action_repo_jump_triggered()
 		head.id = getHeadId();
 		items.insert(items.begin(), head);
 	}
-	JumpDialog dlg(this, items, m->commit_records);
+	JumpDialog dlg(this, items, m->commit_records.records.get());
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
 		jump(g, text);
