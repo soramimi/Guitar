@@ -3,12 +3,19 @@
 #include "MyTableWidgetDelegate.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "ApplicationGlobal.h"
+#include <MainWindow.h>
+#include <QKeyEvent>
+#include <optional>
 
 struct JumpDialog::Private {
 	MyTableWidgetDelegate delegate;
 	QString filter_text;
 	QString selected_name;
-	NamedCommitList items;
+
+	NamedCommitList all_items;
+	std::optional<NamedCommitList> filtered_items;
+
 	CommitRecords commit_records;
 	QStringList header;
 };
@@ -23,6 +30,9 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
+	qApp->installEventFilter(this);
+	installEventFilter(this);
+
 	m->commit_records = commit_records;
 
 	ui->tableWidget->setItemDelegate(&m->delegate);
@@ -36,9 +46,9 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 		} else if (newitem.type == NamedCommitItem::Type::Tag) {
 			newitem.name = "tags" / newitem.name;
 		}
-		m->items.push_back(newitem);
+		m->all_items.push_back(newitem);
 	}
-	sort(&m->items);
+	sort(&m->all_items);
 
 	m->header = QStringList{
 		tr("Name"),
@@ -63,6 +73,27 @@ JumpDialog::~JumpDialog()
 {
 	delete m;
 	delete ui;
+}
+
+MainWindow *JumpDialog::mainwindow()
+{
+	return global->mainwindow;
+}
+
+bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
+{
+	if (watched == ui->tableWidget) {
+		if (event->type() == QEvent::FocusIn) {
+			int row = ui->tableWidget->currentRow();
+			if (row < 0) {
+				row = 0;
+			}
+			ui->tableWidget->setCurrentCell(row, 0);
+			ui->tableWidget->selectRow(row);
+			return true;
+		}
+	}
+	return false;
 }
 
 QString JumpDialog::text() const
@@ -93,6 +124,26 @@ void JumpDialog::sort(NamedCommitList *items)
 		};
 		return Compare(l, r) < 0;
 	});
+}
+
+CommitRecord const *JumpDialog::currentCommit() const
+{
+	int i = ui->tableWidget->currentRow();
+	return m->commit_records.find(m->all_items[i].id.toString());
+}
+
+NamedCommitItem const *JumpDialog::currentItem() const
+{
+	NamedCommitList const *list = m->filtered_items ? &*m->filtered_items : &m->all_items;
+
+	int i = ui->tableWidget->currentRow();
+	if (i < 0) {
+		i = 0;
+	}
+	if (i < list->size()) {
+		return &list->at(i);
+	}
+	return nullptr;
 }
 
 void JumpDialog::updateTable()
@@ -128,12 +179,14 @@ void JumpDialog::updateTable()
 		ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 	};
 
+	m->filtered_items.reset();
+
 	if (m->filter_text.isEmpty()) {
-		InternalUpdateTable(m->items);
+		InternalUpdateTable(m->all_items);
 	} else {
+		m->filtered_items = NamedCommitList();
 		QStringList filter = misc::splitWords(m->filter_text);
-		NamedCommitList list;
-		for (NamedCommitItem const &item: m->items) {
+		for (NamedCommitItem const &item: m->all_items) {
 			auto Match = [&](QString  const &name){
 				for (QString const &s : filter) {
 					if (name.indexOf(s, 0, Qt::CaseInsensitive) < 0) {
@@ -143,9 +196,9 @@ void JumpDialog::updateTable()
 				return true;
 			};
 			if (!Match(QString::fromStdString(item.name))) continue;
-			list.push_back(item);
+			m->filtered_items->push_back(item);
 		}
-		InternalUpdateTable(list);
+		InternalUpdateTable(*m->filtered_items);
 	}
 }
 
@@ -164,6 +217,25 @@ void JumpDialog::on_tableWidget_currentItemChanged(QTableWidgetItem * /*current*
 
 void JumpDialog::on_pushButton_checkout_clicked()
 {
-
+	NamedCommitItem const *item = currentItem();
+	if (item) {
+		std::string name = item->name;
+		if (item->type == NamedCommitItem::Type::BranchRemote) {
+			if (misc::starts_with(name, "remotes/")) {
+				size_t i = 8;
+				i = name.find('/', i);
+				if (i != std::string::npos && i > 0) {
+					name = name.substr(i + 1);
+				}
+			}
+		} else if (item->type == NamedCommitItem::Type::Tag) {
+			if (misc::starts_with(name, "tags/")) {
+				name = name.substr(5);
+			}
+		}
+		if (mainwindow()->checkoutLocalBranch(name)) {
+			done(QDialog::Accepted);
+		}
+	}
 }
 

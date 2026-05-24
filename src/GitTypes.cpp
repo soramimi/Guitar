@@ -44,6 +44,8 @@ template <typename VIEW> void GitHash::_assign(VIEW const &id)
 {
 	if (id.empty()) {
 		valid_ = false;
+	} else if (id == "HEAD") {
+		valid_ = false;
 	} else {
 		valid_ = true;
 		if (id.size() == GIT_ID_LENGTH) {

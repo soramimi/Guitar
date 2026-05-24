@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Branch, Tag or Commit-ID :</string>
+      <string>Branch, Tag or Commit-&amp;ID :</string>
      </property>
      <property name="buddy">
       <cstring>lineEdit_filter</cstring>
@@ -39,6 +39,9 @@
      <property name="editTriggers">
       <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
      </property>
+     <property name="tabKeyNavigation">
+      <bool>false</bool>
+     </property>
      <property name="selectionMode">
       <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
      </property>
@@ -55,7 +58,7 @@
      <item>
       <widget class="QPushButton" name="pushButton_checkout">
        <property name="text">
-        <string>Checkout</string>
+        <string>&amp;Checkout</string>
        </property>
       </widget>
      </item>
@@ -75,7 +78,7 @@
      <item>
       <widget class="QPushButton" name="pushButton">
        <property name="text">
-        <string>Jump</string>
+        <string>&amp;Jump</string>
        </property>
        <property name="default">
         <bool>true</bool>
@@ -96,6 +99,7 @@
  <tabstops>
   <tabstop>lineEdit_filter</tabstop>
   <tabstop>tableWidget</tabstop>
+  <tabstop>pushButton_checkout</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>
