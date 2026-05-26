@@ -4,11 +4,19 @@
 #include "Profile.h"
 #include "common/fmt.h"
 #include "common/joinpath.h"
-#include "common/q/Dir.h"
-#include "common/q/FileInfo.h"
 #include "common/q/helper.h"
 #include "common/str.h"
 #include <QString>
+
+#ifdef _WIN32
+#include <QDir>
+#include <QFileInfo>
+using Dir = QDir;
+using FileInfo = QFileInfo;
+#else
+#include "common/q/Dir.h"
+#include "common/q/FileInfo.h"
+#endif
 
 void GitCommitItem::setParents(std::vector<std::string> const &list)
 {
@@ -115,9 +123,9 @@ bool Git::isValidWorkingCopy() const
 bool GitBasicSession::isValidWorkingCopy(const std::string &dir) const
 {
 	if (!dir.empty()) {
-		if (FileInfo(dir).isDir()) {
+		if (FileInfo((QS)dir).isDir()) {
 			std::string gitdir = dir / ".git";
-			FileInfo info(gitdir);
+			FileInfo info((QS)gitdir);
 			if (info.isFile()) { // submodule?
 				QFile file((QS)gitdir);
 				if (file.open(QFile::ReadOnly)) {
@@ -127,8 +135,8 @@ bool GitBasicSession::isValidWorkingCopy(const std::string &dir) const
 					}
 				}
 			} else if (info.isDir()) { // regular dir
-				if (FileInfo(gitdir).isDir()) {
-					if (FileInfo(gitdir / "config").isFile()) { // git repository
+				if (FileInfo((QS)gitdir).isDir()) {
+					if (FileInfo((QS)gitdir / "config").isFile()) { // git repository
 						return true;
 					}
 				}
@@ -152,9 +160,9 @@ bool Git::init()
 	std::string dir = workingDir();
 	if (Dir::setCurrent((QS)dir)) {
 		std::string gitdir = dir / ".git";
-		if (!FileInfo(gitdir).isDir()) {
+		if (!FileInfo((QS)gitdir).isDir()) {
 			git_nochdir("init", nullptr);
-			if (FileInfo(gitdir).isDir()) {
+			if (FileInfo((QS)gitdir).isDir()) {
 				ok = true;
 			}
 		}
@@ -904,7 +912,7 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 		pty->setChangeDir((QS)data.basedir);
 		DoIt();
 	} else {
-		if (Dir::setCurrent(data.basedir)) {
+		if (Dir::setCurrent((QS)data.basedir)) {
 			DoIt();
 			Dir::setCurrent(cwd.path());
 		}
