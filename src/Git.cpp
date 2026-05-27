@@ -6,6 +6,7 @@
 #include "common/joinpath.h"
 #include "common/q/helper.h"
 #include "common/str.h"
+#include "common/npos.h"
 #include <QString>
 
 #ifdef _WIN32
@@ -16,6 +17,7 @@ using FileInfo = QFileInfo;
 #else
 #include "common/q/Dir.h"
 #include "common/q/FileInfo.h"
+#define QS std::string
 #endif
 
 void GitCommitItem::setParents(std::vector<std::string> const &list)
@@ -127,7 +129,7 @@ bool GitBasicSession::isValidWorkingCopy(const std::string &dir) const
 			std::string gitdir = dir / ".git";
 			FileInfo info((QS)gitdir);
 			if (info.isFile()) { // submodule?
-				QFile file((QS)gitdir);
+				QFile file(QString::fromStdString(gitdir));
 				if (file.open(QFile::ReadOnly)) {
 					QString line = QString::fromUtf8(file.readLine());
 					if (line.startsWith("gitdir:")) {
@@ -277,7 +279,7 @@ std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_
 		GitDiffRaw item;
 		auto colon = line.find(':');
 		int tab = line.find('\t');
-		if (colon != std::string_view::npos && tab != std::string_view::npos && colon < tab) {
+		if ((FOUND)colon && (FOUND)tab && colon < tab) {
 			std::vector<std::string_view> header = misc::splitWords(line.substr(colon + 1, tab - colon - 1)); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
 				std::vector<std::string_view> files = misc::split(line.substr(tab + 1), '\t'); // タブより後ろはファイルパス
@@ -336,7 +338,7 @@ std::string Git::getCurrentBranchName()
 	if (isValidWorkingCopy()) {
 		auto result = git("rev-parse --abbrev-ref HEAD");
 		std::string s{misc::trimmed(resultStdString(result))};
-		if (!s.empty() && !misc::starts_with(s, "fatal:") && s.find(' ') == std::string::npos) {
+		if (!s.empty() && !misc::starts_with(s, "fatal:") && !(FOUND)s.find(' ')) {
 			return s;
 		}
 	}
@@ -485,7 +487,7 @@ std::vector<GitBranch> Git::branches()
 				if (misc::starts_with(name, "remotes/")) {
 					name = name.substr(8);
 					auto i = name.find('/');
-					if (i != std::string::npos && i > 0) {
+					if ((FOUND)i && i > 0) {
 						item.branch.remote = name.substr(0, i);
 						name = name.substr(i + 1);
 					}
@@ -558,7 +560,7 @@ static DateTime parseDateTime(char const *s)
 std::optional<GitCommitItem> Git::parseCommitItem(std::string const &line)
 {
 	auto i = line.find("##");
-	if (i != std::string::npos && i > 0) {
+	if ((FOUND)i && i > 0) {
 		GitCommitItem item;
 		std::string sign_fp; // 署名フィンガープリント
 		item.message = QS(line.substr(i + 2));
@@ -566,7 +568,7 @@ std::optional<GitCommitItem> Git::parseCommitItem(std::string const &line)
 		std::vector<std::string_view> atts = misc::split(s, '#');
 		for (std::string_view const &s : atts) {
 			auto j = s.find(':');
-			if (j != std::string_view::npos && j > 0) {
+			if ((FOUND)j && j > 0) {
 				auto key = s.substr(0, j);
 				auto val = s.substr(j + 1);
 				if (key == "id") {
@@ -876,7 +878,7 @@ GitCloneData Git::preclone(std::string const &url, std::string const &path)
 	if (misc::ends_with(path, '/') || misc::ends_with(path, '\\')) {
 		std::string name = misc::replace_backslash_to_slash(url);
 		auto i = name.rfind('/');
-		if (i != std::string::npos) {
+		if ((FOUND)i) {
 			name = name.substr(i + 1);
 		}
 		if (misc::ends_with(name, ".git")) {
@@ -909,7 +911,7 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 	};
 
 	if (pty) {
-		pty->setChangeDir((QS)data.basedir);
+		pty->setChangeDir(QString::fromStdString(data.basedir));
 		DoIt();
 	} else {
 		if (Dir::setCurrent((QS)data.basedir)) {
@@ -1050,7 +1052,7 @@ bool Git::revert(GitHash const &id)
 
 bool Git::push_u(bool set_upstream, const std::string &remote, const std::string &branch, bool force, AbstractPtyProcess *pty)
 {
-	if (remote.find('\"') != std::string::npos || branch.find('\"') != std::string::npos) {
+	if ((FOUND)remote.find('\"') || (FOUND)branch.find('\"')) {
 		return false;
 	}
 	std::string cmd = "push";
@@ -1447,7 +1449,7 @@ void Git::remote_v(std::vector<GitRemote> *out)
 	for (std::string const &line : lines) {
 		auto i = line.find('\t');
 		auto j = line.find(" (");
-		if (i != std::string::npos && j != std::string::npos && i > 0 && i < j) {
+		if ((FOUND)i && (FOUND)j && i > 0 && i < j) {
 			GitRemote r;
 			r.name = line.substr(0, i);
 			r.ssh_key = gitinfo().ssh_key_override;
@@ -1536,7 +1538,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 				if (d == ':') {
 					// ex. ":100644 100644 bb603836fb597cca994309a1f0a52251d6b20314 d6b9798854debee375bb419f0f2ed9c8437f1932 M\tsrc/MainWindow.cpp"
 					auto tab = line.find('\t');
-					if (tab != std::string::npos && tab > 1) {
+					if ((FOUND)tab && tab > 1) {
 						std::string tmp = line.substr(1, tab - 1);
 						std::string path = line.substr(tab + 1);
 						std::vector<std::string_view> cols = misc::splitWords(tmp);
@@ -1562,9 +1564,9 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 						// ex. "0a2a8b6b66f48bcbf985d8a2afcd14ff41676c16 HEAD@{188}: commit: message"
 						item = GitReflogItem();
 						auto i = line.find(": ");
-						if (i != std::string::npos && i > 0) {
+						if ((FOUND)i && i > 0) {
 							int j = line.find(": ", i + 2);
-							if (j != std::string::npos && j > 2) {
+							if ((FOUND)j && j > 2) {
 								item.head = line.substr(0, i);
 								item.command = line.substr(i + 2, j - i - 2);
 								item.message = line.substr(j + 2);
@@ -1623,7 +1625,7 @@ void GitFileStatus::parse(std::string const &text)
 			data.code_y = p[1];
 
 			int i = text.find(" -> ", 3);
-			if (i != std::string::npos && i > 3) {
+			if ((FOUND)i && i > 3) {
 				data.rawpath1 = text.substr(3, i - 3);
 				data.rawpath2 = text.substr(i + 4);
 				data.path1 = gitTrimPath(data.rawpath1);
@@ -1836,7 +1838,7 @@ void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out
 			}
 		} else {
 			auto i = line.find('=');
-			if (i != std::string::npos && i > 0) {
+			if ((FOUND)i && i > 0) {
 				std::string key{misc::trimmed(line.substr(0, i))};
 				std::string val{misc::trimmed(line.substr(i + 1))};
 				if (key == "path") {

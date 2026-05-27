@@ -54,6 +54,7 @@
 #include "WelcomeWizardDialog.h"
 #include "common/joinpath.h"
 #include "common/misc.h"
+#include "common/npos.h"
 #include "common/q/helper.h"
 #include "AiApiBridge.h"
 #include "platform.h"
@@ -940,7 +941,7 @@ void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 		for (std::string const &line : lines) {
 			auto percent = line.find_last_of('%');
 			auto colon = line.find_last_of(':', percent);
-			if (colon != std::string::npos && percent != std::string::npos) {
+			if ((FOUND)colon && (FOUND)percent) {
 				std::string title(misc::trimmed(line.substr(0, colon)));
 				unsigned long long num, den;
 				if (sscanf(line.data() + percent, "%% (%llu/%llu)", &num, &den) == 2) {
@@ -2566,7 +2567,7 @@ std::string MainWindow::parseDetectedDubiousOwnershipInRepositoryAt(std::vector<
 			detected_dubious_ownership_in_repository_at = true;
 		} else if (detected_dubious_ownership_in_repository_at) {
 			auto pos = line.find(git_config_global_add_safe_directory);
-			if (pos != std::string::npos) {
+			if ((FOUND)pos) {
 				dir = line.substr(pos + git_config_global_add_safe_directory.size());
 				if (i + 1 < lines.size()) {
 					std::string next = lines[i + 1];
@@ -2853,7 +2854,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 	runPtyGit(tr("Pushing..."), git(), Git_push{set_upstream, remote.toStdString(), branch.toStdString(), force}, RUN_PTY_CALLBACK{
 		ASSERT_MAIN_THREAD();
 		if (status->exit_code == 128) {
-			if (status->error_message.find("Connection refused") != std::string::npos) {
+			if ((FOUND)status->error_message.find("Connection refused")) {
 				QMessageBox::critical(this, qApp->applicationName(), tr("Connection refused."));
 				return;
 			}

@@ -2,6 +2,7 @@
 #include "TraceEventWriter.h"
 #include "common/fmt.h"
 #include "common/str.h"
+#include "common/npos.h"
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
 #include <QDebug>
@@ -61,8 +62,8 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 	if (ssh.empty() || gitinfo().ssh_key_override.empty()) {
 		// nop
 	} else {
-		if (ssh.find('\"') != std::string::npos) return std::nullopt;
-		if (gitinfo().ssh_key_override.find('\"') != std::string::npos) return std::nullopt;
+		if ((FOUND)ssh.find('\"')) return std::nullopt;
+		if ((FOUND)gitinfo().ssh_key_override.find('\"')) return std::nullopt;
 		if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
 		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(QString::fromStdString(ssh)).arg(QString::fromStdString(gitinfo().ssh_key_override));
 	}
@@ -143,7 +144,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 
 bool GitBasicSession::remove(const std::string &path)
 {
-	if (path.find("..") != std::string::npos) {
+	if ((FOUND)path.find("..")) {
 		qDebug() << "Invalid path for remove: " << QString::fromStdString(path);
 		return false;
 	}

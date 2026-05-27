@@ -6,6 +6,7 @@
 #include "common/joinpath.h"
 #include "common/misc.h"
 #include "common/str.h"
+#include "common/npos.h"
 #include "common/q/helper.h"
 #include "Profile.h"
 #include <QBuffer>
@@ -433,7 +434,7 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 				std::vector<std::string> lines = (misc::strlist)misc::splitLinesV((QBA)obj.content);
 				for (std::string const &line : lines) {
 					auto i = line.find(' ');
-					if (i == std::string::npos) break;
+					if (!(FOUND)i) break;
 					std::string key{line.substr(0, i)};
 					std::string val{misc::trimmed(line.substr(i + 1))};
 					if (key == "tree") {
@@ -459,7 +460,7 @@ void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, Gi
 	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(s);
 	for (std::string const &line : lines) {
 		auto tab = line.find('\t'); // タブより後ろにパスがある
-		if (tab != std::string::npos && tab > 0) {
+		if ((FOUND)tab && tab > 0) {
 			std::string stat = line.substr(0, tab); // タブの手前まで
 			std::vector<std::string_view> vals = misc::splitWords(stat); // 空白で分割
 			if (vals.size() >= 3) {

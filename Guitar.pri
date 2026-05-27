@@ -118,6 +118,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/common/npos.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
@@ -299,6 +300,7 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/common/npos.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \
