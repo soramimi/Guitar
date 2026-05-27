@@ -1,4 +1,6 @@
 #include "Dir.h"
+#include "misc.h"
+#include <filesystem>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -8,7 +10,7 @@
 #include <unistd.h>
 #endif
 
-Dir::Dir(const std::string &path)
+Dir::Dir(std::string const &path)
 	: path_(path)
 {
 }
@@ -33,10 +35,11 @@ Dir Dir::current()
 	return {};
 }
 
-bool Dir::setCurrent(const std::string &path)
+bool Dir::setCurrent(std::string const &path)
 {
 #ifdef _WIN32
-	return SetCurrentDirectoryA(path.c_str()) != 0;
+	std::filesystem::path p = misc::convert_utf8_to_utf16(path);
+	return SetCurrentDirectoryW(p.c_str()) != 0;
 #else
 	return chdir(path.c_str()) == 0;
 #endif

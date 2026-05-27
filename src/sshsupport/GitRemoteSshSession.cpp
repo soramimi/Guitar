@@ -85,16 +85,16 @@ bool GitRemoteSshSession::remove(std::string const &path)
 	return ret;
 }
 
-std::optional<std::vector<GitFileItem>> GitRemoteSshSession::ls(char const *path)
+std::optional<std::vector<GitFileItem>> GitRemoteSshSession::ls(std::string const &path)
 {
 	std::vector<GitFileItem> files;
 	if (ssh_->open_sftp()) {
-		auto ret = ssh_->list(path);
+		auto ret = ssh_->list(path.c_str());
 		ssh_->close_sftp();
 		if (ret) {
 			for (SshConnection::FileItem const &item : *ret) {
 				GitFileItem newitem;
-				newitem.name = QString::fromStdString(item.name);
+				newitem.name = item.name;
 				newitem.isdir = item.isdir;
 				files.push_back(newitem);
 			}
@@ -104,11 +104,11 @@ std::optional<std::vector<GitFileItem>> GitRemoteSshSession::ls(char const *path
 	return std::nullopt;
 }
 
-std::optional<std::vector<char>> GitRemoteSshSession::readfile(char const *path)
+std::optional<std::vector<char>> GitRemoteSshSession::readfile(std::string const &path)
 {
 	std::vector<char> data;
 	if (ssh_->open_sftp()) {
-		auto ret = ssh_->pull(path);
+		auto ret = ssh_->pull(path.c_str());
 		ssh_->close_sftp();
 		if (ret) {
 			data.insert(data.end(), ret->begin(), ret->end());

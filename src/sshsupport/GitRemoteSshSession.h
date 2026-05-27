@@ -23,8 +23,8 @@ public:
 	std::optional<GitResult> exec_git(std::string const &arg, const Option &opt);
 	bool remove(std::string const &path);
 
-	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);
-	virtual std::optional<std::vector<char>> readfile(char const *path);
+	virtual std::optional<std::vector<GitFileItem>> ls(std::string const &path);
+	virtual std::optional<std::vector<char>> readfile(std::string const &path);
 };
 
 #endif

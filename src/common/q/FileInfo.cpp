@@ -1,4 +1,6 @@
 #include "FileInfo.h"
+#include "common/misc.h"
+#include <filesystem>
 #include <sys/stat.h>
 
 namespace misc {
@@ -9,7 +11,11 @@ std::string realpath(std::string const &path);
 struct FileInfo::Private {
 	std::string file;
 	bool valid = false;
+#ifdef _WIN32
+	struct _stat64 stat = {};
+#else
 	struct stat stat = {};
+#endif
 };
 
 FileInfo::FileInfo()
@@ -21,7 +27,14 @@ FileInfo::FileInfo(const std::string &file)
 	: m(new Private)
 {
 	m->file = file;
-	m->valid = stat(m->file.c_str(), &m->stat) == 0;
+	std::filesystem::path path(misc::convert_utf8_to_utf16(file));
+	path.make_preferred();
+	std::filesystem::path::value_type const *cstr = path.c_str();
+#ifdef _WIN32
+	m->valid = _wstat64(cstr, &m->stat) == 0;
+#else
+	m->valid = stat(cstr, &m->stat) == 0;
+#endif
 }
 
 FileInfo::~FileInfo()
@@ -65,7 +78,7 @@ Dir FileInfo::dir() const
 	} else {
 		path = ".";
 	}
-	return Dir(path);
+	return Dir(m->file);
 }
 
 std::string FileInfo::fileName() const
