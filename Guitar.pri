@@ -119,6 +119,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/common/npos.cpp \
+	$$PWD/src/common/unicode_conversion.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
@@ -301,6 +302,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/common/npos.h \
+	$$PWD/src/common/unicode_conversion.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \

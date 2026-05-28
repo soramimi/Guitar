@@ -1,5 +1,6 @@
 #include "FileInfo.h"
 #include "common/misc.h"
+#include "common/unicode_conversion.h"
 #include <filesystem>
 #include <sys/stat.h>
 
@@ -27,7 +28,7 @@ FileInfo::FileInfo(const std::string &file)
 	: m(new Private)
 {
 	m->file = file;
-	std::filesystem::path path(misc::convert_utf8_to_utf16(file));
+	std::filesystem::path path(convert_utf8_to_utf16(file));
 	path.make_preferred();
 	std::filesystem::path::value_type const *cstr = path.c_str();
 #ifdef _WIN32

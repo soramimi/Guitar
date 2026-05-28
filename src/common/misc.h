@@ -157,9 +157,6 @@ static inline T toi(std::string_view const &s, size_t *consumed = nullptr)
 	return sign ? -n : n;
 }
 
-std::u16string convert_utf8_to_utf16(std::string_view const &s);
-std::string convert_utf16_to_utf8(std::u16string_view const &s);
-
 static inline void append(std::vector<char> *out, char const *ptr, size_t len)
 {
 	if (out && ptr && len > 0) {
