@@ -7503,15 +7503,22 @@ void MainWindow::on_action_branch_triggered()
 
 void MainWindow::test()
 {
-	AiApiBridge api;
-	auto opt = api.queryModels();
-	if (opt) {
-		AiResult::Models const &models = *opt;
-		for (AiResult::Model const &model : models.list) {
-			fprintf(stderr, "Model: %s\n", model.id.c_str());
-		}
+	std::string s = "Hello, world";
+	auto i = s.find(',');
+	if ((FOUND)i) {
+		fprintf(stderr, "found: %d\n", (int)i);
 	}
-}
+	std::vector v = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+	auto it = std::find(v.begin(), v.end(), 5);
+	if (it != v.end()) {
+		fprintf(stderr, "found: %d\n", *it);
+	}
+	if (FOUND(it, v)) {
+		fprintf(stderr, "foundx: %d\n", *it);
+	} else {
+		fprintf(stderr, "!foundx\n");
+	}
 
+}
 
 

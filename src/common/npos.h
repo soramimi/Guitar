@@ -1,8 +1,11 @@
 #ifndef NPOS_H
 #define NPOS_H
 
+#include <string>
 #include <limits>
+#include <type_traits>
 
+#if 0
 struct NPOS_t {
 	template <typename T>
 	friend constexpr bool operator == (T x, NPOS_t)
@@ -18,18 +21,23 @@ struct NPOS_t {
 };
 
 inline constexpr NPOS_t NPOS;
+#endif
 
 class FOUND {
 private:
-	bool value = false;
+	bool found_ = false;
 public:
-	template <typename T> FOUND(T t)
-		 : value(t != NPOS)
+	explicit FOUND(std::string::size_type t)
 	{
+		found_ = (t != std::string::npos);
+	}
+	template <typename T, typename U> FOUND(T t, U const &u)
+	{
+		found_ = (t != u.end());
 	}
 	explicit operator bool () const
 	{
-		return value;
+		return found_;
 	}
 };
 
