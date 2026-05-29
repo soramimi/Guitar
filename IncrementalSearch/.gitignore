@@ -8,3 +8,6 @@ mecasearch.lib
 libmecasearch.a
 *.log
 *.lib
+*.bin
+*.dic
+
