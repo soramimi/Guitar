@@ -11,7 +11,7 @@
 # PARTICULAR PURPOSE.
 
 
-SHELL = /bin/bash
+SHELL = /bin/sh
 
 srcdir = .
 top_srcdir = .
@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/mecab-ipadic
 
 top_builddir = .
 
-ACLOCAL = /Guitar/IncrementalSearch/mecab/mecab-ipadic/missing aclocal-1.4
+ACLOCAL = /home/soramimi/develop/Guitar/IncrementalSearch/mecab/mecab-ipadic/missing aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = /Guitar/IncrementalSearch/mecab/mecab-ipadic/missing automake-1.4
+AUTOMAKE = /home/soramimi/develop/Guitar/IncrementalSearch/mecab/mecab-ipadic/missing automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -64,9 +64,9 @@ CHARSET = utf8
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
 LTLIB = @LTLIB@
-MAKEINFO = /Guitar/IncrementalSearch/mecab/mecab-ipadic/missing makeinfo
+MAKEINFO = makeinfo
 MECAB_CONFIG = /usr/bin/mecab-config
-MECAB_DICDIR = /usr/lib/x86_64-linux-gnu/mecab/dic/ipadic
+MECAB_DICDIR = /usr/lib/mecab/dic/ipadic
 MECAB_DICT_INDEX = /usr/lib/mecab/mecab-dict-index
 MECAB_GENDATA = matrix.bin char.bin sys.dic unk.dic
 MECAB_LEXICAL_DIC = Adj.csv Adnominal.csv Adverb.csv Auxil.csv Conjunction.csv Filler.csv Interjection.csv Noun.adjv.csv Noun.adverbal.csv Noun.csv Noun.demonst.csv Noun.nai.csv Noun.name.csv Noun.number.csv Noun.org.csv Noun.others.csv Noun.place.csv Noun.proper.csv Noun.verbal.csv Others.csv Postp-col.csv Postp.csv Prefix.csv Suffix.csv Symbol.csv Verb.csv
@@ -77,7 +77,7 @@ VERSION = 2.7.0-20070801
 datarootdir = ${prefix}/share
 
 mecab_dict_index = /usr/lib/mecab/mecab-dict-index
-dicdir = /usr/lib/x86_64-linux-gnu/mecab/dic/ipadic
+dicdir = /usr/lib/mecab/dic/ipadic
 
 # SUBDIRS    = doc script
 dic_DATA = matrix.bin char.bin sys.dic unk.dic left-id.def right-id.def rewrite.def pos-id.def dicrc
@@ -251,7 +251,7 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 matrix.bin char.bin sys.dic unk.dic:
 	$(mecab_dict_index) -d . -o . -f EUC-JP -t utf8
-	echo To enable dictionary, rewrite /etc/mecabrc as \"dicrc = /usr/lib/x86_64-linux-gnu/mecab/dic/ipadic\"
+	echo To enable dictionary, rewrite /etc/mecabrc as \"dicrc = /usr/lib/mecab/dic/ipadic\"
 
 rpm: dist
 	rpm -ta mecab-ipadic-2.7.0-20070801.tar.gz

@@ -100,21 +100,39 @@ void ApplicationGlobal::init2()
 	// インクリメンタル検索ライブラリを初期化
 
 	{ // mecab
-		std::string s = mecab.convert_roman_to_katakana("wagahaihanekodearu");
-		if (s != "ワガハイハネコデアル") {
-			qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
+		{
+			std::string s = mecab.convert_roman_to_katakana("wagahaihanekodearu");
+			if (s != "ワガハイハネコデアル") {
+				qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
+			}
+			if (!mecab.open("/dummy")) {
+				qDebug() << "Failed to load dictionary for MeCaSearch. This may cause some features to not work properly.";
+			}
+			auto parts = mecab.parse("吾輩は猫である");
+			if (parts.size() != 5) {
+				qDebug() << "Failed to parse sentence with MeCaSearch. Expected 5 parts, got " << parts.size();
+			} else {
+				std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
+				for (size_t i = 0; i < parts.size(); i++) {
+					if (parts[i].text != expected[i]) {
+						qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+					}
+				}
+			}
 		}
-		if (!mecab.open("/dummy")) {
-			qDebug() << "Failed to load dictionary for MeCaSearch. This may cause some features to not work properly.";
-		}
-		auto parts = mecab.parse("吾輩は猫である");
-		if (parts.size() != 5) {
-			qDebug() << "Failed to parse sentence with MeCaSearch. Expected 5 parts, got " << parts.size();
-		} else {
-			std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
-			for (size_t i = 0; i < parts.size(); i++) {
-				if (parts[i].text != expected[i]) {
-					qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+		{
+			// カスタム辞書のテスト
+			// 「みみの」はオリジナル辞書には存在しないので、
+			// Custom.csv に「みみの」を定義している。
+			auto parts = mecab.parse("かわいいみみのちゃん");
+			if (parts.size() != 3) {
+				qDebug() << "Failed to parse sentence with MeCaSearch. Expected 3 parts, got " << parts.size();
+			} else {
+				std::vector<std::string> expected = {"カワイイ", "ミミノ", "チャン"};
+				for (size_t i = 0; i < parts.size(); i++) {
+					if (parts[i].text != expected[i]) {
+						qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+					}
 				}
 			}
 		}
