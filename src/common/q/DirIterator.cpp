@@ -1,6 +1,7 @@
 #include "DirIterator.h"
 #include "common/misc.h"
 #include "common/joinpath.h"
+#include "common/unicode_conversion.h"
 #include <filesystem>
 
 #ifdef _WIN32
@@ -32,7 +33,7 @@ bool DirIterator::hasNext()
 {
 	if (m->hasnext) return true;
 	if (!m->handle) {
-		std::filesystem::path filter = misc::convert_utf8_to_utf16(m->path / "*.*");
+		std::filesystem::path filter = convert_utf8_to_utf16(m->path / "*.*");
 		filter.make_preferred();
 		m->handle = FindFirstFileW(filter.c_str(), &m->finddata);
 		if (m->handle == INVALID_HANDLE_VALUE) {
@@ -80,10 +81,10 @@ std::string DirIterator::fileName() const
 
 std::string DirIterator::filePath() const
 {
-	std::filesystem::path path = misc::convert_utf8_to_utf16(m->path);
+	std::filesystem::path path = convert_utf8_to_utf16(m->path);
 	path = path / m->finddata.cFileName;
 	path.make_preferred();
-	return misc::convert_utf16_to_utf8(path.u16string());
+	return convert_utf16_to_utf8(path.u16string());
 }
 
 FileInfo DirIterator::fileInfo() const
