@@ -68,7 +68,7 @@ CYRILLIC       1 1 0
 # KATAKANA
 0x30A1..0x30FF  KATAKANA
 0x31F0..0x31FF  KATAKANA  # Small KU .. Small RO
-# 0x30FC          KATAKANA HIRAGANA  # °º
+# 0x30FC          KATAKANA HIRAGANA  # „Éº
 0x30FC          KATAKANA
 
 # Half KATAKANA
@@ -85,7 +85,7 @@ CYRILLIC       1 1 0
 0xF900..0xFA2D  KANJI
 0xFA30..0xFA6A  KANJI
 
-# KANJI-NUMERIC (∞Ï ∆Û ª∞ ªÕ ∏ﬁ œª º∑ »¨ ∂Â ΩΩ …¥ ¿È À¸ ≤Ø √˚)
+# KANJI-NUMERIC (‰∏Ä ‰∫å ‰∏â Âõõ ‰∫î ÂÖ≠ ‰∏É ÂÖ´ ‰πù ÂçÅ Áôæ ÂçÉ ‰∏á ÂÑÑ ÂÖÜ)
 0x4E00 KANJINUMERIC KANJI
 0x4E8C KANJINUMERIC KANJI
 0x4E09 KANJINUMERIC KANJI

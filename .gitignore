@@ -58,3 +58,10 @@ IncrementalSearch/mecab/mecab-ipadic/configure~
 *~
 IncrementalSearch/mecab/mecab/libtool
 .vscode/
+IncrementalSearch/mecab/mecab/Makefile
+IncrementalSearch/mecab/mecab/config.status
+IncrementalSearch/mecab/mecab/doc/Makefile
+IncrementalSearch/mecab/mecab/man/Makefile
+IncrementalSearch/mecab/mecab/src/Makefile
+IncrementalSearch/mecab/mecab/tests/Makefile
+IncrementalSearch/dicedit/utf8dic

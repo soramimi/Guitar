@@ -9,15 +9,13 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-
-	"golang.org/x/text/encoding/japanese"
-	"golang.org/x/text/transform"
 )
 
 //go:embed templates/index.html
@@ -26,7 +24,7 @@ var indexHTML string
 //go:embed templates/edit.html
 var editHTML string
 
-const dicsDir = "dics"
+const dicsDir = "utf8dic"
 
 // Record は MeCab 辞書の1エントリを表す
 type Record struct {
@@ -58,6 +56,27 @@ func validateFile(name string) bool {
 	return name != "" && filepath.Base(name) == name && strings.HasSuffix(name, ".csv")
 }
 
+func fileFromRequest(r *http.Request) string {
+	file := r.URL.Query().Get("file")
+	if validateFile(file) {
+		return file
+	}
+
+	ref := r.Referer()
+	if ref == "" {
+		return ""
+	}
+	u, err := url.Parse(ref)
+	if err != nil {
+		return ""
+	}
+	file = u.Query().Get("file")
+	if validateFile(file) {
+		return file
+	}
+	return ""
+}
+
 // getFileData はキャッシュからファイルデータを返すか、なければ dics/ から読み込む
 func getFileData(name string) (*fileData, error) {
 	cacheMu.RLock()
@@ -74,7 +93,7 @@ func getFileData(name string) (*fileData, error) {
 	}
 	defer f.Close()
 
-	reader := csv.NewReader(transform.NewReader(f, japanese.EUCJP.NewDecoder()))
+	reader := csv.NewReader(f)
 	reader.FieldsPerRecord = -1
 
 	fd = &fileData{nextID: 1}
@@ -102,8 +121,7 @@ func getFileData(name string) (*fileData, error) {
 
 func saveCSV(name string, fd *fileData) error {
 	var buf bytes.Buffer
-	enc := transform.NewWriter(&buf, japanese.EUCJP.NewEncoder())
-	writer := csv.NewWriter(enc)
+	writer := csv.NewWriter(&buf)
 
 	fd.mu.RLock()
 	for _, r := range fd.records {
@@ -118,9 +136,6 @@ func saveCSV(name string, fd *fileData) error {
 
 	if writeErr != nil {
 		return writeErr
-	}
-	if err := enc.Close(); err != nil {
-		return err
 	}
 	return os.WriteFile(filepath.Join(dicsDir, name), buf.Bytes(), 0644)
 }
@@ -149,8 +164,8 @@ func apiDics(w http.ResponseWriter, r *http.Request) {
 
 // apiRecords は /api/records および /api/records/{id} を処理する
 func apiRecords(w http.ResponseWriter, r *http.Request) {
-	file := r.URL.Query().Get("file")
-	if !validateFile(file) {
+	file := fileFromRequest(r)
+	if file == "" {
 		http.Error(w, "invalid file parameter", http.StatusBadRequest)
 		return
 	}
@@ -288,8 +303,8 @@ func apiSave(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	file := r.URL.Query().Get("file")
-	if !validateFile(file) {
+	file := fileFromRequest(r)
+	if file == "" {
 		http.Error(w, "invalid file parameter", http.StatusBadRequest)
 		return
 	}

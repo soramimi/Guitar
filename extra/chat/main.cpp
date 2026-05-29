@@ -3,9 +3,9 @@
 //
 // experimental code for generating commit messages using AI
 
-#include "AiApiBridge.h"
 #include "../common/ConfigParser.h"
 #include "../common/selectitem.h"
+#include "AiApiBridge.h"
 #include "FileTypeDetector.h"
 #include "common/fmt.h"
 #include "common/joinpath.h"
@@ -14,11 +14,11 @@
 #include "curlclient.h"
 
 #ifdef _WIN32
-#include <windows.h>
-#include <shlobj.h>
-#include <string>
 #include "common/wstring.h"
 #include "process/ProcessWin.h"
+#include <shlobj.h>
+#include <string>
+#include <windows.h>
 #else
 #include "process/ProcessPosix.h"
 #endif
@@ -87,7 +87,7 @@ std::string global_mimetype_by_file(std::string const &path)
 struct GitReturn {
 	int exit_code = -1;
 	std::string out_text;
-	operator bool () const
+	operator bool() const
 	{
 		return exit_code == 0;
 	}
@@ -150,7 +150,7 @@ std::string request(Option const &opt)
 	AiResult msg = gen.query(opt.prompt);
 	if (!msg) {
 		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
-		return {};
+		return { };
 	}
 
 	return msg.content();
@@ -234,11 +234,10 @@ static std::string writable_generic_config_location()
 		FOLDERID_LocalAppData, // %LOCALAPPDATA%
 		KF_FLAG_DEFAULT,
 		nullptr,
-		&path
-		);
+		&path);
 
 	if (FAILED(hr)) {
-		return {};
+		return { };
 	}
 
 	std::string result = misc::convert_wstr_to_str(path);
@@ -253,32 +252,30 @@ static std::string writable_generic_config_location()
 }
 #endif
 
-
 int main(int argc, char **argv)
 {
 	if (0) {
-		return {};
+		return { };
 	}
 
 	std::string organization_name = "soramimi.jp";
 	std::string application_name = "chat";
-	std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
+	// std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
 	std::string generic_config_dir = writable_generic_config_location();
 	std::string app_config_dir = generic_config_dir / organization_name / application_name;
-	std::string log_dir = app_config_dir / "log";
+	// std::string log_dir = app_config_dir / "log";
 	opt.config_file_path = app_config_dir / application_name + ".ini";
 	opt.config_file_path = misc::realpath(opt.config_file_path);
 
 	{
 		ConfigParser parser;
-		parser.parse(opt.config_file_path.c_str(), [](std::string const &section, std::string const &key, std::string const &value, void *cookie){
+		parser.parse(opt.config_file_path.c_str(), [](std::string const &section, std::string const &key, std::string const &value, void *cookie) {
 			Option *opt = static_cast<Option *>(cookie);
 			if (section == "AI") {
 				if (key == "model") {
 					opt->model_name = value;
 				}
-			}
-		}, &opt);
+			} }, &opt);
 	}
 
 	return main2(argc, argv);
