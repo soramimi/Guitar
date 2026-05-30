@@ -8,6 +8,7 @@
 #include "filetype/src/FileType.h"
 #include "Git.h"
 #include "webclient.h"
+#include <MyJagger.h>
 #include <QColor>
 #include <QString>
 #include "FileTypeDetector.h"
@@ -104,6 +105,9 @@ public:
 	std::shared_ptr<AbstractInetClient> inet_client();
 
 	LibMecab mecab;
+#ifdef USE_EXPERIMENTAL_JAGGER
+	LibJagger jagger;
+#endif
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
 	

@@ -84,7 +84,11 @@ struct MecabFilter::Private {
 std::string MecabFilter::to_kana(const std::string &text, std::vector<IncrementalSearch::Part> *out)
 {
 	std::string kana;
+#ifdef USE_EXPERIMENTAL_JAGGER
+	std::vector<LibMecab::Part> parts = global->jagger.parse(text);
+#else
 	std::vector<LibMecab::Part> parts = global->mecab.parse(text);
+#endif
 	size_t pos = 0;
 	for (LibMecab::Part const &part : parts) {
 		IncrementalSearch::Part item;

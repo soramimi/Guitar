@@ -137,6 +137,12 @@ void ApplicationGlobal::init2()
 			}
 		}
 
+#ifdef USE_EXPERIMENTAL_JAGGER
+		{
+			jagger.open("/dummy");
+		}
+#endif
+
 		MecabFilter f("atarasii");
 		IncrementalSearch::Result r = f.match("新しいフォルダ新しいフォルダ");
 		Q_ASSERT(r.match);
@@ -200,6 +206,7 @@ std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
 
 IncrementalSearchFilter ApplicationGlobal::makeIncrementalSearchFilter(std::string const &filtertext)
 {
+	return {std::make_shared<MecabFilter>(filtertext)};
 	return {std::make_shared<MecabFilter>(filtertext)};
 }
 

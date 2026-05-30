@@ -97,9 +97,15 @@ include(libfiletype.pri)
 
 INCLUDEPATH += IncrementalSearch/
 
-!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearch.a
+!msvc:CONFIG(release, debug|release):!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearch.a
+!msvc:CONFIG(debug, debug|release):!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearchd.a
 msvc:CONFIG(release, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearch.lib
 msvc:CONFIG(debug, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearchd.lib
+
+# CONFIG += use_experimental_jagger
+use_experimental_jagger {
+    DEFINES += USE_EXPERIMENTAL_JAGGER
+}
 
 #
 

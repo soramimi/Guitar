@@ -8,12 +8,15 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 CPP_STD = c++17
-
 CONFIG += $$CPP_STD nostrip debug_info static
+gcc:QMAKE_CXXFLAGS += -std=$$CPP_STD -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder -Wno-unused-parameter -Wno-unused-parameter
 
 INCLUDEPATH += $$PWD/mecab/mecab/src
 INCLUDEPATH += $$PWD
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+
+INCLUDEPATH += $$PWD/../../jagger-example/jagger/src
+INCLUDEPATH += $$PWD/../src/common
 
 DEFINES += NOMINMAX
 
@@ -21,10 +24,12 @@ DEFINES += HAVE_STDINT_H
 DEFINES += HAVE_CONFIG_H
 
 HEADERS += \
-	# MeCaSearch.h \
+    ../src/common/unicode_conversion.h \
+    MyJagger.h \
+    MyMecab.h \
+    jagger/ccedar_core.h \
+	jagger/jagger.h \
 	AbstractSimpleIO.h \
-	LibMecab.h \
-	MyMecab.h \
 	config.h \
 	mecab/mecab/src/char_property.h \
 	mecab/mecab/src/common.h \
@@ -56,10 +61,12 @@ HEADERS += \
 	mecab/mecab/src/writer.h
 
 SOURCES += \
-	# MeCaSearch.cpp \
+	../src/common/unicode_conversion.cpp \
 	AbstractSimpleIO.cpp \
+	MyJagger.cpp \
 	MyMecab.cpp \
 	gzip.cpp \
+	jagger/jagger.cc \
 	libmain.cpp \
 	mecab/mecab/src/char_property.cpp \
 	mecab/mecab/src/connector.cpp \
