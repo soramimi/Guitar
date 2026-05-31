@@ -154,15 +154,16 @@ public:
 	bool fetch(AbstractPtyProcess *pty = nullptr, bool prune = false);
 
 	std::vector<GitBranch> branches();
-
-	std::string diff(const std::string &old_id, const std::string &new_id);
-	std::string diff_file(const std::string &old_path, const std::string &new_path);
-
+	
+	std::string diff(const std::string &old_id, const std::string &new_id, const GitDiffOption &opt);
+	std::string diff_file(const std::string &old_path, const std::string &new_path, const GitDiffOption &opt);
+	std::string diff_to_file(const std::string &old_id, const std::string &path, const GitDiffOption &opt);
+	
 	std::vector<std::string> diff_name_only_head();
 	std::string diff_full_index_head_file(const std::string &file);
-
+	
 	std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
-
+	
 	std::string status();
 	bool commit(const std::string &text, bool sign, AbstractPtyProcess *pty);
 	bool commit_amend_m(const std::string &text, bool sign, AbstractPtyProcess *pty);
@@ -173,17 +174,16 @@ public:
 	void checkoutBranch(std::string const &name);
 	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);
 	bool deleteBranch(std::string const &name);
-
+	
 	bool checkout(const std::string &branch_name, const std::string &id = {});
 	bool checkout_detach(std::string const &id);
-
+	
 	void rebaseBranch(const std::string &name);
 	bool rebase_continue();
 	bool rebase_abort();
 	bool rebase_quit();
-
+	
 	bool isValidWorkingCopy(const std::string &dir) const;
-	std::string diff_to_file(const std::string &old_id, const std::string &path);
 	std::string errorMessage(const std::optional<GitResult> &var) const;
 
 	GitHash rev_parse(std::string const &name);

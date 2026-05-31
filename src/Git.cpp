@@ -228,18 +228,32 @@ bool Git::delete_tag(std::string const &name, bool remote)
 	return true;
 }
 
-std::string Git::diff(std::string const &old_id, std::string const &new_id)
+static std::string git_diff_command(GitDiffOption const &opt)
 {
-	std::string cmd = "diff --full-index -a %s %s";
-	cmd = fmt(cmd)(old_id)(new_id);
+	std::string cmd = "diff --full-index -a";
+	if (opt.ignore_space_change) {
+		cmd += " --ignore-space-change";
+	}
+	return cmd;
+}
+
+std::string Git::diff(std::string const &old_id, std::string const &new_id, GitDiffOption const &opt)
+{
+	std::string cmd = git_diff_command(opt) + fmt(" %s %s")(old_id)(new_id).str();
 	auto result = git(cmd);
 	return resultStdString(result);
 }
 
-std::string Git::diff_file(std::string const &old_path, std::string const &new_path)
+std::string Git::diff_file(std::string const &old_path, std::string const &new_path, const GitDiffOption &opt)
 {
-	std::string cmd = "diff --full-index -a -- %s %s";
-	cmd = fmt(cmd)(old_path)(new_path);
+	std::string cmd = git_diff_command(opt) + fmt(" -- %s %s")(old_path)(new_path).str();
+	auto result = git(cmd);
+	return resultStdString(result);
+}
+
+std::string Git::diff_to_file(const std::string &old_id, const std::string &path, const GitDiffOption &opt)
+{
+	std::string cmd = git_diff_command(opt) + fmt(" %s -- \"%s\"")(old_id)(path).str();
 	auto result = git(cmd);
 	return resultStdString(result);
 }
@@ -301,13 +315,7 @@ std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_
 	return list;
 }
 
-std::string Git::diff_to_file(std::string const &old_id, std::string const &path)
-{
-	std::string cmd = "diff --full-index -a %s -- \"%s\"";
-	cmd = fmt(cmd)(old_id)(path);
-	auto result = git(cmd);
-	return resultStdString(result);
-}
+
 
 std::string Git::getDefaultBranch()
 {

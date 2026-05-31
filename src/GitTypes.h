@@ -482,6 +482,10 @@ private:
 	void makeForSingleFile(GitDiff *diff, const std::string &id_a, const std::string &id_b, const std::string &path, const std::string &mode);
 };
 
+struct GitDiffOption {
+	bool ignore_space_change = false;
+};
+
 std::string gitTrimPath(std::string const &s);
 
 #endif // GITTYPES_H

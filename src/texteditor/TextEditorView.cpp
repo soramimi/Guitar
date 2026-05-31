@@ -862,7 +862,26 @@ void TextEditorView::paintEvent(QPaintEvent *)
 								}
 							}
 							auto u = chars[j + n].unicode;
-							if (u == '\t') break; // タブなら抜ける
+							if (u == '\t') {
+								CharAttr const &attr = chars[j].attr;
+								if ((attr.flags & CharAttr::Underline1) || (attr.flags & CharAttr::Underline2)) {
+									// 文字差分フラグがあるとき背景を描く
+									int x = text_origin_x + left_x;
+									int w = right_x - left_x;
+									int h = line_height;
+									auto DrawDiffMarker = [&](QColor const &color){
+										const int N = 6;
+										pr.fillRect(x, text_origin_y + h - N, w, N, color);
+									};
+									if (attr.flags & CharAttr::Underline1) {
+										DrawDiffMarker(theme()->bgDiffCharDel());
+									}
+									if (attr.flags & CharAttr::Underline2) {
+										DrawDiffMarker(theme()->bgDiffCharAdd());
+									}
+								}
+								break; // タブなら抜ける
+							}
 							text = appendUnicode(text, u); // 文字を追加
 							right_x = chars[j + n].right_x;
 							n++;
@@ -877,21 +896,12 @@ void TextEditorView::paintEvent(QPaintEvent *)
 								const int N = 6;
 								pr.fillRect(x, text_origin_y + h - N, w, N, color);
 							};
-#if 1
 							if (attr.flags & CharAttr::Underline1) {
 								DrawDiffMarker(theme()->bgDiffCharDel());
 							}
 							if (attr.flags & CharAttr::Underline2) {
 								DrawDiffMarker(theme()->bgDiffCharAdd());
 							}
-#else
-							if (attr.flags & CharAttr::Underline1) {
-								DrawDiffMarker(QColor(255, 255, 128));
-							}
-							if (attr.flags & CharAttr::Underline2) {
-								DrawDiffMarker(QColor(255, 255, 128));
-							}
-#endif
 							pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
 						}
 						if (n == 0) {

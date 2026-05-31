@@ -633,7 +633,9 @@ std::string FileDiffWidget::diffObjects(std::string const &a_id, std::string con
 				file_b.write(m->text_codec->toUnicode(obj_b.content).toUtf8());
 				file_a.close();
 				file_b.close();
-				std::string s = git().diff_file(path_a.toStdString(), path_b.toStdString());
+				GitDiffOption opt;
+				opt.ignore_space_change = true;
+				std::string s = git().diff_file(path_a.toStdString(), path_b.toStdString(), opt);
 				file_a.remove();
 				file_b.remove();
 				return s;

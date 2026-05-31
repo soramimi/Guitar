@@ -366,19 +366,19 @@ std::vector<GitDiffRaw> GitRunner::diff_raw(const GitHash &old_id, const GitHash
 	return gitptr()->diff_raw(old_id, new_id);
 }
 
-std::string GitRunner::diff(std::string const &old_id, std::string const &new_id)
+std::string GitRunner::diff(std::string const &old_id, std::string const &new_id, GitDiffOption const &opt)
 {
-	return gitptr()->diff(old_id, new_id);
+	return gitptr()->diff(old_id, new_id, opt);
 }
 
-std::string GitRunner::diff_file(std::string const &old_path, std::string const &new_path)
+std::string GitRunner::diff_file(std::string const &old_path, std::string const &new_path, const GitDiffOption &opt)
 {
-	return gitptr()->diff_file(old_path, new_path);
+	return gitptr()->diff_file(old_path, new_path, opt);
 }
 
-std::string GitRunner::diff_to_file(std::string const &old_id, std::string const &path)
+std::string GitRunner::diff_to_file(std::string const &old_id, std::string const &path, const GitDiffOption &opt)
 {
-	return gitptr()->diff_to_file(old_id, path);
+	return gitptr()->diff_to_file(old_id, path, opt);
 }
 
 std::vector<std::string> GitRunner::diff_name_only_head()

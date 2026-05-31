@@ -68,17 +68,21 @@ std::string GitDiffManager::prependPathPrefix(std::string const &path)
 std::string GitDiffManager::diffObjects(GitRunner g, std::string const &a_id, std::string const &b_id)
 {
 	std::string path_prefix = PATH_PREFIX;
+	GitDiffOption opt;
+	opt.ignore_space_change = true;
 	if (misc::starts_with(b_id, path_prefix)) {
 		std::string path = b_id.substr(path_prefix.size());
-		return g.diff_to_file(a_id, path);
+		return g.diff_to_file(a_id, path, opt);
 	} else {
-		return g.diff(a_id, b_id);
+		return g.diff(a_id, b_id, opt);
 	}
 }
 
 std::string GitDiffManager::diffFiles(GitRunner g, std::string const &a_path, std::string const &b_path)
 {
-	return g.diff_file(a_path, b_path);
+	GitDiffOption opt;
+	opt.ignore_space_change = true;
+	return g.diff_file(a_path, b_path, opt);
 }
 
 GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
@@ -97,12 +101,13 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 	out.b_submodule.commit = info->b_submodule.commit;
 	out.mode = "0";
 
+	constexpr std::string_view sv_atat = "@@ ";
+
 	bool atat = false;
-	for (std::string_view const &s : lines) {
-		std::string line(s);
-		int c = (unsigned char)line.c_str()[0];
+	for (std::string_view const &line : lines) {
+		int c = line.empty() ? 0 : (unsigned char)line[0];
 		if (c == '@') {
-			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
+			if (misc::starts_with(line, sv_atat)) {
 				out.hunks.push_back(GitHunk());
 				out.hunks.back().at = line;
 				atat = true;
@@ -120,7 +125,7 @@ GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
 				}
 				if (atat) {
 					if (!out.hunks.isEmpty()) {
-						out.hunks.back().lines.push_back(line);
+						out.hunks.back().lines.emplace_back(line);
 					}
 				}
 			}

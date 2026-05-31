@@ -117,9 +117,9 @@ public:
 	std::string queryEntireCommitMessage(const GitHash &id);
 
 	std::vector<GitDiffRaw> diff_raw(GitHash const &old_id, GitHash const &new_id);
-	std::string diff(const std::string &old_id, const std::string &new_id);
-	std::string diff_file(const std::string &old_path, const std::string &new_path);
-	std::string diff_to_file(const std::string &old_id, const std::string &path);
+	std::string diff(const std::string &old_id, const std::string &new_id, const GitDiffOption &opt);
+	std::string diff_file(const std::string &old_path, const std::string &new_path, const GitDiffOption &opt);
+	std::string diff_to_file(const std::string &old_id, const std::string &path, const GitDiffOption &opt);
 	std::vector<std::string> diff_name_only_head();
 	std::string diff_full_index_head_file(const std::string &file);
 
