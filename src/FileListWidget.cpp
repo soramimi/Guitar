@@ -5,6 +5,8 @@
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <map>
+#include "ApplicationGlobal.h"
+#include "common/str.h"
 
 namespace {
 class ItemDelegate : public QStyledItemDelegate {
@@ -26,11 +28,14 @@ public:
 	ItemDelegate(QObject *parent)
 		: QStyledItemDelegate(parent)
 	{
-		badge_map["(chg) "] = Badge("Chg", QColor(240, 240, 140), QIcon(":/image/chg.svg"));
-		badge_map["(add) "] = Badge("Add", QColor(180, 240, 180), QIcon(":/image/add.svg"));
-		badge_map["(del) "] = Badge("Del", QColor(255, 200, 200), QIcon(":/image/del.svg"));
-		badge_map["(ren) "] = Badge("Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
-		badge_map["(cpy) "] = Badge("Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
+		auto Add = [&](auto prefix, QString const &text, QColor const &color, QIcon const &icon) {
+			badge_map[(misc::str)prefix] = Badge(text, color, icon);
+		};
+		Add(global->prefix_chg, "Chg", QColor(240, 240, 140), QIcon(":/image/chg.svg"));
+		Add(global->prefix_add, "Add", QColor(180, 240, 180), QIcon(":/image/add.svg"));
+		Add(global->prefix_del, "Del", QColor(255, 200, 200), QIcon(":/image/del.svg"));
+		Add(global->prefix_ren, "Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
+		Add(global->prefix_cpy, "Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
 	}
 	/**
 	 * @brief ファイルリストの1行分を描画する

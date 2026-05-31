@@ -3738,17 +3738,17 @@ void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::
 {
 	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
 		GitDiff const &diff = diff_list->at(idiff);
-		QString header;
+		std::string_view header;
 
 		switch (diff.type) {
-		case GitDiff::Type::Modify:   header = "(chg) "; break;
-		case GitDiff::Type::Copy:     header = "(cpy) "; break;
-		case GitDiff::Type::Rename:   header = "(ren) "; break;
-		case GitDiff::Type::Create:   header = "(add) "; break;
-		case GitDiff::Type::Delete:   header = "(del) "; break;
-		case GitDiff::Type::ChType:   header = "(chg) "; break;
-		case GitDiff::Type::Unmerged: header = "(unmerged) "; break;
-		default: header = "() "; break;
+		case GitDiff::Type::Modify:   header = global->prefix_chg; break;
+		case GitDiff::Type::Copy:     header = global->prefix_cpy; break;
+		case GitDiff::Type::Rename:   header = global->prefix_ren; break;
+		case GitDiff::Type::Create:   header = global->prefix_add; break;
+		case GitDiff::Type::Delete:   header = global->prefix_del; break;
+		case GitDiff::Type::ChType:   header = global->prefix_chg; break;
+		case GitDiff::Type::Unmerged: header = global->prefix_unmerged; break;
+		default: header = global->prefix_empty; break;
 		}
 
 		ObjectData data;
@@ -3756,7 +3756,7 @@ void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::
 		data.path = diff.path;
 		data.submod = diff.b_submodule.item;
 		data.submod_commit = diff.b_submodule.commit;
-		data.header = header;
+		data.header = (misc::str)header;
 		data.idiff = idiff;
 		fn_add_item(data);
 	}
@@ -4260,7 +4260,7 @@ void MainWindow::updateFileList(GitHash const &id)
 						{
 							bool staged = (s.isStaged() && s.code_y() == ' ');
 							int idiff = -1;
-							QString header;
+							std::string_view header;
 							auto it = diffmap.find((QS)s.path1());
 							GitDiff const *diff = nullptr;
 							if (it != diffmap.end()) {
@@ -4273,20 +4273,20 @@ void MainWindow::updateFileList(GitHash const &id)
 							} else if (s.code() == GitFileStatus::Code::Untracked) {
 								// nop
 							} else if (s.isUnmerged()) {
-								header += "(unmerged) ";
+								header = global->prefix_unmerged;
 							} else if (s.code() == GitFileStatus::Code::AddedToIndex) {
-								header = "(add) ";
+								header = global->prefix_add;
 							} else if (s.code_x() == 'D' || s.code_y() == 'D' || s.code() == GitFileStatus::Code::DeletedFromIndex) {
-								header = "(del) ";
+								header = global->prefix_del;
 							} else if (s.code_x() == 'R' || s.code() == GitFileStatus::Code::RenamedInIndex) {
-								header = "(ren) ";
+								header = global->prefix_ren;
 								path = s.path2(); // renamed newer path
 							} else if (s.code_x() == 'M' || s.code_y() == 'M') {
-								header = "(chg) ";
+								header = global->prefix_chg;
 							}
 							ObjectData obj;
-							obj.path = (QS)path;
-							obj.header = header;
+							obj.path = (misc::str)path;
+							obj.header = (misc::str)header;
 							obj.idiff = idiff;
 							obj.staged = staged;
 							if (diff) {

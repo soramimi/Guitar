@@ -102,6 +102,16 @@ public:
 	void writeLog(const std::string_view &str);
 	void writeLog(const QString &str);
 
+	constexpr static std::string_view prefix_chg = "(chg) ";
+	constexpr static std::string_view prefix_cpy = "(cpy) ";
+	constexpr static std::string_view prefix_ren = "(ren) ";
+	constexpr static std::string_view prefix_add = "(add) ";
+	constexpr static std::string_view prefix_del = "(del) ";
+	constexpr static std::string_view prefix_unmerged = "(unmerged) ";
+	constexpr static std::string_view prefix_empty = "() ";
+
+
+
 	std::shared_ptr<AbstractInetClient> inet_client();
 
 	LibMecab mecab;
