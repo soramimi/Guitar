@@ -135,10 +135,10 @@ GitRunner FileDiffWidget::git()
 GitObject FileDiffWidget::catFile(GitRunner g, std::string const &id)
 {
 	if (g.isValidWorkingCopy()) {
-		std::string path_prefix = PATH_PREFIX;
+		static constexpr std::string_view path_prefix = PATH_PREFIX;
 		if (misc::starts_with(id, path_prefix)) {
 			std::string path = g.workingDir() / id.substr(path_prefix.size());
-			QFile file((QS)path);
+			QFile file(misc::escape_double_quote_for_file_open((QS)path));
 			if (file.open(QFile::ReadOnly)) {
 				GitObject obj;
 				obj.content = file.readAll();

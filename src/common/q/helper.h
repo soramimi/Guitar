@@ -60,4 +60,20 @@ public:
 	}
 };
 
+namespace misc {
+static inline QString escape_double_quote_for_file_open(QString const &in)
+{
+	// 二重引用符を補う
+	QString out;
+	for (QChar c : in) {
+		if (c == '\"') {
+			out += '\\';
+		}
+		out += c;
+	}
+	return out;
+}
+
+}
+
 #endif // QHELPER_H

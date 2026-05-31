@@ -246,14 +246,14 @@ std::string Git::diff(std::string const &old_id, std::string const &new_id, GitD
 
 std::string Git::diff_file(std::string const &old_path, std::string const &new_path, const GitDiffOption &opt)
 {
-	std::string cmd = git_diff_command(opt) + fmt(" -- %s %s")(old_path)(new_path).str();
+	std::string cmd = git_diff_command(opt) + fmt(" -- %s %s")(quoted_text(old_path))(quoted_text(new_path)).str();
 	auto result = git(cmd);
 	return resultStdString(result);
 }
 
 std::string Git::diff_to_file(const std::string &old_id, const std::string &path, const GitDiffOption &opt)
 {
-	std::string cmd = git_diff_command(opt) + fmt(" %s -- \"%s\"")(old_id)(path).str();
+	std::string cmd = git_diff_command(opt) + fmt(" %s -- %s")(old_id)(quoted_text(path)).str();
 	auto result = git(cmd);
 	return resultStdString(result);
 }

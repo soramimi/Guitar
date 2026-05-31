@@ -159,10 +159,15 @@ std::string gitTrimPath(std::string const &s)
 			char c = *ptr;
 			ptr++;
 			if (c == '\\') {
-				c = 0;
-				for (int i = 0; i < 3 && ptr < right && isdigit((unsigned char)*ptr); i++) { // decode \oct
-					c = c * 8 + (*ptr - '0');
-					ptr++;
+				if (ptr + 2 < right && ptr[0] == '\\' && ptr[1] == '\\') { // triple backslash
+					c = ptr[2];
+					ptr += 3;
+				} else if (ptr < end && isdigit((unsigned char)*ptr)) { // octal number
+					c = 0;
+					for (int i = 0; i < 3 && ptr < right && isdigit((unsigned char)*ptr); i++) { // decode \oct
+						c = c * 8 + (*ptr - '0');
+						ptr++;
+					}
 				}
 			}
 			ba += c;
