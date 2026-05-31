@@ -15,7 +15,6 @@ INCLUDEPATH += $$PWD/mecab/mecab/src
 INCLUDEPATH += $$PWD
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
-INCLUDEPATH += $$PWD/../../jagger-example/jagger/src
 INCLUDEPATH += $$PWD/../src/common
 
 DEFINES += NOMINMAX
@@ -24,12 +23,9 @@ DEFINES += HAVE_STDINT_H
 DEFINES += HAVE_CONFIG_H
 
 HEADERS += \
-    ../src/common/unicode_conversion.h \
-    MyJagger.h \
-    MyMecab.h \
-    jagger/ccedar_core.h \
-	jagger/jagger.h \
+	../src/common/unicode_conversion.h \
 	AbstractSimpleIO.h \
+	MyMecab.h \
 	config.h \
 	mecab/mecab/src/char_property.h \
 	mecab/mecab/src/common.h \
@@ -63,10 +59,8 @@ HEADERS += \
 SOURCES += \
 	../src/common/unicode_conversion.cpp \
 	AbstractSimpleIO.cpp \
-	MyJagger.cpp \
 	MyMecab.cpp \
 	gzip.cpp \
-	jagger/jagger.cc \
 	libmain.cpp \
 	mecab/mecab/src/char_property.cpp \
 	mecab/mecab/src/connector.cpp \
@@ -95,3 +89,14 @@ SOURCES += \
 	xxd_matrixbin_gz.c \
 	xxd_sysdic_gz.c \
 	xxd_unkdic_gz.c
+
+linux {
+	INCLUDEPATH += $$PWD/jagger
+	HEADERS += \
+		MyJagger.h \
+		jagger/ccedar_core.h \
+		jagger/jagger.h
+	SOURCES += \
+		MyJagger.cpp \
+		jagger/jagger.cc
+}

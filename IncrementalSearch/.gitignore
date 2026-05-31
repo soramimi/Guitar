@@ -1,4 +1,5 @@
 mecab-test
+utf8dic/
 build/
 *.a
 *.o
