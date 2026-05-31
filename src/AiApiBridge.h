@@ -8,6 +8,8 @@
 #include <optional>
 #include <functional>
 
+class AbstractInetClient;
+
 struct AiResponseEx {
 	std::string model;
 	std::string id;
@@ -67,7 +69,7 @@ struct AiResult {
 
 	operator bool () const
 	{
-		return d.completion || !d.error_status.empty() || !d.error_message.empty();
+		return d.completion && d.error_status.empty() && d.error_message.empty();
 	}
 	std::string const &content() const
 	{
@@ -81,30 +83,15 @@ struct AiResult {
 	{
 		return d.error_message;
 	}
+	
+	bool is_error() const
+	{
+		return !d.error_status.empty() || !d.error_message.empty();
+	}
 };
 
 class AiApiBridge {
 public:
-private:
-	GenerativeAI::Model ai_model_;
-	std::string system_role_;
-	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
-public:
-	AiApiBridge();
-	static AiResult Error(std::string const &status, std::string const &message)
-	{
-		AiResult ret;
-		ret.d.error_status = status;
-		ret.d.error_message = message;
-		return ret;
-	}
-	GenerativeAI::Model ai_model();
-	void set_ai_model(GenerativeAI::Model model);
-	void set_system_role(std::string const &role);
-	AiResult query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
-	AiResult query(const std::string &prompt);
-	std::optional<AiResult::Models> queryModels();
-	
 	struct Quert2Resuest {
 		enum Type {
 			TEXT,
@@ -133,6 +120,32 @@ public:
 			return !prompt.empty();
 		}
 	};
+private:
+	struct Private;
+	Private *m;
+	AbstractInetClient *http();
+	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
+	AiResult x_connect();
+	AiResult x_query(std::function<Quert2Resuest ()> fn_prompt);
+	void x_disconnect();
+public:
+	AiApiBridge();
+	~AiApiBridge();
+	
+	static AiResult Error(std::string const &status, std::string const &message)
+	{
+		AiResult ret;
+		ret.d.error_status = status;
+		ret.d.error_message = message;
+		return ret;
+	}
+	GenerativeAI::Model model();
+	void set_ai_model(GenerativeAI::Model model);
+	void set_system_role(std::string const &role);
+	AiResult query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
+	AiResult query(const std::string &prompt);
+	std::optional<AiResult::Models> queryModels();
+	
 	AiResult query2(std::function<Quert2Resuest ()> fn_prompt);
 };
 
