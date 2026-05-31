@@ -777,6 +777,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				if (k == Qt::Key_Home) {
 					setCurrentLogRow(0);
 					return true;
+				} else if (k == Qt::Key_End) {
+					setCurrentLogRow(ui->tableWidget_log->rowCount() - 1);
+					return true;
 				} else if (shift && k == Qt::Key_Escape) {
 					ui->treeWidget_repos->setFocus();
 					return true;
