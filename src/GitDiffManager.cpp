@@ -156,7 +156,7 @@ std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const 
 			if (newer_commit.parents.empty()) { // 親がないなら最古のコミット
 				auto F = [&](auto self, GitRunner g, std::string const &dir, GitTreeItemList const *files, std::vector<GitDiff> *diffs)-> void {
 					for (GitTreeItem const &d : *files) {
-						std::string path = dir / d.name;
+						std::string path = dir.empty() ? d.name : (dir / d.name);
 						if (d.type == GitTreeItem::BLOB) {
 							GitDiff diff(d.id, path, d.mode);
 							diffs->push_back(diff);
