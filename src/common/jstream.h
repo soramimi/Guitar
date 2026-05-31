@@ -27,7 +27,7 @@ static inline std::vector<char> encode_json_string(std::string_view const &in)
 	ret.reserve(end - ptr + 10);
 	while (ptr < end) {
 		int c = (unsigned char)*ptr;
-		ptr++;
+		char const *next = ptr + 1;
 		switch (c) {
 		case '\"': ret.push_back('\\'); ret.push_back('\"'); break;
 		case '\\': ret.push_back('\\'); ret.push_back('\\'); break;
@@ -40,40 +40,50 @@ static inline std::vector<char> encode_json_string(std::string_view const &in)
 			if (c >= 0x20 && c < 0x7f) {
 				ret.push_back(c);
 			} else {
-				uint32_t u = 0;
-				if ((c & 0xe0) == 0xc0 && ptr < end) {
-					if ((ptr[0] & 0xc0) == 0x80) {
-						int d = (unsigned char)ptr[0];
-						u = ((c & 0x1f) << 6) | (d & 0x3f);
+				int utf8len = 0;
+				uint32_t unicode = 0;
+				if ((c & 0xe0) == 0xc0 && next < end) {
+					if ((next[0] & 0xc0) == 0x80) {
+						int d = (unsigned char)next[0];
+						unicode = ((c & 0x1f) << 6) | (d & 0x3f);
+						utf8len = 2;
 					}
-				} else if ((c & 0xf0) == 0xe0 && ptr + 1 < end) {
-					if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80) {
-						int d = (unsigned char)ptr[0];
-						int e = (unsigned char)ptr[1];
-						u = ((c & 0x0f) << 12) | ((d & 0x3f) << 6) | (e & 0x3f);
+				} else if ((c & 0xf0) == 0xe0 && next + 1 < end) {
+					if ((next[0] & 0xc0) == 0x80 && (next[1] & 0xc0) == 0x80) {
+						int d = (unsigned char)next[0];
+						int e = (unsigned char)next[1];
+						unicode = ((c & 0x0f) << 12) | ((d & 0x3f) << 6) | (e & 0x3f);
+						utf8len = 3;
 					}
-				} else if ((c & 0xf8) == 0xf0 && ptr + 2 < end) {
-					if ((ptr[0] & 0xc0) == 0x80 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
-						int d = (unsigned char)ptr[0];
-						int e = (unsigned char)ptr[1];
-						int f = (unsigned char)ptr[2];
-						u = ((c & 0x0f) << 18) | ((d & 0x3f) << 12) | ((e & 0x3f) << 6) | (f & 0x3f);
+				} else if ((c & 0xf8) == 0xf0 && next + 2 < end) {
+					if ((next[0] & 0xc0) == 0x80 && (next[1] & 0xc0) == 0x80 && (next[2] & 0xc0) == 0x80) {
+						int d = (unsigned char)next[0];
+						int e = (unsigned char)next[1];
+						int f = (unsigned char)next[2];
+						unicode = ((c & 0x0f) << 18) | ((d & 0x3f) << 12) | ((e & 0x3f) << 6) | (f & 0x3f);
+						utf8len = 4;
 					}
 				}
-				if (u != 0) {
-					char tmp[20];
-					if (u >= 0x10000 && u < 0x110000) {
-						uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
-						uint16_t l = (u - 0x10000) % 0x400 + 0xdc00;
-						sprintf(tmp, "\\u%04X\\u%04X", h, l);
-						ret.insert(ret.end(), tmp, tmp + 12);
+				if (unicode != 0) {
+					if (1) {
+						next = ptr + utf8len;
+						ret.insert(ret.end(), ptr, next);
 					} else {
-						sprintf(tmp, "\\u%04X", u);
-						ret.insert(ret.end(), tmp, tmp + 6);
+						char tmp[20];
+						if (unicode >= 0x10000 && unicode < 0x110000) {
+							uint16_t h = (unicode - 0x10000) / 0x400 + 0xd800;
+							uint16_t l = (unicode - 0x10000) % 0x400 + 0xdc00;
+							sprintf(tmp, "\\u%04X\\u%04X", h, l);
+							ret.insert(ret.end(), tmp, tmp + 12);
+						} else {
+							sprintf(tmp, "\\u%04X", unicode);
+							ret.insert(ret.end(), tmp, tmp + 6);
+						}
 					}
 				}
 			}
 		}
+		ptr = next;
 	}
 	return ret;
 }

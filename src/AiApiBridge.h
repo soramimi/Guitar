@@ -6,6 +6,42 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <functional>
+
+struct AiResponseEx {
+	std::string model;
+	std::string id;
+	std::string type;
+	std::string role;
+	struct ContentItem {
+		std::string type;
+		std::string text;
+		std::string id;
+		std::string name;
+		// std::string input;
+		std::string caller_type;
+	};
+	std::vector<ContentItem> content;
+	std::string stop_reason;
+	// std::string stop_sequence;
+	// std::string stop_details;
+	struct Usage {
+		int input_tokens;
+		int cache_creation_input_tokens;
+		int cache_read_input_tokens;
+		struct CacheCreation {
+			int ephemeral_5m_input_tokens;
+			int ephemeral_1h_input_tokens;
+		} cache_creation;
+		int output_tokens;
+		std::string service_tier;
+		std::string inference_geo;
+	} usage;
+	struct Error {
+		std::string type;
+		std::string message;
+	} error;
+};
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct AiResult {
@@ -26,6 +62,7 @@ struct AiResult {
 		std::string content;          ///< AIが返したテキスト本文
 		std::string error_status;  ///< エラー種別
 		std::string error_message; ///< エラーメッセージ
+		AiResponseEx ex;
 	} d;
 
 	operator bool () const
@@ -67,6 +104,36 @@ public:
 	AiResult query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
 	AiResult query(const std::string &prompt);
 	std::optional<AiResult::Models> queryModels();
+	
+	struct Quert2Resuest {
+		enum Type {
+			TEXT,
+			JSON,
+		};
+		Type type = TEXT;
+		std::string prompt;
+		void set_text(std::string const &text)
+		{
+			type = TEXT;
+			prompt = text;
+		}
+		void set_json(std::string const &json)
+		{
+			type = JSON;
+			prompt = json;
+		}
+		Quert2Resuest() = default;
+		Quert2Resuest(Type t, std::string const &p)
+			: type(t)
+			, prompt(p)
+		{
+		}
+		operator bool () const
+		{
+			return !prompt.empty();
+		}
+	};
+	AiResult query2(std::function<Quert2Resuest ()> fn_prompt);
 };
 
 #endif // AIAPIBRIDGE_H

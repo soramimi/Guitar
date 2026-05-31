@@ -123,6 +123,68 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		AiResult ret;
 		while (reader.next()) {
+			if (reader.match("{model")) {
+				ret.d.ex.model = reader.string();
+			} else if (reader.match("{id")) {
+				ret.d.ex.id = reader.string();
+			} else if (reader.match("{type")) {
+				ret.d.ex.type = reader.string();
+				if (ret.d.ex.type == "error") {
+					ret.d.completion = false;
+				}
+			} else if (reader.match("{role")) {
+				ret.d.ex.role = reader.string();
+			} else if (reader.match("{content[{**")) {
+				reader.nest();
+				AiResponseEx::ContentItem item;
+				do {
+					if (reader.match("{content[{type")) {
+						item.type = reader.string();
+					} else if (reader.match("{content[{text")) {
+						item.text = reader.string();
+					} else if (reader.match("{content[{id")) {
+						item.id = reader.string();
+					} else if (reader.match("{content[{name")) {
+						item.name = reader.string();
+					} else if (reader.match("{content[{caller{type")) {
+						item.caller_type = reader.string();
+					}
+				} while (reader.next());
+				ret.d.ex.content.push_back(std::move(item));
+			} else if (reader.match("{stop_reason")) {
+				ret.d.ex.stop_reason = reader.string();
+				if (ret.d.ex.stop_reason == "end_turn") {
+					ret.d.completion = true;
+				} else {
+					ret.d.completion = false;
+					ret.d.error_status = ret.d.ex.stop_reason;
+				}
+			} else if (reader.match("{usage{input_tokens")) {
+				ret.d.ex.usage.input_tokens = reader.number();
+			} else if (reader.match("{usage{cache_creation_input_tokens")) {
+				ret.d.ex.usage.cache_creation_input_tokens = reader.number();
+			} else if (reader.match("{usage{cache_read_input_tokens")) {
+				ret.d.ex.usage.cache_read_input_tokens = reader.number();
+			} else if (reader.match("{usage{cache_creation{ephemeral_5m_input_tokens")) {
+				ret.d.ex.usage.cache_creation.ephemeral_5m_input_tokens = reader.number();
+			} else if (reader.match("{usage{cache_creation{ephemeral_1h_input_tokens")) {
+				ret.d.ex.usage.cache_creation.ephemeral_1h_input_tokens = reader.number();
+			} else if (reader.match("{usage{output_tokens")) {
+				ret.d.ex.usage.output_tokens = reader.number();
+			} else if (reader.match("{usage{service_tier")) {
+				ret.d.ex.usage.service_tier = reader.string();
+			} else if (reader.match("{usage{inference_geo")) {
+				ret.d.ex.usage.inference_geo = reader.string();
+			} else if (reader.match("{error{type")) {
+				ret.d.ex.error.type = ret.d.error_status = reader.string();
+				ret.d.completion = false;
+			} else if (reader.match("{error{message")) {
+				ret.d.ex.error.message = ret.d.error_message = reader.string();
+				ret.d.completion = false;
+			}
+		}
+#if 0
+		while (reader.next()) {
 			if (reader.match("{stop_reason")) {
 				// "end_turn" が正常終了を示す
 				if (reader.string() == "end_turn") {
@@ -145,6 +207,11 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				ret.d.completion = false;
 			}
 		}
+#else
+		if (!ret.d.ex.content.empty()) {
+			ret.d.content = ret.d.ex.content.front().text;
+		}
+#endif
 		return ret;
 	}
 
@@ -548,6 +615,121 @@ AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string con
 		return ret;
 	}
 
+	return {};
+}
+
+// experimental query for multi-turn conversation with tool use support
+AiResult AiApiBridge::query2(std::function<Quert2Resuest ()> fn_prompt)
+{
+	constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
+	
+	constexpr bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	
+	GenerativeAI::Model model = ai_model();
+	if (model.provider_id() == GenerativeAI::ProviderID::Unknown) {
+		return Error("error", "AI model is not defined.");
+	}
+	
+	std::shared_ptr<AbstractInetClient> http = global_inet_client();
+	
+	while (1) {
+		auto req = fn_prompt();
+		if (!req) break;
+		
+		puts("---");
+		puts(req.prompt.c_str());
+		fflush(stdout);
+		
+		std::string request_json;
+		if (req.type == Quert2Resuest::TEXT) {
+			request_json = generate_prompt_json(model, req.prompt, system_role_);
+		} else if (req.type == Quert2Resuest::JSON) {
+			request_json = req.prompt;
+		} else {
+			break;
+		}
+		
+		if (save_log) {
+			logprintf(LOG_RAW, "%s\n", request_json.c_str());
+		}
+		
+		// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
+		GenerativeAI::Credential cred = global_get_ai_credential(model);
+		GenerativeAI::Request ai_req = GenerativeAI::make_request(model.provider_id(), model, cred);
+		
+		InetClient::Request web_req;
+		web_req.set_location(ai_req.endpoint.url(eptype));
+		for (std::string const &h : ai_req.header) {
+			web_req.add_header(h);
+		}
+		
+		InetClient::Post post;
+		post.content_type = "application/json";
+		post.data.insert(post.data.end(), request_json.begin(), request_json.end());
+		
+		int ret = -1;
+		
+		ret = http->post(web_req, &post);
+		
+		std::string response_json;
+		if (ret >= 0) {
+			char const *data = http->content_data();
+			size_t size = http->content_length();
+			response_json.assign(data, size);
+			if (save_log) {
+				logprintf(LOG_RAW, "%s\n", response_json.c_str());
+				// fprintf(stderr, "%s\n", response_json.c_str());
+			}
+		}
+		
+		if (eptype == GenerativeAI::EndPoint::Type::Chat) {
+			AiResult result = AiChatResponseParser(ai_model(), response_json).visit(ai_model().provider_id());
+			if (!result) break;
+/*
+{
+	"model": "claude-sonnet-4-6",
+	"id": "msg_01QgGhfNSoB4mDVt55i55LXr",
+	"type": "message",
+	"role": "assistant",
+	"content": [
+		{
+			"type": "text",
+			"text": "Sure! Let me fetch today's quote for you right away!"
+		},
+		{
+			"type": "tool_use",
+			"id": "toolu_01USQo1v4iheZJ4CxkDxV1ku",
+			"name": "get_quote_of_the_day",
+			"input": {},
+			"caller": {
+				"type": "direct"
+			}
+		}
+	],
+	"stop_reason": "tool_use",
+	"stop_sequence": null,
+	"stop_details": null,
+	"usage": {
+		"input_tokens": 354,
+		"cache_creation_input_tokens": 0,
+		"cache_read_input_tokens": 0,
+		"cache_creation": {
+			"ephemeral_5m_input_tokens": 0,
+			"ephemeral_1h_input_tokens": 0
+		},
+		"output_tokens": 47,
+		"service_tier": "standard",
+		"inference_geo": "global"
+	}
+}
+*/
+		
+			puts(result.content().c_str());
+			fflush(stdout);
+			// return result;
+		}
+	}
+	
 	return {};
 }
 
