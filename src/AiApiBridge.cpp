@@ -78,16 +78,16 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			if (reader.match("{object")) {
 				// "chat.completion" または "text_completion" なら正常完了
 				if (reader.string() == "chat.completion" || reader.string() == "text_completion") {
-					ret.d.completion = true;
+					ret.d.completed = true;
 				}
 			} else if (reader.match("{choices[{message{content")) {
 				ret.d.content = reader.string();
 			} else if (reader.match("{error{type")) {
 				ret.d.error_status = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			} else if (reader.match("{error{message")) {
 				ret.d.error_message = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			}
 		}
 		return ret;
@@ -106,6 +106,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	AiResult case_OpenAI_responses()
 	{
 		AiResult ret;
+#if 0
 		while (reader.next()) {
 			if (reader.match("{status")) {
 				// status が "completed" であれば正常終了
@@ -121,6 +122,9 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				}
 			}
 		}
+#else
+		ret = parse_responses(GenerativeAI::ProviderID::OpenAI_responses);
+#endif
 		return ret;
 	}
 
@@ -134,9 +138,10 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 * @brief Anthropic Claude のレスポンスを解析する。
 	 * @return 解析結果
 	 */
-	AiResult case_Anthropic()
+	AiResult parse_responses(GenerativeAI::ProviderID provider_id)
 	{
 		AiResult ret;
+		ret.d.ex.provider_id = provider_id;
 #if 1
 		while (reader.next()) {
 			if (reader.match("{model")) {
@@ -144,15 +149,22 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			} else if (reader.match("{id")) {
 				ret.d.ex.id = reader.string();
 			} else if (reader.match("{type")) {
-				ret.d.ex.type = reader.string();
-				if (ret.d.ex.type == "error") {
-					ret.d.completion = false;
+				ret.d.ex.anthropic.type = reader.string();
+				if (ret.d.ex.anthropic.type == "error") {
+					ret.d.completed = false;
 				}
 			} else if (reader.match("{role")) {
-				ret.d.ex.role = reader.string();
+				ret.d.ex.anthropic.role = reader.string();
+			} else if (reader.match("{object")) {
+				ret.d.ex.openai.object = reader.string();
+			} else if (reader.match("{status")) {
+				ret.d.ex.openai.status = reader.string();
+				if (ret.d.ex.openai.status == "completed") {
+					ret.d.completed = true;
+				}
 			} else if (reader.match("{content[{**")) {
 				reader.nest();
-				AiResponseEx::ContentItem item;
+				AiResponseEx::AnthropicContentItem item;
 				do {
 					if (reader.match("{content[{type")) {
 						item.type = reader.string();
@@ -166,13 +178,34 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 						item.caller_type = reader.string();
 					}
 				} while (reader.next());
-				ret.d.ex.content.push_back(std::move(item));
+				ret.d.ex.anthropic.content.push_back(std::move(item));
+			} else if (reader.match("{output[{**")) {
+				reader.nest();
+				AiResponseEx::OpenAiOutputItem item;
+				do {
+					if (reader.match("{output[{id")) {
+						item.id = reader.string();
+					} else if (reader.match("{output[{type")) {
+						item.type = reader.string();
+					} else if (reader.match("{output[{status")) {
+						item.status = reader.string();
+					} else if (reader.match("{output[{arguments")) {
+						item.arguments = reader.string();
+					} else if (reader.match("{output[{call_id")) {
+						item.call_id = reader.string();
+					} else if (reader.match("{output[{name")) {
+						item.name = reader.string();
+					} else if (reader.match("{output[{content[{text")) {
+						item.content.push_back({ reader.string() });
+					}
+				} while (reader.next());
+				ret.d.ex.openai.output.push_back(std::move(item));
 			} else if (reader.match("{stop_reason")) {
 				ret.d.ex.stop_reason = reader.string();
 				if (ret.d.ex.stop_reason == "end_turn") {
-					ret.d.completion = true;
+					ret.d.completed = true;
 				} else {
-					ret.d.completion = false;
+					ret.d.completed = false;
 					ret.d.error_status = ret.d.ex.stop_reason;
 				}
 			} else if (reader.match("{usage{input_tokens")) {
@@ -193,14 +226,22 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				ret.d.ex.usage.inference_geo = reader.string();
 			} else if (reader.match("{error{type")) {
 				ret.d.ex.error.type = ret.d.error_status = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			} else if (reader.match("{error{message")) {
 				ret.d.ex.error.message = ret.d.error_message = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			}
 		}
-		if (!ret.d.ex.content.empty()) {
-			ret.d.content = ret.d.ex.content.front().text;
+		if (ret.d.ex.provider_id == GenerativeAI::ProviderID::Anthropic) {
+			if (!ret.d.ex.anthropic.content.empty()) {
+				ret.d.content = ret.d.ex.anthropic.content.front().text;
+			}
+		} else if (ret.d.ex.provider_id == GenerativeAI::ProviderID::OpenAI_responses) {
+			if (!ret.d.ex.openai.output.empty()) {
+				for (AiResponseEx::OpenAiOutputItem::Content const &item : ret.d.ex.openai.output.front().content) {
+					ret.d.content += item.text;
+				}
+			}
 		}
 #else
 		while (reader.next()) {
@@ -229,6 +270,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 #endif
 		return ret;
 	}
+	
+	AiResult case_Anthropic()
+	{
+		AiResult ret = parse_responses(GenerativeAI::ProviderID::Anthropic);
+		return ret;
+	}
 
 	/**
 	 * @brief Google Gemini のレスポンスを解析する。
@@ -240,13 +287,13 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		while (reader.next()) {
 			if (reader.match("{candidates[{content{parts[{text")) {
 				ret.d.content = reader.string();
-				ret.d.completion = true;
+				ret.d.completed = true;
 			} else if (reader.match("{error{message")) {
 				ret.d.error_message = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			} else if (reader.match("{error{status")) {
 				ret.d.error_status = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			}
 		}
 		return ret;
@@ -291,13 +338,13 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				reader.string(); // モデル名は使用しないが読み捨てる
 			} else if (reader.match("{response")) {
 				ret.d.content = reader.string();
-				ret.d.completion = true;
+				ret.d.completed = true;
 			} else if (reader.match("{error{type")) {
 				ret.d.error_status = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			} else if (reader.match("{error{message")) {
 				ret.d.error_message = reader.string();
-				ret.d.completion = false;
+				ret.d.completed = false;
 			}
 		}
 		return ret;
@@ -631,7 +678,7 @@ AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string con
 	
 	if (eptype == GenerativeAI::EndPoint::Type::Models) {
 		AiResult ret;
-		ret.d.completion = true;
+		ret.d.completed = true;
 		ret.d.content = response_json;
 		return ret;
 	}

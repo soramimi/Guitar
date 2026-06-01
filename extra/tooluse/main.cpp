@@ -159,9 +159,14 @@ std::string request(Option const &opt)
 		jstream::Writer w(writer);
 		w.object({}, [&](){
 			w.string("model", opt.model_name);
-			w.number("max_tokens", 1024);
+			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+				w.number("max_tokens", 1024);
+			}
 			w.array("tools", [&](){
 				w.object({}, [&](){
+					if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+						w.string("type", "function");
+					}
 					w.string("name", "get_quote_of_the_day");
 					w.string("description", "Get a quote of the day");
 					w.object("input_schema", [&](){
@@ -174,15 +179,34 @@ std::string request(Option const &opt)
 				});
 			});
 			w.object("tool_choice", [&](){
-				w.string("type", "auto");
-				w.boolean("disable_parallel_tool_use", true);
+				if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+					w.string("type", "auto");
+					w.boolean("disable_parallel_tool_use", true);
+				} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+					w.string("type", "function");
+					w.string("name", "get_quote_of_the_day");
+				}
 			});
-			w.array("messages", [&](){
-				w.object({}, [&](){
-					w.string("role", "user");
-					w.string("content", "You say a quote of the day.");
+			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+				w.array("messages", [&](){
+					w.object({}, [&](){
+						w.string("role", "user");
+						w.string("content", "You say a quote of the day.");
+					});
 				});
-			});
+			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+#if 1
+				w.string("input", "You say a quote of the day.");
+#else
+				std::string prompt = "You say a quote of the day.";
+				w.array("input", [&](){
+					w.object({}, [&](){
+						w.string("role", "user");
+						w.string("content", prompt);
+					});
+				});
+#endif
+			}
 		});
 		puts(json.c_str());
 		// return {};

@@ -10,12 +10,139 @@
 
 class AbstractInetClient;
 
+/* example for Anthropic Claude responses API
+
+{
+  "model": "claude-sonnet-4-6",
+  "id": "msg_01QgGhfNSoB4mDVt55i55LXr",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Sure! Let me fetch today's quote for you right away!"
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_01USQo1v4iheZJ4CxkDxV1ku",
+      "name": "get_quote_of_the_day",
+      "input": {},
+      "caller": {
+        "type": "direct"
+      }
+    }
+  ],
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "stop_details": null,
+  "usage": {
+    "input_tokens": 354,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 47,
+    "service_tier": "standard",
+    "inference_geo": "global"
+  }
+}
+
+*/
+
+/* example for OpenAI responses API
+
+{
+  "id": "resp_0e4c24cb1691fbd5006a1d80ad01fc819a93ff21b72cd42581",
+  "object": "response",
+  "created_at": 1780318381,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "completed_at": 1780318381,
+  "error": null,
+  "frequency_penalty": 0.0,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5.4-mini-2026-03-17",
+  "moderation": null,
+  "output": [
+    {
+      "id": "fc_0e4c24cb1691fbd5006a1d80ad7c20819a9ee90cf849c1a37e",
+      "type": "function_call",
+      "status": "completed",
+      "arguments": "{}",
+      "call_id": "call_L8UWZP0N2eEkgc9F0Z9VjKcZ",
+      "name": "get_quote_of_the_day"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0.0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": "in_memory",
+  "reasoning": {
+    "context": "current_turn",
+    "effort": "none",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": {
+    "type": "function",
+    "name": "get_quote_of_the_day"
+  },
+  "tools": [
+    {
+      "type": "function",
+      "description": "Get a quote of the day",
+      "name": "get_quote_of_the_day",
+      "parameters": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "strict": true
+    }
+  ],
+  "top_logprobs": 0,
+  "top_p": 0.98,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 48,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 17,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 65
+  },
+  "user": null,
+  "metadata": {}
+}
+
+*/
+
 struct AiResponseEx {
-	std::string model;
-	std::string id;
-	std::string type;
-	std::string role;
-	struct ContentItem {
+	GenerativeAI::ProviderID provider_id = GenerativeAI::ProviderID::Anthropic;
+	
+	struct AnthropicContentItem {
 		std::string type;
 		std::string text;
 		std::string id;
@@ -23,7 +150,32 @@ struct AiResponseEx {
 		// std::string input;
 		std::string caller_type;
 	};
-	std::vector<ContentItem> content;
+	
+	struct OpenAiOutputItem {
+		std::string id;
+		std::string type;
+		std::string status;
+		std::string arguments;
+		std::string call_id;
+		std::string name;
+		struct Content {
+			std::string text;
+		};
+		std::vector<Content> content;
+	};
+	
+	std::string model;
+	std::string id;
+	struct {
+		std::string type;
+		std::string role;
+		std::vector<AnthropicContentItem> content;
+	} anthropic;
+	struct {
+		std::string object;
+		std::string status;
+		std::vector<OpenAiOutputItem> output;
+	} openai;
 	std::string stop_reason;
 	// std::string stop_sequence;
 	// std::string stop_details;
@@ -60,8 +212,8 @@ struct AiResult {
 	};
 
 	struct Data {
-		bool completion = false;   ///< 正常に完了したか
-		std::string content;          ///< AIが返したテキスト本文
+		bool completed = false;    ///< 正常に完了したか
+		std::string content;       ///< AIが返したテキスト本文
 		std::string error_status;  ///< エラー種別
 		std::string error_message; ///< エラーメッセージ
 		AiResponseEx ex;
@@ -69,7 +221,7 @@ struct AiResult {
 
 	operator bool () const
 	{
-		return d.completion && d.error_status.empty() && d.error_message.empty();
+		return d.completed && d.error_status.empty() && d.error_message.empty();
 	}
 	std::string const &content() const
 	{
