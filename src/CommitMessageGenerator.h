@@ -6,7 +6,9 @@
 #include "Git.h"
 #include <string>
 
-class CommitMessageGenerator : public AiApiBridge {
+class CommitMessageGenerator {
+private:
+	AiApiBridge api_;
 public:
 	constexpr static int max_diff_size = 200000; // 適当
 
@@ -49,9 +51,14 @@ public:
 	CommitMessageGenerator(GenerativeAI::Model const &model, CommitMessageGenerator::Request const &request)
 		: request_(request)
 	{
-		set_ai_model(model);
-		set_system_role("You are an experienced engineer."); ///< システムロールの内容（OpenAI Chat Completions 形式で使用）
+		api_.set_ai_model(model);
+		api_.set_system_role("You are an experienced engineer."); ///< システムロールの内容（OpenAI Chat Completions 形式で使用）
 	}
+	void set_ai_model(GenerativeAI::Model model)
+	{
+		api_.set_ai_model(model);
+	}
+	
 	static Result parse_response(GenerativeAI::Model model, const AiResult &result);
 	std::string generatePrompt() const;
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
@@ -60,10 +67,10 @@ public:
 	static std::string make_diff(GitRunner g, CommitPair const &commits);
 #endif
 
-	AiResult query()
+	AiResult request()
 	{
 		std::string prompt = generatePrompt();
-		return AiApiBridge::query(prompt);
+		return api_.request(prompt);
 	}
 };
 

@@ -576,8 +576,6 @@ private slots:
 
 	void on_action_restart_trace_logger_triggered();
 
-	void on_action_branch_triggered();
-
 	void on_action_rebase_continue_triggered();
 	void on_action_rebase_quit_triggered();
 	void on_action_rebase_abort_triggered();

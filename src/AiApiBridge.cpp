@@ -13,7 +13,7 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 	
-	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	bool save_log = true;//false; // リクエスト/レスポンスをログに記録するか
 };
 
 /**
@@ -162,6 +162,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				if (ret.d.ex.openai.status == "completed") {
 					ret.d.completed = true;
 				}
+			} else if (reader.match_end_array("{content")) { // catch the end of content array
+				std::string_view array_json = reader.extract(); // extract the entire array as JSON string
+				assert(array_json.front() == '[' && array_json.back() == ']');
+				if (!ret.d.ex.anthropic.content.empty()) {
+					ret.d.ex.anthropic.content.back().content_json = array_json;
+				}
 			} else if (reader.match("{content[{**")) {
 				reader.nest();
 				AiResponseEx::AnthropicContentItem item;
@@ -204,6 +210,8 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				ret.d.ex.stop_reason = reader.string();
 				if (ret.d.ex.stop_reason == "end_turn") {
 					ret.d.completed = true;
+				} else if (ret.d.ex.stop_reason == "tool_use") {
+					ret.d.completed = true;
 				} else {
 					ret.d.completed = false;
 					ret.d.error_status = ret.d.ex.stop_reason;
@@ -238,8 +246,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			}
 		} else if (ret.d.ex.provider_id == GenerativeAI::ProviderID::OpenAI_responses) {
 			if (!ret.d.ex.openai.output.empty()) {
-				for (AiResponseEx::OpenAiOutputItem::Content const &item : ret.d.ex.openai.output.front().content) {
-					ret.d.content += item.text;
+				for (AiResponseEx::OpenAiOutputItem const &item1 : ret.d.ex.openai.output) {
+					if (item1.status == "completed") {
+						for (AiResponseEx::OpenAiOutputItem::Content const &item2 : item1.content) {
+							ret.d.content += item2.text;
+						}
+					}
 				}
 			}
 		}
@@ -614,12 +626,95 @@ void AiApiBridge::set_system_role(const std::string &role)
 	m->system_role = role;
 }
 
+AiResult AiApiBridge::open()
+{
+	constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
+	
+	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
+		return Error("error", "AI model is not defined.");
+	}
+	
+	m->http_ = global_inet_client();
+	
+	return {};
+}
+
+void AiApiBridge::close()
+{
+	m->http_.reset();
+}
+
+AbstractInetClient *AiApiBridge::http()
+{
+	AbstractInetClient *ret = m->http_.get();
+	assert(ret);
+	return ret;
+}
+
+// experimental query for multi-turn conversation with tool use support
+AiResult AiApiBridge::x_request(const Quert2Resuest &req)
+{
+	if (!req) return {};
+	
+	std::string request_json;
+	if (req.type == Quert2Resuest::TEXT) {
+		request_json = generate_prompt_json(model(), req.prompt, m->system_role);
+	} else if (req.type == Quert2Resuest::JSON) {
+		request_json = req.prompt;
+	} else {
+		return {};
+	}
+	
+	if (m->save_log) {
+		logprintf(LOG_RAW, "%s\n", request_json.c_str());
+	}
+	
+	int ret = -1;
+	{
+		InetClient::Request web_req;
+		{
+			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
+			
+			auto cred = global_get_ai_credential(model());
+			auto aireq = GenerativeAI::make_request(model().provider_id(), model(), cred);
+			
+			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat));
+			for (std::string const &h : aireq.header) {
+				web_req.add_header(h);
+			}
+		}
+		{
+			InetClient::Post post;
+			post.content_type = "application/json";
+			post.data.insert(post.data.end(), request_json.begin(), request_json.end());
+			ret = http()->post(web_req, &post);
+		}
+	}
+	
+	std::string response_json;
+	if (ret >= 0) {
+		char const *data = http()->content_data();
+		size_t size = http()->content_length();
+		response_json.assign(data, size);
+		if (m->save_log) {
+			logprintf(LOG_RAW, "%s\n", response_json.c_str());
+		}
+	}
+	if (response_json.empty()) {
+		logprintf(LOG_DEFAULT, "No response received from AI API.\n");
+		return {};
+	}
+	
+	AiResult result = AiChatResponseParser(model(), response_json).visit(model().provider_id());
+	return result;
+}
+
 /**
  * @brief diff文字列を元にAIへリクエストを送り、コミットメッセージ候補を生成する。
  * @param diff コミット対象のdiff文字列
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt)
+AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Quert2Resuest const &req)
 {
 	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 		return Error("error", "AI model is not defined.");
@@ -671,7 +766,7 @@ AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string con
 		}
 	}
 	
-
+	
 	if (eptype == GenerativeAI::EndPoint::Type::Chat) {
 		return AiChatResponseParser(model(), response_json).visit(model().provider_id());
 	}
@@ -682,126 +777,20 @@ AiResult AiApiBridge::query(GenerativeAI::EndPoint::Type eptype, std::string con
 		ret.d.content = response_json;
 		return ret;
 	}
-
-	return {};
-}
-
-AiResult AiApiBridge::x_connect()
-{
-	constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
-	
-	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
-	
-	m->http_ = global_inet_client();
 	
 	return {};
 }
 
-void AiApiBridge::x_disconnect()
+AiResult AiApiBridge::request(std::string const &prompt)
 {
-	m->http_.reset();
-}
-
-AbstractInetClient *AiApiBridge::http()
-{
-	AbstractInetClient *ret = m->http_.get();
-	assert(ret);
-	return ret;
-}
-
-// experimental query for multi-turn conversation with tool use support
-AiResult AiApiBridge::x_query(std::function<Quert2Resuest ()> fn_prompt)
-{
-	model();
-	
-	while (1) {
-		Quert2Resuest req = fn_prompt();
-		if (!req) break;
-		
-		puts("---");
-		puts(req.prompt.c_str());
-		fflush(stdout);
-		
-		std::string request_json;
-		if (req.type == Quert2Resuest::TEXT) {
-			request_json = generate_prompt_json(model(), req.prompt, m->system_role);
-		} else if (req.type == Quert2Resuest::JSON) {
-			request_json = req.prompt;
-		} else {
-			break;
-		}
-		
-		if (m->save_log) {
-			logprintf(LOG_RAW, "%s\n", request_json.c_str());
-		}
-		
-		int ret = -1;
-		{
-			InetClient::Request web_req;
-			{
-				// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-				
-				auto cred = global_get_ai_credential(model());
-				auto aireq = GenerativeAI::make_request(model().provider_id(), model(), cred);
-				
-				web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat));
-				for (std::string const &h : aireq.header) {
-					web_req.add_header(h);
-				}
-			}
-			{
-				InetClient::Post post;
-				post.content_type = "application/json";
-				post.data.insert(post.data.end(), request_json.begin(), request_json.end());
-				ret = http()->post(web_req, &post);
-			}
-		}
-		
-		std::string response_json;
-		if (ret >= 0) {
-			char const *data = http()->content_data();
-			size_t size = http()->content_length();
-			response_json.assign(data, size);
-			if (m->save_log) {
-				logprintf(LOG_RAW, "%s\n", response_json.c_str());
-			}
-		}
-		if (response_json.empty()) {
-			logprintf(LOG_DEFAULT, "No response received from AI API.\n");
-			break;
-		}
-		
-		AiResult result = AiChatResponseParser(model(), response_json).visit(model().provider_id());
-		if (result.is_error()) result;
-		puts(result.content().c_str());
-		fflush(stdout);
-	}
-	
-	return {};
-}
-
-AiResult AiApiBridge::query2(std::function<Quert2Resuest ()> fn_prompt)
-{
-	AiResult result = x_connect();
-	if (result.is_error()) return result;
-	
-	auto ret = x_query(fn_prompt);
-	
-	x_disconnect();
-	
-	return ret;
-}
-
-AiResult AiApiBridge::query(std::string const &prompt)
-{
-	return query(GenerativeAI::EndPoint::Type::Chat, prompt);
+	AiApiBridge::Quert2Resuest req{GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::TEXT, prompt};
+	return request(GenerativeAI::EndPoint::Type::Chat, prompt, req);
 }
 
 std::optional<AiResult::Models> AiApiBridge::queryModels()
 {
-	AiResult result = query(GenerativeAI::EndPoint::Type::Models, {});
+	AiApiBridge::Quert2Resuest req{GenerativeAI::EndPoint::Type::Models, {}, {}};
+	AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
 	if (!result) return std::nullopt;
 
 	AiResult::Models models;

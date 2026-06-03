@@ -4,10 +4,6 @@
 #include "common/str.h"
 #include "common/joinpath.h"
 #include "common/jstream.h"
-#include "common/q/helper.h"
-#include "curlclient.h"
-#include "webclient.h"
-#include "AiApiBridge.h"
 
 #ifdef APP_GUITAR
 #include "Profile.h"

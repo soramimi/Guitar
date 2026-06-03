@@ -7443,69 +7443,15 @@ void MainWindow::on_action_restart_trace_logger_triggered()
 	global->close_trace_logger();
 }
 
-// wip: SwitchBranchDialog
-void MainWindow::on_action_branch_triggered()
-{
-	ASSERT_MAIN_THREAD();
-	m->searching = false;
-	if (commitlog().empty()) return;
-
-	// currentRepositoryData()->commit_log
-	// currentRepositoryData()->branch_map
-	// currentRepositoryData()->tag_map
-	// currentRepositoryData()->label_map
-
-	struct Item {
-		GitCommitItem *commit = nullptr;
-		BranchLabel label;
-	};
-	std::vector<Item> items;
-
-	for (std::pair<int, BranchLabelList> const &p : currentRepositoryData()->label_map) {
-		for (BranchLabel const &l : p.second) {
-			Item item;
-			item.label = l;
-			if (p.first >= 0 && p.first < (int)currentRepositoryData()->commit_log.size()) {
-				item.commit = &currentRepositoryData()->commit_log[p.first];
-				items.push_back(item);
-			}
-		}
-	}
-
-	{ //debug
-		for (Item const &item : items) {
-			assert(item.commit);
-			QString kind;
-			switch (item.label.kind) {
-			case BranchLabel::Kind::LocalBranch:
-				kind = "Local";
-				break;
-			case BranchLabel::Kind::RemoteBranch:
-				kind = "Remote";
-				break;
-			case BranchLabel::Kind::Tag:
-				kind = "Tag";
-				break;
-			default:
-				kind = "Unknown";
-				break;
-			}
-			qDebug() << QString::fromStdString(item.commit->commit_id.toString()) << kind << item.label.text;
-		}
-	}
-
-#if 0
-	SwitchBranchDialog dlg(this);
-	if (dlg.exec() == QDialog::Accepted) {
-		// QString branch = dlg.selectedBranch();
-		// qDebug() << "Selected branch:" << branch;
-	}
-#endif
-
-}
-
 void MainWindow::test()
 {
+	AiApiBridge api;
+	std::optional<AiResult::Models> models = api.queryModels();
+	if (models) {
+		for (AiResult::Model const &model : models->list) {
+			qDebug() << QString::fromStdString(model.id);
+		}
+	}
 }
 
 

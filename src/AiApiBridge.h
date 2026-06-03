@@ -149,6 +149,7 @@ struct AiResponseEx {
 		std::string name;
 		// std::string input;
 		std::string caller_type;
+		std::string content_json;
 	};
 	
 	struct OpenAiOutputItem {
@@ -216,6 +217,7 @@ struct AiResult {
 		std::string content;       ///< AIが返したテキスト本文
 		std::string error_status;  ///< エラー種別
 		std::string error_message; ///< エラーメッセージ
+		std::string stop_reason;
 		AiResponseEx ex;
 	} d;
 
@@ -243,8 +245,10 @@ struct AiResult {
 };
 
 class AiApiBridge {
+	friend class AiSession;
 public:
 	struct Quert2Resuest {
+		GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 		enum Type {
 			TEXT,
 			JSON,
@@ -262,8 +266,9 @@ public:
 			prompt = json;
 		}
 		Quert2Resuest() = default;
-		Quert2Resuest(Type t, std::string const &p)
-			: type(t)
+		Quert2Resuest(GenerativeAI::EndPoint::Type eptype, Type t, std::string const &p)
+			: eptype(eptype)
+			, type(t)
 			, prompt(p)
 		{
 		}
@@ -277,9 +282,9 @@ private:
 	Private *m;
 	AbstractInetClient *http();
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
-	AiResult x_connect();
-	AiResult x_query(std::function<Quert2Resuest ()> fn_prompt);
-	void x_disconnect();
+	AiResult open();
+	AiResult x_request(Quert2Resuest const &req);
+	void close();
 public:
 	AiApiBridge();
 	~AiApiBridge();
@@ -294,11 +299,43 @@ public:
 	GenerativeAI::Model model();
 	void set_ai_model(GenerativeAI::Model model);
 	void set_system_role(std::string const &role);
-	AiResult query(GenerativeAI::EndPoint::Type eptype, std::string const &prompt);
-	AiResult query(const std::string &prompt);
+	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Quert2Resuest &req);
+	AiResult request(const std::string &prompt);
 	std::optional<AiResult::Models> queryModels();
-	
-	AiResult query2(std::function<Quert2Resuest ()> fn_prompt);
+};
+
+
+#include <memory>
+
+class AiSession {
+public:
+	using Quert2Resuest = AiApiBridge::Quert2Resuest;
+	std::shared_ptr<AiApiBridge> api_bridge;
+	AiSession()
+		: api_bridge(std::make_shared<AiApiBridge>())
+	{
+	}
+	~AiSession()
+	{
+		close();
+	}
+	void set_ai_model(GenerativeAI::Model model)
+	{
+		api_bridge->set_ai_model(model);
+	}
+	bool open()
+	{
+		AiResult result = api_bridge->open();
+		return !result.is_error();
+	}
+	void close()
+	{
+		api_bridge->close();
+	}
+	AiResult request(Quert2Resuest const &req)
+	{
+		return api_bridge->x_request(req);
+	}
 };
 
 #endif // AIAPIBRIDGE_H

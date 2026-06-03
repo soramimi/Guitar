@@ -1163,7 +1163,7 @@ public:
 		return path + d.key;
 	}
 
-	std::string_view raw()
+	std::string_view extract()
 	{
 		if (d.last_state.ptr) {
 			size_t n = d.ptr - d.last_state.ptr;
@@ -1240,6 +1240,18 @@ public:
 	{
 		return state() == EndArray && match(path, true);
 	}
+	
+	uintptr_t tell() const
+	{
+		return (uintptr_t)d.ptr;
+	}
+	std::string_view extract(uintptr_t begin, uintptr_t end)
+	{
+		if (begin >= (uintptr_t)d.begin && end <= (uintptr_t)d.end && begin <= end) {
+			return std::string_view((char *)begin, end - begin);
+		}
+		return {};
+	}
 };
 
 class Writer {
@@ -1315,7 +1327,14 @@ private:
 		}
 		print('\"');
 	}
-
+	
+	void print_raw(std::string const &s)
+	{
+		if (!s.empty()) {
+			print(s.c_str(), s.size());
+		}
+	}
+	
 	bool print_value(std::string const &name, std::function<bool ()> const &fn)
 	{
 		print_name(name);
@@ -1518,6 +1537,14 @@ public:
 	operator std::string () const
 	{
 		return string_out;
+	}
+	
+	void raw(std::string const &name, std::string const &s)
+	{
+		print_value(name, [&](){
+			print_raw(s);
+			return true;
+		});
 	}
 };
 

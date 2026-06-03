@@ -148,36 +148,37 @@ static std::vector<std::string_view> split_lines(std::string_view const &str)
 	return ret;
 }
 
+void add_tools(jstream::Writer *w)
+{
+	w->array("tools", [&](){
+		w->object({}, [&](){
+			if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+				w->string("type", "function");
+			}
+			w->string("name", "get_quote_of_the_day");
+			w->string("description", "Get a quote of the day");
+			w->object("input_schema", [&](){
+				w->string("type", "object");
+				w->object("properties", [&](){
+				});
+				w->array("required", [&](){
+				});
+			});
+		});
+	});
+}
+
 std::string request(Option const &opt)
 {
-	std::string json_initialize;
+	std::string json_tooluse;
 	{
-		std::string json;
-		auto writer = [&](char const *p, int n) {
-			json.append(std::string_view(p, n));
-		};
-		jstream::Writer w(writer);
+		jstream::Writer w;
 		w.object({}, [&](){
 			w.string("model", opt.model_name);
 			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
 				w.number("max_tokens", 1024);
 			}
-			w.array("tools", [&](){
-				w.object({}, [&](){
-					if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
-						w.string("type", "function");
-					}
-					w.string("name", "get_quote_of_the_day");
-					w.string("description", "Get a quote of the day");
-					w.object("input_schema", [&](){
-						w.string("type", "object");
-						w.object("properties", [&](){
-						});
-						w.array("required", [&](){
-						});
-					});
-				});
-			});
+			add_tools(&w);
 			w.object("tool_choice", [&](){
 				if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
 					w.string("type", "auto");
@@ -187,57 +188,124 @@ std::string request(Option const &opt)
 					w.string("name", "get_quote_of_the_day");
 				}
 			});
+			std::string prompt = "You say a quote of the day.";
 			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
 				w.array("messages", [&](){
-					w.object({}, [&](){
-						w.string("role", "user");
-						w.string("content", "You say a quote of the day.");
-					});
-				});
-			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
-#if 1
-				w.string("input", "You say a quote of the day.");
-#else
-				std::string prompt = "You say a quote of the day.";
-				w.array("input", [&](){
 					w.object({}, [&](){
 						w.string("role", "user");
 						w.string("content", prompt);
 					});
 				});
-#endif
+			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+				w.string("input", prompt);
 			}
 		});
-		puts(json.c_str());
-		// return {};
-		json_initialize = json;
+		json_tooluse = w;
 	}
 	std::vector<AiApiBridge::Quert2Resuest> prompts;
-#if 0
-	prompts.emplace_back(AiApiBridge::Quert2Resuest::JSON, json_initialize);
+#if 1
+	prompts.emplace_back(GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::JSON, json_tooluse);
 #else
-	prompts.emplace_back(AiApiBridge::Quert2Resuest::TEXT, "Hello");
-	prompts.emplace_back(AiApiBridge::Quert2Resuest::TEXT, "Who are you?");
-	prompts.emplace_back(AiApiBridge::Quert2Resuest::TEXT, "Write a haiku.");
+	prompts.emplace_back(GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::TEXT, "Hello");
+	prompts.emplace_back(GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::TEXT, "Who are you?");
+	prompts.emplace_back(GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::TEXT, "Write a haiku.");
 #endif
 	
-	AiApiBridge gen;
-	gen.set_ai_model(ai_model);
-	size_t i = 0;
-	AiResult msg = gen.query2([&](){
-		AiApiBridge::Quert2Resuest req;
-		if (i < std::size(prompts)) {
-			req = prompts[i];
-			i++;
+	AiSession ai;
+	ai.set_ai_model(ai_model);
+	if (ai.open()) {
+		size_t i = 0;
+		while (i < prompts.size()) {
+			AiSession::Quert2Resuest req = prompts[i++];
+			puts("---");
+			if (req.type == AiSession::Quert2Resuest::TEXT) {
+				puts(req.prompt.c_str());
+				fflush(stdout);
+			}
+			
+			AiResult msg = ai.request(req);
+			if (!msg) break;
+			
+			std::string tool_output = R"---({
+    "quote": "The only way to do great work is to love what you do. - Steve Jobs"
+})---";
+			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+				size_t tool_use = -1;
+				for (size_t i = 0; i < msg.d.ex.anthropic.content.size(); i++) {
+					if (msg.d.ex.anthropic.content[i].type == "tool_use") {
+						tool_use = i;
+						break;
+					}
+				}
+				if (tool_use != -1) {
+					std::string funcname = msg.d.ex.anthropic.content[tool_use].name;
+					if (funcname == "get_quote_of_the_day") {
+						jstream::Writer w;
+						w.object({}, [&](){
+							w.string("model", opt.model_name);
+							w.number("max_tokens", 1024);
+							add_tools(&w);
+							w.object("tool_choice", [&](){
+								w.string("type", "auto");
+								w.boolean("disable_parallel_tool_use", true);
+							});
+							w.array("messages", [&](){
+								w.object({}, [&](){
+									w.string("role", "user");
+									w.string("content", "You say a quote of the day.");
+								});
+								w.object({}, [&](){
+									w.string("role", "assistant");
+									w.raw("content", msg.d.ex.anthropic.content[tool_use].content_json);
+								});
+								w.object({}, [&](){
+									w.string("role", "user");
+									w.array("content", [&](){
+										w.object({}, [&](){
+											w.string("type", "tool_result");
+											w.string("tool_use_id", msg.d.ex.anthropic.content[tool_use].id);
+											w.string("content", tool_output);
+										});
+									});
+								});
+							});
+						});
+						AiApiBridge::Quert2Resuest newreq;
+						newreq.set_json(w);
+						prompts.push_back(newreq);
+					}
+				}
+			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses && msg.d.ex.openai.output.size() == 1 && msg.d.ex.openai.output[0].type == "function_call") {
+				std::string funcname = msg.d.ex.openai.output[0].name;
+				if (funcname == "get_quote_of_the_day") {
+					jstream::Writer w;
+					w.object({}, [&](){
+						w.string("model", msg.d.ex.model);
+						w.string("previous_response_id", msg.d.ex.id);
+						w.array("input", [&](){
+							w.object({}, [&](){
+								w.string("type", "function_call_output");
+								w.string("call_id", msg.d.ex.openai.output[0].call_id);
+								w.string("output", tool_output);
+							});
+						});
+						add_tools(&w);
+					});
+					AiApiBridge::Quert2Resuest newreq;
+					newreq.set_json(w);
+					prompts.push_back(newreq);
+				}
+				continue;
+			}
+			
+			
+			puts(msg.content().c_str());
+			fflush(stdout);
 		}
-		return req;
-	});
-	if (0 && !msg) {
-		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
-		return { };
+		ai.close();
 	}
-
-	return msg.content();
+	
+	return {};//msg.content();
 }
 
 static std::string default_git_command_path()
@@ -272,26 +340,6 @@ int main2(int argc, char **argv)
 			argi++;
 		}
 	}
-
-#if 0
-	if (opt.prompt.empty()) {
-		if (f_stdin) {
-			while (1) {
-				char *line = nullptr;
-				size_t len = 0;
-				if (getline(&line, &len, stdin) == -1) break;
-				std::string_view sv(line, std::strlen(line));
-				opt.prompt += sv;
-				free(line);
-			}
-		}
-	}
-
-	if (opt.prompt.empty()) {
-		fprintf(stderr, "Usage: %s [options] <prompt>\n", argv[0]);
-		return 1;
-	}
-#endif
 
 	std::string model_name = opt.model_name;
 	if (model_name.empty()) {
