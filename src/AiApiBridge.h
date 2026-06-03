@@ -164,6 +164,24 @@ struct AiResponseEx {
 		};
 		std::vector<Content> content;
 	};
+
+	struct OpenAiChoice {
+		double index;
+		struct Message {
+			std::string role;
+			std::string content;
+			struct ToolCall {
+				std::string id;
+				std::string type;
+				struct {
+					std::string name;
+					std::string arguments;
+				} function;
+			};
+			std::vector<ToolCall> tool_calls;
+		} message;
+		std::string finish_reason;
+	};
 	
 	std::string model;
 	std::string id;
@@ -176,6 +194,7 @@ struct AiResponseEx {
 		std::string object;
 		std::string status;
 		std::vector<OpenAiOutputItem> output;
+		std::vector<OpenAiChoice> choices;
 	} openai;
 	std::string stop_reason;
 	// std::string stop_sequence;

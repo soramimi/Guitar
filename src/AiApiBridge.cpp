@@ -75,11 +75,47 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		AiResult ret;
 		while (reader.next()) {
-			if (reader.match("{object")) {
+			if (reader.match("{id")) {
+				ret.d.ex.id = reader.string();
+			} else if (reader.match("{model")) {
+				ret.d.ex.model = reader.string();
+			} else if (reader.match("{object")) {
 				// "chat.completion" または "text_completion" なら正常完了
 				if (reader.string() == "chat.completion" || reader.string() == "text_completion") {
 					ret.d.completed = true;
 				}
+			} else if (reader.match("{choices[**")) {
+				reader.nest();
+				AiResponseEx::OpenAiChoice choice;
+				do {
+					if (reader.match("{choices[{message{content")) {
+						ret.d.content = reader.string();
+					} else if (reader.match("{choices[{index")) {
+						choice.index = reader.number();
+					} else if (reader.match("{choices[{message{role")) {
+						choice.message.role = reader.string();
+					} else if (reader.match("{choices[{message{content")) {
+						choice.message.content = reader.string();
+					} else if (reader.match("{choices[{message{tool_calls[**")) {
+						reader.nest();
+						AiResponseEx::OpenAiChoice::Message::ToolCall toolcall;
+						do {
+							if (reader.match("{choices[{message{tool_calls[{id")) {
+								toolcall.id = reader.string();
+							} else if (reader.match("{choices[{message{tool_calls[{type")) {
+								toolcall.type = reader.string();
+							} else if (reader.match("{choices[{message{tool_calls[{function{name")) {
+								toolcall.function.name = reader.string();
+							} else if (reader.match("{choices[{message{tool_calls[{function{arguments")) {
+								toolcall.function.arguments = reader.string();
+							}
+						} while (reader.next());
+						choice.message.tool_calls.push_back(std::move(toolcall));
+					} else if (reader.match("{choices[{finish_reason")) {
+						choice.finish_reason = reader.string();
+					}
+				} while (reader.next());
+				ret.d.ex.openai.choices.push_back(std::move(choice));
 			} else if (reader.match("{choices[{message{content")) {
 				ret.d.content = reader.string();
 			} else if (reader.match("{error{type")) {
@@ -699,13 +735,14 @@ AiResult AiApiBridge::x_request(const Quert2Resuest &req)
 		if (m->save_log) {
 			logprintf(LOG_RAW, "%s\n", response_json.c_str());
 		}
+		fprintf(stderr, "%s\n", response_json.c_str());
 	}
 	if (response_json.empty()) {
 		logprintf(LOG_DEFAULT, "No response received from AI API.\n");
 		return {};
 	}
 	
-	AiResult result = AiChatResponseParser(model(), response_json).visit(model().provider_id());
+	AiResult result = AiChatResponseParser(model(), response_json).visit(model().api_compatibility());
 	return result;
 }
 

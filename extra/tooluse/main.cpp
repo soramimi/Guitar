@@ -150,20 +150,36 @@ static std::vector<std::string_view> split_lines(std::string_view const &str)
 
 void add_tools(jstream::Writer *w)
 {
+	auto apitype = ai_model.api_compatibility();
 	w->array("tools", [&](){
 		w->object({}, [&](){
-			if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+			if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
 				w->string("type", "function");
+				w->object("function", [&](){
+					w->string("name", "get_quote_of_the_day");
+					w->string("description", "Get a quote of the day");
+					w->object("parameters", [&](){
+						w->string("type", "object");
+						w->object("properties", [&](){
+						});
+						w->array("required", [&](){
+						});
+					});
+				});
+			} else {
+				if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
+					w->string("type", "function");
+				}
+				w->string("name", "get_quote_of_the_day");
+				w->string("description", "Get a quote of the day");
+				w->object("input_schema", [&](){
+					w->string("type", "object");
+					w->object("properties", [&](){
+					});
+					w->array("required", [&](){
+					});
+				});
 			}
-			w->string("name", "get_quote_of_the_day");
-			w->string("description", "Get a quote of the day");
-			w->object("input_schema", [&](){
-				w->string("type", "object");
-				w->object("properties", [&](){
-				});
-				w->array("required", [&](){
-				});
-			});
 		});
 	});
 }
@@ -172,31 +188,37 @@ std::string request(Option const &opt)
 {
 	std::string json_tooluse;
 	{
+		GenerativeAI::ProviderID apitype = ai_model.api_compatibility();
 		jstream::Writer w;
 		w.object({}, [&](){
-			w.string("model", opt.model_name);
-			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+			w.string("model", ai_model.model_name());
+			if (apitype == GenerativeAI::ProviderID::Anthropic) {
 				w.number("max_tokens", 1024);
 			}
 			add_tools(&w);
 			w.object("tool_choice", [&](){
-				if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+				if (apitype == GenerativeAI::ProviderID::Anthropic) {
 					w.string("type", "auto");
 					w.boolean("disable_parallel_tool_use", true);
-				} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+				} else if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
+					w.string("type", "function");
+					w.object("function", [&](){
+						w.string("name", "get_quote_of_the_day");
+					});
+				} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
 					w.string("type", "function");
 					w.string("name", "get_quote_of_the_day");
 				}
 			});
 			std::string prompt = "You say a quote of the day.";
-			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
+			if (apitype == GenerativeAI::ProviderID::Anthropic || apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
 				w.array("messages", [&](){
 					w.object({}, [&](){
 						w.string("role", "user");
 						w.string("content", prompt);
 					});
 				});
-			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
+			} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
 				w.string("input", prompt);
 			}
 		});
@@ -221,10 +243,16 @@ std::string request(Option const &opt)
 			if (req.type == AiSession::Quert2Resuest::TEXT) {
 				puts(req.prompt.c_str());
 				fflush(stdout);
+			} else if (req.type == AiSession::Quert2Resuest::JSON) {
+				puts(req.prompt.c_str());
+				fflush(stdout);
 			}
-			
+
 			AiResult msg = ai.request(req);
-			if (!msg) break;
+			if (!msg) {
+				fprintf(stderr, "Error: %s\n", msg.error_message().c_str());
+				continue;
+			}
 			
 			std::string tool_output = R"---({
     "quote": "The only way to do great work is to love what you do. - Steve Jobs"
@@ -296,8 +324,10 @@ std::string request(Option const &opt)
 					prompts.push_back(newreq);
 				}
 				continue;
+			} else if (ai_model.api_compatibility() == GenerativeAI::ProviderID::OpenAI_chat_completions) {
+				// wip: OpenAI Chat Completions 形式のレスポンスで function_call が返ってきた場合の処理
+				continue;
 			}
-			
 			
 			puts(msg.content().c_str());
 			fflush(stdout);
@@ -350,6 +380,7 @@ int main2(int argc, char **argv)
 		fprintf(stderr, "error: Invalid model name: %s\n", model_name.c_str());
 		return 1;
 	}
+	ai_model.api_compatibility_ = GenerativeAI::ProviderID::OpenAI_chat_completions;
 
 	std::string msg = request(opt);
 	if (!msg.empty()) {

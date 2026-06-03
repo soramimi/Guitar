@@ -148,7 +148,7 @@ struct Model {
 
 	ProviderID api_compatibility() const
 	{
-		return api_compatibility_;
+		return api_compatibility_ == ProviderID::Unknown ? provider_id() : api_compatibility_;
 	}
 
 	static Model from_name(std::string const &name);

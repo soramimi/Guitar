@@ -223,22 +223,30 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return {};
 	}
 
-	Request case_OpenAI_responses()
+	Request case_OpenAI()
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.openai.com/v1/responses";
 		set_authorization_bearer_cred(&r, cred_);
-		return r;
+		switch (model_.api_compatibility()) {
+		case ProviderID::OpenAI_responses:
+			r.endpoint = "https://api.openai.com/v1/responses";
+			return r;
+		case ProviderID::OpenAI_chat_completions:
+			r.endpoint = "https://api.openai.com/v1/chat/completions";
+			return r;
+		}
+		return {};
+	}
+
+	Request case_OpenAI_responses()
+	{
+		return case_OpenAI();
 	}
 
 	Request case_OpenAI_chat_completions()
 	{
-		Request r;
-		r.model_name = model_.model_name();
-		r.endpoint = "https://api.openai.com/v1/chat/completions";
-		set_authorization_bearer_cred(&r, cred_);
-		return r;
+		return case_OpenAI();
 	}
 
 	Request case_Anthropic()
