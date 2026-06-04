@@ -43,6 +43,20 @@ const std::vector<ProviderInfo> &complete_provider_table()
 	return provider_info;
 }
 
+ProviderID api_compatibility(ProviderID pid)
+{
+	switch (pid) {
+	case ProviderID::OpenAI_responses:
+	case ProviderID::OpenAI_chat_completions:
+	case ProviderID::Anthropic:
+	case ProviderID::Google:
+	case ProviderID::XAI:
+		return pid;
+	default:
+		return ProviderID::OpenAI_chat_completions;
+	}
+}
+
 /**
  * @brief ユーザー向けに提示するAIモデルのプリセットリストを返す。
  * @return プリセットモデルのベクタへの参照。

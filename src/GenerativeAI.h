@@ -27,7 +27,7 @@ public:
 	virtual ~AbstractVisitor() = default;
 
 	virtual T case_Unknown() = 0;
-	virtual T case_OpenAI() { return {}; } // placeholder
+	virtual T case_OpenAI() {return {};} // placeholder
 	virtual T case_OpenAI_responses() = 0;
 	virtual T case_OpenAI_chat_completions() = 0;
 	virtual T case_Anthropic() = 0;
@@ -68,6 +68,7 @@ struct ProviderInfo {
 	std::string env_name; // 環境変数名 (UPPER_SNAKE_CASE_API_KEY)
 };
 
+ProviderID api_compatibility(ProviderID pid);
 std::vector<ProviderInfo> const &complete_provider_table();
 const ProviderInfo *provider_info(ProviderID id);
 
@@ -88,7 +89,7 @@ public:
 struct Model {
 	ModelURI model_uri_;
 	ProviderInfo const *provider_info_;
-	ProviderID api_compatibility_ = ProviderID::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
+	ProviderID api_compatibility__ = ProviderID::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
 	std::string model_name_;
 	std::string host_;
 	int port_ = 80;
@@ -148,7 +149,8 @@ struct Model {
 
 	ProviderID api_compatibility() const
 	{
-		return api_compatibility_ == ProviderID::Unknown ? provider_id() : api_compatibility_;
+		ProviderID pid = provider_id();
+		return GenerativeAI::api_compatibility(pid);
 	}
 
 	static Model from_name(std::string const &name);

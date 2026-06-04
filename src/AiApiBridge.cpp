@@ -73,7 +73,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 */
 	AiResult parse_openai_chat_completions_format()
 	{
-		AiResult ret;
+		AiResult ret(model.api_compatibility());
 		while (reader.next()) {
 			if (reader.match("{id")) {
 				ret.d.ex.id = reader.string();
@@ -132,7 +132,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	/// 未知プロバイダー：空の結果を返す
 	AiResult case_Unknown()
 	{
-		return {};
+		return {model.api_compatibility()};
 	}
 
 	/**
@@ -141,7 +141,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 */
 	AiResult case_OpenAI_responses()
 	{
-		AiResult ret;
+		AiResult ret(model.api_compatibility());
 #if 0
 		while (reader.next()) {
 			if (reader.match("{status")) {
@@ -176,8 +176,8 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 */
 	AiResult parse_responses(GenerativeAI::ProviderID provider_id)
 	{
-		AiResult ret;
-		ret.d.ex.provider_id = provider_id;
+		AiResult ret(model.api_compatibility());
+		ret.d.ex.api_id = provider_id;
 #if 1
 		while (reader.next()) {
 			if (reader.match("{model")) {
@@ -276,11 +276,11 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				ret.d.completed = false;
 			}
 		}
-		if (ret.d.ex.provider_id == GenerativeAI::ProviderID::Anthropic) {
+		if (ret.d.ex.api_id == GenerativeAI::ProviderID::Anthropic) {
 			if (!ret.d.ex.anthropic.content.empty()) {
 				ret.d.content = ret.d.ex.anthropic.content.front().text;
 			}
-		} else if (ret.d.ex.provider_id == GenerativeAI::ProviderID::OpenAI_responses) {
+		} else if (ret.d.ex.api_id == GenerativeAI::ProviderID::OpenAI_responses) {
 			if (!ret.d.ex.openai.output.empty()) {
 				for (AiResponseEx::OpenAiOutputItem const &item1 : ret.d.ex.openai.output) {
 					if (item1.status == "completed") {
@@ -331,7 +331,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 */
 	AiResult case_Google()
 	{
-		AiResult ret;
+		AiResult ret(model.api_compatibility());
 		while (reader.next()) {
 			if (reader.match("{candidates[{content{parts[{text")) {
 				ret.d.content = reader.string();
@@ -380,7 +380,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	 */
 	AiResult case_Ollama()
 	{
-		AiResult ret;
+		AiResult ret(model.api_compatibility());
 		while (reader.next()) {
 			if (reader.match("{model")) {
 				reader.string(); // モデル名は使用しないが読み捨てる
@@ -643,7 +643,7 @@ std::string AiApiBridge::generate_prompt_json(GenerativeAI::Model const &model, 
  * @brief 現在設定されているAIモデルを返す。
  * @return AIモデル情報
  */
-GenerativeAI::Model AiApiBridge::model()
+GenerativeAI::Model AiApiBridge::model() const
 {
 	return m->ai_model;
 }
@@ -664,7 +664,7 @@ void AiApiBridge::set_system_role(const std::string &role)
 
 AiResult AiApiBridge::open()
 {
-	constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
+	// constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 	
 	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 		return Error("error", "AI model is not defined.");
@@ -672,7 +672,7 @@ AiResult AiApiBridge::open()
 	
 	m->http_ = global_inet_client();
 	
-	return {};
+	return {model().api_compatibility()};
 }
 
 void AiApiBridge::close()
@@ -690,7 +690,7 @@ AbstractInetClient *AiApiBridge::http()
 // experimental query for multi-turn conversation with tool use support
 AiResult AiApiBridge::x_request(const Quert2Resuest &req)
 {
-	if (!req) return {};
+	if (!req) return {model().api_compatibility()};
 	
 	std::string request_json;
 	if (req.type == Quert2Resuest::TEXT) {
@@ -698,7 +698,7 @@ AiResult AiApiBridge::x_request(const Quert2Resuest &req)
 	} else if (req.type == Quert2Resuest::JSON) {
 		request_json = req.prompt;
 	} else {
-		return {};
+		return {model().api_compatibility()};
 	}
 	
 	if (m->save_log) {
@@ -739,7 +739,7 @@ AiResult AiApiBridge::x_request(const Quert2Resuest &req)
 	}
 	if (response_json.empty()) {
 		logprintf(LOG_DEFAULT, "No response received from AI API.\n");
-		return {};
+		return {model().api_compatibility()};
 	}
 	
 	AiResult result = AiChatResponseParser(model(), response_json).visit(model().api_compatibility());
@@ -809,13 +809,13 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 	}
 	
 	if (eptype == GenerativeAI::EndPoint::Type::Models) {
-		AiResult ret;
+		AiResult ret{model().api_compatibility()};
 		ret.d.completed = true;
 		ret.d.content = response_json;
 		return ret;
 	}
 	
-	return {};
+	return {model().api_compatibility()};
 }
 
 AiResult AiApiBridge::request(std::string const &prompt)

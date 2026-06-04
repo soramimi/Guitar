@@ -140,8 +140,8 @@ class AbstractInetClient;
 */
 
 struct AiResponseEx {
-	GenerativeAI::ProviderID provider_id = GenerativeAI::ProviderID::Anthropic;
-	
+	GenerativeAI::ProviderID api_id = GenerativeAI::ProviderID::Unknown;
+
 	struct AnthropicContentItem {
 		std::string type;
 		std::string text;
@@ -219,6 +219,11 @@ struct AiResponseEx {
 
 /// AIレスポンスの解析結果を保持する内部構造体
 struct AiResult {
+
+	AiResult(GenerativeAI::ProviderID api = GenerativeAI::ProviderID::Unknown)
+	{
+		d.ex.api_id = api;
+	}
 
 	struct Model {
 		std::string id;
@@ -308,14 +313,14 @@ public:
 	AiApiBridge();
 	~AiApiBridge();
 	
-	static AiResult Error(std::string const &status, std::string const &message)
+	AiResult Error(std::string const &status, std::string const &message) const
 	{
-		AiResult ret;
+		AiResult ret{model().api_compatibility()};
 		ret.d.error_status = status;
 		ret.d.error_message = message;
 		return ret;
 	}
-	GenerativeAI::Model model();
+	GenerativeAI::Model model() const;
 	void set_ai_model(GenerativeAI::Model model);
 	void set_system_role(std::string const &role);
 	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Quert2Resuest &req);
