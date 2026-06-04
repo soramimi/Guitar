@@ -1317,7 +1317,7 @@ private:
 		return true;
 	}
 
-	void print_string(std::string const &s)
+	void print_string(std::string_view const &s)
 	{
 		std::vector<char> buf = encode_json_string(s);
 
@@ -1494,7 +1494,7 @@ public:
 		number({}, v);
 	}
 
-	void string(std::string const &name, std::string const &s)
+	void string(std::string const &name, std::string_view const &s)
 	{
 		print_value(name, [&](){
 			print_string(s);
@@ -1532,6 +1532,11 @@ public:
 	void null()
 	{
 		symbol({}, Null);
+	}
+	
+	void null(std::string const &name)
+	{
+		symbol(name, Null);
 	}
 
 	operator std::string () const

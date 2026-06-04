@@ -735,7 +735,7 @@ AiResult AiApiBridge::x_request(const Quert2Resuest &req)
 		if (m->save_log) {
 			logprintf(LOG_RAW, "%s\n", response_json.c_str());
 		}
-		fprintf(stderr, "%s\n", response_json.c_str());
+		// fprintf(stderr, "%s\n", response_json.c_str());
 	}
 	if (response_json.empty()) {
 		logprintf(LOG_DEFAULT, "No response received from AI API.\n");
