@@ -21,6 +21,11 @@ function make2 () {
 	popd
 }
 
+# Note: fileのビルド時に以下のエラーが出る。magic等のビルドは必要だがfileコマンドは不要なので、このエラーは無視していい。
+# file.c:371:13: error: ‘sandbox’ undeclared (first use in this function)
+#  371 |         if (sandbox && enable_landlock(flags, action) == -1)
+#      |             ^~~~~~~
+
 make1 file
 make1 oniguruma
 

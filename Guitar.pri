@@ -16,7 +16,7 @@ unsafe {
 
 msvc:DEFINES += NOMINMAX
 
-INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
 SRC = $$PWD/src
 
