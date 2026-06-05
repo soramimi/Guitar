@@ -36,6 +36,11 @@ bool CurlClient::open()
 {
 	if (!m->curl_) {
 		m->curl_ = curl_easy_init();
+		if (m->curl_) {
+			curl_easy_setopt(m->curl_, CURLOPT_TCP_KEEPALIVE, 1L);
+			curl_easy_setopt(m->curl_, CURLOPT_TCP_KEEPIDLE, 120L);
+			curl_easy_setopt(m->curl_, CURLOPT_TCP_KEEPINTVL, 60L);
+		}
 	}
 	return (bool)m->curl_;
 }

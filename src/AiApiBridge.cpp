@@ -688,15 +688,15 @@ AbstractInetClient *AiApiBridge::http()
 }
 
 // experimental query for multi-turn conversation with tool use support
-AiResult AiApiBridge::x_request(const Quert2Resuest &req)
+AiResult AiApiBridge::x_request(const Quert2Request &req)
 {
 	if (!req) return {model().api_compatibility()};
 	
 	std::string request_json;
-	if (req.type == Quert2Resuest::TEXT) {
-		request_json = generate_prompt_json(model(), req.prompt, m->system_role);
-	} else if (req.type == Quert2Resuest::JSON) {
-		request_json = req.prompt;
+	if (req.type == Quert2Request::TEXT) {
+		request_json = generate_prompt_json(model(), req.prompt_text, m->system_role);
+	} else if (req.type == Quert2Request::JSON) {
+		request_json = req.prompt_json;
 	} else {
 		return {model().api_compatibility()};
 	}
@@ -751,7 +751,7 @@ AiResult AiApiBridge::x_request(const Quert2Resuest &req)
  * @param diff コミット対象のdiff文字列
  * @return コミットメッセージ候補のリスト、またはエラー情報
  */
-AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Quert2Resuest const &req)
+AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Quert2Request const &req)
 {
 	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 		return Error("error", "AI model is not defined.");
@@ -820,13 +820,13 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 
 AiResult AiApiBridge::request(std::string const &prompt)
 {
-	AiApiBridge::Quert2Resuest req{GenerativeAI::EndPoint::Type::Chat, AiApiBridge::Quert2Resuest::TEXT, prompt};
+	AiApiBridge::Quert2Request req;
 	return request(GenerativeAI::EndPoint::Type::Chat, prompt, req);
 }
 
 std::optional<AiResult::Models> AiApiBridge::queryModels()
 {
-	AiApiBridge::Quert2Resuest req{GenerativeAI::EndPoint::Type::Models, {}, {}};
+	AiApiBridge::Quert2Request req{GenerativeAI::EndPoint::Type::Models, {}, {}};
 	AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
 	if (!result) return std::nullopt;
 

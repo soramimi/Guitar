@@ -271,34 +271,31 @@ struct AiResult {
 class AiApiBridge {
 	friend class AiSession;
 public:
-	struct Quert2Resuest {
+	struct Quert2Request {
 		GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 		enum Type {
 			TEXT,
 			JSON,
 		};
 		Type type = TEXT;
-		std::string prompt;
+		bool internal = false;
+		std::string prompt_text;
+		std::string prompt_json;
 		void set_text(std::string const &text)
 		{
 			type = TEXT;
-			prompt = text;
+			prompt_text = text;
 		}
-		void set_json(std::string const &json)
+		void set_tooluse(std::string const &json, std::string const &text)
 		{
 			type = JSON;
-			prompt = json;
+			prompt_json = json;
+			prompt_text = text;
 		}
-		Quert2Resuest() = default;
-		Quert2Resuest(GenerativeAI::EndPoint::Type eptype, Type t, std::string const &p)
-			: eptype(eptype)
-			, type(t)
-			, prompt(p)
-		{
-		}
+		Quert2Request() = default;
 		operator bool () const
 		{
-			return !prompt.empty();
+			return (type == TEXT && !prompt_text.empty()) || (type == JSON && !prompt_json.empty());
 		}
 	};
 private:
@@ -307,7 +304,7 @@ private:
 	AbstractInetClient *http();
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
 	AiResult open();
-	AiResult x_request(Quert2Resuest const &req);
+	AiResult x_request(Quert2Request const &req);
 	void close();
 public:
 	AiApiBridge();
@@ -323,7 +320,7 @@ public:
 	GenerativeAI::Model model() const;
 	void set_ai_model(GenerativeAI::Model model);
 	void set_system_role(std::string const &role);
-	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Quert2Resuest &req);
+	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Quert2Request &req);
 	AiResult request(const std::string &prompt);
 	std::optional<AiResult::Models> queryModels();
 };
@@ -333,7 +330,7 @@ public:
 
 class AiSession {
 public:
-	using Quert2Resuest = AiApiBridge::Quert2Resuest;
+	using Quert2Resuest = AiApiBridge::Quert2Request;
 	std::shared_ptr<AiApiBridge> api_bridge;
 	AiSession()
 		: api_bridge(std::make_shared<AiApiBridge>())
