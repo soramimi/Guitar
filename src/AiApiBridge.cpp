@@ -359,7 +359,6 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 
-
 	/// DeepSeek：OpenAI Chat Completions 互換形式
 	AiResult case_DeepSeek()
 	{
@@ -747,9 +746,12 @@ AiResult AiApiBridge::x_request(const Quert2Request &req)
 }
 
 /**
- * @brief diff文字列を元にAIへリクエストを送り、コミットメッセージ候補を生成する。
- * @param diff コミット対象のdiff文字列
- * @return コミットメッセージ候補のリスト、またはエラー情報
+ * @brief 指定されたエンドポイントタイプに対してプロンプトを送信し、AIの応答を取得する。
+ *
+ * @param eptype エンドポイントの種類（例: Chat, Modelsなど）
+ * @param prompt 送信するプロンプト文字列
+ * @param req 追加のリクエスト情報（将来的な拡張用）
+ * @return AIからの応答を含むAiResultオブジェクト
  */
 AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Quert2Request const &req)
 {

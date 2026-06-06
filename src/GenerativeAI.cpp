@@ -50,7 +50,6 @@ ProviderID api_compatibility(ProviderID pid)
 	case ProviderID::OpenAI_chat_completions:
 	case ProviderID::Anthropic:
 	case ProviderID::Google:
-	case ProviderID::XAI:
 		return pid;
 	default:
 		return ProviderID::OpenAI_chat_completions;
@@ -72,7 +71,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Anthropic,        "claude-sonnet-4-6"},
 		{ProviderID::Anthropic,        "claude-haiku-4-5"},
 		{ProviderID::Google,           "gemini-3-flash-preview"},
-		{ProviderID::XAI,              "grok-4.20"},
+		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		{ProviderID::DeepSeek,         "deepseek-chat"},
 		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
