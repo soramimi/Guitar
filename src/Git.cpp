@@ -356,7 +356,7 @@ std::string Git::getCurrentBranchName()
 std::vector<std::string> Git::getUntrackedFiles()
 {
 	std::vector<std::string> files;
-	std::vector<GitFileStatus> stats = status_s();
+	std::vector<GitFileStatus> stats = status_s_u();
 	for (GitFileStatus const &s : stats) {
 		if (s.code() == GitFileStatus::Code::Untracked) {
 			files.push_back(s.path1());
@@ -1083,14 +1083,21 @@ bool Git::push_tags(AbstractPtyProcess *pty)
 	return (bool)exec_git(cmd.toStdString(), opt);
 }
 
-std::vector<GitFileStatus> Git::status_s_()
+std::vector<GitFileStatus> Git::status_s_u_(std::string *out)
 {
+	if (out) {
+		out->clear();
+	}
+
 	std::vector<GitFileStatus> files;
 	AbstractGitSession::Option opt;
 	opt.use_cache = true;
 	auto result = exec_git("status -s -u --porcelain", opt);
 	if (result) {
 		std::string text = resultStdString(result);
+		if (out) {
+			*out = text;
+		}
 		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(text);
 		for (std::string_view const &line : lines) {
 			if (line.size() > 3) {
@@ -1104,9 +1111,9 @@ std::vector<GitFileStatus> Git::status_s_()
 	return files;
 }
 
-std::vector<GitFileStatus> Git::status_s()
+std::vector<GitFileStatus> Git::status_s_u(std::string *out)
 {
-	return status_s_();
+	return status_s_u_(out);
 }
 
 std::string Git::objectType(GitHash const &id)

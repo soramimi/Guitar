@@ -123,7 +123,7 @@ public:
 	std::vector<std::string> diff_name_only_head();
 	std::string diff_full_index_head_file(const std::string &file);
 
-	std::vector<GitFileStatus> status_s();
+	std::vector<GitFileStatus> status_s_u(std::string *out = nullptr);
 	std::optional<std::vector<char> > cat_file_(const GitHash &id);
 	GitObject catFile(const GitHash &id, bool use_cache = true);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);

@@ -94,16 +94,22 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
   ]
 }
 
-# git diff
 )---";
+
+	if (!request_.status_s_u.empty()) {
+		prompt += "# git status -s -u\n";
+		prompt += request_.status_s_u + "\n\n";
+	}
 
 	// optional hint
 	if (!request_.hint.empty()) {
-		prompt += "Additional hint: " + request_.hint + "\n\n";
+		prompt += "# additional hint\n";
+		prompt += "- " + request_.hint + "\n\n";
 	}
 
 	// build final prompt
 	prompt += schema;
+	prompt += "# git diff\n";
 	prompt += request_.diff;
 
 	return prompt;

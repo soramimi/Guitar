@@ -13,6 +13,7 @@ struct GenerateCommitMessageDialog::Private {
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
 	std::string diff;
+	std::string status_s_u;
 };
 
 GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index)
@@ -67,9 +68,10 @@ GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
 	return global->appsettings.ai_model;
 }
 
-void GenerateCommitMessageDialog::generate(std::string const &diff)
+void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)
 {
 	m->diff = diff;
+	m->status_s_u = status_s_u;
 
 	// experimental: additional hint for AI generation
 	std::string hint;
@@ -91,13 +93,16 @@ void GenerateCommitMessageDialog::generate(std::string const &diff)
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	m->generator.request(diff, ai_model(), hint);
+	m->generator.request(ai_model(), diff, status_s_u, hint);
 }
 
 void GenerateCommitMessageDialog::generate()
 {
-	std::string diff = CommitMessageGenerator::make_diff(global->mainwindow->git(), m->commits);
-	generate(diff);
+	GitRunner g = global->mainwindow->git();
+	std::string diff = CommitMessageGenerator::make_diff(g, m->commits);
+	std::string status_s_u;
+	g.status_s_u(&status_s_u);
+	_generate(diff, status_s_u);
 }
 
 std::string GenerateCommitMessageDialog::diffText() const

@@ -25,10 +25,12 @@ public:
 
 	struct Request {
 		std::string diff;
+		std::string status_s_u;
 		std::string hint;
 		int max_message_count = 5; // 生成するコミットメッセージ候補の数
-		Request(std::string const &diff, const std::string &hint)
+		Request(std::string const &diff, std::string const &status_s_u, const std::string &hint)
 			: diff(diff)
+			, status_s_u(status_s_u)
 			, hint(hint)
 		{
 		}
@@ -70,6 +72,8 @@ public:
 	AiResult request()
 	{
 		std::string prompt = generatePrompt();
+		fprintf(stderr, "%s\n", prompt.c_str());
+		fflush(stderr);
 		return api_.request(prompt);
 	}
 };

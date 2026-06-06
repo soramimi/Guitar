@@ -1448,7 +1448,7 @@ void MainWindow::updateUncommittedChanges(GitRunner g)
 	PROFILE;
 
 	TraceLogger trace("updateUncommittedChanges", {});
-	m->uncommitted_changes_file_list = g.status_s();
+	m->uncommitted_changes_file_list = g.status_s_u();
 	setUncommittedChanges(!m->uncommitted_changes_file_list.empty());
 }
 

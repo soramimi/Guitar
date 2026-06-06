@@ -234,7 +234,7 @@ std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const 
 	} else { // 無効なIDなら、HEADと作業コピーのdiff
 
 		GitHash head_id = g.rev_parse("HEAD");
-		std::vector<GitFileStatus> stats = g.status_s(); // git status // TODO: 巨大リポジトリで遅い
+		std::vector<GitFileStatus> stats = g.status_s_u(); // git status // TODO: 巨大リポジトリで遅い
 
 		GitCommitTree head_tree(objcache_);
 		head_tree.parseCommit(g, head_id); // HEADが親

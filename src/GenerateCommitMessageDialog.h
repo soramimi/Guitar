@@ -21,7 +21,7 @@ private:
 	Private *m;
 	const GenerativeAI::Model &ai_model() const;
 	void init_ai_models(const std::vector<GenerativeAI::Model> &models, int default_index);
-	void generate(const std::string &diff);
+	void _generate(const std::string &diff, const std::string &status_s);
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index);
 	~GenerateCommitMessageDialog();

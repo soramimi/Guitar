@@ -18,13 +18,14 @@ public:
 	bool interrupted_ = false;
 	GenerativeAI::Model ai_model_;
 	std::string diff_;
+	std::string status_s_u_;
 	std::string hint_;
 	
 	GenerateCommitMessageThread();
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(std::string const &diff, GenerativeAI::Model ai_model, const std::string &hint = {});
+	void request(GenerativeAI::Model ai_model, std::string const &diff, const std::string &status_s_u, const std::string &hint);
 signals:
 	void ready(GeneratedCommitMessage const &message);
 	

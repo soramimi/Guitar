@@ -47,7 +47,7 @@ public:
 
 private:
 	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);
-	std::vector<GitFileStatus> status_s_();
+		std::vector<GitFileStatus> status_s_u_(std::string *out);
 	bool commit_(const std::string &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(const std::string &s, GitBranch *b);
 	Git();
@@ -135,7 +135,7 @@ public:
         static GitCloneData preclone(const std::string &url, const std::string &path);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 
-	std::vector<GitFileStatus> status_s();
+	std::vector<GitFileStatus> status_s_u(std::string *out = nullptr);
 	std::optional<std::vector<char> > cat_file(GitHash const &id);
 	void resetFile(const std::string &path);
 	void resetAllFiles();

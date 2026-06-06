@@ -391,9 +391,9 @@ std::string GitRunner::diff_full_index_head_file(std::string const &file)
 	return gitptr()->diff_full_index_head_file(file);
 }
 
-std::vector<GitFileStatus> GitRunner::status_s()
+std::vector<GitFileStatus> GitRunner::status_s_u(std::string *out)
 {
-	return gitptr()->status_s();
+	return gitptr()->status_s_u(out);
 }
 
 std::optional<std::vector<char>> GitRunner::cat_file_(const GitHash &id)
