@@ -3,7 +3,7 @@
 #include "ApplicationGlobal.h"
 #include <QFileDialog>
 #include <QTextStream>
-#include "common/joinpath.h"
+#include <common/joinpath.h>
 
 SettingWorkingFolderForm::SettingWorkingFolderForm(QWidget *parent)
 	: AbstractSettingForm(parent)

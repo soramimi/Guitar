@@ -1,7 +1,7 @@
 #include "Dir.h"
-#include "misc.h"
+#include <common/misc.h>
+#include <common/unicode_conversion.h>
 #include <filesystem>
-#include "common/unicode_conversion.h"
 
 #ifdef _WIN32
 #include <Windows.h>

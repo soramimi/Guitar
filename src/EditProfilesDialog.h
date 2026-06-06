@@ -2,7 +2,7 @@
 #define EDITPROFILESDIALOG_H
 
 #include <QDialog>
-#include "common/misc.h"
+#include <common/misc.h>
 #include "Git.h"
 
 class QTableWidgetItem;

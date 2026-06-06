@@ -1,8 +1,8 @@
-#include "GenerativeAI.h"
-#include "common/fmt.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include "urlencode.h"
+#include <ai/GenerativeAI.h>
+#include <common/urlencode.h>
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <regex>
 
 namespace GenerativeAI {

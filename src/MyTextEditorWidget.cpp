@@ -1,8 +1,8 @@
 #include "MyTextEditorWidget.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <QFileDialog>
 #include <QFontDatabase>
 #include <QMenu>

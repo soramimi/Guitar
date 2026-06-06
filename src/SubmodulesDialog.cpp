@@ -1,9 +1,9 @@
 #include "SubmodulesDialog.h"
 #include "ui_SubmodulesDialog.h"
 #include "MainWindow.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include "common/q/helper.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 
 #include <QDir>
 

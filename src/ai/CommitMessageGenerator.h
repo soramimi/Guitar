@@ -2,7 +2,7 @@
 #define COMMITMESSAGEGENERATOR_H
 
 #include "AiApiBridge.h"
-#include "GenerativeAI.h"
+#include <ai/GenerativeAI.h>
 #include "Git.h"
 #include <string>
 

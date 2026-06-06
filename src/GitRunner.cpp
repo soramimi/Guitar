@@ -1,7 +1,7 @@
 #include "GitRunner.h"
 #include "Git.h"
 #include "TraceLogger.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 
 GitRunner::GitRunner(const std::shared_ptr<Git> &git)
 	: git(git)

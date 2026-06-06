@@ -13,7 +13,7 @@
 #include "SettingOptionsForm.h"
 #include "SettingAiForm.h"
 
-#include "common/misc.h"
+#include <common/misc.h>
 #include <QFileDialog>
 
 static int page_number = 0;

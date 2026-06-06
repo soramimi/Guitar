@@ -2,13 +2,13 @@
 #include "ApplicationGlobal.h"
 #include "Logger.h"
 #include "MySettings.h"
-#include "common/fmt.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include "common/q/helper.h"
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 
 namespace {
 

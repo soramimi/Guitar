@@ -1,7 +1,7 @@
 #ifndef SIMPLEQTIO_H
 #define SIMPLEQTIO_H
 
-#include "common/AbstractSimpleIO.h"
+#include <common/AbstractSimpleIO.h>
 #include <QIODevice>
 
 class SimpleQtReader : public AbstractSimpleReader {

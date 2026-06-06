@@ -3,11 +3,11 @@
 #include "GitPack.h"
 #include "GitPackIdxV2.h"
 #include "MemoryReader.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
-#include "common/str.h"
-#include "common/npos.h"
-#include "common/q/helper.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/str.h>
+#include <common/npos.h>
+#include <common/q/helper.h>
 #include "Profile.h"
 #include <QBuffer>
 #include <QDebug>
@@ -15,7 +15,7 @@
 #include <QFile>
 #include <memory>
 #include <set>
-#include "common/fmt.h"
+#include <common/fmt.h>
 
 struct GitObjectManager::Private {
 	std::mutex *mutex_ = nullptr;

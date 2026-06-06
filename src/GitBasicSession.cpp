@@ -1,10 +1,10 @@
 #include "GitBasicSession.h"
 #include "TraceEventWriter.h"
-#include "common/fmt.h"
-#include "common/str.h"
-#include "common/npos.h"
-#include "common/joinpath.h"
-#include "common/q/FileInfo.h"
+#include <common/fmt.h>
+#include <common/str.h>
+#include <common/npos.h>
+#include <common/joinpath.h>
+#include <common/q/FileInfo.h>
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>

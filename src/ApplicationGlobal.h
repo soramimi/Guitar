@@ -3,19 +3,19 @@
 
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
-#include "Theme.h"
-#include "common/misc.h"
-#include "filetype/src/FileType.h"
+#include "FileTypeDetector.h"
 #include "Git.h"
-#include "webclient.h"
+#include "IncrementalSearch.h"
+#include "Theme.h"
+#include "TraceEventWriter.h"
+#include "filetype/src/FileType.h"
 #include <MyJagger.h>
 #include <QColor>
 #include <QString>
-#include "FileTypeDetector.h"
-#include "GenerativeAI.h"
-#include "IncrementalSearch.h"
-#include "TraceEventWriter.h"
-#include "curlclient.h"
+#include <ai/GenerativeAI.h>
+#include <common/misc.h>
+#include <inet/curlclient.h>
+#include <inet/webclient.h>
 
 class MainWindow;
 class QListWidgetItem;

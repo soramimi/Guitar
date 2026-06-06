@@ -11,8 +11,8 @@
 #include <common/q/FileInfo.h>
 #include <common/selectitem.h>
 #include <common/str.h>
-#include <curlclient.h>
-// #include <webclient.h>
+#include <inet/curlclient.h>
+// #include <inet/webclient.h>
 
 #ifdef _WIN32
 #include "common/wstring.h"

@@ -6,7 +6,7 @@
 #include <QStyledItemDelegate>
 #include <map>
 #include "ApplicationGlobal.h"
-#include "common/str.h"
+#include <common/str.h>
 
 namespace {
 class ItemDelegate : public QStyledItemDelegate {

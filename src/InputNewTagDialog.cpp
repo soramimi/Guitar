@@ -1,6 +1,6 @@
 #include "InputNewTagDialog.h"
 #include "ui_InputNewTagDialog.h"
-#include "common/qmisc.h"
+#include <common/qmisc.h>
 
 InputNewTagDialog::InputNewTagDialog(QWidget *parent)
 	: QDialog(parent)

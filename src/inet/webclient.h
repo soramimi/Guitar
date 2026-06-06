@@ -2,7 +2,7 @@
 #ifndef WEBCLIENT_H_
 #define WEBCLIENT_H_
 
-#include "inetclient.h"
+#include <inet/inetclient.h>
 
 #include <vector>
 #include <string>

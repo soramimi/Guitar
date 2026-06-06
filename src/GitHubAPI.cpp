@@ -4,16 +4,16 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "OverrideWaitCursor.h"
-#include "common/charvec.h"
-#include "common/misc.h"
-#include "urlencode.h"
-#include "webclient.h"
-#include "curlclient.h"
 #include <QApplication>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <common/charvec.h>
+#include <common/misc.h>
+#include <common/urlencode.h>
+#include <inet/curlclient.h>
+#include <inet/webclient.h>
 #include <memory>
 
 struct GitHubRequestThread::Private {

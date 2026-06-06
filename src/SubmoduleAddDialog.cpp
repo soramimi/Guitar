@@ -3,8 +3,8 @@
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QStandardPaths>

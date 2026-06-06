@@ -1,10 +1,10 @@
 #ifndef GENERATECOMMITMESSAGEDIALOG_H
 #define GENERATECOMMITMESSAGEDIALOG_H
 
-#include "CommitMessageGenerator.h"
-#include "GenerativeAI.h"
 #include <QDialog>
 #include <QObject>
+#include <ai/CommitMessageGenerator.h>
+#include <ai/GenerativeAI.h>
 
 namespace Ui {
 class GenerateCommitMessageDialog;

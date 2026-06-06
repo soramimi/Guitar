@@ -1,4 +1,4 @@
-#include "inetclient.h"
+#include <inet/inetclient.h>
 #include <cstring>
 
 InetClient::URL::URL(const std::string &addr)

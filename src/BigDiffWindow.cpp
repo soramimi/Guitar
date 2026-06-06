@@ -2,7 +2,7 @@
 
 #include "BigDiffWindow.h"
 #include "ui_BigDiffWindow.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 
 struct BigDiffWindow::Private {
 	TextEditorEnginePtr text_editor_engine;

@@ -1,11 +1,11 @@
 #include "GenerateCommitMessageDialog.h"
 #include "ui_GenerateCommitMessageDialog.h"
 #include "ApplicationGlobal.h"
-#include "CommitMessageGenerator.h"
 #include "GenerateCommitMessageThread.h"
 #include "MainWindow.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include <QMessageBox>
+#include <ai/CommitMessageGenerator.h>
 
 struct GenerateCommitMessageDialog::Private {
 	std::vector<GenerativeAI::Model> ai_models;

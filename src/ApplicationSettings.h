@@ -1,7 +1,7 @@
 #ifndef APPLICATIONSETTINGS_H
 #define APPLICATIONSETTINGS_H
 
-#include "GenerativeAI.h"
+#include <ai/GenerativeAI.h>
 #include <QColor>
 #include <QString>
 #include <map>

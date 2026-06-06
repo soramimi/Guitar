@@ -4,7 +4,7 @@
 #include "SelectItemDialog.h"
 #include "ApplicationGlobal.h"
 #include "Languages.h"
-#include "common/misc.h"
+#include <common/misc.h>
 
 #include <QFileDialog>
 

@@ -1,6 +1,6 @@
 
 #include "inetresolver.h"
-#include "webclient.h"
+#include <inet/webclient.h>
 #include <algorithm>
 #include <condition_variable>
 #include <cstring>

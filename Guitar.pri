@@ -124,8 +124,6 @@ macx {
 }
 
 SOURCES += \
-	$$PWD/src/common/npos.cpp \
-	$$PWD/src/common/unicode_conversion.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
@@ -151,7 +149,6 @@ SOURCES += \
 	$$SRC/CommitDialog.cpp \
 	$$SRC/CommitExploreWindow.cpp \
 	$$SRC/CommitLogTableWidget.cpp \
-	$$SRC/CommitMessageGenerator.cpp \
 	$$SRC/CommitPropertyDialog.cpp \
 	$$SRC/CommitViewWindow.cpp \
 	$$SRC/ConfigCredentialHelperDialog.cpp \
@@ -180,7 +177,6 @@ SOURCES += \
 	$$SRC/GenerateCommitMessageDialog.cpp \
 	$$SRC/GenerateCommitMessageThread.cpp \
 	$$SRC/GeneratedCommitMessage.cpp \
-	$$SRC/GenerativeAI.cpp \
 	$$SRC/Git.cpp \
 	$$SRC/GitBasicSession.cpp \
 	$$SRC/GitCommandCache.cpp \
@@ -268,6 +264,8 @@ SOURCES += \
 	$$SRC/WelcomeWizardDialog.cpp \
 	$$SRC/WorkingDirLineEdit.cpp \
 	$$SRC/XmlTagState.cpp \
+	$$SRC/ai/CommitMessageGenerator.cpp \
+	$$SRC/ai/GenerativeAI.cpp \
 	$$SRC/coloredit/ColorDialog.cpp \
 	$$SRC/coloredit/ColorEditWidget.cpp \
 	$$SRC/coloredit/ColorPreviewWidget.cpp \
@@ -276,12 +274,14 @@ SOURCES += \
 	$$SRC/coloredit/RingSlider.cpp \
 	$$SRC/common/AbstractSimpleIO.cpp \
 	$$SRC/common/misc.cpp \
+	$$SRC/common/npos.cpp \
 	$$SRC/common/q/DateTime.cpp \
 	$$SRC/common/q/Dir.cpp \
 	$$SRC/common/q/DirIterator.cpp \
 	$$SRC/common/q/FileInfo.cpp \
 	$$SRC/common/qmisc.cpp \
 	$$SRC/common/realpath.cpp \
+	$$SRC/common/unicode_conversion.cpp \
 	$$SRC/common/urlencode.cpp \
 	$$SRC/darktheme/DarkStyle.cpp \
 	$$SRC/darktheme/LightStyle.cpp \
@@ -290,8 +290,8 @@ SOURCES += \
 	$$SRC/darktheme/TraditionalWindowsStyleTreeControl.cpp \
 	$$SRC/gpg.cpp \
 	$$SRC/gzip.cpp \
-	$$SRC/inetclient.cpp \
-	$$SRC/inetresolver.cpp \
+	$$SRC/inet/inetclient.cpp \
+	$$SRC/inet/inetresolver.cpp \
 	$$SRC/main.cpp\
 	$$SRC/platform.cpp \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.cpp \
@@ -301,14 +301,12 @@ SOURCES += \
 	$$SRC/texteditor/TextEditorWidget.cpp \
 	$$SRC/texteditor/UnicodeWidth.cpp \
 	$$SRC/texteditor/unicode.cpp \
-	$$SRC/webclient.cpp \
+	$$SRC/inet/webclient.cpp \
 	$$SRC/zip/zip.cpp \
 	$$SRC/zip/ziparchive.cpp \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/src/common/npos.h \
-	$$PWD/src/common/unicode_conversion.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \
@@ -334,7 +332,6 @@ HEADERS += \
 	$$SRC/CommitDialog.h \
 	$$SRC/CommitExploreWindow.h \
 	$$SRC/CommitLogTableWidget.h \
-	$$SRC/CommitMessageGenerator.h \
 	$$SRC/CommitPropertyDialog.h \
 	$$SRC/CommitViewWindow.h \
 	$$SRC/ConfigCredentialHelperDialog.h \
@@ -362,8 +359,6 @@ HEADERS += \
 	$$SRC/GenerateCommitMessageDialog.h \
 	$$SRC/GenerateCommitMessageThread.h \
 	$$SRC/GeneratedCommitMessage.h \
-	$$SRC/GenerativeAI.h \
-	$$SRC/GenerativeAI.h \
 	$$SRC/Git.h \
 	$$SRC/GitBasicSession.h \
 	$$SRC/GitCommandCache.h \
@@ -452,6 +447,8 @@ HEADERS += \
 	$$SRC/WelcomeWizardDialog.h \
 	$$SRC/WorkingDirLineEdit.h \
 	$$SRC/XmlTagState.h \
+	$$SRC/ai/CommitMessageGenerator.h \
+	$$SRC/ai/GenerativeAI.h \
 	$$SRC/coloredit/ColorDialog.h \
 	$$SRC/coloredit/ColorEditWidget.h \
 	$$SRC/coloredit/ColorPreviewWidget.h \
@@ -467,6 +464,7 @@ HEADERS += \
 	$$SRC/common/joinpath.h \
 	$$SRC/common/jstream.h \
 	$$SRC/common/misc.h \
+	$$SRC/common/npos.h \
 	$$SRC/common/q/DateTime.h \
 	$$SRC/common/q/Dir.h \
 	$$SRC/common/q/DirIterator.h \
@@ -476,6 +474,7 @@ HEADERS += \
 	$$SRC/common/realpath.h \
 	$$SRC/common/str.h \
 	$$SRC/common/strformat.h \
+	$$SRC/common/unicode_conversion.h \
 	$$SRC/common/urlencode.h \
 	$$SRC/darktheme/DarkStyle.h \
 	$$SRC/darktheme/LightStyle.h \
@@ -492,8 +491,8 @@ HEADERS += \
 	$$SRC/dtl/variables.hpp \
 	$$SRC/gpg.h \
 	$$SRC/gzip.h \
-	$$SRC/inetclient.h \
-	$$SRC/inetresolver.h \
+	$$SRC/inet/inetclient.h \
+	$$SRC/inet/inetresolver.h \
 	$$SRC/platform.h \
 	$$SRC/process/MyProcess2.h \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.h \
@@ -503,14 +502,13 @@ HEADERS += \
 	$$SRC/texteditor/TextEditorWidget.h \
 	$$SRC/texteditor/UnicodeWidth.h \
 	$$SRC/texteditor/unicode.h \
-	$$SRC/webclient.h \
+	$$SRC/inet/webclient.h \
 	$$SRC/zip/zip.h \
 	$$SRC/zip/zipinternal.h
 
 HEADERS += version.h
 
 FORMS += \
-	$$SRC/SettingLoggingForm.ui \
 	$$SRC/AboutDialog.ui \
 	$$SRC/AddRepositoriesCollectivelyDialog.ui \
 	$$SRC/AddRepositoryDialog.ui \
@@ -564,6 +562,7 @@ FORMS += \
 	$$SRC/SettingBehaviorForm.ui \
 	$$SRC/SettingExampleForm.ui \
 	$$SRC/SettingGeneralForm.ui \
+	$$SRC/SettingLoggingForm.ui \
 	$$SRC/SettingNetworkForm.ui \
 	$$SRC/SettingOptionsForm.ui \
 	$$SRC/SettingPrograms2Form.ui \
@@ -590,7 +589,7 @@ unix {
 		$$SRC/unix/UnixProcess.cpp \
 		$$SRC/unix/UnixPtyProcess.cpp
 	HEADERS += \
-		$$PWD/src/common/wstring.h \
+		$$SRC/common/wstring.h \
 		$$SRC/process/ProcessPosix.h \
 		$$SRC/unix/UnixUtil.h \
 		$$SRC/unix/UnixProcess.h \
@@ -636,7 +635,7 @@ unsafe {
 }
 
 use_libcurl {
-	SOURCES += $$SRC/curlclient.cpp
-	HEADERS += $$SRC/curlclient.h
+	SOURCES += $$SRC/inet/curlclient.cpp
+	HEADERS += $$SRC/inet/curlclient.h
 }
 

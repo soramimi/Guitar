@@ -1,4 +1,4 @@
-#include "curlclient.h"
+#include <inet/curlclient.h>
 #include <curl/curl.h>
 #include <vector>
 

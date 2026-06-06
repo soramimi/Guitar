@@ -6,9 +6,9 @@
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "Photoshop.h"
-#include "common/charvec.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
+#include <common/charvec.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <QApplication>
 #include <QBuffer>
 #include <QDebug>

@@ -4,7 +4,7 @@
 #include <QDragEnterEvent>
 #include <QFileInfo>
 #include <QMimeData>
-#include "common/misc.h"
+#include <common/misc.h>
 
 WorkingDirLineEdit::WorkingDirLineEdit(QWidget *parent)
 	: QLineEdit(parent)

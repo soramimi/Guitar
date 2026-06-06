@@ -1,5 +1,5 @@
 #include "RingSlider.h"
-//#include "misc.h"
+//#include <common/misc.h>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>

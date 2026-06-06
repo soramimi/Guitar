@@ -1,12 +1,12 @@
 #include "realpath.h"
-#include "misc.h"
-#include "joinpath.h"
+#include <common/misc.h>
+#include <common/joinpath.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <KnownFolders.h>
 #include <ShlObj.h>
-#include "common/wstring.h"
+#include <common/wstring.h>
 #else
 #include <limits.h>
 #endif

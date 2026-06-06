@@ -6,7 +6,7 @@
 #include "UserEvent.h"
 #include <QFile>
 #include <QXmlStreamWriter>
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 
 EditProfilesDialog::Item::Item(const GitUser &user)
 	: name((QS)user.name)

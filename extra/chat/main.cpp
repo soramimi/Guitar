@@ -11,7 +11,7 @@
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
 #include "common/str.h"
-#include "curlclient.h"
+#include <inet/curlclient.h>
 
 #ifdef _WIN32
 #include "common/wstring.h"
@@ -147,7 +147,7 @@ std::string request(Option const &opt)
 {
 	AiApiBridge gen;
 	gen.set_ai_model(ai_model);
-	AiResult msg = gen.query(opt.prompt);
+	AiResult msg = gen.request(opt.prompt);
 	if (!msg) {
 		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
 		return { };

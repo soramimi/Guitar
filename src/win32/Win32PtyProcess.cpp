@@ -7,7 +7,7 @@
 #include <deque>
 #include <thread>
 #include <winpty.h>
-#include "common/misc.h"
+#include <common/misc.h>
 
 namespace {
 

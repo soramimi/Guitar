@@ -3,7 +3,7 @@
 #include "ui_SettingProgramsForm.h"
 #include <QFileDialog>
 #include "SettingsDialog.h"
-#include "common/misc.h"
+#include <common/misc.h>
 
 SettingProgramsForm::SettingProgramsForm(QWidget *parent) :
 	AbstractSettingForm(parent),

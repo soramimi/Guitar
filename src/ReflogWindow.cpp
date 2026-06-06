@@ -3,7 +3,7 @@
 #include "CommitExploreWindow.h"
 #include "Git.h"
 #include "MainWindow.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include <QMenu>
 
 ReflogWindow::ReflogWindow(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)

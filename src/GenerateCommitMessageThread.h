@@ -1,9 +1,9 @@
 #ifndef GENERATECOMMITMESSAGETHREAD_H
 #define GENERATECOMMITMESSAGETHREAD_H
 
-#include <QObject>
-#include "CommitMessageGenerator.h"
 #include "GeneratedCommitMessage.h"
+#include <QObject>
+#include <ai/CommitMessageGenerator.h>
 #include <condition_variable>
 #include <mutex>
 #include <thread>

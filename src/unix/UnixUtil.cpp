@@ -4,7 +4,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QString>
-#include "common/joinpath.h"
+#include <common/joinpath.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/stat.h>

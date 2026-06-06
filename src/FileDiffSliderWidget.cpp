@@ -2,7 +2,7 @@
 #include "FileDiffSliderWidget.h"
 #include "ApplicationGlobal.h"
 #include "TextEditorTheme.h"
-#include "common/misc.h"
+#include <common/misc.h>
 #include <QDebug>
 #include <QMouseEvent>
 #include <QPainter>

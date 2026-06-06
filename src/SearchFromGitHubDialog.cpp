@@ -1,8 +1,8 @@
 #include "SearchFromGitHubDialog.h"
 #include "ui_SearchFromGitHubDialog.h"
 #include "MainWindow.h"
-#include "common/misc.h"
-#include "urlencode.h"
+#include <common/misc.h>
+#include <common/urlencode.h>
 #include <QDebug>
 #include <QDesktopServices>
 #include <QThread>

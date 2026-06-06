@@ -5,11 +5,11 @@
 #include "MainWindow.h"
 #include "ManageWorkingFolderDialog.h"
 #include "SearchFromGitHubDialog.h"
-#include "common/misc.h"
 #include <QFileDialog>
 #include <QFocusEvent>
 #include <QMessageBox>
-#include "common/joinpath.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
 
 enum {
 	Manage = -100,

@@ -8,8 +8,8 @@
 #include "MySettings.h"
 #include "RepositoryModel.h"
 #include "SettingGeneralForm.h"
-#include "common/joinpath.h"
-#include "webclient.h"
+#include <common/joinpath.h>
+#include <inet/webclient.h>
 #include <QApplication>
 #include <QDebug>
 #include <QDir>

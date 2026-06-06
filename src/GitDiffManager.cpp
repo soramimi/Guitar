@@ -2,9 +2,9 @@
 #include "GitDiffManager.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include "common/fmt.h"
-#include "common/joinpath.h"
-#include "common/q/helper.h"
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/q/helper.h>
 #include <QDebug>
 #include <QThread>
 

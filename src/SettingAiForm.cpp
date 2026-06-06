@@ -1,8 +1,8 @@
 #include "SettingAiForm.h"
 #include "ui_SettingAiForm.h"
-#include "GenerativeAI.h"
+#include <ai/GenerativeAI.h>
 #include "Logger.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include <QMessageBox>
 
 using ApiKeyFrom = AiApiKeys::KeyFrom;

@@ -1,6 +1,6 @@
 #include "GitTypes.h"
-#include "common/crc32.h"
-#include "common/q/helper.h"
+#include <common/crc32.h>
+#include <common/q/helper.h>
 #include <set>
 
 class Latin1View {

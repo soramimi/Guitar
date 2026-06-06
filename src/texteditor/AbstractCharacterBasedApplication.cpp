@@ -8,7 +8,7 @@
 #include <QFile>
 // #include <QTextCodec>
 #include <memory>
-#include "common/misc.h"
+#include <common/misc.h>
 
 using WriteMode = AbstractCharacterBasedApplication::WriteMode;
 using FormattedLine = AbstractCharacterBasedApplication::FormattedLine2;

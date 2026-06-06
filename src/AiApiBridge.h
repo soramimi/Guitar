@@ -1,7 +1,7 @@
 #ifndef AIAPIBRIDGE_H
 #define AIAPIBRIDGE_H
 
-#include "GenerativeAI.h"
+#include <ai/GenerativeAI.h>
 
 #include <string>
 #include <vector>

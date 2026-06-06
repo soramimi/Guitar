@@ -5,8 +5,8 @@
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
 #include "OverrideWaitCursor.h"
-#include "common/misc.h"
-#include "common/q/helper.h"
+#include <common/misc.h>
+#include <common/q/helper.h>
 #include <QMenu>
 #include <QPainter>
 #include <QStyledItemDelegate>

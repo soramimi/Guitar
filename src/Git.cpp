@@ -2,11 +2,11 @@
 #include "Git.h"
 #include "GitBasicSession.h"
 #include "Profile.h"
-#include "common/fmt.h"
-#include "common/joinpath.h"
-#include "common/q/helper.h"
-#include "common/str.h"
-#include "common/npos.h"
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/q/helper.h>
+#include <common/str.h>
+#include <common/npos.h>
 #include <QString>
 
 #ifdef _WIN32
@@ -15,8 +15,8 @@
 using Dir = QDir;
 using FileInfo = QFileInfo;
 #else
-#include "common/q/Dir.h"
-#include "common/q/FileInfo.h"
+#include <common/q/Dir.h>
+#include <common/q/FileInfo.h>
 #define QS std::string
 #endif
 

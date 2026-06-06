@@ -2,7 +2,7 @@
 #include "Win32Util.h"
 
 #include "ApplicationGlobal.h"
-#include "common/joinpath.h"
+#include <common/joinpath.h>
 #include "event.h"
 #include "thread.h"
 #include <QApplication>

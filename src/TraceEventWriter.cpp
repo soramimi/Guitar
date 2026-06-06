@@ -1,7 +1,7 @@
 #include "TraceEventWriter.h"
 #include "ApplicationGlobal.h"
-#include "common/joinpath.h"
-#include "common/jstream.h"
+#include <common/joinpath.h>
+#include <common/jstream.h>
 #include <QDebug>
 #include <QFileInfo>
 #include <thread>

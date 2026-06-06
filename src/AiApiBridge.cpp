@@ -1,8 +1,8 @@
 #include "AiApiBridge.h"
-#include "common/jstream.h"
-#include "CommitMessageGenerator.h"
 #include "Logger.h"
-#include "inetclient.h"
+#include <ai/CommitMessageGenerator.h>
+#include <common/jstream.h>
+#include <inet/inetclient.h>
 
 #ifdef APP_GUITAR
 #include "ApplicationGlobal.h"

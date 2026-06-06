@@ -3,7 +3,7 @@
 #include "BranchLabel.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include <QApplication>
 #include <QHeaderView>
 #include <QPainter>

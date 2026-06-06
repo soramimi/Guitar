@@ -3,7 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "InputNewTagDialog.h"
 #include "MainWindow.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 
 EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) :
 	QDialog(parent),

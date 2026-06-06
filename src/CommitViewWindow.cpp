@@ -1,7 +1,7 @@
 #include "CommitViewWindow.h"
 #include "ui_CommitViewWindow.h"
 #include "ApplicationGlobal.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include <QMenu>
 
 struct CommitViewWindow::Private {

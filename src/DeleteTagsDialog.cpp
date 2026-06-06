@@ -1,6 +1,6 @@
 #include "DeleteTagsDialog.h"
 #include "ui_DeleteTagsDialog.h"
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 #include "ApplicationGlobal.h"
 
 DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)

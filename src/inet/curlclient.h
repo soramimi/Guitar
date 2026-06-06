@@ -1,7 +1,7 @@
 #ifndef CURLCLIENT_H
 #define CURLCLIENT_H
 
-#include "inetclient.h"
+#include <inet/inetclient.h>
 #include <string>
 #include <vector>
 

@@ -5,7 +5,7 @@
 #include "MainWindow.h"
 #include "GenerateCommitMessageDialog.h"
 #include <QDir>
-#include "common/q/helper.h"
+#include <common/q/helper.h>
 
 CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser const &user, gpg::Data const &key, QString const &previousMessage)
 	: QDialog(parent)

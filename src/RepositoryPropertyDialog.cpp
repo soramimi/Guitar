@@ -2,7 +2,7 @@
 #include "ui_RepositoryPropertyDialog.h"
 #include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include "common/misc.h"
+#include <common/misc.h>
 #include <QClipboard>
 #include <QItemDelegate>
 #include <QMenu>

@@ -1,9 +1,9 @@
-#include "CommitMessageGenerator.h"
 #include "Logger.h"
-#include "common/fmt.h"
-#include "common/str.h"
-#include "common/joinpath.h"
-#include "common/jstream.h"
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/jstream.h>
+#include <common/str.h>
+#include <ai/CommitMessageGenerator.h>
 
 #ifdef APP_GUITAR
 #include "Profile.h"
@@ -39,7 +39,7 @@ CommitMessageGenerator::CommitMessageGenerator::Result CommitMessageGenerator::p
 			text.remove_prefix(i);
 		}
 		// JSONオブジェクトの範囲を前後から絞り込む（前後に余分なテキストが混入しても対応できるように）
-		auto j = text.rfind('}');
+		auto j = text.find_last_of("}]");
 		if (j != std::string::npos) {
 			text = text.substr(0, j + 1);
 		}
@@ -87,19 +87,13 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
 	std::string schema = R"---(# Schema:
 {
   "messages": [
-	"message1",
-	"message2",
-	"message3",
-	...
+    "message1",
+    "message2",
+    "message3",
+    ...
   ]
 }
-
 )---";
-
-	if (!request_.status_s_u.empty()) {
-		prompt += "# git status -s -u\n";
-		prompt += request_.status_s_u + "\n\n";
-	}
 
 	// optional hint
 	if (!request_.hint.empty()) {
@@ -107,8 +101,14 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
 		prompt += "- " + request_.hint + "\n\n";
 	}
 
+	if (!request_.status_s_u.empty()) {
+		prompt += "# git status -s -u\n";
+		prompt += request_.status_s_u + "\n\n";
+	}
+
 	// build final prompt
 	prompt += schema;
+	prompt += '\n';
 	prompt += "# git diff\n";
 	prompt += request_.diff;
 

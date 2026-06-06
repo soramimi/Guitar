@@ -3,8 +3,8 @@
 #include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "MainWindow.h"
-#include "common/misc.h"
-#include "common/q/helper.h"
+#include <common/misc.h>
+#include <common/q/helper.h>
 #include "gpg.h"
 
 struct CommitPropertyDialog::Private {

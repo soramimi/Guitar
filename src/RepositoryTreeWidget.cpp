@@ -2,7 +2,7 @@
 #include "ApplicationGlobal.h"
 #include "IncrementalSearch.h"
 #include "MainWindow.h"
-#include "common/joinpath.h"
+#include <common/joinpath.h>
 #include <QApplication>
 #include <QDebug>
 #include <QDropEvent>

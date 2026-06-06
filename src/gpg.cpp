@@ -10,7 +10,7 @@
 
 #include "MyProcess.h"
 
-#include "common/misc.h"
+#include <common/misc.h>
 
 void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)
 {

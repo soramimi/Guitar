@@ -2,8 +2,8 @@
 #include "ui_JumpDialog.h"
 #include "MyTableWidgetDelegate.h"
 #include "ApplicationGlobal.h"
-#include "common/joinpath.h"
-#include "common/misc.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <MainWindow.h>
 #include <QKeyEvent>
 #include <QPainter>

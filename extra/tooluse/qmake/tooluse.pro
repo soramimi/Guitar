@@ -35,50 +35,52 @@ msvc:LIBS += -llibcurl
 
 include($$BASEDIR/../libfiletype.pri)
 
+SRC = $$PWD/../../../src
+
 SOURCES += \
-	../../../src/AbstractProcess.cpp \
-	../../../src/FileTypeDetector.cpp \
-	../../../src/GenerativeAI.cpp \
-	../../../src/Logger.cpp \
-	../../../src/MyProcess.cpp \
-	../../../src/common/misc.cpp \
-	../../../src/common/q/Dir.cpp \
-	../../../src/common/q/FileInfo.cpp \
-	../../../src/common/realpath.cpp \
-	../../../src/common/unicode_conversion.cpp \
-	../../../src/common/urlencode.cpp \
-	../../../src/curlclient.cpp \
-	../../../src/inetclient.cpp \
-	../../../src/inetresolver.cpp \
-	../../../src/process/MyProcess2.cpp \
-	../../../src/AiApiBridge.cpp \
-	../../../src/webclient.cpp \
+	$$SRC/AbstractProcess.cpp \
+	$$SRC/AiApiBridge.cpp \
+	$$SRC/FileTypeDetector.cpp \
+	$$SRC/Logger.cpp \
+	$$SRC/MyProcess.cpp \
+	$$SRC/ai/GenerativeAI.cpp \
+	$$SRC/common/misc.cpp \
+	$$SRC/common/q/Dir.cpp \
+	$$SRC/common/q/FileInfo.cpp \
+	$$SRC/common/realpath.cpp \
+	$$SRC/common/unicode_conversion.cpp \
+	$$SRC/common/urlencode.cpp \
+	$$SRC/inet/curlclient.cpp \
+	$$SRC/inet/inetclient.cpp \
+	$$SRC/inet/inetresolver.cpp \
+	$$SRC/inet/webclient.cpp \
+	$$SRC/process/MyProcess2.cpp \
 	../../common/ConfigParser.cpp \
 	../../common/LineReader.cpp \
 	../../common/rwfile.cpp \
 	../src/main.cpp
 
 HEADERS +=  \
-	../../../src/AbstractProcess.h \
-	../../../src/FileTypeDetector.h \
-	../../../src/GenerativeAI.h \
-	../../../src/Logger.h \
-	../../../src/MyProcess.h \
-	../../../src/common/base64.h \
-	../../../src/common/joinpath.h \
-	../../../src/common/jstream.h \
-	../../../src/common/misc.h \
-	../../../src/common/q/Dir.h \
-	../../../src/common/q/FileInfo.h \
-	../../../src/common/realpath.h \
-	../../../src/common/unicode_conversion.h \
-	../../../src/common/urlencode.h \
-	../../../src/curlclient.h \
-	../../../src/inetclient.h \
-	../../../src/inetresolver.h \
-	../../../src/process/MyProcess2.h \
-	../../../src/AiApiBridge.h \
-	../../../src/webclient.h \
+	$$SRC/AbstractProcess.h \
+	$$SRC/AiApiBridge.h \
+	$$SRC/FileTypeDetector.h \
+	$$SRC/Logger.h \
+	$$SRC/MyProcess.h \
+	$$SRC/ai/GenerativeAI.h \
+	$$SRC/common/base64.h \
+	$$SRC/common/joinpath.h \
+	$$SRC/common/jstream.h \
+	$$SRC/common/misc.h \
+	$$SRC/common/q/Dir.h \
+	$$SRC/common/q/FileInfo.h \
+	$$SRC/common/realpath.h \
+	$$SRC/common/unicode_conversion.h \
+	$$SRC/common/urlencode.h \
+	$$SRC/inet/curlclient.h \
+	$$SRC/inet/inetclient.h \
+	$$SRC/inet/inetresolver.h \
+	$$SRC/inet/webclient.h \
+	$$SRC/process/MyProcess2.h \
 	../../common/ConfigParser.h \
 	../../common/LineReader.h \
 	../../common/rwfile.h \
@@ -86,21 +88,21 @@ HEADERS +=  \
 
 msvc {
 SOURCES += \
-	../../../src/common/wstring.cpp \
-	../../../src/process/ProcessWin.cpp \
-	../../../src/win32/Win32Process.cpp
+	$$SRC/common/wstring.cpp \
+	$$SRC/process/ProcessWin.cpp \
+	$$SRC/win32/Win32Process.cpp
 HEADERS +=  \
-	../../../src/common/wstring.h \
-	../../../src/process/ProcessWin.h \
-	../../../src/win32/Win32Process.h
+	$$SRC/common/wstring.h \
+	$$SRC/process/ProcessWin.h \
+	$$SRC/win32/Win32Process.h
 }
 
 !msvc {
 	SOURCES += \
-		../../../src/process/ProcessPosix.cpp \
-		../../../src/unix/UnixProcess.cpp
+		$$SRC/process/ProcessPosix.cpp \
+		$$SRC/unix/UnixProcess.cpp
 	HEADERS +=  \
-		../../../src/process/ProcessPosix.h \
-		../../../src/unix/UnixProcess.h
+		$$SRC/process/ProcessPosix.h \
+		$$SRC/unix/UnixProcess.h
 }
 

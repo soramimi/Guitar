@@ -2,9 +2,9 @@
 #define GITTYPES_H
 
 #include "MyProcess.h"
-#include "common/misc.h"
-#include "common/q/DateTime.h"
-#include "common/qmisc.h"
+#include <common/misc.h>
+#include <common/q/DateTime.h>
+#include <common/qmisc.h>
 
 #define GIT_ID_LENGTH (40)
 

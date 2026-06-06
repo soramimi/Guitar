@@ -2,7 +2,7 @@
 #include "ui_SettingOptionsForm.h"
 #include "ApplicationGlobal.h"
 #include "EditProfilesDialog.h"
-#include "GenerativeAI.h"
+#include <ai/GenerativeAI.h>
 #include "IncrementalSearch.h"
 
 #include <QMessageBox>

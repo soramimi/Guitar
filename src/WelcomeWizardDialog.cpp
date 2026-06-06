@@ -4,8 +4,8 @@
 #include "Git.h"
 #include "MainWindow.h"
 #include "UserEvent.h"
-#include "common/misc.h"
-#include "common/q/helper.h"
+#include <common/misc.h>
+#include <common/q/helper.h>
 #include <QFileDialog>
 
 WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)

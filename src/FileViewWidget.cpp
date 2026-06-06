@@ -1,5 +1,5 @@
 #include "FileViewWidget.h"
-#include "common/misc.h"
+#include <common/misc.h>
 #include <QApplication>
 #include <QMenu>
 #include <QPainter>

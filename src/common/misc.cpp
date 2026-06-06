@@ -1,5 +1,5 @@
-#include "misc.h"
-#include "joinpath.h"
+#include <common/misc.h>
+#include <common/joinpath.h>
 #include "q/FileInfo.h"
 #include "str.h"
 #include "Git.h"

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "common/AbstractSimpleIO.h"
+#include <common/AbstractSimpleIO.h>
 
 class gzip {
 private:

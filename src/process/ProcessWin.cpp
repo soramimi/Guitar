@@ -6,13 +6,15 @@
 // #include "process/MyProcess2.h"
 #include <stdio.h>
 #include "main.h"
+
+#include "Logger.h"
+#include <common/base64.h>
+#include <common/misc.h>
+#include <common/misc.h>
+#include <common/wstring.h>
+#include <optional>
 #include <string>
 #include <thread>
-#include <optional>
-// #include <QElapsedTimer>
-#include "common/misc.h"
-#include "common/wstring.h"
-#include "Logger.h"
 
 #if 0
 #include <QApplication>
@@ -72,9 +74,6 @@ bool is_conpty_available()
 
 
 #endif
-
-#include "common/misc.h"
-#include "common/base64.h"
 
 constexpr static char const *conpty_agent_tag = "--conpty-agent---";
 

@@ -1,8 +1,8 @@
 #ifndef GENERATEDCOMMITMESSAGE_H
 #define GENERATEDCOMMITMESSAGE_H
 
-#include "CommitMessageGenerator.h"
 #include <QString>
+#include <ai/CommitMessageGenerator.h>
 
 class GeneratedCommitMessage {
 	friend class CommitMessageGenerator;
