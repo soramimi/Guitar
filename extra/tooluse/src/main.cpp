@@ -300,138 +300,221 @@ private:
 		newreq.set_tooluse(json, (std::string)prompt);
 		prompts_.push_back(newreq);
 	}
-	bool tooluse_anthropic(AiResult const &msg)
-	{
-		if (msg.d.ex.anthropic.content.empty()) {
-			fprintf(stderr, "Error: Unexpected response structure: anthropic.content is empty\n");
-			return true;
+	class ToolUse2ndHandler : public GenerativeAI::AbstractVisitor<std::optional<std::string>> {
+	private:
+		AiResult msg;
+		std::optional<std::string> unsupported()
+		{
+			fprintf(stderr, "Error: Unsupported provider tag '%s' for tool_use\n",
+				ai_model.provider_info_ ? ai_model.provider_info_->tag.c_str() : "unknown");
+			return {std::string()}; // continueするのでtrue
 		}
-
-		size_t index = (size_t)-1;
-		for (size_t i = 0; i < msg.d.ex.anthropic.content.size(); i++) {
-			if (msg.d.ex.anthropic.content[i].type == "tool_use") {
-				index = i;
-				break;
-			}
+		AiApiBridge::Quert2Request add_tool_result_request(std::string_view const &prompt, std::string const &json)
+		{
+			AiApiBridge::Quert2Request newreq;
+			newreq.internal = true;
+			newreq.set_tooluse(json, (std::string)prompt);
+			return newreq;
 		}
-
-		if (index != (size_t)-1) {
-			std::string const &fname = msg.d.ex.anthropic.content[index].name;
-			if (fname == tool.name) {
-				jstream::Writer w;
-				w.enable_indent(false);
-				w.enable_newline(false);
-				w.object({}, [&](){
-					w.string("model", opt.model_name);
-					w.number("max_tokens", 1024);
-					add_tools(&w);
-					w.object("tool_choice", [&](){
-						w.string("type", "auto");
-						w.boolean("disable_parallel_tool_use", true);
-					});
-					w.array("messages", [&](){
-						w.object({}, [&](){
-							w.string("role", "user");
-							w.string("content", tool.use_prompt);
+		void add_tools(jstream::Writer *w)
+		{
+			auto apitype = ai_model.api_compatibility();
+			w->array("tools", [&](){
+				w->object({}, [&](){
+					auto Parameters = [&](){
+						w->object("parameters", [&](){
+							w->string("type", "object");
+							w->object("properties", [&](){
+							});
+							w->array("required", [&](){
+							});
 						});
-						w.object({}, [&](){
-							w.string("role", "assistant");
-							w.raw("content", msg.d.ex.anthropic.content[index].content_json);
-						});
-						w.object({}, [&](){
-							w.string("role", "user");
-							w.array("content", [&](){
-								w.object({}, [&](){
-									w.string("type", "tool_result");
-									w.string("tool_use_id", msg.d.ex.anthropic.content[index].id);
-									w.string("content", tool.output);
+					};
+					if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
+						w->string("type", "function");
+						w->object("function", [&](){
+							w->string("name", tool.name);
+							w->string("description", tool.description);
+							w->object("parameters", [&](){
+								w->string("type", "object");
+								w->object("properties", [&](){
+								});
+								w->array("required", [&](){
 								});
 							});
 						});
-					});
-				});
-				add_tool_result_request(tool.use_prompt, w);
-				return true;
-			} else {
-				fprintf(stderr, "Error: Unexpected tool name from Anthropic: '%s' (expected '%s')\n",
-					fname.c_str(), tool.name.data());
-				return true;
-			}
-		}
-		return false;
-	}
-	bool tooluse_openai_responses(AiResult const &msg)
-	{
-		if (msg.d.ex.openai.output.empty()) {
-			fprintf(stderr, "Error: Unexpected response structure: openai.output is empty\n");
-			return true;
-		}
-
-		size_t index = (size_t)-1;
-		for (size_t i = 0; i < msg.d.ex.openai.output.size(); i++) {
-			if (msg.d.ex.openai.output[i].type == "function_call") {
-				index = i;
-				break;
-			}
-		}
-
-		if (index != (size_t)-1) {
-			std::string const &fname = msg.d.ex.openai.output[index].name;
-			if (fname == tool.name) {
-				jstream::Writer w;
-				w.enable_indent(false);
-				w.enable_newline(false);
-				w.object({}, [&](){
-					w.string("model", msg.d.ex.model);
-					w.string("previous_response_id", msg.d.ex.id);
-					w.array("input", [&](){
-						w.object({}, [&](){
-							w.string("type", "function_call_output");
-							w.string("call_id", msg.d.ex.openai.output[index].call_id);
-							w.string("output", tool.output);
+					} else if (apitype == GenerativeAI::ProviderID::Google) {
+						w->array("functionDeclarations", [&](){
+							w->object({}, [&](){
+								w->string("name", tool.name);
+								w->string("description", tool.description);
+								Parameters();
+							});
 						});
-					});
-					add_tools(&w);
+					} else {
+						if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
+							w->string("type", "function");
+						}
+						w->string("name", tool.name);
+						w->string("description", tool.description);
+						w->object("input_schema", [&](){
+							w->string("type", "object");
+							w->object("properties", [&](){
+							});
+							w->array("required", [&](){
+							});
+						});
+					}
 				});
-				add_tool_result_request(tool.use_prompt, w);
-				return true;
-			} else {
-				fprintf(stderr, "Error: Unexpected function call from OpenAI responses: '%s' (expected '%s')\n",
-					fname.c_str(), tool.name.data());
-				return true;
+			});
+		}
+		std::optional<std::string> error(std::string const &message)
+		{
+			fprintf(stderr, "Error: %s\n", message.c_str());
+			return {std::string()}; // continueするのでtrue
+		}
+	public:
+		ToolUse2ndHandler(AiResult const &msg)
+			: msg(msg)
+		{
+		}
+		std::optional<std::string> case_Unknown()
+		{
+			return unsupported();
+		}
+		std::optional<std::string> case_OpenAI_responses()
+		{
+			if (msg.d.ex.openai.output.empty()) {
+				return error("Unexpected response structure: openai.output is empty");
 			}
-		}
-		return false;
-	}
-	bool tooluse_openai_chat_completion(AiResult const &msg)
-	{
-		if (msg.d.ex.openai.choices.empty()) {
-			fprintf(stderr, "Error: Unexpected response structure: openai.choices is empty\n");
-			return true;
-		}
-
-		size_t index = (size_t)-1;
-		for (size_t i = 0; i < msg.d.ex.openai.choices.size(); i++) {
-			std::string finish_reason = msg.d.ex.openai.choices[i].finish_reason;
-			if (finish_reason == "tool_calls" || finish_reason == "stop") {
-				// "stop" can also indicate tool calls if the tool call is the reason for stopping
-				// e.g. Kimi-K2.6のとき finish_reason == "stop" でここにくる
-				index = i;
-				break;
+	
+			size_t index = (size_t)-1;
+			for (size_t i = 0; i < msg.d.ex.openai.output.size(); i++) {
+				if (msg.d.ex.openai.output[i].type == "function_call") {
+					index = i;
+					break;
+				}
 			}
-		}
-
-		if (index != (size_t)-1) {
-			bool handled = false;
-			using ToolCall = AiResponseEx::OpenAiChoice::Message::ToolCall;
-			std::vector<ToolCall> const &tool_calls = msg.d.ex.openai.choices[index].message.tool_calls;
-			for (ToolCall const &call : tool_calls) {
-				if (call.type == "function" && call.function.name == tool.name) {
+	
+			if (index != (size_t)-1) {
+				std::string const &fname = msg.d.ex.openai.output[index].name;
+				if (fname == tool.name) {
 					jstream::Writer w;
 					w.enable_indent(false);
 					w.enable_newline(false);
 					w.object({}, [&](){
 						w.string("model", msg.d.ex.model);
+						w.string("previous_response_id", msg.d.ex.id);
+						w.array("input", [&](){
+							w.object({}, [&](){
+								w.string("type", "function_call_output");
+								w.string("call_id", msg.d.ex.openai.output[index].call_id);
+								w.string("output", tool.output);
+							});
+						});
+						add_tools(&w);
+					});
+					return (std::string)w;
+				} else {
+					return error(fmt("Unexpected function call from OpenAI responses: '%s' (expected '%s')")(fname)(tool.name));
+				}
+			}
+			return std::nullopt;
+		}
+		std::optional<std::string> case_OpenAI_chat_completions()
+		{
+			if (msg.d.ex.openai.choices.empty()) {
+				return error("Unexpected response structure: openai.choices is empty");
+			}
+	
+			size_t index = (size_t)-1;
+			for (size_t i = 0; i < msg.d.ex.openai.choices.size(); i++) {
+				std::string finish_reason = msg.d.ex.openai.choices[i].finish_reason;
+				if (finish_reason == "tool_calls" || finish_reason == "stop") {
+					// "stop" can also indicate tool calls if the tool call is the reason for stopping
+					// e.g. Kimi-K2.6のとき finish_reason == "stop" でここにくる
+					index = i;
+					break;
+				}
+			}
+	
+			if (index != (size_t)-1) {
+				std::optional<std::string> handled;
+				using ToolCall = AiResponseEx::OpenAiChoice::Message::ToolCall;
+				std::vector<ToolCall> const &tool_calls = msg.d.ex.openai.choices[index].message.tool_calls;
+				for (ToolCall const &call : tool_calls) {
+					if (call.type == "function" && call.function.name == tool.name) {
+						jstream::Writer w;
+						w.enable_indent(false);
+						w.enable_newline(false);
+						w.object({}, [&](){
+							w.string("model", msg.d.ex.model);
+							w.array("messages", [&](){
+								w.object({}, [&](){
+									w.string("role", "user");
+									w.string("content", tool.use_prompt);
+								});
+								w.object({}, [&](){
+									w.string("role", "assistant");
+									w.null("content");
+									w.array("tool_calls", [&](){
+										w.object({}, [&](){
+											w.string("id", call.id);
+											w.string("type", call.type);
+											w.object("function", [&](){
+												w.string("name", call.function.name);
+												w.string("arguments", call.function.arguments);
+											});
+										});
+									});
+								});
+								w.object({}, [&](){
+									w.string("role", "tool");
+									w.string("tool_call_id", call.id);
+									w.string("name", call.function.name);
+									w.string("content", tool.output);
+								});
+							});
+						});
+						handled = (std::string)w;
+					} else {
+						// モデルによってはツールの実行結果を'stop'かつ'function'なしで返すことがあるため警告は出さない。
+						// fprintf(stderr, "Warning: Ignoring unexpected tool call: type='%s', name='%s' (expected '%s')\n",
+						// 	call.type.c_str(), call.function.name.c_str(), tool_name.data());
+					}
+				}
+				if (handled) return handled;
+			}
+			return std::nullopt;
+		}
+		std::optional<std::string> case_Anthropic()
+		{
+			if (msg.d.ex.anthropic.content.empty()) {
+				return error("Unexpected response structure: anthropic.content is empty");
+			}
+	
+			size_t index = (size_t)-1;
+			for (size_t i = 0; i < msg.d.ex.anthropic.content.size(); i++) {
+				if (msg.d.ex.anthropic.content[i].type == "tool_use") {
+					index = i;
+					break;
+				}
+			}
+	
+			if (index != (size_t)-1) {
+				AiResponseEx::AnthropicContentItem const &item = msg.d.ex.anthropic.content[index];
+				if (item.name == tool.name) {
+					jstream::Writer w;
+					w.enable_indent(false);
+					w.enable_newline(false);
+					w.object({}, [&](){
+						w.string("model", opt.model_name);
+						w.number("max_tokens", 1024);
+						add_tools(&w);
+						w.object("tool_choice", [&](){
+							w.string("type", "auto");
+							w.boolean("disable_parallel_tool_use", true);
+						});
 						w.array("messages", [&](){
 							w.object({}, [&](){
 								w.string("role", "user");
@@ -439,93 +522,112 @@ private:
 							});
 							w.object({}, [&](){
 								w.string("role", "assistant");
-								w.null("content");
-								w.array("tool_calls", [&](){
+								w.raw("content", item.content_json);
+							});
+							w.object({}, [&](){
+								w.string("role", "user");
+								w.array("content", [&](){
 									w.object({}, [&](){
-										w.string("id", call.id);
-										w.string("type", call.type);
-										w.object("function", [&](){
-											w.string("name", call.function.name);
-											w.string("arguments", call.function.arguments);
-										});
+										w.string("type", "tool_result");
+										w.string("tool_use_id", item.id);
+										w.string("content", tool.output);
 									});
 								});
 							});
-							w.object({}, [&](){
-								w.string("role", "tool");
-								w.string("tool_call_id", call.id);
-								w.string("name", call.function.name);
-								w.string("content", tool.output);
-							});
 						});
 					});
-					add_tool_result_request(tool.use_prompt, w);
-					handled = true;
+					return (std::string)w;
 				} else {
-					// モデルによってはツールの実行結果を'stop'かつ'function'なしで返すことがあるため警告は出さない。
-					// fprintf(stderr, "Warning: Ignoring unexpected tool call: type='%s', name='%s' (expected '%s')\n",
-					// 	call.type.c_str(), call.function.name.c_str(), tool_name.data());
+					error(fmt("Unexpected tool name from Anthropic: '%s' (expected '%s')")(item.name)(tool.name));
+					return {std::string()};
 				}
 			}
-			if (handled) return true;
+			return std::nullopt;
 		}
-		return false;
-	}
-	bool tooluse_google_gemini(AiResult const &msg)
-	{
-		if (msg.d.ex.google.content_parts.empty()) {
-			fprintf(stderr, "Error: Unexpected response structure: google.content_parts is empty\n");
-			return true;
-		}
-		
-		for (size_t i = 0; i <  msg.d.ex.google.content_parts.size(); i++) {
-			std::string fc_id = msg.d.ex.google.content_parts[i].functionCall.id;
-			std::string fc_name = msg.d.ex.google.content_parts[i].functionCall.name;
-			if (!fc_id.empty() && !fc_name.empty()) {
-				if (fc_name == tool.name) {
-					jstream::Writer w;
-					w.enable_indent(false);
-					w.enable_newline(false);
-					w.object({}, [&](){
-						w.array("contents", [&](){
-							w.object({}, [&](){
-								w.string("role", "user");
-								w.array("parts", [&](){
-									w.object({}, [&](){
-										w.string("text", tool.use_prompt);
+		std::optional<std::string> case_Google()
+		{
+			if (msg.d.ex.google.content_parts.empty()) {
+				return error("Unexpected response structure: google.content_parts is empty");
+			}
+			
+			for (size_t i = 0; i <  msg.d.ex.google.content_parts.size(); i++) {
+				AiResponseEx::GoogleContentItem const &item = item;
+				std::string fc_id = item.functionCall.id;
+				std::string fc_name = item.functionCall.name;
+				if (!fc_id.empty() && !fc_name.empty()) {
+					if (fc_name == tool.name) {
+						jstream::Writer w;
+						w.enable_indent(false);
+						w.enable_newline(false);
+						w.object({}, [&](){
+							w.array("contents", [&](){
+								w.object({}, [&](){
+									w.string("role", "user");
+									w.array("parts", [&](){
+										w.object({}, [&](){
+											w.string("text", tool.use_prompt);
+										});
 									});
 								});
-							});
-							w.object({}, [&](){
-								w.string("role", "model");
-								std::string json = msg.d.ex.google.content_parts[i].functionCall.content_json;
-								w.raw("parts", json);
-							});
-							w.object({}, [&](){
-								w.string("role", "user");
-								w.array("parts", [&](){
-									w.object({}, [&](){
-										w.object("functionResponse", [&](){
-											w.string("name", tool.name);
-											w.object("response", [&](){
-												w.string("message", tool.output);
+								w.object({}, [&](){
+									w.string("role", "model");
+									std::string json = item.functionCall.content_json;
+									w.raw("parts", json);
+								});
+								w.object({}, [&](){
+									w.string("role", "user");
+									w.array("parts", [&](){
+										w.object({}, [&](){
+											w.object("functionResponse", [&](){
+												w.string("name", tool.name);
+												w.object("response", [&](){
+													w.string("message", tool.output);
+												});
+												w.string("id", fc_id);
 											});
-											w.string("id", fc_id);
 										});
 									});
 								});
 							});
+							add_tools(&w);
 						});
-						add_tools(&w);
-					});
-					add_tool_result_request(tool.use_prompt, w);
-					return true;
+						add_tool_result_request(tool.use_prompt, w);
+						return (std::string)w;
+					}
 				}
 			}
+			
+			return std::nullopt;
 		}
-		
-		return false;
-	}
+		std::optional<std::string> case_XAI()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_Sakura()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_DeepSeek()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_OpenRouter()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_Ollama()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_LMStudio()
+		{
+			return case_OpenAI_chat_completions();
+		}
+		std::optional<std::string> case_LLAMACPP()
+		{
+			return case_OpenAI_chat_completions();
+		}
+	};
 public:
 	ChatSession() = default;
 	~ChatSession()
@@ -566,17 +668,9 @@ public:
 				continue;
 			}
 
-			if (ai_model.provider_id() == GenerativeAI::ProviderID::Anthropic) {
-				if (tooluse_anthropic(msg)) continue;
-			} else if (ai_model.provider_id() == GenerativeAI::ProviderID::OpenAI_responses) {
-				if (tooluse_openai_responses(msg)) continue;
-			} else if (ai_model.api_compatibility() == GenerativeAI::ProviderID::OpenAI_chat_completions) {
-				if (tooluse_openai_chat_completion(msg)) continue;
-			} else if (ai_model.api_compatibility() == GenerativeAI::ProviderID::Google) {
-				if (tooluse_google_gemini(msg)) continue;
-			} else {
-				fprintf(stderr, "Error: Unsupported provider tag '%s' for tool_use\n",
-					ai_model.provider_info_ ? ai_model.provider_info_->tag.c_str() : "unknown");
+			auto ret = ToolUse2ndHandler(msg).visit(ai_model.api_compatibility());
+			if (ret) {
+				add_tool_result_request(tool.use_prompt, *ret);
 				continue;
 			}
 
@@ -590,14 +684,6 @@ public:
 		return true;
 	}
 };
-static std::string default_git_command_path()
-{
-#if _WIN32
-	return "C:\\Program Files\\Git\\cmd\\git.exe";
-#else
-	return "/usr/bin/git";
-#endif
-}
 
 int main2(int argc, char **argv)
 {
@@ -636,9 +722,9 @@ int main2(int argc, char **argv)
 	ChatSession session;
 	if (session.open()) {
 		
-		// session.add_chat_request("Hello");
-		// session.add_chat_request("Who are you?");
-		// session.add_chat_request("Write a haiku.");
+		session.add_chat_request("Hello");
+		session.add_chat_request("Who are you?");
+		session.add_chat_request("Write a haiku.");
 		session.add_tool_use_request(tool.use_prompt, tool.name);
 	
 		session.run(opt);

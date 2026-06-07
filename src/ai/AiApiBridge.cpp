@@ -142,25 +142,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	AiResult case_OpenAI_responses()
 	{
 		AiResult ret(model.api_compatibility());
-#if 0
-		while (reader.next()) {
-			if (reader.match("{status")) {
-				// status が "completed" であれば正常終了
-				if (reader.string() == "completed") {
-					ret.d.completion = true;
-				}
-			} else if (reader.match("{output[{content[{text")) {
-				ret.d.content = reader.string();
-			} else if (reader.match("{error")) {
-				if (!reader.isnull()) {
-					ret.d.error_status = reader.string();
-					ret.d.completion = false;
-				}
-			}
-		}
-#else
 		ret = parse_responses(GenerativeAI::ProviderID::OpenAI_responses);
-#endif
 		return ret;
 	}
 
@@ -178,7 +160,6 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		AiResult ret(model.api_compatibility());
 		ret.d.ex.api_id = provider_id;
-#if 1
 		while (reader.next()) {
 			if (reader.match("{model")) {
 				ret.d.ex.model = reader.string();
@@ -291,31 +272,6 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				}
 			}
 		}
-#else
-		while (reader.next()) {
-			if (reader.match("{stop_reason")) {
-				// "end_turn" が正常終了を示す
-				if (reader.string() == "end_turn") {
-					ret.d.completion = true;
-				} else {
-					ret.d.completion = false;
-					ret.d.error_status = reader.string();
-				}
-			} else if (reader.match("{content[{text")) {
-				ret.d.content = reader.string();
-			} else if (reader.match("{type")) {
-				if (reader.string() == "error") {
-					ret.d.completion = false;
-				}
-			} else if (reader.match("{error{type")) {
-				ret.d.error_status = reader.string();
-				ret.d.completion = false;
-			} else if (reader.match("{error{message")) {
-				ret.d.error_message = reader.string();
-				ret.d.completion = false;
-			}
-		}
-#endif
 		return ret;
 	}
 	
