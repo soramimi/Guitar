@@ -1,4 +1,4 @@
-#include "AiApiBridge.h"
+#include <ai/AiApiBridge.h>
 #include "Logger.h"
 #include <ai/CommitMessageGenerator.h>
 #include <common/jstream.h>
@@ -336,6 +336,29 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			if (reader.match("{candidates[{content{parts[{text")) {
 				ret.d.content = reader.string();
 				ret.d.completed = true;
+			} else if (reader.match("{candidates[{content{parts[**")) {
+				AiResponseEx::GoogleContentItem item;
+				reader.nest([&](){
+					if (reader.match("{candidates[{content{parts[{functionCall{name")) {
+						item.functionCall.name = reader.string();
+					} else if (reader.match("{candidates[{content{parts[{functionCall{id")) {
+						item.functionCall.id = reader.string();
+					} else if (reader.match("{candidates[{content{parts[{text")) {
+						item.functionCall.text = reader.string();
+						ret.d.content += item.functionCall.text; // 累積して content に追加
+					}
+				});
+				ret.d.ex.google.content_parts.push_back(item);
+			} else if (reader.match_end_array("{candidates[{content{parts")) {
+				std::string_view array_json = reader.extract(); // extract the entire array as JSON string
+				if (!ret.d.ex.google.content_parts.empty()) {
+					ret.d.ex.google.content_parts.back().functionCall.content_json = array_json;
+				}
+			} else if (reader.match("{candidates[{finishReason")) {
+				ret.d.ex.stop_reason = reader.string();
+				if (ret.d.ex.stop_reason == "STOP") {
+					ret.d.completed = true;
+				}
 			} else if (reader.match("{error{message")) {
 				ret.d.error_message = reader.string();
 				ret.d.completed = false;
@@ -801,6 +824,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				if (m->save_log) {
 					logprintf(LOG_RAW, "%s\n", response_json.c_str());
 				}
+				// fprintf(stderr, "%s\n", response_json.c_str());
 			}
 		}
 	}

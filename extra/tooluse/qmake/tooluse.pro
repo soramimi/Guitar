@@ -39,7 +39,7 @@ SRC = $$PWD/../../../src
 
 SOURCES += \
 	$$SRC/AbstractProcess.cpp \
-	$$SRC/AiApiBridge.cpp \
+	$$SRC/ai/AiApiBridge.cpp \
 	$$SRC/FileTypeDetector.cpp \
 	$$SRC/Logger.cpp \
 	$$SRC/MyProcess.cpp \
@@ -62,7 +62,7 @@ SOURCES += \
 
 HEADERS +=  \
 	$$SRC/AbstractProcess.h \
-	$$SRC/AiApiBridge.h \
+	$$SRC/ai/AiApiBridge.h \
 	$$SRC/FileTypeDetector.h \
 	$$SRC/Logger.h \
 	$$SRC/MyProcess.h \
@@ -83,8 +83,7 @@ HEADERS +=  \
 	$$SRC/process/MyProcess2.h \
 	../../common/ConfigParser.h \
 	../../common/LineReader.h \
-	../../common/rwfile.h \
-	../src/main.h
+	../../common/rwfile.h
 
 msvc {
 SOURCES += \

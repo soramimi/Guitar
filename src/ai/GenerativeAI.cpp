@@ -47,7 +47,6 @@ ProviderID api_compatibility(ProviderID pid)
 {
 	switch (pid) {
 	case ProviderID::OpenAI_responses:
-	case ProviderID::OpenAI_chat_completions:
 	case ProviderID::Anthropic:
 	case ProviderID::Google:
 		return pid;
@@ -70,7 +69,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Anthropic,        "claude-opus-4-7"},
 		{ProviderID::Anthropic,        "claude-sonnet-4-6"},
 		{ProviderID::Anthropic,        "claude-haiku-4-5"},
-		{ProviderID::Google,           "gemini-3-flash-preview"},
+		{ProviderID::Google,           "gemini-3.1-flash-lite"},
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		{ProviderID::DeepSeek,         "deepseek-chat"},

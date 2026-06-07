@@ -164,7 +164,17 @@ struct AiResponseEx {
 		};
 		std::vector<Content> content;
 	};
-
+	
+	struct GoogleContentItem {
+		struct FunctionCall {
+			std::string name;
+			// std::vector<Args> args;
+			std::string id;
+			std::string content_json;
+			std::string text;
+		} functionCall;
+	};
+	
 	struct OpenAiChoice {
 		double index;
 		struct Message {
@@ -196,6 +206,9 @@ struct AiResponseEx {
 		std::vector<OpenAiOutputItem> output;
 		std::vector<OpenAiChoice> choices;
 	} openai;
+	struct {
+		std::vector<GoogleContentItem> content_parts;
+	} google;
 	std::string stop_reason;
 	// std::string stop_sequence;
 	// std::string stop_details;

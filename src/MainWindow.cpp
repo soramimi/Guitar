@@ -52,11 +52,6 @@
 #include "UserEvent.h"
 #include "Util.h"
 #include "WelcomeWizardDialog.h"
-#include <common/joinpath.h>
-#include <common/misc.h>
-#include <common/npos.h>
-#include <common/q/helper.h>
-#include "AiApiBridge.h"
 #include "platform.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -75,13 +70,18 @@
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
+#include <ai/AiApiBridge.h>
 #include <cctype>
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/jstream.h>
+#include <common/misc.h>
+#include <common/npos.h>
+#include <common/q/helper.h>
+#include <common/str.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <variant>
-#include <common/fmt.h>
-#include <common/str.h>
-#include <common/jstream.h>
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"

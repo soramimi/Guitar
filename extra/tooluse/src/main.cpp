@@ -3,7 +3,7 @@
 //
 // experimental code for generating commit messages using AI
 
-#include <AiApiBridge.h>
+#include <ai/AiApiBridge.h>
 #include <FileTypeDetector.h>
 #include <common/ConfigParser.h>
 #include <common/fmt.h>
@@ -149,7 +149,8 @@ static std::vector<std::string_view> split_lines(std::string_view const &str)
 }
 
 struct Tool {
-	constexpr static std::string_view use_prompt = "You say a quote of the day.";
+	// constexpr static std::string_view use_prompt = "You say a quote of the day.";
+	constexpr static std::string_view use_prompt = "今日の名言を日本語で答えてください。";
 	constexpr static std::string_view name = "get_quote_of_the_day";
 	constexpr static std::string_view description = "Get a quote of the day";
 	constexpr static std::string_view output = R"---({
@@ -169,10 +170,19 @@ private:
 		auto apitype = ai_model.api_compatibility();
 		w->array("tools", [&](){
 			w->object({}, [&](){
+				auto Parameters = [&](){
+					w->object("parameters", [&](){
+						w->string("type", "object");
+						w->object("properties", [&](){
+						});
+						w->array("required", [&](){
+						});
+					});
+				};
 				if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
 					w->string("type", "function");
 					w->object("function", [&](){
-						w->string("name", std::string{tool.name});
+						w->string("name", tool.name);
 						w->string("description", tool.description);
 						w->object("parameters", [&](){
 							w->string("type", "object");
@@ -182,11 +192,19 @@ private:
 							});
 						});
 					});
+				} else if (apitype == GenerativeAI::ProviderID::Google) {
+					w->array("functionDeclarations", [&](){
+						w->object({}, [&](){
+							w->string("name", tool.name);
+							w->string("description", tool.description);
+							Parameters();
+						});
+					});
 				} else {
 					if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
 						w->string("type", "function");
 					}
-					w->string("name", std::string{tool.name});
+					w->string("name", tool.name);
 					w->string("description", tool.description);
 					w->object("input_schema", [&](){
 						w->string("type", "object");
@@ -211,37 +229,52 @@ private:
 		jstream::Writer w;
 		w.enable_indent(false);
 		w.enable_newline(false);
-		w.object({}, [&](){
-			w.string("model", ai_model.model_name());
-			if (apitype == GenerativeAI::ProviderID::Anthropic) {
-				w.number("max_tokens", 1024);
-			}
-			add_tools(&w);
-			w.object("tool_choice", [&](){
-				if (apitype == GenerativeAI::ProviderID::Anthropic) {
-					w.string("type", "auto");
-					w.boolean("disable_parallel_tool_use", true);
-				} else if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
-					w.string("type", "function");
-					w.object("function", [&](){
-						w.string("name", tool_name);
-					});
-				} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
-					w.string("type", "function");
-					w.string("name", tool_name);
-				}
-			});
-			if (apitype == GenerativeAI::ProviderID::Anthropic || apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
-				w.array("messages", [&](){
+		if (apitype == GenerativeAI::ProviderID::Google) {
+			w.object({}, [&](){
+				w.array("contents", [&](){
 					w.object({}, [&](){
-						w.string("role", "user");
-						w.string("content", tool_use_prompt);
+						w.array("parts", [&](){
+							w.object({}, [&](){
+								w.string("text", tool_use_prompt);
+							});
+						});
 					});
 				});
-			} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
-				w.string("input", tool_use_prompt);
-			}
-		});
+				add_tools(&w);
+			});
+		} else {
+			w.object({}, [&](){
+				w.string("model", ai_model.model_name());
+				if (apitype == GenerativeAI::ProviderID::Anthropic) {
+					w.number("max_tokens", 1024);
+				}
+				add_tools(&w);
+				w.object("tool_choice", [&](){
+					if (apitype == GenerativeAI::ProviderID::Anthropic) {
+						w.string("type", "auto");
+						w.boolean("disable_parallel_tool_use", true);
+					} else if (apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
+						w.string("type", "function");
+						w.object("function", [&](){
+							w.string("name", tool_name);
+						});
+					} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
+						w.string("type", "function");
+						w.string("name", tool_name);
+					}
+				});
+				if (apitype == GenerativeAI::ProviderID::Anthropic || apitype == GenerativeAI::ProviderID::OpenAI_chat_completions) {
+					w.array("messages", [&](){
+						w.object({}, [&](){
+							w.string("role", "user");
+							w.string("content", tool_use_prompt);
+						});
+					});
+				} else if (apitype == GenerativeAI::ProviderID::OpenAI_responses) {
+					w.string("input", tool_use_prompt);
+				}
+			});
+		}
 		AiApiBridge::Quert2Request req;
 		req.set_tooluse(w, (std::string)tool_use_prompt);
 		return req;
@@ -438,6 +471,61 @@ private:
 		}
 		return false;
 	}
+	bool tooluse_google_gemini(AiResult const &msg)
+	{
+		if (msg.d.ex.google.content_parts.empty()) {
+			fprintf(stderr, "Error: Unexpected response structure: google.content_parts is empty\n");
+			return true;
+		}
+		
+		for (size_t i = 0; i <  msg.d.ex.google.content_parts.size(); i++) {
+			std::string fc_id = msg.d.ex.google.content_parts[i].functionCall.id;
+			std::string fc_name = msg.d.ex.google.content_parts[i].functionCall.name;
+			if (!fc_id.empty() && !fc_name.empty()) {
+				if (fc_name == tool.name) {
+					jstream::Writer w;
+					w.enable_indent(false);
+					w.enable_newline(false);
+					w.object({}, [&](){
+						w.array("contents", [&](){
+							w.object({}, [&](){
+								w.string("role", "user");
+								w.array("parts", [&](){
+									w.object({}, [&](){
+										w.string("text", tool.use_prompt);
+									});
+								});
+							});
+							w.object({}, [&](){
+								w.string("role", "model");
+								std::string json = msg.d.ex.google.content_parts[i].functionCall.content_json;
+								w.raw("parts", json);
+							});
+							w.object({}, [&](){
+								w.string("role", "user");
+								w.array("parts", [&](){
+									w.object({}, [&](){
+										w.object("functionResponse", [&](){
+											w.string("name", tool.name);
+											w.object("response", [&](){
+												w.string("message", tool.output);
+											});
+											w.string("id", fc_id);
+										});
+									});
+								});
+							});
+						});
+						add_tools(&w);
+					});
+					add_tool_result_request(tool.use_prompt, w);
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
 public:
 	ChatSession() = default;
 	~ChatSession()
@@ -484,6 +572,8 @@ public:
 				if (tooluse_openai_responses(msg)) continue;
 			} else if (ai_model.api_compatibility() == GenerativeAI::ProviderID::OpenAI_chat_completions) {
 				if (tooluse_openai_chat_completion(msg)) continue;
+			} else if (ai_model.api_compatibility() == GenerativeAI::ProviderID::Google) {
+				if (tooluse_google_gemini(msg)) continue;
 			} else {
 				fprintf(stderr, "Error: Unsupported provider tag '%s' for tool_use\n",
 					ai_model.provider_info_ ? ai_model.provider_info_->tag.c_str() : "unknown");
@@ -546,9 +636,9 @@ int main2(int argc, char **argv)
 	ChatSession session;
 	if (session.open()) {
 		
-		session.add_chat_request("Hello");
-		session.add_chat_request("Who are you?");
-		session.add_chat_request("Write a haiku.");
+		// session.add_chat_request("Hello");
+		// session.add_chat_request("Who are you?");
+		// session.add_chat_request("Write a haiku.");
 		session.add_tool_use_request(tool.use_prompt, tool.name);
 	
 		session.run(opt);

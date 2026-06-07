@@ -130,7 +130,6 @@ SOURCES += \
 	$$SRC/AbstractSettingForm.cpp \
 	$$SRC/AddRepositoriesCollectivelyDialog.cpp \
 	$$SRC/AddRepositoryDialog.cpp \
-	$$SRC/AiApiBridge.cpp \
 	$$SRC/ApplicationGlobal.cpp \
 	$$SRC/ApplicationSettings.cpp \
 	$$SRC/AreYouSureYouWantToContinueConnectingDialog.cpp \
@@ -264,6 +263,7 @@ SOURCES += \
 	$$SRC/WelcomeWizardDialog.cpp \
 	$$SRC/WorkingDirLineEdit.cpp \
 	$$SRC/XmlTagState.cpp \
+	$$SRC/ai/AiApiBridge.cpp \
 	$$SRC/ai/CommitMessageGenerator.cpp \
 	$$SRC/ai/GenerativeAI.cpp \
 	$$SRC/coloredit/ColorDialog.cpp \
@@ -292,6 +292,7 @@ SOURCES += \
 	$$SRC/gzip.cpp \
 	$$SRC/inet/inetclient.cpp \
 	$$SRC/inet/inetresolver.cpp \
+	$$SRC/inet/webclient.cpp \
 	$$SRC/main.cpp\
 	$$SRC/platform.cpp \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.cpp \
@@ -301,7 +302,6 @@ SOURCES += \
 	$$SRC/texteditor/TextEditorWidget.cpp \
 	$$SRC/texteditor/UnicodeWidth.cpp \
 	$$SRC/texteditor/unicode.cpp \
-	$$SRC/inet/webclient.cpp \
 	$$SRC/zip/zip.cpp \
 	$$SRC/zip/ziparchive.cpp \
 	$$SRC/zip/zipextract.cpp
@@ -313,7 +313,6 @@ HEADERS += \
 	$$SRC/AbstractSettingForm.h \
 	$$SRC/AddRepositoriesCollectivelyDialog.h \
 	$$SRC/AddRepositoryDialog.h \
-	$$SRC/AiApiBridge.h \
 	$$SRC/ApplicationGlobal.h \
 	$$SRC/ApplicationSettings.h \
 	$$SRC/AreYouSureYouWantToContinueConnectingDialog.h \
@@ -447,6 +446,7 @@ HEADERS += \
 	$$SRC/WelcomeWizardDialog.h \
 	$$SRC/WorkingDirLineEdit.h \
 	$$SRC/XmlTagState.h \
+	$$SRC/ai/AiApiBridge.h \
 	$$SRC/ai/CommitMessageGenerator.h \
 	$$SRC/ai/GenerativeAI.h \
 	$$SRC/coloredit/ColorDialog.h \
@@ -493,6 +493,7 @@ HEADERS += \
 	$$SRC/gzip.h \
 	$$SRC/inet/inetclient.h \
 	$$SRC/inet/inetresolver.h \
+	$$SRC/inet/webclient.h \
 	$$SRC/platform.h \
 	$$SRC/process/MyProcess2.h \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.h \
@@ -502,7 +503,6 @@ HEADERS += \
 	$$SRC/texteditor/TextEditorWidget.h \
 	$$SRC/texteditor/UnicodeWidth.h \
 	$$SRC/texteditor/unicode.h \
-	$$SRC/inet/webclient.h \
 	$$SRC/zip/zip.h \
 	$$SRC/zip/zipinternal.h
 
