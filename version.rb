@@ -16,24 +16,23 @@ $version_d = 0
 
 # History
 #
-# v1.4.0 2026-05-05
-# - Add AI model selection combo box to commit message generation dialog
-# - Add support for new providers: llama.cpp, xAI/Grok, and OpenAI Responses API
-# - Store provider API keys securely in an owner-only permissions file
-# - Update model presets for OpenAI, Anthropic, and Google to latest versions
-# - Improve commit message generation prompt; skip large/irrelevant diffs
-# - Add "Rebase Continue" / "Rebase Quit" actions
+# v1.4.0 2026-06-09
+# - Implement MeCab-based incremental search for Japanese romanization, replacing Migemo
 # - Add "Quick Merge" action to commit log context menu
 # - Add "Switch To Branch" submenu to commit log context menu
+# - Add "Save As" action to file context menu
+# - Add "Rebase Continue" / "Rebase Quit" actions
 # - Double-clicking a submodule now opens it in a new Guitar instance
 # - Submodules dialog now shows URL and path, with file manager/terminal launch
-# - Fix regression where submodules could not be opened
-# - Add "Save As" action to file context menu
-# - Implement MeCab-based incremental search, replacing Migemo
+# - Add AI model selection combo box to commit message generation dialog
+# - Store provider API keys securely in an owner-only permissions file
+# - Improve commit message generation prompt; skip large/irrelevant diffs
+# - Add support for new providers: llama.cpp, xAI/Grok, and OpenAI Responses API
+# - Update model presets for OpenAI, Anthropic, and Google to latest versions
 # - Implement Happy Eyeballs algorithm for parallel IPv4/IPv6 connection attempts
-# - Experimental libcurl HTTP backend support
-# - Add Tamil (ta) translation
 # - Update Russian translation (including guitar.desktop entry)
+# - Add Tamil (ta) translation
+# - Improved stability and performance
 #
 # v1.3.1 2025-10-31
 # - Performance improvements
