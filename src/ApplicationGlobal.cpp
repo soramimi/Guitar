@@ -239,9 +239,10 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(model.provider_id()); // 絶対に非nullptrを返す
 	Q_ASSERT(provider);
 	std::string envname = provider->env_name;
-	if (envname.empty()) {
-		envname = GenerativeAI::makeEnvName(model.model_uri());
-	}
+	if (envname.empty()) return {};
+	// if (envname.empty()) {
+	// 	envname = GenerativeAI::makeEnvName(model.model_uri());
+	// }
 	auto it = global->appsettings.ai_api_keys.map.find(envname);
 	if (it != global->appsettings.ai_api_keys.map.end()) {
 		apikey = &it->second;

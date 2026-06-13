@@ -201,10 +201,10 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 	SettingAiForm::ProviderFormData const *p = formdata(m->current_provider_id());
 	if (p) {
 		envname = p->env_name();
-		if (envname.empty()) {
-			auto uri = currentModelURI();
-			envname = GenerativeAI::makeEnvName(uri);
-		}
+		// if (envname.empty()) {
+		// 	auto uri = currentModelURI();
+		// 	envname = GenerativeAI::makeEnvName(uri);
+		// }
 	}
 	if (!envname.empty()) {
 		auto it = m->api_keys_.map.find(envname);
@@ -253,9 +253,10 @@ void SettingAiForm::exchange(bool save)
 		s->ai_api_keys.map.clear();
 		for (SettingAiForm::ProviderFormData &formdata : m->provider_formdata_) {
 			std::string envname = formdata.info->env_name;
-			if (envname.empty()) {
-				envname = GenerativeAI::makeEnvName(uri);
-			}
+			if (envname.empty()) continue;
+			// if (envname.empty()) {
+			// 	envname = GenerativeAI::makeEnvName(uri);
+			// }
 			AiApiKeys::Item form_item;
 			auto it = m->api_keys_.map.find(envname); // ensure the key exists
 			if (it != m->api_keys_.map.end()) {
@@ -358,11 +359,11 @@ void SettingAiForm::reflectSettingsToUI()
 			ui->lineEdit_api_key->setEnabled(false);
 			break;
 		case ApiKeyFrom::LocalSecret:
-			{
-				if (envname.empty()) {
-					auto uri = currentModelURI();
-					envname = GenerativeAI::makeEnvName(uri);
-				}
+			if (!envname.empty()) {
+				// if (envname.empty()) {
+				// 	auto uri = currentModelURI();
+				// 	envname = GenerativeAI::makeEnvName(uri);
+				// }
 				auto it = m->api_keys_.map.find(envname);
 				if (it != m->api_keys_.map.end()) {
 					apikey = it->second.api_key;

@@ -72,8 +72,10 @@ public:
 	AiResult request()
 	{
 		std::string prompt = generatePrompt();
-		fprintf(stderr, "%s\n", prompt.c_str());
-		fflush(stderr);
+		if (0) {
+			fprintf(stderr, "%s\n", prompt.c_str());
+			fflush(stderr);
+		}
 		return api_.request(prompt);
 	}
 };

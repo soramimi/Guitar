@@ -13,7 +13,7 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 	
-	bool save_log = true;//false; // リクエスト/レスポンスをログに記録するか
+	bool save_log = false; // リクエスト/レスポンスをログに記録するか
 };
 
 /**
@@ -331,7 +331,17 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return parse_openai_chat_completions_format();
 	}
-
+	
+	AiResult case_Kimi()
+	{
+		switch (model.api_compatibility()) {
+		case GenerativeAI::ProviderID::Anthropic:
+			return case_Anthropic();
+		default:
+			return parse_openai_chat_completions_format();
+		}
+	}
+	
 	/// Sakura：OpenAI Chat Completions 互換形式
 	AiResult case_Sakura()
 	{
@@ -466,7 +476,11 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		jstream::Writer w;
 		w.object({}, [&](){
 			w.string("model", modelname());
-			w.number("temperature", temperature_);
+			if (model.provider_id() == GenerativeAI::ProviderID::Moonshot) {
+				// pass
+			} else {
+				w.number("temperature", temperature_);
+			}
 			w.array("messages", [&](){
 				if (!system_role.empty()) {
 					w.object({}, [&](){
@@ -544,7 +558,18 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		return case_OpenAI_chat_completions();
 	}
-
+	
+	/// Kimi
+	std::string case_Kimi()
+	{
+		switch (model.api_compatibility()) {
+		case GenerativeAI::ProviderID::Anthropic:
+			return case_Anthropic();
+		default:
+			return case_OpenAI_chat_completions();
+		}
+	}
+	
 	/// Sakura：OpenAI Chat Completions 互換形式
 	std::string case_Sakura()
 	{

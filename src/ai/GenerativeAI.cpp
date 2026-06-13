@@ -33,6 +33,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
 		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
+		{ProviderID::Moonshot,                     "moonshot",                        "Moonshot AI",                    "MOONSHOT_API_KEY"},
 		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
@@ -71,6 +72,8 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Anthropic,        "claude-haiku-4-5"},
 		{ProviderID::Google,           "gemini-3.1-flash-lite"},
 		{ProviderID::XAI,              "grok-latest"},
+		{ProviderID::Moonshot,         "kimi-k2.7-code"},
+		{ProviderID::Moonshot,         "kimi-k2.6"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		{ProviderID::DeepSeek,         "deepseek-chat"},
 		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
@@ -95,6 +98,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::Anthropic,
 		ProviderID::Google,
 		ProviderID::XAI,
+		ProviderID::Moonshot,
 		ProviderID::Sakura,
 		ProviderID::DeepSeek,
 		ProviderID::OpenRouter,
@@ -124,6 +128,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::Anthropic, "^claude-"},
 		{ProviderID::Google, "^gemini-"},
 		{ProviderID::XAI, "^grok-"},
+		{ProviderID::Moonshot, "^kimi-"},
 		{ProviderID::Sakura, "^sakura:"},
 		{ProviderID::DeepSeek, "^deepseek-"},
 		{ProviderID::Ollama, "^ollama://"},
@@ -287,7 +292,23 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
-
+	
+	Request case_Kimi()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		switch (model_.api_compatibility()) {
+		case ProviderID::OpenAI_chat_completions:
+			r.endpoint = "https://api.moonshot.ai/v1/chat/completions";
+			break;
+		case ProviderID::Anthropic:
+			r.endpoint = "https://api.moonshot.ai/v1/responses";
+			break;
+		}
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
 	Request case_Sakura()
 	{
 		Request r;
