@@ -1267,12 +1267,12 @@ std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &
 
 void Git::createBranch(std::string const &name)
 {
-	git("branch " + name);
+	git("branch \"" + name + "\"");
 }
 
 void Git::checkoutBranch(std::string const &name)
 {
-	git("checkout " + name);
+	git("checkout \"" + name + "\"");
 }
 
 void Git::cherrypick(std::string const &name)
