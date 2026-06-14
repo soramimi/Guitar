@@ -14,11 +14,11 @@ class MainWindow;
 class FilePropertyDialog : public QDialog {
 	Q_OBJECT
 private:
-	// MainWindow *mainwindow;
+	using QDialog::exec; // -Woverloaded-virtual
 public:
 	explicit FilePropertyDialog(QWidget *parent = nullptr);
 	~FilePropertyDialog() override;
-
+	
 	void exec(QString const &path, const GitHash &id);
 private:
 	Ui::FilePropertyDialog *ui;

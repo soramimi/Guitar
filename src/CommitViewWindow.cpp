@@ -44,7 +44,7 @@ CommitViewWindow::~CommitViewWindow()
 
 void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)
 {
-	if (currentRow >= 0 && currentRow < m->diff_list.size()) {
+	if (currentRow >= 0 && (size_t)currentRow < m->diff_list.size()) {
 		GitDiff const &diff = m->diff_list[currentRow];
 		ui->widget_diff->updateDiffView(diff, false);
 	}

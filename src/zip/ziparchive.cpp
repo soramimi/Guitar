@@ -56,13 +56,13 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 	std::list<file_header_item_t> fileheaders;
 
 	unsigned short entries = 0;
-	unsigned long offset_of_central_directory = 0;
+	size_t offset_of_central_directory = 0;
 
 	for (std::list<file_entry_t>::const_iterator filelist_it = filelist->begin(); filelist_it != filelist->end(); filelist_it++) {
 		std::string srcpath = filelist_it->src;
 		std::string dstpath = filelist_it->dst;
 
-		unsigned long offset = offset_of_central_directory;
+		size_t offset = offset_of_central_directory;
 
 		struct tm *tm = localtime(&filelist_it->time);
 
@@ -76,7 +76,7 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 		lfh.crc_32 = 0;
 		lfh.compressed_size = 0;
 		lfh.uncompressed_size = 0;
-		lfh.file_name_length = dstpath.size();
+		lfh.file_name_length = (uint16_t)dstpath.size();
 		lfh.extra_field_length = 0;
 
 		std::vector<unsigned char> compressedbuffer;
@@ -86,14 +86,14 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 		unsigned char const *end = 0;
 
 		if (filelist_it->kind == file_entry_t::Data) {
-			lfh.uncompressed_size = filelist_it->data.size();
+			lfh.uncompressed_size = (uint32_t)filelist_it->data.size();
 			if (lfh.uncompressed_size > 0) {
 				begin = &filelist_it->data[0];
 				end = begin + lfh.uncompressed_size;
 			}
 		} else if (filelist_it->kind == file_entry_t::File) {
 			loadfile(srcpath.c_str(), &sourcebuffer);
-			lfh.uncompressed_size = sourcebuffer.size();
+			lfh.uncompressed_size = (uint32_t)sourcebuffer.size();
 			begin = &sourcebuffer[0];
 			end = begin + lfh.uncompressed_size;
 		}
@@ -123,7 +123,7 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 				c_stream.total_out = 0;
 				c_stream.next_in  = (unsigned char *)ptr;
 				c_stream.next_out = tmp;
-				c_stream.avail_in = end - ptr;
+				c_stream.avail_in = uInt(end - ptr);
 				c_stream.avail_out = sizeof(tmp);
 				err = deflate(&c_stream, ptr < end ? Z_NO_FLUSH : Z_FINISH);
 				if (err < 0) {
@@ -138,17 +138,17 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 				throw failed_t("Failed to deflateEnd.");
 			}
 
-			lfh.crc_32 = crc32(0, begin, end - begin);
-			lfh.compressed_size = compressedbuffer.size();
+			lfh.crc_32 = crc32(0, begin, uInt(end - begin));
+			lfh.compressed_size = (uint32_t)compressedbuffer.size();
 		}
 
 		write_(fd, &lfh, sizeof(zip_local_file_header_t));
-		write_(fd, dstpath.c_str(), dstpath.size());
+		write_(fd, dstpath.c_str(), (int)dstpath.size());
 
-		offset_of_central_directory += sizeof(zip_local_file_header_t) + dstpath.size();
+		offset_of_central_directory += (unsigned long)(sizeof(zip_local_file_header_t) + dstpath.size());
 
 		if (!compressedbuffer.empty()) {
-			write_(fd, &compressedbuffer[0], compressedbuffer.size());
+			write_(fd, &compressedbuffer[0], (int)compressedbuffer.size());
 			offset_of_central_directory += compressedbuffer.size();
 		}
 
@@ -163,15 +163,15 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 			it->header.last_mod_file_time = lfh.last_mod_file_time;
 			it->header.last_mod_file_date = lfh.last_mod_file_date;
 			it->header.crc_32 = lfh.crc_32;
-			it->header.compressed_size = compressedbuffer.size();
+			it->header.compressed_size = (uint32_t)compressedbuffer.size();
 			it->header.uncompressed_size = lfh.uncompressed_size;
-			it->header.file_name_length = it->path.size();
+			it->header.file_name_length = (uint32_t)it->path.size();
 			it->header.extra_field_length = 0;
 			it->header.file_comment_length = 0;
 			it->header.disk_number_start = 0;
 			it->header.internal_file_attributes = 1;
 			it->header.external_file_attributes = 0x81b60020;
-			it->header.relative_offset_of_local_header = offset;
+			it->header.relative_offset_of_local_header = (uint32_t)offset;
 		}
 
 		entries++;
@@ -184,19 +184,19 @@ void archive(int fd, std::list<file_entry_t> const *filelist)
 	eocdr->number_of_the_disk_with_the_start_of_the_central_directory = 0;
 	eocdr->total_number_of_entries_in_the_central_directory_on_this_disk = entries;
 	eocdr->total_number_of_entries_in_the_central_directory = entries;
-	eocdr->offset_of_start_of_central_directory_with_respect_to_the_starting_disk_number = offset_of_central_directory;
+	eocdr->offset_of_start_of_central_directory_with_respect_to_the_starting_disk_number = (uint32_t)offset_of_central_directory;
 	eocdr->comment_length = 0;
 
 	eocdr->size_of_the_central_directory = 0;
 	{
 		for (std::list<file_header_item_t>::const_iterator it = fileheaders.begin(); it != fileheaders.end(); it++) {
 			write_(fd, &it->header, sizeof(zip_file_header_t));
-			write_(fd, it->path.c_str(), it->path.size());
-			eocdr->size_of_the_central_directory += sizeof(zip_file_header_t) + it->path.size();
+			write_(fd, it->path.c_str(), (int)it->path.size());
+			eocdr->size_of_the_central_directory += uint32_t(sizeof(zip_file_header_t) + it->path.size());
 		}
 	}
 
-	write_(fd, &eocdr_vec[0], eocdr_vec.size());
+	write_(fd, &eocdr_vec[0], (int)eocdr_vec.size());
 }
 
 void archive(char const *zipfile, std::list<file_entry_t> const *filelist)

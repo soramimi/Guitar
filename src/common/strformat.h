@@ -296,6 +296,11 @@ struct NumberParser {
 	}
 };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4146) // unary minus operator applied to unsigned type, result still unsigned
+#endif
+
 template <typename T> static inline T parse_number(char const *ptr, std::function<T(char const *p, int radix)> conv)
 {
 	NumberParser t(ptr);
@@ -303,6 +308,10 @@ template <typename T> static inline T parse_number(char const *ptr, std::functio
 	if (t.sign) v = -v;
 	return v;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 struct Option_ {
 #ifdef STRFORMAT_NO_LOCALE
@@ -411,11 +420,11 @@ private:
 	}
 	Part *alloc_part(const char *begin, const char *end)
 	{
-		return alloc_part(begin, end - begin);
+		return alloc_part(begin, int(end - begin));
 	}
 	Part *alloc_part(const char *str)
 	{
-		return alloc_part(str, strlen(str));
+		return alloc_part(str, (int)strlen(str));
 	}
 	Part *alloc_part(const std::string_view &str)
 	{

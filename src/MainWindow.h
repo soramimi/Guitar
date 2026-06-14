@@ -142,7 +142,7 @@ private:
 		GitSubmoduleItem submod;
 		GitCommitItem submod_commit;
 		QString header;
-		int idiff;
+		size_t idiff;
 		bool staged = false;
 	};
 private:
@@ -560,7 +560,7 @@ private slots:
 	void onRemoteInfoChanged();
 	void onShowStatusInfo(StatusInfo const &info);
 
-	void onShowFileList(FileListType panel_type)
+	void onShowFileList(MainWindow::FileListType panel_type)
 	{
 		ASSERT_MAIN_THREAD();
 

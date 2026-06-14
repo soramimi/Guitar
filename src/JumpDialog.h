@@ -24,7 +24,7 @@ private:
 	const CommitRecord *findCommit(const std::string &id) const;
 	bool appendCharToFilterText(int k);
 protected:
-	bool eventFilter(QObject *watched, QEvent *event);
+	bool eventFilter(QObject *watched, QEvent *event) override;
 public:
 	explicit JumpDialog(QWidget *parent, NamedCommitList const &items, const CommitRecords::Vector *commit_records);
 	~JumpDialog() override;

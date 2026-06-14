@@ -101,7 +101,7 @@ bool GitPack::decompress(QIODevice *in, size_t expanded_size, QByteArray *out, s
 		while (1) {
 			uint8_t ibuf[65536];
 			uint8_t obuf[65536];
-			size_t ilen = d_stream.avail_in;
+			uInt ilen = d_stream.avail_in;
 			d_stream.next_in = ibuf;
 			d_stream.next_out = obuf;
 			d_stream.avail_out = sizeof(obuf);
@@ -159,7 +159,7 @@ bool GitPack::seekPackedObject(QIODevice *file, GitPackIdxItem const *item, GitP
 			if (l < 0 || ((size_t)(l)) != len) {
 				throw QString("failed to read");
 			}
-			info.checksum = crc32(info.checksum, (uint8_t const *)ptr, len);
+			info.checksum = (uint32_t)crc32(info.checksum, (uint8_t const *)ptr, (uint32_t)len);
 		};
 
 		file->seek(0);

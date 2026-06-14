@@ -26,7 +26,7 @@ public:
 public:
 	static std::string diffObjects(GitRunner g, const std::string &a_id, const std::string &b_id);
 	static std::string diffFiles(GitRunner g, const std::string &a_path, const std::string &b_path);
-	static GitDiff parseDiff(std::string const &s, const GitDiff *info);
+	static GitDiff parseDiff(std::string const &s, GitDiff const &info);
 	static std::string makeKey(std::string const &a_id, std::string const &b_id);
 	static std::string makeKey(const GitDiff &diff);
 	static std::string prependPathPrefix(const std::string &path);

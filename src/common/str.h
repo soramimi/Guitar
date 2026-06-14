@@ -19,7 +19,7 @@ public:
 	explicit str(std::string_view sv) : str_(sv) {}
 	explicit str(std::vector<char> const &v) : str_(std::string_view(v.data(), v.size())) {}
 	explicit str(QString const &s) : str_(s) {}
-	explicit str(ushort const *begin, ushort const *end) : str_(QString::fromUtf16(begin, end - begin)) {}
+	explicit str(char16_t const *begin, char16_t const *end) : str_(QString::fromUtf16(begin, end - begin)) {}
 	explicit str(QByteArray const &ba) : str_(std::string_view(ba.data(), ba.size())) {}
 	bool empty() const
 	{

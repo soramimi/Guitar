@@ -92,7 +92,12 @@ void AvatarLoader::run()
 				{
 					std::string email = misc::toLower(misc::trimmed(request.email));
 					QCryptographicHash hash(QCryptographicHash::Md5);
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 					hash.addData(email.c_str(), (int)email.size());
+#else
+					QByteArrayView v(email.c_str(), email.size());
+					hash.addData(v);
+#endif
 					QByteArray ba = hash.result();
 					char tmp[100];
 					for (int i = 0; i < ba.size(); i++) {

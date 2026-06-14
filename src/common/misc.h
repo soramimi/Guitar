@@ -154,7 +154,17 @@ static inline T toi(std::string_view const &s, size_t *consumed = nullptr)
 	if (consumed) {
 		*consumed = i;
 	}
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4146) // unary minus operator applied to unsigned type, result still unsigned
+#endif
+
 	return sign ? -n : n;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 }
 
 static inline void append(std::vector<char> *out, char const *ptr, size_t len)

@@ -691,14 +691,14 @@ AbstractInetClient *AiApiBridge::http()
 }
 
 // experimental query for multi-turn conversation with tool use support
-AiResult AiApiBridge::x_request(const Quert2Request &req)
+AiResult AiApiBridge::x_request(const Query2Request &req)
 {
 	if (!req) return {model().api_compatibility()};
 	
 	std::string request_json;
-	if (req.type == Quert2Request::TEXT) {
+	if (req.type == Query2Request::TEXT) {
 		request_json = generate_prompt_json(model(), req.prompt_text, m->system_role);
-	} else if (req.type == Quert2Request::JSON) {
+	} else if (req.type == Query2Request::JSON) {
 		request_json = req.prompt_json;
 	} else {
 		return {model().api_compatibility()};
@@ -757,7 +757,7 @@ AiResult AiApiBridge::x_request(const Quert2Request &req)
  * @param req 追加のリクエスト情報（将来的な拡張用）
  * @return AIからの応答を含むAiResultオブジェクト
  */
-AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Quert2Request const &req)
+AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Query2Request const &req)
 {
 	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 		return Error("error", "AI model is not defined.");
@@ -827,13 +827,13 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 
 AiResult AiApiBridge::request(std::string const &prompt)
 {
-	AiApiBridge::Quert2Request req;
+	AiApiBridge::Query2Request req;
 	return request(GenerativeAI::EndPoint::Type::Chat, prompt, req);
 }
 
 std::optional<AiResult::Models> AiApiBridge::queryModels()
 {
-	AiApiBridge::Quert2Request req{GenerativeAI::EndPoint::Type::Models, {}, {}};
+	AiApiBridge::Query2Request req{GenerativeAI::EndPoint::Type::Models};
 	AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
 	if (!result) return std::nullopt;
 

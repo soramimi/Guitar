@@ -185,7 +185,7 @@ void EditProfilesDialog::on_lineEdit_name_textChanged(const QString &text)
 
 	auto *item = ui->tableWidget->item(row, 0);
 	Q_ASSERT(item);
-	Q_ASSERT(row < list_.size());
+	Q_ASSERT((size_t)row < list_.size());
 	QString t = text.trimmed();
 	list_[row].name = t;
 	bool b = ui->tableWidget->blockSignals(true);
@@ -204,7 +204,7 @@ void EditProfilesDialog::on_lineEdit_mail_textChanged(const QString &text)
 
 	auto *item = ui->tableWidget->item(row, 1);
 	Q_ASSERT(item);
-	Q_ASSERT(row < list_.size());
+	Q_ASSERT((size_t)row < list_.size());
 	QString mail = text.trimmed();
 	list_[row].email = mail;
 	{

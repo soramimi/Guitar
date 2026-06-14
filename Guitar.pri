@@ -14,8 +14,6 @@ unsafe {
 	LIBS += -lssh
 }
 
-msvc:DEFINES += NOMINMAX
-
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
 SRC = $$PWD/src

@@ -174,7 +174,7 @@ std::optional<std::vector<char>> GitBasicSession::readfile(const char *path)
 		return std::nullopt;
 	}
 	std::vector<char> data(file.size());
-	if (file.read(data.data(), data.size()) != data.size()) {
+	if ((size_t)file.read(data.data(), data.size()) != data.size()) {
 		qDebug() << "Failed to read file: " << path;
 		return std::nullopt;
 	}

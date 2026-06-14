@@ -57,7 +57,9 @@ private slots:
 	void on_pushButton_get_icon_from_network_clicked();
 
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
-
+	
+private:
+	using QDialog::exec; // -Woverloaded-virtual
 public slots:
 	int exec(EditProfilesDialog::Item const &select);
 };

@@ -293,7 +293,7 @@ std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_
 	for (std::string_view const &line : lines) { // raw format: e.g. ":100644 100644 08bc10d... 18f0501... M  src/MainWindow.cpp"
 		GitDiffRaw item;
 		auto colon = line.find(':');
-		int tab = line.find('\t');
+		auto tab = line.find('\t');
 		if ((FOUND)colon && (FOUND)tab && colon < tab) {
 			std::vector<std::string_view> header = misc::splitWords(line.substr(colon + 1, tab - colon - 1)); // コロンとタブの間の文字列を空白で分割
 			if (header.size() >= 5) {
@@ -449,10 +449,10 @@ std::vector<GitBranch> Git::branches()
 		if (line.size() > 2) {
 			std::string name;
 			std::string text = line.substr(2);
-			int pos = 0;
+			size_t pos = 0;
 			if (misc::starts_with(text, '(')) {
 				int paren = 1;
-				for (int i = 1; i < text.size(); i++) {
+				for (size_t i = 1; i < text.size(); i++) {
 					if (text[i] == '(') {
 						paren++;
 					} else if (text[i] == ')') {
@@ -529,12 +529,12 @@ std::vector<GitBranch> Git::branches()
 
 	std::vector<GitBranch> ret;
 
-	for (int i = 0; i < branches.size(); i++) {
+	for (size_t i = 0; i < branches.size(); i++) {
 		BranchItem *b = &branches[i];
 		if (b->alternate_name.empty()) {
 			ret.push_back(b->branch);
 		} else {
-			for (int j = 0; j < branches.size(); j++) {
+			for (size_t j = 0; j < branches.size(); j++) {
 				if (j != i) {
 					if (branches[j].branch.name == b->alternate_name) {
 						b->branch.id = branches[j].branch.id;
@@ -774,10 +774,6 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 		lines.pop_back();
 	}
 
-	auto QSTR = [](std::string_view const &s){
-		return QString(QString::fromUtf8(s.data(), s.size()));
-	};
-
 	GitCommitItem out;
 
 	bool gpgsig = false;
@@ -834,12 +830,12 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			out.parent_ids.push_back(GitHash(val));
 		} else if (Starts("author", &val)) {
 			std::vector<std::string_view> arr = misc::splitWords(val);
-			int n = arr.size();
+			size_t n = arr.size();
 			if (n >= 4) {
 				out.commit_date = DateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
 				out.email = std::string(arr[n - 3]);
 				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
-					int m = out.email.size();
+					size_t m = out.email.size();
 					out.email = out.email.substr(1, m - 2);
 				}
 				for (int i = 0; i < n - 3; i++) {
@@ -1099,7 +1095,7 @@ std::vector<GitFileStatus> Git::status_s_u_(std::string *out)
 		if (out) {
 			*out = text;
 		}
-		std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(text);
+		std::vector<std::string_view> lines = misc::splitLinesV(text);
 		for (std::string_view const &line : lines) {
 			if (line.size() > 3) {
 				GitFileStatus s((std::string)line);
@@ -1581,7 +1577,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 						item = GitReflogItem();
 						auto i = line.find(": ");
 						if ((FOUND)i && i > 0) {
-							int j = line.find(": ", i + 2);
+							auto j = line.find(": ", i + 2);
 							if ((FOUND)j && j > 2) {
 								item.head = line.substr(0, i);
 								item.command = line.substr(i + 2, j - i - 2);
@@ -1640,7 +1636,7 @@ void GitFileStatus::parse(std::string const &text)
 			data.code_x = p[0];
 			data.code_y = p[1];
 
-			int i = text.find(" -> ", 3);
+			auto i = text.find(" -> ", 3);
 			if ((FOUND)i && i > 3) {
 				data.rawpath1 = text.substr(3, i - 3);
 				data.rawpath2 = text.substr(i + 4);
@@ -1837,13 +1833,13 @@ void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out
 		}
 		submod = {};
 	};
-	for (int i = 0; i < lines.size(); i++) {
+	for (size_t i = 0; i < lines.size(); i++) {
 		std::string_view line = misc::trimmed(lines[i]);
 		if (misc::starts_with(line, '[')) {
 			Push();
 			if (misc::starts_with(line, "[submodule ") && misc::ends_with(line, ']')) {
 				int i = 11;
-				int j = line.size() - 1;
+				size_t j = line.size() - 1;
 				if (i + 1 < j && line[i] == '\"') {
 					if (line[j - 1] == '\"') {
 						i++;

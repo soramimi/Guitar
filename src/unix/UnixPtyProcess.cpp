@@ -223,6 +223,8 @@ void UnixPtyProcess::run()
 		trace.end();
 
 		notifyCompleted();
+		
+		(void)ok;
 	}
 }
 

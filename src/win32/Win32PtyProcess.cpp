@@ -146,6 +146,7 @@ void Win32PtyProcess::run()
 				msleep(1);
 			} else {
 				ok = true;
+				(void)ok;
 				break;
 			}
 		}
@@ -174,7 +175,7 @@ void Win32PtyProcess::run()
 
 int Win32PtyProcess::readOutputStreaming(char *dstptr, int maxlen)
 {
-	int len = output_queue_.size();
+	size_t len = output_queue_.size();
 	if (len > maxlen) {
 		len = maxlen;
 	}
@@ -183,7 +184,7 @@ int Win32PtyProcess::readOutputStreaming(char *dstptr, int maxlen)
 		std::copy(begin, begin + len, dstptr);
 		output_queue_.erase(begin, begin + len);
 	}
-	return len;
+	return (int)len;
 }
 
 void Win32PtyProcess::writeInput(char const *ptr, int len)

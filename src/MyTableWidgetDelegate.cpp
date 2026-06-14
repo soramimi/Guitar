@@ -11,6 +11,7 @@ MyTableWidgetDelegate::MyTableWidgetDelegate(QObject *parent)
 }
 
 namespace {
+#if 0
 void drawFocusFrame(QPainter *p, QRect const &rect, int margin)
 {
 	p->save();
@@ -22,6 +23,7 @@ void drawFocusFrame(QPainter *p, QRect const &rect, int margin)
 	p->drawRoundedRect(((QRectF)rect).adjusted(m, m, -m, -m), 3, 3);
 	p->restore();
 }
+#endif
 }
 
 void MyTableWidgetDelegate::paint_bg(QPainter *painter, const QStyleOptionViewItem &option, QModelIndex const &index) const

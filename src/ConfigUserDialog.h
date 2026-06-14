@@ -25,7 +25,7 @@ private:
 public:
 	explicit ConfigUserDialog(MainWindow *parent, GitUser const &global_user, GitUser const &local_user, bool enable_local_user, QString const &repo);
 	~ConfigUserDialog() override;
-
+	
 	bool isLocalUnset() const;
 	GitUser user(bool global) const;
 private slots:

@@ -131,7 +131,7 @@ QRgb colorize(QRgb color, int light, int alpha)
 
 // DarkStyle
 
-static const int TEXTURE_CACHE_SIZE = 100;
+// static const int TEXTURE_CACHE_SIZE = 100;
 
 struct DarkStyle::Private {
 	QColor base_color;
@@ -661,7 +661,7 @@ int DarkStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const
 	case PM_ListViewIconSize:
 		val = 24;
 		break;
-	case PM_DialogButtonsSeparator:
+	case PM_DialogButtonsSeparator: // deprecated
 	case PM_ScrollBarSliderMin:
 		val = 26;
 		break;
@@ -2160,7 +2160,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 				} else {
 					p->setPen(o->palette.color(cg, QPalette::Text));
 				}
-				if (o->state & QStyle::State_Editing) {
+				if (o->state & QStyle::State_Editing) { // deprecated
 					p->setPen(o->palette.color(cg, QPalette::Text));
 					p->drawRect(textRect.adjusted(0, 0, -1, -1));
 				}
@@ -2631,7 +2631,7 @@ QSize DarkStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
 	//	return QProxyStyle::sizeFromContents(type, option, size, widget);
 
-	static const int groupBoxTopMargin       =  3;
+	// static const int groupBoxTopMargin       =  3;
 
 	QSize newSize = Base::sizeFromContents(type, option, size, widget);
 	switch (type) {

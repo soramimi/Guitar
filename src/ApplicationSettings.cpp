@@ -89,10 +89,12 @@ std::tuple<std::vector<GenerativeAI::Model>, int> ApplicationSettings::ai_models
 	return {list, index};
 }
 
+#if 0
 static inline QString UPPER(QString const &s)
 {
 	return s.toUpper();
 }
+#endif
 
 ApplicationSettings ApplicationSettings::loadSettings()
 {

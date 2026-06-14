@@ -15,7 +15,7 @@ public:
 			throw std::runtime_error("input device is null");
 		}
 	}
-	int read(void *ptr, size_t len)
+	int read(void *ptr, int64_t len) override
 	{
 		if (!input_) {
 			throw std::runtime_error("input device is null");
@@ -25,14 +25,14 @@ public:
 		}
 		return input_->read(static_cast<char *>(ptr), len);
 	}
-	int64_t pos() const
+	int64_t pos() const override
 	{
 		if (!input_) {
 			throw std::runtime_error("input device is null");
 		}
 		return input_->pos();
 	}
-	void seek(int64_t pos)
+	void seek(int64_t pos) override
 	{
 		if (!input_) {
 			throw std::runtime_error("input device is null");
@@ -52,7 +52,7 @@ public:
 			throw std::runtime_error("output device is null");
 		}
 	}
-	int write(void const *ptr, size_t len)
+	int write(void const *ptr, int64_t len) override
 	{
 		if (!output_) {
 			throw std::runtime_error("output device is null");

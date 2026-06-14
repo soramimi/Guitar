@@ -18,7 +18,7 @@ QString GetErrorMessage(DWORD e)
 	QString msg;
 	wchar_t *p = nullptr;
 	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, e, 0, (wchar_t *)&p, 0, nullptr);
-	msg = QString::fromUtf16((ushort const *)p);
+	msg = QString::fromUtf16((char16_t const *)p, size);
 	LocalFree(p);
 	return msg;
 }
@@ -211,7 +211,7 @@ protected:
 					if (!input.empty()) {
 						if (hInputWrite != INVALID_HANDLE_VALUE) {
 							DWORD written;
-							WriteFile(hInputWrite, input.data(), input.size(), &written, nullptr);
+							WriteFile(hInputWrite, input.data(), (DWORD)input.size(), &written, nullptr);
 							input.clear();
 						}
 					} else if (close_input_later) {

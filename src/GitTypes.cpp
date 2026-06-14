@@ -119,7 +119,7 @@ size_t GitHash::_std_hash() const
 bool GitHash::isValidID(std::string const &id)
 {
 	int zero = 0;
-	int n = id.size();
+	size_t n = id.size();
 	if (n >= 4 && n <= GIT_ID_LENGTH) {
 		char const *p = id.c_str();
 		for (int i = 0; i < n; i++) {
@@ -265,7 +265,7 @@ int GitCommitItemList::find_index(const GitHash &id) const
 	if (id.isValid()) {
 		auto it = index_.find(id);
 		if (it != index_.end()) {
-			return it->second;
+			return (int)it->second;
 		}
 	}
 	return -1;
@@ -370,7 +370,7 @@ void GitCommitItemList::updateCommitGraph()
 			if (item->parent_ids.empty()) {
 				item->resolved = true;
 			} else {
-				for (int j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
+				for (size_t j = 0; j < item->parent_ids.size(); j++) { // 親の数だけループ
 					GitHash const &parent_id = item->parent_ids[j]; // 親のハッシュ値
 					for (int k = i + 1; k < (int)LogCount; k++) { // 親を探す
 						if (LogItem(k).commit_id == parent_id) { // ハッシュ値が一致したらそれが親

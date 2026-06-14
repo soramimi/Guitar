@@ -47,7 +47,7 @@ QModelIndex CommitLogTableModel::parent(const QModelIndex &child) const
 
 int CommitLogTableModel::rowcount() const
 {
-	return index_.size();
+	return (int)index_.size();
 }
 
 int CommitLogTableModel::rowCount(const QModelIndex &parent) const
@@ -114,7 +114,6 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 		size_t n = records_.size();
 		index_.clear();
 		index_.reserve(n);
-		auto cols = columnCount(QModelIndex());
 		for (size_t i = 0; i < n; i++) {
 			bool match = [&](){
 				auto Match = [&](QString const &s){
@@ -150,7 +149,7 @@ bool CommitLogTableModel::setFilter(std::string const &text)
 
 int CommitLogTableModel::unfilteredIndex(int i) const
 {
-	return index_[i];
+	return (int)index_[i];
 }
 
 void CommitLogTableModel::setRecords(CommitRecords records)

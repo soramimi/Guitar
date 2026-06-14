@@ -13,7 +13,7 @@ int tid()
 	std::thread::id id = std::this_thread::get_id();
 	for (size_t i = 0; i < thread_ids.size(); i++) {
 		if (thread_ids[i] == id) {
-			return i;
+			return (int)i;
 		}
 	}
 	int i = (int)thread_ids.size();

@@ -120,11 +120,11 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		d.item_list_order_by_id.resize(size);
 		d.item_list_order_by_offset.resize(size);
 
-		auto offset = [&](int i) {
+		auto offset = [&](size_t i) {
 			return read_uint32_be(&offsets[i]);
 		};
 
-		auto checksum = [&](int i) {
+		auto checksum = [&](size_t i) {
 			return read_uint32_be(&checksums[i]);
 		};
 

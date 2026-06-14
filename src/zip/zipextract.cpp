@@ -60,7 +60,7 @@ bool ZipInternal::attach(char const *begin, char const *end)
 {
 	// zip_end_of_central_directory_record_tを読む
 	zip_end_of_central_directory_record_t const *eocd;
-	size_t n = sizeof(zip_end_of_central_directory_record_t);
+	int n = sizeof(zip_end_of_central_directory_record_t);
 	if (end - begin >= n) {
 		eocd = reinterpret_cast<zip_end_of_central_directory_record_t const *>(end - n);
 	} else {
@@ -140,7 +140,7 @@ bool ZipInternal::extract_file(zip_file_header_t const *cd, std::vector<char> *o
 				}
 				std::vector<char> zip(lfh->compressed_size);
 				memcpy(&zip[0], p, lfh->compressed_size);
-				p += lfh->compressed_size;
+				// p += lfh->compressed_size;
 				if (!inflate(&zip[0], zip.size(), out)) {	// 圧縮解除
 					return false;
 				}

@@ -26,7 +26,7 @@ SubmodulesDialog::SubmodulesDialog(QWidget *parent, QString workingdir, std::vec
 	int rows = (int)mods_.size();
 	ui->tableWidget->verticalHeader()->hide();
 	ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-	ui->tableWidget->setColumnCount(hedaer.size());
+	ui->tableWidget->setColumnCount((int)hedaer.size());
 	ui->tableWidget->setRowCount(rows);
 
 	for (int col = 0; col < (int)hedaer.size(); col++) {
@@ -67,7 +67,7 @@ SubmodulesDialog::~SubmodulesDialog()
 void SubmodulesDialog::on_tableWidget_itemSelectionChanged()
 {
 	int row = ui->tableWidget->currentRow();
-	if (row >= 0 && row < mods_.size()) {
+	if (row >= 0 && row < (int)mods_.size()) {
 		ui->lineEdit_path->setText(QString::fromStdString(mods_[row].submodule.path) / QString());
 		ui->lineEdit_remote_url->setText(QString::fromStdString(mods_[row].submodule.url));
 	}
@@ -75,7 +75,7 @@ void SubmodulesDialog::on_tableWidget_itemSelectionChanged()
 
 QString SubmodulesDialog::absoluteDir(int row) const
 {
-	if (row >= 0 && row < mods_.size()) {
+	if (row >= 0 && row < (int)mods_.size()) {
 		QDir dir(working_dir_);
 		return dir.absoluteFilePath(QString::fromStdString(mods_[row].submodule.path));
 	}
@@ -102,7 +102,7 @@ void SubmodulesDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	(void)item;
 	int row = ui->tableWidget->currentRow();
-	if (row >= 0 && row < mods_.size()) {
+	if (row >= 0 && row < (int)mods_.size()) {
 		QDir d(working_dir_);
 		QString dir = d.absoluteFilePath(QString::fromStdString(mods_[row].submodule.path));
 		if (dir.isEmpty()) return;

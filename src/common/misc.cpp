@@ -16,8 +16,8 @@
  * 分割は、改行文字（\n、\r）または文字列の終端で行われます。
  *
  * @tparam S 戻り値のベクターの要素の型（例: std::string, QString, std::string_view）
- * @tparam C 入力文字列の文字型（例: char, ushort）
- * @tparam U 文字コードの型（例: unsigned char, ushort）
+ * @tparam C 入力文字列の文字型（例: char, char16_t）
+ * @tparam U 文字コードの型（例: unsigned char, char16_t）
  * @param begin 分割する対象の文字列の開始位置
  * @param size 分割する対象の文字列のサイズ
  * @param keep_newline 改行文字を含めて行を格納する場合はtrue、そうでない場合はfalse
@@ -80,7 +80,7 @@ std::vector<std::string> misc::splitLines(std::string_view const &str)
 #ifdef USE_QT
 std::vector<QString> misc::splitLines(QString const &text)
 {
-	return t_splitLines<QString, ushort, ushort>(text.utf16(), text.size(), false);
+	return t_splitLines<QString, char16_t, char16_t>((char16_t const *)text.utf16(), text.size(), false);
 }
 #endif
 
@@ -254,18 +254,18 @@ std::string misc::replace_backslash_to_slash(std::string_view const &in)
 QString misc::normalizePathSeparator(QString const &str)
 {
 	if (!str.isEmpty()) {
-		ushort const *s = str.utf16();
+		char16_t const *s = reinterpret_cast<char16_t const *>(str.utf16());
 		size_t n = str.size();
-		std::vector<ushort> v;
+		std::vector<char16_t> v;
 		v.reserve(n);
 		for (size_t i = 0; i < n; i++) {
-			ushort c = s[i];
+			char16_t c = s[i];
 			if (c == '/') {
 				c = '\\';
 			}
 			v.push_back(c);
 		}
-		ushort const *p = &v[0];
+		char16_t const *p = &v[0];
 		return QString::fromUtf16(p, n);
 	}
 	return QString();

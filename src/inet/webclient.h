@@ -37,7 +37,7 @@ public:
 	}
 };
 
-struct ResponseHeader;
+class ResponseHeader;
 
 class WebClient : public AbstractInetClient {
 public:

@@ -64,9 +64,9 @@ Logger::time_point_t Logger::now()
 void Logger::write(char const *ptr, size_t len)
 {
 	if (m->fd_log != -1) {
-		::write(m->fd_log, ptr, len);
+		::write(m->fd_log, ptr, (int)len);
 	} else {
-		::write(fileno(stderr), ptr, len);
+		::write(fileno(stderr), ptr, (int)len);
 	}
 }
 

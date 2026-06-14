@@ -130,7 +130,7 @@ private:
 			}
 			mutex.unlock();
 			if (n == 0 && !procthread) return -1;
-			return n;
+			return (int)n;
 		}
 	};
 	StreamThread stream;
@@ -415,6 +415,7 @@ void createWin32Shortcut(Win32ShortcutData const &data)
 		hr = shlink->QueryInterface(IID_IPersistFile, (void**)&pfile);
 		if (SUCCEEDED(hr)) {
 			hr = pfile->Save(d.lnkpath.c_str(), TRUE);
+			(void)hr;
 			pfile->Release();
 		}
 

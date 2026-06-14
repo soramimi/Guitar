@@ -23,7 +23,6 @@ DEFINES += HAVE_STDINT_H
 DEFINES += HAVE_CONFIG_H
 
 HEADERS += \
-	../src/common/unicode_conversion.h \
 	AbstractSimpleIO.h \
 	MyMecab.h \
 	config.h \
@@ -57,7 +56,6 @@ HEADERS += \
 	mecab/mecab/src/writer.h
 
 SOURCES += \
-	../src/common/unicode_conversion.cpp \
 	AbstractSimpleIO.cpp \
 	MyMecab.cpp \
 	gzip.cpp \

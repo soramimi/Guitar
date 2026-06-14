@@ -36,9 +36,9 @@ using socket_t = int;
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
 // #if (OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined SSL_get_peer_certificate)
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#define SSL_get_peer_certificate(s) SSL_get1_peer_certificate(s)
-#endif
+// #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+// #define SSL_get_peer_certificate(s) SSL_get1_peer_certificate(s)
+// #endif
 #else
 typedef void SSL;
 typedef void SSL_CTX;
@@ -542,13 +542,13 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	while (1) {
 		int n;
 		if (rh->state == ResponseHeader::Content && rh->content_length >= 0) {
-			n = rh->pos + rh->content_length - pos;
+			n = int(rh->pos + rh->content_length - pos);
 			if (n > (int)sizeof(buf)) {
 				n = sizeof(buf);
 			}
 			if (n < 1) break;
 		} else {
-			n = sizeof(buf);
+			n = (int)sizeof(buf);
 		}
 		n = rcv(buf, n);
 		if (n < 1) break;
@@ -566,7 +566,7 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 	}
 }
 
-static int inet_connect(std::string const &hostname, int port)
+static socket_t inet_connect(std::string const &hostname, int port)
 {
 	socket_t sock = INVALID_SOCKET;
 	InetResolver::Addr addr;
@@ -777,7 +777,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 				str += request_req.url().host();
 				str += port_str;
 				str += " HTTP/1.0\r\n\r\n";
-				send_(sock, str.c_str(), str.size());
+				send_(sock, str.c_str(), (int)str.size());
 				
 				// Read proxy response
 				char tmp[1000];
@@ -827,7 +827,7 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 			}
 			SSL_set_tlsext_host_name(ssl, hostname.c_str());
 
-			int ret = SSL_set_fd(ssl, sock);
+			int ret = SSL_set_fd(ssl, (int)sock);
 			if (ret != 1) {
 				throw InetClient::Error(get_ssl_error());
 			}
@@ -1230,7 +1230,7 @@ void WebClient::close()
 	if (m->sock != INVALID_SOCKET) {
 		// Try graceful shutdown first
 		int shutdown_result = shutdown(m->sock, 2); // SD_BOTH or SHUT_RDWR
-		// Ignore shutdown errors as socket might already be disconnected
+		(void)shutdown_result; // Ignore shutdown errors as socket might already be disconnected
 		
 		closesocket(m->sock);
 		m->sock = INVALID_SOCKET;

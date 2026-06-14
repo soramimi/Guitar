@@ -1,4 +1,5 @@
 #include <memory>
+#include <npos.h>
 
 #include "BigDiffWindow.h"
 #include "ui_BigDiffWindow.h"
@@ -49,8 +50,8 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 
 	{
 		std::string name = m->param.diff.path;
-		int i = name.rfind('/');
-		if (i != std::string::npos) {
+		auto i = name.rfind('/');
+		if ((FOUND)i) {
 			name = name.substr(i + 1);
 		}
 		ui->lineEdit_center->setText((QS)name);

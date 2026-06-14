@@ -279,7 +279,7 @@ NamedCommitItem const *JumpDialog::currentItem() const
 	if (i < 0) {
 		i = 0;
 	}
-	if (i < list->size()) {
+	if ((size_t)i < list->size()) {
 		return &list->at(i);
 	}
 	return nullptr;
@@ -289,8 +289,8 @@ void JumpDialog::updateTable()
 {
 	auto InternalUpdateTable = [&](NamedCommitList const &list) {
 		ui->tableWidget->clearContents();
-		ui->tableWidget->setRowCount(list.size());
-		for (int i = 0; i < list.size(); i++) {
+		ui->tableWidget->setRowCount((int)list.size());
+		for (size_t i = 0; i < list.size(); i++) {
 			CommitRecord const *r = findCommit(list[i].id.toString());
 			for (int col = 0; col < m->header.size(); col++) {
 				auto *item = new QTableWidgetItem();
@@ -311,7 +311,7 @@ void JumpDialog::updateTable()
 					break;
 				}
 				item->setText(text);
-				ui->tableWidget->setItem(i, col, item);
+				ui->tableWidget->setItem((int)i, col, item);
 			}
 		}
 		ui->tableWidget->resizeColumnsToContents();

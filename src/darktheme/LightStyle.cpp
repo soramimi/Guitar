@@ -20,6 +20,7 @@ constexpr static int windowsRightBorder      = 15; // right border on windows
 
 namespace {
 
+#if 0
 QColor baseColor(QPalette const &palette)
 {
 	return palette.color(QPalette::Button);
@@ -55,6 +56,7 @@ void drawFrame(QPainter *pr, QRect const &r, QColor const &color_topleft, QColor
 {
 	return drawFrame(pr, r.x(), r.y(), r.width(), r.height(), color_topleft, color_bottomright);
 }
+#endif
 
 void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 {
@@ -82,6 +84,7 @@ void drawSelectedItemFrame(QPainter *p, QRect rect, bool focus)
 	p->drawRect(x, y, w - 1, h - 1);
 }
 
+#if 0
 void drawToolButton(QPainter *p, const QStyleOption *option, QPalette const &palette)
 {
 	p->save();
@@ -131,6 +134,7 @@ void drawToolButton(QPainter *p, const QStyleOption *option, QPalette const &pal
 
 	p->restore();
 }
+#endif
 
 } // namespace
 
@@ -309,7 +313,7 @@ void LightStyle::drawControl(ControlElement element, const QStyleOption *opt, QP
 				} else {
 					p->setPen(o->palette.color(cg, QPalette::Text));
 				}
-				if (o->state & QStyle::State_Editing) {
+				if (o->state & QStyle::State_Editing) { // deprecated
 					p->setPen(o->palette.color(cg, QPalette::Text));
 					p->drawRect(textRect.adjusted(0, 0, -1, -1));
 				}

@@ -5,6 +5,7 @@
 #include "MainWindow.h"
 #include <common/q/helper.h>
 #include <QMenu>
+#include <npos.h>
 
 ReflogWindow::ReflogWindow(QWidget *parent, MainWindow *mainwin, Git::ReflogItemList const &reflog)
 	: QDialog(parent)
@@ -45,7 +46,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 	};
 
 	ui->tableWidget->setColumnCount(cols.size());
-	ui->tableWidget->setRowCount(reflog.size());
+	ui->tableWidget->setRowCount((int)reflog.size());
 
 	for (int col = 0; col < cols.size(); col++) {
 		item = newQTableWidgetItem(cols[col]);
@@ -60,8 +61,8 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 		item = newQTableWidgetItem((QS)t.head);
 		ui->tableWidget->setItem(row, 1, item);
 		std::string cmd = t.command;
-		int i = cmd.find(' ');
-		if (i == std::string::npos) {
+		size_t i = cmd.find(' ');
+		if ((FOUND)i) {
 			i = cmd.size();
 		} else if (i > 10) {
 			i = 10;
@@ -82,7 +83,7 @@ void ReflogWindow::updateTable(Git::ReflogItemList const &reflog)
 std::optional<GitCommitItem> ReflogWindow::currentCommitItem()
 {
 	int row = ui->tableWidget->currentRow();
-	if (row >= 0 && row < reflog_.size()) {
+	if (row >= 0 && row < (int)reflog_.size()) {
 		GitReflogItem const &logitem = reflog_[row];
 		return mainwindow()->queryCommit(GitHash(logitem.id));
 	}

@@ -84,7 +84,7 @@ void ApplicationGlobal::init1()
 
 	{ // test digits.png filetype registration
 		QFile file(":/image/digits.png");
-		file.open(QFile::ReadOnly);
+		(void)file.open(QFile::ReadOnly);
 		QByteArray ba = file.readAll();
 		auto mime = mimetype_by_data(ba.data(), ba.size());
 		if (mime != "image/png") {

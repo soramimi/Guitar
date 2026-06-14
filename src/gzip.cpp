@@ -123,7 +123,7 @@ bool gzip::decompress(AbstractSimpleReader *input, AbstractSimpleWriter *output)
 				stream.next_out = obuf;            /* discard the output */
 				stream.avail_out = sizeof(obuf);
 				if (max_size_ != -1 && stream.total_out + stream.avail_out > (unsigned)max_size_ && (unsigned)max_size_ >= stream.total_out) {
-					stream.avail_out = size_t(max_size_ - stream.total_out);
+					stream.avail_out = uInt(max_size_ - stream.total_out);
 				}
 				uLong total_out = stream.total_out;
 				err = ::inflate(&stream, Z_NO_FLUSH);

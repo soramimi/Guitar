@@ -111,6 +111,7 @@ struct ProcessWin::Private {
 	std::deque<char> output_queue; // for log
 	std::vector<char> output_vector; // for result
 	std::vector<char> stdout_bytes;
+	std::vector<char> stderr_bytes;
 	PROCESS_INFORMATION pi = {};
 	DWORD exit_code = 128;
 };
@@ -258,7 +259,7 @@ const std::vector<char> &ProcessWin::stdout_bytes() const
 
 const std::vector<char> &ProcessWin::stderr_bytes() const
 {
-	return {};
+	return m->stderr_bytes;
 }
 
 // ProcessWinPty
@@ -648,13 +649,13 @@ int ProcessWinConPTY::getExitCode() const
 int ProcessWinConPTY::readOutputStreaming(char *ptr, int len)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	int n = output_queue_.size();
+	size_t n = output_queue_.size();
 	if (n > len) n = len;
 	for (int i = 0; i < n; i++) {
 		ptr[i] = output_queue_.front();
 		output_queue_.pop_front();
 	}
-	return n;
+	return (int)n;
 }
 
 

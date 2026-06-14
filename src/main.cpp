@@ -88,7 +88,7 @@ void onSigPipe(int)
 
 int main(int argc, char *argv[])
 {
-	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
+	putenv(const_cast<char *>("QT_ASSUME_STDERR_HAS_CONSOLE=1"));
 	qInstallMessageHandler(logHandler);
 
 	WebClient::initialize();

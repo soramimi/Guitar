@@ -447,7 +447,7 @@ private:
 			}
 			break;
 		}
-		return ptr - begin;
+		return int(ptr - begin);
 	}
 
 	int parse_symbol(char const *begin, char const *end, std::string *out)
@@ -462,7 +462,7 @@ private:
 		}
 		if (ptr > begin && !vec.empty()) {
 			*out = to_stdstr(vec);
-			return ptr - begin;
+			return int(ptr - begin);
 		}
 		out->clear();
 		return 0;
@@ -491,8 +491,8 @@ private:
 				}
 				vec.push_back(0);
 				long long v = strtoll(vec.data(), nullptr, 16);
-				*out = sign ? -v : v;
-				return p - begin;
+				*out = double(sign ? -v : v);
+				return int(p - begin);
 			}
 		}
 
@@ -516,7 +516,7 @@ private:
 				*out = NAN;
 			}
 			if (ptr > begin) {
-				return ptr - begin;
+				return int(ptr - begin);
 			}
 		}
 
@@ -537,7 +537,7 @@ private:
 		// std::from_chars(vec.data(), vec.data() + vec.size(), *out); // C++17
 		*out = misc::my_strtod(vec.data(), nullptr);
 
-		return ptr - begin;
+		return int(ptr - begin);
 	}
 
 	int parse_string(char const *begin, char const *end, std::string *out)
@@ -551,7 +551,7 @@ private:
 				if (*ptr == '\"') {
 					*out = to_stdstr(vec);
 					ptr++;
-					return ptr - begin;
+					return int(ptr - begin);
 				} else if (*ptr == '\\') {
 					ptr++;
 					if (ptr < end) {
@@ -732,7 +732,7 @@ private:
 	void parse(char const *ptr, int len = -1)
 	{
 		if (len < 0) {
-			len = strlen(ptr);
+			len = (int)strlen(ptr);
 		}
 		parse(ptr, ptr + len);
 	}
@@ -1148,7 +1148,7 @@ public:
 
 	int depth() const
 	{
-		return d.depth.size();
+		return (int)d.depth.size();
 	}
 
 	std::string path() const
@@ -1272,12 +1272,12 @@ protected:
 
 	void print(char const *p)
 	{
-		print(p, strlen(p));
+		print(p, (int)strlen(p));
 	}
 
 	void print(std::string const &s)
 	{
-		print(s.c_str(), s.size());
+		print(s.c_str(), (int)s.size());
 	}
 private:
 	std::vector<int> stack;
@@ -1323,7 +1323,7 @@ private:
 
 		print('\"');
 		if (!buf.empty()) {
-			print(buf.data(), buf.size());
+			print(buf.data(), (int)buf.size());
 		}
 		print('\"');
 	}
@@ -1331,7 +1331,7 @@ private:
 	void print_raw(std::string const &s)
 	{
 		if (!s.empty()) {
-			print(s.c_str(), s.size());
+			print(s.c_str(), (int)s.size());
 		}
 	}
 	

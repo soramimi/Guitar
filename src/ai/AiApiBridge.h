@@ -284,7 +284,7 @@ struct AiResult {
 class AiApiBridge {
 	friend class AiSession;
 public:
-	struct Quert2Request {
+	struct Query2Request {
 		GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 		enum Type {
 			TEXT,
@@ -305,7 +305,11 @@ public:
 			prompt_json = json;
 			prompt_text = text;
 		}
-		Quert2Request() = default;
+		Query2Request() = default;
+		Query2Request(GenerativeAI::EndPoint::Type eptype)
+			: eptype(eptype)
+		{
+		}
 		operator bool () const
 		{
 			return (type == TEXT && !prompt_text.empty()) || (type == JSON && !prompt_json.empty());
@@ -317,7 +321,7 @@ private:
 	AbstractInetClient *http();
 	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
 	AiResult open();
-	AiResult x_request(Quert2Request const &req);
+	AiResult x_request(Query2Request const &req);
 	void close();
 public:
 	AiApiBridge();
@@ -333,7 +337,7 @@ public:
 	GenerativeAI::Model model() const;
 	void set_ai_model(GenerativeAI::Model model);
 	void set_system_role(std::string const &role);
-	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Quert2Request &req);
+	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req);
 	AiResult request(const std::string &prompt);
 	std::optional<AiResult::Models> queryModels();
 };
@@ -343,7 +347,7 @@ public:
 
 class AiSession {
 public:
-	using Quert2Resuest = AiApiBridge::Quert2Request;
+	using Quert2Resuest = AiApiBridge::Query2Request;
 	std::shared_ptr<AiApiBridge> api_bridge;
 	AiSession()
 		: api_bridge(std::make_shared<AiApiBridge>())

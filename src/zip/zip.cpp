@@ -62,7 +62,7 @@ bool Zip::extract_from_data(char const *zipdata, size_t zipsize, std::string con
 			zip.extract_file(&it->cd, &out);
 			int fd = open((destdir / it->name).c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 			if (fd != -1) {
-				write(fd, &out[0], out.size());
+				write(fd, &out[0], (unsigned int)out.size());
 				close(fd);
 #ifdef Q_OS_WIN
 				struct _utimbuf t;
@@ -95,7 +95,7 @@ bool Zip::extract(std::string const &zipfile, std::string const &destdir)
 	struct stat st;
 	fstat(fd, &st);
 	std::vector<char> data(st.st_size);
-	read(fd, data.data(), data.size());
+	read(fd, data.data(), (int)data.size());
 	close(fd);
 
 	return true;

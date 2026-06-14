@@ -52,7 +52,7 @@ void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model
 {
 	m->ai_models = models;
 	ui->comboBox_ai_models->clear();
-	for (int i = 0; i < m->ai_models.size(); i++) {
+	for (size_t i = 0; i < m->ai_models.size(); i++) {
 		GenerativeAI::Model const &model = m->ai_models[i];
 		ui->comboBox_ai_models->addItem((QS)model.model_uri().string);
 	}
@@ -62,7 +62,7 @@ void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model
 GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
 {
 	int index = ui->comboBox_ai_models->currentIndex();
-	if (index >= 0 && index < m->ai_models.size()) {
+	if (index >= 0 && (size_t)index < m->ai_models.size()) {
 		return m->ai_models[index];
 	}
 	return global->appsettings.ai_model;

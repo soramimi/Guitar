@@ -85,20 +85,20 @@ std::string GitDiffManager::diffFiles(GitRunner g, std::string const &a_path, st
 	return g.diff_file(a_path, b_path, opt);
 }
 
-GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const *info)
+GitDiff GitDiffManager::parseDiff(std::string const &s, GitDiff const &info)
 {
 	GitDiff out;
 
 	std::vector<std::string_view> lines = misc::splitLinesV(s);
 
-	out.diff = "diff --git " + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out.index = "index " + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
-	out.path = info->path;
-	out.blob = info->blob;
-	out.a_submodule.item = info->a_submodule.item;
-	out.a_submodule.commit = info->a_submodule.commit;
-	out.b_submodule.item = info->b_submodule.item;
-	out.b_submodule.commit = info->b_submodule.commit;
+	out.diff = "diff --git " + ("a/" + info.path) + ' ' + ("b/" + info.path);
+	out.index = "index " + info.blob.a_id_or_path + ".." + info.blob.b_id_or_path + ' ' + info.mode;
+	out.path = info.path;
+	out.blob = info.blob;
+	out.a_submodule.item = info.a_submodule.item;
+	out.a_submodule.commit = info.a_submodule.commit;
+	out.b_submodule.item = info.b_submodule.item;
+	out.b_submodule.commit = info.b_submodule.commit;
 	out.mode = "0";
 
 	constexpr std::string_view sv_atat = "@@ ";
@@ -276,12 +276,12 @@ std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const 
 		threads[thread_index] = std::thread([&](){
 			while (1) {
 				size_t i = diffs_index++;
-				if ((int)i >= diffs.size()) break; // 終了
+				if (i >= diffs.size()) break; // 終了
 				GitDiff *diff = &diffs[i];
 				if (!diff->isSubmodule()) continue;
 
 				auto Do = [this, &g, &submodules](GitDiff *diff){
-					for (auto j = 0; j < submodules.size(); j++) {
+					for (size_t j = 0; j < submodules.size(); j++) {
 						GitSubmoduleItem const &submod = submodules[j];
 						if (submod.path != diff->path) continue;
 						auto GetSubmoduleDetail = [&](GitRunner g, std::string const &id){

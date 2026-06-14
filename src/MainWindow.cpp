@@ -1720,7 +1720,9 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	PtyProcess *pty = getPtyProcess();
 	if (pty) {
-		if (!pty->wait(5000)) /*return*/; //@ something wrong
+		if (!pty->wait(5000)) {
+			/*return;*/ //@ something wrong
+		}
 	}
 
 	// リポジトリ情報をクリア
@@ -3545,7 +3547,7 @@ std::vector<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash 
 		// サブモジュールに対応するIDを求める
 		TraceLogger trace_retrieve_submodules;
 		trace_retrieve_submodules.begin("retrieve submodules parse objects", {});
-		for (int i = 0; i < submodules.size(); i++) {
+		for (size_t i = 0; i < submodules.size(); i++) {
 			QStringList vars = QString::fromStdString(submodules[i].path).split('/'); //@TODO:
 			for (int j = 0; j < vars.size(); j++) {
 				for (int k = 0; k < list.size(); k++) {
@@ -3717,7 +3719,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
 
 	QListWidgetItem *item = new_QListWidgetItem((QS)text);
 	item->setData(FilePathRole, (QS)data.path);
-	item->setData(DiffIndexRole, data.idiff);
+	item->setData(DiffIndexRole, (int)data.idiff);
 	item->setData(ObjectIdRole, (QS)data.id);
 	item->setData(HeaderRole, header);
 	item->setData(SubmodulePathRole, QString::fromStdString(data.submod.path));
@@ -3736,7 +3738,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
  */
 void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::function<void (ObjectData const &data)> &fn_add_item)
 {
-	for (int idiff = 0; idiff < diff_list->size(); idiff++) {
+	for (size_t idiff = 0; idiff < diff_list->size(); idiff++) {
 		GitDiff const &diff = diff_list->at(idiff);
 		std::string_view header;
 
@@ -3757,7 +3759,7 @@ void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::
 		data.submod = diff.b_submodule.item;
 		data.submod_commit = diff.b_submodule.commit;
 		data.header = (misc::str)header;
-		data.idiff = idiff;
+		data.idiff = (int)idiff;
 		fn_add_item(data);
 	}
 }
@@ -4237,9 +4239,9 @@ void MainWindow::updateFileList(GitHash const &id)
 
 		} else {
 
-			std::map<std::string, int> diffmap;
+			std::map<std::string, size_t> diffmap;
 
-			for (int idiff = 0; idiff < diffResult()->size(); idiff++) {
+			for (size_t idiff = 0; idiff < diffResult()->size(); idiff++) {
 				GitDiff const &diff = diffResult()->at(idiff);
 				std::string filename = diff.path;
 				if (!filename.empty()) {
@@ -4259,7 +4261,7 @@ void MainWindow::updateFileList(GitHash const &id)
 						GitFileStatus const &s = m->uncommitted_changes_file_list[i];
 						{
 							bool staged = (s.isStaged() && s.code_y() == ' ');
-							int idiff = -1;
+							size_t idiff = -1;
 							std::string_view header;
 							auto it = diffmap.find((QS)s.path1());
 							GitDiff const *diff = nullptr;
@@ -4553,15 +4555,15 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	int n = commit->parent_ids.size();
+	size_t n = commit->parent_ids.size();
 	if (n == 1) {
 		g.cherrypick(commit->commit_id.toString());
 	} else if (n > 1) {
 		auto head = g.queryCommitItem(g.rev_parse("HEAD"));
 		auto pick = g.queryCommitItem(commit->commit_id);
 		QList<GitCommitItem> parents;
-		for (int i = 0; i < n; i++) {
-			std::string id = commit->commit_id.toString() + fmt("^%d")(i + 1).str();
+		for (size_t i = 0; i < n; i++) {
+			std::string id = commit->commit_id.toString() + fmt("^%d")((int)i + 1).str();
 			GitHash id2 = g.rev_parse(id);
 			auto item = g.queryCommitItem(id2);
 			parents.push_back(*item);
@@ -5913,9 +5915,15 @@ void MainWindow::updateAncestorCommitMap()
 	m->ancestors.clear(); // 先祖集合を初期化
 
 	GitCommitItemList const &logs = commitlog(); // コミットログ一覧の取得
-
-	const int index = selectedLogIndex(); // 現在選択されている行のインデックス
-	if (index < 0 || index >= logs.size()) return; // 無効なインデックスなら早期リターン
+	
+	size_t index;
+	{
+		const auto i = selectedLogIndex(); // 現在選択されている行のインデックス
+		// 無効なインデックスなら早期リターン
+		if (i < 0) return;
+		index = (size_t)i;
+		if (index >= logs.size()) return;
+	}
 
 	size_t end = logs.size(); // 探索の終端をログの末尾と仮定
 
@@ -6051,9 +6059,9 @@ int MainWindow::selectedLogIndex() const
 
 GitHash MainWindow::blobID(QListWidgetItem *item) const
 {
-	int idiff = indexOfDiff(item);
+	auto idiff = indexOfDiff(item);
 	std::vector<GitDiff> const *diffs = diffResult();
-	if (idiff >= 0 && idiff < diffs->size()) {
+	if (idiff >= 0 && idiff < (int)diffs->size()) {
 		GitDiff const &diff = diffs->at(idiff);
 		return GitHash(diff.blob.b_id_or_path);
 	}
@@ -6074,9 +6082,9 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 
 	if (!item) return;
 
-	int idiff = indexOfDiff(item);
+	auto idiff = indexOfDiff(item);
 	std::vector<GitDiff> const *diffs = diffResult();
-	if (idiff >= 0 && idiff < diffs->size()) {
+	if (idiff < (int)diffs->size()) {
 		GitDiff const &diff = diffs->at(idiff);
 		bool updatediffview = false;
 		bool uncommited = false;
@@ -7435,7 +7443,7 @@ void MainWindow::on_action_ssh_triggered() // experimental
 		return;
 	}
 #endif
-	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Warning, QMessageBox::Ok);
+	QMessageBox::warning(this, tr("SSH Connection"), tr("SSH connection is disabled"), QMessageBox::Ok);
 }
 
 void MainWindow::on_action_restart_trace_logger_triggered()

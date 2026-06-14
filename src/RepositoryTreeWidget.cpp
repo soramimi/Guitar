@@ -284,7 +284,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 				}
 				std::atomic<size_t> index(0);
 				std::vector<std::thread> threads(THREADS_COUNT);
-				for (int i = 0; i < threads.size(); i++) {
+				for (size_t i = 0; i < threads.size(); i++) {
 					threads[i] = std::thread([&](){
 						while (1) {
 							size_t j = index++;
@@ -294,7 +294,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 						}
 					});
 				}
-				for (int i = 0; i < threads.size(); i++) {
+				for (size_t i = 0; i < threads.size(); i++) {
 					threads[i].join();
 				}
 			}

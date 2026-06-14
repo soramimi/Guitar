@@ -17,7 +17,7 @@ MergeDialog::MergeDialog(QString const &fastforward, const std::vector<QString> 
 		QString const &label = labels[i];
 		ui->listWidget_from->addItem(label);
 		if (label == curr_branch_name) {
-			select = i;
+			select = (int)i;
 		}
 	}
 	ui->listWidget_from->setCurrentRow(select);

@@ -123,7 +123,7 @@ BlameWindow::~BlameWindow()
 QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 {
 	QList<BlameItem> list;
-	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(str);
+	std::vector<std::string_view> lines = misc::splitLinesV(str);
 	BlameItem item;
 	for (std::string_view const &v : lines) {
 		if (v.empty()) continue;
