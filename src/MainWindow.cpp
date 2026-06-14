@@ -4148,8 +4148,13 @@ void MainWindow::showFileList(FileListType files_list_type)
 void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 {
 	clearFileList();
-
-	for (ObjectData const &obj : data.object_data) {
+	
+	std::vector<MainWindow::ObjectData> objects = data.object_data;
+	std::sort(objects.begin(), objects.end(), [](ObjectData const &a, ObjectData const &b){
+		return misc::stricmp(a.path, b.path) < 0;
+	});
+	
+	for (ObjectData const &obj : objects) {
 		QListWidgetItem *item = newListWidgetFileItem(obj);
 		showFileList(data.files_list_type);
 		switch (data.files_list_type) {

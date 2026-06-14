@@ -41,10 +41,14 @@ static inline int stricmp(std::string_view const &s1, std::string_view const &s2
 {
 	size_t n1 = s1.size();
 	size_t n2 = s2.size();
-	if (n1 == n2) {
-		return strnicmp(s1.data(), s2.data(), n1);
+	size_t n = std::min(n1, n2);
+	if (n > 0) {
+		int i = strnicmp(s1.data(), s2.data(), n);
+		if (i != 0) return i;
 	}
-	return n1 < n2 ? -1 : 1;
+	if (n1 < n2) return -1;
+	if (n1 > n2) return 1;
+	return 0;
 }
 
 static inline char const *stristr(const char *haystack, const char *needle)
