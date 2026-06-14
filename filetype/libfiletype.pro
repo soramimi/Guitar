@@ -15,6 +15,8 @@ msvc:INCLUDEPATH += file-msvc
 gcc:INCLUDEPATH += file-gcc
 INCLUDEPATH += file
 
+msvc:QMAKE_CXXFLAGS += /FI $$PWD/file-msvc/unistd.h
+
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
