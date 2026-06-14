@@ -2,20 +2,39 @@
 #include <cstdio>
 #include <time.h>
 
+std::string Date::toString() const
+{
+	if (isValid()) {
+		char tmp[100];
+		sprintf(tmp, "%04u-%02u-%02u"
+				, year()
+				, month()
+				, day()
+				);
+		return tmp;
+	}
+	return {};
+}
+
+std::string Time::toString() const
+{
+	if (isValid()) {
+		char tmp[100];
+		sprintf(tmp, "%02u:%02u:%02u"
+				, hour()
+				, minute()
+				, second()
+				);
+		return tmp;
+	}
+	return {};
+}
+
 std::string DateTime::toString() const
 {
 	DateTime const &dt = *this;
 	if (dt.isValid()) {
-		char tmp[100];
-		sprintf(tmp, "%04u-%02u-%02u %02u:%02u:%02u"
-				, dt.date().year()
-				, dt.date().month()
-				, dt.date().day()
-				, dt.time().hour()
-				, dt.time().minute()
-				, dt.time().second()
-				);
-		return tmp;
+		return dt.date().toString() + ' ' + dt.time().toString();
 	}
 	return {};
 }

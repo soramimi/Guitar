@@ -25,6 +25,7 @@ public:
 	int month() const { return month_; }
 	int day() const { return day_; }
 	bool isValid() const { return valid_; }
+	std::string toString() const;
 };
 
 class Time {
@@ -45,6 +46,7 @@ public:
 	int minute() const { return minute_; }
 	int second() const { return second_; }
 	bool isValid() const { return valid_; }
+	std::string toString() const;
 };
 
 class DateTime {

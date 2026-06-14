@@ -5,11 +5,16 @@
 #include <common/joinpath.h>
 #include <common/misc.h>
 #include <MainWindow.h>
+#include <QClipboard>
 #include <QKeyEvent>
 #include <QPainter>
 #include <optional>
 
 namespace {
+
+enum {
+	CommitIdRole = Qt::UserRole + 100,
+};
 
 class ItemDelegate : public MyTableWidgetDelegate {
 private:
@@ -138,10 +143,11 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 	sort(&m->all_items);
 
 	m->header = QStringList{
-		tr("Name"),
-		tr("Date"),
-		tr("Message"),
-	};
+			tr("Name"),
+			tr("Commit"),
+			tr("Date"),
+			tr("Message"),
+			};
 
 	ui->tableWidget->setColumnCount(m->header.size());
 	{
@@ -216,8 +222,13 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 		if (event->type() == QEvent::KeyPress) {
 			QKeyEvent *e = dynamic_cast<QKeyEvent *>(event);
 			Q_ASSERT(e);
-			if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) {
-				bool ctrl = e->modifiers() & Qt::ControlModifier;
+			const int k = e->key();
+			const bool alt = (e->modifiers() & Qt::AltModifier);
+			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
+			const bool shift = (e->modifiers() & Qt::ShiftModifier);
+			const bool mods = (e->modifiers() & Qt::KeyboardModifierMask);
+			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
+			if (enter) {
 				if (ctrl) {
 					on_pushButton_checkout_clicked();
 				} else {
@@ -225,8 +236,15 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 				}
 				return true;
 			}
-			if (appendCharToFilterText(e->key())) {
-				return true;
+			if (ctrl) {
+				if (k == Qt::Key_V) {
+					QString s = QApplication::clipboard()->text();
+					ui->lineEdit_filter->setText(s);
+				}
+			} else {
+				if (appendCharToFilterText(k)) {
+					return true;
+				}
 			}
 		}
 	}
@@ -295,22 +313,29 @@ void JumpDialog::updateTable()
 			for (int col = 0; col < m->header.size(); col++) {
 				auto *item = new QTableWidgetItem();
 				QString text;
+				QString commit_id = QString::fromStdString(r->commit_id());
 				switch (col)    {
 				case 0: // Name
 					text = QString::fromStdString(list[i].name);
 					break;
-				case 1: // Date
+				case 1: // Commit
+					if (r) {
+						text = commit_id.mid(0, 7);
+					}
+					break;
+				case 2: // Date
 					if (r) {
 						text = r->datetime;
 					}
 					break;
-				case 2: // Message
+				case 3: // Message
 					if (r) {
 						text = r->message;
 					}
 					break;
 				}
 				item->setText(text);
+				item->setData(CommitIdRole, commit_id);
 				ui->tableWidget->setItem((int)i, col, item);
 			}
 		}

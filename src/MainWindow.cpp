@@ -790,6 +790,13 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				} else if (shift && k == Qt::Key_Escape) {
 					ui->treeWidget_repos->setFocus();
 					return true;
+				} else if (ctrl && k == Qt::Key_C) {
+					GitCommitItem const *commit = currentCommitItem();
+					QClipboard *clipboard = QApplication::clipboard();
+					if (commit && clipboard) {
+						clipboard->setText(QString::fromStdString(commit->commit_id.toString()));
+					}
+					return true;
 				} else if (!mods && appendCharToFilterText(k, MainWindow::FilterTarget::CommitLogSearch)) {
 					return true;
 				}
@@ -1660,7 +1667,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 			rec.commit_hash = commit.commit_id;
 		}
 
-		rec.datetime = (misc::str)commit.commit_date.toString();
+		rec.datetime = (misc::str)commit.commit_date.date().toString();
 		rec.author = (misc::str)commit.author;
 		rec.message = (misc::str)commit.message;
 		rec.tooltip = rec.message + message_ex;
