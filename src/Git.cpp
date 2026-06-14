@@ -99,7 +99,8 @@ std::string Git::resultStdString(std::optional<GitResult> const &var) const
 QString Git::resultQString(std::optional<GitResult> const &var) const
 {
 	if (var) {
-		return QString::fromUtf8(toByteArray(var));
+		auto v = toByteArray(var);
+		return QString::fromUtf8(v.data(), v.size());
 	} else {
 		return {};
 	}

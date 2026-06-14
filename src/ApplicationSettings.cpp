@@ -2,6 +2,7 @@
 #include "ApplicationGlobal.h"
 #include "Logger.h"
 #include "MySettings.h"
+#include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>

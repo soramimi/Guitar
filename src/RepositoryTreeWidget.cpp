@@ -4,6 +4,7 @@
 #include "MainWindow.h"
 #include <common/joinpath.h>
 #include <QApplication>
+#include <QDateTime>
 #include <QDebug>
 #include <QDropEvent>
 #include <QFileInfo>

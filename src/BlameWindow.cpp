@@ -132,7 +132,7 @@ QList<BlameItem> BlameWindow::parseBlame(std::string_view const &str)
 			item.text = QString::fromUtf8(line.c_str() + 1);
 			list.push_back(item);
 			item.commit_id = {};
-			item.text = {};
+			item.text.clear();
 		} else {
 			char const *p = line.c_str();
 			char const *q = strchr(p, ' ');

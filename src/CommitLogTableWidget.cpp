@@ -3,11 +3,12 @@
 #include "BranchLabel.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
-#include <common/q/helper.h>
 #include <QApplication>
 #include <QHeaderView>
 #include <QPainter>
 #include <QPainterPath>
+#include <cmath>
+#include <common/q/helper.h>
 
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
 {
@@ -291,7 +292,7 @@ private:
 		CommitLogTableWidget const *tablewidget = qobject_cast<CommitLogTableWidget const *>(opt.widget);
 		if (tablewidget->model_->isFiltered()) {
 			QStyleOptionViewItem o = opt;
-			o.text = {};
+			o.text.clear();
 			MyTableWidgetDelegate::paint_bg(painter, o, index);
 			IncrementalSearch::fillFilteredBG(painter, opt.rect);
 			IncrementalSearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
