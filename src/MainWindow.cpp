@@ -7410,6 +7410,7 @@ void MainWindow::selectLogTableRow(int row)
 void MainWindow::onCommitLogCurrentRowChanged(int row)
 {
 	// qDebug() << __FILE__ << __LINE__;
+	setCurrentLogRow(row);
 	onLogCurrentItemChanged(true);
 	updateStatusBarText(); // ステータスバー更新
 	m->searching = false;
