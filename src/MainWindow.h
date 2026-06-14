@@ -450,6 +450,7 @@ private:
 	void endSession();
 	std::optional<GitCommitItem> getCommitItem(GitRunner g, const GitHash &hash) const;
 	GitHash blobID(QListWidgetItem *item) const;
+	bool copyWorkingCopyDirToClipboard();
 protected:
 	void closeEvent(QCloseEvent *event) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;

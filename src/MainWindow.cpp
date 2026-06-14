@@ -770,6 +770,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					if (k == Qt::Key_R) {
 						onRepositoryTreeSortRecent(true); // 最近使用した順ソート
 						return true;
+					} else if (k == Qt::Key_C) {
+						copyWorkingCopyDirToClipboard();
+						return true;
 					}
 				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::RepositorySearch)) {
 					return true;
@@ -877,6 +880,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	}
 
 	QMainWindow::closeEvent(event);
+}
+
+bool MainWindow::copyWorkingCopyDirToClipboard()
+{
+	QTreeWidgetItem *treeitem = ui->treeWidget_repos->currentItem();
+	if (treeitem) {
+		RepositoryTreeIndex repoindex = repositoryTreeIndex(treeitem);
+		std::optional<RepositoryInfo> repo = repositoryItem(repoindex);
+		auto *clipboard = QApplication::clipboard();
+		if (repo && clipboard) {
+			QString local_dir = repo->local_dir;
+			clipboard->setText(local_dir);
+			return true;
+		}
+	}
+	return false;
 }
 
 void MainWindow::toggleMaximized()
