@@ -838,7 +838,7 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 					size_t m = out.email.size();
 					out.email = out.email.substr(1, m - 2);
 				}
-				for (int i = 0; i < n - 3; i++) {
+				for (size_t i = 0; i < n - 3; i++) {
 					if (!out.author.empty()) {
 						out.author += ' ';
 					}
@@ -1263,17 +1263,17 @@ std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &
 
 void Git::createBranch(std::string const &name)
 {
-	git("branch " + name);
+	git("branch " + quoted_text(name));
 }
 
 void Git::checkoutBranch(std::string const &name)
 {
-	git("checkout " + name);
+	git("checkout " + quoted_text(name));
 }
 
 void Git::cherrypick(std::string const &name)
 {
-	git("cherry-pick " + name);
+	git("cherry-pick " + quoted_text(name));
 }
 
 std::string Git::getCherryPicking() const
@@ -1314,12 +1314,12 @@ void Git::mergeBranch(std::string const &name, GitMergeFastForward ff, bool squa
 	if (squash) {
 		cmd += "--squash ";
 	}
-	git(cmd + name);
+	git(cmd + quoted_text(name));
 }
 
 bool Git::deleteBranch(const std::string &name)
 {
-	return (bool)git(fmt("branch -D \"%s\"")(name));
+	return (bool)git("branch -D " + quoted_text(name));
 }
 
 bool Git::checkout(std::string const &branch_name, std::string const &id) // oops! `switch` is C's keyword
@@ -1327,9 +1327,9 @@ bool Git::checkout(std::string const &branch_name, std::string const &id) // oop
 	// use `switch` instead of `checkout`
 	std::string cmd;
 	if (id.empty()) {
-		cmd = fmt("switch %s")(branch_name);
+		cmd = fmt("switch %s")(quoted_text(branch_name));
 	} else {
-		cmd = fmt("switch -c %s %s")(branch_name)(id);
+		cmd = fmt("switch -c %s %s")(quoted_text(branch_name))(id);
 	}
 	return (bool)git(cmd);
 }
@@ -1838,7 +1838,7 @@ void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out
 		if (misc::starts_with(line, '[')) {
 			Push();
 			if (misc::starts_with(line, "[submodule ") && misc::ends_with(line, ']')) {
-				int i = 11;
+				size_t i = 11;
 				size_t j = line.size() - 1;
 				if (i + 1 < j && line[i] == '\"') {
 					if (line[j - 1] == '\"') {
