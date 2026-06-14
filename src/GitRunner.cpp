@@ -51,10 +51,7 @@ void GitRunner::clearObjectCache()
 	if (git) gitptr()->clearObjectCache();
 }
 
-std::optional<GitCommitItem> GitRunner::parseCommit(std::vector<char> const &ba)
-{
-	return Git::parseCommit(ba);
-}
+
 
 bool GitRunner::isValidWorkingCopy(std::string const &dir) const
 {

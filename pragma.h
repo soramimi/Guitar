@@ -2,11 +2,14 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic error   "-Wreturn-type"
 #pragma GCC diagnostic error   "-Wtrigraphs"
-#pragma GCC diagnostic error   "-Wuninitialized-const-reference"
 #pragma GCC diagnostic ignored "-Wswitch"
 #pragma GCC diagnostic ignored "-Wreorder"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+
+#ifdef __clang__
+#pragma GCC diagnostic error   "-Wuninitialized-const-reference"
 #endif
 
 #ifdef _MSC_VER

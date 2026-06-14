@@ -309,14 +309,15 @@ public:
 	{
 		CommitLogTableWidget const *tablewidget = qobject_cast<CommitLogTableWidget const *>(option.widget);
 		Q_ASSERT(tablewidget);
-
+		
+		const int actual_row = tablewidget->model_->unfilteredIndex(index.row()); // フィルタ適用前の行番号
+		GitCommitItem const &commit = tablewidget->commitItem(actual_row);
+		
 		QStyleOptionViewItem opt = option;
 		initStyleOption(&opt, index);
-
-		GitCommitItem const &commit = tablewidget->commitItem(index.row());
-
+		
 		paintCommitMessage(painter, opt, index);
-
+		
 		enum {
 			Graph,
 			CommitId,
@@ -324,9 +325,7 @@ public:
 			Author,
 			Message,
 		};
-
-		const int actual_row = tablewidget->model_->unfilteredIndex(index.row()); // フィルタ適用前の行番号
-
+		
 		// 署名アイコンの描画
 		if (index.column() == CommitId) {
 			drawSignatureIcon(painter, opt, commit);

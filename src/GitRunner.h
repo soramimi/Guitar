@@ -36,8 +36,6 @@ public:
 	void clearCommandCache();
 	void clearObjectCache();
 
-	static std::optional<GitCommitItem> parseCommit(const std::vector<char> &ba);
-
 	bool isValidWorkingCopy(const std::string &dir) const;
 
 	bool isValidWorkingCopy() const;

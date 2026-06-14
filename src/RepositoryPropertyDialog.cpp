@@ -92,7 +92,7 @@ void RepositoryPropertyDialog::updateRemotesTable()
 	};
 	SetHeaderItem(0, tr("Name"));
 	SetHeaderItem(1, tr("URL"));
-	for (int row = 0; row < rows; row++) {
+	for (size_t row = 0; row < rows; row++) {
 		GitRemote const &r = m->remotes[row];
 		url = QString::fromStdString(r.url_fetch);
 		auto SetItem = [&](int col, QString const &text, bool editable){

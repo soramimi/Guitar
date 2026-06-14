@@ -122,7 +122,7 @@ bool GitHash::isValidID(std::string const &id)
 	size_t n = id.size();
 	if (n >= 4 && n <= GIT_ID_LENGTH) {
 		char const *p = id.c_str();
-		for (int i = 0; i < n; i++) {
+		for (size_t i = 0; i < n; i++) {
 			char c = p[i];
 			if (c == '0') {
 				zero++;

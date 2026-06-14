@@ -76,7 +76,7 @@ bool ZipInternal::attach(char const *begin, char const *end)
 
 	// zip_file_header_tを読む
 	for (int i = 0; i < eocd->total_number_of_entries_in_the_central_directory; i++) {
-		if (end - p < sizeof(zip_file_header_t)) {
+		if (size_t(end - p) < sizeof(zip_file_header_t)) {
 			return false;
 		}
 		zip_file_header_t const *cd = reinterpret_cast<zip_file_header_t const *>(p);

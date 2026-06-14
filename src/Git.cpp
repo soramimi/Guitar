@@ -566,6 +566,101 @@ static DateTime parseDateTime(char const *s)
 	return DateTime::parseDateTime(s);
 }
 
+std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
+{
+	std::vector<std::string_view> lines = misc::splitLinesV(ba);
+	
+	while (!lines.empty() && lines[lines.size() - 1].empty()) {
+		lines.pop_back();
+	}
+	
+	GitCommitItem out;
+	
+	bool gpgsig = false;
+	bool message = false;
+	for (size_t i = 0; i < lines.size(); i++) {
+		std::string_view const &line = lines[i];
+		if (line.empty()) {
+			i++;
+			for (; i < lines.size(); i++) {
+				std::string_view const &line = lines[i];
+				if (!out.message.empty()) {
+					out.message += '\n';
+				}
+				out.message += line;
+			}
+			break;
+		}
+		if (gpgsig) {
+			if (line[0] == ' ') {
+				std::string_view s = line.substr(1);
+				out.gpgsig += std::string(s) + '\n';
+				if (s == "-----END PGP SIGNATURE-----") {
+					gpgsig = false;
+				}
+			}
+			continue;
+		}
+		if (line.empty()) {
+			message = true;
+			continue;
+		}
+		if (message) {
+			if (!out.message.empty()) {
+				out.message += '\n';
+			}
+			out.message += std::string(line);
+		}
+		
+		auto Starts = [&](char const *key, std::string_view *out){
+			for (size_t i = 0; i < line.size(); i++) {
+				if (line[i] == ' ' && key[i] == 0) {
+					*out = line.substr(i + 1);
+					return true;
+				}
+				if (line[i] != key[i]) break;
+			}
+			return false;
+		};
+		
+		std::string_view val;
+		if (Starts("tree", &val)) {
+			out.tree = GitHash(val);
+		} else if (Starts("parent", &val)) {
+			out.parent_ids.push_back(GitHash(val));
+		} else if (Starts("author", &val)) {
+			std::vector<std::string_view> arr = misc::splitWords(val);
+			size_t n = arr.size();
+			if (n >= 4) {
+				out.commit_date = DateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
+				out.email = std::string(arr[n - 3]);
+				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
+					size_t m = out.email.size();
+					out.email = out.email.substr(1, m - 2);
+				}
+				for (size_t i = 0; i < n - 3; i++) {
+					if (!out.author.empty()) {
+						out.author += ' ';
+					}
+					out.author += std::string(arr[i]);
+				}
+			}
+		} else if (Starts("commiter", &val)) {
+			// nop
+		} else if (Starts("gpgsig", &val)) {
+			if (val == "-----BEGIN PGP SIGNATURE-----") {
+				out.has_gpgsig = true;
+				out.gpgsig.append(std::string(val));
+				gpgsig = true;
+			}
+		}
+	}
+	
+	if (!out.tree.isValid()) return std::nullopt;
+	
+	return out;
+}
+
 std::optional<GitCommitItem> Git::parseCommitItem(std::string const &line)
 {
 	auto i = line.find("##");
@@ -628,7 +723,7 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 	GitCommitItemList items;
 	std::vector<GitCommitItem> list;
 
-	std::string cmd = "log --pretty=format:\"id:%H#parent:%P#author:%an#mail:%ae#date:%ci##%s\"";
+	std::string cmd = "log --pretty=format:\"id:%H#gpg:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\"";
 	cmd += fmt(" --all -%d -- %s")(maxcount)(path);
 	auto result = git_nolog(cmd, nullptr);
 
@@ -712,13 +807,13 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 
 	std::optional<GitCommitItem> ret;
 
-	std::string cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" %s";
-	cmd = fmt(cmd)(id.toString());
+	std::string cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" ";
+	cmd +=id.toString();
 	auto result = git_nolog(cmd, nullptr);
 	if (result && result->exit_code() == 0) {
-		auto splitLines = [&](std::string const &text){ // modified from misc::splitLines
-			std::vector<std::string> list;
-			char const *begin = text.c_str();
+		auto splitLines = [&](std::string_view const &text){ // modified from misc::splitLines
+			std::vector<std::string_view> list;
+			char const *begin = text.data();
 			char const *end = begin + text.size();
 			char const *ptr = begin;
 			char const *left = ptr;
@@ -728,8 +823,8 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 					c = (unsigned char)*ptr;
 				}
 				if (c == '\n' /*|| c == '\r'*/ || c == 0) { // '\r'では分割しない（Windowsで git log の結果に単独の'\r'が現れることがある）
-					std::string s = (std::string)misc::trimmed({left, size_t(ptr - left)}); // 行頭・行末の空白を除去
-					list.push_back(s);
+					auto v = misc::trimmed({left, size_t(ptr - left)}); // 行頭・行末の空白を除去
+					list.push_back(v);
 					if (c == 0) break;
 					if (c == '\n') {
 						ptr++;
@@ -743,8 +838,9 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 		};
 
 		std::string gpgtext;
-		std::string_view text = misc::trimmed(resultStdString(result));
-		std::vector<std::string_view> lines = misc::splitLinesV(text);
+		auto s = resultStdString(result);
+		std::string_view text = misc::trimmed(s);
+		std::vector<std::string_view> lines = splitLines(text);
 		for (std::string_view const &line : lines) {
 			if (misc::starts_with(line, "gpg:")) {
 				if (!gpgtext.empty()) {
@@ -764,101 +860,6 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 	}
 
 	return ret;
-}
-
-std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
-{
-	std::vector<std::string_view> lines = misc::splitLinesV(ba);
-
-	while (!lines.empty() && lines[lines.size() - 1].empty()) {
-		lines.pop_back();
-	}
-
-	GitCommitItem out;
-
-	bool gpgsig = false;
-	bool message = false;
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::string_view const &line = lines[i];
-		if (line.empty()) {
-			i++;
-			for (; i < lines.size(); i++) {
-				std::string_view const &line = lines[i];
-				if (!out.message.empty()) {
-					out.message += '\n';
-				}
-				out.message += line;
-			}
-			break;
-		}
-		if (gpgsig) {
-			if (line[0] == ' ') {
-				std::string_view s = line.substr(1);
-				out.gpgsig += std::string(s) + '\n';
-				if (s == "-----END PGP SIGNATURE-----") {
-					gpgsig = false;
-				}
-			}
-			continue;
-		}
-		if (line.empty()) {
-			message = true;
-			continue;
-		}
-		if (message) {
-			if (!out.message.empty()) {
-				out.message += '\n';
-			}
-			out.message += std::string(line);
-		}
-
-		auto Starts = [&](char const *key, std::string_view *out){
-			for (size_t i = 0; i < line.size(); i++) {
-				if (line[i] == ' ' && key[i] == 0) {
-					*out = line.substr(i + 1);
-					return true;
-				}
-				if (line[i] != key[i]) break;
-			}
-			return false;
-		};
-
-		std::string_view val;
-		if (Starts("tree", &val)) {
-			out.tree = GitHash(val);
-		} else if (Starts("parent", &val)) {
-			out.parent_ids.push_back(GitHash(val));
-		} else if (Starts("author", &val)) {
-			std::vector<std::string_view> arr = misc::splitWords(val);
-			size_t n = arr.size();
-			if (n >= 4) {
-				out.commit_date = DateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
-				out.email = std::string(arr[n - 3]);
-				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
-					size_t m = out.email.size();
-					out.email = out.email.substr(1, m - 2);
-				}
-				for (size_t i = 0; i < n - 3; i++) {
-					if (!out.author.empty()) {
-						out.author += ' ';
-					}
-					out.author += std::string(arr[i]);
-				}
-			}
-		} else if (Starts("commiter", &val)) {
-			// nop
-		} else if (Starts("gpgsig", &val)) {
-			if (val == "-----BEGIN PGP SIGNATURE-----") {
-				out.has_gpgsig = true;
-				out.gpgsig.append(std::string(val));
-				gpgsig = true;
-			}
-		}
-	}
-
-	if (!out.tree.isValid()) return std::nullopt;
-
-	return out;
 }
 
 std::optional<GitCommitItem> Git::queryCommitItem(GitHash const &id)
