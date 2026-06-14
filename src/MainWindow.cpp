@@ -691,6 +691,13 @@ bool MainWindow::jumpToHEAD()
 
 //
 
+bool MainWindow::isIncrementalSearching() const
+{
+	return !global->incremental_search_text.isEmpty();
+}
+
+//
+
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
 	QEvent::Type et = event->type();
@@ -752,7 +759,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 			if (watched == ui->treeWidget_repos) { // リポジトリツリー
 				if (enter) {
-					if (ui->treeWidget_repos->isFiltered()) {
+					if (isIncrementalSearching()) {
 						chooseRepository();
 						return true;
 					}
@@ -769,7 +776,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 			} else if (watched == ui->tableWidget_log) {
 				if (enter) {
-					if (!global->incremental_search_text.isEmpty()) {
+					if (isIncrementalSearching()) {
 						applyFilter();
 						return true;
 					}
@@ -4724,7 +4731,7 @@ void MainWindow::chooseRepository()
 
 void MainWindow::on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int /*column*/)
 {
-	if (ui->treeWidget_repos->isFiltered()) {
+	if (isIncrementalSearching()) {
 		_chooseRepository(item);
 	} else {
 		openSelectedRepository();
@@ -6228,8 +6235,9 @@ void MainWindow::setIncrementalSearchText(QString const &text, int repo_list_sel
 	// qDebug() << text;
 	FilterTarget ft = filtertarget();
 
-	if (global->incremental_search_text.isEmpty() && !text.isEmpty()) {
+	if (!isIncrementalSearching() && !text.isEmpty()) {
 		if (ft == FilterTarget::RepositorySearch) {
+			// nop
 		} else if (ft == FilterTarget::CommitLogSearch) {
 			m->before_search_row = ui->tableWidget_log->currentRow();
 		}
@@ -6268,7 +6276,7 @@ void MainWindow::clearFilterText(int repo_list_select_row)
  */
 void MainWindow::clearAllFilters(int select_row)
 {
-	if (global->incremental_search_text.isEmpty()) return;
+	if (!isIncrementalSearching()) return;
 
 	clearFilterText(select_row);
 	updateStatusBarText();
@@ -6376,11 +6384,16 @@ void MainWindow::on_action_push_all_tags_triggered()
 void MainWindow::on_tableWidget_log_doubleClicked(const QModelIndex &index)
 {
 	int i = selectedLogIndex();
-
+	
+	bool filtered = isIncrementalSearching(); // 現在フィルタ中？
+	
 	clearAllFilters();
-
 	ui->tableWidget_log->setCurrentRow(i);
-
+	
+	if (filtered) return; // フィルタ解除して戻るだけ
+	
+	// フィルタ中でなければ、コミットプロパティダイアログを表示する
+	
 	GitCommitItem const &commit = commitItem(i);
 	if (commit) {
 		execCommitPropertyDialog(this, commit);

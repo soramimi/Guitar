@@ -294,6 +294,7 @@ private:
 			o.text.clear();
 			MyTableWidgetDelegate::paint_bg(painter, o, index);
 			IncrementalSearch::fillFilteredBG(painter, opt.rect);
+			opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget); // 選択枠
 			IncrementalSearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
 		} else {
 			MyTableWidgetDelegate::paint(painter, opt, index);

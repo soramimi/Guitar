@@ -719,7 +719,9 @@ public:
 	void setCommitLog(const CommitLogExchangeData &exdata);
 	bool saveFileAs(QString const &srcpath, QString const &dstpath);
 	bool saveBlobAs(const GitHash &id, QString const &dstpath);
-
+	
+	bool isIncrementalSearching() const;
+	
 	static void openTerminal(QString const &dir, QString const &ssh_key);
 	static void openExplorer(QString const &dir, QString const &ssh_key);
 	static void openNewGuitar(QString const &path, QString const &commit_id);
