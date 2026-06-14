@@ -36,10 +36,12 @@ void CommitPropertyDialog::init()
 
 	ui->pushButton_jump->setVisible(false);
 
+	const GitHash commit_id = m->commit.commit_id;
+	
 	std::string message = m->commit.message;
 	QString detail;
 	{
-		std::string s = mainwindow()->git().queryEntireCommitMessage(m->commit.commit_id);
+		std::string s = mainwindow()->git().queryEntireCommitMessage(commit_id);
 		if (misc::starts_with(s, message)) {
 			s = s.substr(message.length());
 		}
@@ -52,7 +54,7 @@ void CommitPropertyDialog::init()
 	}
 	
 	ui->lineEdit_message->setText((QS)message);
-	ui->lineEdit_commit_id->setText((QS)m->commit.commit_id.toString());
+	ui->lineEdit_commit_id->setText((QS)commit_id.toString());
 	ui->lineEdit_date->setText((QS)m->commit.commit_date.toString());
 	ui->lineEdit_author->setText((QS)m->commit.author);
 	ui->lineEdit_mail->setText((QS)m->commit.email);
@@ -63,7 +65,7 @@ void CommitPropertyDialog::init()
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
-	std::optional<GitCommitItem> sig = mainwindow()->git().log_signature(m->commit.commit_id);
+	std::optional<GitCommitItem> sig = mainwindow()->git().log_signature(commit_id);
 	if (sig) {
 		QString status;
 		QString sig_name;
@@ -114,6 +116,12 @@ void CommitPropertyDialog::init()
 		ui->lineEdit_sign_name->setText(sig_name);
 		ui->lineEdit_sign_mail->setText(sig_mail);
 		ui->textEdit_sign_text->setPlainText((QS)sig->sign.text);
+		{ // 署名アイコン
+			QIcon icon = mainwindow()->signatureVerificationIcon(commit_id);
+			QSize size = ui->widget_sign_icon->size();
+			QImage image = icon.pixmap(size).toImage();
+			ui->widget_sign_icon->setImage(image);
+		}
 		ui->frame_sign->setVisible(true);
 	} else {
 		ui->frame_sign->setVisible(false);
