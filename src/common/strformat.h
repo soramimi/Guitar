@@ -480,125 +480,6 @@ private:
 	}
 	//
 #ifndef STRFORMAT_NO_FP
-#if 0
-	Part *format_double(double val, int precision, bool trim_zeros, bool plus)
-	{
-		if (std::isnan(val)) return alloc_part("#NAN");
-		if (std::isinf(val)) return alloc_part("#INF");
-
-		char *ptr, *end;
-
-		char *dot = nullptr;
-
-		bool sign = val < 0;
-		if (sign) {
-			val = -val;
-		}
-
-		double intval = floor(val);
-		val -= intval;
-
-		int intlen = 0;
-		if (intval == 0) {
-			ptr = end = (char *)alloca(precision + 10) + 5;
-		} else {
-			double t = intval;
-			do {
-				t = floor(t / 10);
-				intlen++;
-			} while (t != 0);
-			ptr = end = (char *)alloca(intlen + precision + 10) + intlen + 5;
-		}
-
-		if (precision > 0) {
-			dot = end;
-			*end++ = decimal_point();
-			double v = val;
-			int e = 0;
-			while (v > 0 && v < 1) {
-				v *= 10;
-				e++;
-			}
-			while (v >= 1) {
-				v /= 10;
-				e--;
-			}
-			double add = 0.5;
-			for (int i = 0; i < precision - e; i++) {
-				add /= 10;
-			}
-			v += add;
-			double t = floor(v);
-			intval += t;
-			v -= t;
-			int i = 0;
-			int n = intlen;
-			int r = std::min(e, precision);
-			while (i < r) {
-				*end++ = '0';
-				if (n != 0) {
-					n++;
-				}
-				i++;
-			}
-			while (i < precision) {
-				if (n < 16) {
-					v *= 10;
-					double m = floor(v);
-					v -= m;
-					*end++ = (char)m + '0';
-				} else {
-					*end++ = '0';
-				}
-				n++;
-				i++;
-			}
-		} else {
-			intval += floor(val + 0.5);
-		}
-
-		intlen = 0;
-		double t = intval;
-		do {
-			t = floor(t / 10);
-			intlen++;
-		} while (t != 0);
-
-		if (intval == 0) {
-			*--ptr = '0';
-		} else {
-			double t = intval;
-			for (int i = 0; i < intlen; i++) {
-				t /= 10;
-				double u = floor(t);
-				*--ptr = (char)((t - u) * 10 + 0.49) + '0';
-				t = u;
-			}
-		}
-
-		if (sign) {
-			*--ptr = '-';
-		} else if (plus) {
-			*--ptr = '+';
-		}
-
-		if (trim_zeros && dot) {
-			while (dot < end) {
-				char c = end[-1];
-				if (c == '.') {
-					end--;
-					break;
-				}
-				if (c != '0') {
-					break;
-				}
-				end--;
-			}
-		}
-
-		return alloc_part(ptr, end);
-	}
-#endif
 	Part *format_double(double val, int precision, bool trim_zeros, bool plus)
 	{
 		if (std::isnan(val)) return alloc_part("#NAN");
@@ -835,7 +716,7 @@ private:
 	}
 private:
 	struct Private {
-		std::string text;
+		std::string_view text;
 		char const *head;
 		char const *next;
 		PartList list;
@@ -1260,7 +1141,7 @@ public:
 	string_formatter &reset(int flags, std::string_view text)
 	{
 		clear();
-		q.text = text;
+		q.text = text.empty() ? std::string_view("") : text;
 		q.head = q.text.data();
 		q.next = q.head;
 
@@ -1268,17 +1149,6 @@ public:
 		use_locale(flags & Locale);
 #endif
 
-		return *this;
-	}
-
-	string_formatter &append(std::string_view s)
-	{
-		q.text += s;
-		return *this;
-	}
-	string_formatter &append(char const *s)
-	{
-		q.text += s;
 		return *this;
 	}
 
