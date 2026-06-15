@@ -1942,15 +1942,17 @@ bool MainWindow::_addExistingLocalRepository(QString dir, QString name, QString 
 	// 要求されたパスとリポジトリのルートディレクトリが異なる場合は、ユーザーに確認する
 	std::string requested_dir = (misc::str)dir; // 要求されたパス
 	if (!IsValidWorkingCopy(requested_dir)) {
-		QFileInfo info(dir);
-		if (info.isFile()) {
-			dir = info.absoluteDir().absolutePath(); // ファイルが指定された場合は、その親ディレクトリをリポジトリのパスとする
-		} else if (info.isDir()) {
-			dir = info.absoluteFilePath();
-		}
 		GitRunner g = new_git_runner(dir, {});
 		const std::string toplevel_dir = g.rev_parse_show_toplevel(); // リポジトリのルートディレクトリ
-		if (requested_dir != toplevel_dir) { // 要求されたパスとリポジトリのルートディレクトリが異なる場合はエラー
+		if (toplevel_dir.empty()) {
+			// pass: 下で initialize repository へ入る想定
+		} else if (requested_dir != toplevel_dir) { // 要求されたパスとリポジトリのルートディレクトリが異なる場合はエラー
+			QFileInfo info(dir);
+			if (info.isFile()) {
+				dir = info.absoluteDir().absolutePath(); // ファイルが指定された場合は、その親ディレクトリをリポジトリのパスとする
+			} else if (info.isDir()) {
+				dir = info.absoluteFilePath();
+			}
 			auto r = QMessageBox::question(this,
 										   tr("Add Repository"),
 										   tr("The specified folder is not the root of the git repository.")
