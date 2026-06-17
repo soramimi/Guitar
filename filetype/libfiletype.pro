@@ -12,6 +12,8 @@ CONFIG -= qt
 
 DEFINES += ONIG_STATIC=1 HAVE_CONFIG_H=1
 
+DEFINES += DLLEXPORT=__declspec(dllexport)
+
 msvc:INCLUDEPATH += file-msvc
 gcc:INCLUDEPATH += file-gcc
 INCLUDEPATH += file
@@ -28,6 +30,18 @@ msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/file.lib $$PWD/lib/oniguru
 msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/onigurumad.lib
 !msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/libfile.a $$PWD/lib/liboniguruma.a
 !msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/libfiled.a $$PWD/lib/libonigurumad.a
+
+# zlib
+
+msvc {
+	LIBS += -lzlib
+	LIBS += -lzstd
+}
+
+!msvc {
+	LIBS += -lz
+	LIBS += -lzstd
+}
 
 #
 

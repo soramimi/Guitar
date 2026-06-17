@@ -36,6 +36,10 @@ public:
 	Result detect(const char *data, size_t size, int filemode = 0644) const;
 };
 
-extern "C" int hoge(int a, int b);
+#ifndef DLLEXPORT
+#define DLLEXPORT __declspec(dllimport)
+#endif
+
+extern "C" DLLEXPORT int hoge(int a, int b);
 
 #endif // FILETYPE_H

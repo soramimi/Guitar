@@ -23,7 +23,11 @@
 #include <IncrementalSearchInterface.h>
 #include "Logger.h"
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
@@ -197,37 +201,93 @@ int main(int argc, char *argv[])
 	}
 	
 	// experimental shared library loading test
+	class MyLibrary {
+	private:
+		typedef FARPROC fnptr_t;
+		struct {
 #ifdef Q_OS_WIN
-	{
-		HMODULE hLib = LoadLibraryA("filetype.dll");
-		if (!hLib) {
-			logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
+			HMODULE hLib = nullptr;
+#else
+			void *hLib = nullptr;
+#endif
+
+		} d;
+		struct {
+			int (*hoge)(int a, int b) = nullptr;
+		} fn;
+		bool _open()
+		{
+			std::string libname = "filetype";
+#ifdef Q_OS_WIN
+			{
+				d.hLib = LoadLibraryA((libname + ".dll").c_str());
+				if (!d.hLib) {
+					logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
+					return false;
+				}
+				struct {
+					char const *name;
+					fnptr_t &ptr;
+				} table[] = {
+					{ "hoge", (fnptr_t &)fn.hoge },
+				};
+				for (auto &e : table) {
+					e.ptr = GetProcAddress(d.hLib, e.name);
+					if (!e.ptr) {
+						logprintf(LOG_DEFAULT, "Failed to find symbol %s in filetype.dll: %d", e.name, GetLastError());
+						return false;
+					}
+				}
+			}
+#else
+			{
+				d.hLib = dlopen("libfiletype.so", RTLD_NOW | RTLD_GLOBAL);
+				if (!d.hLib) {
+					logprintf(LOG_DEFAULT, "Failed to load libfiletype.so: %s", dlerror());
+					return false;
+				}
+				(void *&)fn.hoge = dlsym(d.hLib, "hoge");
+				if (!fn.hoge) {
+					logprintf(LOG_DEFAULT, "Failed to find symbol hoge in libfiletype.so: %s", dlerror());
+					return false;
+				}
+			}
+#endif
+			return true;
 		}
-		typedef int (*HogeFunc)(int a, int b);
-		HogeFunc fn_hoge = (HogeFunc)GetProcAddress(hLib, "hoge");
-		if (!fn_hoge) {
-			logprintf(LOG_DEFAULT, "Failed to find symbol hoge in filetype.dll: %d", GetLastError());
-		} else {
-			int n = fn_hoge(12, 34);
+	public:
+		MyLibrary() = default;
+		~MyLibrary()
+		{
+		}
+		bool open()
+		{
+			if (_open()) {
+				return true;
+			} else {
+				close();
+				return false;
+			}
+		}
+		void close()
+		{
+			d = {};
+			fn = {};
+		}
+		void run()
+		{
+			assert(fn.hoge);
+			int n = fn.hoge(12, 34);
 			fprintf(stderr, "filetype.dll: hoge(12, 34) = %d\n", n);
 		}
-	}
-#else	
+	};
 	{
-		void *so_libfiletype = dlopen("libfiletype.so", RTLD_NOW | RTLD_GLOBAL);
-		if (!so_libfiletype) {
-			logprintf(LOG_DEFAULT, "Failed to load libfiletype.so: %s", dlerror());
-		}
-		int (*fn_hoge)(int a, int b);
-		if (!fn_hoge) {
-			logprintf(LOG_DEFAULT, "Failed to find symbol hoge in libfiletype.so: %s", dlerror());
-		} else {
-			(void *&)fn_hoge = dlsym(so_libfiletype, "hoge");
-			int n = fn_hoge(12, 34);
-			fprintf(stderr, "libfiletype.so: hoge(12, 34) = %d\n", n);
+		MyLibrary lib;
+		if (lib.open()) {
+			lib.run();
 		}
 	}
-#endif	
+
 	
 	global->init2();
 
