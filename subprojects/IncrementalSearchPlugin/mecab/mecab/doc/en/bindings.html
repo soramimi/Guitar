@@ -1,0 +1,391 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>MeCab: Yet Another Japanese Dependency Structure Analyzer</title>
+
+<link rel="stylesheet" href="bindings_files/mecab.css"></head><body>
+
+<h1>スクリプト言語のバインディング -- Bindings for scripting languages</h1>
+<p>$Id: bindings.html,v 1.3 2006/01/07 14:37:40 taku-ku Exp $;</p>
+<p>English translation: Eric Nichols &lt; eric-n --at-- is.naist.jp &gt;</p>
+
+<h2>概要 -- Outline</h2>
+<p>
+各種スクリプト言語
+(<a href="http://www.perl.com/">perl</a>, 
+<a href="http://www.ruby-lang.org/">ruby</a>, 
+<a href="http://www.python.org/">python</a>, 
+<a href="http://java.sun.com/">Java</a>)
+から, MeCab が提供する形態素解析の機能を利用可能です.
+各バインディングは <a href="http://www.swig.org/">SWIG</a> というプログラ
+ムを用いて, 自動生成されています. <a href="http://www.swig.org/">SWIG</a> がサポートする他の言語も
+生成可能だと思われますが, 現在は, 作者の管理できる範囲内ということで, 
+上記の4つの言語のみを提供しております.
+</p>
+
+<p>
+The functions for morphological analysis provided by MeCab can be used
+from various scripting languages (<a href="http://www.perl.com/">perl</a>, 
+<a href="http://www.ruby-lang.org/">ruby</a>, 
+<a href="http://www.python.org/">python</a>, 
+<a href="http://java.sun.com/">Java</a>).
+Each of these bindings was generated automatically using a program
+called <a href="http://www.swig.org/">SWIG</a>. Bindings can likely be
+generated for the other languages supported
+by <a href="http://www.swig.org/">SWIG</a>, however, at this time, in
+order to keep things manageable, they are only provided for the above
+four languages. 
+</p>
+
+<h2>インストール -- Installation</h2>
+<p>
+各言語バイディングのインストール方法は, perl/README, ruby/README, python/README,
+java/README を御覧下さい.
+</p>
+
+<p>
+Consult perl/README, ruby/README, python/README, and java/README for
+installation instructions for each language's binding.
+</p>
+
+
+<h2>とりあえず解析する -- Example usage</h2>
+<p>
+MeCab::Tagger というクラスのインスタンスを生成し, parse (もしくは
+parseToString) というメソッドを呼ぶことで, 解析結果が文字列として取得できます.
+MeCab::Tagger のコンストラクタの引数は, 基本的に mecab の実行形式に与え
+るパラメータと同一で, それらを文字列として与えます.
+</p>
+
+<p>
+By creating an instance of MeCab::Tagger and calling the method parse
+(or parseToString), parse results can be acquired in string form.
+The arguments of MeCab::Tagger 's constructor are basically the same
+as the parameters of mecab's command line form and are supplied as a
+string.
+</p>
+
+<h3>perl</h3>
+<pre>use MeCab;
+$m = new MeCab::Tagger ("-Ochasen");
+print $m-&gt;parse ("今日もしないとね");
+</pre>
+
+<h3>ruby</h3>
+<pre>require 'MeCab'
+m = MeCab::Tagger.new ("-Ochasen")
+print m.parse ("今日もしないとね")
+</pre>
+
+<h3>python</h3>
+<pre>import sys
+import MeCab
+m = MeCab.Tagger ("-Ochasen")
+print m.parse ("今日もしないとね")
+</pre>
+
+<h3>Java</h3>
+<pre>import org.chasen.mecab.Tagger;
+import org.chasen.mecab.Node
+ public static void main(String[] argv) {
+ Tagger tagger = new Tagger ("-Ochasen");
+ System.out.println (tagger.parse ("太郎は二郎にこの本を渡した.")); 
+}
+</pre>
+
+<h2>各形態素の詳細情報を取得する -- Acquiring detailed information from each morpheme</h2>
+<p>
+MeCab::Tagger クラスの, parseToNode という
+メソッドを呼ぶことで, 「文頭」という特別な形態素が MeCab::Node クラスのインスタンスとして
+取得できます.
+</p>
+
+<p>
+By calling the parseToNode function from the MeCab::Tagger class, a
+special morpheme called "Beginning of sentence" can be acquired as an
+instance of the MeCab::Node class.
+</p>
+
+<p>
+MeCab::Node は, 双方向リストとして表現されており, next, prev というメン
+バ変数があります. それぞれ, 次の形態素, 前の形態素を MeCab::Node クラスのインスタンスとして
+返します. 全形態素には, next を順次呼ぶことでアクセスできます.
+</p>
+
+<p>
+MeCab::Node is represented as a doubly-linked list and has the member
+functions prev and next. They return the previous and following
+morphemes respectively as instances of the MeCab::Node class. All of
+the morphemes can be accessed by calling next in succession.
+</p>
+
+<p>MeCab::Node は C 言語のインタフェイスで提供している mecab_node_t をラッ
+プしたクラスです. mecab_node_t が持つほぼすべてのメンバ変数にアクセスす
+ることができます. ただし, surface のみ, 単語そのものが返るように変更して
+います.</p>
+
+<p>
+MeCab::Node is a wrapper class of the mecab_node_t interface provided
+in the C language. Almost all of mecab_node_t's member functions can
+be accessed with the exception that only the surface function has be
+altered to return the word's orthography as it is.
+</p>
+
+<p>
+以下に <a href="http://www.perl.com/">perl</a> の例を示します. この例では, 
+各形態素を順次にアクセスし,形態素の表層文字列, 品詞, その形態素までのコストを表示します.
+</p>
+
+<p>
+Consider the following <a href="http://www.perl.com/">perl</a>. In
+this example, the morphemes are accessed sequentially, and the surface
+string (orthography), part-of-speech, and cost up to that morpheme are
+displayed.
+</p>
+
+<pre>use MeCab;
+my $m = new MeCab::Tagger ("");
+
+for (my $n = $m-&gt;parseToNode ("今日もしないとね"); $n ; $n = $n-&gt;{next}) {
+   printf ("%s\t%s\t%d\n",
+            $n-&gt;{surface},          # 表層 -- word's orthography
+	    $n-&gt;{feature},          # 現在の品詞 -- current part-of-speech
+	    $n-&gt;{cost}              # その形態素までのコスト -- cost up to current morpheme
+	    );
+}
+</pre>
+
+<h2>エラー処理 -- Error handling</h2>
+<p>
+もし, コンストラクタや, 解析途中でエラーが起きた場合は, 
+RuntimeError 例外が発生します. 
+例外のハンドリングの方法は, 各言語のリファレンスマニュアルを
+ごらんください. 以下は, <a href="http://www.python.org/">python</a> の例です
+</p>
+
+<p>
+In the event an error occurs in the constructor or during parsing, a 
+RuntimeError exception is produced. Consult the documentation for
+information on exception handling in each of the scripting languages.
+The following is an example in <a href="http://www.python.org/">python</a>. 
+</p>
+
+<pre>try:
+    m = MeCab.Tagger ("-d .")
+    print m.parse ("今日もしないとね")
+except RuntimeError, e:
+    print "RuntimeError:", e
+</pre>
+
+
+<h2>注意事項 -- Items of Caution</h2>
+<h3>文頭,文末形態素 Beginning- and end-of-sentence morphemes</h3>
+<p>
+    parseToNode の返り値は, 「文頭」という特別な形態素を示す MeCab::Node
+    インタンスです. さらに, 「文末」という特別な形態素も存在いたしますので,
+    注意してください. もし, これらを無視したい場合は, 以下のように
+    next でそれぞれを読み飛ばしてください.
+</p>
+
+<p>
+
+The return value of parseToNode is an instance of MeCab::Node that
+represents the special beginning-of-sentence morpheme. Furthermore,
+there is also a end-of-sentence morpheme, so be aware of them. If you
+want to ignore these, you can skip over them in the following manner:
+
+</p>
+
+<pre>my $n = $m-&gt;parseToNode ("今日もしないとね"); 
+$n = $n-&gt;{next}; # 「文頭」を無視 -- ignore "beginning-of-sentence"
+
+while ($n-&gt;{next}) { # next を調べる -- check for next node
+  printf ("%s\n", $n-&gt;{surface});
+  $n = $n-&gt;{next}; # 次に移動 -- move to next node
+}
+</pre>
+   
+
+
+<h3>MeCab::Node の振舞い -- Behavior of MeCab::Node</h3>
+<p>
+MeCab::Node の実体(メモリ上にある形態素情報)は, 
+MeCab::Tagger インスタンスが管理しています. MeCab::Node は,
+Node の実体を指している<b>参照</b>にすぎません. そのために, parseToNode が
+呼ばれる度に, 実体そのものが, 上書きされていきます. 以下のような例はソースの意図する通りには動きません.
+</p>
+ 
+<p>
+The contents of MeCab::Node (i.e. the morphological information stored
+in memory) are managed by the MeCab::Tagger interface. MeCab::Node is
+nothing more than a reference to the contents of a Node. Because of
+this, when parseToNode is called, these contents are overwritten. 
+Thus, the example given in the following code will not work as
+expected.
+</p>
+
+<pre>m = MeCab.Tagger ("")
+n1 = m.parseToNode ("今日もしないとね") 
+n2 = m.parseToNode ("さくさくさくら")
+
+# n1 の内容は無効になっている -- the contents of n1 are now inaccessible 
+while (n1.hasNode () != 0):
+   print n1.getSurface ()
+   n1 = n1.next ()
+</pre>
+
+<p>
+上記の例では, n1 の指す中身が, 「さくさくさくら」を解析した時点で
+上書きされており, 使用できなくなっています. 
+</p>
+
+<p>
+In the above example, the contents of n1 are overwritten as soon as "
+さくさくさくら" is parsed and become inaccessible.
+</p>
+
+<p>
+複数の Node を同時にアクセスしたい場合は, 複数の MeCab::Tagger インスタンスを生成してください.
+</p>
+
+<p>
+When you want to process multiple nodes simultaneously, you will need to
+create multiple instances of MeCab::Tagger.
+</p>
+
+<h2>全メソッド -- All methods</h2>
+<p>
+以下に, <a href="http://www.swig.org/">SWIG</a>用のインタフェースファイル
+の一部を示します. バイディングの実装言語の都合上, C++ のシンタックスで
+表記されていますが, 適宜読みかえてください. また, 各メソッドの動作も添え
+ていますので参考にしてください.
+</p>
+
+<p>
+
+The following is part of the interface file for <a href="http://www.swig.org/">SWIG</a>. 
+It is shown in C++ syntax, as that is the implementation language of the bindings.
+Make sure to read over it appropriately. The behavior of each method
+is also given, so consult them as necessary.
+
+</p>
+
+<pre>namespace MeCab {
+
+  class Tagger {
+
+     // str を解析して文字列として結果を得ます. len は str の長さ(省略可能)
+     // Parse str and get the results as a string. len is the length of str (can be omitted)
+     string parse(string str, int len);
+  
+     // parse と同じ
+     // Same as parse
+     string parseToString(string str, int len);
+  
+     // str を解析して MeCab::Node 型の形態素を返します. 
+     // この形態素は文頭を示すもので, next を順に辿ることで全形態素にアクセスできます
+     // Parse str and return a morpheme in the form of MeCab::Node
+     // This morpheme represents the beginning of the sentence.
+     // All of the morphemes can be accessed by following next in order.
+     Node parseToNode(string str, int len);
+  
+     // parse の Nbest 版です. N に nbest の個数を指定します.
+     // この機能を使う場合は, 起動時オプションとして -l 1 を指定する必要があります
+     // An Nbest version of parse. N specifies the number of parses.
+     // It is necessary to specify the option -l 1 at initialization when this function is used
+     string parseNBest(int N, string str, int len);
+  
+     // 解析結果を, 確からしいものから順番に取得する場合にこの関数で初期化を行います.
+     // When parse results are accessed from most likely result in succession,
+     // this function will carry out reinitialization. 
+     bool  parseNBestInit(string str, int len);
+  
+     // parseNbestInit() の後, この関数を順次呼ぶことで, 確からしい解析結果を, 順番に取得できます.
+     // After calling parseNbestInit, results can be accessed in order from most likely
+     // by calling this function
+     string next();
+  
+     // next() と同じですが, MeCab::Node を返します.
+     // Same as next() but returns a MeCab::Node
+     Node  nextNode();
+  };
+  
+  #define MECAB_NOR_NODE  0
+  #define MECAB_UNK_NODE  1
+  #define MECAB_BOS_NODE  2
+  #define MECAB_EOS_NODE  3
+  
+  struct Node {
+
+    struct Node  prev;  // 一つ前の形態素へのポインタ
+                        // pointer to previous morpheme
+    struct Node  next;  // 一つ先の形態素へのポインタ
+                        // pointer to next morpheme
+    
+    struct Node  enext; // 同じ位置で終わる形態素へのポインタ
+                        // pointer to next morpheme that ends at same location
+    struct Node  bnext; // 同じ開始位置で始まる形態素へのポインタ
+                        // pointer to next morpheme that begins at same location 
+  
+    string surface;             // 形態素の文字列情報
+                                // orthography of morpheme in string form
+  			      
+    string feature;             // CSV で表記された素性情報
+                                // feature information in CSV format
+    unsigned int   length;      // 形態素の長さ
+                                // length of morpheme
+    unsigned int   rlength;     // 形態素の長さ(先頭のスペースを含む)
+                                // length of morpheme (including any leading space)
+    unsigned int   id;          // 形態素に付与される ユニークID
+                                // unique ID for each morpheme
+    unsigned short rcAttr;      // 右文脈 id
+                                // ID for context on right
+    unsigned short lcAttr;      // 左文脈 id
+                                // ID for context on left
+    unsigned short posid;       // 形態素 ID (未使用)
+                                // morpheme ID (no longer used)
+    unsigned char  char_type;   // 文字種情報
+                                // character type information
+    unsigned char  stat;        // 形態素の種類: 以下のマクロの値
+                                // morpheme type: one of the following macro values
+                                // #define MECAB_NOR_NODE  0
+                                // #define MECAB_UNK_NODE  1
+                                // #define MECAB_BOS_NODE  2
+                                // #define MECAB_EOS_NODE  3
+    unsigned char  isbest;      // ベスト解の場合 1, それ以外 0
+                                // 1 when best parse, 0 otherwise
+  
+    float          alpha;       // forward backward の foward log 確率
+                                // forward log probability of forward backward
+    float          beta;        // forward backward の backward log 確率 
+                                // backword log probability of forward backward
+    float          prob;        // 周辺確率
+                                // surrounding probability
+                                // alpha, beta, prob は -l 2 オプションを指定した時に定義されます
+                                // alpha, beta, and prob are defined when -l 2 is specified
+  
+    short          wcost;       // 単語生起コスト
+                                // word occurrence cost
+    long           cost;        // 累積コスト
+                                // cumulative cost
+  };
+}
+</pre>
+<h2>サンプルプログラム -- Sample programs</h2>
+<p>
+perl/test.pl, ruby/test.rb, python/test.py, java/test.java
+にそれぞれの言語のサンプルがありますので, 参考にしてください.
+</p>
+
+<p>
+There are sample programs in perl/test.pl, ruby/test.rb,
+python/test.py, and java/test.java for your reference.
+</p>
+
+<hr>
+<p>
+$Id: bindings.html,v 1.3 2006/01/07 14:37:40 taku-ku Exp $;
+</p>
+</body></html>

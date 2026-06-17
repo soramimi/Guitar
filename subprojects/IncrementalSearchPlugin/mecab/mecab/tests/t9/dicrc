@@ -1,0 +1,8 @@
+dictionary-charset = euc-jp
+cost-factor = 800
+bos-feature = _
+output-format-type=katakana
+
+node-format-katakana = %H
+unk-format-katakana = %M
+eos-format-katakana  = \n

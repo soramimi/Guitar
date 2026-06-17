@@ -1,0 +1,330 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/mecab.cpp)
+AH_TEMPLATE([HAVE_GCC_ATOMIC_OPS], [])
+AH_TEMPLATE([HAVE_OSX_ATOMIC_OPS], [])
+AH_TEMPLATE([HAVE_TLS_KEYWORD], [])
+AM_INIT_AUTOMAKE(mecab, 0.996)
+AC_CONFIG_MACRO_DIR([m4])
+
+# DIC_VERSION XXYY
+DIC_VERSION="102"
+
+# Before making a release, the LTVERSION string should be modified.
+# The string is of the form C:R:A.
+# - If interfaces have been changed or added, but binary compatibility has
+#   been preserved, change to C+1:0:A+1
+# - If binary compatibility has been broken (eg removed or changed interfaces)
+#   change to C+1:0:0
+# - If the interface is the same as the previous version, change to C:R+1:A
+LTVERSION="2:0:0"
+AC_SUBST(LTVERSION)
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_MAKE_SET
+AC_LIBTOOL_WIN32_DLL
+AM_PROG_LIBTOOL
+AC_ISC_POSIX
+AC_C_BIGENDIAN
+AC_CYGWIN
+AM_ICONV
+AC_LANG_CPLUSPLUS
+AC_LANG(C)
+AC_HEADER_STDC
+AC_C_CONST
+AC_C_BIGENDIAN
+AC_CHECK_HEADERS(string.h stdlib.h unistd.h fcntl.h stdint.h \
+		sys/stat.h sys/mman.h sys/times.h sys/types.h dirent.h \
+	        ctype.h sys/types.h io.h windows.h pthread.h)
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(size_t)
+AC_TYPE_SIZE_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+
+AC_FUNC_MMAP
+AC_CHECK_LIB(stdc++, main, MECAB_LIBS="-lstdc++")
+AC_CHECK_LIB(pthread,pthread_create)
+AC_CHECK_LIB(pthread,pthread_join)
+AC_CHECK_FUNCS(getenv)
+AC_CHECK_FUNCS(opendir)
+AC_LANG(C++)
+
+AC_ARG_ENABLE(utf8-only,
+[  --enable-utf8-only            use utf8 only [default no]])
+if test "$enable_utf8_only" = "yes"; then
+MECAB_USE_UTF8_ONLY="-DMECAB_USE_UTF8_ONLY"
+else
+MECAB_USE_UTF8_ONLY=""
+fi
+
+LIBS="$LIBS $MECAB_LIBS $LIBICONV"
+AC_SUBST(MECAB_LIBS)
+AC_SUBST(MECAB_USE_UTF8_ONLY)
+
+MECAB_LIBEXEC_DIR="$libexecdir/mecab"
+AC_SUBST(MECAB_LIBEXEC_DIR)
+
+dnl
+dnl Check for GNU make
+dnl
+AC_MSG_CHECKING(whether make is GNU Make)
+if $ac_make --version 2>/dev/null | grep '^GNU Make ' >/dev/null ; then
+        AC_MSG_RESULT(yes)
+else
+        AC_MSG_RESULT(no)
+        if test "$host_vendor" = "sun" ; then
+                AC_MSG_ERROR("SUN make does not work for building MeCab. Please install GNU make")
+        fi
+fi
+
+dnl
+dnl check gcc
+dnl
+if test -n "$GCC"; then
+   CFLAGS="-O3 -Wall "
+   CXXFLAGS="-O3 -Wall "
+fi
+
+dnl
+dnl check Char Code
+dnl
+AC_ARG_WITH(
+    charset,
+     [  --with-charset=charset  set default charset (euc/sjis/utf8))],
+     [CHARSET=${withval}], [CHARSET='euc']
+)
+CHARSET=$CHARSET
+AC_SUBST(CHARSET)
+
+dnl
+dnl check C++ features
+dnl
+AC_DEFUN(CHECK_CXX_STL, [
+  AC_MSG_CHECKING(if ${CXX-c++} supports stl <$1> (required))
+  AC_TRY_COMPILE(
+	[
+	  #include <$1>
+	], [
+	;
+	], [
+	  ac_stl_$1=yes
+	], [
+	  config_error=yes
+	  AC_WARN(${CXX-c++} stl <$1> does not work)
+        ])
+  AC_MSG_RESULT([$ac_stl_$1])
+])
+
+CHECK_CXX_STL(vector)
+CHECK_CXX_STL(list)
+CHECK_CXX_STL(map)
+CHECK_CXX_STL(set)
+CHECK_CXX_STL(queue)
+CHECK_CXX_STL(functional)
+CHECK_CXX_STL(algorithm)
+CHECK_CXX_STL(string)
+CHECK_CXX_STL(iostream)
+CHECK_CXX_STL(sstream)
+CHECK_CXX_STL(fstream)
+
+# check for const_cast
+AC_MSG_CHECKING([if ${CXX-c++} supports template <class T> (required)])
+AC_TRY_COMPILE(
+[
+   template <class T> T foo (T &i) { return i++; };
+],[
+   int i = 0;
+   double d = 0.0;
+   foo(i); foo(d);
+],[
+  ac_template=yes
+],[
+  AC_WARN(${CXX-c++} template <class T> does not work)
+  config_error=yes
+])
+AC_MSG_RESULT([$ac_template])
+
+# check for const_cast
+AC_MSG_CHECKING([if ${CXX-c++} supports const_cast<> (required)])
+AC_TRY_COMPILE(
+[
+   class foo;
+],[
+   const foo *c=0;
+   foo *c1=const_cast<foo*>(c);
+],[
+  ac_const_cast=yes
+],[
+  AC_WARN(${CXX-c++} const_cast<> does not work)
+  config_error=yes
+])
+AC_MSG_RESULT([$ac_const_cast])
+
+# check for static_cast<>
+AC_MSG_CHECKING(if ${CXX-c++} supports static_cast<> (required))
+AC_TRY_COMPILE(
+[
+   class foo;
+],[
+   foo *c = 0;
+   void *c1 = static_cast<void *>(c);
+],[
+  ac_static_cast=yes
+],[
+  AC_WARN(${CXX-c++} static_cast<> does not work)
+  config_error=yes
+])
+AC_MSG_RESULT([$ac_static_cast])
+
+# check for reinterpret_cast
+AC_MSG_CHECKING(if ${CXX-c++} supports reinterpret_cast<> (required))
+AC_TRY_COMPILE(
+[
+  int *a = 0;
+],[
+   char *p = reinterpret_cast<char *>(a);
+],[
+  ac_reinterpret_cast=yes
+],[
+  AC_WARN(${CXX-c++} reinterpret_cast<> does not work)
+  config_error=yes
+])
+AC_MSG_RESULT([$ac_reinterpret_cast])
+
+# check for namespaces
+AC_MSG_CHECKING(if ${CXX-c++} supports namespaces (required) )
+AC_TRY_COMPILE(
+[
+namespace Foo { struct A {}; }
+using namespace Foo;
+],[
+A a;
+],[
+ ac_namespaces=yes
+dnl AC_DEFINE(HAVE_CXX_NAMESPACE)
+],[
+ config_error=yes
+ ac_namespaces=no
+])
+AC_MSG_RESULT([$ac_namespaces])
+
+dnl __thread keyword
+AC_MSG_CHECKING([if ${CXX-c++} supports __thread (optional)])
+AC_TRY_COMPILE(
+[
+__thread int a = 0;
+],[
+  a = 10;
+],[
+ enable_tls=yes
+],[
+ enable_tls=no
+])
+AC_MSG_RESULT([$enable_tls])
+
+if test "$enable_tls" = "no"; then
+AC_MSG_WARN([__thread keyword is not supported on this environment. \
+Error handling of MeCab, e.g., MeCab::getLastError(), is not thread safe.])
+else
+AC_DEFINE([HAVE_TLS_KEYWORD])
+fi
+
+AC_MSG_CHECKING([if ${CXX-c++} supports template <class T> (required)])
+AC_TRY_COMPILE(
+[
+   template <class T> T foo (T &i) { return i++; };
+],[
+   int i = 0;
+   double d = 0.0;
+   foo(i); foo(d);
+],[
+  ac_template=yes
+],[
+  AC_WARN(${CXX-c++} template <class T> does not work)
+  config_error=yes
+])
+AC_MSG_RESULT([$ac_template])
+
+AC_MSG_CHECKING([if ${CXX-c++} supports GCC native atomic operations (optional)])
+AC_TRY_COMPILE(
+[
+#include <sched.h>
+],[
+  int a = 10;
+  __sync_fetch_and_add(&a, 10);
+  __sync_val_compare_and_swap(&a, 0, 10);
+  sched_yield();
+],[
+  enable_gcc_atomic_ops=yes
+],[
+  enable_gcc_atomic_ops=no
+])
+AC_MSG_RESULT([$enable_gcc_atomic_ops])
+if test "$enable_gcc_atomic_ops" = "yes"; then
+AC_DEFINE([HAVE_GCC_ATOMIC_OPS])
+fi
+
+AC_MSG_CHECKING([if ${CXX-c++} supports OSX native atomic operations (optional)])
+AC_TRY_COMPILE(
+[
+#include <libkern/OSAtomic.h>
+],[
+  int a = 10;
+  OSAtomicAdd32(10, &a);
+  OSAtomicCompareAndSwapInt(10, 0, &a);
+],[
+  enable_osx_atomic_ops=yes
+],[
+  enable_osx_atomic_ops=no
+])
+AC_MSG_RESULT([$enable_osx_atomic_ops])
+if test "$enable_osx_atomic_ops" = "yes"; then
+AC_DEFINE([HAVE_OSX_ATOMIC_OPS])
+fi
+
+AC_MSG_CHECKING(if ${CXX-c++} environment provides all required features)
+if test "x$config_error" = xyes ; then
+  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([Your compiler is not powerful enough to compile MeCab. \
+        If it should be, see config.log for more information of why it failed.])
+fi
+AC_MSG_RESULT([yes])
+
+case "$host_os" in
+ mingw* | os2*)
+  MECAB_DEFAULT_RC='c:\\\\Program Files\\\\mecab\\\\etc\\\\mecabrc'
+  CFLAGS="$CFLAGS -municode -DUNICODE -D_UNICODE"
+  CXXFLAGS="$CXXFLAGS -municode -DUNICODE -D_UNICODE"
+  ;;
+ *)
+  MECAB_DEFAULT_RC="$sysconfdir/mecabrc"
+  ;;
+esac
+
+AC_SUBST(MECAB_DEFAULT_RC)
+AC_SUBST(datarootdir)
+AC_SUBST(DIC_VERSION)
+
+AM_CONFIG_HEADER(config.h)
+AC_OUTPUT([
+            Makefile
+	    src/Makefile
+	    src/Makefile.msvc
+	    man/Makefile
+	    doc/Makefile
+	    tests/Makefile
+	    swig/version.h
+	    mecab.iss
+	    mecab-config
+	    mecabrc ],
+	    chmod +x mecab-config \
+	    )
+

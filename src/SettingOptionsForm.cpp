@@ -3,7 +3,7 @@
 #include "ApplicationGlobal.h"
 #include "EditProfilesDialog.h"
 #include <ai/GenerativeAI.h>
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 
 #include <QMessageBox>
 

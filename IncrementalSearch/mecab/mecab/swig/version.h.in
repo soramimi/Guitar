@@ -1,3 +1,0 @@
-namespace MeCab {
-#   define VERSION "@VERSION@"
-}

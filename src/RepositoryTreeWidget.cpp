@@ -1,6 +1,6 @@
 #include "RepositoryTreeWidget.h"
 #include "ApplicationGlobal.h"
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 #include "MainWindow.h"
 #include <common/joinpath.h>
 #include <QApplication>
@@ -14,10 +14,10 @@
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 private:
-	static void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text, IncrementalSearchFilter filter)
+	static void drawText(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, QString const &text, IncrementalSearchFilter const &filter)
 	{
 		if (filter) {
-			IncrementalSearch::drawText_filtered(painter, opt, rect, filter);
+			incrementalsearch::drawText_filtered(painter, opt, rect, filter);
 		} else {
 			int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
 			QRect r = rect;
@@ -34,15 +34,15 @@ private:
 				painter->setFont(smallfont);
 				painter->save();
 				painter->setOpacity(0.75);
-				IncrementalSearch::drawText(painter, opt, r, s);
+				incrementalsearch::drawText(painter, opt, r, s);
 				painter->restore();
 				int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
 				r.translate(w, 0);
 				painter->setFont(font);
 				painter->setPen(opt.palette.color(QPalette::Text));
-				IncrementalSearch::drawText(painter, opt, r, text.mid(i + 1));
+				incrementalsearch::drawText(painter, opt, r, text.mid(i + 1));
 			} else {
-				IncrementalSearch::drawText(painter, opt, r, text);
+				incrementalsearch::drawText(painter, opt, r, text);
 			}
 		}
 	}
@@ -61,7 +61,7 @@ public:
 
 		// 背景を描画
 		if (!filter.isEmpty()) {
-			IncrementalSearch::fillFilteredBG(painter, opt.rect);
+			incrementalsearch::fillFilteredBG(painter, opt.rect);
 		}
 		opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
 
@@ -188,7 +188,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
-			if (!IncrementalSearch::match(repo.name.toStdString(), filter)) continue;
+			if (!global->incremental_search->match(repo.name.toStdString(), filter)) continue;
 
 			RepositoryTreeWidgetItem *parent = nullptr;
 			{

@@ -1,0 +1,7 @@
+cost-factor = 800
+bos-feature = BOS/EOS
+output-format-type=yomi
+
+node-format-yomi = %H
+unk-format-yomi = %M
+eos-format-yomi  = \n

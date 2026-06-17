@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeCab辞書エディタ</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="header">
+  <h1>MeCab辞書エディタ</h1>
+</div>
+<div id="select-wrap">
+  <h2>編集する辞書ファイルを選択してください</h2>
+  <ul id="file-list"></ul>
+</div>
+<script>
+fetch('/api/dics').then(function(r) { return r.json(); }).then(function(files) {
+  var ul = document.getElementById('file-list');
+  if (!files || files.length === 0) {
+    var li = document.createElement('li');
+    li.textContent = 'dics/ フォルダにCSVファイルが見つかりません';
+    li.style.color = '#999';
+    ul.appendChild(li);
+    return;
+  }
+  files.forEach(function(f) {
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '/edit?file=' + encodeURIComponent(f);
+    a.textContent = f;
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+});
+</script>
+</body>
+</html>

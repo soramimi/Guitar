@@ -1,5 +1,5 @@
 #include "ApplicationGlobal.h"
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "SimpleQtIO.h"
@@ -12,7 +12,7 @@
 #include <QApplication>
 #include <QListWidgetItem>
 #include "Logger.h"
-#include "MyMecab.h"
+#include <MyMecab.h>
 
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
@@ -99,23 +99,24 @@ void ApplicationGlobal::init2()
 {
 	// インクリメンタル検索ライブラリを初期化
 
+#if 0
 	{ // mecab
 		{
-			std::string s = mecab.convert_roman_to_katakana("wagahaihanekodearu");
+			std::string s = global->incremental_search->convertRomajiToKatakana("wagahaihanekodearu");
 			if (s != "ワガハイハネコデアル") {
 				qDebug() << "Failed to convert romaji to katakana: " << QString::fromStdString(s);
 			}
-			if (!mecab.open("/dummy")) {
-				qDebug() << "Failed to load dictionary for MeCaSearch. This may cause some features to not work properly.";
+			if (!global->incremental_search->open("/dummy")) {
+				qDebug() << "Failed to load dictionary for IncrementalSearchPlugin. This may cause some features to not work properly.";
 			}
-			auto parts = mecab.parse("吾輩は猫である");
+			auto parts = global->incremental_search->parse("吾輩は猫である");
 			if (parts.size() != 5) {
-				qDebug() << "Failed to parse sentence with MeCaSearch. Expected 5 parts, got " << parts.size();
+				qDebug() << "Failed to parse sentence with IncrementalSearchPlugin. Expected 5 parts, got " << parts.size();
 			} else {
 				std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
 				for (size_t i = 0; i < parts.size(); i++) {
 					if (parts[i].text != expected[i]) {
-						qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+						qDebug() << "Failed to parse sentence with IncrementalSearchPlugin. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
 					}
 				}
 			}
@@ -124,14 +125,14 @@ void ApplicationGlobal::init2()
 			// カスタム辞書のテスト
 			// 「みみの」はオリジナル辞書には存在しないので、
 			// Custom.csv に「みみの」を定義している。
-			auto parts = mecab.parse("かわいいみみのちゃん");
+			auto parts = global->incremental_search->parse("かわいいみみのちゃん");
 			if (parts.size() != 3) {
-				qDebug() << "Failed to parse sentence with MeCaSearch. Expected 3 parts, got " << parts.size();
+				qDebug() << "Failed to parse sentence with IncrementalSearchPlugin. Expected 3 parts, got " << parts.size();
 			} else {
 				std::vector<std::string> expected = {"カワイイ", "ミミノ", "チャン"};
 				for (size_t i = 0; i < parts.size(); i++) {
 					if (parts[i].text != expected[i]) {
-						qDebug() << "Failed to parse sentence with MeCaSearch. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
+						qDebug() << "Failed to parse sentence with IncrementalSearchPlugin. Part " << i << ": expected \"" << QString::fromStdString(expected[i]) << "\", got \"" << QString::fromStdString(parts[i].text) << "\"";
 					}
 				}
 			}
@@ -144,7 +145,7 @@ void ApplicationGlobal::init2()
 #endif
 
 		MecabFilter f("atarasii");
-		IncrementalSearch::Result r = f.match("新しいフォルダ新しいフォルダ");
+		incrementalsearch::Result r = f.match("新しいフォルダ新しいフォルダ");
 		Q_ASSERT(r.match);
 		Q_ASSERT(r.parts.size() == 4);
 		Q_ASSERT(r.parts[0].match);
@@ -164,7 +165,35 @@ void ApplicationGlobal::init2()
 		Q_ASSERT(r.parts[3].end == 42);
 		Q_ASSERT(r.parts[3].text == "フォルダ");
 	}
-
+#endif
+	try {
+		// if (!global->incremental_search->open()) {
+		// 	throw QString("Failed to load dictionary for IncrementalSearchPlugin. This may cause some features to not work properly.");
+		// }
+		std::string s = global->incremental_search->convertRomajiToKatakana("wagahaihanekodearu");
+		if (s != "ワガハイハネコデアル") {
+			throw QString("Failed to convert romaji to katakana: ") + QString::fromStdString(s);
+		}
+		IncrementalSearchFilter filter = global->incremental_search->makeFilter("neko");
+		incrementalsearch::Result r = global->incremental_search->match("吾輩は猫である", filter);
+		if (!r) {
+			throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected match, got no match.");
+		}
+		if (!(r.parts.size() == 3)) {
+			throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected 3 parts, got " + QString::number(r.parts.size()));
+		}
+		if (!(r.parts[0].text == "吾輩は" && !r.parts[0].match)) {
+			throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 0 to be \"吾輩は\", got \"" + QString::fromStdString(r.parts[0].text) + "\"");
+		}
+		if (!(r.parts[1].text == "猫" && r.parts[1].match)) {
+			throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 1 to be \"猫\", got \"" + QString::fromStdString(r.parts[1].text) + "\"");
+		}
+		if (!(r.parts[2].text == "である" && !r.parts[2].match)) {
+			throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + QString::fromStdString(r.parts[2].text) + "\"");
+		}
+	} catch (QString const &e) {
+		qDebug() << e;
+	}
 
 	// グローバル画像リソースの読み込み
 
@@ -206,8 +235,11 @@ std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
 
 IncrementalSearchFilter ApplicationGlobal::makeIncrementalSearchFilter(std::string const &filtertext)
 {
+#if 0
 	return {std::make_shared<MecabFilter>(filtertext)};
-	return {std::make_shared<MecabFilter>(filtertext)};
+#else
+	return incremental_search->makeFilter(filtertext);
+#endif
 }
 
 bool ApplicationGlobal::isMainThread()

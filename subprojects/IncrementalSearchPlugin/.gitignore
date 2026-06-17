@@ -1,0 +1,14 @@
+mecab-test
+utf8dic/
+build/
+*.a
+*.o
+*.d
+.qtcreator/
+mecasearch.lib
+libmecasearch.a
+*.log
+*.lib
+*.bin
+*.dic
+

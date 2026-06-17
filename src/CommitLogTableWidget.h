@@ -5,8 +5,9 @@
 
 #include <memory>
 #include "RepositoryTreeWidget.h"
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 #include <QTableWidget>
+#include <IncrementalSearch.h>
 
 class MainWindow;
 class CommitLogTableWidget;

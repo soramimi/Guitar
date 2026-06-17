@@ -5,17 +5,18 @@
 #include "AvatarLoader.h"
 #include "FileTypeDetector.h"
 #include "Git.h"
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 #include "Theme.h"
 #include "TraceEventWriter.h"
 #include "filetype/src/FileType.h"
-#include <MyJagger.h>
+// #include <MyJagger.h>
 #include <QColor>
 #include <QString>
 #include <ai/GenerativeAI.h>
 #include <common/misc.h>
 #include <inet/curlclient.h>
 #include <inet/webclient.h>
+#include <IncrementalSearchInterface.h>
 
 class MainWindow;
 class QListWidgetItem;
@@ -114,10 +115,11 @@ public:
 
 	std::shared_ptr<AbstractInetClient> inet_client();
 
-	LibMecab mecab;
-#ifdef USE_EXPERIMENTAL_JAGGER
-	LibJagger jagger;
-#endif
+// 	MyMecab mecab;
+// #ifdef USE_EXPERIMENTAL_JAGGER
+// 	LibJagger jagger;
+// #endif
+	std::shared_ptr<IncrementalSearch> incremental_search;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
 	

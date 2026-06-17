@@ -1,0 +1,11 @@
+MeCab java module
+
+$Id: README,v 1.2 2005/12/25 16:55:43 taku-ku Exp $;
+
+1. Build UTF-8 dictionary
+
+2. How to use?
+
+  See test.java as sample program.
+
+  % java -classpath MeCab.jar test -d ../dic

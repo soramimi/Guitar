@@ -14,11 +14,13 @@
 #include <QDebug>
 #include <QDir>
 #include <QMessageBox>
+#include <QPluginLoader>
 #include <QProxyStyle>
 #include <QStandardPaths>
 #include <QTranslator>
 #include <csignal>
 #include <string>
+#include <IncrementalSearchInterface.h>
 #include "Logger.h"
 
 #ifndef APP_GUITAR
@@ -176,8 +178,22 @@ int main(int argc, char *argv[])
 	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 	// qputenv("QT_SCALE_FACTOR", "1.5");
-
+	
 	QApplication a(argc, argv);
+	{
+		qDebug() << QDir::currentPath();
+		QPluginLoader loader("incrementalsearchplugin");
+		IncrementalSearchInterface *plugin = dynamic_cast<IncrementalSearchInterface *>(loader.instance());
+		if (plugin) {
+			global->incremental_search = std::shared_ptr<IncrementalSearch>(plugin->create());
+			if (!global->incremental_search->open()) {
+				logprintf(LOG_DEFAULT, "Incremental Search plugin is loaded but failed to open. This may cause some features to not work properly.");
+			}
+		} else {
+			logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
+		}
+	}
+	
 	global->init2();
 
 	QApplication::setOrganizationName(global->organization_name);
@@ -194,6 +210,7 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");
 	qRegisterMetaType<CommitRecord>("CommitRecord");
 	qRegisterMetaType<StatusInfo>("StatusInfo");
+
 
 	{
 		MySettings s;

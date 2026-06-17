@@ -9,6 +9,7 @@
 #include <QPainterPath>
 #include <cmath>
 #include <common/q/helper.h>
+#include <IncrementalSearchHelper.h>
 
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
 {
@@ -117,7 +118,7 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 		for (size_t i = 0; i < n; i++) {
 			bool match = [&](){
 				auto Match = [&](QString const &s){
-					return IncrementalSearch::match(s.toStdString(), getIncrementalSearchFilter());
+					return global->incremental_search->match(s.toStdString(), getIncrementalSearchFilter());
 				};
 				CommitRecord const *r = records_.record(i);
 				Q_ASSERT(r);
@@ -293,9 +294,9 @@ private:
 			QStyleOptionViewItem o = opt;
 			o.text.clear();
 			MyTableWidgetDelegate::paint_bg(painter, o, index);
-			IncrementalSearch::fillFilteredBG(painter, opt.rect);
+			incrementalsearch::fillFilteredBG(painter, opt.rect);
 			opt.widget->style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget); // 選択枠
-			IncrementalSearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
+			incrementalsearch::drawText_filtered(painter, opt, opt.rect, tablewidget->model_->getIncrementalSearchFilter());
 		} else {
 			MyTableWidgetDelegate::paint(painter, opt, index);
 		}

@@ -39,7 +39,6 @@ INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
-INCLUDEPATH += $$PWD/IncrementalSearch/mecab/mecab/src/
 INCLUDEPATH += $$PWD/filetype/src/
 
 msvc:INCLUDEPATH += $$PWD/misc/winpty/include
@@ -91,19 +90,9 @@ msvc {
 
 include(libfiletype.pri)
 
-# experimental: MeCaSearch
+# Incremental Search
 
-INCLUDEPATH += IncrementalSearch/
-
-!msvc:CONFIG(release, debug|release):!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearch.a
-!msvc:CONFIG(debug, debug|release):!msvc:LIBS += $$PWD/IncrementalSearch/libmecasearchd.a
-msvc:CONFIG(release, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearch.lib
-msvc:CONFIG(debug, debug|release):LIBS += $$PWD/IncrementalSearch/mecasearchd.lib
-
-# CONFIG += use_experimental_jagger
-use_experimental_jagger {
-    DEFINES += USE_EXPERIMENTAL_JAGGER
-}
+INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
 
 #
 
@@ -122,6 +111,7 @@ macx {
 }
 
 SOURCES += \
+	$$PWD/src/IncrementalSearchHelper.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
@@ -189,7 +179,6 @@ SOURCES += \
 	$$SRC/GitTypes.cpp \
 	$$SRC/HyperLinkLabel.cpp \
 	$$SRC/ImageViewWidget.cpp \
-	$$SRC/IncrementalSearch.cpp \
 	$$SRC/InputNewTagDialog.cpp \
 	$$SRC/JumpDialog.cpp \
 	$$SRC/Languages.cpp \
@@ -305,6 +294,7 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/IncrementalSearchHelper.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \
@@ -371,7 +361,6 @@ HEADERS += \
 	$$SRC/GitTypes.h \
 	$$SRC/HyperLinkLabel.h \
 	$$SRC/ImageViewWidget.h \
-	$$SRC/IncrementalSearch.h \
 	$$SRC/InputNewTagDialog.h \
 	$$SRC/JumpDialog.h \
 	$$SRC/Languages.h \
@@ -636,4 +625,5 @@ use_libcurl {
 	SOURCES += $$SRC/inet/curlclient.cpp
 	HEADERS += $$SRC/inet/curlclient.h
 }
+
 

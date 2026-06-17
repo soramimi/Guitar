@@ -1,0 +1,7 @@
+cost-factor = 800
+bos-feature = BOS/EOS
+output-format-type=autolink
+
+node-format-autolink = <a href="%H">%M</a>
+unk-format-autolink = %M
+eos-format-autolink = \n

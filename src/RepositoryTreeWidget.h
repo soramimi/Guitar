@@ -1,7 +1,7 @@
 #ifndef REPOSITORYTREEWIDGET_H
 #define REPOSITORYTREEWIDGET_H
 
-#include "IncrementalSearch.h"
+#include "IncrementalSearchHelper.h"
 #include "RepositoryInfo.h"
 #include <QTreeWidget>
 
