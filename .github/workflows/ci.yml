@@ -42,17 +42,16 @@ jobs:
         ls -la lib
         cd ..
 
-    - name: Build libmecasearch
+    - name: Build incrementalsearchPlugin
       run: |
-        ./ci/mecab.sh
-        cd IncrementalSearch
+        cd subprojects/IncrementalSearchPlugin
         rm -fr build
         mkdir build
         cd build
-        qmake6 ../libmecasearch.pro
+        qmake6 ../IncrementalSearchPlugin.pro
         make
-        cd ..
-        ls libmecasearch.a
+        cd ../../../_bin
+        ls libincrementalsearchplugin.so
         cd ..
         
     - name: Build Guitar
