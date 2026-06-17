@@ -1,9 +1,11 @@
 QMAKE_PROJECT_DEPTH = 0
 
 DESTDIR = $$PWD/../_bin
+# DESTDIR = $$PWD/lib
 
-CONFIG(debug,debug|release):TARGET = filetyped
-CONFIG(release,debug|release):TARGET = filetype
+TARGET = filetype
+# CONFIG(debug,debug|release):TARGET = filetyped
+# CONFIG(release,debug|release):TARGET = filetype
 
 TEMPLATE = lib
 CONFIG += console c++11
@@ -12,7 +14,7 @@ CONFIG -= qt
 
 DEFINES += ONIG_STATIC=1 HAVE_CONFIG_H=1
 
-DEFINES += DLLEXPORT=__declspec(dllexport)
+msvc:DEFINES += DLLEXPORT=__declspec(dllexport)
 
 msvc:INCLUDEPATH += file-msvc
 gcc:INCLUDEPATH += file-gcc

@@ -556,8 +556,30 @@ FileType::Result FileType::detect(const char *data, size_t size, int st_mode) co
 	}
 }
 
-extern "C" int hoge(int a, int b)
+struct Hoge::Private {
+	int value = 0;
+};
+
+static void ctor(Hoge *self)
 {
-	return a + b;
+	self->m = new Hoge::Private();
+	self->m->value = 123;
+}
+
+extern "C" void dtor(Hoge *self)
+{
+	delete self->m;
+}
+
+extern "C" Hoge hoge()
+{
+	Hoge ret;
+	ctor(&ret);
+	return ret;
+}
+
+extern "C" int value(Hoge *self)
+{
+	return self->m->value;
 }
 

@@ -23,6 +23,8 @@
 #include <IncrementalSearchInterface.h>
 #include "Logger.h"
 
+#include "FileType.h"
+
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
@@ -203,21 +205,34 @@ int main(int argc, char *argv[])
 	// experimental shared library loading test
 	class MyLibrary {
 	private:
+#ifdef Q_OS_WIN
 		typedef FARPROC fnptr_t;
 		struct {
-#ifdef Q_OS_WIN
 			HMODULE hLib = nullptr;
-#else
-			void *hLib = nullptr;
-#endif
-
 		} d;
+#else
+		typedef void *fnptr_t;
 		struct {
-			int (*hoge)(int a, int b) = nullptr;
+			void *hLib = nullptr;
+		} d;
+#endif
+		struct {
+			void (*dtor)(Hoge *self) = nullptr;
+			Hoge (*hoge)() = nullptr;
+			int (*value)(Hoge *self) = nullptr;
 		} fn;
 		bool _open()
 		{
 			std::string libname = "filetype";
+			struct {
+				char const *name;
+				fnptr_t &ptr;
+			} table[] = {
+				{ "dtor", (fnptr_t &)fn.dtor },
+				{ "hoge", (fnptr_t &)fn.hoge },
+				{ "value", (fnptr_t &)fn.value },
+				
+			};
 #ifdef Q_OS_WIN
 			{
 				d.hLib = LoadLibraryA((libname + ".dll").c_str());
@@ -225,12 +240,6 @@ int main(int argc, char *argv[])
 					logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
 					return false;
 				}
-				struct {
-					char const *name;
-					fnptr_t &ptr;
-				} table[] = {
-					{ "hoge", (fnptr_t &)fn.hoge },
-				};
 				for (auto &e : table) {
 					e.ptr = GetProcAddress(d.hLib, e.name);
 					if (!e.ptr) {
@@ -241,15 +250,17 @@ int main(int argc, char *argv[])
 			}
 #else
 			{
-				d.hLib = dlopen("libfiletype.so", RTLD_NOW | RTLD_GLOBAL);
+				d.hLib = dlopen(("lib" + libname + ".so").c_str(), RTLD_NOW | RTLD_GLOBAL);
 				if (!d.hLib) {
 					logprintf(LOG_DEFAULT, "Failed to load libfiletype.so: %s", dlerror());
 					return false;
 				}
-				(void *&)fn.hoge = dlsym(d.hLib, "hoge");
-				if (!fn.hoge) {
-					logprintf(LOG_DEFAULT, "Failed to find symbol hoge in libfiletype.so: %s", dlerror());
-					return false;
+				for (auto &e : table) {
+					e.ptr = dlsym(d.hLib, e.name);
+					if (!e.ptr) {
+						logprintf(LOG_DEFAULT, "Failed to find symbol %s in libfiletype.so: %s", e.name, dlerror());
+						return false;
+					}
 				}
 			}
 #endif
@@ -274,17 +285,18 @@ int main(int argc, char *argv[])
 			d = {};
 			fn = {};
 		}
-		void run()
+		void hoge()
 		{
 			assert(fn.hoge);
-			int n = fn.hoge(12, 34);
-			fprintf(stderr, "filetype.dll: hoge(12, 34) = %d\n", n);
+			Hoge hoge = fn.hoge();
+			fprintf(stderr, "filetype.dll: hoge() = %d\n", fn.value(&hoge));
+			fn.dtor(&hoge);
 		}
 	};
 	{
 		MyLibrary lib;
 		if (lib.open()) {
-			lib.run();
+			lib.hoge();
 		}
 	}
 
