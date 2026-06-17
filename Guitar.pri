@@ -51,6 +51,71 @@ prepare.commands = cd $$PWD && ruby -W0 prepare.rb
 QMAKE_EXTRA_TARGETS += prepare
 PRE_TARGETDEPS += prepare
 
+# OpenSSL
+
+linux {
+	static_link_openssl {
+		LIBS += $$OPENSSL_LIB_DIR/libssl.a $$OPENSSL_LIB_DIR/libcrypto.a -ldl
+	} else {
+		LIBS += -lssl -lcrypto
+	}
+}
+haiku:LIBS += -lssl -lcrypto -lnetwork
+macx:INCLUDEPATH += /opt/homebrew/include
+macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
+msvc:LIBS += -llibcrypto -llibssl
+
+# network library
+
+# CONFIG += use_libcurl
+use_libcurl {
+	DEFINES += USE_LIBCURL
+	!msvc:LIBS += -lcurl
+	msvc:LIBS += -llibcurl
+}
+
+# libfiletype
+
+include(libfiletype.pri)
+
+# Incremental Search
+
+INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
+
+# zlib
+
+msvc {
+	LIBS += -lzlib
+	LIBS += -lzstd
+}
+
+!msvc {
+	LIBS += -lz
+	LIBS += -lzstd
+}
+
+#
+
+win32 {
+	LIBS += -ladvapi32 -lshell32 -luser32 -lws2_32
+	RC_FILE = win.rc
+	QMAKE_SUBSYSTEM_SUFFIX=,5.01
+}
+
+macx {
+	QMAKE_INFO_PLIST = Info.plist
+	ICON += src/resources/Guitar.icns
+	macres.files = $$ICON
+	macres.path = Contents/Resources
+	QMAKE_BUNDLE_DATA += macres
+}
+
+!msvc {
+	LIBS += -ldl
+}
+
+#
+
 SOURCES += \
 	$$PWD/src/IncrementalSearchHelper.cpp \
 	$$SRC/AboutDialog.cpp \
@@ -565,68 +630,5 @@ unsafe {
 use_libcurl {
 	SOURCES += $$SRC/inet/curlclient.cpp
 	HEADERS += $$SRC/inet/curlclient.h
-}
-
-# OpenSSL
-
-linux {
-	static_link_openssl {
-		LIBS += $$OPENSSL_LIB_DIR/libssl.a $$OPENSSL_LIB_DIR/libcrypto.a -ldl
-	} else {
-		LIBS += -lssl -lcrypto
-	}
-}
-haiku:LIBS += -lssl -lcrypto -lnetwork
-macx:INCLUDEPATH += /opt/homebrew/include
-macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
-msvc:LIBS += -llibcrypto -llibssl
-
-# network library
-
-# CONFIG += use_libcurl
-use_libcurl {
-	DEFINES += USE_LIBCURL
-	!msvc:LIBS += -lcurl
-	msvc:LIBS += -llibcurl
-}
-
-# libfiletype
-
-include(libfiletype.pri)
-
-# Incremental Search
-
-INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
-
-# zlib
-
-msvc {
-	LIBS += -lzlib
-	LIBS += -lzstd
-}
-
-!msvc {
-	LIBS += -lz
-	LIBS += -lzstd
-}
-
-#
-
-win32 {
-	LIBS += -ladvapi32 -lshell32 -luser32 -lws2_32
-	RC_FILE = win.rc
-	QMAKE_SUBSYSTEM_SUFFIX=,5.01
-}
-
-macx {
-	QMAKE_INFO_PLIST = Info.plist
-	ICON += src/resources/Guitar.icns
-	macres.files = $$ICON
-	macres.path = Contents/Resources
-	QMAKE_BUNDLE_DATA += macres
-}
-
-!msvc {
-	LIBS += -ldl
 }
 

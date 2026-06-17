@@ -23,6 +23,8 @@
 #include <IncrementalSearchInterface.h>
 #include "Logger.h"
 
+#include <dlfcn.h>
+
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
 #endif
@@ -193,6 +195,39 @@ int main(int argc, char *argv[])
 			logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
 		}
 	}
+	
+	// experimental shared library loading test
+#ifdef Q_OS_WIN
+	{
+		HMODULE hLib = LoadLibraryA("filetype.dll");
+		if (!hLib) {
+			logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
+		}
+		typedef int (*HogeFunc)(int a, int b);
+		HogeFunc fn_hoge = (HogeFunc)GetProcAddress(hLib, "hoge");
+		if (!fn_hoge) {
+			logprintf(LOG_DEFAULT, "Failed to find symbol hoge in filetype.dll: %d", GetLastError());
+		} else {
+			int n = fn_hoge(12, 34);
+			fprintf(stderr, "filetype.dll: hoge(12, 34) = %d\n", n);
+		}
+	}
+#else	
+	{
+		void *so_libfiletype = dlopen("libfiletype.so", RTLD_NOW | RTLD_GLOBAL);
+		if (!so_libfiletype) {
+			logprintf(LOG_DEFAULT, "Failed to load libfiletype.so: %s", dlerror());
+		}
+		int (*fn_hoge)(int a, int b);
+		if (!fn_hoge) {
+			logprintf(LOG_DEFAULT, "Failed to find symbol hoge in libfiletype.so: %s", dlerror());
+		} else {
+			(void *&)fn_hoge = dlsym(so_libfiletype, "hoge");
+			int n = fn_hoge(12, 34);
+			fprintf(stderr, "libfiletype.so: hoge(12, 34) = %d\n", n);
+		}
+	}
+#endif	
 	
 	global->init2();
 

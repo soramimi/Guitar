@@ -1,11 +1,12 @@
 QMAKE_PROJECT_DEPTH = 0
 
-DESTDIR = $$PWD/lib
+DESTDIR = $$PWD/../_bin
+
 CONFIG(debug,debug|release):TARGET = filetyped
 CONFIG(release,debug|release):TARGET = filetype
 
 TEMPLATE = lib
-CONFIG += staticlib console c++11
+CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
@@ -22,6 +23,11 @@ msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
 macx:QMAKE_CFLAGS += -include xlocale.h
 macx:QMAKE_CXXFLAGS += -include xlocale.h
+
+msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/file.lib $$PWD/lib/oniguruma.lib
+msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/onigurumad.lib
+!msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/libfile.a $$PWD/lib/liboniguruma.a
+!msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/libfiled.a $$PWD/lib/libonigurumad.a
 
 #
 

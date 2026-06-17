@@ -555,3 +555,9 @@ FileType::Result FileType::detect(const char *data, size_t size, int st_mode) co
 		return p ? parse_mime(p) : Result();
 	}
 }
+
+extern "C" int hoge(int a, int b)
+{
+	return a + b;
+}
+
