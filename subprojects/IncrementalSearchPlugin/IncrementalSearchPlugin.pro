@@ -19,18 +19,30 @@ DEFINES += HAVE_CONFIG_H
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 
+msvc {
+	LIBS += -lzlib
+	LIBS += -lzstd
+}
+
+!msvc {
+	LIBS += -lz
+	LIBS += -lzstd
+}
+
 HEADERS += \
 	src/IncrementalSearch.h \
 	src/IncrementalSearchInterface.h \
 	src/IncrementalSearchPlugin.h \
 	src/MyMecab.h \
-	src/romaji.h
+	src/romaji.h \
+	src/zs.h
 SOURCES += \
 	src/IncrementalSearch.cpp \
 	src/IncrementalSearchInterface.cpp \
 	src/IncrementalSearchPlugin.cpp \
 	src/MyMecab.cpp \
-	src/romaji.cpp
+	src/romaji.cpp \
+	src/zs.cpp
 
 HEADERS += \
 	config.h \
@@ -91,12 +103,23 @@ SOURCES += \
 	src/gzip.cpp \
 	src/libmain.cpp
 	
+# SOURCES += \
+# 	gen/xxd_charbin_gz.c \
+# 	gen/xxd_dicrc_gz.c \
+# 	gen/xxd_matrixbin_gz.c \
+# 	gen/xxd_sysdic_gz.c \
+# 	gen/xxd_unkdic_gz.c
+
 SOURCES += \
-	gen/xxd_charbin_gz.c \
-	gen/xxd_dicrc_gz.c \
-	gen/xxd_matrixbin_gz.c \
-	gen/xxd_sysdic_gz.c \
-	gen/xxd_unkdic_gz.c
+	gen/xxd_charbin_zst.c \
+	gen/xxd_dicrc_zst.c \
+	gen/xxd_matrixbin_zst.c \
+	gen/xxd_sysdic_zst.c \
+	gen/xxd_unkdic_zst.c
 
 DISTFILES += \
 	incrementalsearchplugin.json
+
+!msvc {
+	LIBS += -ldl
+}

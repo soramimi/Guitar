@@ -6,7 +6,7 @@ RUN apt update
 RUN apt install -y software-properties-common
 RUN apt install -y build-essential clang libc++-dev cmake
 RUN apt install -y libncurses6
-RUN apt install -y python3 python3-pip ruby zstd wget curl
+RUN apt install -y python3 python3-pip ruby zstd libzstd-dev wget curl
 RUN apt update
 
 ARG UID

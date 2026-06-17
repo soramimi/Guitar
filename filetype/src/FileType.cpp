@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include "gzip.h"
+#include "zs.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -336,8 +337,13 @@ public:
 	}
 };
 
+#if 0
 extern "C" unsigned char magic_mgc_gz[];
 extern "C" unsigned int magic_mgc_gz_len;
+#else
+extern "C" unsigned char magic_mgc_zst[];
+extern "C" unsigned int magic_mgc_zst_len;
+#endif
 
 bool FileType::open()
 {
@@ -349,10 +355,18 @@ bool FileType::open()
 	}
 
 	// decompress the magic file
+#if 0
 	MagicReader reader((char const *)magic_mgc_gz, magic_mgc_gz_len);
 	MagicWriter writer(&mgcdata_);
 	gzip gz;
 	gz.decompress(&reader, &writer);
+#else
+	MagicReader reader((char const *)magic_mgc_zst, magic_mgc_zst_len);
+	MagicWriter writer(&mgcdata_);
+	ZS zs;
+	zs.decompress([&reader](char *ptr, int len) { return reader.read(ptr, len); },
+				  [&writer](char const *ptr, int len) { return writer.write(ptr, len); });
+#endif
 
 	void *bufs[1];
 	size_t sizes[1];

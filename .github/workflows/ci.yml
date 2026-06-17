@@ -25,6 +25,7 @@ jobs:
           libqt6svg6-dev \
           libqt6core5compat6-dev \
           zlib1g-dev \
+          libzstd-dev \
           libgl1-mesa-dev \
           libssl-dev \
           qt6-base-dev \

@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "gzip.h"
+#include "zs.h"
 
 using namespace incrementalsearch;
 
@@ -14,6 +15,11 @@ struct Resource {
 	unsigned char *data;
 	unsigned int size;
 };
+
+// #define USE_GZIP
+#define USE_ZSTD
+
+#ifdef USE_GZIP
 
 extern "C" unsigned char xxd_dicrc_gz[];
 extern "C" unsigned int xxd_dicrc_gz_len;
@@ -26,31 +32,73 @@ extern "C" unsigned int xxd_sysdic_gz_len;
 extern "C" unsigned char xxd_matrixbin_gz[];
 extern "C" unsigned int xxd_matrixbin_gz_len;
 
-
-Resource dicrc_gz = {
+Resource dicrc_z = {
 	xxd_dicrc_gz,
 	xxd_dicrc_gz_len
 };
 
-Resource unkdic_gz = {
+Resource unkdic_z = {
 	xxd_unkdic_gz,
 	xxd_unkdic_gz_len
 };
 
-Resource charbin_gz = {
+Resource charbin_z = {
 	xxd_charbin_gz,
 	xxd_charbin_gz_len
 };
 
-Resource sysdic_gz = {
+Resource sysdic_z = {
 	xxd_sysdic_gz,
 	xxd_sysdic_gz_len
 };
 
-Resource matrixbin_gz = {
+Resource matrixbin_z = {
 	xxd_matrixbin_gz,
 	xxd_matrixbin_gz_len
 };
+
+#endif
+
+#ifdef USE_ZSTD
+
+extern "C" unsigned char xxd_dicrc_zst[];
+extern "C" unsigned int xxd_dicrc_zst_len;
+extern "C" unsigned char xxd_unkdic_zst[];
+extern "C" unsigned int xxd_unkdic_zst_len;
+extern "C" unsigned char xxd_charbin_zst[];
+extern "C" unsigned int xxd_charbin_zst_len;
+extern "C" unsigned char xxd_sysdic_zst[];
+extern "C" unsigned int xxd_sysdic_zst_len;
+extern "C" unsigned char xxd_matrixbin_zst[];
+extern "C" unsigned int xxd_matrixbin_zst_len;
+
+Resource dicrc_z = {
+	xxd_dicrc_zst,
+	xxd_dicrc_zst_len
+};
+
+Resource unkdic_z = {
+	xxd_unkdic_zst,
+	xxd_unkdic_zst_len
+};
+
+Resource charbin_z = {
+	xxd_charbin_zst,
+	xxd_charbin_zst_len
+};
+
+Resource sysdic_z = {
+	xxd_sysdic_zst,
+	xxd_sysdic_zst_len
+};
+
+Resource matrixbin_z = {
+	xxd_matrixbin_zst,
+	xxd_matrixbin_zst_len
+};
+
+#endif
+
 
 class ResourceReader : public AbstractSimpleReader {
 private:
@@ -109,9 +157,6 @@ public:
 	{
 		offset = static_cast<size_t>(pos);
 	}
-
-	// AbstractSimpleWriter interface
-public:
 };
 
 static std::string filename(char const *name)
@@ -132,21 +177,36 @@ bool x_get_resource_i8(char const *path, std::vector<char> *buf)
 	Resource *res = nullptr;
 	std::string name = filename(path);
 	if (name == "dicrc") {
-		res = &dicrc_gz;
+		res = &dicrc_z;
 	} else if (name == "unk.dic") {
-		res = &unkdic_gz;
+		res = &unkdic_z;
 	} else if (name == "char.bin") {
-		res = &charbin_gz;
+		res = &charbin_z;
 	} else if (name == "sys.dic") {
-		res = &sysdic_gz;
+		res = &sysdic_z;
 	}
 	if (res) {
 		ResourceReader reader((char const *)res->data, res->size);
 		ResourceWriter writer(buf);
-		gzip gz;
-		if (gz.decompress(&reader, &writer)) {
+#ifdef USE_GZIP
+		{
+			gzip gz;
+			if (gz.decompress(&reader, &writer)) {
+				return true;
+			}
+		}
+#endif
+#ifdef USE_ZSTD
+		{
+			ZS zs;
+			zs.decompress([&](char *ptr, int len) -> int {
+				return reader.read(ptr, len);
+			}, [&](char const *ptr, int len) -> int {
+				return writer.write(ptr, len);
+			});
 			return true;
 		}
+#endif
 	}
 	return false;
 }
@@ -156,14 +216,33 @@ bool x_get_resource_i16(char const *path, std::vector<short int> *buf)
 	Resource *res = nullptr;
 	std::string name = filename(path);
 	if (name == "matrix.bin") {
-		res = &matrixbin_gz;
+		res = &matrixbin_z;
 	}
 	if (res) {
 		std::vector<char> tmp;
 		ResourceReader reader((char const *)res->data, res->size);
 		ResourceWriter writer(&tmp);
-		gzip gz;
-		if (gz.decompress(&reader, &writer)) {
+#ifdef USE_GZIP
+		{
+			gzip gz;
+			if (gz.decompress(&reader, &writer)) {
+				size_t n = tmp.size() / 2;
+				if (n > 0) {
+					buf->resize(n);
+					memcpy(buf->data(), tmp.data(), n * 2);
+				}
+				return true;
+			}
+		}
+#endif
+#ifdef USE_ZSTD
+		{
+			ZS zs;
+			zs.decompress([&](char *ptr, int len) -> int {
+				return reader.read(ptr, len);
+			}, [&](char const *ptr, int len) -> int {
+				return writer.write(ptr, len);
+			});
 			size_t n = tmp.size() / 2;
 			if (n > 0) {
 				buf->resize(n);
@@ -171,6 +250,7 @@ bool x_get_resource_i16(char const *path, std::vector<short int> *buf)
 			}
 			return true;
 		}
+#endif
 	}
 	return false;
 }

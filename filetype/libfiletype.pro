@@ -23,27 +23,21 @@ msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 macx:QMAKE_CFLAGS += -include xlocale.h
 macx:QMAKE_CXXFLAGS += -include xlocale.h
 
-# zlib
-
-msvc {
-	LIBS += -lzlib
-}
-
-!msvc {
-	LIBS += -lz
-}
-
 #
 
 SOURCES += \
 	lib/magic_mgc_gz.c \
 	src/AbstractSimpleIO.cpp \
 	src/FileType.cpp \
-	src/gzip.cpp
+	src/gzip.cpp \
+	src/zs.cpp
 
 HEADERS += \
 	src/AbstractSimpleIO.h \
 	src/FileType.h \
-	src/gzip.h
+	src/gzip.h \
+	src/zs.h
 
+# SOURCES += lib/magic_mgc_gz.c
+SOURCES += lib/magic_mgc_zst.c
 
