@@ -1,7 +1,7 @@
 QMAKE_PROJECT_DEPTH = 0
 
-DESTDIR = $$PWD/../_bin
-# DESTDIR = $$PWD/lib
+# DESTDIR = $$PWD/../_bin
+DESTDIR = $$PWD/lib
 
 TARGET = filetype
 # CONFIG(debug,debug|release):TARGET = filetyped

@@ -65,3 +65,5 @@ IncrementalSearch/mecab/mecab/man/Makefile
 IncrementalSearch/mecab/mecab/src/Makefile
 IncrementalSearch/mecab/mecab/tests/Makefile
 IncrementalSearch/dicedit/utf8dic
+subprojects/IncrementalSearchPlugin/mecab/mecab/autom4te.cache/requests
+subprojects/IncrementalSearchPlugin/mecab/mecab/libtool
