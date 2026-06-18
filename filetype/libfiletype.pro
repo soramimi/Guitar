@@ -8,7 +8,7 @@ TARGET = filetype
 # CONFIG(release,debug|release):TARGET = filetype
 
 TEMPLATE = lib
-CONFIG += console c++11
+CONFIG += staticlib console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
