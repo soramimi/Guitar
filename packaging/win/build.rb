@@ -38,7 +38,7 @@ Dir.chdir("filetype") {
 	run "build-msvc.bat"
 }
 
-Dir.chdir("IncrementalSearch") {
+Dir.chdir("subprojects/IncrementalSearchPlugin") {
 	run "build-msvc.bat"
 }
 

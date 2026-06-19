@@ -15,6 +15,7 @@ FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir)
 
 FileUtils.cp("_bin/#{$product_name}.exe", $dstdir)
+FileUtils.cp("_bin/incrementalsearchplugin.dll", $dstdir)
 
 `7z x -o#{$dstdir} misc/win32tools.zip`
 `move #{$dstdir}\\win32tools\\* #{$dstdir}`
