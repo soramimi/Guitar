@@ -53,7 +53,7 @@ PRE_TARGETDEPS += prepare
 
 #
 
-CONFIG += experimental_filetypeplugin
+# CONFIG += experimental_filetypeplugin
 experimental_filetypeplugin {
 	DEFINES += EXPERIMENTAL_FILETYPEPLUGIN
 }

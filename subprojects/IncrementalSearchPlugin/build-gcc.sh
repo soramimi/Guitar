@@ -43,7 +43,7 @@ popd
 
 function my_xxd () {
         gzip -k ${DICDIR}/$2 -c >/tmp/$1.gz
-	zstd -20 ${DICDIR}/$2 -f -o /tmp/$1.zst
+	zstd -19 ${DICDIR}/$2 -f -o /tmp/$1.zst
 #        perl my_xxd.pl -n xxd_$1_gz /tmp/$1.gz >gen/xxd_$1_gz.c
         perl my_xxd.pl -n xxd_$1_zst /tmp/$1.zst >gen/xxd_$1_zst.c
 }

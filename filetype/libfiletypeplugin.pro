@@ -8,13 +8,13 @@ TARGET = filetypeplugin
 # CONFIG(release,debug|release):TARGET = filetypeplugin
 
 TEMPLATE = lib
-CONFIG += console c++11
+CONFIG += console c++20
 CONFIG -= app_bundle
 CONFIG -= qt
 
 DEFINES += ONIG_STATIC=1 HAVE_CONFIG_H=1
 
-CONFIG += experimental_filetypeplugin
+# CONFIG += experimental_filetypeplugin
 experimental_filetypeplugin {
 	DEFINES += EXPERIMENTAL_FILETYPEPLUGIN
 }

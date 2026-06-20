@@ -25,10 +25,10 @@
 
 #include "FileType.h"
 
+#include <MyExperimentalLibrary.h>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
-#include <MyExperimentalLibrary.h>
 #include <dlfcn.h>
 #endif
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 	}
 
 	// experimental shared library loading test
-#ifdef QT_DEBUG
+#ifdef EXPERIMENTAL_FILETYPEPLUGIN
 	if (1) {
 		MyExperimentalLibrary lib;
 		if (lib.open()) {
@@ -235,7 +235,6 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<CommitLogExchangeData>("CommitLogExchangeData");
 	qRegisterMetaType<CommitRecord>("CommitRecord");
 	qRegisterMetaType<StatusInfo>("StatusInfo");
-
 
 	{
 		MySettings s;

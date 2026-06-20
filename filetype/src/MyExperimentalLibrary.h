@@ -2,6 +2,8 @@
 #define MYEXPERIMENTALLIBRARY_H
 #ifdef EXPERIMENTAL_FILETYPEPLUGIN
 
+#include <string>
+
 #ifdef _WIN32
 #include <windows.h>
 #ifndef DLLEXPORT
@@ -35,42 +37,45 @@ class MyExperimentalLibrary {
 private:
 	using FILETYPE_API_TABLE = filetypeplugin::FILETYPE_API_TABLE;
 	using Hoge = filetypeplugin::Hoge;
-#ifdef Q_OS_WIN
-	typedef FARPROC fnptr_t;
 	struct {
+#ifdef _WIN32
 		HMODULE hLib = nullptr;
-	} d;
 #else
-	struct {
 		void *hLib = nullptr;
-		FILETYPE_API_TABLE *filetype_api = nullptr;
-	} d;
 #endif
-	FILETYPE_API_TABLE *(*filetypeplugin_init)(size_t n) = nullptr;
-	struct {
-		FILETYPE_API_TABLE *(*init)() = nullptr;
-		void (*dtor)(Hoge *self) = nullptr;
-		Hoge (*hoge)() = nullptr;
-		int (*value)(Hoge *self) = nullptr;
-	} fn;
+		FILETYPE_API_TABLE *filetype_api = nullptr;
+		FILETYPE_API_TABLE *(*filetypeplugin_init)(size_t n) = nullptr;
+	} d;
+	bool _init()
+	{
+		if (d.filetypeplugin_init) {
+			d.filetype_api = d.filetypeplugin_init(sizeof(FILETYPE_API_TABLE));
+			if (d.filetype_api) {
+				int n = d.filetype_api->test(12, 34);
+				fprintf(stderr, "filetype.dll: test(12, 34) = %d\n", n);
+				Hoge *hoge = d.filetype_api->Hoge_new();
+				int value = d.filetype_api->Hoge_value(hoge);
+				fprintf(stderr, "filetype.dll: Hoge_value() = %d\n", value);
+				d.filetype_api->Hoge_delete(hoge);
+				d.filetype_api->release();
+				return true;
+			}
+		}
+		return false;
+	}
 	bool _open()
 	{
 		bool ok = true;
 		std::string libname = "filetypeplugin";
-#ifdef Q_OS_WIN
+#ifdef _WIN32
 		{
 			d.hLib = LoadLibraryA((libname + ".dll").c_str());
 			if (!d.hLib) {
-				logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
+				fprintf(stderr, "Failed to load filetype.dll: %d", GetLastError());
 				return false;
 			}
-			for (auto &e : table) {
-				e.ptr = GetProcAddress(d.hLib, e.name);
-				if (!e.ptr) {
-					logprintf(LOG_DEFAULT, "Failed to find symbol %s in filetype.dll: %d", e.name, GetLastError());
-					return false;
-				}
-			}
+			(void *&)d.filetypeplugin_init = GetProcAddress(d.hLib, "init_5b803ec8_416b_ee53_7fd2_fc9aec7decf8");
+			ok = _init();
 		}
 #else
 		{
@@ -80,20 +85,8 @@ private:
 				fprintf(stderr, "Failed to load %s: %s", soname.c_str(), dlerror());
 				return false;
 			}
-			(void *&)filetypeplugin_init = dlsym(d.hLib, "init_5b803ec8_416b_ee53_7fd2_fc9aec7decf8");
-			if (filetypeplugin_init) {
-				d.filetype_api = filetypeplugin_init(sizeof(FILETYPE_API_TABLE));
-				if (d.filetype_api) {
-					int n = d.filetype_api->test(12, 34);
-					fprintf(stderr, "filetype.dll: test(12, 34) = %d\n", n);
-					Hoge *hoge = d.filetype_api->Hoge_new();
-					int value = d.filetype_api->Hoge_value(hoge);
-					fprintf(stderr, "filetype.dll: Hoge_value() = %d\n", value);
-					d.filetype_api->Hoge_delete(hoge);
-					d.filetype_api->release();
-					ok = true;
-				}
-			}
+			(void *&)d.filetypeplugin_init = dlsym(d.hLib, "init_5b803ec8_416b_ee53_7fd2_fc9aec7decf8");
+			ok = _init();
 		}
 #endif
 		return ok;
@@ -115,7 +108,6 @@ public:
 	void close()
 	{
 		d = {};
-		fn = {};
 	}
 };
 

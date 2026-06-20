@@ -11,7 +11,7 @@
 #include "zs.h"
 
 #ifdef _WIN32
-#define NOMINMAX
+// #define NOMINMAX
 #include <io.h>
 #include <fcntl.h>
 #else
