@@ -43,16 +43,10 @@ jobs:
         ls -la lib
         cd ..
 
-    - name: Build incrementalsearchPlugin
+    - name: Build IncrementalsearchPlugin
       run: |
         cd subprojects/IncrementalSearchPlugin
-        rm -fr build
-        mkdir build
-        cd build
-        qmake6 ../IncrementalSearchPlugin.pro
-        make
-        cd ../../../_bin
-        ls libincrementalsearchplugin.so
+        bash build-gcc.sh
         cd ..
         
     - name: Build Guitar

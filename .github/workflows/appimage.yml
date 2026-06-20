@@ -45,9 +45,9 @@ jobs:
         bash build-gcc.sh
         cd ..
 
-    - name: Build libmecasearch
+    - name: Build IncrementalSearchPlugin
       run: |
-        cd IncrementalSearch
+        cd subprojects/IncrementalSearchPlugin
         bash build-gcc.sh
         cd ..
         
