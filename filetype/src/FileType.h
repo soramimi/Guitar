@@ -36,21 +36,4 @@ public:
 	Result detect(const char *data, size_t size, int filemode = 0644) const;
 };
 
-#ifdef _WIN32
-#ifndef DLLEXPORT
-#define DLLEXPORT __declspec(dllimport)
-#endif
-#else
-#define DLLEXPORT
-#endif
-
-struct Hoge {
-	struct Private;
-	Private *m;
-};
-
-extern "C" DLLEXPORT void dtor(Hoge *self);
-extern "C" DLLEXPORT Hoge hoge();
-extern "C" DLLEXPORT int value(Hoge *self);
-
 #endif // FILETYPE_H

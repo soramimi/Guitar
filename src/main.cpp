@@ -28,6 +28,7 @@
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
+#include <MyExperimentalLibrary.h>
 #include <dlfcn.h>
 #endif
 
@@ -209,102 +210,14 @@ int main(int argc, char *argv[])
 	}
 
 	// experimental shared library loading test
-	class MyLibrary {
-	private:
-#ifdef Q_OS_WIN
-		typedef FARPROC fnptr_t;
-		struct {
-			HMODULE hLib = nullptr;
-		} d;
-#else
-		typedef void *fnptr_t;
-		struct {
-			void *hLib = nullptr;
-		} d;
-#endif
-		struct {
-			void (*dtor)(Hoge *self) = nullptr;
-			Hoge (*hoge)() = nullptr;
-			int (*value)(Hoge *self) = nullptr;
-		} fn;
-		bool _open()
-		{
-			std::string libname = "filetype";
-			struct {
-				char const *name;
-				fnptr_t &ptr;
-			} table[] = {
-				{ "dtor", (fnptr_t &)fn.dtor },
-				{ "hoge", (fnptr_t &)fn.hoge },
-				{ "value", (fnptr_t &)fn.value },
-
-			};
-#ifdef Q_OS_WIN
-			{
-				d.hLib = LoadLibraryA((libname + ".dll").c_str());
-				if (!d.hLib) {
-					logprintf(LOG_DEFAULT, "Failed to load filetype.dll: %d", GetLastError());
-					return false;
-				}
-				for (auto &e : table) {
-					e.ptr = GetProcAddress(d.hLib, e.name);
-					if (!e.ptr) {
-						logprintf(LOG_DEFAULT, "Failed to find symbol %s in filetype.dll: %d", e.name, GetLastError());
-						return false;
-					}
-				}
-			}
-#else
-			{
-				d.hLib = dlopen(("lib" + libname + ".so").c_str(), RTLD_NOW | RTLD_GLOBAL);
-				if (!d.hLib) {
-					logprintf(LOG_DEFAULT, "Failed to load libfiletype.so: %s", dlerror());
-					return false;
-				}
-				for (auto &e : table) {
-					e.ptr = dlsym(d.hLib, e.name);
-					if (!e.ptr) {
-						logprintf(LOG_DEFAULT, "Failed to find symbol %s in libfiletype.so: %s", e.name, dlerror());
-						return false;
-					}
-				}
-			}
-#endif
-			return true;
-		}
-	public:
-		MyLibrary() = default;
-		~MyLibrary()
-		{
-		}
-		bool open()
-		{
-			if (_open()) {
-				return true;
-			} else {
-				close();
-				return false;
-			}
-		}
-		void close()
-		{
-			d = {};
-			fn = {};
-		}
-		void hoge()
-		{
-			assert(fn.hoge);
-			Hoge hoge = fn.hoge();
-			fprintf(stderr, "filetype.dll: hoge() = %d\n", fn.value(&hoge));
-			fn.dtor(&hoge);
-		}
-	};
-	if (0) {
-		MyLibrary lib;
+#ifdef QT_DEBUG
+	if (1) {
+		MyExperimentalLibrary lib;
 		if (lib.open()) {
-			lib.hoge();
+			// lib.hoge();
 		}
 	}
+#endif
 
 	global->init2();
 

@@ -51,6 +51,13 @@ prepare.commands = cd $$PWD && ruby -W0 prepare.rb
 QMAKE_EXTRA_TARGETS += prepare
 PRE_TARGETDEPS += prepare
 
+#
+
+CONFIG += experimental_filetypeplugin
+experimental_filetypeplugin {
+	DEFINES += EXPERIMENTAL_FILETYPEPLUGIN
+}
+
 # OpenSSL
 
 linux {
