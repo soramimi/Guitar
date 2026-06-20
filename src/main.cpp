@@ -186,11 +186,15 @@ int main(int argc, char *argv[])
 	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 	// qputenv("QT_SCALE_FACTOR", "1.5");
-	
+
 	QApplication a(argc, argv);
 	{
 		qDebug() << QDir::currentPath();
-		QPluginLoader loader("incrementalsearchplugin");
+		QString name = "incrementalsearchplugin";
+#ifdef QT_DEBUG
+		name += 'd';
+#endif
+		QPluginLoader loader(name);
 		IncrementalSearchInterface *plugin = dynamic_cast<IncrementalSearchInterface *>(loader.instance());
 		if (plugin) {
 			global->incremental_search = std::shared_ptr<IncrementalSearch>(plugin->create());
@@ -201,7 +205,7 @@ int main(int argc, char *argv[])
 			logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
 		}
 	}
-	
+
 	// experimental shared library loading test
 	class MyLibrary {
 	private:
@@ -231,7 +235,7 @@ int main(int argc, char *argv[])
 				{ "dtor", (fnptr_t &)fn.dtor },
 				{ "hoge", (fnptr_t &)fn.hoge },
 				{ "value", (fnptr_t &)fn.value },
-				
+
 			};
 #ifdef Q_OS_WIN
 			{
@@ -293,14 +297,14 @@ int main(int argc, char *argv[])
 			fn.dtor(&hoge);
 		}
 	};
-	{
+	if (0) {
 		MyLibrary lib;
 		if (lib.open()) {
 			lib.hoge();
 		}
 	}
 
-	
+
 	global->init2();
 
 	QApplication::setOrganizationName(global->organization_name);

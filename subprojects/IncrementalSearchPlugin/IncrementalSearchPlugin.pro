@@ -1,5 +1,6 @@
 include(../../common.pri)
-TARGET = incrementalsearchplugin
+CONFIG(debug,debug|release):TARGET = incrementalsearchplugind
+CONFIG(release,debug|release):TARGET = incrementalsearchplugin
 TEMPLATE = lib
 CONFIG += plugin
 QT = core
