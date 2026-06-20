@@ -188,7 +188,9 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<Repositor
 		for (int i = 0; i < repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
-			if (!global->incremental_search->match(repo.name.toStdString(), filter)) continue;
+			if (global->incremental_search) {
+				if (!global->incremental_search->match(repo.name.toStdString(), filter)) continue;
+			}
 
 			RepositoryTreeWidgetItem *parent = nullptr;
 			{

@@ -308,7 +308,7 @@ void MyMecab::close()
 	}
 }
 
-std::vector<MyMecab::Part> MyMecab::parse(const std::string_view &line)
+std::vector<incrementalsearch::Part> MyMecab::parse(const std::string_view &line) const
 {
 	if (!m->tagger) {
 		// fprintf(stderr, "Maybe MeCab is not initialized. Please call open() MeCab before calling parse().\n");
@@ -335,3 +335,4 @@ std::vector<MyMecab::Part> MyMecab::parse(const std::string_view &line)
 	}
 	return parts;
 }
+

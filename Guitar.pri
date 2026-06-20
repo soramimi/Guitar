@@ -82,6 +82,15 @@ include(libfiletype.pri)
 
 INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
 
+# experimental: Sudachi support
+
+# CONFIG += use_cudachi
+use_cudachi {
+	DEFINES += USE_SUDACHI
+	CONFIG(debug,debug|release):IBS += -L/home/soramimi/develop/sudachi-example/sudachi-capi/target/release -lsudachi_capi
+	CONFIG(release,debug|release):IBS += -L/home/soramimi/develop/sudachi-example/sudachi-capi/target/debug -lsudachi_capi
+}
+
 # zlib
 
 msvc {

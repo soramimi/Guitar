@@ -1,8 +1,63 @@
 #ifndef INCREMENTALSEARCH_H
 #define INCREMENTALSEARCH_H
 
-#include "MyMecab.h"
+// #include "MyMecab.h"
 #include <QObject>
+
+//
+
+namespace incrementalsearch {
+
+struct Element {
+	bool match = false;
+	struct Fragment {
+		std::string text;
+		size_t pos = 0;
+		size_t end = 0;
+	};
+	Fragment source;
+	Fragment kana;
+};
+
+
+struct Result {
+	struct Part : public Element::Fragment {
+		bool match = false;
+		Part() = default;
+		Part(Element const &t)
+			: Element::Fragment(t.source)
+			, match(t.match)
+		{
+		}
+	};
+	bool match = false;
+	std::vector<Part> parts;
+	explicit operator bool () const
+	{
+		return match;
+	}
+};
+
+struct Part {
+	size_t offset;
+	size_t length;
+	std::string text;
+};
+
+class Engine {
+private:
+	struct Private;
+	Private *m;
+public:
+public:
+	virtual ~Engine() {}
+	virtual bool open(char const *dicpath) = 0;
+	virtual void close() = 0;
+	virtual std::vector<incrementalsearch::Part> parse(std::string_view const &line) const = 0;
+	virtual operator bool () const = 0;
+};
+
+} // namespace incrementalsearch
 
 class IncrementalSearchFilter {
 public:
@@ -24,7 +79,9 @@ class IncrementalSearch : public QObject {
 private:
 	struct Private;
 	Private *m;
-	std::string to_kana(const std::string &text, std::vector<incrementalsearch::Part> *out) const;
+	incrementalsearch::Engine *mecab();
+	incrementalsearch::Engine const *mecab() const;
+	std::string to_kana(const std::string &text, std::vector<incrementalsearch::Element> *out) const;
 public:
 	IncrementalSearch();
 	~IncrementalSearch();

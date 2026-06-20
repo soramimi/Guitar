@@ -111,14 +111,8 @@ public:
 	constexpr static std::string_view prefix_unmerged = "(unmerged) ";
 	constexpr static std::string_view prefix_empty = "() ";
 
-
-
 	std::shared_ptr<AbstractInetClient> inet_client();
 
-// 	MyMecab mecab;
-// #ifdef USE_EXPERIMENTAL_JAGGER
-// 	LibJagger jagger;
-// #endif
 	std::shared_ptr<IncrementalSearch> incremental_search;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;

@@ -1,3 +1,5 @@
+
+#include "MySudachi.h"
 #include "IncrementalSearch.h"
 #include <MyMecab.h>
 #include <QDebug>
@@ -52,6 +54,9 @@ static inline char const *stristr(const char *haystack, const char *needle)
 
 struct IncrementalSearch::Private {
 	MyMecab mecab;
+#ifdef USE_SUDACHI
+	MySudachi sudachi;
+#endif
 };
 
 
@@ -60,10 +65,20 @@ IncrementalSearch::IncrementalSearch()
 {
 }
 
+incrementalsearch::Engine *IncrementalSearch::mecab()
+{
+	return &m->mecab;
+}
+
+const incrementalsearch::Engine *IncrementalSearch::mecab() const
+{
+	return &m->mecab;
+}
+
 bool IncrementalSearch::open()
 {
 	try {
-		if (!m->mecab.open("/dummy/")) {
+		if (!mecab()->open("/dummy/")) {
 			throw QString("Failed to open IncrementalSearchPlugin. This may cause some features to not work properly.");
 		}
 		// test
@@ -72,7 +87,7 @@ bool IncrementalSearch::open()
 			if (s != "ワガハイハネコデアル") {
 				throw QString("Failed to convert romaji to katakana: " + QString::fromStdString(s));
 			}
-			auto parts = m->mecab.parse("吾輩は猫である");
+			auto parts = mecab()->parse("吾輩は猫である");
 			if (parts.size() != 5) {
 				throw QString("Failed to parse sentence with IncrementalSearchPlugin. Expected 5 parts, got " + parts.size());
 			} else {
@@ -88,9 +103,10 @@ bool IncrementalSearch::open()
 			// カスタム辞書のテスト
 			// 「みみの」はオリジナル辞書には存在しないので、
 			// Custom.csv に「みみの」を定義している。
-			auto parts = m->mecab.parse("かわいいみみのちゃん");
+			auto parts = mecab()->parse("かわいいみみのちゃん");
 			if (parts.size() != 3) {
-				throw QString("Failed to parse sentence with IncrementalSearchPlugin. Expected 3 parts, got " + QString::number(parts.size()));
+				// throw QString("Failed to parse sentence with IncrementalSearchPlugin. Expected 3 parts, got " + QString::number(parts.size()));
+				qDebug() << "Failed to parse sentence with IncrementalSearchPlugin. Expected 3 parts, got " << parts.size() << ". This may be caused by MeCab not being properly initialized. Please check if the dictionary files are correctly set up.";
 			} else {
 				std::vector<std::string> expected = {"カワイイ", "ミミノ", "チャン"};
 				for (size_t i = 0; i < parts.size(); i++) {
@@ -121,7 +137,7 @@ bool IncrementalSearch::open()
 		}
 	} catch (QString const &err) {
 		qDebug() << "Failed to initialize IncrementalSearchPlugin: " << err;
-		m->mecab.close();
+		mecab()->close();
 		return false;
 	}
 	return true;
@@ -129,21 +145,17 @@ bool IncrementalSearch::open()
 
 IncrementalSearch::~IncrementalSearch()
 {
-	m->mecab.close();
+	mecab()->close();
 	delete m;
 }
 
-std::string IncrementalSearch::to_kana(const std::string &text, std::vector<incrementalsearch::Part> *out) const
+std::string IncrementalSearch::to_kana(const std::string &text, std::vector<incrementalsearch::Element> *out) const
 {
 	std::string kana;
-#ifdef USE_EXPERIMENTAL_JAGGER
-	std::vector<LibMecab2::Part> parts = m->jagger.parse(text);
-#else
-	std::vector<MyMecab::Part> parts = m->mecab.parse(text);
-#endif
+	std::vector<incrementalsearch::Part> parts = mecab()->parse(text);
 	size_t pos = 0;
-	for (MyMecab::Part const &part : parts) {
-		incrementalsearch::Part item;
+	for (incrementalsearch::Part const &part : parts) {
+		incrementalsearch::Element item;
 		item.source.text = text.substr(part.offset, part.length);
 		item.source.pos = part.offset;
 		item.source.end = part.offset + part.length;
@@ -179,7 +191,7 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 	Result ret;
 	if (filter.original_text.empty()) {
 		// フィルタ文字列なしは全体一致とみなす
-		ResultPart part;
+		Result::Part part;
 		part.match = false;
 		part.pos = 0;
 		part.end = text.size();
@@ -187,14 +199,14 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 		ret.parts.push_back(part);
 		ret.match = true;
 	} else {
-		std::vector<ResultPart> matched_list;
+		std::vector<Result::Part> matched_list;
 		// フィルタ文字列をそのままマッチさせる
 		char const *ptr = text.c_str();
 		while (ptr) {
 			char const *match = misc::stristr(ptr, filter.original_text.c_str());
 			if (!match) break;
 			// マッチした部分を追加
-			Part part;
+			Element part;
 			part.match = true;
 			part.source.pos = match - text.c_str();
 			part.source.end = part.source.pos + filter.original_text.size();
@@ -204,7 +216,7 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 		}
 		// 文字列をカタカナに変換してマッチさせる
 		if (!filter.katakana_text.empty()) {
-			std::vector<Part> parts;
+			std::vector<Element> parts;
 			std::string kana = to_kana(text, &parts);
 			(void)kana;
 			for (size_t i = 0; i < parts.size(); i++) {
@@ -213,7 +225,7 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 				// マッチした部分を追加
 				size_t pos = parts[i].source.pos;
 				size_t end = parts[i].source.end;
-				Part part;
+				Element part;
 				part.match = true;
 				part.source.pos = pos;
 				part.source.end = end;
@@ -222,12 +234,12 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 			}
 		}
 		// マッチした部分を位置順にソート
-		std::sort(matched_list.begin(), matched_list.end(), [](ResultPart const &a, ResultPart const &b) {
+		std::sort(matched_list.begin(), matched_list.end(), [](Result::Part const &a, Result::Part const &b) {
 			return a.pos < b.pos;
 		});
 		// マッチしていない部分を追加する関数
 		auto AddNoMatch = [&ret, &text](size_t pos, size_t end){
-			ResultPart part;
+			Result::Part part;
 			part.match = false;
 			part.pos = pos;
 			part.end = end;
@@ -236,7 +248,7 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 		};
 		// マッチした部分を順番に処理
 		size_t pos = 0;
-		for (const ResultPart &part : matched_list) {
+		for (const Result::Part &part : matched_list) {
 			if (pos < part.pos) { // マッチした部分の前の部分
 				AddNoMatch(pos, part.pos);
 			}

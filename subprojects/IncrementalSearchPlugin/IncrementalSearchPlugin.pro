@@ -30,11 +30,26 @@ msvc {
 	LIBS += -lzstd
 }
 
+
+# CONFIG += use_cudachi
+use_cudachi {
+	DEFINES += USE_SUDACHI
+	LIBS = -L$$DESTDIR -lsudachi_capi
+	
+	# CONFIG(debug,debug|release):LIBS += -L/home/soramimi/develop/sudachi-example/sudachi-capi/target/release -lsudachi_capi
+	# CONFIG(release,debug|release):IBS += -L/home/soramimi/develop/sudachi-example/sudachi-capi/target/debug -lsudachi_capi
+	
+	# CONFIG(debug,debug|release):LIBS := -L../sudachi-capi/target/debug -lsudachi_capi -Wl,-rpath,'$$ORIGIN/../sudachi-capi/target/debug'
+	# CONFIG(release,debug|release):LIBS := -L../sudachi-capi/target/release -lsudachi_capi -Wl,-rpath,'$$ORIGIN/../sudachi-capi/target/release'
+}
+
+
 HEADERS += \
 	src/IncrementalSearch.h \
 	src/IncrementalSearchInterface.h \
 	src/IncrementalSearchPlugin.h \
 	src/MyMecab.h \
+	src/MySudachi.h \
 	src/romaji.h \
 	src/zs.h
 SOURCES += \
@@ -42,6 +57,7 @@ SOURCES += \
 	src/IncrementalSearchInterface.cpp \
 	src/IncrementalSearchPlugin.cpp \
 	src/MyMecab.cpp \
+	src/MySudachi.cpp \
 	src/romaji.cpp \
 	src/zs.cpp
 
