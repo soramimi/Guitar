@@ -1,11 +1,9 @@
 QMAKE_PROJECT_DEPTH = 0
 
-# DESTDIR = $$PWD/../_bin
 DESTDIR = $$PWD/lib
 
-TARGET = filetype
-# CONFIG(debug,debug|release):TARGET = filetyped
-# CONFIG(release,debug|release):TARGET = filetype
+CONFIG(debug,debug|release):TARGET = filetyped
+CONFIG(release,debug|release):TARGET = filetype
 
 TEMPLATE = lib
 CONFIG += staticlib console c++11

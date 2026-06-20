@@ -79,7 +79,7 @@ Dir FileInfo::dir() const
 	} else {
 		path = ".";
 	}
-	return Dir(m->file);
+	return Dir(path);
 }
 
 std::string FileInfo::fileName() const

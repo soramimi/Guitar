@@ -209,20 +209,20 @@ std::vector<GitTag> Git::tags()
 
 bool Git::tag(std::string const &name, GitHash const &id)
 {
-	std::string cmd = "tag \"%s\" %s";
-	cmd = fmt(cmd)(name)(id.toString());
+	std::string cmd = "tag %s %s";
+	cmd = fmt(cmd)(quoted_text(name))(id.toString());
 	return (bool)git(cmd);
 }
 
 bool Git::delete_tag(std::string const &name, bool remote)
 {
-	std::string cmd = "tag --delete \"%s\"";
-	cmd = fmt(cmd)(name);
+	std::string cmd = "tag --delete %s";
+	cmd = fmt(cmd)(quoted_text(name));
 	git(cmd);
 
 	if (remote) {
-		std::string cmd = "push --delete origin \"%s\"";
-		cmd = fmt(cmd)(name);
+		std::string cmd = "push --delete origin %s";
+		cmd = fmt(cmd)(quoted_text(name));
 		git(cmd);
 	}
 
@@ -330,8 +330,8 @@ void Git::setDefaultBranch(std::string const &branchname)
 {
 	AbstractGitSession::Option opt;
 	opt.chdir = false;
-	std::string cmd = "config --global init.defaultBranch \"%s\"";
-	cmd = fmt(cmd)(branchname);
+	std::string cmd = "config --global init.defaultBranch %s";
+	cmd = fmt(cmd)(quoted_text(branchname));
 	exec_git(cmd, opt);
 }
 
@@ -808,7 +808,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 	std::optional<GitCommitItem> ret;
 
 	std::string cmd = "log -1 --show-signature --pretty=format:\"id:%H#gpg:%G?#key:%GF#sub:%GP#trust:%GT##%s\" ";
-	cmd +=id.toString();
+	cmd += id.toString();
 	auto result = git_nolog(cmd, nullptr);
 	if (result && result->exit_code() == 0) {
 		auto splitLines = [&](std::string_view const &text){ // modified from misc::splitLines
@@ -909,10 +909,10 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 	Dir cwd = Dir::current();
 
 	auto DoIt = [&](){
-		std::string cmd = fmt("clone --recurse-submodules --progress -j%u \"%s\" \"%s\"")
+		std::string cmd = fmt("clone --recurse-submodules --progress -j%u %s %s")
 						  (std::thread::hardware_concurrency())
-						  (data.url)
-						  (data.subdir);
+						  (quoted_text(data.url))
+						  (quoted_text(data.subdir));
 		var = git_nochdir(cmd, pty);
 	};
 
@@ -931,7 +931,7 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 
 std::string Git::submoduleURL(std::string const &path)
 {
-	std::string cmd = fmt("config --file .gitmodules submodule.%s.url")(quoted_text(path));
+	std::string cmd = fmt("config --file .gitmodules %s")(quoted_text("submodule." + path + ".url"));
 	auto result = git(cmd);
 	if (result) {
 		return std::string{misc::trimmed(resultStdString(result))};
@@ -979,7 +979,7 @@ bool Git::submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess
 	if (force) {
 		cmd += " -f";
 	}
-	cmd += fmt(" \"%s\" \"%s\"")(data.url)(data.subdir);
+	cmd += fmt(" %s %s")(quoted_text(data.url))(quoted_text(data.subdir));
 	AbstractGitSession::Option opt;
 	opt.errout = true;
 	opt.pty = pty;
@@ -1066,7 +1066,7 @@ bool Git::push_u(bool set_upstream, const std::string &remote, const std::string
 		cmd += " --force";
 	}
 	if (set_upstream && !remote.empty() && !branch.empty()) {
-		cmd += fmt(" -u \"%s\" \"%s\"")(remote)(branch);
+		cmd += fmt(" -u %s %s")(quoted_text(remote))(quoted_text(branch));
 	}
 	AbstractGitSession::Option opt;
 	opt.pty = pty;
@@ -1210,8 +1210,8 @@ bool Git::stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty)
 
 void Git::unstage(std::string const &path)
 {
-	std::string cmd = "reset HEAD \"%s\"";
-	cmd = fmt(cmd)(path);
+	std::string cmd = "reset HEAD %s";
+	cmd = fmt(cmd)(quoted_text(path));
 	git(cmd);
 }
 
@@ -1450,7 +1450,7 @@ bool Git::stash_drop()
 
 bool Git::rm_cached(std::string const &file)
 {
-	std::string cmd = fmt("rm --cached \"%s\"")(file);
+	std::string cmd = fmt("rm --cached %s")(quoted_text(file));
 	return (bool)git(cmd);
 }
 
@@ -1510,7 +1510,7 @@ void Git::setRemoteURL(GitRemote const &remote)
 
 void Git::addRemoteURL(GitRemote const &remote)
 {
-	std::string cmd = fmt("remote add \"%s\" \"%s\"")
+	std::string cmd = fmt("remote add %s %s")
 			(quoted_text(remote.name))
 			(quoted_text(remote.url_fetch));
 	gitinfo().ssh_key_override = remote.ssh_key;
@@ -1656,8 +1656,8 @@ void GitFileStatus::parse(std::string const &text)
 
 std::vector<char> Git::blame(std::string const &path)
 {
-	std::string cmd = "blame --porcelain --abbrev=40 \"%s\"";
-	cmd = fmt(cmd)(path);
+	std::string cmd = "blame --porcelain --abbrev=40 %s";
+	cmd = fmt(cmd)(quoted_text(path));
 	auto result = git(cmd);
 	if (result) {
 		return toByteArray(result);
@@ -1762,7 +1762,7 @@ bool Git::configGpgProgram(std::string const &path, bool global)
 	}
 	cmd += "gpg.program ";
 	if (!path.empty()) {
-		cmd += fmt("\"%s\"")(path);
+		cmd += quoted_text(path);
 	}
 	return (bool)git_nochdir(cmd, nullptr);
 }
