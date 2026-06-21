@@ -54,6 +54,7 @@ Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\D3Dcompiler_47.dll"; DestDir
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\Guitar.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\incrementalsearchplugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\zstd.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\libcrypto-3-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\libssl-3-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\opengl32sw.dll"; DestDir: "{app}"; Flags: ignoreversion
