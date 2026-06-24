@@ -709,10 +709,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
 			const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
-			qDebug() << "eventFilter: key=" << k << " alt=" << alt << " ctrl=" << ctrl << " shift=" << shift;
-			if (k == 95) {
-				qDebug();
-			}
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
