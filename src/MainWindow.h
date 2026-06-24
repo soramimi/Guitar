@@ -300,8 +300,8 @@ private:
 	void fetch(GitRunner g);
 	void pull(GitRunner g);
 	void push_tags(GitRunner g);
-	void delete_tags(GitRunner g, const std::vector<std::string> &tagnames);
-	void add_tag(GitRunner g, QString const &name, GitHash const &commit_id);
+	void delete_tags(GitRunner g, const std::vector<std::string> &names);
+	void add_tag(GitRunner g, const std::string &name, GitHash const &commit_id);
 
 	bool push();
 
@@ -311,7 +311,7 @@ private:
 	void clearAuthentication();
 	void clearSshAuthentication();
 	void internalDeleteTags(const std::vector<std::string> &tagnames);
-	void internalAddTag(QString const &name);
+	void internalAddTag(const std::string &name);
 	void createRepository(QString const &dir);
 	void addRepository(QString const &local_dir, QString const &group = { });
 	void addRepositoryAccepted(const AddRepositoryDialog &dlg);
@@ -636,7 +636,7 @@ public:
 	bool setCurrentLogRow(int row);
 	bool shown();
 	void deleteTags(const std::vector<std::string> &tagnames);
-	void addTag(QString const &name);
+	void addTag(const std::string &name);
 	int selectedLogIndex() const;
 	void updateAncestorCommitMap();
 	bool isAncestorCommit(GitHash const &id) const;

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>308</width>
-    <height>141</height>
+    <height>173</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,13 +23,13 @@
    <item>
     <widget class="QListWidget" name="listWidget">
      <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
+      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
      </property>
      <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
+      <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
      </property>
      <property name="horizontalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
+      <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
      </property>
     </widget>
    </item>
@@ -38,21 +38,21 @@
      <item>
       <widget class="QPushButton" name="pushButton_add">
        <property name="text">
-        <string>Add...</string>
+        <string>&amp;Add...</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_delete">
        <property name="text">
-        <string>Delete</string>
+        <string>&amp;Delete</string>
        </property>
       </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -65,7 +65,7 @@
      <item>
       <widget class="QPushButton" name="pushButton_4">
        <property name="text">
-        <string>Close</string>
+        <string>Cancel</string>
        </property>
       </widget>
      </item>
@@ -89,8 +89,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>368</x>
-     <y>222</y>
+     <x>297</x>
+     <y>162</y>
     </hint>
     <hint type="destinationlabel">
      <x>393</x>

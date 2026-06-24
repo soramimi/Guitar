@@ -2920,17 +2920,27 @@ void MainWindow::pull(GitRunner g)
 
 void MainWindow::push_tags(GitRunner g)
 {
-	runPtyGit(tr("Pushing tags..."), g, Git_push_tags { }, nullptr, { });
+	runPtyGit(tr("Pushing tags..."), g, Git_push_tags { }, RUN_PTY_CALLBACK {
+		updateCurrentFileList();
+	}, { });
 }
 
-void MainWindow::delete_tags(GitRunner g, std::vector<std::string> const &tagnames)
+void MainWindow::delete_tags(GitRunner g, std::vector<std::string> const &names)
 {
-	runPtyGit(QString { }, g, Git_delete_tags { tagnames }, nullptr, { });
+	// runPtyGit(QString { }, g, Git_delete_tags { tagnames }, RUN_PTY_CALLBACK {
+	// 	updateCurrentFileList();
+	// }, { });
+	for (std::string const &name : names) {
+		git().delete_tag(name, false);
+	}
 }
 
-void MainWindow::add_tag(GitRunner g, const QString &name, GitHash const &commit_id)
+void MainWindow::add_tag(GitRunner g, const std::string &name, GitHash const &commit_id)
 {
-	runPtyGit(QString { }, g, Git_add_tag { name.toStdString(), commit_id }, nullptr, { });
+	// runPtyGit(QString { }, g, Git_add_tag { name.toStdString(), commit_id }, RUN_PTY_CALLBACK {
+	// 	updateCurrentFileList();
+	// }, { });
+	git().tag(name, commit_id);
 }
 
 /**
@@ -3086,9 +3096,9 @@ void MainWindow::internalDeleteTags(std::vector<std::string> const &tagnames)
  *
  * タグを追加する
  */
-void MainWindow::internalAddTag(const QString &name)
+void MainWindow::internalAddTag(const std::string &name)
 {
-	if (name.isEmpty()) return;
+	if (name.empty()) return;
 
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -6387,7 +6397,7 @@ void MainWindow::revertCommit()
 	}
 }
 
-void MainWindow::addTag(QString const &name)
+void MainWindow::addTag(std::string const &name)
 {
 	int row = ui->tableWidget_log->currentRow();
 
@@ -7131,7 +7141,9 @@ void MainWindow::on_action_edit_tags_triggered()
 	GitCommitItem const &commit = selectedCommitItem();
 	if (commit && GitHash::isValidID(commit.commit_id.toString())) {
 		EditTagsDialog dlg(this, &commit);
-		dlg.exec();
+		if (dlg.exec() == QDialog::Accepted) {
+			reopenRepository(true, { });
+		}
 	}
 }
 

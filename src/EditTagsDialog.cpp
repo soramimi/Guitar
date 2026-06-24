@@ -20,6 +20,8 @@ EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) 
 	ui->lineEdit_message->setText((QS)commit_->message);
 
 	updateTagList();
+	
+	ui->pushButton_add->setFocus();
 }
 
 EditTagsDialog::~EditTagsDialog()
@@ -71,8 +73,9 @@ void EditTagsDialog::on_pushButton_add_clicked()
 	InputNewTagDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
-		mainwindow()->addTag(text);
-		updateTagList();
+		mainwindow()->addTag(text.toStdString());
+		// updateTagList();
+		done(QDialog::Accepted);
 	}
 }
 
@@ -80,6 +83,7 @@ void EditTagsDialog::on_pushButton_delete_clicked()
 {
 	QStringList list = selectedTags();
 	mainwindow()->deleteTags((QSL)list);
-	updateTagList();
+	// updateTagList();
+	done(QDialog::Accepted);
 }
 
