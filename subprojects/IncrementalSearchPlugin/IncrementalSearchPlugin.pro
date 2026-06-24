@@ -5,7 +5,7 @@ TEMPLATE = lib
 CONFIG += plugin
 QT = core
 
-DESTDIR = $$PWD/../../_bin
+DESTDIR = $$PWD/../../lib
 
 gcc:QMAKE_CXXFLAGS += -include $$PWD/config.h
 

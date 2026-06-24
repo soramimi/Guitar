@@ -197,7 +197,12 @@ int main(int argc, char *argv[])
 #ifdef QT_DEBUG
 		name += 'd';
 #endif
-		QPluginLoader loader(name);
+#ifdef Q_OS_WIN
+		QString path = name;
+#else
+		QString path = QFileInfo(global->this_executive_program).absoluteDir().absoluteFilePath("../lib/lib" + name + ".so");
+#endif
+		QPluginLoader loader(path);
 		IncrementalSearchInterface *plugin = dynamic_cast<IncrementalSearchInterface *>(loader.instance());
 		if (plugin) {
 			global->incremental_search = std::shared_ptr<IncrementalSearch>(plugin->create());
