@@ -33,6 +33,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
 		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
+		{ProviderID::PFN,                          "pfn",                             "Preferred Networks",             "PFN_API_KEY"},
 		{ProviderID::Moonshot,                     "moonshot",                        "Moonshot AI",                    "MOONSHOT_API_KEY"},
 		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
@@ -72,6 +73,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Anthropic,        "claude-haiku-4-5"},
 		{ProviderID::Google,           "gemini-3.1-flash-lite"},
 		{ProviderID::XAI,              "grok-latest"},
+		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Moonshot,         "kimi-k2.7-code"},
 		{ProviderID::Moonshot,         "kimi-k2.6"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
@@ -98,6 +100,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::Anthropic,
 		ProviderID::Google,
 		ProviderID::XAI,
+		ProviderID::PFN,
 		ProviderID::Moonshot,
 		ProviderID::Sakura,
 		ProviderID::DeepSeek,
@@ -128,6 +131,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::Anthropic, "^claude-"},
 		{ProviderID::Google, "^gemini-"},
 		{ProviderID::XAI, "^grok-"},
+		{ProviderID::PFN, "^plamo-"},
 		{ProviderID::Moonshot, "^kimi-"},
 		{ProviderID::Sakura, "^sakura:"},
 		{ProviderID::DeepSeek, "^deepseek-"},
@@ -289,6 +293,15 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint = "https://api.x.ai/v1/chat/completions";
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
+	Request case_PFN()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint = "https://api.platform.preferredai.jp/v1/chat/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}

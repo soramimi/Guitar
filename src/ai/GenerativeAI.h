@@ -14,6 +14,7 @@ enum class ProviderID {
 	Anthropic,
 	Google,
 	XAI,
+	PFN,
 	Moonshot,
 	Sakura, // さくらの AI Engine（OpenAI chat completions 互換）
 	DeepSeek,
@@ -34,6 +35,7 @@ public:
 	virtual T case_Anthropic() = 0;
 	virtual T case_Google() = 0;
 	virtual T case_XAI() = 0;
+	virtual T case_PFN() = 0;
 	virtual T case_Kimi() = 0;
 	virtual T case_Sakura() = 0;
 	virtual T case_DeepSeek() = 0;
@@ -52,7 +54,8 @@ public:
 		case ProviderID::Anthropic:               return case_Anthropic();
 		case ProviderID::Google:                  return case_Google();
 		case ProviderID::XAI:                     return case_XAI();
-		case ProviderID::Moonshot:                    return case_Kimi();
+		case ProviderID::PFN:                     return case_PFN();
+		case ProviderID::Moonshot:                return case_Kimi();
 		case ProviderID::Sakura:                  return case_Sakura();
 		case ProviderID::DeepSeek:                return case_DeepSeek();
 		case ProviderID::OpenRouter:              return case_OpenRouter();

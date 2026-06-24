@@ -332,6 +332,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 	
+	/// PFN：OpenAI Chat Completions 互換形式
+	AiResult case_PFN()
+	{
+		return parse_openai_chat_completions_format();
+	}
+	
 	AiResult case_Kimi()
 	{
 		switch (model.api_compatibility()) {
@@ -555,6 +561,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 
 	/// xAI：OpenAI Chat Completions 互換形式
 	std::string case_XAI()
+	{
+		return case_OpenAI_chat_completions();
+	}
+	
+	/// PFN：OpenAI Chat Completions 互換形式
+	std::string case_PFN()
 	{
 		return case_OpenAI_chat_completions();
 	}
