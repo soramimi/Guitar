@@ -763,7 +763,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				}
 				if (ctrl) {
 					if (k == Qt::Key_R) {
+#if 0 // TODO: v1.4では無効化しておく
 						onRepositoryTreeSortRecent(true); // 最近使用した順ソート
+#endif
 						return true;
 					} else if (k == Qt::Key_C) {
 						copyWorkingCopyDirToClipboard();
@@ -7438,8 +7440,10 @@ void MainWindow::onCommitLogCurrentRowChanged(int row)
 
 void MainWindow::on_action_view_sort_by_time_changed()
 {
+#if 0 // v1.4では無効化しておく
 	bool f = ui->action_view_sort_by_time->isChecked();
 	onRepositoryTreeSortRecent(f);
+#endif
 }
 
 void MainWindow::on_action_ssh_triggered() // experimental
