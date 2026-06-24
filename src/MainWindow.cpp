@@ -2930,20 +2930,16 @@ void MainWindow::push_tags(GitRunner g)
 
 void MainWindow::delete_tags(GitRunner g, std::vector<std::string> const &names)
 {
-	// runPtyGit(QString { }, g, Git_delete_tags { tagnames }, RUN_PTY_CALLBACK {
-	// 	updateCurrentFileList();
-	// }, { });
-	for (std::string const &name : names) {
-		git().delete_tag(name, false);
-	}
+	runPtyGit(QString { }, g, Git_delete_tags { names }, RUN_PTY_CALLBACK {
+		updateCurrentFileList();
+	}, { });
 }
 
 void MainWindow::add_tag(GitRunner g, const std::string &name, GitHash const &commit_id)
 {
-	// runPtyGit(QString { }, g, Git_add_tag { name.toStdString(), commit_id }, RUN_PTY_CALLBACK {
-	// 	updateCurrentFileList();
-	// }, { });
-	git().tag(name, commit_id);
+	runPtyGit(QString { }, g, Git_add_tag { name, commit_id }, RUN_PTY_CALLBACK {
+		updateCurrentFileList();
+	}, { });
 }
 
 /**

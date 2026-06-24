@@ -39,6 +39,7 @@ void GitCommandRunner::operator ()(Git_push_tags const &item)
 void GitCommandRunner::operator ()(Git_delete_tag const &item)
 {
 	d.result = git().delete_tag(item.name_, item.remote_);
+	d.result = git().push_tags(pty());
 }
 
 void GitCommandRunner::operator ()(Git_delete_tags const &item)
@@ -49,11 +50,13 @@ void GitCommandRunner::operator ()(Git_delete_tags const &item)
 			d.result = true;
 		}
 	}
+	d.result = git().push_tags(pty());
 }
 
 void GitCommandRunner::operator ()(Git_add_tag const &item)
 {
 	d.result = git().tag(item.name_, item.commit_id_);
+	d.result = git().push_tags(pty());
 }
 
 void GitCommandRunner::operator ()(Git_submodule_add const &item)
