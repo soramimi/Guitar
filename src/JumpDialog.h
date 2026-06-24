@@ -22,7 +22,7 @@ private:
 	MainWindow *mainwindow();
 	const NamedCommitItem *currentItem() const;
 	const CommitRecord *findCommit(const std::string &id) const;
-	bool appendCharToFilterText(int k);
+	bool appendCharToFilterText(QString const &s);
 protected:
 	bool eventFilter(QObject *watched, QEvent *event) override;
 public:
