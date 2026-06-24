@@ -21,10 +21,11 @@ $arch = `#{$project_root}/packaging/deb/arch.rb`.strip
 
 FileUtils.mkpath($dstdir + "/DEBIAN")
 FileUtils.mkpath($dstdir + "/usr/bin")
+FileUtils.mkpath($dstdir + "/usr/lib")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
 FileUtils.cp("#{$project_root}/_bin/Guitar", $dstdir + "/usr/bin/")
-FileUtils.cp("#{$project_root}/_bin/libincrementalsearchplugin.so", $dstdir + "/usr/bin/")
+FileUtils.cp("#{$project_root}/lib/libincrementalsearchplugin.so", $dstdir + "/usr/lib/")
 system "strip #{$dstdir}/usr/bin/Guitar"
 FileUtils.cp("#{$project_root}/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
 File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|
