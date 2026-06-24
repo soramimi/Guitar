@@ -707,8 +707,12 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
-			const bool mods = (e->modifiers() & Qt::KeyboardModifierMask);
+			const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
+			qDebug() << "eventFilter: key=" << k << " alt=" << alt << " ctrl=" << ctrl << " shift=" << shift;
+			if (k == 95) {
+				qDebug();
+			}
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
@@ -751,6 +755,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					return true;
 				}
 			}
+			QString text = e->text();
 			if (watched == ui->treeWidget_repos) { // リポジトリツリー
 				if (enter) {
 					if (isIncrementalSearching()) {
@@ -768,7 +773,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						copyWorkingCopyDirToClipboard();
 						return true;
 					}
-				} else if (appendCharToFilterText(k, MainWindow::FilterTarget::RepositorySearch)) {
+				} else if (!(alt || ctrl) && appendCharToFilterText(text, MainWindow::FilterTarget::RepositorySearch)) {
 					return true;
 				}
 			} else if (watched == ui->tableWidget_log) {
@@ -794,7 +799,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						clipboard->setText(QString::fromStdString(commit->commit_id.toString()));
 					}
 					return true;
-				} else if (!mods && appendCharToFilterText(k, MainWindow::FilterTarget::CommitLogSearch)) {
+				} else if (!(alt || ctrl) && appendCharToFilterText(text, MainWindow::FilterTarget::CommitLogSearch)) {
 					return true;
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
@@ -6336,9 +6341,13 @@ bool MainWindow::applyFilter()
  * @brief フィルタに文字を追加する
  * @return
  */
-void MainWindow::_appendCharToFilterText(ushort c)
+void MainWindow::_appendCharToFilterText(QString const &s)
 {
+	if (s.isEmpty()) return;
+	
 	QString text = getIncrementalSearchText();
+	
+	uchar c = *s.utf16();
 	if (c == ASCII_BACKSPACE) {
 		int i = text.size();
 		if (i > 0) {
@@ -6346,30 +6355,20 @@ void MainWindow::_appendCharToFilterText(ushort c)
 		}
 	} else if (c == ASCII_DELETE) {
 		text.clear();
-	} else if (QChar(c).isLetterOrNumber()) {
-		text.append(QChar(c).toLower());
+	} else if (c >= 0x20 && c < 128 && (!isspace(c) && isprint(c))) {
+		text.append(QChar(c));
 	}
 	setIncrementalSearchText(text);
 }
 
-bool MainWindow::appendCharToFilterText(int k, MainWindow::FilterTarget ft)
+bool MainWindow::appendCharToFilterText(QString const &text, MainWindow::FilterTarget ft)
 {
 	m->filter_target = ft;
-
-	if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
-		// thru
-	} else if (k == Qt::Key_Backspace) {
-		k = ASCII_BACKSPACE;
-	} else if (k == Qt::Key_Delete) {
-		k = ASCII_DELETE;
-	} else {
-		return false;
-	}
-
+	
 	if (isPtyProcessRunning()) {
 		// ignore but return true
 	} else {
-		_appendCharToFilterText(k);
+		_appendCharToFilterText(text);
 		updateStatusBarText();
 	}
 

@@ -176,29 +176,26 @@ MainWindow *JumpDialog::mainwindow()
 static constexpr int ASCII_BACKSPACE = 0x08;
 static constexpr int ASCII_DELETE = 0xff;
 
-bool JumpDialog::appendCharToFilterText(int k)
+bool JumpDialog::appendCharToFilterText(QString const &s)
 {
-	if (k >= 0 && k < 128 && isalnum(k)) { // 英数字
-		// thru
-	} else if (k == Qt::Key_Backspace) {
-		k = ASCII_BACKSPACE;
-	} else if (k == Qt::Key_Delete) {
-		k = ASCII_DELETE;
-	} else {
-		return false;
-	}
-
+	if (s.isEmpty()) return false;
+	
 	QString text = ui->lineEdit_filter->text();
-	if (k == ASCII_BACKSPACE) {
+	
+	ushort c = *s.utf16();
+	if (c == Qt::Key_Backspace) {
 		int i = text.size();
 		if (i > 0) {
 			text.remove(i - 1, 1);
 		}
-	} else if (k == ASCII_DELETE) {
+	} else if (c == Qt::Key_Delete) {
 		text.clear();
-	} else if (QChar(k).isLetterOrNumber()) {
-		text.append(QChar(k).toLower());
+	} else if (c >= 0x20 && c < 128 && (!isspace(c) && isprint(c))) {
+		text.append(QChar(c).toLower());
+	} else {
+		return false;
 	}
+	
 	ui->lineEdit_filter->setText(text);
 	m->delegate.setFilterText(text);
 
@@ -226,7 +223,7 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
-			const bool mods = (e->modifiers() & Qt::KeyboardModifierMask);
+			const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 			if (enter) {
 				if (ctrl) {
@@ -242,7 +239,7 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 					ui->lineEdit_filter->setText(s);
 				}
 			} else {
-				if (appendCharToFilterText(k)) {
+				if (!(alt || ctrl) && appendCharToFilterText(e->text())) {
 					return true;
 				}
 			}
