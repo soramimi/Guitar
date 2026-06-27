@@ -16,7 +16,7 @@ public:
 	explicit AboutDialog(QWidget *parent = nullptr);
 	~AboutDialog() override;
 
-	static QString appVersion();
+	static QString appVersionString();
 protected:
 	void mouseReleaseEvent(QMouseEvent *) override;
 	void paintEvent(QPaintEvent *event) override;

@@ -1,11 +1,9 @@
 #include "AboutDialog.h"
 #include "ui_AboutDialog.h"
-#include <common/qmisc.h>
-
+#include "ApplicationGlobal.h"
 #include <QPainter>
 #include <QTextBlock>
-
-#include "../version.h"
+#include <common/qmisc.h>
 
 AboutDialog::AboutDialog(QWidget *parent) :
 	QDialog(parent),
@@ -58,8 +56,8 @@ hr { height: 1px; border-width: 0; }
 #endif
 	html = html
 			.arg(FONTSIZE)
-			.arg(appVersion())
-			.arg(copyright_year)
+			.arg(appVersionString())
+			.arg(global->copyright_year())
 			.arg(copyright_holder)
 			.arg(twitter_account.isEmpty() ? QString() : QString("(@%1)").arg(twitter_account))
 			.arg(devenv)
@@ -98,7 +96,10 @@ void AboutDialog::paintEvent(QPaintEvent *)
 	pr.drawPixmap(0, 0, w, h, pixmap);
 }
 
-QString AboutDialog::appVersion()
+QString AboutDialog::appVersionString()
 {
-	return QString("%1, v%2 (%3)").arg(qApp->applicationName()).arg(product_version).arg(source_revision);
+	return QString("%1, v%2 (%3)")
+			.arg(qApp->applicationName())
+			.arg(global->product_version())
+			.arg(global->source_revision());
 }

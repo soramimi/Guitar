@@ -1,5 +1,6 @@
 #include "Profile.h"
 #include <QDebug>
+#include "Logger.h"
 
 void Profile::log(const QString &s)
 {
@@ -10,14 +11,12 @@ Profile::Profile(const char *func)
 	: func_(func)
 {
 	trace_logger_.begin("function", func);
-	// log(QString("--- profile [enter] %1").arg(func));
-	qDebug() << "--- profile [enter]\t" << func;
+	logprintf(LOG_DEFAULT, "--- profile [enter] <<%s>>", func);
 	timer_.start();
 }
 
 Profile::~Profile()
 {
-	// log(QString("--- profile [leave] %1 @ %2ms").arg(func_).arg(timer_.elapsed()));
-	qDebug() << "--- profile [leave]\t" << func_ << "\t" << timer_.elapsed();
+	logprintf(LOG_DEFAULT, "--- profile [leave] <<%s>> %d ms", func_.c_str(), (int)timer_.elapsed());
 	trace_logger_.end();
 }

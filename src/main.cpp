@@ -3,13 +3,16 @@
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "CommitLogTableWidget.h"
+#include "FileType.h"
 #include "GeneratedCommitMessage.h"
+#include "Logger.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "RepositoryModel.h"
 #include "SettingGeneralForm.h"
-#include <common/joinpath.h>
-#include <inet/webclient.h>
+#include "fmt.h"
+#include <IncrementalSearchInterface.h>
+#include <MyExperimentalLibrary.h>
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
@@ -18,14 +21,11 @@
 #include <QProxyStyle>
 #include <QStandardPaths>
 #include <QTranslator>
+#include <common/joinpath.h>
 #include <csignal>
+#include <inet/webclient.h>
 #include <string>
-#include <IncrementalSearchInterface.h>
-#include "Logger.h"
 
-#include "FileType.h"
-
-#include <MyExperimentalLibrary.h>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #else
@@ -100,7 +100,9 @@ void onSigPipe(int)
 int main(int argc, char *argv[])
 {
 	putenv(const_cast<char *>("QT_ASSUME_STDERR_HAS_CONSOLE=1"));
-	qInstallMessageHandler(logHandler);
+	if (0) {
+		qInstallMessageHandler(logHandler);
+	}
 
 	WebClient::initialize();
 
@@ -164,6 +166,17 @@ int main(int argc, char *argv[])
 	global->appsettings = ApplicationSettings::loadSettings();
 
 	Logger::start();
+	{
+		logprintf(LOG_DEFAULT, "-----------------------------------");
+		logprintf(LOG_DEFAULT, "Starting Guitar, The Git GUI Client");
+		logprintf(LOG_DEFAULT, "-----------------------------------");
+		logprintf(LOG_DEFAULT, "%s, v%s (%s)"
+				  , APPLICATION_NAME
+				  , global->product_version()
+				  , global->source_revision()
+				  );
+		
+	}
 	Logger::pause(true);
 	Logger::open(global->log_dir.toStdString() / "Guitar.log");
 	Logger::pause(false);
