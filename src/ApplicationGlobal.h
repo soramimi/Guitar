@@ -48,6 +48,12 @@ public:
 	ApplicationGlobal();
 	~ApplicationGlobal();
 
+	int copyright_year();
+	
+	char const *product_version();
+	
+	char const *source_revision();
+	
 	AbstractGitSession::Option gitopt;
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;

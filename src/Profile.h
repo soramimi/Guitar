@@ -7,7 +7,7 @@
 
 class Profile {
 private:
-	QString func_;
+	std::string func_;
 	QElapsedTimer timer_;
 	TraceLogger trace_logger_;
 	void log(QString const &s);

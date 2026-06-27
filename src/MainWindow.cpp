@@ -635,7 +635,7 @@ void MainWindow::onStartEvent()
 		updateWindowTitle(git());
 
 		// プログラムバーション表示
-		global->writeLog(AboutDialog::appVersion() + '\n');
+		global->writeLog(AboutDialog::appVersionString() + '\n');
 		// gitコマンドバージョン表示
 		logGitVersion();
 	}
@@ -771,7 +771,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						copyWorkingCopyDirToClipboard();
 						return true;
 					}
-				} else if (!(alt || ctrl) && appendCharToFilterText(text, MainWindow::FilterTarget::RepositorySearch)) {
+				} else if (!(alt || ctrl) && appendCharToFilterText(k, text, MainWindow::FilterTarget::RepositorySearch)) {
 					return true;
 				}
 			} else if (watched == ui->tableWidget_log) {
@@ -797,7 +797,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						clipboard->setText(QString::fromStdString(commit->commit_id.toString()));
 					}
 					return true;
-				} else if (!(alt || ctrl) && appendCharToFilterText(text, MainWindow::FilterTarget::CommitLogSearch)) {
+				} else if (!(alt || ctrl) && appendCharToFilterText(k, text, MainWindow::FilterTarget::CommitLogSearch)) {
 					return true;
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
@@ -6355,8 +6355,12 @@ void MainWindow::_appendCharToFilterText(QString const &s)
 	setIncrementalSearchText(text);
 }
 
-bool MainWindow::appendCharToFilterText(QString const &text, MainWindow::FilterTarget ft)
+bool MainWindow::appendCharToFilterText(int key, QString const &text, MainWindow::FilterTarget ft)
 {
+	if (key < Qt::Key_Space || key >= Qt::Key_Delete) {
+		return false;
+	}
+	
 	m->filter_target = ft;
 	
 	if (isPtyProcessRunning()) {

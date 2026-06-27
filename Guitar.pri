@@ -515,8 +515,6 @@ HEADERS += \
 	$$SRC/zip/zip.h \
 	$$SRC/zip/zipinternal.h
 
-HEADERS += version.h
-
 FORMS += \
 	$$SRC/AboutDialog.ui \
 	$$SRC/AddRepositoriesCollectivelyDialog.ui \

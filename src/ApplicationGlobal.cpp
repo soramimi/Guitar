@@ -14,6 +14,10 @@
 #include "Logger.h"
 #include <MyMecab.h>
 
+namespace ver {
+#include "../version.c"
+}
+
 struct ApplicationGlobal::Private {
 	TraceEventWriter trace_event_logger;
 };
@@ -27,6 +31,21 @@ ApplicationGlobal::~ApplicationGlobal()
 {
 	close_trace_logger();
 	delete m;
+}
+
+int ApplicationGlobal::copyright_year()
+{
+	return ver::copyright_year;
+}
+
+const char *ApplicationGlobal::product_version()
+{
+	return ver::product_version;
+}
+
+const char *ApplicationGlobal::source_revision()
+{
+	return ver::source_revision;
 }
 
 void ApplicationGlobal::open_trace_logger()
