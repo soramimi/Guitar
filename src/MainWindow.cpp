@@ -709,6 +709,20 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
 			const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
+
+			auto AppendCharToFilterText = [&](){
+				FilterTarget target;
+				if (watched == ui->treeWidget_repos) { // リポジトリツリー
+					target = FilterTarget::RepositorySearch;
+				} else if (watched == ui->tableWidget_log) { // コミットログ
+					target = FilterTarget::CommitLogSearch;
+				} else {
+					return false;
+				}
+				QString text = e->text();
+				return !(alt || ctrl) && appendCharToFilterText(text, target);
+			};
+			
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
@@ -769,7 +783,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						copyWorkingCopyDirToClipboard();
 						return true;
 					}
-				} else if (!(alt || ctrl) && appendCharToFilterText(k, text, MainWindow::FilterTarget::RepositorySearch)) {
+				} else if (AppendCharToFilterText()) {
 					return true;
 				}
 			} else if (watched == ui->tableWidget_log) {
@@ -795,7 +809,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 						clipboard->setText(QString::fromStdString(commit->commit_id.toString()));
 					}
 					return true;
-				} else if (!(alt || ctrl) && appendCharToFilterText(k, text, MainWindow::FilterTarget::CommitLogSearch)) {
+				} else if (AppendCharToFilterText()) {
 					return true;
 				}
 			} else if (watched == ui->listWidget_files || watched == ui->listWidget_unstaged || watched == ui->listWidget_staged) {
@@ -6333,41 +6347,33 @@ bool MainWindow::applyFilter()
  * @brief フィルタに文字を追加する
  * @return
  */
-void MainWindow::_appendCharToFilterText(QString const &s)
+bool MainWindow::appendCharToFilterText(QString const &text, MainWindow::FilterTarget ft)
 {
-	if (s.isEmpty()) return;
+	if (text.isEmpty()) return false;
 	
-	QString text = getIncrementalSearchText();
+	QString searchtext = getIncrementalSearchText();
 	
-	uchar c = *s.utf16();
+	uchar c = *text.utf16();
 	if (c == ASCII_BACKSPACE) {
-		int i = text.size();
+		int i = searchtext.size();
 		if (i > 0) {
-			text.remove(i - 1, 1);
+			searchtext.remove(i - 1, 1);
 		}
 	} else if (c == ASCII_DELETE) {
-		text.clear();
-	} else if (c >= 0x20 && c < 128 && (!isspace(c) && isprint(c))) {
-		text.append(QChar(c));
-	}
-	setIncrementalSearchText(text);
-}
-
-bool MainWindow::appendCharToFilterText(int key, QString const &text, MainWindow::FilterTarget ft)
-{
-	if (key < Qt::Key_Space || key >= Qt::Key_Delete) {
+		searchtext.clear();
+	} else if (c >= 0x20 && c < 0x80 && (!isspace(c) && isprint(c))) {
+		searchtext.append(QChar(c));
+	} else {
 		return false;
 	}
 	
 	m->filter_target = ft;
-	
 	if (isPtyProcessRunning()) {
 		// ignore but return true
 	} else {
-		_appendCharToFilterText(text);
-		updateStatusBarText();
+		setIncrementalSearchText(searchtext);
 	}
-
+	updateStatusBarText();
 	return true;
 }
 
