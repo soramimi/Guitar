@@ -143,10 +143,17 @@ int main(int argc, char *argv[])
 			i++;
 		}
 	}
-
+	
+#ifdef Q_OS_WIN
+	putenv("QT_ENABLE_HIGHDPI_SCALING=1");
+	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+	// qputenv("QT_SCALE_FACTOR", "1.5");
+	
+	QApplication a(argc, argv);
 	global->organization_name = ORGANIZATION_NAME;
 	global->application_name = APPLICATION_NAME;
-	global->this_executive_program = QFileInfo(argv[0]).absoluteFilePath();
+	global->application_file_path = QCoreApplication::applicationFilePath();
 	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
 	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
 	global->log_dir = global->app_config_dir / "log";
@@ -175,7 +182,6 @@ int main(int argc, char *argv[])
 				  , global->product_version()
 				  , global->source_revision()
 				  );
-		
 	}
 	Logger::pause(true);
 	Logger::open(global->log_dir.toStdString() / "Guitar.log");
@@ -189,20 +195,6 @@ int main(int argc, char *argv[])
 
 	global->init1();
 
-#if 0
-	if (a_genmsg) {
-		return genmsg();
-	}
-#endif
-
-#ifdef Q_OS_WIN
-	putenv("QT_ENABLE_HIGHDPI_SCALING=1");
-	// QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-#endif
-	// qputenv("QT_SCALE_FACTOR", "1.5");
-
-	QApplication a(argc, argv);
-	
 	// load incremental search plugin
 	{
 		QString name = "incrementalsearchplugin";

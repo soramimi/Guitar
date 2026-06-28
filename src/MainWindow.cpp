@@ -3981,7 +3981,7 @@ void MainWindow::openExplorer(QString const &dir, QString const &ssh_key)
 
 void MainWindow::openNewGuitar(QString const &path, QString const &commit_id)
 {
-	QProcess::execute(global->this_executive_program, { path, "--commit-id", commit_id });
+	QProcess::execute(global->application_file_path, { path, "--commit-id", commit_id });
 }
 
 /**
