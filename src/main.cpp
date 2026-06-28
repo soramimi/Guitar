@@ -205,7 +205,6 @@ int main(int argc, char *argv[])
 	
 	// load incremental search plugin
 	{
-		qDebug() << QDir::currentPath();
 		QString name = "incrementalsearchplugin";
 #ifdef QT_DEBUG
 		name += 'd';
@@ -213,14 +212,17 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN
 		QString path = name;
 #else
-		QString path = QFileInfo(global->this_executive_program).absoluteDir().absoluteFilePath("../lib/lib" + name + ".so");
+		QString path = QCoreApplication::applicationDirPath() / "../lib/lib" + name + ".so";
 #endif
+		logprintf(LOG_DEFAULT, "loading the plugin %s", path.toStdString().c_str());
 		QPluginLoader loader(path);
 		IncrementalSearchInterface *plugin = dynamic_cast<IncrementalSearchInterface *>(loader.instance());
 		if (plugin) {
 			global->incremental_search = std::shared_ptr<IncrementalSearch>(plugin->create());
-			if (!global->incremental_search->open()) {
-				logprintf(LOG_DEFAULT, "Incremental Search plugin is loaded but failed to open. This may cause some features to not work properly.");
+			if (global->incremental_search->open()) {
+				logprintf(LOG_DEFAULT, "%s is loaded successfully.", name.toStdString().c_str());
+			} else {
+				logprintf(LOG_DEFAULT, "%s is loaded but failed to open. This may cause some features to not work properly.", name.toStdString().c_str());
 			}
 		} else {
 			logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
