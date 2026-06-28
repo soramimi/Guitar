@@ -720,7 +720,7 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 {
 	PROFILE;
 
-	GitCommitItemList items;
+	// GitCommitItemList items;
 	std::vector<GitCommitItem> list;
 
 	std::string cmd = "log --pretty=format:\"id:%H#gpg:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\"";
@@ -738,8 +738,8 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 		}
 	}
 
-	items.setList(std::move(list));
-	return items;
+	return {std::move(list)};
+	// return items;
 }
 
 GitCommitItemList Git::log_all(GitHash const &id, int maxcount)

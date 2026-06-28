@@ -97,17 +97,19 @@ void FileHistoryWindow::collectFileHistory()
 	int n = cols.size();
 	ui->tableWidget_log->setColumnCount(n);
 	ui->tableWidget_log->setRowCount(0);
+	
 	for (int i = 0; i < n; i++) {
 		QString const &text = cols[i];
 		auto *item = new QTableWidgetItem(text);
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
+	
+	std::basic_string_view<GitCommitItem *> items = m->commit_item_list.items();
+	
+	ui->tableWidget_log->setRowCount(items.size());
 
-	int count = (int)m->commit_item_list.size();
-	ui->tableWidget_log->setRowCount(count);
-
-	for (int row = 0; row < count; row++) {
-		GitCommitItem const &commit = m->commit_item_list[row];
+	for (int row = 0; row < (int)items.size(); row++) {
+		GitCommitItem const *commit = items[row];
 		int col = 0;
 		auto AddColumn = [&](QString const &text, QString const &tooltip){
 			auto *item = new QTableWidgetItem(text);
@@ -115,13 +117,13 @@ void FileHistoryWindow::collectFileHistory()
 			ui->tableWidget_log->setItem(row, col, item);
 			col++;
 		};
-
-		QString commit_id = MainWindow::abbrevCommitID(commit);
-		QString datetime = (QS)commit.commit_date.toString();
+		
+		QString commit_id = MainWindow::abbrevCommitID(*commit);
+		QString datetime = (QS)commit->commit_date.toString();
 		AddColumn(commit_id, QString());
 		AddColumn(datetime, QString());
-		AddColumn((QS)commit.author, QString());
-		AddColumn((QS)commit.message, (QS)commit.message);
+		AddColumn((QS)commit->author, QString());
+		AddColumn((QS)commit->message, (QS)commit->message);
 		ui->tableWidget_log->setRowHeight(row, 24);
 	}
 
@@ -138,22 +140,25 @@ void FileHistoryWindow::updateDiffView()
 	Q_ASSERT(m->g.isValidWorkingCopy());
 
 	ui->widget_diff_view->clearDiffView();
-
+	
+	auto FindFileID = [&](GitCommitItem const &commit){
+		return mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
+	};
+	
+	std::basic_string_view<GitCommitItem *> items = m->commit_item_list.items();
+	
 	int row = ui->tableWidget_log->currentRow();
-	if (row >= 0 && row + 1 < (int)m->commit_item_list.size()) {
-		GitCommitItem const &commit_left = m->commit_item_list[row + 1]; // older
-		GitCommitItem const &commit_right = m->commit_item_list[row];    // newer
+	if (row >= 0 && row + 1 < (int)items.size()) {
+		GitCommitItem const *commit_left = items[row + 1]; // older
+		GitCommitItem const *commit_right = items[row];    // newer
 
-		auto FindFileID = [&](GitCommitItem const &commit){
-			return mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
-		};
-		std::string id_left = FindFileID(commit_left);
-		std::string id_right = FindFileID(commit_right);
+		std::string id_left = FindFileID(*commit_left);
+		std::string id_right = FindFileID(*commit_right);
 
-		ui->widget_diff_view->updateDiffView_(id_left, id_right, m->path.toStdString());
-	} else if (row >= 0 && row < (int)m->commit_item_list.size()) {
-		GitCommitItem const &commit = m->commit_item_list[row];    // newer
-		std::string id = mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
+		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path.toStdString());
+	} else if (row >= 0 && row < (int)items.size()) {
+		GitCommitItem const *commit = items[row];    // newer
+		std::string id = FindFileID(*commit);
 
 		GitDiff diff(id, m->path.toStdString(), {});
 		ui->widget_diff_view->updateDiffView(diff, false);

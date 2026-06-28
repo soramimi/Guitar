@@ -1524,7 +1524,7 @@ GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxco
 {
 	TraceLogger trace("log_all2", { });
 #if 0
-	auto items = g.log_all(id, maxcount);
+	auto list = g.log_all(id, maxcount);
 #else
 
 	std::vector<GitHash> revlist = g.rev_list_all(id, maxcount);
@@ -1632,8 +1632,8 @@ CommitLogExchangeData MainWindow::queryCommitLog(GitRunner g, bool suppress_unco
 	}
 
 	CommitLogExchangeData exdata;
-	exdata.p->commit_log = commit_log;
-	exdata.p->branch_map = branch_map;
+	exdata.p->commit_log = std::move(commit_log);
+	exdata.p->branch_map = std::move(branch_map);
 	exdata.p->tag_map = async_tags.get();
 	return exdata;
 }
@@ -7396,6 +7396,11 @@ void MainWindow::on_action_create_desktop_launcher_file_triggered()
 GitCommitItemList const &MainWindow::commitlog() const
 {
 	return currentRepositoryData()->commit_log;
+}
+
+std::basic_string_view<GitCommitItem *> MainWindow::commitlogItems() const
+{
+	return commitlog().items();
 }
 
 void MainWindow::clearLogContents()

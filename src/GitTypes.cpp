@@ -192,34 +192,34 @@ bool GitDiff::isSubmodule() const
 
 // GitCommitItemList
 
+void GitCommitItemList::_update_ptrs()
+{
+	const size_t N = d.list.size();
+	d.ptrs.resize(N);
+	for (size_t i = 0; i < N; i++) {
+		d.ptrs[i] = &d.list[i];
+	}
+}
+
 void GitCommitItemList::setList(std::vector<GitCommitItem> &&list)
 {
-	list_ = std::move(list);
+	d.list = std::move(list);
+	_update_ptrs();
 }
 
 size_t GitCommitItemList::size() const
 {
-	return list_.size();
+	return d.list.size();
 }
 
-void GitCommitItemList::resize(size_t n)
+GitCommitItem &GitCommitItemList::_at(size_t i)
 {
-	list_.resize(n);
-}
-
-GitCommitItem &GitCommitItemList::at(size_t i)
-{
-	return list_[i];
+	return d.list.at(i);
 }
 
 const GitCommitItem &GitCommitItemList::at(size_t i) const
 {
-	return list_.at(i);
-}
-
-GitCommitItem &GitCommitItemList::operator [](size_t i)
-{
-	return at(i);
+	return d.list.at(i);
 }
 
 const GitCommitItem &GitCommitItemList::operator [](size_t i) const
@@ -227,24 +227,20 @@ const GitCommitItem &GitCommitItemList::operator [](size_t i) const
 	return at(i);
 }
 
-void GitCommitItemList::clear()
-{
-	list_.clear();
-}
-
 bool GitCommitItemList::empty() const
 {
-	return list_.empty();
+	return d.list.empty();
 }
 
 void GitCommitItemList::push_front(const GitCommitItem &item)
 {
-	list_.insert(list_.begin(), item);
+	d.list.insert(d.list.begin(), item);
+	d.ptrs.insert(d.ptrs.begin(), &d.list.front());
 }
 
 std::string GitCommitItemList::previousMessage() const
 {
-	for (GitCommitItem const &item : list_) {
+	for (GitCommitItem const &item : d.list) {
 		if (item.commit_id.isValid()) {
 			return item.message;
 		}
@@ -254,55 +250,60 @@ std::string GitCommitItemList::previousMessage() const
 
 void GitCommitItemList::updateIndex()
 {
-	index_.clear();
-	for (size_t i = 0; i < list_.size(); i++) {
-		index_[list_[i].commit_id] = i;
+	d.map.clear();
+	for (size_t i = 0; i < d.list.size(); i++) {
+		d.map[d.list[i].commit_id] = i;
 	}
 }
 
 int GitCommitItemList::find_index(const GitHash &id) const
 {
 	if (id.isValid()) {
-		auto it = index_.find(id);
-		if (it != index_.end()) {
+		auto it = d.map.find(id);
+		if (it != d.map.end()) {
 			return (int)it->second;
 		}
 	}
 	return -1;
 }
 
-GitCommitItem *GitCommitItemList::find(const GitHash &id)
+// GitCommitItem *GitCommitItemList::_find(const GitHash &id)
+// {
+// 	// int index = find_index(id);
+// 	// if (index >= 0) {
+// 	// 	return &d.list[index];
+// 	// }
+// 	return nullptr;
+// }
+
+const GitCommitItem *GitCommitItemList::find(const GitHash &id) const
 {
 	int index = find_index(id);
 	if (index >= 0) {
-		return &list_[index];
+		return &d.list[index];
 	}
 	return nullptr;
 }
 
-const GitCommitItem *GitCommitItemList::find(const GitHash &id) const
-{
-	return const_cast<GitCommitItemList *>(this)->find(id);
-}
-
 void GitCommitItemList::fixCommitLogOrder()
 {
-	GitCommitItemList list2;
-	std::swap(list2.list_, this->list_);
+	std::vector<GitCommitItem> list1;
+	
+	std::swap(list1, d.list);
 
-	const size_t count = list2.size();
+	const size_t count = list1.size();
 
 	std::vector<size_t> index(count);
 	std::iota(index.begin(), index.end(), 0);
 
-	auto LISTITEM = [&](size_t i)->GitCommitItem &{
-		return list2[index[i]];
+	auto ListItem = [&](size_t i)->GitCommitItem const &{
+		return list1.at(index[i]);
 	};
 
-	auto MOVEITEM = [&](size_t from, size_t to){
+	auto MoveItem = [&](size_t from, size_t to){
 		Q_ASSERT(from > to);
 		// 親子関係が整合しないコミットをリストの上の方へ移動する
-		LISTITEM(from).order_fixed = true;
+		// ListItem(from).order_fixed = true;
 		auto a = index[from];
 		index.erase(index.begin() + from);
 		index.insert(index.begin() + to, a);
@@ -315,10 +316,10 @@ void GitCommitItemList::fixCommitLogOrder()
 	size_t i = 0;
 	while (i < count) {
 		size_t newpos = (size_t)-1;
-		for (GitHash const &parent : LISTITEM(i).parent_ids) {
+		for (GitHash const &parent : ListItem(i).parent_ids) {
 			if (set.find(parent) != set.end()) {
 				for (size_t j = 0; j < i; j++) {
-					if (parent == LISTITEM(j).commit_id) {
+					if (parent == ListItem(j).commit_id) {
 						if (newpos == (size_t)-1 || j < newpos) {
 							newpos = j;
 						}
@@ -328,10 +329,10 @@ void GitCommitItemList::fixCommitLogOrder()
 				}
 			}
 		}
-		set.insert(set.end(), LISTITEM(i).commit_id);
+		set.insert(set.end(), ListItem(i).commit_id);
 		if (newpos != (size_t)-1) {
 			if (limit == 0) break; // まず無いと思うが、もし、無限ループに陥ったら
-			MOVEITEM(i, newpos);
+			MoveItem(i, newpos);
 			i = newpos;
 			limit--;
 		}
@@ -339,11 +340,14 @@ void GitCommitItemList::fixCommitLogOrder()
 	}
 
 	//
-
-	this->list_.reserve(count);
+	
+	std::vector<GitCommitItem> list2;
+	list2.reserve(count);
 	for (size_t i : index) {
-		this->list_.push_back(LISTITEM(i));
+		list2.push_back(ListItem(i));
 	}
+	
+	setList(std::move(list2));
 }
 
 /**
@@ -355,12 +359,14 @@ void GitCommitItemList::updateCommitGraph()
 {
 	const int LogCount = (int)this->size();
 	if (LogCount > 0) {
-		auto LogItem = [&](int i)->GitCommitItem &{ return this->at((size_t)i); };
+		auto LogItem = [&](int i)->GitCommitItem &{
+			return this->_at((size_t)i);
+		};
 		enum { // 有向グラフを構築するあいだ CommitItem::marker_depth をフラグとして使用する
 			UNKNOWN = 0,
 			KNOWN = 1,
 		};
-		for (GitCommitItem &item : this->list_) {
+		for (GitCommitItem &item : this->d.list) {
 			item.marker_depth = UNKNOWN;
 		}
 		// コミットハッシュを検索して、親コミットのインデックスを求める
@@ -443,7 +449,7 @@ void GitCommitItemList::updateCommitGraph()
 			}
 		}
 		// 線情報をクリア
-		for (GitCommitItem &item : this->list_) {
+		for (GitCommitItem &item : this->d.list) {
 			item.marker_depth = -1;
 			item.parent_lines.clear();
 		}

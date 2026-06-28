@@ -146,7 +146,7 @@ public:
 	void scrollToBottom();
 
 	void updateDiffView(const GitDiff &info, bool uncommited);
-	void updateDiffView_(const std::string &id_left, const std::string &id_right, const std::string &path = {});
+	void updateDiffView(const std::string &id_left, const std::string &id_right, const std::string &path = {});
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);

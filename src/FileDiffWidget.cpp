@@ -26,7 +26,7 @@ enum {
 
 struct FileDiffWidget::Private {
 	FileDiffWidget::InitParam_ init_param_;
-	GitCommitItemList commit_item_list;
+	// GitCommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
 	TextEditorEnginePtr engine_left;
 	TextEditorEnginePtr engine_right;
@@ -714,7 +714,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
  * @param id_right
  * @param path
  */
-void FileDiffWidget::updateDiffView_(std::string const &id_left, std::string const &id_right, std::string const &path)
+void FileDiffWidget::updateDiffView(std::string const &id_left, std::string const &id_right, std::string const &path)
 {
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;

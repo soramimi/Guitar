@@ -142,7 +142,7 @@ struct GitCommitItem {
 	bool has_child = false;
 	int marker_depth = -1;
 	bool resolved =  false;
-	bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
+	// bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
 	void setParents(const std::vector<std::string> &list);
 	explicit operator bool () const
 	{
@@ -160,30 +160,55 @@ struct GitCommitItem {
 
 class GitCommitItemList {
 private:
-	std::vector<GitCommitItem> list_;
-	std::map<GitHash, size_t> index_;
+	struct D {
+		std::vector<GitCommitItem> list;
+		std::vector<GitCommitItem *> ptrs;
+		std::map<GitHash, size_t> map;
+	} d;
+	GitCommitItem &_at(size_t i);
+	void _update_ptrs();
+	void assign(GitCommitItemList const &r)
+	{
+		d.list = r.d.list;
+		_update_ptrs();
+		d.map = r.d.map;
+	}
 public:
 	GitCommitItemList() = default;
+	GitCommitItemList(GitCommitItemList const &r)
+	{
+		assign(r);
+	}
+	void operator = (GitCommitItemList const &r)
+	{
+		assign(r);
+	}
+	GitCommitItemList(GitCommitItemList &&r)
+	{
+		d = std::move(r.d);
+	}
 	GitCommitItemList(std::vector<GitCommitItem> &&list)
 	{
 		setList(std::move(list));
 	}
 	void setList(std::vector<GitCommitItem> &&list);
-	size_t size() const;
-	void resize(size_t n);
-	GitCommitItem &at(size_t i);
-	GitCommitItem const &at(size_t i) const;
-	GitCommitItem &operator [] (size_t i);
-	GitCommitItem const &operator [] (size_t i) const;
-	void clear();
+	
 	bool empty() const;
+	size_t size() const;
+	GitCommitItem const &at(size_t i) const;
+	GitCommitItem const &operator [] (size_t i) const;
 	void push_front(GitCommitItem const &item);
 	std::string previousMessage() const;
 	void updateIndex();
+	
 	int find_index(GitHash const &id) const;
-	GitCommitItem *find(GitHash const &id);
 	GitCommitItem const *find(GitHash const &id) const;
-
+	
+	std::basic_string_view<GitCommitItem *> items() const
+	{
+		return std::basic_string_view<GitCommitItem *>(d.ptrs.data(), d.ptrs.size());
+	}
+	
 	void fixCommitLogOrder();
 	void updateCommitGraph();
 };

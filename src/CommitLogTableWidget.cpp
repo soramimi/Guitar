@@ -336,11 +336,11 @@ public:
 		// コミット日時
 		if (index.column() == Date) {
 			if (0) { // 無効
-				if (commit.order_fixed) {
-					QColor color(255, 0, 0, 128); // 薄い赤枠
-					QRect r = opt.rect.adjusted(1, 1, -1, -2);
-					misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
-				}
+				// if (commit.order_fixed) {
+				// 	QColor color(255, 0, 0, 128); // 薄い赤枠
+				// 	QRect r = opt.rect.adjusted(1, 1, -1, -2);
+				// 	misc::drawFrame(painter, r.x(), r.y(), r.width(), r.height(), color, color);
+				// }
 			}
 		}
 
@@ -438,7 +438,8 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	GitCommitItemList const &list = mainwindow()->commitlog();
+	// GitCommitItemList const &_list = mainwindow()->commitlog();
+	std::basic_string_view<GitCommitItem *> items = mainwindow()->commitlogItems();
 
 	int indent_span = 16;
 
@@ -467,19 +468,19 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		pr->setPen(QPen(c, thick ? thick_line_width : line_width, s));
 	};
 
-	auto DrawLine = [&](size_t index, int itemrow){
+	auto DrawLine = [&](int row){
 		QRect rc1;
-		if (index < list.size()) {
-			GitCommitItem const &item1 = list.at(index);
-			rc1 = ItemRect(itemrow);
-			QPointF pt1 = ItemPoint(item1.marker_depth, rc1);
+		if (row < (int)items.size()) {
+			GitCommitItem const *item1 = items[row];
+			rc1 = ItemRect(row);
+			QPointF pt1 = ItemPoint(item1->marker_depth, rc1);
 			double halfheight = rc1.height() / 2.0;
-			for (GitTreeLine const &line : item1.parent_lines) {
+			for (GitTreeLine const &line : item1->parent_lines) {
 				if (line.depth >= 0) {
 					QPainterPath *path = nullptr;
-					GitCommitItem const &item2 = list.at(line.index);
+					GitCommitItem const &item2 = *items.at(line.index);
 					QRect rc2 = ItemRect(line.index);
-					if (index + 1 == (size_t)line.index || line.depth == item1.marker_depth || line.depth == item2.marker_depth) {
+					if (row + 1 == line.index || line.depth == item1->marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);
 						if (pt2.y() > 0) {
 							path = new QPainterPath();
@@ -489,14 +490,14 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 						QPointF pt3 = ItemPoint(item2.marker_depth, rc2);
 						if (pt3.y() > 0) {
 							path = new QPainterPath();
-							QRect rc3 = ItemRect(itemrow + 1);
+							QRect rc3 = ItemRect(row + 1);
 							QPointF pt2 = ItemPoint(line.depth, rc3);
 							drawBranch(path, pt1.x(), pt1.y(), pt2.x(), pt2.y(), halfheight, true);
 							drawBranch(path, pt2.x(), pt2.y(), pt3.x(), pt3.y(), halfheight, false);
 						}
 					}
 					if (path) {
-						SetPen(&pr, line.color_number, IsAncestor(item1));
+						SetPen(&pr, line.color_number, IsAncestor(*item1));
 						pr.drawPath(*path);
 						delete path;
 					}
@@ -506,23 +507,23 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		return rc1.y();
 	};
 
-	auto DrawMark = [&](size_t index, int row){
+	auto DrawMark = [&](int row){
 		double x, y;
 		y = 0;
-		if (index < list.size()) {
-			GitCommitItem const &item = list.at(index);
+		if (row < (int)items.size()) {
+			GitCommitItem const *item = items[row];
 			QRect rc = ItemRect(row);
-			QPointF pt = ItemPoint(item.marker_depth, rc);
+			QPointF pt = ItemPoint(item->marker_depth, rc);
 			double r = 4;
 			x = pt.x() - r;
 			y = pt.y() - r;
-			if (item.resolved) {
+			if (item->resolved) {
 				// ◯
-				SetPen(&pr, item.marker_depth, IsAncestor(item));
+				SetPen(&pr, item->marker_depth, IsAncestor(*item));
 				pr.drawEllipse((int)x, (int)y, int(r * 2), int(r * 2));
 			} else {
 				// ▽
-				SetPen(&pr, item.marker_depth, false);
+				SetPen(&pr, item->marker_depth, false);
 				QPainterPath path;
 				path.moveTo(pt.x(), pt.y() + r);
 				path.lineTo(pt.x() - r, pt.y() - r);
@@ -543,8 +544,8 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 0.5);
 		pr.setBrush(Qt::NoBrush);
 
-		for (int i = 0; i < (int)list.size(); i++) {
-			double y = DrawLine(i, i);
+		for (int i = 0; i < (int)items.size(); i++) {
+			double y = DrawLine(i);
 			if (y >= height()) break;
 		}
 
@@ -553,8 +554,8 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		pr.setOpacity(opacity * 1);
 		pr.setBrush(mainwindow()->color(0));
 
-		for (int i = 0; i < (int)list.size(); i++) {
-			double y = DrawMark(i, i);
+		for (int i = 0; i < (int)items.size(); i++) {
+			double y = DrawMark(i);
 			if (y >= height()) break;
 		}
 	};

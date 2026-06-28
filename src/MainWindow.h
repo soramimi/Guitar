@@ -711,7 +711,12 @@ public:
 	void hideProgress();
 	void internalAfterFetch();
 	void onRepositoryTreeSortRecent(bool f);
+	
+private:
 	const GitCommitItemList &commitlog() const;
+public:
+	std::basic_string_view<GitCommitItem *> commitlogItems() const;
+	
 	const GitCommitItem *currentCommitItem();
 	void clearLogContents();
 	void updateLogTableView();

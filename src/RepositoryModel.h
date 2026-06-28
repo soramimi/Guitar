@@ -27,7 +27,7 @@ struct CommitLogExchangeData {
 		: p(std::make_shared<D>())
 	{}
 	CommitLogExchangeData(CommitLogExchangeData const &r)
-		: p(std::make_shared<D>(*r.p))
+		: p(r.p)
 	{}
 };
 Q_DECLARE_METATYPE(CommitLogExchangeData)
