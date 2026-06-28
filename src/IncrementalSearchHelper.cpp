@@ -74,3 +74,18 @@ void incrementalsearch::fillFilteredBG(QPainter *painter, const QRect &rect)
 	painter->fillRect(rect, incremental_search_filtered_bg_color());
 }
 
+QString incrementalsearch::appendCharToFilterText(QString filter, const QString &add)
+{
+	uchar c = *add.utf16();
+	if (c == ASCII_BACKSPACE) {
+		int i = filter.size();
+		if (i > 0) {
+			filter.remove(i - 1, 1);
+		}
+	} else if (c == ASCII_DELETE) {
+		filter.clear();
+	} else if (c >= 0x20 && c < 0x80 && (!isspace(c) && isprint(c))) {
+		filter.append(QChar(c));
+	}	
+	return filter;
+}

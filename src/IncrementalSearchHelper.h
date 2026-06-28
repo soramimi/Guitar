@@ -26,6 +26,10 @@ void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const
 void drawText_filtered(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const IncrementalSearchFilter &filter);
 void fillFilteredBG(QPainter *painter, const QRect &rect);
 
+static constexpr int ASCII_BACKSPACE = 0x08;
+static constexpr int ASCII_DELETE = 0xff;
+QString appendCharToFilterText(QString filter, QString const &add);
+
 } // namespace incrementalsearch
 
 
