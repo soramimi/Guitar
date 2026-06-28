@@ -15,7 +15,7 @@ class ApplicationBasicData {
 public:
 	QString organization_name = ORGANIZATION_NAME;
 	QString application_name = APPLICATION_NAME;
-	QString this_executive_program;
+	QString application_file_path;
 	QString generic_config_dir;
 	QString app_config_dir;
 	QString log_dir;
